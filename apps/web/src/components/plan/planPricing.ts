@@ -112,38 +112,39 @@ export interface PlanServiceRule {
  * «отсутствующий зуб → мост или съёмный протез» — клиническое решение, его
  * принимает не программа; оставлено как было и записано в долг.
  */
-export const PLAN_SERVICE_RULES: Partial<Record<ToothState, PlanServiceRule>> = {
-	Caries: {
-		category: "therapy",
-		keywords: ["кариес"],
-		humanName: "лечение кариеса",
-	},
-	Pulpitis: {
-		category: "therapy",
-		keywords: ["пульпит", "эндо", "канал"],
-		humanName: "лечение пульпита",
-	},
-	Planned_Implant: {
-		category: "surgery",
-		keywords: ["имплант"],
-		humanName: "установка имплантата",
-	},
-	Implant: {
-		category: "surgery",
-		keywords: ["имплант"],
-		humanName: "установка имплантата",
-	},
-	Missing: {
-		category: "surgery",
-		keywords: ["имплант"],
-		humanName: "установка имплантата",
-	},
-	Crown: {
-		category: "prosthetics",
-		keywords: ["коронка"],
-		humanName: "коронка",
-	},
-};
+export const PLAN_SERVICE_RULES: Partial<Record<ToothState, PlanServiceRule>> =
+	{
+		Caries: {
+			category: "therapy",
+			keywords: ["кариес"],
+			humanName: "лечение кариеса",
+		},
+		Pulpitis: {
+			category: "therapy",
+			keywords: ["пульпит", "эндо", "канал"],
+			humanName: "лечение пульпита",
+		},
+		Planned_Implant: {
+			category: "surgery",
+			keywords: ["имплант"],
+			humanName: "установка имплантата",
+		},
+		Implant: {
+			category: "surgery",
+			keywords: ["имплант"],
+			humanName: "установка имплантата",
+		},
+		Missing: {
+			category: "surgery",
+			keywords: ["имплант"],
+			humanName: "установка имплантата",
+		},
+		Crown: {
+			category: "prosthetics",
+			keywords: ["коронка"],
+			humanName: "коронка",
+		},
+	};
 
 /** Почему у строки нет цены. */
 export type PlanPriceIssueKind =
@@ -324,7 +325,9 @@ export function planPriceIssueMessages(
  * Разбор денежного значения, пришедшего из API, без исключения в отрисовке.
  * null — значение испорчено, и это ЧЕСТНЫЙ ответ, в отличие от нуля.
  */
-function safeKopecks(value: number | string | null | undefined): Kopecks | null {
+function safeKopecks(
+	value: number | string | null | undefined,
+): Kopecks | null {
 	if (value === null || value === undefined || value === "") return 0;
 	if (typeof value === "number" && !Number.isFinite(value)) return null;
 	try {

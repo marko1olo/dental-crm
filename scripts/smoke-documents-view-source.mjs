@@ -110,7 +110,7 @@ requireIn(
  */
 requireIn(
 	appSource,
-	"setPostVisitPresetFeedback: createSetter(set, \"postVisitPresetFeedback\")",
+	'setPostVisitPresetFeedback: createSetter(set, "postVisitPresetFeedback")',
 	"Post-visit preset changes must have visible feedback state.",
 );
 requireIn(

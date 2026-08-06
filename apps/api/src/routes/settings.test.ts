@@ -40,7 +40,10 @@ describe("clinicProfileMutationRejection", () => {
 
 	test("returns 409 and clinic_time_zone_invalid when error message includes часовой пояс", () => {
 		const error = new Error("Неправильный часовой пояс.");
-		const body = clinicProfileMutationRejection(mockReply as FastifyReply, error);
+		const body = clinicProfileMutationRejection(
+			mockReply as FastifyReply,
+			error,
+		);
 
 		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
 		assert.deepStrictEqual(body, {
@@ -53,7 +56,10 @@ describe("clinicProfileMutationRejection", () => {
 
 	test("returns 409 and active_schedule_conflict when error message includes активная запись", () => {
 		const error = new Error("Есть активная запись.");
-		const body = clinicProfileMutationRejection(mockReply as FastifyReply, error);
+		const body = clinicProfileMutationRejection(
+			mockReply as FastifyReply,
+			error,
+		);
 
 		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
 		assert.deepStrictEqual(body, {
@@ -66,7 +72,10 @@ describe("clinicProfileMutationRejection", () => {
 
 	test("returns 409 and active_schedule_conflict when error message includes активные записи", () => {
 		const error = new Error("Есть активные записи.");
-		const body = clinicProfileMutationRejection(mockReply as FastifyReply, error);
+		const body = clinicProfileMutationRejection(
+			mockReply as FastifyReply,
+			error,
+		);
 
 		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
 		assert.deepStrictEqual(body, {
@@ -79,7 +88,10 @@ describe("clinicProfileMutationRejection", () => {
 
 	test("returns 409 and clinic_profile_rejected for other errors", () => {
 		const error = new Error("Неизвестная ошибка.");
-		const body = clinicProfileMutationRejection(mockReply as FastifyReply, error);
+		const body = clinicProfileMutationRejection(
+			mockReply as FastifyReply,
+			error,
+		);
 
 		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
 		assert.deepStrictEqual(body, {
@@ -92,7 +104,10 @@ describe("clinicProfileMutationRejection", () => {
 
 	test("handles non-Error objects gracefully", () => {
 		const error = "Just a string error";
-		const body = clinicProfileMutationRejection(mockReply as FastifyReply, error);
+		const body = clinicProfileMutationRejection(
+			mockReply as FastifyReply,
+			error,
+		);
 
 		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
 		assert.deepStrictEqual(body, {

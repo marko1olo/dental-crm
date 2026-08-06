@@ -24,8 +24,8 @@
 
 import { randomBytes } from "node:crypto";
 import { eq, inArray, sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
 import { organizations, serviceCatalogItems } from "../../db/schema.js";
 import { registerSettingsRoutes } from "../../routes/settings.js";
@@ -37,7 +37,10 @@ import { signToken } from "../../utils/cryptoHelper.js";
  * Имена организаций прогона. Сверяются на точное равенство, без LIKE и без
  * маски, чтобы клиника с похожим названием не попала под удаление.
  */
-const PROOF_ORGANIZATION_NAMES = ["Проверка прайса — клиника А", "Проверка прайса — клиника Б"] as const;
+const PROOF_ORGANIZATION_NAMES = [
+	"Проверка прайса — клиника А",
+	"Проверка прайса — клиника Б",
+] as const;
 
 let failures = 0;
 
@@ -58,7 +61,10 @@ function checkRussianRefusal(label: string, message: unknown): void {
 
 function seeded<Row>(rows: Row[], what: string): Row {
 	const row = rows[0];
-	if (!row) throw new Error(`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`);
+	if (!row)
+		throw new Error(
+			`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`,
+		);
 	return row;
 }
 
@@ -88,7 +94,10 @@ async function buildApp(): Promise<FastifyInstance> {
  * content-type не подставляет никогда. Ровно этой формой уже работают удаление
  * сотрудника и кресла.
  */
-function headersFor(organizationId: string, withBody: boolean): Record<string, string> {
+function headersFor(
+	organizationId: string,
+	withBody: boolean,
+): Record<string, string> {
 	const headers: Record<string, string> = {
 		"x-dente-admin-secret": settingsAdminSecret,
 		"x-dente-clinic-token": signToken({ organizationId }, authTokenSecret()),
@@ -97,7 +106,11 @@ function headersFor(organizationId: string, withBody: boolean): Record<string, s
 	return headers;
 }
 
-type Injected = { statusCode: number; body: string; json: Record<string, unknown> };
+type Injected = {
+	statusCode: number;
+	body: string;
+	json: Record<string, unknown>;
+};
 
 async function call(
 	app: FastifyInstance,
@@ -151,33 +164,50 @@ async function independentCount(organizationId: string) {
 	return result.rows[0] as { total: number; active: number };
 }
 
-async function proveWrites(app: FastifyInstance, created: string[]): Promise<void> {
+async function proveWrites(
+	app: FastifyInstance,
+	created: string[],
+): Promise<void> {
 	const own = seeded(
-		await db.insert(organizations).values({ name: PROOF_ORGANIZATION_NAMES[0] }).returning({ id: organizations.id }),
+		await db
+			.insert(organizations)
+			.values({ name: PROOF_ORGANIZATION_NAMES[0] })
+			.returning({ id: organizations.id }),
 		PROOF_ORGANIZATION_NAMES[0],
 	);
 	created.push(own.id);
 	const foreign = seeded(
-		await db.insert(organizations).values({ name: PROOF_ORGANIZATION_NAMES[1] }).returning({ id: organizations.id }),
+		await db
+			.insert(organizations)
+			.values({ name: PROOF_ORGANIZATION_NAMES[1] })
+			.returning({ id: organizations.id }),
 		PROOF_ORGANIZATION_NAMES[1],
 	);
 	created.push(foreign.id);
 
 	console.log(`\n=== СОЗДАНИЕ УСЛУГИ (POST /api/settings/catalog) ===`);
 	const before = await independentCount(own.id);
-	console.log(`  до создания в прайсе клиники: всего ${before.total}, активных ${before.active}`);
+	console.log(
+		`  до создания в прайсе клиники: всего ${before.total}, активных ${before.active}`,
+	);
 
 	// Цена С КОПЕЙКАМИ: ровно на этом прайс ломался раньше (см. db/schema.ts:426).
-	const createResponse = await call(app, "POST", "/api/settings/catalog", own.id, {
-		title: "Первичная консультация врача-терапевта",
-		code: "T01",
-		category: "consultation",
-		specialty: "therapist",
-		basePriceRub: 1500.5,
-		durationMinutes: 45,
-		taxDeductible: true,
-		active: true,
-	});
+	const createResponse = await call(
+		app,
+		"POST",
+		"/api/settings/catalog",
+		own.id,
+		{
+			title: "Первичная консультация врача-терапевта",
+			code: "T01",
+			category: "consultation",
+			specialty: "therapist",
+			basePriceRub: 1500.5,
+			durationMinutes: 45,
+			taxDeductible: true,
+			active: true,
+		},
+	);
 	check("услуга создана", createResponse.statusCode, 201);
 	if (createResponse.statusCode !== 201) {
 		console.log(`  тело: ${createResponse.body.slice(0, 400)}`);
@@ -190,37 +220,79 @@ async function proveWrites(app: FastifyInstance, created: string[]): Promise<voi
 	console.log(`  независимый SQL: ${JSON.stringify(rowAfterCreate)}`);
 	check("услуга легла в базу", rowAfterCreate !== null, true);
 	check("клиника у строки своя", rowAfterCreate?.organization_id, own.id);
-	check("копейки не потеряны (base_price_rub)", rowAfterCreate?.base_price_rub, "1500.50");
-	check("вторая денежная колонка заполнена тем же (price_rub)", rowAfterCreate?.price_rub, "1500.50");
+	check(
+		"копейки не потеряны (base_price_rub)",
+		rowAfterCreate?.base_price_rub,
+		"1500.50",
+	);
+	check(
+		"вторая денежная колонка заполнена тем же (price_rub)",
+		rowAfterCreate?.price_rub,
+		"1500.50",
+	);
 	check("длительность записана", rowAfterCreate?.duration_minutes, 45);
 	check("категория записана", rowAfterCreate?.category, "consultation");
 	check("услуга активна", rowAfterCreate?.is_active, true);
-	check("маршрут вернул цену как число", createResponse.json.basePriceRub, 1500.5);
+	check(
+		"маршрут вернул цену как число",
+		createResponse.json.basePriceRub,
+		1500.5,
+	);
 
 	const afterCreate = await independentCount(own.id);
-	check("в прайсе стало на одну услугу больше", afterCreate.total, before.total + 1);
+	check(
+		"в прайсе стало на одну услугу больше",
+		afterCreate.total,
+		before.total + 1,
+	);
 
 	console.log(`\n=== ПРАВКА ЦЕНЫ (PUT /api/settings/catalog/:serviceId) ===`);
-	const updateResponse = await call(app, "PUT", `/api/settings/catalog/${serviceId}`, own.id, {
-		basePriceRub: 1990.99,
-		durationMinutes: 60,
-	});
+	const updateResponse = await call(
+		app,
+		"PUT",
+		`/api/settings/catalog/${serviceId}`,
+		own.id,
+		{
+			basePriceRub: 1990.99,
+			durationMinutes: 60,
+		},
+	);
 	check("цена изменена", updateResponse.statusCode, 200);
 	console.log(`  ответ маршрута: ${updateResponse.body}`);
 	const rowAfterUpdate = await independentRow(serviceId);
 	console.log(`  независимый SQL: ${JSON.stringify(rowAfterUpdate)}`);
 	check("новая цена в базе", rowAfterUpdate?.base_price_rub, "1990.99");
-	check("вторая колонка не разошлась с первой", rowAfterUpdate?.price_rub, "1990.99");
+	check(
+		"вторая колонка не разошлась с первой",
+		rowAfterUpdate?.price_rub,
+		"1990.99",
+	);
 	check("новая длительность в базе", rowAfterUpdate?.duration_minutes, 60);
-	check("непереданное поле не затёрто (название)", rowAfterUpdate?.title, "Первичная консультация врача-терапевта");
+	check(
+		"непереданное поле не затёрто (название)",
+		rowAfterUpdate?.title,
+		"Первичная консультация врача-терапевта",
+	);
 	check("непереданное поле не затёрто (код)", rowAfterUpdate?.code, "T01");
 
 	console.log(`\n=== ОТКАЗЫ ПО ВВОДУ (проверяется текст, а не только код) ===`);
-	const thirdDecimal = await call(app, "PUT", `/api/settings/catalog/${serviceId}`, own.id, { basePriceRub: 100.001 });
+	const thirdDecimal = await call(
+		app,
+		"PUT",
+		`/api/settings/catalog/${serviceId}`,
+		own.id,
+		{ basePriceRub: 100.001 },
+	);
 	check("цена с третьим знаком отклонена", thirdDecimal.statusCode, 400);
 	checkRussianRefusal("текст отказа по копейкам", thirdDecimal.json.message);
 
-	const negative = await call(app, "PUT", `/api/settings/catalog/${serviceId}`, own.id, { basePriceRub: -1 });
+	const negative = await call(
+		app,
+		"PUT",
+		`/api/settings/catalog/${serviceId}`,
+		own.id,
+		{ basePriceRub: -1 },
+	);
 	check("отрицательная цена отклонена", negative.statusCode, 400);
 
 	const emptyTitle = await call(app, "POST", "/api/settings/catalog", own.id, {
@@ -233,67 +305,154 @@ async function proveWrites(app: FastifyInstance, created: string[]): Promise<voi
 	check("услуга без названия не создана", emptyTitle.statusCode, 400);
 	checkRussianRefusal("текст отказа по названию", emptyTitle.json.message);
 
-	const unknownCategory = await call(app, "POST", "/api/settings/catalog", own.id, {
-		title: "Услуга неизвестной категории",
-		category: "выдуманная",
-		specialty: "therapist",
-		basePriceRub: 100,
-		durationMinutes: 30,
-	});
+	const unknownCategory = await call(
+		app,
+		"POST",
+		"/api/settings/catalog",
+		own.id,
+		{
+			title: "Услуга неизвестной категории",
+			category: "выдуманная",
+			specialty: "therapist",
+			basePriceRub: 100,
+			durationMinutes: 30,
+		},
+	);
 	check("неизвестная категория не создана", unknownCategory.statusCode, 400);
 
-	const emptyPatch = await call(app, "PUT", `/api/settings/catalog/${serviceId}`, own.id, { какое_то_поле: 1 });
-	check("правка без полей отклонена, а не выдана за успех", emptyPatch.statusCode, 400);
+	const emptyPatch = await call(
+		app,
+		"PUT",
+		`/api/settings/catalog/${serviceId}`,
+		own.id,
+		{ какое_то_поле: 1 },
+	);
+	check(
+		"правка без полей отклонена, а не выдана за успех",
+		emptyPatch.statusCode,
+		400,
+	);
 	checkRussianRefusal("текст отказа по пустой правке", emptyPatch.json.message);
 
-	const missing = await call(app, "PUT", "/api/settings/catalog/00000000-0000-0000-0000-000000000000", own.id, {
-		basePriceRub: 500,
-	});
-	check("несуществующая услуга даёт 404 маршрута, а не Fastify", missing.statusCode, 404);
-	checkRussianRefusal("текст отказа по ненайденной услуге", missing.json.message);
+	const missing = await call(
+		app,
+		"PUT",
+		"/api/settings/catalog/00000000-0000-0000-0000-000000000000",
+		own.id,
+		{
+			basePriceRub: 500,
+		},
+	);
+	check(
+		"несуществующая услуга даёт 404 маршрута, а не Fastify",
+		missing.statusCode,
+		404,
+	);
+	checkRussianRefusal(
+		"текст отказа по ненайденной услуге",
+		missing.json.message,
+	);
 
 	// Цена в базе не должна была измениться ни одним из отказов.
 	const rowAfterRefusals = await independentRow(serviceId);
-	check("ни один отказ не изменил цену", rowAfterRefusals?.base_price_rub, "1990.99");
+	check(
+		"ни один отказ не изменил цену",
+		rowAfterRefusals?.base_price_rub,
+		"1990.99",
+	);
 
 	console.log(`\n=== ИЗОЛЯЦИЯ КЛИНИК ===`);
-	const foreignUpdate = await call(app, "PUT", `/api/settings/catalog/${serviceId}`, foreign.id, {
-		basePriceRub: 1,
-	});
+	const foreignUpdate = await call(
+		app,
+		"PUT",
+		`/api/settings/catalog/${serviceId}`,
+		foreign.id,
+		{
+			basePriceRub: 1,
+		},
+	);
 	check("чужая клиника не правит услугу", foreignUpdate.statusCode, 404);
 	checkRussianRefusal("отказ чужой клинике", foreignUpdate.json.message);
-	const foreignDelete = await call(app, "DELETE", `/api/settings/catalog/${serviceId}`, foreign.id);
+	const foreignDelete = await call(
+		app,
+		"DELETE",
+		`/api/settings/catalog/${serviceId}`,
+		foreign.id,
+	);
 	check("чужая клиника не отключает услугу", foreignDelete.statusCode, 404);
 	const rowAfterForeign = await independentRow(serviceId);
-	check("цена после чужих попыток та же", rowAfterForeign?.base_price_rub, "1990.99");
+	check(
+		"цена после чужих попыток та же",
+		rowAfterForeign?.base_price_rub,
+		"1990.99",
+	);
 	check("услуга после чужих попыток активна", rowAfterForeign?.is_active, true);
 
-	console.log(`\n=== ОТКЛЮЧЕНИЕ, А НЕ УДАЛЕНИЕ (DELETE /api/settings/catalog/:serviceId) ===`);
-	const deleteResponse = await call(app, "DELETE", `/api/settings/catalog/${serviceId}`, own.id);
+	console.log(
+		`\n=== ОТКЛЮЧЕНИЕ, А НЕ УДАЛЕНИЕ (DELETE /api/settings/catalog/:serviceId) ===`,
+	);
+	const deleteResponse = await call(
+		app,
+		"DELETE",
+		`/api/settings/catalog/${serviceId}`,
+		own.id,
+	);
 	check("услуга отключена", deleteResponse.statusCode, 200);
 	console.log(`  ответ маршрута: ${deleteResponse.body}`);
 	const rowAfterDelete = await independentRow(serviceId);
 	console.log(`  независимый SQL: ${JSON.stringify(rowAfterDelete)}`);
-	check("СТРОКА В БАЗЕ ОСТАЛАСЬ (история лечения и счёта целы)", rowAfterDelete !== null, true);
+	check(
+		"СТРОКА В БАЗЕ ОСТАЛАСЬ (история лечения и счёта целы)",
+		rowAfterDelete !== null,
+		true,
+	);
 	check("услуга ушла в архив", rowAfterDelete?.is_active, false);
-	check("цена в архивной строке сохранена", rowAfterDelete?.base_price_rub, "1990.99");
+	check(
+		"цена в архивной строке сохранена",
+		rowAfterDelete?.base_price_rub,
+		"1990.99",
+	);
 	check("маршрут вернул active: false", deleteResponse.json.active, false);
 	const afterDelete = await independentCount(own.id);
-	check("строк в прайсе столько же, активных меньше", afterDelete.total, afterCreate.total);
-	check("активных стало меньше на одну", afterDelete.active, afterCreate.active - 1);
+	check(
+		"строк в прайсе столько же, активных меньше",
+		afterDelete.total,
+		afterCreate.total,
+	);
+	check(
+		"активных стало меньше на одну",
+		afterDelete.active,
+		afterCreate.active - 1,
+	);
 
 	console.log(`\n=== ОХРАНА ДОСТУПА ===`);
 	const noSecret = await app.inject({
 		method: "POST",
 		url: "/api/settings/catalog",
 		headers: {
-			"x-dente-clinic-token": signToken({ organizationId: own.id }, authTokenSecret()),
+			"x-dente-clinic-token": signToken(
+				{ organizationId: own.id },
+				authTokenSecret(),
+			),
 			"content-type": "application/json",
 		},
-		payload: JSON.stringify({ title: "Без секрета", category: "therapy", specialty: "therapist", basePriceRub: 10, durationMinutes: 30 }),
+		payload: JSON.stringify({
+			title: "Без секрета",
+			category: "therapy",
+			specialty: "therapist",
+			basePriceRub: 10,
+			durationMinutes: 30,
+		}),
 	});
-	check("без секрета администратора запись отклонена", noSecret.statusCode, 403);
-	checkRussianRefusal("отказ без секрета", (JSON.parse(noSecret.body) as { message?: string }).message);
+	check(
+		"без секрета администратора запись отклонена",
+		noSecret.statusCode,
+		403,
+	);
+	checkRussianRefusal(
+		"отказ без секрета",
+		(JSON.parse(noSecret.body) as { message?: string }).message,
+	);
 
 	await proveOverRealHttp(own.id);
 }
@@ -315,7 +474,11 @@ async function proveOverRealHttp(organizationId: string): Promise<void> {
 		console.log(`\n=== ЖИВОЙ HTTP на 127.0.0.1:${port} (не app.inject) ===`);
 		const url = `http://127.0.0.1:${port}/api/settings/catalog`;
 
-		const anonymous = await fetch(url, { method: "POST", body: "{}", headers: { "content-type": "application/json" } });
+		const anonymous = await fetch(url, {
+			method: "POST",
+			body: "{}",
+			headers: { "content-type": "application/json" },
+		});
 		check("живой HTTP без секрета отклонён", anonymous.status, 403);
 
 		const response = await fetch(url, {
@@ -334,7 +497,11 @@ async function proveOverRealHttp(organizationId: string): Promise<void> {
 		check("живой HTTP создал услугу", response.status, 201);
 		console.log(`  по сети: HTTP ${response.status} ${JSON.stringify(body)}`);
 		const row = await independentRow(String(body.id ?? ""));
-		check("услуга из сети лежит в базе с копейками", row?.base_price_rub, "3200.75");
+		check(
+			"услуга из сети лежит в базе с копейками",
+			row?.base_price_rub,
+			"3200.75",
+		);
 		check("код по умолчанию не выдуман", row?.code, "H01");
 	} finally {
 		await app.close();
@@ -343,7 +510,9 @@ async function proveOverRealHttp(organizationId: string): Promise<void> {
 
 async function cleanup(organizationIds: string[]): Promise<void> {
 	for (const organizationId of organizationIds) {
-		await db.delete(serviceCatalogItems).where(eq(serviceCatalogItems.organizationId, organizationId));
+		await db
+			.delete(serviceCatalogItems)
+			.where(eq(serviceCatalogItems.organizationId, organizationId));
 		await db.delete(organizations).where(eq(organizations.id, organizationId));
 	}
 }
@@ -359,7 +528,9 @@ async function sweepStaleProofOrganizations(): Promise<void> {
 		.from(organizations)
 		.where(inArray(organizations.name, [...PROOF_ORGANIZATION_NAMES]));
 	if (stale.length === 0) return;
-	console.log(`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`);
+	console.log(
+		`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`,
+	);
 	for (const row of stale) console.log(`  ${row.id}  ${row.name}`);
 	await cleanup(stale.map((row) => row.id));
 }
@@ -388,7 +559,9 @@ async function main(): Promise<void> {
 			.from(organizations)
 			.where(inArray(organizations.name, [...PROOF_ORGANIZATION_NAMES]));
 		check("тестовых клиник в базе не осталось", stillThere.length, 0);
-		console.log(failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`);
+		console.log(
+			failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`,
+		);
 		await pool.end();
 	}
 	if (failures > 0) process.exitCode = 1;

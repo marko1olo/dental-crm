@@ -27,7 +27,9 @@ import { uiPreferencesInputSchema } from "@dental/shared";
  * трогает ни на чтение, ни на запись.
  */
 
-const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "dente-state-flush-"));
+const temporaryRoot = fs.mkdtempSync(
+	path.join(os.tmpdir(), "dente-state-flush-"),
+);
 const stateFilePath = path.join(temporaryRoot, "dental-crm-state.json");
 const stateTempFilePath = `${stateFilePath}.tmp`;
 const environmentSnapshot = { ...process.env };
@@ -36,8 +38,12 @@ process.env.DENTAL_STATE_PERSISTENCE = "on";
 process.env.DENTAL_STATE_FILE = stateFilePath;
 process.env.DENTAL_STATE_BACKUP_DIR = path.join(temporaryRoot, "backups");
 
-const { flushPersistentStateNow, saveUiPreferences, getUiPreferences, recordAuditEvent } =
-	await import("../sampleData.js");
+const {
+	flushPersistentStateNow,
+	saveUiPreferences,
+	getUiPreferences,
+	recordAuditEvent,
+} = await import("../sampleData.js");
 
 const originalWriteFileSync = fs.writeFileSync;
 let stateWriteCount = 0;
@@ -49,15 +55,20 @@ let stateWriteBytes = 0;
  * счёт не попадали.
  */
 function countStateWrites(): void {
-	mock.method(fs, "writeFileSync", ((...parameters: Parameters<typeof fs.writeFileSync>) => {
+	mock.method(fs, "writeFileSync", ((
+		...parameters: Parameters<typeof fs.writeFileSync>
+	) => {
 		const [file, data] = parameters;
 		if (file === stateTempFilePath) {
 			stateWriteCount += 1;
-			stateWriteBytes += typeof data === "string" ? Buffer.byteLength(data, "utf8") : 0;
+			stateWriteBytes +=
+				typeof data === "string" ? Buffer.byteLength(data, "utf8") : 0;
 		}
-		return (originalWriteFileSync as (...args: Parameters<typeof fs.writeFileSync>) => void)(
-			...parameters
-		);
+		return (
+			originalWriteFileSync as (
+				...args: Parameters<typeof fs.writeFileSync>
+			) => void
+		)(...parameters);
 	}) as typeof fs.writeFileSync);
 }
 
@@ -81,7 +92,10 @@ function sleep(ms: number): Promise<void> {
 	});
 }
 
-function persistedStateFile(): { savedAt: string; state: { uiPreferences: { scheduleDateFilter: string } } } {
+function persistedStateFile(): {
+	savedAt: string;
+	state: { uiPreferences: { scheduleDateFilter: string } };
+} {
 	return JSON.parse(fs.readFileSync(stateFilePath, "utf8"));
 }
 
@@ -137,7 +151,11 @@ describe("слияние записей снимка состояния", () => 
 
 		await sleep(200);
 
-		assert.equal(stateWriteCount, 1, "пачка из 20 действий обязана дать ровно одну запись");
+		assert.equal(
+			stateWriteCount,
+			1,
+			"пачка из 20 действий обязана дать ровно одну запись",
+		);
 		console.log(
 			`  ПОСЛЕ (окно 60 мс): 20 действий -> ${stateWriteCount} запись, ${stateWriteBytes.toLocaleString("ru-RU")} Б`,
 		);
@@ -235,15 +253,24 @@ describe("слияние записей снимка состояния", () => 
 			entityType: "visit",
 			entityId: "9f5b6f4e-4d51-4a2f-9d3e-1f2c3b4a5d6e",
 			action: "state_flush_coalescing_probe",
-			reason: "Проверка слияния записей снимка состояния между разными местами вызова.",
+			reason:
+				"Проверка слияния записей снимка состояния между разными местами вызова.",
 		});
 		smallUserAction(2);
 
-		assert.equal(stateWriteCount, 0, "ни одно из трёх действий не должно писать файл на своём такте");
+		assert.equal(
+			stateWriteCount,
+			0,
+			"ни одно из трёх действий не должно писать файл на своём такте",
+		);
 
 		await sleep(200);
 
-		assert.equal(stateWriteCount, 1, "три действия из разных мест обязаны дать одну запись");
+		assert.equal(
+			stateWriteCount,
+			1,
+			"три действия из разных мест обязаны дать одну запись",
+		);
 		const persisted = JSON.parse(fs.readFileSync(stateFilePath, "utf8")) as {
 			state: { auditEvents: Array<{ id: string }> };
 		};
@@ -261,7 +288,11 @@ describe("слияние записей снимка состояния", () => 
 		assert.equal(stateWriteCount, 0);
 
 		flushPersistentStateNow();
-		assert.equal(stateWriteCount, 1, "принудительная запись обязана состояться сразу");
+		assert.equal(
+			stateWriteCount,
+			1,
+			"принудительная запись обязана состояться сразу",
+		);
 
 		flushPersistentStateNow();
 		assert.equal(

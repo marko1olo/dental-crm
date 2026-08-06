@@ -1,8 +1,8 @@
+import { multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { showToast } from "../GlobalToast";
-import { multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
 
 export interface InventoryItem {
 	id: string;
@@ -50,7 +50,8 @@ function inventoryItemFromServer(raw: unknown): InventoryItem {
 	 * возвращающую `string | undefined`: при exactOptionalPropertyTypes значение
 	 * `undefined` не подходит свойству, объявленному как `sku?: string`.
 	 */
-	const asText = (value: unknown) => (typeof value === "string" ? value.trim() : "");
+	const asText = (value: unknown) =>
+		typeof value === "string" ? value.trim() : "";
 	const sku = asText(row.sku);
 	const barcode = asText(row.barcode);
 	const lotNumber = asText(row.lotNumber);
@@ -61,7 +62,10 @@ function inventoryItemFromServer(raw: unknown): InventoryItem {
 		stockQuantity: asNumber(row.stockQuantity),
 		criticalThreshold: asNumber(row.criticalThreshold),
 		// Цена остаётся строкой: так объявлен тип, и её везде читают через Number().
-		unitCostRub: row.unitCostRub === null || row.unitCostRub === undefined ? "0" : String(row.unitCostRub),
+		unitCostRub:
+			row.unitCostRub === null || row.unitCostRub === undefined
+				? "0"
+				: String(row.unitCostRub),
 		updatedAt: typeof row.updatedAt === "string" ? row.updatedAt : "",
 		...(sku ? { sku } : {}),
 		...(barcode ? { barcode } : {}),
@@ -576,10 +580,7 @@ export function useInventoryLogic(organizationId: string) {
 		const typedCost = formData.unitCostRub.trim();
 		const parsedCost = typedCost ? normalizeRubAmountInput(typedCost) : 0;
 		if (parsedCost === null) {
-			showToast(
-				"Цену укажите цифрами, копейки после запятой: 12,50",
-				"error",
-			);
+			showToast("Цену укажите цифрами, копейки после запятой: 12,50", "error");
 			return;
 		}
 		const unitCost = parsedCost;
@@ -771,7 +772,10 @@ export function useInventoryLogic(organizationId: string) {
 		const totalKopecks = sumKopecks(
 			items.map((item) => {
 				const unitCostKopecks = parseKopecks(item.unitCostRub || "0");
-				const quantity = Math.max(0, Math.round(Number(item.stockQuantity) || 0));
+				const quantity = Math.max(
+					0,
+					Math.round(Number(item.stockQuantity) || 0),
+				);
 				return multiplyKopecks(unitCostKopecks, quantity);
 			}),
 		);

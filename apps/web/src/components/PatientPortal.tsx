@@ -251,14 +251,18 @@ export const PatientPortal: React.FC = () => {
 		phoneRef.current?.focus();
 	}, []);
 
-	const plans: any[] = Array.isArray(patientData?.plans) ? patientData.plans : [];
+	const plans: any[] = Array.isArray(patientData?.plans)
+		? patientData.plans
+		: [];
 	const invoices: any[] = Array.isArray(patientData?.invoices)
 		? patientData.invoices
 		: [];
 	// Планы без цены считаем отдельно и говорим о них вслух: иначе итог
 	// молча оказывается меньше настоящего, а пациент читает его как полный.
 	const planTotals = plans.map((plan) => planTotalRub(plan));
-	const pricedPlanTotals = planTotals.filter((value): value is number => value !== null);
+	const pricedPlanTotals = planTotals.filter(
+		(value): value is number => value !== null,
+	);
 	const plansWithoutPrice = planTotals.length - pricedPlanTotals.length;
 	const totalCost = pricedPlanTotals.reduce((sum, value) => sum + value, 0);
 	// БЫЛО: `i.amount`. В patient_invoices такого поля нет — сумма счёта лежит
@@ -267,7 +271,11 @@ export const PatientPortal: React.FC = () => {
 	// не попадают: внесённой части в строке счёта нет, взять её неоткуда.
 	const paid = invoices
 		.filter((invoice) => invoice?.status === "paid")
-		.reduce((sum: number, invoice: any) => sum + (rubFromDbValue(invoice?.totalRub) ?? 0), 0);
+		.reduce(
+			(sum: number, invoice: any) =>
+				sum + (rubFromDbValue(invoice?.totalRub) ?? 0),
+			0,
+		);
 	const remaining = totalCost - paid;
 
 	useEffect(() => {
@@ -376,7 +384,9 @@ export const PatientPortal: React.FC = () => {
 					{/* Третье состояние входа: пропуск сохранён, но кабинет ещё читается.
 					    Раньше в этот момент пациент видел пустую форму телефона и начинал
 					    вход заново, тратя лимит запросов кода. */}
-					{isLoading && <p className="auth-hint">Проверяем сохранённый вход…</p>}
+					{isLoading && (
+						<p className="auth-hint">Проверяем сохранённый вход…</p>
+					)}
 					{/* Отказ сервера — своим текстом и с повтором, без нового СМС.
 					    Раньше он был неотличим от «сессия истекла». */}
 					{sessionError && (
@@ -502,13 +512,22 @@ export const PatientPortal: React.FC = () => {
 						    а не знак у числа. */}
 						<div className="fin-stat">
 							<span>{remaining < 0 ? "Переплата" : "Остаток"}</span>
-							<strong className="text-orange">{money(Math.abs(remaining))}</strong>
+							<strong className="text-orange">
+								{money(Math.abs(remaining))}
+							</strong>
 						</div>
 					</div>
 					{plansWithoutPrice > 0 && (
-						<p style={{ margin: "8px 0 0", fontSize: "0.8rem", color: "var(--muted)" }}>
-							У {countLabel(plansWithoutPrice, "плана", "планов", "планов")} цена
-							пока не указана, поэтому итог неполный — уточните сумму в клинике.
+						<p
+							style={{
+								margin: "8px 0 0",
+								fontSize: "0.8rem",
+								color: "var(--muted)",
+							}}
+						>
+							У {countLabel(plansWithoutPrice, "плана", "планов", "планов")}{" "}
+							цена пока не указана, поэтому итог неполный — уточните сумму в
+							клинике.
 						</p>
 					)}
 					{plans.length === 0 && (
@@ -530,7 +549,9 @@ export const PatientPortal: React.FC = () => {
 									{/* Цены нет — так и написано. Ноль здесь был бы обещанием
 									    бесплатного лечения. */}
 									<span className="stage-cost">
-										{stageTotal === null ? "цена не указана" : money(stageTotal)}
+										{stageTotal === null
+											? "цена не указана"
+											: money(stageTotal)}
 									</span>
 									{stage.status === "completed" && (
 										<span className="stage-icon">✓</span>

@@ -46,7 +46,9 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 	 * сколько угодно раз: кнопка не делала ничего и не объясняла, почему. Ни
 	 * одного слова о том, что расчёт не выполнен, на экране не было.
 	 */
-	const [failure, setFailure] = useState<{ status: number | null } | null>(null);
+	const [failure, setFailure] = useState<{ status: number | null } | null>(
+		null,
+	);
 
 	// Прогноз запрашивается через POST, поэтому общий хук usePatientResource
 	// (он делает GET) здесь не подходит — отмена сделана вручную.
@@ -165,7 +167,10 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 				className="panel-heading compact-heading flex items-center gap-2 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800"
 				title="Машинный расчет риска отмены записи пациента"
 			>
-				<BrainCircuit size={18} className="text-emerald-600 dark:text-emerald-400" />
+				<BrainCircuit
+					size={18}
+					className="text-emerald-600 dark:text-emerald-400"
+				/>
 				{/* БЫЛО: «AI-Прогноз неявки на приём». Латиница в заголовке того,
 				    что читает администратор у стойки. */}
 				<span className="text-sm font-semibold">
@@ -189,9 +194,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 				/>
 			) : riskData ? (
 				<div>
-					<div
-						className="flex justify-between items-center mb-3 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
-					>
+					<div className="flex justify-between items-center mb-3 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700">
 						<div className="flex items-center gap-2">
 							{getRiskIcon(riskData.riskLevel)}
 							<span
@@ -200,9 +203,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 								{getRiskLabel(riskData.riskLevel)}
 							</span>
 						</div>
-						<div
-							className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 border border-blue-200 dark:border-blue-800"
-						>
+						<div className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 border border-blue-200 dark:border-blue-800">
 							Вероятность неявки:{" "}
 							{Math.round((riskData.noShowProbability || 0) * 100)}%
 						</div>
@@ -210,7 +211,9 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 
 					{riskData.factors && riskData.factors.length > 0 && (
 						<div className="mt-3">
-							<span className="text-xs font-bold text-slate-700 dark:text-slate-300">Факторы риска:</span>
+							<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+								Факторы риска:
+							</span>
 							<ul className="mt-1 space-y-1 text-xs text-slate-600 dark:text-slate-400 pl-4 list-disc">
 								{riskData.factors.map((factor: string, idx: number) => (
 									<li key={idx}>{factor}</li>
@@ -221,7 +224,8 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 
 					{riskData.recommendedAction && (
 						<div className="mt-3 p-2.5 rounded bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-xs text-emerald-800 dark:text-emerald-200">
-							<strong>Рекомендуемое действие:</strong> {riskData.recommendedAction}
+							<strong>Рекомендуемое действие:</strong>{" "}
+							{riskData.recommendedAction}
 						</div>
 					)}
 				</div>

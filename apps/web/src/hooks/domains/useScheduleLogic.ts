@@ -31,12 +31,21 @@ import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
  * на сервере не задан вовсе, а незащищённые изменения запрещены. Только в этих
  * двух случаях у пользователя имеет смысл спрашивать секрет.
  */
-export async function scheduleAdminSecretRefusal(response: Response): Promise<string | null> {
+export async function scheduleAdminSecretRefusal(
+	response: Response,
+): Promise<string | null> {
 	if (response.status !== 403 && response.status !== 503) return null;
 	try {
-		const payload = (await response.clone().json()) as { error?: unknown; message?: unknown };
+		const payload = (await response.clone().json()) as {
+			error?: unknown;
+			message?: unknown;
+		};
 		const code = typeof payload.error === "string" ? payload.error : "";
-		if (code !== "ScheduleAdminSecretRequired" && code !== "ScheduleAdminSecretMissing") return null;
+		if (
+			code !== "ScheduleAdminSecretRequired" &&
+			code !== "ScheduleAdminSecretMissing"
+		)
+			return null;
 		return code;
 	} catch {
 		return null;
@@ -309,8 +318,13 @@ export function useScheduleLogic({
 
 	function newAppointmentPreferenceDefaults() {
 		let defaultChairId = scheduleDefaultChairId;
-		if (!workspaceProfile.hasMultipleChairs && dashboard?.clinicSettings?.chairs) {
-			const activeChairs = dashboard.clinicSettings.chairs.filter((c: any) => c.active);
+		if (
+			!workspaceProfile.hasMultipleChairs &&
+			dashboard?.clinicSettings?.chairs
+		) {
+			const activeChairs = dashboard.clinicSettings.chairs.filter(
+				(c: any) => c.active,
+			);
 			if (activeChairs.length > 0) {
 				defaultChairId = activeChairs[0].id;
 			}
@@ -330,10 +344,14 @@ export function useScheduleLogic({
 	) {
 		newAppointmentDraftUserEditedRef.current = true;
 		setNewAppointmentDraft((current) => ({ ...current, [key]: value }));
-		if (key === "patientId" && typeof value === "string") setSelectedPatientId(value || null);
-		if (key === "doctorUserId" && typeof value === "string") setScheduleDefaultDoctorUserId(value || null);
-		if (key === "assistantUserId" && typeof value === "string") setScheduleDefaultAssistantUserId(value || null);
-		if (key === "chairId" && typeof value === "string") setScheduleDefaultChairId(value || null);
+		if (key === "patientId" && typeof value === "string")
+			setSelectedPatientId(value || null);
+		if (key === "doctorUserId" && typeof value === "string")
+			setScheduleDefaultDoctorUserId(value || null);
+		if (key === "assistantUserId" && typeof value === "string")
+			setScheduleDefaultAssistantUserId(value || null);
+		if (key === "chairId" && typeof value === "string")
+			setScheduleDefaultChairId(value || null);
 		setNewAppointmentSaveState("idle");
 		setNewAppointmentError(null);
 	}
@@ -629,7 +647,10 @@ export function useScheduleLogic({
 			draft,
 			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
-			{ chairs: dashboard?.clinicSettings?.chairs, patients: dashboard?.patients },
+			{
+				chairs: dashboard?.clinicSettings?.chairs,
+				patients: dashboard?.patients,
+			},
 		);
 		if (missing.length) {
 			const message = `Перед сохранением записи: ${missing.join("; ")}.`;
@@ -662,7 +683,9 @@ export function useScheduleLogic({
 				body: JSON.stringify(appointmentUpdateInputFromDraft(draft)),
 			});
 			if (!response.ok) {
-				setScheduleAdminSecretDemand((await scheduleAdminSecretRefusal(response)) ?? "");
+				setScheduleAdminSecretDemand(
+					(await scheduleAdminSecretRefusal(response)) ?? "",
+				);
 				throw new Error(
 					await responseErrorMessage(response, "Запись не сохранена"),
 				);
@@ -726,7 +749,10 @@ export function useScheduleLogic({
 			draft,
 			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
-			{ chairs: dashboard?.clinicSettings?.chairs, patients: dashboard?.patients },
+			{
+				chairs: dashboard?.clinicSettings?.chairs,
+				patients: dashboard?.patients,
+			},
 		);
 	}
 
@@ -765,7 +791,9 @@ export function useScheduleLogic({
 				),
 			});
 			if (!response.ok) {
-				setScheduleAdminSecretDemand((await scheduleAdminSecretRefusal(response)) ?? "");
+				setScheduleAdminSecretDemand(
+					(await scheduleAdminSecretRefusal(response)) ?? "",
+				);
 				throw new Error(
 					await responseErrorMessage(response, "Запись не создана"),
 				);

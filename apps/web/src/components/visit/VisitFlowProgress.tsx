@@ -17,9 +17,9 @@ import "./VisitFlowProgress.css";
  * что разбор что-то сообщил. Теперь тип берётся из контракта, а приведений нет ни
  * одного.
  */
-export const VisitFlowProgress: React.FC<{ result: VisitFlowResult | null | undefined }> = ({
-	result,
-}) => {
+export const VisitFlowProgress: React.FC<{
+	result: VisitFlowResult | null | undefined;
+}> = ({ result }) => {
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "success":
@@ -50,11 +50,15 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult | null | unde
 	 * Поэтому статус шага проверяется схемой ОДНОГО поля, а не приведением: пришло
 	 * не то слово или не строка — показываем «ожидает», а не роняем панель.
 	 */
-	const stepStatus = (step: VisitFlowStepResult | null | undefined): VisitFlowStepStatus => {
+	const stepStatus = (
+		step: VisitFlowStepResult | null | undefined,
+	): VisitFlowStepStatus => {
 		const parsed = visitFlowStepStatusSchema.safeParse(step?.status);
 		return parsed.success ? parsed.data : "pending";
 	};
-	const stepMessage = (step: VisitFlowStepResult | null | undefined): string | null => {
+	const stepMessage = (
+		step: VisitFlowStepResult | null | undefined,
+	): string | null => {
 		const message = step?.message;
 		return typeof message === "string" && message.trim() ? message : null;
 	};
@@ -84,14 +88,24 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult | null | unde
 			status: stepStatus(result?.draft),
 			msg: stepMessage(result?.draft),
 		},
-		{ label: "План лечения", key: "plan", status: stepStatus(result?.plan), msg: stepMessage(result?.plan) },
+		{
+			label: "План лечения",
+			key: "plan",
+			status: stepStatus(result?.plan),
+			msg: stepMessage(result?.plan),
+		},
 		{
 			label: "Рекомендации",
 			key: "recommendations",
 			status: stepStatus(result?.recommendations),
 			msg: stepMessage(result?.recommendations),
 		},
-		{ label: "Документы", key: "documents", status: stepStatus(result?.documents), msg: stepMessage(result?.documents) },
+		{
+			label: "Документы",
+			key: "documents",
+			status: stepStatus(result?.documents),
+			msg: stepMessage(result?.documents),
+		},
 	];
 
 	/** Состояние шага по-русски: у точки нет подписи, а у строки отказа она нужна. */
@@ -121,7 +135,9 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult | null | unde
 	const recommendationsData = result.recommendations?.data ?? null;
 	const documentsData = result.documents?.data ?? null;
 	// Array.isArray остаётся: тип обещает массив, а ответ схемой не проверен.
-	const temporaryRestrictions = Array.isArray(recommendationsData?.temporaryRestrictions)
+	const temporaryRestrictions = Array.isArray(
+		recommendationsData?.temporaryRestrictions,
+	)
 		? recommendationsData.temporaryRestrictions
 		: [];
 	const documentSuggestions = Array.isArray(documentsData?.suggestions)
@@ -153,7 +169,9 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult | null | unde
 					— в том числе отсутствие значения. Пока разбор идёт, врач видел
 					слово «Ошибка» и бросался переделывать то, что не сломалось.
 				*/}
-				<span className={`vfp-badge status-${result.overallStatus ?? "pending"}`}>
+				<span
+					className={`vfp-badge status-${result.overallStatus ?? "pending"}`}
+				>
 					{result.overallStatus === "success"
 						? "Готово"
 						: result.overallStatus === "partial"
@@ -181,10 +199,14 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult | null | unde
 							<span className="vfp-step-status">✓</span>
 						)}
 						{step.status === "error" && (
-							<span className="vfp-step-status" title="Шаг не выполнен">✕</span>
+							<span className="vfp-step-status" title="Шаг не выполнен">
+								✕
+							</span>
 						)}
 						{step.status === "skipped" && (
-							<span className="vfp-step-status" title="Шаг пропущен">—</span>
+							<span className="vfp-step-status" title="Шаг пропущен">
+								—
+							</span>
 						)}
 					</div>
 				))}
@@ -206,10 +228,10 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult | null | unde
 						))}
 					</ul>
 					<p>
-						Разбор — помощник, записи приёма он не заменяет: продиктованный текст и
-						поля ЭМК остались на месте. Шаг, выключенный в настройках, включают в
-						настройках клиники; если шаг отказал — нажмите «Собрать нейро-черновик»
-						ещё раз или заполните поля руками.
+						Разбор — помощник, записи приёма он не заменяет: продиктованный
+						текст и поля ЭМК остались на месте. Шаг, выключенный в настройках,
+						включают в настройках клиники; если шаг отказал — нажмите «Собрать
+						нейро-черновик» ещё раз или заполните поля руками.
 					</p>
 				</div>
 			)}
@@ -227,30 +249,26 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult | null | unde
 							Рекомендации после: {recommendationsData.procedureName}
 						</strong>
 						{temporaryRestrictions.length > 0 && (
-								<ul style={{ margin: "0.5rem 0", paddingLeft: "1.2rem" }}>
-									{temporaryRestrictions.map(
-										(r, i) => (
-											<li key={i}>{r}</li>
-										),
-									)}
-								</ul>
-							)}
+							<ul style={{ margin: "0.5rem 0", paddingLeft: "1.2rem" }}>
+								{temporaryRestrictions.map((r, i) => (
+									<li key={i}>{r}</li>
+								))}
+							</ul>
+						)}
 					</div>
 				)}
 				{documentSuggestions.length > 0 && (
-						<div className="vfp-output-card">
-							<strong>Предложенные документы:</strong>
-							<div className="vfp-tags">
-								{documentSuggestions.map(
-									(s: string, i: number) => (
-										<span key={i} className="vfp-tag">
-											{s}
-										</span>
-									),
-								)}
-							</div>
+					<div className="vfp-output-card">
+						<strong>Предложенные документы:</strong>
+						<div className="vfp-tags">
+							{documentSuggestions.map((s: string, i: number) => (
+								<span key={i} className="vfp-tag">
+									{s}
+								</span>
+							))}
 						</div>
-					)}
+					</div>
+				)}
 			</div>
 		</div>
 	);

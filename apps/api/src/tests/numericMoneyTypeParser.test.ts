@@ -30,14 +30,18 @@ describe("registerMoneyTypeParsers", () => {
 
 	it("после включения numeric приходит числом", () => {
 		registerMoneyTypeParsers();
-		const parse = pg.types.getTypeParser(1700 as never) as (value: string) => unknown;
+		const parse = pg.types.getTypeParser(1700 as never) as (
+			value: string,
+		) => unknown;
 		assert.equal(parse("1500.50"), 1500.5);
 		assert.equal(typeof parse("1500.50"), "number");
 	});
 
 	it("копейки сохраняются точно", () => {
 		registerMoneyTypeParsers();
-		const parse = pg.types.getTypeParser(1700 as never) as (value: string) => number;
+		const parse = pg.types.getTypeParser(1700 as never) as (
+			value: string,
+		) => number;
 		assert.equal(parse("0.01"), 0.01);
 		assert.equal(parse("0.50"), 0.5);
 		assert.equal(parse("1500.50"), 1500.5);
@@ -46,13 +50,17 @@ describe("registerMoneyTypeParsers", () => {
 
 	it("суммы теперь складываются как числа, а не склеиваются", () => {
 		registerMoneyTypeParsers();
-		const parse = pg.types.getTypeParser(1700 as never) as (value: string) => number;
+		const parse = pg.types.getTypeParser(1700 as never) as (
+			value: string,
+		) => number;
 		assert.equal(parse("1500.50") + parse("200.00"), 1700.5);
 	});
 
 	it("сравнение сумм перестаёт быть текстовым", () => {
 		registerMoneyTypeParsers();
-		const parse = pg.types.getTypeParser(1700 as never) as (value: string) => number;
+		const parse = pg.types.getTypeParser(1700 as never) as (
+			value: string,
+		) => number;
 		// Как текст «900.00» больше «1500.50»: девятка больше единицы.
 		assert.ok("900.00" > "1500.50");
 		assert.ok(parse("900.00") < parse("1500.50"));
@@ -60,13 +68,17 @@ describe("registerMoneyTypeParsers", () => {
 
 	it("пустое значение остаётся пустым, а не превращается в ноль", () => {
 		registerMoneyTypeParsers();
-		const parse = pg.types.getTypeParser(1700 as never) as (value: string | null) => unknown;
+		const parse = pg.types.getTypeParser(1700 as never) as (
+			value: string | null,
+		) => unknown;
 		assert.equal(parse(null), null);
 	});
 
 	it("значение вне точного диапазона числа отдаётся строкой, а не округляется молча", () => {
 		registerMoneyTypeParsers();
-		const parse = pg.types.getTypeParser(1700 as never) as (value: string) => unknown;
+		const parse = pg.types.getTypeParser(1700 as never) as (
+			value: string,
+		) => unknown;
 		// 2^53 = 9007199254740992: за этой границей число уже неточно.
 		const huge = "90071992547409921.55";
 		assert.equal(typeof parse(huge), "string");
@@ -76,7 +88,9 @@ describe("registerMoneyTypeParsers", () => {
 	it("включение повторно ничего не ломает", () => {
 		registerMoneyTypeParsers();
 		registerMoneyTypeParsers();
-		const parse = pg.types.getTypeParser(1700 as never) as (value: string) => number;
+		const parse = pg.types.getTypeParser(1700 as never) as (
+			value: string,
+		) => number;
 		assert.equal(parse("12.34"), 12.34);
 	});
 });

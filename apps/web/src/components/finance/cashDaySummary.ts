@@ -1,4 +1,8 @@
-import { type Dashboard, kopecksToNumericString, parseKopecks } from "@dental/shared";
+import {
+	type Dashboard,
+	kopecksToNumericString,
+	parseKopecks,
+} from "@dental/shared";
 
 /*
  * СВЕРКА КАССЫ ЗА ДЕНЬ: СЧЁТ ОТДЕЛЬНО ОТ ПОКАЗА.
@@ -146,7 +150,8 @@ export function summarizeCashDay(
 	let refundedCount = 0;
 
 	for (const payment of payments ?? []) {
-		if (localDayKey(payment.paidAt ?? payment.createdAt ?? "") !== dayKey) continue;
+		if (localDayKey(payment.paidAt ?? payment.createdAt ?? "") !== dayKey)
+			continue;
 		const kopecks = paymentKopecks(payment);
 		if (kopecks <= 0) continue;
 
@@ -202,16 +207,16 @@ export function summarizeCashDay(
 		totals.set(payment.method, row);
 	}
 
-	const byMethod: CashDayMethodRow[] = METHOD_ORDER.filter((method) => totals.has(method)).map(
-		(method) => {
-			const row = totals.get(method) as { kopecks: number; count: number };
-			return {
-				method,
-				amountRub: Number(kopecksToNumericString(row.kopecks)),
-				count: row.count,
-			};
-		},
-	);
+	const byMethod: CashDayMethodRow[] = METHOD_ORDER.filter((method) =>
+		totals.has(method),
+	).map((method) => {
+		const row = totals.get(method) as { kopecks: number; count: number };
+		return {
+			method,
+			amountRub: Number(kopecksToNumericString(row.kopecks)),
+			count: row.count,
+		};
+	});
 
 	return {
 		receivedRub: Number(kopecksToNumericString(receivedKopecks)),

@@ -63,7 +63,9 @@ export type MaxTransportResult =
  * Получатель. Разделение явное, потому что в запросе это разные параметры, а
  * перепутать их — значит отправить сообщение не тому.
  */
-export type MaxRecipient = { readonly kind: "chat"; readonly id: string } | { readonly kind: "user"; readonly id: string };
+export type MaxRecipient =
+	| { readonly kind: "chat"; readonly id: string }
+	| { readonly kind: "user"; readonly id: string };
 
 export type SendMaxTextInput = {
 	readonly botToken: string;
@@ -84,14 +86,22 @@ export type SendMaxTextInput = {
  * здесь означают, что в поле лежит телефон или почта, то есть сообщение
  * отправлять некуда.
  */
-export function parseMaxRecipient(rawAddress: string | null | undefined): MaxRecipient | null {
+export function parseMaxRecipient(
+	rawAddress: string | null | undefined,
+): MaxRecipient | null {
 	const value = (rawAddress ?? "").trim();
 	if (!value) return null;
 
-	const withoutPrefix = value.startsWith("user:") ? value.slice(5).trim() : value.startsWith("chat:") ? value.slice(5).trim() : value;
+	const withoutPrefix = value.startsWith("user:")
+		? value.slice(5).trim()
+		: value.startsWith("chat:")
+			? value.slice(5).trim()
+			: value;
 	if (!/^-?\d{1,19}$/.test(withoutPrefix)) return null;
 
-	return value.startsWith("user:") ? { kind: "user", id: withoutPrefix } : { kind: "chat", id: withoutPrefix };
+	return value.startsWith("user:")
+		? { kind: "user", id: withoutPrefix }
+		: { kind: "chat", id: withoutPrefix };
 }
 
 /**
@@ -111,8 +121,10 @@ function classifyMaxStatus(status: number): DeliveryErrorClass {
 function readErrorMessage(payload: unknown, status: number): string {
 	if (payload && typeof payload === "object") {
 		const record = payload as Record<string, unknown>;
-		if (typeof record.message === "string" && record.message.trim()) return record.message.trim();
-		if (typeof record.code === "string" && record.code.trim()) return `MAX вернул код «${record.code.trim()}»`;
+		if (typeof record.message === "string" && record.message.trim())
+			return record.message.trim();
+		if (typeof record.code === "string" && record.code.trim())
+			return `MAX вернул код «${record.code.trim()}»`;
 	}
 	return `MAX ответил ${status}`;
 }
@@ -132,7 +144,9 @@ function readMessageId(payload: unknown): string | null {
 	return typeof mid === "string" && mid.trim() ? mid.trim() : null;
 }
 
-export async function sendMaxTextMessage(input: SendMaxTextInput): Promise<MaxTransportResult> {
+export async function sendMaxTextMessage(
+	input: SendMaxTextInput,
+): Promise<MaxTransportResult> {
 	const text = input.text.trim();
 	if (!text) {
 		return {
@@ -140,7 +154,7 @@ export async function sendMaxTextMessage(input: SendMaxTextInput): Promise<MaxTr
 			providerMessageId: null,
 			errorCode: null,
 			errorClass: "bad_request",
-			errorMessage: "Пустое сообщение не отправляется."
+			errorMessage: "Пустое сообщение не отправляется.",
 		};
 	}
 	if (text.length > MAX_TEXT_LIMIT) {
@@ -150,7 +164,7 @@ export async function sendMaxTextMessage(input: SendMaxTextInput): Promise<MaxTr
 			providerMessageId: null,
 			errorCode: null,
 			errorClass: "bad_request",
-			errorMessage: `Текст длиннее ${MAX_TEXT_LIMIT} символов — MAX такое сообщение не примет.`
+			errorMessage: `Текст длиннее ${MAX_TEXT_LIMIT} символов — MAX такое сообщение не примет.`,
 		};
 	}
 
@@ -159,19 +173,25 @@ export async function sendMaxTextMessage(input: SendMaxTextInput): Promise<MaxTr
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
 	const query = new URLSearchParams();
-	query.set(input.recipient.kind === "user" ? "user_id" : "chat_id", input.recipient.id);
+	query.set(
+		input.recipient.kind === "user" ? "user_id" : "chat_id",
+		input.recipient.id,
+	);
 
 	try {
-		const response = await fetch(`${MAX_API_BASE}/messages?${query.toString()}`, {
-			method: "POST",
-			headers: {
-				// Именно так, без «Bearer»: документация требует голый токен.
-				authorization: input.botToken,
-				"content-type": "application/json"
+		const response = await fetch(
+			`${MAX_API_BASE}/messages?${query.toString()}`,
+			{
+				method: "POST",
+				headers: {
+					// Именно так, без «Bearer»: документация требует голый токен.
+					authorization: input.botToken,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({ text, notify: true }),
+				signal: controller.signal,
 			},
-			body: JSON.stringify({ text, notify: true }),
-			signal: controller.signal
-		});
+		);
 
 		const payload: unknown = await response.json().catch(() => null);
 
@@ -181,7 +201,7 @@ export async function sendMaxTextMessage(input: SendMaxTextInput): Promise<MaxTr
 				providerMessageId: null,
 				errorCode: response.status,
 				errorClass: classifyMaxStatus(response.status),
-				errorMessage: readErrorMessage(payload, response.status)
+				errorMessage: readErrorMessage(payload, response.status),
 			};
 		}
 
@@ -190,7 +210,7 @@ export async function sendMaxTextMessage(input: SendMaxTextInput): Promise<MaxTr
 			providerMessageId: readMessageId(payload),
 			errorCode: null,
 			errorClass: null,
-			errorMessage: null
+			errorMessage: null,
 		};
 	} catch (error) {
 		const aborted = error instanceof Error && error.name === "AbortError";
@@ -201,7 +221,7 @@ export async function sendMaxTextMessage(input: SendMaxTextInput): Promise<MaxTr
 			errorClass: aborted ? "timeout" : "network",
 			errorMessage: aborted
 				? `MAX не ответил за ${timeoutMs} мс`
-				: `Сеть недоступна: ${error instanceof Error ? error.message : String(error)}`
+				: `Сеть недоступна: ${error instanceof Error ? error.message : String(error)}`,
 		};
 	} finally {
 		clearTimeout(timeout);

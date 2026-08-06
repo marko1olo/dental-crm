@@ -15,8 +15,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { actionFailureToast, panelStateText } from "../../lib/panelStateText";
-import { SettingsModuleDisabled } from "./SettingsModuleDisabled";
-import { INSURANCE_CONTRACTS_GATE } from "./settingsModuleGate";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -26,6 +24,8 @@ import {
 	type InsuranceContractsLoadState,
 	parseInsuranceContractsPayload,
 } from "./insuranceContractsPanelData";
+import { SettingsModuleDisabled } from "./SettingsModuleDisabled";
+import { INSURANCE_CONTRACTS_GATE } from "./settingsModuleGate";
 
 interface ContractFormData {
 	companyName: string;
@@ -226,10 +226,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 				showToast(actionFailureToast(failedAction, res.status), "error");
 				return;
 			}
-			showToast(
-				`Договор «${contract.companyName}» убран из работы`,
-				"success",
-			);
+			showToast(`Договор «${contract.companyName}» убран из работы`, "success");
 			await fetchContracts();
 		} catch (err) {
 			console.error("[договоры ДМС] удаление не дошло до сервера", err);
@@ -401,7 +398,9 @@ export const InsuranceContractsPanel: React.FC = () => {
 										<div className="text-[11px] text-slate-500 dark:text-slate-400 mb-1">
 											{label}
 										</div>
-										<div className={`text-xl font-bold ${val > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>
+										<div
+											className={`text-xl font-bold ${val > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}
+										>
 											{val}%
 										</div>
 										{/* Visual bar */}

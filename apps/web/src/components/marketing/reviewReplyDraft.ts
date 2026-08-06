@@ -42,15 +42,15 @@
 export type ReviewReplyTone = "positive" | "negative" | "neutral";
 
 export type ReviewReplyDraft = {
-  /** Тело ответа, готовое к правке руками. Уже с подписью клиники. */
-  text: string;
-  /** Какие SEO-ключи попали в текст — показываем, чтобы не гадать. */
-  usedKeys: string[];
-  /**
-   * Чего не хватило для полноценного ответа. Это не ошибки: черновик всё равно
-   * составлен, но человеку надо сказать, что именно стоит дописать самому.
-   */
-  warnings: string[];
+	/** Тело ответа, готовое к правке руками. Уже с подписью клиники. */
+	text: string;
+	/** Какие SEO-ключи попали в текст — показываем, чтобы не гадать. */
+	usedKeys: string[];
+	/**
+	 * Чего не хватило для полноценного ответа. Это не ошибки: черновик всё равно
+	 * составлен, но человеку надо сказать, что именно стоит дописать самому.
+	 */
+	warnings: string[];
 };
 
 /**
@@ -59,21 +59,21 @@ export type ReviewReplyDraft = {
  * клиники и без утверждений о том, чего мы не знаем.
  */
 const OPENINGS: Record<ReviewReplyTone, readonly string[]> = {
-  positive: [
-    "Спасибо за добрые слова! Нам очень важно, что вы нашли время написать отзыв — для команды это лучшая поддержка.",
-    "Благодарим за отзыв — приятно знать, что вы остались довольны.",
-    "Спасибо, что поделились впечатлением! Обязательно передадим ваши слова врачу и всей смене."
-  ],
-  neutral: [
-    "Спасибо за отзыв. Нам важно любое мнение: именно по таким отзывам видно, что можно сделать лучше.",
-    "Благодарим за обратную связь. Мы посмотрим, что стоит улучшить в приёме.",
-    "Спасибо, что написали. Нам важно понимать, чего не хватило, чтобы визит запомнился с лучшей стороны."
-  ],
-  negative: [
-    "Извините, что так получилось. Нам искренне жаль, что визит оставил такое впечатление.",
-    "Приносим извинения за случившееся. Это не тот приём, к которому мы стремимся.",
-    "Извините нас, пожалуйста. Понимаем ваше недовольство и не хотим оставлять его без ответа."
-  ]
+	positive: [
+		"Спасибо за добрые слова! Нам очень важно, что вы нашли время написать отзыв — для команды это лучшая поддержка.",
+		"Благодарим за отзыв — приятно знать, что вы остались довольны.",
+		"Спасибо, что поделились впечатлением! Обязательно передадим ваши слова врачу и всей смене.",
+	],
+	neutral: [
+		"Спасибо за отзыв. Нам важно любое мнение: именно по таким отзывам видно, что можно сделать лучше.",
+		"Благодарим за обратную связь. Мы посмотрим, что стоит улучшить в приёме.",
+		"Спасибо, что написали. Нам важно понимать, чего не хватило, чтобы визит запомнился с лучшей стороны.",
+	],
+	negative: [
+		"Извините, что так получилось. Нам искренне жаль, что визит оставил такое впечатление.",
+		"Приносим извинения за случившееся. Это не тот приём, к которому мы стремимся.",
+		"Извините нас, пожалуйста. Понимаем ваше недовольство и не хотим оставлять его без ответа.",
+	],
 };
 
 /**
@@ -82,11 +82,11 @@ const OPENINGS: Record<ReviewReplyTone, readonly string[]> = {
  * человека под курсором прямо во время правки.
  */
 function pickVariant(reviewText: string, variantCount: number): number {
-  let sum = 0;
-  for (let i = 0; i < reviewText.length; i += 1) {
-    sum += reviewText.charCodeAt(i);
-  }
-  return sum % variantCount;
+	let sum = 0;
+	for (let i = 0; i < reviewText.length; i += 1) {
+		sum += reviewText.charCodeAt(i);
+	}
+	return sum % variantCount;
 }
 
 /**
@@ -97,68 +97,81 @@ function pickVariant(reviewText: string, variantCount: number): number {
  * половине реальных ключей, а ошибка в публичном ответе хуже отсутствия ключа.
  */
 function buildKeysSentence(keys: string[]): string {
-  if (keys.length === 0) return "";
-  return `Наши направления: ${keys.join(", ")}.`;
+	if (keys.length === 0) return "";
+	return `Наши направления: ${keys.join(", ")}.`;
 }
 
 export function buildReviewReplyDraft(input: {
-  reviewText: string;
-  tone: ReviewReplyTone;
-  clinicName: string;
-  chiefDoctorPhone: string;
-  seoKeys: string[];
+	reviewText: string;
+	tone: ReviewReplyTone;
+	clinicName: string;
+	chiefDoctorPhone: string;
+	seoKeys: string[];
 }): ReviewReplyDraft | null {
-  const reviewText = input.reviewText.trim();
-  if (!reviewText) return null;
+	const reviewText = input.reviewText.trim();
+	if (!reviewText) return null;
 
-  const warnings: string[] = [];
-  const parts: string[] = [];
+	const warnings: string[] = [];
+	const parts: string[] = [];
 
-  const openings = OPENINGS[input.tone] ?? OPENINGS.neutral;
-  /*
-   * Обращение выбирается по индексу, и индекс обязан существовать.
-   *
-   * Работу оборвало исчерпанием лимита здесь: pickVariant возвращает число, но
-   * доступ по индексу в TypeScript даёт `string | undefined`, и сборка не
-   * проходила. Запас берётся из того же набора, а не из пустой строки: ответ на
-   * отзыв без обращения читается как отписка.
-   */
-  const opening = openings[pickVariant(reviewText, openings.length)] ?? openings[0] ?? "Здравствуйте!";
-  parts.push(opening);
+	const openings = OPENINGS[input.tone] ?? OPENINGS.neutral;
+	/*
+	 * Обращение выбирается по индексу, и индекс обязан существовать.
+	 *
+	 * Работу оборвало исчерпанием лимита здесь: pickVariant возвращает число, но
+	 * доступ по индексу в TypeScript даёт `string | undefined`, и сборка не
+	 * проходила. Запас берётся из того же набора, а не из пустой строки: ответ на
+	 * отзыв без обращения читается как отписка.
+	 */
+	const opening =
+		openings[pickVariant(reviewText, openings.length)] ??
+		openings[0] ??
+		"Здравствуйте!";
+	parts.push(opening);
 
-  // Ключи только в позитив и нейтраль, максимум два: в ответе на негатив реклама
-  // услуг читается как цинизм. Это же правило написано на вкладке «SEO-ключи»,
-  // и здесь оно наконец соблюдается, а не только обещается промптом.
-  const cleanKeys = input.seoKeys.map((key) => key.trim()).filter((key) => key.length > 0);
-  const usedKeys = input.tone === "negative" ? [] : cleanKeys.slice(0, 2);
+	// Ключи только в позитив и нейтраль, максимум два: в ответе на негатив реклама
+	// услуг читается как цинизм. Это же правило написано на вкладке «SEO-ключи»,
+	// и здесь оно наконец соблюдается, а не только обещается промптом.
+	const cleanKeys = input.seoKeys
+		.map((key) => key.trim())
+		.filter((key) => key.length > 0);
+	const usedKeys = input.tone === "negative" ? [] : cleanKeys.slice(0, 2);
 
-  if (input.tone === "negative") {
-    parts.push("Спасибо, что написали открыто: без такого отзыва мы бы не узнали о проблеме.");
-    const phone = input.chiefDoctorPhone.trim();
-    if (phone) {
-      parts.push(
-        `Позвоните, пожалуйста, главному врачу по номеру ${phone} — разберёмся в вашей ситуации и всё исправим.`
-      );
-    } else {
-      parts.push("Свяжитесь, пожалуйста, с главным врачом клиники — разберёмся в вашей ситуации и всё исправим.");
-      warnings.push(
-        "Телефон главного врача не заполнен, поэтому в ответе не сказано, куда звонить. Впишите номер в поле выше и составьте черновик заново."
-      );
-    }
-  } else {
-    const keysSentence = buildKeysSentence(usedKeys);
-    if (keysSentence) {
-      parts.push(`Будем рады видеть вас снова. ${keysSentence}`);
-    } else {
-      parts.push("Будем рады видеть вас снова.");
-      warnings.push(
-        "SEO-ключей нет, поэтому ответ без них. Добавить их можно на вкладке «SEO-ключи» — они помогают клинике в поиске."
-      );
-    }
-  }
+	if (input.tone === "negative") {
+		parts.push(
+			"Спасибо, что написали открыто: без такого отзыва мы бы не узнали о проблеме.",
+		);
+		const phone = input.chiefDoctorPhone.trim();
+		if (phone) {
+			parts.push(
+				`Позвоните, пожалуйста, главному врачу по номеру ${phone} — разберёмся в вашей ситуации и всё исправим.`,
+			);
+		} else {
+			parts.push(
+				"Свяжитесь, пожалуйста, с главным врачом клиники — разберёмся в вашей ситуации и всё исправим.",
+			);
+			warnings.push(
+				"Телефон главного врача не заполнен, поэтому в ответе не сказано, куда звонить. Впишите номер в поле выше и составьте черновик заново.",
+			);
+		}
+	} else {
+		const keysSentence = buildKeysSentence(usedKeys);
+		if (keysSentence) {
+			parts.push(`Будем рады видеть вас снова. ${keysSentence}`);
+		} else {
+			parts.push("Будем рады видеть вас снова.");
+			warnings.push(
+				"SEO-ключей нет, поэтому ответ без них. Добавить их можно на вкладке «SEO-ключи» — они помогают клинике в поиске.",
+			);
+		}
+	}
 
-  const clinicName = input.clinicName.trim();
-  parts.push(clinicName ? `С уважением, администрация клиники «${clinicName}».` : "С уважением, администрация клиники.");
+	const clinicName = input.clinicName.trim();
+	parts.push(
+		clinicName
+			? `С уважением, администрация клиники «${clinicName}».`
+			: "С уважением, администрация клиники.",
+	);
 
-  return { text: parts.join("\n\n"), usedKeys, warnings };
+	return { text: parts.join("\n\n"), usedKeys, warnings };
 }

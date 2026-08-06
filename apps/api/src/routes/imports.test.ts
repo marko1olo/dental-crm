@@ -1,8 +1,8 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import type { ImportPreviewRequest } from "@dental/shared";
-import { buildPatientImportIntake } from "./imports.js";
 import { db } from "../db/client.js";
+import { buildPatientImportIntake } from "./imports.js";
 
 /**
  * buildPatientImportIntake стала асинхронной и принимает организацию первым

@@ -92,7 +92,9 @@ describe("generateDentalCdaXml", () => {
 		assert.ok(xml.includes(`<birthTime nullFlavor="UNK"/>`));
 		assert.ok(xml.includes(`code="2"`)); // Real female gender code from DB
 
-		assert.ok(xml.includes(`root="1.2.643.5.1.13.13.12.2" extension="doc-123"`)); // EGDIS default MO root
+		assert.ok(
+			xml.includes(`root="1.2.643.5.1.13.13.12.2" extension="doc-123"`),
+		); // EGDIS default MO root
 		assert.ok(!xml.includes(`extension="undefined"`)); // Missing doctorSnils should not render the whole tag
 
 		// No fabricated clinical text: an absent anamnesis / treatment description
@@ -105,7 +107,10 @@ describe("generateDentalCdaXml", () => {
 	test("handles 'other' or null gender code", () => {
 		// Unknown/absent gender is expressed as HL7 nullFlavor UNK, never a fake
 		// administrativeGenderCode code="0".
-		let result = generateDentalCdaXml({ ...baseParams, patientGender: "other" });
+		let result = generateDentalCdaXml({
+			...baseParams,
+			patientGender: "other",
+		});
 		assert.ok(result.success, result.success ? "" : String(result.error));
 		let xml = result.xml;
 		assert.ok(xml.includes(`<administrativeGenderCode nullFlavor="UNK"/>`));

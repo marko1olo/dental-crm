@@ -455,7 +455,10 @@ if (manualStopBlock === null) {
 }
 
 const uploadStart = appSource.indexOf("async function uploadSpeechBlob(");
-const uploadEnd = appSource.indexOf("function stopSpeechMonitor()", uploadStart);
+const uploadEnd = appSource.indexOf(
+	"function stopSpeechMonitor()",
+	uploadStart,
+);
 if (uploadStart === -1 || uploadEnd === -1) {
 	unevaluable.push(
 		"Speech upload block was not found. [uploadSpeechBlob..stopSpeechMonitor]",

@@ -10,8 +10,12 @@ const cases = [
 	["20 x 55.55", Array.from({ length: 20 }, () => 55.55)],
 ];
 
-console.log("=== renderDocument.ts:1261  actualTotalRub = parts.reduce((t,p)=>t+p, 0) ===");
-console.log("=== then :1262  if (actualTotalRub !== payload.totalPaidRub) -> BLOCK ===\n");
+console.log(
+	"=== renderDocument.ts:1261  actualTotalRub = parts.reduce((t,p)=>t+p, 0) ===",
+);
+console.log(
+	"=== then :1262  if (actualTotalRub !== payload.totalPaidRub) -> BLOCK ===\n",
+);
 
 let driftCount = 0;
 for (const [label, parts] of cases) {
@@ -22,19 +26,29 @@ for (const [label, parts] of cases) {
 	const drifted = floatSum !== exact;
 	if (drifted) driftCount++;
 	console.log(`${label}`);
-	console.log(`  parts        : ${parts.length} values, exact total ${exact.toFixed(2)}`);
+	console.log(
+		`  parts        : ${parts.length} values, exact total ${exact.toFixed(2)}`,
+	);
 	console.log(`  float reduce : ${floatSum}`);
 	console.log(`  exact kopecks: ${exactKopecks} kop = ${exact}`);
-	console.log(`  float === exact ? ${!drifted}${drifted ? "   <-- :1262 STRICT !== FIRES, DOCUMENT BLOCKED" : ""}`);
+	console.log(
+		`  float === exact ? ${!drifted}${drifted ? "   <-- :1262 STRICT !== FIRES, DOCUMENT BLOCKED" : ""}`,
+	);
 	if (drifted) {
 		console.log(`  message the user would read at :1263 ->`);
-		console.log(`    "сумма ${exact} руб. не совпадает с выбранными оплатами ${floatSum} руб."`);
+		console.log(
+			`    "сумма ${exact} руб. не совпадает с выбранными оплатами ${floatSum} руб."`,
+		);
 	}
 	console.log("");
 }
 console.log(`cases that drift: ${driftCount} of ${cases.length}`);
 
-console.log("\n=== and the other half of the trap: payload.totalPaidRub is z.number().int() ===");
+console.log(
+	"\n=== and the other half of the trap: payload.totalPaidRub is z.number().int() ===",
+);
 for (const v of [5400.5, 10801.0, 600.6]) {
-	console.log(`  Number.isInteger(${v}) = ${Number.isInteger(v)}  -> ${Number.isInteger(v) ? "passes .int()" : "REJECTED by z.number().int() before it ever reaches :1262"}`);
+	console.log(
+		`  Number.isInteger(${v}) = ${Number.isInteger(v)}  -> ${Number.isInteger(v) ? "passes .int()" : "REJECTED by z.number().int() before it ever reaches :1262"}`,
+	);
 }

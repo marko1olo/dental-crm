@@ -21,7 +21,8 @@ import { desc, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { communicationOutbox } from "../db/schema.js";
 
-const organizationId = process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : null;
+const organizationId =
+	process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : null;
 const showRows = process.argv.includes("--rows");
 
 const summary = await db
@@ -29,21 +30,35 @@ const summary = await db
 		organizationId: communicationOutbox.organizationId,
 		status: communicationOutbox.status,
 		intent: communicationOutbox.intent,
-		total: sql<number>`count(*)::int`
+		total: sql<number>`count(*)::int`,
 	})
 	.from(communicationOutbox)
-	.where(organizationId ? eq(communicationOutbox.organizationId, organizationId) : sql`true`)
-	.groupBy(communicationOutbox.organizationId, communicationOutbox.status, communicationOutbox.intent)
+	.where(
+		organizationId
+			? eq(communicationOutbox.organizationId, organizationId)
+			: sql`true`,
+	)
+	.groupBy(
+		communicationOutbox.organizationId,
+		communicationOutbox.status,
+		communicationOutbox.intent,
+	)
 	.orderBy(communicationOutbox.organizationId, communicationOutbox.status);
 
 if (summary.length === 0) {
-	console.log(organizationId ? "Очередь этой клиники пуста." : "Очередь пуста.");
+	console.log(
+		organizationId ? "Очередь этой клиники пуста." : "Очередь пуста.",
+	);
 } else {
-	console.log("Клиника                              | статус     | назначение                | строк");
-	console.log("-------------------------------------|------------|---------------------------|------");
+	console.log(
+		"Клиника                              | статус     | назначение                | строк",
+	);
+	console.log(
+		"-------------------------------------|------------|---------------------------|------",
+	);
 	for (const row of summary) {
 		console.log(
-			`${row.organizationId} | ${String(row.status).padEnd(10)} | ${String(row.intent).padEnd(25)} | ${row.total}`
+			`${row.organizationId} | ${String(row.status).padEnd(10)} | ${String(row.intent).padEnd(25)} | ${row.total}`,
 		);
 	}
 }
@@ -57,18 +72,26 @@ if (showRows) {
 			attempts: communicationOutbox.attempts,
 			lockedAt: communicationOutbox.lockedAt,
 			errorClass: communicationOutbox.lastErrorClass,
-			errorMessage: communicationOutbox.lastErrorMessage
+			errorMessage: communicationOutbox.lastErrorMessage,
 		})
 		.from(communicationOutbox)
-		.where(organizationId ? eq(communicationOutbox.organizationId, organizationId) : sql`true`)
+		.where(
+			organizationId
+				? eq(communicationOutbox.organizationId, organizationId)
+				: sql`true`,
+		)
 		.orderBy(desc(communicationOutbox.createdAt))
 		.limit(50);
 
 	console.log("\nПоследние строки (до 50):");
 	for (const row of rows) {
 		const lock = row.lockedAt ? " [захвачена]" : "";
-		const failure = row.errorClass ? ` — ${row.errorClass}: ${row.errorMessage ?? ""}` : "";
-		console.log(`  ${row.status.padEnd(10)} ${row.channel.padEnd(9)} попыток ${row.attempts}${lock} ${row.dedupeKey}${failure}`);
+		const failure = row.errorClass
+			? ` — ${row.errorClass}: ${row.errorMessage ?? ""}`
+			: "";
+		console.log(
+			`  ${row.status.padEnd(10)} ${row.channel.padEnd(9)} попыток ${row.attempts}${lock} ${row.dedupeKey}${failure}`,
+		);
 	}
 }
 

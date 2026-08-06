@@ -13,6 +13,7 @@ import {
 	type CommunicationTaskOutcome,
 	type CreateAppointmentInput,
 	type Dashboard,
+	type DentalMedicalCard043uPayload,
 	type DentalPricelistAnalysisResponse,
 	type DentalSpecialty,
 	type DenteTelegramBotMode,
@@ -90,8 +91,8 @@ import {
 	type MigrationLocalSourceDiscoveryResponse,
 	type MigrationLocalSourceProbeResponse,
 	type MigrationLocalSourceWorkupResponse,
+	multiplyKopecks,
 	normalizeDentalSpeechTranscript,
-	type DentalMedicalCard043uPayload,
 	type OutpatientMedicalCard025uPayload,
 	type Patient,
 	type PatientAdministrativeProfile,
@@ -102,6 +103,8 @@ import {
 	type PricelistSourceKind,
 	type ProcedureSpecificConsentProcedure,
 	type ProtocolTemplate,
+	parseKopecks,
+	percentageOfKopecks,
 	type ResourceLoad,
 	type ScheduleWarning,
 	type SmartImportCommitResponse,
@@ -120,6 +123,7 @@ import {
 	type SpeechTranscriptPolishResponse,
 	type StaffRole,
 	type StaffWorkingHours,
+	sumKopecks,
 	type TaxDeductionApplicationDeliveryChannel,
 	type TaxDeductionApplicationForm,
 	type TaxDeductionApplicationRelationship,
@@ -134,10 +138,6 @@ import {
 	type VoidDocumentInput,
 	type XrayCbctReferralPregnancyStatus,
 	type XrayCbctReferralPriority,
-	multiplyKopecks,
-	parseKopecks,
-	percentageOfKopecks,
-	sumKopecks,
 } from "@dental/shared";
 import {
 	AlertTriangle,
@@ -750,7 +750,10 @@ import { usePatientLogic } from "./hooks/domains/usePatientLogic";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import { useTelegramSettings } from "./hooks/useTelegramSettings.js";
-import { loadWorkspaceProfile, useWorkspaceProfileStore } from "./hooks/useWorkspaceProfile";
+import {
+	loadWorkspaceProfile,
+	useWorkspaceProfileStore,
+} from "./hooks/useWorkspaceProfile";
 import {
 	type ImagingStudyRow,
 	imagingCaptureDistanceMs,
@@ -794,8 +797,8 @@ import {
 	policyAuditEventLabels,
 	pricelistParserModeLabels,
 } from "./imagingUiLabels";
-import { motionSafeScrollIntoView } from "./motionPreference";
 import { safeLocalStorageSetItem } from "./lib/safeLocalStorage";
+import { motionSafeScrollIntoView } from "./motionPreference";
 import {
 	buildMprClinicalChecklist,
 	buildMprOperatorSummary,
@@ -2427,7 +2430,8 @@ export function useAppLogic(): any {
 	const activeOrganizationId =
 		dashboard?.clinicSettings?.profile?.organizationId ?? null;
 	const isOmniRoleMode =
-		(dashboard?.clinicSettings?.profile as { isOmniRole?: boolean } | undefined)?.isOmniRole ?? false;
+		(dashboard?.clinicSettings?.profile as { isOmniRole?: boolean } | undefined)
+			?.isOmniRole ?? false;
 
 	const [dicomFirstFramePreviewRequest, setDicomFirstFramePreviewRequest] =
 		useState<DicomFirstFramePreviewRequestContext | null>(null);
@@ -2531,7 +2535,9 @@ export function useAppLogic(): any {
 			dashboard.appointments?.find(
 				(appointment) =>
 					appointment.id === dashboard?.activeVisit?.appointmentId,
-			) ?? dashboard.appointments?.[0] ?? null
+			) ??
+			dashboard.appointments?.[0] ??
+			null
 		);
 	}, [dashboard]);
 	const activeDoctor = useMemo(() => {
@@ -2821,10 +2827,13 @@ export function useAppLogic(): any {
 			// были мёртвым кодом, и истёкшая сессия не приводила к повторному входу.
 			console.error("[Dente] Не удалось загрузить данные клиники:", err);
 			const isAuthError =
-				err instanceof Error && /401|403|Требуется авторизация|Сессия истекла/i.test(err.message);
+				err instanceof Error &&
+				/401|403|Требуется авторизация|Сессия истекла/i.test(err.message);
 			if (isAuthError) {
 				setAccessUnlockRequired(true);
-				setAccessUnlockMessage("Сессия истекла. Войдите в кабинет клиники заново.");
+				setAccessUnlockMessage(
+					"Сессия истекла. Войдите в кабинет клиники заново.",
+				);
 			} else {
 				setError(
 					"Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.",
@@ -3781,7 +3790,9 @@ export function useAppLogic(): any {
 		recordedPatientViewRef.current = selectedPatientId;
 		void fetch("/api/hr/recent-patients", {
 			method: "POST",
-			headers: auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+			headers: auth.denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+			}),
 			body: JSON.stringify({ patientId: selectedPatientId }),
 		})
 			.then((response) => {
@@ -4242,7 +4253,9 @@ export function useAppLogic(): any {
 		const saveTimer = window.setTimeout(
 			() => {
 				dirtyAppointmentIds.forEach((appointmentId) => {
-					void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false });
+					void saveAppointmentSchedule(appointmentId, {
+						closeEditorOnSave: false,
+					});
 				});
 			},
 			appointmentRetryingErrors ? 5000 : 1200,
@@ -4270,7 +4283,9 @@ export function useAppLogic(): any {
 			});
 			Array.from(appointmentScheduleDirtyIds).forEach((appointmentId) => {
 				if (appointmentScheduleSaveStates[appointmentId] !== "saving") {
-					void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false });
+					void saveAppointmentSchedule(appointmentId, {
+						closeEditorOnSave: false,
+					});
 				}
 			});
 		};
@@ -5105,7 +5120,9 @@ export function useAppLogic(): any {
 	 * один: App.tsx -> FinanceView -> FinancePlanningOverview, и он рисует блок
 	 * как неопределённый.
 	 */
-	const patientBillingSummary = useMemo<Dashboard["billingSummary"] | null>(() => {
+	const patientBillingSummary = useMemo<
+		Dashboard["billingSummary"] | null
+	>(() => {
 		if (!dashboard || !documentPatient) return null;
 		const activePlanItems = activeTreatmentPlanItems.filter(
 			(item) => item.status !== "cancelled",
@@ -5123,7 +5140,9 @@ export function useAppLogic(): any {
 		 * БРОСАЕТ на неожидаемом значении, а данные дашборда на клиенте схемой не
 		 * проверяются: исключение внутри useMemo погасило бы экран целиком.
 		 */
-		const treatmentLineTotalKopecks = (item: (typeof activePlanItems)[number]) => {
+		const treatmentLineTotalKopecks = (
+			item: (typeof activePlanItems)[number],
+		) => {
 			const unitKopecks = parseKopecks(item.unitPriceRub);
 			const quantity = Math.max(0, Math.round(item.quantity));
 			const subtotalKopecks = multiplyKopecks(unitKopecks, quantity);
@@ -6026,7 +6045,8 @@ export function useAppLogic(): any {
 		   ни прошлогоднюю ОПТГ, ни только что загруженный снимок.
 
 		   Лента обязана показывать того же пациента, что назван в шапке. */
-		const feedPatientId = activePatient?.id ?? dashboard?.activeVisit?.patientId ?? null;
+		const feedPatientId =
+			activePatient?.id ?? dashboard?.activeVisit?.patientId ?? null;
 		if (!feedPatientId) return [];
 		return (dashboard.imagingStudies || [])
 			.filter((study) => study.patientId === feedPatientId)
@@ -11959,11 +11979,7 @@ export function useAppLogic(): any {
 			visitNoteForm.treatmentPlan.trim() ||
 			recordExtractTreatmentProvidedValue() ||
 			"";
-		const sexRaw = (
-			documentPatient?.sex ??
-			patientProfile?.sex ??
-			""
-		)
+		const sexRaw = (documentPatient?.sex ?? patientProfile?.sex ?? "")
 			.toString()
 			.toLowerCase();
 		const sex =
@@ -11973,9 +11989,9 @@ export function useAppLogic(): any {
 			sexRaw === "женский"
 				? "женский"
 				: sexRaw === "male" ||
-					  sexRaw === "m" ||
-					  sexRaw === "муж" ||
-					  sexRaw === "мужской"
+						sexRaw === "m" ||
+						sexRaw === "муж" ||
+						sexRaw === "мужской"
 					? "мужской"
 					: null;
 		const birthDate =
@@ -11986,8 +12002,7 @@ export function useAppLogic(): any {
 			clinicProfileDraft.legalName?.trim() ||
 			clinicProfileDraft.clinicName?.trim() ||
 			"Стоматологическая клиника";
-		const identityDocument =
-			patientProfile?.identityDocument?.trim() || null;
+		const identityDocument = patientProfile?.identityDocument?.trim() || null;
 
 		return {
 			formNumber: "043/у",
@@ -11998,8 +12013,7 @@ export function useAppLogic(): any {
 				phone: clinicProfileDraft.phone?.trim() || null,
 				ogrn: clinicProfileDraft.ogrn?.trim() || null,
 				inn: clinicProfileDraft.inn?.trim() || null,
-				licenseNumber:
-					clinicProfileDraft.medicalLicenseNumber?.trim() || null,
+				licenseNumber: clinicProfileDraft.medicalLicenseNumber?.trim() || null,
 				licenseIssueDate:
 					clinicProfileDraft.medicalLicenseIssuedAt?.trim() || null,
 				licenseAuthority:
@@ -12360,12 +12374,18 @@ export function useAppLogic(): any {
 			...documentState,
 			...documentDerivedValues,
 		});
-		const payloadError = validateDocumentPayloadForKind(kind, documentStateForCreation);
+		const payloadError = validateDocumentPayloadForKind(
+			kind,
+			documentStateForCreation,
+		);
 		if (payloadError) {
 			setError(payloadError);
 			return;
 		}
-		const documentPayload = documentPayloadForKind(kind, documentStateForCreation);
+		const documentPayload = documentPayloadForKind(
+			kind,
+			documentStateForCreation,
+		);
 		if (
 			(kind === "tax_deduction_certificate" ||
 				kind === "tax_deduction_registry") &&
@@ -13021,7 +13041,8 @@ export function useAppLogic(): any {
 						// БЫЛО: оплата с семейного кошелька шла вообще без ключа
 						// идемпотентности. Повтор после обрыва связи списывал деньги
 						// с баланса семьи ДВАЖДЫ за одно лечение.
-						clientMutationId: (paymentMutationIdRef.current ||= browserGeneratedId("family-payment")),
+						clientMutationId: (paymentMutationIdRef.current ||=
+							browserGeneratedId("family-payment")),
 					}),
 				});
 			} else {
@@ -13813,15 +13834,16 @@ export function useAppLogic(): any {
 				.filter((member) => member.active && member.role !== "owner")
 				.map((member) => member.role as string),
 		);
-		return (["doctor", "administrator", "assistant", "manager"] as const).filter(
-			(role) => !covered.has(role),
-		) as string[];
+		return (
+			["doctor", "administrator", "assistant", "manager"] as const
+		).filter((role) => !covered.has(role)) as string[];
 	}, [dashboard?.clinicSettings?.staff]);
 	const roleRecommendedActions = (dashboard?.recommendedActions ?? []).filter(
 		(action) =>
 			action.role === selectedWorkspaceRole ||
 			(selectedWorkspaceRole === "owner" &&
-				(action.role === "manager" || uncoveredStaffRoles.includes(action.role))),
+				(action.role === "manager" ||
+					uncoveredStaffRoles.includes(action.role))),
 	);
 	const visibleRecommendedActions = (
 		roleRecommendedActions.length
@@ -13859,8 +13881,10 @@ export function useAppLogic(): any {
 		onboardingDocumentReadinessIssues.length === 0;
 	// Флаг «готово к созданию» дополнительно учитывает выполняющийся запрос,
 	// поэтому кнопки гаснут сразу после первого нажатия, а не после ответа сервера.
-	const newStaffReadyToCreate = newStaffName.trim().length > 0 && !isStaffCreating;
-	const newChairReadyToCreate = newChairName.trim().length > 0 && !isChairCreating;
+	const newStaffReadyToCreate =
+		newStaffName.trim().length > 0 && !isStaffCreating;
+	const newChairReadyToCreate =
+		newChairName.trim().length > 0 && !isChairCreating;
 	const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance";
 	const onboardingChairCreateGuidanceId = "onboarding-chair-create-guidance";
 	const onboardingFinishGuidanceId = "onboarding-finish-guidance";

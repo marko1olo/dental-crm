@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import {
+	createServer,
+	type IncomingMessage,
+	type Server,
+	type ServerResponse,
+} from "node:http";
 import test from "node:test";
 import {
 	fetchSmsBalance,
 	normalizeRussianMsisdn,
 	readSmsCredentialsFromEnv,
+	type SmsCredentials,
 	sendSms,
-	type SmsCredentials
 } from "../smsTransport.js";
 
 /**
@@ -19,22 +24,31 @@ import {
 type CapturedRequest = { path: string; body: string };
 
 function startFakeGateway(
-	handler: (request: CapturedRequest) => { status?: number; json: unknown }
-): Promise<{ baseUrl: string; server: Server; requests: CapturedRequest[]; close: () => Promise<void> }> {
+	handler: (request: CapturedRequest) => { status?: number; json: unknown },
+): Promise<{
+	baseUrl: string;
+	server: Server;
+	requests: CapturedRequest[];
+	close: () => Promise<void>;
+}> {
 	const requests: CapturedRequest[] = [];
-	const server = createServer((request: IncomingMessage, response: ServerResponse) => {
-		let body = "";
-		request.on("data", (chunk) => {
-			body += String(chunk);
-		});
-		request.on("end", () => {
-			const captured = { path: request.url ?? "", body };
-			requests.push(captured);
-			const result = handler(captured);
-			response.writeHead(result.status ?? 200, { "content-type": "application/json; charset=utf-8" });
-			response.end(JSON.stringify(result.json));
-		});
-	});
+	const server = createServer(
+		(request: IncomingMessage, response: ServerResponse) => {
+			let body = "";
+			request.on("data", (chunk) => {
+				body += String(chunk);
+			});
+			request.on("end", () => {
+				const captured = { path: request.url ?? "", body };
+				requests.push(captured);
+				const result = handler(captured);
+				response.writeHead(result.status ?? 200, {
+					"content-type": "application/json; charset=utf-8",
+				});
+				response.end(JSON.stringify(result.json));
+			});
+		},
+	);
 
 	return new Promise((resolve, reject) => {
 		server.once("error", reject);
@@ -51,18 +65,32 @@ function startFakeGateway(
 				close: () =>
 					new Promise<void>((done) => {
 						server.close(() => done());
-					})
+					}),
 			});
 		});
 	});
 }
 
 function smsRuCredentials(baseUrl: string): SmsCredentials {
-	return { provider: "smsru", apiId: "test-api-id", login: null, password: null, sender: "CLINIC", baseUrl };
+	return {
+		provider: "smsru",
+		apiId: "test-api-id",
+		login: null,
+		password: null,
+		sender: "CLINIC",
+		baseUrl,
+	};
 }
 
 function smscCredentials(baseUrl: string): SmsCredentials {
-	return { provider: "smsc", apiId: null, login: "clinic", password: "секрет", sender: "CLINIC", baseUrl };
+	return {
+		provider: "smsc",
+		apiId: null,
+		login: "clinic",
+		password: "секрет",
+		sender: "CLINIC",
+		baseUrl,
+	};
 }
 
 test("SMS.RU: успешная отправка возвращает идентификатор сообщения", async () => {
@@ -70,15 +98,21 @@ test("SMS.RU: успешная отправка возвращает идент�
 		json: {
 			status: "OK",
 			status_code: 100,
-			sms: { "79161234567": { status: "OK", status_code: 100, sms_id: "000000-10000000" } },
-			balance: 4122.56
-		}
+			sms: {
+				"79161234567": {
+					status: "OK",
+					status_code: 100,
+					sms_id: "000000-10000000",
+				},
+			},
+			balance: 4122.56,
+		},
 	}));
 	try {
 		const result = await sendSms({
 			credentials: smsRuCredentials(gateway.baseUrl),
 			toMsisdn: "79161234567",
-			text: "Напоминаем о приёме завтра в 14:30."
+			text: "Напоминаем о приёме завтра в 14:30.",
 		});
 		assert.equal(result.ok, true, result.ok ? "" : result.errorMessage);
 		assert.equal(result.ok && result.providerMessageId, "000000-10000000");
@@ -99,18 +133,27 @@ test("SMS.RU: отказ по конкретному номеру важнее �
 		json: {
 			status: "OK",
 			status_code: 100,
-			sms: { "79161234567": { status: "ERROR", status_code: 207, status_text: "На этот номер нельзя отправлять" } }
-		}
+			sms: {
+				"79161234567": {
+					status: "ERROR",
+					status_code: 207,
+					status_text: "На этот номер нельзя отправлять",
+				},
+			},
+		},
 	}));
 	try {
 		const result = await sendSms({
 			credentials: smsRuCredentials(gateway.baseUrl),
 			toMsisdn: "79161234567",
-			text: "Текст"
+			text: "Текст",
 		});
 		assert.equal(result.ok, false);
 		assert.equal(result.ok === false && result.errorCode, 207);
-		assert.equal(result.ok === false && result.errorClass, "recipient_unavailable");
+		assert.equal(
+			result.ok === false && result.errorClass,
+			"recipient_unavailable",
+		);
 	} finally {
 		await gateway.close();
 	}
@@ -119,27 +162,34 @@ test("SMS.RU: отказ по конкретному номеру важнее �
 test("SMS.RU: закончившиеся деньги отделены от прочих ошибок", async () => {
 	// Диспетчер не должен повторять такую отправку по кругу: она не пройдёт,
 	// пока клиника не пополнит счёт, и это нужно показать администратору.
-	const gateway = await startFakeGateway(() => ({ json: { status: "ERROR", status_code: 201 } }));
+	const gateway = await startFakeGateway(() => ({
+		json: { status: "ERROR", status_code: 201 },
+	}));
 	try {
 		const result = await sendSms({
 			credentials: smsRuCredentials(gateway.baseUrl),
 			toMsisdn: "79161234567",
-			text: "Текст"
+			text: "Текст",
 		});
 		assert.equal(result.ok, false);
-		assert.equal(result.ok === false && result.errorClass, "insufficient_funds");
+		assert.equal(
+			result.ok === false && result.errorClass,
+			"insufficient_funds",
+		);
 	} finally {
 		await gateway.close();
 	}
 });
 
 test("SMS.RU: неверный ключ доступа — это auth, а не unknown", async () => {
-	const gateway = await startFakeGateway(() => ({ json: { status: "ERROR", status_code: 200 } }));
+	const gateway = await startFakeGateway(() => ({
+		json: { status: "ERROR", status_code: 200 },
+	}));
 	try {
 		const result = await sendSms({
 			credentials: smsRuCredentials(gateway.baseUrl),
 			toMsisdn: "79161234567",
-			text: "Текст"
+			text: "Текст",
 		});
 		assert.equal(result.ok === false && result.errorClass, "auth");
 	} finally {
@@ -148,13 +198,15 @@ test("SMS.RU: неверный ключ доступа — это auth, а не 
 });
 
 test("SMSC: успешная отправка возвращает идентификатор и число частей", async () => {
-	const gateway = await startFakeGateway(() => ({ json: { id: 12345, cnt: 2 } }));
+	const gateway = await startFakeGateway(() => ({
+		json: { id: 12345, cnt: 2 },
+	}));
 	try {
 		const result = await sendSms({
 			credentials: smscCredentials(gateway.baseUrl),
 			toMsisdn: "79161234567",
 			text: "Длинный текст напоминания",
-			idempotencyKey: "outbox-1"
+			idempotencyKey: "outbox-1",
 		});
 		assert.equal(result.ok, true);
 		assert.equal(result.ok && result.providerMessageId, "12345");
@@ -171,14 +223,19 @@ test("SMSC: успешная отправка возвращает иденти�
 });
 
 test("SMSC: код ошибки классифицируется", async () => {
-	const gateway = await startFakeGateway(() => ({ json: { error: "not enough credits", error_code: 3 } }));
+	const gateway = await startFakeGateway(() => ({
+		json: { error: "not enough credits", error_code: 3 },
+	}));
 	try {
 		const result = await sendSms({
 			credentials: smscCredentials(gateway.baseUrl),
 			toMsisdn: "79161234567",
-			text: "Текст"
+			text: "Текст",
 		});
-		assert.equal(result.ok === false && result.errorClass, "insufficient_funds");
+		assert.equal(
+			result.ok === false && result.errorClass,
+			"insufficient_funds",
+		);
 	} finally {
 		await gateway.close();
 	}
@@ -190,7 +247,7 @@ test("ошибка HTTP не превращается в исключение", 
 		const result = await sendSms({
 			credentials: smsRuCredentials(gateway.baseUrl),
 			toMsisdn: "79161234567",
-			text: "Текст"
+			text: "Текст",
 		});
 		assert.equal(result.ok === false && result.errorClass, "server");
 		assert.equal(result.ok === false && result.errorCode, 503);
@@ -200,7 +257,9 @@ test("ошибка HTTP не превращается в исключение", 
 });
 
 test("остаток на счету шлюза читается", async () => {
-	const gateway = await startFakeGateway(() => ({ json: { status: "OK", status_code: 100, balance: 1543.2 } }));
+	const gateway = await startFakeGateway(() => ({
+		json: { status: "OK", status_code: 100, balance: 1543.2 },
+	}));
 	try {
 		const balance = await fetchSmsBalance(smsRuCredentials(gateway.baseUrl));
 		assert.equal(balance.ok, true);
@@ -213,11 +272,22 @@ test("остаток на счету шлюза читается", async () => {
 test("пустой текст и неприведённый номер отсекаются до обращения к шлюзу", async () => {
 	const credentials = smsRuCredentials("http://127.0.0.1:1");
 
-	const emptyText = await sendSms({ credentials, toMsisdn: "79161234567", text: "   " });
+	const emptyText = await sendSms({
+		credentials,
+		toMsisdn: "79161234567",
+		text: "   ",
+	});
 	assert.equal(emptyText.ok === false && emptyText.errorClass, "bad_request");
 
-	const badNumber = await sendSms({ credentials, toMsisdn: "916123", text: "Текст" });
-	assert.equal(badNumber.ok === false && badNumber.errorClass, "recipient_unavailable");
+	const badNumber = await sendSms({
+		credentials,
+		toMsisdn: "916123",
+		text: "Текст",
+	});
+	assert.equal(
+		badNumber.ok === false && badNumber.errorClass,
+		"recipient_unavailable",
+	);
 });
 
 test("номера приводятся к международному формату", () => {
@@ -231,14 +301,29 @@ test("номера приводятся к международному форм
 
 test("шлюз без ключей считается ненастроенным", () => {
 	assert.equal(readSmsCredentialsFromEnv({}), null);
-	assert.equal(readSmsCredentialsFromEnv({ DENTE_SMS_PROVIDER: "smsru" }), null);
-	assert.equal(readSmsCredentialsFromEnv({ DENTE_SMS_PROVIDER: "smsru", DENTE_SMS_API_ID: "   " }), null);
-	assert.equal(readSmsCredentialsFromEnv({ DENTE_SMS_PROVIDER: "smsc", DENTE_SMS_LOGIN: "clinic" }), null);
+	assert.equal(
+		readSmsCredentialsFromEnv({ DENTE_SMS_PROVIDER: "smsru" }),
+		null,
+	);
+	assert.equal(
+		readSmsCredentialsFromEnv({
+			DENTE_SMS_PROVIDER: "smsru",
+			DENTE_SMS_API_ID: "   ",
+		}),
+		null,
+	);
+	assert.equal(
+		readSmsCredentialsFromEnv({
+			DENTE_SMS_PROVIDER: "smsc",
+			DENTE_SMS_LOGIN: "clinic",
+		}),
+		null,
+	);
 
 	const configured = readSmsCredentialsFromEnv({
 		DENTE_SMS_PROVIDER: "smsru",
 		DENTE_SMS_API_ID: "abc",
-		DENTE_SMS_SENDER: "CLINIC"
+		DENTE_SMS_SENDER: "CLINIC",
 	});
 	assert.equal(configured?.provider, "smsru");
 	assert.equal(configured?.baseUrl, "https://sms.ru");
@@ -249,7 +334,7 @@ test("адрес шлюза можно переопределить — для �
 		DENTE_SMS_PROVIDER: "smsc",
 		DENTE_SMS_LOGIN: "clinic",
 		DENTE_SMS_PASSWORD: "секрет",
-		DENTE_SMS_BASE_URL: "https://smsc.kz/"
+		DENTE_SMS_BASE_URL: "https://smsc.kz/",
 	});
 	assert.equal(configured?.baseUrl, "https://smsc.kz");
 });

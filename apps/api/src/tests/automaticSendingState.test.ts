@@ -20,7 +20,11 @@ describe("состояние автоматической отправки", () 
 		const state = describeAutomaticSending({});
 
 		assert.equal(state.enabled, false);
-		assert.equal(state.intervalSeconds, null, "интервала у выключенного обработчика нет");
+		assert.equal(
+			state.intervalSeconds,
+			null,
+			"интервала у выключенного обработчика нет",
+		);
 		// Формулировка обязана называть последствие, а не только факт.
 		assert.ok(state.detail.includes("копятся"), state.detail);
 		// И называть кнопку ТЕМ ЖЕ ИМЕНЕМ, что стоит на экране. Первая редакция
@@ -35,7 +39,7 @@ describe("состояние автоматической отправки", () 
 		const state = describeAutomaticSending({
 			DENTE_COMMUNICATION_WORKER_ENABLED: "1",
 			DENTE_COMMUNICATION_WORKER_INTERVAL_MS: "60000",
-			DENTE_COMMUNICATION_WORKER_BATCH_SIZE: "40"
+			DENTE_COMMUNICATION_WORKER_BATCH_SIZE: "40",
 		});
 
 		assert.equal(state.enabled, true);
@@ -49,23 +53,41 @@ describe("состояние автоматической отправки", () 
 		// напоминание о завтрашнем приёме уйдёт послезавтра.
 		const tooFast = describeAutomaticSending({
 			DENTE_COMMUNICATION_WORKER_ENABLED: "true",
-			DENTE_COMMUNICATION_WORKER_INTERVAL_MS: "10"
+			DENTE_COMMUNICATION_WORKER_INTERVAL_MS: "10",
 		});
-		assert.equal(tooFast.intervalSeconds, 5, "интервал должен подтягиваться к нижней границе");
+		assert.equal(
+			tooFast.intervalSeconds,
+			5,
+			"интервал должен подтягиваться к нижней границе",
+		);
 
 		const tooSlow = describeAutomaticSending({
 			DENTE_COMMUNICATION_WORKER_ENABLED: "true",
-			DENTE_COMMUNICATION_WORKER_INTERVAL_MS: "86400000"
+			DENTE_COMMUNICATION_WORKER_INTERVAL_MS: "86400000",
 		});
-		assert.equal(tooSlow.intervalSeconds, 900, "интервал должен ограничиваться верхней границей");
+		assert.equal(
+			tooSlow.intervalSeconds,
+			900,
+			"интервал должен ограничиваться верхней границей",
+		);
 	});
 
 	test("признак включения читается по-человечески, а не только как «1»", () => {
 		for (const value of ["1", "true", "TRUE", "yes"]) {
-			assert.equal(describeAutomaticSending({ DENTE_COMMUNICATION_WORKER_ENABLED: value }).enabled, true, value);
+			assert.equal(
+				describeAutomaticSending({ DENTE_COMMUNICATION_WORKER_ENABLED: value })
+					.enabled,
+				true,
+				value,
+			);
 		}
 		for (const value of ["0", "false", "no", "", "   "]) {
-			assert.equal(describeAutomaticSending({ DENTE_COMMUNICATION_WORKER_ENABLED: value }).enabled, false, value);
+			assert.equal(
+				describeAutomaticSending({ DENTE_COMMUNICATION_WORKER_ENABLED: value })
+					.enabled,
+				false,
+				value,
+			);
 		}
 	});
 });

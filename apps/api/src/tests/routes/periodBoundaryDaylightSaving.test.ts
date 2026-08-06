@@ -41,7 +41,7 @@ function wallClock(zone: string, at: Date): string {
 		minute: "2-digit",
 		second: "2-digit",
 		hour12: false,
-		timeZoneName: "shortOffset"
+		timeZoneName: "shortOffset",
 	}).format(at);
 }
 
@@ -51,12 +51,42 @@ function wallClock(zone: string, at: Date): string {
  * ровно 24 и проверка бы упала.
  */
 const days: { zone: string; date: string; hours: number; what: string }[] = [
-	{ zone: "America/New_York", date: "2026-03-08", hours: 23, what: "переход на летнее время, час пропадает" },
-	{ zone: "America/New_York", date: "2026-11-01", hours: 25, what: "переход на зимнее время, час повторяется" },
-	{ zone: "Europe/Berlin", date: "2026-03-29", hours: 23, what: "переход на летнее время, час пропадает" },
-	{ zone: "Europe/Berlin", date: "2026-10-25", hours: 25, what: "переход на зимнее время, час повторяется" },
-	{ zone: "Asia/Kamchatka", date: "2026-07-01", hours: 24, what: "перехода нет, +12" },
-	{ zone: "Europe/Moscow", date: "2026-07-01", hours: 24, what: "перехода нет, +3" }
+	{
+		zone: "America/New_York",
+		date: "2026-03-08",
+		hours: 23,
+		what: "переход на летнее время, час пропадает",
+	},
+	{
+		zone: "America/New_York",
+		date: "2026-11-01",
+		hours: 25,
+		what: "переход на зимнее время, час повторяется",
+	},
+	{
+		zone: "Europe/Berlin",
+		date: "2026-03-29",
+		hours: 23,
+		what: "переход на летнее время, час пропадает",
+	},
+	{
+		zone: "Europe/Berlin",
+		date: "2026-10-25",
+		hours: 25,
+		what: "переход на зимнее время, час повторяется",
+	},
+	{
+		zone: "Asia/Kamchatka",
+		date: "2026-07-01",
+		hours: 24,
+		what: "перехода нет, +12",
+	},
+	{
+		zone: "Europe/Moscow",
+		date: "2026-07-01",
+		hours: 24,
+		what: "перехода нет, +3",
+	},
 ];
 
 describe("календарная дата в поясе с переходом на зимнее время", () => {
@@ -70,7 +100,7 @@ describe("календарная дата в поясе с переходом н
 			// Начало периода — полночь ЗАПРОШЕННОГО дня по часам пояса.
 			assert.ok(
 				wallClock(zone, from).startsWith(`${date}, 00:00:00`),
-				`начало суток попало не в полночь запрошенного дня: ${wallClock(zone, from)} (${from.toISOString()})`
+				`начало суток попало не в полночь запрошенного дня: ${wallClock(zone, from)} (${from.toISOString()})`,
 			);
 
 			// Конец периода ВКЛЮЧАЮЩИЙ: ещё одна миллисекунда — уже следующие сутки,
@@ -79,7 +109,7 @@ describe("календарная дата в поясе с переходом н
 			assert.match(
 				wallClock(zone, justAfter),
 				/, 00:00:00/,
-				`конец суток не совпал с началом следующих: ${wallClock(zone, justAfter)} (${justAfter.toISOString()})`
+				`конец суток не совпал с началом следующих: ${wallClock(zone, justAfter)} (${justAfter.toISOString()})`,
 			);
 
 			// Длина суток. Именно здесь однократное снятие смещения ошибается на час.
@@ -87,7 +117,7 @@ describe("календарная дата в поясе с переходом н
 			assert.equal(
 				measured,
 				hours,
-				`длина суток ${measured} ч вместо ${hours}: смещение перехода снято неверно (${from.toISOString()} .. ${to.toISOString()})`
+				`длина суток ${measured} ч вместо ${hours}: смещение перехода снято неверно (${from.toISOString()} .. ${to.toISOString()})`,
 			);
 		});
 	}
@@ -105,15 +135,18 @@ describe("календарная дата в поясе с переходом н
 		for (const [zone, lastDay, nextFirst] of [
 			["Europe/Berlin", "2026-10-31", "2026-11-01"],
 			["America/New_York", "2026-11-30", "2026-12-01"],
-			["America/New_York", "2026-03-31", "2026-04-01"]
+			["America/New_York", "2026-03-31", "2026-04-01"],
 		] as const) {
 			const monthEnd = resolvePeriodBoundary(lastDay, "to", zone);
 			const nextMonthStart = resolvePeriodBoundary(nextFirst, "from", zone);
-			assert.ok(monthEnd && nextMonthStart, `${zone} ${lastDay}: границы не разобраны`);
+			assert.ok(
+				monthEnd && nextMonthStart,
+				`${zone} ${lastDay}: границы не разобраны`,
+			);
 			assert.equal(
 				monthEnd.getTime() + 1,
 				nextMonthStart.getTime(),
-				`${zone} ${lastDay}: между концом месяца и началом следующего образовалась щель или наложение`
+				`${zone} ${lastDay}: между концом месяца и началом следующего образовалась щель или наложение`,
 			);
 		}
 	});

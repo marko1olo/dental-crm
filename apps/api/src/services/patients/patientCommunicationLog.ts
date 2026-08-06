@@ -100,11 +100,15 @@ export function parsePatientCommunicationLogLimit(raw: unknown): number {
 	}
 	// Number("") === 0 и Number(" ") === 0, поэтому пустая строка отсеяна выше,
 	// а пробелы обрезаются до преобразования.
-	const numeric = typeof candidate === "string" ? Number(candidate.trim()) : Number(candidate);
+	const numeric =
+		typeof candidate === "string"
+			? Number(candidate.trim())
+			: Number(candidate);
 	if (!Number.isFinite(numeric)) return PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT;
 	const whole = Math.floor(numeric);
 	if (whole < 1) return 1;
-	if (whole > PATIENT_COMMUNICATION_LOG_MAX_LIMIT) return PATIENT_COMMUNICATION_LOG_MAX_LIMIT;
+	if (whole > PATIENT_COMMUNICATION_LOG_MAX_LIMIT)
+		return PATIENT_COMMUNICATION_LOG_MAX_LIMIT;
 	return whole;
 }
 
@@ -121,31 +125,40 @@ export function parsePatientCommunicationLogLimit(raw: unknown): number {
  * таблицы. Где sql`` всё же нужен (агрегаты ниже), таблица пишется явно —
  * ${communicationEvents}."status".
  */
-export function buildPatientCommunicationEntriesQuery(organizationId: string, patientId: string, limit: number) {
-	return db
-		.select({
-			id: communicationEvents.id,
-			channel: communicationEvents.channel,
-			direction: communicationEvents.direction,
-			status: communicationEvents.status,
-			message: communicationEvents.message,
-			createdAt: communicationEvents.createdAt,
-			actorName: users.fullName,
-		})
-		.from(communicationEvents)
-		.leftJoin(users, eq(users.id, communicationEvents.actorUserId))
-		.where(
-			and(
-				// Изоляция по организации стоит в самом запросе, а не в маршруте:
-				// иначе следующий вызывающий про неё забудет.
-				eq(communicationEvents.organizationId, organizationId),
-				eq(communicationEvents.patientId, patientId),
-			),
-		)
-		// Второй ключ сортировки нужен для устойчивого порядка: у событий одной
-		// рассылки created_at совпадает до микросекунды.
-		.orderBy(desc(communicationEvents.createdAt), desc(communicationEvents.id))
-		.limit(limit);
+export function buildPatientCommunicationEntriesQuery(
+	organizationId: string,
+	patientId: string,
+	limit: number,
+) {
+	return (
+		db
+			.select({
+				id: communicationEvents.id,
+				channel: communicationEvents.channel,
+				direction: communicationEvents.direction,
+				status: communicationEvents.status,
+				message: communicationEvents.message,
+				createdAt: communicationEvents.createdAt,
+				actorName: users.fullName,
+			})
+			.from(communicationEvents)
+			.leftJoin(users, eq(users.id, communicationEvents.actorUserId))
+			.where(
+				and(
+					// Изоляция по организации стоит в самом запросе, а не в маршруте:
+					// иначе следующий вызывающий про неё забудет.
+					eq(communicationEvents.organizationId, organizationId),
+					eq(communicationEvents.patientId, patientId),
+				),
+			)
+			// Второй ключ сортировки нужен для устойчивого порядка: у событий одной
+			// рассылки created_at совпадает до микросекунды.
+			.orderBy(
+				desc(communicationEvents.createdAt),
+				desc(communicationEvents.id),
+			)
+			.limit(limit)
+	);
 }
 
 /**
@@ -153,7 +166,10 @@ export function buildPatientCommunicationEntriesQuery(organizationId: string, pa
  * выбранным строкам: иначе «12 обращений» превратилось бы в «100 обращений» у
  * любого, у кого их больше сотни, и период тоже соврал бы.
  */
-export function buildPatientCommunicationTotalsQuery(organizationId: string, patientId: string) {
+export function buildPatientCommunicationTotalsQuery(
+	organizationId: string,
+	patientId: string,
+) {
 	return db
 		.select({
 			// count(*) отдаёт bigint, драйвер вернул бы его строкой: '12' + 1 = '121'.
@@ -166,8 +182,14 @@ export function buildPatientCommunicationTotalsQuery(organizationId: string, pat
 				sql<Date | null>`max(${communicationEvents}."created_at") filter (where ${communicationEvents}."status" = 'needs_call')`.as(
 					"last_needs_call_at",
 				),
-			firstEventAt: sql<Date | null>`min(${communicationEvents}."created_at")`.as("first_event_at"),
-			lastEventAt: sql<Date | null>`max(${communicationEvents}."created_at")`.as("last_event_at"),
+			firstEventAt:
+				sql<Date | null>`min(${communicationEvents}."created_at")`.as(
+					"first_event_at",
+				),
+			lastEventAt:
+				sql<Date | null>`max(${communicationEvents}."created_at")`.as(
+					"last_event_at",
+				),
 		})
 		.from(communicationEvents)
 		.where(
@@ -184,7 +206,8 @@ export function buildPatientCommunicationTotalsQuery(organizationId: string, pat
  * строку в null означало бы потерять период на экране.
  */
 function toDate(value: unknown): Date | null {
-	if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+	if (value instanceof Date)
+		return Number.isNaN(value.getTime()) ? null : value;
 	if (typeof value === "string" && value.trim() !== "") {
 		const parsed = new Date(value);
 		return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -200,11 +223,19 @@ function toDate(value: unknown): Date | null {
  * памяти (patientsQuery.ts:81-83). На проверке существования это худший из
  * возможных ответов — при сбое базы она сказала бы «пациент есть».
  */
-async function patientBelongsToOrganization(organizationId: string, patientId: string): Promise<boolean> {
+async function patientBelongsToOrganization(
+	organizationId: string,
+	patientId: string,
+): Promise<boolean> {
 	const [row] = await db
 		.select({ id: patients.id })
 		.from(patients)
-		.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+		.where(
+			and(
+				eq(patients.organizationId, organizationId),
+				eq(patients.id, patientId),
+			),
+		)
 		.limit(1);
 	return Boolean(row);
 }
@@ -234,7 +265,8 @@ export async function findPatientCommunicationLog(
 ): Promise<PatientCommunicationLog | null> {
 	const limit = parsePatientCommunicationLogLimit(options.limit);
 
-	if (!(await patientBelongsToOrganization(organizationId, patientId))) return null;
+	if (!(await patientBelongsToOrganization(organizationId, patientId)))
+		return null;
 
 	const [rows, totals] = await Promise.all([
 		buildPatientCommunicationEntriesQuery(organizationId, patientId, limit),
@@ -250,7 +282,8 @@ export async function findPatientCommunicationLog(
 		message: row.message,
 		// Пустое ФИО сотрудника равносильно его отсутствию: пустая строка на
 		// экране выглядела бы как автор без имени.
-		actorName: row.actorName && row.actorName.trim() !== "" ? row.actorName : null,
+		actorName:
+			row.actorName && row.actorName.trim() !== "" ? row.actorName : null,
 		createdAt: toDate(row.createdAt) ?? new Date(0),
 	}));
 

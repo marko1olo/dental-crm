@@ -1,4 +1,7 @@
-import { anesthesiaConsentPayloadSchema, anesthesiaDoseRowSchema } from "@dental/shared";
+import {
+	anesthesiaConsentPayloadSchema,
+	anesthesiaDoseRowSchema,
+} from "@dental/shared";
 
 /**
  * Длина текста в журнале анестезии: отказ сервера был неотличим от «не заполнено».
@@ -92,15 +95,21 @@ function limitOf(schema: { maxLength: number | null }): number | null {
 }
 
 /** Пределы полей, у которых в схеме стоит `nullable().optional()`. */
-const vasoconstrictorLimit = limitOf(payloadShape.vasoconstrictor.unwrap().unwrap());
-const restrictionNotesLimit = limitOf(payloadShape.restrictionNotes.unwrap().unwrap());
+const vasoconstrictorLimit = limitOf(
+	payloadShape.vasoconstrictor.unwrap().unwrap(),
+);
+const restrictionNotesLimit = limitOf(
+	payloadShape.restrictionNotes.unwrap().unwrap(),
+);
 const reactionLimit = limitOf(doseRowShape.reaction.unwrap().unwrap());
 
 /**
  * Предел склейки «препарат, вазоконстриктор», которая уходит в строку дозы.
  * Ни одному полю формы он не принадлежит.
  */
-export const ANESTHESIA_MEDICATION_JOIN_LIMIT = limitOf(doseRowShape.medication);
+export const ANESTHESIA_MEDICATION_JOIN_LIMIT = limitOf(
+	doseRowShape.medication,
+);
 
 /** Разделитель склейки — дословно как в сборщике содержимого. */
 const MEDICATION_JOIN_SEPARATOR = ", ";
@@ -110,7 +119,10 @@ function trimmedLength(value: string): number {
 }
 
 /** Склейка препарата и вазоконстриктора ровно так, как её собирает documentLogic. */
-export function anesthesiaMedicationJoin(anesthetic: string, vasoconstrictor: string): string {
+export function anesthesiaMedicationJoin(
+	anesthetic: string,
+	vasoconstrictor: string,
+): string {
 	return [String(anesthetic ?? "").trim(), String(vasoconstrictor ?? "").trim()]
 		.filter(Boolean)
 		.join(MEDICATION_JOIN_SEPARATOR);
@@ -119,10 +131,23 @@ export function anesthesiaMedicationJoin(anesthetic: string, vasoconstrictor: st
 export function anesthesiaTextLimitsReview(
 	input: AnesthesiaTextLimitsInput,
 ): AnesthesiaTextLimitsReview {
-	const medicationJoin = anesthesiaMedicationJoin(input.anesthetic, input.vasoconstrictor);
+	const medicationJoin = anesthesiaMedicationJoin(
+		input.anesthetic,
+		input.vasoconstrictor,
+	);
 
-	const candidates: Array<{ field: string; label: string; limit: number | null; length: number }> = [
-		{ field: "anesthesiaMethod", label: "Метод", limit: limitOf(payloadShape.method), length: trimmedLength(input.method) },
+	const candidates: Array<{
+		field: string;
+		label: string;
+		limit: number | null;
+		length: number;
+	}> = [
+		{
+			field: "anesthesiaMethod",
+			label: "Метод",
+			limit: limitOf(payloadShape.method),
+			length: trimmedLength(input.method),
+		},
 		{
 			field: "anesthesiaAnesthetic",
 			label: "Препарат",

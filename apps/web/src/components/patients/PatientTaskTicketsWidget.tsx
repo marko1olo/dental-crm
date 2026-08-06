@@ -15,9 +15,9 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import {
 	actionFailureToast,
+	type PanelSubject,
 	panelStateText,
 	resolvePanelPhase,
-	type PanelSubject,
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -32,16 +32,19 @@ const TICKETS_SUBJECT: PanelSubject = {
 	notLoadedTitle: "Задачи по пациенту не загружены",
 	accusative: "задачи по пациенту",
 	emptyTitle: "Нет активных задач по пациенту",
-	emptyHint: "Задачи помогают администраторам и врачам не забыть о важных делах: перезвонить, дослать документы, проверить самочувствие.",
-	failureConsequence: "Задачи могут быть — их не удалось прочитать. Не планируйте день по этому списку, пока он не обновится.",
+	emptyHint:
+		"Задачи помогают администраторам и врачам не забыть о важных делах: перезвонить, дослать документы, проверить самочувствие.",
+	failureConsequence:
+		"Задачи могут быть — их не удалось прочитать. Не планируйте день по этому списку, пока он не обновится.",
 };
 
 export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const { dashboard, auth } = useAppLogicContext();
 	const [isAdding, setIsAdding] = useState(false);
 
-	const getReadHeaders = () => auth ? auth.denteClinicalReadHeaders() : {};
-	const getMutationHeaders = (extra?: Record<string, string>) => auth ? auth.denteClinicalMutationHeaders(extra) : { ...(extra || {}) };
+	const getReadHeaders = () => (auth ? auth.denteClinicalReadHeaders() : {});
+	const getMutationHeaders = (extra?: Record<string, string>) =>
+		auth ? auth.denteClinicalMutationHeaders(extra) : { ...(extra || {}) };
 
 	const [newTitle, setNewTitle] = useState("");
 	const [newDescription, setNewDescription] = useState("");
@@ -291,7 +294,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										autoFocus
 										className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
 									/>
-									<label className="text-xs text-slate-500 dark:text-slate-400">Название задачи</label>
+									<label className="text-xs text-slate-500 dark:text-slate-400">
+										Название задачи
+									</label>
 								</div>
 
 								<div className="smart-field">
@@ -310,7 +315,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 											</option>
 										))}
 									</select>
-									<label className="text-xs text-slate-500 dark:text-slate-400">Кому назначена</label>
+									<label className="text-xs text-slate-500 dark:text-slate-400">
+										Кому назначена
+									</label>
 								</div>
 
 								<div className="smart-field">
@@ -320,7 +327,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										placeholder=" "
 										className="w-full p-3 rounded-lg min-h-[80px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none resize-y"
 									/>
-									<label className="text-xs text-slate-500 dark:text-slate-400">Описание и комментарии (опционально)</label>
+									<label className="text-xs text-slate-500 dark:text-slate-400">
+										Описание и комментарии (опционально)
+									</label>
 								</div>
 							</div>
 
@@ -332,7 +341,10 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 								>
 									Отмена
 								</button>
-								<button type="submit" className="primary-button bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold cursor-pointer">
+								<button
+									type="submit"
+									className="primary-button bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold cursor-pointer"
+								>
 									Создать задачу
 								</button>
 							</div>
@@ -393,7 +405,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									<button
 										onClick={() => handleToggleStatus(ticket.id, ticket.status)}
 										className={`bg-transparent border-0 p-0 cursor-pointer transition-colors flex mt-0.5 ${
-											isPending ? "text-slate-400 dark:text-slate-500 hover:text-sky-600" : "text-emerald-500"
+											isPending
+												? "text-slate-400 dark:text-slate-500 hover:text-sky-600"
+												: "text-emerald-500"
 										}`}
 										title={
 											isPending

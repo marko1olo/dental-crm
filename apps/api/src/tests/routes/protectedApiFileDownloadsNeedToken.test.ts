@@ -158,10 +158,18 @@ describe("файл вложения не отдаётся запросу без 
 			readFileSync(new URL("../../routes/files.ts", import.meta.url), "utf8"),
 		);
 
-		const published = [...filesRoute.matchAll(/url:\s*`([^`]+)`/g)].map((m) => m[1]);
-		assert.ok(published.length >= 2, `поле url больше не публикуется: ${published.join(", ")}`);
+		const published = [...filesRoute.matchAll(/url:\s*`([^`]+)`/g)].map(
+			(m) => m[1],
+		);
+		assert.ok(
+			published.length >= 2,
+			`поле url больше не публикуется: ${published.join(", ")}`,
+		);
 		for (const template of published) {
-			assert.match(String(template), /^\/api\/attachments\/\$\{[^}]+\}\/download$/);
+			assert.match(
+				String(template),
+				/^\/api\/attachments\/\$\{[^}]+\}\/download$/,
+			);
 		}
 	});
 });

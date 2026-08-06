@@ -16,7 +16,7 @@
  * Проверки, которым важен именно файл useAppLogic.tsx (например, ограничение
  * на его размер), должны читать его напрямую, а не через этот модуль.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const WEB_SOURCE_ROOT = "apps/web/src";

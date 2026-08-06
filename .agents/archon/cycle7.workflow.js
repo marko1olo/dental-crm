@@ -1,11 +1,19 @@
 export const meta = {
-  name: 'archon-cycle-7',
-  description: 'DENTE cycle 7: hollow modules, clinicMode for solo, unreachable views, human errors, capture theme, real decomposition',
-  phases: [
-    { title: 'Build', detail: 'depth over facade: delete lies, gate by practice size, route or remove' },
-    { title: 'Attack', detail: 'a different agent tries to destroy each commit' },
-  ],
-}
+	name: "archon-cycle-7",
+	description:
+		"DENTE cycle 7: hollow modules, clinicMode for solo, unreachable views, human errors, capture theme, real decomposition",
+	phases: [
+		{
+			title: "Build",
+			detail:
+				"depth over facade: delete lies, gate by practice size, route or remove",
+		},
+		{
+			title: "Attack",
+			detail: "a different agent tries to destroy each commit",
+		},
+	],
+};
 
 const LAW = `
 You are an implementer on the DENTE dental CRM under lead [ARCHON]. Repo root: C:\\Clinic_MVP\\dental-crm
@@ -133,8 +141,7 @@ time. Do the same inside your own packet.
   <packet dir>/state.md, commitmsg.txt, handoff.md
 handoff.md: HEAD: <hash> / ## Что было сломано (file:line) / ## Что изменено / ## ПРОВЕРЕНО /
 ## НЕ ПРОВЕРЕНО (each with the exact closing command) / ## Коммит / ## Долг
-`
-
+`;
 
 const CYCLE5_CORRECTIONS = `
 ═══ CORRECTIONS TO THE TEXT ABOVE — CYCLE 5. THESE OVERRIDE IT. ═══
@@ -156,7 +163,7 @@ const CYCLE5_CORRECTIONS = `
 5. **SPEECH/DICTATION AND TELEGRAM ARE FROZEN THIS CYCLE.** Those areas failed review across five and
    two packets respectively; their residue is recorded as debt, not patched again. Do not edit
    apps/api/src/speech/**, apps/api/src/routes/speech.ts, or apps/api/src/routes/telegram.ts.
-`
+`;
 
 const CYCLE7_CORRECTIONS = `
 ═══ EXPLICIT SUPERSESSIONS — THE TEXT ABOVE ACCUMULATED STALE LINES ACROSS CYCLES. ═══
@@ -238,17 +245,18 @@ fantasise.** Changing a shared/API contract means updating all sides synchronous
 4. Did I overload the screen? 5. Does a small practice avoid seeing the extra?
 6. Grep confirms the edit is in the file? 7. Committed, with a hash, nothing of others' touched?
 8. Did I keep the green green? 9. Is the report honest, no gloss?
-`
+`;
 
 const PACKETS = [
-  {
-    id: 'W1-hollow-query-census',
-    label: 'W1 hollow query modules',
-    wave: 1,
-    dir: '.agents/archon/packets/W1-hollow-query-census',
-    files: 'a new scripts/ census tool, plus deletion of provably-dead db/*Query.ts modules AND their widgets. Coordinate, do not fight, over files the second author is deleting.',
-    gate: 'your census tool run + node --import tsx --test on your own test file. NEVER npm run typecheck or build — the lead owns those gates (§7a).',
-    brief: `
+	{
+		id: "W1-hollow-query-census",
+		label: "W1 hollow query modules",
+		wave: 1,
+		dir: ".agents/archon/packets/W1-hollow-query-census",
+		files:
+			"a new scripts/ census tool, plus deletion of provably-dead db/*Query.ts modules AND their widgets. Coordinate, do not fight, over files the second author is deleting.",
+		gate: "your census tool run + node --import tsx --test on your own test file. NEVER npm run typecheck or build — the lead owns those gates (§7a).",
+		brief: `
 PACKET W1 — READ-ONLY QUERY MODULES OVER TABLES NOTHING EVER WRITES TO. §1: A WIDGET THAT CAN NEVER
 HAVE DATA IS NOT A MISSING FEATURE, IT IS A LIE WITH A UI.
 Lane: PLATFORM. Read .agents/DATABASE.md COMPLETE (corrected this campaign; rule 4 is about exactly
@@ -292,15 +300,16 @@ PROOF EXPECTED:
 - For each deletion: the commit hash, and 'git grep -n "<BaseName>" HEAD -- apps/' returning nothing.
 - TYPECHECK VERIFIED on both workspaces after the deletions.
 `,
-  },
-  {
-    id: 'W2-clinicmode-really-hides',
-    label: 'W2 solo sees a clinic-sized app',
-    wave: 1,
-    dir: '.agents/archon/packets/W2-clinicmode-really-hides',
-    files: 'apps/web/src/store/settingsStore.ts, useSettingsDerivations.tsx, workspaceShell.tsx and the gating sites you find. NOT App.tsx (packet W3 owns it this cycle).',
-    gate: 'node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).',
-    brief: `
+	},
+	{
+		id: "W2-clinicmode-really-hides",
+		label: "W2 solo sees a clinic-sized app",
+		wave: 1,
+		dir: ".agents/archon/packets/W2-clinicmode-really-hides",
+		files:
+			"apps/web/src/store/settingsStore.ts, useSettingsDerivations.tsx, workspaceShell.tsx and the gating sites you find. NOT App.tsx (packet W3 owns it this cycle).",
+		gate: "node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).",
+		brief: `
 PACKET W2 — A SOLO DENTIST OPENS THE APP AND SEES A NETWORK CLINIC. §5 IS THE CORE OF THE PRODUCT.
 Lane: ADAPTIVITY / DESIGN SYSTEM. Read .agents/UI_STANDARDS.md COMPLETE.
 
@@ -340,15 +349,16 @@ PROOF EXPECTED:
 - Rendered appearance is NOT VERIFIED by you — the lead owns screenshots and will capture solo vs
   network mode personally. Give the exact command.
 `,
-  },
-  {
-    id: 'W3-unreachable-views',
-    label: 'W3 4689 lines nobody can open',
-    wave: 1,
-    dir: '.agents/archon/packets/W3-unreachable-views',
-    files: 'apps/web/src/App.tsx, workspaceShell.tsx (appViews), workspacePreload.ts, AppRouter.tsx, and the five view files. CHECK App.tsx IS CLEAN FIRST.',
-    gate: 'node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).',
-    brief: `
+	},
+	{
+		id: "W3-unreachable-views",
+		label: "W3 4689 lines nobody can open",
+		wave: 1,
+		dir: ".agents/archon/packets/W3-unreachable-views",
+		files:
+			"apps/web/src/App.tsx, workspaceShell.tsx (appViews), workspacePreload.ts, AppRouter.tsx, and the five view files. CHECK App.tsx IS CLEAN FIRST.",
+		gate: "node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).",
+		brief: `
 PACKET W3 — FIVE FINISHED-LOOKING VIEWS, 4,689 LINES, REACHABLE BY NOBODY. §1: EITHER REAL OR GONE.
 Lane: WEB / cross-lane seam. Read .agents/UI_STANDARDS.md COMPLETE.
 
@@ -394,15 +404,16 @@ PROOF EXPECTED:
 - For each deletion: 'git grep -n "<Name>" HEAD -- apps/' returning nothing.
 - Rendered appearance is NOT VERIFIED by you — the lead will open each newly routed view personally.
 `,
-  },
-  {
-    id: 'W4-human-error-text',
-    label: 'W4 errors a grandmother can read',
-    wave: 2,
-    dir: '.agents/archon/packets/W4-human-error-text',
-    files: 'the UI error/empty/loading surfaces you identify. NOT App.tsx (W3 owns it), NOT the frozen speech/telegram routes.',
-    gate: 'node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).',
-    brief: `
+	},
+	{
+		id: "W4-human-error-text",
+		label: "W4 errors a grandmother can read",
+		wave: 2,
+		dir: ".agents/archon/packets/W4-human-error-text",
+		files:
+			"the UI error/empty/loading surfaces you identify. NOT App.tsx (W3 owns it), NOT the frozen speech/telegram routes.",
+		gate: "node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).",
+		brief: `
 PACKET W4 — ERRORS THAT TELL THE USER NOTHING. §3 IS THE PACKET.
 Lane: WEB / ADAPTIVITY. Read .agents/UI_STANDARDS.md COMPLETE and .agents/archon/VISUAL_VERDICT.md
 COMPLETE.
@@ -452,15 +463,16 @@ PROOF EXPECTED:
 - SMOKE VERIFIED: 'npm run smoke:web-text-encoding' exit 0.
 - TYPECHECK VERIFIED.
 `,
-  },
-  {
-    id: 'W5-capture-theme-assert',
-    label: 'W5 light capture rendered night',
-    wave: 2,
-    dir: '.agents/archon/packets/W5-capture-theme-assert',
-    files: 'scripts/ops-panels-shots.mjs (and dente-redesign-shots.mjs if the same flaw is there)',
-    gate: 'node scripts/ops-panels-shots.mjs',
-    brief: `
+	},
+	{
+		id: "W5-capture-theme-assert",
+		label: "W5 light capture rendered night",
+		wave: 2,
+		dir: ".agents/archon/packets/W5-capture-theme-assert",
+		files:
+			"scripts/ops-panels-shots.mjs (and dente-redesign-shots.mjs if the same flaw is there)",
+		gate: "node scripts/ops-panels-shots.mjs",
+		brief: `
 PACKET W5 — THE CAPTURE PIPELINE FILED A NIGHT-THEME PANEL AS THE LIGHT THEME.
 Lane: PROOF. Read .agents/archon/VISUAL_VERDICT.md addendum C COMPLETE — the lead found this personally.
 
@@ -505,15 +517,16 @@ PROOF EXPECTED:
   A guard nobody proved can go red is not a guard.
 - Do NOT restart the shared dev server. The pipeline needs api 4100 and web 5173 up; they are.
 `,
-  },
-  {
-    id: 'W6-monolith-real-split',
-    label: 'W6 one monolith, really split',
-    wave: 2,
-    dir: '.agents/archon/packets/W6-monolith-real-split',
-    files: 'ONE monolith you choose, plus the domain components you extract. NOT App.tsx (W3), NOT useAppLogic.tsx (cross-lane seam, additive only).',
-    gate: 'node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).',
-    brief: `
+	},
+	{
+		id: "W6-monolith-real-split",
+		label: "W6 one monolith, really split",
+		wave: 2,
+		dir: ".agents/archon/packets/W6-monolith-real-split",
+		files:
+			"ONE monolith you choose, plus the domain components you extract. NOT App.tsx (W3), NOT useAppLogic.tsx (cross-lane seam, additive only).",
+		gate: "node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).",
+		brief: `
 PACKET W6 — SPLIT ONE MONOLITH FOR REAL. §5: THE DECOMPOSITION MUST BE IMPORTED AND USED, NOT ORPHANED.
 Lane: WEB. Read .agents/UI_STANDARDS.md COMPLETE.
 
@@ -552,167 +565,262 @@ PROOF EXPECTED:
 - Rendered appearance is NOT VERIFIED by you — say so; a refactor that silently changes the screen is
   the failure mode here, and the lead will compare captures.
 `,
-  },
-]
+	},
+];
 
 const BUILD_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'status', 'defectReal', 'commitHash', 'filesChanged', 'proven', 'notProven', 'summary', 'reachability', 'measurements', 'constitutionCheck', 'dossierCorrections', 'blockers', 'foundNotFixed'],
-  properties: {
-    packet: { type: 'string' },
-    status: { enum: ['COMMITTED', 'PARTIAL', 'BLOCKED', 'NO_CHANGE'] },
-    defectReal: { type: 'boolean' },
-    commitHash: { type: 'string' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    proven: { type: 'array', items: { type: 'string' } },
-    notProven: { type: 'array', items: { type: 'string' } },
-    summary: { type: 'string' },
-    reachability: { type: 'string' },
-    measurements: { type: 'array', items: { type: 'string' }, description: 'Real reproducible numbers. A count or performance claim without one is an opinion.' },
-    constitutionCheck: { type: 'array', items: { type: 'string' }, description: 'Answer the Director self-check: really works not just compiles; no stub left; a grandmother copes; no visual overload; a small practice avoids the extra; grep confirms the edit; committed with a hash; green kept green.' },
-    dossierCorrections: { type: 'array', items: { type: 'string' } },
-    blockers: { type: 'array', items: { type: 'string' } },
-    foundNotFixed: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"status",
+		"defectReal",
+		"commitHash",
+		"filesChanged",
+		"proven",
+		"notProven",
+		"summary",
+		"reachability",
+		"measurements",
+		"constitutionCheck",
+		"dossierCorrections",
+		"blockers",
+		"foundNotFixed",
+	],
+	properties: {
+		packet: { type: "string" },
+		status: { enum: ["COMMITTED", "PARTIAL", "BLOCKED", "NO_CHANGE"] },
+		defectReal: { type: "boolean" },
+		commitHash: { type: "string" },
+		filesChanged: { type: "array", items: { type: "string" } },
+		proven: { type: "array", items: { type: "string" } },
+		notProven: { type: "array", items: { type: "string" } },
+		summary: { type: "string" },
+		reachability: { type: "string" },
+		measurements: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Real reproducible numbers. A count or performance claim without one is an opinion.",
+		},
+		constitutionCheck: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Answer the Director self-check: really works not just compiles; no stub left; a grandmother copes; no visual overload; a small practice avoids the extra; grep confirms the edit; committed with a hash; green kept green.",
+		},
+		dossierCorrections: { type: "array", items: { type: "string" } },
+		blockers: { type: "array", items: { type: "string" } },
+		foundNotFixed: { type: "array", items: { type: "string" } },
+	},
+};
 
 const REVIEW_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'verdict', 'attackSurface', 'proofAudit', 'gitHygiene', 'reasoning', 'requiredRework'],
-  properties: {
-    packet: { type: 'string' },
-    verdict: { enum: ['SOUND', 'SOUND_WITH_NITS', 'NEEDS_REWORK', 'REVERT'] },
-    attackSurface: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['hypothesis', 'result', 'evidence'],
-        properties: {
-          hypothesis: { type: 'string' },
-          result: { enum: ['CONFIRMED', 'DISPROVED', 'UNTESTABLE'] },
-          evidence: { type: 'string' },
-        },
-      },
-    },
-    proofAudit: { type: 'string' },
-    gitHygiene: { type: 'string' },
-    reasoning: { type: 'string' },
-    requiredRework: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"verdict",
+		"attackSurface",
+		"proofAudit",
+		"gitHygiene",
+		"reasoning",
+		"requiredRework",
+	],
+	properties: {
+		packet: { type: "string" },
+		verdict: { enum: ["SOUND", "SOUND_WITH_NITS", "NEEDS_REWORK", "REVERT"] },
+		attackSurface: {
+			type: "array",
+			items: {
+				type: "object",
+				additionalProperties: false,
+				required: ["hypothesis", "result", "evidence"],
+				properties: {
+					hypothesis: { type: "string" },
+					result: { enum: ["CONFIRMED", "DISPROVED", "UNTESTABLE"] },
+					evidence: { type: "string" },
+				},
+			},
+		},
+		proofAudit: { type: "string" },
+		gitHygiene: { type: "string" },
+		reasoning: { type: "string" },
+		requiredRework: { type: "array", items: { type: "string" } },
+	},
+};
 
 function buildStage(p) {
-  return agent(
-    LAW + CYCLE7_CORRECTIONS +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'YOUR PACKET: ' + p.id + '\n' +
-    'YOUR ROLE: implementer with file-edit rights, bounded to the claim below (§7a).\n' +
-    'WHY THIS IS DELEGATED: it needs full-file comprehension of a specific subsystem plus its own\n' +
-    'reconnaissance, and it is disjoint from the other packets in this wave.\n' +
-    'YOUR FILE CLAIM — OWNED read/edit scope, edit nothing outside it: ' + p.files + '\n' +
-    'FORBIDDEN SCOPE: any file not in your claim; apps/api/src/speech/**, routes/speech.ts,\n' +
-    'routes/telegram.ts (frozen); any file another author has dirty; the shared gates listed in §7a\n' +
-    '(typecheck, build, whole-suite test, migrations, seeds) — those are the lead\'s.\n' +
-    'YOUR OWN SIGNAL (safe, no shared state): ' + p.gate + '\n' +
-    'EVIDENCE STANDARD: every "proven" entry is a command you actually ran, with its true exit code and\n' +
-    'real output quoted. Your output is EVIDENCE, not authority — the lead re-runs it.\n' +
-    'YOUR PACKET DIRECTORY (create FIRST): ' + p.dir + '\n' +
-    '═══════════════════════════════════════════════════════════════\n' + p.brief +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'ORDER OF OPERATIONS, MANDATORY:\n' +
-    ' 1. Write ' + p.dir + '/state.md == STARTED. NOW, before reading anything.\n' +
-    ' 2. Read the authority documents. Complete. state.md == AUTHORITY READ.\n' +
-    ' 3. git rev-parse HEAD; git status --porcelain on your claimed files. Dirty and not by you =>\n' +
-    '    STOP, report the collision. A second, non-fleet author commits here continuously.\n' +
-    ' 4. Read your target file(s) IN FULL. Confirm the defect at real lines.\n' +
-    '    state.md == DEFECT CONFIRMED / ABSENT. If absent, say so loudly; never invent work.\n' +
-    ' 5. Build the real fix. No stub, no facade, no half-product (§1). state.md == EDIT WRITTEN.\n' +
-    ' 6. Run YOUR OWN signal only (never the shared gates — §7a). state.md == SELF-CHECK PASSED.\n' +
-    ' 7. **COMMIT NOW** — pathspec form, retry loop, verify with git log -1 --stat.\n' +
-    '    state.md == COMMITTED <hash>. Do NOT wait for proofs. Nothing may be lost.\n' +
-    ' 8. Proofs. Second commit for the test. state.md == PROVEN.\n' +
-    ' 9. Write ' + p.dir + '/handoff.md. state.md == DONE.\n' +
-    '10. Emit structured output, including "constitutionCheck". Every "proven" entry must be a command\n' +
-    '    you actually ran.\n' +
-    'A packet ending in a plan and no diff is a FAILED packet.\n',
-    { label: p.label, phase: 'Build', schema: BUILD_SCHEMA }
-  )
+	return agent(
+		LAW +
+			CYCLE7_CORRECTIONS +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"YOUR PACKET: " +
+			p.id +
+			"\n" +
+			"YOUR ROLE: implementer with file-edit rights, bounded to the claim below (§7a).\n" +
+			"WHY THIS IS DELEGATED: it needs full-file comprehension of a specific subsystem plus its own\n" +
+			"reconnaissance, and it is disjoint from the other packets in this wave.\n" +
+			"YOUR FILE CLAIM — OWNED read/edit scope, edit nothing outside it: " +
+			p.files +
+			"\n" +
+			"FORBIDDEN SCOPE: any file not in your claim; apps/api/src/speech/**, routes/speech.ts,\n" +
+			"routes/telegram.ts (frozen); any file another author has dirty; the shared gates listed in §7a\n" +
+			"(typecheck, build, whole-suite test, migrations, seeds) — those are the lead's.\n" +
+			"YOUR OWN SIGNAL (safe, no shared state): " +
+			p.gate +
+			"\n" +
+			'EVIDENCE STANDARD: every "proven" entry is a command you actually ran, with its true exit code and\n' +
+			"real output quoted. Your output is EVIDENCE, not authority — the lead re-runs it.\n" +
+			"YOUR PACKET DIRECTORY (create FIRST): " +
+			p.dir +
+			"\n" +
+			"═══════════════════════════════════════════════════════════════\n" +
+			p.brief +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"ORDER OF OPERATIONS, MANDATORY:\n" +
+			" 1. Write " +
+			p.dir +
+			"/state.md == STARTED. NOW, before reading anything.\n" +
+			" 2. Read the authority documents. Complete. state.md == AUTHORITY READ.\n" +
+			" 3. git rev-parse HEAD; git status --porcelain on your claimed files. Dirty and not by you =>\n" +
+			"    STOP, report the collision. A second, non-fleet author commits here continuously.\n" +
+			" 4. Read your target file(s) IN FULL. Confirm the defect at real lines.\n" +
+			"    state.md == DEFECT CONFIRMED / ABSENT. If absent, say so loudly; never invent work.\n" +
+			" 5. Build the real fix. No stub, no facade, no half-product (§1). state.md == EDIT WRITTEN.\n" +
+			" 6. Run YOUR OWN signal only (never the shared gates — §7a). state.md == SELF-CHECK PASSED.\n" +
+			" 7. **COMMIT NOW** — pathspec form, retry loop, verify with git log -1 --stat.\n" +
+			"    state.md == COMMITTED <hash>. Do NOT wait for proofs. Nothing may be lost.\n" +
+			" 8. Proofs. Second commit for the test. state.md == PROVEN.\n" +
+			" 9. Write " +
+			p.dir +
+			"/handoff.md. state.md == DONE.\n" +
+			'10. Emit structured output, including "constitutionCheck". Every "proven" entry must be a command\n' +
+			"    you actually ran.\n" +
+			"A packet ending in a plan and no diff is a FAILED packet.\n",
+		{ label: p.label, phase: "Build", schema: BUILD_SCHEMA },
+	);
 }
 
 function reviewStage(built, p) {
-  if (!built) {
-    return { packet: p.id, verdict: 'NEEDS_REWORK', attackSurface: [], proofAudit: 'Builder produced no result — died or out of capacity. Read ' + p.dir + '/state.md.', gitHygiene: 'unknown', reasoning: 'No build output.', requiredRework: ['Resume ' + p.id] }
-  }
-  if (built.status === 'BLOCKED' || built.status === 'NO_CHANGE' || !built.commitHash) {
-    return { packet: p.id, verdict: 'SOUND_WITH_NITS', attackSurface: [], proofAudit: 'No commit to audit; builder reported ' + built.status + '.', gitHygiene: 'n/a', reasoning: built.summary || '', requiredRework: built.blockers || [] }
-  }
-  return agent(
-    'You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to\n' +
-    'lead [ARCHON]. You did NOT write this code. Your job is to DESTROY it, not bless it.\n' +
-    'Write findings to ' + p.dir + '/review.md AS YOU GO — you may be killed mid-review.\n\n' +
-    'THE DISEASE HERE IS FABRICATED PROOF. What reviewers before you caught — this is your standard:\n' +
-    '- 49 cited proof_*.png files that do not exist.\n' +
-    '- A screenshot MD5-unique and 116 KB showing the staff PIN screen, not the view it is named after.\n' +
-    '- A handoff asserting "текст не уничтожен", refuted by run output.\n' +
-    '- A measurement taken against a baseline the packet itself proved impossible.\n' +
-    '- A smoke green only because it loaded a dist built BEFORE the fix.\n' +
-    '- A commit message describing a defect that does not reproduce at its own parent.\n' +
-    '- A light-theme screenshot that is byte-identical to the night one.\n' +
-    '- **The lead published a census of "45 hollow modules" that was a regex artefact.** Numbers are\n' +
-    '  claims too: re-derive every count.\n' +
-    'Default posture: disbelief. Reproduce claims; never read them.\n\n' +
-    'Read .agents/AGENTS.md COMPLETE plus .agents/INDEX.md. Do NOT penalise the builder for defying §11\n' +
-    '(madge absent) or the biome orders (absent; would reformat the repo).\n' +
-    'REBUILD before any proof that loads apps/api/dist — a stale dist has hidden four defects.\n\n' +
-    'THE DIRECTOR\'S CONSTITUTION binds this packet. Judge against it too:\n' +
-    '§1 depth not facade, no stubs, "compiles" is not "works". §3 a Russian grandmother must understand\n' +
-    'every error, empty and loading state, and know what to do next. §4 no visual overload; depth hidden\n' +
-    'properly. §5 a small practice must not see what it does not need, via flags not hardcode; any\n' +
-    'decomposition must be IMPORTED AND USED, never orphaned. §10 no invented backend contracts, schemas\n' +
-    'or fields — absent things are debt with a reason, not fantasy.\n\n' +
-    'THE PACKET: ' + p.id + '\nCLAIMED SCOPE: ' + p.files + '\nCOMMIT TO ATTACK: ' + built.commitHash + '\n' +
-    'FILES CHANGED: ' + JSON.stringify(built.filesChanged) + '\n' +
-    'CLAIMED PROVEN: ' + JSON.stringify(built.proven) + '\n' +
-    'CLAIMED NOT PROVEN: ' + JSON.stringify(built.notProven) + '\n' +
-    'MEASUREMENTS: ' + JSON.stringify(built.measurements || []) + '\n' +
-    'CONSTITUTION SELF-CHECK: ' + JSON.stringify(built.constitutionCheck || []) + '\n' +
-    'SUMMARY: ' + built.summary + '\n' +
-    'ORIGINAL BRIEF:\n' + p.brief + '\n\n' +
-    'DO THIS:\n' +
-    '1. git show ' + built.commitHash + ' --stat, then the full diff, then read the changed files at HEAD.\n' +
-    '2. HYPOTHESES YOU MUST ACTUALLY TEST:\n' +
-    '   - Was the defect REAL before this commit? Reproduce it at the parent.\n' +
-    '   - Is the fix REACHABLE by a real user, or dead code sold as a product fix?\n' +
-    '   - **Are the claimed numbers reproducible?** Re-derive every count yourself.\n' +
-    '   - **If the packet DELETED anything: does anything still reference it at HEAD?**\n' +
-    '     git grep -n "<BaseName>" HEAD -- apps/ must return nothing. Half-deletions broke HEAD twice.\n' +
-    '   - **If the packet EXTRACTED components: is each one actually imported and used?** An orphaned\n' +
-    '     file is a regression dressed as refactoring.\n' +
-    '   - Did the fix introduce a REGRESSION worse than the defect? One packet closed a real overlap and\n' +
-    '     gave away a third of a phone viewport doing it.\n' +
-    '   - HOLLOW FACADE, SECOND OWNER, deleted useAppLogic return field, missing teardown, hardcoded\n' +
-    '     hex/px, undeclared Russian literal, mojibake in diff or subject?\n' +
-    '3. PROOF AUDIT: RE-RUN EVERY CLAIMED PROOF COMMAND YOURSELF, capturing the TRUE exit code.\n' +
-    '4. GIT HYGIENE: only the claimed files? churn or another author work swept in via the shared index?\n' +
-    '5. VERDICT. Reserve REVERT for a change actively worse than the defect. Never award SOUND to a\n' +
-    '   claim you could not reproduce. If NEEDS_REWORK, make requiredRework numbered and actionable.\n\n' +
-    'CONSTRAINTS: read-only on source — no edit, fix, commit, revert, git add. Never git remote -v (live\n' +
-    'tokens). Never npx @biomejs/biome. Do not start or restart any server. You MAY run typechecks,\n' +
-    'tests, smokes, builds, read-only node -e, curl to 127.0.0.1:4100, read-only SQL, and you MAY open\n' +
-    'PNG files to judge a visual claim.',
-    { label: 'attack:' + p.id, phase: 'Attack', schema: REVIEW_SCHEMA }
-  )
+	if (!built) {
+		return {
+			packet: p.id,
+			verdict: "NEEDS_REWORK",
+			attackSurface: [],
+			proofAudit:
+				"Builder produced no result — died or out of capacity. Read " +
+				p.dir +
+				"/state.md.",
+			gitHygiene: "unknown",
+			reasoning: "No build output.",
+			requiredRework: ["Resume " + p.id],
+		};
+	}
+	if (
+		built.status === "BLOCKED" ||
+		built.status === "NO_CHANGE" ||
+		!built.commitHash
+	) {
+		return {
+			packet: p.id,
+			verdict: "SOUND_WITH_NITS",
+			attackSurface: [],
+			proofAudit: "No commit to audit; builder reported " + built.status + ".",
+			gitHygiene: "n/a",
+			reasoning: built.summary || "",
+			requiredRework: built.blockers || [],
+		};
+	}
+	return agent(
+		"You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to\n" +
+			"lead [ARCHON]. You did NOT write this code. Your job is to DESTROY it, not bless it.\n" +
+			"Write findings to " +
+			p.dir +
+			"/review.md AS YOU GO — you may be killed mid-review.\n\n" +
+			"THE DISEASE HERE IS FABRICATED PROOF. What reviewers before you caught — this is your standard:\n" +
+			"- 49 cited proof_*.png files that do not exist.\n" +
+			"- A screenshot MD5-unique and 116 KB showing the staff PIN screen, not the view it is named after.\n" +
+			'- A handoff asserting "текст не уничтожен", refuted by run output.\n' +
+			"- A measurement taken against a baseline the packet itself proved impossible.\n" +
+			"- A smoke green only because it loaded a dist built BEFORE the fix.\n" +
+			"- A commit message describing a defect that does not reproduce at its own parent.\n" +
+			"- A light-theme screenshot that is byte-identical to the night one.\n" +
+			'- **The lead published a census of "45 hollow modules" that was a regex artefact.** Numbers are\n' +
+			"  claims too: re-derive every count.\n" +
+			"Default posture: disbelief. Reproduce claims; never read them.\n\n" +
+			"Read .agents/AGENTS.md COMPLETE plus .agents/INDEX.md. Do NOT penalise the builder for defying §11\n" +
+			"(madge absent) or the biome orders (absent; would reformat the repo).\n" +
+			"REBUILD before any proof that loads apps/api/dist — a stale dist has hidden four defects.\n\n" +
+			"THE DIRECTOR'S CONSTITUTION binds this packet. Judge against it too:\n" +
+			'§1 depth not facade, no stubs, "compiles" is not "works". §3 a Russian grandmother must understand\n' +
+			"every error, empty and loading state, and know what to do next. §4 no visual overload; depth hidden\n" +
+			"properly. §5 a small practice must not see what it does not need, via flags not hardcode; any\n" +
+			"decomposition must be IMPORTED AND USED, never orphaned. §10 no invented backend contracts, schemas\n" +
+			"or fields — absent things are debt with a reason, not fantasy.\n\n" +
+			"THE PACKET: " +
+			p.id +
+			"\nCLAIMED SCOPE: " +
+			p.files +
+			"\nCOMMIT TO ATTACK: " +
+			built.commitHash +
+			"\n" +
+			"FILES CHANGED: " +
+			JSON.stringify(built.filesChanged) +
+			"\n" +
+			"CLAIMED PROVEN: " +
+			JSON.stringify(built.proven) +
+			"\n" +
+			"CLAIMED NOT PROVEN: " +
+			JSON.stringify(built.notProven) +
+			"\n" +
+			"MEASUREMENTS: " +
+			JSON.stringify(built.measurements || []) +
+			"\n" +
+			"CONSTITUTION SELF-CHECK: " +
+			JSON.stringify(built.constitutionCheck || []) +
+			"\n" +
+			"SUMMARY: " +
+			built.summary +
+			"\n" +
+			"ORIGINAL BRIEF:\n" +
+			p.brief +
+			"\n\n" +
+			"DO THIS:\n" +
+			"1. git show " +
+			built.commitHash +
+			" --stat, then the full diff, then read the changed files at HEAD.\n" +
+			"2. HYPOTHESES YOU MUST ACTUALLY TEST:\n" +
+			"   - Was the defect REAL before this commit? Reproduce it at the parent.\n" +
+			"   - Is the fix REACHABLE by a real user, or dead code sold as a product fix?\n" +
+			"   - **Are the claimed numbers reproducible?** Re-derive every count yourself.\n" +
+			"   - **If the packet DELETED anything: does anything still reference it at HEAD?**\n" +
+			'     git grep -n "<BaseName>" HEAD -- apps/ must return nothing. Half-deletions broke HEAD twice.\n' +
+			"   - **If the packet EXTRACTED components: is each one actually imported and used?** An orphaned\n" +
+			"     file is a regression dressed as refactoring.\n" +
+			"   - Did the fix introduce a REGRESSION worse than the defect? One packet closed a real overlap and\n" +
+			"     gave away a third of a phone viewport doing it.\n" +
+			"   - HOLLOW FACADE, SECOND OWNER, deleted useAppLogic return field, missing teardown, hardcoded\n" +
+			"     hex/px, undeclared Russian literal, mojibake in diff or subject?\n" +
+			"3. PROOF AUDIT: RE-RUN EVERY CLAIMED PROOF COMMAND YOURSELF, capturing the TRUE exit code.\n" +
+			"4. GIT HYGIENE: only the claimed files? churn or another author work swept in via the shared index?\n" +
+			"5. VERDICT. Reserve REVERT for a change actively worse than the defect. Never award SOUND to a\n" +
+			"   claim you could not reproduce. If NEEDS_REWORK, make requiredRework numbered and actionable.\n\n" +
+			"CONSTRAINTS: read-only on source — no edit, fix, commit, revert, git add. Never git remote -v (live\n" +
+			"tokens). Never npx @biomejs/biome. Do not start or restart any server. You MAY run typechecks,\n" +
+			"tests, smokes, builds, read-only node -e, curl to 127.0.0.1:4100, read-only SQL, and you MAY open\n" +
+			"PNG files to judge a visual claim.",
+		{ label: "attack:" + p.id, phase: "Attack", schema: REVIEW_SCHEMA },
+	);
 }
 
-const all = []
+const all = [];
 for (const waveNo of [1, 2]) {
-  const wave = PACKETS.filter((p) => p.wave === waveNo)
-  log('Cycle 7 wave ' + waveNo + ': ' + wave.map((p) => p.id).join(', '))
-  const done = await pipeline(wave, buildStage, reviewStage)
-  for (let i = 0; i < wave.length; i++) all.push({ packet: wave[i].id, dir: wave[i].dir, review: done[i] || null })
-  log('Cycle 7 wave ' + waveNo + ' complete.')
+	const wave = PACKETS.filter((p) => p.wave === waveNo);
+	log("Cycle 7 wave " + waveNo + ": " + wave.map((p) => p.id).join(", "));
+	const done = await pipeline(wave, buildStage, reviewStage);
+	for (let i = 0; i < wave.length; i++)
+		all.push({ packet: wave[i].id, dir: wave[i].dir, review: done[i] || null });
+	log("Cycle 7 wave " + waveNo + " complete.");
 }
 return { cycle: 7, results: all }

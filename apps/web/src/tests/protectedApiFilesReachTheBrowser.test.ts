@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { before, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -44,7 +44,8 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const webSrc = join(here, "..");
 const repoRoot = join(webSrc, "..", "..", "..");
-const readWeb = (relativePath: string) => readFileSync(join(webSrc, relativePath), "utf8");
+const readWeb = (relativePath: string) =>
+	readFileSync(join(webSrc, relativePath), "utf8");
 const readApi = (relativePath: string) =>
 	readFileSync(join(repoRoot, "apps", "api", "src", relativePath), "utf8");
 
@@ -66,7 +67,9 @@ before(() => {
  */
 function publishedFileUrlTemplates(): string[] {
 	const filesRoute = readApi(join("routes", "files.ts"));
-	const templates = [...filesRoute.matchAll(/url:\s*`([^`]+)`/g)].map((match) => match[1] ?? "");
+	const templates = [...filesRoute.matchAll(/url:\s*`([^`]+)`/g)].map(
+		(match) => match[1] ?? "",
+	);
 	assert.ok(
 		templates.length >= 2,
 		"apps/api/src/routes/files.ts больше не публикует адрес вложения в поле url — " +
@@ -77,7 +80,10 @@ function publishedFileUrlTemplates(): string[] {
 
 /** `/api/attachments/${a.id}/download` → `/api/attachments/<id>/download`. */
 function concreteAddress(template: string): string {
-	return template.replace(/\$\{[^}]+\}/g, "00000000-0000-4000-8000-000000000001");
+	return template.replace(
+		/\$\{[^}]+\}/g,
+		"00000000-0000-4000-8000-000000000001",
+	);
 }
 
 /**
@@ -90,7 +96,10 @@ function concreteAddress(template: string): string {
 function withoutComments(source: string): string {
 	return source
 		.split(/\r?\n/)
-		.filter((line) => !line.trimStart().startsWith("//") && !line.trimStart().startsWith("*"))
+		.filter(
+			(line) =>
+				!line.trimStart().startsWith("//") && !line.trimStart().startsWith("*"),
+		)
 		.join("\n")
 		.replace(/\/\*[\s\S]*?\*\//g, " ");
 }
@@ -127,7 +136,9 @@ describe("файлы защищённого API доходят до экрана
 			);
 		}
 		assert.equal(
-			shouldAttachApiAuth("/api/migration/00000000-0000-4000-8000-000000000001/reconciliation.csv"),
+			shouldAttachApiAuth(
+				"/api/migration/00000000-0000-4000-8000-000000000001/reconciliation.csv",
+			),
 			true,
 		);
 	});
@@ -136,7 +147,8 @@ describe("файлы защищённого API доходят до экрана
 		const { shouldAttachApiAuth } = await import("../lib/apiAuthFetch.js");
 		// Ровно то место, где дефект жил: атрибут разметки, по которому запрос
 		// уходит от браузера без заголовков.
-		const attributePattern = /\b(?:src|href)=\{?[`"']([^`"'{}]*\/api\/[^`"'{}]*)[`"']?/g;
+		const attributePattern =
+			/\b(?:src|href)=\{?[`"']([^`"'{}]*\/api\/[^`"'{}]*)[`"']?/g;
 		const offenders: string[] = [];
 
 		for (const file of webSourceFiles()) {
@@ -161,14 +173,20 @@ describe("файлы защищённого API доходят до экрана
 	});
 
 	it("клиент просит у сервера ровно тот адрес и превращает ответ в объектный адрес", async () => {
-		const { fetchAuthedApiFileObjectUrl } = await import("../lib/authedApiFile.js");
+		const { fetchAuthedApiFileObjectUrl } = await import(
+			"../lib/authedApiFile.js"
+		);
 		const published = concreteAddress(publishedFileUrlTemplates()[0] ?? "");
 		const asked: string[] = [];
 
 		const objectUrl = await fetchAuthedApiFileObjectUrl(published, {
 			fetchImpl: (async (input: RequestInfo | URL) => {
 				asked.push(String(input));
-				return { ok: true, status: 200, blob: async () => "снимок-как-блоб" } as unknown as Response;
+				return {
+					ok: true,
+					status: 200,
+					blob: async () => "снимок-как-блоб",
+				} as unknown as Response;
 			}) as typeof fetch,
 			createObjectUrl: (blob) => `blob:proof/${String(blob)}`,
 			revokeObjectUrl: () => {},
@@ -179,17 +197,23 @@ describe("файлы защищённого API доходят до экрана
 	});
 
 	it("отказ сервера превращается в русский текст, а не в тихую битую картинку", async () => {
-		const { AUTHED_API_FILE_FAILURE, fetchAuthedApiFileObjectUrl } = await import(
-			"../lib/authedApiFile.js"
-		);
+		const { AUTHED_API_FILE_FAILURE, fetchAuthedApiFileObjectUrl } =
+			await import("../lib/authedApiFile.js");
 
 		await assert.rejects(
 			() =>
-				fetchAuthedApiFileObjectUrl("/api/attachments/00000000-0000-4000-8000-000000000001/download", {
-					fetchImpl: (async () => ({ ok: false, status: 401 }) as unknown as Response) as typeof fetch,
-					createObjectUrl: () => "blob:не-должно-случиться",
-					revokeObjectUrl: () => {},
-				}),
+				fetchAuthedApiFileObjectUrl(
+					"/api/attachments/00000000-0000-4000-8000-000000000001/download",
+					{
+						fetchImpl: (async () =>
+							({
+								ok: false,
+								status: 401,
+							}) as unknown as Response) as typeof fetch,
+						createObjectUrl: () => "blob:не-должно-случиться",
+						revokeObjectUrl: () => {},
+					},
+				),
 			(error: unknown) =>
 				error instanceof Error &&
 				error.message.startsWith(AUTHED_API_FILE_FAILURE) &&
@@ -216,7 +240,11 @@ describe("файлы защищённого API доходят до экрана
 			{
 				fetchImpl: (async (input: RequestInfo | URL) => {
 					asked.push(String(input));
-					return { ok: true, status: 200, blob: async () => "csv" } as unknown as Response;
+					return {
+						ok: true,
+						status: 200,
+						blob: async () => "csv",
+					} as unknown as Response;
 				}) as typeof fetch,
 				createObjectUrl: () => "blob:proof/csv",
 				revokeObjectUrl: () => {},
@@ -230,13 +258,17 @@ describe("файлы защищённого API доходят до экрана
 		assert.deepEqual(asked, [
 			"/api/migration/00000000-0000-4000-8000-000000000001/reconciliation.csv",
 		]);
-		assert.deepEqual(clicked, [{ href: "blob:proof/csv", download: "акт-сверки.csv" }]);
+		assert.deepEqual(clicked, [
+			{ href: "blob:proof/csv", download: "акт-сверки.csv" },
+		]);
 		assert.equal(objectUrl, "blob:proof/csv");
 	});
 
 	it("дневник приёма рисует объектный адрес, а акт сверки скачивается кнопкой", () => {
 		// Место ОТРИСОВКИ: ответ должен доходить до экрана, а не только до памяти.
-		const photoUpload = readWeb(join("components", "VisitDiaryPhotoUpload.tsx"));
+		const photoUpload = readWeb(
+			join("components", "VisitDiaryPhotoUpload.tsx"),
+		);
 		assert.match(photoUpload, /fetchAuthedApiFileObjectUrl\(attachment\.url\)/);
 		assert.match(photoUpload, /src=\{objectUrl\}/);
 		assert.match(
@@ -246,7 +278,9 @@ describe("файлы защищённого API доходят до экрана
 				"копию каждого снимка каждого открытого за смену приёма.",
 		);
 
-		const wizard = readWeb(join("components", "settings", "MigrationWizard.tsx"));
+		const wizard = readWeb(
+			join("components", "settings", "MigrationWizard.tsx"),
+		);
 		assert.match(wizard, /downloadAuthedApiFile\(/);
 		assert.match(wizard, /reconciliation\.csv/);
 	});

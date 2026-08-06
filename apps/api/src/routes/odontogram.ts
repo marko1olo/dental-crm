@@ -11,6 +11,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { evaluateClinicalRulesInDb } from "../db/clinicalQuery.js";
 import {
 	patients,
 	serviceCatalogItems,
@@ -27,7 +28,6 @@ import {
 } from "../money/patientDebt.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { wsBroker } from "../services/websocketBroker.js";
-import { evaluateClinicalRulesInDb } from "../db/clinicalQuery.js";
 
 /**
  * Создаёт таблицу истории, если миграция ещё не применена.
@@ -68,7 +68,10 @@ async function ensureToothStateHistoryTable(): Promise<void> {
 		`);
 		toothStateHistoryTableReady = true;
 	} catch (error) {
-		console.warn("[toothStateHistory] Не удалось подготовить таблицу истории:", error);
+		console.warn(
+			"[toothStateHistory] Не удалось подготовить таблицу истории:",
+			error,
+		);
 	}
 }
 
@@ -349,7 +352,9 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 
 			// Явный тип: схема валидации гарантирует числа, но вывод типов из
 			// zod-схемы с .refine() до этого места не доходит.
-			const toothNumbers: number[] = [...new Set<number>(parsed.data.toothNumbers)];
+			const toothNumbers: number[] = [
+				...new Set<number>(parsed.data.toothNumbers),
+			];
 			if (toothNumbers.length === 0)
 				return reply.send({ success: true, states: [] });
 
@@ -384,7 +389,10 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 					surfaces: unknown;
 				};
 				const previousByTooth = new Map<number, PreviousToothState>(
-					(previousStates as PreviousToothState[]).map((row) => [row.toothNumber, row]),
+					(previousStates as PreviousToothState[]).map((row) => [
+						row.toothNumber,
+						row,
+					]),
 				);
 
 				await tx
@@ -411,7 +419,8 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							toothNumber,
 							previousState: previousByTooth.get(toothNumber)?.state ?? null,
 							newState: parsed.data.state,
-							previousSurfaces: previousByTooth.get(toothNumber)?.surfaces ?? null,
+							previousSurfaces:
+								previousByTooth.get(toothNumber)?.surfaces ?? null,
 							newSurfaces: parsed.data.surfaces || null,
 							changedByUserId: actorUserId,
 							changedAt: now,
@@ -767,7 +776,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 									eq(treatmentItems.status, "completed"),
 								),
 							);
-						
+
 						// NOTE: evaluateClinicalRulesInDb reads clinicalRules via global `db` (org-level config,
 						// not transactional data). Using global db here is intentional and safe — these rules
 						// are configuration, not rows mutated by this transaction. The dynamic import() was
@@ -775,7 +784,9 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						const evaluation = await evaluateClinicalRulesInDb(organizationId, {
 							patientId,
 							serviceIds: Array.from(knownServiceIds),
-							completedServiceIds: completedItems.map((r) => r.serviceId).filter(Boolean) as string[],
+							completedServiceIds: completedItems
+								.map((r) => r.serviceId)
+								.filter(Boolean) as string[],
 							enforceBlockers: true,
 						});
 

@@ -37,26 +37,32 @@ const inventoryCreateBodySchema = z.object({
 });
 
 const inventoryStockBodySchema = z.object({
-	adjustment: z.number({
-		required_error:
-			"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
-		invalid_type_error:
-			"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
-	}).finite({
-		message:
-			"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
-	}),
+	adjustment: z
+		.number({
+			required_error:
+				"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+			invalid_type_error:
+				"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+		})
+		.finite({
+			message:
+				"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+		}),
 });
 
 const inventoryRuleBodySchema = z.object({
-	serviceId: z.string({
-		required_error: "Missing required fields",
-		invalid_type_error: "Missing required fields",
-	}).min(1, { message: "Missing required fields" }),
-	inventoryItemId: z.string({
-		required_error: "Missing required fields",
-		invalid_type_error: "Missing required fields",
-	}).min(1, { message: "Missing required fields" }),
+	serviceId: z
+		.string({
+			required_error: "Missing required fields",
+			invalid_type_error: "Missing required fields",
+		})
+		.min(1, { message: "Missing required fields" }),
+	inventoryItemId: z
+		.string({
+			required_error: "Missing required fields",
+			invalid_type_error: "Missing required fields",
+		})
+		.min(1, { message: "Missing required fields" }),
 	quantityToDeduct: z.number({
 		required_error: "Missing required fields",
 		invalid_type_error: "Missing required fields",
@@ -80,7 +86,9 @@ const INVALID_DATE = Symbol("invalid-expiration-date");
  * базу. Всё остальное — ошибка, о которой надо сказать человеку, а не
  * подставлять пустоту.
  */
-function normalizedExpirationDate(value: string | null | undefined): string | null | typeof INVALID_DATE {
+function normalizedExpirationDate(
+	value: string | null | undefined,
+): string | null | typeof INVALID_DATE {
 	if (value === null || value === undefined) return null;
 	const trimmed = String(value).trim();
 	if (!trimmed) return null;
@@ -149,9 +157,10 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 		const parsedBody = inventoryCreateBodySchema.safeParse(request.body ?? {});
 		if (!parsedBody.success) {
-			return reply
-				.status(400)
-				.send({ error: "NameRequired", message: "Укажите название материала." });
+			return reply.status(400).send({
+				error: "NameRequired",
+				message: "Укажите название материала.",
+			});
 		}
 		const {
 			name,
@@ -164,9 +173,10 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			expirationDate = null,
 		} = parsedBody.data;
 		if (!name?.trim()) {
-			return reply
-				.status(400)
-				.send({ error: "NameRequired", message: "Укажите название материала." });
+			return reply.status(400).send({
+				error: "NameRequired",
+				message: "Укажите название материала.",
+			});
 		}
 		/*
 		 * Умолчание порога снижено с 5 до 0.
@@ -407,11 +417,14 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		 * пятёрка бралась с потолка и заставляла склад сигналить о дефиците
 		 * материала, для которого порога не задавали.
 		 */
-		const parsedUpdate = inventoryCreateBodySchema.safeParse(request.body ?? {});
+		const parsedUpdate = inventoryCreateBodySchema.safeParse(
+			request.body ?? {},
+		);
 		if (!parsedUpdate.success) {
-			return reply
-				.status(400)
-				.send({ error: "NameRequired", message: "Укажите название материала." });
+			return reply.status(400).send({
+				error: "NameRequired",
+				message: "Укажите название материала.",
+			});
 		}
 		const {
 			name,
@@ -423,9 +436,10 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			expirationDate = null,
 		} = parsedUpdate.data;
 		if (!name?.trim()) {
-			return reply
-				.status(400)
-				.send({ error: "NameRequired", message: "Укажите название материала." });
+			return reply.status(400).send({
+				error: "NameRequired",
+				message: "Укажите название материала.",
+			});
 		}
 		const expiration = normalizedExpirationDate(expirationDate);
 		if (expiration === INVALID_DATE) {

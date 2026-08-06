@@ -19,8 +19,8 @@
  */
 
 import { eq, inArray, sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
 import {
 	appointments,
@@ -51,14 +51,19 @@ const PERIOD_TO = "2026-07-31T23:59:59.999Z";
  * равенство, без LIKE и без маски, чтобы клиника с похожим названием не попала
  * под удаление.
  */
-const PROOF_ORGANIZATION_NAMES = ["Проверка выплат — клиника А", "Проверка выплат — клиника Б"] as const;
+const PROOF_ORGANIZATION_NAMES = [
+	"Проверка выплат — клиника А",
+	"Проверка выплат — клиника Б",
+] as const;
 
 let failures = 0;
 
 function check(label: string, actual: unknown, expected: unknown): void {
 	const ok = JSON.stringify(actual) === JSON.stringify(expected);
 	if (!ok) failures += 1;
-	console.log(`${ok ? "OK  " : "ПРОВАЛ"} ${label}: получено ${JSON.stringify(actual)}, ожидалось ${JSON.stringify(expected)}`);
+	console.log(
+		`${ok ? "OK  " : "ПРОВАЛ"} ${label}: получено ${JSON.stringify(actual)}, ожидалось ${JSON.stringify(expected)}`,
+	);
 }
 
 function money(value: unknown): number {
@@ -73,7 +78,10 @@ function money(value: unknown): number {
  */
 function seeded<Row>(rows: Row[], what: string): Row {
 	const row = rows[0];
-	if (!row) throw new Error(`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`);
+	if (!row)
+		throw new Error(
+			`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`,
+		);
 	return row;
 }
 
@@ -88,14 +96,22 @@ async function buildApp(): Promise<FastifyInstance> {
 	return app;
 }
 
-type Injected = { statusCode: number; body: string; report: DoctorPayoutReport & { scope?: string } };
+type Injected = {
+	statusCode: number;
+	body: string;
+	report: DoctorPayoutReport & { scope?: string };
+};
 
 async function callPayouts(
 	app: FastifyInstance,
 	headers: Record<string, string>,
 	query = `?from=${PERIOD_FROM}&to=${PERIOD_TO}`,
 ): Promise<Injected> {
-	const response = await app.inject({ method: "GET", url: `/api/billing/payouts${query}`, headers });
+	const response = await app.inject({
+		method: "GET",
+		url: `/api/billing/payouts${query}`,
+		headers,
+	});
 	let report: DoctorPayoutReport & { scope?: string };
 	try {
 		report = JSON.parse(response.body);
@@ -123,7 +139,12 @@ async function independentRevenue(organizationId: string) {
 		 group by a.doctor_user_id, u.full_name
 		 order by revenue_rub desc
 	`);
-	return result.rows as { doctor_user_id: string; full_name: string; payment_count: number; revenue_rub: unknown }[];
+	return result.rows as {
+		doctor_user_id: string;
+		full_name: string;
+		payment_count: number;
+		revenue_rub: unknown;
+	}[];
 }
 
 async function independentMaterials(organizationId: string) {
@@ -147,7 +168,11 @@ async function independentMaterials(organizationId: string) {
 		       )
 		 group by a.doctor_user_id
 	`);
-	return result.rows as { doctor_user_id: string; movements: number; material_rub: unknown }[];
+	return result.rows as {
+		doctor_user_id: string;
+		movements: number;
+		material_rub: unknown;
+	}[];
 }
 
 async function independentRates(organizationId: string) {
@@ -158,7 +183,11 @@ async function independentRates(organizationId: string) {
 		 where organization_id = ${organizationId} and is_active = true
 		 order by effective_from desc
 	`);
-	return result.rows as { user_id: string; commission_pct: string; material_cost_deduction_pct: string }[];
+	return result.rows as {
+		user_id: string;
+		commission_pct: string;
+		material_cost_deduction_pct: string;
+	}[];
 }
 
 /**
@@ -170,7 +199,10 @@ async function independentRates(organizationId: string) {
  * дёргается общий сервер разработки: его в этот момент может использовать другой
  * исполнитель, и перезапуск чужого процесса — не моя зона.
  */
-async function proveOverRealHttp(organizationId: string, ownerUserId: string): Promise<void> {
+async function proveOverRealHttp(
+	organizationId: string,
+	ownerUserId: string,
+): Promise<void> {
 	const app = await buildApp();
 	const port = Number(process.env.PAYOUT_PROOF_PORT ?? 4199);
 	await app.listen({ host: "127.0.0.1", port });
@@ -183,11 +215,20 @@ async function proveOverRealHttp(organizationId: string, ownerUserId: string): P
 		check("живой HTTP без сотрудника отклонён", anonymous.status, 401);
 		console.log(`  без токена: HTTP ${anonymous.status} ${anonymousBody}`);
 
-		const token = signToken({ organizationId, userId: ownerUserId, role: "owner" }, authTokenSecret());
-		const authorized = await fetch(url, { headers: { "x-dente-staff-token": token } });
-		const body = (await authorized.json()) as DoctorPayoutReport & { scope?: string };
+		const token = signToken(
+			{ organizationId, userId: ownerUserId, role: "owner" },
+			authTokenSecret(),
+		);
+		const authorized = await fetch(url, {
+			headers: { "x-dente-staff-token": token },
+		});
+		const body = (await authorized.json()) as DoctorPayoutReport & {
+			scope?: string;
+		};
 		check("живой HTTP отдал расчёт", authorized.status, 200);
-		console.log(`  владелец: HTTP ${authorized.status}, строк ${body.rows.length}`);
+		console.log(
+			`  владелец: HTTP ${authorized.status}, строк ${body.rows.length}`,
+		);
 		console.log(`  ИТОГИ по сети: ${JSON.stringify(body.totals)}`);
 		for (const row of body.rows) {
 			console.log(
@@ -195,7 +236,11 @@ async function proveOverRealHttp(organizationId: string, ownerUserId: string): P
 					`ставка=${row.commissionPct ?? "нет"} к_выплате=${row.payoutRub ?? "—"} (${row.state})`,
 			);
 		}
-		check("по сети те же 203,27 у врача со ставкой", body.rows.find((r) => r.commissionPct === 30)?.payoutRub, 203.27);
+		check(
+			"по сети те же 203,27 у врача со ставкой",
+			body.rows.find((r) => r.commissionPct === 30)?.payoutRub,
+			203.27,
+		);
 	} finally {
 		await app.close();
 	}
@@ -203,9 +248,13 @@ async function proveOverRealHttp(organizationId: string, ownerUserId: string): P
 
 /** ЧАСТЬ 1: живые данные, только чтение. */
 async function proveAgainstLiveData(app: FastifyInstance): Promise<void> {
-	const orgRows = await db.select({ id: organizations.id, name: organizations.name }).from(organizations);
+	const orgRows = await db
+		.select({ id: organizations.id, name: organizations.name })
+		.from(organizations);
 
-	console.log("\n=== SQL агрегата (печать обязательна: ловушка голого \"id\" в подзапросе) ===");
+	console.log(
+		'\n=== SQL агрегата (печать обязательна: ловушка голого "id" в подзапросе) ===',
+	);
 	const preview = buildDoctorPayoutAggregateQuery({
 		organizationId: orgRows[0]?.id ?? "00000000-0000-0000-0000-000000000000",
 		from: new Date(PERIOD_FROM),
@@ -215,7 +264,10 @@ async function proveAgainstLiveData(app: FastifyInstance): Promise<void> {
 	console.log(`параметров в запросе: ${preview.params.length}`);
 
 	for (const org of orgRows) {
-		const clinicToken = signToken({ organizationId: org.id }, authTokenSecret());
+		const clinicToken = signToken(
+			{ organizationId: org.id },
+			authTokenSecret(),
+		);
 		// userId в токене обязателен: зарплата не отдаётся неопознанному сотруднику.
 		const [owner] = await db
 			.select({ id: users.id, role: users.role })
@@ -250,18 +302,29 @@ async function proveAgainstLiveData(app: FastifyInstance): Promise<void> {
 			continue;
 		}
 
-		const ownerToken = signToken({ organizationId: org.id, userId: owner.id, role: "owner" }, authTokenSecret());
-		const anonymous = await callPayouts(app, { "x-dente-clinic-token": clinicToken });
+		const ownerToken = signToken(
+			{ organizationId: org.id, userId: owner.id, role: "owner" },
+			authTokenSecret(),
+		);
+		const anonymous = await callPayouts(app, {
+			"x-dente-clinic-token": clinicToken,
+		});
 		check("запрос без сотрудника отклонён", anonymous.statusCode, 401);
 		console.log(`  тело отказа: ${anonymous.body.slice(0, 200)}`);
 
-		const response = await callPayouts(app, { "x-dente-staff-token": ownerToken });
+		const response = await callPayouts(app, {
+			"x-dente-staff-token": ownerToken,
+		});
 		if (response.statusCode !== 200) {
 			failures += 1;
-			console.log(`ПРОВАЛ владелец не получил расчёт: HTTP ${response.statusCode} ${response.body.slice(0, 300)}`);
+			console.log(
+				`ПРОВАЛ владелец не получил расчёт: HTTP ${response.statusCode} ${response.body.slice(0, 300)}`,
+			);
 			continue;
 		}
-		console.log(`  HTTP 200, scope=${response.report.scope}, строк ${response.report.rows.length}`);
+		console.log(
+			`  HTTP 200, scope=${response.report.scope}, строк ${response.report.rows.length}`,
+		);
 		console.log(`  ИТОГИ: ${JSON.stringify(response.report.totals)}`);
 		for (const row of response.report.rows) {
 			console.log(
@@ -278,18 +341,43 @@ async function proveAgainstLiveData(app: FastifyInstance): Promise<void> {
 		const revenue = await independentRevenue(org.id);
 		const materials = await independentMaterials(org.id);
 		const rates = await independentRates(org.id);
-		console.log(`  SQL напрямую: врачей с кассой ${revenue.length}, строк материалов ${materials.length}, ставок ${rates.length}`);
+		console.log(
+			`  SQL напрямую: врачей с кассой ${revenue.length}, строк материалов ${materials.length}, ставок ${rates.length}`,
+		);
 		for (const sqlRow of revenue) {
-			const reportRow = response.report.rows.find((row) => row.doctorUserId === sqlRow.doctor_user_id);
-			check(`касса ${sqlRow.full_name}`, reportRow?.revenueRub ?? null, money(sqlRow.revenue_rub));
-			check(`платежей ${sqlRow.full_name}`, reportRow?.paymentCount ?? null, Number(sqlRow.payment_count));
+			const reportRow = response.report.rows.find(
+				(row) => row.doctorUserId === sqlRow.doctor_user_id,
+			);
+			check(
+				`касса ${sqlRow.full_name}`,
+				reportRow?.revenueRub ?? null,
+				money(sqlRow.revenue_rub),
+			);
+			check(
+				`платежей ${sqlRow.full_name}`,
+				reportRow?.paymentCount ?? null,
+				Number(sqlRow.payment_count),
+			);
 		}
 		for (const sqlRow of materials) {
-			const reportRow = response.report.rows.find((row) => row.doctorUserId === sqlRow.doctor_user_id);
-			check(`материалы ${sqlRow.doctor_user_id}`, reportRow?.materialCostRub ?? null, money(sqlRow.material_rub));
+			const reportRow = response.report.rows.find(
+				(row) => row.doctorUserId === sqlRow.doctor_user_id,
+			);
+			check(
+				`материалы ${sqlRow.doctor_user_id}`,
+				reportRow?.materialCostRub ?? null,
+				money(sqlRow.material_rub),
+			);
 		}
-		const revenueSum = revenue.reduce((total, row) => total + money(row.revenue_rub), 0);
-		check("сумма кассы врачей = отнесённая касса отчёта", response.report.totals.attributableRevenueRub, money(revenueSum));
+		const revenueSum = revenue.reduce(
+			(total, row) => total + money(row.revenue_rub),
+			0,
+		);
+		check(
+			"сумма кассы врачей = отнесённая касса отчёта",
+			response.report.totals.attributableRevenueRub,
+			money(revenueSum),
+		);
 		if (rates.length === 0) {
 			check(
 				"без ставок ни одной посчитанной выплаты",
@@ -308,14 +396,23 @@ async function proveAgainstLiveData(app: FastifyInstance): Promise<void> {
  * клиники остались бы в живой базе навсегда. Это ровно та ошибка, из-за которой
  * в базе заводится мусор, который потом принимают за данные клиники.
  */
-async function proveFullFormula(app: FastifyInstance, created: string[]): Promise<void> {
+async function proveFullFormula(
+	app: FastifyInstance,
+	created: string[],
+): Promise<void> {
 	const mainOrganization = seeded(
-		await db.insert(organizations).values({ name: PROOF_ORGANIZATION_NAMES[0] }).returning({ id: organizations.id }),
+		await db
+			.insert(organizations)
+			.values({ name: PROOF_ORGANIZATION_NAMES[0] })
+			.returning({ id: organizations.id }),
 		PROOF_ORGANIZATION_NAMES[0],
 	);
 	created.push(mainOrganization.id);
 	const otherOrganization = seeded(
-		await db.insert(organizations).values({ name: PROOF_ORGANIZATION_NAMES[1] }).returning({ id: organizations.id }),
+		await db
+			.insert(organizations)
+			.values({ name: PROOF_ORGANIZATION_NAMES[1] })
+			.returning({ id: organizations.id }),
 		PROOF_ORGANIZATION_NAMES[1],
 	);
 	created.push(otherOrganization.id);
@@ -323,21 +420,53 @@ async function proveFullFormula(app: FastifyInstance, created: string[]): Promis
 	const otherOrganizationId = otherOrganization.id;
 
 	const insertUser = async (orgId: string, fullName: string, role: string) => {
-		const rows = await db.insert(users).values({ organizationId: orgId, fullName, role }).returning({ id: users.id });
+		const rows = await db
+			.insert(users)
+			.values({ organizationId: orgId, fullName, role })
+			.returning({ id: users.id });
 		return seeded(rows, `сотрудник «${fullName}»`).id;
 	};
-	const doctorWithRate = await insertUser(organizationId, "Врач со ставкой", "doctor");
-	const doctorWithoutRate = await insertUser(organizationId, "Врач без ставки", "doctor");
-	const doctorInDebt = await insertUser(organizationId, "Врач с дорогими материалами", "doctor");
-	const receptionist = await insertUser(organizationId, "Администратор смены", "administrator");
-	const foreignDoctor = await insertUser(otherOrganizationId, "Врач чужой клиники", "doctor");
+	const doctorWithRate = await insertUser(
+		organizationId,
+		"Врач со ставкой",
+		"doctor",
+	);
+	const doctorWithoutRate = await insertUser(
+		organizationId,
+		"Врач без ставки",
+		"doctor",
+	);
+	const doctorInDebt = await insertUser(
+		organizationId,
+		"Врач с дорогими материалами",
+		"doctor",
+	);
+	const receptionist = await insertUser(
+		organizationId,
+		"Администратор смены",
+		"administrator",
+	);
+	const foreignDoctor = await insertUser(
+		otherOrganizationId,
+		"Врач чужой клиники",
+		"doctor",
+	);
 
 	const insertPatient = async (orgId: string, fullName: string) => {
-		const rows = await db.insert(patients).values({ organizationId: orgId, fullName }).returning({ id: patients.id });
+		const rows = await db
+			.insert(patients)
+			.values({ organizationId: orgId, fullName })
+			.returning({ id: patients.id });
 		return seeded(rows, `пациент «${fullName}»`).id;
 	};
-	const patientId = await insertPatient(organizationId, "Пациент проверки выплат");
-	const foreignPatientId = await insertPatient(otherOrganizationId, "Пациент чужой клиники");
+	const patientId = await insertPatient(
+		organizationId,
+		"Пациент проверки выплат",
+	);
+	const foreignPatientId = await insertPatient(
+		otherOrganizationId,
+		"Пациент чужой клиники",
+	);
 
 	/** Приём + визит + оплата: единственная цепочка, связывающая деньги с врачом. */
 	const seedPaidVisit = async (options: {
@@ -532,8 +661,15 @@ async function proveFullFormula(app: FastifyInstance, created: string[]): Promis
 		isActive: true,
 	});
 
-	const ownerId = await insertUser(organizationId, "Владелец клиники А", "owner");
-	const ownerToken = signToken({ organizationId, userId: ownerId, role: "owner" }, authTokenSecret());
+	const ownerId = await insertUser(
+		organizationId,
+		"Владелец клиники А",
+		"owner",
+	);
+	const ownerToken = signToken(
+		{ organizationId, userId: ownerId, role: "owner" },
+		authTokenSecret(),
+	);
 	const doctorToken = signToken(
 		{ organizationId, userId: doctorWithRate, role: "doctor" },
 		authTokenSecret(),
@@ -578,14 +714,26 @@ async function proveFullFormula(app: FastifyInstance, created: string[]): Promis
 
 	// Материалы дороже начисленного: 1000 × 10 % = 100, удержано 500 → −400.
 	check("начислено врачу с дорогими материалами", inDebt?.accruedRub, 100);
-	check("удержано врачу с дорогими материалами", inDebt?.withheldMaterialRub, 500);
+	check(
+		"удержано врачу с дорогими материалами",
+		inDebt?.withheldMaterialRub,
+		500,
+	);
 	check("отрицательная выплата не обнулена", inDebt?.payoutRub, -400);
 
 	// Итоги и изоляция.
 	check("касса периода целиком", owner.report.totals.revenueRub, 3500.55);
-	check("касса, отнесённая к врачам", owner.report.totals.attributableRevenueRub, 3200.55);
+	check(
+		"касса, отнесённая к врачам",
+		owner.report.totals.attributableRevenueRub,
+		3200.55,
+	);
 	check("не отнесено к врачу", owner.report.totals.unattributedRevenueRub, 300);
-	check("итог к выплате только по врачам со ставкой", owner.report.totals.payoutRub, -196.73);
+	check(
+		"итог к выплате только по врачам со ставкой",
+		owner.report.totals.payoutRub,
+		-196.73,
+	);
 	check("врачей посчитано", owner.report.totals.doctorsCounted, 2);
 	check("врачей без ставки", owner.report.totals.doctorsWithoutRate, 1);
 	check(
@@ -593,19 +741,37 @@ async function proveFullFormula(app: FastifyInstance, created: string[]): Promis
 		owner.report.rows.some((row) => row.doctorUserId === foreignDoctor),
 		false,
 	);
-	check("оплата вне периода не попала", owner.report.rows.some((row) => row.revenueRub === 12_345), false);
+	check(
+		"оплата вне периода не попала",
+		owner.report.rows.some((row) => row.revenueRub === 12_345),
+		false,
+	);
 
 	// Сверка с независимым SQL.
 	const revenue = await independentRevenue(organizationId);
 	const materials = await independentMaterials(organizationId);
 	console.log("\n  Независимый SQL по клинике А:");
-	for (const row of revenue) console.log(`    ${row.full_name}: касса ${row.revenue_rub}, платежей ${row.payment_count}`);
-	for (const row of materials) console.log(`    материалы ${row.doctor_user_id}: ${row.material_rub} (списаний ${row.movements})`);
+	for (const row of revenue)
+		console.log(
+			`    ${row.full_name}: касса ${row.revenue_rub}, платежей ${row.payment_count}`,
+		);
+	for (const row of materials)
+		console.log(
+			`    материалы ${row.doctor_user_id}: ${row.material_rub} (списаний ${row.movements})`,
+		);
 	for (const row of revenue) {
-		check(`SQL vs маршрут, касса ${row.full_name}`, byId.get(row.doctor_user_id)?.revenueRub, money(row.revenue_rub));
+		check(
+			`SQL vs маршрут, касса ${row.full_name}`,
+			byId.get(row.doctor_user_id)?.revenueRub,
+			money(row.revenue_rub),
+		);
 	}
 	for (const row of materials) {
-		check(`SQL vs маршрут, материалы ${row.doctor_user_id}`, byId.get(row.doctor_user_id)?.materialCostRub, money(row.material_rub));
+		check(
+			`SQL vs маршрут, материалы ${row.doctor_user_id}`,
+			byId.get(row.doctor_user_id)?.materialCostRub,
+			money(row.material_rub),
+		);
 	}
 
 	// Врач видит только свою строку, ресепшен не видит ничего.
@@ -614,33 +780,71 @@ async function proveFullFormula(app: FastifyInstance, created: string[]): Promis
 	check("охват врача", own.report?.scope, "own");
 	check("врач видит одну строку", own.report?.rows.length, 1);
 	check("и это его строка", own.report?.rows[0]?.doctorUserId, doctorWithRate);
-	check("итог врача — только его выплата", own.report?.totals.payoutRub, 203.27);
+	check(
+		"итог врача — только его выплата",
+		own.report?.totals.payoutRub,
+		203.27,
+	);
 
-	const denied = await callPayouts(app, { "x-dente-staff-token": receptionistToken });
+	const denied = await callPayouts(app, {
+		"x-dente-staff-token": receptionistToken,
+	});
 	check("ресепшен не видит зарплаты", denied.statusCode, 403);
 	console.log(`  отказ ресепшену: ${denied.body.slice(0, 220)}`);
 
-	const badPeriod = await callPayouts(app, { "x-dente-staff-token": ownerToken }, "?from=2020-01-01T00:00:00.000Z&to=2026-01-01T00:00:00.000Z");
+	const badPeriod = await callPayouts(
+		app,
+		{ "x-dente-staff-token": ownerToken },
+		"?from=2020-01-01T00:00:00.000Z&to=2026-01-01T00:00:00.000Z",
+	);
 	check("слишком широкий период отклонён", badPeriod.statusCode, 400);
 	console.log(`  отказ по периоду: ${badPeriod.body.slice(0, 220)}`);
 
-	const reversed = await callPayouts(app, { "x-dente-staff-token": ownerToken }, "?from=2026-07-31T00:00:00.000Z&to=2026-07-01T00:00:00.000Z");
+	const reversed = await callPayouts(
+		app,
+		{ "x-dente-staff-token": ownerToken },
+		"?from=2026-07-31T00:00:00.000Z&to=2026-07-01T00:00:00.000Z",
+	);
 	check("перевёрнутый период отклонён", reversed.statusCode, 400);
 	console.log(`  отказ по датам: ${reversed.body.slice(0, 220)}`);
 
-	const defaultPeriod = await callPayouts(app, { "x-dente-staff-token": ownerToken }, "");
-	check("без параметров расчёт идёт за текущий месяц", defaultPeriod.statusCode, 200);
-	console.log(`  период по умолчанию: ${JSON.stringify(defaultPeriod.report?.period)}`);
+	const defaultPeriod = await callPayouts(
+		app,
+		{ "x-dente-staff-token": ownerToken },
+		"",
+	);
+	check(
+		"без параметров расчёт идёт за текущий месяц",
+		defaultPeriod.statusCode,
+		200,
+	);
+	console.log(
+		`  период по умолчанию: ${JSON.stringify(defaultPeriod.report?.period)}`,
+	);
 
 	// Чужая клиника не должна видеть ни строки клиники А, даже своим владельцем.
-	const foreignOwnerId = await insertUser(otherOrganizationId, "Владелец клиники Б", "owner");
+	const foreignOwnerId = await insertUser(
+		otherOrganizationId,
+		"Владелец клиники Б",
+		"owner",
+	);
 	const foreignOwnerToken = signToken(
-		{ organizationId: otherOrganizationId, userId: foreignOwnerId, role: "owner" },
+		{
+			organizationId: otherOrganizationId,
+			userId: foreignOwnerId,
+			role: "owner",
+		},
 		authTokenSecret(),
 	);
-	const foreign = await callPayouts(app, { "x-dente-staff-token": foreignOwnerToken });
+	const foreign = await callPayouts(app, {
+		"x-dente-staff-token": foreignOwnerToken,
+	});
 	check("владелец чужой клиники получил свой расчёт", foreign.statusCode, 200);
-	check("касса клиники А в него не попала", foreign.report?.totals.revenueRub, 9999);
+	check(
+		"касса клиники А в него не попала",
+		foreign.report?.totals.revenueRub,
+		9999,
+	);
 	check(
 		"врачи клиники А в чужом отчёте отсутствуют",
 		foreign.report?.rows.some((row) => byId.has(row.doctorUserId)),
@@ -653,13 +857,25 @@ async function proveFullFormula(app: FastifyInstance, created: string[]): Promis
 
 async function cleanup(organizationIds: string[]): Promise<void> {
 	for (const organizationId of organizationIds) {
-		await db.delete(inventoryTransactions).where(eq(inventoryTransactions.organizationId, organizationId));
-		await db.delete(inventoryItems).where(eq(inventoryItems.organizationId, organizationId));
-		await db.delete(doctorCommissions).where(eq(doctorCommissions.organizationId, organizationId));
-		await db.delete(payments).where(eq(payments.organizationId, organizationId));
+		await db
+			.delete(inventoryTransactions)
+			.where(eq(inventoryTransactions.organizationId, organizationId));
+		await db
+			.delete(inventoryItems)
+			.where(eq(inventoryItems.organizationId, organizationId));
+		await db
+			.delete(doctorCommissions)
+			.where(eq(doctorCommissions.organizationId, organizationId));
+		await db
+			.delete(payments)
+			.where(eq(payments.organizationId, organizationId));
 		await db.delete(visits).where(eq(visits.organizationId, organizationId));
-		await db.delete(appointments).where(eq(appointments.organizationId, organizationId));
-		await db.delete(patients).where(eq(patients.organizationId, organizationId));
+		await db
+			.delete(appointments)
+			.where(eq(appointments.organizationId, organizationId));
+		await db
+			.delete(patients)
+			.where(eq(patients.organizationId, organizationId));
 		await db.delete(users).where(eq(users.organizationId, organizationId));
 		await db.delete(organizations).where(eq(organizations.id, organizationId));
 	}
@@ -680,7 +896,9 @@ async function sweepStaleProofOrganizations(): Promise<void> {
 		.from(organizations)
 		.where(inArray(organizations.name, [...PROOF_ORGANIZATION_NAMES]));
 	if (stale.length === 0) return;
-	console.log(`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`);
+	console.log(
+		`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`,
+	);
 	for (const row of stale) console.log(`  ${row.id}  ${row.name}`);
 	await cleanup(stale.map((row) => row.id));
 }
@@ -705,7 +923,9 @@ async function main(): Promise<void> {
 			       (select count(*)::int from doctor_commissions) as rates
 		`);
 		console.log(`\nПОСЛЕ УБОРКИ ${JSON.stringify(leftovers.rows[0])}`);
-		console.log(failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`);
+		console.log(
+			failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`,
+		);
 		await pool.end();
 	}
 	if (failures > 0) process.exitCode = 1;

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { type FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { communicationCampaigns } from "../../db/communicationsSchema.js";
 import {
@@ -11,10 +11,13 @@ import {
 	communicationTemplates,
 	organizations,
 	patientCommunicationConsents,
-	patients
+	patients,
 } from "../../db/schema.js";
 import { registerCommunicationOutboxRoutes } from "../../routes/communicationsOutbox.js";
-import { estimateAudienceCost, resolveAudience } from "../../services/communications/audience.js";
+import {
+	estimateAudienceCost,
+	resolveAudience,
+} from "../../services/communications/audience.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
@@ -40,7 +43,9 @@ const OLD_VISIT_APPOINTMENT = "dce70000-0000-4000-8000-000000000205";
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
+	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(
+		message,
+	);
 }
 
 /**
@@ -70,12 +75,24 @@ async function purgeFixtures(): Promise<void> {
 	 * нет — отозванное согласие прошлого прогона пережило бы «успешную» уборку.
 	 */
 	await withFixtureTenant(ORG_ID, async () => {
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-		await db.delete(communicationCampaigns).where(eq(communicationCampaigns.organizationId, ORG_ID));
-		await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-		await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
-		await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
+		await db
+			.delete(communicationOutbox)
+			.where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db
+			.delete(communicationCampaigns)
+			.where(eq(communicationCampaigns.organizationId, ORG_ID));
+		await db
+			.delete(patientCommunicationConsents)
+			.where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+		await db
+			.delete(appointments)
+			.where(eq(appointments.organizationId, ORG_ID));
+		await db
+			.delete(communicationTemplates)
+			.where(eq(communicationTemplates.organizationId, ORG_ID));
+		await db
+			.delete(communicationSettings)
+			.where(eq(communicationSettings.organizationId, ORG_ID));
 		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
 	});
@@ -92,7 +109,12 @@ describe("рассылки пациентам", () => {
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.NODE_ENV = "development";
-		for (const key of ["DENTE_SMS_PROVIDER", "DENTE_SMS_API_ID", "DENTE_SMS_LOGIN", "DENTE_SMS_PASSWORD"]) {
+		for (const key of [
+			"DENTE_SMS_PROVIDER",
+			"DENTE_SMS_API_ID",
+			"DENTE_SMS_LOGIN",
+			"DENTE_SMS_PASSWORD",
+		]) {
 			delete process.env[key];
 		}
 
@@ -109,27 +131,40 @@ describe("рассылки пациентам", () => {
 			 * отвергается кодом 42501, и обход RLS этого не лечит.
 			 */
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника рассылок" });
 				await db
-					.insert(patients)
-					.values([
-						{ id: CONSENTED, organizationId: ORG_ID, fullName: "Согласный Пётр Иванович", phone: "+7 916 000-01-01" },
-						{ id: NO_CONSENT, organizationId: ORG_ID, fullName: "Отказной Иван Петрович", phone: "+7 916 000-01-02" },
-						{ id: NO_PHONE, organizationId: ORG_ID, fullName: "Безномера Сергей Сергеевич", phone: null }
-					]);
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника рассылок" });
+				await db.insert(patients).values([
+					{
+						id: CONSENTED,
+						organizationId: ORG_ID,
+						fullName: "Согласный Пётр Иванович",
+						phone: "+7 916 000-01-01",
+					},
+					{
+						id: NO_CONSENT,
+						organizationId: ORG_ID,
+						fullName: "Отказной Иван Петрович",
+						phone: "+7 916 000-01-02",
+					},
+					{
+						id: NO_PHONE,
+						organizationId: ORG_ID,
+						fullName: "Безномера Сергей Сергеевич",
+						phone: null,
+					},
+				]);
 
 				// Приём годичной давности — для отбора «давно не были».
 				const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-				await db
-					.insert(appointments)
-					.values({
-						id: OLD_VISIT_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: CONSENTED,
-						status: "completed",
-						startsAt: yearAgo,
-						endsAt: new Date(yearAgo.getTime() + 3_600_000)
-					});
+				await db.insert(appointments).values({
+					id: OLD_VISIT_APPOINTMENT,
+					organizationId: ORG_ID,
+					patientId: CONSENTED,
+					status: "completed",
+					startsAt: yearAgo,
+					endsAt: new Date(yearAgo.getTime() + 3_600_000),
+				});
 
 				/*
 				 * Согласие на рекламу есть только у одного пациента.
@@ -145,7 +180,7 @@ describe("рассылки пациентам", () => {
 					channel: "sms",
 					scope: "marketing",
 					state: "granted",
-					source: "contract"
+					source: "contract",
 				});
 			});
 		} catch (error) {
@@ -164,16 +199,28 @@ describe("рассылки пациентам", () => {
 
 	test("стоимость SMS считается по сегментам, а не по числу получателей", () => {
 		// 400 символов кириллицы — шесть сегментов, и оператор берёт за каждый.
-		const long = estimateAudienceCost({ channel: "sms", recipients: 100, body: "я".repeat(400) });
+		const long = estimateAudienceCost({
+			channel: "sms",
+			recipients: 100,
+			body: "я".repeat(400),
+		});
 		assert.equal(long.segmentsPerMessage, 6);
 		assert.equal(long.billableUnits, 600);
 
-		const short = estimateAudienceCost({ channel: "sms", recipients: 100, body: "Короткий текст." });
+		const short = estimateAudienceCost({
+			channel: "sms",
+			recipients: 100,
+			body: "Короткий текст.",
+		});
 		assert.equal(short.segmentsPerMessage, 1);
 		assert.equal(short.billableUnits, 100);
 
 		// У мессенджеров сегментов нет — единица тарификации это сообщение.
-		const telegram = estimateAudienceCost({ channel: "telegram", recipients: 100, body: "я".repeat(400) });
+		const telegram = estimateAudienceCost({
+			channel: "telegram",
+			recipients: 100,
+			body: "я".repeat(400),
+		});
 		assert.equal(telegram.segmentsPerMessage, null);
 		assert.equal(telegram.billableUnits, 100);
 	});
@@ -190,8 +237,8 @@ describe("рассылки пациентам", () => {
 				channel: "sms",
 				scope: "marketing",
 				criteria: { status: "active" },
-				now
-			})
+				now,
+			}),
 		);
 
 		// Пациент без телефона отсеивается запросом, поэтому в matched его нет.
@@ -199,7 +246,10 @@ describe("рассылки пациентам", () => {
 		assert.equal(audience.deliverable, 1, JSON.stringify(audience));
 		assert.equal(audience.excluded.no_consent, 1);
 		assert.equal(audience.candidates[0]?.patientId, CONSENTED);
-		assert.ok(audience.notes.some((note) => note.includes("согласия")), audience.notes.join(" "));
+		assert.ok(
+			audience.notes.some((note) => note.includes("согласия")),
+			audience.notes.join(" "),
+		);
 	});
 
 	test("сервисная рассылка не требует согласия по умолчанию", async (context) => {
@@ -212,8 +262,8 @@ describe("рассылки пациентам", () => {
 				channel: "sms",
 				scope: "service",
 				criteria: { status: "active" },
-				now
-			})
+				now,
+			}),
 		);
 		assert.equal(audience.deliverable, 2, JSON.stringify(audience));
 	});
@@ -221,15 +271,17 @@ describe("рассылки пациентам", () => {
 	test("отбор «давно не были» опирается на завершённые приёмы", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const halfYearAgo = new Date(now.getTime() - 182 * 24 * 60 * 60 * 1000).toISOString();
+		const halfYearAgo = new Date(
+			now.getTime() - 182 * 24 * 60 * 60 * 1000,
+		).toISOString();
 		const audience = await withFixtureTenant(ORG_ID, async () =>
 			resolveAudience({
 				organizationId: ORG_ID,
 				channel: "sms",
 				scope: "service",
 				criteria: { status: "active", lastVisitBefore: halfYearAgo },
-				now
-			})
+				now,
+			}),
 		);
 
 		// Только у одного пациента есть приём, и он годичной давности.
@@ -246,8 +298,8 @@ describe("рассылки пациентам", () => {
 				channel: "sms",
 				scope: "service",
 				criteria: { status: "active", neverVisited: true },
-				now
-			})
+				now,
+			}),
 		);
 		assert.equal(audience.matched, 1, JSON.stringify(audience));
 		assert.equal(audience.candidates[0]?.patientId, NO_CONSENT);
@@ -267,8 +319,8 @@ describe("рассылки пациентам", () => {
 				title: "Плохая рассылка",
 				channel: "sms",
 				intent: "general",
-				body: "{patient}, ждём вас {date} в {time}."
-			}
+				body: "{patient}, ждём вас {date} в {time}.",
+			},
 		});
 		assert.equal(template.statusCode, 201, template.body);
 
@@ -278,10 +330,17 @@ describe("рассылки пациентам", () => {
 			method: "POST",
 			url: "/api/communications/campaigns",
 			headers: ORG_HEADERS,
-			payload: { title: "Рассылка", templateId: JSON.parse(template.body).template.id, criteria: {} }
+			payload: {
+				title: "Рассылка",
+				templateId: JSON.parse(template.body).template.id,
+				criteria: {},
+			},
 		});
 		assert.equal(campaign.statusCode, 400, campaign.body);
-		assert.ok(JSON.parse(campaign.body).message.includes("{date}"), campaign.body);
+		assert.ok(
+			JSON.parse(campaign.body).message.includes("{date}"),
+			campaign.body,
+		);
 	});
 
 	test("рассылка создаётся на пригодном шаблоне", async (context) => {
@@ -295,8 +354,8 @@ describe("рассылки пациентам", () => {
 				title: "Приглашение на осмотр",
 				channel: "sms",
 				intent: "recall",
-				body: "{patient}, приглашаем на профилактический осмотр. {clinic}."
-			}
+				body: "{patient}, приглашаем на профилактический осмотр. {clinic}.",
+			},
 		});
 		assert.equal(template.statusCode, 201, template.body);
 		templateId = JSON.parse(template.body).template.id;
@@ -309,8 +368,8 @@ describe("рассылки пациентам", () => {
 				title: "Осмотр для давно не приходивших",
 				templateId,
 				scope: "marketing",
-				criteria: { status: "active" }
-			}
+				criteria: { status: "active" },
+			},
 		});
 		assert.equal(campaign.statusCode, 201, campaign.body);
 		campaignId = JSON.parse(campaign.body).campaign.id;
@@ -323,7 +382,7 @@ describe("рассылки пациентам", () => {
 		const response = await app.inject({
 			method: "GET",
 			url: `/api/communications/campaigns/${campaignId}/preview`,
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const preview = JSON.parse(response.body);
@@ -338,8 +397,13 @@ describe("рассылки пациентам", () => {
 		// короткое сообщение стоит вдвое дороже, чем кажется.
 		assert.equal(preview.cost.segmentsPerMessage, 2);
 		assert.equal(preview.cost.billableUnits, 2);
-		assert.ok(typeof preview.sampleText === "string" && preview.sampleText.length > 0);
-		assert.ok(preview.criteria.includes("активные пациенты"), JSON.stringify(preview.criteria));
+		assert.ok(
+			typeof preview.sampleText === "string" && preview.sampleText.length > 0,
+		);
+		assert.ok(
+			preview.criteria.includes("активные пациенты"),
+			JSON.stringify(preview.criteria),
+		);
 	});
 
 	test("запуск ставит в очередь только получателей с согласием", async (context) => {
@@ -348,7 +412,7 @@ describe("рассылки пациентам", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: `/api/communications/campaigns/${campaignId}/launch`,
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).queued, 1);
@@ -357,13 +421,21 @@ describe("рассылки пациентам", () => {
 			db
 				.select()
 				.from(communicationOutbox)
-				.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.campaignId, campaignId)))
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.campaignId, campaignId),
+					),
+				),
 		);
 		assert.equal(rows.length, 1);
 		assert.equal(rows[0]?.patientId, CONSENTED);
 		assert.equal(rows[0]?.scope, "marketing");
 		// Имя подставлено каждому своё: «Здравствуйте!» без имени читается как спам.
-		assert.ok(rows[0]?.body.startsWith("Пётр Иванович, приглашаем"), rows[0]?.body ?? "");
+		assert.ok(
+			rows[0]?.body.startsWith("Пётр Иванович, приглашаем"),
+			rows[0]?.body ?? "",
+		);
 	});
 
 	/*
@@ -384,7 +456,7 @@ describe("рассылки пациентам", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: `/api/communications/campaigns/${campaignId}/launch`,
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 400, response.body);
 		const body = JSON.parse(response.body);
@@ -396,7 +468,12 @@ describe("рассылки пациентам", () => {
 			db
 				.select({ id: communicationOutbox.id })
 				.from(communicationOutbox)
-				.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.campaignId, campaignId)))
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.campaignId, campaignId),
+					),
+				),
 		);
 		assert.equal(rows.length, 1);
 	});
@@ -407,7 +484,7 @@ describe("рассылки пациентам", () => {
 		const response = await app.inject({
 			method: "GET",
 			url: `/api/communications/campaigns/${campaignId}/progress`,
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const progress = JSON.parse(response.body);
@@ -428,7 +505,7 @@ describe("рассылки пациентам", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: `/api/communications/campaigns/${campaignId}/cancel`,
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).cancelledMessages, 1);
@@ -437,7 +514,12 @@ describe("рассылки пациентам", () => {
 			db
 				.select({ status: communicationOutbox.status })
 				.from(communicationOutbox)
-				.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.campaignId, campaignId)))
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.campaignId, campaignId),
+					),
+				),
 		);
 		assert.equal(row?.status, "cancelled");
 
@@ -445,7 +527,7 @@ describe("рассылки пациентам", () => {
 			db
 				.select({ status: communicationCampaigns.status })
 				.from(communicationCampaigns)
-				.where(eq(communicationCampaigns.id, campaignId))
+				.where(eq(communicationCampaigns.id, campaignId)),
 		);
 		assert.equal(campaign?.status, "cancelled");
 	});
@@ -456,7 +538,7 @@ describe("рассылки пациентам", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: `/api/communications/campaigns/${campaignId}/launch`,
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 400, response.body);
 		assert.ok(JSON.parse(response.body).message.includes("Отменённую"));
@@ -471,7 +553,7 @@ describe("рассылки пациентам", () => {
 			method: "POST",
 			url: "/api/communications/campaigns",
 			headers: ORG_HEADERS,
-			payload: { title: "Хитрая", templateId, criteria: { rawSql: "1=1" } }
+			payload: { title: "Хитрая", templateId, criteria: { rawSql: "1=1" } },
 		});
 		assert.equal(response.statusCode, 400, response.body);
 	});
@@ -479,18 +561,20 @@ describe("рассылки пациентам", () => {
 	test("рассылка чужой организации не видна и не запускается", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const otherOrgHeaders = { "x-organization-id": "dce70000-0000-4000-8000-0000000002ff" };
+		const otherOrgHeaders = {
+			"x-organization-id": "dce70000-0000-4000-8000-0000000002ff",
+		};
 		const preview = await app.inject({
 			method: "GET",
 			url: `/api/communications/campaigns/${campaignId}/preview`,
-			headers: otherOrgHeaders
+			headers: otherOrgHeaders,
 		});
 		assert.equal(preview.statusCode, 404, preview.body);
 
 		const launch = await app.inject({
 			method: "POST",
 			url: `/api/communications/campaigns/${campaignId}/launch`,
-			headers: otherOrgHeaders
+			headers: otherOrgHeaders,
 		});
 		assert.equal(launch.statusCode, 400, launch.body);
 		assert.ok(JSON.parse(launch.body).message.includes("не найдена"));

@@ -112,14 +112,17 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 
 		void (async () => {
 			try {
-				const res = await fetch(`/api/portal/lab-order/${encodeURIComponent(token)}`);
+				const res = await fetch(
+					`/api/portal/lab-order/${encodeURIComponent(token)}`,
+				);
 				if (!res.ok) throw new Error(labOrderLoadFailureText(res.status));
 				const data = (await res.json()) as LabOrderData;
 				if (!cancelled) setOrder(data);
 			} catch (e) {
 				// Сетевой отказ fetch не несёт кода ответа вовсе — про него нужен
 				// свой текст, иначе он выглядел бы как ошибка сервера.
-				if (!cancelled) setError(e instanceof Error ? e.message : NETWORK_FAILURE_TEXT);
+				if (!cancelled)
+					setError(e instanceof Error ? e.message : NETWORK_FAILURE_TEXT);
 			} finally {
 				if (!cancelled) setIsLoading(false);
 			}
@@ -134,13 +137,16 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 		if (!token || !order) return;
 		try {
 			setIsUpdating(true);
-			const res = await fetch(`/api/portal/lab-order/${encodeURIComponent(token)}/status`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
+			const res = await fetch(
+				`/api/portal/lab-order/${encodeURIComponent(token)}/status`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ status: newStatus }),
 				},
-				body: JSON.stringify({ status: newStatus }),
-			});
+			);
 
 			if (!res.ok) throw new Error(statusSaveFailureText(res.status));
 
@@ -156,9 +162,15 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 			}
 
 			setOrder({ ...order, status: data.status });
-			showToast("Статус заказа сохранён, врач увидит его в расписании клиники", "success");
+			showToast(
+				"Статус заказа сохранён, врач увидит его в расписании клиники",
+				"success",
+			);
 		} catch (e) {
-			showToast(e instanceof Error ? e.message : statusSaveFailureText(0), "error");
+			showToast(
+				e instanceof Error ? e.message : statusSaveFailureText(0),
+				"error",
+			);
 		} finally {
 			setIsUpdating(false);
 		}
@@ -166,7 +178,10 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 
 	if (isLoading) {
 		return (
-			<div className="guest-portal-container" style={{ justifyContent: "center" }}>
+			<div
+				className="guest-portal-container"
+				style={{ justifyContent: "center" }}
+			>
 				<RefreshCcw className="guest-portal-spinner" size={32} />
 			</div>
 		);
@@ -174,7 +189,10 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 
 	if (error || !order) {
 		return (
-			<div className="guest-portal-container" style={{ justifyContent: "center" }}>
+			<div
+				className="guest-portal-container"
+				style={{ justifyContent: "center" }}
+			>
 				<div className="guest-portal-card">
 					<div className="guest-portal-icon-wrapper">
 						<Beaker size={32} />
@@ -221,19 +239,62 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 					недействительно, поэтому круг под значком оставался прозрачным.
 					--teal-soft и --teal объявлены во всех трёх темах (styles/main.css).
 				*/}
-				<div className="guest-portal-icon-wrapper" style={{ background: "var(--teal-soft)", color: "var(--teal)", borderColor: "transparent" }}>
+				<div
+					className="guest-portal-icon-wrapper"
+					style={{
+						background: "var(--teal-soft)",
+						color: "var(--teal)",
+						borderColor: "transparent",
+					}}
+				>
 					<Beaker size={32} />
 				</div>
-				<h1 className="guest-portal-title">Портал Зуботехнической Лаборатории</h1>
-				<p className="guest-portal-subtitle">Безопасный доступ к деталям заказа</p>
+				<h1 className="guest-portal-title">
+					Портал Зуботехнической Лаборатории
+				</h1>
+				<p className="guest-portal-subtitle">
+					Безопасный доступ к деталям заказа
+				</p>
 
-				<div style={{ background: "var(--bg-default)", borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
-					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1px solid var(--line)", paddingBottom: "16px" }}>
+				<div
+					style={{
+						background: "var(--bg-default)",
+						borderRadius: "12px",
+						padding: "20px",
+						marginBottom: "24px",
+					}}
+				>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							marginBottom: "20px",
+							borderBottom: "1px solid var(--line)",
+							paddingBottom: "16px",
+						}}
+					>
 						<div style={{ textAlign: "left" }}>
-							<p style={{ fontSize: "12px", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: "4px" }}>
+							<p
+								style={{
+									fontSize: "12px",
+									textTransform: "uppercase",
+									color: "var(--text-secondary)",
+									marginBottom: "4px",
+								}}
+							>
 								Заказ № {(order.id ?? "").substring(0, 8).toUpperCase()}
 							</p>
-							<h2 style={{ fontSize: "20px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+							<h2
+								style={{
+									fontSize: "20px",
+									fontWeight: "600",
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									margin: 0,
+								}}
+							>
 								<User size={20} />
 								{order.patientFullName || "Пациент не указан"}
 							</h2>
@@ -246,32 +307,66 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 
 					<div className="guest-portal-grid">
 						<div>
-							<h3 className="guest-portal-field-label" style={{ marginBottom: "12px" }}>
+							<h3
+								className="guest-portal-field-label"
+								style={{ marginBottom: "12px" }}
+							>
 								<CheckCircle2 size={16} /> Технические параметры
 							</h3>
-							<div className="guest-portal-field" style={{ background: "var(--paper)", padding: "16px", borderRadius: "8px", border: "1px solid var(--line)" }}>
-								<div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+							<div
+								className="guest-portal-field"
+								style={{
+									background: "var(--paper)",
+									padding: "16px",
+									borderRadius: "8px",
+									border: "1px solid var(--line)",
+								}}
+							>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										marginBottom: "8px",
+									}}
+								>
 									<span className="guest-portal-field-label">Зуб (FDI)</span>
-									<span className="guest-portal-field-value">{order.toothFdi || "—"}</span>
+									<span className="guest-portal-field-value">
+										{order.toothFdi || "—"}
+									</span>
 								</div>
-								<div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										marginBottom: "8px",
+									}}
+								>
 									<span className="guest-portal-field-label">Материал</span>
 									{/*
 										Неизвестный код печатается как есть, а не заменяется на «—»:
 										прочерк скрыл бы от зуботехника то, что врач всё-таки указал.
 									*/}
 									<span className="guest-portal-field-value">
-										{order.material ? (MATERIAL_LABELS[order.material] ?? order.material) : "—"}
+										{order.material
+											? (MATERIAL_LABELS[order.material] ?? order.material)
+											: "—"}
 									</span>
 								</div>
-								<div style={{ display: "flex", justifyContent: "space-between" }}>
+								<div
+									style={{ display: "flex", justifyContent: "space-between" }}
+								>
 									<span className="guest-portal-field-label">Цвет (Vita)</span>
-									<span className="guest-portal-field-value">{order.colorVita || "—"}</span>
+									<span className="guest-portal-field-value">
+										{order.colorVita || "—"}
+									</span>
 								</div>
 							</div>
 						</div>
 						<div>
-							<h3 className="guest-portal-field-label" style={{ marginBottom: "12px" }}>
+							<h3
+								className="guest-portal-field-label"
+								style={{ marginBottom: "12px" }}
+							>
 								<AlignLeft size={16} /> Клинические заметки
 							</h3>
 							{/*
@@ -281,32 +376,86 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								пятном. --amber-soft, --amber и --text-primary объявлены для всех
 								трёх тем (styles/main.css, styles/premium.css).
 							*/}
-							<div style={{ background: "var(--amber-soft)", padding: "16px", borderRadius: "8px", color: "var(--text-primary)", minHeight: "100px", border: "1px solid var(--amber)" }}>
+							<div
+								style={{
+									background: "var(--amber-soft)",
+									padding: "16px",
+									borderRadius: "8px",
+									color: "var(--text-primary)",
+									minHeight: "100px",
+									border: "1px solid var(--amber)",
+								}}
+							>
 								{order.clinicalNotes ? (
-									<p style={{ margin: 0, fontSize: "14px", whiteSpace: "pre-wrap" }}>{order.clinicalNotes}</p>
+									<p
+										style={{
+											margin: 0,
+											fontSize: "14px",
+											whiteSpace: "pre-wrap",
+										}}
+									>
+										{order.clinicalNotes}
+									</p>
 								) : (
-									<p style={{ margin: 0, fontSize: "14px", fontStyle: "italic", opacity: 0.8 }}>Врач не оставил комментариев.</p>
+									<p
+										style={{
+											margin: 0,
+											fontSize: "14px",
+											fontStyle: "italic",
+											opacity: 0.8,
+										}}
+									>
+										Врач не оставил комментариев.
+									</p>
 								)}
 							</div>
 						</div>
 					</div>
 
 					<div style={{ textAlign: "left", marginBottom: "32px" }}>
-						<h3 className="guest-portal-field-label" style={{ marginBottom: "12px" }}>
+						<h3
+							className="guest-portal-field-label"
+							style={{ marginBottom: "12px" }}
+						>
 							<ImageIcon size={16} /> Приложенные снимки
 						</h3>
 						{order.attachedImageUrl ? (
-							<img src={order.attachedImageUrl} alt="Клинический снимок" className="guest-portal-image" />
+							<img
+								src={order.attachedImageUrl}
+								alt="Клинический снимок"
+								className="guest-portal-image"
+							/>
 						) : (
-							<div style={{ padding: "40px", border: "1px dashed var(--line)", borderRadius: "12px", textAlign: "center", color: "var(--text-secondary)" }}>
-								<ImageIcon size={32} style={{ margin: "0 auto 8px", opacity: 0.5 }} />
+							<div
+								style={{
+									padding: "40px",
+									border: "1px dashed var(--line)",
+									borderRadius: "12px",
+									textAlign: "center",
+									color: "var(--text-secondary)",
+								}}
+							>
+								<ImageIcon
+									size={32}
+									style={{ margin: "0 auto 8px", opacity: 0.5 }}
+								/>
 								Нет приложенных снимков
 							</div>
 						)}
 					</div>
 
 					<div className="guest-portal-actions">
-						<h3 style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "8px", textAlign: "left" }}>Управление статусом заказа</h3>
+						<h3
+							style={{
+								fontSize: "14px",
+								fontWeight: "600",
+								color: "var(--text-secondary)",
+								marginBottom: "8px",
+								textAlign: "left",
+							}}
+						>
+							Управление статусом заказа
+						</h3>
 						<div style={{ display: "flex", gap: "12px" }}>
 							<button
 								onClick={() => updateStatus("in_progress")}
@@ -333,8 +482,15 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								На переделке
 							</button>
 						</div>
-						<p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "8px" }}>
-							* Изменение статуса автоматически уведомит врача в расписании клиники.
+						<p
+							style={{
+								fontSize: "11px",
+								color: "var(--text-secondary)",
+								marginTop: "8px",
+							}}
+						>
+							* Изменение статуса автоматически уведомит врача в расписании
+							клиники.
 						</p>
 					</div>
 				</div>

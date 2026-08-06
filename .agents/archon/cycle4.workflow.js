@@ -1,11 +1,18 @@
 export const meta = {
-  name: 'archon-cycle-4',
-  description: 'DENTE cycle 4: unauthenticated clinical write, cross-patient text merge, then finish the rework',
-  phases: [
-    { title: 'Build', detail: 'security root-cause first, then reviewer-ordered rework' },
-    { title: 'Attack', detail: 'a different agent tries to destroy each commit' },
-  ],
-}
+	name: "archon-cycle-4",
+	description:
+		"DENTE cycle 4: unauthenticated clinical write, cross-patient text merge, then finish the rework",
+	phases: [
+		{
+			title: "Build",
+			detail: "security root-cause first, then reviewer-ordered rework",
+		},
+		{
+			title: "Attack",
+			detail: "a different agent tries to destroy each commit",
+		},
+	],
+};
 
 const LAW = `
 You are an implementer on the DENTE dental CRM under lead [ARCHON]. Repo root: C:\\Clinic_MVP\\dental-crm
@@ -133,7 +140,7 @@ time. Do the same inside your own packet.
   <packet dir>/state.md, commitmsg.txt, handoff.md
 handoff.md: HEAD: <hash> / ## Что было сломано (file:line) / ## Что изменено / ## ПРОВЕРЕНО /
 ## НЕ ПРОВЕРЕНО (each with the exact closing command) / ## Коммит / ## Долг
-`
+`;
 
 const REWORK_RULES = `
 ═══ THIS IS A REWORK PACKET. READ TWICE. ═══
@@ -150,17 +157,18 @@ specific list. **THE REVIEW FILE IS YOUR SPECIFICATION.** Read it COMPLETE first
    exact sentence that was wrong.
 5. The reviewer's own new findings (F1/F2/…) count. HIGH ones must be closed or declared with a reason.
 6. Re-prove what you changed, running the specific test the reviewer asked for.
-`
+`;
 
 const PACKETS = [
-  {
-    id: 'S1-speech-unauthenticated',
-    label: 'S1 unauthenticated clinical write',
-    wave: 1,
-    dir: '.agents/archon/packets/S1-speech-unauthenticated',
-    files: 'apps/api/src/routes/speech.ts + its node:test. NOT accessGuard.ts, NOT server.ts.',
-    gate: 'npm run typecheck -w @dental/api',
-    brief: `
+	{
+		id: "S1-speech-unauthenticated",
+		label: "S1 unauthenticated clinical write",
+		wave: 1,
+		dir: ".agents/archon/packets/S1-speech-unauthenticated",
+		files:
+			"apps/api/src/routes/speech.ts + its node:test. NOT accessGuard.ts, NOT server.ts.",
+		gate: "npm run typecheck -w @dental/api",
+		brief: `
 PACKET S1 — HIGHEST SEVERITY OF THE ENTIRE CAMPAIGN: AN UNAUTHENTICATED ENDPOINT WRITES INTO A
 PATIENT'S CLINICAL RECORD. Lane: PLATFORM / SECURITY.
 Read .agents/CLINICAL_RULES.md COMPLETE.
@@ -213,15 +221,16 @@ PROOF EXPECTED:
   the endpoint being open. If it does, that is a real finding: those tests were encoding the defect.
 - API VERIFIED is NOT available to you here (server not reloading). Say so with the exact command.
 `,
-  },
-  {
-    id: 'S2-cross-patient-merge',
-    label: 'S2 two patients merged into one record',
-    wave: 1,
-    dir: '.agents/archon/packets/S2-cross-patient-merge',
-    files: 'apps/api/src/speech/storage.ts + its node:test. NOT routes/speech.ts (S1 owns it), NOT db/schema.ts.',
-    gate: 'npm run typecheck -w @dental/api',
-    brief: `
+	},
+	{
+		id: "S2-cross-patient-merge",
+		label: "S2 two patients merged into one record",
+		wave: 1,
+		dir: ".agents/archon/packets/S2-cross-patient-merge",
+		files:
+			"apps/api/src/speech/storage.ts + its node:test. NOT routes/speech.ts (S1 owns it), NOT db/schema.ts.",
+		gate: "npm run typecheck -w @dental/api",
+		brief: `
 PACKET S2 — TWO PATIENTS' DICTATED CLINICAL TEXT MERGES INTO ONE RECORD UNDER THE FIRST PATIENT'S NAME.
 Lane: CLINICAL / PLATFORM.
 Read .agents/CLINICAL_RULES.md COMPLETE, and
@@ -269,15 +278,16 @@ PROOF EXPECTED:
 - TYPECHECK VERIFIED: npm run typecheck -w @dental/api
 - 'npm test -w @dental/api' summary.
 `,
-  },
-  {
-    id: 'S3-aijobs-index-and-ram',
-    label: 'S3 ai_jobs seq scan + unbounded restore',
-    wave: 1,
-    dir: '.agents/archon/packets/S3-aijobs-index-and-ram',
-    files: 'apps/api/src/speech/storage.ts restore/query path ONLY if S2 has not claimed the same lines — otherwise report and stop. Plus one new apps/api/drizzle/*.sql for the index.',
-    gate: 'npm run typecheck -w @dental/api',
-    brief: `
+	},
+	{
+		id: "S3-aijobs-index-and-ram",
+		label: "S3 ai_jobs seq scan + unbounded restore",
+		wave: 1,
+		dir: ".agents/archon/packets/S3-aijobs-index-and-ram",
+		files:
+			"apps/api/src/speech/storage.ts restore/query path ONLY if S2 has not claimed the same lines — otherwise report and stop. Plus one new apps/api/drizzle/*.sql for the index.",
+		gate: "npm run typecheck -w @dental/api",
+		brief: `
 PACKET S3 — THE DICTATION STORE HAS NO INDEX AND NO CEILING.
 Lane: PLATFORM. Read .agents/DATABASE.md COMPLETE (it was corrected tonight and is now accurate).
 Read .agents/archon/packets/R1-dictation-rework/review.md COMPLETE — it measured all of this.
@@ -330,16 +340,17 @@ PROOF EXPECTED:
 - UNIT VERIFIED: a node:test proving the global ceiling holds across multiple organizations.
 - TYPECHECK VERIFIED: npm run typecheck -w @dental/api
 `,
-  },
-  {
-    id: 'S4-panoramic-claim',
-    label: 'S4 panoramic claim correction',
-    wave: 2,
-    rework: '.agents/archon/packets/R2-panoramic-rework/review.md',
-    dir: '.agents/archon/packets/S4-panoramic-claim',
-    files: 'the panoramic geometry module + Cornerstone3DViewer.tsx + their handoff/state docs (see R2 handoff.md)',
-    gate: 'npm run typecheck -w @dental/web',
-    brief: `
+	},
+	{
+		id: "S4-panoramic-claim",
+		label: "S4 panoramic claim correction",
+		wave: 2,
+		rework: ".agents/archon/packets/R2-panoramic-rework/review.md",
+		dir: ".agents/archon/packets/S4-panoramic-claim",
+		files:
+			"the panoramic geometry module + Cornerstone3DViewer.tsx + their handoff/state docs (see R2 handoff.md)",
+		gate: "npm run typecheck -w @dental/web",
+		brief: `
 PACKET S4 — REWORK OF R2 (panoramic). Lane: IMAGING.
 **YOUR SPECIFICATION: .agents/archon/packets/R2-panoramic-rework/review.md — read it COMPLETE**, plus
 R2's handoff.md and state.md, and the earlier C5 review for lineage.
@@ -368,16 +379,17 @@ WHAT TO DO:
 PROOF EXPECTED: UNIT VERIFIED on whatever geometry assertions survive; TYPECHECK VERIFIED; and an
 explicit statement of which previously-claimed numbers were withdrawn and why.
 `,
-  },
-  {
-    id: 'S5-telegram-rework',
-    label: 'S5 telegram rework',
-    wave: 2,
-    rework: '.agents/archon/packets/R5-telegram-time-bugs/review.md',
-    dir: '.agents/archon/packets/S5-telegram-rework',
-    files: 'the telegram delivery/schedule module R5 touched (see its handoff.md) + its node:test',
-    gate: 'npm run typecheck -w @dental/api',
-    brief: `
+	},
+	{
+		id: "S5-telegram-rework",
+		label: "S5 telegram rework",
+		wave: 2,
+		rework: ".agents/archon/packets/R5-telegram-time-bugs/review.md",
+		dir: ".agents/archon/packets/S5-telegram-rework",
+		files:
+			"the telegram delivery/schedule module R5 touched (see its handoff.md) + its node:test",
+		gate: "npm run typecheck -w @dental/api",
+		brief: `
 PACKET S5 — REWORK OF R5 (telegram time and delivery bugs). Lane: COMMS.
 Read .agents/MESSENGERS.md COMPLETE.
 **YOUR SPECIFICATION: .agents/archon/packets/R5-telegram-time-bugs/review.md — read it COMPLETE**, plus
@@ -410,16 +422,17 @@ NOT VERIFIED with the exact command.
 PROOF EXPECTED: UNIT VERIFIED with a fixed clock for every behaviour you change; TYPECHECK VERIFIED;
 'npm test -w @dental/api' summary.
 `,
-  },
-  {
-    id: 'S6-speech-audio-rework',
-    label: 'S6 speech audio retention rework',
-    wave: 2,
-    rework: '.agents/archon/packets/R6-speech-audio-retention/review.md',
-    dir: '.agents/archon/packets/S6-speech-audio-rework',
-    files: 'the AssemblyAI polling / provider-deletion modules R6 touched (see its handoff.md) + its node:test',
-    gate: 'npm run typecheck -w @dental/api',
-    brief: `
+	},
+	{
+		id: "S6-speech-audio-rework",
+		label: "S6 speech audio retention rework",
+		wave: 2,
+		rework: ".agents/archon/packets/R6-speech-audio-retention/review.md",
+		dir: ".agents/archon/packets/S6-speech-audio-rework",
+		files:
+			"the AssemblyAI polling / provider-deletion modules R6 touched (see its handoff.md) + its node:test",
+		gate: "npm run typecheck -w @dental/api",
+		brief: `
 PACKET S6 — REWORK OF R6 (AssemblyAI polling cap and undeleted patient audio). Lane: CLINICAL/PLATFORM.
 Read the speech-gateway section of .agents/ARCHITECTURE.md COMPLETE.
 **YOUR SPECIFICATION: .agents/archon/packets/R6-speech-audio-retention/review.md — read it COMPLETE**,
@@ -448,164 +461,279 @@ PROOF EXPECTED: UNIT VERIFIED with a stubbed provider for both the delete-issued
 failed-delete-recorded path, and for a long job polled past the old cap plus a surfaced timeout;
 TYPECHECK VERIFIED; 'npm test -w @dental/api' summary.
 `,
-  },
-]
+	},
+];
 
 const BUILD_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'status', 'defectReal', 'commitHash', 'filesChanged', 'proven', 'notProven', 'summary', 'reachability', 'reworkItems', 'censusFindings', 'dossierCorrections', 'blockers', 'foundNotFixed'],
-  properties: {
-    packet: { type: 'string' },
-    status: { enum: ['COMMITTED', 'PARTIAL', 'BLOCKED', 'NO_CHANGE'] },
-    defectReal: { type: 'boolean' },
-    commitHash: { type: 'string' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    proven: { type: 'array', items: { type: 'string' } },
-    notProven: { type: 'array', items: { type: 'string' } },
-    summary: { type: 'string' },
-    reachability: { type: 'string', description: 'Is the fixed code reachable by a real user? Trace the chain, file:line.' },
-    reworkItems: { type: 'array', items: { type: 'string' }, description: 'Rework packets: EVERY numbered reviewer item marked CLOSED / DECLARED DEBT / DISPUTED(evidence). Empty for non-rework.' },
-    censusFindings: { type: 'array', items: { type: 'string' }, description: 'S1 only: every unguarded mutating route found, file:line. Empty for other packets.' },
-    dossierCorrections: { type: 'array', items: { type: 'string' } },
-    blockers: { type: 'array', items: { type: 'string' } },
-    foundNotFixed: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"status",
+		"defectReal",
+		"commitHash",
+		"filesChanged",
+		"proven",
+		"notProven",
+		"summary",
+		"reachability",
+		"reworkItems",
+		"censusFindings",
+		"dossierCorrections",
+		"blockers",
+		"foundNotFixed",
+	],
+	properties: {
+		packet: { type: "string" },
+		status: { enum: ["COMMITTED", "PARTIAL", "BLOCKED", "NO_CHANGE"] },
+		defectReal: { type: "boolean" },
+		commitHash: { type: "string" },
+		filesChanged: { type: "array", items: { type: "string" } },
+		proven: { type: "array", items: { type: "string" } },
+		notProven: { type: "array", items: { type: "string" } },
+		summary: { type: "string" },
+		reachability: {
+			type: "string",
+			description:
+				"Is the fixed code reachable by a real user? Trace the chain, file:line.",
+		},
+		reworkItems: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Rework packets: EVERY numbered reviewer item marked CLOSED / DECLARED DEBT / DISPUTED(evidence). Empty for non-rework.",
+		},
+		censusFindings: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"S1 only: every unguarded mutating route found, file:line. Empty for other packets.",
+		},
+		dossierCorrections: { type: "array", items: { type: "string" } },
+		blockers: { type: "array", items: { type: "string" } },
+		foundNotFixed: { type: "array", items: { type: "string" } },
+	},
+};
 
 const REVIEW_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'verdict', 'attackSurface', 'proofAudit', 'gitHygiene', 'reasoning', 'requiredRework'],
-  properties: {
-    packet: { type: 'string' },
-    verdict: { enum: ['SOUND', 'SOUND_WITH_NITS', 'NEEDS_REWORK', 'REVERT'] },
-    attackSurface: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['hypothesis', 'result', 'evidence'],
-        properties: {
-          hypothesis: { type: 'string' },
-          result: { enum: ['CONFIRMED', 'DISPROVED', 'UNTESTABLE'] },
-          evidence: { type: 'string' },
-        },
-      },
-    },
-    proofAudit: { type: 'string' },
-    gitHygiene: { type: 'string' },
-    reasoning: { type: 'string' },
-    requiredRework: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"verdict",
+		"attackSurface",
+		"proofAudit",
+		"gitHygiene",
+		"reasoning",
+		"requiredRework",
+	],
+	properties: {
+		packet: { type: "string" },
+		verdict: { enum: ["SOUND", "SOUND_WITH_NITS", "NEEDS_REWORK", "REVERT"] },
+		attackSurface: {
+			type: "array",
+			items: {
+				type: "object",
+				additionalProperties: false,
+				required: ["hypothesis", "result", "evidence"],
+				properties: {
+					hypothesis: { type: "string" },
+					result: { enum: ["CONFIRMED", "DISPROVED", "UNTESTABLE"] },
+					evidence: { type: "string" },
+				},
+			},
+		},
+		proofAudit: { type: "string" },
+		gitHygiene: { type: "string" },
+		reasoning: { type: "string" },
+		requiredRework: { type: "array", items: { type: "string" } },
+	},
+};
 
 function buildStage(p) {
-  return agent(
-    LAW + (p.rework ? REWORK_RULES : '') +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'YOUR PACKET: ' + p.id + '\n' +
-    (p.rework ? 'YOUR SPECIFICATION (read COMPLETE, first): ' + p.rework + '\n' : '') +
-    'YOUR FILE CLAIM (edit nothing outside this): ' + p.files + '\n' +
-    'YOUR COMPILE GATE: ' + p.gate + '\n' +
-    'YOUR PACKET DIRECTORY (create FIRST): ' + p.dir + '\n' +
-    '═══════════════════════════════════════════════════════════════\n' + p.brief +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'ORDER OF OPERATIONS, MANDATORY:\n' +
-    ' 1. Write ' + p.dir + '/state.md == STARTED. NOW, before reading anything.\n' +
-    ' 2. Read the authority documents. Complete. state.md == AUTHORITY READ.\n' +
-    (p.rework ? ' 2b. Read ' + p.rework + ' COMPLETE, plus that packet handoff.md and state.md.\n' : '') +
-    ' 3. git rev-parse HEAD; git status --porcelain on your claimed files. Dirty and not by you =>\n' +
-    '    STOP, report the collision.\n' +
-    ' 4. Read your target file(s) IN FULL. Confirm the defect at real lines.\n' +
-    '    state.md == DEFECT CONFIRMED / ABSENT. If absent, say so loudly; never invent work.\n' +
-    ' 5. Build the real fix. state.md == EDIT WRITTEN.\n' +
-    ' 6. Run your compile gate. state.md == GATE PASSED.\n' +
-    ' 7. **COMMIT NOW** — pathspec form, retry loop, verify with git log -1 --stat.\n' +
-    '    state.md == COMMITTED <hash>. Do NOT wait for proofs.\n' +
-    ' 8. Proofs. Second commit for the test. state.md == PROVEN.\n' +
-    ' 9. Write ' + p.dir + '/handoff.md. state.md == DONE.\n' +
-    '10. Emit structured output. Every "proven" entry must be a command you actually ran.\n' +
-    (p.rework ? '"reworkItems" MUST list EVERY numbered reviewer item. An unmentioned item is a failed packet.\n' : '') +
-    'A packet ending in a plan and no diff is a FAILED packet.\n',
-    { label: p.label, phase: 'Build', schema: BUILD_SCHEMA }
-  )
+	return agent(
+		LAW +
+			(p.rework ? REWORK_RULES : "") +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"YOUR PACKET: " +
+			p.id +
+			"\n" +
+			(p.rework
+				? "YOUR SPECIFICATION (read COMPLETE, first): " + p.rework + "\n"
+				: "") +
+			"YOUR FILE CLAIM (edit nothing outside this): " +
+			p.files +
+			"\n" +
+			"YOUR COMPILE GATE: " +
+			p.gate +
+			"\n" +
+			"YOUR PACKET DIRECTORY (create FIRST): " +
+			p.dir +
+			"\n" +
+			"═══════════════════════════════════════════════════════════════\n" +
+			p.brief +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"ORDER OF OPERATIONS, MANDATORY:\n" +
+			" 1. Write " +
+			p.dir +
+			"/state.md == STARTED. NOW, before reading anything.\n" +
+			" 2. Read the authority documents. Complete. state.md == AUTHORITY READ.\n" +
+			(p.rework
+				? " 2b. Read " +
+					p.rework +
+					" COMPLETE, plus that packet handoff.md and state.md.\n"
+				: "") +
+			" 3. git rev-parse HEAD; git status --porcelain on your claimed files. Dirty and not by you =>\n" +
+			"    STOP, report the collision.\n" +
+			" 4. Read your target file(s) IN FULL. Confirm the defect at real lines.\n" +
+			"    state.md == DEFECT CONFIRMED / ABSENT. If absent, say so loudly; never invent work.\n" +
+			" 5. Build the real fix. state.md == EDIT WRITTEN.\n" +
+			" 6. Run your compile gate. state.md == GATE PASSED.\n" +
+			" 7. **COMMIT NOW** — pathspec form, retry loop, verify with git log -1 --stat.\n" +
+			"    state.md == COMMITTED <hash>. Do NOT wait for proofs.\n" +
+			" 8. Proofs. Second commit for the test. state.md == PROVEN.\n" +
+			" 9. Write " +
+			p.dir +
+			"/handoff.md. state.md == DONE.\n" +
+			'10. Emit structured output. Every "proven" entry must be a command you actually ran.\n' +
+			(p.rework
+				? '"reworkItems" MUST list EVERY numbered reviewer item. An unmentioned item is a failed packet.\n'
+				: "") +
+			"A packet ending in a plan and no diff is a FAILED packet.\n",
+		{ label: p.label, phase: "Build", schema: BUILD_SCHEMA },
+	);
 }
 
 function reviewStage(built, p) {
-  if (!built) {
-    return { packet: p.id, verdict: 'NEEDS_REWORK', attackSurface: [], proofAudit: 'Builder produced no result — died or out of capacity. Read ' + p.dir + '/state.md.', gitHygiene: 'unknown', reasoning: 'No build output.', requiredRework: ['Resume ' + p.id] }
-  }
-  if (built.status === 'BLOCKED' || built.status === 'NO_CHANGE' || !built.commitHash) {
-    return { packet: p.id, verdict: 'SOUND_WITH_NITS', attackSurface: [], proofAudit: 'No commit to audit; builder reported ' + built.status + '.', gitHygiene: 'n/a', reasoning: built.summary || '', requiredRework: built.blockers || [] }
-  }
-  return agent(
-    'You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to\n' +
-    'lead [ARCHON]. You did NOT write this code. Your job is to DESTROY it, not bless it.\n' +
-    'Write findings to ' + p.dir + '/review.md AS YOU GO — you may be killed mid-review.\n\n' +
-    'THE DISEASE HERE IS FABRICATED PROOF. Track record you are upholding:\n' +
-    '- FEATURES_REGISTRY.md cites proof_<name>.png for 49 features; all 49 files do not exist.\n' +
-    '- A reviewer certified "56 unique MD5, 0 blank pages" over a set where six "themed" shots were one\n' +
-    '  Vite CSS error overlay — on the same pass that screenshotted "+null ₽" as green profit.\n' +
-    '- The lead found mobile_light_documents.png is the staff PIN screen, not documents: MD5-unique and\n' +
-    '  116 KB, so it passes every hash-and-size rubric. Hash uniqueness proves nothing about content.\n' +
-    '- Cycle 2: a reviewer caught a handoff asserting "текст не уничтожен" and produced run output\n' +
-    '  proving the opposite. Cycle 3: a reviewer caught a measurement taken against a baseline the\n' +
-    '  packet itself proved impossible to obtain.\n' +
-    'That is the standard: reproduce claims, do not read them. Default posture: disbelief.\n\n' +
-    'Read .agents/AGENTS.md COMPLETE plus .agents/INDEX.md. Do NOT penalise the builder for defying §11\n' +
-    '(madge absent) or the biome orders (absent; would reformat the repo).\n\n' +
-    (p.rework ? 'THIS IS A REWORK PACKET. Its specification was ' + p.rework + ' — READ IT COMPLETE, then\nverify item by item that each numbered requirement is genuinely CLOSED, honestly DECLARED AS DEBT, or\nDISPUTED WITH REAL EVIDENCE. **An item silently ignored is an automatic NEEDS_REWORK.** Also verify the\nbuilder corrected any false statement in the previous handoff.\n\n' : '') +
-    'THE PACKET: ' + p.id + '\nCLAIMED SCOPE: ' + p.files + '\nCOMMIT TO ATTACK: ' + built.commitHash + '\n' +
-    'FILES CHANGED: ' + JSON.stringify(built.filesChanged) + '\n' +
-    'CLAIMED PROVEN: ' + JSON.stringify(built.proven) + '\n' +
-    'CLAIMED NOT PROVEN: ' + JSON.stringify(built.notProven) + '\n' +
-    'REACHABILITY CLAIM: ' + (built.reachability || '(none)') + '\n' +
-    'REWORK DISPOSITION: ' + JSON.stringify(built.reworkItems || []) + '\n' +
-    'CENSUS FINDINGS: ' + JSON.stringify(built.censusFindings || []) + '\n' +
-    'SUMMARY: ' + built.summary + '\n' +
-    'ORIGINAL BRIEF:\n' + p.brief + '\n\n' +
-    'DO THIS:\n' +
-    '1. git show ' + built.commitHash + ' --stat, then the full diff, then read the changed files at HEAD\n' +
-    '   in context. A diff hides what surrounds it.\n' +
-    '2. HYPOTHESES YOU MUST ACTUALLY TEST:\n' +
-    '   - Was the defect REAL before this commit? (git show ' + built.commitHash + '^:<path>)\n' +
-    '   - **Is the fix REACHABLE by a real user, or dead code sold as a product fix?** Verify\n' +
-    '     independently; trace the chain and say where it terminates.\n' +
-    '   - **Does it hold on REAL data, not just the fixture?** Cycle 2 shipped a panorama fix that passed\n' +
-    '     every test and threw on every real CBCT volume one line later. Look for that shape.\n' +
-    '   - For a SECURITY packet: try to BYPASS the new guard. No token, malformed token, a token for a\n' +
-    '     different organization, and a token whose organization UUID exists in no organizations row\n' +
-    '     (that last one is a known live weakness). Quote every status code.\n' +
-    '   - HOLLOW FACADE — {success:true} over a no-op, placeholder, magic constant, hardcoded\n' +
-    '     UUID/port/endpoint, fabricated 0/default for an unknown?\n' +
-    '   - SECOND OWNER of something that already had one?\n' +
-    '   - Deleted/renamed a useAppLogic.tsx return field? Listener/interval/handle without teardown?\n' +
-    '   - Hardcoded hex, static px, undeclared Russian literal?\n' +
-    '   - Mojibake in the diff or the commit subject? Check actual characters.\n' +
-    '   - If the packet deleted a file: git grep -n "<BaseName>" HEAD -- apps/ must return nothing.\n' +
-    '3. PROOF AUDIT — the part that matters most. RE-RUN EVERY CLAIMED PROOF COMMAND YOURSELF, the same\n' +
-    '   one, capturing the TRUE exit code (not $? after a pipe). Does the output support the claim or\n' +
-    '   merely coexist with it? Judge only errors inside the claimed scope.\n' +
-    '4. GIT HYGIENE: only the claimed files? Any churn (apps/api/dist/**, .data/*.json, tsbuildinfo,\n' +
-    '   scratch/**) or another author work swept in via the shared index? Russian subject naming the\n' +
-    '   DEFECT?\n' +
-    '5. VERDICT. Reserve REVERT for a change actively worse than the defect. Never award SOUND to a\n' +
-    '   change whose central claim you could not reproduce. If NEEDS_REWORK, make requiredRework\n' +
-    '   numbered, specific and actionable — the next agent builds directly from it.\n\n' +
-    'CONSTRAINTS: read-only on source — no edit, fix, commit, revert, git add. Never git remote -v (live\n' +
-    'tokens). Never npx @biomejs/biome. Do not start or restart any server, no screenshot pipeline. You\n' +
-    'MAY run typechecks, tests, smokes, read-only node -e, curl to 127.0.0.1:4100, read-only SQL to 5432.',
-    { label: 'attack:' + p.id, phase: 'Attack', schema: REVIEW_SCHEMA }
-  )
+	if (!built) {
+		return {
+			packet: p.id,
+			verdict: "NEEDS_REWORK",
+			attackSurface: [],
+			proofAudit:
+				"Builder produced no result — died or out of capacity. Read " +
+				p.dir +
+				"/state.md.",
+			gitHygiene: "unknown",
+			reasoning: "No build output.",
+			requiredRework: ["Resume " + p.id],
+		};
+	}
+	if (
+		built.status === "BLOCKED" ||
+		built.status === "NO_CHANGE" ||
+		!built.commitHash
+	) {
+		return {
+			packet: p.id,
+			verdict: "SOUND_WITH_NITS",
+			attackSurface: [],
+			proofAudit: "No commit to audit; builder reported " + built.status + ".",
+			gitHygiene: "n/a",
+			reasoning: built.summary || "",
+			requiredRework: built.blockers || [],
+		};
+	}
+	return agent(
+		"You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to\n" +
+			"lead [ARCHON]. You did NOT write this code. Your job is to DESTROY it, not bless it.\n" +
+			"Write findings to " +
+			p.dir +
+			"/review.md AS YOU GO — you may be killed mid-review.\n\n" +
+			"THE DISEASE HERE IS FABRICATED PROOF. Track record you are upholding:\n" +
+			"- FEATURES_REGISTRY.md cites proof_<name>.png for 49 features; all 49 files do not exist.\n" +
+			'- A reviewer certified "56 unique MD5, 0 blank pages" over a set where six "themed" shots were one\n' +
+			'  Vite CSS error overlay — on the same pass that screenshotted "+null ₽" as green profit.\n' +
+			"- The lead found mobile_light_documents.png is the staff PIN screen, not documents: MD5-unique and\n" +
+			"  116 KB, so it passes every hash-and-size rubric. Hash uniqueness proves nothing about content.\n" +
+			'- Cycle 2: a reviewer caught a handoff asserting "текст не уничтожен" and produced run output\n' +
+			"  proving the opposite. Cycle 3: a reviewer caught a measurement taken against a baseline the\n" +
+			"  packet itself proved impossible to obtain.\n" +
+			"That is the standard: reproduce claims, do not read them. Default posture: disbelief.\n\n" +
+			"Read .agents/AGENTS.md COMPLETE plus .agents/INDEX.md. Do NOT penalise the builder for defying §11\n" +
+			"(madge absent) or the biome orders (absent; would reformat the repo).\n\n" +
+			(p.rework
+				? "THIS IS A REWORK PACKET. Its specification was " +
+					p.rework +
+					" — READ IT COMPLETE, then\nverify item by item that each numbered requirement is genuinely CLOSED, honestly DECLARED AS DEBT, or\nDISPUTED WITH REAL EVIDENCE. **An item silently ignored is an automatic NEEDS_REWORK.** Also verify the\nbuilder corrected any false statement in the previous handoff.\n\n"
+				: "") +
+			"THE PACKET: " +
+			p.id +
+			"\nCLAIMED SCOPE: " +
+			p.files +
+			"\nCOMMIT TO ATTACK: " +
+			built.commitHash +
+			"\n" +
+			"FILES CHANGED: " +
+			JSON.stringify(built.filesChanged) +
+			"\n" +
+			"CLAIMED PROVEN: " +
+			JSON.stringify(built.proven) +
+			"\n" +
+			"CLAIMED NOT PROVEN: " +
+			JSON.stringify(built.notProven) +
+			"\n" +
+			"REACHABILITY CLAIM: " +
+			(built.reachability || "(none)") +
+			"\n" +
+			"REWORK DISPOSITION: " +
+			JSON.stringify(built.reworkItems || []) +
+			"\n" +
+			"CENSUS FINDINGS: " +
+			JSON.stringify(built.censusFindings || []) +
+			"\n" +
+			"SUMMARY: " +
+			built.summary +
+			"\n" +
+			"ORIGINAL BRIEF:\n" +
+			p.brief +
+			"\n\n" +
+			"DO THIS:\n" +
+			"1. git show " +
+			built.commitHash +
+			" --stat, then the full diff, then read the changed files at HEAD\n" +
+			"   in context. A diff hides what surrounds it.\n" +
+			"2. HYPOTHESES YOU MUST ACTUALLY TEST:\n" +
+			"   - Was the defect REAL before this commit? (git show " +
+			built.commitHash +
+			"^:<path>)\n" +
+			"   - **Is the fix REACHABLE by a real user, or dead code sold as a product fix?** Verify\n" +
+			"     independently; trace the chain and say where it terminates.\n" +
+			"   - **Does it hold on REAL data, not just the fixture?** Cycle 2 shipped a panorama fix that passed\n" +
+			"     every test and threw on every real CBCT volume one line later. Look for that shape.\n" +
+			"   - For a SECURITY packet: try to BYPASS the new guard. No token, malformed token, a token for a\n" +
+			"     different organization, and a token whose organization UUID exists in no organizations row\n" +
+			"     (that last one is a known live weakness). Quote every status code.\n" +
+			"   - HOLLOW FACADE — {success:true} over a no-op, placeholder, magic constant, hardcoded\n" +
+			"     UUID/port/endpoint, fabricated 0/default for an unknown?\n" +
+			"   - SECOND OWNER of something that already had one?\n" +
+			"   - Deleted/renamed a useAppLogic.tsx return field? Listener/interval/handle without teardown?\n" +
+			"   - Hardcoded hex, static px, undeclared Russian literal?\n" +
+			"   - Mojibake in the diff or the commit subject? Check actual characters.\n" +
+			'   - If the packet deleted a file: git grep -n "<BaseName>" HEAD -- apps/ must return nothing.\n' +
+			"3. PROOF AUDIT — the part that matters most. RE-RUN EVERY CLAIMED PROOF COMMAND YOURSELF, the same\n" +
+			"   one, capturing the TRUE exit code (not $? after a pipe). Does the output support the claim or\n" +
+			"   merely coexist with it? Judge only errors inside the claimed scope.\n" +
+			"4. GIT HYGIENE: only the claimed files? Any churn (apps/api/dist/**, .data/*.json, tsbuildinfo,\n" +
+			"   scratch/**) or another author work swept in via the shared index? Russian subject naming the\n" +
+			"   DEFECT?\n" +
+			"5. VERDICT. Reserve REVERT for a change actively worse than the defect. Never award SOUND to a\n" +
+			"   change whose central claim you could not reproduce. If NEEDS_REWORK, make requiredRework\n" +
+			"   numbered, specific and actionable — the next agent builds directly from it.\n\n" +
+			"CONSTRAINTS: read-only on source — no edit, fix, commit, revert, git add. Never git remote -v (live\n" +
+			"tokens). Never npx @biomejs/biome. Do not start or restart any server, no screenshot pipeline. You\n" +
+			"MAY run typechecks, tests, smokes, read-only node -e, curl to 127.0.0.1:4100, read-only SQL to 5432.",
+		{ label: "attack:" + p.id, phase: "Attack", schema: REVIEW_SCHEMA },
+	);
 }
 
-const all = []
+const all = [];
 for (const waveNo of [1, 2]) {
-  const wave = PACKETS.filter((p) => p.wave === waveNo)
-  log('Cycle 4 wave ' + waveNo + ': ' + wave.map((p) => p.id).join(', '))
-  const done = await pipeline(wave, buildStage, reviewStage)
-  for (let i = 0; i < wave.length; i++) all.push({ packet: wave[i].id, dir: wave[i].dir, review: done[i] || null })
-  log('Cycle 4 wave ' + waveNo + ' complete.')
+	const wave = PACKETS.filter((p) => p.wave === waveNo);
+	log("Cycle 4 wave " + waveNo + ": " + wave.map((p) => p.id).join(", "));
+	const done = await pipeline(wave, buildStage, reviewStage);
+	for (let i = 0; i < wave.length; i++)
+		all.push({ packet: wave[i].id, dir: wave[i].dir, review: done[i] || null });
+	log("Cycle 4 wave " + waveNo + " complete.");
 }
 return { cycle: 4, results: all }

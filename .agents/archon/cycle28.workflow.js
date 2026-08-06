@@ -1,10 +1,8 @@
 export const meta = {
-  name: 'dente-cycle28-QQ',
-  description: 'Цикл 28, волна QQ: ноль вместо тридцати в тексте коммита, живая нулевая дверь, охрана слепая к трём формам, выдуманный контекст, классификация 64 красных гейтов, недоделанная миграция telegram',
-  phases: [
-    { title: 'Build' },
-    { title: 'Review' }
-  ]
+	name: "dente-cycle28-QQ",
+	description:
+		"Цикл 28, волна QQ: ноль вместо тридцати в тексте коммита, живая нулевая дверь, охрана слепая к трём формам, выдуманный контекст, классификация 64 красных гейтов, недоделанная миграция telegram",
+	phases: [{ title: "Build" }, { title: "Review" }],
 };
 
 const LAW = `Ты исполнитель в волне QQ. Проект: C:\\Clinic_MVP\\dental-crm (Windows, bash). Работай молча и коммить.
@@ -55,11 +53,12 @@ const LAW = `Ты исполнитель в волне QQ. Проект: C:\\Cli
 ВОЗВРАТ: COMMITS | EXIT_PASS / EXIT_BITE / COUNT / MUTATION | MEASURED | CLAIM | CONTRADICTED | FOUND`;
 
 const PACKETS = [
-  {
-    id: 'QQ1',
-    label: 'ноль подставлен вместо тридцати, и число живёт в тексте коммита',
-    files: 'apps/web/src/components/settings/sources/** (SourcesConnectorGrid.tsx, SourcesIntegrationPresets.tsx, SourcesDicomCapability.tsx)',
-    brief: `P0, ПЕРЕДЕЛКА. Пакет прошлой волны заявил в ПОСТОЯННОМ тексте коммита «17 имён / 0 мёртвых и 19 / 0».
+	{
+		id: "QQ1",
+		label: "ноль подставлен вместо тридцати, и число живёт в тексте коммита",
+		files:
+			"apps/web/src/components/settings/sources/** (SourcesConnectorGrid.tsx, SourcesIntegrationPresets.tsx, SourcesDicomCapability.tsx)",
+		brief: `P0, ПЕРЕДЕЛКА. Пакет прошлой волны заявил в ПОСТОЯННОМ тексте коммита «17 имён / 0 мёртвых и 19 / 0».
 Ревьюер измерил: компилятор находит **34 мёртвых локали** в этих двух файлах, а до экрана доходят **2 пропса
 из 17** и **4 из 19**.
 
@@ -89,13 +88,14 @@ const PACKETS = [
 
 ДОКАЗАТЬ: EXIT_PASS среза \`npx tsc -p apps/web/tsconfig.json --noEmit\` = 0; COUNT = число TS6133 в твоих
 файлах до и после с флагом \`--noUnusedLocals\`; EXIT_BITE — в копии добавь чтение несуществующего пропса и
-покажи, что контракт ЛОВИТ это (а с \`as any\` молчал).`
-  },
-  {
-    id: 'QQ2',
-    label: 'живая нулевая дверь: неизвестный итог печатается как «0 ₽»',
-    files: 'apps/web/src/FinanceView.tsx + компонент FinancePlanningOverview (найди его сам) + apps/web/src/useAppLogic.tsx ТОЧЕЧНО (файл ГРЯЗНЫЙ, чужая работа в полёте)',
-    brief: `P1. Починка прошлой волны сделала \`money(null)\` → «не определено», но через этот путь она ИНЕРТНА.
+покажи, что контракт ЛОВИТ это (а с \`as any\` молчал).`,
+	},
+	{
+		id: "QQ2",
+		label: "живая нулевая дверь: неизвестный итог печатается как «0 ₽»",
+		files:
+			"apps/web/src/FinanceView.tsx + компонент FinancePlanningOverview (найди его сам) + apps/web/src/useAppLogic.tsx ТОЧЕЧНО (файл ГРЯЗНЫЙ, чужая работа в полёте)",
+		brief: `P1. Починка прошлой волны сделала \`money(null)\` → «не определено», но через этот путь она ИНЕРТНА.
 
 ЗАМЕР ВЕДУЩЕГО ПО HEAD, дверей две и живая ОДНА:
   • ЖИВАЯ — \`useAppLogic.tsx:5030\`: \`patientBillingSummary = useMemo<Dashboard["billingSummary"]>(() => {
@@ -120,13 +120,14 @@ const PACKETS = [
 
 ДОКАЗАТЬ: тест на apps/web с заглушкой CSS. Обе стороны обязательны: при отсутствии дашборда экран НЕ
 показывает «0 ₽» по итогам, а при загруженном дашборде с настоящими нулями показывает «0 ₽» и не прячет их.
-EXIT_BITE: верни объект из нулей в копии и покажи, что тест краснеет.`
-  },
-  {
-    id: 'QQ3',
-    label: 'охрана денег слепа к трём формам, и одна из них хуже дефекта',
-    files: 'apps/web/src/tests/moneyUnknownNotZero.test.ts (+ при необходимости места вызова, которые она сторожит, КРОМЕ FinanceView.tsx и useAppLogic.tsx — их держит QQ2)',
-    brief: `P1. Охрана, написанная в прошлой волне, ловит одну форму из четырёх. Измерено ревьюером четырьмя мутациями
+EXIT_BITE: верни объект из нулей в копии и покажи, что тест краснеет.`,
+	},
+	{
+		id: "QQ3",
+		label: "охрана денег слепа к трём формам, и одна из них хуже дефекта",
+		files:
+			"apps/web/src/tests/moneyUnknownNotZero.test.ts (+ при необходимости места вызова, которые она сторожит, КРОМЕ FinanceView.tsx и useAppLogic.tsx — их держит QQ2)",
+		brief: `P1. Охрана, написанная в прошлой волне, ловит одну форму из четырёх. Измерено ревьюером четырьмя мутациями
 с кодами выхода:
   money(x ?? 0)          → EXIT 1   ЛОВИТ
   money(x || 0)          → EXIT 0   не ловит
@@ -148,13 +149,14 @@ EXIT_BITE: верни объект из нулей в копии и покажи
 в FOUND, а чинить их можно только если они НЕ в файлах QQ2.
 
 ДОКАЗАТЬ: COUNT и EXIT_PASS набора; EXIT_BITE — четыре мутации, по одной на форму, и все четыре обязаны дать
-код 1. Приведи таблицу форма | код выхода до | после. Это и есть весь пакет.`
-  },
-  {
-    id: 'QQ4',
-    label: 'контекст ВЫДУМЫВАЕТ значения вместо отказа',
-    files: 'apps/web/src/contexts/AppLogicContext.tsx + его потребители, КРОМЕ FinanceView.tsx / useAppLogic.tsx (QQ2) и components/settings/sources/** (QQ1)',
-    brief: `P1. Четвёртое место стирания типов в этой кампании и худшее из четырёх: остальные делают чтения
+код 1. Приведи таблицу форма | код выхода до | после. Это и есть весь пакет.`,
+	},
+	{
+		id: "QQ4",
+		label: "контекст ВЫДУМЫВАЕТ значения вместо отказа",
+		files:
+			"apps/web/src/contexts/AppLogicContext.tsx + его потребители, КРОМЕ FinanceView.tsx / useAppLogic.tsx (QQ2) и components/settings/sources/** (QQ1)",
+		brief: `P1. Четвёртое место стирания типов в этой кампании и худшее из четырёх: остальные делают чтения
 непроверяемыми, а это ВЫДУМЫВАЕТ значение.
 
 \`apps/web/src/contexts/AppLogicContext.tsx:21\` — \`return {} as AppLogicContextType;\`
@@ -178,13 +180,14 @@ EXIT_BITE: верни объект из нулей в копии и покажи
 
 ДОКАЗАТЬ: COUNT и EXIT_PASS. EXIT_BITE особый и он же смысл пакета: тест, который рендерит потребителя БЕЗ
 провайдера, обязан КРАСНЕТЬ (получать ошибку), а не проходить на пустом объекте. Покажи, что до правки он
-проходил, а после — падает с внятным текстом.`
-  },
-  {
-    id: 'QQ5',
-    label: 'разведка: 64 красных smoke-гейта — среда или дефект',
-    files: 'ТОЛЬКО ЧТЕНИЕ по scripts/**. Пишешь ЕДИНСТВЕННЫЙ файл: .agents/archon/recon/QQ5-smoke-triage/DOSSIER.md',
-    brief: `P1, разведка, и она снимает главную слепоту кампании.
+проходил, а после — падает с внятным текстом.`,
+	},
+	{
+		id: "QQ5",
+		label: "разведка: 64 красных smoke-гейта — среда или дефект",
+		files:
+			"ТОЛЬКО ЧТЕНИЕ по scripts/**. Пишешь ЕДИНСТВЕННЫЙ файл: .agents/archon/recon/QQ5-smoke-triage/DOSSIER.md",
+		brief: `P1, разведка, и она снимает главную слепоту кампании.
 
 ЗАМЕР ВЕДУЩЕГО: все циклы я считал только семейство \`-source\` (41 скрипт, 35 зелёных / 6 красных) и называл
 это «слоем стражей». Прогон ВСЕХ \`smoke:*\` из package.json дал **127 скриптов, 63 зелёных, 64 КРАСНЫХ**.
@@ -223,13 +226,15 @@ EXIT_BITE: верни объект из нулей в копии и покажи
 
 ДОКАЗАТЬ: досье с дословными кодами выхода. COUNT здесь — число разобранных гейтов из 64; если не успеешь все,
 разбери столько, сколько успеешь ДО КОНЦА, и честно скажи сколько осталось. Двадцать разобранных точно лучше
-шестидесяти угаданных.`
-  },
-  {
-    id: 'QQ6',
-    label: 'миграция telegram на базу недоделана: состояние теряется при перезапуске',
-    files: 'apps/api/src/telegram/** + apps/api/src/routes/telegram.ts (ОСТОРОЖНО, см. бриф) + при необходимости новый тест в apps/api/src/tests/',
-    brief: `P0 архитектурный, и это самый крупный «сырые файлы вместо системы» в проекте. ЗАМЕР ВЕДУЩЕГО.
+шестидесяти угаданных.`,
+	},
+	{
+		id: "QQ6",
+		label:
+			"миграция telegram на базу недоделана: состояние теряется при перезапуске",
+		files:
+			"apps/api/src/telegram/** + apps/api/src/routes/telegram.ts (ОСТОРОЖНО, см. бриф) + при необходимости новый тест в apps/api/src/tests/",
+		brief: `P0 архитектурный, и это самый крупный «сырые файлы вместо системы» в проекте. ЗАМЕР ВЕДУЩЕГО.
 
 \`routes/telegram.ts\` импортирует **29 имён из \`../sampleData.js\`** и обслуживает **17 маршрутов**. А в
 \`sampleData.ts\` — **четыре массива В ПАМЯТИ и НОЛЬ обращений к базе**:
@@ -272,23 +277,23 @@ chat-link — сама привязка. Перезапуск обнуляет �
 ДОКАЗАТЬ: COUNT и EXIT_PASS нового теста. Тест обязан показать ГЛАВНОЕ — что состояние ПЕРЕЖИВАЕТ перезапуск,
 то есть запись видна во ВТОРОМ независимом чтении из базы, а не в той же переменной процесса.
 EXIT_BITE: верни маршрут на синхронную версию из \`sampleData.ts\` в копии и покажи, что тест краснеет.
-Плюс \`npm run smoke:telegram-outbox-persistence\` и \`npm run smoke:telegram-bot\` — оба до и после, с кодами.`
-  }
+Плюс \`npm run smoke:telegram-outbox-persistence\` и \`npm run smoke:telegram-bot\` — оба до и после, с кодами.`,
+	},
 ];
 
-phase('Build');
+phase("Build");
 
 const done = await pipeline(
-  PACKETS,
-  (packet) =>
-    agent(
-      `${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
-      { label: `build:${packet.id}`, phase: 'Build', effort: 'high' }
-    ),
-  (buildResult, packet) => {
-    if (!buildResult) return null;
-    return agent(
-      `Ты ревьюер пакета ${packet.id} в волне QQ. Проект C:\\Clinic_MVP\\dental-crm.
+	PACKETS,
+	(packet) =>
+		agent(
+			`${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
+			{ label: `build:${packet.id}`, phase: "Build", effort: "high" },
+		),
+	(buildResult, packet) => {
+		if (!buildResult) return null;
+		return agent(
+			`Ты ревьюер пакета ${packet.id} в волне QQ. Проект C:\\Clinic_MVP\\dental-crm.
 Ты НЕ ПРАВИШЬ КОД. Пишешь ОДИН файл: .agents/archon/packets/${packet.id}/review.md, коммитишь только его
 (ретрай 20×6 с, сообщение в файл, [ARCHON] в теме, без атрибуции, трейлеры пусты). НЕ ПУШИТЬ.
 
@@ -330,12 +335,14 @@ ${buildResult}
 FOUND — самая ценная часть: за четыре волны ревьюеры нашли то, чего не видел никто, — год как цену услуги,
 зелёный тест на сломанном коде, английский токен на экране, регресс, вернувший закрытый P0, подделку
 требований комментарием, ноль вместо тридцати в тексте коммита и дыру в самом методе замера.`,
-      { label: `review:${packet.id}`, phase: 'Review', effort: 'high' }
-    );
-  }
+			{ label: `review:${packet.id}`, phase: "Review", effort: "high" },
+		);
+	},
 );
 
-log(`волна QQ завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`);
+log(
+	`волна QQ завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`,
+);
 
 return {
   packets: PACKETS.map((packet, index) => ({ id: packet.id, label: packet.label, review: done[index] ?? null }))

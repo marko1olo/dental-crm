@@ -46,15 +46,15 @@
    ============================================================ */
 
 @media (pointer: coarse), (max-width: 700px) {
-  /* --- Самостоятельные кнопки --- */
-  .primary-button,
-  .secondary-button,
-  .text-button,
-  .icon-button {
-    min-height: 44px;
-  }
+	/* --- Самостоятельные кнопки --- */
+	.primary-button,
+	.secondary-button,
+	.text-button,
+	.icon-button {
+		min-height: 44px;
+	}
 
-  /* --- Вкладки ---
+	/* --- Вкладки ---
      ДВА ИЗ ТРЁХ СЕЛЕКТОРОВ ЗДЕСЬ БЫЛИ МЁРТВЫМИ. `.settings-tab-button` и
      `.visit-tab-button` не встречаются в разметке ни разу (проверено по всему
      apps/web/src): вкладки настроек рисуются как `.settings-tabs button`
@@ -62,111 +62,113 @@
      `.visit-sub-nav-tabs button` (VisitView.tsx:417). То есть правило про 44px
      существовало, но ни к чему не применялось, и вкладки оставались 29px даже
      на телефоне. */
-  .emk-tab-button,
-  .visit-sub-nav-tabs button {
-    min-height: 44px;
-  }
+	.emk-tab-button,
+	.visit-sub-nav-tabs button {
+		min-height: 44px;
+	}
 
-  /* !important обязателен: main.css:14512 задаёт
+	/* !important обязателен: main.css:14512 задаёт
      `.settings-tabs button { min-height: auto !important }` при равной
      специфичности (0,1,1). Без !important правило проигрывает, и вкладки
      остаются 29px — именно это и замерено на 768px. */
-  .settings-tabs button {
-    min-height: 44px !important;
-  }
+	.settings-tabs button {
+		min-height: 44px !important;
+	}
 
-  /* --- Плотные наборы чипов ---
+	/* --- Плотные наборы чипов ---
      36px + промежуток 8px: по WCAG 2.5.8 допустимо, когда цели
      разнесены, и не ломает плотную сетку быстрых сумм. */
-  .quick-chip,
-  .dictation-quick-row button {
-    min-height: 36px;
-  }
+	.quick-chip,
+	.dictation-quick-row button {
+		min-height: 36px;
+	}
 
-  /* !important нужен только там, где конкурирующее объявление тоже с
+	/* !important нужен только там, где конкурирующее объявление тоже с
      !important, иначе правило не действует:
        main.css  .quick-chip--sm        { min-height: 24px !important }
        main.css  .appointment-edit-button { min-height: 28px !important }
      Замерено до правки: чипы быстрых сумм оплаты 55x24, 56x24, 41x24. */
-  .quick-chip--sm {
-    min-height: 36px !important;
-  }
+	.quick-chip--sm {
+		min-height: 36px !important;
+	}
 
-  .appointment-edit-button {
-    min-height: 40px !important;
-  }
+	.appointment-edit-button {
+		min-height: 40px !important;
+	}
 
-  .quick-chips-row,
-  .dictation-quick-row {
-    gap: 8px;
-  }
+	.quick-chips-row,
+	.dictation-quick-row {
+		gap: 8px;
+	}
 
-  /* --- Поля выбора и ввода --- */
-  select,
-  .select-phase,
-  input[type="date"],
-  input[type="datetime-local"],
-  input[type="time"],
-  input[type="month"] {
-    min-height: 40px;
-  }
+	/* --- Поля выбора и ввода --- */
+	select,
+	.select-phase,
+	input[type="date"],
+	input[type="datetime-local"],
+	input[type="time"],
+	input[type="month"] {
+		min-height: 40px;
+	}
 
-  /* --- Кнопки-иконки без текста --- */
-  .btn-remove-item,
-  .btn-icon,
-  button[aria-label]:not(.primary-button):not(.secondary-button):not(.nav-item) {
-    min-height: 40px;
-    min-width: 40px;
-  }
+	/* --- Кнопки-иконки без текста --- */
+	.btn-remove-item,
+	.btn-icon,
+	button[aria-label]:not(.primary-button):not(.secondary-button):not(
+		.nav-item
+	) {
+		min-height: 40px;
+		min-width: 40px;
+	}
 
-  /* --- Раскрывающиеся блоки ---
+	/* --- Раскрывающиеся блоки ---
      У <summary> высота была равна высоте строки. */
-  summary {
-    align-items: center;
-    display: flex;
-    min-height: 44px;
-  }
+	summary {
+		align-items: center;
+		display: flex;
+		min-height: 44px;
+	}
 
-  /* --- Отметки и переключатели ---
+	/* --- Отметки и переключатели ---
      Сам квадратик остаётся компактным, но обёртка-подпись даёт
      полноценную зону нажатия: так делают, чтобы не раздувать
      нативный вид отметки. */
-  input[type="checkbox"],
-  input[type="radio"] {
-    height: 20px;
-    min-height: 20px;
-    min-width: 20px;
-    width: 20px;
-  }
+	input[type="checkbox"],
+	input[type="radio"] {
+		height: 20px;
+		min-height: 20px;
+		min-width: 20px;
+		width: 20px;
+	}
 
-  label:has(> input[type="checkbox"]),
-  label:has(> input[type="radio"]) {
-    align-items: center;
-    display: flex;
-    min-height: 44px;
-  }
+	label:has(> input[type="checkbox"]),
+	label:has(> input[type="radio"]) {
+		align-items: center;
+		display: flex;
+		min-height: 44px;
+	}
 
-  /* --- Ползунки ---
+	/* --- Ползунки ---
      Нативная дорожка тонкая, палец по ней не попадает. */
-  input[type="range"] {
-    min-height: 44px;
-  }
+	input[type="range"] {
+		min-height: 44px;
+	}
 
-  /* --- Узкие по ширине цели ---
+	/* --- Узкие по ширине цели ---
      Высота бывает достаточной, а ширина нет. Замерено: кнопка
      микрофона в умном бронировании 16x36, кнопка «День» в заголовке
      расписания 30x44. */
-  .text-button,
-  .smart-ai-booking button,
-  .panel-heading button {
-    min-width: 44px;
-  }
+	.text-button,
+	.smart-ai-booking button,
+	.panel-heading button {
+		min-width: 44px;
+	}
 
-  /* Кнопки-иконки внутри полей позиционируются абсолютно, поэтому
+	/* Кнопки-иконки внутри полей позиционируются абсолютно, поэтому
      задаём размер обеих сторон. */
-  .smart-ai-booking .relative button,
-  .smart-field button[aria-label] {
-    min-height: 40px;
-    min-width: 40px;
-  }
+	.smart-ai-booking .relative button,
+	.smart-field button[aria-label] {
+		min-height: 40px;
+		min-width: 40px;
+	}
 }

@@ -28,8 +28,8 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { patients } from "../../db/schema.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
+import { patients } from "../../db/schema.js";
 
 export type DuplicateReason =
 	/** Совпали фамилия, имя, отчество и дата рождения. */
@@ -73,33 +73,39 @@ export type DuplicateCandidate = {
 };
 
 const REASON_META: Readonly<
-	Record<DuplicateReason, { confidence: number; explanation: string; caution: string | null }>
+	Record<
+		DuplicateReason,
+		{ confidence: number; explanation: string; caution: string | null }
+	>
 > = {
 	same_name_and_birth_date: {
 		confidence: 0.95,
 		explanation: "Полностью совпали фамилия, имя, отчество и дата рождения.",
-		caution: null
+		caution: null,
 	},
 	same_name_birth_date_unknown: {
 		confidence: 0.75,
-		explanation: "Совпало полное имя, дата рождения указана только в одной карточке.",
-		caution: "Полные тёзки бывают. Сверьте телефон и историю приёмов."
+		explanation:
+			"Совпало полное имя, дата рождения указана только в одной карточке.",
+		caution: "Полные тёзки бывают. Сверьте телефон и историю приёмов.",
 	},
 	same_phone_and_surname: {
 		confidence: 0.8,
 		explanation: "Совпал номер телефона и фамилия.",
-		caution: "Родственники с одной фамилией часто указывают один номер. Сверьте имя и дату рождения."
+		caution:
+			"Родственники с одной фамилией часто указывают один номер. Сверьте имя и дату рождения.",
 	},
 	same_phone_only: {
 		confidence: 0.35,
 		explanation: "Совпал только номер телефона, имена разные.",
-		caution: "Скорее всего это родственники: муж и жена, мать и ребёнок. Объединять нельзя без проверки."
+		caution:
+			"Скорее всего это родственники: муж и жена, мать и ребёнок. Объединять нельзя без проверки.",
 	},
 	same_email: {
 		confidence: 0.55,
 		explanation: "Совпал адрес электронной почты.",
-		caution: "Семья нередко указывает один адрес почты."
-	}
+		caution: "Семья нередко указывает один адрес почты.",
+	},
 };
 
 /** «+7 (916) 123-45-67» и «89161234567» — один номер. Сравниваем последние 10 цифр. */
@@ -152,7 +158,7 @@ export type DuplicateReport = {
 
 export async function findDuplicateCandidates(
 	organizationId: string,
-	options: FindDuplicatesOptions = {}
+	options: FindDuplicatesOptions = {},
 ): Promise<DuplicateReport> {
 	const minConfidence = Math.max(0, Math.min(1, options.minConfidence ?? 0.3));
 	const limit = Math.max(1, Math.min(500, options.limit ?? 100));
@@ -163,17 +169,27 @@ export async function findDuplicateCandidates(
 			fullName: patients.fullName,
 			phone: patients.phone,
 			email: patients.email,
-			birthDate: patients.birthDate
+			birthDate: patients.birthDate,
 		})
 		.from(patients)
-		.where(and(eq(patients.organizationId, organizationId), eq(patients.status, "active")));
+		.where(
+			and(
+				eq(patients.organizationId, organizationId),
+				eq(patients.status, "active"),
+			),
+		);
 
 	// Пары, про которые человек уже сказал «это не дубли» или которые объединены.
 	const decisions = await db
-		.select({ leftPatientId: patientDuplicateDecisions.leftPatientId, rightPatientId: patientDuplicateDecisions.rightPatientId })
+		.select({
+			leftPatientId: patientDuplicateDecisions.leftPatientId,
+			rightPatientId: patientDuplicateDecisions.rightPatientId,
+		})
 		.from(patientDuplicateDecisions)
 		.where(eq(patientDuplicateDecisions.organizationId, organizationId));
-	const hidden = new Set(decisions.map((row) => pairKey(row.leftPatientId, row.rightPatientId)));
+	const hidden = new Set(
+		decisions.map((row) => pairKey(row.leftPatientId, row.rightPatientId)),
+	);
 
 	const byName = new Map<string, PatientRow[]>();
 	const byPhone = new Map<string, PatientRow[]>();
@@ -203,7 +219,11 @@ export async function findDuplicateCandidates(
 	/** Сильнейшая причина на пару: одна пара не должна показываться трижды. */
 	const strongest = new Map<string, DuplicateCandidate>();
 
-	const consider = (left: PatientRow, right: PatientRow, reason: DuplicateReason) => {
+	const consider = (
+		left: PatientRow,
+		right: PatientRow,
+		reason: DuplicateReason,
+	) => {
 		const key = pairKey(left.id, right.id);
 		if (hidden.has(key)) return;
 
@@ -220,7 +240,7 @@ export async function findDuplicateCandidates(
 			fullName: row.fullName,
 			phone: row.phone,
 			birthDate: row.birthDate,
-			email: row.email
+			email: row.email,
 		});
 		strongest.set(key, {
 			leftPatientId: first.id,
@@ -232,7 +252,7 @@ export async function findDuplicateCandidates(
 			reason,
 			confidence: meta.confidence,
 			explanation: meta.explanation,
-			caution: meta.caution
+			caution: meta.caution,
 		});
 	};
 
@@ -244,7 +264,8 @@ export async function findDuplicateCandidates(
 				const right = bucket[j];
 				if (!left || !right) continue;
 				if (left.birthDate && right.birthDate) {
-					if (left.birthDate === right.birthDate) consider(left, right, "same_name_and_birth_date");
+					if (left.birthDate === right.birthDate)
+						consider(left, right, "same_name_and_birth_date");
 					// Одинаковое имя и РАЗНЫЕ даты рождения — это два разных человека,
 					// а не дубль. Такую пару не предлагаем вовсе.
 					continue;
@@ -262,9 +283,19 @@ export async function findDuplicateCandidates(
 				const right = bucket[j];
 				if (!left || !right) continue;
 				// Разные даты рождения при одном телефоне — почти наверняка родня.
-				if (left.birthDate && right.birthDate && left.birthDate !== right.birthDate) continue;
-				const sameSurname = surnameOf(left.fullName) === surnameOf(right.fullName);
-				consider(left, right, sameSurname ? "same_phone_and_surname" : "same_phone_only");
+				if (
+					left.birthDate &&
+					right.birthDate &&
+					left.birthDate !== right.birthDate
+				)
+					continue;
+				const sameSurname =
+					surnameOf(left.fullName) === surnameOf(right.fullName);
+				consider(
+					left,
+					right,
+					sameSurname ? "same_phone_and_surname" : "same_phone_only",
+				);
 			}
 		}
 	}
@@ -276,14 +307,22 @@ export async function findDuplicateCandidates(
 				const left = bucket[i];
 				const right = bucket[j];
 				if (!left || !right) continue;
-				if (left.birthDate && right.birthDate && left.birthDate !== right.birthDate) continue;
+				if (
+					left.birthDate &&
+					right.birthDate &&
+					left.birthDate !== right.birthDate
+				)
+					continue;
 				consider(left, right, "same_email");
 			}
 		}
 	}
 
 	const candidates = [...strongest.values()]
-		.sort((a, b) => b.confidence - a.confidence || a.leftName.localeCompare(b.leftName))
+		.sort(
+			(a, b) =>
+				b.confidence - a.confidence || a.leftName.localeCompare(b.leftName),
+		)
 		.slice(0, limit);
 
 	return {
@@ -303,25 +342,40 @@ export async function findDuplicateCandidates(
 			 */
 			"Пары по одному телефону показываются с низкой уверенностью и пометкой: чаще всего это " +
 			"родственники, а не один человек. Не предлагаются вовсе только полные тёзки с разными " +
-			"датами рождения — это заведомо разные люди."
+			"датами рождения — это заведомо разные люди.",
 	};
 }
 
 /** Сводка для карточки пациента: есть ли у него вероятные дубли. */
-export async function duplicatesForPatient(organizationId: string, patientId: string): Promise<DuplicateCandidate[]> {
-	const report = await findDuplicateCandidates(organizationId, { limit: 500, minConfidence: 0.3 });
+export async function duplicatesForPatient(
+	organizationId: string,
+	patientId: string,
+): Promise<DuplicateCandidate[]> {
+	const report = await findDuplicateCandidates(organizationId, {
+		limit: 500,
+		minConfidence: 0.3,
+	});
 	return report.candidates.filter(
-		(candidate) => candidate.leftPatientId === patientId || candidate.rightPatientId === patientId
+		(candidate) =>
+			candidate.leftPatientId === patientId ||
+			candidate.rightPatientId === patientId,
 	);
 }
 
 /** Проверка существования пациента в организации — нужна маршрутам. */
-export async function patientBelongsToOrganization(organizationId: string, patientId: string): Promise<boolean> {
+export async function patientBelongsToOrganization(
+	organizationId: string,
+	patientId: string,
+): Promise<boolean> {
 	const [row] = await db
 		.select({ id: patients.id })
 		.from(patients)
-		.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+		.where(
+			and(
+				eq(patients.id, patientId),
+				eq(patients.organizationId, organizationId),
+			),
+		)
 		.limit(1);
 	return Boolean(row);
 }
-

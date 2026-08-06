@@ -1,7 +1,7 @@
-import test, { describe } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import test, { describe } from "node:test";
 import fastify from "fastify";
 
 /**
@@ -44,7 +44,11 @@ describe("область действия preHandler у маршрутного �
 		await app.ready();
 
 		const outside = await app.inject({ method: "GET", url: "/outside" });
-		assert.equal(outside.statusCode, 403, "хук модуля не должен был затронуть посторонний маршрут, но затронул");
+		assert.equal(
+			outside.statusCode,
+			403,
+			"хук модуля не должен был затронуть посторонний маршрут, но затронул",
+		);
 		await app.close();
 	});
 
@@ -55,7 +59,11 @@ describe("область действия preHandler у маршрутного �
 		await app.ready();
 
 		const outside = await app.inject({ method: "GET", url: "/outside" });
-		assert.equal(outside.statusCode, 200, "посторонний маршрут не должен зависеть от хука модуля");
+		assert.equal(
+			outside.statusCode,
+			200,
+			"посторонний маршрут не должен зависеть от хука модуля",
+		);
 
 		const own = await app.inject({ method: "GET", url: "/module/own" });
 		assert.equal(own.statusCode, 403, "внутри модуля хук обязан работать");
@@ -64,7 +72,10 @@ describe("область действия preHandler у маршрутного �
 });
 
 describe("проводка маршрутных модулей со своими хуками", () => {
-	const serverSource = readFileSync(new URL("../server.ts", import.meta.url), "utf8");
+	const serverSource = readFileSync(
+		new URL("../server.ts", import.meta.url),
+		"utf8",
+	);
 
 	function routeModulesWithOwnHooks(): string[] {
 		const routesDir = new URL("../routes/", import.meta.url);
@@ -72,7 +83,12 @@ describe("проводка маршрутных модулей со своими
 		const found: string[] = [];
 		for (const entry of readdirSync(dir)) {
 			const full = join(dir, entry);
-			if (!statSync(full).isFile() || !entry.endsWith(".ts") || entry.endsWith(".test.ts")) continue;
+			if (
+				!statSync(full).isFile() ||
+				!entry.endsWith(".ts") ||
+				entry.endsWith(".test.ts")
+			)
+				continue;
 			const source = readFileSync(full, "utf8");
 			/* Любой вид хука, а не только preHandler: маршрутный модуль не должен
 			   влиять на чужие маршруты ни проверкой доступа, ни заголовками, ни
@@ -86,12 +102,17 @@ describe("проводка маршрутных модулей со своими
 
 	test("каждый модуль со своим хуком регистрируется через app.register", () => {
 		const modules = routeModulesWithOwnHooks();
-		assert.ok(modules.length > 0, "не нашёл ни одного модуля со своим хуком — проверка потеряла смысл");
+		assert.ok(
+			modules.length > 0,
+			"не нашёл ни одного модуля со своим хуком — проверка потеряла смысл",
+		);
 
 		const leaking: string[] = [];
 		for (const moduleName of modules) {
 			// Прямой вызов: `await registerMaxRoutes(app);`
-			const directCall = new RegExp(`(?<!register\\(\\s*)\\b${moduleName}\\s*\\(\\s*app\\s*\\)`);
+			const directCall = new RegExp(
+				`(?<!register\\(\\s*)\\b${moduleName}\\s*\\(\\s*app\\s*\\)`,
+			);
 			if (directCall.test(serverSource)) leaking.push(moduleName);
 		}
 

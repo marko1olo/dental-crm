@@ -42,9 +42,18 @@ export function AnamnesisField({
 	return (
 		<label className="document-anamnesis-field">
 			{label}
-			<textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} rows={rows} />
+			<textarea
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+				placeholder={placeholder}
+				rows={rows}
+			/>
 			{empty ? (
-				<button type="button" className="document-anamnesis-quick" onClick={() => onChange(denialText)}>
+				<button
+					type="button"
+					className="document-anamnesis-quick"
+					onClick={() => onChange(denialText)}
+				>
 					{denialLabel}
 				</button>
 			) : null}

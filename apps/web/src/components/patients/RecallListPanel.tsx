@@ -50,7 +50,7 @@ const BAND_TITLES: Record<RecallBand, string> = {
 	due: "Пора на профилактику",
 	overdue: "Пропустил осмотр",
 	never_arrived: "Не дошёл ни разу",
-	probably_lost: "Скорее всего ушёл"
+	probably_lost: "Скорее всего ушёл",
 };
 
 /** Полосы, к которым приглашение уместно. Ушедшим два года назад — уже нет. */
@@ -62,18 +62,25 @@ const INVITABLE: RecallBand[] = ["due", "overdue"];
  * давности, а в том, что человек и не начинал лечиться. Замечено на снимке.
  */
 const NOT_INVITABLE_REASON: Record<string, string> = {
-	probably_lost: "Приглашение не предлагается: прошло больше двух лет, такое сообщение читается как спам.",
-	never_arrived: "Приглашение не предлагается: сначала стоит позвонить и выяснить, почему не дошёл."
+	probably_lost:
+		"Приглашение не предлагается: прошло больше двух лет, такое сообщение читается как спам.",
+	never_arrived:
+		"Приглашение не предлагается: сначала стоит позвонить и выяснить, почему не дошёл.",
 };
 
 function formatDate(value: string | null): string {
 	if (!value) return "приёмов не было";
 	const parsed = new Date(value);
-	return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString("ru-RU");
+	return Number.isNaN(parsed.getTime())
+		? value
+		: parsed.toLocaleDateString("ru-RU");
 }
 
 /** Текст приглашения. Короткий: это SMS, и за длину платит клиника. */
-function invitationText(candidate: RecallCandidate, clinicName: string): string {
+function invitationText(
+	candidate: RecallCandidate,
+	clinicName: string,
+): string {
 	const name = candidate.fullName.split(" ")[1] ?? candidate.fullName;
 	return `${name}, здравствуйте! ${clinicName}: прошло больше полугода с последнего осмотра — самое время проверить зубы. Записаться можно по телефону клиники.`;
 }
@@ -99,14 +106,19 @@ export const RecallListPanel: React.FC = () => {
 		setError(null);
 		try {
 			const response = await fetch("/api/patients/recall-candidates", {
-				headers: auth ? auth.denteClinicalReadHeaders() : {}
+				headers: auth ? auth.denteClinicalReadHeaders() : {},
 			});
-			const payload = (await response.json()) as RecallReport & { message?: string };
-			if (!response.ok) throw new Error(payload.message ?? `Сервер ответил ${response.status}`);
+			const payload = (await response.json()) as RecallReport & {
+				message?: string;
+			};
+			if (!response.ok)
+				throw new Error(payload.message ?? `Сервер ответил ${response.status}`);
 			setReport(payload);
 		} catch (loadError) {
 			setReport(null);
-			setError(loadError instanceof Error ? loadError.message : String(loadError));
+			setError(
+				loadError instanceof Error ? loadError.message : String(loadError),
+			);
 		}
 	}, [auth]);
 
@@ -120,17 +132,29 @@ export const RecallListPanel: React.FC = () => {
 		try {
 			const response = await fetch("/api/patients/recall-candidates/invite", {
 				method: "POST",
-				headers: { ...(auth ? auth.denteClinicalMutationHeaders() : {}), "content-type": "application/json" },
+				headers: {
+					...(auth ? auth.denteClinicalMutationHeaders() : {}),
+					"content-type": "application/json",
+				},
 				body: JSON.stringify({
 					patientId: candidate.patientId,
 					channel: "sms",
-					body: invitationText(candidate, clinicName)
-				})
+					body: invitationText(candidate, clinicName),
+				}),
 			});
 			const payload = (await response.json()) as { message?: string };
-			setNotice(payload.message ?? (response.ok ? "Приглашение поставлено в очередь." : `Сервер ответил ${response.status}`));
+			setNotice(
+				payload.message ??
+					(response.ok
+						? "Приглашение поставлено в очередь."
+						: `Сервер ответил ${response.status}`),
+			);
 		} catch (inviteError) {
-			setNotice(inviteError instanceof Error ? inviteError.message : String(inviteError));
+			setNotice(
+				inviteError instanceof Error
+					? inviteError.message
+					: String(inviteError),
+			);
 		} finally {
 			setBusyPatient(null);
 		}
@@ -146,7 +170,9 @@ export const RecallListPanel: React.FC = () => {
 			<div className="panel-heading">
 				<h2>Пора пригласить</h2>
 				{report ? (
-					<span className="status-pill status-planned">просмотрено карточек: {report.examinedPatients}</span>
+					<span className="status-pill status-planned">
+						просмотрено карточек: {report.examinedPatients}
+					</span>
 				) : null}
 			</div>
 
@@ -174,8 +200,15 @@ export const RecallListPanel: React.FC = () => {
 					<p className="ops-empty ops-empty--good">
 						{/* БЫЛО: «Просмотрено 1 карточек» — число подставлялось к
 						    неизменяемому слову. Согласование берём из общей countLabel. */}
-						Звать некого: все, кто лечился, либо были недавно, либо уже записаны. Просмотрено{" "}
-						{countLabel(report.examinedPatients, "карточка", "карточки", "карточек")}.
+						Звать некого: все, кто лечился, либо были недавно, либо уже
+						записаны. Просмотрено{" "}
+						{countLabel(
+							report.examinedPatients,
+							"карточка",
+							"карточки",
+							"карточек",
+						)}
+						.
 					</p>
 				) : (
 					<>
@@ -193,10 +226,18 @@ export const RecallListPanel: React.FC = () => {
 												activeBand === band ? "ops-metric--selected" : ""
 											}`}
 											aria-pressed={activeBand === band}
-											onClick={() => setActiveBand((previous) => (previous === band ? null : band))}
+											onClick={() =>
+												setActiveBand((previous) =>
+													previous === band ? null : band,
+												)
+											}
 										>
-											<span className="ops-metric__value">{report.byBand[band]}</span>
-											<span className="ops-metric__label">{BAND_TITLES[band]}</span>
+											<span className="ops-metric__value">
+												{report.byBand[band]}
+											</span>
+											<span className="ops-metric__label">
+												{BAND_TITLES[band]}
+											</span>
 										</button>
 									</li>
 								))}
@@ -205,7 +246,11 @@ export const RecallListPanel: React.FC = () => {
 						{activeBand ? (
 							<p className="ops-hint">
 								Показана одна группа: «{BAND_TITLES[activeBand]}».{" "}
-								<button className="link-button" type="button" onClick={() => setActiveBand(null)}>
+								<button
+									className="link-button"
+									type="button"
+									onClick={() => setActiveBand(null)}
+								>
 									Показать всех
 								</button>
 							</p>
@@ -213,7 +258,9 @@ export const RecallListPanel: React.FC = () => {
 
 						<div className="ops-table-wrap">
 							<table className="ops-table">
-								<caption className="sr-only">Пациенты, которых пора пригласить на осмотр</caption>
+								<caption className="sr-only">
+									Пациенты, которых пора пригласить на осмотр
+								</caption>
 								<thead>
 									<tr>
 										<th scope="col">Пациент</th>
@@ -224,59 +271,72 @@ export const RecallListPanel: React.FC = () => {
 								</thead>
 								<tbody>
 									{report.candidates
-										.filter((candidate) => activeBand === null || candidate.band === activeBand)
+										.filter(
+											(candidate) =>
+												activeBand === null || candidate.band === activeBand,
+										)
 										.map((candidate) => {
-										const busy = busyPatient === candidate.patientId;
-										const wasCalled = called.has(candidate.patientId);
+											const busy = busyPatient === candidate.patientId;
+											const wasCalled = called.has(candidate.patientId);
 
-										return (
-											<tr className={wasCalled ? "ops-row--done" : ""} key={candidate.patientId}>
-												<td className="ops-strong" data-label="Пациент">
-													{candidate.fullName}
-													<span className="ops-note">{candidate.phone ?? "телефон не указан"}</span>
-												</td>
-												<td data-label="Последний приём">
-													<span className="ops-time">{formatDate(candidate.lastCompletedAt)}</span>
-													<span className="ops-note">
-														{candidate.monthsSinceLastVisit === null
-															? "завершённых приёмов не было"
-															: `${candidate.monthsSinceLastVisit} мес. назад`}
-													</span>
-												</td>
-												<td data-label="Почему в списке">
-													<span className={`ops-state ops-state--${candidate.band === "due" ? "ok" : "warn"}`}>
-														{BAND_TITLES[candidate.band]}
-													</span>
-													<span className="ops-note">{candidate.reason}</span>
-												</td>
-												<td data-label="Что делать">
-													{/* Звонок доступен всегда: он не рассылка и согласия не требует. */}
-													<button
-														className="secondary-button"
-														type="button"
-														disabled={!candidate.phone}
-														onClick={() => markCalled(candidate.patientId)}
-													>
-														{wasCalled ? "Позвонил ✓" : "Позвонил"}
-													</button>
-													{INVITABLE.includes(candidate.band) ? (
+											return (
+												<tr
+													className={wasCalled ? "ops-row--done" : ""}
+													key={candidate.patientId}
+												>
+													<td className="ops-strong" data-label="Пациент">
+														{candidate.fullName}
+														<span className="ops-note">
+															{candidate.phone ?? "телефон не указан"}
+														</span>
+													</td>
+													<td data-label="Последний приём">
+														<span className="ops-time">
+															{formatDate(candidate.lastCompletedAt)}
+														</span>
+														<span className="ops-note">
+															{candidate.monthsSinceLastVisit === null
+																? "завершённых приёмов не было"
+																: `${candidate.monthsSinceLastVisit} мес. назад`}
+														</span>
+													</td>
+													<td data-label="Почему в списке">
+														<span
+															className={`ops-state ops-state--${candidate.band === "due" ? "ok" : "warn"}`}
+														>
+															{BAND_TITLES[candidate.band]}
+														</span>
+														<span className="ops-note">{candidate.reason}</span>
+													</td>
+													<td data-label="Что делать">
+														{/* Звонок доступен всегда: он не рассылка и согласия не требует. */}
 														<button
 															className="secondary-button"
 															type="button"
-															disabled={busy || !candidate.phone}
-															onClick={() => void invite(candidate)}
+															disabled={!candidate.phone}
+															onClick={() => markCalled(candidate.patientId)}
 														>
-															{busy ? "Отправляю…" : "Пригласить SMS"}
+															{wasCalled ? "Позвонил ✓" : "Позвонил"}
 														</button>
-													) : (
-														<span className="ops-note">
-															{NOT_INVITABLE_REASON[candidate.band] ?? "Приглашение не предлагается."}
-														</span>
-													)}
-												</td>
-											</tr>
-										);
-									})}
+														{INVITABLE.includes(candidate.band) ? (
+															<button
+																className="secondary-button"
+																type="button"
+																disabled={busy || !candidate.phone}
+																onClick={() => void invite(candidate)}
+															>
+																{busy ? "Отправляю…" : "Пригласить SMS"}
+															</button>
+														) : (
+															<span className="ops-note">
+																{NOT_INVITABLE_REASON[candidate.band] ??
+																	"Приглашение не предлагается."}
+															</span>
+														)}
+													</td>
+												</tr>
+											);
+										})}
 								</tbody>
 							</table>
 						</div>

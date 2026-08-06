@@ -1,13 +1,19 @@
-import React, { useEffect, useRef, useState } from "react";
-import { ShieldAlert, Archive, AlertTriangle, CheckCircle2 } from "lucide-react";
+import {
+	AlertTriangle,
+	Archive,
+	CheckCircle2,
+	ShieldAlert,
+} from "lucide-react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import {
 	actionFailureToast,
+	type PanelSubject,
 	panelStateText,
 	resolvePanelPhase,
 	unconfirmedActionToast,
-	type PanelSubject,
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -25,7 +31,8 @@ const BLACKLIST_SUBJECT: PanelSubject = {
 	notLoadedTitle: "Статус блокировки записи не прочитан",
 	accusative: "статус блокировки записи",
 	emptyTitle: "Пациент не в архиве, запрет записи не установлен",
-	emptyHint: "Блокировка нужна, когда записывать пациента нельзя: долг, агрессия, отказ от лечения. Она действует во всех клиниках сети.",
+	emptyHint:
+		"Блокировка нужна, когда записывать пациента нельзя: долг, агрессия, отказ от лечения. Она действует во всех клиниках сети.",
 	failureConsequence:
 		"Не считайте пациента разблокированным по этому экрану: статус не прочитан. Обновите его перед записью на приём.",
 };
@@ -40,7 +47,9 @@ export interface ArchiveReasonItem {
 	createdAt: string;
 }
 
-export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> = ({ patientId }) => {
+export const PatientArchiveAndBlacklistWidget: React.FC<{
+	patientId: string;
+}> = ({ patientId }) => {
 	const { auth, dashboard } = useAppLogicContext();
 	const [selectedReason, setSelectedReason] = useState<string>("");
 	const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
@@ -62,16 +71,15 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 	} = usePatientResource<ArchiveReasonItem[]>(
 		patientId,
 		(id) => `/api/patients/${id}/archive-status`,
-		() =>
-			auth
-				? auth.denteClinicalReadHeaders()
-				: {},
+		() => (auth ? auth.denteClinicalReadHeaders() : {}),
 		[],
 	);
 
 	// Оптимистичное значение после успешной записи. Принадлежит конкретному
 	// пациенту, поэтому сбрасывается при переключении.
-	const [optimisticBlacklist, setOptimisticBlacklist] = useState<boolean | null>(null);
+	const [optimisticBlacklist, setOptimisticBlacklist] = useState<
+		boolean | null
+	>(null);
 	useEffect(() => {
 		setOptimisticBlacklist(null);
 		setConfirmModalOpen(false);
@@ -85,7 +93,8 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 	 * оно имеет право попадать на экран только когда статус действительно
 	 * прочитан: при отказе чтения виджет показывает отказ и не даёт кнопку.
 	 */
-	const isBlacklisted = optimisticBlacklist ?? (reasons[0]?.isBookingBlocked ?? false);
+	const isBlacklisted =
+		optimisticBlacklist ?? reasons[0]?.isBookingBlocked ?? false;
 	const statusPhase = resolvePanelPhase({
 		isLoading: loading,
 		hasFailure: Boolean(loadFailure),
@@ -93,14 +102,17 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 	});
 	// Успешная запись даёт факт, которого сервер уже не отменит: после неё
 	// прежний отказ чтения статус неизвестным больше не делает.
-	const statusUnknown = statusPhase === "failed" && optimisticBlacklist === null;
+	const statusUnknown =
+		statusPhase === "failed" && optimisticBlacklist === null;
 
 	// Блокировка записи действует на всю сеть клиник, поэтому подтверждение
 	// обязано называть пациента поимённо, а не «пациента».
 	const patientName =
-		(dashboard?.patients as Array<{ id: string; fullName?: string }> | undefined)?.find(
-			(p) => p.id === patientId,
-		)?.fullName ?? null;
+		(
+			dashboard?.patients as
+				| Array<{ id: string; fullName?: string }>
+				| undefined
+		)?.find((p) => p.id === patientId)?.fullName ?? null;
 
 	const handleApplyStatus = async () => {
 		if (isApplying || loading) return;
@@ -108,32 +120,44 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 		const newStatus = !isBlacklisted;
 		setIsApplying(true);
 		try {
-			const res = await fetch(`/api/patients/${targetPatientId}/archive-status`, {
-				method: "POST",
-				headers: auth
-					? { ...auth.denteClinicalMutationHeaders(), "Content-Type": "application/json" }
-					: {
-							"Content-Type": "application/json",
-						},
-				body: JSON.stringify({ isBlacklisted: newStatus }),
-			});
+			const res = await fetch(
+				`/api/patients/${targetPatientId}/archive-status`,
+				{
+					method: "POST",
+					headers: auth
+						? {
+								...auth.denteClinicalMutationHeaders(),
+								"Content-Type": "application/json",
+							}
+						: {
+								"Content-Type": "application/json",
+							},
+					body: JSON.stringify({ isBlacklisted: newStatus }),
+				},
+			);
 			// БЫЛО: ни .catch, ни проверки res.ok. При отказе сервера кнопка
 			// просто ничего не делала — оператор считал, что заблокировал.
 			if (!res.ok) {
 				showToast(
 					actionFailureToast(
-						newStatus ? "Пациент не добавлен в черный список" : "Блокировка записи не снята",
+						newStatus
+							? "Пациент не добавлен в черный список"
+							: "Блокировка записи не снята",
 						res.status,
 					),
 					"error",
 				);
 				return;
 			}
-			const data = await res.json().catch(() => ({}) as Record<string, unknown>);
+			const data = await res
+				.json()
+				.catch(() => ({}) as Record<string, unknown>);
 			if (!(data.success || data.isBlacklisted !== undefined)) {
 				showToast(
 					unconfirmedActionToast(
-						newStatus ? "Пациент не добавлен в черный список" : "Блокировка записи не снята",
+						newStatus
+							? "Пациент не добавлен в черный список"
+							: "Блокировка записи не снята",
 					),
 					"error",
 				);
@@ -155,7 +179,9 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 			console.error("[PatientArchiveAndBlacklistWidget apply error]:", error);
 			showToast(
 				actionFailureToast(
-					newStatus ? "Пациент не добавлен в черный список" : "Блокировка записи не снята",
+					newStatus
+						? "Пациент не добавлен в черный список"
+						: "Блокировка записи не снята",
 					null,
 				),
 				"error",
@@ -198,7 +224,11 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 						Отказ чтения вместо кнопки, а не рядом с ней: кнопка
 						подписана по значению isBlacklisted, а оно здесь неизвестно.
 					*/
-					<PanelLoadFailure subject={BLACKLIST_SUBJECT} status={failureStatus} onRetry={reload} />
+					<PanelLoadFailure
+						subject={BLACKLIST_SUBJECT}
+						status={failureStatus}
+						onRetry={reload}
+					/>
 				) : (
 					<>
 						<p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed break-words">
@@ -214,7 +244,11 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 								// умолчанию: нажатие в этот момент предлагало бы «добавить
 								// в ЧС» пациента, который в нём уже есть.
 								disabled={loading || isApplying}
-								title={isBlacklisted ? "Снять блокировку записи" : "Заблокировать запись и добавить в ЧС"}
+								title={
+									isBlacklisted
+										? "Снять блокировку записи"
+										: "Заблокировать запись и добавить в ЧС"
+								}
 								className={`px-3 py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
 									isBlacklisted
 										? "bg-emerald-600 hover:bg-emerald-700 text-white"

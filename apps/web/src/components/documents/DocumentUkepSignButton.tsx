@@ -94,7 +94,9 @@ const CERTIFICATE_STORE_ADVICE =
 const SIGN_FAILURE_TAIL =
 	"Документ остался без крипто-подписи. Повторите подписание, а если отказ повторится — сообщите администратору клиники.";
 
-type PdfLoadResult = { ok: true; base64: string } | { ok: false; reason: string };
+type PdfLoadResult =
+	| { ok: true; base64: string }
+	| { ok: false; reason: string };
 
 export function DocumentUkepSignButton({
 	documentId,
@@ -107,7 +109,8 @@ export function DocumentUkepSignButton({
 	const [certificatesState, setCertificatesState] =
 		useState<CertificatesState>("loading");
 	/** Причина отказа чтения хранилища, если она пригодна для человека. */
-	const [certificatesFailureDetail, setCertificatesFailureDetail] = useState("");
+	const [certificatesFailureDetail, setCertificatesFailureDetail] =
+		useState("");
 	/** Причина отказа подписания. Остаётся на экране до следующей попытки. */
 	const [signFailure, setSignFailure] = useState("");
 
@@ -288,10 +291,10 @@ export function DocumentUkepSignButton({
 					<span>Плагин КриптоПро ЭЦП Browser Plug-in не обнаружен.</span>
 				</div>
 				<p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-					Подписать документ усиленной квалифицированной подписью без него нельзя.
-					Нужны КриптоПро CSP и расширение для браузера. Установите их по
-					инструкции, затем нажмите «Проверить снова» — перезагружать страницу не
-					требуется.
+					Подписать документ усиленной квалифицированной подписью без него
+					нельзя. Нужны КриптоПро CSP и расширение для браузера. Установите их
+					по инструкции, затем нажмите «Проверить снова» — перезагружать
+					страницу не требуется.
 				</p>
 				<div className="flex flex-wrap items-center gap-3">
 					<button
@@ -335,8 +338,8 @@ export function DocumentUkepSignButton({
 					aria-live="polite"
 				>
 					<strong className="block mb-1">
-						Хранилище сертификатов не прочитано — это не значит, что сертификатов
-						нет.
+						Хранилище сертификатов не прочитано — это не значит, что
+						сертификатов нет.
 					</strong>
 					{certificatesFailureDetail ? (
 						<p className="mb-1">{certificatesFailureDetail}</p>
@@ -362,7 +365,8 @@ export function DocumentUkepSignButton({
 					</strong>
 					<p className="mb-2">
 						Сертификат подписи выдаёт удостоверяющий центр, и он должен быть
-						установлен в личное хранилище этого компьютера. {CERTIFICATE_STORE_ADVICE}
+						установлен в личное хранилище этого компьютера.{" "}
+						{CERTIFICATE_STORE_ADVICE}
 					</p>
 					<button
 						type="button"

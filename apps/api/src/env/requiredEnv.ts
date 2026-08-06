@@ -83,7 +83,8 @@ export interface RequiredEnvEntry {
 export const REQUIRED_ENV: readonly RequiredEnvEntry[] = [
 	{
 		name: "DATABASE_URL",
-		breaks: "без строки подключения не работает ничего: сервер не стартует вовсе",
+		breaks:
+			"без строки подключения не работает ничего: сервер не стартует вовсе",
 		readAt: "apps/api/src/db/client.ts:27",
 	},
 	{
@@ -99,7 +100,8 @@ export const REQUIRED_ENV: readonly RequiredEnvEntry[] = [
 		breaks:
 			"изменение настроек клиники и настроек DICOM-хранилища: 503 " +
 			"`SettingsAdminSecretMissing` и `DicomWebSettingsAdminSecretMissing`",
-		readAt: "apps/api/src/routes/settings.ts:743,765; apps/api/src/routes/imaging.ts:147,165",
+		readAt:
+			"apps/api/src/routes/settings.ts:743,765; apps/api/src/routes/imaging.ts:147,165",
 	},
 	{
 		name: "DENTE_SCHEDULE_ADMIN_SECRET",
@@ -164,7 +166,9 @@ export const REQUIRED_ENV: readonly RequiredEnvEntry[] = [
  * разработки считается ТОЛЬКО явное `development` или `test`. Пустая строка,
  * пробелы и незаданное значение режимом разработки НЕ являются.
  */
-export function isDevelopmentEnvironment(env: NodeJS.ProcessEnv = process.env): boolean {
+export function isDevelopmentEnvironment(
+	env: NodeJS.ProcessEnv = process.env,
+): boolean {
 	const mode = env.NODE_ENV?.trim().toLowerCase();
 	return mode === "development" || mode === "test";
 }
@@ -179,9 +183,12 @@ export function isDevelopmentEnvironment(env: NodeJS.ProcessEnv = process.env): 
  * отличить нельзя.
  */
 export function isAutomatedRun(env: NodeJS.ProcessEnv = process.env): boolean {
-	if (typeof env.NODE_TEST_CONTEXT === "string" && env.NODE_TEST_CONTEXT.trim()) return true;
+	if (typeof env.NODE_TEST_CONTEXT === "string" && env.NODE_TEST_CONTEXT.trim())
+		return true;
 	const entry = process.argv[1]?.replace(/\\/g, "/") ?? "";
-	return /\/scripts\/[^/]*\.mjs$/.test(entry) || /\.test\.(ts|js|mjs)$/.test(entry);
+	return (
+		/\/scripts\/[^/]*\.mjs$/.test(entry) || /\.test\.(ts|js|mjs)$/.test(entry)
+	);
 }
 
 /**
@@ -198,20 +205,26 @@ function secretSchema(entry: RequiredEnvEntry): z.ZodType<string> {
 	if (entry.name === "DENTE_COMMUNICATION_RECEIPT_SECRET") {
 		schema = schema.min(
 			RECEIPT_SECRET_MIN_LENGTH,
-			"короче " + String(RECEIPT_SECRET_MIN_LENGTH) + " символов — код считает такое значение незаданным"
+			"короче " +
+				String(RECEIPT_SECRET_MIN_LENGTH) +
+				" символов — код считает такое значение незаданным",
 		);
 	}
 
 	if (entry.name === "CLINIC_ENCRYPTION_KEY") {
 		return schema
-			.refine((value) => Buffer.byteLength(value, "utf8") >= ENCRYPTION_KEY_MIN_BYTES, {
-				message:
-					"короче " +
-					String(ENCRYPTION_KEY_MIN_BYTES) +
-					" байт — резервные копии создаваться не будут",
-			})
+			.refine(
+				(value) => Buffer.byteLength(value, "utf8") >= ENCRYPTION_KEY_MIN_BYTES,
+				{
+					message:
+						"короче " +
+						String(ENCRYPTION_KEY_MIN_BYTES) +
+						" байт — резервные копии создаваться не будут",
+				},
+			)
 			.refine((value) => value !== PUBLIC_SAMPLE_ENCRYPTION_KEY, {
-				message: "равно примеру из репозитория — таким ключом нельзя шифровать медицинские данные",
+				message:
+					"равно примеру из репозитория — таким ключом нельзя шифровать медицинские данные",
 			});
 	}
 
@@ -219,7 +232,9 @@ function secretSchema(entry: RequiredEnvEntry): z.ZodType<string> {
 }
 
 /** Схема окружения целиком. Собирается из `REQUIRED_ENV`, чтобы список был один. */
-export function buildRequiredEnvSchema(): z.ZodObject<Record<string, z.ZodType<string>>> {
+export function buildRequiredEnvSchema(): z.ZodObject<
+	Record<string, z.ZodType<string>>
+> {
 	const shape: Record<string, z.ZodType<string>> = {};
 	for (const entry of REQUIRED_ENV) shape[entry.name] = secretSchema(entry);
 	return z.object(shape);
@@ -235,7 +250,9 @@ export interface EnvProblem {
  * последовательные `throw`: падение на первой переменной заставляет владельца
  * системы обходить список по одному перезапуску на имя.
  */
-export function collectEnvProblems(env: NodeJS.ProcessEnv = process.env): EnvProblem[] {
+export function collectEnvProblems(
+	env: NodeJS.ProcessEnv = process.env,
+): EnvProblem[] {
 	const result = buildRequiredEnvSchema().safeParse(env);
 	if (result.success) return [];
 
@@ -272,7 +289,8 @@ export function formatEnvFailure(problems: readonly EnvProblem[]): string {
 	for (const { entry, reason } of problems) {
 		lines.push("  • " + entry.name + " — " + reason + ".");
 		lines.push("      ломается: " + entry.breaks + ".");
-		if (entry.constraint) lines.push("      требуется: " + entry.constraint + ".");
+		if (entry.constraint)
+			lines.push("      требуется: " + entry.constraint + ".");
 		lines.push("      читается: " + entry.readAt);
 		lines.push("");
 	}
@@ -319,7 +337,7 @@ export function assertRequiredEnv(env: NodeJS.ProcessEnv = process.env): void {
 			"[env] Не заданы обязательные переменные: " +
 				problems.map((problem) => problem.entry.name).join(", ") +
 				". Старт разрешён только потому, что это режим разработки или автоматический прогон. " +
-				"При пустом NODE_ENV этот же запуск будет остановлен."
+				"При пустом NODE_ENV этот же запуск будет остановлен.",
 		);
 		return;
 	}

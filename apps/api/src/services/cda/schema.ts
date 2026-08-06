@@ -65,15 +65,11 @@ export const egiszCdaParamsSchema = z.object({
 	 * document is never rejected for a bogus clock value. Real wall-clock
 	 * values are preserved verbatim.
 	 */
-	documentTime: z
-		.preprocess(
-			(v) => {
-				if (v === undefined || v === null || v === "") return undefined;
-				const d = v instanceof Date ? v : new Date(String(v));
-				return Number.isNaN(d.getTime()) ? new Date() : d;
-			},
-			z.date().optional(),
-		),
+	documentTime: z.preprocess((v) => {
+		if (v === undefined || v === null || v === "") return undefined;
+		const d = v instanceof Date ? v : new Date(String(v));
+		return Number.isNaN(d.getTime()) ? new Date() : d;
+	}, z.date().optional()),
 });
 
 export type EgiszCdaParams = z.infer<typeof egiszCdaParamsSchema>;

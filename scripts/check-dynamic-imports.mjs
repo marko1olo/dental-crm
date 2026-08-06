@@ -18,7 +18,7 @@
  * Только чтение. Возвращает ненулевой код при находках, чтобы её можно было
  * поставить в гейт.
  */
-import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 
 const ROOTS = ["apps/api/src", "apps/web/src", "packages/shared/src"];
@@ -32,7 +32,8 @@ function sources(dir) {
 			out.push(...sources(full));
 			continue;
 		}
-		if ([".ts", ".tsx", ".mts", ".js", ".mjs"].includes(extname(entry))) out.push(full);
+		if ([".ts", ".tsx", ".mts", ".js", ".mjs"].includes(extname(entry)))
+			out.push(full);
 	}
 	return out;
 }
@@ -47,11 +48,16 @@ function sources(dir) {
 function resolveTarget(fromFile, specifier) {
 	const base = resolve(dirname(fromFile), specifier);
 	const candidates = [base];
-	if (base.endsWith(".js")) candidates.push(`${base.slice(0, -3)}.ts`, `${base.slice(0, -3)}.tsx`);
+	if (base.endsWith(".js"))
+		candidates.push(`${base.slice(0, -3)}.ts`, `${base.slice(0, -3)}.tsx`);
 	if (base.endsWith(".mjs")) candidates.push(`${base.slice(0, -4)}.mts`);
 	if (!extname(base)) {
 		candidates.push(`${base}.ts`, `${base}.tsx`, `${base}.js`, `${base}.mjs`);
-		candidates.push(join(base, "index.ts"), join(base, "index.tsx"), join(base, "index.js"));
+		candidates.push(
+			join(base, "index.ts"),
+			join(base, "index.tsx"),
+			join(base, "index.js"),
+		);
 	}
 	return candidates.find((candidate) => existsSync(candidate)) ?? null;
 }
@@ -66,17 +72,26 @@ function resolveTarget(fromFile, specifier) {
  */
 const selfCheckAnchor = "apps/api/src/db/client.ts";
 if (existsSync(selfCheckAnchor)) {
-	const mustFail = resolveTarget(selfCheckAnchor, "./этого-модуля-нет-и-никогда-не-было.js");
+	const mustFail = resolveTarget(
+		selfCheckAnchor,
+		"./этого-модуля-нет-и-никогда-не-было.js",
+	);
 	const mustPass = resolveTarget(selfCheckAnchor, "./schema.js");
 	if (mustFail !== null) {
-		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: выдуманный путь разрешился, проверка ничего не поймает");
+		console.error(
+			"САМОПРОВЕРКА НЕ ПРОШЛА: выдуманный путь разрешился, проверка ничего не поймает",
+		);
 		process.exit(2);
 	}
 	if (mustPass === null) {
-		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: существующий модуль не разрешился, будут ложные находки");
+		console.error(
+			"САМОПРОВЕРКА НЕ ПРОШЛА: существующий модуль не разрешился, будут ложные находки",
+		);
 		process.exit(2);
 	}
-	console.log("самопроверка: выдуманный путь не разрешается, существующий разрешается");
+	console.log(
+		"самопроверка: выдуманный путь не разрешается, существующий разрешается",
+	);
 }
 
 const files = ROOTS.flatMap((root) => (existsSync(root) ? sources(root) : []));
@@ -90,8 +105,12 @@ for (const file of files) {
 	 * какой модуль удалён, и путь из объяснения — не импорт. Без вырезания
 	 * проверка ловила бы собственную документацию.
 	 */
-	const code = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-	for (const match of code.matchAll(/\bimport\s*\(\s*["'`](\.[^"'`]+)["'`]\s*\)/g)) {
+	const code = text
+		.replace(/\/\*[\s\S]*?\*\//g, "")
+		.replace(/(^|[^:])\/\/.*$/gm, "$1");
+	for (const match of code.matchAll(
+		/\bimport\s*\(\s*["'`](\.[^"'`]+)["'`]\s*\)/g,
+	)) {
 		checked += 1;
 		const specifier = match[1];
 		if (resolveTarget(file, specifier)) continue;
@@ -105,14 +124,20 @@ console.log(`динамических импортов найдено:  ${checke
 console.log(`ведут в несуществующий файл:    ${broken.length}`);
 
 if (broken.length > 0) {
-	console.log("\nНАЙДЕНЫ ИМПОРТЫ В НИКУДА. Проверка типов их не видит, а сервер падает");
+	console.log(
+		"\nНАЙДЕНЫ ИМПОРТЫ В НИКУДА. Проверка типов их не видит, а сервер падает",
+	);
 	console.log("при первом обращении к такому маршруту:\n");
 	for (const item of broken) {
 		console.log(`  ${item.file}:${item.line}`);
 		console.log(`      import("${item.specifier}") — файла нет`);
 	}
-	console.log("\nКак закрывать: либо вернуть модуль, либо убрать обращение к нему вместе");
-	console.log("с маршрутом. Оставлять импорт «на потом» нельзя: он не сломает сборку и");
+	console.log(
+		"\nКак закрывать: либо вернуть модуль, либо убрать обращение к нему вместе",
+	);
+	console.log(
+		"с маршрутом. Оставлять импорт «на потом» нельзя: он не сломает сборку и",
+	);
 	console.log("будет ждать первого посетителя раздела.");
 	process.exit(1);
 }

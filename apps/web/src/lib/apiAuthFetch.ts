@@ -18,9 +18,9 @@
  */
 
 import {
-  DENTE_CLINIC_TOKEN_KEY,
-  DENTE_STAFF_TOKEN_KEY,
-  safeLocalStorageGetItem,
+	DENTE_CLINIC_TOKEN_KEY,
+	DENTE_STAFF_TOKEN_KEY,
+	safeLocalStorageGetItem,
 } from "./safeLocalStorage";
 
 const CLINIC_TOKEN_STORAGE_KEY = DENTE_CLINIC_TOKEN_KEY;
@@ -31,17 +31,21 @@ const STAFF_TOKEN_HEADER = "x-dente-staff-token";
 const INSTALLED_FLAG = "__denteApiAuthFetchInstalled";
 
 /** Публичные маршруты, которым токен не нужен (и не должен утекать наружу). */
-const PUBLIC_API_PREFIXES = ["/api/public/", "/api/portal/", "/api/auth/"] as const;
+const PUBLIC_API_PREFIXES = [
+	"/api/public/",
+	"/api/portal/",
+	"/api/auth/",
+] as const;
 
 function readToken(key: string): string | null {
-  const value = safeLocalStorageGetItem(key);
-  return value && value.trim() ? value : null;
+	const value = safeLocalStorageGetItem(key);
+	return value && value.trim() ? value : null;
 }
 
 function requestUrlOf(input: RequestInfo | URL): string {
-  if (typeof input === "string") return input;
-  if (input instanceof URL) return input.toString();
-  return input.url;
+	if (typeof input === "string") return input;
+	if (input instanceof URL) return input.toString();
+	return input.url;
 }
 
 /**
@@ -50,46 +54,53 @@ function requestUrlOf(input: RequestInfo | URL): string {
  * проверяются на совпадение origin.
  */
 export function shouldAttachApiAuth(rawUrl: string): boolean {
-  let pathname: string;
-  try {
-    const parsed = new URL(rawUrl, window.location.origin);
-    if (parsed.origin !== window.location.origin) return false;
-    pathname = parsed.pathname;
-  } catch {
-    return false;
-  }
+	let pathname: string;
+	try {
+		const parsed = new URL(rawUrl, window.location.origin);
+		if (parsed.origin !== window.location.origin) return false;
+		pathname = parsed.pathname;
+	} catch {
+		return false;
+	}
 
-  if (!pathname.startsWith("/api/")) return false;
-  return !PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+	if (!pathname.startsWith("/api/")) return false;
+	return !PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 export function installApiAuthFetch(): void {
-  if (typeof window === "undefined") return;
-  const globalWindow = window as unknown as Record<string, unknown>;
-  if (globalWindow[INSTALLED_FLAG]) return;
-  globalWindow[INSTALLED_FLAG] = true;
+	if (typeof window === "undefined") return;
+	const globalWindow = window as unknown as Record<string, unknown>;
+	if (globalWindow[INSTALLED_FLAG]) return;
+	globalWindow[INSTALLED_FLAG] = true;
 
-  const originalFetch = window.fetch.bind(window);
+	const originalFetch = window.fetch.bind(window);
 
-  window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    if (!shouldAttachApiAuth(requestUrlOf(input))) {
-      return originalFetch(input, init);
-    }
+	window.fetch = async (
+		input: RequestInfo | URL,
+		init?: RequestInit,
+	): Promise<Response> => {
+		if (!shouldAttachApiAuth(requestUrlOf(input))) {
+			return originalFetch(input, init);
+		}
 
-    const clinicToken = readToken(CLINIC_TOKEN_STORAGE_KEY);
-    const staffToken = readToken(STAFF_TOKEN_STORAGE_KEY);
-    if (!clinicToken && !staffToken) {
-      return originalFetch(input, init);
-    }
+		const clinicToken = readToken(CLINIC_TOKEN_STORAGE_KEY);
+		const staffToken = readToken(STAFF_TOKEN_STORAGE_KEY);
+		if (!clinicToken && !staffToken) {
+			return originalFetch(input, init);
+		}
 
-    // Заголовки могут быть заданы в init, а могут — в объекте Request.
-    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
-    if (clinicToken && !headers.has(CLINIC_TOKEN_HEADER)) headers.set(CLINIC_TOKEN_HEADER, clinicToken);
-    if (staffToken && !headers.has(STAFF_TOKEN_HEADER)) headers.set(STAFF_TOKEN_HEADER, staffToken);
+		// Заголовки могут быть заданы в init, а могут — в объекте Request.
+		const headers = new Headers(
+			init?.headers ?? (input instanceof Request ? input.headers : undefined),
+		);
+		if (clinicToken && !headers.has(CLINIC_TOKEN_HEADER))
+			headers.set(CLINIC_TOKEN_HEADER, clinicToken);
+		if (staffToken && !headers.has(STAFF_TOKEN_HEADER))
+			headers.set(STAFF_TOKEN_HEADER, staffToken);
 
-    if (input instanceof Request && !init) {
-      return originalFetch(new Request(input, { headers }));
-    }
-    return originalFetch(input, { ...(init ?? {}), headers });
-  };
+		if (input instanceof Request && !init) {
+			return originalFetch(new Request(input, { headers }));
+		}
+		return originalFetch(input, { ...(init ?? {}), headers });
+	};
 }

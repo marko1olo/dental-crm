@@ -77,13 +77,16 @@ async function main(): Promise<void> {
 	await measureOnce();
 
 	const durations: number[] = [];
-	for (let index = 0; index < SAMPLES; index += 1) durations.push(await measureOnce());
+	for (let index = 0; index < SAMPLES; index += 1)
+		durations.push(await measureOnce());
 	durations.sort((left, right) => left - right);
 	const median = durations[Math.floor(durations.length / 2)] ?? 0;
 	const worst = durations.at(-1) ?? 0;
 	const total = durations.reduce((sum, value) => sum + value, 0);
 
-	console.log(`Одна проверка пароля: медиана ${median.toFixed(1)} мс, худшая ${worst.toFixed(1)} мс`);
+	console.log(
+		`Одна проверка пароля: медиана ${median.toFixed(1)} мс, худшая ${worst.toFixed(1)} мс`,
+	);
 	console.log(`Серия из ${SAMPLES} проверок: ${total.toFixed(0)} мс подряд`);
 
 	/*

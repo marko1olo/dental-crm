@@ -28,15 +28,24 @@ import { signToken } from "../../../../apps/api/src/utils/cryptoHelper.js";
 const TTL_SECONDS = 3600;
 const tokenFile = path.resolve(process.cwd(), "../../.ops-shot-tokens.json");
 
-type TokenFile = { organizationId?: string; clinicToken: string; staffToken: string };
+type TokenFile = {
+	organizationId?: string;
+	clinicToken: string;
+	staffToken: string;
+};
 
 function payloadOf(token: string): Record<string, unknown> {
 	const [data] = token.split(".");
-	if (!data) throw new Error("Токен не двухсегментный: полезную нагрузку не прочитать");
-	const parsed: unknown = JSON.parse(Buffer.from(data, "base64url").toString("utf8"));
-	if (!parsed || typeof parsed !== "object") throw new Error("Полезная нагрузка токена не объект");
+	if (!data)
+		throw new Error("Токен не двухсегментный: полезную нагрузку не прочитать");
+	const parsed: unknown = JSON.parse(
+		Buffer.from(data, "base64url").toString("utf8"),
+	);
+	if (!parsed || typeof parsed !== "object")
+		throw new Error("Полезная нагрузка токена не объект");
 	const { exp, iat, ...rest } = parsed as Record<string, unknown>;
-	if (exp === undefined) throw new Error("В токене нет срока действия: это не наш формат");
+	if (exp === undefined)
+		throw new Error("В токене нет срока действия: это не наш формат");
 	return rest;
 }
 
@@ -49,13 +58,16 @@ const current = JSON.parse(readFileSync(tokenFile, "utf8")) as TokenFile;
  * cwd (apps/api), потому что из .agents/ его не видно: он лежит в
  * apps/api/node_modules. Секрет читает процесс, не человек: он нигде не печатается.
  */
-await import(pathToFileURL(path.resolve(process.cwd(), "node_modules/dotenv/config.js")).href);
+await import(
+	pathToFileURL(path.resolve(process.cwd(), "node_modules/dotenv/config.js"))
+		.href
+);
 const secret = authTokenSecret();
 
 console.log(
 	JSON.stringify({
 		organizationId: current.organizationId,
 		clinicToken: signToken(payloadOf(current.clinicToken), secret, TTL_SECONDS),
-		staffToken: signToken(payloadOf(current.staffToken), secret, TTL_SECONDS)
-	})
+		staffToken: signToken(payloadOf(current.staffToken), secret, TTL_SECONDS),
+	}),
 );

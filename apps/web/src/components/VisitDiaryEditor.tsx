@@ -15,33 +15,38 @@ import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { getIcdColor, ICD_GROUP_COLORS, ICD10_DICTIONARY } from "../lib/icd10";
+import { specialtyLabels } from "../workspaceUiLabels";
 import { PanelLoadFailure } from "./PanelLoadFailure";
 import { SmartMicrophoneButton } from "./SmartMicrophoneButton";
 import { useVisitDiaryLogic } from "./useVisitDiaryLogic";
 import {
-	VisitDiaryPhotoUpload,
 	type DiaryPrintPhoto,
+	VisitDiaryPhotoUpload,
 } from "./VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "./VisitDiaryTemplateSelector";
 import { CryptoProSigner } from "./visit/CryptoProSigner";
 import { realVisitFieldId } from "./visit/visitIdentity";
-import { specialtyLabels } from "../workspaceUiLabels";
 import "../styles/visit-diary-043.css";
-
 
 interface VisitDiaryEditorProps {
 	visitId: string;
 	patientId: string;
 }
 
-function formatPersonName(p: {
-	lastName?: string | null;
-	firstName?: string | null;
-	middleName?: string | null;
-	fullName?: string | null;
-} | null | undefined): string {
+function formatPersonName(
+	p:
+		| {
+				lastName?: string | null;
+				firstName?: string | null;
+				middleName?: string | null;
+				fullName?: string | null;
+		  }
+		| null
+		| undefined,
+): string {
 	if (!p) return "—";
-	if (typeof p.fullName === "string" && p.fullName.trim()) return p.fullName.trim();
+	if (typeof p.fullName === "string" && p.fullName.trim())
+		return p.fullName.trim();
 	const parts = [p.lastName, p.firstName, p.middleName]
 		.map((x) => (typeof x === "string" ? x.trim() : ""))
 		.filter(Boolean);
@@ -223,8 +228,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		const meaningful = codes.filter((c: string) => c !== "universal");
 		const list = meaningful.length > 0 ? meaningful : codes;
 		return list
-			.map((c: string) =>
-				specialtyLabels[c as keyof typeof specialtyLabels] ?? c,
+			.map(
+				(c: string) => specialtyLabels[c as keyof typeof specialtyLabels] ?? c,
 			)
 			.join(", ");
 	})();
@@ -512,10 +517,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 												key={ph.id}
 												className="vde-043-print-photos__item"
 											>
-												<img
-													src={ph.objectUrl}
-													alt={ph.name}
-												/>
+												<img src={ph.objectUrl} alt={ph.name} />
 												<figcaption>{ph.name}</figcaption>
 											</figure>
 										))}
@@ -709,7 +711,6 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 
 			{/* ── SOAP Fields grid ── */}
 			<div className="vde-043__grid">
-
 				{/* S — Subjective */}
 				<div className="vde-043__field">
 					<label className="vde-043__label" htmlFor="diary-anamnesis">
@@ -801,7 +802,15 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									<span className="vde-043__icd-code">
 										{diary.diagnosisIcd10}
 									</span>
-									<span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+									<span
+										style={{
+											flex: 1,
+											minWidth: 0,
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+										}}
+									>
 										{ICD10_DICTIONARY.find(
 											(i) => i.code === diary.diagnosisIcd10,
 										)?.label ?? "Диагноз выбран"}
@@ -1045,12 +1054,12 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					/>
 				</div>
 			) : isRevising ? (
-				<div
-					className="vde-043__revise-panel"
-					data-testid="diary-revise-panel"
-				>
+				<div className="vde-043__revise-panel" data-testid="diary-revise-panel">
 					<div className="vde-043__revise-warn">
-						<AlertTriangle className="w-4 h-4 shrink-0" style={{ marginTop: 2 }} />
+						<AlertTriangle
+							className="w-4 h-4 shrink-0"
+							style={{ marginTop: 2 }}
+						/>
 						<span>
 							Режим правки подписанного дневника. Прежний текст сохранится в
 							истории. Доступно только администратору клиники.
@@ -1155,11 +1164,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 								diaryId ? { id: diaryId, hash: diaryHash } : null
 							}
 							onLock={async (thumbprint, signature, alreadySavedId) => {
-								await doLock(
-									thumbprint,
-									signature,
-									alreadySavedId ?? diaryId,
-								);
+								await doLock(thumbprint, signature, alreadySavedId ?? diaryId);
 							}}
 						/>
 					)}
@@ -1189,10 +1194,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					>
 						<Printer className="w-3.5 h-3.5" /> Форма 043/у
 					</button>
-
 				</div>
 			)}
-
 
 			{/*
 			  Forensic 043/у: история правок подписанного дневника.
@@ -1274,8 +1277,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 										</ul>
 									) : (
 										<p className="vde-043__revision-empty-prev">
-											Снимок прежних полей пуст (ревизия до forensic-полей
-											или поля были пустыми).
+											Снимок прежних полей пуст (ревизия до forensic-полей или
+											поля были пустыми).
 										</p>
 									)}
 								</li>

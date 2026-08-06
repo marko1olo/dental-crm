@@ -42,20 +42,27 @@ export type ResolvedTheme = {
 	readonly colorScheme: "light" | "dark";
 };
 
-export function resolveTheme(themeMode: ThemeMode, prefersDark: boolean): ResolvedTheme {
-	const theme = themeMode === "auto" ? (prefersDark ? "dark" : "light") : themeMode;
+export function resolveTheme(
+	themeMode: ThemeMode,
+	prefersDark: boolean,
+): ResolvedTheme {
+	const theme =
+		themeMode === "auto" ? (prefersDark ? "dark" : "light") : themeMode;
 	return {
 		theme,
 		darkClass: theme === "dark",
 		lightClass: theme === "light",
 		// Ночная тема — тоже тёмная: системные полосы прокрутки и поля ввода
 		// должны быть тёмными, иначе браузер рисует их светлыми поверх тёмного.
-		colorScheme: theme === "light" ? "light" : "dark"
+		colorScheme: theme === "light" ? "light" : "dark",
 	};
 }
 
 /** Применение к <html>. Вынесено рядом, чтобы порядок действий был один. */
-export function applyThemeToRoot(root: HTMLElement, resolved: ResolvedTheme): void {
+export function applyThemeToRoot(
+	root: HTMLElement,
+	resolved: ResolvedTheme,
+): void {
 	root.dataset.theme = resolved.theme;
 	root.classList.toggle("dark", resolved.darkClass);
 	root.classList.toggle("light", resolved.lightClass);

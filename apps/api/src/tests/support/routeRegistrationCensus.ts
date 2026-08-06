@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -117,25 +117,37 @@ function parseImportClause(clause: string): ImportedBinding[] {
 
 	const bindings: ImportedBinding[] = [];
 	const bracePosition = trimmed.indexOf("{");
-	const head = (bracePosition === -1 ? trimmed : trimmed.slice(0, bracePosition))
+	const head = (
+		bracePosition === -1 ? trimmed : trimmed.slice(0, bracePosition)
+	)
 		.replace(/,\s*$/, "")
 		.trim();
 
 	if (head.length > 0) {
 		const namespace = /^\*\s+as\s+([A-Za-z_$][\w$]*)$/.exec(head);
-		if (namespace?.[1]) bindings.push({ local: namespace[1], isNamespace: true });
-		else if (/^[A-Za-z_$][\w$]*$/.test(head)) bindings.push({ local: head, isNamespace: false });
+		if (namespace?.[1])
+			bindings.push({ local: namespace[1], isNamespace: true });
+		else if (/^[A-Za-z_$][\w$]*$/.test(head))
+			bindings.push({ local: head, isNamespace: false });
 	}
 
 	if (bracePosition !== -1) {
 		const closing = trimmed.indexOf("}", bracePosition);
-		const inner = trimmed.slice(bracePosition + 1, closing === -1 ? undefined : closing);
+		const inner = trimmed.slice(
+			bracePosition + 1,
+			closing === -1 ? undefined : closing,
+		);
 		for (const rawPart of inner.split(",")) {
 			const part = rawPart.trim();
 			if (part.length === 0) continue;
 			if (/^type\b/.test(part)) continue;
-			const local = part.split(/\s+as\s+/).pop()?.trim() ?? "";
-			if (/^[A-Za-z_$][\w$]*$/.test(local)) bindings.push({ local, isNamespace: false });
+			const local =
+				part
+					.split(/\s+as\s+/)
+					.pop()
+					?.trim() ?? "";
+			if (/^[A-Za-z_$][\w$]*$/.test(local))
+				bindings.push({ local, isNamespace: false });
 		}
 	}
 
@@ -153,17 +165,29 @@ type InvocationShape = {
 	readonly prefixes: readonly string[];
 };
 
-function invocationShapeOf(source: string, binding: ImportedBinding): InvocationShape {
+function invocationShapeOf(
+	source: string,
+	binding: ImportedBinding,
+): InvocationShape {
 	const name = escapeForRegExp(binding.local);
 	if (binding.isNamespace) {
-		const namespaced = new RegExp(`(?<![\\w$.])${name}\\.[A-Za-z_$][\\w$]*\\s*\\(`);
-		return { invoked: namespaced.test(source), direct: namespaced.test(source), prefixes: [] };
+		const namespaced = new RegExp(
+			`(?<![\\w$.])${name}\\.[A-Za-z_$][\\w$]*\\s*\\(`,
+		);
+		return {
+			invoked: namespaced.test(source),
+			direct: namespaced.test(source),
+			prefixes: [],
+		};
 	}
 
 	// `await registerXRoutes(app)` — хук такого модуля попадает в корневую область.
 	const direct = new RegExp(`(?<![\\w$.])${name}\\s*\\(`).test(source);
 	// `app.register(x)` / `app.register(x, { prefix: "/api/x" })`.
-	const mountPattern = new RegExp(`\\.register\\(\\s*${name}\\s*(,\\s*\\{([^}]*)\\})?`, "g");
+	const mountPattern = new RegExp(
+		`\\.register\\(\\s*${name}\\s*(,\\s*\\{([^}]*)\\})?`,
+		"g",
+	);
 	const prefixes: string[] = [];
 	let mounted = false;
 	for (const match of source.matchAll(mountPattern)) {
@@ -177,7 +201,10 @@ function invocationShapeOf(source: string, binding: ImportedBinding): Invocation
 	return { invoked: direct || mounted, direct: direct && !mounted, prefixes };
 }
 
-function resolveImportTarget(fromFile: string, specifier: string): string | null {
+function resolveImportTarget(
+	fromFile: string,
+	specifier: string,
+): string | null {
 	if (!specifier.startsWith(".")) return null;
 	const withoutExtension = specifier.replace(/\.(?:js|ts)$/, "");
 	const resolved = path.resolve(path.dirname(fromFile), withoutExtension);
@@ -197,7 +224,11 @@ type Edge = {
 	readonly prefixes: readonly string[];
 };
 
-function outgoingEdges(file: string, source: string, known: ReadonlySet<string>): Edge[] {
+function outgoingEdges(
+	file: string,
+	source: string,
+	known: ReadonlySet<string>,
+): Edge[] {
 	const edges = new Map<string, Edge>();
 	for (const match of source.matchAll(IMPORT_PATTERN)) {
 		const clause = match[1] ?? "";
@@ -230,7 +261,9 @@ export function censusRouteModules(options: {
 	const routesDir = path.resolve(options.routesDir);
 	const entryFile = path.resolve(options.entryFile);
 
-	const files = listFilesRecursive(routesDir).filter((file) => file !== entryFile);
+	const files = listFilesRecursive(routesDir).filter(
+		(file) => file !== entryFile,
+	);
 	const known = new Set(files);
 
 	const sources = new Map<string, string>();
@@ -243,15 +276,23 @@ export function censusRouteModules(options: {
 	}
 
 	const idOf = (file: string): string =>
-		file === entryFile ? toPosix(path.basename(file)) : toPosix(path.relative(routesDir, file));
+		file === entryFile
+			? toPosix(path.basename(file))
+			: toPosix(path.relative(routesDir, file));
 
 	// Обход в ширину от точки входа: цепочка проводки, а не список имён.
-	type Reached = { readonly chain: readonly string[]; readonly prefixes: readonly string[]; readonly direct: boolean };
+	type Reached = {
+		readonly chain: readonly string[];
+		readonly prefixes: readonly string[];
+		readonly direct: boolean;
+	};
 	const reached = new Map<string, Reached>();
 	const entryId = idOf(entryFile);
-	const queue: Array<{ file: string; chain: readonly string[]; prefixes: readonly string[] }> = [
-		{ file: entryFile, chain: [entryId], prefixes: [] },
-	];
+	const queue: Array<{
+		file: string;
+		chain: readonly string[];
+		prefixes: readonly string[];
+	}> = [{ file: entryFile, chain: [entryId], prefixes: [] }];
 
 	while (queue.length > 0) {
 		const current = queue.shift();

@@ -55,6 +55,7 @@
 import { Decimal } from "decimal.js";
 import { and, eq, gte, isNotNull, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	doctorCommissions,
@@ -63,8 +64,10 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
-import { currentMonthPeriod, type ReportPeriod } from "../reports/managerReports.js";
-import { withTenantCtx, withSuperuserBypass } from "../../db/rls.js";
+import {
+	currentMonthPeriod,
+	type ReportPeriod,
+} from "../reports/managerReports.js";
 
 /**
  * Период по умолчанию берётся из отчётов руководителю, а не объявляется здесь
@@ -90,7 +93,10 @@ export type ResolvedPayoutPeriod =
  * зарплату считают раз в месяц.
  */
 export function resolvePayoutPeriod(
-	input: { readonly from?: string | undefined; readonly to?: string | undefined },
+	input: {
+		readonly from?: string | undefined;
+		readonly to?: string | undefined;
+	},
 	now = new Date(),
 	/**
 	 * Часовой пояс клиники. Без него границы месяца считались в поясе СЕРВЕРНОГО
@@ -111,11 +117,15 @@ export function resolvePayoutPeriod(
 	if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
 		return {
 			ok: false,
-			message: "Даты периода не разобраны. Передайте начало и конец периода в формате даты со временем.",
+			message:
+				"Даты периода не разобраны. Передайте начало и конец периода в формате даты со временем.",
 		};
 	}
 	if (from.getTime() > to.getTime()) {
-		return { ok: false, message: "Начало периода позже его конца. Поменяйте даты местами." };
+		return {
+			ok: false,
+			message: "Начало периода позже его конца. Поменяйте даты местами.",
+		};
 	}
 	const spanDays = (to.getTime() - from.getTime()) / 86_400_000;
 	if (spanDays > MAX_PAYOUT_PERIOD_DAYS) {
@@ -265,12 +275,24 @@ export type PayoutFormulaResult = {
  * Начислено = касса × ставка. Удержано = себестоимость материалов × процент
  * удержания. Выплата = начислено − удержано, со знаком.
  */
-export function computeDoctorPayout(input: PayoutFormulaInput): PayoutFormulaResult {
+export function computeDoctorPayout(
+	input: PayoutFormulaInput,
+): PayoutFormulaResult {
 	if (input.commissionPct === null) {
-		return { state: "rate_missing", accruedRub: null, withheldMaterialRub: null, payoutRub: null };
+		return {
+			state: "rate_missing",
+			accruedRub: null,
+			withheldMaterialRub: null,
+			payoutRub: null,
+		};
 	}
 	if (!isUsablePercent(input.commissionPct)) {
-		return { state: "rate_invalid", accruedRub: null, withheldMaterialRub: null, payoutRub: null };
+		return {
+			state: "rate_invalid",
+			accruedRub: null,
+			withheldMaterialRub: null,
+			payoutRub: null,
+		};
 	}
 
 	const accruedRub = percentOfMoney(input.revenueRub, input.commissionPct);
@@ -299,7 +321,10 @@ export function computeDoctorPayout(input: PayoutFormulaInput): PayoutFormulaRes
 		};
 	}
 
-	const withheldMaterialRub = percentOfMoney(input.materialCostRub, input.materialDeductionPct);
+	const withheldMaterialRub = percentOfMoney(
+		input.materialCostRub,
+		input.materialDeductionPct,
+	);
 	return {
 		state: "computed",
 		accruedRub,
@@ -309,7 +334,10 @@ export function computeDoctorPayout(input: PayoutFormulaInput): PayoutFormulaRes
 }
 
 /** Состояние себестоимости по числу строк списания. */
-export function materialsStateOf(movements: number, unpriced: number): DoctorPayoutMaterialsState {
+export function materialsStateOf(
+	movements: number,
+	unpriced: number,
+): DoctorPayoutMaterialsState {
 	if (movements === 0) return "no_movements";
 	return unpriced > 0 ? "cost_missing" : "counted";
 }
@@ -350,7 +378,9 @@ export function payoutRowNote(input: {
 			);
 			break;
 		case "computed":
-			parts.push("Начислено процентом от кассы, затем удержана доля себестоимости материалов.");
+			parts.push(
+				"Начислено процентом от кассы, затем удержана доля себестоимости материалов.",
+			);
 			break;
 	}
 
@@ -369,7 +399,11 @@ export function payoutRowNote(input: {
 		}
 	}
 
-	if (input.state === "computed" && input.payoutRub !== null && input.payoutRub < 0) {
+	if (
+		input.state === "computed" &&
+		input.payoutRub !== null &&
+		input.payoutRub < 0
+	) {
 		parts.push(
 			"Выплата отрицательная: материалы дороже начисленного процента. " +
 				"Это долг врача клинике, а не ноль — обнулять его нельзя.",
@@ -431,52 +465,55 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 	 */
 	const paidVisits = db.$with("payout_paid_visits").as(
 		db
-    			.select({ visitId: payments.visitId })
-    			.from(payments)
-    			.where(
-    				and(
-    					eq(payments.organizationId, organizationId),
-    					eq(payments.status, "paid"),
-    					isNotNull(payments.visitId),
-    					gte(payments.paidAt, from),
-    					lte(payments.paidAt, to),
-    				),
-    			)
-    			.groupBy(payments.visitId),
-    	);
+			.select({ visitId: payments.visitId })
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					eq(payments.status, "paid"),
+					isNotNull(payments.visitId),
+					gte(payments.paidAt, from),
+					lte(payments.paidAt, to),
+				),
+			)
+			.groupBy(payments.visitId),
+	);
 
 	const revenue = db.$with("payout_revenue").as(
 		db
-    			.select({
-    				doctorUserId: appointments.doctorUserId,
-    				revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as("revenue_rub"),
-    				paymentCount: sql<number>`count(*)::int`.as("payment_count"),
-    			})
-    			.from(payments)
-    			.innerJoin(visits, eq(payments.visitId, visits.id))
-    			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
-    			.where(
-    				and(
-    					eq(payments.organizationId, organizationId),
-    					eq(payments.status, "paid"),
-    					gte(payments.paidAt, from),
-    					lte(payments.paidAt, to),
-    					// Изоляция клиники на КАЖДОМ звене цепочки, а не только на платеже:
-    					// строка чужой организации не должна попасть в расчёт даже при
-    					// испорченной ссылке.
-    					eq(visits.organizationId, organizationId),
-    					eq(appointments.organizationId, organizationId),
-    					isNotNull(appointments.doctorUserId),
-    				),
-    			)
-    			.groupBy(appointments.doctorUserId),
-    	);
+			.select({
+				doctorUserId: appointments.doctorUserId,
+				revenueRub:
+					sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as(
+						"revenue_rub",
+					),
+				paymentCount: sql<number>`count(*)::int`.as("payment_count"),
+			})
+			.from(payments)
+			.innerJoin(visits, eq(payments.visitId, visits.id))
+			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					eq(payments.status, "paid"),
+					gte(payments.paidAt, from),
+					lte(payments.paidAt, to),
+					// Изоляция клиники на КАЖДОМ звене цепочки, а не только на платеже:
+					// строка чужой организации не должна попасть в расчёт даже при
+					// испорченной ссылке.
+					eq(visits.organizationId, organizationId),
+					eq(appointments.organizationId, organizationId),
+					isNotNull(appointments.doctorUserId),
+				),
+			)
+			.groupBy(appointments.doctorUserId),
+	);
 
 	const materials = db.$with("payout_materials").as(
 		db
-    			.select({
-    				doctorUserId: appointments.doctorUserId,
-    				materialCostRub: sql<number>`
+			.select({
+				doctorUserId: appointments.doctorUserId,
+				materialCostRub: sql<number>`
 					coalesce(
 						sum(
 							coalesce(${inventoryTransactions}."unit_cost_rub", 0)
@@ -485,31 +522,34 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 						0
 					)::numeric(12,2)
 				`.as("material_cost_rub"),
-    				movements: sql<number>`count(*)::int`.as("movements"),
-    				movementsUnpriced: sql<number>`count(*) filter (
+				movements: sql<number>`count(*)::int`.as("movements"),
+				movementsUnpriced: sql<number>`count(*) filter (
 					where ${inventoryTransactions}."unit_cost_rub" is null
 					   or ${inventoryTransactions}."unit_cost_rub" = 0
 					   or ${inventoryTransactions}."quantity_changed" is null
 					   or ${inventoryTransactions}."quantity_changed" = 0
 				)::int`.as("movements_unpriced"),
-    			})
-    			.from(inventoryTransactions)
-    			.innerJoin(paidVisits, eq(inventoryTransactions.visitId, paidVisits.visitId))
-    			.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
-    			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
-    			.where(
-    				and(
-    					eq(inventoryTransactions.organizationId, organizationId),
-    					// Расход материалов при подписании приёма. Приход на склад
-    					// ('receipt') себестоимостью визита не является.
-    					eq(inventoryTransactions.transactionType, "auto_deduct"),
-    					eq(visits.organizationId, organizationId),
-    					eq(appointments.organizationId, organizationId),
-    					isNotNull(appointments.doctorUserId),
-    				),
-    			)
-    			.groupBy(appointments.doctorUserId),
-    	);
+			})
+			.from(inventoryTransactions)
+			.innerJoin(
+				paidVisits,
+				eq(inventoryTransactions.visitId, paidVisits.visitId),
+			)
+			.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
+			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+			.where(
+				and(
+					eq(inventoryTransactions.organizationId, organizationId),
+					// Расход материалов при подписании приёма. Приход на склад
+					// ('receipt') себестоимостью визита не является.
+					eq(inventoryTransactions.transactionType, "auto_deduct"),
+					eq(visits.organizationId, organizationId),
+					eq(appointments.organizationId, organizationId),
+					isNotNull(appointments.doctorUserId),
+				),
+			)
+			.groupBy(appointments.doctorUserId),
+	);
 
 	/*
 	 * Ставки врачей. Уникальности в БД нет (единственный индекс —
@@ -520,34 +560,38 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 	 */
 	const rateCandidates = db.$with("payout_rate_candidates").as(
 		db
-    			.select({
-    				userId: doctorCommissions.userId,
-    				commissionPct: doctorCommissions.commissionPct,
-    				materialDeductionPct: doctorCommissions.materialCostDeductionPct,
-    				effectiveFrom: doctorCommissions.effectiveFrom,
-    				rowNumber: sql<number>`row_number() over (
+			.select({
+				userId: doctorCommissions.userId,
+				commissionPct: doctorCommissions.commissionPct,
+				materialDeductionPct: doctorCommissions.materialCostDeductionPct,
+				effectiveFrom: doctorCommissions.effectiveFrom,
+				rowNumber: sql<number>`row_number() over (
 					partition by ${doctorCommissions}."user_id"
 					order by ${doctorCommissions}."effective_from" desc, ${doctorCommissions}."created_at" desc
 				)`.as("row_number"),
-    				rateRowCount: sql<number>`(count(*) over (partition by ${doctorCommissions}."user_id"))::int`.as(
-    					"rate_row_count",
-    				),
-    			})
-    			.from(doctorCommissions)
-    			.where(
-    				and(
-    					eq(doctorCommissions.organizationId, organizationId),
-    					eq(doctorCommissions.isActive, true),
-    					lte(doctorCommissions.effectiveFrom, to),
-    					// Соединять ставку по doctor_id нельзя: эту колонку не пишет ни
-    					// один писатель, и такой отчёт был бы пуст всегда.
-    					isNotNull(doctorCommissions.userId),
-    				),
-    			)
-    	);
+				rateRowCount:
+					sql<number>`(count(*) over (partition by ${doctorCommissions}."user_id"))::int`.as(
+						"rate_row_count",
+					),
+			})
+			.from(doctorCommissions)
+			.where(
+				and(
+					eq(doctorCommissions.organizationId, organizationId),
+					eq(doctorCommissions.isActive, true),
+					lte(doctorCommissions.effectiveFrom, to),
+					// Соединять ставку по doctor_id нельзя: эту колонку не пишет ни
+					// один писатель, и такой отчёт был бы пуст всегда.
+					isNotNull(doctorCommissions.userId),
+				),
+			),
+	);
 
 	const doctorFilter = scope.onlyDoctorUserId
-		? and(eq(users.organizationId, organizationId), eq(users.id, scope.onlyDoctorUserId))
+		? and(
+				eq(users.organizationId, organizationId),
+				eq(users.id, scope.onlyDoctorUserId),
+			)
 		: eq(users.organizationId, organizationId);
 
 	/*
@@ -571,9 +615,10 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 	const periodRevenue = db.$with("payout_period_revenue").as(
 		db
 			.select({
-				totalRevenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as(
-					"total_revenue_rub",
-				),
+				totalRevenueRub:
+					sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as(
+						"total_revenue_rub",
+					),
 				totalPaymentCount: sql<number>`count(*)::int`.as("total_payment_count"),
 				attributableRevenueRub: sql<number>`coalesce(
 					sum(${payments.amountRub}) filter (where ${appointments.doctorUserId} is not null),
@@ -581,10 +626,19 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 				)::numeric(12,2)`.as("attributable_revenue_rub"),
 			})
 			.from(payments)
-			.leftJoin(visits, and(eq(payments.visitId, visits.id), eq(visits.organizationId, organizationId)))
+			.leftJoin(
+				visits,
+				and(
+					eq(payments.visitId, visits.id),
+					eq(visits.organizationId, organizationId),
+				),
+			)
 			.leftJoin(
 				appointments,
-				and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, organizationId)),
+				and(
+					eq(visits.appointmentId, appointments.id),
+					eq(appointments.organizationId, organizationId),
+				),
 			)
 			.where(
 				and(
@@ -592,7 +646,9 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					eq(payments.status, "paid"),
 					gte(payments.paidAt, from),
 					lte(payments.paidAt, to),
-					scope.onlyDoctorUserId ? eq(appointments.doctorUserId, scope.onlyDoctorUserId) : undefined,
+					scope.onlyDoctorUserId
+						? eq(appointments.doctorUserId, scope.onlyDoctorUserId)
+						: undefined,
 				),
 			),
 	);
@@ -604,26 +660,45 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 				doctorName: users.fullName,
 				role: users.role,
 				isActive: users.isActive,
-				revenueRub: sql<number>`coalesce(${revenue.revenueRub}, 0)::numeric(12,2)`.as("doctor_revenue_rub"),
-				paymentCount: sql<number>`coalesce(${revenue.paymentCount}, 0)::int`.as("doctor_payment_count"),
-				materialCostRub: sql<number>`coalesce(${materials.materialCostRub}, 0)::numeric(12,2)`.as(
-					"doctor_material_cost_rub",
+				revenueRub:
+					sql<number>`coalesce(${revenue.revenueRub}, 0)::numeric(12,2)`.as(
+						"doctor_revenue_rub",
+					),
+				paymentCount: sql<number>`coalesce(${revenue.paymentCount}, 0)::int`.as(
+					"doctor_payment_count",
 				),
-				materialMovements: sql<number>`coalesce(${materials.movements}, 0)::int`.as("doctor_material_movements"),
-				materialMovementsUnpriced: sql<number>`coalesce(${materials.movementsUnpriced}, 0)::int`.as(
-					"doctor_material_movements_unpriced",
-				),
+				materialCostRub:
+					sql<number>`coalesce(${materials.materialCostRub}, 0)::numeric(12,2)`.as(
+						"doctor_material_cost_rub",
+					),
+				materialMovements:
+					sql<number>`coalesce(${materials.movements}, 0)::int`.as(
+						"doctor_material_movements",
+					),
+				materialMovementsUnpriced:
+					sql<number>`coalesce(${materials.movementsUnpriced}, 0)::int`.as(
+						"doctor_material_movements_unpriced",
+					),
 				commissionPct: rateCandidates.commissionPct,
 				materialDeductionPct: rateCandidates.materialDeductionPct,
 				rateEffectiveFrom: rateCandidates.effectiveFrom,
-				rateRowCount: sql<number>`coalesce(${rateCandidates.rateRowCount}, 0)::int`.as("doctor_rate_row_count"),
+				rateRowCount:
+					sql<number>`coalesce(${rateCandidates.rateRowCount}, 0)::int`.as(
+						"doctor_rate_row_count",
+					),
 			})
 			.from(users)
 			.leftJoin(revenue, eq(revenue.doctorUserId, users.id))
 			.leftJoin(materials, eq(materials.doctorUserId, users.id))
 			// Ставка присоединяется только самой свежей строкой: остальные оставлены
 			// в CTE ради счётчика rate_row_count.
-			.leftJoin(rateCandidates, and(eq(rateCandidates.userId, users.id), eq(rateCandidates.rowNumber, 1)))
+			.leftJoin(
+				rateCandidates,
+				and(
+					eq(rateCandidates.userId, users.id),
+					eq(rateCandidates.rowNumber, 1),
+				),
+			)
 			.where(
 				and(
 					doctorFilter,
@@ -633,13 +708,24 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					 * обязательно: приём может вести владелец или сотрудник с иной
 					 * ролью, и его заработок нельзя потерять из-за фильтра по роли.
 					 */
-					or(eq(users.role, "doctor"), isNotNull(revenue.doctorUserId), isNotNull(materials.doctorUserId)),
+					or(
+						eq(users.role, "doctor"),
+						isNotNull(revenue.doctorUserId),
+						isNotNull(materials.doctorUserId),
+					),
 				),
 			),
 	);
 
 	return db
-		.with(paidVisits, revenue, materials, rateCandidates, periodRevenue, doctorRows)
+		.with(
+			paidVisits,
+			revenue,
+			materials,
+			rateCandidates,
+			periodRevenue,
+			doctorRows,
+		)
 		.select({
 			doctorUserId: doctorRows.doctorUserId,
 			doctorName: doctorRows.doctorName,
@@ -674,7 +760,9 @@ function moneyFromDb(value: unknown, field: string): number {
 		if (Number.isFinite(parsed)) return parsed;
 	}
 	if (value === null || value === undefined) return 0;
-	throw new Error(`Поле «${field}» пришло из базы в непригодном для денег виде: ${JSON.stringify(value)}`);
+	throw new Error(
+		`Поле «${field}» пришло из базы в непригодном для денег виде: ${JSON.stringify(value)}`,
+	);
 }
 
 /** Процент из базы: null остаётся null, мусор — ошибка, а не тихий ноль. */
@@ -685,7 +773,9 @@ function percentFromDb(value: unknown, field: string): number | null {
 		const parsed = Number(value);
 		if (Number.isFinite(parsed)) return parsed;
 	}
-	throw new Error(`Поле «${field}» пришло из базы в непригодном для процента виде: ${JSON.stringify(value)}`);
+	throw new Error(
+		`Поле «${field}» пришло из базы в непригодном для процента виде: ${JSON.stringify(value)}`,
+	);
 }
 
 const METHOD_NOTE =
@@ -748,7 +838,9 @@ const METHOD_NOTE =
  * вовсе — ни в строки, ни в контрольную сумму, — и это правильно: отчёт
  * отвечает на вопрос о состоянии кассы на один момент времени.
  */
-export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPayoutReport> {
+export async function doctorPayouts(
+	scope: DoctorPayoutScope,
+): Promise<DoctorPayoutReport> {
 	const snapshotRows = await withTenantCtx(scope.organizationId, async () =>
 		buildDoctorPayoutAggregateQuery(scope),
 	);
@@ -760,16 +852,30 @@ export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPay
 	 */
 	const [snapshotHead] = snapshotRows;
 	const aggregateRows = snapshotRows.filter(
-		(row): row is typeof row & { doctorUserId: string; doctorName: string; role: string; isActive: boolean } =>
-			row.doctorUserId !== null,
+		(
+			row,
+		): row is typeof row & {
+			doctorUserId: string;
+			doctorName: string;
+			role: string;
+			isActive: boolean;
+		} => row.doctorUserId !== null,
 	);
 
 	const rows: DoctorPayoutRow[] = aggregateRows.map((row) => {
 		const revenueRub = moneyFromDb(row.revenueRub, "выручка врача");
-		const materialCostRub = moneyFromDb(row.materialCostRub, "себестоимость материалов");
+		const materialCostRub = moneyFromDb(
+			row.materialCostRub,
+			"себестоимость материалов",
+		);
 		const materialMovements = Number(row.materialMovements ?? 0);
-		const materialMovementsUnpriced = Number(row.materialMovementsUnpriced ?? 0);
-		const commissionPct = percentFromDb(row.commissionPct, "ставка врача (commission_pct)");
+		const materialMovementsUnpriced = Number(
+			row.materialMovementsUnpriced ?? 0,
+		);
+		const commissionPct = percentFromDb(
+			row.commissionPct,
+			"ставка врача (commission_pct)",
+		);
 		const materialDeductionPct = percentFromDb(
 			row.materialDeductionPct,
 			"процент удержания за материалы (material_cost_deduction_pct)",
@@ -782,7 +888,10 @@ export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPay
 			commissionPct,
 			materialDeductionPct,
 		});
-		const materialsState = materialsStateOf(materialMovements, materialMovementsUnpriced);
+		const materialsState = materialsStateOf(
+			materialMovements,
+			materialMovementsUnpriced,
+		);
 		const rateRowCount = Number(row.rateRowCount ?? 0);
 
 		return {
@@ -798,7 +907,9 @@ export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPay
 			materialsState,
 			commissionPct,
 			materialDeductionPct,
-			rateEffectiveFrom: row.rateEffectiveFrom ? new Date(row.rateEffectiveFrom).toISOString() : null,
+			rateEffectiveFrom: row.rateEffectiveFrom
+				? new Date(row.rateEffectiveFrom).toISOString()
+				: null,
 			rateRowCount,
 			state: computed.state,
 			accruedRub: computed.accruedRub,
@@ -817,10 +928,15 @@ export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPay
 	});
 
 	rows.sort(
-		(left, right) => right.revenueRub - left.revenueRub || left.doctorName.localeCompare(right.doctorName, "ru"),
+		(left, right) =>
+			right.revenueRub - left.revenueRub ||
+			left.doctorName.localeCompare(right.doctorName, "ru"),
 	);
 
-	const totalRevenueRub = moneyFromDb(snapshotHead?.totalRevenueRub ?? 0, "касса за период");
+	const totalRevenueRub = moneyFromDb(
+		snapshotHead?.totalRevenueRub ?? 0,
+		"касса за период",
+	);
 	const attributableRevenueRub = moneyFromDb(
 		snapshotHead?.attributableRevenueRub ?? 0,
 		"касса, отнесённая к врачам",
@@ -835,7 +951,11 @@ export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPay
 
 	for (const row of rows) {
 		materialCost = materialCost.plus(row.materialCostRub);
-		if (row.state === "computed" && row.payoutRub !== null && row.withheldMaterialRub !== null) {
+		if (
+			row.state === "computed" &&
+			row.payoutRub !== null &&
+			row.withheldMaterialRub !== null
+		) {
 			accrued = accrued.plus(row.accruedRub ?? 0);
 			withheld = withheld.plus(row.withheldMaterialRub);
 			payout = payout.plus(row.payoutRub);
@@ -880,7 +1000,9 @@ export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPay
 			revenueRub: totalRevenueRub,
 			paymentCount: Number(snapshotHead?.totalPaymentCount ?? 0),
 			attributableRevenueRub,
-			unattributedRevenueRub: roundMoney(new Decimal(totalRevenueRub).minus(attributableRevenueRub)),
+			unattributedRevenueRub: roundMoney(
+				new Decimal(totalRevenueRub).minus(attributableRevenueRub),
+			),
 			materialCostRub: roundMoney(materialCost),
 			accruedRub: roundMoney(accrued),
 			withheldMaterialRub: roundMoney(withheld),

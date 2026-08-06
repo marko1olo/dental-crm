@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { type FastifyInstance } from "fastify";
-import pg from "pg";
 import { and, eq } from "drizzle-orm";
-import { registerImagingPlanningRoutes } from "../../routes/imaging_planning.js";
+import type { FastifyInstance } from "fastify";
+import pg from "pg";
 import { db } from "../../db/client.js";
-import { organizations, patientCtPlannings, patients } from "../../db/schema.js";
+import {
+	organizations,
+	patientCtPlannings,
+	patients,
+} from "../../db/schema.js";
+import { registerImagingPlanningRoutes } from "../../routes/imaging_planning.js";
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -101,10 +105,19 @@ function clinicHeaders(organizationId: string): Record<string, string> {
 
 /** Отдельное соединение, не знающее ни про drizzle, ни про схему. */
 async function rawPlanningRows(): Promise<
-	{ spline: string; nerve: string; implants: string; org: string; study: string }[]
+	{
+		spline: string;
+		nerve: string;
+		implants: string;
+		org: string;
+		study: string;
+	}[]
 > {
 	const url = process.env.DATABASE_URL;
-	assert.ok(url, "DATABASE_URL не задан — независимую проверку базы выполнить нечем");
+	assert.ok(
+		url,
+		"DATABASE_URL не задан — независимую проверку базы выполнить нечем",
+	);
 	const client = new pg.Client({ connectionString: url });
 	await client.connect();
 	try {
@@ -119,7 +132,9 @@ async function rawPlanningRows(): Promise<
 		 * утверждения `rows.length === 1` и `row.org === ORG_MINE` перестали бы
 		 * ловить чужую строку по тому же пациенту.
 		 */
-		await client.query("select set_config('app.superuser_bypass', 'on', false)");
+		await client.query(
+			"select set_config('app.superuser_bypass', 'on', false)",
+		);
 		const result = await client.query<{
 			spline_points_json: string;
 			nerve_points_json: string;
@@ -162,18 +177,24 @@ describe("разметка планирования имплантации до�
 		 * контекста снимает ноль строк и об этом молчит.
 		 */
 		await withFixtureTenant(ORG_MINE, async () => {
-			await db.delete(patientCtPlannings).where(eq(patientCtPlannings.patientId, PATIENT_MINE));
+			await db
+				.delete(patientCtPlannings)
+				.where(eq(patientCtPlannings.patientId, PATIENT_MINE));
 			await db.delete(patients).where(eq(patients.organizationId, ORG_MINE));
 			await db.delete(organizations).where(eq(organizations.id, ORG_MINE));
 		});
 		await withFixtureTenant(ORG_FOREIGN, async () => {
-			await db.delete(patientCtPlannings).where(eq(patientCtPlannings.patientId, PATIENT_FOREIGN));
+			await db
+				.delete(patientCtPlannings)
+				.where(eq(patientCtPlannings.patientId, PATIENT_FOREIGN));
 			await db.delete(patients).where(eq(patients.organizationId, ORG_FOREIGN));
 			await db.delete(organizations).where(eq(organizations.id, ORG_FOREIGN));
 		});
 
 		await withFixtureTenant(ORG_MINE, async () => {
-			await db.insert(organizations).values({ id: ORG_MINE, name: "Клиника разметки КЛКТ" });
+			await db
+				.insert(organizations)
+				.values({ id: ORG_MINE, name: "Клиника разметки КЛКТ" });
 			await db.insert(patients).values({
 				id: PATIENT_MINE,
 				organizationId: ORG_MINE,
@@ -181,7 +202,9 @@ describe("разметка планирования имплантации до�
 			});
 		});
 		await withFixtureTenant(ORG_FOREIGN, async () => {
-			await db.insert(organizations).values({ id: ORG_FOREIGN, name: "Чужая клиника разметки КЛКТ" });
+			await db
+				.insert(organizations)
+				.values({ id: ORG_FOREIGN, name: "Чужая клиника разметки КЛКТ" });
 			await db.insert(patients).values({
 				id: PATIENT_FOREIGN,
 				organizationId: ORG_FOREIGN,
@@ -243,7 +266,11 @@ describe("разметка планирования имплантации до�
 
 	test("в базе лежит именно разметка, а не текст в двойной кодировке", async () => {
 		const rows = await rawPlanningRows();
-		assert.equal(rows.length, 1, `строк разметки у пациента ${rows.length}, ожидалась одна`);
+		assert.equal(
+			rows.length,
+			1,
+			`строк разметки у пациента ${rows.length}, ожидалась одна`,
+		);
 		const row = rows[0]!;
 		assert.equal(row.org, ORG_MINE);
 		assert.equal(row.study, STUDY_UID);
@@ -279,8 +306,16 @@ describe("разметка планирования имплантации до�
 		assert.equal(saved.statusCode, 200, saved.body);
 
 		const rows = await rawPlanningRows();
-		assert.equal(rows.length, 1, `после второго сохранения строк ${rows.length}, ожидалась одна`);
-		assert.equal(rows[0]!.spline, JSON.stringify(changed), "правка дуги не доехала до базы");
+		assert.equal(
+			rows.length,
+			1,
+			`после второго сохранения строк ${rows.length}, ожидалась одна`,
+		);
+		assert.equal(
+			rows[0]!.spline,
+			JSON.stringify(changed),
+			"правка дуги не доехала до базы",
+		);
 
 		// Возврат к исходной разметке: следующий тест и независимый psql должны
 		// видеть ровно то, что описано в SPLINE_POINTS.
@@ -382,7 +417,10 @@ describe("разметка планирования имплантации до�
 		});
 		assert.equal(saved.statusCode, 401, saved.body);
 		const message = String(saved.json().message ?? "");
-		assert.ok(/[А-Яа-яЁё]/.test(message), `отказ без русского текста: ${saved.body}`);
+		assert.ok(
+			/[А-Яа-яЁё]/.test(message),
+			`отказ без русского текста: ${saved.body}`,
+		);
 		assert.ok(
 			/Войдите в кабинет/.test(message),
 			`в отказе нет действия, которое лечит причину: ${message}`,
@@ -406,8 +444,15 @@ describe("разметка планирования имплантации до�
 			headers: clinicHeaders(ORG_MINE),
 			payload: { patientId: "не-идентификатор", studyInstanceUid: STUDY_UID },
 		});
-		assert.equal(saved.statusCode, 400, `ожидался отказ разбора, пришло: ${saved.body}`);
-		assert.ok(/[А-Яа-яЁё]/.test(String(saved.json().message ?? "")), saved.body);
+		assert.equal(
+			saved.statusCode,
+			400,
+			`ожидался отказ разбора, пришло: ${saved.body}`,
+		);
+		assert.ok(
+			/[А-Яа-яЁё]/.test(String(saved.json().message ?? "")),
+			saved.body,
+		);
 
 		const loaded = await app.inject({
 			method: "GET",

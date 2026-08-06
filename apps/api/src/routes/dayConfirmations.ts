@@ -23,7 +23,13 @@ import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { appointmentActionCodes } from "../db/communicationsSchema.js";
-import { appointments, clinics, communicationOutbox, patients, users } from "../db/schema.js";
+import {
+	appointments,
+	clinics,
+	communicationOutbox,
+	patients,
+	users,
+} from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 
 const querySchema = z.object({
@@ -31,11 +37,18 @@ const querySchema = z.object({
 	date: z
 		.string()
 		.regex(/^\d{4}-\d{2}-\d{2}$/, "дата должна быть в виде ГГГГ-ММ-ДД")
-		.optional()
+		.optional(),
 });
 
 /** Состояние напоминания глазами администратора, а не очереди. */
-export type ReminderState = "not_queued" | "queued" | "sent" | "delivered" | "failed" | "suppressed" | "cancelled";
+export type ReminderState =
+	| "not_queued"
+	| "queued"
+	| "sent"
+	| "delivered"
+	| "failed"
+	| "suppressed"
+	| "cancelled";
 
 const OUTBOX_TO_REMINDER_STATE: Readonly<Record<string, ReminderState>> = {
 	queued: "queued",
@@ -44,7 +57,7 @@ const OUTBOX_TO_REMINDER_STATE: Readonly<Record<string, ReminderState>> = {
 	delivered: "delivered",
 	failed: "failed",
 	suppressed: "suppressed",
-	cancelled: "cancelled"
+	cancelled: "cancelled",
 };
 
 /**
@@ -52,7 +65,10 @@ const OUTBOX_TO_REMINDER_STATE: Readonly<Record<string, ReminderState>> = {
  * в клинике на востоке страны «завтра» наступает раньше, и список приёмов
  * съехал бы на сутки.
  */
-export function dayBoundsInTimeZone(date: string, timeZone: string): { from: Date; to: Date } | null {
+export function dayBoundsInTimeZone(
+	date: string,
+	timeZone: string,
+): { from: Date; to: Date } | null {
 	const parts = date.split("-").map((value) => Number.parseInt(value, 10));
 	const [year, month, day] = parts;
 	if (!year || !month || !day) return null;
@@ -66,17 +82,26 @@ export function dayBoundsInTimeZone(date: string, timeZone: string): { from: Dat
 			timeZone,
 			hour: "2-digit",
 			minute: "2-digit",
-			hour12: false
+			hour12: false,
 		});
 		const rendered = formatter.format(new Date(probe));
-		const [renderedHour, renderedMinute] = rendered.split(":").map((value) => Number.parseInt(value, 10));
-		if (renderedHour === undefined || renderedMinute === undefined || Number.isNaN(renderedHour)) return null;
+		const [renderedHour, renderedMinute] = rendered
+			.split(":")
+			.map((value) => Number.parseInt(value, 10));
+		if (
+			renderedHour === undefined ||
+			renderedMinute === undefined ||
+			Number.isNaN(renderedHour)
+		)
+			return null;
 		offsetMinutes = (renderedHour % 24) * 60 + renderedMinute - 12 * 60;
 	} catch {
 		return null;
 	}
 
-	const from = new Date(Date.UTC(year, month - 1, day, 0, 0, 0) - offsetMinutes * 60_000);
+	const from = new Date(
+		Date.UTC(year, month - 1, day, 0, 0, 0) - offsetMinutes * 60_000,
+	);
 	const to = new Date(from.getTime() + 24 * 60 * 60 * 1000 - 1);
 	return { from, to };
 }
@@ -85,9 +110,12 @@ export function dayBoundsInTimeZone(date: string, timeZone: string): { from: Dat
 function dateInTimeZone(timeZone: string, moment: Date): string | null {
 	try {
 		// en-CA даёт ISO-подобный формат ГГГГ-ММ-ДД.
-		return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(
-			moment
-		);
+		return new Intl.DateTimeFormat("en-CA", {
+			timeZone,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(moment);
 	} catch {
 		return null;
 	}
@@ -98,9 +126,13 @@ function dateInTimeZone(timeZone: string, moment: Date): string | null {
  * `Date.UTC`: день 32 в июле он превращает в 1 августа.
  */
 function nextCalendarDay(date: string): string {
-	const [year, month, day] = date.split("-").map((value) => Number.parseInt(value, 10));
+	const [year, month, day] = date
+		.split("-")
+		.map((value) => Number.parseInt(value, 10));
 	if (!year || !month || !day) return date;
-	return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+	return new Date(Date.UTC(year, month - 1, day + 1))
+		.toISOString()
+		.slice(0, 10);
 }
 
 /**
@@ -125,22 +157,33 @@ export function tomorrowInTimeZone(timeZone: string, now = new Date()): string {
 	// Пояс неизвестен — прежнее поведение: сутки вперёд по UTC. Здесь это
 	// единственный доступный ответ, и он честнее отказа: маршрут обязан вернуть
 	// список хотя бы за какой-то день.
-	if (!today) return new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+	if (!today)
+		return new Date(now.getTime() + 24 * 60 * 60 * 1000)
+			.toISOString()
+			.slice(0, 10);
 	return nextCalendarDay(today);
 }
 
 function badRequest(reply: FastifyReply, message: string) {
-	return reply.code(400).send({ error: "DayConfirmationValidationError", message });
+	return reply
+		.code(400)
+		.send({ error: "DayConfirmationValidationError", message });
 }
 
 export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 	app.get("/api/schedule/day-confirmations", async (request, reply) => {
-		const context = await requireClinicalReadContext(request, reply, "day confirmations");
+		const context = await requireClinicalReadContext(
+			request,
+			reply,
+			"day confirmations",
+		);
 		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "schedule.read")) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "schedule.read"))
+			return;
 
 		const parsed = querySchema.safeParse(request.query);
-		if (!parsed.success) return badRequest(reply, "Дата должна быть в виде ГГГГ-ММ-ДД.");
+		if (!parsed.success)
+			return badRequest(reply, "Дата должна быть в виде ГГГГ-ММ-ДД.");
 
 		const [clinic] = await db
 			.select({ timezone: clinics.timezone })
@@ -151,7 +194,11 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 
 		const date = parsed.data.date ?? tomorrowInTimeZone(timeZone);
 		const bounds = dayBoundsInTimeZone(date, timeZone);
-		if (!bounds) return badRequest(reply, "Дату не удалось разобрать в часовом поясе клиники.");
+		if (!bounds)
+			return badRequest(
+				reply,
+				"Дату не удалось разобрать в часовом поясе клиники.",
+			);
 
 		const appointmentRows = await db
 			.select({
@@ -159,15 +206,15 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 				startsAt: appointments.startsAt,
 				status: appointments.status,
 				patientId: appointments.patientId,
-				doctorUserId: appointments.doctorUserId
+				doctorUserId: appointments.doctorUserId,
 			})
 			.from(appointments)
 			.where(
 				and(
 					eq(appointments.organizationId, context.organizationId),
 					gte(appointments.startsAt, bounds.from),
-					lte(appointments.startsAt, bounds.to)
-				)
+					lte(appointments.startsAt, bounds.to),
+				),
 			)
 			.orderBy(asc(appointments.startsAt));
 
@@ -175,9 +222,17 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			return {
 				date,
 				timeZone,
-				summary: { total: 0, confirmed: 0, awaiting: 0 , cancelled: 0, noShow: 0, needsCall: 0, withoutPhone: 0 },
+				summary: {
+					total: 0,
+					confirmed: 0,
+					awaiting: 0,
+					cancelled: 0,
+					noShow: 0,
+					needsCall: 0,
+					withoutPhone: 0,
+				},
 				rows: [],
-				isEmpty: true
+				isEmpty: true,
 			};
 		}
 
@@ -191,19 +246,36 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 		// на второй год работы стоил вдвое, хотя приёмов в дне столько же.
 		// Идентификаторы дня уже собраны выше, поэтому отбор идёт по ним.
 		const dayPatientIds = [
-			...new Set(appointmentRows.map((row) => row.patientId).filter((id): id is string => !!id))
+			...new Set(
+				appointmentRows
+					.map((row) => row.patientId)
+					.filter((id): id is string => !!id),
+			),
 		];
 		const dayDoctorIds = [
-			...new Set(appointmentRows.map((row) => row.doctorUserId).filter((id): id is string => !!id))
+			...new Set(
+				appointmentRows
+					.map((row) => row.doctorUserId)
+					.filter((id): id is string => !!id),
+			),
 		];
 		const dayAppointmentIds = appointmentRows.map((row) => row.id);
 
 		const patientRows =
 			dayPatientIds.length > 0
 				? await db
-						.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+						.select({
+							id: patients.id,
+							fullName: patients.fullName,
+							phone: patients.phone,
+						})
 						.from(patients)
-						.where(and(eq(patients.organizationId, context.organizationId), inArray(patients.id, dayPatientIds)))
+						.where(
+							and(
+								eq(patients.organizationId, context.organizationId),
+								inArray(patients.id, dayPatientIds),
+							),
+						)
 				: [];
 		const patientById = new Map(patientRows.map((row) => [row.id, row]));
 
@@ -212,7 +284,12 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 				? await db
 						.select({ id: users.id, fullName: users.fullName })
 						.from(users)
-						.where(and(eq(users.organizationId, context.organizationId), inArray(users.id, dayDoctorIds)))
+						.where(
+							and(
+								eq(users.organizationId, context.organizationId),
+								inArray(users.id, dayDoctorIds),
+							),
+						)
 				: [];
 		const staffById = new Map(staffRows.map((row) => [row.id, row.fullName]));
 
@@ -237,14 +314,18 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 							sentAt: communicationOutbox.sentAt,
 							deliveredAt: communicationOutbox.deliveredAt,
 							lastErrorMessage: communicationOutbox.lastErrorMessage,
-							receiptDetail: communicationOutbox.receiptDetail
+							receiptDetail: communicationOutbox.receiptDetail,
 						})
 						.from(communicationOutbox)
 						.where(
 							and(
 								eq(communicationOutbox.organizationId, context.organizationId),
-								or(...dayAppointmentIds.map((id) => like(communicationOutbox.dedupeKey, `reminder:${id}:%`)))
-							)
+								or(
+									...dayAppointmentIds.map((id) =>
+										like(communicationOutbox.dedupeKey, `reminder:${id}:%`),
+									),
+								),
+							),
 						)
 				: [];
 
@@ -267,10 +348,13 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 				state,
 				channel: row.channel,
 				at: row.deliveredAt ?? row.sentAt ?? null,
-				detail: row.receiptDetail ?? row.lastErrorMessage ?? null
+				detail: row.receiptDetail ?? row.lastErrorMessage ?? null,
 			};
 			const existing = reminderByAppointment.get(appointmentId);
-			if (!existing || reminderStateRank(candidate.state) > reminderStateRank(existing.state)) {
+			if (
+				!existing ||
+				reminderStateRank(candidate.state) > reminderStateRank(existing.state)
+			) {
 				reminderByAppointment.set(appointmentId, candidate);
 			}
 		}
@@ -283,20 +367,30 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 		const codeRows =
 			dayAppointmentIds.length > 0
 				? await db
-						.select({ appointmentId: appointmentActionCodes.appointmentId, usedAt: appointmentActionCodes.usedAt })
+						.select({
+							appointmentId: appointmentActionCodes.appointmentId,
+							usedAt: appointmentActionCodes.usedAt,
+						})
 						.from(appointmentActionCodes)
 						.where(
 							and(
-								eq(appointmentActionCodes.organizationId, context.organizationId),
-								inArray(appointmentActionCodes.appointmentId, dayAppointmentIds)
-							)
+								eq(
+									appointmentActionCodes.organizationId,
+									context.organizationId,
+								),
+								inArray(
+									appointmentActionCodes.appointmentId,
+									dayAppointmentIds,
+								),
+							),
 						)
 				: [];
 		const clickedAtByAppointment = new Map<string, Date>();
 		for (const row of codeRows) {
 			if (!row.usedAt) continue;
 			const existing = clickedAtByAppointment.get(row.appointmentId);
-			if (!existing || row.usedAt > existing) clickedAtByAppointment.set(row.appointmentId, row.usedAt);
+			if (!existing || row.usedAt > existing)
+				clickedAtByAppointment.set(row.appointmentId, row.usedAt);
 		}
 
 		let confirmed = 0;
@@ -306,12 +400,14 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 		let withoutPhone = 0;
 
 		const rows = appointmentRows.map((appointment) => {
-			const patient = appointment.patientId ? patientById.get(appointment.patientId) : undefined;
+			const patient = appointment.patientId
+				? patientById.get(appointment.patientId)
+				: undefined;
 			const reminder = reminderByAppointment.get(appointment.id) ?? {
 				state: "not_queued" as ReminderState,
 				channel: null,
 				at: null,
-				detail: null
+				detail: null,
 			};
 			const clickedAt = clickedAtByAppointment.get(appointment.id) ?? null;
 			const phone = patient?.phone?.trim() || null;
@@ -337,10 +433,12 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 				patientId: appointment.patientId,
 				patientName: patient?.fullName ?? "Пациент не указан",
 				phone,
-				doctorName: appointment.doctorUserId ? (staffById.get(appointment.doctorUserId) ?? "Врач не в списке") : null,
+				doctorName: appointment.doctorUserId
+					? (staffById.get(appointment.doctorUserId) ?? "Врач не в списке")
+					: null,
 				reminder,
 				patientClickedAt: clickedAt,
-				needsCall: requiresCall
+				needsCall: requiresCall,
 			};
 		});
 
@@ -356,10 +454,10 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 				cancelled,
 				noShow,
 				needsCall,
-				withoutPhone
+				withoutPhone,
 			},
 			rows,
-			isEmpty: false
+			isEmpty: false,
 		};
 	});
 }

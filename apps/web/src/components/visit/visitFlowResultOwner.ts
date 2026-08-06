@@ -51,8 +51,14 @@ export function visitFlowOwnerKey(
 	patientId: unknown,
 	visitId: unknown,
 ): string {
-	const patient = typeof patientId === "string" && patientId.trim() ? patientId.trim() : "нет-пациента";
-	const visit = typeof visitId === "string" && visitId.trim() ? visitId.trim() : "нет-приёма";
+	const patient =
+		typeof patientId === "string" && patientId.trim()
+			? patientId.trim()
+			: "нет-пациента";
+	const visit =
+		typeof visitId === "string" && visitId.trim()
+			? visitId.trim()
+			: "нет-приёма";
 	return `${patient}|${visit}`;
 }
 
@@ -61,7 +67,10 @@ export function visitFlowOwnerKey(
  * объектом владельца НЕ меняет: иначе разбор пациента А переписался бы на
  * пациента Б ровно тем действием, которое обязано его скрыть.
  */
-export function rememberVisitFlowResultOwner(result: unknown, owner: string): void {
+export function rememberVisitFlowResultOwner(
+	result: unknown,
+	owner: string,
+): void {
 	if (!result || typeof result !== "object") {
 		forgetVisitFlowResultOwner();
 		return;
@@ -77,7 +86,10 @@ export function rememberVisitFlowResultOwner(result: unknown, owner: string): vo
  * нельзя. Неизвестный (ещё не привязанный) разбор чужим не считается: его
  * только что получил текущий приём, привязка появится тем же рендером.
  */
-export function visitFlowResultIsForeign(result: unknown, owner: string): boolean {
+export function visitFlowResultIsForeign(
+	result: unknown,
+	owner: string,
+): boolean {
 	if (!result || typeof result !== "object") return false;
 	if (ownedResult !== result) return false;
 	return ownerKey !== owner;
@@ -109,10 +121,14 @@ export function forgetVisitFlowResultOwner(): void {
  * packages/shared). Чужую не показываем, но и не выбрасываем — вернётся врач к
  * тому приёму, расписка снова окажется на месте.
  */
-export function visitSaveReceiptBelongsToVisit(receipt: unknown, visitId: unknown): boolean {
+export function visitSaveReceiptBelongsToVisit(
+	receipt: unknown,
+	visitId: unknown,
+): boolean {
 	if (!receipt || typeof receipt !== "object") return false;
 	const receiptVisitId = (receipt as { visitId?: unknown }).visitId;
-	if (typeof receiptVisitId !== "string" || !receiptVisitId.trim()) return false;
+	if (typeof receiptVisitId !== "string" || !receiptVisitId.trim())
+		return false;
 	if (typeof visitId !== "string" || !visitId.trim()) return false;
 	return receiptVisitId.trim() === visitId.trim();
 }

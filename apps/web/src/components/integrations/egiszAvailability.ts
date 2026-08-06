@@ -154,7 +154,9 @@ export function russianServerText(value: unknown): string | null {
  *
  * 404, 405 и 501 значат одно и то же для пользователя: этого раздела на сервере нет.
  */
-export function classifyFailedHttpStatus(httpStatus: number): EgiszEndpointProblem {
+export function classifyFailedHttpStatus(
+	httpStatus: number,
+): EgiszEndpointProblem {
 	if (httpStatus === 404 || httpStatus === 405 || httpStatus === 501) {
 		return { kind: "missing" };
 	}
@@ -175,7 +177,8 @@ export function readIntegrationStatus(
 	const body = raw as Record<string, unknown>;
 	const capabilities = body.capabilities;
 	if (typeof body.configured !== "boolean") return { kind: "unreadable" };
-	if (!capabilities || typeof capabilities !== "object") return { kind: "unreadable" };
+	if (!capabilities || typeof capabilities !== "object")
+		return { kind: "unreadable" };
 	const caps = capabilities as Record<string, unknown>;
 	if (
 		typeof caps.remdTransmission !== "boolean" ||
@@ -225,7 +228,9 @@ export function readVisitTransmission(
 	if (!status) return { kind: "unreadable" };
 	const details = row.errorDetails;
 	const detailsObject =
-		details && typeof details === "object" ? (details as Record<string, unknown>) : null;
+		details && typeof details === "object"
+			? (details as Record<string, unknown>)
+			: null;
 	const errorMessage =
 		typeof details === "string"
 			? details
@@ -233,7 +238,8 @@ export function readVisitTransmission(
 				? detailsObject.message
 				: null;
 	const xmlPreview =
-		typeof detailsObject?.xmlPreview === "string" && detailsObject.xmlPreview.length > 0
+		typeof detailsObject?.xmlPreview === "string" &&
+		detailsObject.xmlPreview.length > 0
 			? detailsObject.xmlPreview
 			: null;
 	return {
@@ -288,7 +294,9 @@ export interface EgiszPanelInput {
  * Единственное место, где решается, что показать и можно ли отправлять.
  * Компонент не имеет права принимать это решение сам.
  */
-export function resolveEgiszPanelState(input: EgiszPanelInput): EgiszPanelState {
+export function resolveEgiszPanelState(
+	input: EgiszPanelInput,
+): EgiszPanelState {
 	const base = {
 		missingConfiguration: [] as readonly string[],
 		transactionId: null as string | null,
@@ -311,8 +319,10 @@ export function resolveEgiszPanelState(input: EgiszPanelInput): EgiszPanelState 
 	const problem = worstProblem([input.statusOutcome, input.journalOutcome]);
 	if (problem) return problemState(problem, base);
 
-	const status = input.statusOutcome.kind === "ok" ? input.statusOutcome.data : null;
-	const journal = input.journalOutcome.kind === "ok" ? input.journalOutcome.data : null;
+	const status =
+		input.statusOutcome.kind === "ok" ? input.statusOutcome.data : null;
+	const journal =
+		input.journalOutcome.kind === "ok" ? input.journalOutcome.data : null;
 	if (!status) {
 		// Недостижимо: worstProblem уже вернул бы неудачу. Оставлено как явный
 		// отказ вместо молчаливого «готово к отправке».
@@ -331,7 +341,8 @@ export function resolveEgiszPanelState(input: EgiszPanelInput): EgiszPanelState 
 				"настраивал программу, нужно заполнить перечисленные ниже настройки сервера.",
 			missingConfiguration: status.missingConfiguration,
 			canTransmit: false,
-			transmitBlockedReason: "Отправка невозможна: подключение к ЕГИСЗ не настроено",
+			transmitBlockedReason:
+				"Отправка невозможна: подключение к ЕГИСЗ не настроено",
 			canRetryLoad: true,
 		};
 	}
@@ -347,7 +358,8 @@ export function resolveEgiszPanelState(input: EgiszPanelInput): EgiszPanelState 
 				"усиленной квалифицированной подписью в программе пока не реализованы. " +
 				"Документ по приёму не отправлен и не уйдёт, пока это не появится.",
 			canTransmit: false,
-			transmitBlockedReason: "Отправка невозможна: передача в РЭМД не реализована",
+			transmitBlockedReason:
+				"Отправка невозможна: передача в РЭМД не реализована",
 			canRetryLoad: false,
 		};
 	}
@@ -397,7 +409,8 @@ export function resolveEgiszPanelState(input: EgiszPanelInput): EgiszPanelState 
 			transactionId: journal.transactionId,
 			xmlPreview: journal.xmlPreview,
 			canTransmit: false,
-			transmitBlockedReason: "Повторная отправка заблокирована: документ уже ушёл",
+			transmitBlockedReason:
+				"Повторная отправка заблокирована: документ уже ушёл",
 			canRetryLoad: true,
 		};
 	}
@@ -457,7 +470,8 @@ function problemState(
 					"в Минздрав не уходил. Настраивать здесь нечего — раздел должен появиться в " +
 					"самой программе.",
 				canTransmit: false,
-				transmitBlockedReason: "Отправка невозможна: сервер не отдаёт этот раздел",
+				transmitBlockedReason:
+					"Отправка невозможна: сервер не отдаёт этот раздел",
 				canRetryLoad: false,
 			};
 		case "unauthorized":

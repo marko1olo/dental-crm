@@ -1,17 +1,20 @@
-import { db } from "./client.js";
-import * as schema from "./schema.js";
-import { eq, and, ne, lt, gt, or, type SQL } from "drizzle-orm";
-import type { Appointment, CreateAppointmentInput, UpdateAppointmentInput } from "@dental/shared";
+import type {
+	Appointment,
+	CreateAppointmentInput,
+	UpdateAppointmentInput,
+} from "@dental/shared";
+import { and, eq, gt, lt, ne, or, type SQL } from "drizzle-orm";
 import {
-  createAppointment as createAppointmentInMemory,
-  updateAppointment as updateAppointmentInMemory,
-  appointments as inMemoryAppointments
+	createAppointment as createAppointmentInMemory,
+	appointments as inMemoryAppointments,
+	updateAppointment as updateAppointmentInMemory,
 } from "../sampleData.js";
-
+import { db } from "./client.js";
 import { isPatientBookingBlocked } from "./patientArchiveReasonsAndBlacklistsQuery.js";
+import * as schema from "./schema.js";
 
 function useInMemory() {
-  return process.env.DENTAL_STATE_PERSISTENCE === "off";
+	return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
 
 /**
@@ -29,34 +32,53 @@ function useInMemory() {
  * встречные вызовы могут заклиниться друг о друга.
  */
 async function lockAppointmentResources(
-  executor: any,
-  organizationId: string,
-  resources: { chairId?: string | null; doctorUserId?: string | null; patientId?: string | null }
+	executor: any,
+	organizationId: string,
+	resources: {
+		chairId?: string | null;
+		doctorUserId?: string | null;
+		patientId?: string | null;
+	},
 ) {
-  if (resources.chairId) {
-    await executor
-      .select({ id: schema.chairs.id })
-      .from(schema.chairs)
-      .where(and(eq(schema.chairs.organizationId, organizationId), eq(schema.chairs.id, resources.chairId)))
-      .for("update")
-      .limit(1);
-  }
-  if (resources.doctorUserId) {
-    await executor
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(and(eq(schema.users.organizationId, organizationId), eq(schema.users.id, resources.doctorUserId)))
-      .for("update")
-      .limit(1);
-  }
-  if (resources.patientId) {
-    await executor
-      .select({ id: schema.patients.id })
-      .from(schema.patients)
-      .where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, resources.patientId)))
-      .for("update")
-      .limit(1);
-  }
+	if (resources.chairId) {
+		await executor
+			.select({ id: schema.chairs.id })
+			.from(schema.chairs)
+			.where(
+				and(
+					eq(schema.chairs.organizationId, organizationId),
+					eq(schema.chairs.id, resources.chairId),
+				),
+			)
+			.for("update")
+			.limit(1);
+	}
+	if (resources.doctorUserId) {
+		await executor
+			.select({ id: schema.users.id })
+			.from(schema.users)
+			.where(
+				and(
+					eq(schema.users.organizationId, organizationId),
+					eq(schema.users.id, resources.doctorUserId),
+				),
+			)
+			.for("update")
+			.limit(1);
+	}
+	if (resources.patientId) {
+		await executor
+			.select({ id: schema.patients.id })
+			.from(schema.patients)
+			.where(
+				and(
+					eq(schema.patients.organizationId, organizationId),
+					eq(schema.patients.id, resources.patientId),
+				),
+			)
+			.for("update")
+			.limit(1);
+	}
 }
 
 /**
@@ -71,52 +93,59 @@ async function lockAppointmentResources(
  * кресла на одно время, оба ответа 201.
  */
 async function assertNoResourceOverlap(
-  executor: any,
-  organizationId: string,
-  candidate: {
-    startsAt: Date;
-    endsAt: Date;
-    chairId?: string | null;
-    doctorUserId?: string | null;
-    patientId?: string | null;
-    excludeAppointmentId?: string;
-  }
+	executor: any,
+	organizationId: string,
+	candidate: {
+		startsAt: Date;
+		endsAt: Date;
+		chairId?: string | null;
+		doctorUserId?: string | null;
+		patientId?: string | null;
+		excludeAppointmentId?: string;
+	},
 ) {
-  const conditions: SQL[] = [
-    eq(schema.appointments.organizationId, organizationId),
-    ne(schema.appointments.status, "cancelled"),
-    ne(schema.appointments.status, "no_show"),
-    lt(schema.appointments.startsAt, candidate.endsAt),
-    gt(schema.appointments.endsAt, candidate.startsAt),
-  ];
-  if (candidate.excludeAppointmentId) {
-    conditions.push(ne(schema.appointments.id, candidate.excludeAppointmentId));
-  }
+	const conditions: SQL[] = [
+		eq(schema.appointments.organizationId, organizationId),
+		ne(schema.appointments.status, "cancelled"),
+		ne(schema.appointments.status, "no_show"),
+		lt(schema.appointments.startsAt, candidate.endsAt),
+		gt(schema.appointments.endsAt, candidate.startsAt),
+	];
+	if (candidate.excludeAppointmentId) {
+		conditions.push(ne(schema.appointments.id, candidate.excludeAppointmentId));
+	}
 
-  const matchConditions: SQL[] = [];
-  if (candidate.chairId) matchConditions.push(eq(schema.appointments.chairId, candidate.chairId));
-  if (candidate.doctorUserId) matchConditions.push(eq(schema.appointments.doctorUserId, candidate.doctorUserId));
-  if (candidate.patientId) matchConditions.push(eq(schema.appointments.patientId, candidate.patientId));
-  if (matchConditions.length === 0) return;
+	const matchConditions: SQL[] = [];
+	if (candidate.chairId)
+		matchConditions.push(eq(schema.appointments.chairId, candidate.chairId));
+	if (candidate.doctorUserId)
+		matchConditions.push(
+			eq(schema.appointments.doctorUserId, candidate.doctorUserId),
+		);
+	if (candidate.patientId)
+		matchConditions.push(
+			eq(schema.appointments.patientId, candidate.patientId),
+		);
+	if (matchConditions.length === 0) return;
 
-  const overlapping = await executor
-    .select()
-    .from(schema.appointments)
-    .where(and(...conditions, or(...matchConditions)))
-    .limit(1);
+	const overlapping = await executor
+		.select()
+		.from(schema.appointments)
+		.where(and(...conditions, or(...matchConditions)))
+		.limit(1);
 
-  const ov = overlapping[0];
-  if (!ov) return;
+	const ov = overlapping[0];
+	if (!ov) return;
 
-  // Порядок сообщений — от самого понятного администратору: пациент важнее
-  // врача, врач важнее кресла.
-  if (candidate.patientId && ov.patientId === candidate.patientId) {
-    throw new Error("У пациента уже есть запись в это время");
-  }
-  if (candidate.doctorUserId && ov.doctorUserId === candidate.doctorUserId) {
-    throw new Error("У врача уже есть запись в это время");
-  }
-  throw new Error("Кресло уже занято другой записью в это время");
+	// Порядок сообщений — от самого понятного администратору: пациент важнее
+	// врача, врач важнее кресла.
+	if (candidate.patientId && ov.patientId === candidate.patientId) {
+		throw new Error("У пациента уже есть запись в это время");
+	}
+	if (candidate.doctorUserId && ov.doctorUserId === candidate.doctorUserId) {
+		throw new Error("У врача уже есть запись в это время");
+	}
+	throw new Error("Кресло уже занято другой записью в это время");
 }
 
 /**
@@ -151,213 +180,282 @@ async function assertNoResourceOverlap(
  * устаревший список на экране.
  */
 async function assertAppointmentResourcesBelongToOrganization(
-  executor: any,
-  organizationId: string,
-  input: { patientId?: string | null | undefined; doctorUserId?: string | null | undefined; chairId?: string | null | undefined }
+	executor: any,
+	organizationId: string,
+	input: {
+		patientId?: string | null | undefined;
+		doctorUserId?: string | null | undefined;
+		chairId?: string | null | undefined;
+	},
 ): Promise<void> {
-  const checks: { id: string; table: any; what: string; action: string }[] = [];
-  if (input.patientId)
-    checks.push({
-      id: input.patientId,
-      table: schema.patients,
-      what: "Пациент",
-      action: "Обновите список пациентов и выберите карту из своей клиники.",
-    });
-  if (input.doctorUserId)
-    checks.push({
-      id: input.doctorUserId,
-      table: schema.users,
-      what: "Врач",
-      action: "Обновите список сотрудников и выберите врача своей клиники.",
-    });
-  if (input.chairId)
-    checks.push({
-      id: input.chairId,
-      table: schema.chairs,
-      what: "Кресло",
-      action: "Обновите список кресел и выберите кресло своей клиники.",
-    });
+	const checks: { id: string; table: any; what: string; action: string }[] = [];
+	if (input.patientId)
+		checks.push({
+			id: input.patientId,
+			table: schema.patients,
+			what: "Пациент",
+			action: "Обновите список пациентов и выберите карту из своей клиники.",
+		});
+	if (input.doctorUserId)
+		checks.push({
+			id: input.doctorUserId,
+			table: schema.users,
+			what: "Врач",
+			action: "Обновите список сотрудников и выберите врача своей клиники.",
+		});
+	if (input.chairId)
+		checks.push({
+			id: input.chairId,
+			table: schema.chairs,
+			what: "Кресло",
+			action: "Обновите список кресел и выберите кресло своей клиники.",
+		});
 
-  for (const check of checks) {
-    const [found] = await executor
-      .select({ id: check.table.id })
-      .from(check.table)
-      .where(and(eq(check.table.id, check.id), eq(check.table.organizationId, organizationId)))
-      .limit(1);
-    if (!found) {
-      throw new Error(`${check.what} не относится к вашей клинике, приём не записан. ${check.action}`);
-    }
-  }
+	for (const check of checks) {
+		const [found] = await executor
+			.select({ id: check.table.id })
+			.from(check.table)
+			.where(
+				and(
+					eq(check.table.id, check.id),
+					eq(check.table.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!found) {
+			throw new Error(
+				`${check.what} не относится к вашей клинике, приём не записан. ${check.action}`,
+			);
+		}
+	}
 }
 
-export async function createAppointmentInDb(organizationId: string, input: CreateAppointmentInput, tx?: any): Promise<Appointment> {
-  if (useInMemory()) {
-    return createAppointmentInMemory(input);
-  }
-  if (input.patientId && await isPatientBookingBlocked(organizationId, input.patientId)) {
-    throw new Error("Пациент внесен в черный список. Запись заблокирована.");
-  }
+export async function createAppointmentInDb(
+	organizationId: string,
+	input: CreateAppointmentInput,
+	tx?: any,
+): Promise<Appointment> {
+	if (useInMemory()) {
+		return createAppointmentInMemory(input);
+	}
+	if (
+		input.patientId &&
+		(await isPatientBookingBlocked(organizationId, input.patientId))
+	) {
+		throw new Error("Пациент внесен в черный список. Запись заблокирована.");
+	}
 
-  const startsAtMs = Date.parse(input.startsAt);
-  const endsAtMs = Date.parse(input.endsAt);
-  if (!Number.isFinite(startsAtMs) || !Number.isFinite(endsAtMs) || endsAtMs <= startsAtMs) {
-    throw new Error("Время окончания должно быть позже времени начала");
-  }
+	const startsAtMs = Date.parse(input.startsAt);
+	const endsAtMs = Date.parse(input.endsAt);
+	if (
+		!Number.isFinite(startsAtMs) ||
+		!Number.isFinite(endsAtMs) ||
+		endsAtMs <= startsAtMs
+	) {
+		throw new Error("Время окончания должно быть позже времени начала");
+	}
 
-  const candidateStarts = new Date(startsAtMs);
-  const candidateEnds = new Date(endsAtMs);
+	const candidateStarts = new Date(startsAtMs);
+	const candidateEnds = new Date(endsAtMs);
 
-  const insertChecked = async (executor: any) => {
-    // Принадлежность проверяется ДО блокировки ресурсов: блокировать чужую
-    // строку незачем, а отказ обязан прийти раньше любой записи.
-    await assertAppointmentResourcesBelongToOrganization(executor, organizationId, input);
-    if (input.status !== "cancelled" && input.status !== "no_show") {
-      await lockAppointmentResources(executor, organizationId, {
-        chairId: input.chairId,
-        doctorUserId: input.doctorUserId,
-        patientId: input.patientId,
-      });
-      await assertNoResourceOverlap(executor, organizationId, {
-        startsAt: candidateStarts,
-        endsAt: candidateEnds,
-        chairId: input.chairId,
-        doctorUserId: input.doctorUserId,
-        patientId: input.patientId,
-      });
-    }
+	const insertChecked = async (executor: any) => {
+		// Принадлежность проверяется ДО блокировки ресурсов: блокировать чужую
+		// строку незачем, а отказ обязан прийти раньше любой записи.
+		await assertAppointmentResourcesBelongToOrganization(
+			executor,
+			organizationId,
+			input,
+		);
+		if (input.status !== "cancelled" && input.status !== "no_show") {
+			await lockAppointmentResources(executor, organizationId, {
+				chairId: input.chairId,
+				doctorUserId: input.doctorUserId,
+				patientId: input.patientId,
+			});
+			await assertNoResourceOverlap(executor, organizationId, {
+				startsAt: candidateStarts,
+				endsAt: candidateEnds,
+				chairId: input.chairId,
+				doctorUserId: input.doctorUserId,
+				patientId: input.patientId,
+			});
+		}
 
-    const [created] = await executor.insert(schema.appointments).values({
-      organizationId,
-      patientId: input.patientId,
-      doctorUserId: input.doctorUserId,
-      assistantUserId: input.assistantUserId ?? null,
-      chairId: input.chairId,
-      status: input.status,
-      startsAt: candidateStarts,
-      endsAt: candidateEnds,
-      reason: input.reason || null,
-      comment: input.comment || null
-    }).returning();
+		const [created] = await executor
+			.insert(schema.appointments)
+			.values({
+				organizationId,
+				patientId: input.patientId,
+				doctorUserId: input.doctorUserId,
+				assistantUserId: input.assistantUserId ?? null,
+				chairId: input.chairId,
+				status: input.status,
+				startsAt: candidateStarts,
+				endsAt: candidateEnds,
+				reason: input.reason || null,
+				comment: input.comment || null,
+			})
+			.returning();
 
-    if (!created) throw new Error("Failed to insert appointment");
+		if (!created) throw new Error("Failed to insert appointment");
 
-    return {
-      id: created.id,
-      organizationId: created.organizationId,
-      patientId: created.patientId,
-      doctorUserId: created.doctorUserId,
-      assistantUserId: created.assistantUserId,
-      chairId: created.chairId,
-      status: created.status,
-      startsAt: created.startsAt.toISOString(),
-      endsAt: created.endsAt.toISOString(),
-      reason: created.reason,
-      comment: created.comment
-    } as unknown as Appointment;
-  };
+		return {
+			id: created.id,
+			organizationId: created.organizationId,
+			patientId: created.patientId,
+			doctorUserId: created.doctorUserId,
+			assistantUserId: created.assistantUserId,
+			chairId: created.chairId,
+			status: created.status,
+			startsAt: created.startsAt.toISOString(),
+			endsAt: created.endsAt.toISOString(),
+			reason: created.reason,
+			comment: created.comment,
+		} as unknown as Appointment;
+	};
 
-  // Блокировки живут только внутри транзакции. Если вызывающий код уже
-  // открыл свою — работаем в ней, иначе открываем собственную, иначе
-  // проверка и вставка снова окажутся двумя независимыми операциями.
-  if (tx) return insertChecked(tx);
-  return db.transaction(insertChecked);
+	// Блокировки живут только внутри транзакции. Если вызывающий код уже
+	// открыл свою — работаем в ней, иначе открываем собственную, иначе
+	// проверка и вставка снова окажутся двумя независимыми операциями.
+	if (tx) return insertChecked(tx);
+	return db.transaction(insertChecked);
 }
 
-export async function updateAppointmentInDb(organizationId: string, appointmentId: string, input: UpdateAppointmentInput): Promise<Appointment> {
-  if (useInMemory()) {
-    return updateAppointmentInMemory(appointmentId, input);
-  }
-  // Перенос приёма — та же гонка, что и создание: между проверкой занятости
-  // и записью другой администратор успевает занять слот. Всё внутри одной
-  // транзакции с блокировкой строк ресурсов.
-  const updated = await db.transaction(async (tx) => {
-    const [existing] = await tx
-      .select()
-      .from(schema.appointments)
-      .where(and(eq(schema.appointments.id, appointmentId), eq(schema.appointments.organizationId, organizationId)))
-      .for("update")
-      .limit(1);
-    if (!existing) throw new Error("Запись не найдена");
+export async function updateAppointmentInDb(
+	organizationId: string,
+	appointmentId: string,
+	input: UpdateAppointmentInput,
+): Promise<Appointment> {
+	if (useInMemory()) {
+		return updateAppointmentInMemory(appointmentId, input);
+	}
+	// Перенос приёма — та же гонка, что и создание: между проверкой занятости
+	// и записью другой администратор успевает занять слот. Всё внутри одной
+	// транзакции с блокировкой строк ресурсов.
+	const updated = await db.transaction(async (tx) => {
+		const [existing] = await tx
+			.select()
+			.from(schema.appointments)
+			.where(
+				and(
+					eq(schema.appointments.id, appointmentId),
+					eq(schema.appointments.organizationId, organizationId),
+				),
+			)
+			.for("update")
+			.limit(1);
+		if (!existing) throw new Error("Запись не найдена");
 
-    // Перенос принимает те же ссылки, что и создание, и тем же путём уводил
-    // приём за пределы клиники.
-    await assertAppointmentResourcesBelongToOrganization(tx, organizationId, input);
+		// Перенос принимает те же ссылки, что и создание, и тем же путём уводил
+		// приём за пределы клиники.
+		await assertAppointmentResourcesBelongToOrganization(
+			tx,
+			organizationId,
+			input,
+		);
 
-    const startsAtRaw = input.startsAt ?? existing.startsAt.toISOString();
-    const endsAtRaw = input.endsAt ?? existing.endsAt.toISOString();
+		const startsAtRaw = input.startsAt ?? existing.startsAt.toISOString();
+		const endsAtRaw = input.endsAt ?? existing.endsAt.toISOString();
 
-    const startsAtMs = Date.parse(startsAtRaw);
-    const endsAtMs = Date.parse(endsAtRaw);
-    if (!Number.isFinite(startsAtMs) || !Number.isFinite(endsAtMs) || endsAtMs <= startsAtMs) {
-      throw new Error("Время окончания должно быть позже времени начала");
-    }
+		const startsAtMs = Date.parse(startsAtRaw);
+		const endsAtMs = Date.parse(endsAtRaw);
+		if (
+			!Number.isFinite(startsAtMs) ||
+			!Number.isFinite(endsAtMs) ||
+			endsAtMs <= startsAtMs
+		) {
+			throw new Error("Время окончания должно быть позже времени начала");
+		}
 
-    const candidateStarts = new Date(startsAtMs);
-    const candidateEnds = new Date(endsAtMs);
-    const newStatus = input.status ?? existing.status;
-    const newChairId = input.chairId ?? existing.chairId;
-    const newDoctorUserId = input.doctorUserId ?? existing.doctorUserId;
-    const newPatientId = input.patientId ?? existing.patientId;
+		const candidateStarts = new Date(startsAtMs);
+		const candidateEnds = new Date(endsAtMs);
+		const newStatus = input.status ?? existing.status;
+		const newChairId = input.chairId ?? existing.chairId;
+		const newDoctorUserId = input.doctorUserId ?? existing.doctorUserId;
+		const newPatientId = input.patientId ?? existing.patientId;
 
-    if (newStatus !== "cancelled" && newStatus !== "no_show") {
-      await lockAppointmentResources(tx, organizationId, {
-        chairId: newChairId,
-        doctorUserId: newDoctorUserId,
-        patientId: newPatientId,
-      });
-      await assertNoResourceOverlap(tx, organizationId, {
-        startsAt: candidateStarts,
-        endsAt: candidateEnds,
-        chairId: newChairId,
-        doctorUserId: newDoctorUserId,
-        patientId: newPatientId,
-        excludeAppointmentId: appointmentId,
-      });
-    }
+		if (newStatus !== "cancelled" && newStatus !== "no_show") {
+			await lockAppointmentResources(tx, organizationId, {
+				chairId: newChairId,
+				doctorUserId: newDoctorUserId,
+				patientId: newPatientId,
+			});
+			await assertNoResourceOverlap(tx, organizationId, {
+				startsAt: candidateStarts,
+				endsAt: candidateEnds,
+				chairId: newChairId,
+				doctorUserId: newDoctorUserId,
+				patientId: newPatientId,
+				excludeAppointmentId: appointmentId,
+			});
+		}
 
-    /*
-     * БЫЛО: UPDATE только по appointments.id. SELECT+FOR UPDATE выше уже с org,
-     * но после patients (live cross-tenant PUT) область обязана быть на самом
-     * UPDATE: не полагаться на порядок вызовов.
-     * СТАЛО: organizationId + id в WHERE.
-     */
-    const [row] = await tx.update(schema.appointments).set({
-      patientId: input.patientId ?? existing.patientId,
-      doctorUserId: input.doctorUserId ?? existing.doctorUserId,
-      assistantUserId: input.assistantUserId !== undefined ? input.assistantUserId : existing.assistantUserId,
-      chairId: input.chairId ?? existing.chairId,
-      status: input.status ?? existing.status,
-      startsAt: new Date(startsAtMs),
-      endsAt: new Date(endsAtMs),
-      reason: input.reason !== undefined ? input.reason : existing.reason,
-      comment: input.comment !== undefined ? input.comment : existing.comment
+		/*
+		 * БЫЛО: UPDATE только по appointments.id. SELECT+FOR UPDATE выше уже с org,
+		 * но после patients (live cross-tenant PUT) область обязана быть на самом
+		 * UPDATE: не полагаться на порядок вызовов.
+		 * СТАЛО: organizationId + id в WHERE.
+		 */
+		const [row] = await tx
+			.update(schema.appointments)
+			.set({
+				patientId: input.patientId ?? existing.patientId,
+				doctorUserId: input.doctorUserId ?? existing.doctorUserId,
+				assistantUserId:
+					input.assistantUserId !== undefined
+						? input.assistantUserId
+						: existing.assistantUserId,
+				chairId: input.chairId ?? existing.chairId,
+				status: input.status ?? existing.status,
+				startsAt: new Date(startsAtMs),
+				endsAt: new Date(endsAtMs),
+				reason: input.reason !== undefined ? input.reason : existing.reason,
+				comment: input.comment !== undefined ? input.comment : existing.comment,
+			})
+			.where(
+				and(
+					eq(schema.appointments.organizationId, organizationId),
+					eq(schema.appointments.id, appointmentId),
+				),
+			)
+			.returning();
 
-    }).where(and(eq(schema.appointments.organizationId, organizationId), eq(schema.appointments.id, appointmentId))).returning();
+		return row;
+	});
 
-    return row;
-  });
+	if (!updated) throw new Error("Failed to update appointment");
 
-  if (!updated) throw new Error("Failed to update appointment");
-
-  return {
-    id: updated.id,
-    organizationId: updated.organizationId,
-    patientId: updated.patientId,
-    doctorUserId: updated.doctorUserId,
-    assistantUserId: updated.assistantUserId,
-    chairId: updated.chairId,
-    status: updated.status,
-    startsAt: updated.startsAt.toISOString(),
-    endsAt: updated.endsAt.toISOString(),
-    reason: updated.reason,
-    comment: updated.comment
-  } as unknown as Appointment;
+	return {
+		id: updated.id,
+		organizationId: updated.organizationId,
+		patientId: updated.patientId,
+		doctorUserId: updated.doctorUserId,
+		assistantUserId: updated.assistantUserId,
+		chairId: updated.chairId,
+		status: updated.status,
+		startsAt: updated.startsAt.toISOString(),
+		endsAt: updated.endsAt.toISOString(),
+		reason: updated.reason,
+		comment: updated.comment,
+	} as unknown as Appointment;
 }
 
-export async function getAppointmentByIdInDb(organizationId: string, id: string) {
-  if (useInMemory()) {
-    return inMemoryAppointments.find((a) => a.id === id) ?? null;
-  }
-  const [res] = await db.select().from(schema.appointments).where(and(eq(schema.appointments.organizationId, organizationId), eq(schema.appointments.id, id))).limit(1);
-  return res || null;
+export async function getAppointmentByIdInDb(
+	organizationId: string,
+	id: string,
+) {
+	if (useInMemory()) {
+		return inMemoryAppointments.find((a) => a.id === id) ?? null;
+	}
+	const [res] = await db
+		.select()
+		.from(schema.appointments)
+		.where(
+			and(
+				eq(schema.appointments.organizationId, organizationId),
+				eq(schema.appointments.id, id),
+			),
+		)
+		.limit(1);
+	return res || null;
 }

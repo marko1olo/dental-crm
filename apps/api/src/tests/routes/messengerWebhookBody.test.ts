@@ -78,7 +78,11 @@ describe("Messenger webhooks — cast-after-200 body guard", () => {
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: String(response.body || "") };
+		return {
+			statusCode: response.statusCode,
+			json,
+			body: String(response.body || ""),
+		};
 	}
 
 	test("MAX webhook: JSON null body → 200 ok, no throw", async () => {

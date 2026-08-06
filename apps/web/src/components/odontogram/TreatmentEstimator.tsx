@@ -1,9 +1,24 @@
-import { type ServiceCatalogItem, kopecksToNumericString } from "@dental/shared";
-import { AlertTriangle, Calculator, FileText, Loader2, PenTool, Save, Trash2 } from "lucide-react";
+import {
+	kopecksToNumericString,
+	type ServiceCatalogItem,
+} from "@dental/shared";
+import {
+	AlertTriangle,
+	Calculator,
+	FileText,
+	Loader2,
+	PenTool,
+	Save,
+	Trash2,
+} from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { denteAdminSecretRequestHeaders, money, operatorReadableErrorDetail } from "../../AppHelpers";
+import {
+	denteAdminSecretRequestHeaders,
+	money,
+	operatorReadableErrorDetail,
+} from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	actionFailureToast,
@@ -20,7 +35,6 @@ import { SignaturePad } from "../SignaturePad";
 import type { ToothData } from "./ToothChart";
 import {
 	type EstimatorContract,
-	type PlanItem,
 	estimatorContractFrom,
 	estimatorDismissalKeys,
 	estimatorIssueMessages,
@@ -29,6 +43,7 @@ import {
 	estimatorSaveBlock,
 	estimatorTotals,
 	isDeciduousFdiToothNumber,
+	type PlanItem,
 	planItemFromServer,
 	reconcileAutoSuggestions,
 } from "./treatmentEstimatorPricing";
@@ -109,7 +124,9 @@ function jsonObjectOrNull(rawBody: string): Record<string, unknown> | null {
 	if (!trimmed) return null;
 	try {
 		const parsed: unknown = JSON.parse(trimmed);
-		return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+		return typeof parsed === "object" &&
+			parsed !== null &&
+			!Array.isArray(parsed)
 			? (parsed as Record<string, unknown>)
 			: null;
 	} catch {
@@ -134,7 +151,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	 * показывает полные цены, и врач с пациентом видят суммы больше тех, которые
 	 * пациент реально заплатит. Молча так делать нельзя.
 	 */
-	const [contractFailure, setContractFailure] = useState<{ status: number | null } | null>(null);
+	const [contractFailure, setContractFailure] = useState<{
+		status: number | null;
+	} | null>(null);
 	/** Счётчик кнопки «Повторить»: меняется — оба запроса идут заново. */
 	const [reloadToken, setReloadToken] = useState(0);
 	/**
@@ -143,9 +162,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	 * формулы, а формула про снятие не знает. Корзина выглядела рабочей, а
 	 * лечение с ценой возвращалось в документ для подписи пациентом.
 	 */
-	const [dismissedSuggestions, setDismissedSuggestions] = useState<ReadonlySet<string>>(
-		() => new Set<string>(),
-	);
+	const [dismissedSuggestions, setDismissedSuggestions] = useState<
+		ReadonlySet<string>
+	>(() => new Set<string>());
 
 	const { dashboard } = useAppLogicContext();
 	/*
@@ -172,15 +191,20 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 		const loadContract = async () => {
 			try {
-				const res = await fetch(`/api/insurance/contracts/${insuranceContractId}`, {
-					headers: denteAdminSecretRequestHeaders(),
-				});
+				const res = await fetch(
+					`/api/insurance/contracts/${insuranceContractId}`,
+					{
+						headers: denteAdminSecretRequestHeaders(),
+					},
+				);
 				const rawBody = await res.text();
 				if (!res.ok) {
 					// БЫЛО: `res.ok ? res.json() : null` — отказ становился «договора
 					// нет», покрытие ДМС молча исчезало из сметы, и пациенту называли
 					// полную цену вместо со-оплаты.
-					console.error(`[insurance contract] ${res.status} ${rawBody.slice(0, 300)}`);
+					console.error(
+						`[insurance contract] ${res.status} ${rawBody.slice(0, 300)}`,
+					);
 					if (!active) return;
 					setActiveContract(null);
 					setContractFailure({ status: res.status });
@@ -244,16 +268,21 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		const loadPlan = async () => {
 			let status: number | null = null;
 			try {
-				const response = await fetch(`/api/patients/${patientId}/treatment-plans`, {
-					headers: denteAdminSecretRequestHeaders(),
-				});
+				const response = await fetch(
+					`/api/patients/${patientId}/treatment-plans`,
+					{
+						headers: denteAdminSecretRequestHeaders(),
+					},
+				);
 				status = response.status;
 				// Тело читается один раз строкой: на пустом теле response.json()
 				// бросает исключение, и прежний catch превращал отказ в ту же
 				// «пустую» смету.
 				const rawBody = await response.text();
 				if (!response.ok) {
-					console.error(`[treatment plan load] ${status} ${rawBody.slice(0, 300)}`);
+					console.error(
+						`[treatment plan load] ${status} ${rawBody.slice(0, 300)}`,
+					);
 					if (active) setPlanLoad({ phase: "failed", status });
 					return;
 				}
@@ -261,7 +290,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				if (!payload || !Array.isArray(payload.plans)) {
 					// Успешный статус без списка планов — испорченный ответ, а не
 					// «планов нет»: сервер всегда отдаёт {success, plans: []}.
-					console.error(`[treatment plan load] ${status}: в ответе нет списка планов`);
+					console.error(
+						`[treatment plan load] ${status}: в ответе нет списка планов`,
+					);
 					if (active) setPlanLoad({ phase: "failed", status });
 					return;
 				}
@@ -273,7 +304,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				setPlanId(latestPlan.id);
 				setItems(
 					Array.isArray(latestPlan.items)
-						? latestPlan.items.map(planItemFromServer).filter((item): item is PlanItem => item !== null)
+						? latestPlan.items
+								.map(planItemFromServer)
+								.filter((item): item is PlanItem => item !== null)
 						: [],
 				);
 				setSignatureUrl(latestPlan.patientSignature ?? null);
@@ -336,7 +369,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	 * во втором состоянии рядом. Прежде итог лежал в useState и обновлялся
 	 * эффектом, то есть один кадр показывал сумму от предыдущего набора строк.
 	 */
-	const totals = useMemo(() => estimatorTotals(items, contract), [items, contract]);
+	const totals = useMemo(
+		() => estimatorTotals(items, contract),
+		[items, contract],
+	);
 	const issueMessages = useMemo(() => estimatorIssueMessages(items), [items]);
 	const saveBlock = useMemo(() => estimatorSaveBlock(items), [items]);
 
@@ -395,7 +431,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			const rawBody = await res.text();
 			const data = jsonObjectOrNull(rawBody);
 			if (!res.ok || data?.success !== true) {
-				console.error(`[treatment plan save] ${res.status} ${rawBody.slice(0, 300)}`);
+				console.error(
+					`[treatment plan save] ${res.status} ${rawBody.slice(0, 300)}`,
+				);
 				const detail = operatorReadableErrorDetail(
 					typeof data?.message === "string" ? data.message : null,
 				);
@@ -408,7 +446,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				return;
 			}
 			if (typeof data.planId === "string") setPlanId(data.planId);
-			const savedPlan = data.plan && typeof data.plan === "object" ? (data.plan as Record<string, unknown>) : null;
+			const savedPlan =
+				data.plan && typeof data.plan === "object"
+					? (data.plan as Record<string, unknown>)
+					: null;
 			// Позиции из ответа проходят ту же нормализацию, что и при чтении:
 			// иначе в состояние попадёт строка без цены и разметка снова упадёт.
 			if (Array.isArray(savedPlan?.items)) {
@@ -420,7 +461,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			}
 			if (savedPlan && savedPlan.patientSignature !== undefined) {
 				setSignatureUrl(
-					typeof savedPlan.patientSignature === "string" ? savedPlan.patientSignature : null,
+					typeof savedPlan.patientSignature === "string"
+						? savedPlan.patientSignature
+						: null,
 				);
 			}
 			showToast("План лечения успешно сохранен!", "success");
@@ -544,7 +587,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						role="alert"
 						className="flex flex-wrap items-start gap-x-3 gap-y-2 p-3 mb-3 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900"
 					>
-						<AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+						<AlertTriangle
+							size={14}
+							className="mt-0.5 shrink-0"
+							aria-hidden="true"
+						/>
 						<div className="flex-1 min-w-0 break-words">
 							<div className="font-semibold">
 								{/*
@@ -555,11 +602,13 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 								  сохранён в состоянии. Отказ доступа и упавший сервер требуют
 								  от администратора разных действий.
 								*/}
-								Договор ДМС не прочитан: {requestFailureCause(contractFailure.status)}.
+								Договор ДМС не прочитан:{" "}
+								{requestFailureCause(contractFailure.status)}.
 							</div>
 							<div className="mt-0.5">
-								Суммы ниже показаны БЕЗ покрытия ДМС — пациент по договору заплатит
-								меньше. Не называйте эти суммы пациенту, пока договор не прочитан.
+								Суммы ниже показаны БЕЗ покрытия ДМС — пациент по договору
+								заплатит меньше. Не называйте эти суммы пациенту, пока договор
+								не прочитан.
 							</div>
 						</div>
 						<button
@@ -582,7 +631,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						role="alert"
 						className="flex flex-wrap items-start gap-x-3 gap-y-2 p-3 mb-3 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900"
 					>
-						<AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+						<AlertTriangle
+							size={14}
+							className="mt-0.5 shrink-0"
+							aria-hidden="true"
+						/>
 						<div className="flex-1 min-w-0 break-words">
 							<div className="font-semibold">
 								Часть лечения посчитать не удалось — цены нет в вашем прайсе.
@@ -657,7 +710,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 													</div>
 													<div className="plan-item-price-quantity">
 														{(() => {
-															const rowMoney = estimatorRowMoney(item, contract);
+															const rowMoney = estimatorRowMoney(
+																item,
+																contract,
+															);
 															/*
 															 * Цены нет — и числа не будет. Здесь стояло
 															 * money(item.price), а money() печатает «0 ₽» и для
@@ -682,19 +738,23 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 																	</span>
 																);
 															}
-															if (rowMoney.hasContract && rowMoney.coveragePct === 0) {
+															if (
+																rowMoney.hasContract &&
+																rowMoney.coveragePct === 0
+															) {
 																return (
 																	<span className="text-rose-500 font-semibold flex items-center gap-1.5 flex-wrap">
-																		<span>
-																			{rub(rowMoney.unitKopecks)}
-																		</span>
+																		<span>{rub(rowMoney.unitKopecks)}</span>
 																		<span className="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25">
 																			Вне покрытия ДМС
 																		</span>
 																	</span>
 																);
 															}
-															if (rowMoney.hasContract && rowMoney.coveragePct < 100) {
+															if (
+																rowMoney.hasContract &&
+																rowMoney.coveragePct < 100
+															) {
 																return (
 																	<span className="flex items-center gap-1.5 flex-wrap">
 																		<span className="line-through text-slate-400 dark:text-zinc-500">
@@ -726,8 +786,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 															}
 															return (
 																<span>
-																	{rub(rowMoney.unitKopecks)} x{" "}
-																	{item.quantity}
+																	{rub(rowMoney.unitKopecks)} x {item.quantity}
 																</span>
 															);
 														})()}
@@ -783,7 +842,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			    известное и выдать это за итог — то же самое, что выдумать цену. */}
 			<div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 px-6 py-4 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
 				<div className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-					{totals.incompleteRows > 0 ? "Итого, без непосчитанного:" : "Итого по плану:"}
+					{totals.incompleteRows > 0
+						? "Итого, без непосчитанного:"
+						: "Итого по плану:"}
 				</div>
 				<div className="flex flex-col items-end min-w-0">
 					{/*

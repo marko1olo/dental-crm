@@ -85,11 +85,14 @@ export function readWhatsappCredentials(config: {
 }
 
 /** «+7 (916) 123-45-67» → «79161234567». Cloud API принимает только цифры. */
-export function normalizeWhatsappRecipient(raw: string | null | undefined): string | null {
+export function normalizeWhatsappRecipient(
+	raw: string | null | undefined,
+): string | null {
 	const digits = (raw ?? "").replace(/\D/g, "");
 	if (digits.length < 10) return null;
 	// Российские номера в базе часто хранятся с ведущей 8.
-	if (digits.length === 11 && digits.startsWith("8")) return `7${digits.slice(1)}`;
+	if (digits.length === 11 && digits.startsWith("8"))
+		return `7${digits.slice(1)}`;
 	return digits;
 }
 

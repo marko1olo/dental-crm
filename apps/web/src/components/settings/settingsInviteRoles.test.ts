@@ -8,9 +8,9 @@
  * приглашённый администратор получал права владельца.
  */
 
-import { staffRoleSchema } from "@dental/shared";
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import { staffRoleSchema } from "@dental/shared";
 
 import { getFilteredAppViews } from "../../workspaceShell";
 import { staffRoleLabels } from "../../workspaceUiLabels";
@@ -135,7 +135,10 @@ describe("ответ на изменение сотрудника", () => {
 	});
 
 	test("машинный код error наружу не берётся", () => {
-		const outcome = parseStaffMutationPayload(400, '{"error":"SettingsValidationError"}');
+		const outcome = parseStaffMutationPayload(
+			400,
+			'{"error":"SettingsValidationError"}',
+		);
 		assert.equal(outcome.ok === false && outcome.message, null);
 	});
 });

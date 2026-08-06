@@ -72,7 +72,11 @@ function paymentsCountLabel(count: number): string {
 	return countLabel(count, "оплата", "оплаты", "оплат");
 }
 
-export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProps) {
+export function CashDayTally({
+	payments,
+	methodLabels,
+	money,
+}: CashDayTallyProps) {
 	/*
 	 * Сколько наличных пересчитал человек в ящике. Строкой, а не числом: поле
 	 * хранит то, что набрали, вместе с запятой, а разбор делает тот же
@@ -91,20 +95,28 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 	 * первый же показ переносит итог в новые сутки.
 	 */
 	const dayKey = localDayKey(new Date()) ?? "";
-	const summary = useMemo(() => summarizeCashDay(payments, dayKey), [payments, dayKey]);
+	const summary = useMemo(
+		() => summarizeCashDay(payments, dayKey),
+		[payments, dayKey],
+	);
 
 	const isLoaded = payments !== undefined;
 	const hasAnything =
-		summary.receivedCount > 0 || summary.familyWalletRub > 0 || summary.refundedCount > 0;
+		summary.receivedCount > 0 ||
+		summary.familyWalletRub > 0 ||
+		summary.refundedCount > 0;
 
 	const countedCash = normalizeRubAmountInput(countedCashInput);
-	const countedCashInvalid = Boolean(countedCashInput.trim()) && countedCash === null;
+	const countedCashInvalid =
+		Boolean(countedCashInput.trim()) && countedCash === null;
 	/*
 	 * Расхождение считается в копейках целыми: разность двух дробей в плавающей
 	 * точке даёт хвост, и «сходится» превратилось бы в «не хватает 0,000001 ₽».
 	 */
 	const differenceRub =
-		countedCash === null ? null : Math.round((countedCash - summary.cashRub) * 100) / 100;
+		countedCash === null
+			? null
+			: Math.round((countedCash - summary.cashRub) * 100) / 100;
 
 	const headline = !isLoaded
 		? "Касса за сегодня: считаем…"
@@ -113,20 +125,23 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 			: "Касса за сегодня: оплат пока не записано";
 
 	return (
-		<details className="payment-capture-detail-section" data-testid="cash-day-tally">
+		<details
+			className="payment-capture-detail-section"
+			data-testid="cash-day-tally"
+		>
 			<summary>{headline}</summary>
 			<div className="smart-details-content">
 				{!isLoaded ? (
 					/* Загрузка. Нулей вместо цифр здесь быть не должно: ноль неотличим
 					   от «денег не было», а это разные вещи для сверки. */
 					<p style={{ margin: "8px 0 0", color: "var(--muted)" }}>
-						Загружаем оплаты клиники за сегодня. Итог появится, как только журнал
-						платежей прочитается.
+						Загружаем оплаты клиники за сегодня. Итог появится, как только
+						журнал платежей прочитается.
 					</p>
 				) : !hasAnything ? (
 					<p style={{ margin: "8px 0 0", color: "var(--muted)" }}>
-						За сегодня оплат ещё не записано. Здесь появятся все оплаты клиники —
-						и наличные, и карта, и переводы, — как только их примут в форме
+						За сегодня оплат ещё не записано. Здесь появятся все оплаты клиники
+						— и наличные, и карта, и переводы, — как только их примут в форме
 						«Принять оплату» выше.
 					</p>
 				) : (
@@ -157,7 +172,9 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 									<Wallet aria-hidden="true" />
 									<div>
 										<h3>Из них аванс на семейный счёт</h3>
-										<p>деньги получены, но выручкой станут при оплате лечения</p>
+										<p>
+											деньги получены, но выручкой станут при оплате лечения
+										</p>
 									</div>
 									<strong>{money(summary.advanceRub)}</strong>
 								</article>
@@ -168,8 +185,8 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 									<div>
 										<h3>Оплачено с семейных счетов</h3>
 										<p>
-											в приход не входит: эти деньги клиника получила раньше, когда
-											счёт пополняли
+											в приход не входит: эти деньги клиника получила раньше,
+											когда счёт пополняли
 										</p>
 									</div>
 									<strong>{money(summary.familyWalletRub)}</strong>
@@ -185,8 +202,8 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 										    оплаты, поэтому деньги по ней и пришли, и ушли: в приходе
 										    их нет, и вычитать из ящика нечего. */}
 										<p>
-											{paymentsCountLabel(summary.refundedCount)}; в приход за день не
-											входят — эти деньги вернули
+											{paymentsCountLabel(summary.refundedCount)}; в приход за
+											день не входят — эти деньги вернули
 										</p>
 									</div>
 									<strong>−{money(summary.refundedRub)}</strong>
@@ -215,7 +232,11 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 									Пересчитайте наличные в ящике (₽)
 								</label>
 							</div>
-							<p id="cash-day-counted-result" style={{ margin: "6px 0 0" }} role="status">
+							<p
+								id="cash-day-counted-result"
+								style={{ margin: "6px 0 0" }}
+								role="status"
+							>
 								{countedCashInvalid
 									? "Впишите сумму цифрами, копейки после запятой: 12 000,50"
 									: differenceRub === null
@@ -232,11 +253,17 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 						    день», а это итог того, что ЗАПИСАЛИ в программу. И это итог всей
 						    клиники, а не выбранного пациента, — самая вероятная ошибка чтения
 						    на экране, где всё остальное показано по одному человеку. */}
-						<p style={{ margin: "10px 0 0", color: "var(--muted)", fontSize: "13px" }}>
-							Считаются оплаты, записанные в программу за сегодня по всей клинике, а
-							не только по выбранному пациенту. Если оплату приняли и не записали,
-							её здесь нет. Сама сверка в программе пока не сохраняется — это
-							проверка на месте.
+						<p
+							style={{
+								margin: "10px 0 0",
+								color: "var(--muted)",
+								fontSize: "13px",
+							}}
+						>
+							Считаются оплаты, записанные в программу за сегодня по всей
+							клинике, а не только по выбранному пациенту. Если оплату приняли и
+							не записали, её здесь нет. Сама сверка в программе пока не
+							сохраняется — это проверка на месте.
 						</p>
 					</>
 				)}

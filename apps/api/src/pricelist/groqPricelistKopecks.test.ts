@@ -1,6 +1,9 @@
-import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import type { DentalPricelistAnalysisRequest, ServiceCatalogItem } from "@dental/shared";
+import { describe, test } from "node:test";
+import type {
+	DentalPricelistAnalysisRequest,
+	ServiceCatalogItem,
+} from "@dental/shared";
 import { itemFromGroq } from "./analyzer.js";
 
 /**
@@ -92,8 +95,16 @@ describe("выдуманный ноль вместо неизвестной це
 		// давала цену 0 ₽ — выдуманное значение вместо неизвестного.
 		for (const junk of [false, [], {}, "бесплатно", null]) {
 			const item = parseGroqRecord({ priceRub: junk });
-			assert.notEqual(item.priceRub, 0, `значение ${JSON.stringify(junk)} стало ценой 0 ₽`);
-			assert.equal(item.priceRub, null, `значение ${JSON.stringify(junk)} должно остаться неизвестным`);
+			assert.notEqual(
+				item.priceRub,
+				0,
+				`значение ${JSON.stringify(junk)} стало ценой 0 ₽`,
+			);
+			assert.equal(
+				item.priceRub,
+				null,
+				`значение ${JSON.stringify(junk)} должно остаться неизвестным`,
+			);
 		}
 	});
 
@@ -115,7 +126,10 @@ describe("длительность приёма осталась целым чи
 		 */
 		const item = parseGroqRecord({ priceRub: 1500.5, durationMinutes: 45.7 });
 		assert.equal(item.durationMinutes, 46);
-		assert.ok(Number.isInteger(item.durationMinutes), "длительность обязана быть целой");
+		assert.ok(
+			Number.isInteger(item.durationMinutes),
+			"длительность обязана быть целой",
+		);
 		assert.equal(item.id, AI_ITEM_ID);
 		assert.equal(item.priceRub, 1500.5);
 	});
@@ -132,9 +146,18 @@ describe("длительность приёма осталась целым чи
 	test("длительность вне разумных границ отбрасывается, а не принимается", () => {
 		// 99999 минут — это 69 суток приёма. Детерминированный разбор такое
 		// значение не пропускал, нейро-ветка не проверяла границу вовсе.
-		assert.equal(parseGroqRecord({ durationMinutes: 99999 }).durationMinutes, null);
-		assert.equal(parseGroqRecord({ durationMinutes: -30 }).durationMinutes, null);
-		assert.equal(parseGroqRecord({ durationMinutes: 600 }).durationMinutes, 600);
+		assert.equal(
+			parseGroqRecord({ durationMinutes: 99999 }).durationMinutes,
+			null,
+		);
+		assert.equal(
+			parseGroqRecord({ durationMinutes: -30 }).durationMinutes,
+			null,
+		);
+		assert.equal(
+			parseGroqRecord({ durationMinutes: 600 }).durationMinutes,
+			600,
+		);
 	});
 });
 
@@ -166,16 +189,25 @@ describe("диапазон цены не выворачивается наизн
 
 describe("запись, которую разобрать нечем, не выдаёт себя за разбор", () => {
 	test("запись без текста источника не превращается в позицию прайса", () => {
-		assert.equal(itemFromGroq({ priceRub: 1500.5 }, 0, AI_REQUEST, EMPTY_CATALOG), null);
+		assert.equal(
+			itemFromGroq({ priceRub: 1500.5 }, 0, AI_REQUEST, EMPTY_CATALOG),
+			null,
+		);
 		assert.equal(itemFromGroq(null, 0, AI_REQUEST, EMPTY_CATALOG), null);
-		assert.equal(itemFromGroq("Лечение кариеса 1500,50", 0, AI_REQUEST, EMPTY_CATALOG), null);
+		assert.equal(
+			itemFromGroq("Лечение кариеса 1500,50", 0, AI_REQUEST, EMPTY_CATALOG),
+			null,
+		);
 	});
 
 	test("откат помечен своим id, и его ни с чем не спутать", () => {
 		// Строка настолько короткая, что контракт отвергает позицию модели
 		// (title_too_short не мешает, но пустое название — мешает).
 		const item = itemFromGroq(
-			{ sourceText: SOURCE_TEXT_WITHOUT_DIGITS, category: "не существует такой категории" },
+			{
+				sourceText: SOURCE_TEXT_WITHOUT_DIGITS,
+				category: "не существует такой категории",
+			},
 			0,
 			AI_REQUEST,
 			EMPTY_CATALOG,

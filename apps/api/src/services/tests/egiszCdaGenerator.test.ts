@@ -1,7 +1,7 @@
 import assert from "node:assert";
-import { test, describe } from "node:test";
-import { generateDentalCdaXml } from "../egiszCdaGenerator.js";
+import { describe, test } from "node:test";
 import type { EgiszCdaParams } from "../egiszCdaGenerator.js";
+import { generateDentalCdaXml } from "../egiszCdaGenerator.js";
 
 describe("egiszCdaGenerator", () => {
 	test("generateDentalCdaXml with full parameter set", (t) => {
@@ -55,7 +55,10 @@ describe("egiszCdaGenerator", () => {
 
 		// DEFECT #61: revised diary.version must appear in CDA versionNumber
 		const revised_res = generateDentalCdaXml({ ...params, documentVersion: 3 });
-		assert.ok(revised_res.success, revised_res.success ? "" : String(revised_res.error));
+		assert.ok(
+			revised_res.success,
+			revised_res.success ? "" : String(revised_res.error),
+		);
 		const revised = revised_res.xml;
 		assert.ok(revised.includes('<versionNumber value="3"/>'));
 		assert.ok(!revised.includes('<versionNumber value="1"/>'));
@@ -113,11 +116,14 @@ describe("egiszCdaGenerator", () => {
 		const xml = xml_res.xml;
 		t.assert.snapshot(xml);
 
-        params.patientGender = "other"; // Test other gender
-        const xmlOther_res = generateDentalCdaXml(params);
-		assert.ok(xmlOther_res.success, xmlOther_res.success ? "" : String(xmlOther_res.error));
+		params.patientGender = "other"; // Test other gender
+		const xmlOther_res = generateDentalCdaXml(params);
+		assert.ok(
+			xmlOther_res.success,
+			xmlOther_res.success ? "" : String(xmlOther_res.error),
+		);
 		const xmlOther = xmlOther_res.xml;
-        t.assert.snapshot(xmlOther);
+		t.assert.snapshot(xmlOther);
 	});
 
 	test("DEFECT #72: documentTime drives ClinicalDocument + author effectiveTime", (t) => {
@@ -150,8 +156,14 @@ describe("egiszCdaGenerator", () => {
 			documentId: "doc-72",
 		};
 
-		const withSign_res = generateDentalCdaXml({ ...base, documentTime: lockedAt });
-		assert.ok(withSign_res.success, withSign_res.success ? "" : String(withSign_res.error));
+		const withSign_res = generateDentalCdaXml({
+			...base,
+			documentTime: lockedAt,
+		});
+		assert.ok(
+			withSign_res.success,
+			withSign_res.success ? "" : String(withSign_res.error),
+		);
 		const withSign = withSign_res.xml;
 		// Root ClinicalDocument effectiveTime
 		assert.ok(
@@ -190,7 +202,10 @@ describe("egiszCdaGenerator", () => {
 
 		// Without documentTime: falls back to generation now
 		const withoutSign_res = generateDentalCdaXml(base);
-		assert.ok(withoutSign_res.success, withoutSign_res.success ? "" : String(withoutSign_res.error));
+		assert.ok(
+			withoutSign_res.success,
+			withoutSign_res.success ? "" : String(withoutSign_res.error),
+		);
 		const withoutSign = withoutSign_res.xml;
 		assert.ok(
 			withoutSign.includes(`<effectiveTime value="${expectedNow}"/>`),
@@ -205,7 +220,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			documentTime: new Date("not-a-date"),
 		});
-		assert.ok(invalid_res.success, invalid_res.success ? "" : String(invalid_res.error));
+		assert.ok(
+			invalid_res.success,
+			invalid_res.success ? "" : String(invalid_res.error),
+		);
 		const invalid = invalid_res.xml;
 		assert.ok(
 			invalid.includes(`<effectiveTime value="${expectedNow}"/>`),
@@ -269,7 +287,6 @@ describe("egiszCdaGenerator", () => {
 	 * Route already 422s (DEFECT #68); generator uses nullFlavor="UNK".
 	 */
 	test("DEFECT #81: administrativeGenderCode nullFlavor UNK when gender unknown; 1/2 when known", () => {
-
 		const base = {
 			patientId: "pat-81",
 			patientName: { first: "A", last: "B" },
@@ -285,7 +302,10 @@ describe("egiszCdaGenerator", () => {
 		};
 
 		const unknown_res = generateDentalCdaXml(base);
-		assert.ok(unknown_res.success, unknown_res.success ? "" : String(unknown_res.error));
+		assert.ok(
+			unknown_res.success,
+			unknown_res.success ? "" : String(unknown_res.error),
+		);
 		const unknown = unknown_res.xml;
 		assert.ok(
 			unknown.includes('<administrativeGenderCode nullFlavor="UNK"/>'),
@@ -300,7 +320,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			patientGender: "other",
 		});
-		assert.ok(other_res.success, other_res.success ? "" : String(other_res.error));
+		assert.ok(
+			other_res.success,
+			other_res.success ? "" : String(other_res.error),
+		);
 		const other = other_res.xml;
 		assert.ok(
 			other.includes('<administrativeGenderCode nullFlavor="UNK"/>'),
@@ -332,7 +355,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			patientGender: "female",
 		});
-		assert.ok(female_res.success, female_res.success ? "" : String(female_res.error));
+		assert.ok(
+			female_res.success,
+			female_res.success ? "" : String(female_res.error),
+		);
 		const female = female_res.xml;
 		assert.ok(
 			female.includes(
@@ -352,7 +378,6 @@ describe("egiszCdaGenerator", () => {
 	 * for direct callers / future paths — use birthTime nullFlavor="UNK".
 	 */
 	test("DEFECT #80: birthTime nullFlavor UNK when DOB missing/invalid; real date when present", () => {
-
 		const base = {
 			patientId: "pat-80",
 			patientName: { first: "A", last: "B" },
@@ -368,7 +393,10 @@ describe("egiszCdaGenerator", () => {
 		};
 
 		const missing_res = generateDentalCdaXml(base);
-		assert.ok(missing_res.success, missing_res.success ? "" : String(missing_res.error));
+		assert.ok(
+			missing_res.success,
+			missing_res.success ? "" : String(missing_res.error),
+		);
 		const missing = missing_res.xml;
 		assert.ok(
 			missing.includes('<birthTime nullFlavor="UNK"/>'),
@@ -387,13 +415,19 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			patientBirthDate: "not-a-date",
 		});
-		assert.ok(invalid_res.success, invalid_res.success ? "" : String(invalid_res.error));
+		assert.ok(
+			invalid_res.success,
+			invalid_res.success ? "" : String(invalid_res.error),
+		);
 		const invalid = invalid_res.xml;
 		assert.ok(
 			invalid.includes('<birthTime nullFlavor="UNK"/>'),
 			"invalid DOB must emit birthTime nullFlavor=UNK",
 		);
-		assert.ok(!invalid.includes("19000101"), "invalid DOB must not invent 19000101");
+		assert.ok(
+			!invalid.includes("19000101"),
+			"invalid DOB must not invent 19000101",
+		);
 
 		const real_res = generateDentalCdaXml({
 			...base,
@@ -423,7 +457,6 @@ describe("egiszCdaGenerator", () => {
 	 * longer needs nullFlavor NI — MRN alone satisfies II 1..*.
 	 */
 	test("DEFECT #79: patientRole never emits empty SNILS extension; SNILS when present", () => {
-
 		const base = {
 			patientId: "pat-79",
 			patientName: { first: "A", last: "B" },
@@ -439,7 +472,10 @@ describe("egiszCdaGenerator", () => {
 		};
 
 		const blank_res = generateDentalCdaXml(base);
-		assert.ok(blank_res.success, blank_res.success ? "" : String(blank_res.error));
+		assert.ok(
+			blank_res.success,
+			blank_res.success ? "" : String(blank_res.error),
+		);
 		const blank = blank_res.xml;
 		const roleBlank = blank.slice(
 			blank.indexOf("<patientRole>"),
@@ -463,7 +499,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			patientSnils: "   ",
 		});
-		assert.ok(whitespace_res.success, whitespace_res.success ? "" : String(whitespace_res.error));
+		assert.ok(
+			whitespace_res.success,
+			whitespace_res.success ? "" : String(whitespace_res.error),
+		);
 		const whitespace = whitespace_res.xml;
 		const roleWs = whitespace.slice(
 			whitespace.indexOf("<patientRole>"),
@@ -482,7 +521,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			patientSnils: "123-456-789 00",
 		});
-		assert.ok(withSnils_res.success, withSnils_res.success ? "" : String(withSnils_res.error));
+		assert.ok(
+			withSnils_res.success,
+			withSnils_res.success ? "" : String(withSnils_res.error),
+		);
 		const withSnils = withSnils_res.xml;
 		const roleOk = withSnils.slice(
 			withSnils.indexOf("<patientRole>"),
@@ -514,13 +556,11 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
-
 	/**
 	 * DEFECT #78: custodian organization id must not emit empty extension=""
 	 * when clinicOid is absent; clinicOid must be XML-escaped when present.
 	 */
 	test("DEFECT #78: custodian id nullFlavor NI without clinicOid; escaped when present", () => {
-
 		const base = {
 			patientId: "pat-78",
 			patientName: { first: "A", last: "B" },
@@ -536,7 +576,10 @@ describe("egiszCdaGenerator", () => {
 		};
 
 		const withoutOid_res = generateDentalCdaXml(base);
-		assert.ok(withoutOid_res.success, withoutOid_res.success ? "" : String(withoutOid_res.error));
+		assert.ok(
+			withoutOid_res.success,
+			withoutOid_res.success ? "" : String(withoutOid_res.error),
+		);
 		const withoutOid = withoutOid_res.xml;
 		const custodianBlock = withoutOid.slice(
 			withoutOid.indexOf("<custodian>"),
@@ -562,7 +605,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			clinicOid: "1.2.643.5.1.13.13.12.2.77.1",
 		});
-		assert.ok(withOid_res.success, withOid_res.success ? "" : String(withOid_res.error));
+		assert.ok(
+			withOid_res.success,
+			withOid_res.success ? "" : String(withOid_res.error),
+		);
 		const withOid = withOid_res.xml;
 		const custWith = withOid.slice(
 			withOid.indexOf("<custodian>"),
@@ -603,13 +649,11 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
-
 	/**
 	 * DEFECT #76: realmCode RU is required by HL7 CDA R2 / EGISZ SEMD header.
 	 * Without it validators reject the document before body checks run.
 	 */
 	test("DEFECT #76: realmCode RU present in ClinicalDocument header", () => {
-
 		const xml_res = generateDentalCdaXml({
 			patientId: "pat-76",
 			patientName: { first: "A", last: "B" },
@@ -641,7 +685,6 @@ describe("egiszCdaGenerator", () => {
 	 * Signature party must mirror doctorName and use documentClock (lockedAt).
 	 */
 	test("DEFECT #75: legalAuthenticator present with doctor name and document time", () => {
-
 		const lockedAt = new Date("2024-06-01T12:30:00.000Z");
 		const xml_res = generateDentalCdaXml({
 			patientId: "pat-75",
@@ -731,7 +774,10 @@ describe("egiszCdaGenerator", () => {
 			visitDate: new Date("2024-01-01T00:00:00.000Z"),
 			documentId: "doc-75b",
 		});
-		assert.ok(minimal_res.success, minimal_res.success ? "" : String(minimal_res.error));
+		assert.ok(
+			minimal_res.success,
+			minimal_res.success ? "" : String(minimal_res.error),
+		);
 		const minimal = minimal_res.xml;
 		assert.ok(
 			minimal.includes("<legalAuthenticator>"),
@@ -739,8 +785,7 @@ describe("egiszCdaGenerator", () => {
 		);
 		const laMin = minimal.slice(
 			minimal.indexOf("<legalAuthenticator>"),
-			minimal.indexOf("</legalAuthenticator>") +
-				"</legalAuthenticator>".length,
+			minimal.indexOf("</legalAuthenticator>") + "</legalAuthenticator>".length,
 		);
 		// DEFECT #77: id required (1..*) — nullFlavor NI when SNILS absent
 		assert.ok(
@@ -778,7 +823,10 @@ describe("egiszCdaGenerator", () => {
 		};
 
 		const withoutSnils_res = generateDentalCdaXml(base);
-		assert.ok(withoutSnils_res.success, withoutSnils_res.success ? "" : String(withoutSnils_res.error));
+		assert.ok(
+			withoutSnils_res.success,
+			withoutSnils_res.success ? "" : String(withoutSnils_res.error),
+		);
 		const withoutSnils = withoutSnils_res.xml;
 		// assignedAuthor must have exactly one id — nullFlavor NI
 		const authorBlock = withoutSnils.slice(
@@ -809,7 +857,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			doctorSnils: "111-222-333 44",
 		});
-		assert.ok(withSnils_res.success, withSnils_res.success ? "" : String(withSnils_res.error));
+		assert.ok(
+			withSnils_res.success,
+			withSnils_res.success ? "" : String(withSnils_res.error),
+		);
 		const withSnils = withSnils_res.xml;
 		const authorWith = withSnils.slice(
 			withSnils.indexOf("<assignedAuthor>"),
@@ -842,7 +893,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			doctorSnils: "   ",
 		});
-		assert.ok(blankSnils_res.success, blankSnils_res.success ? "" : String(blankSnils_res.error));
+		assert.ok(
+			blankSnils_res.success,
+			blankSnils_res.success ? "" : String(blankSnils_res.error),
+		);
 		const blankSnils = blankSnils_res.xml;
 		assert.ok(
 			blankSnils.includes('<id nullFlavor="NI"/>'),
@@ -850,14 +904,12 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
-
 	/**
 	 * DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth must appear
 	 * in CDA diagnosis observation as targetSiteCode (and in human-readable text).
 	 * Without this, signed 043 tooth never reaches EGISZ/REMD export.
 	 */
 	test("DEFECT #74: diagnosisTooth exports as targetSiteCode on diagnosis observation", () => {
-
 		const base: EgiszCdaParams = {
 			patientId: "pat-74",
 			patientName: { first: "Иван", last: "Иванов" },
@@ -876,7 +928,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			diagnosisTooth: "36",
 		});
-		assert.ok(withTooth_res.success, withTooth_res.success ? "" : String(withTooth_res.error));
+		assert.ok(
+			withTooth_res.success,
+			withTooth_res.success ? "" : String(withTooth_res.error),
+		);
 		const withTooth = withTooth_res.xml;
 		assert.ok(
 			withTooth.includes(
@@ -894,7 +949,10 @@ describe("egiszCdaGenerator", () => {
 		);
 
 		const withoutTooth_res = generateDentalCdaXml(base);
-		assert.ok(withoutTooth_res.success, withoutTooth_res.success ? "" : String(withoutTooth_res.error));
+		assert.ok(
+			withoutTooth_res.success,
+			withoutTooth_res.success ? "" : String(withoutTooth_res.error),
+		);
 		const withoutTooth = withoutTooth_res.xml;
 		assert.ok(
 			!withoutTooth.includes("targetSiteCode"),
@@ -910,7 +968,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			diagnosisTooth: "   ",
 		});
-		assert.ok(blankTooth_res.success, blankTooth_res.success ? "" : String(blankTooth_res.error));
+		assert.ok(
+			blankTooth_res.success,
+			blankTooth_res.success ? "" : String(blankTooth_res.error),
+		);
 		const blankTooth = blankTooth_res.xml;
 		assert.ok(
 			!blankTooth.includes("targetSiteCode"),
@@ -920,19 +981,28 @@ describe("egiszCdaGenerator", () => {
 		// XML special chars in tooth must be escaped
 		const evilTooth_res = generateDentalCdaXml({
 			...base,
-			diagnosisTooth: "3" + String.fromCharCode(60) + "6" + String.fromCharCode(62) + String.fromCharCode(38) + "x",
+			diagnosisTooth:
+				"3" +
+				String.fromCharCode(60) +
+				"6" +
+				String.fromCharCode(62) +
+				String.fromCharCode(38) +
+				"x",
 		});
-		assert.ok(evilTooth_res.success, evilTooth_res.success ? "" : String(evilTooth_res.error));
+		assert.ok(
+			evilTooth_res.success,
+			evilTooth_res.success ? "" : String(evilTooth_res.error),
+		);
 		const evilTooth = evilTooth_res.xml;
 		const lt = "&" + "lt;";
 		const gt = "&" + "gt;";
 		const amp = "&" + "amp;";
 		assert.ok(
-			evilTooth.includes("targetSiteCode code=\"3" + lt + "6" + gt + amp + "x\""),
+			evilTooth.includes('targetSiteCode code="3' + lt + "6" + gt + amp + 'x"'),
 			"diagnosisTooth must be XML-escaped in targetSiteCode@code",
 		);
 		assert.ok(
-			!evilTooth.includes("code=\"3" + String.fromCharCode(60) + "6"),
+			!evilTooth.includes('code="3' + String.fromCharCode(60) + "6"),
 			"raw < must not appear in targetSiteCode@code",
 		);
 	});
@@ -999,16 +1069,30 @@ describe("egiszCdaGenerator", () => {
 		const noOid_res = generateDentalCdaXml({
 			...params,
 			clinicOid: undefined,
-			documentId: "doc" + String.fromCharCode(60) + "enc" + String.fromCharCode(62) + String.fromCharCode(38) + "x",
+			documentId:
+				"doc" +
+				String.fromCharCode(60) +
+				"enc" +
+				String.fromCharCode(62) +
+				String.fromCharCode(38) +
+				"x",
 		});
-		assert.ok(noOid_res.success, noOid_res.success ? "" : String(noOid_res.error));
+		assert.ok(
+			noOid_res.success,
+			noOid_res.success ? "" : String(noOid_res.error),
+		);
 		const noOid = noOid_res.xml;
 		const lt = "&" + "lt;";
 		const gt = "&" + "gt;";
 		const amp = "&" + "amp;";
 		assert.ok(
 			noOid.includes(
-				'root="1.2.643.5.1.13.13.12.2" extension="doc' + lt + "enc" + gt + amp + 'x"',
+				'root="1.2.643.5.1.13.13.12.2" extension="doc' +
+					lt +
+					"enc" +
+					gt +
+					amp +
+					'x"',
 			),
 			"missing clinicOid uses default root; documentId must be XML-escaped",
 		);
@@ -1067,7 +1151,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			encounterId: "   ",
 		});
-		assert.ok(fallback_res.success, fallback_res.success ? "" : String(fallback_res.error));
+		assert.ok(
+			fallback_res.success,
+			fallback_res.success ? "" : String(fallback_res.error),
+		);
 		const fallback = fallback_res.xml;
 		const fbEnc = fallback.slice(
 			fallback.indexOf("<encompassingEncounter>"),
@@ -1081,7 +1168,10 @@ describe("egiszCdaGenerator", () => {
 		/* omitted encounterId → same fallback */
 		const { encounterId: _omit, ...noEnc } = base;
 		const omitted_res = generateDentalCdaXml(noEnc);
-		assert.ok(omitted_res.success, omitted_res.success ? "" : String(omitted_res.error));
+		assert.ok(
+			omitted_res.success,
+			omitted_res.success ? "" : String(omitted_res.error),
+		);
 		const omitted = omitted_res.xml;
 		const omEnc = omitted.slice(
 			omitted.indexOf("<encompassingEncounter>"),
@@ -1095,7 +1185,8 @@ describe("egiszCdaGenerator", () => {
 		/* encounterId XML-escaped */
 		const esc_res = generateDentalCdaXml({
 			...base,
-			encounterId: "v" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
+			encounterId:
+				"v" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
 		});
 		assert.ok(esc_res.success, esc_res.success ? "" : String(esc_res.error));
 		const esc = esc_res.xml;
@@ -1148,9 +1239,7 @@ describe("egiszCdaGenerator", () => {
 			"versionNumber tracks diary revise",
 		);
 		/* setId must not silently equal documentId when documentSetId is set */
-		const setIdLine = xml
-			.split("\n")
-			.find((l) => l.includes("<setId "));
+		const setIdLine = xml.split("\n").find((l) => l.includes("<setId "));
 		assert.ok(setIdLine && setIdLine.includes('extension="visit-set-stable"'));
 		assert.ok(setIdLine && !setIdLine.includes('extension="doc-version-2"'));
 
@@ -1192,7 +1281,10 @@ describe("egiszCdaGenerator", () => {
 		/* omitted documentSetId → same fallback */
 		const { documentSetId: _omit, ...noSet } = base;
 		const omitted_res = generateDentalCdaXml(noSet);
-		assert.ok(omitted_res.success, omitted_res.success ? "" : String(omitted_res.error));
+		assert.ok(
+			omitted_res.success,
+			omitted_res.success ? "" : String(omitted_res.error),
+		);
 		const omitted = omitted_res.xml;
 		const omSet = omitted.split("\n").find((l) => l.includes("<setId "));
 		assert.ok(
@@ -1204,18 +1296,20 @@ describe("egiszCdaGenerator", () => {
 		const esc_res = generateDentalCdaXml({
 			...base,
 			documentSetId:
-				"s" +
-				String.fromCharCode(60) +
-				"x" +
-				String.fromCharCode(38) +
-				"y",
+				"s" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
 		});
 		assert.ok(esc_res.success, esc_res.success ? "" : String(esc_res.error));
 		const esc = esc_res.xml;
 		const lt = "&" + "lt;";
 		const amp = "&" + "amp;";
 		assert.ok(
-			esc.includes('<setId root="1.2.643.5.1.13.13.12.2.777" extension="s' + lt + "x" + amp + 'y"/>'),
+			esc.includes(
+				'<setId root="1.2.643.5.1.13.13.12.2.777" extension="s' +
+					lt +
+					"x" +
+					amp +
+					'y"/>',
+			),
 			"documentSetId must be XML-escaped in setId",
 		);
 	});
@@ -1293,7 +1387,10 @@ describe("egiszCdaGenerator", () => {
 			...base,
 			replacesDocumentId: "   ",
 		});
-		assert.ok(blank_res.success, blank_res.success ? "" : String(blank_res.error));
+		assert.ok(
+			blank_res.success,
+			blank_res.success ? "" : String(blank_res.error),
+		);
 		const blank = blank_res.xml;
 		assert.ok(
 			!blank.includes("<relatedDocument"),
@@ -1304,11 +1401,7 @@ describe("egiszCdaGenerator", () => {
 		const esc_res = generateDentalCdaXml({
 			...base,
 			replacesDocumentId:
-				"p" +
-				String.fromCharCode(60) +
-				"x" +
-				String.fromCharCode(38) +
-				"y",
+				"p" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
 		});
 		assert.ok(esc_res.success, esc_res.success ? "" : String(esc_res.error));
 		const esc = esc_res.xml;
@@ -1349,9 +1442,7 @@ describe("egiszCdaGenerator", () => {
 		const enc = xml.slice(encStart, encEnd);
 
 		assert.ok(
-			enc.includes(
-				'code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461"',
-			),
+			enc.includes('code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461"'),
 			"encompassingEncounter must declare AMB ambulatory encounter code",
 		);
 		assert.ok(
@@ -1389,7 +1480,10 @@ describe("egiszCdaGenerator", () => {
 			doctorPosition: undefined,
 			doctorName: { first: "Анна", last: "Сидорова" },
 		});
-		assert.ok(noSnils_res.success, noSnils_res.success ? "" : String(noSnils_res.error));
+		assert.ok(
+			noSnils_res.success,
+			noSnils_res.success ? "" : String(noSnils_res.error),
+		);
 		const noSnils = noSnils_res.xml;
 		const nsEnc = noSnils.slice(
 			noSnils.indexOf("<encompassingEncounter>"),
@@ -1457,7 +1551,10 @@ describe("egiszCdaGenerator", () => {
 			clinicOid: undefined,
 			clinicName: "Clinic <X> & Co",
 		});
-		assert.ok(noOid_res.success, noOid_res.success ? "" : String(noOid_res.error));
+		assert.ok(
+			noOid_res.success,
+			noOid_res.success ? "" : String(noOid_res.error),
+		);
 		const noOid = noOid_res.xml;
 		const noEnc = noOid.slice(
 			noOid.indexOf("<encompassingEncounter>"),
@@ -1469,13 +1566,7 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(
 			noEnc.includes(
-				"<name>Clinic " +
-					"&" +
-					"lt;X" +
-					"&" +
-					"gt; " +
-					"&" +
-					"amp; Co</name>",
+				"<name>Clinic " + "&" + "lt;X" + "&" + "gt; " + "&" + "amp; Co</name>",
 			),
 			"clinicName in location must be XML-escaped",
 		);
@@ -1546,7 +1637,10 @@ describe("egiszCdaGenerator", () => {
 			doctorPosition: undefined,
 			doctorName: { first: "Анна", last: "Сидорова" },
 		});
-		assert.ok(noSnils_res.success, noSnils_res.success ? "" : String(noSnils_res.error));
+		assert.ok(
+			noSnils_res.success,
+			noSnils_res.success ? "" : String(noSnils_res.error),
+		);
 		const noSnils = noSnils_res.xml;
 		const nsDoc = noSnils.slice(
 			noSnils.indexOf("<documentationOf>"),
@@ -1589,9 +1683,7 @@ describe("egiszCdaGenerator", () => {
 			"patientRole must emit local MRN id (clinicOid + patientId)",
 		);
 		assert.ok(
-			role.includes(
-				`<id root="1.2.643.100.3" extension="123-456-789 00"/>`,
-			),
+			role.includes(`<id root="1.2.643.100.3" extension="123-456-789 00"/>`),
 			"patientRole must still emit SNILS when present",
 		);
 		/* MRN before SNILS */
@@ -1604,7 +1696,10 @@ describe("egiszCdaGenerator", () => {
 			...withBoth,
 			patientSnils: "   ",
 		});
-		assert.ok(noSnils_res.success, noSnils_res.success ? "" : String(noSnils_res.error));
+		assert.ok(
+			noSnils_res.success,
+			noSnils_res.success ? "" : String(noSnils_res.error),
+		);
 		const noSnils = noSnils_res.xml;
 		const nsRole = noSnils.slice(
 			noSnils.indexOf("<patientRole>"),
@@ -1629,9 +1724,13 @@ describe("egiszCdaGenerator", () => {
 		const noOid_res = generateDentalCdaXml({
 			...withBoth,
 			clinicOid: undefined,
-			patientId: "p" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
+			patientId:
+				"p" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
 		});
-		assert.ok(noOid_res.success, noOid_res.success ? "" : String(noOid_res.error));
+		assert.ok(
+			noOid_res.success,
+			noOid_res.success ? "" : String(noOid_res.error),
+		);
 		const noOid = noOid_res.xml;
 		const noRole = noOid.slice(
 			noOid.indexOf("<patientRole>"),
@@ -1719,7 +1818,10 @@ describe("egiszCdaGenerator", () => {
 			doctorPosition: undefined,
 			doctorName: { first: "Анна", last: "Сидорова" },
 		});
-		assert.ok(noSnils_res.success, noSnils_res.success ? "" : String(noSnils_res.error));
+		assert.ok(
+			noSnils_res.success,
+			noSnils_res.success ? "" : String(noSnils_res.error),
+		);
 		const noSnils = noSnils_res.xml;
 		const nsAuth = noSnils.slice(
 			noSnils.indexOf("<authenticator>"),
@@ -1781,9 +1883,17 @@ describe("egiszCdaGenerator", () => {
 		const noOid_res = generateDentalCdaXml({
 			...params,
 			clinicOid: undefined,
-			clinicName: "Clinic " + String.fromCharCode(60) + "X" + String.fromCharCode(38) + "Y",
+			clinicName:
+				"Clinic " +
+				String.fromCharCode(60) +
+				"X" +
+				String.fromCharCode(38) +
+				"Y",
 		});
-		assert.ok(noOid_res.success, noOid_res.success ? "" : String(noOid_res.error));
+		assert.ok(
+			noOid_res.success,
+			noOid_res.success ? "" : String(noOid_res.error),
+		);
 		const noOid = noOid_res.xml;
 		const noIr = noOid.slice(
 			noOid.indexOf("<informationRecipient>"),
@@ -1923,10 +2033,7 @@ describe("egiszCdaGenerator", () => {
 		const telIdx = author.indexOf("<telecom ");
 		const personIdx = author.indexOf("<assignedPerson>");
 		assert.ok(
-			idIdx >= 0 &&
-				addrIdx > idIdx &&
-				telIdx > addrIdx &&
-				personIdx > telIdx,
+			idIdx >= 0 && addrIdx > idIdx && telIdx > addrIdx && personIdx > telIdx,
 			"assignedAuthor order: id → addr → telecom → assignedPerson",
 		);
 		/* still carries person + org (prior defects) */
@@ -1975,10 +2082,7 @@ describe("egiszCdaGenerator", () => {
 		const telIdx = la.indexOf("<telecom ");
 		const personIdx = la.indexOf("<assignedPerson>");
 		assert.ok(
-			idIdx >= 0 &&
-				addrIdx > idIdx &&
-				telIdx > addrIdx &&
-				personIdx > telIdx,
+			idIdx >= 0 && addrIdx > idIdx && telIdx > addrIdx && personIdx > telIdx,
 			"legalAuthenticator order: id → addr → telecom → assignedPerson",
 		);
 		assert.ok(la.includes("<family>Петров</family>"));
@@ -2026,10 +2130,7 @@ describe("egiszCdaGenerator", () => {
 		const telIdx = auth.indexOf("<telecom ");
 		const personIdx = auth.indexOf("<assignedPerson>");
 		assert.ok(
-			idIdx >= 0 &&
-				addrIdx > idIdx &&
-				telIdx > addrIdx &&
-				personIdx > telIdx,
+			idIdx >= 0 && addrIdx > idIdx && telIdx > addrIdx && personIdx > telIdx,
 			"authenticator order: id → addr → telecom → assignedPerson",
 		);
 		assert.ok(auth.includes("<family>Петров</family>"));
@@ -2080,10 +2181,7 @@ describe("egiszCdaGenerator", () => {
 		const telIdx = cust.indexOf("<telecom ");
 		const nameIdx = cust.indexOf("<name>");
 		assert.ok(
-			idIdx >= 0 &&
-				addrIdx > idIdx &&
-				telIdx > addrIdx &&
-				nameIdx > telIdx,
+			idIdx >= 0 && addrIdx > idIdx && telIdx > addrIdx && nameIdx > telIdx,
 			"custodian org order: id → addr → telecom → name",
 		);
 		assert.ok(cust.includes("<name>ООО Клиника Custodian Contact</name>"));
@@ -2133,19 +2231,11 @@ describe("egiszCdaGenerator", () => {
 		const telIdx = ir.indexOf("<telecom ");
 		const nameIdx = ir.indexOf("<name>");
 		assert.ok(
-			idIdx >= 0 &&
-				addrIdx > idIdx &&
-				telIdx > addrIdx &&
-				nameIdx > telIdx,
+			idIdx >= 0 && addrIdx > idIdx && telIdx > addrIdx && nameIdx > telIdx,
 			"receivedOrganization order: id → addr → telecom → name",
 		);
 		assert.ok(ir.includes("<name>ООО Клиника Recipient Contact</name>"));
 	});
-
-
-
-
-
 
 	test("DEFECT #104: serviceEvent performer assignedEntity addr and telecom nullFlavor NI", () => {
 		const params: EgiszCdaParams = {
@@ -2170,7 +2260,10 @@ describe("egiszCdaGenerator", () => {
 		const xml = xml_res.xml;
 		const perfEnd = "</performer>";
 		const perfStart = xml.indexOf('<performer typeCode="PRF">');
-		const perf = xml.slice(perfStart, xml.indexOf(perfEnd, perfStart) + perfEnd.length);
+		const perf = xml.slice(
+			perfStart,
+			xml.indexOf(perfEnd, perfStart) + perfEnd.length,
+		);
 		assert.ok(perfStart >= 0, "serviceEvent must include performer");
 		assert.ok(
 			perf.includes('<addr nullFlavor="NI"/>'),
@@ -2188,16 +2281,12 @@ describe("egiszCdaGenerator", () => {
 		const telIdx = perf.indexOf("<telecom ");
 		const personIdx = perf.indexOf("<assignedPerson>");
 		assert.ok(
-			idIdx >= 0 &&
-				addrIdx > idIdx &&
-				telIdx > addrIdx &&
-				personIdx > telIdx,
+			idIdx >= 0 && addrIdx > idIdx && telIdx > addrIdx && personIdx > telIdx,
 			"performer assignedEntity order: id → addr → telecom → assignedPerson",
 		);
 		assert.ok(perf.includes("<family>Петров</family>"));
 		assert.ok(perf.includes("<name>ООО Клиника Performer Contact</name>"));
 	});
-
 
 	test("DEFECT #105: encompassingEncounter responsibleParty assignedEntity addr and telecom nullFlavor NI", () => {
 		const params: EgiszCdaParams = {
@@ -2224,7 +2313,10 @@ describe("egiszCdaGenerator", () => {
 		const rpEnd = "</responsibleParty>";
 		const rpStart = xml.indexOf("<responsibleParty>");
 		const rp = xml.slice(rpStart, xml.indexOf(rpEnd, rpStart) + rpEnd.length);
-		assert.ok(rpStart >= 0, "encompassingEncounter must include responsibleParty");
+		assert.ok(
+			rpStart >= 0,
+			"encompassingEncounter must include responsibleParty",
+		);
 		assert.ok(
 			rp.includes('<addr nullFlavor="NI"/>'),
 			"responsibleParty assignedEntity must emit addr nullFlavor=NI when contact unknown",
@@ -2241,16 +2333,12 @@ describe("egiszCdaGenerator", () => {
 		const telIdx = rp.indexOf("<telecom ");
 		const personIdx = rp.indexOf("<assignedPerson>");
 		assert.ok(
-			idIdx >= 0 &&
-				addrIdx > idIdx &&
-				telIdx > addrIdx &&
-				personIdx > telIdx,
+			idIdx >= 0 && addrIdx > idIdx && telIdx > addrIdx && personIdx > telIdx,
 			"responsibleParty assignedEntity order: id → addr → telecom → assignedPerson",
 		);
 		assert.ok(rp.includes("<family>Петров</family>"));
 		assert.ok(rp.includes("<name>ООО Клиника Responsible Contact</name>"));
 	});
-
 
 	test("DEFECT #106: assignedAuthor representedOrganization addr and telecom nullFlavor NI", () => {
 		const params: EgiszCdaParams = {
@@ -2276,7 +2364,10 @@ describe("egiszCdaGenerator", () => {
 		const aa = xml.slice(aaStart, xml.indexOf(aaEnd, aaStart) + aaEnd.length);
 		const roStart = aa.indexOf("<representedOrganization>");
 		const roEnd = "</representedOrganization>";
-		assert.ok(roStart >= 0, "assignedAuthor must include representedOrganization");
+		assert.ok(
+			roStart >= 0,
+			"assignedAuthor must include representedOrganization",
+		);
 		const ro = aa.slice(roStart, aa.indexOf(roEnd, roStart) + roEnd.length);
 		assert.ok(
 			ro.includes('<addr nullFlavor="NI"/>'),
@@ -2299,7 +2390,6 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(ro.includes("<name>ООО Клиника Author Org Contact</name>"));
 	});
-
 
 	test("DEFECT #107: legalAuthenticator representedOrganization addr and telecom nullFlavor NI", () => {
 		const params: EgiszCdaParams = {
@@ -2325,7 +2415,10 @@ describe("egiszCdaGenerator", () => {
 		const la = xml.slice(laStart, xml.indexOf(laEnd, laStart) + laEnd.length);
 		const roStart = la.indexOf("<representedOrganization>");
 		const roEnd = "</representedOrganization>";
-		assert.ok(roStart >= 0, "legalAuthenticator must include representedOrganization");
+		assert.ok(
+			roStart >= 0,
+			"legalAuthenticator must include representedOrganization",
+		);
 		const ro = la.slice(roStart, la.indexOf(roEnd, roStart) + roEnd.length);
 		assert.ok(
 			ro.includes('<addr nullFlavor="NI"/>'),
@@ -2370,10 +2463,16 @@ describe("egiszCdaGenerator", () => {
 		const xml = xml_res.xml;
 		const authEnd = "</authenticator>";
 		const authStart = xml.indexOf("<authenticator>");
-		const auth = xml.slice(authStart, xml.indexOf(authEnd, authStart) + authEnd.length);
+		const auth = xml.slice(
+			authStart,
+			xml.indexOf(authEnd, authStart) + authEnd.length,
+		);
 		const roStart = auth.indexOf("<representedOrganization>");
 		const roEnd = "</representedOrganization>";
-		assert.ok(roStart >= 0, "authenticator must include representedOrganization");
+		assert.ok(
+			roStart >= 0,
+			"authenticator must include representedOrganization",
+		);
 		const ro = auth.slice(roStart, auth.indexOf(roEnd, roStart) + roEnd.length);
 		assert.ok(
 			ro.includes('<addr nullFlavor="NI"/>'),
@@ -2418,7 +2517,10 @@ describe("egiszCdaGenerator", () => {
 		const xml = xml_res.xml;
 		const perfEnd = "</performer>";
 		const perfStart = xml.indexOf('<performer typeCode="PRF">');
-		const perf = xml.slice(perfStart, xml.indexOf(perfEnd, perfStart) + perfEnd.length);
+		const perf = xml.slice(
+			perfStart,
+			xml.indexOf(perfEnd, perfStart) + perfEnd.length,
+		);
 		const roStart = perf.indexOf("<representedOrganization>");
 		const roEnd = "</representedOrganization>";
 		assert.ok(roStart >= 0, "performer must include representedOrganization");
@@ -2470,7 +2572,10 @@ describe("egiszCdaGenerator", () => {
 		const rp = xml.slice(rpStart, xml.indexOf(rpEnd, rpStart) + rpEnd.length);
 		const roStart = rp.indexOf("<representedOrganization>");
 		const roEnd = "</representedOrganization>";
-		assert.ok(roStart >= 0, "responsibleParty must include representedOrganization");
+		assert.ok(
+			roStart >= 0,
+			"responsibleParty must include representedOrganization",
+		);
 		const ro = rp.slice(roStart, rp.indexOf(roEnd, roStart) + roEnd.length);
 		assert.ok(
 			ro.includes('<addr nullFlavor="NI"/>'),
@@ -2516,8 +2621,14 @@ describe("egiszCdaGenerator", () => {
 		const xml = xml_res.xml;
 		const spoEnd = "</serviceProviderOrganization>";
 		const spoStart = xml.indexOf("<serviceProviderOrganization>");
-		assert.ok(spoStart >= 0, "healthCareFacility must include serviceProviderOrganization");
-		const spo = xml.slice(spoStart, xml.indexOf(spoEnd, spoStart) + spoEnd.length);
+		assert.ok(
+			spoStart >= 0,
+			"healthCareFacility must include serviceProviderOrganization",
+		);
+		const spo = xml.slice(
+			spoStart,
+			xml.indexOf(spoEnd, spoStart) + spoEnd.length,
+		);
 		assert.ok(
 			spo.includes('<addr nullFlavor="NI"/>'),
 			"serviceProviderOrganization must emit addr nullFlavor=NI when contact unknown",
@@ -2562,13 +2673,22 @@ describe("egiszCdaGenerator", () => {
 		const xml = xml_res.xml;
 		const hcfEnd = "</healthCareFacility>";
 		const hcfStart = xml.indexOf("<healthCareFacility>");
-		assert.ok(hcfStart >= 0, "encompassingEncounter must include healthCareFacility");
-		const hcf = xml.slice(hcfStart, xml.indexOf(hcfEnd, hcfStart) + hcfEnd.length);
+		assert.ok(
+			hcfStart >= 0,
+			"encompassingEncounter must include healthCareFacility",
+		);
+		const hcf = xml.slice(
+			hcfStart,
+			xml.indexOf(hcfEnd, hcfStart) + hcfEnd.length,
+		);
 		/* inner place location (not outer encompassingEncounter/location) */
 		const placeOpen = hcf.indexOf("<location>");
 		const placeClose = "</location>";
 		assert.ok(placeOpen >= 0, "healthCareFacility must include place location");
-		const place = hcf.slice(placeOpen, hcf.indexOf(placeClose, placeOpen) + placeClose.length);
+		const place = hcf.slice(
+			placeOpen,
+			hcf.indexOf(placeClose, placeOpen) + placeClose.length,
+		);
 		assert.ok(
 			place.includes('<addr nullFlavor="NI"/>'),
 			"facility location must emit addr nullFlavor=NI when street unknown",
@@ -2586,26 +2706,7 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(place.includes("<name>ООО Клиника Facility Location</name>"));
 	});
 
-
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 		const params: EgiszCdaParams = {
 			patientId: "pat-esc",
 			patientName: { first: "A<B", last: "C&D", middle: 'E"F' },
@@ -2637,8 +2738,14 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(xml.includes("&apos;"));
 		// Raw special chars must not appear unescaped in clinical free text
 		assert.ok(!xml.includes("<paragraph>Pain <2>"));
-		assert.ok(xml.includes("<paragraph>Pain &lt;2&gt; &amp; &quot;sharp&quot;&apos;</paragraph>"));
-		assert.ok(xml.includes('displayName="Diag &lt;x&gt; &amp; &quot;y&quot;&apos;"'));
+		assert.ok(
+			xml.includes(
+				"<paragraph>Pain &lt;2&gt; &amp; &quot;sharp&quot;&apos;</paragraph>",
+			),
+		);
+		assert.ok(
+			xml.includes('displayName="Diag &lt;x&gt; &amp; &quot;y&quot;&apos;"'),
+		);
 		assert.ok(xml.includes("<family>C&amp;D</family>"));
 		assert.ok(xml.includes("<name>Clinic &lt;Main&gt; &amp; Co</name>"));
 		assert.ok(xml.includes("<paragraph>Status &lt;O&gt; &amp; x</paragraph>"));
@@ -2690,24 +2797,52 @@ describe("egiszCdaGenerator", () => {
 		const xml = xml_res.xml;
 
 		assert.ok(
-			xml.includes('<streetAddressLine>г. Москва, ул. Тверская, д. 1</streetAddressLine>'),
+			xml.includes(
+				"<streetAddressLine>г. Москва, ул. Тверская, д. 1</streetAddressLine>",
+			),
 			"patient addr must be real",
 		);
-		assert.ok(xml.includes('<telecom value="tel:+7 495 123-45-67"/>'), "patient phone must be real");
-		assert.ok(xml.includes('<telecom value="mailto:ivan@example.ru"/>'), "patient email must be real");
+		assert.ok(
+			xml.includes('<telecom value="tel:+7 495 123-45-67"/>'),
+			"patient phone must be real",
+		);
+		assert.ok(
+			xml.includes('<telecom value="mailto:ivan@example.ru"/>'),
+			"patient email must be real",
+		);
 
 		assert.ok(
-			xml.includes('<streetAddressLine>г. Москва, ул. Клиническая, д. 10</streetAddressLine>'),
+			xml.includes(
+				"<streetAddressLine>г. Москва, ул. Клиническая, д. 10</streetAddressLine>",
+			),
 			"clinic addr must be real",
 		);
-		assert.ok(xml.includes('<telecom value="tel:+7 495 000-11-22"/>'), "clinic phone must be real");
-		assert.ok(xml.includes('<telecom value="mailto:clinic@example.ru"/>'), "clinic email must be real");
+		assert.ok(
+			xml.includes('<telecom value="tel:+7 495 000-11-22"/>'),
+			"clinic phone must be real",
+		);
+		assert.ok(
+			xml.includes('<telecom value="mailto:clinic@example.ru"/>'),
+			"clinic email must be real",
+		);
 
-		assert.ok(xml.includes('<telecom value="tel:+7 495 555-66-77"/>'), "doctor phone must be real");
-		assert.ok(xml.includes('<telecom value="mailto:doctor@example.ru"/>'), "doctor email must be real");
+		assert.ok(
+			xml.includes('<telecom value="tel:+7 495 555-66-77"/>'),
+			"doctor phone must be real",
+		);
+		assert.ok(
+			xml.includes('<telecom value="mailto:doctor@example.ru"/>'),
+			"doctor email must be real",
+		);
 
-		assert.ok(!xml.includes('<addr nullFlavor="NI"/>'), "must not emit nullFlavor addr when contact data present");
-		assert.ok(!xml.includes('<telecom nullFlavor="NI"/>'), "must not emit nullFlavor telecom when contact data present");
+		assert.ok(
+			!xml.includes('<addr nullFlavor="NI"/>'),
+			"must not emit nullFlavor addr when contact data present",
+		);
+		assert.ok(
+			!xml.includes('<telecom nullFlavor="NI"/>'),
+			"must not emit nullFlavor telecom when contact data present",
+		);
 	});
 
 	/*
@@ -2740,7 +2875,13 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(xml_res.success, xml_res.success ? "" : String(xml_res.error));
 		const xml = xml_res.xml;
 
-		assert.ok(xml.includes('<addr nullFlavor="NI"/>'), "must emit nullFlavor addr when no contact data");
-		assert.ok(xml.includes('<telecom nullFlavor="NI"/>'), "must emit nullFlavor telecom when no contact data");
+		assert.ok(
+			xml.includes('<addr nullFlavor="NI"/>'),
+			"must emit nullFlavor addr when no contact data",
+		);
+		assert.ok(
+			xml.includes('<telecom nullFlavor="NI"/>'),
+			"must emit nullFlavor telecom when no contact data",
+		);
 	});
 });

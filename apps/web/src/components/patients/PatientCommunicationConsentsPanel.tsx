@@ -14,10 +14,13 @@
 
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { showToast } from "../GlobalToast";
 import { operatorReadableErrorDetail } from "../../AppHelpers";
-import { actionFailureToast, requestFailureCause } from "../../lib/panelStateText";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	actionFailureToast,
+	requestFailureCause,
+} from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 const CHANNELS = [
 	{ value: "sms", label: "SMS" },
@@ -128,10 +131,13 @@ export const PatientCommunicationConsentsPanel: React.FC<
 				auth && typeof auth.denteClinicalReadHeaders === "function"
 					? auth.denteClinicalReadHeaders()
 					: {};
-			const res = await fetch(`/api/communications/consents/${encodeURIComponent(pid)}`, {
-				method: "GET",
-				headers,
-			});
+			const res = await fetch(
+				`/api/communications/consents/${encodeURIComponent(pid)}`,
+				{
+					method: "GET",
+					headers,
+				},
+			);
 			const raw = await res.text();
 			const json = jsonObjectOrNull(raw);
 			if (!res.ok) {
@@ -165,12 +171,17 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			};
 			const rows: ConsentRow[] = Array.isArray(json?.consents)
 				? (json!.consents as unknown[])
-						.filter((r): r is Record<string, unknown> => typeof r === "object" && r !== null)
+						.filter(
+							(r): r is Record<string, unknown> =>
+								typeof r === "object" && r !== null,
+						)
 						.map((r) => {
 							const row: ConsentRow = {
 								channel: String(r.channel ?? "") as Channel,
 								scope: String(r.scope ?? "") as Scope,
-								state: (r.state === "granted" ? "granted" : "revoked") as ConsentState,
+								state: (r.state === "granted"
+									? "granted"
+									: "revoked") as ConsentState,
 							};
 							if (typeof r.source === "string") row.source = r.source;
 							if (typeof r.evidence === "string") row.evidence = r.evidence;
@@ -254,18 +265,23 @@ export const PatientCommunicationConsentsPanel: React.FC<
 		try {
 			const headers =
 				auth && typeof auth.denteClinicalMutationHeaders === "function"
-					? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+					? auth.denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+						})
 					: auth && typeof auth.denteClinicalReadHeaders === "function"
 						? {
 								...auth.denteClinicalReadHeaders(),
 								"Content-Type": "application/json",
 							}
 						: { "Content-Type": "application/json" };
-			const res = await fetch(`/api/communications/consents/${encodeURIComponent(pid)}`, {
-				method: "PUT",
-				headers,
-				body: JSON.stringify({ entries }),
-			});
+			const res = await fetch(
+				`/api/communications/consents/${encodeURIComponent(pid)}`,
+				{
+					method: "PUT",
+					headers,
+					body: JSON.stringify({ entries }),
+				},
+			);
 			const raw = await res.text();
 			const json = jsonObjectOrNull(raw);
 			if (!res.ok) {
@@ -279,7 +295,10 @@ export const PatientCommunicationConsentsPanel: React.FC<
 						? "Согласия не сохранены: проверьте каналы и статусы."
 						: res.status === 404
 							? "Пациент не найден в клинике."
-							: actionFailureToast("Согласия на связь не сохранены", res.status));
+							: actionFailureToast(
+									"Согласия на связь не сохранены",
+									res.status,
+								));
 				setError(msg);
 				showToast(msg, "error", 12000);
 				return;
@@ -356,13 +375,19 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			)}
 
 			{loaded && (
-				<div className="overflow-x-auto" data-testid="patient-comm-consents-matrix">
+				<div
+					className="overflow-x-auto"
+					data-testid="patient-comm-consents-matrix"
+				>
 					<table className="w-full text-left text-xs border-collapse min-w-[420px]">
 						<thead>
 							<tr className="text-zinc-500 border-b border-zinc-800">
 								<th className="py-2 pr-3 font-medium">Канал</th>
 								{SCOPES.map((sc) => (
-									<th key={sc.value} className="py-2 px-2 font-medium text-center">
+									<th
+										key={sc.value}
+										className="py-2 px-2 font-medium text-center"
+									>
 										{sc.label}
 									</th>
 								))}
@@ -371,7 +396,9 @@ export const PatientCommunicationConsentsPanel: React.FC<
 						<tbody>
 							{CHANNELS.map((ch) => (
 								<tr key={ch.value} className="border-b border-zinc-900/80">
-									<td className="py-2 pr-3 text-zinc-200 font-medium">{ch.label}</td>
+									<td className="py-2 pr-3 text-zinc-200 font-medium">
+										{ch.label}
+									</td>
 									{SCOPES.map((sc) => {
 										const k = cellKey(ch.value, sc.value);
 										const state = matrix[k] ?? "revoked";
@@ -400,8 +427,8 @@ export const PatientCommunicationConsentsPanel: React.FC<
 						</tbody>
 					</table>
 					<p className="mt-2 text-[11px] text-zinc-500">
-						По умолчанию служебные — разрешены, реклама — запрещена, пока администратор
-						не зафиксирует иное.
+						По умолчанию служебные — разрешены, реклама — запрещена, пока
+						администратор не зафиксирует иное.
 					</p>
 				</div>
 			)}

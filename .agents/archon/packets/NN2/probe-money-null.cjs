@@ -31,8 +31,14 @@ for (let i = source.indexOf("{", start); i < source.length; i++) {
 if (end < 0) throw new Error("не найден конец тела money()");
 const body = source
 	.slice(start, end)
-	.replace("export function money(value: number | string | null)", "function money(value)")
-	.replace("Number.isFinite(amount as number) ? (amount as number)", "Number.isFinite(amount) ? amount");
+	.replace(
+		"export function money(value: number | string | null)",
+		"function money(value)",
+	)
+	.replace(
+		"Number.isFinite(amount as number) ? (amount as number)",
+		"Number.isFinite(amount) ? amount",
+	);
 const money = new Function(`${body}; return money;`)();
 
 for (const value of [null, 0, 35000, 1500.5]) {

@@ -5,12 +5,18 @@
  * enumeration or an artefact of the depth limit.
  * Prints, for each GET/HEAD route, the shortest call chain reaching a DB write.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+const REPO_ROOT = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"..",
+	"..",
+);
 const API_SRC = join(REPO_ROOT, "apps", "api", "src");
 const SKIP = new Set(["node_modules", "dist", ".git"]);
 const MAX_DEPTH = Number(process.env.MAX_DEPTH || 3);
@@ -32,19 +38,32 @@ function walk(dir, out = []) {
 }
 const rel = (f) => relative(REPO_ROOT, f).split(sep).join("/");
 // exclude tests so we measure production reachability
-const files = walk(API_SRC).filter((f) => !/[.]test[.]ts$/.test(f) && !/[\\/]tests?[\\/]/.test(f));
+const files = walk(API_SRC).filter(
+	(f) => !/[.]test[.]ts$/.test(f) && !/[\\/]tests?[\\/]/.test(f),
+);
 
 const WRITE_METHODS = new Set(["insert", "update", "delete"]);
-const RX_RAW_WRITE = /\b(insert\s+into|update\s+[a-z0-9_"]+\s+set|delete\s+from|truncate)\b/i;
+const RX_RAW_WRITE =
+	/\b(insert\s+into|update\s+[a-z0-9_"]+\s+set|delete\s+from|truncate)\b/i;
 // receivers that are plausibly a DB handle; excludes Map/Set/array receivers
 const DB_RECEIVERS = /^(db|tx|trx|client|conn|database|this\.db|schema)$/;
 
 const parsed = new Map();
 for (const f of files) {
 	const src = readFileSync(f, "utf8");
-	parsed.set(f, { src, sf: ts.createSourceFile(f, src, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS) });
+	parsed.set(f, {
+		src,
+		sf: ts.createSourceFile(
+			f,
+			src,
+			ts.ScriptTarget.ESNext,
+			true,
+			ts.ScriptKind.TS,
+		),
+	});
 }
-const lineOf = (sf, n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+const lineOf = (sf, n) =>
+	sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
 
 /** direct DB writes in a subtree, NOT descending into nested function bodies is NOT done
  *  (we keep nested arrow bodies, same as the recon, since handlers wrap in try/catch) */
@@ -57,16 +76,24 @@ function directWrites(node, sf) {
 				const recv = n.expression.expression.getText(sf);
 				// only count when the receiver looks like a DB handle -> kills Map/Set .delete
 				// and createHmac().update() false positives without needing a manual audit
-				const recvHead = recv.replace(/^await\s+/, "").split("(")[0].trim();
+				const recvHead = recv
+					.replace(/^await\s+/, "")
+					.split("(")[0]
+					.trim();
 				if (DB_RECEIVERS.test(recvHead)) {
-					hits.push(`${recv}.${m}(${n.arguments[0].getText(sf).slice(0, 50)}) @${lineOf(sf, n)}`);
+					hits.push(
+						`${recv}.${m}(${n.arguments[0].getText(sf).slice(0, 50)}) @${lineOf(sf, n)}`,
+					);
 				}
 			}
 		}
 		if (ts.isStringLiteralLike(n) || ts.isNoSubstitutionTemplateLiteral(n)) {
 			if (RX_RAW_WRITE.test(n.text)) hits.push(`rawSQL @${lineOf(sf, n)}`);
 		} else if (ts.isTemplateExpression(n)) {
-			const t = [n.head.text, ...n.templateSpans.map((s) => s.literal.text)].join(" ");
+			const t = [
+				n.head.text,
+				...n.templateSpans.map((s) => s.literal.text),
+			].join(" ");
 			if (RX_RAW_WRITE.test(t)) hits.push(`rawSQL @${lineOf(sf, n)}`);
 		}
 		ts.forEachChild(n, visit);
@@ -102,7 +129,8 @@ for (const [f, { sf }] of parsed) {
 			ts.isVariableDeclaration(n) &&
 			ts.isIdentifier(n.name) &&
 			n.initializer &&
-			(ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer)) &&
+			(ts.isArrowFunction(n.initializer) ||
+				ts.isFunctionExpression(n.initializer)) &&
 			n.initializer.body
 		) {
 			name = n.name.text;
@@ -112,7 +140,12 @@ for (const [f, { sf }] of parsed) {
 			body = n.body;
 		}
 		if (name && body) {
-			const rec = { writes: directWrites(body, sf), calls: calleeNames(body), file: rel(f), line: lineOf(sf, n) };
+			const rec = {
+				writes: directWrites(body, sf),
+				calls: calleeNames(body),
+				file: rel(f),
+				line: lineOf(sf, n),
+			};
 			if (!fns.has(name)) fns.set(name, []);
 			fns.get(name).push(rec);
 		}
@@ -134,8 +167,15 @@ function findChain(startCalls, depth, seen = new Set()) {
 			const recs = fns.get(item.name);
 			if (!recs) continue;
 			for (const r of recs) {
-				if (r.writes.length > 0) return { path: item.path, site: `${r.file}:${r.line}`, writes: r.writes, depth: d };
-				for (const c of r.calls) if (!seen.has(c)) next.push({ name: c, path: [...item.path, c] });
+				if (r.writes.length > 0)
+					return {
+						path: item.path,
+						site: `${r.file}:${r.line}`,
+						writes: r.writes,
+						depth: d,
+					};
+				for (const c of r.calls)
+					if (!seen.has(c)) next.push({ name: c, path: [...item.path, c] });
 			}
 		}
 		frontier = next;
@@ -158,7 +198,9 @@ for (const [f, { sf }] of parsed) {
 			if (ts.isArrowFunction(handler) || ts.isFunctionExpression(handler)) {
 				const body = handler.body ?? handler;
 				const direct = directWrites(body, sf);
-				const chain = direct.length ? null : findChain(calleeNames(body), MAX_DEPTH);
+				const chain = direct.length
+					? null
+					: findChain(calleeNames(body), MAX_DEPTH);
 				routes.push({
 					method: n.expression.name.text.toUpperCase(),
 					routePath,
@@ -183,20 +225,34 @@ for (const [f, { sf }] of parsed) {
 	};
 	visit(sf);
 }
-console.log(`GET/HEAD registrations with a string path (no leading-slash filter): ${routes.length}`);
-console.log(`  of those with a NON-INLINE handler (recon scanned these as empty): ${routes.filter((r) => r.nonInlineHandler).length}`);
-console.log(`  of those whose path does NOT start with "/" (recon DROPPED these): ${routes.filter((r) => !r.routePath.startsWith("/")).length}`);
+console.log(
+	`GET/HEAD registrations with a string path (no leading-slash filter): ${routes.length}`,
+);
+console.log(
+	`  of those with a NON-INLINE handler (recon scanned these as empty): ${routes.filter((r) => r.nonInlineHandler).length}`,
+);
+console.log(
+	`  of those whose path does NOT start with "/" (recon DROPPED these): ${routes.filter((r) => !r.routePath.startsWith("/")).length}`,
+);
 for (const r of routes.filter((r) => !r.routePath.startsWith("/")))
-	console.log(`      DROPPED-BY-RECON  ${r.method} "${r.routePath}"  ${r.file}:${r.line}`);
+	console.log(
+		`      DROPPED-BY-RECON  ${r.method} "${r.routePath}"  ${r.file}:${r.line}`,
+	);
 for (const r of routes.filter((r) => r.nonInlineHandler))
-	console.log(`      NON-INLINE  ${r.method} ${r.routePath}  ${r.file}:${r.line}  -> ${r.nonInlineHandler}`);
+	console.log(
+		`      NON-INLINE  ${r.method} ${r.routePath}  ${r.file}:${r.line}  -> ${r.nonInlineHandler}`,
+	);
 
 const t1 = routes.filter((r) => r.direct.length > 0);
 console.log(`\n== TIER1 direct write in handler: ${t1.length}`);
-for (const r of t1) console.log(`  ${r.method} ${r.routePath}  ${r.file}:${r.line}  ${r.direct.join("; ")}`);
+for (const r of t1)
+	console.log(
+		`  ${r.method} ${r.routePath}  ${r.file}:${r.line}  ${r.direct.join("; ")}`,
+	);
 
 const byDepth = {};
-for (const r of routes.filter((r) => r.chain)) (byDepth[r.chain.depth] ||= []).push(r);
+for (const r of routes.filter((r) => r.chain))
+	(byDepth[r.chain.depth] ||= []).push(r);
 for (const d of Object.keys(byDepth).sort()) {
 	console.log(`\n== reaches a write at DEPTH ${d}: ${byDepth[d].length}`);
 	for (const r of byDepth[d])

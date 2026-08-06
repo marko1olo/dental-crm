@@ -23,8 +23,8 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { settingsTabs } from "../../AppHelpers";
 import { appViews, viewLabels } from "../../workspaceShell";
@@ -97,7 +97,9 @@ describe("типизированный переход на вкладку нас
 	});
 
 	test("подпись кнопки совпадает с подписью вкладки в меню", () => {
-		const inMenu = settingsTabs.find((tab) => tab.id === MESSENGERS_SETTINGS_TAB);
+		const inMenu = settingsTabs.find(
+			(tab) => tab.id === MESSENGERS_SETTINGS_TAB,
+		);
 		assert.equal(settingsTabTitle(MESSENGERS_SETTINGS_TAB), inMenu?.title);
 		// Идентификатор исторический, а подпись давно другая: за вкладкой живут
 		// ещё WhatsApp и MAX. Подпись в разметке писать руками нельзя.

@@ -15,10 +15,11 @@
  *
  * Ни порт, ни организация не зашиты: порт берётся из .env, организация — из базы.
  */
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
+
 import { createHmac } from "node:crypto";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 const packetDir = path.dirname(fileURLToPath(import.meta.url));
@@ -32,7 +33,10 @@ function readEnvFile(absolutePath) {
 		if (!line || line.startsWith("#")) continue;
 		const separator = line.indexOf("=");
 		if (separator < 1) continue;
-		result.set(line.slice(0, separator).trim(), line.slice(separator + 1).trim());
+		result.set(
+			line.slice(0, separator).trim(),
+			line.slice(separator + 1).trim(),
+		);
 	}
 	return result;
 }
@@ -43,7 +47,8 @@ const apiEnv = readEnvFile(path.join(repoRoot, "apps", "api", ".env"));
 const databaseUrl = rootEnv.get("DATABASE_URL");
 const apiHost = rootEnv.get("API_HOST") || "127.0.0.1";
 const apiPort = rootEnv.get("API_PORT");
-const tokenSecret = apiEnv.get("AUTH_TOKEN_SECRET") ?? rootEnv.get("AUTH_TOKEN_SECRET");
+const tokenSecret =
+	apiEnv.get("AUTH_TOKEN_SECRET") ?? rootEnv.get("AUTH_TOKEN_SECRET");
 
 if (!databaseUrl) throw new Error("DATABASE_URL отсутствует в .env");
 if (!apiPort) throw new Error("API_PORT отсутствует в .env");
@@ -54,7 +59,9 @@ function signToken(payload, secret, ttlSeconds = 600) {
 	const issuedAt = Math.floor(Date.now() / 1000);
 	const full = { ...payload, exp: issuedAt + ttlSeconds, iat: issuedAt };
 	const data = Buffer.from(JSON.stringify(full)).toString("base64url");
-	const signature = createHmac("sha256", secret).update(data).digest("base64url");
+	const signature = createHmac("sha256", secret)
+		.update(data)
+		.digest("base64url");
 	return `${data}.${signature}`;
 }
 
@@ -71,7 +78,9 @@ const orgRows = await client.query(
 	["Демо-клиника для снимков"],
 );
 if (orgRows.rowCount !== 1) {
-	throw new Error(`ожидалась одна реальная организация, найдено ${orgRows.rowCount}`);
+	throw new Error(
+		`ожидалась одна реальная организация, найдено ${orgRows.rowCount}`,
+	);
 }
 const organization = orgRows.rows[0];
 await client.end();
@@ -87,10 +96,9 @@ const clinicToken = signToken(
  * отвергнуть. Значит потребитель обязан округлить его до копейки сам, и именно
  * это проверяется ниже: 1900,38 проходит, 1900,375 не прошло бы.
  */
-const rawText = [
-	"Лечение кариеса 1500,50",
-	"Пломба композитная 2300,25",
-].join("\n");
+const rawText = ["Лечение кариеса 1500,50", "Пломба композитная 2300,25"].join(
+	"\n",
+);
 
 const url = `http://${apiHost}:${apiPort}/api/pricelist/analyze`;
 const response = await fetch(url, {
@@ -99,7 +107,11 @@ const response = await fetch(url, {
 		"Content-Type": "application/json",
 		"x-dente-clinic-token": clinicToken,
 	},
-	body: JSON.stringify({ sourceName: "aa3-kopecks-proof", sourceKind: "text", rawText }),
+	body: JSON.stringify({
+		sourceName: "aa3-kopecks-proof",
+		sourceKind: "text",
+		rawText,
+	}),
 });
 
 const bodyText = await response.text();
@@ -125,14 +137,26 @@ for (const summary of body.summary ?? []) {
 }
 
 /** Копейки обязаны дожить до ответа неизменными. */
-const prices = (body.items ?? []).map((item) => item.priceRub).filter((value) => value !== null);
+const prices = (body.items ?? [])
+	.map((item) => item.priceRub)
+	.filter((value) => value !== null);
 const withKopecks = prices.filter((value) => !Number.isInteger(value));
-console.log("\nцен всего:", prices.length, "| из них с копейками:", withKopecks.length);
+console.log(
+	"\nцен всего:",
+	prices.length,
+	"| из них с копейками:",
+	withKopecks.length,
+);
 console.log("значения с копейками:", JSON.stringify(withKopecks));
 
 const averages = (body.summary ?? [])
 	.map((summary) => summary.averagePriceRub)
 	.filter((value) => value !== null);
 const fractionalAverages = averages.filter((value) => !Number.isInteger(value));
-console.log("средних всего:", averages.length, "| из них дробных:", fractionalAverages.length);
+console.log(
+	"средних всего:",
+	averages.length,
+	"| из них дробных:",
+	fractionalAverages.length,
+);
 console.log("значения средних:", JSON.stringify(averages));

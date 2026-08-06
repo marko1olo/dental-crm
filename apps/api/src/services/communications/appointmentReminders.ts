@@ -20,7 +20,11 @@
 
 import { and, eq, gte, inArray, like, lte } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx, type TenantDb } from "../../db/rls.js";
+import {
+	type TenantDb,
+	withSuperuserBypass,
+	withTenantCtx,
+} from "../../db/rls.js";
 import {
 	appointments,
 	clinics,
@@ -29,14 +33,19 @@ import {
 	communicationTemplates,
 	organizations,
 	patients,
-	users
+	users,
 } from "../../db/schema.js";
 import { issueAppointmentActionLinks } from "./appointmentActionLinks.js";
-import { loadConsentsByPatient } from "./consentLoader.js";
-import { decideConsent, type ConsentRecord } from "./deliveryPolicy.js";
-import { enqueueMessage, parseLeadHours, resolveCommunicationSettings, resolveRecipientAddress } from "./dispatcher.js";
-import { renderTemplate } from "./templateRenderer.js";
 import type { CommunicationChannelCode } from "./channelRouter.js";
+import { loadConsentsByPatient } from "./consentLoader.js";
+import { type ConsentRecord, decideConsent } from "./deliveryPolicy.js";
+import {
+	enqueueMessage,
+	parseLeadHours,
+	resolveCommunicationSettings,
+	resolveRecipientAddress,
+} from "./dispatcher.js";
+import { renderTemplate } from "./templateRenderer.js";
 
 /** Статусы, при которых напоминание уместно. Отменённому приёму оно вредно. */
 const REMINDABLE_STATUSES = ["planned", "confirmed"] as const;
@@ -103,11 +112,20 @@ export function shortDoctorName(fullName: string): string {
 	return initials ? `${surname} ${initials}` : surname;
 }
 
-function formatInTimeZone(date: Date, timeZone: string, options: Intl.DateTimeFormatOptions): string {
+function formatInTimeZone(
+	date: Date,
+	timeZone: string,
+	options: Intl.DateTimeFormatOptions,
+): string {
 	try {
-		return new Intl.DateTimeFormat("ru-RU", { ...options, timeZone }).format(date);
+		return new Intl.DateTimeFormat("ru-RU", { ...options, timeZone }).format(
+			date,
+		);
 	} catch {
-		return new Intl.DateTimeFormat("ru-RU", { ...options, timeZone: "UTC" }).format(date);
+		return new Intl.DateTimeFormat("ru-RU", {
+			...options,
+			timeZone: "UTC",
+		}).format(date);
 	}
 }
 
@@ -130,7 +148,7 @@ function formatInTimeZone(date: Date, timeZone: string, options: Intl.DateTimeFo
 export async function invalidateAppointmentReminders(
 	organizationId: string,
 	appointmentId: string,
-	reason: string
+	reason: string,
 ): Promise<number> {
 	/*
 	 * КОНТЕКСТ АРЕНДАТОРА. Вызывают отсюда двое: маршрут сетки приёмов
@@ -153,16 +171,16 @@ export async function invalidateAppointmentReminders(
 					eq(communicationOutbox.status, "queued"),
 					// Только напоминания этого приёма: ключ начинается с
 					// `reminder:<приём>:`. Рассылки и ручные сообщения не трогаем.
-					like(communicationOutbox.dedupeKey, `reminder:${appointmentId}:%`)
-				)
+					like(communicationOutbox.dedupeKey, `reminder:${appointmentId}:%`),
+				),
 			)
-			.returning({ id: communicationOutbox.id })
+			.returning({ id: communicationOutbox.id }),
 	);
 
 	if (removed.length > 0) {
 		// Причина остаётся в журнале сервера: в самой строке её уже не сохранить.
 		console.info(
-			`[reminders] снято напоминаний: ${removed.length}, приём ${appointmentId}, причина: ${reason}`
+			`[reminders] снято напоминаний: ${removed.length}, приём ${appointmentId}, причина: ${reason}`,
 		);
 	}
 	return removed.length;
@@ -175,7 +193,7 @@ export type ScheduleAppointmentRemindersOptions = {
 };
 
 export async function scheduleAppointmentReminders(
-	options: ScheduleAppointmentRemindersOptions = {}
+	options: ScheduleAppointmentRemindersOptions = {},
 ): Promise<ReminderScheduleReport> {
 	const now = options.now ?? new Date();
 	const report = {
@@ -185,7 +203,7 @@ export async function scheduleAppointmentReminders(
 		alreadyQueued: 0,
 		skippedNoChannel: 0,
 		skippedNoTemplateData: 0,
-		problems: [] as string[]
+		problems: [] as string[],
 	};
 	/*
 	 * Ключ — пациент и причина. При двух порогах оповещения (за 24 и за 2 часа)
@@ -195,9 +213,13 @@ export async function scheduleAppointmentReminders(
 	 */
 	const namedSkips = new Map<string, ReminderSkip>();
 
-	const settingsFilter = [eq(communicationSettings.appointmentReminderEnabled, true)];
+	const settingsFilter = [
+		eq(communicationSettings.appointmentReminderEnabled, true),
+	];
 	if (options.organizationId) {
-		settingsFilter.push(eq(communicationSettings.organizationId, options.organizationId));
+		settingsFilter.push(
+			eq(communicationSettings.organizationId, options.organizationId),
+		);
 	}
 	/*
 	 * ПЕРЕЧИСЛЕНИЕ АРЕНДАТОРОВ — ЕДИНСТВЕННОЕ МЕСТО, ГДЕ АРЕНДАТОР НЕИЗВЕСТЕН.
@@ -242,24 +264,29 @@ export async function scheduleAppointmentReminders(
 			// приёмов, и постановка в очередь. Внутри этой транзакции чужая
 			// строка недоступна ни на чтение, ни на запись.
 			await withTenantCtx(organizationId, () =>
-				scheduleForOrganization(organizationId, now, report, namedSkips)
+				scheduleForOrganization(organizationId, now, report, namedSkips),
 			);
 		} catch (error) {
-			const detail = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
+			const detail =
+				error instanceof Error
+					? error.message.slice(0, 200)
+					: String(error).slice(0, 200);
 			/*
 			 * Идентификатор организации остаётся в журнале сервера и уходит из текста
 			 * для человека: администратор клиники видел строку вида «Организация
 			 * 4a3420d1-6ffb-…: …» и не мог из неё ничего понять, а поддержке нужен
 			 * именно идентификатор.
 			 */
-			console.error(`[reminders] сбой постановки напоминаний, организация ${organizationId}: ${detail}`);
+			console.error(
+				`[reminders] сбой постановки напоминаний, организация ${organizationId}: ${detail}`,
+			);
 			report.problems.push(`Напоминания поставить не удалось: ${detail}`);
 		}
 	}
 
 	return {
 		...report,
-		skipped: [...namedSkips.values()].slice(0, MAX_NAMED_REMINDER_SKIPS)
+		skipped: [...namedSkips.values()].slice(0, MAX_NAMED_REMINDER_SKIPS),
 	};
 }
 
@@ -274,12 +301,12 @@ async function scheduleForOrganization(
 		skippedNoTemplateData: number;
 		problems: string[];
 	},
-	namedSkips: Map<string, ReminderSkip>
+	namedSkips: Map<string, ReminderSkip>,
 ): Promise<void> {
 	const [settingsRow] = await db
 		.select({
 			leadHoursJson: communicationSettings.appointmentReminderLeadHoursJson,
-			windowMinutes: communicationSettings.appointmentReminderWindowMinutes
+			windowMinutes: communicationSettings.appointmentReminderWindowMinutes,
 		})
 		.from(communicationSettings)
 		.where(eq(communicationSettings.organizationId, organizationId))
@@ -298,12 +325,13 @@ async function scheduleForOrganization(
 			and(
 				eq(communicationTemplates.organizationId, organizationId),
 				eq(communicationTemplates.intent, "appointment_confirmation"),
-				eq(communicationTemplates.isActive, true)
-			)
+				eq(communicationTemplates.isActive, true),
+			),
 		);
 	const templateByChannel = new Map<string, (typeof templateRows)[number]>();
 	for (const template of templateRows) {
-		if (!templateByChannel.has(template.channel)) templateByChannel.set(template.channel, template);
+		if (!templateByChannel.has(template.channel))
+			templateByChannel.set(template.channel, template);
 	}
 	if (templateByChannel.size === 0) {
 		/*
@@ -312,10 +340,12 @@ async function scheduleForOrganization(
 		 * кодом, а ставятся в очередь, и прежняя фраза описывала не то, что здесь
 		 * произошло. Сказано то, что администратору нужно сделать.
 		 */
-		console.error(`[reminders] нет активного шаблона «Подтверждение приёма», организация ${organizationId}`);
+		console.error(
+			`[reminders] нет активного шаблона «Подтверждение приёма», организация ${organizationId}`,
+		);
 		report.problems.push(
 			"Напоминания включены, но нет ни одного активного шаблона с назначением «Подтверждение приёма» — " +
-				"отправлять нечем. Создайте шаблон для нужного канала в разделе «Шаблоны сообщений» ниже."
+				"отправлять нечем. Создайте шаблон для нужного канала в разделе «Шаблоны сообщений» ниже.",
 		);
 		return;
 	}
@@ -326,7 +356,11 @@ async function scheduleForOrganization(
 		.where(eq(organizations.id, organizationId))
 		.limit(1);
 	const [clinic] = await db
-		.select({ name: clinics.name, phone: clinics.phone, address: clinics.address })
+		.select({
+			name: clinics.name,
+			phone: clinics.phone,
+			address: clinics.address,
+		})
 		.from(clinics)
 		.where(eq(clinics.organizationId, organizationId))
 		.limit(1);
@@ -345,7 +379,7 @@ async function scheduleForOrganization(
 				patientId: appointments.patientId,
 				doctorUserId: appointments.doctorUserId,
 				startsAt: appointments.startsAt,
-				status: appointments.status
+				status: appointments.status,
 			})
 			.from(appointments)
 			.where(
@@ -353,8 +387,8 @@ async function scheduleForOrganization(
 					eq(appointments.organizationId, organizationId),
 					inArray(appointments.status, [...REMINDABLE_STATUSES]),
 					gte(appointments.startsAt, windowStart),
-					lte(appointments.startsAt, windowEnd)
-				)
+					lte(appointments.startsAt, windowEnd),
+				),
 			);
 
 		// ФИО пациентов, ФИО врачей и согласия — по одному запросу на всю выборку
@@ -365,9 +399,19 @@ async function scheduleForOrganization(
 		// рассылка напоминаний конкурировала со стойкой регистрации. Правило
 		// «согласия читаются пакетом» уже было записано в рассылках с той же
 		// причиной — здесь оно наконец соблюдается через общий consentLoader.
-		const duePatientIds = [...new Set(dueAppointments.map((row) => row.patientId).filter((id): id is string => !!id))];
+		const duePatientIds = [
+			...new Set(
+				dueAppointments
+					.map((row) => row.patientId)
+					.filter((id): id is string => !!id),
+			),
+		];
 		const dueDoctorIds = [
-			...new Set(dueAppointments.map((row) => row.doctorUserId).filter((id): id is string => !!id))
+			...new Set(
+				dueAppointments
+					.map((row) => row.doctorUserId)
+					.filter((id): id is string => !!id),
+			),
 		];
 
 		const patientRows =
@@ -375,7 +419,12 @@ async function scheduleForOrganization(
 				? await db
 						.select({ id: patients.id, fullName: patients.fullName })
 						.from(patients)
-						.where(and(eq(patients.organizationId, organizationId), inArray(patients.id, duePatientIds)))
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								inArray(patients.id, duePatientIds),
+							),
+						)
 				: [];
 		const patientById = new Map(patientRows.map((row) => [row.id, row]));
 
@@ -393,7 +442,10 @@ async function scheduleForOrganization(
 				: [];
 		const doctorById = new Map(doctorRows.map((row) => [row.id, row]));
 
-		const consentsByPatient = await loadConsentsByPatient(organizationId, duePatientIds);
+		const consentsByPatient = await loadConsentsByPatient(
+			organizationId,
+			duePatientIds,
+		);
 
 		for (const appointment of dueAppointments) {
 			if (!appointment.patientId) continue;
@@ -402,17 +454,28 @@ async function scheduleForOrganization(
 			const patient = patientById.get(appointment.patientId);
 			if (!patient) continue;
 
-			const doctor = appointment.doctorUserId ? doctorById.get(appointment.doctorUserId) : undefined;
+			const doctor = appointment.doctorUserId
+				? doctorById.get(appointment.doctorUserId)
+				: undefined;
 
-			const consents: ConsentRecord[] = consentsByPatient.get(appointment.patientId) ?? [];
+			const consents: ConsentRecord[] =
+				consentsByPatient.get(appointment.patientId) ?? [];
 
 			const values: Record<string, string> = {
 				patient: addressableName(patient.fullName),
 				patientFullName: patient.fullName.trim(),
 				clinic: clinic?.name ?? organization?.name ?? "клиника",
-				date: formatInTimeZone(appointment.startsAt, settings.timezone, { day: "numeric", month: "long" }),
-				time: formatInTimeZone(appointment.startsAt, settings.timezone, { hour: "2-digit", minute: "2-digit" }),
-				weekday: formatInTimeZone(appointment.startsAt, settings.timezone, { weekday: "long" })
+				date: formatInTimeZone(appointment.startsAt, settings.timezone, {
+					day: "numeric",
+					month: "long",
+				}),
+				time: formatInTimeZone(appointment.startsAt, settings.timezone, {
+					hour: "2-digit",
+					minute: "2-digit",
+				}),
+				weekday: formatInTimeZone(appointment.startsAt, settings.timezone, {
+					weekday: "long",
+				}),
 			};
 			if (clinic?.phone) values.clinicPhone = clinic.phone;
 			if (clinic?.address) values.clinicAddress = clinic.address;
@@ -422,8 +485,12 @@ async function scheduleForOrganization(
 			// настроен, переменных просто нет: шаблон с {confirmLink} тогда не
 			// отрендерится и напоминание не уйдёт с пустым местом вместо ссылки.
 			const links = await issueAppointmentActionLinks(
-				{ organizationId, appointmentId: appointment.id, startsAt: appointment.startsAt },
-				now
+				{
+					organizationId,
+					appointmentId: appointment.id,
+					startsAt: appointment.startsAt,
+				},
+				now,
 			);
 			if (links) {
 				values.confirmLink = links.confirmLink;
@@ -438,7 +505,7 @@ async function scheduleForOrganization(
 				values,
 				consents,
 				channelOrder: settings.channelFallback,
-				templateByChannel
+				templateByChannel,
 			});
 
 			/*
@@ -461,7 +528,7 @@ async function scheduleForOrganization(
 					rememberSkip(namedSkips, appointment.patientId, {
 						patientName: patient.fullName.trim(),
 						reason: "no_template_data",
-						appointmentAt: appointment.startsAt.toISOString()
+						appointmentAt: appointment.startsAt.toISOString(),
 					});
 					break;
 				case "no_channel":
@@ -469,12 +536,14 @@ async function scheduleForOrganization(
 					rememberSkip(namedSkips, appointment.patientId, {
 						patientName: patient.fullName.trim(),
 						reason: "no_channel",
-						appointmentAt: appointment.startsAt.toISOString()
+						appointmentAt: appointment.startsAt.toISOString(),
 					});
 					break;
 				default: {
 					const unhandled: never = outcome;
-					throw new Error(`Неизвестный итог постановки напоминания: ${String(unhandled)}`);
+					throw new Error(
+						`Неизвестный итог постановки напоминания: ${String(unhandled)}`,
+					);
 				}
 			}
 		}
@@ -487,12 +556,20 @@ async function scheduleForOrganization(
  * звонить всё равно нужно один раз. А вот время приёма входит — два разных приёма
  * одного пациента это два разных повода позвонить.
  */
-function rememberSkip(namedSkips: Map<string, ReminderSkip>, patientId: string, skip: ReminderSkip): void {
+function rememberSkip(
+	namedSkips: Map<string, ReminderSkip>,
+	patientId: string,
+	skip: ReminderSkip,
+): void {
 	const key = `${patientId}|${skip.reason}|${skip.appointmentAt}`;
 	if (!namedSkips.has(key)) namedSkips.set(key, skip);
 }
 
-type ReminderOutcome = "queued" | "duplicate" | "no_channel" | "no_template_data";
+type ReminderOutcome =
+	| "queued"
+	| "duplicate"
+	| "no_channel"
+	| "no_template_data";
 
 async function enqueueReminderForAppointment(input: {
 	organizationId: string;
@@ -502,7 +579,10 @@ async function enqueueReminderForAppointment(input: {
 	values: Record<string, string>;
 	consents: ConsentRecord[];
 	channelOrder: CommunicationChannelCode[];
-	templateByChannel: Map<string, { id: string; channel: string; body: string; title: string }>;
+	templateByChannel: Map<
+		string,
+		{ id: string; channel: string; body: string; title: string }
+	>;
 }): Promise<ReminderOutcome> {
 	let sawTemplateDataProblem = false;
 
@@ -514,10 +594,16 @@ async function enqueueReminderForAppointment(input: {
 
 		if (!decideConsent(input.consents, channel, "service").allowed) continue;
 
-		const recipient = await resolveRecipientAddress(input.organizationId, channel, input.patientId);
+		const recipient = await resolveRecipientAddress(
+			input.organizationId,
+			channel,
+			input.patientId,
+		);
 		if (!recipient.address) continue;
 
-		const rendered = renderTemplate(template.body, input.values, { allowPhi: true });
+		const rendered = renderTemplate(template.body, input.values, {
+			allowPhi: true,
+		});
 		if (!rendered.ok) {
 			// Шаблон просит то, чего у нас нет. Отправлять с дырой нельзя.
 			sawTemplateDataProblem = true;
@@ -536,7 +622,7 @@ async function enqueueReminderForAppointment(input: {
 			body: rendered.text,
 			// Ключ не зависит от канала: если канал сменится, второе напоминание
 			// об одном приёме всё равно не уйдёт.
-			dedupeKey: `reminder:${input.appointmentId}:${input.hours}`
+			dedupeKey: `reminder:${input.appointmentId}:${input.hours}`,
 		});
 
 		if (!result.ok) continue;

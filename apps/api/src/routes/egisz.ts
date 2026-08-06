@@ -33,7 +33,6 @@ const visitCdaParamsSchema = z.object({
 	visitId: z.string().uuid(),
 });
 
-
 /**
  * Модуль ЕГИСЗ (ФРМО / ФРМР / РЭМД).
  *
@@ -92,7 +91,9 @@ function readGatewayConfig(): EgiszGatewayConfig {
 type ComponentStatus = "CONNECTED" | "NOT_CONFIGURED";
 
 function componentStatus(...required: (string | null)[]): ComponentStatus {
-	return required.every((value) => value !== null) ? "CONNECTED" : "NOT_CONFIGURED";
+	return required.every((value) => value !== null)
+		? "CONNECTED"
+		: "NOT_CONFIGURED";
 }
 
 export default async function registerEgiszRoutes(app: FastifyInstance) {
@@ -103,13 +104,19 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 	app.get(
 		"/api/clinical/egisz/integration-status",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			if (!(await requireClinicalReadAccess(request, reply, "egisz status check")))
+			if (
+				!(await requireClinicalReadAccess(request, reply, "egisz status check"))
+			)
 				return;
 
 			const config = readGatewayConfig();
 			const frmoStatus = componentStatus(config.frmoId);
 			const frmrStatus = componentStatus(config.guid, config.lpuId);
-			const remdStatus = componentStatus(config.baseUrl, config.guid, config.lpuId);
+			const remdStatus = componentStatus(
+				config.baseUrl,
+				config.guid,
+				config.lpuId,
+			);
 			const configured =
 				frmoStatus === "CONNECTED" &&
 				frmrStatus === "CONNECTED" &&
@@ -150,7 +157,11 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 		"/api/clinical/egisz/validate-doctor-snils",
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			if (
-				!(await requireClinicalReadAccess(request, reply, "egisz snils validation"))
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"egisz snils validation",
+				))
 			)
 				return;
 
@@ -228,7 +239,9 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 	app.get(
 		"/api/egisz/visits/:visitId/cda",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			if (!(await requireClinicalReadAccess(request, reply, "egisz cda export")))
+			if (
+				!(await requireClinicalReadAccess(request, reply, "egisz cda export"))
+			)
 				return;
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
@@ -238,8 +251,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				return reply.status(400).send({
 					ok: false,
 					error: "ValidationError",
-					message:
-						"Идентификатор приёма в адресе должен быть UUID (visitId).",
+					message: "Идентификатор приёма в адресе должен быть UUID (visitId).",
 				});
 			}
 			const { visitId } = parsedParams.data;
@@ -251,7 +263,10 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					organization: schema.organizations,
 				})
 				.from(schema.visits)
-				.innerJoin(schema.patients, eq(schema.visits.patientId, schema.patients.id))
+				.innerJoin(
+					schema.patients,
+					eq(schema.visits.patientId, schema.patients.id),
+				)
 				.innerJoin(
 					schema.organizations,
 					eq(schema.visits.organizationId, schema.organizations.id),
@@ -293,7 +308,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					/* DEFECT #63: signer fallback when doctorId empty (pre-#35 locks) */
 					lockedByUserId: schema.visitDiaries.lockedByUserId,
 					authorId: schema.visitDiaries.authorId,
-				/* DEFECT #59: draft 043 must not become EGISZ CDA */
+					/* DEFECT #59: draft 043 must not become EGISZ CDA */
 					isLocked: schema.visitDiaries.isLocked,
 					/* DEFECT #61: CDA versionNumber after 043 revise */
 					version: schema.visitDiaries.version,
@@ -459,11 +474,17 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			 * complaint + anamnesis (deduped), diary text still wins when present.
 			 */
 			const diaryAnamnesis =
-				typeof diaryRow?.anamnesis === "string" ? diaryRow.anamnesis.trim() : "";
+				typeof diaryRow?.anamnesis === "string"
+					? diaryRow.anamnesis.trim()
+					: "";
 			const visitAnamnesis =
-				typeof row.visit.anamnesis === "string" ? row.visit.anamnesis.trim() : "";
+				typeof row.visit.anamnesis === "string"
+					? row.visit.anamnesis.trim()
+					: "";
 			const visitComplaint =
-				typeof row.visit.complaint === "string" ? row.visit.complaint.trim() : "";
+				typeof row.visit.complaint === "string"
+					? row.visit.complaint.trim()
+					: "";
 			const visitSParts: string[] = [];
 			if (visitComplaint) visitSParts.push(visitComplaint);
 			if (visitAnamnesis && visitAnamnesis !== visitComplaint) {
@@ -547,7 +568,10 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					doctorName = splitFullName(diaryDoctor.fullName);
 					const pos = formatDoctorSpecialtyLabelForCda(diaryDoctor.specialties);
 					if (pos) doctorPosition = pos;
-					doctorContact = { phone: diaryDoctor.phone, email: diaryDoctor.email };
+					doctorContact = {
+						phone: diaryDoctor.phone,
+						email: diaryDoctor.email,
+					};
 				}
 			}
 
@@ -612,7 +636,10 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			const patientSnilsDigits = readSnilsFromProfile(
 				row.patient.administrativeProfile,
 			);
-			if (patientSnilsDigits.length !== 11 || !isValidSnils(patientSnilsDigits)) {
+			if (
+				patientSnilsDigits.length !== 11 ||
+				!isValidSnils(patientSnilsDigits)
+			) {
 				return reply.status(422).send({
 					error: "PatientSnilsRequired",
 					message:
@@ -730,7 +757,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				? (row.patient.administrativeProfile as {
 						residentialAddress?: string | null;
 						registrationAddress?: string | null;
-				  })
+					})
 				: undefined;
 			const patientPhone =
 				typeof row.patient.phone === "string" ? row.patient.phone : undefined;
@@ -759,9 +786,13 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			 * for the CDA signer/author above (users.phone / users.email).
 			 */
 			const doctorPhone =
-				typeof doctorContact?.phone === "string" ? doctorContact.phone : undefined;
+				typeof doctorContact?.phone === "string"
+					? doctorContact.phone
+					: undefined;
 			const doctorEmail =
-				typeof doctorContact?.email === "string" ? doctorContact.email : undefined;
+				typeof doctorContact?.email === "string"
+					? doctorContact.email
+					: undefined;
 
 			const params: EgiszCdaParams = {
 				patientId: row.patient.id,
@@ -839,7 +870,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				 */
 				documentSetId: row.visit.id,
 
-			/* DEFECT #61: revised 043 must not re-export as version 1 */
+				/* DEFECT #61: revised 043 must not re-export as version 1 */
 
 				...(typeof diaryRow?.version === "number" &&
 				Number.isFinite(diaryRow.version) &&
@@ -861,7 +892,6 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 							replacesDocumentId: `${row.visit.id}-v${Math.floor(diaryRow.version) - 1}`,
 						}
 					: {}),
-
 
 				/*
 				 * DEFECT #72: ClinicalDocument + author effectiveTime = diary sign.
@@ -888,16 +918,17 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				...(objectiveStatus ? { objectiveStatus } : {}),
 				...(complications ? { complications } : {}),
 				...(comorbidities ? { comorbidities } : {}),
-				...(instrumentTrayBarcode
-					? { instrumentTrayBarcode }
-					: {}),
+				...(instrumentTrayBarcode ? { instrumentTrayBarcode } : {}),
 				/* DEFECT #74: ISO 3950 tooth → CDA diagnosis targetSiteCode */
 				...(diagnosisTooth ? { diagnosisTooth } : {}),
 				...(treatmentPlan ? { treatmentDescription: treatmentPlan } : {}),
 			};
 			const cdaResult = generateDentalCdaXml(params);
 			if (!cdaResult.success) {
-				console.error("[egisz] generateDentalCdaXml safeParse failed:", cdaResult.error);
+				console.error(
+					"[egisz] generateDentalCdaXml safeParse failed:",
+					cdaResult.error,
+				);
 				return reply.status(422).send({
 					error: "CdaGenerationFailed",
 					message: "Внутренняя ошибка генерации документа (ошибка схемы CDA).",
@@ -940,7 +971,6 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 	);
 }
 
-
 /**
  * DEFECT #58: RU specialty label for CDA assignedAuthor (mirrors diary #41).
  * users.specialties jsonb string[]; prefer non-universal codes.
@@ -960,9 +990,7 @@ const EGISZ_DENTAL_SPECIALTY_LABELS: Record<string, string> = {
 
 function formatDoctorSpecialtyLabelForCda(raw: unknown): string | null {
 	const codes: string[] = Array.isArray(raw)
-		? raw
-				.map((x) => (typeof x === "string" ? x.trim() : ""))
-				.filter(Boolean)
+		? raw.map((x) => (typeof x === "string" ? x.trim() : "")).filter(Boolean)
 		: typeof raw === "string" && raw.trim()
 			? [raw.trim()]
 			: [];
@@ -1004,7 +1032,8 @@ function readGenderFromProfile(
 ): "male" | "female" | "other" | null {
 	if (profile && typeof profile === "object" && "gender" in profile) {
 		const value = (profile as { gender?: unknown }).gender;
-		if (value === "male" || value === "female" || value === "other") return value;
+		if (value === "male" || value === "female" || value === "other")
+			return value;
 	}
 	return null;
 }

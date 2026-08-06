@@ -22,10 +22,7 @@ const workspaceStaticOptionsSource = await readFile(
  * Список перечислен, а не собран обходом каталога: обход подхватил бы новый
  * компонент молча.
  */
-const scheduleComponentSources = [
-	"AppointmentCard",
-	"NewAppointmentForm",
-];
+const scheduleComponentSources = ["AppointmentCard", "NewAppointmentForm"];
 
 const webSource = [
 	appSource,

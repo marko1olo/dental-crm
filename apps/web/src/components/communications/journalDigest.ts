@@ -55,34 +55,35 @@ export type JournalPhase = "failed" | "empty" | "ready";
  * и дату, а этому модулю от события нужны лишь направление и статус. Так список
  * не приходится приводить обратно на месте отрисовки.
  */
-export type JournalDigest<TEntry extends JournalEntryLike = JournalEntryLike> = {
-	/**
-	 * Три РАЗНЫХ состояния, которые раньше сливались в одно пустое место:
-	 * `failed` — списка в ответе сервера не было вовсе;
-	 * `empty` — сервер ответил, событий действительно ноль;
-	 * `ready` — есть что показывать.
-	 */
-	readonly phase: JournalPhase;
-	readonly entries: readonly TEntry[];
-	readonly total: number;
-	readonly undelivered: number;
-	readonly pending: number;
-	/** Подпись плашки с общим числом, уже согласованная: «12 записей». */
-	readonly totalLabel: string;
-	/**
-	 * Плашка перестаёт быть зелёной, как только в журнале есть недоставленное:
-	 * цвет — это первое, что читают, и он не должен обещать успех.
-	 */
-	readonly totalPillClass: string;
-	/** Красная строка с числом недоставленных, либо `null`, если всё дошло. */
-	readonly undeliveredLabel: string | null;
-	/** Сколько ещё в очереди — это не отказ, но и не доставка. */
-	readonly pendingLabel: string | null;
-	/** Заголовок для состояний `failed` и `empty`; для `ready` — пустая строка. */
-	readonly title: string;
-	/** Что делать дальше. Пустота и отказ без подсказки — тупик. */
-	readonly hint: string;
-};
+export type JournalDigest<TEntry extends JournalEntryLike = JournalEntryLike> =
+	{
+		/**
+		 * Три РАЗНЫХ состояния, которые раньше сливались в одно пустое место:
+		 * `failed` — списка в ответе сервера не было вовсе;
+		 * `empty` — сервер ответил, событий действительно ноль;
+		 * `ready` — есть что показывать.
+		 */
+		readonly phase: JournalPhase;
+		readonly entries: readonly TEntry[];
+		readonly total: number;
+		readonly undelivered: number;
+		readonly pending: number;
+		/** Подпись плашки с общим числом, уже согласованная: «12 записей». */
+		readonly totalLabel: string;
+		/**
+		 * Плашка перестаёт быть зелёной, как только в журнале есть недоставленное:
+		 * цвет — это первое, что читают, и он не должен обещать успех.
+		 */
+		readonly totalPillClass: string;
+		/** Красная строка с числом недоставленных, либо `null`, если всё дошло. */
+		readonly undeliveredLabel: string | null;
+		/** Сколько ещё в очереди — это не отказ, но и не доставка. */
+		readonly pendingLabel: string | null;
+		/** Заголовок для состояний `failed` и `empty`; для `ready` — пустая строка. */
+		readonly title: string;
+		/** Что делать дальше. Пустота и отказ без подсказки — тупик. */
+		readonly hint: string;
+	};
 
 const EMPTY_TITLE = "В журнале пока нет записей";
 
@@ -95,7 +96,8 @@ const EMPTY_HINT =
  * ответе не было. Придумывать причину, которой сервер не сообщал, нельзя,
  * поэтому здесь не «сервер недоступен» и не «нет прав».
  */
-const FAILED_TITLE = "Журнал связи не прочитан: сервер ответил без списка событий";
+const FAILED_TITLE =
+	"Журнал связи не прочитан: сервер ответил без списка событий";
 
 const FAILED_HINT =
 	"Не считайте, что сообщений не было. Обновите страницу; если строка осталась, сообщите администратору.";
@@ -106,9 +108,9 @@ const FAILED_HINT =
  * подстановки `?? []`. Прежняя разметка делала эту подстановку первой строкой и
  * теряла различие навсегда.
  */
-export function summarizeJournal<TEntry extends JournalEntryLike = JournalEntryLike>(
-	rawEvents: unknown,
-): JournalDigest<TEntry> {
+export function summarizeJournal<
+	TEntry extends JournalEntryLike = JournalEntryLike,
+>(rawEvents: unknown): JournalDigest<TEntry> {
 	if (!Array.isArray(rawEvents)) {
 		return {
 			phase: "failed",
@@ -143,10 +145,17 @@ export function summarizeJournal<TEntry extends JournalEntryLike = JournalEntryL
 		pending,
 		totalLabel: countLabel(total, "запись", "записи", "записей"),
 		totalPillClass:
-			undelivered > 0 ? "status-pill status-cancelled" : "status-pill status-confirmed",
+			undelivered > 0
+				? "status-pill status-cancelled"
+				: "status-pill status-confirmed",
 		undeliveredLabel:
 			undelivered > 0
-				? countLabel(undelivered, "сообщение не дошло", "сообщения не дошли", "сообщений не дошло")
+				? countLabel(
+						undelivered,
+						"сообщение не дошло",
+						"сообщения не дошли",
+						"сообщений не дошло",
+					)
 				: null,
 		pendingLabel:
 			pending > 0

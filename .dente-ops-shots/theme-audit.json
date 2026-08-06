@@ -1,537 +1,534 @@
 {
-  "startedAt": "2026-07-31T12:34:33.709Z",
-  "finishedAt": "2026-07-31T12:39:45.823Z",
-  "out": "C:/Clinic_MVP/dental-crm/.dente-ops-shots",
-  "palettes": [
-    {
-      "key": "light@1600x1000",
-      "fingerprint": "fb13b9804418"
-    },
-    {
-      "key": "dark@1600x1000",
-      "fingerprint": "85cb4671fb5f"
-    },
-    {
-      "key": "night@1600x1000",
-      "fingerprint": "0cba16b88626"
-    },
-    {
-      "key": "light@720x1100",
-      "fingerprint": "fb13b9804418"
-    }
-  ],
-  "plates": 44,
-  "uniqueMd5": 44,
-  "diagnostics": [
-    "narrow_waitlist_ПУСТО.png",
-    "narrow_duplicates_ПУСТО.png"
-  ],
-  "shots": [
-    {
-      "file": "light_callList.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "a7748c99ba20d42c8af4cbabc407abdc",
-      "bytes": 105261,
-      "diagnostic": false
-    },
-    {
-      "file": "light_waitlist.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "ff51e5786f44b12a43de64b9f2cb3b7e",
-      "bytes": 166810,
-      "diagnostic": false
-    },
-    {
-      "file": "light_visit.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "6a32db753c45b3e03eb62bacdcc5e264",
-      "bytes": 572768,
-      "diagnostic": false
-    },
-    {
-      "file": "light_delivery.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "0cb8fabfe3b8da5bada0bc3c8560d0ea",
-      "bytes": 219807,
-      "diagnostic": false
-    },
-    {
-      "file": "light_campaigns.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "3d79a6e456a5e2884bd5d563b355bd62",
-      "bytes": 43446,
-      "diagnostic": false
-    },
-    {
-      "file": "light_reports.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "31bba312df1b38209d64a9be3afe8ccc",
-      "bytes": 27085,
-      "diagnostic": false
-    },
-    {
-      "file": "light_recall.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "83ed2c6308f79f8b9a811cc1992cc78a",
-      "bytes": 103463,
-      "diagnostic": false
-    },
-    {
-      "file": "light_freedSlots.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "95483bc53540b6abee27d79ba4128d71",
-      "bytes": 29295,
-      "diagnostic": false
-    },
-    {
-      "file": "light_duplicates.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "50af452d773b19aa1b55225e71cecd87",
-      "bytes": 134827,
-      "diagnostic": false
-    },
-    {
-      "file": "light_duplicateAlert.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "93e61292609139a4f50ae93e31be5f64",
-      "bytes": 55802,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_callList.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "ea95c4f77ec3865f90967030945085aa",
-      "bytes": 108665,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_waitlist.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "a2abc039b538a5b7aeaba58af267dae9",
-      "bytes": 202092,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_visit.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "c39618a6b95836006f04f4bbde80411a",
-      "bytes": 594744,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_delivery.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "dafa7a061b6afcdb74c06c4d7f75360c",
-      "bytes": 226628,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_campaigns.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "400aa5d8446ab84da5d18dc313a8943e",
-      "bytes": 45183,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_reports.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "7ddd716f6960ef927a602eefa3c32f18",
-      "bytes": 30812,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_recall.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "d84aea5ab9f24971d548d4f88229e8a2",
-      "bytes": 99642,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_freedSlots.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "033cb190e2af4a59cb3ec411e59acbeb",
-      "bytes": 30540,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_duplicates.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "559d1942f2a72d91e88e2241ec172a4c",
-      "bytes": 127914,
-      "diagnostic": false
-    },
-    {
-      "file": "dark_duplicateAlert.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "bdbf6e8a09e432f705ca1747ea632e15",
-      "bytes": 55674,
-      "diagnostic": false
-    },
-    {
-      "file": "night_callList.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "26dbe4037a2c0945fe30384d8c78e9da",
-      "bytes": 108715,
-      "diagnostic": false
-    },
-    {
-      "file": "night_waitlist.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "37a54649b7b80de24056bf3b1b7664e0",
-      "bytes": 179235,
-      "diagnostic": false
-    },
-    {
-      "file": "night_visit.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "ac34d17193c36cc7a6787613eab08214",
-      "bytes": 586533,
-      "diagnostic": false
-    },
-    {
-      "file": "night_delivery.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "fe6dea916c8fd6200360272a71e495da",
-      "bytes": 225190,
-      "diagnostic": false
-    },
-    {
-      "file": "night_campaigns.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "0f5e906ac34f7ae4754804171473deaa",
-      "bytes": 45113,
-      "diagnostic": false
-    },
-    {
-      "file": "night_reports.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "7ff76193231b6936aed341f053bfcb45",
-      "bytes": 20647,
-      "diagnostic": false
-    },
-    {
-      "file": "night_recall.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "e8e56fe09edc22b6b4bef4e812a8d9b7",
-      "bytes": 104124,
-      "diagnostic": false
-    },
-    {
-      "file": "night_freedSlots.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "3c73075c01e37a6e0d107a24855c0fbe",
-      "bytes": 24674,
-      "diagnostic": false
-    },
-    {
-      "file": "night_duplicates.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "111271258aeca2579122ec7fba8bc9a6",
-      "bytes": 136793,
-      "diagnostic": false
-    },
-    {
-      "file": "night_duplicateAlert.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "1f0b5cdc7cc151fc149299c7861b61fb",
-      "bytes": 56767,
-      "diagnostic": false
-    },
-    {
-      "file": "narrow_callList.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "0df164572274e8b4a44ee3b971061792",
-      "bytes": 18262,
-      "diagnostic": false
-    },
-    {
-      "file": "narrow_waitlist_ПУСТО.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "7c00545a90e060e2fd3fdcdc739159e3",
-      "bytes": 118123,
-      "diagnostic": true
-    },
-    {
-      "file": "narrow_visit.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "4c6e12f18ae3edd23cbbcdb6c12f69c0",
-      "bytes": 406916,
-      "diagnostic": false
-    },
-    {
-      "file": "narrow_delivery.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "9d7caad4ca2e4fc1aeb0c384ae47c20c",
-      "bytes": 265716,
-      "diagnostic": false
-    },
-    {
-      "file": "narrow_campaigns.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "0555f2eee18075bf618db22e81577871",
-      "bytes": 49996,
-      "diagnostic": false
-    },
-    {
-      "file": "narrow_reports.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "f993df18b429a20a806f44d9cd642de1",
-      "bytes": 339578,
-      "diagnostic": false
-    },
-    {
-      "file": "narrow_recall.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "7aa96e882607e00155280c3215fedfaf",
-      "bytes": 136398,
-      "diagnostic": false
-    },
-    {
-      "file": "narrow_freedSlots.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "bf5afcc42df614214b326dfbc8eda97e",
-      "bytes": 32166,
-      "diagnostic": false
-    },
-    {
-      "file": "narrow_duplicates_ПУСТО.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "f1a5ec93696ba1701aea8bd18558c9a4",
-      "bytes": 86256,
-      "diagnostic": true
-    },
-    {
-      "file": "narrow_duplicateAlert.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "a635b255622361ee7ad805110247e3f0",
-      "bytes": 56983,
-      "diagnostic": false
-    },
-    {
-      "file": "narrow_full.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "720x1100",
-      "md5": "7dbd99cd5c696e711fa87a82b8bd8ec1",
-      "bytes": 94753,
-      "diagnostic": false
-    },
-    {
-      "file": "finance_full.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "7fb553c160c06cbcf87b9b4113bc053c",
-      "bytes": 139190,
-      "diagnostic": false
-    },
-    {
-      "file": "patients_light_full.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "2aeb355000194dbc0b352f29bcd3c894",
-      "bytes": 183042,
-      "diagnostic": false
-    },
-    {
-      "file": "patients_dark_full.png",
-      "theme": "dark",
-      "dataTheme": "dark",
-      "storeMode": "dark",
-      "palette": "85cb4671fb5f",
-      "viewport": "1600x1000",
-      "md5": "109e33bb0a2f453ae4b6e981916156bc",
-      "bytes": 208813,
-      "diagnostic": false
-    },
-    {
-      "file": "patients_night_full.png",
-      "theme": "night",
-      "dataTheme": "night",
-      "storeMode": "night",
-      "palette": "0cba16b88626",
-      "viewport": "1600x1000",
-      "md5": "569079993651bbad0b2171c7b33476bf",
-      "bytes": 212368,
-      "diagnostic": false
-    },
-    {
-      "file": "communications_full.png",
-      "theme": "light",
-      "dataTheme": "light",
-      "storeMode": "light",
-      "palette": "fb13b9804418",
-      "viewport": "1600x1000",
-      "md5": "fad7cef5e75b8d92111ac6fe287132eb",
-      "bytes": 161711,
-      "diagnostic": false
-    }
-  ]
+	"startedAt": "2026-07-31T12:34:33.709Z",
+	"finishedAt": "2026-07-31T12:39:45.823Z",
+	"out": "C:/Clinic_MVP/dental-crm/.dente-ops-shots",
+	"palettes": [
+		{
+			"key": "light@1600x1000",
+			"fingerprint": "fb13b9804418"
+		},
+		{
+			"key": "dark@1600x1000",
+			"fingerprint": "85cb4671fb5f"
+		},
+		{
+			"key": "night@1600x1000",
+			"fingerprint": "0cba16b88626"
+		},
+		{
+			"key": "light@720x1100",
+			"fingerprint": "fb13b9804418"
+		}
+	],
+	"plates": 44,
+	"uniqueMd5": 44,
+	"diagnostics": ["narrow_waitlist_ПУСТО.png", "narrow_duplicates_ПУСТО.png"],
+	"shots": [
+		{
+			"file": "light_callList.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "a7748c99ba20d42c8af4cbabc407abdc",
+			"bytes": 105261,
+			"diagnostic": false
+		},
+		{
+			"file": "light_waitlist.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "ff51e5786f44b12a43de64b9f2cb3b7e",
+			"bytes": 166810,
+			"diagnostic": false
+		},
+		{
+			"file": "light_visit.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "6a32db753c45b3e03eb62bacdcc5e264",
+			"bytes": 572768,
+			"diagnostic": false
+		},
+		{
+			"file": "light_delivery.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "0cb8fabfe3b8da5bada0bc3c8560d0ea",
+			"bytes": 219807,
+			"diagnostic": false
+		},
+		{
+			"file": "light_campaigns.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "3d79a6e456a5e2884bd5d563b355bd62",
+			"bytes": 43446,
+			"diagnostic": false
+		},
+		{
+			"file": "light_reports.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "31bba312df1b38209d64a9be3afe8ccc",
+			"bytes": 27085,
+			"diagnostic": false
+		},
+		{
+			"file": "light_recall.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "83ed2c6308f79f8b9a811cc1992cc78a",
+			"bytes": 103463,
+			"diagnostic": false
+		},
+		{
+			"file": "light_freedSlots.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "95483bc53540b6abee27d79ba4128d71",
+			"bytes": 29295,
+			"diagnostic": false
+		},
+		{
+			"file": "light_duplicates.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "50af452d773b19aa1b55225e71cecd87",
+			"bytes": 134827,
+			"diagnostic": false
+		},
+		{
+			"file": "light_duplicateAlert.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "93e61292609139a4f50ae93e31be5f64",
+			"bytes": 55802,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_callList.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "ea95c4f77ec3865f90967030945085aa",
+			"bytes": 108665,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_waitlist.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "a2abc039b538a5b7aeaba58af267dae9",
+			"bytes": 202092,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_visit.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "c39618a6b95836006f04f4bbde80411a",
+			"bytes": 594744,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_delivery.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "dafa7a061b6afcdb74c06c4d7f75360c",
+			"bytes": 226628,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_campaigns.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "400aa5d8446ab84da5d18dc313a8943e",
+			"bytes": 45183,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_reports.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "7ddd716f6960ef927a602eefa3c32f18",
+			"bytes": 30812,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_recall.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "d84aea5ab9f24971d548d4f88229e8a2",
+			"bytes": 99642,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_freedSlots.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "033cb190e2af4a59cb3ec411e59acbeb",
+			"bytes": 30540,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_duplicates.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "559d1942f2a72d91e88e2241ec172a4c",
+			"bytes": 127914,
+			"diagnostic": false
+		},
+		{
+			"file": "dark_duplicateAlert.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "bdbf6e8a09e432f705ca1747ea632e15",
+			"bytes": 55674,
+			"diagnostic": false
+		},
+		{
+			"file": "night_callList.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "26dbe4037a2c0945fe30384d8c78e9da",
+			"bytes": 108715,
+			"diagnostic": false
+		},
+		{
+			"file": "night_waitlist.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "37a54649b7b80de24056bf3b1b7664e0",
+			"bytes": 179235,
+			"diagnostic": false
+		},
+		{
+			"file": "night_visit.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "ac34d17193c36cc7a6787613eab08214",
+			"bytes": 586533,
+			"diagnostic": false
+		},
+		{
+			"file": "night_delivery.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "fe6dea916c8fd6200360272a71e495da",
+			"bytes": 225190,
+			"diagnostic": false
+		},
+		{
+			"file": "night_campaigns.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "0f5e906ac34f7ae4754804171473deaa",
+			"bytes": 45113,
+			"diagnostic": false
+		},
+		{
+			"file": "night_reports.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "7ff76193231b6936aed341f053bfcb45",
+			"bytes": 20647,
+			"diagnostic": false
+		},
+		{
+			"file": "night_recall.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "e8e56fe09edc22b6b4bef4e812a8d9b7",
+			"bytes": 104124,
+			"diagnostic": false
+		},
+		{
+			"file": "night_freedSlots.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "3c73075c01e37a6e0d107a24855c0fbe",
+			"bytes": 24674,
+			"diagnostic": false
+		},
+		{
+			"file": "night_duplicates.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "111271258aeca2579122ec7fba8bc9a6",
+			"bytes": 136793,
+			"diagnostic": false
+		},
+		{
+			"file": "night_duplicateAlert.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "1f0b5cdc7cc151fc149299c7861b61fb",
+			"bytes": 56767,
+			"diagnostic": false
+		},
+		{
+			"file": "narrow_callList.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "0df164572274e8b4a44ee3b971061792",
+			"bytes": 18262,
+			"diagnostic": false
+		},
+		{
+			"file": "narrow_waitlist_ПУСТО.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "7c00545a90e060e2fd3fdcdc739159e3",
+			"bytes": 118123,
+			"diagnostic": true
+		},
+		{
+			"file": "narrow_visit.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "4c6e12f18ae3edd23cbbcdb6c12f69c0",
+			"bytes": 406916,
+			"diagnostic": false
+		},
+		{
+			"file": "narrow_delivery.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "9d7caad4ca2e4fc1aeb0c384ae47c20c",
+			"bytes": 265716,
+			"diagnostic": false
+		},
+		{
+			"file": "narrow_campaigns.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "0555f2eee18075bf618db22e81577871",
+			"bytes": 49996,
+			"diagnostic": false
+		},
+		{
+			"file": "narrow_reports.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "f993df18b429a20a806f44d9cd642de1",
+			"bytes": 339578,
+			"diagnostic": false
+		},
+		{
+			"file": "narrow_recall.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "7aa96e882607e00155280c3215fedfaf",
+			"bytes": 136398,
+			"diagnostic": false
+		},
+		{
+			"file": "narrow_freedSlots.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "bf5afcc42df614214b326dfbc8eda97e",
+			"bytes": 32166,
+			"diagnostic": false
+		},
+		{
+			"file": "narrow_duplicates_ПУСТО.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "f1a5ec93696ba1701aea8bd18558c9a4",
+			"bytes": 86256,
+			"diagnostic": true
+		},
+		{
+			"file": "narrow_duplicateAlert.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "a635b255622361ee7ad805110247e3f0",
+			"bytes": 56983,
+			"diagnostic": false
+		},
+		{
+			"file": "narrow_full.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "720x1100",
+			"md5": "7dbd99cd5c696e711fa87a82b8bd8ec1",
+			"bytes": 94753,
+			"diagnostic": false
+		},
+		{
+			"file": "finance_full.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "7fb553c160c06cbcf87b9b4113bc053c",
+			"bytes": 139190,
+			"diagnostic": false
+		},
+		{
+			"file": "patients_light_full.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "2aeb355000194dbc0b352f29bcd3c894",
+			"bytes": 183042,
+			"diagnostic": false
+		},
+		{
+			"file": "patients_dark_full.png",
+			"theme": "dark",
+			"dataTheme": "dark",
+			"storeMode": "dark",
+			"palette": "85cb4671fb5f",
+			"viewport": "1600x1000",
+			"md5": "109e33bb0a2f453ae4b6e981916156bc",
+			"bytes": 208813,
+			"diagnostic": false
+		},
+		{
+			"file": "patients_night_full.png",
+			"theme": "night",
+			"dataTheme": "night",
+			"storeMode": "night",
+			"palette": "0cba16b88626",
+			"viewport": "1600x1000",
+			"md5": "569079993651bbad0b2171c7b33476bf",
+			"bytes": 212368,
+			"diagnostic": false
+		},
+		{
+			"file": "communications_full.png",
+			"theme": "light",
+			"dataTheme": "light",
+			"storeMode": "light",
+			"palette": "fb13b9804418",
+			"viewport": "1600x1000",
+			"md5": "fad7cef5e75b8d92111ac6fe287132eb",
+			"bytes": 161711,
+			"diagnostic": false
+		}
+	]
 }

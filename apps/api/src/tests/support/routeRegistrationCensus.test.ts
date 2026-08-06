@@ -3,7 +3,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test, { after, describe } from "node:test";
-import { censusRouteModules, denteApiCensus } from "./routeRegistrationCensus.js";
+import {
+	censusRouteModules,
+	denteApiCensus,
+} from "./routeRegistrationCensus.js";
 
 /**
  * ДОКАЗАТЕЛЬСТВО, ЧТО ПЕРЕПИСЬ УМЕЕТ ПОКРАСНЕТЬ.
@@ -109,7 +112,10 @@ writeFixture(
 `,
 );
 
-writeFixture("routes/typeOnly.ts", `export type Something = { readonly id: string };\n`);
+writeFixture(
+	"routes/typeOnly.ts",
+	`export type Something = { readonly id: string };\n`,
+);
 
 const fixtureCensus = censusRouteModules({
 	routesDir: path.join(fixtureRoot, "routes"),
@@ -119,8 +125,15 @@ const fixtureCensus = censusRouteModules({
 describe("перепись проводки маршрутных модулей", () => {
 	test("находит модуль в подкаталоге, который никто не импортирует", () => {
 		const orphan = fixtureCensus.byId.get("nested/orphan.ts");
-		assert.ok(orphan, "модуль nested/orphan.ts не попал в перепись — обход не рекурсивный");
-		assert.equal(orphan.declaresHttpRoutes, true, "маршрут в файле-сироте не распознан");
+		assert.ok(
+			orphan,
+			"модуль nested/orphan.ts не попал в перепись — обход не рекурсивный",
+		);
+		assert.equal(
+			orphan.declaresHttpRoutes,
+			true,
+			"маршрут в файле-сироте не распознан",
+		);
 		assert.equal(
 			orphan.registered,
 			false,
@@ -142,14 +155,26 @@ describe("перепись проводки маршрутных модулей"
 	test("цепочка через родителя признаётся проводкой", () => {
 		const child = fixtureCensus.byId.get("nested/child.ts");
 		assert.ok(child);
-		assert.equal(child.registered, true, "ребёнок подключённого родителя обязан считаться подключённым");
-		assert.deepEqual(child.chain, ["server.ts", "connected.ts", "nested/child.ts"]);
+		assert.equal(
+			child.registered,
+			true,
+			"ребёнок подключённого родителя обязан считаться подключённым",
+		);
+		assert.deepEqual(child.chain, [
+			"server.ts",
+			"connected.ts",
+			"nested/child.ts",
+		]);
 	});
 
 	test("экспорт по умолчанию и префикс монтирования разобраны", () => {
 		const prefixed = fixtureCensus.byId.get("mountedWithPrefix.ts");
 		assert.ok(prefixed);
-		assert.equal(prefixed.registered, true, "экспорт по умолчанию не распознан как регистратор");
+		assert.equal(
+			prefixed.registered,
+			true,
+			"экспорт по умолчанию не распознан как регистратор",
+		);
 		assert.deepEqual(prefixed.prefixes, ["/api/prefixed"]);
 		assert.deepEqual(prefixed.routePaths, ["/list"]);
 	});
@@ -168,7 +193,11 @@ describe("перепись проводки маршрутных модулей"
 	test("прямой вызов с корневым экземпляром отличается от app.register", () => {
 		const hookOwner = fixtureCensus.byId.get("hookOwner.ts");
 		assert.ok(hookOwner);
-		assert.equal(hookOwner.declaresHooks, true, "app.addHook в модуле не распознан");
+		assert.equal(
+			hookOwner.declaresHooks,
+			true,
+			"app.addHook в модуле не распознан",
+		);
 		assert.equal(
 			hookOwner.invokedDirectlyWithRootInstance,
 			true,
@@ -182,7 +211,11 @@ describe("перепись проводки маршрутных модулей"
 	test("импорт только типов не считается проводкой", () => {
 		const typeOnly = fixtureCensus.byId.get("typeOnly.ts");
 		assert.ok(typeOnly);
-		assert.equal(typeOnly.registered, false, "import type не вызывает ничего и проводкой не является");
+		assert.equal(
+			typeOnly.registered,
+			false,
+			"import type не вызывает ничего и проводкой не является",
+		);
 	});
 
 	test("перепись живого дерева не выродилась", () => {
@@ -194,13 +227,18 @@ describe("перепись проводки маршрутных модулей"
 		// Заведомо существующая цепочка через родителя: children documents/*
 		// подключаются из routes/documents.ts, а он — из server.ts.
 		const child = census.byId.get("documents/create.ts");
-		assert.ok(child, "routes/documents/create.ts не попал в перепись — обход не рекурсивный");
+		assert.ok(
+			child,
+			"routes/documents/create.ts не попал в перепись — обход не рекурсивный",
+		);
 		assert.deepEqual(
 			child.chain,
 			["server.ts", "documents.ts", "documents/create.ts"],
 			"цепочка проводки через routes/documents.ts не распознана — доверять вердиктам нельзя",
 		);
-		const registeredCount = census.modules.filter((module) => module.registered).length;
+		const registeredCount = census.modules.filter(
+			(module) => module.registered,
+		).length;
 		assert.ok(
 			registeredCount > 40,
 			`подключённых модулей найдено ${registeredCount} — разбор вызовов сломан`,

@@ -1,36 +1,51 @@
+import {
+	clinicalRuleEvaluationInputSchema,
+	clinicalRuleEvaluationResponseSchema,
+	clinicalRuleSchema,
+	createClinicalRuleSchema,
+	updateClinicalRuleSchema,
+} from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
-  clinicalRuleEvaluationInputSchema,
-  clinicalRuleEvaluationResponseSchema,
-  clinicalRuleSchema,
-  createClinicalRuleSchema,
-  updateClinicalRuleSchema
-} from "@dental/shared";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
-import { requireOrganizationId, requireStaffIdentity } from "../security/identity.js";
+	requireClinicalMutationAccess,
+	requireClinicalReadAccess,
+} from "../accessGuard.js";
 import {
-  evaluateClinicalRulesInDb,
-  createClinicalRuleInDb,
-  updateClinicalRuleInDb,
-  deleteClinicalRuleInDb
+	createClinicalRuleInDb,
+	deleteClinicalRuleInDb,
+	evaluateClinicalRulesInDb,
+	updateClinicalRuleInDb,
 } from "../db/clinicalQuery.js";
 import { ClinicalTaskOwnershipError } from "../db/clinicalTasksQuery.js";
-import { CLINICAL_PHASE_CODES, ClinicalRouter, isClinicalPhaseCode } from "../services/clinical/ClinicalRouter.js";
+import {
+	requireOrganizationId,
+	requireStaffIdentity,
+} from "../security/identity.js";
+import {
+	CLINICAL_PHASE_CODES,
+	ClinicalRouter,
+	isClinicalPhaseCode,
+} from "../services/clinical/ClinicalRouter.js";
 
 type ClinicalPayloadSchema<T> = {
-  safeParse: (value: unknown) => { success: true; data: T } | { success: false };
+	safeParse: (
+		value: unknown,
+	) => { success: true; data: T } | { success: false };
 };
 
 const clinicalRuleEvaluationValidationMessage =
-  "Ошибка валидации: запрос не соответствует формату.";
+	"Ошибка валидации: запрос не соответствует формату.";
 const clinicalRuleMutationValidationMessage =
-  "Ошибка валидации: данные правила некорректны.";
+	"Ошибка валидации: данные правила некорректны.";
 
-function parseClinicalPayload<T>(schema: ClinicalPayloadSchema<T>, value: unknown) {
-  const parsed = schema.safeParse(value);
-  if (!parsed.success) return null;
-  return parsed.data;
+function parseClinicalPayload<T>(
+	schema: ClinicalPayloadSchema<T>,
+	value: unknown,
+) {
+	const parsed = schema.safeParse(value);
+	if (!parsed.success) return null;
+	return parsed.data;
 }
 
 /**
@@ -38,12 +53,13 @@ function parseClinicalPayload<T>(schema: ClinicalPayloadSchema<T>, value: unknow
  * PostgreSQL и возвращается пятисоткой «invalid input syntax for type uuid».
  * Проверяем формат заранее, чтобы клиент получил внятные 400, а не 500.
  */
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function optionalUuid(value: unknown): string | null | undefined {
-  if (value === undefined || value === null || value === "") return null;
-  if (typeof value !== "string" || !UUID_PATTERN.test(value)) return undefined;
-  return value;
+	if (value === undefined || value === null || value === "") return null;
+	if (typeof value !== "string" || !UUID_PATTERN.test(value)) return undefined;
+	return value;
 }
 
 const clinicalPhaseCompletionValidationMessage = `Ошибка валидации: нужен patientId в формате UUID и completedPhaseCode из списка: ${CLINICAL_PHASE_CODES.join(", ")}.`;
@@ -57,171 +73,247 @@ const recentPatientViewBodySchema = z.object({
 	patientId: z.unknown().optional(),
 });
 
-
 export async function registerClinicalRoutes(app: FastifyInstance) {
-  app.post("/api/clinical/rules/evaluate", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "clinical rule evaluate"))) return;
-    const input = parseClinicalPayload(clinicalRuleEvaluationInputSchema, request.body);
-    if (!input) {
-      return reply.code(400).send({ error: "ClinicalRuleValidationError", message: clinicalRuleEvaluationValidationMessage });
-    }
-    // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»
-    // без учёта того, кто прислал запрос. Клиника Б проверяла противопоказания
-    // по НАБОРУ ПРАВИЛ КЛИНИКИ А: её собственное правило «аллергия на артикаин —
-    // блокирующее» в выборку не попадало, blocker не находился, и укол
-    // с противопоказанием проходил проверку.
-    const orgId = requireOrganizationId(request, reply);
-    if (!orgId) return;
-    const evaluation = await evaluateClinicalRulesInDb(orgId, input);
-    const blockingRule = evaluation.evaluations.find(
-      (e) => !e.resolved && e.severity === "blocker"
-    );
-    if (blockingRule && input.enforceBlockers) {
-      return reply.code(400).send({
-        code: "ClinicalRuleBlocker",
-        error: "ClinicalRuleBlocker",
-        message: `Клиническое противопоказание: ${blockingRule.message}`,
-        ruleId: blockingRule.ruleId,
-        evaluation: blockingRule,
-      });
-    }
-    return clinicalRuleEvaluationResponseSchema.parse(evaluation);
-  });
+	app.post("/api/clinical/rules/evaluate", async (request, reply) => {
+		if (
+			!(await requireClinicalReadAccess(
+				request,
+				reply,
+				"clinical rule evaluate",
+			))
+		)
+			return;
+		const input = parseClinicalPayload(
+			clinicalRuleEvaluationInputSchema,
+			request.body,
+		);
+		if (!input) {
+			return reply.code(400).send({
+				error: "ClinicalRuleValidationError",
+				message: clinicalRuleEvaluationValidationMessage,
+			});
+		}
+		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»
+		// без учёта того, кто прислал запрос. Клиника Б проверяла противопоказания
+		// по НАБОРУ ПРАВИЛ КЛИНИКИ А: её собственное правило «аллергия на артикаин —
+		// блокирующее» в выборку не попадало, blocker не находился, и укол
+		// с противопоказанием проходил проверку.
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
+		const evaluation = await evaluateClinicalRulesInDb(orgId, input);
+		const blockingRule = evaluation.evaluations.find(
+			(e) => !e.resolved && e.severity === "blocker",
+		);
+		if (blockingRule && input.enforceBlockers) {
+			return reply.code(400).send({
+				code: "ClinicalRuleBlocker",
+				error: "ClinicalRuleBlocker",
+				message: `Клиническое противопоказание: ${blockingRule.message}`,
+				ruleId: blockingRule.ruleId,
+				evaluation: blockingRule,
+			});
+		}
+		return clinicalRuleEvaluationResponseSchema.parse(evaluation);
+	});
 
-  app.post("/api/clinical/rules", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "clinical rule create"))) return;
-    const input = parseClinicalPayload(createClinicalRuleSchema, request.body);
-    if (!input) {
-      return reply.code(400).send({ error: "ClinicalRuleValidationError", message: clinicalRuleMutationValidationMessage });
-    }
-    // См. выше: правило создавалось в чужой организации.
-    const orgId = requireOrganizationId(request, reply);
-    if (!orgId) return;
-    return clinicalRuleSchema.parse(await createClinicalRuleInDb(orgId, input));
-  });
+	app.post("/api/clinical/rules", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"clinical rule create",
+			))
+		)
+			return;
+		const input = parseClinicalPayload(createClinicalRuleSchema, request.body);
+		if (!input) {
+			return reply.code(400).send({
+				error: "ClinicalRuleValidationError",
+				message: clinicalRuleMutationValidationMessage,
+			});
+		}
+		// См. выше: правило создавалось в чужой организации.
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
+		return clinicalRuleSchema.parse(await createClinicalRuleInDb(orgId, input));
+	});
 
-  app.patch("/api/clinical/rules/:ruleId", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "clinical rule update"))) return;
-    const params = request.params as { ruleId: string };
-    const body = request.body && typeof request.body === "object" ? request.body : {};
-    const input = parseClinicalPayload(updateClinicalRuleSchema, { ...body, id: params.ruleId });
-    if (!input) {
-      return reply.code(400).send({ error: "ClinicalRuleValidationError", message: clinicalRuleMutationValidationMessage });
-    }
-    // См. выше: правило редактировалось в чужой организации.
-    const orgId = requireOrganizationId(request, reply);
-    if (!orgId) return;
-    return clinicalRuleSchema.parse(await updateClinicalRuleInDb(orgId, input));
-  });
+	app.patch("/api/clinical/rules/:ruleId", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"clinical rule update",
+			))
+		)
+			return;
+		const params = request.params as { ruleId: string };
+		const body =
+			request.body && typeof request.body === "object" ? request.body : {};
+		const input = parseClinicalPayload(updateClinicalRuleSchema, {
+			...body,
+			id: params.ruleId,
+		});
+		if (!input) {
+			return reply.code(400).send({
+				error: "ClinicalRuleValidationError",
+				message: clinicalRuleMutationValidationMessage,
+			});
+		}
+		// См. выше: правило редактировалось в чужой организации.
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
+		return clinicalRuleSchema.parse(await updateClinicalRuleInDb(orgId, input));
+	});
 
-  /**
-   * Удаление клинического правила.
-   *
-   * БЫЛО: маршрута не существовало ни в одной сборке. Кнопка «удалить» в
-   * настройках правил звала этот адрес и получала 404 «Route not found» —
-   * проверено живым запросом: PATCH по тому же пути отвечал 401, то есть сервер
-   * различал случаи и говорил именно «такого маршрута нет». Врач нажимал
-   * «удалить», видел ошибку, и правило продолжало срабатывать на приёме.
-   *
-   * Гарды и их порядок повторяют PATCH выше: сначала право на изменение правил,
-   * затем организация из подписанного токена. Организация обязательна и здесь —
-   * см. выше про редактирование правила в чужой организации; удалить чужое
-   * правило хуже, чем испортить его, потому что вернуть его нечем.
-   *
-   * Идентификатор проверяется на формат UUID по той же причине, что и в задачах
-   * выше: clinical_rules.id имеет тип uuid, и строка «rule1» дошла бы до
-   * PostgreSQL пятисоткой «invalid input syntax for type uuid».
-   */
-  app.delete("/api/clinical/rules/:ruleId", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "clinical rule delete"))) return;
-    const { ruleId } = request.params as { ruleId: string };
-    if (!ruleId || !UUID_PATTERN.test(ruleId)) {
-      return reply.code(400).send({ error: "ClinicalRuleValidationError", message: clinicalRuleMutationValidationMessage });
-    }
-    const orgId = requireOrganizationId(request, reply);
-    if (!orgId) return;
-    const deleted = await deleteClinicalRuleInDb(orgId, ruleId);
-    if (!deleted) {
-      // Чужое правило и несуществующее правило отвечают одинаково: разный ответ
-      // сообщал бы посторонней клинике, что такое правило у соседей есть.
-      return reply
-        .code(404)
-        .send({ error: "ClinicalRuleNotFound", message: "Правило не найдено." });
-    }
-    return reply.code(200).send({ id: ruleId, deleted: true });
-  });
+	/**
+	 * Удаление клинического правила.
+	 *
+	 * БЫЛО: маршрута не существовало ни в одной сборке. Кнопка «удалить» в
+	 * настройках правил звала этот адрес и получала 404 «Route not found» —
+	 * проверено живым запросом: PATCH по тому же пути отвечал 401, то есть сервер
+	 * различал случаи и говорил именно «такого маршрута нет». Врач нажимал
+	 * «удалить», видел ошибку, и правило продолжало срабатывать на приёме.
+	 *
+	 * Гарды и их порядок повторяют PATCH выше: сначала право на изменение правил,
+	 * затем организация из подписанного токена. Организация обязательна и здесь —
+	 * см. выше про редактирование правила в чужой организации; удалить чужое
+	 * правило хуже, чем испортить его, потому что вернуть его нечем.
+	 *
+	 * Идентификатор проверяется на формат UUID по той же причине, что и в задачах
+	 * выше: clinical_rules.id имеет тип uuid, и строка «rule1» дошла бы до
+	 * PostgreSQL пятисоткой «invalid input syntax for type uuid».
+	 */
+	app.delete("/api/clinical/rules/:ruleId", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"clinical rule delete",
+			))
+		)
+			return;
+		const { ruleId } = request.params as { ruleId: string };
+		if (!ruleId || !UUID_PATTERN.test(ruleId)) {
+			return reply.code(400).send({
+				error: "ClinicalRuleValidationError",
+				message: clinicalRuleMutationValidationMessage,
+			});
+		}
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
+		const deleted = await deleteClinicalRuleInDb(orgId, ruleId);
+		if (!deleted) {
+			// Чужое правило и несуществующее правило отвечают одинаково: разный ответ
+			// сообщал бы посторонней клинике, что такое правило у соседей есть.
+			return reply.code(404).send({
+				error: "ClinicalRuleNotFound",
+				message: "Правило не найдено.",
+			});
+		}
+		return reply.code(200).send({ id: ruleId, deleted: true });
+	});
 
-  /**
-   * Завершение клинического этапа и передача пациента следующему врачу.
-   *
-   * БЫЛО: роута не существовало. Сервис ClinicalRouter собирал задачу-передачу
-   * в памяти, печатал её в консоль и возвращал вызывающему, которого не было:
-   * класс не был подключён ни к одному эндпоинту. Передача между этапами
-   * лечения не доходила ни до базы, ни до следующего врача.
-   */
-  app.post("/api/clinical/phase-completions", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "clinical phase completion"))) return;
-    const orgId = requireOrganizationId(request, reply);
-    if (!orgId) return;
+	/**
+	 * Завершение клинического этапа и передача пациента следующему врачу.
+	 *
+	 * БЫЛО: роута не существовало. Сервис ClinicalRouter собирал задачу-передачу
+	 * в памяти, печатал её в консоль и возвращал вызывающему, которого не было:
+	 * класс не был подключён ни к одному эндпоинту. Передача между этапами
+	 * лечения не доходила ни до базы, ни до следующего врача.
+	 */
+	app.post("/api/clinical/phase-completions", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"clinical phase completion",
+			))
+		)
+			return;
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
 
-    const body = (request.body && typeof request.body === "object" ? request.body : {}) as Record<string, unknown>;
-    const patientId = typeof body.patientId === "string" && UUID_PATTERN.test(body.patientId) ? body.patientId : null;
-    const treatmentPlanId = optionalUuid(body.treatmentPlanId);
-    const assignedDoctorId = optionalUuid(body.assignedDoctorId);
-    const toothCodesRaw = body.toothCodes;
-    const toothCodesValid =
-      toothCodesRaw === undefined || (Array.isArray(toothCodesRaw) && toothCodesRaw.every((c) => typeof c === "string"));
-    const notesValid = body.notes === undefined || body.notes === null || typeof body.notes === "string";
+		const body = (
+			request.body && typeof request.body === "object" ? request.body : {}
+		) as Record<string, unknown>;
+		const patientId =
+			typeof body.patientId === "string" && UUID_PATTERN.test(body.patientId)
+				? body.patientId
+				: null;
+		const treatmentPlanId = optionalUuid(body.treatmentPlanId);
+		const assignedDoctorId = optionalUuid(body.assignedDoctorId);
+		const toothCodesRaw = body.toothCodes;
+		const toothCodesValid =
+			toothCodesRaw === undefined ||
+			(Array.isArray(toothCodesRaw) &&
+				toothCodesRaw.every((c) => typeof c === "string"));
+		const notesValid =
+			body.notes === undefined ||
+			body.notes === null ||
+			typeof body.notes === "string";
 
-    if (
-      !patientId ||
-      !isClinicalPhaseCode(body.completedPhaseCode) ||
-      treatmentPlanId === undefined ||
-      assignedDoctorId === undefined ||
-      !toothCodesValid ||
-      !notesValid
-    ) {
-      return reply
-        .code(400)
-        .send({ error: "ClinicalPhaseValidationError", message: clinicalPhaseCompletionValidationMessage });
-    }
+		if (
+			!patientId ||
+			!isClinicalPhaseCode(body.completedPhaseCode) ||
+			treatmentPlanId === undefined ||
+			assignedDoctorId === undefined ||
+			!toothCodesValid ||
+			!notesValid
+		) {
+			return reply.code(400).send({
+				error: "ClinicalPhaseValidationError",
+				message: clinicalPhaseCompletionValidationMessage,
+			});
+		}
 
-    try {
-      const task = await new ClinicalRouter().handlePhaseCompletion(orgId, {
-        patientId,
-        completedPhaseCode: body.completedPhaseCode,
-        notes: typeof body.notes === "string" ? body.notes : null,
-        toothCodes: (toothCodesRaw as string[] | undefined) ?? [],
-        treatmentPlanId,
-        assignedDoctorId,
-      });
-      if (!task) {
-        return reply
-          .code(400)
-          .send({ error: "ClinicalPhaseValidationError", message: clinicalPhaseCompletionValidationMessage });
-      }
-      return reply.code(201).send(task);
-    } catch (error) {
-      if (error instanceof ClinicalTaskOwnershipError) {
-        return reply.code(404).send({ error: "ClinicalTaskReferenceNotFound", message: error.message, field: error.field });
-      }
-      throw error;
-    }
-  });
+		try {
+			const task = await new ClinicalRouter().handlePhaseCompletion(orgId, {
+				patientId,
+				completedPhaseCode: body.completedPhaseCode,
+				notes: typeof body.notes === "string" ? body.notes : null,
+				toothCodes: (toothCodesRaw as string[] | undefined) ?? [],
+				treatmentPlanId,
+				assignedDoctorId,
+			});
+			if (!task) {
+				return reply.code(400).send({
+					error: "ClinicalPhaseValidationError",
+					message: clinicalPhaseCompletionValidationMessage,
+				});
+			}
+			return reply.code(201).send(task);
+		} catch (error) {
+			if (error instanceof ClinicalTaskOwnershipError) {
+				return reply.code(404).send({
+					error: "ClinicalTaskReferenceNotFound",
+					message: error.message,
+					field: error.field,
+				});
+			}
+			throw error;
+		}
+	});
 
-  /** Задачи, созданные передачей между этапами. Это то, что видит следующий врач, открывая карту. */
-  app.get("/api/clinical/tasks", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "clinical tasks read"))) return;
-    const orgId = requireOrganizationId(request, reply);
-    if (!orgId) return;
-    const { patientId } = request.query as { patientId?: string };
-    if (patientId !== undefined && !UUID_PATTERN.test(patientId)) {
-      return reply
-        .code(400)
-        .send({ error: "ClinicalTaskValidationError", message: "Ошибка валидации: patientId должен быть UUID." });
-    }
-    return reply.code(200).send(await new ClinicalRouter().listTasks(orgId, patientId));
-  });
+	/** Задачи, созданные передачей между этапами. Это то, что видит следующий врач, открывая карту. */
+	app.get("/api/clinical/tasks", async (request, reply) => {
+		if (
+			!(await requireClinicalReadAccess(request, reply, "clinical tasks read"))
+		)
+			return;
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
+		const { patientId } = request.query as { patientId?: string };
+		if (patientId !== undefined && !UUID_PATTERN.test(patientId)) {
+			return reply.code(400).send({
+				error: "ClinicalTaskValidationError",
+				message: "Ошибка валидации: patientId должен быть UUID.",
+			});
+		}
+		return reply
+			.code(200)
+			.send(await new ClinicalRouter().listTasks(orgId, patientId));
+	});
 
 	/*
 	 * Маршруты «пользовательские справочники бланков» и «формы осмотра без выбора
@@ -282,7 +374,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * формулой — это второй, ложный источник правды о состоянии зубов.
 	 */
 
-
 	/*
 	 * Шесть маршрутов удалены вместе со своими модулями доступа. Их таблицы
 	 * никто в приложении не наполняет — ни одной вставки, ноль строк в живой
@@ -340,8 +431,12 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
-		const { getSingleSessionEnforcementsFromDb } = await import("../db/singleSessionEnforcementsQuery.js");
-		return reply.status(200).send(await getSingleSessionEnforcementsFromDb(orgId));
+		const { getSingleSessionEnforcementsFromDb } = await import(
+			"../db/singleSessionEnforcementsQuery.js"
+		);
+		return reply
+			.status(200)
+			.send(await getSingleSessionEnforcementsFromDb(orgId));
 	});
 
 	// COMPETITOR FEATURE #60: интеграции::геокодирование_адресов_через_dadata
@@ -351,8 +446,12 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
-		const { getDadataGeocodedAddressesFromDb } = await import("../db/dadataGeocodedAddressesQuery.js");
-		return reply.status(200).send(await getDadataGeocodedAddressesFromDb(orgId));
+		const { getDadataGeocodedAddressesFromDb } = await import(
+			"../db/dadataGeocodedAddressesQuery.js"
+		);
+		return reply
+			.status(200)
+			.send(await getDadataGeocodedAddressesFromDb(orgId));
 	});
 
 	/*
@@ -380,10 +479,17 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	app.get("/api/hr/recent-patients", async (request, reply) => {
 		const identity = requireStaffIdentity(request, reply);
 		if (!identity) return;
-		const { getRecentPatientHistoryFromDb } = await import("../db/recentPatientHistoryQuery.js");
+		const { getRecentPatientHistoryFromDb } = await import(
+			"../db/recentPatientHistoryQuery.js"
+		);
 		return reply
 			.status(200)
-			.send(await getRecentPatientHistoryFromDb(identity.organizationId!, identity.userId!));
+			.send(
+				await getRecentPatientHistoryFromDb(
+					identity.organizationId!,
+					identity.userId!,
+				),
+			);
 	});
 
 	/*
@@ -397,7 +503,9 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	app.post("/api/hr/recent-patients", async (request, reply) => {
 		const identity = requireStaffIdentity(request, reply);
 		if (!identity) return;
-		const parsedBody = recentPatientViewBodySchema.safeParse(request.body ?? {});
+		const parsedBody = recentPatientViewBodySchema.safeParse(
+			request.body ?? {},
+		);
 		if (!parsedBody.success) {
 			return reply.status(400).send({
 				error: "PatientIdRequired",
@@ -405,14 +513,18 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			});
 		}
 		const patientId =
-			typeof parsedBody.data.patientId === "string" ? parsedBody.data.patientId : "";
+			typeof parsedBody.data.patientId === "string"
+				? parsedBody.data.patientId
+				: "";
 		if (!patientId) {
 			return reply.status(400).send({
 				error: "PatientIdRequired",
 				message: "Не указан пациент, карточку которого открыли.",
 			});
 		}
-		const { recordPatientViewInDb } = await import("../db/recentPatientHistoryQuery.js");
+		const { recordPatientViewInDb } = await import(
+			"../db/recentPatientHistoryQuery.js"
+		);
 		const result = await recordPatientViewInDb(
 			identity.organizationId!,
 			identity.userId!,
@@ -434,7 +546,9 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
-		const { getCustomCrmTaskTypesFromDb } = await import("../db/customCrmTaskTypesQuery.js");
+		const { getCustomCrmTaskTypesFromDb } = await import(
+			"../db/customCrmTaskTypesQuery.js"
+		);
 		return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
 	});
 
@@ -443,7 +557,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * advance_deposit_taggings не наполняется ничем. Часть кассовой темы 54-ФЗ,
 	 * которой в системе нет; см. долг в apps/web/src/FinanceView.tsx.
 	 */
-
 
 	/*
 	 * Маршрут «отправка электронных чеков» удалён вместе со своим экраном:
@@ -461,15 +574,20 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 */
 
 	// COMPETITOR FEATURE #54: маркетинг::маппинг_полей_лендингов_и_лид_форм
-	app.get("/api/integrations/landing-field-mappings", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getLandingFieldMappingsFromDb } = await import("../db/landingFieldMappingsQuery.js");
-		return reply.status(200).send(await getLandingFieldMappingsFromDb(orgId));
-	});
+	app.get(
+		"/api/integrations/landing-field-mappings",
+		async (request, reply) => {
+			// Организация берётся из подписанного токена, а не из заголовка клиента.
+			// Раньше здесь принимался x-organization-id без всякой аутентификации:
+			// любой мог подставить UUID чужой клиники и читать её медицинские данные.
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+			const { getLandingFieldMappingsFromDb } = await import(
+				"../db/landingFieldMappingsQuery.js"
+			);
+			return reply.status(200).send(await getLandingFieldMappingsFromDb(orgId));
+		},
+	);
 
 	// COMPETITOR FEATURE #47: crm::пользовательские_типы_задач_для_администраторов
 	app.get("/api/crm/custom-crm-task-types", async (request, reply) => {
@@ -478,21 +596,29 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
-		const { getCustomCrmTaskTypesFromDb } = await import("../db/customCrmTaskTypesQuery.js");
+		const { getCustomCrmTaskTypesFromDb } = await import(
+			"../db/customCrmTaskTypesQuery.js"
+		);
 		return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
 	});
 
 	// COMPETITOR FEATURE #58: пациенты::геокодинг_адресов_через_dadata
-	app.get("/api/integrations/dadata-geocoded-addresses", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getDadataGeocodedAddressesFromDb } = await import("../db/dadataGeocodedAddressesQuery.js");
-		return reply.status(200).send(await getDadataGeocodedAddressesFromDb(orgId));
-	});
-
+	app.get(
+		"/api/integrations/dadata-geocoded-addresses",
+		async (request, reply) => {
+			// Организация берётся из подписанного токена, а не из заголовка клиента.
+			// Раньше здесь принимался x-organization-id без всякой аутентификации:
+			// любой мог подставить UUID чужой клиники и читать её медицинские данные.
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+			const { getDadataGeocodedAddressesFromDb } = await import(
+				"../db/dadataGeocodedAddressesQuery.js"
+			);
+			return reply
+				.status(200)
+				.send(await getDadataGeocodedAddressesFromDb(orgId));
+		},
+	);
 
 	// COMPETITOR FEATURE #63: финансы::автоматическое_указание_меры_количества_в_kkm
 	/*
@@ -502,7 +628,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 
 	// Второй адрес того же удалённого экрана начислений убран вместе с первым.
 
-
 	// COMPETITOR FEATURE #6: маркетинг::фильтр_потерянных_пациентов_в_отчете
 	app.get("/api/analytics/lost-patients-filters", async (request, reply) => {
 		// Организация берётся из подписанного токена, а не из заголовка клиента.
@@ -510,7 +635,9 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
-		const { getLostPatientsFiltersFromDb } = await import("../db/lostPatientsFiltersQuery.js");
+		const { getLostPatientsFiltersFromDb } = await import(
+			"../db/lostPatientsFiltersQuery.js"
+		);
 		return reply.status(200).send(await getLostPatientsFiltersFromDb(orgId));
 	});
 
@@ -530,8 +657,4 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * приёмам в «Обзвоне и подтверждениях» — второй, пустой источник ответа на
 	 * тот же вопрос был хуже, чем его отсутствие.
 	 */
-
 }
-
-
-

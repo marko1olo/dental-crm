@@ -304,8 +304,7 @@ if (!reloadMarkerBinding) {
 				(argument) =>
 					(ts.isIdentifier(argument) &&
 						argument.text === reloadMarkerBinding) ||
-					(ts.isStringLiteral(argument) &&
-						argument.text === RELOAD_MARKER_KEY),
+					(ts.isStringLiteral(argument) && argument.text === RELOAD_MARKER_KEY),
 			);
 			const passesFlag = node.arguments.some(
 				(argument) => ts.isStringLiteral(argument) && argument.text === "1",
@@ -565,7 +564,9 @@ function auditStaleRecoveryAffordance(boundary, label) {
 	}
 
 	if (clickHandlers.length > 0 && !recoveryHandler) {
-		const bodies = clickHandlers.flatMap((handler) => bodiesOf(handler.resolved));
+		const bodies = clickHandlers.flatMap((handler) =>
+			bodiesOf(handler.resolved),
+		);
 		const detail = messagePostSite(bodies, CLEAR_SHELL_CACHE_MESSAGE)
 			? `cache is cleared but the reload is not deferred by 1..${MAX_RECOVERY_DEFER_MS}ms, so ${CLEAR_SHELL_CACHE_MESSAGE} can be cut off before the service worker receives it`
 			: `no handler posts { type: "${CLEAR_SHELL_CACHE_MESSAGE}" } to the service worker`;

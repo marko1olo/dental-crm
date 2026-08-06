@@ -237,7 +237,10 @@ if (finalizeStart === -1 || flushStart === -1) {
 				"Final speech status must check recognized text before showing the retry message.",
 			);
 		}
-		if (finalizeBlock.indexOf("queuedCurrentRecordingCount > 0") > genericRetryIndex) {
+		if (
+			finalizeBlock.indexOf("queuedCurrentRecordingCount > 0") >
+			genericRetryIndex
+		) {
 			liveLockFailures.push(
 				"Final speech status must check queued audio before showing the retry message.",
 			);
@@ -295,7 +298,9 @@ if (monitorStart === -1 || configureStart === -1) {
 } else {
 	const monitorBlock = appSource.slice(monitorStart, configureStart);
 	if (
-		monitorBlock.includes("speechVoiceDetectedDuringRecordingRef.current = false;")
+		monitorBlock.includes(
+			"speechVoiceDetectedDuringRecordingRef.current = false;",
+		)
 	) {
 		liveLockFailures.push(
 			"Speech monitor restarts must not clear the whole-recording audible-voice flag.",

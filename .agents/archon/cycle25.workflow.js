@@ -1,10 +1,8 @@
 export const meta = {
-  name: 'dente-cycle25-NN',
-  description: 'Цикл 25, волна NN: год как цена, предупреждения ответа не доезжают до экрана, «неизвестно» превращается в ноль, 31 красный страж -source',
-  phases: [
-    { title: 'Build' },
-    { title: 'Review' }
-  ]
+	name: "dente-cycle25-NN",
+	description:
+		"Цикл 25, волна NN: год как цена, предупреждения ответа не доезжают до экрана, «неизвестно» превращается в ноль, 31 красный страж -source",
+	phases: [{ title: "Build" }, { title: "Review" }],
 };
 
 const LAW = `Ты исполнитель в волне NN. Проект: C:\\Clinic_MVP\\dental-crm (Windows, bash). Работай молча и коммить.
@@ -49,11 +47,12 @@ const LAW = `Ты исполнитель в волне NN. Проект: C:\\Cli
 | CONTRADICTED: <в чём бриф был неверен или none> | FOUND: <новые дефекты для очереди, по одному на строку>`;
 
 const PACKETS = [
-  {
-    id: 'NN1',
-    label: 'год становится ценой услуги + нейро-ветка без гейта строк',
-    files: 'apps/api/src/pricelist/analyzer.ts + НОВЫЙ apps/api/src/pricelist/pricelistYearPrice.test.ts. ТЫ ЕДИНСТВЕННЫЙ ВЛАДЕЛЕЦ analyzer.ts в этой волне',
-    brief: `P0, ДВЕ ЗАДАЧИ В ОДНОМ ФАЙЛЕ. Первая — выдуманная цена в подписываемом документе. Коммить их ОТДЕЛЬНО.
+	{
+		id: "NN1",
+		label: "год становится ценой услуги + нейро-ветка без гейта строк",
+		files:
+			"apps/api/src/pricelist/analyzer.ts + НОВЫЙ apps/api/src/pricelist/pricelistYearPrice.test.ts. ТЫ ЕДИНСТВЕННЫЙ ВЛАДЕЛЕЦ analyzer.ts в этой волне",
+		brief: `P0, ДВЕ ЗАДАЧИ В ОДНОМ ФАЙЛЕ. Первая — выдуманная цена в подписываемом документе. Коммить их ОТДЕЛЬНО.
 
 === ЗАДАЧА 1: ЧЕТЫРЁХЗНАЧНЫЙ ГОД ЧИТАЕТСЯ КАК ЦЕНА ===
 
@@ -114,13 +113,14 @@ responseFromItems напрямую (около analyzer.ts:1455) — БЕЗ ге
 «Коронка 12 500 руб»→12500; «Имплантация 1 200 000»→1200000; «Лечение кариеса 1500,50»→1500.50;
 «Седация 5000/120 мин кабинет 412»→5000; и три вернувшиеся строки — «Полировка одного зуба 290 руб»,
 «Полная реабилитация обеих челюстей 2 500 000 руб», «Полная реабилитация 2 000 001 руб» дают ПОЗИЦИЮ.
-Прогон: cd apps/api && node --import tsx --test src/pricelist/pricelistYearPrice.test.ts src/pricelist/pricelistRowGate.test.ts src/pricelist/pricelistKopecks.test.ts src/pricelist/analyzer.test.ts src/pricelist/pricelistLastNumber.test.ts src/pricelist/pricelistBrandDigits.test.ts src/pricelist/groqPricelistKopecks.test.ts`
-  },
-  {
-    id: 'NN2',
-    label: 'предупреждения ОТВЕТА не доезжают до экрана',
-    files: 'apps/web/src/SettingsView.tsx + apps/web/src/pricelistUiMeta.ts. ТЫ ЕДИНСТВЕННЫЙ ВЛАДЕЛЕЦ обоих',
-    brief: `P0. Разбор считает предупреждения и складывает их в ответ, а экран показывает только часть.
+Прогон: cd apps/api && node --import tsx --test src/pricelist/pricelistYearPrice.test.ts src/pricelist/pricelistRowGate.test.ts src/pricelist/pricelistKopecks.test.ts src/pricelist/analyzer.test.ts src/pricelist/pricelistLastNumber.test.ts src/pricelist/pricelistBrandDigits.test.ts src/pricelist/groqPricelistKopecks.test.ts`,
+	},
+	{
+		id: "NN2",
+		label: "предупреждения ОТВЕТА не доезжают до экрана",
+		files:
+			"apps/web/src/SettingsView.tsx + apps/web/src/pricelistUiMeta.ts. ТЫ ЕДИНСТВЕННЫЙ ВЛАДЕЛЕЦ обоих",
+		brief: `P0. Разбор считает предупреждения и складывает их в ответ, а экран показывает только часть.
 
 ИЗМЕРЕНО РЕВЬЮЕРОМ ВОЛНЫ MM И ПОДТВЕРЖДЕНО ВЕДУЩИМ. Предупреждений у прайса ДВА УРОВНЯ:
   item.warnings              — по позиции (price_not_found, category_uncertain, material_uncertain)
@@ -162,13 +162,14 @@ responseFromItems напрямую (около analyzer.ts:1455) — БЕЗ ге
 (а) прогон стража, который это как раз проверяет: npm run smoke:pricelist-analyzer > /tmp/nn2.log 2>&1; echo $?
     Он читает SettingsView.tsx и три вкладки настроек и требует локализованные подписи. Обязан остаться 0.
 (б) если снимаешь цепочку — rg -c по каждому снятому имени во всех затронутых файлах даёт 0, покажи вывод.
-(в) если рисуешь — приведи получившуюся русскую фразу для pricelist_rows_skipped:3 дословно.`
-  },
-  {
-    id: 'NN3',
-    label: '«неизвестно» превращается в ноль по всему api',
-    files: 'apps/api/src (КРОМЕ src/pricelist/** — его держит NN1) + apps/api/src/tests для доказательств',
-    brief: `P0, СИСТЕМНЫЙ. За один цикл найдено ТРИ независимых экземпляра одного дефекта, все разными людьми.
+(в) если рисуешь — приведи получившуюся русскую фразу для pricelist_rows_skipped:3 дословно.`,
+	},
+	{
+		id: "NN3",
+		label: "«неизвестно» превращается в ноль по всему api",
+		files:
+			"apps/api/src (КРОМЕ src/pricelist/** — его держит NN1) + apps/api/src/tests для доказательств",
+		brief: `P0, СИСТЕМНЫЙ. За один цикл найдено ТРИ независимых экземпляра одного дефекта, все разными людьми.
 
 ИДИОМ: \`?? 0\`, \`|| 0\`, \`Number(x) || 0\`, \`parseInt(x) || 0\` — отсутствие значения превращается в НОЛЬ,
 и дальше ноль неотличим от измеренного нуля. Три найденных экземпляра, каждый с последствием:
@@ -198,13 +199,14 @@ responseFromItems напрямую (около analyzer.ts:1455) — БЕЗ ге
 cd apps/api && node --import tsx --test src/tests/<файл> > /tmp/nn3.log 2>&1; echo $?
 И хотя бы ОДИН новый тест, который краснеет на подставленном нуле: подай на вход отсутствующее значение и
 проверь, что на выходе НЕ ноль, а null или честная надпись. Тест, который прошёл бы и до правки, не считается —
-в этой кампании такое было дважды и оба раза попало в закон.`
-  },
-  {
-    id: 'NN4',
-    label: 'стражи -source, которые не могут открыть свои же файлы',
-    files: 'ТОЛЬКО эти скрипты: scripts/smoke-dental-persistence-routes-source.mjs, scripts/smoke-telegram-control-ui-source.mjs, scripts/smoke-web-render-gating-source.mjs, scripts/smoke-workspace-shell-source.mjs, scripts/smoke-communications-view-source.mjs, scripts/smoke-finance-view-source.mjs',
-    brief: `P1, но класс тяжёлый: страж, который никогда не работал, не защищал НИЧЕГО, а в отчётах числится проверкой.
+в этой кампании такое было дважды и оба раза попало в закон.`,
+	},
+	{
+		id: "NN4",
+		label: "стражи -source, которые не могут открыть свои же файлы",
+		files:
+			"ТОЛЬКО эти скрипты: scripts/smoke-dental-persistence-routes-source.mjs, scripts/smoke-telegram-control-ui-source.mjs, scripts/smoke-web-render-gating-source.mjs, scripts/smoke-workspace-shell-source.mjs, scripts/smoke-communications-view-source.mjs, scripts/smoke-finance-view-source.mjs",
+		brief: `P1, но класс тяжёлый: страж, который никогда не работал, не защищал НИЧЕГО, а в отчётах числится проверкой.
 
 ЗАМЕР ВЕДУЩЕГО, ЦИКЛ 24, прогнаны все 41 скрипта с суффиксом -source: ЗЕЛЁНЫХ 10, КРАСНЫХ 31.
 Твои шесть — из этих 31. Два из них не могут даже открыть свои входные файлы, и это видно по пути в ошибке:
@@ -235,13 +237,14 @@ path.resolve, и первые буквы «apps» съедены. Такой с�
 
 ДОКАЗАТЬ: по каждому из шести — npm run <имя скрипта> > /tmp/nn4-<имя>.log 2>&1; echo $? до и после,
 и в отчёте таблица: скрипт | класс | код выхода до | код выхода после. Класс REAL остаётся красным законно —
-так и напиши, это не провал пакета.`
-  },
-  {
-    id: 'NN5',
-    label: 'стражи -source: вторая партия',
-    files: 'ТОЛЬКО эти скрипты: scripts/smoke-imaging-viewer-usability-source.mjs, scripts/smoke-shift-visit-usability-source.mjs, scripts/smoke-documents-view-source.mjs, scripts/smoke-settings-view-source.mjs, scripts/smoke-schedule-view-source.mjs, scripts/smoke-onboarding-configuration-source.mjs',
-    brief: `P1, тот же разбор, что у NN4, но твоя партия ИНТЕРЕСНЕЕ: у этих шести текст ошибки выглядит как настоящее
+так и напиши, это не провал пакета.`,
+	},
+	{
+		id: "NN5",
+		label: "стражи -source: вторая партия",
+		files:
+			"ТОЛЬКО эти скрипты: scripts/smoke-imaging-viewer-usability-source.mjs, scripts/smoke-shift-visit-usability-source.mjs, scripts/smoke-documents-view-source.mjs, scripts/smoke-settings-view-source.mjs, scripts/smoke-schedule-view-source.mjs, scripts/smoke-onboarding-configuration-source.mjs",
+		brief: `P1, тот же разбор, что у NN4, но твоя партия ИНТЕРЕСНЕЕ: у этих шести текст ошибки выглядит как настоящее
 продуктовое требование, а не как поломка скрипта. Значит среди них вероятны вердикты REAL, и их надо не
 чинить, а точно описать.
 
@@ -278,13 +281,15 @@ STALE покажи, ГДЕ текст лежит теперь (файл и ст�
 храповик, который падает, когда долг закрыт. Переиспользуй идиом.
 
 ДОКАЗАТЬ: таблица скрипт | класс | код выхода до | после, по каждому из шести, истинный код без конвейера:
-npm run <имя> > /tmp/nn5-<имя>.log 2>&1; echo $?`
-  },
-  {
-    id: 'NN6',
-    label: 'перепись таблиц врёт агрегатом и держит вписанные константы вместо замера',
-    files: 'ТОЛЬКО scripts/count-orphan-table-rows.mjs + .agents/archon/recon/MM4-orphan-tables/DOSSIER.md',
-    brief: `P1. Инструмент, которым принимают решение об УДАЛЕНИИ таблиц с боевыми данными, печатает как измеренное
+npm run <имя> > /tmp/nn5-<имя>.log 2>&1; echo $?`,
+	},
+	{
+		id: "NN6",
+		label:
+			"перепись таблиц врёт агрегатом и держит вписанные константы вместо замера",
+		files:
+			"ТОЛЬКО scripts/count-orphan-table-rows.mjs + .agents/archon/recon/MM4-orphan-tables/DOSSIER.md",
+		brief: `P1. Инструмент, которым принимают решение об УДАЛЕНИИ таблиц с боевыми данными, печатает как измеренное
 то, что не измерял. Обе находки — ревьюера волны MM, перепроверь их сам перед правкой.
 
 1. АГРЕГАТ ПРЕВРАЩАЕТ «НЕ ОПРЕДЕЛЯЕТСЯ» В НОЛЬ.
@@ -320,23 +325,23 @@ npm run <имя> > /tmp/nn5-<имя>.log 2>&1; echo $?`
 
 ДОКАЗАТЬ: прогон скрипта до и после с истинным кодом выхода без конвейера, и покажи ту самую итоговую строку
 до и после — она и есть предмет пакета. Плюс проверь, что страж переписи не сломан:
-node --import tsx --test scripts/smoke-schema-missing-declarations.test.mjs > /tmp/nn6.log 2>&1; echo $?`
-  }
+node --import tsx --test scripts/smoke-schema-missing-declarations.test.mjs > /tmp/nn6.log 2>&1; echo $?`,
+	},
 ];
 
-phase('Build');
+phase("Build");
 
 const done = await pipeline(
-  PACKETS,
-  (packet) =>
-    agent(
-      `${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
-      { label: `build:${packet.id}`, phase: 'Build', effort: 'high' }
-    ),
-  (buildResult, packet) => {
-    if (!buildResult) return null;
-    return agent(
-      `Ты ревьюер пакета ${packet.id} в волне NN. Проект C:\\Clinic_MVP\\dental-crm.
+	PACKETS,
+	(packet) =>
+		agent(
+			`${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
+			{ label: `build:${packet.id}`, phase: "Build", effort: "high" },
+		),
+	(buildResult, packet) => {
+		if (!buildResult) return null;
+		return agent(
+			`Ты ревьюер пакета ${packet.id} в волне NN. Проект C:\\Clinic_MVP\\dental-crm.
 Ты НЕ ПРАВИШЬ КОД. Ты пишешь ОДИН файл: .agents/archon/packets/${packet.id}/review.md, и коммитишь только его
 (ретрай вокруг git add и git commit, сообщение в файл, [ARCHON] в теме, без атрибуции инструмента,
 git log -1 --format='%(trailers)' пуст). НЕ ПУШИТЬ.
@@ -376,12 +381,14 @@ ${buildResult}
 разделом «## FOUND» — они пойдут в очередь ведущего. Коротко и по факту, без пересказа диффа.
 В прошлой волне ревьюеры нашли два P0, которых не видел никто: год как цена услуги и предупреждения ответа,
 не доезжающие до экрана. Раздел FOUND — самая ценная часть твоей работы, не оставляй его пустым из вежливости.`,
-      { label: `review:${packet.id}`, phase: 'Review', effort: 'high' }
-    );
-  }
+			{ label: `review:${packet.id}`, phase: "Review", effort: "high" },
+		);
+	},
 );
 
-log(`волна NN завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`);
+log(
+	`волна NN завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`,
+);
 
 return {
   packets: PACKETS.map((packet, index) => ({ id: packet.id, label: packet.label, review: done[index] ?? null }))

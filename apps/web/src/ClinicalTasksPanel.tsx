@@ -107,25 +107,35 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 	const auth = appLogic?.auth;
 
 	const [tasks, setTasks] = useState<ClinicalTask[] | null>(null);
-	const [customTaskTypes, setCustomTaskTypes] = useState<CustomTaskType[] | null>(null);
+	const [customTaskTypes, setCustomTaskTypes] = useState<
+		CustomTaskType[] | null
+	>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	/** Какой этап сейчас отправляем — чтобы кнопка не молчала. */
-	const [submittingPhase, setSubmittingPhase] = useState<ClinicalPhaseCode | null>(null);
+	const [submittingPhase, setSubmittingPhase] =
+		useState<ClinicalPhaseCode | null>(null);
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [actionNotice, setActionNotice] = useState<string | null>(null);
 	const [notes, setNotes] = useState("");
 
-	const loadFailureText = (status: number, serverMessage: string | null): string => {
+	const loadFailureText = (
+		status: number,
+		serverMessage: string | null,
+	): string => {
 		if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
 		if (status === 401 || status === 403)
 			return "Нет прав смотреть клинические задачи: доступ закрыт или истёк вход в программу.";
 		if (status === 404) return "Раздел клинических задач не отвечает.";
-		if (status >= 500) return "Сбой на сервере клиники: список задач не собран.";
+		if (status >= 500)
+			return "Сбой на сервере клиники: список задач не собран.";
 		return `Программа не смогла получить список задач (ответ ${status}).`;
 	};
 
-	const actionFailureText = (status: number, serverMessage: string | null): string => {
+	const actionFailureText = (
+		status: number,
+		serverMessage: string | null,
+	): string => {
 		if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
 		if (status === 401 || status === 403)
 			return "Нет прав завершать этап: доступ закрыт или истёк вход в программу.";
@@ -133,7 +143,8 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 			return "Пациент, план или врач не найдены в этой клинике — передачу не создали.";
 		if (status === 400)
 			return "Не удалось зафиксировать этап: проверьте, что пациент выбран и этап указан верно.";
-		if (status >= 500) return "Сбой на сервере клиники: передачу между этапами не записали.";
+		if (status >= 500)
+			return "Сбой на сервере клиники: передачу между этапами не записали.";
 		return `Программа не смогла зафиксировать этап (ответ ${status}).`;
 	};
 
@@ -174,7 +185,9 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 			if (!response.ok) {
 				setTasks(null);
 				const message =
-					payload && !Array.isArray(payload) && typeof payload.message === "string"
+					payload &&
+					!Array.isArray(payload) &&
+					typeof payload.message === "string"
 						? payload.message
 						: null;
 				setError(loadFailureText(response.status, message));
@@ -225,7 +238,9 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				response = await fetch("/api/clinical/phase-completions", {
 					method: "POST",
 					headers: auth
-						? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+						? auth.denteClinicalMutationHeaders({
+								"Content-Type": "application/json",
+							})
 						: { "Content-Type": "application/json" },
 					body: JSON.stringify(body),
 				});
@@ -241,17 +256,24 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				| null;
 			if (!response.ok) {
 				const message =
-					payload && typeof payload === "object" && typeof payload.message === "string"
+					payload &&
+					typeof payload === "object" &&
+					typeof payload.message === "string"
 						? payload.message
 						: null;
 				setActionError(actionFailureText(response.status, message));
 				return;
 			}
 			const createdTitle =
-				payload && typeof payload === "object" && "title" in payload && typeof payload.title === "string"
+				payload &&
+				typeof payload === "object" &&
+				"title" in payload &&
+				typeof payload.title === "string"
 					? payload.title
 					: "задача передачи";
-			setActionNotice(`Этап зафиксирован: ${createdTitle}. Следующий врач увидит её в списке задач пациента.`);
+			setActionNotice(
+				`Этап зафиксирован: ${createdTitle}. Следующий врач увидит её в списке задач пациента.`,
+			);
 			setNotes("");
 			await load();
 		} finally {
@@ -261,8 +283,12 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 
 	if (!patientId) return null;
 
-	const openTasks = (tasks ?? []).filter((task) => OPEN_STATUSES.has(task.status));
-	const closedTasks = (tasks ?? []).filter((task) => !OPEN_STATUSES.has(task.status));
+	const openTasks = (tasks ?? []).filter((task) =>
+		OPEN_STATUSES.has(task.status),
+	);
+	const closedTasks = (tasks ?? []).filter(
+		(task) => !OPEN_STATUSES.has(task.status),
+	);
 
 	return (
 		<section className="panel ops-panel" data-testid="clinical-tasks-panel">
@@ -278,17 +304,18 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 			</div>
 
 			<p className="ops-hint">
-				Когда терапевтический или хирургический этап закончен, зафиксируйте это здесь —
-				ортопед получит задачу в карте пациента. Приём, подпись и оплату закрывайте своими
-				шагами ниже.
+				Когда терапевтический или хирургический этап закончен, зафиксируйте это
+				здесь — ортопед получит задачу в карте пациента. Приём, подпись и оплату
+				закрывайте своими шагами ниже.
 			</p>
 
 			{error ? (
 				<div className="ops-notice ops-notice--error" role="alert">
 					<p>{error}</p>
 					<p>
-						Список задач передачи сейчас не виден. Пока он не открылся, передавайте
-						пациента следующему врачу устно и сверяйтесь с картой вручную.
+						Список задач передачи сейчас не виден. Пока он не открылся,
+						передавайте пациента следующему врачу устно и сверяйтесь с картой
+						вручную.
 					</p>
 					<button
 						className="secondary-button"
@@ -333,7 +360,15 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 					placeholder="Например: зубы 16 и 17 готовы к препарированию под коронки"
 					disabled={submittingPhase !== null}
 				/>
-				<div className="ops-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+				<div
+					className="ops-actions"
+					style={{
+						display: "flex",
+						flexWrap: "wrap",
+						gap: "0.5rem",
+						marginTop: "0.75rem",
+					}}
+				>
 					{PHASE_OPTIONS.map((option) => (
 						<button
 							key={option.code}
@@ -343,7 +378,9 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 							disabled={submittingPhase !== null}
 							onClick={() => void completePhase(option.code)}
 						>
-							{submittingPhase === option.code ? "Записываю…" : option.buttonLabel}
+							{submittingPhase === option.code
+								? "Записываю…"
+								: option.buttonLabel}
 						</button>
 					))}
 					{customTaskTypes?.map((type) => (
@@ -354,9 +391,13 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 							title={type.typeLabel}
 							disabled={submittingPhase !== null}
 							style={{ borderColor: type.colorHex, color: type.colorHex }}
-							onClick={() => void completePhase(type.typeCode as ClinicalPhaseCode)}
+							onClick={() =>
+								void completePhase(type.typeCode as ClinicalPhaseCode)
+							}
 						>
-							{submittingPhase === type.typeCode ? "Записываю…" : type.typeLabel}
+							{submittingPhase === type.typeCode
+								? "Записываю…"
+								: type.typeLabel}
 						</button>
 					))}
 				</div>
@@ -364,15 +405,17 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 
 			{tasks !== null && openTasks.length === 0 && !error ? (
 				<p className="ops-note">
-					Открытых задач передачи у этого пациента нет. Когда этап будет завершён
-					кнопкой выше — задача появится здесь и у следующего врача.
+					Открытых задач передачи у этого пациента нет. Когда этап будет
+					завершён кнопкой выше — задача появится здесь и у следующего врача.
 				</p>
 			) : null}
 
 			{openTasks.length > 0 ? (
 				<div className="ops-table-wrap">
 					<table className="ops-table">
-						<caption className="sr-only">Открытые задачи передачи между этапами</caption>
+						<caption className="sr-only">
+							Открытые задачи передачи между этапами
+						</caption>
 						<thead>
 							<tr>
 								<th scope="col">Задача</th>
@@ -405,7 +448,10 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 			) : null}
 
 			{closedTasks.length > 0 ? (
-				<details className="clinical-rules-toggle" style={{ marginTop: "0.75rem" }}>
+				<details
+					className="clinical-rules-toggle"
+					style={{ marginTop: "0.75rem" }}
+				>
 					<summary>Закрытые задачи ({closedTasks.length})</summary>
 					<ul className="ops-note" style={{ marginTop: "0.5rem" }}>
 						{closedTasks.map((task) => (

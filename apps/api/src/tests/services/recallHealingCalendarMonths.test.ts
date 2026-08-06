@@ -21,7 +21,8 @@ import { addCalendarMonths } from "../../services/recallScheduler.js";
  */
 
 const pad = (value: number) => String(value).padStart(2, "0");
-const asDay = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+const asDay = (date: Date) =>
+	`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
 /** Прежний расчёт — ровно то, что стояло в планировщике до починки. */
 function bySetMonth(from: Date, months: number): Date {
@@ -34,19 +35,31 @@ describe("срок приживления не перескакивает чер
 	it("31 августа + 6 месяцев (верхняя челюсть) = 28 февраля, а не 3 марта", () => {
 		const placed = new Date(2025, 7, 31, 9, 30, 0, 0);
 		assert.equal(asDay(addCalendarMonths(placed, 6)), "2026-02-28");
-		assert.equal(asDay(bySetMonth(placed, 6)), "2026-03-03", "стенд: прежний расчёт уносил в март");
+		assert.equal(
+			asDay(bySetMonth(placed, 6)),
+			"2026-03-03",
+			"стенд: прежний расчёт уносил в март",
+		);
 	});
 
 	it("31 августа + 3 месяца (нижняя челюсть) = 30 ноября, а не 1 декабря", () => {
 		const placed = new Date(2025, 7, 31, 9, 30, 0, 0);
 		assert.equal(asDay(addCalendarMonths(placed, 3)), "2025-11-30");
-		assert.equal(asDay(bySetMonth(placed, 3)), "2025-12-01", "стенд: прежний расчёт уносил в декабрь");
+		assert.equal(
+			asDay(bySetMonth(placed, 3)),
+			"2025-12-01",
+			"стенд: прежний расчёт уносил в декабрь",
+		);
 	});
 
 	it("30 ноября + 3 месяца = 28 февраля, а не 2 марта", () => {
 		const placed = new Date(2025, 10, 30, 14, 0, 0, 0);
 		assert.equal(asDay(addCalendarMonths(placed, 3)), "2026-02-28");
-		assert.equal(asDay(bySetMonth(placed, 3)), "2026-03-02", "стенд: прежний расчёт уносил в март");
+		assert.equal(
+			asDay(bySetMonth(placed, 3)),
+			"2026-03-02",
+			"стенд: прежний расчёт уносил в март",
+		);
 	});
 
 	it("31 января + 1 месяц в високосном году = 29 февраля", () => {
@@ -60,7 +73,7 @@ describe("срок приживления не перескакивает чер
 		assert.equal(
 			asDay(addCalendarMonths(placed, 3)),
 			asDay(bySetMonth(placed, 3)),
-			"на существующем числе оба расчёта обязаны совпадать — починка не сдвигает верные случаи"
+			"на существующем числе оба расчёта обязаны совпадать — починка не сдвигает верные случаи",
 		);
 	});
 
@@ -92,22 +105,32 @@ describe("срок приживления не перескакивает чер
 				assert.equal(
 					fixed.getMonth(),
 					expectedMonth,
-					`срок ушёл в чужой месяц: ${asDay(placed)} + ${months} мес -> ${asDay(fixed)}`
+					`срок ушёл в чужой месяц: ${asDay(placed)} + ${months} мес -> ${asDay(fixed)}`,
 				);
 				assert.ok(
 					legacy.getTime() >= fixed.getTime(),
-					`снос прежнего расчёта обязан быть только вперёд: ${asDay(placed)} + ${months} мес`
+					`снос прежнего расчёта обязан быть только вперёд: ${asDay(placed)} + ${months} мес`,
 				);
 				if (legacy.getTime() > fixed.getTime()) driftedForward += 1;
 			}
 		}
-		assert.ok(driftedForward > 0, "стенд: прежний расчёт обязан расходиться хотя бы где-то");
-		assert.equal(driftedForward, 12, "измерено: ровно 12 дат 2025 года уносило в чужой месяц");
+		assert.ok(
+			driftedForward > 0,
+			"стенд: прежний расчёт обязан расходиться хотя бы где-то",
+		);
+		assert.equal(
+			driftedForward,
+			12,
+			"измерено: ровно 12 дат 2025 года уносило в чужой месяц",
+		);
 	});
 
 	it("неразобранная дата плана не создаёт задачу: срок остаётся неопределённым", () => {
 		const healing = addCalendarMonths(new Date("не дата"), 6);
-		assert.ok(Number.isNaN(healing.getTime()), "срок обязан остаться Invalid Date");
+		assert.ok(
+			Number.isNaN(healing.getTime()),
+			"срок обязан остаться Invalid Date",
+		);
 		// now >= NaN всегда false, поэтому приглашение не уйдёт — отказ в пользу
 		// пациента: лучше не позвать вовремя, чем позвать до приживления.
 		assert.equal(new Date() >= healing, false);

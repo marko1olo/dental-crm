@@ -20,7 +20,10 @@ const appSource =
  */
 const patientsSource = [
 	readFileSync("apps/web/src/PatientsView.tsx", "utf8"),
-	readFileSync("apps/web/src/components/patient/PatientAdministrativeForm.tsx", "utf8"),
+	readFileSync(
+		"apps/web/src/components/patient/PatientAdministrativeForm.tsx",
+		"utf8",
+	),
 ].join("\n");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 

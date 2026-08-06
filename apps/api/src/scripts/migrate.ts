@@ -45,7 +45,7 @@
  * не может позеленеть там, где боевой запуск падает.
  */
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -140,7 +140,10 @@ function readMigrations(): MigrationFile[] {
  * комментарии И первый DDL-оператор, поэтому проверяется проекция без
  * комментариев, а не первый символ.
  */
-function statementsOf(migration: MigrationFile, noTransaction: boolean): string[] {
+function statementsOf(
+	migration: MigrationFile,
+	noTransaction: boolean,
+): string[] {
 	if (noTransaction) return splitSqlStatements(migration.sql);
 	// Файлы, сгенерированные drizzle-kit, размечены маркером statement-breakpoint.
 	// Написанные руками — обычные скрипты, их Postgres выполняет целиком.
@@ -181,8 +184,8 @@ function assertNoConcurrentInTransaction(migration: MigrationFile): void {
 	if (carriesConcurrently(migration.sql)) {
 		throw new Error(
 			`[migrate] КОНФЛИКТ: ${migration.name} содержит CONCURRENTLY, но не помечен ` +
-			`'-- no-transaction'. CREATE INDEX CONCURRENTLY нельзя использовать ` +
-			`внутри транзакции. Добавьте '-- no-transaction' в первую строку файла.`,
+				`'-- no-transaction'. CREATE INDEX CONCURRENTLY нельзя использовать ` +
+				`внутри транзакции. Добавьте '-- no-transaction' в первую строку файла.`,
 		);
 	}
 }
@@ -210,7 +213,7 @@ function assertMigrationsAreApplicable(pending: MigrationFile[]): void {
 		if (statementsOf(migration, noTx).length === 0) {
 			throw new Error(
 				`[migrate] ПУСТО: в ${migration.name} нет ни одного SQL-выражения. ` +
-				`Файл был бы отмечен применённым, не изменив базу.`,
+					`Файл был бы отмечен применённым, не изменив базу.`,
 			);
 		}
 	}
@@ -269,9 +272,7 @@ async function main(): Promise<void> {
 			assertMigrationsAreApplicable(pending);
 		} catch (error) {
 			console.error((error as Error).message);
-			console.error(
-				"[migrate] Остановлено до применения. База не изменена.",
-			);
+			console.error("[migrate] Остановлено до применения. База не изменена.");
 			process.exitCode = 1;
 			return;
 		}
@@ -333,7 +334,7 @@ async function main(): Promise<void> {
 					);
 					console.error(
 						"[migrate] Остановлено. В режиме no-transaction частично созданные " +
-						"индексы (IF NOT EXISTS) безопасны — повторный запуск продолжит.",
+							"индексы (IF NOT EXISTS) безопасны — повторный запуск продолжит.",
 					);
 					process.exitCode = 1;
 					return;

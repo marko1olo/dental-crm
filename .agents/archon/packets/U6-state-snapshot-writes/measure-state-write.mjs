@@ -27,7 +27,11 @@ function listBackupFiles(dir) {
 		.map((e) => {
 			const filePath = path.join(dir, e.name);
 			const stats = fs.statSync(filePath);
-			return { filePath, savedAt: stats.mtime.toISOString(), sizeBytes: stats.size };
+			return {
+				filePath,
+				savedAt: stats.mtime.toISOString(),
+				sizeBytes: stats.size,
+			};
 		})
 		.sort((l, r) => r.savedAt.localeCompare(l.savedAt));
 }
@@ -43,8 +47,12 @@ function timedSave(state, stateFilePath, backupDir) {
 	// rotateStateBackup()
 	if (fs.existsSync(stateFilePath)) {
 		fs.mkdirSync(backupDir, { recursive: true });
-		fs.copyFileSync(stateFilePath, path.join(backupDir, `dental-crm-state-${timestampForFileName()}.json`));
-		for (const stale of listBackupFiles(backupDir).slice(BACKUP_LIMIT)) fs.unlinkSync(stale.filePath);
+		fs.copyFileSync(
+			stateFilePath,
+			path.join(backupDir, `dental-crm-state-${timestampForFileName()}.json`),
+		);
+		for (const stale of listBackupFiles(backupDir).slice(BACKUP_LIMIT))
+			fs.unlinkSync(stale.filePath);
 	}
 	const t2 = process.hrtime.bigint();
 
@@ -63,7 +71,7 @@ function timedSave(state, stateFilePath, backupDir) {
 		prettyStringifyMs: ms(t2, t3),
 		writeRenameMs: ms(t3, t4),
 		totalMs: ms(t0, t4),
-		bytes: Buffer.byteLength(serialized, "utf8")
+		bytes: Buffer.byteLength(serialized, "utf8"),
 	};
 }
 
@@ -72,15 +80,27 @@ function summarize(label, runs) {
 	const med = (arr) => arr[Math.floor(arr.length / 2)];
 	const sum = (k) => runs.reduce((acc, r) => acc + r[k], 0);
 	console.log(`\n--- ${label} ---`);
-	console.log(`bytes written per save: ${runs[0].bytes.toLocaleString("en-US")}`);
+	console.log(
+		`bytes written per save: ${runs[0].bytes.toLocaleString("en-US")}`,
+	);
 	console.log(`runs: ${runs.length}`);
-	for (const k of ["checksumMs", "backupRotationMs", "prettyStringifyMs", "writeRenameMs", "totalMs"]) {
+	for (const k of [
+		"checksumMs",
+		"backupRotationMs",
+		"prettyStringifyMs",
+		"writeRenameMs",
+		"totalMs",
+	]) {
 		console.log(
-			`  ${k.padEnd(20)} median ${med(pick(k)).toFixed(2)} ms  min ${pick(k)[0].toFixed(2)}  max ${pick(k)[runs.length - 1].toFixed(2)}`
+			`  ${k.padEnd(20)} median ${med(pick(k)).toFixed(2)} ms  min ${pick(k)[0].toFixed(2)}  max ${pick(k)[runs.length - 1].toFixed(2)}`,
 		);
 	}
-	console.log(`  TOTAL wall clock for ${runs.length} saves: ${sum("totalMs").toFixed(2)} ms`);
-	console.log(`  TOTAL bytes for ${runs.length} saves: ${(runs[0].bytes * runs.length).toLocaleString("en-US")} (+ same again copied as backups)`);
+	console.log(
+		`  TOTAL wall clock for ${runs.length} saves: ${sum("totalMs").toFixed(2)} ms`,
+	);
+	console.log(
+		`  TOTAL bytes for ${runs.length} saves: ${(runs[0].bytes * runs.length).toLocaleString("en-US")} (+ same again copied as backups)`,
+	);
 }
 
 function collectionSizes(state) {
@@ -88,7 +108,7 @@ function collectionSizes(state) {
 		.map(([key, value]) => ({
 			key,
 			count: Array.isArray(value) ? value.length : value === null ? 0 : 1,
-			bytes: Buffer.byteLength(JSON.stringify(value) ?? "null", "utf8")
+			bytes: Buffer.byteLength(JSON.stringify(value) ?? "null", "utf8"),
 		}))
 		.sort((a, b) => b.bytes - a.bytes);
 }
@@ -103,12 +123,18 @@ function main() {
 	const state = payload.state;
 
 	console.log(`REAL state file: ${REAL_STATE_FILE}`);
-	console.log(`  on-disk bytes (pretty, indent 2): ${realBytes.toLocaleString("en-US")}`);
-	console.log(`  compact re-serialize bytes:       ${Buffer.byteLength(JSON.stringify(state), "utf8").toLocaleString("en-US")}`);
+	console.log(
+		`  on-disk bytes (pretty, indent 2): ${realBytes.toLocaleString("en-US")}`,
+	);
+	console.log(
+		`  compact re-serialize bytes:       ${Buffer.byteLength(JSON.stringify(state), "utf8").toLocaleString("en-US")}`,
+	);
 	console.log(`  savedAt: ${payload.savedAt}`);
 	console.log("\nTop collections by serialized bytes:");
 	for (const row of collectionSizes(state).slice(0, 10)) {
-		console.log(`  ${row.key.padEnd(38)} ${String(row.count).padStart(6)} items  ${row.bytes.toLocaleString("en-US").padStart(10)} bytes`);
+		console.log(
+			`  ${row.key.padEnd(38)} ${String(row.count).padStart(6)} items  ${row.bytes.toLocaleString("en-US").padStart(10)} bytes`,
+		);
 	}
 
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "dente-u6-"));
@@ -122,11 +148,21 @@ function main() {
 	// Seed the backup directory to the real steady state (30 kept backups) so the
 	// rotation cost measured is the cost the running server actually pays.
 	for (let i = 0; i < BACKUP_LIMIT; i += 1) {
-		fs.copyFileSync(REAL_STATE_FILE, path.join(caseABackups, `dental-crm-state-seed-${String(i).padStart(3, "0")}.json`));
+		fs.copyFileSync(
+			REAL_STATE_FILE,
+			path.join(
+				caseABackups,
+				`dental-crm-state-seed-${String(i).padStart(3, "0")}.json`,
+			),
+		);
 	}
 	const runsA = [];
-	for (let i = 0; i < ITERATIONS; i += 1) runsA.push(timedSave(state, caseAFile, caseABackups));
-	summarize(`CASE A: current database (${state.patients?.length ?? 0} patients)`, runsA);
+	for (let i = 0; i < ITERATIONS; i += 1)
+		runsA.push(timedSave(state, caseAFile, caseABackups));
+	summarize(
+		`CASE A: current database (${state.patients?.length ?? 0} patients)`,
+		runsA,
+	);
 
 	// Case B: synthetic 10,000-patient clinic. Patients cloned from REAL records with
 	// fresh ids, so per-record shape and Cyrillic payload are realistic. Other
@@ -148,10 +184,17 @@ function main() {
 		// First save creates the file; then seed backups at the scaled size.
 		timedSave(bigState, caseBFile, caseBBackups);
 		for (let i = 0; i < BACKUP_LIMIT; i += 1) {
-			fs.copyFileSync(caseBFile, path.join(caseBBackups, `dental-crm-state-seed-${String(i).padStart(3, "0")}.json`));
+			fs.copyFileSync(
+				caseBFile,
+				path.join(
+					caseBBackups,
+					`dental-crm-state-seed-${String(i).padStart(3, "0")}.json`,
+				),
+			);
 		}
 		const runsB = [];
-		for (let i = 0; i < ITERATIONS; i += 1) runsB.push(timedSave(bigState, caseBFile, caseBBackups));
+		for (let i = 0; i < ITERATIONS; i += 1)
+			runsB.push(timedSave(bigState, caseBFile, caseBBackups));
 		summarize("CASE B: synthetic 10,000 patients (cloned real records)", runsB);
 	}
 

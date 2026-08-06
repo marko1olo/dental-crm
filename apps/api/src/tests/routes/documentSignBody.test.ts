@@ -58,8 +58,7 @@ describe("подпись документа — Zod body (null → 400, не 500
 		};
 		if (opts.withAuth !== false) {
 			headers["x-dente-staff-token"] = staffToken;
-			headers["content-type"] =
-				headers["content-type"] ?? "application/json";
+			headers["content-type"] = headers["content-type"] ?? "application/json";
 		}
 		const injectOpts: {
 			method: "POST";
@@ -100,8 +99,7 @@ describe("подпись документа — Zod body (null → 400, не 500
 		};
 		if (opts.withAuth !== false) {
 			headers["x-dente-staff-token"] = staffToken;
-			headers["content-type"] =
-				headers["content-type"] ?? "application/json";
+			headers["content-type"] = headers["content-type"] ?? "application/json";
 		}
 		const injectOpts: {
 			method: "POST";
@@ -259,10 +257,7 @@ describe("подпись документа — Zod body (null → 400, не 500
 			`JSON null body дал HTTP ${nullBody.statusCode}: ${nullBody.body}`,
 		);
 		assert.equal(nullBody.json.error, "ValidationError");
-		assert.equal(
-			nullBody.json.message,
-			"ID and pkcs7Signature are required",
-		);
+		assert.equal(nullBody.json.message, "ID and pkcs7Signature are required");
 	});
 
 	test("sign empty/null body → 400 ID and signatureSvg are required", async () => {

@@ -50,21 +50,33 @@ test("перепись видит РОВНО те модули db/*Query.ts, ч�
 	assert.ok(onDisk.length > 0, "модулей *Query.ts на диске не осталось совсем");
 	assert.deepEqual([...census.report.map((r) => r.module)].sort(), onDisk);
 	assert.equal(census.totalModules, census.report.length);
-	assert.ok(census.tablesInSchema > 100, `таблиц найдено ${census.tablesInSchema}`);
+	assert.ok(
+		census.tablesInSchema > 100,
+		`таблиц найдено ${census.tablesInSchema}`,
+	);
 });
 
 test("auditQuery НЕ пустотелый: имя файла не равно имени таблицы", () => {
 	const audit = byModule.get("auditQuery");
 	assert.ok(audit, "auditQuery отсутствует в переписи");
-	assert.ok(audit.importedTables.includes("auditEvents"), `таблицы: ${audit.importedTables}`);
+	assert.ok(
+		audit.importedTables.includes("auditEvents"),
+		`таблицы: ${audit.importedTables}`,
+	);
 	const events = audit.perTable.find((t) => t.table === "auditEvents");
 	assert.ok(events, "таблица auditEvents не попала в вердикт");
-	assert.ok(events.runtimeWriters > 0, `писателей auditEvents: ${events.runtimeWriters}`);
+	assert.ok(
+		events.runtimeWriters > 0,
+		`писателей auditEvents: ${events.runtimeWriters}`,
+	);
 	assert.equal(audit.verdict, "ЖИВОЙ");
 });
 
 test("динамический await import учтён как настоящий потребитель", () => {
-	const dynamicOnly = ["patientServiceLineagesQuery", "prodoctorovSyncExportsQuery"];
+	const dynamicOnly = [
+		"patientServiceLineagesQuery",
+		"prodoctorovSyncExportsQuery",
+	];
 	for (const name of dynamicOnly) {
 		const entry = byModule.get(name);
 		if (!entry) continue; // модуль мог быть уже удалён — тогда проверять нечего
@@ -77,12 +89,23 @@ test("динамический await import учтён как настоящий
 
 test("пустотелый вердикт означает ноль писателей у КАЖДОЙ читаемой таблицы", () => {
 	const hollow = census.report.filter((r) => r.verdict === "ПУСТОТЕЛЫЙ");
-	assert.ok(hollow.length > 0, "пустотелых не найдено — перепись сломана либо всё вычищено");
+	assert.ok(
+		hollow.length > 0,
+		"пустотелых не найдено — перепись сломана либо всё вычищено",
+	);
 	for (const entry of hollow) {
 		assert.ok(entry.perTable.length > 0, `${entry.module}: вердикт без таблиц`);
 		for (const t of entry.perTable) {
-			assert.equal(t.runtimeWriters, 0, `${entry.module}.${t.table} писателей ${t.runtimeWriters}`);
-			assert.equal(t.migrationSeeds, 0, `${entry.module}.${t.table} наполняется миграцией`);
+			assert.equal(
+				t.runtimeWriters,
+				0,
+				`${entry.module}.${t.table} писателей ${t.runtimeWriters}`,
+			);
+			assert.equal(
+				t.migrationSeeds,
+				0,
+				`${entry.module}.${t.table} наполняется миграцией`,
+			);
 		}
 	}
 });
@@ -94,7 +117,10 @@ test("смешанный вердикт: живая таблица рядом с
 			entry.perTable.some((t) => t.runtimeWriters > 0),
 			`${entry.module}: смешанный без единой живой таблицы`,
 		);
-		assert.ok(entry.deadTables.length > 0, `${entry.module}: смешанный без мёртвой таблицы`);
+		assert.ok(
+			entry.deadTables.length > 0,
+			`${entry.module}: смешанный без мёртвой таблицы`,
+		);
 	}
 });
 
@@ -103,6 +129,9 @@ test("каждый путь потребителя существует на д�
 		for (const importer of entry.importers) {
 			assert.ok(existsSync(join(REPO_ROOT, importer)), `нет файла ${importer}`);
 		}
-		assert.ok(existsSync(join(REPO_ROOT, entry.path)), `нет файла ${entry.path}`);
+		assert.ok(
+			existsSync(join(REPO_ROOT, entry.path)),
+			`нет файла ${entry.path}`,
+		);
 	}
 });

@@ -55,7 +55,10 @@ const SETTINGS_STORE_PATH = join(webSrcRoot, "store", "settingsStore.ts");
  * Мёртвые имена, известные на день постановки стража, с причиной по каждому.
  * Вычеркивать по мере починки; добавлять — только вместе с причиной.
  */
-const DANGLING_BACKLOG: ReadonlyArray<{ readonly name: string; readonly reason: string }> = [
+const DANGLING_BACKLOG: ReadonlyArray<{
+	readonly name: string;
+	readonly reason: string;
+}> = [
 	{
 		name: "setSelectedPatientId",
 		reason:
@@ -70,23 +73,28 @@ const DANGLING_BACKLOG: ReadonlyArray<{ readonly name: string; readonly reason: 
 	},
 	{
 		name: "scheduleDateFilter",
-		reason: "деструктурируется и не используется в App.tsx ни разу — мёртвая строка деструктуризации",
+		reason:
+			"деструктурируется и не используется в App.tsx ни разу — мёртвая строка деструктуризации",
 	},
 	{
 		name: "applyProtocolTemplateDirectly",
-		reason: "деструктурируется и не используется в App.tsx ни разу — мёртвая строка деструктуризации",
+		reason:
+			"деструктурируется и не используется в App.tsx ни разу — мёртвая строка деструктуризации",
 	},
 	{
 		name: "speechLiveRms",
-		reason: "деструктурируется и не используется в App.tsx ни разу — мёртвая строка деструктуризации",
+		reason:
+			"деструктурируется и не используется в App.tsx ни разу — мёртвая строка деструктуризации",
 	},
 	{
 		name: "polishingField",
-		reason: "App.tsx:3938 — проп дочернего компонента, уходит undefined: починка правит useAppLogic.tsx",
+		reason:
+			"App.tsx:3938 — проп дочернего компонента, уходит undefined: починка правит useAppLogic.tsx",
 	},
 	{
 		name: "polishSingleField",
-		reason: "App.tsx:3939 — проп дочернего компонента, уходит undefined: починка правит useAppLogic.tsx",
+		reason:
+			"App.tsx:3939 — проп дочернего компонента, уходит undefined: починка правит useAppLogic.tsx",
 	},
 	{
 		name: "speechTranscriptionBusy",
@@ -128,8 +136,10 @@ function walk(node: unknown, visit: (node: BabelNode) => void): void {
 function propertyName(property: BabelNode): string | null {
 	const key = property.key as BabelNode | undefined;
 	if (!key) return null;
-	if (key.type === "Identifier" && typeof key.name === "string") return key.name;
-	if (key.type === "StringLiteral" && typeof key.value === "string") return key.value;
+	if (key.type === "Identifier" && typeof key.name === "string")
+		return key.name;
+	if (key.type === "StringLiteral" && typeof key.value === "string")
+		return key.value;
 	return null;
 }
 
@@ -142,10 +152,15 @@ interface ObjectShape {
 function shapeOfObjectExpression(objectExpression: BabelNode): ObjectShape {
 	const keys = new Set<string>();
 	const spreads: string[] = [];
-	for (const property of (objectExpression.properties as BabelNode[] | undefined) ?? []) {
+	for (const property of (objectExpression.properties as
+		| BabelNode[]
+		| undefined) ?? []) {
 		if (property.type === "SpreadElement") {
 			const argument = property.argument as BabelNode | undefined;
-			if (argument?.type === "Identifier" && typeof argument.name === "string") {
+			if (
+				argument?.type === "Identifier" &&
+				typeof argument.name === "string"
+			) {
 				spreads.push(argument.name);
 			} else {
 				spreads.push("<не идентификатор>");
@@ -163,7 +178,10 @@ function shapeOfObjectExpression(objectExpression: BabelNode): ObjectShape {
  * возврат самой функции: вложенные функции обходятся, но их возвраты в набор не
  * попадают, иначе внутренний хелпер подарил бы наружу чужие имена.
  */
-function returnedObjectShape(filePath: string, functionName: string): ObjectShape {
+function returnedObjectShape(
+	filePath: string,
+	functionName: string,
+): ObjectShape {
 	const ast = parseFile(filePath);
 	let target: BabelNode | null = null;
 	walk(ast, (node) => {
@@ -171,15 +189,22 @@ function returnedObjectShape(filePath: string, functionName: string): ObjectShap
 		const id = node.id as BabelNode | undefined;
 		if (id?.type === "Identifier" && id.name === functionName) target = node;
 	});
-	assert.ok(target, `Функция ${functionName} не найдена в ${filePath} — страж потерял цель разбора`);
+	assert.ok(
+		target,
+		`Функция ${functionName} не найдена в ${filePath} — страж потерял цель разбора`,
+	);
 	const body = (target as BabelNode).body as BabelNode;
 	let shape: ObjectShape | null = null;
 	for (const statement of (body.body as BabelNode[] | undefined) ?? []) {
 		if (statement.type !== "ReturnStatement") continue;
 		const argument = statement.argument as BabelNode | undefined;
-		if (argument?.type === "ObjectExpression") shape = shapeOfObjectExpression(argument);
+		if (argument?.type === "ObjectExpression")
+			shape = shapeOfObjectExpression(argument);
 	}
-	assert.ok(shape, `У ${functionName} в ${filePath} нет возврата объектным литералом`);
+	assert.ok(
+		shape,
+		`У ${functionName} в ${filePath} нет возврата объектным литералом`,
+	);
 	return shape as ObjectShape;
 }
 
@@ -194,7 +219,10 @@ function settingsStoreKeys(): ReadonlySet<string> {
 		const id = node.id as BabelNode | undefined;
 		if (id?.type !== "Identifier") return;
 		const init = node.init as BabelNode | undefined;
-		if (id.name === "initialSettingsState" && init?.type === "ObjectExpression") {
+		if (
+			id.name === "initialSettingsState" &&
+			init?.type === "ObjectExpression"
+		) {
 			sawInitialState = true;
 			for (const key of shapeOfObjectExpression(init).keys) keys.add(key);
 			return;
@@ -208,8 +236,14 @@ function settingsStoreKeys(): ReadonlySet<string> {
 			for (const key of shape.keys) keys.add(key);
 		});
 	});
-	assert.ok(sawInitialState, "В settingsStore.ts не найдено initialSettingsState — страж потерял источник состояния");
-	assert.ok(sawStoreFactory, "В settingsStore.ts не найден объект действий create() — страж потерял источник действий");
+	assert.ok(
+		sawInitialState,
+		"В settingsStore.ts не найдено initialSettingsState — страж потерял источник состояния",
+	);
+	assert.ok(
+		sawStoreFactory,
+		"В settingsStore.ts не найден объект действий create() — страж потерял источник действий",
+	);
 	return keys;
 }
 
@@ -224,9 +258,14 @@ function namesConsumedByApp(): ReadonlySet<string> {
 		const id = node.id as BabelNode | undefined;
 		if (id?.type === "ObjectPattern") pattern = id;
 	});
-	assert.ok(pattern, "В App.tsx не найдена деструктуризация appLogicValue — страж потерял цель разбора");
+	assert.ok(
+		pattern,
+		"В App.tsx не найдена деструктуризация appLogicValue — страж потерял цель разбора",
+	);
 	const names = new Set<string>();
-	for (const property of ((pattern as BabelNode).properties as BabelNode[] | undefined) ?? []) {
+	for (const property of ((pattern as BabelNode).properties as
+		| BabelNode[]
+		| undefined) ?? []) {
 		if (property.type !== "ObjectProperty") continue;
 		const name = propertyName(property);
 		if (name) names.add(name);
@@ -250,10 +289,19 @@ function producedNames(): ReadonlySet<string> {
 			"RESOLVED_TELEGRAM_SPREADS",
 	);
 	const auth = returnedObjectShape(AUTH_PATH, "useAuthLogic");
-	assert.deepEqual(auth.spreads, [], "В return useAuthLogic появилось подмешивание — разберите его источник");
+	assert.deepEqual(
+		auth.spreads,
+		[],
+		"В return useAuthLogic появилось подмешивание — разберите его источник",
+	);
 
 	const produced = new Set<string>();
-	for (const source of [logic.keys, telegram.keys, auth.keys, settingsStoreKeys()]) {
+	for (const source of [
+		logic.keys,
+		telegram.keys,
+		auth.keys,
+		settingsStoreKeys(),
+	]) {
 		for (const key of source) produced.add(key);
 	}
 	return produced;
@@ -262,8 +310,14 @@ function producedNames(): ReadonlySet<string> {
 test("общая логика отдаёт каждое имя, которое достаёт App.tsx", () => {
 	const consumed = namesConsumedByApp();
 	const produced = producedNames();
-	assert.ok(consumed.size > 500, `Деструктуризация appLogicValue выродилась: имён ${consumed.size}`);
-	assert.ok(produced.size > 500, `Набор отдаваемых имён выродился: имён ${produced.size}`);
+	assert.ok(
+		consumed.size > 500,
+		`Деструктуризация appLogicValue выродилась: имён ${consumed.size}`,
+	);
+	assert.ok(
+		produced.size > 500,
+		`Набор отдаваемых имён выродился: имён ${produced.size}`,
+	);
 
 	const dangling = [...consumed].filter((name) => !produced.has(name)).sort();
 	const expected = DANGLING_BACKLOG.map((entry) => entry.name).sort();
@@ -276,7 +330,10 @@ test("общая логика отдаёт каждое имя, которое �
 			`Новое имя = кнопка, которая упадёт TypeError при нажатии. Починенное имя вычеркните из DANGLING_BACKLOG.`,
 	);
 	for (const entry of DANGLING_BACKLOG) {
-		assert.ok(entry.reason.trim().length > 40, `Запись долга ${entry.name} без внятной причины`);
+		assert.ok(
+			entry.reason.trim().length > 40,
+			`Запись долга ${entry.name} без внятной причины`,
+		);
 	}
 });
 
@@ -287,10 +344,18 @@ test("мастер первого запуска не зовёт ни одног
 		line.includes("if (!onboardingDismissed && !isLocalOnboardingDismissed) {"),
 	);
 	const closeIndex = lines.findIndex(
-		(line, index) => index > openIndex && line.includes("if (accessUnlockRequired && !dashboard) {"),
+		(line, index) =>
+			index > openIndex &&
+			line.includes("if (accessUnlockRequired && !dashboard) {"),
 	);
-	assert.ok(openIndex >= 0, "В App.tsx не найден гейт мастера первого запуска — страж потерял границу блока");
-	assert.ok(closeIndex > openIndex, "В App.tsx не найдена граница после мастера первого запуска");
+	assert.ok(
+		openIndex >= 0,
+		"В App.tsx не найден гейт мастера первого запуска — страж потерял границу блока",
+	);
+	assert.ok(
+		closeIndex > openIndex,
+		"В App.tsx не найдена граница после мастера первого запуска",
+	);
 
 	const wizard = lines.slice(openIndex, closeIndex);
 	const consumed = namesConsumedByApp();
@@ -317,7 +382,12 @@ test("мастер первого запуска не зовёт ни одног
 			hits.join("\n"),
 	);
 
-	for (const handler of ["continueOnboardingInDraftMode", "moveOnboardingTo", "addStaffMember", "addChair"]) {
+	for (const handler of [
+		"continueOnboardingInDraftMode",
+		"moveOnboardingTo",
+		"addStaffMember",
+		"addChair",
+	]) {
 		assert.ok(
 			produced.has(handler),
 			`Мастер первого запуска опирается на ${handler}, а общая логика его больше не отдаёт`,

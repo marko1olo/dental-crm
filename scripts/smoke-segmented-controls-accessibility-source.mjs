@@ -95,10 +95,19 @@ const appSource = [
  */
 const settingsSource = [
 	readFileSync("apps/web/src/SettingsView.tsx", "utf8"),
-	readFileSync("apps/web/src/components/settings/SettingsClinicTab.tsx", "utf8"),
-	readFileSync("apps/web/src/components/settings/SettingsPricesTab.tsx", "utf8"),
+	readFileSync(
+		"apps/web/src/components/settings/SettingsClinicTab.tsx",
+		"utf8",
+	),
+	readFileSync(
+		"apps/web/src/components/settings/SettingsPricesTab.tsx",
+		"utf8",
+	),
 	readFileSync("apps/web/src/components/settings/SettingsAiTab.tsx", "utf8"),
-	readFileSync("apps/web/src/components/settings/SettingsImportsTab.tsx", "utf8"),
+	readFileSync(
+		"apps/web/src/components/settings/SettingsImportsTab.tsx",
+		"utf8",
+	),
 ]
 	.map(codeOnly)
 	.join("\n");
@@ -411,7 +420,9 @@ requireIn(
 // Имя переменной цикла в продукте сменилось на `key` — образец не пиннит его.
 requirePattern(
 	settingsSource,
-	new RegExp(`${SELECTED_STATE_ATTRIBUTES}=\\{\\s*pricelistSourceKind === \\w+\\s*\\}`),
+	new RegExp(
+		`${SELECTED_STATE_ATTRIBUTES}=\\{\\s*pricelistSourceKind === \\w+\\s*\\}`,
+	),
 	"Settings price source picker must expose selected state.",
 );
 requirePattern(

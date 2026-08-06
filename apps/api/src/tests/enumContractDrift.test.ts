@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import * as drizzleSchema from "../db/schema.js";
 
@@ -82,7 +82,12 @@ import * as drizzleSchema from "../db/schema.js";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(here, "../../../..");
 const databaseModulesDir = path.resolve(here, "../db");
-const contractSourceDir = path.join(repositoryRoot, "packages", "shared", "src");
+const contractSourceDir = path.join(
+	repositoryRoot,
+	"packages",
+	"shared",
+	"src",
+);
 const contractDistDir = path.join(repositoryRoot, "packages", "shared", "dist");
 
 /* ------------------------------------------------------------------ *
@@ -121,11 +126,21 @@ type ModuleRecord = {
 	readonly module: string;
 	readonly parsed: ts.SourceFile;
 	readonly declarations: ReadonlyMap<string, ts.Expression>;
-	readonly imports: ReadonlyMap<string, { readonly module: string; readonly name: string }>;
+	readonly imports: ReadonlyMap<
+		string,
+		{ readonly module: string; readonly name: string }
+	>;
 	readonly starExports: readonly string[];
-	readonly namedReExports: readonly { exported: string; local: string; module: string }[];
+	readonly namedReExports: readonly {
+		exported: string;
+		local: string;
+		module: string;
+	}[];
 	readonly localExports: readonly { exported: string; local: string }[];
-	readonly exportedDeclarations: readonly { name: string; initializer: ts.Expression }[];
+	readonly exportedDeclarations: readonly {
+		name: string;
+		initializer: ts.Expression;
+	}[];
 	/** Развёрнутые инициализаторы экспортов — чтобы не считать их безымянными. */
 	readonly exportedInitializers: ReadonlySet<ts.Node>;
 };
@@ -149,7 +164,10 @@ function unwrapModifiers(expression: ts.Expression): ts.Expression {
 		if (
 			ts.isCallExpression(current) &&
 			ts.isPropertyAccessExpression(current.expression) &&
-			!(ts.isIdentifier(current.expression.expression) && current.expression.expression.text === "z")
+			!(
+				ts.isIdentifier(current.expression.expression) &&
+				current.expression.expression.text === "z"
+			)
 		) {
 			current = current.expression.expression;
 			continue;
@@ -171,18 +189,32 @@ function zodFactory(expression: ts.Expression): string | null {
 	if (!ts.isCallExpression(expression)) return null;
 	const callee = expression.expression;
 	if (!ts.isPropertyAccessExpression(callee)) return null;
-	if (!ts.isIdentifier(callee.expression) || callee.expression.text !== "z") return null;
+	if (!ts.isIdentifier(callee.expression) || callee.expression.text !== "z")
+		return null;
 	return callee.name.text;
 }
 
-function parseModule(module: string, source: string, moduleExtension: string, scriptKind: ts.ScriptKind): ModuleRecord {
-	const parsed = ts.createSourceFile(module, source, ts.ScriptTarget.Latest, /* setParentNodes */ true, scriptKind);
+function parseModule(
+	module: string,
+	source: string,
+	moduleExtension: string,
+	scriptKind: ts.ScriptKind,
+): ModuleRecord {
+	const parsed = ts.createSourceFile(
+		module,
+		source,
+		ts.ScriptTarget.Latest,
+		/* setParentNodes */ true,
+		scriptKind,
+	);
 	const declarations = new Map<string, ts.Expression>();
 	const imports = new Map<string, { module: string; name: string }>();
 	const starExports: string[] = [];
-	const namedReExports: { exported: string; local: string; module: string }[] = [];
+	const namedReExports: { exported: string; local: string; module: string }[] =
+		[];
 	const localExports: { exported: string; local: string }[] = [];
-	const exportedDeclarations: { name: string; initializer: ts.Expression }[] = [];
+	const exportedDeclarations: { name: string; initializer: ts.Expression }[] =
+		[];
 	const exportedInitializers = new Set<ts.Node>();
 
 	// Специфик модуля в исходнике на TypeScript указывает на ".js" (правило ESM),
@@ -190,35 +222,58 @@ function parseModule(module: string, source: string, moduleExtension: string, sc
 	const resolveSpecifier = (specifier: string): string | null => {
 		if (!specifier.startsWith(".")) return null;
 		const target = specifier.replace(/\.js$/, moduleExtension);
-		return path.normalize(path.join(path.dirname(module), target)).split(path.sep).join("/");
+		return path
+			.normalize(path.join(path.dirname(module), target))
+			.split(path.sep)
+			.join("/");
 	};
 
 	for (const statement of parsed.statements) {
 		if (ts.isVariableStatement(statement)) {
-			const exported = statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword);
+			const exported = statement.modifiers?.some(
+				(modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+			);
 			for (const declaration of statement.declarationList.declarations) {
-				if (!ts.isIdentifier(declaration.name) || declaration.initializer === undefined) continue;
+				if (
+					!ts.isIdentifier(declaration.name) ||
+					declaration.initializer === undefined
+				)
+					continue;
 				declarations.set(declaration.name.text, declaration.initializer);
 				if (exported === true) {
-					exportedDeclarations.push({ name: declaration.name.text, initializer: declaration.initializer });
+					exportedDeclarations.push({
+						name: declaration.name.text,
+						initializer: declaration.initializer,
+					});
 					exportedInitializers.add(unwrapModifiers(declaration.initializer));
 				}
 			}
 			continue;
 		}
-		if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)) {
+		if (
+			ts.isImportDeclaration(statement) &&
+			ts.isStringLiteral(statement.moduleSpecifier)
+		) {
 			const target = resolveSpecifier(statement.moduleSpecifier.text);
 			const bindings = statement.importClause?.namedBindings;
-			if (target !== null && bindings !== undefined && ts.isNamedImports(bindings)) {
+			if (
+				target !== null &&
+				bindings !== undefined &&
+				ts.isNamedImports(bindings)
+			) {
 				for (const element of bindings.elements) {
-					imports.set(element.name.text, { module: target, name: (element.propertyName ?? element.name).text });
+					imports.set(element.name.text, {
+						module: target,
+						name: (element.propertyName ?? element.name).text,
+					});
 				}
 			}
 			continue;
 		}
 		if (ts.isExportDeclaration(statement)) {
 			const target =
-				statement.moduleSpecifier !== undefined && ts.isStringLiteral(statement.moduleSpecifier)
+				statement.moduleSpecifier !== undefined &&
+				ts.isStringLiteral(statement.moduleSpecifier)
 					? resolveSpecifier(statement.moduleSpecifier.text)
 					: null;
 			if (statement.exportClause === undefined) {
@@ -228,7 +283,12 @@ function parseModule(module: string, source: string, moduleExtension: string, sc
 			if (!ts.isNamedExports(statement.exportClause)) continue;
 			for (const element of statement.exportClause.elements) {
 				const local = (element.propertyName ?? element.name).text;
-				if (target !== null) namedReExports.push({ exported: element.name.text, local, module: target });
+				if (target !== null)
+					namedReExports.push({
+						exported: element.name.text,
+						local,
+						module: target,
+					});
 				else localExports.push({ exported: element.name.text, local });
 			}
 		}
@@ -257,7 +317,12 @@ function createModuleGraph(options: {
 		load: (module: string): ModuleRecord => {
 			const cached = cache.get(module);
 			if (cached !== undefined) return cached;
-			const record = parseModule(module, options.read(module), options.moduleExtension, options.scriptKind);
+			const record = parseModule(
+				module,
+				options.read(module),
+				options.moduleExtension,
+				options.scriptKind,
+			);
 			cache.set(module, record);
 			return record;
 		},
@@ -292,7 +357,8 @@ function resolveEnumValues(
 ): readonly string[] | null {
 	const node = unwrapModifiers(expression);
 
-	if (ts.isIdentifier(node)) return resolveIdentifier(graph, module, node.text, seen);
+	if (ts.isIdentifier(node))
+		return resolveIdentifier(graph, module, node.text, seen);
 
 	if (ts.isArrayLiteralExpression(node)) {
 		const values: string[] = [];
@@ -302,7 +368,12 @@ function resolveEnumValues(
 				continue;
 			}
 			if (ts.isSpreadElement(element)) {
-				const spread = resolveEnumValues(graph, module, element.expression, new Set(seen));
+				const spread = resolveEnumValues(
+					graph,
+					module,
+					element.expression,
+					new Set(seen),
+				);
 				if (spread === null) return null;
 				values.push(...spread);
 				continue;
@@ -315,16 +386,22 @@ function resolveEnumValues(
 	const factory = zodFactory(node);
 	if (factory === "enum") {
 		const argument = (node as ts.CallExpression).arguments[0];
-		return argument === undefined ? null : resolveEnumValues(graph, module, argument, seen);
+		return argument === undefined
+			? null
+			: resolveEnumValues(graph, module, argument, seen);
 	}
 	if (factory === "literal") {
 		const argument = (node as ts.CallExpression).arguments[0];
-		return argument !== undefined && ts.isStringLiteralLike(argument) ? [argument.text] : null;
+		return argument !== undefined && ts.isStringLiteralLike(argument)
+			? [argument.text]
+			: null;
 	}
 	if (factory === "union") {
 		const argument = (node as ts.CallExpression).arguments[0];
-		const members = argument === undefined ? undefined : unwrapModifiers(argument);
-		if (members === undefined || !ts.isArrayLiteralExpression(members)) return null;
+		const members =
+			argument === undefined ? undefined : unwrapModifiers(argument);
+		if (members === undefined || !ts.isArrayLiteralExpression(members))
+			return null;
 		const values: string[] = [];
 		for (const member of members.elements) {
 			const resolved = resolveEnumValues(graph, module, member, new Set(seen));
@@ -335,11 +412,17 @@ function resolveEnumValues(
 	}
 	if (factory === "nativeEnum") {
 		const argument = (node as ts.CallExpression).arguments[0];
-		const members = argument === undefined ? undefined : unwrapModifiers(argument);
-		if (members === undefined || !ts.isObjectLiteralExpression(members)) return null;
+		const members =
+			argument === undefined ? undefined : unwrapModifiers(argument);
+		if (members === undefined || !ts.isObjectLiteralExpression(members))
+			return null;
 		const values: string[] = [];
 		for (const property of members.properties) {
-			if (!ts.isPropertyAssignment(property) || !ts.isStringLiteralLike(property.initializer)) return null;
+			if (
+				!ts.isPropertyAssignment(property) ||
+				!ts.isStringLiteralLike(property.initializer)
+			)
+				return null;
 			values.push(property.initializer.text);
 		}
 		return values.length > 0 ? values : null;
@@ -361,7 +444,12 @@ function resolveIdentifier(
 	if (local !== undefined) return resolveEnumValues(graph, module, local, seen);
 	const imported = module.imports.get(name);
 	if (imported === undefined) return null;
-	return resolveIdentifier(graph, graph.load(imported.module), imported.name, seen);
+	return resolveIdentifier(
+		graph,
+		graph.load(imported.module),
+		imported.name,
+		seen,
+	);
 }
 
 /**
@@ -386,40 +474,72 @@ function enumCensus(graph: ModuleGraph, entry: string): EnumCensus {
 		visited.push(module);
 		const record = graph.load(module);
 
-		const record$ = (name: string, initializer: ts.Expression, values: readonly string[] | null): void => {
+		const record$ = (
+			name: string,
+			initializer: ts.Expression,
+			values: readonly string[] | null,
+		): void => {
 			if (values === null || named.has(name)) return;
 			named.set(name, {
 				values,
 				module,
-				line: record.parsed.getLineAndCharacterOfPosition(initializer.getStart(record.parsed)).line + 1,
+				line:
+					record.parsed.getLineAndCharacterOfPosition(
+						initializer.getStart(record.parsed),
+					).line + 1,
 			});
 		};
 
 		for (const declaration of record.exportedDeclarations) {
-			record$(declaration.name, declaration.initializer, resolveEnumValues(graph, record, declaration.initializer, new Set()));
+			record$(
+				declaration.name,
+				declaration.initializer,
+				resolveEnumValues(graph, record, declaration.initializer, new Set()),
+			);
 		}
 		for (const entryPoint of record.localExports) {
 			const initializer = record.declarations.get(entryPoint.local);
 			if (initializer === undefined) continue;
-			record$(entryPoint.exported, initializer, resolveEnumValues(graph, record, initializer, new Set()));
+			record$(
+				entryPoint.exported,
+				initializer,
+				resolveEnumValues(graph, record, initializer, new Set()),
+			);
 		}
 		for (const reExport of record.namedReExports) {
 			const target = graph.load(reExport.module);
 			const initializer = target.declarations.get(reExport.local);
 			if (initializer === undefined) continue;
-			record$(reExport.exported, initializer, resolveIdentifier(graph, target, reExport.local, new Set()));
+			record$(
+				reExport.exported,
+				initializer,
+				resolveIdentifier(graph, target, reExport.local, new Set()),
+			);
 		}
 
 		const collectInline = (node: ts.Node): void => {
-			if (ts.isCallExpression(node) && zodFactory(node) === "enum" && !record.exportedInitializers.has(node)) {
+			if (
+				ts.isCallExpression(node) &&
+				zodFactory(node) === "enum" &&
+				!record.exportedInitializers.has(node)
+			) {
 				const argument = node.arguments[0];
-				const values = argument === undefined ? null : resolveEnumValues(graph, record, argument, new Set());
+				const values =
+					argument === undefined
+						? null
+						: resolveEnumValues(graph, record, argument, new Set());
 				if (values !== null) {
 					const parent = node.parent;
 					inline.push({
 						module,
-						line: record.parsed.getLineAndCharacterOfPosition(node.getStart(record.parsed)).line + 1,
-						property: ts.isPropertyAssignment(parent) && ts.isIdentifier(parent.name) ? parent.name.text : "",
+						line:
+							record.parsed.getLineAndCharacterOfPosition(
+								node.getStart(record.parsed),
+							).line + 1,
+						property:
+							ts.isPropertyAssignment(parent) && ts.isIdentifier(parent.name)
+								? parent.name.text
+								: "",
 						values,
 					});
 				}
@@ -445,7 +565,8 @@ let contractSourceCache: EnumCensus | null = null;
 function contractSourceCensus(): EnumCensus {
 	if (contractSourceCache !== null) return contractSourceCache;
 	const graph = createModuleGraph({
-		read: (module) => readFileSync(path.join(contractSourceDir, ...module.split("/")), "utf8"),
+		read: (module) =>
+			readFileSync(path.join(contractSourceDir, ...module.split("/")), "utf8"),
 		moduleExtension: ".ts",
 		scriptKind: ts.ScriptKind.TS,
 	});
@@ -457,7 +578,8 @@ function contractSourceCensus(): EnumCensus {
 function contractDistCensus(): EnumCensus | null {
 	if (!existsSync(path.join(contractDistDir, "index.js"))) return null;
 	const graph = createModuleGraph({
-		read: (module) => readFileSync(path.join(contractDistDir, ...module.split("/")), "utf8"),
+		read: (module) =>
+			readFileSync(path.join(contractDistDir, ...module.split("/")), "utf8"),
 		moduleExtension: ".js",
 		scriptKind: ts.ScriptKind.JS,
 	});
@@ -481,14 +603,17 @@ type DatabaseEnum = {
 function databaseModuleFiles(): string[] {
 	const found: string[] = [];
 	const walk = (dir: string, prefix: string): void => {
-		const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+		const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
+			a.name.localeCompare(b.name),
+		);
 		for (const entry of entries) {
 			const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
 			if (entry.isDirectory()) {
 				walk(path.join(dir, entry.name), relative);
 				continue;
 			}
-			if (!entry.name.endsWith(".ts") || entry.name.endsWith(".test.ts")) continue;
+			if (!entry.name.endsWith(".ts") || entry.name.endsWith(".test.ts"))
+				continue;
 			found.push(relative);
 		}
 	};
@@ -522,7 +647,8 @@ function databaseEnums(): DatabaseEnum[] {
 	// значения вынесены в соседний модуль (`pgEnum("x", VALUES_FROM_OTHER_FILE)`),
 	// иначе разрешался бы не в том файле и молча приезжал бы с пустым набором.
 	const graph = createModuleGraph({
-		read: (module) => readFileSync(path.join(databaseModulesDir, ...module.split("/")), "utf8"),
+		read: (module) =>
+			readFileSync(path.join(databaseModulesDir, ...module.split("/")), "utf8"),
 		moduleExtension: ".ts",
 		scriptKind: ts.ScriptKind.TS,
 	});
@@ -530,25 +656,48 @@ function databaseEnums(): DatabaseEnum[] {
 	const seen = new Set<string>();
 
 	for (const file of databaseModuleFiles()) {
-		if (!readFileSync(path.join(databaseModulesDir, ...file.split("/")), "utf8").includes("pgEnum")) continue;
+		if (
+			!readFileSync(
+				path.join(databaseModulesDir, ...file.split("/")),
+				"utf8",
+			).includes("pgEnum")
+		)
+			continue;
 		const record = graph.load(file);
 
-		const collect = (exportName: string, initializer: ts.Expression, owner: ModuleRecord): void => {
+		const collect = (
+			exportName: string,
+			initializer: ts.Expression,
+			owner: ModuleRecord,
+		): void => {
 			const call = unwrapModifiers(initializer);
-			if (!ts.isCallExpression(call) || !ts.isIdentifier(call.expression) || call.expression.text !== "pgEnum") {
+			if (
+				!ts.isCallExpression(call) ||
+				!ts.isIdentifier(call.expression) ||
+				call.expression.text !== "pgEnum"
+			) {
 				return;
 			}
 			if (seen.has(exportName)) return;
 			seen.add(exportName);
 			const nameArgument = call.arguments[0];
 			const valuesArgument = call.arguments[1];
-			const values = valuesArgument === undefined ? null : resolveEnumValues(graph, owner, valuesArgument, new Set());
+			const values =
+				valuesArgument === undefined
+					? null
+					: resolveEnumValues(graph, owner, valuesArgument, new Set());
 			found.push({
 				exportName,
-				databaseName: nameArgument !== undefined && ts.isStringLiteralLike(nameArgument) ? nameArgument.text : "",
+				databaseName:
+					nameArgument !== undefined && ts.isStringLiteralLike(nameArgument)
+						? nameArgument.text
+						: "",
 				values: values ?? [],
 				module: owner.module,
-				line: owner.parsed.getLineAndCharacterOfPosition(call.getStart(owner.parsed)).line + 1,
+				line:
+					owner.parsed.getLineAndCharacterOfPosition(
+						call.getStart(owner.parsed),
+					).line + 1,
 			});
 		};
 
@@ -560,16 +709,20 @@ function databaseEnums(): DatabaseEnum[] {
 		// того, как написан экспорт, а не от того, что объявлено.
 		for (const entry of record.localExports) {
 			const initializer = record.declarations.get(entry.local);
-			if (initializer !== undefined) collect(entry.exported, initializer, record);
+			if (initializer !== undefined)
+				collect(entry.exported, initializer, record);
 		}
 		for (const entry of record.namedReExports) {
 			const target = graph.load(entry.module);
 			const initializer = target.declarations.get(entry.local);
-			if (initializer !== undefined) collect(entry.exported, initializer, target);
+			if (initializer !== undefined)
+				collect(entry.exported, initializer, target);
 		}
 	}
 
-	databaseEnumsCache = found.sort((left, right) => left.exportName.localeCompare(right.exportName));
+	databaseEnumsCache = found.sort((left, right) =>
+		left.exportName.localeCompare(right.exportName),
+	);
 	return databaseEnumsCache;
 }
 
@@ -577,10 +730,17 @@ function databaseEnums(): DatabaseEnum[] {
 function runtimeDatabaseEnums(): Map<string, readonly string[]> {
 	const found = new Map<string, readonly string[]>();
 	for (const [exportName, value] of Object.entries(drizzleSchema)) {
-		if ((typeof value !== "object" && typeof value !== "function") || value === null) continue;
+		if (
+			(typeof value !== "object" && typeof value !== "function") ||
+			value === null
+		)
+			continue;
 		const candidate = value as { enumName?: unknown; enumValues?: unknown };
 		if (typeof candidate.enumName !== "string") continue;
-		if (!Array.isArray(candidate.enumValues) || !candidate.enumValues.every((item) => typeof item === "string")) {
+		if (
+			!Array.isArray(candidate.enumValues) ||
+			!candidate.enumValues.every((item) => typeof item === "string")
+		) {
 			continue;
 		}
 		found.set(exportName, candidate.enumValues as readonly string[]);
@@ -588,7 +748,10 @@ function runtimeDatabaseEnums(): Map<string, readonly string[]> {
 	return found;
 }
 
-function contractEnumFor(census: EnumCensus, exportName: string): ResolvedEnum | null {
+function contractEnumFor(
+	census: EnumCensus,
+	exportName: string,
+): ResolvedEnum | null {
 	return census.named.get(`${exportName}Schema`) ?? null;
 }
 
@@ -629,8 +792,8 @@ const NO_CONTRACT_PAIR: readonly {
 		exportName: "communicationDirection",
 		contractIsAnonymous: true,
 		reason:
-			"Контракт ЕСТЬ, но объявлен безымянным литералом внутри объекта: `direction: z.enum([\"inbound\", " +
-			"\"outbound\"])` в packages/shared/src/index.ts. Набор совпадает со схемой один в один (проверяется " +
+			'Контракт ЕСТЬ, но объявлен безымянным литералом внутри объекта: `direction: z.enum(["inbound", ' +
+			'"outbound"])` в packages/shared/src/index.ts. Набор совпадает со схемой один в один (проверяется ' +
 			"тестом о безымянных контрактах), но перепись видит только именованные экспорты. Починка — вынести " +
 			"в communicationDirectionSchema.",
 	},
@@ -638,23 +801,23 @@ const NO_CONTRACT_PAIR: readonly {
 		exportName: "denteTelegramWebhookStatus",
 		contractIsAnonymous: true,
 		reason:
-			"Контракт ЕСТЬ, но безымянный: `status: z.enum([\"processing\", \"processed\", \"duplicate\", " +
-			"\"ignored\", \"rejected\"])` в packages/shared/src/index.ts — набор совпадает со схемой полностью. " +
+			'Контракт ЕСТЬ, но безымянный: `status: z.enum(["processing", "processed", "duplicate", ' +
+			'"ignored", "rejected"])` в packages/shared/src/index.ts — набор совпадает со схемой полностью. ' +
 			"Пара не строится только из-за отсутствия именованного экспорта.",
 	},
 	{
 		exportName: "documentStatus",
 		contractIsAnonymous: true,
 		reason:
-			"Контракт ЕСТЬ, но безымянный И продублирован: ДВА литерала `status: z.enum([\"draft\", \"issued\", " +
-			"\"voided\"])` в packages/shared/src/index.ts, оба совпадают со схемой. Две копии одного перечисления " +
+			'Контракт ЕСТЬ, но безымянный И продублирован: ДВА литерала `status: z.enum(["draft", "issued", ' +
+			'"voided"])` в packages/shared/src/index.ts, оба совпадают со схемой. Две копии одного перечисления ' +
 			"разъедутся молча — тем более нужен один именованный экспорт.",
 	},
 	{
 		exportName: "imagingStudyStatus",
 		contractIsAnonymous: true,
 		reason:
-			"Контракт ЕСТЬ, но безымянный: `status: z.enum([\"available\", \"needs_review\", \"failed\"])` в " +
+			'Контракт ЕСТЬ, но безымянный: `status: z.enum(["available", "needs_review", "failed"])` в ' +
 			"packages/shared/src/index.ts — набор совпадает со схемой. Пара не строится только из-за отсутствия " +
 			"именованного экспорта.",
 	},
@@ -679,14 +842,14 @@ const NO_CONTRACT_PAIR: readonly {
 	{
 		exportName: "communicationConsentState",
 		reason:
-			"Контракта НЕТ вовсе: поиск по \"granted\" в packages/shared/src даёт ноль совпадений. Отзыв " +
+			'Контракта НЕТ вовсе: поиск по "granted" в packages/shared/src даёт ноль совпадений. Отзыв ' +
 			"согласия — юридически значимое действие, и его состояние попадает в базу без проверки на входе. " +
 			"Долг ведущему: packages/shared вне зоны участка сторожей.",
 	},
 	{
 		exportName: "communicationOutboxStatus",
 		reason:
-			"Контракта НЕТ вовсе: поиск по \"suppressed\" в packages/shared/src даёт ноль совпадений. Ближайший " +
+			'Контракта НЕТ вовсе: поиск по "suppressed" в packages/shared/src даёт ноль совпадений. Ближайший ' +
 			"по имени communicationStatusSchema — ДРУГОЙ набор (queued/scheduled/needs_call/sent/delivered/" +
 			"completed/failed/skipped) и другая таблица, он уже спарен с pgEnum communication_status; " +
 			"подставлять его сюда нельзя. Долг ведущему.",
@@ -706,7 +869,7 @@ const NO_CONTRACT_PAIR: readonly {
 	{
 		exportName: "ledgerPaymentMethod",
 		reason:
-			"Контракта НЕТ вовсе: поиск по \"installment_balance\" в packages/shared/src даёт ноль совпадений. " +
+			'Контракта НЕТ вовсе: поиск по "installment_balance" в packages/shared/src даёт ноль совпадений. ' +
 			"paymentMethodSchema — ДРУГОЙ набор из семи значений, уже спаренный с pgEnum payment_method: в нём " +
 			"нет dms и installment_balance, зато есть лишние bank_transfer, online, insurance, other. Способ " +
 			"оплаты в кассовой книге — это деньги, и проверять его чужим набором нельзя. Долг ведущему.",
@@ -717,11 +880,15 @@ const NO_CONTRACT_PAIR: readonly {
  * Самопроверка разбора на фикстурах.
  * ------------------------------------------------------------------ */
 
-function fixtureCensus(files: Record<string, string>, entry = "index.ts"): EnumCensus {
+function fixtureCensus(
+	files: Record<string, string>,
+	entry = "index.ts",
+): EnumCensus {
 	const graph = createModuleGraph({
 		read: (module) => {
 			const source = files[module];
-			if (source === undefined) throw new Error(`фикстура не содержит модуль ${module}`);
+			if (source === undefined)
+				throw new Error(`фикстура не содержит модуль ${module}`);
 			return source;
 		},
 		moduleExtension: ".ts",
@@ -739,25 +906,28 @@ function fixtureCensus(files: Record<string, string>, entry = "index.ts"): EnumC
 test("разбор контракта видит перечисление в любой записи", () => {
 	const census = fixtureCensus({
 		"index.ts": [
-			"const PAYMENT_METHODS = [\"cash\", \"card\"] as const;",
-			"export const patientStatusSchema = z.enum([\"active\", \"archived\"]);",
+			'const PAYMENT_METHODS = ["cash", "card"] as const;',
+			'export const patientStatusSchema = z.enum(["active", "archived"]);',
 			"export const paymentMethodSchema = z.enum(PAYMENT_METHODS);",
-			"export const spreadSchema = z.enum([...PAYMENT_METHODS, \"dms\"]);",
-			"export const visitStatusSchema = z.union([z.literal(\"planned\"), z.literal(\"done\")]);",
-			"export const singleSchema = z.literal(\"only\");",
-			"export const nativeSchema = z.nativeEnum({ Draft: \"draft\", Issued: \"issued\" });",
-			"export const chainedSchema = z.enum([\"a\", \"b\"]).default(\"a\").describe(\"…\");",
+			'export const spreadSchema = z.enum([...PAYMENT_METHODS, "dms"]);',
+			'export const visitStatusSchema = z.union([z.literal("planned"), z.literal("done")]);',
+			'export const singleSchema = z.literal("only");',
+			'export const nativeSchema = z.nativeEnum({ Draft: "draft", Issued: "issued" });',
+			'export const chainedSchema = z.enum(["a", "b"]).default("a").describe("…");',
 			"export const aliasSchema = patientStatusSchema;",
-			"const localStatus = z.enum([\"x\", \"y\"]);",
+			'const localStatus = z.enum(["x", "y"]);',
 			"export { localStatus as localStatusSchema };",
-			"export { migrationRunStatusSchema as renamedSchema } from \"./migration.js\";",
-			"export * from \"./migration.js\";",
+			'export { migrationRunStatusSchema as renamedSchema } from "./migration.js";',
+			'export * from "./migration.js";',
 		].join("\n"),
-		"migration.ts": 'export const migrationRunStatusSchema = z.enum(["queued", "running"]);',
+		"migration.ts":
+			'export const migrationRunStatusSchema = z.enum(["queued", "running"]);',
 	});
 
 	assert.deepEqual(
-		Object.fromEntries([...census.named].map(([name, found]) => [name, [...found.values]])),
+		Object.fromEntries(
+			[...census.named].map(([name, found]) => [name, [...found.values]]),
+		),
 		{
 			patientStatusSchema: ["active", "archived"],
 			paymentMethodSchema: ["cash", "card"],
@@ -790,11 +960,11 @@ test("разбор контракта не видит перечисление �
 		"index.ts": [
 			"/**",
 			" * ЗАПРЕЩЁННЫЙ набор — пример из докстринга ниже в этом же файле:",
-			" * z.enum([\"Pending\", \"Sent\", \"Error\", \"Accepted\", \"sent\"]) — «sent» база отклонит.",
+			' * z.enum(["Pending", "Sent", "Error", "Accepted", "sent"]) — «sent» база отклонит.',
 			" */",
-			"// export const ghostSchema = z.enum([\"ghost\"]);",
-			"/** БЫЛО: z.enum([\"vk\"]) — убрали, значение переехало в communicationChannelSchema. */",
-			"export const egiszStatusSchema = z.enum([\"Pending\", \"Sent\", \"Error\", \"Accepted\"]);",
+			'// export const ghostSchema = z.enum(["ghost"]);',
+			'/** БЫЛО: z.enum(["vk"]) — убрали, значение переехало в communicationChannelSchema. */',
+			'export const egiszStatusSchema = z.enum(["Pending", "Sent", "Error", "Accepted"]);',
 		].join("\n"),
 	});
 
@@ -822,9 +992,9 @@ test("разбор контракта отличает безымянный ли
 	const census = fixtureCensus({
 		"index.ts": [
 			"export const documentSchema = z.object({",
-			"	status: z.enum([\"draft\", \"issued\", \"voided\"]),",
+			'	status: z.enum(["draft", "issued", "voided"]),',
 			"});",
-			"export const patientStatusSchema = z.enum([\"active\", \"archived\"]);",
+			'export const patientStatusSchema = z.enum(["active", "archived"]);',
 		].join("\n"),
 	});
 
@@ -913,7 +1083,9 @@ test("перепись перечислений базы не выродилас
 	);
 
 	const census = contractSourceCensus();
-	const paired = enums.filter((item) => contractEnumFor(census, item.exportName) !== null);
+	const paired = enums.filter(
+		(item) => contractEnumFor(census, item.exportName) !== null,
+	);
 	assert.ok(
 		paired.length >= 37,
 		`Пар «перечисление базы + контракт» нашлось ${paired.length}, а на момент установки порога их было ` +
@@ -934,7 +1106,9 @@ test("перепись контракта читает исходник, а не
 			"в первом случае зелёное ниже получено на урезанном множестве.",
 	);
 
-	const outsideEntry = [...census.named.values()].filter((found) => found.module !== "index.ts");
+	const outsideEntry = [...census.named.values()].filter(
+		(found) => found.module !== "index.ts",
+	);
 	assert.ok(
 		outsideEntry.length > 0,
 		"В переписи контракта не осталось экспортов вне index.ts. Обход по `export * from` сломался: " +
@@ -947,7 +1121,12 @@ test("перепись контракта читает исходник, а не
 	// разбором собственного текста: иначе «починку» откатит первый, кому покажется,
 	// что импорт короче.
 	const ownSource = readFileSync(fileURLToPath(import.meta.url), "utf8");
-	const ownModule = parseModule("enumContractDrift.test.ts", ownSource, ".ts", ts.ScriptKind.TS);
+	const ownModule = parseModule(
+		"enumContractDrift.test.ts",
+		ownSource,
+		".ts",
+		ts.ScriptKind.TS,
+	);
 	const importsBuiltPackage = ownModule.parsed.statements.filter(
 		(statement) =>
 			ts.isImportDeclaration(statement) &&
@@ -969,7 +1148,9 @@ test("разбор исходника схемы совпадает с тем, �
 	const runtime = runtimeDatabaseEnums();
 	const byName = new Map(parsed.map((item) => [item.exportName, item]));
 
-	const invisible = [...runtime.keys()].filter((name) => !byName.has(name)).sort();
+	const invisible = [...runtime.keys()]
+		.filter((name) => !byName.has(name))
+		.sort();
 	assert.deepEqual(
 		invisible,
 		[],
@@ -978,7 +1159,11 @@ test("разбор исходника схемы совпадает с тем, �
 	);
 
 	const mismatched = parsed
-		.filter((item) => runtime.has(item.exportName) && !sameSet(item.values, runtime.get(item.exportName) ?? []))
+		.filter(
+			(item) =>
+				runtime.has(item.exportName) &&
+				!sameSet(item.values, runtime.get(item.exportName) ?? []),
+		)
 		.map(
 			(item) =>
 				`${item.exportName}: исходник [${item.values.join(", ")}], drizzle ` +
@@ -993,7 +1178,9 @@ test("разбор исходника схемы совпадает с тем, �
 	);
 
 	const lostFromMainSchema = parsed
-		.filter((item) => item.module === "schema.ts" && !runtime.has(item.exportName))
+		.filter(
+			(item) => item.module === "schema.ts" && !runtime.has(item.exportName),
+		)
 		.map((item) => item.exportName);
 	assert.deepEqual(
 		lostFromMainSchema,
@@ -1028,9 +1215,9 @@ test("у каждого перечисления базы есть либо ко
 			"запись — иначе список причин перестаёт быть правдой, а пара выпадает из сверки.",
 	);
 
-	const shallow = NO_CONTRACT_PAIR.filter((entry) => entry.reason.trim().length < 80).map(
-		(entry) => entry.exportName,
-	);
+	const shallow = NO_CONTRACT_PAIR.filter(
+		(entry) => entry.reason.trim().length < 80,
+	).map((entry) => entry.exportName);
 	assert.deepEqual(
 		shallow,
 		[],
@@ -1056,21 +1243,32 @@ test("у каждого перечисления базы есть либо ко
  */
 test("безымянный контракт, названный в причине, существует и совпадает со схемой", () => {
 	const census = contractSourceCensus();
-	const byName = new Map(databaseEnums().map((item) => [item.exportName, item]));
+	const byName = new Map(
+		databaseEnums().map((item) => [item.exportName, item]),
+	);
 	const problems: string[] = [];
 
 	for (const entry of NO_CONTRACT_PAIR) {
 		if (entry.contractIsAnonymous !== true) continue;
 		const found = byName.get(entry.exportName);
 		if (found === undefined) {
-			problems.push(`${entry.exportName}: перечисления с таким именем в переписи базы больше нет`);
+			problems.push(
+				`${entry.exportName}: перечисления с таким именем в переписи базы больше нет`,
+			);
 			continue;
 		}
-		const matches = census.inline.filter((candidate) => sameSet(candidate.values, found.values));
+		const matches = census.inline.filter((candidate) =>
+			sameSet(candidate.values, found.values),
+		);
 		if (matches.length > 0) continue;
 		const nearest = census.inline
-			.filter((candidate) => candidate.values.some((value) => found.values.includes(value)))
-			.map((candidate) => `${candidate.module}:${candidate.line} ${candidate.property} [${candidate.values.join(", ")}]`);
+			.filter((candidate) =>
+				candidate.values.some((value) => found.values.includes(value)),
+			)
+			.map(
+				(candidate) =>
+					`${candidate.module}:${candidate.line} ${candidate.property} [${candidate.values.join(", ")}]`,
+			);
 		problems.push(
 			`${entry.exportName} (${found.databaseName}, db/${found.module}:${found.line}): в базе набор ` +
 				`[${found.values.join(", ")}], а безымянного z.enum с этим набором в контракте нет. Ближайшие: ` +
@@ -1122,13 +1320,22 @@ test("каждая пара перечислений непуста — пров
 		);
 		const contract = contractEnumFor(census, item.exportName);
 		if (contract === null) continue;
-		assert.ok(contract.values.length > 0, `${item.exportName}Schema: пустое перечисление в контракте`);
+		assert.ok(
+			contract.values.length > 0,
+			`${item.exportName}Schema: пустое перечисление в контракте`,
+		);
 	}
 });
 
 test("канал связи содержит vk и max — из-за их отсутствия терялась переписка", () => {
-	const contract = contractEnumFor(contractSourceCensus(), "communicationChannel");
-	assert.ok(contract !== null, "communicationChannelSchema не найден в packages/shared/src");
+	const contract = contractEnumFor(
+		contractSourceCensus(),
+		"communicationChannel",
+	);
+	assert.ok(
+		contract !== null,
+		"communicationChannelSchema не найден в packages/shared/src",
+	);
 	for (const channel of ["vk", "max"]) {
 		assert.ok(
 			contract.values.includes(channel),
@@ -1215,7 +1422,8 @@ test("собранный @dental/shared не отстал от исходник�
 			const expected = source.named.get(name);
 			const actual = built.named.get(name);
 			if (expected === undefined) return null;
-			if (actual === undefined) return `${name}: в исходнике есть, в сборке нет вовсе`;
+			if (actual === undefined)
+				return `${name}: в исходнике есть, в сборке нет вовсе`;
 			if (!sameSet(expected.values, actual.values)) {
 				return `${name}: исходник [${expected.values.join(", ")}], сборка [${actual.values.join(", ")}]`;
 			}

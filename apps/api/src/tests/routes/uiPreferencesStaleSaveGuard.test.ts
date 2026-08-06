@@ -153,7 +153,8 @@ const SCENARIOS: Scenario[] = [
 		key: "fresh",
 		label: "свежее поверх старого сохраняется",
 		organizationId: fixtureUuid(NAMESPACE, 1),
-		organizationName: "Проверка настроек рабочего места — свежее поверх старого",
+		organizationName:
+			"Проверка настроек рабочего места — свежее поверх старого",
 		incomingSavedAt: FRESH_SAVED_AT,
 		expectedStatus: 200,
 		expectedStoredSavedAt: FRESH_SAVED_AT,
@@ -163,7 +164,8 @@ const SCENARIOS: Scenario[] = [
 		key: "stale",
 		label: "старое поверх свежего отвергается",
 		organizationId: fixtureUuid(NAMESPACE, 2),
-		organizationName: "Проверка настроек рабочего места — старое поверх свежего",
+		organizationName:
+			"Проверка настроек рабочего места — старое поверх свежего",
 		incomingSavedAt: STALE_SAVED_AT,
 		expectedStatus: 409,
 		expectedStoredSavedAt: BASE_SAVED_AT,
@@ -191,7 +193,8 @@ const SCENARIOS: Scenario[] = [
 	},
 	{
 		key: "garbage",
-		label: "нечитаемая отметка порядка не ложится в хранилище, сохранение получает время сервера",
+		label:
+			"нечитаемая отметка порядка не ложится в хранилище, сохранение получает время сервера",
 		organizationId: fixtureUuid(NAMESPACE, 5),
 		organizationName: "Проверка настроек рабочего места — время не разбирается",
 		incomingSavedAt: "позавчера вечером",
@@ -202,7 +205,8 @@ const SCENARIOS: Scenario[] = [
 ];
 
 const CONCURRENT_ORGANIZATION_ID = fixtureUuid(NAMESPACE, 90);
-const CONCURRENT_ORGANIZATION_NAME = "Проверка настроек рабочего места — одновременно";
+const CONCURRENT_ORGANIZATION_NAME =
+	"Проверка настроек рабочего места — одновременно";
 
 const PROOF_ORGANIZATION_IDS = [
 	...SCENARIOS.map((scenario) => scenario.organizationId),
@@ -224,7 +228,10 @@ const savedEnv: Record<string, string | undefined> = {};
 /** Идентификаторы организаций прогона по ключу сценария. */
 const organizationIdByKey = new Map<string, string>();
 
-function headersFor(organizationId: string, withBody: boolean): Record<string, string> {
+function headersFor(
+	organizationId: string,
+	withBody: boolean,
+): Record<string, string> {
 	const headers: Record<string, string> = {
 		"x-dente-admin-secret": settingsAdminSecret,
 		[CLINIC_TOKEN_HEADER]: signToken({ organizationId }, authTokenSecret()),
@@ -250,7 +257,11 @@ function preferencesPayload(
 	};
 }
 
-type Injected = { statusCode: number; json: Record<string, unknown>; body: string };
+type Injected = {
+	statusCode: number;
+	json: Record<string, unknown>;
+	body: string;
+};
 
 async function putPreferences(
 	organizationId: string,
@@ -271,14 +282,22 @@ async function putPreferences(
 	return { statusCode: response.statusCode, json, body: response.body };
 }
 
-async function getPreferences(organizationId: string): Promise<Record<string, unknown> | null> {
+async function getPreferences(
+	organizationId: string,
+): Promise<Record<string, unknown> | null> {
 	const response = await app.inject({
 		method: "GET",
 		url: "/api/settings/preferences",
 		headers: headersFor(organizationId, false),
 	});
-	assert.equal(response.statusCode, 200, `чтение настроек не удалось: ${response.body}`);
-	const payload = JSON.parse(response.body) as { preferences?: Record<string, unknown> | null };
+	assert.equal(
+		response.statusCode,
+		200,
+		`чтение настроек не удалось: ${response.body}`,
+	);
+	const payload = JSON.parse(response.body) as {
+		preferences?: Record<string, unknown> | null;
+	};
 	return payload.preferences ?? null;
 }
 
@@ -315,7 +334,10 @@ function russianTextPresent(value: unknown): boolean {
  */
 async function runScenario(scenario: Scenario): Promise<ScenarioRecord> {
 	const organizationId = organizationIdByKey.get(scenario.key);
-	assert.ok(organizationId, `организация сценария «${scenario.key}» не создана`);
+	assert.ok(
+		organizationId,
+		`организация сценария «${scenario.key}» не создана`,
+	);
 
 	// Первая вкладка: роль владельца и выбранная дата расписания.
 	const seed = await putPreferences(
@@ -336,7 +358,10 @@ async function runScenario(scenario: Scenario): Promise<ScenarioRecord> {
 	);
 
 	const stored = await getPreferences(organizationId);
-	assert.ok(stored, `после сохранения настройки не читаются вовсе (${scenario.key})`);
+	assert.ok(
+		stored,
+		`после сохранения настройки не читаются вовсе (${scenario.key})`,
+	);
 	const storedSavedAt = String(stored.savedAt ?? "");
 	const storedRole = String(stored.selectedWorkspaceRole ?? "");
 
@@ -345,7 +370,9 @@ async function runScenario(scenario: Scenario): Promise<ScenarioRecord> {
 		secondSaveStatus: second.statusCode,
 		storedSavedAt,
 		storedRole,
-		refusalHasRussianText: russianTextPresent((second.json as { message?: unknown }).message),
+		refusalHasRussianText: russianTextPresent(
+			(second.json as { message?: unknown }).message,
+		),
 	};
 }
 
@@ -354,7 +381,10 @@ async function runScenario(scenario: Scenario): Promise<ScenarioRecord> {
  * это действительно разбираемое время и что мусорная строка в хранилище не
  * лежит. Без этой проверки пометка спрятала бы ровно тот дефект, который ищем.
  */
-function normalizeRecord(record: ScenarioRecord, scenario: Scenario): ScenarioRecord {
+function normalizeRecord(
+	record: ScenarioRecord,
+	scenario: Scenario,
+): ScenarioRecord {
 	if (scenario.expectedStoredSavedAt !== SERVER_STAMP) return record;
 	assert.ok(
 		Number.isFinite(Date.parse(record.storedSavedAt)),
@@ -369,7 +399,11 @@ function normalizeRecord(record: ScenarioRecord, scenario: Scenario): ScenarioRe
 	return { ...record, storedSavedAt: SERVER_STAMP };
 }
 
-function assertRecordMatchesScenario(record: ScenarioRecord, scenario: Scenario, path: string): void {
+function assertRecordMatchesScenario(
+	record: ScenarioRecord,
+	scenario: Scenario,
+	path: string,
+): void {
 	assert.equal(
 		record.secondSaveStatus,
 		scenario.expectedStatus,
@@ -395,7 +429,10 @@ async function seedOrganizations(): Promise<void> {
 		const [org] = await withFixtureTenant(scenario.organizationId, async () => {
 			const inserted = await db
 				.insert(organizations)
-				.values({ id: scenario.organizationId, name: scenario.organizationName })
+				.values({
+					id: scenario.organizationId,
+					name: scenario.organizationName,
+				})
 				.returning({ id: organizations.id });
 			await db.insert(users).values({
 				organizationId: scenario.organizationId,
@@ -404,22 +441,34 @@ async function seedOrganizations(): Promise<void> {
 			});
 			return inserted;
 		});
-		if (!org) throw new Error(`Посев не состоялся: организация «${scenario.organizationName}»`);
+		if (!org)
+			throw new Error(
+				`Посев не состоялся: организация «${scenario.organizationName}»`,
+			);
 		organizationIdByKey.set(scenario.key, org.id);
 	}
-	const [concurrent] = await withFixtureTenant(CONCURRENT_ORGANIZATION_ID, async () => {
-		const inserted = await db
-			.insert(organizations)
-			.values({ id: CONCURRENT_ORGANIZATION_ID, name: CONCURRENT_ORGANIZATION_NAME })
-			.returning({ id: organizations.id });
-		await db.insert(users).values({
-			organizationId: CONCURRENT_ORGANIZATION_ID,
-			fullName: "Владелец клиники проверки одновременности",
-			role: "owner",
-		});
-		return inserted;
-	});
-	if (!concurrent) throw new Error(`Посев не состоялся: организация «${CONCURRENT_ORGANIZATION_NAME}»`);
+	const [concurrent] = await withFixtureTenant(
+		CONCURRENT_ORGANIZATION_ID,
+		async () => {
+			const inserted = await db
+				.insert(organizations)
+				.values({
+					id: CONCURRENT_ORGANIZATION_ID,
+					name: CONCURRENT_ORGANIZATION_NAME,
+				})
+				.returning({ id: organizations.id });
+			await db.insert(users).values({
+				organizationId: CONCURRENT_ORGANIZATION_ID,
+				fullName: "Владелец клиники проверки одновременности",
+				role: "owner",
+			});
+			return inserted;
+		},
+	);
+	if (!concurrent)
+		throw new Error(
+			`Посев не состоялся: организация «${CONCURRENT_ORGANIZATION_NAME}»`,
+		);
 	organizationIdByKey.set("concurrent", concurrent.id);
 }
 
@@ -486,7 +535,11 @@ describe("настройки рабочего места: устаревшее �
 			// Независимая сверка: в колонке лежит то же, что отдало чтение маршрута.
 			const organizationId = organizationIdByKey.get(scenario.key) ?? "";
 			const rows = await independentStoredPreferences(organizationId);
-			assert.equal(rows.length, 1, `копий настроек в базе ${rows.length}, ожидалась одна`);
+			assert.equal(
+				rows.length,
+				1,
+				`копий настроек в базе ${rows.length}, ожидалась одна`,
+			);
 			const row = rows[0];
 			assert.ok(row, "независимый SQL не вернул строку настроек");
 			assert.equal(
@@ -515,15 +568,27 @@ describe("настройки рабочего места: устаревшее �
 			organizationId,
 			preferencesPayload("assistant", "", STALE_SAVED_AT),
 		);
-		assert.equal(refusal.statusCode, 409, `ожидался отказ по устаревшей копии: ${refusal.body}`);
-		const message = String((refusal.json as { message?: unknown }).message ?? "");
-		assert.ok(/[А-Яа-яЁё]/.test(message), `текст отказа обязан быть русским: «${message}»`);
+		assert.equal(
+			refusal.statusCode,
+			409,
+			`ожидался отказ по устаревшей копии: ${refusal.body}`,
+		);
+		const message = String(
+			(refusal.json as { message?: unknown }).message ?? "",
+		);
+		assert.ok(
+			/[А-Яа-яЁё]/.test(message),
+			`текст отказа обязан быть русским: «${message}»`,
+		);
 		assert.ok(
 			!/[A-Za-z]/.test(message),
 			`латиница в тексте для человека гасит фразу на экране целиком: «${message}»`,
 		);
 		// Причина: копия устарела, потому что настройки изменили позже.
-		assert.ok(/устарел/.test(message), `отказ не называет причину: «${message}»`);
+		assert.ok(
+			/устарел/.test(message),
+			`отказ не называет причину: «${message}»`,
+		);
 		// Действие: перечитать настройки и повторить правку.
 		assert.ok(
 			/Обновите|перечитайте|Откройте/.test(message),
@@ -531,7 +596,8 @@ describe("настройки рабочего места: устаревшее �
 		);
 		// Действующее значение приложено к отказу: клиенту не нужен второй запрос,
 		// чтобы узнать, чем именно его копия перебита.
-		const attached = (refusal.json as { preferences?: { savedAt?: unknown } }).preferences;
+		const attached = (refusal.json as { preferences?: { savedAt?: unknown } })
+			.preferences;
 		assert.equal(
 			attached?.savedAt,
 			BASE_SAVED_AT,
@@ -545,11 +611,21 @@ describe("настройки рабочего места: устаревшее �
 			organizationId,
 			preferencesPayload("owner", "2026-05-20", BASE_SAVED_AT),
 		);
-		assert.equal(seed.statusCode, 200, `посев копии не сохранился: ${seed.body}`);
+		assert.equal(
+			seed.statusCode,
+			200,
+			`посев копии не сохранился: ${seed.body}`,
+		);
 
 		const [fresh, stale] = await Promise.all([
-			putPreferences(organizationId, preferencesPayload("owner", "2026-05-21", FRESH_SAVED_AT)),
-			putPreferences(organizationId, preferencesPayload("assistant", "", STALE_SAVED_AT)),
+			putPreferences(
+				organizationId,
+				preferencesPayload("owner", "2026-05-21", FRESH_SAVED_AT),
+			),
+			putPreferences(
+				organizationId,
+				preferencesPayload("assistant", "", STALE_SAVED_AT),
+			),
 		]);
 
 		/*
@@ -558,21 +634,49 @@ describe("настройки рабочего места: устаревшее �
 		 * свежее его перебьёт. Закрепляется то, что действительно обязано быть
 		 * одинаковым при любом порядке: свежее принято, а в базе осталось свежее.
 		 */
-		assert.equal(fresh.statusCode, 200, `свежее сохранение отвергнуто: ${fresh.body}`);
+		assert.equal(
+			fresh.statusCode,
+			200,
+			`свежее сохранение отвергнуто: ${fresh.body}`,
+		);
 		assert.ok(
 			stale.statusCode === 409 || stale.statusCode === 200,
 			`неожиданный код у устаревшего сохранения: ${stale.body}`,
 		);
 
 		const stored = await getPreferences(organizationId);
-		assert.equal(stored?.savedAt, FRESH_SAVED_AT, "в хранилище осталось не свежее время");
-		assert.equal(stored?.selectedWorkspaceRole, "owner", "роль рабочего места откатилась");
-		assert.equal(stored?.scheduleDateFilter, "2026-05-21", "фильтр расписания откатился");
+		assert.equal(
+			stored?.savedAt,
+			FRESH_SAVED_AT,
+			"в хранилище осталось не свежее время",
+		);
+		assert.equal(
+			stored?.selectedWorkspaceRole,
+			"owner",
+			"роль рабочего места откатилась",
+		);
+		assert.equal(
+			stored?.scheduleDateFilter,
+			"2026-05-21",
+			"фильтр расписания откатился",
+		);
 
 		const rows = await independentStoredPreferences(organizationId);
-		assert.equal(rows.length, 1, `копий настроек в базе ${rows.length}, ожидалась одна`);
-		assert.equal(rows[0]?.saved_at, FRESH_SAVED_AT, "независимый SQL: в базе не свежее время");
-		assert.equal(rows[0]?.role, "owner", "независимый SQL: в базе откатившаяся роль");
+		assert.equal(
+			rows.length,
+			1,
+			`копий настроек в базе ${rows.length}, ожидалась одна`,
+		);
+		assert.equal(
+			rows[0]?.saved_at,
+			FRESH_SAVED_AT,
+			"независимый SQL: в базе не свежее время",
+		);
+		assert.equal(
+			rows[0]?.role,
+			"owner",
+			"независимый SQL: в базе откатившаяся роль",
+		);
 	});
 
 	test("путь без базы ведёт себя РОВНО так же, как путь с базой", async () => {

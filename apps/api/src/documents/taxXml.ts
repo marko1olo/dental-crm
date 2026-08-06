@@ -1,9 +1,13 @@
-import { kopecksToNumericString, parseKopecks, sumKopecks } from "@dental/shared";
 import type {
 	ClinicProfile,
 	GeneratedDocument,
 	Patient,
 	Payment,
+} from "@dental/shared";
+import {
+	kopecksToNumericString,
+	parseKopecks,
+	sumKopecks,
 } from "@dental/shared";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import { taxPaymentsForDocumentScope } from "./taxPaymentSnapshot.js";

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 /**
  * Страж экрана «Смена» и карточки пациента.
@@ -27,7 +27,10 @@ import test from "node:test";
  * через `AppHelpers` тянет за собой таблицы стилей и в node не загружается.
  */
 
-const webSource = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const webSource = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
+);
 const repoRoot = path.resolve(webSource, "../../..");
 
 const SHIFT_VIEW = "ShiftView.tsx";
@@ -54,7 +57,9 @@ function readWeb(relativePath: string): string {
  * проекте заводить не стали, но и общий модуль ради четырёх строк не нужен.
  */
 function stripComments(source: string): string {
-	return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+	return source
+		.replace(/\/\*[\s\S]*?\*\//g, " ")
+		.replace(/(^|[^:])\/\/[^\n]*/g, "$1");
 }
 
 /*
@@ -62,17 +67,38 @@ function stripComments(source: string): string {
  * включая «вырезание съело весь файл».
  */
 test("вырезание комментариев не мешает ловить настоящее нарушение", () => {
-	const inBlockComment = stripComments('{/* было «3 шт.» */}\n<p>{countLabel(n, "документ", "документа", "документов")}</p>');
-	assert.ok(!inBlockComment.includes("шт."), "сокращение из комментария принято за нарушение");
+	const inBlockComment = stripComments(
+		'{/* было «3 шт.» */}\n<p>{countLabel(n, "документ", "документа", "документов")}</p>',
+	);
+	assert.ok(
+		!inBlockComment.includes("шт."),
+		"сокращение из комментария принято за нарушение",
+	);
 
-	const inCode = stripComments('{/* пояснение про 1042 */}\n<p>карта № 1042</p>');
-	assert.ok(inCode.includes("1042"), "нарушение в коде потерялось после вырезания");
+	const inCode = stripComments(
+		"{/* пояснение про 1042 */}\n<p>карта № 1042</p>",
+	);
+	assert.ok(
+		inCode.includes("1042"),
+		"нарушение в коде потерялось после вырезания",
+	);
 
-	const afterUrl = stripComments('const doc = "https://example.ru/x"; const bad = "шт.";');
-	assert.ok(afterUrl.includes("шт."), "адрес со слэшами спрятал нарушение за собой");
+	const afterUrl = stripComments(
+		'const doc = "https://example.ru/x"; const bad = "шт.";',
+	);
+	assert.ok(
+		afterUrl.includes("шт."),
+		"адрес со слэшами спрятал нарушение за собой",
+	);
 
-	const lineComment = stripComments("const a = 1; // тут было шт.\nconst b = 'шт.';");
-	assert.equal(lineComment.split("шт.").length - 1, 1, "строчный комментарий обработан неверно");
+	const lineComment = stripComments(
+		"const a = 1; // тут было шт.\nconst b = 'шт.';",
+	);
+	assert.equal(
+		lineComment.split("шт.").length - 1,
+		1,
+		"строчный комментарий обработан неверно",
+	);
 });
 
 /**
@@ -85,26 +111,51 @@ test("вырезание комментариев не мешает ловить
  * обращение к полю.
  */
 const FORBIDDEN_IN_SHIFT_VIEW: ReadonlyArray<readonly [string, string]> = [
-	["?? app.status", "ключ статуса приёма нельзя показывать вместо подписи — нужен словарь"],
-	["?? action.priority", "ключ приоритета нельзя показывать вместо подписи — нужен словарь"],
-	["?? queue.role", "ключ роли нельзя показывать вместо подписи — нужен словарь"],
-	["дел: ${", "счётчик без согласованного счётного слова: «дел: 1» читается неверно"],
-	["шт.", "сокращение из накладной: у документов и снимков есть свои счётные слова"],
-	["1042", "выдуманный номер карты: администратор пойдёт искать по нему бумажную карту"]
+	[
+		"?? app.status",
+		"ключ статуса приёма нельзя показывать вместо подписи — нужен словарь",
+	],
+	[
+		"?? action.priority",
+		"ключ приоритета нельзя показывать вместо подписи — нужен словарь",
+	],
+	[
+		"?? queue.role",
+		"ключ роли нельзя показывать вместо подписи — нужен словарь",
+	],
+	[
+		"дел: ${",
+		"счётчик без согласованного счётного слова: «дел: 1» читается неверно",
+	],
+	[
+		"шт.",
+		"сокращение из накладной: у документов и снимков есть свои счётные слова",
+	],
+	[
+		"1042",
+		"выдуманный номер карты: администратор пойдёт искать по нему бумажную карту",
+	],
 ];
 
 test("на «Смене» нет внутренних ключей и сокращений вместо текста для человека", () => {
 	const source = stripComments(readWeb(SHIFT_VIEW));
 	for (const [needle, why] of FORBIDDEN_IN_SHIFT_VIEW) {
-		assert.ok(!source.includes(needle), `${SHIFT_VIEW}: найдено «${needle}» — ${why}`);
+		assert.ok(
+			!source.includes(needle),
+			`${SHIFT_VIEW}: найдено «${needle}» — ${why}`,
+		);
 	}
 });
 
 /** Значения перечисления риска берутся из контракта, а не переписываются здесь. */
 function contractRiskLevels(): string[] {
 	const contract = readFileSync(SHARED_CONTRACT, "utf8");
-	const declaration = /patientInsightRiskSchema\s*=\s*z\.enum\(\[([^\]]*)\]\)/.exec(contract);
-	assert.ok(declaration, "в контракте не нашлось patientInsightRiskSchema — проверка потеряла опору");
+	const declaration =
+		/patientInsightRiskSchema\s*=\s*z\.enum\(\[([^\]]*)\]\)/.exec(contract);
+	assert.ok(
+		declaration,
+		"в контракте не нашлось patientInsightRiskSchema — проверка потеряла опору",
+	);
 	/*
 	 * Содержимое скобок вынуто в переменную и проверено отдельно. При включённом
 	 * noUncheckedIndexedAccess группа разбора имеет тип «строка или ничего», и
@@ -112,7 +163,10 @@ function contractRiskLevels(): string[] {
 	 * разборе проверка молча проходит на пустом перечислении.
 	 */
 	const enumBody = declaration[1];
-	assert.ok(enumBody, "перечисление риска в контракте разобрано пустым — проверка потеряла опору");
+	assert.ok(
+		enumBody,
+		"перечисление риска в контракте разобрано пустым — проверка потеряла опору",
+	);
 	const levels = [...enumBody.matchAll(/"([^"]+)"/g)]
 		.map((match) => match[1])
 		.filter((value): value is string => Boolean(value));
@@ -163,7 +217,7 @@ function comparedRiskValues(source: string): string[] {
 	const values: string[] = [];
 	const comparisons: readonly RegExp[] = [
 		/riskLevel\s*(?:===|!==|==|!=)\s*"([^"]+)"/g,
-		/"([^"]+)"\s*(?:===|!==|==|!=)\s*[\w.?\[\]]*riskLevel/g
+		/"([^"]+)"\s*(?:===|!==|==|!=)\s*[\w.?[\]]*riskLevel/g,
 	];
 	for (const pattern of comparisons) {
 		for (const match of source.matchAll(pattern)) {
@@ -188,22 +242,36 @@ test("сравнения уровня риска собираются во вс�
 		['activePatientInsight.riskLevel == "medium"', "нестрогое равенство"],
 		['activePatientInsight.riskLevel !== "medium"', "строгое неравенство"],
 		['activePatientInsight.riskLevel != "medium"', "нестрогое неравенство"],
-		['"medium" === activePatientInsight.riskLevel', "сравнение в обратном порядке"],
-		['switch (activePatientInsight.riskLevel) {\n\tcase "medium":\n\t\tbreak;\n}', "переключатель по уровню"]
+		[
+			'"medium" === activePatientInsight.riskLevel',
+			"сравнение в обратном порядке",
+		],
+		[
+			'switch (activePatientInsight.riskLevel) {\n\tcase "medium":\n\t\tbreak;\n}',
+			"переключатель по уровню",
+		],
 	];
 	for (const [snippet, form] of forms) {
-		assert.deepEqual(comparedRiskValues(snippet), ["medium"], `${form}: сравнение не собрано, дефект пройдёт мимо стража`);
+		assert.deepEqual(
+			comparedRiskValues(snippet),
+			["medium"],
+			`${form}: сравнение не собрано, дефект пройдёт мимо стража`,
+		);
 	}
 
 	assert.deepEqual(
-		comparedRiskValues('switch (appointment.status) {\n\tcase "planned":\n\t\tbreak;\n}'),
+		comparedRiskValues(
+			'switch (appointment.status) {\n\tcase "planned":\n\t\tbreak;\n}',
+		),
 		[],
-		"переключатель по чужому полю принят за сравнение уровня риска"
+		"переключатель по чужому полю принят за сравнение уровня риска",
 	);
 	assert.deepEqual(
-		comparedRiskValues('switch (insight.riskLevel) {\n\tcase "watch": {\n\t\tconst s = { a: 1 };\n\t\tbreak;\n\t}\n}\nswitch (app.status) {\n\tcase "planned":\n\t\tbreak;\n}'),
+		comparedRiskValues(
+			'switch (insight.riskLevel) {\n\tcase "watch": {\n\t\tconst s = { a: 1 };\n\t\tbreak;\n\t}\n}\nswitch (app.status) {\n\tcase "planned":\n\t\tbreak;\n}',
+		),
 		["watch"],
-		"тело переключателя разобрано неверно: вложенные скобки или чужой переключатель"
+		"тело переключателя разобрано неверно: вложенные скобки или чужой переключатель",
 	);
 });
 
@@ -212,11 +280,14 @@ test("сравнения уровня риска ссылаются только
 	const levels = contractRiskLevels();
 	const source = stripComments(readWeb(SHIFT_VIEW));
 	const compared = comparedRiskValues(source);
-	assert.ok(compared.length > 0, `${SHIFT_VIEW}: сравнений уровня риска не найдено — проверка ослепла`);
+	assert.ok(
+		compared.length > 0,
+		`${SHIFT_VIEW}: сравнений уровня риска не найдено — проверка ослепла`,
+	);
 	for (const value of compared) {
 		assert.ok(
 			levels.includes(value),
-			`${SHIFT_VIEW}: сравнение с «${value}», которого нет в контракте (${levels.join(" | ")}) — ветка мертва`
+			`${SHIFT_VIEW}: сравнение с «${value}», которого нет в контракте (${levels.join(" | ")}) — ветка мертва`,
 		);
 	}
 });
@@ -227,25 +298,30 @@ test("средний уровень риска отличается от спо�
 	const source = stripComments(readWeb(SHIFT_VIEW));
 	assert.ok(
 		source.includes('riskLevel === "watch"'),
-		`${SHIFT_VIEW}: у среднего уровня риска нет своей ветки оформления`
+		`${SHIFT_VIEW}: у среднего уровня риска нет своей ветки оформления`,
 	);
 	assert.ok(
 		source.includes("var(--warn-bg)") && source.includes("var(--warn-fg)"),
-		`${SHIFT_VIEW}: средний уровень риска не берёт предупреждающие цвета темы`
+		`${SHIFT_VIEW}: средний уровень риска не берёт предупреждающие цвета темы`,
 	);
 });
 
 test("у каждого уровня риска есть русская подпись", () => {
 	const levels = contractRiskLevels();
 	const helpers = readWeb(HELPERS);
-	const block = /patientInsightRiskLabels[^=]*=\s*\{([\s\S]*?)\n\};/.exec(helpers);
+	const block = /patientInsightRiskLabels[^=]*=\s*\{([\s\S]*?)\n\};/.exec(
+		helpers,
+	);
 	assert.ok(block, `${HELPERS}: не нашёлся словарь patientInsightRiskLabels`);
 	const blockBody = block[1];
-	assert.ok(blockBody, `${HELPERS}: словарь patientInsightRiskLabels разобран пустым`);
+	assert.ok(
+		blockBody,
+		`${HELPERS}: словарь patientInsightRiskLabels разобран пустым`,
+	);
 	for (const level of levels) {
 		assert.ok(
 			new RegExp(`\\b${level}\\s*:`).test(blockBody),
-			`${HELPERS}: у уровня «${level}» нет подписи — на экран попадёт пустота или ключ`
+			`${HELPERS}: у уровня «${level}» нет подписи — на экран попадёт пустота или ключ`,
 		);
 	}
 });
@@ -254,7 +330,10 @@ test("пропсы карточки пациента типизированы, �
 	// Именно `any` позволил мёртвому сравнению дожить до сдачи: компилятор не
 	// видел, что у riskLevel нет варианта «medium».
 	const source = readWeb(SHIFT_VIEW);
-	const signature = /export function PatientCockpit\(\{[\s\S]*?\}:\s*([A-Za-z][\w<>[\]"|\s.]*)\)/.exec(source);
+	const signature =
+		/export function PatientCockpit\(\{[\s\S]*?\}:\s*([A-Za-z][\w<>[\]"|\s.]*)\)/.exec(
+			source,
+		);
 	assert.ok(signature, `${SHIFT_VIEW}: не разобрана сигнатура PatientCockpit`);
 	/*
 	 * Тип пропсов проверяется отдельным утверждением, а не подстановкой пустой
@@ -262,13 +341,16 @@ test("пропсы карточки пациента типизированы, �
 	 * бы декоративным именно в том случае, для которого написан.
 	 */
 	const signatureType = signature[1];
-	assert.ok(signatureType, `${SHIFT_VIEW}: не разобран тип пропсов PatientCockpit`);
+	assert.ok(
+		signatureType,
+		`${SHIFT_VIEW}: не разобран тип пропсов PatientCockpit`,
+	);
 	assert.ok(
 		!/\bany\b/.test(signatureType),
-		`${SHIFT_VIEW}: пропсы PatientCockpit снова any — расхождение с контрактом станет невидимым`
+		`${SHIFT_VIEW}: пропсы PatientCockpit снова any — расхождение с контрактом станет невидимым`,
 	);
 	assert.ok(
 		source.includes('Dashboard["patientInsights"][number]'),
-		`${SHIFT_VIEW}: тип сводки пациента переписан рядом вместо формы Dashboard — он снова разойдётся с контрактом`
+		`${SHIFT_VIEW}: тип сводки пациента переписан рядом вместо формы Dashboard — он снова разойдётся с контрактом`,
 	);
 });

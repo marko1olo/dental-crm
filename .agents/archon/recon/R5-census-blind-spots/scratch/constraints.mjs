@@ -2,7 +2,15 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "..");
+
+const REPO_ROOT = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"..",
+	"..",
+	"..",
+);
 function databaseUrl() {
 	if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
 	const line = readFileSync(join(REPO_ROOT, ".env"), "utf8")

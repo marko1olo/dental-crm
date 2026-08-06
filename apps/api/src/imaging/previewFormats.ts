@@ -12,7 +12,9 @@ import path from "node:path";
  * `<img>` значит показать сломанную картинку вместо честного объяснения, что
  * предпросмотра нет и снимок надо открыть в просмотрщике DICOM.
  */
-export function browserRenderableImageMimeType(storagePath: string | null | undefined): string | null {
+export function browserRenderableImageMimeType(
+	storagePath: string | null | undefined,
+): string | null {
 	if (!storagePath) return null;
 	const extension = path.extname(storagePath).toLowerCase();
 	if (extension === ".png") return "image/png";

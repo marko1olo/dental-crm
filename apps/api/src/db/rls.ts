@@ -37,11 +37,11 @@
  * insufficient — they will produce silent empty result sets for covered tables.
  */
 
-import { AsyncLocalStorage } from 'node:async_hooks';
-import { sql } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { dbRaw, transactionStorage } from './client.js';
-import type * as schema from './schema.js';
+import { AsyncLocalStorage } from "node:async_hooks";
+import { sql } from "drizzle-orm";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { dbRaw, transactionStorage } from "./client.js";
+import type * as schema from "./schema.js";
 
 /** Drizzle database type scoped to this project's schema. */
 export type TenantDb = NodePgDatabase<typeof schema>;
@@ -102,116 +102,122 @@ const bypassScope = new AsyncLocalStorage<true>();
  *                        inside it are protected by tenant RLS policies.
  */
 export async function withTenantCtx<T>(
-  organizationId: string,
-  callback: (tx: TenantDb) => Promise<T>,
+	organizationId: string,
+	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
-  const existingTx = transactionStorage.getStore();
-  if (existingTx) {
-    // Re-assert the tenant on the existing transaction rather than opening a
-    // new one. This is not a no-op: the inner scope may target a different
-    // tenant than the outer, and the value must be restored afterwards so the
-    // remainder of the outer transaction keeps its own tenant context.
-    const previous = await existingTx.execute(
-      sql`SELECT current_setting('app.current_tenant', true) AS tenant`,
-    );
-    const rawTenant =
-      (previous as unknown as { rows?: Array<{ tenant: string | null }> })
-        .rows?.[0]?.tenant ?? null;
-    // Reset value of a user-defined GUC is '' rather than NULL. Writing ''
-    // back would make the `::uuid` casts in the policies raise 22P02; NULL
-    // casts cleanly. Normalize on read so the restore below passes NULL.
-    const previousTenant = rawTenant === '' ? null : rawTenant;
-    // An enclosing withSuperuserBypass left `app.superuser_bypass = 'on'` on
-    // this transaction, which satisfies the permissive disjunct of every 0158
-    // policy for every row. Asking for a tenant context means asking for
-    // isolation, so the flag is suppressed for the callback and handed back to
-    // the outer scope in `finally`.
-    const bypassActive = bypassScope.getStore() === true;
-    const tenantChanged = previousTenant !== organizationId;
-    if (!tenantChanged && !bypassActive) {
-      // The transaction already carries exactly this tenant and no bypass to
-      // undo: set_config would write back the value that is already there, and
-      // the restore would write it a second time. Skip both.
-      return callback(existingTx as any);
-    }
-    if (bypassActive) {
-      await existingTx.execute(
-        sql`SELECT set_config('app.superuser_bypass', 'off', true)`,
-      );
-    }
-    if (tenantChanged) {
-      await existingTx.execute(
-        sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
-      );
-    }
-    try {
-      return await callback(existingTx as any);
-    } finally {
-      // Each restore gets its own try/catch: on an aborted transaction every
-      // statement fails, and a throw from here would replace the original error
-      // from the callback. Failing the first must not skip the second either.
-      if (tenantChanged) {
-        try {
-          await existingTx.execute(
-            sql`SELECT set_config('app.current_tenant', ${previousTenant}, true)`,
-          );
-        } catch {
-          // Transaction already aborted; the setting dies with it. Suppress so
-          // the original error from the callback is not masked.
-        }
-      }
-      if (bypassActive) {
-        try {
-          await existingTx.execute(
-            sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
-          );
-        } catch {
-          // Same reasoning: the outer bypass scope resets the flag itself, and
-          // on an aborted transaction nothing survives anyway.
-        }
-      }
-    }
-  }
-  return dbRaw.transaction(async (tx) => {
-    // is_local = true: the setting expires when this transaction commits or
-    // rolls back, preventing the setting from leaking to the next request that
-    // reuses the same pooled connection.
-    await tx.execute(
-      sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
-    );
-    return transactionStorage.run(tx as any, () => callback(tx as any));
-  });
+	const existingTx = transactionStorage.getStore();
+	if (existingTx) {
+		// Re-assert the tenant on the existing transaction rather than opening a
+		// new one. This is not a no-op: the inner scope may target a different
+		// tenant than the outer, and the value must be restored afterwards so the
+		// remainder of the outer transaction keeps its own tenant context.
+		const previous = await existingTx.execute(
+			sql`SELECT current_setting('app.current_tenant', true) AS tenant`,
+		);
+		const rawTenant =
+			(previous as unknown as { rows?: Array<{ tenant: string | null }> })
+				.rows?.[0]?.tenant ?? null;
+		// Reset value of a user-defined GUC is '' rather than NULL. Writing ''
+		// back would make the `::uuid` casts in the policies raise 22P02; NULL
+		// casts cleanly. Normalize on read so the restore below passes NULL.
+		const previousTenant = rawTenant === "" ? null : rawTenant;
+		// An enclosing withSuperuserBypass left `app.superuser_bypass = 'on'` on
+		// this transaction, which satisfies the permissive disjunct of every 0158
+		// policy for every row. Asking for a tenant context means asking for
+		// isolation, so the flag is suppressed for the callback and handed back to
+		// the outer scope in `finally`.
+		const bypassActive = bypassScope.getStore() === true;
+		const tenantChanged = previousTenant !== organizationId;
+		if (!tenantChanged && !bypassActive) {
+			// The transaction already carries exactly this tenant and no bypass to
+			// undo: set_config would write back the value that is already there, and
+			// the restore would write it a second time. Skip both.
+			return callback(existingTx as any);
+		}
+		if (bypassActive) {
+			await existingTx.execute(
+				sql`SELECT set_config('app.superuser_bypass', 'off', true)`,
+			);
+		}
+		if (tenantChanged) {
+			await existingTx.execute(
+				sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
+			);
+		}
+		try {
+			return await callback(existingTx as any);
+		} finally {
+			// Each restore gets its own try/catch: on an aborted transaction every
+			// statement fails, and a throw from here would replace the original error
+			// from the callback. Failing the first must not skip the second either.
+			if (tenantChanged) {
+				try {
+					await existingTx.execute(
+						sql`SELECT set_config('app.current_tenant', ${previousTenant}, true)`,
+					);
+				} catch {
+					// Transaction already aborted; the setting dies with it. Suppress so
+					// the original error from the callback is not masked.
+				}
+			}
+			if (bypassActive) {
+				try {
+					await existingTx.execute(
+						sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
+					);
+				} catch {
+					// Same reasoning: the outer bypass scope resets the flag itself, and
+					// on an aborted transaction nothing survives anyway.
+				}
+			}
+		}
+	}
+	return dbRaw.transaction(async (tx) => {
+		// is_local = true: the setting expires when this transaction commits or
+		// rolls back, preventing the setting from leaking to the next request that
+		// reuses the same pooled connection.
+		await tx.execute(
+			sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
+		);
+		return transactionStorage.run(tx as any, () => callback(tx as any));
+	});
 }
 
 export async function withSuperuserBypass<T>(
-  callback: (tx: TenantDb) => Promise<T>,
+	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
-  const existingTx = transactionStorage.getStore();
-  if (existingTx) {
-    // A bypass scope is already open on this transaction; it owns the flag and
-    // its reset. Doing another set/reset pair here would turn the bypass off
-    // while the outer scope is still using it.
-    if (bypassScope.getStore()) {
-      return callback(existingTx);
-    }
-    await existingTx.execute(sql`SELECT set_config('app.superuser_bypass', 'on', true)`);
-    try {
-      return await bypassScope.run(true, () => callback(existingTx));
-    } finally {
-      // Reset the flag even if the callback threw. If the transaction is already
-      // aborted, this cleanup will fail — suppress that error to preserve the
-      // original exception from the callback.
-      try {
-        await existingTx.execute(sql`SELECT set_config('app.superuser_bypass', 'off', true)`);
-      } catch {
-        // Cleanup failed, likely because the transaction is aborted. Ignore.
-      }
-    }
-  }
-  return dbRaw.transaction(async (tx) => {
-    await tx.execute(sql`SELECT set_config('app.superuser_bypass', 'on', true)`);
-    return transactionStorage.run(tx as any, () =>
-      bypassScope.run(true, () => callback(tx as any)),
-    );
-  });
+	const existingTx = transactionStorage.getStore();
+	if (existingTx) {
+		// A bypass scope is already open on this transaction; it owns the flag and
+		// its reset. Doing another set/reset pair here would turn the bypass off
+		// while the outer scope is still using it.
+		if (bypassScope.getStore()) {
+			return callback(existingTx);
+		}
+		await existingTx.execute(
+			sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
+		);
+		try {
+			return await bypassScope.run(true, () => callback(existingTx));
+		} finally {
+			// Reset the flag even if the callback threw. If the transaction is already
+			// aborted, this cleanup will fail — suppress that error to preserve the
+			// original exception from the callback.
+			try {
+				await existingTx.execute(
+					sql`SELECT set_config('app.superuser_bypass', 'off', true)`,
+				);
+			} catch {
+				// Cleanup failed, likely because the transaction is aborted. Ignore.
+			}
+		}
+	}
+	return dbRaw.transaction(async (tx) => {
+		await tx.execute(
+			sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
+		);
+		return transactionStorage.run(tx as any, () =>
+			bypassScope.run(true, () => callback(tx as any)),
+		);
+	});
 }

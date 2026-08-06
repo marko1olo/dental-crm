@@ -8,10 +8,10 @@ import {
 	parseMaxSettingsPayload,
 } from "./useMaxSettings.js";
 import {
-	WHATSAPP_SETTINGS_SAVE_BLOCKED_MESSAGE,
-	WHATSAPP_SETTINGS_SAVE_WHILE_LOADING_MESSAGE,
 	normalizeWhatsappStaffRouting,
 	parseWhatsappSettingsPayload,
+	WHATSAPP_SETTINGS_SAVE_BLOCKED_MESSAGE,
+	WHATSAPP_SETTINGS_SAVE_WHILE_LOADING_MESSAGE,
 	whatsappSaveGuardVerdict,
 } from "./useWhatsappSettings.js";
 

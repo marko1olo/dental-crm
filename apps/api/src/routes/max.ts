@@ -8,7 +8,6 @@
  * Docs: https://business.max.ru (requires business account login)
  */
 import { createHash } from "node:crypto";
-import { verifyWebhookSecret } from "../security/webhookAuth.js";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -25,8 +24,9 @@ import {
 	messengerInboundEvents,
 	patients,
 } from "../db/schema.js";
-import { wsBroker } from "../services/websocketBroker.js";
+import { verifyWebhookSecret } from "../security/webhookAuth.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 const updateMaxConfigSchema = z.object({
 	botId: z.string().trim().max(128).nullable().optional(),
@@ -66,7 +66,6 @@ function parseJsonSafe<T>(value: unknown, fallback: T): T {
 	return value as T;
 }
 
-
 /** Точная проверка пути вебхука (без учёта query-строки). */
 function isWebhookPath(url: string): boolean {
 	const pathname = (url.split("?")[0] ?? "").replace(/\/+$/, "");
@@ -80,10 +79,12 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		// включая, например, /api/max/settings?x=/webhook. Теперь путь
 		// вебхука проверяется точно и защищён общим секретом канала.
 		if (isWebhookPath(request.url)) {
-			if (!verifyWebhookSecret(request, reply, {
-				channel: "max",
-				secretEnvNames: ["MAX_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
-			})) {
+			if (
+				!verifyWebhookSecret(request, reply, {
+					channel: "max",
+					secretEnvNames: ["MAX_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
+				})
+			) {
 				return reply;
 			}
 			return;
@@ -362,7 +363,9 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			.from(patients)
 			// БЫЛО: условие только по patients.id, без организации. Сотрудник любой
 			// клиники мог указать UUID чужого пациента.
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+			.where(
+				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+			)
 			.limit(1);
 
 		if (!patient) {

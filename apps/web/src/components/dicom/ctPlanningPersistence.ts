@@ -1,9 +1,9 @@
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
-	buildPanoramicArch,
 	type BuildPanoramicArchOptions,
+	buildPanoramicArch,
 	type PanoramicArchResult,
 } from "./panoramicArch";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 /**
  * ПЛАНИРОВАНИЕ ИМПЛАНТАЦИИ ПЕРЕСТАЁТ УМИРАТЬ ВМЕСТЕ С ЭКРАНОМ.
@@ -52,7 +52,10 @@ export const CT_PLANNING_LOAD_PATH = "/api/imaging/planning/load";
  * а живой контракт сервера, и клиент обязан соблюдать оба имени дословно.
  * Единственное место, где эта разница записана, — эта функция.
  */
-export function ctPlanningLoadUrl(patientId: string, studyInstanceUid: string): string {
+export function ctPlanningLoadUrl(
+	patientId: string,
+	studyInstanceUid: string,
+): string {
 	const query = new URLSearchParams({ studyUid: studyInstanceUid, patientId });
 	return `${CT_PLANNING_LOAD_PATH}?${query.toString()}`;
 }
@@ -152,7 +155,9 @@ export function worldTriple(value: unknown): [number, number, number] | null {
 /** Мировая точка cornerstone (`ArrayLike<number>`) в форму для записи. */
 export function worldPointOf(value: unknown): WorldPoint3 | null {
 	const triple = worldTriple(
-		value && typeof value === "object" && "length" in (value as ArrayLike<number>)
+		value &&
+			typeof value === "object" &&
+			"length" in (value as ArrayLike<number>)
 			? Array.from(value as ArrayLike<number>)
 			: value,
 	);
@@ -171,7 +176,9 @@ export function worldPointOf(value: unknown): WorldPoint3 | null {
  */
 export function archControlPointsOf(
 	annotations: readonly {
-		data?: { handles?: { points?: readonly unknown[] | undefined } | undefined } | undefined;
+		data?:
+			| { handles?: { points?: readonly unknown[] | undefined } | undefined }
+			| undefined;
 	}[],
 ): WorldPoint3[] {
 	for (let i = annotations.length - 1; i >= 0; i--) {
@@ -203,7 +210,15 @@ export function archFromStoredControlPoints(
 	options: BuildPanoramicArchOptions = {},
 ): PanoramicArchResult {
 	return buildPanoramicArch(
-		[{ data: { handles: { points: points.map((point) => [point.x, point.y, point.z]) } } }],
+		[
+			{
+				data: {
+					handles: {
+						points: points.map((point) => [point.x, point.y, point.z]),
+					},
+				},
+			},
+		],
 		options,
 	);
 }
@@ -257,7 +272,10 @@ function storedImplantOf(value: unknown): StoredImplant | null {
 	if (!startWorld || !endWorld) return null;
 	const density = (raw.boneDensity ?? {}) as Record<string, unknown>;
 	return {
-		id: typeof raw.id === "string" && raw.id ? raw.id : `restored-${startWorld.join("-")}`,
+		id:
+			typeof raw.id === "string" && raw.id
+				? raw.id
+				: `restored-${startWorld.join("-")}`,
 		fdiCode: typeof raw.fdiCode === "string" ? raw.fdiCode : "",
 		diameter: finiteNumber(raw.diameter) ?? 0,
 		length: finiteNumber(raw.length) ?? 0,
@@ -265,7 +283,10 @@ function storedImplantOf(value: unknown): StoredImplant | null {
 		endWorld,
 		boneDensity: {
 			averageHU: finiteNumber(density.averageHU) ?? 0,
-			classification: typeof density.classification === "string" ? density.classification : "",
+			classification:
+				typeof density.classification === "string"
+					? density.classification
+					: "",
 		},
 		distanceToNerve: finiteNumber(raw.distanceToNerve) ?? 0,
 	};
@@ -281,7 +302,9 @@ function worldPointsOf(value: unknown): WorldPoint3[] {
 						const x = finiteNumber(raw.x);
 						const y = finiteNumber(raw.y);
 						const z = finiteNumber(raw.z);
-						return x === null || y === null || z === null ? worldPointOf(candidate) : { x, y, z };
+						return x === null || y === null || z === null
+							? worldPointOf(candidate)
+							: { x, y, z };
 					})()
 				: worldPointOf(candidate);
 		if (point) out.push(point);
@@ -327,7 +350,10 @@ function serverMessageForOperator(body: unknown): string | null {
  * Отказ сохранения. Врач в этот момент уже обвёл дугу, поэтому первое, что он
  * обязан услышать, — что обведённое не потеряно.
  */
-export function ctPlanningSaveRefusalText(status: number | null, body: unknown): string {
+export function ctPlanningSaveRefusalText(
+	status: number | null,
+	body: unknown,
+): string {
 	const fromServer = serverMessageForOperator(body);
 	if (fromServer) return fromServer;
 	if (status === null) {
@@ -356,7 +382,10 @@ export function ctPlanningSaveRefusalText(status: number | null, body: unknown):
 }
 
 /** Отказ чтения. Пустой снимок без объяснения врач читает как потерю разметки. */
-export function ctPlanningLoadRefusalText(status: number | null, body: unknown): string {
+export function ctPlanningLoadRefusalText(
+	status: number | null,
+	body: unknown,
+): string {
 	const fromServer = serverMessageForOperator(body);
 	if (fromServer) return fromServer;
 	if (status === null) {
@@ -418,15 +447,25 @@ export async function saveCtPlanningMarkup(
 	try {
 		response = await fetch(CT_PLANNING_SAVE_URL, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-			body: JSON.stringify(ctPlanningSaveBody(patientId, studyInstanceUid, markup)),
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+			}),
+			body: JSON.stringify(
+				ctPlanningSaveBody(patientId, studyInstanceUid, markup),
+			),
 		});
 	} catch {
-		return { status: "refused", message: ctPlanningSaveRefusalText(null, null) };
+		return {
+			status: "refused",
+			message: ctPlanningSaveRefusalText(null, null),
+		};
 	}
 	if (!response.ok) {
 		const body = await jsonBodyOf(response);
-		return { status: "refused", message: ctPlanningSaveRefusalText(response.status, body) };
+		return {
+			status: "refused",
+			message: ctPlanningSaveRefusalText(response.status, body),
+		};
 	}
 	return { status: "saved" };
 }
@@ -441,11 +480,17 @@ export async function loadCtPlanningMarkup(
 			headers: denteAdminSecretRequestHeaders(),
 		});
 	} catch {
-		return { status: "refused", message: ctPlanningLoadRefusalText(null, null) };
+		return {
+			status: "refused",
+			message: ctPlanningLoadRefusalText(null, null),
+		};
 	}
 	const body = await jsonBodyOf(response);
 	if (!response.ok) {
-		return { status: "refused", message: ctPlanningLoadRefusalText(response.status, body) };
+		return {
+			status: "refused",
+			message: ctPlanningLoadRefusalText(response.status, body),
+		};
 	}
 	const planning = (body as { planning?: unknown } | null)?.planning ?? null;
 	return {
@@ -459,11 +504,16 @@ export async function loadCtPlanningMarkup(
  * Русская сводка того, что прочитано из базы. Восстановление, о котором врач не
  * узнал, равно отсутствию восстановления: он обведёт дугу заново.
  */
-export function ctPlanningRestoredLabel(markup: CtPlanningMarkup): string | null {
+export function ctPlanningRestoredLabel(
+	markup: CtPlanningMarkup,
+): string | null {
 	if (ctPlanningMarkupIsEmpty(markup)) return null;
 	const parts: string[] = [];
-	if (markup.splinePoints.length > 0) parts.push(`точек дуги ${markup.splinePoints.length}`);
-	if (markup.nervePoints.length > 0) parts.push(`точек канала ${markup.nervePoints.length}`);
-	if (markup.implants.length > 0) parts.push(`имплантов ${markup.implants.length}`);
+	if (markup.splinePoints.length > 0)
+		parts.push(`точек дуги ${markup.splinePoints.length}`);
+	if (markup.nervePoints.length > 0)
+		parts.push(`точек канала ${markup.nervePoints.length}`);
+	if (markup.implants.length > 0)
+		parts.push(`имплантов ${markup.implants.length}`);
 	return `Разметка этого снимка восстановлена из базы: ${parts.join(", ")}.`;
 }

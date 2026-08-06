@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -12,7 +12,7 @@ import {
 	payments,
 	treatmentItems,
 	users,
-	visits
+	visits,
 } from "../../db/schema.js";
 import { registerReportRoutes } from "../../routes/reports.js";
 import { currentMonthPeriod } from "../../services/reports/managerReports.js";
@@ -44,7 +44,9 @@ const ORG_HEADERS = { "x-organization-id": ORG_ID };
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
+	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(
+		message,
+	);
 }
 
 /**
@@ -67,10 +69,14 @@ function isMissingDatabase(error: unknown): boolean {
  */
 async function removeFixtureRows(): Promise<void> {
 	await withFixtureTenant(ORG_ID, async () => {
-		await db.delete(treatmentItems).where(eq(treatmentItems.organizationId, ORG_ID));
+		await db
+			.delete(treatmentItems)
+			.where(eq(treatmentItems.organizationId, ORG_ID));
 		await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
 		await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
-		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db
+			.delete(appointments)
+			.where(eq(appointments.organizationId, ORG_ID));
 		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 		await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
 		await db.delete(users).where(eq(users.organizationId, ORG_ID));
@@ -109,24 +115,50 @@ describe("отчёты руководителю", () => {
 			// известному ORG_ID — тем же приёмом, каким создаёт клинику боевой
 			// маршрут регистрации (`routes/auth.ts`).
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника отчётов" }).onConflictDoNothing();
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника отчётов" })
+					.onConflictDoNothing();
 				await db
 					.insert(clinics)
-					.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" })
+					.values({
+						id: CLINIC_ID,
+						organizationId: ORG_ID,
+						name: "Главная",
+						timezone: "Europe/Moscow",
+					})
 					.onConflictDoNothing();
 				await db
 					.insert(chairs)
-					.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1" })
+					.values({
+						id: CHAIR_ID,
+						organizationId: ORG_ID,
+						clinicId: CLINIC_ID,
+						name: "Кресло 1",
+					})
 					.onConflictDoNothing();
 				await db
 					.insert(users)
-					.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Петров Пётр Петрович", role: "doctor" })
+					.values({
+						id: DOCTOR_ID,
+						organizationId: ORG_ID,
+						fullName: "Петров Пётр Петрович",
+						role: "doctor",
+					})
 					.onConflictDoNothing();
 				await db
 					.insert(patients)
 					.values([
-						{ id: PATIENT_OLD, organizationId: ORG_ID, fullName: "Старый Пациент Иванович" },
-						{ id: PATIENT_NEW, organizationId: ORG_ID, fullName: "Новый Пациент Петрович" }
+						{
+							id: PATIENT_OLD,
+							organizationId: ORG_ID,
+							fullName: "Старый Пациент Иванович",
+						},
+						{
+							id: PATIENT_NEW,
+							organizationId: ORG_ID,
+							fullName: "Новый Пациент Петрович",
+						},
 					])
 					.onConflictDoNothing();
 
@@ -142,7 +174,7 @@ describe("отчёты руководителю", () => {
 							chairId: CHAIR_ID,
 							status: "completed",
 							startsAt: longAgo,
-							endsAt: new Date(longAgo.getTime() + 60 * 60_000)
+							endsAt: new Date(longAgo.getTime() + 60 * 60_000),
 						},
 						{
 							id: APPOINTMENT_ID,
@@ -152,7 +184,7 @@ describe("отчёты руководителю", () => {
 							chairId: CHAIR_ID,
 							status: "completed",
 							startsAt: inPeriod,
-							endsAt: new Date(inPeriod.getTime() + 90 * 60_000)
+							endsAt: new Date(inPeriod.getTime() + 90 * 60_000),
 						},
 						{
 							organizationId: ORG_ID,
@@ -161,7 +193,7 @@ describe("отчёты руководителю", () => {
 							chairId: CHAIR_ID,
 							status: "completed",
 							startsAt: new Date(inPeriod.getTime() + 3 * 60 * 60_000),
-							endsAt: new Date(inPeriod.getTime() + 4 * 60 * 60_000)
+							endsAt: new Date(inPeriod.getTime() + 4 * 60 * 60_000),
 						},
 						{
 							organizationId: ORG_ID,
@@ -170,7 +202,7 @@ describe("отчёты руководителю", () => {
 							chairId: CHAIR_ID,
 							status: "cancelled",
 							startsAt: new Date(inPeriod.getTime() + 6 * 60 * 60_000),
-							endsAt: new Date(inPeriod.getTime() + 7 * 60 * 60_000)
+							endsAt: new Date(inPeriod.getTime() + 7 * 60 * 60_000),
 						},
 						{
 							organizationId: ORG_ID,
@@ -179,8 +211,8 @@ describe("отчёты руководителю", () => {
 							chairId: CHAIR_ID,
 							status: "no_show",
 							startsAt: new Date(inPeriod.getTime() + 8 * 60 * 60_000),
-							endsAt: new Date(inPeriod.getTime() + 9 * 60 * 60_000)
-						}
+							endsAt: new Date(inPeriod.getTime() + 9 * 60 * 60_000),
+						},
 					])
 					.onConflictDoNothing();
 
@@ -194,7 +226,7 @@ describe("отчёты руководителю", () => {
 						// доходит до врача, у визита своего поля «врач» нет.
 						appointmentId: APPOINTMENT_ID,
 						status: "signed",
-						createdAt: inPeriod
+						createdAt: inPeriod,
 					})
 					.onConflictDoNothing();
 
@@ -209,10 +241,22 @@ describe("отчёты руководителю", () => {
 							visitId: VISIT_ID,
 							amountRub: 10_000,
 							status: "paid",
-							paidAt: inPeriod
+							paidAt: inPeriod,
 						},
-						{ organizationId: ORG_ID, patientId: PATIENT_OLD, amountRub: 50_000, status: "planned", paidAt: inPeriod },
-						{ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 7_000, status: "refunded", paidAt: inPeriod }
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_OLD,
+							amountRub: 50_000,
+							status: "planned",
+							paidAt: inPeriod,
+						},
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_NEW,
+							amountRub: 7_000,
+							status: "refunded",
+							paidAt: inPeriod,
+						},
 					])
 					.onConflictDoNothing();
 
@@ -229,7 +273,7 @@ describe("отчёты руководителю", () => {
 							priceRub: 8_000,
 							unitPriceRub: 8_000,
 							discountRub: 2_000,
-							status: "completed"
+							status: "completed",
 						},
 						{
 							organizationId: ORG_ID,
@@ -240,8 +284,8 @@ describe("отчёты руководителю", () => {
 							priceRub: 16_000,
 							unitPriceRub: 16_000,
 							discountRub: 0,
-							status: "completed"
-						}
+							status: "completed",
+						},
 					])
 					.onConflictDoNothing();
 			});
@@ -262,7 +306,11 @@ describe("отчёты руководителю", () => {
 	test("в выручку идут только полученные деньги", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/revenue", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/revenue",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
@@ -280,7 +328,7 @@ describe("отчёты руководителю", () => {
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/revenue?granularity=month",
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
@@ -291,11 +339,17 @@ describe("отчёты руководителю", () => {
 	test("по врачу считаются доли отмен и неявок, а маржа не выдумывается", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/doctors", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/doctors",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
-		const doctor = body.rows.find((row: { doctorUserId: string }) => row.doctorUserId === DOCTOR_ID);
+		const doctor = body.rows.find(
+			(row: { doctorUserId: string }) => row.doctorUserId === DOCTOR_ID,
+		);
 		assert.ok(doctor, JSON.stringify(body));
 		assert.equal(doctor.revenueRub, 10_000);
 		// В периоде: 2 завершённых, 1 отменённый, 1 неявка.
@@ -324,17 +378,32 @@ describe("отчёты руководителю", () => {
 		const [orphanPayment] = await withFixtureTenant(ORG_ID, async () =>
 			db
 				.insert(payments)
-				.values({ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 3_000, status: "paid", paidAt: inPeriod })
-				.returning({ id: payments.id })
+				.values({
+					organizationId: ORG_ID,
+					patientId: PATIENT_NEW,
+					amountRub: 3_000,
+					status: "paid",
+					paidAt: inPeriod,
+				})
+				.returning({ id: payments.id }),
 		);
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/doctors", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/doctors",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 		assert.equal(body.unattributedRevenueRub, 3_000, JSON.stringify(body));
-		assert.ok(body.attributionNote.includes("не отнесена"), body.attributionNote);
+		assert.ok(
+			body.attributionNote.includes("не отнесена"),
+			body.attributionNote,
+		);
 
-		const doctor = body.rows.find((row: { doctorUserId: string }) => row.doctorUserId === DOCTOR_ID);
+		const doctor = body.rows.find(
+			(row: { doctorUserId: string }) => row.doctorUserId === DOCTOR_ID,
+		);
 		// Врачу чужие 3 000 не приписаны.
 		assert.equal(doctor.revenueRub, 10_000);
 
@@ -346,16 +415,26 @@ describe("отчёты руководителю", () => {
 	test("занятость кресла считается в минутах и от названной базы", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/chairs", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/chairs",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
-		const chair = body.rows.find((row: { chairId: string }) => row.chairId === CHAIR_ID);
+		const chair = body.rows.find(
+			(row: { chairId: string }) => row.chairId === CHAIR_ID,
+		);
 		assert.ok(chair, JSON.stringify(body));
 		// 90 + 60 минут завершённых приёмов. Отменённый и неявка кресло не заняли.
 		assert.equal(chair.bookedMinutes, 150);
 		assert.equal(chair.appointments, 2);
-		assert.ok(chair.utilization !== null && chair.utilization > 0 && chair.utilization < 1);
+		assert.ok(
+			chair.utilization !== null &&
+				chair.utilization > 0 &&
+				chair.utilization < 1,
+		);
 		// База расчёта обязана возвращаться рядом с процентом.
 		assert.ok(body.basis.totalMinutesPerChair > 0);
 		assert.ok(body.basis.note.includes("Отменённые"));
@@ -364,7 +443,11 @@ describe("отчёты руководителю", () => {
 	test("воронка приёмов даёт потери и доли", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/appointments", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/appointments",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
@@ -380,7 +463,11 @@ describe("отчёты руководителю", () => {
 	test("первичный считается по первому приёму за всю историю, а не в периоде", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/patient-flow", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/patient-flow",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
@@ -416,39 +503,60 @@ describe("отчёты руководителю", () => {
 		const FAR_ZONE = "Asia/Kamchatka";
 		const monthIn = (zone: string, at: Date): string => {
 			const parts = new Map(
-				new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit" })
+				new Intl.DateTimeFormat("en-CA", {
+					timeZone: zone,
+					year: "numeric",
+					month: "2-digit",
+				})
 					.formatToParts(at)
-					.map((part) => [part.type, part.value])
+					.map((part) => [part.type, part.value]),
 			);
 			return `${parts.get("year")}-${parts.get("month")}`;
 		};
 
 		const clinicMonthStart = currentMonthPeriod(new Date(), FAR_ZONE).from;
-		const justAfterMonthStart = new Date(clinicMonthStart.getTime() + 30 * 60_000);
+		const justAfterMonthStart = new Date(
+			clinicMonthStart.getTime() + 30 * 60_000,
+		);
 		const clinicMonth = monthIn(FAR_ZONE, justAfterMonthStart);
-		const previousMonth = monthIn(FAR_ZONE, new Date(clinicMonthStart.getTime() - 60 * 60_000));
+		const previousMonth = monthIn(
+			FAR_ZONE,
+			new Date(clinicMonthStart.getTime() - 60 * 60_000),
+		);
 
 		// Пояс клиники, пациент и приём заводятся одним севом под тенант-контекстом.
 		// Без `app.current_tenant` `UPDATE` не видит строки клиники и молча меняет
 		// ноль строк, а `INSERT` отвергается политикой кодом 42501.
-		const { boundaryPatient, boundaryAppointment } = await withFixtureTenant(ORG_ID, async () => {
-			await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
-			const [seededPatient] = await db
-				.insert(patients)
-				.values({ organizationId: ORG_ID, fullName: "Ночной Пациент Границевич" })
-				.returning({ id: patients.id });
-			const [seededAppointment] = await db
-				.insert(appointments)
-				.values({
-					organizationId: ORG_ID,
-					patientId: seededPatient?.id ?? "",
-					status: "completed",
-					startsAt: justAfterMonthStart,
-					endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000)
-				})
-				.returning({ id: appointments.id });
-			return { boundaryPatient: seededPatient, boundaryAppointment: seededAppointment };
-		});
+		const { boundaryPatient, boundaryAppointment } = await withFixtureTenant(
+			ORG_ID,
+			async () => {
+				await db
+					.update(clinics)
+					.set({ timezone: FAR_ZONE })
+					.where(eq(clinics.id, CLINIC_ID));
+				const [seededPatient] = await db
+					.insert(patients)
+					.values({
+						organizationId: ORG_ID,
+						fullName: "Ночной Пациент Границевич",
+					})
+					.returning({ id: patients.id });
+				const [seededAppointment] = await db
+					.insert(appointments)
+					.values({
+						organizationId: ORG_ID,
+						patientId: seededPatient?.id ?? "",
+						status: "completed",
+						startsAt: justAfterMonthStart,
+						endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000),
+					})
+					.returning({ id: appointments.id });
+				return {
+					boundaryPatient: seededPatient,
+					boundaryAppointment: seededAppointment,
+				};
+			},
+		);
 
 		try {
 			/*
@@ -459,29 +567,43 @@ describe("отчёты руководителю", () => {
 			 * тест ниже. Этот случай оставлен как проверка второй ветки: период
 			 * по умолчанию.
 			 */
-			const from = new Date(clinicMonthStart.getTime() - 2 * 60 * 60_000).toISOString();
+			const from = new Date(
+				clinicMonthStart.getTime() - 2 * 60 * 60_000,
+			).toISOString();
 			const response = await app.inject({
 				method: "GET",
 				url: `/api/reports/patient-flow?from=${encodeURIComponent(from)}`,
-				headers: ORG_HEADERS
+				headers: ORG_HEADERS,
 			});
 			assert.equal(response.statusCode, 200, response.body);
 			const body = JSON.parse(response.body);
-			const buckets = body.points.map((point: { bucket: string }) => point.bucket);
+			const buckets = body.points.map(
+				(point: { bucket: string }) => point.bucket,
+			);
 
-			assert.ok(buckets.includes(clinicMonth), `${clinicMonth} нет в ${JSON.stringify(buckets)}`);
+			assert.ok(
+				buckets.includes(clinicMonth),
+				`${clinicMonth} нет в ${JSON.stringify(buckets)}`,
+			);
 			assert.ok(
 				!buckets.includes(previousMonth),
-				`приём попал в предыдущий месяц ${previousMonth}: месяц снова считается в поясе сессии — ${JSON.stringify(buckets)}`
+				`приём попал в предыдущий месяц ${previousMonth}: месяц снова считается в поясе сессии — ${JSON.stringify(buckets)}`,
 			);
 		} finally {
 			// Уборка тоже под контекстом: без него `DELETE` не видит собственных
 			// строк и снимает ноль без ошибки, а восстановление пояса не доходит до
 			// клиники — следующие тесты считали бы период в чужом поясе.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.delete(appointments).where(eq(appointments.id, boundaryAppointment?.id ?? ""));
-				await db.delete(patients).where(eq(patients.id, boundaryPatient?.id ?? ""));
-				await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+				await db
+					.delete(appointments)
+					.where(eq(appointments.id, boundaryAppointment?.id ?? ""));
+				await db
+					.delete(patients)
+					.where(eq(patients.id, boundaryPatient?.id ?? ""));
+				await db
+					.update(clinics)
+					.set({ timezone: "Europe/Moscow" })
+					.where(eq(clinics.id, CLINIC_ID));
 			});
 		}
 	});
@@ -517,68 +639,102 @@ describe("отчёты руководителю", () => {
 		const FAR_ZONE = "Asia/Kamchatka";
 		const monthIn = (zone: string, at: Date): string => {
 			const parts = new Map(
-				new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit" })
+				new Intl.DateTimeFormat("en-CA", {
+					timeZone: zone,
+					year: "numeric",
+					month: "2-digit",
+				})
 					.formatToParts(at)
-					.map((part) => [part.type, part.value])
+					.map((part) => [part.type, part.value]),
 			);
 			return `${parts.get("year")}-${parts.get("month")}`;
 		};
 
 		const clinicMonthStart = currentMonthPeriod(new Date(), FAR_ZONE).from;
-		const justAfterMonthStart = new Date(clinicMonthStart.getTime() + 30 * 60_000);
+		const justAfterMonthStart = new Date(
+			clinicMonthStart.getTime() + 30 * 60_000,
+		);
 		const clinicMonth = monthIn(FAR_ZONE, justAfterMonthStart);
-		const previousMonth = monthIn(FAR_ZONE, new Date(clinicMonthStart.getTime() - 60 * 60_000));
+		const previousMonth = monthIn(
+			FAR_ZONE,
+			new Date(clinicMonthStart.getTime() - 60 * 60_000),
+		);
 
 		// Тот же тенант-контекст, что и в севе `before`: без него `UPDATE` меняет
 		// ноль строк молча, а `INSERT` падает с 42501 — проверка поясов не дошла бы
 		// до запроса вовсе.
-		const { boundaryPatient, boundaryAppointment } = await withFixtureTenant(ORG_ID, async () => {
-			await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
-			const [seededPatient] = await db
-				.insert(patients)
-				.values({ organizationId: ORG_ID, fullName: "Панельный Пациент Границевич" })
-				.returning({ id: patients.id });
-			const [seededAppointment] = await db
-				.insert(appointments)
-				.values({
-					organizationId: ORG_ID,
-					patientId: seededPatient?.id ?? "",
-					status: "completed",
-					startsAt: justAfterMonthStart,
-					endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000)
-				})
-				.returning({ id: appointments.id });
-			return { boundaryPatient: seededPatient, boundaryAppointment: seededAppointment };
-		});
+		const { boundaryPatient, boundaryAppointment } = await withFixtureTenant(
+			ORG_ID,
+			async () => {
+				await db
+					.update(clinics)
+					.set({ timezone: FAR_ZONE })
+					.where(eq(clinics.id, CLINIC_ID));
+				const [seededPatient] = await db
+					.insert(patients)
+					.values({
+						organizationId: ORG_ID,
+						fullName: "Панельный Пациент Границевич",
+					})
+					.returning({ id: patients.id });
+				const [seededAppointment] = await db
+					.insert(appointments)
+					.values({
+						organizationId: ORG_ID,
+						patientId: seededPatient?.id ?? "",
+						status: "completed",
+						startsAt: justAfterMonthStart,
+						endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000),
+					})
+					.returning({ id: appointments.id });
+				return {
+					boundaryPatient: seededPatient,
+					boundaryAppointment: seededAppointment,
+				};
+			},
+		);
 
 		try {
-			const from = new Date(clinicMonthStart.getTime() - 3 * 60 * 60_000).toISOString();
-			const to = new Date(justAfterMonthStart.getTime() + 3 * 60 * 60_000).toISOString();
+			const from = new Date(
+				clinicMonthStart.getTime() - 3 * 60 * 60_000,
+			).toISOString();
+			const to = new Date(
+				justAfterMonthStart.getTime() + 3 * 60 * 60_000,
+			).toISOString();
 			const response = await app.inject({
 				method: "GET",
 				url: `/api/reports/patient-flow?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
-				headers: ORG_HEADERS
+				headers: ORG_HEADERS,
 			});
 			assert.equal(response.statusCode, 200, response.body);
 			const body = JSON.parse(response.body);
-			const buckets = body.points.map((point: { bucket: string }) => point.bucket);
+			const buckets = body.points.map(
+				(point: { bucket: string }) => point.bucket,
+			);
 
 			assert.ok(
 				buckets.includes(clinicMonth),
-				`${clinicMonth} нет в ${JSON.stringify(buckets)}: с обеими границами маршрут снова не читает пояс клиники`
+				`${clinicMonth} нет в ${JSON.stringify(buckets)}: с обеими границами маршрут снова не читает пояс клиники`,
 			);
 			assert.ok(
 				!buckets.includes(previousMonth),
-				`приём попал в предыдущий месяц ${previousMonth}: с обеими границами месяц считается в поясе сессии — ${JSON.stringify(buckets)}`
+				`приём попал в предыдущий месяц ${previousMonth}: с обеими границами месяц считается в поясе сессии — ${JSON.stringify(buckets)}`,
 			);
 		} finally {
 			// Уборка тоже под контекстом: без него `DELETE` не видит собственных
 			// строк и снимает ноль без ошибки, а восстановление пояса не доходит до
 			// клиники — следующие тесты считали бы период в чужом поясе.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.delete(appointments).where(eq(appointments.id, boundaryAppointment?.id ?? ""));
-				await db.delete(patients).where(eq(patients.id, boundaryPatient?.id ?? ""));
-				await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+				await db
+					.delete(appointments)
+					.where(eq(appointments.id, boundaryAppointment?.id ?? ""));
+				await db
+					.delete(patients)
+					.where(eq(patients.id, boundaryPatient?.id ?? ""));
+				await db
+					.update(clinics)
+					.set({ timezone: "Europe/Moscow" })
+					.where(eq(clinics.id, CLINIC_ID));
 			});
 		}
 	});
@@ -626,30 +782,42 @@ describe("отчёты руководителю", () => {
 		// Один сев под тенант-контекстом клиники: под FORCE RLS `INSERT` без
 		// `app.current_tenant` отвергается кодом 42501, а `UPDATE` пояса без него
 		// меняет ноль строк и об этом не сообщает.
-		const { shiftPatient, shiftAppointment } = await withFixtureTenant(ORG_ID, async () => {
-			await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
-			const [seededPatient] = await db
-				.insert(patients)
-				.values({ organizationId: ORG_ID, fullName: "Первая Смена Месяцевна" })
-				.returning({ id: patients.id });
-			const [seededAppointment] = await db
-				.insert(appointments)
-				.values({
-					organizationId: ORG_ID,
-					patientId: seededPatient?.id ?? "",
-					status: "completed",
-					startsAt: firstShift,
-					endsAt: new Date(firstShift.getTime() + 30 * 60_000)
-				})
-				.returning({ id: appointments.id });
-			return { shiftPatient: seededPatient, shiftAppointment: seededAppointment };
-		});
+		const { shiftPatient, shiftAppointment } = await withFixtureTenant(
+			ORG_ID,
+			async () => {
+				await db
+					.update(clinics)
+					.set({ timezone: FAR_ZONE })
+					.where(eq(clinics.id, CLINIC_ID));
+				const [seededPatient] = await db
+					.insert(patients)
+					.values({
+						organizationId: ORG_ID,
+						fullName: "Первая Смена Месяцевна",
+					})
+					.returning({ id: patients.id });
+				const [seededAppointment] = await db
+					.insert(appointments)
+					.values({
+						organizationId: ORG_ID,
+						patientId: seededPatient?.id ?? "",
+						status: "completed",
+						startsAt: firstShift,
+						endsAt: new Date(firstShift.getTime() + 30 * 60_000),
+					})
+					.returning({ id: appointments.id });
+				return {
+					shiftPatient: seededPatient,
+					shiftAppointment: seededAppointment,
+				};
+			},
+		);
 
 		try {
 			const byCalendarDate = await app.inject({
 				method: "GET",
 				url: `/api/reports/appointments?from=${CALENDAR_DAY}&to=${CALENDAR_DAY}`,
-				headers: ORG_HEADERS
+				headers: ORG_HEADERS,
 			});
 			assert.equal(byCalendarDate.statusCode, 200, byCalendarDate.body);
 			const calendarBody = JSON.parse(byCalendarDate.body);
@@ -659,17 +827,17 @@ describe("отчёты руководителю", () => {
 			assert.equal(
 				calendarBody.period.from,
 				"2026-04-30T12:00:00.000Z",
-				`начало суток посчитано не в поясе клиники: ${calendarBody.period.from}`
+				`начало суток посчитано не в поясе клиники: ${calendarBody.period.from}`,
 			);
 			assert.equal(
 				calendarBody.period.to,
 				"2026-05-01T11:59:59.999Z",
-				`конец суток посчитан не в поясе клиники: ${calendarBody.period.to}`
+				`конец суток посчитан не в поясе клиники: ${calendarBody.period.to}`,
 			);
 			assert.equal(
 				calendarBody.total,
 				1,
-				"приём первой смены месяца не попал в отчёт по календарной дате: границы снова считаются в чужом поясе"
+				"приём первой смены месяца не попал в отчёт по календарной дате: границы снова считаются в чужом поясе",
 			);
 
 			/*
@@ -680,26 +848,36 @@ describe("отчёты руководителю", () => {
 			 */
 			const asMoscowBrowserSent = await app.inject({
 				method: "GET",
-				url:
-					"/api/reports/appointments?from=2026-04-30T21%3A00%3A00.000Z&to=2026-05-01T20%3A59%3A59.000Z",
-				headers: ORG_HEADERS
+				url: "/api/reports/appointments?from=2026-04-30T21%3A00%3A00.000Z&to=2026-05-01T20%3A59%3A59.000Z",
+				headers: ORG_HEADERS,
 			});
-			assert.equal(asMoscowBrowserSent.statusCode, 200, asMoscowBrowserSent.body);
+			assert.equal(
+				asMoscowBrowserSent.statusCode,
+				200,
+				asMoscowBrowserSent.body,
+			);
 			const moscowBody = JSON.parse(asMoscowBrowserSent.body);
 			// Полный ISO принимается и уважается как есть — прежний контракт цел.
 			assert.equal(moscowBody.period.from, "2026-04-30T21:00:00.000Z");
 			assert.equal(
 				moscowBody.total,
 				0,
-				"московская граница внезапно захватила камчатскую первую смену: проверка перестала показывать дефект"
+				"московская граница внезапно захватила камчатскую первую смену: проверка перестала показывать дефект",
 			);
 		} finally {
 			// Под контекстом, иначе уборка снимет ноль строк молча, а клиника
 			// останется в поясе +12 для всех следующих тестов файла.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.delete(appointments).where(eq(appointments.id, shiftAppointment?.id ?? ""));
-				await db.delete(patients).where(eq(patients.id, shiftPatient?.id ?? ""));
-				await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+				await db
+					.delete(appointments)
+					.where(eq(appointments.id, shiftAppointment?.id ?? ""));
+				await db
+					.delete(patients)
+					.where(eq(patients.id, shiftPatient?.id ?? ""));
+				await db
+					.update(clinics)
+					.set({ timezone: "Europe/Moscow" })
+					.where(eq(clinics.id, CLINIC_ID));
 			});
 		}
 	});
@@ -718,12 +896,20 @@ describe("отчёты руководителю", () => {
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/appointments?from=2026-05-01T00%3A00%3A00%2B12%3A00&to=2026-05-01T23%3A59%3A59%2B12%3A00",
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
-		assert.equal(body.period.from, "2026-04-30T12:00:00.000Z", `смещение +12:00 разобрано неверно: ${body.period.from}`);
-		assert.equal(body.period.to, "2026-05-01T11:59:59.000Z", `смещение +12:00 разобрано неверно: ${body.period.to}`);
+		assert.equal(
+			body.period.from,
+			"2026-04-30T12:00:00.000Z",
+			`смещение +12:00 разобрано неверно: ${body.period.from}`,
+		);
+		assert.equal(
+			body.period.to,
+			"2026-05-01T11:59:59.000Z",
+			`смещение +12:00 разобрано неверно: ${body.period.to}`,
+		);
 	});
 
 	/**
@@ -741,21 +927,31 @@ describe("отчёты руководителю", () => {
 			const response = await app.inject({
 				method: "GET",
 				url: `/api/reports/appointments?from=${broken}&to=2026-05-31`,
-				headers: ORG_HEADERS
+				headers: ORG_HEADERS,
 			});
-			assert.equal(response.statusCode, 400, `${broken} принят: ${response.body}`);
+			assert.equal(
+				response.statusCode,
+				400,
+				`${broken} принят: ${response.body}`,
+			);
 		}
 	});
 
 	test("услуги показывают назначенные суммы и оговаривают это", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/services", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/services",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
 		// Кариес: 8 000 × 2 − 2 000 = 14 000. Гигиена: 16 000.
-		const caries = body.rows.find((row: { title: string }) => row.title === "Лечение кариеса");
+		const caries = body.rows.find(
+			(row: { title: string }) => row.title === "Лечение кариеса",
+		);
 		assert.equal(caries?.plannedRub, 14_000, JSON.stringify(body.rows));
 		assert.equal(caries?.quantity, 2);
 		assert.equal(caries?.averagePriceRub, 7_000);
@@ -770,13 +966,19 @@ describe("отчёты руководителю", () => {
 	test("дебиторка считает долг как назначено минус оплачено", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/receivables", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/receivables",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
 		// Назначено 30 000, получено 10 000 → долг 20 000 у «старого» пациента.
 		assert.equal(body.totalDebtRub, 20_000, JSON.stringify(body));
-		const debtor = body.rows.find((row: { patientId: string }) => row.patientId === PATIENT_OLD);
+		const debtor = body.rows.find(
+			(row: { patientId: string }) => row.patientId === PATIENT_OLD,
+		);
 		assert.equal(debtor?.debtRub, 20_000);
 		assert.ok(debtor?.oldestChargeAt !== null);
 		assert.ok(body.note.includes("назначено минус оплачено"));
@@ -804,27 +1006,45 @@ describe("отчёты руководителю", () => {
 		const [prepayment] = await withFixtureTenant(ORG_ID, async () =>
 			db
 				.insert(payments)
-				.values({ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 4_500.5, status: "paid", paidAt: inPeriod })
-				.returning({ id: payments.id })
+				.values({
+					organizationId: ORG_ID,
+					patientId: PATIENT_NEW,
+					amountRub: 4_500.5,
+					status: "paid",
+					paidAt: inPeriod,
+				})
+				.returning({ id: payments.id }),
 		);
 
 		try {
-			const response = await app.inject({ method: "GET", url: "/api/reports/receivables", headers: ORG_HEADERS });
+			const response = await app.inject({
+				method: "GET",
+				url: "/api/reports/receivables",
+				headers: ORG_HEADERS,
+			});
 			assert.equal(response.statusCode, 200, response.body);
 			const body = JSON.parse(response.body);
 
 			// Долг считается прежним выражением: способ подсчёта не менялся.
 			assert.equal(body.totalDebtRub, 20_000, JSON.stringify(body));
-			assert.equal(body.totalPrepaidRub, 4_500.5, JSON.stringify(body.prepayments));
+			assert.equal(
+				body.totalPrepaidRub,
+				4_500.5,
+				JSON.stringify(body.prepayments),
+			);
 
-			const prepaid = body.prepayments.find((row: { patientId: string }) => row.patientId === PATIENT_NEW);
+			const prepaid = body.prepayments.find(
+				(row: { patientId: string }) => row.patientId === PATIENT_NEW,
+			);
 			assert.equal(prepaid?.prepaidRub, 4_500.5);
 			assert.equal(prepaid?.patientName, "Новый Пациент Петрович");
 
 			// Переплативший не должник: попасть в дебиторку он не имеет права.
 			assert.equal(
-				body.rows.find((row: { patientId: string }) => row.patientId === PATIENT_NEW),
-				undefined
+				body.rows.find(
+					(row: { patientId: string }) => row.patientId === PATIENT_NEW,
+				),
+				undefined,
 			);
 
 			/*
@@ -850,7 +1070,11 @@ describe("отчёты руководителю", () => {
 	test("переплат нет — отчёт говорит это прямо, а не молчит", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/receivables", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/receivables",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
@@ -862,7 +1086,11 @@ describe("отчёты руководителю", () => {
 	test("загрузка по дням недели и часам заполнена", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/schedule-load", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/schedule-load",
+			headers: ORG_HEADERS,
+		});
 		// Код ответа проверяется ДО чтения полей. Без этой строки ошибка 500
 		// превращалась в «undefined !== false»: тело ответа — это
 		// {statusCode:500,message:"Failed query: …"}, полей isEmpty и cells в нём
@@ -872,14 +1100,26 @@ describe("отчёты руководителю", () => {
 		const body = JSON.parse(response.body);
 		assert.equal(body.isEmpty, false);
 		assert.ok(body.cells.length > 0);
-		assert.ok(body.busiestWeekday !== null && body.busiestWeekday >= 1 && body.busiestWeekday <= 7);
-		assert.ok(body.busiestHour !== null && body.busiestHour >= 0 && body.busiestHour <= 23);
+		assert.ok(
+			body.busiestWeekday !== null &&
+				body.busiestWeekday >= 1 &&
+				body.busiestWeekday <= 7,
+		);
+		assert.ok(
+			body.busiestHour !== null &&
+				body.busiestHour >= 0 &&
+				body.busiestHour <= 23,
+		);
 	});
 
 	test("сводка собирает всё одним запросом", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/summary", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/summary",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
@@ -893,7 +1133,11 @@ describe("отчёты руководителю", () => {
 	test("эффект напоминаний: малая выборка помечена, а не выдана за вывод", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/reports/reminder-effect", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/reminder-effect",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
@@ -911,9 +1155,17 @@ describe("отчёты руководителю", () => {
 
 		// Потери — это отмены плюс неявки, и в обеих группах считаются одинаково.
 		for (const group of [body.reminded, body.notReminded]) {
-			assert.equal(group.lost, group.cancelled + group.noShow, JSON.stringify(group));
+			assert.equal(
+				group.lost,
+				group.cancelled + group.noShow,
+				JSON.stringify(group),
+			);
 			if (group.appointments === 0) {
-				assert.equal(group.lostRate, null, "доля потерь без приёмов должна быть прочерком, а не нулём");
+				assert.equal(
+					group.lostRate,
+					null,
+					"доля потерь без приёмов должна быть прочерком, а не нулём",
+				);
 			}
 		}
 	});
@@ -924,7 +1176,7 @@ describe("отчёты руководителю", () => {
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/revenue?from=2000-01-01T00:00:00Z&to=2030-01-01T00:00:00Z",
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 400, response.body);
 		assert.ok(JSON.parse(response.body).message.includes("длиннее"));
@@ -936,7 +1188,7 @@ describe("отчёты руководителю", () => {
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/revenue?from=2026-07-20T00:00:00Z&to=2026-07-01T00:00:00Z",
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(response.statusCode, 400, response.body);
 		assert.ok(JSON.parse(response.body).message.includes("позже"));
@@ -948,7 +1200,7 @@ describe("отчёты руководителю", () => {
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/revenue",
-			headers: { "x-organization-id": "dce70000-0000-4000-8000-0000000004ff" }
+			headers: { "x-organization-id": "dce70000-0000-4000-8000-0000000004ff" },
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);

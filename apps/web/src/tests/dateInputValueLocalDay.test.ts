@@ -4,7 +4,7 @@ import {
 	calendarDayInTimeZone,
 	dateInputValuePlusDays,
 	shiftCalendarDay,
-	todayDateInputValue
+	todayDateInputValue,
 } from "../AppHelpers";
 
 /**
@@ -38,7 +38,11 @@ const PINNED = Date.parse("2026-07-29T22:00:00Z");
 describe("день для поля ввода date считается в поясе клиники", () => {
 	it("Москва получает 30 июля, когда по UTC ещё 29-е", (t) => {
 		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
-		assert.equal(new Date().toISOString().slice(0, 10), "2026-07-29", "проверка самого стенда");
+		assert.equal(
+			new Date().toISOString().slice(0, 10),
+			"2026-07-29",
+			"проверка самого стенда",
+		);
 		assert.equal(todayDateInputValue("Europe/Moscow"), "2026-07-30");
 	});
 
@@ -82,7 +86,11 @@ describe("сдвиг на сутки считается календарно", (
 	it("переход через конец месяца и конец года", () => {
 		assert.equal(shiftCalendarDay("2026-07-31", 1), "2026-08-01");
 		assert.equal(shiftCalendarDay("2026-12-31", 1), "2027-01-01");
-		assert.equal(shiftCalendarDay("2028-02-28", 1), "2028-02-29", "2028 — високосный");
+		assert.equal(
+			shiftCalendarDay("2028-02-28", 1),
+			"2028-02-29",
+			"2028 — високосный",
+		);
 		assert.equal(shiftCalendarDay("2026-03-01", -1), "2026-02-28");
 	});
 
@@ -107,13 +115,17 @@ describe("сдвиг на сутки считается календарно", (
 			timeZone: zone,
 			year: "numeric",
 			month: "2-digit",
-			day: "2-digit"
+			day: "2-digit",
 		}).format(new Date(moment.getTime() + 24 * 60 * 60 * 1000));
-		assert.equal(byMilliseconds, "2026-11-01", "стенд: 24 часа не доводят до следующей даты");
+		assert.equal(
+			byMilliseconds,
+			"2026-11-01",
+			"стенд: 24 часа не доводят до следующей даты",
+		);
 		assert.notEqual(
 			shiftCalendarDay(today, 1),
 			byMilliseconds,
-			"календарный шаг и арифметика по миллисекундам обязаны здесь расходиться"
+			"календарный шаг и арифметика по миллисекундам обязаны здесь расходиться",
 		);
 	});
 

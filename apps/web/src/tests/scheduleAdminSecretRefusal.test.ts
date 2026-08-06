@@ -29,17 +29,25 @@ describe("scheduleAdminSecretRefusal", () => {
 	it("узнаёт отказ 403 с неверным секретом", async () => {
 		const response = jsonResponse(403, {
 			error: "ScheduleAdminSecretRequired",
-			message: "Для изменения расписания нужен действующий секрет администратора клиники.",
+			message:
+				"Для изменения расписания нужен действующий секрет администратора клиники.",
 		});
-		assert.equal(await scheduleAdminSecretRefusal(response), "ScheduleAdminSecretRequired");
+		assert.equal(
+			await scheduleAdminSecretRefusal(response),
+			"ScheduleAdminSecretRequired",
+		);
 	});
 
 	it("узнаёт отказ 503, когда секрет на сервере не задан", async () => {
 		const response = jsonResponse(503, {
 			error: "ScheduleAdminSecretMissing",
-			message: "На сервере не задан секрет администратора клиники для изменения расписания.",
+			message:
+				"На сервере не задан секрет администратора клиники для изменения расписания.",
 		});
-		assert.equal(await scheduleAdminSecretRefusal(response), "ScheduleAdminSecretMissing");
+		assert.equal(
+			await scheduleAdminSecretRefusal(response),
+			"ScheduleAdminSecretMissing",
+		);
 	});
 
 	it("не путает пересечение приёмов с требованием секрета", async () => {
@@ -65,18 +73,24 @@ describe("scheduleAdminSecretRefusal", () => {
 	});
 
 	it("не падает, когда тело ответа не JSON", async () => {
-		const response = new Response("<html>502 Bad Gateway</html>", { status: 503 });
+		const response = new Response("<html>502 Bad Gateway</html>", {
+			status: 503,
+		});
 		assert.equal(await scheduleAdminSecretRefusal(response), null);
 	});
 
 	it("не срабатывает на успешном ответе", async () => {
-		assert.equal(await scheduleAdminSecretRefusal(jsonResponse(200, { ok: true })), null);
+		assert.equal(
+			await scheduleAdminSecretRefusal(jsonResponse(200, { ok: true })),
+			null,
+		);
 	});
 
 	it("оставляет тело ответа читаемым: сообщение об ошибке разбирается после проверки", async () => {
 		const response = jsonResponse(403, {
 			error: "ScheduleAdminSecretRequired",
-			message: "Для изменения расписания нужен действующий секрет администратора клиники.",
+			message:
+				"Для изменения расписания нужен действующий секрет администратора клиники.",
 		});
 		await scheduleAdminSecretRefusal(response);
 		const body = (await response.json()) as { message?: string };

@@ -57,9 +57,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { countLabel, money } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 
-
 /** Состояние расчёта по врачу. Значения приходят с сервера как есть. */
-type DoctorPayoutState = "computed" | "rate_missing" | "rate_invalid" | "material_policy_missing";
+type DoctorPayoutState =
+	| "computed"
+	| "rate_missing"
+	| "rate_invalid"
+	| "material_policy_missing";
 
 /** Что известно про себестоимость материалов врача за период. */
 type DoctorPayoutMaterialsState = "counted" | "no_movements" | "cost_missing";
@@ -162,7 +165,9 @@ function currentMonthValue(now = new Date()): string {
  * годом и месяцем, поэтому берётся через `Date.UTC`: нулевой день следующего
  * месяца есть последний день этого, без таблицы длин и без местного времени.
  */
-export function payoutMonthCalendarBounds(monthValue: string): { from: string; to: string } | null {
+export function payoutMonthCalendarBounds(
+	monthValue: string,
+): { from: string; to: string } | null {
 	const match = /^(\d{4})-(\d{2})$/.exec(monthValue);
 	if (!match) return null;
 	const year = Number(match[1]);
@@ -172,7 +177,7 @@ export function payoutMonthCalendarBounds(monthValue: string): { from: string; t
 	const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
 	return {
 		from: `${year}-${month}-01`,
-		to: `${year}-${month}-${String(lastDay).padStart(2, "0")}`
+		to: `${year}-${month}-${String(lastDay).padStart(2, "0")}`,
 	};
 }
 
@@ -205,8 +210,6 @@ export async function requestDoctorPayouts(
 	return fetch(`/api/billing/payouts?${query.toString()}`, { headers });
 }
 
-
-
 /** Подпись месяца человеческим видом: «июль 2026 г.». */
 function monthLabelOf(monthValue: string): string {
 	const match = /^(\d{4})-(\d{2})$/.exec(monthValue);
@@ -215,7 +218,10 @@ function monthLabelOf(monthValue: string): string {
 	if (monthIndex < 0 || monthIndex > 11) return monthValue;
 	// Подпись — не граница периода: местная дата здесь безвредна, потому что
 	// названием месяца она и форматируется обратно, а на сервер не уходит.
-	return new Date(Number(match[1]), monthIndex, 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+	return new Date(Number(match[1]), monthIndex, 1).toLocaleDateString("ru-RU", {
+		month: "long",
+		year: "numeric",
+	});
 }
 
 /** Сообщение сервера, если оно есть. Своё придумывать поверх чужого нельзя. */
@@ -282,7 +288,9 @@ export function DoctorPayoutDashboard() {
 	const [state, setState] = useState<PayoutLoadState>({ kind: "loading" });
 	const [editingRateFor, setEditingRateFor] = useState<string | null>(null);
 	const [rateDraft, setRateDraft] = useState<string>("");
-	const [rateSave, setRateSave] = useState<CommissionSaveState>({ kind: "idle" });
+	const [rateSave, setRateSave] = useState<CommissionSaveState>({
+		kind: "idle",
+	});
 
 	/*
 	 * authRef: useAppLogic returns a new auth object each render. Putting auth
@@ -299,7 +307,7 @@ export function DoctorPayoutDashboard() {
 			setState({
 				kind: "failed",
 				message: "Месяц расчёта не выбран.",
-				action: "Выберите месяц, за который считаем выплаты."
+				action: "Выберите месяц, за который считаем выплаты.",
 			});
 			return;
 		}
@@ -328,18 +336,19 @@ export function DoctorPayoutDashboard() {
 					kind: "needs_staff_login",
 					message:
 						serverMessageOf(payload) ??
-						"Расчёт выплат показывает зарплату конкретных врачей, поэтому сервер должен знать, кто смотрит."
+						"Расчёт выплат показывает зарплату конкретных врачей, поэтому сервер должен знать, кто смотрит.",
 				});
 				return;
 			}
 			if (!response.ok) {
 				setState({
 					kind: "failed",
-					message: serverMessageOf(payload) ?? `Сервер ответил ${response.status}.`,
+					message:
+						serverMessageOf(payload) ?? `Сервер ответил ${response.status}.`,
 					action:
 						response.status >= 500
 							? "Это отказ расчёта, а не отсутствие заработка. Повторите позже и покажите сообщение администратору системы."
-							: "Проверьте выбранный месяц и повторите."
+							: "Проверьте выбранный месяц и повторите.",
 				});
 				return;
 			}
@@ -351,8 +360,10 @@ export function DoctorPayoutDashboard() {
 			if (!report || !Array.isArray(report.rows) || !report.totals) {
 				setState({
 					kind: "failed",
-					message: "Сервер ответил успешно, но состав ответа не похож на расчёт выплат.",
-					action: "Показать пустую таблицу вместо этого нельзя: её прочитали бы как «никто ничего не заработал»."
+					message:
+						"Сервер ответил успешно, но состав ответа не похож на расчёт выплат.",
+					action:
+						"Показать пустую таблицу вместо этого нельзя: её прочитали бы как «никто ничего не заработал».",
 				});
 				return;
 			}
@@ -364,7 +375,8 @@ export function DoctorPayoutDashboard() {
 					error instanceof Error && error.message
 						? `Запрос к серверу не дошёл: ${error.message}`
 						: "Запрос к серверу не дошёл.",
-				action: "Проверьте связь с сервером клиники и повторите. Пока ответа нет, суммы к выплате неизвестны."
+				action:
+					"Проверьте связь с сервером клиники и повторите. Пока ответа нет, суммы к выплате неизвестны.",
 			});
 		}
 	}, []);
@@ -379,7 +391,8 @@ export function DoctorPayoutDashboard() {
 			if (pct === null) {
 				setRateSave({
 					kind: "failed",
-					message: "Процент от кассы указывается числом от 0 до 100. Ставка не сохранена."
+					message:
+						"Процент от кассы указывается числом от 0 до 100. Ставка не сохранена.",
 				});
 				return;
 			}
@@ -400,11 +413,14 @@ export function DoctorPayoutDashboard() {
 						? auth.settingsAccessHeaders({ "Content-Type": "application/json" })
 						: { "Content-Type": "application/json" };
 				void "settingsAccessHeaders";
-				const response = await fetch(`/api/settings/staff/${doctorUserId}/commission`, {
-					method: "PUT",
-					headers,
-					body: JSON.stringify({ commissionPct: pct })
-				});
+				const response = await fetch(
+					`/api/settings/staff/${doctorUserId}/commission`,
+					{
+						method: "PUT",
+						headers,
+						body: JSON.stringify({ commissionPct: pct }),
+					},
+				);
 
 				const payload = (await response.json().catch(() => null)) as unknown;
 				if (!response.ok) {
@@ -415,7 +431,7 @@ export function DoctorPayoutDashboard() {
 						kind: "failed",
 						message:
 							serverMessageOf(payload) ??
-							`Ставка не сохранена: сервер ответил ${response.status}. Повторите или обратитесь к администратору системы.`
+							`Ставка не сохранена: сервер ответил ${response.status}. Повторите или обратитесь к администратору системы.`,
 					});
 					return;
 				}
@@ -430,11 +446,11 @@ export function DoctorPayoutDashboard() {
 					message:
 						error instanceof Error && error.message
 							? `Ставка не сохранена, запрос к серверу не дошёл: ${error.message}. Проверьте связь и повторите.`
-							: "Ставка не сохранена, запрос к серверу не дошёл. Проверьте связь и повторите."
+							: "Ставка не сохранена, запрос к серверу не дошёл. Проверьте связь и повторите.",
 				});
 			}
 		},
-		[load, month]
+		[load, month],
 	);
 
 	const report = state.kind === "ready" ? state.report : null;
@@ -467,9 +483,9 @@ export function DoctorPayoutDashboard() {
 		return report.rows.reduce(
 			(sum, row) => ({
 				revenueRub: sum.revenueRub + row.revenueRub,
-				paymentCount: sum.paymentCount + row.paymentCount
+				paymentCount: sum.paymentCount + row.paymentCount,
 			}),
-			{ revenueRub: 0, paymentCount: 0 }
+			{ revenueRub: 0, paymentCount: 0 },
 		);
 	}, [report]);
 
@@ -510,14 +526,16 @@ export function DoctorPayoutDashboard() {
 
 			{state.kind === "needs_staff_login" ? (
 				<p className="ops-notice" role="status">
-					Выплаты не показаны: нет входа сотрудника. {state.message} Войдите в рабочий кабинет клиники и
-					подтвердите себя PIN-кодом — после этого расчёт откроется.
+					Выплаты не показаны: нет входа сотрудника. {state.message} Войдите в
+					рабочий кабинет клиники и подтвердите себя PIN-кодом — после этого
+					расчёт откроется.
 				</p>
 			) : null}
 
 			{state.kind === "failed" ? (
 				<p className="ops-notice ops-notice--error" role="alert">
-					Расчёт выплат за {monthLabel} не выполнен. {state.message} {state.action}
+					Расчёт выплат за {monthLabel} не выполнен. {state.message}{" "}
+					{state.action}
 				</p>
 			) : null}
 
@@ -541,7 +559,8 @@ export function DoctorPayoutDashboard() {
 						<div className="ops-table-wrap">
 							<table className="ops-table">
 								<caption className="sr-only">
-									Выплаты врачам за {monthLabel}: касса, ставка, удержание за материалы и сумма к выплате
+									Выплаты врачам за {monthLabel}: касса, ставка, удержание за
+									материалы и сумма к выплате
 								</caption>
 								<thead>
 									<tr>
@@ -562,14 +581,23 @@ export function DoctorPayoutDashboard() {
 												{row.isActive ? null : (
 													<>
 														{" "}
-														<span className="ops-state ops-state--muted">уволен</span>
+														<span className="ops-state ops-state--muted">
+															уволен
+														</span>
 													</>
 												)}
 											</td>
 											<td className="ops-num" data-label="Касса">
 												{money(row.revenueRub)}
 												<br />
-												<span className="ops-note">{countLabel(row.paymentCount, "оплата", "оплаты", "оплат")}</span>
+												<span className="ops-note">
+													{countLabel(
+														row.paymentCount,
+														"оплата",
+														"оплаты",
+														"оплат",
+													)}
+												</span>
 											</td>
 											{/*
 												Ставка отсутствующая печатается СЛОВАМИ. Ноль на этом месте
@@ -597,10 +625,18 @@ export function DoctorPayoutDashboard() {
 															step={0.01}
 															value={rateDraft}
 															autoFocus
-															onChange={(event) => setRateDraft(event.target.value)}
+															onChange={(event) =>
+																setRateDraft(event.target.value)
+															}
 														/>
-														<button className="primary-button" type="submit" disabled={rateSave.kind === "saving"}>
-															{rateSave.kind === "saving" ? "Сохраняю…" : "Сохранить"}
+														<button
+															className="primary-button"
+															type="submit"
+															disabled={rateSave.kind === "saving"}
+														>
+															{rateSave.kind === "saving"
+																? "Сохраняю…"
+																: "Сохранить"}
 														</button>
 														<button
 															className="secondary-button"
@@ -617,7 +653,9 @@ export function DoctorPayoutDashboard() {
 												) : (
 													<>
 														{row.commissionPct === null ? (
-															<span className="ops-state ops-state--warn">не задана</span>
+															<span className="ops-state ops-state--warn">
+																не задана
+															</span>
 														) : (
 															percentLabel(row.commissionPct)
 														)}
@@ -633,11 +671,17 @@ export function DoctorPayoutDashboard() {
 																		// правят на несколько пунктов, а не вводят
 																		// заново. Пустое поле у заданной ставки
 																		// выглядело бы как «ставки нет».
-																		setRateDraft(row.commissionPct === null ? "" : String(row.commissionPct));
+																		setRateDraft(
+																			row.commissionPct === null
+																				? ""
+																				: String(row.commissionPct),
+																		);
 																		setRateSave({ kind: "idle" });
 																	}}
 																>
-																	{row.commissionPct === null ? "Задать ставку" : "Изменить"}
+																	{row.commissionPct === null
+																		? "Задать ставку"
+																		: "Изменить"}
 																</button>
 															</>
 														) : null}
@@ -654,7 +698,9 @@ export function DoctorPayoutDashboard() {
 											*/}
 											<td className="ops-num" data-label="Материалы">
 												{row.materialsState === "no_movements" ? (
-													<span className="ops-state ops-state--muted">не списывались</span>
+													<span className="ops-state ops-state--muted">
+														не списывались
+													</span>
 												) : (
 													<>
 														{money(row.materialCostRub)}
@@ -670,11 +716,16 @@ export function DoctorPayoutDashboard() {
 												)}
 											</td>
 											<td className="ops-num" data-label="Удержано">
-												{row.withheldMaterialRub === null ? "—" : money(row.withheldMaterialRub)}
+												{row.withheldMaterialRub === null
+													? "—"
+													: money(row.withheldMaterialRub)}
 												{row.materialDeductionPct === null ? null : (
 													<>
 														<br />
-														<span className="ops-note">{percentLabel(row.materialDeductionPct)} себестоимости</span>
+														<span className="ops-note">
+															{percentLabel(row.materialDeductionPct)}{" "}
+															себестоимости
+														</span>
 													</>
 												)}
 											</td>
@@ -684,7 +735,9 @@ export function DoctorPayoutDashboard() {
 												) : row.payoutRub < 0 ? (
 													// Отрицательную выплату нельзя обнулять: это долг врача
 													// клинике, и спрятав знак, клиника теряет деньги.
-													<span className="ops-state ops-state--bad">{money(row.payoutRub)}</span>
+													<span className="ops-state ops-state--bad">
+														{money(row.payoutRub)}
+													</span>
 												) : (
 													money(row.payoutRub)
 												)}
@@ -735,7 +788,9 @@ export function DoctorPayoutDashboard() {
 						<ul className="ops-metrics">
 							<li
 								className={`ops-metric ops-metric--primary ${
-									nothingComputed || report.totals.payoutRub < 0 ? "ops-metric--danger" : ""
+									nothingComputed || report.totals.payoutRub < 0
+										? "ops-metric--danger"
+										: ""
 								}`}
 							>
 								<span className="ops-metric__value">
@@ -759,7 +814,9 @@ export function DoctorPayoutDashboard() {
 							</li>
 							<li className="ops-metric">
 								<span className="ops-metric__value">
-									{nothingComputed ? "—" : money(report.totals.withheldMaterialRub)}
+									{nothingComputed
+										? "—"
+										: money(report.totals.withheldMaterialRub)}
 								</span>
 								<span className="ops-metric__label">удержано за материалы</span>
 							</li>
@@ -770,7 +827,11 @@ export function DoctorPayoutDashboard() {
 									строками, что напечатаны выше (см. пояснение к `ownVisible`).
 								*/}
 								<span className="ops-metric__value">
-									{money(isOwnScope ? ownVisible.revenueRub : report.totals.revenueRub)}
+									{money(
+										isOwnScope
+											? ownVisible.revenueRub
+											: report.totals.revenueRub,
+									)}
 								</span>
 								<span className="ops-metric__label">
 									{isOwnScope ? "моя касса за месяц" : "касса клиники за месяц"}
@@ -785,9 +846,16 @@ export function DoctorPayoutDashboard() {
 						*/}
 						{report.totals.doctorsWithoutRate > 0 ? (
 							<p className="ops-hint ops-hint--weak">
-								Итог посчитан по {countLabel(report.totals.doctorsCounted, "врачу", "врачам", "врачам")} из{" "}
-								{report.rows.length}: у {report.totals.doctorsWithoutRate} нет пригодной ставки, и сумму к
-								выплате им считать не из чего. Это отсутствие расчёта, а не ноль к выплате.{" "}
+								Итог посчитан по{" "}
+								{countLabel(
+									report.totals.doctorsCounted,
+									"врачу",
+									"врачам",
+									"врачам",
+								)}{" "}
+								из {report.rows.length}: у {report.totals.doctorsWithoutRate}{" "}
+								нет пригодной ставки, и сумму к выплате им считать не из чего.
+								Это отсутствие расчёта, а не ноль к выплате.{" "}
 								{canEditRates
 									? "Нажмите «Задать ставку» в колонке «Ставка» напротив врача — итог пересчитается сразу."
 									: "Ставку задаёт тот, кому сервер открывает выплаты всей клиники."}
@@ -796,15 +864,18 @@ export function DoctorPayoutDashboard() {
 
 						{!isOwnScope && report.totals.unattributedRevenueRub > 0 ? (
 							<p className="ops-hint">
-								Не отнесено ни к одному врачу: {money(report.totals.unattributedRevenueRub)} из{" "}
-								{money(report.totals.revenueRub)}. Такая оплата не связана с приёмом, поэтому в выплату не
-								попадает: оформляйте оплату из визита, созданного из записи в расписании.
+								Не отнесено ни к одному врачу:{" "}
+								{money(report.totals.unattributedRevenueRub)} из{" "}
+								{money(report.totals.revenueRub)}. Такая оплата не связана с
+								приёмом, поэтому в выплату не попадает: оформляйте оплату из
+								визита, созданного из записи в расписании.
 							</p>
 						) : null}
 
 						<p className="ops-hint">
-							Период: {new Date(report.period.from).toLocaleDateString("ru-RU")} —{" "}
-							{new Date(report.period.to).toLocaleDateString("ru-RU")}. {report.methodNote}
+							Период: {new Date(report.period.from).toLocaleDateString("ru-RU")}{" "}
+							— {new Date(report.period.to).toLocaleDateString("ru-RU")}.{" "}
+							{report.methodNote}
 						</p>
 
 						{report.limitations.length > 0 ? (

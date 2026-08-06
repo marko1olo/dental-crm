@@ -67,7 +67,10 @@ describe("чтение списка сценариев", () => {
 	});
 
 	test("сценарий без названия остаётся в списке — его надо дать удалить", () => {
-		const row = normalizeClinicWorkflow({ id: "w2", trigger: "invoice_issued" });
+		const row = normalizeClinicWorkflow({
+			id: "w2",
+			trigger: "invoice_issued",
+		});
 		assert.equal(row?.name, "Сценарий без названия");
 		assert.equal(row?.active, false);
 	});
@@ -106,11 +109,17 @@ describe("подзаголовок с количеством", () => {
 	});
 
 	test("во время чтения не утверждается ничего о количестве", () => {
-		assert.equal(workflowsCountLabel({ phase: "loading" }, 0), "Загружаем список…");
+		assert.equal(
+			workflowsCountLabel({ phase: "loading" }, 0),
+			"Загружаем список…",
+		);
 	});
 
 	test("числа согласованы по-русски", () => {
-		assert.equal(workflowsCountLabel({ phase: "ready" }, 0), "Ни одного сценария");
+		assert.equal(
+			workflowsCountLabel({ phase: "ready" }, 0),
+			"Ни одного сценария",
+		);
 		assert.equal(workflowsCountLabel({ phase: "ready" }, 1), "1 сценарий");
 		assert.equal(workflowsCountLabel({ phase: "ready" }, 3), "3 сценария");
 		assert.equal(workflowsCountLabel({ phase: "ready" }, 5), "5 сценариев");

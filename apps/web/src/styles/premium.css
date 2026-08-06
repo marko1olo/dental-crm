@@ -53,7 +53,7 @@ html.light {
 
 [data-theme="dark"] {
 	--bg-app: #0a1211;
-	--glass-panel: rgba(16, 26, 25, 0.80);
+	--glass-panel: rgba(16, 26, 25, 0.8);
 	--glass-border: rgba(45, 212, 191, 0.15);
 	--glass-shadow:
 		0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -106,7 +106,7 @@ html.light {
 	--glass-blur: blur(12px);
 	--shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
 	--shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
-	--shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.80);
+	--shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.8);
 	--focus-ring: rgba(224, 164, 88, 0.7);
 	--teal-glow: 0 0 30px rgba(224, 164, 88, 0.25);
 	--active-item-bg: linear-gradient(
@@ -193,7 +193,12 @@ textarea::placeholder {
 }
 
 /* Universal Text & Heading Harmonization */
-h1, h2, h3, h4, h5, h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
 .panel-heading h2,
 .settings-heading h2 {
 	color: var(--text-primary);

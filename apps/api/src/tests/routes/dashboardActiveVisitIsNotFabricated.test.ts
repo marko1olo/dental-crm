@@ -73,16 +73,23 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { dashboardSchema } from "@dental/shared";
 import { sql } from "drizzle-orm";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { denteAdminSecretHeader } from "../../accessGuard.js";
 import { db, pool } from "../../db/client.js";
 import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations, patients, visits } from "../../db/schema.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
-import { authTokenSecret, clinicalAdminSecret } from "../../security/authSecret.js";
+import {
+	authTokenSecret,
+	clinicalAdminSecret,
+} from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
@@ -104,7 +111,10 @@ const STAFFED_ORGANIZATION_ID = fixtureUuid(NAMESPACE, 2);
 const PATIENT_ID = fixtureUuid(NAMESPACE, 11);
 const REAL_VISIT_ID = fixtureUuid(NAMESPACE, 21);
 
-const FIXTURE_ORGANIZATION_IDS = [EMPTY_ORGANIZATION_ID, STAFFED_ORGANIZATION_ID] as const;
+const FIXTURE_ORGANIZATION_IDS = [
+	EMPTY_ORGANIZATION_ID,
+	STAFFED_ORGANIZATION_ID,
+] as const;
 
 type ActiveVisit = {
 	id?: unknown;
@@ -139,7 +149,9 @@ function headersFor(organizationId: string): Record<string, string> {
  * получиться из отсутствия поля. Для клиента это разные ответы — «приёма нет» и
  * «про приём не сказано».
  */
-async function readActiveVisit(organizationId: string): Promise<ActiveVisit | null> {
+async function readActiveVisit(
+	organizationId: string,
+): Promise<ActiveVisit | null> {
 	const response = await app.inject({
 		method: "GET",
 		url: "/api/dashboard",
@@ -180,7 +192,10 @@ async function readActiveVisit(organizationId: string): Promise<ActiveVisit | nu
 }
 
 /** Есть ли в базе строка приёма с таким идентификатором у этой клиники. */
-async function visitRowExists(organizationId: string, visitId: string): Promise<number> {
+async function visitRowExists(
+	organizationId: string,
+	visitId: string,
+): Promise<number> {
 	// Счёт идёт под тенант-контекстом этой клиники: под FORCE RLS чтение без
 	// `app.current_tenant` возвращает ноль строк молча, и «приём разрешается в
 	// строку visits» доказывалось бы нулём при любом состоянии базы.
@@ -205,14 +220,16 @@ before(async () => {
 	 * сеются под её контекстом.
 	 */
 	await withFixtureTenant(EMPTY_ORGANIZATION_ID, async () => {
-		await db
-			.insert(organizations)
-			.values({ id: EMPTY_ORGANIZATION_ID, name: "Сторож нулевого приёма — клиника без приёмов" });
+		await db.insert(organizations).values({
+			id: EMPTY_ORGANIZATION_ID,
+			name: "Сторож нулевого приёма — клиника без приёмов",
+		});
 	});
 	await withFixtureTenant(STAFFED_ORGANIZATION_ID, async () => {
-		await db
-			.insert(organizations)
-			.values({ id: STAFFED_ORGANIZATION_ID, name: "Сторож нулевого приёма — клиника с приёмом" });
+		await db.insert(organizations).values({
+			id: STAFFED_ORGANIZATION_ID,
+			name: "Сторож нулевого приёма — клиника с приёмом",
+		});
 		await db.insert(patients).values({
 			id: PATIENT_ID,
 			organizationId: STAFFED_ORGANIZATION_ID,
@@ -272,7 +289,11 @@ describe("GET /api/dashboard: приём в сводке либо есть в б
 				sql`select count(*)::int as n from visits where organization_id = ${EMPTY_ORGANIZATION_ID}::uuid`,
 			),
 		);
-		assert.equal(seeded.rows[0]?.n, 0, "У клиники фикстуры не должно быть ни одного приёма.");
+		assert.equal(
+			seeded.rows[0]?.n,
+			0,
+			"У клиники фикстуры не должно быть ни одного приёма.",
+		);
 
 		const active = await readActiveVisit(EMPTY_ORGANIZATION_ID);
 
@@ -330,7 +351,11 @@ describe("GET /api/dashboard: приём в сводке либо есть в б
 				"временем ЛОКАЛЬНО сохранённого черновика врача — пока сервер отвечает «изменён сейчас», " +
 				"серверная отметка новее любой локальной всегда, и набранное врачом не восстанавливается никогда.",
 		);
-		assert.equal(second, null, "Оба чтения совпали, но не на `null`. Совпадение выдумки — всё ещё выдумка.");
+		assert.equal(
+			second,
+			null,
+			"Оба чтения совпали, но не на `null`. Совпадение выдумки — всё ещё выдумка.",
+		);
 	});
 
 	it("рабочий путь не сломан: при живом приёме сводка отдаёт НАСТОЯЩУЮ строку базы", async () => {
@@ -342,15 +367,27 @@ describe("GET /api/dashboard: приём в сводке либо есть в б
 				"откроет карту приёма, а касса не примет оплату по нему.",
 		);
 		const id = String(active.id ?? "");
-		assert.notEqual(id, NIL_VISIT_ID, "Настоящий приём подменён нулевым идентификатором.");
+		assert.notEqual(
+			id,
+			NIL_VISIT_ID,
+			"Настоящий приём подменён нулевым идентификатором.",
+		);
 		assert.equal(
 			await visitRowExists(STAFFED_ORGANIZATION_ID, id),
 			1,
 			`Идентификатор приёма из сводки «${id}» не разрешается в строку visits этой клиники. Именно это ` +
 				"правило и охраняет весь файл: сводка обязана называть приём, который есть.",
 		);
-		assert.equal(active.id, REAL_VISIT_ID, "Сводка назвала не тот приём, что посеян.");
-		assert.equal(active.complaint, "скол пломбы 46", "Настоящие поля приёма потерялись по дороге в сводку.");
+		assert.equal(
+			active.id,
+			REAL_VISIT_ID,
+			"Сводка назвала не тот приём, что посеян.",
+		);
+		assert.equal(
+			active.complaint,
+			"скол пломбы 46",
+			"Настоящие поля приёма потерялись по дороге в сводку.",
+		);
 		assert.equal(active.status, "draft");
 		assert.equal(
 			active.organizationId,
@@ -388,11 +425,19 @@ describe("метка «приёма нет» в изменяющих маршр�
 		method: "PUT" | "POST",
 		suffix: "autosave" | "accept",
 		payload: unknown,
-	): Promise<{ status: number; body: string; reason: string; message: string }> {
+	): Promise<{
+		status: number;
+		body: string;
+		reason: string;
+		message: string;
+	}> {
 		const response = await app.inject({
 			method,
 			url: `/api/visits/${NIL_VISIT_ID}/draft/${suffix}`,
-			headers: { ...headersFor(EMPTY_ORGANIZATION_ID), "content-type": "application/json" },
+			headers: {
+				...headersFor(EMPTY_ORGANIZATION_ID),
+				"content-type": "application/json",
+			},
 			payload: payload as Record<string, unknown>,
 		});
 		let parsed: Record<string, unknown> = {};
@@ -428,7 +473,11 @@ describe("метка «приёма нет» в изменяющих маршр�
 			`Отказ не называет ВЫПОЛНИМОЕ действие. Прежний текст предлагал «выберите актуальный прием», ` +
 				`которого не существует, — врач жмёт одно и то же. Пришло: «${refusal.message}»`,
 		);
-		assert.equal(refusal.reason, "no_active_visit", `Машинная причина отказа не названа: ${refusal.body}`);
+		assert.equal(
+			refusal.reason,
+			"no_active_visit",
+			`Машинная причина отказа не названа: ${refusal.body}`,
+		);
 	});
 
 	it("подписание по метке отказывает своим текстом и ничего не записывает в базу", async () => {
@@ -453,8 +502,16 @@ describe("метка «приёма нет» в изменяющих маршр�
 			!/не найден/i.test(refusal.message),
 			`Подписание отвечает «приём не найден» про метку «приёма нет»: ${refusal.body}`,
 		);
-		assert.match(refusal.message, /не открыт/i, `Отказ подписания без причины: «${refusal.message}»`);
-		assert.match(refusal.message, /откройте прием/i, `Отказ подписания без действия: «${refusal.message}»`);
+		assert.match(
+			refusal.message,
+			/не открыт/i,
+			`Отказ подписания без причины: «${refusal.message}»`,
+		);
+		assert.match(
+			refusal.message,
+			/откройте прием/i,
+			`Отказ подписания без действия: «${refusal.message}»`,
+		);
 		assert.ok(
 			/подписывать нечего|подписывать/i.test(refusal.message),
 			`Отказ подписания повторяет текст автосохранения дословно: врач читает «записывать некуда» там, ` +

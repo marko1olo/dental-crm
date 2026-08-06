@@ -47,18 +47,23 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	fetchReceivablesDetail,
 	fetchReportsSummary,
 	fetchScheduleLoad,
 	fetchServiceSales,
-	sliceRefusalText
+	sliceRefusalText,
 } from "../components/reports/ManagerReportsPanel.js";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const panelPath = path.join(webSrc, "components", "reports", "ManagerReportsPanel.tsx");
+const panelPath = path.join(
+	webSrc,
+	"components",
+	"reports",
+	"ManagerReportsPanel.tsx",
+);
 const panelSource = readFileSync(panelPath, "utf8");
 
 /**
@@ -71,7 +76,7 @@ const panelSource = readFileSync(panelPath, "utf8");
 const SESSION_HEADERS = {
 	"x-dente-admin-secret": "секрет-периметра",
 	"x-dente-clinic-token": "токен-кабинета",
-	"x-dente-staff-token": "токен-сотрудника"
+	"x-dente-staff-token": "токен-сотрудника",
 };
 
 const PERIOD = { from: "2026-07-01", to: "2026-07-31" } as const;
@@ -92,7 +97,7 @@ type CapturedRequest = { url: string; headers: unknown };
 async function captureRequests(
 	browserZone: string,
 	body: unknown,
-	run: () => Promise<unknown>
+	run: () => Promise<unknown>,
 ): Promise<CapturedRequest[]> {
 	const realFetch = globalThis.fetch;
 	const zoneWasSet = Object.hasOwn(process.env, "TZ");
@@ -103,11 +108,11 @@ async function captureRequests(
 	globalThis.fetch = (async (input: unknown, init?: { headers?: unknown }) => {
 		captured.push({
 			url: typeof input === "string" ? input : String(input),
-			headers: init === undefined ? undefined : init.headers
+			headers: init === undefined ? undefined : init.headers,
 		});
 		return new Response(JSON.stringify(body), {
 			status: 200,
-			headers: { "content-type": "application/json" }
+			headers: { "content-type": "application/json" },
 		});
 	}) as typeof globalThis.fetch;
 
@@ -122,7 +127,13 @@ async function captureRequests(
 }
 
 /** Правдоподобные, но пустые ответы: проверяется запрос, а не разбор. */
-const emptyServices = { rows: [], plannedTotalRub: 0, discountTotalRub: 0, note: "", isEmpty: true };
+const emptyServices = {
+	rows: [],
+	plannedTotalRub: 0,
+	discountTotalRub: 0,
+	note: "",
+	isEmpty: true,
+};
 const emptyReceivables = {
 	rows: [],
 	totalDebtRub: 0,
@@ -130,9 +141,14 @@ const emptyReceivables = {
 	prepayments: [],
 	totalPrepaidRub: 0,
 	note: "",
-	isEmpty: true
+	isEmpty: true,
 };
-const emptySchedule = { cells: [], busiestWeekday: null, busiestHour: null, isEmpty: true };
+const emptySchedule = {
+	cells: [],
+	busiestWeekday: null,
+	busiestHour: null,
+	isEmpty: true,
+};
 
 /**
  * Код без комментариев: иначе замки ловят собственное объяснение дефекта.
@@ -183,9 +199,17 @@ function callArguments(code: string, name: string): string | null {
  */
 function loadBody(): string {
 	const start = panelCode.indexOf("const load = useCallback(");
-	assert.notEqual(start, -1, "в панели больше нет `const load = useCallback(` — замок потерял предмет проверки");
+	assert.notEqual(
+		start,
+		-1,
+		"в панели больше нет `const load = useCallback(` — замок потерял предмет проверки",
+	);
 	const end = panelCode.indexOf("}, [from, to, granularity]);", start);
-	assert.notEqual(end, -1, "у `load` изменился список зависимостей — перечитайте, что и когда он теперь грузит");
+	assert.notEqual(
+		end,
+		-1,
+		"у `load` изменился список зависимостей — перечитайте, что и когда он теперь грузит",
+	);
 	return panelCode.slice(start, end);
 }
 
@@ -194,13 +218,19 @@ describe("разрезы отчётов управляющего доходят 
 		const asked = async (zone: string) => {
 			const requests: CapturedRequest[] = [];
 			requests.push(
-				...(await captureRequests(zone, emptyServices, () => fetchServiceSales(PERIOD, SESSION_HEADERS)))
+				...(await captureRequests(zone, emptyServices, () =>
+					fetchServiceSales(PERIOD, SESSION_HEADERS),
+				)),
 			);
 			requests.push(
-				...(await captureRequests(zone, emptyReceivables, () => fetchReceivablesDetail(SESSION_HEADERS)))
+				...(await captureRequests(zone, emptyReceivables, () =>
+					fetchReceivablesDetail(SESSION_HEADERS),
+				)),
 			);
 			requests.push(
-				...(await captureRequests(zone, emptySchedule, () => fetchScheduleLoad(PERIOD, SESSION_HEADERS)))
+				...(await captureRequests(zone, emptySchedule, () =>
+					fetchScheduleLoad(PERIOD, SESSION_HEADERS),
+				)),
 			);
 			return requests.map((request) => request.url);
 		};
@@ -211,9 +241,9 @@ describe("разрезы отчётов управляющего доходят 
 			[
 				"/api/reports/services?from=2026-07-01&to=2026-07-31",
 				"/api/reports/receivables",
-				"/api/reports/schedule-load?from=2026-07-01&to=2026-07-31"
+				"/api/reports/schedule-load?from=2026-07-01&to=2026-07-31",
 			],
-			"адрес разреза изменился или запрос перестал уходить: владелец снова не увидит этот разрез"
+			"адрес разреза изменился или запрос перестал уходить: владелец снова не увидит этот разрез",
 		);
 
 		// Дебиторка периода не принимает намеренно: долг существует на дату отчёта,
@@ -225,38 +255,51 @@ describe("разрезы отчётов управляющего доходят 
 			assert.deepEqual(
 				await asked(zone),
 				fromMoscow,
-				`запрос зависит от пояса браузера (${zone}): границы периода снова считает браузер, а пояс клиники знает только сервер`
+				`запрос зависит от пояса браузера (${zone}): границы периода снова считает браузер, а пояс клиники знает только сервер`,
 			);
 		}
 		for (const url of fromMoscow) {
-			assert.ok(!LOOKS_LIKE_AN_INSTANT.test(url), `в адрес вернулось мгновение вместо календарной даты: ${url}`);
+			assert.ok(
+				!LOOKS_LIKE_AN_INSTANT.test(url),
+				`в адрес вернулось мгновение вместо календарной даты: ${url}`,
+			);
 		}
 	});
 
 	test("каждый запрос несёт заголовки охраны — без них клиника получает 403", async () => {
 		const requests: CapturedRequest[] = [
 			...(await captureRequests("Europe/Moscow", emptyServices, () =>
-				fetchServiceSales(PERIOD, SESSION_HEADERS)
+				fetchServiceSales(PERIOD, SESSION_HEADERS),
 			)),
 			...(await captureRequests("Europe/Moscow", emptyReceivables, () =>
-				fetchReceivablesDetail(SESSION_HEADERS)
+				fetchReceivablesDetail(SESSION_HEADERS),
 			)),
 			...(await captureRequests("Europe/Moscow", emptySchedule, () =>
-				fetchScheduleLoad(PERIOD, SESSION_HEADERS)
+				fetchScheduleLoad(PERIOD, SESSION_HEADERS),
 			)),
-			...(await captureRequests("Europe/Moscow", { period: { from: "", to: "" } }, () =>
-				fetchReportsSummary({ ...PERIOD, granularity: "day" }, SESSION_HEADERS)
-			))
+			...(await captureRequests(
+				"Europe/Moscow",
+				{ period: { from: "", to: "" } },
+				() =>
+					fetchReportsSummary(
+						{ ...PERIOD, granularity: "day" },
+						SESSION_HEADERS,
+					),
+			)),
 		];
 
-		assert.equal(requests.length, 4, "ушло не четыре запроса — состав разрезов изменился");
+		assert.equal(
+			requests.length,
+			4,
+			"ушло не четыре запроса — состав разрезов изменился",
+		);
 		for (const request of requests) {
 			assert.deepEqual(
 				request.headers,
 				SESSION_HEADERS,
 				`${request.url}: запрос ушёл без заголовков сеанса. Охрана accessGuard отвечает на такой 403, ` +
 					"и раздел выглядит пустым, а не сломанным — локально этого не видно, потому что в .env " +
-					"включены лазейки для чтения."
+					"включены лазейки для чтения.",
 			);
 		}
 	});
@@ -267,25 +310,25 @@ describe("разрезы отчётов управляющего доходят 
 		assert.match(
 			body,
 			/denteClinicalReadHeaders\(\)/,
-			"панель перестала собирать заголовки охраны: с обычным fetch раздел в клинике мёртв (403)"
+			"панель перестала собирать заголовки охраны: с обычным fetch раздел в клинике мёртв (403)",
 		);
 
 		for (const caller of [
 			"fetchReportsSummary",
 			"fetchServiceSales",
 			"fetchReceivablesDetail",
-			"fetchScheduleLoad"
+			"fetchScheduleLoad",
 		]) {
 			const argumentsText = callArguments(body, caller);
 			assert.notEqual(
 				argumentsText,
 				null,
-				`${caller} больше не вызывается из load(): разрез считается на сервере и не доходит до владельца`
+				`${caller} больше не вызывается из load(): разрез считается на сервере и не доходит до владельца`,
 			);
 			assert.match(
 				argumentsText ?? "",
 				/readHeaders/,
-				`${caller} вызывается без заголовков сеанса — сервер ответит 403`
+				`${caller} вызывается без заголовков сеанса — сервер ответит 403`,
 			);
 		}
 
@@ -294,14 +337,14 @@ describe("разрезы отчётов управляющего доходят 
 		assert.match(
 			body,
 			/Promise\.allSettled\(/,
-			"запросы разрезов снова объединены так, что отказ одного гасит остальные"
+			"запросы разрезов снова объединены так, что отказ одного гасит остальные",
 		);
 
 		// Без этого вызова load() не случается вовсе, и панель показывает пустоту.
 		assert.match(
 			panelCode,
 			/useEffect\(\(\) => \{\s*void load\(\);\s*\}, \[load\]\)/,
-			"панель больше не запускает загрузку при открытии раздела"
+			"панель больше не запускает загрузку при открытии раздела",
 		);
 	});
 
@@ -313,10 +356,14 @@ describe("разрезы отчётов управляющего доходят 
 			["должники", /debtors\.data\.rows\.map\(/],
 			["загрузка по дням недели", /scheduleMargins\.byWeekday\.map\(/],
 			["загрузка по часам", /scheduleMargins\.byHour\.map\(/],
-			["поток пациентов по месяцам", /summary\.patientFlow\.points\.map\(/]
+			["поток пациентов по месяцам", /summary\.patientFlow\.points\.map\(/],
 		];
 		for (const [what, pattern] of renderSites) {
-			assert.match(panelCode, pattern, `разрез «${what}» больше не рисуется: данные приходят и пропадают`);
+			assert.match(
+				panelCode,
+				pattern,
+				`разрез «${what}» больше не рисуется: данные приходят и пропадают`,
+			);
 		}
 
 		// Адрес обязан стоять в вызове ЛИТЕРАЛОМ. Недостижимость этих отчётов нашла
@@ -326,49 +373,81 @@ describe("разрезы отчётов управляющего доходят 
 			"/api/reports/summary",
 			"/api/reports/services",
 			"/api/reports/receivables",
-			"/api/reports/schedule-load"
+			"/api/reports/schedule-load",
 		]) {
-			assert.ok(panelCode.includes(address), `адрес ${address} исчез из кода панели`);
+			assert.ok(
+				panelCode.includes(address),
+				`адрес ${address} исчез из кода панели`,
+			);
 		}
 
 		// Отказ виден на экране русским текстом, а не в консоли: три раздела плюс
 		// объявление самой функции.
 		assert.ok(
 			(panelCode.match(/sliceRefusalText\(/g) ?? []).length >= 4,
-			"отказ разреза больше не превращается в текст на экране"
+			"отказ разреза больше не превращается в текст на экране",
 		);
-		assert.ok(panelCode.includes('role="alert"'), "отказ разреза не объявлен для программ чтения с экрана");
+		assert.ok(
+			panelCode.includes('role="alert"'),
+			"отказ разреза не объявлен для программ чтения с экрана",
+		);
 	});
 
 	test("отказ сервера показан по-русски, с причиной и следующим шагом", () => {
 		// Причина от сервера, которую человеку показывать можно, доходит до экрана.
-		const readable = sliceRefusalText("Список должников", "Даты периода не разобраны.");
+		const readable = sliceRefusalText(
+			"Список должников",
+			"Даты периода не разобраны.",
+		);
 		assert.match(readable, /Список должников не построен/);
 		assert.match(readable, /Даты периода не разобраны/);
-		assert.match(readable, /Обновить/, "в отказе нет следующего шага — это код ответа русскими словами");
-		assert.match(readable, /кабинет/, "в отказе нет действия, которое лечит самую частую причину — истёкший вход");
+		assert.match(
+			readable,
+			/Обновить/,
+			"в отказе нет следующего шага — это код ответа русскими словами",
+		);
+		assert.match(
+			readable,
+			/кабинет/,
+			"в отказе нет действия, которое лечит самую частую причину — истёкший вход",
+		);
 
 		// Техническая строка гасится и заменяется действием: «Failed to fetch» на
 		// экране клиники — это то же самое, что пустой экран.
-		const technical = sliceRefusalText("Разрез по услугам", "TypeError: Failed to fetch");
-		assert.ok(!technical.includes("Failed to fetch"), "техническая строка ушла на экран владельцу");
+		const technical = sliceRefusalText(
+			"Разрез по услугам",
+			"TypeError: Failed to fetch",
+		);
+		assert.ok(
+			!technical.includes("Failed to fetch"),
+			"техническая строка ушла на экран владельцу",
+		);
 		assert.match(technical, /сервер отказал без объяснения/);
 		assert.match(technical, /Обновить/);
 
 		// И то же для полного отсутствия причины.
-		assert.match(sliceRefusalText("Разрез загрузки", null), /сервер отказал без объяснения/);
+		assert.match(
+			sliceRefusalText("Разрез загрузки", null),
+			/сервер отказал без объяснения/,
+		);
 	});
 
 	test("точка входа владельца на месте: панель смонтирована в разделе аналитики", () => {
 		// До панели надо ДОЙТИ. Если её перестанут монтировать, все проверки выше
 		// останутся зелёными, а владелец снова не увидит ни одного разреза — так уже
 		// было с тремя починками диктовки и с таблицей выплат врачам.
-		const app = withoutComments(readFileSync(path.join(webSrc, "App.tsx"), "utf8"));
+		const app = withoutComments(
+			readFileSync(path.join(webSrc, "App.tsx"), "utf8"),
+		);
 		assert.match(
 			app,
 			/import\("\.\/components\/reports\/ManagerReportsPanel"\)/,
-			"App.tsx больше не подгружает панель отчётов"
+			"App.tsx больше не подгружает панель отчётов",
 		);
-		assert.match(app, /<ManagerReportsPanel\s/, "панель отчётов больше не отрисовывается ни на одном экране");
+		assert.match(
+			app,
+			/<ManagerReportsPanel\s/,
+			"панель отчётов больше не отрисовывается ни на одном экране",
+		);
 	});
 });

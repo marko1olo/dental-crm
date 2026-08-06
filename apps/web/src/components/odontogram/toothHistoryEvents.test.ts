@@ -86,7 +86,9 @@ test("тело по контракту сервера читается цели�
 });
 
 test("честная пустота остаётся пустотой, а не отказом", () => {
-	const events = toothHistoryEventsFromResponseBody(JSON.stringify({ events: [] }));
+	const events = toothHistoryEventsFromResponseBody(
+		JSON.stringify({ events: [] }),
+	);
 	assert.deepEqual(events, []);
 });
 
@@ -156,9 +158,18 @@ test("незнакомый вид события не выбрасывается
 
 test("выброшенные строки не роняют остальные события", () => {
 	const body = JSON.stringify({
-		events: [{}, { type: "plan", date: "2026-05-01T08:00:00.000Z", description: "План: коронка" }],
+		events: [
+			{},
+			{
+				type: "plan",
+				date: "2026-05-01T08:00:00.000Z",
+				description: "План: коронка",
+			},
+		],
 	});
-	const events = toothHistoryEventsFromResponseBody(body) as ToothHistoryEvent[];
+	const events = toothHistoryEventsFromResponseBody(
+		body,
+	) as ToothHistoryEvent[];
 	assert.equal(events.length, 1);
 	assert.equal(events[0]?.description, "План: коронка");
 });

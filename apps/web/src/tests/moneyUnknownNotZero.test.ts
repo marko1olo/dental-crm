@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 /**
@@ -149,11 +149,13 @@ function isZeroDefault(node: ts.Expression): boolean {
 	if (ts.isNumericLiteral(inner)) return Number(inner.text) === 0;
 	if (
 		ts.isPrefixUnaryExpression(inner) &&
-		(inner.operator === ts.SyntaxKind.MinusToken || inner.operator === ts.SyntaxKind.PlusToken)
+		(inner.operator === ts.SyntaxKind.MinusToken ||
+			inner.operator === ts.SyntaxKind.PlusToken)
 	) {
 		return isZeroDefault(inner.operand);
 	}
-	if (ts.isStringLiteralLike(inner)) return inner.text.trim() !== "" && Number(inner.text) === 0;
+	if (ts.isStringLiteralLike(inner))
+		return inner.text.trim() !== "" && Number(inner.text) === 0;
 	return false;
 }
 
@@ -196,7 +198,10 @@ export type ZeroFallback = { line: number; text: string };
  * Экспортируется для самопроверок: разбор, проверенный пересказом, а не
  * прогоном, отличается от отсутствующего только тем, что в него верят.
  */
-export function zeroFallbacksInMoneyCalls(fileName: string, source: string): ZeroFallback[] {
+export function zeroFallbacksInMoneyCalls(
+	fileName: string,
+	source: string,
+): ZeroFallback[] {
 	const parsed = parseSource(fileName, source);
 	const found: ZeroFallback[] = [];
 	const starts = new Set<number>();
@@ -267,7 +272,10 @@ function parseSource(fileName: string, source: string): ts.SourceFile {
  * предмета, то есть худший из возможных отказов сторожа.
  */
 function parseErrorCount(file: ts.SourceFile): number {
-	return (file as unknown as { parseDiagnostics?: readonly unknown[] }).parseDiagnostics?.length ?? 0;
+	return (
+		(file as unknown as { parseDiagnostics?: readonly unknown[] })
+			.parseDiagnostics?.length ?? 0
+	);
 }
 
 /** Сколько вызовов money() в файле — предмет охраны. */
@@ -287,12 +295,16 @@ function moneyCallCount(fileName: string, source: string): number {
 
 const guardedFiles = ["ShiftView.tsx", "FinancePlanning.tsx"];
 
-const readSource = (relativePath: string) => readFileSync(join(webSrcDir, relativePath), "utf8");
+const readSource = (relativePath: string) =>
+	readFileSync(join(webSrcDir, relativePath), "utf8");
 
 describe("неизвестная сумма не гасится нулём до money()", () => {
 	for (const relativePath of guardedFiles) {
 		it(`${relativePath}: внутри money() ноль не подставляется`, () => {
-			const found = zeroFallbacksInMoneyCalls(relativePath, readSource(relativePath));
+			const found = zeroFallbacksInMoneyCalls(
+				relativePath,
+				readSource(relativePath),
+			);
 			assert.deepEqual(
 				found.map((entry) => `${relativePath}:${entry.line} ${entry.text}`),
 				[],
@@ -334,8 +346,14 @@ describe("неизвестная сумма не гасится нулём до 
 		const cases: [string, string, string?][] = [
 			["одиночный ??", "money(dashboard?.billingSummary?.totalDueRub ?? 0)"],
 			["|| вместо ??", "money(dashboard?.billingSummary?.totalDueRub || 0)"],
-			["скобки вокруг значения", "money((dashboard?.billingSummary?.totalDueRub) ?? 0)"],
-			["обёртка Number()", "money(Number(dashboard?.billingSummary?.totalDueRub ?? 0))"],
+			[
+				"скобки вокруг значения",
+				"money((dashboard?.billingSummary?.totalDueRub) ?? 0)",
+			],
+			[
+				"обёртка Number()",
+				"money(Number(dashboard?.billingSummary?.totalDueRub ?? 0))",
+			],
 			["тройная запись", "money(due ? due : 0)"],
 			["пробелы и перевод строки", "money(\n\tdue\n\t\t??\n\t\t0,\n)"],
 			["ноль записан иначе", "money(due ?? 0.0)"],
@@ -344,7 +362,10 @@ describe("неизвестная сумма не гасится нулём до 
 			["обёртка Math.round()", "money(Math.round(due ?? 0))"],
 			["арифметика внутри вызова", "money(total - (discount ?? 0))"],
 			["цепочка из двух ??", "money(item.basePriceRub ?? item.priceRub ?? 0)"],
-			['разметка вокруг вызова', 'const tile = <p className="tile">{money(due || 0)}</p>;'],
+			[
+				"разметка вокруг вызова",
+				'const tile = <p className="tile">{money(due || 0)}</p>;',
+			],
 			// Обёртки на стороне НУЛЯ. Все четыре давали ноль совпадений у первой
 			// редакции этого разбора: компилятор снял обёртки вокруг значения, а
 			// вокруг нуля осталась та же щель.
@@ -376,15 +397,30 @@ describe("неизвестная сумма не гасится нулём до 
 			["настоящий ноль аргументом", "money(0)"],
 			["без подстановки", "money(dashboard?.billingSummary?.totalDueRub)"],
 			["округление без нуля", "money(Math.round(remainingDebt))"],
-			["пустая строка — это неизвестное, money() печатает «не определено»", 'money(due ?? "")'],
+			[
+				"пустая строка — это неизвестное, money() печатает «не определено»",
+				'money(due ?? "")',
+			],
 			["гашение вне вызова денег", "const total = due ?? 0;"],
-			["условие показа блока, а не сумма", "if ((summary.totalPrepaidRub ?? 0) > 0) show();"],
+			[
+				"условие показа блока, а не сумма",
+				"if ((summary.totalPrepaidRub ?? 0) > 0) show();",
+			],
 			["чужой формат", "percent(share ?? 0)"],
-			["блочный комментарий с дефектом дословно", "/* Здесь стояло money(поле ?? 0) и снято. */\nmoney(поле);"],
-			["строчный комментарий с дефектом дословно", "// было money(x || 0)\nmoney(x);"],
+			[
+				"блочный комментарий с дефектом дословно",
+				"/* Здесь стояло money(поле ?? 0) и снято. */\nmoney(поле);",
+			],
+			[
+				"строчный комментарий с дефектом дословно",
+				"// было money(x || 0)\nmoney(x);",
+			],
 			["дефект внутри строкового литерала", 'const doc = "money(x ?? 0)";'],
 			["не ноль по умолчанию", "money(due ?? fallbackRub)"],
-			["ноль справа, но не по умолчанию", "money(due === 0 ? unknownRub : due)"],
+			[
+				"ноль справа, но не по умолчанию",
+				"money(due === 0 ? unknownRub : due)",
+			],
 			// NaN money() относит к неизвестному и печатает «не определено» — это
 			// честный ответ, а не гашение.
 			["NaN по умолчанию", "money(due ?? Number.NaN)"],
@@ -392,7 +428,9 @@ describe("неизвестная сумма не гасится нулём до 
 		];
 		for (const [label, sample] of silent) {
 			assert.deepEqual(
-				zeroFallbacksInMoneyCalls("fixture.tsx", sample).map((entry) => entry.text),
+				zeroFallbacksInMoneyCalls("fixture.tsx", sample).map(
+					(entry) => entry.text,
+				),
 				[],
 				`${label}: ложная тревога на «${sample}» — на охрану, краснеющую на верном коде, перестанут смотреть`,
 			);

@@ -1,11 +1,11 @@
-import { test, describe, afterEach, beforeEach, mock } from "node:test";
 import assert from "node:assert";
-import Fastify from "fastify";
+import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import { and, eq } from "drizzle-orm";
-import { registerClinicalRoutes } from "../../routes/clinical.js";
-import { getClinicalRules } from "../../db/clinicalQuery.js";
+import Fastify from "fastify";
 import { db } from "../../db/client.js";
+import { getClinicalRules } from "../../db/clinicalQuery.js";
 import * as schema from "../../db/schema.js";
+import { registerClinicalRoutes } from "../../routes/clinical.js";
 
 /**
  * DELETE /api/clinical/rules/:ruleId — маршрута не существовало ни в одной
@@ -31,9 +31,15 @@ type ClinicalRuleRow = typeof schema.clinicalRules.$inferSelect;
 
 /** Имя колонки в БД -> имя поля в строке. Берётся из самой схемы, не переписывается руками. */
 const FIELD_BY_COLUMN = new Map<string, string>();
-for (const [field, column] of Object.entries(schema.clinicalRules as unknown as Record<string, unknown>)) {
+for (const [field, column] of Object.entries(
+	schema.clinicalRules as unknown as Record<string, unknown>,
+)) {
 	const candidate = column as { name?: unknown; columnType?: unknown } | null;
-	if (candidate && typeof candidate.name === "string" && typeof candidate.columnType === "string") {
+	if (
+		candidate &&
+		typeof candidate.name === "string" &&
+		typeof candidate.columnType === "string"
+	) {
 		FIELD_BY_COLUMN.set(candidate.name, field);
 	}
 }
@@ -60,7 +66,10 @@ function boundFilter(condition: unknown): Record<string, unknown> {
 			for (const chunk of shaped.queryChunks) walk(chunk);
 			return;
 		}
-		if (typeof shaped.name === "string" && typeof shaped.columnType === "string") {
+		if (
+			typeof shaped.name === "string" &&
+			typeof shaped.columnType === "string"
+		) {
 			pendingColumn = shaped.name;
 			return;
 		}
@@ -74,7 +83,10 @@ function boundFilter(condition: unknown): Record<string, unknown> {
 	return filter;
 }
 
-function matchesFilter(row: ClinicalRuleRow, filter: Record<string, unknown>): boolean {
+function matchesFilter(
+	row: ClinicalRuleRow,
+	filter: Record<string, unknown>,
+): boolean {
 	return Object.entries(filter).every(([column, value]) => {
 		const field = FIELD_BY_COLUMN.get(column);
 		if (!field) return false;
@@ -137,7 +149,8 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 
 		mock.method(db, "select", () => ({
 			from: () => ({
-				where: async (condition: unknown) => rows.filter((row) => matchesFilter(row, boundFilter(condition))),
+				where: async (condition: unknown) =>
+					rows.filter((row) => matchesFilter(row, boundFilter(condition))),
 			}),
 		}));
 
@@ -155,9 +168,15 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 		// Если этот разбор сломается, остальные проверки станут бессмысленно
 		// зелёными: фейк перестанет фильтровать и начнёт удалять всё подряд.
 		const filter = boundFilter(
-			and(eq(schema.clinicalRules.organizationId, ORG_A), eq(schema.clinicalRules.id, RULE_IN_ORG_A)),
+			and(
+				eq(schema.clinicalRules.organizationId, ORG_A),
+				eq(schema.clinicalRules.id, RULE_IN_ORG_A),
+			),
 		);
-		assert.deepStrictEqual(filter, { organization_id: ORG_A, id: RULE_IN_ORG_A });
+		assert.deepStrictEqual(filter, {
+			organization_id: ORG_A,
+			id: RULE_IN_ORG_A,
+		});
 	});
 
 	test("без удостоверения отвечает 401, а не 404: маршрут существует", async () => {
@@ -170,7 +189,11 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 		// отвечал 404 «Route not found», потому что app.delete не был объявлен.
 		assert.strictEqual(response.statusCode, 401, response.body);
 		assert.strictEqual(JSON.parse(response.body).error, "AuthRequired");
-		assert.strictEqual(rows.length, 1, "отказ в доступе не должен ничего удалять");
+		assert.strictEqual(
+			rows.length,
+			1,
+			"отказ в доступе не должен ничего удалять",
+		);
 	});
 
 	test("контроль: несуществующий адрес рядом всё ещё даёт 404", async () => {
@@ -195,12 +218,18 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 		assert.strictEqual(JSON.parse(response.body).error, "ClinicalRuleNotFound");
 
 		// Главное: строка выжила. Это и есть защита от межклиничного удаления.
-		assert.strictEqual(rows.length, 1, "правило клиники А удалено запросом клиники Б");
+		assert.strictEqual(
+			rows.length,
+			1,
+			"правило клиники А удалено запросом клиники Б",
+		);
 		assert.strictEqual(rows[0]!.id, RULE_IN_ORG_A);
 		assert.strictEqual((await getClinicalRules(ORG_A)).length, 1);
 
 		// И организация действительно попала в WHERE, а не была проверена мимо базы.
-		assert.deepStrictEqual(deleteFilters, [{ organization_id: ORG_B, id: RULE_IN_ORG_A }]);
+		assert.deepStrictEqual(deleteFilters, [
+			{ organization_id: ORG_B, id: RULE_IN_ORG_A },
+		]);
 	});
 
 	test("несуществующее правило своей клиники — тоже 404", async () => {
@@ -218,7 +247,11 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 	});
 
 	test("своё правило удаляется, и повторное чтение его больше не возвращает", async () => {
-		assert.strictEqual((await getClinicalRules(ORG_A)).length, 1, "правило не засеялось");
+		assert.strictEqual(
+			(await getClinicalRules(ORG_A)).length,
+			1,
+			"правило не засеялось",
+		);
 
 		const response = await app.inject({
 			method: "DELETE",
@@ -227,13 +260,18 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 		});
 
 		assert.strictEqual(response.statusCode, 200, response.body);
-		assert.deepStrictEqual(JSON.parse(response.body), { id: RULE_IN_ORG_A, deleted: true });
+		assert.deepStrictEqual(JSON.parse(response.body), {
+			id: RULE_IN_ORG_A,
+			deleted: true,
+		});
 
 		// Интерфейс после удаления перечитывает дашборд (useAppLogic.tsx,
 		// removeClinicalRule зовёт loadDashboard), а не правит список у себя.
 		// Значит выборка обязана перестать отдавать правило сразу же.
 		assert.deepStrictEqual(await getClinicalRules(ORG_A), []);
-		assert.deepStrictEqual(deleteFilters, [{ organization_id: ORG_A, id: RULE_IN_ORG_A }]);
+		assert.deepStrictEqual(deleteFilters, [
+			{ organization_id: ORG_A, id: RULE_IN_ORG_A },
+		]);
 	});
 
 	test("повторное удаление того же правила отвечает 404, а не успехом", async () => {
@@ -262,7 +300,14 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 		});
 
 		assert.strictEqual(response.statusCode, 400, response.body);
-		assert.strictEqual(JSON.parse(response.body).error, "ClinicalRuleValidationError");
-		assert.strictEqual(deleteFilters.length, 0, "запрос в базу не должен был случиться");
+		assert.strictEqual(
+			JSON.parse(response.body).error,
+			"ClinicalRuleValidationError",
+		);
+		assert.strictEqual(
+			deleteFilters.length,
+			0,
+			"запрос в базу не должен был случиться",
+		);
 	});
 });

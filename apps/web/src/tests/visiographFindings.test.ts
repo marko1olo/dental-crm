@@ -38,7 +38,9 @@ test("состояния, которые пишутся в карту, суще�
 	 * писал `Filling` — значения, которого нет ни там, ни там (на сервере `Filled`).
 	 */
 	const chart = readSource("components/odontogram/ToothChart.tsx");
-	const declaredInChart = [...chart.matchAll(/\n\t\| "([A-Za-z_]+)"/g)].map((m) => m[1] as string);
+	const declaredInChart = [...chart.matchAll(/\n\t\| "([A-Za-z_]+)"/g)].map(
+		(m) => m[1] as string,
+	);
 	assert.ok(
 		declaredInChart.length >= 8,
 		`из ToothChart.tsx разобрано ${declaredInChart.length} состояний зуба — разбор типа сломался, ` +
@@ -67,7 +69,11 @@ test("один статус ИИ не может одновременно пис
 });
 
 test("«требует лечения» и «зуб отсутствует» уходят в карту, каждое своей группой", () => {
-	const plan = planVisiographFindings({ "26": "treatment", "36": "treatment", "31": "missing" });
+	const plan = planVisiographFindings({
+		"26": "treatment",
+		"36": "treatment",
+		"31": "missing",
+	});
 
 	assert.equal(
 		plan.groups.length,
@@ -77,14 +83,24 @@ test("«требует лечения» и «зуб отсутствует» у�
 	);
 	const caries = plan.groups.find((group) => group.state === "Caries");
 	const missing = plan.groups.find((group) => group.state === "Missing");
-	assert.deepEqual(caries?.teeth.map((t) => t.toothNumber), [26, 36]);
-	assert.deepEqual(missing?.teeth.map((t) => t.toothNumber), [31]);
+	assert.deepEqual(
+		caries?.teeth.map((t) => t.toothNumber),
+		[26, 36],
+	);
+	assert.deepEqual(
+		missing?.teeth.map((t) => t.toothNumber),
+		[31],
+	);
 	assert.deepEqual([...plan.unreadableCodes], []);
 	assert.deepEqual([...plan.noFormulaStateCodes], []);
 });
 
 test("«наблюдение», «план» и «ранее вылечен» в карту не пишутся, но и не молчат", () => {
-	const plan = planVisiographFindings({ "27": "watch", "16": "planned", "45": "done" });
+	const plan = planVisiographFindings({
+		"27": "watch",
+		"16": "planned",
+		"45": "done",
+	});
 
 	assert.deepEqual(
 		plan.groups,
@@ -120,7 +136,14 @@ test("мусорный номер зуба и незнакомое слово н
 	// Сортировка, а не порядок ответа: числовые ключи объекта JS всегда идут
 	// первыми и по возрастанию, а нечисловые — в порядке вставки. Проверять здесь
 	// порядок значило бы закреплять правило движка, а не поведение разбора.
-	assert.deepEqual([...plan.unreadableCodes].sort(), ["", "0", "12abc", "46", "47", "99"]);
+	assert.deepEqual([...plan.unreadableCodes].sort(), [
+		"",
+		"0",
+		"12abc",
+		"46",
+		"47",
+		"99",
+	]);
 });
 
 test("пустой ответ модели не даёт ни записи, ни отказа", () => {
@@ -150,7 +173,9 @@ test("панель пишет находки на живой адрес форм
 			"смонтированный файл: запись уходит в никуда и исчезает при перезагрузке страницы.",
 	);
 	assert.ok(
-		analyzer.includes("denteClinicalMutationHeaders({ 'Content-Type': 'application/json' })"),
+		analyzer.includes(
+			"denteClinicalMutationHeaders({ 'Content-Type': 'application/json' })",
+		),
 		"запись формулы ушла без заголовков авторизации. Маршрут требует И токен кабинета, И токен " +
 			"сотрудника: голый fetch получит 401, и врач увидит пустоту вместо отказа.",
 	);

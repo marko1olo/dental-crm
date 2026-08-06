@@ -86,7 +86,7 @@ export async function getLostPatientsFiltersFromDb(orgId: string) {
 			fullName: patients.fullName,
 			phone: patients.phone,
 			createdAt: patients.createdAt,
-			lastPastStartsAt
+			lastPastStartsAt,
 		})
 		.from(patients)
 		.leftJoin(
@@ -94,8 +94,8 @@ export async function getLostPatientsFiltersFromDb(orgId: string) {
 			and(
 				eq(appointments.organizationId, orgId),
 				eq(appointments.patientId, patients.id),
-				gt(appointments.startsAt, now)
-			)
+				gt(appointments.startsAt, now),
+			),
 		)
 		.where(and(eq(patients.organizationId, orgId), isNull(appointments.id)))
 		// Прежний вариант не задавал порядок вообще, поэтому список мог приходить
@@ -122,7 +122,9 @@ export async function getLostPatientsFiltersFromDb(orgId: string) {
 			 * трактовать как «задач нет» — это «не считали».
 			 */
 			hasActiveCrmTask: false,
-			createdAt: row.createdAt ? row.createdAt.toISOString() : now.toISOString()
+			createdAt: row.createdAt
+				? row.createdAt.toISOString()
+				: now.toISOString(),
 		};
 	});
 

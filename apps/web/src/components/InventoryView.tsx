@@ -30,17 +30,29 @@ import { useInventoryLogic } from "./inventory/useInventoryLogic";
  * указан днём, и «осталось 0 дней» должно значить «истекает сегодня», а не
  * зависеть от времени суток.
  */
-function expirationState(isoDate: string): { label: string; className: string } {
+function expirationState(isoDate: string): {
+	label: string;
+	className: string;
+} {
 	const readable = new Date(`${isoDate}T00:00:00`).toLocaleDateString("ru-RU");
-	const startOfDay = (value: Date) => Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
+	const startOfDay = (value: Date) =>
+		Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
 	const expires = new Date(`${isoDate}T00:00:00`);
-	const daysLeft = Math.round((startOfDay(expires) - startOfDay(new Date())) / 86400000);
+	const daysLeft = Math.round(
+		(startOfDay(expires) - startOfDay(new Date())) / 86400000,
+	);
 
 	if (daysLeft < 0) {
-		return { label: `Просрочен с ${readable}`, className: "inventory-expiry-expired" };
+		return {
+			label: `Просрочен с ${readable}`,
+			className: "inventory-expiry-expired",
+		};
 	}
 	if (daysLeft === 0) {
-		return { label: `Истекает сегодня, ${readable}`, className: "inventory-expiry-expired" };
+		return {
+			label: `Истекает сегодня, ${readable}`,
+			className: "inventory-expiry-expired",
+		};
 	}
 	if (daysLeft <= 30) {
 		return {
@@ -216,7 +228,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							  Цена через общую money(): в прайсе теперь копейки, и
 							  «{basePriceRub} ₽» показывало бы «1500.5 ₽» с точкой.
 							*/}
-							[{s.code || "Без кода"}] {s.title} ({money(s.basePriceRub)})
+								[{s.code || "Без кода"}] {s.title} ({money(s.basePriceRub)})
 							</option>
 						))}
 					</select>
@@ -1013,8 +1025,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 											? unitCostRaw
 											: null;
 										const lineValue =
-											unitCost !== null &&
-											Number.isFinite(item.stockQuantity)
+											unitCost !== null && Number.isFinite(item.stockQuantity)
 												? item.stockQuantity * unitCost
 												: null;
 										return (
@@ -1142,18 +1153,31 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 													*/}
 													{item.expirationDate ? (
 														(() => {
-															const state = expirationState(item.expirationDate);
+															const state = expirationState(
+																item.expirationDate,
+															);
 															return (
-																<div style={{ display: "flex", flexDirection: "column" }}>
-																	<span className={state.className}>{state.label}</span>
+																<div
+																	style={{
+																		display: "flex",
+																		flexDirection: "column",
+																	}}
+																>
+																	<span className={state.className}>
+																		{state.label}
+																	</span>
 																	{item.lotNumber ? (
-																		<span style={{ fontSize: 12 }}>Партия: {item.lotNumber}</span>
+																		<span style={{ fontSize: 12 }}>
+																			Партия: {item.lotNumber}
+																		</span>
 																	) : null}
 																</div>
 															);
 														})()
 													) : item.lotNumber ? (
-														<span style={{ fontSize: 12 }}>Партия: {item.lotNumber}</span>
+														<span style={{ fontSize: 12 }}>
+															Партия: {item.lotNumber}
+														</span>
 													) : (
 														<span style={{ fontStyle: "italic", opacity: 0.5 }}>
 															Не указан
@@ -1481,7 +1505,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									<input
 										type="text"
 										value={formData.lotNumber}
-										onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
+										onChange={(e) =>
+											setFormData({ ...formData, lotNumber: e.target.value })
+										}
 										placeholder="номер с упаковки, если есть"
 									/>
 								</label>
@@ -1490,7 +1516,12 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									<input
 										type="date"
 										value={formData.expirationDate}
-										onChange={(e) => setFormData({ ...formData, expirationDate: e.target.value })}
+										onChange={(e) =>
+											setFormData({
+												...formData,
+												expirationDate: e.target.value,
+											})
+										}
 									/>
 								</label>
 							</div>
@@ -1508,7 +1539,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										<input
 											type="text"
 											value={formData.sku}
-											onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+											onChange={(e) =>
+												setFormData({ ...formData, sku: e.target.value })
+											}
 											placeholder="код поставщика"
 										/>
 									</label>
@@ -1517,7 +1550,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										<input
 											type="text"
 											value={formData.barcode}
-											onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+											onChange={(e) =>
+												setFormData({ ...formData, barcode: e.target.value })
+											}
 											placeholder="или отсканируйте сканером"
 										/>
 									</label>

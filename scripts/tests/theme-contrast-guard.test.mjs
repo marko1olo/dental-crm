@@ -66,7 +66,12 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-const stylesDirectory = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "apps/web/src/styles");
+const stylesDirectory = join(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"apps/web/src/styles",
+);
 
 /** Правила, переведённые с почти белых литералов на токены палитры. */
 const GUARDED_SELECTORS = [
@@ -125,13 +130,15 @@ const COLOR_PROPERTY =
 	/^(color|background|background-color|border|border-color|border-top-color|border-right-color|border-bottom-color|border-left-color|outline-color|fill|stroke)$/;
 
 /** Плечо «Ночи» в селекторе. */
-const DARK_ARM = /\[data-theme="dark"\]|html\.dark|body\.dark-mode|(?:^|\s)\.dark(?=\s|$)/;
+const DARK_ARM =
+	/\[data-theme="dark"\]|html\.dark|body\.dark-mode|(?:^|\s)\.dark(?=\s|$)/;
 const NIGHT_ARM = /\[data-theme="night"\]/;
 const ANY_ARM =
 	/:root\[data-theme="(?:dark|night|light)"\]\s*|\[data-theme="(?:dark|night|light)"\]\s*|html\.(?:dark|light)\s*|body\.dark-mode\s*|(?:^|\s)\.dark(?=\s|$)/g;
 
 /** Один канал sRGB 0..1 -> линейное значение по WCAG 2.x. */
-const linearizeChannel = (channel) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+const linearizeChannel = (channel) =>
+	channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
 
 /** Относительная яркость цветового литерала, либо null, если это не плотный цвет. */
 function relativeLuminance(literal) {
@@ -141,11 +148,23 @@ function relativeLuminance(literal) {
 	if (hex) {
 		const digits = hex[1];
 		if (digits.length === 3 || digits.length === 4) {
-			channels = [0, 1, 2].map((index) => Number.parseInt(digits[index] + digits[index], 16));
-			if (digits.length === 4 && Number.parseInt(digits[3] + digits[3], 16) / 255 < 0.85) return null;
+			channels = [0, 1, 2].map((index) =>
+				Number.parseInt(digits[index] + digits[index], 16),
+			);
+			if (
+				digits.length === 4 &&
+				Number.parseInt(digits[3] + digits[3], 16) / 255 < 0.85
+			)
+				return null;
 		} else if (digits.length === 6 || digits.length === 8) {
-			channels = [0, 2, 4].map((index) => Number.parseInt(digits.slice(index, index + 2), 16));
-			if (digits.length === 8 && Number.parseInt(digits.slice(6, 8), 16) / 255 < 0.85) return null;
+			channels = [0, 2, 4].map((index) =>
+				Number.parseInt(digits.slice(index, index + 2), 16),
+			);
+			if (
+				digits.length === 8 &&
+				Number.parseInt(digits.slice(6, 8), 16) / 255 < 0.85
+			)
+				return null;
 		}
 	} else {
 		const rgb = /^rgba?\(([^)]*)\)$/.exec(text);
@@ -154,12 +173,19 @@ function relativeLuminance(literal) {
 			if (parts.length > 3 && Number.parseFloat(parts[3]) < 0.85) return null;
 			const head = parts.slice(0, 3);
 			if (head.length === 3 && head.every((part) => /^[\d.]+%?$/.test(part))) {
-				channels = head.map((part) => (part.endsWith("%") ? (Number.parseFloat(part) * 255) / 100 : Number.parseFloat(part)));
+				channels = head.map((part) =>
+					part.endsWith("%")
+						? (Number.parseFloat(part) * 255) / 100
+						: Number.parseFloat(part),
+				);
 			}
 		}
 	}
-	if (!channels || channels.some((channel) => !Number.isFinite(channel))) return null;
-	const [red, green, blue] = channels.map((channel) => linearizeChannel(channel / 255));
+	if (!channels || channels.some((channel) => !Number.isFinite(channel)))
+		return null;
+	const [red, green, blue] = channels.map((channel) =>
+		linearizeChannel(channel / 255),
+	);
 	return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }
 
@@ -182,7 +208,8 @@ function blankComments(source) {
 		result += source.slice(index, start);
 		let end = source.indexOf("*/", start + 2);
 		end = end < 0 ? source.length : end + 2;
-		for (const character of source.slice(start, end)) result += character === "\n" ? "\n" : " ";
+		for (const character of source.slice(start, end))
+			result += character === "\n" ? "\n" : " ";
 		index = end;
 	}
 	return result;
@@ -200,7 +227,10 @@ function parseRules(source, file) {
 	for (let index = 0; index < source.length; index++) {
 		const character = source[index];
 		if (character === "{") {
-			stack.push({ selector: source.slice(selectorStart, index).trim(), bodyStart: index + 1 });
+			stack.push({
+				selector: source.slice(selectorStart, index).trim(),
+				bodyStart: index + 1,
+			});
 			depth += 1;
 			selectorStart = index + 1;
 		} else if (character === "}") {
@@ -267,7 +297,8 @@ function lightLiterals(body) {
 }
 
 const normalize = (selector) => selector.replace(/\s+/g, " ").trim();
-const splitSelectorList = (selectorList) => selectorList.split(",").map(normalize).filter(Boolean);
+const splitSelectorList = (selectorList) =>
+	selectorList.split(",").map(normalize).filter(Boolean);
 const stripThemeArms = (selector) => normalize(selector.replace(ANY_ARM, " "));
 
 /**
@@ -290,7 +321,10 @@ function scanGuarded(rules, guarded) {
 			}
 		}
 	}
-	return { offenders, missing: guarded.filter((selector) => !seen.has(selector)) };
+	return {
+		offenders,
+		missing: guarded.filter((selector) => !seen.has(selector)),
+	};
 }
 
 /**
@@ -311,11 +345,13 @@ function collectDarkWithoutNight(rules) {
 				continue;
 			}
 			if (DARK_ARM.test(selector)) {
-				if (!darkBases.has(base)) darkBases.set(base, `${rule.file}:${rule.line}`);
+				if (!darkBases.has(base))
+					darkBases.set(base, `${rule.file}:${rule.line}`);
 				continue;
 			}
 			if (/\[data-theme=|html\.light/.test(selector)) continue;
-			if (lightLiterals(rule.body).length > 0 && !litBases.has(base)) litBases.set(base, `${rule.file}:${rule.line}`);
+			if (lightLiterals(rule.body).length > 0 && !litBases.has(base))
+				litBases.set(base, `${rule.file}:${rule.line}`);
 		}
 	}
 
@@ -330,7 +366,12 @@ function collectDarkWithoutNight(rules) {
 
 const allRules = readdirSync(stylesDirectory)
 	.filter((name) => name.endsWith(".css"))
-	.flatMap((name) => parseRules(blankComments(readFileSync(join(stylesDirectory, name), "utf8")), name));
+	.flatMap((name) =>
+		parseRules(
+			blankComments(readFileSync(join(stylesDirectory, name), "utf8")),
+			name,
+		),
+	);
 
 test("правила, переведённые на токены, не возвращают светлый литерал", () => {
 	const { offenders, missing } = scanGuarded(allRules, GUARDED_SELECTORS);
@@ -351,8 +392,12 @@ test("правила, переведённые на токены, не возв�
 test("тёмное плечо без ночного плеча над светлым литералом: реестр из 24 мест закрыт", () => {
 	const hits = collectDarkWithoutNight(allRules);
 
-	const added = [...hits.keys()].filter((base) => !KNOWN_DARK_WITHOUT_NIGHT.has(base)).sort();
-	const gone = [...KNOWN_DARK_WITHOUT_NIGHT].filter((base) => !hits.has(base)).sort();
+	const added = [...hits.keys()]
+		.filter((base) => !KNOWN_DARK_WITHOUT_NIGHT.has(base))
+		.sort();
+	const gone = [...KNOWN_DARK_WITHOUT_NIGHT]
+		.filter((base) => !hits.has(base))
+		.sort();
 
 	assert.deepEqual(
 		added,
@@ -360,7 +405,9 @@ test("тёмное плечо без ночного плеча над светл
 		"новое место того же дефекта: базовое правило со светлым литералом, поправка на «Ночь» есть, " +
 			`на «Тепло» нет — тема «Тепло» останется на светлой плите:\n${added
 				.map((base) => `  ${base}  (${hits.get(base)})`)
-				.join("\n")}\nПеречислять [data-theme="night"] рядом с [data-theme="dark"] недостаточно надёжно: ` +
+				.join(
+					"\n",
+				)}\nПеречислять [data-theme="night"] рядом с [data-theme="dark"] недостаточно надёжно: ` +
 			"надёжно — убрать литерал из базового правила в токен, объявленный во всех трёх темах.",
 	);
 	assert.deepEqual(
@@ -377,13 +424,19 @@ test("--teal-glow с двумя типами: теневое использов�
 	const shadowTyped = [];
 	/** Использование, требующее ЦВЕТА: перед var(--teal-glow) в значении стоят длины. */
 	const colorTyped = [];
-	for (const name of readdirSync(stylesDirectory).filter((file) => file.endsWith(".css"))) {
-		const source = blankComments(readFileSync(join(stylesDirectory, name), "utf8"));
+	for (const name of readdirSync(stylesDirectory).filter((file) =>
+		file.endsWith(".css"),
+	)) {
+		const source = blankComments(
+			readFileSync(join(stylesDirectory, name), "utf8"),
+		);
 		source.split("\n").forEach((line, index) => {
 			const match = /^\s*box-shadow\s*:\s*(.+?)\s*;?\s*$/.exec(line);
 			if (!match || !match[1].includes("var(--teal-glow")) return;
 			const value = match[1].replace(/\s*!important\s*$/, "").trim();
-			(value.startsWith("var(--teal-glow") ? shadowTyped : colorTyped).push(`${name}:${index + 1}  ${value}`);
+			(value.startsWith("var(--teal-glow") ? shadowTyped : colorTyped).push(
+				`${name}:${index + 1}  ${value}`,
+			);
 		});
 	}
 
@@ -393,13 +446,30 @@ test("--teal-glow с двумя типами: теневое использов�
 		"--teal-glow объявлен цветом в main.css/dente-redesign.css и готовой тенью в premium.css; побеждает цвет, " +
 			`поэтому каждое теневое использование недействительно и тень пропадает целиком:\n${shadowTyped.join("\n")}`,
 	);
-	assert.match(shadowTyped[0], /^premium\.css:/, "известное теневое использование одно, в premium.css");
-	assert.ok(colorTyped.length > 0, "цветовые использования --teal-glow должны остаться цветовыми");
+	assert.match(
+		shadowTyped[0],
+		/^premium\.css:/,
+		"известное теневое использование одно, в premium.css",
+	);
+	assert.ok(
+		colorTyped.length > 0,
+		"цветовые использования --teal-glow должны остаться цветовыми",
+	);
 
-	const strip = allRules.find((rule) => splitSelectorList(rule.selector).includes(".onboarding-compact-strip"));
+	const strip = allRules.find((rule) =>
+		splitSelectorList(rule.selector).includes(".onboarding-compact-strip"),
+	);
 	assert.ok(strip, "правило .onboarding-compact-strip обязано быть в дереве");
-	assert.match(strip.body, /border:[^;]*var\(--line-strong\)/, "рамка полосы готовности стоит на --line-strong");
-	assert.doesNotMatch(strip.body, /var\(--teal-glow\)/, "--teal-glow здесь мог стать тенью и убить рамку целиком");
+	assert.match(
+		strip.body,
+		/border:[^;]*var\(--line-strong\)/,
+		"рамка полосы готовности стоит на --line-strong",
+	);
+	assert.doesNotMatch(
+		strip.body,
+		/var\(--teal-glow\)/,
+		"--teal-glow здесь мог стать тенью и убить рамку целиком",
+	);
 });
 
 /**
@@ -433,13 +503,32 @@ test("детекторы краснеют на подделанном входе
 	);
 
 	const hits = collectDarkWithoutNight(fixture);
-	assert.deepEqual([...hits.keys()], [".plate"], "дефект — только .plate: у .plate-ok плечо «Тепла» есть");
-	assert.match(hits.get(".plate"), /база fixture\.css:2, плечо «Ночи» fixture\.css:3/);
+	assert.deepEqual(
+		[...hits.keys()],
+		[".plate"],
+		"дефект — только .plate: у .plate-ok плечо «Тепла» есть",
+	);
+	assert.match(
+		hits.get(".plate"),
+		/база fixture\.css:2, плечо «Ночи» fixture\.css:3/,
+	);
 
-	const guarded = scanGuarded(fixture, [".plate", ".tokenised", ".veil", ".fallback"]);
+	const guarded = scanGuarded(fixture, [
+		".plate",
+		".tokenised",
+		".veil",
+		".fallback",
+	]);
 	assert.deepEqual(guarded.missing, [], "все четыре селектора в фикстуре есть");
-	assert.equal(guarded.offenders.length, 1, `светлым литералом обязано быть только .plate:\n${guarded.offenders.join("\n")}`);
-	assert.match(guarded.offenders[0], /^fixture\.css:2\s+\.plate\s+background: #fef2f2 \(яркость 0\.9\d\)$/);
+	assert.equal(
+		guarded.offenders.length,
+		1,
+		`светлым литералом обязано быть только .plate:\n${guarded.offenders.join("\n")}`,
+	);
+	assert.match(
+		guarded.offenders[0],
+		/^fixture\.css:2\s+\.plate\s+background: #fef2f2 \(яркость 0\.9\d\)$/,
+	);
 
 	assert.deepEqual(
 		scanGuarded(fixture, [".renamed-away"]).missing,

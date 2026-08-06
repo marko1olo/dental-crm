@@ -1,14 +1,14 @@
 {
-  "tables": {
-    "public.generated_documents": {
-      "columns": {
-        "signature_attestation": {
-          "type": "jsonb"
-        },
-        "release_journal_entry": {
-          "type": "jsonb"
-        }
-      }
-    }
-  }
+	"tables": {
+		"public.generated_documents": {
+			"columns": {
+				"signature_attestation": {
+					"type": "jsonb"
+				},
+				"release_journal_entry": {
+					"type": "jsonb"
+				}
+			}
+		}
+	}
 }

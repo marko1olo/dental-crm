@@ -307,7 +307,9 @@ export function WorkspaceFeaturesSelector() {
 	 * устройстве и у второго сотрудника модуль оставался включённым. Настройка,
 	 * которая молча не сохраняется, хуже настройки, которой нет.
 	 */
-	const [failure, setFailure] = useState<{ key: string; text: string } | null>(null);
+	const [failure, setFailure] = useState<{ key: string; text: string } | null>(
+		null,
+	);
 
 	async function handleToggle(
 		key: keyof WorkspaceFeatureFlags,

@@ -1,9 +1,23 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { StaffRole } from "@dental/shared";
-import { applyClinicModeToFlags, clinicCapabilities, clinicModes, describeHiddenCapabilities, hasCapability, type ClinicMode, visibleStaffRoles } from "../lib/clinicCapabilities.js";
 import type { WorkspaceFeatureFlags } from "../hooks/useWorkspaceProfile.js";
-import { appViews, getFilteredAppViews, getRailViewsHiddenByMode, getVisibleRailViews, viewLabels } from "../workspaceShell.js";
+import {
+	applyClinicModeToFlags,
+	type ClinicMode,
+	clinicCapabilities,
+	clinicModes,
+	describeHiddenCapabilities,
+	hasCapability,
+	visibleStaffRoles,
+} from "../lib/clinicCapabilities.js";
+import {
+	appViews,
+	getFilteredAppViews,
+	getRailViewsHiddenByMode,
+	getVisibleRailViews,
+	viewLabels,
+} from "../workspaceShell.js";
 
 /*
  * Режим клиники против состава экрана.
@@ -21,10 +35,23 @@ import { appViews, getFilteredAppViews, getRailViewsHiddenByMode, getVisibleRail
  * продукте, а не о коде.
  */
 
-const roleFocusOrder: StaffRole[] = ["doctor", "administrator", "assistant", "manager", "owner"];
+const roleFocusOrder: StaffRole[] = [
+	"doctor",
+	"administrator",
+	"assistant",
+	"manager",
+	"owner",
+];
 
 /** Разделы, без которых врач не проведёт приём. Их режим скрывать не вправе. */
-const clinicalViews = ["schedule", "patients", "imaging", "visit", "documents", "finance"] as const;
+const clinicalViews = [
+	"schedule",
+	"patients",
+	"imaging",
+	"visit",
+	"documents",
+	"finance",
+] as const;
 
 const railFor = (mode: ClinicMode | null): string[] => {
 	const seen = new Set<string>();
@@ -34,7 +61,8 @@ const railFor = (mode: ClinicMode | null): string[] => {
 	return appViews.filter((view) => seen.has(view));
 };
 
-const named = (views: readonly string[]): string => views.map((view) => viewLabels[view as (typeof appViews)[number]]).join(", ");
+const named = (views: readonly string[]): string =>
+	views.map((view) => viewLabels[view as (typeof appViews)[number]]).join(", ");
 
 /*
  * ВТОРАЯ СИСТЕМА МОДУЛЬНОСТИ — ПРИЗНАКИ МОДУЛЕЙ.
@@ -74,7 +102,7 @@ const serverFlags: ModuleFlagFixture = {
 	hasPediatricMode: true,
 	aiEnableTreatmentPlan: true,
 	aiEnableRecommendations: true,
-	aiEnableDocuments: true
+	aiEnableDocuments: true,
 };
 
 const flagKeys = Object.keys(serverFlags) as Array<keyof ModuleFlagFixture>;
@@ -86,7 +114,7 @@ const clinicalFlags: ReadonlyArray<keyof ModuleFlagFixture> = [
 	"hasPediatricMode",
 	"aiEnableTreatmentPlan",
 	"aiEnableRecommendations",
-	"aiEnableDocuments"
+	"aiEnableDocuments",
 ];
 
 /**
@@ -97,10 +125,14 @@ const clinicalFlags: ReadonlyArray<keyof ModuleFlagFixture> = [
 const moduleSurface = (mode: ClinicMode | null): string[] => {
 	const flags = applyClinicModeToFlags(serverFlags, mode);
 	return [
-		...railFor(mode).map((view) => `меню: ${viewLabels[view as (typeof appViews)[number]]}`),
+		...railFor(mode).map(
+			(view) => `меню: ${viewLabels[view as (typeof appViews)[number]]}`,
+		),
 		...visibleStaffRoles(roleFocusOrder, mode).map((role) => `роль: ${role}`),
-		...clinicCapabilities(mode).map((capability) => `возможность: ${capability}`),
-		...flagKeys.filter((key) => flags[key]).map((key) => `модуль: ${key}`)
+		...clinicCapabilities(mode).map(
+			(capability) => `возможность: ${capability}`,
+		),
+		...flagKeys.filter((key) => flags[key]).map((key) => `модуль: ${key}`),
 	];
 };
 
@@ -129,14 +161,26 @@ describe("состав рабочего экрана по режиму клин�
 		console.log(`  РЕЖИМ УБРАЛ (${removed.length}): ${removed.join(" | ")}`);
 
 		for (const entry of solo) {
-			assert.ok(network.includes(entry), `«${entry}» есть у отдельного врача и нет у сети`);
+			assert.ok(
+				network.includes(entry),
+				`«${entry}» есть у отдельного врача и нет у сети`,
+			);
 		}
-		assert.ok(solo.length < network.length, "режим не убрал ни одного пункта — флаг ничем не управляет");
+		assert.ok(
+			solo.length < network.length,
+			"режим не убрал ни одного пункта — флаг ничем не управляет",
+		);
 		for (const view of clinicalViews) {
-			assert.ok(solo.includes(`меню: ${viewLabels[view]}`), `у отдельного врача пропал раздел «${viewLabels[view]}»`);
+			assert.ok(
+				solo.includes(`меню: ${viewLabels[view]}`),
+				`у отдельного врача пропал раздел «${viewLabels[view]}»`,
+			);
 		}
 		for (const flag of clinicalFlags) {
-			assert.ok(solo.includes(`модуль: ${flag}`), `режим снял клинический признак ${flag}`);
+			assert.ok(
+				solo.includes(`модуль: ${flag}`),
+				`режим снял клинический признак ${flag}`,
+			);
 		}
 	});
 
@@ -151,20 +195,47 @@ describe("состав рабочего экрана по режиму клин�
 		 * useMemo, и новый объект на каждый рендер перерисовывал бы всех
 		 * потребителей признаков.
 		 */
-		assert.equal(applyClinicModeToFlags(serverFlags, "network_clinic"), serverFlags);
+		assert.equal(
+			applyClinicModeToFlags(serverFlags, "network_clinic"),
+			serverFlags,
+		);
 		assert.equal(applyClinicModeToFlags(serverFlags, "one_chair"), serverFlags);
-		assert.equal(applyClinicModeToFlags(serverFlags, null), serverFlags, "неизвестный режим не смеет ничего снимать");
+		assert.equal(
+			applyClinicModeToFlags(serverFlags, null),
+			serverFlags,
+			"неизвестный режим не смеет ничего снимать",
+		);
 
 		// Клиника выключила маркетинг вручную — режим сети не включает его обратно.
-		const manuallyOff: ModuleFlagFixture = { ...serverFlags, hasMarketingModule: false };
-		assert.equal(applyClinicModeToFlags(manuallyOff, "network_clinic"), manuallyOff);
+		const manuallyOff: ModuleFlagFixture = {
+			...serverFlags,
+			hasMarketingModule: false,
+		};
+		assert.equal(
+			applyClinicModeToFlags(manuallyOff, "network_clinic"),
+			manuallyOff,
+		);
 
 		const solo = applyClinicModeToFlags(serverFlags, "solo_doctor");
-		assert.equal(solo.hasMarketingModule, false, "вкладка настроек «Маркетинг» осталась у отдельного врача");
-		const touched = flagKeys.filter((key) => key !== "hasMarketingModule" && solo[key] !== serverFlags[key]);
-		assert.deepEqual(touched, [], `режим тронул признаки помимо маркетинга: ${touched.join(", ")}`);
-		console.log(`  снято режимом «отдельный врач»: hasMarketingModule (вкладка настроек «Маркетинг» уходит вместе с разделом меню)`);
-		console.log(`  остальные ${flagKeys.length - 1} признака не тронуты: ${flagKeys.filter((key) => key !== "hasMarketingModule").join(", ")}`);
+		assert.equal(
+			solo.hasMarketingModule,
+			false,
+			"вкладка настроек «Маркетинг» осталась у отдельного врача",
+		);
+		const touched = flagKeys.filter(
+			(key) => key !== "hasMarketingModule" && solo[key] !== serverFlags[key],
+		);
+		assert.deepEqual(
+			touched,
+			[],
+			`режим тронул признаки помимо маркетинга: ${touched.join(", ")}`,
+		);
+		console.log(
+			`  снято режимом «отдельный врач»: hasMarketingModule (вкладка настроек «Маркетинг» уходит вместе с разделом меню)`,
+		);
+		console.log(
+			`  остальные ${flagKeys.length - 1} признака не тронуты: ${flagKeys.filter((key) => key !== "hasMarketingModule").join(", ")}`,
+		);
 	});
 
 	it("печатает оба состава: отдельный врач против сети", () => {
@@ -172,10 +243,18 @@ describe("состав рабочего экрана по режиму клин�
 		const network = railFor("network_clinic");
 		console.log(`  отдельный врач (${solo.length}): ${named(solo)}`);
 		console.log(`  сеть           (${network.length}): ${named(network)}`);
-		console.log(`  роли, отдельный врач: ${visibleStaffRoles(roleFocusOrder, "solo_doctor").join(", ")}`);
-		console.log(`  роли, сеть:           ${visibleStaffRoles(roleFocusOrder, "network_clinic").join(", ")}`);
-		console.log(`  возможности, отдельный врач (${clinicCapabilities("solo_doctor").length}): ${clinicCapabilities("solo_doctor").join(", ")}`);
-		console.log(`  возможности, сеть          (${clinicCapabilities("network_clinic").length}): ${clinicCapabilities("network_clinic").join(", ")}`);
+		console.log(
+			`  роли, отдельный врач: ${visibleStaffRoles(roleFocusOrder, "solo_doctor").join(", ")}`,
+		);
+		console.log(
+			`  роли, сеть:           ${visibleStaffRoles(roleFocusOrder, "network_clinic").join(", ")}`,
+		);
+		console.log(
+			`  возможности, отдельный врач (${clinicCapabilities("solo_doctor").length}): ${clinicCapabilities("solo_doctor").join(", ")}`,
+		);
+		console.log(
+			`  возможности, сеть          (${clinicCapabilities("network_clinic").length}): ${clinicCapabilities("network_clinic").join(", ")}`,
+		);
 		assert.ok(solo.length > 0);
 		assert.ok(network.length > 0);
 	});
@@ -198,19 +277,30 @@ describe("состав рабочего экрана по режиму клин�
 				assert.deepEqual(
 					[...hidden, ...visible].sort(),
 					[...byRole].sort(),
-					`${mode}/${role}: скрытое и видимое вместе не равны праву роли`
+					`${mode}/${role}: скрытое и видимое вместе не равны праву роли`,
 				);
 				for (const view of hidden) {
-					assert.ok(viewLabels[view], `${mode}/${role}: скрытый раздел ${view} нечем назвать человеку`);
+					assert.ok(
+						viewLabels[view],
+						`${mode}/${role}: скрытый раздел ${view} нечем назвать человеку`,
+					);
 				}
 			}
 		}
 		const ownerHiddenSolo = getRailViewsHiddenByMode("owner", "solo_doctor");
-		console.log(`  скрыто у владельца, отдельный врач: ${named(ownerHiddenSolo)}`);
-		console.log(`  словами: ${describeHiddenCapabilities("solo_doctor").join(", ")}`);
+		console.log(
+			`  скрыто у владельца, отдельный врач: ${named(ownerHiddenSolo)}`,
+		);
+		console.log(
+			`  словами: ${describeHiddenCapabilities("solo_doctor").join(", ")}`,
+		);
 		assert.deepEqual(named(ownerHiddenSolo), "Обращения, Маркетинг/SEO");
 		// Оба скрытых раздела названы в подписи, а не только один из них.
-		assert.ok(describeHiddenCapabilities("solo_doctor").includes("раздел продвижения и воронка обращений"));
+		assert.ok(
+			describeHiddenCapabilities("solo_doctor").includes(
+				"раздел продвижения и воронка обращений",
+			),
+		);
 		// Сети скрывать нечего — строки объяснения в интерфейсе не будет.
 		assert.deepEqual(getRailViewsHiddenByMode("owner", "network_clinic"), []);
 		assert.deepEqual(describeHiddenCapabilities("network_clinic"), []);
@@ -231,12 +321,24 @@ describe("состав рабочего экрана по режиму клин�
 		 * правило — и тогда покраснеет эта проверка.
 		 */
 		for (const mode of clinicModes) {
-			const railHasMarketing = getVisibleRailViews("owner", mode).includes("marketing");
+			const railHasMarketing = getVisibleRailViews("owner", mode).includes(
+				"marketing",
+			);
 			const railHasLeads = getVisibleRailViews("owner", mode).includes("leads");
 			const capability = hasCapability(mode, "marketingSection");
-			console.log(`  ${mode}: возможность=${capability} меню-маркетинг=${railHasMarketing} меню-обращения=${railHasLeads}`);
-			assert.equal(railHasMarketing, capability, `${mode}: меню и возможность разошлись`);
-			assert.equal(railHasLeads, capability, `${mode}: воронка обращений живёт по своему правилу`);
+			console.log(
+				`  ${mode}: возможность=${capability} меню-маркетинг=${railHasMarketing} меню-обращения=${railHasLeads}`,
+			);
+			assert.equal(
+				railHasMarketing,
+				capability,
+				`${mode}: меню и возможность разошлись`,
+			);
+			assert.equal(
+				railHasLeads,
+				capability,
+				`${mode}: воронка обращений живёт по своему правилу`,
+			);
 		}
 	});
 
@@ -244,19 +346,33 @@ describe("состав рабочего экрана по режиму клин�
 		const solo = railFor("solo_doctor");
 		const network = railFor("network_clinic");
 		for (const view of solo) {
-			assert.ok(network.includes(view), `«${viewLabels[view as (typeof appViews)[number]]}» есть у врача и нет у сети`);
+			assert.ok(
+				network.includes(view),
+				`«${viewLabels[view as (typeof appViews)[number]]}» есть у врача и нет у сети`,
+			);
 		}
-		assert.ok(solo.length < network.length, `состав не сократился: ${named(solo)}`);
+		assert.ok(
+			solo.length < network.length,
+			`состав не сократился: ${named(solo)}`,
+		);
 	});
 
 	it("ни один раздел лечения не скрыт ни в одном режиме", () => {
 		// Прячется организационная обвязка. Лечение не трогается: снимки и приём
 		// нужны отдельному врачу ровно так же, как клинике.
-		const modes: ClinicMode[] = ["solo_doctor", "one_chair", "small_clinic", "network_clinic"];
+		const modes: ClinicMode[] = [
+			"solo_doctor",
+			"one_chair",
+			"small_clinic",
+			"network_clinic",
+		];
 		for (const mode of modes) {
 			const rail = railFor(mode);
 			for (const view of clinicalViews) {
-				assert.ok(rail.includes(view), `${mode}: пропал раздел «${viewLabels[view]}»`);
+				assert.ok(
+					rail.includes(view),
+					`${mode}: пропал раздел «${viewLabels[view]}»`,
+				);
 			}
 		}
 	});
@@ -265,24 +381,49 @@ describe("состав рабочего экрана по режиму клин�
 		// Роль задаёт состав разделов, а «Настройки» есть не у каждой роли. Если
 		// сокращение ролей отрежет настройки, клиника не сможет сменить режим
 		// обратно: это была бы ловушка, а не упрощение.
-		const modes: ClinicMode[] = ["solo_doctor", "one_chair", "small_clinic", "network_clinic"];
+		const modes: ClinicMode[] = [
+			"solo_doctor",
+			"one_chair",
+			"small_clinic",
+			"network_clinic",
+		];
 		for (const mode of modes) {
 			const roles = visibleStaffRoles(roleFocusOrder, mode);
 			assert.ok(roles.length > 0, `${mode}: не осталось ни одной роли`);
-			const reachable = roles.some((role) => getVisibleRailViews(role, mode).includes("settings"));
-			assert.ok(reachable, `${mode}: ни одна доступная роль не открывает «Настройки»`);
+			const reachable = roles.some((role) =>
+				getVisibleRailViews(role, mode).includes("settings"),
+			);
+			assert.ok(
+				reachable,
+				`${mode}: ни одна доступная роль не открывает «Настройки»`,
+			);
 		}
 	});
 
 	it("у отдельного врача не предлагаются роли отсутствующих сотрудников", () => {
 		const solo = visibleStaffRoles(roleFocusOrder, "solo_doctor");
 		assert.deepEqual(solo, ["doctor", "owner"]);
-		for (const role of ["assistant", "administrator", "manager"] as StaffRole[]) {
-			assert.ok(!solo.includes(role), `отдельному врачу предложена роль ${role}`);
+		for (const role of [
+			"assistant",
+			"administrator",
+			"manager",
+		] as StaffRole[]) {
+			assert.ok(
+				!solo.includes(role),
+				`отдельному врачу предложена роль ${role}`,
+			);
 		}
 		// Управляющий над одним кабинетом — тоже никто, а ассистент уже возможен.
-		assert.deepEqual(visibleStaffRoles(roleFocusOrder, "one_chair"), ["doctor", "administrator", "assistant", "owner"]);
-		assert.deepEqual(visibleStaffRoles(roleFocusOrder, "small_clinic"), roleFocusOrder);
+		assert.deepEqual(visibleStaffRoles(roleFocusOrder, "one_chair"), [
+			"doctor",
+			"administrator",
+			"assistant",
+			"owner",
+		]);
+		assert.deepEqual(
+			visibleStaffRoles(roleFocusOrder, "small_clinic"),
+			roleFocusOrder,
+		);
 	});
 
 	it("неизвестный режим не отнимает ни разделов, ни ролей", () => {
@@ -290,9 +431,15 @@ describe("состав рабочего экрана по режиму клин�
 		// раздел ищут, лишний — замечают и настраивают.
 		assert.deepEqual(railFor(null), railFor("network_clinic"));
 		assert.deepEqual(visibleStaffRoles(roleFocusOrder, null), roleFocusOrder);
-		assert.deepEqual(visibleStaffRoles(roleFocusOrder, "legacy_mode" as ClinicMode), roleFocusOrder);
+		assert.deepEqual(
+			visibleStaffRoles(roleFocusOrder, "legacy_mode" as ClinicMode),
+			roleFocusOrder,
+		);
 		for (const role of roleFocusOrder) {
-			assert.deepEqual(getVisibleRailViews(role, null), getFilteredAppViews(role));
+			assert.deepEqual(
+				getVisibleRailViews(role, null),
+				getFilteredAppViews(role),
+			);
 		}
 	});
 
@@ -301,7 +448,9 @@ describe("состав рабочего экрана по режиму клин�
 		// режим влиял и на него, адрес #marketing выбрасывал бы на «Смену», то
 		// есть раздел был бы удалён, а не убран с глаз.
 		assert.ok(getFilteredAppViews("owner").includes("marketing"));
-		assert.ok(!getVisibleRailViews("owner", "solo_doctor").includes("marketing"));
+		assert.ok(
+			!getVisibleRailViews("owner", "solo_doctor").includes("marketing"),
+		);
 		assert.ok(getVisibleRailViews("owner", "one_chair").includes("marketing"));
 	});
 });

@@ -50,7 +50,8 @@ export const fiscalReceiptUrlErrorText =
 	"Ссылка ОФД должна начинаться с http:// или https://";
 
 /** Текст отказа по ИНН плательщика. */
-export const payerInnErrorText = "ИНН плательщика должен содержать 10 или 12 цифр";
+export const payerInnErrorText =
+	"ИНН плательщика должен содержать 10 или 12 цифр";
 
 /** Ссылка на проверку чека: пустая допустима, непустая обязана быть адресом. */
 export function isFiscalReceiptUrlInvalid(value: string): boolean {
@@ -101,8 +102,16 @@ const taxDeductionRequirements: readonly {
 	},
 	{ key: "fiscalFn", step: "ФН — номер фискального накопителя", label: "ФН" },
 	{ key: "fiscalFd", step: "ФД — номер фискального документа", label: "ФД" },
-	{ key: "fiscalFpd", step: "ФПД — фискальный признак документа", label: "ФПД" },
-	{ key: "payerFullName", step: "ФИО плательщика явно", label: "ФИО плательщика" },
+	{
+		key: "fiscalFpd",
+		step: "ФПД — фискальный признак документа",
+		label: "ФПД",
+	},
+	{
+		key: "payerFullName",
+		step: "ФИО плательщика явно",
+		label: "ФИО плательщика",
+	},
 	{
 		key: "payerBirthDate",
 		step: "дату рождения плательщика",
@@ -137,7 +146,9 @@ export function missingTaxDeductionSteps(fields: TaxDeductionFields): string[] {
  * запись разойдутся, кнопка «Принять оплату» станет доступной, а сервер оплату
  * отклонит — оплата будет выглядеть принятой, не будучи принятой.
  */
-export function missingTaxDeductionLabels(fields: TaxDeductionFields): string[] {
+export function missingTaxDeductionLabels(
+	fields: TaxDeductionFields,
+): string[] {
 	return taxDeductionRequirements
 		.filter((requirement) => !fields[requirement.key].trim())
 		.map((requirement) => requirement.label);

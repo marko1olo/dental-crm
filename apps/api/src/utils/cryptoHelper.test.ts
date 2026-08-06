@@ -6,32 +6,53 @@ describe("cryptoHelper", () => {
 	describe("verifyCredential", () => {
 		test("returns true for valid salt:hash matching", async () => {
 			const hashed = await hashCredential("securepassword");
-			assert.strictEqual(await verifyCredential("securepassword", hashed), true);
+			assert.strictEqual(
+				await verifyCredential("securepassword", hashed),
+				true,
+			);
 		});
 
 		test("returns false for invalid salt:hash matching", async () => {
 			const hashed = await hashCredential("securepassword");
-			assert.strictEqual(await verifyCredential("wrongpassword", hashed), false);
+			assert.strictEqual(
+				await verifyCredential("wrongpassword", hashed),
+				false,
+			);
 		});
 
 		test("returns false when salt is missing in stored format", async () => {
-			assert.strictEqual(await verifyCredential("password", ":somehash"), false);
+			assert.strictEqual(
+				await verifyCredential("password", ":somehash"),
+				false,
+			);
 		});
 
 		test("returns false when hash is missing in stored format", async () => {
-			assert.strictEqual(await verifyCredential("password", "somesalt:"), false);
+			assert.strictEqual(
+				await verifyCredential("password", "somesalt:"),
+				false,
+			);
 		});
 
 		test("returns false when stored hash has different length than expected", async () => {
 			// salt = "somesalt", hash = "short"
-			assert.strictEqual(await verifyCredential("password", "somesalt:short"), false);
+			assert.strictEqual(
+				await verifyCredential("password", "somesalt:short"),
+				false,
+			);
 		});
 
 		test("returns false when try block throws exception", async () => {
 			// Passing null as stored string should throw on .includes
-			assert.strictEqual(await verifyCredential("password", null as unknown as string), false);
+			assert.strictEqual(
+				await verifyCredential("password", null as unknown as string),
+				false,
+			);
 			// Passing null as plain string should throw in pbkdf2
-			assert.strictEqual(await verifyCredential(null as unknown as string, "somesalt:somehash"), false);
+			assert.strictEqual(
+				await verifyCredential(null as unknown as string, "somesalt:somehash"),
+				false,
+			);
 		});
 	});
 
@@ -68,16 +89,28 @@ describe("cryptoHelper", () => {
 			"d0a16f7826bb8634992bc271b5bba907a74a83669b02d3a420c5a74f74e055ef";
 
 		test("пароль клиники, захешированный синхронной редакцией, проверяется асинхронной", async () => {
-			assert.strictEqual(await verifyCredential(LEGACY_PASSWORD, LEGACY_PASSWORD_HASH), true);
+			assert.strictEqual(
+				await verifyCredential(LEGACY_PASSWORD, LEGACY_PASSWORD_HASH),
+				true,
+			);
 		});
 
 		test("PIN сотрудника, захешированный синхронной редакцией, проверяется асинхронной", async () => {
-			assert.strictEqual(await verifyCredential(LEGACY_PIN, LEGACY_PIN_HASH), true);
+			assert.strictEqual(
+				await verifyCredential(LEGACY_PIN, LEGACY_PIN_HASH),
+				true,
+			);
 		});
 
 		test("неверный пароль против старого хеша по-прежнему отклоняется", async () => {
-			assert.strictEqual(await verifyCredential("dente2027", LEGACY_PASSWORD_HASH), false);
-			assert.strictEqual(await verifyCredential("4321", LEGACY_PIN_HASH), false);
+			assert.strictEqual(
+				await verifyCredential("dente2027", LEGACY_PASSWORD_HASH),
+				false,
+			);
+			assert.strictEqual(
+				await verifyCredential("4321", LEGACY_PIN_HASH),
+				false,
+			);
 		});
 
 		test("новый хеш сохраняет прежнюю форму: hex-соль 64 знака, hex-хеш 128 знаков", async () => {
@@ -144,7 +177,10 @@ describe("cryptoHelper", () => {
 			}, 5);
 			let verified = false;
 			try {
-				verified = await verifyCredential("пароль для замера блокировки", stored);
+				verified = await verifyCredential(
+					"пароль для замера блокировки",
+					stored,
+				);
 			} finally {
 				clearInterval(timer);
 			}

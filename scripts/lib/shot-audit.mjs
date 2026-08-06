@@ -108,7 +108,10 @@ export const THEME_STATE_EXPRESSION = `
 
 /** Отпечаток палитры: короткий хеш от «имя:значение» всех тем-зависимых токенов. */
 export function paletteFingerprint(values) {
-  return createHash("sha256").update(values.join("\n")).digest("hex").slice(0, 12);
+	return createHash("sha256")
+		.update(values.join("\n"))
+		.digest("hex")
+		.slice(0, 12);
 }
 
 /**
@@ -125,12 +128,12 @@ export function paletteFingerprint(values) {
  * раздел был полностью отрисован.
  */
 export function busySelector(selectorList) {
-  const parts = String(selectorList)
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  if (!parts.length) throw new Error("busySelector: пустой список селекторов");
-  return parts.map((part) => `${part}[aria-busy="true"]`).join(", ");
+	const parts = String(selectorList)
+		.split(",")
+		.map((part) => part.trim())
+		.filter(Boolean);
+	if (!parts.length) throw new Error("busySelector: пустой список селекторов");
+	return parts.map((part) => `${part}[aria-busy="true"]`).join(", ");
 }
 
 /**
@@ -144,9 +147,11 @@ export function busySelector(selectorList) {
  * которого прогон не ждал, доказательством не считается.
  */
 export function expectedPlate(file, theme) {
-  if (!file.endsWith(".png")) throw new Error(`Ожидаемая плита «${file}» должна быть .png`);
-  if (!THEMES.includes(theme)) throw new Error(`Ожидаемая плита «${file}»: неизвестная тема «${theme}»`);
-  return { file, theme };
+	if (!file.endsWith(".png"))
+		throw new Error(`Ожидаемая плита «${file}» должна быть .png`);
+	if (!THEMES.includes(theme))
+		throw new Error(`Ожидаемая плита «${file}»: неизвестная тема «${theme}»`);
+	return { file, theme };
 }
 
 /**
@@ -154,197 +159,217 @@ export function expectedPlate(file, theme) {
  * охрана побайтовых двойников перед записью, проверка полноты в конце.
  */
 export function createShotAudit({ expected }) {
-  if (!Array.isArray(expected) || expected.length === 0) {
-    throw new Error("createShotAudit: список ожидаемых плит пуст — аудировать нечего");
-  }
-  const themeOfFile = new Map();
-  for (const plate of expected) {
-    const { file, theme } = expectedPlate(plate.file, plate.theme);
-    if (themeOfFile.has(file)) throw new Error(`Ожидаемая плита «${file}» объявлена дважды`);
-    themeOfFile.set(file, theme);
-  }
+	if (!Array.isArray(expected) || expected.length === 0) {
+		throw new Error(
+			"createShotAudit: список ожидаемых плит пуст — аудировать нечего",
+		);
+	}
+	const themeOfFile = new Map();
+	for (const plate of expected) {
+		const { file, theme } = expectedPlate(plate.file, plate.theme);
+		if (themeOfFile.has(file))
+			throw new Error(`Ожидаемая плита «${file}» объявлена дважды`);
+		themeOfFile.set(file, theme);
+	}
 
-  const entries = [];
-  const byMd5 = new Map();
-  const paletteByThemeAndViewport = new Map();
-  let viewport = "не задан";
+	const entries = [];
+	const byMd5 = new Map();
+	const paletteByThemeAndViewport = new Map();
+	let viewport = "не задан";
 
-  /** Диагностический кадр наследует тему той плиты, вместо которой он записан. */
-  function declaredTheme(file) {
-    const direct = themeOfFile.get(file);
-    if (direct) return direct;
-    const base = file.endsWith(`${MISS_SUFFIX}.png`) ? `${file.slice(0, -`${MISS_SUFFIX}.png`.length)}.png` : null;
-    const viaMiss = base ? themeOfFile.get(base) : undefined;
-    if (viaMiss) return viaMiss;
-    throw new Error(
-      `Снимок «${file}» не заявлен в списке ожидаемых плит этого прогона. Файл, которого прогон не ждал, доказательством не является: либо имя разошлось со списком, либо в списке забыли строку.`,
-    );
-  }
+	/** Диагностический кадр наследует тему той плиты, вместо которой он записан. */
+	function declaredTheme(file) {
+		const direct = themeOfFile.get(file);
+		if (direct) return direct;
+		const base = file.endsWith(`${MISS_SUFFIX}.png`)
+			? `${file.slice(0, -`${MISS_SUFFIX}.png`.length)}.png`
+			: null;
+		const viaMiss = base ? themeOfFile.get(base) : undefined;
+		if (viaMiss) return viaMiss;
+		throw new Error(
+			`Снимок «${file}» не заявлен в списке ожидаемых плит этого прогона. Файл, которого прогон не ждал, доказательством не является: либо имя разошлось со списком, либо в списке забыли строку.`,
+		);
+	}
 
-  return {
-    /** Размер окна входит в ключ отпечатка: часть токенов объявлена внутри @media. */
-    setViewport(next) {
-      viewport = next;
-    },
-    get viewport() {
-      return viewport;
-    },
-    expectedFiles: () => [...themeOfFile.keys()],
-    declaredTheme,
+	return {
+		/** Размер окна входит в ключ отпечатка: часть токенов объявлена внутри @media. */
+		setViewport(next) {
+			viewport = next;
+		},
+		get viewport() {
+			return viewport;
+		},
+		expectedFiles: () => [...themeOfFile.keys()],
+		declaredTheme,
 
-    /**
-     * ПРОВЕРКА ВПЛОТНУЮ ПЕРЕД ЗАТВОРОМ. Прогон падает, а не предупреждает: файл
-     * с чужой темой не должен лечь на диск и быть подшит как плита темы.
-     */
-    assertThemeBeforeShot(state, theme, file) {
-      if (!state) throw new Error(`${file}: страница не вернула состояние темы`);
-      const where = `${file} (ожидалась тема «${theme}»)`;
+		/**
+		 * ПРОВЕРКА ВПЛОТНУЮ ПЕРЕД ЗАТВОРОМ. Прогон падает, а не предупреждает: файл
+		 * с чужой темой не должен лечь на диск и быть подшит как плита темы.
+		 */
+		assertThemeBeforeShot(state, theme, file) {
+			if (!state)
+				throw new Error(`${file}: страница не вернула состояние темы`);
+			const where = `${file} (ожидалась тема «${theme}»)`;
 
-      const named = declaredTheme(file);
-      if (named !== theme) {
-        throw new Error(
-          `${where}: в списке ожидаемых плит у этого файла тема «${named}». Ошибка в сценарии, а не в приложении: имя и снимаемая тема разошлись.`,
-        );
-      }
-      if (state.dataTheme !== theme) {
-        throw new Error(
-          `${where}: на <html> применена тема «${state.dataTheme || "нет атрибута"}», режим хранилища «${state.mode}». Снимок с чужой темой под этим именем — подложное доказательство, прогон остановлен.`,
-        );
-      }
-      if (state.mode !== theme) {
-        throw new Error(
-          `${where}: атрибут data-theme верный, но режим в хранилище приложения «${state.mode}». Перезагрузка страницы вернёт другую тему, снимку доверять нельзя.`,
-        );
-      }
-      /* Класс на <html> — второй источник правды о теме: несколько старых правил
+			const named = declaredTheme(file);
+			if (named !== theme) {
+				throw new Error(
+					`${where}: в списке ожидаемых плит у этого файла тема «${named}». Ошибка в сценарии, а не в приложении: имя и снимаемая тема разошлись.`,
+				);
+			}
+			if (state.dataTheme !== theme) {
+				throw new Error(
+					`${where}: на <html> применена тема «${state.dataTheme || "нет атрибута"}», режим хранилища «${state.mode}». Снимок с чужой темой под этим именем — подложное доказательство, прогон остановлен.`,
+				);
+			}
+			if (state.mode !== theme) {
+				throw new Error(
+					`${where}: атрибут data-theme верный, но режим в хранилище приложения «${state.mode}». Перезагрузка страницы вернёт другую тему, снимку доверять нельзя.`,
+				);
+			}
+			/* Класс на <html> — второй источник правды о теме: несколько старых правил
          CSS опираются на html.dark и html.light. Класс ЧУЖОЙ темы означает
          гибрид: часть страницы нарисована по атрибуту, часть по классу. Ночная
          тема класса не получает вовсе (lib/themeClasses.ts:49-50), поэтому
          сверяется не соответствие «тема = класс», а отсутствие чужого. */
-      const foreign = String(state.className || "")
-        .split(/\s+/)
-        .filter(Boolean)
-        .filter((name) => THEMES.includes(name) && name !== theme);
-      if (foreign.length > 0) {
-        throw new Error(
-          `${where}: на <html> остался класс чужой темы «${foreign.join(", ")}» (класс целиком: «${state.className}»). Правила, опирающиеся на html.dark/html.light, нарисуют часть страницы в другой теме — это гибрид, а не тема.`,
-        );
-      }
-      if (!state.tokenCount) {
-        throw new Error(
-          `${where}: в загруженных стилях не найдено ни одного токена, зависящего от темы. Палитра не загрузилась — снимать нечего.`,
-        );
-      }
-      if (state.empty.length > 0) {
-        throw new Error(
-          `${where}: тем-зависимые токены без значения (${state.empty.length}): ${state.empty.slice(0, 6).join(", ")}. Пустой var() красит плашку в чёрное поверх текста.`,
-        );
-      }
+			const foreign = String(state.className || "")
+				.split(/\s+/)
+				.filter(Boolean)
+				.filter((name) => THEMES.includes(name) && name !== theme);
+			if (foreign.length > 0) {
+				throw new Error(
+					`${where}: на <html> остался класс чужой темы «${foreign.join(", ")}» (класс целиком: «${state.className}»). Правила, опирающиеся на html.dark/html.light, нарисуют часть страницы в другой теме — это гибрид, а не тема.`,
+				);
+			}
+			if (!state.tokenCount) {
+				throw new Error(
+					`${where}: в загруженных стилях не найдено ни одного токена, зависящего от темы. Палитра не загрузилась — снимать нечего.`,
+				);
+			}
+			if (state.empty.length > 0) {
+				throw new Error(
+					`${where}: тем-зависимые токены без значения (${state.empty.length}): ${state.empty.slice(0, 6).join(", ")}. Пустой var() красит плашку в чёрное поверх текста.`,
+				);
+			}
 
-      const fingerprint = state.fingerprint ?? paletteFingerprint(state.values);
-      const key = `${theme}@${viewport}`;
-      const known = paletteByThemeAndViewport.get(key);
-      if (known && known !== fingerprint) {
-        throw new Error(
-          `${where}: палитра темы «${theme}» изменилась посреди прогона (${known} -> ${fingerprint}). Плиты одной темы сняты в разных палитрах.`,
-        );
-      }
-      if (!known) {
-        for (const [otherKey, otherFingerprint] of paletteByThemeAndViewport) {
-          if (otherFingerprint !== fingerprint) continue;
-          const [otherTheme, otherViewport] = otherKey.split("@");
-          if (otherTheme === theme || otherViewport !== viewport) continue;
-          throw new Error(
-            `${where}: палитра совпала с темой «${otherTheme}» при том же размере окна (отпечаток ${fingerprint}). Атрибут темы переставлен, а цвета не сменились.`,
-          );
-        }
-        paletteByThemeAndViewport.set(key, fingerprint);
-      }
-      return { ...state, fingerprint };
-    },
+			const fingerprint = state.fingerprint ?? paletteFingerprint(state.values);
+			const key = `${theme}@${viewport}`;
+			const known = paletteByThemeAndViewport.get(key);
+			if (known && known !== fingerprint) {
+				throw new Error(
+					`${where}: палитра темы «${theme}» изменилась посреди прогона (${known} -> ${fingerprint}). Плиты одной темы сняты в разных палитрах.`,
+				);
+			}
+			if (!known) {
+				for (const [otherKey, otherFingerprint] of paletteByThemeAndViewport) {
+					if (otherFingerprint !== fingerprint) continue;
+					const [otherTheme, otherViewport] = otherKey.split("@");
+					if (otherTheme === theme || otherViewport !== viewport) continue;
+					throw new Error(
+						`${where}: палитра совпала с темой «${otherTheme}» при том же размере окна (отпечаток ${fingerprint}). Атрибут темы переставлен, а цвета не сменились.`,
+					);
+				}
+				paletteByThemeAndViewport.set(key, fingerprint);
+			}
+			return { ...state, fingerprint };
+		},
 
-    /**
-     * ЗАПИСЬ В ВЕДОМОСТЬ ДО ЗАПИСИ ФАЙЛА. Побайтовый двойник обрывает прогон
-     * здесь, а не в конце: иначе файл-двойник успевает лечь на диск, и следующий
-     * читатель каталога берёт его как плиту темы. Диагностические кадры «ПУСТО»
-     * из правила исключены — это снимок всего экрана вместо ненайденной панели, и
-     * две подряд неудачи законно дают один и тот же кадр.
-     */
-    register({ file, buffer, theme, state, diagnostic = false, note = "" }) {
-      const declared = declaredTheme(file);
-      if (!diagnostic && declared !== theme) {
-        throw new Error(`${file}: заявлена тема «${theme}», в списке ожидаемых плит — «${declared}»`);
-      }
-      const md5 = createHash("md5").update(buffer).digest("hex");
-      if (!diagnostic) {
-        const twin = byMd5.get(md5);
-        if (twin) {
-          throw new Error(
-            `${file} побайтово совпадает с ${twin.file} (тема ${twin.theme}, ${twin.viewport}, md5 ${md5}). Разные панели, темы и размеры окна не могут дать один файл — снимок не отражает то, чем назван. Файл не записан, прогон остановлен.`,
-          );
-        }
-        byMd5.set(md5, { file, theme, viewport });
-      }
-      const entry = {
-        file,
-        theme,
-        dataTheme: state?.dataTheme ?? null,
-        storeMode: state?.mode ?? null,
-        className: state?.className ?? null,
-        palette: state?.fingerprint ?? null,
-        viewport,
-        md5,
-        bytes: buffer.length,
-        diagnostic,
-        note,
-      };
-      entries.push(entry);
-      return entry;
-    },
+		/**
+		 * ЗАПИСЬ В ВЕДОМОСТЬ ДО ЗАПИСИ ФАЙЛА. Побайтовый двойник обрывает прогон
+		 * здесь, а не в конце: иначе файл-двойник успевает лечь на диск, и следующий
+		 * читатель каталога берёт его как плиту темы. Диагностические кадры «ПУСТО»
+		 * из правила исключены — это снимок всего экрана вместо ненайденной панели, и
+		 * две подряд неудачи законно дают один и тот же кадр.
+		 */
+		register({ file, buffer, theme, state, diagnostic = false, note = "" }) {
+			const declared = declaredTheme(file);
+			if (!diagnostic && declared !== theme) {
+				throw new Error(
+					`${file}: заявлена тема «${theme}», в списке ожидаемых плит — «${declared}»`,
+				);
+			}
+			const md5 = createHash("md5").update(buffer).digest("hex");
+			if (!diagnostic) {
+				const twin = byMd5.get(md5);
+				if (twin) {
+					throw new Error(
+						`${file} побайтово совпадает с ${twin.file} (тема ${twin.theme}, ${twin.viewport}, md5 ${md5}). Разные панели, темы и размеры окна не могут дать один файл — снимок не отражает то, чем назван. Файл не записан, прогон остановлен.`,
+					);
+				}
+				byMd5.set(md5, { file, theme, viewport });
+			}
+			const entry = {
+				file,
+				theme,
+				dataTheme: state?.dataTheme ?? null,
+				storeMode: state?.mode ?? null,
+				className: state?.className ?? null,
+				palette: state?.fingerprint ?? null,
+				viewport,
+				md5,
+				bytes: buffer.length,
+				diagnostic,
+				note,
+			};
+			entries.push(entry);
+			return entry;
+		},
 
-    plates: () => entries.filter((entry) => !entry.diagnostic),
-    diagnostics: () => entries.filter((entry) => entry.diagnostic),
-    palettes: () => [...paletteByThemeAndViewport].map(([key, fingerprint]) => ({ key, fingerprint })),
+		plates: () => entries.filter((entry) => !entry.diagnostic),
+		diagnostics: () => entries.filter((entry) => entry.diagnostic),
+		palettes: () =>
+			[...paletteByThemeAndViewport].map(([key, fingerprint]) => ({
+				key,
+				fingerprint,
+			})),
 
-    /** Чего прогон не снял. Пустой список — обязательное условие зелёного прогона. */
-    missing() {
-      const written = new Set(entries.filter((entry) => !entry.diagnostic).map((entry) => entry.file));
-      return [...themeOfFile.keys()].filter((file) => !written.has(file));
-    },
+		/** Чего прогон не снял. Пустой список — обязательное условие зелёного прогона. */
+		missing() {
+			const written = new Set(
+				entries.filter((entry) => !entry.diagnostic).map((entry) => entry.file),
+			);
+			return [...themeOfFile.keys()].filter((file) => !written.has(file));
+		},
 
-    manifest(extra = {}) {
-      const plates = entries.filter((entry) => !entry.diagnostic);
-      return {
-        ...extra,
-        expected: themeOfFile.size,
-        plates: plates.length,
-        uniqueMd5: new Set(plates.map((entry) => entry.md5)).size,
-        missing: this.missing(),
-        palettes: this.palettes(),
-        diagnostics: entries.filter((entry) => entry.diagnostic).map((entry) => entry.file),
-        shots: entries,
-      };
-    },
+		manifest(extra = {}) {
+			const plates = entries.filter((entry) => !entry.diagnostic);
+			return {
+				...extra,
+				expected: themeOfFile.size,
+				plates: plates.length,
+				uniqueMd5: new Set(plates.map((entry) => entry.md5)).size,
+				missing: this.missing(),
+				palettes: this.palettes(),
+				diagnostics: entries
+					.filter((entry) => entry.diagnostic)
+					.map((entry) => entry.file),
+				shots: entries,
+			};
+		},
 
-    /**
-     * ПОЛНОТА ПРОГОНА. Раньше конвейер считал только то, что записал, поэтому
-     * прогон, снявший 3 панели из 38, печатал «нет плиты» для остальных и
-     * заканчивался зелёным. Для конвейера, чья работа — не давать подделывать
-     * доказательства, это дыра ровно того же класса, что и ненадёжная тема.
-     */
-    assertComplete() {
-      const gone = this.missing();
-      if (gone.length === 0) return;
-      const diag = new Set(entries.filter((entry) => entry.diagnostic).map((entry) => entry.file));
-      const detail = gone
-        .map((file) => {
-          const missName = `${file.slice(0, -4)}${MISS_SUFFIX}.png`;
-          return diag.has(missName) ? `${file} (есть только диагностический ${missName})` : file;
-        })
-        .join(", ");
-      throw new Error(
-        `Аудит прогона: не снято ${gone.length} из ${themeOfFile.size} ожидаемых плит: ${detail}. Неполная партия не доказательство: следующий читатель каталога не отличит «панель не открылась» от «панель не снималась».`,
-      );
-    },
-  };
+		/**
+		 * ПОЛНОТА ПРОГОНА. Раньше конвейер считал только то, что записал, поэтому
+		 * прогон, снявший 3 панели из 38, печатал «нет плиты» для остальных и
+		 * заканчивался зелёным. Для конвейера, чья работа — не давать подделывать
+		 * доказательства, это дыра ровно того же класса, что и ненадёжная тема.
+		 */
+		assertComplete() {
+			const gone = this.missing();
+			if (gone.length === 0) return;
+			const diag = new Set(
+				entries.filter((entry) => entry.diagnostic).map((entry) => entry.file),
+			);
+			const detail = gone
+				.map((file) => {
+					const missName = `${file.slice(0, -4)}${MISS_SUFFIX}.png`;
+					return diag.has(missName)
+						? `${file} (есть только диагностический ${missName})`
+						: file;
+				})
+				.join(", ");
+			throw new Error(
+				`Аудит прогона: не снято ${gone.length} из ${themeOfFile.size} ожидаемых плит: ${detail}. Неполная партия не доказательство: следующий читатель каталога не отличит «панель не открылась» от «панель не снималась».`,
+			);
+		},
+	};
 }

@@ -1,11 +1,18 @@
 export const meta = {
-  name: 'archon-cycle-5',
-  description: 'DENTE cycle 5: unverified tenant identity, behavioural guard gate, design system, clinical ceremony, snapshot writes',
-  phases: [
-    { title: 'Build', detail: 'fresh ground: security, gates, design, clinical, performance' },
-    { title: 'Attack', detail: 'a different agent tries to destroy each commit' },
-  ],
-}
+	name: "archon-cycle-5",
+	description:
+		"DENTE cycle 5: unverified tenant identity, behavioural guard gate, design system, clinical ceremony, snapshot writes",
+	phases: [
+		{
+			title: "Build",
+			detail: "fresh ground: security, gates, design, clinical, performance",
+		},
+		{
+			title: "Attack",
+			detail: "a different agent tries to destroy each commit",
+		},
+	],
+};
 const LAW = `
 You are an implementer on the DENTE dental CRM under lead [ARCHON]. Repo root: C:\\Clinic_MVP\\dental-crm
 (branch main). Two other fleet agents work this tree concurrently. Stay inside your claim.
@@ -132,7 +139,7 @@ time. Do the same inside your own packet.
   <packet dir>/state.md, commitmsg.txt, handoff.md
 handoff.md: HEAD: <hash> / ## Что было сломано (file:line) / ## Что изменено / ## ПРОВЕРЕНО /
 ## НЕ ПРОВЕРЕНО (each with the exact closing command) / ## Коммит / ## Долг
-`
+`;
 
 const REWORK_RULES = `
 ═══ THIS IS A REWORK PACKET. READ TWICE. ═══
@@ -149,7 +156,7 @@ specific list. **THE REVIEW FILE IS YOUR SPECIFICATION.** Read it COMPLETE first
    exact sentence that was wrong.
 5. The reviewer's own new findings (F1/F2/…) count. HIGH ones must be closed or declared with a reason.
 6. Re-prove what you changed, running the specific test the reviewer asked for.
-`
+`;
 
 const CYCLE5_CORRECTIONS = `
 ═══ CORRECTIONS TO THE TEXT ABOVE — CYCLE 5. THESE OVERRIDE IT. ═══
@@ -171,17 +178,18 @@ const CYCLE5_CORRECTIONS = `
 5. **SPEECH/DICTATION AND TELEGRAM ARE FROZEN THIS CYCLE.** Those areas failed review across five and
    two packets respectively; their residue is recorded as debt, not patched again. Do not edit
    apps/api/src/speech/**, apps/api/src/routes/speech.ts, or apps/api/src/routes/telegram.ts.
-`
+`;
 
 const PACKETS = [
-  {
-    id: 'U1-identity-verified',
-    label: 'U1 unverified org identity accepted',
-    wave: 1,
-    dir: '.agents/archon/packets/U1-identity-verified',
-    files: 'apps/api/src/security/identity.ts + apply-dev-env.ps1 + a node:test. NOT accessGuard.ts, NOT any route file.',
-    gate: 'npm run typecheck -w @dental/api',
-    brief: `
+	{
+		id: "U1-identity-verified",
+		label: "U1 unverified org identity accepted",
+		wave: 1,
+		dir: ".agents/archon/packets/U1-identity-verified",
+		files:
+			"apps/api/src/security/identity.ts + apply-dev-env.ps1 + a node:test. NOT accessGuard.ts, NOT any route file.",
+		gate: "npm run typecheck -w @dental/api",
+		brief: `
 PACKET U1 — THE CODEBASE MARKS AN IDENTITY UNVERIFIED AND THEN NEVER CHECKS THE MARK.
 Lane: PLATFORM / SECURITY. Highest severity this cycle.
 
@@ -229,15 +237,16 @@ PROOF EXPECTED:
   DB-backed tests is the likeliest failure mode.
 - TYPECHECK VERIFIED: npm run typecheck -w @dental/api
 `,
-  },
-  {
-    id: 'U2-behavioural-guard-gate',
-    label: 'U2 gate that tests behaviour',
-    wave: 1,
-    dir: '.agents/archon/packets/U2-behavioural-guard-gate',
-    files: 'scripts/smoke-clinical-mutation-guard.mjs (rewrite) + any new scripts/ helper it needs',
-    gate: 'the gate itself, plus npm run typecheck -w @dental/api',
-    brief: `
+	},
+	{
+		id: "U2-behavioural-guard-gate",
+		label: "U2 gate that tests behaviour",
+		wave: 1,
+		dir: ".agents/archon/packets/U2-behavioural-guard-gate",
+		files:
+			"scripts/smoke-clinical-mutation-guard.mjs (rewrite) + any new scripts/ helper it needs",
+		gate: "the gate itself, plus npm run typecheck -w @dental/api",
+		brief: `
 PACKET U2 — THE GATE THAT IS SUPPOSED TO PROVE ROUTES ARE GUARDED COUNTS IDENTIFIERS INSTEAD.
 Lane: PROOF. This packet removes a whole class of false confidence.
 
@@ -280,15 +289,16 @@ PROOF EXPECTED:
 - Report the count of mutating routes probed, the allowlist with justifications, and any route you could
   not classify. Unclassified routes are a finding, not a failure.
 `,
-  },
-  {
-    id: 'U3-undefined-tokens',
-    label: 'U3 black boxes over text',
-    wave: 1,
-    dir: '.agents/archon/packets/U3-undefined-tokens',
-    files: 'apps/web/src/styles/token-aliases.css and the specific rule(s) at fault + a node:test or scripts/ guard. NOT DocumentsView.tsx (dirty, foreign author).',
-    gate: 'npm run typecheck -w @dental/web',
-    brief: `
+	},
+	{
+		id: "U3-undefined-tokens",
+		label: "U3 black boxes over text",
+		wave: 1,
+		dir: ".agents/archon/packets/U3-undefined-tokens",
+		files:
+			"apps/web/src/styles/token-aliases.css and the specific rule(s) at fault + a node:test or scripts/ guard. NOT DocumentsView.tsx (dirty, foreign author).",
+		gate: "npm run typecheck -w @dental/web",
+		brief: `
 PACKET U3 — SOLID BLACK RECTANGLES ARE RENDERED OVER TEXT ON A LIGHT SURFACE.
 Lane: DESIGN SYSTEM. Read .agents/UI_STANDARDS.md COMPLETE.
 
@@ -334,15 +344,16 @@ PROOF EXPECTED:
   errors are NOT yours; ignore them and say so.
 - The rendered result is NOT VERIFIED by you — the lead owns screenshots. Give the exact command.
 `,
-  },
-  {
-    id: 'U4-fab-corner-owner',
-    label: 'U4 FABs covering the Save button',
-    wave: 2,
-    dir: '.agents/archon/packets/U4-fab-corner-owner',
-    files: 'the components rendering the help FAB, mic FAB and Cmd+K search pill, plus the CSS that positions them. NOT App.tsx (hot, foreign author). NOT DocumentsView.tsx (dirty).',
-    gate: 'npm run typecheck -w @dental/web',
-    brief: `
+	},
+	{
+		id: "U4-fab-corner-owner",
+		label: "U4 FABs covering the Save button",
+		wave: 2,
+		dir: ".agents/archon/packets/U4-fab-corner-owner",
+		files:
+			"the components rendering the help FAB, mic FAB and Cmd+K search pill, plus the CSS that positions them. NOT App.tsx (hot, foreign author). NOT DocumentsView.tsx (dirty).",
+		gate: "npm run typecheck -w @dental/web",
+		brief: `
 PACKET U4 — THREE FLOATING BUTTONS SIT ON TOP OF A REAL SAVE BUTTON. THIS IS A FUNCTIONAL DEFECT.
 Lane: DESIGN SYSTEM / ADAPTIVITY. Read .agents/UI_STANDARDS.md COMPLETE and
 .agents/archon/VISUAL_VERDICT.md COMPLETE (§3, §4, addendum A3 and B1 all converge on this).
@@ -383,15 +394,15 @@ PROOF EXPECTED:
 - The rendered result is NOT VERIFIED by you — the lead owns the screenshot pipeline and will re-capture
   and judge this personally. Give the exact command that would close it.
 `,
-  },
-  {
-    id: 'U5-diary-lock-ceremony',
-    label: 'U5 diary signing skips the ceremony',
-    wave: 2,
-    dir: '.agents/archon/packets/U5-diary-lock-ceremony',
-    files: 'apps/api/src/routes/diary.ts + a node:test. NOT db/schema.ts.',
-    gate: 'npm run typecheck -w @dental/api',
-    brief: `
+	},
+	{
+		id: "U5-diary-lock-ceremony",
+		label: "U5 diary signing skips the ceremony",
+		wave: 2,
+		dir: ".agents/archon/packets/U5-diary-lock-ceremony",
+		files: "apps/api/src/routes/diary.ts + a node:test. NOT db/schema.ts.",
+		gate: "npm run typecheck -w @dental/api",
+		brief: `
 PACKET U5 — TWO WAYS TO SIGN A VISIT DIARY, AND ONE OF THEM SKIPS INVENTORY AND THE AUDIT LOG.
 Lane: CLINICAL. Read .agents/CLINICAL_RULES.md COMPLETE.
 
@@ -427,15 +438,16 @@ PROOF EXPECTED:
   quote status and body.
 - TYPECHECK VERIFIED, plus 'npm test -w @dental/api' summary.
 `,
-  },
-  {
-    id: 'U6-state-snapshot-writes',
-    label: 'U6 multi-MB write per action',
-    wave: 2,
-    dir: '.agents/archon/packets/U6-state-snapshot-writes',
-    files: 'the module owning mutableStateSnapshot()/persistMutableState() (locate it) + a node:test. NOT routes/telegram.ts (frozen this cycle).',
-    gate: 'npm run typecheck -w @dental/api',
-    brief: `
+	},
+	{
+		id: "U6-state-snapshot-writes",
+		label: "U6 multi-MB write per action",
+		wave: 2,
+		dir: ".agents/archon/packets/U6-state-snapshot-writes",
+		files:
+			"the module owning mutableStateSnapshot()/persistMutableState() (locate it) + a node:test. NOT routes/telegram.ts (frozen this cycle).",
+		gate: "npm run typecheck -w @dental/api",
+		brief: `
 PACKET U6 — EVERY SMALL ACTION REWRITES THE WHOLE DATABASE STATE INTO A JSON FILE.
 Lane: PLATFORM / PERFORMANCE.
 
@@ -473,161 +485,256 @@ PROOF EXPECTED:
 - A BEFORE and AFTER measurement, quoted with real numbers: bytes and milliseconds.
 - TYPECHECK VERIFIED, plus 'npm test -w @dental/api' summary.
 `,
-  },
-]
+	},
+];
 
 const BUILD_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'status', 'defectReal', 'commitHash', 'filesChanged', 'proven', 'notProven', 'summary', 'reachability', 'measurements', 'dossierCorrections', 'blockers', 'foundNotFixed'],
-  properties: {
-    packet: { type: 'string' },
-    status: { enum: ['COMMITTED', 'PARTIAL', 'BLOCKED', 'NO_CHANGE'] },
-    defectReal: { type: 'boolean' },
-    commitHash: { type: 'string' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    proven: { type: 'array', items: { type: 'string' } },
-    notProven: { type: 'array', items: { type: 'string' } },
-    summary: { type: 'string' },
-    reachability: { type: 'string', description: 'Is the fixed code reachable by a real user? Trace the chain, file:line. "Dead code" is a valid answer.' },
-    measurements: { type: 'array', items: { type: 'string' }, description: 'Real numbers you measured (counts, bytes, ms, route totals). Empty if the packet had nothing to measure.' },
-    dossierCorrections: { type: 'array', items: { type: 'string' } },
-    blockers: { type: 'array', items: { type: 'string' } },
-    foundNotFixed: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"status",
+		"defectReal",
+		"commitHash",
+		"filesChanged",
+		"proven",
+		"notProven",
+		"summary",
+		"reachability",
+		"measurements",
+		"dossierCorrections",
+		"blockers",
+		"foundNotFixed",
+	],
+	properties: {
+		packet: { type: "string" },
+		status: { enum: ["COMMITTED", "PARTIAL", "BLOCKED", "NO_CHANGE"] },
+		defectReal: { type: "boolean" },
+		commitHash: { type: "string" },
+		filesChanged: { type: "array", items: { type: "string" } },
+		proven: { type: "array", items: { type: "string" } },
+		notProven: { type: "array", items: { type: "string" } },
+		summary: { type: "string" },
+		reachability: {
+			type: "string",
+			description:
+				'Is the fixed code reachable by a real user? Trace the chain, file:line. "Dead code" is a valid answer.',
+		},
+		measurements: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Real numbers you measured (counts, bytes, ms, route totals). Empty if the packet had nothing to measure.",
+		},
+		dossierCorrections: { type: "array", items: { type: "string" } },
+		blockers: { type: "array", items: { type: "string" } },
+		foundNotFixed: { type: "array", items: { type: "string" } },
+	},
+};
 
 const REVIEW_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'verdict', 'attackSurface', 'proofAudit', 'gitHygiene', 'reasoning', 'requiredRework'],
-  properties: {
-    packet: { type: 'string' },
-    verdict: { enum: ['SOUND', 'SOUND_WITH_NITS', 'NEEDS_REWORK', 'REVERT'] },
-    attackSurface: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['hypothesis', 'result', 'evidence'],
-        properties: {
-          hypothesis: { type: 'string' },
-          result: { enum: ['CONFIRMED', 'DISPROVED', 'UNTESTABLE'] },
-          evidence: { type: 'string' },
-        },
-      },
-    },
-    proofAudit: { type: 'string' },
-    gitHygiene: { type: 'string' },
-    reasoning: { type: 'string' },
-    requiredRework: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"verdict",
+		"attackSurface",
+		"proofAudit",
+		"gitHygiene",
+		"reasoning",
+		"requiredRework",
+	],
+	properties: {
+		packet: { type: "string" },
+		verdict: { enum: ["SOUND", "SOUND_WITH_NITS", "NEEDS_REWORK", "REVERT"] },
+		attackSurface: {
+			type: "array",
+			items: {
+				type: "object",
+				additionalProperties: false,
+				required: ["hypothesis", "result", "evidence"],
+				properties: {
+					hypothesis: { type: "string" },
+					result: { enum: ["CONFIRMED", "DISPROVED", "UNTESTABLE"] },
+					evidence: { type: "string" },
+				},
+			},
+		},
+		proofAudit: { type: "string" },
+		gitHygiene: { type: "string" },
+		reasoning: { type: "string" },
+		requiredRework: { type: "array", items: { type: "string" } },
+	},
+};
 
 function buildStage(p) {
-  return agent(
-    LAW + CYCLE5_CORRECTIONS +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'YOUR PACKET: ' + p.id + '\n' +
-    'YOUR FILE CLAIM (edit nothing outside this): ' + p.files + '\n' +
-    'YOUR COMPILE GATE: ' + p.gate + '\n' +
-    'YOUR PACKET DIRECTORY (create FIRST): ' + p.dir + '\n' +
-    '═══════════════════════════════════════════════════════════════\n' + p.brief +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'ORDER OF OPERATIONS, MANDATORY:\n' +
-    ' 1. Write ' + p.dir + '/state.md == STARTED. NOW, before reading anything.\n' +
-    ' 2. Read the authority documents. Complete. state.md == AUTHORITY READ.\n' +
-    ' 3. git rev-parse HEAD; git status --porcelain on your claimed files. Dirty and not by you =>\n' +
-    '    STOP, report the collision.\n' +
-    ' 4. Read your target file(s) IN FULL. Confirm the defect at real lines.\n' +
-    '    state.md == DEFECT CONFIRMED / ABSENT. If absent, say so loudly; never invent work.\n' +
-    ' 5. Build the real fix. state.md == EDIT WRITTEN.\n' +
-    ' 6. Run your compile gate. state.md == GATE PASSED.\n' +
-    ' 7. **COMMIT NOW** — pathspec form, retry loop, verify with git log -1 --stat.\n' +
-    '    state.md == COMMITTED <hash>. Do NOT wait for proofs.\n' +
-    ' 8. Proofs. Second commit for the test. state.md == PROVEN.\n' +
-    ' 9. Write ' + p.dir + '/handoff.md. state.md == DONE.\n' +
-    '10. Emit structured output. Every "proven" entry must be a command you actually ran.\n' +
-    'A packet ending in a plan and no diff is a FAILED packet.\n',
-    { label: p.label, phase: 'Build', schema: BUILD_SCHEMA }
-  )
+	return agent(
+		LAW +
+			CYCLE5_CORRECTIONS +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"YOUR PACKET: " +
+			p.id +
+			"\n" +
+			"YOUR FILE CLAIM (edit nothing outside this): " +
+			p.files +
+			"\n" +
+			"YOUR COMPILE GATE: " +
+			p.gate +
+			"\n" +
+			"YOUR PACKET DIRECTORY (create FIRST): " +
+			p.dir +
+			"\n" +
+			"═══════════════════════════════════════════════════════════════\n" +
+			p.brief +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"ORDER OF OPERATIONS, MANDATORY:\n" +
+			" 1. Write " +
+			p.dir +
+			"/state.md == STARTED. NOW, before reading anything.\n" +
+			" 2. Read the authority documents. Complete. state.md == AUTHORITY READ.\n" +
+			" 3. git rev-parse HEAD; git status --porcelain on your claimed files. Dirty and not by you =>\n" +
+			"    STOP, report the collision.\n" +
+			" 4. Read your target file(s) IN FULL. Confirm the defect at real lines.\n" +
+			"    state.md == DEFECT CONFIRMED / ABSENT. If absent, say so loudly; never invent work.\n" +
+			" 5. Build the real fix. state.md == EDIT WRITTEN.\n" +
+			" 6. Run your compile gate. state.md == GATE PASSED.\n" +
+			" 7. **COMMIT NOW** — pathspec form, retry loop, verify with git log -1 --stat.\n" +
+			"    state.md == COMMITTED <hash>. Do NOT wait for proofs.\n" +
+			" 8. Proofs. Second commit for the test. state.md == PROVEN.\n" +
+			" 9. Write " +
+			p.dir +
+			"/handoff.md. state.md == DONE.\n" +
+			'10. Emit structured output. Every "proven" entry must be a command you actually ran.\n' +
+			"A packet ending in a plan and no diff is a FAILED packet.\n",
+		{ label: p.label, phase: "Build", schema: BUILD_SCHEMA },
+	);
 }
 
 function reviewStage(built, p) {
-  if (!built) {
-    return { packet: p.id, verdict: 'NEEDS_REWORK', attackSurface: [], proofAudit: 'Builder produced no result — died or out of capacity. Read ' + p.dir + '/state.md.', gitHygiene: 'unknown', reasoning: 'No build output.', requiredRework: ['Resume ' + p.id] }
-  }
-  if (built.status === 'BLOCKED' || built.status === 'NO_CHANGE' || !built.commitHash) {
-    return { packet: p.id, verdict: 'SOUND_WITH_NITS', attackSurface: [], proofAudit: 'No commit to audit; builder reported ' + built.status + '.', gitHygiene: 'n/a', reasoning: built.summary || '', requiredRework: built.blockers || [] }
-  }
-  return agent(
-    'You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to\n' +
-    'lead [ARCHON]. You did NOT write this code. Your job is to DESTROY it, not bless it.\n' +
-    'Write findings to ' + p.dir + '/review.md AS YOU GO — you may be killed mid-review.\n\n' +
-    'THE DISEASE HERE IS FABRICATED PROOF. What previous reviewers caught, and your standard:\n' +
-    '- FEATURES_REGISTRY.md cites proof_<name>.png for 49 features; all 49 files do not exist.\n' +
-    '- A milestone was certified on "56 unique MD5, 0 blank pages" while six "themed" shots were one\n' +
-    '  Vite CSS error overlay, on the same pass that screenshotted "+null ₽" as green profit.\n' +
-    '- mobile_light_documents.png is the staff PIN screen, not documents — MD5-unique and 116 KB, so it\n' +
-    '  passes every hash-and-size rubric. **Hash uniqueness proves nothing about content.**\n' +
-    '- A handoff asserted "текст не уничтожен"; a reviewer produced run output proving the opposite.\n' +
-    '- A packet measured its own cost against a baseline it had itself proved impossible to obtain.\n' +
-    '- A smoke passed only because it loaded a compiled dist built BEFORE the fix.\n' +
-    'Default posture: disbelief. Reproduce claims; never read them.\n\n' +
-    'Read .agents/AGENTS.md COMPLETE plus .agents/INDEX.md. Do NOT penalise the builder for defying §11\n' +
-    '(madge absent) or the biome orders (absent; would reformat the repo).\n' +
-    'KNOWN PRE-EXISTING, NOT THE BUILDER\'S FAULT: "npm run typecheck -w @dental/web" reports 6\n' +
-    '"Cannot find name AnamnesisField" errors in apps/web/src/DocumentsView.tsx, from a second\n' +
-    'non-fleet author\'s uncommitted refactor. HEAD itself is clean. Ignore them.\n\n' +
-    'THE PACKET: ' + p.id + '\nCLAIMED SCOPE: ' + p.files + '\nCOMMIT TO ATTACK: ' + built.commitHash + '\n' +
-    'FILES CHANGED: ' + JSON.stringify(built.filesChanged) + '\n' +
-    'CLAIMED PROVEN: ' + JSON.stringify(built.proven) + '\n' +
-    'CLAIMED NOT PROVEN: ' + JSON.stringify(built.notProven) + '\n' +
-    'REACHABILITY CLAIM: ' + (built.reachability || '(none)') + '\n' +
-    'MEASUREMENTS CLAIMED: ' + JSON.stringify(built.measurements || []) + '\n' +
-    'SUMMARY: ' + built.summary + '\n' +
-    'ORIGINAL BRIEF:\n' + p.brief + '\n\n' +
-    'DO THIS:\n' +
-    '1. git show ' + built.commitHash + ' --stat, then the full diff, then read the changed files at HEAD\n' +
-    '   in context. A diff hides what surrounds it.\n' +
-    '2. HYPOTHESES YOU MUST ACTUALLY TEST:\n' +
-    '   - Was the defect REAL before this commit? (git show ' + built.commitHash + '^:<path>)\n' +
-    '   - **Is the fix REACHABLE by a real user, or dead code sold as a product fix?** Trace it yourself.\n' +
-    '   - **Does it hold on REAL data, not just the fixture?**\n' +
-    '   - **Are the claimed MEASUREMENTS reproducible?** Re-measure. A number nobody can reproduce is a\n' +
-    '     fabrication even when it is plausible.\n' +
-    '   - For a SECURITY packet: try to BYPASS the new guard — no credentials, malformed credentials,\n' +
-    '     another tenant\'s credentials, and an organization UUID that exists in no organizations row.\n' +
-    '     Quote every status code you observe.\n' +
-    '   - For a GATE packet: does the gate actually FAIL when the defect is reintroduced? A gate nobody\n' +
-    '     proved can go red is not a gate. Break something in a scratch copy and check.\n' +
-    '   - HOLLOW FACADE — {success:true} over a no-op, placeholder, magic constant, hardcoded\n' +
-    '     UUID/port/endpoint, fabricated 0/default for an unknown value?\n' +
-    '   - SECOND OWNER of something that already had one?\n' +
-    '   - Deleted/renamed a useAppLogic.tsx return field? Listener/interval/handle without teardown?\n' +
-    '   - Hardcoded hex, static px where a relative unit belongs, undeclared Russian literal?\n' +
-    '   - Mojibake in the diff or the commit subject? Check actual characters.\n' +
-    '   - If the packet deleted a file: git grep -n "<BaseName>" HEAD -- apps/ must return nothing.\n' +
-    '3. PROOF AUDIT — the part that matters most. RE-RUN EVERY CLAIMED PROOF COMMAND YOURSELF, the same\n' +
-    '   one, capturing the TRUE exit code (not $? after a pipe).\n' +
-    '4. GIT HYGIENE: only the claimed files? Any churn (apps/api/.data/*.json, tsbuildinfo, scratch/**)\n' +
-    '   or another author work swept in via the shared index? Russian subject naming the DEFECT?\n' +
-    '5. VERDICT. Reserve REVERT for a change actively worse than the defect. Never award SOUND to a\n' +
-    '   change whose central claim you could not reproduce. If NEEDS_REWORK, make requiredRework\n' +
-    '   numbered, specific and actionable.\n\n' +
-    'CONSTRAINTS: read-only on source — no edit, fix, commit, revert, git add. Never git remote -v (live\n' +
-    'tokens). Never npx @biomejs/biome. Do not start or restart any server, no screenshot pipeline. You\n' +
-    'MAY run typechecks, tests, smokes, builds, read-only node -e, curl to 127.0.0.1:4100, read-only SQL.',
-    { label: 'attack:' + p.id, phase: 'Attack', schema: REVIEW_SCHEMA }
-  )
+	if (!built) {
+		return {
+			packet: p.id,
+			verdict: "NEEDS_REWORK",
+			attackSurface: [],
+			proofAudit:
+				"Builder produced no result — died or out of capacity. Read " +
+				p.dir +
+				"/state.md.",
+			gitHygiene: "unknown",
+			reasoning: "No build output.",
+			requiredRework: ["Resume " + p.id],
+		};
+	}
+	if (
+		built.status === "BLOCKED" ||
+		built.status === "NO_CHANGE" ||
+		!built.commitHash
+	) {
+		return {
+			packet: p.id,
+			verdict: "SOUND_WITH_NITS",
+			attackSurface: [],
+			proofAudit: "No commit to audit; builder reported " + built.status + ".",
+			gitHygiene: "n/a",
+			reasoning: built.summary || "",
+			requiredRework: built.blockers || [],
+		};
+	}
+	return agent(
+		"You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to\n" +
+			"lead [ARCHON]. You did NOT write this code. Your job is to DESTROY it, not bless it.\n" +
+			"Write findings to " +
+			p.dir +
+			"/review.md AS YOU GO — you may be killed mid-review.\n\n" +
+			"THE DISEASE HERE IS FABRICATED PROOF. What previous reviewers caught, and your standard:\n" +
+			"- FEATURES_REGISTRY.md cites proof_<name>.png for 49 features; all 49 files do not exist.\n" +
+			'- A milestone was certified on "56 unique MD5, 0 blank pages" while six "themed" shots were one\n' +
+			'  Vite CSS error overlay, on the same pass that screenshotted "+null ₽" as green profit.\n' +
+			"- mobile_light_documents.png is the staff PIN screen, not documents — MD5-unique and 116 KB, so it\n" +
+			"  passes every hash-and-size rubric. **Hash uniqueness proves nothing about content.**\n" +
+			'- A handoff asserted "текст не уничтожен"; a reviewer produced run output proving the opposite.\n' +
+			"- A packet measured its own cost against a baseline it had itself proved impossible to obtain.\n" +
+			"- A smoke passed only because it loaded a compiled dist built BEFORE the fix.\n" +
+			"Default posture: disbelief. Reproduce claims; never read them.\n\n" +
+			"Read .agents/AGENTS.md COMPLETE plus .agents/INDEX.md. Do NOT penalise the builder for defying §11\n" +
+			"(madge absent) or the biome orders (absent; would reformat the repo).\n" +
+			'KNOWN PRE-EXISTING, NOT THE BUILDER\'S FAULT: "npm run typecheck -w @dental/web" reports 6\n' +
+			'"Cannot find name AnamnesisField" errors in apps/web/src/DocumentsView.tsx, from a second\n' +
+			"non-fleet author's uncommitted refactor. HEAD itself is clean. Ignore them.\n\n" +
+			"THE PACKET: " +
+			p.id +
+			"\nCLAIMED SCOPE: " +
+			p.files +
+			"\nCOMMIT TO ATTACK: " +
+			built.commitHash +
+			"\n" +
+			"FILES CHANGED: " +
+			JSON.stringify(built.filesChanged) +
+			"\n" +
+			"CLAIMED PROVEN: " +
+			JSON.stringify(built.proven) +
+			"\n" +
+			"CLAIMED NOT PROVEN: " +
+			JSON.stringify(built.notProven) +
+			"\n" +
+			"REACHABILITY CLAIM: " +
+			(built.reachability || "(none)") +
+			"\n" +
+			"MEASUREMENTS CLAIMED: " +
+			JSON.stringify(built.measurements || []) +
+			"\n" +
+			"SUMMARY: " +
+			built.summary +
+			"\n" +
+			"ORIGINAL BRIEF:\n" +
+			p.brief +
+			"\n\n" +
+			"DO THIS:\n" +
+			"1. git show " +
+			built.commitHash +
+			" --stat, then the full diff, then read the changed files at HEAD\n" +
+			"   in context. A diff hides what surrounds it.\n" +
+			"2. HYPOTHESES YOU MUST ACTUALLY TEST:\n" +
+			"   - Was the defect REAL before this commit? (git show " +
+			built.commitHash +
+			"^:<path>)\n" +
+			"   - **Is the fix REACHABLE by a real user, or dead code sold as a product fix?** Trace it yourself.\n" +
+			"   - **Does it hold on REAL data, not just the fixture?**\n" +
+			"   - **Are the claimed MEASUREMENTS reproducible?** Re-measure. A number nobody can reproduce is a\n" +
+			"     fabrication even when it is plausible.\n" +
+			"   - For a SECURITY packet: try to BYPASS the new guard — no credentials, malformed credentials,\n" +
+			"     another tenant's credentials, and an organization UUID that exists in no organizations row.\n" +
+			"     Quote every status code you observe.\n" +
+			"   - For a GATE packet: does the gate actually FAIL when the defect is reintroduced? A gate nobody\n" +
+			"     proved can go red is not a gate. Break something in a scratch copy and check.\n" +
+			"   - HOLLOW FACADE — {success:true} over a no-op, placeholder, magic constant, hardcoded\n" +
+			"     UUID/port/endpoint, fabricated 0/default for an unknown value?\n" +
+			"   - SECOND OWNER of something that already had one?\n" +
+			"   - Deleted/renamed a useAppLogic.tsx return field? Listener/interval/handle without teardown?\n" +
+			"   - Hardcoded hex, static px where a relative unit belongs, undeclared Russian literal?\n" +
+			"   - Mojibake in the diff or the commit subject? Check actual characters.\n" +
+			'   - If the packet deleted a file: git grep -n "<BaseName>" HEAD -- apps/ must return nothing.\n' +
+			"3. PROOF AUDIT — the part that matters most. RE-RUN EVERY CLAIMED PROOF COMMAND YOURSELF, the same\n" +
+			"   one, capturing the TRUE exit code (not $? after a pipe).\n" +
+			"4. GIT HYGIENE: only the claimed files? Any churn (apps/api/.data/*.json, tsbuildinfo, scratch/**)\n" +
+			"   or another author work swept in via the shared index? Russian subject naming the DEFECT?\n" +
+			"5. VERDICT. Reserve REVERT for a change actively worse than the defect. Never award SOUND to a\n" +
+			"   change whose central claim you could not reproduce. If NEEDS_REWORK, make requiredRework\n" +
+			"   numbered, specific and actionable.\n\n" +
+			"CONSTRAINTS: read-only on source — no edit, fix, commit, revert, git add. Never git remote -v (live\n" +
+			"tokens). Never npx @biomejs/biome. Do not start or restart any server, no screenshot pipeline. You\n" +
+			"MAY run typechecks, tests, smokes, builds, read-only node -e, curl to 127.0.0.1:4100, read-only SQL.",
+		{ label: "attack:" + p.id, phase: "Attack", schema: REVIEW_SCHEMA },
+	);
 }
 
-const all = []
+const all = [];
 for (const waveNo of [1, 2]) {
-  const wave = PACKETS.filter((p) => p.wave === waveNo)
-  log('Cycle 5 wave ' + waveNo + ': ' + wave.map((p) => p.id).join(', '))
-  const done = await pipeline(wave, buildStage, reviewStage)
-  for (let i = 0; i < wave.length; i++) all.push({ packet: wave[i].id, dir: wave[i].dir, review: done[i] || null })
-  log('Cycle 5 wave ' + waveNo + ' complete.')
+	const wave = PACKETS.filter((p) => p.wave === waveNo);
+	log("Cycle 5 wave " + waveNo + ": " + wave.map((p) => p.id).join(", "));
+	const done = await pipeline(wave, buildStage, reviewStage);
+	for (let i = 0; i < wave.length; i++)
+		all.push({ packet: wave[i].id, dir: wave[i].dir, review: done[i] || null });
+	log("Cycle 5 wave " + waveNo + " complete.");
 }
 return { cycle: 5, results: all }

@@ -50,20 +50,20 @@
  */
 
 import {
-	type Kopecks,
 	isValidFdiToothNumber,
+	type Kopecks,
 	multiplyKopecks,
 	parseKopecks,
 	percentageOfKopecks,
 	sumKopecks,
 } from "@dental/shared";
 import {
+	basisPointsFromPercent,
+	coveragePercentForCategory,
 	type InsuranceCoveragePercents,
 	PLAN_SERVICE_RULES,
 	type PlanPriceCatalogItem,
 	type PlanServiceRule,
-	basisPointsFromPercent,
-	coveragePercentForCategory,
 } from "../plan/planPricing";
 
 /**
@@ -388,7 +388,8 @@ export function planItemFromRule(
 	catalog: readonly PlanPriceCatalogItem[],
 ): PlanItem {
 	const resolution = resolveEstimatorService(rule, catalog);
-	const baseName = resolution.serviceTitle ?? capitalizeFirst(rule.match.humanName);
+	const baseName =
+		resolution.serviceTitle ?? capitalizeFirst(rule.match.humanName);
 	return {
 		isAuto: true,
 		suggestion: rule.key,
@@ -452,7 +453,8 @@ const ESTIMATOR_RULE_SAMPLES: Partial<
 export function estimatorDismissalKeys(item: PlanItem): string[] {
 	if (item.toothNumber === undefined) return [];
 	const keys: string[] = [];
-	if (item.suggestion) keys.push(`${item.toothNumber}:подбор:${item.suggestion}`);
+	if (item.suggestion)
+		keys.push(`${item.toothNumber}:подбор:${item.suggestion}`);
 	// Строки из сохранённого плана ключа подбора не несут — сервер о нём не
 	// знает. Для них опознание по позиции прайса, как и в самой пересборке.
 	if (item.priceId) keys.push(`${item.toothNumber}:прайс:${item.priceId}`);
@@ -474,7 +476,8 @@ export function reconcileAutoSuggestions(
 	for (const rule of Object.values(ESTIMATOR_RULE_SAMPLES)) {
 		const { serviceId } = resolveEstimatorService(rule, catalog);
 		if (!serviceId) continue;
-		const keys = keysByServiceId.get(serviceId) ?? new Set<EstimatorSuggestionKey>();
+		const keys =
+			keysByServiceId.get(serviceId) ?? new Set<EstimatorSuggestionKey>();
 		keys.add(rule.key);
 		keysByServiceId.set(serviceId, keys);
 	}
@@ -638,7 +641,10 @@ export function estimatorContractFrom(raw: unknown): EstimatorContract {
 	if (!raw || typeof raw !== "object") return null;
 	const source = raw as Record<string, unknown>;
 	const pct = (value: unknown): number =>
-		typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100
+		typeof value === "number" &&
+		Number.isFinite(value) &&
+		value >= 0 &&
+		value <= 100
 			? value
 			: 0;
 	return {
@@ -695,7 +701,9 @@ export type EstimatorRowMoney =
  * Разбор денежного значения без исключения посреди отрисовки.
  * `parseKopecks` по замыслу бросает, а погашенный экран не лучше неверной суммы.
  */
-function safeKopecks(value: number | string | null | undefined): Kopecks | null {
+function safeKopecks(
+	value: number | string | null | undefined,
+): Kopecks | null {
 	if (value === null || value === undefined || value === "") return null;
 	if (typeof value === "number" && !Number.isFinite(value)) return null;
 	try {
@@ -760,7 +768,8 @@ export function estimatorRowMoney(
 			hasContract: true,
 		};
 	}
-	const unitPayable = unitKopecks - percentageOfKopecks(unitKopecks, basisPoints);
+	const unitPayable =
+		unitKopecks - percentageOfKopecks(unitKopecks, basisPoints);
 	return {
 		known: true,
 		unitKopecks,
@@ -1217,7 +1226,9 @@ export interface EstimatorItemForApi {
 	isAuto?: boolean;
 }
 
-export function estimatorItemForApi(item: PlanItem): EstimatorItemForApi | null {
+export function estimatorItemForApi(
+	item: PlanItem,
+): EstimatorItemForApi | null {
 	// Правило «сервер возьмёт строку» одно и живёт в estimatorRowBlock. Второй
 	// строкой не проверка, а сужение типов: в PlanItem и цена, и позиция прайса
 	// допускают null, и компилятор обязан это увидеть здесь, а не поверить.
@@ -1225,7 +1236,9 @@ export function estimatorItemForApi(item: PlanItem): EstimatorItemForApi | null 
 	const { priceId, price } = item;
 	if (priceId === null || price === null) return null;
 	return {
-		...(item.toothNumber !== undefined ? { toothNumber: item.toothNumber } : {}),
+		...(item.toothNumber !== undefined
+			? { toothNumber: item.toothNumber }
+			: {}),
 		priceId,
 		name: item.name,
 		quantity: item.quantity,

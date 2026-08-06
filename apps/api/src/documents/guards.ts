@@ -2,10 +2,11 @@ import {
 	type CompletedWorksActPayload,
 	type CreateDocumentInput,
 	type DocumentKind,
-	type GeneratedDocument,
 	documentKindMetadata,
 	documentPayloadDisallowedKeys,
+	type GeneratedDocument,
 	type InstallmentPaymentSchedulePayload,
+	kopecksToNumericString,
 	legacyTaxDeductionCertificateMaxYear,
 	legacyTaxDeductionCertificateMinYear,
 	type PaidMedicalServicesContractPayload,
@@ -13,14 +14,13 @@ import {
 	type Payment,
 	type PaymentInvoicePayload,
 	type PaymentReceiptPayload,
+	parseKopecks,
+	sumKopecks,
 	type TreatmentCostEstimatePayload,
 	type TreatmentPlanItem,
 	taxDeductionApplicationPayloadSchema,
 	taxDeductionCertificateMinYear,
 	type Visit,
-	kopecksToNumericString,
-	parseKopecks,
-	sumKopecks,
 } from "@dental/shared";
 /*
  * Итог строки лечения считается в ОДНОМ месте на весь сервер —
@@ -1039,9 +1039,7 @@ function completedWorksActMismatchReason(
 	payload: CompletedWorksActPayload,
 	facts: DocumentCreationFacts,
 ): string | null {
-	if (
-		!moneyRubEquals(parseKopecks(payload.totalByActRub), payload.paidRub)
-	) {
+	if (!moneyRubEquals(parseKopecks(payload.totalByActRub), payload.paidRub)) {
 		return `Акт выполненных работ: сумма акта ${moneyRubText(payload.totalByActRub)} руб. не совпадает с оплаченной суммой ${moneyRubText(payload.paidRub)} руб.`;
 	}
 	return (

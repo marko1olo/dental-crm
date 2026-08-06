@@ -1,26 +1,33 @@
-import { Activity, ArrowRight, PlusCircle, ShieldCheck, Users, Wallet } from "lucide-react";
+import {
+	Activity,
+	ArrowRight,
+	PlusCircle,
+	ShieldCheck,
+	Users,
+	Wallet,
+} from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
+import { useCountUp } from "../../hooks/useCountUp";
+import { useWebsocket } from "../../hooks/useWebsocket";
+import type { PanelSubject } from "../../lib/panelStateText";
+import { actionFailureToast } from "../../lib/panelStateText";
 /*
  * Разбор набранной суммы — тот же, что в форме приёма оплаты. Второй разбор
  * рядом с кассой означал бы, что «1500,50» в одном поле и в другом понимается
  * по-разному.
  */
 import { normalizeRubAmountInput } from "../../rubAmountInput";
+import { paymentMethodLabels } from "../../workspaceUiLabels";
+import { showToast } from "../GlobalToast";
+import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
 	familyMutationId,
 	familyPayRequestKey,
 	familyTopupRequestKey,
 	type MutationTicket,
 } from "./familyWalletMutationKey";
-import { useCountUp } from "../../hooks/useCountUp";
-import { useWebsocket } from "../../hooks/useWebsocket";
-import type { PanelSubject } from "../../lib/panelStateText";
-import { actionFailureToast } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
-import { PanelLoadFailure } from "../PanelLoadFailure";
-import { paymentMethodLabels } from "../../workspaceUiLabels";
 import "./FamilyWalletPanel.css";
 
 interface FamilyMember {
@@ -53,7 +60,8 @@ const WALLET_PANEL_SUBJECT: PanelSubject = {
 	notLoadedTitle: "Данные семейного кошелька не загружены",
 	accusative: "семейный кошелёк",
 	emptyTitle: "Пациент не входит в семью",
-	emptyHint: "Семейный счёт появится, когда пациента добавят в семейную группу.",
+	emptyHint:
+		"Семейный счёт появится, когда пациента добавят в семейную группу.",
 	failureConsequence:
 		"Не считайте, что семейного счёта нет: баланс не прочитан. Пока он не загрузился, списывать с него нельзя — примите оплату обычным способом или повторите загрузку.",
 };
@@ -77,9 +85,15 @@ const WALLET_PANEL_SUBJECT: PanelSubject = {
  * текст исключения — заменяем подсказкой по коду ответа, той же, что показывают
  * панели загрузки: она всегда говорит, что делать.
  */
-function refusalToast(action: string, status: number, message: unknown): string {
+function refusalToast(
+	action: string,
+	status: number,
+	message: unknown,
+): string {
 	const serverText = typeof message === "string" ? message.trim() : "";
-	return /[а-яё]/i.test(serverText) ? serverText : actionFailureToast(action, status);
+	return /[а-яё]/i.test(serverText)
+		? serverText
+		: actionFailureToast(action, status);
 }
 
 /**
@@ -90,7 +104,8 @@ function refusalToast(action: string, status: number, message: unknown): string 
  * видимыми, на экране финансов без выбранного пациента появилась бы ложная
  * тревога «баланс не прочитан». Такой запрос не отправляем вовсе.
  */
-const PATIENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PATIENT_ID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /*
  * Чем можно внести аванс на семейный счёт.
@@ -102,7 +117,11 @@ const PATIENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-
  * способ назывался одинаково здесь, в форме приёма оплаты и в истории оплат.
  */
 type FamilyTopupMethod = "cash" | "card" | "bank_transfer";
-const FAMILY_TOPUP_METHODS: readonly FamilyTopupMethod[] = ["cash", "card", "bank_transfer"];
+const FAMILY_TOPUP_METHODS: readonly FamilyTopupMethod[] = [
+	"cash",
+	"card",
+	"bank_transfer",
+];
 
 interface FamilyWalletPanelProps {
 	patientId: string;
@@ -120,7 +139,9 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	// Отказ сервера хранится ОТДЕЛЬНО от «семьи нет»: раньше и то и другое
 	// сводилось к family=null, и панель просто исчезала. `status` — код ответа,
 	// null — до сервера не дошли вовсе.
-	const [loadFailure, setLoadFailure] = useState<{ status: number | null } | null>(null);
+	const [loadFailure, setLoadFailure] = useState<{
+		status: number | null;
+	} | null>(null);
 	const [isPaying, setIsPaying] = useState(false);
 	const [isToppingUp, setIsToppingUp] = useState(false);
 	/*
@@ -273,7 +294,10 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			if (isStale()) return;
 			// Текст исключения английский и наружу не идёт: пользователю сообщение
 			// собирает panelStateText по коду, здесь — «сервер не ответил».
-			console.error("[family wallet] не удалось прочитать семейный кошелёк:", e);
+			console.error(
+				"[family wallet] не удалось прочитать семейный кошелёк:",
+				e,
+			);
 			setFamily(null);
 			setLoadFailure({ status: null });
 		} finally {
@@ -483,7 +507,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}) as { message?: string });
 				showToast(
-					refusalToast("Списание с семейного счёта не прошло", res.status, err.message),
+					refusalToast(
+						"Списание с семейного счёта не прошло",
+						res.status,
+						err.message,
+					),
 					"error",
 				);
 				return;
@@ -500,7 +528,9 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			 * Сервер отвечает `duplicate: true`, когда узнал ключ и денег НЕ тронул, —
 			 * это и говорим словами: деньги ушли раньше, второй раз не ушли.
 			 */
-			const payResult = (await res.json().catch(() => null)) as { duplicate?: boolean } | null;
+			const payResult = (await res.json().catch(() => null)) as {
+				duplicate?: boolean;
+			} | null;
 			showToast(
 				payResult?.duplicate
 					? "Эта оплата уже была списана раньше — второй раз деньги не списаны."
@@ -524,7 +554,10 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// ветке), поэтому второго списания не будет.
 			console.error("[family wallet] списание не получило ответа сервера:", e);
 			showToast(
-				actionFailureToast("Ответ по списанию с семейного счёта не получен", null),
+				actionFailureToast(
+					"Ответ по списанию с семейного счёта не получен",
+					null,
+				),
 				"error",
 			);
 		} finally {
@@ -569,7 +602,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}) as { message?: string });
 				showToast(
-					refusalToast("Пополнение семейного счёта не прошло", res.status, err.message),
+					refusalToast(
+						"Пополнение семейного счёта не прошло",
+						res.status,
+						err.message,
+					),
 					"error",
 				);
 				return;
@@ -596,9 +633,15 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// То же, что у списания: оборванный запрос не говорит, зачислены деньги
 			// или нет. Повтор безопасен по тому же ключу идемпотентности
 			// (topupMutationIdRef в этой ветке не сбрасывается).
-			console.error("[family wallet] пополнение не получило ответа сервера:", e);
+			console.error(
+				"[family wallet] пополнение не получило ответа сервера:",
+				e,
+			);
 			showToast(
-				actionFailureToast("Ответ по пополнению семейного счёта не получен", null),
+				actionFailureToast(
+					"Ответ по пополнению семейного счёта не получен",
+					null,
+				),
 				"error",
 			);
 		} finally {
@@ -691,7 +734,9 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						placeholder="0"
 						disabled={isPaying}
 						aria-invalid={payBlockReason ? true : undefined}
-						aria-describedby={payBlockReason ? "family-withdraw-hint" : undefined}
+						aria-describedby={
+							payBlockReason ? "family-withdraw-hint" : undefined
+						}
 					/>
 					{/* Долг подставляется ТОЛЬКО нажатием, а не сам. Кнопка нужна,
 					    чтобы администратору не приходилось переписывать сумму глазами
@@ -722,7 +767,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				</div>
 			</div>
 			{payBlockReason && (
-				<p className="family-wallet-hint" id="family-withdraw-hint" role="status">
+				<p
+					className="family-wallet-hint"
+					id="family-withdraw-hint"
+					role="status"
+				>
 					{payBlockReason}
 				</p>
 			)}
@@ -749,7 +798,9 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						placeholder="0"
 						disabled={isToppingUp}
 						aria-invalid={topupBlockReason ? true : undefined}
-						aria-describedby={topupBlockReason ? "family-topup-hint" : undefined}
+						aria-describedby={
+							topupBlockReason ? "family-topup-hint" : undefined
+						}
 					/>
 					{/* Чем внесли аванс. БЫЛО: способ не спрашивали и не отправляли, а
 					    сервер записывал в журнал наличные. Вечером наличных в ящике
@@ -776,7 +827,8 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						disabled={isToppingUp || topupAmount <= 0}
 						className="family-wallet-btn"
 					>
-						{isToppingUp ? "Зачисление..." : "Пополнить"} <PlusCircle size={16} />
+						{isToppingUp ? "Зачисление..." : "Пополнить"}{" "}
+						<PlusCircle size={16} />
 					</button>
 				</div>
 			</div>

@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildDictationSystemPrompt, dictationTodayDate } from "../../ai/dictationParser.js";
+import {
+	buildDictationSystemPrompt,
+	dictationTodayDate,
+} from "../../ai/dictationParser.js";
 
 /**
  * «СЕГОДНЯ» В ПОДСКАЗКЕ МОДЕЛИ — ДЕНЬ КЛИНИКИ, А НЕ ДЕНЬ ПО UTC.
@@ -43,19 +46,31 @@ describe("дата в подсказке разбора диктовки счи�
 	});
 
 	it("Москва получает 30 июля, когда по UTC ещё 29-е", () => {
-		assert.equal(dictationTodayDate("Europe/Moscow", new Date(PINNED_MS)), "2026-07-30");
+		assert.equal(
+			dictationTodayDate("Europe/Moscow", new Date(PINNED_MS)),
+			"2026-07-30",
+		);
 	});
 
 	it("Самара — пояс по умолчанию в схеме клиник — тоже 30 июля", () => {
-		assert.equal(dictationTodayDate("Europe/Samara", new Date(PINNED_MS)), "2026-07-30");
+		assert.equal(
+			dictationTodayDate("Europe/Samara", new Date(PINNED_MS)),
+			"2026-07-30",
+		);
 	});
 
 	it("Камчатка получает 30 июля: там уже десять утра", () => {
-		assert.equal(dictationTodayDate("Asia/Kamchatka", new Date(PINNED_MS)), "2026-07-30");
+		assert.equal(
+			dictationTodayDate("Asia/Kamchatka", new Date(PINNED_MS)),
+			"2026-07-30",
+		);
 	});
 
 	it("пояс, где действительно 29-е, получает 29-е — расчёт не сдвигает всё вперёд", () => {
-		assert.equal(dictationTodayDate("America/New_York", new Date(PINNED_MS)), "2026-07-29");
+		assert.equal(
+			dictationTodayDate("America/New_York", new Date(PINNED_MS)),
+			"2026-07-29",
+		);
 		assert.equal(dictationTodayDate("UTC", new Date(PINNED_MS)), "2026-07-29");
 	});
 
@@ -80,40 +95,92 @@ describe("дата в подсказке разбора диктовки счи�
 
 describe("подсказка контекста schedule несёт день клиники", () => {
 	it("в тексте подсказки стоит 30 июля для Самары, а не 29-е по UTC", () => {
-		const prompt = buildDictationSystemPrompt("schedule", "Europe/Samara", new Date(PINNED_MS));
+		const prompt = buildDictationSystemPrompt(
+			"schedule",
+			"Europe/Samara",
+			new Date(PINNED_MS),
+		);
 		assert.ok(
 			prompt.includes("Для вычисления даты сегодня: 2026-07-30."),
-			`в подсказке нет дня клиники; подсказка: ${prompt}`
+			`в подсказке нет дня клиники; подсказка: ${prompt}`,
 		);
 		assert.ok(
 			!prompt.includes("2026-07-29"),
-			"в подсказке остался день по UTC — модель отсчитает «завтра» от вчерашнего числа"
+			"в подсказке остался день по UTC — модель отсчитает «завтра» от вчерашнего числа",
 		);
 	});
 
 	it("Камчатка и Москва получают свой день, а не общий серверный", () => {
-		const kamchatka = buildDictationSystemPrompt("schedule", "Asia/Kamchatka", new Date(PINNED_MS));
-		const newYork = buildDictationSystemPrompt("schedule", "America/New_York", new Date(PINNED_MS));
+		const kamchatka = buildDictationSystemPrompt(
+			"schedule",
+			"Asia/Kamchatka",
+			new Date(PINNED_MS),
+		);
+		const newYork = buildDictationSystemPrompt(
+			"schedule",
+			"America/New_York",
+			new Date(PINNED_MS),
+		);
 		assert.ok(kamchatka.includes("Для вычисления даты сегодня: 2026-07-30."));
 		assert.ok(newYork.includes("Для вычисления даты сегодня: 2026-07-29."));
-		assert.notEqual(kamchatka, newYork, "подсказка обязана зависеть от пояса клиники");
+		assert.notEqual(
+			kamchatka,
+			newYork,
+			"подсказка обязана зависеть от пояса клиники",
+		);
 	});
 
 	it("остальные поля подсказки на месте: вынос в отдельную функцию ничего не потерял", () => {
-		const prompt = buildDictationSystemPrompt("schedule", "Europe/Samara", new Date(PINNED_MS));
-		for (const field of ["patientName", "doctorName", "startTime", "reason", "note"]) {
-			assert.ok(prompt.includes(field), `в подсказке schedule потеряно поле ${field}`);
+		const prompt = buildDictationSystemPrompt(
+			"schedule",
+			"Europe/Samara",
+			new Date(PINNED_MS),
+		);
+		for (const field of [
+			"patientName",
+			"doctorName",
+			"startTime",
+			"reason",
+			"note",
+		]) {
+			assert.ok(
+				prompt.includes(field),
+				`в подсказке schedule потеряно поле ${field}`,
+			);
 		}
 		assert.ok(prompt.includes("Время переводи в 24ч"));
 	});
 
 	it("подсказки patient и visit не содержат даты и не зависят от пояса", () => {
-		const patient = buildDictationSystemPrompt("patient", "Asia/Kamchatka", new Date(PINNED_MS));
-		const visit = buildDictationSystemPrompt("visit", "Asia/Kamchatka", new Date(PINNED_MS));
-		assert.equal(patient, buildDictationSystemPrompt("patient", "UTC", new Date(PINNED_MS)));
-		assert.equal(visit, buildDictationSystemPrompt("visit", "UTC", new Date(PINNED_MS)));
-		assert.ok(patient.includes("birthDate"), "в подсказке patient потеряно поле birthDate");
-		assert.ok(visit.includes("toothUpdates"), "в подсказке visit потеряно поле toothUpdates");
-		assert.ok(visit.includes("МКБ-10"), "в подсказке visit потеряна ссылка на МКБ-10");
+		const patient = buildDictationSystemPrompt(
+			"patient",
+			"Asia/Kamchatka",
+			new Date(PINNED_MS),
+		);
+		const visit = buildDictationSystemPrompt(
+			"visit",
+			"Asia/Kamchatka",
+			new Date(PINNED_MS),
+		);
+		assert.equal(
+			patient,
+			buildDictationSystemPrompt("patient", "UTC", new Date(PINNED_MS)),
+		);
+		assert.equal(
+			visit,
+			buildDictationSystemPrompt("visit", "UTC", new Date(PINNED_MS)),
+		);
+		assert.ok(
+			patient.includes("birthDate"),
+			"в подсказке patient потеряно поле birthDate",
+		);
+		assert.ok(
+			visit.includes("toothUpdates"),
+			"в подсказке visit потеряно поле toothUpdates",
+		);
+		assert.ok(
+			visit.includes("МКБ-10"),
+			"в подсказке visit потеряна ссылка на МКБ-10",
+		);
 	});
 });

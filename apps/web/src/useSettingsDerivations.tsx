@@ -1353,9 +1353,12 @@ export function useSettingsDerivations() {
 			? "Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные, если для них включены отдельные секреты."
 			: "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные, если для них включены отдельные секреты.";
 	const typedClinicModes = Object.keys(clinicModeLabels ?? {}) as ClinicMode[];
-	const typedModeHints = (dashboard?.clinicSettings?.modeHints ?? []) as string[];
-	const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ?? []) as RoleQueue[];
-	const typedStaffMembers = (dashboard?.clinicSettings?.staff ?? []) as StaffMember[];
+	const typedModeHints = (dashboard?.clinicSettings?.modeHints ??
+		[]) as string[];
+	const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ??
+		[]) as RoleQueue[];
+	const typedStaffMembers = (dashboard?.clinicSettings?.staff ??
+		[]) as StaffMember[];
 	const typedChairs = (dashboard?.clinicSettings?.chairs ?? []) as Chair[];
 	const typedWeekdayOptions = (weekdayOptions ?? []) as WeekdayOption[];
 	const typedUiLanguageOptions = (uiLanguageOptions ?? []) as Array<{
@@ -1363,13 +1366,13 @@ export function useSettingsDerivations() {
 		label: string;
 		detail: string;
 	}>;
-	const typedTelegramLinkStaffOptions =
-		(telegramLinkStaffOptions ?? []) as StaffMember[];
+	const typedTelegramLinkStaffOptions = (telegramLinkStaffOptions ??
+		[]) as StaffMember[];
 
-	const typedImagingConnectorCards =
-		(imagingConnectorCards ?? []) as ImagingConnectorCard[];
-	const typedImagingViewerCapabilities =
-		(imagingViewerCapabilities ?? []) as ImagingViewerCapability[];
+	const typedImagingConnectorCards = (imagingConnectorCards ??
+		[]) as ImagingConnectorCard[];
+	const typedImagingViewerCapabilities = (imagingViewerCapabilities ??
+		[]) as ImagingViewerCapability[];
 	const typedCtPlanningImplantPlan =
 		ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
 	const typedCtPlanningActiveQuickActionId =
@@ -1378,9 +1381,12 @@ export function useSettingsDerivations() {
 			: null;
 	const typedImagingViewerActiveTool =
 		imagingViewerActiveTool as ImagingViewerTool;
-	const typedIntegrationPresets = (dashboard?.clinicSettings?.integrationPresets ?? []) as IntegrationPreset[];
-	const typedSpeechProviders = (dashboard?.speechProviders ?? []) as SpeechProvider[];
-	const typedRecognitionPresets = (recognitionPresets ?? []) as RecognitionPreset[];
+	const typedIntegrationPresets = (dashboard?.clinicSettings
+		?.integrationPresets ?? []) as IntegrationPreset[];
+	const typedSpeechProviders = (dashboard?.speechProviders ??
+		[]) as SpeechProvider[];
+	const typedRecognitionPresets = (recognitionPresets ??
+		[]) as RecognitionPreset[];
 	const typedRecognitionJob = recognitionJob as AiRecognitionJob | null;
 	const typedSpeechRecordingRecovery =
 		speechRecordingRecovery as SpeechRecordingRecoveryList | null;
@@ -1388,11 +1394,12 @@ export function useSettingsDerivations() {
 		browserMigrationDiscovery as MigrationLocalSourceDiscoveryResponse | null;
 	const typedSmartImportPreview =
 		smartImportPreview as SmartImportPreviewResponse | null;
-	const typedImagingSourceChoices = (imagingSourceChoices ?? []) as ImagingSourceKind[];
+	const typedImagingSourceChoices = (imagingSourceChoices ??
+		[]) as ImagingSourceKind[];
 	const typedImagingImportPreview =
 		imagingImportPreview as ImagingImportPreviewResponse | null;
-	const typedBrowserContinuityChecks =
-		(browserContinuityChecks ?? []) as BrowserContinuityCheck[];
+	const typedBrowserContinuityChecks = (browserContinuityChecks ??
+		[]) as BrowserContinuityCheck[];
 	const typedLocalBridgeReadiness =
 		localBridgeReadiness as LocalBridgeReadinessResponse | null;
 	const typedLocalBridgeUsePlans =
@@ -1413,8 +1420,10 @@ export function useSettingsDerivations() {
 	const typedImportPreview = importPreview as ImportPreviewResponse | null;
 	const typedActiveWorkspaceProfile =
 		activeWorkspaceProfile as WorkspaceProfile | null;
-	const typedWorkspaceProfiles = (dashboard?.clinicSettings?.workspaceProfiles ?? []) as WorkspaceProfile[];
-	const typedRoleAccessPolicies = (dashboard?.clinicSettings?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
+	const typedWorkspaceProfiles = (dashboard?.clinicSettings
+		?.workspaceProfiles ?? []) as WorkspaceProfile[];
+	const typedRoleAccessPolicies = (dashboard?.clinicSettings
+		?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
 	const typedTelegramChatLinks =
 		(telegramChatLinks as DenteTelegramChatLinkPublic[]) ?? [];
 	const typedTelegramLinkCodes =
@@ -1423,8 +1432,8 @@ export function useSettingsDerivations() {
 		telegramPreview as DenteTelegramMessagePreview | null;
 	const typedTelegramOutbox =
 		telegramOutbox as DenteTelegramOutboxResponse | null;
-	const typedVisibleTelegramOutboxItems =
-		(visibleTelegramOutboxItems ?? []) as DenteTelegramOutboxItem[];
+	const typedVisibleTelegramOutboxItems = (visibleTelegramOutboxItems ??
+		[]) as DenteTelegramOutboxItem[];
 	const telegramOutboxRemainingCount = typedTelegramOutbox
 		? Math.max(
 				0,
@@ -1487,7 +1496,8 @@ export function useSettingsDerivations() {
 		fields: Record<string, unknown>,
 	) =>
 		Object.entries(fields || {}).filter(([key, value]) => {
-			if (!Object.hasOwn(clinicPublicLookupFieldLabels || {}, key)) return false;
+			if (!Object.hasOwn(clinicPublicLookupFieldLabels || {}, key))
+				return false;
 			if (value === null || typeof value === "undefined") return false;
 			return String(value).trim().length > 0;
 		});
@@ -1844,8 +1854,11 @@ export function useSettingsDerivations() {
 		typedMigrationAutopilot?.clinicLookup ?? null;
 	const typedMigrationAutopilotSteps = (typedMigrationAutopilot?.steps ??
 		[]) as MigrationAutopilotStep[];
-	const typedMigrationOperatorLanes = (typedMigrationAutopilot?.operatorPacket?.lanes ?? []) as MigrationAutopilotPacketLane[];
-	const typedMigrationHandoffChecklist = (typedMigrationAutopilot?.operatorPacket?.handoffChecklist ?? []) as MigrationAutopilotHandoffChecklistItem[];
+	const typedMigrationOperatorLanes = (typedMigrationAutopilot?.operatorPacket
+		?.lanes ?? []) as MigrationAutopilotPacketLane[];
+	const typedMigrationHandoffChecklist = (typedMigrationAutopilot
+		?.operatorPacket?.handoffChecklist ??
+		[]) as MigrationAutopilotHandoffChecklistItem[];
 	const migrationDryRunSummary =
 		typedMigrationAutopilot?.operatorPacket?.dryRun ?? null;
 	const migrationTriageItems = [...typedMigrationHandoffChecklist]
@@ -2227,22 +2240,19 @@ export function useSettingsDerivations() {
 			</details>
 		);
 	};
-	const typedClinicalRuleActionLabels = (clinicalRuleActionLabels || {}) as Record<
-		ClinicalRuleAction,
-		string
-	>;
+	const typedClinicalRuleActionLabels = (clinicalRuleActionLabels ||
+		{}) as Record<ClinicalRuleAction, string>;
 	const typedClinicalRuleActions = Object.keys(
 		typedClinicalRuleActionLabels,
 	) as ClinicalRuleAction[];
-	const typedClinicalRuleSeverityLabels = (clinicalRuleSeverityLabels || {}) as Record<
-		ClinicalRuleSeverity,
-		string
-	>;
+	const typedClinicalRuleSeverityLabels = (clinicalRuleSeverityLabels ||
+		{}) as Record<ClinicalRuleSeverity, string>;
 	const typedClinicalRuleSeverities = Object.keys(
 		typedClinicalRuleSeverityLabels,
 	) as ClinicalRuleSeverity[];
 	const typedClinicalRules = (dashboard?.clinicalRules || []) as ClinicalRule[];
-	const typedServiceCatalog = (dashboard?.serviceCatalog || []) as ServiceCatalogItem[];
+	const typedServiceCatalog = (dashboard?.serviceCatalog ||
+		[]) as ServiceCatalogItem[];
 	const typedServiceCategoryLabels = (serviceCategoryLabels || {}) as Record<
 		ServiceCategory,
 		string

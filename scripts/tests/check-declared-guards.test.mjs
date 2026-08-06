@@ -30,7 +30,13 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	copyFileSync,
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -56,9 +62,14 @@ function runGuardOn(files, extraArgs = []) {
 			mkdirSync(dirname(target), { recursive: true });
 			writeFileSync(target, content, "utf8");
 		}
-		const result = spawnSync(process.execPath, [guardCopy, ...extraArgs], { encoding: "utf8" });
+		const result = spawnSync(process.execPath, [guardCopy, ...extraArgs], {
+			encoding: "utf8",
+		});
 		assert.equal(result.error, undefined, "проверка не запустилась");
-		return { status: result.status, output: `${result.stdout}${result.stderr}` };
+		return {
+			status: result.status,
+			output: `${result.stdout}${result.stderr}`,
+		};
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -76,27 +87,35 @@ test("настоящая дыра расписания: охрана без expo
 	// файле (git show 1f4614ea2^): проверка находит его на строке 141.
 	const { status, output } = runGuardOn({
 		"routes/schedule.ts": [
-			"import type { FastifyReply, FastifyRequest } from \"fastify\";",
+			'import type { FastifyReply, FastifyRequest } from "fastify";',
 			"",
 			"async function requireScheduleMutationAccess(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {",
-			"\tconst secret = request.headers[\"x-dente-schedule-admin-secret\"];",
+			'\tconst secret = request.headers["x-dente-schedule-admin-secret"];',
 			"\tif (!secret) {",
-			"\t\treply.code(403).send({ error: \"ScheduleAdminSecretRequired\" });",
+			'\t\treply.code(403).send({ error: "ScheduleAdminSecretRequired" });',
 			"\t\treturn false;",
 			"\t}",
 			"\treturn true;",
 			"}",
 			"",
 			"export async function registerScheduleRoutes(app: { post: (url: string, handler: unknown) => void }) {",
-			"\tapp.post(\"/api/appointments\", async () => ({ created: true }));",
+			'\tapp.post("/api/appointments", async () => ({ created: true }));',
 			"}",
 			"",
 		].join("\n"),
 	});
 
 	assert.equal(summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"), 1);
-	assert.match(output, /requireScheduleMutationAccess/, "имя охраны обязано быть напечатано");
-	assert.match(output, /routes\/schedule\.ts:3/, "место обязано быть напечатано файлом и строкой");
+	assert.match(
+		output,
+		/requireScheduleMutationAccess/,
+		"имя охраны обязано быть напечатано",
+	);
+	assert.match(
+		output,
+		/routes\/schedule\.ts:3/,
+		"место обязано быть напечатано файлом и строкой",
+	);
 	assert.equal(status, 1, "настоящая дыра класса обязана валить гейт");
 });
 
@@ -112,7 +131,7 @@ test("экспортированная охрана без ссылок крас
 			"",
 		].join("\n"),
 		"routes/thing.ts": [
-			"import { requireActuallyCalled } from \"../guards.js\";",
+			'import { requireActuallyCalled } from "../guards.js";',
 			"export function handler(): boolean {",
 			"\treturn requireActuallyCalled();",
 			"}",
@@ -120,7 +139,11 @@ test("экспортированная охрана без ссылок крас
 		].join("\n"),
 	});
 
-	assert.equal(summaryNumber(output, "объявлено охранников:"), 2, "две охраны; handler под шаблон имени не подходит");
+	assert.equal(
+		summaryNumber(output, "объявлено охранников:"),
+		2,
+		"две охраны; handler под шаблон имени не подходит",
+	);
 	assert.equal(summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"), 1);
 	assert.match(output, /requireNeverCalled/);
 	assert.doesNotMatch(
@@ -147,9 +170,9 @@ test("ссылка-значение в preHandler считается сшивк�
 			"",
 		].join("\n"),
 		"routes/thing.ts": [
-			"import { requireViaPreHandler, requireOnlyImported } from \"../guards.js\";",
+			'import { requireViaPreHandler, requireOnlyImported } from "../guards.js";',
 			"export function register(app: { get: (url: string, options: unknown) => void }): void {",
-			"\tapp.get(\"/api/thing\", { preHandler: requireViaPreHandler });",
+			'\tapp.get("/api/thing", { preHandler: requireViaPreHandler });',
 			"}",
 			"export const unused = typeof requireOnlyImported;",
 			"",
@@ -163,16 +186,21 @@ test("ссылка-значение в preHandler считается сшивк�
 
 	// А теперь имя ТОЛЬКО импортировано и нигде не использовано.
 	const idle = runGuardOn({
-		"guards.ts": "export function requireOnlyImported(): boolean {\n\treturn true;\n}\n",
+		"guards.ts":
+			"export function requireOnlyImported(): boolean {\n\treturn true;\n}\n",
 		"routes/thing.ts": [
-			"import { requireOnlyImported } from \"../guards.js\";",
+			'import { requireOnlyImported } from "../guards.js";',
 			"export function register(): string {",
-			"\treturn \"nothing wired\";",
+			'\treturn "nothing wired";',
 			"}",
 			"",
 		].join("\n"),
 	});
-	assert.equal(summaryNumber(idle.output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"), 1, "праздный импорт сшивкой не является");
+	assert.equal(
+		summaryNumber(idle.output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"),
+		1,
+		"праздный импорт сшивкой не является",
+	);
 	assert.match(idle.output, /имя импортируется и не используется: 1 раз/);
 	assert.equal(idle.status, 1);
 });
@@ -192,15 +220,28 @@ test("объявленная причина снимает нарушение, �
 	});
 	assert.equal(summaryNumber(withReason.output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"), 0);
 	assert.equal(summaryNumber(withReason.output, "с объявленной причиной:"), 1);
-	assert.match(withReason.output, /маршрут выгрузки в реестр появится волной позже/);
+	assert.match(
+		withReason.output,
+		/маршрут выгрузки в реестр появится волной позже/,
+	);
 	assert.equal(withReason.status, 0);
 
 	// Маркер без текста — это глушилка, а не объяснение. Этот вход поймал настоящий
 	// дефект в самой проверке: она принимала за причину закрывающую последовательность
 	// комментария, то есть глушилка работала и выглядела объяснением.
-	for (const emptyMarker of ["/** guard-callers: none — */", "// guard-callers: none — .", "/* guard-callers: none — */"]) {
+	for (const emptyMarker of [
+		"/** guard-callers: none — */",
+		"// guard-callers: none — .",
+		"/* guard-callers: none — */",
+	]) {
 		const emptyReason = runGuardOn({
-			"guards.ts": [emptyMarker, "export function requirePlannedGuard(): boolean {", "\treturn true;", "}", ""].join("\n"),
+			"guards.ts": [
+				emptyMarker,
+				"export function requirePlannedGuard(): boolean {",
+				"\treturn true;",
+				"}",
+				"",
+			].join("\n"),
 		});
 		assert.equal(
 			summaryNumber(emptyReason.output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"),
@@ -218,7 +259,7 @@ test("одноимённые охраны в двух файлах не прик
 	const { status, output } = runGuardOn({
 		"alpha.ts": [
 			"function assertSameName(value: string): void {",
-			"\tif (!value) throw new Error(\"пусто\");",
+			'\tif (!value) throw new Error("пусто");',
 			"}",
 			"export function useIt(value: string): void {",
 			"\tassertSameName(value);",
@@ -227,18 +268,30 @@ test("одноимённые охраны в двух файлах не прик
 		].join("\n"),
 		"beta.ts": [
 			"function assertSameName(value: string): void {",
-			"\tif (!value) throw new Error(\"пусто\");",
+			'\tif (!value) throw new Error("пусто");',
 			"}",
 			"export function doesNotUseIt(): string {",
-			"\treturn \"ничего не проверяю\";",
+			'\treturn "ничего не проверяю";',
 			"}",
 			"",
 		].join("\n"),
 	});
 
-	assert.equal(summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"), 1, "вызов в alpha.ts не оправдывает beta.ts");
-	assert.match(output, /beta\.ts:1/, "нарушение обязано быть указано в beta.ts");
-	assert.doesNotMatch(output.split("ОХРАНА ОБЪЯВЛЕНА")[1] ?? "", /alpha\.ts/, "alpha.ts сшит и нарушением не является");
+	assert.equal(
+		summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"),
+		1,
+		"вызов в alpha.ts не оправдывает beta.ts",
+	);
+	assert.match(
+		output,
+		/beta\.ts:1/,
+		"нарушение обязано быть указано в beta.ts",
+	);
+	assert.doesNotMatch(
+		output.split("ОХРАНА ОБЪЯВЛЕНА")[1] ?? "",
+		/alpha\.ts/,
+		"alpha.ts сшит и нарушением не является",
+	);
 	assert.equal(status, 1);
 });
 
@@ -247,7 +300,8 @@ test("обращение к свойству с тем же именем зач�
 	// — другой символ. Если бы свойство давало зачёт, охрану гасило бы любое
 	// одноимённое поле в дереве.
 	const { status, output } = runGuardOn({
-		"guards.ts": "export function requireByProperty(): boolean {\n\treturn true;\n}\n",
+		"guards.ts":
+			"export function requireByProperty(): boolean {\n\treturn true;\n}\n",
 		"routes/thing.ts": [
 			"const registry = { requireByProperty: () => true };",
 			"export function register(): boolean {",
@@ -276,13 +330,17 @@ test("упоминание охраны в комментарии сшивкой
 			"// Здесь обязательно надо вызвать requireMentionedOnly(request, reply),",
 			"/* и ещё раз: requireMentionedOnly — самая важная охрана периметра */",
 			"export function register(): string {",
-			"\treturn \"а вызова нет\";",
+			'\treturn "а вызова нет";',
 			"}",
 			"",
 		].join("\n"),
 	});
 
-	assert.equal(summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"), 1, "комментарий охрану не сшивает");
+	assert.equal(
+		summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"),
+		1,
+		"комментарий охрану не сшивает",
+	);
 	assert.match(output, /requireMentionedOnly/);
 	assert.equal(status, 1);
 });
@@ -304,19 +362,24 @@ test("ПРЕДЕЛ: ссылка-значение, которую никогда
 	// и является настоящей сшивкой, поэтому краснеть здесь нельзя — иначе гейт
 	// краснел бы на верно сшитых маршрутах и его выключили бы целиком.
 	const { status, output } = runGuardOn({
-		"guards.ts": "export function requireForgotten(a: unknown): boolean {\n\treturn Boolean(a);\n}\n",
+		"guards.ts":
+			"export function requireForgotten(a: unknown): boolean {\n\treturn Boolean(a);\n}\n",
 		"routes/thing.ts": [
-			"import { requireForgotten } from \"../guards.js\";",
+			'import { requireForgotten } from "../guards.js";',
 			"const registry = { perimeter: requireForgotten };",
 			"export function register(): string {",
 			"\tvoid registry;",
-			"\treturn \"охрана лежит в объекте и не вызывается ни разу\";",
+			'\treturn "охрана лежит в объекте и не вызывается ни разу";',
 			"}",
 			"",
 		].join("\n"),
 	});
 
-	assert.equal(summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"), 0, "предел: присваивание считается сшивкой");
+	assert.equal(
+		summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"),
+		0,
+		"предел: присваивание считается сшивкой",
+	);
 	assert.equal(status, 0);
 });
 
@@ -334,7 +397,11 @@ test("ПРЕДЕЛ: охрана как метод объекта в переп�
 		].join("\n"),
 	});
 
-	assert.equal(summaryNumber(output, "объявлено охранников:"), 0, "предел: метод объекта не объявление");
+	assert.equal(
+		summaryNumber(output, "объявлено охранников:"),
+		0,
+		"предел: метод объекта не объявление",
+	);
 	assert.equal(status, 0);
 });
 
@@ -343,9 +410,10 @@ test("вызов через пространство имён сшивкой С�
 	// объявлялось нарушением, хотя охрана вызывается. Замерено на фикстуре и
 	// починено; тест держит починку.
 	const { status, output } = runGuardOn({
-		"guards.ts": "export function requireViaNamespace(a: unknown): boolean {\n\treturn Boolean(a);\n}\n",
+		"guards.ts":
+			"export function requireViaNamespace(a: unknown): boolean {\n\treturn Boolean(a);\n}\n",
 		"routes/thing.ts": [
-			"import * as guards from \"../guards.js\";",
+			'import * as guards from "../guards.js";',
 			"export function register(a: unknown): boolean {",
 			"\treturn guards.requireViaNamespace(a);",
 			"}",
@@ -353,30 +421,40 @@ test("вызов через пространство имён сшивкой С�
 		].join("\n"),
 	});
 
-	assert.equal(summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"), 0, "вызов через пространство имён — вызов");
+	assert.equal(
+		summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"),
+		0,
+		"вызов через пространство имён — вызов",
+	);
 	assert.equal(status, 0);
 });
 
 test("псевдоним на импорте: используемый — сшивка, неиспользуемый — нарушение", () => {
 	const used = runGuardOn({
-		"guards.ts": "export function requireAliased(a: unknown): boolean {\n\treturn Boolean(a);\n}\n",
+		"guards.ts":
+			"export function requireAliased(a: unknown): boolean {\n\treturn Boolean(a);\n}\n",
 		"routes/thing.ts": [
-			"import { requireAliased as gate } from \"../guards.js\";",
+			'import { requireAliased as gate } from "../guards.js";',
 			"export function register(a: unknown): boolean {",
 			"\treturn gate(a);",
 			"}",
 			"",
 		].join("\n"),
 	});
-	assert.equal(summaryNumber(used.output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"), 0, "вызов под псевдонимом — сшивка");
+	assert.equal(
+		summaryNumber(used.output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"),
+		0,
+		"вызов под псевдонимом — сшивка",
+	);
 	assert.equal(used.status, 0);
 
 	const idle = runGuardOn({
-		"guards.ts": "export function requireAliased(a: unknown): boolean {\n\treturn Boolean(a);\n}\n",
+		"guards.ts":
+			"export function requireAliased(a: unknown): boolean {\n\treturn Boolean(a);\n}\n",
 		"routes/thing.ts": [
-			"import { requireAliased as gate } from \"../guards.js\";",
+			'import { requireAliased as gate } from "../guards.js";',
 			"export function register(): string {",
-			"\treturn \"псевдоним втянут и не применён\";",
+			'\treturn "псевдоним втянут и не применён";',
 			"}",
 			"",
 		].join("\n"),
@@ -392,10 +470,15 @@ test("псевдоним на импорте: используемый — сш�
 test("боевое дерево: ни одного охранника без ссылок и без объяснения", () => {
 	// Это и есть гейт. Прогон идёт по настоящему apps/api/src, а не по фикстуре:
 	// без него все тесты выше проверяли бы только разборщик, а дерево — ничего.
-	const result = spawnSync(process.execPath, [guardPath, "--census"], { encoding: "utf8" });
+	const result = spawnSync(process.execPath, [guardPath, "--census"], {
+		encoding: "utf8",
+	});
 	assert.equal(result.error, undefined, "проверка не запустилась");
 	const output = `${result.stdout}${result.stderr}`;
-	assert.ok(summaryNumber(output, "объявлено охранников:") > 0, "перепись пуста — проверка ничего не разобрала");
+	assert.ok(
+		summaryNumber(output, "объявлено охранников:") > 0,
+		"перепись пуста — проверка ничего не разобрала",
+	);
 	assert.equal(
 		summaryNumber(output, "ОБЪЯВЛЕН И НЕ ВЫЗВАН:"),
 		0,

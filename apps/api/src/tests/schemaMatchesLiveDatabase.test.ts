@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { is } from "drizzle-orm";
-import { PgTable, getTableConfig } from "drizzle-orm/pg-core";
+import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
 import pg from "pg";
 import * as communicationsSchema from "../db/communicationsSchema.js";
 import * as patientsSchema from "../db/patientsSchema.js";
@@ -92,7 +92,10 @@ const databaseModulesDir = path.resolve(here, "../db");
  * импорт по имени файла ломается тихо, а статический импорт ломает сборку
  * громко. Поэтому оба.
  */
-const SCHEMA_MODULES: readonly { readonly file: string; readonly exports: Record<string, unknown> }[] = [
+const SCHEMA_MODULES: readonly {
+	readonly file: string;
+	readonly exports: Record<string, unknown>;
+}[] = [
 	{ file: "schema.ts", exports: mainSchema },
 	{ file: "communicationsSchema.ts", exports: communicationsSchema },
 	{ file: "patientsSchema.ts", exports: patientsSchema },
@@ -146,9 +149,12 @@ function declaredTables(): readonly DeclaredTable[] {
 					// статическое умолчание уходит в SQL ключевым словом `default`
 					// (значение берёт база), а `$defaultFn` считает Node и передаёт
 					// значение параметром (база своё умолчание не применяет).
-					hasStaticDefault: column.hasDefault === true && column.defaultFn === undefined,
+					hasStaticDefault:
+						column.hasDefault === true && column.defaultFn === undefined,
 					hasClientDefault: column.defaultFn !== undefined,
-					enumValues: Array.isArray(column.enumValues) ? [...(column.enumValues as string[])] : null,
+					enumValues: Array.isArray(column.enumValues)
+						? [...(column.enumValues as string[])]
+						: null,
 					owner: exportName,
 				})),
 			});
@@ -224,7 +230,9 @@ function safeTarget(connectionString: string): string {
 	}
 }
 
-type LiveSchemaResult = { readonly schema: LiveSchema } | { readonly unavailable: string };
+type LiveSchemaResult =
+	| { readonly schema: LiveSchema }
+	| { readonly unavailable: string };
 
 let liveSchemaPromise: Promise<LiveSchemaResult> | null = null;
 
@@ -252,7 +260,10 @@ async function readLiveSchema(): Promise<LiveSchemaResult> {
 				position: Number(row.position),
 				sqlType: String(row.sql_type),
 				notNull: row.not_null === true,
-				defaultExpression: row.default_expression === null ? null : String(row.default_expression),
+				defaultExpression:
+					row.default_expression === null
+						? null
+						: String(row.default_expression),
 				isEnum: row.is_enum === true,
 			});
 			tables.set(table, list);
@@ -289,7 +300,9 @@ const REQUIRE_DATABASE = process.env.SCHEMA_LOCK_REQUIRE_DATABASE === "1";
  * Одна дорога до факта для всех проверок. Возвращает `null`, когда базы нет, —
  * и тогда проверка помечает себя `skip` с причиной, названной вслух.
  */
-async function liveSchemaOrSkip(t: { skip: (message: string) => void }): Promise<LiveSchema | null> {
+async function liveSchemaOrSkip(t: {
+	skip: (message: string) => void;
+}): Promise<LiveSchema | null> {
 	const result = await liveSchema();
 	if ("schema" in result) return result.schema;
 	assert.ok(
@@ -411,8 +424,9 @@ function register(block: string): readonly string[] {
 		.sort();
 }
 
-const KNOWN_DIVERGENCES: Readonly<Record<DivergenceClass, readonly string[]>> = {
-	type: register(`
+const KNOWN_DIVERGENCES: Readonly<Record<DivergenceClass, readonly string[]>> =
+	{
+		type: register(`
 		advance_deposit_taggings.deposit_amount_rub
 		clinical_audit_logs.entity_id
 		collaborative_chat_processing_states.chat_id
@@ -449,7 +463,7 @@ const KNOWN_DIVERGENCES: Readonly<Record<DivergenceClass, readonly string[]>> = 
 		visit_templates.specialty
 		visit_templates.title
 	`),
-	notNullInDatabase: register(`
+		notNullInDatabase: register(`
 		appointment_waitlists.updated_at
 		chat_message_dispatch_statuses.message_id
 		clinical_audit_logs.action
@@ -491,7 +505,7 @@ const KNOWN_DIVERGENCES: Readonly<Record<DivergenceClass, readonly string[]>> = 
 		visit_diaries.updated_at
 		yandex_calendar_syncs.yandex_calendar_id
 	`),
-	nullableInDatabase: register(`
+		nullableInDatabase: register(`
 		bulk_image_operation_logs.status
 		chairs.clinic_id
 		chat_message_dispatch_statuses.channel
@@ -555,7 +569,7 @@ const KNOWN_DIVERGENCES: Readonly<Record<DivergenceClass, readonly string[]>> = 
 		yandex_calendar_syncs.created_at
 		yandex_calendar_syncs.doctor_id
 	`),
-	declaredDefaultMissing: register(`
+		declaredDefaultMissing: register(`
 		doctor_commissions.specialty
 		inventory_transactions.transaction_type
 		messenger_inbound_events.channel
@@ -564,7 +578,7 @@ const KNOWN_DIVERGENCES: Readonly<Record<DivergenceClass, readonly string[]>> = 
 		sterilization_logs.status
 		visit_templates.specialty
 	`),
-	undeclaredInModel: register(`
+		undeclaredInModel: register(`
 		appointments.is_synced
 		appointments.version
 		bulk_image_operation_logs.assigned_tooth_number
@@ -689,7 +703,7 @@ const KNOWN_DIVERGENCES: Readonly<Record<DivergenceClass, readonly string[]>> = 
 		yandex_calendar_syncs.doctor_name
 		yandex_calendar_syncs.last_synced_at
 	`),
-};
+	};
 
 /**
  * САМОПРОВЕРКА РЕЕСТРА: он обязан остаться реестром 269 замеренных расхождений, а
@@ -708,7 +722,11 @@ type Divergence = { readonly key: string; readonly detail: string };
  * Сверка найденного с реестром. Оба направления обязательны — почему, сказано в
  * докстринге реестра.
  */
-function assertAgainstRegistry(kind: DivergenceClass, found: readonly Divergence[], cost: string): void {
+function assertAgainstRegistry(
+	kind: DivergenceClass,
+	found: readonly Divergence[],
+	cost: string,
+): void {
 	const known = new Set(KNOWN_DIVERGENCES[kind]);
 	const byKey = new Map(found.map((entry) => [entry.key, entry.detail]));
 
@@ -741,9 +759,18 @@ function assertAgainstRegistry(kind: DivergenceClass, found: readonly Divergence
 
 test("перепись модулей схемы не потеряла файл с pgTable", () => {
 	const withTables = readdirSync(databaseModulesDir, { withFileTypes: true })
-		.filter((entry) => entry.isFile() && entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts"))
+		.filter(
+			(entry) =>
+				entry.isFile() &&
+				entry.name.endsWith(".ts") &&
+				!entry.name.endsWith(".test.ts"),
+		)
 		.map((entry) => entry.name)
-		.filter((name) => readFileSync(path.join(databaseModulesDir, name), "utf8").includes("pgTable("))
+		.filter((name) =>
+			readFileSync(path.join(databaseModulesDir, name), "utf8").includes(
+				"pgTable(",
+			),
+		)
 		.sort();
 	const imported = SCHEMA_MODULES.map((module) => module.file).sort();
 
@@ -774,17 +801,28 @@ test("перепись объявлений не выродилась", () => {
 	);
 	// Порог не заметит подмену ВСЕХ колонок на пустые, поэтому отдельно проверяется
 	// форма: у каждой таблицы есть колонки, и у каждой колонки есть тип.
-	const empty = tables.filter((table) => table.columns.length === 0).map((table) => table.name);
-	assert.deepEqual(empty, [], `Таблица в переписи без колонок: ${empty.join(", ")}. Разбор метаданных сломан.`);
+	const empty = tables
+		.filter((table) => table.columns.length === 0)
+		.map((table) => table.name);
+	assert.deepEqual(
+		empty,
+		[],
+		`Таблица в переписи без колонок: ${empty.join(", ")}. Разбор метаданных сломан.`,
+	);
 	const typeless = tables
-		.flatMap((table) => table.columns.map((column) => ({ table: table.name, column })))
+		.flatMap((table) =>
+			table.columns.map((column) => ({ table: table.name, column })),
+		)
 		.filter((entry) => entry.column.sqlType.trim() === "")
 		.map((entry) => `${entry.table}.${entry.column.name}`);
 	assert.deepEqual(typeless, [], `Колонка без типа: ${typeless.join(", ")}.`);
 });
 
 test("реестр известных расхождений не превратился в «пропустить всё»", () => {
-	const total = Object.values(KNOWN_DIVERGENCES).reduce((sum, list) => sum + list.length, 0);
+	const total = Object.values(KNOWN_DIVERGENCES).reduce(
+		(sum, list) => sum + list.length,
+		0,
+	);
 	assert.equal(
 		total,
 		REGISTERED_DIVERGENCE_COUNT,
@@ -797,12 +835,20 @@ test("реестр известных расхождений не преврат
 	// Без этой проверки одна опечатка в блоке превратила бы запись в мусор, который
 	// ничего не покрывает, и сокращение прошло бы незамеченным.
 	const malformed = Object.entries(KNOWN_DIVERGENCES).flatMap(([kind, list]) =>
-		list.filter((key) => !/^[a-z0-9_]+\.[a-z0-9_]+$/.test(key)).map((key) => `${kind}: ${key}`),
+		list
+			.filter((key) => !/^[a-z0-9_]+\.[a-z0-9_]+$/.test(key))
+			.map((key) => `${kind}: ${key}`),
 	);
-	assert.deepEqual(malformed, [], `Запись реестра не похожа на «таблица.колонка»: ${malformed.join(", ")}.`);
+	assert.deepEqual(
+		malformed,
+		[],
+		`Запись реестра не похожа на «таблица.колонка»: ${malformed.join(", ")}.`,
+	);
 
 	const duplicated = Object.entries(KNOWN_DIVERGENCES).flatMap(([kind, list]) =>
-		list.filter((key, index) => list.indexOf(key) !== index).map((key) => `${kind}: ${key}`),
+		list
+			.filter((key, index) => list.indexOf(key) !== index)
+			.map((key) => `${kind}: ${key}`),
 	);
 	assert.deepEqual(
 		duplicated,
@@ -815,16 +861,36 @@ test("реестр известных расхождений не преврат
 test("сравнение типов различает разные типы и не различает синонимы одного", () => {
 	// Синонимы: краснеть на них — значит учить инженера выключать замок.
 	assert.ok(typesAgree("timestamp with time zone", "timestamp with time zone"));
-	assert.ok(typesAgree("numeric(12, 2)", "numeric(12,2)"), "пробел внутри скобок не должен быть расхождением");
+	assert.ok(
+		typesAgree("numeric(12, 2)", "numeric(12,2)"),
+		"пробел внутри скобок не должен быть расхождением",
+	);
 	assert.ok(typesAgree("varchar(50)", "character varying(50)"));
-	assert.ok(typesAgree("numeric", "numeric(12,2)"), "numeric без точности — «любая точность», это не дрейф");
+	assert.ok(
+		typesAgree("numeric", "numeric(12,2)"),
+		"numeric без точности — «любая точность», это не дрейф",
+	);
 
 	// Настоящие расхождения — те самые, что стоили клинике данных.
-	assert.ok(!typesAgree("jsonb", "text"), "jsonb против text — это двойная кодировка разметки в базе");
-	assert.ok(!typesAgree("text", "treatment_plan_status"), "text против перечисления — отказ базы на записи");
-	assert.ok(!typesAgree("integer", "numeric(12,2)"), "integer против numeric — деньги строкой вместо числа");
-	assert.ok(!typesAgree("numeric(10,2)", "numeric(12,2)"), "разная точность — отказ базы на большой сумме");
-	assert.ok(!typesAgree("timestamp with time zone", "timestamp without time zone"));
+	assert.ok(
+		!typesAgree("jsonb", "text"),
+		"jsonb против text — это двойная кодировка разметки в базе",
+	);
+	assert.ok(
+		!typesAgree("text", "treatment_plan_status"),
+		"text против перечисления — отказ базы на записи",
+	);
+	assert.ok(
+		!typesAgree("integer", "numeric(12,2)"),
+		"integer против numeric — деньги строкой вместо числа",
+	);
+	assert.ok(
+		!typesAgree("numeric(10,2)", "numeric(12,2)"),
+		"разная точность — отказ базы на большой сумме",
+	);
+	assert.ok(
+		!typesAgree("timestamp with time zone", "timestamp without time zone"),
+	);
 	assert.ok(!typesAgree("text", "text[]"), "массив — не скаляр");
 });
 
@@ -845,7 +911,10 @@ test("каждая объявленная таблица существует в
 
 	const missing = declaredTables()
 		.filter((table) => !live.tables.has(table.name))
-		.map((table) => `${table.name} (db/${table.module}, export ${table.exportName})`);
+		.map(
+			(table) =>
+				`${table.name} (db/${table.module}, export ${table.exportName})`,
+		);
 
 	assert.deepEqual(
 		missing,
@@ -874,7 +943,9 @@ test("каждая объявленная колонка существует в
 		const known = new Set(liveColumns.map((column) => column.name));
 		for (const column of table.columns) {
 			if (!known.has(column.name)) {
-				missing.push(`${table.name}.${column.name} (db/${table.module}: ${column.owner})`);
+				missing.push(
+					`${table.name}.${column.name} (db/${table.module}: ${column.owner})`,
+				);
 			}
 		}
 	}
@@ -1032,7 +1103,8 @@ test("объявленное умолчание существует и в ба�
 		for (const column of table.columns) {
 			const actual = byName.get(column.name);
 			if (actual === undefined) continue;
-			if (!column.hasStaticDefault || actual.defaultExpression !== null) continue;
+			if (!column.hasStaticDefault || actual.defaultExpression !== null)
+				continue;
 			drift.push({
 				key: `${table.name}.${column.name}`,
 				detail:
@@ -1075,14 +1147,23 @@ test("набор значений перечисления совпадает с
 		const byName = new Map(liveColumns.map((column) => [column.name, column]));
 		for (const column of table.columns) {
 			const actual = byName.get(column.name);
-			if (actual === undefined || column.enumValues === null || !actual.isEnum) continue;
-			const liveLabels = live.enums.get(canonicalType(actual.sqlType)) ?? live.enums.get(actual.sqlType);
+			if (actual === undefined || column.enumValues === null || !actual.isEnum)
+				continue;
+			const liveLabels =
+				live.enums.get(canonicalType(actual.sqlType)) ??
+				live.enums.get(actual.sqlType);
 			if (liveLabels === undefined) {
-				drift.push(`${table.name}.${column.name}: тип ${actual.sqlType} не найден в pg_enum`);
+				drift.push(
+					`${table.name}.${column.name}: тип ${actual.sqlType} не найден в pg_enum`,
+				);
 				continue;
 			}
-			const declaredOnly = column.enumValues.filter((value) => !liveLabels.includes(value));
-			const liveOnly = liveLabels.filter((value) => !column.enumValues?.includes(value));
+			const declaredOnly = column.enumValues.filter(
+				(value) => !liveLabels.includes(value),
+			);
+			const liveOnly = liveLabels.filter(
+				(value) => !column.enumValues?.includes(value),
+			);
 			if (declaredOnly.length === 0 && liveOnly.length === 0) continue;
 			drift.push(
 				`${table.name}.${column.name} (${actual.sqlType}): только в модели ` +
@@ -1119,7 +1200,12 @@ test("колонки базы, недостижимые через drizzle, вс
 	if (live === null) return;
 
 	const declared = declaredTables();
-	const known = new Map(declared.map((table) => [table.name, new Set(table.columns.map((column) => column.name))]));
+	const known = new Map(
+		declared.map((table) => [
+			table.name,
+			new Set(table.columns.map((column) => column.name)),
+		]),
+	);
 	const undeclared: Divergence[] = [];
 	for (const table of declared) {
 		const liveColumns = live.tables.get(table.name) ?? [];

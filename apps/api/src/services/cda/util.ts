@@ -81,8 +81,7 @@ export function buildCdaContext(params: EgiszCdaParams): CdaContext {
 
 	const setIdRaw =
 		params.documentSetId != null ? String(params.documentSetId).trim() : "";
-	const setIdExtension =
-		setIdRaw.length > 0 ? setIdRaw : params.documentId;
+	const setIdExtension = setIdRaw.length > 0 ? setIdRaw : params.documentId;
 
 	const replacesRaw =
 		params.replacesDocumentId != null
@@ -222,9 +221,7 @@ export function doctorIdXml(ctx: CdaContext): string {
 
 /** Specialty code: NI + displayName when position known, else bare NI. */
 export function doctorCodeXml(ctx: CdaContext): string {
-	const pos = ctx.params.doctorPosition
-		? ctx.params.doctorPosition.trim()
-		: "";
+	const pos = ctx.params.doctorPosition ? ctx.params.doctorPosition.trim() : "";
 	return pos
 		? `<code nullFlavor="NI" displayName="${escapeXml(pos)}"/>`
 		: `<code nullFlavor="NI"/>`;

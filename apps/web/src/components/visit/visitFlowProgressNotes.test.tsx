@@ -41,13 +41,19 @@ import { VisitFlowProgress } from "./VisitFlowProgress";
  * — фикстура, которая собирает шаг «плана» из полей «черновика», больше не
  * соберётся.
  */
-const draftStep = (status: VisitFlowStepStatus, message: string | null = null): VisitFlowDraftStepResult => ({
+const draftStep = (
+	status: VisitFlowStepStatus,
+	message: string | null = null,
+): VisitFlowDraftStepResult => ({
 	step: "draft",
 	status,
 	message,
 	data: null,
 });
-const planStep = (status: VisitFlowStepStatus, message: string | null = null): VisitFlowPlanStepResult => ({
+const planStep = (
+	status: VisitFlowStepStatus,
+	message: string | null = null,
+): VisitFlowPlanStepResult => ({
 	step: "plan",
 	status,
 	message,
@@ -56,11 +62,21 @@ const planStep = (status: VisitFlowStepStatus, message: string | null = null): V
 const recommendationsStep = (
 	status: VisitFlowStepStatus,
 	message: string | null = null,
-): VisitFlowRecommendationsStepResult => ({ step: "recommendations", status, message, data: null });
+): VisitFlowRecommendationsStepResult => ({
+	step: "recommendations",
+	status,
+	message,
+	data: null,
+});
 const documentsStep = (
 	status: VisitFlowStepStatus,
 	message: string | null = null,
-): VisitFlowDocumentsStepResult => ({ step: "documents", status, message, data: null });
+): VisitFlowDocumentsStepResult => ({
+	step: "documents",
+	status,
+	message,
+	data: null,
+});
 
 describe("VisitFlowProgress: причины отказа шагов", () => {
 	it("пропущенный шаг называет причину целиком, а не обрезком", () => {
@@ -69,7 +85,10 @@ describe("VisitFlowProgress: причины отказа шагов", () => {
 				result: {
 					draft: draftStep("success"),
 					plan: planStep("skipped", "Отключено в настройках клиники"),
-					recommendations: recommendationsStep("skipped", "Нет оснований для рекомендаций"),
+					recommendations: recommendationsStep(
+						"skipped",
+						"Нет оснований для рекомендаций",
+					),
 					documents: documentsStep("success"),
 					overallStatus: "partial",
 				},
@@ -78,8 +97,14 @@ describe("VisitFlowProgress: причины отказа шагов", () => {
 
 		// Ровно эти строки приходят с сервера; обрезка до «Отключено в…» — то,
 		// из-за чего врач не мог понять, что шаг вообще не запускался.
-		assert.match(markup, /План лечения — пропущено: Отключено в настройках клиники/);
-		assert.match(markup, /Рекомендации — пропущено: Нет оснований для рекомендаций/);
+		assert.match(
+			markup,
+			/План лечения — пропущено: Отключено в настройках клиники/,
+		);
+		assert.match(
+			markup,
+			/Рекомендации — пропущено: Нет оснований для рекомендаций/,
+		);
 		// И подсказка, что делать дальше: включить в настройках либо заполнить руками.
 		assert.match(markup, /настройках клиники/);
 		assert.match(markup, /заполните поля руками/);
@@ -98,7 +123,10 @@ describe("VisitFlowProgress: причины отказа шагов", () => {
 			}),
 		);
 
-		assert.match(markup, /Распознавание — не выполнено: Ошибка генерации черновика/);
+		assert.match(
+			markup,
+			/Распознавание — не выполнено: Ошибка генерации черновика/,
+		);
 		// Крестик у шага: раньше отказ отличался от «ещё идёт» только цветом точки.
 		assert.match(markup, /Шаг не выполнен/);
 		// Врач не должен решить, что диктовка пропала вместе с разбором.
@@ -135,7 +163,9 @@ describe("VisitFlowProgress: причины отказа шагов", () => {
 		 * подделка испорченного ответа: без приведения такой ответ не собрать,
 		 * ровно потому что контракт теперь его запрещает.
 		 */
-		const malformedWireResponse = { overallStatus: undefined } as unknown as VisitFlowResult;
+		const malformedWireResponse = {
+			overallStatus: undefined,
+		} as unknown as VisitFlowResult;
 		const markup = renderToStaticMarkup(
 			createElement(VisitFlowProgress, { result: malformedWireResponse }),
 		);

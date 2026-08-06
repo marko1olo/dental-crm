@@ -28,7 +28,11 @@ test("у каждой известной причины свой следующ�
 		voiceDictationErrorText("network"),
 		voiceDictationErrorText("aborted"),
 	];
-	assert.equal(new Set(texts).size, texts.length, "две причины дают один текст");
+	assert.equal(
+		new Set(texts).size,
+		texts.length,
+		"две причины дают один текст",
+	);
 });
 
 test("незнакомый и отсутствующий код не показывают английское слово", () => {
@@ -56,6 +60,11 @@ test("ни один текст ошибки не содержит латиниц
 test("текст про неподдерживаемый браузер не выглядит распознанной речью", () => {
 	// БЫЛО: эта фраза записывалась в transcript, и её можно было отправить на
 	// разбор как содержание приёма.
-	assert.ok(VOICE_DICTATION_UNSUPPORTED_TEXT.includes("вручную"), "нет следующего шага");
-	assert.ok(VOICE_DICTATION_UNSUPPORTED_TEXT.includes("не умеет распознавать речь"));
+	assert.ok(
+		VOICE_DICTATION_UNSUPPORTED_TEXT.includes("вручную"),
+		"нет следующего шага",
+	);
+	assert.ok(
+		VOICE_DICTATION_UNSUPPORTED_TEXT.includes("не умеет распознавать речь"),
+	);
 });

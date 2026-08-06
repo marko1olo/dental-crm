@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { organizations, patients, payments, treatmentPlans } from "../db/schema.js";
+import {
+	organizations,
+	patients,
+	payments,
+	treatmentPlans,
+} from "../db/schema.js";
 import { runBiAnalyticsAggregation } from "../scripts/cronAnalyticsWorker.js";
 import {
 	buildPlanFunnel,
@@ -72,7 +77,10 @@ const SEEDED: Readonly<Record<string, number>> = {
 	Rejected: 5,
 };
 
-const SEEDED_TOTAL = Object.values(SEEDED).reduce((sum, count) => sum + count, 0);
+const SEEDED_TOTAL = Object.values(SEEDED).reduce(
+	(sum, count) => sum + count,
+	0,
+);
 
 /** Оплаченная выручка клиники. Ровно эта сумма обязана вернуться без множителей. */
 const REVENUE_RUB = 7_431;
@@ -138,7 +146,9 @@ describe("воронка планов лечения совпадает с пе�
 			// `organization_id` и обхода не допускает: две клиники — два вызова, иначе
 			// вторая вставка отвергается кодом 42501.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника воронки планов" });
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника воронки планов" });
 				await db.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
@@ -162,7 +172,9 @@ describe("воронка планов лечения совпадает с пе�
 				});
 			});
 			await withFixtureTenant(EMPTY_ORG_ID, async () => {
-				await db.insert(organizations).values({ id: EMPTY_ORG_ID, name: "Клиника без данных" });
+				await db
+					.insert(organizations)
+					.values({ id: EMPTY_ORG_ID, name: "Клиника без данных" });
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
@@ -192,7 +204,9 @@ describe("воронка планов лечения совпадает с пе�
 		);
 
 		// Поимённо, а не только суммой: сумма сошлась бы и при перепутанных ветвях.
-		const byStatus = new Map(planFunnel.map((stage) => [stage.status, stage.value]));
+		const byStatus = new Map(
+			planFunnel.map((stage) => [stage.status, stage.value]),
+		);
 		for (const [status, expected] of Object.entries(SEEDED)) {
 			assert.equal(
 				byStatus.get(status),
@@ -311,7 +325,9 @@ describe("воронка планов лечения совпадает с пе�
 		 * (`AnalyticsDashboardView.tsx:388`), то есть месячная выручка,
 		 * умноженная на три, предъявлялась владельцу как измеренная годовая.
 		 */
-		const horizons = Object.keys(row).filter((key) => /^Month (3|6|12)$/.test(key));
+		const horizons = Object.keys(row).filter((key) =>
+			/^Month (3|6|12)$/.test(key),
+		);
 		assert.deepEqual(
 			horizons,
 			[],
@@ -334,7 +350,9 @@ describe("воронка планов лечения совпадает с пе�
 		 */
 		const funnels = await computePlanFunnelAll();
 		const funnel = funnels.get(ORG_ID) ?? [];
-		const byStatus = new Map(funnel.map((stage) => [stage.status, stage.value]));
+		const byStatus = new Map(
+			funnel.map((stage) => [stage.status, stage.value]),
+		);
 
 		for (const [status, expected] of Object.entries(SEEDED)) {
 			assert.equal(

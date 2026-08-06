@@ -2,16 +2,19 @@ import assert from "node:assert";
 import { randomUUID } from "node:crypto";
 import { describe, test } from "node:test";
 import {
-	RU_MONEY_NBSP,
-	paymentReceiptPayloadSchema,
-	paymentRefundCorrectionPayloadSchema,
-	paymentSchema,
 	type ClinicProfile,
 	type GeneratedDocument,
 	type Patient,
 	type Payment,
+	paymentReceiptPayloadSchema,
+	paymentRefundCorrectionPayloadSchema,
+	paymentSchema,
+	RU_MONEY_NBSP,
 } from "@dental/shared";
-import { documentHasUnresolvedPlaceholders, documentIssueBlockReason } from "./renderDocument.js";
+import {
+	documentHasUnresolvedPlaceholders,
+	documentIssueBlockReason,
+} from "./renderDocument.js";
 
 describe("documentHasUnresolvedPlaceholders", () => {
 	test("returns false for HTML without placeholders", () => {
@@ -52,7 +55,10 @@ describe("documentHasUnresolvedPlaceholders", () => {
 
 	test("поиск заготовок не зависит от регистра", () => {
 		// Текст приводится к нижнему регистру по правилам ru-RU.
-		assert.strictEqual(documentHasUnresolvedPlaceholders("<p>НЕ УКАЗАН</p>"), true);
+		assert.strictEqual(
+			documentHasUnresolvedPlaceholders("<p>НЕ УКАЗАН</p>"),
+			true,
+		);
 	});
 
 	test("ignores placeholders inside signatures block", () => {
@@ -142,7 +148,9 @@ describe("денежные гейты выдачи: квитанция и воз
 
 	/** «1 111,00 ₽» из целых копеек — ожидаемый вид суммы в тексте отказа. */
 	function expectedMoney(wholeRubles: number, kopecks: number): string {
-		const grouped = wholeRubles.toLocaleString("ru-RU").replaceAll(" ", RU_MONEY_NBSP);
+		const grouped = wholeRubles
+			.toLocaleString("ru-RU")
+			.replaceAll(" ", RU_MONEY_NBSP);
 		return `${grouped},${String(kopecks).padStart(2, "0")}${RU_MONEY_NBSP}₽`;
 	}
 
@@ -176,14 +184,19 @@ describe("денежные гейты выдачи: квитанция и воз
 	}
 
 	function repeatedPayments(amountRub: number, count: number): Payment[] {
-		return Array.from({ length: count }, (_, index) => paidPayment(amountRub, index));
+		return Array.from({ length: count }, (_, index) =>
+			paidPayment(amountRub, index),
+		);
 	}
 
 	function floatReduce(payments: Payment[]): number {
 		return payments.reduce((total, payment) => total + payment.amountRub, 0);
 	}
 
-	function receiptDocument(payments: Payment[], declaredTotalPaidRub: number): GeneratedDocument {
+	function receiptDocument(
+		payments: Payment[],
+		declaredTotalPaidRub: number,
+	): GeneratedDocument {
 		const paymentReceipt = paymentReceiptPayloadSchema.parse({
 			receiptNumber: "КВ-2026-014",
 			receiptDate: "2026-03-14",
@@ -192,7 +205,9 @@ describe("денежные гейты выдачи: квитанция и воз
 			payerFullName,
 			taxSupportRequested: false,
 			paymentPurpose: "Оплата лечения по плану от 10.03.2026",
-			fiscalReceiptNumbers: payments.map((payment) => payment.fiscalReceiptNumber),
+			fiscalReceiptNumbers: payments.map(
+				(payment) => payment.fiscalReceiptNumber,
+			),
 			issuedByFullName: "Сидорова Мария Павловна",
 			paymentAndFiscalDataVerified: true,
 			payerIdentityVerified: true,
@@ -214,7 +229,10 @@ describe("денежные гейты выдачи: квитанция и воз
 		} as GeneratedDocument;
 	}
 
-	function refundDocument(payments: Payment[], refundAmountRub: number): GeneratedDocument {
+	function refundDocument(
+		payments: Payment[],
+		refundAmountRub: number,
+	): GeneratedDocument {
 		// Номер фискального чека берётся у первой оплаты набора: пустой набор
 		// заявление на возврат описать не может, и тест обязан сказать это прямо.
 		const firstPayment = payments[0];
@@ -228,7 +246,8 @@ describe("денежные гейты выдачи: квитанция и воз
 			recipientFullName: payerFullName,
 			recipientIdentityDocument: identityDocument,
 			originalFiscalReceiptNumber: firstPayment.fiscalReceiptNumber,
-			accountantDecision: "Возврат согласован главным врачом и бухгалтером клиники.",
+			accountantDecision:
+				"Возврат согласован главным врачом и бухгалтером клиники.",
 		});
 		return {
 			id: randomUUID(),
@@ -246,8 +265,14 @@ describe("денежные гейты выдачи: квитанция и воз
 		} as GeneratedDocument;
 	}
 
-	function blockReasonFor(document: GeneratedDocument, payments: Payment[]): string | null {
-		return documentIssueBlockReason(document, patient, { clinicProfile, payments });
+	function blockReasonFor(
+		document: GeneratedDocument,
+		payments: Payment[],
+	): string | null {
+		return documentIssueBlockReason(document, patient, {
+			clinicProfile,
+			payments,
+		});
 	}
 
 	test("двадцать оплат по 55,55 руб.: квитанция на 1111 руб. выдаётся", () => {
@@ -258,7 +283,10 @@ describe("денежные гейты выдачи: квитанция и воз
 			1111,
 			"набор перестал быть дрейфующим — тест потерял смысл, поправьте суммы",
 		);
-		assert.strictEqual(blockReasonFor(receiptDocument(payments, 1111), payments), null);
+		assert.strictEqual(
+			blockReasonFor(receiptDocument(payments, 1111), payments),
+			null,
+		);
 	});
 
 	test("десять оплат по 1010,10 руб.: квитанция на 10101 руб. выдаётся", () => {
@@ -268,14 +296,20 @@ describe("денежные гейты выдачи: квитанция и воз
 			10101,
 			"набор перестал быть дрейфующим — тест потерял смысл, поправьте суммы",
 		);
-		assert.strictEqual(blockReasonFor(receiptDocument(payments, 10101), payments), null);
+		assert.strictEqual(
+			blockReasonFor(receiptDocument(payments, 10101), payments),
+			null,
+		);
 	});
 
 	test("расхождение в одну копейку по-прежнему блокирует выдачу квитанции", () => {
 		// 19 × 55,55 + 55,54 = 1110,99. Заявлено 1111 руб. — не хватает копейки.
 		const payments = [...repeatedPayments(55.55, 19), paidPayment(55.54, 19)];
 		const reason = blockReasonFor(receiptDocument(payments, 1111), payments);
-		assert.ok(reason, "квитанция с расхождением в копейку обязана быть заблокирована");
+		assert.ok(
+			reason,
+			"квитанция с расхождением в копейку обязана быть заблокирована",
+		);
 		assert.match(reason, /выбранные оплаты дают/);
 		assert.ok(
 			reason.includes(expectedMoney(1110, 99)),
@@ -289,16 +323,30 @@ describe("денежные гейты выдачи: квитанция и воз
 
 	test("отказ не показывает человеку дробный мусор из плавающей точки", () => {
 		// 100,10 + 200,20 + 300,30 = 600,60. Дробное сложение даёт 600.5999999999999.
-		const payments = [paidPayment(100.1, 0), paidPayment(200.2, 1), paidPayment(300.3, 2)];
+		const payments = [
+			paidPayment(100.1, 0),
+			paidPayment(200.2, 1),
+			paidPayment(300.3, 2),
+		];
 		assert.notStrictEqual(
 			floatReduce(payments),
 			600.6,
 			"набор перестал быть дрейфующим — тест потерял смысл, поправьте суммы",
 		);
 		const reason = blockReasonFor(receiptDocument(payments, 601), payments);
-		assert.ok(reason, "601 руб. не равно 600,60 руб., выдача обязана быть заблокирована");
-		assert.ok(reason.includes(expectedMoney(600, 60)), `ожидалось «600,60 ₽», получено: ${reason}`);
-		assert.doesNotMatch(reason, /\d\.\d{3,}/, `в тексте для человека остался дробный мусор: ${reason}`);
+		assert.ok(
+			reason,
+			"601 руб. не равно 600,60 руб., выдача обязана быть заблокирована",
+		);
+		assert.ok(
+			reason.includes(expectedMoney(600, 60)),
+			`ожидалось «600,60 ₽», получено: ${reason}`,
+		);
+		assert.doesNotMatch(
+			reason,
+			/\d\.\d{3,}/,
+			`в тексте для человека остался дробный мусор: ${reason}`,
+		);
 	});
 
 	/**
@@ -326,7 +374,11 @@ describe("денежные гейты выдачи: квитанция и воз
 	 * платежей, и человек остаётся без документа для налогового вычета.
 	 */
 	test("копеечный итог квитанции контракт принимает, и гейт её выдаёт", () => {
-		const payments = [paidPayment(100.1, 0), paidPayment(200.2, 1), paidPayment(300.3, 2)];
+		const payments = [
+			paidPayment(100.1, 0),
+			paidPayment(200.2, 1),
+			paidPayment(300.3, 2),
+		];
 		const result = paymentReceiptPayloadSchema.safeParse({
 			receiptNumber: "КВ-2026-015",
 			receiptDate: "2026-03-14",
@@ -335,7 +387,9 @@ describe("денежные гейты выдачи: квитанция и воз
 			payerFullName,
 			taxSupportRequested: false,
 			paymentPurpose: "Оплата лечения по плану от 10.03.2026",
-			fiscalReceiptNumbers: payments.map((payment) => payment.fiscalReceiptNumber),
+			fiscalReceiptNumbers: payments.map(
+				(payment) => payment.fiscalReceiptNumber,
+			),
 			issuedByFullName: "Сидорова Мария Павловна",
 			paymentAndFiscalDataVerified: true,
 			payerIdentityVerified: true,
@@ -349,8 +403,15 @@ describe("денежные гейты выдачи: квитанция и воз
 		// И вторая половина: гейт выдачи такую квитанцию пропускает. Дробное
 		// сложение этих же оплат даёт 600.5999999999999, поэтому проверка гейта
 		// обязана считать в копейках, а не в плавающей точке.
-		assert.notStrictEqual(floatReduce(payments), 600.6, "набор перестал быть дрейфующим — поправьте суммы");
-		assert.strictEqual(blockReasonFor(receiptDocument(payments, 600.6), payments), null);
+		assert.notStrictEqual(
+			floatReduce(payments),
+			600.6,
+			"набор перестал быть дрейфующим — поправьте суммы",
+		);
+		assert.strictEqual(
+			blockReasonFor(receiptDocument(payments, 600.6), payments),
+			null,
+		);
 	});
 
 	test("возврат всей уплаченной суммы 1111 руб. не отклоняется потолком", () => {
@@ -366,10 +427,14 @@ describe("денежные гейты выдачи: квитанция и воз
 	test("возврат больше уплаченного по-прежнему отклоняется, и суммы отформатированы", () => {
 		const payments = repeatedPayments(55.55, 20);
 		const reason = blockReasonFor(refundDocument(payments, 1112), payments);
-		assert.ok(reason, "возврат 1112 руб. при оплате 1111 руб. обязан быть заблокирован");
+		assert.ok(
+			reason,
+			"возврат 1112 руб. при оплате 1111 руб. обязан быть заблокирован",
+		);
 		assert.match(reason, /больше фактически оплаченной/);
 		assert.ok(
-			reason.includes(expectedMoney(1112, 0)) && reason.includes(expectedMoney(1111, 0)),
+			reason.includes(expectedMoney(1112, 0)) &&
+				reason.includes(expectedMoney(1111, 0)),
 			`в отказе должны быть обе суммы в формате «1 112,00 ₽» и «1 111,00 ₽», получено: ${reason}`,
 		);
 	});

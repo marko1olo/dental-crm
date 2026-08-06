@@ -424,9 +424,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	const appliedArchScaleRef = useRef(1);
 
 	const topTeethList = pediatricMode ? PEDIATRIC_TOP_TEETH : TOP_TEETH;
-	const bottomTeethList = pediatricMode
-		? PEDIATRIC_BOTTOM_TEETH
-		: BOTTOM_TEETH;
+	const bottomTeethList = pediatricMode ? PEDIATRIC_BOTTOM_TEETH : BOTTOM_TEETH;
 
 	/**
 	 * Подгоняет дугу под фактическую ширину контейнера.

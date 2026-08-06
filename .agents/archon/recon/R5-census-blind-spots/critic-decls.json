@@ -1,632 +1,632 @@
 [
- {
-  "ident": "organizations",
-  "table": "organizations",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "clinics",
-  "table": "clinics",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "users",
-  "table": "users",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "userInvitations",
-  "table": "user_invitations",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "chairs",
-  "table": "chairs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patients",
-  "table": "patients",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patientConsents",
-  "table": "patient_consents",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "appointments",
-  "table": "appointments",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "visits",
-  "table": "visits",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "serviceCatalogItems",
-  "table": "service_catalog_items",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "treatmentItems",
-  "table": "treatment_items",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "treatmentScenarios",
-  "table": "treatment_scenarios",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "clinicalRules",
-  "table": "clinical_rules",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "payments",
-  "table": "payments",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "generatedDocuments",
-  "table": "generated_documents",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "communicationTemplates",
-  "table": "communication_templates",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "communicationTasks",
-  "table": "communication_tasks",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "communicationEvents",
-  "table": "communication_events",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "denteTelegramBotConfigs",
-  "table": "dente_telegram_bot_configs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "denteTelegramLinkCodes",
-  "table": "dente_telegram_link_codes",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "denteTelegramChatLinks",
-  "table": "dente_telegram_chat_links",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "denteTelegramWebhookEvents",
-  "table": "dente_telegram_webhook_events",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "denteTelegramOutboxDeliveryReceipts",
-  "table": "dente_telegram_outbox_delivery_receipts",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "attachments",
-  "table": "attachments",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "imagingStudies",
-  "table": "imaging_studies",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "importBatches",
-  "table": "import_batches",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "auditEvents",
-  "table": "audit_events",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "aiJobs",
-  "table": "ai_jobs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "imagingSeries",
-  "table": "imaging_series",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "imagingInstances",
-  "table": "imaging_instances",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "imagingAnnotations",
-  "table": "imaging_annotations",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "xrayScans",
-  "table": "xray_scans",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "imagingViewerSessions",
-  "table": "imaging_viewer_sessions",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "dicomWorkbenchBundles",
-  "table": "dicom_workbench_bundles",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "recentPatientHistory",
-  "table": "recent_patient_history",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "customCrmTaskTypes",
-  "table": "custom_crm_task_types",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "crmEmailDispatchLogs",
-  "table": "crm_email_dispatch_logs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "cancellationReasonsTwoLevel",
-  "table": "cancellation_reasons_two_level",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "advanceDepositTaggings",
-  "table": "advance_deposit_taggings",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "treatmentPlanLockTokens",
-  "table": "treatment_plan_lock_tokens",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "digitalReceiptDispatches",
-  "table": "digital_receipt_dispatches",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patientServiceLineages",
-  "table": "patient_service_lineages",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "landingFieldMappings",
-  "table": "landing_field_mappings",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "kkmItemQuantityUnits",
-  "table": "kkm_item_quantity_units",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "uisOmniMessengerQueues",
-  "table": "uis_omni_messenger_queues",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "lostPatientsFilters",
-  "table": "lost_patients_filters",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "quickAppointmentConfirmations",
-  "table": "quick_appointment_confirmations",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "urgentScheduleRequests",
-  "table": "urgent_schedule_requests",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "confirmationPerformanceReports",
-  "table": "confirmation_performance_reports",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "alternativeTreatmentPlans",
-  "table": "alternative_treatment_plans",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "scheduleClipboardItems",
-  "table": "schedule_clipboard_items",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "scheduleTimeReservations",
-  "table": "schedule_time_reservations",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "customExaminationFormCatalogs",
-  "table": "custom_examination_form_catalogs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "egiszMultipleDiagnoses",
-  "table": "egisz_multiple_diagnoses",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "extendedOdontogramStates",
-  "table": "extended_odontogram_states",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "nonDentalExaminationForms",
-  "table": "non_dental_examination_forms",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "treatmentPlanPrintOdontograms",
-  "table": "treatment_plan_print_odontograms",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "treatmentPlanStages",
-  "table": "treatment_plan_stages",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "pricelistDoctorPayrolls",
-  "table": "pricelist_doctor_payrolls",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "rebookingConversionRules",
-  "table": "rebooking_conversion_rules",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "prodoctorovSyncExports",
-  "table": "prodoctorov_sync_exports",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "dadataGeocodedAddresses",
-  "table": "dadata_geocoded_addresses",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "singleSessionEnforcements",
-  "table": "single_session_enforcements",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "labOrders",
-  "table": "lab_orders",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "treatmentPlans",
-  "table": "treatment_plans",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "treatmentPlanItemsNew",
-  "table": "treatment_plan_items_new",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "visitTemplates",
-  "table": "visit_templates",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "visitDiaries",
-  "table": "visit_diaries",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "visitDiaryRevisions",
-  "table": "visit_diary_revisions",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "visitExaminationPhotoLinks",
-  "table": "visit_examination_photo_links",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "toothStates",
-  "table": "tooth_states",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "toothStateHistory",
-  "table": "tooth_state_history",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "insuranceContracts",
-  "table": "insurance_contracts",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "inventoryItems",
-  "table": "inventory_items",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "inventoryTransactions",
-  "table": "inventory_transactions",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patientInvoices",
-  "table": "patient_invoices",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "appointmentWaitlists",
-  "table": "appointment_waitlists",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "clinicChairs",
-  "table": "clinic_chairs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "doctorCommissions",
-  "table": "doctor_commissions",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "familyGroups",
-  "table": "family_groups",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "crmLeads",
-  "table": "crm_leads",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "procedureMaterialRules",
-  "table": "procedure_material_rules",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "sterilizationLogs",
-  "table": "sterilization_logs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "systemRamWatchdogs",
-  "table": "system_ram_watchdogs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "clinicalAuditLogs",
-  "table": "clinical_audit_logs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patientCtPlannings",
-  "table": "patient_ct_plannings",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patientDuplicateMergeQueues",
-  "table": "patient_duplicate_merge_queues",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "appointmentChannelInheritances",
-  "table": "appointment_channel_inheritances",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "bulkImageOperationLogs",
-  "table": "bulk_image_operation_logs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "chatMessageDispatchStatuses",
-  "table": "chat_message_dispatch_statuses",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "collaborativeChatProcessingStates",
-  "table": "collaborative_chat_processing_states",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "diagnocatAiFindings",
-  "table": "diagnocat_ai_findings",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "egiszBlankPermissions",
-  "table": "egisz_blank_permissions",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "externalScheduleActionLogs",
-  "table": "external_schedule_action_logs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "familyRecommendationSources",
-  "table": "family_recommendation_sources",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "messageTemplateCatalogs",
-  "table": "message_template_catalogs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "messengerFileAttachments",
-  "table": "messenger_file_attachments",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "messengerInboundEvents",
-  "table": "messenger_inbound_events",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "mkb10AutoDirectories",
-  "table": "mkb10_auto_directories",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "ndflTaxCalculators",
-  "table": "ndfl_tax_calculators",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patientArchiveReasonsAndBlacklists",
-  "table": "patient_archive_reasons_and_blacklists",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patientCommunicationTimelines",
-  "table": "patient_communication_timelines",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "previousChatDialogHistories",
-  "table": "previous_chat_dialog_histories",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "uisCallSpeechTranscripts",
-  "table": "uis_call_speech_transcripts",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "uisSmsChatQuotas",
-  "table": "uis_sms_chat_quotas",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "yandexCalendarSyncs",
-  "table": "yandex_calendar_syncs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "denteMaxBotConfigs",
-  "table": "dente_max_bot_configs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "denteWhatsappBotConfigs",
-  "table": "dente_whatsapp_bot_configs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "services",
-  "table": "services",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "protocolTemplates",
-  "table": "protocol_templates",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "uisMassAppointmentConfirmations",
-  "table": "uis_mass_appointment_confirmations",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "outgoingNotifications",
-  "table": "outgoing_notifications",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "biAnalyticsSnapshots",
-  "table": "bi_analytics_snapshots",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "cashLedger",
-  "table": "cash_ledger",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "communicationOutbox",
-  "table": "communication_outbox",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patientCommunicationConsents",
-  "table": "patient_communication_consents",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "communicationSettings",
-  "table": "communication_settings",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "migrationRuns",
-  "table": "migration_runs",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "migrationStagingRecords",
-  "table": "migration_staging_records",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "migrationQuarantineRecords",
-  "table": "migration_quarantine_records",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "migrationEntityLinks",
-  "table": "migration_entity_links",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "migrationReconciliations",
-  "table": "migration_reconciliations",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "portalOtpCodes",
-  "table": "portal_otp_codes",
-  "file": "apps/api/src/db/schema.ts"
- },
- {
-  "ident": "patientDuplicateDecisions",
-  "table": "patient_duplicate_decisions",
-  "file": "apps/api/src/db/patientsSchema.ts"
- },
- {
-  "ident": "communicationCampaigns",
-  "table": "communication_campaigns",
-  "file": "apps/api/src/db/communicationsSchema.ts"
- },
- {
-  "ident": "appointmentActionCodes",
-  "table": "appointment_action_codes",
-  "file": "apps/api/src/db/communicationsSchema.ts"
- }
+	{
+		"ident": "organizations",
+		"table": "organizations",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "clinics",
+		"table": "clinics",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "users",
+		"table": "users",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "userInvitations",
+		"table": "user_invitations",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "chairs",
+		"table": "chairs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patients",
+		"table": "patients",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patientConsents",
+		"table": "patient_consents",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "appointments",
+		"table": "appointments",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "visits",
+		"table": "visits",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "serviceCatalogItems",
+		"table": "service_catalog_items",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "treatmentItems",
+		"table": "treatment_items",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "treatmentScenarios",
+		"table": "treatment_scenarios",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "clinicalRules",
+		"table": "clinical_rules",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "payments",
+		"table": "payments",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "generatedDocuments",
+		"table": "generated_documents",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "communicationTemplates",
+		"table": "communication_templates",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "communicationTasks",
+		"table": "communication_tasks",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "communicationEvents",
+		"table": "communication_events",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "denteTelegramBotConfigs",
+		"table": "dente_telegram_bot_configs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "denteTelegramLinkCodes",
+		"table": "dente_telegram_link_codes",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "denteTelegramChatLinks",
+		"table": "dente_telegram_chat_links",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "denteTelegramWebhookEvents",
+		"table": "dente_telegram_webhook_events",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "denteTelegramOutboxDeliveryReceipts",
+		"table": "dente_telegram_outbox_delivery_receipts",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "attachments",
+		"table": "attachments",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "imagingStudies",
+		"table": "imaging_studies",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "importBatches",
+		"table": "import_batches",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "auditEvents",
+		"table": "audit_events",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "aiJobs",
+		"table": "ai_jobs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "imagingSeries",
+		"table": "imaging_series",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "imagingInstances",
+		"table": "imaging_instances",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "imagingAnnotations",
+		"table": "imaging_annotations",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "xrayScans",
+		"table": "xray_scans",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "imagingViewerSessions",
+		"table": "imaging_viewer_sessions",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "dicomWorkbenchBundles",
+		"table": "dicom_workbench_bundles",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "recentPatientHistory",
+		"table": "recent_patient_history",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "customCrmTaskTypes",
+		"table": "custom_crm_task_types",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "crmEmailDispatchLogs",
+		"table": "crm_email_dispatch_logs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "cancellationReasonsTwoLevel",
+		"table": "cancellation_reasons_two_level",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "advanceDepositTaggings",
+		"table": "advance_deposit_taggings",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "treatmentPlanLockTokens",
+		"table": "treatment_plan_lock_tokens",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "digitalReceiptDispatches",
+		"table": "digital_receipt_dispatches",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patientServiceLineages",
+		"table": "patient_service_lineages",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "landingFieldMappings",
+		"table": "landing_field_mappings",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "kkmItemQuantityUnits",
+		"table": "kkm_item_quantity_units",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "uisOmniMessengerQueues",
+		"table": "uis_omni_messenger_queues",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "lostPatientsFilters",
+		"table": "lost_patients_filters",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "quickAppointmentConfirmations",
+		"table": "quick_appointment_confirmations",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "urgentScheduleRequests",
+		"table": "urgent_schedule_requests",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "confirmationPerformanceReports",
+		"table": "confirmation_performance_reports",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "alternativeTreatmentPlans",
+		"table": "alternative_treatment_plans",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "scheduleClipboardItems",
+		"table": "schedule_clipboard_items",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "scheduleTimeReservations",
+		"table": "schedule_time_reservations",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "customExaminationFormCatalogs",
+		"table": "custom_examination_form_catalogs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "egiszMultipleDiagnoses",
+		"table": "egisz_multiple_diagnoses",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "extendedOdontogramStates",
+		"table": "extended_odontogram_states",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "nonDentalExaminationForms",
+		"table": "non_dental_examination_forms",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "treatmentPlanPrintOdontograms",
+		"table": "treatment_plan_print_odontograms",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "treatmentPlanStages",
+		"table": "treatment_plan_stages",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "pricelistDoctorPayrolls",
+		"table": "pricelist_doctor_payrolls",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "rebookingConversionRules",
+		"table": "rebooking_conversion_rules",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "prodoctorovSyncExports",
+		"table": "prodoctorov_sync_exports",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "dadataGeocodedAddresses",
+		"table": "dadata_geocoded_addresses",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "singleSessionEnforcements",
+		"table": "single_session_enforcements",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "labOrders",
+		"table": "lab_orders",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "treatmentPlans",
+		"table": "treatment_plans",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "treatmentPlanItemsNew",
+		"table": "treatment_plan_items_new",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "visitTemplates",
+		"table": "visit_templates",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "visitDiaries",
+		"table": "visit_diaries",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "visitDiaryRevisions",
+		"table": "visit_diary_revisions",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "visitExaminationPhotoLinks",
+		"table": "visit_examination_photo_links",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "toothStates",
+		"table": "tooth_states",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "toothStateHistory",
+		"table": "tooth_state_history",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "insuranceContracts",
+		"table": "insurance_contracts",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "inventoryItems",
+		"table": "inventory_items",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "inventoryTransactions",
+		"table": "inventory_transactions",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patientInvoices",
+		"table": "patient_invoices",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "appointmentWaitlists",
+		"table": "appointment_waitlists",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "clinicChairs",
+		"table": "clinic_chairs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "doctorCommissions",
+		"table": "doctor_commissions",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "familyGroups",
+		"table": "family_groups",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "crmLeads",
+		"table": "crm_leads",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "procedureMaterialRules",
+		"table": "procedure_material_rules",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "sterilizationLogs",
+		"table": "sterilization_logs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "systemRamWatchdogs",
+		"table": "system_ram_watchdogs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "clinicalAuditLogs",
+		"table": "clinical_audit_logs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patientCtPlannings",
+		"table": "patient_ct_plannings",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patientDuplicateMergeQueues",
+		"table": "patient_duplicate_merge_queues",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "appointmentChannelInheritances",
+		"table": "appointment_channel_inheritances",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "bulkImageOperationLogs",
+		"table": "bulk_image_operation_logs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "chatMessageDispatchStatuses",
+		"table": "chat_message_dispatch_statuses",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "collaborativeChatProcessingStates",
+		"table": "collaborative_chat_processing_states",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "diagnocatAiFindings",
+		"table": "diagnocat_ai_findings",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "egiszBlankPermissions",
+		"table": "egisz_blank_permissions",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "externalScheduleActionLogs",
+		"table": "external_schedule_action_logs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "familyRecommendationSources",
+		"table": "family_recommendation_sources",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "messageTemplateCatalogs",
+		"table": "message_template_catalogs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "messengerFileAttachments",
+		"table": "messenger_file_attachments",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "messengerInboundEvents",
+		"table": "messenger_inbound_events",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "mkb10AutoDirectories",
+		"table": "mkb10_auto_directories",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "ndflTaxCalculators",
+		"table": "ndfl_tax_calculators",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patientArchiveReasonsAndBlacklists",
+		"table": "patient_archive_reasons_and_blacklists",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patientCommunicationTimelines",
+		"table": "patient_communication_timelines",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "previousChatDialogHistories",
+		"table": "previous_chat_dialog_histories",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "uisCallSpeechTranscripts",
+		"table": "uis_call_speech_transcripts",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "uisSmsChatQuotas",
+		"table": "uis_sms_chat_quotas",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "yandexCalendarSyncs",
+		"table": "yandex_calendar_syncs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "denteMaxBotConfigs",
+		"table": "dente_max_bot_configs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "denteWhatsappBotConfigs",
+		"table": "dente_whatsapp_bot_configs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "services",
+		"table": "services",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "protocolTemplates",
+		"table": "protocol_templates",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "uisMassAppointmentConfirmations",
+		"table": "uis_mass_appointment_confirmations",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "outgoingNotifications",
+		"table": "outgoing_notifications",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "biAnalyticsSnapshots",
+		"table": "bi_analytics_snapshots",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "cashLedger",
+		"table": "cash_ledger",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "communicationOutbox",
+		"table": "communication_outbox",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patientCommunicationConsents",
+		"table": "patient_communication_consents",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "communicationSettings",
+		"table": "communication_settings",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "migrationRuns",
+		"table": "migration_runs",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "migrationStagingRecords",
+		"table": "migration_staging_records",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "migrationQuarantineRecords",
+		"table": "migration_quarantine_records",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "migrationEntityLinks",
+		"table": "migration_entity_links",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "migrationReconciliations",
+		"table": "migration_reconciliations",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "portalOtpCodes",
+		"table": "portal_otp_codes",
+		"file": "apps/api/src/db/schema.ts"
+	},
+	{
+		"ident": "patientDuplicateDecisions",
+		"table": "patient_duplicate_decisions",
+		"file": "apps/api/src/db/patientsSchema.ts"
+	},
+	{
+		"ident": "communicationCampaigns",
+		"table": "communication_campaigns",
+		"file": "apps/api/src/db/communicationsSchema.ts"
+	},
+	{
+		"ident": "appointmentActionCodes",
+		"table": "appointment_action_codes",
+		"file": "apps/api/src/db/communicationsSchema.ts"
+	}
 ]

@@ -120,7 +120,8 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	 * уходит в ветку «Подписано» и окно исчезает; не подписалось — говорим об
 	 * этом словами прямо в окне, а не всплывающей подсказкой, которая гаснет.
 	 */
-	const [awaitingLockConfirmation, setAwaitingLockConfirmation] = useState(false);
+	const [awaitingLockConfirmation, setAwaitingLockConfirmation] =
+		useState(false);
 
 	/*
 	 * ПОДПИСАНИЕ ИДЁТ — ОКНО ЗАКРЫТЬ НЕЛЬЗЯ НИЧЕМ.
@@ -195,10 +196,13 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 		}
 	};
 
-	const selectedCertInfo = certificates.find((c) => c.thumbprint === selectedCert);
+	const selectedCertInfo = certificates.find(
+		(c) => c.thumbprint === selectedCert,
+	);
 	// Рутокен без ПИН-кода носителя подписать нельзя — так устроен lib/cryptopro.ts.
 	const needsTokenPin =
-		selectedCertInfo?.provider === "rutoken" || selectedCertInfo?.deviceId !== undefined;
+		selectedCertInfo?.provider === "rutoken" ||
+		selectedCertInfo?.deviceId !== undefined;
 
 	/*
 	 * Подписывается отпечаток записи (diaryHash) с сервера.
@@ -212,7 +216,6 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	 * серверный.
 	 */
 	const cryptoSigningUnavailable = !diaryHash;
-
 
 	const handleConfirmLock = async () => {
 		// Пока ждём подтверждения подписи, второе нажатие — второе подписание той
@@ -282,7 +285,9 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	if (isLocked) {
 		/* Дата может не прийти: раньше здесь стоял new Date(lockedAt!) и врач видел
 		   «Invalid Date» под словом «Подписано». */
-		const signedAtText = lockedAt ? new Date(lockedAt).toLocaleString("ru-RU") : null;
+		const signedAtText = lockedAt
+			? new Date(lockedAt).toLocaleString("ru-RU")
+			: null;
 		return (
 			<div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
 				<ShieldCheck className="w-4 h-4 text-emerald-500" />
@@ -432,12 +437,14 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 										причин, потому что getCertificates() глотает ошибки. Пишем,
 										что проверить, — иначе врач решает, что подписать нечем.
 									*/}
-									{!isLoadingCerts && certificatesLoaded && certificates.length === 0 ? (
+									{!isLoadingCerts &&
+									certificatesLoaded &&
+									certificates.length === 0 ? (
 										<p className="mt-2 text-[11px] text-amber-400">
-											Ни одного сертификата не видно. Проверьте: носитель Рутокен
-											вставлен, КриптоПро установлен, расширение браузера включено.
-											Затем нажмите «Обновить список». Подписать приём можно и
-											простой подписью по ПИН-коду.
+											Ни одного сертификата не видно. Проверьте: носитель
+											Рутокен вставлен, КриптоПро установлен, расширение
+											браузера включено. Затем нажмите «Обновить список».
+											Подписать приём можно и простой подписью по ПИН-коду.
 										</p>
 									) : null}
 									<button
@@ -497,9 +504,9 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 								aria-live="polite"
 								className="mb-4 p-3 rounded-xl bg-zinc-800/70 border border-zinc-700 text-zinc-300 text-xs leading-relaxed"
 							>
-								Отправили подпись и ждём подтверждения сервера — это пара секунд. Не
-								закрывайте окно: пока подтверждения нет, запись НЕ подписана. Если
-								подписать не удалось, причина появится здесь же.
+								Отправили подпись и ждём подтверждения сервера — это пара
+								секунд. Не закрывайте окно: пока подтверждения нет, запись НЕ
+								подписана. Если подписать не удалось, причина появится здесь же.
 							</div>
 						) : null}
 

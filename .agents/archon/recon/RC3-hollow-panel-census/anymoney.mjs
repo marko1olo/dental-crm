@@ -30,14 +30,19 @@ const rel = (f) => relative(REPO, f).split(sep).join("/");
 
 const configPath = join(WEB, "tsconfig.json");
 const cf = ts.readConfigFile(configPath, ts.sys.readFile);
-if (cf.error) throw new Error(ts.flattenDiagnosticMessageText(cf.error.messageText, " "));
+if (cf.error)
+	throw new Error(ts.flattenDiagnosticMessageText(cf.error.messageText, " "));
 const parsed = ts.parseJsonConfigFileContent(cf.config, ts.sys, WEB);
 console.log(`tsconfig: ${rel(configPath)}  files: ${parsed.fileNames.length}`);
 
-const program = ts.createProgram({ rootNames: parsed.fileNames, options: { ...parsed.options, noEmit: true } });
+const program = ts.createProgram({
+	rootNames: parsed.fileNames,
+	options: { ...parsed.options, noEmit: true },
+});
 const checker = program.getTypeChecker();
 
-const MONEY = /(Rub|Kopeck|Kopek|amount|price|Price|total|Total|sum|Sum|balance|Balance|cost|Cost|payout|Payout|debt|Debt|revenue|Revenue|paid|Paid|discount|Discount)/;
+const MONEY =
+	/(Rub|Kopeck|Kopek|amount|price|Price|total|Total|sum|Sum|balance|Balance|cost|Cost|payout|Payout|debt|Debt|revenue|Revenue|paid|Paid|discount|Discount)/;
 
 const unchecked = [];
 const checked = [];
@@ -57,10 +62,19 @@ for (const sf of program.getSourceFiles()) {
 	const f = sf.fileName;
 	if (f.includes("node_modules")) continue;
 	if (!f.replace(/\\/g, "/").includes("/apps/web/src/")) continue;
-	if (/\.test\.tsx?$/.test(f) || /\/tests?\//.test(f.replace(/\\/g, "/")) || f.includes("__tests__")) continue;
+	if (
+		/\.test\.tsx?$/.test(f) ||
+		/\/tests?\//.test(f.replace(/\\/g, "/")) ||
+		f.includes("__tests__")
+	)
+		continue;
 
 	const visit = (node) => {
-		if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.name) && MONEY.test(node.name.text)) {
+		if (
+			ts.isPropertyAccessExpression(node) &&
+			ts.isIdentifier(node.name) &&
+			MONEY.test(node.name.text)
+		) {
 			let objType;
 			try {
 				objType = checker.getTypeAtLocation(node.expression);
@@ -83,8 +97,12 @@ for (const sf of program.getSourceFiles()) {
 }
 
 console.log(`\nMoney-ish property accesses in apps/web/src (non-test):`);
-console.log(`  type-CHECKED (compiler guarantees the field exists): ${checked.length}`);
-console.log(`  UNCHECKED (object type is any/unknown/index-signature): ${unchecked.length}`);
+console.log(
+	`  type-CHECKED (compiler guarantees the field exists): ${checked.length}`,
+);
+console.log(
+	`  UNCHECKED (object type is any/unknown/index-signature): ${unchecked.length}`,
+);
 
 const byFile = new Map();
 for (const u of unchecked) {
@@ -92,8 +110,15 @@ for (const u of unchecked) {
 	if (!byFile.has(file)) byFile.set(file, []);
 	byFile.get(file).push(u);
 }
-console.log(`\n=== UNCHECKED money reads, grouped by file (${byFile.size} files) ===`);
-for (const [file, list] of [...byFile].sort((a, b) => b[1].length - a[1].length)) {
+console.log(
+	`\n=== UNCHECKED money reads, grouped by file (${byFile.size} files) ===`,
+);
+for (const [file, list] of [...byFile].sort(
+	(a, b) => b[1].length - a[1].length,
+)) {
 	console.log(`\n${file}  (${list.length})`);
-	for (const u of list.slice(0, 40)) console.log(`   ${u.site.split(":")[1]}\t${u.kind}\t${u.objText}.${u.name}`);
+	for (const u of list.slice(0, 40))
+		console.log(
+			`   ${u.site.split(":")[1]}\t${u.kind}\t${u.objText}.${u.name}`,
+		);
 }

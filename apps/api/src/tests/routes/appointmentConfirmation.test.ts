@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { type FastifyInstance } from "fastify";
 import { and, eq, like } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { appointmentActionCodes } from "../../db/communicationsSchema.js";
 import {
@@ -10,7 +10,7 @@ import {
 	communicationOutbox,
 	communicationTasks,
 	organizations,
-	patients
+	patients,
 } from "../../db/schema.js";
 import { registerPublicAppointmentActionRoutes } from "../../routes/publicAppointmentActions.js";
 import {
@@ -19,7 +19,7 @@ import {
 	generateActionCode,
 	issueAppointmentActionLinks,
 	readPublicBaseUrl,
-	resolveActionCode
+	resolveActionCode,
 } from "../../services/communications/appointmentActionLinks.js";
 import { invalidateAppointmentReminders } from "../../services/communications/appointmentReminders.js";
 import { describeSmsPayload } from "../../services/communications/templateRenderer.js";
@@ -55,7 +55,9 @@ const BASE_URL = "https://clinic.example";
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
+	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(
+		message,
+	);
 }
 
 describe("код ссылки на приём", () => {
@@ -65,13 +67,19 @@ describe("код ссылки на приём", () => {
 		for (let attempt = 0; attempt < 200; attempt += 1) {
 			const code = generateActionCode();
 			assert.equal(code.length, 10);
-			assert.equal(/[0O1lI]/.test(code), false, `в коде ${code} есть похожий знак`);
+			assert.equal(
+				/[0O1lI]/.test(code),
+				false,
+				`в коде ${code} есть похожий знак`,
+			);
 			assert.equal(/^[A-Za-z0-9]+$/.test(code), true);
 		}
 	});
 
 	test("коды не повторяются", () => {
-		const codes = new Set(Array.from({ length: 500 }, () => generateActionCode()));
+		const codes = new Set(
+			Array.from({ length: 500 }, () => generateActionCode()),
+		);
 		assert.equal(codes.size, 500);
 	});
 
@@ -79,40 +87,72 @@ describe("код ссылки на приём", () => {
 		const now = new Date("2026-08-01T09:00:00Z");
 		const tomorrow = new Date("2026-08-02T09:00:00Z");
 		// Приём плюс шесть часов запаса на ответ пациента.
-		assert.equal(actionCodeExpiry(tomorrow, now).toISOString(), "2026-08-02T15:00:00.000Z");
+		assert.equal(
+			actionCodeExpiry(tomorrow, now).toISOString(),
+			"2026-08-02T15:00:00.000Z",
+		);
 		// Приём в прошлом: ссылка живёт минимум час от сейчас, но не бессрочно.
-		assert.equal(actionCodeExpiry(new Date("2026-07-01T09:00:00Z"), now).toISOString(), "2026-08-01T10:00:00.000Z");
+		assert.equal(
+			actionCodeExpiry(new Date("2026-07-01T09:00:00Z"), now).toISOString(),
+			"2026-08-01T10:00:00.000Z",
+		);
 	});
 
 	test("публичный адрес берётся только из настройки и без пути", () => {
-		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "https://clinic.example/portal?a=1" }), BASE_URL);
+		assert.equal(
+			readPublicBaseUrl({
+				DENTE_PUBLIC_BASE_URL: "https://clinic.example/portal?a=1",
+			}),
+			BASE_URL,
+		);
 		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "  " }), null);
 		assert.equal(readPublicBaseUrl({}), null);
-		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "ftp://clinic.example" }), null);
-		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "не адрес" }), null);
+		assert.equal(
+			readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "ftp://clinic.example" }),
+			null,
+		);
+		assert.equal(
+			readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "не адрес" }),
+			null,
+		);
 	});
 
 	test("ошибка разбора некорректного адреса безопасно перехватывается", () => {
 		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "http://" }), null);
-		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "this-is-not-a-url" }), null);
-		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "http://%" }), null);
+		assert.equal(
+			readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "this-is-not-a-url" }),
+			null,
+		);
+		assert.equal(
+			readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "http://%" }),
+			null,
+		);
 	});
 
 	test("короткая ссылка втрое дешевле подписанного токена в SMS", () => {
 		// Кириллица даёт 70 знаков на сегмент, и клиника платит за каждый.
 		// Здесь измеряется ровно та разница, из-за которой токен был заменён кодом.
 		const shortLink = actionLinkFor(BASE_URL, generateActionCode());
-		assert.ok(shortLink.length <= 50, `ссылка длиной ${shortLink.length}: ${shortLink}`);
+		assert.ok(
+			shortLink.length <= 50,
+			`ссылка длиной ${shortLink.length}: ${shortLink}`,
+		);
 
 		const text = "Приём 12 августа 14:30. Подтвердить: ";
 		const withCode = describeSmsPayload(`${text}${shortLink}`);
 		// Токен прежней версии: 300 символов в адресе.
-		const withToken = describeSmsPayload(`${text}${BASE_URL}/api/public/appointments/${"a".repeat(300)}/confirm`);
+		const withToken = describeSmsPayload(
+			`${text}${BASE_URL}/api/public/appointments/${"a".repeat(300)}/confirm`,
+		);
 
-		assert.equal(withCode.segments, 2, `с кодом получилось ${withCode.segments} сегмент(ов)`);
+		assert.equal(
+			withCode.segments,
+			2,
+			`с кодом получилось ${withCode.segments} сегмент(ов)`,
+		);
 		assert.ok(
 			withToken.segments >= withCode.segments * 3,
-			`ожидалась разница не меньше трёхкратной: ${withToken.segments} против ${withCode.segments}`
+			`ожидалась разница не меньше трёхкратной: ${withToken.segments} против ${withCode.segments}`,
 		);
 	});
 
@@ -123,12 +163,22 @@ describe("код ссылки на приём", () => {
 		await registerPublicAppointmentActionRoutes(app);
 		try {
 			const shortCode = generateActionCode();
-			const short = await app.inject({ method: "GET", url: `/api/p/${shortCode}` });
+			const short = await app.inject({
+				method: "GET",
+				url: `/api/p/${shortCode}`,
+			});
 			// Код не существует в базе, поэтому 400 — но маршрут найден.
 			assert.equal(short.statusCode, 400, short.body.slice(0, 200));
 
-			const long = await app.inject({ method: "GET", url: `/api/p/${"a".repeat(300)}` });
-			assert.equal(long.statusCode, 404, "параметр в 300 знаков маршрутом не сопоставляется");
+			const long = await app.inject({
+				method: "GET",
+				url: `/api/p/${"a".repeat(300)}`,
+			});
+			assert.equal(
+				long.statusCode,
+				404,
+				"параметр в 300 знаков маршрутом не сопоставляется",
+			);
 		} finally {
 			await app.close();
 		}
@@ -163,10 +213,18 @@ async function purgeFixtures(): Promise<void> {
 	 * отчиталась бы об успехе, оставив приёмы прошлого прогона подтверждёнными.
 	 */
 	await withFixtureTenant(ORG_ID, async () => {
-		await db.delete(appointmentActionCodes).where(eq(appointmentActionCodes.organizationId, ORG_ID));
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-		await db.delete(communicationTasks).where(eq(communicationTasks.organizationId, ORG_ID));
-		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db
+			.delete(appointmentActionCodes)
+			.where(eq(appointmentActionCodes.organizationId, ORG_ID));
+		await db
+			.delete(communicationOutbox)
+			.where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db
+			.delete(communicationTasks)
+			.where(eq(communicationTasks.organizationId, ORG_ID));
+		await db
+			.delete(appointments)
+			.where(eq(appointments.organizationId, ORG_ID));
 		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
 		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
@@ -195,39 +253,46 @@ describe("страница подтверждения приёма", () => {
 			 * контекста отвергается кодом 42501 и до проверок дело не доходит.
 			 */
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" });
 				await db
-					.insert(clinics)
-					.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Клиника на Ленина", timezone: "Europe/Moscow" });
-				await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" });
-				await db
-					.insert(appointments)
-					.values([
-						{
-							id: APPOINTMENT_ID,
-							organizationId: ORG_ID,
-							patientId: PATIENT_ID,
-							status: "planned",
-							startsAt: soon,
-							endsAt: new Date(soon.getTime() + 3_600_000)
-						},
-						{
-							id: PAST_APPOINTMENT_ID,
-							organizationId: ORG_ID,
-							patientId: PATIENT_ID,
-							status: "planned",
-							startsAt: past,
-							endsAt: new Date(past.getTime() + 3_600_000)
-						},
-						{
-							id: CANCEL_APPOINTMENT_ID,
-							organizationId: ORG_ID,
-							patientId: PATIENT_ID,
-							status: "confirmed",
-							startsAt: soon,
-							endsAt: new Date(soon.getTime() + 3_600_000)
-						}
-					]);
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника подтверждений" });
+				await db.insert(clinics).values({
+					id: CLINIC_ID,
+					organizationId: ORG_ID,
+					name: "Клиника на Ленина",
+					timezone: "Europe/Moscow",
+				});
+				await db.insert(patients).values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Подтвердов Пётр Петрович",
+				});
+				await db.insert(appointments).values([
+					{
+						id: APPOINTMENT_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						status: "planned",
+						startsAt: soon,
+						endsAt: new Date(soon.getTime() + 3_600_000),
+					},
+					{
+						id: PAST_APPOINTMENT_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						status: "planned",
+						startsAt: past,
+						endsAt: new Date(past.getTime() + 3_600_000),
+					},
+					{
+						id: CANCEL_APPOINTMENT_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						status: "confirmed",
+						startsAt: soon,
+						endsAt: new Date(soon.getTime() + 3_600_000),
+					},
+				]);
 			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
@@ -254,7 +319,7 @@ describe("страница подтверждения приёма", () => {
 		const links = await issueAppointmentActionLinks(
 			{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
 			new Date(),
-			{}
+			{},
 		);
 		assert.equal(links, null);
 	});
@@ -270,24 +335,37 @@ describe("страница подтверждения приёма", () => {
 		 */
 		const links = await withFixtureTenant(ORG_ID, async () =>
 			issueAppointmentActionLinks(
-				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				{
+					organizationId: ORG_ID,
+					appointmentId: APPOINTMENT_ID,
+					startsAt: soon,
+				},
 				new Date(),
-				env
-			)
+				env,
+			),
 		);
 		assert.ok(links);
 
-		const response = await app.inject({ method: "GET", url: pathOf(links.confirmLink) });
+		const response = await app.inject({
+			method: "GET",
+			url: pathOf(links.confirmLink),
+		});
 		assert.equal(response.statusCode, 200, response.body.slice(0, 300));
 		// Пациент открывает ссылку в телефоне: ответ — страница, а не JSON.
 		assert.ok(response.headers["content-type"]?.includes("text/html"));
-		assert.ok(response.body.includes("подтверждён"), response.body.slice(0, 300));
+		assert.ok(
+			response.body.includes("подтверждён"),
+			response.body.slice(0, 300),
+		);
 		assert.ok(response.body.includes("Клиника на Ленина"));
 		// Ссылка на запись пациента не должна попадать в поисковики.
 		assert.ok(response.body.includes('name="robots" content="noindex'));
 
 		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db.select({ status: appointments.status }).from(appointments).where(eq(appointments.id, APPOINTMENT_ID))
+			db
+				.select({ status: appointments.status })
+				.from(appointments)
+				.where(eq(appointments.id, APPOINTMENT_ID)),
 		);
 		assert.equal(row?.status, "confirmed");
 	});
@@ -297,13 +375,20 @@ describe("страница подтверждения приёма", () => {
 
 		const links = await withFixtureTenant(ORG_ID, async () =>
 			issueAppointmentActionLinks(
-				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				{
+					organizationId: ORG_ID,
+					appointmentId: APPOINTMENT_ID,
+					startsAt: soon,
+				},
 				new Date(),
-				env
-			)
+				env,
+			),
 		);
 		assert.ok(links);
-		const response = await app.inject({ method: "GET", url: pathOf(links.confirmLink) });
+		const response = await app.inject({
+			method: "GET",
+			url: pathOf(links.confirmLink),
+		});
 		assert.equal(response.statusCode, 200, response.body.slice(0, 200));
 		assert.ok(response.body.includes("уже подтверждён"));
 	});
@@ -315,17 +400,25 @@ describe("страница подтверждения приёма", () => {
 		// сообщениях должна быть одна ссылка, иначе первая перестанет работать.
 		const first = await withFixtureTenant(ORG_ID, async () =>
 			issueAppointmentActionLinks(
-				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				{
+					organizationId: ORG_ID,
+					appointmentId: APPOINTMENT_ID,
+					startsAt: soon,
+				},
 				new Date(),
-				env
-			)
+				env,
+			),
 		);
 		const second = await withFixtureTenant(ORG_ID, async () =>
 			issueAppointmentActionLinks(
-				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				{
+					organizationId: ORG_ID,
+					appointmentId: APPOINTMENT_ID,
+					startsAt: soon,
+				},
 				new Date(),
-				env
-			)
+				env,
+			),
 		);
 		assert.equal(first?.confirmLink, second?.confirmLink);
 		assert.equal(first?.cancelLink, second?.cancelLink);
@@ -336,15 +429,25 @@ describe("страница подтверждения приёма", () => {
 
 		const links = await withFixtureTenant(ORG_ID, async () =>
 			issueAppointmentActionLinks(
-				{ organizationId: ORG_ID, appointmentId: PAST_APPOINTMENT_ID, startsAt: past },
+				{
+					organizationId: ORG_ID,
+					appointmentId: PAST_APPOINTMENT_ID,
+					startsAt: past,
+				},
 				new Date(),
-				env
-			)
+				env,
+			),
 		);
 		assert.ok(links);
-		const response = await app.inject({ method: "GET", url: pathOf(links.confirmLink) });
+		const response = await app.inject({
+			method: "GET",
+			url: pathOf(links.confirmLink),
+		});
 		assert.equal(response.statusCode, 409, response.body.slice(0, 300));
-		assert.ok(response.body.includes("уже прошёл"), response.body.slice(0, 300));
+		assert.ok(
+			response.body.includes("уже прошёл"),
+			response.body.slice(0, 300),
+		);
 	});
 
 	test("просроченный код не срабатывает", async (context) => {
@@ -354,10 +457,14 @@ describe("страница подтверждения приёма", () => {
 		// не вставляем второй — на это есть уникальный индекс.
 		const links = await withFixtureTenant(ORG_ID, async () =>
 			issueAppointmentActionLinks(
-				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				{
+					organizationId: ORG_ID,
+					appointmentId: APPOINTMENT_ID,
+					startsAt: soon,
+				},
 				new Date(),
-				env
-			)
+				env,
+			),
 		);
 		assert.ok(links);
 		const code = links.cancelLink.slice(links.cancelLink.lastIndexOf("/") + 1);
@@ -391,7 +498,10 @@ describe("страница подтверждения приёма", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		// По разнице ответов можно было бы перебором находить живые ссылки.
-		const unknown = await app.inject({ method: "GET", url: `/api/p/${generateActionCode()}` });
+		const unknown = await app.inject({
+			method: "GET",
+			url: `/api/p/${generateActionCode()}`,
+		});
 		assert.equal(unknown.statusCode, 400);
 		assert.ok(unknown.body.includes("недействительна"));
 	});
@@ -417,20 +527,27 @@ describe("страница подтверждения приёма", () => {
 				recipientAddress: "79160000601",
 				body: "Ждём вас завтра",
 				status: "queued",
-				dedupeKey: `reminder:${CANCEL_APPOINTMENT_ID}:24`
+				dedupeKey: `reminder:${CANCEL_APPOINTMENT_ID}:24`,
 			});
 		});
 
 		const links = await withFixtureTenant(ORG_ID, async () =>
 			issueAppointmentActionLinks(
-				{ organizationId: ORG_ID, appointmentId: CANCEL_APPOINTMENT_ID, startsAt: soon },
+				{
+					organizationId: ORG_ID,
+					appointmentId: CANCEL_APPOINTMENT_ID,
+					startsAt: soon,
+				},
 				new Date(),
-				env
-			)
+				env,
+			),
 		);
 		assert.ok(links);
 
-		const response = await app.inject({ method: "GET", url: pathOf(links.cancelLink) });
+		const response = await app.inject({
+			method: "GET",
+			url: pathOf(links.cancelLink),
+		});
 		assert.equal(response.statusCode, 200, response.body.slice(0, 300));
 		assert.ok(response.body.includes("отменён"), response.body.slice(0, 300));
 
@@ -438,7 +555,7 @@ describe("страница подтверждения приёма", () => {
 			db
 				.select({ status: appointments.status })
 				.from(appointments)
-				.where(eq(appointments.id, CANCEL_APPOINTMENT_ID))
+				.where(eq(appointments.id, CANCEL_APPOINTMENT_ID)),
 		);
 		assert.equal(row?.status, "cancelled");
 
@@ -450,18 +567,25 @@ describe("страница подтверждения приёма", () => {
 				.where(
 					and(
 						eq(communicationOutbox.organizationId, ORG_ID),
-						like(communicationOutbox.dedupeKey, `reminder:${CANCEL_APPOINTMENT_ID}:%`)
-					)
-				)
+						like(
+							communicationOutbox.dedupeKey,
+							`reminder:${CANCEL_APPOINTMENT_ID}:%`,
+						),
+					),
+				),
 		);
 		assert.equal(leftovers.length, 0);
 
 		// Отмена не проходит молча: администратор должен узнать о слоте.
 		const tasks = await withFixtureTenant(ORG_ID, async () =>
 			db
-				.select({ title: communicationTasks.title, priority: communicationTasks.priority, body: communicationTasks.body })
+				.select({
+					title: communicationTasks.title,
+					priority: communicationTasks.priority,
+					body: communicationTasks.body,
+				})
 				.from(communicationTasks)
-				.where(eq(communicationTasks.organizationId, ORG_ID))
+				.where(eq(communicationTasks.organizationId, ORG_ID)),
 		);
 		assert.equal(tasks.length, 1, JSON.stringify(tasks));
 		assert.ok(tasks[0]?.title.includes("отменил"));
@@ -474,13 +598,20 @@ describe("страница подтверждения приёма", () => {
 
 		const links = await withFixtureTenant(ORG_ID, async () =>
 			issueAppointmentActionLinks(
-				{ organizationId: ORG_ID, appointmentId: CANCEL_APPOINTMENT_ID, startsAt: soon },
+				{
+					organizationId: ORG_ID,
+					appointmentId: CANCEL_APPOINTMENT_ID,
+					startsAt: soon,
+				},
 				new Date(),
-				env
-			)
+				env,
+			),
 		);
 		assert.ok(links);
-		const response = await app.inject({ method: "GET", url: pathOf(links.cancelLink) });
+		const response = await app.inject({
+			method: "GET",
+			url: pathOf(links.cancelLink),
+		});
 		assert.equal(response.statusCode, 200, response.body.slice(0, 200));
 		assert.ok(response.body.includes("уже отменён"));
 
@@ -488,7 +619,7 @@ describe("страница подтверждения приёма", () => {
 			db
 				.select({ id: communicationTasks.id })
 				.from(communicationTasks)
-				.where(eq(communicationTasks.organizationId, ORG_ID))
+				.where(eq(communicationTasks.organizationId, ORG_ID)),
 		);
 		assert.equal(tasks.length, 1);
 	});
@@ -498,9 +629,12 @@ describe("страница подтверждения приёма", () => {
 
 		const rows = await withFixtureTenant(ORG_ID, async () =>
 			db
-				.select({ action: appointmentActionCodes.action, usedAt: appointmentActionCodes.usedAt })
+				.select({
+					action: appointmentActionCodes.action,
+					usedAt: appointmentActionCodes.usedAt,
+				})
 				.from(appointmentActionCodes)
-				.where(eq(appointmentActionCodes.appointmentId, CANCEL_APPOINTMENT_ID))
+				.where(eq(appointmentActionCodes.appointmentId, CANCEL_APPOINTMENT_ID)),
 		);
 		const cancelCode = rows.find((row) => row.action === "cancel");
 		assert.notEqual(cancelCode?.usedAt, null);
@@ -523,8 +657,14 @@ describe("снятие устаревших напоминаний", () => {
 			// Тот же тенант-контекст, что и у сева выше: без него вставка
 			// организации и пациента отвергается кодом 42501.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" });
-				await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" });
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника подтверждений" });
+				await db.insert(patients).values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Подтвердов Пётр Петрович",
+				});
 			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
@@ -554,7 +694,7 @@ describe("снятие устаревших напоминаний", () => {
 					recipientAddress: "79160000611",
 					body: "Напоминание за сутки",
 					status: "queued",
-					dedupeKey: `reminder:${targetAppointment}:24`
+					dedupeKey: `reminder:${targetAppointment}:24`,
 				},
 				{
 					organizationId: ORG_ID,
@@ -564,7 +704,7 @@ describe("снятие устаревших напоминаний", () => {
 					recipientAddress: "79160000611",
 					body: "Напоминание за два часа",
 					status: "queued",
-					dedupeKey: `reminder:${targetAppointment}:2`
+					dedupeKey: `reminder:${targetAppointment}:2`,
 				},
 				{
 					// Уже отправленное не трогаем: историю переписывать нельзя.
@@ -576,7 +716,7 @@ describe("снятие устаревших напоминаний", () => {
 					body: "Уже отправлено",
 					status: "sent",
 					sentAt: new Date(),
-					dedupeKey: `reminder:${targetAppointment}:48`
+					dedupeKey: `reminder:${targetAppointment}:48`,
 				},
 				{
 					// Напоминание другого приёма.
@@ -587,7 +727,7 @@ describe("снятие устаревших напоминаний", () => {
 					recipientAddress: "79160000611",
 					body: "Другой приём",
 					status: "queued",
-					dedupeKey: `reminder:${otherAppointment}:24`
+					dedupeKey: `reminder:${otherAppointment}:24`,
 				},
 				{
 					// Рассылка: ключ другой, снятие её не касается.
@@ -598,19 +738,27 @@ describe("снятие устаревших напоминаний", () => {
 					recipientAddress: "79160000611",
 					body: "Рассылка",
 					status: "queued",
-					dedupeKey: `campaign:some-campaign:${PATIENT_ID}`
-				}
+					dedupeKey: `campaign:some-campaign:${PATIENT_ID}`,
+				},
 			]);
 		});
 
-		const removed = await invalidateAppointmentReminders(ORG_ID, targetAppointment, "перенос в тесте");
-		assert.equal(removed, 2, "должны сняться ровно два неотправленных напоминания этого приёма");
+		const removed = await invalidateAppointmentReminders(
+			ORG_ID,
+			targetAppointment,
+			"перенос в тесте",
+		);
+		assert.equal(
+			removed,
+			2,
+			"должны сняться ровно два неотправленных напоминания этого приёма",
+		);
 
 		const remaining = await withFixtureTenant(ORG_ID, async () =>
 			db
 				.select({ dedupeKey: communicationOutbox.dedupeKey })
 				.from(communicationOutbox)
-				.where(eq(communicationOutbox.organizationId, ORG_ID))
+				.where(eq(communicationOutbox.organizationId, ORG_ID)),
 		);
 
 		assert.deepEqual(
@@ -618,15 +766,19 @@ describe("снятие устаревших напоминаний", () => {
 			[
 				`campaign:some-campaign:${PATIENT_ID}`,
 				`reminder:${otherAppointment}:24`,
-				`reminder:${targetAppointment}:48`
-			].sort()
+				`reminder:${targetAppointment}:48`,
+			].sort(),
 		);
 	});
 
 	test("повторный вызов ничего не ломает", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const removed = await invalidateAppointmentReminders(ORG_ID, "dce70000-0000-4000-8000-000000000611", "повтор");
+		const removed = await invalidateAppointmentReminders(
+			ORG_ID,
+			"dce70000-0000-4000-8000-000000000611",
+			"повтор",
+		);
 		assert.equal(removed, 0);
 	});
 });

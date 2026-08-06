@@ -39,17 +39,17 @@
  * падает, а не делает вид, что снял.
  */
 
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { spawn } from "node:child_process";
 
 import {
-  MISS_SUFFIX,
-  THEME_STATE_EXPRESSION,
-  busySelector,
-  createShotAudit,
-  paletteFingerprint,
+	busySelector,
+	createShotAudit,
+	MISS_SUFFIX,
+	paletteFingerprint,
+	THEME_STATE_EXPRESSION,
 } from "./lib/shot-audit.mjs";
 
 const OUT = "C:/Clinic_MVP/dental-crm/.dente-redesign-shots";
@@ -57,25 +57,25 @@ const OUT = "C:/Clinic_MVP/dental-crm/.dente-redesign-shots";
 const webBaseUrl = process.env.DENTE_SHOT_WEB_URL || "http://127.0.0.1:5173";
 const cdpPort = Number(process.env.DENTE_SHOT_CDP_PORT || 9331);
 const demoLogin = {
-  email: process.env.DENTE_SHOT_EMAIL || "doctor@clinic.com",
-  password: process.env.DENTE_SHOT_PASSWORD || "password",
+	email: process.env.DENTE_SHOT_EMAIL || "doctor@clinic.com",
+	password: process.env.DENTE_SHOT_PASSWORD || "password",
 };
 /** Время старта: попадает в theme-audit.json, чтобы снимки нельзя было спутать со вчерашними. */
 const runStartedAt = new Date().toISOString();
 
 /** Разделы и темы прогона. Ожидаемый список файлов выводится из них, а не пишется руками. */
 const VIEWS = [
-  "shift",
-  "schedule",
-  "patients",
-  "imaging",
-  "visit",
-  "documents",
-  "finance",
-  "analytics",
-  "communications",
-  "settings",
-  "marketing",
+	"shift",
+	"schedule",
+	"patients",
+	"imaging",
+	"visit",
+	"documents",
+	"finance",
+	"analytics",
+	"communications",
+	"settings",
+	"marketing",
 ];
 const COLLAPSED_FILE = "desktop_light_shift_collapsed.png";
 
@@ -86,42 +86,49 @@ const COLLAPSED_FILE = "desktop_light_shift_collapsed.png";
  * снимок одного раздела попадает под именем другого.
  */
 const VIEW_CONTAINERS = {
-  shift: "#shift, .shift-hero",
-  schedule: "#schedule, .schedule-panel",
-  patients: "#patients, .patients-panel",
-  imaging: "#imaging, .imaging-panel",
-  visit: "#visit, .visit-panel",
-  documents: "#documents, .documents-panel",
-  finance: "#finance, .finance-panel",
-  analytics: "#analytics, .analytics-panel",
-  communications: "#communications, .communications-panel",
-  settings: "#settings, .settings-zone",
-  marketing: "#marketing, .marketing-panel",
+	shift: "#shift, .shift-hero",
+	schedule: "#schedule, .schedule-panel",
+	patients: "#patients, .patients-panel",
+	imaging: "#imaging, .imaging-panel",
+	visit: "#visit, .visit-panel",
+	documents: "#documents, .documents-panel",
+	finance: "#finance, .finance-panel",
+	analytics: "#analytics, .analytics-panel",
+	communications: "#communications, .communications-panel",
+	settings: "#settings, .settings-zone",
+	marketing: "#marketing, .marketing-panel",
 };
 
 const expected = [
-  ...VIEWS.map((view) => ({ file: `desktop_light_${view}.png`, theme: "light" })),
-  { file: COLLAPSED_FILE, theme: "light" },
-  ...VIEWS.map((view) => ({ file: `desktop_dark_${view}.png`, theme: "dark" })),
-  ...VIEWS.map((view) => ({ file: `mobile_light_${view}.png`, theme: "light" })),
-  ...VIEWS.map((view) => ({ file: `mobile_dark_${view}.png`, theme: "dark" })),
+	...VIEWS.map((view) => ({
+		file: `desktop_light_${view}.png`,
+		theme: "light",
+	})),
+	{ file: COLLAPSED_FILE, theme: "light" },
+	...VIEWS.map((view) => ({ file: `desktop_dark_${view}.png`, theme: "dark" })),
+	...VIEWS.map((view) => ({
+		file: `mobile_light_${view}.png`,
+		theme: "light",
+	})),
+	...VIEWS.map((view) => ({ file: `mobile_dark_${view}.png`, theme: "dark" })),
 ];
 const audit = createShotAudit({ expected });
 
 // Живой веб-сервер обязателен: без него снимать нечего.
 const probe = await fetch(webBaseUrl).catch((error) => {
-  throw new Error(
-    `Веб-сервер на ${webBaseUrl} недоступен (${error.message}). Запустите npm run dev и повторите: снимок несуществующей страницы — ложное доказательство.`,
-  );
+	throw new Error(
+		`Веб-сервер на ${webBaseUrl} недоступен (${error.message}). Запустите npm run dev и повторите: снимок несуществующей страницы — ложное доказательство.`,
+	);
 });
-if (!probe.ok) throw new Error(`Веб-сервер на ${webBaseUrl} ответил ${probe.status}`);
+if (!probe.ok)
+	throw new Error(`Веб-сервер на ${webBaseUrl} ответил ${probe.status}`);
 
 await mkdir(OUT, { recursive: true });
 
 const browserPath = [
-  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 ].find((candidate) => existsSync(candidate));
 if (!browserPath) throw new Error("Браузер не найден");
 
@@ -144,26 +151,26 @@ if (!browserPath) throw new Error("Браузер не найден");
  * ни данных проекта здесь нет.
  */
 const tmpProfile = path.join(
-  process.env.TEMP || "C:/tmp",
-  `dente-shot-profile-${runStartedAt.replace(/[:.]/g, "-")}`,
+	process.env.TEMP || "C:/tmp",
+	`dente-shot-profile-${runStartedAt.replace(/[:.]/g, "-")}`,
 );
 await rm(tmpProfile, { recursive: true, force: true }).catch(() => {});
 await mkdir(tmpProfile, { recursive: true });
 
 const browser = spawn(
-  browserPath,
-  [
-    "--headless=new",
-    "--disable-gpu",
-    "--disable-dev-shm-usage",
-    "--no-first-run",
-    "--remote-allow-origins=*",
-    `--remote-debugging-port=${cdpPort}`,
-    `--user-data-dir=${tmpProfile}`,
-    "--window-size=1440,900",
-    `${webBaseUrl}/`,
-  ],
-  { stdio: ["ignore", "ignore", "pipe"] },
+	browserPath,
+	[
+		"--headless=new",
+		"--disable-gpu",
+		"--disable-dev-shm-usage",
+		"--no-first-run",
+		"--remote-allow-origins=*",
+		`--remote-debugging-port=${cdpPort}`,
+		`--user-data-dir=${tmpProfile}`,
+		"--window-size=1440,900",
+		`${webBaseUrl}/`,
+	],
+	{ stdio: ["ignore", "ignore", "pipe"] },
 );
 
 /**
@@ -176,86 +183,88 @@ const browser = spawn(
  */
 const browserStderr = [];
 browser.stderr?.on("data", (chunk) => {
-  // Труба читается всегда: непрочитанная труба сама держит цикл событий открытым,
-  // а сообщения браузера — единственное объяснение, если он не поднялся.
-  browserStderr.push(chunk.toString());
-  if (browserStderr.length > 40) browserStderr.splice(0, browserStderr.length - 40);
+	// Труба читается всегда: непрочитанная труба сама держит цикл событий открытым,
+	// а сообщения браузера — единственное объяснение, если он не поднялся.
+	browserStderr.push(chunk.toString());
+	if (browserStderr.length > 40)
+		browserStderr.splice(0, browserStderr.length - 40);
 });
 
 let closeSocket = () => {};
 let shuttingDown = false;
 function shutdown() {
-  if (shuttingDown) return;
-  shuttingDown = true;
-  try {
-    closeSocket();
-  } catch {
-    /* сокет уже закрыт */
-  }
-  try {
-    browser.kill();
-  } catch {
-    /* браузер уже мёртв */
-  }
+	if (shuttingDown) return;
+	shuttingDown = true;
+	try {
+		closeSocket();
+	} catch {
+		/* сокет уже закрыт */
+	}
+	try {
+		browser.kill();
+	} catch {
+		/* браузер уже мёртв */
+	}
 }
 process.on("exit", shutdown);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function getTargets(retries = 40) {
-  for (let attempt = 0; attempt < retries; attempt += 1) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${cdpPort}/json/list`);
-      const targets = await response.json();
-      if (targets.length) return targets;
-    } catch {
-      /* браузер ещё поднимается */
-    }
-    await sleep(1000);
-  }
-  throw new Error(
-    `Отладочный порт браузера ${cdpPort} не отвечает. Последнее от браузера: ${browserStderr.slice(-3).join(" ").trim() || "(тишина)"}`,
-  );
+	for (let attempt = 0; attempt < retries; attempt += 1) {
+		try {
+			const response = await fetch(`http://127.0.0.1:${cdpPort}/json/list`);
+			const targets = await response.json();
+			if (targets.length) return targets;
+		} catch {
+			/* браузер ещё поднимается */
+		}
+		await sleep(1000);
+	}
+	throw new Error(
+		`Отладочный порт браузера ${cdpPort} не отвечает. Последнее от браузера: ${browserStderr.slice(-3).join(" ").trim() || "(тишина)"}`,
+	);
 }
 
 const targets = await getTargets();
-const pageTarget = targets.find((target) => target.type === "page") ?? targets[0];
+const pageTarget =
+	targets.find((target) => target.type === "page") ?? targets[0];
 const socket = new WebSocket(pageTarget.webSocketDebuggerUrl);
 closeSocket = () => socket.close();
 
 let messageId = 0;
 const pending = new Map();
 socket.onmessage = (event) => {
-  const message = JSON.parse(event.data);
-  if (!message.id) return;
-  const request = pending.get(message.id);
-  if (!request) return;
-  pending.delete(message.id);
-  clearTimeout(request.timer);
-  if (message.error) request.reject(new Error(message.error.message));
-  else request.resolve(message.result);
+	const message = JSON.parse(event.data);
+	if (!message.id) return;
+	const request = pending.get(message.id);
+	if (!request) return;
+	pending.delete(message.id);
+	clearTimeout(request.timer);
+	if (message.error) request.reject(new Error(message.error.message));
+	else request.resolve(message.result);
 };
 await new Promise((resolve, reject) => {
-  socket.onopen = resolve;
-  socket.onerror = () => reject(new Error("Веб-сокет отладки не открылся"));
+	socket.onopen = resolve;
+	socket.onerror = () => reject(new Error("Веб-сокет отладки не открылся"));
 });
 
 const cdp = {
-  send(method, params = {}) {
-    messageId += 1;
-    const id = messageId;
-    return new Promise((resolve, reject) => {
-      // Ответ обязателен: без срока ожидания потерянный ответ вешает прогон
-      // навсегда, и снаружи это выглядит как «сценарий работает».
-      const timer = setTimeout(() => {
-        if (!pending.has(id)) return;
-        pending.delete(id);
-        reject(new Error(`${method}: браузер не ответил за 30 с`));
-      }, 30000);
-      pending.set(id, { resolve, reject, timer });
-      socket.send(JSON.stringify({ id, method, params }));
-    });
-  },
+	send(method, params = {}) {
+		messageId += 1;
+		const id = messageId;
+		return new Promise((resolve, reject) => {
+			// Ответ обязателен: без срока ожидания потерянный ответ вешает прогон
+			// навсегда, и снаружи это выглядит как «сценарий работает».
+			const timer = setTimeout(() => {
+				if (!pending.has(id)) return;
+				pending.delete(id);
+				reject(new Error(`${method}: браузер не ответил за 30 с`));
+			}, 30000);
+			pending.set(id, { resolve, reject, timer });
+			socket.send(JSON.stringify({ id, method, params }));
+		});
+	},
 };
 
 await cdp.send("Page.enable");
@@ -267,12 +276,18 @@ await cdp.send("Runtime.enable");
  * читалось как «раздел не готов», и в тексте ошибки называлась не та причина.
  */
 async function evaluate(expression) {
-  const result = await cdp.send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
-  if (result?.exceptionDetails) {
-    const details = result.exceptionDetails;
-    throw new Error(`Ошибка в странице: ${details.exception?.description || details.text || "исключение без описания"}`);
-  }
-  return result?.result?.value;
+	const result = await cdp.send("Runtime.evaluate", {
+		expression,
+		returnByValue: true,
+		awaitPromise: true,
+	});
+	if (result?.exceptionDetails) {
+		const details = result.exceptionDetails;
+		throw new Error(
+			`Ошибка в странице: ${details.exception?.description || details.text || "исключение без описания"}`,
+		);
+	}
+	return result?.result?.value;
 }
 
 /**
@@ -294,50 +309,60 @@ async function evaluate(expression) {
  * останавливает прогон, а не выдаёт кадр не того состояния.
  */
 async function setSidebarCollapsed(collapsed) {
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const state = await evaluate(
-      `(() => {
+	for (let attempt = 0; attempt < 12; attempt += 1) {
+		const state = await evaluate(
+			`(() => {
         const rail = document.querySelector('.sidebar');
         if (!rail) return { present: false };
         return { present: true, collapsed: rail.getAttribute('data-collapsed') === 'true' };
       })()`,
-    );
-    if (!state?.present) {
-      throw new Error(
-        "Боковое меню (.sidebar) не найдено: снимок настольной раскладки без рельсы — ложное доказательство",
-      );
-    }
-    if (state.collapsed === collapsed) return state;
-    const clicked = await evaluate(
-      `(() => { const button = document.querySelector('.sidebar-collapse-button'); if (button) button.click(); return Boolean(button); })()`,
-    );
-    if (!clicked) {
-      throw new Error(
-        "Кнопка сворачивания (.sidebar-collapse-button) не найдена: состояние рельсы задать нечем, прогон остановлен",
-      );
-    }
-    await sleep(400);
-  }
-  throw new Error(
-    `Меню не перешло в состояние «свёрнуто: ${collapsed}» за 12 попыток: состояние хранится в localStorage и могло остаться от прошлого прогона`,
-  );
+		);
+		if (!state?.present) {
+			throw new Error(
+				"Боковое меню (.sidebar) не найдено: снимок настольной раскладки без рельсы — ложное доказательство",
+			);
+		}
+		if (state.collapsed === collapsed) return state;
+		const clicked = await evaluate(
+			`(() => { const button = document.querySelector('.sidebar-collapse-button'); if (button) button.click(); return Boolean(button); })()`,
+		);
+		if (!clicked) {
+			throw new Error(
+				"Кнопка сворачивания (.sidebar-collapse-button) не найдена: состояние рельсы задать нечем, прогон остановлен",
+			);
+		}
+		await sleep(400);
+	}
+	throw new Error(
+		`Меню не перешло в состояние «свёрнуто: ${collapsed}» за 12 попыток: состояние хранится в localStorage и могло остаться от прошлого прогона`,
+	);
 }
 
 async function readThemeState() {
-  const state = await evaluate(THEME_STATE_EXPRESSION);
-  if (!state) throw new Error("Страница не вернула состояние темы");
-  return { ...state, fingerprint: paletteFingerprint(state.values) };
+	const state = await evaluate(THEME_STATE_EXPRESSION);
+	if (!state) throw new Error("Страница не вернула состояние темы");
+	return { ...state, fingerprint: paletteFingerprint(state.values) };
 }
 
 async function setViewport(width, height, mobile) {
-  if (mobile) {
-    await cdp.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 2, mobile: true });
-  } else {
-    await cdp.send("Emulation.clearDeviceMetricsOverride");
-    await cdp.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
-  }
-  audit.setViewport(`${width}x${height}${mobile ? " mobile" : ""}`);
-  await sleep(500);
+	if (mobile) {
+		await cdp.send("Emulation.setDeviceMetricsOverride", {
+			width,
+			height,
+			deviceScaleFactor: 2,
+			mobile: true,
+		});
+	} else {
+		await cdp.send("Emulation.clearDeviceMetricsOverride");
+		await cdp.send("Emulation.setDeviceMetricsOverride", {
+			width,
+			height,
+			deviceScaleFactor: 1,
+			mobile: false,
+		});
+	}
+	audit.setViewport(`${width}x${height}${mobile ? " mobile" : ""}`);
+	await sleep(500);
 }
 
 /**
@@ -349,38 +374,43 @@ async function setViewport(width, height, mobile) {
  * хранилище одновременно.
  */
 async function setTheme(theme) {
-  const applied = await evaluate(`(() => {
+	const applied = await evaluate(`(() => {
     const store = window.__useThemeStore;
     if (!store) return false;
     store.getState().setThemeMode(${JSON.stringify(theme)});
     return true;
   })()`);
-  if (!applied) {
-    throw new Error(
-      `Хранилище темы недоступно (window.__useThemeStore): приложение не загрузилось, тема «${theme}» не применена`,
-    );
-  }
+	if (!applied) {
+		throw new Error(
+			`Хранилище темы недоступно (window.__useThemeStore): приложение не загрузилось, тема «${theme}» не применена`,
+		);
+	}
 
-  const deadline = Date.now() + 15000;
-  let state = null;
-  while (Date.now() < deadline) {
-    state = await readThemeState();
-    if (state.dataTheme === theme && state.mode === theme && state.tokenCount > 0 && state.empty.length === 0) {
-      console.log(
-        `тема ${theme}: data-theme «${state.dataTheme}», режим «${state.mode}», класс «${state.className}», токенов ${state.tokenCount}, палитра ${state.fingerprint}`,
-      );
-      return state;
-    }
-    await sleep(150);
-  }
-  throw new Error(
-    `Тема «${theme}» не применилась за 15 с: data-theme «${state?.dataTheme}», режим «${state?.mode}», пустых тем-зависимых токенов ${state?.empty?.length ?? 0}`,
-  );
+	const deadline = Date.now() + 15000;
+	let state = null;
+	while (Date.now() < deadline) {
+		state = await readThemeState();
+		if (
+			state.dataTheme === theme &&
+			state.mode === theme &&
+			state.tokenCount > 0 &&
+			state.empty.length === 0
+		) {
+			console.log(
+				`тема ${theme}: data-theme «${state.dataTheme}», режим «${state.mode}», класс «${state.className}», токенов ${state.tokenCount}, палитра ${state.fingerprint}`,
+			);
+			return state;
+		}
+		await sleep(150);
+	}
+	throw new Error(
+		`Тема «${theme}» не применилась за 15 с: data-theme «${state?.dataTheme}», режим «${state?.mode}», пустых тем-зависимых токенов ${state?.empty?.length ?? 0}`,
+	);
 }
 
 /** Что на самом деле открыто: список id разделов, найденных на странице, и адрес. */
 async function pageWhereami() {
-  return evaluate(`
+	return evaluate(`
     (() => {
       const ids = ${JSON.stringify(VIEWS)}.filter((view) => document.getElementById(view));
       const login = document.body.textContent?.includes("ВХОД В ЛИЧНЫЙ КАБИНЕТ") || false;
@@ -398,9 +428,9 @@ async function pageWhereami() {
 
 /** Диагностический кадр: без него причину не отличить от симптома. */
 async function writeDiagnosticShot(fileName) {
-  const stuck = await cdp.send("Page.captureScreenshot", { format: "png" });
-  await writeFile(path.join(OUT, fileName), Buffer.from(stuck.data, "base64"));
-  return fileName;
+	const stuck = await cdp.send("Page.captureScreenshot", { format: "png" });
+	await writeFile(path.join(OUT, fileName), Buffer.from(stuck.data, "base64"));
+	return fileName;
 }
 
 /**
@@ -412,28 +442,28 @@ async function writeDiagnosticShot(fileName) {
  * ИМЕННО ЭТОГО раздела есть и не помечен aria-busy.
  */
 async function waitForViewReady(viewName) {
-  const selector = VIEW_CONTAINERS[viewName];
-  if (!selector) {
-    throw new Error(
-      `Раздел «${viewName}» не описан в VIEW_CONTAINERS: по какому контейнеру считать его открытым — неизвестно. Общий «.panel» здесь не годится: он есть на любом разделе, и снимок лёг бы под чужим именем.`,
-    );
-  }
-  const busy = busySelector(selector);
-  let last = null;
-  /*
-   * Бюджет ожидания — 30 с, а не 10.
-   *
-   * Раздел «communications» не уложился в 10 с и прогон упал, но сообщение об
-   * ошибке само себе противоречило: «контейнер раздела не появился» и тут же
-   * «контейнеры разделов [communications]». Причина не в приложении: разделы
-   * грузятся ленивыми модулями, и тяжёлый чанк при первом открытии не успевал,
-   * а pageWhereami() читал страницу уже ПОСЛЕ того, как контейнер появился.
-   * Порог поднят до 120 попыток по 250 мс; проверка при этом не ослаблена —
-   * раздел, которого нет, всё равно останавливает прогон, просто теперь это
-   * означает «нет», а не «не успел».
-   */
-  for (let attempt = 0; attempt < 120; attempt += 1) {
-    last = await evaluate(`
+	const selector = VIEW_CONTAINERS[viewName];
+	if (!selector) {
+		throw new Error(
+			`Раздел «${viewName}» не описан в VIEW_CONTAINERS: по какому контейнеру считать его открытым — неизвестно. Общий «.panel» здесь не годится: он есть на любом разделе, и снимок лёг бы под чужим именем.`,
+		);
+	}
+	const busy = busySelector(selector);
+	let last = null;
+	/*
+	 * Бюджет ожидания — 30 с, а не 10.
+	 *
+	 * Раздел «communications» не уложился в 10 с и прогон упал, но сообщение об
+	 * ошибке само себе противоречило: «контейнер раздела не появился» и тут же
+	 * «контейнеры разделов [communications]». Причина не в приложении: разделы
+	 * грузятся ленивыми модулями, и тяжёлый чанк при первом открытии не успевал,
+	 * а pageWhereami() читал страницу уже ПОСЛЕ того, как контейнер появился.
+	 * Порог поднят до 120 попыток по 250 мс; проверка при этом не ослаблена —
+	 * раздел, которого нет, всё равно останавливает прогон, просто теперь это
+	 * означает «нет», а не «не успел».
+	 */
+	for (let attempt = 0; attempt < 120; attempt += 1) {
+		last = await evaluate(`
       (() => {
         const node = document.querySelector(${JSON.stringify(selector)});
         if (!node) return { ready: false, reason: "контейнер раздела не появился" };
@@ -441,17 +471,17 @@ async function waitForViewReady(viewName) {
         return { ready: true };
       })()
     `);
-    if (last?.ready) {
-      await sleep(500);
-      return;
-    }
-    await sleep(250);
-  }
-  // Причина перечитывается на момент отказа. Прежде печаталась причина ПОСЛЕДНЕЙ
-  // попытки, а диагностика собиралась позже, поэтому сообщение могло утверждать
-  // «контейнера нет» и одновременно перечислять этот контейнер среди найденных.
-  // Сообщение, противоречащее самому себе, отправляет разбираться не туда.
-  const atFailure = await evaluate(`
+		if (last?.ready) {
+			await sleep(500);
+			return;
+		}
+		await sleep(250);
+	}
+	// Причина перечитывается на момент отказа. Прежде печаталась причина ПОСЛЕДНЕЙ
+	// попытки, а диагностика собиралась позже, поэтому сообщение могло утверждать
+	// «контейнера нет» и одновременно перечислять этот контейнер среди найденных.
+	// Сообщение, противоречащее самому себе, отправляет разбираться не туда.
+	const atFailure = await evaluate(`
     (() => {
       const node = document.querySelector(${JSON.stringify(selector)});
       if (!node) return { ready: false, reason: "контейнер раздела не появился" };
@@ -459,15 +489,15 @@ async function waitForViewReady(viewName) {
       return { ready: true, reason: "контейнер появился уже ПОСЛЕ истечения бюджета — это медленная загрузка, а не отсутствующий раздел" };
     })()
   `);
-  const where = await pageWhereami();
-  const stuckName = `${MISS_SUFFIX.slice(1)}_НЕ_ОТКРЫЛСЯ_${viewName}.png`;
-  await writeDiagnosticShot(stuckName);
-  throw new Error(
-    `Раздел «${viewName}» не открылся за 30 с: ${atFailure?.reason ?? last?.reason ?? "причина не считана"} (искали ${selector}). ` +
-      `На странице: адрес «${where?.hash}», контейнеры разделов [${(where?.containers ?? []).join(", ") || "нет ни одного"}], ` +
-      `экран входа: ${where?.login}, экран PIN: ${where?.pin}, заголовок «${where?.title}». ` +
-      `Снимать нечего, прогон остановлен. Что было на экране: ${stuckName}`,
-  );
+	const where = await pageWhereami();
+	const stuckName = `${MISS_SUFFIX.slice(1)}_НЕ_ОТКРЫЛСЯ_${viewName}.png`;
+	await writeDiagnosticShot(stuckName);
+	throw new Error(
+		`Раздел «${viewName}» не открылся за 30 с: ${atFailure?.reason ?? last?.reason ?? "причина не считана"} (искали ${selector}). ` +
+			`На странице: адрес «${where?.hash}», контейнеры разделов [${(where?.containers ?? []).join(", ") || "нет ни одного"}], ` +
+			`экран входа: ${where?.login}, экран PIN: ${where?.pin}, заголовок «${where?.title}». ` +
+			`Снимать нечего, прогон остановлен. Что было на экране: ${stuckName}`,
+	);
 }
 
 /**
@@ -477,7 +507,7 @@ async function waitForViewReady(viewName) {
  * которой снимок раздела оказывается снимком экрана входа.
  */
 async function nav(viewName) {
-  await evaluate(`(() => {
+	await evaluate(`(() => {
     const pinPad = document.querySelector('.staff-pin-pad, .pin-lock-screen');
     if (!pinPad) return false;
     const staffCard = document.querySelector('.staff-card, .staff-member-item');
@@ -489,8 +519,8 @@ async function nav(viewName) {
     return true;
   })()`);
 
-  const selector = `aside.sidebar nav a[href="#${viewName}"], .dnt-bottom-nav a[href="#${viewName}"]`;
-  await evaluate(`(() => {
+	const selector = `aside.sidebar nav a[href="#${viewName}"], .dnt-bottom-nav a[href="#${viewName}"]`;
+	await evaluate(`(() => {
     const link = document.querySelector(${JSON.stringify(selector)});
     if (link) {
       link.click();
@@ -500,7 +530,7 @@ async function nav(viewName) {
     window.dispatchEvent(new HashChangeEvent("hashchange"));
     return false;
   })()`);
-  await waitForViewReady(viewName);
+	await waitForViewReady(viewName);
 }
 
 /**
@@ -531,23 +561,35 @@ async function nav(viewName) {
 const MIN_PLAUSIBLE_SHOT_BYTES = 20_000;
 
 async function shot(name, theme) {
-  const fileName = `${name}.png`;
-  const themeState = audit.assertThemeBeforeShot(await readThemeState(), theme, fileName);
-  const { data } = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-  const buffer = Buffer.from(data, "base64");
-  if (buffer.byteLength < MIN_PLAUSIBLE_SHOT_BYTES) {
-    throw new Error(
-      `Кадр «${fileName}» весит ${buffer.byteLength} байт — это пустой лист, а не раздел. ` +
-        `Ниже ${MIN_PLAUSIBLE_SHOT_BYTES} байт интерфейс не отрисовался: DOM мог быть на месте, а отрисовка умереть. ` +
-        `Кадр НЕ записан на диск: пустой снимок под именем раздела — ложное доказательство, а не плохой снимок. ` +
-        `Проверьте, что веб-сервер не отдаёт полуготовое дерево (правки в полёте) и что браузер жив.`,
-    );
-  }
-  const entry = audit.register({ file: fileName, buffer, theme, state: themeState });
-  await writeFile(path.join(OUT, fileName), buffer);
-  console.log(
-    `снимок ${fileName} (${Math.round(entry.bytes / 1024)} КБ, тема «${themeState.dataTheme}», палитра ${themeState.fingerprint})`,
-  );
+	const fileName = `${name}.png`;
+	const themeState = audit.assertThemeBeforeShot(
+		await readThemeState(),
+		theme,
+		fileName,
+	);
+	const { data } = await cdp.send("Page.captureScreenshot", {
+		format: "png",
+		captureBeyondViewport: false,
+	});
+	const buffer = Buffer.from(data, "base64");
+	if (buffer.byteLength < MIN_PLAUSIBLE_SHOT_BYTES) {
+		throw new Error(
+			`Кадр «${fileName}» весит ${buffer.byteLength} байт — это пустой лист, а не раздел. ` +
+				`Ниже ${MIN_PLAUSIBLE_SHOT_BYTES} байт интерфейс не отрисовался: DOM мог быть на месте, а отрисовка умереть. ` +
+				`Кадр НЕ записан на диск: пустой снимок под именем раздела — ложное доказательство, а не плохой снимок. ` +
+				`Проверьте, что веб-сервер не отдаёт полуготовое дерево (правки в полёте) и что браузер жив.`,
+		);
+	}
+	const entry = audit.register({
+		file: fileName,
+		buffer,
+		theme,
+		state: themeState,
+	});
+	await writeFile(path.join(OUT, fileName), buffer);
+	console.log(
+		`снимок ${fileName} (${Math.round(entry.bytes / 1024)} КБ, тема «${themeState.dataTheme}», палитра ${themeState.fingerprint})`,
+	);
 }
 
 /**
@@ -588,30 +630,32 @@ const session = await evaluate(`(async () => {
   }
 })()`);
 if (!session?.ok) {
-  throw new Error(
-    `Вход под ${demoLogin.email} не удался (ответ ${session?.status}: ${session?.reason}). Снимать нечего: без сессии сценарий снял бы экран входа под именами разделов. Задайте DENTE_SHOT_EMAIL/DENTE_SHOT_PASSWORD или пересейте демо-данные.`,
-  );
+	throw new Error(
+		`Вход под ${demoLogin.email} не удался (ответ ${session?.status}: ${session?.reason}). Снимать нечего: без сессии сценарий снял бы экран входа под именами разделов. Задайте DENTE_SHOT_EMAIL/DENTE_SHOT_PASSWORD или пересейте демо-данные.`,
+	);
 }
-console.log(`вход выполнен: организация ${session.organization ?? "не сообщена"}`);
+console.log(
+	`вход выполнен: организация ${session.organization ?? "не сообщена"}`,
+);
 
 /**
  * Ждём рабочий кабинет. Раньше это ожидание молча заканчивалось после 40 попыток
  * и прогон шёл снимать что попало.
  */
 async function waitForWorkspace() {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    const ready = await evaluate(
-      `Boolean(document.querySelector('.shift-hero, .panel, .today-schedule-box, .section-card'))`,
-    );
-    if (ready) return;
-    await sleep(500);
-  }
-  const where = await pageWhereami();
-  const stuckName = `${MISS_SUFFIX.slice(1)}_НЕ_ОТКРЫЛСЯ_кабинет.png`;
-  await writeDiagnosticShot(stuckName);
-  throw new Error(
-    `Рабочий кабинет не открылся за 20 с: адрес «${where?.hash}», экран входа: ${where?.login}, экран PIN: ${where?.pin}, заголовок «${where?.title}». Что было на экране: ${stuckName}`,
-  );
+	for (let attempt = 0; attempt < 40; attempt += 1) {
+		const ready = await evaluate(
+			`Boolean(document.querySelector('.shift-hero, .panel, .today-schedule-box, .section-card'))`,
+		);
+		if (ready) return;
+		await sleep(500);
+	}
+	const where = await pageWhereami();
+	const stuckName = `${MISS_SUFFIX.slice(1)}_НЕ_ОТКРЫЛСЯ_кабинет.png`;
+	await writeDiagnosticShot(stuckName);
+	throw new Error(
+		`Рабочий кабинет не открылся за 20 с: адрес «${where?.hash}», экран входа: ${where?.login}, экран PIN: ${where?.pin}, заголовок «${where?.title}». Что было на экране: ${stuckName}`,
+	);
 }
 
 await evaluate(`window.location.reload()`);
@@ -626,8 +670,8 @@ await setTheme("light");
 // показали не то состояние, которое обещали их имена.
 await setSidebarCollapsed(false);
 for (const view of VIEWS) {
-  await nav(view);
-  await shot(`desktop_light_${view}`, "light");
+	await nav(view);
+	await shot(`desktop_light_${view}`, "light");
 }
 
 // Свёрнутое боковое меню — отдельный кадр того же раздела.
@@ -641,23 +685,23 @@ await sleep(700);
 // 2. НАСТОЛЬНЫЙ ЭКРАН, ТЁМНАЯ ТЕМА
 await setTheme("dark");
 for (const view of VIEWS) {
-  await nav(view);
-  await shot(`desktop_dark_${view}`, "dark");
+	await nav(view);
+	await shot(`desktop_dark_${view}`, "dark");
 }
 
 // 3. ТЕЛЕФОН, СВЕТЛАЯ ТЕМА (390x844)
 await setViewport(390, 844, true);
 await setTheme("light");
 for (const view of VIEWS) {
-  await nav(view);
-  await shot(`mobile_light_${view}`, "light");
+	await nav(view);
+	await shot(`mobile_light_${view}`, "light");
 }
 
 // 4. ТЕЛЕФОН, ТЁМНАЯ ТЕМА
 await setTheme("dark");
 for (const view of VIEWS) {
-  await nav(view);
-  await shot(`mobile_dark_${view}`, "dark");
+	await nav(view);
+	await shot(`mobile_dark_${view}`, "dark");
 }
 
 /**
@@ -665,21 +709,41 @@ for (const view of VIEWS) {
  * здесь остаётся ПОЛНОТА: все ли ожидаемые снимки сделаны. Раньше конвейер считал
  * только то, что записал, и прогон, снявший часть разделов, заканчивался зелёным.
  */
-const manifest = audit.manifest({ startedAt: runStartedAt, finishedAt: new Date().toISOString(), out: OUT });
-await writeFile(path.join(OUT, "theme-audit.json"), JSON.stringify(manifest, null, 2), "utf8");
+const manifest = audit.manifest({
+	startedAt: runStartedAt,
+	finishedAt: new Date().toISOString(),
+	out: OUT,
+});
+await writeFile(
+	path.join(OUT, "theme-audit.json"),
+	JSON.stringify(manifest, null, 2),
+	"utf8",
+);
 
 console.log(`\nСнимки: ${OUT}`);
-console.log(`Снимков записано: ${manifest.plates} из ${manifest.expected} ожидаемых, уникальных md5: ${manifest.uniqueMd5}`);
-for (const { key, fingerprint } of manifest.palettes) console.log(`  палитра ${key}: ${fingerprint}`);
+console.log(
+	`Снимков записано: ${manifest.plates} из ${manifest.expected} ожидаемых, уникальных md5: ${manifest.uniqueMd5}`,
+);
+for (const { key, fingerprint } of manifest.palettes)
+	console.log(`  палитра ${key}: ${fingerprint}`);
 console.log("Светлая и тёмная тема одного раздела — разные файлы:");
 for (const view of VIEWS) {
-  const row = ["desktop_light", "desktop_dark", "mobile_light", "mobile_dark"].map((prefix) => {
-    const entry = manifest.shots.find((item) => item.file === `${prefix}_${view}.png`);
-    return `${prefix} ${entry ? entry.md5.slice(0, 12) : "нет снимка"}`;
-  });
-  console.log(`  ${view}: ${row.join(" | ")}`);
+	const row = [
+		"desktop_light",
+		"desktop_dark",
+		"mobile_light",
+		"mobile_dark",
+	].map((prefix) => {
+		const entry = manifest.shots.find(
+			(item) => item.file === `${prefix}_${view}.png`,
+		);
+		return `${prefix} ${entry ? entry.md5.slice(0, 12) : "нет снимка"}`;
+	});
+	console.log(`  ${view}: ${row.join(" | ")}`);
 }
-console.log(`Происхождение каждого снимка: ${path.join(OUT, "theme-audit.json")}`);
+console.log(
+	`Происхождение каждого снимка: ${path.join(OUT, "theme-audit.json")}`,
+);
 
 // Завершение до броска: иначе браузер остался бы жить на общей машине.
 shutdown();

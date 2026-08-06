@@ -52,7 +52,17 @@ import { signToken } from "../../utils/cryptoHelper.js";
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
-const webHooks = join(here, "..", "..", "..", "..", "web", "src", "hooks", "useWorkspaceProfile.ts");
+const webHooks = join(
+	here,
+	"..",
+	"..",
+	"..",
+	"..",
+	"web",
+	"src",
+	"hooks",
+	"useWorkspaceProfile.ts",
+);
 
 const ORG_UNKNOWN = "aa880000-0000-4000-8000-0000000000a1";
 const TEST_SECRET = "workspace-flags-survive-server-proof".padEnd(48, "z");
@@ -70,8 +80,13 @@ function clientFlagKeys(): string[] {
 	const open = source.indexOf("{", start);
 	const close = source.indexOf("\n};", open);
 	const body = source.slice(open, close);
-	const keys = [...body.matchAll(/^\t([A-Za-z][A-Za-z0-9]*)\s*:/gm)].map((match) => match[1] ?? "");
-	assert.ok(keys.length >= 25, `разбор DEFAULT_FLAGS дал ${keys.length} ключей — разбор сломался`);
+	const keys = [...body.matchAll(/^\t([A-Za-z][A-Za-z0-9]*)\s*:/gm)].map(
+		(match) => match[1] ?? "",
+	);
+	assert.ok(
+		keys.length >= 25,
+		`разбор DEFAULT_FLAGS дал ${keys.length} ключей — разбор сломался`,
+	);
 	return keys;
 }
 
@@ -117,7 +132,9 @@ describe("признаки рабочего пространства не тер
 		// Ровно то преобразование, которое делает обработчик POST: слияние
 		// сохранённого набора с телом запроса через workspaceFlagsFromStorage.
 		for (const key of clientFlagKeys()) {
-			const fallback = (DEFAULT_WORKSPACE_FEATURE_FLAGS as unknown as Record<string, unknown>)[key];
+			const fallback = (
+				DEFAULT_WORKSPACE_FEATURE_FLAGS as unknown as Record<string, unknown>
+			)[key];
 			let sent: unknown;
 			if (typeof fallback === "boolean") sent = !fallback;
 			else if (typeof fallback === "number") sent = fallback + 1;
@@ -146,12 +163,31 @@ describe("признаки рабочего пространства не тер
 			hasEngineeringStatus: true,
 		}) as unknown as Record<string, unknown>;
 
-		assert.equal(saved.hasClinicalRules, true, "вкладка клинических правил снова недостижима");
-		assert.equal(saved.hasEngineeringStatus, true, "состояние отправки в ЕГИСЗ снова скрыто от врача");
+		assert.equal(
+			saved.hasClinicalRules,
+			true,
+			"вкладка клинических правил снова недостижима",
+		);
+		assert.equal(
+			saved.hasEngineeringStatus,
+			true,
+			"состояние отправки в ЕГИСЗ снова скрыто от врача",
+		);
 
 		// Связь с точкой входа: гейт читает именно этот признак.
 		const rulesTab = readFileSync(
-			join(here, "..", "..", "..", "..", "web", "src", "components", "settings", "SettingsRulesTab.tsx"),
+			join(
+				here,
+				"..",
+				"..",
+				"..",
+				"..",
+				"web",
+				"src",
+				"components",
+				"settings",
+				"SettingsRulesTab.tsx",
+			),
 			"utf8",
 		);
 		assert.match(rulesTab, /if \(!flags\.hasClinicalRules\)/);
@@ -168,16 +204,21 @@ describe("признаки рабочего пространства не тер
 		}) as unknown as Record<string, unknown>;
 
 		assert.equal(merged.hasClinicalRules, false);
-		assert.equal(merged.numberOfDoctors, DEFAULT_WORKSPACE_FEATURE_FLAGS.numberOfDoctors);
+		assert.equal(
+			merged.numberOfDoctors,
+			DEFAULT_WORKSPACE_FEATURE_FLAGS.numberOfDoctors,
+		);
 		assert.equal("hasVampireMode" in merged, false);
 
 		// NaN/Infinity в jsonb попасть могут; числом врачей быть не могут.
 		for (const broken of [Number.NaN, Number.POSITIVE_INFINITY]) {
-			const guarded = workspaceFlagsFromStorage({ numberOfDoctors: broken }) as unknown as Record<
-				string,
-				unknown
-			>;
-			assert.equal(guarded.numberOfDoctors, DEFAULT_WORKSPACE_FEATURE_FLAGS.numberOfDoctors);
+			const guarded = workspaceFlagsFromStorage({
+				numberOfDoctors: broken,
+			}) as unknown as Record<string, unknown>;
+			assert.equal(
+				guarded.numberOfDoctors,
+				DEFAULT_WORKSPACE_FEATURE_FLAGS.numberOfDoctors,
+			);
 		}
 	});
 

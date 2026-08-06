@@ -113,7 +113,9 @@ export async function computeCohortLtvAll(organizationIds: readonly string[]) {
 	const map = new Map<string, CohortRevenuePoint[]>();
 
 	for (const organizationId of organizationIds) {
-		const zone = await postgresKnowsTimeZone(await clinicTimeZone(organizationId));
+		const zone = await postgresKnowsTimeZone(
+			await clinicTimeZone(organizationId),
+		);
 		// Выражение месяца объявлено ОДИН раз на SELECT, GROUP BY и ORDER BY.
 		// Через три отдельных фрагмента имя пояса ушло бы параметром трижды и
 		// получило РАЗНЫЕ номера — PostgreSQL считает такие выражения разными и
@@ -127,7 +129,9 @@ export async function computeCohortLtvAll(organizationIds: readonly string[]) {
 				total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
 			})
 			.from(payments)
-			.where(and(eq(payments.organizationId, organizationId), PAID_PAYMENTS_ONLY))
+			.where(
+				and(eq(payments.organizationId, organizationId), PAID_PAYMENTS_ONLY),
+			)
 			.groupBy(monthBucket)
 			.orderBy(monthBucket);
 
@@ -146,7 +150,8 @@ export async function computeCohortLtvAll(organizationIds: readonly string[]) {
 }
 
 /** Состояние плана лечения так, как его называет перечисление базы. */
-export type TreatmentPlanStatus = (typeof treatmentPlanStatus.enumValues)[number];
+export type TreatmentPlanStatus =
+	(typeof treatmentPlanStatus.enumValues)[number];
 
 /**
  * ВЕТВИ ВОРОНКИ ВЫВЕДЕНЫ ИЗ ПЕРЕЧИСЛЕНИЯ, А НЕ ЗАПИСАНЫ ВТОРЫМ СПИСКОМ.
@@ -227,7 +232,9 @@ export interface PlanFunnelStage {
  * русскую подпись нельзя, а потерять планы — хуже, чем показать ветвь без
  * перевода. Так сумма ветвей всегда равна числу планов.
  */
-export function buildPlanFunnel(rows: readonly PlanStatusCount[]): PlanFunnelStage[] {
+export function buildPlanFunnel(
+	rows: readonly PlanStatusCount[],
+): PlanFunnelStage[] {
 	const known = new Map<string, number>(
 		TREATMENT_PLAN_FUNNEL_STATUSES.map((status) => [status, 0]),
 	);
@@ -298,7 +305,9 @@ export function buildPlanFunnel(rows: readonly PlanStatusCount[]): PlanFunnelSta
  * есть и не «приведено к единому виду» тихой правкой, потому что это вопрос
  * правила аренды, а не оформления.
  */
-export async function computePlanFunnelAll(): Promise<Map<string, PlanFunnelStage[]>> {
+export async function computePlanFunnelAll(): Promise<
+	Map<string, PlanFunnelStage[]>
+> {
 	const stats = await db
 		.select({
 			organizationId: treatmentPlans.organizationId,

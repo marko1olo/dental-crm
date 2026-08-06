@@ -24,7 +24,7 @@
  * именно два источника одного решения в этом разделе и расходились.
  */
 
-import { settingsTabs, type SettingsTab } from "../../AppHelpers";
+import { type SettingsTab, settingsTabs } from "../../AppHelpers";
 import { type AppView, viewLabels } from "../../workspaceShell";
 
 /** Часть адреса после `#`: `settings/telegram`. */

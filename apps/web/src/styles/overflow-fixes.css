@@ -18,10 +18,10 @@
  * Встречалось во всех 10 рабочих экранах в обеих темах.
  */
 @media (max-width: 840px) {
-  .topbar {
-    margin-left: -14px;
-    margin-right: -14px;
-  }
+	.topbar {
+		margin-left: -14px;
+		margin-right: -14px;
+	}
 }
 
 /* --- 2. Секции смены раскрывались на 562px внутри 364px ---
@@ -35,40 +35,40 @@
  * Замерено: 562px при родителе 364px, переполнение 185px.
  */
 @media (max-width: 700px) {
-  .role-focus-strip,
-  .shift-intelligence {
-    grid-template-columns: minmax(0, 1fr);
-    max-width: 100%;
-    min-width: 0;
-  }
+	.role-focus-strip,
+	.shift-intelligence {
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 100%;
+		min-width: 0;
+	}
 
-  .shift-dashboard-grid > * {
-    max-width: 100%;
-    min-width: 0;
-  }
+	.shift-dashboard-grid > * {
+		max-width: 100%;
+		min-width: 0;
+	}
 
-  /* --- 3. Подпись в свёрнутом блоке документов пациента ---
+	/* --- 3. Подпись в свёрнутом блоке документов пациента ---
    * span.settings-advanced-hint шириной 223px вылезал на 47px:
    * summary не давал ей перенести строку. */
-  .settings-advanced-toggle {
-    flex-wrap: wrap;
-    min-width: 0;
-  }
+	.settings-advanced-toggle {
+		flex-wrap: wrap;
+		min-width: 0;
+	}
 
-  .settings-advanced-hint {
-    max-width: 100%;
-    min-width: 0;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
+	.settings-advanced-hint {
+		max-width: 100%;
+		min-width: 0;
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
 
-  /* --- 4. Карточки с классами Tailwind p-4/rounded-xl/border ---
+	/* --- 4. Карточки с классами Tailwind p-4/rounded-xl/border ---
    * Вылезали на 19px: свои отступы поверх отступов страницы. */
-  .work-grid > div > .p-4,
-  .page-grid > div > .p-4 {
-    max-width: 100%;
-    min-width: 0;
-  }
+	.work-grid > div > .p-4,
+	.page-grid > div > .p-4 {
+		max-width: 100%;
+		min-width: 0;
+	}
 }
 
 /* --- 5. Зубная карта ---
@@ -80,12 +80,12 @@
  */
 .tooth-chart-container,
 .tooth-arch-wrapper {
-  max-width: 100%;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
+	max-width: 100%;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
 }
 
 .tooth-chart-arch-container {
-  max-width: 100%;
+	max-width: 100%;
 }

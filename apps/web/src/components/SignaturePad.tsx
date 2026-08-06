@@ -204,9 +204,7 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 						onTouchCancel={stopDrawing}
 					/>
 					{isEmpty && (
-						<div
-							className="absolute inset-0 pointer-events-none flex items-center justify-center text-[var(--odontogram-ink-muted,#94a3b8)] text-lg font-medium select-none"
-						>
+						<div className="absolute inset-0 pointer-events-none flex items-center justify-center text-[var(--odontogram-ink-muted,#94a3b8)] text-lg font-medium select-none">
 							Место для подписи
 						</div>
 					)}
@@ -223,9 +221,9 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 					Очистить
 				</button>
 				<div className="flex items-center gap-3">
-					<button 
-						type="button" 
-						onClick={onCancel} 
+					<button
+						type="button"
+						onClick={onCancel}
 						aria-label="Отмена"
 						className="modal-btn secondary focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
 					>
@@ -245,4 +243,3 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 		</>
 	);
 }
-

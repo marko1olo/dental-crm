@@ -1,9 +1,9 @@
+import { useDocumentStore } from "../../../store/documentStore";
+import { AnamnesisField } from "../AnamnesisField";
 import {
 	ANESTHESIA_MEDICATION_JOIN_LIMIT,
 	anesthesiaTextLimitsReview,
 } from "../anesthesiaTextLimits";
-import { useDocumentStore } from "../../../store/documentStore";
-import { AnamnesisField } from "../AnamnesisField";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import type { DocumentVisitHints } from "./documentFormTypes";
 
@@ -40,7 +40,9 @@ import type { DocumentVisitHints } from "./documentFormTypes";
  * схемы содержимого журнала теперь видны на экране, а не только на сервере:
  * разбор и то, что видел врач, записаны в anesthesiaTextLimits.ts.
  */
-export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<DocumentVisitHints, "inferredTreatmentArea">) {
+export function AnesthesiaConsentLogForm({
+	inferredTreatmentArea,
+}: Pick<DocumentVisitHints, "inferredTreatmentArea">) {
 	const {
 		anesthesiaAllergyRestrictionsChecked,
 		anesthesiaAllergyStatus,
@@ -100,9 +102,9 @@ export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<Documen
 						style={{ marginTop: "12px" }}
 					>
 						<strong>
-							Журнал не создастся: текст в {limits.tooLong.length} поле длиннее, чем
-							принимает сервер. Отказ на нажатие «Создать» при этом говорит про
-							незаполненные поля, поэтому причину пишем здесь:
+							Журнал не создастся: текст в {limits.tooLong.length} поле длиннее,
+							чем принимает сервер. Отказ на нажатие «Создать» при этом говорит
+							про незаполненные поля, поэтому причину пишем здесь:
 						</strong>
 						<ul>
 							{limits.tooLong.map((entry) => (
@@ -116,8 +118,8 @@ export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<Documen
 							))}
 						</ul>
 						<small>
-							Текст не обрезается сам: обрезка посередине испортила бы клиническую
-							запись, поэтому сокращает врач.
+							Текст не обрезается сам: обрезка посередине испортила бы
+							клиническую запись, поэтому сокращает врач.
 						</small>
 					</div>
 				) : null
@@ -202,7 +204,9 @@ export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<Documen
 				Ограничения
 				<textarea
 					value={anesthesiaRestrictionNotes}
-					onChange={(event) => setAnesthesiaRestrictionNotes(event.target.value)}
+					onChange={(event) =>
+						setAnesthesiaRestrictionNotes(event.target.value)
+					}
 					placeholder="например: без вазоконстриктора / контроль АД"
 					rows={2}
 				/>
@@ -211,7 +215,9 @@ export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<Documen
 				<input
 					checked={anesthesiaRisksExplained}
 					type="checkbox"
-					onChange={(event) => setAnesthesiaRisksExplained(event.target.checked)}
+					onChange={(event) =>
+						setAnesthesiaRisksExplained(event.target.checked)
+					}
 				/>
 				Пациенту объяснены риски и ограничения анестезии
 			</label>
@@ -219,7 +225,9 @@ export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<Documen
 				<input
 					checked={anesthesiaAllergyRestrictionsChecked}
 					type="checkbox"
-					onChange={(event) => setAnesthesiaAllergyRestrictionsChecked(event.target.checked)}
+					onChange={(event) =>
+						setAnesthesiaAllergyRestrictionsChecked(event.target.checked)
+					}
 				/>
 				Аллергии, лекарства и ограничения проверены до введения
 			</label>
@@ -227,7 +235,9 @@ export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<Documen
 				<input
 					checked={anesthesiaConsentConfirmed}
 					type="checkbox"
-					onChange={(event) => setAnesthesiaConsentConfirmed(event.target.checked)}
+					onChange={(event) =>
+						setAnesthesiaConsentConfirmed(event.target.checked)
+					}
 				/>
 				Пациент согласен на выбранную местную анестезию
 			</label>

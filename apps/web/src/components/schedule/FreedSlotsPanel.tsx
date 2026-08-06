@@ -56,11 +56,18 @@ type FreedSlotsReport = {
 function formatMoment(iso: string): string {
 	const parsed = new Date(iso);
 	if (Number.isNaN(parsed.getTime())) return iso;
-	return parsed.toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+	return parsed.toLocaleString("ru-RU", {
+		day: "numeric",
+		month: "long",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
 }
 
 function formatDuration(fromIso: string, toIso: string): string {
-	const minutes = Math.round((new Date(toIso).getTime() - new Date(fromIso).getTime()) / 60_000);
+	const minutes = Math.round(
+		(new Date(toIso).getTime() - new Date(fromIso).getTime()) / 60_000,
+	);
 	if (!Number.isFinite(minutes) || minutes <= 0) return "";
 	if (minutes < 60) return `${minutes} мин`;
 	const hours = Math.floor(minutes / 60);
@@ -114,7 +121,10 @@ export const FreedSlotsPanel: React.FC = () => {
 		по-русски: тогда оно точнее любого нашего. И на экране появилась кнопка
 		повторить, потому что «не построен» без действия — тупик.
 	*/
-	const loadFailureText = (status: number, serverMessage: string | null): string => {
+	const loadFailureText = (
+		status: number,
+		serverMessage: string | null,
+	): string => {
 		// Кириллица в сообщении сервера — признак, что оно написано для человека.
 		if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
 		if (status === 401 || status === 403)
@@ -131,12 +141,12 @@ export const FreedSlotsPanel: React.FC = () => {
 			let response: Response;
 			try {
 				response = await fetch("/api/schedule/freed-slots", {
-					headers: auth ? auth.denteClinicalReadHeaders() : {}
+					headers: auth ? auth.denteClinicalReadHeaders() : {},
 				});
 			} catch {
 				setReport(null);
 				setError(
-					"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть."
+					"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть.",
 				);
 				return;
 			}
@@ -173,7 +183,9 @@ export const FreedSlotsPanel: React.FC = () => {
 			<div className="panel-heading">
 				<h2>Освободившиеся окна</h2>
 				{report ? (
-					<span className={`status-pill ${report.slots.length > 0 ? "status-arrived" : "status-planned"}`}>
+					<span
+						className={`status-pill ${report.slots.length > 0 ? "status-arrived" : "status-planned"}`}
+					>
 						{report.slots.length}
 					</span>
 				) : null}
@@ -210,7 +222,9 @@ export const FreedSlotsPanel: React.FC = () => {
 				<>
 					<div className="ops-table-wrap">
 						<table className="ops-table">
-							<caption className="sr-only">Окна, освободившиеся после отмены или неявки</caption>
+							<caption className="sr-only">
+								Окна, освободившиеся после отмены или неявки
+							</caption>
 							<thead>
 								<tr>
 									<th scope="col">Когда</th>
@@ -228,11 +242,17 @@ export const FreedSlotsPanel: React.FC = () => {
 										<tr key={slot.appointmentId}>
 											<td className="ops-strong" data-label="Когда">
 												{formatMoment(slot.startsAt)}
-												<span className="ops-note">{formatDuration(slot.startsAt, slot.endsAt)}</span>
+												<span className="ops-note">
+													{formatDuration(slot.startsAt, slot.endsAt)}
+												</span>
 											</td>
-											<td data-label="Врач">{slot.doctorName ?? "врач не указан"}</td>
+											<td data-label="Врач">
+												{slot.doctorName ?? "врач не указан"}
+											</td>
 											<td data-label="Почему освободилось">
-												<span className={`ops-state ops-state--${slot.status === "no_show" ? "bad" : "warn"}`}>
+												<span
+													className={`ops-state ops-state--${slot.status === "no_show" ? "bad" : "warn"}`}
+												>
 													{slot.freedBecause}
 												</span>
 											</td>
@@ -257,9 +277,15 @@ export const FreedSlotsPanel: React.FC = () => {
 															<button
 																className="link-button"
 																type="button"
-																onClick={() => setOpenSlot(isOpen ? null : slot.appointmentId)}
+																onClick={() =>
+																	setOpenSlot(
+																		isOpen ? null : slot.appointmentId,
+																	)
+																}
 															>
-																{isOpen ? "Скрыть полный подбор" : "Полный подбор из очереди"}
+																{isOpen
+																	? "Скрыть полный подбор"
+																	: "Полный подбор из очереди"}
 															</button>
 														) : null}
 														{isOpen ? (
@@ -273,10 +299,16 @@ export const FreedSlotsPanel: React.FC = () => {
 													</>
 												) : (
 													<>
-														<span className="ops-strong">{best?.patientName}</span>
-														<span className="ops-note">{best?.phone ?? "телефон не указан"}</span>
+														<span className="ops-strong">
+															{best?.patientName}
+														</span>
+														<span className="ops-note">
+															{best?.phone ?? "телефон не указан"}
+														</span>
 														<span className="ops-note">{best?.reason}</span>
-														{called.has(calledKey(slot.appointmentId, best?.patientId)) ? (
+														{called.has(
+															calledKey(slot.appointmentId, best?.patientId),
+														) ? (
 															<span className="ops-note">Позвонили ✓</span>
 														) : (
 															<button
@@ -286,8 +318,11 @@ export const FreedSlotsPanel: React.FC = () => {
 																onClick={() =>
 																	setCalled((previous) =>
 																		new Set(previous).add(
-																			calledKey(slot.appointmentId, best?.patientId)
-																		)
+																			calledKey(
+																				slot.appointmentId,
+																				best?.patientId,
+																			),
+																		),
 																	)
 																}
 															>
@@ -302,7 +337,9 @@ export const FreedSlotsPanel: React.FC = () => {
 														<button
 															className="link-button"
 															type="button"
-															onClick={() => setOpenSlot(isOpen ? null : slot.appointmentId)}
+															onClick={() =>
+																setOpenSlot(isOpen ? null : slot.appointmentId)
+															}
 															data-testid={`freed-slot-expand-${slot.appointmentId}`}
 														>
 															{isOpen
@@ -314,7 +351,10 @@ export const FreedSlotsPanel: React.FC = () => {
 																		: "Полный подбор"}
 														</button>
 														{isOpen ? (
-															<div style={{ marginTop: 8 }} data-testid="freed-slot-full-matches">
+															<div
+																style={{ marginTop: 8 }}
+																data-testid="freed-slot-full-matches"
+															>
 																<WaitlistMatchesBlock
 																	appointmentId={slot.appointmentId}
 																	compact
@@ -324,7 +364,6 @@ export const FreedSlotsPanel: React.FC = () => {
 													</>
 												)}
 											</td>
-
 										</tr>
 									);
 								})}

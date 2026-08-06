@@ -122,7 +122,10 @@ function apiSourceFiles(): readonly string[] {
 		}
 	};
 	walk(apiSrcRoot);
-	assert.ok(found.length > 100, `перепись исходников apps/api выродилась: файлов ${found.length}`);
+	assert.ok(
+		found.length > 100,
+		`перепись исходников apps/api выродилась: файлов ${found.length}`,
+	);
 	return found;
 }
 
@@ -145,13 +148,26 @@ function sitesOf(field: "clinicSchedule" | "clinicMode"): readonly FoundSite[] {
 		lines.forEach((line, index) => {
 			const code = line.trim();
 			// Комментарий — это разбор, а не обращение к колонке.
-			if (code.startsWith("*") || code.startsWith("//") || code.startsWith("/*")) return;
+			if (
+				code.startsWith("*") ||
+				code.startsWith("//") ||
+				code.startsWith("/*")
+			)
+				return;
 			// Обращение к свойству прочитанной строки (`org.clinicSchedule`) —
 			// чтение по определению и в список не заводится.
 			if (!pattern.test(code)) return;
-			if (new RegExp(`\\.${field}\\b`).test(code) && !new RegExp(`${field}\\s*[:=]`).test(code)) return;
+			if (
+				new RegExp(`\\.${field}\\b`).test(code) &&
+				!new RegExp(`${field}\\s*[:=]`).test(code)
+			)
+				return;
 			if (!new RegExp(`${field}\\s*[:=]`).test(code)) return;
-			sites.push({ file: relative(apiSrcRoot, file).split(sep).join("/"), line: index + 1, code });
+			sites.push({
+				file: relative(apiSrcRoot, file).split(sep).join("/"),
+				line: index + 1,
+				code,
+			});
 		});
 	}
 	return sites;
@@ -164,7 +180,12 @@ function assertSitesMatch(
 	const found = sitesOf(field);
 	const foundKeys = found.map((site) => `${site.file} :: ${site.code}`).sort();
 	const allowedKeys = allowed
-		.flatMap((site) => Array.from({ length: site.count ?? 1 }, () => `${site.file} :: ${site.code}`))
+		.flatMap((site) =>
+			Array.from(
+				{ length: site.count ?? 1 },
+				() => `${site.file} :: ${site.code}`,
+			),
+		)
 		.sort();
 	assert.deepEqual(
 		foundKeys,
@@ -183,7 +204,10 @@ function assertSitesMatch(
 			writers.map((w) => w.file).join(", "),
 	);
 	for (const site of allowed) {
-		assert.ok(site.why.trim().length > 20, `Запись «${site.code}» без внятной причины`);
+		assert.ok(
+			site.why.trim().length > 20,
+			`Запись «${site.code}» без внятной причины`,
+		);
 	}
 }
 
@@ -215,15 +239,33 @@ test("формат единственного писателя графика �
 		"формат экрана настроек перестал проходить разбор графика — значит настройка клиники снова невидима на чтении",
 	);
 	assert.equal(
-		clinicScheduleDefaultsSchema.safeParse({ workHours: [9, 18], specs: ["therapy"] }).success,
+		clinicScheduleDefaultsSchema.safeParse({
+			workHours: [9, 18],
+			specs: ["therapy"],
+		}).success,
 		false,
 		"старая раскладка мастера первого запуска снова проходит разбор — тогда два формата опять неразличимы",
 	);
 });
 
 test("словарь режимов не пуст и писатель принимает только его значения", () => {
-	assert.ok(clinicModeSchema.options.length >= 2, "перечисление режимов выродилось");
-	assert.equal(clinicModeSchema.safeParse("single").success, false, "значение 'single' снова внутри словаря");
-	assert.equal(clinicModeSchema.safeParse("network").success, false, "значение 'network' снова внутри словаря");
-	assert.equal(clinicModeSchema.safeParse("demo").success, false, "значение 'demo' снова внутри словаря");
+	assert.ok(
+		clinicModeSchema.options.length >= 2,
+		"перечисление режимов выродилось",
+	);
+	assert.equal(
+		clinicModeSchema.safeParse("single").success,
+		false,
+		"значение 'single' снова внутри словаря",
+	);
+	assert.equal(
+		clinicModeSchema.safeParse("network").success,
+		false,
+		"значение 'network' снова внутри словаря",
+	);
+	assert.equal(
+		clinicModeSchema.safeParse("demo").success,
+		false,
+		"значение 'demo' снова внутри словаря",
+	);
 });

@@ -1,13 +1,13 @@
-import test, { describe, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
+import test, { afterEach, beforeEach, describe } from "node:test";
+import { db } from "../../db/client.js";
 import {
 	createPatientInDb,
 	getPatientsFromDb,
-	updatePatientInDb,
-	updatePatientAdministrativeProfileInDb,
 	rowToPatient,
+	updatePatientAdministrativeProfileInDb,
+	updatePatientInDb,
 } from "../../db/patientsQuery.js";
-import { db } from "../../db/client.js";
 
 /**
  * Сбой базы не должен выглядеть как успешная работа.
@@ -42,7 +42,8 @@ describe("patientsQuery: сбой базы не подменяется памя�
 
 	afterEach(() => {
 		test.mock.restoreAll();
-		if (savedPersistence === undefined) delete process.env.DENTAL_STATE_PERSISTENCE;
+		if (savedPersistence === undefined)
+			delete process.env.DENTAL_STATE_PERSISTENCE;
 		else process.env.DENTAL_STATE_PERSISTENCE = savedPersistence;
 	});
 
@@ -55,7 +56,10 @@ describe("patientsQuery: сбой базы не подменяется памя�
 			}),
 		}));
 
-		await assert.rejects(() => getPatientsFromDb(ORG), /сбой соединения с базой/);
+		await assert.rejects(
+			() => getPatientsFromDb(ORG),
+			/сбой соединения с базой/,
+		);
 	});
 
 	test("createPatientInDb передаёт ошибку наружу, а не выдаёт несуществующий идентификатор", async (t) => {
@@ -67,7 +71,10 @@ describe("patientsQuery: сбой базы не подменяется памя�
 			}),
 		}));
 
-		await assert.rejects(() => createPatientInDb(ORG, { fullName: "Проба Проверочная" } as never), /сбой соединения с базой/);
+		await assert.rejects(
+			() => createPatientInDb(ORG, { fullName: "Проба Проверочная" } as never),
+			/сбой соединения с базой/,
+		);
 	});
 
 	test("updatePatientInDb передаёт ошибку наружу, а не отвечает успехом", async (t) => {
@@ -82,7 +89,10 @@ describe("patientsQuery: сбой базы не подменяется памя�
 		}));
 
 		await assert.rejects(
-			() => updatePatientInDb(ORG, PATIENT, { fullName: "Проба Проверочная" } as never),
+			() =>
+				updatePatientInDb(ORG, PATIENT, {
+					fullName: "Проба Проверочная",
+				} as never),
 			/сбой соединения с базой/,
 		);
 	});
@@ -99,7 +109,10 @@ describe("patientsQuery: сбой базы не подменяется памя�
 		}));
 
 		await assert.rejects(
-			() => updatePatientAdministrativeProfileInDb(ORG, PATIENT, { vipStatus: true } as never),
+			() =>
+				updatePatientAdministrativeProfileInDb(ORG, PATIENT, {
+					vipStatus: true,
+				} as never),
 			/сбой соединения с базой/,
 		);
 	});
@@ -154,7 +167,9 @@ describe("patientsQuery: сбой базы не подменяется памя�
 			}),
 		}));
 
-		const patient = await updatePatientInDb(ORG, PATIENT, { fullName: "Петров Пётр Петрович" } as never);
+		const patient = await updatePatientInDb(ORG, PATIENT, {
+			fullName: "Петров Пётр Петрович",
+		} as never);
 		assert.equal(patient?.fullName, "Петров Пётр Петрович");
 	});
 
@@ -169,7 +184,9 @@ describe("patientsQuery: сбой базы не подменяется памя�
 			}),
 		}));
 
-		const patient = await updatePatientInDb(ORG, PATIENT, { fullName: "Чужой" } as never);
+		const patient = await updatePatientInDb(ORG, PATIENT, {
+			fullName: "Чужой",
+		} as never);
 		assert.equal(patient, null);
 	});
 });

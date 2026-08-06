@@ -70,7 +70,11 @@ function summarizeEvaluations(
 function collectServiceIdsForPatient(
 	dashboard: Dashboard | null | undefined,
 	patientId: string,
-): { serviceIds: string[]; completedServiceIds: string[]; scenarioId: string | null } {
+): {
+	serviceIds: string[];
+	completedServiceIds: string[];
+	scenarioId: string | null;
+} {
 	const planItems = (dashboard?.treatmentPlanItems ?? []).filter(
 		(item) => item.patientId === patientId && item.status !== "cancelled",
 	);
@@ -108,10 +112,12 @@ export function ClinicalRulePanel({
 	const auth = appLogic?.auth;
 	const dashboard = appLogic?.dashboard as Dashboard | null | undefined;
 
-	const [liveEvaluations, setLiveEvaluations] = useState<ClinicalRuleEvaluation[] | null>(
+	const [liveEvaluations, setLiveEvaluations] = useState<
+		ClinicalRuleEvaluation[] | null
+	>(null);
+	const [liveSummary, setLiveSummary] = useState<ClinicalRuleSummary | null>(
 		null,
 	);
-	const [liveSummary, setLiveSummary] = useState<ClinicalRuleSummary | null>(null);
 	const [liveAt, setLiveAt] = useState<string | null>(null);
 	const [evaluating, setEvaluating] = useState(false);
 	const [evaluateError, setEvaluateError] = useState<string | null>(null);
@@ -128,9 +134,14 @@ export function ClinicalRulePanel({
 	const displayEvaluations = liveEvaluations ?? evaluations;
 	const displaySummary = liveSummary ?? summary ?? EMPTY_SUMMARY;
 
-	const unresolved = displayEvaluations.filter((evaluation) => !evaluation.resolved);
+	const unresolved = displayEvaluations.filter(
+		(evaluation) => !evaluation.resolved,
+	);
 	const sourceEvaluations = unresolved.length ? unresolved : displayEvaluations;
-	const visibleEvaluations = sourceEvaluations.slice(0, context === "visit" ? 1 : 4);
+	const visibleEvaluations = sourceEvaluations.slice(
+		0,
+		context === "visit" ? 1 : 4,
+	);
 	const emptyMessage =
 		context === "visit"
 			? "Активных клинических предупреждений нет. Можно продолжать прием."
@@ -154,14 +165,18 @@ export function ClinicalRulePanel({
 		return evaluation.message;
 	};
 
-	const failureText = (status: number, serverMessage: string | null): string => {
+	const failureText = (
+		status: number,
+		serverMessage: string | null,
+	): string => {
 		if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
 		if (status === 401 || status === 403)
 			return "Нет прав проверять клинические правила: доступ закрыт или истёк вход в программу.";
 		if (status === 404) return "Раздел клинических правил не отвечает.";
 		if (status === 400)
 			return "Не удалось пересчитать правила: проверьте, что у пациента есть услуги в плане.";
-		if (status >= 500) return "Сбой на сервере клиники: правила не пересчитаны.";
+		if (status >= 500)
+			return "Сбой на сервере клиники: правила не пересчитаны.";
 		return `Программа не смогла пересчитать клинические правила (ответ ${status}).`;
 	};
 
@@ -188,7 +203,9 @@ export function ClinicalRulePanel({
 					response = await fetch("/api/clinical/rules/evaluate", {
 						method: "POST",
 						headers: auth
-							? auth.denteClinicalReadHeaders({ "Content-Type": "application/json" })
+							? auth.denteClinicalReadHeaders({
+									"Content-Type": "application/json",
+								})
 							: { "Content-Type": "application/json" },
 						body: JSON.stringify({
 							patientId,
@@ -211,7 +228,10 @@ export function ClinicalRulePanel({
 				} catch {
 					payload = null;
 				}
-				const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+				const body =
+					payload && typeof payload === "object"
+						? (payload as Record<string, unknown>)
+						: null;
 				const serverMessage =
 					body && typeof body.message === "string" ? body.message : null;
 
@@ -222,7 +242,8 @@ export function ClinicalRulePanel({
 				if (
 					response.status === 400 &&
 					body &&
-					(body.code === "ClinicalRuleBlocker" || body.error === "ClinicalRuleBlocker") &&
+					(body.code === "ClinicalRuleBlocker" ||
+						body.error === "ClinicalRuleBlocker") &&
 					body.evaluation &&
 					typeof body.evaluation === "object"
 				) {
@@ -230,7 +251,10 @@ export function ClinicalRulePanel({
 					const list = [blocker];
 					setLiveEvaluations(list);
 					setLiveSummary(
-						summarizeEvaluations(list, dashboard?.clinicalRuleSummary?.activeRules ?? 0),
+						summarizeEvaluations(
+							list,
+							dashboard?.clinicalRuleSummary?.activeRules ?? 0,
+						),
 					);
 					setLiveAt(new Date().toISOString());
 					setEvaluateError(serverMessage ?? blocker.message);
@@ -256,7 +280,9 @@ export function ClinicalRulePanel({
 				setLiveEvaluations(nextEvaluations);
 				setLiveSummary(nextSummary);
 				setLiveAt(new Date().toISOString());
-				const unresolvedCount = nextEvaluations.filter((e) => !e.resolved).length;
+				const unresolvedCount = nextEvaluations.filter(
+					(e) => !e.resolved,
+				).length;
 				setEvaluateNotice(
 					unresolvedCount
 						? `Пересчитано по плану: ${nextEvaluations.length} срабатываний, ${unresolvedCount} требуют внимания.`
@@ -269,67 +295,76 @@ export function ClinicalRulePanel({
 		[auth, dashboard, patientId],
 	);
 
-	const liveControls =
-		patientId ? (
-			<div
-				className="clinical-rule-live-controls"
-				style={{
-					display: "flex",
-					flexWrap: "wrap",
-					gap: "0.5rem",
-					alignItems: "center",
-					marginBottom: context === "visit" ? "0.75rem" : "1rem",
-				}}
-				data-testid="clinical-rule-live-controls"
+	const liveControls = patientId ? (
+		<div
+			className="clinical-rule-live-controls"
+			style={{
+				display: "flex",
+				flexWrap: "wrap",
+				gap: "0.5rem",
+				alignItems: "center",
+				marginBottom: context === "visit" ? "0.75rem" : "1rem",
+			}}
+			data-testid="clinical-rule-live-controls"
+		>
+			<button
+				type="button"
+				className="secondary-button"
+				disabled={evaluating}
+				onClick={() => void runLiveEvaluate(false)}
+				aria-label="Пересчитать клинические правила по текущему плану лечения"
 			>
+				<RefreshCw aria-hidden="true" size={16} />
+				{evaluating ? "Считаем…" : "Пересчитать по плану"}
+			</button>
+			{context === "visit" ? (
 				<button
 					type="button"
 					className="secondary-button"
 					disabled={evaluating}
-					onClick={() => void runLiveEvaluate(false)}
-					aria-label="Пересчитать клинические правила по текущему плану лечения"
+					onClick={() => void runLiveEvaluate(true)}
+					aria-label="Проверить план с остановкой на блокирующих правилах"
+					title="Если есть блокирующее противопоказание — покажем его отдельно"
 				>
-					<RefreshCw aria-hidden="true" size={16} />
-					{evaluating ? "Считаем…" : "Пересчитать по плану"}
+					{evaluating ? "Считаем…" : "Проверить с блокировкой"}
 				</button>
-				{context === "visit" ? (
-					<button
-						type="button"
-						className="secondary-button"
-						disabled={evaluating}
-						onClick={() => void runLiveEvaluate(true)}
-						aria-label="Проверить план с остановкой на блокирующих правилах"
-						title="Если есть блокирующее противопоказание — покажем его отдельно"
-					>
-						{evaluating ? "Считаем…" : "Проверить с блокировкой"}
-					</button>
-				) : null}
-				{planContext && !planContext.serviceIds.length ? (
-					<span className="ops-note">В плане пока нет услуг для проверки.</span>
-				) : null}
-				{liveAt ? (
-					<span className="ops-note">
-						Живой пересчёт:{" "}
-						{new Date(liveAt).toLocaleTimeString("ru-RU", {
-							hour: "2-digit",
-							minute: "2-digit",
-						})}
-					</span>
-				) : (
-					<span className="ops-note">Показан снимок смены — нажмите «Пересчитать по плану».</span>
-				)}
-			</div>
-		) : null;
+			) : null}
+			{planContext && !planContext.serviceIds.length ? (
+				<span className="ops-note">В плане пока нет услуг для проверки.</span>
+			) : null}
+			{liveAt ? (
+				<span className="ops-note">
+					Живой пересчёт:{" "}
+					{new Date(liveAt).toLocaleTimeString("ru-RU", {
+						hour: "2-digit",
+						minute: "2-digit",
+					})}
+				</span>
+			) : (
+				<span className="ops-note">
+					Показан снимок смены — нажмите «Пересчитать по плану».
+				</span>
+			)}
+		</div>
+	) : null;
 
 	const liveFeedback = (
 		<>
 			{evaluateError ? (
-				<div className="ops-notice ops-notice--error" role="alert" style={{ marginBottom: "0.75rem" }}>
+				<div
+					className="ops-notice ops-notice--error"
+					role="alert"
+					style={{ marginBottom: "0.75rem" }}
+				>
 					{evaluateError}
 				</div>
 			) : null}
 			{evaluateNotice ? (
-				<div className="ops-notice" role="status" style={{ marginBottom: "0.75rem" }}>
+				<div
+					className="ops-notice"
+					role="status"
+					style={{ marginBottom: "0.75rem" }}
+				>
 					{evaluateNotice}
 				</div>
 			) : null}
@@ -359,13 +394,17 @@ export function ClinicalRulePanel({
 						{evaluation.missingRequiredServiceIds.length ? (
 							<small>
 								Добавить:{" "}
-								{evaluation.missingRequiredServiceIds.map(serviceTitle).join(", ")}
+								{evaluation.missingRequiredServiceIds
+									.map(serviceTitle)
+									.join(", ")}
 							</small>
 						) : null}
 						{evaluation.missingCompletedServiceIds.length ? (
 							<small>
 								Сначала завершить:{" "}
-								{evaluation.missingCompletedServiceIds.map(serviceTitle).join(", ")}
+								{evaluation.missingCompletedServiceIds
+									.map(serviceTitle)
+									.join(", ")}
 							</small>
 						) : null}
 						{evaluation.blockedServiceIds.length ? (
@@ -402,13 +441,17 @@ export function ClinicalRulePanel({
 						{evaluation.missingRequiredServiceIds.length ? (
 							<small>
 								Добавить:{" "}
-								{evaluation.missingRequiredServiceIds.map(serviceTitle).join(", ")}
+								{evaluation.missingRequiredServiceIds
+									.map(serviceTitle)
+									.join(", ")}
 							</small>
 						) : null}
 						{evaluation.missingCompletedServiceIds.length ? (
 							<small>
 								Сначала завершить:{" "}
-								{evaluation.missingCompletedServiceIds.map(serviceTitle).join(", ")}
+								{evaluation.missingCompletedServiceIds
+									.map(serviceTitle)
+									.join(", ")}
 							</small>
 						) : null}
 						{evaluation.blockedServiceIds.length ? (
@@ -438,8 +481,8 @@ export function ClinicalRulePanel({
 					<div>
 						<h3>Клинические предупреждения</h3>
 						<p>
-							{displaySummary.unresolved} требуют внимания · {displaySummary.coveredRules}{" "}
-							закрыты
+							{displaySummary.unresolved} требуют внимания ·{" "}
+							{displaySummary.coveredRules} закрыты
 						</p>
 					</div>
 					<span
@@ -475,8 +518,8 @@ export function ClinicalRulePanel({
 				<div>
 					<h3>Клинические правила</h3>
 					<p>
-						{displaySummary.unresolved} требуют внимания · {displaySummary.coveredRules}{" "}
-						закрыты
+						{displaySummary.unresolved} требуют внимания ·{" "}
+						{displaySummary.coveredRules} закрыты
 					</p>
 				</div>
 				<span

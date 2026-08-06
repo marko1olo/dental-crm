@@ -17,14 +17,17 @@
 
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { operatorReadableErrorDetail } from "../../AppHelpers";
 import {
 	AUTHED_API_FILE_FAILURE,
 	fetchAuthedApiFileObjectUrl,
 } from "../../lib/authedApiFile";
-import { operatorReadableErrorDetail } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import {
+	actionFailureToast,
+	requestFailureCause,
+} from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
-import { actionFailureToast, requestFailureCause } from "../../lib/panelStateText";
 
 type AttachmentFile = {
 	id: string;
@@ -59,7 +62,12 @@ function parseFilesPayload(raw: string): AttachmentFile[] {
 		const name = typeof r.name === "string" ? r.name.trim() : "";
 		const type = typeof r.type === "string" ? r.type.trim() : "";
 		if (!id || !url) continue;
-		out.push({ id, url, name: name || id, type: type || "application/octet-stream" });
+		out.push({
+			id,
+			url,
+			name: name || id,
+			type: type || "application/octet-stream",
+		});
 	}
 	return out;
 }
@@ -69,10 +77,9 @@ export type PatientAttachmentsPanelProps = {
 	patientName?: string | null;
 };
 
-export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = ({
-	patientId,
-	patientName,
-}) => {
+export const PatientAttachmentsPanel: React.FC<
+	PatientAttachmentsPanelProps
+> = ({ patientId, patientName }) => {
 	const [files, setFiles] = useState<AttachmentFile[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [uploading, setUploading] = useState(false);
@@ -90,12 +97,17 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
 		setLoading(true);
 		setError(null);
 		try {
-			const res = await fetch(`/api/patients/${encodeURIComponent(id)}/attachments`, {
-				headers: denteAdminSecretRequestHeaders(),
-			});
+			const res = await fetch(
+				`/api/patients/${encodeURIComponent(id)}/attachments`,
+				{
+					headers: denteAdminSecretRequestHeaders(),
+				},
+			);
 			const raw = await res.text();
 			if (!res.ok) {
-				console.error(`[patient-attachments] GET ${res.status} ${raw.slice(0, 300)}`);
+				console.error(
+					`[patient-attachments] GET ${res.status} ${raw.slice(0, 300)}`,
+				);
 				const json = jsonObjectOrNull(raw);
 				const serverMsg =
 					typeof json?.message === "string" ? json.message.trim() : "";
@@ -138,11 +150,14 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
 				const formData = new FormData();
 				formData.append("file", file, file.name);
 
-				const res = await fetch(`/api/patients/${encodeURIComponent(id)}/attachments`, {
-					method: "POST",
-					headers: denteAdminSecretRequestHeaders(),
-					body: formData,
-				});
+				const res = await fetch(
+					`/api/patients/${encodeURIComponent(id)}/attachments`,
+					{
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders(),
+						body: formData,
+					},
+				);
 				const raw = await res.text();
 				const json = jsonObjectOrNull(raw);
 				const serverMsg =
@@ -150,7 +165,9 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
 				const detail = operatorReadableErrorDetail(serverMsg || null);
 
 				if (!res.ok) {
-					console.error(`[patient-attachments] POST ${res.status} ${raw.slice(0, 300)}`);
+					console.error(
+						`[patient-attachments] POST ${res.status} ${raw.slice(0, 300)}`,
+					);
 					const msg =
 						detail ??
 						(res.status === 400
@@ -164,19 +181,31 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
 				}
 
 				const fileObj = json?.file;
-				if (typeof fileObj === "object" && fileObj !== null && !Array.isArray(fileObj)) {
+				if (
+					typeof fileObj === "object" &&
+					fileObj !== null &&
+					!Array.isArray(fileObj)
+				) {
 					const f = fileObj as Record<string, unknown>;
 					const newId = typeof f.id === "string" ? f.id.trim() : "";
 					const newUrl = typeof f.url === "string" ? f.url.trim() : "";
-					const newName = typeof f.name === "string" ? f.name.trim() : file.name;
+					const newName =
+						typeof f.name === "string" ? f.name.trim() : file.name;
 					const newType =
-						typeof f.type === "string" ? f.type.trim() : file.type || "application/octet-stream";
+						typeof f.type === "string"
+							? f.type.trim()
+							: file.type || "application/octet-stream";
 					if (newId && newUrl) {
 						setFiles((prev) => {
 							if (prev.some((x) => x.id === newId)) return prev;
 							return [
 								...prev,
-								{ id: newId, url: newUrl, name: newName || newId, type: newType },
+								{
+									id: newId,
+									url: newUrl,
+									name: newName || newId,
+									type: newType,
+								},
 							];
 						});
 					} else {
@@ -243,8 +272,8 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
 					</h3>
 					<p className="text-xs text-zinc-500 mt-0.5">
 						Паспорт, направление, договор и прочие документы
-						{nameHint ? ` · ${nameHint}` : ""}. Не фото дневника приёма —
-						те живут во вкладке визита.
+						{nameHint ? ` · ${nameHint}` : ""}. Не фото дневника приёма — те
+						живут во вкладке визита.
 					</p>
 				</div>
 				<label className="cursor-pointer inline-flex items-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 text-sm font-medium rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white border border-sky-400/40 disabled:opacity-50">
@@ -271,11 +300,17 @@ export const PatientAttachmentsPanel: React.FC<PatientAttachmentsPanelProps> = (
 			) : null}
 
 			{loading && files.length === 0 ? (
-				<p className="text-xs text-zinc-500" data-testid="patient-attachments-loading">
+				<p
+					className="text-xs text-zinc-500"
+					data-testid="patient-attachments-loading"
+				>
 					Загрузка списка…
 				</p>
 			) : files.length === 0 ? (
-				<p className="text-xs text-zinc-500" data-testid="patient-attachments-empty">
+				<p
+					className="text-xs text-zinc-500"
+					data-testid="patient-attachments-empty"
+				>
 					Вложений пока нет. Прикрепите скан или PDF.
 				</p>
 			) : (

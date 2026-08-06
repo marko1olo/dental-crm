@@ -1,11 +1,20 @@
 export const meta = {
-  name: 'archon-cycle-15',
-  description: 'DENTE cycle 15: radiology renders nothing at all in night theme',
-  phases: [
-    { title: 'Build', detail: 'reproduce first, then fix; an unreproducible finding is a full success' },
-    { title: 'Attack', detail: 'a different agent checks the mechanism was established, not guessed' },
-  ],
-}
+	name: "archon-cycle-15",
+	description:
+		"DENTE cycle 15: radiology renders nothing at all in night theme",
+	phases: [
+		{
+			title: "Build",
+			detail:
+				"reproduce first, then fix; an unreproducible finding is a full success",
+		},
+		{
+			title: "Attack",
+			detail:
+				"a different agent checks the mechanism was established, not guessed",
+		},
+	],
+};
 
 /*
  * DELIBERATELY SHORT LAW. The previous cycles carried a ~15 KB preamble and agents
@@ -53,16 +62,17 @@ Every "proven" entry is a command you actually RAN, with its TRUE exit code — 
 ('cmd > /tmp/log 2>&1; echo $?'), because '$?' after a pipe reports the pipe and the lead has been fooled by
 that. If your measurement contradicts this brief, YOUR MEASUREMENT WINS — say so loudly. The lead has been
 wrong seven times tonight and expects correction.
-`
+`;
 
 const PACKETS = [
-  {
-    id: 'EE1-imaging-blank-in-night-theme',
-    label: 'EE1 radiology renders nothing in night theme',
-    dir: '.agents/archon/packets/EE1-imaging-blank-in-night-theme',
-    files: 'apps/web/src/ImagingView.tsx and the imaging rules inside apps/web/src/styles/main.css, premium.css, shadow-analyst.css. You may READ anything. Do NOT edit App.tsx, useAppLogic.tsx, or any other view.',
-    gate: 'node scripts/check-css-tokens.mjs (exits 0 today) plus node --import tsx --test on any test you add',
-    brief: `
+	{
+		id: "EE1-imaging-blank-in-night-theme",
+		label: "EE1 radiology renders nothing in night theme",
+		dir: ".agents/archon/packets/EE1-imaging-blank-in-night-theme",
+		files:
+			"apps/web/src/ImagingView.tsx and the imaging rules inside apps/web/src/styles/main.css, premium.css, shadow-analyst.css. You may READ anything. Do NOT edit App.tsx, useAppLogic.tsx, or any other view.",
+		gate: "node scripts/check-css-tokens.mjs (exits 0 today) plus node --import tsx --test on any test you add",
+		brief: `
 THE LEAD CAPTURED THIS AND JUDGED IT BY EYE. «Снимки» — radiology — RENDERS NOTHING IN NIGHT THEME.
 
 **THE EVIDENCE, two frames from ONE capture run, same data, same minute:**
@@ -131,99 +141,189 @@ worth more than a guessed fix.
 Fixing night and leaving «Тепло». Claiming UI VERIFIED — that label is the lead's alone and the lead will
 re-capture. Editing files outside your claim.
 `,
-  },
-]
+	},
+];
 
 const BUILD_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'status', 'commitHash', 'filesChanged', 'inventory', 'proven', 'notProven', 'leadMustRun', 'foundNotFixed', 'summary'],
-  properties: {
-    packet: { type: 'string' },
-    status: { enum: ['COMMITTED', 'PARTIAL', 'BLOCKED', 'NO_CHANGE'] },
-    commitHash: { type: 'string' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    inventory: { type: 'array', items: { type: 'string' }, description: 'All 11 sites: file:line + CONVERTED / ALREADY CORRECT / NOT MONEY.' },
-    proven: { type: 'array', items: { type: 'string' }, description: 'Commands actually run, with TRUE exit codes captured without a pipe.' },
-    notProven: { type: 'array', items: { type: 'string' } },
-    leadMustRun: { type: 'array', items: { type: 'string' } },
-    foundNotFixed: { type: 'array', items: { type: 'string' } },
-    summary: { type: 'string' },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"status",
+		"commitHash",
+		"filesChanged",
+		"inventory",
+		"proven",
+		"notProven",
+		"leadMustRun",
+		"foundNotFixed",
+		"summary",
+	],
+	properties: {
+		packet: { type: "string" },
+		status: { enum: ["COMMITTED", "PARTIAL", "BLOCKED", "NO_CHANGE"] },
+		commitHash: { type: "string" },
+		filesChanged: { type: "array", items: { type: "string" } },
+		inventory: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"All 11 sites: file:line + CONVERTED / ALREADY CORRECT / NOT MONEY.",
+		},
+		proven: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Commands actually run, with TRUE exit codes captured without a pipe.",
+		},
+		notProven: { type: "array", items: { type: "string" } },
+		leadMustRun: { type: "array", items: { type: "string" } },
+		foundNotFixed: { type: "array", items: { type: "string" } },
+		summary: { type: "string" },
+	},
+};
 
 const REVIEW_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'verdict', 'sitesMissed', 'comparisonsTouched', 'testWouldFailOnRevert', 'attributionClean', 'reasoning', 'requiredRework'],
-  properties: {
-    packet: { type: 'string' },
-    verdict: { enum: ['SOUND', 'SOUND_WITH_NITS', 'NEEDS_REWORK', 'REVERT'] },
-    sitesMissed: { type: 'array', items: { type: 'string' }, description: 'Money-in-text sites still raw at HEAD, re-derived by YOUR OWN grep.' },
-    comparisonsTouched: { type: 'string', description: 'Did the diff alter any money COMPARISON? Quote the diff if so — that is REVERT-grade.' },
-    testWouldFailOnRevert: { type: 'string' },
-    attributionClean: { type: 'string', description: 'Output of git log -1 --format=%(trailers) for the commit. Must be empty.' },
-    reasoning: { type: 'string' },
-    requiredRework: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"verdict",
+		"sitesMissed",
+		"comparisonsTouched",
+		"testWouldFailOnRevert",
+		"attributionClean",
+		"reasoning",
+		"requiredRework",
+	],
+	properties: {
+		packet: { type: "string" },
+		verdict: { enum: ["SOUND", "SOUND_WITH_NITS", "NEEDS_REWORK", "REVERT"] },
+		sitesMissed: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Money-in-text sites still raw at HEAD, re-derived by YOUR OWN grep.",
+		},
+		comparisonsTouched: {
+			type: "string",
+			description:
+				"Did the diff alter any money COMPARISON? Quote the diff if so — that is REVERT-grade.",
+		},
+		testWouldFailOnRevert: { type: "string" },
+		attributionClean: {
+			type: "string",
+			description:
+				"Output of git log -1 --format=%(trailers) for the commit. Must be empty.",
+		},
+		reasoning: { type: "string" },
+		requiredRework: { type: "array", items: { type: "string" } },
+	},
+};
 
 function buildStage(p) {
-  return agent(
-    LAW +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'YOUR PACKET: ' + p.id + '\n' +
-    'OWNED SCOPE: ' + p.files + '\n' +
-    'FORBIDDEN: every other file; all shared gates; any money COMPARISON in your own file.\n' +
-    'YOUR SIGNAL: ' + p.gate + '\n' +
-    'PACKET DIR (create first, one line in state.md): ' + p.dir + '\n' +
-    '═══════════════════════════════════════════════════════════════\n' + p.brief +
-    '\nCOMMIT AS SOON AS IT COMPILES, then add the test in a second commit if you have room.\n',
-    { label: p.label, phase: 'Build', schema: BUILD_SCHEMA }
-  )
+	return agent(
+		LAW +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"YOUR PACKET: " +
+			p.id +
+			"\n" +
+			"OWNED SCOPE: " +
+			p.files +
+			"\n" +
+			"FORBIDDEN: every other file; all shared gates; any money COMPARISON in your own file.\n" +
+			"YOUR SIGNAL: " +
+			p.gate +
+			"\n" +
+			"PACKET DIR (create first, one line in state.md): " +
+			p.dir +
+			"\n" +
+			"═══════════════════════════════════════════════════════════════\n" +
+			p.brief +
+			"\nCOMMIT AS SOON AS IT COMPILES, then add the test in a second commit if you have room.\n",
+		{ label: p.label, phase: "Build", schema: BUILD_SCHEMA },
+	);
 }
 
 function reviewStage(built, p) {
-  if (!built) {
-    return { packet: p.id, verdict: 'NEEDS_REWORK', sitesMissed: [], comparisonsTouched: 'unknown', testWouldFailOnRevert: 'unknown', attributionClean: 'unknown', reasoning: 'Builder died. Read ' + p.dir + '/state.md — work may already be committed.', requiredRework: ['Resume ' + p.id] }
-  }
-  if (!built.commitHash) {
-    return { packet: p.id, verdict: 'SOUND_WITH_NITS', sitesMissed: [], comparisonsTouched: 'n/a', testWouldFailOnRevert: 'n/a', attributionClean: 'n/a', reasoning: built.summary || 'No commit.', requiredRework: built.foundNotFixed || [] }
-  }
-  return agent(
-    'You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm) reporting to lead\n' +
-    '[ARCHON]. You did NOT write this code. READ-ONLY: no edits, no git add/commit/push, never\n' +
-    "'git remote -v' (live tokens). Do NOT run npm typecheck/build/test — other agents are mid-edit and you\n" +
-    'would read a half-written tree. You MAY run "node --import tsx --test <one file>", read-only rg/grep,\n' +
-    'git show/grep, and read-only node -e. Write findings to ' + p.dir + '/review.md AS YOU GO — reviewers\n' +
-    'die on credits here constantly and an unwritten finding is lost.\n\n' +
-    'COMMIT: ' + built.commitHash + '\nFILES: ' + JSON.stringify(built.filesChanged) + '\n' +
-    'CLAIMED INVENTORY: ' + JSON.stringify(built.inventory || []) + '\n' +
-    'CLAIMED PROVEN: ' + JSON.stringify(built.proven || []) + '\n\n' +
-    'CHECK EXACTLY FIVE THINGS, each by running something:\n' +
-    '1. **Did it miss a site?** Re-derive with YOUR OWN grep over guards.ts at HEAD — count interpolations\n' +
-    '   of a money value into text that are still raw. The lead measured 11 raw and 4 already correct at\n' +
-    '   dispatch; report YOUR numbers, not the brief\'s.\n' +
-    '2. **Did it touch a money COMPARISON?** That is REVERT-grade. The comparisons use integer kopecks with\n' +
-    '   NO epsilon on purpose: a tolerance that hides float drift also hides a genuine one-kopeck\n' +
-    '   discrepancy, and these gates release payment receipts. Quote the diff if any comparison changed.\n' +
-    '3. **Did it convert something that is NOT money?** «${index + 1}» is a line number. A count of rows is\n' +
-    '   a count. Converting either is a defect.\n' +
-    '4. **Would its test fail if the fix were reverted?** Name the assertion that breaks. A test that\n' +
-    '   passes either way is ceremony. If it added no test, say so plainly.\n' +
-    '5. **Attribution:** run "git log -1 --format=%(trailers) ' + built.commitHash + '" and report the\n' +
-    '   output. It MUST be empty. Also grep the body for «Co-Authored-By» and «anthropic».\n\n' +
-    'Also sweep for: «руб. ₽» (would mean formatKopecksRu was used where a decimal string belongs), a\n' +
-    'second money helper beside @dental/shared, mojibake in the diff or subject, and any English string\n' +
-    'reaching a user. Reserve REVERT for a changed comparison or a tolerance introduced. Never award SOUND\n' +
-    'to a claim you could not reproduce.',
-    { label: 'attack:' + p.id, phase: 'Attack', schema: REVIEW_SCHEMA }
-  )
+	if (!built) {
+		return {
+			packet: p.id,
+			verdict: "NEEDS_REWORK",
+			sitesMissed: [],
+			comparisonsTouched: "unknown",
+			testWouldFailOnRevert: "unknown",
+			attributionClean: "unknown",
+			reasoning:
+				"Builder died. Read " +
+				p.dir +
+				"/state.md — work may already be committed.",
+			requiredRework: ["Resume " + p.id],
+		};
+	}
+	if (!built.commitHash) {
+		return {
+			packet: p.id,
+			verdict: "SOUND_WITH_NITS",
+			sitesMissed: [],
+			comparisonsTouched: "n/a",
+			testWouldFailOnRevert: "n/a",
+			attributionClean: "n/a",
+			reasoning: built.summary || "No commit.",
+			requiredRework: built.foundNotFixed || [],
+		};
+	}
+	return agent(
+		"You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm) reporting to lead\n" +
+			"[ARCHON]. You did NOT write this code. READ-ONLY: no edits, no git add/commit/push, never\n" +
+			"'git remote -v' (live tokens). Do NOT run npm typecheck/build/test — other agents are mid-edit and you\n" +
+			'would read a half-written tree. You MAY run "node --import tsx --test <one file>", read-only rg/grep,\n' +
+			"git show/grep, and read-only node -e. Write findings to " +
+			p.dir +
+			"/review.md AS YOU GO — reviewers\n" +
+			"die on credits here constantly and an unwritten finding is lost.\n\n" +
+			"COMMIT: " +
+			built.commitHash +
+			"\nFILES: " +
+			JSON.stringify(built.filesChanged) +
+			"\n" +
+			"CLAIMED INVENTORY: " +
+			JSON.stringify(built.inventory || []) +
+			"\n" +
+			"CLAIMED PROVEN: " +
+			JSON.stringify(built.proven || []) +
+			"\n\n" +
+			"CHECK EXACTLY FIVE THINGS, each by running something:\n" +
+			"1. **Did it miss a site?** Re-derive with YOUR OWN grep over guards.ts at HEAD — count interpolations\n" +
+			"   of a money value into text that are still raw. The lead measured 11 raw and 4 already correct at\n" +
+			"   dispatch; report YOUR numbers, not the brief's.\n" +
+			"2. **Did it touch a money COMPARISON?** That is REVERT-grade. The comparisons use integer kopecks with\n" +
+			"   NO epsilon on purpose: a tolerance that hides float drift also hides a genuine one-kopeck\n" +
+			"   discrepancy, and these gates release payment receipts. Quote the diff if any comparison changed.\n" +
+			"3. **Did it convert something that is NOT money?** «${index + 1}» is a line number. A count of rows is\n" +
+			"   a count. Converting either is a defect.\n" +
+			"4. **Would its test fail if the fix were reverted?** Name the assertion that breaks. A test that\n" +
+			"   passes either way is ceremony. If it added no test, say so plainly.\n" +
+			'5. **Attribution:** run "git log -1 --format=%(trailers) ' +
+			built.commitHash +
+			'" and report the\n' +
+			"   output. It MUST be empty. Also grep the body for «Co-Authored-By» and «anthropic».\n\n" +
+			"Also sweep for: «руб. ₽» (would mean formatKopecksRu was used where a decimal string belongs), a\n" +
+			"second money helper beside @dental/shared, mojibake in the diff or subject, and any English string\n" +
+			"reaching a user. Reserve REVERT for a changed comparison or a tolerance introduced. Never award SOUND\n" +
+			"to a claim you could not reproduce.",
+		{ label: "attack:" + p.id, phase: "Attack", schema: REVIEW_SCHEMA },
+	);
 }
 
-const all = []
-log('Cycle 15: ' + PACKETS.map((p) => p.id).join(', '))
-const done = await pipeline(PACKETS, buildStage, reviewStage)
-for (let i = 0; i < PACKETS.length; i++) all.push({ packet: PACKETS[i].id, dir: PACKETS[i].dir, review: done[i] || null })
-log('Cycle 15 complete.')
+const all = [];
+log("Cycle 15: " + PACKETS.map((p) => p.id).join(", "));
+const done = await pipeline(PACKETS, buildStage, reviewStage);
+for (let i = 0; i < PACKETS.length; i++)
+	all.push({
+		packet: PACKETS[i].id,
+		dir: PACKETS[i].dir,
+		review: done[i] || null,
+	});
+log("Cycle 15 complete.");
 return { cycle: 15, results: all }

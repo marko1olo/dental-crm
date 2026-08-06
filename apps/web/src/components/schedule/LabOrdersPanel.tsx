@@ -1,8 +1,8 @@
 import { Calendar, FlaskConical, Link, Plus, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
@@ -51,7 +51,9 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		auth?.denteClinicalReadHeaders
 			? auth.denteClinicalReadHeaders(extra)
 			: denteAdminSecretRequestHeaders(extra);
-	const liveStatus = useAppStore((state) => (state as any).labOrderStatuses?.[patientId]);
+	const liveStatus = useAppStore(
+		(state) => (state as any).labOrderStatuses?.[patientId],
+	);
 	const [orders, setOrders] = useState<LabOrder[]>([]);
 	/*
 		Первая отрисовка — уже загрузка, а не пустота: запрос уходит сразу после
@@ -526,8 +528,8 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 						*/}
 						Заказов в зуботехническую лабораторию по этому пациенту пока нет.
 						<br />
-						Первый появится здесь сразу после того, как вы заполните наряд выше и
-						нажмёте «Создать наряд ЗТЛ».
+						Первый появится здесь сразу после того, как вы заполните наряд выше
+						и нажмёте «Создать наряд ЗТЛ».
 					</div>
 				) : orders.length > 0 ? (
 					<div className="space-y-2">

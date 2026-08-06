@@ -15,7 +15,8 @@ process.env.DENTE_SCHEDULE_ADMIN_SECRET = "synthetic-schedule-secret";
  * («не подписывать токены известным секретом») — и без этой строки сценарий
  * падает на своём же правильном стороже, не дойдя до проверки.
  */
-process.env.AUTH_TOKEN_SECRET = "synthetic-auth-token-secret-for-schedule-guard-smoke";
+process.env.AUTH_TOKEN_SECRET =
+	"synthetic-auth-token-secret-for-schedule-guard-smoke";
 
 const routePath = path.resolve("apps/api/dist/routes/schedule.js");
 
@@ -26,8 +27,12 @@ if (!existsSync(routePath)) {
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
 const { registerScheduleRoutes } = await import(pathToFileURL(routePath).href);
-const { signToken } = await import(pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href);
-const { authTokenSecret } = await import(pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href);
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -46,8 +51,14 @@ function assert(condition, message) {
  * Токен подписывается тем же секретом, что и в бою (`authTokenSecret`), поэтому
  * гейт остаётся настоящим: проверяется секрет расписания, а не послабление.
  */
-const clinicToken = signToken({ organizationId: "d0000000-0000-4000-8000-00000000d001" }, authTokenSecret());
-const clinicHeaders = { "content-type": "application/json", "x-dente-clinic-token": clinicToken };
+const clinicToken = signToken(
+	{ organizationId: "d0000000-0000-4000-8000-00000000d001" },
+	authTokenSecret(),
+);
+const clinicHeaders = {
+	"content-type": "application/json",
+	"x-dente-clinic-token": clinicToken,
+};
 
 const scheduleRouteSource = readFileSync(
 	"apps/api/src/routes/schedule.ts",
@@ -118,7 +129,10 @@ assert(
  */
 const allowedResponse = await app.inject({
 	...request,
-	headers: { ...clinicHeaders, "x-dente-admin-secret": process.env.DENTE_SCHEDULE_ADMIN_SECRET },
+	headers: {
+		...clinicHeaders,
+		"x-dente-admin-secret": process.env.DENTE_SCHEDULE_ADMIN_SECRET,
+	},
 });
 assert(
 	allowedResponse.statusCode !== 403 && allowedResponse.statusCode !== 503,
@@ -132,7 +146,8 @@ assert(
 		guardCode = null;
 	}
 	assert(
-		guardCode !== "ScheduleAdminSecretRequired" && guardCode !== "ScheduleAdminSecretMissing",
+		guardCode !== "ScheduleAdminSecretRequired" &&
+			guardCode !== "ScheduleAdminSecretMissing",
 		`valid schedule secret still rejected by the guard: ${allowedResponse.body}`,
 	);
 }
@@ -164,7 +179,10 @@ process.env.DENTE_SETTINGS_ADMIN_SECRET = "synthetic-settings-only-secret";
 
 const settingsOnlyResponse = await app.inject({
 	...request,
-	headers: { ...clinicHeaders, "x-dente-admin-secret": process.env.DENTE_SETTINGS_ADMIN_SECRET },
+	headers: {
+		...clinicHeaders,
+		"x-dente-admin-secret": process.env.DENTE_SETTINGS_ADMIN_SECRET,
+	},
 });
 assert(
 	settingsOnlyResponse.statusCode === 503,
@@ -180,7 +198,10 @@ process.env.DENTE_TELEGRAM_ADMIN_SECRET = "synthetic-telegram-only-secret";
 
 const telegramOnlyResponse = await app.inject({
 	...request,
-	headers: { ...clinicHeaders, "x-dente-admin-secret": process.env.DENTE_TELEGRAM_ADMIN_SECRET },
+	headers: {
+		...clinicHeaders,
+		"x-dente-admin-secret": process.env.DENTE_TELEGRAM_ADMIN_SECRET,
+	},
 });
 assert(
 	telegramOnlyResponse.statusCode === 503,

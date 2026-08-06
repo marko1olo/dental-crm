@@ -155,9 +155,13 @@ describe("пациент карта — Zod body (AUTH-first 401; empty → 400 
 	});
 
 	test("POST archive-status {} → 400 (запретить/снять)", async () => {
-		const r = await inject("POST", `/api/patients/${PATIENT_ID}/archive-status`, {
-			body: {},
-		});
+		const r = await inject(
+			"POST",
+			`/api/patients/${PATIENT_ID}/archive-status`,
+			{
+				body: {},
+			},
+		);
 		assert.equal(r.statusCode, 400, r.body);
 		assert.notEqual(r.statusCode, 500);
 		assert.equal(r.json.error, "ValidationError");
@@ -165,18 +169,26 @@ describe("пациент карта — Zod body (AUTH-first 401; empty → 400 
 	});
 
 	test("POST archive-status isBlacklisted string → 400", async () => {
-		const r = await inject("POST", `/api/patients/${PATIENT_ID}/archive-status`, {
-			body: { isBlacklisted: "true" },
-		});
+		const r = await inject(
+			"POST",
+			`/api/patients/${PATIENT_ID}/archive-status`,
+			{
+				body: { isBlacklisted: "true" },
+			},
+		);
 		assert.equal(r.statusCode, 400, r.body);
 		assert.equal(r.json.error, "ValidationError");
 	});
 
 	test("POST archive-status без токена → 401 (не 400)", async () => {
-		const r = await inject("POST", `/api/patients/${PATIENT_ID}/archive-status`, {
-			body: { isBlacklisted: true },
-			withAuth: false,
-		});
+		const r = await inject(
+			"POST",
+			`/api/patients/${PATIENT_ID}/archive-status`,
+			{
+				body: { isBlacklisted: true },
+				withAuth: false,
+			},
+		);
 		assert.equal(r.statusCode, 401, r.body);
 		assert.equal(r.json.error, "AuthRequired");
 	});

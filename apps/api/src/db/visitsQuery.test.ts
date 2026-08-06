@@ -22,15 +22,19 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
-import { sql } from "drizzle-orm";
 import {
-	acceptVisitDraftResponseSchema,
 	type AcceptVisitDraftInput,
+	acceptVisitDraftResponseSchema,
 	type VisitCloseChecklist,
 } from "@dental/shared";
+import { sql } from "drizzle-orm";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../tests/support/fixtureOrganizations.js";
 import { db, pool } from "./client.js";
-import { organizations, patients, visits, imagingStudies } from "./schema.js";
-import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../tests/support/fixtureOrganizations.js";
+import { imagingStudies, organizations, patients, visits } from "./schema.js";
 import { acceptVisitDraftInDb } from "./visitsQuery.js";
 
 const NAMESPACE = "dbVisitsQuery";
@@ -43,7 +47,9 @@ const IMAGING_STUDY_ID = fixtureUuid(NAMESPACE, 20);
 
 type IdRow = { readonly id: string };
 
-async function firstRow<T extends Record<string, unknown>>(query: ReturnType<typeof sql>): Promise<T | null> {
+async function firstRow<T extends Record<string, unknown>>(
+	query: ReturnType<typeof sql>,
+): Promise<T | null> {
 	const result = await db.execute(query);
 	return ((result.rows as T[])[0] ?? null) as T | null;
 }
@@ -76,7 +82,6 @@ function itemOf(checklist: VisitCloseChecklist, id: string) {
 const PATIENT_MARK = "Сторож подписания приёма (удалить)";
 
 describe("acceptVisitDraftInDb: ответ по контракту и привязка карточки к приёму", () => {
-
 	before(async () => {
 		// Уборка следов прерванного прогона ДО посева: см. докстринг фикстуры.
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
@@ -138,7 +143,9 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 	after(async () => {
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
 		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
-			firstRow<{ n: number }>(sql`select count(*)::int as n from patients where full_name like ${`${PATIENT_MARK}%`}`),
+			firstRow<{ n: number }>(
+				sql`select count(*)::int as n from patients where full_name like ${`${PATIENT_MARK}%`}`,
+			),
 		);
 		assert.equal(leftovers?.n, 0, "сторож не убрал за собой свои строки");
 		await pool.end();
@@ -159,12 +166,20 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 
 		assert.equal(result.visit.id, FILLED_VISIT_ID);
 		assert.equal(result.visit.status, "signed");
-		assert.equal(result.visit.revision, 2, "ревизия приёма обязана вырасти на подписании");
+		assert.equal(
+			result.visit.revision,
+			2,
+			"ревизия приёма обязана вырасти на подписании",
+		);
 		assert.equal(result.visit.diagnosis, "K02.1 Кариес дентина");
 		assert.equal(result.visit.doctorSummary, "Лечение кариеса 36 выполнено");
 
 		// Подпись действительно в базе, а не только в ответе.
-		const stored = await firstRow<{ status: string; revision: number; diagnosis: string | null }>(
+		const stored = await firstRow<{
+			status: string;
+			revision: number;
+			diagnosis: string | null;
+		}>(
 			sql`select status::text as status, revision, diagnosis from visits where id = ${FILLED_VISIT_ID}`,
 		);
 		assert.equal(stored?.status, "signed");
@@ -194,7 +209,8 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 		assert.equal(result.saveReceipt.status, "conflict_accepted");
 		assert.equal(result.saveReceipt.clientMutationId, "storozh-konflikt");
 		assert.ok(
-			result.saveReceipt.warning && result.saveReceipt.warning.includes("ревизия 1"),
+			result.saveReceipt.warning &&
+				result.saveReceipt.warning.includes("ревизия 1"),
 			"конфликт ревизий обязан быть назван в квитанции",
 		);
 	});
@@ -223,7 +239,10 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 			     values (${ORGANIZATION_ID}, ${EMPTY_PATIENT_ID}, 'draft', 1)
 			     returning id::text as id`,
 		);
-		assert.ok(secondFilledVisit && secondEmptyVisit, "приёмы для сравнения карточек не созданы");
+		assert.ok(
+			secondFilledVisit && secondEmptyVisit,
+			"приёмы для сравнения карточек не созданы",
+		);
 
 		// Снимок, ждущий проверки, переносим на новый приём того же пациента.
 		await db.execute(
@@ -232,10 +251,18 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 
 		try {
 			const withImaging = await withFixtureTenant(ORGANIZATION_ID, async () =>
-				acceptVisitDraftInDb(ORGANIZATION_ID, draftInput(secondFilledVisit.id, true)),
+				acceptVisitDraftInDb(
+					ORGANIZATION_ID,
+					draftInput(secondFilledVisit.id, true),
+				),
 			);
-			const withoutImaging = await withFixtureTenant(ORGANIZATION_ID, async () =>
-				acceptVisitDraftInDb(ORGANIZATION_ID, draftInput(secondEmptyVisit.id, false)),
+			const withoutImaging = await withFixtureTenant(
+				ORGANIZATION_ID,
+				async () =>
+					acceptVisitDraftInDb(
+						ORGANIZATION_ID,
+						draftInput(secondEmptyVisit.id, false),
+					),
 			);
 
 			const cardWithImaging = withImaging.visitCloseChecklist;
@@ -244,10 +271,18 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 			assert.equal(cardWithImaging.visitId, secondFilledVisit.id);
 			assert.equal(cardWithoutImaging.visitId, secondEmptyVisit.id);
 			for (const item of cardWithImaging.items) {
-				assert.equal(item.visitId, secondFilledVisit.id, `пункт «${item.id}» указывает на чужой приём`);
+				assert.equal(
+					item.visitId,
+					secondFilledVisit.id,
+					`пункт «${item.id}» указывает на чужой приём`,
+				);
 			}
 			for (const item of cardWithoutImaging.items) {
-				assert.equal(item.visitId, secondEmptyVisit.id, `пункт «${item.id}» указывает на чужой приём`);
+				assert.equal(
+					item.visitId,
+					secondEmptyVisit.id,
+					`пункт «${item.id}» указывает на чужой приём`,
+				);
 			}
 
 			// Содержательная разница, а не только идентификаторы.
@@ -261,8 +296,16 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 
 			const noteHere = itemOf(cardWithImaging, "visit-note");
 			const noteThere = itemOf(cardWithoutImaging, "visit-note");
-			assert.equal(noteHere.ready, true, "заполненная ЭМК обязана считаться готовой");
-			assert.equal(noteThere.ready, false, "ЭМК без диагноза и плана готовой быть не может");
+			assert.equal(
+				noteHere.ready,
+				true,
+				"заполненная ЭМК обязана считаться готовой",
+			);
+			assert.equal(
+				noteThere.ready,
+				false,
+				"ЭМК без диагноза и плана готовой быть не может",
+			);
 
 			// Следующее действие тоже разное: у одного приёма это снимки, у другого — запись.
 			assert.equal(cardWithImaging.nextAction, "Открыть снимки");
@@ -276,8 +319,12 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 			await db.execute(
 				sql`update imaging_studies set visit_id = ${FILLED_VISIT_ID} where id = ${IMAGING_STUDY_ID}`,
 			);
-			await db.execute(sql`delete from visits where id = ${secondFilledVisit.id}`);
-			await db.execute(sql`delete from visits where id = ${secondEmptyVisit.id}`);
+			await db.execute(
+				sql`delete from visits where id = ${secondFilledVisit.id}`,
+			);
+			await db.execute(
+				sql`delete from visits where id = ${secondEmptyVisit.id}`,
+			);
 		}
 	});
 
@@ -285,7 +332,10 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 		await assert.rejects(
 			() =>
 				withFixtureTenant(ORGANIZATION_ID, async () =>
-					acceptVisitDraftInDb(ORGANIZATION_ID, draftInput(FILLED_VISIT_ID, true)),
+					acceptVisitDraftInDb(
+						ORGANIZATION_ID,
+						draftInput(FILLED_VISIT_ID, true),
+					),
 				),
 			/Прием уже закрыт или аннулирован/,
 		);

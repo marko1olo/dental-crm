@@ -1,12 +1,12 @@
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import { describe, test } from "node:test";
-import type { Point2D } from "../mprMath.js";
 import {
 	AXIAL_NORMAL_MIN_ABS_Z,
 	buildPanoramicArch,
 	CLOSED_CONTOUR_GAP_FRACTION,
 	DEFAULT_ARCH_SAMPLE_STEP_MM,
+	type DrawnArchAnnotation,
 	MAX_ARCH_SAMPLES,
 	orientArchPatientRightFirst,
 	panoramicIssueLabels,
@@ -17,9 +17,9 @@ import {
 	readVolumeScalarData,
 	resamplePolylineByArcLength,
 	sampleArchCurve,
-	type DrawnArchAnnotation,
 	type VolumeScalarDataSource,
 } from "../components/dicom/panoramicArch.js";
+import type { Point2D } from "../mprMath.js";
 
 /** The literal that used to be substituted for the dentist's trace. */
 const OLD_FAKE_SPLINE: Point2D[] = [
@@ -168,7 +168,10 @@ describe("sampleArchCurve", () => {
 	test("keeps the traced endpoints as the curve endpoints", () => {
 		const curve = sampleArchCurve(control);
 		assert.deepStrictEqual(curve[0], control[0]);
-		assert.deepStrictEqual(curve[curve.length - 1], control[control.length - 1]);
+		assert.deepStrictEqual(
+			curve[curve.length - 1],
+			control[control.length - 1],
+		);
 	});
 
 	test("samples in world millimetres, not per click", () => {
@@ -193,12 +196,18 @@ describe("sampleArchCurve", () => {
 	});
 
 	test("two points give the straight segment between them, nothing invented", () => {
-		const curve = sampleArchCurve([
-			{ x: 0, y: 0 },
-			{ x: 10, y: 0 },
-		], 1);
+		const curve = sampleArchCurve(
+			[
+				{ x: 0, y: 0 },
+				{ x: 10, y: 0 },
+			],
+			1,
+		);
 		for (const point of curve) {
-			assert.ok(Math.abs(point.y) < 1e-9, `point drifted off the segment: ${point.y}`);
+			assert.ok(
+				Math.abs(point.y) < 1e-9,
+				`point drifted off the segment: ${point.y}`,
+			);
 			assert.ok(point.x >= -1e-9 && point.x <= 10 + 1e-9);
 		}
 		assert.deepStrictEqual(curve[curve.length - 1], { x: 10, y: 0 });
@@ -215,7 +224,10 @@ describe("sampleArchCurve", () => {
 		const curve = sampleArchCurve(three, 0.5);
 		const maxOffChord = curve
 			.filter((point) => point.x > -20 && point.x < 0)
-			.reduce((worst, point) => Math.max(worst, Math.abs(point.y - (point.x + 20))), 0);
+			.reduce(
+				(worst, point) => Math.max(worst, Math.abs(point.y - (point.x + 20))),
+				0,
+			);
 		assert.ok(
 			maxOffChord > 0.05,
 			`curve is a plain polyline, not an interpolated arch (max deviation ${maxOffChord} mm)`,
@@ -233,7 +245,10 @@ describe("sampleArchCurve", () => {
 			curve.length <= MAX_ARCH_SAMPLES + control.length,
 			`column count ${curve.length} escaped the cap`,
 		);
-		assert.ok(curve.length > 1000, "the cap must not collapse the curve either");
+		assert.ok(
+			curve.length > 1000,
+			"the cap must not collapse the curve either",
+		);
 	});
 
 	test("a non-finite step falls back to the documented default", () => {
@@ -253,10 +268,16 @@ describe("resamplePolylineByArcLength", () => {
 		];
 		const resampled = resamplePolylineByArcLength(source, 0.5);
 		for (const point of resampled) {
-			const onFirst = Math.abs(point.y) < 1e-9 && point.x >= -1e-9 && point.x <= 10 + 1e-9;
+			const onFirst =
+				Math.abs(point.y) < 1e-9 && point.x >= -1e-9 && point.x <= 10 + 1e-9;
 			const onSecond =
-				Math.abs(point.x - 10) < 1e-9 && point.y >= -1e-9 && point.y <= 10 + 1e-9;
-			assert.ok(onFirst || onSecond, `point left the polyline: ${JSON.stringify(point)}`);
+				Math.abs(point.x - 10) < 1e-9 &&
+				point.y >= -1e-9 &&
+				point.y <= 10 + 1e-9;
+			assert.ok(
+				onFirst || onSecond,
+				`point left the polyline: ${JSON.stringify(point)}`,
+			);
 		}
 	});
 
@@ -304,7 +325,10 @@ describe("buildPanoramicArch", () => {
 	test("zero annotations produce no reconstruction, not a default curve", () => {
 		const result = buildPanoramicArch([]);
 		assert.strictEqual(result.status, "unavailable");
-		assert.strictEqual(result.status === "unavailable" && result.reason, "no_arch");
+		assert.strictEqual(
+			result.status === "unavailable" && result.reason,
+			"no_arch",
+		);
 		assert.strictEqual(
 			result.status === "unavailable" && result.controlPointCount,
 			0,
@@ -313,9 +337,15 @@ describe("buildPanoramicArch", () => {
 	});
 
 	test("an annotation with no points at all is still no reconstruction", () => {
-		const result = buildPanoramicArch([{ data: { handles: { points: [] } } }, {}]);
+		const result = buildPanoramicArch([
+			{ data: { handles: { points: [] } } },
+			{},
+		]);
 		assert.strictEqual(result.status, "unavailable");
-		assert.strictEqual(result.status === "unavailable" && result.reason, "no_arch");
+		assert.strictEqual(
+			result.status === "unavailable" && result.reason,
+			"no_arch",
+		);
 	});
 
 	test("a single placed point is refused, not extended into an arch", () => {
@@ -392,7 +422,8 @@ describe("buildPanoramicArch", () => {
 		// not the handle list's.
 		assert.ok(distanceMm(result.curve[0]!, { x: -28, y: 11 }) < 1e-9);
 		assert.ok(
-			distanceMm(result.curve[result.curve.length - 1]!, { x: 28, y: 11 }) < 1e-9,
+			distanceMm(result.curve[result.curve.length - 1]!, { x: 28, y: 11 }) <
+				1e-9,
 		);
 		// ...and the dentist's own control points are still reported alongside.
 		assert.strictEqual(result.controlPoints.length, TRACED_ARCH.length);
@@ -403,7 +434,10 @@ describe("buildPanoramicArch", () => {
 			archAnnotation(TRACED_ARCH, { viewPlaneNormal: [1, 0, 0] }),
 		]);
 		assert.strictEqual(result.status, "unavailable");
-		assert.strictEqual(result.status === "unavailable" && result.reason, "wrong_plane");
+		assert.strictEqual(
+			result.status === "unavailable" && result.reason,
+			"wrong_plane",
+		);
 	});
 
 	test("a tilted oblique axial trace is still accepted", () => {
@@ -493,7 +527,11 @@ describe("a closed contour does not grow a tail on the panorama", () => {
 	// whole arch AND back across the tongue to where it started.
 	const openArch = archPolyline(240);
 	const handles = archHandles(7);
-	const closingRun = straightRun(openArch[openArch.length - 1]!, openArch[0]!, 60);
+	const closingRun = straightRun(
+		openArch[openArch.length - 1]!,
+		openArch[0]!,
+		60,
+	);
 	const closedPolyline = [...openArch, ...closingRun];
 	const openArchMm = polylineLengthMm(projectToAxialPlane(openArch));
 	const returnSweepMm = 56; // (28, 11) -> (-28, 11)
@@ -598,7 +636,8 @@ describe("a closed contour does not grow a tail on the panorama", () => {
 		if (result.status !== "ready") return;
 		assert.ok(distanceMm(result.curve[0]!, { x: -28, y: 11 }) < 1e-9);
 		assert.ok(
-			distanceMm(result.curve[result.curve.length - 1]!, { x: 28, y: 11 }) < 1e-9,
+			distanceMm(result.curve[result.curve.length - 1]!, { x: 28, y: 11 }) <
+				1e-9,
 		);
 		assert.ok(Math.abs(result.lengthMm - openArchMm) < 0.01);
 	});
@@ -614,14 +653,16 @@ describe("polylineReturnsToStart", () => {
 
 	test("a curve back to its own start is a loop", () => {
 		const open = archPolyline(240);
-		const loop = [...open, ...straightRun(open[open.length - 1]!, open[0]!, 60)];
+		const loop = [
+			...open,
+			...straightRun(open[open.length - 1]!, open[0]!, 60),
+		];
 		assert.strictEqual(polylineReturnsToStart(projectToAxialPlane(loop)), true);
 	});
 
 	test("a gap just inside the tolerance still counts as a loop", () => {
 		const open = archPolyline(240);
-		const total =
-			polylineLengthMm(projectToAxialPlane(open)) + 56;
+		const total = polylineLengthMm(projectToAxialPlane(open)) + 56;
 		const gap = total * CLOSED_CONTOUR_GAP_FRACTION * 0.5;
 		const loop = [
 			...open,
@@ -914,7 +955,10 @@ describe("panoramicIssueLabels", () => {
 
 	test("the success copy lives in the dictionary too, with the arch it describes", () => {
 		const label = panoramicReadyLabel(7, 129.4567);
-		assert.ok(label.includes("точек 7"), `control point count missing: ${label}`);
+		assert.ok(
+			label.includes("точек 7"),
+			`control point count missing: ${label}`,
+		);
 		assert.ok(
 			label.includes("129.5 мм"),
 			`arch length is not reported to one decimal with its unit: ${label}`,

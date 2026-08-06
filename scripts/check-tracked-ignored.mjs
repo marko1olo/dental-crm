@@ -63,7 +63,7 @@
 
 import { execFileSync } from "node:child_process";
 import { statSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -96,7 +96,9 @@ function parseArguments(argv) {
 	const extraPaths = [];
 	for (let index = 0; index < argv.length; index += 1) {
 		if (argv[index] !== "--extra-path") {
-			throw new Error(`Неизвестный аргумент: ${argv[index]}. Поддерживается только --extra-path <путь>.`);
+			throw new Error(
+				`Неизвестный аргумент: ${argv[index]}. Поддерживается только --extra-path <путь>.`,
+			);
 		}
 		const value = argv[index + 1];
 		if (value === undefined || value.startsWith("--")) {
@@ -138,26 +140,34 @@ function collectTrackedIgnored(paths) {
 
 	let stdout;
 	try {
-		stdout = execFileSync("git", ["check-ignore", "--stdin", "-z", "--no-index", "-v"], {
-			cwd: repoRoot,
-			input: Buffer.from(`${paths.join("\0")}\0`, "utf8"),
-			encoding: "buffer",
-			maxBuffer: 256 * 1024 * 1024,
-		});
+		stdout = execFileSync(
+			"git",
+			["check-ignore", "--stdin", "-z", "--no-index", "-v"],
+			{
+				cwd: repoRoot,
+				input: Buffer.from(`${paths.join("\0")}\0`, "utf8"),
+				encoding: "buffer",
+				maxBuffer: 256 * 1024 * 1024,
+			},
+		);
 	} catch (error) {
 		// Код 1 — «ни один путь не игнорируется». Это законный успех с нулём
 		// находок, а не сбой: путать их значит превратить чистое дерево в падение.
 		// Всё остальное (в первую очередь 128) — настоящая ошибка git.
 		if (error.status === 1) return [];
 		const stderr = error.stderr ? error.stderr.toString("utf8").trim() : "";
-		throw new Error(`git check-ignore завершился с кодом ${error.status}: ${stderr || "без вывода"}`);
+		throw new Error(
+			`git check-ignore завершился с кодом ${error.status}: ${stderr || "без вывода"}`,
+		);
 	}
 
 	// Формат при `-z -v`: <источник>\0<строка>\0<шаблон>\0<путь>\0 — четыре поля
 	// на запись, разделитель между полями тот же NUL, что и между записями.
 	const fields = splitNulBuffer(stdout);
 	if (fields.length % 4 !== 0) {
-		throw new Error(`Неожиданный вывод git check-ignore: ${fields.length} полей, не кратно 4.`);
+		throw new Error(
+			`Неожиданный вывод git check-ignore: ${fields.length} полей, не кратно 4.`,
+		);
 	}
 
 	const records = [];
@@ -191,7 +201,12 @@ function groupByPattern(records) {
 	for (const record of records) {
 		let group = groups.get(record.pattern);
 		if (group === undefined) {
-			group = { pattern: record.pattern, source: record.source, line: record.line, paths: [] };
+			group = {
+				pattern: record.pattern,
+				source: record.source,
+				line: record.line,
+				paths: [],
+			};
 			groups.set(record.pattern, group);
 		}
 		group.paths.push(record.path);
@@ -212,13 +227,16 @@ function namePaths(group, overBudget) {
 		return { paths: [...group.paths].sort(), exact: true };
 	}
 	const limit = Math.min(MAX_NAMED_PATHS, Math.max(overBudget + 3, 5));
-	const sorted = [...group.paths].sort((left, right) => modifiedAt(right) - modifiedAt(left));
+	const sorted = [...group.paths].sort(
+		(left, right) => modifiedAt(right) - modifiedAt(left),
+	);
 	return { paths: sorted.slice(0, limit), exact: false };
 }
 
 const { extraPaths } = parseArguments(process.argv.slice(2));
 const trackedPaths = readTrackedPaths();
-const probedPaths = extraPaths.length > 0 ? [...trackedPaths, ...extraPaths] : trackedPaths;
+const probedPaths =
+	extraPaths.length > 0 ? [...trackedPaths, ...extraPaths] : trackedPaths;
 const records = collectTrackedIgnored(probedPaths);
 const groups = groupByPattern(records);
 
@@ -239,15 +257,24 @@ for (const group of groups.values()) {
 // Правило, которое исчезло целиком (бюджет есть, находок нет), — тоже улучшение.
 for (const [pattern, budget] of BUDGETS) {
 	if (budget > 0 && !groups.has(pattern)) {
-		improvements.push({ group: { pattern, source: ".gitignore", line: "-" }, budget, actual: 0 });
+		improvements.push({
+			group: { pattern, source: ".gitignore", line: "-" },
+			budget,
+			actual: 0,
+		});
 	}
 }
 
 const total = records.length;
-const budgetTotal = [...BUDGETS.values()].reduce((sum, value) => sum + value, 0);
+const budgetTotal = [...BUDGETS.values()].reduce(
+	(sum, value) => sum + value,
+	0,
+);
 
 if (extraPaths.length > 0) {
-	console.error(`ОТРИЦАТЕЛЬНЫЙ КОНТРОЛЬ: к списку из индекса добавлено синтетических путей: ${extraPaths.length}.`);
+	console.error(
+		`ОТРИЦАТЕЛЬНЫЙ КОНТРОЛЬ: к списку из индекса добавлено синтетических путей: ${extraPaths.length}.`,
+	);
 }
 
 if (failures.length === 0) {
@@ -270,7 +297,9 @@ console.error(
 );
 
 for (const { group, budget, actual } of failures) {
-	console.error(`  правило «${group.pattern}» (${group.source}:${group.line}): ${actual} при бюджете ${budget}`);
+	console.error(
+		`  правило «${group.pattern}» (${group.source}:${group.line}): ${actual} при бюджете ${budget}`,
+	);
 	const overBudget = actual - budget;
 	const { paths, exact } = namePaths(group, overBudget);
 	console.error(

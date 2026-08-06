@@ -1,11 +1,11 @@
 import { ArrowRight, MessageSquareShare, Star } from "lucide-react";
 import { viewLabels } from "../../workspaceShell";
+import { PublicBookingLinkPanel } from "./PublicBookingLinkPanel";
 import {
 	MESSENGERS_SETTINGS_TAB,
 	openSettingsTab,
 	settingsTabTitle,
 } from "./settingsDeepLink";
-import { PublicBookingLinkPanel } from "./PublicBookingLinkPanel";
 
 /**
  * Вкладка настроек «Отзывы и NPS».
@@ -89,7 +89,12 @@ export function SettingsMarketingTab() {
 
 			<div
 				className="profile-form-grid"
-				style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "24px" }}
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					gap: "24px",
+					marginTop: "24px",
+				}}
 			>
 				{/*
 					Онлайн-запись LIVE (PublicBookingWidget + /api/public/booking),
@@ -143,7 +148,10 @@ export function SettingsMarketingTab() {
 							</p>
 						</div>
 
-						<div className="profile-form-group full-width" style={{ marginTop: "4px" }}>
+						<div
+							className="profile-form-group full-width"
+							style={{ marginTop: "4px" }}
+						>
 							<button
 								className="primary-button"
 								type="button"
@@ -203,7 +211,8 @@ export function SettingsMarketingTab() {
 							<p style={{ marginTop: "10px", marginBottom: 0 }}>
 								Что можно делать уже сейчас: включить просьбу об отзыве кнопкой
 								выше — она работает и сохраняется. Ответы пациентов приходят в
-								переписку с ботом, её видно в разделе «{viewLabels.communications}
+								переписку с ботом, её видно в разделе «
+								{viewLabels.communications}
 								».
 							</p>
 						</div>

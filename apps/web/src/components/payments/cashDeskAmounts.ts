@@ -48,7 +48,9 @@ const MAX_SAFE_RUB = Math.floor(Number.MAX_SAFE_INTEGER / 100);
  * ввода, с точкой из базы. Пробелы (в том числе неразрывный, он же
  * разделитель разрядов у `toLocaleString('ru-RU')`) отбрасываем.
  */
-export function toKopecks(value: number | string | null | undefined): number | null {
+export function toKopecks(
+	value: number | string | null | undefined,
+): number | null {
 	if (value === null || value === undefined) return null;
 
 	if (typeof value === "number") {
@@ -73,7 +75,8 @@ export function toKopecks(value: number | string | null | undefined): number | n
 	if (!/^-?\d+(\.\d+)?$/.test(compact)) return null;
 
 	const amountRub = Number(compact);
-	if (!Number.isFinite(amountRub) || Math.abs(amountRub) > MAX_SAFE_RUB) return null;
+	if (!Number.isFinite(amountRub) || Math.abs(amountRub) > MAX_SAFE_RUB)
+		return null;
 	return Math.round(amountRub * 100);
 }
 
@@ -93,7 +96,9 @@ export function fromKopecks(kopecks: number): number {
  * разбора как обычный символ. Пустая строка вместо мусора: лучше не заполнить
  * поле, чем заполнить его суммой, которой нет.
  */
-export function rubAmountForInput(value: number | string | null | undefined): string {
+export function rubAmountForInput(
+	value: number | string | null | undefined,
+): string {
 	const kopecks = toKopecks(value);
 	if (kopecks === null || kopecks <= 0) return "";
 
@@ -147,7 +152,9 @@ export function changeToReturn(
  * чтобы экран мог сказать честно, что часть строк не разобрана, вместо того
  * чтобы показать заниженный итог как полный.
  */
-export function sumRubAmounts(values: readonly (number | string | null | undefined)[]): {
+export function sumRubAmounts(
+	values: readonly (number | string | null | undefined)[],
+): {
 	totalRub: number;
 	unreadableCount: number;
 } {

@@ -54,37 +54,37 @@
    ============================================================ */
 
 :root {
-  /* Поверхности и границы */
-  --background: var(--paper);
-  --surface-0: var(--paper);
-  --paper-light: var(--paper-soft);
-  --border-default: var(--line-strong);
-  --border-subtle: var(--line);
+	/* Поверхности и границы */
+	--background: var(--paper);
+	--surface-0: var(--paper);
+	--paper-light: var(--paper-soft);
+	--border-default: var(--line-strong);
+	--border-subtle: var(--line);
 
-  /* Тени */
-  --shadow: var(--shadow-1);
-  --shadow-sm: var(--shadow-1);
-  --shadow-md: var(--shadow-2);
+	/* Тени */
+	--shadow: var(--shadow-1);
+	--shadow-sm: var(--shadow-1);
+	--shadow-md: var(--shadow-2);
 
-  /* Текст */
-  --muted-dark: var(--ink-2, var(--ink));
+	/* Текст */
+	--muted-dark: var(--ink-2, var(--ink));
 
-  /* Брендовые оттенки */
-  --brand-300: var(--teal-2, var(--teal));
-  --brand-900: var(--teal-dark);
+	/* Брендовые оттенки */
+	--brand-300: var(--teal-2, var(--teal));
+	--brand-900: var(--teal-dark);
 
-  /* Статусные оттенки: сводим к семантическим токенам, которые уже
+	/* Статусные оттенки: сводим к семантическим токенам, которые уже
      имеют значения для светлой, тёмной и ночной темы. */
-  --green-dark: var(--ok-fg);
-  --emerald-700: var(--ok-fg);
-  --emerald-400: var(--ok-fg);
-  --emerald-100: var(--ok-bg);
-  --red-700: var(--bad-fg);
-  --red-400: var(--bad-fg);
-  --red-100: var(--bad-bg);
-  --danger-color: var(--bad-fg);
+	--green-dark: var(--ok-fg);
+	--emerald-700: var(--ok-fg);
+	--emerald-400: var(--ok-fg);
+	--emerald-100: var(--ok-bg);
+	--red-700: var(--bad-fg);
+	--red-400: var(--bad-fg);
+	--red-100: var(--bad-bg);
+	--danger-color: var(--bad-fg);
 
-  /* --tomato: одиннадцать вхождений на экране склада и одно в договорах ДМС.
+	/* --tomato: одиннадцать вхождений на экране склада и одно в договорах ДМС.
      Имени не существовало нигде, а девять из этих мест стояли без запаса:
      низкий остаток, значок тревоги, иконка удаления и кнопка «Списать»
      теряли красный и рисовались цветом наследуемого текста. То есть склад
@@ -95,20 +95,20 @@
      .dicom-series-blocked). border-left-color не наследуется, поэтому вместо
      красного бралось начальное currentColor — про это прямо сказано в
      комментарии наверху файла и до сих пор не было исправлено. */
-  --tomato: var(--bad-fg);
-  --danger: var(--bad-fg);
+	--tomato: var(--bad-fg);
+	--danger: var(--bad-fg);
 
-  /* Последние два имени из списка check-css-tokens.mjs, оба без запаса.
+	/* Последние два имени из списка check-css-tokens.mjs, оба без запаса.
      --brand-400: пять вхождений (подсказки HelpHUD, вкладка мессенджеров,
      обучающий тур, сканер, main.css) — ряд --brand-300/--brand-900 уже сведён
      к бирюзе темы, четырёхсотый просто забыли.
      --glass-bg: пять вхождений (сравнение планов лечения и две карточки в
      main.css) — рядом объявлен --glass-panel ровно для этой цели, с разными
      значениями в светлой и тёмной теме. */
-  --brand-400: var(--teal);
-  --glass-bg: var(--glass-panel);
+	--brand-400: var(--teal);
+	--glass-bg: var(--glass-panel);
 
-  /* ЧАСТЬ 1b — ИМЕНА С ЗАПАСОМ, КОТОРЫЕ ГЕЙТ ПРОЩАЛ, А ТЕМА НЕТ.
+	/* ЧАСТЬ 1b — ИМЕНА С ЗАПАСОМ, КОТОРЫЕ ГЕЙТ ПРОЩАЛ, А ТЕМА НЕТ.
      Добавлено 28.07.2026 после замеров в живом браузере.
 
      scripts/check-css-tokens.mjs считал `var(--x, запас)` закрытым вхождением.
@@ -140,29 +140,29 @@
      --sky-100/--sky-700), --bad-bg = #fee2e2 (запас --error-bg), --teal =
      #0d9488 (запасы --teal-600 и --teal-light, второй — в правиле только для
      тёмной темы, где --teal = #2dd4bf, тоже байт в байт). */
-  --surface: var(--paper);
-  --surface-muted: var(--surface-100);
-  --border-color: var(--line);
-  --border-muted: var(--line);
-  --border-hover: var(--line-strong);
-  --text-color: var(--ink);
-  --bg-default: var(--paper-soft);
-  --sky-100: var(--info-bg);
-  --sky-700: var(--info-fg);
-  --error-bg: var(--bad-bg);
-  /* Запас был #ef4444 (--red), семантический токен даёт #b91c1c в светлой —
+	--surface: var(--paper);
+	--surface-muted: var(--surface-100);
+	--border-color: var(--line);
+	--border-muted: var(--line);
+	--border-hover: var(--line-strong);
+	--text-color: var(--ink);
+	--bg-default: var(--paper-soft);
+	--sky-100: var(--info-bg);
+	--sky-700: var(--info-fg);
+	--error-bg: var(--bad-bg);
+	/* Запас был #ef4444 (--red), семантический токен даёт #b91c1c в светлой —
      на #fee2e2 это 6.4:1 вместо 3.9:1 у прежнего значения. */
-  --error-text: var(--bad-fg);
-  --brand-200: var(--teal-soft);
-  --teal-600: var(--teal);
-  --teal-light: var(--teal);
-  /* Единственное вхождение — вертушка ожидания в портале лаборатории
+	--error-text: var(--bad-fg);
+	--brand-200: var(--teal-soft);
+	--teal-600: var(--teal);
+	--teal-light: var(--teal);
+	/* Единственное вхождение — вертушка ожидания в портале лаборатории
      (GuestLabPortal.css:50, запас #2563eb). --brand-500 держит синий в светлой
      (#0ea5e9) и тёмной (#38bdf8) теме и уходит в тёплый в ночной, то есть
      оттенок сохраняется там, где он был, а не заменяется бирюзой. */
-  --primary: var(--brand-500);
+	--primary: var(--brand-500);
 
-  /* --text-muted: 13 вхождений, из них 9 — «второстепенный текст на поверхности
+	/* --text-muted: 13 вхождений, из них 9 — «второстепенный текст на поверхности
      темы» (main.css x6, shadow-analyst.css x2, contrast-fixes.css x1).
      --ink-2 — ровно этот смысл, и он объявлен для всех трёх тем:
      #3f544f / #b9c9c4 / #cdbfae. На светлой подложке #f8fafc это 7.7:1 вместо
@@ -177,7 +177,7 @@
      Тот файл при этом НИКУДА не подключён (ни импорта, ни компонента, ни одного
      использования классов в apps/web/src), поэтому речь о будущем подключении, а
      не о живом экране. */
-  --text-muted: var(--ink-2);
+	--text-muted: var(--ink-2);
 }
 
 /* Светлые значения ровно те, что были зашиты в main.css.
@@ -215,58 +215,58 @@
    текстом, то есть ту же нечитаемость с обратным знаком. */
 :root,
 :root[data-theme="light"] {
-  /* Сплошная заливка под белый текст. --teal (#0d9488) с белым даёт
+	/* Сплошная заливка под белый текст. --teal (#0d9488) с белым даёт
      3.74:1 — ниже нормы WCAG 4.5:1. --teal-dark (#0f766e) даёт 5.5:1.
      В тёмной теме заливка остаётся --teal: там текст --on-teal
      (#04211c), и контраст около 9:1 уже достаточен. */
-  --teal-fill: var(--teal-dark);
-  --srf-check-task: #faf7f1;
-  --srf-check-task-blocking: #fffaf0;
-  --srf-chip-soft: #f7fbf9;
-  --srf-badge-official: #e5f4ee;
-  --srf-badge-official-line: #b9ddcf;
+	--teal-fill: var(--teal-dark);
+	--srf-check-task: #faf7f1;
+	--srf-check-task-blocking: #fffaf0;
+	--srf-chip-soft: #f7fbf9;
+	--srf-badge-official: #e5f4ee;
+	--srf-badge-official-line: #b9ddcf;
 
-  /* --surface-alt и --surface-hover разведены по темам, потому что у них меняется
+	/* --surface-alt и --surface-hover разведены по темам, потому что у них меняется
      не только светлота, но и НАПРАВЛЕНИЕ: приподнятая полоса заголовка и её
      состояние при наведении должны отличаться друг от друга в каждой теме.
      Светлая: #f8fafc под #f1f5f9 при наведении — ровно прежние запасы
      (main.css:14752 и shadow-analyst.css:217), байт в байт. */
-  --surface-alt: var(--surface-50);
-  --surface-hover: var(--surface-100);
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
 }
 
 :root[data-theme="dark"],
 html.dark:not([data-theme]) {
-  --teal-fill: var(--teal);
-  --srf-check-task: #16201e;
-  --srf-check-task-blocking: #2a2113;
-  --srf-chip-soft: #16211f;
-  --srf-badge-official: #10271f;
-  --srf-badge-official-line: rgba(74, 222, 128, 0.32);
+	--teal-fill: var(--teal);
+	--srf-check-task: #16201e;
+	--srf-check-task-blocking: #2a2113;
+	--srf-chip-soft: #16211f;
+	--srf-badge-official: #10271f;
+	--srf-badge-official-line: rgba(74, 222, 128, 0.32);
 
-  /* Тёмная тема: --surface-50 = #1e293b — это ровно тот запас, что стоял в пяти
+	/* Тёмная тема: --surface-50 = #1e293b — это ровно тот запас, что стоял в пяти
      правилах [data-theme="dark"] в конце main.css (16992, 17008, 17015, 17047,
      17080). Тёмная тема тоже не меняется байт в байт. Наведение уходит на шаг
      светлее (--surface-100 = #334155): на тёмном фоне отклик обязан светлеть. */
-  --surface-alt: var(--surface-50);
-  --surface-hover: var(--surface-100);
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
 }
 
 :root[data-theme="night"] {
-  --teal-fill: var(--teal);
-  --srf-check-task: #1c1815;
-  --srf-check-task-blocking: #2c2114;
-  --srf-chip-soft: #1a1714;
-  --srf-badge-official: #1b2419;
-  --srf-badge-official-line: rgba(181, 201, 138, 0.32);
+	--teal-fill: var(--teal);
+	--srf-check-task: #1c1815;
+	--srf-check-task-blocking: #2c2114;
+	--srf-chip-soft: #1a1714;
+	--srf-badge-official: #1b2419;
+	--srf-badge-official-line: rgba(181, 201, 138, 0.32);
 
-  /* Ночная тема — то место, ради которого весь этот блок и написан. Прежде
+	/* Ночная тема — то место, ради которого весь этот блок и написан. Прежде
      здесь рисовался светлый запас #f8fafc, и заголовок раскрывающегося блока
      давал 1.16:1. --elev (#231d19) светлее и --paper (#1c1714), и подложки
      панели (--glass-panel над --bg, около #1a1512), поэтому полоса читается как
      приподнятая, а не как дыра: --text-primary (#f1e8dd) на ней даёт 13.9:1.
      Наведение уходит на --paper — темнее основы, как и в светлой теме
      (#f8fafc -> #f1f5f9), то есть направление отклика одно во всех темах. */
-  --surface-alt: var(--elev);
-  --surface-hover: var(--paper);
+	--surface-alt: var(--elev);
+	--surface-hover: var(--paper);
 }

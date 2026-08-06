@@ -7,7 +7,7 @@ import {
 	describeSmsPayload,
 	extractTemplateVariables,
 	renderTemplate,
-	validateTemplateBody
+	validateTemplateBody,
 } from "../services/communications/templateRenderer.js";
 
 /**
@@ -19,24 +19,32 @@ import {
  */
 
 test("находит переменные по порядку и без повторов", () => {
-	assert.deepEqual(extractTemplateVariables("{patient}, приём {date} в {time}. До встречи, {patient}!"), [
-		"patient",
-		"date",
-		"time"
-	]);
+	assert.deepEqual(
+		extractTemplateVariables(
+			"{patient}, приём {date} в {time}. До встречи, {patient}!",
+		),
+		["patient", "date", "time"],
+	);
 	assert.deepEqual(extractTemplateVariables("текст без переменных"), []);
 });
 
 test("двойные скобки — это литеральные скобки, а не переменная", () => {
-	assert.deepEqual(extractTemplateVariables("скидка {{ спецпредложение }}"), []);
-	const rendered = renderTemplate("Формула {{2.6}} — {patient}", { patient: "Марина" });
+	assert.deepEqual(
+		extractTemplateVariables("скидка {{ спецпредложение }}"),
+		[],
+	);
+	const rendered = renderTemplate("Формула {{2.6}} — {patient}", {
+		patient: "Марина",
+	});
 	assert.equal(rendered.ok, true);
 	assert.equal(rendered.ok && rendered.text, "Формула {2.6} — Марина");
 });
 
 test("незаполненная переменная останавливает отправку", () => {
 	// Пациент не должен получить «остаток по лечению составляет {amount}».
-	const result = renderTemplate("{patient}, остаток {amount}.", { patient: "Марина" });
+	const result = renderTemplate("{patient}, остаток {amount}.", {
+		patient: "Марина",
+	});
 	assert.equal(result.ok, false);
 	assert.deepEqual(result.ok === false && result.missingVariables, ["amount"]);
 });
@@ -63,24 +71,38 @@ test("неизвестная переменная отклоняется на п
 });
 
 test("медицинские переменные не проходят в канал без согласия", () => {
-	const denied = validateTemplateBody("Напоминаем о процедуре {procedure}, зуб {tooth}.");
+	const denied = validateTemplateBody(
+		"Напоминаем о процедуре {procedure}, зуб {tooth}.",
+	);
 	assert.equal(denied.ok, false);
 	assert.deepEqual(denied.phiVariables, ["procedure", "tooth"]);
 
-	const allowed = validateTemplateBody("Напоминаем о процедуре {procedure}.", { allowPhi: true });
+	const allowed = validateTemplateBody("Напоминаем о процедуре {procedure}.", {
+		allowPhi: true,
+	});
 	assert.equal(allowed.ok, true);
 });
 
 test("предпросмотр подставляет примеры вместо пустых значений", () => {
-	const preview = renderTemplate("{patient}, приём {date} в {time}.", {}, { allowEmptyValues: true });
+	const preview = renderTemplate(
+		"{patient}, приём {date} в {time}.",
+		{},
+		{ allowEmptyValues: true },
+	);
 	assert.equal(preview.ok, true);
 	assert.equal(preview.ok && preview.text.includes("{"), false);
 });
 
 test("у каждой переменной справочника есть подпись и пример", () => {
 	for (const variable of communicationTemplateVariables) {
-		assert.ok(variable.label.trim().length > 0, `нет подписи у ${variable.key}`);
-		assert.ok(variable.example.trim().length > 0, `нет примера у ${variable.key}`);
+		assert.ok(
+			variable.label.trim().length > 0,
+			`нет подписи у ${variable.key}`,
+		);
+		assert.ok(
+			variable.example.trim().length > 0,
+			`нет примера у ${variable.key}`,
+		);
 	}
 	const keys = communicationTemplateVariables.map((variable) => variable.key);
 	assert.equal(new Set(keys).size, keys.length, "ключи переменных повторяются");
@@ -134,7 +156,10 @@ test("длинная SMS отклоняется по числу сегменто
 	assert.equal(long.sms?.encoding, "ucs2");
 	assert.ok(long.sms !== null && long.sms.segments > 4);
 
-	const short = checkChannelFit("sms", "Приём завтра в 14:30. Клиника на Ленина.");
+	const short = checkChannelFit(
+		"sms",
+		"Приём завтра в 14:30. Клиника на Ленина.",
+	);
 	assert.equal(short.ok, true);
 	assert.equal(short.sms?.segments, 1);
 });

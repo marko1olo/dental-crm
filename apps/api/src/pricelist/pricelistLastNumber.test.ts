@@ -1,5 +1,5 @@
-import { describe, test } from "node:test";
 import assert from "node:assert/strict";
+import { describe, test } from "node:test";
 import type { ServiceCatalogItem } from "@dental/shared";
 import { analyzePricelist } from "./analyzer.js";
 
@@ -68,8 +68,16 @@ describe("номер кабинета услугу не оценивает", () 
 			["Осмотр 1500 № 412", 1500],
 		] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.priceRub, expectedPrice, `ценой стал не тот номер (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, null, `выдуман диапазон (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				expectedPrice,
+				`ценой стал не тот номер (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				null,
+				`выдуман диапазон (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -77,8 +85,14 @@ describe("номер кабинета услугу не оценивает", () 
 		// Ценой он не стал, значит из названия его вырезать нечем: вырезается
 		// РОВНО прочитанная цена (stripPriceFromTitle).
 		const item = await itemOf("Имплантация 45000 кабинет 412");
-		assert.ok(item.title.includes("кабинет 412"), `из названия исчез номер кабинета: «${item.title}»`);
-		assert.ok(!item.title.includes("45000"), `цена осталась в названии: «${item.title}»`);
+		assert.ok(
+			item.title.includes("кабинет 412"),
+			`из названия исчез номер кабинета: «${item.title}»`,
+		);
+		assert.ok(
+			!item.title.includes("45000"),
+			`цена осталась в названии: «${item.title}»`,
+		);
 	});
 });
 
@@ -103,8 +117,16 @@ describe("номер телефона услугу не оценивает", () 
 			["Осмотр 1500 запись +7 999 123 45 67", 1500],
 		] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.priceRub, expectedPrice, `ценой стал номер телефона (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, null, `выдуман диапазон (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				expectedPrice,
+				`ценой стал номер телефона (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				null,
+				`выдуман диапазон (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -112,15 +134,26 @@ describe("номер телефона услугу не оценивает", () 
 		// Из середины номера вырезался кусок как будто это цена, и в каталоге
 		// оставалось «Осмотр1500 тел 8 45 67».
 		const item = await itemOf("Осмотр1500 тел 8 999 123 45 67");
-		assert.ok(item.title.includes("8 999 123 45 67"), `номер телефона порван: «${item.title}»`);
+		assert.ok(
+			item.title.includes("8 999 123 45 67"),
+			`номер телефона порван: «${item.title}»`,
+		);
 	});
 
 	test("строка без услуги ценой не обзаводится", async () => {
-		for (const line of ["Тел 8 999 123 45 67", "Телефон 8 999 123 45 67", "Запись 8 (999) 123-45-67"]) {
+		for (const line of [
+			"Тел 8 999 123 45 67",
+			"Телефон 8 999 123 45 67",
+			"Запись 8 (999) 123-45-67",
+		]) {
 			const items = await itemsOf(line);
 			// Позиции прайса из контактной строки быть не должно вовсе; если она
 			// всё-таки появилась, цены у неё быть не может.
-			assert.equal(items[0]?.priceRub ?? null, null, `контактная строка получила цену («${line}»)`);
+			assert.equal(
+				items[0]?.priceRub ?? null,
+				null,
+				`контактная строка получила цену («${line}»)`,
+			);
 		}
 	});
 
@@ -146,7 +179,11 @@ describe("номер телефона услугу не оценивает", () 
 			["Коронка 12 500 руб", 12500],
 		] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.priceRub, expectedPrice, `правило телефона съело цену (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				expectedPrice,
+				`правило телефона съело цену (строка «${line}»)`,
+			);
 		}
 	});
 });
@@ -161,7 +198,11 @@ describe("единица измерения ценой не становится
 			["Наркоз 8000 40 мин 500 мл", 8000],
 		] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.priceRub, expectedPrice, `единица измерения стала ценой (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				expectedPrice,
+				`единица измерения стала ценой (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -174,7 +215,11 @@ describe("единица измерения ценой не становится
 		 * одной строке без потерь.
 		 */
 		const item = await itemOf("Коронка 12 500 30 дней");
-		assert.equal(item.priceRub, 12500, "разряды цены съедены правилом единиц измерения");
+		assert.equal(
+			item.priceRub,
+			12500,
+			"разряды цены съедены правилом единиц измерения",
+		);
 	});
 
 	test("гашение числа не уносит его из названия услуги", async () => {
@@ -182,8 +227,14 @@ describe("единица измерения ценой не становится
 		// строится из исходной строки минус прочитанная цена, поэтому минуты и
 		// номер кабинета обязаны остаться на месте.
 		const item = await itemOf("Седация 5000/120 мин кабинет 412");
-		assert.ok(item.title.includes("120 мин"), `из названия исчезли минуты: «${item.title}»`);
-		assert.ok(item.title.includes("кабинет 412"), `из названия исчез номер кабинета: «${item.title}»`);
+		assert.ok(
+			item.title.includes("120 мин"),
+			`из названия исчезли минуты: «${item.title}»`,
+		);
+		assert.ok(
+			item.title.includes("кабинет 412"),
+			`из названия исчез номер кабинета: «${item.title}»`,
+		);
 	});
 
 	test("длительность приёма из русской строки читается, а не теряется", async () => {
@@ -203,7 +254,11 @@ describe("единица измерения ценой не становится
 			["Sedation 5000 120 minutes", 120],
 		] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.durationMinutes, expectedDuration, `длительность приёма потеряна (строка «${line}»)`);
+			assert.equal(
+				item.durationMinutes,
+				expectedDuration,
+				`длительность приёма потеряна (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -211,7 +266,11 @@ describe("единица измерения ценой не становится
 		// Запрет буквы справа обязан отсечь «минимум»: иначе «5000 минимум»
 		// назначило бы приёму длину 5000 минут — почти четверо суток.
 		const item = await itemOf("Гигиена 3000 500 минимум");
-		assert.equal(item.durationMinutes, null, "слово «минимум» прочитано как минуты");
+		assert.equal(
+			item.durationMinutes,
+			null,
+			"слово «минимум» прочитано как минуты",
+		);
 	});
 });
 
@@ -226,15 +285,27 @@ describe("отброшенное число не оставляет висеть
 		 * каталоге, а пациент — в подписываемом документе.
 		 */
 		for (const [line, expectedTitle, expectedPrice] of [
-			["Седация 5000 руб/120 мин кабинет 412", "Седация 120 мин кабинет 412", 5000],
+			[
+				"Седация 5000 руб/120 мин кабинет 412",
+				"Седация 120 мин кабинет 412",
+				5000,
+			],
 			["Седация 5000/120 мин", "Седация 120 мин", 5000],
 			["Гигиена 3000/1 час", "Гигиена 1 час", 3000],
 			["Пломба 1500/2 поверхности", "Пломба 2 поверхности", 1500],
 			["Коронка 15000/зуб", "Коронка /зуб", 15000],
 		] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.title, expectedTitle, `название испорчено: «${item.title}» (строка «${line}»)`);
-			assert.equal(item.priceRub, expectedPrice, `цена потеряна (строка «${line}»)`);
+			assert.equal(
+				item.title,
+				expectedTitle,
+				`название испорчено: «${item.title}» (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceRub,
+				expectedPrice,
+				`цена потеряна (строка «${line}»)`,
+			);
 		}
 	});
 });
@@ -249,9 +320,16 @@ describe("неоднозначная строка остаётся без цен
 		 */
 		for (const line of ["Пломба 3500 4000", "Осмотр 1024 ; Пломба ; 3500"]) {
 			const item = await itemOf(line);
-			assert.equal(item.priceRub, null, `цена выдумана из неоднозначной строки («${line}»)`);
+			assert.equal(
+				item.priceRub,
+				null,
+				`цена выдумана из неоднозначной строки («${line}»)`,
+			);
 			assert.equal(item.priceMaxRub, null);
-			assert.ok(item.warnings.includes("price_not_found"), `клиника не предупреждена («${line}»)`);
+			assert.ok(
+				item.warnings.includes("price_not_found"),
+				`клиника не предупреждена («${line}»)`,
+			);
 			assert.equal(item.title, line, `название испорчено: «${item.title}»`);
 		}
 	});
@@ -265,6 +343,10 @@ describe("неоднозначная строка остаётся без цен
 
 	test("одно и то же число дважды неоднозначностью не является", async () => {
 		const item = await itemOf("Пломба 3500 ; 3500");
-		assert.equal(item.priceRub, 3500, "совпадающие числа отвергнуты как неоднозначные");
+		assert.equal(
+			item.priceRub,
+			3500,
+			"совпадающие числа отвергнуты как неоднозначные",
+		);
 	});
 });

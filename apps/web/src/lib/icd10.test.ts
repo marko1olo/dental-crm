@@ -1,5 +1,5 @@
-import { describe, it } from "node:test";
 import assert from "node:assert";
+import { describe, it } from "node:test";
 import { getIcdColor, ICD_GROUP_COLORS } from "./icd10.js";
 
 describe("getIcdColor", () => {

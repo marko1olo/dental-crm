@@ -17,7 +17,10 @@ import {
  * `Pick` от `ClinicProfileDraft` (AppHelpers.tsx) даёт ровно те же четыре
  * обязательных строки и ломает сборку здесь, если поле переименуют там.
  */
-export type DocumentClinicOperator = Pick<ClinicProfileDraft, "legalName" | "clinicName" | "inn" | "address">;
+export type DocumentClinicOperator = Pick<
+	ClinicProfileDraft,
+	"legalName" | "clinicName" | "inn" | "address"
+>;
 
 export interface PersonalDataProcessingConsentFormProps {
 	/** Черновик профиля клиники: оператор, ИНН и адрес для согласия на ПДн. */
@@ -33,8 +36,11 @@ export interface PersonalDataProcessingConsentFormProps {
  * администратор до него: три пустые серые рамки и отказ по одной позиции за
  * нажатие, без указания экрана, на котором эти реквизиты заполняют.
  */
-export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: PersonalDataProcessingConsentFormProps) {
-	const operatorReview = personalDataOperatorRequisitesReview(clinicProfileDraft);
+export function PersonalDataProcessingConsentForm({
+	clinicProfileDraft,
+}: PersonalDataProcessingConsentFormProps) {
+	const operatorReview =
+		personalDataOperatorRequisitesReview(clinicProfileDraft);
 	const {
 		personalDataActions,
 		personalDataAutomatedDecisionAllowed,
@@ -73,9 +79,10 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 						style={{ marginTop: "12px" }}
 					>
 						<strong>
-							Согласие на ПДн не создастся: у клиники не хватает {operatorReview.problems.length} из{" "}
-							{operatorReview.requiredCount} реквизитов оператора. Вписать их в самом согласии нельзя —
-							они приходят из профиля клиники:
+							Согласие на ПДн не создастся: у клиники не хватает{" "}
+							{operatorReview.problems.length} из {operatorReview.requiredCount}{" "}
+							реквизитов оператора. Вписать их в самом согласии нельзя — они
+							приходят из профиля клиники:
 						</strong>
 						<ul>
 							{operatorReview.problems.map((problem) => (
@@ -85,9 +92,10 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 							))}
 						</ul>
 						<small>
-							Заполните их в «{CLINIC_REQUISITES_LOCATION}», сохраните и вернитесь сюда — предупреждение
-							исчезнет само. Если в настройках реквизиты уже стоят, значит они не загрузились: обновите
-							страницу и откройте раздел заново.
+							Заполните их в «{CLINIC_REQUISITES_LOCATION}», сохраните и
+							вернитесь сюда — предупреждение исчезнет само. Если в настройках
+							реквизиты уже стоят, значит они не загрузились: обновите страницу
+							и откройте раздел заново.
 						</small>
 					</div>
 				) : null
@@ -97,7 +105,9 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 				<label>
 					Оператор
 					<input
-						value={clinicProfileDraft.legalName || clinicProfileDraft.clinicName}
+						value={
+							clinicProfileDraft.legalName || clinicProfileDraft.clinicName
+						}
 						readOnly
 						placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
 					/>
@@ -121,26 +131,44 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 			</label>
 			<label>
 				Цели обработки
-				<textarea value={personalDataPurposes} onChange={(event) => setPersonalDataPurposes(event.target.value)} rows={4} />
+				<textarea
+					value={personalDataPurposes}
+					onChange={(event) => setPersonalDataPurposes(event.target.value)}
+					rows={4}
+				/>
 			</label>
 			<label>
 				Категории данных
-				<textarea value={personalDataCategories} onChange={(event) => setPersonalDataCategories(event.target.value)} rows={4} />
+				<textarea
+					value={personalDataCategories}
+					onChange={(event) => setPersonalDataCategories(event.target.value)}
+					rows={4}
+				/>
 			</label>
 			<label>
 				Действия с данными
-				<textarea value={personalDataActions} onChange={(event) => setPersonalDataActions(event.target.value)} rows={4} />
+				<textarea
+					value={personalDataActions}
+					onChange={(event) => setPersonalDataActions(event.target.value)}
+					rows={4}
+				/>
 			</label>
 			<label>
 				Передача третьим лицам
-				<textarea value={personalDataTransferRules} onChange={(event) => setPersonalDataTransferRules(event.target.value)} rows={3} />
+				<textarea
+					value={personalDataTransferRules}
+					onChange={(event) => setPersonalDataTransferRules(event.target.value)}
+					rows={3}
+				/>
 			</label>
 			<div className="document-payload-row">
 				<label className="document-payload-checkbox">
 					<input
 						checked={personalDataCrossBorderAllowed}
 						type="checkbox"
-						onChange={(event) => setPersonalDataCrossBorderAllowed(event.target.checked)}
+						onChange={(event) =>
+							setPersonalDataCrossBorderAllowed(event.target.checked)
+						}
 					/>
 					Разрешена трансграничная передача
 				</label>
@@ -148,7 +176,9 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 					<input
 						checked={personalDataAutomatedDecisionAllowed}
 						type="checkbox"
-						onChange={(event) => setPersonalDataAutomatedDecisionAllowed(event.target.checked)}
+						onChange={(event) =>
+							setPersonalDataAutomatedDecisionAllowed(event.target.checked)
+						}
 					/>
 					Разрешены автоматизированные решения
 				</label>
@@ -157,7 +187,9 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 				Срок хранения
 				<textarea
 					value={personalDataRetentionPeriod}
-					onChange={(event) => setPersonalDataRetentionPeriod(event.target.value)}
+					onChange={(event) =>
+						setPersonalDataRetentionPeriod(event.target.value)
+					}
 					rows={2}
 				/>
 			</label>
@@ -166,20 +198,29 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 					Порядок отзыва
 					<textarea
 						value={personalDataRevocationChannel}
-						onChange={(event) => setPersonalDataRevocationChannel(event.target.value)}
+						onChange={(event) =>
+							setPersonalDataRevocationChannel(event.target.value)
+						}
 						rows={2}
 					/>
 				</label>
 				<label>
 					Дата согласия
-					<input value={personalDataConsentGivenAt} onChange={(event) => setPersonalDataConsentGivenAt(event.target.value)} />
+					<input
+						value={personalDataConsentGivenAt}
+						onChange={(event) =>
+							setPersonalDataConsentGivenAt(event.target.value)
+						}
+					/>
 				</label>
 			</div>
 			<label className="document-payload-checkbox">
 				<input
 					checked={personalDataVoluntaryConsentConfirmed}
 					type="checkbox"
-					onChange={(event) => setPersonalDataVoluntaryConsentConfirmed(event.target.checked)}
+					onChange={(event) =>
+						setPersonalDataVoluntaryConsentConfirmed(event.target.checked)
+					}
 				/>
 				Пациент добровольно согласен на обработку персональных данных
 			</label>
@@ -187,7 +228,9 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 				<input
 					checked={personalDataMedicalProcessingAcknowledged}
 					type="checkbox"
-					onChange={(event) => setPersonalDataMedicalProcessingAcknowledged(event.target.checked)}
+					onChange={(event) =>
+						setPersonalDataMedicalProcessingAcknowledged(event.target.checked)
+					}
 				/>
 				Пациент понимает обработку медицинских данных
 			</label>

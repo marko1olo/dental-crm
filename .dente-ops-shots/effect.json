@@ -1,1 +1,25 @@
-{"period":{"from":"2026-07-01T00:00:00.000Z","to":"2026-08-01T00:00:00.000Z"},"reminded":{"appointments":3,"completed":0,"cancelled":0,"noShow":0,"lost":0,"lostRate":0},"notReminded":{"appointments":19,"completed":10,"cancelled":3,"noShow":2,"lost":5,"lostRate":0.2631578947368421},"lostRateDifference":0.2631578947368421,"caveat":"Это сравнение групп, а не доказательство причины: напоминание не уходит пациентам без телефона, без согласия и записанным на сегодня, а они и без напоминаний приходят иначе.","isEmpty":false}
+{
+	"period": {
+		"from": "2026-07-01T00:00:00.000Z",
+		"to": "2026-08-01T00:00:00.000Z"
+	},
+	"reminded": {
+		"appointments": 3,
+		"completed": 0,
+		"cancelled": 0,
+		"noShow": 0,
+		"lost": 0,
+		"lostRate": 0
+	},
+	"notReminded": {
+		"appointments": 19,
+		"completed": 10,
+		"cancelled": 3,
+		"noShow": 2,
+		"lost": 5,
+		"lostRate": 0.2631578947368421
+	},
+	"lostRateDifference": 0.2631578947368421,
+	"caveat": "Это сравнение групп, а не доказательство причины: напоминание не уходит пациентам без телефона, без согласия и записанным на сегодня, а они и без напоминаний приходят иначе.",
+	"isEmpty": false
+}

@@ -12,8 +12,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { resolveTheme } from "../lib/themeClasses";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -55,7 +55,7 @@ describe("разрешение темы", () => {
 				const resolved = resolveTheme(mode, prefersDark);
 				assert.ok(
 					!(resolved.darkClass && resolved.lightClass),
-					`${mode}/${prefersDark}: оба класса сразу — правила тем начнут конфликтовать`
+					`${mode}/${prefersDark}: оба класса сразу — правила тем начнут конфликтовать`,
 				);
 			}
 		}
@@ -64,14 +64,22 @@ describe("разрешение темы", () => {
 
 describe("вариант Tailwind dark:", () => {
 	test("объявлен через data-theme и покрывает ночную тему", () => {
-		const source = readFileSync(path.join(webSrc, "styles/tailwind.css"), "utf8");
-		const variant = source.split("\n").find((line) => line.startsWith("@custom-variant dark"));
+		const source = readFileSync(
+			path.join(webSrc, "styles/tailwind.css"),
+			"utf8",
+		);
+		const variant = source
+			.split("\n")
+			.find((line) => line.startsWith("@custom-variant dark"));
 		assert.ok(variant, "объявление варианта dark: не найдено");
 		// Ночная тема обязана попадать в вариант: она тёмная.
 		assert.ok(
 			variant.includes('[data-theme="night"]'),
 			"вариант dark: не учитывает ночную тему — плашки Tailwind останутся светлыми на тёмном фоне",
 		);
-		assert.ok(variant.includes('[data-theme="dark"]'), "вариант dark: не учитывает тёмную тему");
+		assert.ok(
+			variant.includes('[data-theme="dark"]'),
+			"вариант dark: не учитывает тёмную тему",
+		);
 	});
 });

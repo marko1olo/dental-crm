@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
-import fs from "node:fs/promises";
 import type { FileHandle } from "node:fs/promises";
+import fs from "node:fs/promises";
 import path from "node:path";
 import dicomParser from "dicom-parser";
 import { and, eq, isNotNull } from "drizzle-orm";
@@ -89,12 +89,13 @@ const SAMPLE_DICOM_ORGANIZATION_ID_ENV = "DENTE_DICOM_SAMPLE_ORGANIZATION_ID";
  * 00000000-0000-0000-0000-000000000000 форму проходит намеренно: существует
  * организация или нет — решает база, а не регулярное выражение.
  */
-const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+const UUID_SHAPE =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
 interface DicomFileIdentity {
-  studyUid: string | null;
-  seriesUid: string | null;
-  sopInstanceUid: string | null;
+	studyUid: string | null;
+	seriesUid: string | null;
+	sopInstanceUid: string | null;
 }
 
 /**
@@ -103,9 +104,9 @@ interface DicomFileIdentity {
  * значения, иначе верный файл будет отвергнут из-за одного байта набивки.
  */
 function normalizeUid(value: string | null | undefined): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.replace(/\0+$/u, "").trim();
-  return trimmed.length > 0 ? trimmed : null;
+	if (typeof value !== "string") return null;
+	const trimmed = value.replace(/\0+$/u, "").trim();
+	return trimmed.length > 0 ? trimmed : null;
 }
 
 /**
@@ -114,48 +115,53 @@ function normalizeUid(value: string | null | undefined): string | null {
  * требует распаковки (сжатый deflate-набор данных без inflater). Во всех этих
  * случаях байты не подтверждают запрошенный UID — значит, отдавать их нельзя.
  */
-async function readDicomIdentity(filePath: string): Promise<DicomFileIdentity | null> {
-  let handle: FileHandle | null = null;
-  try {
-    handle = await fs.open(filePath, "r");
-    const stat = await handle.stat();
-    if (!stat.isFile() || stat.size === 0) return null;
-    const length = Math.min(stat.size, DICOM_HEADER_PROBE_BYTES);
-    const buffer = Buffer.alloc(length);
-    const { bytesRead } = await handle.read(buffer, 0, length, 0);
-    const dataSet = dicomParser.parseDicom(new Uint8Array(buffer.subarray(0, bytesRead)), {
-      untilTag: TAG_SERIES_INSTANCE_UID
-    });
-    return {
-      studyUid: normalizeUid(dataSet.string(TAG_STUDY_INSTANCE_UID)),
-      seriesUid: normalizeUid(dataSet.string(TAG_SERIES_INSTANCE_UID)),
-      sopInstanceUid: normalizeUid(dataSet.string(TAG_SOP_INSTANCE_UID))
-    };
-  } catch {
-    return null;
-  } finally {
-    // Дескриптор закрывается всегда: при отказе разбора файл иначе остаётся
-    // открытым до сборки мусора, а маршрут вызывается на каждый кадр.
-    if (handle) {
-      await handle.close().catch(() => undefined);
-    }
-  }
+async function readDicomIdentity(
+	filePath: string,
+): Promise<DicomFileIdentity | null> {
+	let handle: FileHandle | null = null;
+	try {
+		handle = await fs.open(filePath, "r");
+		const stat = await handle.stat();
+		if (!stat.isFile() || stat.size === 0) return null;
+		const length = Math.min(stat.size, DICOM_HEADER_PROBE_BYTES);
+		const buffer = Buffer.alloc(length);
+		const { bytesRead } = await handle.read(buffer, 0, length, 0);
+		const dataSet = dicomParser.parseDicom(
+			new Uint8Array(buffer.subarray(0, bytesRead)),
+			{
+				untilTag: TAG_SERIES_INSTANCE_UID,
+			},
+		);
+		return {
+			studyUid: normalizeUid(dataSet.string(TAG_STUDY_INSTANCE_UID)),
+			seriesUid: normalizeUid(dataSet.string(TAG_SERIES_INSTANCE_UID)),
+			sopInstanceUid: normalizeUid(dataSet.string(TAG_SOP_INSTANCE_UID)),
+		};
+	} catch {
+		return null;
+	} finally {
+		// Дескриптор закрывается всегда: при отказе разбора файл иначе остаётся
+		// открытым до сборки мусора, а маршрут вызывается на каждый кадр.
+		if (handle) {
+			await handle.close().catch(() => undefined);
+		}
+	}
 }
 
 /** Подтверждают ли сами байты файла, что это именно запрошенный объект. */
 async function fileCarriesRequestedUids(
-  filePath: string,
-  studyUid: string,
-  seriesUid: string,
-  instanceUid: string
+	filePath: string,
+	studyUid: string,
+	seriesUid: string,
+	instanceUid: string,
 ): Promise<boolean> {
-  const identity = await readDicomIdentity(filePath);
-  if (!identity) return false;
-  return (
-    identity.studyUid === studyUid &&
-    identity.seriesUid === seriesUid &&
-    identity.sopInstanceUid === instanceUid
-  );
+	const identity = await readDicomIdentity(filePath);
+	if (!identity) return false;
+	return (
+		identity.studyUid === studyUid &&
+		identity.seriesUid === seriesUid &&
+		identity.sopInstanceUid === instanceUid
+	);
 }
 
 /**
@@ -164,9 +170,9 @@ async function fileCarriesRequestedUids(
  * относительно корня монорепозитория, сервер запускается из apps/api).
  */
 function sampleDicomPath(): string {
-  const configured = process.env[SAMPLE_DICOM_PATH_ENV]?.trim();
-  if (configured) return path.resolve(configured);
-  return path.resolve(process.cwd(), "../../.data/dicom/test.dcm");
+	const configured = process.env[SAMPLE_DICOM_PATH_ENV]?.trim();
+	if (configured) return path.resolve(configured);
+	return path.resolve(process.cwd(), "../../.data/dicom/test.dcm");
 }
 
 /**
@@ -184,9 +190,9 @@ function sampleDicomPath(): string {
  * стал бы читаемым для всех клиник установки.
  */
 function sampleDicomOwnerOrganizationId(): string | null {
-  const configured = process.env[SAMPLE_DICOM_ORGANIZATION_ID_ENV]?.trim();
-  if (!configured || !UUID_SHAPE.test(configured)) return null;
-  return configured;
+	const configured = process.env[SAMPLE_DICOM_ORGANIZATION_ID_ENV]?.trim();
+	if (!configured || !UUID_SHAPE.test(configured)) return null;
+	return configured;
 }
 
 /**
@@ -205,13 +211,13 @@ function sampleDicomOwnerOrganizationId(): string | null {
  * значило бы выдать выдуманный ответ за проверенный.
  */
 async function organizationExists(organizationId: string): Promise<boolean> {
-  if (!UUID_SHAPE.test(organizationId)) return false;
-  const [row] = await db
-    .select({ id: schema.organizations.id })
-    .from(schema.organizations)
-    .where(eq(schema.organizations.id, organizationId))
-    .limit(1);
-  return typeof row?.id === "string";
+	if (!UUID_SHAPE.test(organizationId)) return false;
+	const [row] = await db
+		.select({ id: schema.organizations.id })
+		.from(schema.organizations)
+		.where(eq(schema.organizations.id, organizationId))
+		.limit(1);
+	return typeof row?.id === "string";
 }
 
 /**
@@ -222,211 +228,261 @@ async function organizationExists(organizationId: string): Promise<boolean> {
  * соседней организации.
  */
 async function resolveInstanceFilePath(
-  organizationId: string,
-  studyUid: string,
-  seriesUid: string,
-  instanceUid: string
+	organizationId: string,
+	studyUid: string,
+	seriesUid: string,
+	instanceUid: string,
 ): Promise<string | null> {
-  const [instanceRow] = await db
-    .select({ storagePath: schema.imagingInstances.storagePath })
-    .from(schema.imagingInstances)
-    .innerJoin(schema.imagingSeries, eq(schema.imagingSeries.id, schema.imagingInstances.seriesId))
-    .innerJoin(schema.imagingStudies, eq(schema.imagingStudies.id, schema.imagingSeries.studyId))
-    .where(
-      and(
-        // Организация проверяется на каждом уровне соединения: одной строки с
-        // неверной ссылкой достаточно, чтобы снимок ушёл в другую клинику.
-        eq(schema.imagingInstances.organizationId, organizationId),
-        eq(schema.imagingSeries.organizationId, organizationId),
-        eq(schema.imagingStudies.organizationId, organizationId),
-        eq(schema.imagingStudies.dicomStudyUid, studyUid),
-        eq(schema.imagingSeries.dicomSeriesUid, seriesUid),
-        eq(schema.imagingInstances.dicomSopInstanceUid, instanceUid)
-      )
-    )
-    .limit(1);
+	const [instanceRow] = await db
+		.select({ storagePath: schema.imagingInstances.storagePath })
+		.from(schema.imagingInstances)
+		.innerJoin(
+			schema.imagingSeries,
+			eq(schema.imagingSeries.id, schema.imagingInstances.seriesId),
+		)
+		.innerJoin(
+			schema.imagingStudies,
+			eq(schema.imagingStudies.id, schema.imagingSeries.studyId),
+		)
+		.where(
+			and(
+				// Организация проверяется на каждом уровне соединения: одной строки с
+				// неверной ссылкой достаточно, чтобы снимок ушёл в другую клинику.
+				eq(schema.imagingInstances.organizationId, organizationId),
+				eq(schema.imagingSeries.organizationId, organizationId),
+				eq(schema.imagingStudies.organizationId, organizationId),
+				eq(schema.imagingStudies.dicomStudyUid, studyUid),
+				eq(schema.imagingSeries.dicomSeriesUid, seriesUid),
+				eq(schema.imagingInstances.dicomSopInstanceUid, instanceUid),
+			),
+		)
+		.limit(1);
 
-  if (instanceRow?.storagePath) return path.resolve(instanceRow.storagePath);
+	if (instanceRow?.storagePath) return path.resolve(instanceRow.storagePath);
 
-  const [studyRow] = await db
-    .select({ storagePath: schema.imagingStudies.storagePath })
-    .from(schema.imagingStudies)
-    .where(
-      and(
-        eq(schema.imagingStudies.organizationId, organizationId),
-        eq(schema.imagingStudies.dicomStudyUid, studyUid),
-        isNotNull(schema.imagingStudies.storagePath)
-      )
-    )
-    .limit(1);
+	const [studyRow] = await db
+		.select({ storagePath: schema.imagingStudies.storagePath })
+		.from(schema.imagingStudies)
+		.where(
+			and(
+				eq(schema.imagingStudies.organizationId, organizationId),
+				eq(schema.imagingStudies.dicomStudyUid, studyUid),
+				isNotNull(schema.imagingStudies.storagePath),
+			),
+		)
+		.limit(1);
 
-  if (studyRow?.storagePath) {
-    const studyFilePath = path.resolve(studyRow.storagePath);
-    if (await fileCarriesRequestedUids(studyFilePath, studyUid, seriesUid, instanceUid)) {
-      return studyFilePath;
-    }
-  }
+	if (studyRow?.storagePath) {
+		const studyFilePath = path.resolve(studyRow.storagePath);
+		if (
+			await fileCarriesRequestedUids(
+				studyFilePath,
+				studyUid,
+				seriesUid,
+				instanceUid,
+			)
+		) {
+			return studyFilePath;
+		}
+	}
 
-  // Ветка образца проходит тот же арендный гейт, что и настоящее исследование:
-  // спрашивающая организация обязана быть той, которой образец назначен. Раньше
-  // здесь не было ни одного упоминания organizationId — и это была единственная
-  // ветка маршрута, отдававшая байты кому угодно.
-  const sampleOwnerOrganizationId = sampleDicomOwnerOrganizationId();
-  if (sampleOwnerOrganizationId !== null && sampleOwnerOrganizationId === organizationId) {
-    const samplePath = sampleDicomPath();
-    if (await fileCarriesRequestedUids(samplePath, studyUid, seriesUid, instanceUid)) {
-      return samplePath;
-    }
-  }
+	// Ветка образца проходит тот же арендный гейт, что и настоящее исследование:
+	// спрашивающая организация обязана быть той, которой образец назначен. Раньше
+	// здесь не было ни одного упоминания organizationId — и это была единственная
+	// ветка маршрута, отдававшая байты кому угодно.
+	const sampleOwnerOrganizationId = sampleDicomOwnerOrganizationId();
+	if (
+		sampleOwnerOrganizationId !== null &&
+		sampleOwnerOrganizationId === organizationId
+	) {
+		const samplePath = sampleDicomPath();
+		if (
+			await fileCarriesRequestedUids(
+				samplePath,
+				studyUid,
+				seriesUid,
+				instanceUid,
+			)
+		) {
+			return samplePath;
+		}
+	}
 
-  return null;
+	return null;
 }
 
 export async function registerDicomwebRoutes(app: FastifyInstance) {
-  app.get<{ Params: { studyUid: string; seriesUid: string; instanceUid: string } }>(
-    "/api/dicomweb/studies/:studyUid/series/:seriesUid/instances/:instanceUid",
-    /*
-     * ТРАНЗАКЦИЯ НЕ ДЕРЖИТСЯ НА ВРЕМЯ ПЕРЕДАЧИ СНИМКА.
-     *
-     * Тело ответа — поток файла DICOM. Один кадр это мегабайты, том КЛКТ —
-     * сотни мегабайт и тысячи объектов, и время передачи задаёт клиент.
-     * Автоматическая обёртка server.ts держала бы транзакцию и соединение из
-     * пула (их 10) всё это время: десяти одновременных выгрузок хватало, чтобы
-     * API перестал получать соединения вовсе, а бэкенды висели
-     * `idle in transaction` и держали VACUUM. Развёрнутое объяснение механизма —
-     * в server.ts у хука onRoute.
-     *
-     * Флаг снимает только автоматику. Обе проверки, которые смотрят в базу —
-     * существование организации и разрешение трёх UID в конкретный файл — идут
-     * ниже внутри одного явного withTenantCtx и заканчиваются ДО первого байта
-     * тела. Обхода RLS здесь нет и быть не может: без контекста арендатора
-     * политики закрыты, и маршрут вернул бы 403/404, а не чужой снимок.
-     */
-    { config: { tenantTxSelfManaged: true } },
-    async (request, reply) => {
-      if (!(await requireClinicalReadAccess(request, reply, "dicom instance read"))) return;
-      const organizationId = requireOrganizationId(request, reply);
-      if (!organizationId) return;
+	app.get<{
+		Params: { studyUid: string; seriesUid: string; instanceUid: string };
+	}>(
+		"/api/dicomweb/studies/:studyUid/series/:seriesUid/instances/:instanceUid",
+		/*
+		 * ТРАНЗАКЦИЯ НЕ ДЕРЖИТСЯ НА ВРЕМЯ ПЕРЕДАЧИ СНИМКА.
+		 *
+		 * Тело ответа — поток файла DICOM. Один кадр это мегабайты, том КЛКТ —
+		 * сотни мегабайт и тысячи объектов, и время передачи задаёт клиент.
+		 * Автоматическая обёртка server.ts держала бы транзакцию и соединение из
+		 * пула (их 10) всё это время: десяти одновременных выгрузок хватало, чтобы
+		 * API перестал получать соединения вовсе, а бэкенды висели
+		 * `idle in transaction` и держали VACUUM. Развёрнутое объяснение механизма —
+		 * в server.ts у хука onRoute.
+		 *
+		 * Флаг снимает только автоматику. Обе проверки, которые смотрят в базу —
+		 * существование организации и разрешение трёх UID в конкретный файл — идут
+		 * ниже внутри одного явного withTenantCtx и заканчиваются ДО первого байта
+		 * тела. Обхода RLS здесь нет и быть не может: без контекста арендатора
+		 * политики закрыты, и маршрут вернул бы 403/404, а не чужой снимок.
+		 */
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"dicom instance read",
+				))
+			)
+				return;
+			const organizationId = requireOrganizationId(request, reply);
+			if (!organizationId) return;
 
-      const studyUid = normalizeUid(request.params.studyUid);
-      const seriesUid = normalizeUid(request.params.seriesUid);
-      const instanceUid = normalizeUid(request.params.instanceUid);
+			const studyUid = normalizeUid(request.params.studyUid);
+			const seriesUid = normalizeUid(request.params.seriesUid);
+			const instanceUid = normalizeUid(request.params.instanceUid);
 
-      // Идентификатор организации не в формате UUID отсекается ДО открытия
-      // транзакции: соединение из пула на заведомо неверного арендатора не
-      // тратится, и в базу такой запрос не уходит вовсе. Тот же ответ дал бы
-      // organizationExists ниже — он тоже начинается с проверки формы.
-      if (!UUID_SHAPE.test(organizationId)) {
-        request.log.warn(
-          { organizationId },
-          "[dicomweb] Идентификатор организации не в формате UUID — снимок не выдан"
-        );
-        return reply.code(403).send({
-          error: "OrganizationUnknown",
-          message: "Снимок не выдан: организация из токена не существует."
-        });
-      }
+			// Идентификатор организации не в формате UUID отсекается ДО открытия
+			// транзакции: соединение из пула на заведомо неверного арендатора не
+			// тратится, и в базу такой запрос не уходит вовсе. Тот же ответ дал бы
+			// organizationExists ниже — он тоже начинается с проверки формы.
+			if (!UUID_SHAPE.test(organizationId)) {
+				request.log.warn(
+					{ organizationId },
+					"[dicomweb] Идентификатор организации не в формате UUID — снимок не выдан",
+				);
+				return reply.code(403).send({
+					error: "OrganizationUnknown",
+					message: "Снимок не выдан: организация из токена не существует.",
+				});
+			}
 
-      // Организация обязана существовать. Проверка стоит до разбора адреса:
-      // неизвестному арендатору не сообщается даже то, правильно ли он составил
-      // запрос. Отказ по причине недоступной базы отделён от отказа по причине
-      // отсутствующей организации — иначе авария хранилища выглядела бы как
-      // проверенный вывод «такой клиники нет». Различие сохранено и внутри
-      // транзакции: сбой проверки организации даёт 503 ниже, а сбой разрешения
-      // UID по-прежнему уходит в общий обработчик ошибок как 500.
-      //
-      // Оба обращения к базе выполняются в одной транзакции арендатора и
-      // закрывают её до того, как начнётся передача файла.
-      const resolution = await withTenantCtx(organizationId, async () => {
-        let organizationKnown: boolean;
-        try {
-          organizationKnown = await organizationExists(organizationId);
-        } catch (lookupError) {
-          return { organizationCheckFailed: true as const, lookupError, organizationKnown: false, filePath: null };
-        }
-        if (!organizationKnown || !studyUid || !seriesUid || !instanceUid) {
-          return { organizationCheckFailed: false as const, lookupError: null, organizationKnown, filePath: null };
-        }
-        return {
-          organizationCheckFailed: false as const,
-          lookupError: null,
-          organizationKnown,
-          filePath: await resolveInstanceFilePath(organizationId, studyUid, seriesUid, instanceUid)
-        };
-      });
+			// Организация обязана существовать. Проверка стоит до разбора адреса:
+			// неизвестному арендатору не сообщается даже то, правильно ли он составил
+			// запрос. Отказ по причине недоступной базы отделён от отказа по причине
+			// отсутствующей организации — иначе авария хранилища выглядела бы как
+			// проверенный вывод «такой клиники нет». Различие сохранено и внутри
+			// транзакции: сбой проверки организации даёт 503 ниже, а сбой разрешения
+			// UID по-прежнему уходит в общий обработчик ошибок как 500.
+			//
+			// Оба обращения к базе выполняются в одной транзакции арендатора и
+			// закрывают её до того, как начнётся передача файла.
+			const resolution = await withTenantCtx(organizationId, async () => {
+				let organizationKnown: boolean;
+				try {
+					organizationKnown = await organizationExists(organizationId);
+				} catch (lookupError) {
+					return {
+						organizationCheckFailed: true as const,
+						lookupError,
+						organizationKnown: false,
+						filePath: null,
+					};
+				}
+				if (!organizationKnown || !studyUid || !seriesUid || !instanceUid) {
+					return {
+						organizationCheckFailed: false as const,
+						lookupError: null,
+						organizationKnown,
+						filePath: null,
+					};
+				}
+				return {
+					organizationCheckFailed: false as const,
+					lookupError: null,
+					organizationKnown,
+					filePath: await resolveInstanceFilePath(
+						organizationId,
+						studyUid,
+						seriesUid,
+						instanceUid,
+					),
+				};
+			});
 
-      if (resolution.organizationCheckFailed) {
-        request.log.error(
-          { err: resolution.lookupError, organizationId },
-          "[dicomweb] Не удалось проверить организацию запроса — снимок не выдан"
-        );
-        return reply.code(503).send({
-          error: "OrganizationCheckUnavailable",
-          message:
-            "Снимок не выдан: не удалось проверить организацию запроса. Повторите позже — выдача без проверки клиники запрещена."
-        });
-      }
-      if (!resolution.organizationKnown) {
-        request.log.warn(
-          { organizationId },
-          "[dicomweb] Токен подписан, но организации с таким идентификатором нет — снимок не выдан"
-        );
-        return reply.code(403).send({
-          error: "OrganizationUnknown",
-          message: "Снимок не выдан: организация из токена не существует."
-        });
-      }
+			if (resolution.organizationCheckFailed) {
+				request.log.error(
+					{ err: resolution.lookupError, organizationId },
+					"[dicomweb] Не удалось проверить организацию запроса — снимок не выдан",
+				);
+				return reply.code(503).send({
+					error: "OrganizationCheckUnavailable",
+					message:
+						"Снимок не выдан: не удалось проверить организацию запроса. Повторите позже — выдача без проверки клиники запрещена.",
+				});
+			}
+			if (!resolution.organizationKnown) {
+				request.log.warn(
+					{ organizationId },
+					"[dicomweb] Токен подписан, но организации с таким идентификатором нет — снимок не выдан",
+				);
+				return reply.code(403).send({
+					error: "OrganizationUnknown",
+					message: "Снимок не выдан: организация из токена не существует.",
+				});
+			}
 
-      if (!studyUid || !seriesUid || !instanceUid) {
-        return reply.code(400).send({
-          error: "DicomInstanceUidMissing",
-          message: "Снимок не выдан: в адресе должны быть указаны UID исследования, серии и объекта."
-        });
-      }
+			if (!studyUid || !seriesUid || !instanceUid) {
+				return reply.code(400).send({
+					error: "DicomInstanceUidMissing",
+					message:
+						"Снимок не выдан: в адресе должны быть указаны UID исследования, серии и объекта.",
+				});
+			}
 
-      const filePath = resolution.filePath;
-      if (!filePath) {
-        request.log.warn(
-          { organizationId, studyUid, seriesUid, instanceUid },
-          "[dicomweb] Запрошенный DICOM-объект не найден в этой клинике — байты не выданы"
-        );
-        return reply.code(404).send({
-          error: "DicomInstanceNotFound",
-          message: "Снимок с таким UID в этой клинике не найден. Показ чужого исследования вместо него исключён.",
-          studyUid,
-          seriesUid,
-          instanceUid
-        });
-      }
+			const filePath = resolution.filePath;
+			if (!filePath) {
+				request.log.warn(
+					{ organizationId, studyUid, seriesUid, instanceUid },
+					"[dicomweb] Запрошенный DICOM-объект не найден в этой клинике — байты не выданы",
+				);
+				return reply.code(404).send({
+					error: "DicomInstanceNotFound",
+					message:
+						"Снимок с таким UID в этой клинике не найден. Показ чужого исследования вместо него исключён.",
+					studyUid,
+					seriesUid,
+					instanceUid,
+				});
+			}
 
-      let size: number;
-      try {
-        const stat = await fs.stat(filePath);
-        if (!stat.isFile()) throw new Error("not a regular file");
-        size = stat.size;
-      } catch (statError) {
-        request.log.error(
-          { err: statError, organizationId, studyUid, seriesUid, instanceUid },
-          "[dicomweb] Файл объекта числится в базе, но не читается с диска"
-        );
-        return reply.code(404).send({
-          error: "DicomInstanceFileUnreadable",
-          message: "Файл снимка не читается с диска: проверьте подключение хранилища. Другой снимок вместо него не выдаётся.",
-          studyUid,
-          seriesUid,
-          instanceUid
-        });
-      }
+			let size: number;
+			try {
+				const stat = await fs.stat(filePath);
+				if (!stat.isFile()) throw new Error("not a regular file");
+				size = stat.size;
+			} catch (statError) {
+				request.log.error(
+					{ err: statError, organizationId, studyUid, seriesUid, instanceUid },
+					"[dicomweb] Файл объекта числится в базе, но не читается с диска",
+				);
+				return reply.code(404).send({
+					error: "DicomInstanceFileUnreadable",
+					message:
+						"Файл снимка не читается с диска: проверьте подключение хранилища. Другой снимок вместо него не выдаётся.",
+					studyUid,
+					seriesUid,
+					instanceUid,
+				});
+			}
 
-      reply.header("Content-Type", "application/dicom");
-      reply.header("Content-Length", size);
-      // БЫЛО: reply.header("Access-Control-Allow-Origin", "*") — маршрут сам
-      // выставлял разрешение для любого источника и тем самым перебивал общую
-      // политику CORS приложения (server.ts регистрирует @fastify/cors со
-      // списком webOrigins). Речь о выдаче DICOM-снимков, то есть медицинских
-      // данных: со звёздочкой их мог вычитать любой сторонний сайт. Заголовок
-      // убран — источник определяет общая политика.
-      return reply.send(createReadStream(filePath));
-    }
-  );
+			reply.header("Content-Type", "application/dicom");
+			reply.header("Content-Length", size);
+			// БЫЛО: reply.header("Access-Control-Allow-Origin", "*") — маршрут сам
+			// выставлял разрешение для любого источника и тем самым перебивал общую
+			// политику CORS приложения (server.ts регистрирует @fastify/cors со
+			// списком webOrigins). Речь о выдаче DICOM-снимков, то есть медицинских
+			// данных: со звёздочкой их мог вычитать любой сторонний сайт. Заголовок
+			// убран — источник определяет общая политика.
+			return reply.send(createReadStream(filePath));
+		},
+	);
 }

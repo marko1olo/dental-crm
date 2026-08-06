@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { buildCtPlanningRuntimeTruthPolicy } from "../ctPlanningExport.js";
 import type { DicomGpuRenderPlan, ImagingSourceKind } from "@dental/shared";
+import { buildCtPlanningRuntimeTruthPolicy } from "../ctPlanningExport.js";
 
 describe("buildCtPlanningRuntimeTruthPolicy", () => {
 	const defaultRenderPlan: DicomGpuRenderPlan = {
@@ -50,7 +50,11 @@ describe("buildCtPlanningRuntimeTruthPolicy", () => {
 				renderPlan: null,
 				sourceKind: source,
 			});
-			assert.strictEqual(policy.sourceMode, "remote_online_required", `failed for ${source}`);
+			assert.strictEqual(
+				policy.sourceMode,
+				"remote_online_required",
+				`failed for ${source}`,
+			);
 		}
 	});
 
@@ -66,7 +70,11 @@ describe("buildCtPlanningRuntimeTruthPolicy", () => {
 				renderPlan: null,
 				sourceKind: source,
 			});
-			assert.strictEqual(policy.sourceMode, "local_offline_available", `failed for ${source}`);
+			assert.strictEqual(
+				policy.sourceMode,
+				"local_offline_available",
+				`failed for ${source}`,
+			);
 		}
 	});
 
@@ -86,7 +94,10 @@ describe("buildCtPlanningRuntimeTruthPolicy", () => {
 		assert.strictEqual(policy1.executionLane, "metadata_only_no_pixels");
 
 		const policy2 = buildCtPlanningRuntimeTruthPolicy({
-			renderPlan: { ...defaultRenderPlan, diagnosticPixelPolicy: "metadata_only_no_pixels" },
+			renderPlan: {
+				...defaultRenderPlan,
+				diagnosticPixelPolicy: "metadata_only_no_pixels",
+			},
 			sourceKind: "manual_upload",
 		});
 		assert.strictEqual(policy2.executionLane, "metadata_only_no_pixels");
@@ -94,16 +105,25 @@ describe("buildCtPlanningRuntimeTruthPolicy", () => {
 
 	test("executionLane desktop_app_or_external_diagnostic when app review or external strategy", () => {
 		const policy1 = buildCtPlanningRuntimeTruthPolicy({
-			renderPlan: { ...defaultRenderPlan, diagnosticPixelPolicy: "desktop_app_or_external_review" },
+			renderPlan: {
+				...defaultRenderPlan,
+				diagnosticPixelPolicy: "desktop_app_or_external_review",
+			},
 			sourceKind: "manual_upload",
 		});
-		assert.strictEqual(policy1.executionLane, "desktop_app_or_external_diagnostic");
+		assert.strictEqual(
+			policy1.executionLane,
+			"desktop_app_or_external_diagnostic",
+		);
 
 		const policy2 = buildCtPlanningRuntimeTruthPolicy({
 			renderPlan: { ...defaultRenderPlan, textureStrategy: "external_viewer" },
 			sourceKind: "manual_upload",
 		});
-		assert.strictEqual(policy2.executionLane, "desktop_app_or_external_diagnostic");
+		assert.strictEqual(
+			policy2.executionLane,
+			"desktop_app_or_external_diagnostic",
+		);
 	});
 
 	test("executionLane mobile_or_constrained_preview when hardware weight low or memory constrained", () => {
@@ -131,11 +151,14 @@ describe("buildCtPlanningRuntimeTruthPolicy", () => {
 			renderPlan: {
 				...defaultRenderPlan,
 				hardwareQualityWeight: 0.8,
-				memoryBudgetClass: "standard"
+				memoryBudgetClass: "standard",
 			},
 			sourceKind: "manual_upload",
 		});
-		assert.strictEqual(policy.executionLane, "desktop_browser_planning_preview");
+		assert.strictEqual(
+			policy.executionLane,
+			"desktop_browser_planning_preview",
+		);
 	});
 
 	test("clamps runtime weights properly", () => {
@@ -163,7 +186,7 @@ describe("buildCtPlanningRuntimeTruthPolicy", () => {
 			renderPlan: {
 				...defaultRenderPlan,
 				progressiveSliceWindowCap: 4,
-				targetSliceBatch: 8
+				targetSliceBatch: 8,
 			},
 			sourceKind: "manual_upload",
 		});
@@ -177,7 +200,7 @@ describe("buildCtPlanningRuntimeTruthPolicy", () => {
 				...defaultRenderPlan,
 				estimatedGpuMemoryMb: -100,
 				targetSliceBatch: -10,
-				progressiveSliceWindowCap: -5
+				progressiveSliceWindowCap: -5,
 			},
 			sourceKind: "manual_upload",
 		});

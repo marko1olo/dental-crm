@@ -29,7 +29,14 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	copyFileSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -56,9 +63,14 @@ function runGuardOn(files) {
 			mkdirSync(dirname(target), { recursive: true });
 			writeFileSync(target, content, "utf8");
 		}
-		const result = spawnSync(process.execPath, [guardCopy], { encoding: "utf8" });
+		const result = spawnSync(process.execPath, [guardCopy], {
+			encoding: "utf8",
+		});
 		assert.equal(result.error, undefined, "проверка не запустилась");
-		return { status: result.status, output: `${result.stdout}${result.stderr}` };
+		return {
+			status: result.status,
+			output: `${result.stdout}${result.stderr}`,
+		};
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -73,7 +85,9 @@ function summaryNumber(output, label) {
 
 /** Сколько имён и сколько вхождений проверка объявила неразрешимыми. */
 function offenderTotals(output) {
-	const match = output.match(/НЕ РАЗРЕШАЕТСЯ НИ В ОДНОЙ ТЕМЕ:\s+(\d+) имён, (\d+) вхождений/);
+	const match = output.match(
+		/НЕ РАЗРЕШАЕТСЯ НИ В ОДНОЙ ТЕМЕ:\s+(\d+) имён, (\d+) вхождений/,
+	);
 	assert.ok(match, `в выводе нет итоговой строки нарушений:\n${output}`);
 	return { names: Number(match[1]), occurrences: Number(match[2]) };
 }
@@ -91,9 +105,15 @@ function offenderTotals(output) {
  */
 function debtEntries() {
 	const source = readFileSync(guardPath, "utf8");
-	return [...source.matchAll(/\["(--[\w-]+)",\s*\{\s*occurrences:\s*(\d+),\s*file:\s*"([^"]+)"\s*\}\]/g)].map(
-		(match) => ({ name: match[1], occurrences: Number(match[2]), file: match[3] }),
-	);
+	return [
+		...source.matchAll(
+			/\["(--[\w-]+)",\s*\{\s*occurrences:\s*(\d+),\s*file:\s*"([^"]+)"\s*\}\]/g,
+		),
+	].map((match) => ({
+		name: match[1],
+		occurrences: Number(match[2]),
+		file: match[3],
+	}));
 }
 
 /** Путь записи долга -> имя внутри дерева-фикстуры (она пишет от apps/web/src). */
@@ -114,24 +134,32 @@ function debtSatisfyingCss(entries, skip = null) {
 		const key = fixtureRelative(entry.file);
 		const lines = byFile.get(key) ?? [];
 		for (let index = 0; index < entry.occurrences; index += 1) {
-			lines.push(`.debt-${entry.name.slice(2)}-${index} { background: var(${entry.name}, ${LIGHT_FALLBACK}); }`);
+			lines.push(
+				`.debt-${entry.name.slice(2)}-${index} { background: var(${entry.name}, ${LIGHT_FALLBACK}); }`,
+			);
 		}
 		byFile.set(key, lines);
 	}
-	return Object.fromEntries([...byFile].map(([file, lines]) => [file, `${lines.join("\n")}\n`]));
+	return Object.fromEntries(
+		[...byFile].map(([file, lines]) => [file, `${lines.join("\n")}\n`]),
+	);
 }
 
 test("суффикс класса перед псевдоклассом не считается объявлением токена", () => {
 	const { status, output } = runGuardOn({
 		"styles/bem.css": [
 			".btn--danger:hover { background: red; }",
-			".btn--secondary::before { content: \"\"; }",
+			'.btn--secondary::before { content: ""; }',
 			".cancelled { border-left-color: var(--danger); }",
 			"",
 		].join("\n"),
 	});
 
-	assert.equal(summaryNumber(output, "объявлено переменных в css:"), 0, "селектор не объявляет токенов");
+	assert.equal(
+		summaryNumber(output, "объявлено переменных в css:"),
+		0,
+		"селектор не объявляет токенов",
+	);
 	assert.deepEqual(offenderTotals(output), { names: 1, occurrences: 1 });
 	assert.match(output, /--danger/, "--danger обязан попасть в список");
 	assert.equal(status, 1, "есть нарушение — код возврата 1");
@@ -152,7 +180,11 @@ test("закомментированное упоминание в .ts не гл
 		].join("\n"),
 	});
 
-	assert.equal(summaryNumber(output, "имён выставляется из js:"), 0, "комментарий не выставляет токенов");
+	assert.equal(
+		summaryNumber(output, "имён выставляется из js:"),
+		0,
+		"комментарий не выставляет токенов",
+	);
 	assert.deepEqual(offenderTotals(output), { names: 2, occurrences: 2 });
 	assert.match(output, /--line-comment-token/);
 	assert.match(output, /--block-comment-token/);
@@ -187,8 +219,16 @@ test("настоящие объявления и настоящие имена �
 		].join("\n"),
 	});
 
-	assert.equal(summaryNumber(output, "объявлено переменных в css:"), 6, "пять объявлений плюс @property");
-	assert.equal(summaryNumber(output, "имён выставляется из js:"), 3, "setProperty, обычный и вычисляемый ключ");
+	assert.equal(
+		summaryNumber(output, "объявлено переменных в css:"),
+		6,
+		"пять объявлений плюс @property",
+	);
+	assert.equal(
+		summaryNumber(output, "имён выставляется из js:"),
+		3,
+		"setProperty, обычный и вычисляемый ключ",
+	);
 	assert.deepEqual(offenderTotals(output), { names: 0, occurrences: 0 });
 	assert.match(output, /Все var\(\) разрешаются/);
 	assert.equal(status, 0, "нарушений нет — код возврата 0");
@@ -196,12 +236,20 @@ test("настоящие объявления и настоящие имена �
 
 test("запас считается по месту использования, а не по имени", () => {
 	const { status, output } = runGuardOn({
-		"styles/fallback.css": [".a { color: var(--nowhere, #000); }", ".b { color: var(--nowhere); }", ""].join("\n"),
+		"styles/fallback.css": [
+			".a { color: var(--nowhere, #000); }",
+			".b { color: var(--nowhere); }",
+			"",
+		].join("\n"),
 	});
 
 	assert.equal(summaryNumber(output, "использований var\\(\\):"), 2);
 	assert.match(output, /из них с запасом: 1/);
-	assert.deepEqual(offenderTotals(output), { names: 1, occurrences: 1 }, "без запаса ломается только второе место");
+	assert.deepEqual(
+		offenderTotals(output),
+		{ names: 1, occurrences: 1 },
+		"без запаса ломается только второе место",
+	);
 	assert.equal(status, 1);
 });
 
@@ -217,12 +265,21 @@ test("оба промаха на одном входе: проверка нах�
 			".z { color: var(--commented-token); }",
 			"",
 		].join("\n"),
-		"audit.ts": '// упоминание { "--commented-token": "1rem" } и ничего больше\n',
+		"audit.ts":
+			'// упоминание { "--commented-token": "1rem" } и ничего больше\n',
 	});
 
 	assert.deepEqual(offenderTotals(output), { names: 3, occurrences: 3 });
-	for (const name of ["--danger", "--definitely-missing-xyz", "--commented-token"]) {
-		assert.match(output, new RegExp(`${name}\\b`), `${name} обязан попасть в список`);
+	for (const name of [
+		"--danger",
+		"--definitely-missing-xyz",
+		"--commented-token",
+	]) {
+		assert.match(
+			output,
+			new RegExp(`${name}\\b`),
+			`${name} обязан попасть в список`,
+		);
 	}
 	assert.equal(summaryNumber(output, "объявлено переменных в css:"), 0);
 	assert.equal(summaryNumber(output, "имён выставляется из js:"), 0);
@@ -249,7 +306,10 @@ test("оба промаха на одном входе: проверка нах�
 
 test("расхождение списка долга не съедает список нарушений", () => {
 	const entries = debtEntries();
-	assert.ok(entries.length > 0, "в KNOWN_LIGHT_FALLBACK_DEBT нет ни одной записи — механизм разрешений проверять нечем");
+	assert.ok(
+		entries.length > 0,
+		"в KNOWN_LIGHT_FALLBACK_DEBT нет ни одной записи — механизм разрешений проверять нечем",
+	);
 	const paid = entries[0];
 
 	// Записанный файл в дереве ЕСТЬ, весь список удовлетворён — кроме одного
@@ -257,24 +317,40 @@ test("расхождение списка долга не съедает спи�
 	// настоящее нарушение, и оно обязано быть напечатано ПОИМЁННО, а не съедено.
 	const { status, output } = runGuardOn({
 		...debtSatisfyingCss(entries, paid.name),
-		"styles/real-offender.css": ".x { color: var(--definitely-missing-abc); }\n",
+		"styles/real-offender.css":
+			".x { color: var(--definitely-missing-abc); }\n",
 	});
 
-	assert.match(output, /Запись известного долга разошлась с деревом/, "расхождение обязано называться");
-	assert.match(output, new RegExp(`${paid.name}\\b`), "имя из списка долга обязано быть названо");
+	assert.match(
+		output,
+		/Запись известного долга разошлась с деревом/,
+		"расхождение обязано называться",
+	);
+	assert.match(
+		output,
+		new RegExp(`${paid.name}\\b`),
+		"имя из списка долга обязано быть названо",
+	);
 	assert.match(
 		output,
 		new RegExp(`записано ${paid.occurrences}, в дереве 0`),
 		"обе величины обязаны стоять рядом в одной строке",
 	);
 	assert.deepEqual(offenderTotals(output), { names: 1, occurrences: 1 });
-	assert.match(output, /--definitely-missing-abc/, "настоящее нарушение обязано попасть в список, а не быть съеденным");
+	assert.match(
+		output,
+		/--definitely-missing-abc/,
+		"настоящее нарушение обязано попасть в список, а не быть съеденным",
+	);
 	assert.equal(status, 1);
 });
 
 test("разрешение долга действует только на записанное место", () => {
 	const entries = debtEntries();
-	assert.ok(entries.length > 0, "в KNOWN_LIGHT_FALLBACK_DEBT нет ни одной записи — механизм разрешений проверять нечем");
+	assert.ok(
+		entries.length > 0,
+		"в KNOWN_LIGHT_FALLBACK_DEBT нет ни одной записи — механизм разрешений проверять нечем",
+	);
 	const moved = entries[0];
 
 	// То же имя, тот же светлый запас, но в ДРУГОМ файле. Пока разрешение
@@ -285,9 +361,21 @@ test("разрешение долга действует только на за�
 		"styles/elsewhere.css": `.moved { background: var(${moved.name}, ${LIGHT_FALLBACK}); }\n`,
 	});
 
-	assert.equal(summaryNumber(output, "СВЕТЛЫЙ ЗАПАС ВО ВСЕХ ТЕМАХ:"), 1, "лишнее место обязано краснеть");
-	assert.match(output, /styles\/elsewhere\.css/, "красным обязано стать вхождение в НЕзаписанном файле");
-	assert.doesNotMatch(output, /Запись известного долга разошлась/, "в записанных файлах счёт сошёлся");
+	assert.equal(
+		summaryNumber(output, "СВЕТЛЫЙ ЗАПАС ВО ВСЕХ ТЕМАХ:"),
+		1,
+		"лишнее место обязано краснеть",
+	);
+	assert.match(
+		output,
+		/styles\/elsewhere\.css/,
+		"красным обязано стать вхождение в НЕзаписанном файле",
+	);
+	assert.doesNotMatch(
+		output,
+		/Запись известного долга разошлась/,
+		"в записанных файлах счёт сошёлся",
+	);
 	assert.equal(
 		summaryNumber(output, "известный долг \\(лестницы оттенков\\):"),
 		entries.length,

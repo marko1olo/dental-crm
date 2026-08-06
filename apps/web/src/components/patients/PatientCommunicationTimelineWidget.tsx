@@ -27,7 +27,7 @@
 
 import type { CommunicationChannel, CommunicationStatus } from "@dental/shared";
 import { MessageSquare, PhoneOutgoing } from "lucide-react";
-import React from "react";
+import type React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import { countLabel } from "../../lib/russianPlural";
@@ -106,7 +106,9 @@ const OUTBOUND_TITLES: Record<CommunicationChannel, string> = {
 };
 
 function entryTitle(entry: PatientCommunicationEntry): string {
-	return entry.direction === "inbound" ? INBOUND_TITLES[entry.channel] : OUTBOUND_TITLES[entry.channel];
+	return entry.direction === "inbound"
+		? INBOUND_TITLES[entry.channel]
+		: OUTBOUND_TITLES[entry.channel];
 }
 
 /**
@@ -117,7 +119,10 @@ function entryTitle(entry: PatientCommunicationEntry): string {
  */
 type StatusTone = "success" | "waiting" | "failed" | "skipped";
 
-const STATUS_VIEW: Record<CommunicationStatus, { label: string; tone: StatusTone }> = {
+const STATUS_VIEW: Record<
+	CommunicationStatus,
+	{ label: string; tone: StatusTone }
+> = {
 	delivered: { label: "доставлено", tone: "success" },
 	completed: { label: "выполнено", tone: "success" },
 	sent: { label: "отправлено", tone: "success" },
@@ -131,9 +136,12 @@ const STATUS_VIEW: Record<CommunicationStatus, { label: string; tone: StatusTone
 const TONE_CLASSES: Record<StatusTone, string> = {
 	success:
 		"bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800",
-	waiting: "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800",
-	failed: "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800",
-	skipped: "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
+	waiting:
+		"bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800",
+	failed:
+		"bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800",
+	skipped:
+		"bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
 };
 
 /**
@@ -184,7 +192,9 @@ function asLog(payload: unknown): PatientCommunicationLogResponse | null {
 	return candidate as PatientCommunicationLogResponse;
 }
 
-export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }> = ({ patientId }) => {
+export const PatientCommunicationTimelineWidget: React.FC<{
+	patientId: string;
+}> = ({ patientId }) => {
 	const { auth } = useAppLogicContext();
 	// Загрузка через общий хук: он обнуляет данные при смене пациента и
 	// отбрасывает устаревший ответ. Без этого на карточке нового пациента
@@ -222,27 +232,32 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 				    срока — число, из которого нельзя сделать ни одного вывода. */}
 				{!loading && !error && total > 0 && periodStart && periodEnd ? (
 					<span className="text-xs text-slate-500 dark:text-slate-400">
-						{countLabel(total, "обращение", "обращения", "обращений")} с {periodStart} по {periodEnd}
+						{countLabel(total, "обращение", "обращения", "обращений")} с{" "}
+						{periodStart} по {periodEnd}
 					</span>
 				) : null}
 			</div>
 
 			{loading ? (
-				<div className="text-xs py-3 text-slate-500 dark:text-slate-400">Загрузка звонков и сообщений...</div>
+				<div className="text-xs py-3 text-slate-500 dark:text-slate-400">
+					Загрузка звонков и сообщений...
+				</div>
 			) : error ? (
 				<div
 					role="alert"
 					className="p-3 rounded-lg border text-xs bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800"
 				>
-					Журнал не загружен: {error} Это не значит, что общения с пациентом не было.
+					Журнал не загружен: {error} Это не значит, что общения с пациентом не
+					было.
 				</div>
 			) : !log ? (
 				<div
 					role="alert"
 					className="p-3 rounded-lg border text-xs bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800"
 				>
-					Журнал не прочитан: сервер ответил в неизвестном виде. Обновите страницу; если повторится — это
-					расхождение версий сервера и интерфейса, нужен разработчик. Не считайте, что обращений не было.
+					Журнал не прочитан: сервер ответил в неизвестном виде. Обновите
+					страницу; если повторится — это расхождение версий сервера и
+					интерфейса, нужен разработчик. Не считайте, что обращений не было.
 				</div>
 			) : (
 				<>
@@ -250,21 +265,32 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 					    это единственное место в карточке, где они вообще видны. */}
 					{needsCallCount > 0 ? (
 						<div className="mb-3 p-3 rounded-lg border flex items-start gap-2 text-xs bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800">
-							<PhoneOutgoing className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+							<PhoneOutgoing
+								className="w-4 h-4 mt-0.5 shrink-0"
+								aria-hidden="true"
+							/>
 							<span>
 								Машина отправить не смогла:{" "}
-								{countLabel(needsCallCount, "обращение ждёт", "обращения ждут", "обращений ждут")} звонка
-								руками{lastNeedsCall ? `, последнее — ${lastNeedsCall}` : ""}. Позвоните пациенту и
-								закройте задачу в разделе «{COMMUNICATIONS_SECTION_TITLE}».
+								{countLabel(
+									needsCallCount,
+									"обращение ждёт",
+									"обращения ждут",
+									"обращений ждут",
+								)}{" "}
+								звонка руками
+								{lastNeedsCall ? `, последнее — ${lastNeedsCall}` : ""}.
+								Позвоните пациенту и закройте задачу в разделе «
+								{COMMUNICATIONS_SECTION_TITLE}».
 							</span>
 						</div>
 					) : null}
 
 					{entries.length === 0 ? (
 						<div className="p-4 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400">
-							Обращений через систему не записано. Здесь появляются SMS, сообщения в Telegram, WhatsApp,
-							ВКонтакте и MAX, письма и звонки, прошедшие через клинику. Звонок с личного телефона врача
-							сюда не попадает — такой разговор нужно записать заметкой в карте.
+							Обращений через систему не записано. Здесь появляются SMS,
+							сообщения в Telegram, WhatsApp, ВКонтакте и MAX, письма и звонки,
+							прошедшие через клинику. Звонок с личного телефона врача сюда не
+							попадает — такой разговор нужно записать заметкой в карте.
 						</div>
 					) : (
 						<>
@@ -287,7 +313,9 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 													{view.label}
 												</span>
 												{moment ? (
-													<span className="text-slate-500 dark:text-slate-400">{moment}</span>
+													<span className="text-slate-500 dark:text-slate-400">
+														{moment}
+													</span>
 												) : null}
 											</div>
 											{/* Текст сообщения — единственное содержательное поле события;
@@ -296,7 +324,9 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 												{entry.message}
 											</p>
 											<p className="mt-1 mb-0 text-slate-500 dark:text-slate-400">
-												{entry.actorName ? `Сотрудник: ${entry.actorName}` : "Автоматически, без участия сотрудника"}
+												{entry.actorName
+													? `Сотрудник: ${entry.actorName}`
+													: "Автоматически, без участия сотрудника"}
 											</p>
 										</li>
 									);
@@ -304,13 +334,14 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 							</ul>
 							{log.truncated ? (
 								<p className="mt-2 mb-0 text-xs text-slate-500 dark:text-slate-400">
-									Показаны не все обращения: {entries.length} из {total}, начиная с самого свежего.
-									Полная переписка — в разделе «{COMMUNICATIONS_SECTION_TITLE}».
+									Показаны не все обращения: {entries.length} из {total},
+									начиная с самого свежего. Полная переписка — в разделе «
+									{COMMUNICATIONS_SECTION_TITLE}».
 								</p>
 							) : null}
 							<p className="mt-2 mb-0 text-xs text-slate-500 dark:text-slate-400">
-								Видно только то, что прошло через клинику: сообщения из мессенджеров, SMS, письма и
-								звонки через телефонию.
+								Видно только то, что прошло через клинику: сообщения из
+								мессенджеров, SMS, письма и звонки через телефонию.
 							</p>
 						</>
 					)}

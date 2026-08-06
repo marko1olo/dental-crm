@@ -1,8 +1,5 @@
 import { ArrowRight, BarChart3, Database } from "lucide-react";
-import {
-	openWorkspaceView,
-	workspaceViewTitle,
-} from "./settingsDeepLink";
+import { openWorkspaceView, workspaceViewTitle } from "./settingsDeepLink";
 
 /**
  * Вкладка настроек «Отчёты».
@@ -70,15 +67,20 @@ export function SettingsReportingTab() {
 					<h2>Отчёты клиники</h2>
 					<p>
 						Программа считает выручку, загрузку кресел, работу врачей и
-						задолженности пациентов сама, по мере работы клиники. Настраивать для
-						этого ничего не нужно.
+						задолженности пациентов сама, по мере работы клиники. Настраивать
+						для этого ничего не нужно.
 					</p>
 				</div>
 			</div>
 
 			<div
 				className="profile-form-grid"
-				style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "24px" }}
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					gap: "24px",
+					marginTop: "24px",
+				}}
 			>
 				<section className="profile-section-card">
 					<div className="profile-section-header">
@@ -89,7 +91,8 @@ export function SettingsReportingTab() {
 							<h3>Отчёты смотрят в разделе «{reportsViewTitle}»</h3>
 							<p>
 								Там же выбирается период. Отчёты считаются по данным клиники в
-								момент открытия, поэтому отдельной выгрузки для них не требуется.
+								момент открытия, поэтому отдельной выгрузки для них не
+								требуется.
 							</p>
 						</div>
 					</div>
@@ -115,7 +118,10 @@ export function SettingsReportingTab() {
 							</ul>
 						</div>
 
-						<div className="profile-form-group full-width" style={{ marginTop: "4px" }}>
+						<div
+							className="profile-form-group full-width"
+							style={{ marginTop: "4px" }}
+						>
 							<button
 								className="primary-button"
 								type="button"
@@ -151,14 +157,14 @@ export function SettingsReportingTab() {
 					<div className="profile-form-grid">
 						<div className="profile-form-group full-width">
 							<p style={{ margin: 0 }}>
-								<strong>Регулярной выгрузки в стороннюю систему</strong> (PowerBI,
-								Yandex DataLens и подобные) нет: сервер клиники не умеет
-								отправлять данные по расписанию и не хранит настройки такой
-								отправки.
+								<strong>Регулярной выгрузки в стороннюю систему</strong>{" "}
+								(PowerBI, Yandex DataLens и подобные) нет: сервер клиники не
+								умеет отправлять данные по расписанию и не хранит настройки
+								такой отправки.
 							</p>
 							<p style={{ marginTop: "10px", marginBottom: 0 }}>
-								<strong>Отдельного токена только для чтения</strong> тоже нет — ни
-								создать, ни отозвать его нечем. Здесь стояло поле «API-токен
+								<strong>Отдельного токена только для чтения</strong> тоже нет —
+								ни создать, ни отозвать его нечем. Здесь стояло поле «API-токен
 								только для чтения» с кнопкой «Создать новый токен» и обещанием,
 								что перегенерация аннулирует старый. Нажатие всегда
 								заканчивалось отказом сервера, потому что такого токена в
@@ -178,8 +184,8 @@ export function SettingsReportingTab() {
 								та же поломка, что и форма, которая не сохраняется.
 							*/}
 							<p style={{ marginTop: "10px", marginBottom: 0 }}>
-								Что можно сделать уже сейчас: открыть нужный отчёт в разделе
-								«{reportsViewTitle}» за выбранный период и читать числа с экрана.
+								Что можно сделать уже сейчас: открыть нужный отчёт в разделе «
+								{reportsViewTitle}» за выбранный период и читать числа с экрана.
 								Способа отдать данные клиники наружу автоматически в этой версии
 								нет — и это не обход настройки, а её отсутствие.
 							</p>

@@ -41,7 +41,8 @@ describe("textToNumbers: простые числительные", () => {
 			["восемнадцать", "18"],
 			["девятнадцать", "19"],
 		];
-		for (const [input, out] of expected) assert.equal(convert(input), out, `«${input}»`);
+		for (const [input, out] of expected)
+			assert.equal(convert(input), out, `«${input}»`);
 	});
 
 	it("«ноль» не задваивается", () => {
@@ -162,7 +163,10 @@ describe("textToNumbers: медицинские слова не превраща
 
 	it("в клиническом термине не появляется цифр", () => {
 		for (const term of terms) {
-			assert.ok(!/\d/.test(convert(term)), `в «${term}» появилась цифра: «${convert(term)}»`);
+			assert.ok(
+				!/\d/.test(convert(term)),
+				`в «${term}» появилась цифра: «${convert(term)}»`,
+			);
 		}
 	});
 

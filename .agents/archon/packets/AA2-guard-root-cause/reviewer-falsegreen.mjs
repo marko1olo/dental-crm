@@ -4,15 +4,22 @@
 // That cannot distinguish "rendered by a live component" from "rendered only by a
 // dead sibling inside a live file". This script builds the graph at DECLARATION
 // granularity and diffs the mounted set against the census.
+
+import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { readFileSync, readdirSync } from "node:fs";
 import { extname, join, posix, relative, sep } from "node:path";
 
 const require = createRequire("C:/Clinic_MVP/dental-crm/apps/web/package.json");
 const ts = require("typescript");
 
 const ROOT = "C:/Clinic_MVP/dental-crm/apps/web/src";
-const IGNORED = new Set(["node_modules", "dist", "__snapshots__", "tests", "__tests__"]);
+const IGNORED = new Set([
+	"node_modules",
+	"dist",
+	"__snapshots__",
+	"tests",
+	"__tests__",
+]);
 const ENTRY = "main.tsx";
 
 function collect() {
@@ -44,7 +51,13 @@ function resolveSpec(from, spec) {
 	if (!spec.startsWith(".")) return null;
 	const joined = posix.join(posix.dirname(from), spec);
 	const stem = joined.replace(/\.(js|jsx|mjs|cjs)$/, "");
-	for (const c of [`${stem}.tsx`, `${stem}.ts`, `${stem}/index.tsx`, `${stem}/index.ts`, joined]) {
+	for (const c of [
+		`${stem}.tsx`,
+		`${stem}.ts`,
+		`${stem}/index.tsx`,
+		`${stem}/index.ts`,
+		joined,
+	]) {
 		if (universe.has(c)) return c;
 	}
 	return null;
@@ -84,7 +97,11 @@ function containsJsx(node) {
 	let f = false;
 	(function w(n) {
 		if (f || isTypeOnly(n)) return;
-		if (ts.isJsxElement(n) || ts.isJsxSelfClosingElement(n) || ts.isJsxFragment(n)) {
+		if (
+			ts.isJsxElement(n) ||
+			ts.isJsxSelfClosingElement(n) ||
+			ts.isJsxFragment(n)
+		) {
 			f = true;
 			return;
 		}
@@ -94,7 +111,12 @@ function containsJsx(node) {
 }
 
 function hasExport(n) {
-	return ts.canHaveModifiers(n) && (ts.getModifiers(n) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+	return (
+		ts.canHaveModifiers(n) &&
+		(ts.getModifiers(n) ?? []).some(
+			(m) => m.kind === ts.SyntaxKind.ExportKeyword,
+		)
+	);
 }
 
 // ---- per-file facts -------------------------------------------------------
@@ -107,7 +129,13 @@ const F = new Map();
 
 for (const rel of files) {
 	const text = readFileSync(join(ROOT, rel), "utf8");
-	const sf = ts.createSourceFile(rel, text, ts.ScriptTarget.Latest, true, rel.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+	const sf = ts.createSourceFile(
+		rel,
+		text,
+		ts.ScriptTarget.Latest,
+		true,
+		rel.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+	);
 	const decls = new Map();
 	const imports = new Map();
 	const reexports = [];
@@ -129,7 +157,10 @@ for (const rel of files) {
 		let target = null;
 		let imported = "default";
 		(function w(n) {
-			if (ts.isCallExpression(n) && n.expression.kind === ts.SyntaxKind.ImportKeyword) {
+			if (
+				ts.isCallExpression(n) &&
+				n.expression.kind === ts.SyntaxKind.ImportKeyword
+			) {
 				const a = n.arguments[0];
 				if (a && ts.isStringLiteral(a)) target = a.text;
 			}
@@ -154,13 +185,21 @@ for (const rel of files) {
 			if (!ts.isStringLiteral(spec)) continue;
 			const c = st.importClause;
 			if (!c) continue;
-			if (c.name) imports.set(c.name.text, { spec: spec.text, imported: "default" });
+			if (c.name)
+				imports.set(c.name.text, { spec: spec.text, imported: "default" });
 			if (c.namedBindings) {
-				if (ts.isNamespaceImport(c.namedBindings)) imports.set(c.namedBindings.name.text, { spec: spec.text, imported: "*" });
+				if (ts.isNamespaceImport(c.namedBindings))
+					imports.set(c.namedBindings.name.text, {
+						spec: spec.text,
+						imported: "*",
+					});
 				else
 					for (const el of c.namedBindings.elements) {
 						if (el.isTypeOnly) continue;
-						imports.set(el.name.text, { spec: spec.text, imported: (el.propertyName ?? el.name).text });
+						imports.set(el.name.text, {
+							spec: spec.text,
+							imported: (el.propertyName ?? el.name).text,
+						});
 					}
 			}
 			continue;
@@ -171,18 +210,42 @@ for (const rel of files) {
 				if (!st.exportClause) starReexports.push(spec.text);
 				else if (ts.isNamedExports(st.exportClause))
 					for (const el of st.exportClause.elements)
-						reexports.push({ spec: spec.text, imported: (el.propertyName ?? el.name).text, exportedAs: el.name.text });
+						reexports.push({
+							spec: spec.text,
+							imported: (el.propertyName ?? el.name).text,
+							exportedAs: el.name.text,
+						});
 			}
 			continue;
 		}
 		if (ts.isFunctionDeclaration(st) && st.name) {
-			decls.set(st.name.text, { line: line(st.name), jsx: containsJsx(st), exported: hasExport(st), refs: refsIn(st, sf) });
-			if ((ts.getModifiers(st) ?? []).some((m) => m.kind === ts.SyntaxKind.DefaultKeyword)) defaultExportNames.add(st.name.text);
+			decls.set(st.name.text, {
+				line: line(st.name),
+				jsx: containsJsx(st),
+				exported: hasExport(st),
+				refs: refsIn(st, sf),
+			});
+			if (
+				(ts.getModifiers(st) ?? []).some(
+					(m) => m.kind === ts.SyntaxKind.DefaultKeyword,
+				)
+			)
+				defaultExportNames.add(st.name.text);
 			continue;
 		}
 		if (ts.isClassDeclaration(st) && st.name) {
-			decls.set(st.name.text, { line: line(st.name), jsx: containsJsx(st), exported: hasExport(st), refs: refsIn(st, sf) });
-			if ((ts.getModifiers(st) ?? []).some((m) => m.kind === ts.SyntaxKind.DefaultKeyword)) defaultExportNames.add(st.name.text);
+			decls.set(st.name.text, {
+				line: line(st.name),
+				jsx: containsJsx(st),
+				exported: hasExport(st),
+				refs: refsIn(st, sf),
+			});
+			if (
+				(ts.getModifiers(st) ?? []).some(
+					(m) => m.kind === ts.SyntaxKind.DefaultKeyword,
+				)
+			)
+				defaultExportNames.add(st.name.text);
 			continue;
 		}
 		if (ts.isVariableStatement(st)) {
@@ -193,7 +256,9 @@ for (const rel of files) {
 					line: line(d),
 					jsx: d.initializer ? containsJsx(d.initializer) : false,
 					exported: exp,
-					refs: d.initializer ? refsIn(d.initializer, sf) : { tags: new Set(), ids: new Set() },
+					refs: d.initializer
+						? refsIn(d.initializer, sf)
+						: { tags: new Set(), ids: new Set() },
 				});
 				if (d.initializer) {
 					const lz = lazyTargetOf(d.initializer);
@@ -206,7 +271,8 @@ for (const rel of files) {
 			const r = refsIn(st, sf);
 			for (const t of r.tags) moduleScopeRefs.tags.add(t);
 			for (const i of r.ids) moduleScopeRefs.ids.add(i);
-			if (ts.isIdentifier(st.expression)) defaultExportNames.add(st.expression.text);
+			if (ts.isIdentifier(st.expression))
+				defaultExportNames.add(st.expression.text);
 			continue;
 		}
 		// any other top-level statement = module scope (e.g. main.tsx createRoot().render(<X/>))
@@ -217,7 +283,12 @@ for (const rel of files) {
 
 	// `export {A, B}` without module specifier marks local decls exported
 	for (const st of sf.statements) {
-		if (ts.isExportDeclaration(st) && !st.moduleSpecifier && st.exportClause && ts.isNamedExports(st.exportClause)) {
+		if (
+			ts.isExportDeclaration(st) &&
+			!st.moduleSpecifier &&
+			st.exportClause &&
+			ts.isNamedExports(st.exportClause)
+		) {
 			for (const el of st.exportClause.elements) {
 				const local = (el.propertyName ?? el.name).text;
 				const d = decls.get(local);
@@ -227,7 +298,15 @@ for (const rel of files) {
 		}
 	}
 
-	F.set(rel, { decls, imports, reexports, starReexports, lazyBindings, moduleScopeRefs, defaultExportNames });
+	F.set(rel, {
+		decls,
+		imports,
+		reexports,
+		starReexports,
+		lazyBindings,
+		moduleScopeRefs,
+		defaultExportNames,
+	});
 }
 
 // ---- resolve a local name in a file to a declaration node id --------------
@@ -261,7 +340,8 @@ function resolveExported(file, exportedName, depth = 0) {
 	const f = F.get(file);
 	if (!f) return null;
 	if (exportedName === "default") {
-		for (const n of f.defaultExportNames) if (f.decls.has(n)) return `${file}:${n}`;
+		for (const n of f.defaultExportNames)
+			if (f.decls.has(n)) return `${file}:${n}`;
 		return null;
 	}
 	if (f.decls.has(exportedName)) return `${file}:${exportedName}`;
@@ -299,7 +379,8 @@ const entry = F.get(ENTRY);
 if (!entry) throw new Error("no main.tsx");
 for (const n of entry.moduleScopeRefs.ids) push(resolveName(ENTRY, n));
 // main.tsx module scope may also call a local bootstrap function
-for (const [n, d] of entry.decls) if (entry.moduleScopeRefs.ids.has(n)) push(`${ENTRY}:${n}`);
+for (const [n, d] of entry.decls)
+	if (entry.moduleScopeRefs.ids.has(n)) push(`${ENTRY}:${n}`);
 
 while (queue.length) {
 	const id = queue.shift();

@@ -3,7 +3,10 @@ import type { ReactNode } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { AnamnesisField } from "../AnamnesisField";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
-import type { DocumentSelectOption, DocumentVisitHints } from "./documentFormTypes";
+import type {
+	DocumentSelectOption,
+	DocumentVisitHints,
+} from "./documentFormTypes";
 
 export interface ProcedureSpecificConsentFormProps extends DocumentVisitHints {
 	/** Блоки процедур из справочника согласий. */
@@ -71,7 +74,11 @@ export function ProcedureSpecificConsentForm({
 					Блок процедуры
 					<select
 						value={procedureConsentProcedureType}
-						onChange={(event) => setProcedureConsentProcedureType(normalizeProcedure(event.target.value))}
+						onChange={(event) =>
+							setProcedureConsentProcedureType(
+								normalizeProcedure(event.target.value),
+							)
+						}
 					>
 						{procedureOptions.map((option) => (
 							<option key={option.value} value={option.value}>
@@ -84,8 +91,12 @@ export function ProcedureSpecificConsentForm({
 					Врач
 					<input
 						value={procedureConsentDoctorFullName}
-						onChange={(event) => setProcedureConsentDoctorFullName(event.target.value)}
-						placeholder={activeDoctorFullName ?? "врач, проводивший разъяснение"}
+						onChange={(event) =>
+							setProcedureConsentDoctorFullName(event.target.value)
+						}
+						placeholder={
+							activeDoctorFullName ?? "врач, проводивший разъяснение"
+						}
 					/>
 				</label>
 			</div>
@@ -93,7 +104,9 @@ export function ProcedureSpecificConsentForm({
 				Процедура или этап
 				<textarea
 					value={procedureConsentProcedureName}
-					onChange={(event) => setProcedureConsentProcedureName(event.target.value)}
+					onChange={(event) =>
+						setProcedureConsentProcedureName(event.target.value)
+					}
 					placeholder="название процедуры: например, удаление зуба 48"
 					rows={2}
 				/>
@@ -103,20 +116,29 @@ export function ProcedureSpecificConsentForm({
 					Область или зубы
 					<input
 						value={procedureConsentToothOrArea}
-						onChange={(event) => setProcedureConsentToothOrArea(event.target.value)}
+						onChange={(event) =>
+							setProcedureConsentToothOrArea(event.target.value)
+						}
 						placeholder={inferredTreatmentArea || "FDI / зона лечения"}
 					/>
 				</label>
 				<label>
 					Дата подтверждения
-					<input value={procedureConsentConfirmedAt} onChange={(event) => setProcedureConsentConfirmedAt(event.target.value)} />
+					<input
+						value={procedureConsentConfirmedAt}
+						onChange={(event) =>
+							setProcedureConsentConfirmedAt(event.target.value)
+						}
+					/>
 				</label>
 			</div>
 			<label>
 				Диагноз или клиническое показание
 				<textarea
 					value={procedureConsentDiagnosisOrIndication}
-					onChange={(event) => setProcedureConsentDiagnosisOrIndication(event.target.value)}
+					onChange={(event) =>
+						setProcedureConsentDiagnosisOrIndication(event.target.value)
+					}
 					placeholder={activeVisitComplaint ?? "показание к процедуре"}
 					rows={2}
 				/>
@@ -125,11 +147,21 @@ export function ProcedureSpecificConsentForm({
 			<div className="document-payload-row">
 				<label>
 					Анестезия
-					<input value={procedureConsentAnesthesia} onChange={(event) => setProcedureConsentAnesthesia(event.target.value)} />
+					<input
+						value={procedureConsentAnesthesia}
+						onChange={(event) =>
+							setProcedureConsentAnesthesia(event.target.value)
+						}
+					/>
 				</label>
 				<label>
 					Материалы, системы, конструкции
-					<input value={procedureConsentMaterials} onChange={(event) => setProcedureConsentMaterials(event.target.value)} />
+					<input
+						value={procedureConsentMaterials}
+						onChange={(event) =>
+							setProcedureConsentMaterials(event.target.value)
+						}
+					/>
 				</label>
 			</div>
 			<AnamnesisField
@@ -145,23 +177,37 @@ export function ProcedureSpecificConsentForm({
 				Процедурные риски
 				<textarea
 					value={procedureConsentSpecificRisks}
-					onChange={(event) => setProcedureConsentSpecificRisks(event.target.value)}
+					onChange={(event) =>
+						setProcedureConsentSpecificRisks(event.target.value)
+					}
 					rows={4}
 				/>
 			</label>
 			<label>
 				Альтернативы и отказ
-				<textarea value={procedureConsentAlternatives} onChange={(event) => setProcedureConsentAlternatives(event.target.value)} rows={4} />
+				<textarea
+					value={procedureConsentAlternatives}
+					onChange={(event) =>
+						setProcedureConsentAlternatives(event.target.value)
+					}
+					rows={4}
+				/>
 			</label>
 			<label>
 				После процедуры
-				<textarea value={procedureConsentAftercare} onChange={(event) => setProcedureConsentAftercare(event.target.value)} rows={4} />
+				<textarea
+					value={procedureConsentAftercare}
+					onChange={(event) => setProcedureConsentAftercare(event.target.value)}
+					rows={4}
+				/>
 			</label>
 			<label className="document-payload-checkbox">
 				<input
 					checked={procedureConsentLocalFormAttached}
 					type="checkbox"
-					onChange={(event) => setProcedureConsentLocalFormAttached(event.target.checked)}
+					onChange={(event) =>
+						setProcedureConsentLocalFormAttached(event.target.checked)
+					}
 				/>
 				Локальная форма клиники приложена или включена в пакет
 			</label>
@@ -169,7 +215,9 @@ export function ProcedureSpecificConsentForm({
 				<input
 					checked={procedureConsentQuestionsAnswered}
 					type="checkbox"
-					onChange={(event) => setProcedureConsentQuestionsAnswered(event.target.checked)}
+					onChange={(event) =>
+						setProcedureConsentQuestionsAnswered(event.target.checked)
+					}
 				/>
 				Пациент получил ответы на вопросы по процедуре
 			</label>
@@ -177,7 +225,9 @@ export function ProcedureSpecificConsentForm({
 				<input
 					checked={procedureConsentExactProcedureConfirmed}
 					type="checkbox"
-					onChange={(event) => setProcedureConsentExactProcedureConfirmed(event.target.checked)}
+					onChange={(event) =>
+						setProcedureConsentExactProcedureConfirmed(event.target.checked)
+					}
 				/>
 				Конкретная процедура, зона и объем названы пациенту
 			</label>
@@ -185,7 +235,9 @@ export function ProcedureSpecificConsentForm({
 				<input
 					checked={procedureConsentRisksUnderstood}
 					type="checkbox"
-					onChange={(event) => setProcedureConsentRisksUnderstood(event.target.checked)}
+					onChange={(event) =>
+						setProcedureConsentRisksUnderstood(event.target.checked)
+					}
 				/>
 				Пациент понял процедурные риски и ограничения
 			</label>

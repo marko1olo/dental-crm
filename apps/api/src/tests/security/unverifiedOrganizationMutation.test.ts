@@ -4,8 +4,14 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations } from "../../db/schema.js";
 import { registerClinicalRoutes } from "../../routes/clinical.js";
-import { CLINIC_TOKEN_HEADER, ORGANIZATION_HEADER } from "../../security/identity.js";
-import { authTokenSecret, resetAuthSecretCacheForTests } from "../../security/authSecret.js";
+import {
+	authTokenSecret,
+	resetAuthSecretCacheForTests,
+} from "../../security/authSecret.js";
+import {
+	CLINIC_TOKEN_HEADER,
+	ORGANIZATION_HEADER,
+} from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 
 /**
@@ -92,7 +98,11 @@ describe("непроверенная организация из заголов�
 		process.env.AUTH_TOKEN_SECRET = TEST_SECRET;
 		resetAuthSecretCacheForTests();
 
-		clinicToken = signToken({ organizationId: TOKEN_ORG }, authTokenSecret(), 3600);
+		clinicToken = signToken(
+			{ organizationId: TOKEN_ORG },
+			authTokenSecret(),
+			3600,
+		);
 
 		listeningApp = Fastify();
 		await registerClinicalRoutes(listeningApp);
@@ -124,7 +134,10 @@ describe("непроверенная организация из заголов�
 	test("живой сервер: клиническая запись по одному заголовку организации отклонена", async () => {
 		const response = await fetch(`${baseUrl}/api/clinical/rules`, {
 			method: "POST",
-			headers: { "content-type": "application/json", [ORGANIZATION_HEADER]: ATTACKER_ORG },
+			headers: {
+				"content-type": "application/json",
+				[ORGANIZATION_HEADER]: ATTACKER_ORG,
+			},
 			body: JSON.stringify(createRulePayload()),
 		});
 
@@ -138,7 +151,10 @@ describe("непроверенная организация из заголов�
 		// любой не-GET считается записью. Ошибка в эту сторону стоит логина.
 		const response = await fetch(`${baseUrl}/api/clinical/rules/evaluate`, {
 			method: "POST",
-			headers: { "content-type": "application/json", [ORGANIZATION_HEADER]: ATTACKER_ORG },
+			headers: {
+				"content-type": "application/json",
+				[ORGANIZATION_HEADER]: ATTACKER_ORG,
+			},
 			body: JSON.stringify(evaluatePayload()),
 		});
 

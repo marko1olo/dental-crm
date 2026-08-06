@@ -29,8 +29,9 @@
  * Только чтение. Разбор — компилятором TypeScript (`ts.createSourceFile`), без
  * проверки типов: программа целиком здесь не нужна, а без неё разбор быстрый.
  */
-import ts from "typescript";
+
 import { readFileSync } from "node:fs";
+import ts from "typescript";
 
 /**
  * Признаки того, что вызов посылает админский секрет. Правильный приём в проекте
@@ -64,7 +65,10 @@ export const CONDUIT_REASON = "conduit:headers-from-parameter";
 /** Файл проверки, а не панель: секрет в тесте не доказывает секрета у экрана. */
 export function isTestFile(file) {
 	const normalized = file.replace(/\\/g, "/");
-	return /\/tests?\//.test(normalized) || /\.(test|spec)\.[cm]?tsx?$/.test(normalized);
+	return (
+		/\/tests?\//.test(normalized) ||
+		/\.(test|spec)\.[cm]?tsx?$/.test(normalized)
+	);
 }
 
 export function parseSource(file) {
@@ -84,7 +88,9 @@ export function walk(node, visit) {
 }
 
 export function lineOfNode(sourceFile, node) {
-	return sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+	return (
+		sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1
+	);
 }
 
 /**
@@ -99,8 +105,13 @@ export function mentionsHelper(node) {
 	let found = false;
 	walk(node, (current) => {
 		if (found) return;
-		if (ts.isIdentifier(current) && HEADER_HELPERS.includes(current.text)) found = true;
-		else if (ts.isStringLiteralLike(current) && HEADER_HELPERS.includes(current.text)) found = true;
+		if (ts.isIdentifier(current) && HEADER_HELPERS.includes(current.text))
+			found = true;
+		else if (
+			ts.isStringLiteralLike(current) &&
+			HEADER_HELPERS.includes(current.text)
+		)
+			found = true;
 	});
 	return found;
 }
@@ -111,7 +122,8 @@ export function mentionsDeadSecret(node) {
 	let found = false;
 	walk(node, (current) => {
 		if (found) return;
-		if (ts.isStringLiteralLike(current) && current.text === DEAD_SECRET_KEY) found = true;
+		if (ts.isStringLiteralLike(current) && current.text === DEAD_SECRET_KEY)
+			found = true;
 	});
 	return found;
 }
@@ -137,8 +149,14 @@ export function functionName(fn) {
 	if (!fn) return null;
 	if (fn.name && ts.isIdentifier(fn.name)) return fn.name.text;
 	const parent = fn.parent;
-	if (parent && ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) return parent.name.text;
-	if (parent && ts.isPropertyAssignment(parent) && ts.isIdentifier(parent.name)) return parent.name.text;
+	if (
+		parent &&
+		ts.isVariableDeclaration(parent) &&
+		ts.isIdentifier(parent.name)
+	)
+		return parent.name.text;
+	if (parent && ts.isPropertyAssignment(parent) && ts.isIdentifier(parent.name))
+		return parent.name.text;
 	return null;
 }
 
@@ -166,7 +184,8 @@ export function parameterNames(fn) {
  */
 export function resolvePathExpression(node, scope, depth = 0) {
 	if (!node || depth > 4) return null;
-	if (ts.isParenthesizedExpression(node)) return resolvePathExpression(node.expression, scope, depth + 1);
+	if (ts.isParenthesizedExpression(node))
+		return resolvePathExpression(node.expression, scope, depth + 1);
 	if (ts.isStringLiteralLike(node)) return node.text;
 	if (ts.isTemplateExpression(node)) {
 		let out = node.head.text;
@@ -214,8 +233,15 @@ export function buildScope(sourceFile) {
 	const localFunctions = new Map();
 
 	walk(sourceFile, (node) => {
-		if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
-			if (ts.isStringLiteralLike(node.initializer) && node.initializer.text.startsWith("/api/")) {
+		if (
+			ts.isVariableDeclaration(node) &&
+			ts.isIdentifier(node.name) &&
+			node.initializer
+		) {
+			if (
+				ts.isStringLiteralLike(node.initializer) &&
+				node.initializer.text.startsWith("/api/")
+			) {
 				constants.set(node.name.text, node.initializer.text);
 			}
 		}
@@ -264,8 +290,15 @@ export function buildScope(sourceFile) {
 export function buildHelperBindings(sourceFile) {
 	const bindings = new Set();
 	walk(sourceFile, (node) => {
-		if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
-			if (mentionsHelper(node.initializer) && !mentionsDeadSecret(node.initializer)) {
+		if (
+			ts.isVariableDeclaration(node) &&
+			ts.isIdentifier(node.name) &&
+			node.initializer
+		) {
+			if (
+				mentionsHelper(node.initializer) &&
+				!mentionsDeadSecret(node.initializer)
+			) {
 				bindings.add(node.name.text);
 			}
 			return;
@@ -277,7 +310,12 @@ export function buildHelperBindings(sourceFile) {
 			ts.isMethodDeclaration(node)
 		) {
 			const name = functionName(node);
-			if (name && node.body && mentionsHelper(node.body) && !mentionsDeadSecret(node.body)) {
+			if (
+				name &&
+				node.body &&
+				mentionsHelper(node.body) &&
+				!mentionsDeadSecret(node.body)
+			) {
 				bindings.add(name);
 			}
 		}
@@ -315,7 +353,8 @@ export function collectFetchCalls(file) {
 
 	walk(sourceFile, (node) => {
 		if (!ts.isCallExpression(node)) return;
-		if (!ts.isIdentifier(node.expression) || node.expression.text !== "fetch") return;
+		if (!ts.isIdentifier(node.expression) || node.expression.text !== "fetch")
+			return;
 		if (node.arguments.length === 0) return;
 
 		const pathArg = node.arguments[0];
@@ -328,28 +367,43 @@ export function collectFetchCalls(file) {
 		const fnName = functionName(fn);
 
 		const optionsArg = node.arguments[1];
-		const methodProp = optionsArg && ts.isObjectLiteralExpression(optionsArg)
-			? optionsArg.properties.find(
-				(p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === "method"
-			)
-			: null;
-		const methodLiteral = methodProp && ts.isPropertyAssignment(methodProp) && ts.isStringLiteralLike(methodProp.initializer)
-			? methodProp.initializer.text.toUpperCase()
-			: "GET";
+		const methodProp =
+			optionsArg && ts.isObjectLiteralExpression(optionsArg)
+				? optionsArg.properties.find(
+						(p) =>
+							ts.isPropertyAssignment(p) &&
+							ts.isIdentifier(p.name) &&
+							p.name.text === "method",
+					)
+				: null;
+		const methodLiteral =
+			methodProp &&
+			ts.isPropertyAssignment(methodProp) &&
+			ts.isStringLiteralLike(methodProp.initializer)
+				? methodProp.initializer.text.toUpperCase()
+				: "GET";
 
-		const headersProp = optionsArg && ts.isObjectLiteralExpression(optionsArg)
-			? optionsArg.properties.find(
-				(p) =>
-					(ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === "headers") ||
-					(ts.isShorthandPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === "headers")
-			)
-			: null;
+		const headersProp =
+			optionsArg && ts.isObjectLiteralExpression(optionsArg)
+				? optionsArg.properties.find(
+						(p) =>
+							(ts.isPropertyAssignment(p) &&
+								ts.isIdentifier(p.name) &&
+								p.name.text === "headers") ||
+							(ts.isShorthandPropertyAssignment(p) &&
+								ts.isIdentifier(p.name) &&
+								p.name.text === "headers"),
+					)
+				: null;
 
 		let sendsSecret = false;
 		let reason = null;
 
 		// Случай 1: помощник упомянут в самом вызове или в объемлющей функции (через имя или прямо)
-		if (mentionsHelperResolved(node, bindings) || mentionsHelperResolved(fn, bindings)) {
+		if (
+			mentionsHelperResolved(node, bindings) ||
+			mentionsHelperResolved(fn, bindings)
+		) {
 			if (mentionsDeadSecret(node) || mentionsDeadSecret(fn)) {
 				sendsSecret = false;
 				reason = "dead secret source";
@@ -400,7 +454,11 @@ export function findCallers(file, fnName) {
 		const expr = node.expression;
 		let called = null;
 		if (ts.isIdentifier(expr) && expr.text === fnName) called = fnName;
-		else if (ts.isPropertyAccessExpression(expr) && ts.isIdentifier(expr.name) && expr.name.text === fnName) {
+		else if (
+			ts.isPropertyAccessExpression(expr) &&
+			ts.isIdentifier(expr.name) &&
+			expr.name.text === fnName
+		) {
 			called = fnName;
 		}
 		if (!called) return;
@@ -412,11 +470,11 @@ export function findCallers(file, fnName) {
 		 * значит объявить виновными всех вызывающих сразу — так и появлялись
 		 * ложные находки в `ManagerReportsPanel` и `patientDuplicatesApi`.
 		 */
-		const passesHelper = node.arguments.some((argument) => mentionsHelperResolved(argument, bindings));
+		const passesHelper = node.arguments.some((argument) =>
+			mentionsHelperResolved(argument, bindings),
+		);
 		callers.push({ file, line, called, passesHelper });
 	});
 
 	return callers;
 }
-
-

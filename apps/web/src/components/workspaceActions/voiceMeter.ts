@@ -49,8 +49,7 @@ export function voiceMeterHeights(
 		const weight =
 			VOICE_METER_EDGE_SHARE + (1 - VOICE_METER_EDGE_SHARE) * (1 - distance);
 		const share =
-			VOICE_METER_FLOOR_SHARE +
-			(1 - VOICE_METER_FLOOR_SHARE) * level * weight;
+			VOICE_METER_FLOOR_SHARE + (1 - VOICE_METER_FLOOR_SHARE) * level * weight;
 		heights.push(Math.round(share * 1000) / 10);
 	}
 	return heights;

@@ -9,10 +9,13 @@ import {
 	messengerInboundEvents,
 	organizations,
 	patientCommunicationConsents,
-	patients
+	patients,
 } from "../db/schema.js";
+import {
+	detectOptOutIntent,
+	optOutAcknowledgement,
+} from "../services/communications/optOut.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
-import { detectOptOutIntent, optOutAcknowledgement } from "../services/communications/optOut.js";
 import { withFixtureTenant } from "./support/fixtureOrganizations.js";
 
 /**
@@ -34,7 +37,9 @@ const TWIN_B = "dce70000-0000-4000-8000-000000000304";
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
+	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(
+		message,
+	);
 }
 
 describe("распознавание отказа от сообщений", () => {
@@ -63,7 +68,10 @@ describe("распознавание отказа от сообщений", () =
 		// придёт на приём. Такое сообщение должно дойти до администратора.
 		assert.equal(detectOptOutIntent("Стоп, а во сколько приём завтра?"), null);
 		assert.equal(detectOptOutIntent("подскажите, где остановка"), null);
-		assert.equal(detectOptOutIntent("Здравствуйте! Хочу записаться на осмотр"), null);
+		assert.equal(
+			detectOptOutIntent("Здравствуйте! Хочу записаться на осмотр"),
+			null,
+		);
 	});
 
 	test("«старт» возвращает к рассылке", () => {
@@ -100,15 +108,33 @@ describe("разбор входящих сообщений", () => {
 			// `organization_id` с `app.current_tenant` и обхода не допускает: сев без
 			// тенант-контекста отвергается кодом 42501, а не создаёт клинику.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника входящих" }).onConflictDoNothing();
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника входящих" })
+					.onConflictDoNothing();
 				await db
 					.insert(patients)
 					.values([
-						{ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Входящий Иван Иванович", phone: "+7 916 000-02-01" },
+						{
+							id: PATIENT_ID,
+							organizationId: ORG_ID,
+							fullName: "Входящий Иван Иванович",
+							phone: "+7 916 000-02-01",
+						},
 						// Два пациента с одним номером — семья, общий телефон. Такое
 						// совпадение нельзя разрешать в пользу первой строки.
-						{ id: TWIN_A, organizationId: ORG_ID, fullName: "Двойников Пётр Петрович", phone: "+7 916 000-02-99" },
-						{ id: TWIN_B, organizationId: ORG_ID, fullName: "Двойникова Анна Петровна", phone: "89160000299" }
+						{
+							id: TWIN_A,
+							organizationId: ORG_ID,
+							fullName: "Двойников Пётр Петрович",
+							phone: "+7 916 000-02-99",
+						},
+						{
+							id: TWIN_B,
+							organizationId: ORG_ID,
+							fullName: "Двойникова Анна Петровна",
+							phone: "89160000299",
+						},
 					])
 					.onConflictDoNothing();
 			});
@@ -124,10 +150,18 @@ describe("разбор входящих сообщений", () => {
 			// снимает НОЛЬ молча — фикстура осталась бы в живой базе, а отчёт
 			// выглядел бы успешным.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-				await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_ID));
-				await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-				await db.delete(messengerInboundEvents).where(eq(messengerInboundEvents.organizationId, ORG_ID));
+				await db
+					.delete(communicationOutbox)
+					.where(eq(communicationOutbox.organizationId, ORG_ID));
+				await db
+					.delete(communicationEvents)
+					.where(eq(communicationEvents.organizationId, ORG_ID));
+				await db
+					.delete(patientCommunicationConsents)
+					.where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+				await db
+					.delete(messengerInboundEvents)
+					.where(eq(messengerInboundEvents.organizationId, ORG_ID));
 				await db.delete(crmLeads).where(eq(crmLeads.organizationId, ORG_ID));
 				await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 				await db.delete(organizations).where(eq(organizations.id, ORG_ID));
@@ -147,7 +181,7 @@ describe("разбор входящих сообщений", () => {
 				channel: "whatsapp",
 				externalChatId: "79160000201",
 				messageText: "СТОП",
-				eventKind: "message"
+				eventKind: "message",
 			});
 		});
 
@@ -157,22 +191,32 @@ describe("разбор входящих сообщений", () => {
 
 		const consents = await withFixtureTenant(ORG_ID, async () =>
 			db
-				.select({ scope: patientCommunicationConsents.scope, state: patientCommunicationConsents.state, source: patientCommunicationConsents.source })
+				.select({
+					scope: patientCommunicationConsents.scope,
+					state: patientCommunicationConsents.state,
+					source: patientCommunicationConsents.source,
+				})
 				.from(patientCommunicationConsents)
 				.where(
 					and(
 						eq(patientCommunicationConsents.organizationId, ORG_ID),
 						eq(patientCommunicationConsents.patientId, PATIENT_ID),
-						eq(patientCommunicationConsents.channel, "whatsapp")
-					)
-				)
+						eq(patientCommunicationConsents.channel, "whatsapp"),
+					),
+				),
 		);
 
 		// Пациент, написавший «СТОП», не делает разницы между сервисным и
 		// рекламным — отзываются обе области.
 		assert.equal(consents.length, 2, JSON.stringify(consents));
-		assert.ok(consents.every((row) => row.state === "revoked"), JSON.stringify(consents));
-		assert.ok(consents.every((row) => row.source === "inbound_stop"), JSON.stringify(consents));
+		assert.ok(
+			consents.every((row) => row.state === "revoked"),
+			JSON.stringify(consents),
+		);
+		assert.ok(
+			consents.every((row) => row.source === "inbound_stop"),
+			JSON.stringify(consents),
+		);
 	});
 
 	test("после «СТОП» пациенту уходит подтверждение, а не тишина", async (context) => {
@@ -184,7 +228,7 @@ describe("разбор входящих сообщений", () => {
 				channel: "whatsapp",
 				externalChatId: "79160000201",
 				messageText: "стоп",
-				eventKind: "message"
+				eventKind: "message",
 			});
 		});
 
@@ -197,14 +241,24 @@ describe("разбор входящих сообщений", () => {
 					scope: communicationOutbox.scope,
 					body: communicationOutbox.body,
 					channel: communicationOutbox.channel,
-					status: communicationOutbox.status
+					status: communicationOutbox.status,
 				})
 				.from(communicationOutbox)
-				.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.patientId, PATIENT_ID)))
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.patientId, PATIENT_ID),
+					),
+				),
 		);
 
-		const acknowledgement = queued.find((row) => row.intent === "transactional_reply");
-		assert.ok(acknowledgement, `подтверждение не поставлено в очередь: ${JSON.stringify(queued)}`);
+		const acknowledgement = queued.find(
+			(row) => row.intent === "transactional_reply",
+		);
+		assert.ok(
+			acknowledgement,
+			`подтверждение не поставлено в очередь: ${JSON.stringify(queued)}`,
+		);
 		// Ответ идёт по тому каналу, откуда пришёл «СТОП».
 		assert.equal(acknowledgement.channel, "whatsapp");
 		// Это не реклама: область остаётся служебной.
@@ -225,9 +279,9 @@ describe("разбор входящих сообщений", () => {
 					channel: "sms",
 					externalChatId: "79160000201",
 					messageText: "отпишите меня",
-					eventKind: "message"
+					eventKind: "message",
 				})
-				.returning({ id: messengerInboundEvents.id })
+				.returning({ id: messengerInboundEvents.id }),
 		);
 		assert.ok(event);
 
@@ -236,7 +290,10 @@ describe("разбор входящих сообщений", () => {
 		// `UPDATE` без тенант-контекста тронул бы ноль строк и не сообщил об этом —
 		// повтор разбора просто не состоялся бы, а тест остался бы зелёным.
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.update(messengerInboundEvents).set({ processedAt: null }).where(eq(messengerInboundEvents.id, event.id));
+			await db
+				.update(messengerInboundEvents)
+				.set({ processedAt: null })
+				.where(eq(messengerInboundEvents.id, event.id));
 		});
 		await processInboundEvents({ limit: 50 });
 
@@ -247,9 +304,9 @@ describe("разбор входящих сообщений", () => {
 				.where(
 					and(
 						eq(communicationOutbox.organizationId, ORG_ID),
-						eq(communicationOutbox.dedupeKey, `optout-ack:${event.id}`)
-					)
-				)
+						eq(communicationOutbox.dedupeKey, `optout-ack:${event.id}`),
+					),
+				),
 		);
 
 		assert.equal(acknowledgements.length, 1, "подтверждение поставлено дважды");
@@ -264,7 +321,7 @@ describe("разбор входящих сообщений", () => {
 				channel: "whatsapp",
 				externalChatId: "79160000201",
 				messageText: "СТАРТ",
-				eventKind: "message"
+				eventKind: "message",
 			});
 		});
 
@@ -273,15 +330,18 @@ describe("разбор входящих сообщений", () => {
 
 		const rows = await withFixtureTenant(ORG_ID, async () =>
 			db
-				.select({ scope: patientCommunicationConsents.scope, state: patientCommunicationConsents.state })
+				.select({
+					scope: patientCommunicationConsents.scope,
+					state: patientCommunicationConsents.state,
+				})
 				.from(patientCommunicationConsents)
 				.where(
 					and(
 						eq(patientCommunicationConsents.organizationId, ORG_ID),
 						eq(patientCommunicationConsents.patientId, PATIENT_ID),
-						eq(patientCommunicationConsents.channel, "whatsapp")
-					)
-				)
+						eq(patientCommunicationConsents.channel, "whatsapp"),
+					),
+				),
 		);
 		const byScope = new Map(rows.map((row) => [row.scope, row.state]));
 		assert.equal(byScope.get("service"), "granted");
@@ -299,7 +359,7 @@ describe("разбор входящих сообщений", () => {
 				channel: "whatsapp",
 				externalChatId: "79160000201",
 				messageText: "Здравствуйте, можно перенести приём на четверг?",
-				eventKind: "message"
+				eventKind: "message",
 			});
 		});
 
@@ -308,11 +368,22 @@ describe("разбор входящих сообщений", () => {
 
 		const events = await withFixtureTenant(ORG_ID, async () =>
 			db
-				.select({ message: communicationEvents.message, direction: communicationEvents.direction })
+				.select({
+					message: communicationEvents.message,
+					direction: communicationEvents.direction,
+				})
 				.from(communicationEvents)
-				.where(and(eq(communicationEvents.organizationId, ORG_ID), eq(communicationEvents.patientId, PATIENT_ID)))
+				.where(
+					and(
+						eq(communicationEvents.organizationId, ORG_ID),
+						eq(communicationEvents.patientId, PATIENT_ID),
+					),
+				),
 		);
-		assert.ok(events.some((row) => row.message.includes("перенести приём")), JSON.stringify(events));
+		assert.ok(
+			events.some((row) => row.message.includes("перенести приём")),
+			JSON.stringify(events),
+		);
 		assert.ok(events.every((row) => row.direction === "inbound"));
 	});
 
@@ -320,7 +391,10 @@ describe("разбор входящих сообщений", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const patientsBefore = await withFixtureTenant(ORG_ID, async () =>
-			db.select({ id: patients.id }).from(patients).where(eq(patients.organizationId, ORG_ID))
+			db
+				.select({ id: patients.id })
+				.from(patients)
+				.where(eq(patients.organizationId, ORG_ID)),
 		);
 
 		await withFixtureTenant(ORG_ID, async () => {
@@ -329,7 +403,7 @@ describe("разбор входящих сообщений", () => {
 				channel: "whatsapp",
 				externalChatId: "79995550000",
 				messageText: "Здравствуйте, сколько стоит имплантация?",
-				eventKind: "message"
+				eventKind: "message",
 			});
 		});
 
@@ -340,15 +414,22 @@ describe("разбор входящих сообщений", () => {
 		// «WhatsApp User 79995550000». Оба счёта берутся под тенант-контекстом —
 		// без него они оба дали бы ноль и сравнение стало бы бессодержательным.
 		const patientsAfter = await withFixtureTenant(ORG_ID, async () =>
-			db.select({ id: patients.id }).from(patients).where(eq(patients.organizationId, ORG_ID))
+			db
+				.select({ id: patients.id })
+				.from(patients)
+				.where(eq(patients.organizationId, ORG_ID)),
 		);
 		assert.equal(patientsAfter.length, patientsBefore.length);
 
 		const leads = await withFixtureTenant(ORG_ID, async () =>
 			db
-				.select({ source: crmLeads.source, phone: crmLeads.phone, notes: crmLeads.notes })
+				.select({
+					source: crmLeads.source,
+					phone: crmLeads.phone,
+					notes: crmLeads.notes,
+				})
 				.from(crmLeads)
-				.where(eq(crmLeads.organizationId, ORG_ID))
+				.where(eq(crmLeads.organizationId, ORG_ID)),
 		);
 		assert.equal(leads.length, 1, JSON.stringify(leads));
 		assert.equal(leads[0]?.source, "inbound_whatsapp");
@@ -365,7 +446,7 @@ describe("разбор входящих сообщений", () => {
 				channel: "whatsapp",
 				externalChatId: "+7 916 000-02-99",
 				messageText: "Добрый день",
-				eventKind: "message"
+				eventKind: "message",
 			});
 		});
 
@@ -377,16 +458,24 @@ describe("разбор входящих сообщений", () => {
 			db
 				.select({ patientId: communicationEvents.patientId })
 				.from(communicationEvents)
-				.where(eq(communicationEvents.organizationId, ORG_ID))
+				.where(eq(communicationEvents.organizationId, ORG_ID)),
 		);
-		assert.equal(events.some((row) => row.patientId === TWIN_A || row.patientId === TWIN_B), false);
+		assert.equal(
+			events.some(
+				(row) => row.patientId === TWIN_A || row.patientId === TWIN_B,
+			),
+			false,
+		);
 
 		const leads = await withFixtureTenant(ORG_ID, async () =>
-			db.select({ notes: crmLeads.notes }).from(crmLeads).where(eq(crmLeads.organizationId, ORG_ID))
+			db
+				.select({ notes: crmLeads.notes })
+				.from(crmLeads)
+				.where(eq(crmLeads.organizationId, ORG_ID)),
 		);
 		assert.ok(
 			leads.some((row) => row.notes?.includes("несколько карточек")),
-			JSON.stringify(leads)
+			JSON.stringify(leads),
 		);
 	});
 
@@ -396,8 +485,13 @@ describe("разбор входящих сообщений", () => {
 		const [inserted] = await withFixtureTenant(ORG_ID, async () =>
 			db
 				.insert(messengerInboundEvents)
-				.values({ organizationId: ORG_ID, channel: "whatsapp", externalChatId: "79160000201", eventKind: "status" })
-				.returning({ id: messengerInboundEvents.id })
+				.values({
+					organizationId: ORG_ID,
+					channel: "whatsapp",
+					externalChatId: "79160000201",
+					eventKind: "status",
+				})
+				.returning({ id: messengerInboundEvents.id }),
 		);
 
 		await processInboundEvents({ limit: 50 });
@@ -406,7 +500,7 @@ describe("разбор входящих сообщений", () => {
 			db
 				.select({ processedAt: messengerInboundEvents.processedAt })
 				.from(messengerInboundEvents)
-				.where(eq(messengerInboundEvents.id, inserted?.id ?? ""))
+				.where(eq(messengerInboundEvents.id, inserted?.id ?? "")),
 		);
 		assert.notEqual(row?.processedAt, null);
 	});

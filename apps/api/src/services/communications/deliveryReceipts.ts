@@ -37,7 +37,9 @@ export type ParsedReceipt = {
  * Коды состояний SMS.RU. Читать их как «больше 100 — плохо» нельзя: 110 это
  * «прочитано», то есть лучший возможный исход.
  */
-const SMS_RU_STATES: Readonly<Record<number, { state: ReceiptState; text: string }>> = {
+const SMS_RU_STATES: Readonly<
+	Record<number, { state: ReceiptState; text: string }>
+> = {
 	100: { state: "in_transit", text: "Сообщение принято шлюзом" },
 	101: { state: "in_transit", text: "Передаётся оператору" },
 	102: { state: "in_transit", text: "Передано оператору" },
@@ -48,7 +50,7 @@ const SMS_RU_STATES: Readonly<Record<number, { state: ReceiptState; text: string
 	107: { state: "failed", text: "Не доставлено по неизвестной причине" },
 	108: { state: "failed", text: "Отклонено" },
 	110: { state: "delivered", text: "Прочитано" },
-	150: { state: "failed", text: "Не доставлено: номер в чёрном списке" }
+	150: { state: "failed", text: "Не доставлено: номер в чёрном списке" },
 };
 
 /**
@@ -73,7 +75,9 @@ export function parseSmsRuReceipts(rawData: unknown): ParsedReceipt[] {
 		receipts.push({
 			providerMessageId,
 			state: known?.state ?? "unknown",
-			detail: known ? `SMS.RU ${code}: ${known.text}` : `SMS.RU ${code}: состояние не распознано`
+			detail: known
+				? `SMS.RU ${code}: ${known.text}`
+				: `SMS.RU ${code}: состояние не распознано`,
 		});
 	}
 	return receipts;
@@ -84,7 +88,9 @@ export function parseSmsRuReceipts(rawData: unknown): ParsedReceipt[] {
  * отправки», и трактовать его как ошибку значит преждевременно признать
  * сообщение потерянным.
  */
-const SMSC_STATES: Readonly<Record<number, { state: ReceiptState; text: string }>> = {
+const SMSC_STATES: Readonly<
+	Record<number, { state: ReceiptState; text: string }>
+> = {
 	[-3]: { state: "unknown", text: "Сообщение не найдено у провайдера" },
 	[-1]: { state: "in_transit", text: "Ожидает отправки" },
 	0: { state: "in_transit", text: "Передано оператору" },
@@ -95,13 +101,20 @@ const SMSC_STATES: Readonly<Record<number, { state: ReceiptState; text: string }
 	22: { state: "failed", text: "Неверный номер" },
 	23: { state: "failed", text: "Отправка запрещена" },
 	24: { state: "failed", text: "Недостаточно средств" },
-	25: { state: "failed", text: "Недоступный номер" }
+	25: { state: "failed", text: "Недоступный номер" },
 };
 
 /** SMSC присылает по одной квитанции: `id`, `status`, при отказе — `err`. */
-export function parseSmscReceipt(params: Record<string, unknown>): ParsedReceipt | null {
+export function parseSmscReceipt(
+	params: Record<string, unknown>,
+): ParsedReceipt | null {
 	const rawId = params.id;
-	const providerMessageId = typeof rawId === "string" ? rawId.trim() : typeof rawId === "number" ? String(rawId) : "";
+	const providerMessageId =
+		typeof rawId === "string"
+			? rawId.trim()
+			: typeof rawId === "number"
+				? String(rawId)
+				: "";
 	if (!providerMessageId) return null;
 
 	const rawStatus = params.status;
@@ -114,13 +127,17 @@ export function parseSmscReceipt(params: Record<string, unknown>): ParsedReceipt
 	if (!Number.isFinite(status)) return null;
 
 	const known = SMSC_STATES[status];
-	const errorCode = params.err === undefined || params.err === null ? null : String(params.err);
-	const suffix = errorCode && errorCode !== "0" ? `, код ошибки ${errorCode}` : "";
+	const errorCode =
+		params.err === undefined || params.err === null ? null : String(params.err);
+	const suffix =
+		errorCode && errorCode !== "0" ? `, код ошибки ${errorCode}` : "";
 
 	return {
 		providerMessageId,
 		state: known?.state ?? "unknown",
-		detail: known ? `SMSC ${status}: ${known.text}${suffix}` : `SMSC ${status}: состояние не распознано${suffix}`
+		detail: known
+			? `SMSC ${status}: ${known.text}${suffix}`
+			: `SMSC ${status}: состояние не распознано${suffix}`,
 	};
 }
 
@@ -130,15 +147,18 @@ export function parseSmscReceipt(params: Record<string, unknown>): ParsedReceipt
  * говорит, что делать. «У пациента нет WhatsApp — напишите SMS» говорит.
  */
 const WHATSAPP_ERRORS: Readonly<Record<number, string>> = {
-	131026: "у получателя нет WhatsApp или он не может принять сообщение — нужен другой канал",
-	131047: "прошло больше 24 часов с последнего ответа пациента: свободный текст запрещён, нужен согласованный шаблон",
-	131049: "Meta ограничила доставку этому получателю, чтобы снизить долю рассылок",
+	131026:
+		"у получателя нет WhatsApp или он не может принять сообщение — нужен другой канал",
+	131047:
+		"прошло больше 24 часов с последнего ответа пациента: свободный текст запрещён, нужен согласованный шаблон",
+	131049:
+		"Meta ограничила доставку этому получателю, чтобы снизить долю рассылок",
 	131051: "тип сообщения не поддерживается получателем",
 	131053: "вложение не принято: неподходящий формат или размер",
 	132000: "число значений не совпадает с шаблоном",
 	132001: "шаблон не найден или не одобрен",
 	133010: "номер отправителя не зарегистрирован в WhatsApp Business",
-	470: "истекло окно свободной переписки — нужен шаблон"
+	470: "истекло окно свободной переписки — нужен шаблон",
 };
 
 /**
@@ -161,28 +181,47 @@ export function parseWhatsappStatuses(rawStatuses: unknown): ParsedReceipt[] {
 		if (!item || typeof item !== "object") continue;
 		const entry = item as Record<string, unknown>;
 
-		const providerMessageId = typeof entry.id === "string" ? entry.id.trim() : "";
+		const providerMessageId =
+			typeof entry.id === "string" ? entry.id.trim() : "";
 		if (!providerMessageId) continue;
 
-		const status = typeof entry.status === "string" ? entry.status.trim().toLowerCase() : "";
+		const status =
+			typeof entry.status === "string" ? entry.status.trim().toLowerCase() : "";
 
 		// Расшифровка ошибки берётся из первой записи errors: Meta присылает их
 		// массивом, но для одного сообщения причина одна.
 		const errors = Array.isArray(entry.errors) ? entry.errors : [];
-		const firstError = errors.length > 0 && errors[0] && typeof errors[0] === "object" ? (errors[0] as Record<string, unknown>) : null;
-		const errorCode = typeof firstError?.code === "number" ? firstError.code : null;
-		const errorTitle = typeof firstError?.title === "string" ? firstError.title : null;
+		const firstError =
+			errors.length > 0 && errors[0] && typeof errors[0] === "object"
+				? (errors[0] as Record<string, unknown>)
+				: null;
+		const errorCode =
+			typeof firstError?.code === "number" ? firstError.code : null;
+		const errorTitle =
+			typeof firstError?.title === "string" ? firstError.title : null;
 
 		if (status === "delivered") {
-			receipts.push({ providerMessageId, state: "delivered", detail: "WhatsApp: доставлено" });
+			receipts.push({
+				providerMessageId,
+				state: "delivered",
+				detail: "WhatsApp: доставлено",
+			});
 			continue;
 		}
 		if (status === "read") {
-			receipts.push({ providerMessageId, state: "delivered", detail: "WhatsApp: прочитано" });
+			receipts.push({
+				providerMessageId,
+				state: "delivered",
+				detail: "WhatsApp: прочитано",
+			});
 			continue;
 		}
 		if (status === "sent") {
-			receipts.push({ providerMessageId, state: "in_transit", detail: "WhatsApp: передано в сеть" });
+			receipts.push({
+				providerMessageId,
+				state: "in_transit",
+				detail: "WhatsApp: передано в сеть",
+			});
 			continue;
 		}
 		if (status === "failed") {
@@ -191,7 +230,7 @@ export function parseWhatsappStatuses(rawStatuses: unknown): ParsedReceipt[] {
 			receipts.push({
 				providerMessageId,
 				state: "failed",
-				detail: `WhatsApp: не доставлено — ${explanation}${errorCode !== null ? ` (код ${errorCode})` : ""}`
+				detail: `WhatsApp: не доставлено — ${explanation}${errorCode !== null ? ` (код ${errorCode})` : ""}`,
 			});
 			continue;
 		}
@@ -201,7 +240,7 @@ export function parseWhatsappStatuses(rawStatuses: unknown): ParsedReceipt[] {
 		receipts.push({
 			providerMessageId,
 			state: "unknown",
-			detail: `WhatsApp: состояние «${status || "не указано"}» не распознано`
+			detail: `WhatsApp: состояние «${status || "не указано"}» не распознано`,
 		});
 	}
 	return receipts;
@@ -233,8 +272,17 @@ export type ApplyReceiptsReport = {
  * 4. Организация не принимается извне: она берётся из найденной строки. Иначе
  *    вызывающий мог бы менять статусы чужой клиники, зная идентификатор.
  */
-export async function applyReceipts(receipts: readonly ParsedReceipt[], now = new Date()): Promise<ApplyReceiptsReport> {
-	const report = { applied: 0, delivered: 0, failed: 0, unmatched: 0, ignored: 0 };
+export async function applyReceipts(
+	receipts: readonly ParsedReceipt[],
+	now = new Date(),
+): Promise<ApplyReceiptsReport> {
+	const report = {
+		applied: 0,
+		delivered: 0,
+		failed: 0,
+		unmatched: 0,
+		ignored: 0,
+	};
 	if (receipts.length === 0) return report;
 
 	const byId = new Map<string, ParsedReceipt>();
@@ -263,7 +311,7 @@ export async function applyReceipts(receipts: readonly ParsedReceipt[], now = ne
 				id: communicationOutbox.id,
 				organizationId: communicationOutbox.organizationId,
 				status: communicationOutbox.status,
-				providerMessageId: communicationOutbox.providerMessageId
+				providerMessageId: communicationOutbox.providerMessageId,
 			})
 			.from(communicationOutbox)
 			.where(
@@ -271,16 +319,24 @@ export async function applyReceipts(receipts: readonly ParsedReceipt[], now = ne
 					sql`${communicationOutbox.providerMessageId} is not null`,
 					inArray(communicationOutbox.providerMessageId, [...byId.keys()]),
 					// Провайдер знает только об отправленных сообщениях.
-					inArray(communicationOutbox.status, ["sent", "delivered"])
-				)
-			)
+					inArray(communicationOutbox.status, ["sent", "delivered"]),
+				),
+			),
 	);
 
-	const matchedIds = new Set(rows.map((row) => row.providerMessageId).filter((id): id is string => Boolean(id)));
-	report.unmatched = [...byId.keys()].filter((id) => !matchedIds.has(id)).length;
+	const matchedIds = new Set(
+		rows
+			.map((row) => row.providerMessageId)
+			.filter((id): id is string => Boolean(id)),
+	);
+	report.unmatched = [...byId.keys()].filter(
+		(id) => !matchedIds.has(id),
+	).length;
 
 	for (const row of rows) {
-		const receipt = row.providerMessageId ? byId.get(row.providerMessageId) : undefined;
+		const receipt = row.providerMessageId
+			? byId.get(row.providerMessageId)
+			: undefined;
 		if (!receipt) continue;
 
 		// Одна квитанция — одна клиника. Контекст ставится по организации самой
@@ -289,7 +345,12 @@ export async function applyReceipts(receipts: readonly ParsedReceipt[], now = ne
 			if (receipt.state === "delivered") {
 				await tx
 					.update(communicationOutbox)
-					.set({ status: "delivered", deliveredAt: now, receiptDetail: receipt.detail, updatedAt: now })
+					.set({
+						status: "delivered",
+						deliveredAt: now,
+						receiptDetail: receipt.detail,
+						updatedAt: now,
+					})
 					.where(eq(communicationOutbox.id, row.id));
 				report.applied += 1;
 				report.delivered += 1;
@@ -314,7 +375,7 @@ export async function applyReceipts(receipts: readonly ParsedReceipt[], now = ne
 						lastErrorClass: "not_delivered",
 						lastErrorMessage: receipt.detail,
 						receiptDetail: receipt.detail,
-						updatedAt: now
+						updatedAt: now,
 					})
 					.where(eq(communicationOutbox.id, row.id));
 				report.applied += 1;
@@ -342,14 +403,20 @@ export async function applyReceipts(receipts: readonly ParsedReceipt[], now = ne
  * отказывает: открытый эндпоинт позволил бы кому угодно помечать сообщения
  * доставленными, то есть скрывать недоставку.
  */
-export function readReceiptSecret(env: NodeJS.ProcessEnv = process.env): string | null {
+export function readReceiptSecret(
+	env: NodeJS.ProcessEnv = process.env,
+): string | null {
 	const secret = env.DENTE_COMMUNICATION_RECEIPT_SECRET?.trim();
 	return secret && secret.length >= 16 ? secret : null;
 }
 
 /** Сравнение за постоянное время: длина секрета не должна утекать по таймингу. */
-export function receiptSecretMatches(provided: unknown, expected: string): boolean {
-	if (typeof provided !== "string" || provided.length !== expected.length) return false;
+export function receiptSecretMatches(
+	provided: unknown,
+	expected: string,
+): boolean {
+	if (typeof provided !== "string" || provided.length !== expected.length)
+		return false;
 	let difference = 0;
 	for (let index = 0; index < expected.length; index += 1) {
 		difference |= provided.charCodeAt(index) ^ expected.charCodeAt(index);

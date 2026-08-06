@@ -188,168 +188,168 @@ describe("картотека отдаёт настоящее сальдо пац
 			return;
 		}
 
-			/*
-			 * Весь сев идёт под тенант-контекстом клиники. Под FORCE RLS в WITH CHECK
-			 * политик тенант-таблиц дизъюнкта обхода нет, поэтому вставка без
-			 * `app.current_tenant` отвергается кодом 42501 на КАЖДОЙ строке —
-			 * и на организации, и на пациентах, и на деньгах.
-			 */
-			await withFixtureTenant(ORGANIZATION_ID, async () => {
-				await db.insert(organizations).values({
-					id: ORGANIZATION_ID,
-					name: "Клиника замка сальдо карточки",
-				});
-				for (const [patientId, fullName] of [
-					[PATIENT_DEBTOR, "Должников Должник Должникович"],
-					[PATIENT_OVERPAID, "Переплатова Переплата Переплатовна"],
-					[PATIENT_SETTLED, "Расчётов Расчёт Расчётович"],
-					[PATIENT_CANCELLED_ONLY, "Отменин Отмен Отменович"],
-					[PATIENT_NO_MONEY, "Безденежных Без Денегович"],
-					[PATIENT_KOPECKS, "Копейкин Копей Копейкович"],
-				] as const) {
-					await db.insert(patients).values({
-						id: patientId,
-						organizationId: ORGANIZATION_ID,
-						fullName,
-						status: "active",
-					});
-				}
-
-				await db.insert(treatmentItems).values([
-					// Должник: 10 000,00 назначено двумя строками.
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_DEBTOR,
-						title: "Лечение кариеса",
-						quantity: "1",
-						priceRub: 6000,
-						unitPriceRub: 6000,
-						discountRub: 0,
-						status: "completed",
-					},
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_DEBTOR,
-						title: "Пломба",
-						quantity: "1",
-						priceRub: 4000,
-						unitPriceRub: 4000,
-						discountRub: 0,
-						status: "proposed",
-					},
-					// Переплативший: назначено 1 500,50.
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_OVERPAID,
-						title: "Осмотр",
-						quantity: "1",
-						priceRub: 1500.5,
-						unitPriceRub: 1500.5,
-						discountRub: 0,
-						status: "completed",
-					},
-					/*
-					 * Рассчитавшийся: три позиции, чья сумма в плавающей точке даёт
-					 * 3491.4900000000002. В карточке обязано выйти ровно 0.
-					 */
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_SETTLED,
-						title: "Позиция 1",
-						quantity: "1",
-						priceRub: 1000,
-						unitPriceRub: 1000,
-						discountRub: 0,
-						status: "completed",
-					},
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_SETTLED,
-						title: "Позиция 2",
-						quantity: "1",
-						priceRub: 1001.82,
-						unitPriceRub: 1001.82,
-						discountRub: 0,
-						status: "completed",
-					},
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_SETTLED,
-						title: "Позиция 3",
-						quantity: "1",
-						priceRub: 1489.67,
-						unitPriceRub: 1489.67,
-						discountRub: 0,
-						status: "completed",
-					},
-					// Только отменённое лечение: в сальдо не идёт ни копейки.
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_CANCELLED_ONLY,
-						title: "Отменённый план",
-						quantity: "1",
-						priceRub: 5000,
-						unitPriceRub: 5000,
-						discountRub: 0,
-						status: "cancelled",
-					},
-					// Копейки на умножении: 1 500,10 × 3 = 4 500,30, а не 4500.299999999999.
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_KOPECKS,
-						title: "Три единицы по 1 500,10",
-						quantity: "3",
-						priceRub: 4500.3,
-						unitPriceRub: 1500.1,
-						discountRub: 0,
-						status: "proposed",
-					},
-				]);
-
-				await db.insert(payments).values([
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_DEBTOR,
-						amountRub: 4000,
-						method: "card",
-						status: "paid",
-					},
-					// 1 500,50 + 1 990,99 = 3 491,49 — переплата 1 990,99 сверх назначенного.
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_OVERPAID,
-						amountRub: 1500.5,
-						method: "card",
-						status: "paid",
-					},
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_OVERPAID,
-						amountRub: 1990.99,
-						method: "cash",
-						status: "paid",
-					},
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_SETTLED,
-						amountRub: 3491.49,
-						method: "card",
-						status: "paid",
-					},
-					/*
-					 * Запланированный платёж должника (`planned` — статус из enum
-					 * `payment_status`): в сальдо он не идёт, иначе долг «погасился» бы
-					 * обещанием заплатить.
-					 */
-					{
-						organizationId: ORGANIZATION_ID,
-						patientId: PATIENT_DEBTOR,
-						amountRub: 6000,
-						method: "card",
-						status: "planned",
-					},
-				]);
+		/*
+		 * Весь сев идёт под тенант-контекстом клиники. Под FORCE RLS в WITH CHECK
+		 * политик тенант-таблиц дизъюнкта обхода нет, поэтому вставка без
+		 * `app.current_tenant` отвергается кодом 42501 на КАЖДОЙ строке —
+		 * и на организации, и на пациентах, и на деньгах.
+		 */
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.insert(organizations).values({
+				id: ORGANIZATION_ID,
+				name: "Клиника замка сальдо карточки",
 			});
+			for (const [patientId, fullName] of [
+				[PATIENT_DEBTOR, "Должников Должник Должникович"],
+				[PATIENT_OVERPAID, "Переплатова Переплата Переплатовна"],
+				[PATIENT_SETTLED, "Расчётов Расчёт Расчётович"],
+				[PATIENT_CANCELLED_ONLY, "Отменин Отмен Отменович"],
+				[PATIENT_NO_MONEY, "Безденежных Без Денегович"],
+				[PATIENT_KOPECKS, "Копейкин Копей Копейкович"],
+			] as const) {
+				await db.insert(patients).values({
+					id: patientId,
+					organizationId: ORGANIZATION_ID,
+					fullName,
+					status: "active",
+				});
+			}
+
+			await db.insert(treatmentItems).values([
+				// Должник: 10 000,00 назначено двумя строками.
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_DEBTOR,
+					title: "Лечение кариеса",
+					quantity: "1",
+					priceRub: 6000,
+					unitPriceRub: 6000,
+					discountRub: 0,
+					status: "completed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_DEBTOR,
+					title: "Пломба",
+					quantity: "1",
+					priceRub: 4000,
+					unitPriceRub: 4000,
+					discountRub: 0,
+					status: "proposed",
+				},
+				// Переплативший: назначено 1 500,50.
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_OVERPAID,
+					title: "Осмотр",
+					quantity: "1",
+					priceRub: 1500.5,
+					unitPriceRub: 1500.5,
+					discountRub: 0,
+					status: "completed",
+				},
+				/*
+				 * Рассчитавшийся: три позиции, чья сумма в плавающей точке даёт
+				 * 3491.4900000000002. В карточке обязано выйти ровно 0.
+				 */
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_SETTLED,
+					title: "Позиция 1",
+					quantity: "1",
+					priceRub: 1000,
+					unitPriceRub: 1000,
+					discountRub: 0,
+					status: "completed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_SETTLED,
+					title: "Позиция 2",
+					quantity: "1",
+					priceRub: 1001.82,
+					unitPriceRub: 1001.82,
+					discountRub: 0,
+					status: "completed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_SETTLED,
+					title: "Позиция 3",
+					quantity: "1",
+					priceRub: 1489.67,
+					unitPriceRub: 1489.67,
+					discountRub: 0,
+					status: "completed",
+				},
+				// Только отменённое лечение: в сальдо не идёт ни копейки.
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_CANCELLED_ONLY,
+					title: "Отменённый план",
+					quantity: "1",
+					priceRub: 5000,
+					unitPriceRub: 5000,
+					discountRub: 0,
+					status: "cancelled",
+				},
+				// Копейки на умножении: 1 500,10 × 3 = 4 500,30, а не 4500.299999999999.
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_KOPECKS,
+					title: "Три единицы по 1 500,10",
+					quantity: "3",
+					priceRub: 4500.3,
+					unitPriceRub: 1500.1,
+					discountRub: 0,
+					status: "proposed",
+				},
+			]);
+
+			await db.insert(payments).values([
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_DEBTOR,
+					amountRub: 4000,
+					method: "card",
+					status: "paid",
+				},
+				// 1 500,50 + 1 990,99 = 3 491,49 — переплата 1 990,99 сверх назначенного.
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_OVERPAID,
+					amountRub: 1500.5,
+					method: "card",
+					status: "paid",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_OVERPAID,
+					amountRub: 1990.99,
+					method: "cash",
+					status: "paid",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_SETTLED,
+					amountRub: 3491.49,
+					method: "card",
+					status: "paid",
+				},
+				/*
+				 * Запланированный платёж должника (`planned` — статус из enum
+				 * `payment_status`): в сальдо он не идёт, иначе долг «погасился» бы
+				 * обещанием заплатить.
+				 */
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_DEBTOR,
+					amountRub: 6000,
+					method: "card",
+					status: "planned",
+				},
+			]);
+		});
 
 		clinicToken = signToken(
 			{

@@ -1,5 +1,5 @@
-import { describe, test } from "node:test";
 import assert from "node:assert/strict";
+import { describe, test } from "node:test";
 import type { ServiceCatalogItem } from "@dental/shared";
 import { analyzePricelist } from "./analyzer.js";
 
@@ -104,7 +104,10 @@ describe("сводка по категории сходится с ценами 
 		const prices = response.items
 			.map((item) => item.priceRub)
 			.filter((price): price is number => price !== null);
-		assert.deepEqual(prices.slice().sort((a, b) => a - b), [1500.5, 2300.25]);
+		assert.deepEqual(
+			prices.slice().sort((a, b) => a - b),
+			[1500.5, 2300.25],
+		);
 
 		const summary = response.summary.find((entry) => entry.pricedCount === 2);
 		assert.ok(summary, "обе цены должны попасть в одну сводку по категории");
@@ -207,9 +210,21 @@ describe("название услуги не тащит за собой цену
 			const response = await parseLines(line);
 			const item = response.items[0];
 			assert.ok(item, `строка «${line}» не разобралась`);
-			assert.equal(item.title, "Отбеливание", `название испорчено: «${item.title}» (строка «${line}»)`);
-			assert.equal(item.priceRub, 12000, `нижняя граница цены потеряна (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, 18000, `верхняя граница цены потеряна (строка «${line}»)`);
+			assert.equal(
+				item.title,
+				"Отбеливание",
+				`название испорчено: «${item.title}» (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceRub,
+				12000,
+				`нижняя граница цены потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				18000,
+				`верхняя граница цены потеряна (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -221,9 +236,21 @@ describe("название услуги не тащит за собой цену
 			const response = await parseLines(line);
 			const item = response.items[0];
 			assert.ok(item, `строка «${line}» не разобралась`);
-			assert.equal(item.title, "Отбеливание", `название испорчено: «${item.title}»`);
-			assert.equal(item.priceRub, 12000.5, `копейки нижней границы потеряны (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, 18000.75, `копейки верхней границы потеряны (строка «${line}»)`);
+			assert.equal(
+				item.title,
+				"Отбеливание",
+				`название испорчено: «${item.title}»`,
+			);
+			assert.equal(
+				item.priceRub,
+				12000.5,
+				`копейки нижней границы потеряны (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				18000.75,
+				`копейки верхней границы потеряны (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -258,8 +285,16 @@ describe("название услуги не тащит за собой цену
 			const response = await parseLines(line);
 			const item = response.items[0];
 			assert.ok(item, `строка «${line}» не разобралась`);
-			assert.equal(item.priceRub, expectedPrice, `цена за единицу потеряна (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, null, `выдуман диапазон из счёта единиц (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				expectedPrice,
+				`цена за единицу потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				null,
+				`выдуман диапазон из счёта единиц (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -318,21 +353,44 @@ describe("пара цен не схлопывается в бо́льшую", ()
 			const response = await parseLines(line);
 			const item = response.items[0];
 			assert.ok(item, `строка «${line}» не разобралась`);
-			assert.equal(item.priceRub, 500, `цена вдвое выше написанной (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, 1000, `вторая цена пары потеряна (строка «${line}»)`);
-			assert.equal(item.title, "Консультация", `название испорчено: «${item.title}»`);
+			assert.equal(
+				item.priceRub,
+				500,
+				`цена вдвое выше написанной (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				1000,
+				`вторая цена пары потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.title,
+				"Консультация",
+				`название испорчено: «${item.title}»`,
+			);
 		}
 	});
 
 	test("возрастающая пара опций читается так же, как убывающая", async () => {
 		// Порядок записи двух опций («первичная / повторная») на исход влиять не
 		// должен: меньшее — нижняя граница, большее — верхняя, в обоих случаях.
-		for (const line of ["Консультация 500/1000 руб", "Консультация 500-1000 руб"]) {
+		for (const line of [
+			"Консультация 500/1000 руб",
+			"Консультация 500-1000 руб",
+		]) {
 			const response = await parseLines(line);
 			const item = response.items[0];
 			assert.ok(item, `строка «${line}» не разобралась`);
-			assert.equal(item.priceRub, 500, `нижняя граница потеряна (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, 1000, `верхняя граница потеряна (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				500,
+				`нижняя граница потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				1000,
+				`верхняя граница потеряна (строка «${line}»)`,
+			);
 		}
 	});
 });
@@ -363,14 +421,28 @@ describe("знак рубля у обеих границ диапазона", ()
 			const response = await parseLines(line);
 			const item = response.items[0];
 			assert.ok(item, `строка «${line}» не разобралась`);
-			assert.equal(item.priceRub, 12000, `нижняя граница потеряна (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, 18000, `верхняя граница потеряна (строка «${line}»)`);
-			assert.equal(item.title, "Отбеливание", `название испорчено: «${item.title}» (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				12000,
+				`нижняя граница потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				18000,
+				`верхняя граница потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.title,
+				"Отбеливание",
+				`название испорчено: «${item.title}» (строка «${line}»)`,
+			);
 		}
 	});
 
 	test("копейки у обеих границ со знаком рубля на каждой", async () => {
-		const response = await parseLines("Отбеливание 12000,50 руб - 18000,75 руб");
+		const response = await parseLines(
+			"Отбеливание 12000,50 руб - 18000,75 руб",
+		);
 		const item = response.items[0];
 		assert.ok(item);
 		assert.equal(item.priceRub, 12000.5);
@@ -394,9 +466,19 @@ describe("из названия вырезается только то, что �
 		const item = response.items[0];
 		assert.ok(item);
 		assert.equal(item.priceRub, 5000);
-		assert.equal(item.priceMaxRub, null, "минуты выданы за верхнюю границу цены");
-		assert.ok(item.title.includes("120"), `из названия исчезли минуты: «${item.title}»`);
-		assert.ok(!item.title.includes("5000"), `цена осталась в названии: «${item.title}»`);
+		assert.equal(
+			item.priceMaxRub,
+			null,
+			"минуты выданы за верхнюю границу цены",
+		);
+		assert.ok(
+			item.title.includes("120"),
+			`из названия исчезли минуты: «${item.title}»`,
+		);
+		assert.ok(
+			!item.title.includes("5000"),
+			`цена осталась в названии: «${item.title}»`,
+		);
 	});
 
 	test("номер документа с годом через косую черту ценой не считается и из названия не уходит", async () => {
@@ -405,7 +487,9 @@ describe("из названия вырезается только то, что �
 		// нечем, и выбор здесь между выдуманной ценой 5678 ₽ (не видна нигде,
 		// доезжает до плана лечения) и отказом от цены (виден пользователем как
 		// предупреждение price_not_found).
-		const response = await parseLines("Справка 5678/2024 для налогового вычета");
+		const response = await parseLines(
+			"Справка 5678/2024 для налогового вычета",
+		);
 		const item = response.items[0];
 		assert.ok(item);
 		assert.equal(item.priceRub, null, "номер документа стал ценой услуги");
@@ -422,12 +506,20 @@ describe("из названия вырезается только то, что �
 		const item = response.items[0];
 		assert.ok(item);
 		assert.equal(item.priceRub, 1500);
-		assert.ok(item.title.includes("305/2"), `из названия исчез номер кабинета: «${item.title}»`);
-		assert.ok(!item.title.includes("1500"), `цена осталась в названии: «${item.title}»`);
+		assert.ok(
+			item.title.includes("305/2"),
+			`из названия исчез номер кабинета: «${item.title}»`,
+		);
+		assert.ok(
+			!item.title.includes("1500"),
+			`цена осталась в названии: «${item.title}»`,
+		);
 	});
 
 	test("дата не разбирается как цена и остаётся в названии", async () => {
-		const response = await parseLines("Договор 1234/2025 от 01.01.2025 на лечение");
+		const response = await parseLines(
+			"Договор 1234/2025 от 01.01.2025 на лечение",
+		);
 		const item = response.items[0];
 		assert.ok(item);
 		assert.equal(item.priceRub, null, "номер договора или дата стали ценой");
@@ -445,7 +537,9 @@ describe("из названия вырезается только то, что �
 	 * всё равно становилась вторая.
 	 */
 	test("две цены в одной строке: в названии остаётся невыбранная", async () => {
-		const response = await parseLines("Осмотр 500 руб, повторный осмотр 300 руб");
+		const response = await parseLines(
+			"Осмотр 500 руб, повторный осмотр 300 руб",
+		);
 		const item = response.items[0];
 		assert.ok(item);
 		assert.equal(item.priceRub, 300);
@@ -468,8 +562,16 @@ describe("семейство разделителей разобрано цел�
 			const response = await parseLines(line);
 			const item = response.items[0];
 			assert.ok(item, `строка «${line}» не разобралась`);
-			assert.equal(item.priceRub, expectedPrice, `цена за единицу потеряна (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, null, `выдуман диапазон из счёта единиц (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				expectedPrice,
+				`цена за единицу потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				null,
+				`выдуман диапазон из счёта единиц (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -490,9 +592,21 @@ describe("семейство разделителей разобрано цел�
 			const response = await parseLines(line);
 			const item = response.items[0];
 			assert.ok(item, `строка «${line}» не разобралась`);
-			assert.equal(item.priceRub, 12000, `нижняя граница потеряна (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, 18000, `верхняя граница потеряна (строка «${line}»)`);
-			assert.equal(item.title, "Отбеливание", `название испорчено: «${item.title}» (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				12000,
+				`нижняя граница потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				18000,
+				`верхняя граница потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.title,
+				"Отбеливание",
+				`название испорчено: «${item.title}» (строка «${line}»)`,
+			);
 		}
 	});
 

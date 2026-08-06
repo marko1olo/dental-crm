@@ -145,7 +145,8 @@ export function normalizeInsuranceContract(
 		id,
 		// Договор без названия компании остаётся в списке: его надо дать исправить
 		// или удалить, а не спрятать от администратора.
-		companyName: textOrNull(record.companyName) ?? "Страховая компания не указана",
+		companyName:
+			textOrNull(record.companyName) ?? "Страховая компания не указана",
 		policyNumberMask: textOrNull(record.policyNumberMask),
 		coverageTherapyPct: coveragePercent(record.coverageTherapyPct),
 		coverageSurgeryPct: coveragePercent(record.coverageSurgeryPct),

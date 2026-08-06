@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-	paidContractRequiredFieldsReview,
 	type PaidContractRequiredFieldsInput,
+	paidContractRequiredFieldsReview,
 } from "../components/documents/paidContractRequiredFields";
 import {
 	validateDocumentPayloadForKind,

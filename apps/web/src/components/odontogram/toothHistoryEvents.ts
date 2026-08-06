@@ -60,8 +60,11 @@ function trimmedOrNull(value: unknown): string | null {
  * описания одновременно. Событие с датой, но без описания, сохраняется — дата
  * лечения зуба это факт, и терять его нельзя.
  */
-export function toothHistoryEventFromServer(raw: unknown): ToothHistoryEvent | null {
-	if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+export function toothHistoryEventFromServer(
+	raw: unknown,
+): ToothHistoryEvent | null {
+	if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+		return null;
 	const row = raw as Record<string, unknown>;
 
 	const rawType = trimmedOrNull(row.type);
@@ -77,7 +80,8 @@ export function toothHistoryEventFromServer(raw: unknown): ToothHistoryEvent | n
 	 * медицинской карте.
 	 */
 	const rawDate = trimmedOrNull(row.date);
-	const dateIso = rawDate !== null && Number.isFinite(Date.parse(rawDate)) ? rawDate : null;
+	const dateIso =
+		rawDate !== null && Number.isFinite(Date.parse(rawDate)) ? rawDate : null;
 
 	const description = trimmedOrNull(row.description);
 	if (dateIso === null && description === null) return null;
@@ -125,14 +129,17 @@ export function toothHistoryAuthorLabel(author: string | null): string {
 	 * хуже нельзя — соврать про имя врача можно.
 	 */
 	const looksLikeId =
-		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(author) ||
-		/^[0-9a-f]{24,}$/i.test(author);
+		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+			author,
+		) || /^[0-9a-f]{24,}$/i.test(author);
 	if (looksLikeId) return "Автор: имя в записи не сохранено";
 	// Имя целиком. Обрезать ФИО в медицинской карте нельзя.
 	return `Автор: ${author}`;
 }
 
-export function toothHistoryEventsFromResponseBody(rawBody: string): ToothHistoryEvent[] | null {
+export function toothHistoryEventsFromResponseBody(
+	rawBody: string,
+): ToothHistoryEvent[] | null {
 	const trimmed = rawBody.trim();
 	if (trimmed === "") return null;
 	let parsed: unknown;
@@ -142,7 +149,8 @@ export function toothHistoryEventsFromResponseBody(rawBody: string): ToothHistor
 		// Текст исключения английский, человеку он не показывается никогда.
 		return null;
 	}
-	if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+	if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
+		return null;
 	const events = (parsed as Record<string, unknown>).events;
 	if (!Array.isArray(events)) return null;
 	return events

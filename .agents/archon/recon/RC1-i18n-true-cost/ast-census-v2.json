@@ -1,4022 +1,4022 @@
 {
- "buckets": {
-  "a_jsx_visible": 5280,
-  "dict_value": 3018,
-  "other": 4277,
-  "b_error_toast": 2306,
-  "data_not_ui": 9608,
-  "d_test_fixture": 4711,
-  "log_only": 116
- },
- "distinct": {
-  "a_jsx_visible": 4084,
-  "dict_value": 2062,
-  "other": 3535,
-  "b_error_toast": 1898,
-  "data_not_ui": 6296,
-  "d_test_fixture": 3819,
-  "log_only": 115
- },
- "perArea": {
-  "web|a_jsx_visible": 5280,
-  "web|dict_value": 2469,
-  "web|other": 2473,
-  "web|b_error_toast": 1477,
-  "web|data_not_ui": 807,
-  "web|d_test_fixture": 1599,
-  "web|log_only": 57,
-  "api|b_error_toast": 709,
-  "api|data_not_ui": 8097,
-  "api|other": 1476,
-  "api|log_only": 59,
-  "api|d_test_fixture": 2851,
-  "api|dict_value": 166,
-  "shared|b_error_toast": 120,
-  "shared|dict_value": 383,
-  "shared|other": 328,
-  "shared|data_not_ui": 704,
-  "shared|d_test_fixture": 261
- },
- "perFile": {
-  "apps/web/src/App.tsx": {
-   "total": 269,
-   "buckets": {
-    "a_jsx_visible": 269
-   }
-  },
-  "apps/web/src/AppBootState.tsx": {
-   "total": 8,
-   "buckets": {
-    "a_jsx_visible": 8
-   }
-  },
-  "apps/web/src/AppHelpers.tsx": {
-   "total": 476,
-   "buckets": {
-    "dict_value": 247,
-    "other": 127,
-    "b_error_toast": 98,
-    "data_not_ui": 4
-   }
-  },
-  "apps/web/src/AppShell.tsx": {
-   "total": 5,
-   "buckets": {
-    "other": 2,
-    "a_jsx_visible": 3
-   }
-  },
-  "apps/web/src/browserContinuity.ts": {
-   "total": 17,
-   "buckets": {
-    "dict_value": 6,
-    "other": 11
-   }
-  },
-  "apps/web/src/ClinicalRulePanel.tsx": {
-   "total": 23,
-   "buckets": {
-    "other": 5,
-    "a_jsx_visible": 18
-   }
-  },
-  "apps/web/src/CommunicationsView.tsx": {
-   "total": 43,
-   "buckets": {
-    "dict_value": 5,
-    "a_jsx_visible": 38
-   }
-  },
-  "apps/web/src/communicationTaskData.ts": {
-   "total": 31,
-   "buckets": {
-    "dict_value": 31
-   }
-  },
-  "apps/web/src/components/analytics/analyticsWidgetData.test.ts": {
-   "total": 37,
-   "buckets": {
-    "d_test_fixture": 37
-   }
-  },
-  "apps/web/src/components/analytics/analyticsWidgetData.ts": {
-   "total": 2,
-   "buckets": {
-    "other": 2
-   }
-  },
-  "apps/web/src/components/auth/AcceptInvite.tsx": {
-   "total": 12,
-   "buckets": {
-    "b_error_toast": 5,
-    "a_jsx_visible": 7
-   }
-  },
-  "apps/web/src/components/auth/ClinicLogin.tsx": {
-   "total": 11,
-   "buckets": {
-    "b_error_toast": 4,
-    "a_jsx_visible": 7
-   }
-  },
-  "apps/web/src/components/auth/Register.tsx": {
-   "total": 21,
-   "buckets": {
-    "b_error_toast": 9,
-    "a_jsx_visible": 12
-   }
-  },
-  "apps/web/src/components/auth/StaffPinPad.tsx": {
-   "total": 17,
-   "buckets": {
-    "log_only": 1,
-    "other": 5,
-    "b_error_toast": 1,
-    "a_jsx_visible": 10
-   }
-  },
-  "apps/web/src/components/auth/UserLogin.tsx": {
-   "total": 11,
-   "buckets": {
-    "b_error_toast": 4,
-    "a_jsx_visible": 7
-   }
-  },
-  "apps/web/src/components/auth/__tests__/AuthArtBackground.test.ts": {
-   "total": 7,
-   "buckets": {
-    "d_test_fixture": 7
-   }
-  },
-  "apps/web/src/components/CommandPalette.tsx": {
-   "total": 7,
-   "buckets": {
-    "b_error_toast": 5,
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/communications/CampaignPanel.tsx": {
-   "total": 63,
-   "buckets": {
-    "dict_value": 7,
-    "other": 1,
-    "b_error_toast": 7,
-    "a_jsx_visible": 48
-   }
-  },
-  "apps/web/src/components/communications/MessageDeliveryConsole.tsx": {
-   "total": 117,
-   "buckets": {
-    "dict_value": 19,
-    "other": 11,
-    "b_error_toast": 15,
-    "a_jsx_visible": 72
-   }
-  },
-  "apps/web/src/components/crm/CustomCrmTaskTypesWidget.tsx": {
-   "total": 10,
-   "buckets": {
-    "a_jsx_visible": 10
-   }
-  },
-  "apps/web/src/components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx": {
-   "total": 12,
-   "buckets": {
-    "other": 1,
-    "a_jsx_visible": 11
-   }
-  },
-  "apps/web/src/components/crm/PatientCommunicationTimelinesWidget.tsx": {
-   "total": 2,
-   "buckets": {
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/crm/PatientDuplicateMergeQueuesWidget.tsx": {
-   "total": 31,
-   "buckets": {
-    "other": 1,
-    "b_error_toast": 2,
-    "a_jsx_visible": 28
-   }
-  },
-  "apps/web/src/components/dicom/BoneQualityPanel.tsx": {
-   "total": 11,
-   "buckets": {
-    "a_jsx_visible": 11
-   }
-  },
-  "apps/web/src/components/dicom/Cornerstone3DViewer.tsx": {
-   "total": 12,
-   "buckets": {
-    "log_only": 1,
-    "other": 6,
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/components/dicom/DicomArchiveUploader.tsx": {
-   "total": 19,
-   "buckets": {
-    "other": 12,
-    "log_only": 1,
-    "a_jsx_visible": 6
-   }
-  },
-  "apps/web/src/components/dicom/DicomToolbar.tsx": {
-   "total": 25,
-   "buckets": {
-    "a_jsx_visible": 25
-   }
-  },
-  "apps/web/src/components/dicom/panoramicArch.ts": {
-   "total": 9,
-   "buckets": {
-    "dict_value": 6,
-    "other": 3
-   }
-  },
-  "apps/web/src/components/dicom/ViewportOverlays.tsx": {
-   "total": 2,
-   "buckets": {
-    "other": 1,
-    "a_jsx_visible": 1
-   }
-  },
-  "apps/web/src/components/documents/AnamnesisField.tsx": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/web/src/components/documents/DocumentPayloadCard.tsx": {
-   "total": 1,
-   "buckets": {
-    "a_jsx_visible": 1
-   }
-  },
-  "apps/web/src/components/documents/DocumentUkepSignButton.tsx": {
-   "total": 19,
-   "buckets": {
-    "b_error_toast": 7,
-    "a_jsx_visible": 12
-   }
-  },
-  "apps/web/src/components/documents/forms/AnesthesiaConsentLogForm.tsx": {
-   "total": 24,
-   "buckets": {
-    "a_jsx_visible": 24
-   }
-  },
-  "apps/web/src/components/documents/forms/InformedConsentForm.tsx": {
-   "total": 22,
-   "buckets": {
-    "a_jsx_visible": 22
-   }
-  },
-  "apps/web/src/components/documents/forms/MedicalInterventionRefusalForm.tsx": {
-   "total": 34,
-   "buckets": {
-    "other": 16,
-    "a_jsx_visible": 18
-   }
-  },
-  "apps/web/src/components/documents/forms/PersonalDataProcessingConsentForm.tsx": {
-   "total": 19,
-   "buckets": {
-    "a_jsx_visible": 19
-   }
-  },
-  "apps/web/src/components/documents/forms/PhotoVideoConsentForm.tsx": {
-   "total": 11,
-   "buckets": {
-    "a_jsx_visible": 11
-   }
-  },
-  "apps/web/src/components/documents/forms/ProcedureSpecificConsentForm.tsx": {
-   "total": 25,
-   "buckets": {
-    "a_jsx_visible": 25
-   }
-  },
-  "apps/web/src/components/documents/forms/TaxDeductionApplicationForm.tsx": {
-   "total": 17,
-   "buckets": {
-    "a_jsx_visible": 17
-   }
-  },
-  "apps/web/src/components/EgiszMonitor.tsx": {
-   "total": 9,
-   "buckets": {
-    "other": 2,
-    "a_jsx_visible": 7
-   }
-  },
-  "apps/web/src/components/ErrorBoundary.tsx": {
-   "total": 3,
-   "buckets": {
-    "a_jsx_visible": 3
-   }
-  },
-  "apps/web/src/components/finance/cashDaySummary.test.ts": {
-   "total": 18,
-   "buckets": {
-    "d_test_fixture": 18
-   }
-  },
-  "apps/web/src/components/finance/CashDayTally.tsx": {
-   "total": 25,
-   "buckets": {
-    "other": 8,
-    "a_jsx_visible": 17
-   }
-  },
-  "apps/web/src/components/finance/FamilyWalletPanel.tsx": {
-   "total": 33,
-   "buckets": {
-    "dict_value": 5,
-    "log_only": 1,
-    "other": 3,
-    "b_error_toast": 10,
-    "a_jsx_visible": 14
-   }
-  },
-  "apps/web/src/components/finance/paymentComposerReset.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/web/src/components/GlobalToast.tsx": {
-   "total": 1,
-   "buckets": {
-    "a_jsx_visible": 1
-   }
-  },
-  "apps/web/src/components/HelpHUD.tsx": {
-   "total": 16,
-   "buckets": {
-    "other": 7,
-    "a_jsx_visible": 9
-   }
-  },
-  "apps/web/src/components/imaging/ShadowAnalystImageSlider.tsx": {
-   "total": 5,
-   "buckets": {
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/components/imaging/ShadowAnalystReport.tsx": {
-   "total": 10,
-   "buckets": {
-    "other": 2,
-    "a_jsx_visible": 8
-   }
-  },
-  "apps/web/src/components/imaging/VisiographAnalyzer.tsx": {
-   "total": 66,
-   "buckets": {
-    "dict_value": 20,
-    "b_error_toast": 5,
-    "log_only": 7,
-    "other": 11,
-    "a_jsx_visible": 23
-   }
-  },
-  "apps/web/src/components/IncomingCallToast.tsx": {
-   "total": 15,
-   "buckets": {
-    "a_jsx_visible": 15
-   }
-  },
-  "apps/web/src/components/integrations/DadataGeocodedAddressesWidget.tsx": {
-   "total": 5,
-   "buckets": {
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx": {
-   "total": 10,
-   "buckets": {
-    "a_jsx_visible": 10
-   }
-  },
-  "apps/web/src/components/integrations/LandingFieldMappingsWidget.tsx": {
-   "total": 5,
-   "buckets": {
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/components/integrations/YandexCalendarSyncsWidget.tsx": {
-   "total": 6,
-   "buckets": {
-    "a_jsx_visible": 6
-   }
-  },
-  "apps/web/src/components/inventory/InventoryConfirmDialog.tsx": {
-   "total": 2,
-   "buckets": {
-    "other": 1,
-    "a_jsx_visible": 1
-   }
-  },
-  "apps/web/src/components/inventory/useInventoryLogic.ts": {
-   "total": 30,
-   "buckets": {
-    "b_error_toast": 30
-   }
-  },
-  "apps/web/src/components/InventoryView.tsx": {
-   "total": 90,
-   "buckets": {
-    "b_error_toast": 4,
-    "other": 8,
-    "a_jsx_visible": 78
-   }
-  },
-  "apps/web/src/components/leads/LeadsKanbanView.tsx": {
-   "total": 52,
-   "buckets": {
-    "other": 6,
-    "b_error_toast": 13,
-    "a_jsx_visible": 33
-   }
-  },
-  "apps/web/src/components/marketing/FamilyRecommendationSourcesWidget.tsx": {
-   "total": 8,
-   "buckets": {
-    "a_jsx_visible": 8
-   }
-  },
-  "apps/web/src/components/odontogram/OdontogramModule.tsx": {
-   "total": 26,
-   "buckets": {
-    "dict_value": 8,
-    "b_error_toast": 2,
-    "a_jsx_visible": 16
-   }
-  },
-  "apps/web/src/components/odontogram/ToothChart.tsx": {
-   "total": 14,
-   "buckets": {
-    "dict_value": 8,
-    "a_jsx_visible": 6
-   }
-  },
-  "apps/web/src/components/odontogram/ToothHistoryChronicle.tsx": {
-   "total": 3,
-   "buckets": {
-    "a_jsx_visible": 3
-   }
-  },
-  "apps/web/src/components/odontogram/TreatmentEstimator.tsx": {
-   "total": 53,
-   "buckets": {
-    "dict_value": 5,
-    "log_only": 5,
-    "b_error_toast": 9,
-    "other": 3,
-    "a_jsx_visible": 31
-   }
-  },
-  "apps/web/src/components/odontogram/treatmentEstimatorPricing.test.ts": {
-   "total": 80,
-   "buckets": {
-    "d_test_fixture": 80
-   }
-  },
-  "apps/web/src/components/odontogram/treatmentEstimatorPricing.ts": {
-   "total": 25,
-   "buckets": {
-    "other": 25
-   }
-  },
-  "apps/web/src/components/odontogram/VoiceDictationOverlay.tsx": {
-   "total": 4,
-   "buckets": {
-    "other": 1,
-    "a_jsx_visible": 3
-   }
-  },
-  "apps/web/src/components/Odontogram.tsx": {
-   "total": 2,
-   "buckets": {
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/Omnibar.tsx": {
-   "total": 29,
-   "buckets": {
-    "b_error_toast": 12,
-    "other": 12,
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/components/patient/PatientAdministrativeForm.tsx": {
-   "total": 31,
-   "buckets": {
-    "a_jsx_visible": 31
-   }
-  },
-  "apps/web/src/components/PatientAvatar.tsx": {
-   "total": 45,
-   "buckets": {
-    "other": 44,
-    "a_jsx_visible": 1
-   }
-  },
-  "apps/web/src/components/PatientJourneyTimeline.tsx": {
-   "total": 42,
-   "buckets": {
-    "dict_value": 28,
-    "other": 2,
-    "b_error_toast": 4,
-    "a_jsx_visible": 8
-   }
-  },
-  "apps/web/src/components/PatientPortal.tsx": {
-   "total": 49,
-   "buckets": {
-    "a_jsx_visible": 38,
-    "other": 9,
-    "log_only": 1,
-    "b_error_toast": 1
-   }
-  },
-  "apps/web/src/components/patients/OrthodonticProgressWidget.tsx": {
-   "total": 21,
-   "buckets": {
-    "b_error_toast": 6,
-    "a_jsx_visible": 15
-   }
-  },
-  "apps/web/src/components/patients/PatientArchiveAndBlacklistWidget.tsx": {
-   "total": 31,
-   "buckets": {
-    "dict_value": 5,
-    "b_error_toast": 8,
-    "a_jsx_visible": 18
-   }
-  },
-  "apps/web/src/components/patients/PatientCommunicationTimelineWidget.tsx": {
-   "total": 49,
-   "buckets": {
-    "other": 1,
-    "dict_value": 24,
-    "a_jsx_visible": 24
-   }
-  },
-  "apps/web/src/components/patients/PatientDuplicateAlert.tsx": {
-   "total": 19,
-   "buckets": {
-    "other": 1,
-    "b_error_toast": 2,
-    "a_jsx_visible": 16
-   }
-  },
-  "apps/web/src/components/patients/PatientFamilyCard.tsx": {
-   "total": 26,
-   "buckets": {
-    "b_error_toast": 8,
-    "a_jsx_visible": 18
-   }
-  },
-  "apps/web/src/components/patients/PatientLoyaltyHeader.tsx": {
-   "total": 8,
-   "buckets": {
-    "dict_value": 4,
-    "b_error_toast": 2,
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/patients/PatientNoShowRisk.tsx": {
-   "total": 13,
-   "buckets": {
-    "other": 4,
-    "a_jsx_visible": 9
-   }
-  },
-  "apps/web/src/components/patients/PatientOverviewTab.tsx": {
-   "total": 4,
-   "buckets": {
-    "other": 2,
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/patients/PatientReclamationsWidget.tsx": {
-   "total": 44,
-   "buckets": {
-    "dict_value": 5,
-    "b_error_toast": 17,
-    "other": 1,
-    "a_jsx_visible": 21
-   }
-  },
-  "apps/web/src/components/patients/PatientTaskTicketsWidget.tsx": {
-   "total": 34,
-   "buckets": {
-    "dict_value": 5,
-    "b_error_toast": 15,
-    "a_jsx_visible": 14
-   }
-  },
-  "apps/web/src/components/patients/RecallListPanel.tsx": {
-   "total": 37,
-   "buckets": {
-    "dict_value": 6,
-    "other": 4,
-    "b_error_toast": 3,
-    "a_jsx_visible": 24
-   }
-  },
-  "apps/web/src/components/plan/ComparativePlannerDashboard.tsx": {
-   "total": 103,
-   "buckets": {
-    "other": 23,
-    "b_error_toast": 18,
-    "a_jsx_visible": 62
-   }
-  },
-  "apps/web/src/components/plan/planPricing.ts": {
-   "total": 35,
-   "buckets": {
-    "dict_value": 14,
-    "other": 21
-   }
-  },
-  "apps/web/src/components/reports/ManagerReportsPanel.tsx": {
-   "total": 108,
-   "buckets": {
-    "dict_value": 5,
-    "other": 11,
-    "a_jsx_visible": 92
-   }
-  },
-  "apps/web/src/components/schedule/AppointmentCard.tsx": {
-   "total": 48,
-   "buckets": {
-    "a_jsx_visible": 48
-   }
-  },
-  "apps/web/src/components/schedule/DayConfirmationsPanel.tsx": {
-   "total": 56,
-   "buckets": {
-    "dict_value": 14,
-    "other": 3,
-    "a_jsx_visible": 39
-   }
-  },
-  "apps/web/src/components/schedule/FreedSlotsPanel.tsx": {
-   "total": 27,
-   "buckets": {
-    "other": 4,
-    "b_error_toast": 1,
-    "a_jsx_visible": 22
-   }
-  },
-  "apps/web/src/components/schedule/LabOrdersPanel.tsx": {
-   "total": 51,
-   "buckets": {
-    "other": 1,
-    "b_error_toast": 11,
-    "dict_value": 11,
-    "a_jsx_visible": 28
-   }
-  },
-  "apps/web/src/components/schedule/NewAppointmentForm.tsx": {
-   "total": 45,
-   "buckets": {
-    "a_jsx_visible": 45
-   }
-  },
-  "apps/web/src/components/schedule/scheduleDayGrouping.test.ts": {
-   "total": 33,
-   "buckets": {
-    "d_test_fixture": 33
-   }
-  },
-  "apps/web/src/components/schedule/scheduleDayGrouping.ts": {
-   "total": 8,
-   "buckets": {
-    "other": 8
-   }
-  },
-  "apps/web/src/components/schedule/WaitlistDrawer.tsx": {
-   "total": 52,
-   "buckets": {
-    "other": 10,
-    "dict_value": 8,
-    "b_error_toast": 14,
-    "a_jsx_visible": 20
-   }
-  },
-  "apps/web/src/components/settings/InsuranceContractsPanel.tsx": {
-   "total": 39,
-   "buckets": {
-    "b_error_toast": 15,
-    "a_jsx_visible": 24
-   }
-  },
-  "apps/web/src/components/settings/MaxSettingsPanel.tsx": {
-   "total": 24,
-   "buckets": {
-    "a_jsx_visible": 24
-   }
-  },
-  "apps/web/src/components/settings/MessengerRoutingRules.tsx": {
-   "total": 13,
-   "buckets": {
-    "dict_value": 6,
-    "a_jsx_visible": 7
-   }
-  },
-  "apps/web/src/components/settings/MigrationWizard.tsx": {
-   "total": 102,
-   "buckets": {
-    "dict_value": 15,
-    "other": 4,
-    "b_error_toast": 9,
-    "a_jsx_visible": 74
-   }
-  },
-  "apps/web/src/components/settings/SettingsAccessTab.tsx": {
-   "total": 28,
-   "buckets": {
-    "b_error_toast": 5,
-    "a_jsx_visible": 23
-   }
-  },
-  "apps/web/src/components/settings/SettingsAiTab.tsx": {
-   "total": 34,
-   "buckets": {
-    "a_jsx_visible": 34
-   }
-  },
-  "apps/web/src/components/settings/SettingsAuditTab.tsx": {
-   "total": 455,
-   "buckets": {
-    "dict_value": 194,
-    "other": 47,
-    "data_not_ui": 131,
-    "b_error_toast": 21,
-    "a_jsx_visible": 62
-   }
-  },
-  "apps/web/src/components/settings/SettingsBpmnTab.tsx": {
-   "total": 29,
-   "buckets": {
-    "dict_value": 5,
-    "b_error_toast": 6,
-    "a_jsx_visible": 18
-   }
-  },
-  "apps/web/src/components/settings/SettingsClinicTab.tsx": {
-   "total": 133,
-   "buckets": {
-    "other": 1,
-    "dict_value": 6,
-    "b_error_toast": 6,
-    "a_jsx_visible": 120
-   }
-  },
-  "apps/web/src/components/settings/SettingsImportsTab.tsx": {
-   "total": 853,
-   "buckets": {
-    "dict_value": 194,
-    "other": 47,
-    "data_not_ui": 131,
-    "b_error_toast": 21,
-    "a_jsx_visible": 460
-   }
-  },
-  "apps/web/src/components/settings/SettingsMarketingTab.tsx": {
-   "total": 20,
-   "buckets": {
-    "other": 1,
-    "b_error_toast": 2,
-    "a_jsx_visible": 17
-   }
-  },
-  "apps/web/src/components/settings/SettingsMessengersTab.tsx": {
-   "total": 6,
-   "buckets": {
-    "a_jsx_visible": 6
-   }
-  },
-  "apps/web/src/components/settings/SettingsModulesTab.tsx": {
-   "total": 2,
-   "buckets": {
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/settings/SettingsPricesTab.tsx": {
-   "total": 69,
-   "buckets": {
-    "b_error_toast": 3,
-    "other": 3,
-    "a_jsx_visible": 63
-   }
-  },
-  "apps/web/src/components/settings/SettingsProfileTab.tsx": {
-   "total": 42,
-   "buckets": {
-    "b_error_toast": 13,
-    "a_jsx_visible": 28,
-    "other": 1
-   }
-  },
-  "apps/web/src/components/settings/SettingsProtocolsTab.tsx": {
-   "total": 39,
-   "buckets": {
-    "log_only": 2,
-    "b_error_toast": 6,
-    "other": 1,
-    "a_jsx_visible": 30
-   }
-  },
-  "apps/web/src/components/settings/SettingsReportingTab.tsx": {
-   "total": 26,
-   "buckets": {
-    "b_error_toast": 6,
-    "a_jsx_visible": 19,
-    "other": 1
-   }
-  },
-  "apps/web/src/components/settings/SettingsRulesTab.tsx": {
-   "total": 47,
-   "buckets": {
-    "a_jsx_visible": 47
-   }
-  },
-  "apps/web/src/components/settings/SettingsStaffTab.tsx": {
-   "total": 31,
-   "buckets": {
-    "b_error_toast": 9,
-    "a_jsx_visible": 22
-   }
-  },
-  "apps/web/src/components/settings/SettingsTelegramTab.tsx": {
-   "total": 161,
-   "buckets": {
-    "b_error_toast": 2,
-    "other": 3,
-    "a_jsx_visible": 156
-   }
-  },
-  "apps/web/src/components/settings/SettingsViewHelpers.tsx": {
-   "total": 352,
-   "buckets": {
-    "dict_value": 194,
-    "other": 27,
-    "data_not_ui": 131
-   }
-  },
-  "apps/web/src/components/settings/SingleSessionEnforcementsWidget.tsx": {
-   "total": 6,
-   "buckets": {
-    "a_jsx_visible": 6
-   }
-  },
-  "apps/web/src/components/settings/sources/SourcesConnectorGrid.tsx": {
-   "total": 1,
-   "buckets": {
-    "a_jsx_visible": 1
-   }
-  },
-  "apps/web/src/components/settings/sources/SourcesDicomCapability.tsx": {
-   "total": 191,
-   "buckets": {
-    "a_jsx_visible": 191
-   }
-  },
-  "apps/web/src/components/settings/sources/SourcesIntegrationPresets.tsx": {
-   "total": 7,
-   "buckets": {
-    "a_jsx_visible": 7
-   }
-  },
-  "apps/web/src/components/settings/WhatsappSettingsPanel.tsx": {
-   "total": 34,
-   "buckets": {
-    "dict_value": 7,
-    "a_jsx_visible": 27
-   }
-  },
-  "apps/web/src/components/SignaturePad.tsx": {
-   "total": 10,
-   "buckets": {
-    "a_jsx_visible": 10
-   }
-  },
-  "apps/web/src/components/SmartMicrophoneButton.tsx": {
-   "total": 2,
-   "buckets": {
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/TourEngine.tsx": {
-   "total": 24,
-   "buckets": {
-    "dict_value": 22,
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/useVisitDiaryLogic.ts": {
-   "total": 36,
-   "buckets": {
-    "dict_value": 5,
-    "log_only": 6,
-    "b_error_toast": 21,
-    "other": 4
-   }
-  },
-  "apps/web/src/components/visit/CompletedServicesChecklist.tsx": {
-   "total": 14,
-   "buckets": {
-    "other": 6,
-    "a_jsx_visible": 8
-   }
-  },
-  "apps/web/src/components/visit/CryptoProSigner.tsx": {
-   "total": 35,
-   "buckets": {
-    "other": 11,
-    "log_only": 3,
-    "a_jsx_visible": 21
-   }
-  },
-  "apps/web/src/components/visit/DoctorDesktopHeader.tsx": {
-   "total": 8,
-   "buckets": {
-    "other": 1,
-    "a_jsx_visible": 7
-   }
-  },
-  "apps/web/src/components/visit/VisitDictation.tsx": {
-   "total": 29,
-   "buckets": {
-    "a_jsx_visible": 29
-   }
-  },
-  "apps/web/src/components/visit/VisitEmkTab.tsx": {
-   "total": 52,
-   "buckets": {
-    "b_error_toast": 6,
-    "a_jsx_visible": 46
-   }
-  },
-  "apps/web/src/components/visit/VisitFlowProgress.tsx": {
-   "total": 12,
-   "buckets": {
-    "b_error_toast": 4,
-    "a_jsx_visible": 8
-   }
-  },
-  "apps/web/src/components/visit/VisitOdontogramTab.tsx": {
-   "total": 4,
-   "buckets": {
-    "a_jsx_visible": 4
-   }
-  },
-  "apps/web/src/components/visit/VisitSpecialtyFocus.tsx": {
-   "total": 6,
-   "buckets": {
-    "other": 1,
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/components/VisitDiaryEditor.tsx": {
-   "total": 46,
-   "buckets": {
-    "a_jsx_visible": 46
-   }
-  },
-  "apps/web/src/components/VisitDiaryPhotoUpload.tsx": {
-   "total": 8,
-   "buckets": {
-    "b_error_toast": 2,
-    "a_jsx_visible": 6
-   }
-  },
-  "apps/web/src/components/VisitDiaryTemplateSelector.tsx": {
-   "total": 3,
-   "buckets": {
-    "other": 1,
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/workspace/onboarding/steps/Step1Specializations.tsx": {
-   "total": 9,
-   "buckets": {
-    "a_jsx_visible": 9
-   }
-  },
-  "apps/web/src/components/workspace/onboarding/steps/Step2Infrastructure.tsx": {
-   "total": 4,
-   "buckets": {
-    "a_jsx_visible": 4
-   }
-  },
-  "apps/web/src/components/workspace/onboarding/steps/Step3Modules.tsx": {
-   "total": 11,
-   "buckets": {
-    "b_error_toast": 11
-   }
-  },
-  "apps/web/src/components/workspace/onboarding/steps/Step4Branding.tsx": {
-   "total": 1,
-   "buckets": {
-    "a_jsx_visible": 1
-   }
-  },
-  "apps/web/src/components/workspace/onboarding/steps/Step5Staff.tsx": {
-   "total": 27,
-   "buckets": {
-    "a_jsx_visible": 22,
-    "other": 5
-   }
-  },
-  "apps/web/src/components/workspace/onboarding/steps/Step6Legal.tsx": {
-   "total": 9,
-   "buckets": {
-    "a_jsx_visible": 9
-   }
-  },
-  "apps/web/src/components/workspace/onboarding/steps/Step7Migration.tsx": {
-   "total": 8,
-   "buckets": {
-    "a_jsx_visible": 8
-   }
-  },
-  "apps/web/src/components/workspace/onboarding/ui/SharedOnboardingUI.tsx": {
-   "total": 10,
-   "buckets": {
-    "b_error_toast": 5,
-    "other": 5
-   }
-  },
-  "apps/web/src/components/workspace/onboarding/useOnboardingLogic.ts": {
-   "total": 3,
-   "buckets": {
-    "other": 3
-   }
-  },
-  "apps/web/src/components/workspace/OnboardingSetupWizard.tsx": {
-   "total": 21,
-   "buckets": {
-    "a_jsx_visible": 21
-   }
-  },
-  "apps/web/src/components/workspace/RecentPatientHistoryWidget.tsx": {
-   "total": 13,
-   "buckets": {
-    "b_error_toast": 1,
-    "a_jsx_visible": 12
-   }
-  },
-  "apps/web/src/components/workspace/shift/RoleFocusStrip.tsx": {
-   "total": 10,
-   "buckets": {
-    "a_jsx_visible": 10
-   }
-  },
-  "apps/web/src/components/workspace/shift/ShiftIntelligence.tsx": {
-   "total": 16,
-   "buckets": {
-    "a_jsx_visible": 16
-   }
-  },
-  "apps/web/src/components/workspace/WorkspaceFeaturesSelector.tsx": {
-   "total": 47,
-   "buckets": {
-    "b_error_toast": 45,
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/components/workspaceActions/workspaceActionsLabels.ts": {
-   "total": 63,
-   "buckets": {
-    "other": 3,
-    "dict_value": 59,
-    "b_error_toast": 1
-   }
-  },
-  "apps/web/src/components/workspaceActions/workspaceActionsPlacement.test.ts": {
-   "total": 67,
-   "buckets": {
-    "d_test_fixture": 67
-   }
-  },
-  "apps/web/src/ctPlanningArtifactCommands.ts": {
-   "total": 48,
-   "buckets": {
-    "b_error_toast": 24,
-    "other": 24
-   }
-  },
-  "apps/web/src/ctPlanningArtifactPanel.tsx": {
-   "total": 6,
-   "buckets": {
-    "a_jsx_visible": 6
-   }
-  },
-  "apps/web/src/ctPlanningCatalog.ts": {
-   "total": 124,
-   "buckets": {
-    "b_error_toast": 42,
-    "other": 58,
-    "dict_value": 24
-   }
-  },
-  "apps/web/src/ctPlanningExport.ts": {
-   "total": 78,
-   "buckets": {
-    "other": 60,
-    "b_error_toast": 18
-   }
-  },
-  "apps/web/src/ctPlanningExportPanel.tsx": {
-   "total": 32,
-   "buckets": {
-    "dict_value": 6,
-    "b_error_toast": 10,
-    "other": 1,
-    "a_jsx_visible": 15
-   }
-  },
-  "apps/web/src/ctPlanningExportScenarioPanel.tsx": {
-   "total": 7,
-   "buckets": {
-    "other": 3,
-    "a_jsx_visible": 4
-   }
-  },
-  "apps/web/src/ctPlanningExportScenarioSummary.ts": {
-   "total": 66,
-   "buckets": {
-    "dict_value": 57,
-    "other": 9
-   }
-  },
-  "apps/web/src/ctPlanningGeometry.ts": {
-   "total": 24,
-   "buckets": {
-    "other": 19,
-    "b_error_toast": 3,
-    "dict_value": 2
-   }
-  },
-  "apps/web/src/ctPlanningGeometryGridPanel.tsx": {
-   "total": 1,
-   "buckets": {
-    "a_jsx_visible": 1
-   }
-  },
-  "apps/web/src/ctPlanningImplantFit.ts": {
-   "total": 33,
-   "buckets": {
-    "b_error_toast": 1,
-    "other": 32
-   }
-  },
-  "apps/web/src/ctPlanningImplantFitPanel.tsx": {
-   "total": 20,
-   "buckets": {
-    "other": 8,
-    "a_jsx_visible": 12
-   }
-  },
-  "apps/web/src/ctPlanningImplantLibraryPanel.tsx": {
-   "total": 7,
-   "buckets": {
-    "a_jsx_visible": 7
-   }
-  },
-  "apps/web/src/ctPlanningImplantModel.ts": {
-   "total": 69,
-   "buckets": {
-    "other": 45,
-    "dict_value": 9,
-    "b_error_toast": 15
-   }
-  },
-  "apps/web/src/ctPlanningImplantModelPanel.tsx": {
-   "total": 24,
-   "buckets": {
-    "other": 6,
-    "b_error_toast": 5,
-    "a_jsx_visible": 13
-   }
-  },
-  "apps/web/src/ctPlanningMeasurementPanel.tsx": {
-   "total": 7,
-   "buckets": {
-    "a_jsx_visible": 7
-   }
-  },
-  "apps/web/src/ctPlanningMeasurementPlan.ts": {
-   "total": 69,
-   "buckets": {
-    "other": 52,
-    "b_error_toast": 17
-   }
-  },
-  "apps/web/src/ctPlanningMetricGridPanel.tsx": {
-   "total": 1,
-   "buckets": {
-    "a_jsx_visible": 1
-   }
-  },
-  "apps/web/src/ctPlanningPlanBoardPanel.tsx": {
-   "total": 16,
-   "buckets": {
-    "dict_value": 3,
-    "a_jsx_visible": 13
-   }
-  },
-  "apps/web/src/ctPlanningQuickActionsPanel.tsx": {
-   "total": 4,
-   "buckets": {
-    "a_jsx_visible": 4
-   }
-  },
-  "apps/web/src/ctPlanningReconstruction.ts": {
-   "total": 54,
-   "buckets": {
-    "other": 36,
-    "b_error_toast": 18
-   }
-  },
-  "apps/web/src/ctPlanningReconstructionPanel.tsx": {
-   "total": 13,
-   "buckets": {
-    "a_jsx_visible": 13
-   }
-  },
-  "apps/web/src/ctPlanningReport.ts": {
-   "total": 22,
-   "buckets": {
-    "other": 13,
-    "b_error_toast": 6,
-    "dict_value": 3
-   }
-  },
-  "apps/web/src/ctPlanningState.ts": {
-   "total": 58,
-   "buckets": {
-    "dict_value": 33,
-    "other": 12,
-    "b_error_toast": 13
-   }
-  },
-  "apps/web/src/ctPlanningTaskBoardPanel.tsx": {
-   "total": 3,
-   "buckets": {
-    "a_jsx_visible": 3
-   }
-  },
-  "apps/web/src/ctPlanningToolGridPanel.tsx": {
-   "total": 2,
-   "buckets": {
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/ctPlanningTools.tsx": {
-   "total": 11,
-   "buckets": {
-    "dict_value": 3,
-    "other": 5,
-    "a_jsx_visible": 3
-   }
-  },
-  "apps/web/src/ctPlanningValidation.ts": {
-   "total": 48,
-   "buckets": {
-    "dict_value": 3,
-    "b_error_toast": 26,
-    "other": 19
-   }
-  },
-  "apps/web/src/ctPlanningValidationPanel.tsx": {
-   "total": 2,
-   "buckets": {
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/ctPlanningViewerBridgeLaunch.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/web/src/ctPlanningViewerRestore.ts": {
-   "total": 7,
-   "buckets": {
-    "other": 7
-   }
-  },
-  "apps/web/src/ctPlanningWorkflowPanel.tsx": {
-   "total": 10,
-   "buckets": {
-    "dict_value": 5,
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/ctPlanningWorkflowPlan.ts": {
-   "total": 36,
-   "buckets": {
-    "other": 24,
-    "b_error_toast": 12
-   }
-  },
-  "apps/web/src/DictationHints.tsx": {
-   "total": 25,
-   "buckets": {
-    "a_jsx_visible": 25
-   }
-  },
-  "apps/web/src/documentLogic.test.ts": {
-   "total": 2,
-   "buckets": {
-    "d_test_fixture": 2
-   }
-  },
-  "apps/web/src/documentLogic.ts": {
-   "total": 68,
-   "buckets": {
-    "other": 67,
-    "b_error_toast": 1
-   }
-  },
-  "apps/web/src/DocumentsView.tsx": {
-   "total": 774,
-   "buckets": {
-    "other": 47,
-    "a_jsx_visible": 727
-   }
-  },
-  "apps/web/src/documentValidators.ts": {
-   "total": 335,
-   "buckets": {
-    "other": 335
-   }
-  },
-  "apps/web/src/FinanceLedger.tsx": {
-   "total": 20,
-   "buckets": {
-    "a_jsx_visible": 20
-   }
-  },
-  "apps/web/src/FinancePlanning.tsx": {
-   "total": 34,
-   "buckets": {
-    "a_jsx_visible": 34
-   }
-  },
-  "apps/web/src/FinanceView.tsx": {
-   "total": 5,
-   "buckets": {
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/GuestLabPortal.tsx": {
-   "total": 30,
-   "buckets": {
-    "b_error_toast": 4,
-    "a_jsx_visible": 19,
-    "dict_value": 7
-   }
-  },
-  "apps/web/src/hooks/domains/useAuthLogic.ts": {
-   "total": 3,
-   "buckets": {
-    "b_error_toast": 3
-   }
-  },
-  "apps/web/src/hooks/domains/usePatientLogic.ts": {
-   "total": 16,
-   "buckets": {
-    "other": 3,
-    "b_error_toast": 13
-   }
-  },
-  "apps/web/src/hooks/domains/useScheduleLogic.ts": {
-   "total": 26,
-   "buckets": {
-    "other": 17,
-    "b_error_toast": 9
-   }
-  },
-  "apps/web/src/hooks/domains/useVisitLogic.ts": {
-   "total": 103,
-   "buckets": {
-    "other": 60,
-    "b_error_toast": 43
-   }
-  },
-  "apps/web/src/hooks/messengerSettingsLoad.test.ts": {
-   "total": 22,
-   "buckets": {
-    "d_test_fixture": 22
-   }
-  },
-  "apps/web/src/hooks/useMaxSettings.ts": {
-   "total": 14,
-   "buckets": {
-    "dict_value": 5,
-    "other": 4,
-    "log_only": 5
-   }
-  },
-  "apps/web/src/hooks/useMprLogic.ts": {
-   "total": 27,
-   "buckets": {
-    "dict_value": 6,
-    "b_error_toast": 17,
-    "other": 4
-   }
-  },
-  "apps/web/src/hooks/useOfflineQueue.ts": {
-   "total": 4,
-   "buckets": {
-    "b_error_toast": 4
-   }
-  },
-  "apps/web/src/hooks/usePatientResource.ts": {
-   "total": 2,
-   "buckets": {
-    "log_only": 2
-   }
-  },
-  "apps/web/src/hooks/useShortDictation.ts": {
-   "total": 5,
-   "buckets": {
-    "b_error_toast": 5
-   }
-  },
-  "apps/web/src/hooks/useTelegramSettings.ts": {
-   "total": 17,
-   "buckets": {
-    "other": 10,
-    "b_error_toast": 7
-   }
-  },
-  "apps/web/src/hooks/useVoiceAssistant.ts": {
-   "total": 16,
-   "buckets": {
-    "log_only": 4,
-    "other": 6,
-    "b_error_toast": 6
-   }
-  },
-  "apps/web/src/hooks/useWhatsappSettings.ts": {
-   "total": 14,
-   "buckets": {
-    "dict_value": 5,
-    "other": 4,
-    "log_only": 5
-   }
-  },
-  "apps/web/src/hooks/useWorkspaceProfile.ts": {
-   "total": 6,
-   "buckets": {
-    "other": 4,
-    "log_only": 2
-   }
-  },
-  "apps/web/src/imagingComparison.ts": {
-   "total": 5,
-   "buckets": {
-    "other": 5
-   }
-  },
-  "apps/web/src/imagingUiLabels.ts": {
-   "total": 200,
-   "buckets": {
-    "dict_value": 186,
-    "b_error_toast": 12,
-    "other": 2
-   }
-  },
-  "apps/web/src/ImagingView.tsx": {
-   "total": 220,
-   "buckets": {
-    "other": 11,
-    "dict_value": 33,
-    "b_error_toast": 9,
-    "log_only": 2,
-    "a_jsx_visible": 165
-   }
-  },
-  "apps/web/src/lib/aiOrchestrator.ts": {
-   "total": 30,
-   "buckets": {
-    "other": 30
-   }
-  },
-  "apps/web/src/lib/aiPromptRouter.ts": {
-   "total": 20,
-   "buckets": {
-    "other": 20
-   }
-  },
-  "apps/web/src/lib/clinicCapabilities.ts": {
-   "total": 7,
-   "buckets": {
-    "dict_value": 7
-   }
-  },
-  "apps/web/src/lib/cryptopro.ts": {
-   "total": 1,
-   "buckets": {
-    "log_only": 1
-   }
-  },
-  "apps/web/src/lib/icd10.test.ts": {
-   "total": 7,
-   "buckets": {
-    "d_test_fixture": 7
-   }
-  },
-  "apps/web/src/lib/icd10.ts": {
-   "total": 63,
-   "buckets": {
-    "dict_value": 62,
-    "other": 1
-   }
-  },
-  "apps/web/src/lib/panelStateText.test.ts": {
-   "total": 73,
-   "buckets": {
-    "d_test_fixture": 73
-   }
-  },
-  "apps/web/src/lib/panelStateText.ts": {
-   "total": 25,
-   "buckets": {
-    "other": 23,
-    "b_error_toast": 2
-   }
-  },
-  "apps/web/src/lib/patientDuplicatesApi.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/web/src/lib/semanticParser.ts": {
-   "total": 34,
-   "buckets": {
-    "other": 34
-   }
-  },
-  "apps/web/src/lib/smartBookingParser.test.ts": {
-   "total": 53,
-   "buckets": {
-    "d_test_fixture": 53
-   }
-  },
-  "apps/web/src/lib/smartBookingParser.ts": {
-   "total": 185,
-   "buckets": {
-    "data_not_ui": 185
-   }
-  },
-  "apps/web/src/lib/smartPatientParser.test.ts": {
-   "total": 49,
-   "buckets": {
-    "d_test_fixture": 49
-   }
-  },
-  "apps/web/src/lib/smartPatientParser.ts": {
-   "total": 96,
-   "buckets": {
-    "data_not_ui": 96
-   }
-  },
-  "apps/web/src/lib/smartPriceParser.test.ts": {
-   "total": 48,
-   "buckets": {
-    "d_test_fixture": 48
-   }
-  },
-  "apps/web/src/lib/smartPriceParser.ts": {
-   "total": 25,
-   "buckets": {
-    "data_not_ui": 25
-   }
-  },
-  "apps/web/src/lib/smartScheduleParser.ts": {
-   "total": 104,
-   "buckets": {
-    "data_not_ui": 104
-   }
-  },
-  "apps/web/src/lib/smartVisitParser.test.ts": {
-   "total": 26,
-   "buckets": {
-    "d_test_fixture": 26
-   }
-  },
-  "apps/web/src/lib/stringUtils.ts": {
-   "total": 105,
-   "buckets": {
-    "dict_value": 89,
-    "other": 16
-   }
-  },
-  "apps/web/src/lib/test-debug.ts": {
-   "total": 9,
-   "buckets": {
-    "other": 8,
-    "log_only": 1
-   }
-  },
-  "apps/web/src/lib/test-parser-deep.ts": {
-   "total": 53,
-   "buckets": {
-    "other": 8,
-    "dict_value": 45
-   }
-  },
-  "apps/web/src/MarketingView.tsx": {
-   "total": 78,
-   "buckets": {
-    "log_only": 3,
-    "other": 6,
-    "a_jsx_visible": 69
-   }
-  },
-  "apps/web/src/mprClinicalStatus.ts": {
-   "total": 92,
-   "buckets": {
-    "other": 43,
-    "b_error_toast": 43,
-    "dict_value": 6
-   }
-  },
-  "apps/web/src/mprControlMath.ts": {
-   "total": 79,
-   "buckets": {
-    "b_error_toast": 3,
-    "dict_value": 44,
-    "other": 32
-   }
-  },
-  "apps/web/src/pages/AnalyticsDashboardView.tsx": {
-   "total": 46,
-   "buckets": {
-    "b_error_toast": 4,
-    "other": 6,
-    "a_jsx_visible": 36
-   }
-  },
-  "apps/web/src/pages/analyticsDoctorMetrics.ts": {
-   "total": 11,
-   "buckets": {
-    "other": 11
-   }
-  },
-  "apps/web/src/pages/DoctorPayoutDashboard.tsx": {
-   "total": 67,
-   "buckets": {
-    "dict_value": 4,
-    "b_error_toast": 4,
-    "other": 3,
-    "a_jsx_visible": 56
-   }
-  },
-  "apps/web/src/pages/PublicBookingWidget.tsx": {
-   "total": 32,
-   "buckets": {
-    "other": 6,
-    "b_error_toast": 2,
-    "a_jsx_visible": 24
-   }
-  },
-  "apps/web/src/PatientsView.tsx": {
-   "total": 60,
-   "buckets": {
-    "other": 9,
-    "a_jsx_visible": 51
-   }
-  },
-  "apps/web/src/PaymentCapture.tsx": {
-   "total": 63,
-   "buckets": {
-    "a_jsx_visible": 49,
-    "b_error_toast": 1,
-    "other": 13
-   }
-  },
-  "apps/web/src/postVisitCareData.ts": {
-   "total": 99,
-   "buckets": {
-    "dict_value": 99
-   }
-  },
-  "apps/web/src/PriceDictationBar.tsx": {
-   "total": 3,
-   "buckets": {
-    "other": 1,
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/pricelistUiMeta.ts": {
-   "total": 144,
-   "buckets": {
-    "dict_value": 64,
-    "other": 65,
-    "b_error_toast": 15
-   }
-  },
-  "apps/web/src/rubAmountInput.ts": {
-   "total": 2,
-   "buckets": {
-    "other": 2
-   }
-  },
-  "apps/web/src/ScannerView.tsx": {
-   "total": 38,
-   "buckets": {
-    "other": 6,
-    "log_only": 1,
-    "b_error_toast": 8,
-    "a_jsx_visible": 23
-   }
-  },
-  "apps/web/src/ScheduleView.tsx": {
-   "total": 82,
-   "buckets": {
-    "other": 11,
-    "b_error_toast": 15,
-    "a_jsx_visible": 56
-   }
-  },
-  "apps/web/src/settingsStaticData.tsx": {
-   "total": 26,
-   "buckets": {
-    "dict_value": 17,
-    "b_error_toast": 6,
-    "other": 3
-   }
-  },
-  "apps/web/src/SettingsView.tsx": {
-   "total": 20,
-   "buckets": {
-    "other": 2,
-    "a_jsx_visible": 18
-   }
-  },
-  "apps/web/src/ShiftView.tsx": {
-   "total": 113,
-   "buckets": {
-    "other": 4,
-    "a_jsx_visible": 109
-   }
-  },
-  "apps/web/src/SmartParsePreview.tsx": {
-   "total": 47,
-   "buckets": {
-    "log_only": 2,
-    "a_jsx_visible": 45
-   }
-  },
-  "apps/web/src/store/documentStore.ts": {
-   "total": 65,
-   "buckets": {
-    "other": 65
-   }
-  },
-  "apps/web/src/store/imagingStore.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/web/src/store/patientStore.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/web/src/tests/analyticsDoctorMetrics.test.ts": {
-   "total": 46,
-   "buckets": {
-    "d_test_fixture": 46
-   }
-  },
-  "apps/web/src/tests/anamnesisStartsEmpty.test.ts": {
-   "total": 25,
-   "buckets": {
-    "d_test_fixture": 25
-   }
-  },
-  "apps/web/src/tests/apiAuthFetch.test.ts": {
-   "total": 4,
-   "buckets": {
-    "d_test_fixture": 4
-   }
-  },
-  "apps/web/src/tests/appointmentMissingFields.test.ts": {
-   "total": 19,
-   "buckets": {
-    "d_test_fixture": 19
-   }
-  },
-  "apps/web/src/tests/browserContinuity.test.ts": {
-   "total": 34,
-   "buckets": {
-    "d_test_fixture": 34
-   }
-  },
-  "apps/web/src/tests/clinicCapabilities.test.ts": {
-   "total": 41,
-   "buckets": {
-    "d_test_fixture": 41
-   }
-  },
-  "apps/web/src/tests/ctPlanningMeasurementPlan.test.ts": {
-   "total": 2,
-   "buckets": {
-    "d_test_fixture": 2
-   }
-  },
-  "apps/web/src/tests/documentCreationTimestamps.test.ts": {
-   "total": 12,
-   "buckets": {
-    "d_test_fixture": 12
-   }
-  },
-  "apps/web/src/tests/documentPayloadForms.test.ts": {
-   "total": 116,
-   "buckets": {
-    "d_test_fixture": 116
-   }
-  },
-  "apps/web/src/tests/documentsViewDecomposition.test.ts": {
-   "total": 28,
-   "buckets": {
-    "d_test_fixture": 28
-   }
-  },
-  "apps/web/src/tests/moneyFieldsStartEmpty.test.ts": {
-   "total": 9,
-   "buckets": {
-    "d_test_fixture": 9
-   }
-  },
-  "apps/web/src/tests/moneyFormat.test.ts": {
-   "total": 8,
-   "buckets": {
-    "d_test_fixture": 8
-   }
-  },
-  "apps/web/src/tests/mprControlMath.test.ts": {
-   "total": 27,
-   "buckets": {
-    "d_test_fixture": 27
-   }
-  },
-  "apps/web/src/tests/operationsPanelsStyling.test.ts": {
-   "total": 33,
-   "buckets": {
-    "d_test_fixture": 33
-   }
-  },
-  "apps/web/src/tests/panelsAreMounted.test.ts": {
-   "total": 125,
-   "buckets": {
-    "d_test_fixture": 125
-   }
-  },
-  "apps/web/src/tests/panoramicArch.test.ts": {
-   "total": 5,
-   "buckets": {
-    "d_test_fixture": 5
-   }
-  },
-  "apps/web/src/tests/patientCardDecomposition.test.ts": {
-   "total": 65,
-   "buckets": {
-    "d_test_fixture": 65
-   }
-  },
-  "apps/web/src/tests/patientCommunicationLogPanel.test.ts": {
-   "total": 27,
-   "buckets": {
-    "d_test_fixture": 27
-   }
-  },
-  "apps/web/src/tests/patientsWidgetsGridColumns.test.ts": {
-   "total": 40,
-   "buckets": {
-    "d_test_fixture": 40
-   }
-  },
-  "apps/web/src/tests/paymentComposerReset.test.ts": {
-   "total": 38,
-   "buckets": {
-    "d_test_fixture": 38
-   }
-  },
-  "apps/web/src/tests/planPricing.test.ts": {
-   "total": 49,
-   "buckets": {
-    "d_test_fixture": 49
-   }
-  },
-  "apps/web/src/tests/rubAmountInput.test.ts": {
-   "total": 8,
-   "buckets": {
-    "d_test_fixture": 8
-   }
-  },
-  "apps/web/src/tests/scheduleAdminSecretRefusal.test.ts": {
-   "total": 13,
-   "buckets": {
-    "d_test_fixture": 13
-   }
-  },
-  "apps/web/src/tests/stringUtils.test.ts": {
-   "total": 37,
-   "buckets": {
-    "d_test_fixture": 37
-   }
-  },
-  "apps/web/src/tests/textToNumbers.test.ts": {
-   "total": 104,
-   "buckets": {
-    "d_test_fixture": 104
-   }
-  },
-  "apps/web/src/tests/themeClasses.test.ts": {
-   "total": 12,
-   "buckets": {
-    "d_test_fixture": 12
-   }
-  },
-  "apps/web/src/tests/themeTokenSpecificity.test.ts": {
-   "total": 20,
-   "buckets": {
-    "d_test_fixture": 20
-   }
-  },
-  "apps/web/src/tests/utils/componentReachability.ts": {
-   "total": 11,
-   "buckets": {
-    "d_test_fixture": 11
-   }
-  },
-  "apps/web/src/tests/workspaceRouteErrorBoundary.test.ts": {
-   "total": 12,
-   "buckets": {
-    "d_test_fixture": 12
-   }
-  },
-  "apps/web/src/tests/workspaceUiLabels.test.ts": {
-   "total": 2,
-   "buckets": {
-    "d_test_fixture": 2
-   }
-  },
-  "apps/web/src/useAppLogic.tsx": {
-   "total": 644,
-   "buckets": {
-    "other": 252,
-    "log_only": 1,
-    "b_error_toast": 369,
-    "dict_value": 20,
-    "a_jsx_visible": 2
-   }
-  },
-  "apps/web/src/useSettingsDerivations.tsx": {
-   "total": 44,
-   "buckets": {
-    "other": 20,
-    "b_error_toast": 21,
-    "a_jsx_visible": 3
-   }
-  },
-  "apps/web/src/utils/cryptoPro.ts": {
-   "total": 6,
-   "buckets": {
-    "b_error_toast": 6
-   }
-  },
-  "apps/web/src/utils/dicom/boneQualityEngine.ts": {
-   "total": 26,
-   "buckets": {
-    "b_error_toast": 8,
-    "other": 18
-   }
-  },
-  "apps/web/src/utils/dicom/drillSequenceGenerator.ts": {
-   "total": 17,
-   "buckets": {
-    "other": 17
-   }
-  },
-  "apps/web/src/utils/math/mprMath.ts": {
-   "total": 79,
-   "buckets": {
-    "b_error_toast": 3,
-    "dict_value": 44,
-    "other": 32
-   }
-  },
-  "apps/web/src/utils/math/toothGeometry.ts": {
-   "total": 26,
-   "buckets": {
-    "other": 19,
-    "b_error_toast": 5,
-    "dict_value": 2
-   }
-  },
-  "apps/web/src/utils/planEstimator.ts": {
-   "total": 16,
-   "buckets": {
-    "dict_value": 5,
-    "b_error_toast": 7,
-    "other": 4
-   }
-  },
-  "apps/web/src/utils/rutoken.ts": {
-   "total": 5,
-   "buckets": {
-    "b_error_toast": 5
-   }
-  },
-  "apps/web/src/utils/unifiedPdfGenerator.ts": {
-   "total": 22,
-   "buckets": {
-    "other": 22
-   }
-  },
-  "apps/web/src/visitDictationData.ts": {
-   "total": 80,
-   "buckets": {
-    "dict_value": 80
-   }
-  },
-  "apps/web/src/visitSpecialtyData.ts": {
-   "total": 20,
-   "buckets": {
-    "dict_value": 20
-   }
-  },
-  "apps/web/src/VisitView.tsx": {
-   "total": 190,
-   "buckets": {
-    "b_error_toast": 15,
-    "other": 4,
-    "a_jsx_visible": 171
-   }
-  },
-  "apps/web/src/workspaceContinuityStrip.tsx": {
-   "total": 15,
-   "buckets": {
-    "other": 10,
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/workspaceRouteErrorBoundary.tsx": {
-   "total": 7,
-   "buckets": {
-    "other": 2,
-    "a_jsx_visible": 5
-   }
-  },
-  "apps/web/src/workspaceShell.tsx": {
-   "total": 50,
-   "buckets": {
-    "dict_value": 34,
-    "other": 4,
-    "a_jsx_visible": 12
-   }
-  },
-  "apps/web/src/workspaceStaticOptions.ts": {
-   "total": 79,
-   "buckets": {
-    "dict_value": 68,
-    "b_error_toast": 11
-   }
-  },
-  "apps/web/src/workspaceUiLabels.test.ts": {
-   "total": 8,
-   "buckets": {
-    "d_test_fixture": 8
-   }
-  },
-  "apps/web/src/workspaceUiLabels.ts": {
-   "total": 180,
-   "buckets": {
-    "dict_value": 166,
-    "other": 5,
-    "b_error_toast": 9
-   }
-  },
-  "apps/web/src/__tests__/clinicModeSurface.test.ts": {
-   "total": 55,
-   "buckets": {
-    "d_test_fixture": 55
-   }
-  },
-  "apps/web/src/__tests__/workspaceTopbarActions.test.ts": {
-   "total": 33,
-   "buckets": {
-    "d_test_fixture": 33
-   }
-  },
-  "apps/web/src/__tests__/workspaceUiLabels.test.ts": {
-   "total": 9,
-   "buckets": {
-    "d_test_fixture": 9
-   }
-  },
-  "apps/api/src/accessGuard.ts": {
-   "total": 7,
-   "buckets": {
-    "b_error_toast": 7
-   }
-  },
-  "apps/api/src/ai/dictationParser.ts": {
-   "total": 6,
-   "buckets": {
-    "data_not_ui": 6
-   }
-  },
-  "apps/api/src/ai/localDictationParser.ts": {
-   "total": 209,
-   "buckets": {
-    "data_not_ui": 209
-   }
-  },
-  "apps/api/src/ai/marketingReviewReply.ts": {
-   "total": 15,
-   "buckets": {
-    "data_not_ui": 15
-   }
-  },
-  "apps/api/src/ai/postVisitPersonalize.ts": {
-   "total": 197,
-   "buckets": {
-    "data_not_ui": 197
-   }
-  },
-  "apps/api/src/ai/testParser.ts": {
-   "total": 12,
-   "buckets": {
-    "data_not_ui": 12
-   }
-  },
-  "apps/api/src/ai/treatmentPlanPersonalize.ts": {
-   "total": 27,
-   "buckets": {
-    "data_not_ui": 27
-   }
-  },
-  "apps/api/src/ai/visiograph.ts": {
-   "total": 3,
-   "buckets": {
-    "data_not_ui": 3
-   }
-  },
-  "apps/api/src/ai/visiographPrompt.ts": {
-   "total": 1,
-   "buckets": {
-    "data_not_ui": 1
-   }
-  },
-  "apps/api/src/ai/visionAnalyzer.ts": {
-   "total": 6,
-   "buckets": {
-    "data_not_ui": 6
-   }
-  },
-  "apps/api/src/ai/visitDraft.ts": {
-   "total": 27,
-   "buckets": {
-    "data_not_ui": 27
-   }
-  },
-  "apps/api/src/ai/visitFlowOrchestrator.ts": {
-   "total": 46,
-   "buckets": {
-    "data_not_ui": 46
-   }
-  },
-  "apps/api/src/db/aiQuery.ts": {
-   "total": 17,
-   "buckets": {
-    "other": 16,
-    "b_error_toast": 1
-   }
-  },
-  "apps/api/src/db/appointmentsQuery.ts": {
-   "total": 7,
-   "buckets": {
-    "b_error_toast": 7
-   }
-  },
-  "apps/api/src/db/client.ts": {
-   "total": 1,
-   "buckets": {
-    "b_error_toast": 1
-   }
-  },
-  "apps/api/src/db/clinicalQuery.ts": {
-   "total": 1,
-   "buckets": {
-    "b_error_toast": 1
-   }
-  },
-  "apps/api/src/db/clinicalTasksQuery.ts": {
-   "total": 5,
-   "buckets": {
-    "b_error_toast": 2,
-    "other": 3
-   }
-  },
-  "apps/api/src/db/dashboardQuery.ts": {
-   "total": 1,
-   "buckets": {
-    "log_only": 1
-   }
-  },
-  "apps/api/src/db/documentQuery.test.ts": {
-   "total": 8,
-   "buckets": {
-    "d_test_fixture": 8
-   }
-  },
-  "apps/api/src/db/documentQuery.ts": {
-   "total": 12,
-   "buckets": {
-    "dict_value": 8,
-    "other": 1,
-    "b_error_toast": 3
-   }
-  },
-  "apps/api/src/db/domainStateHydration.ts": {
-   "total": 10,
-   "buckets": {
-    "other": 10
-   }
-  },
-  "apps/api/src/db/lostPatientsFiltersQuery.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/api/src/db/patientArchiveReasonsAndBlacklistsQuery.ts": {
-   "total": 3,
-   "buckets": {
-    "other": 3
-   }
-  },
-  "apps/api/src/db/patientsQuery.ts": {
-   "total": 13,
-   "buckets": {
-    "b_error_toast": 9,
-    "log_only": 4
-   }
-  },
-  "apps/api/src/db/pricelistQuery.ts": {
-   "total": 7,
-   "buckets": {
-    "other": 5,
-    "b_error_toast": 2
-   }
-  },
-  "apps/api/src/db/schema.ts": {
-   "total": 6,
-   "buckets": {
-    "other": 5,
-    "b_error_toast": 1
-   }
-  },
-  "apps/api/src/db/tests/billingQuery.test.ts": {
-   "total": 1,
-   "buckets": {
-    "d_test_fixture": 1
-   }
-  },
-  "apps/api/src/db/visitsQuery.ts": {
-   "total": 8,
-   "buckets": {
-    "b_error_toast": 8
-   }
-  },
-  "apps/api/src/documents/documents.test.ts": {
-   "total": 4,
-   "buckets": {
-    "d_test_fixture": 4
-   }
-  },
-  "apps/api/src/documents/guards.test.ts": {
-   "total": 9,
-   "buckets": {
-    "d_test_fixture": 9
-   }
-  },
-  "apps/api/src/documents/guards.ts": {
-   "total": 128,
-   "buckets": {
-    "data_not_ui": 128
-   }
-  },
-  "apps/api/src/documents/moneyExactKopecks.test.ts": {
-   "total": 34,
-   "buckets": {
-    "d_test_fixture": 34
-   }
-  },
-  "apps/api/src/documents/renderDocument.test.ts": {
-   "total": 51,
-   "buckets": {
-    "d_test_fixture": 51
-   }
-  },
-  "apps/api/src/documents/renderDocument.ts": {
-   "total": 1548,
-   "buckets": {
-    "data_not_ui": 1548
-   }
-  },
-  "apps/api/src/documents/taxPaymentSnapshot.test.ts": {
-   "total": 2,
-   "buckets": {
-    "d_test_fixture": 2
-   }
-  },
-  "apps/api/src/documents/taxXml.test.ts": {
-   "total": 8,
-   "buckets": {
-    "d_test_fixture": 8
-   }
-  },
-  "apps/api/src/documents/taxXml.ts": {
-   "total": 110,
-   "buckets": {
-    "data_not_ui": 110
-   }
-  },
-  "apps/api/src/emailTransport.ts": {
-   "total": 13,
-   "buckets": {
-    "b_error_toast": 9,
-    "other": 4
-   }
-  },
-  "apps/api/src/ingestion/documentExtractor.ts": {
-   "total": 81,
-   "buckets": {
-    "other": 66,
-    "b_error_toast": 15
-   }
-  },
-  "apps/api/src/maxTransport.ts": {
-   "total": 8,
-   "buckets": {
-    "other": 8
-   }
-  },
-  "apps/api/src/migration/columnProfile.ts": {
-   "total": 9,
-   "buckets": {
-    "data_not_ui": 9
-   }
-  },
-  "apps/api/src/migration/discovery.ts": {
-   "total": 30,
-   "buckets": {
-    "data_not_ui": 30
-   }
-  },
-  "apps/api/src/migration/encoding.ts": {
-   "total": 10,
-   "buckets": {
-    "data_not_ui": 10
-   }
-  },
-  "apps/api/src/migration/engine.ts": {
-   "total": 42,
-   "buckets": {
-    "data_not_ui": 42
-   }
-  },
-  "apps/api/src/migration/formats/dicom.ts": {
-   "total": 9,
-   "buckets": {
-    "data_not_ui": 9
-   }
-  },
-  "apps/api/src/migration/formats/signatures.ts": {
-   "total": 46,
-   "buckets": {
-    "data_not_ui": 46
-   }
-  },
-  "apps/api/src/migration/formats/sqlite.ts": {
-   "total": 10,
-   "buckets": {
-    "data_not_ui": 10
-   }
-  },
-  "apps/api/src/migration/identity.ts": {
-   "total": 9,
-   "buckets": {
-    "data_not_ui": 9
-   }
-  },
-  "apps/api/src/migration/llmClient.ts": {
-   "total": 5,
-   "buckets": {
-    "data_not_ui": 5
-   }
-  },
-  "apps/api/src/migration/llmMapper.ts": {
-   "total": 34,
-   "buckets": {
-    "data_not_ui": 34
-   }
-  },
-  "apps/api/src/migration/loader.ts": {
-   "total": 73,
-   "buckets": {
-    "data_not_ui": 73
-   }
-  },
-  "apps/api/src/migration/mapping.ts": {
-   "total": 46,
-   "buckets": {
-    "data_not_ui": 46
-   }
-  },
-  "apps/api/src/migration/parsers/dbf.ts": {
-   "total": 37,
-   "buckets": {
-    "data_not_ui": 37
-   }
-  },
-  "apps/api/src/migration/parsers/delimited.ts": {
-   "total": 13,
-   "buckets": {
-    "data_not_ui": 13
-   }
-  },
-  "apps/api/src/migration/parsers/index.ts": {
-   "total": 10,
-   "buckets": {
-    "data_not_ui": 10
-   }
-  },
-  "apps/api/src/migration/parsers/spreadsheet.ts": {
-   "total": 10,
-   "buckets": {
-    "data_not_ui": 10
-   }
-  },
-  "apps/api/src/migration/parsers/structured.ts": {
-   "total": 14,
-   "buckets": {
-    "data_not_ui": 14
-   }
-  },
-  "apps/api/src/migration/phases.ts": {
-   "total": 24,
-   "buckets": {
-    "data_not_ui": 24
-   }
-  },
-  "apps/api/src/migration/reconcile.ts": {
-   "total": 60,
-   "buckets": {
-    "data_not_ui": 60
-   }
-  },
-  "apps/api/src/migration/rowTransform.ts": {
-   "total": 29,
-   "buckets": {
-    "data_not_ui": 29
-   }
-  },
-  "apps/api/src/migration/runStore.ts": {
-   "total": 4,
-   "buckets": {
-    "data_not_ui": 4
-   }
-  },
-  "apps/api/src/migration/streamStage.ts": {
-   "total": 13,
-   "buckets": {
-    "data_not_ui": 13
-   }
-  },
-  "apps/api/src/migration/tests/mapping.test.ts": {
-   "total": 175,
-   "buckets": {
-    "d_test_fixture": 175
-   }
-  },
-  "apps/api/src/migration/tests/parsers.test.ts": {
-   "total": 152,
-   "buckets": {
-    "d_test_fixture": 152
-   }
-  },
-  "apps/api/src/migration/tests/valueNormalize.test.ts": {
-   "total": 135,
-   "buckets": {
-    "d_test_fixture": 135
-   }
-  },
-  "apps/api/src/migration/uploadStore.ts": {
-   "total": 3,
-   "buckets": {
-    "data_not_ui": 3
-   }
-  },
-  "apps/api/src/migration/valueNormalize.ts": {
-   "total": 107,
-   "buckets": {
-    "data_not_ui": 107
-   }
-  },
-  "apps/api/src/migration/vendorProfiles.ts": {
-   "total": 425,
-   "buckets": {
-    "data_not_ui": 425
-   }
-  },
-  "apps/api/src/migration/worker.ts": {
-   "total": 23,
-   "buckets": {
-    "data_not_ui": 23
-   }
-  },
-  "apps/api/src/persistentState.ts": {
-   "total": 7,
-   "buckets": {
-    "other": 7
-   }
-  },
-  "apps/api/src/pricelist/analyzer.ts": {
-   "total": 4,
-   "buckets": {
-    "other": 4
-   }
-  },
-  "apps/api/src/pricelist/groqPricelistKopecks.test.ts": {
-   "total": 29,
-   "buckets": {
-    "d_test_fixture": 29
-   }
-  },
-  "apps/api/src/pricelist/pricelistKopecks.test.ts": {
-   "total": 74,
-   "buckets": {
-    "d_test_fixture": 74
-   }
-  },
-  "apps/api/src/routes/ai.ts": {
-   "total": 9,
-   "buckets": {
-    "other": 5,
-    "b_error_toast": 4
-   }
-  },
-  "apps/api/src/routes/analytics.ts": {
-   "total": 22,
-   "buckets": {
-    "other": 12,
-    "b_error_toast": 9,
-    "log_only": 1
-   }
-  },
-  "apps/api/src/routes/audit.ts": {
-   "total": 1,
-   "buckets": {
-    "b_error_toast": 1
-   }
-  },
-  "apps/api/src/routes/auth.test.ts": {
-   "total": 37,
-   "buckets": {
-    "d_test_fixture": 37
-   }
-  },
-  "apps/api/src/routes/auth.ts": {
-   "total": 66,
-   "buckets": {
-    "b_error_toast": 64,
-    "other": 2
-   }
-  },
-  "apps/api/src/routes/billing.ts": {
-   "total": 48,
-   "buckets": {
-    "other": 20,
-    "dict_value": 18,
-    "b_error_toast": 10
-   }
-  },
-  "apps/api/src/routes/clinical.ts": {
-   "total": 7,
-   "buckets": {
-    "other": 3,
-    "b_error_toast": 4
-   }
-  },
-  "apps/api/src/routes/communicationReceipts.ts": {
-   "total": 5,
-   "buckets": {
-    "b_error_toast": 5
-   }
-  },
-  "apps/api/src/routes/communications.ts": {
-   "total": 6,
-   "buckets": {
-    "other": 3,
-    "b_error_toast": 3
-   }
-  },
-  "apps/api/src/routes/communicationsOutbox.ts": {
-   "total": 38,
-   "buckets": {
-    "other": 23,
-    "b_error_toast": 15
-   }
-  },
-  "apps/api/src/routes/dashboard.ts": {
-   "total": 2,
-   "buckets": {
-    "log_only": 1,
-    "b_error_toast": 1
-   }
-  },
-  "apps/api/src/routes/dayConfirmations.ts": {
-   "total": 5,
-   "buckets": {
-    "other": 5
-   }
-  },
-  "apps/api/src/routes/diary.ts": {
-   "total": 7,
-   "buckets": {
-    "b_error_toast": 7
-   }
-  },
-  "apps/api/src/routes/dicomweb.test.ts": {
-   "total": 22,
-   "buckets": {
-    "d_test_fixture": 22
-   }
-  },
-  "apps/api/src/routes/dicomweb.ts": {
-   "total": 9,
-   "buckets": {
-    "log_only": 4,
-    "b_error_toast": 5
-   }
-  },
-  "apps/api/src/routes/documents/auditFacts.ts": {
-   "total": 2,
-   "buckets": {
-    "data_not_ui": 2
-   }
-  },
-  "apps/api/src/routes/documents/html.ts": {
-   "total": 4,
-   "buckets": {
-    "data_not_ui": 4
-   }
-  },
-  "apps/api/src/routes/documents/issue.ts": {
-   "total": 8,
-   "buckets": {
-    "data_not_ui": 8
-   }
-  },
-  "apps/api/src/routes/documents/pdf.ts": {
-   "total": 9,
-   "buckets": {
-    "data_not_ui": 9
-   }
-  },
-  "apps/api/src/routes/documents/sign.ts": {
-   "total": 2,
-   "buckets": {
-    "data_not_ui": 2
-   }
-  },
-  "apps/api/src/routes/documents/signUkep.ts": {
-   "total": 4,
-   "buckets": {
-    "data_not_ui": 4
-   }
-  },
-  "apps/api/src/routes/documents/taxXml.ts": {
-   "total": 10,
-   "buckets": {
-    "data_not_ui": 10
-   }
-  },
-  "apps/api/src/routes/documents/void.ts": {
-   "total": 6,
-   "buckets": {
-    "data_not_ui": 6
-   }
-  },
-  "apps/api/src/routes/documents.test.ts": {
-   "total": 1,
-   "buckets": {
-    "d_test_fixture": 1
-   }
-  },
-  "apps/api/src/routes/documents.ts": {
-   "total": 63,
-   "buckets": {
-    "other": 60,
-    "b_error_toast": 2,
-    "log_only": 1
-   }
-  },
-  "apps/api/src/routes/egisz.ts": {
-   "total": 5,
-   "buckets": {
-    "b_error_toast": 4,
-    "other": 1
-   }
-  },
-  "apps/api/src/routes/finance_family.ts": {
-   "total": 9,
-   "buckets": {
-    "b_error_toast": 9
-   }
-  },
-  "apps/api/src/routes/imaging.test.ts": {
-   "total": 1,
-   "buckets": {
-    "d_test_fixture": 1
-   }
-  },
-  "apps/api/src/routes/imaging.ts": {
-   "total": 530,
-   "buckets": {
-    "dict_value": 15,
-    "b_error_toast": 90,
-    "other": 363,
-    "data_not_ui": 60,
-    "log_only": 2
-   }
-  },
-  "apps/api/src/routes/imports.test.ts": {
-   "total": 7,
-   "buckets": {
-    "d_test_fixture": 7
-   }
-  },
-  "apps/api/src/routes/imports.ts": {
-   "total": 34,
-   "buckets": {
-    "data_not_ui": 18,
-    "other": 12,
-    "b_error_toast": 4
-   }
-  },
-  "apps/api/src/routes/ingestion.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/api/src/routes/inventory.ts": {
-   "total": 4,
-   "buckets": {
-    "b_error_toast": 4
-   }
-  },
-  "apps/api/src/routes/lab.ts": {
-   "total": 6,
-   "buckets": {
-    "b_error_toast": 6
-   }
-  },
-  "apps/api/src/routes/leads.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/api/src/routes/max.ts": {
-   "total": 11,
-   "buckets": {
-    "b_error_toast": 10,
-    "log_only": 1
-   }
-  },
-  "apps/api/src/routes/migration.ts": {
-   "total": 6,
-   "buckets": {
-    "other": 2,
-    "b_error_toast": 4
-   }
-  },
-  "apps/api/src/routes/migrationRuns.ts": {
-   "total": 24,
-   "buckets": {
-    "other": 22,
-    "b_error_toast": 2
-   }
-  },
-  "apps/api/src/routes/odontogram.ts": {
-   "total": 5,
-   "buckets": {
-    "log_only": 1,
-    "b_error_toast": 4
-   }
-  },
-  "apps/api/src/routes/patientDuplicates.ts": {
-   "total": 12,
-   "buckets": {
-    "b_error_toast": 7,
-    "other": 5
-   }
-  },
-  "apps/api/src/routes/patientRecall.ts": {
-   "total": 7,
-   "buckets": {
-    "other": 4,
-    "b_error_toast": 3
-   }
-  },
-  "apps/api/src/routes/patients.ts": {
-   "total": 21,
-   "buckets": {
-    "other": 8,
-    "log_only": 5,
-    "b_error_toast": 8
-   }
-  },
-  "apps/api/src/routes/portal.ts": {
-   "total": 12,
-   "buckets": {
-    "other": 2,
-    "b_error_toast": 8,
-    "log_only": 2
-   }
-  },
-  "apps/api/src/routes/pricelist.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/api/src/routes/publicAppointmentActions.ts": {
-   "total": 26,
-   "buckets": {
-    "other": 21,
-    "b_error_toast": 5
-   }
-  },
-  "apps/api/src/routes/publicBooking.ts": {
-   "total": 20,
-   "buckets": {
-    "other": 4,
-    "b_error_toast": 15,
-    "log_only": 1
-   }
-  },
-  "apps/api/src/routes/reports.ts": {
-   "total": 6,
-   "buckets": {
-    "b_error_toast": 4,
-    "other": 2
-   }
-  },
-  "apps/api/src/routes/schedule.ts": {
-   "total": 38,
-   "buckets": {
-    "other": 35,
-    "b_error_toast": 2,
-    "log_only": 1
-   }
-  },
-  "apps/api/src/routes/settings.test.ts": {
-   "total": 12,
-   "buckets": {
-    "d_test_fixture": 12
-   }
-  },
-  "apps/api/src/routes/settings.ts": {
-   "total": 56,
-   "buckets": {
-    "other": 41,
-    "b_error_toast": 15
-   }
-  },
-  "apps/api/src/routes/smartImports.ts": {
-   "total": 926,
-   "buckets": {
-    "data_not_ui": 926
-   }
-  },
-  "apps/api/src/routes/speech.ts": {
-   "total": 11,
-   "buckets": {
-    "other": 10,
-    "b_error_toast": 1
-   }
-  },
-  "apps/api/src/routes/system.ts": {
-   "total": 139,
-   "buckets": {
-    "b_error_toast": 13,
-    "other": 126
-   }
-  },
-  "apps/api/src/routes/telegram.ts": {
-   "total": 308,
-   "buckets": {
-    "other": 187,
-    "b_error_toast": 77,
-    "dict_value": 43,
-    "log_only": 1
-   }
-  },
-  "apps/api/src/routes/telephony.ts": {
-   "total": 5,
-   "buckets": {
-    "b_error_toast": 1,
-    "other": 4
-   }
-  },
-  "apps/api/src/routes/tests/imaging.test.ts": {
-   "total": 3,
-   "buckets": {
-    "d_test_fixture": 3
-   }
-  },
-  "apps/api/src/routes/toothHistory.ts": {
-   "total": 9,
-   "buckets": {
-    "b_error_toast": 6,
-    "log_only": 1,
-    "other": 2
-   }
-  },
-  "apps/api/src/routes/visits.test.ts": {
-   "total": 1,
-   "buckets": {
-    "d_test_fixture": 1
-   }
-  },
-  "apps/api/src/routes/visits.ts": {
-   "total": 19,
-   "buckets": {
-    "other": 17,
-    "b_error_toast": 1,
-    "log_only": 1
-   }
-  },
-  "apps/api/src/routes/vk.ts": {
-   "total": 2,
-   "buckets": {
-    "b_error_toast": 1,
-    "other": 1
-   }
-  },
-  "apps/api/src/routes/waitlist.ts": {
-   "total": 6,
-   "buckets": {
-    "b_error_toast": 6
-   }
-  },
-  "apps/api/src/routes/waitlistMatches.ts": {
-   "total": 8,
-   "buckets": {
-    "other": 5,
-    "b_error_toast": 3
-   }
-  },
-  "apps/api/src/routes/whatsapp.ts": {
-   "total": 17,
-   "buckets": {
-    "b_error_toast": 12,
-    "log_only": 5
-   }
-  },
-  "apps/api/src/routes/workspaceProfile.ts": {
-   "total": 57,
-   "buckets": {
-    "b_error_toast": 27,
-    "dict_value": 5,
-    "other": 25
-   }
-  },
-  "apps/api/src/routes/xray.ts": {
-   "total": 9,
-   "buckets": {
-    "b_error_toast": 8,
-    "other": 1
-   }
-  },
-  "apps/api/src/sampleData.ts": {
-   "total": 1194,
-   "buckets": {
-    "data_not_ui": 1194
-   }
-  },
-  "apps/api/src/sampleData_opt.ts": {
-   "total": 1184,
-   "buckets": {
-    "data_not_ui": 1184
-   }
-  },
-  "apps/api/src/scripts/cronAnalyticsWorker.ts": {
-   "total": 1,
-   "buckets": {
-    "data_not_ui": 1
-   }
-  },
-  "apps/api/src/scripts/inspectOutbox.ts": {
-   "total": 6,
-   "buckets": {
-    "data_not_ui": 6
-   }
-  },
-  "apps/api/src/scripts/inspectRecall.ts": {
-   "total": 6,
-   "buckets": {
-    "data_not_ui": 6
-   }
-  },
-  "apps/api/src/scripts/migrate.ts": {
-   "total": 17,
-   "buckets": {
-    "data_not_ui": 17
-   }
-  },
-  "apps/api/src/scripts/migrateStateToDb.ts": {
-   "total": 1,
-   "buckets": {
-    "data_not_ui": 1
-   }
-  },
-  "apps/api/src/scripts/printClientInfo.ts": {
-   "total": 3,
-   "buckets": {
-    "data_not_ui": 3
-   }
-  },
-  "apps/api/src/scripts/seedAuth.ts": {
-   "total": 5,
-   "buckets": {
-    "data_not_ui": 5
-   }
-  },
-  "apps/api/src/scripts/seedOpsScreenshotDemo.ts": {
-   "total": 47,
-   "buckets": {
-    "data_not_ui": 47
-   }
-  },
-  "apps/api/src/scripts/seedPglite.ts": {
-   "total": 5,
-   "buckets": {
-    "data_not_ui": 5
-   }
-  },
-  "apps/api/src/scripts/seedTemplates.ts": {
-   "total": 150,
-   "buckets": {
-    "data_not_ui": 150
-   }
-  },
-  "apps/api/src/scripts/setup-fresh-db.ts": {
-   "total": 2,
-   "buckets": {
-    "data_not_ui": 2
-   }
-  },
-  "apps/api/src/scripts/tests/cronAnalyticsWorker.test.ts": {
-   "total": 22,
-   "buckets": {
-    "d_test_fixture": 22
-   }
-  },
-  "apps/api/src/scripts/verify-migration-engine.ts": {
-   "total": 176,
-   "buckets": {
-    "data_not_ui": 176
-   }
-  },
-  "apps/api/src/scripts/verify-migration-formats.ts": {
-   "total": 108,
-   "buckets": {
-    "data_not_ui": 108
-   }
-  },
-  "apps/api/src/scripts/verify-migration-http.ts": {
-   "total": 169,
-   "buckets": {
-    "data_not_ui": 169
-   }
-  },
-  "apps/api/src/security/authSecret.ts": {
-   "total": 9,
-   "buckets": {
-    "log_only": 4,
-    "b_error_toast": 5
-   }
-  },
-  "apps/api/src/security/identity.ts": {
-   "total": 9,
-   "buckets": {
-    "other": 3,
-    "b_error_toast": 6
-   }
-  },
-  "apps/api/src/security/permissions.ts": {
-   "total": 6,
-   "buckets": {
-    "b_error_toast": 6
-   }
-  },
-  "apps/api/src/security/rateLimit.ts": {
-   "total": 1,
-   "buckets": {
-    "b_error_toast": 1
-   }
-  },
-  "apps/api/src/security/webhookAuth.ts": {
-   "total": 7,
-   "buckets": {
-    "b_error_toast": 4,
-    "log_only": 3
-   }
-  },
-  "apps/api/src/server.ts": {
-   "total": 16,
-   "buckets": {
-    "b_error_toast": 2,
-    "other": 11,
-    "log_only": 3
-   }
-  },
-  "apps/api/src/services/backupWorker.test.ts": {
-   "total": 3,
-   "buckets": {
-    "d_test_fixture": 3
-   }
-  },
-  "apps/api/src/services/backupWorker.ts": {
-   "total": 18,
-   "buckets": {
-    "b_error_toast": 8,
-    "log_only": 9,
-    "other": 1
-   }
-  },
-  "apps/api/src/services/biAnalyticsWorker.ts": {
-   "total": 1,
-   "buckets": {
-    "other": 1
-   }
-  },
-  "apps/api/src/services/clinical/ClinicalRouter.test.ts": {
-   "total": 26,
-   "buckets": {
-    "d_test_fixture": 26
-   }
-  },
-  "apps/api/src/services/clinical/ClinicalRouter.ts": {
-   "total": 9,
-   "buckets": {
-    "dict_value": 6,
-    "other": 3
-   }
-  },
-  "apps/api/src/services/communications/appointmentReminders.ts": {
-   "total": 8,
-   "buckets": {
-    "log_only": 3,
-    "other": 4,
-    "dict_value": 1
-   }
-  },
-  "apps/api/src/services/communications/audience.ts": {
-   "total": 25,
-   "buckets": {
-    "b_error_toast": 6,
-    "other": 19
-   }
-  },
-  "apps/api/src/services/communications/campaigns.ts": {
-   "total": 19,
-   "buckets": {
-    "other": 6,
-    "b_error_toast": 13
-   }
-  },
-  "apps/api/src/services/communications/channelRouter.ts": {
-   "total": 12,
-   "buckets": {
-    "other": 12
-   }
-  },
-  "apps/api/src/services/communications/deliveryPolicy.ts": {
-   "total": 4,
-   "buckets": {
-    "b_error_toast": 4
-   }
-  },
-  "apps/api/src/services/communications/deliveryReceipts.ts": {
-   "total": 43,
-   "buckets": {
-    "dict_value": 31,
-    "b_error_toast": 10,
-    "other": 2
-   }
-  },
-  "apps/api/src/services/communications/dispatcher.ts": {
-   "total": 15,
-   "buckets": {
-    "b_error_toast": 11,
-    "other": 4
-   }
-  },
-  "apps/api/src/services/communications/dispatchWorker.ts": {
-   "total": 18,
-   "buckets": {
-    "b_error_toast": 4,
-    "other": 14
-   }
-  },
-  "apps/api/src/services/communications/optOut.ts": {
-   "total": 27,
-   "buckets": {
-    "other": 27
-   }
-  },
-  "apps/api/src/services/communications/templateRenderer.ts": {
-   "total": 44,
-   "buckets": {
-    "b_error_toast": 20,
-    "other": 24
-   }
-  },
-  "apps/api/src/services/egiszCdaGenerator.ts": {
-   "total": 8,
-   "buckets": {
-    "other": 8
-   }
-  },
-  "apps/api/src/services/finance/doctorPayouts.test.ts": {
-   "total": 16,
-   "buckets": {
-    "d_test_fixture": 16
-   }
-  },
-  "apps/api/src/services/finance/doctorPayouts.ts": {
-   "total": 50,
-   "buckets": {
-    "b_error_toast": 9,
-    "other": 41
-   }
-  },
-  "apps/api/src/services/finance/payoutNegativeExplain.test.ts": {
-   "total": 37,
-   "buckets": {
-    "d_test_fixture": 37
-   }
-  },
-  "apps/api/src/services/finance/payoutNegativeExplain.ts": {
-   "total": 56,
-   "buckets": {
-    "other": 56
-   }
-  },
-  "apps/api/src/services/messengerIngestion.ts": {
-   "total": 13,
-   "buckets": {
-    "other": 6,
-    "b_error_toast": 5,
-    "log_only": 2
-   }
-  },
-  "apps/api/src/services/patients/duplicateDetection.ts": {
-   "total": 13,
-   "buckets": {
-    "dict_value": 9,
-    "other": 1,
-    "b_error_toast": 3
-   }
-  },
-  "apps/api/src/services/patients/patientMerge.ts": {
-   "total": 14,
-   "buckets": {
-    "b_error_toast": 7,
-    "other": 7
-   }
-  },
-  "apps/api/src/services/patients/recallCandidates.ts": {
-   "total": 7,
-   "buckets": {
-    "dict_value": 4,
-    "b_error_toast": 3
-   }
-  },
-  "apps/api/src/services/postOpCareTrigger.ts": {
-   "total": 2,
-   "buckets": {
-    "other": 2
-   }
-  },
-  "apps/api/src/services/recallScheduler.ts": {
-   "total": 3,
-   "buckets": {
-    "b_error_toast": 3
-   }
-  },
-  "apps/api/src/services/reports/managerReports.ts": {
-   "total": 29,
-   "buckets": {
-    "other": 16,
-    "b_error_toast": 13
-   }
-  },
-  "apps/api/src/services/schedule/waitlistMatching.ts": {
-   "total": 15,
-   "buckets": {
-    "other": 12,
-    "b_error_toast": 3
-   }
-  },
-  "apps/api/src/services/tests/biAnalyticsWorker.test.ts": {
-   "total": 12,
-   "buckets": {
-    "d_test_fixture": 12
-   }
-  },
-  "apps/api/src/services/tests/postOpCareTrigger.test.ts": {
-   "total": 1,
-   "buckets": {
-    "d_test_fixture": 1
-   }
-  },
-  "apps/api/src/services/tests/recallScheduler.test.ts": {
-   "total": 2,
-   "buckets": {
-    "d_test_fixture": 2
-   }
-  },
-  "apps/api/src/smsTransport.ts": {
-   "total": 43,
-   "buckets": {
-    "dict_value": 26,
-    "other": 17
-   }
-  },
-  "apps/api/src/speech/dentalPrompt.ts": {
-   "total": 216,
-   "buckets": {
-    "data_not_ui": 216
-   }
-  },
-  "apps/api/src/speech/gateway.ts": {
-   "total": 192,
-   "buckets": {
-    "data_not_ui": 192
-   }
-  },
-  "apps/api/src/speech/keyPool.ts": {
-   "total": 2,
-   "buckets": {
-    "data_not_ui": 2
-   }
-  },
-  "apps/api/src/speech/polish.ts": {
-   "total": 50,
-   "buckets": {
-    "data_not_ui": 50
-   }
-  },
-  "apps/api/src/speech/providers.ts": {
-   "total": 21,
-   "buckets": {
-    "data_not_ui": 21
-   }
-  },
-  "apps/api/src/speech/storage.ts": {
-   "total": 63,
-   "buckets": {
-    "data_not_ui": 63
-   }
-  },
-  "apps/api/src/speech/tests/assemblyAiRetention.test.ts": {
-   "total": 44,
-   "buckets": {
-    "d_test_fixture": 44
-   }
-  },
-  "apps/api/src/speech/tests/speechRetentionStatement.test.ts": {
-   "total": 19,
-   "buckets": {
-    "d_test_fixture": 19
-   }
-  },
-  "apps/api/src/speech/tests/storage.test.ts": {
-   "total": 52,
-   "buckets": {
-    "d_test_fixture": 52
-   }
-  },
-  "apps/api/src/speech/tests/storageIdentity.test.ts": {
-   "total": 41,
-   "buckets": {
-    "d_test_fixture": 41
-   }
-  },
-  "apps/api/src/speech/tests/storageRestoreCeiling.test.ts": {
-   "total": 38,
-   "buckets": {
-    "d_test_fixture": 38
-   }
-  },
-  "apps/api/src/speech/tests/storageRestoreRetry.test.ts": {
-   "total": 15,
-   "buckets": {
-    "d_test_fixture": 15
-   }
-  },
-  "apps/api/src/telegram/outbox.ts": {
-   "total": 2,
-   "buckets": {
-    "b_error_toast": 1,
-    "other": 1
-   }
-  },
-  "apps/api/src/tests/accessGuard.test.ts": {
-   "total": 4,
-   "buckets": {
-    "d_test_fixture": 4
-   }
-  },
-  "apps/api/src/tests/ai/visitDraft.test.ts": {
-   "total": 17,
-   "buckets": {
-    "d_test_fixture": 17
-   }
-  },
-  "apps/api/src/tests/ai/visitFlow.test.ts": {
-   "total": 30,
-   "buckets": {
-    "d_test_fixture": 30
-   }
-  },
-  "apps/api/src/tests/ai.test.ts": {
-   "total": 4,
-   "buckets": {
-    "d_test_fixture": 4
-   }
-  },
-  "apps/api/src/tests/automaticSendingState.test.ts": {
-   "total": 10,
-   "buckets": {
-    "d_test_fixture": 10
-   }
-  },
-  "apps/api/src/tests/clinicModeOneVocabulary.test.ts": {
-   "total": 43,
-   "buckets": {
-    "d_test_fixture": 43
-   }
-  },
-  "apps/api/src/tests/db/patientsQuery.test.ts": {
-   "total": 22,
-   "buckets": {
-    "d_test_fixture": 22
-   }
-  },
-  "apps/api/src/tests/deliveryPolicy.test.ts": {
-   "total": 33,
-   "buckets": {
-    "d_test_fixture": 33
-   }
-  },
-  "apps/api/src/tests/dispatcherConsentGate.test.ts": {
-   "total": 13,
-   "buckets": {
-    "d_test_fixture": 13
-   }
-  },
-  "apps/api/src/tests/documents.test.ts": {
-   "total": 9,
-   "buckets": {
-    "d_test_fixture": 9
-   }
-  },
-  "apps/api/src/tests/egiszCdaGenerator.test.ts": {
-   "total": 31,
-   "buckets": {
-    "d_test_fixture": 31
-   }
-  },
-  "apps/api/src/tests/emailTransport.test.ts": {
-   "total": 46,
-   "buckets": {
-    "d_test_fixture": 46
-   }
-  },
-  "apps/api/src/tests/enumContractDrift.test.ts": {
-   "total": 7,
-   "buckets": {
-    "d_test_fixture": 7
-   }
-  },
-  "apps/api/src/tests/imaging/parseImagingManifest.test.ts": {
-   "total": 2,
-   "buckets": {
-    "d_test_fixture": 2
-   }
-  },
-  "apps/api/src/tests/inboundOptOut.test.ts": {
-   "total": 66,
-   "buckets": {
-    "d_test_fixture": 66
-   }
-  },
-  "apps/api/src/tests/ingestion/documentExtractor.test.ts": {
-   "total": 7,
-   "buckets": {
-    "d_test_fixture": 7
-   }
-  },
-  "apps/api/src/tests/keyPool.test.ts": {
-   "total": 1,
-   "buckets": {
-    "d_test_fixture": 1
-   }
-  },
-  "apps/api/src/tests/maxTransport.test.ts": {
-   "total": 23,
-   "buckets": {
-    "d_test_fixture": 23
-   }
-  },
-  "apps/api/src/tests/mutableStateFlushCoalescing.test.ts": {
-   "total": 33,
-   "buckets": {
-    "d_test_fixture": 33
-   }
-  },
-  "apps/api/src/tests/noFabricatedDataFallback.test.ts": {
-   "total": 8,
-   "buckets": {
-    "d_test_fixture": 8
-   }
-  },
-  "apps/api/src/tests/numericMoneyTypeParser.test.ts": {
-   "total": 8,
-   "buckets": {
-    "d_test_fixture": 8
-   }
-  },
-  "apps/api/src/tests/permissions.test.ts": {
-   "total": 22,
-   "buckets": {
-    "d_test_fixture": 22
-   }
-  },
-  "apps/api/src/tests/persistentState.test.ts": {
-   "total": 5,
-   "buckets": {
-    "d_test_fixture": 5
-   }
-  },
-  "apps/api/src/tests/persistentStateExport.test.ts": {
-   "total": 2,
-   "buckets": {
-    "d_test_fixture": 2
-   }
-  },
-  "apps/api/src/tests/repairMojibake.test.ts": {
-   "total": 14,
-   "buckets": {
-    "d_test_fixture": 14
-   }
-  },
-  "apps/api/src/tests/routeHookScope.test.ts": {
-   "total": 12,
-   "buckets": {
-    "d_test_fixture": 12
-   }
-  },
-  "apps/api/src/tests/routeRegistrationCoverage.test.ts": {
-   "total": 6,
-   "buckets": {
-    "d_test_fixture": 6
-   }
-  },
-  "apps/api/src/tests/routes/appointmentConfirmation.test.ts": {
-   "total": 71,
-   "buckets": {
-    "d_test_fixture": 71
-   }
-  },
-  "apps/api/src/tests/routes/appointmentReminders.test.ts": {
-   "total": 40,
-   "buckets": {
-    "d_test_fixture": 40
-   }
-  },
-  "apps/api/src/tests/routes/chainReconProof.ts": {
-   "total": 65,
-   "buckets": {
-    "d_test_fixture": 65
-   }
-  },
-  "apps/api/src/tests/routes/chainWeldProof.ts": {
-   "total": 105,
-   "buckets": {
-    "d_test_fixture": 105
-   }
-  },
-  "apps/api/src/tests/routes/clinical.test.ts": {
-   "total": 4,
-   "buckets": {
-    "d_test_fixture": 4
-   }
-  },
-  "apps/api/src/tests/routes/communicationCampaigns.test.ts": {
-   "total": 51,
-   "buckets": {
-    "d_test_fixture": 51
-   }
-  },
-  "apps/api/src/tests/routes/communicationsOutbox.test.ts": {
-   "total": 57,
-   "buckets": {
-    "d_test_fixture": 57
-   }
-  },
-  "apps/api/src/tests/routes/dayConfirmations.test.ts": {
-   "total": 39,
-   "buckets": {
-    "d_test_fixture": 39
-   }
-  },
-  "apps/api/src/tests/routes/deliveryReceipts.test.ts": {
-   "total": 49,
-   "buckets": {
-    "d_test_fixture": 49
-   }
-  },
-  "apps/api/src/tests/routes/diaryDeductionProof.ts": {
-   "total": 17,
-   "buckets": {
-    "d_test_fixture": 17
-   }
-  },
-  "apps/api/src/tests/routes/diarySigningCeremony.test.ts": {
-   "total": 35,
-   "buckets": {
-    "d_test_fixture": 35
-   }
-  },
-  "apps/api/src/tests/routes/doctorPayoutsProof.ts": {
-   "total": 126,
-   "buckets": {
-    "d_test_fixture": 126
-   }
-  },
-  "apps/api/src/tests/routes/managerReports.test.ts": {
-   "total": 56,
-   "buckets": {
-    "d_test_fixture": 56
-   }
-  },
-  "apps/api/src/tests/routes/onboardingPurgeProof.ts": {
-   "total": 13,
-   "buckets": {
-    "d_test_fixture": 13
-   }
-  },
-  "apps/api/src/tests/routes/patientArchiveStatusScope.test.ts": {
-   "total": 40,
-   "buckets": {
-    "d_test_fixture": 40
-   }
-  },
-  "apps/api/src/tests/routes/patientCommunicationLog.test.ts": {
-   "total": 37,
-   "buckets": {
-    "d_test_fixture": 37
-   }
-  },
-  "apps/api/src/tests/routes/patientCreateDuplicateGuard.test.ts": {
-   "total": 24,
-   "buckets": {
-    "d_test_fixture": 24
-   }
-  },
-  "apps/api/src/tests/routes/patientDuplicates.test.ts": {
-   "total": 61,
-   "buckets": {
-    "d_test_fixture": 61
-   }
-  },
-  "apps/api/src/tests/routes/patientRecall.test.ts": {
-   "total": 25,
-   "buckets": {
-    "d_test_fixture": 25
-   }
-  },
-  "apps/api/src/tests/routes/portalOtp.test.ts": {
-   "total": 27,
-   "buckets": {
-    "d_test_fixture": 27
-   }
-  },
-  "apps/api/src/tests/routes/speechTranscribeChunkAccess.test.ts": {
-   "total": 25,
-   "buckets": {
-    "d_test_fixture": 25
-   }
-  },
-  "apps/api/src/tests/routes/visits.test.ts": {
-   "total": 25,
-   "buckets": {
-    "d_test_fixture": 25
-   }
-  },
-  "apps/api/src/tests/routes/waitlistMatches.test.ts": {
-   "total": 26,
-   "buckets": {
-    "d_test_fixture": 26
-   }
-  },
-  "apps/api/src/tests/security/unverifiedOrganizationMutation.test.ts": {
-   "total": 14,
-   "buckets": {
-    "d_test_fixture": 14
-   }
-  },
-  "apps/api/src/tests/security.test.ts": {
-   "total": 17,
-   "buckets": {
-    "d_test_fixture": 17
-   }
-  },
-  "apps/api/src/tests/smsTransport.test.ts": {
-   "total": 24,
-   "buckets": {
-    "d_test_fixture": 24
-   }
-  },
-  "apps/api/src/tests/snils.test.ts": {
-   "total": 8,
-   "buckets": {
-    "d_test_fixture": 8
-   }
-  },
-  "apps/api/src/tests/telegramMessageRender.test.ts": {
-   "total": 7,
-   "buckets": {
-    "d_test_fixture": 7
-   }
-  },
-  "apps/api/src/tests/telegramOutboxPartialDelivery.test.ts": {
-   "total": 85,
-   "buckets": {
-    "d_test_fixture": 85
-   }
-  },
-  "apps/api/src/tests/templateRenderer.test.ts": {
-   "total": 45,
-   "buckets": {
-    "d_test_fixture": 45
-   }
-  },
-  "apps/api/src/tests/visitFlow.test.ts": {
-   "total": 7,
-   "buckets": {
-    "d_test_fixture": 7
-   }
-  },
-  "apps/api/src/tests/waitlistMatching.test.ts": {
-   "total": 21,
-   "buckets": {
-    "d_test_fixture": 21
-   }
-  },
-  "apps/api/src/tests/webCallsExistingRoutes.test.ts": {
-   "total": 11,
-   "buckets": {
-    "d_test_fixture": 11
-   }
-  },
-  "apps/api/src/tests/websocketBroker.test.ts": {
-   "total": 12,
-   "buckets": {
-    "d_test_fixture": 12
-   }
-  },
-  "apps/api/src/text/repairMojibake.test.ts": {
-   "total": 7,
-   "buckets": {
-    "d_test_fixture": 7
-   }
-  },
-  "apps/api/src/treatment/TreatmentPlanBuilder.test.ts": {
-   "total": 3,
-   "buckets": {
-    "d_test_fixture": 3
-   }
-  },
-  "apps/api/src/treatment/TreatmentPlanBuilder.ts": {
-   "total": 13,
-   "buckets": {
-    "other": 5,
-    "log_only": 2,
-    "b_error_toast": 6
-   }
-  },
-  "apps/api/src/whatsappTransport.ts": {
-   "total": 4,
-   "buckets": {
-    "other": 4
-   }
-  },
-  "packages/shared/src/index.ts": {
-   "total": 1501,
-   "buckets": {
-    "b_error_toast": 106,
-    "dict_value": 363,
-    "other": 328,
-    "data_not_ui": 704
-   }
-  },
-  "packages/shared/src/migration.ts": {
-   "total": 22,
-   "buckets": {
-    "dict_value": 20,
-    "b_error_toast": 2
-   }
-  },
-  "packages/shared/src/tests/buildRuleBasedVisitDraftFromTranscript.test.ts": {
-   "total": 17,
-   "buckets": {
-    "d_test_fixture": 17
-   }
-  },
-  "packages/shared/src/tests/index.test.ts": {
-   "total": 16,
-   "buckets": {
-    "d_test_fixture": 16
-   }
-  },
-  "packages/shared/src/tests/money-contract-kopecks.test.ts": {
-   "total": 184,
-   "buckets": {
-    "d_test_fixture": 184
-   }
-  },
-  "packages/shared/src/tests/money.test.ts": {
-   "total": 27,
-   "buckets": {
-    "d_test_fixture": 27
-   }
-  },
-  "packages/shared/src/tests/speech-normalization.test.ts": {
-   "total": 14,
-   "buckets": {
-    "d_test_fixture": 14
-   }
-  },
-  "packages/shared/src/tests/strings.test.ts": {
-   "total": 3,
-   "buckets": {
-    "d_test_fixture": 3
-   }
-  },
-  "packages/shared/src/utils/money.ts": {
-   "total": 12,
-   "buckets": {
-    "b_error_toast": 12
-   }
-  }
- },
- "dictLookupsInJsx": 257,
- "dictLookupNames": {
-  "staffRoleLabels": 21,
-  "specialtyLabels": 11,
-  "clinicModeLabels": 5,
-  "pricelistSourceKindLabels": 1,
-  "importSourceLabels": 3,
-  "smartImportModeLabels": 3,
-  "ingestionTargetLabels": 4,
-  "imagingSourceLabels": 4,
-  "viewLabels": 12,
-  "severityLabels": 2,
-  "actionLabels": 1,
-  "communicationIntentLabels": 1,
-  "communicationChannelLabels": 3,
-  "communicationPriorityLabels": 1,
-  "communicationStatusLabels": 2,
-  "communicationTaskOutcomeLabels": 1,
-  "communicationDocumentTaskActionLabels": 1,
-  "documentLabels": 9,
-  "channelLabels": 6,
-  "campaignStatusLabels": 1,
-  "statusLabels": 5,
-  "intentLabels": 1,
-  "methodLabels": 2,
-  "paymentMethodLabels": 2,
-  "bucketLabels": 1,
-  "appointmentLabels": 3,
-  "appointmentStatusLabels": 1,
-  "materialLabels": 1,
-  "priorityLabels": 3,
-  "workspaceScopeLabels": 2,
-  "policyAuditEventLabels": 1,
-  "speechProviderModeLabels": 1,
-  "speechProviderHealthLabels": 1,
-  "recognitionTargetLabels": 1,
-  "localBridgeStatusLabels": 1,
-  "localBridgeUsePathLabels": 1,
-  "clinicPublicLookupProviderStatusLabels": 3,
-  "clinicPublicLookupSuggestionSourceLabels": 3,
-  "clinicPublicLookupFieldLabels": 4,
-  "migrationOperatorPacketStatusLabels": 4,
-  "migrationOwnerLabels": 10,
-  "migrationHandoffPhaseLabels": 2,
-  "migrationPriorityLabels": 1,
-  "migrationReadinessLevelLabels": 3,
-  "migrationBridgeKitKindLabels": 3,
-  "migrationBridgeKitStatusLabels": 3,
-  "migrationAdapterStatusLabels": 2,
-  "migrationAutomationLevelLabels": 2,
-  "migrationEntityLabels": 1,
-  "migrationWorkupStepStatusLabels": 1,
-  "smartImportMigrationPlanStatusLabels": 1,
-  "smartImportLineKindLabels": 1,
-  "localImagingOrganizerActionLabels": 1,
-  "localImagingModelRoleLabels": 2,
-  "localImagingModelWorkbenchTargetLabels": 2,
-  "dicomFolderWorkupPathLabels": 1,
-  "dicomFirstFrameStatusLabels": 1,
-  "imagingKindLabels": 9,
-  "importRowStatusLabels": 3,
-  "dicomSeriesViewerLabels": 2,
-  "mprLoadStrategyLabels": 3,
-  "mprResourceTierLabels": 3,
-  "documentIngestionQualityLabels": 1,
-  "serviceCategoryLabels": 2,
-  "pricelistParserModeLabels": 1,
-  "typedClinicalRuleActionLabels": 2,
-  "typedClinicalRuleSeverityLabels": 2,
-  "telegramModeLabels": 1,
-  "telegramModeHints": 1,
-  "telegramPrivacyModeHints": 1,
-  "telegramTemplateLabels": 2,
-  "telegramClassificationLabels": 1,
-  "typedTelegramInlineButtonKindLabels": 2,
-  "telegramOutboxStatusFilterLabels": 1,
-  "telegramOutboxTemplateFilterLabels": 1,
-  "telegramDeliveryStatusLabels": 1,
-  "mprProjectionLabels": 2,
-  "mprWindowPresetLabels": 2,
-  "mprToolLabels": 1,
-  "mprCacheModeLabels": 1,
-  "dicomViewerLaunchModeLabels": 3,
-  "dicomWebStatusLabels": 1,
-  "dicomRenderCachePriorityLabels": 2,
-  "dicomReadinessCheckLabels": 1,
-  "integrationCategoryLabels": 1,
-  "integrationStatusLabels": 1,
-  "integrationCapabilityLabels": 1,
-  "visitDraftQualityLabels": 1,
-  "workloadStateLabels": 1,
-  "ownerLabels": 2,
-  "toolStateTargetLabels": 1,
-  "documentSourceStatusClassNames": 4,
-  "documentSourceStatusLabels": 4,
-  "documentStatusLabels": 4,
-  "documentIssueSignatureModeLabels": 1,
-  "documentVoidReasonLabels": 1,
-  "documentActionLabels": 1,
-  "categoryLabels": 2,
-  "treatmentStatusLabels": 1,
-  "strategyLabels": 1,
-  "imagingViewerToolLabels": 1,
-  "patientInsightRiskLabels": 2,
-  "safeSpecialtyLabels": 2,
-  "viewHints": 3
- },
- "jsxExprRescued": 1048,
- "dataVarRescued": 1277
+	"buckets": {
+		"a_jsx_visible": 5280,
+		"dict_value": 3018,
+		"other": 4277,
+		"b_error_toast": 2306,
+		"data_not_ui": 9608,
+		"d_test_fixture": 4711,
+		"log_only": 116
+	},
+	"distinct": {
+		"a_jsx_visible": 4084,
+		"dict_value": 2062,
+		"other": 3535,
+		"b_error_toast": 1898,
+		"data_not_ui": 6296,
+		"d_test_fixture": 3819,
+		"log_only": 115
+	},
+	"perArea": {
+		"web|a_jsx_visible": 5280,
+		"web|dict_value": 2469,
+		"web|other": 2473,
+		"web|b_error_toast": 1477,
+		"web|data_not_ui": 807,
+		"web|d_test_fixture": 1599,
+		"web|log_only": 57,
+		"api|b_error_toast": 709,
+		"api|data_not_ui": 8097,
+		"api|other": 1476,
+		"api|log_only": 59,
+		"api|d_test_fixture": 2851,
+		"api|dict_value": 166,
+		"shared|b_error_toast": 120,
+		"shared|dict_value": 383,
+		"shared|other": 328,
+		"shared|data_not_ui": 704,
+		"shared|d_test_fixture": 261
+	},
+	"perFile": {
+		"apps/web/src/App.tsx": {
+			"total": 269,
+			"buckets": {
+				"a_jsx_visible": 269
+			}
+		},
+		"apps/web/src/AppBootState.tsx": {
+			"total": 8,
+			"buckets": {
+				"a_jsx_visible": 8
+			}
+		},
+		"apps/web/src/AppHelpers.tsx": {
+			"total": 476,
+			"buckets": {
+				"dict_value": 247,
+				"other": 127,
+				"b_error_toast": 98,
+				"data_not_ui": 4
+			}
+		},
+		"apps/web/src/AppShell.tsx": {
+			"total": 5,
+			"buckets": {
+				"other": 2,
+				"a_jsx_visible": 3
+			}
+		},
+		"apps/web/src/browserContinuity.ts": {
+			"total": 17,
+			"buckets": {
+				"dict_value": 6,
+				"other": 11
+			}
+		},
+		"apps/web/src/ClinicalRulePanel.tsx": {
+			"total": 23,
+			"buckets": {
+				"other": 5,
+				"a_jsx_visible": 18
+			}
+		},
+		"apps/web/src/CommunicationsView.tsx": {
+			"total": 43,
+			"buckets": {
+				"dict_value": 5,
+				"a_jsx_visible": 38
+			}
+		},
+		"apps/web/src/communicationTaskData.ts": {
+			"total": 31,
+			"buckets": {
+				"dict_value": 31
+			}
+		},
+		"apps/web/src/components/analytics/analyticsWidgetData.test.ts": {
+			"total": 37,
+			"buckets": {
+				"d_test_fixture": 37
+			}
+		},
+		"apps/web/src/components/analytics/analyticsWidgetData.ts": {
+			"total": 2,
+			"buckets": {
+				"other": 2
+			}
+		},
+		"apps/web/src/components/auth/AcceptInvite.tsx": {
+			"total": 12,
+			"buckets": {
+				"b_error_toast": 5,
+				"a_jsx_visible": 7
+			}
+		},
+		"apps/web/src/components/auth/ClinicLogin.tsx": {
+			"total": 11,
+			"buckets": {
+				"b_error_toast": 4,
+				"a_jsx_visible": 7
+			}
+		},
+		"apps/web/src/components/auth/Register.tsx": {
+			"total": 21,
+			"buckets": {
+				"b_error_toast": 9,
+				"a_jsx_visible": 12
+			}
+		},
+		"apps/web/src/components/auth/StaffPinPad.tsx": {
+			"total": 17,
+			"buckets": {
+				"log_only": 1,
+				"other": 5,
+				"b_error_toast": 1,
+				"a_jsx_visible": 10
+			}
+		},
+		"apps/web/src/components/auth/UserLogin.tsx": {
+			"total": 11,
+			"buckets": {
+				"b_error_toast": 4,
+				"a_jsx_visible": 7
+			}
+		},
+		"apps/web/src/components/auth/__tests__/AuthArtBackground.test.ts": {
+			"total": 7,
+			"buckets": {
+				"d_test_fixture": 7
+			}
+		},
+		"apps/web/src/components/CommandPalette.tsx": {
+			"total": 7,
+			"buckets": {
+				"b_error_toast": 5,
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/communications/CampaignPanel.tsx": {
+			"total": 63,
+			"buckets": {
+				"dict_value": 7,
+				"other": 1,
+				"b_error_toast": 7,
+				"a_jsx_visible": 48
+			}
+		},
+		"apps/web/src/components/communications/MessageDeliveryConsole.tsx": {
+			"total": 117,
+			"buckets": {
+				"dict_value": 19,
+				"other": 11,
+				"b_error_toast": 15,
+				"a_jsx_visible": 72
+			}
+		},
+		"apps/web/src/components/crm/CustomCrmTaskTypesWidget.tsx": {
+			"total": 10,
+			"buckets": {
+				"a_jsx_visible": 10
+			}
+		},
+		"apps/web/src/components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx": {
+			"total": 12,
+			"buckets": {
+				"other": 1,
+				"a_jsx_visible": 11
+			}
+		},
+		"apps/web/src/components/crm/PatientCommunicationTimelinesWidget.tsx": {
+			"total": 2,
+			"buckets": {
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/crm/PatientDuplicateMergeQueuesWidget.tsx": {
+			"total": 31,
+			"buckets": {
+				"other": 1,
+				"b_error_toast": 2,
+				"a_jsx_visible": 28
+			}
+		},
+		"apps/web/src/components/dicom/BoneQualityPanel.tsx": {
+			"total": 11,
+			"buckets": {
+				"a_jsx_visible": 11
+			}
+		},
+		"apps/web/src/components/dicom/Cornerstone3DViewer.tsx": {
+			"total": 12,
+			"buckets": {
+				"log_only": 1,
+				"other": 6,
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/components/dicom/DicomArchiveUploader.tsx": {
+			"total": 19,
+			"buckets": {
+				"other": 12,
+				"log_only": 1,
+				"a_jsx_visible": 6
+			}
+		},
+		"apps/web/src/components/dicom/DicomToolbar.tsx": {
+			"total": 25,
+			"buckets": {
+				"a_jsx_visible": 25
+			}
+		},
+		"apps/web/src/components/dicom/panoramicArch.ts": {
+			"total": 9,
+			"buckets": {
+				"dict_value": 6,
+				"other": 3
+			}
+		},
+		"apps/web/src/components/dicom/ViewportOverlays.tsx": {
+			"total": 2,
+			"buckets": {
+				"other": 1,
+				"a_jsx_visible": 1
+			}
+		},
+		"apps/web/src/components/documents/AnamnesisField.tsx": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/web/src/components/documents/DocumentPayloadCard.tsx": {
+			"total": 1,
+			"buckets": {
+				"a_jsx_visible": 1
+			}
+		},
+		"apps/web/src/components/documents/DocumentUkepSignButton.tsx": {
+			"total": 19,
+			"buckets": {
+				"b_error_toast": 7,
+				"a_jsx_visible": 12
+			}
+		},
+		"apps/web/src/components/documents/forms/AnesthesiaConsentLogForm.tsx": {
+			"total": 24,
+			"buckets": {
+				"a_jsx_visible": 24
+			}
+		},
+		"apps/web/src/components/documents/forms/InformedConsentForm.tsx": {
+			"total": 22,
+			"buckets": {
+				"a_jsx_visible": 22
+			}
+		},
+		"apps/web/src/components/documents/forms/MedicalInterventionRefusalForm.tsx": {
+			"total": 34,
+			"buckets": {
+				"other": 16,
+				"a_jsx_visible": 18
+			}
+		},
+		"apps/web/src/components/documents/forms/PersonalDataProcessingConsentForm.tsx": {
+			"total": 19,
+			"buckets": {
+				"a_jsx_visible": 19
+			}
+		},
+		"apps/web/src/components/documents/forms/PhotoVideoConsentForm.tsx": {
+			"total": 11,
+			"buckets": {
+				"a_jsx_visible": 11
+			}
+		},
+		"apps/web/src/components/documents/forms/ProcedureSpecificConsentForm.tsx": {
+			"total": 25,
+			"buckets": {
+				"a_jsx_visible": 25
+			}
+		},
+		"apps/web/src/components/documents/forms/TaxDeductionApplicationForm.tsx": {
+			"total": 17,
+			"buckets": {
+				"a_jsx_visible": 17
+			}
+		},
+		"apps/web/src/components/EgiszMonitor.tsx": {
+			"total": 9,
+			"buckets": {
+				"other": 2,
+				"a_jsx_visible": 7
+			}
+		},
+		"apps/web/src/components/ErrorBoundary.tsx": {
+			"total": 3,
+			"buckets": {
+				"a_jsx_visible": 3
+			}
+		},
+		"apps/web/src/components/finance/cashDaySummary.test.ts": {
+			"total": 18,
+			"buckets": {
+				"d_test_fixture": 18
+			}
+		},
+		"apps/web/src/components/finance/CashDayTally.tsx": {
+			"total": 25,
+			"buckets": {
+				"other": 8,
+				"a_jsx_visible": 17
+			}
+		},
+		"apps/web/src/components/finance/FamilyWalletPanel.tsx": {
+			"total": 33,
+			"buckets": {
+				"dict_value": 5,
+				"log_only": 1,
+				"other": 3,
+				"b_error_toast": 10,
+				"a_jsx_visible": 14
+			}
+		},
+		"apps/web/src/components/finance/paymentComposerReset.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/web/src/components/GlobalToast.tsx": {
+			"total": 1,
+			"buckets": {
+				"a_jsx_visible": 1
+			}
+		},
+		"apps/web/src/components/HelpHUD.tsx": {
+			"total": 16,
+			"buckets": {
+				"other": 7,
+				"a_jsx_visible": 9
+			}
+		},
+		"apps/web/src/components/imaging/ShadowAnalystImageSlider.tsx": {
+			"total": 5,
+			"buckets": {
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/components/imaging/ShadowAnalystReport.tsx": {
+			"total": 10,
+			"buckets": {
+				"other": 2,
+				"a_jsx_visible": 8
+			}
+		},
+		"apps/web/src/components/imaging/VisiographAnalyzer.tsx": {
+			"total": 66,
+			"buckets": {
+				"dict_value": 20,
+				"b_error_toast": 5,
+				"log_only": 7,
+				"other": 11,
+				"a_jsx_visible": 23
+			}
+		},
+		"apps/web/src/components/IncomingCallToast.tsx": {
+			"total": 15,
+			"buckets": {
+				"a_jsx_visible": 15
+			}
+		},
+		"apps/web/src/components/integrations/DadataGeocodedAddressesWidget.tsx": {
+			"total": 5,
+			"buckets": {
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx": {
+			"total": 10,
+			"buckets": {
+				"a_jsx_visible": 10
+			}
+		},
+		"apps/web/src/components/integrations/LandingFieldMappingsWidget.tsx": {
+			"total": 5,
+			"buckets": {
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/components/integrations/YandexCalendarSyncsWidget.tsx": {
+			"total": 6,
+			"buckets": {
+				"a_jsx_visible": 6
+			}
+		},
+		"apps/web/src/components/inventory/InventoryConfirmDialog.tsx": {
+			"total": 2,
+			"buckets": {
+				"other": 1,
+				"a_jsx_visible": 1
+			}
+		},
+		"apps/web/src/components/inventory/useInventoryLogic.ts": {
+			"total": 30,
+			"buckets": {
+				"b_error_toast": 30
+			}
+		},
+		"apps/web/src/components/InventoryView.tsx": {
+			"total": 90,
+			"buckets": {
+				"b_error_toast": 4,
+				"other": 8,
+				"a_jsx_visible": 78
+			}
+		},
+		"apps/web/src/components/leads/LeadsKanbanView.tsx": {
+			"total": 52,
+			"buckets": {
+				"other": 6,
+				"b_error_toast": 13,
+				"a_jsx_visible": 33
+			}
+		},
+		"apps/web/src/components/marketing/FamilyRecommendationSourcesWidget.tsx": {
+			"total": 8,
+			"buckets": {
+				"a_jsx_visible": 8
+			}
+		},
+		"apps/web/src/components/odontogram/OdontogramModule.tsx": {
+			"total": 26,
+			"buckets": {
+				"dict_value": 8,
+				"b_error_toast": 2,
+				"a_jsx_visible": 16
+			}
+		},
+		"apps/web/src/components/odontogram/ToothChart.tsx": {
+			"total": 14,
+			"buckets": {
+				"dict_value": 8,
+				"a_jsx_visible": 6
+			}
+		},
+		"apps/web/src/components/odontogram/ToothHistoryChronicle.tsx": {
+			"total": 3,
+			"buckets": {
+				"a_jsx_visible": 3
+			}
+		},
+		"apps/web/src/components/odontogram/TreatmentEstimator.tsx": {
+			"total": 53,
+			"buckets": {
+				"dict_value": 5,
+				"log_only": 5,
+				"b_error_toast": 9,
+				"other": 3,
+				"a_jsx_visible": 31
+			}
+		},
+		"apps/web/src/components/odontogram/treatmentEstimatorPricing.test.ts": {
+			"total": 80,
+			"buckets": {
+				"d_test_fixture": 80
+			}
+		},
+		"apps/web/src/components/odontogram/treatmentEstimatorPricing.ts": {
+			"total": 25,
+			"buckets": {
+				"other": 25
+			}
+		},
+		"apps/web/src/components/odontogram/VoiceDictationOverlay.tsx": {
+			"total": 4,
+			"buckets": {
+				"other": 1,
+				"a_jsx_visible": 3
+			}
+		},
+		"apps/web/src/components/Odontogram.tsx": {
+			"total": 2,
+			"buckets": {
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/Omnibar.tsx": {
+			"total": 29,
+			"buckets": {
+				"b_error_toast": 12,
+				"other": 12,
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/components/patient/PatientAdministrativeForm.tsx": {
+			"total": 31,
+			"buckets": {
+				"a_jsx_visible": 31
+			}
+		},
+		"apps/web/src/components/PatientAvatar.tsx": {
+			"total": 45,
+			"buckets": {
+				"other": 44,
+				"a_jsx_visible": 1
+			}
+		},
+		"apps/web/src/components/PatientJourneyTimeline.tsx": {
+			"total": 42,
+			"buckets": {
+				"dict_value": 28,
+				"other": 2,
+				"b_error_toast": 4,
+				"a_jsx_visible": 8
+			}
+		},
+		"apps/web/src/components/PatientPortal.tsx": {
+			"total": 49,
+			"buckets": {
+				"a_jsx_visible": 38,
+				"other": 9,
+				"log_only": 1,
+				"b_error_toast": 1
+			}
+		},
+		"apps/web/src/components/patients/OrthodonticProgressWidget.tsx": {
+			"total": 21,
+			"buckets": {
+				"b_error_toast": 6,
+				"a_jsx_visible": 15
+			}
+		},
+		"apps/web/src/components/patients/PatientArchiveAndBlacklistWidget.tsx": {
+			"total": 31,
+			"buckets": {
+				"dict_value": 5,
+				"b_error_toast": 8,
+				"a_jsx_visible": 18
+			}
+		},
+		"apps/web/src/components/patients/PatientCommunicationTimelineWidget.tsx": {
+			"total": 49,
+			"buckets": {
+				"other": 1,
+				"dict_value": 24,
+				"a_jsx_visible": 24
+			}
+		},
+		"apps/web/src/components/patients/PatientDuplicateAlert.tsx": {
+			"total": 19,
+			"buckets": {
+				"other": 1,
+				"b_error_toast": 2,
+				"a_jsx_visible": 16
+			}
+		},
+		"apps/web/src/components/patients/PatientFamilyCard.tsx": {
+			"total": 26,
+			"buckets": {
+				"b_error_toast": 8,
+				"a_jsx_visible": 18
+			}
+		},
+		"apps/web/src/components/patients/PatientLoyaltyHeader.tsx": {
+			"total": 8,
+			"buckets": {
+				"dict_value": 4,
+				"b_error_toast": 2,
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/patients/PatientNoShowRisk.tsx": {
+			"total": 13,
+			"buckets": {
+				"other": 4,
+				"a_jsx_visible": 9
+			}
+		},
+		"apps/web/src/components/patients/PatientOverviewTab.tsx": {
+			"total": 4,
+			"buckets": {
+				"other": 2,
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/patients/PatientReclamationsWidget.tsx": {
+			"total": 44,
+			"buckets": {
+				"dict_value": 5,
+				"b_error_toast": 17,
+				"other": 1,
+				"a_jsx_visible": 21
+			}
+		},
+		"apps/web/src/components/patients/PatientTaskTicketsWidget.tsx": {
+			"total": 34,
+			"buckets": {
+				"dict_value": 5,
+				"b_error_toast": 15,
+				"a_jsx_visible": 14
+			}
+		},
+		"apps/web/src/components/patients/RecallListPanel.tsx": {
+			"total": 37,
+			"buckets": {
+				"dict_value": 6,
+				"other": 4,
+				"b_error_toast": 3,
+				"a_jsx_visible": 24
+			}
+		},
+		"apps/web/src/components/plan/ComparativePlannerDashboard.tsx": {
+			"total": 103,
+			"buckets": {
+				"other": 23,
+				"b_error_toast": 18,
+				"a_jsx_visible": 62
+			}
+		},
+		"apps/web/src/components/plan/planPricing.ts": {
+			"total": 35,
+			"buckets": {
+				"dict_value": 14,
+				"other": 21
+			}
+		},
+		"apps/web/src/components/reports/ManagerReportsPanel.tsx": {
+			"total": 108,
+			"buckets": {
+				"dict_value": 5,
+				"other": 11,
+				"a_jsx_visible": 92
+			}
+		},
+		"apps/web/src/components/schedule/AppointmentCard.tsx": {
+			"total": 48,
+			"buckets": {
+				"a_jsx_visible": 48
+			}
+		},
+		"apps/web/src/components/schedule/DayConfirmationsPanel.tsx": {
+			"total": 56,
+			"buckets": {
+				"dict_value": 14,
+				"other": 3,
+				"a_jsx_visible": 39
+			}
+		},
+		"apps/web/src/components/schedule/FreedSlotsPanel.tsx": {
+			"total": 27,
+			"buckets": {
+				"other": 4,
+				"b_error_toast": 1,
+				"a_jsx_visible": 22
+			}
+		},
+		"apps/web/src/components/schedule/LabOrdersPanel.tsx": {
+			"total": 51,
+			"buckets": {
+				"other": 1,
+				"b_error_toast": 11,
+				"dict_value": 11,
+				"a_jsx_visible": 28
+			}
+		},
+		"apps/web/src/components/schedule/NewAppointmentForm.tsx": {
+			"total": 45,
+			"buckets": {
+				"a_jsx_visible": 45
+			}
+		},
+		"apps/web/src/components/schedule/scheduleDayGrouping.test.ts": {
+			"total": 33,
+			"buckets": {
+				"d_test_fixture": 33
+			}
+		},
+		"apps/web/src/components/schedule/scheduleDayGrouping.ts": {
+			"total": 8,
+			"buckets": {
+				"other": 8
+			}
+		},
+		"apps/web/src/components/schedule/WaitlistDrawer.tsx": {
+			"total": 52,
+			"buckets": {
+				"other": 10,
+				"dict_value": 8,
+				"b_error_toast": 14,
+				"a_jsx_visible": 20
+			}
+		},
+		"apps/web/src/components/settings/InsuranceContractsPanel.tsx": {
+			"total": 39,
+			"buckets": {
+				"b_error_toast": 15,
+				"a_jsx_visible": 24
+			}
+		},
+		"apps/web/src/components/settings/MaxSettingsPanel.tsx": {
+			"total": 24,
+			"buckets": {
+				"a_jsx_visible": 24
+			}
+		},
+		"apps/web/src/components/settings/MessengerRoutingRules.tsx": {
+			"total": 13,
+			"buckets": {
+				"dict_value": 6,
+				"a_jsx_visible": 7
+			}
+		},
+		"apps/web/src/components/settings/MigrationWizard.tsx": {
+			"total": 102,
+			"buckets": {
+				"dict_value": 15,
+				"other": 4,
+				"b_error_toast": 9,
+				"a_jsx_visible": 74
+			}
+		},
+		"apps/web/src/components/settings/SettingsAccessTab.tsx": {
+			"total": 28,
+			"buckets": {
+				"b_error_toast": 5,
+				"a_jsx_visible": 23
+			}
+		},
+		"apps/web/src/components/settings/SettingsAiTab.tsx": {
+			"total": 34,
+			"buckets": {
+				"a_jsx_visible": 34
+			}
+		},
+		"apps/web/src/components/settings/SettingsAuditTab.tsx": {
+			"total": 455,
+			"buckets": {
+				"dict_value": 194,
+				"other": 47,
+				"data_not_ui": 131,
+				"b_error_toast": 21,
+				"a_jsx_visible": 62
+			}
+		},
+		"apps/web/src/components/settings/SettingsBpmnTab.tsx": {
+			"total": 29,
+			"buckets": {
+				"dict_value": 5,
+				"b_error_toast": 6,
+				"a_jsx_visible": 18
+			}
+		},
+		"apps/web/src/components/settings/SettingsClinicTab.tsx": {
+			"total": 133,
+			"buckets": {
+				"other": 1,
+				"dict_value": 6,
+				"b_error_toast": 6,
+				"a_jsx_visible": 120
+			}
+		},
+		"apps/web/src/components/settings/SettingsImportsTab.tsx": {
+			"total": 853,
+			"buckets": {
+				"dict_value": 194,
+				"other": 47,
+				"data_not_ui": 131,
+				"b_error_toast": 21,
+				"a_jsx_visible": 460
+			}
+		},
+		"apps/web/src/components/settings/SettingsMarketingTab.tsx": {
+			"total": 20,
+			"buckets": {
+				"other": 1,
+				"b_error_toast": 2,
+				"a_jsx_visible": 17
+			}
+		},
+		"apps/web/src/components/settings/SettingsMessengersTab.tsx": {
+			"total": 6,
+			"buckets": {
+				"a_jsx_visible": 6
+			}
+		},
+		"apps/web/src/components/settings/SettingsModulesTab.tsx": {
+			"total": 2,
+			"buckets": {
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/settings/SettingsPricesTab.tsx": {
+			"total": 69,
+			"buckets": {
+				"b_error_toast": 3,
+				"other": 3,
+				"a_jsx_visible": 63
+			}
+		},
+		"apps/web/src/components/settings/SettingsProfileTab.tsx": {
+			"total": 42,
+			"buckets": {
+				"b_error_toast": 13,
+				"a_jsx_visible": 28,
+				"other": 1
+			}
+		},
+		"apps/web/src/components/settings/SettingsProtocolsTab.tsx": {
+			"total": 39,
+			"buckets": {
+				"log_only": 2,
+				"b_error_toast": 6,
+				"other": 1,
+				"a_jsx_visible": 30
+			}
+		},
+		"apps/web/src/components/settings/SettingsReportingTab.tsx": {
+			"total": 26,
+			"buckets": {
+				"b_error_toast": 6,
+				"a_jsx_visible": 19,
+				"other": 1
+			}
+		},
+		"apps/web/src/components/settings/SettingsRulesTab.tsx": {
+			"total": 47,
+			"buckets": {
+				"a_jsx_visible": 47
+			}
+		},
+		"apps/web/src/components/settings/SettingsStaffTab.tsx": {
+			"total": 31,
+			"buckets": {
+				"b_error_toast": 9,
+				"a_jsx_visible": 22
+			}
+		},
+		"apps/web/src/components/settings/SettingsTelegramTab.tsx": {
+			"total": 161,
+			"buckets": {
+				"b_error_toast": 2,
+				"other": 3,
+				"a_jsx_visible": 156
+			}
+		},
+		"apps/web/src/components/settings/SettingsViewHelpers.tsx": {
+			"total": 352,
+			"buckets": {
+				"dict_value": 194,
+				"other": 27,
+				"data_not_ui": 131
+			}
+		},
+		"apps/web/src/components/settings/SingleSessionEnforcementsWidget.tsx": {
+			"total": 6,
+			"buckets": {
+				"a_jsx_visible": 6
+			}
+		},
+		"apps/web/src/components/settings/sources/SourcesConnectorGrid.tsx": {
+			"total": 1,
+			"buckets": {
+				"a_jsx_visible": 1
+			}
+		},
+		"apps/web/src/components/settings/sources/SourcesDicomCapability.tsx": {
+			"total": 191,
+			"buckets": {
+				"a_jsx_visible": 191
+			}
+		},
+		"apps/web/src/components/settings/sources/SourcesIntegrationPresets.tsx": {
+			"total": 7,
+			"buckets": {
+				"a_jsx_visible": 7
+			}
+		},
+		"apps/web/src/components/settings/WhatsappSettingsPanel.tsx": {
+			"total": 34,
+			"buckets": {
+				"dict_value": 7,
+				"a_jsx_visible": 27
+			}
+		},
+		"apps/web/src/components/SignaturePad.tsx": {
+			"total": 10,
+			"buckets": {
+				"a_jsx_visible": 10
+			}
+		},
+		"apps/web/src/components/SmartMicrophoneButton.tsx": {
+			"total": 2,
+			"buckets": {
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/TourEngine.tsx": {
+			"total": 24,
+			"buckets": {
+				"dict_value": 22,
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/useVisitDiaryLogic.ts": {
+			"total": 36,
+			"buckets": {
+				"dict_value": 5,
+				"log_only": 6,
+				"b_error_toast": 21,
+				"other": 4
+			}
+		},
+		"apps/web/src/components/visit/CompletedServicesChecklist.tsx": {
+			"total": 14,
+			"buckets": {
+				"other": 6,
+				"a_jsx_visible": 8
+			}
+		},
+		"apps/web/src/components/visit/CryptoProSigner.tsx": {
+			"total": 35,
+			"buckets": {
+				"other": 11,
+				"log_only": 3,
+				"a_jsx_visible": 21
+			}
+		},
+		"apps/web/src/components/visit/DoctorDesktopHeader.tsx": {
+			"total": 8,
+			"buckets": {
+				"other": 1,
+				"a_jsx_visible": 7
+			}
+		},
+		"apps/web/src/components/visit/VisitDictation.tsx": {
+			"total": 29,
+			"buckets": {
+				"a_jsx_visible": 29
+			}
+		},
+		"apps/web/src/components/visit/VisitEmkTab.tsx": {
+			"total": 52,
+			"buckets": {
+				"b_error_toast": 6,
+				"a_jsx_visible": 46
+			}
+		},
+		"apps/web/src/components/visit/VisitFlowProgress.tsx": {
+			"total": 12,
+			"buckets": {
+				"b_error_toast": 4,
+				"a_jsx_visible": 8
+			}
+		},
+		"apps/web/src/components/visit/VisitOdontogramTab.tsx": {
+			"total": 4,
+			"buckets": {
+				"a_jsx_visible": 4
+			}
+		},
+		"apps/web/src/components/visit/VisitSpecialtyFocus.tsx": {
+			"total": 6,
+			"buckets": {
+				"other": 1,
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/components/VisitDiaryEditor.tsx": {
+			"total": 46,
+			"buckets": {
+				"a_jsx_visible": 46
+			}
+		},
+		"apps/web/src/components/VisitDiaryPhotoUpload.tsx": {
+			"total": 8,
+			"buckets": {
+				"b_error_toast": 2,
+				"a_jsx_visible": 6
+			}
+		},
+		"apps/web/src/components/VisitDiaryTemplateSelector.tsx": {
+			"total": 3,
+			"buckets": {
+				"other": 1,
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/workspace/onboarding/steps/Step1Specializations.tsx": {
+			"total": 9,
+			"buckets": {
+				"a_jsx_visible": 9
+			}
+		},
+		"apps/web/src/components/workspace/onboarding/steps/Step2Infrastructure.tsx": {
+			"total": 4,
+			"buckets": {
+				"a_jsx_visible": 4
+			}
+		},
+		"apps/web/src/components/workspace/onboarding/steps/Step3Modules.tsx": {
+			"total": 11,
+			"buckets": {
+				"b_error_toast": 11
+			}
+		},
+		"apps/web/src/components/workspace/onboarding/steps/Step4Branding.tsx": {
+			"total": 1,
+			"buckets": {
+				"a_jsx_visible": 1
+			}
+		},
+		"apps/web/src/components/workspace/onboarding/steps/Step5Staff.tsx": {
+			"total": 27,
+			"buckets": {
+				"a_jsx_visible": 22,
+				"other": 5
+			}
+		},
+		"apps/web/src/components/workspace/onboarding/steps/Step6Legal.tsx": {
+			"total": 9,
+			"buckets": {
+				"a_jsx_visible": 9
+			}
+		},
+		"apps/web/src/components/workspace/onboarding/steps/Step7Migration.tsx": {
+			"total": 8,
+			"buckets": {
+				"a_jsx_visible": 8
+			}
+		},
+		"apps/web/src/components/workspace/onboarding/ui/SharedOnboardingUI.tsx": {
+			"total": 10,
+			"buckets": {
+				"b_error_toast": 5,
+				"other": 5
+			}
+		},
+		"apps/web/src/components/workspace/onboarding/useOnboardingLogic.ts": {
+			"total": 3,
+			"buckets": {
+				"other": 3
+			}
+		},
+		"apps/web/src/components/workspace/OnboardingSetupWizard.tsx": {
+			"total": 21,
+			"buckets": {
+				"a_jsx_visible": 21
+			}
+		},
+		"apps/web/src/components/workspace/RecentPatientHistoryWidget.tsx": {
+			"total": 13,
+			"buckets": {
+				"b_error_toast": 1,
+				"a_jsx_visible": 12
+			}
+		},
+		"apps/web/src/components/workspace/shift/RoleFocusStrip.tsx": {
+			"total": 10,
+			"buckets": {
+				"a_jsx_visible": 10
+			}
+		},
+		"apps/web/src/components/workspace/shift/ShiftIntelligence.tsx": {
+			"total": 16,
+			"buckets": {
+				"a_jsx_visible": 16
+			}
+		},
+		"apps/web/src/components/workspace/WorkspaceFeaturesSelector.tsx": {
+			"total": 47,
+			"buckets": {
+				"b_error_toast": 45,
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/components/workspaceActions/workspaceActionsLabels.ts": {
+			"total": 63,
+			"buckets": {
+				"other": 3,
+				"dict_value": 59,
+				"b_error_toast": 1
+			}
+		},
+		"apps/web/src/components/workspaceActions/workspaceActionsPlacement.test.ts": {
+			"total": 67,
+			"buckets": {
+				"d_test_fixture": 67
+			}
+		},
+		"apps/web/src/ctPlanningArtifactCommands.ts": {
+			"total": 48,
+			"buckets": {
+				"b_error_toast": 24,
+				"other": 24
+			}
+		},
+		"apps/web/src/ctPlanningArtifactPanel.tsx": {
+			"total": 6,
+			"buckets": {
+				"a_jsx_visible": 6
+			}
+		},
+		"apps/web/src/ctPlanningCatalog.ts": {
+			"total": 124,
+			"buckets": {
+				"b_error_toast": 42,
+				"other": 58,
+				"dict_value": 24
+			}
+		},
+		"apps/web/src/ctPlanningExport.ts": {
+			"total": 78,
+			"buckets": {
+				"other": 60,
+				"b_error_toast": 18
+			}
+		},
+		"apps/web/src/ctPlanningExportPanel.tsx": {
+			"total": 32,
+			"buckets": {
+				"dict_value": 6,
+				"b_error_toast": 10,
+				"other": 1,
+				"a_jsx_visible": 15
+			}
+		},
+		"apps/web/src/ctPlanningExportScenarioPanel.tsx": {
+			"total": 7,
+			"buckets": {
+				"other": 3,
+				"a_jsx_visible": 4
+			}
+		},
+		"apps/web/src/ctPlanningExportScenarioSummary.ts": {
+			"total": 66,
+			"buckets": {
+				"dict_value": 57,
+				"other": 9
+			}
+		},
+		"apps/web/src/ctPlanningGeometry.ts": {
+			"total": 24,
+			"buckets": {
+				"other": 19,
+				"b_error_toast": 3,
+				"dict_value": 2
+			}
+		},
+		"apps/web/src/ctPlanningGeometryGridPanel.tsx": {
+			"total": 1,
+			"buckets": {
+				"a_jsx_visible": 1
+			}
+		},
+		"apps/web/src/ctPlanningImplantFit.ts": {
+			"total": 33,
+			"buckets": {
+				"b_error_toast": 1,
+				"other": 32
+			}
+		},
+		"apps/web/src/ctPlanningImplantFitPanel.tsx": {
+			"total": 20,
+			"buckets": {
+				"other": 8,
+				"a_jsx_visible": 12
+			}
+		},
+		"apps/web/src/ctPlanningImplantLibraryPanel.tsx": {
+			"total": 7,
+			"buckets": {
+				"a_jsx_visible": 7
+			}
+		},
+		"apps/web/src/ctPlanningImplantModel.ts": {
+			"total": 69,
+			"buckets": {
+				"other": 45,
+				"dict_value": 9,
+				"b_error_toast": 15
+			}
+		},
+		"apps/web/src/ctPlanningImplantModelPanel.tsx": {
+			"total": 24,
+			"buckets": {
+				"other": 6,
+				"b_error_toast": 5,
+				"a_jsx_visible": 13
+			}
+		},
+		"apps/web/src/ctPlanningMeasurementPanel.tsx": {
+			"total": 7,
+			"buckets": {
+				"a_jsx_visible": 7
+			}
+		},
+		"apps/web/src/ctPlanningMeasurementPlan.ts": {
+			"total": 69,
+			"buckets": {
+				"other": 52,
+				"b_error_toast": 17
+			}
+		},
+		"apps/web/src/ctPlanningMetricGridPanel.tsx": {
+			"total": 1,
+			"buckets": {
+				"a_jsx_visible": 1
+			}
+		},
+		"apps/web/src/ctPlanningPlanBoardPanel.tsx": {
+			"total": 16,
+			"buckets": {
+				"dict_value": 3,
+				"a_jsx_visible": 13
+			}
+		},
+		"apps/web/src/ctPlanningQuickActionsPanel.tsx": {
+			"total": 4,
+			"buckets": {
+				"a_jsx_visible": 4
+			}
+		},
+		"apps/web/src/ctPlanningReconstruction.ts": {
+			"total": 54,
+			"buckets": {
+				"other": 36,
+				"b_error_toast": 18
+			}
+		},
+		"apps/web/src/ctPlanningReconstructionPanel.tsx": {
+			"total": 13,
+			"buckets": {
+				"a_jsx_visible": 13
+			}
+		},
+		"apps/web/src/ctPlanningReport.ts": {
+			"total": 22,
+			"buckets": {
+				"other": 13,
+				"b_error_toast": 6,
+				"dict_value": 3
+			}
+		},
+		"apps/web/src/ctPlanningState.ts": {
+			"total": 58,
+			"buckets": {
+				"dict_value": 33,
+				"other": 12,
+				"b_error_toast": 13
+			}
+		},
+		"apps/web/src/ctPlanningTaskBoardPanel.tsx": {
+			"total": 3,
+			"buckets": {
+				"a_jsx_visible": 3
+			}
+		},
+		"apps/web/src/ctPlanningToolGridPanel.tsx": {
+			"total": 2,
+			"buckets": {
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/ctPlanningTools.tsx": {
+			"total": 11,
+			"buckets": {
+				"dict_value": 3,
+				"other": 5,
+				"a_jsx_visible": 3
+			}
+		},
+		"apps/web/src/ctPlanningValidation.ts": {
+			"total": 48,
+			"buckets": {
+				"dict_value": 3,
+				"b_error_toast": 26,
+				"other": 19
+			}
+		},
+		"apps/web/src/ctPlanningValidationPanel.tsx": {
+			"total": 2,
+			"buckets": {
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/ctPlanningViewerBridgeLaunch.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/web/src/ctPlanningViewerRestore.ts": {
+			"total": 7,
+			"buckets": {
+				"other": 7
+			}
+		},
+		"apps/web/src/ctPlanningWorkflowPanel.tsx": {
+			"total": 10,
+			"buckets": {
+				"dict_value": 5,
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/ctPlanningWorkflowPlan.ts": {
+			"total": 36,
+			"buckets": {
+				"other": 24,
+				"b_error_toast": 12
+			}
+		},
+		"apps/web/src/DictationHints.tsx": {
+			"total": 25,
+			"buckets": {
+				"a_jsx_visible": 25
+			}
+		},
+		"apps/web/src/documentLogic.test.ts": {
+			"total": 2,
+			"buckets": {
+				"d_test_fixture": 2
+			}
+		},
+		"apps/web/src/documentLogic.ts": {
+			"total": 68,
+			"buckets": {
+				"other": 67,
+				"b_error_toast": 1
+			}
+		},
+		"apps/web/src/DocumentsView.tsx": {
+			"total": 774,
+			"buckets": {
+				"other": 47,
+				"a_jsx_visible": 727
+			}
+		},
+		"apps/web/src/documentValidators.ts": {
+			"total": 335,
+			"buckets": {
+				"other": 335
+			}
+		},
+		"apps/web/src/FinanceLedger.tsx": {
+			"total": 20,
+			"buckets": {
+				"a_jsx_visible": 20
+			}
+		},
+		"apps/web/src/FinancePlanning.tsx": {
+			"total": 34,
+			"buckets": {
+				"a_jsx_visible": 34
+			}
+		},
+		"apps/web/src/FinanceView.tsx": {
+			"total": 5,
+			"buckets": {
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/GuestLabPortal.tsx": {
+			"total": 30,
+			"buckets": {
+				"b_error_toast": 4,
+				"a_jsx_visible": 19,
+				"dict_value": 7
+			}
+		},
+		"apps/web/src/hooks/domains/useAuthLogic.ts": {
+			"total": 3,
+			"buckets": {
+				"b_error_toast": 3
+			}
+		},
+		"apps/web/src/hooks/domains/usePatientLogic.ts": {
+			"total": 16,
+			"buckets": {
+				"other": 3,
+				"b_error_toast": 13
+			}
+		},
+		"apps/web/src/hooks/domains/useScheduleLogic.ts": {
+			"total": 26,
+			"buckets": {
+				"other": 17,
+				"b_error_toast": 9
+			}
+		},
+		"apps/web/src/hooks/domains/useVisitLogic.ts": {
+			"total": 103,
+			"buckets": {
+				"other": 60,
+				"b_error_toast": 43
+			}
+		},
+		"apps/web/src/hooks/messengerSettingsLoad.test.ts": {
+			"total": 22,
+			"buckets": {
+				"d_test_fixture": 22
+			}
+		},
+		"apps/web/src/hooks/useMaxSettings.ts": {
+			"total": 14,
+			"buckets": {
+				"dict_value": 5,
+				"other": 4,
+				"log_only": 5
+			}
+		},
+		"apps/web/src/hooks/useMprLogic.ts": {
+			"total": 27,
+			"buckets": {
+				"dict_value": 6,
+				"b_error_toast": 17,
+				"other": 4
+			}
+		},
+		"apps/web/src/hooks/useOfflineQueue.ts": {
+			"total": 4,
+			"buckets": {
+				"b_error_toast": 4
+			}
+		},
+		"apps/web/src/hooks/usePatientResource.ts": {
+			"total": 2,
+			"buckets": {
+				"log_only": 2
+			}
+		},
+		"apps/web/src/hooks/useShortDictation.ts": {
+			"total": 5,
+			"buckets": {
+				"b_error_toast": 5
+			}
+		},
+		"apps/web/src/hooks/useTelegramSettings.ts": {
+			"total": 17,
+			"buckets": {
+				"other": 10,
+				"b_error_toast": 7
+			}
+		},
+		"apps/web/src/hooks/useVoiceAssistant.ts": {
+			"total": 16,
+			"buckets": {
+				"log_only": 4,
+				"other": 6,
+				"b_error_toast": 6
+			}
+		},
+		"apps/web/src/hooks/useWhatsappSettings.ts": {
+			"total": 14,
+			"buckets": {
+				"dict_value": 5,
+				"other": 4,
+				"log_only": 5
+			}
+		},
+		"apps/web/src/hooks/useWorkspaceProfile.ts": {
+			"total": 6,
+			"buckets": {
+				"other": 4,
+				"log_only": 2
+			}
+		},
+		"apps/web/src/imagingComparison.ts": {
+			"total": 5,
+			"buckets": {
+				"other": 5
+			}
+		},
+		"apps/web/src/imagingUiLabels.ts": {
+			"total": 200,
+			"buckets": {
+				"dict_value": 186,
+				"b_error_toast": 12,
+				"other": 2
+			}
+		},
+		"apps/web/src/ImagingView.tsx": {
+			"total": 220,
+			"buckets": {
+				"other": 11,
+				"dict_value": 33,
+				"b_error_toast": 9,
+				"log_only": 2,
+				"a_jsx_visible": 165
+			}
+		},
+		"apps/web/src/lib/aiOrchestrator.ts": {
+			"total": 30,
+			"buckets": {
+				"other": 30
+			}
+		},
+		"apps/web/src/lib/aiPromptRouter.ts": {
+			"total": 20,
+			"buckets": {
+				"other": 20
+			}
+		},
+		"apps/web/src/lib/clinicCapabilities.ts": {
+			"total": 7,
+			"buckets": {
+				"dict_value": 7
+			}
+		},
+		"apps/web/src/lib/cryptopro.ts": {
+			"total": 1,
+			"buckets": {
+				"log_only": 1
+			}
+		},
+		"apps/web/src/lib/icd10.test.ts": {
+			"total": 7,
+			"buckets": {
+				"d_test_fixture": 7
+			}
+		},
+		"apps/web/src/lib/icd10.ts": {
+			"total": 63,
+			"buckets": {
+				"dict_value": 62,
+				"other": 1
+			}
+		},
+		"apps/web/src/lib/panelStateText.test.ts": {
+			"total": 73,
+			"buckets": {
+				"d_test_fixture": 73
+			}
+		},
+		"apps/web/src/lib/panelStateText.ts": {
+			"total": 25,
+			"buckets": {
+				"other": 23,
+				"b_error_toast": 2
+			}
+		},
+		"apps/web/src/lib/patientDuplicatesApi.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/web/src/lib/semanticParser.ts": {
+			"total": 34,
+			"buckets": {
+				"other": 34
+			}
+		},
+		"apps/web/src/lib/smartBookingParser.test.ts": {
+			"total": 53,
+			"buckets": {
+				"d_test_fixture": 53
+			}
+		},
+		"apps/web/src/lib/smartBookingParser.ts": {
+			"total": 185,
+			"buckets": {
+				"data_not_ui": 185
+			}
+		},
+		"apps/web/src/lib/smartPatientParser.test.ts": {
+			"total": 49,
+			"buckets": {
+				"d_test_fixture": 49
+			}
+		},
+		"apps/web/src/lib/smartPatientParser.ts": {
+			"total": 96,
+			"buckets": {
+				"data_not_ui": 96
+			}
+		},
+		"apps/web/src/lib/smartPriceParser.test.ts": {
+			"total": 48,
+			"buckets": {
+				"d_test_fixture": 48
+			}
+		},
+		"apps/web/src/lib/smartPriceParser.ts": {
+			"total": 25,
+			"buckets": {
+				"data_not_ui": 25
+			}
+		},
+		"apps/web/src/lib/smartScheduleParser.ts": {
+			"total": 104,
+			"buckets": {
+				"data_not_ui": 104
+			}
+		},
+		"apps/web/src/lib/smartVisitParser.test.ts": {
+			"total": 26,
+			"buckets": {
+				"d_test_fixture": 26
+			}
+		},
+		"apps/web/src/lib/stringUtils.ts": {
+			"total": 105,
+			"buckets": {
+				"dict_value": 89,
+				"other": 16
+			}
+		},
+		"apps/web/src/lib/test-debug.ts": {
+			"total": 9,
+			"buckets": {
+				"other": 8,
+				"log_only": 1
+			}
+		},
+		"apps/web/src/lib/test-parser-deep.ts": {
+			"total": 53,
+			"buckets": {
+				"other": 8,
+				"dict_value": 45
+			}
+		},
+		"apps/web/src/MarketingView.tsx": {
+			"total": 78,
+			"buckets": {
+				"log_only": 3,
+				"other": 6,
+				"a_jsx_visible": 69
+			}
+		},
+		"apps/web/src/mprClinicalStatus.ts": {
+			"total": 92,
+			"buckets": {
+				"other": 43,
+				"b_error_toast": 43,
+				"dict_value": 6
+			}
+		},
+		"apps/web/src/mprControlMath.ts": {
+			"total": 79,
+			"buckets": {
+				"b_error_toast": 3,
+				"dict_value": 44,
+				"other": 32
+			}
+		},
+		"apps/web/src/pages/AnalyticsDashboardView.tsx": {
+			"total": 46,
+			"buckets": {
+				"b_error_toast": 4,
+				"other": 6,
+				"a_jsx_visible": 36
+			}
+		},
+		"apps/web/src/pages/analyticsDoctorMetrics.ts": {
+			"total": 11,
+			"buckets": {
+				"other": 11
+			}
+		},
+		"apps/web/src/pages/DoctorPayoutDashboard.tsx": {
+			"total": 67,
+			"buckets": {
+				"dict_value": 4,
+				"b_error_toast": 4,
+				"other": 3,
+				"a_jsx_visible": 56
+			}
+		},
+		"apps/web/src/pages/PublicBookingWidget.tsx": {
+			"total": 32,
+			"buckets": {
+				"other": 6,
+				"b_error_toast": 2,
+				"a_jsx_visible": 24
+			}
+		},
+		"apps/web/src/PatientsView.tsx": {
+			"total": 60,
+			"buckets": {
+				"other": 9,
+				"a_jsx_visible": 51
+			}
+		},
+		"apps/web/src/PaymentCapture.tsx": {
+			"total": 63,
+			"buckets": {
+				"a_jsx_visible": 49,
+				"b_error_toast": 1,
+				"other": 13
+			}
+		},
+		"apps/web/src/postVisitCareData.ts": {
+			"total": 99,
+			"buckets": {
+				"dict_value": 99
+			}
+		},
+		"apps/web/src/PriceDictationBar.tsx": {
+			"total": 3,
+			"buckets": {
+				"other": 1,
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/pricelistUiMeta.ts": {
+			"total": 144,
+			"buckets": {
+				"dict_value": 64,
+				"other": 65,
+				"b_error_toast": 15
+			}
+		},
+		"apps/web/src/rubAmountInput.ts": {
+			"total": 2,
+			"buckets": {
+				"other": 2
+			}
+		},
+		"apps/web/src/ScannerView.tsx": {
+			"total": 38,
+			"buckets": {
+				"other": 6,
+				"log_only": 1,
+				"b_error_toast": 8,
+				"a_jsx_visible": 23
+			}
+		},
+		"apps/web/src/ScheduleView.tsx": {
+			"total": 82,
+			"buckets": {
+				"other": 11,
+				"b_error_toast": 15,
+				"a_jsx_visible": 56
+			}
+		},
+		"apps/web/src/settingsStaticData.tsx": {
+			"total": 26,
+			"buckets": {
+				"dict_value": 17,
+				"b_error_toast": 6,
+				"other": 3
+			}
+		},
+		"apps/web/src/SettingsView.tsx": {
+			"total": 20,
+			"buckets": {
+				"other": 2,
+				"a_jsx_visible": 18
+			}
+		},
+		"apps/web/src/ShiftView.tsx": {
+			"total": 113,
+			"buckets": {
+				"other": 4,
+				"a_jsx_visible": 109
+			}
+		},
+		"apps/web/src/SmartParsePreview.tsx": {
+			"total": 47,
+			"buckets": {
+				"log_only": 2,
+				"a_jsx_visible": 45
+			}
+		},
+		"apps/web/src/store/documentStore.ts": {
+			"total": 65,
+			"buckets": {
+				"other": 65
+			}
+		},
+		"apps/web/src/store/imagingStore.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/web/src/store/patientStore.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/web/src/tests/analyticsDoctorMetrics.test.ts": {
+			"total": 46,
+			"buckets": {
+				"d_test_fixture": 46
+			}
+		},
+		"apps/web/src/tests/anamnesisStartsEmpty.test.ts": {
+			"total": 25,
+			"buckets": {
+				"d_test_fixture": 25
+			}
+		},
+		"apps/web/src/tests/apiAuthFetch.test.ts": {
+			"total": 4,
+			"buckets": {
+				"d_test_fixture": 4
+			}
+		},
+		"apps/web/src/tests/appointmentMissingFields.test.ts": {
+			"total": 19,
+			"buckets": {
+				"d_test_fixture": 19
+			}
+		},
+		"apps/web/src/tests/browserContinuity.test.ts": {
+			"total": 34,
+			"buckets": {
+				"d_test_fixture": 34
+			}
+		},
+		"apps/web/src/tests/clinicCapabilities.test.ts": {
+			"total": 41,
+			"buckets": {
+				"d_test_fixture": 41
+			}
+		},
+		"apps/web/src/tests/ctPlanningMeasurementPlan.test.ts": {
+			"total": 2,
+			"buckets": {
+				"d_test_fixture": 2
+			}
+		},
+		"apps/web/src/tests/documentCreationTimestamps.test.ts": {
+			"total": 12,
+			"buckets": {
+				"d_test_fixture": 12
+			}
+		},
+		"apps/web/src/tests/documentPayloadForms.test.ts": {
+			"total": 116,
+			"buckets": {
+				"d_test_fixture": 116
+			}
+		},
+		"apps/web/src/tests/documentsViewDecomposition.test.ts": {
+			"total": 28,
+			"buckets": {
+				"d_test_fixture": 28
+			}
+		},
+		"apps/web/src/tests/moneyFieldsStartEmpty.test.ts": {
+			"total": 9,
+			"buckets": {
+				"d_test_fixture": 9
+			}
+		},
+		"apps/web/src/tests/moneyFormat.test.ts": {
+			"total": 8,
+			"buckets": {
+				"d_test_fixture": 8
+			}
+		},
+		"apps/web/src/tests/mprControlMath.test.ts": {
+			"total": 27,
+			"buckets": {
+				"d_test_fixture": 27
+			}
+		},
+		"apps/web/src/tests/operationsPanelsStyling.test.ts": {
+			"total": 33,
+			"buckets": {
+				"d_test_fixture": 33
+			}
+		},
+		"apps/web/src/tests/panelsAreMounted.test.ts": {
+			"total": 125,
+			"buckets": {
+				"d_test_fixture": 125
+			}
+		},
+		"apps/web/src/tests/panoramicArch.test.ts": {
+			"total": 5,
+			"buckets": {
+				"d_test_fixture": 5
+			}
+		},
+		"apps/web/src/tests/patientCardDecomposition.test.ts": {
+			"total": 65,
+			"buckets": {
+				"d_test_fixture": 65
+			}
+		},
+		"apps/web/src/tests/patientCommunicationLogPanel.test.ts": {
+			"total": 27,
+			"buckets": {
+				"d_test_fixture": 27
+			}
+		},
+		"apps/web/src/tests/patientsWidgetsGridColumns.test.ts": {
+			"total": 40,
+			"buckets": {
+				"d_test_fixture": 40
+			}
+		},
+		"apps/web/src/tests/paymentComposerReset.test.ts": {
+			"total": 38,
+			"buckets": {
+				"d_test_fixture": 38
+			}
+		},
+		"apps/web/src/tests/planPricing.test.ts": {
+			"total": 49,
+			"buckets": {
+				"d_test_fixture": 49
+			}
+		},
+		"apps/web/src/tests/rubAmountInput.test.ts": {
+			"total": 8,
+			"buckets": {
+				"d_test_fixture": 8
+			}
+		},
+		"apps/web/src/tests/scheduleAdminSecretRefusal.test.ts": {
+			"total": 13,
+			"buckets": {
+				"d_test_fixture": 13
+			}
+		},
+		"apps/web/src/tests/stringUtils.test.ts": {
+			"total": 37,
+			"buckets": {
+				"d_test_fixture": 37
+			}
+		},
+		"apps/web/src/tests/textToNumbers.test.ts": {
+			"total": 104,
+			"buckets": {
+				"d_test_fixture": 104
+			}
+		},
+		"apps/web/src/tests/themeClasses.test.ts": {
+			"total": 12,
+			"buckets": {
+				"d_test_fixture": 12
+			}
+		},
+		"apps/web/src/tests/themeTokenSpecificity.test.ts": {
+			"total": 20,
+			"buckets": {
+				"d_test_fixture": 20
+			}
+		},
+		"apps/web/src/tests/utils/componentReachability.ts": {
+			"total": 11,
+			"buckets": {
+				"d_test_fixture": 11
+			}
+		},
+		"apps/web/src/tests/workspaceRouteErrorBoundary.test.ts": {
+			"total": 12,
+			"buckets": {
+				"d_test_fixture": 12
+			}
+		},
+		"apps/web/src/tests/workspaceUiLabels.test.ts": {
+			"total": 2,
+			"buckets": {
+				"d_test_fixture": 2
+			}
+		},
+		"apps/web/src/useAppLogic.tsx": {
+			"total": 644,
+			"buckets": {
+				"other": 252,
+				"log_only": 1,
+				"b_error_toast": 369,
+				"dict_value": 20,
+				"a_jsx_visible": 2
+			}
+		},
+		"apps/web/src/useSettingsDerivations.tsx": {
+			"total": 44,
+			"buckets": {
+				"other": 20,
+				"b_error_toast": 21,
+				"a_jsx_visible": 3
+			}
+		},
+		"apps/web/src/utils/cryptoPro.ts": {
+			"total": 6,
+			"buckets": {
+				"b_error_toast": 6
+			}
+		},
+		"apps/web/src/utils/dicom/boneQualityEngine.ts": {
+			"total": 26,
+			"buckets": {
+				"b_error_toast": 8,
+				"other": 18
+			}
+		},
+		"apps/web/src/utils/dicom/drillSequenceGenerator.ts": {
+			"total": 17,
+			"buckets": {
+				"other": 17
+			}
+		},
+		"apps/web/src/utils/math/mprMath.ts": {
+			"total": 79,
+			"buckets": {
+				"b_error_toast": 3,
+				"dict_value": 44,
+				"other": 32
+			}
+		},
+		"apps/web/src/utils/math/toothGeometry.ts": {
+			"total": 26,
+			"buckets": {
+				"other": 19,
+				"b_error_toast": 5,
+				"dict_value": 2
+			}
+		},
+		"apps/web/src/utils/planEstimator.ts": {
+			"total": 16,
+			"buckets": {
+				"dict_value": 5,
+				"b_error_toast": 7,
+				"other": 4
+			}
+		},
+		"apps/web/src/utils/rutoken.ts": {
+			"total": 5,
+			"buckets": {
+				"b_error_toast": 5
+			}
+		},
+		"apps/web/src/utils/unifiedPdfGenerator.ts": {
+			"total": 22,
+			"buckets": {
+				"other": 22
+			}
+		},
+		"apps/web/src/visitDictationData.ts": {
+			"total": 80,
+			"buckets": {
+				"dict_value": 80
+			}
+		},
+		"apps/web/src/visitSpecialtyData.ts": {
+			"total": 20,
+			"buckets": {
+				"dict_value": 20
+			}
+		},
+		"apps/web/src/VisitView.tsx": {
+			"total": 190,
+			"buckets": {
+				"b_error_toast": 15,
+				"other": 4,
+				"a_jsx_visible": 171
+			}
+		},
+		"apps/web/src/workspaceContinuityStrip.tsx": {
+			"total": 15,
+			"buckets": {
+				"other": 10,
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/workspaceRouteErrorBoundary.tsx": {
+			"total": 7,
+			"buckets": {
+				"other": 2,
+				"a_jsx_visible": 5
+			}
+		},
+		"apps/web/src/workspaceShell.tsx": {
+			"total": 50,
+			"buckets": {
+				"dict_value": 34,
+				"other": 4,
+				"a_jsx_visible": 12
+			}
+		},
+		"apps/web/src/workspaceStaticOptions.ts": {
+			"total": 79,
+			"buckets": {
+				"dict_value": 68,
+				"b_error_toast": 11
+			}
+		},
+		"apps/web/src/workspaceUiLabels.test.ts": {
+			"total": 8,
+			"buckets": {
+				"d_test_fixture": 8
+			}
+		},
+		"apps/web/src/workspaceUiLabels.ts": {
+			"total": 180,
+			"buckets": {
+				"dict_value": 166,
+				"other": 5,
+				"b_error_toast": 9
+			}
+		},
+		"apps/web/src/__tests__/clinicModeSurface.test.ts": {
+			"total": 55,
+			"buckets": {
+				"d_test_fixture": 55
+			}
+		},
+		"apps/web/src/__tests__/workspaceTopbarActions.test.ts": {
+			"total": 33,
+			"buckets": {
+				"d_test_fixture": 33
+			}
+		},
+		"apps/web/src/__tests__/workspaceUiLabels.test.ts": {
+			"total": 9,
+			"buckets": {
+				"d_test_fixture": 9
+			}
+		},
+		"apps/api/src/accessGuard.ts": {
+			"total": 7,
+			"buckets": {
+				"b_error_toast": 7
+			}
+		},
+		"apps/api/src/ai/dictationParser.ts": {
+			"total": 6,
+			"buckets": {
+				"data_not_ui": 6
+			}
+		},
+		"apps/api/src/ai/localDictationParser.ts": {
+			"total": 209,
+			"buckets": {
+				"data_not_ui": 209
+			}
+		},
+		"apps/api/src/ai/marketingReviewReply.ts": {
+			"total": 15,
+			"buckets": {
+				"data_not_ui": 15
+			}
+		},
+		"apps/api/src/ai/postVisitPersonalize.ts": {
+			"total": 197,
+			"buckets": {
+				"data_not_ui": 197
+			}
+		},
+		"apps/api/src/ai/testParser.ts": {
+			"total": 12,
+			"buckets": {
+				"data_not_ui": 12
+			}
+		},
+		"apps/api/src/ai/treatmentPlanPersonalize.ts": {
+			"total": 27,
+			"buckets": {
+				"data_not_ui": 27
+			}
+		},
+		"apps/api/src/ai/visiograph.ts": {
+			"total": 3,
+			"buckets": {
+				"data_not_ui": 3
+			}
+		},
+		"apps/api/src/ai/visiographPrompt.ts": {
+			"total": 1,
+			"buckets": {
+				"data_not_ui": 1
+			}
+		},
+		"apps/api/src/ai/visionAnalyzer.ts": {
+			"total": 6,
+			"buckets": {
+				"data_not_ui": 6
+			}
+		},
+		"apps/api/src/ai/visitDraft.ts": {
+			"total": 27,
+			"buckets": {
+				"data_not_ui": 27
+			}
+		},
+		"apps/api/src/ai/visitFlowOrchestrator.ts": {
+			"total": 46,
+			"buckets": {
+				"data_not_ui": 46
+			}
+		},
+		"apps/api/src/db/aiQuery.ts": {
+			"total": 17,
+			"buckets": {
+				"other": 16,
+				"b_error_toast": 1
+			}
+		},
+		"apps/api/src/db/appointmentsQuery.ts": {
+			"total": 7,
+			"buckets": {
+				"b_error_toast": 7
+			}
+		},
+		"apps/api/src/db/client.ts": {
+			"total": 1,
+			"buckets": {
+				"b_error_toast": 1
+			}
+		},
+		"apps/api/src/db/clinicalQuery.ts": {
+			"total": 1,
+			"buckets": {
+				"b_error_toast": 1
+			}
+		},
+		"apps/api/src/db/clinicalTasksQuery.ts": {
+			"total": 5,
+			"buckets": {
+				"b_error_toast": 2,
+				"other": 3
+			}
+		},
+		"apps/api/src/db/dashboardQuery.ts": {
+			"total": 1,
+			"buckets": {
+				"log_only": 1
+			}
+		},
+		"apps/api/src/db/documentQuery.test.ts": {
+			"total": 8,
+			"buckets": {
+				"d_test_fixture": 8
+			}
+		},
+		"apps/api/src/db/documentQuery.ts": {
+			"total": 12,
+			"buckets": {
+				"dict_value": 8,
+				"other": 1,
+				"b_error_toast": 3
+			}
+		},
+		"apps/api/src/db/domainStateHydration.ts": {
+			"total": 10,
+			"buckets": {
+				"other": 10
+			}
+		},
+		"apps/api/src/db/lostPatientsFiltersQuery.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/api/src/db/patientArchiveReasonsAndBlacklistsQuery.ts": {
+			"total": 3,
+			"buckets": {
+				"other": 3
+			}
+		},
+		"apps/api/src/db/patientsQuery.ts": {
+			"total": 13,
+			"buckets": {
+				"b_error_toast": 9,
+				"log_only": 4
+			}
+		},
+		"apps/api/src/db/pricelistQuery.ts": {
+			"total": 7,
+			"buckets": {
+				"other": 5,
+				"b_error_toast": 2
+			}
+		},
+		"apps/api/src/db/schema.ts": {
+			"total": 6,
+			"buckets": {
+				"other": 5,
+				"b_error_toast": 1
+			}
+		},
+		"apps/api/src/db/tests/billingQuery.test.ts": {
+			"total": 1,
+			"buckets": {
+				"d_test_fixture": 1
+			}
+		},
+		"apps/api/src/db/visitsQuery.ts": {
+			"total": 8,
+			"buckets": {
+				"b_error_toast": 8
+			}
+		},
+		"apps/api/src/documents/documents.test.ts": {
+			"total": 4,
+			"buckets": {
+				"d_test_fixture": 4
+			}
+		},
+		"apps/api/src/documents/guards.test.ts": {
+			"total": 9,
+			"buckets": {
+				"d_test_fixture": 9
+			}
+		},
+		"apps/api/src/documents/guards.ts": {
+			"total": 128,
+			"buckets": {
+				"data_not_ui": 128
+			}
+		},
+		"apps/api/src/documents/moneyExactKopecks.test.ts": {
+			"total": 34,
+			"buckets": {
+				"d_test_fixture": 34
+			}
+		},
+		"apps/api/src/documents/renderDocument.test.ts": {
+			"total": 51,
+			"buckets": {
+				"d_test_fixture": 51
+			}
+		},
+		"apps/api/src/documents/renderDocument.ts": {
+			"total": 1548,
+			"buckets": {
+				"data_not_ui": 1548
+			}
+		},
+		"apps/api/src/documents/taxPaymentSnapshot.test.ts": {
+			"total": 2,
+			"buckets": {
+				"d_test_fixture": 2
+			}
+		},
+		"apps/api/src/documents/taxXml.test.ts": {
+			"total": 8,
+			"buckets": {
+				"d_test_fixture": 8
+			}
+		},
+		"apps/api/src/documents/taxXml.ts": {
+			"total": 110,
+			"buckets": {
+				"data_not_ui": 110
+			}
+		},
+		"apps/api/src/emailTransport.ts": {
+			"total": 13,
+			"buckets": {
+				"b_error_toast": 9,
+				"other": 4
+			}
+		},
+		"apps/api/src/ingestion/documentExtractor.ts": {
+			"total": 81,
+			"buckets": {
+				"other": 66,
+				"b_error_toast": 15
+			}
+		},
+		"apps/api/src/maxTransport.ts": {
+			"total": 8,
+			"buckets": {
+				"other": 8
+			}
+		},
+		"apps/api/src/migration/columnProfile.ts": {
+			"total": 9,
+			"buckets": {
+				"data_not_ui": 9
+			}
+		},
+		"apps/api/src/migration/discovery.ts": {
+			"total": 30,
+			"buckets": {
+				"data_not_ui": 30
+			}
+		},
+		"apps/api/src/migration/encoding.ts": {
+			"total": 10,
+			"buckets": {
+				"data_not_ui": 10
+			}
+		},
+		"apps/api/src/migration/engine.ts": {
+			"total": 42,
+			"buckets": {
+				"data_not_ui": 42
+			}
+		},
+		"apps/api/src/migration/formats/dicom.ts": {
+			"total": 9,
+			"buckets": {
+				"data_not_ui": 9
+			}
+		},
+		"apps/api/src/migration/formats/signatures.ts": {
+			"total": 46,
+			"buckets": {
+				"data_not_ui": 46
+			}
+		},
+		"apps/api/src/migration/formats/sqlite.ts": {
+			"total": 10,
+			"buckets": {
+				"data_not_ui": 10
+			}
+		},
+		"apps/api/src/migration/identity.ts": {
+			"total": 9,
+			"buckets": {
+				"data_not_ui": 9
+			}
+		},
+		"apps/api/src/migration/llmClient.ts": {
+			"total": 5,
+			"buckets": {
+				"data_not_ui": 5
+			}
+		},
+		"apps/api/src/migration/llmMapper.ts": {
+			"total": 34,
+			"buckets": {
+				"data_not_ui": 34
+			}
+		},
+		"apps/api/src/migration/loader.ts": {
+			"total": 73,
+			"buckets": {
+				"data_not_ui": 73
+			}
+		},
+		"apps/api/src/migration/mapping.ts": {
+			"total": 46,
+			"buckets": {
+				"data_not_ui": 46
+			}
+		},
+		"apps/api/src/migration/parsers/dbf.ts": {
+			"total": 37,
+			"buckets": {
+				"data_not_ui": 37
+			}
+		},
+		"apps/api/src/migration/parsers/delimited.ts": {
+			"total": 13,
+			"buckets": {
+				"data_not_ui": 13
+			}
+		},
+		"apps/api/src/migration/parsers/index.ts": {
+			"total": 10,
+			"buckets": {
+				"data_not_ui": 10
+			}
+		},
+		"apps/api/src/migration/parsers/spreadsheet.ts": {
+			"total": 10,
+			"buckets": {
+				"data_not_ui": 10
+			}
+		},
+		"apps/api/src/migration/parsers/structured.ts": {
+			"total": 14,
+			"buckets": {
+				"data_not_ui": 14
+			}
+		},
+		"apps/api/src/migration/phases.ts": {
+			"total": 24,
+			"buckets": {
+				"data_not_ui": 24
+			}
+		},
+		"apps/api/src/migration/reconcile.ts": {
+			"total": 60,
+			"buckets": {
+				"data_not_ui": 60
+			}
+		},
+		"apps/api/src/migration/rowTransform.ts": {
+			"total": 29,
+			"buckets": {
+				"data_not_ui": 29
+			}
+		},
+		"apps/api/src/migration/runStore.ts": {
+			"total": 4,
+			"buckets": {
+				"data_not_ui": 4
+			}
+		},
+		"apps/api/src/migration/streamStage.ts": {
+			"total": 13,
+			"buckets": {
+				"data_not_ui": 13
+			}
+		},
+		"apps/api/src/migration/tests/mapping.test.ts": {
+			"total": 175,
+			"buckets": {
+				"d_test_fixture": 175
+			}
+		},
+		"apps/api/src/migration/tests/parsers.test.ts": {
+			"total": 152,
+			"buckets": {
+				"d_test_fixture": 152
+			}
+		},
+		"apps/api/src/migration/tests/valueNormalize.test.ts": {
+			"total": 135,
+			"buckets": {
+				"d_test_fixture": 135
+			}
+		},
+		"apps/api/src/migration/uploadStore.ts": {
+			"total": 3,
+			"buckets": {
+				"data_not_ui": 3
+			}
+		},
+		"apps/api/src/migration/valueNormalize.ts": {
+			"total": 107,
+			"buckets": {
+				"data_not_ui": 107
+			}
+		},
+		"apps/api/src/migration/vendorProfiles.ts": {
+			"total": 425,
+			"buckets": {
+				"data_not_ui": 425
+			}
+		},
+		"apps/api/src/migration/worker.ts": {
+			"total": 23,
+			"buckets": {
+				"data_not_ui": 23
+			}
+		},
+		"apps/api/src/persistentState.ts": {
+			"total": 7,
+			"buckets": {
+				"other": 7
+			}
+		},
+		"apps/api/src/pricelist/analyzer.ts": {
+			"total": 4,
+			"buckets": {
+				"other": 4
+			}
+		},
+		"apps/api/src/pricelist/groqPricelistKopecks.test.ts": {
+			"total": 29,
+			"buckets": {
+				"d_test_fixture": 29
+			}
+		},
+		"apps/api/src/pricelist/pricelistKopecks.test.ts": {
+			"total": 74,
+			"buckets": {
+				"d_test_fixture": 74
+			}
+		},
+		"apps/api/src/routes/ai.ts": {
+			"total": 9,
+			"buckets": {
+				"other": 5,
+				"b_error_toast": 4
+			}
+		},
+		"apps/api/src/routes/analytics.ts": {
+			"total": 22,
+			"buckets": {
+				"other": 12,
+				"b_error_toast": 9,
+				"log_only": 1
+			}
+		},
+		"apps/api/src/routes/audit.ts": {
+			"total": 1,
+			"buckets": {
+				"b_error_toast": 1
+			}
+		},
+		"apps/api/src/routes/auth.test.ts": {
+			"total": 37,
+			"buckets": {
+				"d_test_fixture": 37
+			}
+		},
+		"apps/api/src/routes/auth.ts": {
+			"total": 66,
+			"buckets": {
+				"b_error_toast": 64,
+				"other": 2
+			}
+		},
+		"apps/api/src/routes/billing.ts": {
+			"total": 48,
+			"buckets": {
+				"other": 20,
+				"dict_value": 18,
+				"b_error_toast": 10
+			}
+		},
+		"apps/api/src/routes/clinical.ts": {
+			"total": 7,
+			"buckets": {
+				"other": 3,
+				"b_error_toast": 4
+			}
+		},
+		"apps/api/src/routes/communicationReceipts.ts": {
+			"total": 5,
+			"buckets": {
+				"b_error_toast": 5
+			}
+		},
+		"apps/api/src/routes/communications.ts": {
+			"total": 6,
+			"buckets": {
+				"other": 3,
+				"b_error_toast": 3
+			}
+		},
+		"apps/api/src/routes/communicationsOutbox.ts": {
+			"total": 38,
+			"buckets": {
+				"other": 23,
+				"b_error_toast": 15
+			}
+		},
+		"apps/api/src/routes/dashboard.ts": {
+			"total": 2,
+			"buckets": {
+				"log_only": 1,
+				"b_error_toast": 1
+			}
+		},
+		"apps/api/src/routes/dayConfirmations.ts": {
+			"total": 5,
+			"buckets": {
+				"other": 5
+			}
+		},
+		"apps/api/src/routes/diary.ts": {
+			"total": 7,
+			"buckets": {
+				"b_error_toast": 7
+			}
+		},
+		"apps/api/src/routes/dicomweb.test.ts": {
+			"total": 22,
+			"buckets": {
+				"d_test_fixture": 22
+			}
+		},
+		"apps/api/src/routes/dicomweb.ts": {
+			"total": 9,
+			"buckets": {
+				"log_only": 4,
+				"b_error_toast": 5
+			}
+		},
+		"apps/api/src/routes/documents/auditFacts.ts": {
+			"total": 2,
+			"buckets": {
+				"data_not_ui": 2
+			}
+		},
+		"apps/api/src/routes/documents/html.ts": {
+			"total": 4,
+			"buckets": {
+				"data_not_ui": 4
+			}
+		},
+		"apps/api/src/routes/documents/issue.ts": {
+			"total": 8,
+			"buckets": {
+				"data_not_ui": 8
+			}
+		},
+		"apps/api/src/routes/documents/pdf.ts": {
+			"total": 9,
+			"buckets": {
+				"data_not_ui": 9
+			}
+		},
+		"apps/api/src/routes/documents/sign.ts": {
+			"total": 2,
+			"buckets": {
+				"data_not_ui": 2
+			}
+		},
+		"apps/api/src/routes/documents/signUkep.ts": {
+			"total": 4,
+			"buckets": {
+				"data_not_ui": 4
+			}
+		},
+		"apps/api/src/routes/documents/taxXml.ts": {
+			"total": 10,
+			"buckets": {
+				"data_not_ui": 10
+			}
+		},
+		"apps/api/src/routes/documents/void.ts": {
+			"total": 6,
+			"buckets": {
+				"data_not_ui": 6
+			}
+		},
+		"apps/api/src/routes/documents.test.ts": {
+			"total": 1,
+			"buckets": {
+				"d_test_fixture": 1
+			}
+		},
+		"apps/api/src/routes/documents.ts": {
+			"total": 63,
+			"buckets": {
+				"other": 60,
+				"b_error_toast": 2,
+				"log_only": 1
+			}
+		},
+		"apps/api/src/routes/egisz.ts": {
+			"total": 5,
+			"buckets": {
+				"b_error_toast": 4,
+				"other": 1
+			}
+		},
+		"apps/api/src/routes/finance_family.ts": {
+			"total": 9,
+			"buckets": {
+				"b_error_toast": 9
+			}
+		},
+		"apps/api/src/routes/imaging.test.ts": {
+			"total": 1,
+			"buckets": {
+				"d_test_fixture": 1
+			}
+		},
+		"apps/api/src/routes/imaging.ts": {
+			"total": 530,
+			"buckets": {
+				"dict_value": 15,
+				"b_error_toast": 90,
+				"other": 363,
+				"data_not_ui": 60,
+				"log_only": 2
+			}
+		},
+		"apps/api/src/routes/imports.test.ts": {
+			"total": 7,
+			"buckets": {
+				"d_test_fixture": 7
+			}
+		},
+		"apps/api/src/routes/imports.ts": {
+			"total": 34,
+			"buckets": {
+				"data_not_ui": 18,
+				"other": 12,
+				"b_error_toast": 4
+			}
+		},
+		"apps/api/src/routes/ingestion.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/api/src/routes/inventory.ts": {
+			"total": 4,
+			"buckets": {
+				"b_error_toast": 4
+			}
+		},
+		"apps/api/src/routes/lab.ts": {
+			"total": 6,
+			"buckets": {
+				"b_error_toast": 6
+			}
+		},
+		"apps/api/src/routes/leads.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/api/src/routes/max.ts": {
+			"total": 11,
+			"buckets": {
+				"b_error_toast": 10,
+				"log_only": 1
+			}
+		},
+		"apps/api/src/routes/migration.ts": {
+			"total": 6,
+			"buckets": {
+				"other": 2,
+				"b_error_toast": 4
+			}
+		},
+		"apps/api/src/routes/migrationRuns.ts": {
+			"total": 24,
+			"buckets": {
+				"other": 22,
+				"b_error_toast": 2
+			}
+		},
+		"apps/api/src/routes/odontogram.ts": {
+			"total": 5,
+			"buckets": {
+				"log_only": 1,
+				"b_error_toast": 4
+			}
+		},
+		"apps/api/src/routes/patientDuplicates.ts": {
+			"total": 12,
+			"buckets": {
+				"b_error_toast": 7,
+				"other": 5
+			}
+		},
+		"apps/api/src/routes/patientRecall.ts": {
+			"total": 7,
+			"buckets": {
+				"other": 4,
+				"b_error_toast": 3
+			}
+		},
+		"apps/api/src/routes/patients.ts": {
+			"total": 21,
+			"buckets": {
+				"other": 8,
+				"log_only": 5,
+				"b_error_toast": 8
+			}
+		},
+		"apps/api/src/routes/portal.ts": {
+			"total": 12,
+			"buckets": {
+				"other": 2,
+				"b_error_toast": 8,
+				"log_only": 2
+			}
+		},
+		"apps/api/src/routes/pricelist.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/api/src/routes/publicAppointmentActions.ts": {
+			"total": 26,
+			"buckets": {
+				"other": 21,
+				"b_error_toast": 5
+			}
+		},
+		"apps/api/src/routes/publicBooking.ts": {
+			"total": 20,
+			"buckets": {
+				"other": 4,
+				"b_error_toast": 15,
+				"log_only": 1
+			}
+		},
+		"apps/api/src/routes/reports.ts": {
+			"total": 6,
+			"buckets": {
+				"b_error_toast": 4,
+				"other": 2
+			}
+		},
+		"apps/api/src/routes/schedule.ts": {
+			"total": 38,
+			"buckets": {
+				"other": 35,
+				"b_error_toast": 2,
+				"log_only": 1
+			}
+		},
+		"apps/api/src/routes/settings.test.ts": {
+			"total": 12,
+			"buckets": {
+				"d_test_fixture": 12
+			}
+		},
+		"apps/api/src/routes/settings.ts": {
+			"total": 56,
+			"buckets": {
+				"other": 41,
+				"b_error_toast": 15
+			}
+		},
+		"apps/api/src/routes/smartImports.ts": {
+			"total": 926,
+			"buckets": {
+				"data_not_ui": 926
+			}
+		},
+		"apps/api/src/routes/speech.ts": {
+			"total": 11,
+			"buckets": {
+				"other": 10,
+				"b_error_toast": 1
+			}
+		},
+		"apps/api/src/routes/system.ts": {
+			"total": 139,
+			"buckets": {
+				"b_error_toast": 13,
+				"other": 126
+			}
+		},
+		"apps/api/src/routes/telegram.ts": {
+			"total": 308,
+			"buckets": {
+				"other": 187,
+				"b_error_toast": 77,
+				"dict_value": 43,
+				"log_only": 1
+			}
+		},
+		"apps/api/src/routes/telephony.ts": {
+			"total": 5,
+			"buckets": {
+				"b_error_toast": 1,
+				"other": 4
+			}
+		},
+		"apps/api/src/routes/tests/imaging.test.ts": {
+			"total": 3,
+			"buckets": {
+				"d_test_fixture": 3
+			}
+		},
+		"apps/api/src/routes/toothHistory.ts": {
+			"total": 9,
+			"buckets": {
+				"b_error_toast": 6,
+				"log_only": 1,
+				"other": 2
+			}
+		},
+		"apps/api/src/routes/visits.test.ts": {
+			"total": 1,
+			"buckets": {
+				"d_test_fixture": 1
+			}
+		},
+		"apps/api/src/routes/visits.ts": {
+			"total": 19,
+			"buckets": {
+				"other": 17,
+				"b_error_toast": 1,
+				"log_only": 1
+			}
+		},
+		"apps/api/src/routes/vk.ts": {
+			"total": 2,
+			"buckets": {
+				"b_error_toast": 1,
+				"other": 1
+			}
+		},
+		"apps/api/src/routes/waitlist.ts": {
+			"total": 6,
+			"buckets": {
+				"b_error_toast": 6
+			}
+		},
+		"apps/api/src/routes/waitlistMatches.ts": {
+			"total": 8,
+			"buckets": {
+				"other": 5,
+				"b_error_toast": 3
+			}
+		},
+		"apps/api/src/routes/whatsapp.ts": {
+			"total": 17,
+			"buckets": {
+				"b_error_toast": 12,
+				"log_only": 5
+			}
+		},
+		"apps/api/src/routes/workspaceProfile.ts": {
+			"total": 57,
+			"buckets": {
+				"b_error_toast": 27,
+				"dict_value": 5,
+				"other": 25
+			}
+		},
+		"apps/api/src/routes/xray.ts": {
+			"total": 9,
+			"buckets": {
+				"b_error_toast": 8,
+				"other": 1
+			}
+		},
+		"apps/api/src/sampleData.ts": {
+			"total": 1194,
+			"buckets": {
+				"data_not_ui": 1194
+			}
+		},
+		"apps/api/src/sampleData_opt.ts": {
+			"total": 1184,
+			"buckets": {
+				"data_not_ui": 1184
+			}
+		},
+		"apps/api/src/scripts/cronAnalyticsWorker.ts": {
+			"total": 1,
+			"buckets": {
+				"data_not_ui": 1
+			}
+		},
+		"apps/api/src/scripts/inspectOutbox.ts": {
+			"total": 6,
+			"buckets": {
+				"data_not_ui": 6
+			}
+		},
+		"apps/api/src/scripts/inspectRecall.ts": {
+			"total": 6,
+			"buckets": {
+				"data_not_ui": 6
+			}
+		},
+		"apps/api/src/scripts/migrate.ts": {
+			"total": 17,
+			"buckets": {
+				"data_not_ui": 17
+			}
+		},
+		"apps/api/src/scripts/migrateStateToDb.ts": {
+			"total": 1,
+			"buckets": {
+				"data_not_ui": 1
+			}
+		},
+		"apps/api/src/scripts/printClientInfo.ts": {
+			"total": 3,
+			"buckets": {
+				"data_not_ui": 3
+			}
+		},
+		"apps/api/src/scripts/seedAuth.ts": {
+			"total": 5,
+			"buckets": {
+				"data_not_ui": 5
+			}
+		},
+		"apps/api/src/scripts/seedOpsScreenshotDemo.ts": {
+			"total": 47,
+			"buckets": {
+				"data_not_ui": 47
+			}
+		},
+		"apps/api/src/scripts/seedPglite.ts": {
+			"total": 5,
+			"buckets": {
+				"data_not_ui": 5
+			}
+		},
+		"apps/api/src/scripts/seedTemplates.ts": {
+			"total": 150,
+			"buckets": {
+				"data_not_ui": 150
+			}
+		},
+		"apps/api/src/scripts/setup-fresh-db.ts": {
+			"total": 2,
+			"buckets": {
+				"data_not_ui": 2
+			}
+		},
+		"apps/api/src/scripts/tests/cronAnalyticsWorker.test.ts": {
+			"total": 22,
+			"buckets": {
+				"d_test_fixture": 22
+			}
+		},
+		"apps/api/src/scripts/verify-migration-engine.ts": {
+			"total": 176,
+			"buckets": {
+				"data_not_ui": 176
+			}
+		},
+		"apps/api/src/scripts/verify-migration-formats.ts": {
+			"total": 108,
+			"buckets": {
+				"data_not_ui": 108
+			}
+		},
+		"apps/api/src/scripts/verify-migration-http.ts": {
+			"total": 169,
+			"buckets": {
+				"data_not_ui": 169
+			}
+		},
+		"apps/api/src/security/authSecret.ts": {
+			"total": 9,
+			"buckets": {
+				"log_only": 4,
+				"b_error_toast": 5
+			}
+		},
+		"apps/api/src/security/identity.ts": {
+			"total": 9,
+			"buckets": {
+				"other": 3,
+				"b_error_toast": 6
+			}
+		},
+		"apps/api/src/security/permissions.ts": {
+			"total": 6,
+			"buckets": {
+				"b_error_toast": 6
+			}
+		},
+		"apps/api/src/security/rateLimit.ts": {
+			"total": 1,
+			"buckets": {
+				"b_error_toast": 1
+			}
+		},
+		"apps/api/src/security/webhookAuth.ts": {
+			"total": 7,
+			"buckets": {
+				"b_error_toast": 4,
+				"log_only": 3
+			}
+		},
+		"apps/api/src/server.ts": {
+			"total": 16,
+			"buckets": {
+				"b_error_toast": 2,
+				"other": 11,
+				"log_only": 3
+			}
+		},
+		"apps/api/src/services/backupWorker.test.ts": {
+			"total": 3,
+			"buckets": {
+				"d_test_fixture": 3
+			}
+		},
+		"apps/api/src/services/backupWorker.ts": {
+			"total": 18,
+			"buckets": {
+				"b_error_toast": 8,
+				"log_only": 9,
+				"other": 1
+			}
+		},
+		"apps/api/src/services/biAnalyticsWorker.ts": {
+			"total": 1,
+			"buckets": {
+				"other": 1
+			}
+		},
+		"apps/api/src/services/clinical/ClinicalRouter.test.ts": {
+			"total": 26,
+			"buckets": {
+				"d_test_fixture": 26
+			}
+		},
+		"apps/api/src/services/clinical/ClinicalRouter.ts": {
+			"total": 9,
+			"buckets": {
+				"dict_value": 6,
+				"other": 3
+			}
+		},
+		"apps/api/src/services/communications/appointmentReminders.ts": {
+			"total": 8,
+			"buckets": {
+				"log_only": 3,
+				"other": 4,
+				"dict_value": 1
+			}
+		},
+		"apps/api/src/services/communications/audience.ts": {
+			"total": 25,
+			"buckets": {
+				"b_error_toast": 6,
+				"other": 19
+			}
+		},
+		"apps/api/src/services/communications/campaigns.ts": {
+			"total": 19,
+			"buckets": {
+				"other": 6,
+				"b_error_toast": 13
+			}
+		},
+		"apps/api/src/services/communications/channelRouter.ts": {
+			"total": 12,
+			"buckets": {
+				"other": 12
+			}
+		},
+		"apps/api/src/services/communications/deliveryPolicy.ts": {
+			"total": 4,
+			"buckets": {
+				"b_error_toast": 4
+			}
+		},
+		"apps/api/src/services/communications/deliveryReceipts.ts": {
+			"total": 43,
+			"buckets": {
+				"dict_value": 31,
+				"b_error_toast": 10,
+				"other": 2
+			}
+		},
+		"apps/api/src/services/communications/dispatcher.ts": {
+			"total": 15,
+			"buckets": {
+				"b_error_toast": 11,
+				"other": 4
+			}
+		},
+		"apps/api/src/services/communications/dispatchWorker.ts": {
+			"total": 18,
+			"buckets": {
+				"b_error_toast": 4,
+				"other": 14
+			}
+		},
+		"apps/api/src/services/communications/optOut.ts": {
+			"total": 27,
+			"buckets": {
+				"other": 27
+			}
+		},
+		"apps/api/src/services/communications/templateRenderer.ts": {
+			"total": 44,
+			"buckets": {
+				"b_error_toast": 20,
+				"other": 24
+			}
+		},
+		"apps/api/src/services/egiszCdaGenerator.ts": {
+			"total": 8,
+			"buckets": {
+				"other": 8
+			}
+		},
+		"apps/api/src/services/finance/doctorPayouts.test.ts": {
+			"total": 16,
+			"buckets": {
+				"d_test_fixture": 16
+			}
+		},
+		"apps/api/src/services/finance/doctorPayouts.ts": {
+			"total": 50,
+			"buckets": {
+				"b_error_toast": 9,
+				"other": 41
+			}
+		},
+		"apps/api/src/services/finance/payoutNegativeExplain.test.ts": {
+			"total": 37,
+			"buckets": {
+				"d_test_fixture": 37
+			}
+		},
+		"apps/api/src/services/finance/payoutNegativeExplain.ts": {
+			"total": 56,
+			"buckets": {
+				"other": 56
+			}
+		},
+		"apps/api/src/services/messengerIngestion.ts": {
+			"total": 13,
+			"buckets": {
+				"other": 6,
+				"b_error_toast": 5,
+				"log_only": 2
+			}
+		},
+		"apps/api/src/services/patients/duplicateDetection.ts": {
+			"total": 13,
+			"buckets": {
+				"dict_value": 9,
+				"other": 1,
+				"b_error_toast": 3
+			}
+		},
+		"apps/api/src/services/patients/patientMerge.ts": {
+			"total": 14,
+			"buckets": {
+				"b_error_toast": 7,
+				"other": 7
+			}
+		},
+		"apps/api/src/services/patients/recallCandidates.ts": {
+			"total": 7,
+			"buckets": {
+				"dict_value": 4,
+				"b_error_toast": 3
+			}
+		},
+		"apps/api/src/services/postOpCareTrigger.ts": {
+			"total": 2,
+			"buckets": {
+				"other": 2
+			}
+		},
+		"apps/api/src/services/recallScheduler.ts": {
+			"total": 3,
+			"buckets": {
+				"b_error_toast": 3
+			}
+		},
+		"apps/api/src/services/reports/managerReports.ts": {
+			"total": 29,
+			"buckets": {
+				"other": 16,
+				"b_error_toast": 13
+			}
+		},
+		"apps/api/src/services/schedule/waitlistMatching.ts": {
+			"total": 15,
+			"buckets": {
+				"other": 12,
+				"b_error_toast": 3
+			}
+		},
+		"apps/api/src/services/tests/biAnalyticsWorker.test.ts": {
+			"total": 12,
+			"buckets": {
+				"d_test_fixture": 12
+			}
+		},
+		"apps/api/src/services/tests/postOpCareTrigger.test.ts": {
+			"total": 1,
+			"buckets": {
+				"d_test_fixture": 1
+			}
+		},
+		"apps/api/src/services/tests/recallScheduler.test.ts": {
+			"total": 2,
+			"buckets": {
+				"d_test_fixture": 2
+			}
+		},
+		"apps/api/src/smsTransport.ts": {
+			"total": 43,
+			"buckets": {
+				"dict_value": 26,
+				"other": 17
+			}
+		},
+		"apps/api/src/speech/dentalPrompt.ts": {
+			"total": 216,
+			"buckets": {
+				"data_not_ui": 216
+			}
+		},
+		"apps/api/src/speech/gateway.ts": {
+			"total": 192,
+			"buckets": {
+				"data_not_ui": 192
+			}
+		},
+		"apps/api/src/speech/keyPool.ts": {
+			"total": 2,
+			"buckets": {
+				"data_not_ui": 2
+			}
+		},
+		"apps/api/src/speech/polish.ts": {
+			"total": 50,
+			"buckets": {
+				"data_not_ui": 50
+			}
+		},
+		"apps/api/src/speech/providers.ts": {
+			"total": 21,
+			"buckets": {
+				"data_not_ui": 21
+			}
+		},
+		"apps/api/src/speech/storage.ts": {
+			"total": 63,
+			"buckets": {
+				"data_not_ui": 63
+			}
+		},
+		"apps/api/src/speech/tests/assemblyAiRetention.test.ts": {
+			"total": 44,
+			"buckets": {
+				"d_test_fixture": 44
+			}
+		},
+		"apps/api/src/speech/tests/speechRetentionStatement.test.ts": {
+			"total": 19,
+			"buckets": {
+				"d_test_fixture": 19
+			}
+		},
+		"apps/api/src/speech/tests/storage.test.ts": {
+			"total": 52,
+			"buckets": {
+				"d_test_fixture": 52
+			}
+		},
+		"apps/api/src/speech/tests/storageIdentity.test.ts": {
+			"total": 41,
+			"buckets": {
+				"d_test_fixture": 41
+			}
+		},
+		"apps/api/src/speech/tests/storageRestoreCeiling.test.ts": {
+			"total": 38,
+			"buckets": {
+				"d_test_fixture": 38
+			}
+		},
+		"apps/api/src/speech/tests/storageRestoreRetry.test.ts": {
+			"total": 15,
+			"buckets": {
+				"d_test_fixture": 15
+			}
+		},
+		"apps/api/src/telegram/outbox.ts": {
+			"total": 2,
+			"buckets": {
+				"b_error_toast": 1,
+				"other": 1
+			}
+		},
+		"apps/api/src/tests/accessGuard.test.ts": {
+			"total": 4,
+			"buckets": {
+				"d_test_fixture": 4
+			}
+		},
+		"apps/api/src/tests/ai/visitDraft.test.ts": {
+			"total": 17,
+			"buckets": {
+				"d_test_fixture": 17
+			}
+		},
+		"apps/api/src/tests/ai/visitFlow.test.ts": {
+			"total": 30,
+			"buckets": {
+				"d_test_fixture": 30
+			}
+		},
+		"apps/api/src/tests/ai.test.ts": {
+			"total": 4,
+			"buckets": {
+				"d_test_fixture": 4
+			}
+		},
+		"apps/api/src/tests/automaticSendingState.test.ts": {
+			"total": 10,
+			"buckets": {
+				"d_test_fixture": 10
+			}
+		},
+		"apps/api/src/tests/clinicModeOneVocabulary.test.ts": {
+			"total": 43,
+			"buckets": {
+				"d_test_fixture": 43
+			}
+		},
+		"apps/api/src/tests/db/patientsQuery.test.ts": {
+			"total": 22,
+			"buckets": {
+				"d_test_fixture": 22
+			}
+		},
+		"apps/api/src/tests/deliveryPolicy.test.ts": {
+			"total": 33,
+			"buckets": {
+				"d_test_fixture": 33
+			}
+		},
+		"apps/api/src/tests/dispatcherConsentGate.test.ts": {
+			"total": 13,
+			"buckets": {
+				"d_test_fixture": 13
+			}
+		},
+		"apps/api/src/tests/documents.test.ts": {
+			"total": 9,
+			"buckets": {
+				"d_test_fixture": 9
+			}
+		},
+		"apps/api/src/tests/egiszCdaGenerator.test.ts": {
+			"total": 31,
+			"buckets": {
+				"d_test_fixture": 31
+			}
+		},
+		"apps/api/src/tests/emailTransport.test.ts": {
+			"total": 46,
+			"buckets": {
+				"d_test_fixture": 46
+			}
+		},
+		"apps/api/src/tests/enumContractDrift.test.ts": {
+			"total": 7,
+			"buckets": {
+				"d_test_fixture": 7
+			}
+		},
+		"apps/api/src/tests/imaging/parseImagingManifest.test.ts": {
+			"total": 2,
+			"buckets": {
+				"d_test_fixture": 2
+			}
+		},
+		"apps/api/src/tests/inboundOptOut.test.ts": {
+			"total": 66,
+			"buckets": {
+				"d_test_fixture": 66
+			}
+		},
+		"apps/api/src/tests/ingestion/documentExtractor.test.ts": {
+			"total": 7,
+			"buckets": {
+				"d_test_fixture": 7
+			}
+		},
+		"apps/api/src/tests/keyPool.test.ts": {
+			"total": 1,
+			"buckets": {
+				"d_test_fixture": 1
+			}
+		},
+		"apps/api/src/tests/maxTransport.test.ts": {
+			"total": 23,
+			"buckets": {
+				"d_test_fixture": 23
+			}
+		},
+		"apps/api/src/tests/mutableStateFlushCoalescing.test.ts": {
+			"total": 33,
+			"buckets": {
+				"d_test_fixture": 33
+			}
+		},
+		"apps/api/src/tests/noFabricatedDataFallback.test.ts": {
+			"total": 8,
+			"buckets": {
+				"d_test_fixture": 8
+			}
+		},
+		"apps/api/src/tests/numericMoneyTypeParser.test.ts": {
+			"total": 8,
+			"buckets": {
+				"d_test_fixture": 8
+			}
+		},
+		"apps/api/src/tests/permissions.test.ts": {
+			"total": 22,
+			"buckets": {
+				"d_test_fixture": 22
+			}
+		},
+		"apps/api/src/tests/persistentState.test.ts": {
+			"total": 5,
+			"buckets": {
+				"d_test_fixture": 5
+			}
+		},
+		"apps/api/src/tests/persistentStateExport.test.ts": {
+			"total": 2,
+			"buckets": {
+				"d_test_fixture": 2
+			}
+		},
+		"apps/api/src/tests/repairMojibake.test.ts": {
+			"total": 14,
+			"buckets": {
+				"d_test_fixture": 14
+			}
+		},
+		"apps/api/src/tests/routeHookScope.test.ts": {
+			"total": 12,
+			"buckets": {
+				"d_test_fixture": 12
+			}
+		},
+		"apps/api/src/tests/routeRegistrationCoverage.test.ts": {
+			"total": 6,
+			"buckets": {
+				"d_test_fixture": 6
+			}
+		},
+		"apps/api/src/tests/routes/appointmentConfirmation.test.ts": {
+			"total": 71,
+			"buckets": {
+				"d_test_fixture": 71
+			}
+		},
+		"apps/api/src/tests/routes/appointmentReminders.test.ts": {
+			"total": 40,
+			"buckets": {
+				"d_test_fixture": 40
+			}
+		},
+		"apps/api/src/tests/routes/chainReconProof.ts": {
+			"total": 65,
+			"buckets": {
+				"d_test_fixture": 65
+			}
+		},
+		"apps/api/src/tests/routes/chainWeldProof.ts": {
+			"total": 105,
+			"buckets": {
+				"d_test_fixture": 105
+			}
+		},
+		"apps/api/src/tests/routes/clinical.test.ts": {
+			"total": 4,
+			"buckets": {
+				"d_test_fixture": 4
+			}
+		},
+		"apps/api/src/tests/routes/communicationCampaigns.test.ts": {
+			"total": 51,
+			"buckets": {
+				"d_test_fixture": 51
+			}
+		},
+		"apps/api/src/tests/routes/communicationsOutbox.test.ts": {
+			"total": 57,
+			"buckets": {
+				"d_test_fixture": 57
+			}
+		},
+		"apps/api/src/tests/routes/dayConfirmations.test.ts": {
+			"total": 39,
+			"buckets": {
+				"d_test_fixture": 39
+			}
+		},
+		"apps/api/src/tests/routes/deliveryReceipts.test.ts": {
+			"total": 49,
+			"buckets": {
+				"d_test_fixture": 49
+			}
+		},
+		"apps/api/src/tests/routes/diaryDeductionProof.ts": {
+			"total": 17,
+			"buckets": {
+				"d_test_fixture": 17
+			}
+		},
+		"apps/api/src/tests/routes/diarySigningCeremony.test.ts": {
+			"total": 35,
+			"buckets": {
+				"d_test_fixture": 35
+			}
+		},
+		"apps/api/src/tests/routes/doctorPayoutsProof.ts": {
+			"total": 126,
+			"buckets": {
+				"d_test_fixture": 126
+			}
+		},
+		"apps/api/src/tests/routes/managerReports.test.ts": {
+			"total": 56,
+			"buckets": {
+				"d_test_fixture": 56
+			}
+		},
+		"apps/api/src/tests/routes/onboardingPurgeProof.ts": {
+			"total": 13,
+			"buckets": {
+				"d_test_fixture": 13
+			}
+		},
+		"apps/api/src/tests/routes/patientArchiveStatusScope.test.ts": {
+			"total": 40,
+			"buckets": {
+				"d_test_fixture": 40
+			}
+		},
+		"apps/api/src/tests/routes/patientCommunicationLog.test.ts": {
+			"total": 37,
+			"buckets": {
+				"d_test_fixture": 37
+			}
+		},
+		"apps/api/src/tests/routes/patientCreateDuplicateGuard.test.ts": {
+			"total": 24,
+			"buckets": {
+				"d_test_fixture": 24
+			}
+		},
+		"apps/api/src/tests/routes/patientDuplicates.test.ts": {
+			"total": 61,
+			"buckets": {
+				"d_test_fixture": 61
+			}
+		},
+		"apps/api/src/tests/routes/patientRecall.test.ts": {
+			"total": 25,
+			"buckets": {
+				"d_test_fixture": 25
+			}
+		},
+		"apps/api/src/tests/routes/portalOtp.test.ts": {
+			"total": 27,
+			"buckets": {
+				"d_test_fixture": 27
+			}
+		},
+		"apps/api/src/tests/routes/speechTranscribeChunkAccess.test.ts": {
+			"total": 25,
+			"buckets": {
+				"d_test_fixture": 25
+			}
+		},
+		"apps/api/src/tests/routes/visits.test.ts": {
+			"total": 25,
+			"buckets": {
+				"d_test_fixture": 25
+			}
+		},
+		"apps/api/src/tests/routes/waitlistMatches.test.ts": {
+			"total": 26,
+			"buckets": {
+				"d_test_fixture": 26
+			}
+		},
+		"apps/api/src/tests/security/unverifiedOrganizationMutation.test.ts": {
+			"total": 14,
+			"buckets": {
+				"d_test_fixture": 14
+			}
+		},
+		"apps/api/src/tests/security.test.ts": {
+			"total": 17,
+			"buckets": {
+				"d_test_fixture": 17
+			}
+		},
+		"apps/api/src/tests/smsTransport.test.ts": {
+			"total": 24,
+			"buckets": {
+				"d_test_fixture": 24
+			}
+		},
+		"apps/api/src/tests/snils.test.ts": {
+			"total": 8,
+			"buckets": {
+				"d_test_fixture": 8
+			}
+		},
+		"apps/api/src/tests/telegramMessageRender.test.ts": {
+			"total": 7,
+			"buckets": {
+				"d_test_fixture": 7
+			}
+		},
+		"apps/api/src/tests/telegramOutboxPartialDelivery.test.ts": {
+			"total": 85,
+			"buckets": {
+				"d_test_fixture": 85
+			}
+		},
+		"apps/api/src/tests/templateRenderer.test.ts": {
+			"total": 45,
+			"buckets": {
+				"d_test_fixture": 45
+			}
+		},
+		"apps/api/src/tests/visitFlow.test.ts": {
+			"total": 7,
+			"buckets": {
+				"d_test_fixture": 7
+			}
+		},
+		"apps/api/src/tests/waitlistMatching.test.ts": {
+			"total": 21,
+			"buckets": {
+				"d_test_fixture": 21
+			}
+		},
+		"apps/api/src/tests/webCallsExistingRoutes.test.ts": {
+			"total": 11,
+			"buckets": {
+				"d_test_fixture": 11
+			}
+		},
+		"apps/api/src/tests/websocketBroker.test.ts": {
+			"total": 12,
+			"buckets": {
+				"d_test_fixture": 12
+			}
+		},
+		"apps/api/src/text/repairMojibake.test.ts": {
+			"total": 7,
+			"buckets": {
+				"d_test_fixture": 7
+			}
+		},
+		"apps/api/src/treatment/TreatmentPlanBuilder.test.ts": {
+			"total": 3,
+			"buckets": {
+				"d_test_fixture": 3
+			}
+		},
+		"apps/api/src/treatment/TreatmentPlanBuilder.ts": {
+			"total": 13,
+			"buckets": {
+				"other": 5,
+				"log_only": 2,
+				"b_error_toast": 6
+			}
+		},
+		"apps/api/src/whatsappTransport.ts": {
+			"total": 4,
+			"buckets": {
+				"other": 4
+			}
+		},
+		"packages/shared/src/index.ts": {
+			"total": 1501,
+			"buckets": {
+				"b_error_toast": 106,
+				"dict_value": 363,
+				"other": 328,
+				"data_not_ui": 704
+			}
+		},
+		"packages/shared/src/migration.ts": {
+			"total": 22,
+			"buckets": {
+				"dict_value": 20,
+				"b_error_toast": 2
+			}
+		},
+		"packages/shared/src/tests/buildRuleBasedVisitDraftFromTranscript.test.ts": {
+			"total": 17,
+			"buckets": {
+				"d_test_fixture": 17
+			}
+		},
+		"packages/shared/src/tests/index.test.ts": {
+			"total": 16,
+			"buckets": {
+				"d_test_fixture": 16
+			}
+		},
+		"packages/shared/src/tests/money-contract-kopecks.test.ts": {
+			"total": 184,
+			"buckets": {
+				"d_test_fixture": 184
+			}
+		},
+		"packages/shared/src/tests/money.test.ts": {
+			"total": 27,
+			"buckets": {
+				"d_test_fixture": 27
+			}
+		},
+		"packages/shared/src/tests/speech-normalization.test.ts": {
+			"total": 14,
+			"buckets": {
+				"d_test_fixture": 14
+			}
+		},
+		"packages/shared/src/tests/strings.test.ts": {
+			"total": 3,
+			"buckets": {
+				"d_test_fixture": 3
+			}
+		},
+		"packages/shared/src/utils/money.ts": {
+			"total": 12,
+			"buckets": {
+				"b_error_toast": 12
+			}
+		}
+	},
+	"dictLookupsInJsx": 257,
+	"dictLookupNames": {
+		"staffRoleLabels": 21,
+		"specialtyLabels": 11,
+		"clinicModeLabels": 5,
+		"pricelistSourceKindLabels": 1,
+		"importSourceLabels": 3,
+		"smartImportModeLabels": 3,
+		"ingestionTargetLabels": 4,
+		"imagingSourceLabels": 4,
+		"viewLabels": 12,
+		"severityLabels": 2,
+		"actionLabels": 1,
+		"communicationIntentLabels": 1,
+		"communicationChannelLabels": 3,
+		"communicationPriorityLabels": 1,
+		"communicationStatusLabels": 2,
+		"communicationTaskOutcomeLabels": 1,
+		"communicationDocumentTaskActionLabels": 1,
+		"documentLabels": 9,
+		"channelLabels": 6,
+		"campaignStatusLabels": 1,
+		"statusLabels": 5,
+		"intentLabels": 1,
+		"methodLabels": 2,
+		"paymentMethodLabels": 2,
+		"bucketLabels": 1,
+		"appointmentLabels": 3,
+		"appointmentStatusLabels": 1,
+		"materialLabels": 1,
+		"priorityLabels": 3,
+		"workspaceScopeLabels": 2,
+		"policyAuditEventLabels": 1,
+		"speechProviderModeLabels": 1,
+		"speechProviderHealthLabels": 1,
+		"recognitionTargetLabels": 1,
+		"localBridgeStatusLabels": 1,
+		"localBridgeUsePathLabels": 1,
+		"clinicPublicLookupProviderStatusLabels": 3,
+		"clinicPublicLookupSuggestionSourceLabels": 3,
+		"clinicPublicLookupFieldLabels": 4,
+		"migrationOperatorPacketStatusLabels": 4,
+		"migrationOwnerLabels": 10,
+		"migrationHandoffPhaseLabels": 2,
+		"migrationPriorityLabels": 1,
+		"migrationReadinessLevelLabels": 3,
+		"migrationBridgeKitKindLabels": 3,
+		"migrationBridgeKitStatusLabels": 3,
+		"migrationAdapterStatusLabels": 2,
+		"migrationAutomationLevelLabels": 2,
+		"migrationEntityLabels": 1,
+		"migrationWorkupStepStatusLabels": 1,
+		"smartImportMigrationPlanStatusLabels": 1,
+		"smartImportLineKindLabels": 1,
+		"localImagingOrganizerActionLabels": 1,
+		"localImagingModelRoleLabels": 2,
+		"localImagingModelWorkbenchTargetLabels": 2,
+		"dicomFolderWorkupPathLabels": 1,
+		"dicomFirstFrameStatusLabels": 1,
+		"imagingKindLabels": 9,
+		"importRowStatusLabels": 3,
+		"dicomSeriesViewerLabels": 2,
+		"mprLoadStrategyLabels": 3,
+		"mprResourceTierLabels": 3,
+		"documentIngestionQualityLabels": 1,
+		"serviceCategoryLabels": 2,
+		"pricelistParserModeLabels": 1,
+		"typedClinicalRuleActionLabels": 2,
+		"typedClinicalRuleSeverityLabels": 2,
+		"telegramModeLabels": 1,
+		"telegramModeHints": 1,
+		"telegramPrivacyModeHints": 1,
+		"telegramTemplateLabels": 2,
+		"telegramClassificationLabels": 1,
+		"typedTelegramInlineButtonKindLabels": 2,
+		"telegramOutboxStatusFilterLabels": 1,
+		"telegramOutboxTemplateFilterLabels": 1,
+		"telegramDeliveryStatusLabels": 1,
+		"mprProjectionLabels": 2,
+		"mprWindowPresetLabels": 2,
+		"mprToolLabels": 1,
+		"mprCacheModeLabels": 1,
+		"dicomViewerLaunchModeLabels": 3,
+		"dicomWebStatusLabels": 1,
+		"dicomRenderCachePriorityLabels": 2,
+		"dicomReadinessCheckLabels": 1,
+		"integrationCategoryLabels": 1,
+		"integrationStatusLabels": 1,
+		"integrationCapabilityLabels": 1,
+		"visitDraftQualityLabels": 1,
+		"workloadStateLabels": 1,
+		"ownerLabels": 2,
+		"toolStateTargetLabels": 1,
+		"documentSourceStatusClassNames": 4,
+		"documentSourceStatusLabels": 4,
+		"documentStatusLabels": 4,
+		"documentIssueSignatureModeLabels": 1,
+		"documentVoidReasonLabels": 1,
+		"documentActionLabels": 1,
+		"categoryLabels": 2,
+		"treatmentStatusLabels": 1,
+		"strategyLabels": 1,
+		"imagingViewerToolLabels": 1,
+		"patientInsightRiskLabels": 2,
+		"safeSpecialtyLabels": 2,
+		"viewHints": 3
+	},
+	"jsxExprRescued": 1048,
+	"dataVarRescued": 1277
 }

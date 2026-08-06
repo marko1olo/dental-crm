@@ -8,8 +8,8 @@ import { db } from "../db/client.js";
 import {
 	appointments,
 	chairs,
-	payments,
 	patients,
+	payments,
 	treatmentPlans,
 	users,
 	visits,
@@ -36,9 +36,18 @@ import {
  * владельцу клиники.
  */
 export const RU_MONTHS = [
-	"Янв", "Фев", "Мар", "Апр",
-	"Май", "Июн", "Июл", "Авг",
-	"Сен", "Окт", "Ноя", "Дек",
+	"Янв",
+	"Фев",
+	"Мар",
+	"Апр",
+	"Май",
+	"Июн",
+	"Июл",
+	"Авг",
+	"Сен",
+	"Окт",
+	"Ноя",
+	"Дек",
 ];
 
 export async function registerAnalyticsRoutes(app: FastifyInstance) {
@@ -72,13 +81,22 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			// БЫЛО: setMonth(getMonth() - 1) на 31-м числе перескакивал через месяц.
 			// 31 марта → "31 февраля" → 3 марта: отчёт "за прошлый месяц" охватывал
 			// 28 дней вместо 31 и молча терял конец февраля. Сначала ставим 1-е число.
-			const monthsBack = range === "last_month" ? 1 : range === "last_3_months" ? 3 : 0;
+			const monthsBack =
+				range === "last_month" ? 1 : range === "last_3_months" ? 3 : 0;
 			if (monthsBack > 0) {
 				const now = new Date();
-				startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack, now.getDate());
+				startDate = new Date(
+					now.getFullYear(),
+					now.getMonth() - monthsBack,
+					now.getDate(),
+				);
 				if (startDate.getDate() !== now.getDate()) {
 					// День не существует в целевом месяце (31 → 30/28): берём его последний день.
-					startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack + 1, 0);
+					startDate = new Date(
+						now.getFullYear(),
+						now.getMonth() - monthsBack + 1,
+						0,
+					);
 				}
 				startDate.setHours(0, 0, 0, 0);
 			} else if (range === "this_year") {
@@ -86,7 +104,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			}
 
 			const withDate = (orgCol: any, dateCol?: any) =>
-				startDate ? and(eq(orgCol, orgId), gte(dateCol, startDate)) : eq(orgCol, orgId);
+				startDate
+					? and(eq(orgCol, orgId), gte(dateCol, startDate))
+					: eq(orgCol, orgId);
 
 			/*
 			 * 1. ВОРОНКА ПЛАНОВ ЛЕЧЕНИЯ. ЗДЕСЬ СЧИТАЛИСЬ ПРИЁМЫ.
@@ -152,7 +172,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					count: sql<number>`count(*)::int`,
 				})
 				.from(treatmentPlans)
-				.where(withDate(treatmentPlans.organizationId, treatmentPlans.createdAt))
+				.where(
+					withDate(treatmentPlans.organizationId, treatmentPlans.createdAt),
+				)
 				.groupBy(treatmentPlans.status);
 
 			/*
@@ -168,7 +190,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			 * с указанием, что делать, и по которому считается `isEmpty` всего
 			 * дашборда. Сумма от этого не меняется: отброшенные ветви несут ноль.
 			 */
-			const planFunnelJson = buildPlanFunnel(planCounts).filter((x) => x.value > 0);
+			const planFunnelJson = buildPlanFunnel(planCounts).filter(
+				(x) => x.value > 0,
+			);
 
 			// 2. Doctor Profitability — payments grouped by doctorUserId
 			const docProfRes = await db
@@ -182,7 +206,12 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				// БЫЛО: суммировались ВСЕ платежи, включая planned (деньги ещё не
 				// получены), refunded и voided. Клиника видела выручку в разы больше
 				// фактической. Фронтенд (useAppLogic) считает правильно — только "paid".
-				.where(and(withDate(payments.organizationId, payments.createdAt), eq(payments.status, "paid")))
+				.where(
+					and(
+						withDate(payments.organizationId, payments.createdAt),
+						eq(payments.status, "paid"),
+					),
+				)
 				.groupBy(appointments.doctorUserId);
 
 			const allDocs = await db
@@ -196,7 +225,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					const revenue = Number(r.revenue || 0);
 					return {
 						name: r.doctorId
-							? (docMap.get(r.doctorId) || "Врач клиники")
+							? docMap.get(r.doctorId) || "Врач клиники"
 							: "Общая касса",
 						revenue,
 						// БЫЛО: margin = 35% от выручки и completionRate = 85 — константы,
@@ -229,7 +258,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const colors = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
 			const chairUtilizationJson = chairUtilRes
 				.map((r, i) => ({
-					name: r.chairId ? (chairMap.get(r.chairId) || "Кресло") : "Основное кресло",
+					name: r.chairId
+						? chairMap.get(r.chairId) || "Кресло"
+						: "Основное кресло",
 					value: Number(r.count),
 					fill: colors[i % colors.length],
 				}))
@@ -276,7 +307,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			 * `::text` тут не спасает: дело не в типе, а в номере. Так уже дважды
 			 * падала в 500 тепловая карта смен.
 			 */
-			const cohortZone = await postgresKnowsTimeZone(await clinicTimeZone(orgId));
+			const cohortZone = await postgresKnowsTimeZone(
+				await clinicTimeZone(orgId),
+			);
 			const cohortMonthBucket = sql`date_trunc('month', ${inClinicZone(patients.createdAt, cohortZone)})`;
 
 			const cohortRaw = await db
@@ -320,7 +353,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					const monthIdx = monthStr ? parseInt(monthStr, 10) - 1 : 0;
 					const label = RU_MONTHS[monthIdx] ?? key;
 					const avg = (arr: number[]) =>
-						arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+						arr.length
+							? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
+							: 0;
 					void m1;
 					return {
 						cohort: label,
@@ -337,7 +372,12 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.select({ total: sql<number>`coalesce(sum(${payments.amountRub}), 0)` })
 				.from(payments)
 				// Только фактически полученные деньги (см. комментарий выше).
-				.where(and(withDate(payments.organizationId, payments.createdAt), eq(payments.status, "paid")));
+				.where(
+					and(
+						withDate(payments.organizationId, payments.createdAt),
+						eq(payments.status, "paid"),
+					),
+				);
 
 			// Средний чек считается на ПЛАТИВШИХ пациентов. Раньше делили выручку
 			// периода на число пациентов, ЗАРЕГИСТРИРОВАННЫХ в этом периоде: при
@@ -345,7 +385,12 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const [payingPatientRow] = await db
 				.select({ count: sql<number>`count(distinct ${payments.patientId})` })
 				.from(payments)
-				.where(and(withDate(payments.organizationId, payments.createdAt), eq(payments.status, "paid")));
+				.where(
+					and(
+						withDate(payments.organizationId, payments.createdAt),
+						eq(payments.status, "paid"),
+					),
+				);
 
 			const [apptCountRow] = await db
 				.select({ count: sql<number>`count(*)` })
@@ -391,7 +436,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			return reply.code(503).send({
 				success: false,
 				error: "AnalyticsUnavailable",
-				message: "Не удалось построить аналитику. Данные не потеряны, повторите позже.",
+				message:
+					"Не удалось построить аналитику. Данные не потеряны, повторите позже.",
 			});
 		}
 	});

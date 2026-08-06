@@ -5,8 +5,8 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { formatPhoneNumber } from "../utils/inputSanitation";
 import { PatientAdministrativeForm } from "../components/patient/PatientAdministrativeForm";
+import { formatPhoneNumber } from "../utils/inputSanitation";
 
 /**
  * КАРТОЧКУ ПАЦИЕНТА РАСПИЛИЛИ, РАСПИЛ ОТКАТИЛИ, А ПОТОМ ВЕРНУЛИ ПОЛОВИНУ.
@@ -36,7 +36,8 @@ import { PatientAdministrativeForm } from "../components/patient/PatientAdminist
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webSrc = join(here, "..");
-const read = (relativePath: string) => readFileSync(join(webSrc, relativePath), "utf8");
+const read = (relativePath: string) =>
+	readFileSync(join(webSrc, relativePath), "utf8");
 
 const patientsView = read("PatientsView.tsx");
 
@@ -82,7 +83,8 @@ function renderForm(profileDraft: typeof draft): string {
 			patientAdministrativeProfileDraft: profileDraft,
 			updatePatientAdministrativeProfileDraft: () => {},
 			weekdayOptions,
-			normalizeOptionalWorkingDaysDraft: (days: number[]) => [...days].sort((a, b) => a - b),
+			normalizeOptionalWorkingDaysDraft: (days: number[]) =>
+				[...days].sort((a, b) => a - b),
 		}),
 	);
 }
@@ -92,7 +94,11 @@ describe("реквизиты пациента рисуются целиком", 
 
 	it("каждое поле административного профиля дошло до экрана", () => {
 		const missing = Object.entries(draft)
-			.filter(([field]) => field !== "preferredAppointmentWeekdays" && field !== "orthodonticProgress")
+			.filter(
+				([field]) =>
+					field !== "preferredAppointmentWeekdays" &&
+					field !== "orthodonticProgress",
+			)
 			.filter(([, value]) => !markup.includes(String(value)))
 			.map(([field]) => field);
 
@@ -112,7 +118,10 @@ describe("реквизиты пациента рисуются целиком", 
 			"Удобно приходить до",
 			"Комментарий к записи",
 		]) {
-			assert.ok(markup.includes(label), `подпись «${label}» пропала — поле снова стало недостижимым`);
+			assert.ok(
+				markup.includes(label),
+				`подпись «${label}» пропала — поле снова стало недостижимым`,
+			);
 		}
 	});
 
@@ -133,8 +142,14 @@ describe("реквизиты пациента рисуются целиком", 
 	});
 
 	it("плейсхолдер документа представителя больше не обещает «сессию»", () => {
-		assert.ok(!markup.includes("Паспорт / сессия"), "вернулся бессмысленный плейсхолдер «Паспорт / сессия»");
-		assert.ok(markup.includes("Паспорт / доверенность"), "плейсхолдер документа представителя потерялся");
+		assert.ok(
+			!markup.includes("Паспорт / сессия"),
+			"вернулся бессмысленный плейсхолдер «Паспорт / сессия»",
+		);
+		assert.ok(
+			markup.includes("Паспорт / доверенность"),
+			"плейсхолдер документа представителя потерялся",
+		);
 	});
 
 	it("удобное окно приема — два раздельных поля времени, а не одно", () => {
@@ -149,8 +164,15 @@ describe("реквизиты пациента рисуются целиком", 
 	});
 
 	it("полупара «начало есть, конца нет» показывает оба поля и выход из тупика", () => {
-		const halfPair = renderForm({ ...draft, preferredAppointmentStart: "09:30", preferredAppointmentEnd: "" });
-		assert.ok(halfPair.includes('value="09:30"'), "начало окна не отрисовано — очистить его нечем");
+		const halfPair = renderForm({
+			...draft,
+			preferredAppointmentStart: "09:30",
+			preferredAppointmentEnd: "",
+		});
+		assert.ok(
+			halfPair.includes('value="09:30"'),
+			"начало окна не отрисовано — очистить его нечем",
+		);
 		assert.equal(
 			(halfPair.match(/type="time"/g) ?? []).length,
 			2,
@@ -190,7 +212,11 @@ describe("карточка пациента не держит вторую ко�
 			"insurancePolicyNumber",
 			"legalRepresentativeFullName",
 			"preferredAppointmentWeekdays",
-		].filter((field) => patientsView.includes(`updatePatientAdministrativeProfileDraft("${field}"`));
+		].filter((field) =>
+			patientsView.includes(
+				`updatePatientAdministrativeProfileDraft("${field}"`,
+			),
+		);
 
 		assert.deepEqual(
 			duplicated,

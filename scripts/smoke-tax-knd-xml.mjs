@@ -4,8 +4,8 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { issueAttestation } from "./lib/documentIssueAttestation.mjs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+import { issueAttestation } from "./lib/documentIssueAttestation.mjs";
 
 const tempRoot = mkdtempSync(path.join(tmpdir(), "dental-tax-knd-xml-"));
 

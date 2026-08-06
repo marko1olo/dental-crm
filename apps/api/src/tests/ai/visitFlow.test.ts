@@ -28,7 +28,7 @@ describe("runVisitFlow Orchestrator", () => {
 		process.env.DENTAL_SPEECH_POLISH_BASE_URL = "http://localhost:9999/dummy";
 		process.env.DENTAL_SPEECH_POLISH_API_KEY = "test-key";
 		process.env.DENTAL_SPEECH_POLISH_MODEL = "test-model";
-		
+
 		process.env.DENTAL_CLINICAL_AI_PROVIDER = "custom";
 		process.env.DENTAL_CLINICAL_AI_BASE_URL = "http://localhost:9999/dummy";
 		process.env.DENTAL_CLINICAL_AI_API_KEY = "test-key";
@@ -40,58 +40,106 @@ describe("runVisitFlow Orchestrator", () => {
 		mock.restoreAll();
 	});
 
-	function mockFetch(responses: { draft?: any, plan?: any, recs?: any, draftError?: boolean, planError?: boolean, recsError?: boolean }) {
+	function mockFetch(responses: {
+		draft?: any;
+		plan?: any;
+		recs?: any;
+		draftError?: boolean;
+		planError?: boolean;
+		recsError?: boolean;
+	}) {
 		mock.method(globalThis, "fetch", async (url: any, init: any) => {
 			const body = init?.body ? JSON.parse(init.body) : {};
-			const prompt = body.messages?.[0]?.content || body.messages?.[1]?.content || "";
+			const prompt =
+				body.messages?.[0]?.content || body.messages?.[1]?.content || "";
 
-			if (prompt.includes("диктовку приема") || prompt.includes("форме 043/у")) {
+			if (
+				prompt.includes("диктовку приема") ||
+				prompt.includes("форме 043/у")
+			) {
 				if (responses.draftError) throw new Error("Draft fetch failed");
 				return {
 					ok: true,
 					json: async () => ({
-						choices: [{ message: { content: JSON.stringify(responses.draft || {}) } }],
-					}),
-				} as any;
-			}
-			
-			if (prompt.includes("презентации пациенту") || prompt.includes("человеческий язык")) {
-				if (responses.planError) throw new Error("Plan fetch failed");
-				return {
-					ok: true,
-					json: async () => ({
-						choices: [{ message: { content: JSON.stringify(responses.plan || {}) } }],
-					}),
-				} as any;
-			}
-			
-			if (prompt.includes("памятки для пациента") || prompt.includes("telegramSummary")) {
-				if (responses.recsError) throw new Error("Recs fetch failed");
-				return {
-					ok: true,
-					json: async () => ({
-						choices: [{ message: { content: JSON.stringify(responses.recs || {}) } }],
+						choices: [
+							{ message: { content: JSON.stringify(responses.draft || {}) } },
+						],
 					}),
 				} as any;
 			}
 
-			return { ok: true, json: async () => ({ choices: [{ message: { content: "{}" } }] }) } as any;
+			if (
+				prompt.includes("презентации пациенту") ||
+				prompt.includes("человеческий язык")
+			) {
+				if (responses.planError) throw new Error("Plan fetch failed");
+				return {
+					ok: true,
+					json: async () => ({
+						choices: [
+							{ message: { content: JSON.stringify(responses.plan || {}) } },
+						],
+					}),
+				} as any;
+			}
+
+			if (
+				prompt.includes("памятки для пациента") ||
+				prompt.includes("telegramSummary")
+			) {
+				if (responses.recsError) throw new Error("Recs fetch failed");
+				return {
+					ok: true,
+					json: async () => ({
+						choices: [
+							{ message: { content: JSON.stringify(responses.recs || {}) } },
+						],
+					}),
+				} as any;
+			}
+
+			return {
+				ok: true,
+				json: async () => ({ choices: [{ message: { content: "{}" } }] }),
+			} as any;
 		});
 	}
 
 	test("runVisitFlow - happy path", async () => {
 		mockFetch({
-			draft: { complaint: "Жалоба", diagnosis: "Диагноз", treatmentPlan: "План" },
-			plan: { patientFriendlyExplanation: "Все будет ок", patientHygieneAdvice: "Чистите зубы" },
-			recs: { telegramSummary: "Рекомендации", hygieneInstructions: ["Чистить"], nutritionInstructions: ["Не есть"] }
+			draft: {
+				complaint: "Жалоба",
+				diagnosis: "Диагноз",
+				treatmentPlan: "План",
+			},
+			plan: {
+				patientFriendlyExplanation: "Все будет ок",
+				patientHygieneAdvice: "Чистите зубы",
+			},
+			recs: {
+				telegramSummary: "Рекомендации",
+				hygieneInstructions: ["Чистить"],
+				nutritionInstructions: ["Не есть"],
+			},
 		});
 
 		const result = await runVisitFlow({
 			patientId: "00000000-0000-0000-0000-000000000000",
 			transcript: "Болит зуб",
 			specialty: "universal",
-			completedServices: [{ title: "Лечение кариеса", priceRub: 1000, serviceId: "1", quantity: 1 }],
-			orchestratorConfig: { enablePlan: true, enableRecommendations: true, enableDocuments: true }
+			completedServices: [
+				{
+					title: "Лечение кариеса",
+					priceRub: 1000,
+					serviceId: "1",
+					quantity: 1,
+				},
+			],
+			orchestratorConfig: {
+				enablePlan: true,
+				enableRecommendations: true,
+				enableDocuments: true,
+			},
 		});
 
 		assert.strictEqual(result.draft.status, "success");
@@ -125,7 +173,9 @@ describe("runVisitFlow Orchestrator", () => {
 			patientId: "00000000-0000-0000-0000-000000000000",
 			transcript: "Жалоба пациента болит зуб",
 			specialty: "universal",
-			completedServices: [{ title: "Лечение", priceRub: 1000, serviceId: "1", quantity: 1 }]
+			completedServices: [
+				{ title: "Лечение", priceRub: 1000, serviceId: "1", quantity: 1 },
+			],
 		});
 
 		assert.strictEqual(result.draft.status, "success");
@@ -141,7 +191,7 @@ describe("runVisitFlow Orchestrator", () => {
 		 */
 		assert.ok(
 			(draftData?.warnings?.length ?? 0) > 0,
-			"Разбор диктовки отказал, но предупреждений для врача не выдал: на экране это молчание вместо причины."
+			"Разбор диктовки отказал, но предупреждений для врача не выдал: на экране это молчание вместо причины.",
 		);
 		// Since completedServices is provided, plan and recommendations should still be generated
 		assert.strictEqual(result.overallStatus, "success");
@@ -153,14 +203,21 @@ describe("runVisitFlow Orchestrator", () => {
 		mockFetch({
 			draft: { complaint: "Жалоба", treatmentPlan: "План" },
 			planError: true,
-			recsError: true
+			recsError: true,
 		});
 
 		const result = await runVisitFlow({
 			patientId: "00000000-0000-0000-0000-000000000000",
 			transcript: "Болит зуб",
 			specialty: "universal",
-			completedServices: [{ title: "Лечение кариеса", priceRub: 1000, serviceId: "1", quantity: 1 }],
+			completedServices: [
+				{
+					title: "Лечение кариеса",
+					priceRub: 1000,
+					serviceId: "1",
+					quantity: 1,
+				},
+			],
 		});
 
 		const planData = result.plan.data;
@@ -168,22 +225,26 @@ describe("runVisitFlow Orchestrator", () => {
 
 		assert.strictEqual(result.draft.status, "success");
 		assert.strictEqual(result.plan.status, "success");
-		assert.ok(planData?.patientFriendlyExplanation?.includes("Ваш план лечения"));
+		assert.ok(
+			planData?.patientFriendlyExplanation?.includes("Ваш план лечения"),
+		);
 		assert.strictEqual(result.recommendations.status, "success");
-		assert.ok(recommendationsData?.telegramSummary?.includes("Рекомендации после"));
+		assert.ok(
+			recommendationsData?.telegramSummary?.includes("Рекомендации после"),
+		);
 		assert.strictEqual(result.overallStatus, "success");
 	});
 
 	test("runVisitFlow - skipped plan and recs when disabled", async () => {
 		mockFetch({
-			draft: { complaint: "Осмотр" }
+			draft: { complaint: "Осмотр" },
 		});
 
 		const result = await runVisitFlow({
 			patientId: "00000000-0000-0000-0000-000000000000",
 			transcript: "Осмотр",
 			specialty: "universal",
-			orchestratorConfig: { enablePlan: false, enableRecommendations: false }
+			orchestratorConfig: { enablePlan: false, enableRecommendations: false },
 		});
 
 		assert.strictEqual(result.draft.status, "success");
@@ -191,23 +252,34 @@ describe("runVisitFlow Orchestrator", () => {
 		assert.strictEqual(result.recommendations.status, "skipped");
 		assert.strictEqual(result.overallStatus, "success");
 	});
-	
+
 	test("runVisitFlow - generates documents correctly", async () => {
 		mockFetch({
-			draft: { complaint: "Жалоба", treatmentPlan: "План" }
+			draft: { complaint: "Жалоба", treatmentPlan: "План" },
 		});
 
 		const result = await runVisitFlow({
 			patientId: "00000000-0000-0000-0000-000000000000",
 			transcript: "Болит зуб",
 			specialty: "universal",
-			completedServices: [{ title: "Сложное удаление зуба", priceRub: 1000, serviceId: "1", quantity: 1 }],
+			completedServices: [
+				{
+					title: "Сложное удаление зуба",
+					priceRub: 1000,
+					serviceId: "1",
+					quantity: 1,
+				},
+			],
 		});
 
 		const documentsData = result.documents.data;
 
 		assert.strictEqual(result.documents.status, "success");
-		assert.ok(documentsData?.suggestions.includes("procedure_specific_consent"));
-		assert.ok(documentsData?.suggestions.includes("post_visit_recommendations"));
+		assert.ok(
+			documentsData?.suggestions.includes("procedure_specific_consent"),
+		);
+		assert.ok(
+			documentsData?.suggestions.includes("post_visit_recommendations"),
+		);
 	});
 });

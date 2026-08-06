@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage";
-import { AuthArtItem, getCurrentTimeSlot, selectAuthArt } from "./authArtSelector";
+import {
+	type AuthArtItem,
+	getCurrentTimeSlot,
+	selectAuthArt,
+} from "./authArtSelector";
 
 export function AuthArtBackground() {
 	const [manifest, setManifest] = useState<AuthArtItem[]>([]);
@@ -19,7 +23,10 @@ export function AuthArtBackground() {
 			try {
 				setArtSettings(JSON.parse(saved));
 			} catch (e) {
-				console.error("Failed to parse auth art settings from local storage", e);
+				console.error(
+					"Failed to parse auth art settings from local storage",
+					e,
+				);
 			}
 		}
 
@@ -34,9 +41,12 @@ export function AuthArtBackground() {
 		if (!artSettings.enabled || manifest.length === 0) return;
 
 		const slot = artSettings.dynamicByTimeOfDay ? getCurrentTimeSlot() : "day";
-		const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		const isReducedMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)",
+		).matches;
 		const nav = navigator as any;
-		const isSaveData = nav.connection?.saveData || nav.connection?.effectiveType?.includes("2g");
+		const isSaveData =
+			nav.connection?.saveData || nav.connection?.effectiveType?.includes("2g");
 
 		const art = selectAuthArt(manifest, {
 			pack: artSettings.pack,
@@ -89,8 +99,12 @@ export function AuthArtBackground() {
 					display: "block",
 				}}
 			>
-				{selectedArt.avif && <source srcSet={`/auth-art/${selectedArt.avif}`} type="image/avif" />}
-				{selectedArt.webp && <source srcSet={`/auth-art/${selectedArt.webp}`} type="image/webp" />}
+				{selectedArt.avif && (
+					<source srcSet={`/auth-art/${selectedArt.avif}`} type="image/avif" />
+				)}
+				{selectedArt.webp && (
+					<source srcSet={`/auth-art/${selectedArt.webp}`} type="image/webp" />
+				)}
 				<img
 					src={`/auth-art/${selectedArt.webp || selectedArt.avif}`}
 					alt=""

@@ -68,7 +68,10 @@ describe("money: неизвестная сумма не выглядит нул�
 	it("undefined не печатается как «0 ₽»", () => {
 		// Доезжает сюда через `money(obj?.field)` и через отсутствующее поле JSON.
 		assert.equal(money(undefined), moneyUnknownLabel);
-		assert.ok(!money(undefined).includes("0 ₽"), `получено: ${money(undefined)}`);
+		assert.ok(
+			!money(undefined).includes("0 ₽"),
+			`получено: ${money(undefined)}`,
+		);
 	});
 
 	it("нечитаемая строка не печатается ни как «0 ₽», ни как «NaN ₽»", () => {

@@ -15,7 +15,11 @@
 
 import assert from "node:assert/strict";
 import { afterEach, describe, test } from "node:test";
-import { parseMaxRecipient, sendMaxTextMessage, MAX_TEXT_LIMIT } from "../maxTransport.js";
+import {
+	MAX_TEXT_LIMIT,
+	parseMaxRecipient,
+	sendMaxTextMessage,
+} from "../maxTransport.js";
 
 const realFetch = globalThis.fetch;
 
@@ -26,12 +30,15 @@ afterEach(() => {
 /** Подмена сети: возвращает заданный ответ и запоминает, что было запрошено. */
 function stubFetch(status: number, payload: unknown) {
 	const calls: { url: string; init: RequestInit }[] = [];
-	globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+	globalThis.fetch = (async (
+		url: string | URL | Request,
+		init?: RequestInit,
+	) => {
 		calls.push({ url: String(url), init: init ?? {} });
 		return {
 			ok: status >= 200 && status < 300,
 			status,
-			json: async () => payload
+			json: async () => payload,
 		} as Response;
 	}) as typeof fetch;
 	return calls;
@@ -39,7 +46,10 @@ function stubFetch(status: number, payload: unknown) {
 
 describe("адрес получателя в MAX", () => {
 	test("голое число — это чат, потому что метку оставляет разбор входящих", () => {
-		assert.deepEqual(parseMaxRecipient("123456789"), { kind: "chat", id: "123456789" });
+		assert.deepEqual(parseMaxRecipient("123456789"), {
+			kind: "chat",
+			id: "123456789",
+		});
 	});
 
 	test("префикс user: адресует пользователя, а не чат", () => {
@@ -63,7 +73,7 @@ describe("отправка в MAX", () => {
 		const result = await sendMaxTextMessage({
 			botToken: "тестовый-токен",
 			recipient: { kind: "chat", id: "555" },
-			text: "Напоминаем о приёме завтра в 10:00."
+			text: "Напоминаем о приёме завтра в 10:00.",
 		});
 
 		assert.equal(result.ok, true);
@@ -72,20 +82,31 @@ describe("отправка в MAX", () => {
 		assert.ok(call);
 		assert.ok(call.url.includes("chat_id=555"), call.url);
 		// Документация прямо запрещает токен в строке запроса.
-		assert.ok(!call.url.includes("тестовый-токен"), "токен не должен попадать в URL");
+		assert.ok(
+			!call.url.includes("тестовый-токен"),
+			"токен не должен попадать в URL",
+		);
 		const headers = call.init.headers as Record<string, string>;
 		assert.equal(headers.authorization, "тестовый-токен");
 	});
 
 	test("идентификатор сообщения читается, а при незнакомой форме — null", async () => {
 		stubFetch(200, { message: { body: { mid: "mid-77" } } });
-		const withId = await sendMaxTextMessage({ botToken: "t", recipient: { kind: "user", id: "1" }, text: "текст" });
+		const withId = await sendMaxTextMessage({
+			botToken: "t",
+			recipient: { kind: "user", id: "1" },
+			text: "текст",
+		});
 		assert.equal(withId.ok && withId.providerMessageId, "mid-77");
 
 		// Структура MessageBody в документации не раскрыта: если поля нет,
 		// возвращается null, а не придуманное значение.
 		stubFetch(200, { message: { body: {} } });
-		const withoutId = await sendMaxTextMessage({ botToken: "t", recipient: { kind: "user", id: "1" }, text: "текст" });
+		const withoutId = await sendMaxTextMessage({
+			botToken: "t",
+			recipient: { kind: "user", id: "1" },
+			text: "текст",
+		});
 		assert.equal(withoutId.ok, true);
 		assert.equal(withoutId.ok && withoutId.providerMessageId, null);
 	});
@@ -96,20 +117,32 @@ describe("отправка в MAX", () => {
 			{ status: 429, expected: "rate_limited" },
 			{ status: 404, expected: "recipient_unavailable" },
 			{ status: 400, expected: "bad_request" },
-			{ status: 503, expected: "network" }
+			{ status: 503, expected: "network" },
 		];
 
 		for (const item of cases) {
 			stubFetch(item.status, { message: "не получилось" });
-			const result = await sendMaxTextMessage({ botToken: "t", recipient: { kind: "chat", id: "1" }, text: "текст" });
+			const result = await sendMaxTextMessage({
+				botToken: "t",
+				recipient: { kind: "chat", id: "1" },
+				text: "текст",
+			});
 			assert.equal(result.ok, false);
-			assert.equal(result.ok === false && result.errorClass, item.expected, `код ${item.status}`);
+			assert.equal(
+				result.ok === false && result.errorClass,
+				item.expected,
+				`код ${item.status}`,
+			);
 		}
 	});
 
 	test("текст сервера сохраняется, а не заменяется своей фразой", async () => {
 		stubFetch(400, { message: "chat not found" });
-		const result = await sendMaxTextMessage({ botToken: "t", recipient: { kind: "chat", id: "1" }, text: "текст" });
+		const result = await sendMaxTextMessage({
+			botToken: "t",
+			recipient: { kind: "chat", id: "1" },
+			text: "текст",
+		});
 		assert.equal(result.ok === false && result.errorMessage, "chat not found");
 	});
 
@@ -118,7 +151,7 @@ describe("отправка в MAX", () => {
 		const result = await sendMaxTextMessage({
 			botToken: "t",
 			recipient: { kind: "chat", id: "1" },
-			text: "я".repeat(MAX_TEXT_LIMIT + 1)
+			text: "я".repeat(MAX_TEXT_LIMIT + 1),
 		});
 
 		assert.equal(result.ok, false);

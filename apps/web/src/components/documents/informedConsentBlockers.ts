@@ -103,7 +103,8 @@ export function informedConsentBlockersReview(
 	const area = filled(input.toothOrArea) || filled(input.inferredTreatmentArea);
 	const indication =
 		filled(input.diagnosisOrIndication) || filled(input.activeVisitComplaint);
-	const doctor = filled(input.doctorFullName) || filled(input.activeDoctorFullName);
+	const doctor =
+		filled(input.doctorFullName) || filled(input.activeDoctorFullName);
 
 	const checks: Array<InformedConsentBlocker & { ok: boolean }> = [
 		{
@@ -139,13 +140,17 @@ export function informedConsentBlockersReview(
 		{
 			field: "informedConsentAlternatives",
 			label: "Альтернативы",
-			hint: erasedClauseHint("другие способы лечения и отказ, по одному в строке"),
+			hint: erasedClauseHint(
+				"другие способы лечения и отказ, по одному в строке",
+			),
 			ok: textLines(input.alternatives).length > 0,
 		},
 		{
 			field: "informedConsentAftercare",
 			label: "После вмешательства",
-			hint: erasedClauseHint("рекомендации и ограничения после лечения, по одной в строке"),
+			hint: erasedClauseHint(
+				"рекомендации и ограничения после лечения, по одной в строке",
+			),
 			ok: textLines(input.aftercare).length > 0,
 		},
 		{

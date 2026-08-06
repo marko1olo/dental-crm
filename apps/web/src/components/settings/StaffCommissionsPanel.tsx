@@ -20,10 +20,9 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 type CommissionRate = {
 	userId: string;
@@ -99,14 +98,16 @@ export const StaffCommissionsPanel: React.FC = () => {
 	const authRef = useRef(appLogic?.auth);
 	authRef.current = appLogic?.auth;
 	// dashboard живёт на корне useAppLogic; точный тип — ReturnType, читаем мягко.
-	const dashboardUnknown = (appLogic as { dashboard?: unknown } | null)?.dashboard;
+	const dashboardUnknown = (appLogic as { dashboard?: unknown } | null)
+		?.dashboard;
 
 	const clinicSettings =
 		dashboardUnknown &&
 		typeof dashboardUnknown === "object" &&
 		dashboardUnknown !== null &&
 		"clinicSettings" in dashboardUnknown
-			? (dashboardUnknown as { clinicSettings?: { staff?: StaffMemberLite[] } }).clinicSettings
+			? (dashboardUnknown as { clinicSettings?: { staff?: StaffMemberLite[] } })
+					.clinicSettings
 			: undefined;
 	const staff: StaffMemberLite[] = Array.isArray(clinicSettings?.staff)
 		? clinicSettings!.staff!
@@ -117,7 +118,8 @@ export const StaffCommissionsPanel: React.FC = () => {
 		for (const member of staff) {
 			const id = typeof member.id === "string" ? member.id : "";
 			if (!id) continue;
-			const name = typeof member.fullName === "string" ? member.fullName.trim() : "";
+			const name =
+				typeof member.fullName === "string" ? member.fullName.trim() : "";
 			map.set(id, name.length > 0 ? name : id);
 		}
 		return map;
@@ -150,7 +152,10 @@ export const StaffCommissionsPanel: React.FC = () => {
 		try {
 			const response = await fetch("/api/settings/staff/commissions", {
 				method: "GET",
-				headers: denteAdminSecretRequestHeaders(undefined, authRef.current?.settingsAdminSecretSession),
+				headers: denteAdminSecretRequestHeaders(
+					undefined,
+					authRef.current?.settingsAdminSecretSession,
+				),
 			});
 			const payload = (await response.json().catch(() => null)) as unknown;
 			if (!response.ok) {
@@ -231,9 +236,12 @@ export const StaffCommissionsPanel: React.FC = () => {
 		try {
 			const response = await fetch(`/api/settings/staff/${userId}/commission`, {
 				method: "PUT",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-				}, authRef.current?.settingsAdminSecretSession),
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+					},
+					authRef.current?.settingsAdminSecretSession,
+				),
 				body: JSON.stringify({ commissionPct: pct }),
 			});
 			const payload = (await response.json().catch(() => null)) as unknown;
@@ -311,7 +319,8 @@ export const StaffCommissionsPanel: React.FC = () => {
 					<h4 className="m-0">Ставки врачей (% от кассы)</h4>
 					<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-1">
 						Процент, по которому клиника платит врачу за лечение. Ноль допустим
-						(оклад). Действующие значения из таблицы ставок, не из отчёта за месяц.
+						(оклад). Действующие значения из таблицы ставок, не из отчёта за
+						месяц.
 					</p>
 				</div>
 				<button
@@ -362,8 +371,8 @@ export const StaffCommissionsPanel: React.FC = () => {
 								className="text-xs text-amber-700 dark:text-amber-300 m-0 mb-3"
 								role="status"
 							>
-								Без ставки: {withoutRate}. Пока процент не задан, отчёт выплат не
-								включает этого врача в итог к выплате.
+								Без ставки: {withoutRate}. Пока процент не задан, отчёт выплат
+								не включает этого врача в итог к выплате.
 							</p>
 						) : null}
 						<div className="overflow-x-auto">

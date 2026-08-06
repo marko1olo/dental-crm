@@ -20,7 +20,10 @@ export interface PhotoVideoConsentFormProps {
  * недействительная сама по себе отметка узнаваемой публикации), записаны в
  * photoVideoConsentBlockers.ts.
  */
-export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: PhotoVideoConsentFormProps) {
+export function PhotoVideoConsentForm({
+	materialOptions,
+	toggleMaterial,
+}: PhotoVideoConsentFormProps) {
 	const {
 		photoVideoAnonymizationConfirmed,
 		photoVideoClinicalRecordUseConfirmed,
@@ -67,8 +70,9 @@ export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: Photo
 					>
 						<strong>
 							Согласие на фото и видео не создастся: не выполнено{" "}
-							{review.blockers.length} условий из {review.requiredCount}. Отметки ниже
-							перемешаны: часть выбирает пациент, а эти обязательны для клиники:
+							{review.blockers.length} условий из {review.requiredCount}.
+							Отметки ниже перемешаны: часть выбирает пациент, а эти обязательны
+							для клиники:
 						</strong>
 						<ul>
 							{review.blockers.map((blocker) => (
@@ -101,7 +105,9 @@ export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: Photo
 				<input
 					checked={photoVideoClinicalRecordUseConfirmed}
 					type="checkbox"
-					onChange={(event) => setPhotoVideoClinicalRecordUseConfirmed(event.target.checked)}
+					onChange={(event) =>
+						setPhotoVideoClinicalRecordUseConfirmed(event.target.checked)
+					}
 				/>
 				Фото, видео и снимки вносятся в медицинскую карту пациента
 			</label>
@@ -109,15 +115,20 @@ export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: Photo
 				<input
 					checked={photoVideoAnonymizationConfirmed}
 					type="checkbox"
-					onChange={(event) => setPhotoVideoAnonymizationConfirmed(event.target.checked)}
+					onChange={(event) =>
+						setPhotoVideoAnonymizationConfirmed(event.target.checked)
+					}
 				/>
-				Внешнее использование только после обезличивания, кроме отдельно разрешенной узнаваемой публикации
+				Внешнее использование только после обезличивания, кроме отдельно
+				разрешенной узнаваемой публикации
 			</label>
 			<label className="document-payload-checkbox">
 				<input
 					checked={photoVideoLabTransferAllowed}
 					type="checkbox"
-					onChange={(event) => setPhotoVideoLabTransferAllowed(event.target.checked)}
+					onChange={(event) =>
+						setPhotoVideoLabTransferAllowed(event.target.checked)
+					}
 				/>
 				Можно передавать в зуботехническую лабораторию
 			</label>
@@ -125,7 +136,9 @@ export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: Photo
 				<input
 					checked={photoVideoColleagueConsultationAllowed}
 					type="checkbox"
-					onChange={(event) => setPhotoVideoColleagueConsultationAllowed(event.target.checked)}
+					onChange={(event) =>
+						setPhotoVideoColleagueConsultationAllowed(event.target.checked)
+					}
 				/>
 				Можно показывать коллегам для консультации
 			</label>
@@ -133,7 +146,9 @@ export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: Photo
 				<input
 					checked={photoVideoEducationUseAllowed}
 					type="checkbox"
-					onChange={(event) => setPhotoVideoEducationUseAllowed(event.target.checked)}
+					onChange={(event) =>
+						setPhotoVideoEducationUseAllowed(event.target.checked)
+					}
 				/>
 				Можно использовать в обучении и профессиональных разборах
 			</label>
@@ -141,7 +156,9 @@ export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: Photo
 				<input
 					checked={photoVideoMarketingUseAllowed}
 					type="checkbox"
-					onChange={(event) => setPhotoVideoMarketingUseAllowed(event.target.checked)}
+					onChange={(event) =>
+						setPhotoVideoMarketingUseAllowed(event.target.checked)
+					}
 				/>
 				Можно использовать в маркетинге клиники
 			</label>
@@ -149,7 +166,9 @@ export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: Photo
 				<input
 					checked={photoVideoRecognizablePublicationAllowed}
 					type="checkbox"
-					onChange={(event) => setPhotoVideoRecognizablePublicationAllowed(event.target.checked)}
+					onChange={(event) =>
+						setPhotoVideoRecognizablePublicationAllowed(event.target.checked)
+					}
 				/>
 				Разрешена узнаваемая публикация лица или улыбки
 			</label>
@@ -157,13 +176,19 @@ export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: Photo
 				Как пациент отзывает согласие
 				<textarea
 					value={photoVideoRevocationChannel}
-					onChange={(event) => setPhotoVideoRevocationChannel(event.target.value)}
+					onChange={(event) =>
+						setPhotoVideoRevocationChannel(event.target.value)
+					}
 					rows={2}
 				/>
 			</label>
 			<label>
 				Ограничения пациента
-				<textarea value={photoVideoScopeNotes} onChange={(event) => setPhotoVideoScopeNotes(event.target.value)} rows={2} />
+				<textarea
+					value={photoVideoScopeNotes}
+					onChange={(event) => setPhotoVideoScopeNotes(event.target.value)}
+					rows={2}
+				/>
 			</label>
 		</DocumentPayloadCard>
 	);

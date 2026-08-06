@@ -99,7 +99,9 @@ export function usePatientResource<T>(
 				if (cancelled) return;
 				if (!res.ok) {
 					// Код состояния нужен поддержке, а не оператору: он в консоли.
-					console.error(`[usePatientResource ${patientId}] ответ ${res.status} на ${urlRef.current(patientId)}`);
+					console.error(
+						`[usePatientResource ${patientId}] ответ ${res.status} на ${urlRef.current(patientId)}`,
+					);
 					setFailureStatus(res.status);
 					setError(`${panelFailureCause(res.status)}.`);
 					return;

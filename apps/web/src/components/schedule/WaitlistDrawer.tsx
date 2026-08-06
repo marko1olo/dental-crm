@@ -2,12 +2,12 @@ import { Calendar, CheckCircle2, Trash2, UserPlus, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { showToast } from "../GlobalToast";
-import { EmptyState } from "../EmptyState";
-import { PanelLoadFailure } from "../PanelLoadFailure";
-import type { PanelSubject } from "../../lib/panelStateText";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import type { PanelSubject } from "../../lib/panelStateText";
+import { EmptyState } from "../EmptyState";
+import { showToast } from "../GlobalToast";
+import { PanelLoadFailure } from "../PanelLoadFailure";
 
 /**
  * Как называется содержимое очереди для сообщений о загрузке и отказе. Общий
@@ -37,9 +37,13 @@ function waitlistWriteHeaders(): Record<string, string> {
  * Почему изменение не удалось — словами администратора, а не кодом ответа.
  * `action` подставляется в инфинитиве: «не удалось добавить пациента в очередь».
  */
-async function writeFailureText(response: Response, action: string): Promise<string> {
+async function writeFailureText(
+	response: Response,
+	action: string,
+): Promise<string> {
 	const body = await response.json().catch(() => null);
-	const serverMessage = body && typeof body.message === "string" ? body.message.trim() : "";
+	const serverMessage =
+		body && typeof body.message === "string" ? body.message.trim() : "";
 	// Сообщение сервера уже написано по-русски и точнее любого домысла на клиенте.
 	if (serverMessage) return serverMessage;
 	if (response.status === 401 || response.status === 403) {
@@ -104,7 +108,7 @@ export function WaitlistDrawer(props: Props) {
 		updateNewAppointmentDraft,
 		focusNewAppointmentEditor,
 		dashboard: propDashboard,
-		auth: propAuth
+		auth: propAuth,
 	} = props;
 
 	let ctx: any = null;
@@ -123,7 +127,9 @@ export function WaitlistDrawer(props: Props) {
 	 * показывал «Очередь ожидания пуста» — самая опасная из возможных подписей:
 	 * непрочитанное выдавалось за прочитанное и пустое.
 	 */
-	const [loadFailureStatus, setLoadFailureStatus] = useState<number | null | undefined>(undefined);
+	const [loadFailureStatus, setLoadFailureStatus] = useState<
+		number | null | undefined
+	>(undefined);
 
 	// Form State
 	const [selectedPatientId, setSelectedPatientId] = useState("");
@@ -143,7 +149,9 @@ export function WaitlistDrawer(props: Props) {
 			setIsLoading(true);
 			setLoadFailureStatus(undefined);
 			const res = await fetch("/api/waitlist", {
-				headers: auth?.denteClinicalReadHeaders ? auth.denteClinicalReadHeaders() : {},
+				headers: auth?.denteClinicalReadHeaders
+					? auth.denteClinicalReadHeaders()
+					: {},
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -194,7 +202,10 @@ export function WaitlistDrawer(props: Props) {
 				setPriorityLevel("medium");
 				fetchWaitlist();
 			} else {
-				showToast(await writeFailureText(res, "добавить пациента в очередь"), "error");
+				showToast(
+					await writeFailureText(res, "добавить пациента в очередь"),
+					"error",
+				);
 			}
 		} catch (e) {
 			showToast(
@@ -215,7 +226,10 @@ export function WaitlistDrawer(props: Props) {
 				showToast("Запись удалена", "success");
 				fetchWaitlist();
 			} else {
-				showToast(await writeFailureText(res, "убрать пациента из очереди"), "error");
+				showToast(
+					await writeFailureText(res, "убрать пациента из очереди"),
+					"error",
+				);
 			}
 		} catch (e) {
 			showToast(
@@ -361,7 +375,10 @@ export function WaitlistDrawer(props: Props) {
 	}
 
 	return createPortal(
-		<div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm" data-testid="waitlist-drawer">
+		<div
+			className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm"
+			data-testid="waitlist-drawer"
+		>
 			<div className="absolute inset-0" onClick={onClose} />
 			<div className="relative w-full max-w-md h-full bg-[var(--paper)] border-l border-[var(--line)] shadow-2xl flex flex-col z-10 text-[var(--ink)] animate-slide-in">
 				{/* Header */}

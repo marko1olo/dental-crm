@@ -5,7 +5,11 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { componentReachability, isMounted, webSrcRoot } from "../../../../apps/web/src/tests/utils/componentReachability.ts";
+import {
+	componentReachability,
+	isMounted,
+	webSrcRoot,
+} from "../../../../apps/web/src/tests/utils/componentReachability.ts";
 
 const census = componentReachability();
 const keyOf = (c) => `${c.file}:${c.name}`;
@@ -54,7 +58,10 @@ const CEILING = 32;
 function appearedAndStale(verdicts, known) {
 	const measured = verdicts.filter((v) => !isMounted(v.state));
 	const measuredKeys = new Set(measured.map(keyOf));
-	const appeared = measured.filter((v) => !known.has(keyOf(v))).map(keyOf).sort();
+	const appeared = measured
+		.filter((v) => !known.has(keyOf(v)))
+		.map(keyOf)
+		.sort();
 	const stale = [...known].filter((k) => !measuredKeys.has(k)).sort();
 	return { appeared, stale };
 }
@@ -78,7 +85,9 @@ function control(name, fn) {
 // C0 baseline: at HEAD, unmutated, both assertions must be silent.
 {
 	const { appeared, stale } = appearedAndStale(census.verdicts, baseKnown);
-	console.log(`C0 baseline: appeared=${appeared.length} stale=${stale.length} (both must be 0)`);
+	console.log(
+		`C0 baseline: appeared=${appeared.length} stale=${stale.length} (both must be 0)`,
+	);
 	assert.deepEqual(appeared, []);
 	assert.deepEqual(stale, []);
 	console.log("C0 baseline OK - gate is green on the real tree");
@@ -91,29 +100,38 @@ control("legacy entry removed => new orphan must be reported", () => {
 	assert.deepEqual(appeared, [], `appeared: ${appeared.join(", ")}`);
 });
 
-control("mounted component listed as unmounted => stale must be reported", () => {
-	const k = new Set(baseKnown);
-	k.add("AppShell.tsx:AppShell");
-	const { stale } = appearedAndStale(census.verdicts, k);
-	assert.deepEqual(stale, [], `stale: ${stale.join(", ")}`);
-});
+control(
+	"mounted component listed as unmounted => stale must be reported",
+	() => {
+		const k = new Set(baseKnown);
+		k.add("AppShell.tsx:AppShell");
+		const { stale } = appearedAndStale(census.verdicts, k);
+		assert.deepEqual(stale, [], `stale: ${stale.join(", ")}`);
+	},
+);
 
 // C3 THE IMPORTANT ONE: simulate the DELETED guard's blind census by dropping
 // every verdict whose declaration is `export const X: React.FC = ...`. The two
 // DECLARED debts are exactly that shape, so a blind census loses them and the
 // `stale` assertion must fire. This proves the @babel/parser upgrade is
 // LOAD-BEARING: the test cannot pass on the old instrument.
-control("blind ast-grep census (annotated shapes invisible) => stale must fire", () => {
-	const blind = census.verdicts.filter(
-		(v) => !DECLARED.includes(keyOf(v)),
-	);
-	const { stale } = appearedAndStale(blind, baseKnown);
-	assert.deepEqual(stale, [], `stale: ${stale.join(", ")}`);
-});
+control(
+	"blind ast-grep census (annotated shapes invisible) => stale must fire",
+	() => {
+		const blind = census.verdicts.filter((v) => !DECLARED.includes(keyOf(v)));
+		const { stale } = appearedAndStale(blind, baseKnown);
+		assert.deepEqual(stale, [], `stale: ${stale.join(", ")}`);
+	},
+);
 
 control("blank reason => emptyReasons must fire", () => {
-	const reasons = [{ key: DECLARED[0], reason: "" }, { key: DECLARED[1], reason: "   " }];
-	const empty = reasons.filter((r) => r.reason.trim().length === 0).map((r) => r.key);
+	const reasons = [
+		{ key: DECLARED[0], reason: "" },
+		{ key: DECLARED[1], reason: "   " },
+	];
+	const empty = reasons
+		.filter((r) => r.reason.trim().length === 0)
+		.map((r) => r.key);
 	assert.deepEqual(empty, [], `emptyReasons: ${empty.join(", ")}`);
 });
 
@@ -126,12 +144,17 @@ control("119-char reason => shallowReasons must fire", () => {
 
 control("33rd legacy entry => ceiling must fire", () => {
 	const grown = [...LEGACY, "components/Fake.tsx:Fake"];
-	assert.ok(grown.length <= CEILING, `${grown.length} entries at ceiling ${CEILING}`);
+	assert.ok(
+		grown.length <= CEILING,
+		`${grown.length} entries at ceiling ${CEILING}`,
+	);
 });
 
 control("legacy entry on a deleted file => missingFiles must fire", () => {
 	const grown = [...LEGACY, "components/DoesNotExistAtAll.tsx:Ghost"];
-	const missing = grown.filter((k) => !existsSync(path.join(webSrcRoot, k.slice(0, k.lastIndexOf(":")))));
+	const missing = grown.filter(
+		(k) => !existsSync(path.join(webSrcRoot, k.slice(0, k.lastIndexOf(":")))),
+	);
 	assert.deepEqual(missing, [], `missingFiles: ${missing.join(", ")}`);
 });
 
@@ -141,5 +164,9 @@ console.log(`REAL reason lengths: see below (test floor = 120 chars)`);
 
 console.log("---");
 console.log(`CONTROLS FIRED ${fired} / ${total - 0}`);
-console.log(`CENSUS: files=${census.scannedFiles} parsed=${census.parsedFiles} components=${census.verdicts.length} reachable=${census.reachableFiles.size} ms=${census.wallClockMs}`);
-console.log(`DUPLICATE COMPONENT NAMES (ambiguous by-name binding): ${census.duplicateComponentNames.length} -> ${census.duplicateComponentNames.join(", ")}`);
+console.log(
+	`CENSUS: files=${census.scannedFiles} parsed=${census.parsedFiles} components=${census.verdicts.length} reachable=${census.reachableFiles.size} ms=${census.wallClockMs}`,
+);
+console.log(
+	`DUPLICATE COMPONENT NAMES (ambiguous by-name binding): ${census.duplicateComponentNames.length} -> ${census.duplicateComponentNames.join(", ")}`,
+);

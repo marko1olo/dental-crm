@@ -124,8 +124,12 @@ export type SpeechDurableTestLock = {
 export async function acquireSpeechDurableTestLock(): Promise<SpeechDurableTestLock> {
 	const client: PoolClient = await pool.connect();
 	try {
-		await client.query("SELECT set_config('lock_timeout', $1, false)", [String(LOCK_WAIT_TIMEOUT_MS)]);
-		await client.query("SELECT pg_advisory_lock($1::bigint)", [speechDurableLockKey]);
+		await client.query("SELECT set_config('lock_timeout', $1, false)", [
+			String(LOCK_WAIT_TIMEOUT_MS),
+		]);
+		await client.query("SELECT pg_advisory_lock($1::bigint)", [
+			speechDurableLockKey,
+		]);
 	} catch (error) {
 		client.release();
 		const reason = error instanceof Error ? error.message : String(error);
@@ -142,7 +146,9 @@ export async function acquireSpeechDurableTestLock(): Promise<SpeechDurableTestL
 			if (released) return;
 			released = true;
 			try {
-				await client.query("SELECT pg_advisory_unlock($1::bigint)", [speechDurableLockKey]);
+				await client.query("SELECT pg_advisory_unlock($1::bigint)", [
+					speechDurableLockKey,
+				]);
 			} finally {
 				client.release();
 			}

@@ -203,7 +203,9 @@ async function planItemCount(planId: string): Promise<number> {
  * Проверяется числом, а не наличием: «ни одной сироты» и «принадлежит нужной
  * клинике» — разные утверждения, и второе без первого проходит на пустой выборке.
  */
-async function planItemOwnership(planId: string): Promise<{ total: number; orphans: number; mine: number }> {
+async function planItemOwnership(
+	planId: string,
+): Promise<{ total: number; orphans: number; mine: number }> {
 	// Под тенант-контекстом строка без организации не видна ни этому запросу, ни
 	// какому-либо другому: `organization_id = current_tenant` на NULL не истинно.
 	// Поэтому сирота теперь проявляется нулевым `total`, а не ненулевым `orphans`,

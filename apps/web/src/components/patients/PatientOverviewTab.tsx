@@ -7,20 +7,18 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
 import { formatPhoneNumber } from "../../utils/inputSanitation";
+import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
-import { PatientFamilyCard } from "./PatientFamilyCard";
+import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
+import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
 import { PatientDuplicateAlert } from "./PatientDuplicateAlert";
+import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
-import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
-import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
-import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
-
-
 
 type TextFieldChangeEvent = React.ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
@@ -102,7 +100,9 @@ export function PatientOverviewTab() {
 					return;
 				}
 				setFamilyData(null);
-				setFamilyLoadFailure(res.status === 404 ? null : { status: res.status });
+				setFamilyLoadFailure(
+					res.status === 404 ? null : { status: res.status },
+				);
 			})
 			.catch(() => {
 				if (selectedPatientIdRef.current !== requestedPatientId) return;
@@ -153,7 +153,9 @@ export function PatientOverviewTab() {
 			{/* Предупреждение о второй карточке того же человека стоит выше полей:
 			    иначе администратор успевает внести данные не в ту карточку. Само
 			    себя не показывает, когда дублей нет. */}
-			{selectedPatientId ? <PatientDuplicateAlert patientId={selectedPatientId} /> : null}
+			{selectedPatientId ? (
+				<PatientDuplicateAlert patientId={selectedPatientId} />
+			) : null}
 
 			<div
 				className="patient-clinical-grid patients-my-0"
@@ -175,7 +177,6 @@ export function PatientOverviewTab() {
 							dashboard={dashboard}
 						/>
 					)}
-
 				</div>
 				<div className="clinical-col-right" style={{ flex: 1 }}>
 					{selectedPatientId && (
@@ -202,12 +203,9 @@ export function PatientOverviewTab() {
 						<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
 					)}
 
-					{selectedPatientId && (
-						<PatientDuplicateMergeQueuesWidget />
-					)}
+					{selectedPatientId && <PatientDuplicateMergeQueuesWidget />}
 				</div>
 			</div>
 		</div>
 	);
 }
-

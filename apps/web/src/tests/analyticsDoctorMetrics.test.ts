@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	EMPTY_BODY_MESSAGE,
-	MALFORMED_BODY_MESSAGE,
-	MISSING_DATA_MESSAGE,
-	UNKNOWN_METRIC_TEXT,
 	formatCompletionRate,
 	formatMarginCell,
 	formatRub,
+	MALFORMED_BODY_MESSAGE,
+	MISSING_DATA_MESSAGE,
 	metricToneClass,
 	parseDashboardPayload,
+	UNKNOWN_METRIC_TEXT,
 } from "../pages/analyticsDoctorMetrics.js";
 
 /**
@@ -29,20 +29,43 @@ import {
 test("прибыль: неизвестное значение — прочерк, нейтральный тон, без валюты и знака", () => {
 	for (const unknown of [null, undefined]) {
 		const cell = formatMarginCell(unknown);
-		assert.equal(cell.text, UNKNOWN_METRIC_TEXT, "неизвестная прибыль обязана печататься прочерком");
-		assert.equal(cell.tone, "neutral", "прочерк не бывает ни прибылью, ни убытком");
+		assert.equal(
+			cell.text,
+			UNKNOWN_METRIC_TEXT,
+			"неизвестная прибыль обязана печататься прочерком",
+		);
+		assert.equal(
+			cell.tone,
+			"neutral",
+			"прочерк не бывает ни прибылью, ни убытком",
+		);
 		// Главный дефект: «+null ₽» зелёным. Ни плюса, ни рубля, ни зелёного.
 		assert.ok(!cell.text.includes("+"), "у неизвестной величины нет знака");
-		assert.ok(!cell.text.includes("₽"), "у неизвестной величины нет единицы измерения");
-		assert.ok(!cell.text.includes("null"), "слово null не должно доезжать до экрана");
-		assert.ok(cell.title && cell.title.length > 0, "прочерк обязан объясняться подсказкой");
+		assert.ok(
+			!cell.text.includes("₽"),
+			"у неизвестной величины нет единицы измерения",
+		);
+		assert.ok(
+			!cell.text.includes("null"),
+			"слово null не должно доезжать до экрана",
+		);
+		assert.ok(
+			cell.title && cell.title.length > 0,
+			"прочерк обязан объясняться подсказкой",
+		);
 	}
-	assert.equal(metricToneClass(formatMarginCell(null).tone), "text-[var(--muted)]");
+	assert.equal(
+		metricToneClass(formatMarginCell(null).tone),
+		"text-[var(--muted)]",
+	);
 });
 
 test("прибыль: NaN и Infinity считаются неизвестными, а не числами", () => {
 	assert.equal(formatMarginCell(Number.NaN).text, UNKNOWN_METRIC_TEXT);
-	assert.equal(formatMarginCell(Number.POSITIVE_INFINITY).text, UNKNOWN_METRIC_TEXT);
+	assert.equal(
+		formatMarginCell(Number.POSITIVE_INFINITY).text,
+		UNKNOWN_METRIC_TEXT,
+	);
 });
 
 test("прибыль: знак и тон берутся из настоящего числа", () => {
@@ -50,7 +73,11 @@ test("прибыль: знак и тон берутся из настоящег�
 	assert.equal(positive.text, "+120,0 тыс. ₽");
 	assert.equal(positive.tone, "positive");
 	assert.equal(metricToneClass(positive.tone), "text-[var(--ok-fg)]");
-	assert.equal(positive.title, undefined, "у посчитанного числа объяснять нечего");
+	assert.equal(
+		positive.title,
+		undefined,
+		"у посчитанного числа объяснять нечего",
+	);
 
 	// Убыток не имеет права печататься со знаком «+».
 	const smallLoss = formatMarginCell(-420);
@@ -69,7 +96,7 @@ test("прибыль: знак и тон берутся из настоящег�
 });
 
 /* Разряды русская локаль разделяет неразрывным пробелом, в новых ICU — узким. */
-const plainMoney = (value: string) => value.replace(/[   ]/g, " ");
+const plainMoney = (value: string) => value.replace(/[ {3}]/g, " ");
 
 test("формат суммы: сокращение считается по модулю, знак стоит впереди", () => {
 	// БЫЛО: +5000 печаталось как «5K ₽», а -5000 — как «-5000 ₽».
@@ -96,7 +123,10 @@ test("формат суммы: копейки видны, латиницы не�
 	assert.equal(plainMoney(formatRub(950.75)), "950,75 ₽");
 	assert.equal(plainMoney(formatRub(0.5)), "0,50 ₽");
 	for (const value of [999, 1_500, 2_400_000]) {
-		assert.ok(!/[A-Za-z]/.test(formatRub(value)), `латиница в «${formatRub(value)}»`);
+		assert.ok(
+			!/[A-Za-z]/.test(formatRub(value)),
+			`латиница в «${formatRub(value)}»`,
+		);
 	}
 });
 
@@ -104,17 +134,33 @@ test("успешность: неизвестное значение не кра�
 	const cell = formatCompletionRate(null);
 	assert.equal(cell.text, UNKNOWN_METRIC_TEXT);
 	// Ровно этот дефект: null не проходил ни >= 80, ни >= 60, и попадал в красную ветку.
-	assert.notEqual(cell.tone, "negative", "неизвестная величина — не плохая оценка врача");
+	assert.notEqual(
+		cell.tone,
+		"negative",
+		"неизвестная величина — не плохая оценка врача",
+	);
 	assert.equal(cell.tone, "neutral");
 	assert.ok(!cell.text.includes("%"), "у неизвестной величины нет процентов");
 });
 
 test("успешность: пороги применяются к настоящему числу", () => {
-	assert.deepEqual(formatCompletionRate(92), { text: "92 %", tone: "positive" });
-	assert.deepEqual(formatCompletionRate(80), { text: "80 %", tone: "positive" });
-	assert.deepEqual(formatCompletionRate(79.6), { text: "80 %", tone: "positive" });
+	assert.deepEqual(formatCompletionRate(92), {
+		text: "92 %",
+		tone: "positive",
+	});
+	assert.deepEqual(formatCompletionRate(80), {
+		text: "80 %",
+		tone: "positive",
+	});
+	assert.deepEqual(formatCompletionRate(79.6), {
+		text: "80 %",
+		tone: "positive",
+	});
 	assert.deepEqual(formatCompletionRate(60), { text: "60 %", tone: "warning" });
-	assert.deepEqual(formatCompletionRate(59), { text: "59 %", tone: "negative" });
+	assert.deepEqual(formatCompletionRate(59), {
+		text: "59 %",
+		tone: "negative",
+	});
 	assert.deepEqual(formatCompletionRate(0), { text: "0 %", tone: "negative" });
 	assert.equal(metricToneClass("warning"), "text-[var(--warn-fg)]");
 });
@@ -144,7 +190,8 @@ test("русское сообщение сервера доходит до эк�
 	const body = JSON.stringify({
 		success: false,
 		error: "AnalyticsUnavailable",
-		message: "Не удалось построить аналитику. Данные не потеряны, повторите позже.",
+		message:
+			"Не удалось построить аналитику. Данные не потеряны, повторите позже.",
 	});
 	const result = parseDashboardPayload(503, body);
 	assert.equal(result.ok, false);
@@ -189,7 +236,12 @@ test("настоящий ответ сервера разбирается, null 
 			planFunnelJson: [{ name: "Завершены", value: 3, fill: "#10b981" }],
 			chairUtilizationJson: [{ name: "Кресло 1", value: 7, fill: "#8b5cf6" }],
 			doctorProfitabilityJson: [
-				{ name: "Иванова А. П.", revenue: 480_000, margin: null, completionRate: null },
+				{
+					name: "Иванова А. П.",
+					revenue: 480_000,
+					margin: null,
+					completionRate: null,
+				},
 			],
 			isEmpty: false,
 		},
@@ -209,14 +261,22 @@ test("настоящий ответ сервера разбирается, null 
 	assert.equal(doctor.margin, null);
 	assert.equal(doctor.completionRate, null);
 	assert.equal(formatMarginCell(doctor.margin).text, UNKNOWN_METRIC_TEXT);
-	assert.equal(formatCompletionRate(doctor.completionRate).text, UNKNOWN_METRIC_TEXT);
+	assert.equal(
+		formatCompletionRate(doctor.completionRate).text,
+		UNKNOWN_METRIC_TEXT,
+	);
 });
 
 test("пустой период отличается от сбоя запроса", () => {
 	const body = JSON.stringify({
 		success: true,
 		data: {
-			kpis: { totalPatients: 0, totalRevenue: 0, totalAppointments: 0, avgRevenuePerPatient: 0 },
+			kpis: {
+				totalPatients: 0,
+				totalRevenue: 0,
+				totalAppointments: 0,
+				avgRevenuePerPatient: 0,
+			},
 			cohortLtvJson: [],
 			planFunnelJson: [],
 			chairUtilizationJson: [],
@@ -233,7 +293,12 @@ test("отсутствие поля isEmpty вычисляется по соде
 	const body = JSON.stringify({
 		success: true,
 		data: {
-			kpis: { totalPatients: 0, totalRevenue: 0, totalAppointments: 0, avgRevenuePerPatient: 0 },
+			kpis: {
+				totalPatients: 0,
+				totalRevenue: 0,
+				totalAppointments: 0,
+				avgRevenuePerPatient: 0,
+			},
 			cohortLtvJson: [],
 			planFunnelJson: [],
 			chairUtilizationJson: [],
@@ -249,7 +314,14 @@ test("мусор в строке врача не превращается в н�
 		success: true,
 		data: {
 			kpis: {},
-			doctorProfitabilityJson: [{ name: "Врач клиники", revenue: 1000, margin: "35%", completionRate: "85" }],
+			doctorProfitabilityJson: [
+				{
+					name: "Врач клиники",
+					revenue: 1000,
+					margin: "35%",
+					completionRate: "85",
+				},
+			],
 			isEmpty: false,
 		},
 	});

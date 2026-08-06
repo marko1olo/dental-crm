@@ -19,7 +19,10 @@ const KEEP_PER_USER = 10;
  * Значения это не имело, потому что писать в таблицу было некому — она пуста
  * с самого создания, и виджет всегда показывал «История просмотров пуста».
  */
-export async function getRecentPatientHistoryFromDb(orgId: string, userId: string) {
+export async function getRecentPatientHistoryFromDb(
+	orgId: string,
+	userId: string,
+) {
 	return db
 		.select()
 		.from(recentPatientHistory)
@@ -52,7 +55,11 @@ export async function recordPatientViewInDb(
 	patientId: string,
 ): Promise<{ recorded: boolean }> {
 	const [patient] = await db
-		.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+		.select({
+			id: patients.id,
+			fullName: patients.fullName,
+			phone: patients.phone,
+		})
 		.from(patients)
 		.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
 		.limit(1);

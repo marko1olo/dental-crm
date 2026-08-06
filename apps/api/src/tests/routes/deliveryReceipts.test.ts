@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
+import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
-import { communicationOutbox, organizations, patients } from "../../db/schema.js";
+import {
+	communicationOutbox,
+	organizations,
+	patients,
+} from "../../db/schema.js";
 import { registerCommunicationReceiptRoutes } from "../../routes/communicationReceipts.js";
-import { parseSmsRuReceipts, parseSmscReceipt, parseWhatsappStatuses } from "../../services/communications/deliveryReceipts.js";
+import {
+	parseSmscReceipt,
+	parseSmsRuReceipts,
+	parseWhatsappStatuses,
+} from "../../services/communications/deliveryReceipts.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
@@ -33,7 +41,9 @@ const SECRET = ["dente", "receipt", "callback", "fixture"].join("-");
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
+	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(
+		message,
+	);
 }
 
 /**
@@ -55,7 +65,9 @@ async function purgeFixtures(): Promise<void> {
 	 * ноль, и хук отчитывается об успехе, оставив фикстуру в общей базе.
 	 */
 	await withFixtureTenant(ORG_ID, async () => {
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db
+			.delete(communicationOutbox)
+			.where(eq(communicationOutbox.organizationId, ORG_ID));
 		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
 	});
@@ -63,7 +75,9 @@ async function purgeFixtures(): Promise<void> {
 
 describe("разбор квитанций провайдеров", () => {
 	test("SMS.RU: несколько квитанций одним запросом", () => {
-		const receipts = parseSmsRuReceipts("000000-10000001=103\n000000-10000002=104\n000000-10000003=110");
+		const receipts = parseSmsRuReceipts(
+			"000000-10000001=103\n000000-10000002=104\n000000-10000003=110",
+		);
 		assert.equal(receipts.length, 3);
 		assert.equal(receipts[0]?.state, "delivered");
 		assert.equal(receipts[1]?.state, "failed");
@@ -97,27 +111,44 @@ describe("разбор квитанций провайдеров", () => {
 	});
 
 	test("SMS.RU: пустые строки между квитанциями игнорируются", () => {
-		const receipts = parseSmsRuReceipts("000000-10000001=103\n \n\t\n000000-10000002=104");
+		const receipts = parseSmsRuReceipts(
+			"000000-10000001=103\n \n\t\n000000-10000002=104",
+		);
 		assert.equal(receipts.length, 2);
 		assert.equal(receipts[0]?.providerMessageId, "000000-10000001");
 		assert.equal(receipts[1]?.providerMessageId, "000000-10000002");
 	});
 
 	test("SMSC: доставка, отказ и ожидание различаются", () => {
-		assert.equal(parseSmscReceipt({ id: "12345", status: "1" })?.state, "delivered");
-		assert.equal(parseSmscReceipt({ id: "12345", status: "2" })?.state, "delivered");
-		assert.equal(parseSmscReceipt({ id: "12345", status: "20" })?.state, "failed");
+		assert.equal(
+			parseSmscReceipt({ id: "12345", status: "1" })?.state,
+			"delivered",
+		);
+		assert.equal(
+			parseSmscReceipt({ id: "12345", status: "2" })?.state,
+			"delivered",
+		);
+		assert.equal(
+			parseSmscReceipt({ id: "12345", status: "20" })?.state,
+			"failed",
+		);
 		// −1 это «ожидает отправки». Считать отрицательный код отказом значит
 		// преждевременно признать сообщение потерянным.
-		assert.equal(parseSmscReceipt({ id: "12345", status: "-1" })?.state, "in_transit");
-		assert.equal(parseSmscReceipt({ id: "12345", status: "0" })?.state, "in_transit");
+		assert.equal(
+			parseSmscReceipt({ id: "12345", status: "-1" })?.state,
+			"in_transit",
+		);
+		assert.equal(
+			parseSmscReceipt({ id: "12345", status: "0" })?.state,
+			"in_transit",
+		);
 	});
 
 	test("WhatsApp: прочитано считается доставкой, а не отдельным исходом", () => {
 		const receipts = parseWhatsappStatuses([
 			{ id: "wamid.A", status: "delivered" },
 			{ id: "wamid.B", status: "read" },
-			{ id: "wamid.C", status: "sent" }
+			{ id: "wamid.C", status: "sent" },
 		]);
 		assert.equal(receipts[0]?.state, "delivered");
 		// Для напоминания о приёме «прочитано» — тот же успех, что «доставлено».
@@ -127,7 +158,11 @@ describe("разбор квитанций провайдеров", () => {
 
 	test("WhatsApp: отказ объяснён человеческим текстом, а не кодом Meta", () => {
 		const [receipt] = parseWhatsappStatuses([
-			{ id: "wamid.D", status: "failed", errors: [{ code: 131026, title: "Message undeliverable" }] }
+			{
+				id: "wamid.D",
+				status: "failed",
+				errors: [{ code: 131026, title: "Message undeliverable" }],
+			},
 		]);
 		assert.equal(receipt?.state, "failed");
 		// Администратор должен понять, что делать: писать SMS.
@@ -137,14 +172,22 @@ describe("разбор квитанций провайдеров", () => {
 
 	test("WhatsApp: окно 24 часов названо своими словами", () => {
 		const [receipt] = parseWhatsappStatuses([
-			{ id: "wamid.E", status: "failed", errors: [{ code: 131047, title: "Re-engagement message" }] }
+			{
+				id: "wamid.E",
+				status: "failed",
+				errors: [{ code: 131047, title: "Re-engagement message" }],
+			},
 		]);
 		assert.ok(receipt?.detail.includes("24 часов"), receipt?.detail);
 	});
 
 	test("WhatsApp: незнакомый код не выдумывает объяснение", () => {
 		const [receipt] = parseWhatsappStatuses([
-			{ id: "wamid.F", status: "failed", errors: [{ code: 999999, title: "Something new" }] }
+			{
+				id: "wamid.F",
+				status: "failed",
+				errors: [{ code: 999999, title: "Something new" }],
+			},
 		]);
 		// Берётся заголовок от Meta, а не придуманная фраза.
 		assert.ok(receipt?.detail.includes("Something new"), receipt?.detail);
@@ -157,7 +200,9 @@ describe("разбор квитанций провайдеров", () => {
 		assert.deepEqual(parseWhatsappStatuses(["строка"]), []);
 		// Неизвестное состояние сохраняется как unknown: расхождение с
 		// документацией Meta должно быть видно, а статус при этом не меняется.
-		const [unknown] = parseWhatsappStatuses([{ id: "wamid.G", status: "deleted" }]);
+		const [unknown] = parseWhatsappStatuses([
+			{ id: "wamid.G", status: "deleted" },
+		]);
 		assert.equal(unknown?.state, "unknown");
 	});
 
@@ -197,50 +242,54 @@ describe("применение квитанций к очереди", () => {
 			 * без дизъюнкта обхода, поэтому вставка без контекста отвергается 42501.
 			 */
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника квитанций" });
-				await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Квитанция Тест Тестович" });
-
 				await db
-					.insert(communicationOutbox)
-					.values([
-						{
-							id: sentId,
-							organizationId: ORG_ID,
-							patientId: PATIENT_ID,
-							channel: "sms",
-							intent: "appointment_confirmation",
-							recipientAddress: "79160000501",
-							body: "Напоминание",
-							status: "sent",
-							providerMessageId: "receipt-sent-1",
-							dedupeKey: "receipt:test:sent"
-						},
-						{
-							// Отменённое сообщение квитанция не должна оживлять.
-							id: cancelledId,
-							organizationId: ORG_ID,
-							patientId: PATIENT_ID,
-							channel: "sms",
-							intent: "general",
-							recipientAddress: "79160000501",
-							body: "Отменено",
-							status: "cancelled",
-							providerMessageId: "receipt-cancelled-1",
-							dedupeKey: "receipt:test:cancelled"
-						},
-						{
-							id: deliveredId,
-							organizationId: ORG_ID,
-							patientId: PATIENT_ID,
-							channel: "sms",
-							intent: "general",
-							recipientAddress: "79160000501",
-							body: "Доставлено",
-							status: "delivered",
-							providerMessageId: "receipt-delivered-1",
-							dedupeKey: "receipt:test:delivered"
-						}
-					]);
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника квитанций" });
+				await db.insert(patients).values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Квитанция Тест Тестович",
+				});
+
+				await db.insert(communicationOutbox).values([
+					{
+						id: sentId,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						channel: "sms",
+						intent: "appointment_confirmation",
+						recipientAddress: "79160000501",
+						body: "Напоминание",
+						status: "sent",
+						providerMessageId: "receipt-sent-1",
+						dedupeKey: "receipt:test:sent",
+					},
+					{
+						// Отменённое сообщение квитанция не должна оживлять.
+						id: cancelledId,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						channel: "sms",
+						intent: "general",
+						recipientAddress: "79160000501",
+						body: "Отменено",
+						status: "cancelled",
+						providerMessageId: "receipt-cancelled-1",
+						dedupeKey: "receipt:test:cancelled",
+					},
+					{
+						id: deliveredId,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						channel: "sms",
+						intent: "general",
+						recipientAddress: "79160000501",
+						body: "Доставлено",
+						status: "delivered",
+						providerMessageId: "receipt-delivered-1",
+						dedupeKey: "receipt:test:delivered",
+					},
+				]);
 			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
@@ -262,7 +311,7 @@ describe("применение квитанций к очереди", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/communications/receipts/smsru",
-			payload: { data: "receipt-sent-1=103" }
+			payload: { data: "receipt-sent-1=103" },
 		});
 		assert.equal(response.statusCode, 401, response.body);
 	});
@@ -273,8 +322,12 @@ describe("применение квитанций к очереди", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/communications/receipts/smsru",
-			headers: { "x-dente-receipt-secret": ["wrong", "secret", "value", "here"].join("-") },
-			payload: { data: "receipt-sent-1=103" }
+			headers: {
+				"x-dente-receipt-secret": ["wrong", "secret", "value", "here"].join(
+					"-",
+				),
+			},
+			payload: { data: "receipt-sent-1=103" },
 		});
 		assert.equal(response.statusCode, 401, response.body);
 	});
@@ -286,7 +339,7 @@ describe("применение квитанций к очереди", () => {
 			method: "POST",
 			url: "/api/communications/receipts/smsru",
 			headers: { "x-dente-receipt-secret": SECRET },
-			payload: { data: "receipt-sent-1=103" }
+			payload: { data: "receipt-sent-1=103" },
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).delivered, 1);
@@ -297,11 +350,17 @@ describe("применение квитанций к очереди", () => {
 		 * вместо статуса сообщения.
 		 */
 		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, sentId))
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.id, sentId)),
 		);
 		assert.equal(row?.status, "delivered");
 		assert.notEqual(row?.deliveredAt, null);
-		assert.ok(row?.receiptDetail?.includes("Доставлено"), row?.receiptDetail ?? "");
+		assert.ok(
+			row?.receiptDetail?.includes("Доставлено"),
+			row?.receiptDetail ?? "",
+		);
 	});
 
 	test("поздняя квитанция об ошибке не отменяет доставку", async (context) => {
@@ -313,17 +372,23 @@ describe("применение квитанций к очереди", () => {
 			method: "POST",
 			url: "/api/communications/receipts/smsru",
 			headers: { "x-dente-receipt-secret": SECRET },
-			payload: { data: "receipt-sent-1=104" }
+			payload: { data: "receipt-sent-1=104" },
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).failed, 0);
 
 		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, sentId))
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.id, sentId)),
 		);
 		assert.equal(row?.status, "delivered");
 		// Текст квитанции при этом сохраняется — расхождение должно быть видно.
-		assert.ok(row?.receiptDetail?.includes("истёк срок"), row?.receiptDetail ?? "");
+		assert.ok(
+			row?.receiptDetail?.includes("истёк срок"),
+			row?.receiptDetail ?? "",
+		);
 	});
 
 	test("отменённое сообщение квитанция не оживляет", async (context) => {
@@ -333,14 +398,17 @@ describe("применение квитанций к очереди", () => {
 			method: "POST",
 			url: "/api/communications/receipts/smsru",
 			headers: { "x-dente-receipt-secret": SECRET },
-			payload: { data: "receipt-cancelled-1=103" }
+			payload: { data: "receipt-cancelled-1=103" },
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		// Провайдер об отменённом сообщении ничего знать не может.
 		assert.equal(JSON.parse(response.body).unmatched, 1);
 
 		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, cancelledId))
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.id, cancelledId)),
 		);
 		assert.equal(row?.status, "cancelled");
 	});
@@ -350,17 +418,23 @@ describe("применение квитанций к очереди", () => {
 
 		const response = await app.inject({
 			method: "GET",
-			url: `/api/communications/receipts/smsc?secret=${encodeURIComponent(SECRET)}&id=receipt-delivered-1&status=20&err=5`
+			url: `/api/communications/receipts/smsc?secret=${encodeURIComponent(SECRET)}&id=receipt-delivered-1&status=20&err=5`,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		// Строка уже delivered — понижения не будет, но текст запишется.
 		assert.equal(JSON.parse(response.body).failed, 0);
 
 		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, deliveredId))
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.id, deliveredId)),
 		);
 		assert.equal(row?.status, "delivered");
-		assert.ok(row?.receiptDetail?.includes("Невозможно доставить"), row?.receiptDetail ?? "");
+		assert.ok(
+			row?.receiptDetail?.includes("Невозможно доставить"),
+			row?.receiptDetail ?? "",
+		);
 	});
 
 	test("неизвестный идентификатор считается несопоставленным", async (context) => {
@@ -370,7 +444,7 @@ describe("применение квитанций к очереди", () => {
 			method: "POST",
 			url: "/api/communications/receipts/smsru",
 			headers: { "x-dente-receipt-secret": SECRET },
-			payload: { data: "чужой-идентификатор=103" }
+			payload: { data: "чужой-идентификатор=103" },
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
@@ -386,7 +460,7 @@ describe("применение квитанций к очереди", () => {
 			method: "POST",
 			url: "/api/communications/receipts/smsru",
 			headers: { "x-dente-receipt-secret": SECRET },
-			payload: { data: "" }
+			payload: { data: "" },
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).accepted, 0);
@@ -404,7 +478,7 @@ describe("приём квитанций без настроенного секр
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/communications/receipts/smsru",
-				payload: { data: "any=103" }
+				payload: { data: "any=103" },
 			});
 			// Открытый эндпоинт позволил бы кому угодно помечать сообщения
 			// доставленными, то есть скрывать недоставку.
@@ -412,7 +486,8 @@ describe("приём квитанций без настроенного секр
 			assert.ok(JSON.parse(response.body).message.includes("не настроен"));
 		} finally {
 			await app.close();
-			if (savedSecret !== undefined) process.env.DENTE_COMMUNICATION_RECEIPT_SECRET = savedSecret;
+			if (savedSecret !== undefined)
+				process.env.DENTE_COMMUNICATION_RECEIPT_SECRET = savedSecret;
 		}
 	});
 });

@@ -1,11 +1,20 @@
 export const meta = {
-  name: 'archon-recon-2',
-  description: 'DENTE read-only reconnaissance: the i18n cost, the unverified-identity auth hole, a behavioural hollow-panel census, and the EGISZ legal clock — output becomes cycle 13 packets',
-  phases: [
-    { title: 'Recon', detail: 'four independent read-only investigations, no source edits at all' },
-    { title: 'Critique', detail: 'a second agent attacks each dossier for numbers it cannot reproduce' },
-  ],
-}
+	name: "archon-recon-2",
+	description:
+		"DENTE read-only reconnaissance: the i18n cost, the unverified-identity auth hole, a behavioural hollow-panel census, and the EGISZ legal clock — output becomes cycle 13 packets",
+	phases: [
+		{
+			title: "Recon",
+			detail:
+				"four independent read-only investigations, no source edits at all",
+		},
+		{
+			title: "Critique",
+			detail:
+				"a second agent attacks each dossier for numbers it cannot reproduce",
+		},
+	],
+};
 
 const RECON_LAW = `
 You are a RECONNAISSANCE analyst on the DENTE dental CRM under lead [ARCHON].
@@ -104,14 +113,14 @@ REASON, never fantasy. §11 Russian, UTF-8, no mojibake.
 - FROZEN AREAS you may investigate but must NOT propose patching a third time: speech/dictation
   ('apps/api/src/speech/**', 'routes/speech.ts') failed review 5 times; Telegram ('routes/telegram.ts')
   twice. For those, only a root-cause or deletion recommendation is acceptable.
-`
+`;
 
 const PACKETS = [
-  {
-    id: 'RC1-i18n-true-cost',
-    label: 'RC1 what would making this product multilingual actually cost',
-    dir: '.agents/archon/recon/RC1-i18n-true-cost',
-    brief: `
+	{
+		id: "RC1-i18n-true-cost",
+		label: "RC1 what would making this product multilingual actually cost",
+		dir: ".agents/archon/recon/RC1-i18n-true-cost",
+		brief: `
 THE QUESTION: is this product translatable at all, and what is the smallest honest first step?
 
 **WHAT IS BELIEVED, AND YOU MUST VERIFY OR DEMOLISH IT.** There is no i18n library. Roughly 14,814 lines
@@ -146,12 +155,12 @@ regex and none has been re-measured.
 gains anything at all from this work. If your answer is «nothing measurable yet», say it. The lead would
 rather cancel a fashionable feature than ship a facade.
 `,
-  },
-  {
-    id: 'RC2-unverified-identity',
-    label: 'RC2 the identity that says verified:false and nobody checks it',
-    dir: '.agents/archon/recon/RC2-unverified-identity',
-    brief: `
+	},
+	{
+		id: "RC2-unverified-identity",
+		label: "RC2 the identity that says verified:false and nobody checks it",
+		dir: ".agents/archon/recon/RC2-unverified-identity",
+		brief: `
 THE QUESTION: can a caller obtain another clinic's data, and how many independent auth idioms decide it?
 
 **WHAT IS BELIEVED, AND EVERY LINE OF IT NEEDS CONFIRMING AT A REAL LINE.**
@@ -190,12 +199,13 @@ shared 'requireClinical*' helpers and hand-rolled 'verifyToken' in 'routes/patie
 **DO NOT PROPOSE A FIX YOU HAVE NOT TRACED TO EVERY CALLER.** The convergence of the two idioms is
 wanted, but converging onto a helper that is itself wrong would be worse than leaving two.
 `,
-  },
-  {
-    id: 'RC3-hollow-panel-census',
-    label: 'RC3 which panels show a table nothing writes — measured behaviourally',
-    dir: '.agents/archon/recon/RC3-hollow-panel-census',
-    brief: `
+	},
+	{
+		id: "RC3-hollow-panel-census",
+		label:
+			"RC3 which panels show a table nothing writes — measured behaviourally",
+		dir: ".agents/archon/recon/RC3-hollow-panel-census",
+		brief: `
 THE QUESTION: which parts of this product are furniture — a panel whose data can never arrive?
 
 **THE PREVIOUS ATTEMPT AT THIS NUMBER WAS A REGEX ARTEFACT AND THE LEAD PUBLISHED IT.** «45 hollow
@@ -236,12 +246,12 @@ they need different fixes, so classify rather than lump:
 **SAY WHAT YOUR CENSUS CANNOT SEE.** Every instrument has a blind spot; naming yours is what separates
 this dossier from the one that produced «45 of 50».
 `,
-  },
-  {
-    id: 'RC4-egisz-legal-clock',
-    label: 'RC4 the EGISZ obligations the product cannot currently meet',
-    dir: '.agents/archon/recon/RC4-egisz-legal-clock',
-    brief: `
+	},
+	{
+		id: "RC4-egisz-legal-clock",
+		label: "RC4 the EGISZ obligations the product cannot currently meet",
+		dir: ".agents/archon/recon/RC4-egisz-legal-clock",
+		brief: `
 THE QUESTION: what does Russian law require of a dental clinic's records, and where does this product
 leave the dentist personally exposed?
 
@@ -277,129 +287,252 @@ Patient consent to transmit data is required and may not be modelled at all.
 6. **RECOMMEND ONE BOUNDED PACKET** — most likely the honest-failure-state work, since that needs no
    legal certainty: a clinic must never believe it reported when it did not. Name the files.
 `,
-  },
-]
+	},
+];
 
 const RECON_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'headline', 'confirmed', 'demolished', 'inventory', 'methodCommands', 'blindSpots', 'notEstablished', 'recommendedPacket', 'dossierCorrections'],
-  properties: {
-    packet: { type: 'string' },
-    headline: { type: 'string', description: 'The single most important finding, one sentence, naming the user-visible consequence.' },
-    confirmed: { type: 'array', items: { type: 'string' }, description: 'Each with file:line or the exact command, and whether it is a source / runtime / database fact.' },
-    demolished: { type: 'array', items: { type: 'string' }, description: 'Beliefs from the brief or existing dossiers that your measurement DISPROVED. Name the wrong claim.' },
-    inventory: { type: 'array', items: { type: 'string' }, description: 'The inventory your brief demanded, per item, with a verdict.' },
-    methodCommands: { type: 'array', items: { type: 'string' }, description: 'The exact commands behind your numbers, so the lead can re-run them.' },
-    blindSpots: { type: 'array', items: { type: 'string' }, description: 'What your instrument structurally cannot see.' },
-    notEstablished: { type: 'array', items: { type: 'string' }, description: 'Each with the exact command or document that would settle it.' },
-    recommendedPacket: { type: 'string', description: 'One bounded packet: the files, the order of work, and what would make it fail review. Or an argued recommendation NOT to do it.' },
-    dossierCorrections: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"headline",
+		"confirmed",
+		"demolished",
+		"inventory",
+		"methodCommands",
+		"blindSpots",
+		"notEstablished",
+		"recommendedPacket",
+		"dossierCorrections",
+	],
+	properties: {
+		packet: { type: "string" },
+		headline: {
+			type: "string",
+			description:
+				"The single most important finding, one sentence, naming the user-visible consequence.",
+		},
+		confirmed: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Each with file:line or the exact command, and whether it is a source / runtime / database fact.",
+		},
+		demolished: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Beliefs from the brief or existing dossiers that your measurement DISPROVED. Name the wrong claim.",
+		},
+		inventory: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"The inventory your brief demanded, per item, with a verdict.",
+		},
+		methodCommands: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"The exact commands behind your numbers, so the lead can re-run them.",
+		},
+		blindSpots: {
+			type: "array",
+			items: { type: "string" },
+			description: "What your instrument structurally cannot see.",
+		},
+		notEstablished: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Each with the exact command or document that would settle it.",
+		},
+		recommendedPacket: {
+			type: "string",
+			description:
+				"One bounded packet: the files, the order of work, and what would make it fail review. Or an argued recommendation NOT to do it.",
+		},
+		dossierCorrections: { type: "array", items: { type: "string" } },
+	},
+};
 
 const CRITIQUE_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'verdict', 'reproduced', 'failedToReproduce', 'overreach', 'missed', 'reasoning'],
-  properties: {
-    packet: { type: 'string' },
-    verdict: { enum: ['TRUSTWORTHY', 'TRUSTWORTHY_WITH_CORRECTIONS', 'PARTLY_UNRELIABLE', 'UNRELIABLE'] },
-    reproduced: { type: 'array', items: { type: 'string' } },
-    failedToReproduce: { type: 'array', items: { type: 'string' } },
-    overreach: { type: 'array', items: { type: 'string' }, description: 'Claims stated more strongly than the evidence supports, especially invented legal rules or backend contracts.' },
-    missed: { type: 'array', items: { type: 'string' }, description: 'What the recon should have found and did not.' },
-    reasoning: { type: 'string' },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"verdict",
+		"reproduced",
+		"failedToReproduce",
+		"overreach",
+		"missed",
+		"reasoning",
+	],
+	properties: {
+		packet: { type: "string" },
+		verdict: {
+			enum: [
+				"TRUSTWORTHY",
+				"TRUSTWORTHY_WITH_CORRECTIONS",
+				"PARTLY_UNRELIABLE",
+				"UNRELIABLE",
+			],
+		},
+		reproduced: { type: "array", items: { type: "string" } },
+		failedToReproduce: { type: "array", items: { type: "string" } },
+		overreach: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Claims stated more strongly than the evidence supports, especially invented legal rules or backend contracts.",
+		},
+		missed: {
+			type: "array",
+			items: { type: "string" },
+			description: "What the recon should have found and did not.",
+		},
+		reasoning: { type: "string" },
+	},
+};
 
 function reconStage(p) {
-  return agent(
-    RECON_LAW +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'YOUR ASSIGNMENT: ' + p.id + '\n' +
-    'YOUR ROLE: read-only reconnaissance analyst. You have full READ rights across the repo, the live\n' +
-    'API and the live database, and WRITE rights ONLY inside your own dossier directory.\n' +
-    'WHY THIS IS DELEGATED: the lead needs four independent investigations to run at once while three\n' +
-    'builders hold the source files, and each of these questions needs a whole context of its own.\n' +
-    'YOUR DOSSIER DIRECTORY (create it FIRST, before reading anything): ' + p.dir + '\n' +
-    'FILES YOU MUST LEAVE ON DISK: ' + p.dir + '/findings.md (append as you go) and\n' +
-    p.dir + '/recommendation.md (the bounded packet you propose).\n' +
-    'EVIDENCE STANDARD: every number carries the command that produced it. Your output is EVIDENCE for\n' +
-    'the lead, never authority — a critic will try to reproduce each of your claims and the lead will\n' +
-    're-run the ones that matter.\n' +
-    '═══════════════════════════════════════════════════════════════\n' + p.brief +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'ORDER OF WORK:\n' +
-    ' 1. Create ' + p.dir + ' and write findings.md == «в работе». NOW, before reading anything else.\n' +
-    ' 2. Read the authority documents you need: .agents/AGENTS.md and .agents/INDEX.md, plus the domain\n' +
-    '    files your question names. Complete, not skimmed.\n' +
-    ' 3. Investigate. Append each confirmed fact to findings.md AS YOU CONFIRM IT, with its command.\n' +
-    ' 4. Build the inventory your brief demands. Completeness for a STATED scope beats breadth.\n' +
-    ' 5. Write recommendation.md: one bounded packet, the files it touches, the order of work, and what\n' +
-    '    would make it fail review. An argued «do not do this yet» is a valid and welcome answer.\n' +
-    ' 6. Emit structured output. Put anything you could not establish in notEstablished WITH the command\n' +
-    '    that would close it — an honest gap is worth more than a confident guess.\n' +
-    'A dossier of confident numbers with no commands behind them is a FAILED assignment.\n',
-    { label: p.label, phase: 'Recon', schema: RECON_SCHEMA }
-  )
+	return agent(
+		RECON_LAW +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"YOUR ASSIGNMENT: " +
+			p.id +
+			"\n" +
+			"YOUR ROLE: read-only reconnaissance analyst. You have full READ rights across the repo, the live\n" +
+			"API and the live database, and WRITE rights ONLY inside your own dossier directory.\n" +
+			"WHY THIS IS DELEGATED: the lead needs four independent investigations to run at once while three\n" +
+			"builders hold the source files, and each of these questions needs a whole context of its own.\n" +
+			"YOUR DOSSIER DIRECTORY (create it FIRST, before reading anything): " +
+			p.dir +
+			"\n" +
+			"FILES YOU MUST LEAVE ON DISK: " +
+			p.dir +
+			"/findings.md (append as you go) and\n" +
+			p.dir +
+			"/recommendation.md (the bounded packet you propose).\n" +
+			"EVIDENCE STANDARD: every number carries the command that produced it. Your output is EVIDENCE for\n" +
+			"the lead, never authority — a critic will try to reproduce each of your claims and the lead will\n" +
+			"re-run the ones that matter.\n" +
+			"═══════════════════════════════════════════════════════════════\n" +
+			p.brief +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"ORDER OF WORK:\n" +
+			" 1. Create " +
+			p.dir +
+			" and write findings.md == «в работе». NOW, before reading anything else.\n" +
+			" 2. Read the authority documents you need: .agents/AGENTS.md and .agents/INDEX.md, plus the domain\n" +
+			"    files your question names. Complete, not skimmed.\n" +
+			" 3. Investigate. Append each confirmed fact to findings.md AS YOU CONFIRM IT, with its command.\n" +
+			" 4. Build the inventory your brief demands. Completeness for a STATED scope beats breadth.\n" +
+			" 5. Write recommendation.md: one bounded packet, the files it touches, the order of work, and what\n" +
+			"    would make it fail review. An argued «do not do this yet» is a valid and welcome answer.\n" +
+			" 6. Emit structured output. Put anything you could not establish in notEstablished WITH the command\n" +
+			"    that would close it — an honest gap is worth more than a confident guess.\n" +
+			"A dossier of confident numbers with no commands behind them is a FAILED assignment.\n",
+		{ label: p.label, phase: "Recon", schema: RECON_SCHEMA },
+	);
 }
 
 function critiqueStage(recon, p) {
-  if (!recon) {
-    return { packet: p.id, verdict: 'UNRELIABLE', reproduced: [], failedToReproduce: [], overreach: [], missed: ['Recon produced no result — died or out of capacity. Read ' + p.dir + '/findings.md; partial work may exist on disk.'], reasoning: 'No recon output.' }
-  }
-  return agent(
-    'You are an ADVERSARIAL CRITIC of a reconnaissance dossier on the DENTE dental CRM\n' +
-    '(C:\\Clinic_MVP\\dental-crm), reporting to lead [ARCHON]. You did NOT write this dossier.\n' +
-    '**Your job is to find the numbers that dissolve when re-measured.**\n\n' +
-    'You are READ-ONLY on source and must not edit, create or delete any file except\n' +
-    p.dir + '/critique.md, which you write AS YOU GO because agents die on credits here constantly.\n' +
-    'No git add/commit/rm/checkout/stash/push. No npm typecheck/build/test. Never git remote -v (live\n' +
-    'tokens). Read-only rg/fd/sg/git log/show/grep, read-only node -e, read-only SQL, curl to\n' +
-    '127.0.0.1:4100 are all fine.\n\n' +
-    'WHY THIS ROLE EXISTS. Four numbers published to the Director this campaign were wrong: «45 hollow\n' +
-    'modules of 50» (regex artefact), «4 organizations» (fixtures from a seeder the lead ran itself),\n' +
-    '«zero payments carry a fiscal receipt» (a seeder column list, not human behaviour), and two\n' +
-    '«security findings» that were a probe\'s own stale configuration comment. A critic caught the second\n' +
-    'one. That is the value you are here to add.\n\n' +
-    'THE DOSSIER UNDER ATTACK: ' + p.id + '\n' +
-    'HEADLINE: ' + (recon.headline || '(none)') + '\n' +
-    'CONFIRMED: ' + JSON.stringify(recon.confirmed || []) + '\n' +
-    'DEMOLISHED: ' + JSON.stringify(recon.demolished || []) + '\n' +
-    'INVENTORY: ' + JSON.stringify(recon.inventory || []) + '\n' +
-    'METHOD COMMANDS: ' + JSON.stringify(recon.methodCommands || []) + '\n' +
-    'BLIND SPOTS IT ADMITS: ' + JSON.stringify(recon.blindSpots || []) + '\n' +
-    'NOT ESTABLISHED: ' + JSON.stringify(recon.notEstablished || []) + '\n' +
-    'RECOMMENDED PACKET: ' + (recon.recommendedPacket || '(none)') + '\n' +
-    'ORIGINAL BRIEF:\n' + p.brief + '\n\n' +
-    'DO THIS:\n' +
-    '1. **RE-RUN ITS COMMANDS YOURSELF** and compare outputs. A command that does not reproduce its own\n' +
-    '   stated number is the finding.\n' +
-    '2. **RE-DERIVE ITS HEADLINE WITH A DIFFERENT INSTRUMENT.** If it counted with a regex, count with a\n' +
-    '   parser. If it read code, probe the live API. If it queried the database, split by\n' +
-    '   organization_id and exclude the fixture organization (id starts d0000000) — a number that\n' +
-    '   includes fixture rows is worthless and this has already destroyed one dossier.\n' +
-    '3. **HUNT OVERREACH SPECIFICALLY.** Did it state a legal requirement it cannot source from a\n' +
-    '   document in this repo? Did it invent a backend contract, a DB field, or a role policy that does\n' +
-    '   not exist (§10)? Did it call something a defect when it is declared debt with a written reason?\n' +
-    '   Did it label a source fact as a runtime fact?\n' +
-    '4. **CHECK REACHABILITY OF EVERY CLAIMED DEFECT, LINK BY LINK.** A defect in an unmounted component\n' +
-    '   or an unregistered route is not a user-facing defect. One packet this campaign fixed a dead file\n' +
-    '   and certified it with its strongest label.\n' +
-    '5. **JUDGE THE RECOMMENDATION.** Is it genuinely ONE bounded packet, or a project wearing a\n' +
-    '   packet\'s clothes? Would it survive the constitution — no fabricated defaults, no facade, real\n' +
-    '   decomposition, human Russian error text? Say what would make it fail review.\n' +
-    '6. **SAY WHAT THE DOSSIER MISSED** — the question it should have asked given what it found.\n\n' +
-    'Reserve UNRELIABLE for a dossier whose central claim you disproved. Never award TRUSTWORTHY to a\n' +
-    'number you could not reproduce. Be specific: quote outputs, not impressions.',
-    { label: 'critique:' + p.id, phase: 'Critique', schema: CRITIQUE_SCHEMA }
-  )
+	if (!recon) {
+		return {
+			packet: p.id,
+			verdict: "UNRELIABLE",
+			reproduced: [],
+			failedToReproduce: [],
+			overreach: [],
+			missed: [
+				"Recon produced no result — died or out of capacity. Read " +
+					p.dir +
+					"/findings.md; partial work may exist on disk.",
+			],
+			reasoning: "No recon output.",
+		};
+	}
+	return agent(
+		"You are an ADVERSARIAL CRITIC of a reconnaissance dossier on the DENTE dental CRM\n" +
+			"(C:\\Clinic_MVP\\dental-crm), reporting to lead [ARCHON]. You did NOT write this dossier.\n" +
+			"**Your job is to find the numbers that dissolve when re-measured.**\n\n" +
+			"You are READ-ONLY on source and must not edit, create or delete any file except\n" +
+			p.dir +
+			"/critique.md, which you write AS YOU GO because agents die on credits here constantly.\n" +
+			"No git add/commit/rm/checkout/stash/push. No npm typecheck/build/test. Never git remote -v (live\n" +
+			"tokens). Read-only rg/fd/sg/git log/show/grep, read-only node -e, read-only SQL, curl to\n" +
+			"127.0.0.1:4100 are all fine.\n\n" +
+			"WHY THIS ROLE EXISTS. Four numbers published to the Director this campaign were wrong: «45 hollow\n" +
+			"modules of 50» (regex artefact), «4 organizations» (fixtures from a seeder the lead ran itself),\n" +
+			"«zero payments carry a fiscal receipt» (a seeder column list, not human behaviour), and two\n" +
+			"«security findings» that were a probe's own stale configuration comment. A critic caught the second\n" +
+			"one. That is the value you are here to add.\n\n" +
+			"THE DOSSIER UNDER ATTACK: " +
+			p.id +
+			"\n" +
+			"HEADLINE: " +
+			(recon.headline || "(none)") +
+			"\n" +
+			"CONFIRMED: " +
+			JSON.stringify(recon.confirmed || []) +
+			"\n" +
+			"DEMOLISHED: " +
+			JSON.stringify(recon.demolished || []) +
+			"\n" +
+			"INVENTORY: " +
+			JSON.stringify(recon.inventory || []) +
+			"\n" +
+			"METHOD COMMANDS: " +
+			JSON.stringify(recon.methodCommands || []) +
+			"\n" +
+			"BLIND SPOTS IT ADMITS: " +
+			JSON.stringify(recon.blindSpots || []) +
+			"\n" +
+			"NOT ESTABLISHED: " +
+			JSON.stringify(recon.notEstablished || []) +
+			"\n" +
+			"RECOMMENDED PACKET: " +
+			(recon.recommendedPacket || "(none)") +
+			"\n" +
+			"ORIGINAL BRIEF:\n" +
+			p.brief +
+			"\n\n" +
+			"DO THIS:\n" +
+			"1. **RE-RUN ITS COMMANDS YOURSELF** and compare outputs. A command that does not reproduce its own\n" +
+			"   stated number is the finding.\n" +
+			"2. **RE-DERIVE ITS HEADLINE WITH A DIFFERENT INSTRUMENT.** If it counted with a regex, count with a\n" +
+			"   parser. If it read code, probe the live API. If it queried the database, split by\n" +
+			"   organization_id and exclude the fixture organization (id starts d0000000) — a number that\n" +
+			"   includes fixture rows is worthless and this has already destroyed one dossier.\n" +
+			"3. **HUNT OVERREACH SPECIFICALLY.** Did it state a legal requirement it cannot source from a\n" +
+			"   document in this repo? Did it invent a backend contract, a DB field, or a role policy that does\n" +
+			"   not exist (§10)? Did it call something a defect when it is declared debt with a written reason?\n" +
+			"   Did it label a source fact as a runtime fact?\n" +
+			"4. **CHECK REACHABILITY OF EVERY CLAIMED DEFECT, LINK BY LINK.** A defect in an unmounted component\n" +
+			"   or an unregistered route is not a user-facing defect. One packet this campaign fixed a dead file\n" +
+			"   and certified it with its strongest label.\n" +
+			"5. **JUDGE THE RECOMMENDATION.** Is it genuinely ONE bounded packet, or a project wearing a\n" +
+			"   packet's clothes? Would it survive the constitution — no fabricated defaults, no facade, real\n" +
+			"   decomposition, human Russian error text? Say what would make it fail review.\n" +
+			"6. **SAY WHAT THE DOSSIER MISSED** — the question it should have asked given what it found.\n\n" +
+			"Reserve UNRELIABLE for a dossier whose central claim you disproved. Never award TRUSTWORTHY to a\n" +
+			"number you could not reproduce. Be specific: quote outputs, not impressions.",
+		{ label: "critique:" + p.id, phase: "Critique", schema: CRITIQUE_SCHEMA },
+	);
 }
 
-const all = []
-log('Recon 2 (read-only, no source edits): ' + PACKETS.map((p) => p.id).join(', '))
-const done = await pipeline(PACKETS, reconStage, critiqueStage)
-for (let i = 0; i < PACKETS.length; i++) all.push({ packet: PACKETS[i].id, dir: PACKETS[i].dir, critique: done[i] || null })
-log('Recon 2 complete.')
+const all = [];
+log(
+	"Recon 2 (read-only, no source edits): " +
+		PACKETS.map((p) => p.id).join(", "),
+);
+const done = await pipeline(PACKETS, reconStage, critiqueStage);
+for (let i = 0; i < PACKETS.length; i++)
+	all.push({
+		packet: PACKETS[i].id,
+		dir: PACKETS[i].dir,
+		critique: done[i] || null,
+	});
+log("Recon 2 complete.");
 return { recon: 2, results: all }

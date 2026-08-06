@@ -35,8 +35,8 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 
 const PROTOCOL_ENDPOINTS = [
@@ -61,7 +61,10 @@ let app: FastifyInstance;
 const savedEnv: Record<string, string | undefined> = {};
 
 before(async () => {
-	for (const name of ["DENTE_SETTINGS_ADMIN_SECRET", "DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS"]) {
+	for (const name of [
+		"DENTE_SETTINGS_ADMIN_SECRET",
+		"DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS",
+	]) {
 		savedEnv[name] = process.env[name];
 		delete process.env[name];
 	}
@@ -110,9 +113,20 @@ describe("шаблоны протоколов: адреса записи сущ�
 	}
 
 	test("отказ доступа объясняется по-русски, а не английским телом Fastify", async () => {
-		const response = await app.inject({ method: "POST", url: "/api/settings/protocols", payload: {} });
-		assert.equal(response.statusCode, 503, `ожидался отказ охраны настроек, получено: ${response.body}`);
-		const body = JSON.parse(response.body) as { error?: string; message?: string };
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/settings/protocols",
+			payload: {},
+		});
+		assert.equal(
+			response.statusCode,
+			503,
+			`ожидался отказ охраны настроек, получено: ${response.body}`,
+		);
+		const body = JSON.parse(response.body) as {
+			error?: string;
+			message?: string;
+		};
 		assert.equal(body.error, "SettingsAdminSecretMissing");
 		assert.ok(
 			/[А-Яа-яЁё]/.test(body.message ?? ""),

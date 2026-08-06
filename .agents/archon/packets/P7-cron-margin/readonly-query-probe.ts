@@ -12,7 +12,9 @@ import { sql } from "drizzle-orm";
 import { db, pool } from "../../../../apps/api/src/db/client.js";
 import { buildDoctorProfitabilityRow } from "../../../../apps/api/src/scripts/cronAnalyticsWorker.js";
 
-const orgs = await db.execute(sql`SELECT id, name FROM organizations ORDER BY id`);
+const orgs = await db.execute(
+	sql`SELECT id, name FROM organizations ORDER BY id`,
+);
 
 for (const org of orgs.rows as Array<{ id: string; name: string }>) {
 	const orgId = org.id;
@@ -52,7 +54,9 @@ for (const org of orgs.rows as Array<{ id: string; name: string }>) {
 		LIMIT 5
 	`);
 
-	console.log(`\n=== org ${org.name} (${orgId}) — ${doctorProf.rows.length} строк ===`);
+	console.log(
+		`\n=== org ${org.name} (${orgId}) — ${doctorProf.rows.length} строк ===`,
+	);
 	console.log("RAW   :", JSON.stringify(doctorProf.rows));
 
 	const mapped = doctorProf.rows.map((row) =>

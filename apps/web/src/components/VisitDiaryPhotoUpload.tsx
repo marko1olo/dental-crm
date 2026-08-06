@@ -1,10 +1,13 @@
 import { Camera, Paperclip, Search } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AUTHED_API_FILE_FAILURE, fetchAuthedApiFileObjectUrl } from "../lib/authedApiFile";
+import {
+	AUTHED_API_FILE_FAILURE,
+	fetchAuthedApiFileObjectUrl,
+} from "../lib/authedApiFile";
 import { requestFailureCause } from "../lib/panelStateText";
-import { showToast } from "./GlobalToast";
 import { readDenteClinicToken } from "../lib/safeLocalStorage";
+import { showToast } from "./GlobalToast";
 
 interface Attachment {
 	id: string;
@@ -66,8 +69,12 @@ export function VisitDiaryPhotoUpload({
 	   lib/apiAuthFetch.ts на разметку не действует. Сервер вложений требует
 	   токен кабинета (apps/api/src/routes/files.ts:86-118), то есть отвечал
 	   401, и врач вместо фотографий лечения видел значки битых картинок. */
-	const [photoObjectUrls, setPhotoObjectUrls] = useState<Record<string, string>>({});
-	const [unreadablePhotoIds, setUnreadablePhotoIds] = useState<readonly string[]>([]);
+	const [photoObjectUrls, setPhotoObjectUrls] = useState<
+		Record<string, string>
+	>({});
+	const [unreadablePhotoIds, setUnreadablePhotoIds] = useState<
+		readonly string[]
+	>([]);
 	/* Ссылка, а не состояние: освобождать объектные адреса нужно при смене приёма
 	   и при размонтировании, а не на каждое прикрепление нового фото. Без
 	   revokeObjectURL рабочее место держало бы в памяти копию каждого снимка
@@ -100,17 +107,18 @@ export function VisitDiaryPhotoUpload({
 		void (async () => {
 			let status: number | null = null;
 			try {
-				const response = await fetch(`/api/files/visits/${visitId}/attachments`, {
-					headers: {
-					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-				},
-					signal: controller.signal,
-				});
+				const response = await fetch(
+					`/api/files/visits/${visitId}/attachments`,
+					{
+						headers: {
+							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+						},
+						signal: controller.signal,
+					},
+				);
 				status = response.status;
 				if (!response.ok) {
-					console.error(
-						`[diary attachments] ${status} ${visitId}`,
-					);
+					console.error(`[diary attachments] ${status} ${visitId}`);
 					if (!cancelled) setLoadState({ phase: "failed", status });
 					return;
 				}
@@ -121,7 +129,7 @@ export function VisitDiaryPhotoUpload({
 					typeof data === "object" &&
 					!Array.isArray(data) &&
 					Array.isArray((data as { files?: unknown }).files)
-						? ((data as { files: Attachment[] }).files)
+						? (data as { files: Attachment[] }).files
 						: null;
 				if (!files) {
 					// 200 без files — испорченный ответ, не «снимков нет».
@@ -157,7 +165,6 @@ export function VisitDiaryPhotoUpload({
 		};
 	}, [visitId, reloadToken]);
 
-
 	/* Снимки забираются через fetch по тому же адресу, который отдал сервер в
 	   поле url (apps/api/src/routes/files.ts:137,185), и только потом попадают в
 	   разметку объектным адресом blob:. Так запрос идёт через подмену
@@ -184,7 +191,10 @@ export function VisitDiaryPhotoUpload({
 						return;
 					}
 					createdPhotoObjectUrls.current.set(attachment.id, objectUrl);
-					setPhotoObjectUrls((prev) => ({ ...prev, [attachment.id]: objectUrl }));
+					setPhotoObjectUrls((prev) => ({
+						...prev,
+						[attachment.id]: objectUrl,
+					}));
 				} catch {
 					if (cancelled) return;
 					setUnreadablePhotoIds((prev) =>
@@ -198,7 +208,6 @@ export function VisitDiaryPhotoUpload({
 			cancelled = true;
 		};
 	}, [attachments]);
-
 
 	/*
 	 * Отдать снимки в печать 043/у только когда blob: готов.
@@ -264,8 +273,7 @@ export function VisitDiaryPhotoUpload({
 			try {
 				await new Promise<void>((resolve, reject) => {
 					img.onload = () => resolve();
-					img.onerror = () =>
-						reject(new Error("FILE_NOT_IMAGE"));
+					img.onerror = () => reject(new Error("FILE_NOT_IMAGE"));
 					img.src = localObjectUrl!;
 				});
 			} catch {
@@ -340,7 +348,9 @@ export function VisitDiaryPhotoUpload({
 				 * БЫЛО: throw new Error("Upload failed") → «Ошибка загрузки:
 				 * Upload failed». Серверный message (RU) отбрасывался.
 				 */
-				console.error(`[diary photo upload] ${res.status} ${rawBody.slice(0, 300)}`);
+				console.error(
+					`[diary photo upload] ${res.status} ${rawBody.slice(0, 300)}`,
+				);
 				let serverMessage: string | null = null;
 				try {
 					const parsed: unknown = rawBody.trim() ? JSON.parse(rawBody) : null;
@@ -386,7 +396,10 @@ export function VisitDiaryPhotoUpload({
 				setLoadState({ phase: "ready" });
 				showToast("Фото сжато в WebP и загружено", "success");
 			} else {
-				console.error("[diary photo upload] 2xx без file", rawBody.slice(0, 200));
+				console.error(
+					"[diary photo upload] 2xx без file",
+					rawBody.slice(0, 200),
+				);
 				showToast(
 					"Сервер принял снимок, но не вернул карточку вложения. Нажмите «Повторить» в списке снимков — файл мог уже сохраниться.",
 					"info",

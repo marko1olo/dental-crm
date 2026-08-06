@@ -1,5 +1,5 @@
-import { describe, test } from "node:test";
 import assert from "node:assert";
+import { describe, test } from "node:test";
 import { z } from "zod";
 import {
 	billingSummarySchema,
@@ -530,7 +530,11 @@ describe("баланс пациента принимает копейки", () =
 	});
 
 	test("положительный баланс с копейками проходит", () => {
-		const parsed = assertAccepts(patientSchema, patient(), "patient.balanceRub");
+		const parsed = assertAccepts(
+			patientSchema,
+			patient(),
+			"patient.balanceRub",
+		);
 		assert.strictEqual(parsed.balanceRub, KOPECKS);
 	});
 
@@ -712,7 +716,9 @@ describe("смета лечения принимает копейки", () => {
 	test("третий знак в цене строки отвергается", () => {
 		assertRejects(
 			treatmentCostEstimatePayloadSchema,
-			costEstimate({ serviceLines: [serviceLine({ unitPriceRub: THIRD_DECIMAL })] }),
+			costEstimate({
+				serviceLines: [serviceLine({ unitPriceRub: THIRD_DECIMAL })],
+			}),
 			"treatmentCostEstimate.serviceLines[].unitPriceRub",
 		);
 	});
@@ -787,7 +793,8 @@ describe("график рассрочки принимает копейки", ()
 		);
 		const paidTotal =
 			Math.round(
-				parsed.installments.reduce((sum, item) => sum + item.amountRub, 0) * 100,
+				parsed.installments.reduce((sum, item) => sum + item.amountRub, 0) *
+					100,
 			) / 100;
 		assert.strictEqual(paidTotal, parsed.totalAmountRub - 0.01);
 		assert.strictEqual(paidTotal, parsed.remainingAmountRub);
@@ -1013,7 +1020,12 @@ describe("цена выполненной услуги в потоке визи�
 	const visitFlow = (patch: Record<string, unknown> = {}) => ({
 		transcript: "Вылечили кариес 36",
 		completedServices: [
-			{ serviceId: "srv-1", title: "Лечение кариеса", quantity: 1, priceRub: KOPECKS },
+			{
+				serviceId: "srv-1",
+				title: "Лечение кариеса",
+				quantity: 1,
+				priceRub: KOPECKS,
+			},
 		],
 		...patch,
 	});
@@ -1038,7 +1050,12 @@ describe("цена выполненной услуги в потоке визи�
 			visitFlowRequestSchema,
 			visitFlow({
 				completedServices: [
-					{ serviceId: "srv-1", title: "Лечение", quantity: 1, priceRub: -5000 },
+					{
+						serviceId: "srv-1",
+						title: "Лечение",
+						quantity: 1,
+						priceRub: -5000,
+					},
 				],
 			}),
 			"visitFlowRequest.completedServices[].priceRub/минус",

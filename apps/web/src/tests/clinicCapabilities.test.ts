@@ -3,6 +3,8 @@ import test from "node:test";
 import type { StaffRole } from "@dental/shared";
 import { clinicModeSchema } from "@dental/shared";
 import {
+	type ClinicCapability,
+	type ClinicMode,
 	clinicCapabilities,
 	clinicModes,
 	describeHiddenCapabilities,
@@ -10,8 +12,6 @@ import {
 	resolveClinicMode,
 	staffRoleChoices,
 	visibleStaffRoles,
-	type ClinicCapability,
-	type ClinicMode
 } from "../lib/clinicCapabilities.js";
 
 /**
@@ -45,9 +45,22 @@ test("перечисление режимов не расходится со с�
 	assert.deepEqual([...clinicModes], [...clinicModeSchema.options]);
 	console.log(`  режимы из схемы сервера: ${clinicModes.join(", ")}`);
 	for (const mode of clinicModeSchema.options) {
-		assert.equal(resolveClinicMode(mode), mode, `режим ${mode} не признан своим`);
-		assert.ok(clinicCapabilities(mode).length > 0, `${mode}: пустой набор возможностей`);
-		assert.ok(visibleStaffRoles(["doctor", "administrator", "assistant", "manager", "owner"], mode).length > 0, `${mode}: ни одной роли`);
+		assert.equal(
+			resolveClinicMode(mode),
+			mode,
+			`режим ${mode} не признан своим`,
+		);
+		assert.ok(
+			clinicCapabilities(mode).length > 0,
+			`${mode}: пустой набор возможностей`,
+		);
+		assert.ok(
+			visibleStaffRoles(
+				["doctor", "administrator", "assistant", "manager", "owner"],
+				mode,
+			).length > 0,
+			`${mode}: ни одной роли`,
+		);
 	}
 });
 
@@ -55,8 +68,16 @@ test("основные инструменты доступны в любом р�
 	// Напоминания и обзвон нужны и отдельному врачу: он звонит сам.
 	for (const mode of ALL_MODES) {
 		assert.equal(hasCapability(mode, "callList"), true, `${mode}: нет обзвона`);
-		assert.equal(hasCapability(mode, "messaging"), true, `${mode}: нет отправки сообщений`);
-		assert.equal(hasCapability(mode, "managerReports"), true, `${mode}: нет отчётов`);
+		assert.equal(
+			hasCapability(mode, "messaging"),
+			true,
+			`${mode}: нет отправки сообщений`,
+		);
+		assert.equal(
+			hasCapability(mode, "managerReports"),
+			true,
+			`${mode}: нет отчётов`,
+		);
 	}
 });
 
@@ -94,13 +115,25 @@ test("неизвестный режим не отнимает возможнос
 		"massCampaigns",
 		"managerReports",
 		"doctorBreakdown",
-		"chairUtilisation"
+		"chairUtilisation",
 	];
 	for (const capability of capabilities) {
-		assert.equal(hasCapability(null, capability), true, `null: нет ${capability}`);
-		assert.equal(hasCapability(undefined, capability), true, `undefined: нет ${capability}`);
+		assert.equal(
+			hasCapability(null, capability),
+			true,
+			`null: нет ${capability}`,
+		);
+		assert.equal(
+			hasCapability(undefined, capability),
+			true,
+			`undefined: нет ${capability}`,
+		);
 		// Значение из старой записи в базе, которого нет в перечислении.
-		assert.equal(hasCapability("legacy_mode" as ClinicMode, capability), true, `неизвестный режим: нет ${capability}`);
+		assert.equal(
+			hasCapability("legacy_mode" as ClinicMode, capability),
+			true,
+			`неизвестный режим: нет ${capability}`,
+		);
 	}
 });
 
@@ -111,15 +144,24 @@ test("набор возможностей растёт от отдельного
 	for (let index = 1; index < sizes.length; index += 1) {
 		const previous = sizes[index - 1] ?? 0;
 		const current = sizes[index] ?? 0;
-		assert.ok(current >= previous, `${ALL_MODES[index]} доступно меньше, чем ${ALL_MODES[index - 1]}`);
+		assert.ok(
+			current >= previous,
+			`${ALL_MODES[index]} доступно меньше, чем ${ALL_MODES[index - 1]}`,
+		);
 	}
 });
 
 test("скрытое перечисляется словами — для объяснения в настройках", () => {
 	// Пропажа раздела не должна выглядеть поломкой: она объясняется режимом.
 	const hiddenForSolo = describeHiddenCapabilities("solo_doctor");
-	assert.ok(hiddenForSolo.includes("рассылки по базе пациентов"), JSON.stringify(hiddenForSolo));
-	assert.ok(hiddenForSolo.includes("занятость кресел"), JSON.stringify(hiddenForSolo));
+	assert.ok(
+		hiddenForSolo.includes("рассылки по базе пациентов"),
+		JSON.stringify(hiddenForSolo),
+	);
+	assert.ok(
+		hiddenForSolo.includes("занятость кресел"),
+		JSON.stringify(hiddenForSolo),
+	);
 	assert.deepEqual(describeHiddenCapabilities("network_clinic"), []);
 });
 
@@ -140,7 +182,7 @@ test("раздел продвижения скрыт только у отдел�
 	console.log(`  что скрыто у отдельного врача: ${hidden.join(", ")}`);
 	assert.ok(
 		hidden.includes("раздел продвижения и воронка обращений"),
-		JSON.stringify(hidden)
+		JSON.stringify(hidden),
 	);
 });
 
@@ -160,21 +202,42 @@ test("текущая роль не исчезает из переключате�
 	// а не дописан в конец.
 	assert.deepEqual(
 		stranded.map((role) => roleFocusOrder.indexOf(role)),
-		[...stranded.map((role) => roleFocusOrder.indexOf(role))].sort((a, b) => a - b)
+		[...stranded.map((role) => roleFocusOrder.indexOf(role))].sort(
+			(a, b) => a - b,
+		),
 	);
 	// Если выбранная роль при режиме и так есть, список не расширяется ни на что.
-	assert.deepEqual(staffRoleChoices(roleFocusOrder, "solo_doctor", "doctor"), visibleStaffRoles(roleFocusOrder, "solo_doctor"));
-	assert.deepEqual(staffRoleChoices(roleFocusOrder, "solo_doctor", "owner"), visibleStaffRoles(roleFocusOrder, "solo_doctor"));
-	assert.deepEqual(staffRoleChoices(roleFocusOrder, "network_clinic", "manager"), roleFocusOrder);
+	assert.deepEqual(
+		staffRoleChoices(roleFocusOrder, "solo_doctor", "doctor"),
+		visibleStaffRoles(roleFocusOrder, "solo_doctor"),
+	);
+	assert.deepEqual(
+		staffRoleChoices(roleFocusOrder, "solo_doctor", "owner"),
+		visibleStaffRoles(roleFocusOrder, "solo_doctor"),
+	);
+	assert.deepEqual(
+		staffRoleChoices(roleFocusOrder, "network_clinic", "manager"),
+		roleFocusOrder,
+	);
 	// Роль не выбрана и режим не известен — поведение не меняется.
-	assert.deepEqual(staffRoleChoices(roleFocusOrder, "solo_doctor", null), visibleStaffRoles(roleFocusOrder, "solo_doctor"));
-	assert.deepEqual(staffRoleChoices(roleFocusOrder, null, "manager"), roleFocusOrder);
+	assert.deepEqual(
+		staffRoleChoices(roleFocusOrder, "solo_doctor", null),
+		visibleStaffRoles(roleFocusOrder, "solo_doctor"),
+	);
+	assert.deepEqual(
+		staffRoleChoices(roleFocusOrder, null, "manager"),
+		roleFocusOrder,
+	);
 	// Ровно одна кнопка подсвечена в любом режиме при любой сохранённой роли:
 	// именно этого и не было в шапке.
 	for (const mode of ALL_MODES) {
 		for (const selected of roleFocusOrder) {
 			const choices = staffRoleChoices(roleFocusOrder, mode, selected);
-			assert.equal(choices.filter((role) => role === selected).length, 1, `${mode}/${selected}: выбранной роли нет в списке`);
+			assert.equal(
+				choices.filter((role) => role === selected).length,
+				1,
+				`${mode}/${selected}: выбранной роли нет в списке`,
+			);
 		}
 	}
 });
@@ -199,7 +262,13 @@ test("неизвестное значение режима не превраща
 	assert.equal(resolveClinicMode(42), null);
 });
 
-const roleFocusOrder: StaffRole[] = ["doctor", "administrator", "assistant", "manager", "owner"];
+const roleFocusOrder: StaffRole[] = [
+	"doctor",
+	"administrator",
+	"assistant",
+	"manager",
+	"owner",
+];
 
 test("роли предлагаются только те, что при этом режиме существуют", () => {
 	/*
@@ -214,44 +283,82 @@ test("роли предлагаются только те, что при это�
 	const oneChair = visibleStaffRoles(roleFocusOrder, "one_chair");
 	console.log(`  отдельный врач: ${solo.join(", ")}`);
 	console.log(`  один кабинет:   ${oneChair.join(", ")}`);
-	console.log(`  малая клиника:  ${visibleStaffRoles(roleFocusOrder, "small_clinic").join(", ")}`);
-	console.log(`  сеть:           ${visibleStaffRoles(roleFocusOrder, "network_clinic").join(", ")}`);
+	console.log(
+		`  малая клиника:  ${visibleStaffRoles(roleFocusOrder, "small_clinic").join(", ")}`,
+	);
+	console.log(
+		`  сеть:           ${visibleStaffRoles(roleFocusOrder, "network_clinic").join(", ")}`,
+	);
 
 	assert.deepEqual(solo, ["doctor", "owner"]);
 	// Управляющий над одним кабинетом — тоже никто, а ассистент уже возможен.
 	assert.deepEqual(oneChair, ["doctor", "administrator", "assistant", "owner"]);
-	assert.deepEqual(visibleStaffRoles(roleFocusOrder, "small_clinic"), roleFocusOrder);
-	assert.deepEqual(visibleStaffRoles(roleFocusOrder, "network_clinic"), roleFocusOrder);
+	assert.deepEqual(
+		visibleStaffRoles(roleFocusOrder, "small_clinic"),
+		roleFocusOrder,
+	);
+	assert.deepEqual(
+		visibleStaffRoles(roleFocusOrder, "network_clinic"),
+		roleFocusOrder,
+	);
 });
 
 test("сокращение ролей не отрезает владельца — иначе режим нельзя вернуть", () => {
 	// Роль задаёт состав разделов, и «Настройки» есть не у каждой роли. Если у
 	// режима не останется роли, которая открывает настройки, сменить режим
 	// обратно будет нечем: это ловушка, а не упрощение.
-	const modes: ClinicMode[] = ["solo_doctor", "one_chair", "small_clinic", "network_clinic"];
+	const modes: ClinicMode[] = [
+		"solo_doctor",
+		"one_chair",
+		"small_clinic",
+		"network_clinic",
+	];
 	for (const mode of modes) {
 		const roles = visibleStaffRoles(roleFocusOrder, mode);
 		assert.ok(roles.length > 0, `${mode}: не осталось ни одной роли`);
-		assert.ok(roles.includes("owner"), `${mode}: владелец убран из переключателя`);
+		assert.ok(
+			roles.includes("owner"),
+			`${mode}: владелец убран из переключателя`,
+		);
 	}
 });
 
 test("набор ролей растёт от отдельного врача к сети, и порядок не переставляется", () => {
-	const modes: ClinicMode[] = ["solo_doctor", "one_chair", "small_clinic", "network_clinic"];
-	const sizes = modes.map((mode) => visibleStaffRoles(roleFocusOrder, mode).length);
+	const modes: ClinicMode[] = [
+		"solo_doctor",
+		"one_chair",
+		"small_clinic",
+		"network_clinic",
+	];
+	const sizes = modes.map(
+		(mode) => visibleStaffRoles(roleFocusOrder, mode).length,
+	);
 	for (let index = 1; index < sizes.length; index += 1) {
-		assert.ok((sizes[index] ?? 0) >= (sizes[index - 1] ?? 0), `${modes[index]}: ролей меньше, чем у ${modes[index - 1]}`);
+		assert.ok(
+			(sizes[index] ?? 0) >= (sizes[index - 1] ?? 0),
+			`${modes[index]}: ролей меньше, чем у ${modes[index - 1]}`,
+		);
 	}
 	// Порядок задан частотой использования в AppHelpers, а не алфавитом.
 	for (const mode of modes) {
 		const roles = visibleStaffRoles(roleFocusOrder, mode);
 		const positions = roles.map((role) => roleFocusOrder.indexOf(role));
-		assert.deepEqual(positions, [...positions].sort((a, b) => a - b), `${mode}: порядок ролей переставлен`);
+		assert.deepEqual(
+			positions,
+			[...positions].sort((a, b) => a - b),
+			`${mode}: порядок ролей переставлен`,
+		);
 	}
 });
 
 test("неизвестный режим не отнимает ни одной роли", () => {
 	assert.deepEqual(visibleStaffRoles(roleFocusOrder, null), roleFocusOrder);
-	assert.deepEqual(visibleStaffRoles(roleFocusOrder, undefined), roleFocusOrder);
-	assert.deepEqual(visibleStaffRoles(roleFocusOrder, "legacy_mode" as ClinicMode), roleFocusOrder);
+	assert.deepEqual(
+		visibleStaffRoles(roleFocusOrder, undefined),
+		roleFocusOrder,
+	);
+	assert.deepEqual(
+		visibleStaffRoles(roleFocusOrder, "legacy_mode" as ClinicMode),
+		roleFocusOrder,
+	);
 });

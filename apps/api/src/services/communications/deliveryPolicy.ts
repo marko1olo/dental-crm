@@ -12,7 +12,10 @@
  * тестом, а диспетчер остаётся тонким.
  */
 
-import type { CommunicationChannelCode, CommunicationConsentScope } from "./channelRouter.js";
+import type {
+	CommunicationChannelCode,
+	CommunicationConsentScope,
+} from "./channelRouter.js";
 
 // ─── Тихие часы ──────────────────────────────────────────────────────────────
 
@@ -30,7 +33,7 @@ export function minuteOfDayInTimeZone(date: Date, timeZone: string): number {
 			timeZone,
 			hour: "2-digit",
 			minute: "2-digit",
-			hour12: false
+			hour12: false,
 		}).formatToParts(date);
 	} catch {
 		// Неизвестный пояс в настройках не должен останавливать рассылку.
@@ -38,12 +41,18 @@ export function minuteOfDayInTimeZone(date: Date, timeZone: string): number {
 			timeZone: "UTC",
 			hour: "2-digit",
 			minute: "2-digit",
-			hour12: false
+			hour12: false,
 		}).formatToParts(date);
 	}
 
-	const hour = Number.parseInt(parts.find((part) => part.type === "hour")?.value ?? "0", 10);
-	const minute = Number.parseInt(parts.find((part) => part.type === "minute")?.value ?? "0", 10);
+	const hour = Number.parseInt(
+		parts.find((part) => part.type === "hour")?.value ?? "0",
+		10,
+	);
+	const minute = Number.parseInt(
+		parts.find((part) => part.type === "minute")?.value ?? "0",
+		10,
+	);
 	// «24» в hourCycle h23/h24 означает полночь.
 	return ((hour % 24) * 60 + minute) % MINUTES_PER_DAY;
 }
@@ -52,15 +61,25 @@ export function minuteOfDayInTimeZone(date: Date, timeZone: string): number {
  * Окно тихих часов обычно переходит через полночь (21:00 → 09:00), поэтому
  * простое сравнение «между началом и концом» здесь не работает.
  */
-export function isQuietMinute(minuteOfDay: number, startMinute: number, endMinute: number): boolean {
-	const minute = ((minuteOfDay % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+export function isQuietMinute(
+	minuteOfDay: number,
+	startMinute: number,
+	endMinute: number,
+): boolean {
+	const minute =
+		((minuteOfDay % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
 	if (startMinute === endMinute) return false;
-	if (startMinute < endMinute) return minute >= startMinute && minute < endMinute;
+	if (startMinute < endMinute)
+		return minute >= startMinute && minute < endMinute;
 	return minute >= startMinute || minute < endMinute;
 }
 
 /** Сколько минут ждать до конца тихих часов. 0 — сейчас не тихие часы. */
-export function minutesUntilQuietHoursEnd(minuteOfDay: number, startMinute: number, endMinute: number): number {
+export function minutesUntilQuietHoursEnd(
+	minuteOfDay: number,
+	startMinute: number,
+	endMinute: number,
+): number {
 	if (!isQuietMinute(minuteOfDay, startMinute, endMinute)) return 0;
 	const delta = (endMinute - minuteOfDay + MINUTES_PER_DAY) % MINUTES_PER_DAY;
 	return delta === 0 ? MINUTES_PER_DAY : delta;
@@ -84,24 +103,40 @@ export type QuietHoursDecision =
 export function decideQuietHours(
 	now: Date,
 	scope: CommunicationConsentScope,
-	settings: QuietHoursSettings
+	settings: QuietHoursSettings,
 ): QuietHoursDecision {
 	const minute = minuteOfDayInTimeZone(now, settings.timezone);
-	if (!isQuietMinute(minute, settings.quietHoursStartMinute, settings.quietHoursEndMinute)) {
+	if (
+		!isQuietMinute(
+			minute,
+			settings.quietHoursStartMinute,
+			settings.quietHoursEndMinute,
+		)
+	) {
 		return { action: "send" };
 	}
 
 	if (scope === "marketing") {
 		if (settings.blockMarketingInQuietHours) {
-			return { action: "suppress", reason: "Рекламное сообщение в тихие часы не отправляется." };
+			return {
+				action: "suppress",
+				reason: "Рекламное сообщение в тихие часы не отправляется.",
+			};
 		}
 		return { action: "send" };
 	}
 
 	if (!settings.deferServiceInQuietHours) return { action: "send" };
 
-	const waitMinutes = minutesUntilQuietHoursEnd(minute, settings.quietHoursStartMinute, settings.quietHoursEndMinute);
-	return { action: "defer", notBefore: new Date(now.getTime() + waitMinutes * 60_000) };
+	const waitMinutes = minutesUntilQuietHoursEnd(
+		minute,
+		settings.quietHoursStartMinute,
+		settings.quietHoursEndMinute,
+	);
+	return {
+		action: "defer",
+		notBefore: new Date(now.getTime() + waitMinutes * 60_000),
+	};
 }
 
 // ─── Согласия ────────────────────────────────────────────────────────────────
@@ -126,9 +161,11 @@ export type ConsentDecision = {
 export function decideConsent(
 	records: readonly ConsentRecord[],
 	channel: CommunicationChannelCode,
-	scope: CommunicationConsentScope
+	scope: CommunicationConsentScope,
 ): ConsentDecision {
-	const explicit = records.find((record) => record.channel === channel && record.scope === scope);
+	const explicit = records.find(
+		(record) => record.channel === channel && record.scope === scope,
+	);
 	if (explicit) {
 		return explicit.state === "granted"
 			? { allowed: true, reason: null }
@@ -137,12 +174,15 @@ export function decideConsent(
 					reason:
 						scope === "marketing"
 							? "Пациент отказался от рекламных сообщений по этому каналу."
-							: "Пациент отказался от сообщений по этому каналу."
+							: "Пациент отказался от сообщений по этому каналу.",
 				};
 	}
 
 	if (scope === "service") return { allowed: true, reason: null };
-	return { allowed: false, reason: "Нет согласия на рекламные сообщения по этому каналу." };
+	return {
+		allowed: false,
+		reason: "Нет согласия на рекламные сообщения по этому каналу.",
+	};
 }
 
 // ─── Повторы ─────────────────────────────────────────────────────────────────
@@ -188,7 +228,9 @@ export function isRetryableErrorClass(errorClass: DeliveryErrorClass): boolean {
 }
 
 /** Класс ошибки, при котором отправлять нечем: это не отказ, а ненастроенность. */
-export function isSuppressingErrorClass(errorClass: DeliveryErrorClass): boolean {
+export function isSuppressingErrorClass(
+	errorClass: DeliveryErrorClass,
+): boolean {
 	return errorClass === "not_configured";
 }
 
@@ -226,7 +268,7 @@ export function computeRetryDelaySeconds(
 	attempt: number,
 	errorClass: DeliveryErrorClass,
 	settings: RetryPolicySettings,
-	jitterSeed = ""
+	jitterSeed = "",
 ): number {
 	const base = Math.max(1, settings.retryBaseSeconds);
 	const ceiling = Math.max(base, settings.retryMaxSeconds);
@@ -238,14 +280,34 @@ export function computeRetryDelaySeconds(
 	if (errorClass === "insufficient_funds") {
 		delay = Math.max(delay, INSUFFICIENT_FUNDS_FLOOR_SECONDS);
 	}
-	return Math.max(1, Math.round(delay * jitterFactor(`${jitterSeed}:${attempt}`)));
+	return Math.max(
+		1,
+		Math.round(delay * jitterFactor(`${jitterSeed}:${attempt}`)),
+	);
 }
 
 export type AttemptOutcome =
-	| { readonly kind: "sent"; readonly providerMessageId: string | null; readonly segments: number | null }
-	| { readonly kind: "retry"; readonly delaySeconds: number; readonly errorClass: DeliveryErrorClass; readonly errorMessage: string }
-	| { readonly kind: "failed"; readonly errorClass: DeliveryErrorClass; readonly errorMessage: string }
-	| { readonly kind: "suppressed"; readonly errorClass: DeliveryErrorClass; readonly errorMessage: string };
+	| {
+			readonly kind: "sent";
+			readonly providerMessageId: string | null;
+			readonly segments: number | null;
+	  }
+	| {
+			readonly kind: "retry";
+			readonly delaySeconds: number;
+			readonly errorClass: DeliveryErrorClass;
+			readonly errorMessage: string;
+	  }
+	| {
+			readonly kind: "failed";
+			readonly errorClass: DeliveryErrorClass;
+			readonly errorMessage: string;
+	  }
+	| {
+			readonly kind: "suppressed";
+			readonly errorClass: DeliveryErrorClass;
+			readonly errorMessage: string;
+	  };
 
 /**
  * Решение по неудачной попытке: повторить, признать окончательным отказом или
@@ -263,15 +325,31 @@ export function decideAfterFailure(input: {
 	readonly jitterSeed?: string;
 }): FailureOutcome {
 	if (isSuppressingErrorClass(input.errorClass)) {
-		return { kind: "suppressed", errorClass: input.errorClass, errorMessage: input.errorMessage };
+		return {
+			kind: "suppressed",
+			errorClass: input.errorClass,
+			errorMessage: input.errorMessage,
+		};
 	}
-	if (!isRetryableErrorClass(input.errorClass) || input.attempt >= input.maxAttempts) {
-		return { kind: "failed", errorClass: input.errorClass, errorMessage: input.errorMessage };
+	if (
+		!isRetryableErrorClass(input.errorClass) ||
+		input.attempt >= input.maxAttempts
+	) {
+		return {
+			kind: "failed",
+			errorClass: input.errorClass,
+			errorMessage: input.errorMessage,
+		};
 	}
 	return {
 		kind: "retry",
-		delaySeconds: computeRetryDelaySeconds(input.attempt, input.errorClass, input.settings, input.jitterSeed ?? ""),
+		delaySeconds: computeRetryDelaySeconds(
+			input.attempt,
+			input.errorClass,
+			input.settings,
+			input.jitterSeed ?? "",
+		),
 		errorClass: input.errorClass,
-		errorMessage: input.errorMessage
+		errorMessage: input.errorMessage,
 	};
 }

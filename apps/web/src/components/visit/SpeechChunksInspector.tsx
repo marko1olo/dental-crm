@@ -137,7 +137,11 @@ export const SpeechChunksInspector: React.FC = () => {
 		| null
 		| undefined;
 	const speechRecordingRecovery = appLogic?.speechRecordingRecovery as
-		| { recordings?: RecoveryRecording[]; totalRecordings?: number; generatedAt?: string }
+		| {
+				recordings?: RecoveryRecording[];
+				totalRecordings?: number;
+				generatedAt?: string;
+		  }
 		| null
 		| undefined;
 	const loadSpeechRecordingRecovery =
@@ -158,7 +162,9 @@ export const SpeechChunksInspector: React.FC = () => {
 		return Array.isArray(list) ? list : [];
 	}, [speechRecordingRecovery]);
 
-	const [selectedRecordingId, setSelectedRecordingId] = useState<string | null>(null);
+	const [selectedRecordingId, setSelectedRecordingId] = useState<string | null>(
+		null,
+	);
 	const [chunks, setChunks] = useState<SpeechTranscriptionChunkRow[]>([]);
 	const [chunksError, setChunksError] = useState<string | null>(null);
 	const [chunksLoading, setChunksLoading] = useState(false);
@@ -173,10 +179,15 @@ export const SpeechChunksInspector: React.FC = () => {
 			setSelectedRecordingId(null);
 			return;
 		}
-		if (selectedRecordingId && recordings.some((r) => r.recordingId === selectedRecordingId)) {
+		if (
+			selectedRecordingId &&
+			recordings.some((r) => r.recordingId === selectedRecordingId)
+		) {
 			return;
 		}
-		const incomplete = recordings.find((r) => r.recoveryState && r.recoveryState !== "complete");
+		const incomplete = recordings.find(
+			(r) => r.recoveryState && r.recoveryState !== "complete",
+		);
 		const pick = incomplete ?? recordings[0];
 		if (!pick) {
 			setSelectedRecordingId(null);
@@ -259,7 +270,8 @@ export const SpeechChunksInspector: React.FC = () => {
 						if (row.quality && typeof row.quality === "object") {
 							out.quality = row.quality;
 						}
-						if (typeof row.createdAt === "string") out.createdAt = row.createdAt;
+						if (typeof row.createdAt === "string")
+							out.createdAt = row.createdAt;
 						if (typeof row.byteLength === "number") {
 							out.byteLength = row.byteLength;
 						}
@@ -343,7 +355,8 @@ export const SpeechChunksInspector: React.FC = () => {
 	const issueCount = recordings.filter(
 		(r) => r.recoveryState && r.recoveryState !== "complete",
 	).length;
-	const selected = recordings.find((r) => r.recordingId === selectedRecordingId) ?? null;
+	const selected =
+		recordings.find((r) => r.recordingId === selectedRecordingId) ?? null;
 	const summaryLabel = !speechRecordingRecovery
 		? "список ещё не загружен"
 		: recordings.length === 0
@@ -386,7 +399,9 @@ export const SpeechChunksInspector: React.FC = () => {
 						style={{
 							fontWeight: 500,
 							fontSize: "0.85rem",
-							color: issueCount ? "var(--rust, #a14a2a)" : "var(--muted, #6b6560)",
+							color: issueCount
+								? "var(--rust, #a14a2a)"
+								: "var(--muted, #6b6560)",
 						}}
 					>
 						{summaryLabel}
@@ -479,8 +494,8 @@ export const SpeechChunksInspector: React.FC = () => {
 							data-testid="speech-chunks-no-recordings"
 							style={{ margin: 0, fontSize: "0.9rem", color: "var(--muted)" }}
 						>
-							На этом приёме серверных записей диктовки пока нет. После голосовой
-							записи фрагменты появятся здесь.
+							На этом приёме серверных записей диктовки пока нет. После
+							голосовой записи фрагменты появятся здесь.
 						</p>
 					) : (
 						<>
@@ -607,16 +622,27 @@ export const SpeechChunksInspector: React.FC = () => {
 							{chunksLoading && !chunks.length ? (
 								<p
 									data-testid="speech-chunks-loading"
-									style={{ margin: 0, fontSize: "0.9rem", color: "var(--muted)" }}
+									style={{
+										margin: 0,
+										fontSize: "0.9rem",
+										color: "var(--muted)",
+									}}
 								>
 									Читаю фрагменты с сервера…
 								</p>
 							) : null}
 
-							{!chunksLoading && !chunksError && selectedRecordingId && chunks.length === 0 ? (
+							{!chunksLoading &&
+							!chunksError &&
+							selectedRecordingId &&
+							chunks.length === 0 ? (
 								<p
 									data-testid="speech-chunks-empty"
-									style={{ margin: 0, fontSize: "0.9rem", color: "var(--muted)" }}
+									style={{
+										margin: 0,
+										fontSize: "0.9rem",
+										color: "var(--muted)",
+									}}
 								>
 									У этой записи на сервере нет фрагментов (или они вне текущего
 									приёма).
@@ -637,19 +663,44 @@ export const SpeechChunksInspector: React.FC = () => {
 									>
 										<thead>
 											<tr style={{ textAlign: "left", color: "var(--muted)" }}>
-												<th style={{ padding: "6px 8px", borderBottom: "1px solid var(--line)" }}>
+												<th
+													style={{
+														padding: "6px 8px",
+														borderBottom: "1px solid var(--line)",
+													}}
+												>
 													№
 												</th>
-												<th style={{ padding: "6px 8px", borderBottom: "1px solid var(--line)" }}>
+												<th
+													style={{
+														padding: "6px 8px",
+														borderBottom: "1px solid var(--line)",
+													}}
+												>
 													Статус
 												</th>
-												<th style={{ padding: "6px 8px", borderBottom: "1px solid var(--line)" }}>
+												<th
+													style={{
+														padding: "6px 8px",
+														borderBottom: "1px solid var(--line)",
+													}}
+												>
 													Качество
 												</th>
-												<th style={{ padding: "6px 8px", borderBottom: "1px solid var(--line)" }}>
+												<th
+													style={{
+														padding: "6px 8px",
+														borderBottom: "1px solid var(--line)",
+													}}
+												>
 													Текст
 												</th>
-												<th style={{ padding: "6px 8px", borderBottom: "1px solid var(--line)" }}>
+												<th
+													style={{
+														padding: "6px 8px",
+														borderBottom: "1px solid var(--line)",
+													}}
+												>
 													Когда
 												</th>
 											</tr>
@@ -674,21 +725,46 @@ export const SpeechChunksInspector: React.FC = () => {
 																	: undefined,
 														}}
 													>
-														<td style={{ padding: "6px 8px", verticalAlign: "top" }}>
+														<td
+															style={{
+																padding: "6px 8px",
+																verticalAlign: "top",
+															}}
+														>
 															{chunk.chunkIndex + 1}
 														</td>
-														<td style={{ padding: "6px 8px", verticalAlign: "top" }}>
+														<td
+															style={{
+																padding: "6px 8px",
+																verticalAlign: "top",
+															}}
+														>
 															{STATUS_LABELS[chunk.status] ?? chunk.status}
 															{chunk.providerLabel ? (
-																<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+																<div
+																	style={{
+																		fontSize: "0.75rem",
+																		color: "var(--muted)",
+																	}}
+																>
 																	{chunk.providerLabel}
 																</div>
 															) : null}
 														</td>
-														<td style={{ padding: "6px 8px", verticalAlign: "top" }}>
+														<td
+															style={{
+																padding: "6px 8px",
+																verticalAlign: "top",
+															}}
+														>
 															{QUALITY_LABELS[qLevel] ?? (qLevel || "—")}
 															{chunk.quality?.nextAction ? (
-																<div style={{ fontSize: "0.75rem", color: "var(--ink)" }}>
+																<div
+																	style={{
+																		fontSize: "0.75rem",
+																		color: "var(--ink)",
+																	}}
+																>
 																	{chunk.quality.nextAction}
 																</div>
 															) : null}

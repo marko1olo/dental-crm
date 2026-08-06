@@ -60,7 +60,11 @@ export type SettingsAccessHeaders = (
  */
 export type StaffMutationResult =
 	| { readonly ok: true }
-	| { readonly ok: false; readonly status: number | null; readonly message: string | null };
+	| {
+			readonly ok: false;
+			readonly status: number | null;
+			readonly message: string | null;
+	  };
 
 export interface StaffMutationRequest {
 	/** Адрес маршрута. Остаётся на вызывающей стороне: он часть смысла действия. */
@@ -125,11 +129,16 @@ export async function requestStaffMutation(
 		response = await fetch(request.url, {
 			method: request.method,
 			headers: staffMutationHeaders(request.accessHeaders),
-			...(request.body === undefined ? {} : { body: JSON.stringify(request.body) }),
+			...(request.body === undefined
+				? {}
+				: { body: JSON.stringify(request.body) }),
 		});
 	} catch (error) {
 		// Текст исключения наружу не идёт: он английский («Failed to fetch»).
-		console.error(`[персонал] ${request.logLabel}: запрос не дошёл до сервера`, error);
+		console.error(
+			`[персонал] ${request.logLabel}: запрос не дошёл до сервера`,
+			error,
+		);
 		return { ok: false, status: null, message: null };
 	}
 
@@ -137,12 +146,17 @@ export async function requestStaffMutation(
 	try {
 		rawBody = await response.text();
 	} catch (error) {
-		console.error(`[персонал] ${request.logLabel}: тело ответа не дочитано`, error);
+		console.error(
+			`[персонал] ${request.logLabel}: тело ответа не дочитано`,
+			error,
+		);
 	}
 
 	const outcome = parseStaffMutationPayload(response.status, rawBody);
 	if (outcome.ok) return { ok: true };
-	console.error(`[персонал] ${request.logLabel}: сервер ответил ${outcome.status}`);
+	console.error(
+		`[персонал] ${request.logLabel}: сервер ответил ${outcome.status}`,
+	);
 	return { ok: false, status: outcome.status, message: outcome.message };
 }
 
@@ -156,13 +170,18 @@ export async function requestStaffMutation(
  * создан, и администратор заводил его второй раз. Теперь отказ перечитывания
  * меняет только подсказку («обновите страницу»), а не сам факт сохранения.
  */
-export async function reloadStaffList(loadDashboard: unknown): Promise<boolean> {
+export async function reloadStaffList(
+	loadDashboard: unknown,
+): Promise<boolean> {
 	if (typeof loadDashboard !== "function") return false;
 	try {
 		await (loadDashboard as () => unknown)();
 		return true;
 	} catch (error) {
-		console.error("[персонал] список сотрудников не перечитан после изменения", error);
+		console.error(
+			"[персонал] список сотрудников не перечитан после изменения",
+			error,
+		);
 		return false;
 	}
 }
@@ -190,7 +209,10 @@ export function planStaffCredentialUpdate(
 ): StaffCredentialPlan {
 	if (kind === "pin") {
 		if (!/^\d{4}$/.test(value)) {
-			return { ok: false, warning: "PIN-код — ровно 4 цифры, без букв и пробелов" };
+			return {
+				ok: false,
+				warning: "PIN-код — ровно 4 цифры, без букв и пробелов",
+			};
 		}
 		return { ok: true, body: { pinCode: value } };
 	}

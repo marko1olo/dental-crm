@@ -68,7 +68,8 @@ export interface PersonalDataOperatorInput {
 }
 
 /** Экран, на котором эти реквизиты заполняют. Название взято из живых вкладок. */
-export const CLINIC_REQUISITES_LOCATION = "Настройки → Клиника → Юридический профиль клиники";
+export const CLINIC_REQUISITES_LOCATION =
+	"Настройки → Клиника → Юридический профиль клиники";
 
 /**
  * Длины ИНН, которые принимает проверка согласия: 10 у организации, 12 у
@@ -93,7 +94,9 @@ function innProblemHint(inn: string): string | null {
 export function personalDataOperatorRequisitesReview(
 	input: PersonalDataOperatorInput,
 ): PersonalDataOperatorReview {
-	const operatorName = String(input.legalName ?? "").trim() || String(input.clinicName ?? "").trim();
+	const operatorName =
+		String(input.legalName ?? "").trim() ||
+		String(input.clinicName ?? "").trim();
 	const address = String(input.address ?? "").trim();
 	const innHint = innProblemHint(input.inn);
 

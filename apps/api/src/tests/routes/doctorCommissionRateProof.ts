@@ -30,8 +30,8 @@
  */
 
 import { and, eq, inArray, sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
 import {
 	appointments,
@@ -79,7 +79,10 @@ function check(label: string, actual: unknown, expected: unknown): void {
 
 function seeded<Row>(rows: Row[], what: string): Row {
 	const row = rows[0];
-	if (!row) throw new Error(`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`);
+	if (!row)
+		throw new Error(
+			`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`,
+		);
 	return row;
 }
 
@@ -112,14 +115,19 @@ async function readPayoutRow(
 	staffToken: string,
 	doctorUserId: string,
 ): Promise<PayoutRow | null> {
-	const query = new URLSearchParams({ from: PERIOD_FROM, to: PERIOD_TO }).toString();
+	const query = new URLSearchParams({
+		from: PERIOD_FROM,
+		to: PERIOD_TO,
+	}).toString();
 	const response = await app.inject({
 		method: "GET",
 		url: `/api/billing/payouts?${query}`,
 		headers: { "x-dente-staff-token": staffToken },
 	});
 	if (response.statusCode !== 200) {
-		console.log(`  расчёт выплат ответил HTTP ${response.statusCode}: ${response.body.slice(0, 300)}`);
+		console.log(
+			`  расчёт выплат ответил HTTP ${response.statusCode}: ${response.body.slice(0, 300)}`,
+		);
 		failures += 1;
 		return null;
 	}
@@ -137,13 +145,21 @@ async function ratesInDb(organizationId: string, userId: string) {
 			isActive: doctorCommissions.isActive,
 		})
 		.from(doctorCommissions)
-		.where(and(eq(doctorCommissions.organizationId, organizationId), eq(doctorCommissions.userId, userId)));
+		.where(
+			and(
+				eq(doctorCommissions.organizationId, organizationId),
+				eq(doctorCommissions.userId, userId),
+			),
+		);
 	return rows;
 }
 
 async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	const organization = seeded(
-		await db.insert(organizations).values({ name: PROOF_ORGANIZATION_NAME }).returning({ id: organizations.id }),
+		await db
+			.insert(organizations)
+			.values({ name: PROOF_ORGANIZATION_NAME })
+			.returning({ id: organizations.id }),
 		PROOF_ORGANIZATION_NAME,
 	);
 	created.push(organization.id);
@@ -152,14 +168,22 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	const ownerId = seeded(
 		await db
 			.insert(users)
-			.values({ organizationId, fullName: "Владелец клиники проверки", role: "owner" })
+			.values({
+				organizationId,
+				fullName: "Владелец клиники проверки",
+				role: "owner",
+			})
 			.returning({ id: users.id }),
 		"владелец",
 	).id;
 	const doctorId = seeded(
 		await db
 			.insert(users)
-			.values({ organizationId, fullName: "Врач проверки ставки", role: "doctor" })
+			.values({
+				organizationId,
+				fullName: "Врач проверки ставки",
+				role: "doctor",
+			})
 			.returning({ id: users.id }),
 		"врач",
 	).id;
@@ -190,7 +214,12 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	const visit = seeded(
 		await db
 			.insert(visits)
-			.values({ organizationId, patientId, appointmentId: appointment.id, status: "signed" })
+			.values({
+				organizationId,
+				patientId,
+				appointmentId: appointment.id,
+				status: "signed",
+			})
 			.returning({ id: visits.id }),
 		"визит",
 	);
@@ -203,11 +232,16 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 		paidAt: new Date(PAID_AT),
 	});
 
-	const ownerToken = signToken({ organizationId, userId: ownerId, role: "owner" }, authTokenSecret());
+	const ownerToken = signToken(
+		{ organizationId, userId: ownerId, role: "owner" },
+		authTokenSecret(),
+	);
 	const clinicToken = signToken({ organizationId }, authTokenSecret());
 	const commissionUrl = `/api/settings/staff/${doctorId}/commission`;
 
-	console.log("\n=== 1. ДО НАЗНАЧЕНИЯ: ставки нет, выплату считать не из чего ===");
+	console.log(
+		"\n=== 1. ДО НАЗНАЧЕНИЯ: ставки нет, выплату считать не из чего ===",
+	);
 	const before = await readPayoutRow(app, ownerToken, doctorId);
 	check("касса врача за период", before?.revenueRub, REVENUE_RUB);
 	check("ставка до назначения", before?.commissionPct ?? null, null);
@@ -221,7 +255,10 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	const unguarded = await app.inject({
 		method: "PUT",
 		url: commissionUrl,
-		headers: { "Content-Type": "application/json", "x-dente-clinic-token": clinicToken },
+		headers: {
+			"Content-Type": "application/json",
+			"x-dente-clinic-token": clinicToken,
+		},
 		payload: { commissionPct: 45 },
 	});
 	check("без секрета администратора — отказ", unguarded.statusCode, 403);
@@ -261,12 +298,20 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	// Рядом живёт commission_percent с DEFAULT '25'. Если писать только одну
 	// колонку, в одной строке останутся два разных процента, и первый же
 	// будущий читатель второй колонки заплатит врачу другую сумму.
-	check("commission_percent согласован с commission_pct", rowsAfterFirst[0]?.commissionPercent, "45");
+	check(
+		"commission_percent согласован с commission_pct",
+		rowsAfterFirst[0]?.commissionPercent,
+		"45",
+	);
 
 	console.log("\n=== 4. РАСЧЁТ ВЫПЛАТ ВИДИТ ВВЕДЁННОЕ ЧИСЛО ===");
 	const after = await readPayoutRow(app, ownerToken, doctorId);
 	check("ставка в расчёте", after?.commissionPct, 45);
-	check("активных ставок у врача (иначе расчёт предупреждает о двоящейся настройке)", after?.rateRowCount, 1);
+	check(
+		"активных ставок у врача (иначе расчёт предупреждает о двоящейся настройке)",
+		after?.rateRowCount,
+		1,
+	);
 	// 100 000 ₽ × 45 % = 45 000 ₽. Материалов не списывали, поэтому удержания нет
 	// и «к выплате» равно начисленному.
 	check("начислено процентом от кассы", after?.accruedRub, 45_000);
@@ -290,7 +335,11 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	// Прежняя строка не удалена — она отключена: история того, что клиника
 	// назначала раньше, обязана сохраниться.
 	check("всего строк ставки", rowsAfterSecond.length, 2);
-	check("активных строк ровно одна", rowsAfterSecond.filter((row) => row.isActive).length, 1);
+	check(
+		"активных строк ровно одна",
+		rowsAfterSecond.filter((row) => row.isActive).length,
+		1,
+	);
 	check(
 		"активная строка — новая",
 		rowsAfterSecond.find((row) => row.isActive)?.commissionPct,
@@ -324,33 +373,56 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 		headers: guardedHeaders,
 		payload: { commissionPct: 20 },
 	});
-	check("чужой/несуществующий сотрудник отклонён", foreignStaff.statusCode, 404);
+	check(
+		"чужой/несуществующий сотрудник отклонён",
+		foreignStaff.statusCode,
+		404,
+	);
 	console.log(`  тело отказа: ${foreignStaff.body.slice(0, 220)}`);
 
 	// Ставка не должна была измениться ни на одном отказе.
 	const finalRates = await ratesInDb(organizationId, doctorId);
-	check("после отказов активная ставка прежняя", finalRates.find((row) => row.isActive)?.commissionPct, "32.5");
+	check(
+		"после отказов активная ставка прежняя",
+		finalRates.find((row) => row.isActive)?.commissionPct,
+		"32.5",
+	);
 
 	console.log("\n=== 7. СПИСОК СТАВОК ДЛЯ ИНТЕРФЕЙСА ===");
 	const listed = await app.inject({
 		method: "GET",
 		url: "/api/settings/staff/commissions",
-		headers: { "x-dente-clinic-token": clinicToken, "x-dente-admin-secret": PROOF_ADMIN_SECRET },
+		headers: {
+			"x-dente-clinic-token": clinicToken,
+			"x-dente-admin-secret": PROOF_ADMIN_SECRET,
+		},
 	});
 	check("список ставок отдан", listed.statusCode, 200);
-	const listedBody = JSON.parse(listed.body) as { commissions: Array<{ userId: string; commissionPct: string }> };
-	const mine = listedBody.commissions.filter((rate) => rate.userId === doctorId);
+	const listedBody = JSON.parse(listed.body) as {
+		commissions: Array<{ userId: string; commissionPct: string }>;
+	};
+	const mine = listedBody.commissions.filter(
+		(rate) => rate.userId === doctorId,
+	);
 	check("в списке одна действующая ставка врача", mine.length, 1);
 	check("и это назначенные 32,5 %", mine[0]?.commissionPct, "32.5");
 }
 
 async function cleanup(organizationIds: string[]): Promise<void> {
 	for (const organizationId of organizationIds) {
-		await db.delete(doctorCommissions).where(eq(doctorCommissions.organizationId, organizationId));
-		await db.delete(payments).where(eq(payments.organizationId, organizationId));
+		await db
+			.delete(doctorCommissions)
+			.where(eq(doctorCommissions.organizationId, organizationId));
+		await db
+			.delete(payments)
+			.where(eq(payments.organizationId, organizationId));
 		await db.delete(visits).where(eq(visits.organizationId, organizationId));
-		await db.delete(appointments).where(eq(appointments.organizationId, organizationId));
-		await db.delete(patients).where(eq(patients.organizationId, organizationId));
+		await db
+			.delete(appointments)
+			.where(eq(appointments.organizationId, organizationId));
+		await db
+			.delete(patients)
+			.where(eq(patients.organizationId, organizationId));
 		await db.delete(users).where(eq(users.organizationId, organizationId));
 		await db.delete(organizations).where(eq(organizations.id, organizationId));
 	}
@@ -367,7 +439,9 @@ async function sweepStale(): Promise<void> {
 		.from(organizations)
 		.where(inArray(organizations.name, [PROOF_ORGANIZATION_NAME]));
 	if (stale.length === 0) return;
-	console.log(`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`);
+	console.log(
+		`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`,
+	);
 	await cleanup(stale.map((row) => row.id));
 }
 
@@ -392,7 +466,9 @@ async function main(): Promise<void> {
 			       (select count(*)::int from doctor_commissions) as rates
 		`);
 		console.log(`\nПОСЛЕ УБОРКИ ${JSON.stringify(leftovers.rows[0])}`);
-		console.log(failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`);
+		console.log(
+			failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`,
+		);
 		await pool.end();
 	}
 	if (failures > 0) process.exitCode = 1;

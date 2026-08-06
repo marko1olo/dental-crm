@@ -50,7 +50,9 @@ describe("сброс форм документов при смене пацие�
 	test("чистый стор не считается заполненным", () => {
 		useDocumentStore.getState().resetDocumentForms();
 		assert.equal(
-			documentFormHasEntries(useDocumentStore.getState() as unknown as Record<string, unknown>),
+			documentFormHasEntries(
+				useDocumentStore.getState() as unknown as Record<string, unknown>,
+			),
 			false,
 			"чистая форма считается заполненной — предупреждение о выброшенном черновике показывалось бы всегда",
 		);
@@ -69,7 +71,9 @@ describe("сброс форм документов при смене пацие�
 			"значение не записалось — дальше проверять нечего",
 		);
 		assert.equal(
-			documentFormHasEntries(useDocumentStore.getState() as unknown as Record<string, unknown>),
+			documentFormHasEntries(
+				useDocumentStore.getState() as unknown as Record<string, unknown>,
+			),
 			true,
 			"заполненная форма не опознана: администратор не узнал бы, что его текст выброшен",
 		);
@@ -86,7 +90,9 @@ describe("сброс форм документов при смене пацие�
 			"аллергоанамнез прежнего пациента остался в форме следующего — это и есть чужие данные в документе",
 		);
 		assert.equal(
-			documentFormHasEntries(useDocumentStore.getState() as unknown as Record<string, unknown>),
+			documentFormHasEntries(
+				useDocumentStore.getState() as unknown as Record<string, unknown>,
+			),
 			false,
 			"после сброса форма всё ещё считается заполненной",
 		);

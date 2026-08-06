@@ -56,7 +56,10 @@ import { signToken } from "../../utils/cryptoHelper.js";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 
-const SCHEDULE_ROUTE_FILE = path.resolve(import.meta.dirname, "../../routes/schedule.ts");
+const SCHEDULE_ROUTE_FILE = path.resolve(
+	import.meta.dirname,
+	"../../routes/schedule.ts",
+);
 const SECRET_HEADER = "x-dente-admin-secret";
 const UNGUARDED_FLAG = "DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS";
 const SECRET_VARIABLE = "DENTE_SCHEDULE_ADMIN_SECRET";
@@ -67,11 +70,15 @@ const ANY_APPOINTMENT = "8356141b-7cfa-4221-95f7-70f47e7344b1";
 /** Латинское слово из шести и более букв гасит фразу на экране целиком. */
 const LATIN_WORD_KILLING_THE_PHRASE = /[A-Za-z]{6,}/;
 /** Следующий шаг: повелительный глагол, а не констатация отказа. */
-const NEXT_STEP = /Введите|введите|Проверьте|проверьте|Обратитесь|обратитесь|возьмите|попросите/;
+const NEXT_STEP =
+	/Введите|введите|Проверьте|проверьте|Обратитесь|обратитесь|возьмите|попросите/;
 /** Причина: речь о секрете администратора, а не «действие запрещено». */
 const REASON = /секрет/i;
 
-const PERIMETER_CODES = new Set(["ScheduleAdminSecretRequired", "ScheduleAdminSecretMissing"]);
+const PERIMETER_CODES = new Set([
+	"ScheduleAdminSecretRequired",
+	"ScheduleAdminSecretMissing",
+]);
 
 /**
  * Вырезание комментариев перед поиском маршрутов.
@@ -125,7 +132,11 @@ function stripComments(text: string): string {
 	return out;
 }
 
-type DiscoveredRoute = { method: "POST" | "PUT" | "PATCH" | "DELETE"; routePath: string; url: string };
+type DiscoveredRoute = {
+	method: "POST" | "PUT" | "PATCH" | "DELETE";
+	routePath: string;
+	url: string;
+};
 
 /** Адрес для запроса: вместо каждого `:параметра` — годный по форме UUID. */
 function injectableUrl(routePath: string): string {
@@ -133,10 +144,13 @@ function injectableUrl(routePath: string): string {
 }
 
 function discoverMutatingRoutes(source: string): DiscoveredRoute[] {
-	const registration = /\bapp\.(post|put|patch|delete)\s*\(\s*["'`](\/api\/[^"'`]+)["'`]/g;
+	const registration =
+		/\bapp\.(post|put|patch|delete)\s*\(\s*["'`](\/api\/[^"'`]+)["'`]/g;
 	const routes: DiscoveredRoute[] = [];
 	for (const match of stripComments(source).matchAll(registration)) {
-		const method = (match[1] as string).toUpperCase() as DiscoveredRoute["method"];
+		const method = (
+			match[1] as string
+		).toUpperCase() as DiscoveredRoute["method"];
 		const routePath = match[2] as string;
 		routes.push({ method, routePath, url: injectableUrl(routePath) });
 	}
@@ -160,7 +174,10 @@ describe("периметр расписания закрыт секретом а
 		app = Fastify({ logger: false });
 		await registerScheduleRoutes(app);
 		await app.ready();
-		clinicToken = signToken({ organizationId: ORGANIZATION }, authTokenSecret());
+		clinicToken = signToken(
+			{ organizationId: ORGANIZATION },
+			authTokenSecret(),
+		);
 	});
 
 	after(async () => {
@@ -193,14 +210,24 @@ describe("периметр расписания закрыт секретом а
 			"x-dente-clinic-token": clinicToken,
 		};
 		if (secret !== null) headers[SECRET_HEADER] = secret;
-		const response = await app.inject({ method: route.method, url: route.url, headers, payload: {} });
+		const response = await app.inject({
+			method: route.method,
+			url: route.url,
+			headers,
+			payload: {},
+		});
 		let body: { error?: unknown; code?: unknown; message?: unknown } = {};
 		try {
 			body = response.json() as typeof body;
 		} catch {
 			body = {};
 		}
-		const error = typeof body.error === "string" ? body.error : typeof body.code === "string" ? body.code : "";
+		const error =
+			typeof body.error === "string"
+				? body.error
+				: typeof body.code === "string"
+					? body.code
+					: "";
 		return {
 			statusCode: response.statusCode,
 			error,
@@ -216,12 +243,16 @@ describe("периметр расписания закрыт секретом а
 	 */
 	test("обход исходника действительно находит маршруты и не ловит комментарии", () => {
 		const sample = [
-			'const headers = { Accept: "application/json;q=0.9, ' + "*/*" + ';q=0.1" };',
+			'const headers = { Accept: "application/json;q=0.9, ' +
+				"*/*" +
+				';q=0.1" };',
 			'/* app.post("/api/выдуманный-из-комментария", () => {}); */',
 			'// app.put("/api/выдуманный-из-строчного-комментария", () => {});',
 			'app.post("/api/самопроверка/настоящий", async () => {});',
 		].join("\n");
-		const found = discoverMutatingRoutes(sample).map((route) => route.routePath);
+		const found = discoverMutatingRoutes(sample).map(
+			(route) => route.routePath,
+		);
 		assert.deepEqual(
 			found,
 			["/api/самопроверка/настоящий"],
@@ -235,12 +266,16 @@ describe("периметр расписания закрыт секретом а
 			`в routes/schedule.ts найдено изменяющих маршрутов ${MUTATING_ROUTES.length}, а их не меньше трёх ` +
 				"(создание приёма и ДВА адреса переноса). Обход перестал видеть файл — дальше он оправдает любую дыру",
 		);
-		const addresses = MUTATING_ROUTES.map((route) => `${route.method} ${route.routePath}`);
+		const addresses = MUTATING_ROUTES.map(
+			(route) => `${route.method} ${route.routePath}`,
+		);
 		assert.ok(
 			addresses.includes("POST /api/appointments"),
 			`создание приёма не найдено обходом, найдено: ${addresses.join(", ")}`,
 		);
-		console.log(`изменяющие маршруты расписания под охраной: ${addresses.join(" | ")}`);
+		console.log(
+			`изменяющие маршруты расписания под охраной: ${addresses.join(" | ")}`,
+		);
 	});
 
 	test("без секрета администратора каждый изменяющий маршрут отвечает 403 и называет причину с действием", async () => {
@@ -254,14 +289,29 @@ describe("периметр расписания закрыт секретом а
 				403,
 				`${where}: без секрета администратора ответ ${statusCode}. Расписание клиники меняется в обход гейта`,
 			);
-			assert.equal(error, "ScheduleAdminSecretRequired", `${where}: машинный код отказа потерян, экран по нему ветвится`);
-			assert.ok(message.length > 0, `${where}: отказ ушёл без message — администратор прочитает только «Запись не создана»`);
+			assert.equal(
+				error,
+				"ScheduleAdminSecretRequired",
+				`${where}: машинный код отказа потерян, экран по нему ветвится`,
+			);
+			assert.ok(
+				message.length > 0,
+				`${where}: отказ ушёл без message — администратор прочитает только «Запись не создана»`,
+			);
 			assert.ok(
 				!LATIN_WORD_KILLING_THE_PHRASE.test(message),
 				`${where}: в отказе латинское слово из шести и более букв, фильтр клиента погасит фразу целиком: ${message}`,
 			);
-			assert.match(message, REASON, `${where}: причина отказа не названа: ${message}`);
-			assert.match(message, NEXT_STEP, `${where}: в отказе нет следующего шага: ${message}`);
+			assert.match(
+				message,
+				REASON,
+				`${where}: причина отказа не названа: ${message}`,
+			);
+			assert.match(
+				message,
+				NEXT_STEP,
+				`${where}: в отказе нет следующего шага: ${message}`,
+			);
 		}
 	});
 
@@ -271,13 +321,25 @@ describe("периметр расписания закрыт секретом а
 		for (const route of MUTATING_ROUTES) {
 			const where = `${route.method} ${route.routePath}`;
 			const wrong = await attempt(route, "заведомо-неверный-секрет");
-			assert.equal(wrong.statusCode, 403, `${where}: неверный секрет прошёл, ответ ${wrong.statusCode}`);
-			assert.equal(wrong.error, "ScheduleAdminSecretRequired", `${where}: машинный код отказа потерян`);
+			assert.equal(
+				wrong.statusCode,
+				403,
+				`${where}: неверный секрет прошёл, ответ ${wrong.statusCode}`,
+			);
+			assert.equal(
+				wrong.error,
+				"ScheduleAdminSecretRequired",
+				`${where}: машинный код отказа потерян`,
+			);
 			assert.ok(
 				!LATIN_WORD_KILLING_THE_PHRASE.test(wrong.message),
 				`${where}: в отказе латиница, экран погасит фразу: ${wrong.message}`,
 			);
-			assert.match(wrong.message, NEXT_STEP, `${where}: в отказе нет следующего шага: ${wrong.message}`);
+			assert.match(
+				wrong.message,
+				NEXT_STEP,
+				`${where}: в отказе нет следующего шага: ${wrong.message}`,
+			);
 
 			/*
 			 * Сервер различает «секрета нет» и «секрет не совпал» точно, а действия у
@@ -329,7 +391,11 @@ describe("периметр расписания закрыт секретом а
 				503,
 				`${where}: незаданный секрет расписания обязан закрывать изменение, а ответ ${statusCode}`,
 			);
-			assert.equal(error, "ScheduleAdminSecretMissing", `${where}: машинный код отказа потерян, экран по нему ветвится`);
+			assert.equal(
+				error,
+				"ScheduleAdminSecretMissing",
+				`${where}: машинный код отказа потерян, экран по нему ветвится`,
+			);
 			assert.ok(
 				!LATIN_WORD_KILLING_THE_PHRASE.test(message),
 				`${where}: в отказе латиница, экран погасит фразу: ${message}`,
@@ -339,7 +405,11 @@ describe("периметр расписания закрыт секретом а
 				/бесполезно|не задан/,
 				`${where}: отказ не говорит, что дело в настройке сервера, и администратор будет вводить секрет по кругу: ${message}`,
 			);
-			assert.match(message, NEXT_STEP, `${where}: в отказе нет следующего шага: ${message}`);
+			assert.match(
+				message,
+				NEXT_STEP,
+				`${where}: в отказе нет следующего шага: ${message}`,
+			);
 		}
 	});
 

@@ -52,7 +52,8 @@ function loadFailureText(status: number, serverMessage: string | null): string {
 	if (status === 400) {
 		return "Подбор нужен только для отменённого или пропущенного будущего приёма.";
 	}
-	if (status >= 500) return "Сбой на сервере клиники: список кандидатов не собран.";
+	if (status >= 500)
+		return "Сбой на сервере клиники: список кандидатов не собран.";
 	return `Программа не смогла получить подбор (ответ ${status}).`;
 }
 
@@ -93,9 +94,14 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 		try {
 			let response: Response;
 			try {
-				response = await fetch(`/api/appointments/${encodeURIComponent(appointmentId)}/waitlist-matches`, {
-					headers: auth?.denteClinicalReadHeaders ? auth.denteClinicalReadHeaders() : {},
-				});
+				response = await fetch(
+					`/api/appointments/${encodeURIComponent(appointmentId)}/waitlist-matches`,
+					{
+						headers: auth?.denteClinicalReadHeaders
+							? auth.denteClinicalReadHeaders()
+							: {},
+					},
+				);
 			} catch {
 				setReport(null);
 				setError(
@@ -120,7 +126,8 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 				appointmentId: payload.appointmentId ?? appointmentId,
 				slot: payload.slot ?? { from: "", to: "", doctorName: null },
 				matches: payload.matches,
-				examinedEntries: Number(payload.examinedEntries) || payload.matches.length,
+				examinedEntries:
+					Number(payload.examinedEntries) || payload.matches.length,
 				note: typeof payload.note === "string" ? payload.note : "",
 			});
 		} finally {
@@ -147,7 +154,10 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 
 	if (lazy && !started) {
 		return (
-			<div className="waitlist-matches-block" data-testid="waitlist-matches-lazy">
+			<div
+				className="waitlist-matches-block"
+				data-testid="waitlist-matches-lazy"
+			>
 				<button
 					type="button"
 					className="link-button"
@@ -173,9 +183,13 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 		>
 			{!compact ? (
 				<div className="panel-heading">
-					<h3 style={{ margin: 0, fontSize: "0.95rem" }}>Кому предложить это окно</h3>
+					<h3 style={{ margin: 0, fontSize: "0.95rem" }}>
+						Кому предложить это окно
+					</h3>
 					{report ? (
-						<span className={`status-pill ${report.matches.length > 0 ? "status-arrived" : "status-planned"}`}>
+						<span
+							className={`status-pill ${report.matches.length > 0 ? "status-arrived" : "status-planned"}`}
+						>
 							{report.matches.length}
 						</span>
 					) : null}
@@ -190,7 +204,14 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 						marginBottom: 6,
 					}}
 				>
-					<strong style={{ fontSize: 12, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--muted)" }}>
+					<strong
+						style={{
+							fontSize: 12,
+							letterSpacing: "0.04em",
+							textTransform: "uppercase",
+							color: "var(--muted)",
+						}}
+					>
 						Лист ожидания · кому звонить
 					</strong>
 					<button
@@ -207,22 +228,39 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 			)}
 
 			{error ? (
-				<div className="ops-notice ops-notice--error" role="alert" data-testid="waitlist-matches-error">
+				<div
+					className="ops-notice ops-notice--error"
+					role="alert"
+					data-testid="waitlist-matches-error"
+				>
 					<p>{error}</p>
-					<button className="secondary-button" type="button" onClick={() => void load()} disabled={loading}>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={() => void load()}
+						disabled={loading}
+					>
 						{loading ? "Загружаю…" : "Попробовать снова"}
 					</button>
 				</div>
 			) : null}
 
 			{loading && !report && !error ? (
-				<p className="ops-note" data-testid="waitlist-matches-loading" style={{ margin: "6px 0" }}>
+				<p
+					className="ops-note"
+					data-testid="waitlist-matches-loading"
+					style={{ margin: "6px 0" }}
+				>
 					Подбираю кандидатов из листа ожидания…
 				</p>
 			) : null}
 
 			{report && report.matches.length === 0 && !error ? (
-				<p className="ops-note" data-testid="waitlist-matches-empty" style={{ margin: "6px 0" }}>
+				<p
+					className="ops-note"
+					data-testid="waitlist-matches-empty"
+					style={{ margin: "6px 0" }}
+				>
 					В листе ожидания подходящих нет
 					{report.examinedEntries > 0
 						? ` (смотрели ${report.examinedEntries} в очереди)`
@@ -251,7 +289,8 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 					) : null}
 					{report.matches.map((match, index) => {
 						const isCalled = called.has(match.patientId);
-						const priorityLabel = PRIORITY_LABELS[match.priorityLevel] ?? match.priorityLevel;
+						const priorityLabel =
+							PRIORITY_LABELS[match.priorityLevel] ?? match.priorityLevel;
 						return (
 							<li
 								key={match.entryId}
@@ -266,7 +305,14 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 									gap: 4,
 								}}
 							>
-								<div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										gap: 8,
+										flexWrap: "wrap",
+									}}
+								>
 									<span className="ops-strong" style={{ fontSize: 13 }}>
 										{index + 1}. {match.patientName}
 									</span>
@@ -290,7 +336,9 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 									{match.sameDoctor ? " · тот же врач" : ""}
 									{match.timeFits ? " · время подходит" : ""}
 									{match.alreadyBooked ? " · уже записан" : ""}
-									{match.waitingDays > 0 ? ` · ждёт ${match.waitingDays} дн.` : " · сегодня в очереди"}
+									{match.waitingDays > 0
+										? ` · ждёт ${match.waitingDays} дн.`
+										: " · сегодня в очереди"}
 								</span>
 								<span className="ops-note" style={{ fontSize: 12 }}>
 									{match.reason}
@@ -314,14 +362,21 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 										</a>
 									) : null}
 									{isCalled ? (
-										<span className="ops-note" data-testid={`waitlist-match-called-${match.entryId}`}>
+										<span
+											className="ops-note"
+											data-testid={`waitlist-match-called-${match.entryId}`}
+										>
 											Позвонили ✓
 										</span>
 									) : (
 										<button
 											type="button"
 											className="secondary-button"
-											style={{ padding: "4px 10px", fontSize: 12, minHeight: 28 }}
+											style={{
+												padding: "4px 10px",
+												fontSize: 12,
+												minHeight: 28,
+											}}
 											data-testid={`waitlist-match-mark-called-${match.entryId}`}
 											onClick={() =>
 												setCalled((prev) => {
@@ -341,7 +396,9 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 				</ul>
 			) : null}
 
-			{report?.note && !compact ? <p className="ops-hint">{report.note}</p> : null}
+			{report?.note && !compact ? (
+				<p className="ops-hint">{report.note}</p>
+			) : null}
 		</section>
 	);
 };

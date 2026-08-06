@@ -43,11 +43,14 @@ import {
 	crmLeads,
 	messengerInboundEvents,
 	patientCommunicationConsents,
-	patients
+	patients,
 } from "../db/schema.js";
 import type { CommunicationChannelCode } from "./communications/channelRouter.js";
 import { enqueueMessage } from "./communications/dispatcher.js";
-import { detectOptOutIntent, optOutAcknowledgement } from "./communications/optOut.js";
+import {
+	detectOptOutIntent,
+	optOutAcknowledgement,
+} from "./communications/optOut.js";
 import { wsBroker } from "./websocketBroker.js";
 
 export type InboundIngestionReport = {
@@ -62,7 +65,14 @@ export type InboundIngestionReport = {
 };
 
 /** Каналы, которые могут прийти во входящих. Значения совпадают с pgEnum. */
-const KNOWN_CHANNELS: readonly CommunicationChannelCode[] = ["telegram", "whatsapp", "vk", "max", "sms", "email"];
+const KNOWN_CHANNELS: readonly CommunicationChannelCode[] = [
+	"telegram",
+	"whatsapp",
+	"vk",
+	"max",
+	"sms",
+	"email",
+];
 
 /**
  * Тип возвращается конкретный, а не string: код канала расходится дальше — в
@@ -88,7 +98,10 @@ type PatientMatch =
  * тот же номер. Больше одного совпадения — `ambiguous`: записать переписку в
  * чужую карту хуже, чем оставить её неразобранной.
  */
-async function findPatientByPhone(organizationId: string, rawPhone: string): Promise<PatientMatch> {
+async function findPatientByPhone(
+	organizationId: string,
+	rawPhone: string,
+): Promise<PatientMatch> {
 	const digits = rawPhone.replace(/\D/g, "");
 	if (digits.length < 10) return { kind: "none" };
 	const suffix = digits.slice(-10);
@@ -99,8 +112,8 @@ async function findPatientByPhone(organizationId: string, rawPhone: string): Pro
 		.where(
 			and(
 				eq(patients.organizationId, organizationId),
-				sql`right(regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g'), 10) = ${suffix}`
-			)
+				sql`right(regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g'), 10) = ${suffix}`,
+			),
 		)
 		.limit(5);
 
@@ -111,11 +124,19 @@ async function findPatientByPhone(organizationId: string, rawPhone: string): Pro
 }
 
 /** Пациент по метке внешнего чата в заметках — так связывается MAX. */
-async function findPatientByExternalMark(organizationId: string, mark: string): Promise<PatientMatch> {
+async function findPatientByExternalMark(
+	organizationId: string,
+	mark: string,
+): Promise<PatientMatch> {
 	const rows = await db
 		.select({ id: patients.id })
 		.from(patients)
-		.where(and(eq(patients.organizationId, organizationId), sql`${patients.notes} LIKE ${`%${mark}%`}`))
+		.where(
+			and(
+				eq(patients.organizationId, organizationId),
+				sql`${patients.notes} LIKE ${`%${mark}%`}`,
+			),
+		)
 		.limit(5);
 
 	if (rows.length === 0) return { kind: "none" };
@@ -129,7 +150,12 @@ async function findPatientByExternalMark(organizationId: string, mark: string): 
  * разницы между сервисным и рекламным — разбираться в этом должна клиника, а
  * не он.
  */
-async function revokeConsentForChannel(organizationId: string, patientId: string, channel: string, evidence: string) {
+async function revokeConsentForChannel(
+	organizationId: string,
+	patientId: string,
+	channel: string,
+	evidence: string,
+) {
 	const now = new Date();
 	for (const scope of ["service", "marketing"] as const) {
 		await db
@@ -142,22 +168,22 @@ async function revokeConsentForChannel(organizationId: string, patientId: string
 				state: "revoked",
 				source: "inbound_stop",
 				evidence: evidence.slice(0, 500),
-				decidedAt: now
+				decidedAt: now,
 			})
 			.onConflictDoUpdate({
 				target: [
 					patientCommunicationConsents.organizationId,
 					patientCommunicationConsents.patientId,
 					patientCommunicationConsents.channel,
-					patientCommunicationConsents.scope
+					patientCommunicationConsents.scope,
 				],
 				set: {
 					state: "revoked",
 					source: "inbound_stop",
 					evidence: evidence.slice(0, 500),
 					decidedAt: now,
-					updatedAt: now
-				}
+					updatedAt: now,
+				},
 			});
 	}
 }
@@ -167,7 +193,12 @@ async function revokeConsentForChannel(organizationId: string, patientId: string
  * область: согласие на рекламу словом «СТАРТ» не выдаётся — для рекламы нужно
  * отдельное явное согласие (ФЗ «О рекламе» ст. 18 ч. 1).
  */
-async function restoreServiceConsent(organizationId: string, patientId: string, channel: string, evidence: string) {
+async function restoreServiceConsent(
+	organizationId: string,
+	patientId: string,
+	channel: string,
+	evidence: string,
+) {
 	const now = new Date();
 	await db
 		.insert(patientCommunicationConsents)
@@ -179,22 +210,22 @@ async function restoreServiceConsent(organizationId: string, patientId: string, 
 			state: "granted",
 			source: "inbound_start",
 			evidence: evidence.slice(0, 500),
-			decidedAt: now
+			decidedAt: now,
 		})
 		.onConflictDoUpdate({
 			target: [
 				patientCommunicationConsents.organizationId,
 				patientCommunicationConsents.patientId,
 				patientCommunicationConsents.channel,
-				patientCommunicationConsents.scope
+				patientCommunicationConsents.scope,
 			],
 			set: {
 				state: "granted",
 				source: "inbound_start",
 				evidence: evidence.slice(0, 500),
 				decidedAt: now,
-				updatedAt: now
-			}
+				updatedAt: now,
+			},
 		});
 }
 
@@ -205,7 +236,9 @@ async function markAsProcessed(eventId: string) {
 		.where(eq(messengerInboundEvents.id, eventId));
 }
 
-export async function processInboundEvents(options: { limit?: number } = {}): Promise<InboundIngestionReport> {
+export async function processInboundEvents(
+	options: { limit?: number } = {},
+): Promise<InboundIngestionReport> {
 	const limit = Math.max(1, Math.min(500, options.limit ?? 100));
 	const report = {
 		processed: 0,
@@ -215,7 +248,7 @@ export async function processInboundEvents(options: { limit?: number } = {}): Pr
 		optIns: 0,
 		ambiguous: 0,
 		failed: 0,
-		problems: [] as string[]
+		problems: [] as string[],
 	};
 
 	const pendingEvents = await db
@@ -233,7 +266,7 @@ export async function processInboundEvents(options: { limit?: number } = {}): Pr
 		} catch (error) {
 			report.failed += 1;
 			report.problems.push(
-				`Событие ${event.id}: ${error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200)}`
+				`Событие ${event.id}: ${error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200)}`,
 			);
 		}
 	}
@@ -263,7 +296,7 @@ async function sendOptOutAcknowledgement(
 	patientId: string,
 	channel: CommunicationChannelCode,
 	intent: "opt_out" | "opt_in",
-	eventId: string
+	eventId: string,
 ): Promise<void> {
 	try {
 		const [clinic] = await db
@@ -280,11 +313,13 @@ async function sendOptOutAcknowledgement(
 			// scope остаётся служебным: это ответ на обращение, не реклама.
 			scope: "service",
 			body: optOutAcknowledgement(intent, clinic?.name ?? "Клиника"),
-			dedupeKey: `optout-ack:${eventId}`
+			dedupeKey: `optout-ack:${eventId}`,
 		});
 
 		if (!result.ok) {
-			console.warn(`Подтверждение отписки не поставлено в очередь (пациент ${patientId}): ${result.reason}`);
+			console.warn(
+				`Подтверждение отписки не поставлено в очередь (пациент ${patientId}): ${result.reason}`,
+			);
 		}
 	} catch (error) {
 		console.error("Подтверждение отписки не поставлено в очередь:", error);
@@ -301,7 +336,7 @@ async function processSingleEvent(
 		optOuts: number;
 		optIns: number;
 		ambiguous: number;
-	}
+	},
 ): Promise<void> {
 	const messageText = event.messageText?.trim();
 	if (!messageText) {
@@ -320,11 +355,17 @@ async function processSingleEvent(
 		const match =
 			channel === "whatsapp" || channel === "sms"
 				? await findPatientByPhone(organizationId, externalChatId)
-				: await findPatientByExternalMark(organizationId, `${channel.toUpperCase()}:${externalChatId}`);
+				: await findPatientByExternalMark(
+						organizationId,
+						`${channel.toUpperCase()}:${externalChatId}`,
+					);
 
 		if (match.kind === "found") {
 			patientId = match.patientId;
-			await db.update(messengerInboundEvents).set({ patientId }).where(eq(messengerInboundEvents.id, event.id));
+			await db
+				.update(messengerInboundEvents)
+				.set({ patientId })
+				.where(eq(messengerInboundEvents.id, event.id));
 		} else if (match.kind === "ambiguous") {
 			ambiguousMatch = true;
 			report.ambiguous += 1;
@@ -336,13 +377,35 @@ async function processSingleEvent(
 
 		const intent = detectOptOutIntent(messageText);
 		if (intent === "opt_out") {
-			await revokeConsentForChannel(organizationId, patientId, channel, messageText);
+			await revokeConsentForChannel(
+				organizationId,
+				patientId,
+				channel,
+				messageText,
+			);
 			report.optOuts += 1;
-			await sendOptOutAcknowledgement(organizationId, patientId, channel, "opt_out", event.id);
+			await sendOptOutAcknowledgement(
+				organizationId,
+				patientId,
+				channel,
+				"opt_out",
+				event.id,
+			);
 		} else if (intent === "opt_in") {
-			await restoreServiceConsent(organizationId, patientId, channel, messageText);
+			await restoreServiceConsent(
+				organizationId,
+				patientId,
+				channel,
+				messageText,
+			);
 			report.optIns += 1;
-			await sendOptOutAcknowledgement(organizationId, patientId, channel, "opt_in", event.id);
+			await sendOptOutAcknowledgement(
+				organizationId,
+				patientId,
+				channel,
+				"opt_in",
+				event.id,
+			);
 		}
 
 		await db.insert(communicationEvents).values({
@@ -355,12 +418,12 @@ async function processSingleEvent(
 			message:
 				intent === null
 					? messageText
-					: `${messageText} [распознано: ${intent === "opt_out" ? "отказ от сообщений" : "возврат к рассылке"}]`
+					: `${messageText} [распознано: ${intent === "opt_out" ? "отказ от сообщений" : "возврат к рассылке"}]`,
 		});
 
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "INBOX_NEW_MESSAGE",
-			payload: { channel, patientId, text: messageText, optOutIntent: intent }
+			payload: { channel, patientId, text: messageText, optOutIntent: intent },
 		});
 
 		await markAsProcessed(event.id);
@@ -377,10 +440,12 @@ async function processSingleEvent(
 
 	const noteParts = [
 		`Первое сообщение: ${messageText.slice(0, 400)}`,
-		`Внешний чат: ${externalChatId || "неизвестен"}`
+		`Внешний чат: ${externalChatId || "неизвестен"}`,
 	];
 	if (ambiguousMatch) {
-		noteParts.push("ВНИМАНИЕ: под этот номер подходит несколько карточек пациентов — сопоставьте вручную.");
+		noteParts.push(
+			"ВНИМАНИЕ: под этот номер подходит несколько карточек пациентов — сопоставьте вручную.",
+		);
 	}
 	if (clinic?.name) noteParts.push(`Клиника: ${clinic.name}`);
 
@@ -389,10 +454,13 @@ async function processSingleEvent(
 		.values({
 			organizationId,
 			name: `Входящее сообщение · ${channel}`,
-			phone: channel === "whatsapp" || channel === "sms" ? externalChatId || null : null,
+			phone:
+				channel === "whatsapp" || channel === "sms"
+					? externalChatId || null
+					: null,
 			source: `inbound_${channel}`,
 			status: "new",
-			notes: noteParts.join("\n")
+			notes: noteParts.join("\n"),
 		})
 		.returning({ id: crmLeads.id });
 
@@ -400,7 +468,13 @@ async function processSingleEvent(
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "INBOX_NEW_MESSAGE",
-		payload: { channel, patientId: null, leadId: lead?.id ?? null, text: messageText, ambiguousMatch }
+		payload: {
+			channel,
+			patientId: null,
+			leadId: lead?.id ?? null,
+			text: messageText,
+			ambiguousMatch,
+		},
 	});
 
 	await markAsProcessed(event.id);

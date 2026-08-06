@@ -116,14 +116,20 @@ describe("журнал связи: направление и подписи со
 	});
 
 	it("у упавшей отправки подпись говорит, что делать дальше", () => {
-		const notice = journalEntryNotice({ direction: "outbound", status: "failed" });
+		const notice = journalEntryNotice({
+			direction: "outbound",
+			status: "failed",
+		});
 		assert.ok(notice);
 		assert.match(notice, /Пациент это не получил/);
 		assert.match(notice, /Журнал отправки/);
 	});
 
 	it("упавшее входящее не превращается в «пациент не получил»", () => {
-		const notice = journalEntryNotice({ direction: "inbound", status: "failed" });
+		const notice = journalEntryNotice({
+			direction: "inbound",
+			status: "failed",
+		});
 		assert.ok(notice);
 		assert.match(notice, /Входящее сообщение не принято/);
 	});
@@ -136,7 +142,13 @@ describe("журнал связи: направление и подписи со
 	});
 
 	it("у доставленного события лишней строки нет", () => {
-		assert.equal(journalEntryNotice({ direction: "outbound", status: "delivered" }), null);
-		assert.equal(journalEntryNotice({ direction: "inbound", status: "completed" }), null);
+		assert.equal(
+			journalEntryNotice({ direction: "outbound", status: "delivered" }),
+			null,
+		);
+		assert.equal(
+			journalEntryNotice({ direction: "inbound", status: "completed" }),
+			null,
+		);
 	});
 });

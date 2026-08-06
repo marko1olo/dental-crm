@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { browserRenderableImageMimeType } from "./previewFormats.js";
 
 test("browserRenderableImageMimeType", async (t) => {

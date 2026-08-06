@@ -34,15 +34,20 @@ async function main() {
 
 	// Same shape as routes/finance_family.ts and routes/communicationsOutbox.ts.
 	app.post("/probe/finance-write", async (request, reply) => {
-		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write")) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
+			return;
 		return { unreachable: true };
 	});
 	app.post("/probe/communications-write", async (request, reply) => {
-		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.write")) return;
+		if (
+			!enforcePermissionWhenStaffKnown(request, reply, "communications.write")
+		)
+			return;
 		return { unreachable: true };
 	});
 	app.post("/probe/settings-write", async (request, reply) => {
-		if (!enforcePermissionWhenStaffKnown(request, reply, "settings.write")) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "settings.write"))
+			return;
 		return { unreachable: true };
 	});
 	// Same shape as routes/whatsapp.ts:130 and routes/max.ts:90.
@@ -52,16 +57,41 @@ async function main() {
 	});
 
 	const scenarios: Array<{ label: string; url: string; role: string }> = [
-		{ label: "Врач жмёт «Списать» в семейном кошельке", url: "/probe/finance-write", role: "doctor" },
-		{ label: "Ассистент жмёт «Списать» в семейном кошельке", url: "/probe/finance-write", role: "assistant" },
-		{ label: "Ассистент отправляет рассылку пациентам", url: "/probe/communications-write", role: "assistant" },
-		{ label: "Администратор ресепшена меняет настройки клиники", url: "/probe/settings-write", role: "administrator" },
-		{ label: "Врач открывает настройки WhatsApp-бота", url: "/probe/non-doctor", role: "doctor" },
+		{
+			label: "Врач жмёт «Списать» в семейном кошельке",
+			url: "/probe/finance-write",
+			role: "doctor",
+		},
+		{
+			label: "Ассистент жмёт «Списать» в семейном кошельке",
+			url: "/probe/finance-write",
+			role: "assistant",
+		},
+		{
+			label: "Ассистент отправляет рассылку пациентам",
+			url: "/probe/communications-write",
+			role: "assistant",
+		},
+		{
+			label: "Администратор ресепшена меняет настройки клиники",
+			url: "/probe/settings-write",
+			role: "administrator",
+		},
+		{
+			label: "Врач открывает настройки WhatsApp-бота",
+			url: "/probe/non-doctor",
+			role: "doctor",
+		},
 	];
 
 	for (const scenario of scenarios) {
 		const staffToken = signToken(
-			{ organizationId: ORG, userId: USER, role: scenario.role, fullName: "Иванова Мария Петровна" },
+			{
+				organizationId: ORG,
+				userId: USER,
+				role: scenario.role,
+				fullName: "Иванова Мария Петровна",
+			},
 			secret,
 		);
 		const clinicToken = signToken({ organizationId: ORG }, secret);
@@ -92,7 +122,8 @@ async function main() {
 		// CampaignPanel.tsx:74, MessageDeliveryConsole.tsx:177, FamilyWalletPanel.tsx:306.
 		const screenB = message ?? "Ошибка оплаты";
 		// Path C — clients that print payload.error: InsuranceContractsPanel.tsx:155.
-		const screenC = typeof body.error === "string" ? body.error : "Ошибка сохранения";
+		const screenC =
+			typeof body.error === "string" ? body.error : "Ошибка сохранения";
 		console.log(
 			[
 				`СЦЕНАРИЙ                 : ${scenario.label}`,

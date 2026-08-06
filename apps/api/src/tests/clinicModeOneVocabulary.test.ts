@@ -39,15 +39,23 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { clinicModeSchema } from "@dental/shared";
-
-import { DEFAULT_CLINIC_MODE, organizations } from "../db/schema.js";
 /*
  * Таблица «режим → набор возможностей». Единственный модуль, отвечающий на вопрос
  * «что видно при этом режиме», и он же — потребитель словаря на стороне веба.
  */
-import { clinicCapabilities, clinicModes } from "../../../web/src/lib/clinicCapabilities.js";
+import {
+	clinicCapabilities,
+	clinicModes,
+} from "../../../web/src/lib/clinicCapabilities.js";
+import { DEFAULT_CLINIC_MODE, organizations } from "../db/schema.js";
 
-const MIGRATION_PATH = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "drizzle", "0140_clinic_mode_one_vocabulary.sql");
+const MIGRATION_PATH = join(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"drizzle",
+	"0140_clinic_mode_one_vocabulary.sql",
+);
 
 /** Словарь-эталон. Всё остальное в программе обязано лежать внутри него. */
 const VOCABULARY: readonly string[] = clinicModeSchema.options;
@@ -71,7 +79,11 @@ test("умолчание колонки clinic_mode лежит внутри пе
 		`умолчание колонки «${String(columnDefault)}» вне словаря режимов [${VOCABULARY.join(", ")}] — ` +
 			"каждая новая клиника рождается вне контракта, ровно как со значением 'demo'",
 	);
-	assert.equal(columnDefault, DEFAULT_CLINIC_MODE, "умолчание колонки разошлось с DEFAULT_CLINIC_MODE");
+	assert.equal(
+		columnDefault,
+		DEFAULT_CLINIC_MODE,
+		"умолчание колонки разошлось с DEFAULT_CLINIC_MODE",
+	);
 
 	/* Разбор проходит без подмены: `.parse`, а не `.catch(...).parse`. */
 	assert.equal(clinicModeSchema.parse(columnDefault), DEFAULT_CLINIC_MODE);
@@ -106,27 +118,49 @@ test("миграция 0140 запрещает базе хранить что-л
 	const sql = readFileSync(MIGRATION_PATH, "utf8");
 
 	const check = /CHECK\s*\(\s*"clinic_mode"\s+IN\s*\(([^)]*)\)/i.exec(sql);
-	assert.ok(check, "в миграции 0140 нет ограничения CHECK на clinic_mode — колонка остаётся свободным text");
+	assert.ok(
+		check,
+		"в миграции 0140 нет ограничения CHECK на clinic_mode — колонка остаётся свободным text",
+	);
 
 	/* Список внутри IN(...) — группа 1; без проверки она имеет тип string | undefined. */
 	const constrainedList = check[1];
-	assert.ok(constrainedList, "в ограничении CHECK на clinic_mode пустой список значений");
+	assert.ok(
+		constrainedList,
+		"в ограничении CHECK на clinic_mode пустой список значений",
+	);
 
-	const constrained = [...constrainedList.matchAll(/'([^']+)'/g)].map((match) => {
-		const value = match[1];
-		assert.ok(value, "в списке значений ограничения CHECK нашлась пустая кавычка");
-		return value;
-	});
+	const constrained = [...constrainedList.matchAll(/'([^']+)'/g)].map(
+		(match) => {
+			const value = match[1];
+			assert.ok(
+				value,
+				"в списке значений ограничения CHECK нашлась пустая кавычка",
+			);
+			return value;
+		},
+	);
 	assert.deepEqual(
 		[...constrained].sort(),
 		[...VOCABULARY].sort(),
 		"список значений в ограничении базы разошёлся со словарём clinicModeSchema",
 	);
 
-	const migratedDefault = /ALTER\s+COLUMN\s+"clinic_mode"\s+SET\s+DEFAULT\s+'([^']+)'/i.exec(sql);
-	assert.ok(migratedDefault, "миграция 0140 не переставляет умолчание колонки — оно осталось 'demo'");
-	assert.equal(migratedDefault[1], DEFAULT_CLINIC_MODE, "умолчание в миграции разошлось с DEFAULT_CLINIC_MODE");
-	assert.ok(VOCABULARY.includes(migratedDefault[1]), "умолчание в миграции вне словаря");
+	const migratedDefault =
+		/ALTER\s+COLUMN\s+"clinic_mode"\s+SET\s+DEFAULT\s+'([^']+)'/i.exec(sql);
+	assert.ok(
+		migratedDefault,
+		"миграция 0140 не переставляет умолчание колонки — оно осталось 'demo'",
+	);
+	assert.equal(
+		migratedDefault[1],
+		DEFAULT_CLINIC_MODE,
+		"умолчание в миграции разошлось с DEFAULT_CLINIC_MODE",
+	);
+	assert.ok(
+		VOCABULARY.includes(migratedDefault[1]),
+		"умолчание в миграции вне словаря",
+	);
 
 	/*
 	 * Правило переноса существующих строк обязано присваивать только значения из
@@ -135,19 +169,37 @@ test("миграция 0140 запрещает базе хранить что-л
 	 * комментария сделал бы тест неверным.
 	 */
 	const updateCase = /SET\s+clinic_mode\s*=\s*CASE([\s\S]*?)END/i.exec(sql);
-	assert.ok(updateCase, "в миграции 0140 нет правила переноса существующих строк");
+	assert.ok(
+		updateCase,
+		"в миграции 0140 нет правила переноса существующих строк",
+	);
 
 	/* Тело CASE — группа 1; проверяется отдельно, иначе тип остаётся string | undefined. */
 	const caseBody = updateCase[1];
-	assert.ok(caseBody, "правило переноса существующих строк в миграции 0140 пустое");
+	assert.ok(
+		caseBody,
+		"правило переноса существующих строк в миграции 0140 пустое",
+	);
 
 	for (const [, assigned] of caseBody.matchAll(/THEN\s+'([^']+)'/g)) {
-		assert.ok(assigned, "в ветке THEN правила переноса не разобралось присваиваемое значение");
-		assert.ok(VOCABULARY.includes(assigned), `правило переноса присваивает «${assigned}» вне словаря`);
+		assert.ok(
+			assigned,
+			"в ветке THEN правила переноса не разобралось присваиваемое значение",
+		);
+		assert.ok(
+			VOCABULARY.includes(assigned),
+			`правило переноса присваивает «${assigned}» вне словаря`,
+		);
 	}
 	for (const [, assigned] of caseBody.matchAll(/ELSE\s+'([^']+)'/g)) {
-		assert.ok(assigned, "в ветке ELSE правила переноса не разобралось присваиваемое значение");
-		assert.ok(VOCABULARY.includes(assigned), `ветка ELSE правила переноса присваивает «${assigned}» вне словаря`);
+		assert.ok(
+			assigned,
+			"в ветке ELSE правила переноса не разобралось присваиваемое значение",
+		);
+		assert.ok(
+			VOCABULARY.includes(assigned),
+			`ветка ELSE правила переноса присваивает «${assigned}» вне словаря`,
+		);
 	}
 });
 
@@ -162,18 +214,33 @@ test("состав разделов сужается от сети к отдел
 	 */
 	console.log("    Отдельный врач видит  :", solo.join(", "));
 	console.log("    Сеть клиник видит     :", network.join(", "));
-	console.log("    Скрыто у одного врача :", network.filter((capability) => !solo.includes(capability)).join(", "));
+	console.log(
+		"    Скрыто у одного врача :",
+		network.filter((capability) => !solo.includes(capability)).join(", "),
+	);
 
 	const networkSet = new Set(network);
 	for (const capability of solo) {
-		assert.ok(networkSet.has(capability), `у отдельного врача есть «${capability}», которого нет у сети — режимы не упорядочены`);
+		assert.ok(
+			networkSet.has(capability),
+			`у отдельного врача есть «${capability}», которого нет у сети — режимы не упорядочены`,
+		);
 	}
-	assert.ok(solo.length < network.length, "отдельный врач видит столько же разделов, сколько сеть — режим ничего не скрывает");
+	assert.ok(
+		solo.length < network.length,
+		"отдельный врач видит столько же разделов, сколько сеть — режим ничего не скрывает",
+	);
 
 	/* Каждый режим обязан быть описан: неизвестный режим не должен появиться. */
 	for (const mode of clinicModes) {
-		assert.ok(VOCABULARY.includes(mode), `в таблице возможностей режим «${mode}» вне словаря`);
-		assert.ok(clinicCapabilities(mode).length > 0, `режим «${mode}» не показывает ни одного раздела`);
+		assert.ok(
+			VOCABULARY.includes(mode),
+			`в таблице возможностей режим «${mode}» вне словаря`,
+		);
+		assert.ok(
+			clinicCapabilities(mode).length > 0,
+			`режим «${mode}» не показывает ни одного раздела`,
+		);
 	}
 
 	/*

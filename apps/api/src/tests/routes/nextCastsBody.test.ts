@@ -12,10 +12,10 @@ import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { registerAiRoutes } from "../../routes/ai.js";
 import { registerClinicalRoutes } from "../../routes/clinical.js";
-import registerDiaryRoutes from "../../routes/diary.js";
-import registerTemplateRoutes from "../../routes/templates.js";
 import registerCommunicationReceiptRoutes from "../../routes/communicationReceipts.js";
 import registerCommunicationOutboxRoutes from "../../routes/communicationsOutbox.js";
+import registerDiaryRoutes from "../../routes/diary.js";
+import registerTemplateRoutes from "../../routes/templates.js";
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
 import {
 	CLINIC_TOKEN_HEADER,
@@ -73,7 +73,11 @@ describe("next bare casts — Zod body (AUTH-first; empty → 400 ≠ 500)", () 
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: String(response.body || "") };
+		return {
+			statusCode: response.statusCode,
+			json,
+			body: String(response.body || ""),
+		};
 	}
 
 	before(async () => {

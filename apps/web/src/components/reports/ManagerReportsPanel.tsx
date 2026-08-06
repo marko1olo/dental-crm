@@ -40,11 +40,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { money, operatorReadableErrorDetail } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { hasCapability, type ClinicMode } from "../../lib/clinicCapabilities";
+import { type ClinicMode, hasCapability } from "../../lib/clinicCapabilities";
 import { formatRub as shortRub } from "../../pages/analyticsDoctorMetrics.js";
 import { DoctorPayoutDashboard } from "../../pages/DoctorPayoutDashboard.js";
 
-type RevenuePoint = { bucket: string; revenueRub: number; paymentCount: number; payingPatients: number };
+type RevenuePoint = {
+	bucket: string;
+	revenueRub: number;
+	paymentCount: number;
+	payingPatients: number;
+};
 
 type DoctorRow = {
 	doctorUserId: string | null;
@@ -70,11 +75,26 @@ type ChairRow = {
 
 export type ReportsSummary = {
 	period: { from: string; to: string };
-	revenue: { granularity: string; points: RevenuePoint[]; totalRub: number; isEmpty: boolean };
-	doctors: { rows: DoctorRow[]; unattributedRevenueRub: number; attributionNote: string; isEmpty: boolean };
+	revenue: {
+		granularity: string;
+		points: RevenuePoint[];
+		totalRub: number;
+		isEmpty: boolean;
+	};
+	doctors: {
+		rows: DoctorRow[];
+		unattributedRevenueRub: number;
+		attributionNote: string;
+		isEmpty: boolean;
+	};
 	chairs: {
 		rows: ChairRow[];
-		basis: { workingDays: number; minutesPerDay: number; totalMinutesPerChair: number; note: string };
+		basis: {
+			workingDays: number;
+			minutesPerDay: number;
+			totalMinutesPerChair: number;
+			note: string;
+		};
 		isEmpty: boolean;
 	};
 	appointments: {
@@ -96,7 +116,15 @@ export type ReportsSummary = {
 		enoughData: boolean;
 		isEmpty: boolean;
 	};
-	patientFlow: { points: { bucket: string; newPatients: number; returningPatients: number }[]; newTotal: number; returningTotal: number };
+	patientFlow: {
+		points: {
+			bucket: string;
+			newPatients: number;
+			returningPatients: number;
+		}[];
+		newTotal: number;
+		returningTotal: number;
+	};
 	receivables: {
 		totalDebtRub: number;
 		byBucket: Record<string, number>;
@@ -108,7 +136,11 @@ export type ReportsSummary = {
 		 * «клиника должна вернуть undefined ₽».
 		 */
 		totalPrepaidRub?: number;
-		prepayments?: { patientId: string; patientName: string; prepaidRub: number }[];
+		prepayments?: {
+			patientId: string;
+			patientName: string;
+			prepaidRub: number;
+		}[];
 	};
 	isEmpty: boolean;
 };
@@ -128,7 +160,7 @@ const bucketLabels: Record<string, string> = {
 	up_to_30: "до 30 дней",
 	up_to_90: "до 90 дней",
 	over_90: "больше 90 дней",
-	undated: "дата не определена"
+	undated: "дата не определена",
 };
 
 /**
@@ -177,7 +209,10 @@ async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch(() => null)) as unknown;
 	if (!response.ok) {
 		const message =
-			payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+			payload &&
+			typeof payload === "object" &&
+			"message" in payload &&
+			typeof payload.message === "string"
 				? payload.message
 				: `Сервер ответил ${response.status}`;
 		throw new Error(message);
@@ -234,14 +269,16 @@ function monthBounds(now = new Date()): { from: string; to: string } {
  */
 export async function fetchReportsSummary(
 	period: CalendarPeriod & { readonly granularity: "day" | "week" | "month" },
-	headers: Record<string, string>
+	headers: Record<string, string>,
 ): Promise<ReportsSummary> {
 	const query = new URLSearchParams({
 		from: period.from,
 		to: period.to,
-		granularity: period.granularity
+		granularity: period.granularity,
 	});
-	const response = await fetch(`/api/reports/summary?${query.toString()}`, { headers });
+	const response = await fetch(`/api/reports/summary?${query.toString()}`, {
+		headers,
+	});
 	return readJson<ReportsSummary>(response);
 }
 
@@ -280,7 +317,13 @@ export type CalendarPeriod = {
 
 /** Ответ `/api/reports/services`. Суммы НАЗНАЧЕННЫЕ, а не полученные. */
 export type ServiceSalesReport = {
-	rows: { title: string; quantity: number; plannedRub: number; averagePriceRub: number; discountRub: number }[];
+	rows: {
+		title: string;
+		quantity: number;
+		plannedRub: number;
+		averagePriceRub: number;
+		discountRub: number;
+	}[];
 	plannedTotalRub: number;
 	discountTotalRub: number;
 	note: string;
@@ -307,7 +350,12 @@ export type ReceivablesDetail = {
 
 /** Ответ `/api/reports/schedule-load`. `weekday` — ISO: 1 понедельник, 7 воскресенье. */
 export type ScheduleLoadReport = {
-	cells: { weekday: number; hour: number; appointments: number; bookedMinutes: number }[];
+	cells: {
+		weekday: number;
+		hour: number;
+		appointments: number;
+		bookedMinutes: number;
+	}[];
 	busiestWeekday: number | null;
 	busiestHour: number | null;
 	isEmpty: boolean;
@@ -333,10 +381,12 @@ export type ScheduleLoadReport = {
 
 export async function fetchServiceSales(
 	period: CalendarPeriod,
-	headers: Record<string, string>
+	headers: Record<string, string>,
 ): Promise<ServiceSalesReport> {
 	const query = new URLSearchParams({ from: period.from, to: period.to });
-	const response = await fetch(`/api/reports/services?${query.toString()}`, { headers });
+	const response = await fetch(`/api/reports/services?${query.toString()}`, {
+		headers,
+	});
 	return readJson<ServiceSalesReport>(response);
 }
 
@@ -344,22 +394,30 @@ export async function fetchServiceSales(
  * Дебиторка периода НЕ ПРИНИМАЕТ, и это не упущение: долг существует на дату
  * отчёта. Передать сюда `from`/`to` значило бы показать «долг за март».
  */
-export async function fetchReceivablesDetail(headers: Record<string, string>): Promise<ReceivablesDetail> {
+export async function fetchReceivablesDetail(
+	headers: Record<string, string>,
+): Promise<ReceivablesDetail> {
 	const response = await fetch("/api/reports/receivables", { headers });
 	return readJson<ReceivablesDetail>(response);
 }
 
 export async function fetchScheduleLoad(
 	period: CalendarPeriod,
-	headers: Record<string, string>
+	headers: Record<string, string>,
 ): Promise<ScheduleLoadReport> {
 	const query = new URLSearchParams({ from: period.from, to: period.to });
-	const response = await fetch(`/api/reports/schedule-load?${query.toString()}`, { headers });
+	const response = await fetch(
+		`/api/reports/schedule-load?${query.toString()}`,
+		{ headers },
+	);
 	return readJson<ScheduleLoadReport>(response);
 }
 
 /** Загруженный разрез либо причина, по которой его нет. */
-type ReportSlice<T> = { readonly data: T | null; readonly error: string | null };
+type ReportSlice<T> = {
+	readonly data: T | null;
+	readonly error: string | null;
+};
 
 const pendingSlice = { data: null, error: null };
 
@@ -367,7 +425,10 @@ function sliceOf<T>(result: PromiseSettledResult<T>): ReportSlice<T> {
 	if (result.status === "fulfilled") return { data: result.value, error: null };
 	return {
 		data: null,
-		error: result.reason instanceof Error ? result.reason.message : String(result.reason)
+		error:
+			result.reason instanceof Error
+				? result.reason.message
+				: String(result.reason),
 	};
 }
 
@@ -386,9 +447,14 @@ function sliceOf<T>(result: PromiseSettledResult<T>): ReportSlice<T> {
  * нажать. Самая частая причина отказа здесь — истёкший вход в кабинет, и лечится
  * она повторным входом.
  */
-export function sliceRefusalText(subject: string, detail: string | null): string {
+export function sliceRefusalText(
+	subject: string,
+	detail: string | null,
+): string {
 	const readable = operatorReadableErrorDetail(detail);
-	const cause = readable ? readable.replace(/\s*[.;]\s*$/, "") : "сервер отказал без объяснения";
+	const cause = readable
+		? readable.replace(/\s*[.;]\s*$/, "")
+		: "сервер отказал без объяснения";
 	return (
 		`${subject} не построен: ${cause}. Нажмите «Обновить». ` +
 		"Если отказ повторяется — войдите в рабочий кабинет клиники заново, этот раздел закрыт входом."
@@ -404,7 +470,9 @@ export type ManagerReportsPanelProps = {
 	readonly clinicMode?: ClinicMode | null;
 };
 
-export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelProps = {}) {
+export function ManagerReportsPanel({
+	clinicMode = null,
+}: ManagerReportsPanelProps = {}) {
 	/*
 	 * ПОЧЕМУ У ЗАПРОСА СВОДКИ ЕСТЬ ЗАГОЛОВКИ. Раздел был мёртв у заказчика целиком,
 	 * и увидеть это на машине разработчика нельзя.
@@ -450,13 +518,18 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 	const initial = useMemo(() => monthBounds(), []);
 	const [from, setFrom] = useState(initial.from);
 	const [to, setTo] = useState(initial.to);
-	const [granularity, setGranularity] = useState<"day" | "week" | "month">("day");
+	const [granularity, setGranularity] = useState<"day" | "week" | "month">(
+		"day",
+	);
 	const [summary, setSummary] = useState<ReportsSummary | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
-	const [services, setServices] = useState<ReportSlice<ServiceSalesReport>>(pendingSlice);
-	const [debtors, setDebtors] = useState<ReportSlice<ReceivablesDetail>>(pendingSlice);
-	const [scheduleLoad, setScheduleLoad] = useState<ReportSlice<ScheduleLoadReport>>(pendingSlice);
+	const [services, setServices] =
+		useState<ReportSlice<ServiceSalesReport>>(pendingSlice);
+	const [debtors, setDebtors] =
+		useState<ReportSlice<ReceivablesDetail>>(pendingSlice);
+	const [scheduleLoad, setScheduleLoad] =
+		useState<ReportSlice<ScheduleLoadReport>>(pendingSlice);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -471,7 +544,9 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 			 */
 			const auth = authRef.current;
 			const readHeaders =
-				auth && typeof auth.denteClinicalReadHeaders === "function" ? auth.denteClinicalReadHeaders() : {};
+				auth && typeof auth.denteClinicalReadHeaders === "function"
+					? auth.denteClinicalReadHeaders()
+					: {};
 			/*
 			 * `from` и `to` — календарные даты `YYYY-MM-DD` прямо из полей ввода.
 			 * Своего превращения в мгновение здесь больше НЕТ: пояс клиники знает
@@ -484,19 +559,22 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 			 * же 403. Ждать их по очереди тоже нельзя: четыре последовательных
 			 * похода к базе складываются в задержку, которую видно глазом.
 			 */
-			const [summaryResult, servicesResult, debtorsResult, scheduleResult] = await Promise.allSettled([
-				fetchReportsSummary({ from, to, granularity }, readHeaders),
-				fetchServiceSales({ from, to }, readHeaders),
-				fetchReceivablesDetail(readHeaders),
-				fetchScheduleLoad({ from, to }, readHeaders)
-			]);
+			const [summaryResult, servicesResult, debtorsResult, scheduleResult] =
+				await Promise.allSettled([
+					fetchReportsSummary({ from, to, granularity }, readHeaders),
+					fetchServiceSales({ from, to }, readHeaders),
+					fetchReceivablesDetail(readHeaders),
+					fetchScheduleLoad({ from, to }, readHeaders),
+				]);
 
 			if (summaryResult.status === "fulfilled") {
 				setSummary(summaryResult.value);
 			} else {
 				setSummary(null);
 				setError(
-					summaryResult.reason instanceof Error ? summaryResult.reason.message : String(summaryResult.reason)
+					summaryResult.reason instanceof Error
+						? summaryResult.reason.message
+						: String(summaryResult.reason),
 				);
 			}
 			setServices(sliceOf(servicesResult));
@@ -510,7 +588,9 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 			 * ни один из четырёх запросов, и все разрезы гасятся одной причиной.
 			 */
 			setSummary(null);
-			setError(loadError instanceof Error ? loadError.message : String(loadError));
+			setError(
+				loadError instanceof Error ? loadError.message : String(loadError),
+			);
 			setServices(pendingSlice);
 			setDebtors(pendingSlice);
 			setScheduleLoad(pendingSlice);
@@ -524,8 +604,12 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 	}, [load]);
 
 	const maxRevenue = useMemo(
-		() => summary?.revenue.points.reduce((peak, point) => Math.max(peak, point.revenueRub), 0) ?? 0,
-		[summary]
+		() =>
+			summary?.revenue.points.reduce(
+				(peak, point) => Math.max(peak, point.revenueRub),
+				0,
+			) ?? 0,
+		[summary],
 	);
 
 	/**
@@ -547,20 +631,28 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 		const weekdayMinutes = new Map<number, number>();
 		const hourMinutes = new Map<number, number>();
 		for (const cell of cells) {
-			weekdayMinutes.set(cell.weekday, (weekdayMinutes.get(cell.weekday) ?? 0) + cell.bookedMinutes);
-			hourMinutes.set(cell.hour, (hourMinutes.get(cell.hour) ?? 0) + cell.bookedMinutes);
+			weekdayMinutes.set(
+				cell.weekday,
+				(weekdayMinutes.get(cell.weekday) ?? 0) + cell.bookedMinutes,
+			);
+			hourMinutes.set(
+				cell.hour,
+				(hourMinutes.get(cell.hour) ?? 0) + cell.bookedMinutes,
+			);
 		}
 		// Все семь дней подряд, включая пустые: «в субботу пусто» — это и есть
 		// ответ, ради которого отчёт нужен, а пропущенная строка читается как
 		// отсутствие данных.
 		const byWeekday = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
 			key: weekday,
-			minutes: weekdayMinutes.get(weekday) ?? 0
+			minutes: weekdayMinutes.get(weekday) ?? 0,
 		}));
 		// Часы — непрерывным отрезком от первого занятого до последнего. Пустой час
 		// ВНУТРИ рабочего дня это настоящий ноль (обед, провал в записи), и прятать
 		// его нельзя; сутки целиком показывать незачем — клиника ночью закрыта.
-		const busyHours = [...hourMinutes.keys()].sort((left, right) => left - right);
+		const busyHours = [...hourMinutes.keys()].sort(
+			(left, right) => left - right,
+		);
 		const byHour: { key: number; minutes: number }[] = [];
 		const firstHour = busyHours[0];
 		const lastHour = busyHours[busyHours.length - 1];
@@ -572,8 +664,14 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 		return {
 			byWeekday,
 			byHour,
-			peakWeekdayMinutes: byWeekday.reduce((peak, row) => Math.max(peak, row.minutes), 0),
-			peakHourMinutes: byHour.reduce((peak, row) => Math.max(peak, row.minutes), 0)
+			peakWeekdayMinutes: byWeekday.reduce(
+				(peak, row) => Math.max(peak, row.minutes),
+				0,
+			),
+			peakHourMinutes: byHour.reduce(
+				(peak, row) => Math.max(peak, row.minutes),
+				0,
+			),
 		};
 	}, [scheduleLoad.data]);
 
@@ -586,25 +684,42 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 			<div className="ops-toolbar">
 				<span className="ops-field">
 					<label htmlFor="report-from">Период с</label>
-					<input id="report-from" type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+					<input
+						id="report-from"
+						type="date"
+						value={from}
+						onChange={(event) => setFrom(event.target.value)}
+					/>
 				</span>
 				<span className="ops-field">
 					<label htmlFor="report-to">по</label>
-					<input id="report-to" type="date" value={to} onChange={(event) => setTo(event.target.value)} />
+					<input
+						id="report-to"
+						type="date"
+						value={to}
+						onChange={(event) => setTo(event.target.value)}
+					/>
 				</span>
 				<span className="ops-field">
 					<label htmlFor="report-granularity">Детализация</label>
 					<select
 						id="report-granularity"
 						value={granularity}
-						onChange={(event) => setGranularity(event.target.value as "day" | "week" | "month")}
+						onChange={(event) =>
+							setGranularity(event.target.value as "day" | "week" | "month")
+						}
 					>
 						<option value="day">по дням</option>
 						<option value="week">по неделям</option>
 						<option value="month">по месяцам</option>
 					</select>
 				</span>
-				<button className="secondary-button" type="button" onClick={() => void load()} disabled={loading}>
+				<button
+					className="secondary-button"
+					type="button"
+					onClick={() => void load()}
+					disabled={loading}
+				>
 					{loading ? "Считаю…" : "Обновить"}
 				</button>
 			</div>
@@ -626,36 +741,64 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 
 			{summary ? (
 				summary.isEmpty ? (
-					<p className="ops-empty">За выбранный период данных нет: ни платежей, ни приёмов. Это не нулевые показатели, а отсутствие записей.</p>
+					<p className="ops-empty">
+						За выбранный период данных нет: ни платежей, ни приёмов. Это не
+						нулевые показатели, а отсутствие записей.
+					</p>
 				) : (
 					<>
 						{/* ── Главные числа ─────────────────────────────────────── */}
 						<h3 className="ops-section-title">Итоги периода</h3>
 						<ul className="ops-metrics">
 							<li className="ops-metric ops-metric--primary">
-								<span className="ops-metric__value" title={money(summary.revenue.totalRub)}>{shortRub(summary.revenue.totalRub)}</span>
+								<span
+									className="ops-metric__value"
+									title={money(summary.revenue.totalRub)}
+								>
+									{shortRub(summary.revenue.totalRub)}
+								</span>
 								<span className="ops-metric__label">получено</span>
 							</li>
 							<li className="ops-metric">
-								<span className="ops-metric__value">{summary.appointments.total}</span>
+								<span className="ops-metric__value">
+									{summary.appointments.total}
+								</span>
 								<span className="ops-metric__label">приёмов</span>
 							</li>
-							<li className={`ops-metric ${summary.appointments.lostAppointments > 0 ? "ops-metric--danger" : ""}`}>
-								<span className="ops-metric__value">{summary.appointments.lostAppointments}</span>
+							<li
+								className={`ops-metric ${summary.appointments.lostAppointments > 0 ? "ops-metric--danger" : ""}`}
+							>
+								<span className="ops-metric__value">
+									{summary.appointments.lostAppointments}
+								</span>
 								{/* Именно этот показатель уменьшают напоминаниями. */}
-								<span className="ops-metric__label">потеряно: отмены и неявки</span>
-							</li>
-							<li className="ops-metric">
-								<span className="ops-metric__value">{formatPercent(summary.appointments.noShowRate)}</span>
-								<span className="ops-metric__label">доля неявок</span>
-							</li>
-							<li className={`ops-metric ${summary.receivables.totalDebtRub > 0 ? "ops-metric--danger" : ""}`}>
-								<span className="ops-metric__value" title={money(summary.receivables.totalDebtRub)}>{shortRub(summary.receivables.totalDebtRub)}</span>
-								<span className="ops-metric__label">долг, {summary.receivables.debtors} пациент(ов)</span>
+								<span className="ops-metric__label">
+									потеряно: отмены и неявки
+								</span>
 							</li>
 							<li className="ops-metric">
 								<span className="ops-metric__value">
-									{summary.patientFlow.newTotal} / {summary.patientFlow.returningTotal}
+									{formatPercent(summary.appointments.noShowRate)}
+								</span>
+								<span className="ops-metric__label">доля неявок</span>
+							</li>
+							<li
+								className={`ops-metric ${summary.receivables.totalDebtRub > 0 ? "ops-metric--danger" : ""}`}
+							>
+								<span
+									className="ops-metric__value"
+									title={money(summary.receivables.totalDebtRub)}
+								>
+									{shortRub(summary.receivables.totalDebtRub)}
+								</span>
+								<span className="ops-metric__label">
+									долг, {summary.receivables.debtors} пациент(ов)
+								</span>
+							</li>
+							<li className="ops-metric">
+								<span className="ops-metric__value">
+									{summary.patientFlow.newTotal} /{" "}
+									{summary.patientFlow.returningTotal}
 								</span>
 								{/*
 									Подпись называет единицу измерения. Было просто «первичные /
@@ -666,7 +809,9 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 									включая ещё не состоявшиеся и отменённые. Цифра была верной,
 									врала подпись.
 								*/}
-								<span className="ops-metric__label">пациентов: первичные / повторные</span>
+								<span className="ops-metric__label">
+									пациентов: первичные / повторные
+								</span>
 							</li>
 						</ul>
 
@@ -691,12 +836,17 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 											<span
 												className="ops-bar__fill"
 												style={{
-													width: `${maxRevenue > 0 ? Math.max(2, Math.round((point.revenueRub / maxRevenue) * 100)) : 2}%`
+													width: `${maxRevenue > 0 ? Math.max(2, Math.round((point.revenueRub / maxRevenue) * 100)) : 2}%`,
 												}}
 											/>
 										</span>
 										{/* Полоса узкая: короткий вид, точная сумма — в подсказке. */}
-										<span className="ops-bar__value" title={money(point.revenueRub)}>{shortRub(point.revenueRub)}</span>
+										<span
+											className="ops-bar__value"
+											title={money(point.revenueRub)}
+										>
+											{shortRub(point.revenueRub)}
+										</span>
 									</li>
 								))}
 							</ul>
@@ -709,46 +859,50 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						*/}
 						{showDoctorBreakdown ? (
 							<>
-						<h3 className="ops-section-title">Врачи</h3>
-						{summary.doctors.isEmpty ? (
-							<p className="ops-empty">Выработки за период нет.</p>
-						) : (
-							<>
-								<div className="ops-table-wrap">
-								<table className="ops-table">
-									<thead>
-										<tr>
-											<th scope="col">Врач</th>
-											<th scope="col">Получено</th>
-											<th scope="col">Приёмов</th>
-											<th scope="col">Завершено</th>
-											<th scope="col">Неявки</th>
-											<th scope="col">Средний чек</th>
-											<th scope="col">Маржа</th>
-										</tr>
-									</thead>
-									<tbody>
-										{summary.doctors.rows.map((row) => (
-											<tr key={row.doctorUserId ?? row.doctorName}>
-												<td className="ops-strong" data-label="Врач">
-													{row.doctorName}
-												</td>
-												<td className="ops-num" data-label="Получено">
-													{money(row.revenueRub)}
-												</td>
-												<td className="ops-num" data-label="Приёмов">
-													{row.appointmentsTotal}
-												</td>
-												<td className="ops-num" data-label="Завершено">
-													{row.appointmentsCompleted} ({formatPercent(row.completionRate)})
-												</td>
-												<td className="ops-num" data-label="Неявки">
-													{row.appointmentsNoShow} ({formatPercent(row.noShowRate)})
-												</td>
-												<td className="ops-num" data-label="Средний чек">
-													{row.averageTicketRub === null ? "—" : money(row.averageTicketRub)}
-												</td>
-												{/*
+								<h3 className="ops-section-title">Врачи</h3>
+								{summary.doctors.isEmpty ? (
+									<p className="ops-empty">Выработки за период нет.</p>
+								) : (
+									<>
+										<div className="ops-table-wrap">
+											<table className="ops-table">
+												<thead>
+													<tr>
+														<th scope="col">Врач</th>
+														<th scope="col">Получено</th>
+														<th scope="col">Приёмов</th>
+														<th scope="col">Завершено</th>
+														<th scope="col">Неявки</th>
+														<th scope="col">Средний чек</th>
+														<th scope="col">Маржа</th>
+													</tr>
+												</thead>
+												<tbody>
+													{summary.doctors.rows.map((row) => (
+														<tr key={row.doctorUserId ?? row.doctorName}>
+															<td className="ops-strong" data-label="Врач">
+																{row.doctorName}
+															</td>
+															<td className="ops-num" data-label="Получено">
+																{money(row.revenueRub)}
+															</td>
+															<td className="ops-num" data-label="Приёмов">
+																{row.appointmentsTotal}
+															</td>
+															<td className="ops-num" data-label="Завершено">
+																{row.appointmentsCompleted} (
+																{formatPercent(row.completionRate)})
+															</td>
+															<td className="ops-num" data-label="Неявки">
+																{row.appointmentsNoShow} (
+																{formatPercent(row.noShowRate)})
+															</td>
+															<td className="ops-num" data-label="Средний чек">
+																{row.averageTicketRub === null
+																	? "—"
+																	: money(row.averageTicketRub)}
+															</td>
+															{/*
 													Прочерк осознанный, но теперь он не тупик: расчёт врачебной
 													выплаты живёт в блоке «Выплаты врачам» ниже, у него свой
 													зарплатный месяц и свои правила округления до копейки.
@@ -761,27 +915,28 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 													заполняются они в другом месте — подсказка должна вести
 													туда, а не утверждать, что возможности нет.
 												*/}
-												<td
-													className="ops-num"
-													data-label="Маржа"
-													title="Маржа по врачу не считается здесь: смотрите блок «Выплаты врачам» ниже — там касса, ставка врача и удержание за материалы за выбранный зарплатный месяц"
-												>
-													—
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-								</div>
-								{summary.doctors.unattributedRevenueRub > 0 ? (
-									<p className="ops-hint">
-										Не отнесено к врачу: {money(summary.doctors.unattributedRevenueRub)}.{" "}
-										{summary.doctors.attributionNote}
-									</p>
-								) : null}
+															<td
+																className="ops-num"
+																data-label="Маржа"
+																title="Маржа по врачу не считается здесь: смотрите блок «Выплаты врачам» ниже — там касса, ставка врача и удержание за материалы за выбранный зарплатный месяц"
+															>
+																—
+															</td>
+														</tr>
+													))}
+												</tbody>
+											</table>
+										</div>
+										{summary.doctors.unattributedRevenueRub > 0 ? (
+											<p className="ops-hint">
+												Не отнесено к врачу:{" "}
+												{money(summary.doctors.unattributedRevenueRub)}.{" "}
+												{summary.doctors.attributionNote}
+											</p>
+										) : null}
+									</>
+								)}
 							</>
-						)}
-						</>
 						) : null}
 
 						{/* ── Кресла ────────────────────────────────────────────── */}
@@ -791,55 +946,55 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						*/}
 						{showChairUtilisation ? (
 							<>
-						<h3 className="ops-section-title">Занятость кресел</h3>
-						{summary.chairs.isEmpty ? (
-							<p className="ops-empty">Приёмов за период не было.</p>
-						) : (
-							<>
-								<div className="ops-table-wrap">
-								<table className="ops-table">
-									<thead>
-										<tr>
-											<th scope="col">Кресло</th>
-											<th scope="col">Занято</th>
-											<th scope="col">Приёмов</th>
-											<th scope="col">Занятость</th>
-										</tr>
-									</thead>
-									<tbody>
-										{summary.chairs.rows.map((row) => (
-											<tr key={row.chairId ?? row.chairName}>
-												<td className="ops-strong" data-label="Кресло">
-													{row.chairName}
-												</td>
-												<td className="ops-num" data-label="Занято">
-													{formatHours(row.bookedMinutes)}
-												</td>
-												<td className="ops-num" data-label="Приёмов">
-													{row.appointments}
-												</td>
-												<td className="ops-num" data-label="Занятость">
-													{formatPercent(row.utilization)}
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-								</div>
-								{/* База расчёта обязана стоять рядом с процентом. */}
-								<p className="ops-hint">{summary.chairs.basis.note}</p>
+								<h3 className="ops-section-title">Занятость кресел</h3>
+								{summary.chairs.isEmpty ? (
+									<p className="ops-empty">Приёмов за период не было.</p>
+								) : (
+									<>
+										<div className="ops-table-wrap">
+											<table className="ops-table">
+												<thead>
+													<tr>
+														<th scope="col">Кресло</th>
+														<th scope="col">Занято</th>
+														<th scope="col">Приёмов</th>
+														<th scope="col">Занятость</th>
+													</tr>
+												</thead>
+												<tbody>
+													{summary.chairs.rows.map((row) => (
+														<tr key={row.chairId ?? row.chairName}>
+															<td className="ops-strong" data-label="Кресло">
+																{row.chairName}
+															</td>
+															<td className="ops-num" data-label="Занято">
+																{formatHours(row.bookedMinutes)}
+															</td>
+															<td className="ops-num" data-label="Приёмов">
+																{row.appointments}
+															</td>
+															<td className="ops-num" data-label="Занятость">
+																{formatPercent(row.utilization)}
+															</td>
+														</tr>
+													))}
+												</tbody>
+											</table>
+										</div>
+										{/* База расчёта обязана стоять рядом с процентом. */}
+										<p className="ops-hint">{summary.chairs.basis.note}</p>
+									</>
+								)}
 							</>
-						)}
-						</>
 						) : null}
 
 						{/* ── Приёмы ────────────────────────────────────────────── */}
 						<h3 className="ops-section-title">Приёмы</h3>
 						<p>
-							Дошли до кресла: {formatPercent(summary.appointments.arrivalRate)} · завершено:{" "}
-							{formatPercent(summary.appointments.completionRate)} · отменено:{" "}
-							{formatPercent(summary.appointments.cancellationRate)} · неявки:{" "}
-							{formatPercent(summary.appointments.noShowRate)}
+							Дошли до кресла: {formatPercent(summary.appointments.arrivalRate)}{" "}
+							· завершено: {formatPercent(summary.appointments.completionRate)}{" "}
+							· отменено: {formatPercent(summary.appointments.cancellationRate)}{" "}
+							· неявки: {formatPercent(summary.appointments.noShowRate)}
 						</p>
 						{/*
 							Доли считаются от ВСЕХ записей периода, включая ещё не
@@ -848,8 +1003,9 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 							куда делись остальные — непонятно.
 						*/}
 						<p className="ops-hint">
-							Доли считаются от всех {summary.appointments.total} записей периода. Остаток до 100 % — приёмы,
-							которые ещё не состоялись: они назначены на будущее или ждут подтверждения.
+							Доли считаются от всех {summary.appointments.total} записей
+							периода. Остаток до 100 % — приёмы, которые ещё не состоялись: они
+							назначены на будущее или ждут подтверждения.
 						</p>
 
 						{/*
@@ -891,10 +1047,7 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 														: null;
 												return (
 													<tr key={status}>
-														<td
-															className="ops-strong"
-															data-label="Статус"
-														>
+														<td className="ops-strong" data-label="Статус">
 															{appointmentStatusLabels[status] ?? status}
 														</td>
 														<td className="ops-num" data-label="Записей">
@@ -933,7 +1086,9 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						*/}
 						{summary.patientFlow.points.length > 0 ? (
 							<>
-								<h3 className="ops-section-title">Первичные и повторные пациенты</h3>
+								<h3 className="ops-section-title">
+									Первичные и повторные пациенты
+								</h3>
 								<div className="ops-table-wrap">
 									<table className="ops-table">
 										<thead>
@@ -961,10 +1116,12 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 									</table>
 								</div>
 								<p className="ops-hint">
-									Первичный — тот, у кого это первый завершённый приём за всю историю клиники, а не первый в
-									выбранном периоде. Пациент, пришедший в одном месяце и первично, и повторно, посчитан
-									первичным один раз. Считаются пациенты, дошедшие до кресла, а не все записи периода —
-									поэтому эти числа меньше числа приёмов выше.
+									Первичный — тот, у кого это первый завершённый приём за всю
+									историю клиники, а не первый в выбранном периоде. Пациент,
+									пришедший в одном месяце и первично, и повторно, посчитан
+									первичным один раз. Считаются пациенты, дошедшие до кресла, а
+									не все записи периода — поэтому эти числа меньше числа приёмов
+									выше.
 								</p>
 							</>
 						) : null}
@@ -979,12 +1136,16 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						*/}
 						<h3 className="ops-section-title">Работают ли напоминания</h3>
 						{summary.reminderEffect.isEmpty ? (
-							<p className="ops-empty">Приёмов за период нет — сравнивать нечего.</p>
+							<p className="ops-empty">
+								Приёмов за период нет — сравнивать нечего.
+							</p>
 						) : (
 							<>
 								<div className="ops-table-wrap">
 									<table className="ops-table">
-										<caption className="sr-only">Потери приёмов в зависимости от того, дошло ли напоминание</caption>
+										<caption className="sr-only">
+											Потери приёмов в зависимости от того, дошло ли напоминание
+										</caption>
 										<thead>
 											<tr>
 												<th scope="col">Приёмы</th>
@@ -998,8 +1159,14 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 										<tbody>
 											{(
 												[
-													["Напоминание дошло", summary.reminderEffect.reminded],
-													["Напоминание не дошло", summary.reminderEffect.notReminded]
+													[
+														"Напоминание дошло",
+														summary.reminderEffect.reminded,
+													],
+													[
+														"Напоминание не дошло",
+														summary.reminderEffect.notReminded,
+													],
 												] as const
 											).map(([label, group]) => (
 												<tr key={label}>
@@ -1018,7 +1185,10 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 													<td className="ops-num" data-label="Потеряно">
 														{group.lost}
 													</td>
-													<td className="ops-num ops-strong" data-label="Доля потерь">
+													<td
+														className="ops-num ops-strong"
+														data-label="Доля потерь"
+													>
 														{formatPercent(group.lostRate)}
 													</td>
 												</tr>
@@ -1028,18 +1198,31 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 								</div>
 
 								{summary.reminderEffect.lostRateDifference !== null ? (
-									<p className={summary.reminderEffect.enoughData ? "ops-hint" : "ops-hint ops-hint--weak"}>
+									<p
+										className={
+											summary.reminderEffect.enoughData
+												? "ops-hint"
+												: "ops-hint ops-hint--weak"
+										}
+									>
 										{summary.reminderEffect.enoughData ? (
 											<>
 												Без напоминания теряется на{" "}
-												<strong>{Math.round(summary.reminderEffect.lostRateDifference * 100)} п. п.</strong> больше.{" "}
+												<strong>
+													{Math.round(
+														summary.reminderEffect.lostRateDifference * 100,
+													)}{" "}
+													п. п.
+												</strong>{" "}
+												больше.{" "}
 											</>
 										) : null}
 										{summary.reminderEffect.caveat}
 									</p>
 								) : (
 									<p className="ops-hint">
-										Одна из групп пуста — сравнивать не с чем. {summary.reminderEffect.caveat}
+										Одна из групп пуста — сравнивать не с чем.{" "}
+										{summary.reminderEffect.caveat}
 									</p>
 								)}
 							</>
@@ -1055,16 +1238,20 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 									.filter(([, amount]) => amount > 0)
 									.map(([bucket, amount]) => (
 										<li className="ops-bar" key={bucket}>
-											<span className="ops-bar__label">{bucketLabels[bucket] ?? bucket}</span>
+											<span className="ops-bar__label">
+												{bucketLabels[bucket] ?? bucket}
+											</span>
 											<span className="ops-bar__track">
 												<span
 													className="ops-bar__fill"
 													style={{
-														width: `${Math.max(2, Math.round((amount / summary.receivables.totalDebtRub) * 100))}%`
+														width: `${Math.max(2, Math.round((amount / summary.receivables.totalDebtRub) * 100))}%`,
 													}}
 												/>
 											</span>
-											<span className="ops-bar__value" title={money(amount)}>{shortRub(amount)}</span>
+											<span className="ops-bar__value" title={money(amount)}>
+												{shortRub(amount)}
+											</span>
 										</li>
 									))}
 							</ul>
@@ -1073,14 +1260,16 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						{/* ── Переплаты: клиника должна вернуть ────────────────────── */}
 						{(summary.receivables.totalPrepaidRub ?? 0) > 0 && (
 							<>
-								<h3 className="ops-section-title">Переплаты: клиника должна вернуть</h3>
+								<h3 className="ops-section-title">
+									Переплаты: клиника должна вернуть
+								</h3>
 								{/*
-								  * Разметка — та же таблица, что у врачей и кресел выше
-								  * (`ops-table` в styles/dente-operations.css), с `data-label`
-								  * для узких экранов. Своих классов здесь нет намеренно:
-								  * придуманный `ops-list__row` в таблице стилей не описан и
-								  * дал бы неоформленный блок.
-								  */}
+								 * Разметка — та же таблица, что у врачей и кресел выше
+								 * (`ops-table` в styles/dente-operations.css), с `data-label`
+								 * для узких экранов. Своих классов здесь нет намеренно:
+								 * придуманный `ops-list__row` в таблице стилей не описан и
+								 * дал бы неоформленный блок.
+								 */}
 								<div className="ops-table-wrap">
 									<table className="ops-table">
 										<thead>
@@ -1105,20 +1294,25 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 								</div>
 								<p className="ops-hint">
 									Эти пациенты заплатили больше назначенного — всего{" "}
-									{money(summary.receivables.totalPrepaidRub ?? 0)}. На главном экране сумма к оплате считается
-									по всей клинике одним вычитанием, поэтому переплата там уже зачтена в долг других пациентов:
-									долг {money(summary.receivables.totalDebtRub)} минус переплаты{" "}
-									{money(summary.receivables.totalPrepaidRub ?? 0)} и есть та сумма, которую показывает главный
-									экран. Верните деньги или зачтите их в счёт следующего приёма — иначе долг клиники
+									{money(summary.receivables.totalPrepaidRub ?? 0)}. На главном
+									экране сумма к оплате считается по всей клинике одним
+									вычитанием, поэтому переплата там уже зачтена в долг других
+									пациентов: долг {money(summary.receivables.totalDebtRub)}{" "}
+									минус переплаты{" "}
+									{money(summary.receivables.totalPrepaidRub ?? 0)} и есть та
+									сумма, которую показывает главный экран. Верните деньги или
+									зачтите их в счёт следующего приёма — иначе долг клиники
 									продолжит выглядеть меньше, чем он есть.
 								</p>
 							</>
 						)}
 
 						<p className="ops-hint">
-							Период: {new Date(summary.period.from).toLocaleDateString("ru-RU")} —{" "}
-							{new Date(summary.period.to).toLocaleDateString("ru-RU")}. В выручку входят только полученные
-							платежи; назначенные и возвращённые не учитываются.
+							Период:{" "}
+							{new Date(summary.period.from).toLocaleDateString("ru-RU")} —{" "}
+							{new Date(summary.period.to).toLocaleDateString("ru-RU")}. В
+							выручку входят только полученные платежи; назначенные и
+							возвращённые не учитываются.
 						</p>
 					</>
 				)
@@ -1146,8 +1340,9 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						</p>
 					) : services.data === null || services.data.isEmpty ? (
 						<p className="ops-empty">
-							За выбранный период не назначено ни одной позиции лечения. Это не нулевая выручка, а отсутствие
-							записей: услуги попадают в отчёт из карты приёма.
+							За выбранный период не назначено ни одной позиции лечения. Это не
+							нулевая выручка, а отсутствие записей: услуги попадают в отчёт из
+							карты приёма.
 						</p>
 					) : (
 						<>
@@ -1192,8 +1387,9 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 								выглядят как ошибка расчёта.
 							*/}
 							<p className="ops-hint">
-								Назначено всего {money(services.data.plannedTotalRub)}, из них отдано скидками{" "}
-								{money(services.data.discountTotalRub)}. {services.data.note}
+								Назначено всего {money(services.data.plannedTotalRub)}, из них
+								отдано скидками {money(services.data.discountTotalRub)}.{" "}
+								{services.data.note}
 							</p>
 						</>
 					)}
@@ -1219,25 +1415,35 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 					<h3 className="ops-section-title">Когда клиника занята</h3>
 					{scheduleLoad.error !== null ? (
 						<p className="ops-notice ops-notice--error" role="alert">
-							{sliceRefusalText("Разрез загрузки по дням и часам", scheduleLoad.error)}
+							{sliceRefusalText(
+								"Разрез загрузки по дням и часам",
+								scheduleLoad.error,
+							)}
 						</p>
 					) : scheduleLoad.data === null || scheduleLoad.data.isEmpty ? (
-						<p className="ops-empty">Приёмов за выбранный период не было — распределять по дням и часам нечего.</p>
+						<p className="ops-empty">
+							Приёмов за выбранный период не было — распределять по дням и часам
+							нечего.
+						</p>
 					) : (
 						<>
 							<ul className="ops-bars">
 								{scheduleMargins.byWeekday.map((row) => (
 									<li className="ops-bar" key={`weekday-${row.key}`}>
-										<span className="ops-bar__label">{weekdayNames[row.key] ?? row.key}</span>
+										<span className="ops-bar__label">
+											{weekdayNames[row.key] ?? row.key}
+										</span>
 										<span className="ops-bar__track">
 											<span
 												className="ops-bar__fill"
 												style={{
-													width: `${row.minutes > 0 && scheduleMargins.peakWeekdayMinutes > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakWeekdayMinutes) * 100)) : 0}%`
+													width: `${row.minutes > 0 && scheduleMargins.peakWeekdayMinutes > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakWeekdayMinutes) * 100)) : 0}%`,
 												}}
 											/>
 										</span>
-										<span className="ops-bar__value">{formatHours(row.minutes)}</span>
+										<span className="ops-bar__value">
+											{formatHours(row.minutes)}
+										</span>
 									</li>
 								))}
 							</ul>
@@ -1245,25 +1451,31 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 							<ul className="ops-bars">
 								{scheduleMargins.byHour.map((row) => (
 									<li className="ops-bar" key={`hour-${row.key}`}>
-										<span className="ops-bar__label">{String(row.key).padStart(2, "0")}:00</span>
+										<span className="ops-bar__label">
+											{String(row.key).padStart(2, "0")}:00
+										</span>
 										<span className="ops-bar__track">
 											<span
 												className="ops-bar__fill"
 												style={{
-													width: `${row.minutes > 0 && scheduleMargins.peakHourMinutes > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakHourMinutes) * 100)) : 0}%`
+													width: `${row.minutes > 0 && scheduleMargins.peakHourMinutes > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakHourMinutes) * 100)) : 0}%`,
 												}}
 											/>
 										</span>
-										<span className="ops-bar__value">{formatHours(row.minutes)}</span>
+										<span className="ops-bar__value">
+											{formatHours(row.minutes)}
+										</span>
 									</li>
 								))}
 							</ul>
 							<p className="ops-hint">
-								{scheduleLoad.data.busiestWeekday !== null && scheduleLoad.data.busiestHour !== null
+								{scheduleLoad.data.busiestWeekday !== null &&
+								scheduleLoad.data.busiestHour !== null
 									? `Самый занятый день — ${weekdayNames[scheduleLoad.data.busiestWeekday] ?? scheduleLoad.data.busiestWeekday}, самый занятый час — ${String(scheduleLoad.data.busiestHour).padStart(2, "0")}:00. `
 									: ""}
-								День недели и час берутся в часовом поясе клиники, а не браузера. Отменённые приёмы в занятые
-								минуты не входят; неявка кресло занимала и учтена.
+								День недели и час берутся в часовом поясе клиники, а не
+								браузера. Отменённые приёмы в занятые минуты не входят; неявка
+								кресло занимала и учтена.
 							</p>
 						</>
 					)}
@@ -1294,12 +1506,17 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 							{sliceRefusalText("Список должников", debtors.error)}
 						</p>
 					) : debtors.data === null || debtors.data.rows.length === 0 ? (
-						<p className="ops-empty ops-empty--good">Должников нет: ни у одного пациента нет неоплаченного лечения.</p>
+						<p className="ops-empty ops-empty--good">
+							Должников нет: ни у одного пациента нет неоплаченного лечения.
+						</p>
 					) : (
 						<>
 							<div className="ops-table-wrap">
 								<table className="ops-table">
-									<caption className="sr-only">Пациенты с неоплаченным лечением, от крупного долга к мелкому</caption>
+									<caption className="sr-only">
+										Пациенты с неоплаченным лечением, от крупного долга к
+										мелкому
+									</caption>
 									<thead>
 										<tr>
 											<th scope="col">Пациент</th>
@@ -1317,11 +1534,15 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 												<td className="ops-num" data-label="Долг">
 													{money(row.debtRub)}
 												</td>
-												<td data-label="Срок">{bucketLabels[row.bucket] ?? row.bucket}</td>
+												<td data-label="Срок">
+													{bucketLabels[row.bucket] ?? row.bucket}
+												</td>
 												<td className="ops-num" data-label="Первая позиция">
 													{row.oldestChargeAt === null
 														? "дата не определена"
-														: new Date(row.oldestChargeAt).toLocaleDateString("ru-RU")}
+														: new Date(row.oldestChargeAt).toLocaleDateString(
+																"ru-RU",
+															)}
 												</td>
 											</tr>
 										))}
@@ -1329,8 +1550,8 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 								</table>
 							</div>
 							<p className="ops-hint">
-								Итого {money(debtors.data.totalDebtRub)} у {debtors.data.rows.length} пациент(ов).{" "}
-								{debtors.data.note}
+								Итого {money(debtors.data.totalDebtRub)} у{" "}
+								{debtors.data.rows.length} пациент(ов). {debtors.data.note}
 							</p>
 						</>
 					)}

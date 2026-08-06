@@ -6,8 +6,14 @@ import type { CdaContext } from "./util.js";
 import { escapeXml } from "./util.js";
 
 export function generateCdaHeader(ctx: CdaContext): string {
-	const { params, effectiveTime, setIdExtension, replacesId, docIdRoot, documentVersion } =
-		ctx;
+	const {
+		params,
+		effectiveTime,
+		setIdExtension,
+		replacesId,
+		docIdRoot,
+		documentVersion,
+	} = ctx;
 
 	const relatedDocumentXml = replacesId
 		? `

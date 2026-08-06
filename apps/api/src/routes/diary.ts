@@ -21,8 +21,8 @@ import {
 	inventoryItems,
 	inventoryTransactions,
 	procedureMaterialRules,
-	treatmentItems,
 	sterilizationLogs,
+	treatmentItems,
 	users,
 	visitDiaries,
 	visitDiaryRevisions,
@@ -156,7 +156,6 @@ const diaryVisitParamsSchema = z.object({
 const diaryIdParamsSchema = z.object({
 	id: z.string().uuid(),
 });
-
 
 /**
  * SHA-256 печать содержимого дневника 043/у.
@@ -329,9 +328,7 @@ const DENTAL_SPECIALTY_LABELS: Record<string, string> = {
  */
 function formatDoctorSpecialtyLabel(raw: unknown): string | null {
 	const codes: string[] = Array.isArray(raw)
-		? raw
-				.map((x) => (typeof x === "string" ? x.trim() : ""))
-				.filter(Boolean)
+		? raw.map((x) => (typeof x === "string" ? x.trim() : "")).filter(Boolean)
 		: typeof raw === "string" && raw.trim()
 			? [raw.trim()]
 			: [];
@@ -560,7 +557,6 @@ async function runDiarySigningCeremony(
 		);
 	}
 
-
 	// 2. Закрыть услуги визита и списать расходники.
 	// Все чтения ограничены организацией дневника. БЫЛО: правила материалов
 	// выбирались по одному serviceId, а позиция склада — по одному id, без
@@ -710,7 +706,8 @@ async function runDiarySigningCeremony(
 						visitId: diary.visitId,
 						inventoryItemId: inv.id,
 						quantityChanged,
-						unitCostRub: inv.unitCostRub != null ? String(inv.unitCostRub) : null,
+						unitCostRub:
+							inv.unitCostRub != null ? String(inv.unitCostRub) : null,
 						transactionType: "auto_deduct",
 						userId,
 					});
@@ -907,16 +904,16 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!parsedVisitParams.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message:
-					"Идентификатор приёма в адресе должен быть UUID (visitId).",
+				message: "Идентификатор приёма в адресе должен быть UUID (visitId).",
 			});
 		}
 		const { visitId } = parsedVisitParams.data;
 		const orgId = await resolveOrganizationId(req);
 		if (!orgId)
-			return reply
-				.code(403)
-				.send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_READ_MESSAGE });
+			return reply.code(403).send({
+				error: "OrgRequired",
+				message: DIARY_CLINIC_UNKNOWN_READ_MESSAGE,
+			});
 
 		/*
 		 * БЫЛО: нет строки visit_diaries → { diary: null } и для чужого UUID,
@@ -931,7 +928,8 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!visitRow) {
 			return reply.code(404).send({
 				error: "VisitNotFound",
-				message: "Приём не найден в этой клинике, дневник 043/у открыть нельзя.",
+				message:
+					"Приём не найден в этой клинике, дневник 043/у открыть нельзя.",
 			});
 		}
 
@@ -972,10 +970,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				})
 				.from(users)
 				.where(
-					and(
-						eq(users.id, signingUserId),
-						eq(users.organizationId, orgId),
-					),
+					and(eq(users.id, signingUserId), eq(users.organizationId, orgId)),
 				)
 				.limit(1);
 			if (docUser) {
@@ -1014,8 +1009,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!parsedIdParams.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message:
-					"Идентификатор дневника в адресе должен быть UUID (id).",
+				message: "Идентификатор дневника в адресе должен быть UUID (id).",
 			});
 		}
 		const { id } = parsedIdParams.data;
@@ -1035,9 +1029,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			);
 
 		if (!diary)
-			return reply
-				.code(404)
-				.send({ error: "NotFound", message: DIARY_NOT_FOUND_REVISIONS_MESSAGE });
+			return reply.code(404).send({
+				error: "NotFound",
+				message: DIARY_NOT_FOUND_REVISIONS_MESSAGE,
+			});
 
 		/*
 		 * Tenant isolation: organizationId на каждом запросе.
@@ -1068,7 +1063,9 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			new Set(
 				revisions
 					.map((r) => r.revisedByUserId)
-					.filter((uid): uid is string => typeof uid === "string" && uid.length > 0),
+					.filter(
+						(uid): uid is string => typeof uid === "string" && uid.length > 0,
+					),
 			),
 		);
 		const reviserNameById = new Map<string, string>();
@@ -1076,9 +1073,12 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			const reviserRows = await db
 				.select({ id: users.id, fullName: users.fullName })
 				.from(users)
-				.where(and(inArray(users.id, reviserIds), eq(users.organizationId, orgId)));
+				.where(
+					and(inArray(users.id, reviserIds), eq(users.organizationId, orgId)),
+				);
 			for (const row of reviserRows) {
-				const name = typeof row.fullName === "string" ? row.fullName.trim() : "";
+				const name =
+					typeof row.fullName === "string" ? row.fullName.trim() : "";
 				if (name) reviserNameById.set(row.id, name);
 			}
 		}
@@ -1101,7 +1101,8 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!parsedUpsert.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Проверьте поля дневника приёма. Нужны корректные visitId и patientId (UUID).",
+				message:
+					"Проверьте поля дневника приёма. Нужны корректные visitId и patientId (UUID).",
 			});
 		}
 		const data = parsedUpsert.data;
@@ -1111,9 +1112,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 
 		const orgId = await resolveOrganizationId(req);
 		if (!orgId)
-			return reply
-				.code(403)
-				.send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_SAVE_MESSAGE });
+			return reply.code(403).send({
+				error: "OrgRequired",
+				message: DIARY_CLINIC_UNKNOWN_SAVE_MESSAGE,
+			});
 		data.organizationId = orgId;
 
 		/*
@@ -1196,7 +1198,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					);
 				}
 
-
 				let diaryId: string;
 				if (existing) {
 					const updatedRows = await tx
@@ -1210,21 +1211,34 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						// Теперь поле переписывается, если оно ПРИСУТСТВУЕТ в запросе
 						// (включая пустую строку), и сохраняется, только если не передано.
 						.set({
-							anamnesis: data.anamnesis !== undefined ? data.anamnesis : existing.anamnesis,
+							anamnesis:
+								data.anamnesis !== undefined
+									? data.anamnesis
+									: existing.anamnesis,
 							statusLocalis:
-								data.statusLocalis !== undefined ? data.statusLocalis : existing.statusLocalis,
+								data.statusLocalis !== undefined
+									? data.statusLocalis
+									: existing.statusLocalis,
 							diagnosisIcd10:
-								data.diagnosisIcd10 !== undefined ? data.diagnosisIcd10 : existing.diagnosisIcd10,
+								data.diagnosisIcd10 !== undefined
+									? data.diagnosisIcd10
+									: existing.diagnosisIcd10,
 							diagnosisTooth:
-								data.diagnosisTooth !== undefined ? data.diagnosisTooth : existing.diagnosisTooth,
+								data.diagnosisTooth !== undefined
+									? data.diagnosisTooth
+									: existing.diagnosisTooth,
 							treatmentDescription:
 								data.treatmentDescription !== undefined
 									? data.treatmentDescription
 									: existing.treatmentDescription,
 							complications:
-								data.complications !== undefined ? data.complications : existing.complications,
+								data.complications !== undefined
+									? data.complications
+									: existing.complications,
 							comorbidities:
-								data.comorbidities !== undefined ? data.comorbidities : existing.comorbidities,
+								data.comorbidities !== undefined
+									? data.comorbidities
+									: existing.comorbidities,
 							updatedAt: new Date(),
 							/*
 							 * Лоток в draft (DEFECT #33).
@@ -1269,7 +1283,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						);
 					}
 					diaryId = existing.id;
-
 				} else {
 					// Дневник всегда рождается черновиком. БЫЛО: при status "signed"
 					// вставка сразу ставила is_locked, время и хеш — дневник появлялся
@@ -1288,16 +1301,16 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 							complications: data.complications,
 							comorbidities: data.comorbidities,
 							draftAuthorId: userId,
-						/*
-						 * DEFECT #35: progressive fill author/doctor on first draft.
-						 * Lock ceremony overwrites with signing user (authoritative).
-						 */
-						authorId: userId,
-						doctorId: userId,
+							/*
+							 * DEFECT #35: progressive fill author/doctor on first draft.
+							 * Lock ceremony overwrites with signing user (authoritative).
+							 */
+							authorId: userId,
+							doctorId: userId,
 							instrumentTrayBarcode:
 								typeof data.instrumentTrayBarcode === "string"
 									? data.instrumentTrayBarcode.trim() || null
-									: data.instrumentTrayBarcode ?? null,
+									: (data.instrumentTrayBarcode ?? null),
 						})
 						.returning({ id: visitDiaries.id });
 					const insertedId = inserted[0]?.id;
@@ -1431,7 +1444,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				id: outcome.diaryId,
 				hash: outcome.signing?.hash ?? outcome.draftHash ?? null,
 			});
-
 		} catch (err) {
 			if (err instanceof DiarySigningError) {
 				if (err.code === "AlreadyLocked") {
@@ -1490,8 +1502,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!parsedIdParams.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message:
-					"Идентификатор дневника в адресе должен быть UUID (id).",
+				message: "Идентификатор дневника в адресе должен быть UUID (id).",
 			});
 		}
 		const { id } = parsedIdParams.data;
@@ -1531,9 +1542,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 
 		const orgId = await resolveOrganizationId(req);
 		if (!orgId)
-			return reply
-				.code(403)
-				.send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_SIGN_MESSAGE });
+			return reply.code(403).send({
+				error: "OrgRequired",
+				message: DIARY_CLINIC_UNKNOWN_SIGN_MESSAGE,
+			});
 
 		const [existing] = await db
 			.select()
@@ -1787,7 +1799,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			/* not_locked: row unlocked between outer read and FOR UPDATE — fall through to ceremony */
 		}
 
-
 		// Церемония — общая с POST /api/diaries, см. runDiarySigningCeremony.
 		// PIN:… → verify + opaque mark ДО транзакции (pbkdf2 вне tx-критики).
 		try {
@@ -1893,8 +1904,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!parsedIdParams.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message:
-					"Идентификатор дневника в адресе должен быть UUID (id).",
+				message: "Идентификатор дневника в адресе должен быть UUID (id).",
 			});
 		}
 		const { id } = parsedIdParams.data;
@@ -2200,7 +2210,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			});
 		}
 
-
 		/*
 		 * cryptoSignatureAttached: false — PKCS#7 обнулён вместе с newHash.
 		 * Клиент обязан снять hasCryptoSignature, иначе печать 043/у продолжит
@@ -2213,7 +2222,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			cryptoSignatureAttached: false,
 		});
 	});
-
 
 	// Legacy endpoint: sync-progress + plan signature (kept for backwards compat)
 	app.post("/api/diaries/sync-progress", async (req, reply) => {

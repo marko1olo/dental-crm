@@ -10,8 +10,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-	MAX_PAYOUT_PERIOD_DAYS,
 	computeDoctorPayout,
+	MAX_PAYOUT_PERIOD_DAYS,
 	materialsStateOf,
 	payoutRowNote,
 	percentOfMoney,
@@ -183,7 +183,11 @@ test("непригодная ставка не превращается в чи�
 			commissionPct: badPercent,
 			materialDeductionPct: 0,
 		});
-		assert.equal(result.state, "rate_invalid", `ставка ${badPercent} должна быть отвергнута`);
+		assert.equal(
+			result.state,
+			"rate_invalid",
+			`ставка ${badPercent} должна быть отвергнута`,
+		);
 		assert.equal(result.payoutRub, null);
 	}
 });
@@ -230,15 +234,25 @@ test("период по умолчанию — текущий месяц цел�
 });
 
 test("период отвергается, а не обрезается молча", () => {
-	const reversed = resolvePayoutPeriod({ from: "2026-07-31T00:00:00.000Z", to: "2026-07-01T00:00:00.000Z" });
+	const reversed = resolvePayoutPeriod({
+		from: "2026-07-31T00:00:00.000Z",
+		to: "2026-07-01T00:00:00.000Z",
+	});
 	assert.equal(reversed.ok, false);
 	if (!reversed.ok) assert.match(reversed.message, /Начало периода позже/);
 
-	const tooWide = resolvePayoutPeriod({ from: "2020-01-01T00:00:00.000Z", to: "2026-01-01T00:00:00.000Z" });
+	const tooWide = resolvePayoutPeriod({
+		from: "2020-01-01T00:00:00.000Z",
+		to: "2026-01-01T00:00:00.000Z",
+	});
 	assert.equal(tooWide.ok, false);
-	if (!tooWide.ok) assert.match(tooWide.message, new RegExp(String(MAX_PAYOUT_PERIOD_DAYS)));
+	if (!tooWide.ok)
+		assert.match(tooWide.message, new RegExp(String(MAX_PAYOUT_PERIOD_DAYS)));
 
-	const garbage = resolvePayoutPeriod({ from: "первое июля", to: "2026-07-31T00:00:00.000Z" });
+	const garbage = resolvePayoutPeriod({
+		from: "первое июля",
+		to: "2026-07-31T00:00:00.000Z",
+	});
 	assert.equal(garbage.ok, false);
 	if (!garbage.ok) assert.match(garbage.message, /не разобраны/);
 });

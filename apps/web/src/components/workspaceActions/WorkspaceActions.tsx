@@ -1,15 +1,22 @@
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
-import { createPortal } from "react-dom";
 import { Mic, X } from "lucide-react";
+import {
+	useCallback,
+	useEffect,
+	useId,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
+import { createPortal } from "react-dom";
 import "./workspaceActions.css";
 import { workspaceActionsLabels } from "./workspaceActionsLabels.js";
 import {
+	resolveWorkspaceActionPlacement,
 	WORKSPACE_ACTION_BAR_SLOTS,
 	WORKSPACE_ACTION_HOST_ID,
 	WORKSPACE_ACTION_NAV_SELECTOR,
 	type WorkspaceActionPlacement,
 	type WorkspaceActionSlotId,
-	resolveWorkspaceActionPlacement,
 	workspaceActionBarOrder,
 } from "./workspaceActionsPlacement.js";
 
@@ -126,7 +133,10 @@ export function revealWorkspaceActions(): void {
  * Порядок кнопок задаётся контрактом раскладки, а не порядком монтирования
  * жильцов: слоты переставляются в самом хосте.
  */
-function applyBarOrder(dom: ActionsHostDom, placement: WorkspaceActionPlacement): void {
+function applyBarOrder(
+	dom: ActionsHostDom,
+	placement: WorkspaceActionPlacement,
+): void {
 	for (const slot of workspaceActionBarOrder(placement)) {
 		const element = dom.slots.get(slot);
 		if (element) dom.bar.append(element);

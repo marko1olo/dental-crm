@@ -1,11 +1,18 @@
 export const meta = {
-  name: 'archon-cycle-9',
-  description: 'DENTE cycle 9: two price lists for one clinic, three vocabularies for one mode, a mount-chain guard',
-  phases: [
-    { title: 'Build', detail: 'money truth, mode vocabulary, mount-chain guard' },
-    { title: 'Attack', detail: 'a different agent tries to destroy each commit' },
-  ],
-}
+	name: "archon-cycle-9",
+	description:
+		"DENTE cycle 9: two price lists for one clinic, three vocabularies for one mode, a mount-chain guard",
+	phases: [
+		{
+			title: "Build",
+			detail: "money truth, mode vocabulary, mount-chain guard",
+		},
+		{
+			title: "Attack",
+			detail: "a different agent tries to destroy each commit",
+		},
+	],
+};
 
 const LAW = `
 You are an implementer on the DENTE dental CRM under lead [ARCHON]. Repo root: C:\\Clinic_MVP\\dental-crm
@@ -133,8 +140,7 @@ time. Do the same inside your own packet.
   <packet dir>/state.md, commitmsg.txt, handoff.md
 handoff.md: HEAD: <hash> / ## Что было сломано (file:line) / ## Что изменено / ## ПРОВЕРЕНО /
 ## НЕ ПРОВЕРЕНО (each with the exact closing command) / ## Коммит / ## Долг
-`
-
+`;
 
 const CYCLE5_CORRECTIONS = `
 ═══ CORRECTIONS TO THE TEXT ABOVE — CYCLE 5. THESE OVERRIDE IT. ═══
@@ -156,7 +162,7 @@ const CYCLE5_CORRECTIONS = `
 5. **SPEECH/DICTATION AND TELEGRAM ARE FROZEN THIS CYCLE.** Those areas failed review across five and
    two packets respectively; their residue is recorded as debt, not patched again. Do not edit
    apps/api/src/speech/**, apps/api/src/routes/speech.ts, or apps/api/src/routes/telegram.ts.
-`
+`;
 
 const CYCLE7_CORRECTIONS = `
 ═══ EXPLICIT SUPERSESSIONS — THE TEXT ABOVE ACCUMULATED STALE LINES ACROSS CYCLES. ═══
@@ -238,7 +244,7 @@ fantasise.** Changing a shared/API contract means updating all sides synchronous
 4. Did I overload the screen? 5. Does a small practice avoid seeing the extra?
 6. Grep confirms the edit is in the file? 7. Committed, with a hash, nothing of others' touched?
 8. Did I keep the green green? 9. Is the report honest, no gloss?
-`
+`;
 
 const CYCLE9_DELTA = `
 ═══ CYCLE 9 DELTA — WHAT CHANGED, AND WHAT THE RECON FLEET PROVED ═══
@@ -268,16 +274,17 @@ const CYCLE9_DELTA = `
    as broken; the real count is **126** — three declarations are multi-line with the name on the next
    line ('communicationsSchema.ts:36', ':89', 'patientsSchema.ts:21'). Same trap that produced the
    lead's false «45 hollow modules of 50». **Use 'npx @ast-grep/cli' for structural counts, not regex.**
-`
+`;
 
 const PACKETS = [
-  {
-    id: 'Y1-price-two-truths',
-    label: 'Y1 two sources of truth for money',
-    dir: '.agents/archon/packets/Y1-price-two-truths',
-    files: 'apps/api/src/db/domainStateHydration.ts, apps/api/src/db/pricelistQuery.ts, and the seeding path you choose. You MAY touch apps/api/src/db/schema.ts and add ONE apps/api/drizzle/*.sql if and only if the fix genuinely requires it.',
-    gate: 'node --import tsx --test on your own test file, plus read-only SQL against 127.0.0.1:5432. NEVER npm run typecheck/build/test — the lead owns those (§7a).',
-    brief: `
+	{
+		id: "Y1-price-two-truths",
+		label: "Y1 two sources of truth for money",
+		dir: ".agents/archon/packets/Y1-price-two-truths",
+		files:
+			"apps/api/src/db/domainStateHydration.ts, apps/api/src/db/pricelistQuery.ts, and the seeding path you choose. You MAY touch apps/api/src/db/schema.ts and add ONE apps/api/drizzle/*.sql if and only if the fix genuinely requires it.",
+		gate: "node --import tsx --test on your own test file, plus read-only SQL against 127.0.0.1:5432. NEVER npm run typecheck/build/test — the lead owns those (§7a).",
+		brief: `
 PACKET Y1 — THE PAYMENT SCREEN AND THE CONTRACT GENERATOR DISAGREE ABOUT PRICES. HIGHEST SEVERITY OF THE
 ENTIRE CAMPAIGN. Lane: MONEY. Read .agents/BILLING_AND_FINANCE.md and .agents/DOCUMENTS_LIFECYCLE.md
 COMPLETE.
@@ -349,14 +356,15 @@ PROOF EXPECTED:
   **That equality IS the fix.** EXECUTE it and quote the pass.
 - 'leadMustRun' must name every shared gate the lead has to run for you.
 `,
-  },
-  {
-    id: 'Y2-clinicmode-one-vocabulary',
-    label: 'Y2 three vocabularies for one mode',
-    dir: '.agents/archon/packets/Y2-clinicmode-one-vocabulary',
-    files: 'apps/api/src/db/schema.ts (the clinic_mode column only), apps/api/src/routes/workspaceProfile.ts, apps/api/src/db/domainStateHydration.ts (the mode coercion only), packages/shared/src/index.ts (clinicModeSchema only), apps/web/src/lib/clinicCapabilities.ts + ONE apps/api/drizzle/*.sql if required. COORDINATE: Y1 may also touch schema.ts and domainStateHydration.ts — run git status before every edit and report any collision.',
-    gate: 'node --import tsx --test on your own test file, plus read-only SQL. NEVER npm run typecheck/build/test (§7a).',
-    brief: `
+	},
+	{
+		id: "Y2-clinicmode-one-vocabulary",
+		label: "Y2 three vocabularies for one mode",
+		dir: ".agents/archon/packets/Y2-clinicmode-one-vocabulary",
+		files:
+			"apps/api/src/db/schema.ts (the clinic_mode column only), apps/api/src/routes/workspaceProfile.ts, apps/api/src/db/domainStateHydration.ts (the mode coercion only), packages/shared/src/index.ts (clinicModeSchema only), apps/web/src/lib/clinicCapabilities.ts + ONE apps/api/drizzle/*.sql if required. COORDINATE: Y1 may also touch schema.ts and domainStateHydration.ts — run git status before every edit and report any collision.",
+		gate: "node --import tsx --test on your own test file, plus read-only SQL. NEVER npm run typecheck/build/test (§7a).",
+		brief: `
 PACKET Y2 — THREE DIFFERENT VOCABULARIES FOR THE CLINIC MODE, AND A '.catch()' THAT SWALLOWS ALL OF THEM.
 §5 IS THE CORE OF THE PRODUCT AND IT IS CURRENTLY DECORATION.
 Lane: PLATFORM / ADAPTIVITY. Read .agents/DATABASE.md and .agents/UI_STANDARDS.md COMPLETE.
@@ -414,14 +422,15 @@ PROOF EXPECTED:
   produce. Do NOT apply a destructive change yourself.
 - 'leadMustRun' must name every shared gate for the lead.
 `,
-  },
-  {
-    id: 'Y3-mount-chain-guard',
-    label: 'Y3 dead files certified as reachable',
-    dir: '.agents/archon/packets/Y3-mount-chain-guard',
-    files: 'a new scripts/ guard, plus apps/web/src/components/workspace/WorkspaceOnboardingNoticeBars.tsx and whatever its chain requires. NOT App.tsx unless it is clean and strictly required.',
-    gate: 'your new guard, plus node --import tsx --test on your own test file. NEVER npm run typecheck/build/test (§7a).',
-    brief: `
+	},
+	{
+		id: "Y3-mount-chain-guard",
+		label: "Y3 dead files certified as reachable",
+		dir: ".agents/archon/packets/Y3-mount-chain-guard",
+		files:
+			"a new scripts/ guard, plus apps/web/src/components/workspace/WorkspaceOnboardingNoticeBars.tsx and whatever its chain requires. NOT App.tsx unless it is clean and strictly required.",
+		gate: "your new guard, plus node --import tsx --test on your own test file. NEVER npm run typecheck/build/test (§7a).",
+		brief: `
 PACKET Y3 — COMPONENTS THAT NOTHING MOUNTS, CERTIFIED AS REACHABLE. THE CAMPAIGN'S MOST EXPENSIVE
 RECURRING MISTAKE. Lane: WEB / PROOF. Read .agents/UI_STANDARDS.md COMPLETE.
 
@@ -474,186 +483,296 @@ PROOF EXPECTED:
 - For any deletion: whole-repo 'git grep' returning nothing outside prose.
 - 'leadMustRun' must name the shared gates for the lead.
 `,
-  },
-]
+	},
+];
 
 const BUILD_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'status', 'defectReal', 'commitHash', 'filesChanged', 'proven', 'notProven', 'summary', 'reachability', 'measurements', 'inventories', 'leadMustRun', 'constitutionCheck', 'dossierCorrections', 'blockers', 'foundNotFixed'],
-  properties: {
-    packet: { type: 'string' },
-    status: { enum: ['COMMITTED', 'PARTIAL', 'BLOCKED', 'NO_CHANGE'] },
-    defectReal: { type: 'boolean' },
-    commitHash: { type: 'string' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    proven: { type: 'array', items: { type: 'string' } },
-    notProven: { type: 'array', items: { type: 'string' } },
-    summary: { type: 'string' },
-    reachability: { type: 'string', description: 'EVERY link of the mount/call chain, not two of three. A dead file was certified reachable this campaign.' },
-    measurements: { type: 'array', items: { type: 'string' } },
-    inventories: { type: 'array', items: { type: 'string' }, description: 'The consumer/state inventories your packet was asked to produce, with file:line.' },
-    leadMustRun: { type: 'array', items: { type: 'string' }, description: 'Exact shared-state commands the LEAD must run for you under §7a. Empty if none.' },
-    constitutionCheck: { type: 'array', items: { type: 'string' } },
-    dossierCorrections: { type: 'array', items: { type: 'string' } },
-    blockers: { type: 'array', items: { type: 'string' } },
-    foundNotFixed: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"status",
+		"defectReal",
+		"commitHash",
+		"filesChanged",
+		"proven",
+		"notProven",
+		"summary",
+		"reachability",
+		"measurements",
+		"inventories",
+		"leadMustRun",
+		"constitutionCheck",
+		"dossierCorrections",
+		"blockers",
+		"foundNotFixed",
+	],
+	properties: {
+		packet: { type: "string" },
+		status: { enum: ["COMMITTED", "PARTIAL", "BLOCKED", "NO_CHANGE"] },
+		defectReal: { type: "boolean" },
+		commitHash: { type: "string" },
+		filesChanged: { type: "array", items: { type: "string" } },
+		proven: { type: "array", items: { type: "string" } },
+		notProven: { type: "array", items: { type: "string" } },
+		summary: { type: "string" },
+		reachability: {
+			type: "string",
+			description:
+				"EVERY link of the mount/call chain, not two of three. A dead file was certified reachable this campaign.",
+		},
+		measurements: { type: "array", items: { type: "string" } },
+		inventories: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"The consumer/state inventories your packet was asked to produce, with file:line.",
+		},
+		leadMustRun: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Exact shared-state commands the LEAD must run for you under §7a. Empty if none.",
+		},
+		constitutionCheck: { type: "array", items: { type: "string" } },
+		dossierCorrections: { type: "array", items: { type: "string" } },
+		blockers: { type: "array", items: { type: "string" } },
+		foundNotFixed: { type: "array", items: { type: "string" } },
+	},
+};
 
 const REVIEW_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'verdict', 'attackSurface', 'proofAudit', 'gitHygiene', 'reasoning', 'requiredRework'],
-  properties: {
-    packet: { type: 'string' },
-    verdict: { enum: ['SOUND', 'SOUND_WITH_NITS', 'NEEDS_REWORK', 'REVERT'] },
-    attackSurface: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['hypothesis', 'result', 'evidence'],
-        properties: {
-          hypothesis: { type: 'string' },
-          result: { enum: ['CONFIRMED', 'DISPROVED', 'UNTESTABLE'] },
-          evidence: { type: 'string' },
-        },
-      },
-    },
-    proofAudit: { type: 'string' },
-    gitHygiene: { type: 'string' },
-    reasoning: { type: 'string' },
-    requiredRework: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"verdict",
+		"attackSurface",
+		"proofAudit",
+		"gitHygiene",
+		"reasoning",
+		"requiredRework",
+	],
+	properties: {
+		packet: { type: "string" },
+		verdict: { enum: ["SOUND", "SOUND_WITH_NITS", "NEEDS_REWORK", "REVERT"] },
+		attackSurface: {
+			type: "array",
+			items: {
+				type: "object",
+				additionalProperties: false,
+				required: ["hypothesis", "result", "evidence"],
+				properties: {
+					hypothesis: { type: "string" },
+					result: { enum: ["CONFIRMED", "DISPROVED", "UNTESTABLE"] },
+					evidence: { type: "string" },
+				},
+			},
+		},
+		proofAudit: { type: "string" },
+		gitHygiene: { type: "string" },
+		reasoning: { type: "string" },
+		requiredRework: { type: "array", items: { type: "string" } },
+	},
+};
 
 function buildStage(p) {
-  return agent(
-    LAW + CYCLE7_CORRECTIONS + CYCLE9_DELTA +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'YOUR PACKET: ' + p.id + '\n' +
-    'YOUR ROLE: implementer with file-edit rights, bounded to the claim below (§7a).\n' +
-    'WHY THIS IS DELEGATED: it needs full-file comprehension of a specific subsystem plus its own\n' +
-    'structural reconnaissance; the lead verified the defect but not its blast radius.\n' +
-    'YOUR FILE CLAIM — OWNED read/edit scope: ' + p.files + '\n' +
-    'FORBIDDEN SCOPE: any file not in your claim; apps/api/src/speech/**, routes/speech.ts,\n' +
-    'routes/telegram.ts (frozen); components/workspaceActions/** (the corner redesign just landed — do\n' +
-    'not disturb it); any file another author has dirty; and every shared gate of §7a.\n' +
-    'YOUR OWN SIGNAL (safe, no shared state): ' + p.gate + '\n' +
-    'EVIDENCE STANDARD: every "proven" entry is a command you actually ran, with its TRUE exit code and\n' +
-    'real output quoted. Your output is EVIDENCE, not authority — the lead re-runs it.\n' +
-    'YOUR PACKET DIRECTORY (create FIRST): ' + p.dir + '\n' +
-    '═══════════════════════════════════════════════════════════════\n' + p.brief +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'ORDER OF OPERATIONS, MANDATORY:\n' +
-    ' 1. Write ' + p.dir + '/state.md == STARTED. NOW, before reading anything.\n' +
-    ' 2. Read the authority documents. Complete. state.md == AUTHORITY READ.\n' +
-    ' 3. git rev-parse HEAD; git status --porcelain on your claimed files. Dirty and not by you =>\n' +
-    '    STOP, report the collision. A second, non-fleet author commits here continuously.\n' +
-    ' 4. Read your target file(s) IN FULL (targeted region for the named monoliths, and SAY which\n' +
-    '    region). Confirm the defect at real lines. state.md == DEFECT CONFIRMED / ABSENT. If absent,\n' +
-    '    say so loudly; never invent work to justify the packet.\n' +
-    ' 5. Produce the inventories your brief asks for BEFORE changing behaviour — they are how the lead\n' +
-    '    learns the blast radius, and they have repeatedly been the most valuable part of a packet.\n' +
-    ' 6. Build the real fix. No stub, no facade, no half-product (§1). state.md == EDIT WRITTEN.\n' +
-    ' 7. Run YOUR OWN signal only (never the shared gates — §7a). state.md == SELF-CHECK PASSED.\n' +
-    ' 8. **COMMIT NOW** — pathspec form "git commit -F <msg> -- <paths>", with a retry loop for\n' +
-    '    .git/index.lock, then verify with git log -1 --stat. state.md == COMMITTED <hash>. Do NOT wait\n' +
-    '    for proofs: credit exhaustion has killed entire waves here, and an uncommitted edit is lost work\n' +
-    '    that also blocks the next agent.\n' +
-    ' 9. Proofs. A second commit for the test. state.md == PROVEN.\n' +
-    '10. Write ' + p.dir + '/handoff.md. state.md == DONE.\n' +
-    '11. Emit structured output, including "inventories", "leadMustRun" and "constitutionCheck".\n' +
-    'A packet ending in a plan and no diff is a FAILED packet.\n',
-    { label: p.label, phase: 'Build', schema: BUILD_SCHEMA }
-  )
+	return agent(
+		LAW +
+			CYCLE7_CORRECTIONS +
+			CYCLE9_DELTA +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"YOUR PACKET: " +
+			p.id +
+			"\n" +
+			"YOUR ROLE: implementer with file-edit rights, bounded to the claim below (§7a).\n" +
+			"WHY THIS IS DELEGATED: it needs full-file comprehension of a specific subsystem plus its own\n" +
+			"structural reconnaissance; the lead verified the defect but not its blast radius.\n" +
+			"YOUR FILE CLAIM — OWNED read/edit scope: " +
+			p.files +
+			"\n" +
+			"FORBIDDEN SCOPE: any file not in your claim; apps/api/src/speech/**, routes/speech.ts,\n" +
+			"routes/telegram.ts (frozen); components/workspaceActions/** (the corner redesign just landed — do\n" +
+			"not disturb it); any file another author has dirty; and every shared gate of §7a.\n" +
+			"YOUR OWN SIGNAL (safe, no shared state): " +
+			p.gate +
+			"\n" +
+			'EVIDENCE STANDARD: every "proven" entry is a command you actually ran, with its TRUE exit code and\n' +
+			"real output quoted. Your output is EVIDENCE, not authority — the lead re-runs it.\n" +
+			"YOUR PACKET DIRECTORY (create FIRST): " +
+			p.dir +
+			"\n" +
+			"═══════════════════════════════════════════════════════════════\n" +
+			p.brief +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"ORDER OF OPERATIONS, MANDATORY:\n" +
+			" 1. Write " +
+			p.dir +
+			"/state.md == STARTED. NOW, before reading anything.\n" +
+			" 2. Read the authority documents. Complete. state.md == AUTHORITY READ.\n" +
+			" 3. git rev-parse HEAD; git status --porcelain on your claimed files. Dirty and not by you =>\n" +
+			"    STOP, report the collision. A second, non-fleet author commits here continuously.\n" +
+			" 4. Read your target file(s) IN FULL (targeted region for the named monoliths, and SAY which\n" +
+			"    region). Confirm the defect at real lines. state.md == DEFECT CONFIRMED / ABSENT. If absent,\n" +
+			"    say so loudly; never invent work to justify the packet.\n" +
+			" 5. Produce the inventories your brief asks for BEFORE changing behaviour — they are how the lead\n" +
+			"    learns the blast radius, and they have repeatedly been the most valuable part of a packet.\n" +
+			" 6. Build the real fix. No stub, no facade, no half-product (§1). state.md == EDIT WRITTEN.\n" +
+			" 7. Run YOUR OWN signal only (never the shared gates — §7a). state.md == SELF-CHECK PASSED.\n" +
+			' 8. **COMMIT NOW** — pathspec form "git commit -F <msg> -- <paths>", with a retry loop for\n' +
+			"    .git/index.lock, then verify with git log -1 --stat. state.md == COMMITTED <hash>. Do NOT wait\n" +
+			"    for proofs: credit exhaustion has killed entire waves here, and an uncommitted edit is lost work\n" +
+			"    that also blocks the next agent.\n" +
+			" 9. Proofs. A second commit for the test. state.md == PROVEN.\n" +
+			"10. Write " +
+			p.dir +
+			"/handoff.md. state.md == DONE.\n" +
+			'11. Emit structured output, including "inventories", "leadMustRun" and "constitutionCheck".\n' +
+			"A packet ending in a plan and no diff is a FAILED packet.\n",
+		{ label: p.label, phase: "Build", schema: BUILD_SCHEMA },
+	);
 }
 
 function reviewStage(built, p) {
-  if (!built) {
-    return { packet: p.id, verdict: 'NEEDS_REWORK', attackSurface: [], proofAudit: 'Builder produced no result — died or out of capacity. Read ' + p.dir + '/state.md; work may already be committed.', gitHygiene: 'unknown', reasoning: 'No build output.', requiredRework: ['Resume ' + p.id] }
-  }
-  if (built.status === 'BLOCKED' || built.status === 'NO_CHANGE' || !built.commitHash) {
-    return { packet: p.id, verdict: 'SOUND_WITH_NITS', attackSurface: [], proofAudit: 'No commit to audit; builder reported ' + built.status + '.', gitHygiene: 'n/a', reasoning: built.summary || '', requiredRework: built.blockers || [] }
-  }
-  return agent(
-    'You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to\n' +
-    'lead [ARCHON]. You did NOT write this code. Your job is to DESTROY it, not bless it.\n' +
-    'Write findings to ' + p.dir + '/review.md AS YOU GO — agents die mid-task on this campaign.\n\n' +
-    'THE DISEASE HERE IS FABRICATED PROOF. The full charge sheet, which is your standard:\n' +
-    '- 49 cited proof_*.png files that do not exist.\n' +
-    '- 14 filenames holding 2 unique images, one a Vite CSS error overlay filed under ten view names —\n' +
-    '  and that set passed a «56 unique MD5» certification.\n' +
-    '- An MD5-unique 116 KB screenshot showing the staff PIN screen, not the view it was named after.\n' +
-    '- A handoff asserting «текст не уничтожен», refuted by run output.\n' +
-    '- A measurement taken against a baseline the packet itself proved impossible to obtain.\n' +
-    '- A smoke green only because it loaded a dist built BEFORE the fix.\n' +
-    '- A commit message describing a defect that does not reproduce at its own parent.\n' +
-    '- A performance headline attributable to a behaviour change, not the performance fix.\n' +
-    '- The lead publishing «45 hollow modules of 50» — a regex artefact.\n' +
-    '- A critic nearly publishing «123 pgTable» when the answer is 126 (three multi-line declarations).\n' +
-    '- A unit test whose fixtures the same packet had deleted: zero assertions, reported pass.\n' +
-    '- **A packet that fixed a DEAD FILE and certified it with its strongest reachability label**, having\n' +
-    '  verified two links of a three-link mount chain.\n' +
-    'Default posture: disbelief. Reproduce claims; never read them. Re-derive every number with a\n' +
-    'DIFFERENT instrument than the builder used. **Verify EVERY link of any reachability claim.**\n\n' +
-    'Read .agents/AGENTS.md COMPLETE plus .agents/INDEX.md. Do NOT penalise the builder for defying the\n' +
-    'madge order (not installed) or the biome order (not installed; would reformat the repo).\n' +
-    'Under §7a the BUILDER was FORBIDDEN from running typecheck/build/whole-suite/migrations — do NOT\n' +
-    'mark it down for that. YOU may run them, one at a time, and you should. Rebuild before any proof\n' +
-    'that loads apps/api/dist. Do NOT apply a migration yourself.\n\n' +
-    'THE DIRECTOR\'S CONSTITUTION binds this packet:\n' +
-    '§1 depth not facade, no stubs, «compiles» is not «works». §3 a Russian grandmother must understand\n' +
-    'every error, empty and loading state and know what to DO next. §4 no visual overload. §5 a small\n' +
-    'practice must not see what it does not need, via flags not hardcode; decomposition must be IMPORTED\n' +
-    'AND USED. §8b money and legal documents are exact to the kopeck. §10 invent no backend contract,\n' +
-    'schema or field — absent things are debt with a reason.\n\n' +
-    'THE PACKET: ' + p.id + '\nCLAIMED SCOPE: ' + p.files + '\nCOMMIT TO ATTACK: ' + built.commitHash + '\n' +
-    'FILES CHANGED: ' + JSON.stringify(built.filesChanged) + '\n' +
-    'CLAIMED PROVEN: ' + JSON.stringify(built.proven) + '\n' +
-    'CLAIMED NOT PROVEN: ' + JSON.stringify(built.notProven) + '\n' +
-    'REACHABILITY: ' + (built.reachability || '(none)') + '\n' +
-    'MEASUREMENTS: ' + JSON.stringify(built.measurements || []) + '\n' +
-    'INVENTORIES: ' + JSON.stringify(built.inventories || []) + '\n' +
-    'LEAD MUST RUN: ' + JSON.stringify(built.leadMustRun || []) + '\n' +
-    'SUMMARY: ' + built.summary + '\n' +
-    'ORIGINAL BRIEF:\n' + p.brief + '\n\n' +
-    'DO THIS:\n' +
-    '1. git show ' + built.commitHash + ' --stat, then the full diff, then read the changed files at HEAD\n' +
-    '   in context. A diff hides what surrounds it.\n' +
-    '2. HYPOTHESES YOU MUST ACTUALLY TEST:\n' +
-    '   - Was the defect REAL before this commit? **Reproduce it at the parent.**\n' +
-    '   - **Is the fix REACHABLE — every link, not two of three?** Trace from a real mount root or a real\n' +
-    '     HTTP route to the changed line. This failure cost this campaign most.\n' +
-    '   - Does it hold on REAL data, not just a fixture? For the money packet: do the screen price and the\n' +
-    '     document price now resolve to the SAME number for the same service id? Prove it, do not read it.\n' +
-    '   - **Are the claimed measurements and inventories reproducible?** Re-derive with your own tooling.\n' +
-    '   - Did the fix introduce a REGRESSION worse than the defect? Two packets this campaign did.\n' +
-    '   - HOLLOW FACADE, SECOND OWNER, a fabricated 0/default for an unknown, a hardcoded price, a\n' +
-    '     deleted useAppLogic return field, a missing teardown, hardcoded hex/px, an undeclared Russian\n' +
-    '     literal, mojibake in the diff or subject?\n' +
-    '   - **If the packet DELETED anything: git grep -l "<BaseName>" HEAD -- . over the WHOLE repo** must\n' +
-    '     return nothing outside docs/ and .agents/ prose.\n' +
-    '   - **Do the new tests actually assert?** Check their fixtures exist at HEAD.\n' +
-    '   - For a GATE packet: does the gate FAIL when the defect is reintroduced? Break it in a scratch\n' +
-    '     copy outside the repo and check.\n' +
-    '3. PROOF AUDIT: RE-RUN EVERY CLAIMED PROOF COMMAND YOURSELF, capturing the TRUE exit code.\n' +
-    '4. GIT HYGIENE: only the claimed files? Any churn (apps/api/.data/*.json, tsbuildinfo, scratch/**)\n' +
-    '   or another author work swept in via the shared index? Russian subject naming the DEFECT?\n' +
-    '5. VERDICT. Reserve REVERT for a change actively worse than the defect. Never award SOUND to a claim\n' +
-    '   you could not reproduce. If NEEDS_REWORK, make requiredRework numbered and actionable.\n\n' +
-    'CONSTRAINTS: read-only on source — no edit, fix, commit, revert, git add. Never git remote -v (live\n' +
-    'tokens). Never npx @biomejs/biome. Do not start or restart any server, and do not apply a migration.\n' +
-    'You MAY run typechecks, builds, tests, smokes, read-only node -e, curl to 127.0.0.1:4100, read-only\n' +
-    'SQL, and you MAY open PNG files to judge a visual claim.',
-    { label: 'attack:' + p.id, phase: 'Attack', schema: REVIEW_SCHEMA }
-  )
+	if (!built) {
+		return {
+			packet: p.id,
+			verdict: "NEEDS_REWORK",
+			attackSurface: [],
+			proofAudit:
+				"Builder produced no result — died or out of capacity. Read " +
+				p.dir +
+				"/state.md; work may already be committed.",
+			gitHygiene: "unknown",
+			reasoning: "No build output.",
+			requiredRework: ["Resume " + p.id],
+		};
+	}
+	if (
+		built.status === "BLOCKED" ||
+		built.status === "NO_CHANGE" ||
+		!built.commitHash
+	) {
+		return {
+			packet: p.id,
+			verdict: "SOUND_WITH_NITS",
+			attackSurface: [],
+			proofAudit: "No commit to audit; builder reported " + built.status + ".",
+			gitHygiene: "n/a",
+			reasoning: built.summary || "",
+			requiredRework: built.blockers || [],
+		};
+	}
+	return agent(
+		"You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to\n" +
+			"lead [ARCHON]. You did NOT write this code. Your job is to DESTROY it, not bless it.\n" +
+			"Write findings to " +
+			p.dir +
+			"/review.md AS YOU GO — agents die mid-task on this campaign.\n\n" +
+			"THE DISEASE HERE IS FABRICATED PROOF. The full charge sheet, which is your standard:\n" +
+			"- 49 cited proof_*.png files that do not exist.\n" +
+			"- 14 filenames holding 2 unique images, one a Vite CSS error overlay filed under ten view names —\n" +
+			"  and that set passed a «56 unique MD5» certification.\n" +
+			"- An MD5-unique 116 KB screenshot showing the staff PIN screen, not the view it was named after.\n" +
+			"- A handoff asserting «текст не уничтожен», refuted by run output.\n" +
+			"- A measurement taken against a baseline the packet itself proved impossible to obtain.\n" +
+			"- A smoke green only because it loaded a dist built BEFORE the fix.\n" +
+			"- A commit message describing a defect that does not reproduce at its own parent.\n" +
+			"- A performance headline attributable to a behaviour change, not the performance fix.\n" +
+			"- The lead publishing «45 hollow modules of 50» — a regex artefact.\n" +
+			"- A critic nearly publishing «123 pgTable» when the answer is 126 (three multi-line declarations).\n" +
+			"- A unit test whose fixtures the same packet had deleted: zero assertions, reported pass.\n" +
+			"- **A packet that fixed a DEAD FILE and certified it with its strongest reachability label**, having\n" +
+			"  verified two links of a three-link mount chain.\n" +
+			"Default posture: disbelief. Reproduce claims; never read them. Re-derive every number with a\n" +
+			"DIFFERENT instrument than the builder used. **Verify EVERY link of any reachability claim.**\n\n" +
+			"Read .agents/AGENTS.md COMPLETE plus .agents/INDEX.md. Do NOT penalise the builder for defying the\n" +
+			"madge order (not installed) or the biome order (not installed; would reformat the repo).\n" +
+			"Under §7a the BUILDER was FORBIDDEN from running typecheck/build/whole-suite/migrations — do NOT\n" +
+			"mark it down for that. YOU may run them, one at a time, and you should. Rebuild before any proof\n" +
+			"that loads apps/api/dist. Do NOT apply a migration yourself.\n\n" +
+			"THE DIRECTOR'S CONSTITUTION binds this packet:\n" +
+			"§1 depth not facade, no stubs, «compiles» is not «works». §3 a Russian grandmother must understand\n" +
+			"every error, empty and loading state and know what to DO next. §4 no visual overload. §5 a small\n" +
+			"practice must not see what it does not need, via flags not hardcode; decomposition must be IMPORTED\n" +
+			"AND USED. §8b money and legal documents are exact to the kopeck. §10 invent no backend contract,\n" +
+			"schema or field — absent things are debt with a reason.\n\n" +
+			"THE PACKET: " +
+			p.id +
+			"\nCLAIMED SCOPE: " +
+			p.files +
+			"\nCOMMIT TO ATTACK: " +
+			built.commitHash +
+			"\n" +
+			"FILES CHANGED: " +
+			JSON.stringify(built.filesChanged) +
+			"\n" +
+			"CLAIMED PROVEN: " +
+			JSON.stringify(built.proven) +
+			"\n" +
+			"CLAIMED NOT PROVEN: " +
+			JSON.stringify(built.notProven) +
+			"\n" +
+			"REACHABILITY: " +
+			(built.reachability || "(none)") +
+			"\n" +
+			"MEASUREMENTS: " +
+			JSON.stringify(built.measurements || []) +
+			"\n" +
+			"INVENTORIES: " +
+			JSON.stringify(built.inventories || []) +
+			"\n" +
+			"LEAD MUST RUN: " +
+			JSON.stringify(built.leadMustRun || []) +
+			"\n" +
+			"SUMMARY: " +
+			built.summary +
+			"\n" +
+			"ORIGINAL BRIEF:\n" +
+			p.brief +
+			"\n\n" +
+			"DO THIS:\n" +
+			"1. git show " +
+			built.commitHash +
+			" --stat, then the full diff, then read the changed files at HEAD\n" +
+			"   in context. A diff hides what surrounds it.\n" +
+			"2. HYPOTHESES YOU MUST ACTUALLY TEST:\n" +
+			"   - Was the defect REAL before this commit? **Reproduce it at the parent.**\n" +
+			"   - **Is the fix REACHABLE — every link, not two of three?** Trace from a real mount root or a real\n" +
+			"     HTTP route to the changed line. This failure cost this campaign most.\n" +
+			"   - Does it hold on REAL data, not just a fixture? For the money packet: do the screen price and the\n" +
+			"     document price now resolve to the SAME number for the same service id? Prove it, do not read it.\n" +
+			"   - **Are the claimed measurements and inventories reproducible?** Re-derive with your own tooling.\n" +
+			"   - Did the fix introduce a REGRESSION worse than the defect? Two packets this campaign did.\n" +
+			"   - HOLLOW FACADE, SECOND OWNER, a fabricated 0/default for an unknown, a hardcoded price, a\n" +
+			"     deleted useAppLogic return field, a missing teardown, hardcoded hex/px, an undeclared Russian\n" +
+			"     literal, mojibake in the diff or subject?\n" +
+			'   - **If the packet DELETED anything: git grep -l "<BaseName>" HEAD -- . over the WHOLE repo** must\n' +
+			"     return nothing outside docs/ and .agents/ prose.\n" +
+			"   - **Do the new tests actually assert?** Check their fixtures exist at HEAD.\n" +
+			"   - For a GATE packet: does the gate FAIL when the defect is reintroduced? Break it in a scratch\n" +
+			"     copy outside the repo and check.\n" +
+			"3. PROOF AUDIT: RE-RUN EVERY CLAIMED PROOF COMMAND YOURSELF, capturing the TRUE exit code.\n" +
+			"4. GIT HYGIENE: only the claimed files? Any churn (apps/api/.data/*.json, tsbuildinfo, scratch/**)\n" +
+			"   or another author work swept in via the shared index? Russian subject naming the DEFECT?\n" +
+			"5. VERDICT. Reserve REVERT for a change actively worse than the defect. Never award SOUND to a claim\n" +
+			"   you could not reproduce. If NEEDS_REWORK, make requiredRework numbered and actionable.\n\n" +
+			"CONSTRAINTS: read-only on source — no edit, fix, commit, revert, git add. Never git remote -v (live\n" +
+			"tokens). Never npx @biomejs/biome. Do not start or restart any server, and do not apply a migration.\n" +
+			"You MAY run typechecks, builds, tests, smokes, read-only node -e, curl to 127.0.0.1:4100, read-only\n" +
+			"SQL, and you MAY open PNG files to judge a visual claim.",
+		{ label: "attack:" + p.id, phase: "Attack", schema: REVIEW_SCHEMA },
+	);
 }
 
-const all = []
-log('Cycle 9: ' + PACKETS.map((p) => p.id).join(', '))
-const done = await pipeline(PACKETS, buildStage, reviewStage)
-for (let i = 0; i < PACKETS.length; i++) all.push({ packet: PACKETS[i].id, dir: PACKETS[i].dir, review: done[i] || null })
-log('Cycle 9 complete.')
+const all = [];
+log("Cycle 9: " + PACKETS.map((p) => p.id).join(", "));
+const done = await pipeline(PACKETS, buildStage, reviewStage);
+for (let i = 0; i < PACKETS.length; i++)
+	all.push({
+		packet: PACKETS[i].id,
+		dir: PACKETS[i].dir,
+		review: done[i] || null,
+	});
+log("Cycle 9 complete.");
 return { cycle: 9, results: all }

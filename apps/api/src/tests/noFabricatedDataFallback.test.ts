@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 /**
@@ -302,7 +302,10 @@ function touchesDatabase(node: ts.Node): boolean {
  * функции. `throw` внутри колбэка до вызывающего не доходит, значит считать его
  * возвратом ошибки нельзя.
  */
-function hasOwnNode(block: ts.Block, matches: (node: ts.Node) => boolean): boolean {
+function hasOwnNode(
+	block: ts.Block,
+	matches: (node: ts.Node) => boolean,
+): boolean {
 	let found = false;
 	const visit = (current: ts.Node): void => {
 		if (found) return;
@@ -318,7 +321,10 @@ function hasOwnNode(block: ts.Block, matches: (node: ts.Node) => boolean): boole
 }
 
 /** Узлы поддерева, удовлетворяющие условию, БЕЗ захода во вложенные функции. */
-function collectOwnNodes(root: ts.Node, matches: (node: ts.Node) => boolean): ts.Node[] {
+function collectOwnNodes(
+	root: ts.Node,
+	matches: (node: ts.Node) => boolean,
+): ts.Node[] {
 	const found: ts.Node[] = [];
 	const visit = (current: ts.Node): void => {
 		if (matches(current)) found.push(current);
@@ -350,15 +356,19 @@ function isNonEmptyLengthTest(condition: ts.Node): boolean {
 			const operator = current.operatorToken.kind;
 			const leftIsLength =
 				isLength(current.left) &&
-				((operator === ts.SyntaxKind.GreaterThanToken && isNumber(current.right, "0")) ||
-					(operator === ts.SyntaxKind.GreaterThanEqualsToken && isNumber(current.right, "1")) ||
+				((operator === ts.SyntaxKind.GreaterThanToken &&
+					isNumber(current.right, "0")) ||
+					(operator === ts.SyntaxKind.GreaterThanEqualsToken &&
+						isNumber(current.right, "1")) ||
 					((operator === ts.SyntaxKind.ExclamationEqualsEqualsToken ||
 						operator === ts.SyntaxKind.ExclamationEqualsToken) &&
 						isNumber(current.right, "0")));
 			const rightIsLength =
 				isLength(current.right) &&
-				((operator === ts.SyntaxKind.LessThanToken && isNumber(current.left, "0")) ||
-					(operator === ts.SyntaxKind.LessThanEqualsToken && isNumber(current.left, "1")));
+				((operator === ts.SyntaxKind.LessThanToken &&
+					isNumber(current.left, "0")) ||
+					(operator === ts.SyntaxKind.LessThanEqualsToken &&
+						isNumber(current.left, "1")));
 			if (leftIsLength || rightIsLength) {
 				found = true;
 				return;
@@ -378,9 +388,11 @@ function isNonEmptyLengthTest(condition: ts.Node): boolean {
  */
 function isEmptyAnswer(expression: ts.Expression | undefined): boolean {
 	if (expression === undefined) return true;
-	if (ts.isArrayLiteralExpression(expression)) return expression.elements.length === 0;
+	if (ts.isArrayLiteralExpression(expression))
+		return expression.elements.length === 0;
 	if (expression.kind === ts.SyntaxKind.NullKeyword) return true;
-	if (ts.isIdentifier(expression) && expression.text === "undefined") return true;
+	if (ts.isIdentifier(expression) && expression.text === "undefined")
+		return true;
 	if (ts.isNumericLiteral(expression)) return expression.text === "0";
 	if (ts.isStringLiteralLike(expression)) return expression.text === "";
 	return false;
@@ -388,7 +400,8 @@ function isEmptyAnswer(expression: ts.Expression | undefined): boolean {
 
 /** Отдаёт ли ветка `then` какое-то значение — прямым `return` или через свой блок. */
 function returnsSomeValue(statement: ts.Statement): boolean {
-	if (ts.isReturnStatement(statement)) return statement.expression !== undefined;
+	if (ts.isReturnStatement(statement))
+		return statement.expression !== undefined;
 	if (ts.isBlock(statement)) {
 		return hasOwnNode(
 			statement,
@@ -401,7 +414,8 @@ function returnsSomeValue(statement: ts.Statement): boolean {
 function enclosingName(node: ts.Node): string {
 	let current: ts.Node | undefined = node.parent;
 	while (current) {
-		if (ts.isFunctionDeclaration(current) && current.name) return current.name.text;
+		if (ts.isFunctionDeclaration(current) && current.name)
+			return current.name.text;
 		if (ts.isMethodDeclaration(current) && ts.isIdentifier(current.name)) {
 			return current.name.text;
 		}
@@ -440,7 +454,8 @@ export function scanModule(file: string, source: string): ModuleScan {
 			runtimeDdl.push({
 				file,
 				fn: enclosingName(node),
-				line: parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1,
+				line:
+					parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1,
 				statement: node.text.trim().replace(/\s+/g, " ").slice(0, 90),
 			});
 		}
@@ -452,7 +467,8 @@ export function scanModule(file: string, source: string): ModuleScan {
 				// Возврат внутри самой проверки лежит до её конца и потому не считается.
 				const fallbacks = collectOwnNodes(
 					body,
-					(current) => ts.isReturnStatement(current) && !isEmptyAnswer(current.expression),
+					(current) =>
+						ts.isReturnStatement(current) && !isEmptyAnswer(current.expression),
 				);
 				const gates = collectOwnNodes(
 					body,
@@ -473,18 +489,25 @@ export function scanModule(file: string, source: string): ModuleScan {
 						file,
 						fn,
 						ordinal,
-						line: parsed.getLineAndCharacterOfPosition(gate.getStart(parsed)).line + 1,
+						line:
+							parsed.getLineAndCharacterOfPosition(gate.getStart(parsed)).line +
+							1,
 					});
 				}
 			}
 		}
-		if (ts.isTryStatement(node) && node.catchClause && touchesDatabase(node.tryBlock)) {
+		if (
+			ts.isTryStatement(node) &&
+			node.catchClause &&
+			touchesDatabase(node.tryBlock)
+		) {
 			databaseTryBlocks += 1;
 			const body = node.catchClause.block;
 			if (!hasOwnNode(body, ts.isThrowStatement)) {
 				const returnsValue = hasOwnNode(
 					body,
-					(current) => ts.isReturnStatement(current) && current.expression !== undefined,
+					(current) =>
+						ts.isReturnStatement(current) && current.expression !== undefined,
 				);
 				const fn = enclosingName(node);
 				// Обход идёт сверху вниз по файлу, поэтому счётчик даёт устойчивый
@@ -496,7 +519,9 @@ export function scanModule(file: string, source: string): ModuleScan {
 					fn,
 					ordinal,
 					line:
-						parsed.getLineAndCharacterOfPosition(node.catchClause.getStart(parsed)).line + 1,
+						parsed.getLineAndCharacterOfPosition(
+							node.catchClause.getStart(parsed),
+						).line + 1,
 					kind: returnsValue ? "подстановка" : "проглатывание",
 				});
 			}
@@ -505,7 +530,13 @@ export function scanModule(file: string, source: string): ModuleScan {
 	};
 	ts.forEachChild(parsed, visit);
 
-	return { swallowed, emptyPath, runtimeDdl, databaseTryBlocks, databaseFunctions };
+	return {
+		swallowed,
+		emptyPath,
+		runtimeDdl,
+		databaseTryBlocks,
+		databaseFunctions,
+	};
 }
 
 function keyOf(found: { file: string; fn: string; ordinal: number }): string {
@@ -536,7 +567,14 @@ function databaseCatchCensus(): {
 	}
 	swallowed.sort((a, b) => keyOf(a).localeCompare(keyOf(b)));
 	emptyPath.sort((a, b) => keyOf(a).localeCompare(keyOf(b)));
-	return { files, swallowed, emptyPath, runtimeDdl, databaseTryBlocks, databaseFunctions };
+	return {
+		files,
+		swallowed,
+		emptyPath,
+		runtimeDdl,
+		databaseTryBlocks,
+		databaseFunctions,
+	};
 }
 
 /**
@@ -544,7 +582,12 @@ function databaseCatchCensus(): {
  * DECLARED_SWALLOWING: точное множество, причина у каждой строки, отписка короче
  * 120 символов валит прогон.
  */
-const DECLARED_EMPTY_PATH: { file: string; fn: string; ordinal: number; reason: string }[] = [
+const DECLARED_EMPTY_PATH: {
+	file: string;
+	fn: string;
+	ordinal: number;
+	reason: string;
+}[] = [
 	/* closed: getLostPatientsFiltersFromDb — пустая выборка → [], снимок lost_patients_filters не читается;
 	   daysSinceLastVisit считается от последнего прошлого приёма / createdAt, не константа 90. */
 ];
@@ -664,7 +707,11 @@ test("сканер находит проглатывающий catch и не к�
 		["fixture.ts:getThingFromDb#1"],
 		"Сканер не увидел заведомую подмену при сбое базы — значит его зелёный ничего не значит.",
 	);
-	assert.equal(real.swallowed[0]?.kind, "подстановка", "Возврат значения из catch назван не тем видом.");
+	assert.equal(
+		real.swallowed[0]?.kind,
+		"подстановка",
+		"Возврат значения из catch назван не тем видом.",
+	);
 
 	// Вторая сторона того же различения. Без неё сверка вида ничего не стоит: если
 	// сканер начнёт называть «подстановкой» всё подряд, храповик станет красным на
@@ -968,7 +1015,9 @@ test("перепись слоя доступа не выродилась", () =>
 			"либо модули удалили по делу — тогда опустите это число тем же коммитом и назовите причину.",
 	);
 
-	const outsideQueryMask = census.files.filter((name) => !name.endsWith("Query.ts"));
+	const outsideQueryMask = census.files.filter(
+		(name) => !name.endsWith("Query.ts"),
+	);
 	assert.ok(
 		outsideQueryMask.length > 0,
 		"В переписи не осталось ни одного модуля вне маски `*Query.ts`. Именно так обход и был сломан до " +
@@ -1006,9 +1055,15 @@ test("список долга по проглатыванию сбоев баз�
 	const duplicated = DECLARED_SWALLOWING.map(keyOf).filter(
 		(key, index, all) => all.indexOf(key) !== index,
 	);
-	assert.deepEqual(duplicated, [], `В списке долга повторы: ${duplicated.join(", ")}`);
+	assert.deepEqual(
+		duplicated,
+		[],
+		`В списке долга повторы: ${duplicated.join(", ")}`,
+	);
 
-	const shallow = DECLARED_SWALLOWING.filter((debt) => debt.reason.trim().length < 120).map(keyOf);
+	const shallow = DECLARED_SWALLOWING.filter(
+		(debt) => debt.reason.trim().length < 120,
+	).map(keyOf);
 	assert.deepEqual(
 		shallow,
 		[],
@@ -1043,7 +1098,9 @@ test("сбой базы в слое доступа доходит до вызы�
 			"молча, — либо функцию переименовали и запись охраняет несуществующее место.",
 	);
 
-	const declaredKind = new Map(DECLARED_SWALLOWING.map((debt) => [keyOf(debt), debt.kind]));
+	const declaredKind = new Map(
+		DECLARED_SWALLOWING.map((debt) => [keyOf(debt), debt.kind]),
+	);
 	const changedKind = census.swallowed
 		.filter((found) => {
 			const known = declaredKind.get(keyOf(found));
@@ -1090,7 +1147,9 @@ test("пустая выборка отдаётся пустым ответом, 
 	const declared = new Set(DECLARED_EMPTY_PATH.map(keyOf));
 	const actual = new Set(census.emptyPath.map(keyOf));
 
-	const shallow = DECLARED_EMPTY_PATH.filter((debt) => debt.reason.trim().length < 120).map(keyOf);
+	const shallow = DECLARED_EMPTY_PATH.filter(
+		(debt) => debt.reason.trim().length < 120,
+	).map(keyOf);
 	assert.deepEqual(
 		shallow,
 		[],

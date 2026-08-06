@@ -30,19 +30,33 @@
  * `await import()` destructure is handled explicitly because routes/clinical.ts
  * uses that idiom everywhere.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+const REPO_ROOT = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"..",
+	"..",
+);
 const API_SRC = join(REPO_ROOT, "apps", "api", "src");
 const DB_DIR = join(API_SRC, "db");
-const SCHEMA_FILES = ["schema.ts", "communicationsSchema.ts", "patientsSchema.ts"].map((f) =>
-	join(DB_DIR, f),
-);
+const SCHEMA_FILES = [
+	"schema.ts",
+	"communicationsSchema.ts",
+	"patientsSchema.ts",
+].map((f) => join(DB_DIR, f));
 
-const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "dente-db", ".data"]);
+const SKIP_DIRS = new Set([
+	"node_modules",
+	"dist",
+	".git",
+	"dente-db",
+	".data",
+]);
 function walk(dir, predicate, out = []) {
 	let entries;
 	try {
@@ -60,13 +74,21 @@ function walk(dir, predicate, out = []) {
 	return out;
 }
 const rel = (f) => relative(REPO_ROOT, f).split(sep).join("/");
-const isSrcTs = (f) => /\.ts$/.test(f) && !f.endsWith(".d.ts") && !/\.test\.ts$/.test(f);
+const isSrcTs = (f) =>
+	/\.ts$/.test(f) && !f.endsWith(".d.ts") && !/\.test\.ts$/.test(f);
 
 function parse(file) {
 	const src = readFileSync(file, "utf8");
-	return ts.createSourceFile(file, src, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
+	return ts.createSourceFile(
+		file,
+		src,
+		ts.ScriptTarget.ESNext,
+		true,
+		ts.ScriptKind.TS,
+	);
 }
-const lineOf = (sf, n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+const lineOf = (sf, n) =>
+	sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
 
 /* ── table registry ── */
 function unwrapTableCall(node) {
@@ -101,16 +123,24 @@ const cache = new Map();
 function fileInfo(file) {
 	if (cache.has(file)) return cache.get(file);
 	const sf = parse(file);
-	const info = { sf, imports: new Map(), namespaceImports: new Map(), schemaNamed: new Map(), schemaNs: new Set() };
+	const info = {
+		sf,
+		imports: new Map(),
+		namespaceImports: new Map(),
+		schemaNamed: new Map(),
+		schemaNs: new Set(),
+	};
 	for (const st of sf.statements) {
-		if (!ts.isImportDeclaration(st) || !ts.isStringLiteral(st.moduleSpecifier)) continue;
+		if (!ts.isImportDeclaration(st) || !ts.isStringLiteral(st.moduleSpecifier))
+			continue;
 		const target = resolveSpec(file, st.moduleSpecifier.text);
 		const clause = st.importClause;
 		if (!clause) continue;
 		const isSchema = target !== null && SCHEMA_FILES.includes(target);
 		if (clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) {
 			if (isSchema) info.schemaNs.add(clause.namedBindings.name.text);
-			if (target) info.namespaceImports.set(clause.namedBindings.name.text, target);
+			if (target)
+				info.namespaceImports.set(clause.namedBindings.name.text, target);
 			continue;
 		}
 		if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
@@ -145,11 +175,24 @@ function resolveSpec(fromFile, spec) {
 /* ── direct-write detection ── */
 const WRITE_METHODS = new Set(["insert", "update", "delete"]);
 const FS_WRITE_FNS = new Set([
-	"writeFile", "writeFileSync", "appendFile", "appendFileSync", "rename", "renameSync",
-	"unlink", "unlinkSync", "mkdir", "mkdirSync", "rm", "rmSync", "copyFile", "copyFileSync",
+	"writeFile",
+	"writeFileSync",
+	"appendFile",
+	"appendFileSync",
+	"rename",
+	"renameSync",
+	"unlink",
+	"unlinkSync",
+	"mkdir",
+	"mkdirSync",
+	"rm",
+	"rmSync",
+	"copyFile",
+	"copyFileSync",
 	"createWriteStream",
 ]);
-const RAW_WRITE_RE = /\b(insert\s+into|update\s+[a-z_"][a-z0-9_"]*\s+set\b|delete\s+from)/i;
+const RAW_WRITE_RE =
+	/\b(insert\s+into|update\s+[a-z_"][a-z0-9_"]*\s+set\b|delete\s+from)/i;
 
 function resolveTableArg(arg, info) {
 	if (!arg) return null;
@@ -160,7 +203,8 @@ function resolveTableArg(arg, info) {
 		return null;
 	}
 	if (ts.isPropertyAccessExpression(arg) && ts.isIdentifier(arg.expression)) {
-		if (info.schemaNs.has(arg.expression.text) && tables.has(arg.name.text)) return arg.name.text;
+		if (info.schemaNs.has(arg.expression.text) && tables.has(arg.name.text))
+			return arg.name.text;
 	}
 	return null;
 }
@@ -174,35 +218,73 @@ function directWrites(file) {
 		if (ts.isCallExpression(node)) {
 			const callee = node.expression;
 			// db.insert(table) / tx.update(table) / trx.delete(table)
-			if (ts.isPropertyAccessExpression(callee) && WRITE_METHODS.has(callee.name.text)) {
+			if (
+				ts.isPropertyAccessExpression(callee) &&
+				WRITE_METHODS.has(callee.name.text)
+			) {
 				const tbl = resolveTableArg(node.arguments[0], info);
 				const recv = callee.expression.getText(sf).slice(0, 40);
 				if (tbl) {
-					out.push({ kind: "drizzle", detail: `${callee.name.text}(${tables.get(tbl)})`,
-						pos: node.getStart(sf), line: lineOf(sf, node) });
+					out.push({
+						kind: "drizzle",
+						detail: `${callee.name.text}(${tables.get(tbl)})`,
+						pos: node.getStart(sf),
+						line: lineOf(sf, node),
+					});
 				} else if (/\b(db|tx|trx|conn|database|executor)\b/.test(recv)) {
-					out.push({ kind: "drizzle-unresolved", detail: `${recv}.${callee.name.text}(?)`,
-						pos: node.getStart(sf), line: lineOf(sf, node) });
+					out.push({
+						kind: "drizzle-unresolved",
+						detail: `${recv}.${callee.name.text}(?)`,
+						pos: node.getStart(sf),
+						line: lineOf(sf, node),
+					});
 				}
 			}
 			// fs writes
-			if (ts.isPropertyAccessExpression(callee) && FS_WRITE_FNS.has(callee.name.text)) {
-				out.push({ kind: "fs", detail: `${callee.name.text}()`, pos: node.getStart(sf), line: lineOf(sf, node) });
+			if (
+				ts.isPropertyAccessExpression(callee) &&
+				FS_WRITE_FNS.has(callee.name.text)
+			) {
+				out.push({
+					kind: "fs",
+					detail: `${callee.name.text}()`,
+					pos: node.getStart(sf),
+					line: lineOf(sf, node),
+				});
 			} else if (ts.isIdentifier(callee) && FS_WRITE_FNS.has(callee.text)) {
-				out.push({ kind: "fs", detail: `${callee.text}()`, pos: node.getStart(sf), line: lineOf(sf, node) });
+				out.push({
+					kind: "fs",
+					detail: `${callee.text}()`,
+					pos: node.getStart(sf),
+					line: lineOf(sf, node),
+				});
 			}
 		}
 		// raw SQL write in a literal
-		if (ts.isStringLiteralLike(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+		if (
+			ts.isStringLiteralLike(node) ||
+			ts.isNoSubstitutionTemplateLiteral(node)
+		) {
 			if (RAW_WRITE_RE.test(node.text)) {
-				out.push({ kind: "raw-sql", detail: node.text.replace(/\s+/g, " ").slice(0, 70),
-					pos: node.getStart(sf), line: lineOf(sf, node) });
+				out.push({
+					kind: "raw-sql",
+					detail: node.text.replace(/\s+/g, " ").slice(0, 70),
+					pos: node.getStart(sf),
+					line: lineOf(sf, node),
+				});
 			}
 		} else if (ts.isTemplateExpression(node)) {
-			const joined = [node.head.text, ...node.templateSpans.map((s) => s.literal.text)].join(" ");
+			const joined = [
+				node.head.text,
+				...node.templateSpans.map((s) => s.literal.text),
+			].join(" ");
 			if (RAW_WRITE_RE.test(joined)) {
-				out.push({ kind: "raw-sql", detail: joined.replace(/\s+/g, " ").slice(0, 70),
-					pos: node.getStart(sf), line: lineOf(sf, node) });
+				out.push({
+					kind: "raw-sql",
+					detail: joined.replace(/\s+/g, " ").slice(0, 70),
+					pos: node.getStart(sf),
+					line: lineOf(sf, node),
+				});
 			}
 		}
 		ts.forEachChild(node, visit);
@@ -227,7 +309,8 @@ function fnName(node, sf) {
 	) {
 		return node.parent.name.text;
 	}
-	if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) return node.name.text;
+	if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name))
+		return node.name.text;
 	return null;
 }
 
@@ -255,7 +338,10 @@ for (const file of files) {
 				if (ts.isCallExpression(n)) {
 					const c = n.expression;
 					if (ts.isIdentifier(c)) calls.add(c.text);
-					else if (ts.isPropertyAccessExpression(c) && ts.isIdentifier(c.expression)) {
+					else if (
+						ts.isPropertyAccessExpression(c) &&
+						ts.isIdentifier(c.expression)
+					) {
 						calls.add(`${c.expression.text}.${c.name.text}`);
 					}
 				}
@@ -336,7 +422,17 @@ const writerReason = dbClosure.reason;
 const rounds = dbClosure.rounds;
 
 /* ── route registrations ── */
-const VERBS = new Set(["get", "post", "put", "patch", "delete", "head", "options", "all", "route"]);
+const VERBS = new Set([
+	"get",
+	"post",
+	"put",
+	"patch",
+	"delete",
+	"head",
+	"options",
+	"all",
+	"route",
+]);
 const routes = [];
 for (const file of files) {
 	const info = fileInfo(file);
@@ -375,7 +471,10 @@ for (const file of files) {
 				if (ts.isCallExpression(n)) {
 					const c = n.expression;
 					if (ts.isIdentifier(c)) calls.add(c.text);
-					else if (ts.isPropertyAccessExpression(c) && ts.isIdentifier(c.expression))
+					else if (
+						ts.isPropertyAccessExpression(c) &&
+						ts.isIdentifier(c.expression)
+					)
 						calls.add(`${c.expression.text}.${c.name.text}`);
 				}
 				// dynamic import destructure: const { f } = await import("x")
@@ -384,17 +483,22 @@ for (const file of files) {
 					n.initializer &&
 					ts.isAwaitExpression(n.initializer) &&
 					ts.isCallExpression(n.initializer.expression) &&
-					n.initializer.expression.expression.kind === ts.SyntaxKind.ImportKeyword &&
+					n.initializer.expression.expression.kind ===
+						ts.SyntaxKind.ImportKeyword &&
 					ts.isStringLiteral(n.initializer.expression.arguments[0]) &&
 					ts.isObjectBindingPattern(n.name)
 				) {
-					const target = resolveSpec(file, n.initializer.expression.arguments[0].text);
+					const target = resolveSpec(
+						file,
+						n.initializer.expression.arguments[0].text,
+					);
 					if (target) {
 						for (const el of n.name.elements) {
 							if (ts.isIdentifier(el.name)) {
-								const imported = el.propertyName && ts.isIdentifier(el.propertyName)
-									? el.propertyName.text
-									: el.name.text;
+								const imported =
+									el.propertyName && ts.isIdentifier(el.propertyName)
+										? el.propertyName.text
+										: el.name.text;
 								calls.add(`@dyn:${rel(target)}#${imported}`);
 							}
 						}
@@ -410,7 +514,8 @@ for (const file of files) {
 				if (c.startsWith("@dyn:")) {
 					const k = c.slice("@dyn:".length);
 					if (writerKeys.has(k)) calledWriters.push(`${k} (dynamic import)`);
-					if (fsClosure.keys.has(k)) calledFsWriters.push(`${k} (dynamic import)`);
+					if (fsClosure.keys.has(k))
+						calledFsWriters.push(`${k} (dynamic import)`);
 					continue;
 				}
 				const target = resolveCall(file, c);
@@ -471,7 +576,10 @@ if (process.argv.includes("--json")) {
 				tier3_fsOnly: fsOnly,
 				directWriteRoots: [...writesByKey]
 					.filter(([, s]) => s.some((x) => DB_KINDS.has(x.kind)))
-					.map(([k, s]) => ({ fn: k, sites: s.map((x) => `${x.kind}:${x.detail}`) })),
+					.map(([k, s]) => ({
+						fn: k,
+						sites: s.map((x) => `${x.kind}:${x.detail}`),
+					})),
 				allRoutes: routes,
 			},
 			null,
@@ -483,26 +591,38 @@ if (process.argv.includes("--json")) {
 
 console.log(`files parsed: ${files.length}`);
 console.log(`functions indexed: ${fnByKey.size}`);
-console.log(`functions that can write the DB (direct + transitive): ${writerKeys.size} (rounds ${rounds})`);
-console.log(`functions that write the filesystem (direct + transitive): ${fsClosure.keys.size}`);
+console.log(
+	`functions that can write the DB (direct + transitive): ${writerKeys.size} (rounds ${rounds})`,
+);
+console.log(
+	`functions that write the filesystem (direct + transitive): ${fsClosure.keys.size}`,
+);
 console.log(`route registrations with an inline handler: ${routes.length}`);
 console.log(`  of those GET/HEAD: ${readRoutes.length}`);
 
-console.log(`\n=== TIER 1: GET/HEAD with a DB WRITE IN THE HANDLER BODY: ${inlineDbWriters.length} ===`);
+console.log(
+	`\n=== TIER 1: GET/HEAD with a DB WRITE IN THE HANDLER BODY: ${inlineDbWriters.length} ===`,
+);
 for (const r of inlineDbWriters) {
 	console.log(`\n  ${r.verb} ${r.routePath}   ${r.file}:${r.line}`);
 	for (const w of r.inlineDbWrites) console.log(`      INLINE  ${w}`);
 	for (const w of r.calledWriters) console.log(`      VIA     ${w}`);
 }
 
-console.log(`\n=== TIER 2: GET/HEAD calling a DB-writing function: ${viaDbWriters.length} ===`);
+console.log(
+	`\n=== TIER 2: GET/HEAD calling a DB-writing function: ${viaDbWriters.length} ===`,
+);
 for (const r of viaDbWriters) {
 	console.log(`\n  ${r.verb} ${r.routePath}   ${r.file}:${r.line}`);
 	for (const w of r.calledWriters)
-		console.log(`      VIA  ${w}  [${writerReason.get(w.split(" ")[0]) ?? "?"}]`);
+		console.log(
+			`      VIA  ${w}  [${writerReason.get(w.split(" ")[0]) ?? "?"}]`,
+		);
 }
 
-console.log(`\n=== TIER 3: GET/HEAD that writes only the FILESYSTEM: ${fsOnly.length} ===`);
+console.log(
+	`\n=== TIER 3: GET/HEAD that writes only the FILESYSTEM: ${fsOnly.length} ===`,
+);
 for (const r of fsOnly) {
 	console.log(`  ${r.verb} ${r.routePath}   ${r.file}:${r.line}`);
 	for (const w of r.inlineFsWrites) console.log(`      INLINE  ${w}`);

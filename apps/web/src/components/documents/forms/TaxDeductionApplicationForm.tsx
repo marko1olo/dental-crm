@@ -17,7 +17,9 @@ export interface TaxDeductionApplicationFormProps {
 	deliveryChannelOptions: readonly DocumentSelectOption<TaxDeductionApplicationDeliveryChannel>[];
 	normalizeRelationship: (value: string) => TaxDeductionApplicationRelationship;
 	normalizeForm: (value: string) => TaxDeductionApplicationFormKind;
-	normalizeDeliveryChannel: (value: string) => TaxDeductionApplicationDeliveryChannel;
+	normalizeDeliveryChannel: (
+		value: string,
+	) => TaxDeductionApplicationDeliveryChannel;
 }
 
 /**
@@ -92,8 +94,8 @@ export function TaxDeductionApplicationForm({
 						style={{ marginTop: "12px" }}
 					>
 						<strong>
-							Заявление не создастся: осталось {review.blockers.length} условий из{" "}
-							{review.requiredCount}:
+							Заявление не создастся: осталось {review.blockers.length} условий
+							из {review.requiredCount}:
 						</strong>
 						<ul>
 							{review.blockers.map((blocker) => (
@@ -103,8 +105,8 @@ export function TaxDeductionApplicationForm({
 							))}
 						</ul>
 						<small>
-							Все эти поля в блоке «Ручная корректировка полей» ниже. Дату заявления
-							программа поставит сама при создании.
+							Все эти поля в блоке «Ручная корректировка полей» ниже. Дату
+							заявления программа поставит сама при создании.
 						</small>
 					</div>
 				) : null
@@ -114,7 +116,9 @@ export function TaxDeductionApplicationForm({
 				Заявитель / налогоплательщик
 				<input
 					value={taxApplicationTaxpayerFullName}
-					onChange={(event) => setTaxApplicationTaxpayerFullName(event.target.value)}
+					onChange={(event) =>
+						setTaxApplicationTaxpayerFullName(event.target.value)
+					}
 					placeholder="ФИО того, кто получит вычет"
 				/>
 			</label>
@@ -124,8 +128,16 @@ export function TaxDeductionApplicationForm({
 					<input
 						inputMode="numeric"
 						value={taxApplicationTaxpayerInn}
-						onChange={(event) => setTaxApplicationTaxpayerInn(event.target.value.replace(/[^\d]/g, "").slice(0, 12))}
-						placeholder={taxApplicationForm === "knd_1151156" ? "12 цифр, если есть" : "10 или 12 цифр"}
+						onChange={(event) =>
+							setTaxApplicationTaxpayerInn(
+								event.target.value.replace(/[^\d]/g, "").slice(0, 12),
+							)
+						}
+						placeholder={
+							taxApplicationForm === "knd_1151156"
+								? "12 цифр, если есть"
+								: "10 или 12 цифр"
+						}
 					/>
 				</label>
 				<label>
@@ -133,7 +145,9 @@ export function TaxDeductionApplicationForm({
 					<input
 						type="date"
 						value={taxApplicationTaxpayerBirthDate}
-						onChange={(event) => setTaxApplicationTaxpayerBirthDate(event.target.value)}
+						onChange={(event) =>
+							setTaxApplicationTaxpayerBirthDate(event.target.value)
+						}
 					/>
 				</label>
 			</div>
@@ -141,7 +155,9 @@ export function TaxDeductionApplicationForm({
 				Документ заявителя
 				<input
 					value={taxApplicationTaxpayerIdentityDocument}
-					onChange={(event) => setTaxApplicationTaxpayerIdentityDocument(event.target.value)}
+					onChange={(event) =>
+						setTaxApplicationTaxpayerIdentityDocument(event.target.value)
+					}
 					placeholder="паспорт, серия, номер, кем и когда выдан"
 				/>
 			</label>
@@ -151,9 +167,12 @@ export function TaxDeductionApplicationForm({
 					<select
 						value={taxApplicationRelationship}
 						onChange={(event) => {
-							const nextRelationship = normalizeRelationship(event.target.value);
+							const nextRelationship = normalizeRelationship(
+								event.target.value,
+							);
 							setTaxApplicationRelationship(nextRelationship);
-							if (nextRelationship === "self") setTaxApplicationAuthorityDocument("");
+							if (nextRelationship === "self")
+								setTaxApplicationAuthorityDocument("");
 						}}
 					>
 						{relationshipOptions.map((option) => (
@@ -165,7 +184,12 @@ export function TaxDeductionApplicationForm({
 				</label>
 				<label>
 					Форма
-					<select value={taxApplicationForm} onChange={(event) => setTaxApplicationForm(normalizeForm(event.target.value))}>
+					<select
+						value={taxApplicationForm}
+						onChange={(event) =>
+							setTaxApplicationForm(normalizeForm(event.target.value))
+						}
+					>
 						{formOptions.map((option) => (
 							<option key={option.value} value={option.value}>
 								{option.label}
@@ -179,7 +203,11 @@ export function TaxDeductionApplicationForm({
 					Канал выдачи
 					<select
 						value={taxApplicationDeliveryChannel}
-						onChange={(event) => setTaxApplicationDeliveryChannel(normalizeDeliveryChannel(event.target.value))}
+						onChange={(event) =>
+							setTaxApplicationDeliveryChannel(
+								normalizeDeliveryChannel(event.target.value),
+							)
+						}
 					>
 						{deliveryChannelOptions.map((option) => (
 							<option key={option.value} value={option.value}>
@@ -190,7 +218,13 @@ export function TaxDeductionApplicationForm({
 				</label>
 				<label>
 					Дата заявления
-					<input type="datetime-local" value={taxApplicationRequestedAt} onChange={(event) => setTaxApplicationRequestedAt(event.target.value)} />
+					<input
+						type="datetime-local"
+						value={taxApplicationRequestedAt}
+						onChange={(event) =>
+							setTaxApplicationRequestedAt(event.target.value)
+						}
+					/>
 				</label>
 			</div>
 			<label>
@@ -211,7 +245,9 @@ export function TaxDeductionApplicationForm({
 				*/}
 				<input
 					value={taxApplicationAuthorityDocument}
-					onChange={(event) => setTaxApplicationAuthorityDocument(event.target.value)}
+					onChange={(event) =>
+						setTaxApplicationAuthorityDocument(event.target.value)
+					}
 					placeholder={
 						taxApplicationRelationship === "self"
 							? "не требуется: заявитель — сам пациент"
@@ -223,7 +259,9 @@ export function TaxDeductionApplicationForm({
 				<input
 					checked={taxApplicationDuplicateWarningAccepted}
 					type="checkbox"
-					onChange={(event) => setTaxApplicationDuplicateWarningAccepted(event.target.checked)}
+					onChange={(event) =>
+						setTaxApplicationDuplicateWarningAccepted(event.target.checked)
+					}
 				/>
 				Перед выдачей будет проверен дубль по тем же расходам
 			</label>

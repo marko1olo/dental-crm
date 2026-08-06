@@ -98,12 +98,10 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 	const appLogic = useAppLogicContext() as any;
 	const authContext = appLogic?.auth;
 
-	const [statusOutcome, setStatusOutcome] = useState<EgiszEndpointOutcome<
-		EgiszIntegrationStatus
-	> | null>(null);
-	const [journalOutcome, setJournalOutcome] = useState<EgiszEndpointOutcome<
-		EgiszVisitTransmission | null
-	> | null>(null);
+	const [statusOutcome, setStatusOutcome] =
+		useState<EgiszEndpointOutcome<EgiszIntegrationStatus> | null>(null);
+	const [journalOutcome, setJournalOutcome] =
+		useState<EgiszEndpointOutcome<EgiszVisitTransmission | null> | null>(null);
 	const [isSending, setIsSending] = useState(false);
 	const [sendProblem, setSendProblem] = useState<string | null>(null);
 

@@ -33,8 +33,8 @@
 import { randomInt } from "node:crypto";
 import { and, eq, lt } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { appointmentActionCodes } from "../../db/communicationsSchema.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 
 export type AppointmentAction = "confirm" | "cancel";
 
@@ -42,7 +42,8 @@ export type AppointmentAction = "confirm" | "cancel";
  * Алфавит без похожих знаков: ни 0/O, ни 1/l/I. Ссылку из SMS иногда
  * перенабирают с экрана вручную, и «O» вместо «0» стоит потерянного приёма.
  */
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+const CODE_ALPHABET =
+	"ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 const CODE_LENGTH = 10;
 
 /**
@@ -62,7 +63,10 @@ export function generateActionCode(length = CODE_LENGTH): string {
  * ответом. Бессрочная ссылка из прошлогодней SMS не должна отменять сегодняшнюю
  * запись.
  */
-export function actionCodeExpiry(appointmentStartsAt: Date, now = new Date()): Date {
+export function actionCodeExpiry(
+	appointmentStartsAt: Date,
+	now = new Date(),
+): Date {
 	const graceMs = 6 * 60 * 60 * 1000;
 	const candidate = new Date(appointmentStartsAt.getTime() + graceMs);
 	// Не меньше часа от текущего момента: приём может быть создан задним числом,
@@ -75,12 +79,15 @@ export function actionCodeExpiry(appointmentStartsAt: Date, now = new Date()): D
  * Публичный адрес клиники. Без него ссылки не собрать, и это не повод подставить
  * «localhost»: сообщение с нерабочей ссылкой хуже сообщения без неё.
  */
-export function readPublicBaseUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+export function readPublicBaseUrl(
+	env: NodeJS.ProcessEnv = process.env,
+): string | null {
 	const raw = env.DENTE_PUBLIC_BASE_URL?.trim();
 	if (!raw) return null;
 	try {
 		const parsed = new URL(raw);
-		if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+		if (parsed.protocol !== "https:" && parsed.protocol !== "http:")
+			return null;
 		// Ссылка уходит пациенту наружу: путь и параметры из настройки не берём.
 		return `${parsed.protocol}//${parsed.host}`;
 	} catch {
@@ -115,29 +122,47 @@ export async function issueAppointmentActionLinks(
 		readonly startsAt: Date;
 	},
 	now = new Date(),
-	env: NodeJS.ProcessEnv = process.env
+	env: NodeJS.ProcessEnv = process.env,
 ): Promise<AppointmentActionLinks | null> {
 	const baseUrl = readPublicBaseUrl(env);
 	if (!baseUrl) return null;
 
 	const expiresAt = actionCodeExpiry(input.startsAt, now);
-	const confirmCode = await issueCode(input.organizationId, input.appointmentId, "confirm", expiresAt);
-	const cancelCode = await issueCode(input.organizationId, input.appointmentId, "cancel", expiresAt);
+	const confirmCode = await issueCode(
+		input.organizationId,
+		input.appointmentId,
+		"confirm",
+		expiresAt,
+	);
+	const cancelCode = await issueCode(
+		input.organizationId,
+		input.appointmentId,
+		"cancel",
+		expiresAt,
+	);
 	if (!confirmCode || !cancelCode) return null;
 
-	return { confirmLink: actionLinkFor(baseUrl, confirmCode), cancelLink: actionLinkFor(baseUrl, cancelCode) };
+	return {
+		confirmLink: actionLinkFor(baseUrl, confirmCode),
+		cancelLink: actionLinkFor(baseUrl, cancelCode),
+	};
 }
 
 async function issueCode(
 	organizationId: string,
 	appointmentId: string,
 	action: AppointmentAction,
-	expiresAt: Date
+	expiresAt: Date,
 ): Promise<string | null> {
 	const existing = await db
 		.select({ code: appointmentActionCodes.code })
 		.from(appointmentActionCodes)
-		.where(and(eq(appointmentActionCodes.appointmentId, appointmentId), eq(appointmentActionCodes.action, action)))
+		.where(
+			and(
+				eq(appointmentActionCodes.appointmentId, appointmentId),
+				eq(appointmentActionCodes.action, action),
+			),
+		)
 		.limit(1);
 
 	if (existing[0]) {
@@ -166,7 +191,12 @@ async function issueCode(
 		const concurrent = await db
 			.select({ code: appointmentActionCodes.code })
 			.from(appointmentActionCodes)
-			.where(and(eq(appointmentActionCodes.appointmentId, appointmentId), eq(appointmentActionCodes.action, action)))
+			.where(
+				and(
+					eq(appointmentActionCodes.appointmentId, appointmentId),
+					eq(appointmentActionCodes.action, action),
+				),
+			)
 			.limit(1);
 		if (concurrent[0]) return concurrent[0].code;
 	}
@@ -182,11 +212,15 @@ export type ResolvedActionCode = {
 	readonly usedAt: Date | null;
 };
 
-export async function resolveActionCode(rawCode: string, now = new Date()): Promise<ResolvedActionCode | null> {
+export async function resolveActionCode(
+	rawCode: string,
+	now = new Date(),
+): Promise<ResolvedActionCode | null> {
 	const code = rawCode.trim();
 	// Отсекаем заведомо непохожее до обращения к базе: публичный адрес получает
 	// и случайный мусор, и попытки перебора.
-	if (code.length < 8 || code.length > 32 || !/^[A-Za-z0-9]+$/.test(code)) return null;
+	if (code.length < 8 || code.length > 32 || !/^[A-Za-z0-9]+$/.test(code))
+		return null;
 
 	/*
 	 * ОПЕРАЦИЯ «ДО АРЕНДАТОРА» — тот же класс, что вход по логину в routes/auth.ts.
@@ -201,7 +235,11 @@ export async function resolveActionCode(rawCode: string, now = new Date()): Prom
 	 * organizationId из найденной строки.
 	 */
 	const [row] = await withSuperuserBypass(async (tx) =>
-		tx.select().from(appointmentActionCodes).where(eq(appointmentActionCodes.code, code)).limit(1)
+		tx
+			.select()
+			.from(appointmentActionCodes)
+			.where(eq(appointmentActionCodes.code, code))
+			.limit(1),
 	);
 	if (!row) return null;
 
@@ -211,12 +249,18 @@ export async function resolveActionCode(rawCode: string, now = new Date()): Prom
 		appointmentId: row.appointmentId,
 		action: row.action === "cancel" ? "cancel" : "confirm",
 		expired: row.expiresAt.getTime() < now.getTime(),
-		usedAt: row.usedAt
+		usedAt: row.usedAt,
 	};
 }
 
-export async function markActionCodeUsed(code: string, now = new Date()): Promise<void> {
-	await db.update(appointmentActionCodes).set({ usedAt: now }).where(eq(appointmentActionCodes.code, code));
+export async function markActionCodeUsed(
+	code: string,
+	now = new Date(),
+): Promise<void> {
+	await db
+		.update(appointmentActionCodes)
+		.set({ usedAt: now })
+		.where(eq(appointmentActionCodes.code, code));
 }
 
 /**
@@ -231,12 +275,14 @@ export async function markActionCodeUsed(code: string, now = new Date()): Promis
  * не узнать, — СПИСОК клиник, у которых есть просроченные коды; само удаление
  * идёт по каждой клинике отдельно, под её собственным контекстом.
  */
-export async function purgeExpiredActionCodes(olderThan: Date): Promise<number> {
+export async function purgeExpiredActionCodes(
+	olderThan: Date,
+): Promise<number> {
 	const staleOrganizations = await withSuperuserBypass(async (tx) =>
 		tx
 			.selectDistinct({ organizationId: appointmentActionCodes.organizationId })
 			.from(appointmentActionCodes)
-			.where(lt(appointmentActionCodes.expiresAt, olderThan))
+			.where(lt(appointmentActionCodes.expiresAt, olderThan)),
 	);
 
 	let removedTotal = 0;
@@ -247,10 +293,10 @@ export async function purgeExpiredActionCodes(olderThan: Date): Promise<number> 
 				.where(
 					and(
 						eq(appointmentActionCodes.organizationId, organizationId),
-						lt(appointmentActionCodes.expiresAt, olderThan)
-					)
+						lt(appointmentActionCodes.expiresAt, olderThan),
+					),
 				)
-				.returning({ code: appointmentActionCodes.code })
+				.returning({ code: appointmentActionCodes.code }),
 		);
 		removedTotal += removed.length;
 	}

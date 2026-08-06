@@ -81,7 +81,9 @@ export function moduleErrorPresentation(
 ): ModuleErrorPresentation {
 	return {
 		detail: moduleErrorDetail(error),
-		diagnostics: options.includeDiagnostics ? moduleErrorDiagnostics(error) : "",
+		diagnostics: options.includeDiagnostics
+			? moduleErrorDiagnostics(error)
+			: "",
 	};
 }
 

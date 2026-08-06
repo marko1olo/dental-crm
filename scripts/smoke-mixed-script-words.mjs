@@ -16,7 +16,13 @@ import { join, relative } from "node:path";
 
 const ROOTS = ["apps/web/src", "apps/api/src", "packages/shared/src"];
 const EXTENSIONS = [".ts", ".tsx", ".css"];
-const SKIP_DIRS = new Set(["node_modules", "dist", ".vite", "coverage", "__snapshots__"]);
+const SKIP_DIRS = new Set([
+	"node_modules",
+	"dist",
+	".vite",
+	"coverage",
+	"__snapshots__",
+]);
 
 /** Латинские буквы, неотличимые от кириллических на вид. */
 const CONFUSABLE_LATIN = "aceopxyABCEHKMOPTX";
@@ -87,16 +93,25 @@ for (const root of ROOTS) {
 				for (const match of literal.matchAll(WORD)) {
 					const word = match[0];
 					if (!/[А-Яа-яЁё]/.test(word)) continue;
-					const latinChars = [...word].filter((ch) => CONFUSABLE_LATIN.includes(ch));
+					const latinChars = [...word].filter((ch) =>
+						CONFUSABLE_LATIN.includes(ch),
+					);
 					if (latinChars.length === 0) continue;
-					const relativePath = relative(process.cwd(), file).replace(/\\/g, "/");
+					const relativePath = relative(process.cwd(), file).replace(
+						/\\/g,
+						"/",
+					);
 					const finding = {
 						file: relativePath,
 						line: index + 1,
 						word,
 						latin: [...new Set(latinChars)].join(""),
 					};
-					if (ALLOWED.some((rule) => rule.file === relativePath && rule.word === word)) {
+					if (
+						ALLOWED.some(
+							(rule) => rule.file === relativePath && rule.word === word,
+						)
+					) {
 						allowed.push(finding);
 						continue;
 					}

@@ -63,8 +63,9 @@ export type RecallReport = {
 const BAND_LABELS: Readonly<Record<RecallBand, string>> = {
 	due: "Полгода без осмотра — пора на профилактику.",
 	overdue: "Больше года не был: пропущен как минимум один осмотр.",
-	probably_lost: "Больше двух лет не был — скорее всего лечится в другом месте.",
-	never_arrived: "Записывался, но ни разу не дошёл до кресла."
+	probably_lost:
+		"Больше двух лет не был — скорее всего лечится в другом месте.",
+	never_arrived: "Записывался, но ни разу не дошёл до кресла.",
 };
 
 /**
@@ -75,12 +76,20 @@ const BAND_LABELS: Readonly<Record<RecallBand, string>> = {
  * на экране не то число, которое стоит в карточке.
  */
 function monthsBetween(from: Date, to: Date): number {
-	const wholeMonths = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+	const wholeMonths =
+		(to.getFullYear() - from.getFullYear()) * 12 +
+		(to.getMonth() - from.getMonth());
 	// Если день месяца ещё не наступил, последний месяц не полный.
-	return Math.max(0, to.getDate() < from.getDate() ? wholeMonths - 1 : wholeMonths);
+	return Math.max(
+		0,
+		to.getDate() < from.getDate() ? wholeMonths - 1 : wholeMonths,
+	);
 }
 
-function bandFor(monthsSince: number | null, hadAnyAppointment: boolean): RecallBand | null {
+function bandFor(
+	monthsSince: number | null,
+	hadAnyAppointment: boolean,
+): RecallBand | null {
 	if (monthsSince === null) {
 		// Ни одного завершённого приёма. Интересен только тот, кто записывался:
 		// карточка, заведённая по звонку и брошенная, — это не «потерянный
@@ -101,7 +110,10 @@ export type RecallOptions = {
 	readonly includeNeverArrived?: boolean;
 };
 
-export async function findRecallCandidates(organizationId: string, options: RecallOptions = {}): Promise<RecallReport> {
+export async function findRecallCandidates(
+	organizationId: string,
+	options: RecallOptions = {},
+): Promise<RecallReport> {
 	const minMonths = Math.max(1, Math.min(60, options.minMonths ?? 6));
 	const limit = Math.max(1, Math.min(1000, options.limit ?? 200));
 	const includeNeverArrived = options.includeNeverArrived ?? true;
@@ -151,7 +163,7 @@ export async function findRecallCandidates(organizationId: string, options: Reca
 			 */
 			lastCompletedAt: lastCompleted.as("last_completed_at"),
 			futureAppointments: futureCount.as("future_appointments"),
-			totalAppointments: anyAppointment.as("total_appointments")
+			totalAppointments: anyAppointment.as("total_appointments"),
 		})
 		.from(patients)
 		.where(
@@ -165,14 +177,22 @@ export async function findRecallCandidates(organizationId: string, options: Reca
 				// Либо завершённых приёмов не было вовсе, либо последний давно.
 				or(
 					sql`${lastCompleted} IS NULL`,
-					lte(lastCompleted, sql`now() - (${minMonths} || ' months')::interval`)
-				)
-			)
+					lte(
+						lastCompleted,
+						sql`now() - (${minMonths} || ' months')::interval`,
+					),
+				),
+			),
 		)
 		.limit(limit + 50);
 
 	const candidates: RecallCandidate[] = [];
-	const byBand: Record<RecallBand, number> = { due: 0, overdue: 0, probably_lost: 0, never_arrived: 0 };
+	const byBand: Record<RecallBand, number> = {
+		due: 0,
+		overdue: 0,
+		probably_lost: 0,
+		never_arrived: 0,
+	};
 
 	for (const row of rows) {
 		const lastAt = row.lastCompletedAt ? new Date(row.lastCompletedAt) : null;
@@ -191,16 +211,22 @@ export async function findRecallCandidates(organizationId: string, options: Reca
 			lastCompletedAt: lastAt,
 			monthsSinceLastVisit: monthsSince,
 			band,
-			reason: BAND_LABELS[band]
+			reason: BAND_LABELS[band],
 		});
 	}
 
 	// Сначала те, кого зовут по делу: «пора на профилактику» важнее, чем
 	// «ушёл два года назад». Внутри полосы — кто дольше не был.
-	const order: Record<RecallBand, number> = { due: 0, overdue: 1, never_arrived: 2, probably_lost: 3 };
+	const order: Record<RecallBand, number> = {
+		due: 0,
+		overdue: 1,
+		never_arrived: 2,
+		probably_lost: 3,
+	};
 	candidates.sort(
 		(left, right) =>
-			order[left.band] - order[right.band] || (right.monthsSinceLastVisit ?? 0) - (left.monthsSinceLastVisit ?? 0)
+			order[left.band] - order[right.band] ||
+			(right.monthsSinceLastVisit ?? 0) - (left.monthsSinceLastVisit ?? 0),
 	);
 
 	return {
@@ -210,13 +236,19 @@ export async function findRecallCandidates(organizationId: string, options: Reca
 		note:
 			"Список считается по текущим данным при каждом запросе. Записанные на будущее не показываются. " +
 			"Приглашение — это реклама услуги: по закону оно требует согласия, поэтому в очереди такие сообщения " +
-			"проверяются на согласие отдельно. Позвонить можно любому."
+			"проверяются на согласие отдельно. Позвонить можно любому.",
 	};
 }
 
 /** Количество без выборки строк — для плитки на экране расписания. */
-export async function countRecallCandidates(organizationId: string, minMonths = 6): Promise<number> {
-	const report = await findRecallCandidates(organizationId, { minMonths, limit: 1000 });
+export async function countRecallCandidates(
+	organizationId: string,
+	minMonths = 6,
+): Promise<number> {
+	const report = await findRecallCandidates(organizationId, {
+		minMonths,
+		limit: 1000,
+	});
 	return report.candidates.length;
 }
 
@@ -226,14 +258,26 @@ export function recallBandLabel(band: RecallBand): string {
 }
 
 /** Проверка принадлежности пациента клинике — нужна маршрутам отправки. */
-export async function recallCandidateBelongsTo(organizationId: string, patientId: string): Promise<boolean> {
+export async function recallCandidateBelongsTo(
+	organizationId: string,
+	patientId: string,
+): Promise<boolean> {
 	const [row] = await db
 		.select({ id: patients.id })
 		.from(patients)
-		.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+		.where(
+			and(
+				eq(patients.id, patientId),
+				eq(patients.organizationId, organizationId),
+			),
+		)
 		.limit(1);
 	return Boolean(row);
 }
 
 /** Экспортируется для тестов: границы полос — часть договорённости, а не деталь. */
-export const RECALL_BANDS = { dueMonths: 6, overdueMonths: 12, probablyLostMonths: 24 } as const;
+export const RECALL_BANDS = {
+	dueMonths: 6,
+	overdueMonths: 12,
+	probablyLostMonths: 24,
+} as const;

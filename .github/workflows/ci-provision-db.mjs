@@ -44,7 +44,12 @@ const dbName = process.env.CI_DB_NAME;
 const roleName = process.env.CI_DB_ROLE;
 const rolePassword = process.env.CI_DB_PASSWORD;
 
-for (const [name, value] of Object.entries({ ADMIN_DATABASE_URL: adminUrl, CI_DB_NAME: dbName, CI_DB_ROLE: roleName, CI_DB_PASSWORD: rolePassword })) {
+for (const [name, value] of Object.entries({
+	ADMIN_DATABASE_URL: adminUrl,
+	CI_DB_NAME: dbName,
+	CI_DB_ROLE: roleName,
+	CI_DB_PASSWORD: rolePassword,
+})) {
 	if (!value) {
 		console.error(`[provision] ${name} не задан.`);
 		process.exit(1);
@@ -56,9 +61,14 @@ for (const [name, value] of Object.entries({ ADMIN_DATABASE_URL: adminUrl, CI_DB
 // имя базы нельзя передать параметром ($1) — PostgreSQL не принимает параметры в
 // DDL, — поэтому они проверяются по белому списку символов и цитируются.
 const SAFE_IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
-for (const [name, value] of Object.entries({ CI_DB_NAME: dbName, CI_DB_ROLE: roleName })) {
+for (const [name, value] of Object.entries({
+	CI_DB_NAME: dbName,
+	CI_DB_ROLE: roleName,
+})) {
 	if (!SAFE_IDENTIFIER.test(value)) {
-		console.error(`[provision] ${name}="${value}" не является безопасным идентификатором.`);
+		console.error(
+			`[provision] ${name}="${value}" не является безопасным идентификатором.`,
+		);
 		process.exit(1);
 	}
 }
@@ -67,19 +77,27 @@ const client = new pg.Client({ connectionString: adminUrl });
 await client.connect();
 
 try {
-	const existingRole = await client.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [roleName]);
+	const existingRole = await client.query(
+		"SELECT 1 FROM pg_roles WHERE rolname = $1",
+		[roleName],
+	);
 	if (existingRole.rowCount === 0) {
 		// NOSUPERUSER и NOBYPASSRLS — не косметика, см. причину 2 в шапке файла.
 		await client.query(
 			`CREATE ROLE "${roleName}" LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD $1`,
 			[rolePassword],
 		);
-		console.log(`[provision] создана роль ${roleName} (NOSUPERUSER, NOBYPASSRLS)`);
+		console.log(
+			`[provision] создана роль ${roleName} (NOSUPERUSER, NOBYPASSRLS)`,
+		);
 	} else {
 		console.log(`[provision] роль ${roleName} уже существует`);
 	}
 
-	const existingDb = await client.query("SELECT 1 FROM pg_database WHERE datname = $1", [dbName]);
+	const existingDb = await client.query(
+		"SELECT 1 FROM pg_database WHERE datname = $1",
+		[dbName],
+	);
 	if (existingDb.rowCount === 0) {
 		await client.query(`CREATE DATABASE "${dbName}" OWNER "${roleName}"`);
 		console.log(`[provision] создана база ${dbName}, владелец ${roleName}`);
@@ -97,11 +115,13 @@ try {
 	if (rolsuper || rolbypassrls) {
 		console.error(
 			`[provision] ОТКАЗ: роль ${roleName} имеет rolsuper=${rolsuper}, rolbypassrls=${rolbypassrls}. ` +
-			"При таких правах RLS не применяется и тесты арендной изоляции зеленеют впустую.",
+				"При таких правах RLS не применяется и тесты арендной изоляции зеленеют впустую.",
 		);
 		process.exit(1);
 	}
-	console.log(`[provision] проверено: ${roleName} rolsuper=false, rolbypassrls=false — RLS будет применяться`);
+	console.log(
+		`[provision] проверено: ${roleName} rolsuper=false, rolbypassrls=false — RLS будет применяться`,
+	);
 } finally {
 	await client.end();
 }

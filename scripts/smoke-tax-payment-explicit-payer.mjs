@@ -189,9 +189,7 @@ assert(
 
 const appSource = [
 	await import("node:fs").then((fs) => fs.readFileSync(appSourcePath, "utf8")),
-	await import("node:fs").then((fs) =>
-		readAppLogicSourceSync(),
-	),
+	await import("node:fs").then((fs) => readAppLogicSourceSync()),
 ].join("\n");
 assertSourceContains(
 	appSource,

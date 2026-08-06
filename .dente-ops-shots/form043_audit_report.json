@@ -1,126 +1,126 @@
 [
-  {
-    "label": "form043_mobile_light",
-    "openInfo": {
-      "hasEditor": true,
-      "hasPreview": true,
-      "hasEcp": false,
-      "diag": {
-        "url": "http://127.0.0.1:5173/#visit",
-        "hasEditor": true,
-        "hasPreview": true,
-        "hasLogin": false,
-        "title": "Dental CRM | Управление клиникой",
-        "snippet": "Перейти к рабочей области DENTE Demo Clinic Текущий прием Черновик ПАЦИЕНТ СЕЙЧАС Петрова Анна Сергеевна Лечение кариеса 16 · +7 (927) 100-20-30 5 ПРЕДУПРЕЖДЕНИЙ ЭМК заполнена 29% готовности · предупреждения не останавливают прием · 0 снимков · 0 документов Диктовка Риски 📝 ЭМК и Диктовка 🦷 Зубная формула и Дневник 🖼️ Рентгены и Диагностика Детский прикус Групповой выбор (Shift) Зубная фо"
-      }
-    },
-    "audit": {
-      "theme": "light",
-      "issues": [],
-      "metrics": {
-        "bg": "rgb(255, 255, 255)",
-        "fg": "rgb(17, 24, 39)",
-        "targetW": 390,
-        "targetH": 844,
-        "hasEcp": false,
-        "preview": true,
-        "buttonCount": 3,
-        "smallTargets": 0
-      }
-    },
-    "shotPath": "C:\\Clinic_MVP\\dental-crm\\.dente-ops-shots\\form043_mobile_light.png"
-  },
-  {
-    "label": "form043_mobile_dark",
-    "openInfo": {
-      "hasEditor": true,
-      "hasPreview": true,
-      "hasEcp": false,
-      "diag": {
-        "url": "http://127.0.0.1:5173/#visit",
-        "hasEditor": true,
-        "hasPreview": true,
-        "hasLogin": false,
-        "title": "Dental CRM | Управление клиникой",
-        "snippet": "Перейти к рабочей области DENTE Demo Clinic Текущий прием Черновик ПАЦИЕНТ СЕЙЧАС Петрова Анна Сергеевна Лечение кариеса 16 · +7 (927) 100-20-30 5 ПРЕДУПРЕЖДЕНИЙ ЭМК заполнена 29% готовности · предупреждения не останавливают прием · 0 снимков · 0 документов Диктовка Риски 📝 ЭМК и Диктовка 🦷 Зубная формула и Дневник 🖼️ Рентгены и Диагностика Детский прикус Групповой выбор (Shift) Зубная фо"
-      }
-    },
-    "audit": {
-      "theme": "dark",
-      "issues": [],
-      "metrics": {
-        "bg": "rgb(15, 23, 42)",
-        "fg": "rgb(248, 250, 252)",
-        "targetW": 390,
-        "targetH": 844,
-        "hasEcp": false,
-        "preview": true,
-        "buttonCount": 3,
-        "smallTargets": 0
-      }
-    },
-    "shotPath": "C:\\Clinic_MVP\\dental-crm\\.dente-ops-shots\\form043_mobile_dark.png"
-  },
-  {
-    "label": "form043_pc_light",
-    "openInfo": {
-      "hasEditor": true,
-      "hasPreview": true,
-      "hasEcp": false,
-      "diag": {
-        "url": "http://127.0.0.1:5173/#visit",
-        "hasEditor": true,
-        "hasPreview": true,
-        "hasLogin": false,
-        "title": "Dental CRM | Управление клиникой",
-        "snippet": "Перейти к рабочей области DENTE Смена что делать сейчас Записи очередь, врачи и кресла Пациенты карточки и контакты Снимки рентген, КЛКТ и КТ Прием прием и диктовка Документы договоры и справки Оплаты оплаты и долги Аналитика отчеты и воронки Связь сообщения и задачи Склад материалы, остатки и сроки Стерилизация лотки и журнал автоклава Обращения звонки и заявки до записи Настройки клиника, импорт"
-      }
-    },
-    "audit": {
-      "theme": "light",
-      "issues": [],
-      "metrics": {
-        "bg": "rgb(255, 255, 255)",
-        "fg": "rgb(17, 24, 39)",
-        "targetW": 1440,
-        "targetH": 900,
-        "hasEcp": false,
-        "preview": true,
-        "buttonCount": 3,
-        "smallTargets": 0
-      }
-    },
-    "shotPath": "C:\\Clinic_MVP\\dental-crm\\.dente-ops-shots\\form043_pc_light.png"
-  },
-  {
-    "label": "form043_pc_dark",
-    "openInfo": {
-      "hasEditor": true,
-      "hasPreview": true,
-      "hasEcp": false,
-      "diag": {
-        "url": "http://127.0.0.1:5173/#visit",
-        "hasEditor": true,
-        "hasPreview": true,
-        "hasLogin": false,
-        "title": "Dental CRM | Управление клиникой",
-        "snippet": "Перейти к рабочей области DENTE Смена что делать сейчас Записи очередь, врачи и кресла Пациенты карточки и контакты Снимки рентген, КЛКТ и КТ Прием прием и диктовка Документы договоры и справки Оплаты оплаты и долги Аналитика отчеты и воронки Связь сообщения и задачи Склад материалы, остатки и сроки Стерилизация лотки и журнал автоклава Обращения звонки и заявки до записи Настройки клиника, импорт"
-      }
-    },
-    "audit": {
-      "theme": "dark",
-      "issues": [],
-      "metrics": {
-        "bg": "rgb(15, 23, 42)",
-        "fg": "rgb(248, 250, 252)",
-        "targetW": 1440,
-        "targetH": 900,
-        "hasEcp": false,
-        "preview": true,
-        "buttonCount": 3,
-        "smallTargets": 0
-      }
-    },
-    "shotPath": "C:\\Clinic_MVP\\dental-crm\\.dente-ops-shots\\form043_pc_dark.png"
-  }
+	{
+		"label": "form043_mobile_light",
+		"openInfo": {
+			"hasEditor": true,
+			"hasPreview": true,
+			"hasEcp": false,
+			"diag": {
+				"url": "http://127.0.0.1:5173/#visit",
+				"hasEditor": true,
+				"hasPreview": true,
+				"hasLogin": false,
+				"title": "Dental CRM | Управление клиникой",
+				"snippet": "Перейти к рабочей области DENTE Demo Clinic Текущий прием Черновик ПАЦИЕНТ СЕЙЧАС Петрова Анна Сергеевна Лечение кариеса 16 · +7 (927) 100-20-30 5 ПРЕДУПРЕЖДЕНИЙ ЭМК заполнена 29% готовности · предупреждения не останавливают прием · 0 снимков · 0 документов Диктовка Риски 📝 ЭМК и Диктовка 🦷 Зубная формула и Дневник 🖼️ Рентгены и Диагностика Детский прикус Групповой выбор (Shift) Зубная фо"
+			}
+		},
+		"audit": {
+			"theme": "light",
+			"issues": [],
+			"metrics": {
+				"bg": "rgb(255, 255, 255)",
+				"fg": "rgb(17, 24, 39)",
+				"targetW": 390,
+				"targetH": 844,
+				"hasEcp": false,
+				"preview": true,
+				"buttonCount": 3,
+				"smallTargets": 0
+			}
+		},
+		"shotPath": "C:\\Clinic_MVP\\dental-crm\\.dente-ops-shots\\form043_mobile_light.png"
+	},
+	{
+		"label": "form043_mobile_dark",
+		"openInfo": {
+			"hasEditor": true,
+			"hasPreview": true,
+			"hasEcp": false,
+			"diag": {
+				"url": "http://127.0.0.1:5173/#visit",
+				"hasEditor": true,
+				"hasPreview": true,
+				"hasLogin": false,
+				"title": "Dental CRM | Управление клиникой",
+				"snippet": "Перейти к рабочей области DENTE Demo Clinic Текущий прием Черновик ПАЦИЕНТ СЕЙЧАС Петрова Анна Сергеевна Лечение кариеса 16 · +7 (927) 100-20-30 5 ПРЕДУПРЕЖДЕНИЙ ЭМК заполнена 29% готовности · предупреждения не останавливают прием · 0 снимков · 0 документов Диктовка Риски 📝 ЭМК и Диктовка 🦷 Зубная формула и Дневник 🖼️ Рентгены и Диагностика Детский прикус Групповой выбор (Shift) Зубная фо"
+			}
+		},
+		"audit": {
+			"theme": "dark",
+			"issues": [],
+			"metrics": {
+				"bg": "rgb(15, 23, 42)",
+				"fg": "rgb(248, 250, 252)",
+				"targetW": 390,
+				"targetH": 844,
+				"hasEcp": false,
+				"preview": true,
+				"buttonCount": 3,
+				"smallTargets": 0
+			}
+		},
+		"shotPath": "C:\\Clinic_MVP\\dental-crm\\.dente-ops-shots\\form043_mobile_dark.png"
+	},
+	{
+		"label": "form043_pc_light",
+		"openInfo": {
+			"hasEditor": true,
+			"hasPreview": true,
+			"hasEcp": false,
+			"diag": {
+				"url": "http://127.0.0.1:5173/#visit",
+				"hasEditor": true,
+				"hasPreview": true,
+				"hasLogin": false,
+				"title": "Dental CRM | Управление клиникой",
+				"snippet": "Перейти к рабочей области DENTE Смена что делать сейчас Записи очередь, врачи и кресла Пациенты карточки и контакты Снимки рентген, КЛКТ и КТ Прием прием и диктовка Документы договоры и справки Оплаты оплаты и долги Аналитика отчеты и воронки Связь сообщения и задачи Склад материалы, остатки и сроки Стерилизация лотки и журнал автоклава Обращения звонки и заявки до записи Настройки клиника, импорт"
+			}
+		},
+		"audit": {
+			"theme": "light",
+			"issues": [],
+			"metrics": {
+				"bg": "rgb(255, 255, 255)",
+				"fg": "rgb(17, 24, 39)",
+				"targetW": 1440,
+				"targetH": 900,
+				"hasEcp": false,
+				"preview": true,
+				"buttonCount": 3,
+				"smallTargets": 0
+			}
+		},
+		"shotPath": "C:\\Clinic_MVP\\dental-crm\\.dente-ops-shots\\form043_pc_light.png"
+	},
+	{
+		"label": "form043_pc_dark",
+		"openInfo": {
+			"hasEditor": true,
+			"hasPreview": true,
+			"hasEcp": false,
+			"diag": {
+				"url": "http://127.0.0.1:5173/#visit",
+				"hasEditor": true,
+				"hasPreview": true,
+				"hasLogin": false,
+				"title": "Dental CRM | Управление клиникой",
+				"snippet": "Перейти к рабочей области DENTE Смена что делать сейчас Записи очередь, врачи и кресла Пациенты карточки и контакты Снимки рентген, КЛКТ и КТ Прием прием и диктовка Документы договоры и справки Оплаты оплаты и долги Аналитика отчеты и воронки Связь сообщения и задачи Склад материалы, остатки и сроки Стерилизация лотки и журнал автоклава Обращения звонки и заявки до записи Настройки клиника, импорт"
+			}
+		},
+		"audit": {
+			"theme": "dark",
+			"issues": [],
+			"metrics": {
+				"bg": "rgb(15, 23, 42)",
+				"fg": "rgb(248, 250, 252)",
+				"targetW": 1440,
+				"targetH": 900,
+				"hasEcp": false,
+				"preview": true,
+				"buttonCount": 3,
+				"smallTargets": 0
+			}
+		},
+		"shotPath": "C:\\Clinic_MVP\\dental-crm\\.dente-ops-shots\\form043_pc_dark.png"
+	}
 ]

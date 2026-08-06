@@ -10,7 +10,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
-import { panelStateText, type PanelSubject } from "../../lib/panelStateText";
+import { type PanelSubject, panelStateText } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 
@@ -191,7 +191,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				}),
 			});
 			if (!res.ok) {
-				const body = await res.json().catch(() => ({} as { message?: string }));
+				const body = await res.json().catch(() => ({}) as { message?: string });
 				if (res.status === 409) {
 					throw new Error(
 						body.message ||
@@ -214,7 +214,6 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				}),
 			});
 			if (!linkRes.ok) throw new Error("Семья создана, но пациент не привязан");
-
 
 			/*
 			 * БЫЛО: здесь сразу шло зелёное «Семья успешно создана». Ответ 200 на
@@ -262,12 +261,9 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			if (!linkRes.ok) {
 				const body = await linkRes
 					.json()
-					.catch(() => ({} as { message?: string }));
-				throw new Error(
-					body.message || "Ошибка при привязке пациента к семье",
-				);
+					.catch(() => ({}) as { message?: string });
+				throw new Error(body.message || "Ошибка при привязке пациента к семье");
 			}
-
 
 			/*
 			 * БЫЛО: «Успешно привязан к семье» по одному коду 200. Привязка не
@@ -324,9 +320,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				body: JSON.stringify({ familyGroupId: null }),
 			});
 			if (!res.ok) {
-				const body = await res
-					.json()
-					.catch(() => ({} as { message?: string }));
+				const body = await res.json().catch(() => ({}) as { message?: string });
 				throw new Error(body.message || "Не удалось отвязать от семьи");
 			}
 			const stillIn = await familyIdOfPatient(patientId);
@@ -346,7 +340,6 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			setLoading(false);
 		}
 	};
-
 
 	/*
 	 * БЫЛО: `{parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽`. Три
@@ -414,7 +407,9 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 								key={m.id}
 								className="p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg flex justify-between items-center"
 							>
-								<span className={`text-xs ${m.id === patientId ? "font-semibold text-slate-900 dark:text-white" : "font-medium text-slate-600 dark:text-slate-400"}`}>
+								<span
+									className={`text-xs ${m.id === patientId ? "font-semibold text-slate-900 dark:text-white" : "font-medium text-slate-600 dark:text-slate-400"}`}
+								>
 									{m.fullName}
 								</span>
 								{m.id === familyData.headPatientId && (
@@ -441,7 +436,6 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						{loading ? "Отвязка..." : "Отвязать от семьи"}
 					</button>
 				</>
-
 			) : loadFailure ? (
 				/*
 				 * Отказ чтения ВМЕСТО пустоты и без кнопок «Создать семью» и

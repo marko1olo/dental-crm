@@ -1,4 +1,5 @@
 import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
+
 /**
  * domainStateHydration.ts — наполнение доменного состояния данными из Postgres.
  *
@@ -59,42 +60,42 @@ import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
  * тех же сведений.
  */
 
-import { and, desc, eq } from "drizzle-orm";
 import {
+	type Appointment,
 	appointmentSchema,
+	type Chair,
+	type ClinicalRule,
+	type CommunicationEvent,
+	type CommunicationTask,
 	chairSchema,
 	clinicalRuleSchema,
 	clinicModeSchema,
 	communicationEventSchema,
 	communicationTaskSchema,
 	dentalSpecialtySchema,
-	generatedDocumentSchema,
-	imagingStudySchema,
-	patientSchema,
-	paymentSchema,
-	protocolTemplateSchema,
-	staffMemberSchema,
-	staffRoleSchema,
-	treatmentPlanItemSchema,
-	visitSchema,
-	type Appointment,
-	type Chair,
-	type ClinicalRule,
-	type CommunicationEvent,
-	type CommunicationTask,
 	type GeneratedDocument,
+	generatedDocumentSchema,
 	type ImagingStudy,
+	imagingStudySchema,
 	type Patient,
 	type Payment,
 	type ProtocolTemplate,
+	patientSchema,
+	paymentSchema,
+	protocolTemplateSchema,
 	type StaffMember,
+	staffMemberSchema,
+	staffRoleSchema,
 	type TreatmentPlanItem,
+	treatmentPlanItemSchema,
 	type Visit,
+	visitSchema,
 } from "@dental/shared";
+import { and, desc, eq } from "drizzle-orm";
 import {
+	type DomainState,
 	inMemoryDomainState,
 	validScheduleTimeZone,
-	type DomainState,
 } from "../sampleData.js";
 import { staffAuthorityFlags } from "../security/permissions.js";
 import { db } from "./client.js";
@@ -183,7 +184,8 @@ function inMemoryMode(): boolean {
 
 function iso(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
-	if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.toISOString();
+	if (value instanceof Date)
+		return Number.isNaN(value.getTime()) ? null : value.toISOString();
 	const parsed = new Date(value);
 	return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
@@ -288,11 +290,14 @@ function isoOrSkipRow(
 }
 
 function parseJsonArray(value: unknown): string[] {
-	if (Array.isArray(value)) return value.filter((entry): entry is string => typeof entry === "string");
+	if (Array.isArray(value))
+		return value.filter((entry): entry is string => typeof entry === "string");
 	if (typeof value !== "string" || !value.trim()) return [];
 	try {
 		const parsed = JSON.parse(value);
-		return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === "string") : [];
+		return Array.isArray(parsed)
+			? parsed.filter((entry): entry is string => typeof entry === "string")
+			: [];
 	} catch {
 		// Не JSON — трактуем как список через запятую (так хранятся chairs.specializations).
 		return value
@@ -396,7 +401,9 @@ export interface HydratedDomainState {
 function collect<T>(
 	rows: unknown[],
 	// biome-ignore lint/suspicious/noExplicitAny: zod-схемы из @dental/shared имеют разные дженерики
-	validator: { safeParse: (input: unknown) => { success: boolean; data?: any } },
+	validator: {
+		safeParse: (input: unknown) => { success: boolean; data?: any };
+	},
 	label: string,
 	report: DomainStateHydrationReport,
 ): T[] {
@@ -436,11 +443,16 @@ async function selectByOrganization<T>(
 	report: DomainStateHydrationReport,
 ): Promise<T[]> {
 	try {
-		return (await db.select().from(table).where(eq(table.organizationId, organizationId))) as T[];
+		return (await db
+			.select()
+			.from(table)
+			.where(eq(table.organizationId, organizationId))) as T[];
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		report.unavailable.push({ slice: label, message });
-		report.warnings.push(`${label}: не удалось прочитать из базы (${message}).`);
+		report.warnings.push(
+			`${label}: не удалось прочитать из базы (${message}).`,
+		);
 		console.error(
 			`[DomainStateHydration] Срез "${label}" клиники ${organizationId} не прочитан:`,
 			error,
@@ -485,7 +497,10 @@ export async function hydrateDomainStateFromDb(
  */
 export async function withHydratedDomainState<T>(
 	organizationId: string,
-	use: (state: DomainState, report: DomainStateHydrationReport) => T | Promise<T>,
+	use: (
+		state: DomainState,
+		report: DomainStateHydrationReport,
+	) => T | Promise<T>,
 ): Promise<T> {
 	const { state, report } = await hydrateDomainStateFromDb(organizationId);
 	return use(state, report);
@@ -495,8 +510,12 @@ export async function withHydratedDomainState<T>(
  * Отказать, если сорвался срез, по которому принимают денежное или клиническое
  * решение. Остальные отказы остаются в отчёте и в журнале.
  */
-export function assertCriticalSlicesAvailable(report: DomainStateHydrationReport): void {
-	const critical = report.unavailable.filter((entry) => CRITICAL_SLICES.has(entry.slice));
+export function assertCriticalSlicesAvailable(
+	report: DomainStateHydrationReport,
+): void {
+	const critical = report.unavailable.filter((entry) =>
+		CRITICAL_SLICES.has(entry.slice),
+	);
 	if (critical.length > 0) throw new DomainStateSliceUnavailableError(critical);
 }
 
@@ -529,78 +548,45 @@ async function hydrateFromDatabase(
 	 * собрались бы из разных моментов времени. Последовательное чтение проще,
 	 * безопаснее и на практике не медленнее того `Promise.all`, который работал.
 	 */
-	const clinicRows = await selectByOrganization<typeof schema.clinics.$inferSelect>(
-		schema.clinics,
-		organizationId,
-		"clinics",
-		report,
-	);
+	const clinicRows = await selectByOrganization<
+		typeof schema.clinics.$inferSelect
+	>(schema.clinics, organizationId, "clinics", report);
 	const userRows = await selectByOrganization<typeof schema.users.$inferSelect>(
 		schema.users,
 		organizationId,
 		"users",
 		report,
 	);
-	const chairRows = await selectByOrganization<typeof schema.chairs.$inferSelect>(
-		schema.chairs,
-		organizationId,
-		"chairs",
-		report,
-	);
-	const patientRows = await selectByOrganization<typeof schema.patients.$inferSelect>(
-		schema.patients,
-		organizationId,
-		"patients",
-		report,
-	);
-	const appointmentRows = await selectByOrganization<typeof schema.appointments.$inferSelect>(
-		schema.appointments,
-		organizationId,
-		"appointments",
-		report,
-	);
-	const visitRows = await selectByOrganization<typeof schema.visits.$inferSelect>(
-		schema.visits,
-		organizationId,
-		"visits",
-		report,
-	);
-	const treatmentItemRows = await selectByOrganization<typeof schema.treatmentItems.$inferSelect>(
-		schema.treatmentItems,
-		organizationId,
-		"treatmentItems",
-		report,
-	);
-	const paymentRows = await selectByOrganization<typeof schema.payments.$inferSelect>(
-		schema.payments,
-		organizationId,
-		"payments",
-		report,
-	);
-	const documentRows = await selectByOrganization<typeof schema.generatedDocuments.$inferSelect>(
-		schema.generatedDocuments,
-		organizationId,
-		"documents",
-		report,
-	);
-	const taskRows = await selectByOrganization<typeof schema.communicationTasks.$inferSelect>(
-		schema.communicationTasks,
-		organizationId,
-		"communicationTasks",
-		report,
-	);
-	const eventRows = await selectByOrganization<typeof schema.communicationEvents.$inferSelect>(
-		schema.communicationEvents,
-		organizationId,
-		"communicationEvents",
-		report,
-	);
-	const imagingRows = await selectByOrganization<typeof schema.imagingStudies.$inferSelect>(
-		schema.imagingStudies,
-		organizationId,
-		"imagingStudies",
-		report,
-	);
+	const chairRows = await selectByOrganization<
+		typeof schema.chairs.$inferSelect
+	>(schema.chairs, organizationId, "chairs", report);
+	const patientRows = await selectByOrganization<
+		typeof schema.patients.$inferSelect
+	>(schema.patients, organizationId, "patients", report);
+	const appointmentRows = await selectByOrganization<
+		typeof schema.appointments.$inferSelect
+	>(schema.appointments, organizationId, "appointments", report);
+	const visitRows = await selectByOrganization<
+		typeof schema.visits.$inferSelect
+	>(schema.visits, organizationId, "visits", report);
+	const treatmentItemRows = await selectByOrganization<
+		typeof schema.treatmentItems.$inferSelect
+	>(schema.treatmentItems, organizationId, "treatmentItems", report);
+	const paymentRows = await selectByOrganization<
+		typeof schema.payments.$inferSelect
+	>(schema.payments, organizationId, "payments", report);
+	const documentRows = await selectByOrganization<
+		typeof schema.generatedDocuments.$inferSelect
+	>(schema.generatedDocuments, organizationId, "documents", report);
+	const taskRows = await selectByOrganization<
+		typeof schema.communicationTasks.$inferSelect
+	>(schema.communicationTasks, organizationId, "communicationTasks", report);
+	const eventRows = await selectByOrganization<
+		typeof schema.communicationEvents.$inferSelect
+	>(schema.communicationEvents, organizationId, "communicationEvents", report);
+	const imagingRows = await selectByOrganization<
+		typeof schema.imagingStudies.$inferSelect
+	>(schema.imagingStudies, organizationId, "imagingStudies", report);
 	/*
 	 * Прайс читается из service_catalog_items, а не из services.
 	 *
@@ -619,18 +605,12 @@ async function hydrateFromDatabase(
 		"serviceCatalog",
 		report,
 	);
-	const ruleRows = await selectByOrganization<typeof schema.clinicalRules.$inferSelect>(
-		schema.clinicalRules,
-		organizationId,
-		"clinicalRules",
-		report,
-	);
-	const protocolRows = await selectByOrganization<typeof schema.protocolTemplates.$inferSelect>(
-		schema.protocolTemplates,
-		organizationId,
-		"protocolTemplates",
-		report,
-	);
+	const ruleRows = await selectByOrganization<
+		typeof schema.clinicalRules.$inferSelect
+	>(schema.clinicalRules, organizationId, "clinicalRules", report);
+	const protocolRows = await selectByOrganization<
+		typeof schema.protocolTemplates.$inferSelect
+	>(schema.protocolTemplates, organizationId, "protocolTemplates", report);
 
 	const organization = organizationRows[0];
 	const clinic = clinicRows[0];
@@ -685,19 +665,25 @@ async function hydrateFromDatabase(
 		clinicProfile.inn = organization.inn ?? null;
 		clinicProfile.kpp = organization.kpp ?? null;
 		clinicProfile.ogrn = organization.ogrn ?? null;
-		clinicProfile.address = clinic?.address ?? organization.legalAddress ?? null;
+		clinicProfile.address =
+			clinic?.address ?? organization.legalAddress ?? null;
 		clinicProfile.phone = clinic?.phone ?? null;
 		clinicProfile.email = organization.email ?? null;
 		clinicProfile.website = organization.website ?? null;
-		clinicProfile.medicalLicenseNumber = organization.medicalLicenseNumber ?? null;
-		clinicProfile.medicalLicenseIssuedAt = organization.medicalLicenseIssuedAt ?? null;
-		clinicProfile.medicalLicenseIssuer = organization.medicalLicenseIssuer ?? null;
+		clinicProfile.medicalLicenseNumber =
+			organization.medicalLicenseNumber ?? null;
+		clinicProfile.medicalLicenseIssuedAt =
+			organization.medicalLicenseIssuedAt ?? null;
+		clinicProfile.medicalLicenseIssuer =
+			organization.medicalLicenseIssuer ?? null;
 		clinicProfile.bankDetails = organization.bankDetails ?? null;
 		clinicProfile.signatoryName = organization.signatoryName ?? null;
 		clinicProfile.signatoryTitle = organization.signatoryTitle ?? null;
 		// В базе clinic_mode по умолчанию "demo" — такого режима в контракте нет,
 		// поэтому неизвестное значение сводим к «один кабинет».
-		clinicProfile.mode = clinicModeSchema.catch("one_chair").parse(organization.clinicMode);
+		clinicProfile.mode = clinicModeSchema
+			.catch("one_chair")
+			.parse(organization.clinicMode);
 		clinicProfile.timezone = validScheduleTimeZone(clinic?.timezone);
 		/*
 		 * ЕДИНСТВЕННЫЙ СЛУЧАЙ, КОТОРЫЙ НЕЛЬЗЯ ПРОПУСТИТЬ, И ПОЭТОМУ ОН РЕШЁН ИНАЧЕ.
@@ -720,7 +706,13 @@ async function hydrateFromDatabase(
 		 */
 		const organizationUpdatedAt = iso(organization.updatedAt);
 		if (organizationUpdatedAt === null) {
-			reportUnreadableTime("organizations", organization.id, "updated_at", organization.updatedAt, report);
+			reportUnreadableTime(
+				"organizations",
+				organization.id,
+				"updated_at",
+				organization.updatedAt,
+				report,
+			);
 		}
 		clinicProfile.updatedAt = organizationUpdatedAt ?? UNREADABLE_TIME_MARKER;
 		report.counts.clinicProfile = 1;
@@ -762,7 +754,13 @@ async function hydrateFromDatabase(
 			...staffAuthorityFlags(user.role),
 			color: "#1e293b",
 			workingHours: user.workingHours ?? null,
-			createdAt: isoOrSkipRow(user.createdAt, "users", user.id, "created_at", report),
+			createdAt: isoOrSkipRow(
+				user.createdAt,
+				"users",
+				user.id,
+				"created_at",
+				report,
+			),
 			/*
 			 * ОБА ПОЛЯ ЧИТАЮТ ОДНУ КОЛОНКУ `created_at`, И ЭТО РАСХОЖДЕНИЕ СХЕМЫ,
 			 * А НЕ ЗАМЫСЕЛ. В базе у `users` есть `updated_at` (NOT NULL, DEFAULT
@@ -777,7 +775,13 @@ async function hydrateFromDatabase(
 			 * нельзя — тогда КАЖДЫЙ сотрудник выглядел бы изменённым при каждой
 			 * загрузке страницы.
 			 */
-			updatedAt: isoOrSkipRow(user.createdAt, "users", user.id, "created_at", report),
+			updatedAt: isoOrSkipRow(
+				user.createdAt,
+				"users",
+				user.id,
+				"created_at",
+				report,
+			),
 		})),
 		staffMemberSchema,
 		"staff",
@@ -803,9 +807,16 @@ async function hydrateFromDatabase(
 				active: chair.isActive,
 				// БЫЛО: оснащение всегда false. Из-за этого приём, требующий снимка,
 				// не мог быть назначен на кресло с рентген-датчиком осознанно.
-				hasXraySensor: equipment.some((entry) => entry.includes("rvg") || entry.includes("рентген")),
-				hasMicroscope: equipment.some((entry) => entry.includes("microscope") || entry.includes("микроскоп")),
-				hasSurgeryKit: equipment.some((entry) => entry.includes("surgery") || entry.includes("хирург")),
+				hasXraySensor: equipment.some(
+					(entry) => entry.includes("rvg") || entry.includes("рентген"),
+				),
+				hasMicroscope: equipment.some(
+					(entry) =>
+						entry.includes("microscope") || entry.includes("микроскоп"),
+				),
+				hasSurgeryKit: equipment.some(
+					(entry) => entry.includes("surgery") || entry.includes("хирург"),
+				),
 				notes: null,
 				workingHours: chair.workingHours ?? null,
 			};
@@ -820,14 +831,23 @@ async function hydrateFromDatabase(
 	const paidByPatient = new Map<string, number>();
 	for (const payment of paymentRows) {
 		if (payment.status !== "paid") continue;
-		paidByPatient.set(payment.patientId, (paidByPatient.get(payment.patientId) ?? 0) + payment.amountRub);
+		paidByPatient.set(
+			payment.patientId,
+			(paidByPatient.get(payment.patientId) ?? 0) + payment.amountRub,
+		);
 	}
 	const plannedByPatient = new Map<string, number>();
 	for (const item of treatmentItemRows) {
 		if (item.status === "cancelled") continue;
 		const quantity = Math.max(1, Math.round(Number(item.quantity) || 1));
-		const lineTotal = Math.max(0, item.unitPriceRub * quantity - item.discountRub);
-		plannedByPatient.set(item.patientId, (plannedByPatient.get(item.patientId) ?? 0) + lineTotal);
+		const lineTotal = Math.max(
+			0,
+			item.unitPriceRub * quantity - item.discountRub,
+		);
+		plannedByPatient.set(
+			item.patientId,
+			(plannedByPatient.get(item.patientId) ?? 0) + lineTotal,
+		);
 	}
 	const patientRecords = collect<Patient>(
 		patientRows.map((patient) => ({
@@ -841,10 +861,23 @@ async function hydrateFromDatabase(
 			notes: patient.notes ?? null,
 			administrativeProfile: patient.administrativeProfile ?? null,
 			balanceRub: Math.round(
-				(paidByPatient.get(patient.id) ?? 0) - (plannedByPatient.get(patient.id) ?? 0),
+				(paidByPatient.get(patient.id) ?? 0) -
+					(plannedByPatient.get(patient.id) ?? 0),
 			),
-			createdAt: isoOrSkipRow(patient.createdAt, "patients", patient.id, "created_at", report),
-			updatedAt: isoOrSkipRow(patient.updatedAt, "patients", patient.id, "updated_at", report),
+			createdAt: isoOrSkipRow(
+				patient.createdAt,
+				"patients",
+				patient.id,
+				"created_at",
+				report,
+			),
+			updatedAt: isoOrSkipRow(
+				patient.updatedAt,
+				"patients",
+				patient.id,
+				"updated_at",
+				report,
+			),
 		})),
 		patientSchema,
 		"patients",
@@ -870,8 +903,20 @@ async function hydrateFromDatabase(
 			 * час поверх настоящего приёма, освобождал своё настоящее окно и вносил
 			 * пациента в готовность приёма и в нагрузку смены на сегодня.
 			 */
-			startsAt: isoOrSkipRow(appointment.startsAt, "appointments", appointment.id, "starts_at", report),
-			endsAt: isoOrSkipRow(appointment.endsAt, "appointments", appointment.id, "ends_at", report),
+			startsAt: isoOrSkipRow(
+				appointment.startsAt,
+				"appointments",
+				appointment.id,
+				"starts_at",
+				report,
+			),
+			endsAt: isoOrSkipRow(
+				appointment.endsAt,
+				"appointments",
+				appointment.id,
+				"ends_at",
+				report,
+			),
 			reason: appointment.reason ?? null,
 			comment: appointment.comment ?? null,
 		})),
@@ -935,7 +980,13 @@ async function hydrateFromDatabase(
 			 * поведение хуже молча: платёж, проведённый в другой день, попадал в
 			 * кассовый отчёт за СЕГОДНЯ и сходился с ним до копейки.
 			 */
-			createdAt: isoOrSkipRow(payment.createdAt, "payments", payment.id, "created_at", report),
+			createdAt: isoOrSkipRow(
+				payment.createdAt,
+				"payments",
+				payment.id,
+				"created_at",
+				report,
+			),
 			fiscalReceiptNumber: payment.fiscalReceiptNumber ?? null,
 			fiscalReceiptIssuedAt: payment.fiscalReceiptIssuedAt ?? null,
 			fiscalReceiptUrl: payment.fiscalReceiptUrl ?? null,
@@ -971,7 +1022,10 @@ async function hydrateFromDatabase(
 			totalAmountRub: document.totalAmountRub ?? null,
 			taxYear: document.taxYear ?? null,
 			taxPayerInn: document.taxPayerInn ?? null,
-			taxPaymentSnapshot: parseJsonObject(document.taxPaymentSnapshotJson, null),
+			taxPaymentSnapshot: parseJsonObject(
+				document.taxPaymentSnapshotJson,
+				null,
+			),
 			payload: parseJsonObject(document.payloadJson, null),
 			signatureAttestation: document.signatureAttestation ?? null,
 			voidAttestation: document.voidAttestation ?? null,
@@ -999,19 +1053,33 @@ async function hydrateFromDatabase(
 			appointmentId: task.appointmentId ?? null,
 			visitId: task.visitId ?? null,
 			documentId: task.documentId ?? null,
-			assignedRole: staffRoleSchema.catch("administrator").parse(task.assignedRole),
+			assignedRole: staffRoleSchema
+				.catch("administrator")
+				.parse(task.assignedRole),
 			channel: task.channel,
 			intent: task.intent,
 			status: task.status,
 			priority: task.priority,
 			// Срок обзвона из часов сервера — это задача, просроченная ровно сейчас:
 			// она лезет в очередь Telegram-отправок и в список «позвонить сегодня».
-			dueAt: isoOrSkipRow(task.dueAt, "communication_tasks", task.id, "due_at", report),
+			dueAt: isoOrSkipRow(
+				task.dueAt,
+				"communication_tasks",
+				task.id,
+				"due_at",
+				report,
+			),
 			title: task.title,
 			body: task.body,
 			workflowCode: task.workflowCode ?? null,
 			lastEventAt: iso(task.lastEventAt),
-			createdAt: isoOrSkipRow(task.createdAt, "communication_tasks", task.id, "created_at", report),
+			createdAt: isoOrSkipRow(
+				task.createdAt,
+				"communication_tasks",
+				task.id,
+				"created_at",
+				report,
+			),
 		})),
 		communicationTaskSchema,
 		"communicationTasks",
@@ -1028,7 +1096,13 @@ async function hydrateFromDatabase(
 			direction: event.direction,
 			status: event.status,
 			message: event.message,
-			createdAt: isoOrSkipRow(event.createdAt, "communication_events", event.id, "created_at", report),
+			createdAt: isoOrSkipRow(
+				event.createdAt,
+				"communication_events",
+				event.id,
+				"created_at",
+				report,
+			),
 		})),
 		communicationEventSchema,
 		"communicationEvents",
@@ -1051,7 +1125,13 @@ async function hydrateFromDatabase(
 			region: study.region ?? null,
 			// Дата снимка из часов сервера — это «рентген сделан только что»:
 			// врач сравнивает по ней динамику и решает, нужен ли новый снимок.
-			capturedAt: isoOrSkipRow(study.capturedAt, "imaging_studies", study.id, "captured_at", report),
+			capturedAt: isoOrSkipRow(
+				study.capturedAt,
+				"imaging_studies",
+				study.id,
+				"captured_at",
+				report,
+			),
 			sourceKind: study.sourceKind,
 			sourceName: study.sourceName,
 			storagePath: study.storagePath ?? null,
@@ -1117,7 +1197,9 @@ async function hydrateFromDatabase(
 			ownerRole: staffRoleSchema.catch("doctor").parse(rule.ownerRole),
 			triggerServiceIds: parseJsonArray(rule.triggerServiceIdsJson),
 			requiredServiceIds: parseJsonArray(rule.requiredServiceIdsJson),
-			requiresCompletedServiceIds: parseJsonArray(rule.requiresCompletedServiceIdsJson),
+			requiresCompletedServiceIds: parseJsonArray(
+				rule.requiresCompletedServiceIdsJson,
+			),
 			blockedServiceIds: parseJsonArray(rule.blockedServiceIdsJson),
 			condition: rule.condition ?? null,
 			warningText: rule.warningText,
@@ -1145,7 +1227,13 @@ async function hydrateFromDatabase(
 			requiredDocuments: parseJsonArray(template.requiredDocuments),
 			suggestedImaging: parseJsonArray(template.suggestedImaging),
 			safetyWarnings: parseJsonArray(template.safetyWarnings),
-			updatedAt: isoOrSkipRow(template.updatedAt, "protocol_templates", template.id, "updated_at", report),
+			updatedAt: isoOrSkipRow(
+				template.updatedAt,
+				"protocol_templates",
+				template.id,
+				"updated_at",
+				report,
+			),
 		})),
 		protocolTemplateSchema,
 		"protocolTemplates",
@@ -1278,13 +1366,18 @@ function noVisitSkeleton(organizationId: string): Visit {
  * писала в общую переменную через `Object.assign`, а при отказе на середине в ней
  * оставалась частично заменённая смесь данных разных клиник.
  */
-function applyActiveVisit(organizationId: string, visitRecords: Visit[]): Visit {
+function applyActiveVisit(
+	organizationId: string,
+	visitRecords: Visit[],
+): Visit {
 	const draft = visitRecords
 		.filter((visit) => visit.status === "draft")
 		.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
 	const latest =
 		draft ??
-		visitRecords.slice().sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
+		visitRecords
+			.slice()
+			.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
 
 	return latest ?? noVisitSkeleton(organizationId);
 }
@@ -1299,7 +1392,12 @@ export async function findLatestVisitIdForPatient(
 		const rows = await db
 			.select({ id: schema.visits.id })
 			.from(schema.visits)
-			.where(and(eq(schema.visits.organizationId, organizationId), eq(schema.visits.patientId, patientId)))
+			.where(
+				and(
+					eq(schema.visits.organizationId, organizationId),
+					eq(schema.visits.patientId, patientId),
+				),
+			)
 			.orderBy(desc(schema.visits.updatedAt))
 			.limit(1);
 		return rows[0]?.id ?? null;

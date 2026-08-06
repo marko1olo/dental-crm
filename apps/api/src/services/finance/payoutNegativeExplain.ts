@@ -45,7 +45,11 @@
  */
 
 import { Decimal } from "decimal.js";
-import type { DoctorPayoutReport, DoctorPayoutRow, DoctorPayoutTotals } from "./doctorPayouts.js";
+import type {
+	DoctorPayoutReport,
+	DoctorPayoutRow,
+	DoctorPayoutTotals,
+} from "./doctorPayouts.js";
 
 /**
  * Итог, разложенный на два денежных события.
@@ -151,7 +155,9 @@ function doctorsText(count: number): string {
  * выплатой ничего не получает и никому не должен, и записывать его в «к выплате
  * 0 врачам» значило бы соврать в счётчике.
  */
-export function splitPayoutsBySign(rows: readonly DoctorPayoutRow[]): PayoutSignSplit {
+export function splitPayoutsBySign(
+	rows: readonly DoctorPayoutRow[],
+): PayoutSignSplit {
 	let due = new Decimal(0);
 	let debt = new Decimal(0);
 	let doctorsDue = 0;
@@ -231,10 +237,18 @@ export function negativeRowExplanation(row: DoctorPayoutRow): string | null {
 		row.revenueRub > 0
 	) {
 		const breakEvenRub = roundMoney(
-			new Decimal(row.revenueRub).times(row.commissionPct).div(row.materialDeductionPct),
+			new Decimal(row.revenueRub)
+				.times(row.commissionPct)
+				.div(row.materialDeductionPct),
 		);
-		const breakEvenSharePct = new Decimal(row.commissionPct).div(row.materialDeductionPct).times(100).toNumber();
-		const actualSharePct = new Decimal(row.materialCostRub).div(row.revenueRub).times(100).toNumber();
+		const breakEvenSharePct = new Decimal(row.commissionPct)
+			.div(row.materialDeductionPct)
+			.times(100)
+			.toNumber();
+		const actualSharePct = new Decimal(row.materialCostRub)
+			.div(row.revenueRub)
+			.times(100)
+			.toNumber();
 		parts.push(
 			`Порог: при ставке ${percentText(row.commissionPct)} и удержании ${percentText(
 				row.materialDeductionPct,
@@ -341,7 +355,10 @@ export function negativeTotalsExplanation(input: {
 /** Текст строки без фраз, которые этот модуль заменяет своими. */
 function withoutSupersededSentences(note: string): string {
 	let rest = note;
-	for (const sentence of [SUPERSEDED_NEGATIVE_SENTENCE, SUPERSEDED_METHOD_SENTENCE]) {
+	for (const sentence of [
+		SUPERSEDED_NEGATIVE_SENTENCE,
+		SUPERSEDED_METHOD_SENTENCE,
+	]) {
 		rest = rest.split(sentence).join(" ");
 	}
 	return rest.replace(/\s{2,}/g, " ").trim();
@@ -379,6 +396,8 @@ export function explainNegativePayouts(
 		totals: { ...report.totals, ...split },
 		// Первым в списке: это утверждение о деньгах всей клиники, а остальные
 		// ограничения расчёта — про то, чего он не умеет.
-		limitations: totalsNote ? [totalsNote, ...report.limitations] : report.limitations,
+		limitations: totalsNote
+			? [totalsNote, ...report.limitations]
+			: report.limitations,
 	};
 }

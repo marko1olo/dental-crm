@@ -23,13 +23,13 @@
  * !important здесь необходим: исходные объявления тоже с !important.
  */
 .default-clinic-banner .banner-btn {
-  background: #b45309 !important;
-  border-color: #b45309 !important;
+	background: #b45309 !important;
+	border-color: #b45309 !important;
 }
 
 .default-clinic-banner .banner-btn:hover {
-  background: #92400e !important;
-  border-color: #92400e !important;
+	background: #92400e !important;
+	border-color: #92400e !important;
 }
 
 /* --- 2. Подпись «Демо-режим.» в тёмной теме ---
@@ -39,7 +39,7 @@
  */
 [data-theme="dark"] .default-clinic-banner strong,
 [data-theme="night"] .default-clinic-banner strong {
-  color: var(--warn-fg) !important;
+	color: var(--warn-fg) !important;
 }
 
 /* --- 3. Основная кнопка в светлой теме ---
@@ -71,7 +71,7 @@
  */
 .dictation-actions .primary-button:disabled,
 .dictation-actions .secondary-button:disabled {
-  color: #4c5b57;
+	color: #4c5b57;
 }
 
 /* --- 5. Всплывающая подпись поля в оплатах ---
@@ -114,7 +114,7 @@
 .smart-field input:not(:placeholder-shown) ~ label,
 .smart-field textarea:focus ~ label,
 .smart-field textarea:not(:placeholder-shown) ~ label {
-  color: var(--info-fg);
+	color: var(--info-fg);
 }
 
 /* --- 6. Подпись свёрнутого блока ---
@@ -123,7 +123,7 @@
  * представитель, договор»). Стало: #5a6878 — 5.4:1.
  */
 .settings-advanced-hint {
-  color: var(--text-muted, #5a6878);
+	color: var(--text-muted, #5a6878);
 }
 
 /* --- 7. Подпись «Роль» в переключателе роли ---
@@ -131,7 +131,9 @@
  * Было: var(--ink-2) в светлой теме давало 4.48:1 при норме 4.5 —
  * промах на две сотых. Стало: var(--ink) на той же подложке.
  */
-:root:not([data-theme="dark"]):not([data-theme="night"]) .workspace-role-switcher summary,
+:root:not([data-theme="dark"]):not([data-theme="night"])
+	.workspace-role-switcher
+	summary,
 html.light .workspace-role-switcher summary {
-  color: var(--ink);
+	color: var(--ink);
 }

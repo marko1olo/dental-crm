@@ -23,20 +23,31 @@
  */
 
 import { and, eq, sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
-import { appointments, chairs, clinics, organizations, patients, users } from "../../db/schema.js";
-import { registerScheduleRoutes } from "../../routes/schedule.js";
-import { registerPatientRoutes } from "../../routes/patients.js";
+import {
+	appointments,
+	chairs,
+	clinics,
+	organizations,
+	patients,
+	users,
+} from "../../db/schema.js";
+import { registerFamilyFinanceRoutes } from "../../routes/finance_family.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
+import { registerPatientRoutes } from "../../routes/patients.js";
+import { registerScheduleRoutes } from "../../routes/schedule.js";
 import registerToothHistoryRoutes from "../../routes/toothHistory.js";
 import { registerWaitlistRoutes } from "../../routes/waitlist.js";
-import { registerFamilyFinanceRoutes } from "../../routes/finance_family.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+} from "../support/fixtureOrganizations.js";
 
 const NAMESPACE = "crossTenantReconProof";
 
@@ -66,7 +77,9 @@ function report(verdict: Verdict, label: string, detail: string): void {
 
 /** Есть ли в ответе ФИО или телефон чужого пациента. */
 function carriesForeignIdentity(body: string): boolean {
-	return body.includes(FOREIGN_PATIENT_NAME) || body.includes(FOREIGN_PATIENT_PHONE);
+	return (
+		body.includes(FOREIGN_PATIENT_NAME) || body.includes(FOREIGN_PATIENT_PHONE)
+	);
 }
 
 async function buildApp(): Promise<FastifyInstance> {
@@ -96,16 +109,46 @@ async function seed(): Promise<void> {
 		{ id: CLINIC_B, organizationId: ORG_B, name: "Кабинет Б" },
 	]);
 	await db.insert(chairs).values([
-		{ id: CHAIR_A, organizationId: ORG_A, clinicId: CLINIC_A, name: "Кресло А" },
-		{ id: CHAIR_B, organizationId: ORG_B, clinicId: CLINIC_B, name: "Кресло Б" },
+		{
+			id: CHAIR_A,
+			organizationId: ORG_A,
+			clinicId: CLINIC_A,
+			name: "Кресло А",
+		},
+		{
+			id: CHAIR_B,
+			organizationId: ORG_B,
+			clinicId: CLINIC_B,
+			name: "Кресло Б",
+		},
 	]);
 	await db.insert(users).values([
-		{ id: DOCTOR_A, organizationId: ORG_A, fullName: "Врач клиники А", role: "doctor" },
-		{ id: DOCTOR_B, organizationId: ORG_B, fullName: "Врач клиники Б", role: "doctor" },
+		{
+			id: DOCTOR_A,
+			organizationId: ORG_A,
+			fullName: "Врач клиники А",
+			role: "doctor",
+		},
+		{
+			id: DOCTOR_B,
+			organizationId: ORG_B,
+			fullName: "Врач клиники Б",
+			role: "doctor",
+		},
 	]);
 	await db.insert(patients).values([
-		{ id: PATIENT_A, organizationId: ORG_A, fullName: "Свой Пациент Аович", phone: "+79990003344" },
-		{ id: PATIENT_B, organizationId: ORG_B, fullName: FOREIGN_PATIENT_NAME, phone: FOREIGN_PATIENT_PHONE },
+		{
+			id: PATIENT_A,
+			organizationId: ORG_A,
+			fullName: "Свой Пациент Аович",
+			phone: "+79990003344",
+		},
+		{
+			id: PATIENT_B,
+			organizationId: ORG_B,
+			fullName: FOREIGN_PATIENT_NAME,
+			phone: FOREIGN_PATIENT_PHONE,
+		},
 	]);
 }
 
@@ -117,8 +160,13 @@ async function seed(): Promise<void> {
  * строка без организации.
  */
 async function auditNullableOrganizationColumns(): Promise<void> {
-	console.log("\n=== ПУНКТ 3: колонки organization_id, допускающие NULL (живая база) ===");
-	const catalog = await db.execute<{ table_name: string; is_nullable: string }>(sql`
+	console.log(
+		"\n=== ПУНКТ 3: колонки organization_id, допускающие NULL (живая база) ===",
+	);
+	const catalog = await db.execute<{
+		table_name: string;
+		is_nullable: string;
+	}>(sql`
 		SELECT c.table_name, c.is_nullable
 		FROM information_schema.columns AS c
 		JOIN information_schema.tables AS t
@@ -129,7 +177,9 @@ async function auditNullableOrganizationColumns(): Promise<void> {
 		ORDER BY c.is_nullable DESC, c.table_name
 	`);
 	const nullable = catalog.rows.filter((row) => row.is_nullable === "YES");
-	console.log(`всего таблиц с organization_id: ${catalog.rows.length}, из них nullable: ${nullable.length}`);
+	console.log(
+		`всего таблиц с organization_id: ${catalog.rows.length}, из них nullable: ${nullable.length}`,
+	);
 	for (const row of nullable) {
 		const counted = await db.execute<{ orphans: number; total: number }>(
 			sql`SELECT count(*) FILTER (WHERE organization_id IS NULL)::int AS orphans, count(*)::int AS total FROM ${sql.identifier(row.table_name)}`,
@@ -141,7 +191,9 @@ async function auditNullableOrganizationColumns(): Promise<void> {
 			orphans > 0 ? "УТЕЧКА" : "СПРАВКА",
 			`nullable organization_id: ${row.table_name}`,
 			`бесхозных строк ${orphans} из ${total}` +
-				(orphans > 0 ? " — строка без организации достижима штатно, захват возможен" : " (пока пусто, но колонка позволяет)"),
+				(orphans > 0
+					? " — строка без организации достижима штатно, захват возможен"
+					: " (пока пусто, но колонка позволяет)"),
 		);
 	}
 }
@@ -149,8 +201,14 @@ async function auditNullableOrganizationColumns(): Promise<void> {
 /** ПУНКТ 4 ЗАДАНИЯ: чужие идентификаторы в пути и теле при своём токене. */
 async function attemptCrossTenant(app: FastifyInstance): Promise<void> {
 	const clinicTokenA = signToken({ organizationId: ORG_A }, authTokenSecret());
-	const staffTokenA = signToken({ organizationId: ORG_A, userId: DOCTOR_A, role: "owner" }, authTokenSecret());
-	const headersA = { "x-dente-clinic-token": clinicTokenA, "x-dente-staff-token": staffTokenA };
+	const staffTokenA = signToken(
+		{ organizationId: ORG_A, userId: DOCTOR_A, role: "owner" },
+		authTokenSecret(),
+	);
+	const headersA = {
+		"x-dente-clinic-token": clinicTokenA,
+		"x-dente-staff-token": staffTokenA,
+	};
 
 	console.log("\n=== ПУНКТ 4: токен клиники А против данных клиники Б ===");
 	console.log(`клиника А ${ORG_A}, клиника Б ${ORG_B}`);
@@ -259,11 +317,19 @@ async function attemptCrossTenant(app: FastifyInstance): Promise<void> {
 		const leakedName = carriesForeignIdentity(body);
 
 		if (leakedName) {
-			report("УТЕЧКА", testCase.label, `HTTP ${response.statusCode}, в ответе ФИО/телефон чужого пациента: ${short}`);
+			report(
+				"УТЕЧКА",
+				testCase.label,
+				`HTTP ${response.statusCode}, в ответе ФИО/телефон чужого пациента: ${short}`,
+			);
 			continue;
 		}
 		if (accepted && testCase.expectRejected) {
-			report("УТЕЧКА", testCase.label, `HTTP ${response.statusCode} — запрос ПРИНЯТ, хотя ссылается на чужую клинику: ${short}`);
+			report(
+				"УТЕЧКА",
+				testCase.label,
+				`HTTP ${response.statusCode} — запрос ПРИНЯТ, хотя ссылается на чужую клинику: ${short}`,
+			);
 			continue;
 		}
 		report("ЗАКРЫТО", testCase.label, `HTTP ${response.statusCode} ${short}`);
@@ -271,7 +337,9 @@ async function attemptCrossTenant(app: FastifyInstance): Promise<void> {
 
 	// Последствие принятой записи важнее кода ответа: осталась ли в базе строка
 	// клиники А, ссылающаяся на пациента/врача/кресло клиники Б.
-	console.log("\n=== ПОСЛЕДСТВИЕ В БАЗЕ: приёмы клиники А со ссылкой за её пределы ===");
+	console.log(
+		"\n=== ПОСЛЕДСТВИЕ В БАЗЕ: приёмы клиники А со ссылкой за её пределы ===",
+	);
 	const crossRows = await db.execute<{
 		appointment_id: string;
 		foreign_patient: string | null;
@@ -290,7 +358,11 @@ async function attemptCrossTenant(app: FastifyInstance): Promise<void> {
 		   AND (p.id IS NOT NULL OR u.id IS NOT NULL OR ch.id IS NOT NULL)
 	`);
 	if (crossRows.rows.length === 0) {
-		report("ЗАКРЫТО", "приёмы со ссылкой за пределы организации", "ни одной строки — целостность арендатора удержана");
+		report(
+			"ЗАКРЫТО",
+			"приёмы со ссылкой за пределы организации",
+			"ни одной строки — целостность арендатора удержана",
+		);
 	} else {
 		for (const row of crossRows.rows) {
 			report(
@@ -303,7 +375,11 @@ async function attemptCrossTenant(app: FastifyInstance): Promise<void> {
 
 	// Тот же вопрос по ВСЕЙ живой базе, а не только по посеянным клиникам:
 	// сколько межклиничных ссылок уже лежит в данных.
-	const wholeBase = await db.execute<{ patient_cross: number; doctor_cross: number; chair_cross: number }>(sql`
+	const wholeBase = await db.execute<{
+		patient_cross: number;
+		doctor_cross: number;
+		chair_cross: number;
+	}>(sql`
 		SELECT count(*) FILTER (WHERE p.id IS NOT NULL)::int  AS patient_cross,
 		       count(*) FILTER (WHERE u.id IS NOT NULL)::int  AS doctor_cross,
 		       count(*) FILTER (WHERE ch.id IS NOT NULL)::int AS chair_cross
@@ -312,22 +388,43 @@ async function attemptCrossTenant(app: FastifyInstance): Promise<void> {
 		  LEFT JOIN users    u ON u.id = a.doctor_user_id AND u.organization_id  <> a.organization_id
 		  LEFT JOIN chairs  ch ON ch.id = a.chair_id      AND ch.organization_id <> a.organization_id
 	`);
-	console.log(`\nПо всей базе приёмов с межклиничной ссылкой: ${JSON.stringify(wholeBase.rows[0])}`);
+	console.log(
+		`\nПо всей базе приёмов с межклиничной ссылкой: ${JSON.stringify(wholeBase.rows[0])}`,
+	);
 }
 
 /** Контрольный опыт: проверка обязана краснеть. Своя клиника читается штатно. */
 async function proveTheProbeCanGoGreen(app: FastifyInstance): Promise<void> {
-	console.log("\n=== КОНТРОЛЬ: тот же запрос по СВОЕМУ пациенту обязан пройти ===");
+	console.log(
+		"\n=== КОНТРОЛЬ: тот же запрос по СВОЕМУ пациенту обязан пройти ===",
+	);
 	const headersA = {
-		"x-dente-clinic-token": signToken({ organizationId: ORG_A }, authTokenSecret()),
-		"x-dente-staff-token": signToken({ organizationId: ORG_A, userId: DOCTOR_A, role: "owner" }, authTokenSecret()),
+		"x-dente-clinic-token": signToken(
+			{ organizationId: ORG_A },
+			authTokenSecret(),
+		),
+		"x-dente-staff-token": signToken(
+			{ organizationId: ORG_A, userId: DOCTOR_A, role: "owner" },
+			authTokenSecret(),
+		),
 	};
-	const own = await app.inject({ method: "GET", url: `/api/patients/${PATIENT_A}/archive-status`, headers: headersA });
-	console.log(`  свой пациент: HTTP ${own.statusCode} ${own.body.slice(0, 160)}`);
+	const own = await app.inject({
+		method: "GET",
+		url: `/api/patients/${PATIENT_A}/archive-status`,
+		headers: headersA,
+	});
+	console.log(
+		`  свой пациент: HTTP ${own.statusCode} ${own.body.slice(0, 160)}`,
+	);
 	if (own.statusCode !== 200) {
-		console.log("  ВНИМАНИЕ: прибор не отличает отказ по изоляции от общей поломки маршрута — вывод выше недостоверен.");
+		console.log(
+			"  ВНИМАНИЕ: прибор не отличает отказ по изоляции от общей поломки маршрута — вывод выше недостоверен.",
+		);
 	}
-	const anonymous = await app.inject({ method: "GET", url: `/api/patients/${PATIENT_A}/archive-status` });
+	const anonymous = await app.inject({
+		method: "GET",
+		url: `/api/patients/${PATIENT_A}/archive-status`,
+	});
 	console.log(`  без токена: HTTP ${anonymous.statusCode} (ожидается 401)`);
 }
 
@@ -348,16 +445,22 @@ async function main(): Promise<void> {
 		await app.close();
 		// Приёмы посеянных клиник могли уехать на чужого пациента — уборка идёт по
 		// каталогу и снимает их вместе с организацией.
-		await db.delete(appointments).where(and(eq(appointments.organizationId, ORG_A)));
+		await db
+			.delete(appointments)
+			.where(and(eq(appointments.organizationId, ORG_A)));
 		await purgeFixtureOrganizations([ORG_A, ORG_B]);
-		console.log(leaks === 0 ? "\nНАРУШЕНИЙ НЕ НАЙДЕНО" : `\nНАРУШЕНИЙ: ${leaks}`);
+		console.log(
+			leaks === 0 ? "\nНАРУШЕНИЙ НЕ НАЙДЕНО" : `\nНАРУШЕНИЙ: ${leaks}`,
+		);
 		await pool.end();
 	}
 }
 
 main().catch((error) => {
 	if (isDatabaseUnavailable(error)) {
-		console.error("База недоступна — доказательство не получено, выводы делать нельзя.");
+		console.error(
+			"База недоступна — доказательство не получено, выводы делать нельзя.",
+		);
 		console.error(error instanceof Error ? error.message : String(error));
 		process.exitCode = 2;
 		return;

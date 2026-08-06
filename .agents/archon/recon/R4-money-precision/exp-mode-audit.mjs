@@ -59,7 +59,9 @@ for (const rel of FILES) {
 		});
 	}
 }
-console.log(`declarations parsed: ${decl.size} columns across ${FILES.length} schema files\n`);
+console.log(
+	`declarations parsed: ${decl.size} columns across ${FILES.length} schema files\n`,
+);
 
 const client = new pg.Client({ connectionString: url });
 await client.connect();
@@ -85,7 +87,10 @@ for (const r of rows) {
 	const d = decl.get(key);
 	const isMoney = MONEY.test(r.column_name);
 	if (!d) {
-		if (isMoney) undeclared.push(`${key}  numeric(${r.numeric_precision},${r.numeric_scale})`);
+		if (isMoney)
+			undeclared.push(
+				`${key}  numeric(${r.numeric_precision},${r.numeric_scale})`,
+			);
 		continue;
 	}
 	if (d.builder !== "numeric" && d.builder !== "decimal") {
@@ -99,23 +104,37 @@ for (const r of rows) {
 			`${key}  DB precision ${r.numeric_precision}  MODEL ${d.precision}   ${d.file}:${d.line}`,
 		);
 	if (d.scale !== null && d.scale !== r.numeric_scale)
-		scaleDrift.push(`${key}  DB scale ${r.numeric_scale}  MODEL ${d.scale}   ${d.file}:${d.line}`);
+		scaleDrift.push(
+			`${key}  DB scale ${r.numeric_scale}  MODEL ${d.scale}   ${d.file}:${d.line}`,
+		);
 	if (!isMoney) continue;
 	const entry = `${key.padEnd(50)} numeric(${r.numeric_precision},${r.numeric_scale})  ${d.file.replace("apps/api/src/db/", "")}:${d.line}`;
 	if (d.mode === "number") modeNumber.push(entry);
 	else modeString.push(entry);
 }
 
-console.log(`=== A. MONEY COLUMNS WHOSE DRIZZLE TYPE IS number (mode:"number") : ${modeNumber.length}`);
+console.log(
+	`=== A. MONEY COLUMNS WHOSE DRIZZLE TYPE IS number (mode:"number") : ${modeNumber.length}`,
+);
 for (const e of modeNumber) console.log("  " + e);
-console.log(`\n=== B. MONEY COLUMNS WHOSE DRIZZLE TYPE IS string (no mode) : ${modeString.length}`);
+console.log(
+	`\n=== B. MONEY COLUMNS WHOSE DRIZZLE TYPE IS string (no mode) : ${modeString.length}`,
+);
 for (const e of modeString) console.log("  " + e);
-console.log(`\n=== C. MONEY numeric COLUMNS WITH NO DRIZZLE DECLARATION AT ALL : ${undeclared.length}`);
+console.log(
+	`\n=== C. MONEY numeric COLUMNS WITH NO DRIZZLE DECLARATION AT ALL : ${undeclared.length}`,
+);
 for (const e of undeclared) console.log("  " + e);
-console.log(`\n=== D. numeric IN DB BUT NON-numeric BUILDER IN MODEL : ${wrongBuilder.length}`);
+console.log(
+	`\n=== D. numeric IN DB BUT NON-numeric BUILDER IN MODEL : ${wrongBuilder.length}`,
+);
 for (const e of wrongBuilder) console.log("  " + e);
-console.log(`\n=== E. PRECISION DRIFT (gate never checks this) : ${precDrift.length}`);
+console.log(
+	`\n=== E. PRECISION DRIFT (gate never checks this) : ${precDrift.length}`,
+);
 for (const e of precDrift) console.log("  " + e);
-console.log(`\n=== F. SCALE DRIFT (gate computes it then discards it) : ${scaleDrift.length}`);
+console.log(
+	`\n=== F. SCALE DRIFT (gate computes it then discards it) : ${scaleDrift.length}`,
+);
 for (const e of scaleDrift) console.log("  " + e);
 console.log(`\nlive numeric columns examined: ${rows.length}`);

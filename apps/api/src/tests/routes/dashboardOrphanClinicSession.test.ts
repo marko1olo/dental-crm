@@ -46,7 +46,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { eq } from "drizzle-orm";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
 import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations, users } from "../../db/schema.js";
@@ -192,7 +192,9 @@ after(async () => {
 	if (organizationId) {
 		await withFixtureTenant(organizationId, async () => {
 			await db.delete(users).where(eq(users.organizationId, organizationId));
-			await db.delete(organizations).where(eq(organizations.id, organizationId));
+			await db
+				.delete(organizations)
+				.where(eq(organizations.id, organizationId));
 		});
 	}
 	await pool.end();

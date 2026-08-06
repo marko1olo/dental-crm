@@ -91,7 +91,8 @@ export function VisitDiaryTemplateSelector({
 			const headerSource = authRef.current;
 			const res = await fetch("/api/templates", {
 				headers:
-					headerSource && typeof headerSource.denteClinicalReadHeaders === "function"
+					headerSource &&
+					typeof headerSource.denteClinicalReadHeaders === "function"
 						? headerSource.denteClinicalReadHeaders({
 								"Content-Type": "application/json",
 							})
@@ -253,10 +254,7 @@ export function VisitDiaryTemplateSelector({
 			await loadTemplates();
 		} catch (error) {
 			console.error("Failed to delete template", error);
-			showToast(
-				actionFailureToast("Протокол приёма не удалён", null),
-				"error",
-			);
+			showToast(actionFailureToast("Протокол приёма не удалён", null), "error");
 		} finally {
 			setIsDeleting(false);
 		}
@@ -400,117 +398,122 @@ export function VisitDiaryTemplateSelector({
 		!isLoading && (templates.length === 0 || loadFailed);
 	const showRestoreLink = !isLoading && templates.length > 0 && !isLocked;
 
-	const createFormEl = showCreateForm && !isLocked ? (
-		<div
-			className="flex flex-col gap-2 w-full max-w-lg p-3 rounded-xl border border-zinc-700/60 bg-zinc-900/80"
-			data-testid="diary-template-create-form"
-		>
-			<div className="flex items-center justify-between gap-2">
-				<span className="text-xs font-medium text-zinc-300">
-					Новый свой протокол приёма
-				</span>
+	const createFormEl =
+		showCreateForm && !isLocked ? (
+			<div
+				className="flex flex-col gap-2 w-full max-w-lg p-3 rounded-xl border border-zinc-700/60 bg-zinc-900/80"
+				data-testid="diary-template-create-form"
+			>
+				<div className="flex items-center justify-between gap-2">
+					<span className="text-xs font-medium text-zinc-300">
+						Новый свой протокол приёма
+					</span>
+					<button
+						type="button"
+						data-testid="diary-template-create-cancel"
+						disabled={isCreating}
+						onClick={() => resetCreateForm()}
+						className="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 disabled:opacity-50"
+						title="Закрыть форму"
+					>
+						<X className="w-3.5 h-3.5" />
+						Отмена
+					</button>
+				</div>
+				<label className="flex flex-col gap-1">
+					<span className="text-[11px] text-zinc-500">
+						Название (обязательно)
+					</span>
+					<input
+						type="text"
+						data-testid="diary-template-create-title"
+						value={createTitle}
+						onChange={(e) => setCreateTitle(e.target.value)}
+						disabled={isCreating}
+						placeholder="Например: Кариес · композит"
+						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50"
+					/>
+				</label>
+				<label className="flex flex-col gap-1">
+					<span className="text-[11px] text-zinc-500">Категория</span>
+					<input
+						type="text"
+						data-testid="diary-template-create-category"
+						value={createCategory}
+						onChange={(e) => setCreateCategory(e.target.value)}
+						disabled={isCreating}
+						placeholder="Общие"
+						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50"
+					/>
+				</label>
+				<label className="flex flex-col gap-1">
+					<span className="text-[11px] text-zinc-500">Анамнез (заготовка)</span>
+					<textarea
+						data-testid="diary-template-create-anamnesis"
+						value={createAnamnesis}
+						onChange={(e) => setCreateAnamnesis(e.target.value)}
+						disabled={isCreating}
+						rows={2}
+						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-y"
+					/>
+				</label>
+				<label className="flex flex-col gap-1">
+					<span className="text-[11px] text-zinc-500">
+						Объективно (заготовка)
+					</span>
+					<textarea
+						data-testid="diary-template-create-objective"
+						value={createObjective}
+						onChange={(e) => setCreateObjective(e.target.value)}
+						disabled={isCreating}
+						rows={2}
+						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-y"
+					/>
+				</label>
+				<label className="flex flex-col gap-1">
+					<span className="text-[11px] text-zinc-500">Лечение (заготовка)</span>
+					<textarea
+						data-testid="diary-template-create-treatment"
+						value={createTreatment}
+						onChange={(e) => setCreateTreatment(e.target.value)}
+						disabled={isCreating}
+						rows={2}
+						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-y"
+					/>
+				</label>
+				<label className="flex flex-col gap-1">
+					<span className="text-[11px] text-zinc-500">МКБ-10 по умолчанию</span>
+					<input
+						type="text"
+						data-testid="diary-template-create-icd10"
+						value={createIcd10}
+						onChange={(e) => setCreateIcd10(e.target.value)}
+						disabled={isCreating}
+						placeholder="K02.1"
+						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50"
+					/>
+				</label>
 				<button
 					type="button"
-					data-testid="diary-template-create-cancel"
-					disabled={isCreating}
-					onClick={() => resetCreateForm()}
-					className="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 disabled:opacity-50"
-					title="Закрыть форму"
+					data-testid="diary-template-create-submit"
+					disabled={isCreating || !createTitle.trim()}
+					onClick={() => void createTemplate()}
+					className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-emerald-100 bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/40 rounded-xl disabled:opacity-50 transition-colors"
 				>
-					<X className="w-3.5 h-3.5" />
-					Отмена
+					{isCreating ? (
+						<>
+							<Loader2 className="w-4 h-4 animate-spin" />
+							Сохраняю…
+						</>
+					) : (
+						<>
+							<Plus className="w-4 h-4" />
+							Сохранить протокол
+						</>
+					)}
 				</button>
 			</div>
-			<label className="flex flex-col gap-1">
-				<span className="text-[11px] text-zinc-500">Название (обязательно)</span>
-				<input
-					type="text"
-					data-testid="diary-template-create-title"
-					value={createTitle}
-					onChange={(e) => setCreateTitle(e.target.value)}
-					disabled={isCreating}
-					placeholder="Например: Кариес · композит"
-					className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50"
-				/>
-			</label>
-			<label className="flex flex-col gap-1">
-				<span className="text-[11px] text-zinc-500">Категория</span>
-				<input
-					type="text"
-					data-testid="diary-template-create-category"
-					value={createCategory}
-					onChange={(e) => setCreateCategory(e.target.value)}
-					disabled={isCreating}
-					placeholder="Общие"
-					className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50"
-				/>
-			</label>
-			<label className="flex flex-col gap-1">
-				<span className="text-[11px] text-zinc-500">Анамнез (заготовка)</span>
-				<textarea
-					data-testid="diary-template-create-anamnesis"
-					value={createAnamnesis}
-					onChange={(e) => setCreateAnamnesis(e.target.value)}
-					disabled={isCreating}
-					rows={2}
-					className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-y"
-				/>
-			</label>
-			<label className="flex flex-col gap-1">
-				<span className="text-[11px] text-zinc-500">Объективно (заготовка)</span>
-				<textarea
-					data-testid="diary-template-create-objective"
-					value={createObjective}
-					onChange={(e) => setCreateObjective(e.target.value)}
-					disabled={isCreating}
-					rows={2}
-					className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-y"
-				/>
-			</label>
-			<label className="flex flex-col gap-1">
-				<span className="text-[11px] text-zinc-500">Лечение (заготовка)</span>
-				<textarea
-					data-testid="diary-template-create-treatment"
-					value={createTreatment}
-					onChange={(e) => setCreateTreatment(e.target.value)}
-					disabled={isCreating}
-					rows={2}
-					className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-y"
-				/>
-			</label>
-			<label className="flex flex-col gap-1">
-				<span className="text-[11px] text-zinc-500">МКБ-10 по умолчанию</span>
-				<input
-					type="text"
-					data-testid="diary-template-create-icd10"
-					value={createIcd10}
-					onChange={(e) => setCreateIcd10(e.target.value)}
-					disabled={isCreating}
-					placeholder="K02.1"
-					className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50"
-				/>
-			</label>
-			<button
-				type="button"
-				data-testid="diary-template-create-submit"
-				disabled={isCreating || !createTitle.trim()}
-				onClick={() => void createTemplate()}
-				className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-emerald-100 bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/40 rounded-xl disabled:opacity-50 transition-colors"
-			>
-				{isCreating ? (
-					<>
-						<Loader2 className="w-4 h-4 animate-spin" />
-						Сохраняю…
-					</>
-				) : (
-					<>
-						<Plus className="w-4 h-4" />
-						Сохранить протокол
-					</>
-				)}
-			</button>
-		</div>
-	) : null;
+		) : null;
 
 	if (showEmptyRecovery) {
 		const isSeedFailed = loadStatus === 503;
@@ -561,7 +564,10 @@ export function VisitDiaryTemplateSelector({
 				) : null}
 				{createFormEl}
 				{seedError && !isSeedFailed && (
-					<p className="text-xs text-rose-400/90" data-testid="diary-template-seed-error">
+					<p
+						className="text-xs text-rose-400/90"
+						data-testid="diary-template-seed-error"
+					>
 						{seedError}
 					</p>
 				)}

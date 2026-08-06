@@ -71,7 +71,9 @@ export function familyTopupRequestKey(
 	amountRub: number,
 	method: string,
 ): string {
-	return ["topup", patientId, familyGroupId, amountRub, method].join(FIELD_SEPARATOR);
+	return ["topup", patientId, familyGroupId, amountRub, method].join(
+		FIELD_SEPARATOR,
+	);
 }
 
 /**

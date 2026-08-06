@@ -367,8 +367,14 @@ describe("buildRuleBasedVisitDraftFromTranscript", () => {
 });
 
 describe("documentPayloadDisallowedKeys", () => {
-  test("returns empty array for null or undefined payload", () => {
-    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", null), []);
-    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", undefined), []);
-  });
+	test("returns empty array for null or undefined payload", () => {
+		assert.deepStrictEqual(
+			documentPayloadDisallowedKeys("patient_intake_questionnaire", null),
+			[],
+		);
+		assert.deepStrictEqual(
+			documentPayloadDisallowedKeys("patient_intake_questionnaire", undefined),
+			[],
+		);
+	});
 });

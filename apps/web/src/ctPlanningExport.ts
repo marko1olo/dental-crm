@@ -437,7 +437,10 @@ export function buildCtPlanningExportPacket(input: {
 		exportFact({
 			id: "implant",
 			title: "Имплант и втулка",
-			tone: laneStatus(implantModelReady, input.hasImplantPlan || model.hasAxis),
+			tone: laneStatus(
+				implantModelReady,
+				input.hasImplantPlan || model.hasAxis,
+			),
 			value: implantValue,
 			detail: `${sleeveValue}; ось ${model.axisLengthMm === null ? "нет" : `${model.axisLengthMm} мм`}.`,
 		}),

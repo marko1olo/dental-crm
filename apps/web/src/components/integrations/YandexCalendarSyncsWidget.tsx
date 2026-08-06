@@ -176,7 +176,8 @@ function stateCopy(state: LoadState): {
 			};
 		case "missing":
 			return {
-				headline: "Раздел синхронизации с Яндекс Календарём на сервере не открыт",
+				headline:
+					"Раздел синхронизации с Яндекс Календарём на сервере не открыт",
 				detail:
 					"Адрес /api/integrations/yandex-calendar-syncs сервер не обслуживает. Подключить календарь врача из этой панели нельзя: маршрута и записи в базу из приложения нет. Повторная проверка не создаст раздел.",
 				tone: "warning",
@@ -241,15 +242,13 @@ const TONE_ICON: Record<"neutral" | "info" | "warning" | "danger", string> = {
 	danger: "text-rose-500",
 };
 
-const TONE_HEADLINE: Record<
-	"neutral" | "info" | "warning" | "danger",
-	string
-> = {
-	neutral: "text-slate-900 dark:text-white",
-	info: "text-slate-900 dark:text-white",
-	warning: "text-amber-800 dark:text-amber-300",
-	danger: "text-rose-800 dark:text-rose-300",
-};
+const TONE_HEADLINE: Record<"neutral" | "info" | "warning" | "danger", string> =
+	{
+		neutral: "text-slate-900 dark:text-white",
+		info: "text-slate-900 dark:text-white",
+		warning: "text-amber-800 dark:text-amber-300",
+		danger: "text-rose-800 dark:text-rose-300",
+	};
 
 export const YandexCalendarSyncsWidget: React.FC = () => {
 	const [state, setState] = useState<LoadState>({ kind: "loading" });
@@ -375,7 +374,9 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 									  СТАЛО: бейдж из фактического syncStatus ответа.
 									*/}
 									<span
-										className={"px-2.5 py-1 rounded font-bold " + badge.className}
+										className={
+											"px-2.5 py-1 rounded font-bold " + badge.className
+										}
 									>
 										{badge.label}
 									</span>

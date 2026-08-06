@@ -256,59 +256,212 @@ const sampleDataSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
  * опробована: иначе удалённое утверждение оставит вечную строку «этого нет».
  */
 const KNOWN_MISSING_IMAGING_SURFACES = new Map([
-	["Clinical CT MPR viewer state must export the clamped selected slice index.", "NOWHERE"],
+	[
+		"Clinical CT MPR viewer state must export the clamped selected slice index.",
+		"NOWHERE",
+	],
 	["CT OPG/canal curve metrics must reject underdrawn curves.", "NOWHERE"],
-	["CT distance and implant-axis metrics must reject single-point drafts.", "NOWHERE"],
-	["CT implant fit screening must not become ready from generic shortest/longest fallback alone.", "NOWHERE"],
-	["CT planning readiness score must apply per-artifact minimum point counts.", "NOWHERE"],
-	["CT planning active scenario summary must resolve route metadata from the exact quick-action id.", "NOWHERE"],
-	["CT planning viewer bridge launch gate must require projection/window/slab for metadata handoffs.", "NOWHERE"],
-	["CT planning viewer bridge launch gate must require volume plus metadata targets for volume restore.", "NOWHERE"],
-	["CT planning viewer bridge launch gate must produce explicit blocked/metadata/volume statuses.", "NOWHERE"],
-	["CT planning viewer bridge attributes must expose viewer restore parse validity metadata.", "NOWHERE"],
-	["CT planning viewer bridge attributes must expose runtime execution lane metadata.", "NOWHERE"],
-	["CT planning viewer bridge attributes must expose runtime source mode metadata.", "NOWHERE"],
-	["CT planning viewer bridge attributes must expose continuous hardware quality weight metadata.", "NOWHERE"],
-	["CT planning viewer bridge attributes must expose bounded slice window metadata.", "NOWHERE"],
-	["CT planning viewer bridge attributes must expose browser heavy-geometry rejection metadata.", "NOWHERE"],
-	["CT planning active scenario summary must resolve viewer preset metadata from the exact quick-action id.", "NOWHERE"],
-	["CT planning scenario handoff UI must prefer the portable packet summary and rebuild only as fallback.", "NOWHERE"],
-	["Settings audit must show the CT recovery path as metadata-only.", "NOWHERE"],
+	[
+		"CT distance and implant-axis metrics must reject single-point drafts.",
+		"NOWHERE",
+	],
+	[
+		"CT implant fit screening must not become ready from generic shortest/longest fallback alone.",
+		"NOWHERE",
+	],
+	[
+		"CT planning readiness score must apply per-artifact minimum point counts.",
+		"NOWHERE",
+	],
+	[
+		"CT planning active scenario summary must resolve route metadata from the exact quick-action id.",
+		"NOWHERE",
+	],
+	[
+		"CT planning viewer bridge launch gate must require projection/window/slab for metadata handoffs.",
+		"NOWHERE",
+	],
+	[
+		"CT planning viewer bridge launch gate must require volume plus metadata targets for volume restore.",
+		"NOWHERE",
+	],
+	[
+		"CT planning viewer bridge launch gate must produce explicit blocked/metadata/volume statuses.",
+		"NOWHERE",
+	],
+	[
+		"CT planning viewer bridge attributes must expose viewer restore parse validity metadata.",
+		"NOWHERE",
+	],
+	[
+		"CT planning viewer bridge attributes must expose runtime execution lane metadata.",
+		"NOWHERE",
+	],
+	[
+		"CT planning viewer bridge attributes must expose runtime source mode metadata.",
+		"NOWHERE",
+	],
+	[
+		"CT planning viewer bridge attributes must expose continuous hardware quality weight metadata.",
+		"NOWHERE",
+	],
+	[
+		"CT planning viewer bridge attributes must expose bounded slice window metadata.",
+		"NOWHERE",
+	],
+	[
+		"CT planning viewer bridge attributes must expose browser heavy-geometry rejection metadata.",
+		"NOWHERE",
+	],
+	[
+		"CT planning active scenario summary must resolve viewer preset metadata from the exact quick-action id.",
+		"NOWHERE",
+	],
+	[
+		"CT planning scenario handoff UI must prefer the portable packet summary and rebuild only as fallback.",
+		"NOWHERE",
+	],
+	[
+		"Settings audit must show the CT recovery path as metadata-only.",
+		"NOWHERE",
+	],
 	["Visit imaging viewer must track the active tool as real state.", "NOWHERE"],
-	["Visit CT planning must track active clinical quick-action identity separately from the shared viewer tool.", "NOWHERE"],
-	["Visit imaging viewer must track the selected implant plan as real state.", "NOWHERE"],
-	["Settings CT workbench must pass current tool-state into planning tools.", "NOWHERE"],
-	["Clinical CT MPR settings plane buttons must detect projections unavailable for the selected series.", "COMMENT"],
-	["Clinical CT MPR settings preset cards must explain projection fallback before applying a preset.", "NOWHERE"],
-	["Clinical CT MPR visit preset apply must use the same projection fallback as nearest-protocol scoring.", "NOWHERE"],
-	["Clinical CT MPR orientation step must be active, not ready, until the protocol matches.", "NOWHERE"],
-	["Clinical CT MPR visit screen must use the shared axis direction formatter.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
-	["Clinical CT MPR visit screen must not show an active axis badge before a series is ready.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
-	["Clinical CT MPR visit axis slider must use shared readable value text.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
-	["Clinical CT MPR visit slab slider must use shared readable value text.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
-	["Clinical CT MPR visit visualizer must use shared keyboard navigation.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
-	["Clinical CT MPR settings summary must announce control changes politely.", "ELSEWHERE:apps/web/src/ImagingView.tsx"],
-	["Clinical CT MPR presets must move the stack slice, not only axis/slab/window.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
-	["Clinical CT MPR must reset to safe defaults when a newly selected series has no saved view.", "NOWHERE"],
-	["Clinical CT MPR local restore must fall back from unavailable saved projections.", "NOWHERE"],
-	["Clinical CT MPR server restore must fall back from unavailable saved projections.", "NOWHERE"],
-	["Clinical CT MPR projection readiness effect must use the same availability helper as restore.", "NOWHERE"],
-	["Clinical CT MPR visit slice fraction must use the render-safe slice index.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
-	["Settings DICOM workbench result must summarize interaction phases.", "NOWHERE"],
-	["Settings DICOM workbench result must summarize progressive loading stages.", "NOWHERE"],
-	["Settings CT workstation UI must show the runtime surface label.", "NOWHERE"],
-	["Settings CT workstation UI must not render raw runtime lane ids.", "NOWHERE"],
-	["Clinical CT MPR numeric clamps must declare a neutral fallback for invalid input.", "NOWHERE"],
-	["Clinical CT MPR invalid numeric input must not jump to the minimum axis angle.", "NOWHERE"],
-	["Clinical CT MPR quick angle presets must cover full oblique axis setup.", "NOWHERE"],
-	["Clinical CT MPR settings slice nudge must start from the clamped slice index.", "ELSEWHERE:apps/web/src/ImagingView.tsx"],
-	["Clinical CT MPR settings landmark presets must compare against the clamped slice index.", "ELSEWHERE:apps/web/src/ImagingView.tsx"],
-	["Clinical CT workbench failures must use the operator-readable workflow helper.", "NOWHERE"],
-	["Clinical CT reconnect failures must use the operator-readable workflow helper.", "NOWHERE"],
-	["Clinical CT cache-plan failures must use the operator-readable workflow helper.", "NOWHERE"],
-	["Clinical first-frame preview failures must use the operator-readable workflow helper.", "NOWHERE"],
-	["Clinical DICOM launch failures must surface backend details without raw API-only copy.", "NOWHERE"],
-	["Clinical DICOM viewer-state failures must use operator-readable wording.", "NOWHERE"],
+	[
+		"Visit CT planning must track active clinical quick-action identity separately from the shared viewer tool.",
+		"NOWHERE",
+	],
+	[
+		"Visit imaging viewer must track the selected implant plan as real state.",
+		"NOWHERE",
+	],
+	[
+		"Settings CT workbench must pass current tool-state into planning tools.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR settings plane buttons must detect projections unavailable for the selected series.",
+		"COMMENT",
+	],
+	[
+		"Clinical CT MPR settings preset cards must explain projection fallback before applying a preset.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR visit preset apply must use the same projection fallback as nearest-protocol scoring.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR orientation step must be active, not ready, until the protocol matches.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR visit screen must use the shared axis direction formatter.",
+		"ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx",
+	],
+	[
+		"Clinical CT MPR visit screen must not show an active axis badge before a series is ready.",
+		"ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx",
+	],
+	[
+		"Clinical CT MPR visit axis slider must use shared readable value text.",
+		"ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx",
+	],
+	[
+		"Clinical CT MPR visit slab slider must use shared readable value text.",
+		"ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx",
+	],
+	[
+		"Clinical CT MPR visit visualizer must use shared keyboard navigation.",
+		"ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx",
+	],
+	[
+		"Clinical CT MPR settings summary must announce control changes politely.",
+		"ELSEWHERE:apps/web/src/ImagingView.tsx",
+	],
+	[
+		"Clinical CT MPR presets must move the stack slice, not only axis/slab/window.",
+		"ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx",
+	],
+	[
+		"Clinical CT MPR must reset to safe defaults when a newly selected series has no saved view.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR local restore must fall back from unavailable saved projections.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR server restore must fall back from unavailable saved projections.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR projection readiness effect must use the same availability helper as restore.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR visit slice fraction must use the render-safe slice index.",
+		"ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx",
+	],
+	[
+		"Settings DICOM workbench result must summarize interaction phases.",
+		"NOWHERE",
+	],
+	[
+		"Settings DICOM workbench result must summarize progressive loading stages.",
+		"NOWHERE",
+	],
+	[
+		"Settings CT workstation UI must show the runtime surface label.",
+		"NOWHERE",
+	],
+	[
+		"Settings CT workstation UI must not render raw runtime lane ids.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR numeric clamps must declare a neutral fallback for invalid input.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR invalid numeric input must not jump to the minimum axis angle.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR quick angle presets must cover full oblique axis setup.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT MPR settings slice nudge must start from the clamped slice index.",
+		"ELSEWHERE:apps/web/src/ImagingView.tsx",
+	],
+	[
+		"Clinical CT MPR settings landmark presets must compare against the clamped slice index.",
+		"ELSEWHERE:apps/web/src/ImagingView.tsx",
+	],
+	[
+		"Clinical CT workbench failures must use the operator-readable workflow helper.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT reconnect failures must use the operator-readable workflow helper.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT cache-plan failures must use the operator-readable workflow helper.",
+		"NOWHERE",
+	],
+	[
+		"Clinical first-frame preview failures must use the operator-readable workflow helper.",
+		"NOWHERE",
+	],
+	[
+		"Clinical DICOM launch failures must surface backend details without raw API-only copy.",
+		"NOWHERE",
+	],
+	[
+		"Clinical DICOM viewer-state failures must use operator-readable wording.",
+		"NOWHERE",
+	],
 ]);
 
 const imagingRequireOutcomes = new Map();
@@ -494,8 +647,7 @@ forbidIn(
 	'loading="lazy"',
 	"Imaging viewer primary study image must not lazy-load the active diagnostic preview.",
 );
-const sliderImageCount =
-	shadowAnalystSliderSource.split("<img").length - 1;
+const sliderImageCount = shadowAnalystSliderSource.split("<img").length - 1;
 const sliderAsyncDecodeCount =
 	shadowAnalystSliderSource.split('decoding="async"').length - 1;
 if (sliderImageCount === 0) {
@@ -507,7 +659,7 @@ if (sliderImageCount === 0) {
 }
 if (sliderAsyncDecodeCount > 0) {
 	throw new Error(
-		"Долг закрыт: у снимков просмотрщика появилось decoding=\"async\" " +
+		'Долг закрыт: у снимков просмотрщика появилось decoding="async" ' +
 			`(${sliderAsyncDecodeCount} из ${sliderImageCount}). Верните утверждение ` +
 			"«Imaging viewer primary study image must decode asynchronously» с образцом " +
 			"PRIMARY_PREVIEW_PATTERN и уберите эту запись из объявленного долга в " +
@@ -516,7 +668,7 @@ if (sliderAsyncDecodeCount > 0) {
 }
 if (PRIMARY_PREVIEW_PATTERN.test(appSource)) {
 	throw new Error(
-		"Долг закрыт: одиночный <img> главного снимка с decoding=\"async\" снова на месте. " +
+		'Долг закрыт: одиночный <img> главного снимка с decoding="async" снова на месте. ' +
 			"Верните исходное утверждение и уберите запись из объявленного долга.",
 	);
 }

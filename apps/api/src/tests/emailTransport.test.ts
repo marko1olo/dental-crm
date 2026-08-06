@@ -8,8 +8,8 @@ import {
 	formatRfc5322Date,
 	isValidEmailAddress,
 	readSmtpCredentialsFromEnv,
+	type SmtpCredentials,
 	sendEmail,
-	type SmtpCredentials
 } from "../emailTransport.js";
 
 /**
@@ -32,9 +32,12 @@ type FakeServerOptions = {
 };
 
 /** Минимальный SMTP-сервер: приветствие, EHLO, AUTH, MAIL/RCPT/DATA, QUIT. */
-function startFakeSmtpServer(
-	options: FakeServerOptions = {}
-): Promise<{ port: number; server: Server; session: CapturedSession; close: () => Promise<void> }> {
+function startFakeSmtpServer(options: FakeServerOptions = {}): Promise<{
+	port: number;
+	server: Server;
+	session: CapturedSession;
+	close: () => Promise<void>;
+}> {
 	const session: CapturedSession = { commands: [], dataLines: [] };
 	const overrides = options.overrides ?? {};
 	const authPlain = options.authPlain ?? true;
@@ -64,7 +67,9 @@ function startFakeSmtpServer(
 				}
 
 				session.commands.push(line);
-				const override = Object.entries(overrides).find(([prefix]) => line.startsWith(prefix));
+				const override = Object.entries(overrides).find(([prefix]) =>
+					line.startsWith(prefix),
+				);
 				if (override) {
 					socket.write(`${override[1]}\r\n`);
 					continue;
@@ -73,7 +78,9 @@ function startFakeSmtpServer(
 				if (line.startsWith("EHLO")) {
 					socket.write("250-fake.dente.local\r\n");
 					socket.write("250-SIZE 35882577\r\n");
-					socket.write(authPlain ? "250-AUTH PLAIN LOGIN\r\n" : "250-AUTH LOGIN\r\n");
+					socket.write(
+						authPlain ? "250-AUTH PLAIN LOGIN\r\n" : "250-AUTH LOGIN\r\n",
+					);
 					socket.write("250 8BITMIME\r\n");
 				} else if (line.startsWith("AUTH PLAIN")) {
 					socket.write("235 2.7.0 Accepted\r\n");
@@ -91,7 +98,12 @@ function startFakeSmtpServer(
 					socket.end();
 				} else {
 					// Шаги AUTH LOGIN: логин и пароль в base64.
-					socket.write(session.commands.filter((c) => c.startsWith("AUTH LOGIN")).length > 0 ? "334 UGFzc3dvcmQ6\r\n" : "250 Ok\r\n");
+					socket.write(
+						session.commands.filter((c) => c.startsWith("AUTH LOGIN")).length >
+							0
+							? "334 UGFzc3dvcmQ6\r\n"
+							: "250 Ok\r\n",
+					);
 				}
 			}
 		});
@@ -115,7 +127,7 @@ function startFakeSmtpServer(
 				close: () =>
 					new Promise<void>((done) => {
 						server.close(() => done());
-					})
+					}),
 			});
 		});
 	});
@@ -132,7 +144,7 @@ function credentialsFor(port: number): SmtpCredentials {
 		fromName: "Клиника на Ленина",
 		// Тестовый сервер без TLS — это единственное место, где открытый канал
 		// допустим. В окружении по умолчанию requireTls остаётся включённым.
-		requireTls: false
+		requireTls: false,
 	};
 }
 
@@ -143,20 +155,23 @@ test("письмо проходит полный SMTP-диалог и прини
 			credentials: credentialsFor(fake.port),
 			to: "patient@example.ru",
 			subject: "Справка для налогового вычета готова",
-			text: "Здравствуйте! Справка готова, заберите её в клинике или скачайте в портале."
+			text: "Здравствуйте! Справка готова, заберите её в клинике или скачайте в портале.",
 		});
 
 		assert.equal(result.ok, true, result.ok ? "" : result.errorMessage);
-		assert.equal(result.ok && result.providerMessageId, "2.0.0 Ok: queued as FAKE123");
+		assert.equal(
+			result.ok && result.providerMessageId,
+			"2.0.0 Ok: queued as FAKE123",
+		);
 
 		const commands = fake.session.commands;
 		assert.ok(
 			commands.some((line) => line.startsWith("EHLO")),
-			"клиент не поздоровался"
+			"клиент не поздоровался",
 		);
 		assert.ok(
 			commands.some((line) => line.startsWith("AUTH PLAIN")),
-			"клиент не авторизовался"
+			"клиент не авторизовался",
 		);
 		assert.ok(commands.includes("MAIL FROM:<clinic@example.ru>"));
 		assert.ok(commands.includes("RCPT TO:<patient@example.ru>"));
@@ -173,10 +188,14 @@ test("AUTH PLAIN передаёт логин и пароль через нуле
 			credentials: credentialsFor(fake.port),
 			to: "patient@example.ru",
 			subject: "Тема",
-			text: "Текст"
+			text: "Текст",
 		});
-		const authLine = fake.session.commands.find((line) => line.startsWith("AUTH PLAIN")) ?? "";
-		const decoded = Buffer.from(authLine.slice("AUTH PLAIN ".length), "base64").toString("utf8");
+		const authLine =
+			fake.session.commands.find((line) => line.startsWith("AUTH PLAIN")) ?? "";
+		const decoded = Buffer.from(
+			authLine.slice("AUTH PLAIN ".length),
+			"base64",
+		).toString("utf8");
 		const nul = String.fromCharCode(0);
 		assert.equal(decoded, `${nul}clinic@example.ru${nul}тест-пароль`);
 	} finally {
@@ -192,7 +211,7 @@ test("при отсутствии AUTH PLAIN клиент переходит н�
 			to: "patient@example.ru",
 			subject: "Тема",
 			text: "Текст",
-			timeoutMs: 4000
+			timeoutMs: 4000,
 		});
 		// Тестовый сервер отвечает на второй шаг 334, а не 235 — важно, что
 		// клиент выбрал именно LOGIN, а не упал на неподдержанном PLAIN.
@@ -204,30 +223,37 @@ test("при отсутствии AUTH PLAIN клиент переходит н�
 });
 
 test("отказ сервера классифицируется, а не превращается в исключение", async () => {
-	const fake = await startFakeSmtpServer({ overrides: { "RCPT TO": "550 5.1.1 Unknown recipient" } });
+	const fake = await startFakeSmtpServer({
+		overrides: { "RCPT TO": "550 5.1.1 Unknown recipient" },
+	});
 	try {
 		const result = await sendEmail({
 			credentials: credentialsFor(fake.port),
 			to: "nobody@example.ru",
 			subject: "Тема",
-			text: "Текст"
+			text: "Текст",
 		});
 		assert.equal(result.ok, false);
 		assert.equal(result.ok === false && result.errorCode, 550);
-		assert.equal(result.ok === false && result.errorClass, "recipient_rejected");
+		assert.equal(
+			result.ok === false && result.errorClass,
+			"recipient_rejected",
+		);
 	} finally {
 		await fake.close();
 	}
 });
 
 test("неверный пароль даёт класс auth, а не network", async () => {
-	const fake = await startFakeSmtpServer({ overrides: { "AUTH PLAIN": "535 5.7.8 Authentication failed" } });
+	const fake = await startFakeSmtpServer({
+		overrides: { "AUTH PLAIN": "535 5.7.8 Authentication failed" },
+	});
 	try {
 		const result = await sendEmail({
 			credentials: credentialsFor(fake.port),
 			to: "patient@example.ru",
 			subject: "Тема",
-			text: "Текст"
+			text: "Текст",
 		});
 		assert.equal(result.ok, false);
 		assert.equal(result.ok === false && result.errorClass, "auth");
@@ -243,14 +269,14 @@ test("без шифрования отправка отменяется, есл�
 			credentials: { ...credentialsFor(fake.port), requireTls: true },
 			to: "patient@example.ru",
 			subject: "Тема",
-			text: "Текст"
+			text: "Текст",
 		});
 		assert.equal(result.ok, false);
 		assert.ok(result.ok === false && result.errorMessage.includes("STARTTLS"));
 		// Диалог не должен доходить до авторизации: пароль в открытый канал не уходит.
 		assert.equal(
 			fake.session.commands.some((line) => line.startsWith("AUTH")),
-			false
+			false,
 		);
 	} finally {
 		await fake.close();
@@ -265,14 +291,15 @@ test("тело письма уходит в base64 и восстанавлива
 			credentials: credentialsFor(fake.port),
 			to: "patient@example.ru",
 			subject: "Напоминание о приёме",
-			text: body
+			text: body,
 		});
 		const lines = fake.session.dataLines;
 		const separator = lines.indexOf("");
 		const encoded = lines.slice(separator + 1).join("");
 		assert.equal(Buffer.from(encoded, "base64").toString("utf8"), body);
 
-		const subjectHeader = lines.find((line) => line.startsWith("Subject:")) ?? "";
+		const subjectHeader =
+			lines.find((line) => line.startsWith("Subject:")) ?? "";
 		assert.ok(subjectHeader.includes("=?UTF-8?B?"), "тема не закодирована");
 	} finally {
 		await fake.close();
@@ -283,18 +310,28 @@ test("кириллическая тема кодируется encoded-word", ()
 	assert.equal(encodeHeaderWord("Invoice"), "Invoice");
 	const encoded = encodeHeaderWord("Справка");
 	assert.ok(encoded.startsWith("=?UTF-8?B?"));
-	assert.equal(Buffer.from(encoded.slice("=?UTF-8?B?".length, -2), "base64").toString("utf8"), "Справка");
+	assert.equal(
+		Buffer.from(encoded.slice("=?UTF-8?B?".length, -2), "base64").toString(
+			"utf8",
+		),
+		"Справка",
+	);
 });
 
 test("дата в заголовке соответствует RFC 5322", () => {
-	const formatted = formatRfc5322Date(new Date(Date.UTC(2026, 6, 27, 12, 30, 0)));
+	const formatted = formatRfc5322Date(
+		new Date(Date.UTC(2026, 6, 27, 12, 30, 0)),
+	);
 	assert.equal(formatted.endsWith("+0000"), true);
 	assert.equal(formatted.includes("GMT"), false);
 });
 
 test("строка с точкой в начале экранируется", () => {
 	// Без этого письмо обрывается ровно на такой строке.
-	assert.equal(dotStuff("первая\n.вторая\nтретья"), "первая\r\n..вторая\r\nтретья");
+	assert.equal(
+		dotStuff("первая\n.вторая\nтретья"),
+		"первая\r\n..вторая\r\nтретья",
+	);
 });
 
 test("заголовки не принимают перевод строки", () => {
@@ -306,7 +343,7 @@ test("заголовки не принимают перевод строки", (
 		subject: "Тема\r\nX-Injected: 1",
 		text: "Текст",
 		date: new Date(Date.UTC(2026, 6, 27)),
-		messageId: "id@dente"
+		messageId: "id@dente",
 	});
 	assert.equal(message.includes("X-Injected"), false);
 	assert.equal(message.includes("Bcc:"), false);
@@ -317,7 +354,7 @@ test("адрес получателя проверяется до соедине
 		credentials: credentialsFor(1),
 		to: "не-адрес",
 		subject: "Тема",
-		text: "Текст"
+		text: "Текст",
 	});
 	assert.equal(result.ok, false);
 	assert.equal(result.ok === false && result.errorClass, "recipient_rejected");
@@ -332,7 +369,10 @@ test("проверка адреса отсекает мусор", () => {
 });
 
 test("частично заполненное окружение считается ненастроенным", () => {
-	assert.equal(readSmtpCredentialsFromEnv({ DENTE_SMTP_HOST: "smtp.example.ru" }), null);
+	assert.equal(
+		readSmtpCredentialsFromEnv({ DENTE_SMTP_HOST: "smtp.example.ru" }),
+		null,
+	);
 	assert.equal(readSmtpCredentialsFromEnv({}), null);
 
 	const full = readSmtpCredentialsFromEnv({
@@ -340,7 +380,7 @@ test("частично заполненное окружение считает�
 		DENTE_SMTP_USER: "clinic@example.ru",
 		DENTE_SMTP_PASSWORD: "секрет",
 		DENTE_SMTP_PORT: "587",
-		DENTE_SMTP_SECURE: "0"
+		DENTE_SMTP_SECURE: "0",
 	});
 	assert.notEqual(full, null);
 	assert.equal(full?.port, 587);

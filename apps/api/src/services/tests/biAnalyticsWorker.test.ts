@@ -1,10 +1,10 @@
 import assert from "node:assert";
 import test, { describe } from "node:test";
+import { db } from "../../db/client.js";
 import {
 	doctorProfitabilityRow,
 	startBiAnalyticsWorker,
 } from "../biAnalyticsWorker.js";
-import { db } from "../../db/client.js";
 
 /**
  * ПЯТЬ ПРЕЖНИХ ПРОВЕРОК ОХРАНЯЛИ ВЫДУМАННЫЕ ЧИСЛА, А НЕ РАСЧЁТ.
@@ -54,7 +54,10 @@ describe("doctorProfitabilityRow", () => {
 	});
 
 	test("материалы и комиссия не подставляются вовсе", () => {
-		const row: Record<string, unknown> = doctorProfitabilityRow("Врач", 1000) as unknown as Record<string, unknown>;
+		const row: Record<string, unknown> = doctorProfitabilityRow(
+			"Врач",
+			1000,
+		) as unknown as Record<string, unknown>;
 		assert.strictEqual(
 			row.materialCost,
 			undefined,
@@ -102,7 +105,7 @@ test("startBiAnalyticsWorker scheduling and execution", async (t) => {
 	t.mock.method(db, "select", () => {
 		dbSelectCalled++;
 		return {
-			from: () => Promise.resolve([])
+			from: () => Promise.resolve([]),
 		};
 	});
 
@@ -117,17 +120,29 @@ test("startBiAnalyticsWorker scheduling and execution", async (t) => {
 		1000 * 60 * 60,
 	);
 
-	assert.strictEqual(dbSelectCalled, 0, "Не должно быть вызовов до срабатывания таймера");
+	assert.strictEqual(
+		dbSelectCalled,
+		0,
+		"Не должно быть вызовов до срабатывания таймера",
+	);
 
 	t.mock.timers.tick(5000);
 	await Promise.resolve(); // даём микротаскам (async функциям) выполниться
 
-	assert.strictEqual(dbSelectCalled, 1, "Должен произойти один вызов через 5 секунд (setTimeout)");
+	assert.strictEqual(
+		dbSelectCalled,
+		1,
+		"Должен произойти один вызов через 5 секунд (setTimeout)",
+	);
 
 	t.mock.timers.tick(1000 * 60 * 60);
 	await Promise.resolve();
 
-	assert.strictEqual(dbSelectCalled, 2, "Должен произойти второй вызов через час (setInterval)");
+	assert.strictEqual(
+		dbSelectCalled,
+		2,
+		"Должен произойти второй вызов через час (setInterval)",
+	);
 
 	t.mock.timers.reset();
 });

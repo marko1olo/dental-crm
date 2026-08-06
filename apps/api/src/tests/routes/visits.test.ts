@@ -1,8 +1,12 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import Fastify from "fastify";
-import { registerVisitRoutes, sendVisitDraftMutationError, sendVisitOpenError } from "../../routes/visits.js";
 import { TOKEN_SECRET } from "../../routes/auth.js";
+import {
+	registerVisitRoutes,
+	sendVisitDraftMutationError,
+	sendVisitOpenError,
+} from "../../routes/visits.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 
 /**
@@ -29,7 +33,10 @@ describe("visits routes integration", () => {
 		await registerVisitRoutes(app);
 		process.env = { ...originalEnv };
 		clinicHeaders = {
-			"x-dente-clinic-token": signToken({ organizationId: ORG_ID }, TOKEN_SECRET()),
+			"x-dente-clinic-token": signToken(
+				{ organizationId: ORG_ID },
+				TOKEN_SECRET(),
+			),
 		};
 	});
 
@@ -101,7 +108,11 @@ describe("visits routes integration", () => {
 
 	test('sendVisitDraftMutationError: "Визит не найден" -> 404 visit_not_found', () => {
 		const { reply, sent } = captureReply();
-		sendVisitDraftMutationError(new Error("Визит не найден"), reply, "autosave");
+		sendVisitDraftMutationError(
+			new Error("Визит не найден"),
+			reply,
+			"autosave",
+		);
 
 		assert.strictEqual(sent.statusCode, 404);
 		assert.strictEqual(sent.body.error, "VisitNotFound");
@@ -112,7 +123,7 @@ describe("visits routes integration", () => {
 		);
 	});
 
-	test('sendVisitDraftMutationError: закрытый прием при autosave -> 409 visit_closed', () => {
+	test("sendVisitDraftMutationError: закрытый прием при autosave -> 409 visit_closed", () => {
 		const { reply, sent } = captureReply();
 		sendVisitDraftMutationError(
 			new Error("Прием уже закрыт или аннулирован"),
@@ -129,7 +140,7 @@ describe("visits routes integration", () => {
 		);
 	});
 
-	test('sendVisitDraftMutationError: закрытый прием при accept -> другое сообщение', () => {
+	test("sendVisitDraftMutationError: закрытый прием при accept -> другое сообщение", () => {
 		const { reply, sent } = captureReply();
 		sendVisitDraftMutationError(
 			new Error("Прием уже закрыт или аннулирован"),
@@ -148,7 +159,11 @@ describe("visits routes integration", () => {
 
 	test("sendVisitDraftMutationError: незнакомая ошибка -> 409 visit_draft_rejected", () => {
 		const { reply, sent } = captureReply();
-		sendVisitDraftMutationError(new Error("Some unknown error"), reply, "autosave");
+		sendVisitDraftMutationError(
+			new Error("Some unknown error"),
+			reply,
+			"autosave",
+		);
 
 		assert.strictEqual(sent.statusCode, 409);
 		assert.strictEqual(sent.body.error, "VisitDraftMutationRejected");

@@ -137,7 +137,7 @@ import {
 	serviceCatalogItems,
 	treatmentItems,
 	users,
-	visits
+	visits,
 } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
@@ -193,7 +193,7 @@ const PATIENT_NAMES = [
 	"Савельева Ольга Игоревна",
 	"Громов Илья Андреевич",
 	"Юдина Екатерина Львовна",
-	"Панфилов Роман Викторович"
+	"Панфилов Роман Викторович",
 ];
 
 /** Пациенты под список возврата: сроки с последнего приёма разные намеренно. */
@@ -232,7 +232,9 @@ function productionModeActive(): boolean {
 }
 
 function destructiveResetAuthorized(): boolean {
-	return process.env[DESTRUCTIVE_RESET_ENV_NAME] === DESTRUCTIVE_RESET_ENV_VALUE;
+	return (
+		process.env[DESTRUCTIVE_RESET_ENV_NAME] === DESTRUCTIVE_RESET_ENV_VALUE
+	);
 }
 
 /**
@@ -248,7 +250,10 @@ function destructiveResetAuthorized(): boolean {
  * «все таблицы заблокированы» с потерей всей работы. Точка сохранения
  * откатывает ровно неудавшийся оператор.
  */
-async function runInSavepoint(tx: TenantDb, run: () => Promise<void>): Promise<Error | null> {
+async function runInSavepoint(
+	tx: TenantDb,
+	run: () => Promise<void>,
+): Promise<Error | null> {
 	await tx.execute(sql`SAVEPOINT sweep_step`);
 	try {
 		await run();
@@ -295,7 +300,7 @@ async function sweepableTables(tx: TenantDb): Promise<string[]> {
 			(name) =>
 				SAFE_TABLE_NAME.test(name) &&
 				!AUDIT_JOURNAL_TABLES.has(name) &&
-				!PINNED_BY_JOURNAL_TABLES.has(name)
+				!PINNED_BY_JOURNAL_TABLES.has(name),
 		);
 }
 
@@ -307,13 +312,13 @@ async function sweepableTables(tx: TenantDb): Promise<string[]> {
  */
 async function countTenantRows(
 	tx: TenantDb,
-	tables: readonly string[]
+	tables: readonly string[],
 ): Promise<{ total: number; byTable: string[] }> {
 	let total = 0;
 	const byTable: string[] = [];
 	for (const table of tables) {
 		const counted = await tx.execute<{ found: number }>(
-			sql`SELECT count(*)::int AS found FROM ${sql.identifier(table)} WHERE organization_id = ${ORG_ID}`
+			sql`SELECT count(*)::int AS found FROM ${sql.identifier(table)} WHERE organization_id = ${ORG_ID}`,
 		);
 		const found = counted.rows[0]?.found ?? 0;
 		if (found > 0) {
@@ -343,7 +348,9 @@ async function clearTenantData(tx: TenantDb): Promise<number> {
 	const { total, byTable } = await countTenantRows(tx, tables);
 
 	if (total === 0) {
-		console.error(`Очистка: у демо-клиники ${ORG_ID} нет ни одной строки — удалять нечего.`);
+		console.error(
+			`Очистка: у демо-клиники ${ORG_ID} нет ни одной строки — удалять нечего.`,
+		);
 		return 0;
 	}
 
@@ -354,8 +361,8 @@ async function clearTenantData(tx: TenantDb): Promise<number> {
 		throw new SeedRefusedError(
 			[
 				`ОТКАЗ: NODE_ENV=production, а база содержит ${total} строк демонстрационной клиники.`,
-				"Демонстрационные данные не сеются в боевую базу ни при каких флагах."
-			].join("\n")
+				"Демонстрационные данные не сеются в боевую базу ни при каких флагах.",
+			].join("\n"),
 		);
 	}
 
@@ -364,24 +371,28 @@ async function clearTenantData(tx: TenantDb): Promise<number> {
 			[
 				`ОТКАЗ: зачистка удалила бы ${total} существующих строк демо-клиники ${ORG_ID}.`,
 				`Чтобы разрешить это осознанно, задайте ${DESTRUCTIVE_RESET_ENV_NAME}="${DESTRUCTIVE_RESET_ENV_VALUE}".`,
-				"Ничего не удалено, транзакция откачена."
-			].join("\n")
+				"Ничего не удалено, транзакция откачена.",
+			].join("\n"),
 		);
 	}
 
 	console.error(
-		`Разрешено переменной ${DESTRUCTIVE_RESET_ENV_NAME}=${DESTRUCTIVE_RESET_ENV_VALUE}. Удаляю...`
+		`Разрешено переменной ${DESTRUCTIVE_RESET_ENV_NAME}=${DESTRUCTIVE_RESET_ENV_VALUE}. Удаляю...`,
 	);
 
 	let removed = 0;
 	let remaining = tables;
 	let lastFailure: Error | null = null;
-	for (let pass = 0; pass < MAX_SWEEP_PASSES && remaining.length > 0; pass += 1) {
+	for (
+		let pass = 0;
+		pass < MAX_SWEEP_PASSES && remaining.length > 0;
+		pass += 1
+	) {
 		const blocked: string[] = [];
 		for (const table of remaining) {
 			const failure = await runInSavepoint(tx, async () => {
 				const deleted = await tx.execute(
-					sql`DELETE FROM ${sql.identifier(table)} WHERE organization_id = ${ORG_ID}`
+					sql`DELETE FROM ${sql.identifier(table)} WHERE organization_id = ${ORG_ID}`,
 				);
 				removed += deleted.rowCount ?? 0;
 			});
@@ -403,12 +414,14 @@ async function clearTenantData(tx: TenantDb): Promise<number> {
 				`ОТКАЗ: не удалось очистить таблицы ${remaining.join(", ")}.`,
 				`Последняя ошибка базы: ${lastFailure?.message ?? "(нет)"}`,
 				"Остаток не замалчивается: следующая вставка получила бы 23505 на тех же",
-				"строках, и причина выглядела бы как поломка сева. Транзакция откачена."
-			].join("\n")
+				"строках, и причина выглядела бы как поломка сева. Транзакция откачена.",
+			].join("\n"),
 		);
 	}
 
-	console.error(`Очистка завершена: удалено ${removed} строк из ${tables.length} таблиц.`);
+	console.error(
+		`Очистка завершена: удалено ${removed} строк из ${tables.length} таблиц.`,
+	);
 	return removed;
 }
 
@@ -430,7 +443,10 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 	const organization = await tx
 		.insert(organizations)
 		.values({ id: ORG_ID, name: ORG_NAME })
-		.onConflictDoUpdate({ target: organizations.id, set: { name: sql`excluded."name"` } })
+		.onConflictDoUpdate({
+			target: organizations.id,
+			set: { name: sql`excluded."name"` },
+		})
 		.returning({ id: organizations.id });
 	console.error(`Организация: ${organization.length} строк (${ORG_NAME})`);
 
@@ -441,15 +457,15 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 			organizationId: ORG_ID,
 			name: "Клиника на Ленина",
 			phone: "+7 495 120-30-40",
-			timezone: "Europe/Moscow"
+			timezone: "Europe/Moscow",
 		})
 		.onConflictDoUpdate({
 			target: clinics.id,
 			set: {
 				name: sql`excluded."name"`,
 				phone: sql`excluded."phone"`,
-				timezone: sql`excluded."timezone"`
-			}
+				timezone: sql`excluded."timezone"`,
+			},
 		})
 		.returning({ id: clinics.id });
 	console.error(`Кабинет: ${clinic.length} строк`);
@@ -457,12 +473,22 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 	const chairRows = await tx
 		.insert(chairs)
 		.values([
-			{ id: CHAIR_A, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1" },
-			{ id: CHAIR_B, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 2" }
+			{
+				id: CHAIR_A,
+				organizationId: ORG_ID,
+				clinicId: CLINIC_ID,
+				name: "Кресло 1",
+			},
+			{
+				id: CHAIR_B,
+				organizationId: ORG_ID,
+				clinicId: CLINIC_ID,
+				name: "Кресло 2",
+			},
 		])
 		.onConflictDoUpdate({
 			target: chairs.id,
-			set: { name: sql`excluded."name"`, clinicId: sql`excluded."clinic_id"` }
+			set: { name: sql`excluded."name"`, clinicId: sql`excluded."clinic_id"` },
 		})
 		.returning({ id: chairs.id });
 	console.error(`Кресла: ${chairRows.length} строк`);
@@ -470,13 +496,28 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 	const staffRows = await tx
 		.insert(users)
 		.values([
-			{ id: DOCTOR_A, organizationId: ORG_ID, fullName: "Смирнова Елена Владимировна", role: "doctor" },
-			{ id: DOCTOR_B, organizationId: ORG_ID, fullName: "Гаврилов Никита Сергеевич", role: "doctor" },
-			{ id: ADMIN_USER, organizationId: ORG_ID, fullName: "Администратор клиники", role: "administrator" }
+			{
+				id: DOCTOR_A,
+				organizationId: ORG_ID,
+				fullName: "Смирнова Елена Владимировна",
+				role: "doctor",
+			},
+			{
+				id: DOCTOR_B,
+				organizationId: ORG_ID,
+				fullName: "Гаврилов Никита Сергеевич",
+				role: "doctor",
+			},
+			{
+				id: ADMIN_USER,
+				organizationId: ORG_ID,
+				fullName: "Администратор клиники",
+				role: "administrator",
+			},
 		])
 		.onConflictDoUpdate({
 			target: users.id,
-			set: { fullName: sql`excluded."full_name"`, role: sql`excluded."role"` }
+			set: { fullName: sql`excluded."full_name"`, role: sql`excluded."role"` },
 		})
 		.returning({ id: users.id });
 	console.error(`Сотрудники: ${staffRows.length} строк`);
@@ -498,7 +539,7 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 				fullName: "орлова  марина петровна",
 				birthDate: "1970-01-10",
 				phone: "+7 916 200-10-20",
-				email: null
+				email: null,
 			},
 			{
 				id: DUPLICATE_KIN,
@@ -506,7 +547,7 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 				fullName: "Орлов Кирилл Сергеевич",
 				birthDate: null,
 				phone: "+7 916 200-10-20",
-				email: null
+				email: null,
 			},
 			/*
 			 * Пациенты, которых пора звать обратно. Нужны, чтобы список возврата было
@@ -520,7 +561,7 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 				fullName: "Зорина Татьяна Львовна",
 				birthDate: "1985-03-14",
 				phone: "+7 916 300-10-31",
-				email: "zorina@example.ru"
+				email: "zorina@example.ru",
 			},
 			{
 				id: RECALL_OVERDUE,
@@ -528,7 +569,7 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 				fullName: "Лапин Егор Дмитриевич",
 				birthDate: "1978-11-02",
 				phone: "+7 916 300-10-32",
-				email: null
+				email: null,
 			},
 			{
 				id: RECALL_LOST,
@@ -536,7 +577,7 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 				fullName: "Ветрова Ирина Павловна",
 				birthDate: "1966-07-21",
 				phone: "+7 916 300-10-33",
-				email: null
+				email: null,
 			},
 			{
 				id: RECALL_NEVER,
@@ -544,7 +585,7 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 				fullName: "Сомов Артур Вадимович",
 				birthDate: "1992-05-05",
 				phone: "+7 916 300-10-34",
-				email: null
+				email: null,
 			},
 			...PATIENT_NAMES.map((fullName, index) => ({
 				id: patientId(index),
@@ -557,8 +598,8 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 						? null
 						: `+7 916 ${String(200 + index).padStart(3, "0")}-10-${String(20 + index).padStart(2, "0")}`,
 				email: index % 3 === 0 ? `patient${index}@example.ru` : null,
-				birthDate: `19${70 + index}-0${(index % 9) + 1}-1${index % 9}`
-			}))
+				birthDate: `19${70 + index}-0${(index % 9) + 1}-1${index % 9}`,
+			})),
 		])
 		.onConflictDoUpdate({
 			target: patients.id,
@@ -566,8 +607,8 @@ async function upsertTenantIdentity(tx: TenantDb): Promise<void> {
 				fullName: sql`excluded."full_name"`,
 				birthDate: sql`excluded."birth_date"`,
 				phone: sql`excluded."phone"`,
-				email: sql`excluded."email"`
-			}
+				email: sql`excluded."email"`,
+			},
 		})
 		.returning({ id: patients.id });
 	console.error(`Пациенты: ${patientRows.length} строк`);
@@ -602,7 +643,7 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				chairId: CHAIR_A,
 				status: "completed" as const,
 				startsAt: monthsAgo(8),
-				endsAt: new Date(monthsAgo(8).getTime() + 60 * 60_000)
+				endsAt: new Date(monthsAgo(8).getTime() + 60 * 60_000),
 			},
 			// Четырнадцать месяцев — пропущен осмотр.
 			{
@@ -613,7 +654,7 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				chairId: CHAIR_B,
 				status: "completed" as const,
 				startsAt: monthsAgo(14),
-				endsAt: new Date(monthsAgo(14).getTime() + 60 * 60_000)
+				endsAt: new Date(monthsAgo(14).getTime() + 60 * 60_000),
 			},
 			// Тридцать месяцев — скорее всего лечится в другом месте.
 			{
@@ -624,7 +665,7 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				chairId: CHAIR_A,
 				status: "completed" as const,
 				startsAt: monthsAgo(30),
-				endsAt: new Date(monthsAgo(30).getTime() + 60 * 60_000)
+				endsAt: new Date(monthsAgo(30).getTime() + 60 * 60_000),
 			},
 			// Записывался дважды и оба раза не пришёл: завершённых приёмов нет вовсе.
 			{
@@ -635,7 +676,7 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				chairId: CHAIR_B,
 				status: "no_show" as const,
 				startsAt: monthsAgo(3),
-				endsAt: new Date(monthsAgo(3).getTime() + 60 * 60_000)
+				endsAt: new Date(monthsAgo(3).getTime() + 60 * 60_000),
 			},
 			{
 				id: "d0000000-0000-4000-8000-0000000009c5",
@@ -645,8 +686,8 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				chairId: CHAIR_B,
 				status: "cancelled" as const,
 				startsAt: monthsAgo(2),
-				endsAt: new Date(monthsAgo(2).getTime() + 60 * 60_000)
-			}
+				endsAt: new Date(monthsAgo(2).getTime() + 60 * 60_000),
+			},
 		])
 		.returning({ id: appointments.id });
 
@@ -659,7 +700,7 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 		"confirmed",
 		"planned",
 		"cancelled",
-		"planned"
+		"planned",
 	] as const;
 	const tomorrowAppointments = await tx
 		.insert(appointments)
@@ -672,8 +713,10 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				chairId: index % 2 === 0 ? CHAIR_A : CHAIR_B,
 				status: statuses[index] ?? "planned",
 				startsAt: new Date(tomorrow.getTime() + index * 45 * 60_000),
-				endsAt: new Date(tomorrow.getTime() + index * 45 * 60_000 + 40 * 60_000)
-			}))
+				endsAt: new Date(
+					tomorrow.getTime() + index * 45 * 60_000 + 40 * 60_000,
+				),
+			})),
 		)
 		.returning({ id: appointments.id });
 
@@ -685,17 +728,23 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 		patientId: patientId(index % PATIENT_NAMES.length),
 		doctorUserId: index % 3 === 0 ? DOCTOR_B : DOCTOR_A,
 		chairId: index % 2 === 0 ? CHAIR_A : CHAIR_B,
-		status: (index % 7 === 0 ? "no_show" : index % 5 === 0 ? "cancelled" : "completed") as
-			| "no_show"
-			| "cancelled"
-			| "completed",
+		status: (index % 7 === 0
+			? "no_show"
+			: index % 5 === 0
+				? "cancelled"
+				: "completed") as "no_show" | "cancelled" | "completed",
 		startsAt: new Date(pastBase.getTime() + index * 26 * 60 * 60_000),
-		endsAt: new Date(pastBase.getTime() + index * 26 * 60 * 60_000 + 60 * 60_000)
+		endsAt: new Date(
+			pastBase.getTime() + index * 26 * 60 * 60_000 + 60 * 60_000,
+		),
 	}));
-	const pastRows = await tx.insert(appointments).values(pastAppointments).returning({ id: appointments.id });
+	const pastRows = await tx
+		.insert(appointments)
+		.values(pastAppointments)
+		.returning({ id: appointments.id });
 	console.error(
 		`Приёмы: ${recallAppointments.length + tomorrowAppointments.length + pastRows.length} строк ` +
-			`(возврат ${recallAppointments.length}, завтра ${tomorrowAppointments.length}, прошедшие ${pastRows.length})`
+			`(возврат ${recallAppointments.length}, завтра ${tomorrowAppointments.length}, прошедшие ${pastRows.length})`,
 	);
 
 	/*
@@ -709,11 +758,46 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 	 * нужен материал, на котором копейка видна.
 	 */
 	const catalog = [
-		{ code: "T01", title: "Лечение кариеса", category: "therapy" as const, specialty: "therapist" as const, price: 7200.5, minutes: 60 },
-		{ code: "H01", title: "Профессиональная гигиена", category: "hygiene" as const, specialty: "hygienist" as const, price: 5400, minutes: 45 },
-		{ code: "T02", title: "Лечение пульпита", category: "therapy" as const, specialty: "therapist" as const, price: 14800.99, minutes: 90 },
-		{ code: "P01", title: "Установка коронки", category: "prosthetics" as const, specialty: "orthopedist" as const, price: 26500, minutes: 60 },
-		{ code: "C01", title: "Консультация", category: "consultation" as const, specialty: "universal" as const, price: 1500.5, minutes: 30 }
+		{
+			code: "T01",
+			title: "Лечение кариеса",
+			category: "therapy" as const,
+			specialty: "therapist" as const,
+			price: 7200.5,
+			minutes: 60,
+		},
+		{
+			code: "H01",
+			title: "Профессиональная гигиена",
+			category: "hygiene" as const,
+			specialty: "hygienist" as const,
+			price: 5400,
+			minutes: 45,
+		},
+		{
+			code: "T02",
+			title: "Лечение пульпита",
+			category: "therapy" as const,
+			specialty: "therapist" as const,
+			price: 14800.99,
+			minutes: 90,
+		},
+		{
+			code: "P01",
+			title: "Установка коронки",
+			category: "prosthetics" as const,
+			specialty: "orthopedist" as const,
+			price: 26500,
+			minutes: 60,
+		},
+		{
+			code: "C01",
+			title: "Консультация",
+			category: "consultation" as const,
+			specialty: "universal" as const,
+			price: 1500.5,
+			minutes: 30,
+		},
 	];
 	const catalogIds = new Map<string, string>();
 	/*
@@ -751,7 +835,7 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				basePriceRub: service.price,
 				priceRub: service.price,
 				durationMinutes: service.minutes,
-				taxDeductible: true
+				taxDeductible: true,
 			})
 			.returning({ id: serviceCatalogItems.id });
 		catalogRows += inserted.length;
@@ -759,7 +843,9 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 	console.error(`Прайс: ${catalogRows} строк`);
 
 	// Визиты, позиции лечения и платежи — чтобы в отчётах были деньги и долг.
-	const completed = pastAppointments.filter((appointment) => appointment.status === "completed");
+	const completed = pastAppointments.filter(
+		(appointment) => appointment.status === "completed",
+	);
 	let visitRows = 0;
 	let itemRows = 0;
 	let paymentRows = 0;
@@ -773,14 +859,18 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				patientId: appointment.patientId,
 				appointmentId: appointment.id,
 				status: "signed",
-				createdAt: appointment.startsAt
+				createdAt: appointment.startsAt,
 			})
 			.returning({ id: visits.id });
 		visitRows += visitInserted.length;
 
 		const itemTitle =
-			["Лечение кариеса", "Профессиональная гигиена", "Лечение пульпита", "Установка коронки"][index % 4] ??
-			"Приём";
+			[
+				"Лечение кариеса",
+				"Профессиональная гигиена",
+				"Лечение пульпита",
+				"Установка коронки",
+			][index % 4] ?? "Приём";
 		/*
 		 * Позиции без цены в прайсе быть не может: `itemTitle` берётся из того же
 		 * списка заголовков, что и прайс. Если списки разойдутся, посев обязан
@@ -792,7 +882,7 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 			throw new SeedRefusedError(
 				`Посев демо-данных остановлен: позиции «${itemTitle}» нет в прайсе этой же сеялки. ` +
 					"Список заголовков позиций и список прайса разошлись — добавьте услугу в прайс, " +
-					"иначе позиция получит цену, не совпадающую с прайсом, и копейки в демо снова исчезнут."
+					"иначе позиция получит цену, не совпадающую с прайсом, и копейки в демо снова исчезнут.",
 			);
 		}
 		const itemInserted = await tx
@@ -810,7 +900,7 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				priceRub: itemPriceRub,
 				unitPriceRub: itemPriceRub,
 				discountRub: index % 5 === 0 ? 800 : 0,
-				status: "completed"
+				status: "completed",
 			})
 			.returning({ id: treatmentItems.id });
 		itemRows += itemInserted.length;
@@ -825,13 +915,15 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 					visitId,
 					amountRub: itemPriceRub,
 					status: "paid",
-					paidAt: appointment.startsAt
+					paidAt: appointment.startsAt,
 				})
 				.returning({ id: payments.id });
 			paymentRows += paymentInserted.length;
 		}
 	}
-	console.error(`Приёмы врача: ${visitRows} строк, позиции лечения: ${itemRows}, платежи: ${paymentRows}`);
+	console.error(
+		`Приёмы врача: ${visitRows} строк, позиции лечения: ${itemRows}, платежи: ${paymentRows}`,
+	);
 
 	// Шаблоны и очередь сообщений — под пульт отправки.
 	const templateRows = await tx
@@ -844,8 +936,14 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				intent: "appointment_confirmation",
 				audienceRole: "administrator",
 				body: "{patient}, напоминаем: приём {date} в {time}, {clinic}. Подтвердить: {confirmLink}",
-				variablesJson: JSON.stringify(["patient", "date", "time", "clinic", "confirmLink"]),
-				isActive: true
+				variablesJson: JSON.stringify([
+					"patient",
+					"date",
+					"time",
+					"clinic",
+					"confirmLink",
+				]),
+				isActive: true,
 			},
 			{
 				organizationId: ORG_ID,
@@ -855,7 +953,7 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				audienceRole: "administrator",
 				body: "{patient}, приглашаем на профилактический осмотр. {clinic}",
 				variablesJson: JSON.stringify(["patient", "clinic"]),
-				isActive: true
+				isActive: true,
 			},
 			{
 				organizationId: ORG_ID,
@@ -865,8 +963,8 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				audienceRole: "administrator",
 				body: "{patient}, справка готова. Заберите её в клинике или скачайте в портале: {link}",
 				variablesJson: JSON.stringify(["patient", "link"]),
-				isActive: false
-			}
+				isActive: false,
+			},
 		])
 		.returning({ id: communicationTemplates.id });
 	/*
@@ -878,22 +976,34 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 	const reminderTemplateId = templateRows[0]?.id;
 	if (reminderTemplateId === undefined) {
 		throw new SeedRefusedError(
-			"Посев остановлен: вставка шаблонов сообщений вернула 0 строк, привязать очередь не к чему."
+			"Посев остановлен: вставка шаблонов сообщений вернула 0 строк, привязать очередь не к чему.",
 		);
 	}
 	console.error(`Шаблоны сообщений: ${templateRows.length} строк`);
 
 	const outboxStates = [
-		{ status: "delivered" as const, error: null, detail: "SMS.RU 103: Доставлено" },
+		{
+			status: "delivered" as const,
+			error: null,
+			detail: "SMS.RU 103: Доставлено",
+		},
 		{ status: "sent" as const, error: null, detail: null },
-		{ status: "failed" as const, error: "Не доставлено: истёк срок жизни сообщения", detail: "SMS.RU 104" },
+		{
+			status: "failed" as const,
+			error: "Не доставлено: истёк срок жизни сообщения",
+			detail: "SMS.RU 104",
+		},
 		{ status: "queued" as const, error: null, detail: null },
 		{
 			status: "suppressed" as const,
 			error: "SMS-шлюз не настроен: нет ключей доступа в окружении сервера.",
-			detail: null
+			detail: null,
 		},
-		{ status: "delivered" as const, error: null, detail: "SMS.RU 110: Прочитано" }
+		{
+			status: "delivered" as const,
+			error: null,
+			detail: "SMS.RU 110: Прочитано",
+		},
 	];
 	const outboxRows = await tx
 		.insert(communicationOutbox)
@@ -904,19 +1014,26 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 				templateId: reminderTemplateId,
 				channel: (index % 3 === 2 ? "email" : "sms") as "sms" | "email",
 				intent: "appointment_confirmation" as const,
-				recipientAddress: index % 3 === 2 ? `patient${index}@example.ru` : `7916${String(200 + index)}1020`,
+				recipientAddress:
+					index % 3 === 2
+						? `patient${index}@example.ru`
+						: `7916${String(200 + index)}1020`,
 				body: `${PATIENT_NAMES[index]?.split(" ")[1] ?? "Пациент"}, напоминаем: приём завтра в ${9 + index}:00, Клиника на Ленина.`,
 				status: state.status,
-				attempts: state.status === "failed" ? 3 : state.status === "queued" ? 0 : 1,
+				attempts:
+					state.status === "failed" ? 3 : state.status === "queued" ? 0 : 1,
 				sentAt:
 					state.status === "delivered" || state.status === "sent"
 						? new Date(now.getTime() - index * 3_600_000)
 						: null,
-				deliveredAt: state.status === "delivered" ? new Date(now.getTime() - index * 3_500_000) : null,
+				deliveredAt:
+					state.status === "delivered"
+						? new Date(now.getTime() - index * 3_500_000)
+						: null,
 				lastErrorMessage: state.error,
 				receiptDetail: state.detail,
-				dedupeKey: `reminder:${appointmentId(index)}:24`
-			}))
+				dedupeKey: `reminder:${appointmentId(index)}:24`,
+			})),
 		)
 		.returning({ id: communicationOutbox.id });
 	console.error(`Очередь сообщений: ${outboxRows.length} строк`);
@@ -931,18 +1048,26 @@ async function seedOperationalData(tx: TenantDb): Promise<void> {
 			channel: "sms",
 			scope: "marketing",
 			status: "running",
-			audienceJson: JSON.stringify({ status: "active", hasFutureAppointment: false }),
+			audienceJson: JSON.stringify({
+				status: "active",
+				hasFutureAppointment: false,
+			}),
 			audienceSnapshotJson: JSON.stringify({
 				takenAt: now.toISOString(),
 				criteria: ["активные пациенты", "нет будущей записи"],
 				matched: 6,
 				deliverable: 2,
-				excluded: { no_contact: 1, no_consent: 3, excluded_by_criteria: 0, status_mismatch: 0 },
+				excluded: {
+					no_contact: 1,
+					no_consent: 3,
+					excluded_by_criteria: 0,
+					status_mismatch: 0,
+				},
 				queued: 2,
 				alreadyQueued: 0,
-				skipped: 0
+				skipped: 0,
 			}),
-			launchedAt: new Date(now.getTime() - 2 * 3_600_000)
+			launchedAt: new Date(now.getTime() - 2 * 3_600_000),
 		})
 		.returning({ id: communicationCampaigns.id });
 	console.error(`Рассылки: ${campaignRows.length} строк`);
@@ -954,7 +1079,7 @@ async function clean(): Promise<void> {
 	console.error(`Данные демо-клиники вычищены: ${removed} строк.`);
 	console.error(
 		"Организация, её сотрудники и карточки пациентов оставлены намеренно: журнал аудита " +
-			"закрепляет их ссылками NO ACTION, и удаление отвечает 23503 (миграция 0161)."
+			"закрепляет их ссылками NO ACTION, и удаление отвечает 23503 (миграция 0161).",
 	);
 }
 
@@ -965,15 +1090,26 @@ async function seed(): Promise<void> {
 		await seedOperationalData(tx);
 	});
 
-	const clinicToken = signToken({ organizationId: ORG_ID, clinicName: ORG_NAME }, authTokenSecret(), 3600);
-	const staffToken = signToken(
-		{ userId: ADMIN_USER, fullName: "Администратор клиники", role: "administrator", organizationId: ORG_ID },
+	const clinicToken = signToken(
+		{ organizationId: ORG_ID, clinicName: ORG_NAME },
 		authTokenSecret(),
-		3600
+		3600,
+	);
+	const staffToken = signToken(
+		{
+			userId: ADMIN_USER,
+			fullName: "Администратор клиники",
+			role: "administrator",
+			organizationId: ORG_ID,
+		},
+		authTokenSecret(),
+		3600,
 	);
 
 	// Единственная строка в stdout: её перенаправляют в .ops-shot-tokens.json.
-	console.log(JSON.stringify({ organizationId: ORG_ID, clinicToken, staffToken }));
+	console.log(
+		JSON.stringify({ organizationId: ORG_ID, clinicToken, staffToken }),
+	);
 }
 
 const shouldClean = process.argv.includes("--clean");

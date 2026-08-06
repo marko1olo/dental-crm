@@ -24,7 +24,11 @@ export function WorkspaceContinuityStrip({
 	pendingSpeechChunkCount,
 	pendingVisitSaveCount,
 }: WorkspaceContinuityStripProps) {
-	const visible = !isOnline || pendingVisitSaveCount > 0 || pendingSpeechChunkCount > 0 || browserContinuityCritical;
+	const visible =
+		!isOnline ||
+		pendingVisitSaveCount > 0 ||
+		pendingSpeechChunkCount > 0 ||
+		browserContinuityCritical;
 	if (!visible) return null;
 
 	const title = !isOnline
@@ -66,7 +70,9 @@ export function WorkspaceContinuityStrip({
 						type="button"
 						onClick={onFlushVisit}
 						disabled={!isOnline || isPendingVisitSyncing}
-						aria-describedby={!isOnline ? workspaceContinuityOfflineGuidanceId : undefined}
+						aria-describedby={
+							!isOnline ? workspaceContinuityOfflineGuidanceId : undefined
+						}
 					>
 						{isPendingVisitSyncing ? "Отправляю приемы" : "Отправить приемы"}
 					</button>
@@ -77,7 +83,9 @@ export function WorkspaceContinuityStrip({
 						type="button"
 						onClick={onFlushSpeech}
 						disabled={!isOnline}
-						aria-describedby={!isOnline ? workspaceContinuityOfflineGuidanceId : undefined}
+						aria-describedby={
+							!isOnline ? workspaceContinuityOfflineGuidanceId : undefined
+						}
 					>
 						Отправить аудио
 					</button>

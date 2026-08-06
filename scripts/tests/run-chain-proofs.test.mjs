@@ -27,8 +27,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { declaresViolationsIn } from "../run-chain-proofs.mjs";
 
@@ -36,19 +36,47 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const runnerPath = path.join(here, "..", "run-chain-proofs.mjs");
 
 test("ноль нарушений — это чисто, а не нарушение", () => {
-	assert.equal(declaresViolationsIn("НАРУШЕНИЙ: 0"), false, "«НАРУШЕНИЙ: 0» прочитано как нарушение");
-	assert.equal(declaresViolationsIn("итог\nНАРУШЕНИЙ: 0\nконец"), false, "то же в середине вывода");
+	assert.equal(
+		declaresViolationsIn("НАРУШЕНИЙ: 0"),
+		false,
+		"«НАРУШЕНИЙ: 0» прочитано как нарушение",
+	);
+	assert.equal(
+		declaresViolationsIn("итог\nНАРУШЕНИЙ: 0\nконец"),
+		false,
+		"то же в середине вывода",
+	);
 	assert.equal(declaresViolationsIn("НАРУШЕНИЙ:0"), false, "то же без пробела");
-	assert.equal(declaresViolationsIn("НАРУШЕНИЙ НЕ НАЙДЕНО"), false, "словесная форма без цифры");
-	assert.equal(declaresViolationsIn("ВСЕ СВЕРКИ СОШЛИСЬ"), false, "обычный успешный итог");
+	assert.equal(
+		declaresViolationsIn("НАРУШЕНИЙ НЕ НАЙДЕНО"),
+		false,
+		"словесная форма без цифры",
+	);
+	assert.equal(
+		declaresViolationsIn("ВСЕ СВЕРКИ СОШЛИСЬ"),
+		false,
+		"обычный успешный итог",
+	);
 });
 
 test("нарушение больше нуля опознаётся при любом числе разрядов", () => {
 	assert.equal(declaresViolationsIn("НАРУШЕНИЙ: 1"), true);
-	assert.equal(declaresViolationsIn("НАРУШЕНИЙ: 4"), true, "именно так была найдена межклиничная утечка");
-	assert.equal(declaresViolationsIn("НАРУШЕНИЙ: 12"), true, "двузначное: шаблон не должен смотреть только на первую цифру");
+	assert.equal(
+		declaresViolationsIn("НАРУШЕНИЙ: 4"),
+		true,
+		"именно так была найдена межклиничная утечка",
+	);
+	assert.equal(
+		declaresViolationsIn("НАРУШЕНИЙ: 12"),
+		true,
+		"двузначное: шаблон не должен смотреть только на первую цифру",
+	);
 	assert.equal(declaresViolationsIn("НАРУШЕНИЙ: 100"), true);
-	assert.equal(declaresViolationsIn("НАРУШЕНИЙ:   7"), true, "пробелы после двоеточия");
+	assert.equal(
+		declaresViolationsIn("НАРУШЕНИЙ:   7"),
+		true,
+		"пробелы после двоеточия",
+	);
 });
 
 test("ноль в одном месте не заглушает нарушение в другом", () => {
@@ -65,9 +93,20 @@ test("ноль в одном месте не заглушает нарушени
 });
 
 test("маркер утечки — нарушение сам по себе, без счётчика", () => {
-	assert.equal(declaresViolationsIn("[УТЕЧКА] чужой пациент в расписании"), true);
-	assert.equal(declaresViolationsIn("НАРУШЕНИЙ: 0\n[УТЕЧКА] и всё же утечка"), true, "счётчик ноль не отменяет маркер");
-	assert.equal(declaresViolationsIn("слово утечка в прозе, без скобок"), false, "прозаическое упоминание не маркер");
+	assert.equal(
+		declaresViolationsIn("[УТЕЧКА] чужой пациент в расписании"),
+		true,
+	);
+	assert.equal(
+		declaresViolationsIn("НАРУШЕНИЙ: 0\n[УТЕЧКА] и всё же утечка"),
+		true,
+		"счётчик ноль не отменяет маркер",
+	);
+	assert.equal(
+		declaresViolationsIn("слово утечка в прозе, без скобок"),
+		false,
+		"прозаическое упоминание не маркер",
+	);
 });
 
 test("прозаические расхождения прогон не валят", () => {
@@ -75,10 +114,16 @@ test("прозаические расхождения прогон не валя
 	// Страж, кричащий на верном коде, будет выключен: в этом дереве так уже
 	// случилось трижды.
 	assert.equal(
-		declaresViolationsIn("РАСХОЖДЕНИЕ ФОРМУЛ ДОЛГА: 53000 − 3100.5 = 49899.5, долг главного экрана = 49899.5"),
+		declaresViolationsIn(
+			"РАСХОЖДЕНИЕ ФОРМУЛ ДОЛГА: 53000 − 3100.5 = 49899.5, долг главного экрана = 49899.5",
+		),
 		false,
 	);
-	assert.equal(declaresViolationsIn("РАЗРЫВ ШВА «счёт → сумма счёта»"), false, "разрыв шва — это карта, а не гейт");
+	assert.equal(
+		declaresViolationsIn("РАЗРЫВ ШВА «счёт → сумма счёта»"),
+		false,
+		"разрыв шва — это карта, а не гейт",
+	);
 });
 
 test("в опознавателе нарушений нет невидимых управляющих символов", () => {
@@ -91,11 +136,15 @@ test("в опознавателе нарушений нет невидимых �
 			const code = character.codePointAt(0);
 			// Табуляция допустима как отступ; всё остальное ниже пробела — нет.
 			if (code < 0x20 && character !== "\t") {
-				offenders.push(`строка ${index + 1}, позиция ${column + 1}: U+${code.toString(16).padStart(4, "0")}`);
+				offenders.push(
+					`строка ${index + 1}, позиция ${column + 1}: U+${code.toString(16).padStart(4, "0")}`,
+				);
 			}
 			// U+00A0 и U+200B тоже невидимы и тоже ломают шаблоны и отступы.
 			if (code === 0x00a0 || code === 0x200b || code === 0xfeff) {
-				offenders.push(`строка ${index + 1}, позиция ${column + 1}: U+${code.toString(16).padStart(4, "0")}`);
+				offenders.push(
+					`строка ${index + 1}, позиция ${column + 1}: U+${code.toString(16).padStart(4, "0")}`,
+				);
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-import { execSync, execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { readFileSync } from "fs";
 
 const TOKEN = readFileSync(

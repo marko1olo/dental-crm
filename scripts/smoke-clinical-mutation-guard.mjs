@@ -160,13 +160,15 @@ const unauthenticatedByDesign = [
 		methods: ["POST"],
 		routePath: "/api/auth/setup/init",
 		expectedStatusCodes: [400],
-		reason: "первичная настройка: создаёт первую организацию, когда токенов ещё нет, лимит 10/мин",
+		reason:
+			"первичная настройка: создаёт первую организацию, когда токенов ещё нет, лимит 10/мин",
 	},
 	{
 		methods: ["POST"],
 		routePath: "/api/auth/invites/accept",
 		expectedStatusCodes: [400],
-		reason: "принятие приглашения: код приглашения в теле и есть учётные данные, лимит 10/мин",
+		reason:
+			"принятие приглашения: код приглашения в теле и есть учётные данные, лимит 10/мин",
 	},
 	{
 		methods: ["GET", "HEAD"],
@@ -187,7 +189,8 @@ const unauthenticatedByDesign = [
 		methods: ["POST"],
 		routePath: "/api/portal/auth/send-otp",
 		expectedStatusCodes: [400],
-		reason: "пациент запрашивает код входа в портал по номеру телефона, лимит 30/мин",
+		reason:
+			"пациент запрашивает код входа в портал по номеру телефона, лимит 30/мин",
 	},
 	{
 		methods: ["POST"],
@@ -220,7 +223,8 @@ const unauthenticatedByDesign = [
 		methods: ["POST"],
 		routePath: "/api/public/booking/:organizationId/book",
 		expectedStatusCodes: [400],
-		reason: "виджет публичной записи: сама запись пациента с сайта клиники, лимит 30/мин",
+		reason:
+			"виджет публичной записи: сама запись пациента с сайта клиники, лимит 30/мин",
 	},
 	{
 		methods: ["GET", "HEAD"],
@@ -297,7 +301,7 @@ const injectionLimitations = [
 		verdictImpact:
 			"оба метода адреса не опрашиваются вовсе; они перечислены в notProbeable и в skippedRoutes",
 		closingCommand:
-			'живой WS-клиент против запущенного сервера: node -e "const ws=new (require(\'ws\'))(process.env.DENTE_WS_URL);ws.on(\'close\',(c)=>console.log(\'close\',c));ws.on(\'message\',(m)=>console.log(String(m)))"',
+			"живой WS-клиент против запущенного сервера: node -e \"const ws=new (require('ws'))(process.env.DENTE_WS_URL);ws.on('close',(c)=>console.log('close',c));ws.on('message',(m)=>console.log(String(m)))\"",
 	},
 	{
 		subject: "процесс не слушает сетевой порт",
@@ -558,9 +562,7 @@ for (const key of exceptions.keys()) {
 }
 for (const key of probePayloads.keys()) {
 	if (!routeTableKeys.has(key)) {
-		failures.push(
-			`ЗОНДОВОЕ ТЕЛО ОПИСАНО ДЛЯ НЕСУЩЕСТВУЮЩЕГО МАРШРУТА: ${key}`,
-		);
+		failures.push(`ЗОНДОВОЕ ТЕЛО ОПИСАНО ДЛЯ НЕСУЩЕСТВУЮЩЕГО МАРШРУТА: ${key}`);
 	}
 }
 
@@ -620,7 +622,8 @@ const clinicalMutationRoute = probeResults.find(
 );
 const clinicalReadRoute = probeResults.find(
 	(result) =>
-		result.method === "GET" && result.errorCode === "ClinicalReadSecretRequired",
+		result.method === "GET" &&
+		result.errorCode === "ClinicalReadSecretRequired",
 );
 // Маршрут с РУКОПИСНОЙ проверкой токена: его ответ не зависит ни от секретов
 // домена, ни от послаблений, поэтому именно на нём проверяется запрет

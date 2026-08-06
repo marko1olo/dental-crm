@@ -191,7 +191,10 @@ const KNOWN_MISSING_SETTINGS_SURFACES = new Map([
 		"NOWHERE",
 	],
 	["SettingsView must not render raw integration input formats.", "COMMENT"],
-	["SettingsView speech heading must use operator-readable wording.", "COMMENT"],
+	[
+		"SettingsView speech heading must use operator-readable wording.",
+		"COMMENT",
+	],
 	["SettingsView speech setup state must not expose key jargon.", "COMMENT"],
 	[
 		"SettingsView speech gateway status must use source wording instead of key jargon.",
@@ -205,41 +208,83 @@ const KNOWN_MISSING_SETTINGS_SURFACES = new Map([
 		"SettingsView local speech runtime must explain local mode without cloud-key jargon.",
 		"COMMENT",
 	],
-	["SettingsView speech health must not call provider slots raw keys.", "COMMENT"],
+	[
+		"SettingsView speech health must not call provider slots raw keys.",
+		"COMMENT",
+	],
 	[
 		"SettingsView speech providers must summarize server settings instead of listing env var names.",
 		"COMMENT",
 	],
-	["SettingsView pricelist AI status must use operator-readable wording.", "COMMENT"],
-	["App CT MPR viewer state must export the clamped selected slice index.", "NOWHERE"],
+	[
+		"SettingsView pricelist AI status must use operator-readable wording.",
+		"COMMENT",
+	],
+	[
+		"App CT MPR viewer state must export the clamped selected slice index.",
+		"NOWHERE",
+	],
 	[
 		"SettingsView CT MPR plane buttons must detect projections unavailable for the selected series.",
 		"COMMENT",
 	],
-	["Settings pricelist local mode must use clinic-readable wording.", "COMMENT"],
-	["Settings speech gateway status must use clinic-readable wording.", "COMMENT"],
-	["Settings speech gateway disabled status must use clinic-readable wording.", "COMMENT"],
+	[
+		"Settings pricelist local mode must use clinic-readable wording.",
+		"COMMENT",
+	],
+	[
+		"Settings speech gateway status must use clinic-readable wording.",
+		"COMMENT",
+	],
+	[
+		"Settings speech gateway disabled status must use clinic-readable wording.",
+		"COMMENT",
+	],
 	[
 		"Migration PC discovery failures must surface backend details without raw API-only copy.",
 		"NOWHERE",
 	],
-	["Migration source workup failures must use operator-readable wording.", "NOWHERE"],
-	["Migration source probe failures must use operator-readable wording.", "NOWHERE"],
-	["Migration sources copy must prioritize usability over safety jargon.", "COMMENT"],
-	["Patient import dictation must be disabled while recognition is active.", "COMMENT"],
+	[
+		"Migration source workup failures must use operator-readable wording.",
+		"NOWHERE",
+	],
+	[
+		"Migration source probe failures must use operator-readable wording.",
+		"NOWHERE",
+	],
+	[
+		"Migration sources copy must prioritize usability over safety jargon.",
+		"COMMENT",
+	],
+	[
+		"Patient import dictation must be disabled while recognition is active.",
+		"COMMENT",
+	],
 	["Patient import dictation must expose busy state.", "COMMENT"],
 	[
 		"DICOM tool-state JSON download must be disabled until a tool-state bundle exists.",
 		"COMMENT",
 	],
 	["DICOM workbench buttons must point to missing-series guidance.", "COMMENT"],
-	["DICOM render-cache button must point to missing workstation guidance.", "COMMENT"],
+	[
+		"DICOM render-cache button must point to missing workstation guidance.",
+		"COMMENT",
+	],
 	["DICOM workbench guidance must explain the first required step.", "COMMENT"],
-	["DICOM archive check button must point to missing-address guidance.", "COMMENT"],
+	[
+		"DICOM archive check button must point to missing-address guidance.",
+		"COMMENT",
+	],
 	["DICOM tool-state result must not expose raw viewer target ids.", "COMMENT"],
 	["DICOM launch warnings must not expose raw backend wording.", "COMMENT"],
-	["DICOM tool-state next action must not expose raw backend wording.", "COMMENT"],
-	["DICOM tool-state export hints must not expose raw backend wording.", "COMMENT"],
+	[
+		"DICOM tool-state next action must not expose raw backend wording.",
+		"COMMENT",
+	],
+	[
+		"DICOM tool-state export hints must not expose raw backend wording.",
+		"COMMENT",
+	],
 	["DICOM workbench result must translate launch mode enums.", "COMMENT"],
 	[
 		"DICOMweb check failures must surface backend details without raw API-only copy.",
@@ -253,8 +298,14 @@ const KNOWN_MISSING_SETTINGS_SURFACES = new Map([
 		"DICOM launch failures must surface backend details without raw API-only copy.",
 		"NOWHERE",
 	],
-	["DICOM viewer-state failures must use operator-readable wording.", "NOWHERE"],
-	["Settings-domain admin unlock guidance must not imply Telegram access.", "COMMENT"],
+	[
+		"DICOM viewer-state failures must use operator-readable wording.",
+		"NOWHERE",
+	],
+	[
+		"Settings-domain admin unlock guidance must not imply Telegram access.",
+		"COMMENT",
+	],
 	["Schedule guard must return operator-readable admin-secret copy.", "TEST"],
 	["Settings CT helper note must avoid raw pixel wording.", "COMMENT"],
 	[
@@ -305,7 +356,7 @@ function requirePattern(source, pattern, message) {
  */
 requireIn(
 	appSource,
-	'/api/imaging/dicomweb/check',
+	"/api/imaging/dicomweb/check",
 	"DICOMweb archive check must use the Settings admin secret boundary.",
 );
 requirePattern(

@@ -1,13 +1,13 @@
-import {
-	type VisitFlowRequest,
-	type VisitFlowResult,
-	type VisitNoteDraft,
-	type TreatmentPlanPayload,
-	type PostVisitRecommendationsPayload,
+import type {
+	PostVisitRecommendationsPayload,
+	TreatmentPlanPayload,
+	VisitFlowRequest,
+	VisitFlowResult,
+	VisitNoteDraft,
 } from "@dental/shared";
-import { buildVisitDraftFromTranscript } from "./visitDraft.js";
-import { personalizeTreatmentPlan } from "./treatmentPlanPersonalize.js";
 import { personalizePostVisitRecommendations } from "./postVisitPersonalize.js";
+import { personalizeTreatmentPlan } from "./treatmentPlanPersonalize.js";
+import { buildVisitDraftFromTranscript } from "./visitDraft.js";
 
 function extractPlanPayload(
 	draft: VisitNoteDraft,
@@ -16,8 +16,10 @@ function extractPlanPayload(
 	if (request.planPayload) return request.planPayload;
 
 	// In the absence of an explicit payload, we check if the draft produced a plan or services
-	const hasServices = request.completedServices && request.completedServices.length > 0;
-	const hasPlanText = draft.treatmentPlan && draft.treatmentPlan.trim().length > 0;
+	const hasServices =
+		request.completedServices && request.completedServices.length > 0;
+	const hasPlanText =
+		draft.treatmentPlan && draft.treatmentPlan.trim().length > 0;
 
 	if (!hasPlanText && !hasServices) return null;
 
@@ -34,7 +36,7 @@ function extractPlanPayload(
 			});
 		}
 	}
-	
+
 	if (plannedStages.length === 0 && hasPlanText) {
 		plannedStages.push({
 			stageName: "План лечения",
@@ -52,7 +54,10 @@ function extractPlanPayload(
 		clinicalToothRows: [],
 		treatmentGoals: [],
 		plannedStages,
-		estimatedTotalRub: plannedStages.reduce((sum, stage) => sum + (stage.estimatedAmountRub || 0), 0),
+		estimatedTotalRub: plannedStages.reduce(
+			(sum, stage) => sum + (stage.estimatedAmountRub || 0),
+			0,
+		),
 		alternatives: [],
 		risksAndLimitations: [],
 		prognosisAndLimits: null as any,
@@ -72,8 +77,10 @@ function extractRecommendationsPayload(
 	if (request.recommendationsPayload) return request.recommendationsPayload;
 
 	// Check if there are completed services to recommend for
-	const hasServices = request.completedServices && request.completedServices.length > 0;
-	const hasPlanText = draft.treatmentPlan && draft.treatmentPlan.trim().length > 0;
+	const hasServices =
+		request.completedServices && request.completedServices.length > 0;
+	const hasPlanText =
+		draft.treatmentPlan && draft.treatmentPlan.trim().length > 0;
 	if (!hasServices && !hasPlanText) return null;
 
 	let careTopic: any = "other";
@@ -87,7 +94,9 @@ function extractRecommendationsPayload(
 		} else if (titles.some((t) => t.includes("удал"))) {
 			careTopic = "extraction";
 			procedureName = "Удаление зуба";
-		} else if (titles.some((t) => t.includes("пломб") || t.includes("кариес"))) {
+		} else if (
+			titles.some((t) => t.includes("пломб") || t.includes("кариес"))
+		) {
 			careTopic = "filling_restoration";
 			procedureName = "Лечение кариеса";
 		}
@@ -106,13 +115,21 @@ function extractRecommendationsPayload(
 		performedAt: new Date().toISOString(),
 		doctorFullName: request.doctorFullName || "Врач клиники",
 		allowedAfter: ["Через 2 часа после окончания действия анестезии"],
-		temporaryRestrictions: ["Ограничить физические нагрузки", "Не греть область вмешательства"],
+		temporaryRestrictions: [
+			"Ограничить физические нагрузки",
+			"Не греть область вмешательства",
+		],
 		medicationAndRinsePlan: ["По назначению врача"],
 		hygieneInstructions: ["Бережная чистка зубов мягкой щеткой"],
 		nutritionInstructions: ["Исключить горячую, острую, грубую пищу"],
-		urgentWarningSigns: ["Кровотечение более 20 минут", "Температура выше 38 градусов", "Сильный нарастающий отек"],
+		urgentWarningSigns: [
+			"Кровотечение более 20 минут",
+			"Температура выше 38 градусов",
+			"Сильный нарастающий отек",
+		],
 		plannedFollowUpAt: null,
-		clinicContactInstruction: "При возникновении симптомов свяжитесь с клиникой",
+		clinicContactInstruction:
+			"При возникновении симптомов свяжитесь с клиникой",
 		telegramSummary: "Рекомендации после приема.",
 		patientReceivedPrintedCopy: true,
 		patientUnderstandsUrgentSigns: true,
@@ -131,8 +148,18 @@ export async function runVisitFlow(
 	const result: VisitFlowResult = {
 		draft: { step: "draft", status: "pending", message: null, data: null },
 		plan: { step: "plan", status: "pending", message: null, data: null },
-		recommendations: { step: "recommendations", status: "pending", message: null, data: null },
-		documents: { step: "documents", status: "pending", message: null, data: null },
+		recommendations: {
+			step: "recommendations",
+			status: "pending",
+			message: null,
+			data: null,
+		},
+		documents: {
+			step: "documents",
+			status: "pending",
+			message: null,
+			data: null,
+		},
 		overallStatus: "success",
 	};
 
@@ -140,13 +167,17 @@ export async function runVisitFlow(
 	let draftData: VisitNoteDraft | null = null;
 	try {
 		result.draft.status = "running";
-		draftData = await buildVisitDraftFromTranscript(request.transcript, request.specialty);
-		
+		draftData = await buildVisitDraftFromTranscript(
+			request.transcript,
+			request.specialty,
+		);
+
 		result.draft.data = draftData;
 		result.draft.status = "success";
 	} catch (error) {
 		result.draft.status = "error";
-		result.draft.message = error instanceof Error ? error.message : "Ошибка генерации черновика";
+		result.draft.message =
+			error instanceof Error ? error.message : "Ошибка генерации черновика";
 		result.overallStatus = "error";
 		return result; // Cannot proceed without draft
 	}
@@ -170,8 +201,10 @@ export async function runVisitFlow(
 			result.plan.data = {
 				...payload,
 				alternatives: personalized.alternatives ?? payload.alternatives,
-				risksAndLimitations: personalized.risksAndLimitations ?? payload.risksAndLimitations,
-				prognosisAndLimits: personalized.prognosisAndLimits ?? payload.prognosisAndLimits,
+				risksAndLimitations:
+					personalized.risksAndLimitations ?? payload.risksAndLimitations,
+				prognosisAndLimits:
+					personalized.prognosisAndLimits ?? payload.prognosisAndLimits,
 				controlPlan: personalized.controlPlan ?? payload.controlPlan,
 				patientFriendlyExplanation: personalized.patientFriendlyExplanation,
 				patientHygieneAdvice: personalized.patientHygieneAdvice,
@@ -179,7 +212,8 @@ export async function runVisitFlow(
 			result.plan.status = "success";
 		} catch (error) {
 			result.plan.status = "error";
-			result.plan.message = error instanceof Error ? error.message : "Ошибка персонализации плана";
+			result.plan.message =
+				error instanceof Error ? error.message : "Ошибка персонализации плана";
 			result.overallStatus = "partial";
 		}
 	})();
@@ -206,7 +240,10 @@ export async function runVisitFlow(
 			result.recommendations.status = "success";
 		} catch (error) {
 			result.recommendations.status = "error";
-			result.recommendations.message = error instanceof Error ? error.message : "Ошибка формирования рекомендаций";
+			result.recommendations.message =
+				error instanceof Error
+					? error.message
+					: "Ошибка формирования рекомендаций";
 			result.overallStatus = "partial";
 		}
 	})();
@@ -222,14 +259,18 @@ export async function runVisitFlow(
 			result.documents.status = "running";
 			const suggestedDocs: string[] = [];
 			if (request.completedServices && request.completedServices.length > 0) {
-				const titles = request.completedServices.map(s => s.title.toLowerCase());
-				if (titles.some(t => t.includes("удал"))) {
+				const titles = request.completedServices.map((s) =>
+					s.title.toLowerCase(),
+				);
+				if (titles.some((t) => t.includes("удал"))) {
 					suggestedDocs.push("procedure_specific_consent");
 					suggestedDocs.push("post_visit_recommendations");
-				} else if (titles.some(t => t.includes("имплант"))) {
+				} else if (titles.some((t) => t.includes("имплант"))) {
 					suggestedDocs.push("procedure_specific_consent");
 					suggestedDocs.push("post_visit_recommendations");
-				} else if (titles.some(t => t.includes("кариес") || t.includes("пломб"))) {
+				} else if (
+					titles.some((t) => t.includes("кариес") || t.includes("пломб"))
+				) {
 					suggestedDocs.push("informed_consent");
 				} else {
 					suggestedDocs.push("informed_consent");
@@ -239,7 +280,8 @@ export async function runVisitFlow(
 			result.documents.status = "success";
 		} catch (error) {
 			result.documents.status = "error";
-			result.documents.message = error instanceof Error ? error.message : "Ошибка подбора документов";
+			result.documents.message =
+				error instanceof Error ? error.message : "Ошибка подбора документов";
 			result.overallStatus = "partial";
 		}
 	})();

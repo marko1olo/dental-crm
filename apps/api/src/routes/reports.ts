@@ -14,9 +14,9 @@
  * администратору, но не врачу и не ассистенту.
  */
 
+import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
 import { requireClinicalReadContext } from "../accessGuard.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import {
@@ -27,12 +27,12 @@ import {
 	doctorPerformance,
 	instantOfLocalTime,
 	patientFlow,
+	type ReportScope,
 	receivables,
 	reminderEffect,
 	revenueTimeline,
 	scheduleLoad,
 	serviceSales,
-	type ReportScope
 } from "../services/reports/managerReports.js";
 
 /** Календарная дата: ровно то, что показывает и отдаёт `<input type="date">`. */
@@ -60,7 +60,7 @@ const CALENDAR_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
  */
 const periodBoundarySchema = z.union([
 	z.string().regex(CALENDAR_DATE_PATTERN),
-	z.string().datetime({ offset: true })
+	z.string().datetime({ offset: true }),
 ]);
 
 const periodQuerySchema = z.object({
@@ -70,7 +70,7 @@ const periodQuerySchema = z.object({
 	minutesPerDay: z.coerce.number().int().min(60).max(1440).optional(),
 	workingDaysPerWeek: z.coerce.number().int().min(1).max(7).optional(),
 	limit: z.coerce.number().int().min(1).max(500).optional(),
-	minDebtRub: z.coerce.number().int().min(1).max(10_000_000).optional()
+	minDebtRub: z.coerce.number().int().min(1).max(10_000_000).optional(),
 });
 
 const MAX_PERIOD_DAYS = 400;
@@ -127,7 +127,11 @@ function badRequest(reply: FastifyReply, message: string) {
  * `2026-13-01`) отклоняется, а НЕ нормализуется молча в 2 марта и январь 2027:
  * правдоподобный ответ на невозможный запрос хуже отказа.
  */
-export function resolvePeriodBoundary(raw: string, edge: "from" | "to", timeZone: string | null): Date | null {
+export function resolvePeriodBoundary(
+	raw: string,
+	edge: "from" | "to",
+	timeZone: string | null,
+): Date | null {
 	const calendar = CALENDAR_DATE_PATTERN.exec(raw);
 	if (!calendar) {
 		const instant = new Date(raw);
@@ -145,7 +149,8 @@ export function resolvePeriodBoundary(raw: string, edge: "from" | "to", timeZone
 	const boundaryDay = edge === "to" ? day + 1 : day;
 	if (timeZone) {
 		const instant = instantOfLocalTime(timeZone, year, month, boundaryDay);
-		if (instant !== null) return new Date(edge === "to" ? instant - 1 : instant);
+		if (instant !== null)
+			return new Date(edge === "to" ? instant - 1 : instant);
 	}
 
 	const local = new Date(year, month - 1, boundaryDay, 0, 0, 0, 0);
@@ -159,20 +164,30 @@ export function resolvePeriodBoundary(raw: string, edge: "from" | "to", timeZone
  */
 function resolvePeriod(
 	query: z.infer<typeof periodQuerySchema>,
-	timeZone: string | null
+	timeZone: string | null,
 ): { ok: true; from: Date; to: Date } | { ok: false; message: string } {
 	const fallback = currentMonthPeriod(new Date(), timeZone);
-	const from = query.from === undefined ? fallback.from : resolvePeriodBoundary(query.from, "from", timeZone);
-	const to = query.to === undefined ? fallback.to : resolvePeriodBoundary(query.to, "to", timeZone);
+	const from =
+		query.from === undefined
+			? fallback.from
+			: resolvePeriodBoundary(query.from, "from", timeZone);
+	const to =
+		query.to === undefined
+			? fallback.to
+			: resolvePeriodBoundary(query.to, "to", timeZone);
 
 	if (from === null || to === null) {
 		return { ok: false, message: "Даты периода не разобраны." };
 	}
-	if (from > to) return { ok: false, message: "Начало периода позже его конца." };
+	if (from > to)
+		return { ok: false, message: "Начало периода позже его конца." };
 
 	const spanDays = (to.getTime() - from.getTime()) / 86_400_000;
 	if (spanDays > MAX_PERIOD_DAYS) {
-		return { ok: false, message: `Период длиннее ${MAX_PERIOD_DAYS} дней. Сузьте диапазон.` };
+		return {
+			ok: false,
+			message: `Период длиннее ${MAX_PERIOD_DAYS} дней. Сузьте диапазон.`,
+		};
 	}
 	return { ok: true, from, to };
 }
@@ -185,15 +200,22 @@ export async function registerReportRoutes(app: FastifyInstance) {
 	async function scopeFor(
 		request: FastifyRequest,
 		reply: FastifyReply,
-		area: string
-	): Promise<{ scope: ReportScope; query: z.infer<typeof periodQuerySchema> } | null> {
+		area: string,
+	): Promise<{
+		scope: ReportScope;
+		query: z.infer<typeof periodQuerySchema>;
+	} | null> {
 		const context = await requireClinicalReadContext(request, reply, area);
 		if (!context) return null;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "analytics.read")) return null;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "analytics.read"))
+			return null;
 
 		const parsed = periodQuerySchema.safeParse(request.query);
 		if (!parsed.success) {
-			badRequest(reply, "Проверьте параметры отчёта: даты, детализацию и пределы.");
+			badRequest(
+				reply,
+				"Проверьте параметры отчёта: даты, детализацию и пределы.",
+			);
 			return null;
 		}
 		/*
@@ -238,40 +260,62 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		return {
 			// Пояс клиники доходит до отчётов: группировка в PostgreSQL иначе считается
 			// в поясе сессии, и день с часом съезжают на величину смещения.
-			scope: { organizationId: context.organizationId, from: period.from, to: period.to, timeZone },
-			query: parsed.data
+			scope: {
+				organizationId: context.organizationId,
+				from: period.from,
+				to: period.to,
+				timeZone,
+			},
+			query: parsed.data,
 		};
 	}
 
 	app.get("/api/reports/revenue", async (request, reply) => {
 		const resolved = await scopeFor(request, reply, "report revenue");
 		if (!resolved) return;
-		const report = await revenueTimeline(resolved.scope, resolved.query.granularity ?? "day");
-		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
+		const report = await revenueTimeline(
+			resolved.scope,
+			resolved.query.granularity ?? "day",
+		);
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
+			...report,
+		};
 	});
 
 	app.get("/api/reports/doctors", async (request, reply) => {
 		const resolved = await scopeFor(request, reply, "report doctors");
 		if (!resolved) return;
 		const report = await doctorPerformance(resolved.scope);
-		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
+			...report,
+		};
 	});
 
 	app.get("/api/reports/chairs", async (request, reply) => {
 		const resolved = await scopeFor(request, reply, "report chairs");
 		if (!resolved) return;
 		const options: { minutesPerDay?: number; workingDaysPerWeek?: number } = {};
-		if (resolved.query.minutesPerDay !== undefined) options.minutesPerDay = resolved.query.minutesPerDay;
-		if (resolved.query.workingDaysPerWeek !== undefined) options.workingDaysPerWeek = resolved.query.workingDaysPerWeek;
+		if (resolved.query.minutesPerDay !== undefined)
+			options.minutesPerDay = resolved.query.minutesPerDay;
+		if (resolved.query.workingDaysPerWeek !== undefined)
+			options.workingDaysPerWeek = resolved.query.workingDaysPerWeek;
 		const report = await chairLoad(resolved.scope, options);
-		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
+			...report,
+		};
 	});
 
 	app.get("/api/reports/appointments", async (request, reply) => {
 		const resolved = await scopeFor(request, reply, "report appointments");
 		if (!resolved) return;
 		const report = await appointmentFunnel(resolved.scope);
-		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
+			...report,
+		};
 	});
 
 	/**
@@ -282,28 +326,43 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		const resolved = await scopeFor(request, reply, "report reminder effect");
 		if (!resolved) return;
 		const report = await reminderEffect(resolved.scope);
-		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
+			...report,
+		};
 	});
 
 	app.get("/api/reports/patient-flow", async (request, reply) => {
 		const resolved = await scopeFor(request, reply, "report patient flow");
 		if (!resolved) return;
 		const report = await patientFlow(resolved.scope);
-		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
+			...report,
+		};
 	});
 
 	app.get("/api/reports/services", async (request, reply) => {
 		const resolved = await scopeFor(request, reply, "report services");
 		if (!resolved) return;
-		const report = await serviceSales(resolved.scope, resolved.query.limit ?? 50);
-		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
+		const report = await serviceSales(
+			resolved.scope,
+			resolved.query.limit ?? 50,
+		);
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
+			...report,
+		};
 	});
 
 	app.get("/api/reports/schedule-load", async (request, reply) => {
 		const resolved = await scopeFor(request, reply, "report schedule load");
 		if (!resolved) return;
 		const report = await scheduleLoad(resolved.scope);
-		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
+			...report,
+		};
 	});
 
 	/**
@@ -312,15 +371,22 @@ export async function registerReportRoutes(app: FastifyInstance) {
 	 * забивали список.
 	 */
 	app.get("/api/reports/receivables", async (request, reply) => {
-		const context = await requireClinicalReadContext(request, reply, "report receivables");
+		const context = await requireClinicalReadContext(
+			request,
+			reply,
+			"report receivables",
+		);
 		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "analytics.read")) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "analytics.read"))
+			return;
 
 		const parsed = periodQuerySchema.safeParse(request.query);
-		if (!parsed.success) return badRequest(reply, "Проверьте параметры отчёта.");
+		if (!parsed.success)
+			return badRequest(reply, "Проверьте параметры отчёта.");
 
 		const options: { minDebtRub?: number; limit?: number } = {};
-		if (parsed.data.minDebtRub !== undefined) options.minDebtRub = parsed.data.minDebtRub;
+		if (parsed.data.minDebtRub !== undefined)
+			options.minDebtRub = parsed.data.minDebtRub;
 		if (parsed.data.limit !== undefined) options.limit = parsed.data.limit;
 
 		return receivables(context.organizationId, options);
@@ -334,15 +400,16 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		const resolved = await scopeFor(request, reply, "report summary");
 		if (!resolved) return;
 
-		const [revenue, doctors, chairs, funnel, flow, debts, reminders] = await Promise.all([
-			revenueTimeline(resolved.scope, resolved.query.granularity ?? "day"),
-			doctorPerformance(resolved.scope),
-			chairLoad(resolved.scope),
-			appointmentFunnel(resolved.scope),
-			patientFlow(resolved.scope),
-			receivables(resolved.scope.organizationId),
-			reminderEffect(resolved.scope)
-		]);
+		const [revenue, doctors, chairs, funnel, flow, debts, reminders] =
+			await Promise.all([
+				revenueTimeline(resolved.scope, resolved.query.granularity ?? "day"),
+				doctorPerformance(resolved.scope),
+				chairLoad(resolved.scope),
+				appointmentFunnel(resolved.scope),
+				patientFlow(resolved.scope),
+				receivables(resolved.scope.organizationId),
+				reminderEffect(resolved.scope),
+			]);
 
 		return {
 			period: { from: resolved.scope.from, to: resolved.scope.to },
@@ -364,11 +431,16 @@ export async function registerReportRoutes(app: FastifyInstance) {
 				byBucket: debts.byBucket,
 				debtors: debts.rows.length,
 				totalPrepaidRub: debts.totalPrepaidRub,
-				prepayments: debts.prepayments
+				prepayments: debts.prepayments,
 			},
 			// Признак пустоты по всем разделам сразу: интерфейс должен различать
 			// «данных за период нет» и «все показатели равны нулю».
-			isEmpty: revenue.isEmpty && doctors.isEmpty && chairs.isEmpty && funnel.isEmpty && flow.isEmpty
+			isEmpty:
+				revenue.isEmpty &&
+				doctors.isEmpty &&
+				chairs.isEmpty &&
+				funnel.isEmpty &&
+				flow.isEmpty,
 		};
 	});
 }

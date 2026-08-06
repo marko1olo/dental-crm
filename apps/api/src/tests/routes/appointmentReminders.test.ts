@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { type FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -12,13 +12,13 @@ import {
 	organizations,
 	patientCommunicationConsents,
 	patients,
-	users
+	users,
 } from "../../db/schema.js";
 import { registerCommunicationOutboxRoutes } from "../../routes/communicationsOutbox.js";
 import {
 	addressableName,
 	scheduleAppointmentReminders,
-	shortDoctorName
+	shortDoctorName,
 } from "../../services/communications/appointmentReminders.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
@@ -43,7 +43,9 @@ const ORG_HEADERS = { "x-organization-id": ORG_ID };
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
+	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(
+		message,
+	);
 }
 
 /**
@@ -67,11 +69,21 @@ async function purgeFixtures(): Promise<void> {
 	 * не считается — приём прошлого прогона со своим временем пережил бы уборку.
 	 */
 	await withFixtureTenant(ORG_ID, async () => {
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-		await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-		await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
-		await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
+		await db
+			.delete(communicationOutbox)
+			.where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db
+			.delete(patientCommunicationConsents)
+			.where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+		await db
+			.delete(appointments)
+			.where(eq(appointments.organizationId, ORG_ID));
+		await db
+			.delete(communicationTemplates)
+			.where(eq(communicationTemplates.organizationId, ORG_ID));
+		await db
+			.delete(communicationSettings)
+			.where(eq(communicationSettings.organizationId, ORG_ID));
 		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 		await db.delete(users).where(eq(users.organizationId, ORG_ID));
 		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
@@ -106,22 +118,27 @@ describe("автоматические напоминания о приёме", 
 			 * отвергается кодом 42501 — и обход RLS здесь не помогает вовсе.
 			 */
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника напоминаний" });
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника напоминаний" });
 				await db.insert(clinics).values({
 					id: CLINIC_ID,
 					organizationId: ORG_ID,
 					name: "Клиника на Ленина",
 					phone: "+7 495 000-00-00",
-					timezone: "Europe/Moscow"
+					timezone: "Europe/Moscow",
 				});
-				await db
-					.insert(users)
-					.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Иванов Иван Иванович", role: "doctor" });
+				await db.insert(users).values({
+					id: DOCTOR_ID,
+					organizationId: ORG_ID,
+					fullName: "Иванов Иван Иванович",
+					role: "doctor",
+				});
 				await db.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
 					fullName: "Орлова Марина Петровна",
-					phone: "+7 916 000-00-02"
+					phone: "+7 916 000-00-02",
 				});
 				// Время приёма отсчитывается от «сейчас», поэтому строка обязана быть
 				// СВОЕЙ: onConflictDoNothing здесь оставил бы приём прошлого прогона с
@@ -133,7 +150,7 @@ describe("автоматические напоминания о приёме", 
 					doctorUserId: DOCTOR_ID,
 					status: "planned",
 					startsAt: appointmentStart,
-					endsAt: new Date(appointmentStart.getTime() + 60 * 60 * 1000)
+					endsAt: new Date(appointmentStart.getTime() + 60 * 60 * 1000),
 				});
 			});
 		} catch (error) {
@@ -170,11 +187,13 @@ describe("автоматические напоминания о приёме", 
 			method: "PUT",
 			url: "/api/communications/settings",
 			headers: ORG_HEADERS,
-			payload: { appointmentReminderEnabled: true }
+			payload: { appointmentReminderEnabled: true },
 		});
 
 		assert.equal(response.statusCode, 400, response.body);
-		assert.ok(JSON.parse(response.body).message.includes("Подтверждение приёма"));
+		assert.ok(
+			JSON.parse(response.body).message.includes("Подтверждение приёма"),
+		);
 	});
 
 	test("после создания шаблона напоминания включаются", async (context) => {
@@ -188,8 +207,8 @@ describe("автоматические напоминания о приёме", 
 				title: "Напоминание о приёме",
 				channel: "sms",
 				intent: "appointment_confirmation",
-				body: "{patient}, напоминаем: приём {date} в {time}, {clinic}. Тел. {clinicPhone}."
-			}
+				body: "{patient}, напоминаем: приём {date} в {time}, {clinic}. Тел. {clinicPhone}.",
+			},
 		});
 		assert.equal(template.statusCode, 201, template.body);
 
@@ -201,17 +220,23 @@ describe("автоматические напоминания о приёме", 
 				appointmentReminderEnabled: true,
 				appointmentReminderLeadHours: [24],
 				channelFallback: ["sms"],
-				timezone: "Europe/Moscow"
-			}
+				timezone: "Europe/Moscow",
+			},
 		});
 		assert.equal(settings.statusCode, 200, settings.body);
-		assert.equal(JSON.parse(settings.body).settings.appointmentReminderEnabled, true);
+		assert.equal(
+			JSON.parse(settings.body).settings.appointmentReminderEnabled,
+			true,
+		);
 	});
 
 	test("приём в окне порождает ровно одно напоминание", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const first = await scheduleAppointmentReminders({ organizationId: ORG_ID, now });
+		const first = await scheduleAppointmentReminders({
+			organizationId: ORG_ID,
+			now,
+		});
 		assert.equal(first.queued, 1, JSON.stringify(first));
 
 		// Чтение тоже под контекстом: без него выборка пуста молча, и «ровно одно
@@ -223,9 +248,9 @@ describe("автоматические напоминания о приёме", 
 				.where(
 					and(
 						eq(communicationOutbox.organizationId, ORG_ID),
-						eq(communicationOutbox.dedupeKey, `reminder:${APPOINTMENT_ID}:24`)
-					)
-				)
+						eq(communicationOutbox.dedupeKey, `reminder:${APPOINTMENT_ID}:24`),
+					),
+				),
 		);
 		assert.equal(rows.length, 1);
 
@@ -233,16 +258,28 @@ describe("автоматические напоминания о приёме", 
 		assert.equal(reminder?.channel, "sms");
 		assert.equal(reminder?.intent, "appointment_confirmation");
 		assert.equal(reminder?.recipientAddress, "79160000002");
-		assert.ok(reminder?.body.startsWith("Марина Петровна, напоминаем: приём "), reminder?.body ?? "");
-		assert.ok(reminder?.body.includes("Клиника на Ленина"), reminder?.body ?? "");
-		assert.ok(reminder?.body.includes("+7 495 000-00-00"), reminder?.body ?? "");
+		assert.ok(
+			reminder?.body.startsWith("Марина Петровна, напоминаем: приём "),
+			reminder?.body ?? "",
+		);
+		assert.ok(
+			reminder?.body.includes("Клиника на Ленина"),
+			reminder?.body ?? "",
+		);
+		assert.ok(
+			reminder?.body.includes("+7 495 000-00-00"),
+			reminder?.body ?? "",
+		);
 	});
 
 	test("повторный запуск планировщика не создаёт второе напоминание", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		// За повторное сообщение клиника платит дважды, а доверие теряет один раз.
-		const second = await scheduleAppointmentReminders({ organizationId: ORG_ID, now });
+		const second = await scheduleAppointmentReminders({
+			organizationId: ORG_ID,
+			now,
+		});
 		assert.equal(second.queued, 0, JSON.stringify(second));
 		assert.equal(second.alreadyQueued, 1, JSON.stringify(second));
 
@@ -253,9 +290,9 @@ describe("автоматические напоминания о приёме", 
 				.where(
 					and(
 						eq(communicationOutbox.organizationId, ORG_ID),
-						eq(communicationOutbox.dedupeKey, `reminder:${APPOINTMENT_ID}:24`)
-					)
-				)
+						eq(communicationOutbox.dedupeKey, `reminder:${APPOINTMENT_ID}:24`),
+					),
+				),
 		);
 		assert.equal(rows.length, 1);
 	});
@@ -266,16 +303,27 @@ describe("автоматические напоминания о приёме", 
 		// DELETE и UPDATE без контекста трогают НОЛЬ строк и молчат об этом:
 		// очередь осталась бы непустой, а приём — запланированным.
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.update(appointments).set({ status: "cancelled" }).where(eq(appointments.id, APPOINTMENT_ID));
+			await db
+				.delete(communicationOutbox)
+				.where(eq(communicationOutbox.organizationId, ORG_ID));
+			await db
+				.update(appointments)
+				.set({ status: "cancelled" })
+				.where(eq(appointments.id, APPOINTMENT_ID));
 		});
 
-		const report = await scheduleAppointmentReminders({ organizationId: ORG_ID, now });
+		const report = await scheduleAppointmentReminders({
+			organizationId: ORG_ID,
+			now,
+		});
 		assert.equal(report.queued, 0, JSON.stringify(report));
 		assert.equal(report.examined, 0, JSON.stringify(report));
 
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.update(appointments).set({ status: "planned" }).where(eq(appointments.id, APPOINTMENT_ID));
+			await db
+				.update(appointments)
+				.set({ status: "planned" })
+				.where(eq(appointments.id, APPOINTMENT_ID));
 		});
 	});
 
@@ -283,18 +331,23 @@ describe("автоматические напоминания о приёме", 
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+			await db
+				.delete(communicationOutbox)
+				.where(eq(communicationOutbox.organizationId, ORG_ID));
 			await db.insert(patientCommunicationConsents).values({
 				organizationId: ORG_ID,
 				patientId: PATIENT_ID,
 				channel: "sms",
 				scope: "service",
 				state: "revoked",
-				source: "staff"
+				source: "staff",
 			});
 		});
 
-		const report = await scheduleAppointmentReminders({ organizationId: ORG_ID, now });
+		const report = await scheduleAppointmentReminders({
+			organizationId: ORG_ID,
+			now,
+		});
 		// Других каналов с шаблоном и контактом нет, поэтому напоминание не уходит.
 		assert.equal(report.queued, 0, JSON.stringify(report));
 		assert.equal(report.skippedNoChannel, 1, JSON.stringify(report));
@@ -310,12 +363,17 @@ describe("автоматические напоминания о приёме", 
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+			await db
+				.delete(communicationOutbox)
+				.where(eq(communicationOutbox.organizationId, ORG_ID));
 		});
 		// «Сейчас» на трое суток раньше: до приёма ещё далеко, напоминать рано.
 		const tooEarly = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
 
-		const report = await scheduleAppointmentReminders({ organizationId: ORG_ID, now: tooEarly });
+		const report = await scheduleAppointmentReminders({
+			organizationId: ORG_ID,
+			now: tooEarly,
+		});
 		assert.equal(report.examined, 0, JSON.stringify(report));
 		assert.equal(report.queued, 0, JSON.stringify(report));
 	});
@@ -324,12 +382,14 @@ describe("автоматические напоминания о приёме", 
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+			await db
+				.delete(communicationOutbox)
+				.where(eq(communicationOutbox.organizationId, ORG_ID));
 		});
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/communications/reminders/run",
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 
 		assert.equal(response.statusCode, 200, response.body);

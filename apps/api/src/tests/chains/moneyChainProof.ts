@@ -46,8 +46,8 @@
 
 import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
@@ -60,7 +60,10 @@ import { registerVisitRoutes } from "../../routes/visits.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+} from "../support/fixtureOrganizations.js";
 
 /** Пространство фикстур выводится из имени файла, а не назначается вручную. */
 const FIXTURE_NAMESPACE = "moneyChainProof";
@@ -128,11 +131,17 @@ function check(label: string, actual: unknown, expected: unknown): boolean {
  * плавающей точке и в квитанции напечатается иначе, чем в базе, поэтому оно
  * считается расхождением, а не совпадением.
  */
-function checkRub(label: string, actual: unknown, expectedText: string): boolean {
+function checkRub(
+	label: string,
+	actual: unknown,
+	expectedText: string,
+): boolean {
 	const value = typeof actual === "number" ? actual : Number(actual);
 	if (!Number.isFinite(value)) {
 		failures += 1;
-		console.log(`РАСХОЖДЕНИЕ ${label}: не число (${JSON.stringify(actual)}), ожидалось ${expectedText} ₽`);
+		console.log(
+			`РАСХОЖДЕНИЕ ${label}: не число (${JSON.stringify(actual)}), ожидалось ${expectedText} ₽`,
+		);
 		return false;
 	}
 	const text = value.toFixed(2);
@@ -155,12 +164,16 @@ function weldBroken(seam: string, fact: string, harm: string): void {
 	console.log(`РАЗРЫВ ШВА «${seam}»\n  ФАКТ: ${fact}\n  ВРЕД КЛИНИКЕ: ${harm}`);
 }
 
-async function firstRow<T extends Record<string, unknown>>(query: ReturnType<typeof sql>): Promise<T | null> {
+async function firstRow<T extends Record<string, unknown>>(
+	query: ReturnType<typeof sql>,
+): Promise<T | null> {
 	const result = await db.execute(query);
 	return ((result.rows as T[])[0] ?? null) as T | null;
 }
 
-async function allRows<T extends Record<string, unknown>>(query: ReturnType<typeof sql>): Promise<T[]> {
+async function allRows<T extends Record<string, unknown>>(
+	query: ReturnType<typeof sql>,
+): Promise<T[]> {
 	const result = await db.execute(query);
 	return result.rows as T[];
 }
@@ -191,9 +204,15 @@ async function main(): Promise<void> {
 
 	const secret = authTokenSecret();
 	const clinicTokenA = signToken({ organizationId: ORG_A }, secret);
-	const staffTokenA = signToken({ organizationId: ORG_A, userId: OWNER_A, role: "owner" }, secret);
+	const staffTokenA = signToken(
+		{ organizationId: ORG_A, userId: OWNER_A, role: "owner" },
+		secret,
+	);
 	const clinicTokenB = signToken({ organizationId: ORG_B }, secret);
-	const staffTokenB = signToken({ organizationId: ORG_B, userId: OWNER_B, role: "owner" }, secret);
+	const staffTokenB = signToken(
+		{ organizationId: ORG_B, userId: OWNER_B, role: "owner" },
+		secret,
+	);
 
 	/** Полный набор заголовков клиники А — тот же, что собирает экран. */
 	const headersA = {
@@ -249,13 +268,19 @@ async function main(): Promise<void> {
 	): Promise<Injected> {
 		const requestHeaders =
 			payload === undefined
-				? Object.fromEntries(Object.entries(headers).filter(([name]) => name.toLowerCase() !== "content-type"))
+				? Object.fromEntries(
+						Object.entries(headers).filter(
+							([name]) => name.toLowerCase() !== "content-type",
+						),
+					)
 				: headers;
 		const response = await app.inject({
 			method,
 			url,
 			headers: requestHeaders,
-			...(payload === undefined ? {} : { payload: payload as Record<string, unknown> }),
+			...(payload === undefined
+				? {}
+				: { payload: payload as Record<string, unknown> }),
 		});
 		return parsed(response);
 	}
@@ -295,7 +320,9 @@ async function main(): Promise<void> {
 	 * иного не принимает) обе записи побитово равны. Ручной SQL сохранён
 	 * намеренно — вызов канона `chargeLineKopecks` сверял бы код с самим собой.
 	 */
-	async function debtText(organizationId: string): Promise<{ planned: string; paid: string; due: string }> {
+	async function debtText(
+		organizationId: string,
+	): Promise<{ planned: string; paid: string; due: string }> {
 		const row = await firstRow<{ planned: string; paid: string; due: string }>(
 			sql`with planned as (
 			      select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as total
@@ -340,7 +367,9 @@ async function main(): Promise<void> {
 		 * денежного шва. Кресло требует clinic_id (schema.ts: chairs.clinicId
 		 * notNull), поэтому строка в `clinics` обязательна — она же несёт пояс.
 		 */
-		step("ШАГ 1. ДВЕ КЛИНИКИ: своя (А) и соседняя (Б), у каждой врач, кресло, пациент");
+		step(
+			"ШАГ 1. ДВЕ КЛИНИКИ: своя (А) и соседняя (Б), у каждой врач, кресло, пациент",
+		);
 		await db.execute(sql`
 			insert into organizations (id, name)
 			values (${ORG_A}::uuid, ${"Денежная цепочка — клиника А"}),
@@ -382,7 +411,11 @@ async function main(): Promise<void> {
 		);
 		console.log(`посеяно: ${JSON.stringify(seeded)}`);
 		check("клиник посеяно", seeded?.organizations, 2);
-		check("пояс клиники А отличается от пояса сессии", (CLINIC_A_TIMEZONE as string) === (CLINIC_B_TIMEZONE as string), false);
+		check(
+			"пояс клиники А отличается от пояса сессии",
+			(CLINIC_A_TIMEZONE as string) === (CLINIC_B_TIMEZONE as string),
+			false,
+		);
 
 		/*
 		 * РЕКВИЗИТЫ КЛИНИКИ — ЧАСТЬ ДЕНЕЖНОГО ШВА, А НЕ КОСМЕТИКА. Без ИНН, адреса,
@@ -392,23 +425,28 @@ async function main(): Promise<void> {
 		 * реквизиты не заполнены, — не дефект программы, поэтому они ставятся
 		 * штатным маршрутом настроек, тем же, которым пользуется экран.
 		 */
-		const profileResponse = await call("PUT", "/api/settings/clinic/profile", headersA, {
-			clinicName: "Кабинет клиники А",
-			legalName: "Денежная цепочка — клиника А",
-			inn: "7700000001",
-			kpp: "770001001",
-			ogrn: "1027700000001",
-			address: "г. Петропавловск-Камчатский, ул. Проверочная, 1",
-			phone: "+79000000001",
-			email: "money-chain-a@example.test",
-			medicalLicenseNumber: "ЛО-41-01-000001",
-			medicalLicenseIssuedAt: "2025-01-15",
-			medicalLicenseIssuer: "Министерство здравоохранения Камчатского края",
-			bankDetails: "р/с 40702810000000000001, БИК 049999999",
-			signatoryName: "Владелец клиники А",
-			signatoryTitle: "главный врач",
-			timezone: CLINIC_A_TIMEZONE,
-		});
+		const profileResponse = await call(
+			"PUT",
+			"/api/settings/clinic/profile",
+			headersA,
+			{
+				clinicName: "Кабинет клиники А",
+				legalName: "Денежная цепочка — клиника А",
+				inn: "7700000001",
+				kpp: "770001001",
+				ogrn: "1027700000001",
+				address: "г. Петропавловск-Камчатский, ул. Проверочная, 1",
+				phone: "+79000000001",
+				email: "money-chain-a@example.test",
+				medicalLicenseNumber: "ЛО-41-01-000001",
+				medicalLicenseIssuedAt: "2025-01-15",
+				medicalLicenseIssuer: "Министерство здравоохранения Камчатского края",
+				bankDetails: "р/с 40702810000000000001, БИК 049999999",
+				signatoryName: "Владелец клиники А",
+				signatoryTitle: "главный врач",
+				timezone: CLINIC_A_TIMEZONE,
+			},
+		);
 		console.log(`PUT реквизиты клиники -> HTTP ${profileResponse.statusCode}`);
 		if (profileResponse.statusCode !== 200) {
 			weldBroken(
@@ -417,7 +455,13 @@ async function main(): Promise<void> {
 				"без реквизитов клиника не может выдать ни счёт, ни квитанцию, ни заявление на возврат: любой платёжный документ отклоняется на выдаче",
 			);
 		}
-		const profileRow = await firstRow<{ inn: string | null; address: string | null; license: string | null; phone: string | null; timezone: string }>(
+		const profileRow = await firstRow<{
+			inn: string | null;
+			address: string | null;
+			license: string | null;
+			phone: string | null;
+			timezone: string;
+		}>(
 			sql`select o.inn, o.legal_address as address, o.medical_license_number as license, c.phone, c.timezone
 			      from organizations o join clinics c on c.organization_id = o.id
 			     where o.id = ${ORG_A}::uuid`,
@@ -425,7 +469,11 @@ async function main(): Promise<void> {
 		console.log(`реквизиты в базе: ${JSON.stringify(profileRow)}`);
 		check("ИНН клиники записан", profileRow?.inn, "7700000001");
 		check("лицензия записана", profileRow?.license, "ЛО-41-01-000001");
-		check("пояс клиники А сохранён после правки реквизитов", profileRow?.timezone, CLINIC_A_TIMEZONE);
+		check(
+			"пояс клиники А сохранён после правки реквизитов",
+			profileRow?.timezone,
+			CLINIC_A_TIMEZONE,
+		);
 
 		step("ШАГ 2. ПРАЙС: POST /api/settings/catalog — цена с копейками");
 		const catalogPayload = (code: string, title: string, price: number) => ({
@@ -438,14 +486,38 @@ async function main(): Promise<void> {
 			taxDeductible: true,
 			active: true,
 		});
-		const serviceOne = await call("POST", "/api/settings/catalog", headersA, catalogPayload("MC-1", "Лечение кариеса (денежная цепочка)", PRICE_ONE));
-		const serviceTwo = await call("POST", "/api/settings/catalog", headersA, catalogPayload("MC-2", "Пломба светового отверждения (денежная цепочка)", PRICE_TWO));
-		console.log(`POST прайс -> HTTP ${serviceOne.statusCode} / ${serviceTwo.statusCode}`);
+		const serviceOne = await call(
+			"POST",
+			"/api/settings/catalog",
+			headersA,
+			catalogPayload("MC-1", "Лечение кариеса (денежная цепочка)", PRICE_ONE),
+		);
+		const serviceTwo = await call(
+			"POST",
+			"/api/settings/catalog",
+			headersA,
+			catalogPayload(
+				"MC-2",
+				"Пломба светового отверждения (денежная цепочка)",
+				PRICE_TWO,
+			),
+		);
+		console.log(
+			`POST прайс -> HTTP ${serviceOne.statusCode} / ${serviceTwo.statusCode}`,
+		);
 		if (serviceOne.statusCode === 201 && serviceTwo.statusCode === 201) {
 			serviceOneId = serviceOne.json?.id ?? null;
 			serviceTwoId = serviceTwo.json?.id ?? null;
-			checkRub("цена услуги 1 в ответе", serviceOne.json?.basePriceRub, "1500.50");
-			checkRub("цена услуги 2 в ответе", serviceTwo.json?.basePriceRub, "1990.99");
+			checkRub(
+				"цена услуги 1 в ответе",
+				serviceOne.json?.basePriceRub,
+				"1500.50",
+			);
+			checkRub(
+				"цена услуги 2 в ответе",
+				serviceTwo.json?.basePriceRub,
+				"1990.99",
+			);
 		} else {
 			weldBroken(
 				"настройки → прайс клиники",
@@ -464,27 +536,62 @@ async function main(): Promise<void> {
 		}
 		// Копейки проверяются ТЕКСТОМ из numeric-колонки: число с плавающей точкой
 		// здесь ничего не доказывает, а прайс — вершина всей денежной цепочки.
-		const priceRows = await allRows<{ code: string; base_price_rub: string; price_rub: string }>(
+		const priceRows = await allRows<{
+			code: string;
+			base_price_rub: string;
+			price_rub: string;
+		}>(
 			sql`select code, base_price_rub::text as base_price_rub, price_rub::text as price_rub
 			      from service_catalog_items where organization_id = ${ORG_A}::uuid order by code`,
 		);
 		console.log(`прайс в базе: ${JSON.stringify(priceRows)}`);
 		check("цена услуги 1 в базе", priceRows[0]?.price_rub, "1500.50");
 		check("цена услуги 2 в базе", priceRows[1]?.price_rub, "1990.99");
-		check("справочная цена дублируется без потери копеек", priceRows[0]?.base_price_rub, "1500.50");
+		check(
+			"справочная цена дублируется без потери копеек",
+			priceRows[0]?.base_price_rub,
+			"1500.50",
+		);
 
 		step("ШАГ 3. ПЛАН ЛЕЧЕНИЯ: POST /api/patients/:id/treatment-plans");
-		const planResponse = await call("POST", `/api/patients/${PATIENT_A}/treatment-plans`, headersA, {
-			name: "План лечения денежной цепочки",
-			items: [
-				{ toothNumber: 36, priceId: serviceOneId ?? "manual", name: "Лечение кариеса 36", quantity: 1, price: PRICE_ONE, discount: 0, phase: 1 },
-				{ toothNumber: 46, priceId: serviceTwoId ?? "manual", name: "Пломба 46", quantity: 1, price: PRICE_TWO, discount: 0, phase: 1 },
-			],
-		});
-		console.log(`POST план -> HTTP ${planResponse.statusCode} ${planResponse.body.slice(0, 200)}`);
+		const planResponse = await call(
+			"POST",
+			`/api/patients/${PATIENT_A}/treatment-plans`,
+			headersA,
+			{
+				name: "План лечения денежной цепочки",
+				items: [
+					{
+						toothNumber: 36,
+						priceId: serviceOneId ?? "manual",
+						name: "Лечение кариеса 36",
+						quantity: 1,
+						price: PRICE_ONE,
+						discount: 0,
+						phase: 1,
+					},
+					{
+						toothNumber: 46,
+						priceId: serviceTwoId ?? "manual",
+						name: "Пломба 46",
+						quantity: 1,
+						price: PRICE_TWO,
+						discount: 0,
+						phase: 1,
+					},
+				],
+			},
+		);
+		console.log(
+			`POST план -> HTTP ${planResponse.statusCode} ${planResponse.body.slice(0, 200)}`,
+		);
 		if (planResponse.statusCode === 200) {
 			planId = planResponse.json?.planId ?? null;
-			checkRub("итог плана в ответе маршрута", planResponse.json?.totalPrice, PLAN_TOTAL_TEXT);
+			checkRub(
+				"итог плана в ответе маршрута",
+				planResponse.json?.totalPrice,
+				PLAN_TOTAL_TEXT,
+			);
 		} else {
 			weldBroken(
 				"смета врача → план лечения",
@@ -497,8 +604,16 @@ async function main(): Promise<void> {
 			     where patient_id = ${PATIENT_A}::uuid order by created_at desc limit 1`,
 		);
 		console.log(`план в базе: ${JSON.stringify(planRow)}`);
-		check("итог плана в базе до копейки", planRow?.total_price, PLAN_TOTAL_TEXT);
-		const planItemRows = await allRows<{ price: string; discount: string; quantity: number }>(
+		check(
+			"итог плана в базе до копейки",
+			planRow?.total_price,
+			PLAN_TOTAL_TEXT,
+		);
+		const planItemRows = await allRows<{
+			price: string;
+			discount: string;
+			quantity: number;
+		}>(
 			sql`select price::text as price, discount::text as discount, quantity
 			      from treatment_plan_items_new where plan_id = ${planRow?.id ?? planId}::uuid order by price`,
 		);
@@ -518,7 +633,9 @@ async function main(): Promise<void> {
 		const itemsAfterPlan = await firstRow<{ n: number }>(
 			sql`select count(*)::int as n from treatment_items where patient_id = ${PATIENT_A}::uuid`,
 		);
-		console.log(`позиций лечения (treatment_items) после сохранения плана: ${itemsAfterPlan?.n}`);
+		console.log(
+			`позиций лечения (treatment_items) после сохранения плана: ${itemsAfterPlan?.n}`,
+		);
 		/*
 		 * Ветка, а не жёсткое ожидание нуля. Сценарий обязан пережить починку: когда
 		 * писатель в treatment_items появится, файл должен позеленеть сам, а не
@@ -530,7 +647,11 @@ async function main(): Promise<void> {
 			// клиники ДО сварки, при полностью сохранённом плане на 3491,49 ₽.
 			const blindDashboard = await call("GET", "/api/dashboard", headersA);
 			const blindSummary = blindDashboard.json?.billingSummary ?? {};
-			const blindReceivables = await call("GET", "/api/reports/receivables", headersA);
+			const blindReceivables = await call(
+				"GET",
+				"/api/reports/receivables",
+				headersA,
+			);
 			console.log(
 				`деньги клиники при сохранённом плане на ${PLAN_TOTAL_TEXT} ₽: главный экран назначено=${blindSummary.totalPlannedRub} ` +
 					`долг=${blindSummary.totalDueRub}; дебиторка итог=${blindReceivables.json?.totalDebtRub} должников=${(blindReceivables.json?.rows ?? []).length}`,
@@ -542,10 +663,16 @@ async function main(): Promise<void> {
 				"клиника не видит собственного долга пациента: счёт уходит с пустой суммой, в дебиторке пациента нет, взыскивать нечего — по данным программы он лечится бесплатно",
 			);
 		} else {
-			check("позиций лечения ровно столько, сколько в плане", itemsAfterPlan?.n, 2);
+			check(
+				"позиций лечения ровно столько, сколько в плане",
+				itemsAfterPlan?.n,
+				2,
+			);
 		}
 
-		step("ШАГ 4. ЗАПИСЬ И ПРИЁМ: POST /api/appointments, POST /api/appointments/:id/visit");
+		step(
+			"ШАГ 4. ЗАПИСЬ И ПРИЁМ: POST /api/appointments, POST /api/appointments/:id/visit",
+		);
 		const startsAt = new Date(nowMs + 3_600_000).toISOString();
 		const endsAt = new Date(nowMs + 7_200_000).toISOString();
 		/*
@@ -553,37 +680,51 @@ async function main(): Promise<void> {
 		 * охранник `requireScheduleMutationAccess` объявлен (строка 137) и не
 		 * вызывается ни разу: измеряем, а не читаем.
 		 */
-		const unguarded = await call("POST", "/api/appointments", {
-			"x-dente-clinic-token": clinicTokenA,
-			"content-type": "application/json",
-		}, {
-			patientId: PATIENT_A,
-			doctorUserId: DOCTOR_A,
-			chairId: CHAIR_A,
-			status: "planned",
-			startsAt: new Date(nowMs + 10_800_000).toISOString(),
-			endsAt: new Date(nowMs + 14_400_000).toISOString(),
-			reason: "Проверка гейта расписания без секрета администратора",
-		});
-		console.log(`POST запись БЕЗ x-dente-admin-secret -> HTTP ${unguarded.statusCode}`);
+		const unguarded = await call(
+			"POST",
+			"/api/appointments",
+			{
+				"x-dente-clinic-token": clinicTokenA,
+				"content-type": "application/json",
+			},
+			{
+				patientId: PATIENT_A,
+				doctorUserId: DOCTOR_A,
+				chairId: CHAIR_A,
+				status: "planned",
+				startsAt: new Date(nowMs + 10_800_000).toISOString(),
+				endsAt: new Date(nowMs + 14_400_000).toISOString(),
+				reason: "Проверка гейта расписания без секрета администратора",
+			},
+		);
+		console.log(
+			`POST запись БЕЗ x-dente-admin-secret -> HTTP ${unguarded.statusCode}`,
+		);
 		if (unguarded.statusCode === 201) {
 			weldBroken(
 				"периметр расписания → секрет администратора",
 				"POST /api/appointments создал запись без заголовка x-dente-admin-secret (HTTP 201); requireScheduleMutationAccess в routes/schedule.ts:137 не вызывается ни разу",
 				"любой, у кого есть токен кабинета, пишет в расписание клиники в обход гейта администратора — тот же барьер на клинических маршрутах отвечает 403",
 			);
-			await db.execute(sql`delete from appointments where organization_id = ${ORG_A}::uuid`);
+			await db.execute(
+				sql`delete from appointments where organization_id = ${ORG_A}::uuid`,
+			);
 		}
 
-		const appointmentResponse = await call("POST", "/api/appointments", headersA, {
-			patientId: PATIENT_A,
-			doctorUserId: DOCTOR_A,
-			chairId: CHAIR_A,
-			status: "planned",
-			startsAt,
-			endsAt,
-			reason: "Лечение 36 и 46 по плану",
-		});
+		const appointmentResponse = await call(
+			"POST",
+			"/api/appointments",
+			headersA,
+			{
+				patientId: PATIENT_A,
+				doctorUserId: DOCTOR_A,
+				chairId: CHAIR_A,
+				status: "planned",
+				startsAt,
+				endsAt,
+				reason: "Лечение 36 и 46 по плану",
+			},
+		);
 		console.log(`POST запись -> HTTP ${appointmentResponse.statusCode}`);
 		if (appointmentResponse.statusCode !== 201) {
 			weldBroken(
@@ -606,8 +747,14 @@ async function main(): Promise<void> {
 			console.log(`запись в базе: ${appointmentId} статус=${created?.status}`);
 		}
 
-		const visitResponse = await call("POST", `/api/appointments/${appointmentId}/visit`, headersA);
-		console.log(`POST приём -> HTTP ${visitResponse.statusCode} ${visitResponse.body.slice(0, 200)}`);
+		const visitResponse = await call(
+			"POST",
+			`/api/appointments/${appointmentId}/visit`,
+			headersA,
+		);
+		console.log(
+			`POST приём -> HTTP ${visitResponse.statusCode} ${visitResponse.body.slice(0, 200)}`,
+		);
 		if (visitResponse.statusCode === 201) {
 			visitId = visitResponse.json?.visit?.id ?? null;
 		} else {
@@ -630,8 +777,22 @@ async function main(): Promise<void> {
 
 		step("ШАГ 5. СЧЁТ ПАЦИЕНТУ: POST /api/documents kind=payment_invoice");
 		const invoiceLines = [
-			{ serviceName: "Лечение кариеса 36", toothOrArea: "36", quantity: 1, unitPriceRub: PRICE_ONE, discountRub: 0, totalRub: PRICE_ONE },
-			{ serviceName: "Пломба 46", toothOrArea: "46", quantity: 1, unitPriceRub: PRICE_TWO, discountRub: 0, totalRub: PRICE_TWO },
+			{
+				serviceName: "Лечение кариеса 36",
+				toothOrArea: "36",
+				quantity: 1,
+				unitPriceRub: PRICE_ONE,
+				discountRub: 0,
+				totalRub: PRICE_ONE,
+			},
+			{
+				serviceName: "Пломба 46",
+				toothOrArea: "46",
+				quantity: 1,
+				unitPriceRub: PRICE_TWO,
+				discountRub: 0,
+				totalRub: PRICE_TWO,
+			},
 		];
 		const invoicePayload = {
 			patientId: PATIENT_A,
@@ -648,8 +809,10 @@ async function main(): Promise<void> {
 					serviceLines: invoiceLines,
 					totalAmountRub: Number(PLAN_TOTAL_TEXT),
 					dueDate: TODAY_TEXT,
-					paymentTerms: "Оплата в кассе клиники или переводом в течение трёх рабочих дней.",
-					clinicBankDetails: "р/с 40702810000000000001, банк проверки цепочки, БИК 049999999",
+					paymentTerms:
+						"Оплата в кассе клиники или переводом в течение трёх рабочих дней.",
+					clinicBankDetails:
+						"р/с 40702810000000000001, банк проверки цепочки, БИК 049999999",
 					cashlessPaymentAllowed: true,
 					cashDeskPaymentAllowed: true,
 					clinicRequisitesVerified: true,
@@ -658,11 +821,21 @@ async function main(): Promise<void> {
 				},
 			},
 		};
-		const invoiceResponse = await call("POST", "/api/documents", headersA, invoicePayload);
-		console.log(`POST счёт -> HTTP ${invoiceResponse.statusCode} ${invoiceResponse.body.slice(0, 260)}`);
+		const invoiceResponse = await call(
+			"POST",
+			"/api/documents",
+			headersA,
+			invoicePayload,
+		);
+		console.log(
+			`POST счёт -> HTTP ${invoiceResponse.statusCode} ${invoiceResponse.body.slice(0, 260)}`,
+		);
 		if (invoiceResponse.statusCode === 201) {
 			invoiceDocumentId = invoiceResponse.json?.id ?? null;
-			const storedInvoice = await firstRow<{ total_amount_rub: string | null; status: string }>(
+			const storedInvoice = await firstRow<{
+				total_amount_rub: string | null;
+				status: string;
+			}>(
 				sql`select total_amount_rub::text as total_amount_rub, status::text as status
 				      from generated_documents where id = ${invoiceDocumentId}::uuid`,
 			);
@@ -682,7 +855,11 @@ async function main(): Promise<void> {
 					"пациент получает счёт без суммы, а бухгалтерия не видит выставленного требования: счёт есть, денег в нём нет",
 				);
 			} else {
-				checkRub("сумма счёта в базе", storedInvoice?.total_amount_rub, PLAN_TOTAL_TEXT);
+				checkRub(
+					"сумма счёта в базе",
+					storedInvoice?.total_amount_rub,
+					PLAN_TOTAL_TEXT,
+				);
 			}
 		} else {
 			weldBroken(
@@ -692,7 +869,9 @@ async function main(): Promise<void> {
 			);
 		}
 
-		step("ШАГ 6. СВАРКА ПЕРВОГО РАЗРЫВА: позиции лечения ставятся прямым SQL, чтобы цепочка шла дальше");
+		step(
+			"ШАГ 6. СВАРКА ПЕРВОГО РАЗРЫВА: позиции лечения ставятся прямым SQL, чтобы цепочка шла дальше",
+		);
 		/*
 		 * Обход ровно настолько, чтобы идти дальше: строки в treatment_items
 		 * повторяют позиции плана один в один. Без них ни долг, ни дебиторка, ни
@@ -706,10 +885,14 @@ async function main(): Promise<void> {
 				  (${ORG_A}::uuid, ${PATIENT_A}::uuid, ${visitId}::uuid, ${serviceOneId}::uuid, '36', ${"Лечение кариеса 36"}, 1, ${PRICE_ONE}, ${PRICE_ONE}, 0, 'approved', ${DOCTOR_A}::uuid),
 				  (${ORG_A}::uuid, ${PATIENT_A}::uuid, ${visitId}::uuid, ${serviceTwoId}::uuid, '46', ${"Пломба 46"}, 1, ${PRICE_TWO}, ${PRICE_TWO}, 0, 'approved', ${DOCTOR_A}::uuid)`);
 		} else {
-			console.log("сварка не нужна: писатель в treatment_items появился, шов работает сам");
+			console.log(
+				"сварка не нужна: писатель в treatment_items появился, шов работает сам",
+			);
 		}
 		const weldedDebt = await debtText(ORG_A);
-		console.log(`после сварки SQL: назначено=${weldedDebt.planned} оплачено=${weldedDebt.paid} долг=${weldedDebt.due}`);
+		console.log(
+			`после сварки SQL: назначено=${weldedDebt.planned} оплачено=${weldedDebt.paid} долг=${weldedDebt.due}`,
+		);
 		check("назначено после сварки", weldedDebt.planned, PLAN_TOTAL_TEXT);
 
 		const invoiceAfterWeld = await call("POST", "/api/documents", headersA, {
@@ -725,19 +908,37 @@ async function main(): Promise<void> {
 			const storedSecond = await firstRow<{ total_amount_rub: string | null }>(
 				sql`select total_amount_rub::text as total_amount_rub from generated_documents where id = ${invoiceAfterWeld.json?.id}::uuid`,
 			);
-			console.log(`тот же счёт после сварки: сумма ${storedSecond?.total_amount_rub}`);
+			console.log(
+				`тот же счёт после сварки: сумма ${storedSecond?.total_amount_rub}`,
+			);
 			// Причина названа точно: пустая сумма счёта — не дефект документов, а
 			// отсутствие писателя в treatment_items. Тот же запрос теперь верен.
-			check("сумма счёта после сварки", storedSecond?.total_amount_rub, PLAN_TOTAL_TEXT);
+			check(
+				"сумма счёта после сварки",
+				storedSecond?.total_amount_rub,
+				PLAN_TOTAL_TEXT,
+			);
 		} else {
-			console.log(`тот же счёт после сварки -> HTTP ${invoiceAfterWeld.statusCode} ${invoiceAfterWeld.body.slice(0, 200)}`);
+			console.log(
+				`тот же счёт после сварки -> HTTP ${invoiceAfterWeld.statusCode} ${invoiceAfterWeld.body.slice(0, 200)}`,
+			);
 		}
 
 		const dueBeforePayment = await call("GET", "/api/dashboard", headersA);
 		const summaryBefore = dueBeforePayment.json?.billingSummary ?? {};
-		console.log(`главный экран до оплаты: назначено=${summaryBefore.totalPlannedRub} оплачено=${summaryBefore.totalPaidRub} долг=${summaryBefore.totalDueRub}`);
-		checkRub("назначено на главном экране", summaryBefore.totalPlannedRub, PLAN_TOTAL_TEXT);
-		checkRub("долг на главном экране до оплаты", summaryBefore.totalDueRub, PLAN_TOTAL_TEXT);
+		console.log(
+			`главный экран до оплаты: назначено=${summaryBefore.totalPlannedRub} оплачено=${summaryBefore.totalPaidRub} долг=${summaryBefore.totalDueRub}`,
+		);
+		checkRub(
+			"назначено на главном экране",
+			summaryBefore.totalPlannedRub,
+			PLAN_TOTAL_TEXT,
+		);
+		checkRub(
+			"долг на главном экране до оплаты",
+			summaryBefore.totalDueRub,
+			PLAN_TOTAL_TEXT,
+		);
 
 		step("ШАГ 7. ЧАСТИЧНАЯ ОПЛАТА: POST /api/billing/payments на 1000,00 ₽");
 		const firstPaymentKey = `money-chain-first-${nowMs}`;
@@ -748,10 +949,16 @@ async function main(): Promise<void> {
 			method: "cash",
 			clientMutationId: firstPaymentKey,
 		});
-		console.log(`POST оплата 1 -> HTTP ${firstPayment.statusCode} ${firstPayment.body.slice(0, 200)}`);
+		console.log(
+			`POST оплата 1 -> HTTP ${firstPayment.statusCode} ${firstPayment.body.slice(0, 200)}`,
+		);
 		if (firstPayment.statusCode === 201) {
 			firstPaymentId = firstPayment.json?.id ?? null;
-			checkRub("сумма первой оплаты в ответе", firstPayment.json?.amountRub, "1000.00");
+			checkRub(
+				"сумма первой оплаты в ответе",
+				firstPayment.json?.amountRub,
+				"1000.00",
+			);
 			check("оплата привязана к приёму", firstPayment.json?.visitId, visitId);
 		} else {
 			weldBroken(
@@ -766,7 +973,11 @@ async function main(): Promise<void> {
 			);
 			firstPaymentId = inserted?.id ?? null;
 		}
-		const storedFirst = await firstRow<{ amount_rub: string; status: string; doctor_user_id: string | null }>(
+		const storedFirst = await firstRow<{
+			amount_rub: string;
+			status: string;
+			doctor_user_id: string | null;
+		}>(
 			sql`select p.amount_rub::text as amount_rub, p.status::text as status, a.doctor_user_id::text as doctor_user_id
 			      from payments p
 			      left join visits v on v.id = p.visit_id
@@ -776,7 +987,11 @@ async function main(): Promise<void> {
 		console.log(`оплата 1 в базе: ${JSON.stringify(storedFirst)}`);
 		check("сумма первой оплаты в базе", storedFirst?.amount_rub, "1000.00");
 		check("статус первой оплаты", storedFirst?.status, "paid");
-		check("деньги отнесены к врачу записи", storedFirst?.doctor_user_id, DOCTOR_A);
+		check(
+			"деньги отнесены к врачу записи",
+			storedFirst?.doctor_user_id,
+			DOCTOR_A,
+		);
 
 		// ИДЕМПОТЕНТНОСТЬ: повтор с тем же ключом обязан вернуть ту же оплату, а не
 		// удвоить деньги. Двойное нажатие «Принять оплату» — типовое событие у кассы.
@@ -787,7 +1002,11 @@ async function main(): Promise<void> {
 			method: "cash",
 			clientMutationId: firstPaymentKey,
 		});
-		check("повтор оплаты с тем же ключом не создал новую", repeated.statusCode, 200);
+		check(
+			"повтор оплаты с тем же ключом не создал новую",
+			repeated.statusCode,
+			200,
+		);
 		check("повтор вернул ту же оплату", repeated.json?.id, firstPaymentId);
 		const paymentsAfterRepeat = await firstRow<{ n: number }>(
 			sql`select count(*)::int as n from payments where client_mutation_id = ${firstPaymentKey}`,
@@ -795,28 +1014,61 @@ async function main(): Promise<void> {
 		check("строк оплаты по ключу ровно одна", paymentsAfterRepeat?.n, 1);
 
 		const debtAfterFirst = await debtText(ORG_A);
-		console.log(`после частичной оплаты SQL: назначено=${debtAfterFirst.planned} оплачено=${debtAfterFirst.paid} долг=${debtAfterFirst.due}`);
+		console.log(
+			`после частичной оплаты SQL: назначено=${debtAfterFirst.planned} оплачено=${debtAfterFirst.paid} долг=${debtAfterFirst.due}`,
+		);
 		check("оплачено после первой оплаты", debtAfterFirst.paid, "1000.00");
 		check("остаток долга", debtAfterFirst.due, "2491.49");
-		const receivablesAfterFirst = await call("GET", "/api/reports/receivables", headersA);
-		console.log(`дебиторка: HTTP ${receivablesAfterFirst.statusCode} итог=${receivablesAfterFirst.json?.totalDebtRub} должников=${(receivablesAfterFirst.json?.rows ?? []).length}`);
-		checkRub("дебиторка видит остаток долга", receivablesAfterFirst.json?.totalDebtRub, "2491.49");
-		check("должник ровно один", (receivablesAfterFirst.json?.rows ?? []).length, 1);
-		check("и это наш пациент", receivablesAfterFirst.json?.rows?.[0]?.patientId, PATIENT_A);
+		const receivablesAfterFirst = await call(
+			"GET",
+			"/api/reports/receivables",
+			headersA,
+		);
+		console.log(
+			`дебиторка: HTTP ${receivablesAfterFirst.statusCode} итог=${receivablesAfterFirst.json?.totalDebtRub} должников=${(receivablesAfterFirst.json?.rows ?? []).length}`,
+		);
+		checkRub(
+			"дебиторка видит остаток долга",
+			receivablesAfterFirst.json?.totalDebtRub,
+			"2491.49",
+		);
+		check(
+			"должник ровно один",
+			(receivablesAfterFirst.json?.rows ?? []).length,
+			1,
+		);
+		check(
+			"и это наш пациент",
+			receivablesAfterFirst.json?.rows?.[0]?.patientId,
+			PATIENT_A,
+		);
 
-		step("ШАГ 8. ДОПЛАТА: POST /api/billing/payments на 2491,49 ₽ — копейка обязана сойтись");
+		step(
+			"ШАГ 8. ДОПЛАТА: POST /api/billing/payments на 2491,49 ₽ — копейка обязана сойтись",
+		);
 		const secondPaymentKey = `money-chain-second-${nowMs}`;
-		const secondPayment = await call("POST", "/api/billing/payments", headersA, {
-			patientId: PATIENT_A,
-			visitId,
-			amountRub: SECOND_PAYMENT,
-			method: "card",
-			clientMutationId: secondPaymentKey,
-		});
-		console.log(`POST оплата 2 -> HTTP ${secondPayment.statusCode} ${secondPayment.body.slice(0, 200)}`);
+		const secondPayment = await call(
+			"POST",
+			"/api/billing/payments",
+			headersA,
+			{
+				patientId: PATIENT_A,
+				visitId,
+				amountRub: SECOND_PAYMENT,
+				method: "card",
+				clientMutationId: secondPaymentKey,
+			},
+		);
+		console.log(
+			`POST оплата 2 -> HTTP ${secondPayment.statusCode} ${secondPayment.body.slice(0, 200)}`,
+		);
 		if (secondPayment.statusCode === 201) {
 			secondPaymentId = secondPayment.json?.id ?? null;
-			checkRub("сумма доплаты в ответе", secondPayment.json?.amountRub, "2491.49");
+			checkRub(
+				"сумма доплаты в ответе",
+				secondPayment.json?.amountRub,
+				"2491.49",
+			);
 		} else {
 			weldBroken(
 				"касса → доплата с копейками",
@@ -832,14 +1084,32 @@ async function main(): Promise<void> {
 		}
 		const paidAfterTwo = await paidTotalText(ORG_A);
 		console.log(`оплачено всего (SQL, текст из numeric): ${paidAfterTwo}`);
-		check("две оплаты сложились без потери копеек", paidAfterTwo, PAID_AFTER_TWO_TEXT);
+		check(
+			"две оплаты сложились без потери копеек",
+			paidAfterTwo,
+			PAID_AFTER_TWO_TEXT,
+		);
 		const debtAfterTwo = await debtText(ORG_A);
 		check("долг закрыт в ноль", debtAfterTwo.due, "0.00");
-		const receivablesClosed = await call("GET", "/api/reports/receivables", headersA);
-		check("дебиторка пуста после полной оплаты", (receivablesClosed.json?.rows ?? []).length, 0);
-		checkRub("итог дебиторки ноль", receivablesClosed.json?.totalDebtRub, "0.00");
+		const receivablesClosed = await call(
+			"GET",
+			"/api/reports/receivables",
+			headersA,
+		);
+		check(
+			"дебиторка пуста после полной оплаты",
+			(receivablesClosed.json?.rows ?? []).length,
+			0,
+		);
+		checkRub(
+			"итог дебиторки ноль",
+			receivablesClosed.json?.totalDebtRub,
+			"0.00",
+		);
 
-		step("ШАГ 9. ПЕРЕПЛАТА: POST /api/billing/payments на 500,00 ₽ с фискальным чеком");
+		step(
+			"ШАГ 9. ПЕРЕПЛАТА: POST /api/billing/payments на 500,00 ₽ с фискальным чеком",
+		);
 		const overpayKey = `money-chain-overpay-${nowMs}`;
 		/*
 		 * ПЛАТЕЛЬЩИК НАЗВАН ПОЛНОСТЬЮ, И ЭТО НЕ УКРАШЕНИЕ. Выдача заявления на
@@ -864,11 +1134,21 @@ async function main(): Promise<void> {
 			payerIdentityDocument: "паспорт 12 34 567890",
 			payerRelationship: "пациент",
 		});
-		console.log(`POST переплата -> HTTP ${overpay.statusCode} ${overpay.body.slice(0, 200)}`);
+		console.log(
+			`POST переплата -> HTTP ${overpay.statusCode} ${overpay.body.slice(0, 200)}`,
+		);
 		if (overpay.statusCode === 201) {
 			overpaymentId = overpay.json?.id ?? null;
-			check("номер чека сохранён", overpay.json?.fiscalReceiptNumber, OVERPAY_RECEIPT_NUMBER);
-			check("дата чека сохранена", overpay.json?.fiscalReceiptIssuedAt, OVERPAY_RECEIPT_DATE);
+			check(
+				"номер чека сохранён",
+				overpay.json?.fiscalReceiptNumber,
+				OVERPAY_RECEIPT_NUMBER,
+			);
+			check(
+				"дата чека сохранена",
+				overpay.json?.fiscalReceiptIssuedAt,
+				OVERPAY_RECEIPT_DATE,
+			);
 		} else {
 			weldBroken(
 				"касса → переплата с чеком",
@@ -892,12 +1172,20 @@ async function main(): Promise<void> {
 
 		const dashboardOverpaid = await call("GET", "/api/dashboard", headersA);
 		const summaryOverpaid = dashboardOverpaid.json?.billingSummary ?? {};
-		const receivablesOverpaid = await call("GET", "/api/reports/receivables", headersA);
+		const receivablesOverpaid = await call(
+			"GET",
+			"/api/reports/receivables",
+			headersA,
+		);
 		console.log(
 			`главный экран при переплате: оплачено=${summaryOverpaid.totalPaidRub} долг=${summaryOverpaid.totalDueRub}; ` +
 				`дебиторка: долг=${receivablesOverpaid.json?.totalDebtRub} переплаты=${receivablesOverpaid.json?.totalPrepaidRub} у ${(receivablesOverpaid.json?.prepayments ?? []).length} пациент(ов)`,
 		);
-		checkRub("оплачено на главном экране", summaryOverpaid.totalPaidRub, PAID_AFTER_OVERPAY_TEXT);
+		checkRub(
+			"оплачено на главном экране",
+			summaryOverpaid.totalPaidRub,
+			PAID_AFTER_OVERPAY_TEXT,
+		);
 		/*
 		 * РАСХОЖДЕНИЕ ФОРМУЛ, И ОНО ТУТ ЖЕ СВОДИТСЯ. Главный экран считает долг как
 		 * `Math.max(0, назначено − оплачено)` (sampleData.ts:1349) и переплату
@@ -906,15 +1194,25 @@ async function main(): Promise<void> {
 		 * Это разные вопросы к одним данным, а не дефект: 0 = max(0, −500), и
 		 * 500 = −(−500).
 		 */
-		checkRub("долг главного экрана обрезан в ноль", summaryOverpaid.totalDueRub, "0.00");
-		checkRub("переплата названа отчётом дебиторки", receivablesOverpaid.json?.totalPrepaidRub, "500.00");
+		checkRub(
+			"долг главного экрана обрезан в ноль",
+			summaryOverpaid.totalDueRub,
+			"0.00",
+		);
+		checkRub(
+			"переплата названа отчётом дебиторки",
+			receivablesOverpaid.json?.totalPrepaidRub,
+			"500.00",
+		);
 		console.log(
 			`РАСХОЖДЕНИЕ ФОРМУЛ ПЕРЕПЛАТЫ СВЕДЕНО: назначено ${PLAN_TOTAL_TEXT} − оплачено ${PAID_AFTER_OVERPAY_TEXT} = −500.00; ` +
 				`главный экран печатает долг ${summaryOverpaid.totalDueRub} (обрезка в ноль), дебиторка — переплату ${receivablesOverpaid.json?.totalPrepaidRub} ₽ ` +
 				`у пациента «${receivablesOverpaid.json?.prepayments?.[0]?.patientName}». Обе цифры верны, вопросы разные.`,
 		);
 
-		step("ШАГ 10. ВОЗВРАТ: POST /api/documents kind=payment_refund_correction_request");
+		step(
+			"ШАГ 10. ВОЗВРАТ: POST /api/documents kind=payment_refund_correction_request",
+		);
 		const refundPayload = {
 			patientId: PATIENT_A,
 			visitId,
@@ -930,15 +1228,27 @@ async function main(): Promise<void> {
 					recipientFullName: "Пациент денежной цепочки А",
 					recipientIdentityDocument: "паспорт 12 34 567890",
 					originalFiscalReceiptNumber: OVERPAY_RECEIPT_NUMBER,
-					accountantDecision: "Возврат согласован: переплата подтверждена сверкой кассы за день.",
+					accountantDecision:
+						"Возврат согласован: переплата подтверждена сверкой кассы за день.",
 				},
 			},
 		};
-		const refund = await call("POST", "/api/documents", headersA, refundPayload);
-		console.log(`POST возврат -> HTTP ${refund.statusCode} ${refund.body.slice(0, 260)}`);
+		const refund = await call(
+			"POST",
+			"/api/documents",
+			headersA,
+			refundPayload,
+		);
+		console.log(
+			`POST возврат -> HTTP ${refund.statusCode} ${refund.body.slice(0, 260)}`,
+		);
 		if (refund.statusCode === 201) {
 			refundDocumentId = refund.json?.id ?? null;
-			checkRub("сумма заявления на возврат", refund.json?.totalAmountRub, "500.00");
+			checkRub(
+				"сумма заявления на возврат",
+				refund.json?.totalAmountRub,
+				"500.00",
+			);
 		} else {
 			weldBroken(
 				"переплата → заявление на возврат",
@@ -949,21 +1259,28 @@ async function main(): Promise<void> {
 
 		// Возврат «выдаётся» — это момент, когда деньги покидают кассу.
 		if (refundDocumentId) {
-			const issued = await call("POST", `/api/documents/${refundDocumentId}/issue`, headersA, {
-				signatureAttestation: {
-					mode: "paper_signed",
-					signedAt: TODAY_TEXT,
-					recipientFullName: "Пациент денежной цепочки А",
-					recipientRole: "пациент",
-					staffFullName: "Владелец клиники А",
-					staffRole: "владелец клиники",
-					identityChecked: true,
-					documentOpenedAndChecked: true,
-					recipientSigned: true,
-					clinicRepresentativeSigned: true,
+			const issued = await call(
+				"POST",
+				`/api/documents/${refundDocumentId}/issue`,
+				headersA,
+				{
+					signatureAttestation: {
+						mode: "paper_signed",
+						signedAt: TODAY_TEXT,
+						recipientFullName: "Пациент денежной цепочки А",
+						recipientRole: "пациент",
+						staffFullName: "Владелец клиники А",
+						staffRole: "владелец клиники",
+						identityChecked: true,
+						documentOpenedAndChecked: true,
+						recipientSigned: true,
+						clinicRepresentativeSigned: true,
+					},
 				},
-			});
-			console.log(`POST выдача возврата -> HTTP ${issued.statusCode} ${issued.body.slice(0, 260)}`);
+			);
+			console.log(
+				`POST выдача возврата -> HTTP ${issued.statusCode} ${issued.body.slice(0, 260)}`,
+			);
 			if (issued.statusCode !== 200) {
 				weldBroken(
 					"заявление на возврат → выдача документа",
@@ -977,7 +1294,9 @@ async function main(): Promise<void> {
 				...refundPayload,
 				title: "Второе заявление на возврат той же переплаты",
 			});
-			console.log(`POST второй возврат по тому же чеку -> HTTP ${secondRefund.statusCode} ${secondRefund.body.slice(0, 200)}`);
+			console.log(
+				`POST второй возврат по тому же чеку -> HTTP ${secondRefund.statusCode} ${secondRefund.body.slice(0, 200)}`,
+			);
 			if (secondRefund.statusCode === 201) {
 				weldBroken(
 					"возврат → остаток по чеку",
@@ -985,8 +1304,14 @@ async function main(): Promise<void> {
 					`клиника может выплатить ${OVERPAYMENT * 2} ₽ по чеку на ${OVERPAYMENT} ₽ — прямая утрата денег`,
 				);
 			} else {
-				check("повторный возврат по тому же чеку отклонён", secondRefund.statusCode, 409);
-				console.log(`  причина отказа: ${secondRefund.json?.message ?? secondRefund.body.slice(0, 200)}`);
+				check(
+					"повторный возврат по тому же чеку отклонён",
+					secondRefund.statusCode,
+					409,
+				);
+				console.log(
+					`  причина отказа: ${secondRefund.json?.message ?? secondRefund.body.slice(0, 200)}`,
+				);
 			}
 		}
 
@@ -1008,10 +1333,15 @@ async function main(): Promise<void> {
 		 * шов снова порвётся, сценарий скажет об этом разрывом, а не молча
 		 * подстроится: ветка `paid` по-прежнему зовёт `weldBroken`.
 		 */
-		const paymentAfterRefund = await firstRow<{ status: string; amount_rub: string }>(
+		const paymentAfterRefund = await firstRow<{
+			status: string;
+			amount_rub: string;
+		}>(
 			sql`select status::text as status, amount_rub::text as amount_rub from payments where id = ${overpaymentId}::uuid`,
 		);
-		console.log(`платёж переплаты после возврата: ${JSON.stringify(paymentAfterRefund)}`);
+		console.log(
+			`платёж переплаты после возврата: ${JSON.stringify(paymentAfterRefund)}`,
+		);
 		const refundReachedTheTill = paymentAfterRefund?.status === "refunded";
 		if (!refundReachedTheTill) {
 			weldBroken(
@@ -1037,23 +1367,57 @@ async function main(): Promise<void> {
 		 * повторное списание, если оно когда-нибудь появится.
 		 */
 		if (!refundReachedTheTill) {
-			console.log("обход разорванного шва: статус возврата ставится прямым SQL, чтобы дойти до отчётов");
-			await db.execute(sql`update payments set status = 'refunded' where id = ${overpaymentId}::uuid`);
+			console.log(
+				"обход разорванного шва: статус возврата ставится прямым SQL, чтобы дойти до отчётов",
+			);
+			await db.execute(
+				sql`update payments set status = 'refunded' where id = ${overpaymentId}::uuid`,
+			);
 		} else {
 			console.log("обход не нужен: маршрут сам перевёл платёж в «refunded»");
 		}
 		const paidAfterWeldedRefund = await paidTotalText(ORG_A);
 		check("касса после возврата", paidAfterWeldedRefund, PAID_AFTER_TWO_TEXT);
-		const receivablesAfterRefund = await call("GET", "/api/reports/receivables", headersA);
-		checkRub("переплат больше нет", receivablesAfterRefund.json?.totalPrepaidRub, "0.00");
-		checkRub("долга тоже нет", receivablesAfterRefund.json?.totalDebtRub, "0.00");
+		const receivablesAfterRefund = await call(
+			"GET",
+			"/api/reports/receivables",
+			headersA,
+		);
+		checkRub(
+			"переплат больше нет",
+			receivablesAfterRefund.json?.totalPrepaidRub,
+			"0.00",
+		);
+		checkRub(
+			"долга тоже нет",
+			receivablesAfterRefund.json?.totalDebtRub,
+			"0.00",
+		);
 
 		step("ШАГ 12. ОТЧЁТ РУКОВОДИТЕЛЮ: выручка, врачи, сводка, выплаты");
-		const revenue = await call("GET", `/api/reports/revenue${reportQuery}`, headersA);
-		const doctors = await call("GET", `/api/reports/doctors${reportQuery}`, headersA);
-		const summary = await call("GET", `/api/reports/summary${reportQuery}`, headersA);
-		const payouts = await call("GET", `/api/billing/payouts${reportQuery}`, headersA);
-		console.log(`HTTP: выручка ${revenue.statusCode}, врачи ${doctors.statusCode}, сводка ${summary.statusCode}, выплаты ${payouts.statusCode}`);
+		const revenue = await call(
+			"GET",
+			`/api/reports/revenue${reportQuery}`,
+			headersA,
+		);
+		const doctors = await call(
+			"GET",
+			`/api/reports/doctors${reportQuery}`,
+			headersA,
+		);
+		const summary = await call(
+			"GET",
+			`/api/reports/summary${reportQuery}`,
+			headersA,
+		);
+		const payouts = await call(
+			"GET",
+			`/api/billing/payouts${reportQuery}`,
+			headersA,
+		);
+		console.log(
+			`HTTP: выручка ${revenue.statusCode}, врачи ${doctors.statusCode}, сводка ${summary.statusCode}, выплаты ${payouts.statusCode}`,
+		);
 		const revenueSqlRow = await firstRow<{ total: string }>(
 			sql`select coalesce(sum(amount_rub), 0)::numeric(12,2)::text as total from payments
 			     where organization_id = ${ORG_A}::uuid and status = 'paid'
@@ -1064,8 +1428,14 @@ async function main(): Promise<void> {
 			// Поле называется totalRub (services/reports/managerReports.ts:349), а не
 			// totalRevenueRub: первый прогон читал несуществующее имя и получал
 			// undefined — то есть проверял свою опечатку, а не выручку клиники.
-			checkRub("выручка отчёта = выручка SQL", revenue.json?.totalRub, revenueSqlRow?.total ?? "0.00");
-			console.log(`  точек в графике выручки: ${(revenue.json?.points ?? []).length}`);
+			checkRub(
+				"выручка отчёта = выручка SQL",
+				revenue.json?.totalRub,
+				revenueSqlRow?.total ?? "0.00",
+			);
+			console.log(
+				`  точек в графике выручки: ${(revenue.json?.points ?? []).length}`,
+			);
 		} else {
 			weldBroken(
 				"отчёт руководителю → выручка",
@@ -1076,20 +1446,48 @@ async function main(): Promise<void> {
 		if (doctors.statusCode === 200) {
 			const doctorRows: any[] = doctors.json?.rows ?? [];
 			const mine = doctorRows.find((row) => row.doctorUserId === DOCTOR_A);
-			console.log(`врачи отчёта: ${JSON.stringify(doctorRows.map((row) => ({ id: row.doctorUserId, revenue: row.revenueRub })))}`);
-			checkRub("выручка отнесена нашему врачу", mine?.revenueRub, PAID_AFTER_TWO_TEXT);
-			check("чужого врача в отчёте нет", doctorRows.some((row) => row.doctorUserId === DOCTOR_B), false);
+			console.log(
+				`врачи отчёта: ${JSON.stringify(doctorRows.map((row) => ({ id: row.doctorUserId, revenue: row.revenueRub })))}`,
+			);
+			checkRub(
+				"выручка отнесена нашему врачу",
+				mine?.revenueRub,
+				PAID_AFTER_TWO_TEXT,
+			);
+			check(
+				"чужого врача в отчёте нет",
+				doctorRows.some((row) => row.doctorUserId === DOCTOR_B),
+				false,
+			);
 		}
 		if (summary.statusCode === 200) {
-			console.log(`сводка: дебиторка=${JSON.stringify(summary.json?.receivables)}`);
+			console.log(
+				`сводка: дебиторка=${JSON.stringify(summary.json?.receivables)}`,
+			);
 			checkRub("сводка: долг", summary.json?.receivables?.totalDebtRub, "0.00");
-			checkRub("сводка: переплаты", summary.json?.receivables?.totalPrepaidRub, "0.00");
+			checkRub(
+				"сводка: переплаты",
+				summary.json?.receivables?.totalPrepaidRub,
+				"0.00",
+			);
 		}
 		if (payouts.statusCode === 200) {
-			console.log(`выплаты: охват=${payouts.json?.scope} итоги=${JSON.stringify(payouts.json?.totals)}`);
-			checkRub("выплаты: касса периода", payouts.json?.totals?.revenueRub, PAID_AFTER_TWO_TEXT);
-			checkRub("выплаты: касса, отнесённая к врачам", payouts.json?.totals?.attributableRevenueRub, PAID_AFTER_TWO_TEXT);
-			const payoutRow = (payouts.json?.rows ?? []).find((row: any) => row.doctorUserId === DOCTOR_A);
+			console.log(
+				`выплаты: охват=${payouts.json?.scope} итоги=${JSON.stringify(payouts.json?.totals)}`,
+			);
+			checkRub(
+				"выплаты: касса периода",
+				payouts.json?.totals?.revenueRub,
+				PAID_AFTER_TWO_TEXT,
+			);
+			checkRub(
+				"выплаты: касса, отнесённая к врачам",
+				payouts.json?.totals?.attributableRevenueRub,
+				PAID_AFTER_TWO_TEXT,
+			);
+			const payoutRow = (payouts.json?.rows ?? []).find(
+				(row: any) => row.doctorUserId === DOCTOR_A,
+			);
 			check("ставка врача не выдумана", payoutRow?.payoutRub ?? null, null);
 			console.log(`  причина по врачу: ${payoutRow?.note}`);
 		} else {
@@ -1100,14 +1498,21 @@ async function main(): Promise<void> {
 			);
 		}
 
-		step("ШАГ 13. ИЗОЛЯЦИЯ: клиника Б не видит и не может тронуть деньги клиники А");
+		step(
+			"ШАГ 13. ИЗОЛЯЦИЯ: клиника Б не видит и не может тронуть деньги клиники А",
+		);
 		const foreignKey = `money-chain-foreign-${nowMs}`;
-		const foreignPayment = await call("POST", "/api/billing/payments", headersB, {
-			patientId: PATIENT_B,
-			amountRub: FOREIGN_PAYMENT,
-			method: "card",
-			clientMutationId: foreignKey,
-		});
+		const foreignPayment = await call(
+			"POST",
+			"/api/billing/payments",
+			headersB,
+			{
+				patientId: PATIENT_B,
+				amountRub: FOREIGN_PAYMENT,
+				method: "card",
+				clientMutationId: foreignKey,
+			},
+		);
 		console.log(`оплата клиники Б -> HTTP ${foreignPayment.statusCode}`);
 		if (foreignPayment.statusCode !== 201) {
 			await db.execute(sql`
@@ -1122,44 +1527,96 @@ async function main(): Promise<void> {
 			method: "cash",
 			clientMutationId: `money-chain-cross-${nowMs}`,
 		});
-		check("Б не может принять оплату за пациента А", crossPayment.statusCode, 404);
+		check(
+			"Б не может принять оплату за пациента А",
+			crossPayment.statusCode,
+			404,
+		);
 		const crossStored = await firstRow<{ n: number }>(
 			sql`select count(*)::int as n from payments
 			     where patient_id = ${PATIENT_A}::uuid and organization_id = ${ORG_B}::uuid`,
 		);
 		if ((crossStored?.n ?? 0) > 0) {
 			failures += 1;
-			console.log(`[УТЕЧКА] клиника Б записала ${crossStored?.n} оплат(ы) на пациента клиники А`);
+			console.log(
+				`[УТЕЧКА] клиника Б записала ${crossStored?.n} оплат(ы) на пациента клиники А`,
+			);
 		} else {
-			console.log("оплат клиники Б на пациента А в базе нет — изоляция кассы держится");
+			console.log(
+				"оплат клиники Б на пациента А в базе нет — изоляция кассы держится",
+			);
 		}
 
 		// 2. Б читает план лечения пациента А.
-		const crossPlanRead = await call("GET", `/api/patients/${PATIENT_A}/treatment-plans`, headersB);
+		const crossPlanRead = await call(
+			"GET",
+			`/api/patients/${PATIENT_A}/treatment-plans`,
+			headersB,
+		);
 		check("Б не читает план лечения пациента А", crossPlanRead.statusCode, 404);
 		// 3. Б пишет план лечения пациенту А.
-		const crossPlanWrite = await call("POST", `/api/patients/${PATIENT_A}/treatment-plans`, headersB, {
-			name: "Чужой план",
-			items: [{ toothNumber: 11, priceId: "manual", name: "Чужая услуга", quantity: 1, price: 100_000, discount: 0, phase: 1 }],
-		});
+		const crossPlanWrite = await call(
+			"POST",
+			`/api/patients/${PATIENT_A}/treatment-plans`,
+			headersB,
+			{
+				name: "Чужой план",
+				items: [
+					{
+						toothNumber: 11,
+						priceId: "manual",
+						name: "Чужая услуга",
+						quantity: 1,
+						price: 100_000,
+						discount: 0,
+						phase: 1,
+					},
+				],
+			},
+		);
 		check("Б не пишет план лечения пациенту А", crossPlanWrite.statusCode, 404);
 		// 4. Б выставляет документ пациенту А.
-		const crossDocument = await call("POST", "/api/documents", headersB, refundPayload);
+		const crossDocument = await call(
+			"POST",
+			"/api/documents",
+			headersB,
+			refundPayload,
+		);
 		check("Б не выставляет документ пациенту А", crossDocument.statusCode, 404);
 
 		// 5. Деньги клиники А не видны в отчётах и на экране клиники Б.
 		const foreignDashboard = await call("GET", "/api/dashboard", headersB);
 		const foreignSummary = foreignDashboard.json?.billingSummary ?? {};
-		const foreignReceivables = await call("GET", "/api/reports/receivables", headersB);
-		const foreignRevenue = await call("GET", `/api/reports/revenue${reportQuery}`, headersB);
-		const foreignPayouts = await call("GET", `/api/billing/payouts${reportQuery}`, headersB);
+		const foreignReceivables = await call(
+			"GET",
+			"/api/reports/receivables",
+			headersB,
+		);
+		const foreignRevenue = await call(
+			"GET",
+			`/api/reports/revenue${reportQuery}`,
+			headersB,
+		);
+		const foreignPayouts = await call(
+			"GET",
+			`/api/billing/payouts${reportQuery}`,
+			headersB,
+		);
 		console.log(
 			`клиника Б: оплачено=${foreignSummary.totalPaidRub} долг=${foreignSummary.totalDueRub}; ` +
 				`выручка=${foreignRevenue.json?.totalRub}; дебиторка=${foreignReceivables.json?.totalDebtRub}`,
 		);
-		checkRub("касса клиники Б — только своя", foreignSummary.totalPaidRub, "7777.77");
+		checkRub(
+			"касса клиники Б — только своя",
+			foreignSummary.totalPaidRub,
+			"7777.77",
+		);
 		if (foreignRevenue.statusCode === 200) {
-			checkRub("выручка клиники Б — только своя", foreignRevenue.json?.totalRub, "7777.77");
+			checkRub(
+				"выручка клиники Б — только своя",
+				foreignRevenue.json?.totalRub,
+				"7777.77",
+			);
 		}
 		const foreignMentionsA =
 			JSON.stringify(foreignReceivables.json ?? {}).includes(PATIENT_A) ||
@@ -1167,14 +1624,24 @@ async function main(): Promise<void> {
 			JSON.stringify(foreignRevenue.json ?? {}).includes(PATIENT_A);
 		if (foreignMentionsA) {
 			failures += 1;
-			console.log("[УТЕЧКА] отчёты клиники Б упоминают пациента или врача клиники А");
+			console.log(
+				"[УТЕЧКА] отчёты клиники Б упоминают пациента или врача клиники А",
+			);
 		} else {
 			console.log("в отчётах клиники Б нет ни пациента, ни врача клиники А");
 		}
 		// 6. Запрос вообще без заголовков к деньгам не допускается.
-		const anonymous = await call("GET", "/api/reports/receivables", { "content-type": "application/json" });
-		check("дебиторка без заголовков отклонена", anonymous.statusCode >= 400, true);
-		console.log(`  без заголовков: HTTP ${anonymous.statusCode} ${anonymous.body.slice(0, 160)}`);
+		const anonymous = await call("GET", "/api/reports/receivables", {
+			"content-type": "application/json",
+		});
+		check(
+			"дебиторка без заголовков отклонена",
+			anonymous.statusCode >= 400,
+			true,
+		);
+		console.log(
+			`  без заголовков: HTTP ${anonymous.statusCode} ${anonymous.body.slice(0, 160)}`,
+		);
 	} finally {
 		step("ШАГ 14. УБОРКА: обе фикстурные клиники удаляются целиком");
 		await app.close();
@@ -1187,7 +1654,9 @@ async function main(): Promise<void> {
 			await purgeFixtureOrganizations([ORG_A, ORG_B]);
 		} catch (error) {
 			failures += 1;
-			console.log(`РАСХОЖДЕНИЕ уборка не завершилась: ${error instanceof Error ? error.message : String(error)}`);
+			console.log(
+				`РАСХОЖДЕНИЕ уборка не завершилась: ${error instanceof Error ? error.message : String(error)}`,
+			);
 		}
 		const leftovers = await firstRow<Record<string, number>>(
 			sql`select
@@ -1199,7 +1668,9 @@ async function main(): Promise<void> {
 			      (select count(*)::int from service_catalog_items where organization_id in (${ORG_A}::uuid, ${ORG_B}::uuid)) as prices,
 			      (select count(*)::int from patients where organization_id in (${ORG_A}::uuid, ${ORG_B}::uuid)) as patients`,
 		);
-		console.log(`остатки фикстуры (обязаны быть нулями): ${JSON.stringify(leftovers)}`);
+		console.log(
+			`остатки фикстуры (обязаны быть нулями): ${JSON.stringify(leftovers)}`,
+		);
 		for (const [table, count] of Object.entries(leftovers ?? {})) {
 			if (Number(count) !== 0) {
 				failures += 1;
@@ -1208,10 +1679,13 @@ async function main(): Promise<void> {
 		}
 
 		if (breaks.length === 0) {
-			console.log("\nРАЗРЫВОВ ШВОВ НЕ НАЙДЕНО: цепочка прошла на штатных маршрутах целиком.");
+			console.log(
+				"\nРАЗРЫВОВ ШВОВ НЕ НАЙДЕНО: цепочка прошла на штатных маршрутах целиком.",
+			);
 		} else {
 			console.log(`\nКАРТА РАЗРЫВОВ ШВОВ (${breaks.length}):`);
-			for (const [index, item] of breaks.entries()) console.log(`  ${index + 1}. ${item}`);
+			for (const [index, item] of breaks.entries())
+				console.log(`  ${index + 1}. ${item}`);
 		}
 		/*
 		 * ИТОГОВАЯ СТРОКА, И ПОЧЕМУ ПРИ НУЛЕ ОНА ДРУГАЯ.

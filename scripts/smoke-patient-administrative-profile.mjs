@@ -18,7 +18,10 @@ delete process.env.DENTAL_STATE_PERSISTENCE;
 const routePath = path.resolve("apps/api/dist/routes/patients.js");
 const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
 const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
-const validToken = signToken({ organizationId: "00000000-0000-0000-0000-000000000001", role: "admin" }, process.env.AUTH_TOKEN_SECRET || "synthetic-clinical-secret");
+const validToken = signToken(
+	{ organizationId: "00000000-0000-0000-0000-000000000001", role: "admin" },
+	process.env.AUTH_TOKEN_SECRET || "synthetic-clinical-secret",
+);
 
 process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
 

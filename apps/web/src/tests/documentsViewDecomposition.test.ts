@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -31,7 +31,8 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webSrc = join(here, "..");
-const read = (relativePath: string) => readFileSync(join(webSrc, relativePath), "utf8");
+const read = (relativePath: string) =>
+	readFileSync(join(webSrc, relativePath), "utf8");
 
 const documentsView = read("DocumentsView.tsx");
 
@@ -72,7 +73,11 @@ function storeDestructureBlocks(code: string): DestructureBlock[] {
 		const openAt = code.lastIndexOf("const {", markerAt);
 		const closeAt = code.lastIndexOf("}", markerAt);
 		if (openAt < 0 || closeAt < openAt) continue;
-		blocks.push({ body: code.slice(openAt + "const {".length, closeAt), start: openAt, end: searchFrom });
+		blocks.push({
+			body: code.slice(openAt + "const {".length, closeAt),
+			start: openAt,
+			end: searchFrom,
+		});
 	}
 	return blocks;
 }
@@ -114,7 +119,8 @@ describe("экран не объявляет состояние форм, кот
 		for (const block of blocks) {
 			for (const line of block.body.split(/\r?\n/)) {
 				const trimmed = line.trim().replace(/,$/, "");
-				if (!trimmed || trimmed.startsWith("*") || trimmed.startsWith("/*")) continue;
+				if (!trimmed || trimmed.startsWith("*") || trimmed.startsWith("/*"))
+					continue;
 				if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(trimmed)) unparsed.push(trimmed);
 			}
 		}
@@ -127,10 +133,15 @@ describe("экран не объявляет состояние форм, кот
 
 	it("каждое вынутое из хранилища поле экран действительно читает", () => {
 		const names = destructuredNames(blocks);
-		assert.ok(names.length > 600, `разобрано всего ${names.length} полей — похоже, сломался разбор, а не экран`);
+		assert.ok(
+			names.length > 600,
+			`разобрано всего ${names.length} полей — похоже, сломался разбор, а не экран`,
+		);
 
 		const rest = sourceWithoutBlocks(documentsViewCode, blocks);
-		const unused = names.filter((name) => !new RegExp(`\\b${name}\\b`).test(rest));
+		const unused = names.filter(
+			(name) => !new RegExp(`\\b${name}\\b`).test(rest),
+		);
 		assert.deepEqual(
 			unused,
 			[],
@@ -148,7 +159,9 @@ describe("экран не объявляет состояние форм, кот
 			!/const current = \w+\.trim\(\);/.test(documentsView),
 			"в DocumentsView.tsx снова появилась своя копия дописывания формулировки вместо appendChipToText",
 		);
-		const refusal = read("components/documents/forms/MedicalInterventionRefusalForm.tsx");
+		const refusal = read(
+			"components/documents/forms/MedicalInterventionRefusalForm.tsx",
+		);
 		assert.equal(
 			refusal.match(/appendChipToText\(/g)?.length,
 			4,
@@ -192,27 +205,35 @@ const knownUnwiredDocumentComponents: readonly string[] = [
 describe("в каталоге документов нет незамеченных сирот", () => {
 	function sourceFiles(directory: string, relative = ""): string[] {
 		const found: string[] = [];
-		for (const entry of readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+		for (const entry of readdirSync(directory, { withFileTypes: true }).sort(
+			(a, b) => a.name.localeCompare(b.name),
+		)) {
 			const next = relative ? `${relative}/${entry.name}` : entry.name;
 			if (entry.isDirectory()) {
 				found.push(...sourceFiles(join(directory, entry.name), next));
 				continue;
 			}
-			if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) found.push(next);
+			if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx"))
+				found.push(next);
 		}
 		return found;
 	}
 
 	const documentFiles = sourceFiles(join(webSrc, "components", "documents"));
 	/** Импорт ищется по всему apps/web/src: компонент документов вправе подключить любой экран. */
-	const allWebFiles = sourceFiles(webSrc).filter((file) => !file.includes("/tests/") && !file.startsWith("tests/"));
+	const allWebFiles = sourceFiles(webSrc).filter(
+		(file) => !file.includes("/tests/") && !file.startsWith("tests/"),
+	);
 
 	it("каталог документов найден и виден целиком", () => {
 		assert.ok(
 			documentFiles.length >= 13,
 			`в components/documents найдено ${documentFiles.length} файлов исходников — ожидалось не меньше 13`,
 		);
-		assert.ok(allWebFiles.length > 100, `по apps/web/src найдено ${allWebFiles.length} файлов — обход сломался`);
+		assert.ok(
+			allWebFiles.length > 100,
+			`по apps/web/src найдено ${allWebFiles.length} файлов — обход сломался`,
+		);
 	});
 
 	for (const file of documentFiles) {
@@ -223,7 +244,9 @@ describe("в каталоге документов нет незамеченны
 		it(`${file}: ${declaredUnwired ? "заявленный долг, подключения нет" : "его кто-то импортирует"}`, () => {
 			const selfPath = `components/documents/${file}`;
 			const importPattern = new RegExp(`(?:from|import) "[^"]*${moduleName}"`);
-			const importers = allWebFiles.filter((other) => other !== selfPath && importPattern.test(read(other)));
+			const importers = allWebFiles.filter(
+				(other) => other !== selfPath && importPattern.test(read(other)),
+			);
 
 			if (declaredUnwired) {
 				assert.deepEqual(

@@ -85,7 +85,10 @@ export const PatientJourneyTimeline: React.FC<{
 		 *    на каждой перерисовке.
 		 */
 		const staffById = new Map<string, { fullName?: string }>(
-			(dashboard?.clinicSettings?.staff ?? []).map((member) => [member.id, member]),
+			(dashboard?.clinicSettings?.staff ?? []).map((member) => [
+				member.id,
+				member,
+			]),
 		);
 		const doctorName = (doctorUserId: string | null | undefined) => {
 			if (!doctorUserId) return "врач не назначен";
@@ -220,8 +223,8 @@ export const PatientJourneyTimeline: React.FC<{
 				<div className="timeline-empty">
 					<p>Здесь пока ничего не было</p>
 					<span>
-						Записи на приём, оплаты и предупреждения по этому пациенту появятся в
-						этой ленте сами, как только они появятся в клинике.
+						Записи на приём, оплаты и предупреждения по этому пациенту появятся
+						в этой ленте сами, как только они появятся в клинике.
 					</span>
 				</div>
 			) : null}
@@ -255,7 +258,7 @@ export const PatientJourneyTimeline: React.FC<{
 								    text-zinc-300/400) под чёрный фон блока. Фон теперь по
 								    теме, поэтому цвет тоже берём из токенов — иначе на
 								    светлой теме получился бы белый текст на белом. */}
-								<span className="timestamp text-xs font-mono">
+									<span className="timestamp text-xs font-mono">
 										{new Date(evt.timestamp).toLocaleString("ru-RU", {
 											day: "2-digit",
 											month: "2-digit",

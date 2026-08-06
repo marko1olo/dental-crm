@@ -166,7 +166,9 @@ interface TabReading {
 }
 
 function readTab(tab: TabUnderTest): TabReading {
-	const code = withoutComments(readFileSync(join(settingsDir, tab.file), "utf8"));
+	const code = withoutComments(
+		readFileSync(join(settingsDir, tab.file), "utf8"),
+	);
 	const needle = `= ${tab.bagName};`;
 	const bagAt = code.indexOf(needle);
 	assert.ok(
@@ -182,10 +184,13 @@ function readTab(tab: TabUnderTest): TabReading {
 
 	const destructuredNames: string[] = [];
 	const unparsedLines: string[] = [];
-	for (const line of code.slice(openAt + "const {".length, closeAt).split(/\r?\n/)) {
+	for (const line of code
+		.slice(openAt + "const {".length, closeAt)
+		.split(/\r?\n/)) {
 		const trimmed = line.trim().replace(/,$/, "");
 		if (!trimmed) continue;
-		if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(trimmed)) destructuredNames.push(trimmed);
+		if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(trimmed))
+			destructuredNames.push(trimmed);
 		else unparsedLines.push(trimmed);
 	}
 
@@ -212,7 +217,8 @@ describe("вкладки настроек не держат мёртвых пр�
 
 		it(`${file}: блок деструктуризации разобран целиком`, () => {
 			assert.ok(
-				reading.destructuredNames.length >= reading.tab.minimumDestructuredNames,
+				reading.destructuredNames.length >=
+					reading.tab.minimumDestructuredNames,
 				`в ${file} разобрано ${reading.destructuredNames.length} имён при ожидаемых ${reading.tab.minimumDestructuredNames}+ — сломался разбор блока, а не вкладка`,
 			);
 			assert.deepEqual(
@@ -235,8 +241,9 @@ describe("вкладки настроек не держат мёртвых пр�
 
 		for (const name of namesThatWereDeadInEveryTab) {
 			it(`${file}: ${name} либо читается, либо не вынимается`, () => {
-				const occurrences =
-					reading.destructuredNames.filter((candidate) => candidate === name).length;
+				const occurrences = reading.destructuredNames.filter(
+					(candidate) => candidate === name,
+				).length;
 				if (occurrences === 0) return;
 				assert.ok(
 					new RegExp(`\\b${name}\\b`).test(reading.codeOutsideBag),
@@ -276,7 +283,9 @@ describe("вкладки настроек не держат мёртвых пр�
 		 * Поэтому у каждой из четырёх подписей проверяется живой вызов в родителе
 		 * — SettingsView.tsx рисует их четырьмя блоками над <SettingsPricesTab />.
 		 */
-		const parent = withoutComments(readFileSync(join(here, "..", "SettingsView.tsx"), "utf8"));
+		const parent = withoutComments(
+			readFileSync(join(here, "..", "SettingsView.tsx"), "utf8"),
+		);
 		for (const call of [
 			"pricelistWarningsText([warning])",
 			"pricelistWarningsText(item.warnings)",
@@ -298,11 +307,19 @@ describe("вкладки настроек не держат мёртвых пр�
 		 * Разбор идёт по блоку самого элемента, а не по всему файлу: те же имена
 		 * законно живут в App.tsx для других мест.
 		 */
-		const app = withoutComments(readFileSync(join(here, "..", "App.tsx"), "utf8"));
+		const app = withoutComments(
+			readFileSync(join(here, "..", "App.tsx"), "utf8"),
+		);
 		const openAt = app.indexOf("<SettingsView");
-		assert.ok(openAt > 0, "в App.tsx не найден элемент <SettingsView …> — проверка смотрела бы не туда");
+		assert.ok(
+			openAt > 0,
+			"в App.tsx не найден элемент <SettingsView …> — проверка смотрела бы не туда",
+		);
 		const closeAt = app.indexOf("/>", openAt);
-		assert.ok(closeAt > openAt, "в App.tsx не найден конец элемента <SettingsView …>");
+		assert.ok(
+			closeAt > openAt,
+			"в App.tsx не найден конец элемента <SettingsView …>",
+		);
 		const element = app.slice(openAt, closeAt);
 		const stillPassed = namesThatMustNotBePassedToSettingsView.filter((name) =>
 			element.includes(`${name}={`),

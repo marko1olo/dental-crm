@@ -110,7 +110,11 @@ export function staffRoleTitle(role: string): string {
 export type InviteCreationOutcome =
 	| { readonly ok: true; readonly inviteLink: string }
 	/** `message` — текст сервера по-русски, если он его прислал. */
-	| { readonly ok: false; readonly status: number; readonly message: string | null };
+	| {
+			readonly ok: false;
+			readonly status: number;
+			readonly message: string | null;
+	  };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
 	return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -165,7 +169,10 @@ export function parseInviteCreationPayload(
  * поэтому адрес клиники дописывается здесь — на то же окно, в котором работает
  * администратор.
  */
-export function inviteLinkForClipboard(origin: string, inviteLink: string): string {
+export function inviteLinkForClipboard(
+	origin: string,
+	inviteLink: string,
+): string {
 	return `${origin}${inviteLink}`;
 }
 
@@ -179,7 +186,11 @@ export function inviteLinkForClipboard(origin: string, inviteLink: string): stri
  */
 export type StaffMutationOutcome =
 	| { readonly ok: true }
-	| { readonly ok: false; readonly status: number; readonly message: string | null };
+	| {
+			readonly ok: false;
+			readonly status: number;
+			readonly message: string | null;
+	  };
 
 /**
  * Разбор ответа маршрутов сотрудников из УЖЕ прочитанного тела.

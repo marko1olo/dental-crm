@@ -23,16 +23,19 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
+import type { Patient } from "@dental/shared";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { Patient } from "@dental/shared";
-import { AppLogicProvider, type AppLogicContextType } from "../../contexts/AppLogicContext";
+import {
+	type AppLogicContextType,
+	AppLogicProvider,
+} from "../../contexts/AppLogicContext";
 import { PatientsView } from "../../PatientsView";
 import { usePatientStore } from "../../store/patientStore";
 import {
 	PatientCardSavePill,
-	patientCardSavePill,
 	type PatientSectionSaveState,
+	patientCardSavePill,
 } from "./patientCardSavePill";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -72,29 +75,32 @@ function patientsViewMarkup(options: {
 }): string {
 	return renderToStaticMarkup(
 		<AppLogicProvider value={emptyAppLogicValue}>
-		<PatientsView
-			createPatient={() => undefined}
-			filteredPatients={[]}
-			money={(amountRub: number) => `${amountRub} ₽`}
-			normalizeOptionalWorkingDaysDraft={(days: number[]) => days}
-			patientAdministrativeProfileValidationMessage={
-				options.patientAdministrativeProfileValidationMessage ?? null
-			}
-			patientInsightById={new Map()}
-			patientInsightRiskLabels={{ low: "спокойно", watch: "контроль", high: "риск" }}
-			query=""
-			savePatientAdministrativeProfile={() => undefined}
-			savePatientCore={() => undefined}
-			selectedPatient={options.selectedPatient ?? null}
-			setQuery={() => undefined}
-			updatePatientAdministrativeProfileDraft={() => undefined}
-			updatePatientCoreDraft={() => undefined}
-			weekdayOptions={[{ label: "Пн", value: 1 }]}
-		/>
+			<PatientsView
+				createPatient={() => undefined}
+				filteredPatients={[]}
+				money={(amountRub: number) => `${amountRub} ₽`}
+				normalizeOptionalWorkingDaysDraft={(days: number[]) => days}
+				patientAdministrativeProfileValidationMessage={
+					options.patientAdministrativeProfileValidationMessage ?? null
+				}
+				patientInsightById={new Map()}
+				patientInsightRiskLabels={{
+					low: "спокойно",
+					watch: "контроль",
+					high: "риск",
+				}}
+				query=""
+				savePatientAdministrativeProfile={() => undefined}
+				savePatientCore={() => undefined}
+				selectedPatient={options.selectedPatient ?? null}
+				setQuery={() => undefined}
+				updatePatientAdministrativeProfileDraft={() => undefined}
+				updatePatientCoreDraft={() => undefined}
+				weekdayOptions={[{ label: "Пн", value: 1 }]}
+			/>
 		</AppLogicProvider>,
 	);
 }
-
 
 /**
  * ВЫРЕЗАНИЕ КОММЕНТАРИЕВ ПЕРЕД ПОИСКОМ СЛОВ ПЛАШКИ.
@@ -110,7 +116,9 @@ function patientsViewMarkup(options: {
  * оставшиеся одинокие фигурные скобки поиску слов не мешают.
  */
 function stripComments(source: string): string {
-	return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+	return source
+		.replace(/\/\*[\s\S]*?\*\//g, " ")
+		.replace(/(^|[^:])\/\/[^\n]*/g, "$1");
 }
 
 describe("плашка сохранения на живом экране картотеки", () => {
@@ -154,7 +162,10 @@ describe("плашка сохранения на живом экране кар�
 	 * удалили.
 	 */
 	test("экран монтирует плашку в оба места и не держит своей копии правила", () => {
-		const rawSource = readFileSync(join(here, "..", "..", "PatientsView.tsx"), "utf8");
+		const rawSource = readFileSync(
+			join(here, "..", "..", "PatientsView.tsx"),
+			"utf8",
+		);
 		// Слова плашки ищутся в коде, а не в объяснениях: см. stripComments выше.
 		const source = stripComments(rawSource);
 		const mounts = source.match(/<PatientCardSavePill/g) ?? [];
@@ -164,7 +175,8 @@ describe("плашка сохранения на живом экране кар�
 			"плашек состояния сохранения на экране картотеки две — у заголовка карточки и у блока " +
 				`паспортных данных; в разметке найдено ${mounts.length}`,
 		);
-		const guarded = source.match(/hasSelectedPatient=\{Boolean\(selectedPatient\)\}/g) ?? [];
+		const guarded =
+			source.match(/hasSelectedPatient=\{Boolean\(selectedPatient\)\}/g) ?? [];
 		assert.equal(
 			guarded.length,
 			2,
@@ -188,12 +200,17 @@ describe("плашка сохранения на живом экране кар�
 		 * Инвариант теперь жёстче и не зависит от формы: слова, которыми владеет
 		 * плашка, на экране не встречаются вовсе. Правило живёт в одном месте.
 		 */
-		for (const word of ["Сохранено", "Не сохранено", "Заполнено", "save-pill"]) {
+		for (const word of [
+			"Сохранено",
+			"Не сохранено",
+			"Заполнено",
+			"save-pill",
+		]) {
 			assert.ok(
 				!source.includes(word),
 				`в разметку экрана вернулось слово «${word}»: правило состояния сохранения живёт в одном месте, ` +
 					"patientCardSavePill.tsx, и прогоняется. Прежняя проверка запрещала ТРИ ТОЧНЫЕ формы записи " +
-					"и обходилась четвёртой: приёмка дописала <span className=\"save-pill save-pill-saved\">Сохранено</span> " +
+					'и обходилась четвёртой: приёмка дописала <span className="save-pill save-pill-saved">Сохранено</span> ' +
 					"внутри области выбранного пациента, и охрана осталась зелёной.",
 			);
 		}
@@ -268,7 +285,8 @@ describe("правило плашки сохранения", () => {
 					{
 						dirty: false,
 						saveState: "idle",
-						validationMessage: "Укажите конец удобного времени приема или очистите начало.",
+						validationMessage:
+							"Укажите конец удобного времени приема или очистите начало.",
 					},
 				],
 			})?.label,
@@ -286,10 +304,26 @@ describe("правило плашки сохранения", () => {
 
 	test("каждое состояние красится своим классом, и ни одно — словарём статусов приёма", () => {
 		const rendered = [
-			{ dirty: false, saveState: "saving" as PatientSectionSaveState, expect: "save-pill-saving" },
-			{ dirty: true, saveState: "idle" as PatientSectionSaveState, expect: "save-pill-dirty" },
-			{ dirty: false, saveState: "error" as PatientSectionSaveState, expect: "save-pill-error" },
-			{ dirty: false, saveState: "saved" as PatientSectionSaveState, expect: "save-pill-saved" },
+			{
+				dirty: false,
+				saveState: "saving" as PatientSectionSaveState,
+				expect: "save-pill-saving",
+			},
+			{
+				dirty: true,
+				saveState: "idle" as PatientSectionSaveState,
+				expect: "save-pill-dirty",
+			},
+			{
+				dirty: false,
+				saveState: "error" as PatientSectionSaveState,
+				expect: "save-pill-error",
+			},
+			{
+				dirty: false,
+				saveState: "saved" as PatientSectionSaveState,
+				expect: "save-pill-saved",
+			},
 		];
 		for (const state of rendered) {
 			const markup = renderToStaticMarkup(
@@ -298,8 +332,14 @@ describe("правило плашки сохранения", () => {
 					sections: [{ dirty: state.dirty, saveState: state.saveState }],
 				}),
 			);
-			assert.ok(markup.includes(state.expect), `${state.expect} не отрисован: ${markup}`);
-			assert.ok(!markup.includes("status-"), `плашка тянет чужой словарь: ${markup}`);
+			assert.ok(
+				markup.includes(state.expect),
+				`${state.expect} не отрисован: ${markup}`,
+			);
+			assert.ok(
+				!markup.includes("status-"),
+				`плашка тянет чужой словарь: ${markup}`,
+			);
 			// Пояснение обязательно: сама надпись из двух слов не говорит, что делать.
 			assert.match(markup, /title="[^"]{20,}"/);
 		}

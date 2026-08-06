@@ -8,7 +8,14 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "..");
+const REPO_ROOT = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"..",
+	"..",
+	"..",
+);
 
 function databaseUrl() {
 	if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -38,7 +45,9 @@ try {
 			out.push({ table: name, rows: "NO_SUCH_TABLE" });
 			continue;
 		}
-		const { rows } = await client.query(`select count(*)::int as n from "${name}"`);
+		const { rows } = await client.query(
+			`select count(*)::int as n from "${name}"`,
+		);
 		out.push({ table: name, rows: rows[0].n });
 	}
 	for (const r of out) console.log(`${r.table}\t${r.rows}`);

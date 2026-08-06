@@ -41,7 +41,9 @@ describe("политика переноса для времени", () => {
 		// приложения, а не как одна кривая строка выгрузки.
 		assert.deepEqual(transferredMoment(new Date("не дата")), { known: false });
 		assert.deepEqual(transferredMoment(new Date(Number.NaN)), { known: false });
-		assert.deepEqual(transferredMoment(new Date(Number.POSITIVE_INFINITY)), { known: false });
+		assert.deepEqual(transferredMoment(new Date(Number.POSITIVE_INFINITY)), {
+			known: false,
+		});
 	});
 
 	test("известная дата доезжает как есть, до миллисекунды", () => {
@@ -60,7 +62,11 @@ describe("политика переноса для времени", () => {
 		// функций до 26 проходил при семи зелёных проверках из восьми.
 		const known = transferredMoment(new Date("2020-01-01T00:00:00.000Z"));
 		const unknown = transferredMoment(null);
-		assert.notDeepEqual(known, unknown, "функция отвечает одинаково на дату и на её отсутствие");
+		assert.notDeepEqual(
+			known,
+			unknown,
+			"функция отвечает одинаково на дату и на её отсутствие",
+		);
 	});
 
 	test("дата переноса НЕ подставляется: результат не зависит от «сейчас»", () => {
@@ -69,7 +75,11 @@ describe("политика переноса для времени", () => {
 		// значения и оба были близки к «сейчас».
 		const first = transferredMoment(null);
 		const second = transferredMoment(null);
-		assert.deepEqual(first, second, "два вызова подряд дали разное — значит подставляется текущее время");
+		assert.deepEqual(
+			first,
+			second,
+			"два вызова подряд дали разное — значит подставляется текущее время",
+		);
 		assert.equal(
 			"at" in first,
 			false,

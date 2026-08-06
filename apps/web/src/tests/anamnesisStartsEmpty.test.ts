@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
 /**
  * Медицинский анамнез и согласия обязаны начинаться пустыми.
@@ -30,11 +30,17 @@ import { dirname, join } from "node:path";
  * статически поймать его надёжнее, чем поднимая браузер.
  */
 const here = dirname(fileURLToPath(import.meta.url));
-const documentStore = readFileSync(join(here, "..", "store", "documentStore.ts"), "utf8");
+const documentStore = readFileSync(
+	join(here, "..", "store", "documentStore.ts"),
+	"utf8",
+);
 
 /** Начальное значение поля в объекте хранилища. */
 function initialValueOf(field: string): string | null {
-	const match = new RegExp(`^\\s{2}${field}\\s*:\\s*(".*?"|'.*?'|\\[.*?\\]|[^,\\n]+),`, "m").exec(documentStore);
+	const match = new RegExp(
+		`^\\s{2}${field}\\s*:\\s*(".*?"|'.*?'|\\[.*?\\]|[^,\\n]+),`,
+		"m",
+	).exec(documentStore);
 	if (!match) return null;
 	return match[1]!.trim();
 }
@@ -69,8 +75,16 @@ describe("анамнез и согласия начинаются пустыми
 	for (const [field, why] of mustStartEmpty) {
 		it(`${why} не заполнен за пациента`, () => {
 			const value = initialValueOf(field);
-			assert.notEqual(value, null, `поле ${field} не найдено в хранилище — проверку надо обновить`);
-			assert.equal(value, '""', `${why}: значение по умолчанию должно быть пустым, а не ${value}`);
+			assert.notEqual(
+				value,
+				null,
+				`поле ${field} не найдено в хранилище — проверку надо обновить`,
+			);
+			assert.equal(
+				value,
+				'""',
+				`${why}: значение по умолчанию должно быть пустым, а не ${value}`,
+			);
 		});
 	}
 
@@ -79,8 +93,19 @@ describe("анамнез и согласия начинаются пустыми
 	});
 
 	it("кнопка быстрой вставки существует и вписывает текст сама", () => {
-		const field = readFileSync(join(here, "..", "components", "documents", "AnamnesisField.tsx"), "utf8");
-		assert.match(field, /denialText/, "поле анамнеза потеряло текст отрицательного ответа");
-		assert.match(field, /Со слов пациента — нет/, "поле анамнеза потеряло подпись кнопки по умолчанию");
+		const field = readFileSync(
+			join(here, "..", "components", "documents", "AnamnesisField.tsx"),
+			"utf8",
+		);
+		assert.match(
+			field,
+			/denialText/,
+			"поле анамнеза потеряло текст отрицательного ответа",
+		);
+		assert.match(
+			field,
+			/Со слов пациента — нет/,
+			"поле анамнеза потеряло подпись кнопки по умолчанию",
+		);
 	});
 });

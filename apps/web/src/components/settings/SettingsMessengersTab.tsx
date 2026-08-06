@@ -133,7 +133,6 @@ export function SettingsMessengersTab({
 				hidden={activeMessenger !== "telegram"}
 			>
 				<SettingsTelegramTab props={mergedBag} settingsTab="telegram" />
-
 			</div>
 
 			<div

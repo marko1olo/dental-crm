@@ -35,7 +35,12 @@ export function InventoryConfirmDialog({
 			role="presentation"
 			onClick={(event) => event.target === event.currentTarget && onCancel()}
 		>
-			<div className="inventory-confirm-window" role="alertdialog" aria-modal="true" aria-label={title}>
+			<div
+				className="inventory-confirm-window"
+				role="alertdialog"
+				aria-modal="true"
+				aria-label={title}
+			>
 				<h3>{title}</h3>
 				<p>{message}</p>
 				<div className="inventory-confirm-actions">
@@ -43,10 +48,19 @@ export function InventoryConfirmDialog({
 					  Отмена стоит первой и получает автофокус: случайный Enter или
 					  пробел сразу после нажатия на корзину не должен удалять материал.
 					*/}
-					<button type="button" className="inventory-confirm-cancel" onClick={onCancel} autoFocus>
+					<button
+						type="button"
+						className="inventory-confirm-cancel"
+						onClick={onCancel}
+						autoFocus
+					>
 						Отмена
 					</button>
-					<button type="button" className="inventory-confirm-danger" onClick={onConfirm}>
+					<button
+						type="button"
+						className="inventory-confirm-danger"
+						onClick={onConfirm}
+					>
 						{confirmLabel}
 					</button>
 				</div>

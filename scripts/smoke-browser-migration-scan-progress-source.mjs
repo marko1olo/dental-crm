@@ -183,7 +183,9 @@ if (
 	smokeCommand !==
 	"node scripts/smoke-browser-migration-scan-progress-source.mjs"
 ) {
-	failures.push("package.json missing smoke:browser-migration-scan-progress-source");
+	failures.push(
+		"package.json missing smoke:browser-migration-scan-progress-source",
+	);
 }
 
 if (failures.length > 0) {

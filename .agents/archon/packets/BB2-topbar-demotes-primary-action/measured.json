@@ -1,577 +1,577 @@
 {
-  "clinicName": "Стоматология, 1 кабинет",
-  "results": {
-    "before": {
-      "390": {
-        "topbarHeight": 153.69,
-        "topbarWidth": 392,
-        "actionsHeight": 82,
-        "actionsWidth": 364,
-        "contextHeight": 46.69,
-        "actionsLineCount": 2,
-        "flexChildren": 3,
-        "interactiveControls": 5,
-        "unlabelled": 1,
-        "bookLine": 2,
-        "bookIsAlone": true,
-        "golosLoaded": true,
-        "fontUsed": "\"Golos Text\"",
-        "children": [
-          {
-            "tag": "div",
-            "cls": "dnt-actions-mount dnt-actions-mount--header",
-            "visibleLabel": "Поиск\nГолос\nСправка",
-            "accessibleName": "Поиск\nГолос\nСправка",
-            "title": null,
-            "width": 297.61,
-            "line": 1
-          },
-          {
-            "tag": "a",
-            "cls": "icon-button",
-            "visibleLabel": null,
-            "accessibleName": "Настройки импорта и экспорта",
-            "title": "Настройки импорта и экспорта",
-            "width": 44,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "primary-button",
-            "visibleLabel": "Запись",
-            "accessibleName": "Запись",
-            "title": null,
-            "width": 364,
-            "line": 2
-          }
-        ],
-        "groupControls": [
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Поиск",
-            "width": 94.3
-          },
-          {
-            "cls": "dnt-actions__control dnt-actions__control--primary",
-            "visibleLabel": "Голос",
-            "width": 90.66
-          },
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Справка",
-            "width": 108.66
-          }
-        ]
-      },
-      "900": {
-        "topbarHeight": 172.13,
-        "topbarWidth": 818,
-        "actionsHeight": 92.22,
-        "actionsWidth": 323.92,
-        "contextHeight": 147.13,
-        "actionsLineCount": 2,
-        "flexChildren": 5,
-        "interactiveControls": 7,
-        "unlabelled": 3,
-        "bookLine": 2,
-        "bookIsAlone": false,
-        "golosLoaded": true,
-        "fontUsed": "\"Golos Text\"",
-        "children": [
-          {
-            "tag": "div",
-            "cls": "dnt-actions-mount dnt-actions-mount--header",
-            "visibleLabel": "Поиск\nГолос\nСправка",
-            "accessibleName": "Поиск\nГолос\nСправка",
-            "title": null,
-            "width": 297.61,
-            "line": 1
-          },
-          {
-            "tag": "a",
-            "cls": "icon-button",
-            "visibleLabel": null,
-            "accessibleName": "Настройки импорта и экспорта",
-            "title": "Настройки импорта и экспорта",
-            "width": 36,
-            "line": 2
-          },
-          {
-            "tag": "button",
-            "cls": "icon-button top-dictation-button",
-            "visibleLabel": null,
-            "accessibleName": "Открыть диктовку приема",
-            "title": "Голосовая заметка",
-            "width": 36,
-            "line": 2
-          },
-          {
-            "tag": "button",
-            "cls": "icon-button top-lock-button",
-            "visibleLabel": null,
-            "accessibleName": "Заблокировать сессию",
-            "title": "Заблокировать сессию",
-            "width": 36,
-            "line": 2
-          },
-          {
-            "tag": "button",
-            "cls": "primary-button",
-            "visibleLabel": "Запись",
-            "accessibleName": "Запись",
-            "title": null,
-            "width": 103.19,
-            "line": 2
-          }
-        ],
-        "groupControls": [
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Поиск",
-            "width": 94.3
-          },
-          {
-            "cls": "dnt-actions__control dnt-actions__control--primary",
-            "visibleLabel": "Голос",
-            "width": 90.66
-          },
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Справка",
-            "width": 108.66
-          }
-        ]
-      },
-      "1440": {
-        "topbarHeight": 171,
-        "topbarWidth": 1309.19,
-        "actionsHeight": 86,
-        "actionsWidth": 600.2,
-        "contextHeight": 146,
-        "actionsLineCount": 2,
-        "flexChildren": 6,
-        "interactiveControls": 8,
-        "unlabelled": 3,
-        "bookLine": 2,
-        "bookIsAlone": true,
-        "golosLoaded": true,
-        "fontUsed": "\"Golos Text\"",
-        "children": [
-          {
-            "tag": "div",
-            "cls": "dnt-actions-mount dnt-actions-mount--header",
-            "visibleLabel": "Поиск\nГолос\nСправка",
-            "accessibleName": "Поиск\nГолос\nСправка",
-            "title": null,
-            "width": 297.61,
-            "line": 1
-          },
-          {
-            "tag": "a",
-            "cls": "icon-button",
-            "visibleLabel": null,
-            "accessibleName": "Настройки импорта и экспорта",
-            "title": "Настройки импорта и экспорта",
-            "width": 36,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "secondary-button compact-top-button",
-            "visibleLabel": "Настроить",
-            "accessibleName": "Настроить",
-            "title": null,
-            "width": 120.61,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "icon-button top-dictation-button",
-            "visibleLabel": null,
-            "accessibleName": "Открыть диктовку приема",
-            "title": "Голосовая заметка",
-            "width": 36,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "icon-button top-lock-button",
-            "visibleLabel": null,
-            "accessibleName": "Заблокировать сессию",
-            "title": "Заблокировать сессию",
-            "width": 36,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "primary-button",
-            "visibleLabel": "Запись",
-            "accessibleName": "Запись",
-            "title": null,
-            "width": 100.59,
-            "line": 2
-          }
-        ],
-        "groupControls": [
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Поиск",
-            "width": 94.3
-          },
-          {
-            "cls": "dnt-actions__control dnt-actions__control--primary",
-            "visibleLabel": "Голос",
-            "width": 90.66
-          },
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Справка",
-            "width": 108.66
-          }
-        ]
-      },
-      "1600": {
-        "topbarHeight": 171,
-        "topbarWidth": 1342,
-        "actionsHeight": 86,
-        "actionsWidth": 615.98,
-        "contextHeight": 146,
-        "actionsLineCount": 2,
-        "flexChildren": 6,
-        "interactiveControls": 8,
-        "unlabelled": 3,
-        "bookLine": 2,
-        "bookIsAlone": true,
-        "golosLoaded": true,
-        "fontUsed": "\"Golos Text\"",
-        "children": [
-          {
-            "tag": "div",
-            "cls": "dnt-actions-mount dnt-actions-mount--header",
-            "visibleLabel": "Поиск\nГолос\nСправка",
-            "accessibleName": "Поиск\nГолос\nСправка",
-            "title": null,
-            "width": 297.61,
-            "line": 1
-          },
-          {
-            "tag": "a",
-            "cls": "icon-button",
-            "visibleLabel": null,
-            "accessibleName": "Настройки импорта и экспорта",
-            "title": "Настройки импорта и экспорта",
-            "width": 36,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "secondary-button compact-top-button",
-            "visibleLabel": "Настроить",
-            "accessibleName": "Настроить",
-            "title": null,
-            "width": 120.61,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "icon-button top-dictation-button",
-            "visibleLabel": null,
-            "accessibleName": "Открыть диктовку приема",
-            "title": "Голосовая заметка",
-            "width": 36,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "icon-button top-lock-button",
-            "visibleLabel": null,
-            "accessibleName": "Заблокировать сессию",
-            "title": "Заблокировать сессию",
-            "width": 36,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "primary-button",
-            "visibleLabel": "Запись",
-            "accessibleName": "Запись",
-            "title": null,
-            "width": 100.59,
-            "line": 2
-          }
-        ],
-        "groupControls": [
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Поиск",
-            "width": 94.3
-          },
-          {
-            "cls": "dnt-actions__control dnt-actions__control--primary",
-            "visibleLabel": "Голос",
-            "width": 90.66
-          },
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Справка",
-            "width": 108.66
-          }
-        ]
-      },
-      "intrinsic": {
-        "intrinsicActionsWidth": 615.98,
-        "intrinsicActionsHeight": 42
-      }
-    },
-    "after": {
-      "390": {
-        "topbarHeight": 160.39,
-        "topbarWidth": 392,
-        "actionsHeight": 85.64,
-        "actionsWidth": 364,
-        "contextHeight": 49.75,
-        "actionsLineCount": 2,
-        "flexChildren": 2,
-        "interactiveControls": 4,
-        "unlabelled": 0,
-        "bookLine": 2,
-        "bookIsAlone": true,
-        "golosLoaded": true,
-        "fontUsed": "\"Golos Text\"",
-        "children": [
-          {
-            "tag": "div",
-            "cls": "dnt-actions-mount dnt-actions-mount--header",
-            "visibleLabel": "Поиск\nГолос\nСправка",
-            "accessibleName": "Поиск\nГолос\nСправка",
-            "title": null,
-            "width": 297.61,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "primary-button",
-            "visibleLabel": "Запись",
-            "accessibleName": "Запись",
-            "title": "Открыть записи и добавить приём",
-            "width": 364,
-            "line": 2
-          }
-        ],
-        "groupControls": [
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Поиск",
-            "width": 94.3
-          },
-          {
-            "cls": "dnt-actions__control dnt-actions__control--primary",
-            "visibleLabel": "Голос",
-            "width": 90.66
-          },
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Справка",
-            "width": 108.66
-          }
-        ]
-      },
-      "900": {
-        "topbarHeight": 171,
-        "topbarWidth": 818,
-        "actionsHeight": 86,
-        "actionsWidth": 272.97,
-        "contextHeight": 146,
-        "actionsLineCount": 2,
-        "flexChildren": 2,
-        "interactiveControls": 4,
-        "unlabelled": 0,
-        "bookLine": 2,
-        "bookIsAlone": true,
-        "golosLoaded": true,
-        "fontUsed": "\"Golos Text\"",
-        "children": [
-          {
-            "tag": "div",
-            "cls": "dnt-actions-mount dnt-actions-mount--header",
-            "visibleLabel": "Поиск\nГолос\nСправка",
-            "accessibleName": "Поиск\nГолос\nСправка",
-            "title": null,
-            "width": 297.61,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "primary-button",
-            "visibleLabel": "Запись",
-            "accessibleName": "Запись",
-            "title": "Открыть записи и добавить приём",
-            "width": 100.59,
-            "line": 2
-          }
-        ],
-        "groupControls": [
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Поиск",
-            "width": 94.3
-          },
-          {
-            "cls": "dnt-actions__control dnt-actions__control--primary",
-            "visibleLabel": "Голос",
-            "width": 90.66
-          },
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Справка",
-            "width": 108.66
-          }
-        ]
-      },
-      "1440": {
-        "topbarHeight": 171,
-        "topbarWidth": 1309.02,
-        "actionsHeight": 86,
-        "actionsWidth": 612.38,
-        "contextHeight": 146,
-        "actionsLineCount": 2,
-        "flexChildren": 4,
-        "interactiveControls": 6,
-        "unlabelled": 0,
-        "bookLine": 1,
-        "bookIsAlone": false,
-        "golosLoaded": true,
-        "fontUsed": "\"Golos Text\"",
-        "children": [
-          {
-            "tag": "div",
-            "cls": "dnt-actions-mount dnt-actions-mount--header",
-            "visibleLabel": "Поиск\nГолос\nСправка",
-            "accessibleName": "Поиск\nГолос\nСправка",
-            "title": null,
-            "width": 297.61,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "primary-button",
-            "visibleLabel": "Запись",
-            "accessibleName": "Запись",
-            "title": "Открыть записи и добавить приём",
-            "width": 100.59,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "secondary-button compact-top-button",
-            "visibleLabel": "Настроить",
-            "accessibleName": "Настроить",
-            "title": "Открыть мастер настройки клиники",
-            "width": 120.61,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "secondary-button compact-top-button",
-            "visibleLabel": "Заблокировать",
-            "accessibleName": "Заблокировать",
-            "title": "Запереть рабочее место — вернуться можно по ПИН-коду",
-            "width": 150.77,
-            "line": 2
-          }
-        ],
-        "groupControls": [
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Поиск",
-            "width": 94.3
-          },
-          {
-            "cls": "dnt-actions__control dnt-actions__control--primary",
-            "visibleLabel": "Голос",
-            "width": 90.66
-          },
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Справка",
-            "width": 108.66
-          }
-        ]
-      },
-      "1600": {
-        "topbarHeight": 171,
-        "topbarWidth": 1342,
-        "actionsHeight": 86,
-        "actionsWidth": 628.58,
-        "contextHeight": 146,
-        "actionsLineCount": 2,
-        "flexChildren": 4,
-        "interactiveControls": 6,
-        "unlabelled": 0,
-        "bookLine": 1,
-        "bookIsAlone": false,
-        "golosLoaded": true,
-        "fontUsed": "\"Golos Text\"",
-        "children": [
-          {
-            "tag": "div",
-            "cls": "dnt-actions-mount dnt-actions-mount--header",
-            "visibleLabel": "Поиск\nГолос\nСправка",
-            "accessibleName": "Поиск\nГолос\nСправка",
-            "title": null,
-            "width": 297.61,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "primary-button",
-            "visibleLabel": "Запись",
-            "accessibleName": "Запись",
-            "title": "Открыть записи и добавить приём",
-            "width": 100.59,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "secondary-button compact-top-button",
-            "visibleLabel": "Настроить",
-            "accessibleName": "Настроить",
-            "title": "Открыть мастер настройки клиники",
-            "width": 120.61,
-            "line": 1
-          },
-          {
-            "tag": "button",
-            "cls": "secondary-button compact-top-button",
-            "visibleLabel": "Заблокировать",
-            "accessibleName": "Заблокировать",
-            "title": "Запереть рабочее место — вернуться можно по ПИН-коду",
-            "width": 150.77,
-            "line": 2
-          }
-        ],
-        "groupControls": [
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Поиск",
-            "width": 94.3
-          },
-          {
-            "cls": "dnt-actions__control dnt-actions__control--primary",
-            "visibleLabel": "Голос",
-            "width": 90.66
-          },
-          {
-            "cls": "dnt-actions__control",
-            "visibleLabel": "Справка",
-            "width": 108.66
-          }
-        ]
-      },
-      "intrinsic": {
-        "intrinsicActionsWidth": 628.58,
-        "intrinsicActionsHeight": 42
-      }
-    }
-  }
+	"clinicName": "Стоматология, 1 кабинет",
+	"results": {
+		"before": {
+			"390": {
+				"topbarHeight": 153.69,
+				"topbarWidth": 392,
+				"actionsHeight": 82,
+				"actionsWidth": 364,
+				"contextHeight": 46.69,
+				"actionsLineCount": 2,
+				"flexChildren": 3,
+				"interactiveControls": 5,
+				"unlabelled": 1,
+				"bookLine": 2,
+				"bookIsAlone": true,
+				"golosLoaded": true,
+				"fontUsed": "\"Golos Text\"",
+				"children": [
+					{
+						"tag": "div",
+						"cls": "dnt-actions-mount dnt-actions-mount--header",
+						"visibleLabel": "Поиск\nГолос\nСправка",
+						"accessibleName": "Поиск\nГолос\nСправка",
+						"title": null,
+						"width": 297.61,
+						"line": 1
+					},
+					{
+						"tag": "a",
+						"cls": "icon-button",
+						"visibleLabel": null,
+						"accessibleName": "Настройки импорта и экспорта",
+						"title": "Настройки импорта и экспорта",
+						"width": 44,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "primary-button",
+						"visibleLabel": "Запись",
+						"accessibleName": "Запись",
+						"title": null,
+						"width": 364,
+						"line": 2
+					}
+				],
+				"groupControls": [
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Поиск",
+						"width": 94.3
+					},
+					{
+						"cls": "dnt-actions__control dnt-actions__control--primary",
+						"visibleLabel": "Голос",
+						"width": 90.66
+					},
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Справка",
+						"width": 108.66
+					}
+				]
+			},
+			"900": {
+				"topbarHeight": 172.13,
+				"topbarWidth": 818,
+				"actionsHeight": 92.22,
+				"actionsWidth": 323.92,
+				"contextHeight": 147.13,
+				"actionsLineCount": 2,
+				"flexChildren": 5,
+				"interactiveControls": 7,
+				"unlabelled": 3,
+				"bookLine": 2,
+				"bookIsAlone": false,
+				"golosLoaded": true,
+				"fontUsed": "\"Golos Text\"",
+				"children": [
+					{
+						"tag": "div",
+						"cls": "dnt-actions-mount dnt-actions-mount--header",
+						"visibleLabel": "Поиск\nГолос\nСправка",
+						"accessibleName": "Поиск\nГолос\nСправка",
+						"title": null,
+						"width": 297.61,
+						"line": 1
+					},
+					{
+						"tag": "a",
+						"cls": "icon-button",
+						"visibleLabel": null,
+						"accessibleName": "Настройки импорта и экспорта",
+						"title": "Настройки импорта и экспорта",
+						"width": 36,
+						"line": 2
+					},
+					{
+						"tag": "button",
+						"cls": "icon-button top-dictation-button",
+						"visibleLabel": null,
+						"accessibleName": "Открыть диктовку приема",
+						"title": "Голосовая заметка",
+						"width": 36,
+						"line": 2
+					},
+					{
+						"tag": "button",
+						"cls": "icon-button top-lock-button",
+						"visibleLabel": null,
+						"accessibleName": "Заблокировать сессию",
+						"title": "Заблокировать сессию",
+						"width": 36,
+						"line": 2
+					},
+					{
+						"tag": "button",
+						"cls": "primary-button",
+						"visibleLabel": "Запись",
+						"accessibleName": "Запись",
+						"title": null,
+						"width": 103.19,
+						"line": 2
+					}
+				],
+				"groupControls": [
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Поиск",
+						"width": 94.3
+					},
+					{
+						"cls": "dnt-actions__control dnt-actions__control--primary",
+						"visibleLabel": "Голос",
+						"width": 90.66
+					},
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Справка",
+						"width": 108.66
+					}
+				]
+			},
+			"1440": {
+				"topbarHeight": 171,
+				"topbarWidth": 1309.19,
+				"actionsHeight": 86,
+				"actionsWidth": 600.2,
+				"contextHeight": 146,
+				"actionsLineCount": 2,
+				"flexChildren": 6,
+				"interactiveControls": 8,
+				"unlabelled": 3,
+				"bookLine": 2,
+				"bookIsAlone": true,
+				"golosLoaded": true,
+				"fontUsed": "\"Golos Text\"",
+				"children": [
+					{
+						"tag": "div",
+						"cls": "dnt-actions-mount dnt-actions-mount--header",
+						"visibleLabel": "Поиск\nГолос\nСправка",
+						"accessibleName": "Поиск\nГолос\nСправка",
+						"title": null,
+						"width": 297.61,
+						"line": 1
+					},
+					{
+						"tag": "a",
+						"cls": "icon-button",
+						"visibleLabel": null,
+						"accessibleName": "Настройки импорта и экспорта",
+						"title": "Настройки импорта и экспорта",
+						"width": 36,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "secondary-button compact-top-button",
+						"visibleLabel": "Настроить",
+						"accessibleName": "Настроить",
+						"title": null,
+						"width": 120.61,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "icon-button top-dictation-button",
+						"visibleLabel": null,
+						"accessibleName": "Открыть диктовку приема",
+						"title": "Голосовая заметка",
+						"width": 36,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "icon-button top-lock-button",
+						"visibleLabel": null,
+						"accessibleName": "Заблокировать сессию",
+						"title": "Заблокировать сессию",
+						"width": 36,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "primary-button",
+						"visibleLabel": "Запись",
+						"accessibleName": "Запись",
+						"title": null,
+						"width": 100.59,
+						"line": 2
+					}
+				],
+				"groupControls": [
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Поиск",
+						"width": 94.3
+					},
+					{
+						"cls": "dnt-actions__control dnt-actions__control--primary",
+						"visibleLabel": "Голос",
+						"width": 90.66
+					},
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Справка",
+						"width": 108.66
+					}
+				]
+			},
+			"1600": {
+				"topbarHeight": 171,
+				"topbarWidth": 1342,
+				"actionsHeight": 86,
+				"actionsWidth": 615.98,
+				"contextHeight": 146,
+				"actionsLineCount": 2,
+				"flexChildren": 6,
+				"interactiveControls": 8,
+				"unlabelled": 3,
+				"bookLine": 2,
+				"bookIsAlone": true,
+				"golosLoaded": true,
+				"fontUsed": "\"Golos Text\"",
+				"children": [
+					{
+						"tag": "div",
+						"cls": "dnt-actions-mount dnt-actions-mount--header",
+						"visibleLabel": "Поиск\nГолос\nСправка",
+						"accessibleName": "Поиск\nГолос\nСправка",
+						"title": null,
+						"width": 297.61,
+						"line": 1
+					},
+					{
+						"tag": "a",
+						"cls": "icon-button",
+						"visibleLabel": null,
+						"accessibleName": "Настройки импорта и экспорта",
+						"title": "Настройки импорта и экспорта",
+						"width": 36,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "secondary-button compact-top-button",
+						"visibleLabel": "Настроить",
+						"accessibleName": "Настроить",
+						"title": null,
+						"width": 120.61,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "icon-button top-dictation-button",
+						"visibleLabel": null,
+						"accessibleName": "Открыть диктовку приема",
+						"title": "Голосовая заметка",
+						"width": 36,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "icon-button top-lock-button",
+						"visibleLabel": null,
+						"accessibleName": "Заблокировать сессию",
+						"title": "Заблокировать сессию",
+						"width": 36,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "primary-button",
+						"visibleLabel": "Запись",
+						"accessibleName": "Запись",
+						"title": null,
+						"width": 100.59,
+						"line": 2
+					}
+				],
+				"groupControls": [
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Поиск",
+						"width": 94.3
+					},
+					{
+						"cls": "dnt-actions__control dnt-actions__control--primary",
+						"visibleLabel": "Голос",
+						"width": 90.66
+					},
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Справка",
+						"width": 108.66
+					}
+				]
+			},
+			"intrinsic": {
+				"intrinsicActionsWidth": 615.98,
+				"intrinsicActionsHeight": 42
+			}
+		},
+		"after": {
+			"390": {
+				"topbarHeight": 160.39,
+				"topbarWidth": 392,
+				"actionsHeight": 85.64,
+				"actionsWidth": 364,
+				"contextHeight": 49.75,
+				"actionsLineCount": 2,
+				"flexChildren": 2,
+				"interactiveControls": 4,
+				"unlabelled": 0,
+				"bookLine": 2,
+				"bookIsAlone": true,
+				"golosLoaded": true,
+				"fontUsed": "\"Golos Text\"",
+				"children": [
+					{
+						"tag": "div",
+						"cls": "dnt-actions-mount dnt-actions-mount--header",
+						"visibleLabel": "Поиск\nГолос\nСправка",
+						"accessibleName": "Поиск\nГолос\nСправка",
+						"title": null,
+						"width": 297.61,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "primary-button",
+						"visibleLabel": "Запись",
+						"accessibleName": "Запись",
+						"title": "Открыть записи и добавить приём",
+						"width": 364,
+						"line": 2
+					}
+				],
+				"groupControls": [
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Поиск",
+						"width": 94.3
+					},
+					{
+						"cls": "dnt-actions__control dnt-actions__control--primary",
+						"visibleLabel": "Голос",
+						"width": 90.66
+					},
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Справка",
+						"width": 108.66
+					}
+				]
+			},
+			"900": {
+				"topbarHeight": 171,
+				"topbarWidth": 818,
+				"actionsHeight": 86,
+				"actionsWidth": 272.97,
+				"contextHeight": 146,
+				"actionsLineCount": 2,
+				"flexChildren": 2,
+				"interactiveControls": 4,
+				"unlabelled": 0,
+				"bookLine": 2,
+				"bookIsAlone": true,
+				"golosLoaded": true,
+				"fontUsed": "\"Golos Text\"",
+				"children": [
+					{
+						"tag": "div",
+						"cls": "dnt-actions-mount dnt-actions-mount--header",
+						"visibleLabel": "Поиск\nГолос\nСправка",
+						"accessibleName": "Поиск\nГолос\nСправка",
+						"title": null,
+						"width": 297.61,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "primary-button",
+						"visibleLabel": "Запись",
+						"accessibleName": "Запись",
+						"title": "Открыть записи и добавить приём",
+						"width": 100.59,
+						"line": 2
+					}
+				],
+				"groupControls": [
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Поиск",
+						"width": 94.3
+					},
+					{
+						"cls": "dnt-actions__control dnt-actions__control--primary",
+						"visibleLabel": "Голос",
+						"width": 90.66
+					},
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Справка",
+						"width": 108.66
+					}
+				]
+			},
+			"1440": {
+				"topbarHeight": 171,
+				"topbarWidth": 1309.02,
+				"actionsHeight": 86,
+				"actionsWidth": 612.38,
+				"contextHeight": 146,
+				"actionsLineCount": 2,
+				"flexChildren": 4,
+				"interactiveControls": 6,
+				"unlabelled": 0,
+				"bookLine": 1,
+				"bookIsAlone": false,
+				"golosLoaded": true,
+				"fontUsed": "\"Golos Text\"",
+				"children": [
+					{
+						"tag": "div",
+						"cls": "dnt-actions-mount dnt-actions-mount--header",
+						"visibleLabel": "Поиск\nГолос\nСправка",
+						"accessibleName": "Поиск\nГолос\nСправка",
+						"title": null,
+						"width": 297.61,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "primary-button",
+						"visibleLabel": "Запись",
+						"accessibleName": "Запись",
+						"title": "Открыть записи и добавить приём",
+						"width": 100.59,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "secondary-button compact-top-button",
+						"visibleLabel": "Настроить",
+						"accessibleName": "Настроить",
+						"title": "Открыть мастер настройки клиники",
+						"width": 120.61,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "secondary-button compact-top-button",
+						"visibleLabel": "Заблокировать",
+						"accessibleName": "Заблокировать",
+						"title": "Запереть рабочее место — вернуться можно по ПИН-коду",
+						"width": 150.77,
+						"line": 2
+					}
+				],
+				"groupControls": [
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Поиск",
+						"width": 94.3
+					},
+					{
+						"cls": "dnt-actions__control dnt-actions__control--primary",
+						"visibleLabel": "Голос",
+						"width": 90.66
+					},
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Справка",
+						"width": 108.66
+					}
+				]
+			},
+			"1600": {
+				"topbarHeight": 171,
+				"topbarWidth": 1342,
+				"actionsHeight": 86,
+				"actionsWidth": 628.58,
+				"contextHeight": 146,
+				"actionsLineCount": 2,
+				"flexChildren": 4,
+				"interactiveControls": 6,
+				"unlabelled": 0,
+				"bookLine": 1,
+				"bookIsAlone": false,
+				"golosLoaded": true,
+				"fontUsed": "\"Golos Text\"",
+				"children": [
+					{
+						"tag": "div",
+						"cls": "dnt-actions-mount dnt-actions-mount--header",
+						"visibleLabel": "Поиск\nГолос\nСправка",
+						"accessibleName": "Поиск\nГолос\nСправка",
+						"title": null,
+						"width": 297.61,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "primary-button",
+						"visibleLabel": "Запись",
+						"accessibleName": "Запись",
+						"title": "Открыть записи и добавить приём",
+						"width": 100.59,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "secondary-button compact-top-button",
+						"visibleLabel": "Настроить",
+						"accessibleName": "Настроить",
+						"title": "Открыть мастер настройки клиники",
+						"width": 120.61,
+						"line": 1
+					},
+					{
+						"tag": "button",
+						"cls": "secondary-button compact-top-button",
+						"visibleLabel": "Заблокировать",
+						"accessibleName": "Заблокировать",
+						"title": "Запереть рабочее место — вернуться можно по ПИН-коду",
+						"width": 150.77,
+						"line": 2
+					}
+				],
+				"groupControls": [
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Поиск",
+						"width": 94.3
+					},
+					{
+						"cls": "dnt-actions__control dnt-actions__control--primary",
+						"visibleLabel": "Голос",
+						"width": 90.66
+					},
+					{
+						"cls": "dnt-actions__control",
+						"visibleLabel": "Справка",
+						"width": 108.66
+					}
+				]
+			},
+			"intrinsic": {
+				"intrinsicActionsWidth": 628.58,
+				"intrinsicActionsHeight": 42
+			}
+		}
+	}
 }

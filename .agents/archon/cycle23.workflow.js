@@ -1,11 +1,20 @@
 export const meta = {
-  name: 'archon-cycle-23',
-  description: 'DENTE cycle 23: a delete button with no route behind it, a room number priced as a service, a test that reads whatever is in the shared database, an enum whose only validator is Postgres, five hand-rolled auth checks beside one shared helper, and the last orphan panel',
-  phases: [
-    { title: 'Build', detail: 'six packets, disjoint file sets; every finding re-measured on HEAD at dispatch' },
-    { title: 'Attack', detail: 'a different agent per packet; the reviewer must write a literal ## VERDICT line' },
-  ],
-}
+	name: "archon-cycle-23",
+	description:
+		"DENTE cycle 23: a delete button with no route behind it, a room number priced as a service, a test that reads whatever is in the shared database, an enum whose only validator is Postgres, five hand-rolled auth checks beside one shared helper, and the last orphan panel",
+	phases: [
+		{
+			title: "Build",
+			detail:
+				"six packets, disjoint file sets; every finding re-measured on HEAD at dispatch",
+		},
+		{
+			title: "Attack",
+			detail:
+				"a different agent per packet; the reviewer must write a literal ## VERDICT line",
+		},
+	],
+};
 
 /*
  * SHORT LAW ON PURPOSE (~2 KB). Cycles 11-13 carried a ~15 KB preamble and six agents
@@ -63,16 +72,17 @@ Every "proven" entry is a command you actually RAN, with its TRUE exit code capt
 ('cmd > /tmp/log 2>&1; echo $?') — '$?' after a pipe reports the pipe and the lead has been fooled by that.
 If your measurement contradicts this brief, YOUR MEASUREMENT WINS — say so loudly and do not invent work.
 The lead has been wrong repeatedly tonight and has twice thanked an agent for refusing a stale brief.
-`
+`;
 
 const PACKETS = [
-  {
-    id: 'LL1-clinical-rule-delete-route',
-    label: 'build:clinical-delete',
-    dir: '.agents/archon/packets/LL1-clinical-rule-delete-route',
-    files: 'apps/api/src/routes/clinical.ts, apps/api/src/db/clinicalQuery.ts, and ONE new test file under apps/api/src/tests/',
-    gate: 'node --import tsx --test apps/api/src/tests/<your new test>.test.ts',
-    brief: `THE DELETE BUTTON FOR A CLINICAL RULE HAS NEVER WORKED. NOT ONCE, IN ANY BUILD.
+	{
+		id: "LL1-clinical-rule-delete-route",
+		label: "build:clinical-delete",
+		dir: ".agents/archon/packets/LL1-clinical-rule-delete-route",
+		files:
+			"apps/api/src/routes/clinical.ts, apps/api/src/db/clinicalQuery.ts, and ONE new test file under apps/api/src/tests/",
+		gate: "node --import tsx --test apps/api/src/tests/<your new test>.test.ts",
+		brief: `THE DELETE BUTTON FOR A CLINICAL RULE HAS NEVER WORKED. NOT ONCE, IN ANY BUILD.
 
 RE-MEASURED ON HEAD AT DISPATCH, these are my numbers not a stale review's:
   apps/api/src/routes/clinical.ts registers exactly three rule routes:
@@ -120,15 +130,16 @@ Write ONE new test file under apps/api/src/tests/. Assert:
 Use app.inject. Look at an existing test in apps/api/src/tests/ for how the app is built and how
 ORG_HEADERS are shaped — and note the standing trap: a test that depends on rows already sitting in the
 shared database proves nothing. SEED YOUR OWN rule inside the test, or skip honestly if the DB is down.`,
-  },
+	},
 
-  {
-    id: 'LL2-room-number-priced-as-service',
-    label: 'build:room-number-price',
-    dir: '.agents/archon/packets/LL2-room-number-priced-as-service',
-    files: 'apps/api/src/pricelist/analyzer.ts and its test files under apps/api/src/pricelist/',
-    gate: 'node --import tsx --test apps/api/src/pricelist/analyzer.test.ts',
-    brief: `A ROOM NUMBER IS BEING SOLD AS A DENTAL SERVICE. «Седация 5000 / 120 мин кабинет 412» costs 412 ₽.
+	{
+		id: "LL2-room-number-priced-as-service",
+		label: "build:room-number-price",
+		dir: ".agents/archon/packets/LL2-room-number-priced-as-service",
+		files:
+			"apps/api/src/pricelist/analyzer.ts and its test files under apps/api/src/pricelist/",
+		gate: "node --import tsx --test apps/api/src/pricelist/analyzer.test.ts",
+		brief: `A ROOM NUMBER IS BEING SOLD AS A DENTAL SERVICE. «Седация 5000 / 120 мин кабинет 412» costs 412 ₽.
 
 RE-MEASURED ON HEAD AT DISPATCH: apps/api/src/pricelist/analyzer.ts:742 reads
     const selected = ambiguous ? undefined : pool.at(-1);
@@ -175,15 +186,16 @@ outcome you chose (5000 or refusal) and WHY, in one sentence, with the discrimin
 IF YOU FINISH WITH ROOM LEFT, a second commit only: after parsing, the duration text «60 мин» stays glued
 into the service title («Лечение кариеса 60 мин»). Decide — strip it, or argue in writing that a duration
 belongs in the name. Do not fold this into the first commit; one reason, one commit.`,
-  },
+	},
 
-  {
-    id: 'LL3-test-reads-shared-database',
-    label: 'build:self-seeding-test',
-    dir: '.agents/archon/packets/LL3-test-reads-shared-database',
-    files: 'apps/api/src/tests/routes/managerReports.test.ts ONLY. apps/api/src/services/reports/managerReports.ts is DIRTY — another author is mid-edit. DO NOT TOUCH THE SERVICE.',
-    gate: 'node --import tsx --test apps/api/src/tests/routes/managerReports.test.ts',
-    brief: `THE ONLY FAILING TEST IN A 1278-TEST SUITE, AND IT IS NOT A CODE DEFECT. IT IS A TEST THAT READS
+	{
+		id: "LL3-test-reads-shared-database",
+		label: "build:self-seeding-test",
+		dir: ".agents/archon/packets/LL3-test-reads-shared-database",
+		files:
+			"apps/api/src/tests/routes/managerReports.test.ts ONLY. apps/api/src/services/reports/managerReports.ts is DIRTY — another author is mid-edit. DO NOT TOUCH THE SERVICE.",
+		gate: "node --import tsx --test apps/api/src/tests/routes/managerReports.test.ts",
+		brief: `THE ONLY FAILING TEST IN A 1278-TEST SUITE, AND IT IS NOT A CODE DEFECT. IT IS A TEST THAT READS
 WHATEVER HAPPENS TO BE LYING IN THE SHARED DATABASE.
 
 MEASURED BY THE LEAD, twice, on the full suite: 1278 tests, 1277 pass, 1 fails —
@@ -224,15 +236,16 @@ skips is worse than a red one because nobody ever looks at it again.
 Look first at how OTHER tests in apps/api/src/tests/ seed rows — there is prior art in this repo for
 inserting fixture rows and cleaning them up, and matching it is better than inventing a new pattern.
 Whatever you do, the file must not leave rows behind for the next test to trip over.`,
-  },
+	},
 
-  {
-    id: 'LL4-egisz-status-only-postgres-validates',
-    label: 'build:egisz-status-contract',
-    dir: '.agents/archon/packets/LL4-egisz-status-only-postgres-validates',
-    files: 'packages/shared/src/index.ts, apps/api/src/db/schema.ts (the egiszLogs block at :1928-1953 ONLY), and apps/api/src/tests/enumContractDrift.test.ts if it needs a new entry',
-    gate: 'node --import tsx --test apps/api/src/tests/enumContractDrift.test.ts',
-    brief: `AN ENUM WHOSE ONLY VALIDATOR IS POSTGRES. A BAD STATUS PASSES TYPECHECK AND EXPLODES AT RUNTIME.
+	{
+		id: "LL4-egisz-status-only-postgres-validates",
+		label: "build:egisz-status-contract",
+		dir: ".agents/archon/packets/LL4-egisz-status-only-postgres-validates",
+		files:
+			"packages/shared/src/index.ts, apps/api/src/db/schema.ts (the egiszLogs block at :1928-1953 ONLY), and apps/api/src/tests/enumContractDrift.test.ts if it needs a new entry",
+		gate: "node --import tsx --test apps/api/src/tests/enumContractDrift.test.ts",
+		brief: `AN ENUM WHOSE ONLY VALIDATOR IS POSTGRES. A BAD STATUS PASSES TYPECHECK AND EXPLODES AT RUNTIME.
 
 RE-MEASURED ON HEAD AT DISPATCH. This one is unusual: the previous author already wrote down the exact
 blocker in a comment, honestly, instead of hiding it. Read apps/api/src/db/schema.ts:1938-1949:
@@ -280,15 +293,16 @@ validator — say so.
 Report in leadMustRun that the lead must rebuild @dental/shared ('npm run build -w @dental/shared') before
 any api typecheck can see your contract — the api imports the BUILT output, and a stale dist has already
 cost this campaign one false measurement.`,
-  },
+	},
 
-  {
-    id: 'LL5-two-auth-idioms-in-one-file',
-    label: 'build:visits-auth-converge',
-    dir: '.agents/archon/packets/LL5-two-auth-idioms-in-one-file',
-    files: 'apps/api/src/routes/visits.ts and apps/api/src/routes/visits.test.ts ONLY',
-    gate: 'node --import tsx --test apps/api/src/routes/visits.test.ts',
-    brief: `ONE ROUTE FILE, TWO DIFFERENT ANSWERS TO «IS THIS CALLER ALLOWED». WHICHEVER IS WEAKER IS THE
+	{
+		id: "LL5-two-auth-idioms-in-one-file",
+		label: "build:visits-auth-converge",
+		dir: ".agents/archon/packets/LL5-two-auth-idioms-in-one-file",
+		files:
+			"apps/api/src/routes/visits.ts and apps/api/src/routes/visits.test.ts ONLY",
+		gate: "node --import tsx --test apps/api/src/routes/visits.test.ts",
+		brief: `ONE ROUTE FILE, TWO DIFFERENT ANSWERS TO «IS THIS CALLER ALLOWED». WHICHEVER IS WEAKER IS THE
 FILE'S REAL SECURITY LEVEL.
 
 RE-MEASURED ON HEAD AT DISPATCH by counting call sites per file:
@@ -325,15 +339,16 @@ visits.ts with NO credentials and assert the status. Add those assertions to vis
 fail if a guard is deleted — verify that by temporarily removing one guard in your working tree, watching
 the test go red, and putting it back. Report the status codes you observed BEFORE and AFTER your change,
 per route. If a route answered 200 with no credentials before your change, that is the headline finding.`,
-  },
+	},
 
-  {
-    id: 'LL6-last-orphan-panel',
-    label: 'build:orphan-planner',
-    dir: '.agents/archon/packets/LL6-last-orphan-panel',
-    files: 'apps/web/src/components/plan/ComparativePlannerDashboard.tsx, apps/web/src/tests/panelsAreMounted.test.ts, and whichever ONE view file you mount it into if you choose to mount',
-    gate: 'node --import tsx --test apps/web/src/tests/panelsAreMounted.test.ts',
-    brief: `THE LAST ORPHAN PANEL. IT IS WRITTEN, IT COMPILES, AND NO HUMAN CAN EVER REACH IT.
+	{
+		id: "LL6-last-orphan-panel",
+		label: "build:orphan-planner",
+		dir: ".agents/archon/packets/LL6-last-orphan-panel",
+		files:
+			"apps/web/src/components/plan/ComparativePlannerDashboard.tsx, apps/web/src/tests/panelsAreMounted.test.ts, and whichever ONE view file you mount it into if you choose to mount",
+		gate: "node --import tsx --test apps/web/src/tests/panelsAreMounted.test.ts",
+		brief: `THE LAST ORPHAN PANEL. IT IS WRITTEN, IT COMPILES, AND NO HUMAN CAN EVER REACH IT.
 
 RE-MEASURED ON HEAD AT DISPATCH: there were two orphans. One is now closed — PublicBookingWidget is
 mounted at apps/web/src/main.tsx:78 and guarded by apps/web/src/tests/publicPortalRoute.test.ts:149. That
@@ -369,117 +384,232 @@ Prefer A or B. This item has been deferred through several cycles already, and �
 survived that long. Read the component in full before you decide — do not decide from the file name.
 Whichever you pick, panelsAreMounted.test.ts must end up ENFORCING your decision, and you must show the
 single-file test run passing.`,
-  },
-]
+	},
+];
 
 const BUILD_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'summary', 'filesChanged', 'commitHash', 'inventory', 'proven', 'foundNotFixed', 'leadMustRun'],
-  properties: {
-    packet: { type: 'string' },
-    summary: { type: 'string', description: 'What the defect was and what you changed, 2-4 sentences, Russian or English.' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    commitHash: { type: 'string', description: 'Short hash, or empty string if you did not commit.' },
-    inventory: { type: 'array', items: { type: 'string' }, description: 'Every site you inspected, with file:line and verdict.' },
-    proven: { type: 'array', items: { type: 'string' }, description: 'Commands you actually ran, each with its TRUE exit code taken without a pipe.' },
-    foundNotFixed: { type: 'array', items: { type: 'string' }, description: 'Defects you saw and deliberately left. Empty array is a claim that there are none.' },
-    leadMustRun: { type: 'array', items: { type: 'string' }, description: 'Shared gates only the lead may run.' },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"summary",
+		"filesChanged",
+		"commitHash",
+		"inventory",
+		"proven",
+		"foundNotFixed",
+		"leadMustRun",
+	],
+	properties: {
+		packet: { type: "string" },
+		summary: {
+			type: "string",
+			description:
+				"What the defect was and what you changed, 2-4 sentences, Russian or English.",
+		},
+		filesChanged: { type: "array", items: { type: "string" } },
+		commitHash: {
+			type: "string",
+			description: "Short hash, or empty string if you did not commit.",
+		},
+		inventory: {
+			type: "array",
+			items: { type: "string" },
+			description: "Every site you inspected, with file:line and verdict.",
+		},
+		proven: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Commands you actually ran, each with its TRUE exit code taken without a pipe.",
+		},
+		foundNotFixed: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Defects you saw and deliberately left. Empty array is a claim that there are none.",
+		},
+		leadMustRun: {
+			type: "array",
+			items: { type: "string" },
+			description: "Shared gates only the lead may run.",
+		},
+	},
+};
 
 const REVIEW_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'verdict', 'reproduced', 'defectsFound', 'testWouldFailOnRevert', 'attributionClean', 'reasoning', 'requiredRework'],
-  properties: {
-    packet: { type: 'string' },
-    verdict: { type: 'string', enum: ['SOUND', 'SOUND_WITH_NITS', 'NEEDS_REWORK', 'REVERT'] },
-    reproduced: { type: 'string', description: 'Which of the builder\'s claims you reproduced yourself, and which you could not.' },
-    defectsFound: { type: 'array', items: { type: 'string' }, description: 'New defects in the committed code, with file:line.' },
-    testWouldFailOnRevert: { type: 'string', description: 'Name the assertion that breaks if the fix is reverted, or say no test was added.' },
-    attributionClean: { type: 'string', description: 'Output of git log -1 --format=%(trailers) <hash>. Must be empty.' },
-    reasoning: { type: 'string' },
-    requiredRework: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"verdict",
+		"reproduced",
+		"defectsFound",
+		"testWouldFailOnRevert",
+		"attributionClean",
+		"reasoning",
+		"requiredRework",
+	],
+	properties: {
+		packet: { type: "string" },
+		verdict: {
+			type: "string",
+			enum: ["SOUND", "SOUND_WITH_NITS", "NEEDS_REWORK", "REVERT"],
+		},
+		reproduced: {
+			type: "string",
+			description:
+				"Which of the builder's claims you reproduced yourself, and which you could not.",
+		},
+		defectsFound: {
+			type: "array",
+			items: { type: "string" },
+			description: "New defects in the committed code, with file:line.",
+		},
+		testWouldFailOnRevert: {
+			type: "string",
+			description:
+				"Name the assertion that breaks if the fix is reverted, or say no test was added.",
+		},
+		attributionClean: {
+			type: "string",
+			description:
+				"Output of git log -1 --format=%(trailers) <hash>. Must be empty.",
+		},
+		reasoning: { type: "string" },
+		requiredRework: { type: "array", items: { type: "string" } },
+	},
+};
 
 function buildStage(p) {
-  return agent(
-    LAW +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'YOUR PACKET: ' + p.id + '\n' +
-    'OWNED SCOPE: ' + p.files + '\n' +
-    'FORBIDDEN: every other file; all shared gates; any money comparison.\n' +
-    'YOUR SIGNAL: ' + p.gate + '\n' +
-    'PACKET DIR (create it first, one line in state.md): ' + p.dir + '\n' +
-    '═══════════════════════════════════════════════════════════════\n' + p.brief +
-    '\n\nCOMMIT AS SOON AS IT COMPILES, then add or extend the test in a second commit if you have room.\n',
-    { label: p.label, phase: 'Build', schema: BUILD_SCHEMA }
-  )
+	return agent(
+		LAW +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"YOUR PACKET: " +
+			p.id +
+			"\n" +
+			"OWNED SCOPE: " +
+			p.files +
+			"\n" +
+			"FORBIDDEN: every other file; all shared gates; any money comparison.\n" +
+			"YOUR SIGNAL: " +
+			p.gate +
+			"\n" +
+			"PACKET DIR (create it first, one line in state.md): " +
+			p.dir +
+			"\n" +
+			"═══════════════════════════════════════════════════════════════\n" +
+			p.brief +
+			"\n\nCOMMIT AS SOON AS IT COMPILES, then add or extend the test in a second commit if you have room.\n",
+		{ label: p.label, phase: "Build", schema: BUILD_SCHEMA },
+	);
 }
 
 function reviewStage(built, p) {
-  if (!built) {
-    return { packet: p.id, verdict: 'NEEDS_REWORK', reproduced: 'nothing — builder died', defectsFound: [], testWouldFailOnRevert: 'unknown', attributionClean: 'unknown', reasoning: 'Builder returned no result. Read ' + p.dir + '/state.md and git log — the work may already be committed; a dead agent is not an idle one.', requiredRework: ['Re-measure ' + p.id + ' on HEAD before re-dispatching'] }
-  }
-  if (!built.commitHash) {
-    return { packet: p.id, verdict: 'NEEDS_REWORK', reproduced: 'n/a — no commit', defectsFound: [], testWouldFailOnRevert: 'n/a', attributionClean: 'n/a', reasoning: built.summary || 'No commit hash returned.', requiredRework: built.foundNotFixed || [] }
-  }
-  return agent(
-    'You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to lead\n' +
-    '[ARCHON]. You did NOT write this code and you are not here to approve it.\n\n' +
-    'READ-ONLY. No edits, no git add/commit/push. **NEVER run "git remote -v"** — the remote URLs contain\n' +
-    'live plaintext access tokens. Do NOT run npm typecheck/build/test: five other agents are mid-edit and\n' +
-    'you would be reading a half-written tree and reporting its damage as this packet\'s. You MAY run\n' +
-    '"node --import tsx --test <one file>", read-only rg/fd, git show/log/grep, and read-only "node -e".\n' +
-    '**"grep -r" and "find /" are BANNED on this machine** — their processes outlive the shell and grind for\n' +
-    'hours; use rg/fd with a scoped path.\n\n' +
-    '**WRITE YOUR FINDINGS TO ' + p.dir + '/review.md AS YOU GO, not at the end.** Reviewers die on credit\n' +
-    'exhaustion here constantly and an unwritten finding is a finding that never existed. The file MUST\n' +
-    'contain a literal line of the form:\n' +
-    '    ## VERDICT: SOUND | SOUND_WITH_NITS | NEEDS_REWORK | REVERT\n' +
-    'Exactly one such line, with one verdict on it. In the last cycle no reviewer wrote that line and the\n' +
-    'lead could not read a single verdict off disk — the whole review pass was wasted.\n\n' +
-    'PACKET: ' + p.id + '\nCOMMIT: ' + built.commitHash + '\nFILES: ' + JSON.stringify(built.filesChanged) + '\n' +
-    'BUILDER\'S CLAIMED INVENTORY: ' + JSON.stringify(built.inventory || []) + '\n' +
-    'BUILDER\'S CLAIMED PROOF: ' + JSON.stringify(built.proven || []) + '\n' +
-    'BUILDER SAYS IT LEFT UNFIXED: ' + JSON.stringify(built.foundNotFixed || []) + '\n\n' +
-    'THE ORIGINAL BRIEF, so you can judge whether it solved the stated problem or a nearby easier one:\n' +
-    '---8<---\n' + p.brief + '\n---8<---\n\n' +
-    'CHECK SIX THINGS, EACH BY RUNNING OR READING SOMETHING — never by agreeing:\n' +
-    '1. **Does the defect actually still reproduce?** Re-derive it yourself at HEAD with your own search or\n' +
-    '   your own single-file test run. If the defect was already gone before this commit, the packet was\n' +
-    '   stale and the "fix" is noise — say so; the lead has shipped twelve stale briefs and wants the\n' +
-    '   thirteenth caught, not accommodated.\n' +
-    '2. **Did it fix the stated defect, or a cheaper neighbour?** Quote the diff line that does the work.\n' +
-    '   "Renamed things and added a comment" is NEEDS_REWORK.\n' +
-    '3. **Did it miss a site?** Re-derive the site list with YOUR OWN scoped rg. Report YOUR count, not the\n' +
-    '   brief\'s and not the builder\'s.\n' +
-    '4. **Would its test fail if the fix were reverted?** Name the exact assertion. If you can, prove it:\n' +
-    '   "git stash" is BANNED, so instead read the assertion against the pre-fix code with\n' +
-    '   "git show <hash>^:<path>" and reason precisely. A test that passes either way is ceremony, and this\n' +
-    '   repo has already shipped several — that finding alone justifies NEEDS_REWORK.\n' +
-    '5. **Tenancy.** If the change touches a query, does organizationId appear in the WHERE clause? A query\n' +
-    '   filtered only by row id lets one clinic read or destroy another clinic\'s data. Also: does any test\n' +
-    '   it added depend on rows already sitting in the shared database rather than seeding its own? That is\n' +
-    '   the exact class of defect packet LL3 exists to remove — do not let a new one in behind it.\n' +
-    '6. **Attribution.** Run "git log -1 --format=%(trailers) ' + built.commitHash + '" and paste the real\n' +
-    '   output. It MUST be empty. Then grep the commit BODY for «Co-Authored-By» and «anthropic» — note\n' +
-    '   that a body which merely quotes the ban is fine; only TRAILERS are violations, and a false positive\n' +
-    '   here has already cost the lead a cycle.\n\n' +
-    'Also sweep for: mojibake in the diff or subject (this repo has lost 10,554 Cyrillic characters once), a\n' +
-    'second money helper beside @dental/shared, an epsilon added to a money comparison, any English string\n' +
-    'reaching a user, and a comment that now describes a state which no longer exists.\n\n' +
-    'Reserve REVERT for a changed money comparison, an introduced tolerance, or a widened access check.\n' +
-    'Never award SOUND to a claim you could not reproduce — say "could not reproduce" and drop the verdict.',
-    { label: 'attack:' + p.id, phase: 'Attack', schema: REVIEW_SCHEMA }
-  )
+	if (!built) {
+		return {
+			packet: p.id,
+			verdict: "NEEDS_REWORK",
+			reproduced: "nothing — builder died",
+			defectsFound: [],
+			testWouldFailOnRevert: "unknown",
+			attributionClean: "unknown",
+			reasoning:
+				"Builder returned no result. Read " +
+				p.dir +
+				"/state.md and git log — the work may already be committed; a dead agent is not an idle one.",
+			requiredRework: ["Re-measure " + p.id + " on HEAD before re-dispatching"],
+		};
+	}
+	if (!built.commitHash) {
+		return {
+			packet: p.id,
+			verdict: "NEEDS_REWORK",
+			reproduced: "n/a — no commit",
+			defectsFound: [],
+			testWouldFailOnRevert: "n/a",
+			attributionClean: "n/a",
+			reasoning: built.summary || "No commit hash returned.",
+			requiredRework: built.foundNotFixed || [],
+		};
+	}
+	return agent(
+		"You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm), reporting to lead\n" +
+			"[ARCHON]. You did NOT write this code and you are not here to approve it.\n\n" +
+			'READ-ONLY. No edits, no git add/commit/push. **NEVER run "git remote -v"** — the remote URLs contain\n' +
+			"live plaintext access tokens. Do NOT run npm typecheck/build/test: five other agents are mid-edit and\n" +
+			"you would be reading a half-written tree and reporting its damage as this packet's. You MAY run\n" +
+			'"node --import tsx --test <one file>", read-only rg/fd, git show/log/grep, and read-only "node -e".\n' +
+			'**"grep -r" and "find /" are BANNED on this machine** — their processes outlive the shell and grind for\n' +
+			"hours; use rg/fd with a scoped path.\n\n" +
+			"**WRITE YOUR FINDINGS TO " +
+			p.dir +
+			"/review.md AS YOU GO, not at the end.** Reviewers die on credit\n" +
+			"exhaustion here constantly and an unwritten finding is a finding that never existed. The file MUST\n" +
+			"contain a literal line of the form:\n" +
+			"    ## VERDICT: SOUND | SOUND_WITH_NITS | NEEDS_REWORK | REVERT\n" +
+			"Exactly one such line, with one verdict on it. In the last cycle no reviewer wrote that line and the\n" +
+			"lead could not read a single verdict off disk — the whole review pass was wasted.\n\n" +
+			"PACKET: " +
+			p.id +
+			"\nCOMMIT: " +
+			built.commitHash +
+			"\nFILES: " +
+			JSON.stringify(built.filesChanged) +
+			"\n" +
+			"BUILDER'S CLAIMED INVENTORY: " +
+			JSON.stringify(built.inventory || []) +
+			"\n" +
+			"BUILDER'S CLAIMED PROOF: " +
+			JSON.stringify(built.proven || []) +
+			"\n" +
+			"BUILDER SAYS IT LEFT UNFIXED: " +
+			JSON.stringify(built.foundNotFixed || []) +
+			"\n\n" +
+			"THE ORIGINAL BRIEF, so you can judge whether it solved the stated problem or a nearby easier one:\n" +
+			"---8<---\n" +
+			p.brief +
+			"\n---8<---\n\n" +
+			"CHECK SIX THINGS, EACH BY RUNNING OR READING SOMETHING — never by agreeing:\n" +
+			"1. **Does the defect actually still reproduce?** Re-derive it yourself at HEAD with your own search or\n" +
+			"   your own single-file test run. If the defect was already gone before this commit, the packet was\n" +
+			'   stale and the "fix" is noise — say so; the lead has shipped twelve stale briefs and wants the\n' +
+			"   thirteenth caught, not accommodated.\n" +
+			"2. **Did it fix the stated defect, or a cheaper neighbour?** Quote the diff line that does the work.\n" +
+			'   "Renamed things and added a comment" is NEEDS_REWORK.\n' +
+			"3. **Did it miss a site?** Re-derive the site list with YOUR OWN scoped rg. Report YOUR count, not the\n" +
+			"   brief's and not the builder's.\n" +
+			"4. **Would its test fail if the fix were reverted?** Name the exact assertion. If you can, prove it:\n" +
+			'   "git stash" is BANNED, so instead read the assertion against the pre-fix code with\n' +
+			'   "git show <hash>^:<path>" and reason precisely. A test that passes either way is ceremony, and this\n' +
+			"   repo has already shipped several — that finding alone justifies NEEDS_REWORK.\n" +
+			"5. **Tenancy.** If the change touches a query, does organizationId appear in the WHERE clause? A query\n" +
+			"   filtered only by row id lets one clinic read or destroy another clinic's data. Also: does any test\n" +
+			"   it added depend on rows already sitting in the shared database rather than seeding its own? That is\n" +
+			"   the exact class of defect packet LL3 exists to remove — do not let a new one in behind it.\n" +
+			'6. **Attribution.** Run "git log -1 --format=%(trailers) ' +
+			built.commitHash +
+			'" and paste the real\n' +
+			"   output. It MUST be empty. Then grep the commit BODY for «Co-Authored-By» and «anthropic» — note\n" +
+			"   that a body which merely quotes the ban is fine; only TRAILERS are violations, and a false positive\n" +
+			"   here has already cost the lead a cycle.\n\n" +
+			"Also sweep for: mojibake in the diff or subject (this repo has lost 10,554 Cyrillic characters once), a\n" +
+			"second money helper beside @dental/shared, an epsilon added to a money comparison, any English string\n" +
+			"reaching a user, and a comment that now describes a state which no longer exists.\n\n" +
+			"Reserve REVERT for a changed money comparison, an introduced tolerance, or a widened access check.\n" +
+			'Never award SOUND to a claim you could not reproduce — say "could not reproduce" and drop the verdict.',
+		{ label: "attack:" + p.id, phase: "Attack", schema: REVIEW_SCHEMA },
+	);
 }
 
-const all = []
-log('Cycle 23: ' + PACKETS.map((p) => p.id).join(', '))
-const done = await pipeline(PACKETS, buildStage, reviewStage)
-for (let i = 0; i < PACKETS.length; i++) all.push({ packet: PACKETS[i].id, dir: PACKETS[i].dir, review: done[i] || null })
-log('Cycle 23 complete.')
+const all = [];
+log("Cycle 23: " + PACKETS.map((p) => p.id).join(", "));
+const done = await pipeline(PACKETS, buildStage, reviewStage);
+for (let i = 0; i < PACKETS.length; i++)
+	all.push({
+		packet: PACKETS[i].id,
+		dir: PACKETS[i].dir,
+		review: done[i] || null,
+	});
+log("Cycle 23 complete.");
 return { cycle: 23, results: all }

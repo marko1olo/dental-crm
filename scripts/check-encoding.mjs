@@ -37,9 +37,8 @@
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -75,17 +74,41 @@ const SKIP_DIRS = new Set([
  * every exemption.
  */
 const FIXTURE_ALLOWLIST = new Map([
-	["apps/api/src/text/repairMojibake.test.ts", "tests the repair, must carry damaged samples"],
+	[
+		"apps/api/src/text/repairMojibake.test.ts",
+		"tests the repair, must carry damaged samples",
+	],
 	["apps/api/src/tests/repairMojibake.test.ts", "same, integration side"],
 	["apps/api/src/migration/encoding.ts", "the source-encoding detector itself"],
-	["apps/api/src/migration/parsers/index.ts", "flags rows containing U+FFFD as suspect"],
+	[
+		"apps/api/src/migration/parsers/index.ts",
+		"flags rows containing U+FFFD as suspect",
+	],
 	["apps/api/src/migration/tests/parsers.test.ts", "asserts damage detection"],
-	["apps/api/src/migration/tests/valueNormalize.test.ts", "asserts damage detection"],
-	["scripts/smoke-api-text-encoding.mjs", "encoding smoke test, holds detector regexes"],
-	["scripts/smoke-telegram-validation.mjs", "detector char class after the telegram.ts incident"],
-	[".agents/archon/cycle1.workflow.js", "agent notes explaining a real mojibake finding"],
-	[".agents/archon/RECON_DOSSIER.md", "dossier that documents this gate's own findings"],
-	[".agents/archon/packets/S3-aijobs-index-and-ram/encoding-check.cjs", "packet-local encoding probe"],
+	[
+		"apps/api/src/migration/tests/valueNormalize.test.ts",
+		"asserts damage detection",
+	],
+	[
+		"scripts/smoke-api-text-encoding.mjs",
+		"encoding smoke test, holds detector regexes",
+	],
+	[
+		"scripts/smoke-telegram-validation.mjs",
+		"detector char class after the telegram.ts incident",
+	],
+	[
+		".agents/archon/cycle1.workflow.js",
+		"agent notes explaining a real mojibake finding",
+	],
+	[
+		".agents/archon/RECON_DOSSIER.md",
+		"dossier that documents this gate's own findings",
+	],
+	[
+		".agents/archon/packets/S3-aijobs-index-and-ram/encoding-check.cjs",
+		"packet-local encoding probe",
+	],
 ]);
 /**
  * Исключения ТОЛЬКО из правила 4 (cp1251). Добавлено 2026-08-06.
@@ -100,23 +123,50 @@ const FIXTURE_ALLOWLIST = new Map([
  * 2026-07-28.
  */
 const CP1251_FIXTURE_ALLOWLIST = new Map([
-	[".agents/AGENTS.md", "раздел «Признаки мождибаке» — 4 показательных примера порчи (строки 161, 237, 238, 241)"],
-	[".agents/archon/packets/U6-state-snapshot-writes/review.md", "строка 158: набор образцов, по которым агент искал порчу"],
-	[".agents/archon/packets/C3-nav-rail-unlabelled/review.md", "строка 143: разбор регулярки-детектора из AGENTS.md"],
-	[".agents/archon/packets/C1-dicom-wrong-study/review.md", "строка 111: цитата испорченного текста в отчёте о находке"],
-	["artifacts/debug_final.html", "снимок DOM от 2026-07-23: страница тогда отдавала порчу, это улика"],
+	[
+		".agents/AGENTS.md",
+		"раздел «Признаки мождибаке» — 4 показательных примера порчи (строки 161, 237, 238, 241)",
+	],
+	[
+		".agents/archon/packets/U6-state-snapshot-writes/review.md",
+		"строка 158: набор образцов, по которым агент искал порчу",
+	],
+	[
+		".agents/archon/packets/C3-nav-rail-unlabelled/review.md",
+		"строка 143: разбор регулярки-детектора из AGENTS.md",
+	],
+	[
+		".agents/archon/packets/C1-dicom-wrong-study/review.md",
+		"строка 111: цитата испорченного текста в отчёте о находке",
+	],
+	[
+		"artifacts/debug_final.html",
+		"снимок DOM от 2026-07-23: страница тогда отдавала порчу, это улика",
+	],
 	[
 		"scripts/smoke-workspace-live-core-actions.mjs",
 		"строка 828: регулярка смоука намеренно ловит ОБЕ формы слова, чистую и испорченную, чтобы видеть порчу в живом UI",
 	],
 ]);
 const FIXTURE_MARKER = "encoding-check: fixture";
-const CHECKED_EXTENSIONS = [".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".md", ".css", ".html", ".sql"];
+const CHECKED_EXTENSIONS = [
+	".ts",
+	".tsx",
+	".js",
+	".mjs",
+	".cjs",
+	".json",
+	".md",
+	".css",
+	".html",
+	".sql",
+];
 
 const REPLACEMENT_CHARACTER = String.fromCharCode(0xfffd);
 // U+00D0 и U+00D1 — это байты D0/D1 (начало кириллицы в UTF-8), показанные как
 // cp1252. За ними в такой мохибаке всегда идёт знак из верхней половины таблицы.
-const MOJIBAKE_PATTERN = new RegExp("[\\u00D0\\u00D1][\\u0080-\\u00BF\\u0402-\\u045F\\u2018-\\u201E\\u20AC\\u2122]");
+const MOJIBAKE_PATTERN =
+	/[\u00D0\u00D1][\u0080-\u00BF\u0402-\u045F\u2018-\u201E\u20AC\u2122]/;
 
 /**
  * ПРАВИЛО 4: cp1251-мохибака. Добавлено 2026-08-06.
@@ -162,7 +212,9 @@ if (CP1251_HIGH.length !== 128) {
 	// Таблица содержит один невидимый символ (байт 0x98). Любой редактор, который
 	// его «почистит», сдвинет всё, что идёт после, и правило 4 молча ослепнет на
 	// всей кириллице. Падаем громко, а не тихо пропускаем порчу.
-	throw new Error(`CP1251_HIGH повреждена: ${CP1251_HIGH.length} символов вместо 128`);
+	throw new Error(
+		`CP1251_HIGH повреждена: ${CP1251_HIGH.length} символов вместо 128`,
+	);
 }
 const CP1251_REVERSE = new Map();
 for (let index = 0; index < CP1251_HIGH.length; index += 1) {
@@ -174,11 +226,14 @@ for (let index = 0; index < CP1251_HIGH.length; index += 1) {
  * мохибаке не бывает, поэтому посимвольный разбор запускается на единицах
  * файлов, а не на всех шести тысячах.
  */
-const CP1251_LEAD_PROBE = new RegExp("[\\u0420-\\u0423][" + CP1251_HIGH.slice(0, 0x40) + "]");
+const CP1251_LEAD_PROBE = new RegExp(
+	"[\\u0420-\\u0423][" + CP1251_HIGH.slice(0, 0x40) + "]",
+);
 const CP1251_MIN_RUN = 4;
 const CP1251_MIN_CYRILLIC = 2;
-const CYRILLIC_LETTER = new RegExp("[\\u0400-\\u04FF]", "g");
-const UNPRINTABLE = new RegExp("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F-\\u009F\\uFFFD]");
+const CYRILLIC_LETTER = /[\u0400-\u04FF]/g;
+const UNPRINTABLE =
+	/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\uFFFD]/;
 
 /** Отрезок cp1251-мохибаки -> исходный текст, либо null, если это не порча. */
 function decodeCp1251Run(run) {
@@ -210,20 +265,27 @@ function findCp1251Mojibake(text) {
 			continue;
 		}
 		let end = index;
-		while (end < characters.length && CP1251_REVERSE.has(characters[end])) end += 1;
+		while (end < characters.length && CP1251_REVERSE.has(characters[end]))
+			end += 1;
 		if (end - index >= CP1251_MIN_RUN) {
 			const run = characters.slice(index, end).join("");
 			const decoded = decodeCp1251Run(run);
 			if (decoded !== null) {
 				total += 1;
 				if (first === null) {
-					first = { run, decoded, offset: characters.slice(0, index).join("").length };
+					first = {
+						run,
+						decoded,
+						offset: characters.slice(0, index).join("").length,
+					};
 				}
 			}
 		}
 		index = end;
 	}
-	return first === null ? null : { run: first.run, decoded: first.decoded, offset: first.offset, total };
+	return first === null
+		? null
+		: { run: first.run, decoded: first.decoded, offset: first.offset, total };
 }
 
 /** UTF-8 без «мусорных» замен: декодируем строго и сравниваем обратный путь. */
@@ -243,7 +305,8 @@ function* walk(directory) {
 			continue;
 		}
 		if (!entry.isFile()) continue;
-		if (!CHECKED_EXTENSIONS.some((extension) => entry.name.endsWith(extension))) continue;
+		if (!CHECKED_EXTENSIONS.some((extension) => entry.name.endsWith(extension)))
+			continue;
 		yield join(directory, entry.name);
 	}
 }
@@ -271,11 +334,15 @@ for (const filePath of walk(repoRoot)) {
 		});
 		continue;
 	}
-	if ((buffer[0] === 0xff && buffer[1] === 0xfe) || (buffer[0] === 0xfe && buffer[1] === 0xff)) {
+	if (
+		(buffer[0] === 0xff && buffer[1] === 0xfe) ||
+		(buffer[0] === 0xfe && buffer[1] === 0xff)
+	) {
 		problems.push({
 			file: relativePath,
 			kind: "UTF-16",
-			detail: "файл в UTF-16 — перекодируйте в UTF-8; однобайтовый декодер превратит его в мусор",
+			detail:
+				"файл в UTF-16 — перекодируйте в UTF-8; однобайтовый декодер превратит его в мусор",
 		});
 		continue;
 	}
@@ -285,7 +352,8 @@ for (const filePath of walk(repoRoot)) {
 		problems.push({
 			file: relativePath,
 			kind: "не UTF-8",
-			detail: "файл не декодируется как UTF-8 — скорее всего он в CP1251; перекодируйте его",
+			detail:
+				"файл не декодируется как UTF-8 — скорее всего он в CP1251; перекодируйте его",
 		});
 		continue;
 	}
@@ -318,7 +386,9 @@ for (const filePath of walk(repoRoot)) {
 		});
 	}
 
-	const cp1251 = CP1251_FIXTURE_ALLOWLIST.has(relativePath) ? null : findCp1251Mojibake(text);
+	const cp1251 = CP1251_FIXTURE_ALLOWLIST.has(relativePath)
+		? null
+		: findCp1251Mojibake(text);
 	if (cp1251) {
 		const line = text.slice(0, cp1251.offset).split("\n").length;
 		problems.push({
@@ -332,11 +402,15 @@ for (const filePath of walk(repoRoot)) {
 }
 
 if (problems.length === 0) {
-	console.log(`Кодировка в порядке: проверено ${checked} файлов, замечаний нет.`);
+	console.log(
+		`Кодировка в порядке: проверено ${checked} файлов, замечаний нет.`,
+	);
 	process.exit(0);
 }
 
-console.error(`Найдены проблемы с кодировкой (${problems.length}) среди ${checked} файлов:\n`);
+console.error(
+	`Найдены проблемы с кодировкой (${problems.length}) среди ${checked} файлов:\n`,
+);
 for (const problem of problems) {
 	console.error(`  [${problem.kind}] ${problem.file}`);
 	console.error(`      ${problem.detail}`);

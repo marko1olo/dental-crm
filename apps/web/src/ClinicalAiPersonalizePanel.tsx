@@ -68,7 +68,12 @@ type Scenario = {
 	patientId?: string;
 	active?: boolean;
 	title?: string;
-	phases?: Array<{ title?: string; window?: string; amountRub?: number; focus?: string }>;
+	phases?: Array<{
+		title?: string;
+		window?: string;
+		amountRub?: number;
+		focus?: string;
+	}>;
 	pros?: string[];
 	tradeoffs?: string[];
 	clinicalWarnings?: string[];
@@ -85,7 +90,11 @@ function readServerMessage(payload: unknown): string | null {
 	return null;
 }
 
-function failureText(status: number, serverMessage: string | null, kind: "plan" | "post"): string {
+function failureText(
+	status: number,
+	serverMessage: string | null,
+	kind: "plan" | "post",
+): string {
 	if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
 	if (status === 401 || status === 403)
 		return "Нет прав на ИИ-персонализацию: доступ закрыт или истёк вход в программу.";
@@ -94,7 +103,8 @@ function failureText(status: number, serverMessage: string | null, kind: "plan" 
 			? "Не удалось собрать план для персонализации: проверьте позиции плана и диагноз."
 			: "Не удалось собрать параметры памятки после приёма.";
 	if (status === 404) return "Сервис ИИ-персонализации не отвечает.";
-	if (status >= 500) return "Сбой на сервере клиники: персонализация не собрана.";
+	if (status >= 500)
+		return "Сбой на сервере клиники: персонализация не собрана.";
 	return `Программа не смогла получить ответ ИИ (код ${status}).`;
 }
 
@@ -107,7 +117,8 @@ function todayDateLike(): string {
 }
 
 function moneyLine(amount: number | null | undefined): number {
-	if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0) return 0;
+	if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0)
+		return 0;
 	// копейки: округление до 0.01
 	return Math.round(amount * 100) / 100;
 }
@@ -152,7 +163,10 @@ function lineTotal(item: PlanItem): number {
 function inferCareTopic(items: PlanItem[], procedureHint: string): string {
 	const blob = [
 		procedureHint,
-		...items.map((i) => `${i.snapshotServiceName ?? ""} ${i.snapshotServiceCategory ?? ""}`),
+		...items.map(
+			(i) =>
+				`${i.snapshotServiceName ?? ""} ${i.snapshotServiceCategory ?? ""}`,
+		),
 	]
 		.join(" ")
 		.toLowerCase();
@@ -212,8 +226,11 @@ function buildTreatmentPlanPayload(input: {
 			if (phases.length > 0) {
 				for (const ph of phases) {
 					plannedStages.push({
-						stageName: (ph.title || sc.title || "Этап сценария").trim() || "Этап",
-						plannedServices: (ph.focus || sc.title || "По сценарию лечения").trim() || "По сценарию",
+						stageName:
+							(ph.title || sc.title || "Этап сценария").trim() || "Этап",
+						plannedServices:
+							(ph.focus || sc.title || "По сценарию лечения").trim() ||
+							"По сценарию",
 						plannedTiming: (ph.window || "По графику").trim() || "По графику",
 						clinicalNotes: null,
 						estimatedAmountRub: moneyLine(ph.amountRub),
@@ -274,8 +291,12 @@ function buildTreatmentPlanPayload(input: {
 	const clinicalToothRows =
 		teeth.length > 0
 			? teeth.slice(0, 16).map((tooth) => {
-					const related = activeItems.find((i) => (i.toothCode || "").trim() === tooth);
-					const svc = (related?.snapshotServiceName || "Лечение по плану").trim();
+					const related = activeItems.find(
+						(i) => (i.toothCode || "").trim() === tooth,
+					);
+					const svc = (
+						related?.snapshotServiceName || "Лечение по плану"
+					).trim();
 					return {
 						toothOrArea: tooth,
 						surfaces: ["not_applicable"],
@@ -296,7 +317,9 @@ function buildTreatmentPlanPayload(input: {
 						status: "planned",
 						diagnosisOrFinding: diagnosisSummary.slice(0, 500),
 						indication: "Лечение по утверждённому плану",
-						plannedAction: String(plannedStages[0]?.plannedServices ?? "Лечение").slice(0, 500),
+						plannedAction: String(
+							plannedStages[0]?.plannedServices ?? "Лечение",
+						).slice(0, 500),
 						prognosis: null,
 						periodontalStatus: null,
 						implantOrProstheticNotes: null,
@@ -320,10 +343,14 @@ function buildTreatmentPlanPayload(input: {
 	const alternatives =
 		alternativesFromScenarios.length > 0
 			? alternativesFromScenarios.slice(0, 12)
-			: ["Наблюдение с контрольным осмотром без активного вмешательства на этом этапе"];
+			: [
+					"Наблюдение с контрольным осмотром без активного вмешательства на этом этапе",
+				];
 
 	const risksFromScenarios = activeScenarios
-		.flatMap((s) => (Array.isArray(s.clinicalWarnings) ? s.clinicalWarnings : []))
+		.flatMap((s) =>
+			Array.isArray(s.clinicalWarnings) ? s.clinicalWarnings : [],
+		)
 		.map((r) => String(r).trim())
 		.filter(Boolean);
 	const risksAndLimitations =
@@ -335,7 +362,10 @@ function buildTreatmentPlanPayload(input: {
 				];
 
 	const estimatedTotalRub = moneyLine(
-		plannedStages.reduce((sum, st) => sum + moneyLine(st.estimatedAmountRub as number), 0),
+		plannedStages.reduce(
+			(sum, st) => sum + moneyLine(st.estimatedAmountRub as number),
+			0,
+		),
 	);
 
 	return {
@@ -358,7 +388,13 @@ function buildTreatmentPlanPayload(input: {
 	};
 }
 
-function ListBlock({ title, items }: { title: string; items: string[] | undefined }) {
+function ListBlock({
+	title,
+	items,
+}: {
+	title: string;
+	items: string[] | undefined;
+}) {
 	if (!items || items.length === 0) return null;
 	return (
 		<div className="ops-block" style={{ marginTop: "0.75rem" }}>
@@ -387,7 +423,9 @@ function MarkdownishText({ text }: { text: string }) {
 	);
 }
 
-export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProps> = ({
+export const ClinicalAiPersonalizePanel: React.FC<
+	ClinicalAiPersonalizePanelProps
+> = ({
 	patientId = null,
 	doctorFullName = null,
 	complaint = null,
@@ -397,10 +435,14 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 }) => {
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
-	const dashboard = (appLogic as { dashboard?: Record<string, unknown> } | null)?.dashboard;
+	const dashboard = (appLogic as { dashboard?: Record<string, unknown> } | null)
+		?.dashboard;
 
-	const [planResult, setPlanResult] = useState<PersonalizedPlanResult | null>(null);
-	const [postResult, setPostResult] = useState<PostVisitPersonalizedResult | null>(null);
+	const [planResult, setPlanResult] = useState<PersonalizedPlanResult | null>(
+		null,
+	);
+	const [postResult, setPostResult] =
+		useState<PostVisitPersonalizedResult | null>(null);
 	const [planError, setPlanError] = useState<string | null>(null);
 	const [postError, setPostError] = useState<string | null>(null);
 	const [planLoading, setPlanLoading] = useState(false);
@@ -409,14 +451,16 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 
 	const patientItems = useMemo(() => {
 		if (!patientId || !dashboard) return [] as PlanItem[];
-		const raw = (dashboard as { treatmentPlanItems?: PlanItem[] }).treatmentPlanItems;
+		const raw = (dashboard as { treatmentPlanItems?: PlanItem[] })
+			.treatmentPlanItems;
 		if (!Array.isArray(raw)) return [];
 		return raw.filter((item) => item?.patientId === patientId);
 	}, [dashboard, patientId]);
 
 	const patientScenarios = useMemo(() => {
 		if (!patientId || !dashboard) return [] as Scenario[];
-		const raw = (dashboard as { treatmentPlanScenarios?: Scenario[] }).treatmentPlanScenarios;
+		const raw = (dashboard as { treatmentPlanScenarios?: Scenario[] })
+			.treatmentPlanScenarios;
 		if (!Array.isArray(raw)) return [];
 		return raw.filter((s) => s?.patientId === patientId);
 	}, [dashboard, patientId]);
@@ -424,8 +468,9 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 	const resolvedDoctorName = useMemo(() => {
 		const fromProp = (doctorFullName || "").trim();
 		if (fromProp) return fromProp;
-		const doc = (appLogic as { activeDoctor?: { fullName?: string; name?: string } } | null)
-			?.activeDoctor;
+		const doc = (
+			appLogic as { activeDoctor?: { fullName?: string; name?: string } } | null
+		)?.activeDoctor;
 		const name = (doc?.fullName || doc?.name || "").trim();
 		return name || "Лечащий врач";
 	}, [appLogic, doctorFullName]);
@@ -434,7 +479,10 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 		try {
 			await navigator.clipboard.writeText(text);
 			setCopied(label);
-			window.setTimeout(() => setCopied((cur) => (cur === label ? null : cur)), 2000);
+			window.setTimeout(
+				() => setCopied((cur) => (cur === label ? null : cur)),
+				2000,
+			);
 		} catch {
 			setCopied(null);
 		}
@@ -442,7 +490,9 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 
 	const runPlanPersonalize = useCallback(async () => {
 		if (!patientId) {
-			setPlanError("Сначала выберите пациента — без карты план собрать нельзя.");
+			setPlanError(
+				"Сначала выберите пациента — без карты план собрать нельзя.",
+			);
 			return;
 		}
 		const payloadOrError = buildTreatmentPlanPayload({
@@ -464,7 +514,9 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 		try {
 			const headers =
 				auth && typeof auth.denteClinicalReadHeaders === "function"
-					? auth.denteClinicalReadHeaders({ "Content-Type": "application/json" })
+					? auth.denteClinicalReadHeaders({
+							"Content-Type": "application/json",
+						})
 					: { "Content-Type": "application/json" };
 			const response = await fetch("/api/ai/treatment-plan-personalize", {
 				method: "POST",
@@ -474,7 +526,9 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 			const body = await response.json().catch(() => null);
 			if (!response.ok) {
 				setPlanResult(null);
-				setPlanError(failureText(response.status, readServerMessage(body), "plan"));
+				setPlanError(
+					failureText(response.status, readServerMessage(body), "plan"),
+				);
 				return;
 			}
 			const result = body as PersonalizedPlanResult;
@@ -484,7 +538,9 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 				typeof result.patientHygieneAdvice !== "string"
 			) {
 				setPlanResult(null);
-				setPlanError("Сервер вернул ответ без текста для пациента. Попробуйте ещё раз.");
+				setPlanError(
+					"Сервер вернул ответ без текста для пациента. Попробуйте ещё раз.",
+				);
 				return;
 			}
 			setPlanResult(result);
@@ -509,7 +565,9 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 
 	const runPostVisitPersonalize = useCallback(async () => {
 		if (!patientId) {
-			setPostError("Сначала выберите пациента — без карты памятку собрать нельзя.");
+			setPostError(
+				"Сначала выберите пациента — без карты памятку собрать нельзя.",
+			);
 			return;
 		}
 
@@ -525,7 +583,9 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 		const toothOrArea =
 			(primary?.toothCode || "").trim() ||
 			Array.from(
-				new Set(activeItems.map((i) => (i.toothCode || "").trim()).filter(Boolean)),
+				new Set(
+					activeItems.map((i) => (i.toothCode || "").trim()).filter(Boolean),
+				),
 			).join(", ") ||
 			"Полость рта";
 		const careTopic = inferCareTopic(activeItems, procedureName);
@@ -535,7 +595,9 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 		try {
 			const headers =
 				auth && typeof auth.denteClinicalReadHeaders === "function"
-					? auth.denteClinicalReadHeaders({ "Content-Type": "application/json" })
+					? auth.denteClinicalReadHeaders({
+							"Content-Type": "application/json",
+						})
 					: { "Content-Type": "application/json" };
 			const response = await fetch("/api/ai/post-visit-personalize", {
 				method: "POST",
@@ -550,11 +612,17 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 			const body = await response.json().catch(() => null);
 			if (!response.ok) {
 				setPostResult(null);
-				setPostError(failureText(response.status, readServerMessage(body), "post"));
+				setPostError(
+					failureText(response.status, readServerMessage(body), "post"),
+				);
 				return;
 			}
 			const result = body as PostVisitPersonalizedResult;
-			if (!result || !Array.isArray(result.allowedAfter) || typeof result.telegramSummary !== "string") {
+			if (
+				!result ||
+				!Array.isArray(result.allowedAfter) ||
+				typeof result.telegramSummary !== "string"
+			) {
 				setPostResult(null);
 				setPostError("Сервер вернул неполную памятку. Попробуйте ещё раз.");
 				return;
@@ -572,13 +640,16 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 
 	if (!patientId) {
 		return (
-			<section className="panel ops-panel" data-testid="clinical-ai-personalize-panel">
+			<section
+				className="panel ops-panel"
+				data-testid="clinical-ai-personalize-panel"
+			>
 				<div className="panel-heading">
 					<h2>Пациенту простым языком</h2>
 				</div>
 				<p className="ops-hint">
-					Выберите пациента — тогда можно объяснить план лечения и собрать памятку после
-					приёма.
+					Выберите пациента — тогда можно объяснить план лечения и собрать
+					памятку после приёма.
 				</p>
 			</section>
 		);
@@ -591,7 +662,10 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 			: "На приёме — объяснить план до согласия и выдать памятку перед уходом.";
 
 	return (
-		<section className="panel ops-panel" data-testid="clinical-ai-personalize-panel">
+		<section
+			className="panel ops-panel"
+			data-testid="clinical-ai-personalize-panel"
+		>
 			<div className="panel-heading">
 				<h2>Пациенту простым языком</h2>
 				<span className="status-pill status-planned">{planCount} усл.</span>
@@ -599,11 +673,14 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 
 			<p className="ops-hint">
 				{contextHint} Текст собирается из плана пациента
-				{planCount > 0 ? ` (${planCount} поз.)` : ""} и полей приёма. Без нейросети сработает
-				клинический шаблон клиники DENTE.
+				{planCount > 0 ? ` (${planCount} поз.)` : ""} и полей приёма. Без
+				нейросети сработает клинический шаблон клиники DENTE.
 			</p>
 
-			<div className="ops-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+			<div
+				className="ops-actions"
+				style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}
+			>
 				<button
 					type="button"
 					className="primary-button"
@@ -625,19 +702,31 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 			</div>
 
 			{planError ? (
-				<div className="ops-notice ops-notice--error" role="alert" style={{ marginTop: "0.75rem" }}>
+				<div
+					className="ops-notice ops-notice--error"
+					role="alert"
+					style={{ marginTop: "0.75rem" }}
+				>
 					<p>{planError}</p>
 				</div>
 			) : null}
 
 			{postError ? (
-				<div className="ops-notice ops-notice--error" role="alert" style={{ marginTop: "0.75rem" }}>
+				<div
+					className="ops-notice ops-notice--error"
+					role="alert"
+					style={{ marginTop: "0.75rem" }}
+				>
 					<p>{postError}</p>
 				</div>
 			) : null}
 
 			{planResult ? (
-				<div className="ops-block" style={{ marginTop: "1rem" }} data-testid="ai-plan-result">
+				<div
+					className="ops-block"
+					style={{ marginTop: "1rem" }}
+					data-testid="ai-plan-result"
+				>
 					<div
 						style={{
 							display: "flex",
@@ -674,7 +763,11 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 			) : null}
 
 			{postResult ? (
-				<div className="ops-block" style={{ marginTop: "1rem" }} data-testid="ai-post-result">
+				<div
+					className="ops-block"
+					style={{ marginTop: "1rem" }}
+					data-testid="ai-post-result"
+				>
 					<div
 						style={{
 							display: "flex",
@@ -698,12 +791,24 @@ export const ClinicalAiPersonalizePanel: React.FC<ClinicalAiPersonalizePanelProp
 							{postResult.telegramSummary}
 						</p>
 					) : null}
-					<ListBlock title="Можно после процедуры" items={postResult.allowedAfter} />
-					<ListBlock title="Временные ограничения" items={postResult.temporaryRestrictions} />
-					<ListBlock title="Лекарства и полоскания" items={postResult.medicationAndRinsePlan} />
+					<ListBlock
+						title="Можно после процедуры"
+						items={postResult.allowedAfter}
+					/>
+					<ListBlock
+						title="Временные ограничения"
+						items={postResult.temporaryRestrictions}
+					/>
+					<ListBlock
+						title="Лекарства и полоскания"
+						items={postResult.medicationAndRinsePlan}
+					/>
 					<ListBlock title="Гигиена" items={postResult.hygieneInstructions} />
 					<ListBlock title="Питание" items={postResult.nutritionInstructions} />
-					<ListBlock title="Срочно к врачу, если" items={postResult.urgentWarningSigns} />
+					<ListBlock
+						title="Срочно к врачу, если"
+						items={postResult.urgentWarningSigns}
+					/>
 				</div>
 			) : null}
 		</section>

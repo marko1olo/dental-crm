@@ -22,11 +22,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { parse } from "@babel/parser";
-import { RU_MONEY_NBSP, formatKopecksRu, parseKopecks } from "@dental/shared";
+import { formatKopecksRu, parseKopecks, RU_MONEY_NBSP } from "@dental/shared";
 import type { PlanPriceCatalogItem } from "../plan/planPricing";
 import {
 	type EstimatorToothInput,
-	type PlanItem,
 	estimatorContractFrom,
 	estimatorDismissalKeys,
 	estimatorIssueMessages,
@@ -35,12 +34,15 @@ import {
 	estimatorSaveBlock,
 	estimatorTotals,
 	isDeciduousFdiToothNumber,
+	type PlanItem,
 	planItemFromServer,
 	reconcileAutoSuggestions,
 } from "./treatmentEstimatorPricing";
 
 /** Суммы, которых не назначала ни одна клиника. Ни одна не имеет права появиться. */
-const INVENTED_PRICES_RUB = [4000, 5500, 6000, 12500, 35000, 12000, 5000, 28000];
+const INVENTED_PRICES_RUB = [
+	4000, 5500, 6000, 12500, 35000, 12000, 5000, 28000,
+];
 
 /** Идентификаторы услуг, которых нет ни в одном прайсе. */
 const INVENTED_SERVICE_IDS = [
@@ -86,9 +88,7 @@ function build(
 /* ─────────── 1. Заполненный прайс: цена клиники, точно до копейки ─────────── */
 
 test("цена берётся из прайса клиники и не теряет копейки", () => {
-	const catalog = [
-		service("svc-caries", "Лечение кариеса", "therapy", 1500.5),
-	];
+	const catalog = [service("svc-caries", "Лечение кариеса", "therapy", 1500.5)];
 	const items = build([tooth(11, "Caries")], catalog);
 
 	assert.equal(items.length, 1);
@@ -351,9 +351,7 @@ test("со-оплата по ДМС считается целыми копейк
 		coverageHygienePct: 0,
 		coverageSurgeryPct: 0,
 	});
-	const catalog = [
-		service("svc-caries", "Лечение кариеса", "therapy", 1500.5),
-	];
+	const catalog = [service("svc-caries", "Лечение кариеса", "therapy", 1500.5)];
 	const items = build([tooth(11, "Caries")], catalog);
 	const money = estimatorRowMoney(items[0] as PlanItem, contract);
 
@@ -408,9 +406,7 @@ test("строка без услуги прайса не превращаетс�
 });
 
 test("в тело запроса уходят только поля контракта сервера", () => {
-	const catalog = [
-		service("svc-caries", "Лечение кариеса", "therapy", 1500.5),
-	];
+	const catalog = [service("svc-caries", "Лечение кариеса", "therapy", 1500.5)];
 	const items = build([tooth(11, "Caries")], catalog);
 	const body = estimatorItemForApi({ ...(items[0] as PlanItem), id: "row-1" });
 
@@ -603,14 +599,25 @@ test("снятая корзиной строка не возвращается �
 });
 
 test("снятие на одном зубе не убирает то же лечение на другом", () => {
-	const catalog = [service("svc-crown", "Коронка керамическая", "prosthetics", 25000)];
+	const catalog = [
+		service("svc-crown", "Коронка керамическая", "prosthetics", 25000),
+	];
 	const first = reconcileAutoSuggestions([], [tooth(26, "Crown")], catalog);
 	const removed = first.items[0];
 	assert.ok(removed);
 	const dismissed = new Set(estimatorDismissalKeys(removed));
 
-	const other = reconcileAutoSuggestions([], [tooth(36, "Crown")], catalog, dismissed);
-	assert.equal(other.items.length, 1, "коронка на 36 снята вместе с коронкой на 26");
+	const other = reconcileAutoSuggestions(
+		[],
+		[tooth(36, "Crown")],
+		catalog,
+		dismissed,
+	);
+	assert.equal(
+		other.items.length,
+		1,
+		"коронка на 36 снята вместе с коронкой на 26",
+	);
 	assert.equal(other.items[0]?.toothNumber, 36);
 });
 
@@ -726,5 +733,9 @@ test("в коде сметы ни одному денежному полю не 
 			offenders.push(`${name}: ${String(value.value)}`);
 		}
 	}
-	assert.deepEqual(offenders, [], `в коде зашиты деньги: ${offenders.join(", ")}`);
+	assert.deepEqual(
+		offenders,
+		[],
+		`в коде зашиты деньги: ${offenders.join(", ")}`,
+	);
 });

@@ -1,6 +1,6 @@
 // R4 recon: READ-ONLY SQL runner. Never prints DATABASE_URL.
 // Usage: node q.mjs "<SELECT ...>"   (rejects anything that is not a read)
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import pg from "pg";
 
@@ -12,7 +12,10 @@ function parseDotEnv(text) {
 		if (!line || line.startsWith("#")) continue;
 		const eq = line.indexOf("=");
 		if (eq <= 0) continue;
-		const key = line.slice(0, eq).replace(/^export\s+/, "").trim();
+		const key = line
+			.slice(0, eq)
+			.replace(/^export\s+/, "")
+			.trim();
 		let val = line.slice(eq + 1).trim();
 		if (
 			(val.startsWith('"') && val.endsWith('"')) ||
@@ -39,11 +42,21 @@ if (!url) {
 
 const sql = process.argv.slice(2).join(" ");
 const head = sql.trim().replace(/^\(+/, "").slice(0, 6).toLowerCase();
-if (!(head.startsWith("select") || head.startsWith("with") || head.startsWith("explai"))) {
+if (
+	!(
+		head.startsWith("select") ||
+		head.startsWith("with") ||
+		head.startsWith("explai")
+	)
+) {
 	console.error("REFUSED: read-only runner accepts SELECT/WITH/EXPLAIN only");
 	process.exit(3);
 }
-if (/\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|copy|vacuum|refresh)\b/i.test(sql)) {
+if (
+	/\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|copy|vacuum|refresh)\b/i.test(
+		sql,
+	)
+) {
 	console.error("REFUSED: write keyword present");
 	process.exit(3);
 }

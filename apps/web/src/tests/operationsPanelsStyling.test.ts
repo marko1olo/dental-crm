@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 /**
  * Страж оформления рабочих панелей.
@@ -18,13 +18,16 @@ import test from "node:test";
  * возврат к зашитым цветам они ловят.
  */
 
-const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const projectRoot = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
+);
 
 const OPERATIONS_PANELS = [
 	"components/schedule/DayConfirmationsPanel.tsx",
 	"components/communications/MessageDeliveryConsole.tsx",
 	"components/communications/CampaignPanel.tsx",
-	"components/reports/ManagerReportsPanel.tsx"
+	"components/reports/ManagerReportsPanel.tsx",
 ];
 
 /**
@@ -69,7 +72,9 @@ const HEX_COLOR = /#[0-9a-fA-F]{3,8}\b/g;
  * же строке, спрятался бы от проверки.
  */
 function stripComments(source: string): string {
-	return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+	return source
+		.replace(/\/\*[\s\S]*?\*\//g, " ")
+		.replace(/(^|[^:])\/\/[^\n]*/g, "$1");
 }
 
 /*
@@ -79,17 +84,41 @@ function stripComments(source: string): string {
  * слэшами не превращает остаток строки в комментарий.
  */
 test("вырезание комментариев не мешает ловить настоящий зашитый цвет", () => {
-	const inComment = stripComments("/* было #fbfefd, стало var(--paper) */\n.a { color: var(--ink); }");
-	assert.deepEqual(inComment.match(HEX_COLOR) ?? [], [], "цвет из комментария принят за нарушение");
+	const inComment = stripComments(
+		"/* было #fbfefd, стало var(--paper) */\n.a { color: var(--ink); }",
+	);
+	assert.deepEqual(
+		inComment.match(HEX_COLOR) ?? [],
+		[],
+		"цвет из комментария принят за нарушение",
+	);
 
-	const inCode = stripComments("/* пояснение #ffffff */\n.a { color: #ff0000; }");
-	assert.deepEqual(inCode.match(HEX_COLOR) ?? [], ["#ff0000"], "цвет в коде потерялся после вырезания");
+	const inCode = stripComments(
+		"/* пояснение #ffffff */\n.a { color: #ff0000; }",
+	);
+	assert.deepEqual(
+		inCode.match(HEX_COLOR) ?? [],
+		["#ff0000"],
+		"цвет в коде потерялся после вырезания",
+	);
 
-	const afterUrl = stripComments('const doc = "https://example.ru/x"; const bad = "#00ff00";');
-	assert.deepEqual(afterUrl.match(HEX_COLOR) ?? [], ["#00ff00"], "адрес со слэшами спрятал цвет за собой");
+	const afterUrl = stripComments(
+		'const doc = "https://example.ru/x"; const bad = "#00ff00";',
+	);
+	assert.deepEqual(
+		afterUrl.match(HEX_COLOR) ?? [],
+		["#00ff00"],
+		"адрес со слэшами спрятал цвет за собой",
+	);
 
-	const lineComment = stripComments("const a = 1; // тут был #123456\nconst b = '#654321';");
-	assert.deepEqual(lineComment.match(HEX_COLOR) ?? [], ["#654321"], "строчный комментарий обработан неверно");
+	const lineComment = stripComments(
+		"const a = 1; // тут был #123456\nconst b = '#654321';",
+	);
+	assert.deepEqual(
+		lineComment.match(HEX_COLOR) ?? [],
+		["#654321"],
+		"строчный комментарий обработан неверно",
+	);
 });
 
 test("в рабочих панелях нет зашитых цветов", () => {
@@ -97,7 +126,11 @@ test("в рабочих панелях нет зашитых цветов", () =
 	for (const panel of [...OPERATIONS_PANELS, ...NESTED_OPERATIONS_BLOCKS]) {
 		const source = stripComments(read(panel));
 		const matches = source.match(HEX_COLOR) ?? [];
-		assert.deepEqual(matches, [], `${panel}: найдены цвета ${matches.join(", ")}`);
+		assert.deepEqual(
+			matches,
+			[],
+			`${panel}: найдены цвета ${matches.join(", ")}`,
+		);
 	}
 });
 
@@ -109,20 +142,26 @@ test("во вложенных блоках оформление классами
 		assert.deepEqual(
 			inlineStyles,
 			[],
-			`${block}: оформление в атрибуте style — перенесите в dente-operations.css`
+			`${block}: оформление в атрибуте style — перенесите в dente-operations.css`,
 		);
 
 		// Вложенный блок не заводит вторую рамку панели.
 		assert.ok(
 			!source.includes('className="panel ops-panel"'),
-			`${block}: вложенный блок не должен объявлять свою панель — получится панель в панели`
+			`${block}: вложенный блок не должен объявлять свою панель — получится панель в панели`,
 		);
 
 		if (!source.includes("<table")) continue;
 		// У стойки планшет чаще в портретной ориентации: без подписей колонок
 		// таблица на узком экране теряет смысл (см. CSS-правило content: attr(data-label)).
-		assert.ok(source.includes("data-label="), `${block}: у ячеек таблицы нет data-label`);
-		assert.ok(source.includes('className="ops-num"'), `${block}: числовые колонки не помечены ops-num`);
+		assert.ok(
+			source.includes("data-label="),
+			`${block}: у ячеек таблицы нет data-label`,
+		);
+		assert.ok(
+			source.includes('className="ops-num"'),
+			`${block}: числовые колонки не помечены ops-num`,
+		);
 	}
 });
 
@@ -131,7 +170,10 @@ test("в таблице стилей панелей нет зашитых цве
 	const matches = source.match(HEX_COLOR) ?? [];
 	assert.deepEqual(matches, [], `найдены цвета ${matches.join(", ")}`);
 	// И она действительно опирается на переменные темы, а не на пустоту.
-	assert.ok(source.split("var(--").length > 40, "таблица стилей почти не использует переменные темы");
+	assert.ok(
+		source.split("var(--").length > 40,
+		"таблица стилей почти не использует переменные темы",
+	);
 });
 
 test("оформление задано классами, а не атрибутом style", () => {
@@ -144,13 +186,13 @@ test("оформление задано классами, а не атрибут
 
 		assert.ok(
 			panel.endsWith("ManagerReportsPanel.tsx"),
-			`${panel}: оформление в атрибуте style (${inlineStyles.length} шт.) — перенесите в dente-operations.css`
+			`${panel}: оформление в атрибуте style (${inlineStyles.length} шт.) — перенесите в dente-operations.css`,
 		);
 		const widthOnly = source.match(/style=\{\{\s*\n?\s*width:/g) ?? [];
 		assert.equal(
 			inlineStyles.length,
 			widthOnly.length,
-			"в отчётах допустима только вычисляемая ширина полосы"
+			"в отчётах допустима только вычисляемая ширина полосы",
 		);
 	}
 });
@@ -158,36 +200,60 @@ test("оформление задано классами, а не атрибут
 test("панели подключены к общей таблице стилей", () => {
 	for (const panel of OPERATIONS_PANELS) {
 		const source = read(panel);
-		assert.ok(source.includes('className="panel ops-panel"'), `${panel}: не помечена классом ops-panel`);
+		assert.ok(
+			source.includes('className="panel ops-panel"'),
+			`${panel}: не помечена классом ops-panel`,
+		);
 	}
 	const main = read("main.tsx");
-	assert.ok(main.includes("styles/dente-operations.css"), "таблица стилей не подключена в main.tsx");
+	assert.ok(
+		main.includes("styles/dente-operations.css"),
+		"таблица стилей не подключена в main.tsx",
+	);
 });
 
 test("числовые колонки помечены для моноширинных цифр", () => {
 	// Суммы и время в колонке должны стоять разряд под разрядом, иначе взгляд
 	// не сравнивает строки, а спотыкается.
 	const css = read(STYLESHEET);
-	assert.ok(css.includes("font-variant-numeric: tabular-nums"), "нет правила для моноширинных цифр");
+	assert.ok(
+		css.includes("font-variant-numeric: tabular-nums"),
+		"нет правила для моноширинных цифр",
+	);
 
 	const reports = read("components/reports/ManagerReportsPanel.tsx");
-	assert.ok(reports.includes('className="ops-num"'), "в отчётах числовые колонки не помечены");
+	assert.ok(
+		reports.includes('className="ops-num"'),
+		"в отчётах числовые колонки не помечены",
+	);
 	const confirmations = read("components/schedule/DayConfirmationsPanel.tsx");
-	assert.ok(confirmations.includes('className="ops-time"'), "в обзвоне колонка времени не помечена");
+	assert.ok(
+		confirmations.includes('className="ops-time"'),
+		"в обзвоне колонка времени не помечена",
+	);
 });
 
 test("на узком экране таблица превращается в карточки", () => {
 	// У стойки регистратуры планшет чаще в портретной ориентации, и
 	// горизонтальная прокрутка съедает колонку с телефоном.
 	const css = read(STYLESHEET);
-	assert.ok(css.includes("@media (max-width: 720px)"), "нет правил для узкого экрана");
-	assert.ok(css.includes("content: attr(data-label)"), "у ячеек не подставляются подписи колонок");
+	assert.ok(
+		css.includes("@media (max-width: 720px)"),
+		"нет правил для узкого экрана",
+	);
+	assert.ok(
+		css.includes("content: attr(data-label)"),
+		"у ячеек не подставляются подписи колонок",
+	);
 
 	// А значит, у ячеек эти подписи должны быть проставлены.
 	for (const panel of OPERATIONS_PANELS) {
 		const source = read(panel);
 		if (!source.includes("<table")) continue;
-		assert.ok(source.includes("data-label="), `${panel}: у ячеек таблицы нет data-label`);
+		assert.ok(
+			source.includes("data-label="),
+			`${panel}: у ячеек таблицы нет data-label`,
+		);
 	}
 });
 
@@ -195,13 +261,22 @@ test("состояния читаются без цветовосприятия"
 	// Восемь процентов мужчин не различают красный и зелёный, а администратор
 	// смотрит в эти экраны каждое утро. Значок дублирует цвет формой.
 	const css = read(STYLESHEET);
-	assert.ok(css.includes(".ops-state--ok::before"), "у состояния «успех» нет значка");
-	assert.ok(css.includes(".ops-state--bad::before"), "у состояния «отказ» нет значка");
+	assert.ok(
+		css.includes(".ops-state--ok::before"),
+		"у состояния «успех» нет значка",
+	);
+	assert.ok(
+		css.includes(".ops-state--bad::before"),
+		"у состояния «отказ» нет значка",
+	);
 });
 
 test("движение отключается по просьбе системы", () => {
 	const css = read(STYLESHEET);
-	assert.ok(css.includes("@media (prefers-reduced-motion: reduce)"), "не учтён запрет анимаций");
+	assert.ok(
+		css.includes("@media (prefers-reduced-motion: reduce)"),
+		"не учтён запрет анимаций",
+	);
 });
 
 test("класс sr-only определён — им пользуется разметка", () => {
@@ -210,5 +285,8 @@ test("класс sr-only определён — им пользуется раз
 	const css = read(STYLESHEET);
 	assert.ok(css.includes(".sr-only"), "sr-only не определён");
 	const confirmations = read("components/schedule/DayConfirmationsPanel.tsx");
-	assert.ok(confirmations.includes('className="sr-only"'), "разметка не пользуется sr-only");
+	assert.ok(
+		confirmations.includes('className="sr-only"'),
+		"разметка не пользуется sr-only",
+	);
 });

@@ -71,9 +71,19 @@ describe("сброс черновика карточки пациента", () =
 	 */
 	test("решение не выродилось в константу", () => {
 		const answers = new Set([
-			shouldResetPatientDraftState({ incomingUpdatedAt: "A", savedByThisScreenUpdatedAt: "A" }),
-			shouldResetPatientDraftState({ incomingUpdatedAt: "A", savedByThisScreenUpdatedAt: "B" }),
+			shouldResetPatientDraftState({
+				incomingUpdatedAt: "A",
+				savedByThisScreenUpdatedAt: "A",
+			}),
+			shouldResetPatientDraftState({
+				incomingUpdatedAt: "A",
+				savedByThisScreenUpdatedAt: "B",
+			}),
 		]);
-		assert.deepEqual([...answers].sort(), [false, true], "Функция отвечает одинаково на разные случаи.");
+		assert.deepEqual(
+			[...answers].sort(),
+			[false, true],
+			"Функция отвечает одинаково на разные случаи.",
+		);
 	});
 });

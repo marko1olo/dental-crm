@@ -90,36 +90,48 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 
 	// Управляющий: всё, кроме врачебной документации и выгрузки в ЕГИСЗ.
 	manager: [
-		"schedule.read", "schedule.write",
-		"patients.read", "patients.write",
+		"schedule.read",
+		"schedule.write",
+		"patients.read",
+		"patients.write",
 		"clinical.read",
-		"finance.read", "finance.write",
+		"finance.read",
+		"finance.write",
 		"analytics.read",
 		// Управляющий считает зарплату врачей — это его работа.
 		"payroll.read",
-		"inventory.read", "inventory.write",
+		"inventory.read",
+		"inventory.write",
 		"settings.read",
-		"communications.read", "communications.write",
+		"communications.read",
+		"communications.write",
 	],
 
 	// Администратор ресепшена: записывает, ведёт картотеку, принимает оплату.
 	// Зарплаты врачей не видит — ни чужие, ни свои: он не врач.
 	administrator: [
-		"schedule.read", "schedule.write",
-		"patients.read", "patients.write",
+		"schedule.read",
+		"schedule.write",
+		"patients.read",
+		"patients.write",
 		"clinical.read",
-		"finance.read", "finance.write",
+		"finance.read",
+		"finance.write",
 		"analytics.read",
 		"inventory.read",
 		"settings.read",
-		"communications.read", "communications.write",
+		"communications.read",
+		"communications.write",
 	],
 
 	// Врач: ведёт приём и документацию, к кассе и настройкам не допущен.
 	doctor: [
-		"schedule.read", "schedule.write",
-		"patients.read", "patients.write",
-		"clinical.read", "clinical.write",
+		"schedule.read",
+		"schedule.write",
+		"patients.read",
+		"patients.write",
+		"clinical.read",
+		"clinical.write",
 		"inventory.read",
 		// Свою выработку и свою выплату врач видит; чужие — нет.
 		"payroll.read.own",
@@ -133,7 +145,8 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"schedule.read",
 		"patients.read",
 		"clinical.read",
-		"inventory.read", "inventory.write",
+		"inventory.read",
+		"inventory.write",
 		"communications.read",
 	],
 };
@@ -146,7 +159,9 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 export const ROLES_IN_MATRIX: readonly string[] = Object.keys(ROLE_PERMISSIONS);
 
 /** Права роли. Неизвестная роль не получает ничего. */
-export function permissionsForRole(role: string | null | undefined): readonly Permission[] {
+export function permissionsForRole(
+	role: string | null | undefined,
+): readonly Permission[] {
 	if (!role) return [];
 	return ROLE_PERMISSIONS[role.toLowerCase()] ?? [];
 }
@@ -234,7 +249,9 @@ export interface StaffAuthorityFlags {
 	canManageImports: boolean;
 }
 
-export function staffAuthorityFlags(role: string | null | undefined): StaffAuthorityFlags {
+export function staffAuthorityFlags(
+	role: string | null | undefined,
+): StaffAuthorityFlags {
 	return {
 		canSignMedicalRecords: roleHasPermission(role, "clinical.write"),
 		canManageMoney: roleHasPermission(role, "finance.write"),
@@ -309,7 +326,9 @@ const PERMISSION_ACTIONS: Record<Permission, string> = {
  * приглашения такую должность не предлагает. Права роль сохраняет, в подсказке
  * не участвует.
  */
-const ASSIGNABLE_ROLES: ReadonlySet<string> = new Set<string>(staffRoleSchema.options);
+const ASSIGNABLE_ROLES: ReadonlySet<string> = new Set<string>(
+	staffRoleSchema.options,
+);
 
 /**
  * Кого просить — подписями ролей. Источник один: та же матрица `ROLE_PERMISSIONS`,
@@ -404,7 +423,8 @@ export async function requirePermission(
 	if (!identity.userId || !identity.role) {
 		reply.code(401).send({
 			error: "StaffAuthRequired",
-			message: "Требуется вход сотрудника: действие выполняется от конкретного лица.",
+			message:
+				"Требуется вход сотрудника: действие выполняется от конкретного лица.",
 		});
 		return null;
 	}

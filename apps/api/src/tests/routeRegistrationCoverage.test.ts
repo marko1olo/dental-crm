@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 /**
  * Страховка от повторения самой дорогой ошибки этого репозитория: модуль
@@ -90,7 +90,14 @@ test("каждый импортированный модуль маршруто�
 		if (match[1]) return [match[1]];
 		return (match[2] ?? "")
 			.split(",")
-			.map((part) => part.trim().split(/\s+as\s+/).pop()?.trim() ?? "")
+			.map(
+				(part) =>
+					part
+						.trim()
+						.split(/\s+as\s+/)
+						.pop()
+						?.trim() ?? "",
+			)
 			.filter(Boolean);
 	});
 

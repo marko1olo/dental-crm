@@ -38,33 +38,55 @@ const patients = [{ id: "p1" }] as never;
 describe("appointmentScheduleMissingFields", () => {
 	it("заполненной записи ничего не не хватает", () => {
 		assert.deepEqual(
-			appointmentScheduleMissingFields(draft(), "one_chair", staff, { chairs, patients }),
+			appointmentScheduleMissingFields(draft(), "one_chair", staff, {
+				chairs,
+				patients,
+			}),
 			[],
 		);
 	});
 
 	it("кресло не выбрано, но кресла в клинике есть — просит выбрать", () => {
-		const missing = appointmentScheduleMissingFields(draft({ chairId: "" }), "one_chair", staff, {
-			chairs,
-			patients,
-		});
+		const missing = appointmentScheduleMissingFields(
+			draft({ chairId: "" }),
+			"one_chair",
+			staff,
+			{
+				chairs,
+				patients,
+			},
+		);
 		assert.deepEqual(missing, ["выберите кресло"]);
 	});
 
 	it("кресел в клинике нет — говорит, что их надо создать, а не «выберите»", () => {
-		const missing = appointmentScheduleMissingFields(draft({ chairId: "" }), "one_chair", staff, {
-			chairs: [] as never,
-			patients,
-		});
-		assert.deepEqual(missing, ["в клинике нет кресел — добавьте кресло в настройках"]);
+		const missing = appointmentScheduleMissingFields(
+			draft({ chairId: "" }),
+			"one_chair",
+			staff,
+			{
+				chairs: [] as never,
+				patients,
+			},
+		);
+		assert.deepEqual(missing, [
+			"в клинике нет кресел — добавьте кресло в настройках",
+		]);
 	});
 
 	it("все кресла отключены — тоже говорит создать", () => {
-		const missing = appointmentScheduleMissingFields(draft({ chairId: "" }), "one_chair", staff, {
-			chairs: [{ id: "c1", active: false }] as never,
-			patients,
-		});
-		assert.deepEqual(missing, ["в клинике нет кресел — добавьте кресло в настройках"]);
+		const missing = appointmentScheduleMissingFields(
+			draft({ chairId: "" }),
+			"one_chair",
+			staff,
+			{
+				chairs: [{ id: "c1", active: false }] as never,
+				patients,
+			},
+		);
+		assert.deepEqual(missing, [
+			"в клинике нет кресел — добавьте кресло в настройках",
+		]);
 	});
 
 	it("врача в штате нет — отправляет в настройки сотрудников", () => {
@@ -74,21 +96,35 @@ describe("appointmentScheduleMissingFields", () => {
 			[{ id: "a1", role: "assistant", active: true }] as never,
 			{ chairs, patients },
 		);
-		assert.ok(missing.includes("в клинике нет врача — добавьте сотрудника в настройках"), missing.join("; "));
+		assert.ok(
+			missing.includes(
+				"в клинике нет врача — добавьте сотрудника в настройках",
+			),
+			missing.join("; "),
+		);
 	});
 
 	it("пациентов в клинике нет — отправляет создать карточку", () => {
-		const missing = appointmentScheduleMissingFields(draft({ patientId: "" }), "one_chair", staff, {
-			chairs,
-			patients: [] as never,
-		});
+		const missing = appointmentScheduleMissingFields(
+			draft({ patientId: "" }),
+			"one_chair",
+			staff,
+			{
+				chairs,
+				patients: [] as never,
+			},
+		);
 		assert.deepEqual(missing, [
 			"в клинике ещё нет пациентов — создайте карточку в разделе «Пациенты»",
 		]);
 	});
 
 	it("без сведений о ресурсах ведёт себя как раньше", () => {
-		const missing = appointmentScheduleMissingFields(draft({ chairId: "", patientId: "" }), "one_chair", staff);
+		const missing = appointmentScheduleMissingFields(
+			draft({ chairId: "", patientId: "" }),
+			"one_chair",
+			staff,
+		);
 		assert.deepEqual(missing, ["выберите пациента", "выберите кресло"]);
 	});
 
@@ -129,6 +165,9 @@ describe("appointmentScheduleMissingFields", () => {
 			staff,
 			{ chairs, patients },
 		);
-		assert.ok(missing.some((step) => /позже начала/.test(step)), missing.join("; "));
+		assert.ok(
+			missing.some((step) => /позже начала/.test(step)),
+			missing.join("; "),
+		);
 	});
 });

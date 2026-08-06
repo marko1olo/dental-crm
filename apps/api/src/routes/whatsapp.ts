@@ -42,11 +42,6 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
-	normalizeWhatsappRecipient,
-	readWhatsappCredentials,
-	sendWhatsappTextMessage,
-} from "../whatsappTransport.js";
-import {
 	namedDevelopmentModeActive,
 	requireNonDoctorAccess,
 	requireResolvedOrganizationId,
@@ -60,9 +55,17 @@ import {
 	messengerInboundEvents,
 	patients,
 } from "../db/schema.js";
-import { applyReceipts, parseWhatsappStatuses } from "../services/communications/deliveryReceipts.js";
+import {
+	applyReceipts,
+	parseWhatsappStatuses,
+} from "../services/communications/deliveryReceipts.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import {
+	normalizeWhatsappRecipient,
+	readWhatsappCredentials,
+	sendWhatsappTextMessage,
+} from "../whatsappTransport.js";
 
 const updateWhatsappConfigSchema = z.object({
 	phoneNumberId: z.string().trim().max(64).nullable().optional(),
@@ -138,7 +141,6 @@ function parseJsonSafe<T>(value: string, fallback: T): T {
 	}
 }
 
-
 /** Точная проверка пути вебхука (без учёта query-строки). */
 function isWebhookPath(url: string): boolean {
 	const pathname = (url.split("?")[0] ?? "").replace(/\/+$/, "");
@@ -194,7 +196,10 @@ export async function registerWhatsappRoutes(
 			phoneNumberId: config.phoneNumberId ?? null,
 			hasToken: Boolean(config.tokenSecretRef),
 			webhookVerifyToken: config.webhookVerifyToken ?? null,
-			enabledFeatures: parseJsonSafe<string[]>(config.enabledFeaturesJson as any, []),
+			enabledFeatures: parseJsonSafe<string[]>(
+				config.enabledFeaturesJson as any,
+				[],
+			),
 			staffRouting: parseJsonSafe(config.staffRoutingJson as any, {
 				defaultUserId: null,
 				rules: [],
@@ -497,11 +502,7 @@ export async function registerWhatsappRoutes(
 					: [];
 
 				for (const change of changes) {
-					if (
-						!change ||
-						typeof change !== "object" ||
-						Array.isArray(change)
-					) {
+					if (!change || typeof change !== "object" || Array.isArray(change)) {
 						continue;
 					}
 					const c = change as Record<string, unknown>;
@@ -543,9 +544,7 @@ export async function registerWhatsappRoutes(
 								organizationId: denteWhatsappBotConfigs.organizationId,
 							})
 							.from(denteWhatsappBotConfigs)
-							.where(
-								eq(denteWhatsappBotConfigs.phoneNumberId, phoneNumberId),
-							)
+							.where(eq(denteWhatsappBotConfigs.phoneNumberId, phoneNumberId))
 							.limit(1),
 					);
 
@@ -588,18 +587,16 @@ export async function registerWhatsappRoutes(
 						const fromId = typeof m.from === "string" ? m.from : "unknown";
 						const textRaw = m.text;
 						const textObj =
-							textRaw &&
-							typeof textRaw === "object" &&
-							!Array.isArray(textRaw)
+							textRaw && typeof textRaw === "object" && !Array.isArray(textRaw)
 								? (textRaw as Record<string, unknown>)
 								: undefined;
 						const textBody =
 							typeof textObj?.body === "string" ? textObj.body : null;
 
 						// Клиника уже известна из настроек бота, найденных выше, —
-					// вставка идёт под её контекстом. Без него `INSERT` не
-					// «возвращал ноль строк», а падал с 42501: в WITH CHECK
-					// политики messenger_inbound_events обхода нет.
+						// вставка идёт под её контекстом. Без него `INSERT` не
+						// «возвращал ноль строк», а падал с 42501: в WITH CHECK
+						// политики messenger_inbound_events обхода нет.
 						await withTenantCtx(inboundOrganizationId, async (tx) => {
 							await tx.insert(messengerInboundEvents).values({
 								organizationId: inboundOrganizationId,
@@ -655,7 +652,9 @@ export async function registerWhatsappRoutes(
 			// БЫЛО: условие только по patients.id, без организации. Сотрудник любой
 			// клиники мог указать UUID чужого пациента и написать ему от имени
 			// своей клиники.
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+			.where(
+				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+			)
 			.limit(1);
 
 		if (!patient) {
@@ -750,4 +749,3 @@ export async function registerWhatsappRoutes(
 		return { ok: true, providerMessageId: sendResult.providerMessageId };
 	});
 }
-

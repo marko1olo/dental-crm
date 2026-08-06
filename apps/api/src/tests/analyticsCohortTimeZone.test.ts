@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { eq, sql } from "drizzle-orm";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
 import { clinics, organizations, patients, payments } from "../db/schema.js";
 import { RU_MONTHS, registerAnalyticsRoutes } from "../routes/analytics.js";
@@ -65,14 +65,21 @@ function isMissingDatabase(error: unknown): boolean {
 /** Номер месяца (1..12), который показывает календарь пояса. */
 function monthNumberIn(zone: string, at: Date): number {
 	return Number(
-		new Intl.DateTimeFormat("en-CA", { timeZone: zone, month: "2-digit" }).format(at),
+		new Intl.DateTimeFormat("en-CA", {
+			timeZone: zone,
+			month: "2-digit",
+		}).format(at),
 	);
 }
 
 /** Ярлык `YYYY-MM`, который показывает календарь пояса. */
 function monthKeyIn(zone: string, at: Date): string {
 	const parts = new Map(
-		new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit" })
+		new Intl.DateTimeFormat("en-CA", {
+			timeZone: zone,
+			year: "numeric",
+			month: "2-digit",
+		})
 			.formatToParts(at)
 			.map((part) => [part.type, part.value]),
 	);
@@ -87,7 +94,9 @@ function monthKeyIn(zone: string, at: Date): string {
  */
 async function removeFixtureRows(): Promise<void> {
 	await withFixtureTenant(ORG_ID, async () => {
-		await db.execute(sql`delete from bi_analytics_snapshots where organization_id = ${ORG_ID}`);
+		await db.execute(
+			sql`delete from bi_analytics_snapshots where organization_id = ${ORG_ID}`,
+		);
 		await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
 		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
@@ -164,7 +173,8 @@ describe("месяц когорты берётся в поясе клиники"
 	const beforeBoundary = new Date(clinicMonthStart.getTime() - 60 * 60_000);
 
 	const clinicMonthLabel = RU_MONTHS[monthNumberIn(FAR_ZONE, boundary) - 1];
-	const previousMonthLabel = RU_MONTHS[monthNumberIn(FAR_ZONE, beforeBoundary) - 1];
+	const previousMonthLabel =
+		RU_MONTHS[monthNumberIn(FAR_ZONE, beforeBoundary) - 1];
 	const clinicMonthKey = monthKeyIn(FAR_ZONE, boundary);
 	const previousMonthKey = monthKeyIn(FAR_ZONE, beforeBoundary);
 
@@ -187,10 +197,15 @@ describe("месяц когорты берётся в поясе клиники"
 			// `organization_id` с `app.current_tenant` и дизъюнкта обхода не имеет,
 			// поэтому вставка без контекста отвергается кодом 42501.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника когорт" });
 				await db
-					.insert(clinics)
-					.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: FAR_ZONE });
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника когорт" });
+				await db.insert(clinics).values({
+					id: CLINIC_ID,
+					organizationId: ORG_ID,
+					name: "Главная",
+					timezone: FAR_ZONE,
+				});
 				await db.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
@@ -219,7 +234,10 @@ describe("месяц когорты берётся в поясе клиники"
 		// тесты считают период по умолчанию в поясе клиники. `UPDATE` без
 		// тенант-контекста тронул бы ноль строк и промолчал бы об этом.
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.update(clinics).set({ timezone: RESTORED_ZONE }).where(eq(clinics.id, CLINIC_ID));
+			await db
+				.update(clinics)
+				.set({ timezone: RESTORED_ZONE })
+				.where(eq(clinics.id, CLINIC_ID));
 		});
 		await removeFixtureRows();
 	});
@@ -235,7 +253,8 @@ describe("месяц когорты берётся в поясе клиники"
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
-		const cohorts: { cohort: string; "Month 12": number }[] = body?.data?.cohortLtvJson ?? [];
+		const cohorts: { cohort: string; "Month 12": number }[] =
+			body?.data?.cohortLtvJson ?? [];
 
 		assert.ok(
 			cohorts.some((row) => row.cohort === clinicMonthLabel),
@@ -275,9 +294,14 @@ describe("месяц когорты берётся в поясе клиники"
 		});
 
 		const cohortSql = seen.find((text) => text.includes("date_trunc('month'"));
-		assert.ok(cohortSql, `запроса когорты нет среди ${seen.length} перехваченных`);
+		assert.ok(
+			cohortSql,
+			`запроса когорты нет среди ${seen.length} перехваченных`,
+		);
 
-		const zoneArguments = [...cohortSql.matchAll(/AT TIME ZONE (\$\d+|'[^']+')/g)].map((m) => m[1]);
+		const zoneArguments = [
+			...cohortSql.matchAll(/AT TIME ZONE (\$\d+|'[^']+')/g),
+		].map((m) => m[1]);
 		assert.deepEqual(
 			zoneArguments,
 			[`'${FAR_ZONE}'`, `'${FAR_ZONE}'`, `'${FAR_ZONE}'`],
@@ -297,7 +321,9 @@ describe("месяц когорты берётся в поясе клиники"
 		// тенант-контекстом: без него `DELETE` снял бы ноль строк молча, а `SELECT`
 		// вернул бы пустоту независимо от того, что записала агрегация.
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.execute(sql`delete from bi_analytics_snapshots where organization_id = ${ORG_ID}`);
+			await db.execute(
+				sql`delete from bi_analytics_snapshots where organization_id = ${ORG_ID}`,
+			);
 		});
 		await runBiAnalyticsAggregation(ORG_ID);
 
@@ -311,10 +337,15 @@ describe("месяц когорты берётся в поясе клиники"
 			1,
 			"снимок не записан: агрегация упала внутрь своего catch, смотри лог [BI Analytics]",
 		);
-		const cohorts = (snapshot.rows[0] as { cohort_ltv_json: { cohort: string }[] }).cohort_ltv_json;
+		const cohorts = (
+			snapshot.rows[0] as { cohort_ltv_json: { cohort: string }[] }
+		).cohort_ltv_json;
 		const keys = cohorts.map((row) => row.cohort);
 
-		assert.ok(keys.includes(clinicMonthKey), `${clinicMonthKey} нет в ${JSON.stringify(keys)}`);
+		assert.ok(
+			keys.includes(clinicMonthKey),
+			`${clinicMonthKey} нет в ${JSON.stringify(keys)}`,
+		);
 		assert.ok(
 			!keys.includes(previousMonthKey),
 			`пациент попал в предыдущий месяц ${previousMonthKey}: месяц снова считается в поясе сессии — ${JSON.stringify(keys)}`,
@@ -337,7 +368,9 @@ describe("месяц когорты берётся в поясе клиники"
 		const existing = await withFixtureTenant(ORG_ID, async () =>
 			db.execute(sql`select id from bi_analytics_snapshots`),
 		);
-		const existingIds = new Set(existing.rows.map((row) => (row as { id: string }).id));
+		const existingIds = new Set(
+			existing.rows.map((row) => (row as { id: string }).id),
+		);
 
 		try {
 			await computeBiAnalyticsSnapshots();
@@ -352,11 +385,15 @@ describe("месяц когорты берётся в поясе клиники"
 				1,
 				"снимок не записан: сборка упала внутрь своего catch, смотри лог [BI Worker]",
 			);
-			const cohorts = (snapshot.rows[0] as { cohort_ltv_json: { cohort: string }[] })
-				.cohort_ltv_json;
+			const cohorts = (
+				snapshot.rows[0] as { cohort_ltv_json: { cohort: string }[] }
+			).cohort_ltv_json;
 			const keys = cohorts.map((row) => row.cohort);
 
-			assert.ok(keys.includes(clinicMonthKey), `${clinicMonthKey} нет в ${JSON.stringify(keys)}`);
+			assert.ok(
+				keys.includes(clinicMonthKey),
+				`${clinicMonthKey} нет в ${JSON.stringify(keys)}`,
+			);
 			assert.ok(
 				!keys.includes(previousMonthKey),
 				`платёж попал в предыдущий месяц ${previousMonthKey}: месяц снова считается в поясе сессии — ${JSON.stringify(keys)}`,
@@ -372,12 +409,16 @@ describe("месяц когорты берётся в поясе клиники"
 			// Сборка пишет снимок КАЖДОЙ организации базы, включая чужие. Свои
 			// строки убираем поимённо по id, чужие исторические не трогаем.
 			await withFixtureTenant(ORG_ID, async () => {
-				const written = await db.execute(sql`select id from bi_analytics_snapshots`);
+				const written = await db.execute(
+					sql`select id from bi_analytics_snapshots`,
+				);
 				const created = written.rows
 					.map((row) => (row as { id: string }).id)
 					.filter((id) => !existingIds.has(id));
 				for (const id of created) {
-					await db.execute(sql`delete from bi_analytics_snapshots where id = ${id}`);
+					await db.execute(
+						sql`delete from bi_analytics_snapshots where id = ${id}`,
+					);
 				}
 			});
 		}
@@ -399,7 +440,10 @@ describe("месяц когорты берётся в поясе клиники"
 		// ноль строк и промолчал, а дашборд остался бы на +12, то есть проверка
 		// неизвестного пояса не состоялась бы вовсе.
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.update(clinics).set({ timezone: UNKNOWN_ZONE }).where(eq(clinics.id, CLINIC_ID));
+			await db
+				.update(clinics)
+				.set({ timezone: UNKNOWN_ZONE })
+				.where(eq(clinics.id, CLINIC_ID));
 		});
 		try {
 			const seen = await captureSqlTexts(async () => {
@@ -408,18 +452,30 @@ describe("месяц когорты берётся в поясе клиники"
 					url: "/api/analytics/dashboard",
 					headers: ORG_HEADERS,
 				});
-				assert.equal(response.statusCode, 200, `неизвестный пояс уронил дашборд: ${response.body}`);
+				assert.equal(
+					response.statusCode,
+					200,
+					`неизвестный пояс уронил дашборд: ${response.body}`,
+				);
 			});
 
-			const cohortSql = seen.find((text) => text.includes("date_trunc('month'"));
-			assert.ok(cohortSql, `запроса когорты нет среди ${seen.length} перехваченных`);
+			const cohortSql = seen.find((text) =>
+				text.includes("date_trunc('month'"),
+			);
+			assert.ok(
+				cohortSql,
+				`запроса когорты нет среди ${seen.length} перехваченных`,
+			);
 			assert.ok(
 				!cohortSql.includes("AT TIME ZONE"),
 				`неизвестный пояс всё же попал в SQL и бросит 22023: ${cohortSql}`,
 			);
 		} finally {
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
+				await db
+					.update(clinics)
+					.set({ timezone: FAR_ZONE })
+					.where(eq(clinics.id, CLINIC_ID));
 			});
 		}
 	});

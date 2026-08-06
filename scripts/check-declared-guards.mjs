@@ -95,7 +95,8 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const apiSrc = join(repoRoot, "apps/api/src");
 
 /** Имена, которые в этом проекте означают барьер. Приставки без разбора регистра дальше. */
-const GUARD_NAME = /^(require|assert|enforce|check|ensure|verify|guard|validate)/;
+const GUARD_NAME =
+	/^(require|assert|enforce|check|ensure|verify|guard|validate)/;
 
 const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".vite"]);
 
@@ -165,24 +166,33 @@ function* walk(directory, extensions) {
 		}
 		if (!entry.isFile()) continue;
 		if (entry.name.endsWith(".d.ts")) continue;
-		if (extensions.some((extension) => entry.name.endsWith(extension))) yield join(directory, entry.name);
+		if (extensions.some((extension) => entry.name.endsWith(extension)))
+			yield join(directory, entry.name);
 	}
 }
 
-const asRepoPath = (filePath) => relative(repoRoot, filePath).replaceAll("\\", "/");
+const asRepoPath = (filePath) =>
+	relative(repoRoot, filePath).replaceAll("\\", "/");
 
 const isExported = (node) =>
 	(ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export) !== 0 ||
-	Boolean(node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword));
+	Boolean(
+		node.modifiers?.some(
+			(modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+		),
+	);
 
 /** Есть ли над объявлением маркер объявленной причины С СОДЕРЖАНИЕМ. */
 function declaredReason(node, source) {
 	const ranges = ts.getLeadingCommentRanges(source, node.getFullStart()) ?? [];
 	for (const range of ranges) {
-		const match = REASON_MARKER.exec(commentBody(source.slice(range.pos, range.end)));
+		const match = REASON_MARKER.exec(
+			commentBody(source.slice(range.pos, range.end)),
+		);
 		if (!match) continue;
 		const reason = match[1].trim();
-		if (reason.length >= REASON_MIN_LENGTH && REASON_HAS_WORD.test(reason)) return reason;
+		if (reason.length >= REASON_MIN_LENGTH && REASON_HAS_WORD.test(reason))
+			return reason;
 	}
 	return null;
 }
@@ -190,11 +200,19 @@ function declaredReason(node, source) {
 const sourceFiles = [];
 for (const filePath of walk(apiSrc, [".ts", ".tsx"])) {
 	const source = readFileSync(filePath, "utf8");
-	const scriptKind = filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+	const scriptKind = filePath.endsWith(".tsx")
+		? ts.ScriptKind.TSX
+		: ts.ScriptKind.TS;
 	sourceFiles.push({
 		repoPath: asRepoPath(filePath),
 		source,
-		tree: ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKind),
+		tree: ts.createSourceFile(
+			filePath,
+			source,
+			ts.ScriptTarget.Latest,
+			true,
+			scriptKind,
+		),
 	});
 }
 
@@ -219,7 +237,8 @@ for (const filePath of walk(apiSrc, [".ts", ".tsx"])) {
  */
 const declarations = [];
 for (const { repoPath, source, tree } of sourceFiles) {
-	const lineOf = (node) => tree.getLineAndCharacterOfPosition(node.getStart(tree)).line + 1;
+	const lineOf = (node) =>
+		tree.getLineAndCharacterOfPosition(node.getStart(tree)).line + 1;
 	const remember = (nameNode, statement) => {
 		const name = nameNode.text;
 		if (!GUARD_NAME.test(name)) return;
@@ -255,7 +274,13 @@ for (const { repoPath, source, tree } of sourceFiles) {
 /** Ссылки по видам. Ключ — имя, значение — счётчики и места. */
 const references = new Map();
 for (const declaration of declarations) {
-	if (!references.has(declaration.name)) references.set(declaration.name, { call: [], value: [], binding: [], property: [] });
+	if (!references.has(declaration.name))
+		references.set(declaration.name, {
+			call: [],
+			value: [],
+			binding: [],
+			property: [],
+		});
 }
 
 /**
@@ -272,7 +297,8 @@ function namespaceImportsOf(tree) {
 	for (const statement of tree.statements) {
 		if (!ts.isImportDeclaration(statement)) continue;
 		const bindings = statement.importClause?.namedBindings;
-		if (bindings && ts.isNamespaceImport(bindings)) names.add(bindings.name.text);
+		if (bindings && ts.isNamespaceImport(bindings))
+			names.add(bindings.name.text);
 	}
 	return names;
 }
@@ -290,7 +316,11 @@ function namespaceImportsOf(tree) {
 function aliasesOf(tree) {
 	const byGuardName = new Map();
 	const visit = (node) => {
-		if (ts.isImportSpecifier(node) && node.propertyName && ts.isIdentifier(node.propertyName)) {
+		if (
+			ts.isImportSpecifier(node) &&
+			node.propertyName &&
+			ts.isIdentifier(node.propertyName)
+		) {
 			const list = byGuardName.get(node.propertyName.text) ?? [];
 			list.push(node.name.text);
 			byGuardName.set(node.propertyName.text, list);
@@ -309,20 +339,41 @@ function classify(node, namespaces) {
 		// `guards.requireX(...)` при `import * as guards` — настоящий вызов охраны.
 		const target = parent.expression;
 		if (ts.isIdentifier(target) && namespaces.has(target.text)) {
-			return ts.isCallExpression(parent.parent) && parent.parent.expression === parent ? "call" : "value";
+			return ts.isCallExpression(parent.parent) &&
+				parent.parent.expression === parent
+				? "call"
+				: "value";
 		}
 		return "property";
 	}
-	if ((ts.isPropertyAssignment(parent) || ts.isPropertySignature(parent) || ts.isMethodSignature(parent)) && parent.name === node)
+	if (
+		(ts.isPropertyAssignment(parent) ||
+			ts.isPropertySignature(parent) ||
+			ts.isMethodSignature(parent)) &&
+		parent.name === node
+	)
 		return "property";
-	if (ts.isImportSpecifier(parent) || ts.isExportSpecifier(parent) || ts.isImportClause(parent)) return "binding";
+	if (
+		ts.isImportSpecifier(parent) ||
+		ts.isExportSpecifier(parent) ||
+		ts.isImportClause(parent)
+	)
+		return "binding";
 	if (ts.isNamespaceImport(parent)) return "binding";
 	if (ts.isCallExpression(parent) && parent.expression === node) return "call";
 	// Объявление того же имени (в том числе разбираемое сейчас) ссылкой не является.
-	if (ts.isFunctionDeclaration(parent) || ts.isVariableDeclaration(parent) || ts.isParameter(parent)) {
+	if (
+		ts.isFunctionDeclaration(parent) ||
+		ts.isVariableDeclaration(parent) ||
+		ts.isParameter(parent)
+	) {
 		if (parent.name === node) return "declaration";
 	}
-	if (ts.isFunctionExpression(parent) || ts.isMethodDeclaration(parent) || ts.isClassDeclaration(parent)) {
+	if (
+		ts.isFunctionExpression(parent) ||
+		ts.isMethodDeclaration(parent) ||
+		ts.isClassDeclaration(parent)
+	) {
 		if (parent.name === node) return "declaration";
 	}
 	return "value";
@@ -330,11 +381,15 @@ function classify(node, namespaces) {
 
 /** Строковый литерал с именем охраны: `obj["requireX"]`. Тоже свойство, не привязка. */
 function stringReferencesGuard(node) {
-	return (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && references.has(node.text);
+	return (
+		(ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) &&
+		references.has(node.text)
+	);
 }
 
 for (const { repoPath, tree } of sourceFiles) {
-	const lineOf = (node) => tree.getLineAndCharacterOfPosition(node.getStart(tree)).line + 1;
+	const lineOf = (node) =>
+		tree.getLineAndCharacterOfPosition(node.getStart(tree)).line + 1;
 	const namespaces = namespaceImportsOf(tree);
 	const aliases = aliasesOf(tree);
 	/** Сколько раз в этом файле упомянут псевдоним — то есть работают ли им. */
@@ -351,10 +406,14 @@ for (const { repoPath, tree } of sourceFiles) {
 		if (ts.isIdentifier(node) && references.has(node.text)) {
 			const kind = classify(node, namespaces);
 			if (kind !== "declaration") {
-				references.get(node.text)[kind].push({ file: repoPath, line: lineOf(node) });
+				references
+					.get(node.text)
+					[kind].push({ file: repoPath, line: lineOf(node) });
 			}
 		} else if (stringReferencesGuard(node)) {
-			references.get(node.text).property.push({ file: repoPath, line: lineOf(node) });
+			references
+				.get(node.text)
+				.property.push({ file: repoPath, line: lineOf(node) });
 		}
 		ts.forEachChild(node, visit);
 	};
@@ -365,20 +424,27 @@ for (const { repoPath, tree } of sourceFiles) {
 		if (!references.has(guardName)) continue;
 		for (const alias of aliasNames) {
 			if ((aliasUses.get(alias) ?? 0) > 0) {
-				references.get(guardName).value.push({ file: repoPath, line: 0, alias });
+				references
+					.get(guardName)
+					.value.push({ file: repoPath, line: 0, alias });
 			}
 		}
 	}
 }
 
-const isTestPath = (file) => /(^|\/)tests?\//.test(file) || file.endsWith(".test.ts") || file.endsWith(".test.tsx");
+const isTestPath = (file) =>
+	/(^|\/)tests?\//.test(file) ||
+	file.endsWith(".test.ts") ||
+	file.endsWith(".test.tsx");
 
 /** Приговор по каждой охране. Считается по ссылкам-привязкам, не по упоминаниям. */
 const verdicts = declarations.map((declaration) => {
 	const all = references.get(declaration.name);
 	/** Неэкспортированную охрану видно только внутри её файла — там и ищем. */
 	const inScope = (places) =>
-		declaration.exported ? places : places.filter((place) => place.file === declaration.file);
+		declaration.exported
+			? places
+			: places.filter((place) => place.file === declaration.file);
 	const found = {
 		call: inScope(all.call),
 		value: inScope(all.value),
@@ -394,13 +460,17 @@ const verdicts = declarations.map((declaration) => {
 		debt: debt && debt.file === declaration.file ? debt : null,
 		/** Сшивка есть, но только из тестов: боевой код через охрану не ходит. */
 		onlyFromTests:
-			wiring.length > 0 && !isTestPath(declaration.file) && wiring.every((place) => isTestPath(place.file)),
+			wiring.length > 0 &&
+			!isTestPath(declaration.file) &&
+			wiring.every((place) => isTestPath(place.file)),
 	};
 });
 
 const uncalled = verdicts.filter((verdict) => verdict.wiring.length === 0);
 const waivedByReason = uncalled.filter((verdict) => verdict.reason !== null);
-const waivedByDebt = uncalled.filter((verdict) => verdict.reason === null && verdict.debt !== null);
+const waivedByDebt = uncalled.filter(
+	(verdict) => verdict.reason === null && verdict.debt !== null,
+);
 const offenders = uncalled
 	.filter((verdict) => verdict.reason === null && verdict.debt === null)
 	.sort((a, b) => a.name.localeCompare(b.name) || a.file.localeCompare(b.file));
@@ -417,16 +487,24 @@ const onlyFromTests = verdicts.filter((verdict) => verdict.onlyFromTests);
  */
 const scannedPaths = new Set(sourceFiles.map((file) => file.repoPath));
 const staleDebt = [...KNOWN_UNCALLED_GUARD_DEBT.entries()]
-	.filter(([name, entry]) => scannedPaths.has(entry.file) && !uncalled.some((verdict) => verdict.name === name))
+	.filter(
+		([name, entry]) =>
+			scannedPaths.has(entry.file) &&
+			!uncalled.some((verdict) => verdict.name === name),
+	)
 	.map(([name, entry]) => `${name} (${entry.file})`);
 
 console.log(`файлов разобрано:                 ${sourceFiles.length}`);
-console.log(`объявлено охранников:             ${declarations.length} (экспортированных ${declarations.filter((d) => d.exported).length})`);
+console.log(
+	`объявлено охранников:             ${declarations.length} (экспортированных ${declarations.filter((d) => d.exported).length})`,
+);
 console.log(`из них без единой ссылки:         ${uncalled.length}`);
 console.log(`  с объявленной причиной:         ${waivedByReason.length}`);
 console.log(`  в списке известного долга:      ${waivedByDebt.length}`);
 console.log(`ОБЪЯВЛЕН И НЕ ВЫЗВАН:             ${offenders.length}`);
-console.log(`сшит только из тестов:            ${onlyFromTests.length} (не валит гейт)`);
+console.log(
+	`сшит только из тестов:            ${onlyFromTests.length} (не валит гейт)`,
+);
 
 /*
  * ПЕРЕПИСЬ ЦЕЛИКОМ — по флагу, потому что она нужна человеку, а не гейту.
@@ -435,8 +513,12 @@ console.log(`сшит только из тестов:            ${onlyFromTests
  * работающей. С флагом видно каждое имя и вид его ссылок.
  */
 if (process.argv.includes("--census")) {
-	console.log("\n===== ПЕРЕПИСЬ ОХРАННИКОВ: вызов / значение / импорт / свойство =====");
-	for (const verdict of [...verdicts].sort((a, b) => a.name.localeCompare(b.name))) {
+	console.log(
+		"\n===== ПЕРЕПИСЬ ОХРАННИКОВ: вызов / значение / импорт / свойство =====",
+	);
+	for (const verdict of [...verdicts].sort((a, b) =>
+		a.name.localeCompare(b.name),
+	)) {
 		const { call, value, binding, property } = verdict.found;
 		console.log(
 			`  ${verdict.name.padEnd(42)} вызов ${String(call.length).padStart(3)}  значение ${String(value.length).padStart(3)}` +
@@ -446,15 +528,20 @@ if (process.argv.includes("--census")) {
 }
 
 if (onlyFromTests.length > 0) {
-	console.log("\nОхрана сшита ТОЛЬКО из тестов — боевой код через неё не ходит:");
+	console.log(
+		"\nОхрана сшита ТОЛЬКО из тестов — боевой код через неё не ходит:",
+	);
 	for (const verdict of onlyFromTests) {
 		console.log(`  ${verdict.name}  ${verdict.file}:${verdict.line}`);
-		for (const place of verdict.wiring) console.log(`         ссылка: ${place.file}:${place.line}`);
+		for (const place of verdict.wiring)
+			console.log(`         ссылка: ${place.file}:${place.line}`);
 	}
 }
 
 if (waivedByReason.length > 0) {
-	console.log("\nБез вызывающих, но причина объявлена в комментарии над объявлением:");
+	console.log(
+		"\nБез вызывающих, но причина объявлена в комментарии над объявлением:",
+	);
 	for (const verdict of waivedByReason) {
 		console.log(`  ${verdict.name}  ${verdict.file}:${verdict.line}`);
 		console.log(`         причина: ${verdict.reason}`);
@@ -462,7 +549,9 @@ if (waivedByReason.length > 0) {
 }
 
 if (waivedByDebt.length > 0) {
-	console.log("\nБез вызывающих, названы в списке известного долга этой проверки:");
+	console.log(
+		"\nБез вызывающих, названы в списке известного долга этой проверки:",
+	);
 	for (const verdict of waivedByDebt) {
 		console.log(`  ${verdict.name}  ${verdict.file}:${verdict.line}`);
 		console.log(`         ${verdict.debt.reason}`);
@@ -470,18 +559,24 @@ if (waivedByDebt.length > 0) {
 }
 
 if (offenders.length > 0) {
-	console.error("\nОХРАНА ОБЪЯВЛЕНА И НЕ ВЫЗЫВАЕТСЯ НИГДЕ — ровно форма дыры в расписании:\n");
+	console.error(
+		"\nОХРАНА ОБЪЯВЛЕНА И НЕ ВЫЗЫВАЕТСЯ НИГДЕ — ровно форма дыры в расписании:\n",
+	);
 	for (const verdict of offenders) {
 		console.error(`  ${verdict.name}  ${verdict.file}:${verdict.line}`);
 		if (verdict.found.binding.length > 0) {
-			console.error(`         имя импортируется и не используется: ${verdict.found.binding.length} раз(а)`);
-			for (const place of verdict.found.binding) console.error(`           ${place.file}:${place.line}`);
+			console.error(
+				`         имя импортируется и не используется: ${verdict.found.binding.length} раз(а)`,
+			);
+			for (const place of verdict.found.binding)
+				console.error(`           ${place.file}:${place.line}`);
 		}
 		if (verdict.found.property.length > 0) {
 			console.error(
 				`         есть обращение к свойству с тем же именем (${verdict.found.property.length}): другой символ, зачёт не даёт`,
 			);
-			for (const place of verdict.found.property) console.error(`           ${place.file}:${place.line}`);
+			for (const place of verdict.found.property)
+				console.error(`           ${place.file}:${place.line}`);
 		}
 	}
 	console.error(
@@ -509,7 +604,9 @@ if (staleDebt.length > 0) {
  * настоящего нарушения не печатал. Здесь этой ошибки нет по построению.
  */
 if (offenders.length === 0 && staleDebt.length === 0) {
-	console.log("\nВсе объявленные охранники сшиты, либо их отсутствие вызывающих объяснено поимённо.");
+	console.log(
+		"\nВсе объявленные охранники сшиты, либо их отсутствие вызывающих объяснено поимённо.",
+	);
 	process.exit(0);
 }
 process.exit(1);

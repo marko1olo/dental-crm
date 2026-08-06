@@ -1,9 +1,9 @@
 import { hostname } from "node:os";
 import type {
-  MigrationEntityKind,
-  MigrationFieldLineage,
-  MigrationMappingSnapshot,
-  MigrationRunStatus
+	MigrationEntityKind,
+	MigrationFieldLineage,
+	MigrationMappingSnapshot,
+	MigrationRunStatus,
 } from "@dental/shared";
 import { and, asc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { transactionStorage } from "../db/client.js";
@@ -92,88 +92,98 @@ export type MigrationRunRow = typeof migrationRuns.$inferSelect;
  * защищает от чужого арендатора, а WHERE выражает намерение в коде и переживёт
  * любое будущее ослабление политики.
  */
-export async function findRun(runId: string, organizationId: string): Promise<MigrationRunRow | null> {
-  return withTenantCtx(organizationId, async (tx) => {
-    const [run] = await tx
-      .select()
-      .from(migrationRuns)
-      .where(and(eq(migrationRuns.id, runId), eq(migrationRuns.organizationId, organizationId)));
-    return run ?? null;
-  });
+export async function findRun(
+	runId: string,
+	organizationId: string,
+): Promise<MigrationRunRow | null> {
+	return withTenantCtx(organizationId, async (tx) => {
+		const [run] = await tx
+			.select()
+			.from(migrationRuns)
+			.where(
+				and(
+					eq(migrationRuns.id, runId),
+					eq(migrationRuns.organizationId, organizationId),
+				),
+			);
+		return run ?? null;
+	});
 }
 
 export interface CreateRunInput {
-  organizationId: string;
-  startedByUserId: string | null;
-  sourceName: string;
-  sourceKind: MigrationRunRow["sourceKind"];
-  sourceFingerprint: string;
-  sourceBytes: number;
-  uploadPath: string;
-  uploadFileName: string;
-  detectedEncoding: string;
-  encodingConfidence: number;
+	organizationId: string;
+	startedByUserId: string | null;
+	sourceName: string;
+	sourceKind: MigrationRunRow["sourceKind"];
+	sourceFingerprint: string;
+	sourceBytes: number;
+	uploadPath: string;
+	uploadFileName: string;
+	detectedEncoding: string;
+	encodingConfidence: number;
 }
 
 /** Создаёт прогон в состоянии draft: файл залит, ничего ещё не разобрано. */
-export async function createRun(input: CreateRunInput): Promise<MigrationRunRow> {
-  // INSERT — единственная операция, которая под RLS падает ГРОМКО (42501), а не
-  // отдаёт молча 0 строк: WITH CHECK политики требует совпадения арендатора.
-  // Тенант-контекст здесь обязателен даже на пути маршрута.
-  return withTenantCtx(input.organizationId, async (tx) => {
-    const [run] = await tx
-      .insert(migrationRuns)
-      .values({
-        organizationId: input.organizationId,
-        sourceName: input.sourceName,
-        sourceKind: input.sourceKind,
-        sourceFingerprint: input.sourceFingerprint,
-        sourceBytes: input.sourceBytes,
-        uploadPath: input.uploadPath,
-        uploadFileName: input.uploadFileName,
-        detectedEncoding: input.detectedEncoding,
-        encodingConfidence: input.encodingConfidence,
-        status: "draft",
-        phase: "Файл принят, ожидает сопоставления",
-        dryRun: true,
-        startedByUserId: input.startedByUserId
-      })
-      .returning();
-    if (!run) throw new Error("Не удалось создать запись прогона переноса.");
-    return run;
-  });
+export async function createRun(
+	input: CreateRunInput,
+): Promise<MigrationRunRow> {
+	// INSERT — единственная операция, которая под RLS падает ГРОМКО (42501), а не
+	// отдаёт молча 0 строк: WITH CHECK политики требует совпадения арендатора.
+	// Тенант-контекст здесь обязателен даже на пути маршрута.
+	return withTenantCtx(input.organizationId, async (tx) => {
+		const [run] = await tx
+			.insert(migrationRuns)
+			.values({
+				organizationId: input.organizationId,
+				sourceName: input.sourceName,
+				sourceKind: input.sourceKind,
+				sourceFingerprint: input.sourceFingerprint,
+				sourceBytes: input.sourceBytes,
+				uploadPath: input.uploadPath,
+				uploadFileName: input.uploadFileName,
+				detectedEncoding: input.detectedEncoding,
+				encodingConfidence: input.encodingConfidence,
+				status: "draft",
+				phase: "Файл принят, ожидает сопоставления",
+				dryRun: true,
+				startedByUserId: input.startedByUserId,
+			})
+			.returning();
+		if (!run) throw new Error("Не удалось создать запись прогона переноса.");
+		return run;
+	});
 }
 
 export interface UpdateRunPatch {
-  status?: MigrationRunStatus;
-  phase?: string;
-  mappingJson?: MigrationMappingSnapshot | null;
-  vendorProfile?: string | null;
-  /** Уточняются на фазе сопоставления: голова файла читается только там. */
-  sourceKind?: MigrationRunRow["sourceKind"];
-  detectedEncoding?: string | null;
-  encodingConfidence?: number | null;
-  sourceRows?: number;
-  stagedRows?: number;
-  loadedRows?: number;
-  updatedRows?: number;
-  duplicateRows?: number;
-  quarantinedRows?: number;
-  skippedRows?: number;
-  llmCalls?: number;
-  llmRejectedSuggestions?: number;
-  progressTotal?: number;
-  progressDone?: number;
-  dryRun?: boolean;
-  workerId?: string | null;
-  heartbeatAt?: Date | null;
-  queuedAt?: Date | null;
-  startedAt?: Date | null;
-  finishedAt?: Date | null;
-  errorClass?: string | null;
-  errorMessage?: string | null;
-  resumeCount?: number;
-  uploadPath?: string | null;
+	status?: MigrationRunStatus;
+	phase?: string;
+	mappingJson?: MigrationMappingSnapshot | null;
+	vendorProfile?: string | null;
+	/** Уточняются на фазе сопоставления: голова файла читается только там. */
+	sourceKind?: MigrationRunRow["sourceKind"];
+	detectedEncoding?: string | null;
+	encodingConfidence?: number | null;
+	sourceRows?: number;
+	stagedRows?: number;
+	loadedRows?: number;
+	updatedRows?: number;
+	duplicateRows?: number;
+	quarantinedRows?: number;
+	skippedRows?: number;
+	llmCalls?: number;
+	llmRejectedSuggestions?: number;
+	progressTotal?: number;
+	progressDone?: number;
+	dryRun?: boolean;
+	workerId?: string | null;
+	heartbeatAt?: Date | null;
+	queuedAt?: Date | null;
+	startedAt?: Date | null;
+	finishedAt?: Date | null;
+	errorClass?: string | null;
+	errorMessage?: string | null;
+	resumeCount?: number;
+	uploadPath?: string | null;
 }
 
 /**
@@ -183,13 +193,22 @@ export interface UpdateRunPatch {
  * UPDATE из воркера совпадал с нулём строк и МОЛЧА ничего не делал — статус
  * прогона не менялся, ошибка не возникала, и понять это по логам было нельзя.
  */
-export async function updateRun(runId: string, organizationId: string, patch: UpdateRunPatch): Promise<void> {
-  await withTenantCtx(organizationId, async (tx) => {
-    await tx
-      .update(migrationRuns)
-      .set({ ...patch, updatedAt: new Date() })
-      .where(and(eq(migrationRuns.id, runId), eq(migrationRuns.organizationId, organizationId)));
-  });
+export async function updateRun(
+	runId: string,
+	organizationId: string,
+	patch: UpdateRunPatch,
+): Promise<void> {
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.update(migrationRuns)
+			.set({ ...patch, updatedAt: new Date() })
+			.where(
+				and(
+					eq(migrationRuns.id, runId),
+					eq(migrationRuns.organizationId, organizationId),
+				),
+			);
+	});
 }
 
 /**
@@ -226,24 +245,29 @@ export async function updateRun(runId: string, organizationId: string, patch: Up
  * routes/xray.ts и в speech/storage.ts:1114.
  */
 export async function heartbeat(
-  runId: string,
-  organizationId: string,
-  phase?: string,
-  progressDone?: number
+	runId: string,
+	organizationId: string,
+	phase?: string,
+	progressDone?: number,
 ): Promise<void> {
-  await transactionStorage.exit(() =>
-    withTenantCtx(organizationId, async (tx) => {
-      await tx
-        .update(migrationRuns)
-        .set({
-          heartbeatAt: new Date(),
-          updatedAt: new Date(),
-          ...(phase === undefined ? {} : { phase }),
-          ...(progressDone === undefined ? {} : { progressDone })
-        })
-        .where(and(eq(migrationRuns.id, runId), eq(migrationRuns.organizationId, organizationId)));
-    })
-  );
+	await transactionStorage.exit(() =>
+		withTenantCtx(organizationId, async (tx) => {
+			await tx
+				.update(migrationRuns)
+				.set({
+					heartbeatAt: new Date(),
+					updatedAt: new Date(),
+					...(phase === undefined ? {} : { phase }),
+					...(progressDone === undefined ? {} : { progressDone }),
+				})
+				.where(
+					and(
+						eq(migrationRuns.id, runId),
+						eq(migrationRuns.organizationId, organizationId),
+					),
+				);
+		}),
+	);
 }
 
 /**
@@ -253,30 +277,39 @@ export async function heartbeat(
  * «выполнить» не должны поставить прогон в очередь дважды. Условие на статус
  * внутри WHERE делает это атомарным без отдельной блокировки.
  */
-export async function enqueueRun(runId: string, organizationId: string, dryRun: boolean): Promise<boolean> {
-  return withTenantCtx(organizationId, async (tx) => {
-    const updated = await tx
-      .update(migrationRuns)
-      .set({
-        status: "queued",
-        dryRun,
-        queuedAt: new Date(),
-        phase: "В очереди на выполнение",
-        errorClass: null,
-        errorMessage: null,
-        updatedAt: new Date()
-      })
-      .where(
-        and(
-          eq(migrationRuns.id, runId),
-          eq(migrationRuns.organizationId, organizationId),
-          // Ставить в очередь можно только то, что разобрано и ещё не выполняется.
-          inArray(migrationRuns.status, ["validated", "failed", "draft", "mapping"])
-        )
-      )
-      .returning({ id: migrationRuns.id });
-    return updated.length > 0;
-  });
+export async function enqueueRun(
+	runId: string,
+	organizationId: string,
+	dryRun: boolean,
+): Promise<boolean> {
+	return withTenantCtx(organizationId, async (tx) => {
+		const updated = await tx
+			.update(migrationRuns)
+			.set({
+				status: "queued",
+				dryRun,
+				queuedAt: new Date(),
+				phase: "В очереди на выполнение",
+				errorClass: null,
+				errorMessage: null,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(migrationRuns.id, runId),
+					eq(migrationRuns.organizationId, organizationId),
+					// Ставить в очередь можно только то, что разобрано и ещё не выполняется.
+					inArray(migrationRuns.status, [
+						"validated",
+						"failed",
+						"draft",
+						"mapping",
+					]),
+				),
+			)
+			.returning({ id: migrationRuns.id });
+		return updated.length > 0;
+	});
 }
 
 /**
@@ -318,51 +351,57 @@ export async function enqueueRun(runId: string, organizationId: string, dryRun: 
  * захват коммитится сразу.
  */
 export async function claimNextRun(): Promise<MigrationRunRow | null> {
-  const staleBefore = new Date(Date.now() - HEARTBEAT_STALE_MS);
+	const staleBefore = new Date(Date.now() - HEARTBEAT_STALE_MS);
 
-  // ---- Шаг 1: чей прогон следующий. Единственное межарендное чтение.
-  const candidate = await withSuperuserBypass(async (tx) => {
-    const [row] = await tx
-      .select({ id: migrationRuns.id, organizationId: migrationRuns.organizationId })
-      .from(migrationRuns)
-      .where(
-        or(
-          eq(migrationRuns.status, "queued"),
-          and(
-            eq(migrationRuns.status, "loading"),
-            or(isNull(migrationRuns.heartbeatAt), lt(migrationRuns.heartbeatAt, staleBefore))
-          )
-        )
-      )
-      // `asc nulls first` дословно, а не drizzle-хелпер asc(): в PostgreSQL у
-      // ASC умолчание NULLS LAST, и прогон без queued_at (осиротевший, ещё ни
-      // разу не ставившийся в очередь) уехал бы в конец очереди вместо начала.
-      .orderBy(sql`${migrationRuns.queuedAt} asc nulls first`)
-      .limit(1);
-    return row ?? null;
-  });
+	// ---- Шаг 1: чей прогон следующий. Единственное межарендное чтение.
+	const candidate = await withSuperuserBypass(async (tx) => {
+		const [row] = await tx
+			.select({
+				id: migrationRuns.id,
+				organizationId: migrationRuns.organizationId,
+			})
+			.from(migrationRuns)
+			.where(
+				or(
+					eq(migrationRuns.status, "queued"),
+					and(
+						eq(migrationRuns.status, "loading"),
+						or(
+							isNull(migrationRuns.heartbeatAt),
+							lt(migrationRuns.heartbeatAt, staleBefore),
+						),
+					),
+				),
+			)
+			// `asc nulls first` дословно, а не drizzle-хелпер asc(): в PostgreSQL у
+			// ASC умолчание NULLS LAST, и прогон без queued_at (осиротевший, ещё ни
+			// разу не ставившийся в очередь) уехал бы в конец очереди вместо начала.
+			.orderBy(sql`${migrationRuns.queuedAt} asc nulls first`)
+			.limit(1);
+		return row ?? null;
+	});
 
-  if (!candidate) return null;
+	if (!candidate) return null;
 
-  // ---- Шаг 2: захват в контексте этой клиники и только её, своей короткой
-  // транзакцией (exit() принудительно), чтобы коммит был немедленным.
-  return transactionStorage.exit(() =>
-    withTenantCtx(candidate.organizationId, async (tx) => {
-      const claimed = await tx
-        .update(migrationRuns)
-        .set({
-          status: "loading",
-          workerId: WORKER_ID,
-          heartbeatAt: new Date(),
-          startedAt: sql`coalesce(${migrationRuns.startedAt}, now())`,
-          // Подбор осиротевшего считается отдельно от первого запуска.
-          resumeCount: sql`case when ${migrationRuns.status} = 'loading' then ${migrationRuns.resumeCount} + 1 else ${migrationRuns.resumeCount} end`,
-          updatedAt: new Date()
-        })
-        .where(
-          eq(
-            migrationRuns.id,
-            sql`(
+	// ---- Шаг 2: захват в контексте этой клиники и только её, своей короткой
+	// транзакцией (exit() принудительно), чтобы коммит был немедленным.
+	return transactionStorage.exit(() =>
+		withTenantCtx(candidate.organizationId, async (tx) => {
+			const claimed = await tx
+				.update(migrationRuns)
+				.set({
+					status: "loading",
+					workerId: WORKER_ID,
+					heartbeatAt: new Date(),
+					startedAt: sql`coalesce(${migrationRuns.startedAt}, now())`,
+					// Подбор осиротевшего считается отдельно от первого запуска.
+					resumeCount: sql`case when ${migrationRuns.status} = 'loading' then ${migrationRuns.resumeCount} + 1 else ${migrationRuns.resumeCount} end`,
+					updatedAt: new Date(),
+				})
+				.where(
+					eq(
+						migrationRuns.id,
+						sql`(
           select ${migrationRuns.id} from ${migrationRuns}
           where ${migrationRuns.id} = ${candidate.id}
             and (${migrationRuns.status} = 'queued'
@@ -370,14 +409,14 @@ export async function claimNextRun(): Promise<MigrationRunRow | null> {
                  and (${migrationRuns.heartbeatAt} is null or ${migrationRuns.heartbeatAt} < ${staleBefore})))
           for update skip locked
           limit 1
-        )`
-          )
-        )
-        .returning();
+        )`,
+					),
+				)
+				.returning();
 
-      return claimed[0] ?? null;
-    })
-  );
+			return claimed[0] ?? null;
+		}),
+	);
 }
 
 /**
@@ -395,40 +434,53 @@ export async function claimNextRun(): Promise<MigrationRunRow | null> {
  * транзакции.
  */
 export async function releaseOwnRuns(): Promise<number> {
-  const own = await withSuperuserBypass(async (tx) =>
-    tx
-      .select({ id: migrationRuns.id, organizationId: migrationRuns.organizationId })
-      .from(migrationRuns)
-      .where(and(eq(migrationRuns.status, "loading"), eq(migrationRuns.workerId, WORKER_ID)))
-  );
+	const own = await withSuperuserBypass(async (tx) =>
+		tx
+			.select({
+				id: migrationRuns.id,
+				organizationId: migrationRuns.organizationId,
+			})
+			.from(migrationRuns)
+			.where(
+				and(
+					eq(migrationRuns.status, "loading"),
+					eq(migrationRuns.workerId, WORKER_ID),
+				),
+			),
+	);
 
-  if (own.length === 0) return 0;
+	if (own.length === 0) return 0;
 
-  // Группировка по клинике: одна транзакция на клинику, а не на строку.
-  const byOrganization = new Map<string, string[]>();
-  for (const row of own) {
-    const group = byOrganization.get(row.organizationId) ?? [];
-    group.push(row.id);
-    byOrganization.set(row.organizationId, group);
-  }
+	// Группировка по клинике: одна транзакция на клинику, а не на строку.
+	const byOrganization = new Map<string, string[]>();
+	for (const row of own) {
+		const group = byOrganization.get(row.organizationId) ?? [];
+		group.push(row.id);
+		byOrganization.set(row.organizationId, group);
+	}
 
-  let released = 0;
-  for (const [organizationId, ids] of byOrganization) {
-    const updated = await withTenantCtx(organizationId, async (tx) =>
-      tx
-        .update(migrationRuns)
-        .set({
-          workerId: null,
-          heartbeatAt: null,
-          phase: "Прервано перезапуском процесса, ожидает возобновления",
-          updatedAt: new Date()
-        })
-        .where(and(inArray(migrationRuns.id, ids), eq(migrationRuns.status, "loading")))
-        .returning({ id: migrationRuns.id })
-    );
-    released += updated.length;
-  }
-  return released;
+	let released = 0;
+	for (const [organizationId, ids] of byOrganization) {
+		const updated = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.update(migrationRuns)
+				.set({
+					workerId: null,
+					heartbeatAt: null,
+					phase: "Прервано перезапуском процесса, ожидает возобновления",
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						inArray(migrationRuns.id, ids),
+						eq(migrationRuns.status, "loading"),
+					),
+				)
+				.returning({ id: migrationRuns.id }),
+		);
+		released += updated.length;
+	}
+	return released;
 }
 
 /**
@@ -440,22 +492,25 @@ export async function releaseOwnRuns(): Promise<number> {
  * целиком.
  */
 export async function pendingRunCount(): Promise<number> {
-  const staleBefore = new Date(Date.now() - HEARTBEAT_STALE_MS);
-  return withSuperuserBypass(async (tx) => {
-    const [row] = await tx
-      .select({ count: sql<string>`count(*)` })
-      .from(migrationRuns)
-      .where(
-        or(
-          eq(migrationRuns.status, "queued"),
-          and(
-            eq(migrationRuns.status, "loading"),
-            or(isNull(migrationRuns.heartbeatAt), lt(migrationRuns.heartbeatAt, staleBefore))
-          )
-        )
-      );
-    return Number(row?.count ?? 0);
-  });
+	const staleBefore = new Date(Date.now() - HEARTBEAT_STALE_MS);
+	return withSuperuserBypass(async (tx) => {
+		const [row] = await tx
+			.select({ count: sql<string>`count(*)` })
+			.from(migrationRuns)
+			.where(
+				or(
+					eq(migrationRuns.status, "queued"),
+					and(
+						eq(migrationRuns.status, "loading"),
+						or(
+							isNull(migrationRuns.heartbeatAt),
+							lt(migrationRuns.heartbeatAt, staleBefore),
+						),
+					),
+				),
+			);
+		return Number(row?.count ?? 0);
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -471,25 +526,27 @@ export async function pendingRunCount(): Promise<number> {
  * снова означало бы либо пересчитывать разбор, либо читать карантин на каждую
  * строку — и то и другое лишнее.
  */
-function toStagedRow(record: typeof migrationStagingRecords.$inferSelect): StagedRow {
-  const transformed: TransformedRow = {
-    entityKind: record.entityKind,
-    values: record.normalizedJson ?? {},
-    lineage: (record.lineageJson ?? []) as MigrationFieldLineage[],
-    issues: [],
-    confidence: record.confidence
-  };
+function toStagedRow(
+	record: typeof migrationStagingRecords.$inferSelect,
+): StagedRow {
+	const transformed: TransformedRow = {
+		entityKind: record.entityKind,
+		values: record.normalizedJson ?? {},
+		lineage: (record.lineageJson ?? []) as MigrationFieldLineage[],
+		issues: [],
+		confidence: record.confidence,
+	};
 
-  return {
-    stagingId: record.id,
-    sourceRowNumber: record.sourceRowNumber,
-    sourceTable: record.sourceTable,
-    raw: record.rawJson,
-    rawHash: record.rawHash,
-    transformed,
-    naturalKey: record.naturalKey,
-    issues: []
-  };
+	return {
+		stagingId: record.id,
+		sourceRowNumber: record.sourceRowNumber,
+		sourceTable: record.sourceTable,
+		raw: record.rawJson,
+		rawHash: record.rawHash,
+		transformed,
+		naturalKey: record.naturalKey,
+		issues: [],
+	};
 }
 
 /**
@@ -500,133 +557,145 @@ function toStagedRow(record: typeof migrationStagingRecords.$inferSelect): Stage
  * возобновления счётчик продолжает расти, а не прыгает.
  */
 export async function readReadyRows(
-  runId: string,
-  organizationId: string,
-  entityKind: MigrationEntityKind,
-  limit = STAGING_PAGE_SIZE
+	runId: string,
+	organizationId: string,
+	entityKind: MigrationEntityKind,
+	limit = STAGING_PAGE_SIZE,
 ): Promise<StagedRow[]> {
-  return withTenantCtx(organizationId, async (tx) => {
-    const records = await tx
-      .select()
-      .from(migrationStagingRecords)
-      .where(
-        and(
-          eq(migrationStagingRecords.runId, runId),
-          eq(migrationStagingRecords.organizationId, organizationId),
-          eq(migrationStagingRecords.entityKind, entityKind),
-          eq(migrationStagingRecords.status, "ready")
-        )
-      )
-      .orderBy(asc(migrationStagingRecords.sourceTable), asc(migrationStagingRecords.sourceRowNumber))
-      .limit(limit);
+	return withTenantCtx(organizationId, async (tx) => {
+		const records = await tx
+			.select()
+			.from(migrationStagingRecords)
+			.where(
+				and(
+					eq(migrationStagingRecords.runId, runId),
+					eq(migrationStagingRecords.organizationId, organizationId),
+					eq(migrationStagingRecords.entityKind, entityKind),
+					eq(migrationStagingRecords.status, "ready"),
+				),
+			)
+			.orderBy(
+				asc(migrationStagingRecords.sourceTable),
+				asc(migrationStagingRecords.sourceRowNumber),
+			)
+			.limit(limit);
 
-    return records.map(toStagedRow);
-  });
+		return records.map(toStagedRow);
+	});
 }
 
 /** Сущности, по которым в прогоне есть готовые строки, в порядке загрузки. */
-export async function readyEntityKinds(runId: string, organizationId: string): Promise<MigrationEntityKind[]> {
-  const rows = await withTenantCtx(organizationId, async (tx) =>
-    tx
-      .selectDistinct({ entityKind: migrationStagingRecords.entityKind })
-      .from(migrationStagingRecords)
-      .where(
-        and(
-          eq(migrationStagingRecords.runId, runId),
-          eq(migrationStagingRecords.organizationId, organizationId),
-          eq(migrationStagingRecords.status, "ready")
-        )
-      )
-  );
+export async function readyEntityKinds(
+	runId: string,
+	organizationId: string,
+): Promise<MigrationEntityKind[]> {
+	const rows = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.selectDistinct({ entityKind: migrationStagingRecords.entityKind })
+			.from(migrationStagingRecords)
+			.where(
+				and(
+					eq(migrationStagingRecords.runId, runId),
+					eq(migrationStagingRecords.organizationId, organizationId),
+					eq(migrationStagingRecords.status, "ready"),
+				),
+			),
+	);
 
-  /**
-   * Порядок обязателен: приёмы и платежи ссылаются на пациента через таблицу
-   * соответствий, и если грузить их раньше пациентов, все ссылки окажутся
-   * битыми, а строки уедут в карантин с broken_reference. Пациенты и врачи —
-   * первыми, зависимые — после.
-   */
-  const order: MigrationEntityKind[] = [
-    "patient",
-    "doctor",
-    "service",
-    "appointment",
-    "visit",
-    "payment",
-    "tooth_state",
-    "treatment_plan",
-    "document",
-    "unknown"
-  ];
-  const present = new Set(rows.map((row) => row.entityKind));
-  return order.filter((kind) => present.has(kind));
+	/**
+	 * Порядок обязателен: приёмы и платежи ссылаются на пациента через таблицу
+	 * соответствий, и если грузить их раньше пациентов, все ссылки окажутся
+	 * битыми, а строки уедут в карантин с broken_reference. Пациенты и врачи —
+	 * первыми, зависимые — после.
+	 */
+	const order: MigrationEntityKind[] = [
+		"patient",
+		"doctor",
+		"service",
+		"appointment",
+		"visit",
+		"payment",
+		"tooth_state",
+		"treatment_plan",
+		"document",
+		"unknown",
+	];
+	const present = new Set(rows.map((row) => row.entityKind));
+	return order.filter((kind) => present.has(kind));
 }
 
 export interface StagingCounts {
-  total: number;
-  ready: number;
-  loaded: number;
-  updated: number;
-  duplicate: number;
-  quarantined: number;
-  skipped: number;
-  pending: number;
+	total: number;
+	ready: number;
+	loaded: number;
+	updated: number;
+	duplicate: number;
+	quarantined: number;
+	skipped: number;
+	pending: number;
 }
 
 /** Пересчитывает состояние стейджинга. Источник истины для прогресса и счётчиков. */
-export async function countStagingByStatus(runId: string, organizationId: string): Promise<StagingCounts> {
-  const rows = await withTenantCtx(organizationId, async (tx) =>
-    tx
-      .select({ status: migrationStagingRecords.status, count: sql<string>`count(*)` })
-      .from(migrationStagingRecords)
-      .where(
-        and(
-          eq(migrationStagingRecords.runId, runId),
-          eq(migrationStagingRecords.organizationId, organizationId)
-        )
-      )
-      .groupBy(migrationStagingRecords.status)
-  );
+export async function countStagingByStatus(
+	runId: string,
+	organizationId: string,
+): Promise<StagingCounts> {
+	const rows = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select({
+				status: migrationStagingRecords.status,
+				count: sql<string>`count(*)`,
+			})
+			.from(migrationStagingRecords)
+			.where(
+				and(
+					eq(migrationStagingRecords.runId, runId),
+					eq(migrationStagingRecords.organizationId, organizationId),
+				),
+			)
+			.groupBy(migrationStagingRecords.status),
+	);
 
-  const counts: StagingCounts = {
-    total: 0,
-    ready: 0,
-    loaded: 0,
-    updated: 0,
-    duplicate: 0,
-    quarantined: 0,
-    skipped: 0,
-    pending: 0
-  };
+	const counts: StagingCounts = {
+		total: 0,
+		ready: 0,
+		loaded: 0,
+		updated: 0,
+		duplicate: 0,
+		quarantined: 0,
+		skipped: 0,
+		pending: 0,
+	};
 
-  for (const row of rows) {
-    const amount = Number(row.count);
-    counts.total += amount;
-    switch (row.status) {
-      case "ready":
-        counts.ready += amount;
-        break;
-      case "loaded":
-        counts.loaded += amount;
-        break;
-      case "updated":
-        counts.updated += amount;
-        break;
-      case "duplicate":
-        counts.duplicate += amount;
-        break;
-      case "quarantined":
-        counts.quarantined += amount;
-        break;
-      case "skipped":
-        counts.skipped += amount;
-        break;
-      default:
-        counts.pending += amount;
-        break;
-    }
-  }
+	for (const row of rows) {
+		const amount = Number(row.count);
+		counts.total += amount;
+		switch (row.status) {
+			case "ready":
+				counts.ready += amount;
+				break;
+			case "loaded":
+				counts.loaded += amount;
+				break;
+			case "updated":
+				counts.updated += amount;
+				break;
+			case "duplicate":
+				counts.duplicate += amount;
+				break;
+			case "quarantined":
+				counts.quarantined += amount;
+				break;
+			case "skipped":
+				counts.skipped += amount;
+				break;
+			default:
+				counts.pending += amount;
+				break;
+		}
+	}
 
-  return counts;
+	return counts;
 }
 
 /**
@@ -635,22 +704,25 @@ export async function countStagingByStatus(runId: string, organizationId: string
  * Условие на статус ready в WHERE обязательно: строка, которую параллельный
  * процесс успел загрузить, не должна превратиться в пропущенную.
  */
-export async function markRowsSkipped(organizationId: string, stagingIds: string[]): Promise<number> {
-  if (stagingIds.length === 0) return 0;
-  const updated = await withTenantCtx(organizationId, async (tx) =>
-    tx
-      .update(migrationStagingRecords)
-      .set({ status: "skipped", updatedAt: new Date() })
-      .where(
-        and(
-          inArray(migrationStagingRecords.id, stagingIds),
-          eq(migrationStagingRecords.organizationId, organizationId),
-          eq(migrationStagingRecords.status, "ready")
-        )
-      )
-      .returning({ id: migrationStagingRecords.id })
-  );
-  return updated.length;
+export async function markRowsSkipped(
+	organizationId: string,
+	stagingIds: string[],
+): Promise<number> {
+	if (stagingIds.length === 0) return 0;
+	const updated = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.update(migrationStagingRecords)
+			.set({ status: "skipped", updatedAt: new Date() })
+			.where(
+				and(
+					inArray(migrationStagingRecords.id, stagingIds),
+					eq(migrationStagingRecords.organizationId, organizationId),
+					eq(migrationStagingRecords.status, "ready"),
+				),
+			)
+			.returning({ id: migrationStagingRecords.id }),
+	);
+	return updated.length;
 }
 
 /**
@@ -661,25 +733,26 @@ export async function markRowsSkipped(organizationId: string, stagingIds: string
  * нет. Без этого сверка справедливо признала бы строки потерянными.
  */
 export async function markRemainingReadyAsSkipped(
-  runId: string,
-  organizationId: string,
-  entityKind?: MigrationEntityKind
+	runId: string,
+	organizationId: string,
+	entityKind?: MigrationEntityKind,
 ): Promise<number> {
-  const conditions = [
-    eq(migrationStagingRecords.runId, runId),
-    eq(migrationStagingRecords.organizationId, organizationId),
-    eq(migrationStagingRecords.status, "ready")
-  ];
-  if (entityKind) conditions.push(eq(migrationStagingRecords.entityKind, entityKind));
+	const conditions = [
+		eq(migrationStagingRecords.runId, runId),
+		eq(migrationStagingRecords.organizationId, organizationId),
+		eq(migrationStagingRecords.status, "ready"),
+	];
+	if (entityKind)
+		conditions.push(eq(migrationStagingRecords.entityKind, entityKind));
 
-  const updated = await withTenantCtx(organizationId, async (tx) =>
-    tx
-      .update(migrationStagingRecords)
-      .set({ status: "skipped", updatedAt: new Date() })
-      .where(and(...conditions))
-      .returning({ id: migrationStagingRecords.id })
-  );
-  return updated.length;
+	const updated = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.update(migrationStagingRecords)
+			.set({ status: "skipped", updatedAt: new Date() })
+			.where(and(...conditions))
+			.returning({ id: migrationStagingRecords.id }),
+	);
+	return updated.length;
 }
 
 /**
@@ -699,23 +772,28 @@ export async function markRemainingReadyAsSkipped(
  * лежит в стейджинге) вместе с этим предупреждением: без него следующий автор
  * вернёт её ровно на то место, откуда её убрали.
  */
-export async function stagedMoneyKopecks(runId: string, organizationId: string): Promise<number | null> {
-  const row = await withTenantCtx(organizationId, async (tx) => {
-    const [found] = await tx
-      .select({
-        total: sql<string | null>`sum((${migrationStagingRecords.normalizedJson} ->> 'amountKopecks')::numeric)`
-      })
-      .from(migrationStagingRecords)
-      .where(
-        and(
-          eq(migrationStagingRecords.runId, runId),
-          eq(migrationStagingRecords.organizationId, organizationId),
-          eq(migrationStagingRecords.entityKind, "payment")
-        )
-      );
-    return found;
-  });
+export async function stagedMoneyKopecks(
+	runId: string,
+	organizationId: string,
+): Promise<number | null> {
+	const row = await withTenantCtx(organizationId, async (tx) => {
+		const [found] = await tx
+			.select({
+				total: sql<
+					string | null
+				>`sum((${migrationStagingRecords.normalizedJson} ->> 'amountKopecks')::numeric)`,
+			})
+			.from(migrationStagingRecords)
+			.where(
+				and(
+					eq(migrationStagingRecords.runId, runId),
+					eq(migrationStagingRecords.organizationId, organizationId),
+					eq(migrationStagingRecords.entityKind, "payment"),
+				),
+			);
+		return found;
+	});
 
-  if (row?.total === null || row?.total === undefined) return null;
-  return Math.round(Number(row.total));
+	if (row?.total === null || row?.total === undefined) return null;
+	return Math.round(Number(row.total));
 }

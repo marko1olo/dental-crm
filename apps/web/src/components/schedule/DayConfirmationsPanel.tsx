@@ -22,7 +22,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type ReminderState = "not_queued" | "queued" | "sent" | "delivered" | "failed" | "suppressed" | "cancelled";
+type ReminderState =
+	| "not_queued"
+	| "queued"
+	| "sent"
+	| "delivered"
+	| "failed"
+	| "suppressed"
+	| "cancelled";
 
 type ConfirmationRow = {
 	appointmentId: string;
@@ -32,7 +39,12 @@ type ConfirmationRow = {
 	patientName: string;
 	phone: string | null;
 	doctorName: string | null;
-	reminder: { state: ReminderState; channel: string | null; at: string | null; detail: string | null };
+	reminder: {
+		state: ReminderState;
+		channel: string | null;
+		at: string | null;
+		detail: string | null;
+	};
 	patientClickedAt: string | null;
 	needsCall: boolean;
 };
@@ -54,14 +66,17 @@ type DayConfirmations = {
 };
 
 /** Подпись и вид состояния напоминания. Вид несёт смысл вместе с текстом. */
-const reminderPresentation: Record<ReminderState, { label: string; tone: "ok" | "warn" | "bad" | "info" | "muted" }> = {
+const reminderPresentation: Record<
+	ReminderState,
+	{ label: string; tone: "ok" | "warn" | "bad" | "info" | "muted" }
+> = {
 	delivered: { label: "доставлено", tone: "ok" },
 	sent: { label: "отправлено", tone: "info" },
 	queued: { label: "в очереди", tone: "info" },
 	failed: { label: "не доставлено", tone: "bad" },
 	suppressed: { label: "не отправлено", tone: "warn" },
 	cancelled: { label: "снято", tone: "muted" },
-	not_queued: { label: "не отправлялось", tone: "muted" }
+	not_queued: { label: "не отправлялось", tone: "muted" },
 };
 
 const appointmentStatusLabels: Record<string, string> = {
@@ -71,7 +86,7 @@ const appointmentStatusLabels: Record<string, string> = {
 	in_treatment: "На лечении",
 	completed: "Завершён",
 	cancelled: "Отменён",
-	no_show: "Не пришёл"
+	no_show: "Не пришёл",
 };
 
 /**
@@ -109,7 +124,10 @@ export function dayConfirmationsRequestPath(requestedDate: string): string {
  * — тот, который назвал сервер. Пустое поле возвращает управление серверу, то
  * есть снова к завтрашнему дню клиники.
  */
-export function dayConfirmationsShownDay(requestedDate: string, loaded: { date: string } | null): string {
+export function dayConfirmationsShownDay(
+	requestedDate: string,
+	loaded: { date: string } | null,
+): string {
 	return requestedDate.trim() || loaded?.date || "";
 }
 
@@ -117,9 +135,16 @@ function formatTime(value: string, timeZone: string): string {
 	const parsed = new Date(value);
 	if (Number.isNaN(parsed.getTime())) return "—";
 	try {
-		return new Intl.DateTimeFormat("ru-RU", { timeZone, hour: "2-digit", minute: "2-digit" }).format(parsed);
+		return new Intl.DateTimeFormat("ru-RU", {
+			timeZone,
+			hour: "2-digit",
+			minute: "2-digit",
+		}).format(parsed);
 	} catch {
-		return new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" }).format(parsed);
+		return new Intl.DateTimeFormat("ru-RU", {
+			hour: "2-digit",
+			minute: "2-digit",
+		}).format(parsed);
 	}
 }
 
@@ -127,7 +152,10 @@ async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch(() => null)) as unknown;
 	if (!response.ok) {
 		const message =
-			payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+			payload &&
+			typeof payload === "object" &&
+			"message" in payload &&
+			typeof payload.message === "string"
 				? payload.message
 				: `Сервер ответил ${response.status}`;
 		throw new Error(message);
@@ -156,7 +184,9 @@ export function DayConfirmationsPanel() {
 			setHandled(new Set());
 		} catch (loadError) {
 			setData(null);
-			setError(loadError instanceof Error ? loadError.message : String(loadError));
+			setError(
+				loadError instanceof Error ? loadError.message : String(loadError),
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -174,7 +204,9 @@ export function DayConfirmationsPanel() {
 	const callProgress = useMemo(() => {
 		if (!data) return { done: 0, total: 0 };
 		const total = data.summary.needsCall;
-		const done = data.rows.filter((row) => row.needsCall && handled.has(row.appointmentId)).length;
+		const done = data.rows.filter(
+			(row) => row.needsCall && handled.has(row.appointmentId),
+		).length;
 		return { done, total };
 	}, [data, handled]);
 
@@ -216,7 +248,12 @@ export function DayConfirmationsPanel() {
 						onChange={(event) => setRequestedDate(event.target.value)}
 					/>
 				</span>
-				<button className="secondary-button" type="button" onClick={() => void load()} disabled={loading}>
+				<button
+					className="secondary-button"
+					type="button"
+					onClick={() => void load()}
+					disabled={loading}
+				>
 					{loading ? "Обновляю…" : "Обновить"}
 				</button>
 			</div>
@@ -236,7 +273,12 @@ export function DayConfirmationsPanel() {
 				</div>
 			) : null}
 
-			<p className="sr-only" role="status" aria-live="polite" ref={liveRegion} />
+			<p
+				className="sr-only"
+				role="status"
+				aria-live="polite"
+				ref={liveRegion}
+			/>
 
 			{data ? (
 				data.isEmpty ? (
@@ -244,17 +286,25 @@ export function DayConfirmationsPanel() {
 				) : (
 					<>
 						<ul className="ops-metrics">
-							<li className={`ops-metric ${data.summary.needsCall > 0 ? "ops-metric--primary" : ""}`}>
+							<li
+								className={`ops-metric ${data.summary.needsCall > 0 ? "ops-metric--primary" : ""}`}
+							>
 								{/* Главное число экрана: сколько звонков реально нужно сделать. */}
-								<span className="ops-metric__value">{data.summary.needsCall}</span>
+								<span className="ops-metric__value">
+									{data.summary.needsCall}
+								</span>
 								<span className="ops-metric__label">нужен звонок</span>
 							</li>
 							<li className="ops-metric">
-								<span className="ops-metric__value">{data.summary.confirmed}</span>
+								<span className="ops-metric__value">
+									{data.summary.confirmed}
+								</span>
 								<span className="ops-metric__label">подтвердили сами</span>
 							</li>
 							<li className="ops-metric">
-								<span className="ops-metric__value">{data.summary.awaiting}</span>
+								<span className="ops-metric__value">
+									{data.summary.awaiting}
+								</span>
 								<span className="ops-metric__label">ждут подтверждения</span>
 							</li>
 							<li className="ops-metric">
@@ -263,13 +313,19 @@ export function DayConfirmationsPanel() {
 							</li>
 							{data.summary.withoutPhone > 0 ? (
 								<li className="ops-metric ops-metric--danger">
-									<span className="ops-metric__value">{data.summary.withoutPhone}</span>
+									<span className="ops-metric__value">
+										{data.summary.withoutPhone}
+									</span>
 									<span className="ops-metric__label">без телефона</span>
 								</li>
 							) : null}
 						</ul>
 
-						<div className="quick-chips-row" role="group" aria-label="Что показывать в списке">
+						<div
+							className="quick-chips-row"
+							role="group"
+							aria-label="Что показывать в списке"
+						>
 							<button
 								type="button"
 								className={`quick-chip ${showAll ? "" : "selected"}`}
@@ -291,7 +347,8 @@ export function DayConfirmationsPanel() {
 						{visibleRows.length === 0 ? (
 							<p className="ops-empty ops-empty--good">
 								{/* Лучший возможный итог — и выглядеть он должен как успех, а не как пустота. */}
-								Звонить никому не нужно: все либо подтвердили, либо получили напоминание.
+								Звонить никому не нужно: все либо подтвердили, либо получили
+								напоминание.
 							</p>
 						) : (
 							<div className="ops-table-wrap">
@@ -328,30 +385,53 @@ export function DayConfirmationsPanel() {
 													<td data-label="Телефон">
 														{row.phone ? (
 															// tel: — на планшете регистратуры звонок в одно касание.
-															<a href={`tel:${row.phone.replace(/[^\d+]/g, "")}`}>{row.phone}</a>
+															<a
+																href={`tel:${row.phone.replace(/[^\d+]/g, "")}`}
+															>
+																{row.phone}
+															</a>
 														) : (
-															<span className="ops-state ops-state--bad">телефона нет</span>
+															<span className="ops-state ops-state--bad">
+																телефона нет
+															</span>
 														)}
 													</td>
-													<td data-label="Врач" data-compact="">{row.doctorName ?? "—"}</td>
+													<td data-label="Врач" data-compact="">
+														{row.doctorName ?? "—"}
+													</td>
 													<td data-label="Запись" data-compact="">
-														<span className={`status-pill status-${row.status}`}>
-															{appointmentStatusLabels[row.status] ?? row.status}
+														<span
+															className={`status-pill status-${row.status}`}
+														>
+															{appointmentStatusLabels[row.status] ??
+																row.status}
 														</span>
-														{row.patientClickedAt ? <span className="ops-note">ответил сам</span> : null}
+														{row.patientClickedAt ? (
+															<span className="ops-note">ответил сам</span>
+														) : null}
 													</td>
 													<td data-label="Напоминание" data-compact="">
-														<span className={`ops-state ops-state--${reminder.tone}`}>{reminder.label}</span>
+														<span
+															className={`ops-state ops-state--${reminder.tone}`}
+														>
+															{reminder.label}
+														</span>
 														{row.reminder.detail ? (
 															// Причина недоставки прямо в строке: администратор должен
 															// понимать, почему пациент ничего не знает.
-															<span className="ops-note">{row.reminder.detail}</span>
+															<span className="ops-note">
+																{row.reminder.detail}
+															</span>
 														) : null}
 													</td>
 													<td data-label="Обзвон">
 														{row.needsCall ? (
 															<button
-																className={isHandled ? "secondary-button" : "primary-button"}
+																className={
+																	isHandled
+																		? "secondary-button"
+																		: "primary-button"
+																}
 																type="button"
 																aria-pressed={isHandled}
 																onClick={() => toggleHandled(row)}
@@ -371,9 +451,11 @@ export function DayConfirmationsPanel() {
 						)}
 
 						<p className="ops-hint">
-							Звонок нужен тому, кто не подтвердил и до кого напоминание не дошло. Доставленное напоминание без
-							ответа поводом для звонка не считается: у пациента был выбор. Отметка «Позвонил» живёт до обновления
-							страницы — это рабочий след на утро, а не запись в карточке.
+							Звонок нужен тому, кто не подтвердил и до кого напоминание не
+							дошло. Доставленное напоминание без ответа поводом для звонка не
+							считается: у пациента был выбор. Отметка «Позвонил» живёт до
+							обновления страницы — это рабочий след на утро, а не запись в
+							карточке.
 						</p>
 					</>
 				)

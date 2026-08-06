@@ -31,7 +31,8 @@ export function visitOwnedPlanItems(
 	if (!visitPatientId) return [];
 	if (!Array.isArray(treatmentPlanItems)) return [];
 	return treatmentPlanItems.filter(
-		(item: any) => item?.patientId === visitPatientId && item?.status !== "cancelled",
+		(item: any) =>
+			item?.patientId === visitPatientId && item?.status !== "cancelled",
 	);
 }
 
@@ -95,7 +96,9 @@ export function planLineQuantity(item: unknown): number | null {
  * нечитаема. Ноль вместо null был бы ложью про деньги.
  */
 export function planLineTotalRub(item: unknown): number | null {
-	const unit = parseRubAmount((item as { unitPriceRub?: unknown } | null)?.unitPriceRub);
+	const unit = parseRubAmount(
+		(item as { unitPriceRub?: unknown } | null)?.unitPriceRub,
+	);
 	if (unit === null) return null;
 	const quantity = planLineQuantity(item);
 	if (quantity === null) return null;

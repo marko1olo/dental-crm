@@ -325,9 +325,15 @@ export function SettingsAiTab() {
 				 * расширить набор файлов») — здесь она написана, а не объявлена
 				 * закрытой.
 				 */}
-				<div className="ai-target-row" role="radiogroup" aria-label="Цель распознавания">
+				<div
+					className="ai-target-row"
+					role="radiogroup"
+					aria-label="Цель распознавания"
+				>
 					{typedRecognitionPresets.map((preset) => {
-						const selected = recognitionKind === preset.kind && recognitionTarget === preset.target;
+						const selected =
+							recognitionKind === preset.kind &&
+							recognitionTarget === preset.target;
 						return (
 							<button
 								aria-checked={selected}

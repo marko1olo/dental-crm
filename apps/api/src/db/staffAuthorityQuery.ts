@@ -55,16 +55,19 @@
  * хуже, чем честно погашенная.
  */
 
+import {
+	type StaffAuthorityFlagKey,
+	type StaffAuthorityState,
+	staffAuthorityFlagKeys,
+	type UpdateStaffAuthorityGrantsInput,
+} from "@dental/shared";
 import { and, eq } from "drizzle-orm";
+import {
+	type StaffAuthorityFlags,
+	staffAuthorityFlags,
+} from "../security/permissions.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import { staffAuthorityFlags, type StaffAuthorityFlags } from "../security/permissions.js";
-import {
-  staffAuthorityFlagKeys,
-  type StaffAuthorityFlagKey,
-  type StaffAuthorityState,
-  type UpdateStaffAuthorityGrantsInput
-} from "@dental/shared";
 
 /**
  * Хранение отключено (DENTAL_STATE_PERSISTENCE=off). Надбавки живут только в
@@ -73,21 +76,21 @@ import {
  * перезапуске — это молчаливая потеря решения о доступе, поэтому отказ.
  */
 export class StaffAuthorityStorageDisabledError extends Error {
-  constructor() {
-    super(
-      "Полномочия не сохранены: хранение отключено (DENTAL_STATE_PERSISTENCE=off), " +
-        "персональные полномочия живут только в базе. Включите базу и повторите."
-    );
-    this.name = "StaffAuthorityStorageDisabledError";
-  }
+	constructor() {
+		super(
+			"Полномочия не сохранены: хранение отключено (DENTAL_STATE_PERSISTENCE=off), " +
+				"персональные полномочия живут только в базе. Включите базу и повторите.",
+		);
+		this.name = "StaffAuthorityStorageDisabledError";
+	}
 }
 
 /** Сотрудника нет в ЭТОЙ клинике: организация всегда стоит в условии запроса. */
 export class StaffAuthorityStaffNotFoundError extends Error {
-  constructor() {
-    super("Сотрудник не найден.");
-    this.name = "StaffAuthorityStaffNotFoundError";
-  }
+	constructor() {
+		super("Сотрудник не найден.");
+		this.name = "StaffAuthorityStaffNotFoundError";
+	}
 }
 
 /**
@@ -95,35 +98,49 @@ export class StaffAuthorityStaffNotFoundError extends Error {
  * владельцу нужно знать, какая именно галочка не снялась и почему.
  */
 export class StaffAuthorityRevocationUnsupportedError extends Error {
-  readonly flags: readonly StaffAuthorityFlagKey[];
-  readonly role: string;
+	readonly flags: readonly StaffAuthorityFlagKey[];
+	readonly role: string;
 
-  constructor(role: string, flags: readonly StaffAuthorityFlagKey[]) {
-    super(`Роль «${role}» даёт эти полномочия сама: ${flags.join(", ")}.`);
-    this.name = "StaffAuthorityRevocationUnsupportedError";
-    this.role = role;
-    this.flags = flags;
-  }
+	constructor(role: string, flags: readonly StaffAuthorityFlagKey[]) {
+		super(`Роль «${role}» даёт эти полномочия сама: ${flags.join(", ")}.`);
+		this.name = "StaffAuthorityRevocationUnsupportedError";
+		this.role = role;
+		this.flags = flags;
+	}
 }
 
 /** Итог по одному полномочию: роль ИЛИ надбавка. Отнять надбавка не может. */
-function effectiveFlags(roleDerived: StaffAuthorityFlags, grants: StaffAuthorityFlags): StaffAuthorityFlags {
-  return {
-    canSignMedicalRecords: roleDerived.canSignMedicalRecords || grants.canSignMedicalRecords,
-    canManageMoney: roleDerived.canManageMoney || grants.canManageMoney,
-    canManageImports: roleDerived.canManageImports || grants.canManageImports
-  };
+function effectiveFlags(
+	roleDerived: StaffAuthorityFlags,
+	grants: StaffAuthorityFlags,
+): StaffAuthorityFlags {
+	return {
+		canSignMedicalRecords:
+			roleDerived.canSignMedicalRecords || grants.canSignMedicalRecords,
+		canManageMoney: roleDerived.canManageMoney || grants.canManageMoney,
+		canManageImports: roleDerived.canManageImports || grants.canManageImports,
+	};
 }
 
-function stateOf(staffId: string, role: string, grants: StaffAuthorityFlags): StaffAuthorityState {
-  /*
-   * Роль передаётся СЫРОЙ, как лежит в `users.role`, — та же причина, что в
-   * `staffAuthorityFlags`: сводящие обёртки двух путей чтения падают в разные
-   * умолчания («assistant» и «doctor»), и второе выдало бы неизвестной роли
-   * право подписи ЭМК. Роли вне матрицы `roleHasPermission` не даёт ничего.
-   */
-  const roleDerived = staffAuthorityFlags(role);
-  return { staffId, role, roleDerived, grants, effective: effectiveFlags(roleDerived, grants) };
+function stateOf(
+	staffId: string,
+	role: string,
+	grants: StaffAuthorityFlags,
+): StaffAuthorityState {
+	/*
+	 * Роль передаётся СЫРОЙ, как лежит в `users.role`, — та же причина, что в
+	 * `staffAuthorityFlags`: сводящие обёртки двух путей чтения падают в разные
+	 * умолчания («assistant» и «doctor»), и второе выдало бы неизвестной роли
+	 * право подписи ЭМК. Роли вне матрицы `roleHasPermission` не даёт ничего.
+	 */
+	const roleDerived = staffAuthorityFlags(role);
+	return {
+		staffId,
+		role,
+		roleDerived,
+		grants,
+		effective: effectiveFlags(roleDerived, grants),
+	};
 }
 
 /**
@@ -138,83 +155,100 @@ function stateOf(staffId: string, role: string, grants: StaffAuthorityFlags): St
  * чтобы вызывающая сторона не считала итог второй раз своей формулой.
  */
 export async function grantStaffAuthorityInDb(
-  organizationId: string,
-  staffId: string,
-  input: UpdateStaffAuthorityGrantsInput
+	organizationId: string,
+	staffId: string,
+	input: UpdateStaffAuthorityGrantsInput,
 ): Promise<StaffAuthorityState> {
-  if (process.env.DENTAL_STATE_PERSISTENCE === "off") throw new StaffAuthorityStorageDisabledError();
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off")
+		throw new StaffAuthorityStorageDisabledError();
 
-  return db.transaction(async (tx) => {
-    const [current] = await tx
-      .select({
-        id: schema.users.id,
-        role: schema.users.role,
-        canSignMedicalRecords: schema.users.canSignMedicalRecords,
-        canManageMoney: schema.users.canManageMoney,
-        canManageImports: schema.users.canManageImports
-      })
-      .from(schema.users)
-      .where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)))
-      .limit(1)
-      .for("update");
-    if (!current) throw new StaffAuthorityStaffNotFoundError();
+	return db.transaction(async (tx) => {
+		const [current] = await tx
+			.select({
+				id: schema.users.id,
+				role: schema.users.role,
+				canSignMedicalRecords: schema.users.canSignMedicalRecords,
+				canManageMoney: schema.users.canManageMoney,
+				canManageImports: schema.users.canManageImports,
+			})
+			.from(schema.users)
+			.where(
+				and(
+					eq(schema.users.id, staffId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			)
+			.limit(1)
+			.for("update");
+		if (!current) throw new StaffAuthorityStaffNotFoundError();
 
-    const storedGrants: StaffAuthorityFlags = {
-      canSignMedicalRecords: current.canSignMedicalRecords,
-      canManageMoney: current.canManageMoney,
-      canManageImports: current.canManageImports
-    };
-    const roleDerived = staffAuthorityFlags(current.role);
+		const storedGrants: StaffAuthorityFlags = {
+			canSignMedicalRecords: current.canSignMedicalRecords,
+			canManageMoney: current.canManageMoney,
+			canManageImports: current.canManageImports,
+		};
+		const roleDerived = staffAuthorityFlags(current.role);
 
-    /*
-     * Сначала — отказ целиком, и только потом запись. Частичное применение
-     * («две галочки сохранились, третья нет») оставило бы владельца с
-     * непонятным состоянием экрана: он не смог бы сказать, что именно
-     * применилось.
-     */
-    const refused: StaffAuthorityFlagKey[] = [];
-    const nextGrants: StaffAuthorityFlags = { ...storedGrants };
-    for (const key of staffAuthorityFlagKeys) {
-      const requested = input[key];
-      if (requested === undefined) continue;
-      if (requested === false && roleDerived[key]) {
-        refused.push(key);
-        continue;
-      }
-      nextGrants[key] = requested;
-    }
-    if (refused.length > 0) throw new StaffAuthorityRevocationUnsupportedError(current.role, refused);
+		/*
+		 * Сначала — отказ целиком, и только потом запись. Частичное применение
+		 * («две галочки сохранились, третья нет») оставило бы владельца с
+		 * непонятным состоянием экрана: он не смог бы сказать, что именно
+		 * применилось.
+		 */
+		const refused: StaffAuthorityFlagKey[] = [];
+		const nextGrants: StaffAuthorityFlags = { ...storedGrants };
+		for (const key of staffAuthorityFlagKeys) {
+			const requested = input[key];
+			if (requested === undefined) continue;
+			if (requested === false && roleDerived[key]) {
+				refused.push(key);
+				continue;
+			}
+			nextGrants[key] = requested;
+		}
+		if (refused.length > 0)
+			throw new StaffAuthorityRevocationUnsupportedError(current.role, refused);
 
-    const changed = staffAuthorityFlagKeys.filter((key) => nextGrants[key] !== storedGrants[key]);
-    if (changed.length === 0) {
-      // Запрос подтвердил то, что уже записано. Отдаём действительное состояние,
-      // а не мнимое «сохранено»: лишний UPDATE ничего бы не изменил.
-      return stateOf(current.id, current.role, storedGrants);
-    }
+		const changed = staffAuthorityFlagKeys.filter(
+			(key) => nextGrants[key] !== storedGrants[key],
+		);
+		if (changed.length === 0) {
+			// Запрос подтвердил то, что уже записано. Отдаём действительное состояние,
+			// а не мнимое «сохранено»: лишний UPDATE ничего бы не изменил.
+			return stateOf(current.id, current.role, storedGrants);
+		}
 
-    const [written] = await tx
-      .update(schema.users)
-      .set({
-        canSignMedicalRecords: nextGrants.canSignMedicalRecords,
-        canManageMoney: nextGrants.canManageMoney,
-        canManageImports: nextGrants.canManageImports
-      })
-      .where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)))
-      .returning({
-        id: schema.users.id,
-        role: schema.users.role,
-        canSignMedicalRecords: schema.users.canSignMedicalRecords,
-        canManageMoney: schema.users.canManageMoney,
-        canManageImports: schema.users.canManageImports
-      });
-    // Строка была прочитана и заблокирована в этой же транзакции, поэтому пустой
-    // ответ означал бы не «сотрудника нет», а сбой самой записи.
-    if (!written) throw new Error("Полномочия не сохранены: строка сотрудника не записалась.");
+		const [written] = await tx
+			.update(schema.users)
+			.set({
+				canSignMedicalRecords: nextGrants.canSignMedicalRecords,
+				canManageMoney: nextGrants.canManageMoney,
+				canManageImports: nextGrants.canManageImports,
+			})
+			.where(
+				and(
+					eq(schema.users.id, staffId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			)
+			.returning({
+				id: schema.users.id,
+				role: schema.users.role,
+				canSignMedicalRecords: schema.users.canSignMedicalRecords,
+				canManageMoney: schema.users.canManageMoney,
+				canManageImports: schema.users.canManageImports,
+			});
+		// Строка была прочитана и заблокирована в этой же транзакции, поэтому пустой
+		// ответ означал бы не «сотрудника нет», а сбой самой записи.
+		if (!written)
+			throw new Error(
+				"Полномочия не сохранены: строка сотрудника не записалась.",
+			);
 
-    return stateOf(written.id, written.role, {
-      canSignMedicalRecords: written.canSignMedicalRecords,
-      canManageMoney: written.canManageMoney,
-      canManageImports: written.canManageImports
-    });
-  });
+		return stateOf(written.id, written.role, {
+			canSignMedicalRecords: written.canSignMedicalRecords,
+			canManageMoney: written.canManageMoney,
+			canManageImports: written.canManageImports,
+		});
+	});
 }

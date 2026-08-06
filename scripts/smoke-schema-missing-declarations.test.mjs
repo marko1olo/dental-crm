@@ -13,8 +13,9 @@
  * Нужна живая база (только select). Если базы нет, тест ПАДАЕТ, а не пропускается:
  * молчаливый пропуск — это и есть страж, который проходит будучи сломанным.
  */
-import { spawnSync } from "node:child_process";
+
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -45,8 +46,14 @@ test("на нетронутой схеме страж проходит: реес
 	const report = JSON.parse(output);
 	assert.equal(status, 0, `страж упал на нетронутой схеме:\n${output}`);
 	assert.equal(report.ok, true);
-	assert.ok(report.tablesInDatabase > 100, `таблиц в базе неправдоподобно мало: ${report.tablesInDatabase}`);
-	assert.ok(report.tablesDeclared > 100, `объявлений неправдоподобно мало: ${report.tablesDeclared}`);
+	assert.ok(
+		report.tablesInDatabase > 100,
+		`таблиц в базе неправдоподобно мало: ${report.tablesInDatabase}`,
+	);
+	assert.ok(
+		report.tablesDeclared > 100,
+		`объявлений неправдоподобно мало: ${report.tablesDeclared}`,
+	);
 });
 
 test("пропуск объявления ТАБЛИЦЫ валит страж — это класс дефекта egisz_logs", () => {
@@ -61,28 +68,47 @@ test("пропуск объявления ТАБЛИЦЫ валит страж �
 });
 
 test("пропуск объявления КОЛОНКИ валит страж", () => {
-	const { status, output } = runGuard(`--simulate-missing=${LIVE_TABLE}.${LIVE_COLUMN}`);
+	const { status, output } = runGuard(
+		`--simulate-missing=${LIVE_TABLE}.${LIVE_COLUMN}`,
+	);
 	assert.equal(
 		status,
 		1,
 		`страж НЕ упал на скрытой колонке ${LIVE_TABLE}.${LIVE_COLUMN} — если её переименовали, ` +
 			`поправьте LIVE_COLUMN в этом тесте:\n${output}`,
 	);
-	assert.match(output, new RegExp(`колонки без объявления и вне записи списка исключений — ${LIVE_COLUMN}`));
+	assert.match(
+		output,
+		new RegExp(
+			`колонки без объявления и вне записи списка исключений — ${LIVE_COLUMN}`,
+		),
+	);
 });
 
 test("реестр исключений не покрывает пропуск: скрытая таблица не оправдывается чужой записью", () => {
 	const { output } = runGuard(`--simulate-missing=${LIVE_TABLE}`);
 	// В реестре 19 таблиц; ни одна из них не должна «прикрыть» скрытую patients.
-	assert.doesNotMatch(output, /_dente_migrations/, `реестр применён не к той таблице:\n${output}`);
+	assert.doesNotMatch(
+		output,
+		/_dente_migrations/,
+		`реестр применён не к той таблице:\n${output}`,
+	);
 });
 
 test("самопроверка не врёт: скрывать несуществующее объявление нельзя", () => {
-	const result = spawnSync(process.execPath, [GUARD, "--simulate-missing=нет_такой_таблицы"], {
-		cwd: REPO_ROOT,
-		encoding: "utf8",
-	});
+	const result = spawnSync(
+		process.execPath,
+		[GUARD, "--simulate-missing=нет_такой_таблицы"],
+		{
+			cwd: REPO_ROOT,
+			encoding: "utf8",
+		},
+	);
 	const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
-	assert.equal(result.status, 2, `ожидался код 2 «скрывать нечего», получено ${result.status}:\n${output}`);
+	assert.equal(
+		result.status,
+		2,
+		`ожидался код 2 «скрывать нечего», получено ${result.status}:\n${output}`,
+	);
 	assert.match(output, /скрывать нечего/);
 });

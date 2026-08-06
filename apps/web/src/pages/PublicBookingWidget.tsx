@@ -30,17 +30,19 @@ interface BookingSlot {
  * у работающей клиники. Каждую ночь возникало окно шириной в смещение пояса.
  */
 function localDateString(date: Date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
 }
 
 /** Человекочитаемая дата из строки YYYY-MM-DD без прогона через UTC. */
 function formatLocalDateLabel(value: string): string {
-  const [year, month, day] = value.split("-").map((part) => Number.parseInt(part, 10));
-  if (!year || !month || !day) return value;
-  return new Date(year, month - 1, day).toLocaleDateString("ru-RU");
+	const [year, month, day] = value
+		.split("-")
+		.map((part) => Number.parseInt(part, 10));
+	if (!year || !month || !day) return value;
+	return new Date(year, month - 1, day).toLocaleDateString("ru-RU");
 }
 
 export interface PublicBookingWidgetProps {
@@ -241,7 +243,9 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	if (!organizationId) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-950 p-6 text-center text-slate-900 dark:text-slate-100">
-				<h2 className="text-xl font-bold mb-2">Запись по этой ссылке не открывается</h2>
+				<h2 className="text-xl font-bold mb-2">
+					Запись по этой ссылке не открывается
+				</h2>
 				<p className="text-gray-600 dark:text-slate-400 max-w-sm">
 					В ссылке не указана клиника, поэтому расписание загрузить не из чего.
 					Откройте запись заново с сайта клиники или позвоните в клинику — там
@@ -327,7 +331,10 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 												</div>
 											</div>
 										</div>
-										<ChevronRight className="text-gray-400 dark:text-slate-500" size={20} />
+										<ChevronRight
+											className="text-gray-400 dark:text-slate-500"
+											size={20}
+										/>
 									</button>
 								))}
 								{!doctorsLoading && !loadError && doctors.length === 0 && (
@@ -417,8 +424,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 									&larr; Назад
 								</button>
 								<div className="text-sm text-gray-500 dark:text-slate-400 font-medium bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
-									{formatLocalDateLabel(selectedDate)} в{" "}
-									{selectedSlot?.time}
+									{formatLocalDateLabel(selectedDate)} в {selectedSlot?.time}
 								</div>
 							</div>
 

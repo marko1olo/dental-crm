@@ -39,7 +39,10 @@ describe("период отчёта по умолчанию считается �
 		assert.equal(asIso(period.from), "2026-07-31T20:00:00.000Z");
 		// Последняя миллисекунда 31 августа в Самаре — 31 августа 19:59:59.999Z.
 		assert.equal(asIso(period.to), "2026-08-31T19:59:59.999Z");
-		assert.ok(period.from <= PINNED && PINNED <= period.to, "текущий момент обязан лежать внутри периода");
+		assert.ok(
+			period.from <= PINNED && PINNED <= period.to,
+			"текущий момент обязан лежать внутри периода",
+		);
 	});
 
 	it("московская клиника в тот же момент получает ИЮЛЬ: у неё ещё 31-е", () => {
@@ -58,23 +61,35 @@ describe("период отчёта по умолчанию считается �
 	});
 
 	it("границы стыкуются без зазора и без наложения: конец июля + 1 мс = начало августа", () => {
-		const july = currentMonthPeriod(new Date("2026-07-15T09:00:00Z"), "Europe/Samara");
-		const august = currentMonthPeriod(new Date("2026-08-15T09:00:00Z"), "Europe/Samara");
+		const july = currentMonthPeriod(
+			new Date("2026-07-15T09:00:00Z"),
+			"Europe/Samara",
+		);
+		const august = currentMonthPeriod(
+			new Date("2026-08-15T09:00:00Z"),
+			"Europe/Samara",
+		);
 		assert.equal(
 			july.to.getTime() + 1,
 			august.from.getTime(),
-			"между месяцами не должно быть ни потерянной миллисекунды, ни двойного учёта"
+			"между месяцами не должно быть ни потерянной миллисекунды, ни двойного учёта",
 		);
 	});
 
 	it("переход через конец года: декабрь закрывается началом января", () => {
-		const december = currentMonthPeriod(new Date("2026-12-20T09:00:00Z"), "Europe/Samara");
+		const december = currentMonthPeriod(
+			new Date("2026-12-20T09:00:00Z"),
+			"Europe/Samara",
+		);
 		assert.equal(asIso(december.from), "2026-11-30T20:00:00.000Z");
 		assert.equal(asIso(december.to), "2026-12-31T19:59:59.999Z");
 	});
 
 	it("февраль високосного года кончается 29-м, а не 28-м", () => {
-		const february = currentMonthPeriod(new Date("2028-02-10T09:00:00Z"), "Europe/Samara");
+		const february = currentMonthPeriod(
+			new Date("2028-02-10T09:00:00Z"),
+			"Europe/Samara",
+		);
 		// Полночь 1 марта 2028 в Самаре минус миллисекунда.
 		assert.equal(asIso(february.to), "2028-02-29T19:59:59.999Z");
 	});
@@ -82,15 +97,42 @@ describe("период отчёта по умолчанию считается �
 	it("пояс с переходом на летнее время: границы месяца всё равно местная полночь", () => {
 		// В America/New_York 1 ноября 2026 переводят стрелки: ноябрь начинается
 		// при -4, а кончается при -5. Оба конца обязаны быть местной полночью.
-		const november = currentMonthPeriod(new Date("2026-11-15T15:00:00Z"), "America/New_York");
-		assert.equal(asIso(november.from), "2026-11-01T04:00:00.000Z", "1 ноября 00:00 местного — это ещё -4");
-		assert.equal(asIso(november.to), "2026-12-01T04:59:59.999Z", "1 декабря 00:00 местного — уже -5");
+		const november = currentMonthPeriod(
+			new Date("2026-11-15T15:00:00Z"),
+			"America/New_York",
+		);
+		assert.equal(
+			asIso(november.from),
+			"2026-11-01T04:00:00.000Z",
+			"1 ноября 00:00 местного — это ещё -4",
+		);
+		assert.equal(
+			asIso(november.to),
+			"2026-12-01T04:59:59.999Z",
+			"1 декабря 00:00 местного — уже -5",
+		);
 	});
 
 	it("без пояса берутся границы серверного процесса — прежнее поведение сохранено", () => {
 		const period = currentMonthPeriod(PINNED);
-		const from = new Date(PINNED.getFullYear(), PINNED.getMonth(), 1, 0, 0, 0, 0);
-		const to = new Date(PINNED.getFullYear(), PINNED.getMonth() + 1, 0, 23, 59, 59, 999);
+		const from = new Date(
+			PINNED.getFullYear(),
+			PINNED.getMonth(),
+			1,
+			0,
+			0,
+			0,
+			0,
+		);
+		const to = new Date(
+			PINNED.getFullYear(),
+			PINNED.getMonth() + 1,
+			0,
+			23,
+			59,
+			59,
+			999,
+		);
 		assert.equal(asIso(period.from), asIso(from));
 		assert.equal(asIso(period.to), asIso(to));
 	});
@@ -106,6 +148,9 @@ describe("период отчёта по умолчанию считается �
 		const utc = currentMonthPeriod(PINNED, "UTC");
 		assert.equal(asIso(utc.from), "2026-07-01T00:00:00.000Z");
 		assert.equal(asIso(utc.to), "2026-07-31T23:59:59.999Z");
-		assert.notEqual(asIso(utc.from), asIso(currentMonthPeriod(PINNED, "Europe/Samara").from));
+		assert.notEqual(
+			asIso(utc.from),
+			asIso(currentMonthPeriod(PINNED, "Europe/Samara").from),
+		);
 	});
 });

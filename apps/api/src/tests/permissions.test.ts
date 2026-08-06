@@ -64,14 +64,26 @@ test("регистр роли не влияет на решение", () => {
 });
 
 test("ни одна роль кроме владельца и админа не пишет настройки", () => {
-	const writers = ["owner", "admin", "manager", "administrator", "doctor", "assistant"].filter(
-		(role) => roleHasPermission(role, "settings.write"),
-	);
+	const writers = [
+		"owner",
+		"admin",
+		"manager",
+		"administrator",
+		"doctor",
+		"assistant",
+	].filter((role) => roleHasPermission(role, "settings.write"));
 	assert.deepEqual(writers, ["owner", "admin"]);
 });
 
 test("право на запись всегда подразумевает право на чтение того же раздела", () => {
-	const roles = ["owner", "admin", "manager", "administrator", "doctor", "assistant"];
+	const roles = [
+		"owner",
+		"admin",
+		"manager",
+		"administrator",
+		"doctor",
+		"assistant",
+	];
 	for (const role of roles) {
 		for (const permission of permissionsForRole(role)) {
 			if (!permission.endsWith(".write")) continue;
@@ -118,7 +130,9 @@ test("права с суффиксом .own не охраняются мягки
 	const { readdir, readFile } = await import("node:fs/promises");
 	const path = await import("node:path");
 
-	const ownPermissions = PERMISSIONS.filter((permission) => permission.endsWith(".own"));
+	const ownPermissions = PERMISSIONS.filter((permission) =>
+		permission.endsWith(".own"),
+	);
 	assert.ok(
 		ownPermissions.length > 0,
 		"В наборе прав нет ни одного `.own` — проверка потеряла смысл, а не прошла",
@@ -137,15 +151,27 @@ test("права с суффиксом .own не охраняются мягки
 	}
 
 	const sources = await collectSources(routesDir);
-	assert.ok(sources.length > 10, `Маршрутов найдено ${sources.length} — путь к каталогу неверен`);
+	assert.ok(
+		sources.length > 10,
+		`Маршрутов найдено ${sources.length} — путь к каталогу неверен`,
+	);
 
-	function scanFor(text: string, file: string, wanted: readonly string[]): string[] {
+	function scanFor(
+		text: string,
+		file: string,
+		wanted: readonly string[],
+	): string[] {
 		const hits: string[] = [];
 		text.split(/\r?\n/).forEach((line, index) => {
 			if (!line.includes("enforcePermissionWhenStaffKnown")) return;
 			for (const permission of wanted) {
-				if (line.includes(`"${permission}"`) || line.includes(`'${permission}'`)) {
-					hits.push(`${path.relative(routesDir, file)}:${index + 1} — ${permission}`);
+				if (
+					line.includes(`"${permission}"`) ||
+					line.includes(`'${permission}'`)
+				) {
+					hits.push(
+						`${path.relative(routesDir, file)}:${index + 1} — ${permission}`,
+					);
 				}
 			}
 		});

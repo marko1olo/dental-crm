@@ -32,10 +32,7 @@ const appLogicTexts = await Promise.all(
  */
 const namedSources = [
 	["apps/web/src/App.tsx", await readFile("apps/web/src/App.tsx", "utf8")],
-	...appLogicSourceFiles().map((file, index) => [
-		file,
-		appLogicTexts[index],
-	]),
+	...appLogicSourceFiles().map((file, index) => [file, appLogicTexts[index]]),
 	[
 		"apps/web/src/AppHelpers.tsx",
 		await readFile("apps/web/src/AppHelpers.tsx", "utf8"),
@@ -178,7 +175,7 @@ if (
 	)
 ) {
 	fail(
-		'Visit accept queue retryability marker missing: WorkflowResponseError обязан получить и текст «Прием не принят», и response.status',
+		"Visit accept queue retryability marker missing: WorkflowResponseError обязан получить и текст «Прием не принят», и response.status",
 	);
 }
 
@@ -209,7 +206,10 @@ for (const marker of [
 		);
 }
 
-for (const marker of ["pendingVisitSaveCount: 0,", "lastPendingVisitSaveAt: null,"]) {
+for (const marker of [
+	"pendingVisitSaveCount: 0,",
+	"lastPendingVisitSaveAt: null,",
+]) {
 	if (!appStateBlock.includes(marker))
 		fail(
 			`Visit offline queue must not synchronously read storage during boot: ${marker}`,
@@ -313,7 +313,9 @@ if (
 }
 
 if (failures.length > 0) {
-	console.error(`Visit offline queue source smoke failed (${failures.length}):`);
+	console.error(
+		`Visit offline queue source smoke failed (${failures.length}):`,
+	);
 	for (const failure of failures) console.error(`- ${failure}`);
 	process.exit(1);
 }

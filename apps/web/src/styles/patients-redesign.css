@@ -1,99 +1,99 @@
 /* patients-redesign.css - Premium, clean UX for Patients tab using DENTE CSS Variables */
 
 .patients-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.5rem;
-  background: var(--bg);
-  min-height: 100vh;
-  color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	padding: 1.5rem;
+	background: var(--bg);
+	min-height: 100vh;
+	color: var(--ink);
 }
 
 /* Modern Header */
 .patients-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  /* Перенос вместо сжатия. Замер шрифтом поля: подсказка поиска занимает
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	/* Перенос вместо сжатия. Замер шрифтом поля: подсказка поиска занимает
      225,29 px, подсказка создания — 242,51 px. Пока шапка была nowrap, на
      промежуточных ширинах (окно около 1000 px) сжатие съедало место под текст и
      подсказка обрезалась на середине слова: до правки — у поиска, после
      перестановки пропорций обрезалась бы у создания. Перенос уводит зону
      создания на вторую строку целиком, где ей хватает ширины, и заодно делает
      границу между поиском и созданием ещё очевиднее. */
-  flex-wrap: wrap;
-  gap: 1rem;
-  background: var(--paper);
-  padding: 1rem 1.5rem;
-  border-radius: 14px;
-  box-shadow: var(--shadow-1);
-  border: 1px solid var(--line);
+	flex-wrap: wrap;
+	gap: 1rem;
+	background: var(--paper);
+	padding: 1rem 1.5rem;
+	border-radius: 14px;
+	box-shadow: var(--shadow-1);
+	border: 1px solid var(--line);
 }
 
 .patients-search-box {
-  position: relative;
-  flex: 1;
-  max-width: 400px;
+	position: relative;
+	flex: 1;
+	max-width: 400px;
 }
 
 .patients-search-box svg {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--muted);
-  width: 18px;
-  height: 18px;
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--muted);
+	width: 18px;
+	height: 18px;
 }
 
 .patients-search-box input {
-  width: 100%;
-  padding: 10px 12px 10px 40px;
-  border: 1px solid var(--line-strong);
-  border-radius: 9px;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-  background: var(--paper-soft);
-  color: var(--ink);
+	width: 100%;
+	padding: 10px 12px 10px 40px;
+	border: 1px solid var(--line-strong);
+	border-radius: 9px;
+	font-size: 0.95rem;
+	transition: all 0.2s ease;
+	background: var(--paper-soft);
+	color: var(--ink);
 }
 
 .patients-search-box input:focus {
-  background: var(--paper);
-  border-color: var(--teal);
-  outline: none;
-  box-shadow: 0 0 0 3px var(--teal-surface);
+	background: var(--paper);
+	border-color: var(--teal);
+	outline: none;
+	box-shadow: 0 0 0 3px var(--teal-surface);
 }
 
 /* Smart Input Group */
 .smart-create-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 2;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex: 2;
 }
 
 .smart-input-wrapper {
-  position: relative;
-  flex: 1;
+	position: relative;
+	flex: 1;
 }
 
 .smart-input-wrapper input {
-  width: 100%;
-  padding: 10px 40px 10px 16px;
-  border: 1px solid var(--line-strong);
-  border-radius: 9px;
-  font-size: 0.95rem;
-  background: var(--paper-soft);
-  color: var(--ink);
-  transition: all 0.2s;
+	width: 100%;
+	padding: 10px 40px 10px 16px;
+	border: 1px solid var(--line-strong);
+	border-radius: 9px;
+	font-size: 0.95rem;
+	background: var(--paper-soft);
+	color: var(--ink);
+	transition: all 0.2s;
 }
 
 .smart-input-wrapper input:focus {
-  border-color: var(--teal);
-  outline: none;
-  background: var(--paper);
-  box-shadow: 0 0 0 3px var(--teal-surface);
+	border-color: var(--teal);
+	outline: none;
+	background: var(--paper);
+	box-shadow: 0 0 0 3px var(--teal-surface);
 }
 
 /* ГРАНИЦА МЕЖДУ ПОИСКОМ И СОЗДАНИЕМ.
@@ -137,51 +137,51 @@
    i18n. Разметка живёт в apps/web/src/PatientsView.tsx. */
 .patients-header .patients-search-box,
 .patients-header .smart-create-group {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 }
 
 .patients-header .patients-search-box {
-  /* Поиск открывают на каждом пациенте, создание — на новом человеке. Ширину
+	/* Поиск открывают на каждом пациенте, создание — на новом человеке. Ширину
      получает то, чем работают чаще: было flex 1 против flex 2, то есть шире
      выглядело поле, которым пользуются реже. Основа и предел в rem — шапка
      обязана переживать зум и высокое DPI. */
-  flex: 1 1 20rem;
-  max-width: 32rem;
+	flex: 1 1 20rem;
+	max-width: 32rem;
 }
 
 .patients-header .smart-create-group {
-  /* Основа 26rem = 416 px: подсказка создания занимает 242,51 px, плюс место
+	/* Основа 26rem = 416 px: подсказка создания занимает 242,51 px, плюс место
      под иконку микрофона, кнопку «Создать» и внутренние отступы зоны. Меньше —
      и текст подсказки обрежется. */
-  flex: 1 1 26rem;
-  background: var(--teal-surface);
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  padding: 6px 8px;
+	flex: 1 1 26rem;
+	background: var(--teal-surface);
+	border: 1px solid var(--line-strong);
+	border-radius: 12px;
+	padding: 6px 8px;
 }
 
 @media (max-width: 768px) {
-  .patients-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .patients-search-box {
-    max-width: none;
-  }
-  .smart-create-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .smart-create-group button {
-    width: 100%;
-    justify-content: center;
-  }
-  /* В колонке половины стоят друг под другом, и без разделения это худший из
+	.patients-header {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.patients-search-box {
+		max-width: none;
+	}
+	.smart-create-group {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.smart-create-group button {
+		width: 100%;
+		justify-content: center;
+	}
+	/* В колонке половины стоят друг под другом, и без разделения это худший из
      возможных вариантов: два одинаковых поля подряд, без подписей.
 
      БОКОВЫХ ОТСТУПОВ У ЗОНЫ ЗДЕСЬ НЕТ НАМЕРЕННО. На телефоне каждый пиксель
@@ -191,105 +191,106 @@
      рождения (Enter)» длиннее экрана телефона. Боковой отступ отнял бы ещё
      20 px и обрезал бы сильнее. Границу в колонке несут подложка и верхняя
      линия: ширину они не тратят. */
-  .patients-header .patients-search-box {
-    max-width: none;
-    flex: 0 0 auto;
-  }
-  .patients-header .smart-create-group {
-    flex: 0 0 auto;
-    padding: 0.75rem 0 0;
-    border: none;
-    border-top: 1px solid var(--line-strong);
-    border-radius: 0;
-  }
+	.patients-header .patients-search-box {
+		max-width: none;
+		flex: 0 0 auto;
+	}
+	.patients-header .smart-create-group {
+		flex: 0 0 auto;
+		padding: 0.75rem 0 0;
+		border: none;
+		border-top: 1px solid var(--line-strong);
+		border-radius: 0;
+	}
 }
-
 
 /* Patient List Grid */
 .patient-grid {
-  display: grid;
-  /* min(...): список пациентов открывают с планшета и телефона —
+	display: grid;
+	/* min(...): список пациентов открывают с планшета и телефона —
      колонка обязана ужиматься до ширины контейнера. */
-  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+	grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+	gap: 1rem;
+	margin-bottom: 1rem;
 }
 
 .patient-card-item {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  min-height: 120px;
-  color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	transition: all 0.2s ease;
+	cursor: pointer;
+	position: relative;
+	min-height: 120px;
+	color: var(--ink);
 }
 
 .patient-card-item:hover {
-  border-color: var(--teal-ring);
-  box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
+	border-color: var(--teal-ring);
+	box-shadow: var(--shadow-2);
+	transform: translateY(-2px);
 }
 
 .patient-card-item.selected {
-  border-color: var(--teal);
-  background: var(--teal-surface);
-  box-shadow: 0 0 0 1px var(--teal);
+	border-color: var(--teal);
+	background: var(--teal-surface);
+	box-shadow: 0 0 0 1px var(--teal);
 }
 
 .patient-card-item h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--ink);
+	margin: 0;
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--ink);
 }
 
 .patient-card-item p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+	margin: 0;
+	color: var(--muted);
+	font-size: 0.9rem;
 }
 
 .patient-card-meta {
-  margin-top: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.85rem;
+	margin-top: auto;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.85rem;
 }
 
 .patient-card-meta .risk-badge {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 600;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-weight: 600;
 }
 
 /* Detailed Patient Panel */
 .patient-detail-card {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 1.5rem;
-  box-shadow: var(--shadow-1);
-  color: var(--ink);
-  backdrop-filter: var(--glass-blur);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 1.5rem;
+	box-shadow: var(--shadow-1);
+	color: var(--ink);
+	backdrop-filter: var(--glass-blur);
+	transition:
+		box-shadow 0.2s ease,
+		border-color 0.2s ease;
 }
 
 .patient-detail-card:hover {
-  box-shadow: var(--shadow-2);
-  border-color: var(--line-strong);
+	box-shadow: var(--shadow-2);
+	border-color: var(--line-strong);
 }
 
 .patient-card-item:focus-visible,
 .patient-detail-card:focus-visible {
-  outline: 2px solid var(--teal);
-  outline-offset: 2px;
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
 }
 
 /* Группа виджетов под карточкой пациента (архив, история связи, журнал операций,
@@ -324,8 +325,8 @@
    dente-redesign.css, инлайн у .patients-main-grid приходится глушить через
    `display: flex !important`. Второй такой узел не нужен. */
 .patients-widgets-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
+	gap: 1rem;
+	margin-top: 1.5rem;
 }

@@ -4,7 +4,10 @@ import { patientArchiveReasonsAndBlacklists, patients } from "./schema.js";
 
 const inMemoryBlacklist = new Set<string>();
 
-export async function getPatientArchiveReasonsAndBlacklistsFromDb(orgId: string, _patientId?: string) {
+export async function getPatientArchiveReasonsAndBlacklistsFromDb(
+	orgId: string,
+	_patientId?: string,
+) {
 	return db
 		.select()
 		.from(patientArchiveReasonsAndBlacklists)
@@ -40,7 +43,10 @@ export async function getPatientArchiveReasonsAndBlacklistsFromDb(orgId: string,
  * Набор в памяти оставлен, но ТОЛЬКО как быстрый ответ «да, запрещено» — проверка
  * первой строкой. В эту сторону он безопасен: разрешить лишнего он не может.
  */
-export async function isPatientBookingBlocked(orgId: string, patientId: string): Promise<boolean> {
+export async function isPatientBookingBlocked(
+	orgId: string,
+	patientId: string,
+): Promise<boolean> {
 	if (inMemoryBlacklist.has(`${orgId}:${patientId}`)) {
 		return true;
 	}
@@ -49,7 +55,9 @@ export async function isPatientBookingBlocked(orgId: string, patientId: string):
 		const [patientRow] = await db
 			.select({ fullName: patients.fullName })
 			.from(patients)
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+			.where(
+				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+			)
 			.limit(1);
 		if (patientRow && patientRow.fullName) {
 			fullName = patientRow.fullName.trim();
@@ -60,9 +68,13 @@ export async function isPatientBookingBlocked(orgId: string, patientId: string):
 			eq(patientArchiveReasonsAndBlacklists.isBookingBlocked, true),
 		];
 
-		const matchRules = [eq(patientArchiveReasonsAndBlacklists.patientId, patientId)];
+		const matchRules = [
+			eq(patientArchiveReasonsAndBlacklists.patientId, patientId),
+		];
 		if (fullName) {
-			matchRules.push(eq(patientArchiveReasonsAndBlacklists.patientName, fullName));
+			matchRules.push(
+				eq(patientArchiveReasonsAndBlacklists.patientName, fullName),
+			);
 		}
 
 		const rows = await db
@@ -80,7 +92,7 @@ export async function isPatientBookingBlocked(orgId: string, patientId: string):
 		 */
 		throw new Error(
 			"Не удалось проверить, не внесён ли пациент в чёрный список: база не ответила. " +
-				"Запись не создана — повторите через минуту, а если не поможет, позовите администратора."
+				"Запись не создана — повторите через минуту, а если не поможет, позовите администратора.",
 		);
 	}
 }
@@ -124,11 +136,13 @@ export async function setPatientArchiveStatusInDb(
 					eq(patientArchiveReasonsAndBlacklists.organizationId, orgId),
 					or(
 						eq(patientArchiveReasonsAndBlacklists.patientId, patientId),
-						eq(patientArchiveReasonsAndBlacklists.patientName, patientName || "")
+						eq(
+							patientArchiveReasonsAndBlacklists.patientName,
+							patientName || "",
+						),
 					),
 				),
 			);
 		inMemoryBlacklist.delete(`${orgId}:${patientId}`);
 	}
 }
-

@@ -10,14 +10,25 @@
  *
  * Output: JSON on stdout.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "..");
+const REPO_ROOT = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"..",
+	"..",
+	"..",
+);
 const DB_DIR = join(REPO_ROOT, "apps", "api", "src", "db");
-const SCHEMA_FILES = ["schema.ts", "communicationsSchema.ts", "patientsSchema.ts"].map((f) => join(DB_DIR, f));
+const SCHEMA_FILES = [
+	"schema.ts",
+	"communicationsSchema.ts",
+	"patientsSchema.ts",
+].map((f) => join(DB_DIR, f));
 
 const SKIP_DIRS = new Set([
 	"node_modules",
@@ -53,17 +64,25 @@ function walk(dir, predicate, out = []) {
 }
 
 const rel = (f) => relative(REPO_ROOT, f).split(sep).join("/");
-const isCode = (f) => /\.(ts|tsx|mts|cts|js|mjs|cjs|jsx)$/.test(f) && !f.endsWith(".d.ts");
+const isCode = (f) =>
+	/\.(ts|tsx|mts|cts|js|mjs|cjs|jsx)$/.test(f) && !f.endsWith(".d.ts");
 const isSql = (f) => f.endsWith(".sql");
 
 function parse(file) {
 	const source = readFileSync(file, "utf8");
 	return {
 		source,
-		sourceFile: ts.createSourceFile(file, source, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TSX),
+		sourceFile: ts.createSourceFile(
+			file,
+			source,
+			ts.ScriptTarget.ESNext,
+			true,
+			ts.ScriptKind.TSX,
+		),
 	};
 }
-const lineOf = (sf, node) => sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
+const lineOf = (sf, node) =>
+	sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
 
 /* ---------- 1. schema identifier -> sql table name ---------- */
 function unwrapTableCall(node) {
@@ -119,7 +138,8 @@ function importBindings(file, sourceFile) {
 	const named = new Map(); // local -> imported schema ident
 	const namespaces = new Set();
 	for (const st of sourceFile.statements) {
-		if (!ts.isImportDeclaration(st) || !ts.isStringLiteral(st.moduleSpecifier)) continue;
+		if (!ts.isImportDeclaration(st) || !ts.isStringLiteral(st.moduleSpecifier))
+			continue;
 		const resolved = resolveSpecifier(file, st.moduleSpecifier.text);
 		const isSchema = resolved !== null && SCHEMA_FILES.includes(resolved);
 		if (!isSchema) continue;
@@ -152,7 +172,11 @@ function resolveTableArg(arg, bindings) {
 		return null;
 	}
 	if (ts.isPropertyAccessExpression(arg) && ts.isIdentifier(arg.expression)) {
-		if (bindings.namespaces.has(arg.expression.text) && tables.has(arg.name.text)) return arg.name.text;
+		if (
+			bindings.namespaces.has(arg.expression.text) &&
+			tables.has(arg.name.text)
+		)
+			return arg.name.text;
 		// `schema.x` where `schema` came from an unresolved/barrel import: still count it,
 		// because the ident exists in the schema and no other object in this repo uses these names.
 		if (tables.has(arg.name.text)) return arg.name.text;
@@ -163,23 +187,68 @@ function resolveTableArg(arg, bindings) {
 /* ---------- 4. raw sql ---------- */
 function forEachSqlLiteral(sourceFile, onText) {
 	const visit = (node) => {
-		if (ts.isStringLiteralLike(node) || ts.isNoSubstitutionTemplateLiteral(node)) onText(node.text, node);
+		if (
+			ts.isStringLiteralLike(node) ||
+			ts.isNoSubstitutionTemplateLiteral(node)
+		)
+			onText(node.text, node);
 		else if (ts.isTemplateExpression(node))
-			onText([node.head.text, ...node.templateSpans.map((s) => s.literal.text)].join("  "), node);
+			onText(
+				[node.head.text, ...node.templateSpans.map((s) => s.literal.text)].join(
+					"  ",
+				),
+				node,
+			);
 		ts.forEachChild(node, visit);
 	};
 	visit(sourceFile);
 }
 const RX_INSERT = /insert\s+into\s+(?:public\.)?"?([a-z0-9_]+)"?/gi;
-const RX_UPDATE = /\bupdate\s+(?:only\s+)?(?:public\.)?"?([a-z0-9_]+)"?\s+set\b/gi;
+const RX_UPDATE =
+	/\bupdate\s+(?:only\s+)?(?:public\.)?"?([a-z0-9_]+)"?\s+set\b/gi;
 const RX_DELETE = /\bdelete\s+from\s+(?:public\.)?"?([a-z0-9_]+)"?/gi;
 const RX_FROM = /\bfrom\s+(?:public\.)?"?([a-z0-9_]+)"?/gi;
 const RX_JOIN = /\bjoin\s+(?:public\.)?"?([a-z0-9_]+)"?/gi;
 const RX_TRUNCATE = /\btruncate\s+(?:table\s+)?(?:public\.)?"?([a-z0-9_]+)"?/gi;
 const SQL_KEYWORDS = new Set([
-	"where","select","order","group","limit","join","left","inner","outer","on","and","or","as","set",
-	"values","returning","lateral","union","all","distinct","having","offset","with","using","only",
-	"public","dual","information_schema","table","exists","case","when","then","else","end","null","true","false",
+	"where",
+	"select",
+	"order",
+	"group",
+	"limit",
+	"join",
+	"left",
+	"inner",
+	"outer",
+	"on",
+	"and",
+	"or",
+	"as",
+	"set",
+	"values",
+	"returning",
+	"lateral",
+	"union",
+	"all",
+	"distinct",
+	"having",
+	"offset",
+	"with",
+	"using",
+	"only",
+	"public",
+	"dual",
+	"information_schema",
+	"table",
+	"exists",
+	"case",
+	"when",
+	"then",
+	"else",
+	"end",
+	"null",
+	"true",
+	"false",
 ]);
 
 /* ---------- 5. location bucket ---------- */
@@ -227,20 +296,41 @@ for (const file of codeFiles) {
 
 	// drizzle builder calls
 	const visit = (node) => {
-		if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+		if (
+			ts.isCallExpression(node) &&
+			ts.isPropertyAccessExpression(node.expression)
+		) {
 			const method = node.expression.name.text;
 			if (METHODS.has(method) && node.arguments.length > 0) {
 				const ident = resolveTableArg(node.arguments[0], bindings);
 				if (ident) {
-					const kind = method === "insert" || method === "update" || method === "delete" ? "writes" : "reads";
-					add(acc, ident, kind, { file: path, line: lineOf(sourceFile, node), method, how: "drizzle", bucket: b });
+					const kind =
+						method === "insert" || method === "update" || method === "delete"
+							? "writes"
+							: "reads";
+					add(acc, ident, kind, {
+						file: path,
+						line: lineOf(sourceFile, node),
+						method,
+						how: "drizzle",
+						bucket: b,
+					});
 				}
 			}
 			// joins: .leftJoin(table, ...) / .innerJoin
-			if (/^(left|right|inner|full)?Join$/i.test(method) && node.arguments.length > 0) {
+			if (
+				/^(left|right|inner|full)?Join$/i.test(method) &&
+				node.arguments.length > 0
+			) {
 				const ident = resolveTableArg(node.arguments[0], bindings);
 				if (ident)
-					add(acc, ident, "reads", { file: path, line: lineOf(sourceFile, node), method, how: "drizzle-join", bucket: b });
+					add(acc, ident, "reads", {
+						file: path,
+						line: lineOf(sourceFile, node),
+						method,
+						how: "drizzle-join",
+						bucket: b,
+					});
 			}
 		}
 		ts.forEachChild(node, visit);
@@ -255,8 +345,22 @@ for (const file of codeFiles) {
 				const name = m[1].toLowerCase();
 				if (SQL_KEYWORDS.has(name)) continue;
 				const ident = sqlNameToIdent.get(name);
-				if (ident) add(acc, ident, kind, { file: path, line, method: tag, how: "raw-sql", bucket: b });
-				else add(rawUnmapped, name, kind, { file: path, line, method: tag, how: "raw-sql", bucket: b });
+				if (ident)
+					add(acc, ident, kind, {
+						file: path,
+						line,
+						method: tag,
+						how: "raw-sql",
+						bucket: b,
+					});
+				else
+					add(rawUnmapped, name, kind, {
+						file: path,
+						line,
+						method: tag,
+						how: "raw-sql",
+						bucket: b,
+					});
 			}
 		};
 		hit(RX_INSERT, "writes", "INSERT INTO");
@@ -280,8 +384,22 @@ for (const file of sqlFiles) {
 				const name = m[1].toLowerCase();
 				if (SQL_KEYWORDS.has(name)) continue;
 				const ident = sqlNameToIdent.get(name);
-				if (ident) add(acc, ident, kind, { file: path, line: i + 1, method: tag, how: "sql-file", bucket: b });
-				else add(rawUnmapped, name, kind, { file: path, line: i + 1, method: tag, how: "sql-file", bucket: b });
+				if (ident)
+					add(acc, ident, kind, {
+						file: path,
+						line: i + 1,
+						method: tag,
+						how: "sql-file",
+						bucket: b,
+					});
+				else
+					add(rawUnmapped, name, kind, {
+						file: path,
+						line: i + 1,
+						method: tag,
+						how: "sql-file",
+						bucket: b,
+					});
 			}
 		};
 		hit(RX_INSERT, "writes", "INSERT INTO");
@@ -291,7 +409,14 @@ for (const file of sqlFiles) {
 	});
 }
 
-const out = { parsedCode, codeFiles: codeFiles.length, sqlFiles: sqlFiles.length, tablesInSchema: tables.size, tables: {}, rawUnmapped: {} };
+const out = {
+	parsedCode,
+	codeFiles: codeFiles.length,
+	sqlFiles: sqlFiles.length,
+	tablesInSchema: tables.size,
+	tables: {},
+	rawUnmapped: {},
+};
 for (const [ident, meta] of tables) {
 	const a = acc.get(ident) ?? { reads: [], writes: [] };
 	const byBucket = (arr) => {

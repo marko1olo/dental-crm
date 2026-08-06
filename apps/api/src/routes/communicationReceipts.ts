@@ -16,10 +16,10 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	applyReceipts,
-	parseSmsRuReceipts,
 	parseSmscReceipt,
+	parseSmsRuReceipts,
 	readReceiptSecret,
-	receiptSecretMatches
+	receiptSecretMatches,
 } from "../services/communications/deliveryReceipts.js";
 
 /** Секрет принимается и заголовком, и параметром: шлюзы умеют разное. */
@@ -30,7 +30,10 @@ function extractSecret(request: FastifyRequest): unknown {
 	return query?.secret;
 }
 
-function guardReceiptCall(request: FastifyRequest, reply: FastifyReply): boolean {
+function guardReceiptCall(
+	request: FastifyRequest,
+	reply: FastifyReply,
+): boolean {
 	const expected = readReceiptSecret();
 	if (!expected) {
 		/*
@@ -43,18 +46,21 @@ function guardReceiptCall(request: FastifyRequest, reply: FastifyReply): boolean
 		 */
 		request.log.error(
 			{ requiredEnv: ["DENTE_COMMUNICATION_RECEIPT_SECRET"] },
-			"Квитанция о доставке отклонена: секрет обратного вызова не задан в окружении сервера"
+			"Квитанция о доставке отклонена: секрет обратного вызова не задан в окружении сервера",
 		);
 		reply.code(503).send({
 			error: "ReceiptsNotConfigured",
 			message:
 				"Приём квитанций о доставке на этом сервере не настроен. " +
-				"Без секрета обратного вызова квитанции не принимаются, иначе статусы доставки можно подделать."
+				"Без секрета обратного вызова квитанции не принимаются, иначе статусы доставки можно подделать.",
 		});
 		return false;
 	}
 	if (!receiptSecretMatches(extractSecret(request), expected)) {
-		reply.code(401).send({ error: "ReceiptSecretMismatch", message: "Неверный секрет обратного вызова." });
+		reply.code(401).send({
+			error: "ReceiptSecretMismatch",
+			message: "Неверный секрет обратного вызова.",
+		});
 		return false;
 	}
 	return true;
@@ -106,10 +112,14 @@ export async function registerCommunicationReceiptRoutes(app: FastifyInstance) {
 		const params: Record<string, unknown> = {
 			id: fieldFrom(request, "id"),
 			status: fieldFrom(request, "status"),
-			err: fieldFrom(request, "err")
+			err: fieldFrom(request, "err"),
 		};
 		const receipt = parseSmscReceipt(params);
-		if (!receipt) return { accepted: 0, note: "Квитанция не разобрана: нет идентификатора или состояния." };
+		if (!receipt)
+			return {
+				accepted: 0,
+				note: "Квитанция не разобрана: нет идентификатора или состояния.",
+			};
 
 		const report = await applyReceipts([receipt]);
 		return { accepted: 1, ...report };

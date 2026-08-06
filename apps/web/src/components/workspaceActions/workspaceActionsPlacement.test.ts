@@ -1,20 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-
-import {
-	WORKSPACE_ACTION_BAR_SLOTS,
-	WORKSPACE_ACTION_HOST_ID,
-	WORKSPACE_ACTION_NAV_SELECTOR,
-	WORKSPACE_ACTION_PRIMARY,
-	WORKSPACE_ACTION_SLOTS,
-	type WorkspaceActionBarSlotId,
-	resolveWorkspaceActionPlacement,
-	workspaceActionBarOrder,
-} from "./workspaceActionsPlacement.js";
-import { workspaceActionsLabels } from "./workspaceActionsLabels.js";
+import { fileURLToPath } from "node:url";
 import {
 	VOICE_GLOW_MAX_PX,
 	VOICE_GLOW_MIN_PX,
@@ -23,6 +11,17 @@ import {
 	voiceGlowRadiusPx,
 	voiceMeterHeights,
 } from "./voiceMeter.js";
+import { workspaceActionsLabels } from "./workspaceActionsLabels.js";
+import {
+	resolveWorkspaceActionPlacement,
+	WORKSPACE_ACTION_BAR_SLOTS,
+	WORKSPACE_ACTION_HOST_ID,
+	WORKSPACE_ACTION_NAV_SELECTOR,
+	WORKSPACE_ACTION_PRIMARY,
+	WORKSPACE_ACTION_SLOTS,
+	type WorkspaceActionBarSlotId,
+	workspaceActionBarOrder,
+} from "./workspaceActionsPlacement.js";
 
 /**
  * ЧТО ЗДЕСЬ ПРОВЕРЯЕТСЯ, И ПОЧЕМУ ЭТО НЕ ТЕ ЖЕ ТЕСТЫ, ЧТО БЫЛИ.
@@ -139,12 +138,10 @@ describe("порядок кнопок в строке", () => {
 			!(WORKSPACE_ACTION_BAR_SLOTS as readonly string[]).includes("notice"),
 			"временная накладка не кнопка и в строке стоять не должна",
 		);
-		assert.deepEqual([...WORKSPACE_ACTION_SLOTS], [
-			"notice",
-			"search",
-			"voice",
-			"help",
-		]);
+		assert.deepEqual(
+			[...WORKSPACE_ACTION_SLOTS],
+			["notice", "search", "voice", "help"],
+		);
 	});
 });
 
@@ -191,7 +188,10 @@ describe("§3: у каждого действия есть видимая под
 	});
 
 	it("пункт навигации подписан словом, как и его соседи", () => {
-		assert.equal(workspaceActionsLabels.navTrigger.label.trim().length > 0, true);
+		assert.equal(
+			workspaceActionsLabels.navTrigger.label.trim().length > 0,
+			true,
+		);
 		assert.notEqual(
 			workspaceActionsLabels.navTrigger.titleClosed,
 			workspaceActionsLabels.navTrigger.titleOpen,
@@ -201,7 +201,9 @@ describe("§3: у каждого действия есть видимая под
 
 	it("русский текст живёт в словаре, а не в JSX", () => {
 		const cyrillicInJsx = /[а-яА-ЯёЁ]/u;
-		const owner = readSource("components/workspaceActions/WorkspaceActions.tsx");
+		const owner = readSource(
+			"components/workspaceActions/WorkspaceActions.tsx",
+		);
 		const withoutComments = owner
 			.replace(/\/\*[\s\S]*?\*\//g, "")
 			.replace(/\/\/[^\n]*/g, "");
@@ -250,7 +252,9 @@ describe("ничто больше не плавает над контентом"
 	});
 
 	it("модуль-владелец не опрашивает DOM геометрией", () => {
-		const owner = readSource("components/workspaceActions/WorkspaceActions.tsx");
+		const owner = readSource(
+			"components/workspaceActions/WorkspaceActions.tsx",
+		);
 		const code = owner
 			.replace(/\/\*[\s\S]*?\*\//g, "")
 			.replace(/\/\/[^\n]*/g, "");
@@ -290,7 +294,9 @@ describe("группа действительно смонтирована, а �
 			/import \{ WorkspaceActionsMount \} from "\.\/components\/workspaceActions\/WorkspaceActions"/,
 			"workspaceShell.tsx не импортирует точку монтажа",
 		);
-		const topActions = shell.slice(shell.indexOf('<div className="top-actions">'));
+		const topActions = shell.slice(
+			shell.indexOf('<div className="top-actions">'),
+		);
 		assert.ok(
 			topActions.indexOf("<WorkspaceActionsMount />") > -1,
 			"точка монтажа не отрисована внутри .top-actions",
@@ -305,14 +311,23 @@ describe("группа действительно смонтирована, а �
 	});
 
 	it("на узком экране группа въезжает в живую нижнюю навигацию", () => {
-		const owner = readSource("components/workspaceActions/WorkspaceActions.tsx");
+		const owner = readSource(
+			"components/workspaceActions/WorkspaceActions.tsx",
+		);
 		assert.match(
 			owner,
 			/querySelector\(WORKSPACE_ACTION_NAV_SELECTOR\)/,
 			"владелец не ищет нижнюю навигацию",
 		);
-		assert.match(owner, /nav\.append\(navSlotDom\)/, "контейнер не вставляется в навигацию");
-		assert.match(owner, /createPortal\(<WorkspaceActionsNavSheet \/>, navSlot\)/);
+		assert.match(
+			owner,
+			/nav\.append\(navSlotDom\)/,
+			"контейнер не вставляется в навигацию",
+		);
+		assert.match(
+			owner,
+			/createPortal\(<WorkspaceActionsNavSheet \/>, navSlot\)/,
+		);
 		assert.equal(WORKSPACE_ACTION_NAV_SELECTOR, ".dnt-bottom-nav");
 	});
 
@@ -328,7 +343,10 @@ describe("группа действительно смонтирована, а �
 		const code = placement
 			.replace(/\/\*[\s\S]*?\*\//g, "")
 			.replace(/\/\/[^\n]*/g, "");
-		assert.ok(!/840|52\.5rem|matchMedia/.test(code), "порог продублирован в коде");
+		assert.ok(
+			!/840|52\.5rem|matchMedia/.test(code),
+			"порог продублирован в коде",
+		);
 	});
 
 	it("селектор навигации в CSS и в логике — один и тот же", () => {
@@ -359,7 +377,9 @@ describe("группа действительно смонтирована, а �
 
 	it("идентификатор хоста один и он не пуст", () => {
 		assert.equal(WORKSPACE_ACTION_HOST_ID, "dnt-workspace-actions");
-		const owner = readSource("components/workspaceActions/WorkspaceActions.tsx");
+		const owner = readSource(
+			"components/workspaceActions/WorkspaceActions.tsx",
+		);
 		assert.equal(
 			owner.split("WORKSPACE_ACTION_HOST_ID").length - 1,
 			2,

@@ -65,23 +65,16 @@ const STATUS_PILL: Record<AiJobStatus, string> = {
 };
 
 function isAiJobStatus(value: unknown): value is AiJobStatus {
-	return (
-		typeof value === "string" &&
-		Object.prototype.hasOwnProperty.call(STATUS_LABELS, value)
-	);
+	return typeof value === "string" && Object.hasOwn(STATUS_LABELS, value);
 }
 
 function isAiJobKind(value: unknown): value is AiJobKind {
-	return (
-		typeof value === "string" &&
-		Object.prototype.hasOwnProperty.call(aiJobKindLabels, value)
-	);
+	return typeof value === "string" && Object.hasOwn(aiJobKindLabels, value);
 }
 
 function isAiRecognitionTarget(value: unknown): value is AiRecognitionTarget {
 	return (
-		typeof value === "string" &&
-		Object.prototype.hasOwnProperty.call(recognitionTargetLabels, value)
+		typeof value === "string" && Object.hasOwn(recognitionTargetLabels, value)
 	);
 }
 
@@ -223,7 +216,6 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 	}, [latestJobId, jobs, fetchJobs]);
 
 	const onOpenInWorkbench = useCallback(
-
 		(job: AiRecognitionJob) => {
 			const setter = appLogic.setRecognitionJob;
 			if (typeof setter !== "function") {
@@ -307,7 +299,10 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 			) : null}
 
 			{loadState.phase === "failed" ? (
-				<div style={{ marginTop: "12px" }} data-testid="ai-recognition-jobs-error">
+				<div
+					style={{ marginTop: "12px" }}
+					data-testid="ai-recognition-jobs-error"
+				>
 					<PanelLoadFailure
 						subject={AI_RECOGNITION_JOBS_SUBJECT}
 						status={loadState.status}
@@ -336,10 +331,19 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 				>
 					<table
 						className="data-table"
-						style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}
+						style={{
+							width: "100%",
+							borderCollapse: "collapse",
+							fontSize: "13px",
+						}}
 					>
 						<thead>
-							<tr style={{ textAlign: "left", borderBottom: "1px solid var(--line)" }}>
+							<tr
+								style={{
+									textAlign: "left",
+									borderBottom: "1px solid var(--line)",
+								}}
+							>
 								<th style={{ padding: "8px 6px" }}>Когда</th>
 								<th style={{ padding: "8px 6px" }}>Вид</th>
 								<th style={{ padding: "8px 6px" }}>Цель</th>
@@ -358,15 +362,11 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 										<tr
 											data-testid={`ai-recognition-job-row-${job.id}`}
 											style={{
-												borderBottom: open
-													? "none"
-													: "1px solid var(--line)",
+												borderBottom: open ? "none" : "1px solid var(--line)",
 												cursor: "pointer",
 												verticalAlign: "top",
 											}}
-											onClick={() =>
-												setExpandedId(open ? null : job.id)
-											}
+											onClick={() => setExpandedId(open ? null : job.id)}
 										>
 											<td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>
 												{formatWhen(job.createdAt)}
@@ -425,8 +425,8 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 														minWidth: 44,
 													}}
 												>
-													<ClipboardList size={14} aria-hidden="true" />
-													В лабораторию
+													<ClipboardList size={14} aria-hidden="true" />В
+													лабораторию
 												</button>
 											</td>
 										</tr>

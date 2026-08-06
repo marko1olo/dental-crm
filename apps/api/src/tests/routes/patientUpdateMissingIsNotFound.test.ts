@@ -35,15 +35,20 @@ describe("правка отсутствующей карты пациента", 
 	});
 
 	after(() => {
-		if (saved.persistence === undefined) delete process.env.DENTAL_STATE_PERSISTENCE;
+		if (saved.persistence === undefined)
+			delete process.env.DENTAL_STATE_PERSISTENCE;
 		else process.env.DENTAL_STATE_PERSISTENCE = saved.persistence;
 	});
 
 	test("слой доступа отдаёт null, а не бросает исключение", async () => {
 		const { updatePatientInDb } = await import("../../db/patientsQuery.js");
-		const result = await updatePatientInDb("d0000000-0000-4000-8000-00000000d001", MISSING_PATIENT, {
-			fullName: "Никого Такого Нет",
-		});
+		const result = await updatePatientInDb(
+			"d0000000-0000-4000-8000-00000000d001",
+			MISSING_PATIENT,
+			{
+				fullName: "Никого Такого Нет",
+			},
+		);
 		assert.equal(
 			result,
 			null,
@@ -56,11 +61,18 @@ describe("правка отсутствующей карты пациента", 
 		const { updatePatientInDb } = await import("../../db/patientsQuery.js");
 		const { patients: inMemoryPatients } = await import("../../sampleData.js");
 		const existing = inMemoryPatients[0];
-		assert.ok(existing, "в памяти нет ни одного пациента — сравнивать не с чем, проверка бессодержательна");
+		assert.ok(
+			existing,
+			"в памяти нет ни одного пациента — сравнивать не с чем, проверка бессодержательна",
+		);
 
-		const updated = await updatePatientInDb(existing.organizationId, existing.id, {
-			notes: "Замок правки существующей карты",
-		});
+		const updated = await updatePatientInDb(
+			existing.organizationId,
+			existing.id,
+			{
+				notes: "Замок правки существующей карты",
+			},
+		);
 		assert.ok(
 			updated,
 			"существующая карта вернулась как null: правка сломала рабочий случай, а не только отсутствующий",

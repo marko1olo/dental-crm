@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
-import { appointments, organizations, patients, treatmentPlans } from "../db/schema.js";
+import {
+	appointments,
+	organizations,
+	patients,
+	treatmentPlans,
+} from "../db/schema.js";
 import { registerAnalyticsRoutes } from "../routes/analytics.js";
 import { buildPlanFunnel } from "../services/biAnalyticsWorker.js";
 import {
@@ -174,7 +179,9 @@ describe("воронка планов лечения на экране анал�
 	let app: FastifyInstance;
 	let databaseAvailable = true;
 
-	const oldPlanCreatedAt = new Date(Date.now() - OLD_PLAN_AGE_DAYS * 24 * 60 * 60 * 1000);
+	const oldPlanCreatedAt = new Date(
+		Date.now() - OLD_PLAN_AGE_DAYS * 24 * 60 * 60 * 1000,
+	);
 
 	before(async () => {
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
@@ -195,7 +202,10 @@ describe("воронка планов лечения на экране анал�
 			// тенант-таблиц сверяет с ним `organization_id` и обхода не допускает:
 			// две клиники — два вызова, иначе вставка отвергается кодом 42501.
 			await withFixtureTenant(OTHER_ORG_ID, async () => {
-				await db.insert(organizations).values({ id: OTHER_ORG_ID, name: "Соседняя клиника воронки планов" });
+				await db.insert(organizations).values({
+					id: OTHER_ORG_ID,
+					name: "Соседняя клиника воронки планов",
+				});
 				await db.insert(patients).values({
 					id: OTHER_PATIENT_ID,
 					organizationId: OTHER_ORG_ID,
@@ -203,7 +213,9 @@ describe("воронка планов лечения на экране анал�
 				});
 			});
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника воронки планов маршрута" });
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника воронки планов маршрута" });
 				await db.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
@@ -267,11 +279,15 @@ describe("воронка планов лечения на экране анал�
 	): Promise<FunnelStage[]> {
 		const response = await app.inject({
 			method: "GET",
-			url: range ? `/api/analytics/dashboard?range=${range}` : "/api/analytics/dashboard",
+			url: range
+				? `/api/analytics/dashboard?range=${range}`
+				: "/api/analytics/dashboard",
 			headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
-		const body = JSON.parse(response.body) as { data?: { planFunnelJson?: FunnelStage[] } };
+		const body = JSON.parse(response.body) as {
+			data?: { planFunnelJson?: FunnelStage[] };
+		};
 		return body.data?.planFunnelJson ?? [];
 	}
 
@@ -301,7 +317,9 @@ describe("воронка планов лечения на экране анал�
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const funnel = await funnelOf(ORG_HEADERS);
-		const byStatus = new Map(funnel.map((stage) => [stage.status, stage.value]));
+		const byStatus = new Map(
+			funnel.map((stage) => [stage.status, stage.value]),
+		);
 
 		for (const [status, expected] of Object.entries(EXPECTED_ALL_TIME)) {
 			assert.equal(
@@ -396,7 +414,9 @@ describe("воронка планов лечения на экране анал�
 		);
 
 		const funnel = await funnelOf(ORG_HEADERS);
-		const approved = funnel.find((stage) => stage.status === CROSS_TENANT_PLAN_STATUS)?.value;
+		const approved = funnel.find(
+			(stage) => stage.status === CROSS_TENANT_PLAN_STATUS,
+		)?.value;
 		assert.equal(
 			approved,
 			EXPECTED_ALL_TIME[CROSS_TENANT_PLAN_STATUS],
@@ -409,7 +429,9 @@ describe("воронка планов лечения на экране анал�
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const lastMonth = await funnelOf(ORG_HEADERS, "last_month");
-		const byStatus = new Map(lastMonth.map((stage) => [stage.status, stage.value]));
+		const byStatus = new Map(
+			lastMonth.map((stage) => [stage.status, stage.value]),
+		);
 		for (const [status, expected] of Object.entries(EXPECTED_LAST_MONTH)) {
 			assert.equal(
 				byStatus.get(status),

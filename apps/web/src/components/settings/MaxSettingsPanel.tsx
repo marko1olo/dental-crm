@@ -95,8 +95,8 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 			<div className="messenger-panel-title">
 				<h3>MAX (VK Max)</h3>
 				<p>
-					Российский мессенджер MAX (business.max.ru). Требует
-					верифицированного бизнес-аккаунта и API Token из панели бота.
+					Российский мессенджер MAX (business.max.ru). Требует верифицированного
+					бизнес-аккаунта и API Token из панели бота.
 				</p>
 			</div>
 			{statusUnknown ? (

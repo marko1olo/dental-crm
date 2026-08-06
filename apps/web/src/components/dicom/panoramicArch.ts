@@ -315,10 +315,7 @@ function reflect(anchor: Point2D, through: Point2D): Point2D {
 	return { x: 2 * anchor.x - through.x, y: 2 * anchor.y - through.y };
 }
 
-function resolveStepMm(
-	requestedStepMm: number,
-	totalLengthMm: number,
-): number {
+function resolveStepMm(requestedStepMm: number, totalLengthMm: number): number {
 	const step =
 		Number.isFinite(requestedStepMm) && requestedStepMm > 0
 			? requestedStepMm
@@ -454,7 +451,10 @@ export function buildPanoramicArch(
 	let firstIssue: PanoramicArchIssue | null = null;
 	let firstIssueControlPoints = 0;
 
-	const recordIssue = (reason: PanoramicArchIssue, controlPointCount: number) => {
+	const recordIssue = (
+		reason: PanoramicArchIssue,
+		controlPointCount: number,
+	) => {
 		if (firstIssue !== null) return;
 		firstIssue = reason;
 		firstIssueControlPoints = controlPointCount;

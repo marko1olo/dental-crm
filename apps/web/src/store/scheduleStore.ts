@@ -1,7 +1,5 @@
 import type { Appointment } from "@dental/shared";
-import { resolveUpdater } from "./updater";
 import { create } from "zustand";
-
 import {
 	type AppointmentScheduleDraft,
 	type AppointmentScheduleSaveState,
@@ -11,6 +9,7 @@ import {
 	type StaffScheduleDraft,
 	type StaffScheduleSaveState,
 } from "../AppHelpers";
+import { resolveUpdater } from "./updater";
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
@@ -166,112 +165,120 @@ export const useScheduleStore = create<ScheduleStore>((set) => ({
 	newAppointmentSaveState: "idle",
 	setScheduleDoctorFilterId: (val) =>
 		set((state) => ({
-			scheduleDoctorFilterId:
-				resolveUpdater(val, state.scheduleDoctorFilterId),
+			scheduleDoctorFilterId: resolveUpdater(val, state.scheduleDoctorFilterId),
 		})),
 	setScheduleAssistantFilterId: (val) =>
 		set((state) => ({
-			scheduleAssistantFilterId:
-				resolveUpdater(val, state.scheduleAssistantFilterId),
+			scheduleAssistantFilterId: resolveUpdater(
+				val,
+				state.scheduleAssistantFilterId,
+			),
 		})),
 	setScheduleChairFilterId: (val) =>
 		set((state) => ({
-			scheduleChairFilterId:
-				resolveUpdater(val, state.scheduleChairFilterId),
+			scheduleChairFilterId: resolveUpdater(val, state.scheduleChairFilterId),
 		})),
 	setScheduleDefaultDoctorUserId: (val) =>
 		set((state) => ({
-			scheduleDefaultDoctorUserId:
-				resolveUpdater(val, state.scheduleDefaultDoctorUserId),
+			scheduleDefaultDoctorUserId: resolveUpdater(
+				val,
+				state.scheduleDefaultDoctorUserId,
+			),
 		})),
 	setScheduleDefaultAssistantUserId: (val) =>
 		set((state) => ({
-			scheduleDefaultAssistantUserId:
-				resolveUpdater(val, state.scheduleDefaultAssistantUserId),
+			scheduleDefaultAssistantUserId: resolveUpdater(
+				val,
+				state.scheduleDefaultAssistantUserId,
+			),
 		})),
 	setScheduleDefaultChairId: (val) =>
 		set((state) => ({
-			scheduleDefaultChairId:
-				resolveUpdater(val, state.scheduleDefaultChairId),
+			scheduleDefaultChairId: resolveUpdater(val, state.scheduleDefaultChairId),
 		})),
 	setScheduleStatusFilter: (val) =>
 		set((state) => ({
-			scheduleStatusFilter:
-				resolveUpdater(val, state.scheduleStatusFilter),
+			scheduleStatusFilter: resolveUpdater(val, state.scheduleStatusFilter),
 		})),
 	setScheduleDateFilter: (val) =>
 		set((state) => ({
-			scheduleDateFilter:
-				resolveUpdater(val, state.scheduleDateFilter),
+			scheduleDateFilter: resolveUpdater(val, state.scheduleDateFilter),
 		})),
 	setStaffScheduleDrafts: (val) =>
 		set((state) => ({
-			staffScheduleDrafts:
-				resolveUpdater(val, state.staffScheduleDrafts),
+			staffScheduleDrafts: resolveUpdater(val, state.staffScheduleDrafts),
 		})),
 	setStaffScheduleSavingId: (val) =>
 		set((state) => ({
-			staffScheduleSavingId:
-				resolveUpdater(val, state.staffScheduleSavingId),
+			staffScheduleSavingId: resolveUpdater(val, state.staffScheduleSavingId),
 		})),
 	setStaffScheduleDirtyIds: (val) =>
 		set((state) => ({
-			staffScheduleDirtyIds:
-				resolveUpdater(val, state.staffScheduleDirtyIds),
+			staffScheduleDirtyIds: resolveUpdater(val, state.staffScheduleDirtyIds),
 		})),
 	setStaffScheduleSaveStates: (val) =>
 		set((state) => ({
-			staffScheduleSaveStates:
-				resolveUpdater(val, state.staffScheduleSaveStates),
+			staffScheduleSaveStates: resolveUpdater(
+				val,
+				state.staffScheduleSaveStates,
+			),
 		})),
 	setChairScheduleDrafts: (val) =>
 		set((state) => ({
-			chairScheduleDrafts:
-				resolveUpdater(val, state.chairScheduleDrafts),
+			chairScheduleDrafts: resolveUpdater(val, state.chairScheduleDrafts),
 		})),
 	setChairScheduleSavingId: (val) =>
 		set((state) => ({
-			chairScheduleSavingId:
-				resolveUpdater(val, state.chairScheduleSavingId),
+			chairScheduleSavingId: resolveUpdater(val, state.chairScheduleSavingId),
 		})),
 	setChairScheduleDirtyIds: (val) =>
 		set((state) => ({
-			chairScheduleDirtyIds:
-				resolveUpdater(val, state.chairScheduleDirtyIds),
+			chairScheduleDirtyIds: resolveUpdater(val, state.chairScheduleDirtyIds),
 		})),
 	setChairScheduleSaveStates: (val) =>
 		set((state) => ({
-			chairScheduleSaveStates:
-				resolveUpdater(val, state.chairScheduleSaveStates),
+			chairScheduleSaveStates: resolveUpdater(
+				val,
+				state.chairScheduleSaveStates,
+			),
 		})),
 	setAppointmentScheduleDrafts: (val) =>
 		set((state) => ({
-			appointmentScheduleDrafts:
-				resolveUpdater(val, state.appointmentScheduleDrafts),
+			appointmentScheduleDrafts: resolveUpdater(
+				val,
+				state.appointmentScheduleDrafts,
+			),
 		})),
 	setAppointmentScheduleDirtyIds: (val) =>
 		set((state) => ({
-			appointmentScheduleDirtyIds:
-				resolveUpdater(val, state.appointmentScheduleDirtyIds),
+			appointmentScheduleDirtyIds: resolveUpdater(
+				val,
+				state.appointmentScheduleDirtyIds,
+			),
 		})),
 	setAppointmentScheduleSaveStates: (val) =>
 		set((state) => ({
-			appointmentScheduleSaveStates:
-				resolveUpdater(val, state.appointmentScheduleSaveStates),
+			appointmentScheduleSaveStates: resolveUpdater(
+				val,
+				state.appointmentScheduleSaveStates,
+			),
 		})),
 	setAppointmentScheduleErrors: (val) =>
 		set((state) => ({
-			appointmentScheduleErrors:
-				resolveUpdater(val, state.appointmentScheduleErrors),
+			appointmentScheduleErrors: resolveUpdater(
+				val,
+				state.appointmentScheduleErrors,
+			),
 		})),
 	setNewAppointmentDraft: (val) =>
 		set((state) => ({
-			newAppointmentDraft:
-				resolveUpdater(val, state.newAppointmentDraft),
+			newAppointmentDraft: resolveUpdater(val, state.newAppointmentDraft),
 		})),
 	setNewAppointmentSaveState: (val) =>
 		set((state) => ({
-			newAppointmentSaveState:
-				resolveUpdater(val, state.newAppointmentSaveState),
+			newAppointmentSaveState: resolveUpdater(
+				val,
+				state.newAppointmentSaveState,
+			),
 		})),
 }));

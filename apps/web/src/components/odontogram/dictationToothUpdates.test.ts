@@ -46,7 +46,10 @@ test("строки лежат в payload.toothUpdates, и они находят�
 test("разбор языковой моделью кладёт строки в корень — тоже находятся", () => {
 	// dictationParser.ts:39 отдаёт toothUpdates без обёртки payload.
 	const plan = dictationApplyPlanFromResponseBody(
-		JSON.stringify({ toothUpdates: [{ code: "48", state: "missing" }], emkUpdates: {} }),
+		JSON.stringify({
+			toothUpdates: [{ code: "48", state: "missing" }],
+			emkUpdates: {},
+		}),
 	);
 	assert.ok(plan !== null);
 	assert.deepEqual(plan.applied, [{ toothNumber: 48, state: "Missing" }]);
@@ -112,7 +115,11 @@ test("один зуб дважды не отмечается дважды", () =
 
 test("сервер не разобрал фразу — это пустой план, а не отказ чтения", () => {
 	// parseDictationLocally вернул null, ai.ts отправил его как есть.
-	for (const body of ["", "null", JSON.stringify({ action: "schedule", payload: {} })]) {
+	for (const body of [
+		"",
+		"null",
+		JSON.stringify({ action: "schedule", payload: {} }),
+	]) {
 		const plan = dictationApplyPlanFromResponseBody(body);
 		assert.ok(plan !== null, `тело ${JSON.stringify(body)} — не отказ`);
 		assert.deepEqual(plan.applied, []);
@@ -121,7 +128,11 @@ test("сервер не разобрал фразу — это пустой пл
 });
 
 test("тело не по контракту — отказ чтения", () => {
-	for (const body of ["<html>502</html>", JSON.stringify([]), JSON.stringify("готово")]) {
+	for (const body of [
+		"<html>502</html>",
+		JSON.stringify([]),
+		JSON.stringify("готово"),
+	]) {
 		assert.equal(dictationApplyPlanFromResponseBody(body), null);
 	}
 });
@@ -136,11 +147,23 @@ test("текст для врача без латиницы, с русскими 
 	assert.ok(plan !== null);
 	const message = dictationApplyMessage(plan);
 	assert.equal(message.tone, "success");
-	assert.ok(message.text.includes("2 зуба"), `нет согласования: ${message.text}`);
-	assert.ok(message.text.includes("отсутствует"), "нет русского названия состояния");
-	assert.ok(message.text.includes("имплантат"), "нет русского названия состояния");
+	assert.ok(
+		message.text.includes("2 зуба"),
+		`нет согласования: ${message.text}`,
+	);
+	assert.ok(
+		message.text.includes("отсутствует"),
+		"нет русского названия состояния",
+	);
+	assert.ok(
+		message.text.includes("имплантат"),
+		"нет русского названия состояния",
+	);
 	// БЫЛО: «AI: Зуб 26 обновлен (Missing)».
-	assert.ok(!/[A-Za-z]/.test(message.text), `осталась латиница: ${message.text}`);
+	assert.ok(
+		!/[A-Za-z]/.test(message.text),
+		`осталась латиница: ${message.text}`,
+	);
 });
 
 test("зелёным — только когда на схеме действительно всё отмечено", () => {
@@ -157,9 +180,17 @@ test("зелёным — только когда на схеме действи�
 	assert.ok(nothing !== null);
 	const message = dictationApplyMessage(nothing);
 	assert.equal(message.tone, "info");
-	assert.ok(message.text.includes("двадцать шестой"), "нет примера, как сказать");
+	assert.ok(
+		message.text.includes("двадцать шестой"),
+		"нет примера, как сказать",
+	);
 
-	const one = dictationApplyPlanFromResponseBody(localVisitBody([{ code: "26", state: "missing" }]));
+	const one = dictationApplyPlanFromResponseBody(
+		localVisitBody([{ code: "26", state: "missing" }]),
+	);
 	assert.ok(one !== null);
-	assert.ok(dictationApplyMessage(one).text.includes("1 зуб"), "согласование единственного числа");
+	assert.ok(
+		dictationApplyMessage(one).text.includes("1 зуб"),
+		"согласование единственного числа",
+	);
 });

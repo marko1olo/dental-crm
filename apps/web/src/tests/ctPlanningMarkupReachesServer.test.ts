@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { before, describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 /**
  * РАЗМЕТКА ПЛАНИРОВАНИЯ ИМПЛАНТАЦИИ ДОХОДИТ ДО СЕРВЕРА — И С ЗАГОЛОВКАМИ.
@@ -42,7 +42,8 @@ import { before, describe, test } from "node:test";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(webSrc, "..", "..", "..");
-const readWeb = (relative: string) => readFileSync(path.join(webSrc, relative), "utf8");
+const readWeb = (relative: string) =>
+	readFileSync(path.join(webSrc, relative), "utf8");
 const readApi = (relative: string) =>
 	readFileSync(path.join(repoRoot, "apps", "api", "src", relative), "utf8");
 
@@ -79,7 +80,10 @@ before(() => {
 	};
 	globalWithBrowser.localStorage = localStorage;
 	if (typeof globalWithBrowser.window === "undefined") {
-		globalWithBrowser.window = { location: { origin: "https://crm.example.ru" }, localStorage };
+		globalWithBrowser.window = {
+			location: { origin: "https://crm.example.ru" },
+			localStorage,
+		};
 	}
 });
 
@@ -136,7 +140,10 @@ async function capturedRequestOf(
 			url: typeof input === "string" ? input : String(input),
 			method: init?.method ?? "GET",
 			headers,
-			body: typeof init?.body === "string" ? JSON.parse(init.body) : (init?.body ?? null),
+			body:
+				typeof init?.body === "string"
+					? JSON.parse(init.body)
+					: (init?.body ?? null),
 		});
 		return new Response(JSON.stringify(response.body ?? { success: true }), {
 			status: response.status ?? 200,
@@ -181,7 +188,9 @@ describe("разметка планирования имплантации ух�
 		// Адрес вынимается из живого исходника маршрута, а не из памяти: если
 		// сервер его переименует, красный тест обязан говорить о НОВОМ адресе.
 		const route = readApi(path.join("routes", "imaging_planning.ts"));
-		const served = [...route.matchAll(/app\.(?:post|get)\("([^"]+)"/g)].map((m) => m[1] ?? "");
+		const served = [...route.matchAll(/app\.(?:post|get)\("([^"]+)"/g)].map(
+			(m) => m[1] ?? "",
+		);
 		assert.ok(
 			served.includes(CT_PLANNING_SAVE_URL),
 			`клиент просит ${CT_PLANNING_SAVE_URL}, а сервер обслуживает ${served.join(", ")}`,
@@ -190,14 +199,20 @@ describe("разметка планирования имплантации ух�
 		const { requests } = await capturedRequestOf(() =>
 			saveCtPlanningMarkup(PATIENT_ID, STUDY_UID, MARKUP),
 		);
-		assert.equal(requests.length, 1, `ожидался ровно один запрос, случилось ${requests.length}`);
+		assert.equal(
+			requests.length,
+			1,
+			`ожидался ровно один запрос, случилось ${requests.length}`,
+		);
 		const request = requests[0]!;
 		assert.equal(request.url, CT_PLANNING_SAVE_URL);
 		assert.equal(request.method, "POST");
 	});
 
 	test("запрос сохранения несёт токены кабинета и сотрудника", async () => {
-		const { saveCtPlanningMarkup } = await import("../components/dicom/ctPlanningPersistence.js");
+		const { saveCtPlanningMarkup } = await import(
+			"../components/dicom/ctPlanningPersistence.js"
+		);
 		const { requests } = await capturedRequestOf(() =>
 			saveCtPlanningMarkup(PATIENT_ID, STUDY_UID, MARKUP),
 		);
@@ -219,7 +234,9 @@ describe("разметка планирования имплантации ух�
 	});
 
 	test("в теле уходят ровно те поля, которые разбирает сервер", async () => {
-		const { saveCtPlanningMarkup } = await import("../components/dicom/ctPlanningPersistence.js");
+		const { saveCtPlanningMarkup } = await import(
+			"../components/dicom/ctPlanningPersistence.js"
+		);
 		const { requests } = await capturedRequestOf(() =>
 			saveCtPlanningMarkup(PATIENT_ID, STUDY_UID, MARKUP),
 		);
@@ -227,7 +244,13 @@ describe("разметка планирования имплантации ух�
 
 		assert.deepEqual(
 			Object.keys(body).sort(),
-			["implantsJson", "nervePointsJson", "patientId", "splinePointsJson", "studyInstanceUid"],
+			[
+				"implantsJson",
+				"nervePointsJson",
+				"patientId",
+				"splinePointsJson",
+				"studyInstanceUid",
+			],
 			"состав тела запроса разошёлся со схемой сервера",
 		);
 		assert.equal(body.patientId, PATIENT_ID);
@@ -236,7 +259,10 @@ describe("разметка планирования имплантации ух�
 		assert.equal(typeof body.splinePointsJson, "string");
 		assert.equal(typeof body.nervePointsJson, "string");
 		assert.equal(typeof body.implantsJson, "string");
-		assert.deepEqual(JSON.parse(String(body.splinePointsJson)), MARKUP.splinePoints);
+		assert.deepEqual(
+			JSON.parse(String(body.splinePointsJson)),
+			MARKUP.splinePoints,
+		);
 		assert.deepEqual(JSON.parse(String(body.implantsJson)), MARKUP.implants);
 	});
 
@@ -257,7 +283,10 @@ describe("разметка планирования имплантации ух�
 		 * 400 и пустой снимок у врача, который только что всё разметил.
 		 */
 		const route = readApi(path.join("routes", "imaging_planning.ts"));
-		assert.match(route, /loadPlanningQuerySchema\s*=\s*z\.object\(\{\s*studyUid:/);
+		assert.match(
+			route,
+			/loadPlanningQuerySchema\s*=\s*z\.object\(\{\s*studyUid:/,
+		);
 
 		const url = new URL(request.url, "https://crm.example.ru");
 		assert.equal(url.pathname, CT_PLANNING_LOAD_PATH);
@@ -285,9 +314,8 @@ describe("разметка планирования имплантации ух�
 	});
 
 	test("координаты импланта не превращаются в объект с ключами 0/1/2", async () => {
-		const { ctPlanningSaveBody, parseCtPlanningMarkup, worldTriple } = await import(
-			"../components/dicom/ctPlanningPersistence.js"
-		);
+		const { ctPlanningSaveBody, parseCtPlanningMarkup, worldTriple } =
+			await import("../components/dicom/ctPlanningPersistence.js");
 
 		/*
 		 * ЗАМЕРЕНО: `vec3` из gl-matrix — это `Float32Array`, и
@@ -296,7 +324,9 @@ describe("разметка планирования имплантации ух�
 		 * импланта в форме, из которой вектор обратно не собирается. Поэтому в тело
 		 * запроса обязаны уходить массивы.
 		 */
-		const fromFloat32 = worldTriple(Array.from(new Float32Array([10, 20, -50])));
+		const fromFloat32 = worldTriple(
+			Array.from(new Float32Array([10, 20, -50])),
+		);
 		assert.deepEqual(fromFloat32, [10, 20, -50]);
 
 		const body = ctPlanningSaveBody(PATIENT_ID, STUDY_UID, MARKUP);
@@ -308,7 +338,11 @@ describe("разметка планирования имплантации ух�
 		// И обратный разбор терпит старую форму объекта, если она где-то осталась.
 		const legacy = parseCtPlanningMarkup({
 			implantsJson: JSON.stringify([
-				{ ...MARKUP.implants[0], startWorld: { 0: 1, 1: 2, 2: 3 }, endWorld: { 0: 4, 1: 5, 2: 6 } },
+				{
+					...MARKUP.implants[0],
+					startWorld: { 0: 1, 1: 2, 2: 3 },
+					endWorld: { 0: 4, 1: 5, 2: 6 },
+				},
 			]),
 		});
 		assert.deepEqual(legacy.implants[0]?.startWorld, [1, 2, 3]);
@@ -325,9 +359,16 @@ describe("разметка планирования имплантации ух�
 				{ status, body: { error: "Nope" } },
 			);
 			const outcome = result as { status: string; message?: string };
-			assert.equal(outcome.status, "refused", `отказ ${status} принят за успех`);
+			assert.equal(
+				outcome.status,
+				"refused",
+				`отказ ${status} принят за успех`,
+			);
 			const message = String(outcome.message ?? "");
-			assert.ok(/[А-Яа-яЁё]/.test(message), `отказ ${status} без русского текста: ${message}`);
+			assert.ok(
+				/[А-Яа-яЁё]/.test(message),
+				`отказ ${status} без русского текста: ${message}`,
+			);
 			// Третья часть текста — что делать дальше. Отказ без неё это код ответа
 			// русскими словами, то есть тот же дефект.
 			assert.ok(
@@ -341,9 +382,15 @@ describe("разметка планирования имплантации ух�
 		// Человеческий текст сервера главнее своего: он знает причину точнее.
 		const { result: withServerText } = await capturedRequestOf(
 			() => saveCtPlanningMarkup(PATIENT_ID, STUDY_UID, MARKUP),
-			{ status: 404, body: { error: "Patient not found", message: "Карточки пациента нет." } },
+			{
+				status: 404,
+				body: { error: "Patient not found", message: "Карточки пациента нет." },
+			},
 		);
-		assert.equal((withServerText as { message: string }).message, "Карточки пациента нет.");
+		assert.equal(
+			(withServerText as { message: string }).message,
+			"Карточки пациента нет.",
+		);
 
 		// Латиница без русских букв гасится — интерфейс такой текст не показывает.
 		const { result: technical } = await capturedRequestOf(
@@ -351,12 +398,17 @@ describe("разметка планирования имплантации ух�
 			{ status: 500, body: { message: "Internal server error" } },
 		);
 		const message = (technical as { message: string }).message;
-		assert.ok(!message.includes("Internal"), `технический текст сервера дошёл до врача: ${message}`);
+		assert.ok(
+			!message.includes("Internal"),
+			`технический текст сервера дошёл до врача: ${message}`,
+		);
 		assert.ok(/[А-Яа-яЁё]/.test(message));
 	});
 
 	test("сеть молчит — врач получает текст, а не пустой экран", async () => {
-		const { saveCtPlanningMarkup } = await import("../components/dicom/ctPlanningPersistence.js");
+		const { saveCtPlanningMarkup } = await import(
+			"../components/dicom/ctPlanningPersistence.js"
+		);
 		const realFetch = globalThis.fetch;
 		globalThis.fetch = (async () => {
 			throw new TypeError("Failed to fetch");
@@ -364,7 +416,9 @@ describe("разметка планирования имплантации ух�
 		try {
 			const outcome = await saveCtPlanningMarkup(PATIENT_ID, STUDY_UID, MARKUP);
 			assert.equal(outcome.status, "refused");
-			assert.ok(/[А-Яа-яЁё]/.test(outcome.status === "refused" ? outcome.message : ""));
+			assert.ok(
+				/[А-Яа-яЁё]/.test(outcome.status === "refused" ? outcome.message : ""),
+			);
 		} finally {
 			globalThis.fetch = realFetch;
 		}
@@ -468,7 +522,9 @@ describe("разметка планирования имплантации ух�
 	});
 
 	test("адреса разметки собираются ровно в одном месте", () => {
-		const viewer = readWeb(path.join("components", "dicom", "Cornerstone3DViewer.tsx"));
+		const viewer = readWeb(
+			path.join("components", "dicom", "Cornerstone3DViewer.tsx"),
+		);
 		// Обход собственных адресов мимо модуля вернул бы запрос без заголовков —
 		// ровно тот дефект, который здесь закрывается.
 		assert.ok(

@@ -25,8 +25,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -46,13 +46,18 @@ function blankComments(source: string): string {
 		result += source.slice(index, start);
 		const closing = source.indexOf("*/", start + 2);
 		const end = closing < 0 ? source.length : closing + 2;
-		for (const character of source.slice(start, end)) result += character === "\n" ? "\n" : " ";
+		for (const character of source.slice(start, end))
+			result += character === "\n" ? "\n" : " ";
 		index = end;
 	}
 	return result;
 }
 
-type Rule = { readonly selectors: string[]; readonly body: string; readonly line: number };
+type Rule = {
+	readonly selectors: string[];
+	readonly body: string;
+	readonly line: number;
+};
 
 /** Плоский разбор `селекторы { тело }`. Внутренние блоки @media разбираются как обычные правила. */
 function parseRules(css: string): Rule[] {
@@ -74,17 +79,25 @@ function parseRules(css: string): Rule[] {
 /** Порядок листов берётся из main.tsx, а не из списка в тесте: иначе тест разойдётся со сборкой. */
 function importedStylesheets(): string[] {
 	const entry = readFileSync(path.join(webSrc, "main.tsx"), "utf8");
-	return [...entry.matchAll(/import\s+"\.\/styles\/([\w.-]+\.css)"/g)].map((match) => {
-		const file = match[1];
-		if (file === undefined) throw new Error("имя листа не разобрано");
-		return file;
-	});
+	return [...entry.matchAll(/import\s+"\.\/styles\/([\w.-]+\.css)"/g)].map(
+		(match) => {
+			const file = match[1];
+			if (file === undefined) throw new Error("имя листа не разобрано");
+			return file;
+		},
+	);
 }
 
 const STYLESHEETS = importedStylesheets();
 /** Разбор делается один раз: 12 листов на каждый поиск токена — это минуты вместо секунд. */
 const rulesOf = new Map(
-	STYLESHEETS.map((file) => [file, parseRules(readFileSync(path.join(webSrc, "styles", file), "utf8"))] as const),
+	STYLESHEETS.map(
+		(file) =>
+			[
+				file,
+				parseRules(readFileSync(path.join(webSrc, "styles", file), "utf8")),
+			] as const,
+	),
 );
 
 /** Только корневые селекторы палитры: html, :root, .класс, [атрибут] и их сцепки. */
@@ -116,7 +129,11 @@ function rootSelectorMatch(selector: string, theme: Theme): Specificity | null {
 	return specificity;
 }
 
-type TokenDeclaration = { readonly selectors: readonly string[]; readonly value: string; readonly order: number };
+type TokenDeclaration = {
+	readonly selectors: readonly string[];
+	readonly value: string;
+	readonly order: number;
+};
 
 /** Индекс «имя токена -> все его объявления в порядке каскада» строится один раз. */
 const declarationsOf = ((): Map<string, TokenDeclaration[]> => {
@@ -131,7 +148,11 @@ const declarationsOf = ((): Map<string, TokenDeclaration[]> => {
 				if (!name.startsWith("--")) continue;
 				order += 1;
 				const list = index.get(name) ?? [];
-				list.push({ selectors: rule.selectors, value: declaration.slice(colon + 1).trim(), order });
+				list.push({
+					selectors: rule.selectors,
+					value: declaration.slice(colon + 1).trim(),
+					order,
+				});
 				index.set(name, list);
 			}
 		}
@@ -141,7 +162,8 @@ const declarationsOf = ((): Map<string, TokenDeclaration[]> => {
 
 /** Значение токена, которое победит на <html> в этой теме, — так же, как решает браузер. */
 function winningToken(token: string, theme: Theme): string | null {
-	let best: { specificity: Specificity; order: number; value: string } | null = null;
+	let best: { specificity: Specificity; order: number; value: string } | null =
+		null;
 	for (const declaration of declarationsOf.get(token) ?? []) {
 		for (const selector of declaration.selectors) {
 			const specificity = rootSelectorMatch(selector, theme);
@@ -151,14 +173,25 @@ function winningToken(token: string, theme: Theme): string | null {
 				specificity[0] > best.specificity[0] ||
 				(specificity[0] === best.specificity[0] &&
 					(specificity[1] > best.specificity[1] ||
-						(specificity[1] === best.specificity[1] && declaration.order >= best.order)));
-			if (stronger) best = { specificity, order: declaration.order, value: declaration.value };
+						(specificity[1] === best.specificity[1] &&
+							declaration.order >= best.order)));
+			if (stronger)
+				best = {
+					specificity,
+					order: declaration.order,
+					value: declaration.value,
+				};
 		}
 	}
 	return best?.value ?? null;
 }
 
-type Rgba = { readonly r: number; readonly g: number; readonly b: number; readonly a: number };
+type Rgba = {
+	readonly r: number;
+	readonly g: number;
+	readonly b: number;
+	readonly a: number;
+};
 
 function parseColor(value: string): Rgba {
 	const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value.trim())?.[1];
@@ -171,11 +204,20 @@ function parseColor(value: string): Rgba {
 			a: 1,
 		};
 	}
-	const rgba = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?\s*\)$/i.exec(value.trim());
+	const rgba =
+		/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?\s*\)$/i.exec(
+			value.trim(),
+		);
 	if (!rgba) throw new Error(`цвет не разобран: «${value}»`);
 	const [, r, g, b, a] = rgba;
-	if (r === undefined || g === undefined || b === undefined) throw new Error(`цвет не разобран: «${value}»`);
-	return { r: Number(r), g: Number(g), b: Number(b), a: a === undefined ? 1 : Number(a) };
+	if (r === undefined || g === undefined || b === undefined)
+		throw new Error(`цвет не разобран: «${value}»`);
+	return {
+		r: Number(r),
+		g: Number(g),
+		b: Number(b),
+		a: a === undefined ? 1 : Number(a),
+	};
 }
 
 /** Токен -> цвет темы. Одно звено var() разворачивается: --amber объявлен как var(--warn-fg). */
@@ -183,7 +225,9 @@ function colorOf(token: string, theme: Theme): Rgba {
 	const raw = winningToken(token, theme);
 	assert.ok(raw, `${token} не объявлен ни в одном листе для темы ${theme}`);
 	const alias = /^var\(\s*(--[\w-]+)\s*\)$/.exec(raw);
-	return parseColor(alias?.[1] === undefined ? raw : (winningToken(alias[1], theme) ?? raw));
+	return parseColor(
+		alias?.[1] === undefined ? raw : (winningToken(alias[1], theme) ?? raw),
+	);
 }
 
 function over(top: Rgba, bottom: Rgba): Rgba {
@@ -201,11 +245,16 @@ const channel = (value: number): number => {
 };
 
 const luminance = (color: Rgba): number =>
-	0.2126 * channel(color.r) + 0.7152 * channel(color.g) + 0.0722 * channel(color.b);
+	0.2126 * channel(color.r) +
+	0.7152 * channel(color.g) +
+	0.0722 * channel(color.b);
 
 function contrast(foreground: Rgba, background: Rgba): number {
-	const [high, low] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
-	if (high === undefined || low === undefined) throw new Error("яркость не посчитана");
+	const [high, low] = [luminance(foreground), luminance(background)].sort(
+		(a, b) => b - a,
+	);
+	if (high === undefined || low === undefined)
+		throw new Error("яркость не посчитана");
 	return (high + 0.05) / (low + 0.05);
 }
 
@@ -218,18 +267,38 @@ function contrast(foreground: Rgba, background: Rgba): number {
  * правилом придётся пересчитать, а не оставить как есть.
  */
 const MEASURED = [
-	{ fg: ".onboarding-compact-strip strong", bg: ".onboarding-compact-strip", ratios: [16.69, 14.19, 12.81] },
-	{ fg: ".onboarding-compact-strip span", bg: ".onboarding-compact-strip", ratios: [7.62, 8.64, 8.62] },
-	{ fg: ".onboarding-compact-score", bg: ".onboarding-compact-score", ratios: [5.47, 7.17, 6.59] },
+	{
+		fg: ".onboarding-compact-strip strong",
+		bg: ".onboarding-compact-strip",
+		ratios: [16.69, 14.19, 12.81],
+	},
+	{
+		fg: ".onboarding-compact-strip span",
+		bg: ".onboarding-compact-strip",
+		ratios: [7.62, 8.64, 8.62],
+	},
+	{
+		fg: ".onboarding-compact-score",
+		bg: ".onboarding-compact-score",
+		ratios: [5.47, 7.17, 6.59],
+	},
 	// У .finance-due своего color нет: текст строки наследуется, и это тоже часть правки.
 	{ fg: "--ink", bg: ".finance-due", ratios: [14.52, 13.89, 11.02] },
 	{ fg: ".handoff-lock", bg: ".handoff-lock", ratios: [15.93, 12.89, 10.56] },
-	{ fg: ".appointment-handoff-note", bg: ".appointment-handoff-note", ratios: [15.93, 12.89, 10.56] },
+	{
+		fg: ".appointment-handoff-note",
+		bg: ".appointment-handoff-note",
+		ratios: [15.93, 12.89, 10.56],
+	},
 	{ fg: ".chip-reason", bg: ".chip-reason", ratios: [15.46, 13.24, 10.85] },
 	{ fg: ".chip-doctor", bg: ".chip-doctor", ratios: [16.69, 14.19, 12.81] },
 	{ fg: ".chip-chair", bg: ".chip-chair", ratios: [15.93, 12.89, 10.56] },
 	// Подпись лежит на поверхности карточки, своей подложки у правила нет.
-	{ fg: ".smart-field input:focus ~ label", bg: "--paper", ratios: [5.93, 8.33, 8.35] },
+	{
+		fg: ".smart-field input:focus ~ label",
+		bg: "--paper",
+		ratios: [5.93, 8.33, 8.35],
+	},
 	/*
 	 * Плашка состояния СОХРАНЕНИЯ карточки пациента (dente-redesign.css, раздел 8a).
 	 * Она попала под охрану потому, что раньше брала класс из словаря статусов
@@ -238,12 +307,28 @@ const MEASURED = [
 	 * единственным холодным элементом экрана. Текст 11.5px, то есть норма AA для
 	 * обычного текста — 4.5:1, а не 3:1 для крупного.
 	 */
-	{ fg: ".save-pill.save-pill-saving", bg: ".save-pill.save-pill-saving", ratios: [7.74, 11.73, 10.25] },
+	{
+		fg: ".save-pill.save-pill-saving",
+		bg: ".save-pill.save-pill-saving",
+		ratios: [7.74, 11.73, 10.25],
+	},
 	// Текст здесь --ink, а не --warn-fg: штатная пара предупреждения даёт в светлой
 	// теме 4.42 и норму не держит. Замер и причина — в комментарии рядом с правилом.
-	{ fg: ".save-pill.save-pill-dirty", bg: ".save-pill.save-pill-dirty", ratios: [15.93, 12.89, 10.56] },
-	{ fg: ".save-pill.save-pill-error", bg: ".save-pill.save-pill-error", ratios: [5.3, 5.26, 4.92] },
-	{ fg: ".save-pill.save-pill-saved", bg: ".save-pill.save-pill-saved", ratios: [4.57, 7.72, 7.26] },
+	{
+		fg: ".save-pill.save-pill-dirty",
+		bg: ".save-pill.save-pill-dirty",
+		ratios: [15.93, 12.89, 10.56],
+	},
+	{
+		fg: ".save-pill.save-pill-error",
+		bg: ".save-pill.save-pill-error",
+		ratios: [5.3, 5.26, 4.92],
+	},
+	{
+		fg: ".save-pill.save-pill-saved",
+		bg: ".save-pill.save-pill-saved",
+		ratios: [4.57, 7.72, 7.26],
+	},
 	/*
 	 * Метка риска в строке пациента. До правки её четыре цвета были литералами и
 	 * давали одно и то же отношение во всех трёх темах — 6.25 у «контроль» и 7.34 у
@@ -269,7 +354,10 @@ const MEASURED = [
  * `var(--muted)` в CSS не сдвинула бы ни одного числа здесь — тест был бы слепым
  * ровно так же, как scripts/check-css-tokens.mjs слеп к голым литералам.
  */
-function tokenOfProperty(selector: string, properties: readonly string[]): string {
+function tokenOfProperty(
+	selector: string,
+	properties: readonly string[],
+): string {
 	// Берётся ПОСЛЕДНЕЕ объявление в порядке каскада, а не первое: у одного и того же
 	// селектора бывает несколько правил, и при равной специфичности выигрывает позднее.
 	// Так, .smart-field input:focus ~ label красится var(--brand-600) в main.css:16281 и
@@ -283,19 +371,32 @@ function tokenOfProperty(selector: string, properties: readonly string[]): strin
 				const colon = declaration.indexOf(":");
 				if (colon < 0) continue;
 				if (!properties.includes(declaration.slice(0, colon).trim())) continue;
-				const token = /var\(\s*(--[\w-]+)/.exec(declaration.slice(colon + 1))?.[1];
-				assert.ok(token, `${file}:${rule.line} ${selector} — ${declaration.trim()} красит не токеном`);
+				const token = /var\(\s*(--[\w-]+)/.exec(
+					declaration.slice(colon + 1),
+				)?.[1];
+				assert.ok(
+					token,
+					`${file}:${rule.line} ${selector} — ${declaration.trim()} красит не токеном`,
+				);
 				winner = token;
 			}
 		}
 	}
-	assert.ok(winner, `не найдено правило «${selector}» со свойством ${properties.join("/")}`);
+	assert.ok(
+		winner,
+		`не найдено правило «${selector}» со свойством ${properties.join("/")}`,
+	);
 	return winner;
 }
 
 /** Явное имя токена пропускается как есть; селектор — разворачивается в токен правила. */
-const resolveSide = (reference: string, properties: readonly string[]): string =>
-	reference.startsWith("--") ? reference : tokenOfProperty(reference, properties);
+const resolveSide = (
+	reference: string,
+	properties: readonly string[],
+): string =>
+	reference.startsWith("--")
+		? reference
+		: tokenOfProperty(reference, properties);
 
 /** Норма WCAG 1.4.3 AA для обычного текста. Все правила выше — 12-16px, крупными не считаются. */
 const AA_NORMAL = 4.5;
@@ -304,8 +405,16 @@ describe("контраст правок считается по палитре, 
 	test("светлую и тёмную палитру задаёт main.css, а не dente-redesign.css", () => {
 		// main.css:66/126 — это :root[data-theme="..."], (0,2,0); dente-redesign.css:11/67 — (0,1,0).
 		// Пока это так, все цифры в комментариях считаются по main.css.
-		assert.equal(winningToken("--muted", "light"), "#64748b", "светлый --muted сменил источник — цифры в комментариях устарели");
-		assert.equal(winningToken("--muted", "dark"), "#94a3b8", "тёмный --muted сменил источник — цифры в комментариях устарели");
+		assert.equal(
+			winningToken("--muted", "light"),
+			"#64748b",
+			"светлый --muted сменил источник — цифры в комментариях устарели",
+		);
+		assert.equal(
+			winningToken("--muted", "dark"),
+			"#94a3b8",
+			"тёмный --muted сменил источник — цифры в комментариях устарели",
+		);
 		assert.equal(winningToken("--paper", "light"), "#ffffff");
 		assert.equal(winningToken("--paper", "dark"), "#0f172a");
 		assert.equal(winningToken("--ink", "light"), "#111827");
@@ -317,29 +426,48 @@ describe("контраст правок считается по палитре, 
 
 	test("каждое отношение из комментариев воспроизводится и держит норму 4.5", () => {
 		for (const entry of MEASURED) {
-			const what = entry.fg === entry.bg ? entry.fg : `${entry.fg} на ${entry.bg}`;
+			const what =
+				entry.fg === entry.bg ? entry.fg : `${entry.fg} на ${entry.bg}`;
 			const foreground = resolveSide(entry.fg, ["color"]);
-			const background = resolveSide(entry.bg, ["background", "background-color"]);
+			const background = resolveSide(entry.bg, [
+				"background",
+				"background-color",
+			]);
 			for (const [index, theme] of THEMES.entries()) {
 				const expected = entry.ratios[index];
-				if (expected === undefined) throw new Error(`нет ожидаемого значения для ${what} в теме ${theme}`);
+				if (expected === undefined)
+					throw new Error(
+						`нет ожидаемого значения для ${what} в теме ${theme}`,
+					);
 				const paper = colorOf("--paper", theme);
-				const actual = contrast(colorOf(foreground, theme), over(colorOf(background, theme), paper));
+				const actual = contrast(
+					colorOf(foreground, theme),
+					over(colorOf(background, theme), paper),
+				);
 				assert.ok(
 					Math.abs(actual - expected) < 0.02,
 					`${what}, тема ${theme}: ${foreground} на ${background} даёт ${actual.toFixed(2)}, ` +
 						`в комментарии ${expected.toFixed(2)} — пересчитать комментарий рядом с правилом`,
 				);
-				assert.ok(actual >= AA_NORMAL, `${what}, тема ${theme}: ${actual.toFixed(2)} ниже нормы AA ${AA_NORMAL}`);
+				assert.ok(
+					actual >= AA_NORMAL,
+					`${what}, тема ${theme}: ${actual.toFixed(2)} ниже нормы AA ${AA_NORMAL}`,
+				);
 			}
 		}
 	});
 
 	test("--ink-2 остаётся тёмным в светлой теме и светлым в обеих тёмных", () => {
 		// На нём держится закрытый остаточный промах полосы готовности (было 4.48 на --muted).
-		assert.ok(luminance(colorOf("--ink-2", "light")) < 0.2, "--ink-2 посветлел: светлая полоса готовности снова недоберёт до 4.5");
+		assert.ok(
+			luminance(colorOf("--ink-2", "light")) < 0.2,
+			"--ink-2 посветлел: светлая полоса готовности снова недоберёт до 4.5",
+		);
 		for (const theme of ["dark", "night"] as const) {
-			assert.ok(luminance(colorOf("--ink-2", theme)) > 0.4, `--ink-2 потемнел в теме ${theme}`);
+			assert.ok(
+				luminance(colorOf("--ink-2", theme)) > 0.4,
+				`--ink-2 потемнел в теме ${theme}`,
+			);
 		}
 	});
 });
@@ -370,7 +498,14 @@ const NO_LITERAL_SELECTORS = [
 	".patient-row.risk-high .patient-row-meta .patient-risk-label",
 ] as const;
 
-const COLOR_PROPERTIES = new Set(["color", "background", "background-color", "border", "border-color", "border-left"]);
+const COLOR_PROPERTIES = new Set([
+	"color",
+	"background",
+	"background-color",
+	"border",
+	"border-color",
+	"border-left",
+]);
 
 /**
  * СЕЛЕКТОР, ПРИВЕДЁННЫЙ К СРАВНИМОМУ ВИДУ.
@@ -409,8 +544,10 @@ function normalizeSelector(selector: string): string {
  * рукописном CSS, а забытое имя ловится вторым утверждением — «красит не токеном»
  * на измеряемых селекторах.
  */
-const COLOR_FUNCTIONS = /\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\s*\(/i;
-const NAMED_COLORS = /\b(white|black|red|green|blue|yellow|orange|purple|pink|brown|gray|grey|silver|gold|navy|teal|olive|maroon|lime|aqua|cyan|magenta|fuchsia|indigo|violet|beige|ivory|khaki|salmon|coral|tomato|wheat|orchid|plum|crimson|turquoise|lavender|azure|snow|linen|seashell|honeydew|mintcream|aliceblue|ghostwhite|whitesmoke|gainsboro|lightgray|lightgrey|darkgray|darkgrey|dimgray|dimgrey|slategray|slategrey)\b/i;
+const COLOR_FUNCTIONS =
+	/\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\s*\(/i;
+const NAMED_COLORS =
+	/\b(white|black|red|green|blue|yellow|orange|purple|pink|brown|gray|grey|silver|gold|navy|teal|olive|maroon|lime|aqua|cyan|magenta|fuchsia|indigo|violet|beige|ivory|khaki|salmon|coral|tomato|wheat|orchid|plum|crimson|turquoise|lavender|azure|snow|linen|seashell|honeydew|mintcream|aliceblue|ghostwhite|whitesmoke|gainsboro|lightgray|lightgrey|darkgray|darkgrey|dimgray|dimgrey|slategray|slategrey)\b/i;
 
 /** Литерал ли это. Ключевые слова, не задающие конкретный цвет, литералами не считаются. */
 function looksLikeColorLiteral(value: string): boolean {
@@ -420,7 +557,6 @@ function looksLikeColorLiteral(value: string): boolean {
 	return NAMED_COLORS.test(cleaned);
 }
 
-
 describe("тронутые правила не возвращают литералы", () => {
 	test("ни в одном из них нет hex или rgb вне var()", () => {
 		// scripts/check-css-tokens.mjs сюда не смотрит: он разбирает только var() и запасы,
@@ -429,7 +565,9 @@ describe("тронутые правила не возвращают литера
 		const seen = new Set<string>();
 		for (const file of STYLESHEETS) {
 			for (const rule of rulesOf.get(file) ?? []) {
-				const hit = rule.selectors.filter((selector) => wanted.has(normalizeSelector(selector)));
+				const hit = rule.selectors.filter((selector) =>
+					wanted.has(normalizeSelector(selector)),
+				);
 				if (hit.length === 0) continue;
 				for (const selector of hit) seen.add(selector);
 				for (const declaration of rule.body.split(";")) {
@@ -445,7 +583,11 @@ describe("тронутые правила не возвращают литера
 				}
 			}
 		}
-		assert.deepEqual([...wanted].filter((selector) => !seen.has(selector)), [], "правило переименовано — охрана перестала его сторожить");
+		assert.deepEqual(
+			[...wanted].filter((selector) => !seen.has(selector)),
+			[],
+			"правило переименовано — охрана перестала его сторожить",
+		);
 	});
 
 	/*
@@ -458,8 +600,12 @@ describe("тронутые правила не возвращают литера
 	 */
 	test("охрана не обходится переставленными классами и другой нотацией цвета", () => {
 		assert.equal(
-			normalizeSelector(".risk-watch.patient-row .patient-row-meta .patient-risk-label"),
-			normalizeSelector(".patient-row.risk-watch .patient-row-meta .patient-risk-label"),
+			normalizeSelector(
+				".risk-watch.patient-row .patient-row-meta .patient-risk-label",
+			),
+			normalizeSelector(
+				".patient-row.risk-watch .patient-row-meta .patient-risk-label",
+			),
 			"те же классы в другом порядке дают другой ключ: правило можно перекрыть копией и остаться зелёным",
 		);
 
@@ -475,7 +621,10 @@ describe("тронутые правила не возвращают литера
 			"wheat",
 			"tomato",
 		]) {
-			assert.ok(looksLikeColorLiteral(literal), `литерал «${literal}» не распознан — этой нотацией охрану обходят`);
+			assert.ok(
+				looksLikeColorLiteral(literal),
+				`литерал «${literal}» не распознан — этой нотацией охрану обходят`,
+			);
 		}
 
 		for (const allowed of [
@@ -504,7 +653,8 @@ describe("тронутые правила не возвращают литера
 					const colon = declaration.indexOf(":");
 					if (colon < 0) continue;
 					const property = declaration.slice(0, colon).trim();
-					if (property !== "border" && !property.startsWith("border-")) continue;
+					if (property !== "border" && !property.startsWith("border-"))
+						continue;
 					assert.ok(
 						!declaration.includes("--teal-glow"),
 						`${file}:${rule.line} ${rule.selectors.join(", ")} — рамка на --teal-glow: в premium.css это тень, а не цвет`,
@@ -534,12 +684,26 @@ describe("ни одна поправка на тёмную тему не заб�
 		const lonely: string[] = [];
 		for (const file of STYLESHEETS) {
 			for (const rule of rulesOf.get(file) ?? []) {
-				if (!rule.selectors.some((selector) => selector.includes('[data-theme="dark"]'))) continue;
-				if (rule.selectors.some((selector) => selector.includes('[data-theme="night"]'))) continue;
+				if (
+					!rule.selectors.some((selector) =>
+						selector.includes('[data-theme="dark"]'),
+					)
+				)
+					continue;
+				if (
+					rule.selectors.some((selector) =>
+						selector.includes('[data-theme="night"]'),
+					)
+				)
+					continue;
 				// Корневой блок без потомков — это сама палитра темы, а не поправка к элементу.
 				// Признак: в селекторе нет пробела вне скобок, то есть нет вложенного элемента.
 				const rootLevel = (selector: string): boolean =>
-					!/\s/.test(selector.replaceAll(/\([^()]*\)/g, "").replaceAll(/\[[^\]]*\]/g, ""));
+					!/\s/.test(
+						selector
+							.replaceAll(/\([^()]*\)/g, "")
+							.replaceAll(/\[[^\]]*\]/g, ""),
+					);
 				if (rule.selectors.every(rootLevel)) continue;
 				lonely.push(`${file}:${rule.line} ${rule.selectors.join(", ")}`);
 			}

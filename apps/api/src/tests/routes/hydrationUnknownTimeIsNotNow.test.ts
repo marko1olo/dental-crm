@@ -56,14 +56,21 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { eq, sql } from "drizzle-orm";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { denteAdminSecretHeader } from "../../accessGuard.js";
 import { db, pool } from "../../db/client.js";
 import { appointments, organizations, patients } from "../../db/schema.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
-import { authTokenSecret, clinicalAdminSecret } from "../../security/authSecret.js";
+import {
+	authTokenSecret,
+	clinicalAdminSecret,
+} from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "hydrationUnknownTimeIsNotNow";
@@ -88,9 +95,20 @@ const FIXTURE_ORGANIZATION_IDS = [ORGANIZATION_ID] as const;
 const OK_STARTS_AT = "2025-03-04T08:15:00.000Z";
 const OK_ENDS_AT = "2025-03-04T09:00:00.000Z";
 
-type DashboardAppointment = { id?: unknown; startsAt?: unknown; endsAt?: unknown };
-type DashboardPatient = { id?: unknown; createdAt?: unknown; updatedAt?: unknown };
-type DashboardBody = { appointments?: DashboardAppointment[]; patients?: DashboardPatient[] };
+type DashboardAppointment = {
+	id?: unknown;
+	startsAt?: unknown;
+	endsAt?: unknown;
+};
+type DashboardPatient = {
+	id?: unknown;
+	createdAt?: unknown;
+	updatedAt?: unknown;
+};
+type DashboardBody = {
+	appointments?: DashboardAppointment[];
+	patients?: DashboardPatient[];
+};
 
 let app: FastifyInstance;
 
@@ -124,11 +142,20 @@ async function readDashboard(): Promise<DashboardBody> {
  * выполнялось бы и молчаливым выбрасыванием, а тогда никто в клинике не узнал бы,
  * что запись существует и её время надо исправить.
  */
-async function readDashboardWithServerLog(): Promise<{ body: DashboardBody; errors: string[] }> {
+async function readDashboardWithServerLog(): Promise<{
+	body: DashboardBody;
+	errors: string[];
+}> {
 	const errors: string[] = [];
 	const original = console.error;
 	console.error = (...args: unknown[]): void => {
-		errors.push(args.map((entry) => (entry instanceof Error ? entry.message : String(entry))).join(" "));
+		errors.push(
+			args
+				.map((entry) =>
+					entry instanceof Error ? entry.message : String(entry),
+				)
+				.join(" "),
+		);
 	};
 	try {
 		const body = await readDashboard();
@@ -154,8 +181,16 @@ before(async () => {
 			name: "Сторож нечитаемого времени",
 		});
 		await db.insert(patients).values([
-			{ id: PATIENT_OK_ID, organizationId: ORGANIZATION_ID, fullName: "Читаемов Пациент Временович" },
-			{ id: PATIENT_BROKEN_ID, organizationId: ORGANIZATION_ID, fullName: "Нечитаемов Пациент Временович" },
+			{
+				id: PATIENT_OK_ID,
+				organizationId: ORGANIZATION_ID,
+				fullName: "Читаемов Пациент Временович",
+			},
+			{
+				id: PATIENT_BROKEN_ID,
+				organizationId: ORGANIZATION_ID,
+				fullName: "Нечитаемов Пациент Временович",
+			},
 		]);
 		await db.insert(appointments).values([
 			{
@@ -225,7 +260,11 @@ describe("GET /api/dashboard: время строки берётся из баз
 		// Счёт посеянного — под тенант-контекстом: без него все три числа равны нулю
 		// не потому, что сев не удался, а потому, что политика скрыла строки.
 		const seeded = await withFixtureTenant(ORGANIZATION_ID, async () =>
-			db.execute<{ broken_appointments: number; broken_patients: number; ok_appointments: number }>(sql`
+			db.execute<{
+				broken_appointments: number;
+				broken_patients: number;
+				ok_appointments: number;
+			}>(sql`
 				select
 					(select count(*)::int from appointments
 					  where organization_id = ${ORGANIZATION_ID}::uuid and starts_at = 'infinity') as broken_appointments,
@@ -235,9 +274,21 @@ describe("GET /api/dashboard: время строки берётся из баз
 					  where organization_id = ${ORGANIZATION_ID}::uuid and starts_at = ${OK_STARTS_AT}) as ok_appointments`),
 		);
 		const row = seeded.rows[0];
-		assert.equal(row?.broken_appointments, 1, "Приём с нечитаемым временем не посеян — проверка была бы ни о чём.");
-		assert.equal(row?.broken_patients, 1, "Пациент с нечитаемым временем не посеян.");
-		assert.equal(row?.ok_appointments, 1, "Приём с настоящим временем не посеян — рабочий путь проверять нечем.");
+		assert.equal(
+			row?.broken_appointments,
+			1,
+			"Приём с нечитаемым временем не посеян — проверка была бы ни о чём.",
+		);
+		assert.equal(
+			row?.broken_patients,
+			1,
+			"Пациент с нечитаемым временем не посеян.",
+		);
+		assert.equal(
+			row?.ok_appointments,
+			1,
+			"Приём с настоящим временем не посеян — рабочий путь проверять нечем.",
+		);
 	});
 
 	it("приём с нечитаемым временем не встаёт в расписание на «сейчас»", async () => {
@@ -259,7 +310,8 @@ describe("GET /api/dashboard: время строки берётся из баз
 		// Отказ обязан быть слышен. Молчаливое выбрасывание строки — второй дефект,
 		// а не починка первого: клиника не узнает, что запись есть и её надо исправить.
 		const named = errors.filter(
-			(line) => line.includes(APPOINTMENT_BROKEN_ID) && line.includes("starts_at"),
+			(line) =>
+				line.includes(APPOINTMENT_BROKEN_ID) && line.includes("starts_at"),
 		);
 		assert.ok(
 			named.length > 0,
@@ -291,7 +343,10 @@ describe("GET /api/dashboard: время строки берётся из баз
 				"заведённый годы назад, попадает в отчёт «новые пациенты за месяц» и в списки первичного приёма.",
 		);
 		assert.ok(
-			errors.some((line) => line.includes(PATIENT_BROKEN_ID) && line.includes("created_at")),
+			errors.some(
+				(line) =>
+					line.includes(PATIENT_BROKEN_ID) && line.includes("created_at"),
+			),
 			`Пациент пропущен молча: журнал не называет ни строку, ни колонку. Пришло: ${JSON.stringify(errors)}`,
 		);
 	});
@@ -339,8 +394,13 @@ describe("GET /api/dashboard: время строки берётся из баз
 			`Время окончания приёма не совпало с базой: ${JSON.stringify(ok.endsAt)} против ${OK_ENDS_AT}.`,
 		);
 
-		const okPatient = (body.patients ?? []).find((entry) => entry.id === PATIENT_OK_ID);
-		assert.ok(okPatient, `Пациент ${PATIENT_OK_ID} с читаемым временем пропал из списка.`);
+		const okPatient = (body.patients ?? []).find(
+			(entry) => entry.id === PATIENT_OK_ID,
+		);
+		assert.ok(
+			okPatient,
+			`Пациент ${PATIENT_OK_ID} с читаемым временем пропал из списка.`,
+		);
 
 		/*
 		 * Время читаемого пациента сверяется С БАЗОЙ, а не с константой: `created_at`
@@ -349,7 +409,10 @@ describe("GET /api/dashboard: время строки берётся из баз
 		 */
 		const stored = await withFixtureTenant(ORGANIZATION_ID, async () =>
 			db
-				.select({ createdAt: patients.createdAt, updatedAt: patients.updatedAt })
+				.select({
+					createdAt: patients.createdAt,
+					updatedAt: patients.updatedAt,
+				})
 				.from(patients)
 				.where(eq(patients.id, PATIENT_OK_ID)),
 		);

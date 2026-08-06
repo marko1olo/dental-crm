@@ -18,10 +18,13 @@
 
 import type React from "react";
 import { useCallback, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { operatorReadableErrorDetail } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import {
+	actionFailureToast,
+	requestFailureCause,
+} from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
-import { actionFailureToast, requestFailureCause } from "../../lib/panelStateText";
 
 function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
 	const t = raw.trim();
@@ -43,11 +46,9 @@ export type PatientWhatsappSendPanelProps = {
 	patientName?: string | null;
 };
 
-export const PatientWhatsappSendPanel: React.FC<PatientWhatsappSendPanelProps> = ({
-	patientId,
-	patientPhone,
-	patientName,
-}) => {
+export const PatientWhatsappSendPanel: React.FC<
+	PatientWhatsappSendPanelProps
+> = ({ patientId, patientPhone, patientName }) => {
 	const [message, setMessage] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -79,7 +80,9 @@ export const PatientWhatsappSendPanel: React.FC<PatientWhatsappSendPanelProps> =
 			const detail = operatorReadableErrorDetail(serverMsg || null);
 
 			if (!res.ok) {
-				console.error(`[whatsapp-send] POST ${res.status} ${raw.slice(0, 300)}`);
+				console.error(
+					`[whatsapp-send] POST ${res.status} ${raw.slice(0, 300)}`,
+				);
 				const msg =
 					detail ??
 					(res.status === 404
@@ -92,7 +95,10 @@ export const PatientWhatsappSendPanel: React.FC<PatientWhatsappSendPanelProps> =
 									? "WhatsApp Cloud API отклонил сообщение."
 									: res.status === 403
 										? "Недостаточно прав: прямая отправка WhatsApp недоступна врачу."
-										: actionFailureToast("Сообщение в WhatsApp не отправлено", res.status));
+										: actionFailureToast(
+												"Сообщение в WhatsApp не отправлено",
+												res.status,
+											));
 				setError(msg);
 				showToast(msg, "error", 12000);
 				return;
@@ -136,9 +142,8 @@ export const PatientWhatsappSendPanel: React.FC<PatientWhatsappSendPanelProps> =
 				<p className="text-xs text-zinc-500 mt-0.5">
 					Прямая отправка через Cloud API на номер из карточки
 					{nameHint ? ` · ${nameHint}` : ""}
-					{phoneHint ? ` · ${phoneHint}` : ""}. Не очередь и не рассылка —
-					одно сообщение сейчас. Нужны активные настройки WhatsApp и роль не
-					врач.
+					{phoneHint ? ` · ${phoneHint}` : ""}. Не очередь и не рассылка — одно
+					сообщение сейчас. Нужны активные настройки WhatsApp и роль не врач.
 				</p>
 			</div>
 
@@ -186,7 +191,10 @@ export const PatientWhatsappSendPanel: React.FC<PatientWhatsappSendPanelProps> =
 				>
 					{busy ? "Отправляю…" : "Отправить в WhatsApp"}
 				</button>
-				<span className="text-[11px] text-zinc-500" data-testid="patient-whatsapp-send-hint">
+				<span
+					className="text-[11px] text-zinc-500"
+					data-testid="patient-whatsapp-send-hint"
+				>
 					{message.trim().length > 0
 						? `${message.trim().length} симв.`
 						: "Введите текст"}

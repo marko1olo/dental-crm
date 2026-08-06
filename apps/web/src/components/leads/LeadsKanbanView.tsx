@@ -28,7 +28,13 @@ import { showToast } from "../GlobalToast";
  * проверяет и врача, и кресло по своей организации (routes/leads.ts, ветка
  * convert). Поля объявлены ровно те, что читает разметка.
  */
-type BookableDoctor = { id: string; fullName?: string; name?: string; role?: string; active?: boolean };
+type BookableDoctor = {
+	id: string;
+	fullName?: string;
+	name?: string;
+	role?: string;
+	active?: boolean;
+};
 type BookableChair = { id: string; name: string };
 
 /**
@@ -46,7 +52,11 @@ async function bookingFailureMessage(response: Response): Promise<string> {
 	} catch {
 		// Тело не разобралось — остаётся код ответа, он и уйдёт в текст ниже.
 	}
-	if (typeof payload.message === "string" && payload.message.trim() && payload.message !== "Internal Server Error") {
+	if (
+		typeof payload.message === "string" &&
+		payload.message.trim() &&
+		payload.message !== "Internal Server Error"
+	) {
 		return payload.message;
 	}
 	const code = typeof payload.error === "string" ? payload.error : "";
@@ -153,7 +163,8 @@ export function LeadsKanbanView() {
 	 * шестьдесят нельзя: это выдуманное число попало бы в реальную запись
 	 * расписания. Запись в таком состоянии не отправляется, причина сказана.
 	 */
-	const visitMinutes = dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? null;
+	const visitMinutes =
+		dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? null;
 
 	/*
 	 * Пояс клиники для расчёта дня по умолчанию. К моменту подстановки настройки
@@ -222,18 +233,26 @@ export function LeadsKanbanView() {
 	 * него DoctorNotFound — «Ошибка записи лида» без объяснения.
 	 */
 	useEffect(() => {
-		const clinicStaff = (dashboard?.clinicSettings?.staff ?? []) as BookableDoctor[];
-		const clinicChairs = (dashboard?.clinicSettings?.chairs ?? []) as BookableChair[];
+		const clinicStaff = (dashboard?.clinicSettings?.staff ??
+			[]) as BookableDoctor[];
+		const clinicChairs = (dashboard?.clinicSettings?.chairs ??
+			[]) as BookableChair[];
 		const doctors = clinicStaff.filter(
-			(member) => member.active !== false && (member.role === "doctor" || member.role === "owner"),
+			(member) =>
+				member.active !== false &&
+				(member.role === "doctor" || member.role === "owner"),
 		);
 		setStaff(doctors);
 		setChairs(clinicChairs);
 		setSelectedDoctorId((current) =>
-			current && doctors.some((doctor) => doctor.id === current) ? current : (doctors[0]?.id ?? ""),
+			current && doctors.some((doctor) => doctor.id === current)
+				? current
+				: (doctors[0]?.id ?? ""),
 		);
 		setSelectedChairId((current) =>
-			current && clinicChairs.some((chair) => chair.id === current) ? current : (clinicChairs[0]?.id ?? ""),
+			current && clinicChairs.some((chair) => chair.id === current)
+				? current
+				: (clinicChairs[0]?.id ?? ""),
 		);
 	}, [dashboard?.clinicSettings?.staff, dashboard?.clinicSettings?.chairs]);
 
@@ -287,7 +306,9 @@ export function LeadsKanbanView() {
 			showToast("Проверьте дату и время приема", "error");
 			return;
 		}
-		const endDateTime = new Date(startDateTime.getTime() + visitMinutes * 60000);
+		const endDateTime = new Date(
+			startDateTime.getTime() + visitMinutes * 60000,
+		);
 
 		setIsBooking(true);
 		try {
@@ -319,7 +340,10 @@ export function LeadsKanbanView() {
 				showToast(await bookingFailureMessage(res), "error");
 				return;
 			}
-			showToast("Обращение записано на прием, карточка пациента создана", "success");
+			showToast(
+				"Обращение записано на прием, карточка пациента создана",
+				"success",
+			);
 			setIsConvertOpen(false);
 			setConvertingLeadId(null);
 			updateLeadStatus(convertingLeadId, "consult_booked");
@@ -410,7 +434,6 @@ export function LeadsKanbanView() {
 		}
 	};
 
-
 	const filteredLeads = useMemo(() => {
 		return leads.filter((l) => {
 			const q = searchQuery.toLowerCase();
@@ -482,8 +505,8 @@ export function LeadsKanbanView() {
 							PRO
 						</span>
 					</h2>
-					<button 
-						className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]" 
+					<button
+						className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
 						onClick={() => openEditModal()}
 						type="button"
 						aria-label="Создать новый лид"
@@ -555,8 +578,8 @@ export function LeadsKanbanView() {
 					 * Store already carries RU message-first text (leadsFailureMessage).
 					 * Generic banner alone hid server detail — operator must see it.
 					 */}
-					<strong>Обращения не загружены.</strong> {loadError} Показанные столбцы
-					неполные — не считайте их пустыми.
+					<strong>Обращения не загружены.</strong> {loadError} Показанные
+					столбцы неполные — не считайте их пустыми.
 					<button
 						type="button"
 						className="secondary-button ml-3 mt-2 inline-flex"
@@ -566,7 +589,6 @@ export function LeadsKanbanView() {
 					</button>
 				</div>
 			) : null}
-
 
 			{/* KANBAN BOARD */}
 			<div
@@ -921,8 +943,8 @@ export function LeadsKanbanView() {
 								{staff.length === 0 ? (
 									<p className="m-0 text-xs leading-relaxed text-[var(--rust)]">
 										В клинике нет ни одного активного врача. Добавьте врача в
-										разделе «Настройки» → «Сотрудники», тогда обращение можно будет
-										записать на прием.
+										разделе «Настройки» → «Сотрудники», тогда обращение можно
+										будет записать на прием.
 									</p>
 								) : null}
 							</div>
@@ -1013,7 +1035,12 @@ export function LeadsKanbanView() {
 							<button
 								type="submit"
 								className="primary-button"
-								disabled={isBooking || staff.length === 0 || chairs.length === 0 || !visitMinutes}
+								disabled={
+									isBooking ||
+									staff.length === 0 ||
+									chairs.length === 0 ||
+									!visitMinutes
+								}
 								title={
 									staff.length === 0
 										? "Нет активного врача — записать некому"
@@ -1245,4 +1272,3 @@ export function LeadsKanbanView() {
 		</div>
 	);
 }
-

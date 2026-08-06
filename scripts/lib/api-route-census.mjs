@@ -47,7 +47,11 @@ const repositoryRoot = path.resolve(
 export const apiPackageRoot = path.join(repositoryRoot, "apps", "api");
 
 /** Собранный вход API. Смоук работает по dist, как и остальные скрипты пакета. */
-export const apiServerEntryPath = path.join(apiPackageRoot, "dist", "server.js");
+export const apiServerEntryPath = path.join(
+	apiPackageRoot,
+	"dist",
+	"server.js",
+);
 
 /**
  * Собранный модуль охранника: единственный владелец имени заголовка секрета.
@@ -454,9 +458,7 @@ export function installLogCapture(app) {
 		/** Записи, из-за которых прогон обязан покраснеть. */
 		alerts() {
 			const alerts = records
-				.filter(
-					(record) => Number(record?.level ?? 0) >= loggerAlertLevel,
-				)
+				.filter((record) => Number(record?.level ?? 0) >= loggerAlertLevel)
 				.map((record) => ({
 					level: Number(record.level),
 					requestId: record.reqId ?? null,
@@ -507,7 +509,9 @@ export async function loadGuardHeaderNames() {
 
 async function importBuiltModule(entryPath) {
 	if (!existsSync(entryPath)) {
-		throw new Error(`Сначала соберите API: ${apiBuildCommand} (нет ${entryPath})`);
+		throw new Error(
+			`Сначала соберите API: ${apiBuildCommand} (нет ${entryPath})`,
+		);
 	}
 	return import(pathToFileURL(entryPath).href);
 }

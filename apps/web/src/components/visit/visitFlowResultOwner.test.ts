@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "node:test";
+import { beforeEach, describe, it } from "node:test";
 import {
 	forgetVisitFlowResultOwner,
 	rememberVisitFlowResultOwner,
@@ -127,14 +127,26 @@ describe("расписка о сохранении приёма", () => {
 		assert.equal(visitSaveReceiptBelongsToVisit(undefined, "приём-1"), false);
 		// Расписка без visitId ничего не подтверждает.
 		assert.equal(
-			visitSaveReceiptBelongsToVisit({ ...receipt, visitId: undefined }, "приём-1"),
+			visitSaveReceiptBelongsToVisit(
+				{ ...receipt, visitId: undefined },
+				"приём-1",
+			),
 			false,
 		);
-		assert.equal(visitSaveReceiptBelongsToVisit({ ...receipt, visitId: "" }, "приём-1"), false);
+		assert.equal(
+			visitSaveReceiptBelongsToVisit({ ...receipt, visitId: "" }, "приём-1"),
+			false,
+		);
 	});
 
 	it("лишние пробелы в идентификаторах не разводят один приём на два", () => {
-		assert.equal(visitSaveReceiptBelongsToVisit({ ...receipt, visitId: " приём-1 " }, "приём-1"), true);
+		assert.equal(
+			visitSaveReceiptBelongsToVisit(
+				{ ...receipt, visitId: " приём-1 " },
+				"приём-1",
+			),
+			true,
+		);
 		assert.equal(visitSaveReceiptBelongsToVisit(receipt, " приём-1 "), true);
 	});
 });

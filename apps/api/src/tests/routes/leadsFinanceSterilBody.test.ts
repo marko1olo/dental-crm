@@ -68,7 +68,11 @@ describe("leads + finance_family + sterilization — body guards (AUTH-first; in
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: String(response.body || "") };
+		return {
+			statusCode: response.statusCode,
+			json,
+			body: String(response.body || ""),
+		};
 	}
 
 	before(async () => {

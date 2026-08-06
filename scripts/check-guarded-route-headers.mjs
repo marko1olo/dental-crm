@@ -31,7 +31,12 @@
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
-import { collectFetchCalls, findCallers, CONDUIT_REASON, isTestFile } from "./lib/guarded-header-analysis.mjs";
+import {
+	CONDUIT_REASON,
+	collectFetchCalls,
+	findCallers,
+	isTestFile,
+} from "./lib/guarded-header-analysis.mjs";
 
 const ROUTES_DIR = "apps/api/src/routes";
 const WEB_DIR = "apps/web/src";
@@ -183,7 +188,8 @@ function localGuardWrappers(code) {
 	for (const pattern of declarations) {
 		for (const match of code.matchAll(pattern)) {
 			const body = functionBody(code, match.index);
-			if (GUARD_NAMES.some((guard) => body.includes(guard))) names.add(match[1]);
+			if (GUARD_NAMES.some((guard) => body.includes(guard)))
+				names.add(match[1]);
 		}
 	}
 	return [...names];
@@ -196,7 +202,8 @@ function localGuardWrappers(code) {
  * зовётся внутри обработчика, а не рядом с адресом.
  */
 function collectGuardedRoutes() {
-	const registration = /\bapp\.(get|post|put|patch|delete)\s*\(\s*["'`](\/api\/[^"'`]*)["'`]/g;
+	const registration =
+		/\bapp\.(get|post|put|patch|delete)\s*\(\s*["'`](\/api\/[^"'`]*)["'`]/g;
 	const routes = [];
 	for (const file of sources(ROUTES_DIR, [".ts"])) {
 		const code = stripComments(readFileSync(file, "utf8"));
@@ -225,7 +232,9 @@ function collectGuardedRoutes() {
  * потому что на клиенте на его месте стоит подставленное значение.
  */
 function routeMatcher(path) {
-	const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\/:[^/\\]+/g, "/[^/]+");
+	const escaped = path
+		.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+		.replace(/\/:[^/\\]+/g, "/[^/]+");
 	return new RegExp(`^${escaped}$`);
 }
 
@@ -262,7 +271,9 @@ function collectWebCalls() {
 	 * передать секрет, которого нет у панели.
 	 */
 	const conduitNames = new Set(
-		calls.filter((call) => call.reason === CONDUIT_REASON && call.fnName).map((call) => call.fnName),
+		calls
+			.filter((call) => call.reason === CONDUIT_REASON && call.fnName)
+			.map((call) => call.fnName),
 	);
 	const callerVerdict = new Map();
 	if (conduitNames.size > 0) {
@@ -270,7 +281,11 @@ function collectWebCalls() {
 			if (isTestFile(file)) continue;
 			for (const name of conduitNames) {
 				for (const caller of findCallers(file, name)) {
-					const previous = callerVerdict.get(name) ?? { total: 0, guarded: 0, offenders: [] };
+					const previous = callerVerdict.get(name) ?? {
+						total: 0,
+						guarded: 0,
+						offenders: [],
+					};
 					previous.total += 1;
 					if (caller.passesHelper) previous.guarded += 1;
 					else previous.offenders.push(`${caller.file}:${caller.line}`);
@@ -297,7 +312,6 @@ function collectWebCalls() {
 	return calls;
 }
 
-
 /**
  * Сведение адреса маршрута с адресом вызова, ПОЗВЕНЬЕВО.
  *
@@ -321,7 +335,9 @@ function segmentsMatch(routeSegment, webSegment) {
 	if (!webSegment.includes("SEGMENT")) return routeSegment === webSegment;
 	const first = webSegment.indexOf("SEGMENT");
 	const prefix = webSegment.slice(0, first);
-	const suffix = webSegment.slice(first + "SEGMENT".length).replace(/SEGMENT/g, "");
+	const suffix = webSegment
+		.slice(first + "SEGMENT".length)
+		.replace(/SEGMENT/g, "");
 	if (prefix && !routeSegment.startsWith(prefix)) return false;
 	if (suffix && !routeSegment.endsWith(suffix)) return false;
 	return true;
@@ -331,7 +347,9 @@ function pathsMatch(routePath, webPath) {
 	const routeSegments = routePath.split("/").filter(Boolean);
 	const webSegments = webPath.split("/").filter(Boolean);
 	if (routeSegments.length !== webSegments.length) return false;
-	return routeSegments.every((segment, index) => segmentsMatch(segment, webSegments[index] ?? ""));
+	return routeSegments.every((segment, index) =>
+		segmentsMatch(segment, webSegments[index] ?? ""),
+	);
 }
 
 /**
@@ -347,7 +365,11 @@ function matchPrecision(routePath, webPath) {
 	const webSegments = webPath.split("/").filter(Boolean);
 	let exact = 0;
 	for (let i = 0; i < routeSegments.length; i += 1) {
-		if (!routeSegments[i]?.startsWith(":") && routeSegments[i] === webSegments[i]) exact += 1;
+		if (
+			!routeSegments[i]?.startsWith(":") &&
+			routeSegments[i] === webSegments[i]
+		)
+			exact += 1;
 	}
 	return exact;
 }
@@ -359,14 +381,24 @@ function matchPrecision(routePath, webPath) {
  */
 {
 	const guardedPath = "/api/самопроверка/охраняемый/:id";
-	const mustFlag = pathsMatch(guardedPath, "/api/самопроверка/охраняемый/SEGMENT");
-	const mustNotFlag = pathsMatch(guardedPath, "/api/самопроверка/другой/SEGMENT");
+	const mustFlag = pathsMatch(
+		guardedPath,
+		"/api/самопроверка/охраняемый/SEGMENT",
+	);
+	const mustNotFlag = pathsMatch(
+		guardedPath,
+		"/api/самопроверка/другой/SEGMENT",
+	);
 	if (!mustFlag) {
-		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: адрес с подстановкой не совпал с :param — находки терялись бы");
+		console.error(
+			"САМОПРОВЕРКА НЕ ПРОШЛА: адрес с подстановкой не совпал с :param — находки терялись бы",
+		);
 		process.exit(2);
 	}
 	if (mustNotFlag) {
-		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: чужой адрес совпал — были бы ложные находки");
+		console.error(
+			"САМОПРОВЕРКА НЕ ПРОШЛА: чужой адрес совпал — были бы ложные находки",
+		);
 		process.exit(2);
 	}
 	/*
@@ -377,14 +409,24 @@ function matchPrecision(routePath, webPath) {
 	 * снова начала оправдывать виновных.
 	 */
 	const blindSpots = [
-		["/api/communications/outbox/:id/cancel", "/api/communications/outbox/SEGMENT/SEGMENT"],
-		["/api/communications/campaigns/:id/launch", "/api/communications/campaigns/SEGMENT/SEGMENT"],
+		[
+			"/api/communications/outbox/:id/cancel",
+			"/api/communications/outbox/SEGMENT/SEGMENT",
+		],
+		[
+			"/api/communications/campaigns/:id/launch",
+			"/api/communications/campaigns/SEGMENT/SEGMENT",
+		],
 		["/api/communications/outbox", "/api/communications/outboxSEGMENT"],
 	];
 	for (const [routePath, webPath] of blindSpots) {
 		if (!pathsMatch(routePath, webPath)) {
-			console.error(`САМОПРОВЕРКА НЕ ПРОШЛА: ${webPath} не сведён с ${routePath}.`);
-			console.error("Это слепое пятно уже стоило четырёх пропущенных вызовов — сведение звеньев сломано.");
+			console.error(
+				`САМОПРОВЕРКА НЕ ПРОШЛА: ${webPath} не сведён с ${routePath}.`,
+			);
+			console.error(
+				"Это слепое пятно уже стоило четырёх пропущенных вызовов — сведение звеньев сломано.",
+			);
 			process.exit(2);
 		}
 	}
@@ -394,40 +436,68 @@ function matchPrecision(routePath, webPath) {
 	 * файла вместе с регистрациями маршрутов. Проверяем на том же образце.
 	 */
 	const acceptHeaderSample = [
-		'const headers = { Accept: "application/json;q=0.9, ' + "*/*" + ';q=0.1" };',
+		'const headers = { Accept: "application/json;q=0.9, ' +
+			"*/*" +
+			';q=0.1" };',
 		'app.post("/api/самопроверка/после-заголовка", async () => {',
 		"  await requireClinicalReadAccess(request, reply, 'проверка');",
 		"});",
 	].join("\n");
-	if (!stripComments(acceptHeaderSample).includes("/api/самопроверка/после-заголовка")) {
-		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: строка с заголовком Accept съедает маршруты за собой.");
-		console.error("Так уже терялись все 25 маршрутов routes/imaging.ts — разбор комментариев сломан.");
+	if (
+		!stripComments(acceptHeaderSample).includes(
+			"/api/самопроверка/после-заголовка",
+		)
+	) {
+		console.error(
+			"САМОПРОВЕРКА НЕ ПРОШЛА: строка с заголовком Accept съедает маршруты за собой.",
+		);
+		console.error(
+			"Так уже терялись все 25 маршрутов routes/imaging.ts — разбор комментариев сломан.",
+		);
 		process.exit(2);
 	}
 	/* И обратное: настоящий комментарий обязан вырезаться, иначе поймаем документацию. */
-	if (stripComments("/* app.get(\"/api/выдуманный\") */\nconst x = 1;").includes("/api/выдуманный")) {
-		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: комментарии не вырезаются — проверка поймает свою документацию");
+	if (
+		stripComments('/* app.get("/api/выдуманный") */\nconst x = 1;').includes(
+			"/api/выдуманный",
+		)
+	) {
+		console.error(
+			"САМОПРОВЕРКА НЕ ПРОШЛА: комментарии не вырезаются — проверка поймает свою документацию",
+		);
 		process.exit(2);
 	}
 
 	/* И обратное: разное число звеньев сводиться не должно. */
-	if (pathsMatch("/api/patients/duplicates", "/api/patients/SEGMENT/duplicates")) {
-		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: адреса с разным числом звеньев сведены — будут ложные находки");
+	if (
+		pathsMatch("/api/patients/duplicates", "/api/patients/SEGMENT/duplicates")
+	) {
+		console.error(
+			"САМОПРОВЕРКА НЕ ПРОШЛА: адреса с разным числом звеньев сведены — будут ложные находки",
+		);
 		process.exit(2);
 	}
 
 	const withHelper = `({ headers: denteClinicalReadHeaders() })`;
 	const withoutHelper = `({ method: "POST" })`;
 	if (!HEADER_HELPERS.some((h) => withHelper.includes(h))) {
-		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: вызов с правильным помощником не распознан");
+		console.error(
+			"САМОПРОВЕРКА НЕ ПРОШЛА: вызов с правильным помощником не распознан",
+		);
 		process.exit(2);
 	}
 	if (HEADER_HELPERS.some((h) => withoutHelper.includes(h))) {
-		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: вызов без заголовков признан отправляющим секрет");
+		console.error(
+			"САМОПРОВЕРКА НЕ ПРОШЛА: вызов без заголовков признан отправляющим секрет",
+		);
 		process.exit(2);
 	}
-	console.log("самопроверка: подстановка совпадает с :param, чужой адрес не совпадает,");
-	console.log("              вызов с помощником распознан, вызов без него — нет");
+	console.log(
+		"самопроверка: подстановка совпадает с :param, чужой адрес не совпадает,",
+	);
+	console.log(
+		"              вызов с помощником распознан, вызов без него — нет",
+	);
 }
 
 const guarded = collectGuardedRoutes();
@@ -440,11 +510,17 @@ const guarded = collectGuardedRoutes();
  * разбор обёрток сломался и проверка снова начала оправдывать виновных.
  */
 if (!guarded.some((route) => route.path === "/api/reports/summary")) {
-	console.error("САМОПРОВЕРКА НЕ ПРОШЛА: /api/reports/summary не опознан охраняемым,");
-	console.error("а он проверен живьём и отвечает 403. Сломан разбор местных обёрток охраны.");
+	console.error(
+		"САМОПРОВЕРКА НЕ ПРОШЛА: /api/reports/summary не опознан охраняемым,",
+	);
+	console.error(
+		"а он проверен живьём и отвечает 403. Сломан разбор местных обёрток охраны.",
+	);
 	process.exit(2);
 }
-console.log("самопроверка: /api/reports/summary опознан охраняемым через обёртку scopeFor");
+console.log(
+	"самопроверка: /api/reports/summary опознан охраняемым через обёртку scopeFor",
+);
 const calls = collectWebCalls();
 
 const findings = [];
@@ -453,19 +529,26 @@ for (const call of calls) {
 	/* Из всех подходящих маршрутов берём тот, что сошёлся точнее всех. */
 	const route = guarded
 		.filter((r) => r.method === call.method && pathsMatch(r.path, call.path))
-		.sort((a, b) => matchPrecision(b.path, call.path) - matchPrecision(a.path, call.path))[0];
+		.sort(
+			(a, b) =>
+				matchPrecision(b.path, call.path) - matchPrecision(a.path, call.path),
+		)[0];
 	if (!route) continue;
 	findings.push({ call, route });
 }
 
 console.log(`\nохраняемых маршрутов сервера:        ${guarded.length}`);
 console.log(`вызовов fetch к своему серверу:      ${calls.length}`);
-console.log(`из них без админского секрета:       ${calls.filter((c) => !c.sendsSecret).length}`);
+console.log(
+	`из них без админского секрета:       ${calls.filter((c) => !c.sendsSecret).length}`,
+);
 console.log(`зовут ОХРАНЯЕМЫЙ адрес без секрета:  ${findings.length}`);
 
 if (findings.length > 0) {
 	console.log("\nНАЙДЕНЫ ВЫЗОВЫ, КОТОРЫЕ В НАСТОЯЩЕЙ КЛИНИКЕ ОТВЕТЯТ 403.");
-	console.log("Локально они зелёные: в .env этой машины секрет закомментирован, а лазейки");
+	console.log(
+		"Локально они зелёные: в .env этой машины секрет закомментирован, а лазейки",
+	);
 	console.log("включены. У заказчика лазеек нет — раздел будет мёртв.\n");
 	const byFile = new Map();
 	for (const item of findings) {
@@ -476,13 +559,23 @@ if (findings.length > 0) {
 		console.log(`  ${file}`);
 		for (const { call, route } of items) {
 			console.log(`      строка ${call.line}: ${call.method} ${call.path}`);
-			console.log(`          охрана ${route.guard} — ${route.file}:${route.line}`);
+			console.log(
+				`          охрана ${route.guard} — ${route.file}:${route.line}`,
+			);
 		}
 	}
-	console.log("\nКак закрывать: посылать заголовки тем способом, который в проекте уже есть —");
-	console.log("`auth.denteClinicalReadHeaders()` для чтения и `denteClinicalMutationHeaders()`");
-	console.log("для записи (или `denteAdminSecretRequestHeaders` из lib/denteRequestHeaders.ts).");
-	console.log("Снимать охрану с маршрута ради зелёного НЕЛЬЗЯ: она защищает врачебную тайну.");
+	console.log(
+		"\nКак закрывать: посылать заголовки тем способом, который в проекте уже есть —",
+	);
+	console.log(
+		"`auth.denteClinicalReadHeaders()` для чтения и `denteClinicalMutationHeaders()`",
+	);
+	console.log(
+		"для записи (или `denteAdminSecretRequestHeaders` из lib/denteRequestHeaders.ts).",
+	);
+	console.log(
+		"Снимать охрану с маршрута ради зелёного НЕЛЬЗЯ: она защищает врачебную тайну.",
+	);
 	process.exit(1);
 }
 

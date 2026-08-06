@@ -43,7 +43,7 @@ import {
 	type VisitCloseChecklist,
 } from "@dental/shared";
 import { sql } from "drizzle-orm";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
 import { TOKEN_SECRET } from "../../routes/auth.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
@@ -192,14 +192,22 @@ describe("карточка закрытия приёма: остаток ПО Э
 
 				await insertCharge(PAID_VISIT_ID, PATIENT_ID, PAID_CHARGE_RUB);
 				await insertPayment(PAID_VISIT_ID, PATIENT_ID, PAID_PAYMENT_RUB);
-				await insertCharge(UNDERPAID_VISIT_ID, PATIENT_ID, UNDERPAID_CHARGE_RUB);
+				await insertCharge(
+					UNDERPAID_VISIT_ID,
+					PATIENT_ID,
+					UNDERPAID_CHARGE_RUB,
+				);
 				await insertPayment(
 					UNDERPAID_VISIT_ID,
 					PATIENT_ID,
 					UNDERPAID_PAYMENT_RUB,
 				);
 				await insertCharge(OVERPAID_VISIT_ID, PATIENT_ID, OVERPAID_CHARGE_RUB);
-				await insertPayment(OVERPAID_VISIT_ID, PATIENT_ID, OVERPAID_PAYMENT_RUB);
+				await insertPayment(
+					OVERPAID_VISIT_ID,
+					PATIENT_ID,
+					OVERPAID_PAYMENT_RUB,
+				);
 				// Приём EMPTY_VISIT_ID остаётся без позиций и без оплат намеренно.
 				await insertCharge(null, SKEW_PATIENT_ID, UNLINKED_CHARGE_RUB);
 

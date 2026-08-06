@@ -128,7 +128,10 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 			if (message?.type !== "AUTH") return;
 
 			const payload = message.payload ?? {};
-			const identity = identityFromTokens(payload.clinicToken, payload.staffToken);
+			const identity = identityFromTokens(
+				payload.clinicToken,
+				payload.staffToken,
+			);
 			if (!identity.organizationId) {
 				socket.close(CLOSE_UNAUTHORIZED, "unauthorized");
 				return;

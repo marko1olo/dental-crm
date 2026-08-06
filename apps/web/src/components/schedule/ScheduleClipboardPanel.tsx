@@ -13,8 +13,8 @@
 
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 
 type ClipboardItem = {
@@ -46,7 +46,7 @@ function formatCopiedAt(iso: string): string {
 		day: "numeric",
 		month: "long",
 		hour: "2-digit",
-		minute: "2-digit"
+		minute: "2-digit",
 	});
 }
 
@@ -85,7 +85,10 @@ function loadFailureText(status: number, serverMessage: string | null): string {
 	return `Программа не смогла получить буфер расписания (ответ ${status}).`;
 }
 
-async function writeFailureText(response: Response, action: string): Promise<string> {
+async function writeFailureText(
+	response: Response,
+	action: string,
+): Promise<string> {
 	const body = await response.json().catch(() => null);
 	const serverMessage =
 		body && typeof body.message === "string" ? body.message.trim() : "";
@@ -102,7 +105,10 @@ async function writeFailureText(response: Response, action: string): Promise<str
 	return `Не удалось ${action}. Повторите, а если повторится — сообщите администратору.`;
 }
 
-export const ScheduleClipboardPanel: React.FC<Props> = ({ onPasted, reloadToken = 0 }) => {
+export const ScheduleClipboardPanel: React.FC<Props> = ({
+	onPasted,
+	reloadToken = 0,
+}) => {
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
 
@@ -119,12 +125,12 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({ onPasted, reloadToken 
 			let response: Response;
 			try {
 				response = await fetch("/api/schedule/clipboard-items", {
-					headers: auth ? auth.denteClinicalReadHeaders() : {}
+					headers: auth ? auth.denteClinicalReadHeaders() : {},
 				});
 			} catch {
 				setItems([]);
 				setError(
-					"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть."
+					"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть.",
 				);
 				return;
 			}
@@ -135,7 +141,9 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({ onPasted, reloadToken 
 			if (!response.ok) {
 				setItems([]);
 				const msg =
-					payload && !Array.isArray(payload) && typeof payload.message === "string"
+					payload &&
+					!Array.isArray(payload) &&
+					typeof payload.message === "string"
 						? payload.message
 						: null;
 				setError(loadFailureText(response.status, msg));
@@ -163,17 +171,20 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({ onPasted, reloadToken 
 			try {
 				response = await fetch(`/api/schedule/clipboard-items/${item.id}`, {
 					method: "DELETE",
-					headers: clipboardWriteHeaders()
+					headers: clipboardWriteHeaders(),
 				});
 			} catch {
 				showToast(
 					"Сервер клиники не ответил. Запись в буфере не убрана.",
-					"error"
+					"error",
 				);
 				return;
 			}
 			if (!response.ok) {
-				showToast(await writeFailureText(response, "убрать запись из буфера"), "error");
+				showToast(
+					await writeFailureText(response, "убрать запись из буфера"),
+					"error",
+				);
 				return;
 			}
 			setItems((prev) => prev.filter((row) => row.id !== item.id));
@@ -193,27 +204,33 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({ onPasted, reloadToken 
 		try {
 			let response: Response;
 			try {
-				response = await fetch(`/api/schedule/clipboard-items/${item.id}/paste`, {
-					method: "POST",
-					headers: clipboardWriteHeaders(),
-					body: JSON.stringify({ startsAt: startsAtIso })
-				});
+				response = await fetch(
+					`/api/schedule/clipboard-items/${item.id}/paste`,
+					{
+						method: "POST",
+						headers: clipboardWriteHeaders(),
+						body: JSON.stringify({ startsAt: startsAtIso }),
+					},
+				);
 			} catch {
 				showToast(
 					"Сервер клиники не ответил. Приём из буфера не вставлен.",
-					"error"
+					"error",
 				);
 				return;
 			}
 			if (!response.ok) {
-				showToast(await writeFailureText(response, "вставить приём из буфера"), "error");
+				showToast(
+					await writeFailureText(response, "вставить приём из буфера"),
+					"error",
+				);
 				return;
 			}
 			const dashboard = await response.json().catch(() => null);
 			setItems((prev) => prev.filter((row) => row.id !== item.id));
 			showToast(
 				`Приём «${item.patientName}» вставлен на выбранное время`,
-				"success"
+				"success",
 			);
 			if (dashboard && onPasted) onPasted(dashboard);
 		} finally {
@@ -271,20 +288,30 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({ onPasted, reloadToken 
 
 			{!error && items.length > 0 ? (
 				<>
-					<label className="ops-field" style={{ display: "block", marginBottom: "12px" }}>
+					<label
+						className="ops-field"
+						style={{ display: "block", marginBottom: "12px" }}
+					>
 						<span className="ops-note">Время вставки для выбранной строки</span>
 						<input
 							type="datetime-local"
 							value={pasteStartsAt}
 							onChange={(e) => setPasteStartsAt(e.target.value)}
 							data-testid="schedule-clipboard-paste-starts-at"
-							style={{ display: "block", width: "100%", maxWidth: "280px", marginTop: "4px" }}
+							style={{
+								display: "block",
+								width: "100%",
+								maxWidth: "280px",
+								marginTop: "4px",
+							}}
 						/>
 					</label>
 
 					<div className="ops-table-wrap">
 						<table className="ops-table">
-							<caption className="sr-only">Скопированные приёмы для вставки</caption>
+							<caption className="sr-only">
+								Скопированные приёмы для вставки
+							</caption>
 							<thead>
 								<tr>
 									<th scope="col">Пациент</th>
@@ -307,10 +334,18 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({ onPasted, reloadToken 
 											{formatDuration(item.durationMinutes)}
 										</td>
 										<td data-label="Скопировано">
-											<span className="ops-note">{formatCopiedAt(item.copiedAt)}</span>
+											<span className="ops-note">
+												{formatCopiedAt(item.copiedAt)}
+											</span>
 										</td>
 										<td data-label="Действия">
-											<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+											<div
+												style={{
+													display: "flex",
+													flexWrap: "wrap",
+													gap: "6px",
+												}}
+											>
 												<button
 													className="primary-button"
 													type="button"

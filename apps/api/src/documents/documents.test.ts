@@ -1,11 +1,11 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
+import type { GeneratedDocument, Payment } from "@dental/shared";
 import {
+	frozenTaxXmlPayments,
 	normalizedDocumentChainValue,
 	normalizedTaxpayerInn,
 } from "../routes/documents.js";
-import { frozenTaxXmlPayments } from '../routes/documents.js';
-import type { GeneratedDocument, Payment } from '@dental/shared';
 
 describe("normalizedDocumentChainValue", () => {
 	test("returns empty string for null", () => {
@@ -50,54 +50,52 @@ describe("normalizedDocumentChainValue", () => {
 	});
 });
 
-describe('normalizedTaxpayerInn', () => {
-  test('returns empty string for null', () => {
-    assert.strictEqual(normalizedTaxpayerInn(null), "");
-  });
+describe("normalizedTaxpayerInn", () => {
+	test("returns empty string for null", () => {
+		assert.strictEqual(normalizedTaxpayerInn(null), "");
+	});
 
-  test('returns empty string for undefined', () => {
-    assert.strictEqual(normalizedTaxpayerInn(undefined), "");
-  });
+	test("returns empty string for undefined", () => {
+		assert.strictEqual(normalizedTaxpayerInn(undefined), "");
+	});
 
-  test('removes all non-digit characters', () => {
-    assert.strictEqual(normalizedTaxpayerInn("123-456-789"), "123456789");
-    assert.strictEqual(normalizedTaxpayerInn("A123B456C"), "123456");
-    assert.strictEqual(normalizedTaxpayerInn("  123 456  "), "123456");
-  });
+	test("removes all non-digit characters", () => {
+		assert.strictEqual(normalizedTaxpayerInn("123-456-789"), "123456789");
+		assert.strictEqual(normalizedTaxpayerInn("A123B456C"), "123456");
+		assert.strictEqual(normalizedTaxpayerInn("  123 456  "), "123456");
+	});
 });
 
-describe('frozenTaxXmlPayments', () => {
-  const fallbackPayments: Payment[] = [
-    { id: 'payment-1', amountRub: 100 } as Payment,
-    { id: 'payment-2', amountRub: 200 } as Payment,
-  ];
+describe("frozenTaxXmlPayments", () => {
+	const fallbackPayments: Payment[] = [
+		{ id: "payment-1", amountRub: 100 } as Payment,
+		{ id: "payment-2", amountRub: 200 } as Payment,
+	];
 
-  test('returns payments from taxXmlSourceSnapshot if it exists', () => {
-    const document: GeneratedDocument = {
-      taxXmlSourceSnapshot: {
-        payments: [
-          { id: 'payment-3', amountRub: 300 } as Payment,
-        ]
-      }
-    } as GeneratedDocument;
+	test("returns payments from taxXmlSourceSnapshot if it exists", () => {
+		const document: GeneratedDocument = {
+			taxXmlSourceSnapshot: {
+				payments: [{ id: "payment-3", amountRub: 300 } as Payment],
+			},
+		} as GeneratedDocument;
 
-    const result = frozenTaxXmlPayments(document, fallbackPayments);
-    assert.deepStrictEqual(result, document.taxXmlSourceSnapshot?.payments);
-  });
+		const result = frozenTaxXmlPayments(document, fallbackPayments);
+		assert.deepStrictEqual(result, document.taxXmlSourceSnapshot?.payments);
+	});
 
-  test('returns fallback payments if taxXmlSourceSnapshot is missing', () => {
-    const document: GeneratedDocument = {} as GeneratedDocument;
+	test("returns fallback payments if taxXmlSourceSnapshot is missing", () => {
+		const document: GeneratedDocument = {} as GeneratedDocument;
 
-    const result = frozenTaxXmlPayments(document, fallbackPayments);
-    assert.deepStrictEqual(result, fallbackPayments);
-  });
+		const result = frozenTaxXmlPayments(document, fallbackPayments);
+		assert.deepStrictEqual(result, fallbackPayments);
+	});
 
-  test('returns fallback payments if taxXmlSourceSnapshot is present but payments is undefined', () => {
-    const document: GeneratedDocument = {
-      taxXmlSourceSnapshot: {}
-    } as GeneratedDocument;
+	test("returns fallback payments if taxXmlSourceSnapshot is present but payments is undefined", () => {
+		const document: GeneratedDocument = {
+			taxXmlSourceSnapshot: {},
+		} as GeneratedDocument;
 
-    const result = frozenTaxXmlPayments(document, fallbackPayments);
-    assert.deepStrictEqual(result, fallbackPayments);
-  });
+		const result = frozenTaxXmlPayments(document, fallbackPayments);
+		assert.deepStrictEqual(result, fallbackPayments);
+	});
 });

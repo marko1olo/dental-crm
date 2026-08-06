@@ -24,32 +24,32 @@ import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 export const WEBHOOK_SECRET_HEADER = "x-dente-webhook-secret";
 
 export interface WebhookAuthOptions {
-  /** Имя канала для сообщений об ошибке, например "vk". */
-  channel: string;
-  /** Переменные окружения с ожидаемым секретом, в порядке приоритета. */
-  secretEnvNames: readonly string[];
-  /** Дополнительные заголовки, где провайдер может прислать секрет. */
-  extraHeaderNames?: readonly string[];
+	/** Имя канала для сообщений об ошибке, например "vk". */
+	channel: string;
+	/** Переменные окружения с ожидаемым секретом, в порядке приоритета. */
+	secretEnvNames: readonly string[];
+	/** Дополнительные заголовки, где провайдер может прислать секрет. */
+	extraHeaderNames?: readonly string[];
 }
 
 function headerValue(request: FastifyRequest, name: string): string | null {
-  const raw = request.headers[name.toLowerCase()];
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+	const raw = request.headers[name.toLowerCase()];
+	const value = Array.isArray(raw) ? raw[0] : raw;
+	return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function queryValue(request: FastifyRequest, name: string): string | null {
-  const query = request.query as Record<string, unknown> | undefined;
-  const value = query?.[name];
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+	const query = request.query as Record<string, unknown> | undefined;
+	const value = query?.[name];
+	return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function configuredSecret(envNames: readonly string[]): string | null {
-  for (const name of envNames) {
-    const value = process.env[name]?.trim();
-    if (value) return value;
-  }
-  return null;
+	for (const name of envNames) {
+		const value = process.env[name]?.trim();
+		if (value) return value;
+	}
+	return null;
 }
 
 /**
@@ -96,44 +96,46 @@ function configuredSecret(envNames: readonly string[]): string | null {
  * разработки на боевом сервере, и дыра вернётся ровно в том же виде.
  */
 export function verifyWebhookSecret(
-  request: FastifyRequest,
-  reply: FastifyReply,
-  options: WebhookAuthOptions
+	request: FastifyRequest,
+	reply: FastifyReply,
+	options: WebhookAuthOptions,
 ): boolean {
-  const expected = configuredSecret(options.secretEnvNames);
+	const expected = configuredSecret(options.secretEnvNames);
 
-  if (!expected) {
-    if (!namedDevelopmentModeActive()) {
-      reply.code(503).send({
-        error: "WebhookSecretNotConfigured",
-        message: `Вебхук ${options.channel} не настроен: задайте ${options.secretEnvNames[0]} в окружении сервера.`,
-      });
-      return false;
-    }
-    request.log.warn(
-      `[webhook:${options.channel}] Секрет не задан (${options.secretEnvNames.join(" / ")}). ` +
-        "Запрос принят только потому, что сервер работает в режиме разработки."
-    );
-    return true;
-  }
+	if (!expected) {
+		if (!namedDevelopmentModeActive()) {
+			reply.code(503).send({
+				error: "WebhookSecretNotConfigured",
+				message: `Вебхук ${options.channel} не настроен: задайте ${options.secretEnvNames[0]} в окружении сервера.`,
+			});
+			return false;
+		}
+		request.log.warn(
+			`[webhook:${options.channel}] Секрет не задан (${options.secretEnvNames.join(" / ")}). ` +
+				"Запрос принят только потому, что сервер работает в режиме разработки.",
+		);
+		return true;
+	}
 
-  const candidates = [
-    headerValue(request, WEBHOOK_SECRET_HEADER),
-    ...(options.extraHeaderNames ?? []).map((name) => headerValue(request, name)),
-    queryValue(request, "secret"),
-  ].filter((value): value is string => Boolean(value));
+	const candidates = [
+		headerValue(request, WEBHOOK_SECRET_HEADER),
+		...(options.extraHeaderNames ?? []).map((name) =>
+			headerValue(request, name),
+		),
+		queryValue(request, "secret"),
+	].filter((value): value is string => Boolean(value));
 
-  for (const candidate of candidates) {
-    if (timingSafeSecretEqual(candidate, expected)) return true;
-  }
+	for (const candidate of candidates) {
+		if (timingSafeSecretEqual(candidate, expected)) return true;
+	}
 
-  request.log.warn(
-    { ip: request.ip, url: request.url },
-    `[webhook:${options.channel}] Отклонён запрос с неверным секретом.`
-  );
-  reply.code(401).send({
-    error: "WebhookSecretMismatch",
-    message: "Неверный секрет вебхука.",
-  });
-  return false;
+	request.log.warn(
+		{ ip: request.ip, url: request.url },
+		`[webhook:${options.channel}] Отклонён запрос с неверным секретом.`,
+	);
+	reply.code(401).send({
+		error: "WebhookSecretMismatch",
+		message: "Неверный секрет вебхука.",
+	});
+	return false;
 }

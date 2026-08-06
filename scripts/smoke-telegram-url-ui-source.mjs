@@ -158,8 +158,7 @@ const saveBodyPatterns = [
 		as: "visual card URLs must be normalized from telegramVisualCardUrlDrafts",
 	},
 	{
-		pattern:
-			/botUsername\s*=\s*normalizeTelegramBotUsernameDraft\(/,
+		pattern: /botUsername\s*=\s*normalizeTelegramBotUsernameDraft\(/,
 		as: "shared bot username must be normalized",
 	},
 	{

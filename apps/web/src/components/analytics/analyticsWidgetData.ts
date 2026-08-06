@@ -29,7 +29,8 @@ import { staffRoleLabels } from "../../workspaceUiLabels";
  * Единый текст ошибки для виджетов. Причину (401, 500, обрыв сети) пользователь
  * исправить не может, а вот обновить страницу — может.
  */
-export const WIDGET_LOAD_ERROR_MESSAGE = "Не удалось загрузить, обновите страницу";
+export const WIDGET_LOAD_ERROR_MESSAGE =
+	"Не удалось загрузить, обновите страницу";
 
 /** Состояние виджета. Ровно одно из трёх, без промежуточных комбинаций. */
 export type WidgetListState<T> =
@@ -85,7 +86,12 @@ export function parseWidgetListPayload<T>(
 	}
 	// Элементы, не являющиеся объектами, отбрасываются здесь: иначе они дошли бы
 	// до разметки и уронили её на первом же обращении к полю.
-	return { ok: true, items: list.flatMap((row) => (asRecord(row) ? [toItem(asRecord(row)!)] : [])) };
+	return {
+		ok: true,
+		items: list.flatMap((row) =>
+			asRecord(row) ? [toItem(asRecord(row)!)] : [],
+		),
+	};
 }
 
 /**
@@ -101,7 +107,10 @@ export async function fetchWidgetList<T>(
 	try {
 		// `signal` подставляется только когда он есть: при exactOptionalPropertyTypes
 		// поле `signal: undefined` в RequestInit не проходит проверку типов.
-		const response = await fetch(url, signal ? { headers, signal } : { headers });
+		const response = await fetch(
+			url,
+			signal ? { headers, signal } : { headers },
+		);
 		const raw = await response.text();
 		return parseWidgetListPayload(response.status, raw, toItem);
 	} catch (error) {
@@ -117,7 +126,9 @@ export async function fetchWidgetList<T>(
 
 /** Непустая строка или заранее заданная подпись. Никогда не undefined. */
 export function textOr(value: unknown, fallback: string): string {
-	return typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
+	return typeof value === "string" && value.trim().length > 0
+		? value.trim()
+		: fallback;
 }
 
 /** Число или null. Строки и мусор к нулю не приводятся: ноль — это утверждение. */
@@ -153,7 +164,10 @@ const ROLE_KEY_ALIASES: Record<string, keyof typeof staffRoleLabels> = {
 	manager: "manager",
 };
 
-export function roleLabel(value: unknown, fallback = "роль не указана"): string {
+export function roleLabel(
+	value: unknown,
+	fallback = "роль не указана",
+): string {
 	const raw = typeof value === "string" ? value.trim() : "";
 	if (raw.length === 0) return fallback;
 	const key = ROLE_KEY_ALIASES[raw.toLowerCase()];

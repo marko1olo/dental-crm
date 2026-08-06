@@ -40,8 +40,8 @@ import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { StringDecoder } from "node:string_decoder";
 import { Transform, type TransformCallback } from "node:stream";
+import { StringDecoder } from "node:string_decoder";
 
 const ENCRYPTION_ALGORITHM = "aes-256-cbc";
 const IV_LENGTH = 16;
@@ -58,23 +58,23 @@ const DUMP_COMPLETION_MARKER = "PostgreSQL database dump complete";
 const PUBLIC_SAMPLE_KEY = "DUMMY_SAMPLE_KEY_NOT_A_REAL_SECRET";
 
 export interface BackupResult {
-  success: boolean;
-  filePath?: string;
-  error?: string;
+	success: boolean;
+	filePath?: string;
+	error?: string;
 }
 
 /** Что на самом деле лежит внутри дампа. Считается на лету, файл не перечитывается. */
 export interface DumpContentStats {
-  /** Число секций `COPY … FROM stdin;`. */
-  copyBlocks: number;
-  /** Число строк данных суммарно по всем секциям COPY. */
-  dataRows: number;
-  /** Число таблиц, в которых нашлась хотя бы одна строка данных. */
-  populatedTables: number;
-  /** Секция COPY открылась и не закрылась маркером `\.` — поток оборван. */
-  unterminatedCopy: boolean;
-  /** pg_dump напечатал свой завершающий маркер — значит дошёл до конца. */
-  complete: boolean;
+	/** Число секций `COPY … FROM stdin;`. */
+	copyBlocks: number;
+	/** Число строк данных суммарно по всем секциям COPY. */
+	dataRows: number;
+	/** Число таблиц, в которых нашлась хотя бы одна строка данных. */
+	populatedTables: number;
+	/** Секция COPY открылась и не закрылась маркером `\.` — поток оборван. */
+	unterminatedCopy: boolean;
+	/** pg_dump напечатал свой завершающий маркер — значит дошёл до конца. */
+	complete: boolean;
 }
 
 /**
@@ -86,80 +86,80 @@ export interface DumpContentStats {
  * посчитать, пришлось бы расшифровывать копию целиком на каждом прогоне.
  */
 class DumpContentInspector extends Transform {
-  private readonly decoder = new StringDecoder("utf8");
-  private readonly populated = new Set<string>();
-  private carry = "";
-  private insideCopy = false;
-  private currentTable = "";
-  private copyBlocks = 0;
-  private dataRows = 0;
-  private complete = false;
+	private readonly decoder = new StringDecoder("utf8");
+	private readonly populated = new Set<string>();
+	private carry = "";
+	private insideCopy = false;
+	private currentTable = "";
+	private copyBlocks = 0;
+	private dataRows = 0;
+	private complete = false;
 
-  override _transform(
-    chunk: Buffer,
-    _encoding: BufferEncoding,
-    done: TransformCallback,
-  ): void {
-    this.consume(this.decoder.write(chunk));
-    done(null, chunk);
-  }
+	override _transform(
+		chunk: Buffer,
+		_encoding: BufferEncoding,
+		done: TransformCallback,
+	): void {
+		this.consume(this.decoder.write(chunk));
+		done(null, chunk);
+	}
 
-  override _flush(done: TransformCallback): void {
-    this.consume(this.decoder.end());
-    if (this.carry.length > 0) {
-      this.inspectLine(this.carry);
-      this.carry = "";
-    }
-    done();
-  }
+	override _flush(done: TransformCallback): void {
+		this.consume(this.decoder.end());
+		if (this.carry.length > 0) {
+			this.inspectLine(this.carry);
+			this.carry = "";
+		}
+		done();
+	}
 
-  private consume(text: string): void {
-    if (text.length === 0) return;
-    const buffered = this.carry + text;
-    const lines = buffered.split("\n");
-    // Последний элемент — незавершённый хвост: строка может продолжиться
-    // в следующем чанке, разбирать её сейчас нельзя.
-    this.carry = lines.pop() ?? "";
-    for (const line of lines) this.inspectLine(line);
-  }
+	private consume(text: string): void {
+		if (text.length === 0) return;
+		const buffered = this.carry + text;
+		const lines = buffered.split("\n");
+		// Последний элемент — незавершённый хвост: строка может продолжиться
+		// в следующем чанке, разбирать её сейчас нельзя.
+		this.carry = lines.pop() ?? "";
+		for (const line of lines) this.inspectLine(line);
+	}
 
-  private inspectLine(rawLine: string): void {
-    // pg_dump на Windows печатает CRLF; терминатор и заголовок иначе не совпадут.
-    const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
-    if (this.insideCopy) {
-      if (line === COPY_TERMINATOR) {
-        this.insideCopy = false;
-        this.currentTable = "";
-        return;
-      }
-      this.dataRows += 1;
-      if (this.currentTable) this.populated.add(this.currentTable);
-      return;
-    }
-    const copyHeader = COPY_HEADER_PATTERN.exec(line);
-    if (copyHeader) {
-      this.insideCopy = true;
-      this.currentTable = copyHeader[1] ?? "";
-      this.copyBlocks += 1;
-      return;
-    }
-    if (line.includes(DUMP_COMPLETION_MARKER)) this.complete = true;
-  }
+	private inspectLine(rawLine: string): void {
+		// pg_dump на Windows печатает CRLF; терминатор и заголовок иначе не совпадут.
+		const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+		if (this.insideCopy) {
+			if (line === COPY_TERMINATOR) {
+				this.insideCopy = false;
+				this.currentTable = "";
+				return;
+			}
+			this.dataRows += 1;
+			if (this.currentTable) this.populated.add(this.currentTable);
+			return;
+		}
+		const copyHeader = COPY_HEADER_PATTERN.exec(line);
+		if (copyHeader) {
+			this.insideCopy = true;
+			this.currentTable = copyHeader[1] ?? "";
+			this.copyBlocks += 1;
+			return;
+		}
+		if (line.includes(DUMP_COMPLETION_MARKER)) this.complete = true;
+	}
 
-  stats(): DumpContentStats {
-    return {
-      copyBlocks: this.copyBlocks,
-      dataRows: this.dataRows,
-      populatedTables: this.populated.size,
-      unterminatedCopy: this.insideCopy,
-      complete: this.complete,
-    };
-  }
+	stats(): DumpContentStats {
+		return {
+			copyBlocks: this.copyBlocks,
+			dataRows: this.dataRows,
+			populatedTables: this.populated.size,
+			unterminatedCopy: this.insideCopy,
+			complete: this.complete,
+		};
+	}
 }
 
 function positiveIntFromEnv(name: string, fallback: number): number {
-  const parsed = Number(process.env[name] ?? fallback);
-  return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : fallback;
+	const parsed = Number(process.env[name] ?? fallback);
+	return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : fallback;
 }
 
 /**
@@ -177,34 +177,34 @@ function positiveIntFromEnv(name: string, fallback: number): number {
  * пишутся в журнал каждым успешным прогоном, чтобы порог было на чём выставить.
  */
 function rejectHollowBackup(
-  stats: DumpContentStats,
-  sizeBytes: number,
+	stats: DumpContentStats,
+	sizeBytes: number,
 ): string | null {
-  if (sizeBytes <= IV_LENGTH) {
-    return "копия состоит из одного вектора инициализации: pg_dump не отдал ни байта.";
-  }
-  if (stats.unterminatedCopy) {
-    return `копия оборвана внутри секции COPY (секций ${stats.copyBlocks}, строк данных ${stats.dataRows}): восстановить её нельзя.`;
-  }
-  if (!stats.complete) {
-    return `в копии нет завершающего маркера pg_dump ("${DUMP_COMPLETION_MARKER}"): выгрузка оборвана на ${stats.dataRows} строках данных.`;
-  }
-  const minRows = positiveIntFromEnv("DENTE_BACKUP_MIN_DATA_ROWS", 1);
-  if (stats.dataRows < minRows) {
-    return `в копии ${stats.dataRows} строк данных при минимуме ${minRows}: это схема без данных, а не копия. Частая причина — роль подключения не может обойти RLS (нужен атрибут BYPASSRLS).`;
-  }
-  const minTables = positiveIntFromEnv("DENTE_BACKUP_MIN_POPULATED_TABLES", 1);
-  if (stats.populatedTables < minTables) {
-    return `строки данных нашлись только в ${stats.populatedTables} таблицах при минимуме ${minTables}: остальные таблицы выгружены пустыми.`;
-  }
-  return null;
+	if (sizeBytes <= IV_LENGTH) {
+		return "копия состоит из одного вектора инициализации: pg_dump не отдал ни байта.";
+	}
+	if (stats.unterminatedCopy) {
+		return `копия оборвана внутри секции COPY (секций ${stats.copyBlocks}, строк данных ${stats.dataRows}): восстановить её нельзя.`;
+	}
+	if (!stats.complete) {
+		return `в копии нет завершающего маркера pg_dump ("${DUMP_COMPLETION_MARKER}"): выгрузка оборвана на ${stats.dataRows} строках данных.`;
+	}
+	const minRows = positiveIntFromEnv("DENTE_BACKUP_MIN_DATA_ROWS", 1);
+	if (stats.dataRows < minRows) {
+		return `в копии ${stats.dataRows} строк данных при минимуме ${minRows}: это схема без данных, а не копия. Частая причина — роль подключения не может обойти RLS (нужен атрибут BYPASSRLS).`;
+	}
+	const minTables = positiveIntFromEnv("DENTE_BACKUP_MIN_POPULATED_TABLES", 1);
+	if (stats.populatedTables < minTables) {
+		return `строки данных нашлись только в ${stats.populatedTables} таблицах при минимуме ${minTables}: остальные таблицы выгружены пустыми.`;
+	}
+	return null;
 }
 
 function backupsDirectory(): string {
-  return (
-    process.env.DENTE_BACKUP_DIR?.trim() ||
-    path.resolve(process.cwd(), "../../backups")
-  );
+	return (
+		process.env.DENTE_BACKUP_DIR?.trim() ||
+		path.resolve(process.cwd(), "../../backups")
+	);
 }
 
 /**
@@ -213,42 +213,42 @@ function backupsDirectory(): string {
  * известным всем ключом.
  */
 function resolveEncryptionKey(): { key: Buffer } | { error: string } {
-  const raw = process.env.CLINIC_ENCRYPTION_KEY?.trim();
-  if (!raw) {
-    return {
-      error:
-        "CLINIC_ENCRYPTION_KEY не задан. Копии не создаются: без ключа их нельзя зашифровать, а копия медицинских данных без шифрования недопустима.",
-    };
-  }
-  if (raw === PUBLIC_SAMPLE_KEY) {
-    return {
-      error:
-        "CLINIC_ENCRYPTION_KEY равен примеру из репозитория. Задайте собственный ключ длиной 32 байта.",
-    };
-  }
-  const keyBytes = Buffer.from(raw, "utf8");
-  if (keyBytes.length < REQUIRED_KEY_BYTES) {
-    return {
-      error: `CLINIC_ENCRYPTION_KEY короче ${REQUIRED_KEY_BYTES} байт. Короткий ключ раньше молча дополнялся нулями, что резко ослабляло шифрование.`,
-    };
-  }
-  // Ровно 32 байта: длинный ключ сворачиваем через SHA-256, чтобы не терять
-  // энтропию простой обрезкой.
-  const key =
-    keyBytes.length === REQUIRED_KEY_BYTES
-      ? keyBytes
-      : crypto.createHash("sha256").update(keyBytes).digest();
-  return { key };
+	const raw = process.env.CLINIC_ENCRYPTION_KEY?.trim();
+	if (!raw) {
+		return {
+			error:
+				"CLINIC_ENCRYPTION_KEY не задан. Копии не создаются: без ключа их нельзя зашифровать, а копия медицинских данных без шифрования недопустима.",
+		};
+	}
+	if (raw === PUBLIC_SAMPLE_KEY) {
+		return {
+			error:
+				"CLINIC_ENCRYPTION_KEY равен примеру из репозитория. Задайте собственный ключ длиной 32 байта.",
+		};
+	}
+	const keyBytes = Buffer.from(raw, "utf8");
+	if (keyBytes.length < REQUIRED_KEY_BYTES) {
+		return {
+			error: `CLINIC_ENCRYPTION_KEY короче ${REQUIRED_KEY_BYTES} байт. Короткий ключ раньше молча дополнялся нулями, что резко ослабляло шифрование.`,
+		};
+	}
+	// Ровно 32 байта: длинный ключ сворачиваем через SHA-256, чтобы не терять
+	// энтропию простой обрезкой.
+	const key =
+		keyBytes.length === REQUIRED_KEY_BYTES
+			? keyBytes
+			: crypto.createHash("sha256").update(keyBytes).digest();
+	return { key };
 }
 
 function pgDumpExecutable(): string {
-  const configured = process.env.PG_DUMP_PATH?.trim();
-  if (configured && fs.existsSync(configured)) return configured;
-  const portable = path.resolve(
-    process.cwd(),
-    "../../.postgres/bin/pg_dump.exe",
-  );
-  return fs.existsSync(portable) ? portable : "pg_dump";
+	const configured = process.env.PG_DUMP_PATH?.trim();
+	if (configured && fs.existsSync(configured)) return configured;
+	const portable = path.resolve(
+		process.cwd(),
+		"../../.postgres/bin/pg_dump.exe",
+	);
+	return fs.existsSync(portable) ? portable : "pg_dump";
 }
 
 /**
@@ -256,27 +256,27 @@ function pgDumpExecutable(): string {
  * иначе копия снимается не с той базы, с которой работает приложение.
  */
 function pgDumpArguments(): string[] {
-  const baseArgs = ["--clean", "--if-exists", "--no-owner", "--no-acl"];
-  const databaseUrl = process.env.DATABASE_URL?.trim();
-  if (databaseUrl) return ["--dbname", databaseUrl, ...baseArgs];
-  return [
-    "-U",
-    process.env.POSTGRES_USER || "dental",
-    "-d",
-    process.env.POSTGRES_DB || "dental_crm",
-    ...baseArgs,
-  ];
+	const baseArgs = ["--clean", "--if-exists", "--no-owner", "--no-acl"];
+	const databaseUrl = process.env.DATABASE_URL?.trim();
+	if (databaseUrl) return ["--dbname", databaseUrl, ...baseArgs];
+	return [
+		"-U",
+		process.env.POSTGRES_USER || "dental",
+		"-d",
+		process.env.POSTGRES_DB || "dental_crm",
+		...baseArgs,
+	];
 }
 
 function removePartialFile(filePath: string): void {
-  try {
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  } catch (error) {
-    console.warn(
-      "[BackupWorker] Не удалось удалить незавершённый файл копии:",
-      error,
-    );
-  }
+	try {
+		if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+	} catch (error) {
+		console.warn(
+			"[BackupWorker] Не удалось удалить незавершённый файл копии:",
+			error,
+		);
+	}
 }
 
 /**
@@ -284,26 +284,26 @@ function removePartialFile(filePath: string): void {
  * и со временем занимала весь диск клиники.
  */
 export function pruneOldBackups(
-  retentionDays = Number(process.env.DENTE_BACKUP_RETENTION_DAYS ?? 30),
+	retentionDays = Number(process.env.DENTE_BACKUP_RETENTION_DAYS ?? 30),
 ): void {
-  if (!Number.isFinite(retentionDays) || retentionDays <= 0) return;
-  const dir = backupsDirectory();
-  if (!fs.existsSync(dir)) return;
-  const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
-  try {
-    for (const name of fs.readdirSync(dir)) {
-      if (!name.startsWith("dente_crm_backup_") || !name.endsWith(".sql.enc"))
-        continue;
-      const full = path.join(dir, name);
-      try {
-        if (fs.statSync(full).mtimeMs < cutoff) fs.unlinkSync(full);
-      } catch {
-        // Файл мог быть удалён параллельно — остальные это не должно останавливать.
-      }
-    }
-  } catch (error) {
-    console.warn("[BackupWorker] Не удалось очистить старые копии:", error);
-  }
+	if (!Number.isFinite(retentionDays) || retentionDays <= 0) return;
+	const dir = backupsDirectory();
+	if (!fs.existsSync(dir)) return;
+	const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+	try {
+		for (const name of fs.readdirSync(dir)) {
+			if (!name.startsWith("dente_crm_backup_") || !name.endsWith(".sql.enc"))
+				continue;
+			const full = path.join(dir, name);
+			try {
+				if (fs.statSync(full).mtimeMs < cutoff) fs.unlinkSync(full);
+			} catch {
+				// Файл мог быть удалён параллельно — остальные это не должно останавливать.
+			}
+		}
+	} catch (error) {
+		console.warn("[BackupWorker] Не удалось очистить старые копии:", error);
+	}
 }
 
 /**
@@ -311,160 +311,160 @@ export function pruneOldBackups(
  * success означает, что файл ПОЛНОСТЬЮ записан и закрыт.
  */
 export async function createEncryptedBackup(): Promise<BackupResult> {
-  const keyResult = resolveEncryptionKey();
-  if ("error" in keyResult) {
-    console.error(`[BackupWorker] ${keyResult.error}`);
-    return { success: false, error: keyResult.error };
-  }
+	const keyResult = resolveEncryptionKey();
+	if ("error" in keyResult) {
+		console.error(`[BackupWorker] ${keyResult.error}`);
+		return { success: false, error: keyResult.error };
+	}
 
-  let filePath = "";
-  try {
-    const backupsDir = backupsDirectory();
-    fs.mkdirSync(backupsDir, { recursive: true });
+	let filePath = "";
+	try {
+		const backupsDir = backupsDirectory();
+		fs.mkdirSync(backupsDir, { recursive: true });
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    filePath = path.join(backupsDir, `dente_crm_backup_${timestamp}.sql.enc`);
+		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+		filePath = path.join(backupsDir, `dente_crm_backup_${timestamp}.sql.enc`);
 
-    const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv(
-      ENCRYPTION_ALGORITHM,
-      keyResult.key,
-      iv,
-    );
-    const writeStream = fs.createWriteStream(filePath, { mode: 0o600 });
-    // IV пишется в начало файла — он нужен для расшифровки.
-    writeStream.write(iv);
+		const iv = crypto.randomBytes(IV_LENGTH);
+		const cipher = crypto.createCipheriv(
+			ENCRYPTION_ALGORITHM,
+			keyResult.key,
+			iv,
+		);
+		const writeStream = fs.createWriteStream(filePath, { mode: 0o600 });
+		// IV пишется в начало файла — он нужен для расшифровки.
+		writeStream.write(iv);
 
-    const pgDump = spawn(pgDumpExecutable(), pgDumpArguments(), {
-      env: { ...process.env },
-    });
+		const pgDump = spawn(pgDumpExecutable(), pgDumpArguments(), {
+			env: { ...process.env },
+		});
 
-    // Счётчик стоит ДО шифра: после него виден только шифротекст.
-    const inspector = new DumpContentInspector();
+		// Счётчик стоит ДО шифра: после него виден только шифротекст.
+		const inspector = new DumpContentInspector();
 
-    const stderrChunks: string[] = [];
-    pgDump.stderr.on("data", (data) => {
-      const text = String(data);
-      stderrChunks.push(text);
-      console.warn(`[BackupWorker] pg_dump: ${text.trim()}`);
-    });
+		const stderrChunks: string[] = [];
+		pgDump.stderr.on("data", (data) => {
+			const text = String(data);
+			stderrChunks.push(text);
+			console.warn(`[BackupWorker] pg_dump: ${text.trim()}`);
+		});
 
-    pgDump.stdout.pipe(inspector).pipe(cipher).pipe(writeStream);
+		pgDump.stdout.pipe(inspector).pipe(cipher).pipe(writeStream);
 
-    const outcome = await new Promise<BackupResult>((resolve) => {
-      let settled = false;
-      const settle = (result: BackupResult) => {
-        if (settled) return;
-        settled = true;
-        resolve(result);
-      };
+		const outcome = await new Promise<BackupResult>((resolve) => {
+			let settled = false;
+			const settle = (result: BackupResult) => {
+				if (settled) return;
+				settled = true;
+				resolve(result);
+			};
 
-      // БЫЛО: обработчика 'error' не было — отсутствующий pg_dump ронял
-      // весь процесс API необработанным исключением.
-      pgDump.on("error", (error) => {
-        writeStream.destroy();
-        settle({
-          success: false,
-          error: `Не удалось запустить pg_dump (${(error as Error).message}). Укажите путь в PG_DUMP_PATH.`,
-        });
-      });
+			// БЫЛО: обработчика 'error' не было — отсутствующий pg_dump ронял
+			// весь процесс API необработанным исключением.
+			pgDump.on("error", (error) => {
+				writeStream.destroy();
+				settle({
+					success: false,
+					error: `Не удалось запустить pg_dump (${(error as Error).message}). Укажите путь в PG_DUMP_PATH.`,
+				});
+			});
 
-      // Сбой в середине конвейера (шифр, счётчик) без обработчика тоже валит
-      // процесс: 'error' на потоке без слушателя выбрасывается наружу.
-      for (const stage of [inspector, cipher]) {
-        stage.on("error", (error: Error) => {
-          writeStream.destroy();
-          settle({
-            success: false,
-            error: `Ошибка конвейера копии: ${error.message}`,
-          });
-        });
-      }
+			// Сбой в середине конвейера (шифр, счётчик) без обработчика тоже валит
+			// процесс: 'error' на потоке без слушателя выбрасывается наружу.
+			for (const stage of [inspector, cipher]) {
+				stage.on("error", (error: Error) => {
+					writeStream.destroy();
+					settle({
+						success: false,
+						error: `Ошибка конвейера копии: ${error.message}`,
+					});
+				});
+			}
 
-      writeStream.on("error", (error) => {
-        settle({
-          success: false,
-          error: `Ошибка записи файла копии: ${(error as Error).message}`,
-        });
-      });
+			writeStream.on("error", (error) => {
+				settle({
+					success: false,
+					error: `Ошибка записи файла копии: ${(error as Error).message}`,
+				});
+			});
 
-      // БЫЛО: успех резолвился по закрытию pg_dump — до того, как поток
-      // шифра дописал последний блок на диск. Затем маятник качнулся в другую
-      // сторону: успех стали резолвить по 'finish' файла, а код возврата
-      // pg_dump на тот момент ещё null, и его пропускали как «ошибки нет».
-      // Успех требует ОБА события: код возврата 0 И закрытый файл. Порядок,
-      // в котором они приходят, значения не имеет.
-      let dumpExitCode: number | null = null;
-      let streamFinished = false;
-      const settleIfComplete = () => {
-        if (dumpExitCode === 0 && streamFinished) {
-          settle({ success: true, filePath });
-        }
-      };
+			// БЫЛО: успех резолвился по закрытию pg_dump — до того, как поток
+			// шифра дописал последний блок на диск. Затем маятник качнулся в другую
+			// сторону: успех стали резолвить по 'finish' файла, а код возврата
+			// pg_dump на тот момент ещё null, и его пропускали как «ошибки нет».
+			// Успех требует ОБА события: код возврата 0 И закрытый файл. Порядок,
+			// в котором они приходят, значения не имеет.
+			let dumpExitCode: number | null = null;
+			let streamFinished = false;
+			const settleIfComplete = () => {
+				if (dumpExitCode === 0 && streamFinished) {
+					settle({ success: true, filePath });
+				}
+			};
 
-      pgDump.on("close", (code) => {
-        dumpExitCode = code;
-        if (code !== 0) {
-          writeStream.destroy();
-          settle({
-            success: false,
-            error:
-              `pg_dump завершился с кодом ${code}. ${stderrChunks.join(" ").trim()}`.trim(),
-          });
-          return;
-        }
-        settleIfComplete();
-      });
+			pgDump.on("close", (code) => {
+				dumpExitCode = code;
+				if (code !== 0) {
+					writeStream.destroy();
+					settle({
+						success: false,
+						error:
+							`pg_dump завершился с кодом ${code}. ${stderrChunks.join(" ").trim()}`.trim(),
+					});
+					return;
+				}
+				settleIfComplete();
+			});
 
-      writeStream.on("finish", () => {
-        streamFinished = true;
-        settleIfComplete();
-      });
-    });
+			writeStream.on("finish", () => {
+				streamFinished = true;
+				settleIfComplete();
+			});
+		});
 
-    if (!outcome.success) {
-      // Незавершённый файл удаляем: иначе в папке остаются копии
-      // правильного вида и ненулевого размера, которые не расшифровать.
-      removePartialFile(filePath);
-      console.error(`[BackupWorker] Копия НЕ создана: ${outcome.error}`);
-      return outcome;
-    }
+		if (!outcome.success) {
+			// Незавершённый файл удаляем: иначе в папке остаются копии
+			// правильного вида и ненулевого размера, которые не расшифровать.
+			removePartialFile(filePath);
+			console.error(`[BackupWorker] Копия НЕ создана: ${outcome.error}`);
+			return outcome;
+		}
 
-    const sizeBytes = fs.statSync(filePath).size;
-    const stats = inspector.stats();
-    // БЫЛО: порог в 80 байт. Дамп ПУСТОЙ базы весит полмегабайта, так что
-    // проверка по размеру пропускала и схему без данных, и оборванный дамп.
-    // Решает только содержимое: секции COPY, строки в них и завершающий
-    // маркер pg_dump.
-    const rejection = rejectHollowBackup(stats, sizeBytes);
-    if (rejection) {
-      removePartialFile(filePath);
-      const error = `Копия признана недействительной и удалена: ${rejection}`;
-      console.error(`[BackupWorker] ${error}`);
-      return { success: false, error };
-    }
+		const sizeBytes = fs.statSync(filePath).size;
+		const stats = inspector.stats();
+		// БЫЛО: порог в 80 байт. Дамп ПУСТОЙ базы весит полмегабайта, так что
+		// проверка по размеру пропускала и схему без данных, и оборванный дамп.
+		// Решает только содержимое: секции COPY, строки в них и завершающий
+		// маркер pg_dump.
+		const rejection = rejectHollowBackup(stats, sizeBytes);
+		if (rejection) {
+			removePartialFile(filePath);
+			const error = `Копия признана недействительной и удалена: ${rejection}`;
+			console.error(`[BackupWorker] ${error}`);
+			return { success: false, error };
+		}
 
-    console.log(
-      `[BackupWorker] Копия создана: ${filePath} (${Math.round(sizeBytes / 1024)} КБ, ` +
-        `секций COPY ${stats.copyBlocks}, строк данных ${stats.dataRows}, ` +
-        `таблиц со строками ${stats.populatedTables})`,
-    );
-    pruneOldBackups();
-    return outcome;
-  } catch (error) {
-    if (filePath) removePartialFile(filePath);
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("[BackupWorker] Исключение при создании копии:", error);
-    return { success: false, error: message };
-  }
+		console.log(
+			`[BackupWorker] Копия создана: ${filePath} (${Math.round(sizeBytes / 1024)} КБ, ` +
+				`секций COPY ${stats.copyBlocks}, строк данных ${stats.dataRows}, ` +
+				`таблиц со строками ${stats.populatedTables})`,
+		);
+		pruneOldBackups();
+		return outcome;
+	} catch (error) {
+		if (filePath) removePartialFile(filePath);
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("[BackupWorker] Исключение при создании копии:", error);
+		return { success: false, error: message };
+	}
 }
 
 let backupInterval: NodeJS.Timeout | null = null;
 
 function backupIntervalMs(): number {
-  const configured = Number(process.env.DENTE_BACKUP_INTERVAL_HOURS ?? 24);
-  const hours = Number.isFinite(configured) && configured > 0 ? configured : 24;
-  return hours * 60 * 60 * 1000;
+	const configured = Number(process.env.DENTE_BACKUP_INTERVAL_HOURS ?? 24);
+	const hours = Number.isFinite(configured) && configured > 0 ? configured : 24;
+	return hours * 60 * 60 * 1000;
 }
 
 /**
@@ -475,40 +475,40 @@ function backupIntervalMs(): number {
  * клинике, где компьютер выключают на ночь, копия не создавалась никогда.
  */
 export function startBackupDaemon(): void {
-  if (backupInterval) return;
+	if (backupInterval) return;
 
-  const keyResult = resolveEncryptionKey();
-  if ("error" in keyResult) {
-    // Молчать нельзя: клиника должна знать, что копий НЕТ.
-    console.error(
-      `[BackupWorker] Резервное копирование ОТКЛЮЧЕНО. ${keyResult.error}`,
-    );
-    return;
-  }
+	const keyResult = resolveEncryptionKey();
+	if ("error" in keyResult) {
+		// Молчать нельзя: клиника должна знать, что копий НЕТ.
+		console.error(
+			`[BackupWorker] Резервное копирование ОТКЛЮЧЕНО. ${keyResult.error}`,
+		);
+		return;
+	}
 
-  console.log("[BackupWorker] Резервное копирование включено.");
+	console.log("[BackupWorker] Резервное копирование включено.");
 
-  const firstRunDelayMs = Number(
-    process.env.DENTE_BACKUP_FIRST_RUN_DELAY_MS ?? 120_000,
-  );
-  const firstRun: ReturnType<typeof setTimeout> = setTimeout(
-    () => {
-      void createEncryptedBackup();
-    },
-    Math.max(0, firstRunDelayMs),
-  );
-  // unref, чтобы отложенный первый прогон не удерживал процесс при остановке.
-  (firstRun as unknown as { unref?: () => void }).unref?.();
+	const firstRunDelayMs = Number(
+		process.env.DENTE_BACKUP_FIRST_RUN_DELAY_MS ?? 120_000,
+	);
+	const firstRun: ReturnType<typeof setTimeout> = setTimeout(
+		() => {
+			void createEncryptedBackup();
+		},
+		Math.max(0, firstRunDelayMs),
+	);
+	// unref, чтобы отложенный первый прогон не удерживал процесс при остановке.
+	(firstRun as unknown as { unref?: () => void }).unref?.();
 
-  backupInterval = setInterval(() => {
-    void createEncryptedBackup();
-  }, backupIntervalMs());
+	backupInterval = setInterval(() => {
+		void createEncryptedBackup();
+	}, backupIntervalMs());
 }
 
 export function stopBackupDaemon(): void {
-  if (backupInterval) {
-    clearInterval(backupInterval);
-    backupInterval = null;
-    console.log("[BackupWorker] Резервное копирование остановлено.");
-  }
+	if (backupInterval) {
+		clearInterval(backupInterval);
+		backupInterval = null;
+		console.log("[BackupWorker] Резервное копирование остановлено.");
+	}
 }

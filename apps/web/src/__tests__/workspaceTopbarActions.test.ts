@@ -60,7 +60,11 @@ function walk(node: unknown, visit: (node: AstNode) => void): void {
 	if (!isNode(node)) return;
 	visit(node);
 	for (const key of Object.keys(node)) {
-		if (key === "loc" || key === "leadingComments" || key === "trailingComments")
+		if (
+			key === "loc" ||
+			key === "leadingComments" ||
+			key === "trailingComments"
+		)
 			continue;
 		walk(node[key], visit);
 	}
@@ -124,7 +128,10 @@ interface TopbarControl {
 	readonly start: number;
 }
 
-function collectTopActions(): { container: AstNode; controls: TopbarControl[] } {
+function collectTopActions(): {
+	container: AstNode;
+	controls: TopbarControl[];
+} {
 	let container: AstNode | null = null;
 	walk(shellAst.program, (node) => {
 		if (container) return;
@@ -134,7 +141,7 @@ function collectTopActions(): { container: AstNode; controls: TopbarControl[] } 
 	});
 	assert.ok(
 		container,
-		"в workspaceShell.tsx не найден контейнер className=\"top-actions\" — переписан не тот файл",
+		'в workspaceShell.tsx не найден контейнер className="top-actions" — переписан не тот файл',
 	);
 
 	// Контейнер найден как ОТКРЫВАЮЩИЙ тег; сам элемент со детьми — его родитель.
@@ -222,7 +229,10 @@ test("«Запись» стоит раньше кнопок, которые за
 	const primary = controls.find((control) =>
 		(control.className ?? "").split(/\s+/).includes("primary-button"),
 	);
-	assert.ok(primary, "главное действие «Запись» (.primary-button) исчезло из строки действий");
+	assert.ok(
+		primary,
+		"главное действие «Запись» (.primary-button) исчезло из строки действий",
+	);
 	const expendable = controls.filter((control) =>
 		(control.className ?? "").split(/\s+/).includes("compact-top-button"),
 	);
@@ -265,7 +275,9 @@ test("необязательные кнопки действительно ск�
 	 * здесь охраняется только состав, подписи и порядок.
 	 */
 	const css = readFileSync(redesignCssPath, "utf8");
-	const narrowBlocks = [...css.matchAll(/@media\s*\(max-width:\s*(\d+)px\)\s*\{/g)];
+	const narrowBlocks = [
+		...css.matchAll(/@media\s*\(max-width:\s*(\d+)px\)\s*\{/g),
+	];
 	const hidesCompact = narrowBlocks.some((match) => {
 		const width = Number(match[1]);
 		if (width > 1140) return false;

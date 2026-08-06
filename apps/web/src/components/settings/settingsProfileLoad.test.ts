@@ -12,9 +12,9 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 import {
+	PROFILE_PANEL_SUBJECT,
 	parseProfilePayload,
 	passwordStrength,
-	PROFILE_PANEL_SUBJECT,
 } from "./settingsProfileLoad";
 
 describe("чтение своего профиля", () => {
@@ -43,7 +43,10 @@ describe("чтение своего профиля", () => {
 	});
 
 	test("профиль без id не годится: он ничего не идентифицирует", () => {
-		const outcome = parseProfilePayload(200, '{"ok":true,"user":{"fullName":"Иванов"}}');
+		const outcome = parseProfilePayload(
+			200,
+			'{"ok":true,"user":{"fullName":"Иванов"}}',
+		);
 		assert.equal(outcome.ok, false);
 	});
 
@@ -53,7 +56,10 @@ describe("чтение своего профиля", () => {
 			'{"ok":true,"user":{"id":"u1","fullName":"  ","role":"administrator","email":null}}',
 		);
 		assert.equal(outcome.ok, true);
-		assert.equal(outcome.ok === true && outcome.profile.fullName, "ФИО не заполнено");
+		assert.equal(
+			outcome.ok === true && outcome.profile.fullName,
+			"ФИО не заполнено",
+		);
 		assert.equal(outcome.ok === true && outcome.profile.email, null);
 	});
 

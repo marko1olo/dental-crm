@@ -19,18 +19,18 @@
  * к roleDerived из дашборда, пока гидратация не перейдёт на effective.
  */
 
-import type React from "react";
-import { useCallback, useMemo, useState } from "react";
 import {
-	staffAuthorityFlagKeys,
 	type StaffAuthorityFlagKey,
 	type StaffAuthorityFlagsDto,
 	type StaffAuthorityState,
+	staffAuthorityFlagKeys,
 } from "@dental/shared";
+import type React from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 import { staffRoleTitle } from "./settingsInviteRoles";
 
 type StaffMemberLite = {
@@ -144,9 +144,11 @@ function refusedFlagsOf(payload: unknown): StaffAuthorityFlagKey[] {
 
 export const StaffAuthorityPanel: React.FC = () => {
 	const appLogic = useAppLogicContext();
-	const dashboardUnknown = (appLogic as { dashboard?: unknown } | null)?.dashboard;
-	const loadDashboard = (appLogic as { loadDashboard?: () => Promise<void> | void } | null)
-		?.loadDashboard;
+	const dashboardUnknown = (appLogic as { dashboard?: unknown } | null)
+		?.dashboard;
+	const loadDashboard = (
+		appLogic as { loadDashboard?: () => Promise<void> | void } | null
+	)?.loadDashboard;
 
 	const clinicSettings =
 		dashboardUnknown &&
@@ -165,7 +167,10 @@ export const StaffAuthorityPanel: React.FC = () => {
 	 * roleDerived, поэтому без этого карта сразу «забыла» бы надбавку.
 	 */
 	const [overrides, setOverrides] = useState<
-		Record<string, { roleDerived: Flags; grants: Flags; effective: Flags; role: string }>
+		Record<
+			string,
+			{ roleDerived: Flags; grants: Flags; effective: Flags; role: string }
+		>
 	>({});
 	const [save, setSave] = useState<SaveState>({ kind: "idle" });
 	const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -178,7 +183,8 @@ export const StaffAuthorityPanel: React.FC = () => {
 			if (!id || seen.has(id)) continue;
 			if (member.active === false) continue;
 			seen.add(id);
-			const nameRaw = typeof member.fullName === "string" ? member.fullName.trim() : "";
+			const nameRaw =
+				typeof member.fullName === "string" ? member.fullName.trim() : "";
 			const name = nameRaw.length > 0 ? nameRaw : id;
 			const role = String(member.role ?? "");
 			const fromDash = flagsFromMember(member);
@@ -230,13 +236,16 @@ export const StaffAuthorityPanel: React.FC = () => {
 			const body: Partial<Record<StaffAuthorityFlagKey, boolean>> = {
 				[flag]: nextValue,
 			};
-			const response = await fetch(`/api/settings/staff/${row.staffId}/authority`, {
-				method: "PUT",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify(body),
-			});
+			const response = await fetch(
+				`/api/settings/staff/${row.staffId}/authority`,
+				{
+					method: "PUT",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify(body),
+				},
+			);
 			const payload = (await response.json().catch(() => null)) as unknown;
 			if (!response.ok) {
 				const refused = refusedFlagsOf(payload);
@@ -304,7 +313,10 @@ export const StaffAuthorityPanel: React.FC = () => {
 			setSave({ kind: "idle" });
 			await refreshDashboard();
 		} catch {
-			const msg = actionFailureToast(`Полномочия «${row.name}» не сохранены`, null);
+			const msg = actionFailureToast(
+				`Полномочия «${row.name}» не сохранены`,
+				null,
+			);
 			setSave({ kind: "failed", message: msg });
 			showToast(msg, "error");
 		}
@@ -390,9 +402,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 									<button
 										type="button"
 										className="w-full text-left px-3 py-2.5 flex flex-wrap items-center justify-between gap-2 bg-transparent border-0 cursor-pointer"
-										onClick={() =>
-											setExpandedId(open ? null : row.staffId)
-										}
+										onClick={() => setExpandedId(open ? null : row.staffId)}
 										aria-expanded={open}
 										data-testid={`staff-authority-toggle-${row.staffId}`}
 									>

@@ -52,7 +52,9 @@ export function createTenantTestApp(): FastifyInstance {
 	app.addHook("onRequest", async (request) => {
 		getRequestIdentity(request);
 		const carrier = request as unknown as Record<string, unknown>;
-		const identity = carrier.user as { organizationId?: string | null } | undefined;
+		const identity = carrier.user as
+			| { organizationId?: string | null }
+			| undefined;
 		if (identity?.organizationId) {
 			carrier.tenantId = identity.organizationId;
 		}
@@ -65,7 +67,9 @@ export function createTenantTestApp(): FastifyInstance {
 			const carrier = request as unknown as Record<string, unknown>;
 			const tenantId = carrier.tenantId;
 			if (typeof tenantId === "string" && tenantId.length > 0) {
-				return withTenantCtx(tenantId, async () => originalHandler.call(this, request, reply));
+				return withTenantCtx(tenantId, async () =>
+					originalHandler.call(this, request, reply),
+				);
 			}
 			return originalHandler.call(this, request, reply);
 		};

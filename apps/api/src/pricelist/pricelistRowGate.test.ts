@@ -1,5 +1,5 @@
-import { describe, test } from "node:test";
 import assert from "node:assert/strict";
+import { describe, test } from "node:test";
 import type { ServiceCatalogItem } from "@dental/shared";
 import { analyzePricelist } from "./analyzer.js";
 
@@ -203,9 +203,10 @@ describe("пустой прайс и отброшенный прайс разл�
 
 	test("строки пришли и все отброшены — это НЕ пустой прайс", async () => {
 		const response = await analyze(
-			["Прайс-лист действителен с 01.01.2025", "г. Москва, ул. Ленина, д. 5"].join(
-				"\n",
-			),
+			[
+				"Прайс-лист действителен с 01.01.2025",
+				"г. Москва, ул. Ленина, д. 5",
+			].join("\n"),
 		);
 		assert.equal(response.items.length, 0, "служебные строки стали услугами");
 		assert.equal(

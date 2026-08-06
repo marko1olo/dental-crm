@@ -64,7 +64,11 @@ describe("egisz + vk + workspace preset — body guards (AUTH-first; inject)", (
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: String(response.body || "") };
+		return {
+			statusCode: response.statusCode,
+			json,
+			body: String(response.body || ""),
+		};
 	}
 
 	before(async () => {
@@ -110,9 +114,7 @@ describe("egisz + vk + workspace preset — body guards (AUTH-first; inject)", (
 				{ body: { snils: VALID_SNILS_EARLY }, withClinic: false },
 			);
 			assert.ok(
-				r.statusCode === 401 ||
-					r.statusCode === 403 ||
-					r.statusCode === 503,
+				r.statusCode === 401 || r.statusCode === 403 || r.statusCode === 503,
 				r.body,
 			);
 			assert.notEqual(r.statusCode, 400);
@@ -296,11 +298,8 @@ describe("egisz + vk + workspace preset — body guards (AUTH-first; inject)", (
 		});
 		assert.notEqual(r.statusCode, 500, r.body);
 		assert.ok(
-			r.statusCode === 200 ||
-				r.statusCode === 404 ||
-				r.statusCode === 400,
+			r.statusCode === 200 || r.statusCode === 404 || r.statusCode === 400,
 			r.body,
 		);
 	});
 });
-

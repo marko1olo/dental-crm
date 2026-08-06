@@ -7,7 +7,10 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
-import { applyClinicModeToFlags, resolveClinicMode } from "../lib/clinicCapabilities";
+import {
+	applyClinicModeToFlags,
+	resolveClinicMode,
+} from "../lib/clinicCapabilities";
 /*
  * Заголовки авторизации. Все три запроса ниже уходили БЕЗ них, и это отменяло
  * модульность целиком: GET /api/workspace/profile отвечает 401, если не может
@@ -200,7 +203,10 @@ export function useWorkspaceProfile() {
 	const clinicMode = resolveClinicMode(
 		useAppLogicContext().dashboard?.clinicSettings?.profile?.mode,
 	);
-	return useMemo(() => applyClinicModeToFlags(store, clinicMode), [store, clinicMode]);
+	return useMemo(
+		() => applyClinicModeToFlags(store, clinicMode),
+		[store, clinicMode],
+	);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -215,11 +221,13 @@ export async function applyWorkspacePreset(
 	},
 ): Promise<WorkspaceFeatureFlags> {
 	let flags: WorkspaceFeatureFlags;
-	
+
 	try {
 		const res = await fetch(`/api/workspace/preset/${presetName}`, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+			}),
 			body: JSON.stringify(extraData || {}),
 		});
 		if (!res.ok) {
@@ -246,7 +254,7 @@ export async function applyWorkspacePreset(
 		);
 		// Local fallback for offline/MVP mode
 		const baseFlags = { ...useWorkspaceProfileStore.getState() };
-		
+
 		if (presetName === "solo") {
 			baseFlags.hasAssistants = false;
 			baseFlags.hasMultipleChairs = false;
@@ -275,7 +283,7 @@ export async function applyWorkspacePreset(
 			baseFlags.hasOrthodontics = true;
 			baseFlags.numberOfDoctors = 10;
 		}
-		
+
 		baseFlags.workspacePreset = presetName;
 		flags = baseFlags;
 	}
@@ -362,7 +370,9 @@ export async function saveWorkspaceFlags(
 	try {
 		const response = await fetch("/api/workspace/profile", {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+			}),
 			body: JSON.stringify(partial),
 		});
 		if (response.ok) {
@@ -396,7 +406,10 @@ export async function saveWorkspaceFlags(
 	 */
 	const store = useWorkspaceProfileStore.getState();
 	for (const [k, v] of Object.entries(partial)) {
-		store.setFlag(k as keyof WorkspaceFeatureFlags, v as boolean | string | number);
+		store.setFlag(
+			k as keyof WorkspaceFeatureFlags,
+			v as boolean | string | number,
+		);
 	}
 
 	return { savedOnServer, failureText };

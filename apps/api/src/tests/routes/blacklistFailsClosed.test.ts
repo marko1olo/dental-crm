@@ -2,9 +2,17 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { organizations, patientArchiveReasonsAndBlacklists, patients } from "../../db/schema.js";
 import { isPatientBookingBlocked } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
-import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import {
+	organizations,
+	patientArchiveReasonsAndBlacklists,
+	patients,
+} from "../../db/schema.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 
 /**
  * ЧЁРНЫЙ СПИСОК ОБЯЗАН ОТВЕЧАТЬ В БЕЗОПАСНУЮ СТОРОНУ.
@@ -39,7 +47,9 @@ function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
 	// Намеренно узкая проверка: прежняя ловила любое «does not exist», включая
 	// отсутствующую КОЛОНКУ, и расхождение схемы с кодом молча уходило в skip.
-	return /ECONNREFUSED|ENOTFOUND|password authentication|getaddrinfo|Connection terminated/i.test(message);
+	return /ECONNREFUSED|ENOTFOUND|password authentication|getaddrinfo|Connection terminated/i.test(
+		message,
+	);
 }
 
 describe("чёрный список отвечает в безопасную сторону", () => {
@@ -55,18 +65,20 @@ describe("чёрный список отвечает в безопасную с�
 			 * вставка без контекста отвергается кодом 42501.
 			 */
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника чёрного списка" });
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника чёрного списка" });
 				await db.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
-					fullName: PATIENT_NAME
+					fullName: PATIENT_NAME,
 				});
 				await db.insert(patientArchiveReasonsAndBlacklists).values({
 					organizationId: ORG_ID,
 					patientId: PATIENT_ID,
 					patientName: PATIENT_NAME,
 					archiveReason: "Проверка безопасной стороны",
-					isBookingBlocked: true
+					isBookingBlocked: true,
 				});
 			});
 		} catch (error) {
@@ -84,24 +96,38 @@ describe("чёрный список отвечает в безопасную с�
 
 		// Организация не UUID — PostgreSQL отвергает сравнение по типу колонки.
 		// Это настоящая ошибка базы, а не подделанная.
-		const thrown = await isPatientBookingBlocked("организация-которой-нет", PATIENT_ID).then(
+		const thrown = await isPatientBookingBlocked(
+			"организация-которой-нет",
+			PATIENT_ID,
+		).then(
 			(value) => ({ kind: "вернула" as const, value }),
-			(error: unknown) => ({ kind: "упала" as const, error })
+			(error: unknown) => ({ kind: "упала" as const, error }),
 		);
 
 		assert.equal(
 			thrown.kind,
 			"упала",
 			`при сбое базы проверка обязана отказать, а она вернула ${JSON.stringify(
-				thrown.kind === "вернула" ? thrown.value : null
-			)} — значит пациента из чёрного списка можно записать`
+				thrown.kind === "вернула" ? thrown.value : null,
+			)} — значит пациента из чёрного списка можно записать`,
 		);
-		const message = thrown.kind === "упала" && thrown.error instanceof Error ? thrown.error.message : "";
-		assert.match(message, /чёрный список/i, `причина отказа должна называть чёрный список, получено «${message}»`);
-		assert.match(message, /Запись не создана/i, "причина отказа должна называть последствие для записи");
+		const message =
+			thrown.kind === "упала" && thrown.error instanceof Error
+				? thrown.error.message
+				: "";
+		assert.match(
+			message,
+			/чёрный список/i,
+			`причина отказа должна называть чёрный список, получено «${message}»`,
+		);
+		assert.match(
+			message,
+			/Запись не создана/i,
+			"причина отказа должна называть последствие для записи",
+		);
 		assert.ok(
 			!/undefined|null|Error:|invalid input syntax/i.test(message),
-			`в тексте для администратора не должно быть кличек кода, получено «${message}»`
+			`в тексте для администратора не должно быть кличек кода, получено «${message}»`,
 		);
 	});
 
@@ -111,8 +137,10 @@ describe("чёрный список отвечает в безопасную с�
 		// `withTenantCtx`. Прямой вызов без контекста читал бы ноль строк и молча
 		// отвечал «не запрещён» — то самое, от чего файл и сторожит.
 		assert.equal(
-			await withFixtureTenant(ORG_ID, async () => isPatientBookingBlocked(ORG_ID, PATIENT_ID)),
-			true
+			await withFixtureTenant(ORG_ID, async () =>
+				isPatientBookingBlocked(ORG_ID, PATIENT_ID),
+			),
+			true,
 		);
 	});
 
@@ -124,9 +152,11 @@ describe("чёрный список отвечает в безопасную с�
 				.where(eq(patientArchiveReasonsAndBlacklists.organizationId, ORG_ID));
 		});
 		assert.equal(
-			await withFixtureTenant(ORG_ID, async () => isPatientBookingBlocked(ORG_ID, PATIENT_ID)),
+			await withFixtureTenant(ORG_ID, async () =>
+				isPatientBookingBlocked(ORG_ID, PATIENT_ID),
+			),
 			false,
-			"без строки запрета запись обязана остаться доступной — иначе клиника не сможет записать никого"
+			"без строки запрета запись обязана остаться доступной — иначе клиника не сможет записать никого",
 		);
 	});
 });

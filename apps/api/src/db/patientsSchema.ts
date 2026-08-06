@@ -15,7 +15,14 @@
  * поколение в ту же таблицу значит закрепить путаницу.
  */
 
-import { index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+	index,
+	pgTable,
+	text,
+	timestamp,
+	unique,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { organizations, patients, users } from "./schema.js";
 
 export const patientDuplicateDecisions = pgTable(
@@ -46,20 +53,27 @@ export const patientDuplicateDecisions = pgTable(
 		decision: text("decision").notNull(),
 		/** Слияние медицинских карт должно быть объяснимо: кто и когда. */
 		decidedByUserId: uuid("decided_by_user_id").references(() => users.id),
-		decidedAt: timestamp("decided_at", { withTimezone: true }).notNull().defaultNow(),
+		decidedAt: timestamp("decided_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
 		reason: text("reason"),
 		/** Что именно перенесено: таблица → число строк, в виде JSON. */
 		movedRowsJson: text("moved_rows_json"),
-		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
 	},
 	(table) => {
 		return {
 			pairUnique: unique("patient_duplicate_decisions_pair_unique").on(
 				table.organizationId,
 				table.leftPatientId,
-				table.rightPatientId
+				table.rightPatientId,
 			),
-			orgIdx: index("patient_duplicate_decisions_org_idx").on(table.organizationId, table.decidedAt)
+			orgIdx: index("patient_duplicate_decisions_org_idx").on(
+				table.organizationId,
+				table.decidedAt,
+			),
 		};
-	}
+	},
 );

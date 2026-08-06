@@ -63,7 +63,9 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 							(d) =>
 								d.lockedByUserId || d.coSignedByUserId || d.doctorId || null,
 						)
-						.filter((id): id is string => typeof id === "string" && id.length > 0),
+						.filter(
+							(id): id is string => typeof id === "string" && id.length > 0,
+						),
 				),
 			);
 			const diaryAuthorNameById = new Map<string, string>();
@@ -72,7 +74,10 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 					.select({ id: users.id, fullName: users.fullName })
 					.from(users)
 					.where(
-						and(inArray(users.id, diaryAuthorIds), eq(users.organizationId, orgId)),
+						and(
+							inArray(users.id, diaryAuthorIds),
+							eq(users.organizationId, orgId),
+						),
 					);
 				for (const row of authorRows) {
 					const name =

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from "react";
 import type { AuditEvent } from "@dental/shared";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type AuditLogsResponse = {
@@ -35,7 +36,7 @@ function humanizeAction(action: string): string {
 		"communication.complete": "Завершение коммуникации",
 		"imaging.attach": "Прикрепление снимка",
 		"chair.prepare": "Подготовка кресла",
-		"telegram_outbound_sent": "Исходящее сообщение Telegram",
+		telegram_outbound_sent: "Исходящее сообщение Telegram",
 	};
 	return map[action] ?? action;
 }
@@ -43,8 +44,10 @@ function humanizeAction(action: string): string {
 function readServerMessage(body: unknown): string | null {
 	if (!body || typeof body !== "object") return null;
 	const record = body as { message?: unknown; error?: unknown };
-	if (typeof record.message === "string" && record.message.trim()) return record.message.trim();
-	if (typeof record.error === "string" && record.error.trim()) return record.error.trim();
+	if (typeof record.message === "string" && record.message.trim())
+		return record.message.trim();
+	if (typeof record.error === "string" && record.error.trim())
+		return record.error.trim();
 	return null;
 }
 
@@ -102,7 +105,9 @@ export const AuditLogsPanel: React.FC = () => {
 				return;
 			}
 
-			const payload = (await response.json().catch(() => null)) as AuditLogsResponse | null;
+			const payload = (await response
+				.json()
+				.catch(() => null)) as AuditLogsResponse | null;
 			if (!response.ok) {
 				setLogs(null);
 				setError(loadFailureText(response.status, readServerMessage(payload)));
@@ -141,15 +146,20 @@ export const AuditLogsPanel: React.FC = () => {
 			</div>
 
 			<p className="ops-hint">
-				Полная лента событий организации из базы (GET /api/audit/logs). Журнал неизменяем по
-				152-ФЗ: удаление и правка записей запрещены. Ниже — срез dashboard для быстрого
-				обзора; здесь — живой запрос с фильтрами по типу и идентификатору сущности.
+				Полная лента событий организации из базы (GET /api/audit/logs). Журнал
+				неизменяем по 152-ФЗ: удаление и правка записей запрещены. Ниже — срез
+				dashboard для быстрого обзора; здесь — живой запрос с фильтрами по типу
+				и идентификатору сущности.
 			</p>
 
-			<div className="ops-notice" role="note" data-testid="audit-logs-immutable-notice">
+			<div
+				className="ops-notice"
+				role="note"
+				data-testid="audit-logs-immutable-notice"
+			>
 				<p>
-					Неизменяемость: попытки DELETE/PUT/PATCH к журналу отклоняются сервером (код
-					AuditLogImmutable).
+					Неизменяемость: попытки DELETE/PUT/PATCH к журналу отклоняются
+					сервером (код AuditLogImmutable).
 				</p>
 			</div>
 
@@ -219,11 +229,16 @@ export const AuditLogsPanel: React.FC = () => {
 			</div>
 
 			{error ? (
-				<div className="ops-notice ops-notice--error" role="alert" data-testid="audit-logs-error">
+				<div
+					className="ops-notice ops-notice--error"
+					role="alert"
+					data-testid="audit-logs-error"
+				>
 					<p>{error}</p>
 					<p>
-						Список ниже мог устареть. Если вход не протух, нажмите «Обновить журнал» или
-						перезайдите в программу под сотрудником с правами администратора.
+						Список ниже мог устареть. Если вход не протух, нажмите «Обновить
+						журнал» или перезайдите в программу под сотрудником с правами
+						администратора.
 					</p>
 					<button
 						className="secondary-button"
@@ -237,7 +252,11 @@ export const AuditLogsPanel: React.FC = () => {
 			) : null}
 
 			{logs === null && !error ? (
-				<div className="ops-skeleton" aria-hidden="true" data-testid="audit-logs-skeleton">
+				<div
+					className="ops-skeleton"
+					aria-hidden="true"
+					data-testid="audit-logs-skeleton"
+				>
 					<span className="ops-skeleton__line" />
 					<span className="ops-skeleton__line" />
 					<span className="ops-skeleton__line" />
@@ -247,9 +266,9 @@ export const AuditLogsPanel: React.FC = () => {
 			{logs !== null && logs.length === 0 && !error ? (
 				<article className="ops-empty" data-testid="audit-logs-empty">
 					<p>
-						По выбранным фильтрам записей нет. Снимите фильтры или дождитесь первого
-						клинического действия в клинике — подписание приёма, выдача документа и
-						другие операции появятся здесь.
+						По выбранным фильтрам записей нет. Снимите фильтры или дождитесь
+						первого клинического действия в клинике — подписание приёма, выдача
+						документа и другие операции появятся здесь.
 					</p>
 				</article>
 			) : null}

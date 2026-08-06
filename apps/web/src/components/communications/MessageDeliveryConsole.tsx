@@ -27,13 +27,13 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useCommunicationsQueries } from "../../hooks/domains/useCommunicationsQueries";
 
 import {
+	type DispatchReport,
 	describeDispatchReport,
 	describeReminderReport,
 	failNotice,
 	formatMoment,
-	type DispatchReport,
 	type Notice,
-	type ReminderScheduleReport
+	type ReminderScheduleReport,
 } from "./deliveryReportNotice.js";
 
 type ChannelCode = "sms" | "email" | "whatsapp" | "telegram" | "vk" | "max";
@@ -47,7 +47,12 @@ type GatewayStatus = {
 			balance: { amount: number; currency: string } | null;
 			balanceError: string | null;
 		};
-		email: { configured: boolean; host: string | null; from: string | null; requireTls: boolean };
+		email: {
+			configured: boolean;
+			host: string | null;
+			from: string | null;
+			requireTls: boolean;
+		};
 		whatsapp: { configured: boolean };
 		telegram: { configured: boolean };
 		vk: { configured: boolean; detail: string };
@@ -119,7 +124,12 @@ type PreviewResult = {
 	problems: string[];
 	length: number;
 	limit: number;
-	sms: { encoding: string; characters: number; segments: number; charactersLeftInSegment: number } | null;
+	sms: {
+		encoding: string;
+		characters: number;
+		segments: number;
+		charactersLeftInSegment: number;
+	} | null;
 };
 
 const channelLabels: Record<string, string> = {
@@ -130,7 +140,7 @@ const channelLabels: Record<string, string> = {
 	vk: "ВКонтакте",
 	max: "MAX",
 	phone: "Звонок",
-	in_person: "В кабинете"
+	in_person: "В кабинете",
 };
 
 const intentLabels: Record<string, string> = {
@@ -140,7 +150,7 @@ const intentLabels: Record<string, string> = {
 	recall: "Повторный визит",
 	document_ready: "Документ готов",
 	imaging_review: "Снимок",
-	general: "Произвольное"
+	general: "Произвольное",
 };
 
 /**
@@ -155,7 +165,7 @@ const statusLabels: Record<string, string> = {
 	delivered: "Доставлено",
 	failed: "Ошибка",
 	cancelled: "Отменено",
-	suppressed: "Не отправлено"
+	suppressed: "Не отправлено",
 };
 
 /** Вид состояния. Цвет дублируется значком: он читается и без цветовосприятия. */
@@ -166,7 +176,7 @@ const statusTone: Record<string, "ok" | "warn" | "bad" | "info" | "muted"> = {
 	delivered: "ok",
 	failed: "bad",
 	cancelled: "muted",
-	suppressed: "warn"
+	suppressed: "warn",
 };
 
 function minutesToTime(minutes: number): string {
@@ -180,7 +190,13 @@ function timeToMinutes(value: string): number | null {
 	if (!match) return null;
 	const hours = Number.parseInt(match[1] ?? "", 10);
 	const minutes = Number.parseInt(match[2] ?? "", 10);
-	if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours > 23 || minutes > 59) return null;
+	if (
+		!Number.isFinite(hours) ||
+		!Number.isFinite(minutes) ||
+		hours > 23 ||
+		minutes > 59
+	)
+		return null;
 	return hours * 60 + minutes;
 }
 
@@ -188,7 +204,10 @@ async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch(() => null)) as unknown;
 	if (!response.ok) {
 		const message =
-			payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+			payload &&
+			typeof payload === "object" &&
+			"message" in payload &&
+			typeof payload.message === "string"
 				? payload.message
 				: `Сервер ответил ${response.status}`;
 		throw new Error(message);
@@ -226,7 +245,9 @@ export function MessageDeliveryConsole() {
 	const [preview, setPreview] = useState<PreviewResult | null>(null);
 	const [previewError, setPreviewError] = useState<string | null>(null);
 	/** Каталог {key} для редактора шаблона — GET /api/communications/variables */
-	const [variableCatalog, setVariableCatalog] = useState<TemplateVariable[]>([]);
+	const [variableCatalog, setVariableCatalog] = useState<TemplateVariable[]>(
+		[],
+	);
 
 	/*
 	 * Разовая постановка в очередь (POST /api/communications/outbox).
@@ -235,35 +256,54 @@ export function MessageDeliveryConsole() {
 	 * авто-напоминания. Администратор не мог отправить SMS «приходите завтра»
 	 * без конструктора рассылки.
 	 */
-	const [enqueueChannel, setEnqueueChannel] = useState<"sms" | "email" | "whatsapp" | "telegram">("sms");
+	const [enqueueChannel, setEnqueueChannel] = useState<
+		"sms" | "email" | "whatsapp" | "telegram"
+	>("sms");
 	const [enqueueIntent, setEnqueueIntent] = useState("general");
-	const [enqueueScope, setEnqueueScope] = useState<"service" | "marketing">("service");
+	const [enqueueScope, setEnqueueScope] = useState<"service" | "marketing">(
+		"service",
+	);
 	const [enqueueTemplateId, setEnqueueTemplateId] = useState("");
 	const [enqueueBody, setEnqueueBody] = useState("");
 	const [enqueueRecipient, setEnqueueRecipient] = useState("");
 	const [enqueueSubject, setEnqueueSubject] = useState("");
 	const [enqueueBusy, setEnqueueBusy] = useState(false);
 
-
 	const loadAll = useCallback(async () => {
 		setLoadError(null);
 		try {
-			const query = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
-			
-			const [gatewayResponse, templateResponse, outboxResponse, settingsResponse, variablesResponse] =
-				await Promise.all([
-					commQueries.getGatewayStatus(),
-					commQueries.getTemplates(),
-					commQueries.getOutbox(query),
-					commQueries.getSettings(),
-					commQueries.getVariables()
-				]);
+			const query = statusFilter
+				? `?status=${encodeURIComponent(statusFilter)}`
+				: "";
+
+			const [
+				gatewayResponse,
+				templateResponse,
+				outboxResponse,
+				settingsResponse,
+				variablesResponse,
+			] = await Promise.all([
+				commQueries.getGatewayStatus(),
+				commQueries.getTemplates(),
+				commQueries.getOutbox(query),
+				commQueries.getSettings(),
+				commQueries.getVariables(),
+			]);
 
 			const gatewayData = await readJson<GatewayStatus>(gatewayResponse);
-			const templateData = await readJson<{ templates: TemplateItem[] }>(templateResponse);
-			const outboxData = await readJson<{ items: OutboxItem[]; summary: Record<string, number> }>(outboxResponse);
-			const settingsData = await readJson<{ settings: CommunicationSettings }>(settingsResponse);
-			const variablesData = await readJson<{ variables: TemplateVariable[] }>(variablesResponse);
+			const templateData = await readJson<{ templates: TemplateItem[] }>(
+				templateResponse,
+			);
+			const outboxData = await readJson<{
+				items: OutboxItem[];
+				summary: Record<string, number>;
+			}>(outboxResponse);
+			const settingsData = await readJson<{ settings: CommunicationSettings }>(
+				settingsResponse,
+			);
+			const variablesData = await readJson<{ variables: TemplateVariable[] }>(
+				variablesResponse,
+			);
 
 			setGateways(gatewayData);
 			setTemplates(templateData.templates);
@@ -306,13 +346,15 @@ export function MessageDeliveryConsole() {
 					const response = await commQueries.previewTemplate(null, {
 						body: draftBody,
 						channel: draftChannel,
-						allowPhi: true
+						allowPhi: true,
 					});
 					setPreview(await readJson<PreviewResult>(response));
 					setPreviewError(null);
 				} catch (error) {
 					setPreview(null);
-					setPreviewError(error instanceof Error ? error.message : String(error));
+					setPreviewError(
+						error instanceof Error ? error.message : String(error),
+					);
 				}
 			})();
 		}, 350);
@@ -321,7 +363,12 @@ export function MessageDeliveryConsole() {
 
 	const configuredChannels = useMemo(() => {
 		if (!gateways) return [];
-		return (Object.entries(gateways.channels) as [ChannelCode, { configured: boolean }][])
+		return (
+			Object.entries(gateways.channels) as [
+				ChannelCode,
+				{ configured: boolean },
+			][]
+		)
 			.filter(([, value]) => value.configured)
 			.map(([code]) => code);
 	}, [gateways]);
@@ -339,7 +386,9 @@ export function MessageDeliveryConsole() {
 	/** Вставить {key} в текст шаблона в позицию курсора textarea (или в конец). */
 	function insertTemplateVariable(key: string) {
 		const token = `{${key}}`;
-		const el = document.getElementById("template-body") as HTMLTextAreaElement | null;
+		const el = document.getElementById(
+			"template-body",
+		) as HTMLTextAreaElement | null;
 		if (el && typeof el.selectionStart === "number") {
 			const start = el.selectionStart;
 			const end = el.selectionEnd;
@@ -365,13 +414,16 @@ export function MessageDeliveryConsole() {
 				channel: draftChannel,
 				intent: draftIntent,
 				body: draftBody,
-				allowPhi: true
+				allowPhi: true,
 			};
 			const response = editingId
 				? await commQueries.updateTemplate(editingId, payload)
 				: await commQueries.createTemplate(payload);
 			await readJson(response);
-			setNotice({ kind: "done", text: editingId ? "Шаблон обновлён." : "Шаблон создан." });
+			setNotice({
+				kind: "done",
+				text: editingId ? "Шаблон обновлён." : "Шаблон создан.",
+			});
 			resetDraft();
 			await loadAll();
 		} catch (error) {
@@ -382,8 +434,8 @@ export function MessageDeliveryConsole() {
 					error,
 					editingId
 						? "Шаблон не сохранён, остались прежние правки. Текст ниже не пропал — исправьте и нажмите сохранить ещё раз."
-						: "Шаблон не создан. Текст ниже не пропал — исправьте и нажмите сохранить ещё раз."
-				)
+						: "Шаблон не создан. Текст ниже не пропал — исправьте и нажмите сохранить ещё раз.",
+				),
 			);
 		} finally {
 			setBusy(false);
@@ -398,7 +450,10 @@ export function MessageDeliveryConsole() {
 			await readJson(response);
 			setNotice({
 				kind: "done",
-				text: action === "cancel" ? "Сообщение отменено." : "Сообщение возвращено в очередь."
+				text:
+					action === "cancel"
+						? "Сообщение отменено."
+						: "Сообщение возвращено в очередь.",
 			});
 			await loadAll();
 		} catch (error) {
@@ -407,8 +462,8 @@ export function MessageDeliveryConsole() {
 					error,
 					action === "cancel"
 						? "Сообщение не отменено — оно осталось в очереди и может уйти пациенту. Обновите журнал и попробуйте ещё раз."
-						: "Сообщение не возвращено в очередь — оно осталось неотправленным. Попробуйте ещё раз."
-				)
+						: "Сообщение не возвращено в очередь — оно осталось неотправленным. Попробуйте ещё раз.",
+				),
 			);
 		} finally {
 			setBusy(false);
@@ -427,8 +482,8 @@ export function MessageDeliveryConsole() {
 			setNotice(
 				failNotice(
 					error,
-					"Из очереди ничего не отправлено, сообщения остались на месте. Попробуйте ещё раз; если повторяется — проверьте настройку каналов выше."
-				)
+					"Из очереди ничего не отправлено, сообщения остались на месте. Попробуйте ещё раз; если повторяется — проверьте настройку каналов выше.",
+				),
 			);
 		} finally {
 			setBusy(false);
@@ -447,8 +502,8 @@ export function MessageDeliveryConsole() {
 			setNotice(
 				failNotice(
 					error,
-					"Напоминания не поставлены — пациенты о завтрашних приёмах не узнают. Попробуйте ещё раз."
-				)
+					"Напоминания не поставлены — пациенты о завтрашних приёмах не узнают. Попробуйте ещё раз.",
+				),
 			);
 		} finally {
 			setBusy(false);
@@ -460,7 +515,9 @@ export function MessageDeliveryConsole() {
 		setNotice(null);
 		try {
 			const response = await commQueries.saveSettings(patch);
-			const data = await readJson<{ settings: CommunicationSettings }>(response);
+			const data = await readJson<{ settings: CommunicationSettings }>(
+				response,
+			);
 			setSettings(data.settings);
 			setNotice({ kind: "done", text: "Правила рассылки сохранены." });
 		} catch (error) {
@@ -469,8 +526,8 @@ export function MessageDeliveryConsole() {
 			setNotice(
 				failNotice(
 					error,
-					"Правила не сохранены, на сервере осталось прежнее. Попробуйте ещё раз — переключатели ниже показывают то, что действует сейчас."
-				)
+					"Правила не сохранены, на сервере осталось прежнее. Попробуйте ещё раз — переключатели ниже показывают то, что действует сейчас.",
+				),
 			);
 		} finally {
 			setBusy(false);
@@ -480,7 +537,7 @@ export function MessageDeliveryConsole() {
 	/** Активные шаблоны выбранного канала — для разовой постановки. */
 	const enqueueTemplates = useMemo(
 		() => templates.filter((t) => t.isActive && t.channel === enqueueChannel),
-		[templates, enqueueChannel]
+		[templates, enqueueChannel],
 	);
 
 	const enqueueCanSubmit =
@@ -498,7 +555,7 @@ export function MessageDeliveryConsole() {
 				channel: enqueueChannel,
 				intent: enqueueIntent,
 				scope: enqueueScope,
-				recipientAddress: enqueueRecipient.trim()
+				recipientAddress: enqueueRecipient.trim(),
 			};
 			if (enqueueTemplateId) {
 				payload.templateId = enqueueTemplateId;
@@ -509,10 +566,18 @@ export function MessageDeliveryConsole() {
 				payload.subject = enqueueSubject.trim();
 			}
 			const response = await commQueries.addOutboxMessage(payload);
-			const data = await readJson<{ outboxId: string; duplicate: boolean; message: string }>(response);
+			const data = await readJson<{
+				outboxId: string;
+				duplicate: boolean;
+				message: string;
+			}>(response);
 			setNotice({
 				kind: "done",
-				text: data.message || (data.duplicate ? "Такое сообщение уже стоит в очереди." : "Сообщение поставлено в очередь.")
+				text:
+					data.message ||
+					(data.duplicate
+						? "Такое сообщение уже стоит в очереди."
+						: "Сообщение поставлено в очередь."),
 			});
 			// После успешной постановки очищаем текст/шаблон, адрес оставляем —
 			// часто шлют несколько сообщений одному человеку подряд.
@@ -524,25 +589,31 @@ export function MessageDeliveryConsole() {
 			setNotice(
 				failNotice(
 					error,
-					"Сообщение не поставлено в очередь. Текст и адрес не пропали — исправьте и нажмите ещё раз."
-				)
+					"Сообщение не поставлено в очередь. Текст и адрес не пропали — исправьте и нажмите ещё раз.",
+				),
 			);
 		} finally {
 			setEnqueueBusy(false);
 		}
 	}
 
-
 	if (loadError) {
 		return (
-			<section className="panel ops-panel" data-testid="message-delivery-console">
+			<section
+				className="panel ops-panel"
+				data-testid="message-delivery-console"
+			>
 				<div className="panel-heading">
 					<h2>Отправка сообщений</h2>
 				</div>
 				<p className="ops-notice ops-notice--error" role="alert">
 					Не удалось получить данные: {loadError}
 				</p>
-				<button className="secondary-button" type="button" onClick={() => void loadAll()}>
+				<button
+					className="secondary-button"
+					type="button"
+					onClick={() => void loadAll()}
+				>
 					Повторить
 				</button>
 			</section>
@@ -612,16 +683,18 @@ export function MessageDeliveryConsole() {
 			gateways.automaticSending.waiting > 0 ? (
 				<div className="ops-notice ops-notice--error" role="alert">
 					<strong>
-						Сообщения не отправляются: ждут в очереди {gateways.automaticSending.waiting}
+						Сообщения не отправляются: ждут в очереди{" "}
+						{gateways.automaticSending.waiting}
 						{gateways.automaticSending.oldestWaitingAt
 							? `, самое раннее с ${new Date(gateways.automaticSending.oldestWaitingAt).toLocaleString("ru-RU")}`
 							: ""}
 						.
 					</strong>
 					<p>
-						Автоматическая отправка выключена на сервере. Разослать накопившееся прямо сейчас можно кнопкой
-						«Отправить из очереди» выше; чтобы сообщения уходили сами, тот, кто устанавливал программу,
-						включает переменную {gateways.automaticSending.enableWith}.
+						Автоматическая отправка выключена на сервере. Разослать накопившееся
+						прямо сейчас можно кнопкой «Отправить из очереди» выше; чтобы
+						сообщения уходили сами, тот, кто устанавливал программу, включает
+						переменную {gateways.automaticSending.enableWith}.
 					</p>
 				</div>
 			) : null}
@@ -648,7 +721,10 @@ export function MessageDeliveryConsole() {
 						 * readSmtpCredentialsFromEnv) — их подключает тот, кто ставил
 						 * программу.
 						 */
-						<div className="ops-notice ops-notice--error ops-channels-empty" role="alert">
+						<div
+							className="ops-notice ops-notice--error ops-channels-empty"
+							role="alert"
+						>
 							{/*
 								«НОВЫЕ», а не «сообщения» вообще. Прежняя формулировка
 								утверждала, что сообщения не отправляются, — и тут же под ней в
@@ -658,11 +734,14 @@ export function MessageDeliveryConsole() {
 								от периода, когда канал был настроен, и это нормально; неверно
 								было обобщение в баннере.
 							*/}
-							<strong>Новые сообщения сейчас не уйдут: ни один канал связи не подключён.</strong>
+							<strong>
+								Новые сообщения сейчас не уйдут: ни один канал связи не
+								подключён.
+							</strong>
 							<p>
-								Телеграм и WhatsApp клиника подключает сама — в настройках. SMS и электронную
-								почту подключает тот, кто устанавливал программу: для них нужны ключи доступа
-								на сервере клиники.
+								Телеграм и WhatsApp клиника подключает сама — в настройках. SMS
+								и электронную почту подключает тот, кто устанавливал программу:
+								для них нужны ключи доступа на сервере клиники.
 							</p>
 							<button
 								type="button"
@@ -688,8 +767,11 @@ export function MessageDeliveryConsole() {
 								const channel = gateways.channels[code];
 								return (
 									<li key={code}>
-										<span className={`ops-state ops-state--${channel.configured ? "ok" : "muted"}`}>
-											{channelLabels[code] ?? code}: {channel.configured ? "настроен" : "не настроен"}
+										<span
+											className={`ops-state ops-state--${channel.configured ? "ok" : "muted"}`}
+										>
+											{channelLabels[code] ?? code}:{" "}
+											{channel.configured ? "настроен" : "не настроен"}
 										</span>
 									</li>
 								);
@@ -699,7 +781,10 @@ export function MessageDeliveryConsole() {
 					{gateways.channels.sms.configured ? (
 						<p className="ops-hint">
 							SMS-шлюз: {gateways.channels.sms.provider ?? "—"}
-							{gateways.channels.sms.sender ? `, отправитель ${gateways.channels.sms.sender}` : ""}.{" "}
+							{gateways.channels.sms.sender
+								? `, отправитель ${gateways.channels.sms.sender}`
+								: ""}
+							.{" "}
 							{gateways.channels.sms.balance
 								? `Остаток ${gateways.channels.sms.balance.amount.toFixed(2)} ${gateways.channels.sms.balance.currency}.`
 								: gateways.channels.sms.balanceError
@@ -712,7 +797,11 @@ export function MessageDeliveryConsole() {
 
 			{/* ── Журнал ────────────────────────────────────────────────────── */}
 			<h3 className="ops-section-title">Журнал отправки</h3>
-			<div className="quick-chips-row" role="group" aria-label="Фильтр по состоянию">
+			<div
+				className="quick-chips-row"
+				role="group"
+				aria-label="Фильтр по состоянию"
+			>
 				<button
 					type="button"
 					className={`quick-chip ${statusFilter === "" ? "selected" : ""}`}
@@ -739,67 +828,77 @@ export function MessageDeliveryConsole() {
 				<p className="ops-empty">Сообщений с такими условиями нет.</p>
 			) : (
 				<div className="ops-table-wrap">
-				<table className="ops-table">
-					<thead>
-						<tr>
-							<th scope="col">Создано</th>
-							<th scope="col">Канал</th>
-							<th scope="col">Получатель</th>
-							<th scope="col">Текст</th>
-							<th scope="col">Состояние</th>
-							<th scope="col">Действие</th>
-						</tr>
-					</thead>
-					<tbody>
-						{outbox.map((item) => (
-							<tr key={item.id}>
-								<td className="ops-time" data-label="Создано">
-									{formatMoment(item.createdAt)}
-								</td>
-								<td data-label="Канал">{channelLabels[item.channel] ?? item.channel}</td>
-								<td data-label="Получатель">{item.recipientAddress}</td>
-								<td data-label="Текст" title={item.body}>
-									{item.body.length > 80 ? `${item.body.slice(0, 80)}…` : item.body}
-								</td>
-								<td data-label="Состояние">
-									<span className={`ops-state ops-state--${statusTone[item.status] ?? "muted"}`}>
-										{statusLabels[item.status] ?? item.status}
-									</span>
-									{/* Причина отказа показывается прямо в строке: раньше её негде было узнать. */}
-									{item.lastErrorMessage ? <span className="ops-note">{item.lastErrorMessage}</span> : null}
-									{item.attempts > 0 ? (
-										<span className="ops-note">
-											попыток {item.attempts} из {item.maxAttempts}
-										</span>
-									) : null}
-								</td>
-								<td data-label="Действие">
-									{item.status === "queued" || item.status === "sending" ? (
-										<button
-											className="secondary-button"
-											type="button"
-											disabled={busy}
-											onClick={() => void outboxAction(item.id, "cancel")}
-										>
-											Отменить
-										</button>
-									) : item.status === "failed" || item.status === "cancelled" || item.status === "suppressed" ? (
-										<button
-											className="secondary-button"
-											type="button"
-											disabled={busy}
-											onClick={() => void outboxAction(item.id, "retry")}
-										>
-											Повторить
-										</button>
-									) : (
-										"—"
-									)}
-								</td>
+					<table className="ops-table">
+						<thead>
+							<tr>
+								<th scope="col">Создано</th>
+								<th scope="col">Канал</th>
+								<th scope="col">Получатель</th>
+								<th scope="col">Текст</th>
+								<th scope="col">Состояние</th>
+								<th scope="col">Действие</th>
 							</tr>
-						))}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{outbox.map((item) => (
+								<tr key={item.id}>
+									<td className="ops-time" data-label="Создано">
+										{formatMoment(item.createdAt)}
+									</td>
+									<td data-label="Канал">
+										{channelLabels[item.channel] ?? item.channel}
+									</td>
+									<td data-label="Получатель">{item.recipientAddress}</td>
+									<td data-label="Текст" title={item.body}>
+										{item.body.length > 80
+											? `${item.body.slice(0, 80)}…`
+											: item.body}
+									</td>
+									<td data-label="Состояние">
+										<span
+											className={`ops-state ops-state--${statusTone[item.status] ?? "muted"}`}
+										>
+											{statusLabels[item.status] ?? item.status}
+										</span>
+										{/* Причина отказа показывается прямо в строке: раньше её негде было узнать. */}
+										{item.lastErrorMessage ? (
+											<span className="ops-note">{item.lastErrorMessage}</span>
+										) : null}
+										{item.attempts > 0 ? (
+											<span className="ops-note">
+												попыток {item.attempts} из {item.maxAttempts}
+											</span>
+										) : null}
+									</td>
+									<td data-label="Действие">
+										{item.status === "queued" || item.status === "sending" ? (
+											<button
+												className="secondary-button"
+												type="button"
+												disabled={busy}
+												onClick={() => void outboxAction(item.id, "cancel")}
+											>
+												Отменить
+											</button>
+										) : item.status === "failed" ||
+											item.status === "cancelled" ||
+											item.status === "suppressed" ? (
+											<button
+												className="secondary-button"
+												type="button"
+												disabled={busy}
+												onClick={() => void outboxAction(item.id, "retry")}
+											>
+												Повторить
+											</button>
+										) : (
+											"—"
+										)}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
 				</div>
 			)}
 
@@ -813,8 +912,8 @@ export function MessageDeliveryConsole() {
 			<h3 className="ops-section-title">Поставить в очередь</h3>
 			<div className="ops-editor" data-testid="outbox-enqueue-form">
 				<p className="ops-hint">
-					Одно сообщение одному получателю — без рассылки. Уйдёт через «Отправить из очереди» или
-					автоматический обработчик, если он включён.
+					Одно сообщение одному получателю — без рассылки. Уйдёт через
+					«Отправить из очереди» или автоматический обработчик, если он включён.
 				</p>
 				<div className="ops-toolbar">
 					<span className="ops-field">
@@ -824,15 +923,23 @@ export function MessageDeliveryConsole() {
 							data-testid="outbox-enqueue-channel"
 							value={enqueueChannel}
 							onChange={(event) => {
-								setEnqueueChannel(event.target.value as "sms" | "email" | "whatsapp" | "telegram");
+								setEnqueueChannel(
+									event.target.value as
+										| "sms"
+										| "email"
+										| "whatsapp"
+										| "telegram",
+								);
 								setEnqueueTemplateId("");
 							}}
 						>
-							{(["sms", "email", "whatsapp", "telegram"] as const).map((code) => (
-								<option key={code} value={code}>
-									{channelLabels[code]}
-								</option>
-							))}
+							{(["sms", "email", "whatsapp", "telegram"] as const).map(
+								(code) => (
+									<option key={code} value={code}>
+										{channelLabels[code]}
+									</option>
+								),
+							)}
 						</select>
 					</span>
 					<span className="ops-field">
@@ -856,7 +963,9 @@ export function MessageDeliveryConsole() {
 							id="enqueue-scope"
 							data-testid="outbox-enqueue-scope"
 							value={enqueueScope}
-							onChange={(event) => setEnqueueScope(event.target.value as "service" | "marketing")}
+							onChange={(event) =>
+								setEnqueueScope(event.target.value as "service" | "marketing")
+							}
 						>
 							<option value="service">Сервисное</option>
 							<option value="marketing">Рекламное</option>
@@ -866,7 +975,9 @@ export function MessageDeliveryConsole() {
 
 				<span className="ops-field ops-field--grow">
 					<label htmlFor="enqueue-recipient">
-						{enqueueChannel === "email" ? "Адрес почты" : "Телефон или идентификатор"}
+						{enqueueChannel === "email"
+							? "Адрес почты"
+							: "Телефон или идентификатор"}
 					</label>
 					<input
 						id="enqueue-recipient"
@@ -923,8 +1034,9 @@ export function MessageDeliveryConsole() {
 
 				{enqueueTemplateId ? (
 					<p className="ops-hint">
-						Текст возьмётся из шаблона. Переменные без значений сервер не подставит пустотой — для
-						разовой отправки с подстановками удобнее готовый текст ниже.
+						Текст возьмётся из шаблона. Переменные без значений сервер не
+						подставит пустотой — для разовой отправки с подстановками удобнее
+						готовый текст ниже.
 					</p>
 				) : (
 					<span className="ops-field">
@@ -955,7 +1067,8 @@ export function MessageDeliveryConsole() {
 			<h3 className="ops-section-title">Шаблоны сообщений</h3>
 			{templates.length === 0 ? (
 				<p className="ops-empty">
-					Шаблонов пока нет. Без шаблона «Подтверждение приёма» автоматические напоминания не включаются.
+					Шаблонов пока нет. Без шаблона «Подтверждение приёма» автоматические
+					напоминания не включаются.
 				</p>
 			) : (
 				<ul className="ops-template-list">
@@ -963,9 +1076,15 @@ export function MessageDeliveryConsole() {
 						<li className="ops-template" key={template.id}>
 							<span className="ops-template__head">
 								<strong>{template.title}</strong>
-								<span className="ops-state ops-state--info">{channelLabels[template.channel] ?? template.channel}</span>
-								<span className="ops-state">{intentLabels[template.intent] ?? template.intent}</span>
-								{template.isActive ? null : <span className="ops-state ops-state--warn">выключен</span>}
+								<span className="ops-state ops-state--info">
+									{channelLabels[template.channel] ?? template.channel}
+								</span>
+								<span className="ops-state">
+									{intentLabels[template.intent] ?? template.intent}
+								</span>
+								{template.isActive ? null : (
+									<span className="ops-state ops-state--warn">выключен</span>
+								)}
 							</span>
 							<span className="ops-note">{template.body}</span>
 							<button
@@ -988,53 +1107,59 @@ export function MessageDeliveryConsole() {
 
 			<div className="ops-editor">
 				<div className="ops-toolbar">
-				<span className="ops-field ops-field--grow">
-				<label htmlFor="template-title">Название</label>
-				<input
-					id="template-title"
-					type="text"
-					value={draftTitle}
-					onChange={(event) => setDraftTitle(event.target.value)}
-					placeholder="Напоминание о приёме"
-				/>
-				</span>
+					<span className="ops-field ops-field--grow">
+						<label htmlFor="template-title">Название</label>
+						<input
+							id="template-title"
+							type="text"
+							value={draftTitle}
+							onChange={(event) => setDraftTitle(event.target.value)}
+							placeholder="Напоминание о приёме"
+						/>
+					</span>
 
-				<span className="ops-field">
-				<label htmlFor="template-channel">Канал</label>
-				<select
-					id="template-channel"
-					value={draftChannel}
-					onChange={(event) => setDraftChannel(event.target.value as ChannelCode)}
-				>
-					{["sms", "email", "whatsapp", "telegram"].map((code) => (
-						<option key={code} value={code}>
-							{channelLabels[code]}
-						</option>
-					))}
-				</select>
-				</span>
+					<span className="ops-field">
+						<label htmlFor="template-channel">Канал</label>
+						<select
+							id="template-channel"
+							value={draftChannel}
+							onChange={(event) =>
+								setDraftChannel(event.target.value as ChannelCode)
+							}
+						>
+							{["sms", "email", "whatsapp", "telegram"].map((code) => (
+								<option key={code} value={code}>
+									{channelLabels[code]}
+								</option>
+							))}
+						</select>
+					</span>
 
-				<span className="ops-field">
-				<label htmlFor="template-intent">Назначение</label>
-				<select id="template-intent" value={draftIntent} onChange={(event) => setDraftIntent(event.target.value)}>
-					{Object.entries(intentLabels).map(([code, label]) => (
-						<option key={code} value={code}>
-							{label}
-						</option>
-					))}
-				</select>
-				</span>
+					<span className="ops-field">
+						<label htmlFor="template-intent">Назначение</label>
+						<select
+							id="template-intent"
+							value={draftIntent}
+							onChange={(event) => setDraftIntent(event.target.value)}
+						>
+							{Object.entries(intentLabels).map(([code, label]) => (
+								<option key={code} value={code}>
+									{label}
+								</option>
+							))}
+						</select>
+					</span>
 				</div>
 
 				<span className="ops-field">
-				<label htmlFor="template-body">Текст</label>
-				<textarea
-					id="template-body"
-					rows={4}
-					value={draftBody}
-					onChange={(event) => setDraftBody(event.target.value)}
-					placeholder="{patient}, напоминаем: приём {date} в {time}."
-				/>
+					<label htmlFor="template-body">Текст</label>
+					<textarea
+						id="template-body"
+						rows={4}
+						value={draftBody}
+						onChange={(event) => setDraftBody(event.target.value)}
+						placeholder="{patient}, напоминаем: приём {date} в {time}."
+					/>
 				</span>
 
 				{/*
@@ -1110,7 +1235,11 @@ export function MessageDeliveryConsole() {
 					{editingId ? "Сохранить изменения" : "Создать шаблон"}
 				</button>
 				{editingId ? (
-					<button className="secondary-button" type="button" onClick={resetDraft}>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={resetDraft}
+					>
 						Отменить правку
 					</button>
 				) : null}
@@ -1123,41 +1252,48 @@ export function MessageDeliveryConsole() {
 			) : (
 				<div>
 					<p className="ops-hint">
-						Часовой пояс: {settings.timezone}. Тихие часы: {minutesToTime(settings.quietHoursStartMinute)} —{" "}
-						{minutesToTime(settings.quietHoursEndMinute)}. Сервисные сообщения в это время откладываются до утра,
-						рекламные не отправляются. Не более {settings.dailyLimitPerPatient} сообщений одному пациенту в сутки.
+						Часовой пояс: {settings.timezone}. Тихие часы:{" "}
+						{minutesToTime(settings.quietHoursStartMinute)} —{" "}
+						{minutesToTime(settings.quietHoursEndMinute)}. Сервисные сообщения в
+						это время откладываются до утра, рекламные не отправляются. Не более{" "}
+						{settings.dailyLimitPerPatient} сообщений одному пациенту в сутки.
 					</p>
 
 					<div className="ops-toolbar">
-					<span className="ops-field">
-					<label htmlFor="quiet-start">Тихие часы с</label>
-					<input
-						id="quiet-start"
-						type="time"
-						defaultValue={minutesToTime(settings.quietHoursStartMinute)}
-						onBlur={(event) => {
-							const minutes = timeToMinutes(event.target.value);
-							if (minutes !== null && minutes !== settings.quietHoursStartMinute) {
-								void saveSettings({ quietHoursStartMinute: minutes });
-							}
-						}}
-					/>
-					</span>
-					<span className="ops-field">
-					<label htmlFor="quiet-end">до</label>
-					<input
-						id="quiet-end"
-						type="time"
-						defaultValue={minutesToTime(settings.quietHoursEndMinute)}
-						onBlur={(event) => {
-							const minutes = timeToMinutes(event.target.value);
-							if (minutes !== null && minutes !== settings.quietHoursEndMinute) {
-								void saveSettings({ quietHoursEndMinute: minutes });
-							}
-						}}
-					/>
-
-					</span>
+						<span className="ops-field">
+							<label htmlFor="quiet-start">Тихие часы с</label>
+							<input
+								id="quiet-start"
+								type="time"
+								defaultValue={minutesToTime(settings.quietHoursStartMinute)}
+								onBlur={(event) => {
+									const minutes = timeToMinutes(event.target.value);
+									if (
+										minutes !== null &&
+										minutes !== settings.quietHoursStartMinute
+									) {
+										void saveSettings({ quietHoursStartMinute: minutes });
+									}
+								}}
+							/>
+						</span>
+						<span className="ops-field">
+							<label htmlFor="quiet-end">до</label>
+							<input
+								id="quiet-end"
+								type="time"
+								defaultValue={minutesToTime(settings.quietHoursEndMinute)}
+								onBlur={(event) => {
+									const minutes = timeToMinutes(event.target.value);
+									if (
+										minutes !== null &&
+										minutes !== settings.quietHoursEndMinute
+									) {
+										void saveSettings({ quietHoursEndMinute: minutes });
+									}
+								}}
+							/>
+						</span>
 					</div>
 
 					<label className="ops-checkbox" htmlFor="reminders-enabled">
@@ -1166,14 +1302,20 @@ export function MessageDeliveryConsole() {
 							type="checkbox"
 							checked={settings.appointmentReminderEnabled}
 							disabled={busy}
-							onChange={(event) => void saveSettings({ appointmentReminderEnabled: event.target.checked })}
+							onChange={(event) =>
+								void saveSettings({
+									appointmentReminderEnabled: event.target.checked,
+								})
+							}
 						/>{" "}
-						Напоминать о приёме автоматически за {settings.appointmentReminderLeadHours.join(", ")} ч
+						Напоминать о приёме автоматически за{" "}
+						{settings.appointmentReminderLeadHours.join(", ")} ч
 					</label>
 					{settings.appointmentReminderEnabled ? null : (
 						<p className="ops-hint">
-							Пока выключено. Для включения нужен активный шаблон с назначением «Подтверждение приёма» — иначе
-							автоматика не отправит ничего и промолчит об этом.
+							Пока выключено. Для включения нужен активный шаблон с назначением
+							«Подтверждение приёма» — иначе автоматика не отправит ничего и
+							промолчит об этом.
 						</p>
 					)}
 				</div>

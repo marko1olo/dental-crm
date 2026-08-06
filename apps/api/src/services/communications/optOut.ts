@@ -30,11 +30,19 @@ const OPT_OUT_TOKENS = [
 	"отказаться",
 	"unsubscribe",
 	"прекратите",
-	"прекратить"
+	"прекратить",
 ];
 
 /** Слова возврата к рассылке. */
-const OPT_IN_TOKENS = ["старт", "start", "подписаться", "подписка", "подпишите", "subscribe", "возобновить"];
+const OPT_IN_TOKENS = [
+	"старт",
+	"start",
+	"подписаться",
+	"подписка",
+	"подпишите",
+	"subscribe",
+	"возобновить",
+];
 
 /** Многословные выражения отказа, которые ловятся целиком. */
 const OPT_OUT_PHRASES = [
@@ -46,7 +54,7 @@ const OPT_OUT_PHRASES = [
 	"больше не присылайте",
 	"отказываюсь от рассылки",
 	"уберите меня из рассылки",
-	"удалите меня из рассылки"
+	"удалите меня из рассылки",
 ];
 
 /**
@@ -65,7 +73,9 @@ function normalize(text: string): string {
 /** Не больше трёх слов — иначе это уже фраза, а не команда. */
 const MAX_COMMAND_WORDS = 3;
 
-export function detectOptOutIntent(rawText: string | null | undefined): OptOutIntent {
+export function detectOptOutIntent(
+	rawText: string | null | undefined,
+): OptOutIntent {
 	const text = normalize(rawText ?? "");
 	if (!text) return null;
 
@@ -92,7 +102,10 @@ export function detectOptOutIntent(rawText: string | null | undefined): OptOutIn
 }
 
 /** Текст ответа пациенту. Молчаливая отписка выглядит как игнорирование. */
-export function optOutAcknowledgement(intent: Exclude<OptOutIntent, null>, clinicName: string): string {
+export function optOutAcknowledgement(
+	intent: Exclude<OptOutIntent, null>,
+	clinicName: string,
+): string {
 	if (intent === "opt_out") {
 		return (
 			`${clinicName}: вы отписаны от сообщений по этому каналу. ` +

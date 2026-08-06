@@ -25,10 +25,10 @@ import {
 	blobToBase64,
 	buildOfflineVisitDraftFromTranscript,
 	createLocalQueueId,
+	deletePendingVisitSaveFromIndexedDb,
 	emptyVisitNoteForm,
 	latestPendingVisitSaveAt,
 	loadPendingSpeechChunks,
-	deletePendingVisitSaveFromIndexedDb,
 	loadPendingVisitSaves,
 	operatorReadableErrorDetail,
 	operatorReadableErrorDetailFromUnknown,
@@ -790,7 +790,8 @@ export function useVisitLogic({
 						.trim();
 					if (
 						!normalizedAssembled ||
-						(normalizedCurrent && normalizedCurrent.includes(normalizedAssembled))
+						(normalizedCurrent &&
+							normalizedCurrent.includes(normalizedAssembled))
 					)
 						return safeCurrent;
 					return [safeCurrent.trim(), assembledTranscript]
@@ -1101,7 +1102,10 @@ export function useVisitLogic({
 				setDraft(draftData);
 				setVisitNoteForm(visitNoteFormFromDraft(draftData));
 				// Auto-update tooth map from AI-detected tooth codes
-				if (draftData.quality?.detectedToothCodes?.length || draftData.quality?.detectedToothStates) {
+				if (
+					draftData.quality?.detectedToothCodes?.length ||
+					draftData.quality?.detectedToothStates
+				) {
 					applyAiToothCodes(
 						draftData.quality?.detectedToothCodes || [],
 						"planned",
@@ -1313,7 +1317,8 @@ export function useVisitLogic({
 		//    фрагменты помечались идентификаторами ПРЕДЫДУЩЕГО пациента.
 		// Читаем актуальные значения из стора на момент прихода фрагмента.
 		const liveDashboard = useAppStore.getState().dashboard ?? dashboard;
-		const liveIsOnline = typeof navigator === "undefined" ? isOnline : navigator.onLine;
+		const liveIsOnline =
+			typeof navigator === "undefined" ? isOnline : navigator.onLine;
 		if (!liveDashboard || blob.size === 0) return;
 		const maxChunkBytes = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
 		if (blob.size > maxChunkBytes) {

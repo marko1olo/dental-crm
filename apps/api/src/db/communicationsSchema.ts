@@ -14,7 +14,15 @@
  * достаточно самого объекта таблицы.
  */
 
-import { index, pgEnum, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+	index,
+	pgEnum,
+	pgTable,
+	text,
+	timestamp,
+	unique,
+	uuid,
+} from "drizzle-orm/pg-core";
 import {
 	appointments,
 	clinics,
@@ -22,16 +30,13 @@ import {
 	communicationConsentScope,
 	communicationTemplates,
 	organizations,
-	users
+	users,
 } from "./schema.js";
 
-export const communicationCampaignStatus = pgEnum("communication_campaign_status", [
-	"draft",
-	"scheduled",
-	"running",
-	"completed",
-	"cancelled"
-]);
+export const communicationCampaignStatus = pgEnum(
+	"communication_campaign_status",
+	["draft", "scheduled", "running", "completed", "cancelled"],
+);
 
 export const communicationCampaigns = pgTable(
 	"communication_campaigns",
@@ -63,14 +68,20 @@ export const communicationCampaigns = pgTable(
 		completedAt: timestamp("completed_at", { withTimezone: true }),
 		createdByUserId: uuid("created_by_user_id").references(() => users.id),
 		launchedByUserId: uuid("launched_by_user_id").references(() => users.id),
-		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
 	},
 	(table) => {
 		return {
-			campaignOrgCreatedIdx: index("communication_campaigns_org_created_idx").on(table.organizationId, table.createdAt)
+			campaignOrgCreatedIdx: index(
+				"communication_campaigns_org_created_idx",
+			).on(table.organizationId, table.createdAt),
 		};
-	}
+	},
 );
 
 /**
@@ -105,16 +116,17 @@ export const appointmentActionCodes = pgTable(
 		 * увидеть понятный ответ, а не «ссылка недействительна».
 		 */
 		usedAt: timestamp("used_at", { withTimezone: true }),
-		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
 	},
 	(table) => {
 		return {
 			// Один активный код на пару «приём + действие», чтобы прошлые
 			// напоминания не расходились с текущим.
-			appointmentActionUnique: unique("appointment_action_codes_appointment_action_unique").on(
-				table.appointmentId,
-				table.action
-			)
+			appointmentActionUnique: unique(
+				"appointment_action_codes_appointment_action_unique",
+			).on(table.appointmentId, table.action),
 		};
-	}
+	},
 );

@@ -23,10 +23,26 @@
  * оператора в конце месяца.
  */
 
-import { and, eq, gte, inArray, isNotNull, ne, sql, type SQL } from "drizzle-orm";
+import {
+	and,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	ne,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { appointments, patients, payments, treatmentItems } from "../../db/schema.js";
+import {
+	appointments,
+	patients,
+	payments,
+	treatmentItems,
+} from "../../db/schema.js";
 import { isValidEmailAddress } from "../../emailTransport.js";
+import { normalizeRussianMsisdn } from "../../smsTransport.js";
+import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
 /*
  * Пояс клиники берётся из ЕДИНСТВЕННОГО дома, а не читается здесь ещё раз.
  *
@@ -40,12 +56,13 @@ import { isValidEmailAddress } from "../../emailTransport.js";
  * записана в очередь; зависимость дешевле копии и обратима.
  */
 import { clinicTimeZone } from "../reports/managerReports.js";
-import { normalizeRussianMsisdn } from "../../smsTransport.js";
-import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
-import type { CommunicationChannelCode, CommunicationConsentScope } from "./channelRouter.js";
-import { loadConsentsByPatient } from "./consentLoader.js";
-import { decideConsent, type ConsentRecord } from "./deliveryPolicy.js";
+import type {
+	CommunicationChannelCode,
+	CommunicationConsentScope,
+} from "./channelRouter.js";
 import { resolveTelegramChatId } from "./channelRouter.js";
+import { loadConsentsByPatient } from "./consentLoader.js";
+import { type ConsentRecord, decideConsent } from "./deliveryPolicy.js";
 import { describeSmsPayload } from "./templateRenderer.js";
 
 /**
@@ -116,7 +133,9 @@ export type AudienceCostEstimate = {
 	readonly note: string;
 };
 
-export function estimateAudienceCost(input: EstimateAudienceCostInput): AudienceCostEstimate {
+export function estimateAudienceCost(
+	input: EstimateAudienceCostInput,
+): AudienceCostEstimate {
 	if (input.channel === "sms") {
 		const payload = describeSmsPayload(input.body);
 		return {
@@ -125,14 +144,14 @@ export function estimateAudienceCost(input: EstimateAudienceCostInput): Audience
 			billableUnits: payload.segments * input.recipients,
 			note:
 				`Кириллица считается как UCS-2: ${payload.characters} симв., ${payload.segments} сегм. на сообщение. ` +
-				`Оператор выставит счёт за ${payload.segments * input.recipients} сегмент(ов).`
+				`Оператор выставит счёт за ${payload.segments * input.recipients} сегмент(ов).`,
 		};
 	}
 	return {
 		recipients: input.recipients,
 		segmentsPerMessage: null,
 		billableUnits: input.recipients,
-		note: `Сообщений к отправке: ${input.recipients}.`
+		note: `Сообщений к отправке: ${input.recipients}.`,
 	};
 }
 
@@ -156,36 +175,57 @@ export function estimateAudienceCost(input: EstimateAudienceCostInput): Audience
  * превращается в «Москва»: подставленный пояс сдвинул бы поздравления у той
  * клиники, про которую мы как раз ничего не знаем.
  */
-function calendarPartsIn(timeZone: string | null, at: Date): { year: number; month: number; day: number } {
+function calendarPartsIn(
+	timeZone: string | null,
+	at: Date,
+): { year: number; month: number; day: number } {
 	if (timeZone) {
 		try {
 			const parts = new Map(
-				new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
+				new Intl.DateTimeFormat("en-CA", {
+					timeZone,
+					year: "numeric",
+					month: "2-digit",
+					day: "2-digit",
+				})
 					.formatToParts(at)
-					.map((part) => [part.type, part.value])
+					.map((part) => [part.type, part.value]),
 			);
 			const year = Number(parts.get("year"));
 			const month = Number(parts.get("month"));
 			const day = Number(parts.get("day"));
-			if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+			if (
+				Number.isFinite(year) &&
+				Number.isFinite(month) &&
+				Number.isFinite(day)
+			) {
 				return { year, month: month - 1, day };
 			}
 		} catch {
 			// Имени пояса не существует — это не повод не отобрать получателей.
 		}
 	}
-	return { year: at.getUTCFullYear(), month: at.getUTCMonth(), day: at.getUTCDate() };
+	return {
+		year: at.getUTCFullYear(),
+		month: at.getUTCMonth(),
+		day: at.getUTCDate(),
+	};
 }
 
 /** Возраст в полных годах по дате рождения в виде «ГГГГ-ММ-ДД». */
-function ageFromBirthDate(birthDate: string | null, now: Date, timeZone: string | null): number | null {
+function ageFromBirthDate(
+	birthDate: string | null,
+	now: Date,
+	timeZone: string | null,
+): number | null {
 	if (!birthDate) return null;
 	const parsed = new Date(birthDate);
 	if (Number.isNaN(parsed.getTime())) return null;
 	const today = calendarPartsIn(timeZone, now);
 	let age = today.year - parsed.getUTCFullYear();
 	const monthDelta = today.month - parsed.getUTCMonth();
-	if (monthDelta < 0 || (monthDelta === 0 && today.day < parsed.getUTCDate())) age -= 1;
+	if (monthDelta < 0 || (monthDelta === 0 && today.day < parsed.getUTCDate()))
+		age -= 1;
 	return age >= 0 && age < 130 ? age : null;
 }
 
@@ -199,7 +239,11 @@ function ageFromBirthDate(birthDate: string | null, now: Date, timeZone: string 
  * дату из другой без арифметики по длине месяцев. Пояс влияет на то, КАКАЯ дата
  * считается сегодняшней, а не на то, как считается разница.
  */
-function daysUntilBirthday(birthDate: string | null, now: Date, timeZone: string | null): number | null {
+function daysUntilBirthday(
+	birthDate: string | null,
+	now: Date,
+	timeZone: string | null,
+): number | null {
 	if (!birthDate) return null;
 	const parsed = new Date(birthDate);
 	if (Number.isNaN(parsed.getTime())) return null;
@@ -207,7 +251,11 @@ function daysUntilBirthday(birthDate: string | null, now: Date, timeZone: string
 	const today = calendarPartsIn(timeZone, now);
 	const todayUtc = Date.UTC(today.year, today.month, today.day);
 	for (let yearOffset = 0; yearOffset <= 1; yearOffset += 1) {
-		const candidate = Date.UTC(today.year + yearOffset, parsed.getUTCMonth(), parsed.getUTCDate());
+		const candidate = Date.UTC(
+			today.year + yearOffset,
+			parsed.getUTCMonth(),
+			parsed.getUTCDate(),
+		);
 		if (candidate >= todayUtc) {
 			return Math.round((candidate - todayUtc) / 86_400_000);
 		}
@@ -215,29 +263,38 @@ function daysUntilBirthday(birthDate: string | null, now: Date, timeZone: string
 	return null;
 }
 
-async function lastVisitByPatient(organizationId: string): Promise<Map<string, Date>> {
+async function lastVisitByPatient(
+	organizationId: string,
+): Promise<Map<string, Date>> {
 	// Последним приёмом считается последняя завершённая запись: черновик визита
 	// без записи в расписании — это ещё не состоявшийся приём.
 	const rows = await db
-		.select({ patientId: appointments.patientId, lastAt: sql<Date>`max(${appointments.startsAt})` })
+		.select({
+			patientId: appointments.patientId,
+			lastAt: sql<Date>`max(${appointments.startsAt})`,
+		})
 		.from(appointments)
 		.where(
 			and(
 				eq(appointments.organizationId, organizationId),
 				isNotNull(appointments.patientId),
-				inArray(appointments.status, ["completed", "arrived", "in_treatment"])
-			)
+				inArray(appointments.status, ["completed", "arrived", "in_treatment"]),
+			),
 		)
 		.groupBy(appointments.patientId);
 
 	const map = new Map<string, Date>();
 	for (const row of rows) {
-		if (row.patientId && row.lastAt) map.set(row.patientId, new Date(row.lastAt));
+		if (row.patientId && row.lastAt)
+			map.set(row.patientId, new Date(row.lastAt));
 	}
 	return map;
 }
 
-async function futureAppointmentPatientIds(organizationId: string, now: Date): Promise<Set<string>> {
+async function futureAppointmentPatientIds(
+	organizationId: string,
+	now: Date,
+): Promise<Set<string>> {
 	const rows = await db
 		.select({ patientId: appointments.patientId })
 		.from(appointments)
@@ -246,10 +303,12 @@ async function futureAppointmentPatientIds(organizationId: string, now: Date): P
 				eq(appointments.organizationId, organizationId),
 				isNotNull(appointments.patientId),
 				gte(appointments.startsAt, now),
-				inArray(appointments.status, ["planned", "confirmed"])
-			)
+				inArray(appointments.status, ["planned", "confirmed"]),
+			),
 		);
-	return new Set(rows.map((row) => row.patientId).filter((id): id is string => Boolean(id)));
+	return new Set(
+		rows.map((row) => row.patientId).filter((id): id is string => Boolean(id)),
+	);
 }
 
 /**
@@ -264,11 +323,21 @@ async function futureAppointmentPatientIds(organizationId: string, now: Date): P
  * приглашение искать его снова, а перевёрнутый знак в комментарии над денежным
  * расчётом — приглашение «починить» верный код.
  */
-async function debtByPatient(organizationId: string): Promise<Map<string, number>> {
+async function debtByPatient(
+	organizationId: string,
+): Promise<Map<string, number>> {
 	const paidRows = await db
-		.select({ patientId: payments.patientId, total: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)` })
+		.select({
+			patientId: payments.patientId,
+			total: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
+		})
 		.from(payments)
-		.where(and(eq(payments.organizationId, organizationId), eq(payments.status, "paid")))
+		.where(
+			and(
+				eq(payments.organizationId, organizationId),
+				eq(payments.status, "paid"),
+			),
+		)
 		.groupBy(payments.patientId);
 
 	const plannedRows = await db
@@ -312,13 +381,20 @@ async function debtByPatient(organizationId: string): Promise<Map<string, number
 			 * невозможным: у колонки есть ограничения `quantity > 0` и
 			 * `quantity = trunc(quantity)`.
 			 */
-			total: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * ${treatmentItems.quantity} - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`
+			total: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * ${treatmentItems.quantity} - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`,
 		})
 		.from(treatmentItems)
-		.where(and(eq(treatmentItems.organizationId, organizationId), ne(treatmentItems.status, "cancelled")))
+		.where(
+			and(
+				eq(treatmentItems.organizationId, organizationId),
+				ne(treatmentItems.status, "cancelled"),
+			),
+		)
 		.groupBy(treatmentItems.patientId);
 
-	const paid = new Map(paidRows.map((row) => [row.patientId, Number(row.total)]));
+	const paid = new Map(
+		paidRows.map((row) => [row.patientId, Number(row.total)]),
+	);
 	const debts = new Map<string, number>();
 	for (const row of plannedRows) {
 		const debt = Number(row.total) - (paid.get(row.patientId) ?? 0);
@@ -348,7 +424,9 @@ export type ResolveAudienceInput = {
  * используется и для предпросмотра, и для запуска: расхождение между
  * «показали» и «отправили» здесь недопустимо.
  */
-export async function resolveAudience(input: ResolveAudienceInput): Promise<AudiencePreview> {
+export async function resolveAudience(
+	input: ResolveAudienceInput,
+): Promise<AudiencePreview> {
 	const now = input.now ?? new Date();
 	const limit = Math.max(1, Math.min(20_000, input.limit ?? 5000));
 	const criteria = input.criteria;
@@ -360,7 +438,10 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 	 * Явно переданный пояс (`input.timeZone`) не перезапрашивается — так тест
 	 * может задать пояс, не заводя клинику.
 	 */
-	const needsCalendarDate = criteria.birthdayWithinDays !== undefined || criteria.ageFrom !== undefined || criteria.ageTo !== undefined;
+	const needsCalendarDate =
+		criteria.birthdayWithinDays !== undefined ||
+		criteria.ageFrom !== undefined ||
+		criteria.ageTo !== undefined;
 	const timeZone = needsCalendarDate
 		? (input.timeZone ?? (await clinicTimeZone(input.organizationId)))
 		: (input.timeZone ?? null);
@@ -387,27 +468,33 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 			fullName: patients.fullName,
 			phone: patients.phone,
 			email: patients.email,
-			birthDate: patients.birthDate
+			birthDate: patients.birthDate,
 		})
 		.from(patients)
 		.where(and(...filters))
 		.limit(limit);
 
 	const needsVisitData =
-		criteria.lastVisitBefore !== undefined || criteria.lastVisitAfter !== undefined || criteria.neverVisited === true;
+		criteria.lastVisitBefore !== undefined ||
+		criteria.lastVisitAfter !== undefined ||
+		criteria.neverVisited === true;
 	const [lastVisits, futureAppointments, debts] = await Promise.all([
-		needsVisitData ? lastVisitByPatient(input.organizationId) : Promise.resolve(new Map<string, Date>()),
+		needsVisitData
+			? lastVisitByPatient(input.organizationId)
+			: Promise.resolve(new Map<string, Date>()),
 		criteria.hasFutureAppointment !== undefined
 			? futureAppointmentPatientIds(input.organizationId, now)
 			: Promise.resolve(new Set<string>()),
-		criteria.debtAtLeastRub !== undefined ? debtByPatient(input.organizationId) : Promise.resolve(new Map<string, number>())
+		criteria.debtAtLeastRub !== undefined
+			? debtByPatient(input.organizationId)
+			: Promise.resolve(new Map<string, number>()),
 	]);
 
 	const excluded: Record<AudienceExclusionReason, number> = {
 		no_contact: 0,
 		no_consent: 0,
 		status_mismatch: 0,
-		excluded_by_criteria: 0
+		excluded_by_criteria: 0,
 	};
 	const notes: string[] = [];
 	const matchedIds: string[] = [];
@@ -432,11 +519,17 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 				continue;
 			}
 		}
-		if (criteria.hasFutureAppointment !== undefined && futureAppointments.has(row.id) !== criteria.hasFutureAppointment) {
+		if (
+			criteria.hasFutureAppointment !== undefined &&
+			futureAppointments.has(row.id) !== criteria.hasFutureAppointment
+		) {
 			excluded.excluded_by_criteria += 1;
 			continue;
 		}
-		if (criteria.debtAtLeastRub !== undefined && (debts.get(row.id) ?? 0) < criteria.debtAtLeastRub) {
+		if (
+			criteria.debtAtLeastRub !== undefined &&
+			(debts.get(row.id) ?? 0) < criteria.debtAtLeastRub
+		) {
 			excluded.excluded_by_criteria += 1;
 			continue;
 		}
@@ -469,42 +562,69 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 
 	// Согласия читаются одним запросом на всю выборку: по одному на пациента —
 	// это тысяча запросов на тысячную рассылку.
-	const consentsByPatient = await loadConsents(input.organizationId, matchedIds);
+	const consentsByPatient = await loadConsents(
+		input.organizationId,
+		matchedIds,
+	);
 
 	const candidates: AudienceCandidate[] = [];
 	for (const patientId of matchedIds) {
 		const row = matchedById.get(patientId);
 		if (!row) continue;
 
-		if (!decideConsent(consentsByPatient.get(patientId) ?? [], input.channel, input.scope).allowed) {
+		if (
+			!decideConsent(
+				consentsByPatient.get(patientId) ?? [],
+				input.channel,
+				input.scope,
+			).allowed
+		) {
 			excluded.no_consent += 1;
 			continue;
 		}
 
-		const address = await recipientAddressFor(input.organizationId, input.channel, row);
+		const address = await recipientAddressFor(
+			input.organizationId,
+			input.channel,
+			row,
+		);
 		if (!address) {
 			excluded.no_contact += 1;
 			continue;
 		}
 
-		candidates.push({ patientId, fullName: row.fullName, recipientAddress: address });
+		candidates.push({
+			patientId,
+			fullName: row.fullName,
+			recipientAddress: address,
+		});
 	}
 
 	if (excluded.no_consent > 0 && input.scope === "marketing") {
 		notes.push(
 			`${excluded.no_consent} пациент(ов) отсеяно без согласия на рекламные сообщения. ` +
-				"Согласие фиксируется в карточке пациента; без него отправка запрещена законом о рекламе."
+				"Согласие фиксируется в карточке пациента; без него отправка запрещена законом о рекламе.",
 		);
 	}
 	if (excluded.no_contact > 0) {
-		notes.push(`${excluded.no_contact} пациент(ов) без пригодного контакта для этого канала.`);
+		notes.push(
+			`${excluded.no_contact} пациент(ов) без пригодного контакта для этого канала.`,
+		);
 	}
 	if (rows.length >= limit) {
 		// Молчаливое усечение выборки выглядело бы как «столько и есть».
-		notes.push(`Показаны первые ${limit} записей: выборка ограничена, уточните условия отбора.`);
+		notes.push(
+			`Показаны первые ${limit} записей: выборка ограничена, уточните условия отбора.`,
+		);
 	}
 
-	return { matched: matchedIds.length, deliverable: candidates.length, candidates, excluded, notes };
+	return {
+		matched: matchedIds.length,
+		deliverable: candidates.length,
+		candidates,
+		excluded,
+		notes,
+	};
 }
 
 /**
@@ -513,21 +633,27 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
  * напоминаний о приёме, который до этого спрашивал базу о каждом приёме отдельно.
  * Обёртка оставлена, чтобы не менять здесь ни одного вызова.
  */
-async function loadConsents(organizationId: string, patientIds: string[]): Promise<Map<string, ConsentRecord[]>> {
+async function loadConsents(
+	organizationId: string,
+	patientIds: string[],
+): Promise<Map<string, ConsentRecord[]>> {
 	return loadConsentsByPatient(organizationId, patientIds);
 }
 
 async function recipientAddressFor(
 	organizationId: string,
 	channel: CommunicationChannelCode,
-	row: { id: string; phone: string | null; email: string | null }
+	row: { id: string; phone: string | null; email: string | null },
 ): Promise<string | null> {
-	if (channel === "telegram") return resolveTelegramChatId(organizationId, row.id);
+	if (channel === "telegram")
+		return resolveTelegramChatId(organizationId, row.id);
 	if (channel === "email") {
 		const email = row.email?.trim() ?? "";
 		return isValidEmailAddress(email) ? email : null;
 	}
-	return channel === "whatsapp" ? normalizeWhatsappRecipient(row.phone) : normalizeRussianMsisdn(row.phone);
+	return channel === "whatsapp"
+		? normalizeWhatsappRecipient(row.phone)
+		: normalizeRussianMsisdn(row.phone);
 }
 
 export const AUDIENCE_CRITERIA_KEYS: readonly (keyof AudienceCriteria)[] = [
@@ -540,22 +666,33 @@ export const AUDIENCE_CRITERIA_KEYS: readonly (keyof AudienceCriteria)[] = [
 	"birthdayWithinDays",
 	"ageFrom",
 	"ageTo",
-	"patientIds"
+	"patientIds",
 ];
 
 /** Человекочитаемое описание условий — попадает в журнал и в интерфейс. */
 export function describeCriteria(criteria: AudienceCriteria): string[] {
 	const parts: string[] = [];
-	if (criteria.status) parts.push(criteria.status === "active" ? "активные пациенты" : "архивные пациенты");
+	if (criteria.status)
+		parts.push(
+			criteria.status === "active" ? "активные пациенты" : "архивные пациенты",
+		);
 	if (criteria.neverVisited) parts.push("ни разу не были на приёме");
-	if (criteria.lastVisitBefore) parts.push(`последний приём раньше ${criteria.lastVisitBefore.slice(0, 10)}`);
-	if (criteria.lastVisitAfter) parts.push(`последний приём позже ${criteria.lastVisitAfter.slice(0, 10)}`);
+	if (criteria.lastVisitBefore)
+		parts.push(
+			`последний приём раньше ${criteria.lastVisitBefore.slice(0, 10)}`,
+		);
+	if (criteria.lastVisitAfter)
+		parts.push(`последний приём позже ${criteria.lastVisitAfter.slice(0, 10)}`);
 	if (criteria.hasFutureAppointment === true) parts.push("есть будущая запись");
 	if (criteria.hasFutureAppointment === false) parts.push("нет будущей записи");
-	if (criteria.debtAtLeastRub !== undefined) parts.push(`долг не меньше ${criteria.debtAtLeastRub} ₽`);
-	if (criteria.birthdayWithinDays !== undefined) parts.push(`день рождения в ближайшие ${criteria.birthdayWithinDays} дн.`);
-	if (criteria.ageFrom !== undefined) parts.push(`возраст от ${criteria.ageFrom}`);
+	if (criteria.debtAtLeastRub !== undefined)
+		parts.push(`долг не меньше ${criteria.debtAtLeastRub} ₽`);
+	if (criteria.birthdayWithinDays !== undefined)
+		parts.push(`день рождения в ближайшие ${criteria.birthdayWithinDays} дн.`);
+	if (criteria.ageFrom !== undefined)
+		parts.push(`возраст от ${criteria.ageFrom}`);
 	if (criteria.ageTo !== undefined) parts.push(`возраст до ${criteria.ageTo}`);
-	if (criteria.patientIds?.length) parts.push(`список из ${criteria.patientIds.length} пациент(ов)`);
+	if (criteria.patientIds?.length)
+		parts.push(`список из ${criteria.patientIds.length} пациент(ов)`);
 	return parts;
 }

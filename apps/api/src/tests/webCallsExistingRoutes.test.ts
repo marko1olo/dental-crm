@@ -34,10 +34,10 @@
  */
 
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 const apiSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -251,9 +251,17 @@ const KNOWN_METHOD_MISMATCH: readonly string[] = [
 ];
 
 /** Префиксы, под которыми модули регистрируются в server.ts. */
-const REGISTERED_PREFIXES = ["/api/inventory", "/api/portal", "/api/public/booking", "/api/telephony"];
+const REGISTERED_PREFIXES = [
+	"/api/inventory",
+	"/api/portal",
+	"/api/public/booking",
+	"/api/telephony",
+];
 
-function collectFiles(directory: string, extensions: readonly string[]): string[] {
+function collectFiles(
+	directory: string,
+	extensions: readonly string[],
+): string[] {
 	const collected: string[] = [];
 	for (const entry of readdirSync(directory)) {
 		const full = path.join(directory, entry);
@@ -262,7 +270,8 @@ function collectFiles(directory: string, extensions: readonly string[]): string[
 			collected.push(...collectFiles(full, extensions));
 			continue;
 		}
-		if (extensions.some((extension) => entry.endsWith(extension))) collected.push(full);
+		if (extensions.some((extension) => entry.endsWith(extension)))
+			collected.push(full);
 	}
 	return collected;
 }
@@ -290,10 +299,18 @@ function normalizePath(raw: string): string {
 	 * настоящего сегмента, иначе страж считает живой маршрут несуществующим.
 	 */
 	const segments = withParams.split("/");
-	const glued = segments.findIndex((segment) => segment.includes(":param") && segment !== ":param");
+	const glued = segments.findIndex(
+		(segment) => segment.includes(":param") && segment !== ":param",
+	);
 	return glued === -1
 		? withParams
-		: [...segments.slice(0, glued), segments[glued]?.replace(/:param.*$/, "") ?? ""].filter(Boolean).join("/").replace(/^/, "/");
+		: [
+				...segments.slice(0, glued),
+				segments[glued]?.replace(/:param.*$/, "") ?? "",
+			]
+				.filter(Boolean)
+				.join("/")
+				.replace(/^/, "/");
 }
 
 /**
@@ -433,7 +450,11 @@ function stripComments(source: string): string {
 		}
 		if (char === "/" && next === "*") {
 			index += 2;
-			while (index < source.length && !(source[index] === "*" && source[index + 1] === "/")) index += 1;
+			while (
+				index < source.length &&
+				!(source[index] === "*" && source[index + 1] === "/")
+			)
+				index += 1;
 			index += 2;
 			out += " ";
 			continue;
@@ -480,7 +501,8 @@ function routePathLiteral(argument: ts.Expression | undefined): string | null {
 	if (ts.isStringLiteralLike(argument)) return argument.text;
 	if (ts.isTemplateExpression(argument)) {
 		let text = argument.head.text;
-		for (const span of argument.templateSpans) text += `\${}${span.literal.text}`;
+		for (const span of argument.templateSpans)
+			text += `\${}${span.literal.text}`;
 		return text;
 	}
 	return null;
@@ -534,7 +556,10 @@ function routePathLiteral(argument: ts.Expression | undefined): string | null {
  * Экспортируется, чтобы самопроверка гоняла ТОТ ЖЕ код, что и дерево, на
  * фикстурах, а не проверяла разбор пересказом.
  */
-export function routeRegistrations(file: string, source: string): RouteRegistration[] {
+export function routeRegistrations(
+	file: string,
+	source: string,
+): RouteRegistration[] {
 	const parsed = ts.createSourceFile(
 		file,
 		source,
@@ -553,7 +578,8 @@ export function routeRegistrations(file: string, source: string): RouteRegistrat
 				ROUTE_METHODS.has(callee.name.text)
 			) {
 				const route = routePathLiteral(node.arguments[0]);
-				if (route !== null) found.push({ method: callee.name.text.toUpperCase(), route });
+				if (route !== null)
+					found.push({ method: callee.name.text.toUpperCase(), route });
 			}
 		}
 		ts.forEachChild(node, visit);
@@ -578,7 +604,10 @@ function serverRoutes(): { paths: Set<string>; withMethod: Set<string> } {
 
 	for (const file of collectFiles(path.join(apiSrc, "routes"), [".ts"])) {
 		if (file.endsWith(".test.ts")) continue;
-		for (const { method, route } of routeRegistrations(file, readFileSync(file, "utf8"))) {
+		for (const { method, route } of routeRegistrations(
+			file,
+			readFileSync(file, "utf8"),
+		)) {
 			const normalized = normalizePath(route);
 			paths.add(normalized);
 			withMethod.add(`${method} ${normalized}`);
@@ -603,7 +632,12 @@ function webCalls(): Map<string, string[]> {
 	const pattern = /["'`](\/api\/[^"'`\s]*)["'`]/g;
 
 	for (const file of collectFiles(webSrc, [".ts", ".tsx"])) {
-		if (file.includes(`${path.sep}tests${path.sep}`) || file.endsWith(".test.ts") || file.endsWith(".test.tsx")) continue;
+		if (
+			file.includes(`${path.sep}tests${path.sep}`) ||
+			file.endsWith(".test.ts") ||
+			file.endsWith(".test.tsx")
+		)
+			continue;
 		const source = stripComments(readFileSync(file, "utf8"));
 		for (const match of source.matchAll(pattern)) {
 			const raw = match[1];
@@ -728,7 +762,12 @@ function webCallsWithMethod(): Map<string, string[]> {
 	const calls = new Map<string, string[]>();
 
 	for (const file of collectFiles(webSrc, [".ts", ".tsx"])) {
-		if (file.includes(`${path.sep}tests${path.sep}`) || file.endsWith(".test.ts") || file.endsWith(".test.tsx")) continue;
+		if (
+			file.includes(`${path.sep}tests${path.sep}`) ||
+			file.endsWith(".test.ts") ||
+			file.endsWith(".test.tsx")
+		)
+			continue;
 		const source = stripComments(readFileSync(file, "utf8"));
 		for (const match of source.matchAll(/\bfetch\s*\(/g)) {
 			const openParen = source.indexOf("(", match.index);
@@ -738,7 +777,12 @@ function webCallsWithMethod(): Map<string, string[]> {
 			const raw = literalValue(args[0] ?? "");
 			if (!raw || !raw.startsWith("/api/")) continue;
 			const normalized = normalizePath(raw);
-			if (!normalized.startsWith("/api/") || normalized.includes("${") || normalized.includes("...")) continue;
+			if (
+				!normalized.startsWith("/api/") ||
+				normalized.includes("${") ||
+				normalized.includes("...")
+			)
+				continue;
 			const method = methodFromOptions(args.length > 1 ? (args[1] ?? "") : "");
 			if (!method) continue;
 			const key = `${method} ${normalized}`;
@@ -776,7 +820,10 @@ function isServed(candidate: string, routes: Set<string>): boolean {
 		const routeSegments = route.split("/");
 		if (routeSegments.length !== candidateSegments.length) continue;
 		const same = routeSegments.every(
-			(segment, index) => segment === candidateSegments[index] || segment === ":param" || candidateSegments[index] === ":param"
+			(segment, index) =>
+				segment === candidateSegments[index] ||
+				segment === ":param" ||
+				candidateSegments[index] === ":param",
 		);
 		if (same) return true;
 	}
@@ -814,7 +861,9 @@ function methodMismatches(
 		const candidatePath = candidate.slice(candidate.indexOf(" ") + 1);
 		if (!isServed(candidatePath, paths)) continue;
 		if (known.some((entry) => candidate === entry)) continue;
-		missing.push(`${candidate} — зовут: ${[...new Set(files)].slice(0, 3).join(", ")}`);
+		missing.push(
+			`${candidate} — зовут: ${[...new Set(files)].slice(0, 3).join(", ")}`,
+		);
 	}
 	return missing;
 }
@@ -830,8 +879,13 @@ describe("адреса, которые зовёт интерфейс", () => {
 	 * красной.
 	 */
 	test("сканер видит вызов и не считает вызовом упоминание в комментарии", () => {
-		const inCode = stripComments('const r = await fetch("/api/schedule/day-confirmations");');
-		assert.ok(inCode.includes("/api/schedule/day-confirmations"), "настоящий вызов пропал вместе с комментариями");
+		const inCode = stripComments(
+			'const r = await fetch("/api/schedule/day-confirmations");',
+		);
+		assert.ok(
+			inCode.includes("/api/schedule/day-confirmations"),
+			"настоящий вызов пропал вместе с комментариями",
+		);
 
 		const inBlockComment = stripComments(
 			"/*\n * гейт сверяет `/api/communications/campaigns/SEGMENT/SEGMENT` с `:campaignId/launch`\n */\nconst ok = true;",
@@ -844,14 +898,27 @@ describe("адреса, которые зовёт интерфейс", () => {
 		const inJsDoc = stripComments(
 			"/**\n * Маршруты `/api/settings/staff*` отвечают на отказ телом {error, message}.\n */\nexport type X = 1;",
 		);
-		assert.ok(!inJsDoc.includes("/api/settings/staff"), "адрес из JSDoc остался: этот случай уже держал проверку красной");
+		assert.ok(
+			!inJsDoc.includes("/api/settings/staff"),
+			"адрес из JSDoc остался: этот случай уже держал проверку красной",
+		);
 
-		const inLineComment = stripComments('// звали "/api/egisz/send", маршрута нет\nconst ok = true;');
-		assert.ok(!inLineComment.includes("/api/egisz/send"), "адрес из строчного комментария остался");
+		const inLineComment = stripComments(
+			'// звали "/api/egisz/send", маршрута нет\nconst ok = true;',
+		);
+		assert.ok(
+			!inLineComment.includes("/api/egisz/send"),
+			"адрес из строчного комментария остался",
+		);
 
 		// Ссылка со слэшами не должна съедать остаток строки вместе с настоящим адресом.
-		const afterUrl = stripComments('const docs = "https://example.ru/x"; const call = "/api/visits/quick";');
-		assert.ok(afterUrl.includes("/api/visits/quick"), "двойной слэш в ссылке съел настоящий адрес после неё");
+		const afterUrl = stripComments(
+			'const docs = "https://example.ru/x"; const call = "/api/visits/quick";',
+		);
+		assert.ok(
+			afterUrl.includes("/api/visits/quick"),
+			"двойной слэш в ссылке съел настоящий адрес после неё",
+		);
 
 		/*
 		 * Закомментированного маршрута здесь БОЛЬШЕ НЕ ПРОВЕРЯЕМ, и это перенос, а не
@@ -907,7 +974,9 @@ describe("адреса, которые зовёт интерфейс", () => {
 		].join("\n");
 
 		assert.deepEqual(
-			routeRegistrations("fixture.ts", adversarial).map((found) => `${found.method} ${found.route}`),
+			routeRegistrations("fixture.ts", adversarial).map(
+				(found) => `${found.method} ${found.route}`,
+			),
 			["GET /api/telegram/outbox", "POST /api/imaging/visiograph-ai"],
 			"Разбор серверных файлов разошёлся с деревом. Лишняя строка «/api/never/registered» означает, " +
 				"что комментарий или строка снова считаются регистрацией, и страж объявит живым маршрут, " +
@@ -946,14 +1015,24 @@ describe("адреса, которые зовёт интерфейс", () => {
 
 	test("каждый вызванный адрес обслуживается сервером", () => {
 		const routes = serverRoutes().paths;
-		assert.ok(routes.size > 50, `маршруты сервера не собрались: найдено ${routes.size}`);
+		assert.ok(
+			routes.size > 50,
+			`маршруты сервера не собрались: найдено ${routes.size}`,
+		);
 
 		const missing: string[] = [];
 		for (const [candidate, files] of webCalls()) {
 			if (isServed(candidate, routes)) continue;
 			// Известный долг: не валит сборку, но и не исчезает из виду.
-			if (KNOWN_MISSING.some((known) => candidate === known || candidate.startsWith(`${known}/`))) continue;
-			missing.push(`${candidate} — зовут: ${[...new Set(files)].slice(0, 3).join(", ")}`);
+			if (
+				KNOWN_MISSING.some(
+					(known) => candidate === known || candidate.startsWith(`${known}/`),
+				)
+			)
+				continue;
+			missing.push(
+				`${candidate} — зовут: ${[...new Set(files)].slice(0, 3).join(", ")}`,
+			);
 		}
 
 		assert.deepEqual(
@@ -961,7 +1040,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 			[],
 			"Интерфейс зовёт адреса, которых нет на сервере. Такой вызов возвращает 404, а обёртка вида " +
 				"`response.ok ? json : []` превращает его в пустой экран без ошибки:\n" +
-				missing.join("\n")
+				missing.join("\n"),
 		);
 	});
 
@@ -980,15 +1059,24 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * — следующий тест, он гоняет искусственное нарушение через настоящий отбор.
 		 */
 		const pathsOnly = new Set(["/api/clinical/rules/:param"]);
-		assert.ok(isServed("/api/clinical/rules/:param", pathsOnly), "сравнение по пути сломано");
+		assert.ok(
+			isServed("/api/clinical/rules/:param", pathsOnly),
+			"сравнение по пути сломано",
+		);
 
 		const withMethod = new Set(["PATCH /api/clinical/rules/:param"]);
-		assert.ok(isServed("PATCH /api/clinical/rules/:param", withMethod), "тот же метод обязан совпадать");
+		assert.ok(
+			isServed("PATCH /api/clinical/rules/:param", withMethod),
+			"тот же метод обязан совпадать",
+		);
 		assert.ok(
 			!isServed("DELETE /api/clinical/rules/:param", withMethod),
 			"путь есть, метода нет — Fastify отвечает 404, а страж считает адрес живым",
 		);
-		assert.ok(!isServed("GET /api/clinical/rules/:param", withMethod), "чужой метод принят за обслуживаемый");
+		assert.ok(
+			!isServed("GET /api/clinical/rules/:param", withMethod),
+			"чужой метод принят за обслуживаемый",
+		);
 	});
 
 	test("отбор падает на искусственном нарушении «путь есть, метод другой»", () => {
@@ -1024,7 +1112,12 @@ describe("адреса, которые зовёт интерфейс", () => {
 		// Верный метод не должен попадать в расхождения: страж, краснеющий на живом
 		// коде, выключается целиком, и тогда он не поймает ни одного дефекта.
 		assert.deepEqual(
-			methodMismatches(new Map([["PATCH /api/clinical/rules/:param", ["useAppLogic.tsx"]]]), paths, withMethod, []),
+			methodMismatches(
+				new Map([["PATCH /api/clinical/rules/:param", ["useAppLogic.tsx"]]]),
+				paths,
+				withMethod,
+				[],
+			),
 			[],
 			"верный метод объявлен расхождением",
 		);
@@ -1032,7 +1125,12 @@ describe("адреса, которые зовёт интерфейс", () => {
 		// Отсутствующий путь — другой класс и другой список долга; здесь он молчит,
 		// иначе один дефект был бы назван дважды и обе границы поехали бы.
 		assert.deepEqual(
-			methodMismatches(new Map([["GET /api/nowhere/at/all", ["SomeView.tsx"]]]), paths, withMethod, []),
+			methodMismatches(
+				new Map([["GET /api/nowhere/at/all", ["SomeView.tsx"]]]),
+				paths,
+				withMethod,
+				[],
+			),
 			[],
 			"отсутствующий путь посчитан расхождением по методу",
 		);
@@ -1052,7 +1150,10 @@ describe("адреса, которые зовёт интерфейс", () => {
 
 	test("каждый вызванный адрес обслуживается ТЕМ ЖЕ методом", () => {
 		const { paths, withMethod } = serverRoutes();
-		assert.ok(withMethod.size > 50, `маршруты сервера не собрались: найдено ${withMethod.size}`);
+		assert.ok(
+			withMethod.size > 50,
+			`маршруты сервера не собрались: найдено ${withMethod.size}`,
+		);
 
 		/*
 		 * НИЖНЯЯ ГРАНИЦА НА РАЗБОР ВЫЗОВОВ. Разбор скобок консервативен намеренно: он
@@ -1067,9 +1168,17 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * нуля или до горстки.
 		 */
 		const calls = webCallsWithMethod();
-		assert.ok(calls.size > 150, `вызовы интерфейса не разобрались: найдено ${calls.size} пар метод+адрес`);
+		assert.ok(
+			calls.size > 150,
+			`вызовы интерфейса не разобрались: найдено ${calls.size} пар метод+адрес`,
+		);
 
-		const missing = methodMismatches(calls, paths, withMethod, KNOWN_METHOD_MISMATCH);
+		const missing = methodMismatches(
+			calls,
+			paths,
+			withMethod,
+			KNOWN_METHOD_MISMATCH,
+		);
 
 		assert.deepEqual(
 			missing,
@@ -1077,7 +1186,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 			"Интерфейс зовёт существующий путь чужим методом. Fastify отвечает на такой запрос 404 ровно " +
 				"так же, как на несуществующий путь, и обёртка вида `.catch(() => {})` превращает отказ в " +
 				"тишину:\n" +
-				missing.join("\n")
+				missing.join("\n"),
 		);
 	});
 
@@ -1109,7 +1218,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 		assert.ok(
 			KNOWN_MISSING.length <= 7,
 			`Известных отсутствующих адресов стало больше: ${KNOWN_MISSING.length}. ` +
-				"Долг должен уменьшаться, а не расти."
+				"Долг должен уменьшаться, а не расти.",
 		);
 		/*
 		 * Тот же запрет для долга по методу. Две строки, с которых список начинался,
@@ -1126,7 +1235,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 		assert.ok(
 			KNOWN_METHOD_MISMATCH.length <= 0,
 			`Известных расхождений по методу стало больше: ${KNOWN_METHOD_MISMATCH.length}. ` +
-				"Долг должен уменьшаться, а не расти."
+				"Долг должен уменьшаться, а не расти.",
 		);
 	});
 
@@ -1145,14 +1254,18 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 */
 		const called = new Set(webCalls().keys());
 		const uncalled = KNOWN_MISSING.filter(
-			(known) => ![...called].some((candidate) => candidate === known || candidate.startsWith(`${known}/`))
+			(known) =>
+				![...called].some(
+					(candidate) =>
+						candidate === known || candidate.startsWith(`${known}/`),
+				),
 		);
 		assert.deepEqual(
 			uncalled,
 			[],
 			"Эти строки долга не зовёт ни один файл интерфейса — уберите их из KNOWN_MISSING: " +
 				`${uncalled.join(", ")}. Долг — это расхождение фронта с сервером; строка, у которой нет ` +
-				"вызывающего, описывает только саму себя."
+				"вызывающего, описывает только саму себя.",
 		);
 
 		/*
@@ -1174,23 +1287,27 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * разбор, а не список. Долг, который нельзя подтвердить вызывающим, не долг.
 		 */
 		const pairs = new Set(webCallsWithMethod().keys());
-		const uncalledPairs = KNOWN_METHOD_MISMATCH.filter((known) => !pairs.has(known));
+		const uncalledPairs = KNOWN_METHOD_MISMATCH.filter(
+			(known) => !pairs.has(known),
+		);
 		assert.deepEqual(
 			uncalledPairs,
 			[],
 			"Эти пары метод+адрес не зовёт ни один файл интерфейса — уберите их из " +
 				`KNOWN_METHOD_MISMATCH: ${uncalledPairs.join(", ")}. Либо вызов снят, либо разбор вызовов ` +
-				"перестал его видеть; во втором случае чинить надо разбор, а не список."
+				"перестал его видеть; во втором случае чинить надо разбор, а не список.",
 		);
 	});
 
 	test("починенные адреса удаляются из списка долга", () => {
 		const { paths, withMethod } = serverRoutes();
-		const alreadyServed = KNOWN_MISSING.filter((known) => isServed(known, paths));
+		const alreadyServed = KNOWN_MISSING.filter((known) =>
+			isServed(known, paths),
+		);
 		assert.deepEqual(
 			alreadyServed,
 			[],
-			`Эти адреса уже обслуживаются — уберите их из KNOWN_MISSING: ${alreadyServed.join(", ")}`
+			`Эти адреса уже обслуживаются — уберите их из KNOWN_MISSING: ${alreadyServed.join(", ")}`,
 		);
 
 		/*
@@ -1205,12 +1322,14 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * Оставшийся случай (PUT /api/xray/scans) стоит в очереди на починку в
 		 * apps/api, и когда маршрут появится — покраснеет здесь же.
 		 */
-		const methodNowServed = KNOWN_METHOD_MISMATCH.filter((known) => isServed(known, withMethod));
+		const methodNowServed = KNOWN_METHOD_MISMATCH.filter((known) =>
+			isServed(known, withMethod),
+		);
 		assert.deepEqual(
 			methodNowServed,
 			[],
 			"Эти пары уже обслуживаются — маршрут добавлен, уберите строку из KNOWN_METHOD_MISMATCH: " +
-				`${methodNowServed.join(", ")}`
+				`${methodNowServed.join(", ")}`,
 		);
 
 		/*
@@ -1220,13 +1339,13 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * строки два списка могут разъехаться так, что один дефект не назван ни одним.
 		 */
 		const misfiled = KNOWN_METHOD_MISMATCH.filter(
-			(known) => !isServed(known.slice(known.indexOf(" ") + 1), paths)
+			(known) => !isServed(known.slice(known.indexOf(" ") + 1), paths),
 		);
 		assert.deepEqual(
 			misfiled,
 			[],
 			"У этих записей больше нет самого пути на сервере — это уже не «путь есть, метод чужой», " +
-				`а отсутствующий адрес: перенесите в KNOWN_MISSING: ${misfiled.join(", ")}`
+				`а отсутствующий адрес: перенесите в KNOWN_MISSING: ${misfiled.join(", ")}`,
 		);
 	});
 });

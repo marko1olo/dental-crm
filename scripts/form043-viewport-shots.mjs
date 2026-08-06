@@ -5,8 +5,8 @@
  */
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import { chromium } from "playwright";
+import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -33,11 +33,20 @@ const CANDIDATE_BROWSERS = [
 	process.env.CHROME_PATH,
 	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 	"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-	path.join(process.env.LOCALAPPDATA || "", "Google\\Chrome\\Application\\chrome.exe"),
+	path.join(
+		process.env.LOCALAPPDATA || "",
+		"Google\\Chrome\\Application\\chrome.exe",
+	),
 	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
 	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-	path.join(process.env.PROGRAMFILES || "", "Microsoft\\Edge\\Application\\msedge.exe"),
-	path.join(process.env["ProgramFiles(x86)"] || "", "Microsoft\\Edge\\Application\\msedge.exe"),
+	path.join(
+		process.env.PROGRAMFILES || "",
+		"Microsoft\\Edge\\Application\\msedge.exe",
+	),
+	path.join(
+		process.env["ProgramFiles(x86)"] || "",
+		"Microsoft\\Edge\\Application\\msedge.exe",
+	),
 ].filter(Boolean);
 
 function resolveExecutablePath() {
@@ -79,7 +88,10 @@ async function launchBrowser() {
 				return await chromium.launch({ ...common, executablePath: p });
 			}
 		} catch (err) {
-			console.log(`[browser] exe failed:`, String(err?.message || err).slice(0, 160));
+			console.log(
+				`[browser] exe failed:`,
+				String(err?.message || err).slice(0, 160),
+			);
 		}
 	}
 
@@ -88,7 +100,10 @@ async function launchBrowser() {
 		try {
 			return await chromium.launch({ ...common, executablePath: exe });
 		} catch (err) {
-			console.log(`[browser] exe fallback failed:`, String(err?.message || err).slice(0, 160));
+			console.log(
+				`[browser] exe fallback failed:`,
+				String(err?.message || err).slice(0, 160),
+			);
 		}
 	}
 
@@ -97,14 +112,16 @@ async function launchBrowser() {
 			console.log(`[browser] trying channel=${channel}`);
 			return await chromium.launch({ ...common, channel });
 		} catch (err) {
-			console.log(`[browser] channel ${channel} failed:`, String(err?.message || err).slice(0, 160));
+			console.log(
+				`[browser] channel ${channel} failed:`,
+				String(err?.message || err).slice(0, 160),
+			);
 		}
 	}
 
 	console.log("[browser] falling back to bundled chromium");
 	return chromium.launch(common);
 }
-
 
 /** Real demo SaaS login — returns clinicToken + staffToken (never audit-bypass). */
 async function fetchDemoTokens() {
@@ -176,8 +193,18 @@ async function forceTheme(page, theme) {
 
 async function dismissOverlays(page) {
 	await page.evaluate(() => {
-		const texts = ["Пропустить", "Понятно", "Закрыть", "OK", "Далее", "Готово", "Skip"];
-		const buttons = Array.from(document.querySelectorAll("button, [role='button']"));
+		const texts = [
+			"Пропустить",
+			"Понятно",
+			"Закрыть",
+			"OK",
+			"Далее",
+			"Готово",
+			"Skip",
+		];
+		const buttons = Array.from(
+			document.querySelectorAll("button, [role='button']"),
+		);
 		for (const b of buttons) {
 			const t = (b.textContent || "").trim();
 			if (texts.some((x) => t === x || t.includes(x))) {
@@ -206,7 +233,9 @@ async function waitForVisitWorkspace(page) {
 	// Wait for app shell + visit panel (or empty-state with patient picker).
 	for (let i = 0; i < 20; i++) {
 		const state = await page.evaluate(() => {
-			const hasShell = !!document.querySelector(".app-shell, [data-testid='app-shell']");
+			const hasShell = !!document.querySelector(
+				".app-shell, [data-testid='app-shell']",
+			);
 			const hasVisit = !!document.querySelector('[data-testid="visit-view"]');
 			const hasAuth = !!(
 				document.querySelector(".auth-overlay") ||
@@ -237,7 +266,10 @@ async function waitForVisitWorkspace(page) {
 			document.querySelector('input[type="email"]')
 		),
 		hash: location.hash,
-		snippet: (document.body?.innerText || "").replace(/\s+/g, " ").trim().slice(0, 180),
+		snippet: (document.body?.innerText || "")
+			.replace(/\s+/g, " ")
+			.trim()
+			.slice(0, 180),
 	}));
 }
 
@@ -284,7 +316,9 @@ async function openDiaryAndPreview(page) {
 	}
 
 	await page.evaluate(() => {
-		const buttons = Array.from(document.querySelectorAll("button, [role='tab'], a"));
+		const buttons = Array.from(
+			document.querySelectorAll("button, [role='tab'], a"),
+		);
 		const hit = buttons.find((b) => {
 			const t = (b.textContent || "").trim();
 			return (
@@ -302,12 +336,15 @@ async function openDiaryAndPreview(page) {
 
 	// Wait up to ~12s for editor (API/bootstrap)
 	for (let i = 0; i < 12; i++) {
-		const has = (await page.locator('[data-testid="visit-diary-editor"]').count()) > 0;
+		const has =
+			(await page.locator('[data-testid="visit-diary-editor"]').count()) > 0;
 		if (has) break;
 		await page.waitForTimeout(1000);
 		if (i === 4 || i === 8) {
 			await page.evaluate(() => {
-				const buttons = Array.from(document.querySelectorAll("button, [role='tab'], a"));
+				const buttons = Array.from(
+					document.querySelectorAll("button, [role='tab'], a"),
+				);
 				const hit = buttons.find((b) => {
 					const t = (b.textContent || "").trim();
 					return (
@@ -357,7 +394,8 @@ async function openDiaryAndPreview(page) {
 		await page.waitForTimeout(900);
 	}
 
-	const hasPreview = (await page.locator('[data-testid="form-043-preview"]').count()) > 0;
+	const hasPreview =
+		(await page.locator('[data-testid="form-043-preview"]').count()) > 0;
 	if (!hasPreview) {
 		await page.evaluate(() => {
 			const fill = (id, text) => {
@@ -434,8 +472,10 @@ async function openDiaryAndPreview(page) {
 	});
 
 	return {
-		hasEditor: (await page.locator('[data-testid="visit-diary-editor"]').count()) > 0,
-		hasPreview: (await page.locator('[data-testid="form-043-preview"]').count()) > 0,
+		hasEditor:
+			(await page.locator('[data-testid="visit-diary-editor"]').count()) > 0,
+		hasPreview:
+			(await page.locator('[data-testid="form-043-preview"]').count()) > 0,
 		hasEcp: (await page.locator('[data-testid="form-043-ecp"]').count()) > 0,
 		diag,
 	};
@@ -446,14 +486,17 @@ async function auditPage(page, label) {
 		const issues = [];
 		const root = document.documentElement;
 		const theme =
-			root.dataset.theme || (root.classList.contains("dark") ? "dark" : "light");
+			root.dataset.theme ||
+			(root.classList.contains("dark") ? "dark" : "light");
 
 		const editor = document.querySelector('[data-testid="visit-diary-editor"]');
 		const preview = document.querySelector('[data-testid="form-043-preview"]');
 		const target = preview || editor;
 
 		if (!target) {
-			issues.push("MISSING: neither visit-diary-editor nor form-043-preview in DOM");
+			issues.push(
+				"MISSING: neither visit-diary-editor nor form-043-preview in DOM",
+			);
 			return { theme, issues, metrics: {} };
 		}
 
@@ -461,13 +504,20 @@ async function auditPage(page, label) {
 		const docW = document.documentElement.clientWidth;
 
 		if (rect.width > docW + 2) {
-			issues.push(`OVERFLOW: target width ${Math.round(rect.width)} > viewport ${docW}`);
+			issues.push(
+				`OVERFLOW: target width ${Math.round(rect.width)} > viewport ${docW}`,
+			);
 		}
 		if (rect.right > docW + 4) {
-			issues.push(`OVERFLOW-X: target right ${Math.round(rect.right)} > ${docW}`);
+			issues.push(
+				`OVERFLOW-X: target right ${Math.round(rect.right)} > ${docW}`,
+			);
 		}
 
-		if (document.documentElement.scrollWidth > document.documentElement.clientWidth + 2) {
+		if (
+			document.documentElement.scrollWidth >
+			document.documentElement.clientWidth + 2
+		) {
 			issues.push(
 				`PAGE-OVERFLOW-X: scrollWidth ${document.documentElement.scrollWidth} > clientWidth ${document.documentElement.clientWidth}`,
 			);
@@ -508,7 +558,8 @@ async function auditPage(page, label) {
 		if (preview) {
 			const body = preview.querySelector("#print-043");
 			const text = body ? body.textContent || "" : "";
-			if (!text.includes("043")) issues.push("PRINT: missing Форма 043/у title");
+			if (!text.includes("043"))
+				issues.push("PRINT: missing Форма 043/у title");
 			if (!text.includes("S —") && !text.includes("Жалобы")) {
 				issues.push("PRINT: missing SOAP S section");
 			}
@@ -583,15 +634,17 @@ async function run() {
 				{ s: seed, t: theme },
 			);
 
-			await page.goto(VISIT_URL, {
-				waitUntil: "networkidle",
-				timeout: 60000,
-			}).catch(async () => {
-				await page.goto(VISIT_URL, {
-					waitUntil: "domcontentloaded",
-					timeout: 45000,
+			await page
+				.goto(VISIT_URL, {
+					waitUntil: "networkidle",
+					timeout: 60000,
+				})
+				.catch(async () => {
+					await page.goto(VISIT_URL, {
+						waitUntil: "domcontentloaded",
+						timeout: 45000,
+					});
 				});
-			});
 			await page.waitForTimeout(4500);
 			await forceTheme(page, theme);
 			await dismissOverlays(page);
@@ -620,7 +673,6 @@ async function run() {
 				await forceTheme(page, theme);
 				await dismissOverlays(page);
 			}
-
 
 			const openInfo = await openDiaryAndPreview(page);
 			console.log(`[${label}] open:`, JSON.stringify(openInfo));
@@ -666,7 +718,10 @@ async function run() {
 	try {
 		await browser.close();
 	} catch (err) {
-		console.log("[browser] soft close:", String(err?.message || err).slice(0, 120));
+		console.log(
+			"[browser] soft close:",
+			String(err?.message || err).slice(0, 120),
+		);
 	}
 	process.exit(0);
 }
@@ -675,4 +730,3 @@ run().catch(async (err) => {
 	console.error(err);
 	process.exit(1);
 });
-

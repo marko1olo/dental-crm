@@ -53,7 +53,9 @@ export function resolveViteBin(searchRoots = defaultViteSearchRoots) {
 		if (!manifestPath) continue;
 		const manifest = readManifest(manifestPath);
 		if (manifest.error) {
-			attempted.push(`${manifestPath} -> unreadable (${manifest.error.message})`);
+			attempted.push(
+				`${manifestPath} -> unreadable (${manifest.error.message})`,
+			);
 			continue;
 		}
 		const relative = binRelativePath(manifest);

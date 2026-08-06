@@ -21,18 +21,22 @@
    годятся: --ink в тёмной теме почти белый, и градиент выцветал в
    светло-бирюзовое полотно (проверено в браузере). */
 .onboarding-fullscreen {
-  align-items: center;
-  background:
-    radial-gradient(circle at 12% 8%, rgba(45, 212, 191, 0.22), transparent 45%),
-    radial-gradient(circle at 88% 92%, rgba(13, 148, 136, 0.18), transparent 50%),
-    linear-gradient(135deg, #0f766e 0%, #0b1a18 60%, #060d0c 100%);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-  overflow-y: auto;
-  padding: clamp(16px, 4vw, 40px) clamp(12px, 3vw, 20px);
+	align-items: center;
+	background:
+		radial-gradient(circle at 12% 8%, rgba(45, 212, 191, 0.22), transparent 45%),
+		radial-gradient(
+			circle at 88% 92%,
+			rgba(13, 148, 136, 0.18),
+			transparent 50%
+		),
+		linear-gradient(135deg, #0f766e 0%, #0b1a18 60%, #060d0c 100%);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-height: 100vh;
+	min-height: 100dvh;
+	overflow-y: auto;
+	padding: clamp(16px, 4vw, 40px) clamp(12px, 3vw, 20px);
 }
 
 /* dente-redesign.css задаёт `.workspace, .dnt-content { max-width: 1560px
@@ -43,280 +47,280 @@
    Ограничение ставится на саму карточку: там !important-конкурентов нет,
    и в общий счёт войны каскада мы ничего не добавляем. */
 .onboarding-shell.onboarding-wizard {
-  display: grid;
-  gap: 0;
-  margin: auto;
-  max-width: 820px;
-  padding: clamp(18px, 4vw, 32px);
-  width: 100%;
+	display: grid;
+	gap: 0;
+	margin: auto;
+	max-width: 820px;
+	padding: clamp(18px, 4vw, 32px);
+	width: 100%;
 }
 
 .onboarding-wizard .onboarding-head {
-  border-bottom: 1px solid var(--line);
-  display: block;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
+	border-bottom: 1px solid var(--line);
+	display: block;
+	margin-bottom: 24px;
+	padding-bottom: 20px;
 }
 
 .onboarding-wizard .onboarding-head .eyebrow {
-  color: var(--teal-dark);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  margin: 0;
-  text-transform: uppercase;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	margin: 0;
+	text-transform: uppercase;
 }
 
 .onboarding-wizard .onboarding-head h2 {
-  color: var(--ink);
-  font-size: clamp(19px, 4vw, 24px);
-  font-weight: 700;
-  margin: 4px 0 0;
+	color: var(--ink);
+	font-size: clamp(19px, 4vw, 24px);
+	font-weight: 700;
+	margin: 4px 0 0;
 }
 
 /* ---------- Полоса шагов ---------- */
 .onboarding-wizard .wizard-step-list {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  margin-bottom: 32px;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	margin-bottom: 32px;
 }
 
 .wizard-step {
-  background: var(--paper-soft);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  gap: 2px;
-  padding: 10px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 2px;
+	padding: 10px;
 }
 
 .wizard-step[data-active="true"] {
-  background: var(--teal-surface);
-  border-color: var(--teal);
+	background: var(--teal-surface);
+	border-color: var(--teal);
 }
 
 .wizard-step-index {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 600;
 }
 
 .wizard-step[data-active="true"] .wizard-step-index {
-  color: var(--teal-dark);
+	color: var(--teal-dark);
 }
 
 .wizard-step-title {
-  color: var(--ink-2, var(--ink));
-  font-size: 14px;
+	color: var(--ink-2, var(--ink));
+	font-size: 14px;
 }
 
 .wizard-step[data-active="true"] .wizard-step-title {
-  color: var(--teal-dark);
+	color: var(--teal-dark);
 }
 
 .wizard-step-detail {
-  color: var(--muted);
-  font-size: 11px;
+	color: var(--muted);
+	font-size: 11px;
 }
 
 /* ---------- Панель шага ---------- */
 .onboarding-wizard .onboarding-panel {
-  background: transparent;
-  border: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 0;
+	background: transparent;
+	border: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	padding: 0;
 }
 
 .onboarding-wizard .onboarding-panel h3 {
-  color: var(--ink);
-  font-size: clamp(17px, 3.5vw, 20px);
-  font-weight: 600;
-  margin: 0 0 8px;
+	color: var(--ink);
+	font-size: clamp(17px, 3.5vw, 20px);
+	font-weight: 600;
+	margin: 0 0 8px;
 }
 
 .onboarding-wizard .onboarding-panel p {
-  color: var(--ink-2, var(--muted));
-  margin: 0;
+	color: var(--ink-2, var(--muted));
+	margin: 0;
 }
 
 /* ---------- Выбор режима запуска ---------- */
 .wizard-mode-grid {
-  display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	display: grid;
+	gap: 20px;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 .wizard-mode-card {
-  align-items: flex-start;
-  background: var(--paper-soft);
-  border: 2px solid var(--line-strong);
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 20px;
-  text-align: left;
-  transition:
-    transform var(--transition-fast, 0.15s ease),
-    box-shadow var(--transition-fast, 0.15s ease),
-    border-color var(--transition-fast, 0.15s ease);
+	align-items: flex-start;
+	background: var(--paper-soft);
+	border: 2px solid var(--line-strong);
+	border-radius: 12px;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 20px;
+	text-align: left;
+	transition:
+		transform var(--transition-fast, 0.15s ease),
+		box-shadow var(--transition-fast, 0.15s ease),
+		border-color var(--transition-fast, 0.15s ease);
 }
 
 .wizard-mode-card:hover:not(:disabled) {
-  box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
+	box-shadow: var(--shadow-2);
+	transform: translateY(-2px);
 }
 
 .wizard-mode-card:disabled {
-  cursor: progress;
-  opacity: 0.6;
+	cursor: progress;
+	opacity: 0.6;
 }
 
 .wizard-mode-card--demo {
-  background: var(--info-bg, var(--paper-soft));
-  border-color: var(--info-fg, var(--line-strong));
+	background: var(--info-bg, var(--paper-soft));
+	border-color: var(--info-fg, var(--line-strong));
 }
 
 .wizard-mode-card--clean {
-  background: var(--ok-bg, var(--paper-soft));
-  border-color: var(--ok-fg, var(--line-strong));
+	background: var(--ok-bg, var(--paper-soft));
+	border-color: var(--ok-fg, var(--line-strong));
 }
 
 .wizard-mode-icon {
-  font-size: 28px;
-  line-height: 1;
-  margin-bottom: 6px;
+	font-size: 28px;
+	line-height: 1;
+	margin-bottom: 6px;
 }
 
 .wizard-mode-card--demo .wizard-mode-title {
-  color: var(--info-fg, var(--ink));
+	color: var(--info-fg, var(--ink));
 }
 
 .wizard-mode-card--clean .wizard-mode-title {
-  color: var(--ok-fg, var(--ink));
+	color: var(--ok-fg, var(--ink));
 }
 
 .wizard-mode-title {
-  font-size: 16px;
-  font-weight: 600;
+	font-size: 16px;
+	font-weight: 600;
 }
 
 /* Описание читается на цветной подложке в обеих темах: берём основной
    цвет текста, а не осветлённый акцент. */
 .wizard-mode-note {
-  color: var(--ink);
-  font-size: 13px;
-  line-height: 1.45;
+	color: var(--ink);
+	font-size: 13px;
+	line-height: 1.45;
 }
 
 /* ---------- Поля ---------- */
 .wizard-field-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
 .wizard-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 }
 
 .wizard-field > label {
-  color: var(--ink-2, var(--ink));
-  font-size: 14px;
-  font-weight: 500;
+	color: var(--ink-2, var(--ink));
+	font-size: 14px;
+	font-weight: 500;
 }
 
 .wizard-field > input {
-  background: var(--paper);
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
-  color: var(--ink);
-  font-size: 15px;
-  padding: 10px;
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 8px;
+	color: var(--ink);
+	font-size: 15px;
+	padding: 10px;
 }
 
 .wizard-field > input::placeholder {
-  color: var(--muted);
+	color: var(--muted);
 }
 
 /* ---------- Выбор роли ---------- */
 .wizard-role-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
 }
 
 .wizard-role-chip {
-  background: var(--paper);
-  border: 1px solid var(--line-strong);
-  border-radius: 20px;
-  color: var(--ink-2, var(--ink));
-  cursor: pointer;
-  font-weight: 500;
-  padding: 8px 16px;
-  transition: background var(--transition-fast, 0.15s ease);
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 20px;
+	color: var(--ink-2, var(--ink));
+	cursor: pointer;
+	font-weight: 500;
+	padding: 8px 16px;
+	transition: background var(--transition-fast, 0.15s ease);
 }
 
 .wizard-role-chip:hover {
-  border-color: var(--teal);
+	border-color: var(--teal);
 }
 
 .wizard-role-chip[aria-pressed="true"] {
-  background: var(--teal);
-  border-color: var(--teal);
-  color: var(--on-teal, #fff);
+	background: var(--teal);
+	border-color: var(--teal);
+	color: var(--on-teal, #fff);
 }
 
 /* ---------- Сводка последнего шага ---------- */
 .wizard-summary-grid {
-  background: var(--paper-soft);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  padding: 20px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	display: grid;
+	gap: 16px;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	padding: 20px;
 }
 
 .wizard-summary-label {
-  color: var(--muted);
-  display: block;
-  font-size: 12px;
-  text-transform: uppercase;
+	color: var(--muted);
+	display: block;
+	font-size: 12px;
+	text-transform: uppercase;
 }
 
 .wizard-summary-value {
-  color: var(--ink);
-  font-size: 15px;
+	color: var(--ink);
+	font-size: 15px;
 }
 
 /* ---------- Кнопки ---------- */
 .onboarding-wizard .onboarding-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	justify-content: flex-end;
+	margin-top: 24px;
 }
 
 .onboarding-wizard .onboarding-actions button {
-  border-radius: 8px;
-  font-weight: 600;
-  min-height: 44px;
-  padding: 10px 24px;
+	border-radius: 8px;
+	font-weight: 600;
+	min-height: 44px;
+	padding: 10px 24px;
 }
 
 @media (max-width: 560px) {
-  .onboarding-wizard .onboarding-actions {
-    justify-content: stretch;
-  }
-  .onboarding-wizard .onboarding-actions button {
-    flex: 1 1 140px;
-  }
+	.onboarding-wizard .onboarding-actions {
+		justify-content: stretch;
+	}
+	.onboarding-wizard .onboarding-actions button {
+		flex: 1 1 140px;
+	}
 }

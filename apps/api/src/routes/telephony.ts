@@ -2,10 +2,10 @@ import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { communicationEvents, patients } from "../db/schema.js";
-import { wsBroker } from "../services/websocketBroker.js";
-import { verifyWebhookSecret } from "../security/webhookAuth.js";
 import { withTenantCtx } from "../db/rls.js";
+import { communicationEvents, patients } from "../db/schema.js";
+import { verifyWebhookSecret } from "../security/webhookAuth.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 /**
  * Тела вебхуков АТС/SMS раньше читались через bare destructure `const { … } = request.body`.
@@ -40,10 +40,13 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		// БЫЛО: вебхук АТС принимал любой POST — посторонний мог показывать
 		// врачам всплывающие уведомления о фиктивных звонках и заводить
 		// пациентов/лиды в чужой клинике.
-		if (!verifyWebhookSecret(request, reply, {
-			channel: "telephony",
-			secretEnvNames: ["TELEPHONY_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
-		})) return reply;
+		if (
+			!verifyWebhookSecret(request, reply, {
+				channel: "telephony",
+				secretEnvNames: ["TELEPHONY_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
+			})
+		)
+			return reply;
 
 		const { organizationId } = request.params;
 		return withTenantCtx(organizationId, async () => {
@@ -104,8 +107,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 								phone: from,
 								source: "telephony",
 								status: "new",
-								notes:
-									"Автоматический черновик лида из входящего звонка АТС",
+								notes: "Автоматический черновик лида из входящего звонка АТС",
 							});
 						}
 					} catch (leadErr) {
@@ -146,10 +148,13 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		// БЫЛО: вебхук АТС принимал любой POST — посторонний мог показывать
 		// врачам всплывающие уведомления о фиктивных звонках и заводить
 		// пациентов/лиды в чужой клинике.
-		if (!verifyWebhookSecret(request, reply, {
-			channel: "telephony",
-			secretEnvNames: ["TELEPHONY_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
-		})) return reply;
+		if (
+			!verifyWebhookSecret(request, reply, {
+				channel: "telephony",
+				secretEnvNames: ["TELEPHONY_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
+			})
+		)
+			return reply;
 
 		const { organizationId } = request.params;
 		return withTenantCtx(organizationId, async () => {

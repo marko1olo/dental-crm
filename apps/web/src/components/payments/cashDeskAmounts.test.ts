@@ -169,11 +169,17 @@ describe("changeToReturn", () => {
 describe("sumRubAmounts", () => {
 	it("складывает деньгами, а не строками", () => {
 		// Строкой это дало бы «103».
-		assert.deepEqual(sumRubAmounts(["10", "3"]), { totalRub: 13, unreadableCount: 0 });
+		assert.deepEqual(sumRubAmounts(["10", "3"]), {
+			totalRub: 13,
+			unreadableCount: 0,
+		});
 	});
 
 	it("не набирает хвост плавающей точки", () => {
-		assert.deepEqual(sumRubAmounts([0.1, 0.2]), { totalRub: 0.3, unreadableCount: 0 });
+		assert.deepEqual(sumRubAmounts([0.1, 0.2]), {
+			totalRub: 0.3,
+			unreadableCount: 0,
+		});
 		assert.deepEqual(sumRubAmounts(["1500.24", 1500.24, "0.02"]), {
 			totalRub: 3000.5,
 			unreadableCount: 0,
@@ -199,7 +205,10 @@ describe("unreadablePaymentsWarning", () => {
 		assert.match(unreadablePaymentsWarning(2), /^2 платежа не попали в итог/);
 		assert.match(unreadablePaymentsWarning(5), /^5 платежей не попали в итог/);
 		// 11–14 всегда множественное, поблажка для «один» тут не действует.
-		assert.match(unreadablePaymentsWarning(11), /^11 платежей не попали в итог/);
+		assert.match(
+			unreadablePaymentsWarning(11),
+			/^11 платежей не попали в итог/,
+		);
 		assert.match(unreadablePaymentsWarning(21), /^21 платёж не попал в итог/);
 	});
 

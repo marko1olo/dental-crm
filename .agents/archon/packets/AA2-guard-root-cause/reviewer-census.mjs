@@ -1,15 +1,22 @@
 // READ-ONLY independent census. Reviewer instrument: TypeScript compiler API
 // (NOT @babel/parser, which the builder used). Purpose: re-derive 315 files /
 // 195 components with a different parser and diff against the builder's list.
+
+import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 
 const require = createRequire("C:/Clinic_MVP/dental-crm/apps/web/package.json");
 const ts = require("typescript");
 
 const ROOT = "C:/Clinic_MVP/dental-crm/apps/web/src";
-const IGNORED = new Set(["node_modules", "dist", "__snapshots__", "tests", "__tests__"]);
+const IGNORED = new Set([
+	"node_modules",
+	"dist",
+	"__snapshots__",
+	"tests",
+	"__tests__",
+]);
 
 function collect() {
 	const out = [];
@@ -67,13 +74,21 @@ function containsJsx(node) {
 function hasExportModifier(node) {
 	return (
 		ts.canHaveModifiers(node) &&
-		(ts.getModifiers(node) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
+		(ts.getModifiers(node) ?? []).some(
+			(m) => m.kind === ts.SyntaxKind.ExportKeyword,
+		)
 	);
 }
 
 const files = collect();
 const components = [];
-const shapes = { exportFunction: 0, annotatedConst: 0, plainArrowConst: 0, otherConst: 0, classDecl: 0 };
+const shapes = {
+	exportFunction: 0,
+	annotatedConst: 0,
+	plainArrowConst: 0,
+	otherConst: 0,
+	classDecl: 0,
+};
 let parseErrors = 0;
 
 for (const rel of files) {
@@ -100,14 +115,24 @@ for (const rel of files) {
 		if (ts.isExportAssignment(st)) continue;
 
 		if (ts.isFunctionDeclaration(st) && st.name) {
-			const line = sf.getLineAndCharacterOfPosition(st.name.getStart(sf)).line + 1;
-			declared.set(st.name.text, { line, jsx: containsJsx(st), shape: "exportFunction" });
+			const line =
+				sf.getLineAndCharacterOfPosition(st.name.getStart(sf)).line + 1;
+			declared.set(st.name.text, {
+				line,
+				jsx: containsJsx(st),
+				shape: "exportFunction",
+			});
 			if (hasExportModifier(st)) exported.add(st.name.text);
 			continue;
 		}
 		if (ts.isClassDeclaration(st) && st.name) {
-			const line = sf.getLineAndCharacterOfPosition(st.name.getStart(sf)).line + 1;
-			declared.set(st.name.text, { line, jsx: containsJsx(st), shape: "classDecl" });
+			const line =
+				sf.getLineAndCharacterOfPosition(st.name.getStart(sf)).line + 1;
+			declared.set(st.name.text, {
+				line,
+				jsx: containsJsx(st),
+				shape: "classDecl",
+			});
 			if (hasExportModifier(st)) exported.add(st.name.text);
 			continue;
 		}
@@ -118,7 +143,11 @@ for (const rel of files) {
 				const line = sf.getLineAndCharacterOfPosition(d.getStart(sf)).line + 1;
 				let shape = "otherConst";
 				if (d.type) shape = "annotatedConst";
-				else if (d.initializer && (ts.isArrowFunction(d.initializer) || ts.isFunctionExpression(d.initializer)))
+				else if (
+					d.initializer &&
+					(ts.isArrowFunction(d.initializer) ||
+						ts.isFunctionExpression(d.initializer))
+				)
 					shape = "plainArrowConst";
 				declared.set(d.name.text, {
 					line,
@@ -127,16 +156,22 @@ for (const rel of files) {
 				});
 				if (isExp) exported.add(d.name.text);
 			}
-			continue;
 		}
 	}
 
 	// `export { A, B }` specifiers.
 	for (const st of sf.statements) {
-		if (ts.isExportDeclaration(st) && !st.moduleSpecifier && st.exportClause && ts.isNamedExports(st.exportClause)) {
-			for (const spec of st.exportClause.elements) exported.add(spec.propertyName?.text ?? spec.name.text);
+		if (
+			ts.isExportDeclaration(st) &&
+			!st.moduleSpecifier &&
+			st.exportClause &&
+			ts.isNamedExports(st.exportClause)
+		) {
+			for (const spec of st.exportClause.elements)
+				exported.add(spec.propertyName?.text ?? spec.name.text);
 		}
-		if (ts.isExportAssignment(st) && ts.isIdentifier(st.expression)) exported.add(st.expression.text);
+		if (ts.isExportAssignment(st) && ts.isIdentifier(st.expression))
+			exported.add(st.expression.text);
 	}
 
 	for (const [name, info] of declared) {

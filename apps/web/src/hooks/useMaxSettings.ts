@@ -287,7 +287,8 @@ async function maxSaveFailureMessage(res: Response): Promise<string> {
 	}
 	const serverMessage = textOrNull(asRecord(payload)?.message);
 	return (
-		serverMessage ?? actionFailureToast("Настройки MAX не сохранены", res.status)
+		serverMessage ??
+		actionFailureToast("Настройки MAX не сохранены", res.status)
 	);
 }
 
@@ -311,9 +312,8 @@ export function useMaxSettings() {
 	const [apiTokenDraft, setApiTokenDraft] = useState("");
 	const [webhookUrlDraft, setWebhookUrlDraft] = useState("");
 	const [isActiveDraft, setIsActiveDraft] = useState(false);
-	const [staffRoutingDraft, setStaffRoutingDraft] = useState<MaxStaffRouting>(
-		emptyMaxStaffRouting,
-	);
+	const [staffRoutingDraft, setStaffRoutingDraft] =
+		useState<MaxStaffRouting>(emptyMaxStaffRouting);
 
 	const load = useCallback(async () => {
 		setLoading(true);

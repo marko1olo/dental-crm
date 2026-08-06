@@ -10,10 +10,22 @@ describe("normalizeDentalSlang", () => {
 	});
 
 	it("should apply explicit quadrant context (both upper/lower and left/right)", () => {
-		assert.equal(normalizeDentalSlang("верхняя левая шестерка"), "верхняя левая 26");
-		assert.equal(normalizeDentalSlang("верхняя правая двойка"), "верхняя правая 12");
-		assert.equal(normalizeDentalSlang("нижняя левая восьмерка"), "нижняя левая 38");
-		assert.equal(normalizeDentalSlang("нижняя правая тройка"), "нижняя правая 43");
+		assert.equal(
+			normalizeDentalSlang("верхняя левая шестерка"),
+			"верхняя левая 26",
+		);
+		assert.equal(
+			normalizeDentalSlang("верхняя правая двойка"),
+			"верхняя правая 12",
+		);
+		assert.equal(
+			normalizeDentalSlang("нижняя левая восьмерка"),
+			"нижняя левая 38",
+		);
+		assert.equal(
+			normalizeDentalSlang("нижняя правая тройка"),
+			"нижняя правая 43",
+		);
 	});
 
 	it("should apply explicit single quadrant context", () => {

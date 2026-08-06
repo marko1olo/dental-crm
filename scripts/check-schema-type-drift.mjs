@@ -39,7 +39,8 @@ function databaseUrl() {
 	const line = readFileSync(".env", "utf8")
 		.split(/\r?\n/)
 		.find((l) => l.startsWith("DATABASE_URL="));
-	if (!line) throw new Error("DATABASE_URL не найден ни в окружении, ни в .env");
+	if (!line)
+		throw new Error("DATABASE_URL не найден ни в окружении, ни в .env");
 	return line.slice("DATABASE_URL=".length).trim();
 }
 
@@ -149,7 +150,9 @@ const moneyDrift = [];
 const otherDrift = [];
 const missingTables = [];
 
-for (const [table, columns] of [...declared].sort((a, b) => a[0].localeCompare(b[0]))) {
+for (const [table, columns] of [...declared].sort((a, b) =>
+	a[0].localeCompare(b[0]),
+)) {
 	const live = actual.get(table);
 	if (!live) {
 		missingTables.push(table);

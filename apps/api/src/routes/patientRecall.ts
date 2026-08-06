@@ -13,11 +13,17 @@
 
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
-import { requireClinicalMutationContext, requireClinicalReadContext } from "../accessGuard.js";
+import {
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../accessGuard.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
-import { findRecallCandidates, recallCandidateBelongsTo } from "../services/patients/recallCandidates.js";
-import { enqueueMessage } from "../services/communications/dispatcher.js";
 import { isMachineDeliverableChannel } from "../services/communications/channelRouter.js";
+import { enqueueMessage } from "../services/communications/dispatcher.js";
+import {
+	findRecallCandidates,
+	recallCandidateBelongsTo,
+} from "../services/patients/recallCandidates.js";
 
 const listQuerySchema = z.object({
 	minMonths: z.coerce.number().int().min(1).max(60).optional(),
@@ -25,14 +31,14 @@ const listQuerySchema = z.object({
 	includeNeverArrived: z
 		.enum(["true", "false"])
 		.optional()
-		.transform((value) => (value === undefined ? undefined : value === "true"))
+		.transform((value) => (value === undefined ? undefined : value === "true")),
 });
 
 const inviteSchema = z.object({
 	patientId: z.string().uuid(),
 	channel: z.string().min(2).max(20),
 	/** Текст готовит вызывающий: подстановка переменных уже выполнена. */
-	body: z.string().trim().min(5).max(2000)
+	body: z.string().trim().min(5).max(2000),
 });
 
 function badRequest(reply: FastifyReply, message: string) {
@@ -42,17 +48,32 @@ function badRequest(reply: FastifyReply, message: string) {
 export async function registerPatientRecallRoutes(app: FastifyInstance) {
 	/** Список тех, кого пора звать. Считается при каждом запросе. */
 	app.get("/api/patients/recall-candidates", async (request, reply) => {
-		const context = await requireClinicalReadContext(request, reply, "recall candidates");
+		const context = await requireClinicalReadContext(
+			request,
+			reply,
+			"recall candidates",
+		);
 		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "patients.read")) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "patients.read"))
+			return;
 
 		const parsed = listQuerySchema.safeParse(request.query);
-		if (!parsed.success) return badRequest(reply, "Проверьте параметры: срок в месяцах и предел списка.");
+		if (!parsed.success)
+			return badRequest(
+				reply,
+				"Проверьте параметры: срок в месяцах и предел списка.",
+			);
 
-		const options: { minMonths?: number; limit?: number; includeNeverArrived?: boolean } = {};
-		if (parsed.data.minMonths !== undefined) options.minMonths = parsed.data.minMonths;
+		const options: {
+			minMonths?: number;
+			limit?: number;
+			includeNeverArrived?: boolean;
+		} = {};
+		if (parsed.data.minMonths !== undefined)
+			options.minMonths = parsed.data.minMonths;
 		if (parsed.data.limit !== undefined) options.limit = parsed.data.limit;
-		if (parsed.data.includeNeverArrived !== undefined) options.includeNeverArrived = parsed.data.includeNeverArrived;
+		if (parsed.data.includeNeverArrived !== undefined)
+			options.includeNeverArrived = parsed.data.includeNeverArrived;
 
 		return findRecallCandidates(context.organizationId, options);
 	});
@@ -65,22 +86,38 @@ export async function registerPatientRecallRoutes(app: FastifyInstance) {
 	 * зовёт конкретного человека, глядя на его карточку.
 	 */
 	app.post("/api/patients/recall-candidates/invite", async (request, reply) => {
-		const context = await requireClinicalMutationContext(request, reply, "recall invite");
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"recall invite",
+		);
 		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.write")) return;
+		if (
+			!enforcePermissionWhenStaffKnown(request, reply, "communications.write")
+		)
+			return;
 
 		const parsed = inviteSchema.safeParse(request.body);
-		if (!parsed.success) return badRequest(reply, "Укажите пациента, канал и текст приглашения.");
+		if (!parsed.success)
+			return badRequest(reply, "Укажите пациента, канал и текст приглашения.");
 
 		if (!isMachineDeliverableChannel(parsed.data.channel)) {
 			return badRequest(
 				reply,
-				`Канал «${parsed.data.channel}» не отправляется автоматически — по нему нужно позвонить или пригласить лично.`
+				`Канал «${parsed.data.channel}» не отправляется автоматически — по нему нужно позвонить или пригласить лично.`,
 			);
 		}
 
-		if (!(await recallCandidateBelongsTo(context.organizationId, parsed.data.patientId))) {
-			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в этой клинике." });
+		if (
+			!(await recallCandidateBelongsTo(
+				context.organizationId,
+				parsed.data.patientId,
+			))
+		) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике.",
+			});
 		}
 
 		/*
@@ -102,7 +139,7 @@ export async function registerPatientRecallRoutes(app: FastifyInstance) {
 			// диспетчером перед отправкой, и без него сообщение не уйдёт.
 			scope: "marketing",
 			body: parsed.data.body,
-			dedupeKey: `recall:${parsed.data.patientId}:${period}`
+			dedupeKey: `recall:${parsed.data.patientId}:${period}`,
 		});
 
 		if (!result.ok) return badRequest(reply, result.reason);
@@ -113,7 +150,7 @@ export async function registerPatientRecallRoutes(app: FastifyInstance) {
 			duplicate: result.duplicate,
 			message: result.duplicate
 				? "Этого пациента уже приглашали в этом месяце — второе сообщение не отправлено."
-				: "Приглашение поставлено в очередь. Оно уйдёт, если пациент давал согласие на такие сообщения."
+				: "Приглашение поставлено в очередь. Оно уйдёт, если пациент давал согласие на такие сообщения.",
 		};
 	});
 }

@@ -1,8 +1,15 @@
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import { namedDevelopmentModeActive, requireAuthTokenSecret } from "../accessGuard.js";
+import {
+	namedDevelopmentModeActive,
+	requireAuthTokenSecret,
+} from "../accessGuard.js";
 import { db } from "../db/client.js";
+import {
+	getDocumentById,
+	readIssuedDocumentSnapshot,
+} from "../db/documentQuery.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	generatedDocuments,
@@ -12,10 +19,6 @@ import {
 	treatmentPlans,
 	visitDiaries,
 } from "../db/schema.js";
-import {
-	getDocumentById,
-	readIssuedDocumentSnapshot,
-} from "../db/documentQuery.js";
 import {
 	resolveChannelCredentials,
 	sendThroughChannel,
@@ -347,7 +350,9 @@ export const portalRoutes: FastifyPluginAsync = async (
 		async (request, reply) => {
 			const policy = readPortalOtpPolicy();
 			const rawPhone =
-				typeof request.body?.phone === "string" ? request.body.phone.trim() : "";
+				typeof request.body?.phone === "string"
+					? request.body.phone.trim()
+					: "";
 			if (!rawPhone) {
 				reply.status(400);
 				return { error: "PhoneRequired", message: "Укажите номер телефона." };
@@ -363,7 +368,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 			 * о её срабатывании громко пишется в журнал сервера. Код уходит ТОЛЬКО
 			 * в журнал — в теле HTTP-ответа его нет даже здесь.
 			 */
-			const developerLogFallback = !smsConfigured && developerLogFallbackAllowed();
+			const developerLogFallback =
+				!smsConfigured && developerLogFallbackAllowed();
 
 			/*
 			 * Ответ, одинаковый для «пациент найден», «такого номера нет»,
@@ -386,7 +392,9 @@ export const portalRoutes: FastifyPluginAsync = async (
 				codeLength: policy.codeLength,
 				expiresInSeconds: policy.ttlSeconds,
 				resendAfterSeconds: policy.resendCooldownSeconds,
-				delivery: developerLogFallback ? ("developer_log" as const) : ("sms" as const),
+				delivery: developerLogFallback
+					? ("developer_log" as const)
+					: ("sms" as const),
 			};
 
 			if (!smsConfigured && !developerLogFallback) {
@@ -408,7 +416,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 				 * прежде не было вовсе: настоящая причина не доходила ни до кого.
 				 */
 				request.log.error(
-					{ requiredEnv: ["DENTE_SMS_PROVIDER", "учётные данные выбранного SMS-провайдера"] },
+					{
+						requiredEnv: [
+							"DENTE_SMS_PROVIDER",
+							"учётные данные выбранного SMS-провайдера",
+						],
+					},
 					"Вход пациента в личный кабинет отклонён: SMS-шлюз не настроен в окружении сервера",
 				);
 				reply.status(503);
@@ -710,7 +723,9 @@ export const portalRoutes: FastifyPluginAsync = async (
 			};
 
 			const rawPhone =
-				typeof request.body?.phone === "string" ? request.body.phone.trim() : "";
+				typeof request.body?.phone === "string"
+					? request.body.phone.trim()
+					: "";
 			const code =
 				typeof request.body?.code === "string" ? request.body.code.trim() : "";
 			if (!rawPhone || !code) {
@@ -999,7 +1014,11 @@ export const portalRoutes: FastifyPluginAsync = async (
 				getDocumentById(organizationId, request.params.documentId),
 			);
 
-			if (!document || document.patientId !== patientId || document.status !== "issued") {
+			if (
+				!document ||
+				document.patientId !== patientId ||
+				document.status !== "issued"
+			) {
 				reply.status(404);
 				return { error: "Not found" };
 			}

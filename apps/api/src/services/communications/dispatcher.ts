@@ -26,7 +26,18 @@
  *   5. Зависшие захваты (процесс упал посреди отправки) возвращаются в очередь.
  */
 
-import { and, eq, gt, inArray, isNotNull, lt, lte, notInArray, or, sql } from "drizzle-orm";
+import {
+	and,
+	eq,
+	gt,
+	inArray,
+	isNotNull,
+	lt,
+	lte,
+	notInArray,
+	or,
+	sql,
+} from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import {
@@ -34,28 +45,28 @@ import {
 	communicationOutbox,
 	communicationSettings,
 	patientCommunicationConsents,
-	patients
+	patients,
 } from "../../db/schema.js";
 import { isValidEmailAddress } from "../../emailTransport.js";
 import { normalizeRussianMsisdn } from "../../smsTransport.js";
 import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
 import {
+	type ChannelCredentialSet,
+	type CommunicationChannelCode,
+	type CommunicationConsentScope,
 	isMachineDeliverableChannel,
 	resolveChannelCredentials,
 	resolveTelegramChatId,
 	sendThroughChannel,
-	type ChannelCredentialSet,
-	type CommunicationChannelCode,
-	type CommunicationConsentScope
 } from "./channelRouter.js";
 import {
+	type ConsentRecord,
+	type DeliveryErrorClass,
 	decideAfterFailure,
 	decideConsent,
 	decideQuietHours,
-	type ConsentRecord,
-	type DeliveryErrorClass,
 	type QuietHoursSettings,
-	type RetryPolicySettings
+	type RetryPolicySettings,
 } from "./deliveryPolicy.js";
 import { checkChannelFit } from "./templateRenderer.js";
 
@@ -128,17 +139,21 @@ export const DEFAULT_COMMUNICATION_SETTINGS: ResolvedCommunicationSettings = {
 	// Выключено по умолчанию: включать рассылку пациентам без ведома клиники нельзя.
 	appointmentReminderEnabled: false,
 	appointmentReminderLeadHours: [24],
-	appointmentReminderWindowMinutes: 90
+	appointmentReminderWindowMinutes: 90,
 };
 
 function parseChannelFallback(raw: string): CommunicationChannelCode[] {
 	try {
 		const parsed: unknown = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return DEFAULT_COMMUNICATION_SETTINGS.channelFallback;
-		const channels = parsed.filter((value): value is CommunicationChannelCode =>
-			typeof value === "string" && isMachineDeliverableChannel(value)
+		if (!Array.isArray(parsed))
+			return DEFAULT_COMMUNICATION_SETTINGS.channelFallback;
+		const channels = parsed.filter(
+			(value): value is CommunicationChannelCode =>
+				typeof value === "string" && isMachineDeliverableChannel(value),
 		);
-		return channels.length > 0 ? channels : DEFAULT_COMMUNICATION_SETTINGS.channelFallback;
+		return channels.length > 0
+			? channels
+			: DEFAULT_COMMUNICATION_SETTINGS.channelFallback;
 	} catch {
 		return DEFAULT_COMMUNICATION_SETTINGS.channelFallback;
 	}
@@ -150,15 +165,21 @@ export function parseLeadHours(raw: string): number[] {
 		const parsed: unknown = JSON.parse(raw);
 		if (!Array.isArray(parsed)) return [24];
 		const hours = parsed
-			.map((value) => (typeof value === "number" ? value : Number.parseFloat(String(value))))
+			.map((value) =>
+				typeof value === "number" ? value : Number.parseFloat(String(value)),
+			)
 			.filter((value) => Number.isFinite(value) && value > 0 && value <= 720);
-		return hours.length > 0 ? [...new Set(hours)].sort((left, right) => right - left) : [24];
+		return hours.length > 0
+			? [...new Set(hours)].sort((left, right) => right - left)
+			: [24];
 	} catch {
 		return [24];
 	}
 }
 
-export async function resolveCommunicationSettings(organizationId: string): Promise<ResolvedCommunicationSettings> {
+export async function resolveCommunicationSettings(
+	organizationId: string,
+): Promise<ResolvedCommunicationSettings> {
 	/*
 	 * КОНТЕКСТ СТАВИТСЯ ЗДЕСЬ, А НЕ У ВЫЗЫВАЮЩЕГО. Эту функцию зовут и из
 	 * маршрутов (контекст уже стоит от глобальной обёртки server.ts), и из
@@ -199,7 +220,7 @@ export async function resolveCommunicationSettings(organizationId: string): Prom
 
 			return {
 				...DEFAULT_COMMUNICATION_SETTINGS,
-				timezone: clinic?.timezone ?? FALLBACK_COMMUNICATION_TIMEZONE
+				timezone: clinic?.timezone ?? FALLBACK_COMMUNICATION_TIMEZONE,
 			};
 		}
 
@@ -215,8 +236,10 @@ export async function resolveCommunicationSettings(organizationId: string): Prom
 			retryMaxSeconds: row.retryMaxSeconds,
 			channelFallback: parseChannelFallback(row.channelFallbackJson),
 			appointmentReminderEnabled: row.appointmentReminderEnabled,
-			appointmentReminderLeadHours: parseLeadHours(row.appointmentReminderLeadHoursJson),
-			appointmentReminderWindowMinutes: row.appointmentReminderWindowMinutes
+			appointmentReminderLeadHours: parseLeadHours(
+				row.appointmentReminderLeadHoursJson,
+			),
+			appointmentReminderWindowMinutes: row.appointmentReminderWindowMinutes,
 		};
 	});
 }
@@ -251,14 +274,18 @@ export type EnqueueMessageInput = {
 };
 
 export type EnqueueMessageResult =
-	| { readonly ok: true; readonly outboxId: string; readonly duplicate: boolean }
+	| {
+			readonly ok: true;
+			readonly outboxId: string;
+			readonly duplicate: boolean;
+	  }
 	| { readonly ok: false; readonly reason: string };
 
 /** Адрес получателя по правилам канала. Пустой результат — отправлять некуда. */
 export async function resolveRecipientAddress(
 	organizationId: string,
 	channel: CommunicationChannelCode,
-	patientId: string
+	patientId: string,
 ): Promise<{ address: string | null; reason: string | null }> {
 	// Контекст ставится здесь по той же причине, что и в
 	// resolveCommunicationSettings выше: функцию зовут и маршруты, и фоновый
@@ -270,16 +297,29 @@ export async function resolveRecipientAddress(
 			const chatId = await resolveTelegramChatId(organizationId, patientId);
 			return chatId
 				? { address: chatId, reason: null }
-				: { address: null, reason: "У пациента нет активной привязки к Telegram-боту клиники." };
+				: {
+						address: null,
+						reason: "У пациента нет активной привязки к Telegram-боту клиники.",
+					};
 		}
 
 		const [patient] = await tx
-			.select({ phone: patients.phone, email: patients.email, notes: patients.notes })
+			.select({
+				phone: patients.phone,
+				email: patients.email,
+				notes: patients.notes,
+			})
 			.from(patients)
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+			.where(
+				and(
+					eq(patients.id, patientId),
+					eq(patients.organizationId, organizationId),
+				),
+			)
 			.limit(1);
 
-		if (!patient) return { address: null, reason: "Пациент не найден в этой организации." };
+		if (!patient)
+			return { address: null, reason: "Пациент не найден в этой организации." };
 
 		if (channel === "max") {
 			/*
@@ -293,7 +333,8 @@ export async function resolveRecipientAddress(
 				? { address: mark[1], reason: null }
 				: {
 						address: null,
-						reason: "У пациента нет переписки в MAX: бот не может написать первым, диалог начинает пациент."
+						reason:
+							"У пациента нет переписки в MAX: бот не может написать первым, диалог начинает пациент.",
 					};
 		}
 
@@ -301,22 +342,32 @@ export async function resolveRecipientAddress(
 			const email = patient.email?.trim() ?? "";
 			return isValidEmailAddress(email)
 				? { address: email, reason: null }
-				: { address: null, reason: "У пациента не указан корректный адрес электронной почты." };
+				: {
+						address: null,
+						reason: "У пациента не указан корректный адрес электронной почты.",
+					};
 		}
 
 		const msisdn =
-			channel === "whatsapp" ? normalizeWhatsappRecipient(patient.phone) : normalizeRussianMsisdn(patient.phone);
+			channel === "whatsapp"
+				? normalizeWhatsappRecipient(patient.phone)
+				: normalizeRussianMsisdn(patient.phone);
 		return msisdn
 			? { address: msisdn, reason: null }
-			: { address: null, reason: "У пациента не указан корректный номер телефона." };
+			: {
+					address: null,
+					reason: "У пациента не указан корректный номер телефона.",
+				};
 	});
 }
 
-export async function enqueueMessage(input: EnqueueMessageInput): Promise<EnqueueMessageResult> {
+export async function enqueueMessage(
+	input: EnqueueMessageInput,
+): Promise<EnqueueMessageResult> {
 	if (!isMachineDeliverableChannel(input.channel)) {
 		return {
 			ok: false,
-			reason: `Канал «${input.channel}» не отправляется автоматически — это задача сотруднику, а не сообщение в очереди.`
+			reason: `Канал «${input.channel}» не отправляется автоматически — это задача сотруднику, а не сообщение в очереди.`,
 		};
 	}
 	const body = input.body.trim();
@@ -329,9 +380,15 @@ export async function enqueueMessage(input: EnqueueMessageInput): Promise<Enqueu
 
 	let recipientAddress = input.recipientAddress?.trim() || null;
 	if (!recipientAddress) {
-		if (!input.patientId) return { ok: false, reason: "Не указан ни получатель, ни пациент." };
-		const resolved = await resolveRecipientAddress(input.organizationId, input.channel, input.patientId);
-		if (!resolved.address) return { ok: false, reason: resolved.reason ?? "Отправлять некуда." };
+		if (!input.patientId)
+			return { ok: false, reason: "Не указан ни получатель, ни пациент." };
+		const resolved = await resolveRecipientAddress(
+			input.organizationId,
+			input.channel,
+			input.patientId,
+		);
+		if (!resolved.address)
+			return { ok: false, reason: resolved.reason ?? "Отправлять некуда." };
 		recipientAddress = resolved.address;
 	}
 
@@ -359,14 +416,20 @@ export async function enqueueMessage(input: EnqueueMessageInput): Promise<Enqueu
 				scheduledAt,
 				nextAttemptAt: scheduledAt,
 				maxAttempts: input.maxAttempts ?? 5,
-				dedupeKey: input.dedupeKey
+				dedupeKey: input.dedupeKey,
 			})
 			// Повтор постановки — обычное дело при перезапуске планировщика.
 			// Это не ошибка и не повод отправить второе сообщение.
-			.onConflictDoNothing({ target: [communicationOutbox.organizationId, communicationOutbox.dedupeKey] })
+			.onConflictDoNothing({
+				target: [
+					communicationOutbox.organizationId,
+					communicationOutbox.dedupeKey,
+				],
+			})
 			.returning({ id: communicationOutbox.id });
 
-		if (inserted) return { ok: true as const, outboxId: inserted.id, duplicate: false };
+		if (inserted)
+			return { ok: true as const, outboxId: inserted.id, duplicate: false };
 
 		const [existing] = await tx
 			.select({ id: communicationOutbox.id })
@@ -374,14 +437,17 @@ export async function enqueueMessage(input: EnqueueMessageInput): Promise<Enqueu
 			.where(
 				and(
 					eq(communicationOutbox.organizationId, input.organizationId),
-					eq(communicationOutbox.dedupeKey, input.dedupeKey)
-				)
+					eq(communicationOutbox.dedupeKey, input.dedupeKey),
+				),
 			)
 			.limit(1);
 
 		return existing
 			? { ok: true as const, outboxId: existing.id, duplicate: true }
-			: { ok: false as const, reason: "Не удалось поставить сообщение в очередь." };
+			: {
+					ok: false as const,
+					reason: "Не удалось поставить сообщение в очередь.",
+				};
 	});
 }
 
@@ -456,17 +522,31 @@ type OutboxRow = typeof communicationOutbox.$inferSelect;
  * Возврат зависших захватов. Процесс мог упасть между «пометил sending» и
  * «записал результат»; без этого такие строки не отправятся никогда.
  */
-async function releaseStuckLocks(now: Date, stuckLockMinutes: number, organizationId: string | null): Promise<number> {
+async function releaseStuckLocks(
+	now: Date,
+	stuckLockMinutes: number,
+	organizationId: string | null,
+): Promise<number> {
 	const threshold = new Date(now.getTime() - stuckLockMinutes * 60_000);
 	const scope = [
 		eq(communicationOutbox.status, "sending" as const),
-		or(lt(communicationOutbox.lockedAt, threshold), sql`${communicationOutbox.lockedAt} IS NULL`)
+		or(
+			lt(communicationOutbox.lockedAt, threshold),
+			sql`${communicationOutbox.lockedAt} IS NULL`,
+		),
 	];
-	if (organizationId) scope.push(eq(communicationOutbox.organizationId, organizationId));
+	if (organizationId)
+		scope.push(eq(communicationOutbox.organizationId, organizationId));
 
 	const released = await db
 		.update(communicationOutbox)
-		.set({ status: "queued", lockedAt: null, lockedBy: null, nextAttemptAt: now, updatedAt: now })
+		.set({
+			status: "queued",
+			lockedAt: null,
+			lockedBy: null,
+			nextAttemptAt: now,
+			updatedAt: now,
+		})
 		.where(and(...scope))
 		.returning({ id: communicationOutbox.id });
 	return released.length;
@@ -480,11 +560,15 @@ async function claimBatch(
 	now: Date,
 	batchSize: number,
 	workerId: string,
-	organizationId: string | null
+	organizationId: string | null,
 ): Promise<OutboxRow[]> {
 	return db.transaction(async (tx) => {
-		const scope = [eq(communicationOutbox.status, "queued" as const), lte(communicationOutbox.nextAttemptAt, now)];
-		if (organizationId) scope.push(eq(communicationOutbox.organizationId, organizationId));
+		const scope = [
+			eq(communicationOutbox.status, "queued" as const),
+			lte(communicationOutbox.nextAttemptAt, now),
+		];
+		if (organizationId)
+			scope.push(eq(communicationOutbox.organizationId, organizationId));
 
 		const candidates = await tx
 			.select({ id: communicationOutbox.id })
@@ -498,12 +582,17 @@ async function claimBatch(
 
 		return tx
 			.update(communicationOutbox)
-			.set({ status: "sending", lockedAt: now, lockedBy: workerId, updatedAt: now })
+			.set({
+				status: "sending",
+				lockedAt: now,
+				lockedBy: workerId,
+				updatedAt: now,
+			})
 			.where(
 				inArray(
 					communicationOutbox.id,
-					candidates.map((row) => row.id)
-				)
+					candidates.map((row) => row.id),
+				),
 			)
 			.returning();
 	});
@@ -524,24 +613,35 @@ async function claimBatch(
 async function countQueueRemainder(
 	now: Date,
 	organizationId: string | null,
-	handledIds: readonly string[]
+	handledIds: readonly string[],
 ): Promise<{ awaitingRetry: number; awaitingSchedule: number }> {
-	const scope = [eq(communicationOutbox.status, "queued" as const), gt(communicationOutbox.nextAttemptAt, now)];
-	if (organizationId) scope.push(eq(communicationOutbox.organizationId, organizationId));
-	if (handledIds.length > 0) scope.push(notInArray(communicationOutbox.id, [...handledIds]));
+	const scope = [
+		eq(communicationOutbox.status, "queued" as const),
+		gt(communicationOutbox.nextAttemptAt, now),
+	];
+	if (organizationId)
+		scope.push(eq(communicationOutbox.organizationId, organizationId));
+	if (handledIds.length > 0)
+		scope.push(notInArray(communicationOutbox.id, [...handledIds]));
 
 	const [row] = await db
 		.select({
 			awaitingRetry: sql<number>`(count(*) filter (where ${communicationOutbox.attempts} > 0))::int`,
-			awaitingSchedule: sql<number>`(count(*) filter (where ${communicationOutbox.attempts} = 0))::int`
+			awaitingSchedule: sql<number>`(count(*) filter (where ${communicationOutbox.attempts} = 0))::int`,
 		})
 		.from(communicationOutbox)
 		.where(and(...scope));
 
-	return { awaitingRetry: Number(row?.awaitingRetry ?? 0), awaitingSchedule: Number(row?.awaitingSchedule ?? 0) };
+	return {
+		awaitingRetry: Number(row?.awaitingRetry ?? 0),
+		awaitingSchedule: Number(row?.awaitingSchedule ?? 0),
+	};
 }
 
-async function loadConsents(organizationId: string, patientIds: string[]): Promise<Map<string, ConsentRecord[]>> {
+async function loadConsents(
+	organizationId: string,
+	patientIds: string[],
+): Promise<Map<string, ConsentRecord[]>> {
 	const byPatient = new Map<string, ConsentRecord[]>();
 	if (patientIds.length === 0) return byPatient;
 
@@ -550,14 +650,14 @@ async function loadConsents(organizationId: string, patientIds: string[]): Promi
 			patientId: patientCommunicationConsents.patientId,
 			channel: patientCommunicationConsents.channel,
 			scope: patientCommunicationConsents.scope,
-			state: patientCommunicationConsents.state
+			state: patientCommunicationConsents.state,
 		})
 		.from(patientCommunicationConsents)
 		.where(
 			and(
 				eq(patientCommunicationConsents.organizationId, organizationId),
-				inArray(patientCommunicationConsents.patientId, patientIds)
-			)
+				inArray(patientCommunicationConsents.patientId, patientIds),
+			),
 		);
 
 	for (const row of rows) {
@@ -565,7 +665,7 @@ async function loadConsents(organizationId: string, patientIds: string[]): Promi
 		list.push({
 			channel: row.channel as CommunicationChannelCode,
 			scope: row.scope as CommunicationConsentScope,
-			state: row.state as "granted" | "revoked"
+			state: row.state as "granted" | "revoked",
 		});
 		byPatient.set(row.patientId, list);
 	}
@@ -573,13 +673,20 @@ async function loadConsents(organizationId: string, patientIds: string[]): Promi
 }
 
 /** Сколько сообщений уже ушло пациенту за сегодня — против навязчивости. */
-async function countSentToday(organizationId: string, patientIds: string[], now: Date): Promise<Map<string, number>> {
+async function countSentToday(
+	organizationId: string,
+	patientIds: string[],
+	now: Date,
+): Promise<Map<string, number>> {
 	const counts = new Map<string, number>();
 	if (patientIds.length === 0) return counts;
 
 	const dayStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 	const rows = await db
-		.select({ patientId: communicationOutbox.patientId, total: sql<number>`count(*)::int` })
+		.select({
+			patientId: communicationOutbox.patientId,
+			total: sql<number>`count(*)::int`,
+		})
 		.from(communicationOutbox)
 		.where(
 			and(
@@ -587,8 +694,8 @@ async function countSentToday(organizationId: string, patientIds: string[], now:
 				inArray(communicationOutbox.patientId, patientIds),
 				inArray(communicationOutbox.status, ["sent", "delivered"]),
 				isNotNull(communicationOutbox.sentAt),
-				sql`${communicationOutbox.sentAt} >= ${dayStart.toISOString()}`
-			)
+				sql`${communicationOutbox.sentAt} >= ${dayStart.toISOString()}`,
+			),
 		)
 		.groupBy(communicationOutbox.patientId);
 
@@ -598,7 +705,11 @@ async function countSentToday(organizationId: string, patientIds: string[], now:
 	return counts;
 }
 
-async function markSuppressed(row: OutboxRow, reason: string, now: Date): Promise<void> {
+async function markSuppressed(
+	row: OutboxRow,
+	reason: string,
+	now: Date,
+): Promise<void> {
 	await db
 		.update(communicationOutbox)
 		.set({
@@ -607,12 +718,17 @@ async function markSuppressed(row: OutboxRow, reason: string, now: Date): Promis
 			lockedBy: null,
 			lastErrorClass: "suppressed",
 			lastErrorMessage: reason,
-			updatedAt: now
+			updatedAt: now,
 		})
 		.where(eq(communicationOutbox.id, row.id));
 }
 
-async function markDeferred(row: OutboxRow, notBefore: Date, reason: string, now: Date): Promise<void> {
+async function markDeferred(
+	row: OutboxRow,
+	notBefore: Date,
+	reason: string,
+	now: Date,
+): Promise<void> {
 	await db
 		.update(communicationOutbox)
 		.set({
@@ -622,7 +738,7 @@ async function markDeferred(row: OutboxRow, notBefore: Date, reason: string, now
 			nextAttemptAt: notBefore,
 			lastErrorClass: "deferred",
 			lastErrorMessage: reason,
-			updatedAt: now
+			updatedAt: now,
 		})
 		.where(eq(communicationOutbox.id, row.id));
 }
@@ -631,7 +747,13 @@ async function markDeferred(row: OutboxRow, notBefore: Date, reason: string, now
  * Что стало с одной строкой очереди. Ровно один из этих итогов на строку —
  * счётчики отчёта складываются в `claimed` без остатка.
  */
-export type RowOutcome = "sent" | "retried" | "failed" | "suppressed" | "not_configured" | "deferred";
+export type RowOutcome =
+	| "sent"
+	| "retried"
+	| "failed"
+	| "suppressed"
+	| "not_configured"
+	| "deferred";
 
 /**
  * Одна строка очереди: проверки, отправка, запись итога. Возвращает, что
@@ -645,7 +767,7 @@ async function processRow(
 		readonly consents: Map<string, ConsentRecord[]>;
 		readonly sentToday: Map<string, number>;
 		readonly now: Date;
-	}
+	},
 ): Promise<RowOutcome> {
 	const { credentials, settings, now } = context;
 	const channel = row.channel as CommunicationChannelCode;
@@ -678,9 +800,17 @@ async function processRow(
 	// очереди пациент мог отказаться, и отправить после отказа — нарушение.
 	if (row.patientId) {
 		if (!isTransactionalReply) {
-			const consent = decideConsent(context.consents.get(row.patientId) ?? [], channel, scope);
+			const consent = decideConsent(
+				context.consents.get(row.patientId) ?? [],
+				channel,
+				scope,
+			);
 			if (!consent.allowed) {
-				await markSuppressed(row, consent.reason ?? "Нет согласия на сообщения по этому каналу.", now);
+				await markSuppressed(
+					row,
+					consent.reason ?? "Нет согласия на сообщения по этому каналу.",
+					now,
+				);
 				return "suppressed";
 			}
 		}
@@ -692,7 +822,7 @@ async function processRow(
 			await markSuppressed(
 				row,
 				`Достигнут суточный предел сообщений пациенту (${settings.dailyLimitPerPatient}).`,
-				now
+				now,
 			);
 			return "suppressed";
 		}
@@ -700,13 +830,20 @@ async function processRow(
 
 	// Тихие часы к ответу на обращение не применяются: пациент написал сейчас и
 	// ждёт ответа сейчас, а не в девять утра.
-	const quietHours = isTransactionalReply ? ({ action: "send" } as const) : decideQuietHours(now, scope, settings);
+	const quietHours = isTransactionalReply
+		? ({ action: "send" } as const)
+		: decideQuietHours(now, scope, settings);
 	if (quietHours.action === "suppress") {
 		await markSuppressed(row, quietHours.reason, now);
 		return "suppressed";
 	}
 	if (quietHours.action === "defer") {
-		await markDeferred(row, quietHours.notBefore, "Тихие часы: отправка отложена до утра.", now);
+		await markDeferred(
+			row,
+			quietHours.notBefore,
+			"Тихие часы: отправка отложена до утра.",
+			now,
+		);
 		return "deferred";
 	}
 
@@ -717,9 +854,9 @@ async function processRow(
 			recipientAddress: row.recipientAddress,
 			subject: row.subject,
 			body: row.body,
-			idempotencyKey: row.dedupeKey
+			idempotencyKey: row.dedupeKey,
 		},
-		credentials
+		credentials,
 	);
 
 	if (result.ok) {
@@ -735,11 +872,14 @@ async function processRow(
 				segments: result.segments,
 				lastErrorClass: null,
 				lastErrorMessage: null,
-				updatedAt: now
+				updatedAt: now,
 			})
 			.where(eq(communicationOutbox.id, row.id));
 		if (row.patientId) {
-			context.sentToday.set(row.patientId, (context.sentToday.get(row.patientId) ?? 0) + 1);
+			context.sentToday.set(
+				row.patientId,
+				(context.sentToday.get(row.patientId) ?? 0) + 1,
+			);
 		}
 		return "sent";
 	}
@@ -750,7 +890,7 @@ async function processRow(
 		errorClass: result.errorClass as DeliveryErrorClass,
 		errorMessage: result.errorMessage,
 		settings,
-		jitterSeed: row.id
+		jitterSeed: row.id,
 	});
 
 	if (outcome.kind === "retry") {
@@ -764,7 +904,7 @@ async function processRow(
 				nextAttemptAt: new Date(now.getTime() + outcome.delaySeconds * 1000),
 				lastErrorClass: outcome.errorClass,
 				lastErrorMessage: outcome.errorMessage,
-				updatedAt: now
+				updatedAt: now,
 			})
 			.where(eq(communicationOutbox.id, row.id));
 		return "retried";
@@ -779,7 +919,7 @@ async function processRow(
 			lockedBy: null,
 			lastErrorClass: outcome.errorClass,
 			lastErrorMessage: outcome.errorMessage,
-			updatedAt: now
+			updatedAt: now,
 		})
 		.where(eq(communicationOutbox.id, row.id));
 
@@ -823,7 +963,9 @@ async function processRow(
  * Клиника, до которой бюджет не дошёл, всё равно получает возврат зависших
  * захватов и попадает в счётчики остатка — иначе её очередь выглядела бы пустой.
  */
-export async function dispatchDueMessages(options: DispatchOptions = {}): Promise<DispatchReport> {
+export async function dispatchDueMessages(
+	options: DispatchOptions = {},
+): Promise<DispatchReport> {
 	const now = options.now ?? new Date();
 	const batchSize = Math.max(1, Math.min(200, options.batchSize ?? 25));
 	const workerId = options.workerId ?? `api:${process.pid}`;
@@ -843,7 +985,7 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 		deferred: 0,
 		releasedStuck: 0,
 		awaitingRetry: 0,
-		awaitingSchedule: 0
+		awaitingSchedule: 0,
 	};
 
 	let budget = batchSize;
@@ -854,8 +996,8 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 				now,
 				batchSize: Math.max(0, budget),
 				workerId,
-				stuckLockMinutes
-			})
+				stuckLockMinutes,
+			}),
 		);
 		report.claimed += orgReport.claimed;
 		report.sent += orgReport.sent;
@@ -882,7 +1024,10 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
  * обходом. Запрос читает ОДНУ колонку — идентификатор организации — и не отдаёт
  * ни одной строки очереди: содержимое чужого сообщения под обход не попадает.
  */
-async function listOutboxOrganizations(now: Date, stuckLockMinutes: number): Promise<string[]> {
+async function listOutboxOrganizations(
+	now: Date,
+	stuckLockMinutes: number,
+): Promise<string[]> {
 	const stuckThreshold = new Date(now.getTime() - stuckLockMinutes * 60_000);
 	const rows = await withSuperuserBypass(async (tx) =>
 		tx
@@ -893,12 +1038,15 @@ async function listOutboxOrganizations(now: Date, stuckLockMinutes: number): Pro
 					eq(communicationOutbox.status, "queued" as const),
 					and(
 						eq(communicationOutbox.status, "sending" as const),
-						or(lt(communicationOutbox.lockedAt, stuckThreshold), sql`${communicationOutbox.lockedAt} IS NULL`)
-					)
-				)
+						or(
+							lt(communicationOutbox.lockedAt, stuckThreshold),
+							sql`${communicationOutbox.lockedAt} IS NULL`,
+						),
+					),
+				),
 			)
 			.groupBy(communicationOutbox.organizationId)
-			.orderBy(sql`min(${communicationOutbox.nextAttemptAt}) asc nulls first`)
+			.orderBy(sql`min(${communicationOutbox.nextAttemptAt}) asc nulls first`),
 	);
 	return rows.map((row) => row.organizationId);
 }
@@ -916,10 +1064,17 @@ async function dispatchForOrganization(input: {
 }): Promise<DispatchReport> {
 	const { now, workerId, stuckLockMinutes, batchSize } = input;
 	const organizationScope = input.organizationId;
-	const releasedStuck = await releaseStuckLocks(now, stuckLockMinutes, organizationScope);
+	const releasedStuck = await releaseStuckLocks(
+		now,
+		stuckLockMinutes,
+		organizationScope,
+	);
 	// Бюджет прохода мог кончиться на предыдущих клиниках: тогда строки не
 	// забираются вовсе, но остаток очереди этой клиники всё равно считается.
-	const claimed = batchSize > 0 ? await claimBatch(now, batchSize, workerId, organizationScope) : [];
+	const claimed =
+		batchSize > 0
+			? await claimBatch(now, batchSize, workerId, organizationScope)
+			: [];
 	const handledIds = claimed.map((row) => row.id);
 	const report = {
 		claimed: claimed.length,
@@ -931,13 +1086,16 @@ async function dispatchForOrganization(input: {
 		deferred: 0,
 		releasedStuck,
 		awaitingRetry: 0,
-		awaitingSchedule: 0
+		awaitingSchedule: 0,
 	};
 	if (claimed.length === 0) {
 		// Пустой проход — единственный случай, когда остаток очереди и есть весь
 		// ответ: без него «взято 0» у клиники с пятью неотправленными сообщениями
 		// выглядит так же, как у клиники, которой нечего отправлять.
-		return { ...report, ...(await countQueueRemainder(now, organizationScope, handledIds)) };
+		return {
+			...report,
+			...(await countQueueRemainder(now, organizationScope, handledIds)),
+		};
 	}
 
 	// Строки пачки могут принадлежать разным организациям: учётные данные,
@@ -952,18 +1110,30 @@ async function dispatchForOrganization(input: {
 	for (const [organizationId, rows] of byOrganization) {
 		const [credentials, settings] = await Promise.all([
 			resolveChannelCredentials(organizationId),
-			resolveCommunicationSettings(organizationId)
+			resolveCommunicationSettings(organizationId),
 		]);
-		const patientIds = [...new Set(rows.map((row) => row.patientId).filter((id): id is string => Boolean(id)))];
+		const patientIds = [
+			...new Set(
+				rows
+					.map((row) => row.patientId)
+					.filter((id): id is string => Boolean(id)),
+			),
+		];
 		const [consents, sentToday] = await Promise.all([
 			loadConsents(organizationId, patientIds),
-			countSentToday(organizationId, patientIds, now)
+			countSentToday(organizationId, patientIds, now),
 		]);
 
 		const unknownFailures = new Map<string, string[]>();
 		for (const row of rows) {
 			try {
-				const outcome = await processRow(row, { credentials, settings, consents, sentToday, now });
+				const outcome = await processRow(row, {
+					credentials,
+					settings,
+					consents,
+					sentToday,
+					now,
+				});
 				/*
 				 * Switch, а не цепочка if/else с «остальное — deferred». Прежняя
 				 * цепочка сваливала в `deferred` любой итог, которого не знала: добавь
@@ -998,7 +1168,10 @@ async function dispatchForOrganization(input: {
 				// Непредвиденный сбой не должен оставить строку захваченной
 				// навсегда: возвращаем её в очередь с записанной причиной.
 				report.retried += 1;
-				const errorMessage = error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
+				const errorMessage =
+					error instanceof Error
+						? error.message.slice(0, 500)
+						: String(error).slice(0, 500);
 				const failureGroup = unknownFailures.get(errorMessage) ?? [];
 				failureGroup.push(row.id);
 				unknownFailures.set(errorMessage, failureGroup);
@@ -1017,7 +1190,7 @@ async function dispatchForOrganization(input: {
 						nextAttemptAt: new Date(now.getTime() + 60_000),
 						lastErrorClass: "unknown",
 						lastErrorMessage: errorMessage,
-						updatedAt: now
+						updatedAt: now,
 					})
 					.where(inArray(communicationOutbox.id, ids));
 			}
@@ -1027,5 +1200,8 @@ async function dispatchForOrganization(input: {
 	// Остаток считается ПОСЛЕ прохода и с исключением обработанных строк: пачка
 	// ограничена `batchSize`, поэтому «взято 25» ещё не значит «в очереди больше
 	// ничего нет», и администратор должен знать, что осталось.
-	return { ...report, ...(await countQueueRemainder(now, organizationScope, handledIds)) };
+	return {
+		...report,
+		...(await countQueueRemainder(now, organizationScope, handledIds)),
+	};
 }

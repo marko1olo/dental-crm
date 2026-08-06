@@ -46,7 +46,11 @@ import { registerDocumentRoutes } from "../../routes/documents.js";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "invoiceKeepsItsAmount";
@@ -86,7 +90,10 @@ async function storedTotalText(documentId: string): Promise<string | null> {
 		`),
 	);
 	const row = (result.rows as { total: string | null }[])[0];
-	assert.ok(row !== undefined, `документ ${documentId} не найден в базе — сверять нечего`);
+	assert.ok(
+		row !== undefined,
+		`документ ${documentId} не найден в базе — сверять нечего`,
+	);
 	return row.total;
 }
 
@@ -95,16 +102,26 @@ describe("сумма счёта не теряется по дороге в ба�
 	let headers: Record<string, string> = {};
 	const originalEnv = { ...process.env };
 
-	async function call(method: "GET" | "POST" | "PUT", url: string, payload?: unknown): Promise<Injected> {
+	async function call(
+		method: "GET" | "POST" | "PUT",
+		url: string,
+		payload?: unknown,
+	): Promise<Injected> {
 		const requestHeaders =
 			payload === undefined
-				? Object.fromEntries(Object.entries(headers).filter(([name]) => name.toLowerCase() !== "content-type"))
+				? Object.fromEntries(
+						Object.entries(headers).filter(
+							([name]) => name.toLowerCase() !== "content-type",
+						),
+					)
 				: headers;
 		const response = await app.inject({
 			method,
 			url,
 			headers: requestHeaders,
-			...(payload === undefined ? {} : { payload: payload as Record<string, unknown> }),
+			...(payload === undefined
+				? {}
+				: { payload: payload as Record<string, unknown> }),
 		});
 		let json: any = null;
 		try {
@@ -144,8 +161,10 @@ describe("сумма счёта не теряется по дороге в ба�
 					})),
 					totalAmountRub: options.totalAmountRub,
 					dueDate: TODAY_TEXT,
-					paymentTerms: "Оплата в кассе клиники или переводом в течение трёх рабочих дней.",
-					clinicBankDetails: "р/с 40702810000000000031, банк сторожа суммы, БИК 049999999",
+					paymentTerms:
+						"Оплата в кассе клиники или переводом в течение трёх рабочих дней.",
+					clinicBankDetails:
+						"р/с 40702810000000000031, банк сторожа суммы, БИК 049999999",
 					cashlessPaymentAllowed: true,
 					cashDeskPaymentAllowed: true,
 					clinicRequisitesVerified: true,
@@ -157,7 +176,11 @@ describe("сумма счёта не теряется по дороге в ба�
 	}
 
 	const planLines = [
-		{ serviceName: "Лечение кариеса 36", toothOrArea: "36", unitPriceRub: PRICE_ONE },
+		{
+			serviceName: "Лечение кариеса 36",
+			toothOrArea: "36",
+			unitPriceRub: PRICE_ONE,
+		},
 		{ serviceName: "Пломба 46", toothOrArea: "46", unitPriceRub: PRICE_TWO },
 	];
 
@@ -213,7 +236,10 @@ describe("сумма счёта не теряется по дороге в ба�
 		});
 
 		headers = {
-			"x-dente-clinic-token": signToken({ organizationId: ORGANIZATION_ID }, authTokenSecret()),
+			"x-dente-clinic-token": signToken(
+				{ organizationId: ORGANIZATION_ID },
+				authTokenSecret(),
+			),
 			"x-dente-staff-token": signToken(
 				{ organizationId: ORGANIZATION_ID, userId: OWNER_ID, role: "owner" },
 				authTokenSecret(),
@@ -249,7 +275,11 @@ describe("сумма счёта не теряется по дороге в ба�
 			signatoryTitle: "главный врач",
 			timezone: "Europe/Moscow",
 		});
-		assert.equal(profile.statusCode, 200, `реквизиты клиники не записаны: ${profile.body}`);
+		assert.equal(
+			profile.statusCode,
+			200,
+			`реквизиты клиники не записаны: ${profile.body}`,
+		);
 	});
 
 	after(async () => {
@@ -262,7 +292,11 @@ describe("сумма счёта не теряется по дороге в ба�
 				select count(*)::int as n from generated_documents where organization_id = ${ORGANIZATION_ID}::uuid
 			`),
 		);
-		assert.equal((leftovers.rows as { n: number }[])[0]?.n, 0, "сторож не убрал свои документы из живой базы");
+		assert.equal(
+			(leftovers.rows as { n: number }[])[0]?.n,
+			0,
+			"сторож не убрал свои документы из живой базы",
+		);
 		process.env = originalEnv;
 		await pool.end();
 	});
@@ -331,7 +365,11 @@ describe("сумма счёта не теряется по дороге в ба�
 				lines: planLines,
 			}),
 		);
-		assert.equal(created.statusCode, 201, `счёт по существующему плану не создан: ${created.body}`);
+		assert.equal(
+			created.statusCode,
+			201,
+			`счёт по существующему плану не создан: ${created.body}`,
+		);
 		assert.equal(
 			await storedTotalText(created.json.id as string),
 			PLAN_TOTAL_TEXT,
@@ -362,20 +400,24 @@ describe("сумма счёта не теряется по дороге в ба�
 		);
 		assert.equal(created.statusCode, 201, `счёт не создан: ${created.body}`);
 
-		const issued = await call("POST", `/api/documents/${created.json.id}/issue`, {
-			signatureAttestation: {
-				mode: "paper_signed",
-				signedAt: TODAY_TEXT,
-				recipientFullName: "Плательщик сторожа суммы счёта",
-				recipientRole: "пациент",
-				staffFullName: "Владелец сторожа суммы",
-				staffRole: "владелец клиники",
-				identityChecked: true,
-				documentOpenedAndChecked: true,
-				recipientSigned: true,
-				clinicRepresentativeSigned: true,
+		const issued = await call(
+			"POST",
+			`/api/documents/${created.json.id}/issue`,
+			{
+				signatureAttestation: {
+					mode: "paper_signed",
+					signedAt: TODAY_TEXT,
+					recipientFullName: "Плательщик сторожа суммы счёта",
+					recipientRole: "пациент",
+					staffFullName: "Владелец сторожа суммы",
+					staffRole: "владелец клиники",
+					identityChecked: true,
+					documentOpenedAndChecked: true,
+					recipientSigned: true,
+					clinicRepresentativeSigned: true,
+				},
 			},
-		});
+		);
 		assert.equal(issued.statusCode, 200, `счёт не выдан: ${issued.body}`);
 		assert.equal(
 			await storedTotalText(created.json.id as string),
@@ -391,7 +433,13 @@ describe("сумма счёта не теряется по дороге в ба�
 		 * телом, счёт обязан быть отклонён, а не тихо записан по телу — иначе клиника
 		 * выставила бы требование на сумму, которой в плане лечения нет.
 		 */
-		const wrongLines = [{ serviceName: "Лечение кариеса 36", toothOrArea: "36", unitPriceRub: WRONG_TOTAL_RUB }];
+		const wrongLines = [
+			{
+				serviceName: "Лечение кариеса 36",
+				toothOrArea: "36",
+				unitPriceRub: WRONG_TOTAL_RUB,
+			},
+		];
 		const rejected = await call(
 			"POST",
 			"/api/documents",
@@ -436,7 +484,8 @@ describe("сумма счёта не теряется по дороге в ба�
 							toothOrArea: "36",
 							surfaces: ["occlusal"],
 							status: "caries",
-							diagnosisOrFinding: "Разрушение коронковой части более половины объёма",
+							diagnosisOrFinding:
+								"Разрушение коронковой части более половины объёма",
 							indication: "Показано восстановление коронкой",
 							plannedAction: "Изготовление цельнокерамической коронки",
 						},
@@ -450,7 +499,11 @@ describe("сумма счёта не теряется по дороге в ба�
 				},
 			},
 		});
-		assert.equal(created.statusCode, 201, `заказ-наряд не создан: ${created.body}`);
+		assert.equal(
+			created.statusCode,
+			201,
+			`заказ-наряд не создан: ${created.body}`,
+		);
 		assert.equal(
 			await storedTotalText(created.json.id as string),
 			null,

@@ -40,14 +40,20 @@ describe("названия фискальных реквизитов", () => {
 	it("накопитель называется ФН, а не ФО", () => {
 		assert.equal(fiscalFieldLabels.fn, "ФН (номер фискального накопителя)");
 		for (const label of Object.values(fiscalFieldLabels)) {
-			assert.ok(!/\bФО\b/.test(label), `осталось несуществующее «ФО»: ${label}`);
+			assert.ok(
+				!/\bФО\b/.test(label),
+				`осталось несуществующее «ФО»: ${label}`,
+			);
 		}
 	});
 
 	it("оператор фискальных данных называется ОФД, а не НФД", () => {
 		assert.equal(fiscalFieldLabels.receiptUrl, "Ссылка ОФД (https://...)");
 		for (const label of Object.values(fiscalFieldLabels)) {
-			assert.ok(!label.includes("НФД"), `осталось несуществующее «НФД»: ${label}`);
+			assert.ok(
+				!label.includes("НФД"),
+				`осталось несуществующее «НФД»: ${label}`,
+			);
 		}
 		assert.ok(!fiscalReceiptUrlErrorText.includes("НФД"));
 	});
@@ -87,7 +93,10 @@ describe("чего не хватает для вычета", () => {
 	});
 
 	it("пробелы вместо значения — это не заполнено", () => {
-		assert.equal(missingTaxDeductionSteps({ ...filled, fiscalFd: "   " }).length, 1);
+		assert.equal(
+			missingTaxDeductionSteps({ ...filled, fiscalFd: "   " }).length,
+			1,
+		);
 	});
 
 	/*
@@ -114,7 +123,9 @@ describe("чего не хватает для вычета", () => {
 	});
 
 	it("порядок — как поля стоят на экране, сверху вниз", () => {
-		const allEmpty = (Object.keys(filled) as (keyof TaxDeductionFields)[]).reduce(
+		const allEmpty = (
+			Object.keys(filled) as (keyof TaxDeductionFields)[]
+		).reduce(
 			(accumulator, key) => ({ ...accumulator, [key]: "" }),
 			{} as TaxDeductionFields,
 		);

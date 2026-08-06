@@ -30,125 +30,132 @@
  * врача нет, и все выводы были бы про мышь.
  */
 
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { spawn } from "node:child_process";
 
 const OUT = "C:/Clinic_MVP/dental-crm/.dente-chairside-probe";
 const webBaseUrl = "http://127.0.0.1:5173";
 const cdpPort = 9357;
 
 const res = await fetch(webBaseUrl).catch((error) => {
-  throw new Error(`Веб-сервер ${webBaseUrl} недоступен (${error.message}).`);
+	throw new Error(`Веб-сервер ${webBaseUrl} недоступен (${error.message}).`);
 });
 if (!res.ok) throw new Error(`Веб-сервер ответил ${res.status}`);
 
 await mkdir(OUT, { recursive: true });
 
 const browserPath = [
-  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 ].find((candidate) => existsSync(candidate));
 if (!browserPath) throw new Error("Браузер не найден");
 
-const tmpProfile = path.join(process.env.TEMP || "C:/tmp", "dente-chairside-probe-profile");
+const tmpProfile = path.join(
+	process.env.TEMP || "C:/tmp",
+	"dente-chairside-probe-profile",
+);
 await mkdir(tmpProfile, { recursive: true });
 
 const browser = spawn(
-  browserPath,
-  [
-    "--headless=new",
-    "--disable-gpu",
-    "--disable-dev-shm-usage",
-    "--no-first-run",
-    "--remote-allow-origins=*",
-    `--remote-debugging-port=${cdpPort}`,
-    `--user-data-dir=${tmpProfile}`,
-    "--window-size=1600,1000",
-    `${webBaseUrl}/`,
-  ],
-  { stdio: ["ignore", "ignore", "pipe"] },
+	browserPath,
+	[
+		"--headless=new",
+		"--disable-gpu",
+		"--disable-dev-shm-usage",
+		"--no-first-run",
+		"--remote-allow-origins=*",
+		`--remote-debugging-port=${cdpPort}`,
+		`--user-data-dir=${tmpProfile}`,
+		"--window-size=1600,1000",
+		`${webBaseUrl}/`,
+	],
+	{ stdio: ["ignore", "ignore", "pipe"] },
 );
 process.on("exit", () => {
-  try {
-    browser.kill();
-  } catch {
-    /* уже мёртв */
-  }
+	try {
+		browser.kill();
+	} catch {
+		/* уже мёртв */
+	}
 });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function getPageTarget(retries = 40) {
-  for (let attempt = 0; attempt < retries; attempt += 1) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${cdpPort}/json/list`);
-      const targets = await response.json();
-      const page = targets.find((target) => target.type === "page");
-      if (page) return page;
-    } catch {
-      /* браузер ещё поднимается */
-    }
-    await sleep(1000);
-  }
-  throw new Error("Отладочный порт браузера не отвечает");
+	for (let attempt = 0; attempt < retries; attempt += 1) {
+		try {
+			const response = await fetch(`http://127.0.0.1:${cdpPort}/json/list`);
+			const targets = await response.json();
+			const page = targets.find((target) => target.type === "page");
+			if (page) return page;
+		} catch {
+			/* браузер ещё поднимается */
+		}
+		await sleep(1000);
+	}
+	throw new Error("Отладочный порт браузера не отвечает");
 }
 
 const pageTarget = await getPageTarget();
 const { default: WebSocket } = await import("ws");
 const socket = new WebSocket(pageTarget.webSocketDebuggerUrl, {
-  perMessageDeflate: false,
-  maxPayload: 512 * 1024 * 1024,
+	perMessageDeflate: false,
+	maxPayload: 512 * 1024 * 1024,
 });
 await new Promise((resolve, reject) => {
-  socket.once("open", resolve);
-  socket.once("error", reject);
+	socket.once("open", resolve);
+	socket.once("error", reject);
 });
 
 let messageId = 0;
 const pending = new Map();
 const pageErrors = [];
 socket.on("message", (raw) => {
-  const message = JSON.parse(raw.toString());
-  if (message.method === "Runtime.exceptionThrown") {
-    const details = message.params?.exceptionDetails;
-    pageErrors.push(details?.exception?.description || details?.text || "исключение без описания");
-    return;
-  }
-  if (message.id && pending.has(message.id)) {
-    const { resolve, reject } = pending.get(message.id);
-    pending.delete(message.id);
-    if (message.error) reject(new Error(JSON.stringify(message.error)));
-    else resolve(message.result);
-  }
+	const message = JSON.parse(raw.toString());
+	if (message.method === "Runtime.exceptionThrown") {
+		const details = message.params?.exceptionDetails;
+		pageErrors.push(
+			details?.exception?.description ||
+				details?.text ||
+				"исключение без описания",
+		);
+		return;
+	}
+	if (message.id && pending.has(message.id)) {
+		const { resolve, reject } = pending.get(message.id);
+		pending.delete(message.id);
+		if (message.error) reject(new Error(JSON.stringify(message.error)));
+		else resolve(message.result);
+	}
 });
 
 function send(method, params = {}) {
-  const id = ++messageId;
-  return new Promise((resolve, reject) => {
-    pending.set(id, { resolve, reject });
-    socket.send(JSON.stringify({ id, method, params }));
-    setTimeout(() => {
-      if (pending.has(id)) {
-        pending.delete(id);
-        reject(new Error(`${method}: нет ответа`));
-      }
-    }, 60000);
-  });
+	const id = ++messageId;
+	return new Promise((resolve, reject) => {
+		pending.set(id, { resolve, reject });
+		socket.send(JSON.stringify({ id, method, params }));
+		setTimeout(() => {
+			if (pending.has(id)) {
+				pending.delete(id);
+				reject(new Error(`${method}: нет ответа`));
+			}
+		}, 60000);
+	});
 }
 
 async function evaluate(expression) {
-  const result = await send("Runtime.evaluate", {
-    expression,
-    awaitPromise: true,
-    returnByValue: true,
-  });
-  if (result.exceptionDetails) {
-    throw new Error(`Ошибка в странице: ${result.exceptionDetails.text}`);
-  }
-  return result.result?.value;
+	const result = await send("Runtime.evaluate", {
+		expression,
+		awaitPromise: true,
+		returnByValue: true,
+	});
+	if (result.exceptionDetails) {
+		throw new Error(`Ошибка в странице: ${result.exceptionDetails.text}`);
+	}
+	return result.result?.value;
 }
 
 await send("Page.enable");
@@ -156,7 +163,9 @@ await send("Runtime.enable");
 
 const tokenFile = "C:/Clinic_MVP/dental-crm/.ops-shot-tokens.json";
 if (!existsSync(tokenFile)) throw new Error(`Нет ${tokenFile}`);
-const { clinicToken, staffToken } = JSON.parse(await readFile(tokenFile, "utf8"));
+const { clinicToken, staffToken } = JSON.parse(
+	await readFile(tokenFile, "utf8"),
+);
 
 await evaluate(`
   (() => {
@@ -169,9 +178,9 @@ await evaluate(`
 await send("Page.navigate", { url: `${webBaseUrl}/` });
 
 async function waitForWorkspace(timeoutMs = 60000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const state = await evaluate(`
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		const state = await evaluate(`
       (() => {
         const sidebar = document.querySelector('.sidebar, nav .nav-item, .dnt-bottom-nav a');
         const login = document.body.textContent?.includes("ВХОД В ЛИЧНЫЙ КАБИНЕТ");
@@ -179,17 +188,17 @@ async function waitForWorkspace(timeoutMs = 60000) {
         return { ready: Boolean(sidebar) && !login && !wizard, login: Boolean(login), wizard: Boolean(wizard) };
       })()
     `);
-    if (state?.ready) return true;
-    if (state?.wizard) {
-      await evaluate(
-        `window.localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true })); location.reload(); true`,
-      );
-    }
-    await sleep(1200);
-  }
-  // Диагностика ДО падения: «не открылся» одинаково выглядит при просроченном
-  // токене, при упавшем компоненте и при не поднявшемся сервере, а лечится по-разному.
-  const diagnostic = await evaluate(`
+		if (state?.ready) return true;
+		if (state?.wizard) {
+			await evaluate(
+				`window.localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true })); location.reload(); true`,
+			);
+		}
+		await sleep(1200);
+	}
+	// Диагностика ДО падения: «не открылся» одинаково выглядит при просроченном
+	// токене, при упавшем компоненте и при не поднявшемся сервере, а лечится по-разному.
+	const diagnostic = await evaluate(`
     (() => ({
       url: location.href,
       title: document.title,
@@ -197,11 +206,15 @@ async function waitForWorkspace(timeoutMs = 60000) {
       nodes: document.body.querySelectorAll("*").length,
     }))()
   `);
-  const shot = await send("Page.captureScreenshot", { format: "png" });
-  await writeFile(path.join(OUT, "diagnostic_no_workspace.png"), Buffer.from(shot.data, "base64"));
-  console.log("ДИАГНОСТИКА:", JSON.stringify(diagnostic, null, 2));
-  for (const error of pageErrors.slice(0, 10)) console.log("  ошибка страницы:", error.split("\n")[0]);
-  throw new Error("Рабочий кабинет не открылся: мерить нечего");
+	const shot = await send("Page.captureScreenshot", { format: "png" });
+	await writeFile(
+		path.join(OUT, "diagnostic_no_workspace.png"),
+		Buffer.from(shot.data, "base64"),
+	);
+	console.log("ДИАГНОСТИКА:", JSON.stringify(diagnostic, null, 2));
+	for (const error of pageErrors.slice(0, 10))
+		console.log("  ошибка страницы:", error.split("\n")[0]);
+	throw new Error("Рабочий кабинет не открылся: мерить нечего");
 }
 
 /**
@@ -210,38 +223,38 @@ async function waitForWorkspace(timeoutMs = 60000) {
  * это ноутбук с узким окном, а не то устройство, что у врача в руках.
  */
 async function setDevice(profile) {
-  await send("Emulation.setDeviceMetricsOverride", {
-    width: profile.width,
-    height: profile.height,
-    deviceScaleFactor: 1,
-    mobile: profile.coarse,
-  });
-  // maxTouchPoints обязателен в диапазоне 1..16 даже при enabled: false —
-  // ноль отвергается протоколом целиком, и прогон падает на первом же вызове.
-  await send("Emulation.setTouchEmulationEnabled", {
-    enabled: profile.coarse,
-    maxTouchPoints: profile.coarse ? 5 : 1,
-  });
-  await send("Emulation.setEmulatedMedia", {
-    features: profile.coarse
-      ? [
-          { name: "pointer", value: "coarse" },
-          { name: "any-pointer", value: "coarse" },
-          { name: "hover", value: "none" },
-          { name: "any-hover", value: "none" },
-        ]
-      : [
-          { name: "pointer", value: "fine" },
-          { name: "any-pointer", value: "fine" },
-          { name: "hover", value: "hover" },
-          { name: "any-hover", value: "hover" },
-        ],
-  });
+	await send("Emulation.setDeviceMetricsOverride", {
+		width: profile.width,
+		height: profile.height,
+		deviceScaleFactor: 1,
+		mobile: profile.coarse,
+	});
+	// maxTouchPoints обязателен в диапазоне 1..16 даже при enabled: false —
+	// ноль отвергается протоколом целиком, и прогон падает на первом же вызове.
+	await send("Emulation.setTouchEmulationEnabled", {
+		enabled: profile.coarse,
+		maxTouchPoints: profile.coarse ? 5 : 1,
+	});
+	await send("Emulation.setEmulatedMedia", {
+		features: profile.coarse
+			? [
+					{ name: "pointer", value: "coarse" },
+					{ name: "any-pointer", value: "coarse" },
+					{ name: "hover", value: "none" },
+					{ name: "any-hover", value: "none" },
+				]
+			: [
+					{ name: "pointer", value: "fine" },
+					{ name: "any-pointer", value: "fine" },
+					{ name: "hover", value: "hover" },
+					{ name: "any-hover", value: "hover" },
+				],
+	});
 }
 
 /** Что медиа-условия ДЕЙСТВИТЕЛЬНО видят: без этого замер нечем поверить. */
 async function readMediaState() {
-  return evaluate(`
+	return evaluate(`
     (() => ({
       innerWidth: window.innerWidth,
       innerHeight: window.innerHeight,
@@ -261,7 +274,7 @@ async function readMediaState() {
 }
 
 async function goToView(view) {
-  return evaluate(`
+	return evaluate(`
     (() => {
       if (window.location.hash === "#" + ${JSON.stringify(view)}) {
         window.dispatchEvent(new HashChangeEvent("hashchange"));
@@ -577,67 +590,87 @@ const MEASURE_COVERED = `
 
 /** Прокрутка шагами: elementFromPoint видит только текущую область. */
 async function measureCoveredAcrossPage() {
-  const geometry = await evaluate(`
+	const geometry = await evaluate(`
     (() => {
       const doc = document.scrollingElement || document.documentElement;
       return { height: doc.scrollHeight, view: window.innerHeight };
     })()
   `);
-  const steps = Math.min(8, Math.max(1, Math.ceil(geometry.height / geometry.view)));
-  const all = [];
-  for (let step = 0; step < steps; step += 1) {
-    await evaluate(`window.scrollTo(0, ${step} * window.innerHeight); true`);
-    await sleep(350);
-    const rows = await evaluate(MEASURE_COVERED);
-    for (const row of rows || []) all.push(row);
-  }
-  await evaluate("window.scrollTo(0, 0); true");
-  await sleep(250);
-  const seen = new Set();
-  const unique = [];
-  for (const row of all) {
-    const key = `${row.tag}|${row.cls}|${row.label}|${row.rect.w}x${row.rect.h}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    unique.push(row);
-  }
-  unique.sort((a, b) => b.byFloat - a.byFloat || b.blocked - a.blocked);
-  return { steps, total: all.length, unique };
+	const steps = Math.min(
+		8,
+		Math.max(1, Math.ceil(geometry.height / geometry.view)),
+	);
+	const all = [];
+	for (let step = 0; step < steps; step += 1) {
+		await evaluate(`window.scrollTo(0, ${step} * window.innerHeight); true`);
+		await sleep(350);
+		const rows = await evaluate(MEASURE_COVERED);
+		for (const row of rows || []) all.push(row);
+	}
+	await evaluate("window.scrollTo(0, 0); true");
+	await sleep(250);
+	const seen = new Set();
+	const unique = [];
+	for (const row of all) {
+		const key = `${row.tag}|${row.cls}|${row.label}|${row.rect.w}x${row.rect.h}`;
+		if (seen.has(key)) continue;
+		seen.add(key);
+		unique.push(row);
+	}
+	unique.sort((a, b) => b.byFloat - a.byFloat || b.blocked - a.blocked);
+	return { steps, total: all.length, unique };
 }
 
 async function shootFullPage(fileName, capHeight = 3000) {
-  const box = await evaluate(`
+	const box = await evaluate(`
     (() => {
       const doc = document.scrollingElement || document.documentElement;
       return { w: window.innerWidth, h: Math.min(doc.scrollHeight, ${capHeight}) };
     })()
   `);
-  const shot = await send("Page.captureScreenshot", {
-    format: "png",
-    clip: { x: 0, y: 0, width: box.w, height: box.h, scale: 1 },
-    captureBeyondViewport: true,
-  });
-  await writeFile(path.join(OUT, fileName), Buffer.from(shot.data, "base64"));
-  return box;
+	const shot = await send("Page.captureScreenshot", {
+		format: "png",
+		clip: { x: 0, y: 0, width: box.w, height: box.h, scale: 1 },
+		captureBeyondViewport: true,
+	});
+	await writeFile(path.join(OUT, fileName), Buffer.from(shot.data, "base64"));
+	return box;
 }
 
 async function shootViewportOnly(fileName) {
-  const shot = await send("Page.captureScreenshot", { format: "png" });
-  await writeFile(path.join(OUT, fileName), Buffer.from(shot.data, "base64"));
+	const shot = await send("Page.captureScreenshot", { format: "png" });
+	await writeFile(path.join(OUT, fileName), Buffer.from(shot.data, "base64"));
 }
 
 const VIEWS = [
-  { view: "shift", slug: "shift", label: "Смена" },
-  { view: "schedule", slug: "schedule", label: "Записи (расписание)" },
-  { view: "patients", slug: "patients", label: "Пациенты (картотека)", prepare: SELECT_PATIENT },
-  { view: "visit", slug: "visit", label: "Приём", needsPatient: true },
-  { view: "imaging", slug: "imaging", label: "Снимки" },
-  { view: "finance", slug: "finance", label: "Оплаты" },
+	{ view: "shift", slug: "shift", label: "Смена" },
+	{ view: "schedule", slug: "schedule", label: "Записи (расписание)" },
+	{
+		view: "patients",
+		slug: "patients",
+		label: "Пациенты (картотека)",
+		prepare: SELECT_PATIENT,
+	},
+	{ view: "visit", slug: "visit", label: "Приём", needsPatient: true },
+	{ view: "imaging", slug: "imaging", label: "Снимки" },
+	{ view: "finance", slug: "finance", label: "Оплаты" },
 ];
 
 const DEVICES = [
-  { name: "tablet", width: 820, height: 1180, coarse: true, label: "планшет портрет 820x1180, указатель грубый" },
-  { name: "desktop", width: 1600, height: 1000, coarse: false, label: "настольный 1600x1000, указатель точный" },
+	{
+		name: "tablet",
+		width: 820,
+		height: 1180,
+		coarse: true,
+		label: "планшет портрет 820x1180, указатель грубый",
+	},
+	{
+		name: "desktop",
+		width: 1600,
+		height: 1000,
+		coarse: false,
+		label: "настольный 1600x1000, указатель точный",
+	},
 ];
 
 await setDevice(DEVICES[1]);
@@ -647,36 +680,41 @@ console.log("Рабочий кабинет открыт");
 const report = { startedAt: new Date().toISOString(), devices: [] };
 
 for (const device of DEVICES) {
-  await setDevice(device);
-  await sleep(1500);
-  const media = await readMediaState();
-  console.log(`\n=== ${device.label} ===`);
-  console.log(
-    `   окно ${media.innerWidth}x${media.innerHeight}, pointer:coarse=${media.coarse}, ` +
-      `max-width:700=${media.under700}, правила зон нажатия активны=${media.touchTargetsActive}, ` +
-      `нижняя навигация: ${media.bottomNav}`,
-  );
-  const deviceEntry = { device: device.name, label: device.label, media, views: [] };
+	await setDevice(device);
+	await sleep(1500);
+	const media = await readMediaState();
+	console.log(`\n=== ${device.label} ===`);
+	console.log(
+		`   окно ${media.innerWidth}x${media.innerHeight}, pointer:coarse=${media.coarse}, ` +
+			`max-width:700=${media.under700}, правила зон нажатия активны=${media.touchTargetsActive}, ` +
+			`нижняя навигация: ${media.bottomNav}`,
+	);
+	const deviceEntry = {
+		device: device.name,
+		label: device.label,
+		media,
+		views: [],
+	};
 
-  // Пациент выбирается один раз на устройство: приём без него — пустое состояние.
-  await goToView("patients");
-  await sleep(3000);
-  const chosen = await evaluate(SELECT_PATIENT);
-  console.log(`   выбран пациент: ${chosen}`);
+	// Пациент выбирается один раз на устройство: приём без него — пустое состояние.
+	await goToView("patients");
+	await sleep(3000);
+	const chosen = await evaluate(SELECT_PATIENT);
+	console.log(`   выбран пациент: ${chosen}`);
 
-  for (const item of VIEWS) {
-    await goToView(item.view);
-    await sleep(item.view === "visit" || item.view === "imaging" ? 5000 : 4000);
-    if (item.prepare) await evaluate(item.prepare);
-    await sleep(800);
+	for (const item of VIEWS) {
+		await goToView(item.view);
+		await sleep(item.view === "visit" || item.view === "imaging" ? 5000 : 4000);
+		if (item.prepare) await evaluate(item.prepare);
+		await sleep(800);
 
-    const targets = await evaluate(MEASURE_TARGETS);
-    const overflow = await evaluate(MEASURE_OVERFLOW);
-    const tables = await evaluate(MEASURE_TABLES);
-    const floaters = await evaluate(MEASURE_FLOATERS);
-    const covered = await measureCoveredAcrossPage();
+		const targets = await evaluate(MEASURE_TARGETS);
+		const overflow = await evaluate(MEASURE_OVERFLOW);
+		const tables = await evaluate(MEASURE_TABLES);
+		const floaters = await evaluate(MEASURE_FLOATERS);
+		const covered = await measureCoveredAcrossPage();
 
-    const heading = await evaluate(`
+		const heading = await evaluate(`
       (() => {
         const h = document.querySelector("h1, h2, .panel-heading, .page-title");
         const empty = /Пациент не выбран|Раздел не загружен|Нет данных/.test(document.body.textContent || "");
@@ -684,44 +722,50 @@ for (const device of DEVICES) {
       })()
     `);
 
-    await shootFullPage(`${device.name}_${item.slug}_full.png`);
-    await shootViewportOnly(`${device.name}_${item.slug}_fold.png`);
+		await shootFullPage(`${device.name}_${item.slug}_full.png`);
+		await shootViewportOnly(`${device.name}_${item.slug}_fold.png`);
 
-    const under24 = (targets || []).filter((t) => t.min < 24).length;
-    const under32 = (targets || []).filter((t) => t.min < 32).length;
-    const stillTables = (tables || []).filter((t) => t.stillTable);
-    const coveredByFloat = covered.unique.filter((c) => c.byFloat > 0);
+		const under24 = (targets || []).filter((t) => t.min < 24).length;
+		const under32 = (targets || []).filter((t) => t.min < 32).length;
+		const stillTables = (tables || []).filter((t) => t.stillTable);
+		const coveredByFloat = covered.unique.filter((c) => c.byFloat > 0);
 
-    console.log(
-      `   [${item.label}] цели <44: ${targets?.length ?? "?"} (из них <32: ${under32}, <24: ${under24}); ` +
-        `переполнений за окно: ${overflow.pastCount}, срезано предком: ${overflow.clippedCount}, ` +
-        `док.scrollWidth-clientWidth=${overflow.pageScroll.over}; ` +
-        `таблиц: ${tables?.length ?? 0} (остались таблицами: ${stillTables.length}); ` +
-        `плавающих: ${floaters?.length ?? 0}; перекрыто целей: ${covered.unique.length} (плавающим: ${coveredByFloat.length})`,
-    );
-    if (heading.empty) console.log(`      ВНИМАНИЕ: на экране признак пустого состояния`);
+		console.log(
+			`   [${item.label}] цели <44: ${targets?.length ?? "?"} (из них <32: ${under32}, <24: ${under24}); ` +
+				`переполнений за окно: ${overflow.pastCount}, срезано предком: ${overflow.clippedCount}, ` +
+				`док.scrollWidth-clientWidth=${overflow.pageScroll.over}; ` +
+				`таблиц: ${tables?.length ?? 0} (остались таблицами: ${stillTables.length}); ` +
+				`плавающих: ${floaters?.length ?? 0}; перекрыто целей: ${covered.unique.length} (плавающим: ${coveredByFloat.length})`,
+		);
+		if (heading.empty)
+			console.log(`      ВНИМАНИЕ: на экране признак пустого состояния`);
 
-    deviceEntry.views.push({
-      view: item.view,
-      label: item.label,
-      heading,
-      targets: targets || [],
-      targetSummary: { under44: targets?.length ?? 0, under32, under24 },
-      overflow,
-      tables: tables || [],
-      floaters: floaters || [],
-      covered,
-    });
-  }
+		deviceEntry.views.push({
+			view: item.view,
+			label: item.label,
+			heading,
+			targets: targets || [],
+			targetSummary: { under44: targets?.length ?? 0, under32, under24 },
+			overflow,
+			tables: tables || [],
+			floaters: floaters || [],
+			covered,
+		});
+	}
 
-  report.devices.push(deviceEntry);
+	report.devices.push(deviceEntry);
 }
 
 report.pageErrors = pageErrors.slice(0, 40);
-await writeFile(path.join(OUT, "chairside-measurements.json"), JSON.stringify(report, null, 2), "utf8");
+await writeFile(
+	path.join(OUT, "chairside-measurements.json"),
+	JSON.stringify(report, null, 2),
+	"utf8",
+);
 console.log(`\nЗамеры: ${path.join(OUT, "chairside-measurements.json")}`);
 console.log(`Ошибок страницы: ${pageErrors.length}`);
-for (const error of pageErrors.slice(0, 8)) console.log(`  ${error.split("\n")[0]}`);
+for (const error of pageErrors.slice(0, 8))
+	console.log(`  ${error.split("\n")[0]}`);
 
 socket.close();
 browser.kill();

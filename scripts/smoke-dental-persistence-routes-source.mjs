@@ -278,7 +278,7 @@ requireCallIn(
 // UI-клиент маршрутов finance_family — см. комментарий у чтения файла.
 requireIn(
 	familyWalletPanel,
-	'fetch(`/api/finance/family/patient/${patientId}`',
+	"fetch(`/api/finance/family/patient/${patientId}`",
 	"Family-wallet UI must read the wallet from the tenant-scoped API route.",
 );
 requireIn(

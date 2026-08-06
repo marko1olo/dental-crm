@@ -2,7 +2,10 @@ import type { ProtocolTemplate } from "@dental/shared";
 import { ClipboardCheck, Edit2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { actionFailureToast, NO_RESPONSE_CAUSE } from "../../lib/panelStateText";
+import {
+	actionFailureToast,
+	NO_RESPONSE_CAUSE,
+} from "../../lib/panelStateText";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
@@ -24,11 +27,15 @@ import "./SettingsProtocolsTab.css";
  * человеку. Иначе причину называем по коду ответа общими для всех панелей
  * словами из lib/panelStateText.ts.
  */
-async function refusalMessage(response: Response, action: string): Promise<string> {
+async function refusalMessage(
+	response: Response,
+	action: string,
+): Promise<string> {
 	let serverMessage = "";
 	try {
 		const payload = (await response.json()) as { message?: unknown };
-		if (typeof payload.message === "string") serverMessage = payload.message.trim();
+		if (typeof payload.message === "string")
+			serverMessage = payload.message.trim();
 	} catch {
 		// Тело не разобралось (HTML прокси, пустой ответ) — причина будет по коду.
 	}
@@ -125,7 +132,9 @@ export function SettingsProtocolsTab() {
 			 */
 			const res = await fetch(url, {
 				method,
-				headers: auth.settingsAccessHeaders({ "Content-Type": "application/json" }),
+				headers: auth.settingsAccessHeaders({
+					"Content-Type": "application/json",
+				}),
 				body: JSON.stringify(editForm),
 			});
 
@@ -374,54 +383,60 @@ export function SettingsProtocolsTab() {
 					title="Шаблонов приёма пока нет"
 					description="Шаблон подставляет врачу причину визита, длительность, нужные документы и снимки. Создайте первый — по одному на частый приём, например «Лечение кариеса» и «Осмотр»."
 					action={
-						<button className="primary-button" type="button" onClick={handleCreateNew}>
+						<button
+							className="primary-button"
+							type="button"
+							onClick={handleCreateNew}
+						>
 							<Plus size={16} /> Добавить шаблон
 						</button>
 					}
 				/>
 			) : (
-			<div className="protocol-settings-grid">
-				{typedProtocolTemplates.map((template) => (
-					<article className="protocol-settings-card" key={template.id}>
-						<div className="protocol-settings-head">
-							<span>{specialtyLabels[template.specialty]}</span>
-							<strong>{template.title}</strong>
-							<p>
-								{template.visitReason} · {template.defaultDurationMinutes} мин
-							</p>
-						</div>
-						<div
-							className="protocol-token-row"
-							aria-label="Документы протокола"
-						>
-							{template.requiredDocuments.map((kind) => (
-								<span key={kind}>{documentLabels[kind]}</span>
-							))}
-						</div>
-						<div
-							className="protocol-token-row protocol-token-row-soft"
-							aria-label="Снимки протокола"
-						>
-							{template.suggestedImaging.map((kind) => (
-								<span key={kind}>{imagingKindLabels[kind]}</span>
-							))}
-						</div>
-						<ul>
-							{template.safetyWarnings.slice(0, 2).map((warning) => (
-								<li key={warning}>{warning}</li>
-							))}
-						</ul>
-						<div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={() => handleEdit(template)}
-								title="Редактировать"
-								aria-label={`Редактировать шаблон «${template.title}»`}
+				<div className="protocol-settings-grid">
+					{typedProtocolTemplates.map((template) => (
+						<article className="protocol-settings-card" key={template.id}>
+							<div className="protocol-settings-head">
+								<span>{specialtyLabels[template.specialty]}</span>
+								<strong>{template.title}</strong>
+								<p>
+									{template.visitReason} · {template.defaultDurationMinutes} мин
+								</p>
+							</div>
+							<div
+								className="protocol-token-row"
+								aria-label="Документы протокола"
 							>
-								<Edit2 size={16} />
-							</button>
-							{/*
+								{template.requiredDocuments.map((kind) => (
+									<span key={kind}>{documentLabels[kind]}</span>
+								))}
+							</div>
+							<div
+								className="protocol-token-row protocol-token-row-soft"
+								aria-label="Снимки протокола"
+							>
+								{template.suggestedImaging.map((kind) => (
+									<span key={kind}>{imagingKindLabels[kind]}</span>
+								))}
+							</div>
+							<ul>
+								{template.safetyWarnings.slice(0, 2).map((warning) => (
+									<li key={warning}>{warning}</li>
+								))}
+							</ul>
+							<div
+								style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}
+							>
+								<button
+									className="secondary-button"
+									type="button"
+									onClick={() => handleEdit(template)}
+									title="Редактировать"
+									aria-label={`Редактировать шаблон «${template.title}»`}
+								>
+									<Edit2 size={16} />
+								</button>
+								{/*
 								КНОПКА УДАЛЕНИЯ СНОВА КРАСНАЯ.
 
 								БЫЛО: className="danger-button" и цвета
@@ -440,24 +455,24 @@ export function SettingsProtocolsTab() {
 								--bad-fg (styles/dente-redesign.css:30, есть во всех трёх
 								темах).
 							*/}
-							<button
-								className="secondary-button"
-								type="button"
-								style={{
-									backgroundColor: "var(--bad-bg)",
-									color: "var(--bad-fg)",
-								}}
-								onClick={() => handleDelete(template.id)}
-								title="Удалить"
-								aria-label={`Удалить шаблон «${template.title}»`}
-								disabled={loading}
-							>
-								<Trash2 size={16} />
-							</button>
-						</div>
-					</article>
-				))}
-			</div>
+								<button
+									className="secondary-button"
+									type="button"
+									style={{
+										backgroundColor: "var(--bad-bg)",
+										color: "var(--bad-fg)",
+									}}
+									onClick={() => handleDelete(template.id)}
+									title="Удалить"
+									aria-label={`Удалить шаблон «${template.title}»`}
+									disabled={loading}
+								>
+									<Trash2 size={16} />
+								</button>
+							</div>
+						</article>
+					))}
+				</div>
 			)}
 		</section>
 	);

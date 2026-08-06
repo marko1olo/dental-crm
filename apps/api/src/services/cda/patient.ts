@@ -3,7 +3,12 @@
  */
 
 import type { CdaContext } from "./util.js";
-import { DEFAULT_MO_ROOT, escapeXml, patientAddrXml, patientTelecomXml } from "./util.js";
+import {
+	DEFAULT_MO_ROOT,
+	escapeXml,
+	patientAddrXml,
+	patientTelecomXml,
+} from "./util.js";
 
 export function generateCdaPatient(ctx: CdaContext): string {
 	const { params, birthTimeValue, genderCode, clinicOidEscaped } = ctx;

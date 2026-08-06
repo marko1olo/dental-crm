@@ -262,7 +262,8 @@ export function dynamicImportBindings(sourceFile) {
 				specifiers.push(inner.arguments[0].text);
 			}
 		});
-		if (specifiers.length > 0) bindings.push({ name: node.name.text, specifiers });
+		if (specifiers.length > 0)
+			bindings.push({ name: node.name.text, specifiers });
 	});
 	return bindings;
 }
@@ -295,7 +296,10 @@ export function lazyBindingNameForImport(sourceFile, specifier) {
  *  - `lazyBindingName` — имя первой подходящей ленивой привязки (для текста
  *    отказа), `mountedBindingName` — имя той, чей монтаж реально найден в JSX.
  */
-export function findLazyMountErrorBoundary(hostFile, { specifier = null } = {}) {
+export function findLazyMountErrorBoundary(
+	hostFile,
+	{ specifier = null } = {},
+) {
 	const hostAst = parseTypeScriptFile(hostFile);
 	const hostImports = valueImportsByLocalName(hostAst);
 	const candidates = dynamicImportBindings(hostAst).filter(

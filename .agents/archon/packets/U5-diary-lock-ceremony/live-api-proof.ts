@@ -232,7 +232,9 @@ async function main() {
 			console.log(`token accepted (secret candidate #${index})`);
 			break;
 		}
-		console.log(`secret candidate #${index} rejected: ${attempt.status} ${attempt.body}`);
+		console.log(
+			`secret candidate #${index} rejected: ${attempt.status} ${attempt.body}`,
+		);
 	}
 	if (!token) {
 		throw new Error("сервер не принял ни один вариант токена сотрудника");
@@ -249,7 +251,9 @@ async function main() {
 			statusLocalis: "Зуб 36: глубокая полость.",
 			treatmentDescription: "Обработка, пломба.",
 		});
-		console.log(`POST /api/diaries (черновик) -> ${draft.status} ${draft.body}`);
+		console.log(
+			`POST /api/diaries (черновик) -> ${draft.status} ${draft.body}`,
+		);
 	}
 
 	const signViaPost = await post("/api/diaries", token, {
@@ -306,7 +310,9 @@ async function main() {
 	});
 	console.log(`POST повторная подпись -> ${retry.status} ${retry.body}`);
 	const retryLock = await post(`/api/diaries/${lockDiary.id}/lock`, token, {});
-	console.log(`/lock повторная подпись -> ${retryLock.status} ${retryLock.body}`);
+	console.log(
+		`/lock повторная подпись -> ${retryLock.status} ${retryLock.body}`,
+	);
 	console.log(
 		"stock unchanged after retries:",
 		JSON.stringify({

@@ -230,7 +230,10 @@ describe("planLineTotalKopecks — скидка в рублях, как в ко�
 			planLineTotalKopecks({ price: Number.NaN, quantity: 1 }),
 			null,
 		);
-		assert.equal(planLineTotalKopecks({ price: "нет цены", quantity: 1 }), null);
+		assert.equal(
+			planLineTotalKopecks({ price: "нет цены", quantity: 1 }),
+			null,
+		);
 		assert.equal(planLineTotalKopecks({ price: 100, quantity: 1.5 }), null);
 	});
 });
@@ -310,7 +313,10 @@ describe("покрытие ДМС — по разделам договора, б
 			0,
 		);
 		assert.equal(
-			insuranceCoverageKopecks([{ lineKopecks: 1000000, category: null }], contract),
+			insuranceCoverageKopecks(
+				[{ lineKopecks: 1000000, category: null }],
+				contract,
+			),
 			0,
 		);
 	});

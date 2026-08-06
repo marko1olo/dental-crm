@@ -45,12 +45,15 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { sql } from "drizzle-orm";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { denteAdminSecretHeader } from "../../accessGuard.js";
 import { db, pool } from "../../db/client.js";
 import { organizations, patients, visits } from "../../db/schema.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
-import { authTokenSecret, clinicalAdminSecret } from "../../security/authSecret.js";
+import {
+	authTokenSecret,
+	clinicalAdminSecret,
+} from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
@@ -71,7 +74,10 @@ const DRAFT_VISIT_ID = fixtureUuid(NAMESPACE, 23);
 /** Приём, которого нет. Ни одна вставка этого файла его не создаёт. */
 const ABSENT_VISIT_ID = fixtureUuid(NAMESPACE, 99);
 
-const FIXTURE_ORGANIZATION_IDS = [OWN_ORGANIZATION_ID, OTHER_ORGANIZATION_ID] as const;
+const FIXTURE_ORGANIZATION_IDS = [
+	OWN_ORGANIZATION_ID,
+	OTHER_ORGANIZATION_ID,
+] as const;
 
 type Refusal = {
 	readonly status: number;
@@ -91,7 +97,10 @@ function headersFor(organizationId: string): Record<string, string> {
 	};
 }
 
-async function readDraft(organizationId: string, visitId: string): Promise<Refusal> {
+async function readDraft(
+	organizationId: string,
+	visitId: string,
+): Promise<Refusal> {
 	const response = await app.inject({
 		method: "GET",
 		url: `/api/visits/${visitId}/draft/autosave`,
@@ -125,7 +134,9 @@ function namesCause(message: string, expected: RegExp): boolean {
  * должна валить сторожа, а вот отказ без следующего шага — обязан.
  */
 function namesNextStep(message: string): boolean {
-	return /откройте|создайте|войдите|обновите|повторите|выберите|заполните|сообщите/i.test(message);
+	return /откройте|создайте|войдите|обновите|повторите|выберите|заполните|сообщите/i.test(
+		message,
+	);
 }
 
 before(async () => {
@@ -241,7 +252,11 @@ describe("GET /api/visits/:visitId/draft/autosave: отказ называет �
 			"Посев не состоялся: подписанного приёма нет в базе, и проверять «сервер врёт о существующем приёме» не на чем.",
 		);
 		assert.equal(stored.rows[0]?.status, "signed");
-		assert.equal(stored.rows[0]?.no_draft, true, "У подписанного приёма фикстуры не должно быть черновика.");
+		assert.equal(
+			stored.rows[0]?.no_draft,
+			true,
+			"У подписанного приёма фикстуры не должно быть черновика.",
+		);
 
 		assert.ok(
 			!/не найден/i.test(refusal.message),
@@ -259,7 +274,11 @@ describe("GET /api/visits/:visitId/draft/autosave: отказ называет �
 	it("отказ по подписанному приёму называет причину и следующий шаг", async () => {
 		const refusal = await readDraft(OWN_ORGANIZATION_ID, SIGNED_VISIT_ID);
 
-		assert.match(refusal.message, /[А-Яа-яЁё]/, `Отказ обязан быть по-русски: ${refusal.body}`);
+		assert.match(
+			refusal.message,
+			/[А-Яа-яЁё]/,
+			`Отказ обязан быть по-русски: ${refusal.body}`,
+		);
 		assert.ok(
 			namesCause(refusal.message, /подписан/i),
 			`Отказ не называет ПРИЧИНУ. Правда об этом состоянии одна: приём подписан, поэтому черновика у него ` +
@@ -286,14 +305,21 @@ describe("GET /api/visits/:visitId/draft/autosave: отказ называет �
 			`Аннулированный приём назван не своей причиной: «${voided.message}». Подписанный дописывают новым ` +
 				"приёмом, аннулированный не дописывают вовсе — это разные действия, значит и разные тексты.",
 		);
-		assert.ok(namesNextStep(voided.message), `Отказ по аннулированному приёму без действия: «${voided.message}»`);
+		assert.ok(
+			namesNextStep(voided.message),
+			`Отказ по аннулированному приёму без действия: «${voided.message}»`,
+		);
 		assert.notEqual(
 			voided.message,
 			signed.message,
 			"Аннулированный и подписанный приём получили один текст. Слияние состояний в один отказ — это тот " +
 				"самый дефект, только на одну ступень мельче.",
 		);
-		assert.notEqual(voided.reason, signed.reason, "Машинная причина у двух разных состояний совпала.");
+		assert.notEqual(
+			voided.reason,
+			signed.reason,
+			"Машинная причина у двух разных состояний совпала.",
+		);
 	});
 
 	it("отсутствующий приём и существующий получают РАЗНЫЕ ответы", async () => {
@@ -308,9 +334,20 @@ describe("GET /api/visits/:visitId/draft/autosave: отказ называет �
 				sql`select count(*)::int as n from visits where id = ${ABSENT_VISIT_ID}::uuid`,
 			),
 		);
-		assert.equal(absentCount.rows[0]?.n, 0, "Приём, объявленный отсутствующим, оказался в базе — проверка не о том.");
-		assert.equal(absent.error, "VisitNotFound", `Отсутствующий приём обязан называться ненайденным: ${absent.body}`);
-		assert.ok(namesNextStep(absent.message), `Отказ по отсутствующему приёму без действия: «${absent.message}»`);
+		assert.equal(
+			absentCount.rows[0]?.n,
+			0,
+			"Приём, объявленный отсутствующим, оказался в базе — проверка не о том.",
+		);
+		assert.equal(
+			absent.error,
+			"VisitNotFound",
+			`Отсутствующий приём обязан называться ненайденным: ${absent.body}`,
+		);
+		assert.ok(
+			namesNextStep(absent.message),
+			`Отказ по отсутствующему приёму без действия: «${absent.message}»`,
+		);
 
 		assert.notEqual(
 			absent.message,
@@ -356,8 +393,14 @@ describe("GET /api/visits/:visitId/draft/autosave: отказ называет �
 			200,
 			`Черновик приёма перестал открываться — правка задела верный путь: ${response.body.slice(0, 300)}`,
 		);
-		const body = JSON.parse(response.body) as { serverDraft?: { visitId?: string; draft?: { complaint?: string } } };
-		assert.equal(body.serverDraft?.visitId, DRAFT_VISIT_ID, "Черновик отдан не по тому приёму.");
+		const body = JSON.parse(response.body) as {
+			serverDraft?: { visitId?: string; draft?: { complaint?: string } };
+		};
+		assert.equal(
+			body.serverDraft?.visitId,
+			DRAFT_VISIT_ID,
+			"Черновик отдан не по тому приёму.",
+		);
 		assert.equal(
 			body.serverDraft?.draft?.complaint,
 			"плановый осмотр",

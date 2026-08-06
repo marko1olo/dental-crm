@@ -50,8 +50,8 @@ export function PaidContractRequiredFieldsPanel({
 					padding: "10px 12px",
 				}}
 			>
-				Обязательные поля договора заполнены, все {requiredCount}. Дату договора и
-				время подписания программа поставит сама при создании.
+				Обязательные поля договора заполнены, все {requiredCount}. Дату договора
+				и время подписания программа поставит сама при создании.
 			</p>
 		);
 	}
@@ -64,8 +64,8 @@ export function PaidContractRequiredFieldsPanel({
 			style={{ marginTop: "12px" }}
 		>
 			<strong>
-				Не хватает {missing.length} из {requiredCount} обязательных полей — без них
-				договор не создастся:
+				Не хватает {missing.length} из {requiredCount} обязательных полей — без
+				них договор не создастся:
 			</strong>
 			<ul>
 				{missing.map((entry) => (

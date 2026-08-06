@@ -1,10 +1,8 @@
 export const meta = {
-  name: 'dente-cycle24-MM',
-  description: 'Цикл 24, волна MM: гейт обнаружения строк прайса, красный HEAD, засев фикстур, перепись схемы, копейки на вводе, идиомы авторизации',
-  phases: [
-    { title: 'Build' },
-    { title: 'Review' }
-  ]
+	name: "dente-cycle24-MM",
+	description:
+		"Цикл 24, волна MM: гейт обнаружения строк прайса, красный HEAD, засев фикстур, перепись схемы, копейки на вводе, идиомы авторизации",
+	phases: [{ title: "Build" }, { title: "Review" }],
 };
 
 const LAW = `Ты исполнитель в волне MM. Проект: C:\\Clinic_MVP\\dental-crm (Windows, bash). Работай молча и коммить.
@@ -43,11 +41,12 @@ const LAW = `Ты исполнитель в волне MM. Проект: C:\\Cli
 | CONTRADICTED: <в чём бриф был неверен или none> | FOUND: <новые дефекты для очереди, по одному на строку>`;
 
 const PACKETS = [
-  {
-    id: 'MM1',
-    label: 'гейт обнаружения строк прайса',
-    files: 'apps/api/src/pricelist/analyzer.ts + НОВЫЙ файл apps/api/src/pricelist/pricelistRowGate.test.ts',
-    brief: `P0. ТРИ ЗАКОННЫЕ УСЛУГИ ИСЧЕЗАЮТ ИЗ ПРАЙСА ЦЕЛИКОМ — не цена теряется, а позиция.
+	{
+		id: "MM1",
+		label: "гейт обнаружения строк прайса",
+		files:
+			"apps/api/src/pricelist/analyzer.ts + НОВЫЙ файл apps/api/src/pricelist/pricelistRowGate.test.ts",
+		brief: `P0. ТРИ ЗАКОННЫЕ УСЛУГИ ИСЧЕЗАЮТ ИЗ ПРАЙСА ЦЕЛИКОМ — не цена теряется, а позиция.
 
 ГЕЙТ НАЙДЕН ВЕДУЩИМ В КОДЕ, apps/api/src/pricelist/analyzer.ts:1081, внутри analyzePricelistDeterministic:
   .filter((item) => item.title.length > 0 && (item.priceRub !== null || item.category !== "other"));
@@ -95,13 +94,14 @@ apps/api/src/pricelist/pricelistLastNumber.test.ts:33-45.
 «Отбеливание Zoom 4 25000»→25000; «Имплантация Osstem TS3 45000»→45000; «Пломба Filtek Z550 3500»→3500;
 «Коронка 12 500 руб»→12500; «Имплантация 1 200 000»→1200000; «Лечение кариеса 1500,50»→1500.50;
 «Седация 5000/120 мин кабинет 412»→5000. Прогони по одному файлу:
-node --import tsx --test src/pricelist/pricelistKopecks.test.ts src/pricelist/analyzer.test.ts src/pricelist/pricelistLastNumber.test.ts src/pricelist/pricelistBrandDigits.test.ts`
-  },
-  {
-    id: 'MM2',
-    label: 'красный HEAD: реестр долга врёт про DELETE',
-    files: 'apps/api/src/tests/webCallsExistingRoutes.test.ts (файл ГРЯЗНЫЙ — правь точечно)',
-    brief: `P0, HEAD СЕЙЧАС КРАСНЫЙ, и это блокирует всю волну. Маршрут ПОЯВИЛСЯ, а строка долга осталась.
+node --import tsx --test src/pricelist/pricelistKopecks.test.ts src/pricelist/analyzer.test.ts src/pricelist/pricelistLastNumber.test.ts src/pricelist/pricelistBrandDigits.test.ts`,
+	},
+	{
+		id: "MM2",
+		label: "красный HEAD: реестр долга врёт про DELETE",
+		files:
+			"apps/api/src/tests/webCallsExistingRoutes.test.ts (файл ГРЯЗНЫЙ — правь точечно)",
+		brief: `P0, HEAD СЕЙЧАС КРАСНЫЙ, и это блокирует всю волну. Маршрут ПОЯВИЛСЯ, а строка долга осталась.
 
 ПРОВЕРЕНО ВЕДУЩИМ ПО HEAD: apps/api/src/routes/clinical.ts:124 регистрирует
 app.delete("/api/clinical/rules/:ruleId", ...). Маршрут ЖИВ.
@@ -126,13 +126,14 @@ POST /api/clinical/rules и PATCH /api/clinical/rules/:ruleId — DELETE нет.
 
 ДОКАЗАТЬ: cd apps/api && node --import tsx --test src/tests/webCallsExistingRoutes.test.ts > /tmp/mm2.log 2>&1; echo $?
 Ожидание — 0. Если падает ЧЕМ-ТО ДРУГИМ (не про clinical/rules) — это чужой незакоммиченный дефект,
-запиши его в FOUND и не чини: не твой пакет.`
-  },
-  {
-    id: 'MM3',
-    label: 'onConflictDoNothing без id не отсекает ничего',
-    files: 'apps/api/src/tests/** и apps/api/src/**/*.test.ts, КРОМЕ webCallsExistingRoutes.test.ts (её держит MM2)',
-    brief: `P0. Засев фикстур, который считает себя идемпотентным и им НЕ является.
+запиши его в FOUND и не чини: не твой пакет.`,
+	},
+	{
+		id: "MM3",
+		label: "onConflictDoNothing без id не отсекает ничего",
+		files:
+			"apps/api/src/tests/** и apps/api/src/**/*.test.ts, КРОМЕ webCallsExistingRoutes.test.ts (её держит MM2)",
+		brief: `P0. Засев фикстур, который считает себя идемпотентным и им НЕ является.
 
 Идиом: тест сеет фикстуру через insert(...).values({...}).onConflictDoNothing() и полагается, что повторный
 прогон ничего не добавит. Но если id в values НЕ ЗАДАН, Drizzle/БД генерирует НОВЫЙ первичный ключ, конфликта
@@ -158,13 +159,14 @@ tests/routes/patientCommunicationLog.test.ts (4). По каждому месту
 ДОКАЗАТЬ по каждому тронутому файлу: cd apps/api && node --import tsx --test src/tests/routes/<файл> > /tmp/mm3.log 2>&1; echo $?
 И ГЛАВНОЕ — доказательство самой идемпотентности: прогони ОДИН тронутый файл ДВА РАЗА подряд, второй раз
 должен дать тот же код выхода. Если сегодня второй прогон краснеет, а после правки нет — приведи оба вывода,
-это и есть доказательство. В отчёте отдельной строкой: сколько мест проверено, сколько было сломано.`
-  },
-  {
-    id: 'MM4',
-    label: '13 таблиц базы, которых не назвал ни один файл сервера',
-    files: 'scripts/ + .agents/archon/recon/MM4-orphan-tables/DOSSIER.md. apps/api/src/db/schema.ts — ТОЛЬКО ЧИТАТЬ, его правит MM6',
-    brief: `P1. 148 таблиц в живой базе, 129 объявлены в Drizzle, 18 созданы миграциями и не объявлены никогда.
+это и есть доказательство. В отчёте отдельной строкой: сколько мест проверено, сколько было сломано.`,
+	},
+	{
+		id: "MM4",
+		label: "13 таблиц базы, которых не назвал ни один файл сервера",
+		files:
+			"scripts/ + .agents/archon/recon/MM4-orphan-tables/DOSSIER.md. apps/api/src/db/schema.ts — ТОЛЬКО ЧИТАТЬ, его правит MM6",
+		brief: `P1. 148 таблиц в живой базе, 129 объявлены в Drizzle, 18 созданы миграциями и не объявлены никогда.
 Тринадцать из них не назвал НИ ОДИН файл сервера: cash_shifts, clinic_workflows, dental_lab_orders,
 doctor_assistants, document_templates, drill_protocols, ingested_patients_mapping, ingestion_sources,
 migration_templates, payment_installments, scheduler_reservations, signed_outpatient_cards, ztl_lab_orders.
@@ -193,17 +195,20 @@ payment_installments и signed_outpatient_cards может лежать боев
    миграцию НЕ ПИСАТЬ, удаление таблиц решает ведущий.
 
 ДОКАЗАТЬ: node --import tsx --test scripts/smoke-schema-missing-declarations.test.mjs > /tmp/mm4.log 2>&1; echo $?
-обязан остаться 0 после твоей правки реестра. Плюс вывод счёта строк в досье, дословно.`
-  },
-  {
-    id: 'MM5',
-    label: 'копейки уничтожаются в точке ВВОДА цены',
-    files: 'apps/web/src/components/settings/SettingsPricesTab.tsx (файл ГРЯЗНЫЙ — правь точечно)',
-    brief: `P0. Весь разборщик прайса чинили ради копеек, а в форме ручного ввода они уничтожаются заново.
+обязан остаться 0 после твоей правки реестра. Плюс вывод счёта строк в досье, дословно.`,
+	},
+	{
+		id: "MM5",
+		label: "копейки уничтожаются в точке ВВОДА цены",
+		files:
+			"apps/web/src/components/settings/SettingsPricesTab.tsx (файл ГРЯЗНЫЙ — правь точечно)",
+		brief:
+			`P0. Весь разборщик прайса чинили ради копеек, а в форме ручного ввода они уничтожаются заново.
 
 ТРИ ДЕФЕКТА В ОДНОМ ФАЙЛЕ, все найдены ведущим, строки могли сдвинуться — ищи по коду, не по номеру:
 1. ~:740 — parseInt(e.target.value) || 0 на поле ЦЕНЫ. Два дефекта в одном выражении: parseInt срезает
-   дробную часть (1500,50 сохраняется как 1500), а `|| 0` превращает пустое поле и мусор в ВЫДУМАННЫЙ НОЛЬ,
+   дробную часть (1500,50 сохраняется как 1500), а ` ||
+			0` превращает пустое поле и мусор в ВЫДУМАННЫЙ НОЛЬ,
    то есть услугу за 0 ₽. В проекте есть единственный владелец денежной арифметики — packages/shared
    utils/money.ts (parseKopecks, kopecksToNumericString, splitKopecks). Второго владельца не создавай,
    пользуйся этим. Пустое поле обязано остаться пустым/null, а не стать нулём.
@@ -221,13 +226,14 @@ payment_installments и signed_outpatient_cards может лежать боев
 diff и разбор каждой формы ввода словами: что было при вводе «1500,50», при пустом поле, при «abc»,
 и что стало. Если найдёшь способ проверить прогоном (существующий набор по этому файлу или новый маленький
 тест на чистую функцию преобразования) — сделай, это сильнее рассуждения. Функцию преобразования строки
-поля в копейки стоит вынести отдельно именно чтобы она стала проверяемой.`
-  },
-  {
-    id: 'MM6',
-    label: '134 колонки живой базы без объявления',
-    files: 'apps/api/src/db/schema.ts (ТОЛЬКО ТЫ его правишь) + .agents/archon/recon/MM6-unspoken-columns/DOSSIER.md',
-    brief: `P1. 134 колонки в 34 таблицах живой базы не объявлены в Drizzle. Названы ведущим:
+поля в копейки стоит вынести отдельно именно чтобы она стала проверяемой.`,
+	},
+	{
+		id: "MM6",
+		label: "134 колонки живой базы без объявления",
+		files:
+			"apps/api/src/db/schema.ts (ТОЛЬКО ТЫ его правишь) + .agents/archon/recon/MM6-unspoken-columns/DOSSIER.md",
+		brief: `P1. 134 колонки в 34 таблицах живой базы не объявлены в Drizzle. Названы ведущим:
 appointments.is_synced, appointments.version, patients.insurance_policy_number, chairs.status,
 crm_leads.expected_revenue — и это только пять из 134.
 
@@ -254,13 +260,14 @@ crm_leads.expected_revenue — и это только пять из 134.
 Всё равно сделай git status --porcelain -- apps/api/src/db/schema.ts перед первой правкой.
 
 ДОКАЗАТЬ: node --import tsx --test scripts/smoke-schema-missing-declarations.test.mjs > /tmp/mm6.log 2>&1; echo $?
-обязан быть 0. И покажи, что число незаявленных колонок УМЕНЬШИЛОСЬ на пять: вывод переписи до и после.`
-  },
-  {
-    id: 'MM7',
-    label: 'два идиома авторизации по всем маршрутам',
-    files: 'ТОЛЬКО ЧТЕНИЕ по apps/api/src/routes/**. Пишешь ЕДИНСТВЕННЫЙ файл: .agents/archon/recon/MM7-auth-idioms/DOSSIER.md',
-    brief: `P1, разведка. В проекте живут ДВА идиома проверки доступа, и никто не знает, какой где.
+обязан быть 0. И покажи, что число незаявленных колонок УМЕНЬШИЛОСЬ на пять: вывод переписи до и после.`,
+	},
+	{
+		id: "MM7",
+		label: "два идиома авторизации по всем маршрутам",
+		files:
+			"ТОЛЬКО ЧТЕНИЕ по apps/api/src/routes/**. Пишешь ЕДИНСТВЕННЫЙ файл: .agents/archon/recon/MM7-auth-idioms/DOSSIER.md",
+		brief: `P1, разведка. В проекте живут ДВА идиома проверки доступа, и никто не знает, какой где.
 
 Первый — общие охранники requireClinical* (requireClinicalMutationAccess, requireOrganizationId и родня,
 ищи их объявление и всех вызывающих). Второй — рукописный verifyToken прямо в обработчике маршрута.
@@ -286,23 +293,23 @@ HANDWRITTEN_RISK (организация НЕ проверена — потен�
 доступа» — без контрольного запроса вывод недоказан. Порядок отчёта: сперва RISK с кодами ответа, потом счёт.
 
 ДОКАЗАТЬ: досье с итоговым счётом по трём вердиктам и с командой rg, которой ты собрал список маршрутов,
-дословно — чтобы ведущий мог повторить перепись и получить те же числа. Коммить только досье.`
-  }
+дословно — чтобы ведущий мог повторить перепись и получить те же числа. Коммить только досье.`,
+	},
 ];
 
-phase('Build');
+phase("Build");
 
 const done = await pipeline(
-  PACKETS,
-  (packet) =>
-    agent(
-      `${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
-      { label: `build:${packet.id}`, phase: 'Build', effort: 'high' }
-    ),
-  (buildResult, packet) => {
-    if (!buildResult) return null;
-    return agent(
-      `Ты ревьюер пакета ${packet.id} в волне MM. Проект C:\\Clinic_MVP\\dental-crm.
+	PACKETS,
+	(packet) =>
+		agent(
+			`${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
+			{ label: `build:${packet.id}`, phase: "Build", effort: "high" },
+		),
+	(buildResult, packet) => {
+		if (!buildResult) return null;
+		return agent(
+			`Ты ревьюер пакета ${packet.id} в волне MM. Проект C:\\Clinic_MVP\\dental-crm.
 Ты НЕ ПРАВИШЬ КОД. Ты пишешь ОДИН файл: .agents/archon/packets/${packet.id}/review.md, и коммитишь только его
 (ретрай вокруг git add и git commit, сообщение в файл, [ARCHON] в теме, без атрибуции инструмента,
 git log -1 --format='%(trailers)' пуст).
@@ -332,12 +339,14 @@ ${buildResult}
 
 Дальше в review.md: что проверено командой (дословно, с кодом выхода), что осталось, и НОВЫЕ дефекты
 отдельным разделом «FOUND» — они пойдут в очередь ведущего. Пиши коротко и по факту, без пересказа диффа.`,
-      { label: `review:${packet.id}`, phase: 'Review', effort: 'high' }
-    );
-  }
+			{ label: `review:${packet.id}`, phase: "Review", effort: "high" },
+		);
+	},
 );
 
-log(`волна MM завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`);
+log(
+	`волна MM завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`,
+);
 
 return {
   packets: PACKETS.map((packet, index) => ({ id: packet.id, label: packet.label, review: done[index] ?? null }))

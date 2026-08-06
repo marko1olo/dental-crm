@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { type TenantDb, withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import {
+	type TenantDb,
+	withSuperuserBypass,
+	withTenantCtx,
+} from "../../db/rls.js";
 
 /**
  * ОБЩИЙ ИНВЕНТАРЬ ДЛЯ ТЕСТОВ, КОТОРЫЕ СЕЮТ СВОЮ КЛИНИКУ В ЖИВУЮ БАЗУ.
@@ -97,7 +101,8 @@ import { type TenantDb, withSuperuserBypass, withTenantCtx } from "../../db/rls.
  */
 const FIXTURE_UUID_PREFIX = "dce70000";
 
-const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const UUID_SHAPE =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** Больше проходов не нужно: цепочки ссылок в схеме короче. */
 const MAX_PURGE_PASSES = 8;
@@ -137,7 +142,9 @@ export const LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS = [
  */
 export function fixtureUuid(namespace: string, slot: number): string {
 	if (namespace.trim() === "") {
-		throw new Error("fixtureUuid: пространство имён пусто — передайте имя тестового файла.");
+		throw new Error(
+			"fixtureUuid: пространство имён пусто — передайте имя тестового файла.",
+		);
 	}
 	if (!Number.isInteger(slot) || slot < 0 || slot > MAX_SLOT) {
 		throw new Error(`fixtureUuid: слот ${slot} вне диапазона 0..${MAX_SLOT}.`);
@@ -284,7 +291,10 @@ export interface FixturePurgeReport {
  * арендатора не зависит.
  */
 async function organizationScopedTables(): Promise<OrganizationScopedTable[]> {
-	const catalog = await db.execute<{ table_name: string; deletable: boolean }>(sql`
+	const catalog = await db.execute<{
+		table_name: string;
+		deletable: boolean;
+	}>(sql`
 		SELECT c.table_name,
 		       has_table_privilege(
 		         current_user,
@@ -300,7 +310,10 @@ async function organizationScopedTables(): Promise<OrganizationScopedTable[]> {
 		  AND t.table_type = 'BASE TABLE'
 		ORDER BY c.table_name
 	`);
-	return catalog.rows.map((row) => ({ name: row.table_name, deletable: row.deletable }));
+	return catalog.rows.map((row) => ({
+		name: row.table_name,
+		deletable: row.deletable,
+	}));
 }
 
 /**
@@ -405,7 +418,11 @@ async function purgeOneFixtureOrganization(
 		let remaining = [...deletable];
 		let lastFailure: unknown = null;
 
-		for (let pass = 0; pass < MAX_PURGE_PASSES && remaining.length > 0; pass += 1) {
+		for (
+			let pass = 0;
+			pass < MAX_PURGE_PASSES && remaining.length > 0;
+			pass += 1
+		) {
 			const blocked: string[] = [];
 			for (const table of remaining) {
 				await tx.execute(sql`SAVEPOINT fixture_purge_step`);
@@ -438,7 +455,10 @@ async function purgeOneFixtureOrganization(
 		}
 
 		if (remaining.length > 0) {
-			const reason = lastFailure instanceof Error ? lastFailure.message : String(lastFailure);
+			const reason =
+				lastFailure instanceof Error
+					? lastFailure.message
+					: String(lastFailure);
 			throw new Error(
 				`purgeFixtureOrganizations: не удалось очистить таблицы ${remaining.join(", ")} для ${organizationId}. ` +
 					`Последняя ошибка базы: ${reason}`,
@@ -456,7 +476,11 @@ async function purgeOneFixtureOrganization(
 		 * обязан получить СОБСТВЕННОЕ пространство имён `fixtureUuid`, чтобы его
 		 * организация не совпала с чужой.
 		 */
-		const hasAuditRows = await hasAppendOnlyRows(tx, appendOnly, organizationId);
+		const hasAuditRows = await hasAppendOnlyRows(
+			tx,
+			appendOnly,
+			organizationId,
+		);
 		if (hasAuditRows) {
 			// Организация с записями в журнале не удаляется. Возвращаем факт
 			// уборки удаляемых таблиц — вызывающий получает честные числа.
@@ -532,7 +556,9 @@ async function assertNoFixtureOrganizationSurvived(
 			return false;
 		});
 		if (hasAudit) {
-			survivorsWithAudit.push(`${survivor.id} «${survivor.name}» (журнал аудита)`);
+			survivorsWithAudit.push(
+				`${survivor.id} «${survivor.name}» (журнал аудита)`,
+			);
 		} else {
 			throw new Error(
 				`purgeFixtureOrganizations: уборка отчиталась о завершении, но в базе осталась тестовая клиника ${survivor.id} «${survivor.name}» БЕЗ записей в журнале аудита. ` +
@@ -564,21 +590,30 @@ export async function purgeFixtureOrganizations(
 	organizationIds: readonly string[],
 ): Promise<FixturePurgeReport> {
 	const targets = [...new Set(organizationIds)];
-	for (const organizationId of targets) assertPurgeableFixtureId(organizationId);
+	for (const organizationId of targets)
+		assertPurgeableFixtureId(organizationId);
 	if (targets.length === 0) {
 		return { organizationsRemoved: 0, rowsRemoved: 0, tablesTouched: [] };
 	}
 
 	const catalog = await organizationScopedTables();
-	const appendOnly = catalog.filter((table) => !table.deletable).map((table) => table.name);
-	const deletable = catalog.filter((table) => table.deletable).map((table) => table.name);
+	const appendOnly = catalog
+		.filter((table) => !table.deletable)
+		.map((table) => table.name);
+	const deletable = catalog
+		.filter((table) => table.deletable)
+		.map((table) => table.name);
 
 	let organizationsRemoved = 0;
 	let rowsRemoved = 0;
 	const tablesTouched = new Set<string>();
 
 	for (const organizationId of targets) {
-		const removed = await purgeOneFixtureOrganization(organizationId, deletable, appendOnly);
+		const removed = await purgeOneFixtureOrganization(
+			organizationId,
+			deletable,
+			appendOnly,
+		);
 		organizationsRemoved += removed.organizationsRemoved;
 		rowsRemoved += removed.rowsRemoved;
 		for (const table of removed.tablesTouched) tablesTouched.add(table);

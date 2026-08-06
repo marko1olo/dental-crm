@@ -2,10 +2,10 @@
 // Uses the REAL installed pg + drizzle-orm + a byte-copy of the real parser.
 // READ-ONLY: every statement is a SELECT of literals; touches no table.
 import { readFileSync } from "node:fs";
-import pg from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { pgTable, numeric, integer } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { integer, numeric, pgTable } from "drizzle-orm/pg-core";
+import pg from "pg";
 
 // ---- byte-copy of apps/api/src/db/moneyTypeParsers.ts parseNumericMoney ----
 const SAFE_KOPECKS = Number.MAX_SAFE_INTEGER;
@@ -42,11 +42,24 @@ const probe = pgTable("probe", {
 });
 
 const VALUES = [
-	"1500.50", "1500.00", "0.10", "0.01", "0.00", "-0.00", "-1500.50",
-	"9999999999.99", "1234567.89", "100.30", "0.07", "20.20", "3.30",
+	"1500.50",
+	"1500.00",
+	"0.10",
+	"0.01",
+	"0.00",
+	"-0.00",
+	"-1500.50",
+	"9999999999.99",
+	"1234567.89",
+	"100.30",
+	"0.07",
+	"20.20",
+	"3.30",
 ];
 
-console.log("=== A. RAW DRIVER PATH (pool.query -> what the parser returns) ===");
+console.log(
+	"=== A. RAW DRIVER PATH (pool.query -> what the parser returns) ===",
+);
 for (const v of VALUES) {
 	const r = await pool.query(`select $1::numeric(12,2) as amount_rub`, [v]);
 	const got = r.rows[0].amount_rub;
@@ -66,9 +79,12 @@ for (const v of VALUES) {
 	);
 }
 
-console.log("\n=== C. SAME COLUMN, TWO PATHS, SAME PROCESS: do they agree? ===");
+console.log(
+	"\n=== C. SAME COLUMN, TWO PATHS, SAME PROCESS: do they agree? ===",
+);
 for (const v of ["1500.50", "1500.00", "0.10"]) {
-	const raw = (await pool.query(`select $1::numeric(12,2) as a`, [v])).rows[0].a;
+	const raw = (await pool.query(`select $1::numeric(12,2) as a`, [v])).rows[0]
+		.a;
 	const rows = await db
 		.select({ amountRub: probe.amountRub })
 		.from(sql`(select ${v}::numeric(12,2) as amount_rub) as probe`);
@@ -106,7 +122,9 @@ for (const [v, t] of [
 	const scale = v.split(".")[1]?.length ?? 0;
 	const r = await pool.query(`select $1::numeric(12,${scale}) as a`, [v]);
 	const got = r.rows[0].a;
-	console.log(`  ${t.padEnd(28)} ${v.padEnd(9)} -> ${typeof got} ${JSON.stringify(got)}`);
+	console.log(
+		`  ${t.padEnd(28)} ${v.padEnd(9)} -> ${typeof got} ${JSON.stringify(got)}`,
+	);
 }
 
 await pool.end();

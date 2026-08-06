@@ -15,7 +15,7 @@
  * Существующие 40+ таблиц с рантайм-DDL внесены в список известного долга —
  * список можно только сокращать.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 const SCHEMA_FILE = "apps/api/src/db/schema.ts";
@@ -39,7 +39,9 @@ function tablesDeclaredInSchema() {
 
 function tablesCreatedByMigrations() {
 	const tables = new Set();
-	for (const name of readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql"))) {
+	for (const name of readdirSync(MIGRATIONS_DIR).filter((f) =>
+		f.endsWith(".sql"),
+	)) {
 		const sql = readFileSync(path.join(MIGRATIONS_DIR, name), "utf8");
 		for (const match of sql.matchAll(
 			/CREATE TABLE (?:IF NOT EXISTS )?"?([a-z0-9_]+)"?/gi,

@@ -37,7 +37,11 @@ describe("Clinic/staff auth — body guard (null/typed → 400, не 500)", () =
 	const savedEnv: Record<string, string | undefined> = {};
 
 	before(async () => {
-		for (const key of ["NODE_ENV", "DENTAL_STATE_PERSISTENCE", "DENTE_ALLOW_DEMO_LOGIN"]) {
+		for (const key of [
+			"NODE_ENV",
+			"DENTAL_STATE_PERSISTENCE",
+			"DENTE_ALLOW_DEMO_LOGIN",
+		]) {
 			savedEnv[key] = process.env[key];
 		}
 		process.env.NODE_ENV = "test";
@@ -95,7 +99,11 @@ describe("Clinic/staff auth — body guard (null/typed → 400, не 500)", () =
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: String(response.body || "") };
+		return {
+			statusCode: response.statusCode,
+			json,
+			body: String(response.body || ""),
+		};
 	}
 
 	// ── clinic/login ──────────────────────────────────────────────────────────

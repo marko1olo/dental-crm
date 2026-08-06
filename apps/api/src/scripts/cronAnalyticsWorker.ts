@@ -6,6 +6,10 @@ import {
 	patients,
 	treatmentPlans,
 } from "../db/schema.js";
+// Ветви воронки планов лечения выводятся из перечисления базы ОДНИМ местом на
+// проект. Своя карта состояний здесь и была дефектом: она разошлась с `pg_enum`
+// и по регистру, и по составу, а воронка показывала нули при любом числе планов.
+import { buildPlanFunnel } from "../services/biAnalyticsWorker.js";
 // Пояс клиники берётся ОДНИМ домом на проект — из отчётов руководителя. Своя
 // копия `clinicTimeZone` здесь стала бы вторым источником истины о поясе, а из
 // этой болезни в проекте уже выросли четыре разных расчёта долга.
@@ -14,10 +18,6 @@ import {
 	inClinicZone,
 	postgresKnowsTimeZone,
 } from "../services/reports/managerReports.js";
-// Ветви воронки планов лечения выводятся из перечисления базы ОДНИМ местом на
-// проект. Своя карта состояний здесь и была дефектом: она разошлась с `pg_enum`
-// и по регистру, и по составу, а воронка показывала нули при любом числе планов.
-import { buildPlanFunnel } from "../services/biAnalyticsWorker.js";
 
 /**
  * Сырая строка запроса прибыльности. Числа объявлены `string | number`, потому
@@ -219,11 +219,13 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 		`);
 
 		const colors = ["#14b8a6", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444"];
-		const chairUtilizationJson = chairUsage.rows.map((row: any, idx: number) => ({
-			name: row.name,
-			value: Number(row.appointment_count),
-			fill: colors[idx % colors.length]
-		}));
+		const chairUtilizationJson = chairUsage.rows.map(
+			(row: any, idx: number) => ({
+				name: row.name,
+				value: Number(row.appointment_count),
+				fill: colors[idx % colors.length],
+			}),
+		);
 
 		// 4. Doctor Profitability
 		//
@@ -284,8 +286,12 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			snapshotDate: new Date(),
 			cohortLtvJson: cohortLtvJson.length ? cohortLtvJson : [],
 			planFunnelJson,
-			chairUtilizationJson: chairUtilizationJson.length ? chairUtilizationJson : [],
-			doctorProfitabilityJson: doctorProfitabilityJson.length ? doctorProfitabilityJson : [],
+			chairUtilizationJson: chairUtilizationJson.length
+				? chairUtilizationJson
+				: [],
+			doctorProfitabilityJson: doctorProfitabilityJson.length
+				? doctorProfitabilityJson
+				: [],
 		});
 
 		console.log(

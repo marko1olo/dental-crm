@@ -19,7 +19,7 @@
  * честно покажет ошибку вместо пустого списка.
  */
 
-import React from "react";
+import type React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import { formatShortDate } from "../../utils/formatting";
@@ -46,7 +46,9 @@ function formatRecordDate(value: string): string {
 	return formatShortDate(value);
 }
 
-export const PatientArchiveReasonsAndBlacklistsWidget: React.FC<{ patientId?: string | null }> = ({ patientId }) => {
+export const PatientArchiveReasonsAndBlacklistsWidget: React.FC<{
+	patientId?: string | null;
+}> = ({ patientId }) => {
 	const { auth } = useAppLogicContext();
 	const {
 		data: rawItems,
@@ -58,13 +60,15 @@ export const PatientArchiveReasonsAndBlacklistsWidget: React.FC<{ patientId?: st
 		() =>
 			auth
 				? auth.denteClinicalReadHeaders()
-				// Без контекста авторизации заголовок организации не подставляем:
-				// глобальная обёртка fetch (lib/apiAuthFetch.ts) добавит токен кабинета,
-				// а без него сервер обязан ответить 401, а не выдать чужую клинику.
-				: {},
+				: // Без контекста авторизации заголовок организации не подставляем:
+					// глобальная обёртка fetch (lib/apiAuthFetch.ts) добавит токен кабинета,
+					// а без него сервер обязан ответить 401, а не выдать чужую клинику.
+					{},
 		[],
 	);
-	const items: PatientArchiveRecord[] = Array.isArray(rawItems) ? (rawItems as PatientArchiveRecord[]) : [];
+	const items: PatientArchiveRecord[] = Array.isArray(rawItems)
+		? (rawItems as PatientArchiveRecord[])
+		: [];
 
 	return (
 		<div
@@ -89,13 +93,16 @@ export const PatientArchiveReasonsAndBlacklistsWidget: React.FC<{ patientId?: st
 					Выберите пациента, чтобы увидеть причины архивации и запрет записи.
 				</div>
 			) : loading ? (
-				<div className="text-sm py-3 text-slate-500 dark:text-slate-400">Загрузка причин архивации и запрета записи...</div>
+				<div className="text-sm py-3 text-slate-500 dark:text-slate-400">
+					Загрузка причин архивации и запрета записи...
+				</div>
 			) : error ? (
 				<div
 					role="alert"
 					className="p-3 rounded-lg border text-xs bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800"
 				>
-					Статус не загружен: {error} Считать пациента незаблокированным по этому экрану нельзя — проверьте перед записью на прием.
+					Статус не загружен: {error} Считать пациента незаблокированным по
+					этому экрану нельзя — проверьте перед записью на прием.
 				</div>
 			) : items.length === 0 ? (
 				<div className="p-4 text-center rounded-lg border border-dashed text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400">
@@ -121,7 +128,9 @@ export const PatientArchiveReasonsAndBlacklistsWidget: React.FC<{ patientId?: st
 								<div className="text-xs mt-1 text-slate-500 dark:text-slate-400">
 									{/* Запрет записи — главное следствие строки, поэтому он
 										написан словами, а не выведен из цвета плашки. */}
-									{item.isBookingBlocked ? "Запись на прием заблокирована" : "Запись на прием разрешена"}
+									{item.isBookingBlocked
+										? "Запись на прием заблокирована"
+										: "Запись на прием разрешена"}
 									{" · "}
 									{formatRecordDate(item.createdAt)}
 								</div>

@@ -21,7 +21,11 @@
  * раздел выглядит как поломка.
  */
 
-import { clinicModeSchema, type ClinicMode, type StaffRole } from "@dental/shared";
+import {
+	type ClinicMode,
+	clinicModeSchema,
+	type StaffRole,
+} from "@dental/shared";
 
 /*
  * Перечень режимов не переписывается здесь руками, и это не стилистика.
@@ -78,7 +82,11 @@ export type ClinicCapability =
  * занятости кресел (кресло одно). Обзвон и сообщения остаются: напоминания
  * нужны и ему, причём звонит он сам.
  */
-const SOLO_DOCTOR: readonly ClinicCapability[] = ["callList", "messaging", "managerReports"];
+const SOLO_DOCTOR: readonly ClinicCapability[] = [
+	"callList",
+	"messaging",
+	"managerReports",
+];
 
 /**
  * Один кабинет: «один поток пациентов, одна смена». Рассылки уже осмысленны —
@@ -91,7 +99,7 @@ const ONE_CHAIR: readonly ClinicCapability[] = [
 	"massCampaigns",
 	"managerReports",
 	"doctorBreakdown",
-	"marketingSection"
+	"marketingSection",
 ];
 
 /** Малая клиника и сеть: «несколько врачей, кресел» — доступно всё. */
@@ -102,14 +110,16 @@ const FULL: readonly ClinicCapability[] = [
 	"managerReports",
 	"doctorBreakdown",
 	"chairUtilisation",
-	"marketingSection"
+	"marketingSection",
 ];
 
-const CAPABILITIES_BY_MODE: Readonly<Record<ClinicMode, readonly ClinicCapability[]>> = {
+const CAPABILITIES_BY_MODE: Readonly<
+	Record<ClinicMode, readonly ClinicCapability[]>
+> = {
 	solo_doctor: SOLO_DOCTOR,
 	one_chair: ONE_CHAIR,
 	small_clinic: FULL,
-	network_clinic: FULL
+	network_clinic: FULL,
 };
 
 /**
@@ -129,7 +139,10 @@ export const clinicModes: readonly ClinicMode[] = [...clinicModeSchema.options];
  * `.includes` падал. Сравнение со списком такой дыры не имеет.
  */
 function isClinicMode(value: unknown): value is ClinicMode {
-	return typeof value === "string" && (clinicModes as readonly string[]).includes(value);
+	return (
+		typeof value === "string" &&
+		(clinicModes as readonly string[]).includes(value)
+	);
 }
 
 /**
@@ -140,12 +153,17 @@ function isClinicMode(value: unknown): value is ClinicMode {
  * работающую возможность без объяснения. Лишний раздел заметят и настроят;
  * пропавший будут искать.
  */
-export function clinicCapabilities(mode: ClinicMode | null | undefined): readonly ClinicCapability[] {
+export function clinicCapabilities(
+	mode: ClinicMode | null | undefined,
+): readonly ClinicCapability[] {
 	if (!isClinicMode(mode)) return FULL;
 	return CAPABILITIES_BY_MODE[mode];
 }
 
-export function hasCapability(mode: ClinicMode | null | undefined, capability: ClinicCapability): boolean {
+export function hasCapability(
+	mode: ClinicMode | null | undefined,
+	capability: ClinicCapability,
+): boolean {
 	return clinicCapabilities(mode).includes(capability);
 }
 
@@ -176,10 +194,9 @@ export function hasCapability(mode: ClinicMode | null | undefined, capability: C
  * ССЫЛКА СОХРАНЯЕТСЯ, когда менять нечего: результат идёт в `useMemo`, и новый
  * объект на каждый рендер перерисовывал бы всех потребителей признаков.
  */
-export function applyClinicModeToFlags<Flags extends { hasMarketingModule: boolean }>(
-	flags: Flags,
-	mode: ClinicMode | null | undefined
-): Flags {
+export function applyClinicModeToFlags<
+	Flags extends { hasMarketingModule: boolean },
+>(flags: Flags, mode: ClinicMode | null | undefined): Flags {
 	if (!flags.hasMarketingModule) return flags;
 	if (hasCapability(mode, "marketingSection")) return flags;
 	return { ...flags, hasMarketingModule: false };
@@ -189,7 +206,9 @@ export function applyClinicModeToFlags<Flags extends { hasMarketingModule: boole
  * Подпись для настроек: чем режим отличается по составу разделов. Нужна, чтобы
  * пропажа раздела не выглядела поломкой, а объяснялась выбранным режимом.
  */
-export function describeHiddenCapabilities(mode: ClinicMode | null | undefined): string[] {
+export function describeHiddenCapabilities(
+	mode: ClinicMode | null | undefined,
+): string[] {
 	const available = new Set(clinicCapabilities(mode));
 	const labels: Record<ClinicCapability, string> = {
 		callList: "обзвон и подтверждения",
@@ -202,9 +221,11 @@ export function describeHiddenCapabilities(mode: ClinicMode | null | undefined):
 		// Подпись называла только первый, и объяснение пропажи было неполным
 		// ровно на тот раздел, о котором спросят: воронка обращений исчезала
 		// без единого слова.
-		marketingSection: "раздел продвижения и воронка обращений"
+		marketingSection: "раздел продвижения и воронка обращений",
 	};
-	return (Object.keys(labels) as ClinicCapability[]).filter((capability) => !available.has(capability)).map((capability) => labels[capability]);
+	return (Object.keys(labels) as ClinicCapability[])
+		.filter((capability) => !available.has(capability))
+		.map((capability) => labels[capability]);
 }
 
 /**
@@ -244,7 +265,7 @@ const ROLES_BY_MODE: Readonly<Record<ClinicMode, readonly StaffRole[]>> = {
 	solo_doctor: ["doctor", "owner"],
 	one_chair: ["doctor", "assistant", "administrator", "owner"],
 	small_clinic: ["doctor", "assistant", "administrator", "manager", "owner"],
-	network_clinic: ["doctor", "assistant", "administrator", "manager", "owner"]
+	network_clinic: ["doctor", "assistant", "administrator", "manager", "owner"],
 };
 
 /**
@@ -255,7 +276,10 @@ const ROLES_BY_MODE: Readonly<Record<ClinicMode, readonly StaffRole[]>> = {
  * Режим не известен — возвращается исходный список целиком, по тому же правилу,
  * что и у возможностей: пропавшую кнопку будут искать, лишнюю просто заметят.
  */
-export function visibleStaffRoles(order: readonly StaffRole[], mode: ClinicMode | null | undefined): StaffRole[] {
+export function visibleStaffRoles(
+	order: readonly StaffRole[],
+	mode: ClinicMode | null | undefined,
+): StaffRole[] {
 	if (!isClinicMode(mode)) return [...order];
 	const allowed = ROLES_BY_MODE[mode];
 	return order.filter((role) => allowed.includes(role));
@@ -285,7 +309,7 @@ export function visibleStaffRoles(order: readonly StaffRole[], mode: ClinicMode 
 export function staffRoleChoices(
 	order: readonly StaffRole[],
 	mode: ClinicMode | null | undefined,
-	selected: StaffRole | null | undefined
+	selected: StaffRole | null | undefined,
 ): StaffRole[] {
 	const existing = visibleStaffRoles(order, mode);
 	if (!selected || existing.includes(selected)) return existing;

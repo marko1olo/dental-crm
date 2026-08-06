@@ -183,7 +183,7 @@ try {
 		expression: `
 			window.localStorage.setItem("dente_clinic_token", "audit-bypass-token");
 			window.localStorage.setItem("dente_staff_token", "audit-bypass-staff");
-		`
+		`,
 	});
 	// Reload to apply tokens
 	await cdp.send("Page.reload", { ignoreCache: true });

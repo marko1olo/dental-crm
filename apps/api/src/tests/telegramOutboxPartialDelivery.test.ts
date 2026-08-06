@@ -21,7 +21,9 @@ import type { TelegramTransportResult } from "../telegramTransport.js";
  * тот же шов, который в бою получает настоящие sendTelegramPhotoMessage / sendTelegramTextMessage.
  */
 
-const telegramSendOk = (telegramMessageId: number | null): TelegramTransportResult => ({
+const telegramSendOk = (
+	telegramMessageId: number | null,
+): TelegramTransportResult => ({
 	ok: true,
 	telegramMessageId,
 	retryAfterSeconds: null,
@@ -29,7 +31,9 @@ const telegramSendOk = (telegramMessageId: number | null): TelegramTransportResu
 	errorClass: null,
 });
 
-const telegramRateLimited = (retryAfterSeconds: number): TelegramTransportResult => ({
+const telegramRateLimited = (
+	retryAfterSeconds: number,
+): TelegramTransportResult => ({
 	ok: false,
 	telegramMessageId: null,
 	retryAfterSeconds,
@@ -37,14 +41,21 @@ const telegramRateLimited = (retryAfterSeconds: number): TelegramTransportResult
 	errorClass: "rate_limited",
 });
 
-type RecordedCall = { readonly kind: "photo" | "text"; readonly caption?: string; readonly text?: string };
+type RecordedCall = {
+	readonly kind: "photo" | "text";
+	readonly caption?: string;
+	readonly text?: string;
+};
 
 /** Пишет фактическую последовательность вызовов Telegram, чтобы её можно было предъявить. */
 function recordingSenders(
 	photoResults: TelegramTransportResult[],
 	textResults: TelegramTransportResult[],
 ): {
-	senders: { sendPhoto: (input: { caption: string }) => Promise<TelegramTransportResult>; sendText: (input: { text: string }) => Promise<TelegramTransportResult> };
+	senders: {
+		sendPhoto: (input: { caption: string }) => Promise<TelegramTransportResult>;
+		sendText: (input: { text: string }) => Promise<TelegramTransportResult>;
+	};
 	calls: RecordedCall[];
 } {
 	const calls: RecordedCall[] = [];
@@ -93,7 +104,10 @@ describe("частичная доставка «фото + текст» в оч�
 	});
 
 	test("первая попытка: фото принято, текст отбит 429 — фиксируется доставленное фото, а не полный провал", async () => {
-		const { senders, calls } = recordingSenders([telegramSendOk(555)], [telegramRateLimited(30)]);
+		const { senders, calls } = recordingSenders(
+			[telegramSendOk(555)],
+			[telegramRateLimited(30)],
+		);
 
 		const outcome = await deliverTelegramOutboxParts({
 			...basePlan,
@@ -108,11 +122,25 @@ describe("частичная доставка «фото + текст» в оч�
 			["photo", "text"],
 			"первая попытка обязана позвать оба вызова",
 		);
-		assert.strictEqual(outcome.transport.ok, false, "итог попытки — провал, текст не ушёл");
-		assert.strictEqual(outcome.delivered.photoDelivered, true, "фото доставлено и это должно быть зафиксировано");
-		assert.strictEqual(outcome.delivered.photoMessageId, 555, "message_id доставленного фото не должен теряться");
+		assert.strictEqual(
+			outcome.transport.ok,
+			false,
+			"итог попытки — провал, текст не ушёл",
+		);
+		assert.strictEqual(
+			outcome.delivered.photoDelivered,
+			true,
+			"фото доставлено и это должно быть зафиксировано",
+		);
+		assert.strictEqual(
+			outcome.delivered.photoMessageId,
+			555,
+			"message_id доставленного фото не должен теряться",
+		);
 		assert.ok(
-			outcome.warnings.some((warning) => warning.includes("Частичная доставка")),
+			outcome.warnings.some((warning) =>
+				warning.includes("Частичная доставка"),
+			),
 			`частичная доставка обязана быть видна оператору, получено: ${JSON.stringify(outcome.warnings)}`,
 		);
 	});
@@ -132,7 +160,11 @@ describe("частичная доставка «фото + текст» в оч�
 		};
 
 		const delivered = telegramOutboxDeliveredParts(receiptAfterPartial);
-		assert.strictEqual(delivered.photoDelivered, true, "квитанция обязана сообщить, что фото уже у пациента");
+		assert.strictEqual(
+			delivered.photoDelivered,
+			true,
+			"квитанция обязана сообщить, что фото уже у пациента",
+		);
 		assert.strictEqual(delivered.photoMessageId, 555);
 
 		const { senders, calls } = recordingSenders([], [telegramSendOk(556)]);
@@ -150,12 +182,26 @@ describe("частичная доставка «фото + текст» в оч�
 			["text"],
 			"повтор не имеет права звать sendPhoto второй раз",
 		);
-		assert.strictEqual(calls.filter((call) => call.kind === "photo").length, 0, "фото повторно не отправлено");
-		assert.strictEqual(calls[0]?.text, longPatientText, "досылается именно недоставленная часть — полный текст");
-		assert.strictEqual(outcome.transport.ok, true, "вторая часть доставлена, позиция закрывается");
+		assert.strictEqual(
+			calls.filter((call) => call.kind === "photo").length,
+			0,
+			"фото повторно не отправлено",
+		);
+		assert.strictEqual(
+			calls[0]?.text,
+			longPatientText,
+			"досылается именно недоставленная часть — полный текст",
+		);
+		assert.strictEqual(
+			outcome.transport.ok,
+			true,
+			"вторая часть доставлена, позиция закрывается",
+		);
 		assert.strictEqual(outcome.transport.telegramMessageId, 556);
 		assert.ok(
-			outcome.warnings.some((warning) => warning.includes("предыдущей попытке")),
+			outcome.warnings.some((warning) =>
+				warning.includes("предыдущей попытке"),
+			),
 			`пропуск фото обязан быть объяснён, получено: ${JSON.stringify(outcome.warnings)}`,
 		);
 	});
@@ -175,7 +221,11 @@ describe("частичная доставка «фото + текст» в оч�
 		};
 
 		const delivered = telegramOutboxDeliveredParts(receiptWithoutMessageId);
-		assert.strictEqual(delivered.photoDelivered, true, "нет message_id — доставка фото всё равно состоялась");
+		assert.strictEqual(
+			delivered.photoDelivered,
+			true,
+			"нет message_id — доставка фото всё равно состоялась",
+		);
 		assert.strictEqual(delivered.photoMessageId, null);
 
 		const { senders, calls } = recordingSenders([], [telegramSendOk(557)]);
@@ -187,7 +237,11 @@ describe("частичная доставка «фото + текст» в оч�
 			senders,
 		});
 
-		assert.strictEqual(calls.filter((call) => call.kind === "photo").length, 0, "фото повторно не отправлено");
+		assert.strictEqual(
+			calls.filter((call) => call.kind === "photo").length,
+			0,
+			"фото повторно не отправлено",
+		);
 	});
 
 	test("если фото так и не дошло, повтор обязан отправить его снова", async () => {
@@ -205,9 +259,16 @@ describe("частичная доставка «фото + текст» в оч�
 		};
 
 		const delivered = telegramOutboxDeliveredParts(receiptAfterTotalFailure);
-		assert.strictEqual(delivered.photoDelivered, false, "обычный транспортный провал не означает доставленное фото");
+		assert.strictEqual(
+			delivered.photoDelivered,
+			false,
+			"обычный транспортный провал не означает доставленное фото",
+		);
 
-		const { senders, calls } = recordingSenders([telegramSendOk(601)], [telegramSendOk(602)]);
+		const { senders, calls } = recordingSenders(
+			[telegramSendOk(601)],
+			[telegramSendOk(602)],
+		);
 		await deliverTelegramOutboxParts({
 			...basePlan,
 			text: longPatientText,
@@ -235,14 +296,28 @@ describe("частичная доставка «фото + текст» в оч�
 			senders,
 		});
 
-		assert.deepStrictEqual(calls.map((call) => call.kind), ["photo"]);
-		assert.strictEqual(calls[0]?.caption, shortText, "короткий текст уходит подписью к фото");
+		assert.deepStrictEqual(
+			calls.map((call) => call.kind),
+			["photo"],
+		);
+		assert.strictEqual(
+			calls[0]?.caption,
+			shortText,
+			"короткий текст уходит подписью к фото",
+		);
 		assert.strictEqual(outcome.transport.ok, true);
-		assert.strictEqual(outcome.delivered.photoDelivered, false, "единственное сообщение — не частичная доставка");
+		assert.strictEqual(
+			outcome.delivered.photoDelivered,
+			false,
+			"единственное сообщение — не частичная доставка",
+		);
 	});
 
 	test("фото отбито, текст ушёл: частичной доставки нет, помечать нечего", async () => {
-		const { senders, calls } = recordingSenders([telegramRateLimited(10)], [telegramSendOk(800)]);
+		const { senders, calls } = recordingSenders(
+			[telegramRateLimited(10)],
+			[telegramSendOk(800)],
+		);
 
 		const outcome = await deliverTelegramOutboxParts({
 			...basePlan,
@@ -252,9 +327,16 @@ describe("частичная доставка «фото + текст» в оч�
 			senders,
 		});
 
-		assert.deepStrictEqual(calls.map((call) => call.kind), ["photo", "text"]);
+		assert.deepStrictEqual(
+			calls.map((call) => call.kind),
+			["photo", "text"],
+		);
 		assert.strictEqual(outcome.transport.ok, true);
-		assert.strictEqual(outcome.delivered.photoDelivered, false, "фото не дошло — частичной доставки нет");
+		assert.strictEqual(
+			outcome.delivered.photoDelivered,
+			false,
+			"фото не дошло — частичной доставки нет",
+		);
 	});
 
 	test("успешная квитанция не выдаётся за частичную доставку", () => {
@@ -271,9 +353,18 @@ describe("частичная доставка «фото + текст» в оч�
 			createdAt: new Date("2026-07-28T02:00:00+04:00").toISOString(),
 		};
 
-		assert.strictEqual(telegramOutboxDeliveredParts(sentReceipt).photoDelivered, false);
-		assert.strictEqual(telegramOutboxDeliveredParts(null).photoDelivered, false);
-		assert.strictEqual(telegramOutboxDeliveredParts(undefined).photoDelivered, false);
+		assert.strictEqual(
+			telegramOutboxDeliveredParts(sentReceipt).photoDelivered,
+			false,
+		);
+		assert.strictEqual(
+			telegramOutboxDeliveredParts(null).photoDelivered,
+			false,
+		);
+		assert.strictEqual(
+			telegramOutboxDeliveredParts(undefined).photoDelivered,
+			false,
+		);
 	});
 });
 
@@ -286,11 +377,20 @@ const fixedNowMs = Date.parse("2026-07-28T02:00:00+04:00");
 
 describe("состояние запланированного времени отправки Telegram", () => {
 	test("часы теста действительно фиксированы", () => {
-		assert.ok(Number.isFinite(fixedNowMs), "фиксированные часы обязаны разбираться");
+		assert.ok(
+			Number.isFinite(fixedNowMs),
+			"фиксированные часы обязаны разбираться",
+		);
 	});
 
 	test("нечитаемое время НЕ считается наступившим — иначе сообщение уходит не в свой день", () => {
-		for (const unreadable of ["следующий вторник", "not-a-date", "", "   ", "2026-13-45T99:99:99Z"]) {
+		for (const unreadable of [
+			"следующий вторник",
+			"not-a-date",
+			"",
+			"   ",
+			"2026-13-45T99:99:99Z",
+		]) {
 			assert.strictEqual(
 				telegramOutboxScheduleState(unreadable, fixedNowMs),
 				"unreadable",
@@ -305,18 +405,36 @@ describe("состояние запланированного времени о�
 	});
 
 	test("прошедшее время — пора, будущее — не пора, ровно текущее — пора", () => {
-		assert.strictEqual(telegramOutboxScheduleState("2026-07-28T01:59:59+04:00", fixedNowMs), "due");
-		assert.strictEqual(telegramOutboxScheduleState("2026-07-28T02:00:00+04:00", fixedNowMs), "due");
-		assert.strictEqual(telegramOutboxScheduleState("2026-07-28T02:00:01+04:00", fixedNowMs), "not_due");
+		assert.strictEqual(
+			telegramOutboxScheduleState("2026-07-28T01:59:59+04:00", fixedNowMs),
+			"due",
+		);
+		assert.strictEqual(
+			telegramOutboxScheduleState("2026-07-28T02:00:00+04:00", fixedNowMs),
+			"due",
+		);
+		assert.strictEqual(
+			telegramOutboxScheduleState("2026-07-28T02:00:01+04:00", fixedNowMs),
+			"not_due",
+		);
 		// Напоминание на следующий вторник: раньше нечитаемая дата давала «пора», а читаемая будущая —
 		// нет. Проверяем именно читаемую будущую, чтобы fail-closed не съел нормальное планирование.
-		assert.strictEqual(telegramOutboxScheduleState("2026-08-04T10:00:00+04:00", fixedNowMs), "not_due");
+		assert.strictEqual(
+			telegramOutboxScheduleState("2026-08-04T10:00:00+04:00", fixedNowMs),
+			"not_due",
+		);
 	});
 
 	test("состояние считается от переданных часов, а не от системных", () => {
 		const scheduledAt = "2026-07-28T03:00:00+04:00";
-		assert.strictEqual(telegramOutboxScheduleState(scheduledAt, fixedNowMs), "not_due");
-		assert.strictEqual(telegramOutboxScheduleState(scheduledAt, fixedNowMs + 60 * 60 * 1000), "due");
+		assert.strictEqual(
+			telegramOutboxScheduleState(scheduledAt, fixedNowMs),
+			"not_due",
+		);
+		assert.strictEqual(
+			telegramOutboxScheduleState(scheduledAt, fixedNowMs + 60 * 60 * 1000),
+			"due",
+		);
 	});
 });
 
@@ -325,7 +443,10 @@ describe("состояние запланированного времени о�
  * оператор из интерфейса берёт новый crypto.randomUUID() на каждый клик, поэтому его повтор признака
  * не находил и пациент получал фото второй раз.
  */
-function withReceipt<T>(receipt: DenteTelegramOutboxDeliveryReceipt, run: () => T): T {
+function withReceipt<T>(
+	receipt: DenteTelegramOutboxDeliveryReceipt,
+	run: () => T,
+): T {
 	denteTelegramOutboxDeliveryReceipts.unshift(receipt);
 	try {
 		return run();
@@ -368,8 +489,16 @@ describe("признак частичной доставки принадлеж�
 			);
 
 			const delivered = telegramOutboxDeliveredPartsForItem(itemId, null);
-			assert.strictEqual(delivered.photoDelivered, true, "фото уже в чате пациента, повтор обязан это знать");
-			assert.strictEqual(delivered.photoMessageId, 555, "message_id доставленного фото обязан сохраниться");
+			assert.strictEqual(
+				delivered.photoDelivered,
+				true,
+				"фото уже в чате пациента, повтор обязан это знать",
+			);
+			assert.strictEqual(
+				delivered.photoMessageId,
+				555,
+				"message_id доставленного фото обязан сохраниться",
+			);
 		});
 	});
 
@@ -394,7 +523,11 @@ describe("признак частичной доставки принадлеж�
 			["text"],
 			"повтор оператора не имеет права звать sendPhoto",
 		);
-		assert.strictEqual(calls.filter((call) => call.kind === "photo").length, 0, "фото повторно не отправлено");
+		assert.strictEqual(
+			calls.filter((call) => call.kind === "photo").length,
+			0,
+			"фото повторно не отправлено",
+		);
 	});
 
 	test("сдвиг scheduledAt меняет due-ключ, но признак всё равно находится", () => {
@@ -404,24 +537,42 @@ describe("признак частичной доставки принадлеж�
 
 		withReceipt(receipt, () => {
 			const delivered = telegramOutboxDeliveredPartsForItem(itemId, null);
-			assert.strictEqual(delivered.photoDelivered, true, "смена времени не выкладывает фото из чата пациента");
+			assert.strictEqual(
+				delivered.photoDelivered,
+				true,
+				"смена времени не выкладывает фото из чата пациента",
+			);
 			assert.strictEqual(delivered.photoMessageId, 777);
 		});
 	});
 
 	test("квитанция ЧУЖОЙ позиции не отменяет отправку фото", () => {
 		const otherItemId = "recall:чужая-позиция:пациент";
-		const receipt = partialDeliveryReceipt(otherItemId, "due-чужая-попытка", 999);
+		const receipt = partialDeliveryReceipt(
+			otherItemId,
+			"due-чужая-попытка",
+			999,
+		);
 
 		withReceipt(receipt, () => {
-			const delivered = telegramOutboxDeliveredPartsForItem("recall:моя-позиция:пациент", null);
-			assert.strictEqual(delivered.photoDelivered, false, "признак не имеет права протекать между позициями");
+			const delivered = telegramOutboxDeliveredPartsForItem(
+				"recall:моя-позиция:пациент",
+				null,
+			);
+			assert.strictEqual(
+				delivered.photoDelivered,
+				false,
+				"признак не имеет права протекать между позициями",
+			);
 			assert.strictEqual(delivered.photoMessageId, null);
 		});
 	});
 
 	test("нет ни одной квитанции по позиции — фото обязано уйти", () => {
-		const delivered = telegramOutboxDeliveredPartsForItem("post-visit:позиция-без-квитанций:пациент", null);
+		const delivered = telegramOutboxDeliveredPartsForItem(
+			"post-visit:позиция-без-квитанций:пациент",
+			null,
+		);
 		assert.strictEqual(delivered.photoDelivered, false);
 		assert.strictEqual(delivered.photoMessageId, null);
 	});
@@ -435,7 +586,11 @@ describe("признак частичной доставки принадлеж�
 			withReceipt(newest, () => {
 				const delivered = telegramOutboxDeliveredPartsForItem(itemId, null);
 				assert.strictEqual(delivered.photoDelivered, true);
-				assert.strictEqual(delivered.photoMessageId, 555, "message_id есть хотя бы в одной попытке — его и показываем");
+				assert.strictEqual(
+					delivered.photoMessageId,
+					555,
+					"message_id есть хотя бы в одной попытке — его и показываем",
+				);
 			});
 		});
 	});

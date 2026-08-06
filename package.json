@@ -13,7 +13,7 @@
 		"typecheck": "npm run build -w @dental/shared && npm run typecheck -w @dental/shared && npm run typecheck:tests -w @dental/shared && npm run typecheck -w @dental/api && npm run typecheck:tests -w @dental/api && npm run typecheck -w @dental/web",
 		"typecheck:tests": "npm run typecheck:tests -w @dental/api",
 		"chains": "npm run smoke:chains",
-    "smoke:chains": "node scripts/run-chain-proofs.mjs",
+		"smoke:chains": "node scripts/run-chain-proofs.mjs",
 		"smoke:script-guards": "node --test scripts/tests/*.test.mjs",
 		"check:encoding": "node scripts/check-encoding.mjs",
 		"check:tracked-ignored": "node scripts/check-tracked-ignored.mjs",

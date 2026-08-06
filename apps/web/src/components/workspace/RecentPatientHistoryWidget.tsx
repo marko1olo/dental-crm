@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Clock, UserCheck, ChevronRight } from "lucide-react";
+import { ChevronRight, Clock, UserCheck } from "lucide-react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface RecentPatientItem {
@@ -12,7 +13,9 @@ interface RecentPatientItem {
 	lastViewedAt: string;
 }
 
-export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }> = ({ compactDropdown = false }) => {
+export const RecentPatientHistoryWidget: React.FC<{
+	compactDropdown?: boolean;
+}> = ({ compactDropdown = false }) => {
 	const context = useAppLogicContext();
 	const auth = context?.auth;
 	/*
@@ -66,7 +69,8 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 			.then(async (response) => {
 				// Разбор только успешного ответа: на 401 и 500 приходит не список,
 				// и «пустая история» вместо ошибки — это враньё пользователю.
-				if (!response.ok) throw new Error(`История карточек: ответ ${response.status}`);
+				if (!response.ok)
+					throw new Error(`История карточек: ответ ${response.status}`);
 				return response.json();
 			})
 			.then((data) => {
@@ -100,30 +104,92 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 				onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
 				style={{ position: "relative" }}
 			>
-				<summary title="История 10 последних просмотренных карточек" style={{ display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 500, color: "var(--ink-2)" }}>
-					<Clock size={14} aria-hidden="true" style={{ color: "var(--teal)" }} />
+				<summary
+					title="История 10 последних просмотренных карточек"
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "6px",
+						cursor: "pointer",
+						fontSize: "12px",
+						fontWeight: 500,
+						color: "var(--ink-2)",
+					}}
+				>
+					<Clock
+						size={14}
+						aria-hidden="true"
+						style={{ color: "var(--teal)" }}
+					/>
 					<span>Недавние</span>
-					<strong className="status-pill status-confirmed" style={{ fontSize: "11px", padding: "1px 7px" }}>
+					<strong
+						className="status-pill status-confirmed"
+						style={{ fontSize: "11px", padding: "1px 7px" }}
+					>
 						{patients.length}
 					</strong>
 				</summary>
 				<div
 					className="role-switcher-options"
-					style={{ position: "absolute", top: "100%", right: 0, width: "300px", maxHeight: "360px", overflowY: "auto", zIndex: 50 }}
+					style={{
+						position: "absolute",
+						top: "100%",
+						right: 0,
+						width: "300px",
+						maxHeight: "360px",
+						overflowY: "auto",
+						zIndex: 50,
+					}}
 				>
-					<div style={{ padding: "8px 12px", borderBottom: "1px solid var(--line)", fontSize: "11px", fontWeight: 700, color: "var(--muted)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+					<div
+						style={{
+							padding: "8px 12px",
+							borderBottom: "1px solid var(--line)",
+							fontSize: "11px",
+							fontWeight: 700,
+							color: "var(--muted)",
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+						}}
+					>
 						<span>ОТКРЫТЫЕ РАНЕЕ КАРТОЧКИ</span>
-						<span style={{ fontSize: "10px", color: "var(--muted)" }}>ТОП 10</span>
+						<span style={{ fontSize: "10px", color: "var(--muted)" }}>
+							ТОП 10
+						</span>
 					</div>
 
 					{loading ? (
-						<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>Загрузка...</div>
+						<div
+							style={{
+								padding: "16px",
+								textAlign: "center",
+								fontSize: "12px",
+								color: "var(--muted)",
+							}}
+						>
+							Загрузка...
+						</div>
 					) : failed ? (
-						<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>
+						<div
+							style={{
+								padding: "16px",
+								textAlign: "center",
+								fontSize: "12px",
+								color: "var(--muted)",
+							}}
+						>
 							Не удалось прочитать историю. Обновите страницу.
 						</div>
 					) : patients.length === 0 ? (
-						<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>
+						<div
+							style={{
+								padding: "16px",
+								textAlign: "center",
+								fontSize: "12px",
+								color: "var(--muted)",
+							}}
+						>
 							Здесь появятся карточки, которые вы открывали
 						</div>
 					) : (
@@ -135,12 +201,19 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 								className="flex items-center justify-between w-full px-3 py-2 rounded-lg border-none bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors cursor-pointer"
 							>
 								<div>
-									<div className="text-xs font-semibold text-slate-900 dark:text-slate-100">{pat.patientName}</div>
-									<div className="text-[11px] text-slate-500 dark:text-slate-400">{pat.phone}</div>
+									<div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+										{pat.patientName}
+									</div>
+									<div className="text-[11px] text-slate-500 dark:text-slate-400">
+										{pat.phone}
+									</div>
 								</div>
 								<div className="flex items-center gap-1.5">
 									<span className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-										{new Date(pat.lastViewedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+										{new Date(pat.lastViewedAt).toLocaleTimeString([], {
+											hour: "2-digit",
+											minute: "2-digit",
+										})}
 									</span>
 									<ChevronRight size={14} className="text-slate-400" />
 								</div>
@@ -167,7 +240,9 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">Загрузка...</div>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
+					Загрузка...
+				</div>
 			) : failed ? (
 				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Не удалось прочитать историю. Обновите страницу.
@@ -184,8 +259,12 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 							className="p-3 rounded-lg border flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div>
-								<div className="text-sm font-bold text-slate-900 dark:text-white">{pat.patientName}</div>
-								<div className="text-xs text-slate-500 dark:text-slate-400">{pat.phone}</div>
+								<div className="text-sm font-bold text-slate-900 dark:text-white">
+									{pat.patientName}
+								</div>
+								<div className="text-xs text-slate-500 dark:text-slate-400">
+									{pat.phone}
+								</div>
 							</div>
 							<button
 								type="button"
@@ -201,4 +280,3 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 		</div>
 	);
 };
-

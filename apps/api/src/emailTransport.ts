@@ -21,9 +21,9 @@
  * Пароль ящика читается из окружения и не попадает ни в лог, ни в текст ошибки.
  */
 
+import { randomUUID } from "node:crypto";
 import { createConnection, type Socket } from "node:net";
 import { connect as connectTls, type TLSSocket } from "node:tls";
-import { randomUUID } from "node:crypto";
 
 export type EmailErrorClass =
 	| "not_configured"
@@ -95,7 +95,9 @@ export function isValidEmailAddress(value: string | null | undefined): boolean {
  * Пустая строка в окружении — «не настроено». Половина настроек почты без
  * второй половины бесполезна, поэтому конфигурация принимается только целиком.
  */
-export function readSmtpCredentialsFromEnv(env: NodeJS.ProcessEnv = process.env): SmtpCredentials | null {
+export function readSmtpCredentialsFromEnv(
+	env: NodeJS.ProcessEnv = process.env,
+): SmtpCredentials | null {
 	const host = env.DENTE_SMTP_HOST?.trim();
 	const username = env.DENTE_SMTP_USER?.trim();
 	const password = env.DENTE_SMTP_PASSWORD?.trim();
@@ -104,10 +106,16 @@ export function readSmtpCredentialsFromEnv(env: NodeJS.ProcessEnv = process.env)
 	if (!isValidEmailAddress(fromAddress)) return null;
 
 	const parsedPort = Number.parseInt(env.DENTE_SMTP_PORT?.trim() ?? "", 10);
-	const port = Number.isFinite(parsedPort) && parsedPort > 0 && parsedPort < 65_536 ? parsedPort : 465;
+	const port =
+		Number.isFinite(parsedPort) && parsedPort > 0 && parsedPort < 65_536
+			? parsedPort
+			: 465;
 	// Явное значение важнее догадки по порту, но 465 по умолчанию — implicit TLS.
 	const secureRaw = env.DENTE_SMTP_SECURE?.trim().toLowerCase();
-	const secure = secureRaw === undefined || secureRaw === "" ? port === 465 : secureRaw === "1" || secureRaw === "true";
+	const secure =
+		secureRaw === undefined || secureRaw === ""
+			? port === 465
+			: secureRaw === "1" || secureRaw === "true";
 
 	return {
 		host,
@@ -117,13 +125,15 @@ export function readSmtpCredentialsFromEnv(env: NodeJS.ProcessEnv = process.env)
 		password,
 		fromAddress,
 		fromName: env.DENTE_SMTP_FROM_NAME?.trim() || null,
-		requireTls: env.DENTE_SMTP_ALLOW_PLAINTEXT?.trim() !== "1"
+		requireTls: env.DENTE_SMTP_ALLOW_PLAINTEXT?.trim() !== "1",
 	};
 }
 
 /** RFC 2047: тема письма с кириллицей без этого приходит нечитаемой. */
 export function encodeHeaderWord(value: string): string {
-	const needsEncoding = [...value].some((character) => (character.codePointAt(0) ?? 0) > 126);
+	const needsEncoding = [...value].some(
+		(character) => (character.codePointAt(0) ?? 0) > 126,
+	);
 	if (!needsEncoding) return value;
 	return `=?UTF-8?B?${Buffer.from(value, "utf8").toString("base64")}?=`;
 }
@@ -171,12 +181,16 @@ export function buildMimeMessage(input: BuildMimeMessageInput): string {
 		`Subject: ${encodeHeaderWord(sanitizeHeaderValue(input.subject))}`,
 		`Date: ${formatRfc5322Date(input.date)}`,
 		`Message-ID: <${input.messageId}>`,
-		"MIME-Version: 1.0"
+		"MIME-Version: 1.0",
 	];
-	if (input.replyTo) headers.push(`Reply-To: ${sanitizeHeaderValue(input.replyTo)}`);
+	if (input.replyTo)
+		headers.push(`Reply-To: ${sanitizeHeaderValue(input.replyTo)}`);
 
 	if (!input.html) {
-		headers.push('Content-Type: text/plain; charset="UTF-8"', "Content-Transfer-Encoding: base64");
+		headers.push(
+			'Content-Type: text/plain; charset="UTF-8"',
+			"Content-Transfer-Encoding: base64",
+		);
 		return `${headers.join("\r\n")}\r\n\r\n${encodeBase64Body(input.text)}`;
 	}
 
@@ -194,7 +208,7 @@ export function buildMimeMessage(input: BuildMimeMessageInput): string {
 		"Content-Transfer-Encoding: base64",
 		"",
 		encodeBase64Body(input.html),
-		`--${boundary}--`
+		`--${boundary}--`,
 	];
 
 	return `${headers.join("\r\n")}\r\n\r\n${parts.join("\r\n")}`;
@@ -205,7 +219,10 @@ export function buildMimeMessage(input: BuildMimeMessageInput): string {
  * письмо обрывается ровно там, где в тексте оказался перенос перед точкой.
  */
 export function dotStuff(body: string): string {
-	return body.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n").replace(/^\./gm, "..");
+	return body
+		.replace(/\r\n/g, "\n")
+		.replace(/\n/g, "\r\n")
+		.replace(/^\./gm, "..");
 }
 
 function classifySmtpCode(code: number): EmailErrorClass {
@@ -213,7 +230,8 @@ function classifySmtpCode(code: number): EmailErrorClass {
 	if (code === 450 || code === 451 || code === 452) return "server";
 	if (code === 454) return "auth";
 	if (code === 471) return "rate_limited";
-	if (code === 530 || code === 534 || code === 535 || code === 538) return "auth";
+	if (code === 530 || code === 534 || code === 535 || code === 538)
+		return "auth";
 	if (code === 550 || code === 551 || code === 553) return "recipient_rejected";
 	if (code === 552 || code === 554) return "message_rejected";
 	if (code >= 500) return "bad_request";
@@ -226,7 +244,7 @@ type SmtpSocket = Socket | TLSSocket;
 class SmtpProtocolError extends Error {
 	constructor(
 		readonly code: number | null,
-		message: string
+		message: string,
 	) {
 		super(message);
 		this.name = "SmtpProtocolError";
@@ -240,8 +258,10 @@ class SmtpProtocolError extends Error {
  */
 class SmtpConversation {
 	private buffer = "";
-	private pending: { resolve: (value: { code: number; lines: string[] }) => void; reject: (error: Error) => void } | null =
-		null;
+	private pending: {
+		resolve: (value: { code: number; lines: string[] }) => void;
+		reject: (error: Error) => void;
+	} | null = null;
 	private failure: Error | null = null;
 	private collected: string[] = [];
 
@@ -253,7 +273,9 @@ class SmtpConversation {
 		socket.setEncoding("utf8");
 		socket.on("data", (chunk: string) => this.onData(chunk));
 		socket.on("error", (error: Error) => this.onFailure(error));
-		socket.on("close", () => this.onFailure(new Error("Почтовый сервер закрыл соединение.")));
+		socket.on("close", () =>
+			this.onFailure(new Error("Почтовый сервер закрыл соединение.")),
+		);
 	}
 
 	/** После STARTTLS общение продолжается в новом, зашифрованном сокете. */
@@ -310,11 +332,17 @@ class SmtpConversation {
 		this.socket.write(`${line}\r\n`);
 	}
 
-	async command(line: string, expected: number[]): Promise<{ code: number; lines: string[] }> {
+	async command(
+		line: string,
+		expected: number[],
+	): Promise<{ code: number; lines: string[] }> {
 		this.write(line);
 		const response = await this.read();
 		if (!expected.includes(response.code)) {
-			throw new SmtpProtocolError(response.code, response.lines.join(" ").slice(0, 300));
+			throw new SmtpProtocolError(
+				response.code,
+				response.lines.join(" ").slice(0, 300),
+			);
 		}
 		return response;
 	}
@@ -324,12 +352,20 @@ class SmtpConversation {
 	}
 }
 
-function connectPlain(host: string, port: number, timeoutMs: number): Promise<Socket> {
+function connectPlain(
+	host: string,
+	port: number,
+	timeoutMs: number,
+): Promise<Socket> {
 	return new Promise((resolve, reject) => {
 		const socket = createConnection({ host, port });
 		const timer = setTimeout(() => {
 			socket.destroy();
-			reject(new Error(`Почтовый сервер ${host}:${port} не ответил за ${timeoutMs} мс`));
+			reject(
+				new Error(
+					`Почтовый сервер ${host}:${port} не ответил за ${timeoutMs} мс`,
+				),
+			);
 		}, timeoutMs);
 		socket.once("connect", () => {
 			clearTimeout(timer);
@@ -342,12 +378,20 @@ function connectPlain(host: string, port: number, timeoutMs: number): Promise<So
 	});
 }
 
-function connectSecure(host: string, port: number, timeoutMs: number): Promise<TLSSocket> {
+function connectSecure(
+	host: string,
+	port: number,
+	timeoutMs: number,
+): Promise<TLSSocket> {
 	return new Promise((resolve, reject) => {
 		const socket = connectTls({ host, port, servername: host });
 		const timer = setTimeout(() => {
 			socket.destroy();
-			reject(new Error(`Почтовый сервер ${host}:${port} не ответил за ${timeoutMs} мс`));
+			reject(
+				new Error(
+					`Почтовый сервер ${host}:${port} не ответил за ${timeoutMs} мс`,
+				),
+			);
 		}, timeoutMs);
 		socket.once("secureConnect", () => {
 			clearTimeout(timer);
@@ -360,7 +404,11 @@ function connectSecure(host: string, port: number, timeoutMs: number): Promise<T
 	});
 }
 
-function upgradeToTls(socket: Socket, host: string, timeoutMs: number): Promise<TLSSocket> {
+function upgradeToTls(
+	socket: Socket,
+	host: string,
+	timeoutMs: number,
+): Promise<TLSSocket> {
 	return new Promise((resolve, reject) => {
 		const secured = connectTls({ socket, servername: host });
 		const timer = setTimeout(() => {
@@ -384,14 +432,20 @@ function capabilitiesFrom(lines: string[]): Set<string> {
 		const value = line.slice(4).trim().toUpperCase();
 		if (value) capabilities.add(value.split(" ")[0] ?? value);
 		if (value.startsWith("AUTH ")) {
-			for (const mechanism of value.slice(5).split(/\s+/)) capabilities.add(`AUTH-${mechanism}`);
+			for (const mechanism of value.slice(5).split(/\s+/))
+				capabilities.add(`AUTH-${mechanism}`);
 		}
 	}
 	return capabilities;
 }
 
-export async function sendEmail(input: SendEmailInput): Promise<EmailTransportResult> {
-	const timeoutMs = Math.max(2000, Math.min(120_000, input.timeoutMs ?? 20_000));
+export async function sendEmail(
+	input: SendEmailInput,
+): Promise<EmailTransportResult> {
+	const timeoutMs = Math.max(
+		2000,
+		Math.min(120_000, input.timeoutMs ?? 20_000),
+	);
 	const { credentials } = input;
 
 	if (!isValidEmailAddress(input.to)) {
@@ -400,7 +454,7 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailTransportRe
 			providerMessageId: null,
 			errorCode: null,
 			errorClass: "recipient_rejected",
-			errorMessage: "Адрес получателя некорректен."
+			errorMessage: "Адрес получателя некорректен.",
 		};
 	}
 	if (!input.subject.trim() || !input.text.trim()) {
@@ -409,7 +463,7 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailTransportRe
 			providerMessageId: null,
 			errorCode: null,
 			errorClass: "bad_request",
-			errorMessage: "Письмо без темы или без текста не отправляется."
+			errorMessage: "Письмо без темы или без текста не отправляется.",
 		};
 	}
 
@@ -432,7 +486,11 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailTransportRe
 
 		if (!encrypted && capabilities.has("STARTTLS")) {
 			await conversation.command("STARTTLS", [220]);
-			const secured = await upgradeToTls(conversation.raw as Socket, credentials.host, timeoutMs);
+			const secured = await upgradeToTls(
+				conversation.raw as Socket,
+				credentials.host,
+				timeoutMs,
+			);
 			conversation.replaceSocket(secured);
 			socket = secured;
 			encrypted = true;
@@ -444,7 +502,7 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailTransportRe
 		if (!encrypted && credentials.requireTls) {
 			throw new SmtpProtocolError(
 				null,
-				"Сервер не предложил STARTTLS. Отправка отменена: медицинская переписка не уходит открытым текстом."
+				"Сервер не предложил STARTTLS. Отправка отменена: медицинская переписка не уходит открытым текстом.",
 			);
 		}
 
@@ -452,14 +510,21 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailTransportRe
 			// RFC 4616: authzid NUL authcid NUL passwd. Разделитель — нулевой байт,
 			// в исходнике он собирается кодом, а не пишется в файл.
 			const nul = String.fromCharCode(0);
-			const token = Buffer.from(`${nul}${credentials.username}${nul}${credentials.password}`, "utf8").toString(
-				"base64"
-			);
+			const token = Buffer.from(
+				`${nul}${credentials.username}${nul}${credentials.password}`,
+				"utf8",
+			).toString("base64");
 			await conversation.command(`AUTH PLAIN ${token}`, [235]);
 		} else {
 			await conversation.command("AUTH LOGIN", [334]);
-			await conversation.command(Buffer.from(credentials.username, "utf8").toString("base64"), [334]);
-			await conversation.command(Buffer.from(credentials.password, "utf8").toString("base64"), [235]);
+			await conversation.command(
+				Buffer.from(credentials.username, "utf8").toString("base64"),
+				[334],
+			);
+			await conversation.command(
+				Buffer.from(credentials.password, "utf8").toString("base64"),
+				[235],
+			);
 		}
 
 		await conversation.command(`MAIL FROM:<${credentials.fromAddress}>`, [250]);
@@ -475,14 +540,17 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailTransportRe
 			html: input.html ?? null,
 			replyTo: input.replyTo ?? null,
 			date: new Date(),
-			messageId: `${randomUUID()}@dente`
+			messageId: `${randomUUID()}@dente`,
 		});
 
 		conversation.write(dotStuff(message));
 		conversation.write(".");
 		const accepted = await conversation.read();
 		if (accepted.code !== 250) {
-			throw new SmtpProtocolError(accepted.code, accepted.lines.join(" ").slice(0, 300));
+			throw new SmtpProtocolError(
+				accepted.code,
+				accepted.lines.join(" ").slice(0, 300),
+			);
 		}
 
 		try {
@@ -493,10 +561,12 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailTransportRe
 
 		return {
 			ok: true,
-			providerMessageId: (accepted.lines[accepted.lines.length - 1] ?? "").slice(4).trim() || null,
+			providerMessageId:
+				(accepted.lines[accepted.lines.length - 1] ?? "").slice(4).trim() ||
+				null,
 			errorCode: null,
 			errorClass: null,
-			errorMessage: null
+			errorMessage: null,
 		};
 	} catch (error) {
 		if (error instanceof SmtpProtocolError) {
@@ -504,8 +574,9 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailTransportRe
 				ok: false,
 				providerMessageId: null,
 				errorCode: error.code,
-				errorClass: error.code === null ? "bad_request" : classifySmtpCode(error.code),
-				errorMessage: error.message || "Почтовый сервер отклонил письмо."
+				errorClass:
+					error.code === null ? "bad_request" : classifySmtpCode(error.code),
+				errorMessage: error.message || "Почтовый сервер отклонил письмо.",
 			};
 		}
 		const message = error instanceof Error ? error.message : String(error);
@@ -514,7 +585,7 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailTransportRe
 			providerMessageId: null,
 			errorCode: null,
 			errorClass: message.includes("не ответил за") ? "timeout" : "network",
-			errorMessage: message
+			errorMessage: message,
 		};
 	} finally {
 		socket?.destroy();

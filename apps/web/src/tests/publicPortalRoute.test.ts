@@ -50,21 +50,33 @@ test("ссылку строит и разбирает один и тот же п
 test("ссылка «Ссылка технику» разбирается в токен заказа", () => {
 	const token = "550e8400-e29b-41d4-a716-446655440000";
 
-	assert.deepEqual(publicPortalRouteFromHash(`#${LAB_ORDER_PORTAL_PATH}${token}`), {
-		kind: "lab-order",
-		token,
-	});
+	assert.deepEqual(
+		publicPortalRouteFromHash(`#${LAB_ORDER_PORTAL_PATH}${token}`),
+		{
+			kind: "lab-order",
+			token,
+		},
+	);
 	// Тот же адрес без «#»: hash в некоторых браузерных API приходит без решётки.
-	assert.deepEqual(publicPortalRouteFromHash(`${LAB_ORDER_PORTAL_PATH}${token}`), {
-		kind: "lab-order",
-		token,
-	});
+	assert.deepEqual(
+		publicPortalRouteFromHash(`${LAB_ORDER_PORTAL_PATH}${token}`),
+		{
+			kind: "lab-order",
+			token,
+		},
+	);
 });
 
 test("хвост, который дописывает мессенджер, не попадает в токен", () => {
 	const token = "550e8400-e29b-41d4-a716-446655440000";
 
-	for (const tail of ["/", "/?utm_source=telegram", "?from=mail", "#anchor", "&x=1"]) {
+	for (const tail of [
+		"/",
+		"/?utm_source=telegram",
+		"?from=mail",
+		"#anchor",
+		"&x=1",
+	]) {
 		assert.deepEqual(
 			publicPortalRouteFromHash(`#${LAB_ORDER_PORTAL_PATH}${token}${tail}`),
 			{ kind: "lab-order", token },
@@ -99,7 +111,9 @@ test("ссылка онлайн-записи разбирается в клин�
 	const organizationId = "6f9619ff-8b86-d011-b42d-00c04fc964ff";
 
 	assert.deepEqual(
-		publicPortalRouteFromHash(`#${PUBLIC_BOOKING_PORTAL_PATH}${organizationId}`),
+		publicPortalRouteFromHash(
+			`#${PUBLIC_BOOKING_PORTAL_PATH}${organizationId}`,
+		),
 		{ kind: "booking", organizationId },
 	);
 	// Тот же адрес без «#»: hash в некоторых браузерных API приходит без решётки.
@@ -109,7 +123,13 @@ test("ссылка онлайн-записи разбирается в клин�
 	);
 
 	// Хвост, который дописывают сайт клиники и рекламный кабинет.
-	for (const tail of ["/", "?utm_source=vk", "/?from=maps", "#anchor", "&x=1"]) {
+	for (const tail of [
+		"/",
+		"?utm_source=vk",
+		"/?from=maps",
+		"#anchor",
+		"&x=1",
+	]) {
 		assert.deepEqual(
 			publicPortalRouteFromHash(
 				`#${PUBLIC_BOOKING_PORTAL_PATH}${organizationId}${tail}`,

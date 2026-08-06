@@ -26,11 +26,15 @@ if (!connectionString) {
 const pool = new pg.Pool({ connectionString });
 
 async function main() {
-	const distribution = await pool.query<{ clinic_mode: string; organizations: string }>(
+	const distribution = await pool.query<{
+		clinic_mode: string;
+		organizations: string;
+	}>(
 		"SELECT clinic_mode, count(*)::text AS organizations FROM organizations GROUP BY clinic_mode ORDER BY clinic_mode",
 	);
 	console.log("=== 1. РАСПРЕДЕЛЕНИЕ clinic_mode СЕЙЧАС ===");
-	for (const row of distribution.rows) console.log(`  ${row.clinic_mode} -> ${row.organizations} орг.`);
+	for (const row of distribution.rows)
+		console.log(`  ${row.clinic_mode} -> ${row.organizations} орг.`);
 
 	const column = await pool.query<{
 		column_default: string | null;
@@ -53,7 +57,8 @@ async function main() {
 	);
 	console.log("=== 2b. CHECK-ОГРАНИЧЕНИЯ НА organizations ===");
 	if (constraints.rows.length === 0) console.log("  (нет ни одного)");
-	for (const row of constraints.rows) console.log(`  ${row.conname}: ${row.definition}`);
+	for (const row of constraints.rows)
+		console.log(`  ${row.conname}: ${row.definition}`);
 
 	const shape = await pool.query<{
 		id: string;
@@ -87,7 +92,12 @@ async function main() {
 	 * 4. Ровно то же выражение, что стоит в миграции. Считается здесь SELECT-ом,
 	 * чтобы результат миграции был известен ДО её применения.
 	 */
-	const preview = await pool.query<{ id: string; name: string; clinic_mode: string; new_mode: string }>(
+	const preview = await pool.query<{
+		id: string;
+		name: string;
+		clinic_mode: string;
+		new_mode: string;
+	}>(
 		`WITH shape AS (
 		   SELECT o.id,
 		          o.name,
@@ -126,7 +136,10 @@ async function main() {
 main()
 	.then(() => pool.end())
 	.catch(async (error) => {
-		console.error("ОШИБКА:", error instanceof Error ? error.message : String(error));
+		console.error(
+			"ОШИБКА:",
+			error instanceof Error ? error.message : String(error),
+		);
 		await pool.end();
 		process.exit(1);
 	});

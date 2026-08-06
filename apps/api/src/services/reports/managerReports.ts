@@ -42,9 +42,13 @@ import {
 	payments,
 	treatmentItems,
 	users,
-	visits
+	visits,
 } from "../../db/schema.js";
-import { type Kopecks, rublesFromKopecks, toKopecks } from "../../money/patientDebt.js";
+import {
+	type Kopecks,
+	rublesFromKopecks,
+	toKopecks,
+} from "../../money/patientDebt.js";
 
 export type ReportPeriod = {
 	readonly from: Date;
@@ -112,7 +116,9 @@ export function inClinicZone(column: unknown, zone: string | null) {
 	return sql`(${column} AT TIME ZONE ${sql.raw(`'${zone}'`)})`;
 }
 
-export async function clinicTimeZone(organizationId: string): Promise<string | null> {
+export async function clinicTimeZone(
+	organizationId: string,
+): Promise<string | null> {
 	try {
 		const [clinic] = await db
 			.select({ timezone: clinics.timezone })
@@ -127,13 +133,15 @@ export async function clinicTimeZone(organizationId: string): Promise<string | n
 
 const knownTimeZoneCache = new Map<string, boolean>();
 
-export async function postgresKnowsTimeZone(timeZone: string | null | undefined): Promise<string | null> {
+export async function postgresKnowsTimeZone(
+	timeZone: string | null | undefined,
+): Promise<string | null> {
 	if (!timeZone) return null;
 	const cached = knownTimeZoneCache.get(timeZone);
 	if (cached !== undefined) return cached ? timeZone : null;
 	try {
 		const found = await db.execute(
-			sql`select 1 as ok from pg_timezone_names where name = ${timeZone} limit 1`
+			sql`select 1 as ok from pg_timezone_names where name = ${timeZone} limit 1`,
 		);
 		const known = found.rows.length > 0;
 		knownTimeZoneCache.set(timeZone, known);
@@ -161,10 +169,10 @@ function zoneOffsetMsAt(timeZone: string, instantMs: number): number | null {
 				hour: "2-digit",
 				minute: "2-digit",
 				second: "2-digit",
-				hour12: false
+				hour12: false,
 			})
 				.formatToParts(new Date(instantMs))
-				.map((part) => [part.type, part.value])
+				.map((part) => [part.type, part.value]),
 		);
 		const year = Number(parts.get("year"));
 		const month = Number(parts.get("month"));
@@ -173,11 +181,19 @@ function zoneOffsetMsAt(timeZone: string, instantMs: number): number | null {
 		const hour = Number(parts.get("hour")) % 24;
 		const minute = Number(parts.get("minute"));
 		const second = Number(parts.get("second"));
-		if (![year, month, day, hour, minute, second].every((value) => Number.isFinite(value))) return null;
+		if (
+			![year, month, day, hour, minute, second].every((value) =>
+				Number.isFinite(value),
+			)
+		)
+			return null;
 		// Показания часов пояса, прочитанные как UTC, минус само мгновение — это и
 		// есть смещение. Миллисекунды в вывод не входят, поэтому мгновение
 		// усекается до секунды.
-		return Date.UTC(year, month - 1, day, hour, minute, second, 0) - Math.floor(instantMs / 1000) * 1000;
+		return (
+			Date.UTC(year, month - 1, day, hour, minute, second, 0) -
+			Math.floor(instantMs / 1000) * 1000
+		);
 	} catch {
 		return null;
 	}
@@ -195,7 +211,7 @@ export function instantOfLocalTime(
 	timeZone: string,
 	year: number,
 	month: number,
-	day: number
+	day: number,
 ): number | null {
 	const asIfUtc = Date.UTC(year, month - 1, day, 0, 0, 0, 0);
 	const firstOffset = zoneOffsetMsAt(timeZone, asIfUtc);
@@ -207,12 +223,20 @@ export function instantOfLocalTime(
 }
 
 /** Год и месяц, которые показывает календарь пояса. `null` — пояса не существует. */
-function calendarMonthInTimeZone(timeZone: string, now: Date): { year: number; month: number } | null {
+function calendarMonthInTimeZone(
+	timeZone: string,
+	now: Date,
+): { year: number; month: number } | null {
 	try {
 		const parts = new Map(
-			new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
+			new Intl.DateTimeFormat("en-CA", {
+				timeZone,
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			})
 				.formatToParts(now)
-				.map((part) => [part.type, part.value])
+				.map((part) => [part.type, part.value]),
 		);
 		const year = Number(parts.get("year"));
 		const month = Number(parts.get("month"));
@@ -249,18 +273,26 @@ function calendarMonthInTimeZone(timeZone: string, now: Date): { year: number; m
  * Пояс неизвестен или не разобран — прежнее поведение: границы в поясе сервера.
  * Отчёт обязан вернуть какой-то период, отказ здесь хуже приблизительного ответа.
  */
-export function currentMonthPeriod(now = new Date(), timeZone?: string | null): ReportPeriod {
+export function currentMonthPeriod(
+	now = new Date(),
+	timeZone?: string | null,
+): ReportPeriod {
 	if (timeZone) {
 		const calendar = calendarMonthInTimeZone(timeZone, now);
 		if (calendar) {
-			const monthStart = instantOfLocalTime(timeZone, calendar.year, calendar.month, 1);
+			const monthStart = instantOfLocalTime(
+				timeZone,
+				calendar.year,
+				calendar.month,
+				1,
+			);
 			// Начало следующего месяца минус миллисекунда: конец периода включающий
 			// (`lte`), а длину месяца так считать не нужно вообще.
 			const nextMonthStart = instantOfLocalTime(
 				timeZone,
 				calendar.month === 12 ? calendar.year + 1 : calendar.year,
 				calendar.month === 12 ? 1 : calendar.month + 1,
-				1
+				1,
 			);
 			if (monthStart !== null && nextMonthStart !== null) {
 				return { from: new Date(monthStart), to: new Date(nextMonthStart - 1) };
@@ -269,7 +301,15 @@ export function currentMonthPeriod(now = new Date(), timeZone?: string | null): 
 	}
 
 	const from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-	const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+	const to = new Date(
+		now.getFullYear(),
+		now.getMonth() + 1,
+		0,
+		23,
+		59,
+		59,
+		999,
+	);
 	return { from, to };
 }
 
@@ -295,7 +335,7 @@ export type RevenueTimeline = {
  */
 export async function revenueTimeline(
 	scope: ReportScope,
-	granularity: TimelineGranularity = "day"
+	granularity: TimelineGranularity = "day",
 ): Promise<RevenueTimeline> {
 	/*
 	 * ДЕНЬ ВЫРУЧКИ СЧИТАЛСЯ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
@@ -323,7 +363,7 @@ export async function revenueTimeline(
 			bucket: sql<string>`to_char(${truncated}, 'YYYY-MM-DD')`,
 			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
 			paymentCount: sql<number>`count(*)::int`,
-			payingPatients: sql<number>`count(distinct ${payments.patientId})::int`
+			payingPatients: sql<number>`count(distinct ${payments.patientId})::int`,
 		})
 		.from(payments)
 		.where(
@@ -332,8 +372,8 @@ export async function revenueTimeline(
 				// Только фактически полученные деньги.
 				eq(payments.status, "paid"),
 				gte(payments.paidAt, scope.from),
-				lte(payments.paidAt, scope.to)
-			)
+				lte(payments.paidAt, scope.to),
+			),
 		)
 		.groupBy(truncated)
 		.orderBy(truncated);
@@ -342,14 +382,14 @@ export async function revenueTimeline(
 		bucket: row.bucket,
 		revenueRub: Number(row.revenueRub),
 		paymentCount: Number(row.paymentCount),
-		payingPatients: Number(row.payingPatients)
+		payingPatients: Number(row.payingPatients),
 	}));
 
 	return {
 		granularity,
 		points,
 		totalRub: points.reduce((total, point) => total + point.revenueRub, 0),
-		isEmpty: points.length === 0
+		isEmpty: points.length === 0,
 	};
 }
 
@@ -394,11 +434,13 @@ export type DoctorPerformanceReport = {
  * «не отнесено» — размазывать его по врачам пропорционально значило бы
  * придумать данные.
  */
-export async function doctorPerformance(scope: ReportScope): Promise<DoctorPerformanceReport> {
+export async function doctorPerformance(
+	scope: ReportScope,
+): Promise<DoctorPerformanceReport> {
 	const revenueRows = await db
 		.select({
 			doctorUserId: appointments.doctorUserId,
-			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`
+			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
 		})
 		.from(payments)
 		.leftJoin(visits, eq(payments.visitId, visits.id))
@@ -408,8 +450,8 @@ export async function doctorPerformance(scope: ReportScope): Promise<DoctorPerfo
 				eq(payments.organizationId, scope.organizationId),
 				eq(payments.status, "paid"),
 				gte(payments.paidAt, scope.from),
-				lte(payments.paidAt, scope.to)
-			)
+				lte(payments.paidAt, scope.to),
+			),
 		)
 		.groupBy(appointments.doctorUserId);
 
@@ -417,15 +459,15 @@ export async function doctorPerformance(scope: ReportScope): Promise<DoctorPerfo
 		.select({
 			doctorUserId: appointments.doctorUserId,
 			status: appointments.status,
-			total: sql<number>`count(*)::int`
+			total: sql<number>`count(*)::int`,
 		})
 		.from(appointments)
 		.where(
 			and(
 				eq(appointments.organizationId, scope.organizationId),
 				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to)
-			)
+				lte(appointments.startsAt, scope.to),
+			),
 		)
 		.groupBy(appointments.doctorUserId, appointments.status);
 
@@ -446,7 +488,13 @@ export async function doctorPerformance(scope: ReportScope): Promise<DoctorPerfo
 	const ensure = (key: string): Accumulator => {
 		const existing = byDoctor.get(key);
 		if (existing) return existing;
-		const fresh = { revenueRub: 0, total: 0, completed: 0, cancelled: 0, noShow: 0 };
+		const fresh = {
+			revenueRub: 0,
+			total: 0,
+			completed: 0,
+			cancelled: 0,
+			noShow: 0,
+		};
 		byDoctor.set(key, fresh);
 		return fresh;
 	};
@@ -480,11 +528,17 @@ export async function doctorPerformance(scope: ReportScope): Promise<DoctorPerfo
 			appointmentsCompleted: accumulator.completed,
 			appointmentsCancelled: accumulator.cancelled,
 			appointmentsNoShow: accumulator.noShow,
-			completionRate: accumulator.total > 0 ? accumulator.completed / accumulator.total : null,
-			noShowRate: accumulator.total > 0 ? accumulator.noShow / accumulator.total : null,
+			completionRate:
+				accumulator.total > 0
+					? accumulator.completed / accumulator.total
+					: null,
+			noShowRate:
+				accumulator.total > 0 ? accumulator.noShow / accumulator.total : null,
 			averageTicketRub:
-				accumulator.completed > 0 ? Math.round(accumulator.revenueRub / accumulator.completed) : null,
-			marginRub: null as null
+				accumulator.completed > 0
+					? Math.round(accumulator.revenueRub / accumulator.completed)
+					: null,
+			marginRub: null as null,
 		}))
 		.sort((left, right) => right.revenueRub - left.revenueRub);
 
@@ -502,7 +556,7 @@ export async function doctorPerformance(scope: ReportScope): Promise<DoctorPerfo
 					"Связь идёт через приём, у визита отдельного поля «врач» нет. " +
 					"Чтобы выручка попадала врачу, оплату нужно оформлять из визита, созданного из записи в расписании."
 				: "Вся выручка периода отнесена к врачам.",
-		isEmpty: rows.length === 0 && unattributedRevenueRub === 0
+		isEmpty: rows.length === 0 && unattributedRevenueRub === 0,
 	};
 }
 
@@ -541,16 +595,25 @@ export type ChairLoadReport = {
  */
 export async function chairLoad(
 	scope: ReportScope,
-	options: { readonly minutesPerDay?: number; readonly workingDaysPerWeek?: number } = {}
+	options: {
+		readonly minutesPerDay?: number;
+		readonly workingDaysPerWeek?: number;
+	} = {},
 ): Promise<ChairLoadReport> {
-	const minutesPerDay = Math.max(60, Math.min(24 * 60, options.minutesPerDay ?? 12 * 60));
-	const workingDaysPerWeek = Math.max(1, Math.min(7, options.workingDaysPerWeek ?? 6));
+	const minutesPerDay = Math.max(
+		60,
+		Math.min(24 * 60, options.minutesPerDay ?? 12 * 60),
+	);
+	const workingDaysPerWeek = Math.max(
+		1,
+		Math.min(7, options.workingDaysPerWeek ?? 6),
+	);
 
 	const rows = await db
 		.select({
 			chairId: appointments.chairId,
 			appointments: sql<number>`count(*)::int`,
-			bookedMinutes: sql<number>`coalesce(sum(extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60), 0)::int`
+			bookedMinutes: sql<number>`coalesce(sum(extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60), 0)::int`,
 		})
 		.from(appointments)
 		.where(
@@ -560,8 +623,8 @@ export async function chairLoad(
 				ne(appointments.status, "cancelled"),
 				ne(appointments.status, "no_show"),
 				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to)
-			)
+				lte(appointments.startsAt, scope.to),
+			),
 		)
 		.groupBy(appointments.chairId);
 
@@ -571,8 +634,14 @@ export async function chairLoad(
 		.where(eq(chairs.organizationId, scope.organizationId));
 	const chairNames = new Map(chairRows.map((row) => [row.id, row.name]));
 
-	const spanDays = Math.max(1, Math.ceil((scope.to.getTime() - scope.from.getTime()) / 86_400_000));
-	const workingDays = Math.max(1, Math.round((spanDays * workingDaysPerWeek) / 7));
+	const spanDays = Math.max(
+		1,
+		Math.ceil((scope.to.getTime() - scope.from.getTime()) / 86_400_000),
+	);
+	const workingDays = Math.max(
+		1,
+		Math.round((spanDays * workingDaysPerWeek) / 7),
+	);
 	const totalMinutesPerChair = workingDays * minutesPerDay;
 
 	const result = rows
@@ -580,11 +649,15 @@ export async function chairLoad(
 			const bookedMinutes = Number(row.bookedMinutes);
 			return {
 				chairId: row.chairId,
-				chairName: row.chairId ? (chairNames.get(row.chairId) ?? "Кресло вне списка") : "Без указания кресла",
+				chairName: row.chairId
+					? (chairNames.get(row.chairId) ?? "Кресло вне списка")
+					: "Без указания кресла",
 				appointments: Number(row.appointments),
 				bookedMinutes,
 				// Записи без кресла нельзя отнести к занятости конкретного кресла.
-				utilization: row.chairId ? Math.min(1, bookedMinutes / totalMinutesPerChair) : null
+				utilization: row.chairId
+					? Math.min(1, bookedMinutes / totalMinutesPerChair)
+					: null,
 			};
 		})
 		.sort((left, right) => right.bookedMinutes - left.bookedMinutes);
@@ -597,9 +670,9 @@ export async function chairLoad(
 			totalMinutesPerChair,
 			note:
 				`Знаменатель: ${workingDays} рабочих дн. × ${Math.round(minutesPerDay / 60)} ч. ` +
-				"Отменённые приёмы и неявки в занятые минуты не входят."
+				"Отменённые приёмы и неявки в занятые минуты не входят.",
 		},
-		isEmpty: result.length === 0
+		isEmpty: result.length === 0,
 	};
 }
 
@@ -619,7 +692,9 @@ export type AppointmentFunnelReport = {
 	readonly isEmpty: boolean;
 };
 
-export async function appointmentFunnel(scope: ReportScope): Promise<AppointmentFunnelReport> {
+export async function appointmentFunnel(
+	scope: ReportScope,
+): Promise<AppointmentFunnelReport> {
 	const rows = await db
 		.select({ status: appointments.status, total: sql<number>`count(*)::int` })
 		.from(appointments)
@@ -627,8 +702,8 @@ export async function appointmentFunnel(scope: ReportScope): Promise<Appointment
 			and(
 				eq(appointments.organizationId, scope.organizationId),
 				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to)
-			)
+				lte(appointments.startsAt, scope.to),
+			),
 		)
 		.groupBy(appointments.status);
 
@@ -640,7 +715,10 @@ export async function appointmentFunnel(scope: ReportScope): Promise<Appointment
 	}
 
 	const share = (value: number) => (total > 0 ? value / total : null);
-	const arrived = (byStatus.arrived ?? 0) + (byStatus.in_treatment ?? 0) + (byStatus.completed ?? 0);
+	const arrived =
+		(byStatus.arrived ?? 0) +
+		(byStatus.in_treatment ?? 0) +
+		(byStatus.completed ?? 0);
 	const cancelled = byStatus.cancelled ?? 0;
 	const noShow = byStatus.no_show ?? 0;
 
@@ -652,7 +730,7 @@ export async function appointmentFunnel(scope: ReportScope): Promise<Appointment
 		cancellationRate: share(cancelled),
 		noShowRate: share(noShow),
 		lostAppointments: cancelled + noShow,
-		isEmpty: total === 0
+		isEmpty: total === 0,
 	};
 }
 
@@ -729,7 +807,9 @@ const RELIABLE_GROUP_SIZE = 30;
  * состояние «отправлено» или «доставлено». Подавленное и упавшее напоминание —
  * это НЕ напоминание: пациент его не видел.
  */
-export async function reminderEffect(scope: ReportScope): Promise<ReminderEffectReport> {
+export async function reminderEffect(
+	scope: ReportScope,
+): Promise<ReminderEffectReport> {
 	/*
 	 * Связь приёма с напоминанием — через ключ повтора вида
 	 * `reminder:<приём>:<часов>`: отдельной колонки под приём в очереди нет.
@@ -739,7 +819,10 @@ export async function reminderEffect(scope: ReportScope): Promise<ReminderEffect
 	const reminded = db.$with("reminded").as(
 		db
 			.select({
-				appointmentId: sql<string>`split_part(${communicationOutbox.dedupeKey}, ':', 2)::uuid`.as("appointment_id")
+				appointmentId:
+					sql<string>`split_part(${communicationOutbox.dedupeKey}, ':', 2)::uuid`.as(
+						"appointment_id",
+					),
 			})
 			.from(communicationOutbox)
 			.where(
@@ -750,34 +833,42 @@ export async function reminderEffect(scope: ReportScope): Promise<ReminderEffect
 					sql`${communicationOutbox.status} IN ('sent', 'delivered')`,
 					// Ключ должен содержать корректный идентификатор: испорченная
 					// строка не должна ронять весь отчёт приведением типа.
-					sql`split_part(${communicationOutbox.dedupeKey}, ':', 2) ~ '^[0-9a-fA-F-]{36}$'`
-				)
+					sql`split_part(${communicationOutbox.dedupeKey}, ':', 2) ~ '^[0-9a-fA-F-]{36}$'`,
+				),
 			)
-			.groupBy(sql`split_part(${communicationOutbox.dedupeKey}, ':', 2)`)
+			.groupBy(sql`split_part(${communicationOutbox.dedupeKey}, ':', 2)`),
 	);
 
 	const rows = await db
 		.with(reminded)
 		.select({
-			wasReminded: sql<boolean>`(${appointments.id} IN (SELECT appointment_id FROM reminded))`.as("was_reminded"),
+			wasReminded:
+				sql<boolean>`(${appointments.id} IN (SELECT appointment_id FROM reminded))`.as(
+					"was_reminded",
+				),
 			status: appointments.status,
-			total: sql<number>`count(*)::int`
+			total: sql<number>`count(*)::int`,
 		})
 		.from(appointments)
 		.where(
 			and(
 				eq(appointments.organizationId, scope.organizationId),
 				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to)
-			)
+				lte(appointments.startsAt, scope.to),
+			),
 		)
 		.groupBy(sql`was_reminded`, appointments.status);
 
-	const empty = (): { appointments: number; completed: number; cancelled: number; noShow: number } => ({
+	const empty = (): {
+		appointments: number;
+		completed: number;
+		cancelled: number;
+		noShow: number;
+	} => ({
 		appointments: 0,
 		completed: 0,
 		cancelled: 0,
-		noShow: 0
+		noShow: 0,
 	});
 	const tally = { reminded: empty(), notReminded: empty() };
 
@@ -795,14 +886,18 @@ export async function reminderEffect(scope: ReportScope): Promise<ReminderEffect
 		return {
 			...bucket,
 			lost,
-			lostRate: bucket.appointments > 0 ? lost / bucket.appointments : null
+			lostRate: bucket.appointments > 0 ? lost / bucket.appointments : null,
 		};
 	};
 
 	const remindedGroup = finish(tally.reminded);
 	const notRemindedGroup = finish(tally.notReminded);
-	const comparable = remindedGroup.lostRate !== null && notRemindedGroup.lostRate !== null;
-	const smallestGroupSize = Math.min(remindedGroup.appointments, notRemindedGroup.appointments);
+	const comparable =
+		remindedGroup.lostRate !== null && notRemindedGroup.lostRate !== null;
+	const smallestGroupSize = Math.min(
+		remindedGroup.appointments,
+		notRemindedGroup.appointments,
+	);
 	const enoughData = smallestGroupSize >= RELIABLE_GROUP_SIZE;
 
 	const caveat = enoughData
@@ -816,12 +911,13 @@ export async function reminderEffect(scope: ReportScope): Promise<ReminderEffect
 		reminded: remindedGroup,
 		notReminded: notRemindedGroup,
 		lostRateDifference: comparable
-			? (notRemindedGroup.lostRate as number) - (remindedGroup.lostRate as number)
+			? (notRemindedGroup.lostRate as number) -
+				(remindedGroup.lostRate as number)
 			: null,
 		caveat,
 		smallestGroupSize,
 		enoughData,
-		isEmpty: remindedGroup.appointments + notRemindedGroup.appointments === 0
+		isEmpty: remindedGroup.appointments + notRemindedGroup.appointments === 0,
 	};
 }
 
@@ -845,7 +941,9 @@ export type PatientFlowReport = {
  * историю, а не первый в периоде: иначе при выборе «за март» все пациенты
  * клиники окажутся первичными.
  */
-export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport> {
+export async function patientFlow(
+	scope: ReportScope,
+): Promise<PatientFlowReport> {
 	/*
 	 * МЕСЯЦ ВОРОНКИ СЧИТАЛСЯ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
 	 *
@@ -880,15 +978,15 @@ export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport
 	const firstEverQuery = db
 		.select({
 			patientId: appointments.patientId,
-			firstAt: sql<Date>`min(${appointments.startsAt})`
+			firstAt: sql<Date>`min(${appointments.startsAt})`,
 		})
 		.from(appointments)
 		.where(
 			and(
 				eq(appointments.organizationId, scope.organizationId),
 				eq(appointments.status, "completed"),
-				isNotNull(appointments.patientId)
-			)
+				isNotNull(appointments.patientId),
+			),
 		)
 		.groupBy(appointments.patientId);
 
@@ -898,7 +996,7 @@ export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport
 			patientId: appointments.patientId,
 			// Момент первого приёма пациента ВНУТРИ периода: сравнивать нужно с
 			// ним, иначе повторный приём того же дня посчитался бы первичным.
-			firstInBucketAt: sql<Date>`min(${appointments.startsAt})`
+			firstInBucketAt: sql<Date>`min(${appointments.startsAt})`,
 		})
 		.from(appointments)
 		.where(
@@ -907,30 +1005,40 @@ export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport
 				eq(appointments.status, "completed"),
 				isNotNull(appointments.patientId),
 				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to)
-			)
+				lte(appointments.startsAt, scope.to),
+			),
 		)
 		.groupBy(monthBucket, appointments.patientId);
 
-	const [firstEverRows, periodRows] = await Promise.all([firstEverQuery, periodQuery]);
+	const [firstEverRows, periodRows] = await Promise.all([
+		firstEverQuery,
+		periodQuery,
+	]);
 
 	const firstEverByPatient = new Map<string, number>();
 	for (const row of firstEverRows) {
-		if (row.patientId && row.firstAt) firstEverByPatient.set(row.patientId, new Date(row.firstAt).getTime());
+		if (row.patientId && row.firstAt)
+			firstEverByPatient.set(row.patientId, new Date(row.firstAt).getTime());
 	}
 
-	const byBucket = new Map<string, { newPatients: Set<string>; returningPatients: Set<string> }>();
+	const byBucket = new Map<
+		string,
+		{ newPatients: Set<string>; returningPatients: Set<string> }
+	>();
 	for (const row of periodRows) {
 		if (!row.patientId) continue;
-		const bucket =
-			byBucket.get(row.bucket) ?? { newPatients: new Set<string>(), returningPatients: new Set<string>() };
+		const bucket = byBucket.get(row.bucket) ?? {
+			newPatients: new Set<string>(),
+			returningPatients: new Set<string>(),
+		};
 
 		// Первичный — тот, у кого приём в этом месяце и есть первый за всю
 		// историю. Считать «первый в периоде» нельзя: при выборе одного месяца
 		// первичными оказались бы все пациенты клиники.
 		const firstEver = firstEverByPatient.get(row.patientId);
 		const firstInBucket = new Date(row.firstInBucketAt).getTime();
-		if (firstEver !== undefined && firstEver === firstInBucket) bucket.newPatients.add(row.patientId);
+		if (firstEver !== undefined && firstEver === firstInBucket)
+			bucket.newPatients.add(row.patientId);
 		else bucket.returningPatients.add(row.patientId);
 
 		byBucket.set(row.bucket, bucket);
@@ -943,14 +1051,19 @@ export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport
 			newPatients: sets.newPatients.size,
 			// Пациент, пришедший в месяце и первично, и повторно, считается
 			// первичным один раз: из повторных он исключается.
-			returningPatients: [...sets.returningPatients].filter((id) => !sets.newPatients.has(id)).length
+			returningPatients: [...sets.returningPatients].filter(
+				(id) => !sets.newPatients.has(id),
+			).length,
 		}));
 
 	return {
 		points,
 		newTotal: points.reduce((total, point) => total + point.newPatients, 0),
-		returningTotal: points.reduce((total, point) => total + point.returningPatients, 0),
-		isEmpty: points.length === 0
+		returningTotal: points.reduce(
+			(total, point) => total + point.returningPatients,
+			0,
+		),
+		isEmpty: points.length === 0,
 	};
 }
 
@@ -978,7 +1091,10 @@ export type ServiceSalesReport = {
  * ней и выручкой — это дебиторка и скидки, поэтому подписывать её словом
  * «выручка» нельзя.
  */
-export async function serviceSales(scope: ReportScope, limit = 50): Promise<ServiceSalesReport> {
+export async function serviceSales(
+	scope: ReportScope,
+	limit = 50,
+): Promise<ServiceSalesReport> {
 	// Сумма позиции: цена за единицу на количество минус скидка, не ниже нуля.
 	// Выражение используется и в выборке, и в сортировке, поэтому объявлено один
 	// раз: `orderBy(sql`2 desc`)` по номеру столбца отсортировал бы по
@@ -1044,7 +1160,7 @@ export async function serviceSales(scope: ReportScope, limit = 50): Promise<Serv
 			// должен показывать единицу там, где её не продавали.
 			quantity: sql<number>`coalesce(sum(${treatmentItems.quantity}), 0)::int`,
 			plannedRub: lineTotal,
-			discountRub: sql<number>`coalesce(sum(${treatmentItems.discountRub}), 0)::numeric(12,2)`
+			discountRub: sql<number>`coalesce(sum(${treatmentItems.discountRub}), 0)::numeric(12,2)`,
 		})
 		.from(treatmentItems)
 		.leftJoin(visits, eq(treatmentItems.visitId, visits.id))
@@ -1054,8 +1170,8 @@ export async function serviceSales(scope: ReportScope, limit = 50): Promise<Serv
 				ne(treatmentItems.status, "cancelled"),
 				// Позиции без визита в период не попадают: датировать их нечем.
 				gte(visits.createdAt, scope.from),
-				lte(visits.createdAt, scope.to)
-			)
+				lte(visits.createdAt, scope.to),
+			),
 		)
 		.groupBy(treatmentItems.title)
 		.orderBy(sql`${lineTotal} desc`)
@@ -1070,7 +1186,7 @@ export async function serviceSales(scope: ReportScope, limit = 50): Promise<Serv
 				quantity,
 				plannedRub,
 				averagePriceRub: quantity > 0 ? Math.round(plannedRub / quantity) : 0,
-				discountRub: Number(row.discountRub)
+				discountRub: Number(row.discountRub),
 			};
 		})
 		.sort((left, right) => right.plannedRub - left.plannedRub);
@@ -1082,11 +1198,16 @@ export async function serviceSales(scope: ReportScope, limit = 50): Promise<Serv
 		note:
 			"Суммы назначенные, а не полученные: разница с выручкой — это дебиторка и скидки. " +
 			"Позиции без привязки к приёму в отчёт не входят, датировать их нечем.",
-		isEmpty: result.length === 0
+		isEmpty: result.length === 0,
 	};
 }
 
-export type ReceivablesBucket = "current" | "up_to_30" | "up_to_90" | "over_90" | "undated";
+export type ReceivablesBucket =
+	| "current"
+	| "up_to_30"
+	| "up_to_90"
+	| "over_90"
+	| "undated";
 
 export type ReceivablesRow = {
 	readonly patientId: string;
@@ -1113,7 +1234,7 @@ export type ReceivablesRow = {
 function rubToKopeckText(kopecks: Kopecks): string {
 	return rublesFromKopecks(kopecks).toLocaleString("ru-RU", {
 		minimumFractionDigits: 2,
-		maximumFractionDigits: 2
+		maximumFractionDigits: 2,
 	});
 }
 
@@ -1227,7 +1348,11 @@ export type ReceivablesReport = {
  */
 export async function receivables(
 	organizationId: string,
-	options: { readonly now?: Date; readonly minDebtRub?: number; readonly limit?: number } = {}
+	options: {
+		readonly now?: Date;
+		readonly minDebtRub?: number;
+		readonly limit?: number;
+	} = {},
 ): Promise<ReceivablesReport> {
 	const now = options.now ?? new Date();
 	/*
@@ -1237,7 +1362,10 @@ export async function receivables(
 	 * перевод точный; порог с третьим знаком после запятой отвергается, а не
 	 * округляется молча.
 	 */
-	const minDebtKopecks = toKopecks(Math.max(1, options.minDebtRub ?? 1), "порог долга");
+	const minDebtKopecks = toKopecks(
+		Math.max(1, options.minDebtRub ?? 1),
+		"порог долга",
+	);
 	const limit = Math.max(1, Math.min(1000, options.limit ?? 200));
 
 	const plannedRows = await db
@@ -1262,22 +1390,36 @@ export async function receivables(
 			 * то, что позиция без объёма больше не приписывает пациенту долг за
 			 * единицу, которой ему не оказывали.
 			 */
-			plannedRub: sql<string | number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * ${treatmentItems.quantity} - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`,
+			plannedRub: sql<
+				string | number
+			>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * ${treatmentItems.quantity} - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`,
 			oldestChargeAt: sql<Date | null>`min(${visits.createdAt})`,
-			undatedItems: sql<number>`count(*) filter (where ${visits.createdAt} is null)::int`
+			undatedItems: sql<number>`count(*) filter (where ${visits.createdAt} is null)::int`,
 		})
 		.from(treatmentItems)
 		.leftJoin(visits, eq(treatmentItems.visitId, visits.id))
-		.where(and(eq(treatmentItems.organizationId, organizationId), ne(treatmentItems.status, "cancelled")))
+		.where(
+			and(
+				eq(treatmentItems.organizationId, organizationId),
+				ne(treatmentItems.status, "cancelled"),
+			),
+		)
 		.groupBy(treatmentItems.patientId);
 
 	const paidRows = await db
 		.select({
 			patientId: payments.patientId,
-			paidRub: sql<string | number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`
+			paidRub: sql<
+				string | number
+			>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
 		})
 		.from(payments)
-		.where(and(eq(payments.organizationId, organizationId), eq(payments.status, "paid")))
+		.where(
+			and(
+				eq(payments.organizationId, organizationId),
+				eq(payments.status, "paid"),
+			),
+		)
 		.groupBy(payments.patientId);
 	/*
 	 * ПЕРЕВОД В КОПЕЙКИ НА ПЕРВОМ КАСАНИИ, а не перед выдачей. Здесь стояло
@@ -1285,15 +1427,29 @@ export async function receivables(
 	 * в вычитание рублей, и копейка терялась там. Целые копейки закрывают вопрос
 	 * для всех последующих действий сразу.
 	 */
-	const paidByPatient = new Map(paidRows.map((row) => [row.patientId, toKopecks(row.paidRub, "оплачено пациентом")]));
+	const paidByPatient = new Map(
+		paidRows.map((row) => [
+			row.patientId,
+			toKopecks(row.paidRub, "оплачено пациентом"),
+		]),
+	);
 
 	// Баланс по каждому пациенту, который есть хотя бы в одной из двух таблиц.
 	// Положительный — долг, отрицательный — переплата.
-	const plannedByPatient = new Map(plannedRows.map((row) => [row.patientId, row]));
-	const balances = [...new Set<string>([...plannedByPatient.keys(), ...paidByPatient.keys()])].map((patientId) => {
+	const plannedByPatient = new Map(
+		plannedRows.map((row) => [row.patientId, row]),
+	);
+	const balances = [
+		...new Set<string>([...plannedByPatient.keys(), ...paidByPatient.keys()]),
+	].map((patientId) => {
 		const planned = plannedByPatient.get(patientId);
-		const oldestChargeAt = planned?.oldestChargeAt ? new Date(planned.oldestChargeAt) : null;
-		const plannedKopecks = planned === undefined ? 0 : toKopecks(planned.plannedRub, "назначено пациенту");
+		const oldestChargeAt = planned?.oldestChargeAt
+			? new Date(planned.oldestChargeAt)
+			: null;
+		const plannedKopecks =
+			planned === undefined
+				? 0
+				: toKopecks(planned.plannedRub, "назначено пациенту");
 		return {
 			patientId,
 			// ЗДЕСЬ БЫЛ ДЕФЕКТ: `Number(planned) - paid` в рублях давало
@@ -1301,7 +1457,7 @@ export async function receivables(
 			// вычитание — 4130099 − 1480000 = 2650099, то есть ровно 26 500,99 ₽.
 			debtKopecks: plannedKopecks - (paidByPatient.get(patientId) ?? 0),
 			oldestChargeAt,
-			hasUndated: Number(planned?.undatedItems ?? 0) > 0
+			hasUndated: Number(planned?.undatedItems ?? 0) > 0,
 		};
 	});
 
@@ -1323,17 +1479,25 @@ export async function receivables(
 	 * снаружи — и именно это округление молча принимало 1600.0000000000002 за
 	 * 1 600,00 вместо того, чтобы сказать, что деньги уже потеряли точность.
 	 */
-	const totalPrepaidKopecks = sumKopecks(overpaid.map((row) => -row.debtKopecks));
+	const totalPrepaidKopecks = sumKopecks(
+		overpaid.map((row) => -row.debtKopecks),
+	);
 
 	if (debtors.length === 0 && overpaid.length === 0) {
 		return {
 			rows: [],
 			totalDebtRub: 0,
-			byBucket: { current: 0, up_to_30: 0, up_to_90: 0, over_90: 0, undated: 0 },
+			byBucket: {
+				current: 0,
+				up_to_30: 0,
+				up_to_90: 0,
+				over_90: 0,
+				undated: 0,
+			},
 			prepayments: [],
 			totalPrepaidRub: 0,
 			note: "Долгов нет, переплат тоже нет.",
-			isEmpty: true
+			isEmpty: true,
 		};
 	}
 
@@ -1356,7 +1520,7 @@ export async function receivables(
 		up_to_30: 0,
 		up_to_90: 0,
 		over_90: 0,
-		undated: 0
+		undated: 0,
 	};
 
 	const rows: ReceivablesRow[] = debtors.map((row) => {
@@ -1364,8 +1528,17 @@ export async function receivables(
 		if (!row.oldestChargeAt) {
 			bucket = "undated";
 		} else {
-			const ageDays = Math.floor((now.getTime() - row.oldestChargeAt.getTime()) / 86_400_000);
-			bucket = ageDays <= 7 ? "current" : ageDays <= 30 ? "up_to_30" : ageDays <= 90 ? "up_to_90" : "over_90";
+			const ageDays = Math.floor(
+				(now.getTime() - row.oldestChargeAt.getTime()) / 86_400_000,
+			);
+			bucket =
+				ageDays <= 7
+					? "current"
+					: ageDays <= 30
+						? "up_to_30"
+						: ageDays <= 90
+							? "up_to_90"
+							: "over_90";
 		}
 		byBucketKopecks[bucket] += row.debtKopecks;
 
@@ -1376,15 +1549,17 @@ export async function receivables(
 			// `ReceivablesRow.debtRub` объявлен числом, потому что его проверяет
 			// `moneyRubSchema`. Складывать это число обратно нельзя.
 			debtRub: rublesFromKopecks(row.debtKopecks),
-			oldestChargeAt: row.oldestChargeAt ? row.oldestChargeAt.toISOString() : null,
-			bucket
+			oldestChargeAt: row.oldestChargeAt
+				? row.oldestChargeAt.toISOString()
+				: null,
+			bucket,
 		};
 	});
 
 	const prepayments: ReceivablesPrepaymentRow[] = overpaid.map((row) => ({
 		patientId: row.patientId,
 		patientName: names.get(row.patientId) ?? "Пациент вне картотеки",
-		prepaidRub: rublesFromKopecks(-row.debtKopecks)
+		prepaidRub: rublesFromKopecks(-row.debtKopecks),
 	}));
 
 	/*
@@ -1399,7 +1574,7 @@ export async function receivables(
 		up_to_30: rublesFromKopecks(byBucketKopecks.up_to_30),
 		up_to_90: rublesFromKopecks(byBucketKopecks.up_to_90),
 		over_90: rublesFromKopecks(byBucketKopecks.over_90),
-		undated: rublesFromKopecks(byBucketKopecks.undated)
+		undated: rublesFromKopecks(byBucketKopecks.undated),
 	};
 
 	return {
@@ -1418,7 +1593,7 @@ export async function receivables(
 					`${rubToKopeckText(totalDebtKopecks)} − ${rubToKopeckText(totalPrepaidKopecks)} = ` +
 					`${rubToKopeckText(totalDebtKopecks - totalPrepaidKopecks)} ₽.`
 				: "Переплат нет: ни один пациент не заплатил больше назначенного."),
-		isEmpty: false
+		isEmpty: false,
 	};
 }
 
@@ -1442,7 +1617,9 @@ export type ScheduleLoadReport = {
  * куда ставить дополнительное кресло: «в среду с 10 до 13 очередь, а в субботу
  * пусто» из общей цифры за месяц не видно.
  */
-export async function scheduleLoad(scope: ReportScope): Promise<ScheduleLoadReport> {
+export async function scheduleLoad(
+	scope: ReportScope,
+): Promise<ScheduleLoadReport> {
 	/*
 	 * ТЕПЛОВАЯ КАРТА СЧИТАЛАСЬ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
 	 *
@@ -1466,7 +1643,7 @@ export async function scheduleLoad(scope: ReportScope): Promise<ScheduleLoadRepo
 			weekday: sql<number>`extract(isodow from ${localStart})::int`,
 			hour: sql<number>`extract(hour from ${localStart})::int`,
 			appointments: sql<number>`count(*)::int`,
-			bookedMinutes: sql<number>`coalesce(sum(extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60), 0)::int`
+			bookedMinutes: sql<number>`coalesce(sum(extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60), 0)::int`,
 		})
 		.from(appointments)
 		.where(
@@ -1474,24 +1651,32 @@ export async function scheduleLoad(scope: ReportScope): Promise<ScheduleLoadRepo
 				eq(appointments.organizationId, scope.organizationId),
 				ne(appointments.status, "cancelled"),
 				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to)
-			)
+				lte(appointments.startsAt, scope.to),
+			),
 		)
-		.groupBy(sql`extract(isodow from ${localStart})`, sql`extract(hour from ${localStart})`);
+		.groupBy(
+			sql`extract(isodow from ${localStart})`,
+			sql`extract(hour from ${localStart})`,
+		);
 
 	const cells = rows
 		.map((row) => ({
 			weekday: Number(row.weekday),
 			hour: Number(row.hour),
 			appointments: Number(row.appointments),
-			bookedMinutes: Number(row.bookedMinutes)
+			bookedMinutes: Number(row.bookedMinutes),
 		}))
-		.sort((left, right) => left.weekday - right.weekday || left.hour - right.hour);
+		.sort(
+			(left, right) => left.weekday - right.weekday || left.hour - right.hour,
+		);
 
 	const byWeekday = new Map<number, number>();
 	const byHour = new Map<number, number>();
 	for (const cell of cells) {
-		byWeekday.set(cell.weekday, (byWeekday.get(cell.weekday) ?? 0) + cell.bookedMinutes);
+		byWeekday.set(
+			cell.weekday,
+			(byWeekday.get(cell.weekday) ?? 0) + cell.bookedMinutes,
+		);
 		byHour.set(cell.hour, (byHour.get(cell.hour) ?? 0) + cell.bookedMinutes);
 	}
 
@@ -1511,6 +1696,6 @@ export async function scheduleLoad(scope: ReportScope): Promise<ScheduleLoadRepo
 		cells,
 		busiestWeekday: peak(byWeekday),
 		busiestHour: peak(byHour),
-		isEmpty: cells.length === 0
+		isEmpty: cells.length === 0,
 	};
 }

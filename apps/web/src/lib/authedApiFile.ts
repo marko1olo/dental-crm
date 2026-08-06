@@ -35,7 +35,8 @@ export type AuthedApiFileDeps = {
 };
 
 /** Русский текст ошибки: он попадает на экран врача, а не в консоль. */
-export const AUTHED_API_FILE_FAILURE = "Файл не открылся: сервер не отдал его этому кабинету.";
+export const AUTHED_API_FILE_FAILURE =
+	"Файл не открылся: сервер не отдал его этому кабинету.";
 
 function browserDeps(): AuthedApiFileDeps {
 	return {

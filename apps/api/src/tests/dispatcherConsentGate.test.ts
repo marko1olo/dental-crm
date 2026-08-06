@@ -22,9 +22,12 @@ import {
 	communicationOutbox,
 	organizations,
 	patientCommunicationConsents,
-	patients
+	patients,
 } from "../db/schema.js";
-import { dispatchDueMessages, enqueueMessage } from "../services/communications/dispatcher.js";
+import {
+	dispatchDueMessages,
+	enqueueMessage,
+} from "../services/communications/dispatcher.js";
 import { withFixtureTenant } from "./support/fixtureOrganizations.js";
 
 /**
@@ -39,7 +42,9 @@ const PATIENT_ID = "d0000000-0000-4000-8000-0000000dc101";
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|does not exist|password authentication|ENOTFOUND/i.test(message);
+	return /ECONNREFUSED|does not exist|password authentication|ENOTFOUND/i.test(
+		message,
+	);
 }
 
 /**
@@ -49,12 +54,22 @@ function isMissingDatabase(error: unknown): boolean {
  * запрос без `app.current_tenant` возвращает ноль строк и ошибки не даёт: без
  * обёртки `assert.ok(row)` падал бы на «строки нет», хотя очередь заполнена.
  */
-async function statusOf(dedupeKey: string): Promise<{ status: string; reason: string | null }> {
+async function statusOf(
+	dedupeKey: string,
+): Promise<{ status: string; reason: string | null }> {
 	return withFixtureTenant(ORG_ID, async () => {
 		const [row] = await db
-			.select({ status: communicationOutbox.status, reason: communicationOutbox.lastErrorMessage })
+			.select({
+				status: communicationOutbox.status,
+				reason: communicationOutbox.lastErrorMessage,
+			})
 			.from(communicationOutbox)
-			.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.dedupeKey, dedupeKey)))
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, ORG_ID),
+					eq(communicationOutbox.dedupeKey, dedupeKey),
+				),
+			)
 			.limit(1);
 		assert.ok(row, `строки очереди ${dedupeKey} нет`);
 		return { status: row.status as string, reason: row.reason };
@@ -71,14 +86,17 @@ describe("диспетчер: согласие и ответ на обращен
 			// и дизъюнкта обхода не имеет, поэтому вставка без контекста
 			// отвергается кодом 42501, а не пишет строку.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника согласий" }).onConflictDoNothing();
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника согласий" })
+					.onConflictDoNothing();
 				await db
 					.insert(patients)
 					.values({
 						id: PATIENT_ID,
 						organizationId: ORG_ID,
 						fullName: "Отказавшийся Пётр Петрович",
-						phone: "+7 916 000-07-01"
+						phone: "+7 916 000-07-01",
 					})
 					.onConflictDoNothing();
 
@@ -93,7 +111,7 @@ describe("диспетчер: согласие и ответ на обращен
 							channel: "sms",
 							scope: "service",
 							state: "revoked",
-							source: "inbound_stop"
+							source: "inbound_stop",
 						},
 						{
 							organizationId: ORG_ID,
@@ -101,8 +119,8 @@ describe("диспетчер: согласие и ответ на обращен
 							channel: "sms",
 							scope: "marketing",
 							state: "revoked",
-							source: "inbound_stop"
-						}
+							source: "inbound_stop",
+						},
 					])
 					.onConflictDoNothing();
 			});
@@ -118,8 +136,12 @@ describe("диспетчер: согласие и ответ на обращен
 			// строки и снимает НОЛЬ, не сообщая об этом, — фикстура осталась бы в
 			// живой базе, а отчёт выглядел бы успешным.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-				await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+				await db
+					.delete(communicationOutbox)
+					.where(eq(communicationOutbox.organizationId, ORG_ID));
+				await db
+					.delete(patientCommunicationConsents)
+					.where(eq(patientCommunicationConsents.organizationId, ORG_ID));
 				await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 				await db.delete(organizations).where(eq(organizations.id, ORG_ID));
 			});
@@ -137,7 +159,7 @@ describe("диспетчер: согласие и ответ на обращен
 			intent: "appointment_confirmation",
 			scope: "service",
 			body: "Напоминаем о приёме завтра в 10:00.",
-			dedupeKey
+			dedupeKey,
 		});
 		assert.ok(queued.ok, JSON.stringify(queued));
 
@@ -145,7 +167,10 @@ describe("диспетчер: согласие и ответ на обращен
 
 		const result = await statusOf(dedupeKey);
 		assert.equal(result.status, "suppressed", JSON.stringify(result));
-		assert.ok(CONSENT_REASON.test(result.reason ?? ""), `ожидалась причина про согласие: ${result.reason}`);
+		assert.ok(
+			CONSENT_REASON.test(result.reason ?? ""),
+			`ожидалась причина про согласие: ${result.reason}`,
+		);
 	});
 
 	test("ответ на обращение пациента не глушится отозванным согласием", async (context) => {
@@ -159,7 +184,7 @@ describe("диспетчер: согласие и ответ на обращен
 			intent: "transactional_reply",
 			scope: "service",
 			body: "Клиника: вы отписаны от сообщений. Чтобы вернуть, напишите «СТАРТ».",
-			dedupeKey
+			dedupeKey,
 		});
 		assert.ok(queued.ok, JSON.stringify(queued));
 
@@ -171,7 +196,7 @@ describe("диспетчер: согласие и ответ на обращен
 		// пациент никогда не узнает, что его просьба принята.
 		assert.ok(
 			!CONSENT_REASON.test(result.reason ?? ""),
-			`ответ на обращение заглушён по согласию: ${result.status} / ${result.reason}`
+			`ответ на обращение заглушён по согласию: ${result.status} / ${result.reason}`,
 		);
 	});
 });

@@ -39,7 +39,7 @@
  * нет», база подтверждает «строк нет». Код возврата всегда 0: это перепись,
  * а не гейт — решение об удалении принимает человек.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -51,13 +51,17 @@ const MIGRATIONS_DIR = join(REPO_ROOT, "apps", "api", "drizzle");
 const WEB_SRC = join(REPO_ROOT, "apps", "web", "src");
 
 /** Файлы, где объявлены таблицы Drizzle. Импорт из любого другого места таблицей не считается. */
-const SCHEMA_FILES = ["schema.ts", "communicationsSchema.ts", "patientsSchema.ts"].map((f) =>
-	join(DB_DIR, f),
-);
+const SCHEMA_FILES = [
+	"schema.ts",
+	"communicationsSchema.ts",
+	"patientsSchema.ts",
+].map((f) => join(DB_DIR, f));
 
 const asJson = process.argv.includes("--json");
 const withDb = process.argv.includes("--db");
-const onlyModule = (process.argv.find((a) => a.startsWith("--module=")) ?? "").slice("--module=".length);
+const onlyModule = (
+	process.argv.find((a) => a.startsWith("--module=")) ?? ""
+).slice("--module=".length);
 
 /* ─────────────────────────── обход файлов ─────────────────────────── */
 
@@ -86,7 +90,13 @@ function parse(file) {
 	const source = readFileSync(file, "utf8");
 	return {
 		source,
-		sourceFile: ts.createSourceFile(file, source, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TSX),
+		sourceFile: ts.createSourceFile(
+			file,
+			source,
+			ts.ScriptTarget.ESNext,
+			true,
+			ts.ScriptKind.TSX,
+		),
 	};
 }
 
@@ -115,7 +125,10 @@ function collectTables() {
 				if (!call) continue;
 				const [first] = call.arguments;
 				if (!first || !ts.isStringLiteral(first)) continue;
-				tables.set(decl.name.text, { sqlName: first.text, declaredIn: rel(file) });
+				tables.set(decl.name.text, {
+					sqlName: first.text,
+					declaredIn: rel(file),
+				});
 			}
 		}
 	}
@@ -125,7 +138,10 @@ function collectTables() {
 /** `pgTable(...)` иногда обёрнут в `.enableRLS()` или подобную цепочку — разворачиваем. */
 function unwrapTableCall(node) {
 	let current = node;
-	while (ts.isCallExpression(current) || ts.isPropertyAccessExpression(current)) {
+	while (
+		ts.isCallExpression(current) ||
+		ts.isPropertyAccessExpression(current)
+	) {
 		if (ts.isCallExpression(current)) {
 			const callee = current.expression;
 			if (ts.isIdentifier(callee) && callee.text === "pgTable") return current;
@@ -151,7 +167,11 @@ function importBindings(file, sourceFile) {
 	const moduleImports = new Map();
 
 	for (const statement of sourceFile.statements) {
-		if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+		if (
+			!ts.isImportDeclaration(statement) ||
+			!ts.isStringLiteral(statement.moduleSpecifier)
+		)
+			continue;
 		const specifier = statement.moduleSpecifier.text;
 		const resolved = resolveSpecifier(file, specifier);
 		if (resolved) {
@@ -163,13 +183,16 @@ function importBindings(file, sourceFile) {
 
 		if (clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) {
 			if (isSchema) namespaces.add(clause.namedBindings.name.text);
-			if (resolved) moduleImports.get(resolved).push(clause.namedBindings.name.text);
+			if (resolved)
+				moduleImports.get(resolved).push(clause.namedBindings.name.text);
 			continue;
 		}
 		if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
 			for (const element of clause.namedBindings.elements) {
 				const local = element.name.text;
-				const imported = element.propertyName ? element.propertyName.text : local;
+				const imported = element.propertyName
+					? element.propertyName.text
+					: local;
 				if (resolved) moduleImports.get(resolved).push(imported);
 				if (isSchema) named.set(local, imported);
 			}
@@ -240,11 +263,15 @@ const TABLE_METHODS = new Set(["insert", "from", "update", "delete", "select"]);
 function collectTableAccess(file, sourceFile, bindings, tables) {
 	const access = [];
 	const visit = (node) => {
-		if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+		if (
+			ts.isCallExpression(node) &&
+			ts.isPropertyAccessExpression(node.expression)
+		) {
 			const method = node.expression.name.text;
 			if (TABLE_METHODS.has(method) && node.arguments.length > 0) {
 				const table = resolveTableArgument(node.arguments[0], bindings, tables);
-				if (table) access.push({ method, table, line: lineOf(sourceFile, node), file });
+				if (table)
+					access.push({ method, table, line: lineOf(sourceFile, node), file });
 			}
 		}
 		ts.forEachChild(node, visit);
@@ -262,7 +289,11 @@ function resolveTableArgument(arg, bindings, tables) {
 		return null;
 	}
 	if (ts.isPropertyAccessExpression(arg) && ts.isIdentifier(arg.expression)) {
-		if (bindings.namespaces.has(arg.expression.text) && tables.has(arg.name.text)) return arg.name.text;
+		if (
+			bindings.namespaces.has(arg.expression.text) &&
+			tables.has(arg.name.text)
+		)
+			return arg.name.text;
 	}
 	return null;
 }
@@ -297,12 +328,30 @@ function collectRawSqlTables(sourceFile) {
 	const writes = new Set();
 	forEachSqlLiteral(sourceFile, (text) => {
 		matchInsertInto(text, (name) => writes.add(name));
-		for (const m of text.matchAll(/\bfrom\s+"?([a-z0-9_]+)"?/gi)) reads.add(m[1].toLowerCase());
-		for (const m of text.matchAll(/\bupdate\s+"?([a-z0-9_]+)"?\s+set\b/gi)) writes.add(m[1].toLowerCase());
+		for (const m of text.matchAll(/\bfrom\s+"?([a-z0-9_]+)"?/gi))
+			reads.add(m[1].toLowerCase());
+		for (const m of text.matchAll(/\bupdate\s+"?([a-z0-9_]+)"?\s+set\b/gi))
+			writes.add(m[1].toLowerCase());
 	});
 	// `from` в шаблоне часто обрывается на месте подстановки, и следующее слово —
 	// ключевое, а не имя таблицы. Без этого фильтра в отчёт попадает таблица "where".
-	const SQL_KEYWORDS = new Set(["where", "select", "order", "group", "limit", "join", "left", "inner", "on", "and", "or", "as", "set", "values", "returning"]);
+	const SQL_KEYWORDS = new Set([
+		"where",
+		"select",
+		"order",
+		"group",
+		"limit",
+		"join",
+		"left",
+		"inner",
+		"on",
+		"and",
+		"or",
+		"as",
+		"set",
+		"values",
+		"returning",
+	]);
 	return {
 		reads: [...reads].filter((n) => !SQL_KEYWORDS.has(n)),
 		writes: [...writes].filter((n) => !SQL_KEYWORDS.has(n)),
@@ -311,10 +360,18 @@ function collectRawSqlTables(sourceFile) {
 
 function forEachSqlLiteral(sourceFile, onText) {
 	const visit = (node) => {
-		if (ts.isStringLiteralLike(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+		if (
+			ts.isStringLiteralLike(node) ||
+			ts.isNoSubstitutionTemplateLiteral(node)
+		) {
 			onText(node.text, node);
 		} else if (ts.isTemplateExpression(node)) {
-			onText([node.head.text, ...node.templateSpans.map((s) => s.literal.text)].join(" "), node);
+			onText(
+				[node.head.text, ...node.templateSpans.map((s) => s.literal.text)].join(
+					" ",
+				),
+				node,
+			);
 		}
 		ts.forEachChild(node, visit);
 	};
@@ -355,7 +412,9 @@ function locationKind(file) {
 /* ─────────────────────────── сборка переписи ─────────────────────────── */
 
 const tables = collectTables();
-const sqlNameToTable = new Map([...tables].map(([id, meta]) => [meta.sqlName, id]));
+const sqlNameToTable = new Map(
+	[...tables].map(([id, meta]) => [meta.sqlName, id]),
+);
 
 const apiFiles = walk(API_SRC, isTs);
 const webFiles = walk(WEB_SRC, isTs);
@@ -381,7 +440,13 @@ for (const file of [...apiFiles, ...webFiles]) {
 	const access = collectTableAccess(file, sourceFile, bindings, tables);
 	const rawWriters = collectRawSqlWriters(sourceFile, file, sqlNameToTable);
 	for (const hit of rawWriters.found) {
-		access.push({ method: "insert", table: hit.table, line: hit.line, file: hit.file, raw: true });
+		access.push({
+			method: "insert",
+			table: hit.table,
+			line: hit.line,
+			file: hit.file,
+			raw: true,
+		});
 	}
 	// Сырые вставки в таблицы, которых нет в schema.ts, — единственный писатель
 	// для `clinical_tasks` и подобных. Их тоже надо уметь найти.
@@ -389,10 +454,20 @@ for (const file of [...apiFiles, ...webFiles]) {
 		if (!rawWritesBySqlName.has(sqlName)) rawWritesBySqlName.set(sqlName, []);
 		rawWritesBySqlName.get(sqlName).push(file);
 	}
-	perFile.set(file, { access, bindings, rawSql: collectRawSqlTables(sourceFile) });
+	perFile.set(file, {
+		access,
+		bindings,
+		rawSql: collectRawSqlTables(sourceFile),
+	});
 	for (const hit of access) {
 		if (!accessByTable.has(hit.table)) {
-			accessByTable.set(hit.table, { insert: [], from: [], update: [], delete: [], select: [] });
+			accessByTable.set(hit.table, {
+				insert: [],
+				from: [],
+				update: [],
+				delete: [],
+				select: [],
+			});
 		}
 		accessByTable.get(hit.table)[hit.method].push(hit);
 	}
@@ -414,7 +489,10 @@ function writerSummary(table) {
 	};
 }
 
-const queryModules = walk(DB_DIR, (f) => /Query\.ts$/.test(f) && !/\.test\.ts$/.test(f)).sort();
+const queryModules = walk(
+	DB_DIR,
+	(f) => /Query\.ts$/.test(f) && !/\.test\.ts$/.test(f),
+).sort();
 
 const report = [];
 for (const file of queryModules) {
@@ -425,9 +503,15 @@ for (const file of queryModules) {
 	const bindings = importBindings(file, sourceFile);
 	const access = perFile.get(file)?.access ?? [];
 
-	const importedTables = [...new Set(bindings.named.values())].filter((t) => tables.has(t)).sort();
-	const readTables = [...new Set(access.filter((a) => a.method === "from").map((a) => a.table))].sort();
-	const writtenHere = [...new Set(access.filter((a) => a.method === "insert").map((a) => a.table))].sort();
+	const importedTables = [...new Set(bindings.named.values())]
+		.filter((t) => tables.has(t))
+		.sort();
+	const readTables = [
+		...new Set(access.filter((a) => a.method === "from").map((a) => a.table)),
+	].sort();
+	const writtenHere = [
+		...new Set(access.filter((a) => a.method === "insert").map((a) => a.table)),
+	].sort();
 
 	// Читаемые таблицы — основа вердикта. Если модуль ничего не читает
 	// через .from(), опираемся на импорты: это всё равно его предметная область.
@@ -444,11 +528,15 @@ for (const file of queryModules) {
 			// Писатель внутри самого модуля — не признак жизни, если его никто не зовёт;
 			// это фиксируется отдельно, чтобы вердикт не самообманывался.
 			writtenBySelf: writtenHere.includes(table),
-			runtimeWriterSites: w.runtime.slice(0, 6).map((h) => `${rel(h.file)}:${h.line}`),
+			runtimeWriterSites: w.runtime
+				.slice(0, 6)
+				.map((h) => `${rel(h.file)}:${h.line}`),
 		};
 	});
 
-	const dead = perTable.filter((t) => t.runtimeWriters === 0 && t.migrationSeeds === 0);
+	const dead = perTable.filter(
+		(t) => t.runtimeWriters === 0 && t.migrationSeeds === 0,
+	);
 
 	// Модуль без импортов схемы может работать сырым SQL. Тогда его судят
 	// по именам таблиц из литералов и по писателям в сыром SQL.
@@ -459,7 +547,9 @@ for (const file of queryModules) {
 					.filter((name) => !sqlNameToTable.has(name))
 					.map((name) => ({
 						sqlName: name,
-						writerFiles: [...new Set((rawWritesBySqlName.get(name) ?? []).map(rel))],
+						writerFiles: [
+							...new Set((rawWritesBySqlName.get(name) ?? []).map(rel)),
+						],
 						writtenBySelf: rawSql.writes.includes(name),
 					}))
 			: [];
@@ -513,7 +603,10 @@ function databaseUrl() {
 	const line = readFileSync(join(REPO_ROOT, ".env"), "utf8")
 		.split(/\r?\n/)
 		.find((l) => l.startsWith("DATABASE_URL="));
-	if (!line) throw new Error("DATABASE_URL не найден ни в окружении, ни в корневом .env");
+	if (!line)
+		throw new Error(
+			"DATABASE_URL не найден ни в окружении, ни в корневом .env",
+		);
 	return line.slice("DATABASE_URL=".length).trim();
 }
 
@@ -533,7 +626,9 @@ async function rowCounts(sqlNames) {
 				counts.set(name, "таблицы нет в базе");
 				continue;
 			}
-			const { rows } = await client.query(`select count(*)::int as n from "${name}"`);
+			const { rows } = await client.query(
+				`select count(*)::int as n from "${name}"`,
+			);
 			counts.set(name, rows[0].n);
 		}
 	} finally {
@@ -562,15 +657,25 @@ if (withDb) {
 /* ─────────────────────────── вывод ─────────────────────────── */
 
 if (asJson) {
-	console.log(JSON.stringify({ totalModules: report.length, tablesInSchema: tables.size, report }, null, 2));
+	console.log(
+		JSON.stringify(
+			{ totalModules: report.length, tablesInSchema: tables.size, report },
+			null,
+			2,
+		),
+	);
 	process.exit(0);
 }
 
 const byVerdict = (v) => report.filter((r) => r.verdict === v);
 
 console.log("ПЕРЕПИСЬ ПУСТОТЕЛЫХ МОДУЛЕЙ apps/api/src/db/*Query.ts");
-console.log(`Разборщик: TypeScript ${ts.version} (ast-grep на этой машине не установлен)`);
-console.log(`Таблиц в схеме: ${tables.size}. Модулей *Query.ts: ${report.length}.`);
+console.log(
+	`Разборщик: TypeScript ${ts.version} (ast-grep на этой машине не установлен)`,
+);
+console.log(
+	`Таблиц в схеме: ${tables.size}. Модулей *Query.ts: ${report.length}.`,
+);
 console.log(
 	`Файлов разобрано: ${apiFiles.length} в apps/api/src, ${webFiles.length} в apps/web/src, миграций ${walk(MIGRATIONS_DIR, (f) => f.endsWith(".sql")).length}.\n`,
 );
@@ -587,7 +692,9 @@ const VERDICTS = [
 for (const verdict of VERDICTS) {
 	const group = byVerdict(verdict);
 	if (group.length === 0) continue;
-	console.log(`\n${"═".repeat(78)}\n${verdict}: ${group.length}\n${"═".repeat(78)}`);
+	console.log(
+		`\n${"═".repeat(78)}\n${verdict}: ${group.length}\n${"═".repeat(78)}`,
+	);
 	for (const entry of group) {
 		console.log(`\n${entry.module}  (${entry.path})`);
 		console.log(`  экспортирует: ${entry.exportedFunctions.join(", ") || "—"}`);
@@ -596,7 +703,9 @@ for (const verdict of VERDICTS) {
 				`писателей в рабочем коде: ${t.runtimeWriters}`,
 				t.testWriters > 0 ? `в тестах: ${t.testWriters}` : null,
 				t.scriptWriters > 0 ? `в скриптах: ${t.scriptWriters}` : null,
-				t.migrationSeeds > 0 ? `наполнение миграцией: ${t.migrationSeeds}` : null,
+				t.migrationSeeds > 0
+					? `наполнение миграцией: ${t.migrationSeeds}`
+					: null,
 				t.writtenBySelf ? "пишет сам модуль" : null,
 				t.liveRows === undefined ? null : `строк в живой базе: ${t.liveRows}`,
 			].filter(Boolean);
@@ -612,9 +721,12 @@ for (const verdict of VERDICTS) {
 				t.writtenBySelf ? "пишет сам модуль" : null,
 			].filter(Boolean);
 			console.log(`    "${t.sqlName}"  [${marks.join("; ")}]`);
-			if (t.writerFiles.length > 0) console.log(`        ${t.writerFiles.join(", ")}`);
+			if (t.writerFiles.length > 0)
+				console.log(`        ${t.writerFiles.join(", ")}`);
 		}
-		console.log(`  импортируют (${entry.importers.length}): ${entry.importers.join(", ") || "НИКТО"}`);
+		console.log(
+			`  импортируют (${entry.importers.length}): ${entry.importers.join(", ") || "НИКТО"}`,
+		);
 	}
 }
 
@@ -628,7 +740,12 @@ const hollow = report.filter((r) => r.verdict.startsWith("ПУСТОТЕЛЫЙ")
 const orphans = hollow.filter((r) => r.importers.length === 0);
 const wired = hollow.filter((r) => r.importers.length > 0);
 console.log(`\n  ПУСТОТЕЛЫХ ВСЕГО: ${hollow.length}`);
-console.log(`  из них никем не импортированы (можно удалять целиком): ${orphans.length}`);
+console.log(
+	`  из них никем не импортированы (можно удалять целиком): ${orphans.length}`,
+);
 for (const r of orphans) console.log(`      ${r.module}`);
-console.log(`  из них подключены к живому коду (удалять вместе с использованием): ${wired.length}`);
-for (const r of wired) console.log(`      ${r.module} ← ${r.importers.join(", ")}`);
+console.log(
+	`  из них подключены к живому коду (удалять вместе с использованием): ${wired.length}`,
+);
+for (const r of wired)
+	console.log(`      ${r.module} ← ${r.importers.join(", ")}`);

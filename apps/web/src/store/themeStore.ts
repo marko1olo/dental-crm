@@ -1,12 +1,20 @@
 import { create } from "zustand";
-import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../lib/safeLocalStorage";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../lib/safeLocalStorage";
 
 export type ThemeMode = "auto" | "light" | "dark" | "night";
 
 const THEME_STORAGE_KEY = "dente_theme_mode";
 
 function isThemeMode(value: unknown): value is ThemeMode {
-	return value === "auto" || value === "light" || value === "dark" || value === "night";
+	return (
+		value === "auto" ||
+		value === "light" ||
+		value === "dark" ||
+		value === "night"
+	);
 }
 
 function readThemeMode(): ThemeMode {
@@ -30,5 +38,7 @@ export const useThemeStore = create<ThemeState>((set) => ({
 }));
 
 if (typeof window !== "undefined") {
-	(window as Window & { __useThemeStore?: typeof useThemeStore }).__useThemeStore = useThemeStore;
+	(
+		window as Window & { __useThemeStore?: typeof useThemeStore }
+	).__useThemeStore = useThemeStore;
 }

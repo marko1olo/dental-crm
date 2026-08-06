@@ -27,14 +27,22 @@ import { fileURLToPath } from "node:url";
 
 import { REQUIRED_ENV } from "../apps/api/src/env/requiredEnv.ts";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
+);
 const envExamplePath = path.join(repoRoot, ".env.example");
 
 /** Сколько строк комментария над объявлением считаем объяснением. */
 const MIN_EXPLANATION_LINES = 2;
 
 /** Модули, до которых граф импортов проверки окружения доходить не должен. */
-const FORBIDDEN_IMPORT_SEGMENTS = ["/db/", "/routes/", "/services/", "/migration/"];
+const FORBIDDEN_IMPORT_SEGMENTS = [
+	"/db/",
+	"/routes/",
+	"/services/",
+	"/migration/",
+];
 
 const failures = [];
 
@@ -75,7 +83,9 @@ for (const entry of REQUIRED_ENV) {
 	const declarationIndex = findDeclarationLine(entry.name);
 
 	if (declarationIndex === -1) {
-		const mentionedInProse = envExampleLines.some((line) => line.includes(entry.name));
+		const mentionedInProse = envExampleLines.some((line) =>
+			line.includes(entry.name),
+		);
 		fail(
 			`.env.example: нет строки объявления «# ${entry.name}=».` +
 				(mentionedInProse
@@ -83,7 +93,7 @@ for (const entry of REQUIRED_ENV) {
 						" при копировании файла в .env переменная не попадёт туда никогда."
 					: "") +
 				`\n      ломается без значения: ${entry.breaks}.` +
-				`\n      читается: ${entry.readAt}`
+				`\n      читается: ${entry.readAt}`,
 		);
 		continue;
 	}
@@ -93,7 +103,7 @@ for (const entry of REQUIRED_ENV) {
 		fail(
 			`.env.example:${declarationIndex + 1}: объявление «${entry.name}» есть, но объяснено ` +
 				`${explanation} строкой комментария при минимуме ${MIN_EXPLANATION_LINES}. ` +
-				"Оператор должен прочитать, ЧТО ломается без значения, а не угадывать по имени."
+				"Оператор должен прочитать, ЧТО ломается без значения, а не угадывать по имени.",
 		);
 	}
 }
@@ -121,12 +131,22 @@ function collectRelativeImports(filePath, seen = new Set()) {
 
 	for (const match of source.matchAll(/from\s+["'](\.[^"']+)["']/g)) {
 		const specifier = match[1].replace(/\.js$/, ".ts");
-		collectRelativeImports(path.resolve(path.dirname(filePath), specifier), seen);
+		collectRelativeImports(
+			path.resolve(path.dirname(filePath), specifier),
+			seen,
+		);
 	}
 	return seen;
 }
 
-const bootModule = path.join(repoRoot, "apps", "api", "src", "env", "assertEnvOnBoot.ts");
+const bootModule = path.join(
+	repoRoot,
+	"apps",
+	"api",
+	"src",
+	"env",
+	"assertEnvOnBoot.ts",
+);
 const reached = collectRelativeImports(bootModule);
 
 for (const module of reached) {
@@ -135,7 +155,7 @@ for (const module of reached) {
 			fail(
 				`Граф импортов проверки окружения дошёл до ${module}. ` +
 					"Это ломает порядок: db/client.ts бросает на импорте, и проверка опоздает. " +
-					"Уберите импорт — модуль env/ должен зависеть только от zod и node."
+					"Уберите импорт — модуль env/ должен зависеть только от zod и node.",
 			);
 		}
 	}
@@ -147,7 +167,7 @@ if (failures.length > 0) {
 	console.error("");
 	console.error("check:env-contract — ОТКАЗ");
 	console.error(
-		`Обязательных переменных в схеме: ${REQUIRED_ENV.length}. Нарушений: ${failures.length}.`
+		`Обязательных переменных в схеме: ${REQUIRED_ENV.length}. Нарушений: ${failures.length}.`,
 	);
 	console.error("");
 	for (const failure of failures) console.error("  ✗ " + failure);
@@ -160,5 +180,5 @@ if (failures.length > 0) {
 
 console.log(
 	`check:env-contract — ok: ${REQUIRED_ENV.length} обязательных переменных объявлены и объяснены в .env.example; ` +
-		`граф импортов проверки окружения чист (${reached.size} модулей).`
+		`граф импортов проверки окружения чист (${reached.size} модулей).`,
 );

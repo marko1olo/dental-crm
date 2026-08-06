@@ -20,7 +20,7 @@ export interface AuthArtOptions {
 
 export function selectAuthArt(
 	manifest: AuthArtItem[],
-	options: AuthArtOptions
+	options: AuthArtOptions,
 ): AuthArtItem | null {
 	if (options.saveData) {
 		return null;
@@ -32,7 +32,7 @@ export function selectAuthArt(
 	}
 
 	let eligibleItems = packItems.filter((item) => item.slot === options.slot);
-	
+
 	// If the slot has less than 2 items, expand choice to the entire pack.
 	// This ensures we still have variety, especially for packs like 'dental-epic' and 'abstract'
 	// which might mostly have 'day' items.
@@ -44,7 +44,9 @@ export function selectAuthArt(
 		return null;
 	}
 
-	return eligibleItems[Math.floor(Math.random() * eligibleItems.length)] || null;
+	return (
+		eligibleItems[Math.floor(Math.random() * eligibleItems.length)] || null
+	);
 }
 
 export function getCurrentTimeSlot(): string {

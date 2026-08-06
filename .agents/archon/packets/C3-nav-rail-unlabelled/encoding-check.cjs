@@ -8,7 +8,10 @@ const lines = text.split("\n");
 const mojibake = lines.filter((line) => /[РС][-ÿ]/.test(line));
 
 console.log("file:", target);
-console.log("bom:", bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf);
+console.log(
+	"bom:",
+	bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf,
+);
 console.log("mojibake_lines:", mojibake.length);
 console.log("crlf_count:", (text.match(/\r\n/g) || []).length);
 console.log("lines:", lines.length);

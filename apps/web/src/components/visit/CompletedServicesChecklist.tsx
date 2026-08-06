@@ -1,6 +1,6 @@
 import React from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { money } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { countLabel } from "../../lib/russianPlural";
 import {
 	planLineQuantity,
@@ -71,14 +71,19 @@ import { realVisitFieldId } from "./visitIdentity";
 const PRICE_UNKNOWN_TEXT = "цена не указана";
 
 function serviceTitleOf(item: any): string {
-	const title = typeof item?.snapshotServiceName === "string" ? item.snapshotServiceName.trim() : "";
+	const title =
+		typeof item?.snapshotServiceName === "string"
+			? item.snapshotServiceName.trim()
+			: "";
 	if (title) return title;
-	const serviceId = typeof item?.serviceId === "string" ? item.serviceId.trim() : "";
+	const serviceId =
+		typeof item?.serviceId === "string" ? item.serviceId.trim() : "";
 	return serviceId || "Услуга без названия";
 }
 
 function toothSuffixOf(item: any): string {
-	const tooth = typeof item?.toothCode === "string" ? item.toothCode.trim() : "";
+	const tooth =
+		typeof item?.toothCode === "string" ? item.toothCode.trim() : "";
 	return tooth ? ` (зуб ${tooth})` : "";
 }
 
@@ -88,7 +93,8 @@ function toothSuffixOf(item: any): string {
  */
 function completedLineOf(item: any): string {
 	const quantity = planLineQuantity(item);
-	const quantityPart = quantity !== null && quantity > 1 ? `, ${quantity} шт.` : "";
+	const quantityPart =
+		quantity !== null && quantity > 1 ? `, ${quantity} шт.` : "";
 	const total = planLineTotalRub(item);
 	const priceText = total === null ? PRICE_UNKNOWN_TEXT : money(total);
 	return `Выполнено: ${serviceTitleOf(item)}${toothSuffixOf(item)}${quantityPart} — ${priceText}`;
@@ -99,7 +105,12 @@ export const CompletedServicesChecklist: React.FC = () => {
 	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
 	// выдумывает, и вторая ветка была недостижима.
 	const context = useAppLogicContext() as any;
-	const { visitNoteForm = {}, updateVisitNoteField, dashboard, activeVisitPatient } = context;
+	const {
+		visitNoteForm = {},
+		updateVisitNoteField,
+		dashboard,
+		activeVisitPatient,
+	} = context;
 
 	/*
 	  СПИСОК ПОКАЗЫВАЛ ПЛАН ЛЕЧЕНИЯ ДРУГОГО ПАЦИЕНТА.
@@ -131,7 +142,8 @@ export const CompletedServicesChecklist: React.FC = () => {
 	const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
 	const visitIsOpen = Boolean(visitPatientId && visitId);
 	const visitPatientName =
-		typeof activeVisitPatient?.fullName === "string" && activeVisitPatient.fullName.trim()
+		typeof activeVisitPatient?.fullName === "string" &&
+		activeVisitPatient.fullName.trim()
 			? activeVisitPatient.fullName.trim()
 			: null;
 
@@ -141,7 +153,10 @@ export const CompletedServicesChecklist: React.FC = () => {
 		[dashboard?.treatmentPlanItems, visitPatientId],
 	);
 
-	const planText: string = typeof visitNoteForm?.treatmentPlan === "string" ? visitNoteForm.treatmentPlan : "";
+	const planText: string =
+		typeof visitNoteForm?.treatmentPlan === "string"
+			? visitNoteForm.treatmentPlan
+			: "";
 	const planLines = React.useMemo(
 		() => planText.split("\n").map((line) => line.trim()),
 		[planText],
@@ -159,7 +174,10 @@ export const CompletedServicesChecklist: React.FC = () => {
 		(item: any) => planLineTotalRub(item) === null,
 	).length;
 	const markedTotalRub = roundToKopecks(
-		markedItems.reduce((sum: number, item: any) => sum + (planLineTotalRub(item) ?? 0), 0),
+		markedItems.reduce(
+			(sum: number, item: any) => sum + (planLineTotalRub(item) ?? 0),
+			0,
+		),
 	);
 
 	const toggle = (item: any) => {
@@ -170,7 +188,10 @@ export const CompletedServicesChecklist: React.FC = () => {
 				.split("\n")
 				.filter((existing) => existing.trim() !== line);
 			// Хвостовые пустые строки после удаления отметки убираем, середину текста не трогаем.
-			updateVisitNoteField("treatmentPlan", kept.join("\n").replace(/\n+$/, ""));
+			updateVisitNoteField(
+				"treatmentPlan",
+				kept.join("\n").replace(/\n+$/, ""),
+			);
 			return;
 		}
 		const base = planText.replace(/\s+$/, "");
@@ -192,10 +213,15 @@ export const CompletedServicesChecklist: React.FC = () => {
 				<h4 className="m-0 mb-1 text-sm font-semibold text-slate-900 dark:text-white">
 					Отметка выполненного по плану лечения
 				</h4>
-				<p className="m-0 text-xs text-slate-500 dark:text-slate-400" role="status" aria-live="polite">
+				<p
+					className="m-0 text-xs text-slate-500 dark:text-slate-400"
+					role="status"
+					aria-live="polite"
+				>
 					Приём ещё не открыт, поэтому отмечать выполненное не по чему: отметка
-					записывается в карту конкретного приёма. Запишите пациента и начните приём
-					в разделе «Записи» — план лечения появится здесь списком с ценами.
+					записывается в карту конкретного приёма. Запишите пациента и начните
+					приём в разделе «Записи» — план лечения появится здесь списком с
+					ценами.
 				</p>
 			</div>
 		);
@@ -214,8 +240,8 @@ export const CompletedServicesChecklist: React.FC = () => {
 					{visitPatientName
 						? `У пациента ${visitPatientName} нет согласованного плана лечения — отмечать пока нечего.`
 						: "У пациента этого приёма нет согласованного плана лечения — отмечать пока нечего."}{" "}
-					План собирают в карточке пациента, и после этого его услуги появятся здесь
-					списком с ценами.
+					План собирают в карточке пациента, и после этого его услуги появятся
+					здесь списком с ценами.
 				</p>
 			</div>
 		);
@@ -231,9 +257,9 @@ export const CompletedServicesChecklist: React.FC = () => {
 			</h4>
 			{/* Чей это план — написано прямо: список берётся у пациента открытого приёма. */}
 			<p className="m-0 mb-2 text-xs text-slate-500 dark:text-slate-400">
-				{visitPatientName ? `План пациента ${visitPatientName}. ` : ""}Отмеченное
-				дописывается строкой «Выполнено…» в поле «План» этого приёма — там его видно и
-				там его можно поправить руками.
+				{visitPatientName ? `План пациента ${visitPatientName}. ` : ""}
+				Отмеченное дописывается строкой «Выполнено…» в поле «План» этого приёма
+				— там его видно и там его можно поправить руками.
 			</p>
 			<div className="flex flex-col gap-1.5">
 				{planItems.map((item: any, index: number) => {
@@ -242,7 +268,10 @@ export const CompletedServicesChecklist: React.FC = () => {
 					const quantity = planLineQuantity(item);
 					return (
 						<label
-							key={item?.id ?? `${item?.serviceId ?? "услуга"}-${item?.toothCode ?? "без-зуба"}-${index}`}
+							key={
+								item?.id ??
+								`${item?.serviceId ?? "услуга"}-${item?.toothCode ?? "без-зуба"}-${index}`
+							}
 							className="flex items-center gap-2 cursor-pointer text-xs text-slate-800 dark:text-slate-200"
 						>
 							<input
@@ -263,7 +292,9 @@ export const CompletedServicesChecklist: React.FC = () => {
 									{PRICE_UNKNOWN_TEXT}
 								</em>
 							) : (
-								<strong className="tabular-nums whitespace-nowrap">{money(totalRub)}</strong>
+								<strong className="tabular-nums whitespace-nowrap">
+									{money(totalRub)}
+								</strong>
 							)}
 						</label>
 					);

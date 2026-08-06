@@ -27,7 +27,9 @@ async function main(): Promise<void> {
 		url: "/api/templates",
 		headers: { "Content-Type": "application/json" },
 	});
-	console.log("СЦЕНАРИЙ: GET /api/templates ровно как из VisitDiaryTemplateSelector");
+	console.log(
+		"СЦЕНАРИЙ: GET /api/templates ровно как из VisitDiaryTemplateSelector",
+	);
 	console.log(`  СТАТУС : ${asWebClient.statusCode}`);
 	console.log(`  ТЕЛО   : ${asWebClient.body.slice(0, 300)}`);
 

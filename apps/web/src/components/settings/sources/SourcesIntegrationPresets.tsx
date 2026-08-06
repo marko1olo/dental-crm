@@ -108,8 +108,8 @@ export function SourcesIntegrationPresets() {
 							<div>
 								<strong>{preset.title}</strong>
 								<p>
-									{preset.vendor} · {integrationCategoryLabels[preset.category]} ·
-									риск {integrationPresetRiskLabels[preset.riskLevel]}
+									{preset.vendor} · {integrationCategoryLabels[preset.category]}{" "}
+									· риск {integrationPresetRiskLabels[preset.riskLevel]}
 								</p>
 							</div>
 							<span>{integrationStatusLabels[preset.status]}</span>

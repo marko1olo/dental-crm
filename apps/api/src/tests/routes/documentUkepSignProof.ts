@@ -26,10 +26,15 @@
  */
 
 import { eq, sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
-import { generatedDocuments, organizations, patients, users } from "../../db/schema.js";
+import {
+	generatedDocuments,
+	organizations,
+	patients,
+	users,
+} from "../../db/schema.js";
 import { registerDocumentRoutes } from "../../routes/documents.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -62,8 +67,12 @@ async function removeProofTraces(): Promise<void> {
 		.from(organizations)
 		.where(eq(organizations.name, PROOF_ORGANIZATION_NAME));
 	for (const organization of stale) {
-		await db.delete(generatedDocuments).where(eq(generatedDocuments.organizationId, organization.id));
-		await db.delete(patients).where(eq(patients.organizationId, organization.id));
+		await db
+			.delete(generatedDocuments)
+			.where(eq(generatedDocuments.organizationId, organization.id));
+		await db
+			.delete(patients)
+			.where(eq(patients.organizationId, organization.id));
 		await db.delete(users).where(eq(users.organizationId, organization.id));
 		await db.delete(organizations).where(eq(organizations.id, organization.id));
 	}
@@ -82,7 +91,8 @@ async function main(): Promise<void> {
 			.insert(organizations)
 			.values({ name: PROOF_ORGANIZATION_NAME })
 			.returning({ id: organizations.id });
-		if (!organization) throw new Error("Посев не состоялся: клиника прогона не создана");
+		if (!organization)
+			throw new Error("Посев не состоялся: клиника прогона не создана");
 		organizationId = organization.id;
 
 		const [patient] = await db
@@ -91,9 +101,14 @@ async function main(): Promise<void> {
 			.returning({ id: patients.id });
 		const [staff] = await db
 			.insert(users)
-			.values({ organizationId, fullName: "Главный врач прогона", role: "owner" })
+			.values({
+				organizationId,
+				fullName: "Главный врач прогона",
+				role: "owner",
+			})
 			.returning({ id: users.id });
-		if (!patient || !staff) throw new Error("Посев не состоялся: пациент или сотрудник не создан");
+		if (!patient || !staff)
+			throw new Error("Посев не состоялся: пациент или сотрудник не создан");
 
 		/*
 		 * Документ ВЫДАН и с проверенным архивом — именно такой подписывают УКЭП:
@@ -114,24 +129,51 @@ async function main(): Promise<void> {
 				issuedByUserId: staff.id,
 			})
 			.returning({ id: generatedDocuments.id });
-		if (!document) throw new Error("Посев не состоялся: документ прогона не создан");
+		if (!document)
+			throw new Error("Посев не состоялся: документ прогона не создан");
 
 		const url = `/api/documents/${document.id}/sign-ukep`;
-		const token = signToken({ organizationId, userId: staff.id, role: "owner" }, authTokenSecret());
-		const headers = { "x-dente-staff-token": token, "content-type": "application/json" };
+		const token = signToken(
+			{ organizationId, userId: staff.id, role: "owner" },
+			authTokenSecret(),
+		);
+		const headers = {
+			"x-dente-staff-token": token,
+			"content-type": "application/json",
+		};
 
 		// ЗАМЕР 1. Маршрут вообще обслуживается? До регистрации здесь было 404
 		// с телом Fastify «Route POST:/api/documents/<…>/sign-ukep not found».
-		const anonymous = await app.inject({ method: "POST", url, payload: { pkcs7Signature: PROOF_SIGNATURE } });
-		check("без токена сотрудника маршрут отвечает отказом доступа, а не 404", anonymous.statusCode, 401);
-		console.log(`  без токена: HTTP ${anonymous.statusCode} ${anonymous.body.slice(0, 120)}`);
+		const anonymous = await app.inject({
+			method: "POST",
+			url,
+			payload: { pkcs7Signature: PROOF_SIGNATURE },
+		});
+		check(
+			"без токена сотрудника маршрут отвечает отказом доступа, а не 404",
+			anonymous.statusCode,
+			401,
+		);
+		console.log(
+			`  без токена: HTTP ${anonymous.statusCode} ${anonymous.body.slice(0, 120)}`,
+		);
 
 		// ЗАМЕР 2. Пустая подпись отклоняется до похода в базу.
-		const empty = await app.inject({ method: "POST", url, headers, payload: {} });
+		const empty = await app.inject({
+			method: "POST",
+			url,
+			headers,
+			payload: {},
+		});
 		check("подписание без подписи отклонено", empty.statusCode, 400);
 
 		// ЗАМЕР 3. Подписание выданного документа.
-		const signed = await app.inject({ method: "POST", url, headers, payload: { pkcs7Signature: PROOF_SIGNATURE } });
+		const signed = await app.inject({
+			method: "POST",
+			url,
+			headers,
+			payload: { pkcs7Signature: PROOF_SIGNATURE },
+		});
 		check("документ подписан УКЭП", signed.statusCode, 200);
 		console.log(`  подписание: HTTP ${signed.statusCode} ${signed.body}`);
 
@@ -141,12 +183,23 @@ async function main(): Promise<void> {
 			  from generated_documents
 			 where id = ${document.id}
 		`);
-		const storedSignature = (stored.rows[0] as { signature: string | null } | undefined)?.signature ?? null;
-		check("крипто-подпись сохранена в документе", storedSignature, PROOF_SIGNATURE);
+		const storedSignature =
+			(stored.rows[0] as { signature: string | null } | undefined)?.signature ??
+			null;
+		check(
+			"крипто-подпись сохранена в документе",
+			storedSignature,
+			PROOF_SIGNATURE,
+		);
 
 		// ЗАМЕР 5. Повторное подписание запрещено: иначе подпись главного врача
 		// молча затирается чужой, а кто заверял архивный PDF — не установить.
-		const again = await app.inject({ method: "POST", url, headers, payload: { pkcs7Signature: SECOND_SIGNATURE } });
+		const again = await app.inject({
+			method: "POST",
+			url,
+			headers,
+			payload: { pkcs7Signature: SECOND_SIGNATURE },
+		});
 		check("повторное подписание отклонено", again.statusCode, 409);
 		console.log(`  повтор: HTTP ${again.statusCode} ${again.body}`);
 
@@ -155,8 +208,14 @@ async function main(): Promise<void> {
 			  from generated_documents
 			 where id = ${document.id}
 		`);
-		const signatureAfterRetry = (afterRetry.rows[0] as { signature: string | null } | undefined)?.signature ?? null;
-		check("первая подпись не затёрта повторной попыткой", signatureAfterRetry, PROOF_SIGNATURE);
+		const signatureAfterRetry =
+			(afterRetry.rows[0] as { signature: string | null } | undefined)
+				?.signature ?? null;
+		check(
+			"первая подпись не затёрта повторной попыткой",
+			signatureAfterRetry,
+			PROOF_SIGNATURE,
+		);
 
 		// ЗАМЕР 6. Чужая клиника не подпишет документ этой клиники.
 		const [otherOrganization] = await db
@@ -166,20 +225,35 @@ async function main(): Promise<void> {
 		if (otherOrganization) {
 			const [otherStaff] = await db
 				.insert(users)
-				.values({ organizationId: otherOrganization.id, fullName: "Врач чужой клиники", role: "owner" })
+				.values({
+					organizationId: otherOrganization.id,
+					fullName: "Врач чужой клиники",
+					role: "owner",
+				})
 				.returning({ id: users.id });
 			if (otherStaff) {
 				const foreignToken = signToken(
-					{ organizationId: otherOrganization.id, userId: otherStaff.id, role: "owner" },
+					{
+						organizationId: otherOrganization.id,
+						userId: otherStaff.id,
+						role: "owner",
+					},
 					authTokenSecret(),
 				);
 				const foreign = await app.inject({
 					method: "POST",
 					url: `/api/documents/${document.id}/sign-ukep`,
-					headers: { "x-dente-staff-token": foreignToken, "content-type": "application/json" },
+					headers: {
+						"x-dente-staff-token": foreignToken,
+						"content-type": "application/json",
+					},
 					payload: { pkcs7Signature: "cHJvb2Ytc2lnbmF0dXJlLWZvcmVpZ24=" },
 				});
-				check("документ чужой клиники не найден для подписания", foreign.statusCode, 404);
+				check(
+					"документ чужой клиники не найден для подписания",
+					foreign.statusCode,
+					404,
+				);
 			}
 		}
 	} finally {
@@ -188,7 +262,11 @@ async function main(): Promise<void> {
 		await pool.end();
 	}
 
-	console.log(failures === 0 ? "\nИТОГ: все замеры сошлись" : `\nИТОГ: провалов ${failures}`);
+	console.log(
+		failures === 0
+			? "\nИТОГ: все замеры сошлись"
+			: `\nИТОГ: провалов ${failures}`,
+	);
 	process.exitCode = failures === 0 ? 0 : 1;
 }
 

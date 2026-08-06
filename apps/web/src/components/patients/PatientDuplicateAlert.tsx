@@ -19,7 +19,6 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { usePatientStore } from "../../store/patientStore";
 import {
 	DOUBTFUL_BELOW,
 	type DuplicateCandidate,
@@ -27,8 +26,9 @@ import {
 	duplicatePairKey,
 	fetchDuplicatesForPatient,
 	mergeDuplicatePair,
-	otherSideOf
+	otherSideOf,
 } from "../../lib/patientDuplicatesApi";
+import { usePatientStore } from "../../store/patientStore";
 
 function formatBirthDate(value: string | null): string {
 	if (!value) return "дата рождения не указана";
@@ -37,7 +37,9 @@ function formatBirthDate(value: string | null): string {
 	return parsed.toLocaleDateString("ru-RU");
 }
 
-export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patientId }) => {
+export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({
+	patientId,
+}) => {
 	const appLogic = useAppLogicContext();
 	const { setSelectedPatientId } = usePatientStore();
 	const [candidates, setCandidates] = useState<DuplicateCandidate[]>([]);
@@ -56,7 +58,10 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 		const requestedPatientId = patientId;
 		try {
 			const headers = auth ? auth.denteClinicalReadHeaders() : {};
-			const fresh = await fetchDuplicatesForPatient(requestedPatientId, headers);
+			const fresh = await fetchDuplicatesForPatient(
+				requestedPatientId,
+				headers,
+			);
 			/*
 			 * БЫЛО: результат ставился без этой проверки. Пока список дублей
 			 * Иванова был в пути, администратор успевал открыть карточку Петровой —
@@ -114,8 +119,12 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 			const other = otherSideOf(candidate, keepPatientId);
 			const headers = auth ? auth.denteClinicalMutationHeaders() : {};
 			const result = await mergeDuplicatePair(
-				{ keepPatientId, mergePatientId: other.patientId, reason: "Объединено из карточки пациента" },
-				headers
+				{
+					keepPatientId,
+					mergePatientId: other.patientId,
+					reason: "Объединено из карточки пациента",
+				},
+				headers,
 			);
 			// Отчёт о слиянии принадлежит той карточке, из которой его запустили.
 			// Без этой проверки он появлялся на карточке уже другого пациента.
@@ -141,9 +150,9 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 				{
 					leftPatientId: candidate.leftPatientId,
 					rightPatientId: candidate.rightPatientId,
-					reason: "Отмечено из карточки пациента"
+					reason: "Отмечено из карточки пациента",
 				},
-				headers
+				headers,
 			);
 			// Тот же случай: ответ по чужой карточке на ней и остаётся.
 			if (patientIdRef.current !== decidedOnPatientId) return;
@@ -161,23 +170,35 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 	// ещё один раз: администратор должен увидеть, что произошло.
 	if (candidates.length === 0) {
 		return notice ? (
-			<p className="patient-duplicate-alert patient-duplicate-alert--done" role="status">
+			<p
+				className="patient-duplicate-alert patient-duplicate-alert--done"
+				role="status"
+			>
 				{notice}
 			</p>
 		) : null;
 	}
 
 	return (
-		<section className="patient-duplicate-alert" data-testid="patient-duplicate-alert" aria-label="Возможный дубль карточки">
+		<section
+			className="patient-duplicate-alert"
+			data-testid="patient-duplicate-alert"
+			aria-label="Возможный дубль карточки"
+		>
 			<p className="patient-duplicate-alert__lead">
 				{candidates.length === 1
 					? "Похоже, у этого пациента есть вторая карточка."
 					: `Похоже, у этого пациента есть ещё карточки: ${candidates.length}.`}{" "}
-				Пока карточки не объединены, приёмы, оплаты и снимки разложены по разным местам, и долг не виден целиком.
+				Пока карточки не объединены, приёмы, оплаты и снимки разложены по разным
+				местам, и долг не виден целиком.
 			</p>
 
 			{notice ? (
-				<p className="patient-duplicate-alert__notice" role="status" aria-live="polite">
+				<p
+					className="patient-duplicate-alert__notice"
+					role="status"
+					aria-live="polite"
+				>
 					{notice}
 				</p>
 			) : null}
@@ -192,14 +213,21 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 					return (
 						<li key={key} className="patient-duplicate-alert__item">
 							<div className="patient-duplicate-alert__who">
-								<span className="patient-duplicate-alert__name">{other.fullName}</span>
-								<span className="patient-duplicate-alert__facts">
-									{formatBirthDate(other.birthDate)} · {other.phone ?? "телефон не указан"}
+								<span className="patient-duplicate-alert__name">
+									{other.fullName}
 								</span>
-								<span className={`ops-state ops-state--${doubtful ? "warn" : "ok"}`}>
+								<span className="patient-duplicate-alert__facts">
+									{formatBirthDate(other.birthDate)} ·{" "}
+									{other.phone ?? "телефон не указан"}
+								</span>
+								<span
+									className={`ops-state ops-state--${doubtful ? "warn" : "ok"}`}
+								>
 									{Math.round(candidate.confidence * 100)} % совпадения
 								</span>
-								<span className="patient-duplicate-alert__why">{candidate.explanation}</span>
+								<span className="patient-duplicate-alert__why">
+									{candidate.explanation}
+								</span>
 								{candidate.caution ? (
 									<span className="patient-duplicate-alert__why">
 										<strong>Осторожно:</strong> {candidate.caution}
@@ -211,13 +239,23 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 								{confirmKey === key ? (
 									<>
 										<span className="patient-duplicate-alert__why">
-											Останется открытая карточка. Записи, оплаты и снимки из «{other.fullName}» перенесутся сюда,
-											вторая карточка сохранится как архивная ссылка.
+											Останется открытая карточка. Записи, оплаты и снимки из «
+											{other.fullName}» перенесутся сюда, вторая карточка
+											сохранится как архивная ссылка.
 										</span>
-										<button className="primary-button" type="button" disabled={busy} onClick={() => void merge(candidate)}>
+										<button
+											className="primary-button"
+											type="button"
+											disabled={busy}
+											onClick={() => void merge(candidate)}
+										>
 											{busy ? "Перенос…" : "Подтвердить перенос"}
 										</button>
-										<button className="secondary-button" type="button" onClick={() => setConfirmKey(null)}>
+										<button
+											className="secondary-button"
+											type="button"
+											onClick={() => setConfirmKey(null)}
+										>
 											Отмена
 										</button>
 									</>
@@ -233,7 +271,7 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 												    предупреждение «объединять нельзя без проверки», а кнопка
 												    выглядела так же, как у пары с 95 % совпадения. Замечено
 												    на снимке экрана. */}
-												{doubtful ? "Всё равно перенести сюда" : "Перенести сюда"}
+											{doubtful ? "Всё равно перенести сюда" : "Перенести сюда"}
 										</button>
 										{/* Открыть вторую карточку — чтобы сверить глазами и, если нужно,
 										    объединить в обратную сторону оттуда. */}
@@ -244,7 +282,12 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 										>
 											Открыть вторую
 										</button>
-										<button className="secondary-button" type="button" disabled={busy} onClick={() => void dismiss(candidate)}>
+										<button
+											className="secondary-button"
+											type="button"
+											disabled={busy}
+											onClick={() => void dismiss(candidate)}
+										>
 											Это разные люди
 										</button>
 									</>

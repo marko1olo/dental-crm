@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 import type { WhatsappStaffRouting } from "../../hooks/useWhatsappSettings.js";
 import {
-	WHATSAPP_SETTINGS_PANEL_SUBJECT,
 	useWhatsappSettings,
+	WHATSAPP_SETTINGS_PANEL_SUBJECT,
 } from "../../hooks/useWhatsappSettings.js";
 import { panelStateText } from "../../lib/panelStateText";
 import { PanelLoadFailure } from "../PanelLoadFailure";

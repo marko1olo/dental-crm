@@ -1,4 +1,7 @@
-import { getPaymentsByPatientIdInDb, applyPaymentRefundSettlementsInDb } from "../db/billingQuery.js";
+import {
+	applyPaymentRefundSettlementsInDb,
+	getPaymentsByPatientIdInDb,
+} from "../db/billingQuery.js";
 import { getDocumentsByPatientId } from "../db/documentQuery.js";
 import { paymentRefundSettlements } from "./guards.js";
 
@@ -54,7 +57,11 @@ export type RefundSettlementOutcome = {
 	 * ВЕСЬ чек вместо возвращённой части. Это возвращается вызывающему, чтобы факт
 	 * был видим, а не молчал.
 	 */
-	partiallyRefunded: { paymentId: string; refundedKopecks: number; amountKopecks: number }[];
+	partiallyRefunded: {
+		paymentId: string;
+		refundedKopecks: number;
+		amountKopecks: number;
+	}[];
 };
 
 export async function settleRefundedPaymentsForPatient(
@@ -69,7 +76,10 @@ export async function settleRefundedPaymentsForPatient(
 	if (settlements.length === 0) {
 		return { refunded: [], restored: [], partiallyRefunded: [] };
 	}
-	const applied = await applyPaymentRefundSettlementsInDb(organizationId, settlements);
+	const applied = await applyPaymentRefundSettlementsInDb(
+		organizationId,
+		settlements,
+	);
 	return {
 		refunded: applied.refunded,
 		restored: applied.restored,

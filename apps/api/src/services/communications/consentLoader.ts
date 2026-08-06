@@ -19,7 +19,10 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { patientCommunicationConsents } from "../../db/schema.js";
-import type { CommunicationChannelCode, CommunicationConsentScope } from "./channelRouter.js";
+import type {
+	CommunicationChannelCode,
+	CommunicationConsentScope,
+} from "./channelRouter.js";
 import type { ConsentRecord } from "./deliveryPolicy.js";
 
 /**
@@ -32,7 +35,7 @@ import type { ConsentRecord } from "./deliveryPolicy.js";
  */
 export async function loadConsentsByPatient(
 	organizationId: string,
-	patientIds: readonly string[]
+	patientIds: readonly string[],
 ): Promise<Map<string, ConsentRecord[]>> {
 	const result = new Map<string, ConsentRecord[]>();
 	if (patientIds.length === 0) return result;
@@ -42,14 +45,14 @@ export async function loadConsentsByPatient(
 			patientId: patientCommunicationConsents.patientId,
 			channel: patientCommunicationConsents.channel,
 			scope: patientCommunicationConsents.scope,
-			state: patientCommunicationConsents.state
+			state: patientCommunicationConsents.state,
 		})
 		.from(patientCommunicationConsents)
 		.where(
 			and(
 				eq(patientCommunicationConsents.organizationId, organizationId),
-				inArray(patientCommunicationConsents.patientId, [...patientIds])
-			)
+				inArray(patientCommunicationConsents.patientId, [...patientIds]),
+			),
 		);
 
 	for (const row of rows) {
@@ -57,7 +60,7 @@ export async function loadConsentsByPatient(
 		list.push({
 			channel: row.channel as CommunicationChannelCode,
 			scope: row.scope as CommunicationConsentScope,
-			state: row.state as "granted" | "revoked"
+			state: row.state as "granted" | "revoked",
 		});
 		result.set(row.patientId, list);
 	}

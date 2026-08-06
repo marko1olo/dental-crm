@@ -1,2 +1,2 @@
-export { generateDentalCdaXml, egiszCdaParamsSchema } from './cda/index.js'; 
-export type { EgiszCdaParams } from './cda/index.js';
+export type { EgiszCdaParams } from "./cda/index.js";
+export { egiszCdaParamsSchema, generateDentalCdaXml } from "./cda/index.js";

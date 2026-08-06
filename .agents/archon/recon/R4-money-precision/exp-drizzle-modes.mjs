@@ -2,9 +2,9 @@
 // each of the two modes the schema actually uses. Real table, real rows, real libs.
 // READ-ONLY: two SELECTs against payments, nothing else.
 import { readFileSync } from "node:fs";
-import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { pgTable, uuid, numeric } from "drizzle-orm/pg-core";
+import { numeric, pgTable, uuid } from "drizzle-orm/pg-core";
+import pg from "pg";
 
 const SAFE_KOPECKS = Number.MAX_SAFE_INTEGER;
 function parseNumericMoney(value) {
@@ -49,20 +49,29 @@ const payStr = pgTable("payments", {
 const raw = await pool.query(
 	`select id, amount_rub, amount_rub::text as as_text from payments order by amount_rub, id`,
 );
-const asNumber = (await db.select({ id: payNum.id, a: payNum.amountRub }).from(payNum)).sort(
-	(x, y) => x.a - y.a || String(x.id).localeCompare(String(y.id)),
-);
-const asString = (await db.select({ id: payStr.id, a: payStr.amountRub }).from(payStr)).sort(
-	(x, y) => Number(x.a) - Number(y.a) || String(x.id).localeCompare(String(y.id)),
+const asNumber = (
+	await db.select({ id: payNum.id, a: payNum.amountRub }).from(payNum)
+).sort((x, y) => x.a - y.a || String(x.id).localeCompare(String(y.id)));
+const asString = (
+	await db.select({ id: payStr.id, a: payStr.amountRub }).from(payStr)
+).sort(
+	(x, y) =>
+		Number(x.a) - Number(y.a) || String(x.id).localeCompare(String(y.id)),
 );
 for (let i = 0; i < raw.rows.length; i++) {
 	if (raw.rows[i].id !== asNumber[i].id || raw.rows[i].id !== asString[i].id) {
-		throw new Error(`row alignment broken at ${i} — refusing to print misleading output`);
+		throw new Error(
+			`row alignment broken at ${i} — refusing to print misleading output`,
+		);
 	}
 }
 
-console.log("=== real rows from payments.amount_rub, same DB, same process ===");
-console.log("stored text | raw driver value      | drizzle mode:number | drizzle default (string)");
+console.log(
+	"=== real rows from payments.amount_rub, same DB, same process ===",
+);
+console.log(
+	"stored text | raw driver value      | drizzle mode:number | drizzle default (string)",
+);
 for (let i = 0; i < raw.rows.length; i++) {
 	console.log(
 		`${String(raw.rows[i].as_text).padEnd(11)} | ${(typeof raw.rows[i].amount_rub + " " + JSON.stringify(raw.rows[i].amount_rub)).padEnd(21)} | ${(typeof asNumber[i].a + " " + JSON.stringify(asNumber[i].a)).padEnd(19)} | ${typeof asString[i].a} ${JSON.stringify(asString[i].a)}`,

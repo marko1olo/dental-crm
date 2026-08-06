@@ -34,32 +34,37 @@ import { normalizeMoneyValue } from "./valueNormalize.js";
  * бы невозможно проверить без живой базы.
  */
 export function sourceMoneyTotalFromRows(
-  rows: readonly (readonly string[])[],
-  amountColumnIndex: number
-): { totalKopecks: number | null; unreadableCells: number; parsedCells: number } {
-  let totalKopecks = 0;
-  let unreadableCells = 0;
-  let parsedCells = 0;
+	rows: readonly (readonly string[])[],
+	amountColumnIndex: number,
+): {
+	totalKopecks: number | null;
+	unreadableCells: number;
+	parsedCells: number;
+} {
+	let totalKopecks = 0;
+	let unreadableCells = 0;
+	let parsedCells = 0;
 
-  for (const row of rows) {
-    // normalizeMoneyValue возвращает копейки — суммируем целые, без потерь.
-    const parsedAmount = normalizeMoneyValue(row[amountColumnIndex] ?? "");
-    if (parsedAmount.value === null) {
-      /*
-       * issue !== null означает «в колонке суммы лежит не сумма» (bad), а не
-       * «суммы нет» (empty). Различие принципиальное: в первом случае величина
-       * неизвестна, во втором — известно, что её нет.
-       */
-      if (parsedAmount.issue !== null) unreadableCells += 1;
-      continue;
-    }
-    totalKopecks += parsedAmount.value;
-    parsedCells += 1;
-  }
+	for (const row of rows) {
+		// normalizeMoneyValue возвращает копейки — суммируем целые, без потерь.
+		const parsedAmount = normalizeMoneyValue(row[amountColumnIndex] ?? "");
+		if (parsedAmount.value === null) {
+			/*
+			 * issue !== null означает «в колонке суммы лежит не сумма» (bad), а не
+			 * «суммы нет» (empty). Различие принципиальное: в первом случае величина
+			 * неизвестна, во втором — известно, что её нет.
+			 */
+			if (parsedAmount.issue !== null) unreadableCells += 1;
+			continue;
+		}
+		totalKopecks += parsedAmount.value;
+		parsedCells += 1;
+	}
 
-  return {
-    totalKopecks: unreadableCells > 0 || parsedCells === 0 ? null : totalKopecks,
-    unreadableCells,
-    parsedCells
-  };
+	return {
+		totalKopecks:
+			unreadableCells > 0 || parsedCells === 0 ? null : totalKopecks,
+		unreadableCells,
+		parsedCells,
+	};
 }

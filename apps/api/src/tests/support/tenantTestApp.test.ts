@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { after, before, describe, test } from "node:test";
 import { readFile } from "node:fs/promises";
+import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
@@ -66,7 +66,10 @@ describe("тестовое приложение с тенант-контекст
 			method: "GET",
 			url: "/probe/tenant",
 			headers: {
-				"x-dente-clinic-token": signToken({ organizationId: ORGANIZATION_ID }, authTokenSecret()),
+				"x-dente-clinic-token": signToken(
+					{ organizationId: ORGANIZATION_ID },
+					authTokenSecret(),
+				),
 			},
 		});
 
@@ -88,7 +91,10 @@ describe("тестовое приложение с тенант-контекст
 		// именно на том, что здесь пусто. Сброшенный пользовательский параметр
 		// сеанса читается пустой строкой, а не NULL.
 		const tenant = JSON.parse(response.body).tenant;
-		assert.ok(tenant === "" || tenant === null, `ожидался пустой контекст, получен «${tenant}»`);
+		assert.ok(
+			tenant === "" || tenant === null,
+			`ожидался пустой контекст, получен «${tenant}»`,
+		);
 	});
 
 	test("подделать организацию заголовком нельзя без явного разрешения разработки", async (context) => {
@@ -104,7 +110,10 @@ describe("тестовое приложение с тенант-контекст
 			});
 			assert.equal(response.statusCode, 200, response.body);
 			const tenant = JSON.parse(response.body).tenant;
-			assert.ok(tenant === "" || tenant === null, `заголовок выдал контекст «${tenant}» без разрешения`);
+			assert.ok(
+				tenant === "" || tenant === null,
+				`заголовок выдал контекст «${tenant}» без разрешения`,
+			);
 		} finally {
 			if (previous === undefined) delete process.env.DENTE_DEV_ALLOW_HEADER_ORG;
 			else process.env.DENTE_DEV_ALLOW_HEADER_ORG = previous;
@@ -116,7 +125,10 @@ describe("тестовое приложение с тенант-контекст
 		// смотрит в ИСХОДНИК: импортировать server.ts ради проверки нельзя —
 		// модуль на импорте поднимает прокси, туннели и семьдесят наборов
 		// маршрутов.
-		const serverSource = await readFile(new URL("../../server.ts", import.meta.url), "utf8");
+		const serverSource = await readFile(
+			new URL("../../server.ts", import.meta.url),
+			"utf8",
+		);
 
 		assert.match(
 			serverSource,

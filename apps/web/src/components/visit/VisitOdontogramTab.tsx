@@ -6,9 +6,17 @@ import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { VisitDiaryEditor } from "../VisitDiaryEditor";
 import { realVisitFieldId } from "./visitIdentity";
 
-export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointment?: any; dashboard?: any }) {
+export function VisitOdontogramTab(props?: {
+	activePatient?: any;
+	activeAppointment?: any;
+	dashboard?: any;
+}) {
 	let ctx: any = null;
-	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider: fall back to props */ }
+	try {
+		ctx = useAppLogicContext();
+	} catch {
+		/* rendered outside AppLogic provider: fall back to props */
+	}
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
 	const dashboard = props?.dashboard ?? ctx?.dashboard;
@@ -27,9 +35,7 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 	 * Тот же realVisitFieldId, что VisitEmkTab — отсекает NIL_UUID гидратации.
 	 */
 	const activeVisit =
-		dashboard?.activeVisit ??
-		ctx?.dashboard?.activeVisit ??
-		null;
+		dashboard?.activeVisit ?? ctx?.dashboard?.activeVisit ?? null;
 	const openVisitId = realVisitFieldId(
 		activeVisit && typeof activeVisit === "object"
 			? (activeVisit as { id?: unknown }).id
@@ -42,23 +48,26 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 	);
 	const appointmentId = realVisitFieldId(activeAppointment?.id);
 	const diaryVisitId =
-		openVisitId &&
-		appointmentId &&
-		openVisitAppointmentId === appointmentId
+		openVisitId && appointmentId && openVisitAppointmentId === appointmentId
 			? openVisitId
 			: null;
-	const diaryPatientId = realVisitFieldId(
-		activeVisit && typeof activeVisit === "object"
-			? (activeVisit as { patientId?: unknown }).patientId
-			: null,
-	) ?? realVisitFieldId(activePatient?.id);
+	const diaryPatientId =
+		realVisitFieldId(
+			activeVisit && typeof activeVisit === "object"
+				? (activeVisit as { patientId?: unknown }).patientId
+				: null,
+		) ?? realVisitFieldId(activePatient?.id);
 
 	if (!activePatient?.id) {
 		return (
 			<div className="text-center py-12 px-6 text-slate-500 dark:text-slate-400">
 				<div className="text-4xl mb-3">🦷</div>
-				<h4 className="text-base font-semibold text-slate-900 dark:text-white">Пациент не выбран</h4>
-				<p className="text-sm m-0">Выберите пациента, чтобы открыть одонтограмму.</p>
+				<h4 className="text-base font-semibold text-slate-900 dark:text-white">
+					Пациент не выбран
+				</h4>
+				<p className="text-sm m-0">
+					Выберите пациента, чтобы открыть одонтограмму.
+				</p>
 			</div>
 		);
 	}
@@ -84,7 +93,10 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 			>
 				<OdontogramModule
 					patientId={activePatient.id}
-					pediatricMode={workspaceFlags.hasPediatricMode || (dashboard?.clinicSettings?.profile?.hasPediatricMode ?? false)}
+					pediatricMode={
+						workspaceFlags.hasPediatricMode ||
+						(dashboard?.clinicSettings?.profile?.hasPediatricMode ?? false)
+					}
 				/>
 			</div>
 			<div
@@ -152,7 +164,8 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 								: "Дневник приёма появится, когда приём откроют"}
 						</h4>
 						<p className="text-sm m-0 mt-1">
-							Зубную карту слева можно заполнять уже сейчас: она хранится у пациента.
+							Зубную карту слева можно заполнять уже сейчас: она хранится у
+							пациента.
 							{appointmentId
 								? " Дневник и ЕГИСЗ привязаны к открытому визиту — начните приём в разделе «Записи», чтобы появилась запись 043/у."
 								: " Дневник записывается в конкретный приём — запишите пациента и начните приём в разделе «Записи»."}

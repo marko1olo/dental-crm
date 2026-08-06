@@ -133,11 +133,13 @@ function* walk(directory, extensions) {
 			continue;
 		}
 		if (!entry.isFile()) continue;
-		if (extensions.some((extension) => entry.name.endsWith(extension))) yield join(directory, entry.name);
+		if (extensions.some((extension) => entry.name.endsWith(extension)))
+			yield join(directory, entry.name);
 	}
 }
 
-const asRepoPath = (filePath) => relative(repoRoot, filePath).replaceAll("\\", "/");
+const asRepoPath = (filePath) =>
+	relative(repoRoot, filePath).replaceAll("\\", "/");
 
 /**
  * Вырезает /* ... *​/ , сохраняя смещения: каждый вырезанный символ заменяется
@@ -157,7 +159,8 @@ function blankComments(source) {
 		let end = source.indexOf("*/", start + 2);
 		if (end < 0) end = source.length;
 		else end += 2;
-		for (const character of source.slice(start, end)) result += character === "\n" ? "\n" : " ";
+		for (const character of source.slice(start, end))
+			result += character === "\n" ? "\n" : " ";
 		index = end;
 	}
 	return result;
@@ -166,7 +169,8 @@ function blankComments(source) {
 /** Смещение -> номер строки (1-based). */
 function lineIndex(source) {
 	const starts = [0];
-	for (let i = 0; i < source.length; i++) if (source[i] === "\n") starts.push(i + 1);
+	for (let i = 0; i < source.length; i++)
+		if (source[i] === "\n") starts.push(i + 1);
 	return (offset) => {
 		let low = 0;
 		let high = starts.length - 1;
@@ -208,14 +212,17 @@ function fallbackTextAt(source, openParenIndex) {
 		if (character === "(") depth += 1;
 		else if (character === ")") {
 			depth -= 1;
-			if (depth === 0) return commaIndex < 0 ? null : source.slice(commaIndex + 1, i).trim();
-		} else if (character === "," && depth === 1 && commaIndex < 0) commaIndex = i;
+			if (depth === 0)
+				return commaIndex < 0 ? null : source.slice(commaIndex + 1, i).trim();
+		} else if (character === "," && depth === 1 && commaIndex < 0)
+			commaIndex = i;
 	}
 	return null;
 }
 
 /** Один канал sRGB 0..1 -> линейное значение по WCAG 2.x. */
-const linearizeChannel = (channel) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+const linearizeChannel = (channel) =>
+	channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
 
 /**
  * Относительная яркость цветового литерала по WCAG 2.x, либо null, если это не
@@ -232,23 +239,38 @@ function relativeLuminance(value) {
 	if (hex) {
 		const digits = hex[1];
 		if (digits.length === 3 || digits.length === 4) {
-			channels = [0, 1, 2].map((i) => Number.parseInt(digits[i] + digits[i], 16));
+			channels = [0, 1, 2].map((i) =>
+				Number.parseInt(digits[i] + digits[i], 16),
+			);
 		} else if (digits.length === 6 || digits.length === 8) {
-			channels = [0, 2, 4].map((i) => Number.parseInt(digits.slice(i, i + 2), 16));
+			channels = [0, 2, 4].map((i) =>
+				Number.parseInt(digits.slice(i, i + 2), 16),
+			);
 		}
 	} else {
 		const rgb = /^rgba?\(([^)]*)\)$/.exec(text);
 		if (rgb) {
-			const parts = rgb[1].split(/[,\s/]+/).filter(Boolean).slice(0, 3);
-			if (parts.length === 3 && parts.every((part) => /^[\d.]+%?$/.test(part))) {
+			const parts = rgb[1]
+				.split(/[,\s/]+/)
+				.filter(Boolean)
+				.slice(0, 3);
+			if (
+				parts.length === 3 &&
+				parts.every((part) => /^[\d.]+%?$/.test(part))
+			) {
 				channels = parts.map((part) =>
-					part.endsWith("%") ? (Number.parseFloat(part) * 255) / 100 : Number.parseFloat(part),
+					part.endsWith("%")
+						? (Number.parseFloat(part) * 255) / 100
+						: Number.parseFloat(part),
 				);
 			}
 		}
 	}
-	if (!channels || channels.some((channel) => !Number.isFinite(channel))) return null;
-	const [red, green, blue] = channels.map((channel) => linearizeChannel(channel / 255));
+	if (!channels || channels.some((channel) => !Number.isFinite(channel)))
+		return null;
+	const [red, green, blue] = channels.map((channel) =>
+		linearizeChannel(channel / 255),
+	);
 	return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }
 
@@ -294,7 +316,8 @@ const KNOWN_LIGHT_FALLBACK_DEBT = new Map([
 /** Строковый литерал с именем кастомного свойства -> само имя, иначе null. */
 function customPropertyLiteral(node) {
 	if (!node) return null;
-	if (!ts.isStringLiteral(node) && !ts.isNoSubstitutionTemplateLiteral(node)) return null;
+	if (!ts.isStringLiteral(node) && !ts.isNoSubstitutionTemplateLiteral(node))
+		return null;
 	return node.text.startsWith("--") ? node.text : null;
 }
 
@@ -307,18 +330,29 @@ function customPropertyLiteral(node) {
  *   el.style.setProperty("--x", …).
  */
 function collectJsCustomProperties(filePath, source) {
-	const scriptKind = filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
-	const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, false, scriptKind);
+	const scriptKind = filePath.endsWith(".tsx")
+		? ts.ScriptKind.TSX
+		: ts.ScriptKind.TS;
+	const sourceFile = ts.createSourceFile(
+		filePath,
+		source,
+		ts.ScriptTarget.Latest,
+		false,
+		scriptKind,
+	);
 	const names = new Set();
 	const visit = (node) => {
 		if (ts.isPropertyAssignment(node) || ts.isPropertySignature(node)) {
-			const key = ts.isComputedPropertyName(node.name) ? node.name.expression : node.name;
+			const key = ts.isComputedPropertyName(node.name)
+				? node.name.expression
+				: node.name;
 			const name = customPropertyLiteral(key);
 			if (name) names.add(name);
 		} else if (ts.isCallExpression(node)) {
 			const callee = node.expression;
 			const isSetProperty =
-				(ts.isPropertyAccessExpression(callee) && callee.name.text === "setProperty") ||
+				(ts.isPropertyAccessExpression(callee) &&
+					callee.name.text === "setProperty") ||
 				(ts.isIdentifier(callee) && callee.text === "setProperty");
 			if (isSetProperty) {
 				const name = customPropertyLiteral(node.arguments[0]);
@@ -349,7 +383,11 @@ for (const filePath of cssFiles) {
 //    стили { "--x": … }. Без этого они дали бы ложную тревогу.
 const definedInJs = new Set();
 for (const filePath of walk(webSrc, [".ts", ".tsx"])) {
-	for (const name of collectJsCustomProperties(filePath, readFileSync(filePath, "utf8"))) definedInJs.add(name);
+	for (const name of collectJsCustomProperties(
+		filePath,
+		readFileSync(filePath, "utf8"),
+	))
+		definedInJs.add(name);
 }
 
 // 3. Использования: каждое var() отдельно, с местом и признаком запаса.
@@ -381,9 +419,12 @@ for (const filePath of cssFiles) {
 			const fallback = fallbackTextAt(source, openParen);
 			const luminance = fallback === null ? null : relativeLuminance(fallback);
 			if (luminance === null) continue;
-			const bucket = luminance > LIGHT_FALLBACK_LUMINANCE ? lightFallbacks : darkFallbacks;
+			const bucket =
+				luminance > LIGHT_FALLBACK_LUMINANCE ? lightFallbacks : darkFallbacks;
 			if (!bucket.has(name)) bucket.set(name, []);
-			bucket.get(name).push({ file: repoPath, line: toLine(match.index), fallback });
+			bucket
+				.get(name)
+				.push({ file: repoPath, line: toLine(match.index), fallback });
 			continue;
 		}
 		if (isDeclared) continue;
@@ -392,12 +433,18 @@ for (const filePath of cssFiles) {
 	}
 }
 
-const rank = (entries) => [...entries].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-const count = (ranked) => ranked.reduce((sum, [, places]) => sum + places.length, 0);
+const rank = (entries) =>
+	[...entries].sort(
+		(a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]),
+	);
+const count = (ranked) =>
+	ranked.reduce((sum, [, places]) => sum + places.length, 0);
 
 const ranked = rank(offenders.entries());
 const occurrences = count(ranked);
-const inPrimaryScope = ranked.filter(([, places]) => places.some((place) => place.file.startsWith(PRIMARY_SCOPE)));
+const inPrimaryScope = ranked.filter(([, places]) =>
+	places.some((place) => place.file.startsWith(PRIMARY_SCOPE)),
+);
 const rankedDark = rank(darkFallbacks.entries());
 
 /** Какие css-файлы дерево вообще содержит: по этому и решается, применима ли запись долга. */
@@ -422,20 +469,30 @@ for (const [name, places] of lightFallbacks) {
 		byFile.get(place.file).push(place);
 	}
 	const excess = [];
-	for (const [file, filePlaces] of byFile) excess.push(...filePlaces.slice(allowanceFor(name, file)));
+	for (const [file, filePlaces] of byFile)
+		excess.push(...filePlaces.slice(allowanceFor(name, file)));
 	if (excess.length > 0) lightOverAllowance.set(name, excess);
 }
 const rankedLight = rank(lightOverAllowance.entries());
 
 /** Что каждая запись долга разрешает и что на самом деле лежит в названном ею файле. */
-const debtLedger = [...KNOWN_LIGHT_FALLBACK_DEBT.entries()].map(([name, entry]) => ({
-	name,
-	file: entry.file,
-	recorded: entry.occurrences,
-	actual: (lightFallbacks.get(name) ?? []).filter((place) => place.file === entry.file).length,
-}));
-const debtNames = debtLedger.filter((row) => row.actual > 0).map((row) => row.name);
-const debtOccurrences = debtLedger.reduce((sum, row) => sum + Math.min(row.actual, row.recorded), 0);
+const debtLedger = [...KNOWN_LIGHT_FALLBACK_DEBT.entries()].map(
+	([name, entry]) => ({
+		name,
+		file: entry.file,
+		recorded: entry.occurrences,
+		actual: (lightFallbacks.get(name) ?? []).filter(
+			(place) => place.file === entry.file,
+		).length,
+	}),
+);
+const debtNames = debtLedger
+	.filter((row) => row.actual > 0)
+	.map((row) => row.name);
+const debtOccurrences = debtLedger.reduce(
+	(sum, row) => sum + Math.min(row.actual, row.recorded),
+	0,
+);
 
 /**
  * Запись долга разошлась с деревом — список пора править, иначе он прикроет
@@ -449,24 +506,44 @@ const debtOccurrences = debtLedger.reduce((sum, row) => sum + Math.min(row.actua
  */
 const staleDebt = debtLedger
 	.filter((row) => scannedCssPaths.has(row.file) && row.actual !== row.recorded)
-	.map((row) => `${row.name} (${row.file}: записано ${row.recorded}, в дереве ${row.actual})`);
+	.map(
+		(row) =>
+			`${row.name} (${row.file}: записано ${row.recorded}, в дереве ${row.actual})`,
+	);
 
 console.log(`css-файлов проверено:            ${cssFiles.length}`);
 console.log(`объявлено переменных в css:      ${definedInCss.size}`);
 console.log(`имён выставляется из js:         ${definedInJs.size}`);
-console.log(`использований var():             ${totalUses} (из них с запасом: ${usesWithFallback})`);
+console.log(
+	`использований var():             ${totalUses} (из них с запасом: ${usesWithFallback})`,
+);
 console.log(`имён использовано через var():   ${usedNames.size}`);
-console.log(`НЕ РАЗРЕШАЕТСЯ НИ В ОДНОЙ ТЕМЕ:  ${ranked.length} имён, ${occurrences} вхождений`);
-console.log(`  из них затрагивают ${PRIMARY_SCOPE}: ${inPrimaryScope.length} имён`);
-console.log(`СВЕТЛЫЙ ЗАПАС ВО ВСЕХ ТЕМАХ:     ${rankedLight.length} имён, ${count(rankedLight)} вхождений`);
-console.log(`  известный долг (лестницы оттенков): ${debtNames.length} имён, ${debtOccurrences} вхождений`);
-console.log(`тёмный запас во всех темах:      ${rankedDark.length} имён, ${count(rankedDark)} вхождений (не валит гейт)`);
+console.log(
+	`НЕ РАЗРЕШАЕТСЯ НИ В ОДНОЙ ТЕМЕ:  ${ranked.length} имён, ${occurrences} вхождений`,
+);
+console.log(
+	`  из них затрагивают ${PRIMARY_SCOPE}: ${inPrimaryScope.length} имён`,
+);
+console.log(
+	`СВЕТЛЫЙ ЗАПАС ВО ВСЕХ ТЕМАХ:     ${rankedLight.length} имён, ${count(rankedLight)} вхождений`,
+);
+console.log(
+	`  известный долг (лестницы оттенков): ${debtNames.length} имён, ${debtOccurrences} вхождений`,
+);
+console.log(
+	`тёмный запас во всех темах:      ${rankedDark.length} имён, ${count(rankedDark)} вхождений (не валит гейт)`,
+);
 
 if (rankedDark.length > 0) {
-	console.log("\nИмя не объявлено нигде, запас ТЁМНЫЙ — светлая тема получит тёмную плашку:");
+	console.log(
+		"\nИмя не объявлено нигде, запас ТЁМНЫЙ — светлая тема получит тёмную плашку:",
+	);
 	for (const [name, places] of rankedDark) {
 		console.log(`  ${String(places.length).padStart(3)}x  ${name}`);
-		for (const place of places) console.log(`         ${place.file}:${place.line}  запас ${place.fallback}`);
+		for (const place of places)
+			console.log(
+				`         ${place.file}:${place.line}  запас ${place.fallback}`,
+			);
 	}
 }
 
@@ -483,15 +560,21 @@ if (ranked.length > 0) {
 	console.error("\nНеизвестные имена в var() без запасного значения:\n");
 	for (const [name, places] of ranked) {
 		console.error(`  ${String(places.length).padStart(3)}x  ${name}`);
-		for (const place of places) console.error(`         ${place.file}:${place.line}`);
+		for (const place of places)
+			console.error(`         ${place.file}:${place.line}`);
 	}
 }
 
 if (rankedLight.length > 0) {
-	console.error("\nИмя не объявлено нигде, запас СВЕТЛЫЙ — в тёмной и ночной теме это светлая плита:\n");
+	console.error(
+		"\nИмя не объявлено нигде, запас СВЕТЛЫЙ — в тёмной и ночной теме это светлая плита:\n",
+	);
 	for (const [name, places] of rankedLight) {
 		console.error(`  ${String(places.length).padStart(3)}x  ${name}`);
-		for (const place of places) console.error(`         ${place.file}:${place.line}  запас ${place.fallback}`);
+		for (const place of places)
+			console.error(
+				`         ${place.file}:${place.line}  запас ${place.fallback}`,
+			);
 	}
 }
 
@@ -506,8 +589,8 @@ if (staleDebt.length > 0) {
 if (ranked.length > 0 || rankedLight.length > 0) {
 	console.error(
 		"\nКак закрывать. Объявить токен в канонической палитре\n" +
-			"  apps/web/src/styles/dente-redesign.css — блоки :root/[data-theme=\"light\"],\n" +
-			"  [data-theme=\"dark\"], [data-theme=\"night\"], чтобы значение было во всех трёх темах,\n" +
+			'  apps/web/src/styles/dente-redesign.css — блоки :root/[data-theme="light"],\n' +
+			'  [data-theme="dark"], [data-theme="night"], чтобы значение было во всех трёх темах,\n' +
 			"или псевдонимом к существующему токену в apps/web/src/styles/token-aliases.css,\n" +
 			"либо, если имя лишнее, заменить его на существующий токен по месту использования.\n" +
 			"Запас `var(--x, значение)` закрывает конкретное вхождение, но не остальные:\n" +
@@ -524,7 +607,9 @@ if (ranked.length > 0 || rankedLight.length > 0) {
  * этом файле больше нет.
  */
 if (ranked.length === 0 && rankedLight.length === 0 && staleDebt.length === 0) {
-	console.log("\nВсе var() разрешаются: каждое имя объявлено, либо его запас не светлый литерал.");
+	console.log(
+		"\nВсе var() разрешаются: каждое имя объявлено, либо его запас не светлый литерал.",
+	);
 	process.exit(0);
 }
 process.exit(1);

@@ -1,3 +1,8 @@
+import {
+	kopecksToNumericString,
+	parseKopecks,
+	positiveMoneyRubSchema,
+} from "@dental/shared";
 import { and, desc, eq, ilike, isNull, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -5,14 +10,9 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
-import {
-	kopecksToNumericString,
-	parseKopecks,
-	positiveMoneyRubSchema,
-} from "@dental/shared";
 import { db } from "../db/client.js";
-import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { familyGroups, patients, payments } from "../db/schema.js";
+import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 const familyPaymentSchema = z.object({
@@ -72,7 +72,9 @@ const familyTopupSchema = z.object({
 	}),
 	// Кто внёс деньги — обычно глава семьи. Нужен для журнала платежей.
 	patientId: z.string().uuid(),
-	method: z.enum(["cash", "card", "bank_transfer", "online", "other"]).default("cash"),
+	method: z
+		.enum(["cash", "card", "bank_transfer", "online", "other"])
+		.default("cash"),
 	comment: z.string().trim().max(500).optional(),
 	// Тот же ключ идемпотентности, что и при оплате: повтор после обрыва связи
 	// не должен зачислить деньги дважды.
@@ -80,7 +82,10 @@ const familyTopupSchema = z.object({
 });
 
 class FamilyFinanceError extends Error {
-	constructor(message: string, public statusCode: number) {
+	constructor(
+		message: string,
+		public statusCode: number,
+	) {
 		super(message);
 		this.name = "FamilyFinanceError";
 	}
@@ -243,7 +248,11 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		 * Защита от случайного захвата литерала "patient" как UUID группы
 		 * (если клиент дернул /family/patient без id).
 		 */
-		if (familyGroupId === "patient" || familyGroupId === "pay" || familyGroupId === "topup") {
+		if (
+			familyGroupId === "patient" ||
+			familyGroupId === "pay" ||
+			familyGroupId === "topup"
+		) {
 			return reply.code(404).send({ error: "Family group not found" });
 		}
 
@@ -270,7 +279,6 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			members,
 		};
 	});
-
 
 	// POST /api/finance/family — create a family group
 	app.post("/api/finance/family", async (req, reply) => {
@@ -373,7 +381,6 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		return family;
 	});
 
-
 	// PUT /api/finance/family/:id — update a family group
 	app.put("/api/finance/family/:id", async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -426,10 +433,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					message: "Указанный пациент не найден в вашей клинике",
 				});
 			}
-			if (
-				headPatient.familyGroupId &&
-				headPatient.familyGroupId !== id
-			) {
+			if (headPatient.familyGroupId && headPatient.familyGroupId !== id) {
 				return reply.code(409).send({
 					error: "PatientAlreadyInFamily",
 					message: "Пациент уже состоит в другой семейной группе",
@@ -477,7 +481,6 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		});
 		return family;
 	});
-
 
 	// DELETE /api/finance/family/:id — delete a family group
 	app.delete("/api/finance/family/:id", async (req, reply) => {
@@ -574,7 +577,8 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		if (!payParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Проверьте оплату с семейного счёта: нужны patientId, familyGroupId и сумма больше нуля с точностью до копейки.",
+				message:
+					"Проверьте оплату с семейного счёта: нужны patientId, familyGroupId и сумма больше нуля с точностью до копейки.",
 			});
 		}
 		const payload = payParsed.data;
@@ -593,7 +597,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					.limit(1);
 
 				if (!patient || patient.familyGroupId !== payload.familyGroupId) {
-					throw new FamilyFinanceError("Пациент не найден в семейной группе клиники", 404);
+					throw new FamilyFinanceError(
+						"Пациент не найден в семейной группе клиники",
+						404,
+					);
 				}
 
 				// 1. Get Family Group & Lock it
@@ -633,7 +640,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 						duplicate.patientId !== payload.patientId ||
 						duplicate.method !== "family_wallet"
 					) {
-						throw new FamilyFinanceError("Клиентская операция уже записала другую оплату.", 409);
+						throw new FamilyFinanceError(
+							"Клиентская операция уже записала другую оплату.",
+							409,
+						);
 					}
 					return {
 						payment: duplicate,
@@ -650,11 +660,16 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				const currentKopecks = parseKopecks(family.balance);
 				const amountKopecks = parseKopecks(payload.amountRub);
 				if (currentKopecks < amountKopecks) {
-					throw new FamilyFinanceError("Недостаточно средств на семейном балансе", 402);
+					throw new FamilyFinanceError(
+						"Недостаточно средств на семейном балансе",
+						402,
+					);
 				}
 
 				// 2. Deduct Balance
-				const newBalance = kopecksToNumericString(currentKopecks - amountKopecks);
+				const newBalance = kopecksToNumericString(
+					currentKopecks - amountKopecks,
+				);
 				/*
 				 * БЫЛО: UPDATE family_groups SET balance=... WHERE id=family.id
 				 * (organizationId только в SELECT FOR UPDATE выше). После
@@ -739,7 +754,8 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Проверьте сумму пополнения: нужна сумма больше нуля с точностью до копейки.",
+				message:
+					"Проверьте сумму пополнения: нужна сумма больше нуля с точностью до копейки.",
 			});
 		}
 		const payload = parsed.data;
@@ -758,7 +774,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					)
 					.limit(1);
 				if (!patient || patient.familyGroupId !== payload.familyGroupId) {
-					throw new FamilyFinanceError("Пациент не найден в семейной группе клиники", 404);
+					throw new FamilyFinanceError(
+						"Пациент не найден в семейной группе клиники",
+						404,
+					);
 				}
 
 				// Блокируем строку семьи: параллельные пополнения не потеряют друг друга.
@@ -796,7 +815,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 						duplicate.method !== payload.method ||
 						duplicate.status !== "planned"
 					) {
-						throw new FamilyFinanceError("Клиентская операция уже записала другое пополнение.", 409);
+						throw new FamilyFinanceError(
+							"Клиентская операция уже записала другое пополнение.",
+							409,
+						);
 					}
 					return {
 						payment: duplicate,

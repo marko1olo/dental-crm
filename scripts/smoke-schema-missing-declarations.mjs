@@ -50,7 +50,7 @@
  * Код возврата: 0 — расхождений нет; 1 — есть расхождение или гнилая запись;
  * 2 — до базы не дошли (без базы страж ничего не доказывает и молчать не имеет права).
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -59,10 +59,16 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DB_DIR = join(REPO_ROOT, "apps", "api", "src", "db");
 
 /** Файлы, где объявлены таблицы Drizzle. Тот же список, что в census-hollow-query-modules.mjs. */
-const SCHEMA_FILES = ["schema.ts", "communicationsSchema.ts", "patientsSchema.ts"];
+const SCHEMA_FILES = [
+	"schema.ts",
+	"communicationsSchema.ts",
+	"patientsSchema.ts",
+];
 
 const asJson = process.argv.includes("--json");
-const simulateMissing = (process.argv.find((a) => a.startsWith("--simulate-missing=")) ?? "")
+const simulateMissing = (
+	process.argv.find((a) => a.startsWith("--simulate-missing=")) ?? ""
+)
 	.slice("--simulate-missing=".length)
 	.trim();
 
@@ -351,28 +357,66 @@ const undeclaredTables = new Map([
  * Запись = таблица: объявить недостающие колонки одной таблицы — одна правка.
  */
 const undeclaredColumns = new Map([
-	["appointments", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
+	[
+		"appointments",
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["is_synced", "version"],
+		},
+	],
 	[
 		"bulk_image_operation_logs",
-		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["assigned_tooth_number", "patient_name", "selected_images_count"] },
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: [
+				"assigned_tooth_number",
+				"patient_name",
+				"selected_images_count",
+			],
+		},
 	],
-	["chairs", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["created_at", "status"] }],
+	[
+		"chairs",
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["created_at", "status"],
+		},
+	],
 	[
 		"chat_message_dispatch_statuses",
-		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["can_retry", "dispatch_timestamp", "recipient_name"] },
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["can_retry", "dispatch_timestamp", "recipient_name"],
+		},
 	],
 	[
 		"clinics",
-		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "marketing_settings", "reporting_settings", "version"] },
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: [
+				"is_synced",
+				"marketing_settings",
+				"reporting_settings",
+				"version",
+			],
+		},
 	],
 	[
 		"collaborative_chat_processing_states",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: ["assigned_agent_name", "has_agent_replied", "is_archived", "updated_at"],
+			columns: [
+				"assigned_agent_name",
+				"has_agent_replied",
+				"is_archived",
+				"updated_at",
+			],
 		},
 	],
-	["communication_events", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["read_at"] }],
+	[
+		"communication_events",
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["read_at"] },
+	],
 	// crm_leads: запись снята — expected_revenue объявлена в schema.ts (пакет MM6).
 	[
 		"diagnocat_ai_findings",
@@ -388,7 +432,10 @@ const undeclaredColumns = new Map([
 			],
 		},
 	],
-	["doctor_commissions", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["effective_to"] }],
+	[
+		"doctor_commissions",
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["effective_to"] },
+	],
 	[
 		"egisz_blank_permissions",
 		{
@@ -397,28 +444,62 @@ const undeclaredColumns = new Map([
 			columns: ["field_name", "form_code", "is_export_allowed", "updated_at"],
 		},
 	],
-	["generated_documents", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
+	[
+		"generated_documents",
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["is_synced", "version"],
+		},
+	],
 	[
 		"message_template_catalogs",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: ["body_text", "channel_type", "dynamic_tags", "is_default", "template_name"],
+			columns: [
+				"body_text",
+				"channel_type",
+				"dynamic_tags",
+				"is_default",
+				"template_name",
+			],
 		},
 	],
 	[
 		"messenger_file_attachments",
-		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["delivery_status", "file_name", "patient_name", "target_messenger"] },
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: [
+				"delivery_status",
+				"file_name",
+				"patient_name",
+				"target_messenger",
+			],
+		},
 	],
 	[
 		"mkb10_auto_directories",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: ["auto_updated", "bound_template_package", "last_version_date", "mkb_code", "mkb_title"],
+			columns: [
+				"auto_updated",
+				"bound_template_package",
+				"last_version_date",
+				"mkb_code",
+				"mkb_title",
+			],
 		},
 	],
 	[
 		"ndfl_tax_calculators",
-		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["has_anomaly_warning", "patient_name", "tax_code", "total_eligible_rub"] },
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: [
+				"has_anomaly_warning",
+				"patient_name",
+				"tax_code",
+				"total_eligible_rub",
+			],
+		},
 	],
 	[
 		"organizations",
@@ -461,7 +542,12 @@ const undeclaredColumns = new Map([
 		"patient_duplicate_merge_queues",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: ["duplicate_patient_name", "match_confidence_percent", "merge_status", "primary_patient_name"],
+			columns: [
+				"duplicate_patient_name",
+				"match_confidence_percent",
+				"merge_status",
+				"primary_patient_name",
+			],
 		},
 	],
 	[
@@ -469,37 +555,94 @@ const undeclaredColumns = new Map([
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			// total_amount_rub объявлена в schema.ts (пакет MM6) и из записи снята.
-			columns: ["insurance_amount_rub", "items_json", "patient_amount_rub", "updated_at"],
+			columns: [
+				"insurance_amount_rub",
+				"items_json",
+				"patient_amount_rub",
+				"updated_at",
+			],
 		},
 	],
-	["patients", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["insurance_contract_id", "insurance_policy_number"] }],
-	["payments", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
+	[
+		"patients",
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["insurance_contract_id", "insurance_policy_number"],
+		},
+	],
+	[
+		"payments",
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["is_synced", "version"],
+		},
+	],
 	[
 		"previous_chat_dialog_histories",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: ["closed_at", "dialog_session_id", "message_count", "patient_name", "summary_note"],
+			columns: [
+				"closed_at",
+				"dialog_session_id",
+				"message_count",
+				"patient_name",
+				"summary_note",
+			],
 		},
 	],
 	[
 		"system_ram_watchdogs",
-		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["client_host_name", "total_ram_mb", "used_ram_mb", "warning_level"] },
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: [
+				"client_host_name",
+				"total_ram_mb",
+				"used_ram_mb",
+				"warning_level",
+			],
+		},
 	],
-	["treatment_items", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
-	["treatment_plan_items_new", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["commission_amount"] }],
-	["treatment_scenarios", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
+	[
+		"treatment_items",
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["is_synced", "version"],
+		},
+	],
+	[
+		"treatment_plan_items_new",
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["commission_amount"] },
+	],
+	[
+		"treatment_scenarios",
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["is_synced", "version"],
+		},
+	],
 	[
 		"uis_call_speech_transcripts",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: ["call_session_id", "key_timestamps_json", "patient_name", "sentiment_score", "transcript_text"],
+			columns: [
+				"call_session_id",
+				"key_timestamps_json",
+				"patient_name",
+				"sentiment_score",
+				"transcript_text",
+			],
 		},
 	],
 	[
 		"uis_sms_chat_quotas",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: ["daily_quota_limit", "is_quota_exceeded", "sent_today_count", "updated_at"],
+			columns: [
+				"daily_quota_limit",
+				"is_quota_exceeded",
+				"sent_today_count",
+				"updated_at",
+			],
 		},
 	],
 	[
@@ -515,17 +658,38 @@ const undeclaredColumns = new Map([
 			columns: ["color", "is_synced", "snils", "updated_at", "version"],
 		},
 	],
-	["visit_diaries", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["diagnosis_text"] }],
+	[
+		"visit_diaries",
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["diagnosis_text"] },
+	],
 	[
 		"visit_diary_revisions",
-		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["previous_diagnosis_tooth", "revision_reason"] },
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["previous_diagnosis_tooth", "revision_reason"],
+		},
 	],
 	[
 		"visit_examination_photo_links",
-		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["examination_form_id", "patient_name"] },
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["examination_form_id", "patient_name"],
+		},
 	],
-	["visits", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
-	["yandex_calendar_syncs", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["doctor_name", "last_synced_at"] }],
+	[
+		"visits",
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["is_synced", "version"],
+		},
+	],
+	[
+		"yandex_calendar_syncs",
+		{
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
+			columns: ["doctor_name", "last_synced_at"],
+		},
+	],
 ]);
 
 /* ═══════════════════════ объявления Drizzle ═══════════════════════ */
@@ -533,12 +697,16 @@ const undeclaredColumns = new Map([
 const rel = (file) => relative(REPO_ROOT, file).split(sep).join("/");
 
 /** camelCase → snake_case: Drizzle подставляет так, когда имя колонки не задано строкой. */
-const toSnake = (name) => name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+const toSnake = (name) =>
+	name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
 
 /** Разворачивает `pgTable(...)` из цепочки вида `pgTable(...).enableRLS()`. */
 function unwrapTableCall(node) {
 	let current = node;
-	while (ts.isCallExpression(current) || ts.isPropertyAccessExpression(current)) {
+	while (
+		ts.isCallExpression(current) ||
+		ts.isPropertyAccessExpression(current)
+	) {
 		if (ts.isCallExpression(current)) {
 			const callee = current.expression;
 			if (ts.isIdentifier(callee) && callee.text === "pgTable") return current;
@@ -577,7 +745,13 @@ function declarationsFromSchema() {
 	for (const name of SCHEMA_FILES) {
 		const file = join(DB_DIR, name);
 		const source = readFileSync(file, "utf8");
-		const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
+		const sourceFile = ts.createSourceFile(
+			file,
+			source,
+			ts.ScriptTarget.ESNext,
+			true,
+			ts.ScriptKind.TS,
+		);
 		for (const statement of sourceFile.statements) {
 			if (!ts.isVariableStatement(statement)) continue;
 			for (const decl of statement.declarationList.declarations) {
@@ -590,11 +764,15 @@ function declarationsFromSchema() {
 				if (shape && ts.isObjectLiteralExpression(shape)) {
 					for (const property of shape.properties) {
 						if (!ts.isPropertyAssignment(property)) continue;
-						const key = ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name)
-							? property.name.text
-							: null;
+						const key =
+							ts.isIdentifier(property.name) ||
+							ts.isStringLiteralLike(property.name)
+								? property.name.text
+								: null;
 						if (!key) continue;
-						const base = ts.isCallExpression(property.initializer) ? baseCall(property.initializer) : null;
+						const base = ts.isCallExpression(property.initializer)
+							? baseCall(property.initializer)
+							: null;
 						const first = base?.arguments[0];
 						if (first && ts.isStringLiteralLike(first)) {
 							columns.add(first.text.toLowerCase());
@@ -605,7 +783,11 @@ function declarationsFromSchema() {
 						}
 					}
 				}
-				tables.set(nameArg.text.toLowerCase(), { columns, declaredIn: rel(file), identifier: decl.name.getText(sourceFile) });
+				tables.set(nameArg.text.toLowerCase(), {
+					columns,
+					declaredIn: rel(file),
+					identifier: decl.name.getText(sourceFile),
+				});
 			}
 		}
 	}
@@ -620,7 +802,10 @@ function databaseUrl() {
 	const line = readFileSync(join(REPO_ROOT, ".env"), "utf8")
 		.split(/\r?\n/)
 		.find((l) => l.startsWith("DATABASE_URL="));
-	if (!line) throw new Error("DATABASE_URL не найден ни в окружении, ни в корневом .env");
+	if (!line)
+		throw new Error(
+			"DATABASE_URL не найден ни в окружении, ни в корневом .env",
+		);
 	return line.slice("DATABASE_URL=".length).trim();
 }
 
@@ -654,12 +839,15 @@ async function liveSchema() {
 
 /* ═══════════════════════ проверка списка исключений ═══════════════════════ */
 
-const PLACEHOLDER = /^(todo|fixme|—|-|\?|пока так|нет причины|не знаю|потом)\b/i;
+const PLACEHOLDER =
+	/^(todo|fixme|—|-|\?|пока так|нет причины|не знаю|потом)\b/i;
 const MIN_REASON = 30;
 
 function reasonProblem(reason) {
-	if (typeof reason !== "string" || reason.trim() === "") return "причина не указана";
-	if (PLACEHOLDER.test(reason.trim())) return `причина-заглушка: «${reason.trim().slice(0, 40)}»`;
+	if (typeof reason !== "string" || reason.trim() === "")
+		return "причина не указана";
+	if (PLACEHOLDER.test(reason.trim()))
+		return `причина-заглушка: «${reason.trim().slice(0, 40)}»`;
 	if (reason.trim().length < MIN_REASON) {
 		return `причина короче ${MIN_REASON} символов: «${reason.trim()}»`;
 	}
@@ -668,11 +856,16 @@ function reasonProblem(reason) {
 
 /** Миграции на диске: `since` в записи обязан указывать на существующий файл. */
 const MIGRATION_FILES = new Set(
-	readdirSync(join(REPO_ROOT, "apps", "api", "drizzle")).filter((f) => f.endsWith(".sql")),
+	readdirSync(join(REPO_ROOT, "apps", "api", "drizzle")).filter((f) =>
+		f.endsWith(".sql"),
+	),
 );
 
 function sinceFileProblem(entry) {
-	if (entry.permanent) return entry.since ? "запись permanent не должна ссылаться на миграцию" : null;
+	if (entry.permanent)
+		return entry.since
+			? "запись permanent не должна ссылаться на миграцию"
+			: null;
 	if (!entry.since) return "не указана миграция (since), создающая таблицу";
 	if (!MIGRATION_FILES.has(entry.since)) {
 		return `since="${entry.since}" — такой миграции в apps/api/drizzle нет, провенанс записи устарел`;
@@ -689,12 +882,16 @@ let simulated = null;
 if (simulateMissing) {
 	const [table, column] = simulateMissing.split(".");
 	if (!declared.has(table)) {
-		console.error(`--simulate-missing=${simulateMissing}: таблица "${table}" в объявлениях не найдена, скрывать нечего`);
+		console.error(
+			`--simulate-missing=${simulateMissing}: таблица "${table}" в объявлениях не найдена, скрывать нечего`,
+		);
 		process.exit(2);
 	}
 	if (column) {
 		if (!declared.get(table).columns.delete(column)) {
-			console.error(`--simulate-missing=${simulateMissing}: колонка не объявлена, скрывать нечего`);
+			console.error(
+				`--simulate-missing=${simulateMissing}: колонка не объявлена, скрывать нечего`,
+			);
 			process.exit(2);
 		}
 		simulated = `колонка ${table}.${column}`;
@@ -708,7 +905,9 @@ let live;
 try {
 	live = await liveSchema();
 } catch (error) {
-	console.error("Нет доступа к живой базе — страж не может ничего доказать и не притворяется, что проверил.");
+	console.error(
+		"Нет доступа к живой базе — страж не может ничего доказать и не притворяется, что проверил.",
+	);
 	console.error(`  ${error.message}`);
 	process.exit(2);
 }
@@ -731,15 +930,20 @@ for (const table of [...live.keys()].sort()) {
 	const problem = reasonProblem(entry.reason);
 	if (problem) failures.push(`undeclaredTables["${table}"]: ${problem}`);
 	const sinceProblem = sinceFileProblem(entry);
-	if (sinceProblem) failures.push(`undeclaredTables["${table}"]: ${sinceProblem}`);
+	if (sinceProblem)
+		failures.push(`undeclaredTables["${table}"]: ${sinceProblem}`);
 }
 
 /* 2. Колонка есть в базе, объявления нет (таблица объявлена). */
 const missingColumns = new Map();
-for (const [table, meta] of [...declared].sort((a, b) => a[0].localeCompare(b[0]))) {
+for (const [table, meta] of [...declared].sort((a, b) =>
+	a[0].localeCompare(b[0]),
+)) {
 	const actual = live.get(table);
 	if (!actual) continue; // объявлено, но таблицы в базе нет — область соседнего стража
-	const missing = [...actual].filter((column) => !meta.columns.has(column)).sort();
+	const missing = [...actual]
+		.filter((column) => !meta.columns.has(column))
+		.sort();
 	if (missing.length === 0) continue;
 	missingColumns.set(table, missing);
 
@@ -780,7 +984,9 @@ for (const [table, entry] of undeclaredTables) {
 for (const [table, entry] of undeclaredColumns) {
 	const actual = live.get(table);
 	if (!actual) {
-		failures.push(`undeclaredColumns["${table}"]: таблицы в живой базе больше нет — запись мертва, удалите её`);
+		failures.push(
+			`undeclaredColumns["${table}"]: таблицы в живой базе больше нет — запись мертва, удалите её`,
+		);
 		continue;
 	}
 	const meta = declared.get(table);
@@ -797,7 +1003,9 @@ for (const [table, entry] of undeclaredColumns) {
 			`undeclaredColumns["${table}"]: колонок в живой базе больше нет — ${dead.join(", ")}; удалите их из записи`,
 		);
 	}
-	const nowDeclared = entry.columns.filter((column) => meta.columns.has(column));
+	const nowDeclared = entry.columns.filter((column) =>
+		meta.columns.has(column),
+	);
 	if (nowDeclared.length > 0) {
 		failures.push(
 			`undeclaredColumns["${table}"]: колонки уже объявлены в ${meta.declaredIn} — ${nowDeclared.join(", ")}; удалите их из записи`,
@@ -812,7 +1020,10 @@ const summary = {
 	tablesInDatabase: live.size,
 	tablesDeclared: declared.size,
 	undeclaredTables: missingTables.length,
-	undeclaredColumns: [...missingColumns.values()].reduce((n, list) => n + list.length, 0),
+	undeclaredColumns: [...missingColumns.values()].reduce(
+		(n, list) => n + list.length,
+		0,
+	),
 	ledgerTables: undeclaredTables.size,
 	ledgerColumnTables: undeclaredColumns.size,
 	columnNamesTakenFromKey: fallbackNames,
@@ -825,7 +1036,9 @@ if (asJson) {
 			{
 				...summary,
 				missingTables,
-				missingColumns: Object.fromEntries([...missingColumns].map(([t, c]) => [t, c])),
+				missingColumns: Object.fromEntries(
+					[...missingColumns].map(([t, c]) => [t, c]),
+				),
 				failures,
 			},
 			null,
@@ -838,7 +1051,9 @@ if (asJson) {
 if (simulated) console.log(`САМОПРОВЕРКА: объявление скрыто — ${simulated}\n`);
 
 if (failures.length > 0) {
-	console.error("Объявления Drizzle не покрывают живую базу (каждая строка — таблица/колонка, невидимая для всех аудитов):");
+	console.error(
+		"Объявления Drizzle не покрывают живую базу (каждая строка — таблица/колонка, невидимая для всех аудитов):",
+	);
 	for (const failure of failures) console.error(`  - ${failure}`);
 	console.error(
 		`\nТаблиц в базе ${summary.tablesInDatabase}, объявлено ${summary.tablesDeclared}. ` +

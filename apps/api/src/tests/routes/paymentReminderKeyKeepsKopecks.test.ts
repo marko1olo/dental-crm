@@ -225,9 +225,7 @@ describe("ключ напоминания об оплате хранит коп�
 		});
 
 		app = Fastify();
-		const { registerTelegramRoutes } = await import(
-			"../../routes/telegram.js"
-		);
+		const { registerTelegramRoutes } = await import("../../routes/telegram.js");
 		await registerTelegramRoutes(app);
 		await app.ready();
 	});

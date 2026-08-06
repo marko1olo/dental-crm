@@ -42,12 +42,16 @@
  * Только чтение. Ни одна функция здесь ничего не пишет и не запускает.
  */
 
-import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const repositoryRoot = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+);
 
 export const apiSourceRoot = path.join(repositoryRoot, "apps", "api", "src");
 export const webSourceRoot = path.join(repositoryRoot, "apps", "web", "src");
@@ -55,7 +59,15 @@ export const apiRoutesRoot = path.join(apiSourceRoot, "routes");
 export const apiServerFile = path.join(apiSourceRoot, "server.ts");
 
 /** Глаголы, которыми Fastify регистрирует маршрут. */
-const ROUTE_METHODS = new Set(["get", "post", "put", "patch", "delete", "head", "options"]);
+const ROUTE_METHODS = new Set([
+	"get",
+	"post",
+	"put",
+	"patch",
+	"delete",
+	"head",
+	"options",
+]);
 
 /**
  * Получатели, которых заведомо НЕ надо считать экземпляром Fastify.
@@ -68,7 +80,17 @@ const ROUTE_METHODS = new Set(["get", "post", "put", "patch", "delete", "head", 
  * регистрация маршрута — это минимум два аргумента (путь и обработчик), а
  * `map.get("/x")` — один.
  */
-const NON_FASTIFY_RECEIVERS = new Set(["db", "tx", "trx", "cache", "map", "store", "headers", "params", "query"]);
+const NON_FASTIFY_RECEIVERS = new Set([
+	"db",
+	"tx",
+	"trx",
+	"cache",
+	"map",
+	"store",
+	"headers",
+	"params",
+	"query",
+]);
 
 function relative(filePath) {
 	return path.relative(repositoryRoot, filePath).replaceAll("\\", "/");
@@ -86,7 +108,8 @@ export function sourceFiles(directory, extensions) {
 			continue;
 		}
 		if (!entry.isFile()) continue;
-		if (extensions.some((extension) => entry.name.endsWith(extension))) collected.push(full);
+		if (extensions.some((extension) => entry.name.endsWith(extension)))
+			collected.push(full);
 	}
 	return collected;
 }
@@ -125,13 +148,18 @@ function literalText(node, resolve) {
 	if (ts.isTemplateExpression(node)) {
 		let text = node.head.text;
 		for (const span of node.templateSpans) {
-			const substituted = ts.isIdentifier(span.expression) ? resolve?.get(span.expression.text) : undefined;
+			const substituted = ts.isIdentifier(span.expression)
+				? resolve?.get(span.expression.text)
+				: undefined;
 			text += `${substituted ?? "${}"}${span.literal.text}`;
 		}
 		return text;
 	}
 	/* Склейка строк: "/api/patients/" + id. Оба конца сводятся к одному тексту. */
-	if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+	if (
+		ts.isBinaryExpression(node) &&
+		node.operatorToken.kind === ts.SyntaxKind.PlusToken
+	) {
 		const left = literalText(node.left, resolve);
 		const right = literalText(node.right, resolve);
 		if (left === null && right === null) return null;
@@ -146,7 +174,10 @@ function literalText(node, resolve) {
 	 * этого не увидит. Для вопроса «кто зовёт этот маршрут» это безвредно: хост
 	 * меняется, а хвост пути — нет, а сводятся маршруты по хвосту.
 	 */
-	if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) {
+	if (
+		ts.isBinaryExpression(node) &&
+		node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
+	) {
 		return literalText(node.right, resolve) ?? literalText(node.left, resolve);
 	}
 	return null;
@@ -169,7 +200,9 @@ export function normalizeRoutePath(raw) {
 		.replace(/:[A-Za-z_][A-Za-z0-9_]*/g, ":param")
 		.replace(/\/+$/, "");
 	const segments = withParams.split("/");
-	const glued = segments.findIndex((segment) => segment.includes(":param") && segment !== ":param");
+	const glued = segments.findIndex(
+		(segment) => segment.includes(":param") && segment !== ":param",
+	);
 	if (glued === -1) return withParams;
 	const head = segments.slice(0, glued);
 	const truncated = segments[glued]?.replace(/:param.*$/, "") ?? "";
@@ -192,7 +225,10 @@ export function pathsMatch(left, right) {
 	const rightSegments = right.split("/");
 	if (leftSegments.length !== rightSegments.length) return false;
 	return leftSegments.every(
-		(segment, index) => segment === rightSegments[index] || segment === ":param" || rightSegments[index] === ":param",
+		(segment, index) =>
+			segment === rightSegments[index] ||
+			segment === ":param" ||
+			rightSegments[index] === ":param",
 	);
 }
 
@@ -246,7 +282,8 @@ export function matchPrecision(routePath, callPath) {
  * никем не зовётся и попал бы в отчёт мёртвым маршрутом, которого нет.
  */
 function prefixByRouteFile() {
-	if (!existsSync(apiServerFile)) return { prefixes: new Map(), unresolved: [] };
+	if (!existsSync(apiServerFile))
+		return { prefixes: new Map(), unresolved: [] };
 	const source = readFileSync(apiServerFile, "utf8");
 	const parsed = parseSource(apiServerFile, source);
 
@@ -255,7 +292,11 @@ function prefixByRouteFile() {
 	const rememberImport = (localName, specifier) => {
 		if (!specifier.startsWith(".")) return;
 		const base = path.resolve(path.dirname(apiServerFile), specifier);
-		const candidates = [base.replace(/\.js$/, ".ts"), `${base}.ts`, path.join(base, "index.ts")];
+		const candidates = [
+			base.replace(/\.js$/, ".ts"),
+			`${base}.ts`,
+			path.join(base, "index.ts"),
+		];
 		const found = candidates.find((candidate) => existsSync(candidate));
 		if (found) importedFrom.set(localName, found);
 	};
@@ -264,12 +305,16 @@ function prefixByRouteFile() {
 	const unresolved = [];
 
 	const visit = (node) => {
-		if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+		if (
+			ts.isImportDeclaration(node) &&
+			ts.isStringLiteral(node.moduleSpecifier)
+		) {
 			const specifier = node.moduleSpecifier.text;
 			const clause = node.importClause;
 			if (clause?.name) rememberImport(clause.name.text, specifier);
 			if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) {
-				for (const element of clause.namedBindings.elements) rememberImport(element.name.text, specifier);
+				for (const element of clause.namedBindings.elements)
+					rememberImport(element.name.text, specifier);
 			}
 		}
 		if (
@@ -283,20 +328,31 @@ function prefixByRouteFile() {
 			if (options !== undefined && ts.isObjectLiteralExpression(options)) {
 				for (const property of options.properties) {
 					if (!ts.isPropertyAssignment(property)) continue;
-					const key = ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name) ? property.name.text : null;
+					const key =
+						ts.isIdentifier(property.name) ||
+						ts.isStringLiteralLike(property.name)
+							? property.name.text
+							: null;
 					if (key !== "prefix") continue;
 					prefix = literalText(property.initializer);
 				}
 			}
 			if (prefix !== null && prefix !== "") {
-				if (plugin !== undefined && ts.isIdentifier(plugin) && importedFrom.has(plugin.text)) {
+				if (
+					plugin !== undefined &&
+					ts.isIdentifier(plugin) &&
+					importedFrom.has(plugin.text)
+				) {
 					prefixes.set(importedFrom.get(plugin.text), prefix);
 				} else {
 					/* Префикс есть, а файл по имени не найден: молчать нельзя. */
 					unresolved.push({
 						prefix,
 						where: `${relative(apiServerFile)}:${lineOf(parsed, node)}`,
-						plugin: plugin !== undefined && ts.isIdentifier(plugin) ? plugin.text : "<не идентификатор>",
+						plugin:
+							plugin !== undefined && ts.isIdentifier(plugin)
+								? plugin.text
+								: "<не идентификатор>",
 					});
 				}
 			}
@@ -315,9 +371,14 @@ export function routeRegistrationsIn(file, source) {
 	const parsed = parseSource(file, source);
 	const found = [];
 	const visit = (node) => {
-		if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+		if (
+			ts.isCallExpression(node) &&
+			ts.isPropertyAccessExpression(node.expression)
+		) {
 			const callee = node.expression;
-			const receiver = ts.isIdentifier(callee.expression) ? callee.expression.text : null;
+			const receiver = ts.isIdentifier(callee.expression)
+				? callee.expression.text
+				: null;
 			const verb = callee.name.text;
 			if (
 				receiver !== null &&
@@ -356,7 +417,9 @@ export function collectServerRoutes() {
 	const { prefixes, unresolved: unresolvedPrefixes } = prefixByRouteFile();
 	const files = [
 		...sourceFiles(apiRoutesRoot, [".ts"]).filter(
-			(file) => !file.endsWith(".test.ts") && !file.includes(`${path.sep}tests${path.sep}`),
+			(file) =>
+				!file.endsWith(".test.ts") &&
+				!file.includes(`${path.sep}tests${path.sep}`),
 		),
 		...(existsSync(apiServerFile) ? [apiServerFile] : []),
 	];
@@ -368,8 +431,14 @@ export function collectServerRoutes() {
 
 	for (const file of files) {
 		const prefix = prefixes.get(file) ?? "";
-		for (const registration of routeRegistrationsIn(file, readFileSync(file, "utf8"))) {
-			receivers.set(registration.receiver, (receivers.get(registration.receiver) ?? 0) + 1);
+		for (const registration of routeRegistrationsIn(
+			file,
+			readFileSync(file, "utf8"),
+		)) {
+			receivers.set(
+				registration.receiver,
+				(receivers.get(registration.receiver) ?? 0) + 1,
+			);
 			const where = `${relative(file)}:${registration.line}`;
 			let fullPath = registration.declaredPath;
 			if (prefix !== "") {
@@ -381,7 +450,12 @@ export function collectServerRoutes() {
 					 * префикса. Догадка здесь стоит выдуманного адреса в отчёте, поэтому
 					 * случай выносится в отдельный список и в набор не идёт.
 					 */
-					ambiguous.push({ where, prefix, declaredPath: registration.declaredPath, method: registration.method });
+					ambiguous.push({
+						where,
+						prefix,
+						declaredPath: registration.declaredPath,
+						method: registration.method,
+					});
 					continue;
 				}
 				fullPath = `${prefix}${registration.declaredPath}`;
@@ -408,8 +482,13 @@ export function collectServerRoutes() {
 		ambiguous,
 		nonApi,
 		unresolvedPrefixes,
-		prefixedFiles: [...prefixes.entries()].map(([file, prefix]) => ({ file: relative(file), prefix })),
-		receivers: [...receivers.entries()].sort((left, right) => right[1] - left[1]),
+		prefixedFiles: [...prefixes.entries()].map(([file, prefix]) => ({
+			file: relative(file),
+			prefix,
+		})),
+		receivers: [...receivers.entries()].sort(
+			(left, right) => right[1] - left[1],
+		),
 		fileCount: files.length,
 	};
 }
@@ -449,9 +528,16 @@ function methodFromInit(node) {
 	if (!ts.isObjectLiteralExpression(node)) return null;
 	for (const property of node.properties) {
 		if (ts.isSpreadAssignment(property)) return null;
-		if (ts.isShorthandPropertyAssignment(property) && property.name.text === "method") return null;
+		if (
+			ts.isShorthandPropertyAssignment(property) &&
+			property.name.text === "method"
+		)
+			return null;
 		if (!ts.isPropertyAssignment(property)) continue;
-		const key = ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name) ? property.name.text : null;
+		const key =
+			ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name)
+				? property.name.text
+				: null;
 		if (key !== "method") continue;
 		const value = literalText(property.initializer);
 		if (value === null || value.includes("${")) return null;
@@ -487,7 +573,10 @@ export function collectClientUsage() {
 	for (const file of files) {
 		const source = readFileSync(file, "utf8");
 		if (!source.includes("/api/") && !source.includes("fetch")) continue;
-		const found = clientUsageIn(file, source, { fromTest: isTestFile(file), label: relative(file) });
+		const found = clientUsageIn(file, source, {
+			fromTest: isTestFile(file),
+			label: relative(file),
+		});
 		calls.push(...found.calls);
 		references.push(...found.references);
 		unresolved.push(...found.unresolved);
@@ -500,7 +589,11 @@ export function collectClientUsage() {
  * Разбор одного клиентского файла. Отдельной функцией — чтобы самопроверка гейта
  * гоняла ТОТ ЖЕ код, что и дерево, на образце, а не проверяла разбор пересказом.
  */
-export function clientUsageIn(file, source, { fromTest = false, label = file } = {}) {
+export function clientUsageIn(
+	file,
+	source,
+	{ fromTest = false, label = file } = {},
+) {
 	const calls = [];
 	const references = [];
 	const unresolved = [];
@@ -525,9 +618,14 @@ export function clientUsageIn(file, source, { fromTest = false, label = file } =
 		for (const statement of parsed.statements) {
 			if (!ts.isVariableStatement(statement)) continue;
 			for (const declaration of statement.declarationList.declarations) {
-				if (!ts.isIdentifier(declaration.name) || declaration.initializer === undefined) continue;
+				if (
+					!ts.isIdentifier(declaration.name) ||
+					declaration.initializer === undefined
+				)
+					continue;
 				const value = literalText(declaration.initializer, moduleConstants);
-				if (value !== null && value.includes("/api")) moduleConstants.set(declaration.name.text, value);
+				if (value !== null && value.includes("/api"))
+					moduleConstants.set(declaration.name.text, value);
 			}
 		}
 		/*
@@ -571,7 +669,8 @@ export function clientUsageIn(file, source, { fromTest = false, label = file } =
 		const propertyKeyPositions = new Set();
 		const collectSpans = (node) => {
 			if (ts.isCallExpression(node)) {
-				if (calleeName(node.expression) === "fetch") fetchSpans.push([node.pos, node.end]);
+				if (calleeName(node.expression) === "fetch")
+					fetchSpans.push([node.pos, node.end]);
 				if (
 					ts.isPropertyAccessExpression(node.expression) &&
 					ts.isIdentifier(node.expression.expression) &&
@@ -580,18 +679,26 @@ export function clientUsageIn(file, source, { fromTest = false, label = file } =
 					consoleSpans.push([node.pos, node.end]);
 				}
 			}
-			if ((ts.isPropertyAssignment(node) || ts.isPropertySignature(node)) && ts.isStringLiteralLike(node.name)) {
+			if (
+				(ts.isPropertyAssignment(node) || ts.isPropertySignature(node)) &&
+				ts.isStringLiteralLike(node.name)
+			) {
 				propertyKeyPositions.add(node.name.pos);
 			}
 			ts.forEachChild(node, collectSpans);
 		};
 		ts.forEachChild(parsed, collectSpans);
-		const insideFetchCall = (node) => fetchSpans.some(([start, end]) => node.pos >= start && node.end <= end);
+		const insideFetchCall = (node) =>
+			fetchSpans.some(([start, end]) => node.pos >= start && node.end <= end);
 		const isNotARequest = (node) =>
-			propertyKeyPositions.has(node.pos) || consoleSpans.some(([start, end]) => node.pos >= start && node.end <= end);
+			propertyKeyPositions.has(node.pos) ||
+			consoleSpans.some(([start, end]) => node.pos >= start && node.end <= end);
 
 		const visit = (node) => {
-			if (ts.isCallExpression(node) && calleeName(node.expression) === "fetch") {
+			if (
+				ts.isCallExpression(node) &&
+				calleeName(node.expression) === "fetch"
+			) {
 				const raw = literalText(node.arguments[0], moduleConstants);
 				const line = lineOf(parsed, node);
 				const found = raw === null ? null : apiPathInside(raw);
@@ -612,7 +719,13 @@ export function clientUsageIn(file, source, { fromTest = false, label = file } =
 							file: where,
 							line,
 							fromTest,
-							expression: node.arguments[0] === undefined ? "<без аргумента>" : node.arguments[0].getText(parsed).replace(/\s+/g, " ").slice(0, 120),
+							expression:
+								node.arguments[0] === undefined
+									? "<без аргумента>"
+									: node.arguments[0]
+											.getText(parsed)
+											.replace(/\s+/g, " ")
+											.slice(0, 120),
 						});
 					}
 				} else {
@@ -626,11 +739,19 @@ export function clientUsageIn(file, source, { fromTest = false, label = file } =
 					});
 				}
 			}
-			if ((ts.isStringLiteralLike(node) || ts.isTemplateExpression(node)) && !insideFetchCall(node)) {
+			if (
+				(ts.isStringLiteralLike(node) || ts.isTemplateExpression(node)) &&
+				!insideFetchCall(node)
+			) {
 				const raw = literalText(node, moduleConstants);
 				const found = raw === null ? null : apiPathInside(raw);
 				if (found !== null) {
-					references.push({ file: where, line: lineOf(parsed, node), fromTest, path: normalizeRoutePath(found) });
+					references.push({
+						file: where,
+						line: lineOf(parsed, node),
+						fromTest,
+						path: normalizeRoutePath(found),
+					});
 				}
 			}
 			ts.forEachChild(node, visit);
@@ -653,7 +774,14 @@ export function buildTopology({ routes, calls, references }) {
 	const byKey = new Map();
 	for (const route of routes) {
 		const key = routeKey(route.method, route.path);
-		if (!byKey.has(key)) byKey.set(key, { ...route, key, callers: [], referrers: [], methodUnknownCallers: [] });
+		if (!byKey.has(key))
+			byKey.set(key, {
+				...route,
+				key,
+				callers: [],
+				referrers: [],
+				methodUnknownCallers: [],
+			});
 		else byKey.get(key).duplicateRegistration = true;
 	}
 	const entries = [...byKey.values()];
@@ -661,17 +789,26 @@ export function buildTopology({ routes, calls, references }) {
 	const bestFor = (candidates, callPath) =>
 		candidates
 			.slice()
-			.sort((left, right) => matchPrecision(right.path, callPath) - matchPrecision(left.path, callPath))[0] ?? null;
+			.sort(
+				(left, right) =>
+					matchPrecision(right.path, callPath) -
+					matchPrecision(left.path, callPath),
+			)[0] ?? null;
 
 	for (const call of calls) {
 		if (call.fromTest) continue;
 		if (call.method === null) {
-			const candidates = entries.filter((entry) => pathsMatch(entry.path, call.path));
+			const candidates = entries.filter((entry) =>
+				pathsMatch(entry.path, call.path),
+			);
 			const target = bestFor(candidates, call.path);
 			if (target) target.methodUnknownCallers.push(call);
 			continue;
 		}
-		const candidates = entries.filter((entry) => entry.method === call.method && pathsMatch(entry.path, call.path));
+		const candidates = entries.filter(
+			(entry) =>
+				entry.method === call.method && pathsMatch(entry.path, call.path),
+		);
 		const target = bestFor(candidates, call.path);
 		if (target) target.callers.push(call);
 	}
@@ -690,11 +827,16 @@ export function buildTopology({ routes, calls, references }) {
 	 */
 	for (const reference of references) {
 		if (reference.fromTest) continue;
-		const candidates = entries.filter((entry) => pathsMatch(entry.path, reference.path));
+		const candidates = entries.filter((entry) =>
+			pathsMatch(entry.path, reference.path),
+		);
 		if (candidates.length === 0) continue;
-		const best = Math.max(...candidates.map((entry) => matchPrecision(entry.path, reference.path)));
+		const best = Math.max(
+			...candidates.map((entry) => matchPrecision(entry.path, reference.path)),
+		);
 		for (const candidate of candidates) {
-			if (matchPrecision(candidate.path, reference.path) === best) candidate.referrers.push(reference);
+			if (matchPrecision(candidate.path, reference.path) === best)
+				candidate.referrers.push(reference);
 		}
 	}
 
@@ -723,7 +865,11 @@ export function callSitesOf(entry) {
 		const key = `${reference.file}:${reference.line}`;
 		if (seen.has(key)) continue;
 		seen.add(key);
-		sites.push({ file: reference.file, line: reference.line, via: "адрес вне fetch" });
+		sites.push({
+			file: reference.file,
+			line: reference.line,
+			via: "адрес вне fetch",
+		});
 	}
 	return sites;
 }
@@ -740,15 +886,20 @@ export function callSitesOf(entry) {
  * котором тонет находка, перестают читать.
  */
 export function classifySurface(routePath) {
-	if (/\/webhook(\/|$)|\/webhooks(\/|$)|\/receipts\//.test(routePath)) return "вебхук (зовёт чужая система)";
-	if (routePath.startsWith("/api/public/")) return "публичная поверхность (виджет на сайте)";
-	if (routePath.startsWith("/api/portal/")) return "портал пациента (клиента нет в этом репозитории)";
+	if (/\/webhook(\/|$)|\/webhooks(\/|$)|\/receipts\//.test(routePath))
+		return "вебхук (зовёт чужая система)";
+	if (routePath.startsWith("/api/public/"))
+		return "публичная поверхность (виджет на сайте)";
+	if (routePath.startsWith("/api/portal/"))
+		return "портал пациента (клиента нет в этом репозитории)";
 	if (routePath.startsWith("/api/ws/")) return "живые обновления (WebSocket)";
-	if (routePath.startsWith("/api/dicomweb/")) return "DICOMweb (зовёт внешняя станция)";
-	if (/^\/api\/(health|healthz|ready|metrics|version)$/.test(routePath)) return "служебный";
+	if (routePath.startsWith("/api/dicomweb/"))
+		return "DICOMweb (зовёт внешняя станция)";
+	if (/^\/api\/(health|healthz|ready|metrics|version)$/.test(routePath))
+		return "служебный";
 	return "внутренний экран";
 }
 
 export const surfaceInternal = "внутренний экран";
 
-export { relative as repoRelative, literalText, apiPathInside };
+export { apiPathInside, literalText, relative as repoRelative };

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
 import {
-	NIL_UUID,
 	commitNoteFormVisit,
 	forgetNoteFormVisit,
 	imagingWriteTarget,
+	NIL_UUID,
 	peekNoteFormForeignVisit,
 	realVisitFieldId,
 } from "./visitIdentity";
@@ -36,11 +36,17 @@ describe("идентификатор приёма", () => {
 describe("в чью карту ляжет снимок", () => {
 	it("выбран пациент приёма — запись идёт туда, куда врач думает", () => {
 		assert.equal(imagingWriteTarget("пациент-А", "пациент-А"), "visit-patient");
-		assert.equal(imagingWriteTarget(" пациент-А ", "пациент-А"), "visit-patient");
+		assert.equal(
+			imagingWriteTarget(" пациент-А ", "пациент-А"),
+			"visit-patient",
+		);
 	});
 
 	it("выбран другой пациент — снимок уйдёт в чужую карту", () => {
-		assert.equal(imagingWriteTarget("пациент-Б", "пациент-А"), "another-patient");
+		assert.equal(
+			imagingWriteTarget("пациент-Б", "пациент-А"),
+			"another-patient",
+		);
 	});
 
 	it("пациент не выбран — разбор будет, записи в карту не будет", () => {

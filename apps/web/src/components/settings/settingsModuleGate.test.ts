@@ -13,8 +13,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { settingsTabs } from "../../AppHelpers";
 import {
@@ -22,7 +22,10 @@ import {
 	SETTINGS_MODULE_GATES,
 } from "./settingsModuleGate";
 
-const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const webSrc = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"../..",
+);
 const settingsViewSource = readFileSync(
 	path.join(webSrc, "SettingsView.tsx"),
 	"utf8",
@@ -42,7 +45,10 @@ const knownTabIds = new Set<string>(settingsTabs.map((tab) => tab.id));
 describe("пары «вкладка настроек — признак модуля»", () => {
 	test("вкладка из пары есть в списке вкладок", () => {
 		for (const gate of SETTINGS_MODULE_GATES) {
-			assert.ok(knownTabIds.has(gate.tab), `вкладки «${gate.tab}» нет в settingsTabs`);
+			assert.ok(
+				knownTabIds.has(gate.tab),
+				`вкладки «${gate.tab}» нет в settingsTabs`,
+			);
 		}
 	});
 
@@ -88,7 +94,10 @@ describe("тексты про выключенный модуль", () => {
 	test("название модуля и объяснение заполнены и по-русски", () => {
 		for (const gate of SETTINGS_MODULE_GATES) {
 			assert.ok(gate.moduleTitle.length > 0);
-			assert.ok(gate.whatItDoes.length > 40, `слишком коротко: «${gate.whatItDoes}»`);
+			assert.ok(
+				gate.whatItDoes.length > 40,
+				`слишком коротко: «${gate.whatItDoes}»`,
+			);
 			assert.doesNotMatch(
 				gate.whatItDoes,
 				/[A-Za-z]/,

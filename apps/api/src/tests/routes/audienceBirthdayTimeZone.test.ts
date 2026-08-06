@@ -5,7 +5,12 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
 import { resolveAudience } from "../../services/communications/audience.js";
-import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 
 /**
  * ДЕНЬ РОЖДЕНИЯ И ВОЗРАСТ — В ПОЯСЕ КЛИНИКИ, А НЕ В UTC.
@@ -56,7 +61,10 @@ describe("отбор получателей рассылки: день рожд�
 			 * поясе, и проверка часового дефекта выродилась бы в проверку пустоты.
 			 */
 			await withFixtureTenant(ORG, async () => {
-				await db.insert(organizations).values({ id: ORG, name: "Клиника поздравлений" }).onConflictDoNothing();
+				await db
+					.insert(organizations)
+					.values({ id: ORG, name: "Клиника поздравлений" })
+					.onConflictDoNothing();
 				await db
 					.insert(patients)
 					.values({
@@ -65,7 +73,7 @@ describe("отбор получателей рассылки: день рожд�
 						fullName: "Именинников Ночной Поясович",
 						phone: "+79990000429",
 						birthDate: BIRTH_DATE,
-						status: "active"
+						status: "active",
 					})
 					.onConflictDoNothing();
 			});
@@ -96,7 +104,10 @@ describe("отбор получателей рассылки: день рожд�
 	 * при поясе клиники пациент отсеивается как `no_consent` (то есть календарный
 	 * признак ПРОШЁЛ), при UTC — как `excluded_by_criteria` (не прошёл).
 	 */
-	async function rejectedByCalendar(timeZone: string | null, withinDays: number): Promise<boolean> {
+	async function rejectedByCalendar(
+		timeZone: string | null,
+		withinDays: number,
+	): Promise<boolean> {
 		const preview = await withFixtureTenant(ORG, async () =>
 			resolveAudience({
 				organizationId: ORG,
@@ -104,13 +115,16 @@ describe("отбор получателей рассылки: день рожд�
 				channel: "sms",
 				scope: "marketing",
 				now: NOW,
-				timeZone
-			})
+				timeZone,
+			}),
 		);
 		return preview.excluded.excluded_by_criteria > 0;
 	}
 
-	async function rejectedByAge(timeZone: string | null, ageFrom: number): Promise<boolean> {
+	async function rejectedByAge(
+		timeZone: string | null,
+		ageFrom: number,
+	): Promise<boolean> {
 		const preview = await withFixtureTenant(ORG, async () =>
 			resolveAudience({
 				organizationId: ORG,
@@ -118,8 +132,8 @@ describe("отбор получателей рассылки: день рожд�
 				channel: "sms",
 				scope: "marketing",
 				now: NOW,
-				timeZone
-			})
+				timeZone,
+			}),
 		);
 		return preview.excluded.excluded_by_criteria > 0;
 	}
@@ -130,7 +144,7 @@ describe("отбор получателей рассылки: день рожд�
 			await rejectedByCalendar(CLINIC_ZONE, 0),
 			false,
 			"пациент, у которого день рождения СЕГОДНЯ по часам клиники, отсеян календарным признаком: " +
-				"сегодняшний день снова считается по UTC, и поздравление уйдёт после праздника"
+				"сегодняшний день снова считается по UTC, и поздравление уйдёт после праздника",
 		);
 	});
 
@@ -139,7 +153,7 @@ describe("отбор получателей рассылки: день рожд�
 		assert.equal(
 			await rejectedByCalendar("UTC", 0),
 			true,
-			"проверка выродилась: в поясе UTC этот пациент проходить НЕ должен, иначе она не различает пояса вовсе"
+			"проверка выродилась: в поясе UTC этот пациент проходить НЕ должен, иначе она не различает пояса вовсе",
 		);
 	});
 
@@ -148,7 +162,7 @@ describe("отбор получателей рассылки: день рожд�
 		assert.equal(
 			await rejectedByCalendar("UTC", 1),
 			false,
-			"ожидалось, что по UTC день рождения числится завтрашним — именно так поздравление и опаздывало"
+			"ожидалось, что по UTC день рождения числится завтрашним — именно так поздравление и опаздывало",
 		);
 	});
 
@@ -160,12 +174,12 @@ describe("отбор получателей рассылки: день рожд�
 		assert.equal(
 			await rejectedByAge(CLINIC_ZONE, 36),
 			false,
-			"клиника обязана видеть возраст 36 в день рождения, а не на следующий день"
+			"клиника обязана видеть возраст 36 в день рождения, а не на следующий день",
 		);
 		assert.equal(
 			await rejectedByAge("UTC", 36),
 			true,
-			"проверка выродилась: по UTC ему ещё 35, и порог 36 пройти не должен"
+			"проверка выродилась: по UTC ему ещё 35, и порог 36 пройти не должен",
 		);
 	});
 
@@ -178,7 +192,7 @@ describe("отбор получателей рассылки: день рожд�
 		assert.equal(
 			await rejectedByCalendar("Europe/Nowhereland", 400),
 			false,
-			"несуществующее имя пояса уронило или исказило отбор"
+			"несуществующее имя пояса уронило или исказило отбор",
 		);
 	});
 });

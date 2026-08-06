@@ -21,7 +21,7 @@
  * schema.ts, которой нет ни в одном DDL для этой таблицы. Обратное расхождение
  * (колонка есть в базе, но не объявлена) ошибкой не считается: это нормально.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 const SCHEMA_FILE = "apps/api/src/db/schema.ts";
@@ -84,7 +84,8 @@ function columnsOfCreateTableBody(body) {
 		const line = part.trim();
 		if (!line) continue;
 		// Табличные ограничения — не колонки.
-		if (/^(constraint|primary\s+key|foreign\s+key|unique|check)\b/i.test(line)) continue;
+		if (/^(constraint|primary\s+key|foreign\s+key|unique|check)\b/i.test(line))
+			continue;
 		const name = /^"?([a-z0-9_]+)"?/i.exec(line);
 		if (name) columns.add(name[1].toLowerCase());
 	}
@@ -113,7 +114,8 @@ function collectDdl(text, into) {
 	}
 
 	// ALTER TABLE x ADD COLUMN [IF NOT EXISTS] y — колонки, добавленные позже.
-	const alterTable = /ALTER TABLE\s+(?:ONLY\s+)?"?(?:public"?\.")?([a-z0-9_]+)"?([\s\S]*?);/gi;
+	const alterTable =
+		/ALTER TABLE\s+(?:ONLY\s+)?"?(?:public"?\.")?([a-z0-9_]+)"?([\s\S]*?);/gi;
 	while ((match = alterTable.exec(text)) !== null) {
 		const table = match[1].toLowerCase();
 		const columns = into.get(table) ?? new Set();
@@ -129,7 +131,9 @@ function collectDdl(text, into) {
 
 function ddlFromMigrations() {
 	const tables = new Map();
-	for (const name of readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql"))) {
+	for (const name of readdirSync(MIGRATIONS_DIR).filter((f) =>
+		f.endsWith(".sql"),
+	)) {
 		collectDdl(readFileSync(path.join(MIGRATIONS_DIR, name), "utf8"), tables);
 	}
 	return tables;
@@ -156,7 +160,9 @@ const ddl = ddlFromSources(ddlFromMigrations());
 const failures = [];
 let checkedTables = 0;
 
-for (const [table, columns] of [...declared].sort((a, b) => a[0].localeCompare(b[0]))) {
+for (const [table, columns] of [...declared].sort((a, b) =>
+	a[0].localeCompare(b[0]),
+)) {
 	if (NOT_CHECKED.has(table)) continue;
 	const actual = ddl.get(table);
 	if (!actual || actual.size === 0) continue; // покрытие DDL проверяет соседний скрипт
@@ -171,7 +177,9 @@ for (const [table, columns] of [...declared].sort((a, b) => a[0].localeCompare(b
 }
 
 if (failures.length > 0) {
-	console.error("Расхождение schema.ts и DDL (каждое ломает все запросы к таблице):");
+	console.error(
+		"Расхождение schema.ts и DDL (каждое ломает все запросы к таблице):",
+	);
 	for (const failure of failures) console.error(`  - ${failure}`);
 	process.exit(1);
 }

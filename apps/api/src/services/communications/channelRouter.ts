@@ -17,14 +17,26 @@ import {
 	denteMaxBotConfigs,
 	denteTelegramBotConfigs,
 	denteTelegramChatLinks,
-	denteWhatsappBotConfigs
+	denteWhatsappBotConfigs,
 } from "../../db/schema.js";
-import { sendEmail, readSmtpCredentialsFromEnv, type SmtpCredentials } from "../../emailTransport.js";
+import {
+	readSmtpCredentialsFromEnv,
+	type SmtpCredentials,
+	sendEmail,
+} from "../../emailTransport.js";
 import { parseMaxRecipient, sendMaxTextMessage } from "../../maxTransport.js";
-import { readSmsCredentialsFromEnv, sendSms, type SmsCredentials } from "../../smsTransport.js";
+import {
+	readSmsCredentialsFromEnv,
+	type SmsCredentials,
+	sendSms,
+} from "../../smsTransport.js";
 import { sendTelegramTextMessage } from "../../telegramTransport.js";
 import { decryptTelegramChatId } from "../../utils/telegramChatRef.js";
-import { readWhatsappCredentials, sendWhatsappTextMessage, type WhatsappCredentials } from "../../whatsappTransport.js";
+import {
+	readWhatsappCredentials,
+	sendWhatsappTextMessage,
+	type WhatsappCredentials,
+} from "../../whatsappTransport.js";
 import type { DeliveryErrorClass } from "./deliveryPolicy.js";
 
 export type CommunicationChannelCode =
@@ -40,15 +52,26 @@ export type CommunicationChannelCode =
 export type CommunicationConsentScope = "service" | "marketing";
 
 /** Каналы, по которым сообщение действительно уходит машиной. */
-export const MACHINE_DELIVERABLE_CHANNELS: readonly CommunicationChannelCode[] = ["sms", "email", "whatsapp", "telegram"];
+export const MACHINE_DELIVERABLE_CHANNELS: readonly CommunicationChannelCode[] =
+	["sms", "email", "whatsapp", "telegram"];
 
-export function isMachineDeliverableChannel(channel: string): channel is CommunicationChannelCode {
+export function isMachineDeliverableChannel(
+	channel: string,
+): channel is CommunicationChannelCode {
 	return (MACHINE_DELIVERABLE_CHANNELS as readonly string[]).includes(channel);
 }
 
 export type ChannelSendResult =
-	| { readonly ok: true; readonly providerMessageId: string | null; readonly segments: number | null }
-	| { readonly ok: false; readonly errorClass: DeliveryErrorClass; readonly errorMessage: string };
+	| {
+			readonly ok: true;
+			readonly providerMessageId: string | null;
+			readonly segments: number | null;
+	  }
+	| {
+			readonly ok: false;
+			readonly errorClass: DeliveryErrorClass;
+			readonly errorMessage: string;
+	  };
 
 export type ChannelCredentialSet = {
 	readonly sms: SmsCredentials | null;
@@ -72,10 +95,16 @@ export type ChannelCredentialSet = {
  * туда кладут маскированное значение (routes/whatsapp.ts, routes/max.ts), и
  * старый services/notificationWorker.ts подставлял именно его как токен бота.
  */
-function readTelegramBotToken(mode: string | null, env: NodeJS.ProcessEnv): string | null {
+function readTelegramBotToken(
+	mode: string | null,
+	env: NodeJS.ProcessEnv,
+): string | null {
 	const value = (name: string) => env[name]?.trim() || null;
 	if (mode === "clinic_owned_bot") {
-		return value("DENTE_TELEGRAM_OWN_BOT_TOKEN") ?? value("DENTE_TELEGRAM_CLINIC_BOT_TOKEN");
+		return (
+			value("DENTE_TELEGRAM_OWN_BOT_TOKEN") ??
+			value("DENTE_TELEGRAM_CLINIC_BOT_TOKEN")
+		);
 	}
 	if (mode === "disabled") return null;
 	return value("DENTE_TELEGRAM_BOT_TOKEN") ?? value("TELEGRAM_BOT_TOKEN");
@@ -87,7 +116,7 @@ function readTelegramBotToken(mode: string | null, env: NodeJS.ProcessEnv): stri
  */
 export async function resolveChannelCredentials(
 	organizationId: string,
-	env: NodeJS.ProcessEnv = process.env
+	env: NodeJS.ProcessEnv = process.env,
 ): Promise<ChannelCredentialSet> {
 	const [whatsappConfig] = await db
 		.select()
@@ -102,7 +131,10 @@ export async function resolveChannelCredentials(
 		.limit(1);
 
 	const [maxConfig] = await db
-		.select({ token: denteMaxBotConfigs.maxBotToken, isActive: denteMaxBotConfigs.isActive })
+		.select({
+			token: denteMaxBotConfigs.maxBotToken,
+			isActive: denteMaxBotConfigs.isActive,
+		})
 		.from(denteMaxBotConfigs)
 		.where(eq(denteMaxBotConfigs.organizationId, organizationId))
 		.limit(1);
@@ -111,10 +143,12 @@ export async function resolveChannelCredentials(
 		sms: readSmsCredentialsFromEnv(env),
 		smtp: readSmtpCredentialsFromEnv(env),
 		// Неактивная интеграция — это «не настроено», а не «настроено и молчит».
-		whatsapp: whatsappConfig?.isActive ? readWhatsappCredentials(whatsappConfig) : null,
+		whatsapp: whatsappConfig?.isActive
+			? readWhatsappCredentials(whatsappConfig)
+			: null,
 		telegramBotToken: readTelegramBotToken(telegramConfig?.mode ?? null, env),
 		// Выключенная интеграция — это «не настроено», а не «настроено и молчит».
-		maxBotToken: maxConfig?.isActive ? maxConfig.token?.trim() || null : null
+		maxBotToken: maxConfig?.isActive ? maxConfig.token?.trim() || null : null,
 	};
 }
 
@@ -123,7 +157,10 @@ export async function resolveChannelCredentials(
  * ключа шифрования отправка невозможна — и это должно быть видно как
  * `not_configured`, а не как молчаливый пропуск.
  */
-export async function resolveTelegramChatId(organizationId: string, patientId: string): Promise<string | null> {
+export async function resolveTelegramChatId(
+	organizationId: string,
+	patientId: string,
+): Promise<string | null> {
 	const [link] = await db
 		.select({ chatTransportRef: denteTelegramChatLinks.chatTransportRef })
 		.from(denteTelegramChatLinks)
@@ -131,8 +168,8 @@ export async function resolveTelegramChatId(organizationId: string, patientId: s
 			and(
 				eq(denteTelegramChatLinks.organizationId, organizationId),
 				eq(denteTelegramChatLinks.subjectId, patientId),
-				eq(denteTelegramChatLinks.status, "active")
-			)
+				eq(denteTelegramChatLinks.status, "active"),
+			),
 		)
 		.limit(1);
 
@@ -154,70 +191,111 @@ function notConfigured(message: string): ChannelSendResult {
 
 export async function sendThroughChannel(
 	request: ChannelSendRequest,
-	credentials: ChannelCredentialSet
+	credentials: ChannelCredentialSet,
 ): Promise<ChannelSendResult> {
 	switch (request.channel) {
 		case "sms": {
-			if (!credentials.sms) return notConfigured("SMS-шлюз не настроен: нет ключей доступа в окружении сервера.");
+			if (!credentials.sms)
+				return notConfigured(
+					"SMS-шлюз не настроен: нет ключей доступа в окружении сервера.",
+				);
 			const result = await sendSms({
 				credentials: credentials.sms,
 				toMsisdn: request.recipientAddress,
 				text: request.body,
-				idempotencyKey: request.idempotencyKey
-			});
-			return result.ok
-				? { ok: true, providerMessageId: result.providerMessageId, segments: result.segments }
-				: { ok: false, errorClass: result.errorClass, errorMessage: result.errorMessage };
-		}
-
-		case "email": {
-			if (!credentials.smtp) return notConfigured("Почтовый сервер не настроен: нет параметров SMTP в окружении.");
-			const result = await sendEmail({
-				credentials: credentials.smtp,
-				to: request.recipientAddress,
-				subject: request.subject?.trim() || "Сообщение из клиники",
-				text: request.body
-			});
-			return result.ok
-				? { ok: true, providerMessageId: result.providerMessageId, segments: null }
-				: { ok: false, errorClass: result.errorClass, errorMessage: result.errorMessage };
-		}
-
-		case "whatsapp": {
-			if (!credentials.whatsapp) return notConfigured("WhatsApp не настроен: нет Phone Number ID и токена доступа.");
-			const result = await sendWhatsappTextMessage({
-				...credentials.whatsapp,
-				toPhoneE164: request.recipientAddress,
-				text: request.body
-			});
-			return result.ok
-				? { ok: true, providerMessageId: result.providerMessageId, segments: null }
-				: { ok: false, errorClass: result.errorClass, errorMessage: result.errorMessage };
-		}
-
-		case "telegram": {
-			if (!credentials.telegramBotToken) return notConfigured("Telegram-бот не настроен: нет токена в окружении сервера.");
-			const result = await sendTelegramTextMessage({
-				botToken: credentials.telegramBotToken,
-				chatId: request.recipientAddress,
-				text: request.body
+				idempotencyKey: request.idempotencyKey,
 			});
 			return result.ok
 				? {
 						ok: true,
-						providerMessageId: result.telegramMessageId === null ? null : String(result.telegramMessageId),
-						segments: null
+						providerMessageId: result.providerMessageId,
+						segments: result.segments,
 					}
 				: {
 						ok: false,
 						errorClass: result.errorClass,
-						errorMessage: `Telegram ответил ${result.errorCode ?? "без кода"} (${result.errorClass}).`
+						errorMessage: result.errorMessage,
+					};
+		}
+
+		case "email": {
+			if (!credentials.smtp)
+				return notConfigured(
+					"Почтовый сервер не настроен: нет параметров SMTP в окружении.",
+				);
+			const result = await sendEmail({
+				credentials: credentials.smtp,
+				to: request.recipientAddress,
+				subject: request.subject?.trim() || "Сообщение из клиники",
+				text: request.body,
+			});
+			return result.ok
+				? {
+						ok: true,
+						providerMessageId: result.providerMessageId,
+						segments: null,
+					}
+				: {
+						ok: false,
+						errorClass: result.errorClass,
+						errorMessage: result.errorMessage,
+					};
+		}
+
+		case "whatsapp": {
+			if (!credentials.whatsapp)
+				return notConfigured(
+					"WhatsApp не настроен: нет Phone Number ID и токена доступа.",
+				);
+			const result = await sendWhatsappTextMessage({
+				...credentials.whatsapp,
+				toPhoneE164: request.recipientAddress,
+				text: request.body,
+			});
+			return result.ok
+				? {
+						ok: true,
+						providerMessageId: result.providerMessageId,
+						segments: null,
+					}
+				: {
+						ok: false,
+						errorClass: result.errorClass,
+						errorMessage: result.errorMessage,
+					};
+		}
+
+		case "telegram": {
+			if (!credentials.telegramBotToken)
+				return notConfigured(
+					"Telegram-бот не настроен: нет токена в окружении сервера.",
+				);
+			const result = await sendTelegramTextMessage({
+				botToken: credentials.telegramBotToken,
+				chatId: request.recipientAddress,
+				text: request.body,
+			});
+			return result.ok
+				? {
+						ok: true,
+						providerMessageId:
+							result.telegramMessageId === null
+								? null
+								: String(result.telegramMessageId),
+						segments: null,
+					}
+				: {
+						ok: false,
+						errorClass: result.errorClass,
+						errorMessage: `Telegram ответил ${result.errorCode ?? "без кода"} (${result.errorClass}).`,
 					};
 		}
 
 		case "max": {
 			if (!credentials.maxBotToken) {
-				return notConfigured("Бот MAX не подключён: в настройках клиники нет токена или интеграция выключена.");
+				return notConfigured(
+					"Бот MAX не подключён: в настройках клиники нет токена или интеграция выключена.",
+				);
 			}
 
 			// Адрес приходит из метки MAX:<chat_id>, оставленной разбором входящих.
@@ -225,22 +303,26 @@ export async function sendThroughChannel(
 			const recipient = parseMaxRecipient(request.recipientAddress);
 			if (!recipient) {
 				return notConfigured(
-					"У пациента нет переписки в MAX: отправить первым может только бот, которому пациент уже написал."
+					"У пациента нет переписки в MAX: отправить первым может только бот, которому пациент уже написал.",
 				);
 			}
 
 			const result = await sendMaxTextMessage({
 				botToken: credentials.maxBotToken,
 				recipient,
-				text: request.body
+				text: request.body,
 			});
 
 			return result.ok
-				? { ok: true, providerMessageId: result.providerMessageId, segments: null }
+				? {
+						ok: true,
+						providerMessageId: result.providerMessageId,
+						segments: null,
+					}
 				: {
 						ok: false,
 						errorClass: result.errorClass,
-						errorMessage: result.errorMessage
+						errorMessage: result.errorMessage,
 					};
 		}
 
@@ -253,13 +335,13 @@ export async function sendThroughChannel(
 			 * не теряется — оно видно в журнале с этой причиной.
 			 */
 			return notConfigured(
-				"Отправка во ВКонтакте не подключена: нет ни ключа сообщества, ни разбора входящих. Выберите другой канал."
+				"Отправка во ВКонтакте не подключена: нет ни ключа сообщества, ни разбора входящих. Выберите другой канал.",
 			);
 
 		case "phone":
 		case "in_person":
 			return notConfigured(
-				"Этот канал не отправляется автоматически — это задача сотруднику, а не сообщение в очереди."
+				"Этот канал не отправляется автоматически — это задача сотруднику, а не сообщение в очереди.",
 			);
 
 		default:

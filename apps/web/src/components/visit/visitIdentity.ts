@@ -46,7 +46,11 @@ export function realVisitFieldId(value: unknown): string | null {
  *   • "nobody"          — пациент не выбран: разбор будет, записи в карту нет;
  *   • "no-visit"        — приём не открыт, сравнивать не с кем.
  */
-export type ImagingWriteTarget = "visit-patient" | "another-patient" | "nobody" | "no-visit";
+export type ImagingWriteTarget =
+	| "visit-patient"
+	| "another-patient"
+	| "nobody"
+	| "no-visit";
 
 export function imagingWriteTarget(
 	selectedPatientId: unknown,

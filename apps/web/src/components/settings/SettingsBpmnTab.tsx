@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { GitMerge, Play, Pause, Plus, Trash2 } from "lucide-react";
-import { showToast } from "../GlobalToast";
+import { GitMerge, Pause, Play, Plus, Trash2 } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast, panelStateText } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
 	type ClinicWorkflow,
@@ -76,7 +77,10 @@ export function SettingsBpmnTab() {
 			try {
 				const res = await fetch(`/api/clinic/workflows/${wf.id}/toggle`, {
 					method: "POST",
-					headers: { ...denteClinicalReadHeaders(), "Content-Type": "application/json" },
+					headers: {
+						...denteClinicalReadHeaders(),
+						"Content-Type": "application/json",
+					},
 					body: JSON.stringify({ active: !wf.active }),
 				});
 				if (!res.ok) {
@@ -143,8 +147,15 @@ export function SettingsBpmnTab() {
 			try {
 				const res = await fetch("/api/clinic/workflows", {
 					method: "POST",
-					headers: { ...denteClinicalReadHeaders(), "Content-Type": "application/json" },
-					body: JSON.stringify({ name: newName.trim(), trigger: newTrigger, active: false }),
+					headers: {
+						...denteClinicalReadHeaders(),
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						name: newName.trim(),
+						trigger: newTrigger,
+						active: false,
+					}),
 				});
 				if (!res.ok) {
 					showToast(
@@ -209,20 +220,31 @@ export function SettingsBpmnTab() {
 					<p className="eyebrow">Бизнес-процессы</p>
 					<h2>Автоматические сценарии</h2>
 					<p>
-						Настраивайте автоматические действия по триггерам: создание черновиков, напоминаний,
-						задач для администратора. Все действия проходят подтверждение вручную.
+						Настраивайте автоматические действия по триггерам: создание
+						черновиков, напоминаний, задач для администратора. Все действия
+						проходят подтверждение вручную.
 					</p>
 				</div>
 			</div>
 
 			<div
 				className="profile-form-grid"
-				style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "24px" }}
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					gap: "24px",
+					marginTop: "24px",
+				}}
 			>
 				<section className="profile-section-card">
 					<div
 						className="profile-section-header"
-						style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							width: "100%",
+							alignItems: "center",
+						}}
 					>
 						<div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
 							<div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
@@ -278,7 +300,10 @@ export function SettingsBpmnTab() {
 								border: "1px solid var(--line)",
 							}}
 						>
-							<div className="profile-form-group" style={{ flex: "1 1 180px", margin: 0 }}>
+							<div
+								className="profile-form-group"
+								style={{ flex: "1 1 180px", margin: 0 }}
+							>
 								<label htmlFor="wf-name">Название сценария</label>
 								<input
 									id="wf-name"
@@ -289,7 +314,10 @@ export function SettingsBpmnTab() {
 									required
 								/>
 							</div>
-							<div className="profile-form-group" style={{ flex: "1 1 200px", margin: 0 }}>
+							<div
+								className="profile-form-group"
+								style={{ flex: "1 1 200px", margin: 0 }}
+							>
 								{/* «Триггер» — жаргон. Администратор ищет глазами «после чего». */}
 								<label htmlFor="wf-trigger">После какого события</label>
 								<select
@@ -297,15 +325,21 @@ export function SettingsBpmnTab() {
 									value={newTrigger}
 									onChange={(e) => setNewTrigger(e.target.value)}
 								>
-									{Object.entries(WORKFLOW_TRIGGER_LABELS).map(([key, label]) => (
-										<option key={key} value={key}>
-											{label}
-										</option>
-									))}
+									{Object.entries(WORKFLOW_TRIGGER_LABELS).map(
+										([key, label]) => (
+											<option key={key} value={key}>
+												{label}
+											</option>
+										),
+									)}
 								</select>
 							</div>
 							<div style={{ display: "flex", gap: "8px" }}>
-								<button type="submit" className="primary-button" disabled={adding}>
+								<button
+									type="submit"
+									className="primary-button"
+									disabled={adding}
+								>
 									{adding ? "Создание..." : "Создать"}
 								</button>
 								<button
@@ -341,7 +375,10 @@ export function SettingsBpmnTab() {
 									fontSize: "0.875rem",
 								}}
 							>
-								{panelStateText(WORKFLOWS_PANEL_SUBJECT, { phase: "loading" }).title}
+								{
+									panelStateText(WORKFLOWS_PANEL_SUBJECT, { phase: "loading" })
+										.title
+								}
 							</div>
 						)}
 						{loadState.phase === "ready" && workflows.length === 0 && (
@@ -375,12 +412,24 @@ export function SettingsBpmnTab() {
 								}}
 							>
 								<div>
-									<h4 style={{ margin: 0, color: "var(--ink)", fontSize: "0.9rem" }}>{wf.name}</h4>
-									<span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+									<h4
+										style={{
+											margin: 0,
+											color: "var(--ink)",
+											fontSize: "0.9rem",
+										}}
+									>
+										{wf.name}
+									</h4>
+									<span
+										style={{ fontSize: "13px", color: "var(--text-secondary)" }}
+									>
 										Срабатывает: {workflowTriggerLabel(wf.trigger)}
 									</span>
 								</div>
-								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+								<div
+									style={{ display: "flex", alignItems: "center", gap: "8px" }}
+								>
 									<button
 										type="button"
 										onClick={() => void handleToggle(wf)}
@@ -398,7 +447,9 @@ export function SettingsBpmnTab() {
 											background: wf.active
 												? "rgba(16, 185, 129, 0.1)"
 												: "rgba(100, 116, 139, 0.1)",
-											color: wf.active ? "rgb(16, 185, 129)" : "rgb(100, 116, 139)",
+											color: wf.active
+												? "rgb(16, 185, 129)"
+												: "rgb(100, 116, 139)",
 											opacity: togglingId === wf.id ? 0.5 : 1,
 										}}
 									>

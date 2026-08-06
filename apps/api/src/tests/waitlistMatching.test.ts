@@ -9,7 +9,11 @@
 
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { parsePreferredRanges, parsePreferredWeekday, slotFitsRanges } from "../services/schedule/waitlistMatching.js";
+import {
+	parsePreferredRanges,
+	parsePreferredWeekday,
+	slotFitsRanges,
+} from "../services/schedule/waitlistMatching.js";
 
 /*
  * Эти проверки появились после сверки с ФАКТИЧЕСКИМ контрактом. В первой
@@ -84,15 +88,18 @@ describe("разбор дня недели (parsePreferredWeekday)", () => {
 
 describe("контракт поля из POST /api/waitlist", () => {
 	test("форма {day, slot} с интервалом понимается", () => {
-		assert.deepEqual(parsePreferredRanges([{ day: "вт", slot: "10:00-13:00" }]), [
-			{ fromMinute: 600, toMinute: 780 }
-		]);
+		assert.deepEqual(
+			parsePreferredRanges([{ day: "вт", slot: "10:00-13:00" }]),
+			[{ fromMinute: 600, toMinute: 780 }],
+		);
 	});
 
 	test("одно время в slot считается началом получаса, а не всем днём", () => {
 		// «10:00» означает это время, а не «когда угодно»: полчаса — самый
 		// короткий приём в прайсе.
-		assert.deepEqual(parsePreferredRanges([{ day: "пн", slot: "10:00" }]), [{ fromMinute: 600, toMinute: 630 }]);
+		assert.deepEqual(parsePreferredRanges([{ day: "пн", slot: "10:00" }]), [
+			{ fromMinute: 600, toMinute: 630 },
+		]);
 	});
 
 	test("день недели читается из названия, номера и даты", () => {
@@ -115,7 +122,9 @@ describe("контракт поля из POST /api/waitlist", () => {
 
 describe("желаемое время в листе ожидания", () => {
 	test("строка «10:00-13:00» понимается", () => {
-		assert.deepEqual(parsePreferredRanges(["10:00-13:00"]), [{ fromMinute: 600, toMinute: 780 }]);
+		assert.deepEqual(parsePreferredRanges(["10:00-13:00"]), [
+			{ fromMinute: 600, toMinute: 780 },
+		]);
 	});
 
 	test("тире в любом написании: дефис, среднее и длинное", () => {
@@ -125,7 +134,9 @@ describe("желаемое время в листе ожидания", () => {
 	});
 
 	test("объект {from, to} понимается наравне со строкой", () => {
-		assert.deepEqual(parsePreferredRanges([{ from: "14:30", to: "18:00" }]), [{ fromMinute: 870, toMinute: 1080 }]);
+		assert.deepEqual(parsePreferredRanges([{ from: "14:30", to: "18:00" }]), [
+			{ fromMinute: 870, toMinute: 1080 },
+		]);
 	});
 
 	test("мусор и невозможное время отбрасываются, а не роняют подбор", () => {
@@ -148,7 +159,11 @@ describe("желаемое время в листе ожидания", () => {
 		const ranges = [{ fromMinute: 600, toMinute: 780 }];
 		assert.equal(slotFitsRanges(600, ranges), true, "начало интервала входит");
 		assert.equal(slotFitsRanges(779, ranges), true);
-		assert.equal(slotFitsRanges(780, ranges), false, "конец интервала не входит: в 13:00 приём уже не начнётся");
+		assert.equal(
+			slotFitsRanges(780, ranges),
+			false,
+			"конец интервала не входит: в 13:00 приём уже не начнётся",
+		);
 		assert.equal(slotFitsRanges(599, ranges), false);
 	});
 

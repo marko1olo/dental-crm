@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -159,7 +159,10 @@ function isFlagAccess(node: ts.Node): boolean {
 	);
 }
 
-function subtreeHas(root: ts.Node, matches: (node: ts.Node) => boolean): boolean {
+function subtreeHas(
+	root: ts.Node,
+	matches: (node: ts.Node) => boolean,
+): boolean {
 	let found = false;
 	const visit = (current: ts.Node): void => {
 		if (found) return;
@@ -234,17 +237,26 @@ export function scanModule(file: string, source: string): ModuleScan {
 		if (body === undefined) return false;
 		if (!ts.isBlock(body)) return subtreeHas(body, isFlagAccess);
 		const only = body.statements.length === 1 ? body.statements[0] : undefined;
-		return only !== undefined && ts.isReturnStatement(only) && subtreeHas(only, isFlagAccess);
+		return (
+			only !== undefined &&
+			ts.isReturnStatement(only) &&
+			subtreeHas(only, isFlagAccess)
+		);
 	};
 	const collectPredicates = (node: ts.Node): void => {
-		if (ts.isFunctionDeclaration(node) && node.name && isPredicateBody(node.body)) {
+		if (
+			ts.isFunctionDeclaration(node) &&
+			node.name &&
+			isPredicateBody(node.body)
+		) {
 			predicates.add(node.name.text);
 		}
 		if (
 			ts.isVariableDeclaration(node) &&
 			ts.isIdentifier(node.name) &&
 			node.initializer &&
-			(ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer)) &&
+			(ts.isArrowFunction(node.initializer) ||
+				ts.isFunctionExpression(node.initializer)) &&
 			isPredicateBody(node.initializer.body)
 		) {
 			predicates.add(node.name.text);
@@ -273,7 +285,8 @@ export function scanModule(file: string, source: string): ModuleScan {
 			gates += 1;
 			const branch = node.thenStatement;
 			const refuses =
-				ts.isThrowStatement(branch) || (ts.isBlock(branch) && ownHas(branch, ts.isThrowStatement));
+				ts.isThrowStatement(branch) ||
+				(ts.isBlock(branch) && ownHas(branch, ts.isThrowStatement));
 			kinds.add(refuses ? "отказ" : "память");
 		}
 		if (
@@ -293,7 +306,10 @@ export function scanModule(file: string, source: string): ModuleScan {
 		 * а это ровно тот файл, на котором замерен худший ответ (`200 []` на осложнения
 		 * настоящего пациента). Зелёный такого сканера означал бы «я не смотрел».
 		 */
-		if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+		if (
+			ts.isCallExpression(node) &&
+			node.expression.kind === ts.SyntaxKind.ImportKeyword
+		) {
 			const argument = node.arguments[0];
 			if (argument && ts.isStringLiteral(argument)) {
 				specifiers.push(argument.text);
@@ -306,7 +322,9 @@ export function scanModule(file: string, source: string): ModuleScan {
 
 	return {
 		readsFlag: subtreeHas(parsed, isFlagAccess),
-		touchesDatabase: specifiers.some((specifier) => specifier.endsWith("client.js")),
+		touchesDatabase: specifiers.some((specifier) =>
+			specifier.endsWith("client.js"),
+		),
 		kinds: [...kinds].sort(),
 		gates,
 		specifiers,
@@ -330,7 +348,10 @@ type Census = {
 	/** Всего модулей `routes/**` без `*.test.ts`. */
 	routeModules: number;
 	/** Маршруты, смешивающие оба класса: имя -> что именно смешано. */
-	mixedRoutes: Map<string, { respected: string[]; ignored: string[]; ignoredDynamicOnly: string[] }>;
+	mixedRoutes: Map<
+		string,
+		{ respected: string[]; ignored: string[]; ignoredDynamicOnly: string[] }
+	>;
 	/** Сумма гейтов по всем уважающим модулям. Мера охвата для датчика вырождения. */
 	totalGates: number;
 };
@@ -349,7 +370,10 @@ function buildCensus(): Census {
 	let totalGates = 0;
 
 	for (const file of dbFiles) {
-		const scan = scanModule(file, readFileSync(path.join(dbDir, ...file.split("/")), "utf8"));
+		const scan = scanModule(
+			file,
+			readFileSync(path.join(dbDir, ...file.split("/")), "utf8"),
+		);
 		if (scan.readsFlag) {
 			respecting.set(file, scan.kinds);
 			totalGates += scan.gates;
@@ -367,7 +391,10 @@ function buildCensus(): Census {
 	>();
 
 	for (const file of routeFiles) {
-		const scan = scanModule(file, readFileSync(path.join(routesDir, ...file.split("/")), "utf8"));
+		const scan = scanModule(
+			file,
+			readFileSync(path.join(routesDir, ...file.split("/")), "utf8"),
+		);
 		const staticOnly = new Set(
 			scan.specifiers
 				.filter((specifier) => !scan.dynamicSpecifiers.includes(specifier))
@@ -377,8 +404,12 @@ function buildCensus(): Census {
 		const all = scan.specifiers
 			.map(dbModuleFromSpecifier)
 			.filter((name): name is string => name !== null);
-		const respected = [...new Set(all.filter((name) => respecting.has(name)))].sort();
-		const ignored = [...new Set(all.filter((name) => ignoringSet.has(name)))].sort();
+		const respected = [
+			...new Set(all.filter((name) => respecting.has(name))),
+		].sort();
+		const ignored = [
+			...new Set(all.filter((name) => ignoringSet.has(name))),
+		].sort();
 		if (respected.length === 0 || ignored.length === 0) continue;
 		mixedRoutes.set(file, {
 			respected,
@@ -424,11 +455,16 @@ function buildCensus(): Census {
  *     `noFabricatedDataFallback.test.ts`, где он был добавлен после того, как
  *     ухудшение вида прошло семь проверок из семи.
  */
-const DECLARED_RESPECTING: { module: string; kinds: GateKind[]; behaviour: string }[] = [
+const DECLARED_RESPECTING: {
+	module: string;
+	kinds: GateKind[];
+	behaviour: string;
+}[] = [
 	{
 		module: "appointmentsQuery.ts",
 		kinds: ["память"],
-		behaviour: "Отдаёт приёмы из sampleData.ts. Расписание оживает выдачей токена, второго барьера нет.",
+		behaviour:
+			"Отдаёт приёмы из sampleData.ts. Расписание оживает выдачей токена, второго барьера нет.",
 	},
 	{
 		module: "clinicalQuery.ts",
@@ -602,8 +638,16 @@ test("сканер читает флаг из кода и НЕ видит его
 			"}",
 		].join("\n"),
 	);
-	assert.equal(code.readsFlag, true, "Обращение process.env к флагу не найдено — сканер слеп.");
-	assert.deepEqual(code.kinds, ["память"], "Гейт без throw обязан быть «памятью».");
+	assert.equal(
+		code.readsFlag,
+		true,
+		"Обращение process.env к флагу не найдено — сканер слеп.",
+	);
+	assert.deepEqual(
+		code.kinds,
+		["память"],
+		"Гейт без throw обязан быть «памятью».",
+	);
 	assert.equal(code.gates, 1, "Гейт через локальный предикат не сосчитан.");
 
 	/*
@@ -635,7 +679,11 @@ test("сканер читает флаг из кода и НЕ видит его
 			"уважающим модуль по тексту сообщения об ошибке и наказывает за объяснение — в этом дереве " +
 			"четыре модуля держат имя флага именно в тексте отказа для оператора.",
 	);
-	assert.equal(documented.touchesDatabase, true, "Импорт пула client.js не найден.");
+	assert.equal(
+		documented.touchesDatabase,
+		true,
+		"Импорт пула client.js не найден.",
+	);
 });
 
 test("сканер отличает отказ от выдачи из памяти", () => {
@@ -806,7 +854,9 @@ test("перепись слоя доступа и маршрутов не выр
 			"и переход «отказ» → «память» в непросмотренном гейте пройдёт молча.",
 	);
 
-	const outsideQueryMask = [...census.respecting.keys()].filter((name) => !name.endsWith("Query.ts"));
+	const outsideQueryMask = [...census.respecting.keys()].filter(
+		(name) => !name.endsWith("Query.ts"),
+	);
 	assert.deepEqual(
 		outsideQueryMask,
 		["domainStateHydration.ts"],
@@ -830,9 +880,9 @@ test("объявление границы не выродилось в отпи�
 			"что именно уходит наружу вместо данных базы, иначе объявление границы ничего не объявляет.",
 	);
 
-	const shallowReason = DECLARED_MIXED_ROUTES.filter((entry) => entry.reason.trim().length < 100).map(
-		(entry) => entry.route,
-	);
+	const shallowReason = DECLARED_MIXED_ROUTES.filter(
+		(entry) => entry.reason.trim().length < 100,
+	).map((entry) => entry.route);
 	assert.deepEqual(
 		shallowReason,
 		[],
@@ -843,7 +893,11 @@ test("объявление границы не выродилось в отпи�
 	const duplicated = DECLARED_MIXED_ROUTES.map((entry) => entry.route).filter(
 		(route, index, all) => all.indexOf(route) !== index,
 	);
-	assert.deepEqual(duplicated, [], `В списке смешения повторы: ${duplicated.join(", ")}`);
+	assert.deepEqual(
+		duplicated,
+		[],
+		`В списке смешения повторы: ${duplicated.join(", ")}`,
+	);
 });
 
 test("множество модулей, уважающих DENTAL_STATE_PERSISTENCE, объявлено и не изменилось", () => {
@@ -872,7 +926,9 @@ test("множество модулей, уважающих DENTAL_STATE_PERSIST
 			"сканер перестал видеть чтение флага, и тогда зелёное выше не значит ничего.",
 	);
 
-	const declaredKinds = new Map(DECLARED_RESPECTING.map((entry) => [entry.module, entry.kinds]));
+	const declaredKinds = new Map(
+		DECLARED_RESPECTING.map((entry) => [entry.module, entry.kinds]),
+	);
 	const changedKind = [...census.respecting.entries()]
 		.filter(([name, kinds]) => {
 			const known = declaredKinds.get(name);

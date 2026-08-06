@@ -1,9 +1,8 @@
-import test, { describe, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
-
 import fs from "node:fs";
-import path from "node:path";
 import os from "node:os";
+import path from "node:path";
+import test, { afterEach, beforeEach, describe } from "node:test";
 
 /**
  * Демон резервного копирования переписан, а тест остался от прежней версии.
@@ -43,7 +42,9 @@ describe("BackupWorker start/stop", () => {
 			fs.writeFileSync(dummyPgDump, `@echo off\nexit 0\n`);
 		} else {
 			const dummyPgDump = path.join(dummyBin, "pg_dump");
-			fs.writeFileSync(dummyPgDump, `#!/usr/bin/env node\nprocess.exit(0);\n`, { mode: 0o755 });
+			fs.writeFileSync(dummyPgDump, `#!/usr/bin/env node\nprocess.exit(0);\n`, {
+				mode: 0o755,
+			});
 		}
 
 		originalPath = process.env.PATH;

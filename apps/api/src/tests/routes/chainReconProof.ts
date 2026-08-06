@@ -34,8 +34,8 @@
  */
 
 import { sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
 import {
 	appointments,
@@ -61,8 +61,11 @@ import { registerReportRoutes } from "../../routes/reports.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+} from "../support/fixtureOrganizations.js";
 
 /*
  * ═══════════════════════════════════════════════════════════════════════════
@@ -152,7 +155,9 @@ function producerMoneyKopecks(value: unknown, field: string): Kopecks {
 	}
 	const kopecks = Math.round(asNumber * 100);
 	if (!Number.isSafeInteger(kopecks)) {
-		throw new TypeError(`${field}: сумма вне денежного диапазона — ${String(value)}`);
+		throw new TypeError(
+			`${field}: сумма вне денежного диапазона — ${String(value)}`,
+		);
 	}
 	if (rublesFromKopecks(kopecks) !== asNumber) {
 		const finding = `${field}: производитель отдал ${asNumber}, в копейках это ${debtNumericText(kopecks)}`;
@@ -212,7 +217,8 @@ type Magnitude = number | readonly unknown[] | null | undefined;
 
 function magnitudeOf(value: Magnitude): number {
 	if (value === null || value === undefined) return 0;
-	if (typeof value === "number") return Number.isFinite(value) ? Math.abs(value) : 0;
+	if (typeof value === "number")
+		return Number.isFinite(value) ? Math.abs(value) : 0;
 	return value.length;
 }
 
@@ -307,30 +313,66 @@ function proveSubstanceSensorFires(): string[] {
 	const complaints: string[] = [];
 
 	const zeroAgainstZero = judge("датчик", "ноль против нуля", 0, 0, [0, 0]);
-	if (zeroAgainstZero.substantive) complaints.push("датчик счёл содержательным сравнение нуля с нулём");
-	if (!zeroAgainstZero.ok) complaints.push("датчик не увидел равенства нуля и нуля");
+	if (zeroAgainstZero.substantive)
+		complaints.push("датчик счёл содержательным сравнение нуля с нулём");
+	if (!zeroAgainstZero.ok)
+		complaints.push("датчик не увидел равенства нуля и нуля");
 
-	const emptyAgainstEmpty = judge("датчик", "пусто против пусто", [], [], [[], []]);
-	if (emptyAgainstEmpty.substantive) complaints.push("датчик счёл содержательным сравнение двух пустых наборов");
+	const emptyAgainstEmpty = judge(
+		"датчик",
+		"пусто против пусто",
+		[],
+		[],
+		[[], []],
+	);
+	if (emptyAgainstEmpty.substantive)
+		complaints.push("датчик счёл содержательным сравнение двух пустых наборов");
 
-	const missingValue = judge("датчик", "величина не пришла", null, null, [null, undefined]);
-	if (missingValue.substantive) complaints.push("датчик счёл содержательной непришедшую величину");
+	const missingValue = judge("датчик", "величина не пришла", null, null, [
+		null,
+		undefined,
+	]);
+	if (missingValue.substantive)
+		complaints.push("датчик счёл содержательной непришедшую величину");
 
 	const realMoney = judge("датчик", "сумма против суммы", 9200, 9200, [9200]);
-	if (!realMoney.substantive) complaints.push("датчик счёл вырожденным сравнение ненулевых сумм");
+	if (!realMoney.substantive)
+		complaints.push("датчик счёл вырожденным сравнение ненулевых сумм");
 
-	const overpayment = judge("датчик", "переплата против переплаты", -800, -800, [-800]);
-	if (!overpayment.substantive) complaints.push("датчик потерял содержательность на отрицательной сумме");
+	const overpayment = judge(
+		"датчик",
+		"переплата против переплаты",
+		-800,
+		-800,
+		[-800],
+	);
+	if (!overpayment.substantive)
+		complaints.push("датчик потерял содержательность на отрицательной сумме");
 
-	const isolationOnRealSet = judge("датчик", "чужих строк нет", false, false, [7]);
-	if (!isolationOnRealSet.substantive) complaints.push("датчик счёл вырожденной изоляцию на непустом наборе");
+	const isolationOnRealSet = judge(
+		"датчик",
+		"чужих строк нет",
+		false,
+		false,
+		[7],
+	);
+	if (!isolationOnRealSet.substantive)
+		complaints.push("датчик счёл вырожденной изоляцию на непустом наборе");
 
-	const isolationOnEmptySet = judge("датчик", "чужих строк нет", false, false, [0]);
-	if (isolationOnEmptySet.substantive) complaints.push("датчик счёл доказанной изоляцию на пустом наборе");
+	const isolationOnEmptySet = judge(
+		"датчик",
+		"чужих строк нет",
+		false,
+		false,
+		[0],
+	);
+	if (isolationOnEmptySet.substantive)
+		complaints.push("датчик счёл доказанной изоляцию на пустом наборе");
 
 	const mismatch = judge("датчик", "суммы разошлись", 9200, 9100, [9200]);
 	if (mismatch.ok) complaints.push("датчик не заметил расхождения сумм");
-	if (!mismatch.substantive) complaints.push("датчик потерял содержательность на расхождении");
+	if (!mismatch.substantive)
+		complaints.push("датчик потерял содержательность на расхождении");
 
 	/*
 	 * ПРОВЕРКА САМОГО РЕЕСТРА, тоже на выдуманных утверждениях. Датчик, который
@@ -349,15 +391,30 @@ function proveSubstanceSensorFires(): string[] {
 		"выродившееся утверждение",
 		"утверждения нет вовсе",
 	]);
-	if (rosterVerdict.degenerate.length !== 1 || rosterVerdict.degenerate[0] !== "выродившееся утверждение") {
+	if (
+		rosterVerdict.degenerate.length !== 1 ||
+		rosterVerdict.degenerate[0] !== "выродившееся утверждение"
+	) {
 		complaints.push("реестр не назвал выродившееся утверждение своей клиники");
 	}
-	if (rosterVerdict.missing.length !== 1 || rosterVerdict.missing[0] !== "утверждения нет вовсе") {
-		complaints.push("реестр не заметил, что утверждение не выполнялось (или зачёл его по чужой клинике)");
+	if (
+		rosterVerdict.missing.length !== 1 ||
+		rosterVerdict.missing[0] !== "утверждения нет вовсе"
+	) {
+		complaints.push(
+			"реестр не заметил, что утверждение не выполнялось (или зачёл его по чужой клинике)",
+		);
 	}
-	const cleanVerdict = verifyRoster(synthetic, "своя клиника", ["живое утверждение"]);
-	if (cleanVerdict.missing.length !== 0 || cleanVerdict.degenerate.length !== 0) {
-		complaints.push("реестр объявил нарушение там, где содержательное утверждение на месте");
+	const cleanVerdict = verifyRoster(synthetic, "своя клиника", [
+		"живое утверждение",
+	]);
+	if (
+		cleanVerdict.missing.length !== 0 ||
+		cleanVerdict.degenerate.length !== 0
+	) {
+		complaints.push(
+			"реестр объявил нарушение там, где содержательное утверждение на месте",
+		);
 	}
 
 	return complaints;
@@ -487,11 +544,17 @@ interface RosterVerdict {
  * Сверка реестра — ЧИСТАЯ функция, чтобы её саму можно было проверить на
  * выдуманных утверждениях, не заводя клинику и не глядя в базу.
  */
-function verifyRoster(rows: readonly Claim[], clinic: string, roster: readonly string[]): RosterVerdict {
+function verifyRoster(
+	rows: readonly Claim[],
+	clinic: string,
+	roster: readonly string[],
+): RosterVerdict {
 	const missing: string[] = [];
 	const degenerate: string[] = [];
 	for (const label of roster) {
-		const claim = rows.find((row) => row.clinic === clinic && row.label === label);
+		const claim = rows.find(
+			(row) => row.clinic === clinic && row.label === label,
+		);
 		if (!claim) {
 			missing.push(label);
 			continue;
@@ -514,7 +577,10 @@ async function buildApp(): Promise<FastifyInstance> {
 	return app;
 }
 
-async function rows(label: string, query: ReturnType<typeof sql>): Promise<Record<string, unknown>[]> {
+async function rows(
+	label: string,
+	query: ReturnType<typeof sql>,
+): Promise<Record<string, unknown>[]> {
 	const result = await db.execute(query);
 	const data = result.rows as Record<string, unknown>[];
 	console.log(`\n--- ${label} ---`);
@@ -637,7 +703,9 @@ const FIXTURE_REFUND = 800;
  * routes/reports.ts MAX_PERIOD_DAYS) всегда накрывает и посев, и ближайшее
  * расписание.
  */
-const REPORT_PERIOD_FROM = new Date(Date.now() - 330 * 86_400_000).toISOString();
+const REPORT_PERIOD_FROM = new Date(
+	Date.now() - 330 * 86_400_000,
+).toISOString();
 const REPORT_PERIOD_TO = new Date(Date.now() + 35 * 86_400_000).toISOString();
 
 /** Приём и визит — двое суток назад: срок долга получается определённым. */
@@ -650,16 +718,44 @@ const FIXTURE_PAID_AT = new Date(Date.now() - 86_400_000);
  * после уборки даёт побитово те же строки.
  */
 async function seedFixtureChain(): Promise<void> {
-	await db.insert(organizations).values({ id: FIXTURE_ORGANIZATION_ID, name: FIXTURE_ORGANIZATION_NAME });
+	await db
+		.insert(organizations)
+		.values({ id: FIXTURE_ORGANIZATION_ID, name: FIXTURE_ORGANIZATION_NAME });
 	await db.insert(users).values([
-		{ id: FIXTURE_DOCTOR_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Иванов Пётр Сергеевич", role: "doctor" },
-		{ id: FIXTURE_OWNER_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Петрова Анна Ильинична", role: "owner" },
+		{
+			id: FIXTURE_DOCTOR_ID,
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			fullName: "Иванов Пётр Сергеевич",
+			role: "doctor",
+		},
+		{
+			id: FIXTURE_OWNER_ID,
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			fullName: "Петрова Анна Ильинична",
+			role: "owner",
+		},
 	]);
 	await db.insert(patients).values([
-		{ id: FIXTURE_DEBTOR_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Долгов Артём Юрьевич" },
-		{ id: FIXTURE_OVERPAID_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Переплатова Мария Львовна" },
-		{ id: FIXTURE_EVEN_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Ровнова Ольга Дмитриевна" },
-		{ id: FIXTURE_KOPECK_DEBTOR_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Копейкина Вера Павловна" },
+		{
+			id: FIXTURE_DEBTOR_ID,
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			fullName: "Долгов Артём Юрьевич",
+		},
+		{
+			id: FIXTURE_OVERPAID_ID,
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			fullName: "Переплатова Мария Львовна",
+		},
+		{
+			id: FIXTURE_EVEN_ID,
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			fullName: "Ровнова Ольга Дмитриевна",
+		},
+		{
+			id: FIXTURE_KOPECK_DEBTOR_ID,
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			fullName: "Копейкина Вера Павловна",
+		},
 	]);
 
 	/*
@@ -722,7 +818,11 @@ async function seedFixtureChain(): Promise<void> {
 		},
 	]);
 
-	const appointmentFor = (slot: number, patientId: string, status: "completed" | "cancelled") => ({
+	const appointmentFor = (
+		slot: number,
+		patientId: string,
+		status: "completed" | "cancelled",
+	) => ({
 		id: fixtureUuid(FIXTURE_NAMESPACE, slot),
 		organizationId: FIXTURE_ORGANIZATION_ID,
 		patientId,
@@ -740,11 +840,19 @@ async function seedFixtureChain(): Promise<void> {
 		appointmentFor(45, FIXTURE_KOPECK_DEBTOR_ID, "completed"),
 	]);
 
-	const visitFor = (slot: number, patientId: string, appointmentSlot: number | null, status: "signed" | "draft") => ({
+	const visitFor = (
+		slot: number,
+		patientId: string,
+		appointmentSlot: number | null,
+		status: "signed" | "draft",
+	) => ({
 		id: fixtureUuid(FIXTURE_NAMESPACE, slot),
 		organizationId: FIXTURE_ORGANIZATION_ID,
 		patientId,
-		appointmentId: appointmentSlot === null ? null : fixtureUuid(FIXTURE_NAMESPACE, appointmentSlot),
+		appointmentId:
+			appointmentSlot === null
+				? null
+				: fixtureUuid(FIXTURE_NAMESPACE, appointmentSlot),
 		status,
 		createdAt: FIXTURE_VISIT_AT,
 		updatedAt: FIXTURE_VISIT_AT,
@@ -780,7 +888,10 @@ async function seedFixtureChain(): Promise<void> {
 		quantity: options.quantity,
 		unitPriceRub: options.unitPriceRub,
 		discountRub: options.discountRub,
-		priceRub: Math.max(0, options.unitPriceRub * Number(options.quantity) - options.discountRub),
+		priceRub: Math.max(
+			0,
+			options.unitPriceRub * Number(options.quantity) - options.discountRub,
+		),
 		status: options.status,
 	});
 	await db.insert(treatmentItems).values([
@@ -976,7 +1087,13 @@ async function canonDebt(organizationId: string): Promise<{
 			       discount_rub::text as discount_rub
 			  from treatment_items where organization_id = ${organizationId}
 		`)
-	).rows as { patient_id: string; status: string; unit_price_rub: string; quantity: string; discount_rub: string }[];
+	).rows as {
+		patient_id: string;
+		status: string;
+		unit_price_rub: string;
+		quantity: string;
+		discount_rub: string;
+	}[];
 	const paymentRows = (
 		await db.execute(sql`
 			select patient_id::text as patient_id, status::text as status, amount_rub::text as amount_rub
@@ -992,11 +1109,16 @@ async function canonDebt(organizationId: string): Promise<{
 			quantity: row.quantity,
 			discountRub: row.discount_rub,
 		})),
-		paymentRows.map((row) => ({ patientId: row.patient_id, status: row.status, amountRub: row.amount_rub })),
+		paymentRows.map((row) => ({
+			patientId: row.patient_id,
+			status: row.status,
+			amountRub: row.amount_rub,
+		})),
 	);
 	const totals = clinicDebtTotals(ledgers);
 	let chargedKopecks = 0;
-	for (const ledger of ledgers.values()) chargedKopecks += ledger.chargedKopecks;
+	for (const ledger of ledgers.values())
+		chargedKopecks += ledger.chargedKopecks;
 
 	/*
 	 * ВТОРОЙ ПРОХОД — ФОРМУЛОЙ ГЛАВНОГО ЭКРАНА, А НЕ КАНОНОМ.
@@ -1024,9 +1146,15 @@ async function canonDebt(organizationId: string): Promise<{
 			quantity: row.quantity,
 			discountRub: row.discount_rub,
 		})),
-		paymentRows.map((row) => ({ patientId: row.patient_id, status: row.status, amountRub: row.amount_rub })),
+		paymentRows.map((row) => ({
+			patientId: row.patient_id,
+			status: row.status,
+			amountRub: row.amount_rub,
+		})),
 	);
-	const screenTotals = clinicDebtTotals(screenLedgers, { significanceKopecks: 0 });
+	const screenTotals = clinicDebtTotals(screenLedgers, {
+		significanceKopecks: 0,
+	});
 
 	return {
 		receivableRub: rublesFromKopecks(totals.receivableKopecks),
@@ -1186,8 +1314,11 @@ async function main(): Promise<void> {
 	);
 
 	console.log("\n=== ШАГ 2. СВЕРКА ДЕНЕГ ПО КАЖДОЙ КЛИНИКЕ ===");
-	const orgs = (await db.execute(sql`select id::text as id, name from organizations order by name`))
-		.rows as { id: string; name: string }[];
+	const orgs = (
+		await db.execute(
+			sql`select id::text as id, name from organizations order by name`,
+		)
+	).rows as { id: string; name: string }[];
 
 	const app = await buildApp();
 	try {
@@ -1281,9 +1412,16 @@ async function main(): Promise<void> {
 			).rows[0] as Record<string, unknown>;
 			console.log(`SQL напрямую: ${JSON.stringify(totals)}`);
 
-			const clinicToken = signToken({ organizationId: org.id }, authTokenSecret());
+			const clinicToken = signToken(
+				{ organizationId: org.id },
+				authTokenSecret(),
+			);
 			const staffToken = signToken(
-				{ organizationId: org.id, userId: "00000000-0000-0000-0000-000000000000", role: "owner" },
+				{
+					organizationId: org.id,
+					userId: "00000000-0000-0000-0000-000000000000",
+					role: "owner",
+				},
 				authTokenSecret(),
 			);
 
@@ -1303,10 +1441,14 @@ async function main(): Promise<void> {
 				headers: { "x-dente-clinic-token": clinicToken },
 			});
 			if (dashboardResponse.statusCode !== 200) {
-				console.log(`ПРОВАЛ /api/dashboard HTTP ${dashboardResponse.statusCode}: ${dashboardResponse.body.slice(0, 300)}`);
+				console.log(
+					`ПРОВАЛ /api/dashboard HTTP ${dashboardResponse.statusCode}: ${dashboardResponse.body.slice(0, 300)}`,
+				);
 			} else {
 				const dashboard = JSON.parse(dashboardResponse.body);
-				console.log(`/api/dashboard billingSummary: ${JSON.stringify(dashboard.billingSummary)}`);
+				console.log(
+					`/api/dashboard billingSummary: ${JSON.stringify(dashboard.billingSummary)}`,
+				);
 				console.log(
 					`/api/dashboard activeVisit: id=${dashboard.activeVisit?.id} пациент=${dashboard.activeVisit?.patientId} ` +
 						`статус=${dashboard.activeVisit?.status} запись=${dashboard.activeVisit?.appointmentId}`,
@@ -1332,7 +1474,10 @@ async function main(): Promise<void> {
 					"назначено дашборд = SQL по позициям (количество округлено, как считает дашборд)",
 					money(summary.totalPlannedRub),
 					money(totals.planned_dashboard_rounded),
-					[money(summary.totalPlannedRub), money(totals.planned_dashboard_rounded)],
+					[
+						money(summary.totalPlannedRub),
+						money(totals.planned_dashboard_rounded),
+					],
 				);
 				same(
 					org.name,
@@ -1352,7 +1497,8 @@ async function main(): Promise<void> {
 				const netUncollected = rublesFromKopecks(
 					Math.max(
 						0,
-						moneyKopecks(totals.planned_dashboard_rounded) - moneyKopecks(totals.paid_sql),
+						moneyKopecks(totals.planned_dashboard_rounded) -
+							moneyKopecks(totals.paid_sql),
 					),
 				);
 				same(
@@ -1375,7 +1521,10 @@ async function main(): Promise<void> {
 					"к вычету дашборд = SQL по позициям налоговых услуг",
 					money(summary.taxDeductionEligibleRub),
 					money(totals.tax_deductible_sql),
-					[money(summary.taxDeductionEligibleRub), money(totals.tax_deductible_sql)],
+					[
+						money(summary.taxDeductionEligibleRub),
+						money(totals.tax_deductible_sql),
+					],
 				);
 				same(
 					org.name,
@@ -1384,18 +1533,33 @@ async function main(): Promise<void> {
 					Number(totals.open_items_sql ?? 0),
 					[summary.openTreatmentItems ?? 0, Number(totals.open_items_sql ?? 0)],
 				);
-				same(org.name, "позиций плана на дашборде = строк в базе", dashboard.treatmentPlanItems?.length ?? 0, Number(totals.item_rows ?? 0), [
+				same(
+					org.name,
+					"позиций плана на дашборде = строк в базе",
 					dashboard.treatmentPlanItems?.length ?? 0,
 					Number(totals.item_rows ?? 0),
-				]);
-				same(org.name, "оплат на дашборде = строк в базе", dashboard.payments?.length ?? 0, Number(totals.payment_rows ?? 0), [
+					[
+						dashboard.treatmentPlanItems?.length ?? 0,
+						Number(totals.item_rows ?? 0),
+					],
+				);
+				same(
+					org.name,
+					"оплат на дашборде = строк в базе",
 					dashboard.payments?.length ?? 0,
 					Number(totals.payment_rows ?? 0),
-				]);
-				same(org.name, "приёмов на дашборде = строк в базе", dashboard.appointments?.length ?? 0, Number(totals.appointment_rows ?? 0), [
+					[dashboard.payments?.length ?? 0, Number(totals.payment_rows ?? 0)],
+				);
+				same(
+					org.name,
+					"приёмов на дашборде = строк в базе",
 					dashboard.appointments?.length ?? 0,
 					Number(totals.appointment_rows ?? 0),
-				]);
+					[
+						dashboard.appointments?.length ?? 0,
+						Number(totals.appointment_rows ?? 0),
+					],
+				);
 				/*
 				 * АКТИВНЫЙ ВИЗИТ ОБЯЗАН БЫТЬ СТРОКОЙ БАЗЫ, а не подстановкой.
 				 *
@@ -1416,9 +1580,13 @@ async function main(): Promise<void> {
 							`)
 						).rows[0]?.n ?? 0,
 					) > 0;
-				same(org.name, "активный визит дашборда — настоящая строка базы", activeVisitExists, true, [
-					Number(totals.visit_rows ?? 0),
-				]);
+				same(
+					org.name,
+					"активный визит дашборда — настоящая строка базы",
+					activeVisitExists,
+					true,
+					[Number(totals.visit_rows ?? 0)],
+				);
 				console.log(
 					`справка: сумма только по completed=${money(totals.planned_completed_only)} — ` +
 						"дашборд в totalDueRub её НЕ использует, берёт все не отменённые.",
@@ -1432,10 +1600,14 @@ async function main(): Promise<void> {
 				 */
 				const insightDebt = rublesFromKopecks(
 					sumMoneyKopecks(
-						(insights as { balanceDueRub?: unknown }[]).map((row) => row.balanceDueRub),
+						(insights as { balanceDueRub?: unknown }[]).map(
+							(row) => row.balanceDueRub,
+						),
 					),
 				);
-				console.log(`patientInsights: строк ${insights.length}, сумма balanceDueRub=${insightDebt}`);
+				console.log(
+					`patientInsights: строк ${insights.length}, сумма balanceDueRub=${insightDebt}`,
+				);
 				dashboardInsightDebt = insightDebt;
 				same(
 					org.name,
@@ -1452,7 +1624,9 @@ async function main(): Promise<void> {
 				headers: { "x-dente-staff-token": staffToken },
 			});
 			if (receivablesResponse.statusCode !== 200) {
-				console.log(`ПРОВАЛ /api/reports/receivables HTTP ${receivablesResponse.statusCode}: ${receivablesResponse.body.slice(0, 300)}`);
+				console.log(
+					`ПРОВАЛ /api/reports/receivables HTTP ${receivablesResponse.statusCode}: ${receivablesResponse.body.slice(0, 300)}`,
+				);
 			} else {
 				const receivables = JSON.parse(receivablesResponse.body);
 				console.log(
@@ -1483,29 +1657,45 @@ async function main(): Promise<void> {
 				 */
 				const rowsDebt = rublesFromKopecks(
 					debtRows.reduce(
-						(sum, row) => sum + producerMoneyKopecks(row.debtRub, "receivables.rows[].debtRub"),
+						(sum, row) =>
+							sum +
+							producerMoneyKopecks(row.debtRub, "receivables.rows[].debtRub"),
 						0,
 					),
 				);
 				const bucketDebt = rublesFromKopecks(
-					Object.entries((receivables.byBucket ?? {}) as Record<string, unknown>).reduce(
-						(sum, [bucket, value]) => sum + producerMoneyKopecks(value, `receivables.byBucket.${bucket}`),
+					Object.entries(
+						(receivables.byBucket ?? {}) as Record<string, unknown>,
+					).reduce(
+						(sum, [bucket, value]) =>
+							sum +
+							producerMoneyKopecks(value, `receivables.byBucket.${bucket}`),
 						0,
 					),
 				);
-				same(org.name, "сумма долгов по строкам = итог дебиторки", rowsDebt, money(receivables.totalDebtRub), [
+				same(
+					org.name,
+					"сумма долгов по строкам = итог дебиторки",
 					rowsDebt,
 					money(receivables.totalDebtRub),
-				]);
-				same(org.name, "сумма корзин по сроку = итог дебиторки", bucketDebt, money(receivables.totalDebtRub), [
+					[rowsDebt, money(receivables.totalDebtRub)],
+				);
+				same(
+					org.name,
+					"сумма корзин по сроку = итог дебиторки",
 					bucketDebt,
 					money(receivables.totalDebtRub),
-				]);
+					[bucketDebt, money(receivables.totalDebtRub)],
+				);
 				same(
 					org.name,
 					"должников в отчёте = строк с положительным долгом",
 					receivables.rows?.length ?? 0,
-					debtRows.filter((row) => producerMoneyKopecks(row.debtRub, "receivables.rows[].debtRub") > 0).length,
+					debtRows.filter(
+						(row) =>
+							producerMoneyKopecks(row.debtRub, "receivables.rows[].debtRub") >
+							0,
+					).length,
 					[receivables.rows?.length ?? 0, debtRows.length],
 				);
 
@@ -1519,22 +1709,34 @@ async function main(): Promise<void> {
 				 */
 				const canon = await canonDebt(org.id);
 				console.log(`канон долга (money/patientDebt.ts): ${canon.explanation}`);
-				same(org.name, "назначено по канону = SQL по позициям", canon.chargedRub, money(totals.planned_sql_greatest), [
+				same(
+					org.name,
+					"назначено по канону = SQL по позициям",
 					canon.chargedRub,
 					money(totals.planned_sql_greatest),
-				]);
-				same(org.name, "дебиторка отчёта = дебиторка по канону", money(receivables.totalDebtRub), canon.receivableRub, [
+					[canon.chargedRub, money(totals.planned_sql_greatest)],
+				);
+				same(
+					org.name,
+					"дебиторка отчёта = дебиторка по канону",
 					money(receivables.totalDebtRub),
 					canon.receivableRub,
-				]);
-				same(org.name, "переплата отчёта = возврат по канону", money(receivables.totalPrepaidRub), canon.refundRub, [
+					[money(receivables.totalDebtRub), canon.receivableRub],
+				);
+				same(
+					org.name,
+					"переплата отчёта = возврат по канону",
 					money(receivables.totalPrepaidRub),
 					canon.refundRub,
-				]);
-				same(org.name, "должников в отчёте = должников по канону", receivables.rows?.length ?? 0, canon.debtorCount, [
+					[money(receivables.totalPrepaidRub), canon.refundRub],
+				);
+				same(
+					org.name,
+					"должников в отчёте = должников по канону",
 					receivables.rows?.length ?? 0,
 					canon.debtorCount,
-				]);
+					[receivables.rows?.length ?? 0, canon.debtorCount],
+				);
 				same(
 					org.name,
 					"переплативших в отчёте = переплативших по канону",
@@ -1575,7 +1777,8 @@ async function main(): Promise<void> {
 						reportDebtKopecks - moneyKopecks(dashboardDueRub),
 					);
 					const overpaidMinusDropped = rublesFromKopecks(
-						moneyKopecks(canon.fullRefundRub) - moneyKopecks(canon.subThresholdReceivableRub),
+						moneyKopecks(canon.fullRefundRub) -
+							moneyKopecks(canon.subThresholdReceivableRub),
 					);
 					console.log(
 						`РАСХОЖДЕНИЕ ДВУХ ЭКРАНОВ: дебиторка отчёта ${money(receivables.totalDebtRub)} − долг главного ` +
@@ -1590,7 +1793,11 @@ async function main(): Promise<void> {
 						"разница дебиторки и главного экрана = переплаты минус долги ниже порога отчёта",
 						screenGap,
 						overpaidMinusDropped,
-						[money(receivables.totalDebtRub), dashboardDueRub, canon.fullRefundRub],
+						[
+							money(receivables.totalDebtRub),
+							dashboardDueRub,
+							canon.fullRefundRub,
+						],
 					);
 					/*
 					 * НОВОЕ УТВЕРЖДЕНИЕ, И ИМЕННО ОНО ЗАПИРАЕТ ПОЛТИННИК НАПРЯМУЮ.
@@ -1606,7 +1813,9 @@ async function main(): Promise<void> {
 						org.name,
 						"долг главного экрана = не собрано нетто по канону (порог не уносит копейки)",
 						dashboardDueRub,
-						rublesFromKopecks(Math.max(0, moneyKopecks(canon.netUncollectedRub))),
+						rublesFromKopecks(
+							Math.max(0, moneyKopecks(canon.netUncollectedRub)),
+						),
 						[dashboardDueRub, canon.netUncollectedRub],
 					);
 				}
@@ -1666,7 +1875,11 @@ async function main(): Promise<void> {
 							"формула с отменёнными даёт БОЛЬШЕ канона — значит фильтр статуса вправду работает",
 							canon.screenReceivableRub > canon.fullReceivableRub,
 							true,
-							[canon.screenReceivableRub, canon.fullReceivableRub, cancelledWeight],
+							[
+								canon.screenReceivableRub,
+								canon.fullReceivableRub,
+								cancelledWeight,
+							],
 						);
 						console.log(
 							`ШОВ ЦЕЛ: карточки пациентов считают долг ${dashboardInsightDebt} ₽ и совпадают с полной ` +
@@ -1694,7 +1907,9 @@ async function main(): Promise<void> {
 				headers: { "x-dente-staff-token": staffToken },
 			});
 			if (doctorsResponse.statusCode !== 200) {
-				console.log(`ПРОВАЛ /api/reports/doctors HTTP ${doctorsResponse.statusCode}: ${doctorsResponse.body.slice(0, 300)}`);
+				console.log(
+					`ПРОВАЛ /api/reports/doctors HTTP ${doctorsResponse.statusCode}: ${doctorsResponse.body.slice(0, 300)}`,
+				);
 			} else {
 				const doctors = JSON.parse(doctorsResponse.body);
 				console.log(
@@ -1702,13 +1917,17 @@ async function main(): Promise<void> {
 				);
 				console.log(`   примечание: ${doctors.attributionNote}`);
 				for (const row of doctors.rows ?? []) {
-					console.log(`   ${row.doctorName}: выручка=${money(row.revenueRub)}, приёмов=${row.appointmentsTotal}, завершено=${row.appointmentsCompleted}`);
+					console.log(
+						`   ${row.doctorName}: выручка=${money(row.revenueRub)}, приёмов=${row.appointmentsTotal}, завершено=${row.appointmentsCompleted}`,
+					);
 				}
 				const doctorRows = (doctors.rows ?? []) as {
 					revenueRub?: unknown;
 					appointmentsTotal?: unknown;
 				}[];
-				const attributedKopecks = sumMoneyKopecks(doctorRows.map((row) => row.revenueRub));
+				const attributedKopecks = sumMoneyKopecks(
+					doctorRows.map((row) => row.revenueRub),
+				);
 				const attributed = rublesFromKopecks(attributedKopecks);
 				doctorsPeriodRevenue = rublesFromKopecks(
 					attributedKopecks + moneyKopecks(doctors.unattributedRevenueRub),
@@ -1732,15 +1951,24 @@ async function main(): Promise<void> {
 					"не отнесено к врачу = оплаты, которым приём не нашёлся",
 					money(doctors.unattributedRevenueRub),
 					money(totals.period_paid_unattributed),
-					[money(doctors.unattributedRevenueRub), money(totals.period_paid_unattributed)],
+					[
+						money(doctors.unattributedRevenueRub),
+						money(totals.period_paid_unattributed),
+					],
 				);
-				const appointmentsInReport = doctorRows.reduce((sum, row) => sum + Number(row.appointmentsTotal ?? 0), 0);
+				const appointmentsInReport = doctorRows.reduce(
+					(sum, row) => sum + Number(row.appointmentsTotal ?? 0),
+					0,
+				);
 				same(
 					org.name,
 					"приёмов у врачей = приёмов клиники за период",
 					appointmentsInReport,
 					Number(totals.period_appointments_with_doctor ?? 0),
-					[appointmentsInReport, Number(totals.period_appointments_with_doctor ?? 0)],
+					[
+						appointmentsInReport,
+						Number(totals.period_appointments_with_doctor ?? 0),
+					],
 				);
 			}
 
@@ -1750,7 +1978,9 @@ async function main(): Promise<void> {
 				headers: { "x-dente-staff-token": staffToken },
 			});
 			if (servicesResponse.statusCode !== 200) {
-				console.log(`ПРОВАЛ /api/reports/services HTTP ${servicesResponse.statusCode}: ${servicesResponse.body.slice(0, 300)}`);
+				console.log(
+					`ПРОВАЛ /api/reports/services HTTP ${servicesResponse.statusCode}: ${servicesResponse.body.slice(0, 300)}`,
+				);
 			} else {
 				const services = JSON.parse(servicesResponse.body);
 				console.log(
@@ -1767,7 +1997,10 @@ async function main(): Promise<void> {
 					"назначено услуг = SQL по позициям с визитом в периоде",
 					money(services.plannedTotalRub),
 					money(totals.period_services_planned),
-					[money(services.plannedTotalRub), money(totals.period_services_planned)],
+					[
+						money(services.plannedTotalRub),
+						money(totals.period_services_planned),
+					],
 				);
 			}
 
@@ -1777,10 +2010,14 @@ async function main(): Promise<void> {
 				headers: { "x-dente-staff-token": staffToken },
 			});
 			if (revenueResponse.statusCode !== 200) {
-				console.log(`ПРОВАЛ /api/reports/revenue HTTP ${revenueResponse.statusCode}: ${revenueResponse.body.slice(0, 300)}`);
+				console.log(
+					`ПРОВАЛ /api/reports/revenue HTTP ${revenueResponse.statusCode}: ${revenueResponse.body.slice(0, 300)}`,
+				);
 			} else {
 				const revenue = JSON.parse(revenueResponse.body);
-				console.log(`/api/reports/revenue: точек ${revenue.points?.length ?? 0}, итог=${money(revenue.totalRub)}`);
+				console.log(
+					`/api/reports/revenue: точек ${revenue.points?.length ?? 0}, итог=${money(revenue.totalRub)}`,
+				);
 				if (doctorsPeriodRevenue !== null) {
 					same(
 						org.name,
@@ -1790,21 +2027,28 @@ async function main(): Promise<void> {
 						[money(revenue.totalRub), doctorsPeriodRevenue],
 					);
 				}
-				const revenuePoints = (revenue.points ?? []) as { revenueRub?: unknown }[];
+				const revenuePoints = (revenue.points ?? []) as {
+					revenueRub?: unknown;
+				}[];
 				const pointsTotal = rublesFromKopecks(
 					sumMoneyKopecks(revenuePoints.map((row) => row.revenueRub)),
 				);
-				same(org.name, "сумма точек динамики = итог динамики", pointsTotal, money(revenue.totalRub), [
+				same(
+					org.name,
+					"сумма точек динамики = итог динамики",
 					pointsTotal,
 					money(revenue.totalRub),
-				]);
+					[pointsTotal, money(revenue.totalRub)],
+				);
 			}
 		}
 	} finally {
 		await app.close();
 	}
 
-	console.log("\n=== ШАГ 3. ПОПАРНАЯ СВЕРКА ПО ПАЦИЕНТАМ (назначено/оплачено/долг) ===");
+	console.log(
+		"\n=== ШАГ 3. ПОПАРНАЯ СВЕРКА ПО ПАЦИЕНТАМ (назначено/оплачено/долг) ===",
+	);
 	await rows(
 		"пациенты, у которых числа расходятся между формулами",
 		sql`with planned as (
@@ -1847,7 +2091,9 @@ async function main(): Promise<void> {
 		     limit 15`,
 	);
 
-	console.log("\n=== ШАГ 4. ОТКРЫТИЕ ПРИЁМА: МАРШРУТЫ ЧЕРНОВИКА ПРОТИВ ЖИВОГО activeVisit ===");
+	console.log(
+		"\n=== ШАГ 4. ОТКРЫТИЕ ПРИЁМА: МАРШРУТЫ ЧЕРНОВИКА ПРОТИВ ЖИВОГО activeVisit ===",
+	);
 	const visitApp = Fastify();
 	visitApp.addHook("onRequest", async (request) => {
 		getRequestIdentity(request);
@@ -1873,7 +2119,10 @@ async function main(): Promise<void> {
 		const response = await visitApp.inject({
 			method: "PUT",
 			url: `/api/visits/${visit.id}/draft/autosave`,
-			headers: { "x-dente-clinic-token": clinicToken, "content-type": "application/json" },
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"content-type": "application/json",
+			},
 			payload: {
 				patientId: visit.patient_id,
 				selectedSpecialty: "therapist",
@@ -1905,21 +2154,33 @@ async function main(): Promise<void> {
 	try {
 		for (const org of orgs) {
 			const signed = await visitOfStatus(org.id, "signed");
-			const draft = org.id === FIXTURE_ORGANIZATION_ID ? await visitOfStatus(org.id, "draft") : undefined;
+			const draft =
+				org.id === FIXTURE_ORGANIZATION_ID
+					? await visitOfStatus(org.id, "draft")
+					: undefined;
 			if (!signed && !draft) {
-				console.log(`\n«${org.name}»: приёмов в базе нет вовсе — карту приёма открывать не на чем.`);
+				console.log(
+					`\n«${org.name}»: приёмов в базе нет вовсе — карту приёма открывать не на чем.`,
+				);
 			} else {
-				console.log(`\n«${org.name}»: подписанный визит ${signed?.id ?? "нет"}, свой черновик ${draft?.id ?? "нет"}`);
+				console.log(
+					`\n«${org.name}»: подписанный визит ${signed?.id ?? "нет"}, свой черновик ${draft?.id ?? "нет"}`,
+				);
 			}
 
 			if (signed) {
-				const clinicToken = signToken({ organizationId: org.id }, authTokenSecret());
+				const clinicToken = signToken(
+					{ organizationId: org.id },
+					authTokenSecret(),
+				);
 				const get = await visitApp.inject({
 					method: "GET",
 					url: `/api/visits/${signed.id}/draft/autosave`,
 					headers: { "x-dente-clinic-token": clinicToken },
 				});
-				console.log(`  GET  черновик подписанного -> HTTP ${get.statusCode} ${get.body.slice(0, 200)}`);
+				console.log(
+					`  GET  черновик подписанного -> HTTP ${get.statusCode} ${get.body.slice(0, 200)}`,
+				);
 				if (get.statusCode === 404) {
 					console.log(
 						"  НАХОДКА ДЛЯ ОЧЕРЕДИ: маршрут отвечает «VisitNotFound / Прием не найден» о приёме, который " +
@@ -1929,25 +2190,55 @@ async function main(): Promise<void> {
 					);
 				}
 				const put = await tryAutosave(org.id, signed);
-				console.log(`  PUT  автосохранение подписанного -> HTTP ${put.statusCode} ${put.body.slice(0, 220)}`);
-				same(org.name, "подписанный приём отказывает в автосохранении", put.statusCode, 409, [1]);
+				console.log(
+					`  PUT  автосохранение подписанного -> HTTP ${put.statusCode} ${put.body.slice(0, 220)}`,
+				);
+				same(
+					org.name,
+					"подписанный приём отказывает в автосохранении",
+					put.statusCode,
+					409,
+					[1],
+				);
 			} else {
-				same(org.name, "подписанный приём отказывает в автосохранении", null, 409, [0]);
+				same(
+					org.name,
+					"подписанный приём отказывает в автосохранении",
+					null,
+					409,
+					[0],
+				);
 			}
 
 			if (draft) {
 				const put = await tryAutosave(org.id, draft);
-				console.log(`  PUT  автосохранение своего черновика -> HTTP ${put.statusCode} ${put.body.slice(0, 220)}`);
-				same(org.name, "черновик приёма принимает автосохранение", put.statusCode, 200, [1]);
+				console.log(
+					`  PUT  автосохранение своего черновика -> HTTP ${put.statusCode} ${put.body.slice(0, 220)}`,
+				);
+				same(
+					org.name,
+					"черновик приёма принимает автосохранение",
+					put.statusCode,
+					200,
+					[1],
+				);
 			} else if (org.id === FIXTURE_ORGANIZATION_ID) {
-				same(org.name, "черновик приёма принимает автосохранение", null, 200, [0]);
+				same(
+					org.name,
+					"черновик приёма принимает автосохранение",
+					null,
+					200,
+					[0],
+				);
 			}
 		}
 	} finally {
 		await visitApp.close();
 	}
 
-	console.log("\n=== ШАГ 5. ПОСЕВ ПОД ЧИСЛО: ЛЕГЛО ЛИ В БАЗУ ИМЕННО ТО, ЧТО ЗАЯВЛЕНО ===");
+	console.log(
+		"\n=== ШАГ 5. ПОСЕВ ПОД ЧИСЛО: ЛЕГЛО ЛИ В БАЗУ ИМЕННО ТО, ЧТО ЗАЯВЛЕНО ===",
+	);
 	/*
 	 * ЗАЧЕМ ЭТИ УТВЕРЖДЕНИЯ, ЕСЛИ ВЫШЕ УЖЕ ВСЁ СВЕРЕНО. Без них «пусто» нельзя
 	 * отличить от «посев не состоялся». Сверки выше сравнивают маршрут с базой:
@@ -1985,28 +2276,70 @@ async function main(): Promise<void> {
 	console.log(`посев в базе: ${JSON.stringify(seeded)}`);
 
 	const seedClinic = FIXTURE_ORGANIZATION_NAME;
-	same(seedClinic, "посев: приёмов", Number(seeded.appointments ?? 0), 5, [Number(seeded.appointments ?? 0), 5]);
-	same(seedClinic, "посев: визитов", Number(seeded.visits ?? 0), 5, [Number(seeded.visits ?? 0), 5]);
-	same(seedClinic, "посев: визитов, созданных из записи", Number(seeded.visits_from_appointment ?? 0), 4, [
+	same(seedClinic, "посев: приёмов", Number(seeded.appointments ?? 0), 5, [
+		Number(seeded.appointments ?? 0),
+		5,
+	]);
+	same(seedClinic, "посев: визитов", Number(seeded.visits ?? 0), 5, [
+		Number(seeded.visits ?? 0),
+		5,
+	]);
+	same(
+		seedClinic,
+		"посев: визитов, созданных из записи",
 		Number(seeded.visits_from_appointment ?? 0),
 		4,
+		[Number(seeded.visits_from_appointment ?? 0), 4],
+	);
+	same(seedClinic, "посев: позиций лечения", Number(seeded.items ?? 0), 7, [
+		Number(seeded.items ?? 0),
+		7,
 	]);
-	same(seedClinic, "посев: позиций лечения", Number(seeded.items ?? 0), 7, [Number(seeded.items ?? 0), 7]);
-	same(seedClinic, "посев: оплат", Number(seeded.payments ?? 0), 6, [Number(seeded.payments ?? 0), 6]);
-	same(seedClinic, "посев: назначено", money(seeded.planned), 26_000.5, [money(seeded.planned), 26_000.5]);
-	same(seedClinic, "посев: оплачено", money(seeded.paid), 16_800, [money(seeded.paid), 16_800]);
-	same(seedClinic, "посев: предоплата в статусе planned", money(seeded.advance), 2_500, [money(seeded.advance), 2_500]);
-	same(seedClinic, "посев: оплата без визита", money(seeded.paid_without_visit), 1_000, [
+	same(seedClinic, "посев: оплат", Number(seeded.payments ?? 0), 6, [
+		Number(seeded.payments ?? 0),
+		6,
+	]);
+	same(seedClinic, "посев: назначено", money(seeded.planned), 26_000.5, [
+		money(seeded.planned),
+		26_000.5,
+	]);
+	same(seedClinic, "посев: оплачено", money(seeded.paid), 16_800, [
+		money(seeded.paid),
+		16_800,
+	]);
+	same(
+		seedClinic,
+		"посев: предоплата в статусе planned",
+		money(seeded.advance),
+		2_500,
+		[money(seeded.advance), 2_500],
+	);
+	same(
+		seedClinic,
+		"посев: оплата без визита",
 		money(seeded.paid_without_visit),
 		1_000,
-	]);
-	same(seedClinic, "посев: отменённая позиция вне назначенного", money(seeded.cancelled_line), 5_000, [
+		[money(seeded.paid_without_visit), 1_000],
+	);
+	same(
+		seedClinic,
+		"посев: отменённая позиция вне назначенного",
 		money(seeded.cancelled_line),
 		5_000,
-	]);
+		[money(seeded.cancelled_line), 5_000],
+	);
 	const seedCanon = await canonDebt(FIXTURE_ORGANIZATION_ID);
-	same(seedClinic, "посев: дебиторка по канону", seedCanon.receivableRub, 10_000, [seedCanon.receivableRub, 10_000]);
-	same(seedClinic, "посев: возврат по канону", seedCanon.refundRub, 800, [seedCanon.refundRub, 800]);
+	same(
+		seedClinic,
+		"посев: дебиторка по канону",
+		seedCanon.receivableRub,
+		10_000,
+		[seedCanon.receivableRub, 10_000],
+	);
+	same(seedClinic, "посев: возврат по канону", seedCanon.refundRub, 800, [
+		seedCanon.refundRub,
+		800,
+	]);
 	/*
 	 * ТРИ УТВЕРЖДЕНИЯ ПРО КОПЕЙКИ ПОСЕВА — они и есть замок на тот полтинник.
 	 *
@@ -2016,20 +2349,31 @@ async function main(): Promise<void> {
 	 * назовёт их по имени — то есть вернуть сверку к «зелено на круглых числах»
 	 * молча больше нельзя.
 	 */
-	same(seedClinic, "посев: полная дебиторка по канону (порога нет)", seedCanon.fullReceivableRub, 10_000.5, [
+	same(
+		seedClinic,
+		"посев: полная дебиторка по канону (порога нет)",
 		seedCanon.fullReceivableRub,
 		10_000.5,
-	]);
-	same(seedClinic, "посев: долг ниже порога отчёта", seedCanon.subThresholdReceivableRub, 0.5, [
+		[seedCanon.fullReceivableRub, 10_000.5],
+	);
+	same(
+		seedClinic,
+		"посев: долг ниже порога отчёта",
 		seedCanon.subThresholdReceivableRub,
 		0.5,
-	]);
-	same(seedClinic, "посев: не собрано нетто = полная дебиторка − возврат", seedCanon.netUncollectedRub, 9_200.5, [
+		[seedCanon.subThresholdReceivableRub, 0.5],
+	);
+	same(
+		seedClinic,
+		"посев: не собрано нетто = полная дебиторка − возврат",
 		seedCanon.netUncollectedRub,
 		9_200.5,
-	]);
+		[seedCanon.netUncollectedRub, 9_200.5],
+	);
 
-	console.log("\nГОТОВО. Единственная возможная запись по живым клиникам — PUT автосохранения выше, и он отвечает отказом на подписанном визите.");
+	console.log(
+		"\nГОТОВО. Единственная возможная запись по живым клиникам — PUT автосохранения выше, и он отвечает отказом на подписанном визите.",
+	);
 }
 
 /**
@@ -2055,28 +2399,36 @@ function printVerdict(extraViolations: readonly string[]): number {
 	 * и поломка самого датчика.
 	 */
 	const sensorComplaints = proveSubstanceSensorFires();
-	console.log("\n===== ПРОВЕРКА ДАТЧИКА СОДЕРЖАТЕЛЬНОСТИ (на заданных числах, без базы) =====");
+	console.log(
+		"\n===== ПРОВЕРКА ДАТЧИКА СОДЕРЖАТЕЛЬНОСТИ (на заданных числах, без базы) =====",
+	);
 	if (sensorComplaints.length === 0) {
 		console.log(
 			"датчик исправен: ноль против нуля и пустота против пустоты названы вырождением, " +
 				"ненулевые суммы — содержательными, расхождение опознано.",
 		);
 	} else {
-		for (const complaint of sensorComplaints) console.log(`ПРОВАЛ ДАТЧИКА: ${complaint}`);
+		for (const complaint of sensorComplaints)
+			console.log(`ПРОВАЛ ДАТЧИКА: ${complaint}`);
 	}
 
 	const verdict = substanceSummary(claims);
 	console.log("\n===== ИТОГ СВЕРКИ =====");
 	console.log(`утверждений всего: ${verdict.total}`);
 	console.log(`из них содержательных: ${verdict.substantive}`);
-	console.log(`вырожденных (сравнивался ноль с нулём): ${verdict.degenerate.length}`);
+	console.log(
+		`вырожденных (сравнивался ноль с нулём): ${verdict.degenerate.length}`,
+	);
 	if (verdict.degenerate.length > 0) {
-		console.log("вырожденные утверждения — НЕ подтверждение, перечислены полностью:");
+		console.log(
+			"вырожденные утверждения — НЕ подтверждение, перечислены полностью:",
+		);
 		for (const claim of verdict.degenerate) {
 			console.log(`  «${claim.clinic}» — ${claim.label}`);
 		}
 		const byClinic = new Map<string, number>();
-		for (const claim of verdict.degenerate) byClinic.set(claim.clinic, (byClinic.get(claim.clinic) ?? 0) + 1);
+		for (const claim of verdict.degenerate)
+			byClinic.set(claim.clinic, (byClinic.get(claim.clinic) ?? 0) + 1);
 		for (const [clinic, count] of byClinic) {
 			const all = claims.filter((claim) => claim.clinic === clinic).length;
 			console.log(
@@ -2086,7 +2438,9 @@ function printVerdict(extraViolations: readonly string[]): number {
 		}
 	}
 	for (const claim of verdict.failed) {
-		console.log(`ПРОВАЛ «${claim.clinic}» — ${claim.label}: ${JSON.stringify(claim.actual)} против ${JSON.stringify(claim.expected)}`);
+		console.log(
+			`ПРОВАЛ «${claim.clinic}» — ${claim.label}: ${JSON.stringify(claim.actual)} против ${JSON.stringify(claim.expected)}`,
+		);
 	}
 
 	/*
@@ -2098,14 +2452,20 @@ function printVerdict(extraViolations: readonly string[]): number {
 	 * нарушение, потому что иначе прогон вернулся бы к молчаливому зелёному, ради
 	 * ухода от которого всё это и написано.
 	 */
-	const roster = verifyRoster(claims, FIXTURE_ORGANIZATION_NAME, FIXTURE_SUBSTANCE_ROSTER);
+	const roster = verifyRoster(
+		claims,
+		FIXTURE_ORGANIZATION_NAME,
+		FIXTURE_SUBSTANCE_ROSTER,
+	);
 	console.log("\n===== РЕЕСТР УТВЕРЖДЕНИЙ ПО СВОЕЙ КЛИНИКЕ =====");
 	console.log(`в реестре: ${FIXTURE_SUBSTANCE_ROSTER.length}`);
 	if (roster.missing.length === 0 && roster.degenerate.length === 0) {
 		console.log("все утверждения реестра выполнены и содержательны");
 	}
 	for (const label of roster.missing) {
-		console.log(`НАРУШЕНИЕ: утверждение «${label}» по своей клинике НЕ выполнялось — проверка потеряна`);
+		console.log(
+			`НАРУШЕНИЕ: утверждение «${label}» по своей клинике НЕ выполнялось — проверка потеряна`,
+		);
 	}
 	for (const label of roster.degenerate) {
 		console.log(
@@ -2122,11 +2482,14 @@ function printVerdict(extraViolations: readonly string[]): number {
 	 * проблемы, а на деле означало отсутствие датчика. Нарушением не объявляется —
 	 * производитель назван, и правка канона в эту задачу не входит.
 	 */
-	console.log("\n===== СУММЫ, ПОТЕРЯВШИЕ ТОЧНОСТЬ У СВОЕГО ПРОИЗВОДИТЕЛЯ =====");
+	console.log(
+		"\n===== СУММЫ, ПОТЕРЯВШИЕ ТОЧНОСТЬ У СВОЕГО ПРОИЗВОДИТЕЛЯ =====",
+	);
 	if (producerFloatDirt.length === 0) {
 		console.log("ни одна сумма не пришла с хвостом плавающей точки");
 	} else {
-		for (const finding of producerFloatDirt) console.log(`  НАХОДКА: ${finding}`);
+		for (const finding of producerFloatDirt)
+			console.log(`  НАХОДКА: ${finding}`);
 		console.log(
 			`  всего таких сумм: ${producerFloatDirt.length}. Прогон их приводит к копейке тем же способом, ` +
 				"которым производитель приводит свой итог, и называет каждую по имени. Правка производителя " +
@@ -2134,7 +2497,8 @@ function printVerdict(extraViolations: readonly string[]): number {
 		);
 	}
 
-	for (const complaint of extraViolations) console.log(`НАРУШЕНИЕ: ${complaint}`);
+	for (const complaint of extraViolations)
+		console.log(`НАРУШЕНИЕ: ${complaint}`);
 
 	const violations =
 		verdict.failed.length +
@@ -2164,7 +2528,9 @@ async function purgeFixtureAndProve(): Promise<string[]> {
 	try {
 		await purgeFixtureOrganizations([FIXTURE_ORGANIZATION_ID]);
 	} catch (error) {
-		complaints.push(`уборка своей клиники не завершилась: ${error instanceof Error ? error.message : String(error)}`);
+		complaints.push(
+			`уборка своей клиники не завершилась: ${error instanceof Error ? error.message : String(error)}`,
+		);
 	}
 	const leftovers = (
 		await db.execute(sql`
@@ -2179,10 +2545,14 @@ async function purgeFixtureAndProve(): Promise<string[]> {
 			  (select count(*)::int from service_catalog_items where organization_id = ${FIXTURE_ORGANIZATION_ID}::uuid) as prices
 		`)
 	).rows[0] as Record<string, unknown>;
-	console.log(`\nостатки своей клиники после уборки (обязаны быть нулями): ${JSON.stringify(leftovers)}`);
+	console.log(
+		`\nостатки своей клиники после уборки (обязаны быть нулями): ${JSON.stringify(leftovers)}`,
+	);
 	for (const [table, count] of Object.entries(leftovers ?? {})) {
 		if (Number(count) !== 0) {
-			console.log(`[УТЕЧКА] уборка оставила ${count} строк в ${table} по клинике ${FIXTURE_ORGANIZATION_ID}`);
+			console.log(
+				`[УТЕЧКА] уборка оставила ${count} строк в ${table} по клинике ${FIXTURE_ORGANIZATION_ID}`,
+			);
 			complaints.push(`уборка оставила ${count} строк в ${table}`);
 		}
 	}
@@ -2222,7 +2592,9 @@ run().catch(async (error) => {
 		await purgeFixtureOrganizations([FIXTURE_ORGANIZATION_ID]);
 		console.log("своя клиника убрана после падения прогона");
 	} catch (cleanupError) {
-		console.log(`[УТЕЧКА] своя клиника осталась в базе: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`);
+		console.log(
+			`[УТЕЧКА] своя клиника осталась в базе: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`,
+		);
 	}
 	try {
 		await pool.end();

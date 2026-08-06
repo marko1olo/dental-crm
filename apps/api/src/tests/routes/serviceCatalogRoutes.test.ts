@@ -36,15 +36,27 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 
 /** Адреса прайса и методы, которыми их зовёт интерфейс. */
 const CATALOG_ENDPOINTS = [
-	{ method: "POST" as const, url: "/api/settings/catalog", caller: "useAppLogic.tsx:7422 createServiceCatalogItem" },
-	{ method: "PUT" as const, url: "/api/settings/catalog/00000000-0000-0000-0000-000000000000", caller: "useAppLogic.tsx:7443 updateServiceCatalogItem" },
-	{ method: "DELETE" as const, url: "/api/settings/catalog/00000000-0000-0000-0000-000000000000", caller: "useAppLogic.tsx:7464 deleteServiceCatalogItem" },
+	{
+		method: "POST" as const,
+		url: "/api/settings/catalog",
+		caller: "useAppLogic.tsx:7422 createServiceCatalogItem",
+	},
+	{
+		method: "PUT" as const,
+		url: "/api/settings/catalog/00000000-0000-0000-0000-000000000000",
+		caller: "useAppLogic.tsx:7443 updateServiceCatalogItem",
+	},
+	{
+		method: "DELETE" as const,
+		url: "/api/settings/catalog/00000000-0000-0000-0000-000000000000",
+		caller: "useAppLogic.tsx:7464 deleteServiceCatalogItem",
+	},
 ];
 
 let app: FastifyInstance;
@@ -52,7 +64,10 @@ let app: FastifyInstance;
 const savedEnv: Record<string, string | undefined> = {};
 
 before(async () => {
-	for (const name of ["DENTE_SETTINGS_ADMIN_SECRET", "DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS"]) {
+	for (const name of [
+		"DENTE_SETTINGS_ADMIN_SECRET",
+		"DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS",
+	]) {
 		savedEnv[name] = process.env[name];
 		delete process.env[name];
 	}
@@ -100,11 +115,22 @@ describe("прайс услуг: адреса записи существуют"
 	}
 
 	test("отказ доступа объясняется по-русски, а не английским телом Fastify", async () => {
-		const response = await app.inject({ method: "POST", url: "/api/settings/catalog", payload: {} });
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/settings/catalog",
+			payload: {},
+		});
 		// 503: секрет администратора настроек на сервере не задан. Это ответ самого
 		// маршрута — значит он существует и его охрана работает раньше базы.
-		assert.equal(response.statusCode, 503, `ожидался отказ охраны настроек, получено: ${response.body}`);
-		const body = JSON.parse(response.body) as { error?: string; message?: string };
+		assert.equal(
+			response.statusCode,
+			503,
+			`ожидался отказ охраны настроек, получено: ${response.body}`,
+		);
+		const body = JSON.parse(response.body) as {
+			error?: string;
+			message?: string;
+		};
 		assert.equal(body.error, "SettingsAdminSecretMissing");
 		assert.ok(
 			/[А-Яа-яЁё]/.test(body.message ?? ""),

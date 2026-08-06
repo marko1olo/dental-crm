@@ -34,17 +34,18 @@ export function generateCdaBody(ctx: CdaContext): string {
 	 * or emitting an empty paragraph. We never fabricate clinical facts.
 	 */
 
-	const diagnosisText = params.diagnosisText && params.diagnosisText.trim()
-		? params.diagnosisText
-		: "";
-	const icd10Code = params.icd10Code && params.icd10Code.trim()
-		? params.icd10Code
-		: "";
+	const diagnosisText =
+		params.diagnosisText && params.diagnosisText.trim()
+			? params.diagnosisText
+			: "";
+	const icd10Code =
+		params.icd10Code && params.icd10Code.trim() ? params.icd10Code : "";
 	// ISO 3950 tooth number straight from visit_diaries.diagnosis_tooth (real DB
 	// column). Rendered only when a real value is present; never fabricated.
-	const diagnosisTooth = params.diagnosisTooth && params.diagnosisTooth.trim()
-		? params.diagnosisTooth.trim()
-		: "";
+	const diagnosisTooth =
+		params.diagnosisTooth && params.diagnosisTooth.trim()
+			? params.diagnosisTooth.trim()
+			: "";
 
 	/*
 	 * Never emit a fabricated/empty ICD10 value. If the code is missing,
@@ -53,9 +54,7 @@ export function generateCdaBody(ctx: CdaContext): string {
 	 */
 	const icd10Escaped = icd10Code ? escapeXml(icd10Code) : "";
 	const diagnosisIcd10Attr = icd10Escaped ? ` code="${icd10Escaped}"` : "";
-	const diagnosisIcd10Suffix = icd10Escaped
-		? ` (МКБ-10: ${icd10Escaped})`
-		: "";
+	const diagnosisIcd10Suffix = icd10Escaped ? ` (МКБ-10: ${icd10Escaped})` : "";
 
 	// Only emit the diagnosis section when we have at least one real fact.
 	const diagnosisSection =

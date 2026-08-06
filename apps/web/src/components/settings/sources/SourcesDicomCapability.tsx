@@ -18,9 +18,8 @@ import {
 	ScanSearch,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { CtPlanningToolsPanel } from "../../../ctPlanningTools";
-
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { CtPlanningToolsPanel } from "../../../ctPlanningTools";
 import { useSettingsDerivations } from "../../../useSettingsDerivations";
 /*
  * Подписи и форматтеры — константы модуля, а не состояние. Компонент доставал

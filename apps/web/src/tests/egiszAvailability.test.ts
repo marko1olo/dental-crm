@@ -43,7 +43,11 @@ const LIVE_INTEGRATION_STATUS = {
 	frmoStatus: "NOT_CONFIGURED",
 	frmrStatus: "NOT_CONFIGURED",
 	remdStatus: "NOT_CONFIGURED",
-	capabilities: { cdaGeneration: true, ukepSigning: false, remdTransmission: false },
+	capabilities: {
+		cdaGeneration: true,
+		ukepSigning: false,
+		remdTransmission: false,
+	},
 	missingConfiguration: [
 		"EGISZ_N3_BASE_URL",
 		"EGISZ_N3_GUID",
@@ -202,7 +206,10 @@ test("ни одно состояние панели не выносит лати
 	const cases: { label: string; state: EgiszPanelState }[] = [
 		{
 			label: "loading",
-			state: resolveEgiszPanelState({ statusOutcome: null, journalOutcome: null }),
+			state: resolveEgiszPanelState({
+				statusOutcome: null,
+				journalOutcome: null,
+			}),
 		},
 	];
 	for (const httpStatus of [401, 403, 404, 405, 500, 502, 501]) {
@@ -296,7 +303,10 @@ test("ни одно состояние панели не выносит лати
 		"accepted",
 		"failed",
 	]) {
-		assert.ok(seen.has(expected as EgiszPanelState["kind"]), `нет состояния ${expected}`);
+		assert.ok(
+			seen.has(expected as EgiszPanelState["kind"]),
+			`нет состояния ${expected}`,
+		);
 	}
 });
 
@@ -387,7 +397,10 @@ test("предпросмотр СЭМД не выброшен: он доезжа
 	);
 	assert.equal(outcome.kind, "ok");
 	if (outcome.kind !== "ok") return;
-	assert.equal(outcome.data?.xmlPreview, "<ClinicalDocument xmlns='urn:hl7-org:v3'/>");
+	assert.equal(
+		outcome.data?.xmlPreview,
+		"<ClinicalDocument xmlns='urn:hl7-org:v3'/>",
+	);
 
 	const state = resolveEgiszPanelState({
 		statusOutcome: HEALTHY_STATUS,
@@ -405,7 +418,8 @@ test("предпросмотр СЭМД не выброшен: он доезжа
 		"v-1",
 	);
 	assert.equal(withoutPreview.kind, "ok");
-	if (withoutPreview.kind === "ok") assert.equal(withoutPreview.data?.xmlPreview, null);
+	if (withoutPreview.kind === "ok")
+		assert.equal(withoutPreview.data?.xmlPreview, null);
 	assert.equal(
 		resolveEgiszPanelState({
 			statusOutcome: readIntegrationStatus(LIVE_INTEGRATION_STATUS),
@@ -522,7 +536,11 @@ test("журнал выгрузок читается только по свое�
 	const body = {
 		logs: [
 			{ visitId: "v-1", status: "Accepted", transactionId: "TX-1" },
-			{ visitId: "v-2", status: "Error", errorDetails: { message: "Отклонено" } },
+			{
+				visitId: "v-2",
+				status: "Error",
+				errorDetails: { message: "Отклонено" },
+			},
 		],
 	};
 	const mine = readVisitTransmission(body, "v-2");
@@ -537,9 +555,15 @@ test("журнал выгрузок читается только по свое�
 	if (foreign.kind === "ok") assert.equal(foreign.data, null);
 
 	// Неизвестный статус — это неразобранный ответ, а не «готово к отправке».
-	const broken = readVisitTransmission({ logs: [{ visitId: "v-1", status: "WAT" }] }, "v-1");
+	const broken = readVisitTransmission(
+		{ logs: [{ visitId: "v-1", status: "WAT" }] },
+		"v-1",
+	);
 	assert.equal(broken.kind, "unreadable");
-	assert.equal(readVisitTransmission(FASTIFY_NOT_FOUND, "v-1").kind, "unreadable");
+	assert.equal(
+		readVisitTransmission(FASTIFY_NOT_FOUND, "v-1").kind,
+		"unreadable",
+	);
 });
 
 test("справочник бланков: отсутствующий раздел больше не выдаётся за ненастроенный", () => {
@@ -579,6 +603,9 @@ test("ни одно состояние справочника не выноси�
 			!/[A-Za-z]/.test(state.headline),
 			`латиница в headline: ${state.headline}`,
 		);
-		assert.ok(!/[A-Za-z]/.test(state.detail), `латиница в detail: ${state.detail}`);
+		assert.ok(
+			!/[A-Za-z]/.test(state.detail),
+			`латиница в detail: ${state.detail}`,
+		);
 	}
 });

@@ -16,9 +16,9 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import {
 	actionFailureToast,
+	type PanelSubject,
 	panelStateText,
 	resolvePanelPhase,
-	type PanelSubject,
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -34,7 +34,8 @@ const RECLAMATIONS_SUBJECT: PanelSubject = {
 	notLoadedTitle: "Рекламации и осложнения не загружены",
 	accusative: "рекламации и осложнения по пациенту",
 	emptyTitle: "Рекламации и осложнения отсутствуют",
-	emptyHint: "Если пациент жалуется на результат лечения, зафиксируйте это здесь — тогда история будет видна врачу и руководителю.",
+	emptyHint:
+		"Если пациент жалуется на результат лечения, зафиксируйте это здесь — тогда история будет видна врачу и руководителю.",
 	failureConsequence:
 		"Не считайте, что осложнений нет: журнал не прочитан. Перед разговором с пациентом обновите список.",
 };
@@ -47,8 +48,9 @@ export function PatientReclamationsWidget({
 	const { dashboard, auth } = useAppLogicContext();
 	const [isAdding, setIsAdding] = useState(false);
 
-	const getReadHeaders = () => auth ? auth.denteClinicalReadHeaders() : {};
-	const getMutationHeaders = (extra?: Record<string, string>) => auth ? auth.denteClinicalMutationHeaders(extra) : { ...(extra || {}) };
+	const getReadHeaders = () => (auth ? auth.denteClinicalReadHeaders() : {});
+	const getMutationHeaders = (extra?: Record<string, string>) =>
+		auth ? auth.denteClinicalMutationHeaders(extra) : { ...(extra || {}) };
 
 	const [newComplicationDetails, setNewComplicationDetails] = useState("");
 	const [newProposedAction, setNewProposedAction] = useState("");
@@ -106,7 +108,9 @@ export function PatientReclamationsWidget({
 		getReadHeaders,
 		[],
 	);
-	const reclamations: any[] = Array.isArray(rawReclamations) ? rawReclamations : [];
+	const reclamations: any[] = Array.isArray(rawReclamations)
+		? rawReclamations
+		: [];
 	const phase = resolvePanelPhase({
 		isLoading,
 		hasFailure: Boolean(loadFailure),
@@ -340,7 +344,9 @@ export function PatientReclamationsWidget({
 								{emptyText.title}
 							</h3>
 							{/* Пустота без подсказки — тупик: непонятно, зачем этот блок здесь. */}
-							<p className="text-xs m-0 mt-1 leading-relaxed break-words">{emptyText.hint}</p>
+							<p className="text-xs m-0 mt-1 leading-relaxed break-words">
+								{emptyText.hint}
+							</p>
 						</div>
 					</div>
 					<button

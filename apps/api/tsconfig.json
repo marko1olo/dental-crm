@@ -43,9 +43,5 @@
 	// файла — висячая запись, из-за которой следующий агент ищет файл, которого
 	// нет. Движок PGlite из проекта удалён (db/client.ts работает через
 	// node-postgres), пакет @electric-sql/pglite не установлен.
-	"exclude": [
-		"src/tests",
-		"src/**/*.test.ts",
-		"src/**/*.bench.ts"
-	]
+	"exclude": ["src/tests", "src/**/*.test.ts", "src/**/*.bench.ts"]
 }

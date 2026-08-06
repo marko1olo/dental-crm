@@ -31,7 +31,11 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PatientsView } from "../PatientsView";
 import { usePatientStore } from "../store/patientStore";
-import { AppLogicProvider, type AppLogicContextType, useAppLogicContext } from "./AppLogicContext";
+import {
+	type AppLogicContextType,
+	AppLogicProvider,
+	useAppLogicContext,
+} from "./AppLogicContext";
 
 /** Свежая картотека: пациент не выбран, ничего не введено, ничего не сохранялось. */
 function resetPatientStore(): void {
@@ -61,7 +65,11 @@ const patientsViewElement = () => (
 		normalizeOptionalWorkingDaysDraft={(days: number[]) => days}
 		patientAdministrativeProfileValidationMessage={null}
 		patientInsightById={new Map()}
-		patientInsightRiskLabels={{ low: "спокойно", watch: "контроль", high: "риск" }}
+		patientInsightRiskLabels={{
+			low: "спокойно",
+			watch: "контроль",
+			high: "риск",
+		}}
 		query=""
 		savePatientAdministrativeProfile={() => undefined}
 		savePatientCore={() => undefined}
@@ -122,7 +130,9 @@ describe("потребитель контекста вне провайдера"
 	test("тот же экран внутри провайдера поднимается", () => {
 		resetPatientStore();
 		const markup = renderToStaticMarkup(
-			<AppLogicProvider value={emptyProviderValue}>{patientsViewElement()}</AppLogicProvider>,
+			<AppLogicProvider value={emptyProviderValue}>
+				{patientsViewElement()}
+			</AppLogicProvider>,
 		);
 		assert.ok(
 			markup.includes('id="patients"'),
@@ -149,15 +159,24 @@ describe("хук в отрыве от экрана", () => {
 	test("с провайдером хук отдаёт РОВНО переданное значение", () => {
 		// Отдельная проверка, потому что бросок легко «пройти» хуком, который
 		// бросает всегда: тогда провайдер перестал бы работать вовсе.
-		const marker = { serviceTitle: "проверка провайдера" } as unknown as AppLogicContextType;
+		const marker = {
+			serviceTitle: "проверка провайдера",
+		} as unknown as AppLogicContextType;
 		let seen: unknown = null;
 		function ValueProbe() {
 			seen = useAppLogicContext();
 			return createElement("i", null, "готово");
 		}
 		renderToStaticMarkup(
-			createElement(AppLogicProvider, { value: marker, children: createElement(ValueProbe) }),
+			createElement(AppLogicProvider, {
+				value: marker,
+				children: createElement(ValueProbe),
+			}),
 		);
-		assert.equal(seen, marker, "внутри провайдера хук вернул не переданное значение");
+		assert.equal(
+			seen,
+			marker,
+			"внутри провайдера хук вернул не переданное значение",
+		);
 	});
 });

@@ -24,16 +24,16 @@ import { DatabaseSync } from "node:sqlite";
  */
 
 export interface SqliteTableInfo {
-  name: string;
-  columns: string[];
-  rowCount: number;
-  /** Похожа ли таблица на служебную: sqlite_*, миграции, настройки. */
-  system: boolean;
+	name: string;
+	columns: string[];
+	rowCount: number;
+	/** Похожа ли таблица на служебную: sqlite_*, миграции, настройки. */
+	system: boolean;
 }
 
 export interface SqliteInspection {
-  tables: SqliteTableInfo[];
-  warnings: string[];
+	tables: SqliteTableInfo[];
+	warnings: string[];
 }
 
 /**
@@ -41,19 +41,19 @@ export interface SqliteInspection {
  * «что переносить» — значит заставлять его отличать sqlite_sequence от пациентов.
  */
 const SYSTEM_TABLE_PATTERNS = [
-  /^sqlite_/i,
-  /^_?(migrations?|schema_migrations|knex_migrations|alembic_version)/i,
-  /^_?(settings?|config|preferences|options)$/i,
-  /^android_metadata$/i
+	/^sqlite_/i,
+	/^_?(migrations?|schema_migrations|knex_migrations|alembic_version)/i,
+	/^_?(settings?|config|preferences|options)$/i,
+	/^android_metadata$/i,
 ];
 
 function isSystemTable(name: string): boolean {
-  return SYSTEM_TABLE_PATTERNS.some((pattern) => pattern.test(name));
+	return SYSTEM_TABLE_PATTERNS.some((pattern) => pattern.test(name));
 }
 
 /** Экранирует идентификатор для подстановки в запрос. */
 function quoteIdentifier(name: string): string {
-  return `"${name.replace(/"/g, '""')}"`;
+	return `"${name.replace(/"/g, '""')}"`;
 }
 
 /**
@@ -63,68 +63,72 @@ function quoteIdentifier(name: string): string {
  * открывать одинаково: любой недосмотр здесь означает запись в чужую базу.
  */
 function openReadOnly(filePath: string): DatabaseSync {
-  return new DatabaseSync(filePath, { readOnly: true });
+	return new DatabaseSync(filePath, { readOnly: true });
 }
 
 /** Перечисляет таблицы базы с числом строк и колонками. */
 export function inspectSqlite(filePath: string): SqliteInspection {
-  const warnings: string[] = [];
-  let database: DatabaseSync | null = null;
+	const warnings: string[] = [];
+	let database: DatabaseSync | null = null;
 
-  try {
-    database = openReadOnly(filePath);
+	try {
+		database = openReadOnly(filePath);
 
-    const tableRows = database
-      .prepare("select name from sqlite_master where type in ('table','view') order by name")
-      .all() as Array<{ name: string }>;
+		const tableRows = database
+			.prepare(
+				"select name from sqlite_master where type in ('table','view') order by name",
+			)
+			.all() as Array<{ name: string }>;
 
-    const tables: SqliteTableInfo[] = [];
+		const tables: SqliteTableInfo[] = [];
 
-    for (const { name } of tableRows) {
-      let columns: string[] = [];
-      let rowCount = 0;
+		for (const { name } of tableRows) {
+			let columns: string[] = [];
+			let rowCount = 0;
 
-      try {
-        const info = database.prepare(`pragma table_info(${quoteIdentifier(name)})`).all() as Array<{ name: string }>;
-        columns = info.map((column) => column.name);
-      } catch (error) {
-        warnings.push(
-          `Не удалось прочитать состав колонок таблицы «${name}»: ${error instanceof Error ? error.message : String(error)}`
-        );
-        continue;
-      }
+			try {
+				const info = database
+					.prepare(`pragma table_info(${quoteIdentifier(name)})`)
+					.all() as Array<{ name: string }>;
+				columns = info.map((column) => column.name);
+			} catch (error) {
+				warnings.push(
+					`Не удалось прочитать состав колонок таблицы «${name}»: ${error instanceof Error ? error.message : String(error)}`,
+				);
+				continue;
+			}
 
-      try {
-        const counted = database.prepare(`select count(*) as n from ${quoteIdentifier(name)}`).get() as
-          | { n: number | bigint }
-          | undefined;
-        rowCount = Number(counted?.n ?? 0);
-      } catch (error) {
-        /**
-         * Повреждённая таблица не должна прятать остальные. Помечаем нулём и
-         * сообщаем: оператор увидит, что с этой таблицей что-то не так, а
-         * остальные перенесутся.
-         */
-        warnings.push(
-          `Таблица «${name}» не отдала число строк (возможно повреждение): ${error instanceof Error ? error.message : String(error)}`
-        );
-      }
+			try {
+				const counted = database
+					.prepare(`select count(*) as n from ${quoteIdentifier(name)}`)
+					.get() as { n: number | bigint } | undefined;
+				rowCount = Number(counted?.n ?? 0);
+			} catch (error) {
+				/**
+				 * Повреждённая таблица не должна прятать остальные. Помечаем нулём и
+				 * сообщаем: оператор увидит, что с этой таблицей что-то не так, а
+				 * остальные перенесутся.
+				 */
+				warnings.push(
+					`Таблица «${name}» не отдала число строк (возможно повреждение): ${error instanceof Error ? error.message : String(error)}`,
+				);
+			}
 
-      tables.push({ name, columns, rowCount, system: isSystemTable(name) });
-    }
+			tables.push({ name, columns, rowCount, system: isSystemTable(name) });
+		}
 
-    if (tables.length === 0) {
-      warnings.push("В базе SQLite нет ни одной таблицы.");
-    }
+		if (tables.length === 0) {
+			warnings.push("В базе SQLite нет ни одной таблицы.");
+		}
 
-    return { tables, warnings };
-  } catch (error) {
-    throw new Error(
-      `База SQLite не открылась: ${error instanceof Error ? error.message : String(error)}. Возможно, файл повреждён либо зашифрован (SQLCipher).`
-    );
-  } finally {
-    database?.close();
-  }
+		return { tables, warnings };
+	} catch (error) {
+		throw new Error(
+			`База SQLite не открылась: ${error instanceof Error ? error.message : String(error)}. Возможно, файл повреждён либо зашифрован (SQLCipher).`,
+		);
+	} finally {
+		database?.close();
+	}
 }
 
 /**
@@ -135,23 +139,29 @@ export function inspectSqlite(filePath: string): SqliteInspection {
  * колонки. Возвращается упорядоченный список, а не одна таблица: перенос
  * обрабатывает все содержательные таблицы, а порядок нужен для показа оператору.
  */
-export function rankTablesByRelevance(tables: SqliteTableInfo[]): SqliteTableInfo[] {
-  const nameHints = /(patient|пациент|client|клиент|kart|карт|visit|приём|прием|payment|оплат|платеж|appointment|запис)/i;
-  const columnHints = /(fio|фио|name|фамил|birth|рожд|phone|телефон|diagnos|диагноз|amount|сумма)/i;
+export function rankTablesByRelevance(
+	tables: SqliteTableInfo[],
+): SqliteTableInfo[] {
+	const nameHints =
+		/(patient|пациент|client|клиент|kart|карт|visit|приём|прием|payment|оплат|платеж|appointment|запис)/i;
+	const columnHints =
+		/(fio|фио|name|фамил|birth|рожд|phone|телефон|diagnos|диагноз|amount|сумма)/i;
 
-  return [...tables]
-    .filter((table) => !table.system && table.rowCount > 0)
-    .sort((left, right) => {
-      const score = (table: SqliteTableInfo): number => {
-        let value = 0;
-        if (nameHints.test(table.name)) value += 100;
-        value += table.columns.filter((column) => columnHints.test(column)).length * 10;
-        // При прочих равных полезнее таблица, где больше данных.
-        value += Math.min(20, Math.log10(table.rowCount + 1) * 5);
-        return value;
-      };
-      return score(right) - score(left);
-    });
+	return [...tables]
+		.filter((table) => !table.system && table.rowCount > 0)
+		.sort((left, right) => {
+			const score = (table: SqliteTableInfo): number => {
+				let value = 0;
+				if (nameHints.test(table.name)) value += 100;
+				value +=
+					table.columns.filter((column) => columnHints.test(column)).length *
+					10;
+				// При прочих равных полезнее таблица, где больше данных.
+				value += Math.min(20, Math.log10(table.rowCount + 1) * 5);
+				return value;
+			};
+			return score(right) - score(left);
+		});
 }
 
 /**
@@ -167,79 +177,95 @@ export function rankTablesByRelevance(tables: SqliteTableInfo[]): SqliteTableInf
  * содержимое снимка в текстовое поле бессмысленно.
  */
 export async function* streamSqliteTable(
-  filePath: string,
-  tableName: string,
-  batchRows = 1000
+	filePath: string,
+	tableName: string,
+	batchRows = 1000,
 ): AsyncGenerator<{ columns: string[]; rows: string[][] }> {
-  const database = openReadOnly(filePath);
+	const database = openReadOnly(filePath);
 
-  try {
-    const info = database.prepare(`pragma table_info(${quoteIdentifier(tableName)})`).all() as Array<{ name: string }>;
-    const columns = info.map((column) => column.name);
-    if (columns.length === 0) return;
+	try {
+		const info = database
+			.prepare(`pragma table_info(${quoteIdentifier(tableName)})`)
+			.all() as Array<{ name: string }>;
+		const columns = info.map((column) => column.name);
+		if (columns.length === 0) return;
 
-    const select = database.prepare(
-      `select * from ${quoteIdentifier(tableName)} limit ? offset ?`
-    );
+		const select = database.prepare(
+			`select * from ${quoteIdentifier(tableName)} limit ? offset ?`,
+		);
 
-    let offset = 0;
-    for (;;) {
-      const chunk = select.all(batchRows, offset) as Array<Record<string, unknown>>;
-      if (chunk.length === 0) break;
+		let offset = 0;
+		for (;;) {
+			const chunk = select.all(batchRows, offset) as Array<
+				Record<string, unknown>
+			>;
+			if (chunk.length === 0) break;
 
-      const rows = chunk.map((record) =>
-        columns.map((column) => {
-          const value = record[column];
-          if (value === null || value === undefined) return "";
-          if (typeof value === "string") return value;
-          if (typeof value === "number" || typeof value === "bigint") return String(value);
-          if (value instanceof Uint8Array) {
-            /**
-             * BLOB может быть и текстом в чужой кодировке, и картинкой. Если
-             * это похоже на текст — отдаём как текст, иначе честно пишем, что
-             * это двоичные данные, а не подсовываем их в поле «Комментарий».
-             */
-            const asText = Buffer.from(value).toString("utf8");
-            const printable = asText.replace(/[^\p{L}\p{N}\p{P}\p{Z}\n\r\t]/gu, "").length;
-            if (value.byteLength > 0 && printable / asText.length > 0.9) return asText;
-            return `[двоичные данные, ${value.byteLength} байт]`;
-          }
-          return String(value);
-        })
-      );
+			const rows = chunk.map((record) =>
+				columns.map((column) => {
+					const value = record[column];
+					if (value === null || value === undefined) return "";
+					if (typeof value === "string") return value;
+					if (typeof value === "number" || typeof value === "bigint")
+						return String(value);
+					if (value instanceof Uint8Array) {
+						/**
+						 * BLOB может быть и текстом в чужой кодировке, и картинкой. Если
+						 * это похоже на текст — отдаём как текст, иначе честно пишем, что
+						 * это двоичные данные, а не подсовываем их в поле «Комментарий».
+						 */
+						const asText = Buffer.from(value).toString("utf8");
+						const printable = asText.replace(
+							/[^\p{L}\p{N}\p{P}\p{Z}\n\r\t]/gu,
+							"",
+						).length;
+						if (value.byteLength > 0 && printable / asText.length > 0.9)
+							return asText;
+						return `[двоичные данные, ${value.byteLength} байт]`;
+					}
+					return String(value);
+				}),
+			);
 
-      yield { columns, rows };
-      offset += chunk.length;
-      if (chunk.length < batchRows) break;
-    }
-  } finally {
-    database.close();
-  }
+			yield { columns, rows };
+			offset += chunk.length;
+			if (chunk.length < batchRows) break;
+		}
+	} finally {
+		database.close();
+	}
 }
 
 /** Первые строки таблицы — для портрета колонок и предпросмотра. */
-export function readSqliteSample(filePath: string, tableName: string, limit = 2000): { columns: string[]; rows: string[][] } {
-  const database = openReadOnly(filePath);
-  try {
-    const info = database.prepare(`pragma table_info(${quoteIdentifier(tableName)})`).all() as Array<{ name: string }>;
-    const columns = info.map((column) => column.name);
-    if (columns.length === 0) return { columns: [], rows: [] };
+export function readSqliteSample(
+	filePath: string,
+	tableName: string,
+	limit = 2000,
+): { columns: string[]; rows: string[][] } {
+	const database = openReadOnly(filePath);
+	try {
+		const info = database
+			.prepare(`pragma table_info(${quoteIdentifier(tableName)})`)
+			.all() as Array<{ name: string }>;
+		const columns = info.map((column) => column.name);
+		if (columns.length === 0) return { columns: [], rows: [] };
 
-    const records = database
-      .prepare(`select * from ${quoteIdentifier(tableName)} limit ?`)
-      .all(limit) as Array<Record<string, unknown>>;
+		const records = database
+			.prepare(`select * from ${quoteIdentifier(tableName)} limit ?`)
+			.all(limit) as Array<Record<string, unknown>>;
 
-    const rows = records.map((record) =>
-      columns.map((column) => {
-        const value = record[column];
-        if (value === null || value === undefined) return "";
-        if (value instanceof Uint8Array) return `[двоичные данные, ${value.byteLength} байт]`;
-        return String(value);
-      })
-    );
+		const rows = records.map((record) =>
+			columns.map((column) => {
+				const value = record[column];
+				if (value === null || value === undefined) return "";
+				if (value instanceof Uint8Array)
+					return `[двоичные данные, ${value.byteLength} байт]`;
+				return String(value);
+			}),
+		);
 
-    return { columns, rows };
-  } finally {
-    database.close();
-  }
+		return { columns, rows };
+	} finally {
+		database.close();
+	}
 }

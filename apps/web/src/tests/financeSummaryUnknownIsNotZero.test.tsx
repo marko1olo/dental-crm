@@ -216,7 +216,11 @@ const memoAnchor = "const patientBillingSummary = useMemo";
 /** Тело мемо от объявления и на 600 знаков вперёд: ранний возврат и его форма. */
 const unknownTotalDoor = (source: string) => {
 	const at = source.indexOf(memoAnchor);
-	assert.notEqual(at, -1, "мемо patientBillingSummary исчезло из useAppLogic.tsx");
+	assert.notEqual(
+		at,
+		-1,
+		"мемо patientBillingSummary исчезло из useAppLogic.tsx",
+	);
 	return source.slice(at, at + 600);
 };
 

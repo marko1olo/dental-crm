@@ -83,7 +83,9 @@ function cornerstonePolyline(
 ): Point2D[] {
 	const spline = new splines.CatmullRomSpline();
 	spline.closed = closed;
-	spline.setControlPoints(controlPoints.map((p) => [p.x, p.y] as [number, number]));
+	spline.setControlPoints(
+		controlPoints.map((p) => [p.x, p.y] as [number, number]),
+	);
 	return spline.getPolylinePoints().map(([x, y]) => ({ x, y }));
 }
 
@@ -103,7 +105,10 @@ function distanceToSegmentMm(p: Point2D, a: Point2D, b: Point2D): number {
 }
 
 /** Distance from `p` to the nearest segment of `reference`. */
-function distanceToPolylineMm(p: Point2D, reference: readonly Point2D[]): number {
+function distanceToPolylineMm(
+	p: Point2D,
+	reference: readonly Point2D[],
+): number {
 	let best = Number.POSITIVE_INFINITY;
 	for (let i = 1; i < reference.length; i++) {
 		const d = distanceToSegmentMm(p, reference[i - 1]!, reference[i]!);

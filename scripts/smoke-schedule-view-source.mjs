@@ -32,7 +32,10 @@ const scheduleSource = [
 	appointmentCardSource,
 	newAppointmentFormSource,
 ].join("\n");
-const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8").replace(/\r\n/g, "\n");
+const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8").replace(
+	/\r\n/g,
+	"\n",
+);
 
 function requireIn(source, needle, message) {
 	if (!source.includes(needle)) throw new Error(message);
@@ -213,10 +216,10 @@ requireIn(
  * ScheduleView с ним — отдельным утверждением: иначе правило могло бы уцелеть в
  * AppHelpers, перестав вызываться из расписания.
  */
-const helpersSource = readFileSync("apps/web/src/AppHelpers.tsx", "utf8").replace(
-	/\r\n/g,
-	"\n",
-);
+const helpersSource = readFileSync(
+	"apps/web/src/AppHelpers.tsx",
+	"utf8",
+).replace(/\r\n/g, "\n");
 
 requireIn(
 	scheduleSource,
@@ -225,7 +228,7 @@ requireIn(
 );
 requireIn(
 	helpersSource,
-	'if (!draft.patientId) {',
+	"if (!draft.patientId) {",
 	"ScheduleView edited appointments must require a patient before saving.",
 );
 requireIn(
@@ -235,7 +238,7 @@ requireIn(
 );
 requireIn(
 	helpersSource,
-	'if (!draft.doctorUserId) {',
+	"if (!draft.doctorUserId) {",
 	"ScheduleView edited appointments must require a doctor before saving.",
 );
 requireIn(
@@ -245,7 +248,7 @@ requireIn(
 );
 requireIn(
 	helpersSource,
-	'if (!draft.chairId) {',
+	"if (!draft.chairId) {",
 	"ScheduleView edited appointments must require a chair before saving.",
 );
 requireIn(

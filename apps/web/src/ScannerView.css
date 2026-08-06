@@ -141,7 +141,9 @@
 	border: 2px solid var(--slate-300);
 	background: var(--slate-50);
 	color: var(--slate-900);
-	transition: border-color 0.2s, box-shadow 0.2s;
+	transition:
+		border-color 0.2s,
+		box-shadow 0.2s;
 }
 .scanner-select:focus {
 	outline: none;

@@ -54,42 +54,50 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 	{
 		state: "Caries",
 		label: "Кариес",
-		className: "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20",
+		className:
+			"bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20",
 	},
 	{
 		state: "Pulpitis",
 		label: "Пульпит",
-		className: "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+		className:
+			"bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
 	},
 	{
 		state: "Filled",
 		label: "Пломба",
-		className: "bg-teal-500/10 text-teal-300 border-teal-500/20 hover:bg-teal-500/20",
+		className:
+			"bg-teal-500/10 text-teal-300 border-teal-500/20 hover:bg-teal-500/20",
 	},
 	{
 		state: "Crown",
 		label: "Коронка",
-		className: "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+		className:
+			"bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
 	},
 	{
 		state: "Implant",
 		label: "Имплантат",
-		className: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20 hover:bg-yellow-500/20",
+		className:
+			"bg-yellow-500/10 text-yellow-400 border-yellow-500/20 hover:bg-yellow-500/20",
 	},
 	{
 		state: "Planned_Implant",
 		label: "Имплантат в плане",
-		className: "bg-lime-500/10 text-lime-300 border-lime-500/20 hover:bg-lime-500/20",
+		className:
+			"bg-lime-500/10 text-lime-300 border-lime-500/20 hover:bg-lime-500/20",
 	},
 	{
 		state: "Missing",
 		label: "Отсутствует",
-		className: "bg-zinc-800/40 text-zinc-400 border-zinc-700/30 hover:bg-zinc-800/60",
+		className:
+			"bg-zinc-800/40 text-zinc-400 border-zinc-700/30 hover:bg-zinc-800/60",
 	},
 	{
 		state: "Healthy",
 		label: "Здоров",
-		className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
+		className:
+			"bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
 	},
 ];
 
@@ -260,7 +268,9 @@ export const OdontogramModule = ({
 	   не сработает ни при каком обновлении. Код ответа нужен, чтобы назвать
 	   причину и решить, есть ли смысл в кнопке повтора. */
 	const [teethLoad, setTeethLoad] = useState<
-		{ phase: "loading" } | { phase: "ready" } | { phase: "failed"; status: number | null }
+		| { phase: "loading" }
+		| { phase: "ready" }
+		| { phase: "failed"; status: number | null }
 	>({ phase: "loading" });
 	/** Счётчик кнопки «Повторить»: меняется — формула читается заново. */
 	const [teethReloadToken, setTeethReloadToken] = useState(0);
@@ -312,7 +322,9 @@ export const OdontogramModule = ({
 		setTeethData((prev) => {
 			const merged = [...prev];
 			for (const tooth of incoming) {
-				const idx = merged.findIndex((x) => x.toothNumber === tooth.toothNumber);
+				const idx = merged.findIndex(
+					(x) => x.toothNumber === tooth.toothNumber,
+				);
 				if (idx > -1) merged[idx] = tooth;
 				else merged.push(tooth);
 			}
@@ -428,10 +440,15 @@ export const OdontogramModule = ({
 		 * как номер зуба.
 		 */
 		const handleClinicalCollision = (e: Event) => {
-			const detail = (e as CustomEvent).detail as { toothNumber?: unknown } | undefined;
+			const detail = (e as CustomEvent).detail as
+				| { toothNumber?: unknown }
+				| undefined;
 			const toothNumber = Number(detail?.toothNumber);
 			if (!isValidFdiToothNumber(toothNumber)) {
-				console.error("[имплантат из 3D] номер зуба не читается", detail?.toothNumber);
+				console.error(
+					"[имплантат из 3D] номер зуба не читается",
+					detail?.toothNumber,
+				);
 				return;
 			}
 			showToast(
@@ -447,7 +464,8 @@ export const OdontogramModule = ({
 			const detail = (e as CustomEvent).detail as
 				| { patientId?: unknown; states?: unknown }
 				| undefined;
-			if (detail?.patientId !== patientId || !Array.isArray(detail.states)) return;
+			if (detail?.patientId !== patientId || !Array.isArray(detail.states))
+				return;
 			/*
 			 * Слияние по номеру зуба, а не замена. Тот же дефект уже был закрыт у
 			 * живых обновлений выше: обновление приходит ТОЛЬКО по изменённым зубам,
@@ -463,7 +481,9 @@ export const OdontogramModule = ({
 			setTeethData((prev) => {
 				const merged = [...prev];
 				for (const tooth of incoming) {
-					const idx = merged.findIndex((x) => x.toothNumber === tooth.toothNumber);
+					const idx = merged.findIndex(
+						(x) => x.toothNumber === tooth.toothNumber,
+					);
 					if (idx > -1) merged[idx] = tooth;
 					else merged.push(tooth);
 				}
@@ -485,11 +505,20 @@ export const OdontogramModule = ({
 			const toothNumber = Number(detail?.toothNumber);
 			const finding = detail?.finding;
 			if (!isValidFdiToothNumber(toothNumber)) {
-				console.error("[находка со снимка] номер зуба не читается", detail?.toothNumber);
+				console.error(
+					"[находка со снимка] номер зуба не читается",
+					detail?.toothNumber,
+				);
 				return;
 			}
-			if (typeof finding !== "string" || !Object.hasOwn(TOOTH_STATE_LABELS, finding)) {
-				console.error("[находка со снимка] состояние не из списка схемы", finding);
+			if (
+				typeof finding !== "string" ||
+				!Object.hasOwn(TOOTH_STATE_LABELS, finding)
+			) {
+				console.error(
+					"[находка со снимка] состояние не из списка схемы",
+					finding,
+				);
 				showToast(
 					`Находка по зубу ${toothNumber} в карту не записана: состояние со снимка программе не знакомо. Отметьте зуб на схеме сами.`,
 					"warning",
@@ -551,10 +580,12 @@ export const OdontogramModule = ({
 		   Снимок берётся до отправки, из ref с актуальным состоянием, и
 		   глубоко копируется. Новое состояние собирается новыми объектами,
 		   без мутации прежних. */
-		const previousTeethData: ToothData[] = teethDataRef.current.map((tooth) => ({
-			...tooth,
-			...(tooth.surfaces ? { surfaces: [...tooth.surfaces] } : {}),
-		}));
+		const previousTeethData: ToothData[] = teethDataRef.current.map(
+			(tooth) => ({
+				...tooth,
+				...(tooth.surfaces ? { surfaces: [...tooth.surfaces] } : {}),
+			}),
+		);
 
 		setTeethData((prev) => {
 			const next = prev.map((tooth) => {
@@ -600,7 +631,9 @@ export const OdontogramModule = ({
 				 * откатилась, и он вправе думать, что просто промахнулся по зубу.
 				 */
 				const rawBody = await res.text();
-				console.error(`[tooth states batch] ${res.status} ${rawBody.slice(0, 300)}`);
+				console.error(
+					`[tooth states batch] ${res.status} ${rawBody.slice(0, 300)}`,
+				);
 				setTeethData(previousTeethData);
 				showToast(
 					`${actionFailureToast(
@@ -911,7 +944,9 @@ export const OdontogramModule = ({
 									<button
 										key={action.state}
 										type="button"
-										onClick={() => updateToothState(selectedTeeth, action.state)}
+										onClick={() =>
+											updateToothState(selectedTeeth, action.state)
+										}
 										className={`flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs ${action.className}`}
 									>
 										{action.label}
@@ -1000,7 +1035,9 @@ export const OdontogramModule = ({
 						// исключение, и отказ превращался в «Не удалось обработать».
 						const rawBody = await res.text();
 						if (!res.ok) {
-							console.error(`[dictation parse] ${res.status} ${rawBody.slice(0, 300)}`);
+							console.error(
+								`[dictation parse] ${res.status} ${rawBody.slice(0, 300)}`,
+							);
 							showToast(
 								`${actionFailureToast("Надиктованное не разобрано", res.status)} Схема не изменена — отметьте зубы вручную.`,
 								"error",
@@ -1017,7 +1054,9 @@ export const OdontogramModule = ({
 						 */
 						const plan = dictationApplyPlanFromResponseBody(rawBody);
 						if (plan === null) {
-							console.error(`[dictation parse] ${res.status}: ответ не по контракту`);
+							console.error(
+								`[dictation parse] ${res.status}: ответ не по контракту`,
+							);
 							showToast(
 								"Надиктованное не разобрано: ответ сервера непонятен — повторите, а если повторится, сообщите администратору. Схема не изменена.",
 								"error",
@@ -1034,7 +1073,11 @@ export const OdontogramModule = ({
 						for (const item of plan.applied) {
 							await updateToothState([item.toothNumber], item.state);
 						}
-						showToast(message.text, message.tone, message.tone === "success" ? 6000 : 15000);
+						showToast(
+							message.text,
+							message.tone,
+							message.tone === "success" ? 6000 : 15000,
+						);
 					} catch (e) {
 						console.error("[dictation parse] запрос не выполнен", e);
 						showToast(

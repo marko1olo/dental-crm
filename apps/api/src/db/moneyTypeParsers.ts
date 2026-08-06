@@ -31,7 +31,9 @@ const NUMERIC_OID = 1700;
 /** Максимум, до которого число JavaScript представляет копейки точно. */
 const SAFE_KOPECKS = Number.MAX_SAFE_INTEGER;
 
-export function parseNumericMoney(value: string | null): number | string | null {
+export function parseNumericMoney(
+	value: string | null,
+): number | string | null {
 	if (value === null || value === undefined) return value ?? null;
 	const trimmed = String(value).trim();
 	if (trimmed === "") return trimmed;

@@ -632,7 +632,9 @@ if (!fullCreateDocumentBlock) {
 	missing.push("createDocument declaration not found in document UI sources");
 }
 const createDocumentFetchIndex = fullCreateDocumentBlock
-	? fullCreateDocumentBlock.search(/const response = await fetch\("\/api\/documents"/)
+	? fullCreateDocumentBlock.search(
+			/const response = await fetch\("\/api\/documents"/,
+		)
 	: -1;
 if (fullCreateDocumentBlock && createDocumentFetchIndex < 0) {
 	missing.push("createDocument must POST the document to /api/documents");
@@ -642,7 +644,9 @@ const createDocumentBlock =
 		? fullCreateDocumentBlock.slice(0, createDocumentFetchIndex)
 		: "";
 
-if (!/validateDocumentPayloadForKind\(\s*kind\s*[,)]/.test(createDocumentBlock)) {
+if (
+	!/validateDocumentPayloadForKind\(\s*kind\s*[,)]/.test(createDocumentBlock)
+) {
 	missing.push("createDocument payload validation before fetch");
 }
 
@@ -859,8 +863,9 @@ const inlineCardMounts =
 		/\{selectedDocumentKind === "[^"]+" \? \(\s+<article className="document-payload-card">/g,
 	) ?? [];
 const extractedFormMounts =
-	source.match(/\{selectedDocumentKind === "[^"]+" \? \(\s+<[A-Z][A-Za-z0-9]*Form\b/g) ??
-	[];
+	source.match(
+		/\{selectedDocumentKind === "[^"]+" \? \(\s+<[A-Z][A-Za-z0-9]*Form\b/g,
+	) ?? [];
 if (hiddenDocumentPayloadCards.length) {
 	missing.push(
 		"document payload cards must be conditionally mounted instead of rendered as hidden DOM",
@@ -868,7 +873,8 @@ if (hiddenDocumentPayloadCards.length) {
 }
 if (
 	payloadKindMounts.length < 28 ||
-	inlineCardMounts.length + extractedFormMounts.length !== payloadKindMounts.length
+	inlineCardMounts.length + extractedFormMounts.length !==
+		payloadKindMounts.length
 ) {
 	missing.push(
 		"every structured document payload card must be mounted only for the selected document kind",

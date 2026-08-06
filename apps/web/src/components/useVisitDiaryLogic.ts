@@ -58,7 +58,6 @@ function fdiToothFromText(text: string): string {
 	return tooth ?? "";
 }
 
-
 /**
  * SOAP-поля дневника 043/у из формы ЭМК приёма (visits / visitNoteForm).
  *
@@ -143,7 +142,9 @@ function jsonObjectOrNull(rawBody: string): Record<string, unknown> | null {
 	if (!trimmed) return null;
 	try {
 		const parsed: unknown = JSON.parse(trimmed);
-		return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+		return typeof parsed === "object" &&
+			parsed !== null &&
+			!Array.isArray(parsed)
 			? (parsed as Record<string, unknown>)
 			: null;
 	} catch {
@@ -211,8 +212,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * DEFECT #36: ФИО врача из строки дневника (GET doctorFullName).
 	 * Печать 043/у не должна подставлять activeDoctor смены.
 	 */
-	const [diaryDoctorFullName, setDiaryDoctorFullName] = useState<string | null>(null);
-	const [diaryDoctorSpecialty, setDiaryDoctorSpecialty] = useState<string | null>(null);
+	const [diaryDoctorFullName, setDiaryDoctorFullName] = useState<string | null>(
+		null,
+	);
+	const [diaryDoctorSpecialty, setDiaryDoctorSpecialty] = useState<
+		string | null
+	>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const [showScanner, setShowScanner] = useState(false);
 	const [trayBarcode, setTrayBarcode] = useState<string | null>(null);
@@ -229,7 +234,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * previousComplications/previousComorbidities (0149) в UI не доходили.
 	 */
 	const [diaryRevisions, setDiaryRevisions] = useState<DiaryRevisionRow[]>([]);
-	const [loadState, setLoadState] = useState<DiaryLoadState>({ phase: "loading" });
+	const [loadState, setLoadState] = useState<DiaryLoadState>({
+		phase: "loading",
+	});
 	/**
 	 * Счётчик принудительного перечитывания. PanelLoadFailure требует onRetry —
 	 * без отдельного токена повтор был бы только через смену visitId (её нет).
@@ -252,8 +259,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * БЫЛО: cancelRevise восстанавливал только diary — штрихкод лотка,
 	 * изменённый в режиме правки, оставался на экране/в печати 043/у.
 	 */
-	const [reviseTraySnapshot, setReviseTraySnapshot] = useState<string | null>(null);
-
+	const [reviseTraySnapshot, setReviseTraySnapshot] = useState<string | null>(
+		null,
+	);
 
 	/**
 	 * Заголовки с админским секретом клинической сессии.
@@ -337,10 +345,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setReviseSnapshot(null);
 		setReviseTraySnapshot(null);
 		setLoadState({ phase: "loading" });
-			setDiaryDoctorFullName(null);
-			setDiaryDoctorSpecialty(null);
+		setDiaryDoctorFullName(null);
+		setDiaryDoctorSpecialty(null);
 		autosaveFailureReportedRef.current = false;
-
 
 		/** Отказ чтения: состояние + сообщение человеку с подсказкой что делать. */
 		const reportLoadFailure = (status: number | null) => {
@@ -359,7 +366,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			try {
 				const response = await fetch(`/api/diaries/visit/${visitId}`, {
 					headers:
-						headerSource && typeof headerSource.denteClinicalReadHeaders === "function"
+						headerSource &&
+						typeof headerSource.denteClinicalReadHeaders === "function"
 							? headerSource.denteClinicalReadHeaders()
 							: {},
 				});
@@ -436,12 +444,16 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					// ревизий становилось «0», и пометка «⚠ Ревизий: N» в форме
 					// 043/у пропадала у дневника, который правили после подписи.
 					try {
-						const revisionsResponse = await fetch(`/api/diaries/${d.id}/revisions`, {
-							headers:
-								headerSource && typeof headerSource.denteClinicalReadHeaders === "function"
-									? headerSource.denteClinicalReadHeaders()
-									: {},
-						});
+						const revisionsResponse = await fetch(
+							`/api/diaries/${d.id}/revisions`,
+							{
+								headers:
+									headerSource &&
+									typeof headerSource.denteClinicalReadHeaders === "function"
+										? headerSource.denteClinicalReadHeaders()
+										: {},
+							},
+						);
 						const revisionsBody = await revisionsResponse.text();
 						if (!revisionsResponse.ok) {
 							console.error(
@@ -459,7 +471,10 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 							setRevisionCount(rows.length);
 						}
 					} catch (revisionsError) {
-						console.error("[diary revisions] запрос не выполнен", revisionsError);
+						console.error(
+							"[diary revisions] запрос не выполнен",
+							revisionsError,
+						);
 					}
 				}
 			} catch (error) {
@@ -510,7 +525,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			activeVisit && typeof activeVisit === "object" && "id" in activeVisit
 				? (activeVisit as { id?: unknown }).id
 				: undefined;
-		if (typeof openVisitId === "string" && openVisitId && openVisitId !== visitId) {
+		if (
+			typeof openVisitId === "string" &&
+			openVisitId &&
+			openVisitId !== visitId
+		) {
 			return;
 		}
 
@@ -519,7 +538,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			activeVisit && typeof activeVisit === "object"
 				? (activeVisit as Record<string, unknown>)
 				: null;
-		const pick = (key: "complaint" | "anamnesis" | "objectiveStatus" | "diagnosis" | "treatmentPlan") => {
+		const pick = (
+			key:
+				| "complaint"
+				| "anamnesis"
+				| "objectiveStatus"
+				| "diagnosis"
+				| "treatmentPlan",
+		) => {
 			const fromForm = formFromStore[key];
 			if (typeof fromForm === "string" && fromForm.trim()) return fromForm;
 			const fromVisit = visitRow?.[key];
@@ -547,14 +573,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			return changed ? next : prev;
 		});
 		if (prefill.diagnosisIcd10) {
-			setIcdSearch((current) => (current.trim() ? current : prefill.diagnosisIcd10 ?? current));
+			setIcdSearch((current) =>
+				current.trim() ? current : (prefill.diagnosisIcd10 ?? current),
+			);
 		}
-	}, [
-		loadState.phase,
-		visitId,
-		visitNoteForm,
-		activeVisit,
-	]);
+	}, [loadState.phase, visitId, visitNoteForm, activeVisit]);
 
 	// ── Resize textareas
 
@@ -642,7 +665,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				const res = await fetch("/api/diaries", {
 					method: "POST",
 					headers:
-						headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+						headerSource &&
+						typeof headerSource.denteClinicalMutationHeaders === "function"
 							? headerSource.denteClinicalMutationHeaders({
 									"Content-Type": "application/json",
 								})
@@ -722,9 +746,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				const resolvedId = savedId ?? diaryId;
 				if (!resolvedId) return null;
 				const resolvedHash =
-					typeof data?.hash === "string" && data.hash
-						? data.hash
-						: diaryHash;
+					typeof data?.hash === "string" && data.hash ? data.hash : diaryHash;
 				return { id: resolvedId, hash: resolvedHash };
 			} catch (err) {
 				// До сервера не дошли: сеть или выключенный сервер клиники.
@@ -741,7 +763,17 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setIsSaving(false);
 			}
 		},
-		[activeDoctor, diary, diaryHash, diaryId, isLocked, loadState, patientId, trayBarcode, visitId],
+		[
+			activeDoctor,
+			diary,
+			diaryHash,
+			diaryId,
+			isLocked,
+			loadState,
+			patientId,
+			trayBarcode,
+			visitId,
+		],
 	);
 
 	// ── Autosave
@@ -815,7 +847,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			return;
 		}
 		if (!isLocked) {
-			showToast("Дневник не подписан — просто отредактируйте и сохраните черновик.", "info", 8000);
+			showToast(
+				"Дневник не подписан — просто отредактируйте и сохраните черновик.",
+				"info",
+				8000,
+			);
 			return;
 		}
 		const reason = revisionReason.trim();
@@ -833,7 +869,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const res = await fetch(`/api/diaries/${diaryId}/revise`, {
 				method: "POST",
 				headers:
-					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+					headerSource &&
+					typeof headerSource.denteClinicalMutationHeaders === "function"
 						? headerSource.denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
 							})
@@ -957,16 +994,25 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		} finally {
 			setIsRevisingBusy(false);
 		}
-	}, [activeDoctor, diary, diaryId, isLocked, revisionReason, reviseSnapshot, reviseTraySnapshot, trayBarcode]);
+	}, [
+		activeDoctor,
+		diary,
+		diaryId,
+		isLocked,
+		revisionReason,
+		reviseSnapshot,
+		reviseTraySnapshot,
+		trayBarcode,
+	]);
 
 	/**
 	 * Привязка лотка + пересчёт diary_hash на сервере (sterilization/link).
 	 * Вызывается ДО PKCS#7 (ensureDraftSavedForSigning) и в PIN-path doLock.
 	 * @returns ok:false — подписывать нельзя (тост уже показан).
 	 */
-	const linkSterilizationTray = async (fallbackHash: string | null = null): Promise<
-		{ ok: true; hash: string | null } | { ok: false }
-	> => {
+	const linkSterilizationTray = async (
+		fallbackHash: string | null = null,
+	): Promise<{ ok: true; hash: string | null } | { ok: false }> => {
 		if (!trayBarcode || isLocked) {
 			return { ok: true, hash: fallbackHash ?? diaryHash };
 		}
@@ -984,7 +1030,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const linkRes = await fetch("/api/sterilization/link", {
 				method: "POST",
 				headers:
-					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+					headerSource &&
+					typeof headerSource.denteClinicalMutationHeaders === "function"
 						? headerSource.denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
 							})
@@ -993,7 +1040,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			});
 			if (!linkRes.ok) {
 				const rawBody = await linkRes.text();
-				console.error(`[sterilization link] ${linkRes.status} ${rawBody.slice(0, 300)}`);
+				console.error(
+					`[sterilization link] ${linkRes.status} ${rawBody.slice(0, 300)}`,
+				);
 				const payload = jsonObjectOrNull(rawBody);
 				const detail = operatorReadableErrorDetail(
 					typeof payload?.message === "string" ? payload.message : null,
@@ -1128,7 +1177,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const res = await fetch(`/api/diaries/${lockTargetId}/lock`, {
 				method: "POST",
 				headers:
-					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+					headerSource &&
+					typeof headerSource.denteClinicalMutationHeaders === "function"
 						? headerSource.denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
 							})
@@ -1195,7 +1245,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						.join(" ");
 					const name = fromFull || fromParts;
 					if (name) setDiaryDoctorFullName(name);
-										/*
+					/*
 					 * DEFECT #41: StaffMember.specialties[], not .specialty/.specialization.
 					 * БЫЛО: activeDoctor.specialty / specialization — полей нет → specialty null после lock.
 					 */
@@ -1250,8 +1300,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					12000,
 				);
 			} else {
-
-
 				console.error(`[diary lock] ${res.status} ${rawBody.slice(0, 300)}`);
 				const detail = operatorReadableErrorDetail(
 					typeof json?.message === "string" ? json.message : null,
@@ -1312,7 +1360,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const res = await fetch("/api/diaries", {
 				method: "POST",
 				headers:
-					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+					headerSource &&
+					typeof headerSource.denteClinicalMutationHeaders === "function"
 						? headerSource.denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
 							})
@@ -1333,7 +1382,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			});
 			const rawBody = await res.text();
 			if (!res.ok) {
-				console.error(`[diary tray clear] ${res.status} ${rawBody.slice(0, 300)}`);
+				console.error(
+					`[diary tray clear] ${res.status} ${rawBody.slice(0, 300)}`,
+				);
 				const payload = jsonObjectOrNull(rawBody);
 				const serverDetail = operatorReadableErrorDetail(
 					typeof payload?.message === "string"
@@ -1385,119 +1436,132 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * Нельзя setState→doSave: замыкание со старым trayBarcode. Шлём code явно.
 	 * В режиме isRevising только state — persist через doRevise.
 	 */
-	const assignTrayBarcode = useCallback(async (rawCode: string) => {
-		const code = rawCode.trim();
-		if (!code) {
-			showToast("Введите или отсканируйте штрихкод лотка.", "info", 6000);
-			return;
-		}
-		/* Ревизия подписанного: barcode уйдёт с doRevise, не draft POST. */
-		if (isRevising) {
-			setTrayBarcode(code);
-			setShowScanner(false);
-			showToast(
-				"Лоток указан на экране. Нажмите «Сохранить правку», чтобы записать в историю.",
-				"info",
-				10000,
-			);
-			return;
-		}
-		if (isLocked) {
-			showToast(
-				"Подписанный дневник: лоток меняется только через «Исправить».",
-				"info",
-				10000,
-			);
-			return;
-		}
-		if (loadState.phase === "loading" || loadState.phase === "failed") {
-			showToast(
-				"Сначала дождитесь загрузки записей приёма — привязать лоток нельзя, пока дневник не прочитан.",
-				"error",
-				10000,
-			);
-			return;
-		}
-		setTrayBarcode(code);
-		setShowScanner(false);
-		if (!activeDoctor) {
-			showToast(
-				"Лоток указан на экране. Выберите врача и сохраните черновик, чтобы записать привязку.",
-				"info",
-				10000,
-			);
-			return;
-		}
-		setIsSaving(true);
-		try {
-			const headerSource = authRef.current;
-			const res = await fetch("/api/diaries", {
-				method: "POST",
-				headers:
-					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
-						? headerSource.denteClinicalMutationHeaders({
-								"Content-Type": "application/json",
-							})
-						: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					visitId,
-					patientId,
-					status: "draft",
-					instrumentTrayBarcode: code,
-					anamnesis: diary.anamnesis,
-					statusLocalis: diary.statusLocalis,
-					diagnosisIcd10: diary.diagnosisIcd10,
-					diagnosisTooth: diary.diagnosisTooth,
-					treatmentDescription: diary.treatmentDescription,
-					complications: diary.complications,
-					comorbidities: diary.comorbidities,
-				}),
-			});
-			const rawBody = await res.text();
-			if (!res.ok) {
-				console.error(`[diary tray assign] ${res.status} ${rawBody.slice(0, 300)}`);
-				const payload = jsonObjectOrNull(rawBody);
-				const serverDetail = operatorReadableErrorDetail(
-					typeof payload?.message === "string"
-						? payload.message
-						: typeof payload?.error === "string"
-							? payload.error
-							: null,
-				);
+	const assignTrayBarcode = useCallback(
+		async (rawCode: string) => {
+			const code = rawCode.trim();
+			if (!code) {
+				showToast("Введите или отсканируйте штрихкод лотка.", "info", 6000);
+				return;
+			}
+			/* Ревизия подписанного: barcode уйдёт с doRevise, не draft POST. */
+			if (isRevising) {
+				setTrayBarcode(code);
+				setShowScanner(false);
 				showToast(
-					(
-						serverDetail ??
-						actionFailureToast("Лоток не записан в черновик", res.status)
-					) + " На экране лоток уже указан — сохраните черновик вручную.",
-					"error",
-					12000,
+					"Лоток указан на экране. Нажмите «Сохранить правку», чтобы записать в историю.",
+					"info",
+					10000,
 				);
 				return;
 			}
-			const data = jsonObjectOrNull(rawBody);
-			const savedId = typeof data?.id === "string" ? data.id : undefined;
-			if (savedId) setDiaryId(savedId);
-			if (typeof data?.hash === "string" && data.hash) {
-				setDiaryHash(data.hash);
+			if (isLocked) {
+				showToast(
+					"Подписанный дневник: лоток меняется только через «Исправить».",
+					"info",
+					10000,
+				);
+				return;
 			}
-			if (loadState.phase === "empty") {
-				setLoadState({ phase: "ready" });
+			if (loadState.phase === "loading" || loadState.phase === "failed") {
+				showToast(
+					"Сначала дождитесь загрузки записей приёма — привязать лоток нельзя, пока дневник не прочитан.",
+					"error",
+					10000,
+				);
+				return;
 			}
-			autosaveFailureReportedRef.current = false;
-			setLastSavedAt(new Date());
-			showToast("Лоток записан в черновик", "success", 6000);
-		} catch (err) {
-			console.error("[diary tray assign] запрос не выполнен", err);
-			showToast(
-				actionFailureToast("Лоток не записан в черновик", null) +
-					" На экране лоток уже указан — сохраните черновик вручную.",
-				"error",
-				12000,
-			);
-		} finally {
-			setIsSaving(false);
-		}
-	}, [activeDoctor, diary, isLocked, isRevising, loadState.phase, patientId, visitId]);
+			setTrayBarcode(code);
+			setShowScanner(false);
+			if (!activeDoctor) {
+				showToast(
+					"Лоток указан на экране. Выберите врача и сохраните черновик, чтобы записать привязку.",
+					"info",
+					10000,
+				);
+				return;
+			}
+			setIsSaving(true);
+			try {
+				const headerSource = authRef.current;
+				const res = await fetch("/api/diaries", {
+					method: "POST",
+					headers:
+						headerSource &&
+						typeof headerSource.denteClinicalMutationHeaders === "function"
+							? headerSource.denteClinicalMutationHeaders({
+									"Content-Type": "application/json",
+								})
+							: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						visitId,
+						patientId,
+						status: "draft",
+						instrumentTrayBarcode: code,
+						anamnesis: diary.anamnesis,
+						statusLocalis: diary.statusLocalis,
+						diagnosisIcd10: diary.diagnosisIcd10,
+						diagnosisTooth: diary.diagnosisTooth,
+						treatmentDescription: diary.treatmentDescription,
+						complications: diary.complications,
+						comorbidities: diary.comorbidities,
+					}),
+				});
+				const rawBody = await res.text();
+				if (!res.ok) {
+					console.error(
+						`[diary tray assign] ${res.status} ${rawBody.slice(0, 300)}`,
+					);
+					const payload = jsonObjectOrNull(rawBody);
+					const serverDetail = operatorReadableErrorDetail(
+						typeof payload?.message === "string"
+							? payload.message
+							: typeof payload?.error === "string"
+								? payload.error
+								: null,
+					);
+					showToast(
+						(serverDetail ??
+							actionFailureToast("Лоток не записан в черновик", res.status)) +
+							" На экране лоток уже указан — сохраните черновик вручную.",
+						"error",
+						12000,
+					);
+					return;
+				}
+				const data = jsonObjectOrNull(rawBody);
+				const savedId = typeof data?.id === "string" ? data.id : undefined;
+				if (savedId) setDiaryId(savedId);
+				if (typeof data?.hash === "string" && data.hash) {
+					setDiaryHash(data.hash);
+				}
+				if (loadState.phase === "empty") {
+					setLoadState({ phase: "ready" });
+				}
+				autosaveFailureReportedRef.current = false;
+				setLastSavedAt(new Date());
+				showToast("Лоток записан в черновик", "success", 6000);
+			} catch (err) {
+				console.error("[diary tray assign] запрос не выполнен", err);
+				showToast(
+					actionFailureToast("Лоток не записан в черновик", null) +
+						" На экране лоток уже указан — сохраните черновик вручную.",
+					"error",
+					12000,
+				);
+			} finally {
+				setIsSaving(false);
+			}
+		},
+		[
+			activeDoctor,
+			diary,
+			isLocked,
+			isRevising,
+			loadState.phase,
+			patientId,
+			visitId,
+		],
+	);
 
 	return {
 		diary,
@@ -1555,4 +1619,3 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		icdRef,
 	};
 }
-

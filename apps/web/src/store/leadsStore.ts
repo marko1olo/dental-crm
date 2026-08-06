@@ -1,5 +1,8 @@
 import { create } from "zustand";
-import { readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+} from "../lib/safeLocalStorage";
 
 export interface Lead {
 	id: string;
@@ -100,7 +103,8 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					: "Обращения не загружены: нет связи с сервером.";
 			// Network / English browser noise → RU operator line
 			const operatorFacing =
-				/[А-Яа-яЁё]/.test(message) && !/\b(Failed to fetch|TypeError|NetworkError)\b/i.test(message)
+				/[А-Яа-яЁё]/.test(message) &&
+				!/\b(Failed to fetch|TypeError|NetworkError)\b/i.test(message)
 					? message
 					: "Обращения не загружены: нет связи с сервером. Проверьте, что кабинет открыт, и нажмите «Повторить».";
 			set({ error: operatorFacing, isLoading: false });
@@ -216,7 +220,6 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		}
 	},
 	wsUpdate: (updatedLead) => {
-
 		const leads = get().leads;
 		const exists = leads.find((l) => l.id === updatedLead.id);
 		if (exists) {

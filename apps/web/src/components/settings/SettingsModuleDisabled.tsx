@@ -56,7 +56,8 @@ export function SettingsModuleDisabled({ gate }: { gate: SettingsModuleGate }) {
 						<h3>Модуль «{gate.moduleTitle}» выключен</h3>
 						<p>
 							Поэтому этот экран не работает, и кнопки к нему нет в списке
-							настроек слева. Вы попали сюда по прямой ссылке или кнопкой «Назад».
+							настроек слева. Вы попали сюда по прямой ссылке или кнопкой
+							«Назад».
 						</p>
 					</div>
 				</div>
@@ -65,12 +66,15 @@ export function SettingsModuleDisabled({ gate }: { gate: SettingsModuleGate }) {
 					<div className="profile-form-group full-width">
 						<p style={{ margin: 0 }}>{gate.whatItDoes}</p>
 						<p style={{ marginTop: "10px", marginBottom: 0 }}>
-							Данные, которые уже заведены, не удалены — они снова появятся здесь,
-							как только модуль включат.
+							Данные, которые уже заведены, не удалены — они снова появятся
+							здесь, как только модуль включат.
 						</p>
 					</div>
 
-					<div className="profile-form-group full-width" style={{ marginTop: "4px" }}>
+					<div
+						className="profile-form-group full-width"
+						style={{ marginTop: "4px" }}
+					>
 						<button
 							className="primary-button"
 							type="button"
@@ -86,8 +90,8 @@ export function SettingsModuleDisabled({ gate }: { gate: SettingsModuleGate }) {
 							<ArrowRight size={16} aria-hidden="true" />
 						</button>
 						<span className="profile-form-hint" style={{ marginTop: "6px" }}>
-							Там перечислены все модули клиники — найдите «{gate.moduleTitle}» и
-							включите переключатель.
+							Там перечислены все модули клиники — найдите «{gate.moduleTitle}»
+							и включите переключатель.
 						</span>
 					</div>
 				</div>

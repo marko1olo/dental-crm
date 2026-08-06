@@ -158,7 +158,10 @@ for (const area of WATCHED) {
 	const distDir = path.resolve(area.distDir);
 
 	if (!existsSync(sourceDir)) {
-		report.push({ area: area.name, state: "нет исходников — область пропущена" });
+		report.push({
+			area: area.name,
+			state: "нет исходников — область пропущена",
+		});
 		continue;
 	}
 	/*
@@ -167,11 +170,17 @@ for (const area of WATCHED) {
 	 * заставлять собирать api ради проверки, ничего про api не утверждающей.
 	 */
 	if (!existsSync(distDir)) {
-		report.push({ area: area.name, state: "сборки нет — не собрано, это не устаревание" });
+		report.push({
+			area: area.name,
+			state: "сборки нет — не собрано, это не устаревание",
+		});
 		continue;
 	}
 
-	const sources = listBuiltSources(path.resolve(area.tsconfig), isComparableSource);
+	const sources = listBuiltSources(
+		path.resolve(area.tsconfig),
+		isComparableSource,
+	);
 	if (!sources.length) {
 		report.push({ area: area.name, state: "нечего сравнивать" });
 		continue;
@@ -186,7 +195,11 @@ for (const area of WATCHED) {
 	 */
 	const lagging = [];
 	for (const source of sources) {
-		for (const builtPath of builtCounterparts(source.path, sourceDir, distDir)) {
+		for (const builtPath of builtCounterparts(
+			source.path,
+			sourceDir,
+			distDir,
+		)) {
 			if (!existsSync(builtPath)) continue;
 			let builtMtimeMs;
 			try {
@@ -222,7 +235,9 @@ for (const area of WATCHED) {
 }
 
 if (stale.length) {
-	console.error("Сборка старше исходника — стражи, читающие dist, судили бы вчерашний код:");
+	console.error(
+		"Сборка старше исходника — стражи, читающие dist, судили бы вчерашний код:",
+	);
 	for (const line of stale) console.error(`- ${line}`);
 	process.exit(1);
 }

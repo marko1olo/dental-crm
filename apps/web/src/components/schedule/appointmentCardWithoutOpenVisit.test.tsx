@@ -73,7 +73,9 @@ function dashboardWith(activeVisit: ActiveVisitProp): Dashboard {
 			staff: [],
 			chairs: [],
 		},
-		patients: [{ id: PATIENT_ID, fullName: "Плашкина Мария Ивановна", status: "active" }],
+		patients: [
+			{ id: PATIENT_ID, fullName: "Плашкина Мария Ивановна", status: "active" },
+		],
 		activeVisit,
 	} as unknown as Dashboard;
 }
@@ -95,7 +97,10 @@ const openVisitOnThisAppointment: Visit = {
 	updatedAt: "2026-05-12T08:00:00+04:00",
 };
 
-function propsFor(activeVisit: ActiveVisitProp, useManualSelects: boolean): AppointmentCardProps {
+function propsFor(
+	activeVisit: ActiveVisitProp,
+	useManualSelects: boolean,
+): AppointmentCardProps {
 	return {
 		appointment,
 		dashboard: dashboardWith(activeVisit),
@@ -134,7 +139,8 @@ function propsFor(activeVisit: ActiveVisitProp, useManualSelects: boolean): Appo
 		openScheduleSuggestion: () => {},
 		formatTime: (value) => value.slice(11, 16),
 		patientName: (patients, patientId) =>
-			patients.find((patient) => patient.id === patientId)?.fullName ?? "Пациент не выбран",
+			patients.find((patient) => patient.id === patientId)?.fullName ??
+			"Пациент не выбран",
 		openAppointmentEditor: () => {},
 		repeatAppointment: () => {},
 		closeAppointmentEditor: () => {},
@@ -144,12 +150,19 @@ function propsFor(activeVisit: ActiveVisitProp, useManualSelects: boolean): Appo
 		toDateTimeLocalValue: (value) => value.slice(0, 16),
 		fromDateTimeLocalValue: (value) => value,
 		useManualSelects,
-		activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(["completed"]),
+		activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>([
+			"completed",
+		]),
 	};
 }
 
-function render(activeVisit: ActiveVisitProp, useManualSelects: boolean): string {
-	return renderToStaticMarkup(createElement(AppointmentCard, propsFor(activeVisit, useManualSelects)));
+function render(
+	activeVisit: ActiveVisitProp,
+	useManualSelects: boolean,
+): string {
+	return renderToStaticMarkup(
+		createElement(AppointmentCard, propsFor(activeVisit, useManualSelects)),
+	);
 }
 
 describe("AppointmentCard: открытого приёма нет", () => {
@@ -161,7 +174,10 @@ describe("AppointmentCard: открытого приёма нет", () => {
 			/<select/,
 			"Ветка ручного списка пациентов не отрисовалась вовсе — сравнивать «заблокирован ли выбор» не с чем.",
 		);
-		const select = markup.slice(markup.indexOf("<select"), markup.indexOf("</select>"));
+		const select = markup.slice(
+			markup.indexOf("<select"),
+			markup.indexOf("</select>"),
+		);
 		assert.ok(
 			!select.includes("disabled"),
 			"Выбор пациента заблокирован, хотя открытого приёма в клинике нет. Блокировка означает «пациент " +
@@ -177,7 +193,10 @@ describe("AppointmentCard: открытого приёма нет", () => {
 			/quick-chip/,
 			"Ветка плашек не отрисовалась: проверка блокировки плашки пациента ни о чём.",
 		);
-		const chip = markup.slice(markup.indexOf('class="quick-chip'), markup.indexOf("</button>", markup.indexOf('class="quick-chip')));
+		const chip = markup.slice(
+			markup.indexOf('class="quick-chip'),
+			markup.indexOf("</button>", markup.indexOf('class="quick-chip')),
+		);
 		assert.ok(
 			!chip.includes("disabled"),
 			`Плашка выбора пациента заблокирована без открытого приёма: ${chip}`,
@@ -186,7 +205,10 @@ describe("AppointmentCard: открытого приёма нет", () => {
 
 	it("рабочий путь: приём открыт по ЭТОЙ записи — выбор пациента заблокирован", () => {
 		const withSelect = render(openVisitOnThisAppointment, true);
-		const select = withSelect.slice(withSelect.indexOf("<select"), withSelect.indexOf("</select>"));
+		const select = withSelect.slice(
+			withSelect.indexOf("<select"),
+			withSelect.indexOf("</select>"),
+		);
 		assert.ok(
 			select.includes("disabled"),
 			"По записи открыт приём, а выбор пациента свободен. Тогда администратор переставит пациента под " +
@@ -195,8 +217,14 @@ describe("AppointmentCard: открытого приёма нет", () => {
 
 		const withChips = render(openVisitOnThisAppointment, false);
 		const chipStart = withChips.indexOf('class="quick-chip');
-		const chip = withChips.slice(chipStart, withChips.indexOf("</button>", chipStart));
-		assert.ok(chip.includes("disabled"), `Плашка пациента не заблокирована при открытом приёме: ${chip}`);
+		const chip = withChips.slice(
+			chipStart,
+			withChips.indexOf("</button>", chipStart),
+		);
+		assert.ok(
+			chip.includes("disabled"),
+			`Плашка пациента не заблокирована при открытом приёме: ${chip}`,
+		);
 	});
 
 	it("приём открыт по ДРУГОЙ записи — эта запись выбор пациента не блокирует", () => {
@@ -204,7 +232,10 @@ describe("AppointmentCard: открытого приёма нет", () => {
 			{ ...openVisitOnThisAppointment, appointmentId: OTHER_APPOINTMENT_ID },
 			true,
 		);
-		const select = markup.slice(markup.indexOf("<select"), markup.indexOf("</select>"));
+		const select = markup.slice(
+			markup.indexOf("<select"),
+			markup.indexOf("</select>"),
+		);
 		assert.ok(
 			!select.includes("disabled"),
 			`Запись заблокирована приёмом, который открыт по другой записи: ${select}`,

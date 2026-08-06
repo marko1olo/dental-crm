@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { viewLabels } from "../workspaceShell.js";
 
 /**
@@ -68,7 +68,9 @@ const WRAPPER = "components/crm/PatientCommunicationTimelinesWidget.tsx";
 test("панель отправляет в раздел, который есть в реестре разделов", () => {
 	const source = code(PANEL);
 
-	const declared = /const COMMUNICATIONS_SECTION_TITLE = "([^"]+)"/.exec(source);
+	const declared = /const COMMUNICATIONS_SECTION_TITLE = "([^"]+)"/.exec(
+		source,
+	);
 	assert.ok(
 		declared,
 		"в панели не найдено объявление COMMUNICATIONS_SECTION_TITLE — имя раздела снова вписано в разметку и разъедется с реестром",
@@ -101,8 +103,14 @@ test("пустой журнал не выдаётся за отсутствие 
 		"Записи звонков и сообщений с пациентом отсутствуют",
 		"Звонков и сообщений по пациенту не записано",
 	]) {
-		assert.ok(!source.includes(lie), `в панель вернулась формулировка «${lie}»: она читается как «с человеком не связывались»`);
-		assert.ok(!wrapper.includes(lie), `в обёртку вернулась формулировка «${lie}»`);
+		assert.ok(
+			!source.includes(lie),
+			`в панель вернулась формулировка «${lie}»: она читается как «с человеком не связывались»`,
+		);
+		assert.ok(
+			!wrapper.includes(lie),
+			`в обёртку вернулась формулировка «${lie}»`,
+		);
 	}
 
 	// Пустое состояние обязано ограничить утверждение каналом и назвать, что
@@ -127,7 +135,12 @@ test("пустой журнал не выдаётся за отсутствие 
 
 test("ссылка на запись разговора не вернулась: такого поля в источнике нет", () => {
 	const source = code(PANEL);
-	for (const invented of ["audioRecordingUrl", "Прослушать запись", "statusColor", "eventType"]) {
+	for (const invented of [
+		"audioRecordingUrl",
+		"Прослушать запись",
+		"statusColor",
+		"eventType",
+	]) {
 		assert.ok(
 			!source.includes(invented),
 			`в панель вернулось поле ${invented} мёртвой таблицы patient_communication_timelines — сервер его не отдаёт, блок будет пустым`,
@@ -149,7 +162,10 @@ test("журнал на экране «Пациенты» — одна реал�
 		!wrapper.includes("Array.isArray"),
 		"в обёртке снова разбирается ответ: маршрут отдаёт объект с итогами, и Array.isArray даст пустой список на непустой базе",
 	);
-	assert.ok(!wrapper.includes("usePatientResource"), "обёртка снова грузит данные сама — это вторая копия панели");
+	assert.ok(
+		!wrapper.includes("usePatientResource"),
+		"обёртка снова грузит данные сама — это вторая копия панели",
+	);
 
 	// Внешняя метка сохранена: на неё ссылается генератор снимков-доказательств.
 	assert.ok(

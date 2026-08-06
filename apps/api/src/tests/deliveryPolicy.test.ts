@@ -10,7 +10,7 @@ import {
 	minuteOfDayInTimeZone,
 	minutesUntilQuietHoursEnd,
 	type QuietHoursSettings,
-	type RetryPolicySettings
+	type RetryPolicySettings,
 } from "../services/communications/deliveryPolicy.js";
 
 /**
@@ -25,10 +25,13 @@ const settings: QuietHoursSettings = {
 	quietHoursStartMinute: 21 * 60,
 	quietHoursEndMinute: 9 * 60,
 	deferServiceInQuietHours: true,
-	blockMarketingInQuietHours: true
+	blockMarketingInQuietHours: true,
 };
 
-const retrySettings: RetryPolicySettings = { retryBaseSeconds: 60, retryMaxSeconds: 3600 };
+const retrySettings: RetryPolicySettings = {
+	retryBaseSeconds: 60,
+	retryMaxSeconds: 3600,
+};
 
 test("тихие часы через полночь считаются правильно", () => {
 	// Окно 21:00 → 09:00 переходит через полночь: простое «между» здесь врёт.
@@ -111,7 +114,10 @@ test("сервисное сообщение в тихие часы отклад�
 	assert.equal(decision.action, "defer");
 	if (decision.action === "defer") {
 		// До 09:00 по Москве остаётся 9 часов 30 минут.
-		assert.equal(decision.notBefore.getTime() - night.getTime(), (9 * 60 + 30) * 60_000);
+		assert.equal(
+			decision.notBefore.getTime() - night.getTime(),
+			(9 * 60 + 30) * 60_000,
+		);
 	}
 });
 
@@ -135,20 +141,26 @@ test("сервисные сообщения допустимы по умолча
 });
 
 test("явный отказ перекрывает умолчание", () => {
-	const records = [{ channel: "sms", scope: "service", state: "revoked" } as const];
+	const records = [
+		{ channel: "sms", scope: "service", state: "revoked" } as const,
+	];
 	assert.equal(decideConsent(records, "sms", "service").allowed, false);
 	// Отказ по SMS не запрещает писать в Telegram.
 	assert.equal(decideConsent(records, "telegram", "service").allowed, true);
 });
 
 test("согласие на рекламу по одному каналу не распространяется на другие", () => {
-	const records = [{ channel: "email", scope: "marketing", state: "granted" } as const];
+	const records = [
+		{ channel: "email", scope: "marketing", state: "granted" } as const,
+	];
 	assert.equal(decideConsent(records, "email", "marketing").allowed, true);
 	assert.equal(decideConsent(records, "sms", "marketing").allowed, false);
 });
 
 test("отказ от рекламы не блокирует сервисные сообщения", () => {
-	const records = [{ channel: "sms", scope: "marketing", state: "revoked" } as const];
+	const records = [
+		{ channel: "sms", scope: "marketing", state: "revoked" } as const,
+	];
 	assert.equal(decideConsent(records, "sms", "service").allowed, true);
 	assert.equal(decideConsent(records, "sms", "marketing").allowed, false);
 });
@@ -182,25 +194,40 @@ test("выдержка растёт экспоненциально и упира
 });
 
 test("испорченный счётчик попыток не приводит к переполнению", () => {
-	const delay = computeRetryDelaySeconds(9999, "network", retrySettings, "seed");
-	assert.ok(Number.isFinite(delay) && delay <= 3600 * 1.2, `неожиданная пауза ${delay}`);
+	const delay = computeRetryDelaySeconds(
+		9999,
+		"network",
+		retrySettings,
+		"seed",
+	);
+	assert.ok(
+		Number.isFinite(delay) && delay <= 3600 * 1.2,
+		`неожиданная пауза ${delay}`,
+	);
 });
 
 test("разброс детерминирован, но различается между сообщениями", () => {
 	assert.equal(
 		computeRetryDelaySeconds(1, "network", retrySettings, "outbox-a"),
-		computeRetryDelaySeconds(1, "network", retrySettings, "outbox-a")
+		computeRetryDelaySeconds(1, "network", retrySettings, "outbox-a"),
 	);
 	// Сотня отложенных сообщений не должна вернуться в шлюз одной пачкой.
 	const delays = new Set(
-		Array.from({ length: 20 }, (_unused, index) => computeRetryDelaySeconds(1, "network", retrySettings, `outbox-${index}`))
+		Array.from({ length: 20 }, (_unused, index) =>
+			computeRetryDelaySeconds(1, "network", retrySettings, `outbox-${index}`),
+		),
 	);
 	assert.ok(delays.size > 1, "разброс не работает");
 });
 
 test("закончившиеся деньги ждут не меньше получаса", () => {
 	// Повторять каждую минуту бессмысленно: пока счёт не пополнят, не пройдёт.
-	const delay = computeRetryDelaySeconds(1, "insufficient_funds", retrySettings, "seed");
+	const delay = computeRetryDelaySeconds(
+		1,
+		"insufficient_funds",
+		retrySettings,
+		"seed",
+	);
 	assert.ok(delay >= 1800 * 0.8, `пауза слишком мала: ${delay}`);
 });
 
@@ -210,7 +237,7 @@ test("исчерпание попыток превращает повтор в �
 		maxAttempts: 5,
 		errorClass: "network",
 		errorMessage: "нет сети",
-		settings: retrySettings
+		settings: retrySettings,
 	});
 	assert.equal(outcome.kind, "failed");
 });
@@ -221,7 +248,7 @@ test("непреходящая ошибка не расходует попытк
 		maxAttempts: 5,
 		errorClass: "auth",
 		errorMessage: "неверный ключ",
-		settings: retrySettings
+		settings: retrySettings,
 	});
 	assert.equal(outcome.kind, "failed");
 });
@@ -234,7 +261,7 @@ test("ненастроенный канал помечается отдельн�
 		maxAttempts: 5,
 		errorClass: "not_configured",
 		errorMessage: "нет ключей",
-		settings: retrySettings
+		settings: retrySettings,
 	});
 	assert.equal(outcome.kind, "suppressed");
 });
@@ -246,7 +273,7 @@ test("преходящая ошибка при незакончившихся п
 		errorClass: "server",
 		errorMessage: "шлюз недоступен",
 		settings: retrySettings,
-		jitterSeed: "row"
+		jitterSeed: "row",
 	});
 	assert.equal(outcome.kind, "retry");
 	assert.ok(outcome.kind === "retry" && outcome.delaySeconds > 0);

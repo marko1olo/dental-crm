@@ -2,8 +2,8 @@ import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { withTenantCtx } from "../db/rls.js";
 import { communicationEvents, patients } from "../db/schema.js";
-import { wsBroker } from "../services/websocketBroker.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 type VkWebhookBody = {
 	type?: string;
@@ -22,11 +22,14 @@ export async function registerVkRoutes(server: FastifyInstance) {
 	}>("/api/public/:organizationId/vk/webhook", async (request, reply) => {
 		// БЫЛО: вебхук принимал любой POST без проверки — посторонний мог
 		// создавать пациентов и вбрасывать сообщения в чужую клинику.
-		if (!verifyWebhookSecret(request, reply, {
-			channel: "vk",
-			secretEnvNames: ["VK_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
-			extraHeaderNames: ["x-vk-secret"],
-		})) return reply;
+		if (
+			!verifyWebhookSecret(request, reply, {
+				channel: "vk",
+				secretEnvNames: ["VK_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
+				extraHeaderNames: ["x-vk-secret"],
+			})
+		)
+			return reply;
 
 		const { organizationId } = request.params;
 		// Shape-guard: null/string/array must not TypeError on body.type / body.object.
@@ -58,7 +61,8 @@ export async function registerVkRoutes(server: FastifyInstance) {
 				);
 				return reply.code(503).send({
 					error: "VkConfirmationTokenMissing",
-					message: "Приём сообщений из ВКонтакте на этом сервере не настроен: токен подтверждения не задан.",
+					message:
+						"Приём сообщений из ВКонтакте на этом сервере не настроен: токен подтверждения не задан.",
 				});
 			}
 			return confirmationToken;
@@ -92,8 +96,8 @@ export async function registerVkRoutes(server: FastifyInstance) {
 					.where(
 						and(
 							eq(patients.organizationId, organizationId),
-							ilike(patients.notes, `%VK:${vkId}%`)
-						)
+							ilike(patients.notes, `%VK:${vkId}%`),
+						),
 					)
 					.limit(1);
 
@@ -114,14 +118,17 @@ export async function registerVkRoutes(server: FastifyInstance) {
 
 				if (!patient) return;
 
-				const [newEvent] = await tx.insert(communicationEvents).values({
-					organizationId,
-					patientId: patient.id,
-					channel: "vk",
-					direction: "inbound",
-					status: "delivered",
-					message: text,
-				}).returning();
+				const [newEvent] = await tx
+					.insert(communicationEvents)
+					.values({
+						organizationId,
+						patientId: patient.id,
+						channel: "vk",
+						direction: "inbound",
+						status: "delivered",
+						message: text,
+					})
+					.returning();
 
 				if (newEvent) {
 					wsBroker.broadcastToOrganization(organizationId, {
@@ -133,7 +140,7 @@ export async function registerVkRoutes(server: FastifyInstance) {
 							patientName: patient.fullName,
 							text,
 							direction: "inbound",
-							createdAt: newEvent.createdAt.toISOString()
+							createdAt: newEvent.createdAt.toISOString(),
 						},
 					});
 				}

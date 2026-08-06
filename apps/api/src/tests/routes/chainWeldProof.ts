@@ -31,8 +31,8 @@
  */
 
 import { sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
@@ -48,7 +48,9 @@ function money(value: unknown): number {
 	return Math.round(Number(value ?? 0) * 100) / 100;
 }
 
-async function firstRow<T extends Record<string, unknown>>(query: ReturnType<typeof sql>): Promise<T | null> {
+async function firstRow<T extends Record<string, unknown>>(
+	query: ReturnType<typeof sql>,
+): Promise<T | null> {
 	const result = await db.execute(query);
 	return ((result.rows as T[])[0] ?? null) as T | null;
 }
@@ -65,13 +67,21 @@ type MoneySnapshot = {
 	readonly unattributedRevenueRub: number;
 };
 
-async function readMoney(app: FastifyInstance, clinicToken: string, staffToken: string, label: string): Promise<MoneySnapshot> {
+async function readMoney(
+	app: FastifyInstance,
+	clinicToken: string,
+	staffToken: string,
+	label: string,
+): Promise<MoneySnapshot> {
 	const dashboardResponse = await app.inject({
 		method: "GET",
 		url: "/api/dashboard",
 		headers: { "x-dente-clinic-token": clinicToken },
 	});
-	const dashboard = dashboardResponse.statusCode === 200 ? JSON.parse(dashboardResponse.body) : {};
+	const dashboard =
+		dashboardResponse.statusCode === 200
+			? JSON.parse(dashboardResponse.body)
+			: {};
 	const summary = dashboard.billingSummary ?? {};
 
 	const receivablesResponse = await app.inject({
@@ -79,7 +89,10 @@ async function readMoney(app: FastifyInstance, clinicToken: string, staffToken: 
 		url: "/api/reports/receivables",
 		headers: { "x-dente-staff-token": staffToken },
 	});
-	const receivables = receivablesResponse.statusCode === 200 ? JSON.parse(receivablesResponse.body) : {};
+	const receivables =
+		receivablesResponse.statusCode === 200
+			? JSON.parse(receivablesResponse.body)
+			: {};
 
 	/*
 	 * Период отчёта — не шире 400 дней: routes/reports.ts (MAX_PERIOD_DAYS)
@@ -93,8 +106,12 @@ async function readMoney(app: FastifyInstance, clinicToken: string, staffToken: 
 		url: "/api/reports/doctors?from=2026-01-01T00:00:00.000Z&to=2026-12-31T23:59:59.000Z",
 		headers: { "x-dente-staff-token": staffToken },
 	});
-	const doctors = doctorsResponse.statusCode === 200 ? JSON.parse(doctorsResponse.body) : {};
-	const doctorRevenueRub = (doctors.rows ?? []).reduce((total: number, row: any) => total + money(row.revenueRub), 0);
+	const doctors =
+		doctorsResponse.statusCode === 200 ? JSON.parse(doctorsResponse.body) : {};
+	const doctorRevenueRub = (doctors.rows ?? []).reduce(
+		(total: number, row: any) => total + money(row.revenueRub),
+		0,
+	);
 
 	const snapshot: MoneySnapshot = {
 		plannedRub: money(summary.totalPlannedRub),
@@ -133,7 +150,10 @@ async function main(): Promise<void> {
 		     order by o.name
 		     limit 1`,
 	);
-	if (!org) throw new Error("В базе нет клиники с врачом и креслом — цепочку проходить не на чем.");
+	if (!org)
+		throw new Error(
+			"В базе нет клиники с врачом и креслом — цепочку проходить не на чем.",
+		);
 
 	const doctor = await firstRow<{ id: string; full_name: string }>(
 		sql`select id::text as id, full_name from users
@@ -145,20 +165,34 @@ async function main(): Promise<void> {
 		     where organization_id = ${org.id} and is_active
 		     order by name limit 1`,
 	);
-	if (!doctor || !chair) throw new Error("У клиники нет активного врача или кресла.");
+	if (!doctor || !chair)
+		throw new Error("У клиники нет активного врача или кресла.");
 
-	const service = await firstRow<{ id: string; title: string; price_rub: string }>(
+	const service = await firstRow<{
+		id: string;
+		title: string;
+		price_rub: string;
+	}>(
 		sql`select id::text as id, title, price_rub::text as price_rub from service_catalog_items
 		     where organization_id = ${org.id} and is_active
 		     order by price_rub desc limit 1`,
 	);
 
 	console.log(`КЛИНИКА «${org.name}» (${org.id})`);
-	console.log(`врач: ${doctor.full_name} (${doctor.id}); кресло: ${chair.title} (${chair.id})`);
-	console.log(service ? `услуга прайса: ${service.title} (${service.id}), ${service.price_rub} ₽` : "прайс пуст: смета уйдёт со своей ценой");
+	console.log(
+		`врач: ${doctor.full_name} (${doctor.id}); кресло: ${chair.title} (${chair.id})`,
+	);
+	console.log(
+		service
+			? `услуга прайса: ${service.title} (${service.id}), ${service.price_rub} ₽`
+			: "прайс пуст: смета уйдёт со своей ценой",
+	);
 
 	const clinicToken = signToken({ organizationId: org.id }, authTokenSecret());
-	const staffToken = signToken({ organizationId: org.id, userId: doctor.id, role: "owner" }, authTokenSecret());
+	const staffToken = signToken(
+		{ organizationId: org.id, userId: doctor.id, role: "owner" },
+		authTokenSecret(),
+	);
 
 	const app = Fastify();
 	app.addHook("onRequest", async (request) => {
@@ -182,7 +216,9 @@ async function main(): Promise<void> {
 		console.log("\n=== ШАГ 0. ДЕНЬГИ КЛИНИКИ ДО ПРОХОДА ===");
 		const before = await readMoney(app, clinicToken, staffToken, "до");
 
-		console.log("\n=== ШАГ 1. ПАЦИЕНТ (предпосылка, не звено цепочки: пишется напрямую) ===");
+		console.log(
+			"\n=== ШАГ 1. ПАЦИЕНТ (предпосылка, не звено цепочки: пишется напрямую) ===",
+		);
 		const patient = await firstRow<{ id: string }>(
 			sql`insert into patients (organization_id, full_name, status)
 			     values (${org.id}, ${"Проверка цепочки (удалить)"}, 'active')
@@ -198,7 +234,10 @@ async function main(): Promise<void> {
 		const appointmentResponse = await app.inject({
 			method: "POST",
 			url: "/api/appointments",
-			headers: { "x-dente-clinic-token": clinicToken, "content-type": "application/json" },
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"content-type": "application/json",
+			},
 			payload: {
 				patientId,
 				doctorUserId: doctor.id,
@@ -209,7 +248,9 @@ async function main(): Promise<void> {
 				reason: "Проверка сквозного прохода цепочки",
 			},
 		});
-		console.log(`POST /api/appointments -> HTTP ${appointmentResponse.statusCode}`);
+		console.log(
+			`POST /api/appointments -> HTTP ${appointmentResponse.statusCode}`,
+		);
 		if (appointmentResponse.statusCode !== 201) {
 			console.log(`тело: ${appointmentResponse.body.slice(0, 400)}`);
 			throw new Error("Запись не создана — дальше цепочку идти нечем.");
@@ -219,18 +260,26 @@ async function main(): Promise<void> {
 			     where organization_id = ${org.id} and patient_id = ${patientId}
 			     order by starts_at desc limit 1`,
 		);
-		if (!createdAppointment) throw new Error("Запись не найдена в базе после 201.");
+		if (!createdAppointment)
+			throw new Error("Запись не найдена в базе после 201.");
 		appointmentId = createdAppointment.id;
-		console.log(`запись в базе: ${appointmentId} статус=${createdAppointment.status}`);
+		console.log(
+			`запись в базе: ${appointmentId} статус=${createdAppointment.status}`,
+		);
 
-		console.log("\n=== ШАГ 3. ОТКРЫТЬ ПРИЁМ: POST /api/appointments/:id/visit (новое звено) ===");
+		console.log(
+			"\n=== ШАГ 3. ОТКРЫТЬ ПРИЁМ: POST /api/appointments/:id/visit (новое звено) ===",
+		);
 		const openResponse = await app.inject({
 			method: "POST",
 			url: `/api/appointments/${appointmentId}/visit`,
 			headers: { "x-dente-clinic-token": clinicToken },
 		});
-		console.log(`первый вызов -> HTTP ${openResponse.statusCode} ${openResponse.body.slice(0, 300)}`);
-		if (openResponse.statusCode !== 201) throw new Error("Приём не открылся: звено не работает.");
+		console.log(
+			`первый вызов -> HTTP ${openResponse.statusCode} ${openResponse.body.slice(0, 300)}`,
+		);
+		if (openResponse.statusCode !== 201)
+			throw new Error("Приём не открылся: звено не работает.");
 		visitId = JSON.parse(openResponse.body).visit.id as string;
 
 		const openAgainResponse = await app.inject({
@@ -238,24 +287,38 @@ async function main(): Promise<void> {
 			url: `/api/appointments/${appointmentId}/visit`,
 			headers: { "x-dente-clinic-token": clinicToken },
 		});
-		const openAgain = openAgainResponse.statusCode === 200 ? JSON.parse(openAgainResponse.body) : null;
-		console.log(`повторный вызов -> HTTP ${openAgainResponse.statusCode} created=${openAgain?.created} тот же приём=${openAgain?.visit?.id === visitId}`);
+		const openAgain =
+			openAgainResponse.statusCode === 200
+				? JSON.parse(openAgainResponse.body)
+				: null;
+		console.log(
+			`повторный вызов -> HTTP ${openAgainResponse.statusCode} created=${openAgain?.created} тот же приём=${openAgain?.visit?.id === visitId}`,
+		);
 		const visitCount = await firstRow<{ n: number }>(
 			sql`select count(*)::int as n from visits where appointment_id = ${appointmentId}`,
 		);
-		console.log(`визитов по этой записи в базе: ${visitCount?.n} (должен быть ровно 1: второй увёл бы за собой activeVisit и деньги)`);
+		console.log(
+			`визитов по этой записи в базе: ${visitCount?.n} (должен быть ровно 1: второй увёл бы за собой activeVisit и деньги)`,
+		);
 
-		console.log("\n=== ШАГ 4. КАРТА ПРИЁМА: та же пара маршрутов, что отвечала 404/409 ===");
+		console.log(
+			"\n=== ШАГ 4. КАРТА ПРИЁМА: та же пара маршрутов, что отвечала 404/409 ===",
+		);
 		const draftGet = await app.inject({
 			method: "GET",
 			url: `/api/visits/${visitId}/draft/autosave`,
 			headers: { "x-dente-clinic-token": clinicToken },
 		});
-		console.log(`GET  черновик -> HTTP ${draftGet.statusCode} ${draftGet.body.slice(0, 220)}`);
+		console.log(
+			`GET  черновик -> HTTP ${draftGet.statusCode} ${draftGet.body.slice(0, 220)}`,
+		);
 		const draftPut = await app.inject({
 			method: "PUT",
 			url: `/api/visits/${visitId}/draft/autosave`,
-			headers: { "x-dente-clinic-token": clinicToken, "content-type": "application/json" },
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"content-type": "application/json",
+			},
 			payload: {
 				patientId,
 				selectedSpecialty: "therapist",
@@ -270,15 +333,22 @@ async function main(): Promise<void> {
 				},
 			},
 		});
-		console.log(`PUT  автосохранение -> HTTP ${draftPut.statusCode} ${draftPut.body.slice(0, 200)}`);
+		console.log(
+			`PUT  автосохранение -> HTTP ${draftPut.statusCode} ${draftPut.body.slice(0, 200)}`,
+		);
 
-		console.log("\n=== ШАГ 5. ДАШБОРД: какой приём считается открытым (барьер кассы) ===");
+		console.log(
+			"\n=== ШАГ 5. ДАШБОРД: какой приём считается открытым (барьер кассы) ===",
+		);
 		const dashboardAfterOpen = await app.inject({
 			method: "GET",
 			url: "/api/dashboard",
 			headers: { "x-dente-clinic-token": clinicToken },
 		});
-		const dashboard = dashboardAfterOpen.statusCode === 200 ? JSON.parse(dashboardAfterOpen.body) : {};
+		const dashboard =
+			dashboardAfterOpen.statusCode === 200
+				? JSON.parse(dashboardAfterOpen.body)
+				: {};
 		console.log(
 			`activeVisit: id=${dashboard.activeVisit?.id} пациент=${dashboard.activeVisit?.patientId} ` +
 				`статус=${dashboard.activeVisit?.status} запись=${dashboard.activeVisit?.appointmentId}`,
@@ -288,11 +358,16 @@ async function main(): Promise<void> {
 				" — именно это условие проверяет касса (usePatientLogic.ts: paymentPatientContextReady)",
 		);
 
-		console.log("\n=== ШАГ 6. СМЕТА: POST /api/patients/:id/treatment-plans ===");
+		console.log(
+			"\n=== ШАГ 6. СМЕТА: POST /api/patients/:id/treatment-plans ===",
+		);
 		const planResponse = await app.inject({
 			method: "POST",
 			url: `/api/patients/${patientId}/treatment-plans`,
-			headers: { "x-dente-staff-token": staffToken, "content-type": "application/json" },
+			headers: {
+				"x-dente-staff-token": staffToken,
+				"content-type": "application/json",
+			},
 			payload: {
 				name: "Проверка цепочки: смета",
 				items: [
@@ -308,8 +383,11 @@ async function main(): Promise<void> {
 				],
 			},
 		});
-		console.log(`POST смета -> HTTP ${planResponse.statusCode} ${planResponse.body.slice(0, 300)}`);
-		if (planResponse.statusCode === 200) planId = JSON.parse(planResponse.body).planId ?? null;
+		console.log(
+			`POST смета -> HTTP ${planResponse.statusCode} ${planResponse.body.slice(0, 300)}`,
+		);
+		if (planResponse.statusCode === 200)
+			planId = JSON.parse(planResponse.body).planId ?? null;
 		const planTables = await firstRow<Record<string, unknown>>(
 			sql`select
 			      (select count(*)::int from treatment_plans where patient_id = ${patientId}) as treatment_plans,
@@ -361,11 +439,16 @@ async function main(): Promise<void> {
 		}
 		await readMoney(app, clinicToken, staffToken, "после сметы");
 
-		console.log("\n=== ШАГ 7. ОПЛАТА: POST /api/billing/payments с приёмом этого пациента ===");
+		console.log(
+			"\n=== ШАГ 7. ОПЛАТА: POST /api/billing/payments с приёмом этого пациента ===",
+		);
 		const paymentResponse = await app.inject({
 			method: "POST",
 			url: "/api/billing/payments",
-			headers: { "x-dente-clinic-token": clinicToken, "content-type": "application/json" },
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"content-type": "application/json",
+			},
 			payload: {
 				patientId,
 				visitId,
@@ -374,8 +457,13 @@ async function main(): Promise<void> {
 				clientMutationId: `chain-weld-proof-${Date.now()}`,
 			},
 		});
-		console.log(`POST оплата -> HTTP ${paymentResponse.statusCode} ${paymentResponse.body.slice(0, 300)}`);
-		if (paymentResponse.statusCode === 201 || paymentResponse.statusCode === 200) {
+		console.log(
+			`POST оплата -> HTTP ${paymentResponse.statusCode} ${paymentResponse.body.slice(0, 300)}`,
+		);
+		if (
+			paymentResponse.statusCode === 201 ||
+			paymentResponse.statusCode === 200
+		) {
 			paymentId = JSON.parse(paymentResponse.body).id ?? null;
 		}
 		const storedPayment = await firstRow<Record<string, unknown>>(
@@ -417,7 +505,9 @@ async function main(): Promise<void> {
 		if (receivablesBody.statusCode === 200) {
 			const parsedReceivables = JSON.parse(receivablesBody.body);
 			for (const row of parsedReceivables.prepayments ?? []) {
-				console.log(`   переплата: ${row.patientName} — ${money(row.prepaidRub)} ₽`);
+				console.log(
+					`   переплата: ${row.patientName} — ${money(row.prepaidRub)} ₽`,
+				);
 			}
 			console.log(`   примечание отчёта: ${parsedReceivables.note}`);
 		}
@@ -432,17 +522,25 @@ async function main(): Promise<void> {
 			                  from treatment_items where patient_id = ${patientId} and status <> 'cancelled'), 0)::numeric(12,2) as planned_rub,
 			      coalesce((select sum(amount_rub) from payments where patient_id = ${patientId} and status = 'paid'), 0)::numeric(12,2) as paid_rub`,
 		);
-		console.log(`по этому пациенту SQL: ${JSON.stringify(patientDebt)} — долг отрицательный, отчёт дебиторки такие строки отбрасывает`);
+		console.log(
+			`по этому пациенту SQL: ${JSON.stringify(patientDebt)} — долг отрицательный, отчёт дебиторки такие строки отбрасывает`,
+		);
 
-		console.log("\n=== ШАГ 9. ЗАКРЫТЬ ПРИЁМ: POST /api/visits/:id/draft/accept ===");
+		console.log(
+			"\n=== ШАГ 9. ЗАКРЫТЬ ПРИЁМ: POST /api/visits/:id/draft/accept ===",
+		);
 		const acceptResponse = await app.inject({
 			method: "POST",
 			url: `/api/visits/${visitId}/draft/accept`,
-			headers: { "x-dente-clinic-token": clinicToken, "content-type": "application/json" },
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"content-type": "application/json",
+			},
 			payload: {
 				patientId,
 				selectedSpecialty: "therapist",
-				transcript: "Проверка сквозного прохода: врач подписывает карту приёма.",
+				transcript:
+					"Проверка сквозного прохода: врач подписывает карту приёма.",
 				draft: {
 					warnings: [],
 					complaint: "Боль при накусывании на 36 зуб",
@@ -454,7 +552,9 @@ async function main(): Promise<void> {
 				doctorSummary: "Лечение кариеса 36 выполнено",
 			},
 		});
-		console.log(`POST подписание -> HTTP ${acceptResponse.statusCode} ${acceptResponse.body.slice(0, 200)}`);
+		console.log(
+			`POST подписание -> HTTP ${acceptResponse.statusCode} ${acceptResponse.body.slice(0, 200)}`,
+		);
 		const closedVisit = await firstRow<{ status: string }>(
 			sql`select status::text as status from visits where id = ${visitId}`,
 		);
@@ -478,28 +578,43 @@ async function main(): Promise<void> {
 						"значит их кто-то связал с visit_id: проверить, кто это делает, и сходится ли срок долга по ним.",
 		);
 	} finally {
-		console.log("\n=== ШАГ 10. УБОРКА: удаляю только свои строки по точным id ===");
+		console.log(
+			"\n=== ШАГ 10. УБОРКА: удаляю только свои строки по точным id ===",
+		);
 		console.log(
 			`id прогона: пациент=${patientId} запись=${appointmentId} приём=${visitId} оплата=${paymentId} план=${planId}`,
 		);
 		if (planId) {
-			await db.execute(sql`delete from treatment_plan_items_new where plan_id = ${planId}`);
+			await db.execute(
+				sql`delete from treatment_plan_items_new where plan_id = ${planId}`,
+			);
 			await db.execute(sql`delete from treatment_plans where id = ${planId}`);
 		}
 		if (patientId) {
-			await db.execute(sql`delete from treatment_items where patient_id = ${patientId}`);
-			await db.execute(sql`delete from payments where patient_id = ${patientId}`);
+			await db.execute(
+				sql`delete from treatment_items where patient_id = ${patientId}`,
+			);
+			await db.execute(
+				sql`delete from payments where patient_id = ${patientId}`,
+			);
 		}
-		if (visitId) await db.execute(sql`delete from visits where id = ${visitId}`);
-		if (appointmentId) await db.execute(sql`delete from appointments where id = ${appointmentId}`);
-		if (patientId) await db.execute(sql`delete from patients where id = ${patientId}`);
+		if (visitId)
+			await db.execute(sql`delete from visits where id = ${visitId}`);
+		if (appointmentId)
+			await db.execute(
+				sql`delete from appointments where id = ${appointmentId}`,
+			);
+		if (patientId)
+			await db.execute(sql`delete from patients where id = ${patientId}`);
 		const leftovers = await firstRow<Record<string, unknown>>(
 			sql`select
 			      (select count(*)::int from patients where full_name = ${"Проверка цепочки (удалить)"}) as patients,
 			      (select count(*)::int from visits where id = ${visitId ?? "00000000-0000-0000-0000-000000000000"}) as visits,
 			      (select count(*)::int from appointments where id = ${appointmentId ?? "00000000-0000-0000-0000-000000000000"}) as appointments`,
 		);
-		console.log(`остатки после уборки (должны быть нули): ${JSON.stringify(leftovers)}`);
+		console.log(
+			`остатки после уборки (должны быть нули): ${JSON.stringify(leftovers)}`,
+		);
 
 		// Читаем деньги тем же приложением: если уборка что-то забыла, итоги не
 		// вернутся к исходным, и это будет видно в протоколе.

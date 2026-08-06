@@ -31,8 +31,14 @@ describe("разбор диктовки: что реально уходит в �
 	});
 
 	it("пустой разбор и мусор вместо разбора не считаются переносом", () => {
-		assert.deepEqual(dictationToothUpdates({ toothUpdates: [], emkUpdates: {} }), []);
-		assert.deepEqual(dictationEmkEntries({ toothUpdates: [], emkUpdates: {} }), []);
+		assert.deepEqual(
+			dictationToothUpdates({ toothUpdates: [], emkUpdates: {} }),
+			[],
+		);
+		assert.deepEqual(
+			dictationEmkEntries({ toothUpdates: [], emkUpdates: {} }),
+			[],
+		);
 		assert.deepEqual(dictationToothUpdates(null), []);
 		assert.deepEqual(dictationEmkEntries(null), []);
 		assert.deepEqual(dictationToothUpdates({ toothUpdates: "26" }), []);

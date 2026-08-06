@@ -108,7 +108,11 @@ describe("Admin/setup auth — body guard (AUTH-first 403, Zod 400, не 500)", 
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: String(response.body || "") };
+		return {
+			statusCode: response.statusCode,
+			json,
+			body: String(response.body || ""),
+		};
 	}
 
 	// ── set-password: anon always 403 (no policy oracle) ──────────────────────
@@ -128,7 +132,11 @@ describe("Admin/setup auth — body guard (AUTH-first 403, Zod 400, не 500)", 
 
 	test("set-password anon: {} → 403 exact RU (не 400 oracle)", async () => {
 		const refused = await post(SET_PASSWORD_URL, { body: {} });
-		assert.equal(refused.statusCode, 403, `{} дал HTTP ${refused.statusCode}: ${refused.body}`);
+		assert.equal(
+			refused.statusCode,
+			403,
+			`{} дал HTTP ${refused.statusCode}: ${refused.body}`,
+		);
 		assert.notEqual(refused.statusCode, 400);
 		assert.equal(refused.json.error, "Forbidden");
 		assert.equal(refused.json.message, SET_PASSWORD_FORBIDDEN);

@@ -125,9 +125,12 @@ export function requestFailureCause(status: number | null): string {
 	if (status === 404) {
 		return "сервер не знает такого раздела — скорее всего программа клиники обновлена не полностью, сообщите администратору";
 	}
-	if (status === 409) return "данные успел изменить кто-то другой — обновите страницу, чтобы увидеть свежие";
-	if (status === 413) return "запрос оказался слишком большим для сервера — уменьшите объём и повторите";
-	if (status === 429) return "запросов подряд было слишком много — подождите полминуты и повторите";
+	if (status === 409)
+		return "данные успел изменить кто-то другой — обновите страницу, чтобы увидеть свежие";
+	if (status === 413)
+		return "запрос оказался слишком большим для сервера — уменьшите объём и повторите";
+	if (status === 429)
+		return "запросов подряд было слишком много — подождите полминуты и повторите";
 	// БЫЛО: «сервер не принял запрос — обновите страницу и повторите». Обновление
 	// страницы соберёт ровно тот же запрос и получит ровно тот же отказ: 400 и 422
 	// означают, что запрос не подходит серверу, а не что серверу сейчас плохо.
@@ -174,7 +177,10 @@ export function panelFailureCause(status: number | null): string {
  * Три состояния дают три разных заголовка, и ни один из них не содержит ни
  * английского текста исключения, ни кода ответа.
  */
-export function panelStateText(subject: PanelSubject, state: PanelState): PanelText {
+export function panelStateText(
+	subject: PanelSubject,
+	state: PanelState,
+): PanelText {
 	if (state.phase === "loading") {
 		return {
 			phase: "loading",
@@ -184,7 +190,12 @@ export function panelStateText(subject: PanelSubject, state: PanelState): PanelT
 		};
 	}
 	if (state.phase === "empty") {
-		return { phase: "empty", title: subject.emptyTitle, hint: subject.emptyHint, retryLabel: null };
+		return {
+			phase: "empty",
+			title: subject.emptyTitle,
+			hint: subject.emptyHint,
+			retryLabel: null,
+		};
 	}
 	return {
 		phase: "failed",
@@ -202,7 +213,10 @@ export function panelStateText(subject: PanelSubject, state: PanelState): PanelT
  * «Задача не создана», «Рекламация не удалена». Прежние «Ошибка сети» и
  * «Ошибка при удалении» не говорили ни что не сохранилось, ни что делать.
  */
-export function actionFailureToast(action: string, status: number | null): string {
+export function actionFailureToast(
+	action: string,
+	status: number | null,
+): string {
 	return `${action}: ${requestFailureCause(status)}.`;
 }
 
@@ -242,15 +256,22 @@ export function unconfirmedActionToast(action: string): string {
  * сработать ни при каком обновлении. Пока разбора цен на сервере нет, кнопки
  * тоже нет — иначе экран отправляет человека по кругу.
  */
-export const SERVER_PARSED_DICTATION_CONTEXTS = ["schedule", "patient", "visit"] as const;
+export const SERVER_PARSED_DICTATION_CONTEXTS = [
+	"schedule",
+	"patient",
+	"visit",
+] as const;
 
-export type ServerParsedDictationContext = (typeof SERVER_PARSED_DICTATION_CONTEXTS)[number];
+export type ServerParsedDictationContext =
+	(typeof SERVER_PARSED_DICTATION_CONTEXTS)[number];
 
 /** Все контексты окна распознавания. «prices» разбирается только на клиенте. */
 export type DictationContext = ServerParsedDictationContext | "prices";
 
 export function serverParsesDictation(context: DictationContext): boolean {
-	return (SERVER_PARSED_DICTATION_CONTEXTS as readonly string[]).includes(context);
+	return (SERVER_PARSED_DICTATION_CONTEXTS as readonly string[]).includes(
+		context,
+	);
 }
 
 /**
@@ -276,16 +297,20 @@ export function resolveDictationPhase(input: {
  * `isAiTask` пустотой НЕ считается: это распознанное «фраза сложная», у него
  * свой текст и свой следующий шаг.
  */
-export function isDictationResultEmpty(context: DictationContext, data: unknown): boolean {
+export function isDictationResultEmpty(
+	context: DictationContext,
+	data: unknown,
+): boolean {
 	if (!data || typeof data !== "object") return true;
 	const row = data as Record<string, unknown>;
 	if (row.isAiTask === true) return false;
 	if (context === "prices") return !row.serviceName;
 	if (context === "visit") {
 		const teeth = Array.isArray(row.toothUpdates) ? row.toothUpdates.length : 0;
-		const notes = row.emkUpdates && typeof row.emkUpdates === "object"
-			? Object.keys(row.emkUpdates as Record<string, unknown>).length
-			: 0;
+		const notes =
+			row.emkUpdates && typeof row.emkUpdates === "object"
+				? Object.keys(row.emkUpdates as Record<string, unknown>).length
+				: 0;
 		return teeth === 0 && notes === 0;
 	}
 	return Object.keys(row).length === 0;

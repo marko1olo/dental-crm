@@ -28,11 +28,11 @@ import { pipeline } from "node:stream/promises";
 
 /** Корень хранилища. Настраивается, потому что в контейнере /tmp может быть мал. */
 function uploadRoot(): string {
-  const configured = process.env.DENTAL_MIGRATION_UPLOAD_DIR?.trim();
-  if (configured) return configured;
-  // По умолчанию — рядом с данными приложения, а не в системном /tmp: файл
-  // должен переживать перезапуск процесса, иначе возобновление невозможно.
-  return path.join(process.cwd(), ".data", "migration-uploads");
+	const configured = process.env.DENTAL_MIGRATION_UPLOAD_DIR?.trim();
+	if (configured) return configured;
+	// По умолчанию — рядом с данными приложения, а не в системном /tmp: файл
+	// должен переживать перезапуск процесса, иначе возобновление невозможно.
+	return path.join(process.cwd(), ".data", "migration-uploads");
 }
 
 /**
@@ -44,13 +44,13 @@ function uploadRoot(): string {
 export const MAX_UPLOAD_BYTES = 512 * 1024 * 1024;
 
 export interface StoredUpload {
-  /** Абсолютный путь к файлу на диске. */
-  filePath: string;
-  /** Имя файла, как его назвал оператор, приведённое к безопасному виду. */
-  fileName: string;
-  byteSize: number;
-  /** sha256 содержимого — узнаёт повторно залитый файл. */
-  fingerprint: string;
+	/** Абсолютный путь к файлу на диске. */
+	filePath: string;
+	/** Имя файла, как его назвал оператор, приведённое к безопасному виду. */
+	fileName: string;
+	byteSize: number;
+	/** sha256 содержимого — узнаёт повторно залитый файл. */
+	fingerprint: string;
 }
 
 /**
@@ -61,24 +61,24 @@ export interface StoredUpload {
  * доверять ему нельзя.
  */
 export function safeUploadFileName(rawName: string | undefined): string {
-  const base = (rawName ?? "").split(/[\\/]/).pop()?.trim() ?? "";
-  const cleaned = base
-    .replace(/[\u0000-\u001F]/g, "")
-    .replace(/[<>:"|?*]/g, "_")
-    .slice(0, 180);
-  return cleaned || "upload.bin";
+	const base = (rawName ?? "").split(/[\\/]/).pop()?.trim() ?? "";
+	const cleaned = base
+		.replace(/[\u0000-\u001F]/g, "")
+		.replace(/[<>:"|?*]/g, "_")
+		.slice(0, 180);
+	return cleaned || "upload.bin";
 }
 
 export class UploadTooLargeError extends Error {
-  readonly limitBytes: number;
+	readonly limitBytes: number;
 
-  constructor(limitBytes: number) {
-    super(
-      `Файл превышает предел ${Math.floor(limitBytes / (1024 * 1024))} МБ. Разделите выгрузку на части либо перенесите снимки отдельным путём.`
-    );
-    this.name = "UploadTooLargeError";
-    this.limitBytes = limitBytes;
-  }
+	constructor(limitBytes: number) {
+		super(
+			`Файл превышает предел ${Math.floor(limitBytes / (1024 * 1024))} МБ. Разделите выгрузку на части либо перенесите снимки отдельным путём.`,
+		);
+		this.name = "UploadTooLargeError";
+		this.limitBytes = limitBytes;
+	}
 }
 
 /**
@@ -89,111 +89,131 @@ export class UploadTooLargeError extends Error {
  * до конца записи.
  */
 export async function storeUploadStream(
-  source: Readable,
-  rawFileName: string | undefined,
-  maxBytes = MAX_UPLOAD_BYTES
+	source: Readable,
+	rawFileName: string | undefined,
+	maxBytes = MAX_UPLOAD_BYTES,
 ): Promise<StoredUpload> {
-  const root = uploadRoot();
-  await mkdir(root, { recursive: true });
+	const root = uploadRoot();
+	await mkdir(root, { recursive: true });
 
-  const fileName = safeUploadFileName(rawFileName);
-  // Уникальный префикс: два оператора могут одновременно залить «patients.dbf».
-  const filePath = path.join(root, `${randomUUID()}__${fileName}`);
+	const fileName = safeUploadFileName(rawFileName);
+	// Уникальный префикс: два оператора могут одновременно залить «patients.dbf».
+	const filePath = path.join(root, `${randomUUID()}__${fileName}`);
 
-  const hash = createHash("sha256");
-  let byteSize = 0;
-  let aborted: Error | null = null;
+	const hash = createHash("sha256");
+	let byteSize = 0;
+	let aborted: Error | null = null;
 
-  const target = createWriteStream(filePath);
+	const target = createWriteStream(filePath);
 
-  try {
-    await pipeline(source, async function* (chunks: AsyncIterable<Buffer | string>) {
-      for await (const chunk of chunks) {
-        const buffer = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
-        byteSize += buffer.byteLength;
-        if (byteSize > maxBytes) {
-          aborted = new UploadTooLargeError(maxBytes);
-          // Прерываем конвейер: остаток тела запроса на диск не попадёт.
-          throw aborted;
-        }
-        hash.update(buffer);
-        yield buffer;
-      }
-    }, target);
-  } catch (error) {
-    // Недописанный файл удаляем: мусор в хранилище никому не нужен.
-    await rm(filePath, { force: true }).catch(() => undefined);
-    throw aborted ?? error;
-  }
+	try {
+		await pipeline(
+			source,
+			async function* (chunks: AsyncIterable<Buffer | string>) {
+				for await (const chunk of chunks) {
+					const buffer = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+					byteSize += buffer.byteLength;
+					if (byteSize > maxBytes) {
+						aborted = new UploadTooLargeError(maxBytes);
+						// Прерываем конвейер: остаток тела запроса на диск не попадёт.
+						throw aborted;
+					}
+					hash.update(buffer);
+					yield buffer;
+				}
+			},
+			target,
+		);
+	} catch (error) {
+		// Недописанный файл удаляем: мусор в хранилище никому не нужен.
+		await rm(filePath, { force: true }).catch(() => undefined);
+		throw aborted ?? error;
+	}
 
-  if (byteSize === 0) {
-    await rm(filePath, { force: true }).catch(() => undefined);
-    throw new Error("Файл пуст: в теле запроса не пришло ни одного байта.");
-  }
+	if (byteSize === 0) {
+		await rm(filePath, { force: true }).catch(() => undefined);
+		throw new Error("Файл пуст: в теле запроса не пришло ни одного байта.");
+	}
 
-  return { filePath, fileName, byteSize, fingerprint: hash.digest("hex") };
+	return { filePath, fileName, byteSize, fingerprint: hash.digest("hex") };
 }
 
 /**
  * Кладёт уже собранный в памяти буфер. Нужно для источников, приходящих не
  * файлом: вставка из буфера обмена, текст выгрузки, вызовы из тестов.
  */
-export async function storeUploadBuffer(content: Buffer, rawFileName: string | undefined): Promise<StoredUpload> {
-  const root = uploadRoot();
-  await mkdir(root, { recursive: true });
-  const fileName = safeUploadFileName(rawFileName);
-  const filePath = path.join(root, `${randomUUID()}__${fileName}`);
-  await pipeline(Readable.from(content), createWriteStream(filePath));
-  return {
-    filePath,
-    fileName,
-    byteSize: content.byteLength,
-    fingerprint: createHash("sha256").update(content).digest("hex")
-  };
+export async function storeUploadBuffer(
+	content: Buffer,
+	rawFileName: string | undefined,
+): Promise<StoredUpload> {
+	const root = uploadRoot();
+	await mkdir(root, { recursive: true });
+	const fileName = safeUploadFileName(rawFileName);
+	const filePath = path.join(root, `${randomUUID()}__${fileName}`);
+	await pipeline(Readable.from(content), createWriteStream(filePath));
+	return {
+		filePath,
+		fileName,
+		byteSize: content.byteLength,
+		fingerprint: createHash("sha256").update(content).digest("hex"),
+	};
 }
 
 /** Проверяет, что файл прогона всё ещё на месте. */
-export async function uploadExists(filePath: string | null | undefined): Promise<boolean> {
-  if (!filePath) return false;
-  try {
-    const info = await stat(filePath);
-    return info.isFile();
-  } catch {
-    return false;
-  }
+export async function uploadExists(
+	filePath: string | null | undefined,
+): Promise<boolean> {
+	if (!filePath) return false;
+	try {
+		const info = await stat(filePath);
+		return info.isFile();
+	} catch {
+		return false;
+	}
 }
 
 export async function uploadSize(filePath: string): Promise<number> {
-  const info = await stat(filePath);
-  return info.size;
+	const info = await stat(filePath);
+	return info.size;
 }
 
 /** Читает файл целиком. Только для форматов, которые иначе не разобрать. */
 export async function readUploadFully(filePath: string): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  await pipeline(createReadStream(filePath), async function (source: AsyncIterable<Buffer>) {
-    for await (const chunk of source) chunks.push(chunk);
-  });
-  return Buffer.concat(chunks);
+	const chunks: Buffer[] = [];
+	await pipeline(
+		createReadStream(filePath),
+		async (source: AsyncIterable<Buffer>) => {
+			for await (const chunk of source) chunks.push(chunk);
+		},
+	);
+	return Buffer.concat(chunks);
 }
 
 /** Читает первые N байт — для определения формата и выборки на портрет колонок. */
-export async function readUploadHead(filePath: string, bytes: number): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  let collected = 0;
-  const stream = createReadStream(filePath, { start: 0, end: Math.max(0, bytes - 1) });
-  for await (const chunk of stream) {
-    const buffer = chunk as Buffer;
-    chunks.push(buffer);
-    collected += buffer.byteLength;
-    if (collected >= bytes) break;
-  }
-  return Buffer.concat(chunks).subarray(0, bytes);
+export async function readUploadHead(
+	filePath: string,
+	bytes: number,
+): Promise<Buffer> {
+	const chunks: Buffer[] = [];
+	let collected = 0;
+	const stream = createReadStream(filePath, {
+		start: 0,
+		end: Math.max(0, bytes - 1),
+	});
+	for await (const chunk of stream) {
+		const buffer = chunk as Buffer;
+		chunks.push(buffer);
+		collected += buffer.byteLength;
+		if (collected >= bytes) break;
+	}
+	return Buffer.concat(chunks).subarray(0, bytes);
 }
 
-export async function deleteUpload(filePath: string | null | undefined): Promise<void> {
-  if (!filePath) return;
-  await rm(filePath, { force: true }).catch(() => undefined);
+export async function deleteUpload(
+	filePath: string | null | undefined,
+): Promise<void> {
+	if (!filePath) return;
+	await rm(filePath, { force: true }).catch(() => undefined);
 }
 
 /**
@@ -207,32 +227,34 @@ export async function deleteUpload(filePath: string | null | undefined): Promise
  * исходные строки сохранены в стейджинге, а он под теми же правами, что
  * медицинские данные.
  */
-export async function cleanupExpiredUploads(maxAgeMs = 24 * 60 * 60 * 1000): Promise<number> {
-  const root = uploadRoot();
-  let removed = 0;
-  let entries: string[];
-  try {
-    entries = await readdir(root);
-  } catch {
-    // Каталога нет — значит и убирать нечего.
-    return 0;
-  }
+export async function cleanupExpiredUploads(
+	maxAgeMs = 24 * 60 * 60 * 1000,
+): Promise<number> {
+	const root = uploadRoot();
+	let removed = 0;
+	let entries: string[];
+	try {
+		entries = await readdir(root);
+	} catch {
+		// Каталога нет — значит и убирать нечего.
+		return 0;
+	}
 
-  const cutoff = Date.now() - maxAgeMs;
-  for (const entry of entries) {
-    const filePath = path.join(root, entry);
-    try {
-      const info = await stat(filePath);
-      if (!info.isFile()) continue;
-      if (info.mtimeMs < cutoff) {
-        await rm(filePath, { force: true });
-        removed += 1;
-      }
-    } catch {
-      // Файл исчез между readdir и stat — это не ошибка.
-    }
-  }
-  return removed;
+	const cutoff = Date.now() - maxAgeMs;
+	for (const entry of entries) {
+		const filePath = path.join(root, entry);
+		try {
+			const info = await stat(filePath);
+			if (!info.isFile()) continue;
+			if (info.mtimeMs < cutoff) {
+				await rm(filePath, { force: true });
+				removed += 1;
+			}
+		} catch {
+			// Файл исчез между readdir и stat — это не ошибка.
+		}
+	}
+	return removed;
 }
 
 export { uploadRoot };

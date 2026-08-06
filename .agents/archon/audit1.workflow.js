@@ -1,10 +1,14 @@
 export const meta = {
-  name: 'archon-audit-1',
-  description: 'Adversarial read-only audit of four fixes that landed in main with ZERO review while the orchestrator process was down',
-  phases: [
-    { title: 'Audit', detail: 'one adversarial auditor per unreviewed commit, read-only' },
-  ],
-}
+	name: "archon-audit-1",
+	description:
+		"Adversarial read-only audit of four fixes that landed in main with ZERO review while the orchestrator process was down",
+	phases: [
+		{
+			title: "Audit",
+			detail: "one adversarial auditor per unreviewed commit, read-only",
+		},
+	],
+};
 
 const AUDIT_LAW = `
 You are an ADVERSARIAL AUDITOR on the DENTE dental CRM under lead [ARCHON].
@@ -101,17 +105,19 @@ hex colours or px (hairlines excepted); **never a fabricated 0 or default substi
   'currentView === "x"' chain in 'App.tsx'. A component not reachable through that chain is not mounted.
 - God context 'useAppLogic.tsx' is ~14k lines with a ~950-field return object; fields are additive only.
 - Gates were green before this wave, measured by the lead: typecheck api 0 errors, typecheck web 0 errors.
-`
+`;
 
 const COMMITS = [
-  {
-    id: 'AU1-delivery-console',
-    hash: '35ced8f1b',
-    label: 'AU1 a failed send looked like a successful send',
-    dir: '.agents/archon/audit/AU1-delivery-console',
-    subject: 'fix(связь): отказ отправки выглядел на экране как успешная отправка',
-    files: 'apps/web/src/components/communications/MessageDeliveryConsole.tsx (+107/-19)',
-    focus: `
+	{
+		id: "AU1-delivery-console",
+		hash: "35ced8f1b",
+		label: "AU1 a failed send looked like a successful send",
+		dir: ".agents/archon/audit/AU1-delivery-console",
+		subject:
+			"fix(связь): отказ отправки выглядел на экране как успешная отправка",
+		files:
+			"apps/web/src/components/communications/MessageDeliveryConsole.tsx (+107/-19)",
+		focus: `
 **THIS IS THE MOST DANGEROUS DEFECT CLASS IN THE PRODUCT, so audit it hardest.** A clinic that believes it
 reminded a patient, when it did not, loses the appointment and blames the patient. Judge whether the fix
 makes the FAILURE unmistakable, not merely whether it stops saying «отправлено».
@@ -134,15 +140,17 @@ Specific hypotheses to test by execution or by reading the real lines:
 6. Is the component MOUNTED and reachable through the hash-view chain? A fix to an unmounted console is a
    fix to nothing.
 `,
-  },
-  {
-    id: 'AU2-marketing-storage',
-    hash: 'eed3a4e20',
-    label: 'AU2 an invented search result and a whole section crashing on browser storage',
-    dir: '.agents/archon/audit/AU2-marketing-storage',
-    subject: 'fix(маркетинг): убрал выдуманную позицию в поиске и падение раздела из-за хранилища браузера',
-    files: 'apps/web/src/MarketingView.tsx (+112/-12)',
-    focus: `
+	},
+	{
+		id: "AU2-marketing-storage",
+		hash: "eed3a4e20",
+		label:
+			"AU2 an invented search result and a whole section crashing on browser storage",
+		dir: ".agents/archon/audit/AU2-marketing-storage",
+		subject:
+			"fix(маркетинг): убрал выдуманную позицию в поиске и падение раздела из-за хранилища браузера",
+		files: "apps/web/src/MarketingView.tsx (+112/-12)",
+		focus: `
 The commit claims two unrelated fixes in one file. Audit them separately and say so if one is unproven.
 
 1. **THE INVENTED SEARCH POSITION (§1/§13).** Establish what the code did BEFORE: was a search-ranking
@@ -162,15 +170,17 @@ The commit claims two unrelated fixes in one file. Audit them separately and say
    already relayed one overstated commit subject as fact.
 5. Any hardcoded hex, px, English string, magic constant or fabricated default introduced in the diff?
 `,
-  },
-  {
-    id: 'AU3-cash-drawer-refund',
-    hash: '554919f62',
-    label: 'AU3 a refund reduced the cash drawer by its own amount twice',
-    dir: '.agents/archon/audit/AU3-cash-drawer-refund',
-    subject: 'fix(касса): возврат больше не занижает наличные в ящике на свою сумму',
-    files: 'apps/web/src/components/finance/cashDaySummary.ts (+/-), cashDaySummary.test.ts (+20), components/finance/CashDayTally.tsx (10 lines)',
-    focus: `
+	},
+	{
+		id: "AU3-cash-drawer-refund",
+		hash: "554919f62",
+		label: "AU3 a refund reduced the cash drawer by its own amount twice",
+		dir: ".agents/archon/audit/AU3-cash-drawer-refund",
+		subject:
+			"fix(касса): возврат больше не занижает наличные в ящике на свою сумму",
+		files:
+			"apps/web/src/components/finance/cashDaySummary.ts (+/-), cashDaySummary.test.ts (+20), components/finance/CashDayTally.tsx (10 lines)",
+		focus: `
 **THIS IS CASH, SO §8b IS ABSOLUTE: exact to the kopeck, no epsilon, no float accumulation.** A dentist
 counts physical banknotes against this number at the end of the day. If it is wrong the clinic either
 suspects theft or misses it.
@@ -197,15 +207,16 @@ suspects theft or misses it.
    ceremony and §8 forbids ceremony.
 6. Is 'CashDayTally' mounted and reachable through the hash-view chain?
 `,
-  },
-  {
-    id: 'AU4-imaging-conclusion',
-    hash: 'ec4050199',
-    label: 'AU4 failing to write a radiology conclusion into the record was silent',
-    dir: '.agents/archon/audit/AU4-imaging-conclusion',
-    subject: 'fix(снимки): отказ записи заключения в карту больше не молчит',
-    files: 'apps/web/src/components/imaging/VisiographAnalyzer.tsx (+101/-15)',
-    focus: `
+	},
+	{
+		id: "AU4-imaging-conclusion",
+		hash: "ec4050199",
+		label:
+			"AU4 failing to write a radiology conclusion into the record was silent",
+		dir: ".agents/archon/audit/AU4-imaging-conclusion",
+		subject: "fix(снимки): отказ записи заключения в карту больше не молчит",
+		files: "apps/web/src/components/imaging/VisiographAnalyzer.tsx (+101/-15)",
+		focus: `
 **A radiology conclusion is part of the medical record.** Silently failing to save it means the clinic
 believes a finding is documented when it is not — a clinical and legal exposure, not a UX annoyance.
 
@@ -228,81 +239,145 @@ believes a finding is documented when it is not — a clinical and legal exposur
    'basePriceRub', which silently produced «0 ₽».
 6. Is 'VisiographAnalyzer' mounted and reachable? Verify the chain link by link.
 `,
-  },
-]
+	},
+];
 
 const AUDIT_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['commit', 'verdict', 'defectWasReal', 'attackSurface', 'reachability', 'testsAssert', 'constitutionBreaches', 'proofAudit', 'requiredRework', 'foundNotFixed', 'reasoning'],
-  properties: {
-    commit: { type: 'string' },
-    verdict: { enum: ['SOUND', 'SOUND_WITH_NITS', 'NEEDS_REWORK', 'REVERT'] },
-    defectWasReal: { type: 'string', description: 'Did the defect reproduce at the commit\'s own PARENT? Quote your own reproduction, not the commit message.' },
-    attackSurface: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['hypothesis', 'result', 'evidence'],
-        properties: {
-          hypothesis: { type: 'string' },
-          result: { enum: ['CONFIRMED', 'DISPROVED', 'UNTESTABLE'] },
-          evidence: { type: 'string' },
-        },
-      },
-    },
-    reachability: { type: 'string', description: 'EVERY link from a routed view to the changed line, or a statement that it is unmounted.' },
-    testsAssert: { type: 'string', description: 'Would the new tests FAIL if the fix were reverted? Name the assertion that breaks, or say there are no tests.' },
-    constitutionBreaches: { type: 'array', items: { type: 'string' }, description: 'Per breach: the section, the file:line, and the user-visible consequence.' },
-    proofAudit: { type: 'string', description: 'Every command you actually ran, with its TRUE exit code.' },
-    requiredRework: { type: 'array', items: { type: 'string' }, description: 'Numbered, specific, actionable.' },
-    foundNotFixed: { type: 'array', items: { type: 'string' }, description: 'Real defects you found nearby that this commit did not address.' },
-    reasoning: { type: 'string' },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"commit",
+		"verdict",
+		"defectWasReal",
+		"attackSurface",
+		"reachability",
+		"testsAssert",
+		"constitutionBreaches",
+		"proofAudit",
+		"requiredRework",
+		"foundNotFixed",
+		"reasoning",
+	],
+	properties: {
+		commit: { type: "string" },
+		verdict: { enum: ["SOUND", "SOUND_WITH_NITS", "NEEDS_REWORK", "REVERT"] },
+		defectWasReal: {
+			type: "string",
+			description:
+				"Did the defect reproduce at the commit's own PARENT? Quote your own reproduction, not the commit message.",
+		},
+		attackSurface: {
+			type: "array",
+			items: {
+				type: "object",
+				additionalProperties: false,
+				required: ["hypothesis", "result", "evidence"],
+				properties: {
+					hypothesis: { type: "string" },
+					result: { enum: ["CONFIRMED", "DISPROVED", "UNTESTABLE"] },
+					evidence: { type: "string" },
+				},
+			},
+		},
+		reachability: {
+			type: "string",
+			description:
+				"EVERY link from a routed view to the changed line, or a statement that it is unmounted.",
+		},
+		testsAssert: {
+			type: "string",
+			description:
+				"Would the new tests FAIL if the fix were reverted? Name the assertion that breaks, or say there are no tests.",
+		},
+		constitutionBreaches: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Per breach: the section, the file:line, and the user-visible consequence.",
+		},
+		proofAudit: {
+			type: "string",
+			description: "Every command you actually ran, with its TRUE exit code.",
+		},
+		requiredRework: {
+			type: "array",
+			items: { type: "string" },
+			description: "Numbered, specific, actionable.",
+		},
+		foundNotFixed: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Real defects you found nearby that this commit did not address.",
+		},
+		reasoning: { type: "string" },
+	},
+};
 
 function auditStage(c) {
-  return agent(
-    AUDIT_LAW +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'YOUR ASSIGNMENT: audit commit ' + c.hash + ' — ' + c.id + '\n' +
-    'ITS SUBJECT LINE, WHICH IS A CLAIM AND NOT A FACT: ' + c.subject + '\n' +
-    'FILES IT TOUCHED: ' + c.files + '\n' +
-    'YOUR ROLE: adversarial auditor, read-only on all source.\n' +
-    'WHY THIS IS DELEGATED: four fixes reached main with no review at all, each needs a whole context to\n' +
-    'audit properly, and the lead cannot be the only reader of code the lead did not write.\n' +
-    'YOUR REVIEW FILE, THE ONLY FILE YOU MAY WRITE (create it FIRST): ' + c.dir + '/review.md\n' +
-    'Append findings AS YOU CONFIRM THEM. Auditors die on credits here; an unwritten finding is lost.\n' +
-    'EVIDENCE STANDARD: every claim carries the command that produced it and its TRUE exit code. Your\n' +
-    'output is EVIDENCE for the lead, never authority — the lead re-runs what matters.\n' +
-    '═══════════════════════════════════════════════════════════════\n' +
-    'WHAT TO ATTACK IN THIS PARTICULAR COMMIT:' + c.focus +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'ORDER OF WORK, MANDATORY:\n' +
-    ' 1. Create ' + c.dir + ' and write review.md == «в работе». NOW, before reading anything.\n' +
-    ' 2. git show ' + c.hash + ' --stat, then the FULL diff, then read the changed files at HEAD in full.\n' +
-    '    HEAD has moved since the commit — read HEAD, not the diff alone.\n' +
-    ' 3. **Reproduce the defect at the PARENT with your own instrument.** Not the commit message.\n' +
-    '    git show ' + c.hash + '^:<path> gives you the parent file.\n' +
-    ' 4. Work through the hypotheses above, one at a time, writing each result to review.md as you get it.\n' +
-    ' 5. Verify reachability link by link, from a routed view down to the changed line.\n' +
-    ' 6. Judge the tests by the reversion standard, and RUN them if they exist.\n' +
-    ' 7. Sweep for constitution breaches: fabricated defaults, hardcoded prices or hex or px, English\n' +
-    '    strings shown to users, mojibake, a second money helper, an invented contract field, a facade.\n' +
-    ' 8. Emit structured output. Numbered, actionable requiredRework if not SOUND.\n' +
-    'Reserve REVERT for a change that is actively WORSE than the defect it claims to fix — for example a\n' +
-    'fix that destroys the doctor\'s typed text, double-sends a message, writes a duplicate medical record,\n' +
-    'or hides a real one-kopeck discrepancy behind a tolerance.\n' +
-    '**Never award SOUND to a claim you could not reproduce.** If you could not test something, say so with\n' +
-    'the exact command that would close it — an honest gap outranks a confident guess.\n',
-    { label: c.label, phase: 'Audit', schema: AUDIT_SCHEMA }
-  )
+	return agent(
+		AUDIT_LAW +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"YOUR ASSIGNMENT: audit commit " +
+			c.hash +
+			" — " +
+			c.id +
+			"\n" +
+			"ITS SUBJECT LINE, WHICH IS A CLAIM AND NOT A FACT: " +
+			c.subject +
+			"\n" +
+			"FILES IT TOUCHED: " +
+			c.files +
+			"\n" +
+			"YOUR ROLE: adversarial auditor, read-only on all source.\n" +
+			"WHY THIS IS DELEGATED: four fixes reached main with no review at all, each needs a whole context to\n" +
+			"audit properly, and the lead cannot be the only reader of code the lead did not write.\n" +
+			"YOUR REVIEW FILE, THE ONLY FILE YOU MAY WRITE (create it FIRST): " +
+			c.dir +
+			"/review.md\n" +
+			"Append findings AS YOU CONFIRM THEM. Auditors die on credits here; an unwritten finding is lost.\n" +
+			"EVIDENCE STANDARD: every claim carries the command that produced it and its TRUE exit code. Your\n" +
+			"output is EVIDENCE for the lead, never authority — the lead re-runs what matters.\n" +
+			"═══════════════════════════════════════════════════════════════\n" +
+			"WHAT TO ATTACK IN THIS PARTICULAR COMMIT:" +
+			c.focus +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"ORDER OF WORK, MANDATORY:\n" +
+			" 1. Create " +
+			c.dir +
+			" and write review.md == «в работе». NOW, before reading anything.\n" +
+			" 2. git show " +
+			c.hash +
+			" --stat, then the FULL diff, then read the changed files at HEAD in full.\n" +
+			"    HEAD has moved since the commit — read HEAD, not the diff alone.\n" +
+			" 3. **Reproduce the defect at the PARENT with your own instrument.** Not the commit message.\n" +
+			"    git show " +
+			c.hash +
+			"^:<path> gives you the parent file.\n" +
+			" 4. Work through the hypotheses above, one at a time, writing each result to review.md as you get it.\n" +
+			" 5. Verify reachability link by link, from a routed view down to the changed line.\n" +
+			" 6. Judge the tests by the reversion standard, and RUN them if they exist.\n" +
+			" 7. Sweep for constitution breaches: fabricated defaults, hardcoded prices or hex or px, English\n" +
+			"    strings shown to users, mojibake, a second money helper, an invented contract field, a facade.\n" +
+			" 8. Emit structured output. Numbered, actionable requiredRework if not SOUND.\n" +
+			"Reserve REVERT for a change that is actively WORSE than the defect it claims to fix — for example a\n" +
+			"fix that destroys the doctor's typed text, double-sends a message, writes a duplicate medical record,\n" +
+			"or hides a real one-kopeck discrepancy behind a tolerance.\n" +
+			"**Never award SOUND to a claim you could not reproduce.** If you could not test something, say so with\n" +
+			"the exact command that would close it — an honest gap outranks a confident guess.\n",
+		{ label: c.label, phase: "Audit", schema: AUDIT_SCHEMA },
+	);
 }
 
-log('Audit 1 (read-only): ' + COMMITS.map((c) => c.hash).join(', '))
-const results = await parallel(COMMITS.map((c) => () => auditStage(c)))
-const out = []
-for (let i = 0; i < COMMITS.length; i++) out.push({ commit: COMMITS[i].hash, id: COMMITS[i].id, dir: COMMITS[i].dir, audit: results[i] || null })
-log('Audit 1 complete.')
+log("Audit 1 (read-only): " + COMMITS.map((c) => c.hash).join(", "));
+const results = await parallel(COMMITS.map((c) => () => auditStage(c)));
+const out = [];
+for (let i = 0; i < COMMITS.length; i++)
+	out.push({
+		commit: COMMITS[i].hash,
+		id: COMMITS[i].id,
+		dir: COMMITS[i].dir,
+		audit: results[i] || null,
+	});
+log("Audit 1 complete.");
 return { audit: 1, results: out }

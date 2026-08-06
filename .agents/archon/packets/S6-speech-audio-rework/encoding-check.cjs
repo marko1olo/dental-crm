@@ -8,21 +8,25 @@
 const fs = require("node:fs");
 
 const files = [
-  "apps/api/src/speech/gateway.ts",
-  "apps/api/src/routes/system.ts",
-  "apps/api/src/speech/tests/assemblyAiRetention.test.ts",
-  "apps/api/src/speech/tests/speechRetentionStatement.test.ts",
-  ".agents/archon/packets/S6-speech-audio-rework/commitmsg.txt",
-  ".agents/archon/packets/S6-speech-audio-rework/commitmsg-test.txt",
-  ".agents/archon/packets/S6-speech-audio-rework/commitmsg-statement.txt"
+	"apps/api/src/speech/gateway.ts",
+	"apps/api/src/routes/system.ts",
+	"apps/api/src/speech/tests/assemblyAiRetention.test.ts",
+	"apps/api/src/speech/tests/speechRetentionStatement.test.ts",
+	".agents/archon/packets/S6-speech-audio-rework/commitmsg.txt",
+	".agents/archon/packets/S6-speech-audio-rework/commitmsg-test.txt",
+	".agents/archon/packets/S6-speech-audio-rework/commitmsg-statement.txt",
 ];
 
 let broken = 0;
 for (const file of files) {
-  const content = fs.readFileSync(file, "utf8");
-  const brokenLines = content.split("\n").filter((line) => /[РС][-ÿ]/.test(line));
-  const cyrillic = (content.match(/[А-яЁё]/g) || []).length;
-  broken += brokenLines.length;
-  console.log(`${file} | mojibake lines: ${brokenLines.length} | cyrillic chars: ${cyrillic}`);
+	const content = fs.readFileSync(file, "utf8");
+	const brokenLines = content
+		.split("\n")
+		.filter((line) => /[РС][-ÿ]/.test(line));
+	const cyrillic = (content.match(/[А-яЁё]/g) || []).length;
+	broken += brokenLines.length;
+	console.log(
+		`${file} | mojibake lines: ${brokenLines.length} | cyrillic chars: ${cyrillic}`,
+	);
 }
 console.log(broken === 0 ? "CLEAN" : "MOJIBAKE FOUND");

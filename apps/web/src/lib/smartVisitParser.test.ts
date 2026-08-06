@@ -1,5 +1,5 @@
-import { describe, it } from "node:test";
 import assert from "node:assert";
+import { describe, it } from "node:test";
 import { parseVisitDictationLocal } from "./smartVisitParser";
 
 /**
@@ -28,37 +28,56 @@ describe("parseVisitDictationLocal", () => {
 	});
 
 	it("диктовка о вмешательстве не пропадает целиком", () => {
-		const result = parseVisitDictationLocal("удалил 38 зуб. экстракция прошла успешно. анестезия");
+		const result = parseVisitDictationLocal(
+			"удалил 38 зуб. экстракция прошла успешно. анестезия",
+		);
 		// Раньше emkUpdates был пустым объектом: менялось только состояние
 		// зуба, а запись о самом лечении не сохранялась нигде.
-		assert.ok(result.emkUpdates.treatmentPlan, "запись о лечении не сохранилась");
+		assert.ok(
+			result.emkUpdates.treatmentPlan,
+			"запись о лечении не сохранилась",
+		);
 		assert.match(String(result.emkUpdates.treatmentPlan), /экстракц/i);
 		assert.match(String(result.emkUpdates.treatmentPlan), /анестез/i);
 	});
 
 	it("удаление помечает зуб отсутствующим", () => {
-		const result = parseVisitDictationLocal("удалил 38 зуб. экстракция прошла успешно.");
+		const result = parseVisitDictationLocal(
+			"удалил 38 зуб. экстракция прошла успешно.",
+		);
 		assert.deepEqual(result.toothUpdates, [{ code: "38", state: "missing" }]);
 	});
 
 	it("имплант помечает зуб как имплантацию", () => {
-		const result = parseVisitDictationLocal("пациент хочет имплант на место 24. хирург");
+		const result = parseVisitDictationLocal(
+			"пациент хочет имплант на место 24. хирург",
+		);
 		assert.deepEqual(result.toothUpdates, [{ code: "24", state: "implant" }]);
 	});
 
 	it("кариес и пульпит ведут к состоянию лечения", () => {
-		assert.deepEqual(parseVisitDictationLocal("11 зуб кариес").toothUpdates, [{ code: "11", state: "treatment" }]);
-		assert.deepEqual(parseVisitDictationLocal("36 зуб пульпит").toothUpdates, [{ code: "36", state: "treatment" }]);
+		assert.deepEqual(parseVisitDictationLocal("11 зуб кариес").toothUpdates, [
+			{ code: "11", state: "treatment" },
+		]);
+		assert.deepEqual(parseVisitDictationLocal("36 зуб пульпит").toothUpdates, [
+			{ code: "36", state: "treatment" },
+		]);
 	});
 
 	it("коронка ведёт к ортопедии", () => {
-		assert.deepEqual(parseVisitDictationLocal("на 26 коронка").toothUpdates, [{ code: "26", state: "prosthetics" }]);
+		assert.deepEqual(parseVisitDictationLocal("на 26 коронка").toothUpdates, [
+			{ code: "26", state: "prosthetics" },
+		]);
 	});
 
 	it("один и тот же зуб не дублируется в пределах фразы", () => {
 		const result = parseVisitDictationLocal("36 зуб кариес, лечим 36 зуб");
 		const codes = result.toothUpdates.map((t) => t.code);
-		assert.deepEqual([...new Set(codes)], codes, `зубы задвоились: ${codes.join(", ")}`);
+		assert.deepEqual(
+			[...new Set(codes)],
+			codes,
+			`зубы задвоились: ${codes.join(", ")}`,
+		);
 	});
 
 	it("пустая строка не приводит к исключению и ничего не выдумывает", () => {
@@ -86,7 +105,9 @@ describe("parseVisitDictationLocal", () => {
 	 * фиксирует нынешнее поведение, чтобы изменение было замечено.
 	 */
 	it("ограничение: явный раздел удерживает текст до следующего явного слова", () => {
-		const result = parseVisitDictationLocal("жалобы на боли при накусывании. 45 зуб периодонтит.");
+		const result = parseVisitDictationLocal(
+			"жалобы на боли при накусывании. 45 зуб периодонтит.",
+		);
 		assert.match(String(result.emkUpdates.complaint), /периодонтит/i);
 		assert.equal(result.emkUpdates.diagnosis, undefined);
 	});

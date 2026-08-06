@@ -43,7 +43,9 @@ describe("позиции плана для отметки выполненног
 		);
 		// И наоборот: приём пациента Б не видит позиций пациента А.
 		assert.deepEqual(
-			visitOwnedPlanItems(items, "пациент-Б").map((entry) => entry.snapshotServiceName),
+			visitOwnedPlanItems(items, "пациент-Б").map(
+				(entry) => entry.snapshotServiceName,
+			),
 			["Удаление 48", "Имплантация 46"],
 		);
 	});
@@ -52,7 +54,10 @@ describe("позиции плана для отметки выполненног
 		const items = [item("пациент-А", "Лечение кариеса 26")];
 		assert.deepEqual(visitOwnedPlanItems(items, null), []);
 		// Заготовка приёма из гидратации базы приёмом не считается.
-		assert.deepEqual(visitOwnedPlanItems(items, realVisitFieldId(NIL_UUID)), []);
+		assert.deepEqual(
+			visitOwnedPlanItems(items, realVisitFieldId(NIL_UUID)),
+			[],
+		);
 		assert.deepEqual(visitOwnedPlanItems(items, realVisitFieldId("   ")), []);
 	});
 
@@ -62,7 +67,9 @@ describe("позиции плана для отметки выполненног
 			item("пациент-А", "Отменённая коронка", "cancelled"),
 		];
 		assert.deepEqual(
-			visitOwnedPlanItems(items, "пациент-А").map((entry) => entry.snapshotServiceName),
+			visitOwnedPlanItems(items, "пациент-А").map(
+				(entry) => entry.snapshotServiceName,
+			),
 			["Лечение кариеса 26"],
 		);
 	});
@@ -71,9 +78,11 @@ describe("позиции плана для отметки выполненног
 		assert.deepEqual(visitOwnedPlanItems(undefined, "пациент-А"), []);
 		assert.deepEqual(visitOwnedPlanItems(null, "пациент-А"), []);
 		assert.deepEqual(visitOwnedPlanItems("план", "пациент-А"), []);
-		assert.deepEqual(visitOwnedPlanItems([null, undefined, {}], "пациент-А"), []);
+		assert.deepEqual(
+			visitOwnedPlanItems([null, undefined, {}], "пациент-А"),
+			[],
+		);
 	});
-
 });
 
 /**
@@ -112,15 +121,25 @@ describe("цена позиции плана", () => {
 
 	it("итог строки — цена × количество − скидка, не ниже нуля", () => {
 		assert.equal(
-			planLineTotalRub({ unitPriceRub: "1500.50", quantity: 2, discountRub: "1.00" }),
+			planLineTotalRub({
+				unitPriceRub: "1500.50",
+				quantity: 2,
+				discountRub: "1.00",
+			}),
 			3000,
 		);
 		// Количества нет — это одна единица, как и в смете.
 		assert.equal(planLineTotalRub({ unitPriceRub: "990" }), 990);
 		// Скидка больше цены не превращается в долг пациента.
-		assert.equal(planLineTotalRub({ unitPriceRub: "500", discountRub: "900" }), 0);
+		assert.equal(
+			planLineTotalRub({ unitPriceRub: "500", discountRub: "900" }),
+			0,
+		);
 		// Копейки не уплывают на третий знак.
-		assert.equal(planLineTotalRub({ unitPriceRub: "0.505", quantity: 1 }), 0.51);
+		assert.equal(
+			planLineTotalRub({ unitPriceRub: "0.505", quantity: 1 }),
+			0.51,
+		);
 	});
 
 	it("итог не выдумывается там, где цену прочитать нельзя", () => {
@@ -128,9 +147,18 @@ describe("цена позиции плана", () => {
 		assert.equal(planLineTotalRub({ unitPriceRub: null }), null);
 		assert.equal(planLineTotalRub({ unitPriceRub: "договорная" }), null);
 		assert.equal(planLineTotalRub({ unitPriceRub: "1500", quantity: 0 }), null);
-		assert.equal(planLineTotalRub({ unitPriceRub: "1500", quantity: -2 }), null);
-		assert.equal(planLineTotalRub({ unitPriceRub: "1500", quantity: "две" }), null);
-		assert.equal(planLineTotalRub({ unitPriceRub: "1500", discountRub: "скидка" }), null);
+		assert.equal(
+			planLineTotalRub({ unitPriceRub: "1500", quantity: -2 }),
+			null,
+		);
+		assert.equal(
+			planLineTotalRub({ unitPriceRub: "1500", quantity: "две" }),
+			null,
+		);
+		assert.equal(
+			planLineTotalRub({ unitPriceRub: "1500", discountRub: "скидка" }),
+			null,
+		);
 		assert.equal(planLineTotalRub(null), null);
 	});
 

@@ -1,6 +1,5 @@
 import type { Dashboard, Patient } from "@dental/shared";
 import { useEffect, useMemo, useRef } from "react";
-import { shouldResetPatientDraftState } from "../../components/patients/patientDraftResetDecision.js";
 import type {
 	PatientAdministrativeProfileDraft,
 	PatientCoreDraft,
@@ -25,6 +24,7 @@ import {
 	resetPaymentComposerOnPatientChange,
 	type TrackedComposerPatientId,
 } from "../../components/finance/paymentComposerReset";
+import { shouldResetPatientDraftState } from "../../components/patients/patientDraftResetDecision.js";
 import { useDocumentStore } from "../../store/documentStore";
 import { usePatientStore } from "../../store/patientStore";
 
@@ -42,7 +42,10 @@ const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
  */
 function patientPhoneDigits(value: string | null | undefined): string {
 	const digits = (value ?? "").replace(/\D/g, "");
-	if (digits.length === 11 && (digits.startsWith("8") || digits.startsWith("7"))) {
+	if (
+		digits.length === 11 &&
+		(digits.startsWith("8") || digits.startsWith("7"))
+	) {
 		return `7${digits.slice(1)}`;
 	}
 	return digits;
@@ -255,7 +258,8 @@ export function usePatientLogic({
 		const normalizedQuery = query.trim().toLowerCase();
 		if (!normalizedQuery) return dashboard.patients || [];
 		const queryDigits = patientPhoneDigits(normalizedQuery);
-		const queryLooksLikePhone = queryDigits.length >= PATIENT_PHONE_QUERY_MIN_DIGITS;
+		const queryLooksLikePhone =
+			queryDigits.length >= PATIENT_PHONE_QUERY_MIN_DIGITS;
 		return (dashboard.patients || []).filter((patient) => {
 			if ((patient.fullName ?? "").toLowerCase().includes(normalizedQuery)) {
 				return true;

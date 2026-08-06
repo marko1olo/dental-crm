@@ -25,7 +25,9 @@ type VisitRow = typeof schema.visits.$inferSelect;
  */
 function visitTimestamp(value: Date | string | null | undefined): string {
 	if (value instanceof Date) {
-		return Number.isNaN(value.getTime()) ? new Date().toISOString() : value.toISOString();
+		return Number.isNaN(value.getTime())
+			? new Date().toISOString()
+			: value.toISOString();
 	}
 	if (typeof value === "string" && value.trim()) {
 		const parsed = new Date(value);

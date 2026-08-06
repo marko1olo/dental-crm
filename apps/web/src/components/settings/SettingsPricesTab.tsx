@@ -26,8 +26,8 @@ import { PriceDictationBar } from "../../PriceDictationBar";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import {
-	staffMutationHeaders,
 	type SettingsAccessHeaders,
+	staffMutationHeaders,
 } from "./staffMutationRequest";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -169,8 +169,9 @@ export function SettingsPricesTab() {
 	 * x-dente-admin-secret — в клинике с DENTE_SETTINGS_ADMIN_SECRET это 403,
 	 * а маршрут /api/settings/catalog-import на сервере не существует.
 	 */
-	const accessHeaders = (mergedProps as { auth?: { settingsAccessHeaders?: SettingsAccessHeaders } })
-		.auth?.settingsAccessHeaders;
+	const accessHeaders = (
+		mergedProps as { auth?: { settingsAccessHeaders?: SettingsAccessHeaders } }
+	).auth?.settingsAccessHeaders;
 
 	const filteredCatalog = useMemo(() => {
 		let items = [...typedServiceCatalog];
@@ -287,8 +288,7 @@ export function SettingsPricesTab() {
 				}, 2000);
 			}
 		} catch (err: unknown) {
-			const message =
-				err instanceof Error ? err.message : "Ошибка импорта";
+			const message = err instanceof Error ? err.message : "Ошибка импорта";
 			setImportResult({ error: message });
 		} finally {
 			setIsImporting(false);
@@ -452,7 +452,7 @@ export function SettingsPricesTab() {
 												<button
 													className="icon-button"
 													onClick={() => {
-													setEditServiceForm({
+														setEditServiceForm({
 															title: item.title,
 															code: item.code || "",
 															category: item.category,
@@ -605,7 +605,9 @@ export function SettingsPricesTab() {
 										/* Поле стало пустым: раньше в нём лежал выдуманный прайс
 										   из десяти позиций, и его можно было занести в базу
 										   настоящей клиники одним нажатием. */
-										placeholder={"Вставьте прайс из Excel или Word — по строке на услугу.\nНапример: Лечение кариеса 6 800 руб"}
+										placeholder={
+											"Вставьте прайс из Excel или Word — по строке на услугу.\nНапример: Лечение кариеса 6 800 руб"
+										}
 										value={pricelistText}
 										onChange={(e) => setPricelistText(e.target.value)}
 										rows={6}

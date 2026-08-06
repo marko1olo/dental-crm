@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { withDocumentCreationTimestamps } from "../documentLogic";
 
 /**
@@ -33,15 +33,34 @@ describe("подстановка отметок времени при созда
 			paidContractSignedAt: "",
 		});
 
-		for (const field of ["informedConsentConfirmedAt", "paidContractSignedAt"]) {
+		for (const field of [
+			"informedConsentConfirmedAt",
+			"paidContractSignedAt",
+		]) {
 			const value = String(filled[field]);
-			assert.match(value, /^\d{2}\.\d{2}\.\d{4},?\s\d{1,2}:\d{2}/, `${field}: ожидалась русская дата со временем, получено «${value}»`);
-			const [datePart = "", timePart = ""] = value.replace(",", "").split(/\s+/);
+			assert.match(
+				value,
+				/^\d{2}\.\d{2}\.\d{4},?\s\d{1,2}:\d{2}/,
+				`${field}: ожидалась русская дата со временем, получено «${value}»`,
+			);
+			const [datePart = "", timePart = ""] = value
+				.replace(",", "")
+				.split(/\s+/);
 			const [day, month, year] = datePart.split(".");
 			const [hour, minute] = timePart.split(":");
-			const stamped = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
-			const driftMinutes = Math.abs(stamped.getTime() - before.getTime()) / 60000;
-			assert.ok(driftMinutes <= 2, `${field}: отметка отстоит от текущего момента на ${driftMinutes.toFixed(1)} мин`);
+			const stamped = new Date(
+				Number(year),
+				Number(month) - 1,
+				Number(day),
+				Number(hour),
+				Number(minute),
+			);
+			const driftMinutes =
+				Math.abs(stamped.getTime() - before.getTime()) / 60000;
+			assert.ok(
+				driftMinutes <= 2,
+				`${field}: отметка отстоит от текущего момента на ${driftMinutes.toFixed(1)} мин`,
+			);
 		}
 	});
 
@@ -56,7 +75,9 @@ describe("подстановка отметок времени при созда
 	});
 
 	it("поле ввода типа date получает вид ГГГГ-ММ-ДД по местному дню", () => {
-		const filled = withDocumentCreationTimestamps({ outpatient025uOpenedAt: "" });
+		const filled = withDocumentCreationTimestamps({
+			outpatient025uOpenedAt: "",
+		});
 		const value = String(filled.outpatient025uOpenedAt);
 		assert.match(value, /^\d{4}-\d{2}-\d{2}$/);
 		const now = new Date();
@@ -70,19 +91,31 @@ describe("подстановка отметок времени при созда
 	});
 
 	it("поле datetime-local получает вид, который браузер разбирает", () => {
-		const filled = withDocumentCreationTimestamps({ taxApplicationRequestedAt: "" });
-		assert.match(String(filled.taxApplicationRequestedAt), /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+		const filled = withDocumentCreationTimestamps({
+			taxApplicationRequestedAt: "",
+		});
+		assert.match(
+			String(filled.taxApplicationRequestedAt),
+			/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,
+		);
 	});
 
 	it("исходное состояние не изменяется", () => {
 		const state = { informedConsentConfirmedAt: "" };
 		withDocumentCreationTimestamps(state);
-		assert.equal(state.informedConsentConfirmedAt, "", "хранилище должно остаться пустым, иначе следующий документ унесёт время предыдущего");
+		assert.equal(
+			state.informedConsentConfirmedAt,
+			"",
+			"хранилище должно остаться пустым, иначе следующий документ унесёт время предыдущего",
+		);
 	});
 
 	it("в хранилище документов не осталось дат, вычисляемых при загрузке модуля", () => {
 		const here = dirname(fileURLToPath(import.meta.url));
-		const store = readFileSync(join(here, "..", "store", "documentStore.ts"), "utf8");
+		const store = readFileSync(
+			join(here, "..", "store", "documentStore.ts"),
+			"utf8",
+		);
 		/*
 		 * Ловим именно вычисление при загрузке: `new Date()` в значении поля.
 		 * Год налогового документа (new Date().getFullYear()) — не отметка времени

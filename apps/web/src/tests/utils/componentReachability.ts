@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, extname, join, posix, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "@babel/parser";
@@ -44,7 +44,13 @@ export const webSrcRoot = join(here, "..", "..");
 const ENTRY = "main.tsx";
 
 /** Каталоги, целиком выпадающие из графа. */
-const IGNORED_DIRECTORIES = ["node_modules", "dist", "__snapshots__", "tests", "__tests__"];
+const IGNORED_DIRECTORIES = [
+	"node_modules",
+	"dist",
+	"__snapshots__",
+	"tests",
+	"__tests__",
+];
 
 const SOURCE_EXTENSIONS = [".ts", ".tsx"];
 
@@ -154,17 +160,29 @@ function collectSourceFiles(): string[] {
 	return found.sort();
 }
 
-type Node = { type: string; loc?: { start: { line: number } } } & Record<string, unknown>;
+type Node = { type: string; loc?: { start: { line: number } } } & Record<
+	string,
+	unknown
+>;
 
 function isNode(value: unknown): value is Node {
-	return typeof value === "object" && value !== null && typeof (value as Node).type === "string";
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		typeof (value as Node).type === "string"
+	);
 }
 
 /** Дочерние узлы без списка полей на каждый тип: обходятся все значения объекта. */
 function children(node: Node): Node[] {
 	const out: Node[] = [];
 	for (const [key, value] of Object.entries(node)) {
-		if (key === "loc" || key === "leadingComments" || key === "trailingComments") continue;
+		if (
+			key === "loc" ||
+			key === "leadingComments" ||
+			key === "trailingComments"
+		)
+			continue;
 		if (Array.isArray(value)) {
 			for (const item of value) if (isNode(item)) out.push(item);
 			continue;
@@ -204,7 +222,8 @@ function hasJsx(node: Node): boolean {
 	const stack: Node[] = [node];
 	while (stack.length > 0) {
 		const current = stack.pop() as Node;
-		if (current.type === "JSXElement" || current.type === "JSXFragment") return true;
+		if (current.type === "JSXElement" || current.type === "JSXFragment")
+			return true;
 		if (TYPE_ONLY_NODES.has(current.type)) continue;
 		for (const child of children(current)) stack.push(child);
 	}
@@ -227,7 +246,8 @@ function lineOf(node: Node): number {
 
 function stringLiteralValue(node: unknown): string | null {
 	if (!isNode(node)) return null;
-	if (node.type === "StringLiteral" && typeof node.value === "string") return node.value;
+	if (node.type === "StringLiteral" && typeof node.value === "string")
+		return node.value;
 	return null;
 }
 
@@ -238,11 +258,14 @@ function stringLiteralValue(node: unknown): string | null {
  * AppShell.tsx объявляет DentalWorkspace. Проверка по локальному имени объявила
  * бы главный компонент приложения нерендерящимся.
  */
-function lazyNamedTarget(call: Node): { source: string; exported: string } | null {
+function lazyNamedTarget(
+	call: Node,
+): { source: string; exported: string } | null {
 	const callee = call.callee as Node | undefined;
 	if (!callee || callee.type !== "MemberExpression") return null;
 	const property = callee.property as Node | undefined;
-	if (!property || property.type !== "Identifier" || property.name !== "then") return null;
+	if (!property || property.type !== "Identifier" || property.name !== "then")
+		return null;
 	const inner = callee.object as Node | undefined;
 	if (!inner || inner.type !== "CallExpression") return null;
 	const innerCallee = inner.callee as Node | undefined;
@@ -314,7 +337,10 @@ function collectComponents(program: Node): ComponentDeclaration[] {
 	const components: ComponentDeclaration[] = [];
 
 	function noteDeclaration(node: Node, markExported: boolean): void {
-		if (node.type === "FunctionDeclaration" || node.type === "ClassDeclaration") {
+		if (
+			node.type === "FunctionDeclaration" ||
+			node.type === "ClassDeclaration"
+		) {
 			const named = declarationName(node);
 			if (!named) return;
 			declared.set(named.name, { line: named.line, jsx: hasJsx(node) });
@@ -327,7 +353,10 @@ function collectComponents(program: Node): ComponentDeclaration[] {
 				const id = raw.id as Node | undefined;
 				if (id?.type !== "Identifier" || typeof id.name !== "string") continue;
 				const init = raw.init as Node | undefined;
-				declared.set(id.name, { line: lineOf(raw), jsx: init ? hasJsx(init) : false });
+				declared.set(id.name, {
+					line: lineOf(raw),
+					jsx: init ? hasJsx(init) : false,
+				});
 				if (markExported) exported.add(id.name);
 			}
 		}
@@ -347,9 +376,13 @@ function collectComponents(program: Node): ComponentDeclaration[] {
 				if (!isNode(raw)) continue;
 				const local = raw.local as Node | undefined;
 				const exportedName = raw.exported as Node | undefined;
-				if (local?.type !== "Identifier" || typeof local.name !== "string") continue;
+				if (local?.type !== "Identifier" || typeof local.name !== "string")
+					continue;
 				exported.add(local.name);
-				if (exportedName?.type === "Identifier" && exportedName.name === "default") {
+				if (
+					exportedName?.type === "Identifier" &&
+					exportedName.name === "default"
+				) {
 					defaultExported.add(local.name);
 				}
 			}
@@ -359,21 +392,31 @@ function collectComponents(program: Node): ComponentDeclaration[] {
 		if (statement.type === "ExportDefaultDeclaration") {
 			const declaration = statement.declaration as Node | undefined;
 			if (!declaration) continue;
-			if (declaration.type === "Identifier" && typeof declaration.name === "string") {
+			if (
+				declaration.type === "Identifier" &&
+				typeof declaration.name === "string"
+			) {
 				exported.add(declaration.name);
 				defaultExported.add(declaration.name);
 				continue;
 			}
 			const named = declarationName(declaration);
 			if (named) {
-				declared.set(named.name, { line: named.line, jsx: hasJsx(declaration) });
+				declared.set(named.name, {
+					line: named.line,
+					jsx: hasJsx(declaration),
+				});
 				exported.add(named.name);
 				defaultExported.add(named.name);
 				continue;
 			}
 			// `export default () => <div />` — имени нет; берётся имя модуля.
 			if (hasJsx(declaration)) {
-				components.push({ name: "default", line: lineOf(statement), isDefaultExport: true });
+				components.push({
+					name: "default",
+					line: lineOf(statement),
+					isDefaultExport: true,
+				});
 			}
 			continue;
 		}
@@ -385,7 +428,11 @@ function collectComponents(program: Node): ComponentDeclaration[] {
 		if (!exported.has(name)) continue;
 		if (!info.jsx) continue;
 		if (!COMPONENT_NAME.test(name)) continue;
-		components.push({ name, line: info.line, isDefaultExport: defaultExported.has(name) });
+		components.push({
+			name,
+			line: info.line,
+			isDefaultExport: defaultExported.has(name),
+		});
 	}
 	return components.sort((a, b) => a.line - b.line);
 }
@@ -415,7 +462,8 @@ function collectImportEdges(program: Node): ImportEdge[] {
 			for (const raw of specifiers) {
 				if (!isNode(raw)) continue;
 				const local = raw.local as Node | undefined;
-				if (local?.type !== "Identifier" || typeof local.name !== "string") continue;
+				if (local?.type !== "Identifier" || typeof local.name !== "string")
+					continue;
 				if (raw.type === "ImportDefaultSpecifier") {
 					bindings.push({ imported: "default", local: local.name });
 					continue;
@@ -465,14 +513,17 @@ function collectImportEdges(program: Node): ImportEdge[] {
 				const importedName =
 					localNode?.type === "Identifier" ? (localNode.name as string) : "*";
 				const exportedName =
-					exportedNode?.type === "Identifier" ? (exportedNode.name as string) : importedName;
+					exportedNode?.type === "Identifier"
+						? (exportedNode.name as string)
+						: importedName;
 				bindings.push({ imported: importedName, local: exportedName });
 			}
 			edges.push({
 				source,
 				line: lineOf(statement),
 				kind: "reexport",
-				bindings: bindings.length > 0 ? bindings : [{ imported: "*", local: "*" }],
+				bindings:
+					bindings.length > 0 ? bindings : [{ imported: "*", local: "*" }],
 			});
 		}
 	}
@@ -502,12 +553,16 @@ function collectImportEdges(program: Node): ImportEdge[] {
 									source: named.source,
 									line: lineOf(node),
 									kind: "lazy",
-									bindings: [{ imported: named.exported, local: named.exported }],
+									bindings: [
+										{ imported: named.exported, local: named.exported },
+									],
 								});
 								continue;
 							}
 							if ((node.callee as Node | undefined)?.type === "Import") {
-								const source = stringLiteralValue((node.arguments as unknown[])?.[0]);
+								const source = stringLiteralValue(
+									(node.arguments as unknown[])?.[0],
+								);
 								if (source) {
 									consumedImportCalls.add(node);
 									edges.push({
@@ -525,7 +580,9 @@ function collectImportEdges(program: Node): ImportEdge[] {
 				}
 			} else if ((current.callee as Node | undefined)?.type === "Import") {
 				if (!consumedImportCalls.has(current)) {
-					const source = stringLiteralValue((current.arguments as unknown[])?.[0]);
+					const source = stringLiteralValue(
+						(current.arguments as unknown[])?.[0],
+					);
 					if (source) {
 						edges.push({
 							source,
@@ -544,7 +601,10 @@ function collectImportEdges(program: Node): ImportEdge[] {
 	return edges;
 }
 
-function collectReferences(program: Node): { jsxTags: Set<string>; valueRefs: Set<string> } {
+function collectReferences(program: Node): {
+	jsxTags: Set<string>;
+	valueRefs: Set<string>;
+} {
 	const jsxTags = new Set<string>();
 	const valueRefs = new Set<string>();
 
@@ -556,16 +616,28 @@ function collectReferences(program: Node): { jsxTags: Set<string>; valueRefs: Se
 		if (current.type === "ImportDeclaration") continue;
 		if (TYPE_ONLY_NODES.has(current.type)) continue;
 
-		if (current.type === "JSXOpeningElement" || current.type === "JSXSelfClosingElement") {
+		if (
+			current.type === "JSXOpeningElement" ||
+			current.type === "JSXSelfClosingElement"
+		) {
 			let name = current.name as Node | undefined;
-			while (name?.type === "JSXMemberExpression") name = name.object as Node | undefined;
-			if (name?.type === "JSXIdentifier" && typeof name.name === "string" && PASCAL_CASE.test(name.name)) {
+			while (name?.type === "JSXMemberExpression")
+				name = name.object as Node | undefined;
+			if (
+				name?.type === "JSXIdentifier" &&
+				typeof name.name === "string" &&
+				PASCAL_CASE.test(name.name)
+			) {
 				jsxTags.add(name.name);
 				valueRefs.add(name.name);
 			}
 		}
 
-		if (current.type === "Identifier" && typeof current.name === "string" && PASCAL_CASE.test(current.name)) {
+		if (
+			current.type === "Identifier" &&
+			typeof current.name === "string" &&
+			PASCAL_CASE.test(current.name)
+		) {
 			valueRefs.add(current.name);
 		}
 
@@ -575,11 +647,21 @@ function collectReferences(program: Node): { jsxTags: Set<string>; valueRefs: Se
 	return { jsxTags, valueRefs };
 }
 
-function resolveSpecifier(fromFile: string, specifier: string, universe: Set<string>): string | null {
+function resolveSpecifier(
+	fromFile: string,
+	specifier: string,
+	universe: Set<string>,
+): string | null {
 	if (!specifier.startsWith(".")) return null;
 	const joined = posix.join(posix.dirname(fromFile), specifier);
 	const stem = joined.replace(/\.(js|jsx|mjs|cjs)$/, "");
-	for (const candidate of [`${stem}.tsx`, `${stem}.ts`, `${stem}/index.tsx`, `${stem}/index.ts`, joined]) {
+	for (const candidate of [
+		`${stem}.tsx`,
+		`${stem}.ts`,
+		`${stem}/index.tsx`,
+		`${stem}/index.ts`,
+		joined,
+	]) {
 		if (universe.has(candidate)) return candidate;
 	}
 	return null;
@@ -626,7 +708,9 @@ export function componentReachability(): ReachabilityCensus {
 		});
 	}
 
-	const componentFiles = new Set([...facts].filter(([, f]) => f.components.length > 0).map(([p]) => p));
+	const componentFiles = new Set(
+		[...facts].filter(([, f]) => f.components.length > 0).map(([p]) => p),
+	);
 
 	interface ResolvedEdge {
 		readonly from: string;
@@ -640,7 +724,13 @@ export function componentReachability(): ReachabilityCensus {
 		for (const edge of fileFacts.imports) {
 			const target = resolveSpecifier(file, edge.source, universe);
 			if (!target || target === file) continue;
-			edges.push({ from: file, to: target, kind: edge.kind, line: edge.line, bindings: edge.bindings });
+			edges.push({
+				from: file,
+				to: target,
+				kind: edge.kind,
+				line: edge.line,
+				bindings: edge.bindings,
+			});
 		}
 	}
 
@@ -710,30 +800,44 @@ export function componentReachability(): ReachabilityCensus {
 	 * то рендер `<X/>` в достижимом импортёре бочки — это рендер F.X. Без этого
 	 * шага компонент за бочкой числился бы объявленным и нерендерящимся.
 	 */
-	function reexportAliases(file: string, componentName: string): ImportBinding[] {
+	function reexportAliases(
+		file: string,
+		componentName: string,
+	): ImportBinding[] {
 		const aliases: ImportBinding[] = [];
 		for (const edge of edgesTo.get(file) ?? []) {
 			if (edge.kind !== "reexport") continue;
 			for (const binding of edge.bindings) {
 				if (binding.imported === componentName || binding.imported === "*") {
-					aliases.push({ imported: edge.from, local: binding.local === "*" ? componentName : binding.local });
+					aliases.push({
+						imported: edge.from,
+						local: binding.local === "*" ? componentName : binding.local,
+					});
 				}
 			}
 		}
 		return aliases;
 	}
 
-	function bindersOf(file: string, component: ComponentDeclaration, onlyReachable: boolean) {
+	function bindersOf(
+		file: string,
+		component: ComponentDeclaration,
+		onlyReachable: boolean,
+	) {
 		const result: Array<{ edge: ResolvedEdge; local: string }> = [];
 		for (const edge of edgesTo.get(file) ?? []) {
 			if (edge.kind === "type") continue;
 			if (onlyReachable && !reachable.has(edge.from)) continue;
 			for (const binding of edge.bindings) {
 				const matchesName = binding.imported === component.name;
-				const matchesDefault = binding.imported === "default" && component.isDefaultExport;
+				const matchesDefault =
+					binding.imported === "default" && component.isDefaultExport;
 				const matchesNamespace = binding.imported === "*";
 				if (matchesName || matchesDefault || matchesNamespace) {
-					result.push({ edge, local: binding.local === "*" ? component.name : binding.local });
+					result.push({
+						edge,
+						local: binding.local === "*" ? component.name : binding.local,
+					});
 				}
 			}
 		}
@@ -744,7 +848,10 @@ export function componentReachability(): ReachabilityCensus {
 				if (onlyReachable && !reachable.has(edge.from)) continue;
 				for (const binding of edge.bindings) {
 					if (binding.imported === alias.local || binding.imported === "*") {
-						result.push({ edge, local: binding.local === "*" ? alias.local : binding.local });
+						result.push({
+							edge,
+							local: binding.local === "*" ? alias.local : binding.local,
+						});
 					}
 				}
 			}
@@ -755,7 +862,9 @@ export function componentReachability(): ReachabilityCensus {
 	const verdicts: ComponentVerdict[] = [];
 	for (const file of [...componentFiles].sort()) {
 		const fileFacts = facts.get(file) as FileFacts;
-		const incoming = (edgesTo.get(file) ?? []).filter((edge) => edge.kind !== "type");
+		const incoming = (edgesTo.get(file) ?? []).filter(
+			(edge) => edge.kind !== "type",
+		);
 		const fileReachable = reachable.has(file);
 
 		for (const component of fileFacts.components) {
@@ -765,18 +874,26 @@ export function componentReachability(): ReachabilityCensus {
 				const binders = bindersOf(file, component, true);
 				const renderedAsTag =
 					fileFacts.jsxTags.has(component.name) ||
-					binders.some(({ edge, local }) => facts.get(edge.from)?.jsxTags.has(local) === true);
+					binders.some(
+						({ edge, local }) =>
+							facts.get(edge.from)?.jsxTags.has(local) === true,
+					);
 				const renderedAsValue = binders.some(
-					({ edge, local }) => facts.get(edge.from)?.valueRefs.has(local) === true,
+					({ edge, local }) =>
+						facts.get(edge.from)?.valueRefs.has(local) === true,
 				);
-				const renderedViaLazy = binders.some(({ edge }) => edge.kind === "lazy");
+				const renderedViaLazy = binders.some(
+					({ edge }) => edge.kind === "lazy",
+				);
 
 				if (renderedAsTag || file === ENTRY) {
 					verdicts.push({ ...base, state: "rendered", detail: "" });
 				} else if (renderedViaLazy) {
 					const where = [
 						...new Set(
-							binders.filter(({ edge }) => edge.kind === "lazy").map(({ edge }) => `${edge.from}:${edge.line}`),
+							binders
+								.filter(({ edge }) => edge.kind === "lazy")
+								.map(({ edge }) => `${edge.from}:${edge.line}`),
 						),
 					].join(", ");
 					verdicts.push({
@@ -794,20 +911,31 @@ export function componentReachability(): ReachabilityCensus {
 					verdicts.push({
 						...base,
 						state: "declared-but-never-rendered",
-						detail: "файл достижим от main.tsx, но это имя не встречается ни в одном достижимом файле",
+						detail:
+							"файл достижим от main.tsx, но это имя не встречается ни в одном достижимом файле",
 					});
 				}
 				continue;
 			}
 
 			if (incoming.length === 0) {
-				verdicts.push({ ...base, state: "orphaned", detail: "ни один файл приложения не импортирует этот модуль" });
+				verdicts.push({
+					...base,
+					state: "orphaned",
+					detail: "ни один файл приложения не импортирует этот модуль",
+				});
 				continue;
 			}
-			const rendersSomewhere = incoming.some((edge) => edgeIsRenderPath(edge) && edgeUsesTarget(edge));
+			const rendersSomewhere = incoming.some(
+				(edge) => edgeIsRenderPath(edge) && edgeUsesTarget(edge),
+			);
 			if (rendersSomewhere) {
 				const where = [
-					...new Set(incoming.filter((edge) => edgeUsesTarget(edge)).map((edge) => `${edge.from}:${edge.line}`)),
+					...new Set(
+						incoming
+							.filter((edge) => edgeUsesTarget(edge))
+							.map((edge) => `${edge.from}:${edge.line}`),
+					),
 				].join(", ");
 				verdicts.push({
 					...base,

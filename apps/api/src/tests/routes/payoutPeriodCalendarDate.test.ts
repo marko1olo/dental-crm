@@ -37,8 +37,8 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -48,7 +48,7 @@ import {
 	patients,
 	payments,
 	users,
-	visits
+	visits,
 } from "../../db/schema.js";
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { authTokenSecret } from "../../security/authSecret.js";
@@ -71,7 +71,9 @@ const FIRST_SHIFT_AMOUNT_RUB = 12_345;
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
+	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(
+		message,
+	);
 }
 
 /**
@@ -87,9 +89,13 @@ async function removeFixtureRows(): Promise<void> {
 	await withFixtureTenant(ORG_ID, async () => {
 		await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
 		await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
-		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db
+			.delete(appointments)
+			.where(eq(appointments.organizationId, ORG_ID));
 		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-		await db.delete(doctorCommissions).where(eq(doctorCommissions.organizationId, ORG_ID));
+		await db
+			.delete(doctorCommissions)
+			.where(eq(doctorCommissions.organizationId, ORG_ID));
 		await db.delete(users).where(eq(users.organizationId, ORG_ID));
 		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
 		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
@@ -135,14 +141,27 @@ describe("зарплатный месяц: календарная дата в п
 			 * `app.current_tenant` отвергается кодом 42501 на каждой из этих таблиц.
 			 */
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника зарплатной границы" }).onConflictDoNothing();
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника зарплатной границы" })
+					.onConflictDoNothing();
 				await db
 					.insert(clinics)
-					.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Камчатский филиал", timezone: FAR_ZONE })
+					.values({
+						id: CLINIC_ID,
+						organizationId: ORG_ID,
+						name: "Камчатский филиал",
+						timezone: FAR_ZONE,
+					})
 					.onConflictDoNothing();
 				await db
 					.insert(users)
-					.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Сидоров Сидор Сидорович", role: "doctor" })
+					.values({
+						id: DOCTOR_ID,
+						organizationId: ORG_ID,
+						fullName: "Сидоров Сидор Сидорович",
+						role: "doctor",
+					})
 					.onConflictDoNothing();
 				// Ставка нужна, чтобы расчёт состоялся: без неё строка приходит с
 				// признаком «ставка не задана», и касса в итогах не сложилась бы.
@@ -157,12 +176,16 @@ describe("зарплатный месяц: календарная дата в п
 						serviceCategory: "therapy",
 						commissionPct: "40.00",
 						materialCostDeductionPct: "100.00",
-						isActive: true
+						isActive: true,
 					})
 					.onConflictDoNothing();
 				await db
 					.insert(patients)
-					.values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Ночной Пациент Первомаевич" })
+					.values({
+						id: PATIENT_ID,
+						organizationId: ORG_ID,
+						fullName: "Ночной Пациент Первомаевич",
+					})
 					.onConflictDoNothing();
 				await db
 					.insert(appointments)
@@ -173,7 +196,7 @@ describe("зарплатный месяц: календарная дата в п
 						doctorUserId: DOCTOR_ID,
 						status: "completed",
 						startsAt: FIRST_SHIFT_PAID_AT,
-						endsAt: new Date(FIRST_SHIFT_PAID_AT.getTime() + 60 * 60_000)
+						endsAt: new Date(FIRST_SHIFT_PAID_AT.getTime() + 60 * 60_000),
 					})
 					.onConflictDoNothing();
 				await db
@@ -186,7 +209,7 @@ describe("зарплатный месяц: календарная дата в п
 						// у визита нет.
 						appointmentId: APPOINTMENT_ID,
 						status: "signed",
-						createdAt: FIRST_SHIFT_PAID_AT
+						createdAt: FIRST_SHIFT_PAID_AT,
 					})
 					.onConflictDoNothing();
 				await db
@@ -197,12 +220,15 @@ describe("зарплатный месяц: календарная дата в п
 						visitId: VISIT_ID,
 						amountRub: FIRST_SHIFT_AMOUNT_RUB,
 						status: "paid",
-						paidAt: FIRST_SHIFT_PAID_AT
+						paidAt: FIRST_SHIFT_PAID_AT,
 					})
 					.onConflictDoNothing();
 			});
 
-			staffToken = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "owner" }, authTokenSecret());
+			staffToken = signToken(
+				{ organizationId: ORG_ID, userId: DOCTOR_ID, role: "owner" },
+				authTokenSecret(),
+			);
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -219,7 +245,7 @@ describe("зарплатный месяц: календарная дата в п
 		const response = await app.inject({
 			method: "GET",
 			url: `/api/billing/payouts?${query}`,
-			headers: { "x-dente-staff-token": staffToken }
+			headers: { "x-dente-staff-token": staffToken },
 		});
 		let report: PayoutAnswer["report"];
 		try {
@@ -241,17 +267,17 @@ describe("зарплатный месяц: календарная дата в п
 		assert.equal(
 			answer.report.period.from,
 			"2026-04-30T12:00:00.000Z",
-			`начало зарплатного месяца посчитано не в поясе клиники: ${answer.report.period.from}`
+			`начало зарплатного месяца посчитано не в поясе клиники: ${answer.report.period.from}`,
 		);
 		assert.equal(
 			answer.report.period.to,
 			"2026-05-31T11:59:59.999Z",
-			`конец зарплатного месяца посчитан не в поясе клиники: ${answer.report.period.to}`
+			`конец зарплатного месяца посчитан не в поясе клиники: ${answer.report.period.to}`,
 		);
 		assert.equal(
 			answer.report.totals.paymentCount,
 			1,
-			"оплата первой смены месяца не попала в расчёт выплат: граница снова считается в чужом поясе"
+			"оплата первой смены месяца не попала в расчёт выплат: граница снова считается в чужом поясе",
 		);
 		assert.equal(answer.report.totals.revenueRub, FIRST_SHIFT_AMOUNT_RUB);
 	});
@@ -265,14 +291,14 @@ describe("зарплатный месяц: календарная дата в п
 		 * new Date(2026, 5, 0, 23, 59, 59, 999).toISOString() === 2026-05-31T20:59:59.999Z
 		 */
 		const answer = await callPayouts(
-			"from=2026-04-30T21%3A00%3A00.000Z&to=2026-05-31T20%3A59%3A59.999Z"
+			"from=2026-04-30T21%3A00%3A00.000Z&to=2026-05-31T20%3A59%3A59.999Z",
 		);
 		assert.equal(answer.statusCode, 200, answer.body);
 		assert.equal(answer.report.period.from, "2026-04-30T21:00:00.000Z");
 		assert.equal(
 			answer.report.totals.paymentCount,
 			0,
-			"московская граница внезапно захватила камчатскую первую смену: проверка перестала показывать дефект"
+			"московская граница внезапно захватила камчатскую первую смену: проверка перестала показывать дефект",
 		);
 		assert.equal(answer.report.totals.revenueRub, 0);
 	});
@@ -281,11 +307,19 @@ describe("зарплатный месяц: календарная дата в п
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const answer = await callPayouts(
-			"from=2026-05-01T00%3A00%3A00%2B12%3A00&to=2026-05-31T23%3A59%3A59%2B12%3A00"
+			"from=2026-05-01T00%3A00%3A00%2B12%3A00&to=2026-05-31T23%3A59%3A59%2B12%3A00",
 		);
 		assert.equal(answer.statusCode, 200, answer.body);
-		assert.equal(answer.report.period.from, "2026-04-30T12:00:00.000Z", answer.body);
-		assert.equal(answer.report.period.to, "2026-05-31T11:59:59.000Z", answer.body);
+		assert.equal(
+			answer.report.period.from,
+			"2026-04-30T12:00:00.000Z",
+			answer.body,
+		);
+		assert.equal(
+			answer.report.period.to,
+			"2026-05-31T11:59:59.000Z",
+			answer.body,
+		);
 		assert.equal(answer.report.totals.paymentCount, 1, answer.body);
 	});
 

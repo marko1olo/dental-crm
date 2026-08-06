@@ -26,7 +26,11 @@ export function IncomingCallToast() {
 	} | null>(null);
 
 	let ctx: any = null;
-	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider (e.g. isolated preview): degrade to prop/null */ }
+	try {
+		ctx = useAppLogicContext();
+	} catch {
+		/* rendered outside AppLogic provider (e.g. isolated preview): degrade to prop/null */
+	}
 	const dashboard = ctx?.dashboard;
 	const { lastMessage } = useWebsocket(WS_URL);
 
@@ -63,7 +67,7 @@ export function IncomingCallToast() {
 	const noShowRisk = patient?.noShowRisk;
 
 	return (
-		<div 
+		<div
 			className="fixed bottom-6 right-6 z-[999999] flex w-96 flex-col gap-3 rounded-xl border-l-4 border-[var(--teal-500,#14b8a6)] bg-[var(--paper,#1e293b)] text-[var(--ink,#f8fafc)] shadow-2xl p-5 border border-[var(--line,#334155)] animate-slide-in"
 			role="dialog"
 			aria-label="Уведомление о входящем звонке"
@@ -128,7 +132,9 @@ export function IncomingCallToast() {
 
 					{incomingCall.patientId && !hasDms && (
 						<li className="flex items-start gap-1 text-[var(--teal-500,#14b8a6)]">
-							<span className="text-[var(--teal-500,#14b8a6)] font-bold">•</span>
+							<span className="text-[var(--teal-500,#14b8a6)] font-bold">
+								•
+							</span>
 							<span>
 								Уточните наличие полиса ДМС (клиника работает со страховыми)
 							</span>

@@ -4,14 +4,14 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-	NO_RESPONSE_CAUSE,
 	actionFailureToast,
+	NO_RESPONSE_CAUSE,
+	type PanelSubject,
 	panelRetryLabel,
 	panelStateText,
 	requestFailureCause,
 	resolvePanelPhase,
 	unconfirmedActionToast,
-	type PanelSubject,
 } from "./panelStateText.js";
 
 /**
@@ -44,7 +44,8 @@ const SUBJECT: PanelSubject = {
 	notLoadedTitle: "Рекламации и осложнения не загружены",
 	accusative: "рекламации и осложнения по пациенту",
 	emptyTitle: "Рекламации и осложнения отсутствуют",
-	emptyHint: "Если пациент жалуется на результат лечения, зафиксируйте это здесь.",
+	emptyHint:
+		"Если пациент жалуется на результат лечения, зафиксируйте это здесь.",
 	failureConsequence: "Не считайте, что осложнений нет: журнал не прочитан.",
 };
 
@@ -58,12 +59,15 @@ const SINGULAR_SUBJECT: PanelSubject = {
 	notLoadedTitle: "Статус блокировки записи не прочитан",
 	accusative: "статус блокировки записи",
 	emptyTitle: "Запись пациенту разрешена",
-	emptyHint: "Если пациент трижды не пришёл без предупреждения, закройте ему самозапись здесь.",
+	emptyHint:
+		"Если пациент трижды не пришёл без предупреждения, закройте ему самозапись здесь.",
 	failureConsequence: "Не считайте, что блокировки нет: статус не прочитан.",
 };
 
 /** Коды, которые действительно приходят от Fastify в этом проекте, плюс граничные. */
-const STATUSES = [0, 400, 401, 403, 404, 409, 413, 422, 429, 500, 502, 503, 504, 301, 418];
+const STATUSES = [
+	0, 400, 401, 403, 404, 409, 413, 422, 429, 500, 502, 503, 504, 301, 418,
+];
 
 const LATIN = /[A-Za-z]/;
 const DIGIT = /[0-9]/;
@@ -139,7 +143,11 @@ test("загрузка, пустота и отказ дают три разны�
 	assert.equal(titles.size, 3, "три состояния обязаны звучать по-разному");
 
 	const hints = new Set([loading.hint, empty.hint, failed.hint]);
-	assert.equal(hints.size, 3, "подсказка «что делать» тоже своя у каждого состояния");
+	assert.equal(
+		hints.size,
+		3,
+		"подсказка «что делать» тоже своя у каждого состояния",
+	);
 
 	assert.equal(loading.phase, "loading");
 	assert.equal(empty.phase, "empty");
@@ -175,7 +183,10 @@ test("после отказа по доступу подпись кнопки г
 	// «войдите в смену заново» выглядит альтернативой входу, и оператор жмёт
 	// кнопку вместо того, чтобы войти.
 	for (const status of [401, 403]) {
-		const label = panelStateText(SUBJECT, { phase: "failed", status }).retryLabel;
+		const label = panelStateText(SUBJECT, {
+			phase: "failed",
+			status,
+		}).retryLabel;
 		assert.ok(label, `нет подписи кнопки для ${status}`);
 		assert.match(
 			label,
@@ -233,7 +244,10 @@ test("panelStateText не дописывает к названию НИ ОДНО
 test("панель с названием в единственном числе не получает «не загружены»", () => {
 	// «Статус блокировки записи не загружены» — именно это и уходило врачу.
 	for (const status of [...STATUSES, null]) {
-		const failed = panelStateText(SINGULAR_SUBJECT, { phase: "failed", status });
+		const failed = panelStateText(SINGULAR_SUBJECT, {
+			phase: "failed",
+			status,
+		});
 		assert.ok(
 			!failed.title.includes("не загружены"),
 			`согласование по числу сломано: ${failed.title}`,
@@ -260,17 +274,29 @@ test("ни одна причина отказа не содержит кода �
 	for (const status of STATUSES) {
 		const cause = requestFailureCause(status);
 		assert.ok(cause.length > 0, `пустая причина для ${status}`);
-		assert.ok(!DIGIT.test(cause), `код состояния утёк в текст для ${status}: ${cause}`);
+		assert.ok(
+			!DIGIT.test(cause),
+			`код состояния утёк в текст для ${status}: ${cause}`,
+		);
 		assert.ok(!LATIN.test(cause), `латиница в тексте для ${status}: ${cause}`);
-		assert.ok(!cause.includes(String(status)), `номер ${status} виден человеку: ${cause}`);
+		assert.ok(
+			!cause.includes(String(status)),
+			`номер ${status} виден человеку: ${cause}`,
+		);
 	}
 });
 
 test("ни один заголовок отказа не содержит кода состояния и латиницы", () => {
 	for (const status of [...STATUSES, null]) {
 		const failed = panelStateText(SUBJECT, { phase: "failed", status });
-		assert.ok(!DIGIT.test(failed.title), `цифра в заголовке отказа: ${failed.title}`);
-		assert.ok(!LATIN.test(failed.title), `латиница в заголовке отказа: ${failed.title}`);
+		assert.ok(
+			!DIGIT.test(failed.title),
+			`цифра в заголовке отказа: ${failed.title}`,
+		);
+		assert.ok(
+			!LATIN.test(failed.title),
+			`латиница в заголовке отказа: ${failed.title}`,
+		);
 	}
 });
 
@@ -294,13 +320,18 @@ test("нет доступа, конфликт и сбой сервера объ�
 	const conflict = requestFailureCause(409);
 	const serverDown = requestFailureCause(503);
 	assert.equal(new Set([denied, conflict, serverDown]).size, 3);
-	assert.equal(requestFailureCause(401), denied, "401 и 403 — одна и та же беда для оператора");
+	assert.equal(
+		requestFailureCause(401),
+		denied,
+		"401 и 403 — одна и та же беда для оператора",
+	);
 });
 
 test("каждая причина говорит, что делать дальше", () => {
 	// Действие названо глаголом в повелительном наклонении: «повторите»,
 	// «обновите», «войдите», «подождите», «сообщите», «уменьшите», «проверьте».
-	const imperative = /(повторите|обновите|войдите|подождите|сообщите|уменьшите|проверьте|попросите)/;
+	const imperative =
+		/(повторите|обновите|войдите|подождите|сообщите|уменьшите|проверьте|попросите)/;
 	for (const status of [...STATUSES, null]) {
 		const cause = requestFailureCause(status);
 		assert.match(cause, imperative, `нет действия для человека: ${cause}`);
@@ -336,7 +367,10 @@ test("неподтверждённое действие звучит иначе,
 /*  сказуемого. Компилятор такого не видит; видит только это.          */
 /* ------------------------------------------------------------------ */
 
-const WEB_SRC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const WEB_SRC_DIR = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
+);
 
 /**
  * Все .ts/.tsx фронтенда, КРОМЕ самих тестов. Читается с диска: списка панелей
@@ -350,7 +384,9 @@ const WEB_SRC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 function webSourceFiles(): string[] {
 	return readdirSync(WEB_SRC_DIR, { recursive: true, encoding: "utf8" })
 		.filter((entry) => entry.endsWith(".ts") || entry.endsWith(".tsx"))
-		.filter((entry) => !entry.endsWith(".test.ts") && !entry.endsWith(".test.tsx"))
+		.filter(
+			(entry) => !entry.endsWith(".test.ts") && !entry.endsWith(".test.tsx"),
+		)
 		.map((entry) => path.join(WEB_SRC_DIR, entry));
 }
 
@@ -367,8 +403,15 @@ function panelSubjectLiterals(): Array<{ file: string; body: string }> {
 			// скобка стоит в первой колонке. Если её нет — это не тот случай, и
 			// молча пропускать его нельзя.
 			const end = source.indexOf("\n};", start);
-			assert.notEqual(end, -1, `не найден конец литерала PanelSubject в ${file}`);
-			found.push({ file: path.relative(WEB_SRC_DIR, file), body: source.slice(start, end) });
+			assert.notEqual(
+				end,
+				-1,
+				`не найден конец литерала PanelSubject в ${file}`,
+			);
+			found.push({
+				file: path.relative(WEB_SRC_DIR, file),
+				body: source.slice(start, end),
+			});
 			from = source.indexOf(marker, end);
 		}
 	}
@@ -401,7 +444,10 @@ test("ни одна панель не подставляет в notLoadedTitle �
 	const refusalClause = /\sне\s+[а-яё]+/i;
 	for (const { file, body } of panelSubjectLiterals()) {
 		const value = /\bnotLoadedTitle:\s*(["'])([^"']+)\1/.exec(body);
-		assert.ok(value, `notLoadedTitle не разобран как строковый литерал: ${file}`);
+		assert.ok(
+			value,
+			`notLoadedTitle не разобран как строковый литерал: ${file}`,
+		);
 		const clause = value[2] as string;
 		assert.match(
 			clause,

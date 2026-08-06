@@ -33,10 +33,16 @@
  */
 
 import { eq, inArray, sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
-import { appointments, clinics, organizations, patients, users } from "../../db/schema.js";
+import {
+	appointments,
+	clinics,
+	organizations,
+	patients,
+	users,
+} from "../../db/schema.js";
 import { registerPublicBookingRoutes } from "../../routes/publicBooking.js";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 import { authTokenSecret } from "../../security/authSecret.js";
@@ -77,13 +83,18 @@ function check(label: string, actual: unknown, expected: unknown): void {
 
 function seeded<Row>(rows: Row[], what: string): Row {
 	const row = rows[0];
-	if (!row) throw new Error(`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`);
+	if (!row)
+		throw new Error(
+			`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`,
+		);
 	return row;
 }
 
 /** День недели календарной даты YYYY-MM-DD, 0 — воскресенье. */
 function weekdayOf(date: string): number {
-	const [y, m, d] = date.split("-").map((part) => Number.parseInt(part, 10)) as [number, number, number];
+	const [y, m, d] = date
+		.split("-")
+		.map((part) => Number.parseInt(part, 10)) as [number, number, number];
 	return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
@@ -93,7 +104,9 @@ async function buildApp(): Promise<FastifyInstance> {
 		getRequestIdentity(request);
 	});
 	await registerSettingsRoutes(app);
-	await app.register(registerPublicBookingRoutes, { prefix: "/api/public/booking" });
+	await app.register(registerPublicBookingRoutes, {
+		prefix: "/api/public/booking",
+	});
 	await app.ready();
 	return app;
 }
@@ -121,13 +134,26 @@ async function readSlots(
 	});
 	if (response.statusCode !== 200) {
 		const parsed = JSON.parse(response.body) as { error?: string };
-		return { status: response.statusCode, slots: null, error: parsed.error ?? null };
+		return {
+			status: response.statusCode,
+			slots: null,
+			error: parsed.error ?? null,
+		};
 	}
-	return { status: 200, slots: JSON.parse(response.body) as Slot[], error: null };
+	return {
+		status: 200,
+		slots: JSON.parse(response.body) as Slot[],
+		error: null,
+	};
 }
 
-function describe(answer: { status: number; slots: Slot[] | null; error: string | null }): string {
-	if (!answer.slots) return `HTTP ${answer.status} ${answer.error ?? ""}`.trim();
+function describe(answer: {
+	status: number;
+	slots: Slot[] | null;
+	error: string | null;
+}): string {
+	if (!answer.slots)
+		return `HTTP ${answer.status} ${answer.error ?? ""}`.trim();
 	if (answer.slots.length === 0) return "слотов нет";
 	const first = answer.slots[0]?.time;
 	const last = answer.slots[answer.slots.length - 1]?.time;
@@ -136,7 +162,10 @@ function describe(answer: { status: number; slots: Slot[] | null; error: string 
 
 async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	const organization = seeded(
-		await db.insert(organizations).values({ name: PROOF_ORGANIZATION_NAME }).returning({ id: organizations.id }),
+		await db
+			.insert(organizations)
+			.values({ name: PROOF_ORGANIZATION_NAME })
+			.returning({ id: organizations.id }),
 		PROOF_ORGANIZATION_NAME,
 	);
 	created.push(organization.id);
@@ -150,26 +179,58 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	const doctorId = seeded(
 		await db
 			.insert(users)
-			.values({ organizationId, fullName: "Врач проверки часов", role: "doctor", isActive: true })
+			.values({
+				organizationId,
+				fullName: "Врач проверки часов",
+				role: "doctor",
+				isActive: true,
+			})
 			.returning({ id: users.id }),
 		"врач",
 	).id;
 
 	const clinicToken = signToken({ organizationId }, authTokenSecret());
-	const ownerToken = signToken({ organizationId, role: "owner" }, authTokenSecret());
+	const ownerToken = signToken(
+		{ organizationId, role: "owner" },
+		authTokenSecret(),
+	);
 
-	console.log(`Понедельник ${FUTURE_MONDAY} (день недели ${weekdayOf(FUTURE_MONDAY)}), суббота ${FUTURE_SATURDAY} (${weekdayOf(FUTURE_SATURDAY)})`);
+	console.log(
+		`Понедельник ${FUTURE_MONDAY} (день недели ${weekdayOf(FUTURE_MONDAY)}), суббота ${FUTURE_SATURDAY} (${weekdayOf(FUTURE_SATURDAY)})`,
+	);
 
-	console.log("\n=== 1. ГРАФИК НЕ ЗАДАН: маршрут уходит в запас 09:00–18:00 ===");
-	const beforeMonday = await readSlots(app, organizationId, doctorId, FUTURE_MONDAY);
-	const beforeSaturday = await readSlots(app, organizationId, doctorId, FUTURE_SATURDAY);
+	console.log(
+		"\n=== 1. ГРАФИК НЕ ЗАДАН: маршрут уходит в запас 09:00–18:00 ===",
+	);
+	const beforeMonday = await readSlots(
+		app,
+		organizationId,
+		doctorId,
+		FUTURE_MONDAY,
+	);
+	const beforeSaturday = await readSlots(
+		app,
+		organizationId,
+		doctorId,
+		FUTURE_SATURDAY,
+	);
 	console.log(`  понедельник: ${describe(beforeMonday)}`);
 	console.log(`  суббота:     ${describe(beforeSaturday)}`);
-	check("без графика первый слот понедельника", beforeMonday.slots?.[0]?.time, "09:00");
+	check(
+		"без графика первый слот понедельника",
+		beforeMonday.slots?.[0]?.time,
+		"09:00",
+	);
 	// Запас считает рабочими все дни кроме воскресенья — суббота открыта.
-	check("без графика суббота считается рабочей", (beforeSaturday.slots?.length ?? 0) > 0, true);
+	check(
+		"без графика суббота считается рабочей",
+		(beforeSaturday.slots?.length ?? 0) > 0,
+		true,
+	);
 
-	console.log("\n=== 2. АДМИНИСТРАТОР ЗАДАЁТ 08:00–20:00, ПН–ПТ ЧЕРЕЗ НАСТРОЙКИ ===");
+	console.log(
+		"\n=== 2. АДМИНИСТРАТОР ЗАДАЁТ 08:00–20:00, ПН–ПТ ЧЕРЕЗ НАСТРОЙКИ ===",
+	);
 	const saved = await app.inject({
 		method: "PUT",
 		url: "/api/settings/clinic/profile",
@@ -194,7 +255,8 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 		},
 	});
 	check("профиль клиники сохранён", saved.statusCode, 200);
-	if (saved.statusCode !== 200) console.log(`  тело: ${saved.body.slice(0, 400)}`);
+	if (saved.statusCode !== 200)
+		console.log(`  тело: ${saved.body.slice(0, 400)}`);
 
 	// Настройка обязана лежать в колонке, которую читает виджет.
 	const [stored] = await db
@@ -202,7 +264,9 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 		.from(organizations)
 		.where(eq(organizations.id, organizationId))
 		.limit(1);
-	console.log(`  organizations.clinic_schedule = ${JSON.stringify(stored?.clinicSchedule)}`);
+	console.log(
+		`  organizations.clinic_schedule = ${JSON.stringify(stored?.clinicSchedule)}`,
+	);
 	check(
 		"в колонке лежит заданное начало дня",
 		(stored?.clinicSchedule as { workdayStart?: string } | null)?.workdayStart,
@@ -213,21 +277,52 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	const readBack = await app.inject({
 		method: "GET",
 		url: "/api/settings/clinic",
-		headers: { "x-dente-clinic-token": clinicToken, "x-dente-admin-secret": PROOF_ADMIN_SECRET },
+		headers: {
+			"x-dente-clinic-token": clinicToken,
+			"x-dente-admin-secret": PROOF_ADMIN_SECRET,
+		},
 	});
 	const profile = JSON.parse(readBack.body) as {
-		profile: { scheduleDefaults: { workdayStart: string; workdayEnd: string; workingDays: number[] } };
+		profile: {
+			scheduleDefaults: {
+				workdayStart: string;
+				workdayEnd: string;
+				workingDays: number[];
+			};
+		};
 	};
-	check("настройки отдают заданный график", profile.profile.scheduleDefaults.workdayStart, WORKDAY_START);
-	check("и заданные рабочие дни", profile.profile.scheduleDefaults.workingDays, WORKING_DAYS);
+	check(
+		"настройки отдают заданный график",
+		profile.profile.scheduleDefaults.workdayStart,
+		WORKDAY_START,
+	);
+	check(
+		"и заданные рабочие дни",
+		profile.profile.scheduleDefaults.workingDays,
+		WORKING_DAYS,
+	);
 
 	console.log("\n=== 3. ВИДИТ ЛИ ЭТОТ ГРАФИК ПУБЛИЧНЫЙ ВИДЖЕТ ЗАПИСИ ===");
-	const afterMonday = await readSlots(app, organizationId, doctorId, FUTURE_MONDAY);
-	const afterSaturday = await readSlots(app, organizationId, doctorId, FUTURE_SATURDAY);
+	const afterMonday = await readSlots(
+		app,
+		organizationId,
+		doctorId,
+		FUTURE_MONDAY,
+	);
+	const afterSaturday = await readSlots(
+		app,
+		organizationId,
+		doctorId,
+		FUTURE_SATURDAY,
+	);
 	console.log(`  понедельник: ${describe(afterMonday)}`);
 	console.log(`  суббота:     ${describe(afterSaturday)}`);
 
-	check("первый слот понедельника — начало рабочего дня клиники", afterMonday.slots?.[0]?.time, "08:00");
+	check(
+		"первый слот понедельника — начало рабочего дня клиники",
+		afterMonday.slots?.[0]?.time,
+		"08:00",
+	);
 	// Шаг слота — DEFAULT_SLOT_MINUTES = 30 мин, окно закрывается в 20:00,
 	// значит последний старт — 19:30, а всего слотов 12 ч / 30 мин = 24.
 	check(
@@ -235,7 +330,11 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 		afterMonday.slots?.[(afterMonday.slots?.length ?? 0) - 1]?.time,
 		"19:30",
 	);
-	check("слотов за 12-часовой день с шагом 30 минут", afterMonday.slots?.length, 24);
+	check(
+		"слотов за 12-часовой день с шагом 30 минут",
+		afterMonday.slots?.length,
+		24,
+	);
 	/*
 	 * Суббота отмечена выходной, и маршрут обязан сказать это ВСЛУХ. Пустой список
 	 * пациент читает как «всё занято» и ждёт освобождения времени, которого не
@@ -243,10 +342,20 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	 * Сработать эта ветка может только если список рабочих дней из формата
 	 * настроек прочитан — до правки читателя суббота отдавала 18 слотов.
 	 */
-	check("в выходную субботу маршрут отказывает, а не молчит", afterSaturday.status, 409);
-	check("и называет причину отказа", afterSaturday.error, "ClinicClosedThatDay");
+	check(
+		"в выходную субботу маршрут отказывает, а не молчит",
+		afterSaturday.status,
+		409,
+	);
+	check(
+		"и называет причину отказа",
+		afterSaturday.error,
+		"ClinicClosedThatDay",
+	);
 
-	console.log("\n=== 4. ЗАНЯТОЕ ВРЕМЯ ИСКЛЮЧАЕТСЯ, ГРАНИЦЫ ДНЯ СОХРАНЯЮТСЯ ===");
+	console.log(
+		"\n=== 4. ЗАНЯТОЕ ВРЕМЯ ИСКЛЮЧАЕТСЯ, ГРАНИЦЫ ДНЯ СОХРАНЯЮТСЯ ===",
+	);
 	const patientId = seeded(
 		await db
 			.insert(patients)
@@ -264,12 +373,29 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 		startsAt: busyStart,
 		endsAt: new Date(busyStart.getTime() + 3_600_000),
 	});
-	const withBusy = await readSlots(app, organizationId, doctorId, FUTURE_MONDAY);
+	const withBusy = await readSlots(
+		app,
+		organizationId,
+		doctorId,
+		FUTURE_MONDAY,
+	);
 	console.log(`  понедельник с занятым 08:00: ${describe(withBusy)}`);
 	// Приём занимает час, поэтому исчезают ОБА получасовых слота: 08:00 и 08:30.
-	check("занятый слот 08:00 исчез", withBusy.slots?.some((slot) => slot.time === "08:00"), false);
-	check("перекрытый слот 08:30 тоже исчез", withBusy.slots?.some((slot) => slot.time === "08:30"), false);
-	check("день по-прежнему начинается раньше девяти", withBusy.slots?.[0]?.time, "09:00");
+	check(
+		"занятый слот 08:00 исчез",
+		withBusy.slots?.some((slot) => slot.time === "08:00"),
+		false,
+	);
+	check(
+		"перекрытый слот 08:30 тоже исчез",
+		withBusy.slots?.some((slot) => slot.time === "08:30"),
+		false,
+	);
+	check(
+		"день по-прежнему начинается раньше девяти",
+		withBusy.slots?.[0]?.time,
+		"09:00",
+	);
 	check(
 		"и по-прежнему кончается в девятнадцать тридцать",
 		withBusy.slots?.[(withBusy.slots?.length ?? 0) - 1]?.time,
@@ -280,8 +406,12 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 
 async function cleanup(organizationIds: string[]): Promise<void> {
 	for (const organizationId of organizationIds) {
-		await db.delete(appointments).where(eq(appointments.organizationId, organizationId));
-		await db.delete(patients).where(eq(patients.organizationId, organizationId));
+		await db
+			.delete(appointments)
+			.where(eq(appointments.organizationId, organizationId));
+		await db
+			.delete(patients)
+			.where(eq(patients.organizationId, organizationId));
 		await db.delete(users).where(eq(users.organizationId, organizationId));
 		await db.delete(clinics).where(eq(clinics.organizationId, organizationId));
 		await db.delete(organizations).where(eq(organizations.id, organizationId));
@@ -294,7 +424,9 @@ async function sweepStale(): Promise<void> {
 		.from(organizations)
 		.where(inArray(organizations.name, [PROOF_ORGANIZATION_NAME]));
 	if (stale.length === 0) return;
-	console.log(`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`);
+	console.log(
+		`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`,
+	);
 	await cleanup(stale.map((row) => row.id));
 }
 
@@ -310,9 +442,13 @@ async function main(): Promise<void> {
 	} finally {
 		await app.close();
 		await cleanup(created);
-		const leftovers = await db.execute(sql`select (select count(*)::int from organizations) as organizations`);
+		const leftovers = await db.execute(
+			sql`select (select count(*)::int from organizations) as organizations`,
+		);
 		console.log(`\nПОСЛЕ УБОРКИ ${JSON.stringify(leftovers.rows[0])}`);
-		console.log(failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`);
+		console.log(
+			failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`,
+		);
 		await pool.end();
 	}
 	if (failures > 0) process.exitCode = 1;

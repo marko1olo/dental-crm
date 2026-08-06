@@ -36,12 +36,18 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { after, before, describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
-import { auditEvents, organizations, patients, users, visits } from "../../db/schema.js";
+import {
+	auditEvents,
+	organizations,
+	patients,
+	users,
+	visits,
+} from "../../db/schema.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -73,7 +79,8 @@ const AUDIT_ENTITY_TYPE = "visit";
 const AUDIT_ACTION = "visit_draft_accepted";
 
 /** Текст подменённого отказа базы — по нему проверяется строка лога. */
-const INJECTED_FAILURE = "audit_events недоступна: подмена писателя в проверке visitSignAuditTrail";
+const INJECTED_FAILURE =
+	"audit_events недоступна: подмена писателя в проверке visitSignAuditTrail";
 
 type AuditRow = {
 	readonly id: string;
@@ -138,7 +145,9 @@ async function visitRow(visitId: string): Promise<VisitRow> {
 	return row;
 }
 
-function acceptPayload(options: { clientMutationId?: string; baseRevision?: number } = {}) {
+function acceptPayload(
+	options: { clientMutationId?: string; baseRevision?: number } = {},
+) {
 	return {
 		draft: {
 			warnings: [],
@@ -208,7 +217,11 @@ describe("подписание приёма оставляет след в audit
 				fullName: "Пациент сторожа журнала",
 				status: "active",
 			});
-			for (const visitId of [VISIT_JOURNAL_OK, VISIT_JOURNAL_FAILS, VISIT_JOURNAL_CONFLICT]) {
+			for (const visitId of [
+				VISIT_JOURNAL_OK,
+				VISIT_JOURNAL_FAILS,
+				VISIT_JOURNAL_CONFLICT,
+			]) {
 				await seedDraftVisit(visitId);
 			}
 		});
@@ -233,22 +246,37 @@ describe("подписание приёма оставляет след в audit
 				select count(*)::int as n from audit_events where organization_id = ${ORGANIZATION_ID}::uuid
 			`),
 		);
-		assert.equal((leftovers.rows as { n: number }[])[0]?.n, 0, "сторож не убрал свои строки журнала");
+		assert.equal(
+			(leftovers.rows as { n: number }[])[0]?.n,
+			0,
+			"сторож не убрал свои строки журнала",
+		);
 		process.env = originalEnv;
 		await pool.end();
 	});
 
 	test("после подписания через маршрут в журнале появляется ровно одно событие приёма", async () => {
 		const before = await auditRowsForVisit(VISIT_JOURNAL_OK);
-		assert.equal(before.length, 0, "до подписания события быть не должно — иначе сверка ничего не значит");
+		assert.equal(
+			before.length,
+			0,
+			"до подписания события быть не должно — иначе сверка ничего не значит",
+		);
 
 		const response = await app.inject({
 			method: "POST",
 			url: `/api/visits/${VISIT_JOURNAL_OK}/draft/accept`,
-			headers: { "x-dente-clinic-token": staffToken, "x-dente-staff-token": staffToken },
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
 			payload: acceptPayload(),
 		});
-		assert.equal(response.statusCode, 200, `маршрут не подписал приём: ${response.body}`);
+		assert.equal(
+			response.statusCode,
+			200,
+			`маршрут не подписал приём: ${response.body}`,
+		);
 
 		const signed = await visitRow(VISIT_JOURNAL_OK);
 		assert.equal(signed.status, "signed");
@@ -266,10 +294,26 @@ describe("подписание приёма оставляет след в audit
 		);
 		const row = rows[0];
 		assert.ok(row);
-		assert.equal(row.entity_type, AUDIT_ENTITY_TYPE, "журнал читают по entity_type — он обязан быть 'visit'");
-		assert.equal(row.action, AUDIT_ACTION, "имя действия обязано совпадать с путём без базы");
-		assert.equal(row.entity_id, VISIT_JOURNAL_OK, "событие обязано указывать на подписанный приём");
-		assert.equal(row.organization_id, ORGANIZATION_ID, "событие ушло не в ту клинику");
+		assert.equal(
+			row.entity_type,
+			AUDIT_ENTITY_TYPE,
+			"журнал читают по entity_type — он обязан быть 'visit'",
+		);
+		assert.equal(
+			row.action,
+			AUDIT_ACTION,
+			"имя действия обязано совпадать с путём без базы",
+		);
+		assert.equal(
+			row.entity_id,
+			VISIT_JOURNAL_OK,
+			"событие обязано указывать на подписанный приём",
+		);
+		assert.equal(
+			row.organization_id,
+			ORGANIZATION_ID,
+			"событие ушло не в ту клинику",
+		);
 		assert.ok(
 			row.age_seconds >= 0 && row.age_seconds < 300,
 			`created_at события отстоит от «сейчас» на ${row.age_seconds} с — это не время подписания`,
@@ -325,7 +369,13 @@ describe("подписание приёма оставляет след в audit
 			}) as unknown as typeof db.insert,
 		});
 		console.error = (...args: unknown[]) => {
-			captured.push(args.map((value) => (value instanceof Error ? value.message : String(value))).join(" "));
+			captured.push(
+				args
+					.map((value) =>
+						value instanceof Error ? value.message : String(value),
+					)
+					.join(" "),
+			);
 		};
 
 		let response: Awaited<ReturnType<typeof app.inject>>;
@@ -333,7 +383,10 @@ describe("подписание приёма оставляет след в audit
 			response = await app.inject({
 				method: "POST",
 				url: `/api/visits/${VISIT_JOURNAL_FAILS}/draft/accept`,
-				headers: { "x-dente-clinic-token": staffToken, "x-dente-staff-token": staffToken },
+				headers: {
+					"x-dente-clinic-token": staffToken,
+					"x-dente-staff-token": staffToken,
+				},
 				payload: acceptPayload({ clientMutationId: "storozh-otkaz-zhurnala" }),
 			});
 		} finally {
@@ -348,15 +401,29 @@ describe("подписание приёма оставляет след в audit
 			"отказ журнала уронил подписание. Приём подписан — это факт клиники, и терять его из-за " +
 				`вспомогательной таблицы нельзя. Ответ маршрута: ${response.body}`,
 		);
-		const body = JSON.parse(response.body) as { saveReceipt?: { status?: string; serverRevision?: number } };
-		assert.equal(body.saveReceipt?.status, "accepted", "врач обязан получить полную квитанцию, а не обрывок");
+		const body = JSON.parse(response.body) as {
+			saveReceipt?: { status?: string; serverRevision?: number };
+		};
+		assert.equal(
+			body.saveReceipt?.status,
+			"accepted",
+			"врач обязан получить полную квитанцию, а не обрывок",
+		);
 		assert.equal(body.saveReceipt?.serverRevision, 2);
 
 		const signed = await visitRow(VISIT_JOURNAL_FAILS);
-		assert.equal(signed.status, "signed", "подпись обязана остаться в базе при отказе журнала");
+		assert.equal(
+			signed.status,
+			"signed",
+			"подпись обязана остаться в базе при отказе журнала",
+		);
 		assert.equal(signed.revision, 2);
 		assert.ok(signed.signed_at);
-		assert.equal(signed.diagnosis, "K02.1 Кариес дентина", "текст врача обязан сохраниться целиком");
+		assert.equal(
+			signed.diagnosis,
+			"K02.1 Кариес дентина",
+			"текст врача обязан сохраниться целиком",
+		);
 
 		assert.equal(
 			(await auditRowsForVisit(VISIT_JOURNAL_FAILS)).length,
@@ -364,7 +431,9 @@ describe("подписание приёма оставляет след в audit
 			"подмена писателя не сработала — значит проверка ничего не измерила",
 		);
 
-		const complaint = captured.find((line) => line.includes(VISIT_JOURNAL_FAILS));
+		const complaint = captured.find((line) =>
+			line.includes(VISIT_JOURNAL_FAILS),
+		);
 		assert.ok(
 			complaint,
 			`отказ журнала проглочен молча: в логе нет ни строки про приём ${VISIT_JOURNAL_FAILS}. Пустой ` +
@@ -387,9 +456,15 @@ describe("подписание приёма оставляет след в audit
 		const response = await app.inject({
 			method: "POST",
 			url: `/api/visits/${VISIT_JOURNAL_CONFLICT}/draft/accept`,
-			headers: { "x-dente-clinic-token": staffToken, "x-dente-staff-token": staffToken },
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
 			// Клиент правил приём с ревизии 0, на сервере уже была 1.
-			payload: acceptPayload({ clientMutationId: "storozh-konflikt-zhurnala", baseRevision: 0 }),
+			payload: acceptPayload({
+				clientMutationId: "storozh-konflikt-zhurnala",
+				baseRevision: 0,
+			}),
 		});
 		assert.equal(response.statusCode, 200, response.body);
 

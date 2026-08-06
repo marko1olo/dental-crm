@@ -1,8 +1,8 @@
-import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { describe, test } from "node:test";
 import type {
 	DentalPricelistAnalysisRequest,
 	DentalPricelistAnalysisResponse,
@@ -531,7 +531,8 @@ const AI_REQUEST: Omit<DentalPricelistAnalysisRequest, "rawText"> = {
  * ровно затем, чтобы selectProviderKey вернул кандидата, — иначе analyzePricelist
  * уйдёт в откат с groq_key_pool_empty, не дойдя до разбора.
  */
-const SYNTHETIC_GROQ_KEY = "gsk_synthetic_pricelist_branch_key_do_not_leak_4444";
+const SYNTHETIC_GROQ_KEY =
+	"gsk_synthetic_pricelist_branch_key_do_not_leak_4444";
 
 /**
  * Отдельный ключ для прогона с отказом Groq: отказ 500 ставит ключу остывание
@@ -576,10 +577,10 @@ const GROQ_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions";
 /** Успешный ответ Groq того вида, который читает callGroqPricelist. */
 function groqSuccessReply(rows: unknown[]): Response {
 	const content = JSON.stringify({ items: rows, warnings: [] });
-	return new Response(
-		JSON.stringify({ choices: [{ message: { content } }] }),
-		{ status: 200, headers: { "content-type": "application/json" } },
-	);
+	return new Response(JSON.stringify({ choices: [{ message: { content } }] }), {
+		status: 200,
+		headers: { "content-type": "application/json" },
+	});
 }
 
 function stubbedUrl(input: string | URL | Request): string {
@@ -659,7 +660,9 @@ function assertGroqBranchExecuted(run: NeuroRun): void {
 	);
 	assert.equal(run.response.aiVision.used, true, "нейро-разбор не отмечен");
 	assert.ok(
-		!run.response.warnings.some((warning) => warning.startsWith("groq_failed:")),
+		!run.response.warnings.some((warning) =>
+			warning.startsWith("groq_failed:"),
+		),
 		`Groq отказал: ${JSON.stringify(run.response.warnings)}`,
 	);
 }
@@ -771,7 +774,11 @@ describe("нейро-ветка считает потерянные строки
 			),
 			`отказ модели не показан клинике: ${JSON.stringify(run.response.warnings)}`,
 		);
-		assert.equal(run.response.items.length, 1, "прайс потерян вместе с отказом");
+		assert.equal(
+			run.response.items.length,
+			1,
+			"прайс потерян вместе с отказом",
+		);
 	});
 });
 
@@ -938,7 +945,11 @@ describe("нейро-ветка отказывается от года реда�
 				`отказ от цены не показан клинике («${sourceText}»): ${JSON.stringify(item.warnings)}`,
 			);
 			// Разобрана именно запись МОДЕЛИ: иначе проверка говорила бы о детерминированном откате.
-			assert.equal(item.id, AI_ITEM_ID, `позиция пришла из отката («${sourceText}»)`);
+			assert.equal(
+				item.id,
+				AI_ITEM_ID,
+				`позиция пришла из отката («${sourceText}»)`,
+			);
 		}
 	});
 
@@ -1016,8 +1027,10 @@ describe("нейро-ветка отказывается от года реда�
 			1500.5,
 		);
 		assert.equal(
-			modelItem({ sourceText: "Прицельный снимок 2000", priceRub: 2000 }, PINNED_CALENDAR)
-				.priceRub,
+			modelItem(
+				{ sourceText: "Прицельный снимок 2000", priceRub: 2000 },
+				PINNED_CALENDAR,
+			).priceRub,
 			2000,
 			"цена вне окна года редакции унесена вместе с годами",
 		);
@@ -1027,10 +1040,18 @@ describe("нейро-ветка отказывается от года реда�
 		 * проверка проходила бы мимо предмета.
 		 */
 		const range = modelItem(
-			{ sourceText: "Гигиена от 2025 до 2500 руб", priceRub: 2025, priceMaxRub: 2500 },
+			{
+				sourceText: "Гигиена от 2025 до 2500 руб",
+				priceRub: 2025,
+				priceMaxRub: 2500,
+			},
 			PINNED_CALENDAR,
 		);
-		assert.equal(range.priceRub, 2025, "нижняя граница диапазона принята за год редакции");
+		assert.equal(
+			range.priceRub,
+			2025,
+			"нижняя граница диапазона принята за год редакции",
+		);
 		assert.equal(range.priceMaxRub, 2500, "верхняя граница диапазона потеряна");
 	});
 
@@ -1050,7 +1071,11 @@ describe("нейро-ветка отказывается от года реда�
 				response.items.map((item) => [item.title, item.priceRub]),
 			)}`,
 		);
-		assert.equal(response.items[0]?.priceRub, 12500, "потеряна настоящая услуга");
+		assert.equal(
+			response.items[0]?.priceRub,
+			12500,
+			"потеряна настоящая услуга",
+		);
 		assert.equal(
 			skippedRows(response.warnings),
 			1,

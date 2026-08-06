@@ -1,21 +1,24 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients, visits } from "../../db/schema.js";
-import { registerSpeechRoutes } from "../../routes/speech.js";
 import { TOKEN_SECRET } from "../../routes/auth.js";
-import { signToken } from "../../utils/cryptoHelper.js";
+import { registerSpeechRoutes } from "../../routes/speech.js";
 import { resetSpeechTranscriptionCacheForRestart } from "../../speech/storage.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import {
-	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	fixtureUuid,
 	isDatabaseUnavailable,
+	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	purgeFixtureOrganizations,
-	withFixtureTenant
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import {
+	acquireSpeechDurableTestLock,
+	type SpeechDurableTestLock,
+} from "../support/speechDurableTestLock.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
-import { acquireSpeechDurableTestLock, type SpeechDurableTestLock } from "../support/speechDurableTestLock.js";
 
 /**
  * POST /api/speech/transcribe-chunk — единственный эндпоинт диктовки, который ПИШЕТ
@@ -74,7 +77,7 @@ function chunkPayload(overrides: Record<string, unknown> = {}) {
 		source: "visit",
 		patientId: PATIENT_A,
 		visitId: VISIT_A,
-		...overrides
+		...overrides,
 	};
 }
 
@@ -108,21 +111,37 @@ describe("доступ к записи фрагмента диктовки", () 
 			// засев: при недоступной базе соединение не выдаётся вообще, и файл обязан
 			// уйти по тому же пути, что при провале засева, а не упасть в before.
 			durableLock = await acquireSpeechDurableTestLock();
-			await purgeFixtureOrganizations([ORG_A, ORG_B, ...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS]);
+			await purgeFixtureOrganizations([
+				ORG_A,
+				ORG_B,
+				...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
+			]);
 			// Клиник две, а `app.current_tenant` хранит ровно одного арендатора:
 			// вставка организации проходит только при `id = current_tenant`, поэтому
 			// общий `values([А, Б])` отвергался бы кодом 42501 на второй строке.
 			await withFixtureTenant(ORG_A, async () => {
-				await db.insert(organizations).values({ id: ORG_A, name: "Клиника диктовки А" });
+				await db
+					.insert(organizations)
+					.values({ id: ORG_A, name: "Клиника диктовки А" });
 				// Без onConflictDoNothing: раньше он молча оставлял чужую строку с тем же
 				// первичным ключом, и тест шёл по данным соседнего файла.
-				await db
-					.insert(patients)
-					.values({ id: PATIENT_A, organizationId: ORG_A, fullName: "Гордеев Илья Максимович", birthDate: "1988-03-17" });
-				await db.insert(visits).values({ id: VISIT_A, organizationId: ORG_A, patientId: PATIENT_A, status: "draft" });
+				await db.insert(patients).values({
+					id: PATIENT_A,
+					organizationId: ORG_A,
+					fullName: "Гордеев Илья Максимович",
+					birthDate: "1988-03-17",
+				});
+				await db.insert(visits).values({
+					id: VISIT_A,
+					organizationId: ORG_A,
+					patientId: PATIENT_A,
+					status: "draft",
+				});
 			});
 			await withFixtureTenant(ORG_B, async () => {
-				await db.insert(organizations).values({ id: ORG_B, name: "Клиника диктовки Б" });
+				await db
+					.insert(organizations)
+					.values({ id: ORG_B, name: "Клиника диктовки Б" });
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
@@ -161,13 +180,13 @@ describe("доступ к записи фрагмента диктовки", () 
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/speech/transcribe-chunk",
-			payload: chunkPayload()
+			payload: chunkPayload(),
 		});
 
 		assert.equal(
 			response.statusCode,
 			401,
-			`запись без токена должна получать 401, получено ${response.statusCode}: ${response.body}`
+			`запись без токена должна получать 401, получено ${response.statusCode}: ${response.body}`,
 		);
 		assert.equal(JSON.parse(response.body).error, "AuthRequired");
 	});
@@ -175,10 +194,17 @@ describe("доступ к записи фрагмента диктовки", () 
 	// Пустое тело раньше доходило до валидации схемы и отвечало 400 — это и был признак,
 	// что запрос вообще не спрашивали об учетных данных.
 	test("пустое тело без токена отклоняется по авторизации, а не по схеме", async () => {
-		const response = await app.inject({ method: "POST", url: "/api/speech/transcribe-chunk", payload: {} });
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/speech/transcribe-chunk",
+			payload: {},
+		});
 
 		assert.equal(response.statusCode, 401, response.body);
-		assert.notEqual(JSON.parse(response.body).error, "SpeechChunkValidationError");
+		assert.notEqual(
+			JSON.parse(response.body).error,
+			"SpeechChunkValidationError",
+		);
 	});
 
 	test("с действующим токеном кабинета фрагмент сохраняется", async (context) => {
@@ -188,17 +214,21 @@ describe("доступ к записи фрагмента диктовки", () 
 			method: "POST",
 			url: "/api/speech/transcribe-chunk",
 			headers: { "x-dente-clinic-token": tokenOrgA },
-			payload: chunkPayload()
+			payload: chunkPayload(),
 		});
 
-		assert.equal(response.statusCode, 201, `валидный токен должен пускать: ${response.body}`);
+		assert.equal(
+			response.statusCode,
+			201,
+			`валидный токен должен пускать: ${response.body}`,
+		);
 		const body = JSON.parse(response.body);
 		assert.equal(body.chunk.status, "fallback_text");
 		assert.equal(body.chunk.organizationId, ORG_A);
 		assert.equal(body.chunk.patientId, PATIENT_A);
 		assert.ok(
 			body.chunk.transcript.includes("36 зуба"),
-			`текст диктовки не сохранен: ${body.chunk.transcript}`
+			`текст диктовки не сохранен: ${body.chunk.transcript}`,
 		);
 	});
 
@@ -209,11 +239,15 @@ describe("доступ к записи фрагмента диктовки", () 
 			method: "POST",
 			url: "/api/speech/transcribe-chunk",
 			headers: { "x-dente-clinic-token": tokenOrgB },
-			payload: chunkPayload({ visitId: null, source: "document" })
+			payload: chunkPayload({ visitId: null, source: "document" }),
 		});
 
 		// 404, а не 403: существование чужого идентификатора не подтверждается.
-		assert.equal(response.statusCode, 404, `чужая карта должна быть недоступна: ${response.body}`);
+		assert.equal(
+			response.statusCode,
+			404,
+			`чужая карта должна быть недоступна: ${response.body}`,
+		);
 		const body = JSON.parse(response.body);
 		assert.equal(body.error, "SpeechClinicalScopeError");
 		assert.ok(body.message.includes("не найден"), body.message);
@@ -226,10 +260,14 @@ describe("доступ к записи фрагмента диктовки", () 
 			method: "POST",
 			url: "/api/speech/transcribe-chunk",
 			headers: { "x-dente-clinic-token": tokenOrgB },
-			payload: chunkPayload({ patientId: null })
+			payload: chunkPayload({ patientId: null }),
 		});
 
-		assert.equal(response.statusCode, 404, `чужой прием должен быть недоступен: ${response.body}`);
+		assert.equal(
+			response.statusCode,
+			404,
+			`чужой прием должен быть недоступен: ${response.body}`,
+		);
 		assert.equal(JSON.parse(response.body).error, "SpeechClinicalScopeError");
 	});
 
@@ -246,12 +284,15 @@ describe("доступ к записи фрагмента диктовки", () 
 	 * .agents/archon/packets/S1-speech-unauthenticated/handoff.md.
 	 */
 	test("булевый гейт чтения все еще пускает запрос без учетных данных", async () => {
-		const response = await app.inject({ method: "GET", url: "/api/speech/status" });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/speech/status",
+		});
 
 		assert.equal(
 			response.statusCode,
 			200,
-			`ожидался открытый read-эндпоинт как эталон прежнего поведения, получено ${response.statusCode}`
+			`ожидался открытый read-эндпоинт как эталон прежнего поведения, получено ${response.statusCode}`,
 		);
 	});
 
@@ -259,11 +300,17 @@ describe("доступ к записи фрагмента диктовки", () 
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/speech/transcribe-chunk",
-			headers: { "x-dente-clinic-token": `${signToken({ organizationId: ORG_A }, "чужой-секрет-подписи")}` },
-			payload: chunkPayload()
+			headers: {
+				"x-dente-clinic-token": `${signToken({ organizationId: ORG_A }, "чужой-секрет-подписи")}`,
+			},
+			payload: chunkPayload(),
 		});
 
-		assert.equal(response.statusCode, 401, `токен с чужой подписью должен отклоняться: ${response.body}`);
+		assert.equal(
+			response.statusCode,
+			401,
+			`токен с чужой подписью должен отклоняться: ${response.body}`,
+		);
 		assert.equal(JSON.parse(response.body).error, "AuthRequired");
 	});
 });

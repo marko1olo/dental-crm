@@ -34,8 +34,8 @@
  * Секрет подписи токена берётся штатным authTokenSecret() и в вывод не попадает.
  */
 import { and, eq, sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
 import {
 	clinicalAuditLogs,
@@ -133,7 +133,9 @@ async function reportSchemaDrift(): Promise<void> {
 	const raw = driver.rows[0] as Record<string, unknown>;
 	console.log("=== что отдаёт драйвер после registerMoneyTypeParsers ===");
 	for (const key of Object.keys(raw)) {
-		console.log(`${key}: ${JSON.stringify(raw[key])} typeof=${typeof raw[key]}`);
+		console.log(
+			`${key}: ${JSON.stringify(raw[key])} typeof=${typeof raw[key]}`,
+		);
 	}
 }
 
@@ -306,7 +308,9 @@ async function main(): Promise<void> {
 				treatmentDescription: "Обработка, пломба.",
 			});
 			if (draft.statusCode !== 200) {
-				throw new Error(`черновик не создан: ${draft.statusCode} ${draft.body}`);
+				throw new Error(
+					`черновик не создан: ${draft.statusCode} ${draft.body}`,
+				);
 			}
 			const [diaryRow] = await db
 				.select({ id: visitDiaries.id })
@@ -357,10 +361,12 @@ async function main(): Promise<void> {
 				httpStatus: response.statusCode,
 				httpBody: response.body.slice(0, 160),
 				stockRaw:
-					(stock.rows[0] as { stock: string | null } | undefined)?.stock ?? null,
+					(stock.rows[0] as { stock: string | null } | undefined)?.stock ??
+					null,
 				movements: movements.rows as { quantity: string; type: string }[],
 				diaryLocked:
-					(diary.rows[0] as { is_locked: boolean } | undefined)?.is_locked ?? null,
+					(diary.rows[0] as { is_locked: boolean } | undefined)?.is_locked ??
+					null,
 				treatmentStatus:
 					(treatment.rows[0] as { status: string } | undefined)?.status ?? null,
 				auditRows: (audits.rows[0] as { n: number }).n,
@@ -381,12 +387,16 @@ async function main(): Promise<void> {
 		cases.push(await sign(await seed("negative -3", "-3")));
 		cases.push(await sign(await seed("zero 0", "0")));
 		cases.push(
-			await sign(await seed("orgless rule +2", "2", { ruleOrganizationId: null })),
+			await sign(
+				await seed("orgless rule +2", "2", { ruleOrganizationId: null }),
+			),
 		);
 		// Дробный расход: правило 1 при количестве услуги 1.5 требует записать 8.5 в
 		// integer-колонку stock_quantity. Проверяем, что именно отвечает маршрут.
 		cases.push(
-			await sign(await seed("fractional 1.5", "1", { treatmentQuantity: "1.5" })),
+			await sign(
+				await seed("fractional 1.5", "1", { treatmentQuantity: "1.5" }),
+			),
 		);
 
 		for (const observed of cases) {
@@ -433,7 +443,9 @@ async function main(): Promise<void> {
 		await db
 			.delete(inventoryItems)
 			.where(eq(inventoryItems.organizationId, organizationId));
-		await db.delete(patients).where(eq(patients.organizationId, organizationId));
+		await db
+			.delete(patients)
+			.where(eq(patients.organizationId, organizationId));
 		await db.delete(users).where(eq(users.organizationId, organizationId));
 		await db.delete(organizations).where(eq(organizations.id, organizationId));
 

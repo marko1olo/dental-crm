@@ -1,102 +1,102 @@
 {
-  "version": 1,
-  "savedAt": "2026-08-06T12:25:26.569Z",
-  "health": {
-    "google_speech:26987e457b44": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "successes": 330,
-      "lastUsedAt": 1786019126568,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "google_speech:3e0ef4ad3f5a": {
-      "cooldownUntil": 0,
-      "failures": 2,
-      "successes": 0,
-      "lastUsedAt": 1786010733183,
-      "lastStatusCode": null,
-      "lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
-    },
-    "google_speech:401c79dc50d5": {
-      "cooldownUntil": 0,
-      "failures": 2,
-      "successes": 0,
-      "lastUsedAt": 1786010733183,
-      "lastStatusCode": null,
-      "lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
-    },
-    "google_speech:5cdeb7e487c0": {
-      "cooldownUntil": 1785499372964,
-      "failures": 3,
-      "successes": 302,
-      "lastUsedAt": 1786010733182,
-      "lastStatusCode": null,
-      "lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
-    },
-    "google_speech:5e36d93cca7c": {
-      "cooldownUntil": 1785499372747,
-      "failures": 3,
-      "successes": 276,
-      "lastUsedAt": 1786010733181,
-      "lastStatusCode": null,
-      "lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
-    },
-    "google_speech:c5b553420348": {
-      "cooldownUntil": 0,
-      "failures": 2,
-      "successes": 0,
-      "lastUsedAt": 1786010733184,
-      "lastStatusCode": null,
-      "lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
-    },
-    "google_speech:c637bdf62cb7": {
-      "cooldownUntil": 0,
-      "failures": 2,
-      "successes": 0,
-      "lastUsedAt": 1786010733185,
-      "lastStatusCode": null,
-      "lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
-    },
-    "google_speech:c78fec9a5b53": {
-      "cooldownUntil": 1785499372654,
-      "failures": 3,
-      "successes": 281,
-      "lastUsedAt": 1786010733182,
-      "lastStatusCode": null,
-      "lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
-    },
-    "groq_whisper:2584c81a1b00": {
-      "cooldownUntil": 0,
-      "failures": 2,
-      "successes": 1,
-      "lastUsedAt": 1786010733180,
-      "lastStatusCode": null,
-      "lastError": "[meta-llama/llama-4-scout-17b-16e-instruct] API Error 503: stand: provider refused"
-    },
-    "groq_whisper:31af829f8541": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "successes": 2,
-      "lastUsedAt": 1786010939747,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "groq_whisper:6058314b22ec": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "successes": 1,
-      "lastUsedAt": 1785239300896,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "groq_whisper:af75a6a49164": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "successes": 3,
-      "lastUsedAt": 1786010993853,
-      "lastStatusCode": null,
-      "lastError": null
-    }
-  }
+	"version": 1,
+	"savedAt": "2026-08-06T17:50:35.883Z",
+	"health": {
+		"google_speech:26987e457b44": {
+			"cooldownUntil": 0,
+			"failures": 0,
+			"successes": 331,
+			"lastUsedAt": 1786038635883,
+			"lastStatusCode": null,
+			"lastError": null
+		},
+		"google_speech:3e0ef4ad3f5a": {
+			"cooldownUntil": 0,
+			"failures": 2,
+			"successes": 0,
+			"lastUsedAt": 1786010733183,
+			"lastStatusCode": null,
+			"lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
+		},
+		"google_speech:401c79dc50d5": {
+			"cooldownUntil": 0,
+			"failures": 2,
+			"successes": 0,
+			"lastUsedAt": 1786010733183,
+			"lastStatusCode": null,
+			"lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
+		},
+		"google_speech:5cdeb7e487c0": {
+			"cooldownUntil": 1785499372964,
+			"failures": 3,
+			"successes": 302,
+			"lastUsedAt": 1786010733182,
+			"lastStatusCode": null,
+			"lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
+		},
+		"google_speech:5e36d93cca7c": {
+			"cooldownUntil": 1785499372747,
+			"failures": 3,
+			"successes": 276,
+			"lastUsedAt": 1786010733181,
+			"lastStatusCode": null,
+			"lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
+		},
+		"google_speech:c5b553420348": {
+			"cooldownUntil": 0,
+			"failures": 2,
+			"successes": 0,
+			"lastUsedAt": 1786010733184,
+			"lastStatusCode": null,
+			"lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
+		},
+		"google_speech:c637bdf62cb7": {
+			"cooldownUntil": 0,
+			"failures": 2,
+			"successes": 0,
+			"lastUsedAt": 1786010733185,
+			"lastStatusCode": null,
+			"lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
+		},
+		"google_speech:c78fec9a5b53": {
+			"cooldownUntil": 1785499372654,
+			"failures": 3,
+			"successes": 281,
+			"lastUsedAt": 1786010733182,
+			"lastStatusCode": null,
+			"lastError": "[gemini-3.5-flash] API Error 503: stand: provider refused"
+		},
+		"groq_whisper:2584c81a1b00": {
+			"cooldownUntil": 0,
+			"failures": 2,
+			"successes": 1,
+			"lastUsedAt": 1786010733180,
+			"lastStatusCode": null,
+			"lastError": "[meta-llama/llama-4-scout-17b-16e-instruct] API Error 503: stand: provider refused"
+		},
+		"groq_whisper:31af829f8541": {
+			"cooldownUntil": 0,
+			"failures": 0,
+			"successes": 2,
+			"lastUsedAt": 1786010939747,
+			"lastStatusCode": null,
+			"lastError": null
+		},
+		"groq_whisper:6058314b22ec": {
+			"cooldownUntil": 0,
+			"failures": 0,
+			"successes": 1,
+			"lastUsedAt": 1785239300896,
+			"lastStatusCode": null,
+			"lastError": null
+		},
+		"groq_whisper:af75a6a49164": {
+			"cooldownUntil": 0,
+			"failures": 0,
+			"successes": 3,
+			"lastUsedAt": 1786010993853,
+			"lastStatusCode": null,
+			"lastError": null
+		}
+	}
 }

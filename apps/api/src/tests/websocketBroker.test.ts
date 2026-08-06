@@ -53,7 +53,11 @@ function fakeSocket(): FakeSocket {
 	};
 }
 
-function addClient(socket: FakeSocket, organizationId: string, patientId?: string) {
+function addClient(
+	socket: FakeSocket,
+	organizationId: string,
+	patientId?: string,
+) {
 	wsBroker.addClient(socket as never, organizationId, patientId);
 }
 
@@ -74,9 +78,16 @@ test("broadcastToOrganization не доставляет сообщения в ч
 	addClient(b, ORG_B);
 
 	try {
-		wsBroker.broadcastToOrganization(ORG_A, { type: "FAMILY_BALANCE_UPDATED", payload: { balance: "100.00" } });
+		wsBroker.broadcastToOrganization(ORG_A, {
+			type: "FAMILY_BALANCE_UPDATED",
+			payload: { balance: "100.00" },
+		});
 
-		assert.deepStrictEqual(types(a), ["FAMILY_BALANCE_UPDATED"], "своя клиника сообщение не получила");
+		assert.deepStrictEqual(
+			types(a),
+			["FAMILY_BALANCE_UPDATED"],
+			"своя клиника сообщение не получила",
+		);
 		assert.deepStrictEqual(types(b), [], "сообщение утекло в чужую клинику");
 	} finally {
 		a.fireClose();
@@ -96,14 +107,30 @@ test("broadcastToPatient доставляет только подписке на
 	addClient(noPatient, ORG_A);
 
 	try {
-		wsBroker.broadcastToPatient(ORG_A, PATIENT_1, { type: "UPDATE_ODONTOGRAM", payload: {} });
+		wsBroker.broadcastToPatient(ORG_A, PATIENT_1, {
+			type: "UPDATE_ODONTOGRAM",
+			payload: {},
+		});
 
 		assert.deepStrictEqual(types(samePatient), ["UPDATE_ODONTOGRAM"]);
-		assert.deepStrictEqual(types(otherPatient), [], "сообщение ушло к другому пациенту той же клиники");
-		assert.deepStrictEqual(types(samePatientOtherOrg), [], "сообщение ушло в чужую клинику по совпадению patientId");
-		assert.deepStrictEqual(types(noPatient), [], "сообщение ушло подписке без пациента");
+		assert.deepStrictEqual(
+			types(otherPatient),
+			[],
+			"сообщение ушло к другому пациенту той же клиники",
+		);
+		assert.deepStrictEqual(
+			types(samePatientOtherOrg),
+			[],
+			"сообщение ушло в чужую клинику по совпадению patientId",
+		);
+		assert.deepStrictEqual(
+			types(noPatient),
+			[],
+			"сообщение ушло подписке без пациента",
+		);
 	} finally {
-		for (const s of [samePatient, otherPatient, samePatientOtherOrg, noPatient]) s.fireClose();
+		for (const s of [samePatient, otherPatient, samePatientOtherOrg, noPatient])
+			s.fireClose();
 	}
 });
 
@@ -112,9 +139,16 @@ test("закрытый клиент удаляется из рассылки", (
 	addClient(socket, ORG_A);
 	socket.fireClose();
 
-	wsBroker.broadcastToOrganization(ORG_A, { type: "APPOINTMENT_CREATED", payload: {} });
+	wsBroker.broadcastToOrganization(ORG_A, {
+		type: "APPOINTMENT_CREATED",
+		payload: {},
+	});
 
-	assert.deepStrictEqual(types(socket), [], "закрытый сокет продолжает получать сообщения");
+	assert.deepStrictEqual(
+		types(socket),
+		[],
+		"закрытый сокет продолжает получать сообщения",
+	);
 });
 
 test("сообщение не отправляется в сокет, который ещё не открыт или уже закрывается", () => {
@@ -123,7 +157,10 @@ test("сообщение не отправляется в сокет, котор
 	addClient(socket, ORG_A);
 
 	try {
-		wsBroker.broadcastToOrganization(ORG_A, { type: "APPOINTMENT_UPDATED", payload: {} });
+		wsBroker.broadcastToOrganization(ORG_A, {
+			type: "APPOINTMENT_UPDATED",
+			payload: {},
+		});
 		assert.deepStrictEqual(types(socket), [], "запись в неоткрытый сокет");
 	} finally {
 		socket.fireClose();
@@ -137,7 +174,10 @@ test("несколько клиентов одной клиники получа
 	addClient(second, ORG_A);
 
 	try {
-		wsBroker.broadcastToOrganization(ORG_A, { type: "APPOINTMENT_CREATED", payload: { appointmentId: "x" } });
+		wsBroker.broadcastToOrganization(ORG_A, {
+			type: "APPOINTMENT_CREATED",
+			payload: { appointmentId: "x" },
+		});
 
 		assert.deepStrictEqual(types(first), ["APPOINTMENT_CREATED"]);
 		assert.deepStrictEqual(types(second), ["APPOINTMENT_CREATED"]);

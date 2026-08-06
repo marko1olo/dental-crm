@@ -1,11 +1,20 @@
 export const meta = {
-  name: 'archon-cycle-18',
-  description: 'DENTE cycle 18: the last-number fallback prices a service by its room number, an invisible risk tier, contrast against the losing palette, radiology laid out but unpainted',
-  phases: [
-    { title: 'Build', detail: 'four reworks; reproduce the reviewer findings before trusting them' },
-    { title: 'Attack', detail: 'a different agent per packet; a touched money comparison is REVERT-grade' },
-  ],
-}
+	name: "archon-cycle-18",
+	description:
+		"DENTE cycle 18: the last-number fallback prices a service by its room number, an invisible risk tier, contrast against the losing palette, radiology laid out but unpainted",
+	phases: [
+		{
+			title: "Build",
+			detail:
+				"four reworks; reproduce the reviewer findings before trusting them",
+		},
+		{
+			title: "Attack",
+			detail:
+				"a different agent per packet; a touched money comparison is REVERT-grade",
+		},
+	],
+};
 
 /*
  * DELIBERATELY SHORT LAW. The previous cycles carried a ~15 KB preamble and agents
@@ -53,16 +62,17 @@ Every "proven" entry is a command you actually RAN, with its TRUE exit code — 
 ('cmd > /tmp/log 2>&1; echo $?'), because '$?' after a pipe reports the pipe and the lead has been fooled by
 that. If your measurement contradicts this brief, YOUR MEASUREMENT WINS — say so loudly. The lead has been
 wrong seven times tonight and expects correction.
-`
+`;
 
 const PACKETS = [
-  {
-    id: 'HH1-last-number-wins',
-    label: 'HH1 «взять последнее число» оценивает услугу номером кабинета',
-    dir: '.agents/archon/packets/HH1-last-number-wins',
-    files: 'apps/api/src/pricelist/analyzer.ts and the test files under apps/api/src/pricelist/',
-    gate: 'node --import tsx --test on all three suites under apps/api/src/pricelist/ (33/33, 6/6, 13/13 today)',
-    brief: `
+	{
+		id: "HH1-last-number-wins",
+		label: "HH1 «взять последнее число» оценивает услугу номером кабинета",
+		dir: ".agents/archon/packets/HH1-last-number-wins",
+		files:
+			"apps/api/src/pricelist/analyzer.ts and the test files under apps/api/src/pricelist/",
+		gate: "node --import tsx --test on all three suites under apps/api/src/pricelist/ (33/33, 6/6, 13/13 today)",
+		brief: `
 THE FALLBACK STRATEGY «TAKE THE LAST NUMBER» PRICES A SERVICE BY ITS ROOM NUMBER.
 
 **THE LEAD FIXED ONE HALF OF THIS AND MEASURED WHAT REMAINS. Your job is the half that is left.**
@@ -107,14 +117,15 @@ the last number is far more often a room number, a service code, a duration or a
 **THIS IS MONEY IN A SIGNED DOCUMENT**, not a parser nicety: the value flows price list → treatment plan →
 printed estimate the patient signs.
 `,
-  },
-  {
-    id: 'HH2-middle-risk-tier',
-    label: 'HH2 средний уровень риска не показывается никогда, и any это скрыл',
-    dir: '.agents/archon/packets/HH2-middle-risk-tier',
-    files: 'apps/web/src/ShiftView.tsx and apps/web/src/tests/operationsPanelsStyling.test.ts or a sibling test',
-    gate: 'node --import tsx --test on the test you extend',
-    brief: `
+	},
+	{
+		id: "HH2-middle-risk-tier",
+		label: "HH2 средний уровень риска не показывается никогда, и any это скрыл",
+		dir: ".agents/archon/packets/HH2-middle-risk-tier",
+		files:
+			"apps/web/src/ShiftView.tsx and apps/web/src/tests/operationsPanelsStyling.test.ts or a sibling test",
+		gate: "node --import tsx --test on the test you extend",
+		brief: `
 THE MIDDLE RISK TIER CAN NEVER RENDER, AND AN 'any' IS WHY NOBODY NOTICED.
 
 Carried over from FF2, verdict NEEDS_REWORK — the wording fixes landed and are good, this did not.
@@ -136,14 +147,15 @@ Carried over from FF2, verdict NEEDS_REWORK — the wording fixes landed and are
 tier that cannot show is worse than a missing feature: the screen looks complete while withholding the
 middle case, which is exactly the case a busy morning needs.
 `,
-  },
-  {
-    id: 'HH3-contrast-wrong-palette',
-    label: 'HH3 контраст считан против палитры, проигравшей каскаду',
-    dir: '.agents/archon/packets/HH3-contrast-wrong-palette',
-    files: 'apps/web/src/styles/main.css, contrast-fixes.css, dente-redesign.css, and a new or extended stylesheet test',
-    gate: 'node scripts/check-css-tokens.mjs (exit 0 today — keep it) plus the test you add',
-    brief: `
+	},
+	{
+		id: "HH3-contrast-wrong-palette",
+		label: "HH3 контраст считан против палитры, проигравшей каскаду",
+		dir: ".agents/archon/packets/HH3-contrast-wrong-palette",
+		files:
+			"apps/web/src/styles/main.css, contrast-fixes.css, dente-redesign.css, and a new or extended stylesheet test",
+		gate: "node scripts/check-css-tokens.mjs (exit 0 today — keep it) plus the test you add",
+		brief: `
 THE LIGHT AND DARK CONTRAST FIGURES DESCRIBE VALUES THE BROWSER NEVER USES.
 
 Carried over from FF3, verdict NEEDS_REWORK. The night-theme work stands; the light and dark numbers do not.
@@ -173,14 +185,15 @@ per theme, before and after, with the hex values named. It records 1.04 («бе�
 'data-theme="dark"' and «Тепло» is 'data-theme="night"' — inverted in this product at
 'workspaceShell.tsx:462', which is exactly how someone styles the wrong theme.
 `,
-  },
-  {
-    id: 'HH4-imaging-void-paint',
-    label: 'HH4 «Снимки» разложены, но не покрашены',
-    dir: '.agents/archon/packets/HH4-imaging-void-paint',
-    files: 'apps/web/src/ImagingView.tsx and the stylesheets under apps/web/src/styles/. Report if the cause lies outside them.',
-    gate: 'node scripts/check-css-tokens.mjs; node --import tsx --test on anything you add',
-    brief: `
+	},
+	{
+		id: "HH4-imaging-void-paint",
+		label: "HH4 «Снимки» разложены, но не покрашены",
+		dir: ".agents/archon/packets/HH4-imaging-void-paint",
+		files:
+			"apps/web/src/ImagingView.tsx and the stylesheets under apps/web/src/styles/. Report if the cause lies outside them.",
+		gate: "node scripts/check-css-tokens.mjs; node --import tsx --test on anything you add",
+		brief: `
 RADIOLOGY IS LAID OUT AND NEVER PAINTED. THE MEASUREMENT THAT PROVES IT ALREADY EXISTS.
 
 An earlier packet did honest work here and reported that it had NOT found the cause. Its reviewer then
@@ -219,99 +232,189 @@ may reuse verbatim: «Снимков по пациенту нет / Загруз
 **You may open the PNG files and look at them.** You may NOT run any screenshot script, and you may NOT
 claim UI VERIFIED — that label is the lead's, and the lead re-captures.
 `,
-  },
-]
+	},
+];
 
 const BUILD_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'status', 'commitHash', 'filesChanged', 'inventory', 'proven', 'notProven', 'leadMustRun', 'foundNotFixed', 'summary'],
-  properties: {
-    packet: { type: 'string' },
-    status: { enum: ['COMMITTED', 'PARTIAL', 'BLOCKED', 'NO_CHANGE'] },
-    commitHash: { type: 'string' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    inventory: { type: 'array', items: { type: 'string' }, description: 'All 11 sites: file:line + CONVERTED / ALREADY CORRECT / NOT MONEY.' },
-    proven: { type: 'array', items: { type: 'string' }, description: 'Commands actually run, with TRUE exit codes captured without a pipe.' },
-    notProven: { type: 'array', items: { type: 'string' } },
-    leadMustRun: { type: 'array', items: { type: 'string' } },
-    foundNotFixed: { type: 'array', items: { type: 'string' } },
-    summary: { type: 'string' },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"status",
+		"commitHash",
+		"filesChanged",
+		"inventory",
+		"proven",
+		"notProven",
+		"leadMustRun",
+		"foundNotFixed",
+		"summary",
+	],
+	properties: {
+		packet: { type: "string" },
+		status: { enum: ["COMMITTED", "PARTIAL", "BLOCKED", "NO_CHANGE"] },
+		commitHash: { type: "string" },
+		filesChanged: { type: "array", items: { type: "string" } },
+		inventory: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"All 11 sites: file:line + CONVERTED / ALREADY CORRECT / NOT MONEY.",
+		},
+		proven: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Commands actually run, with TRUE exit codes captured without a pipe.",
+		},
+		notProven: { type: "array", items: { type: "string" } },
+		leadMustRun: { type: "array", items: { type: "string" } },
+		foundNotFixed: { type: "array", items: { type: "string" } },
+		summary: { type: "string" },
+	},
+};
 
 const REVIEW_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['packet', 'verdict', 'sitesMissed', 'comparisonsTouched', 'testWouldFailOnRevert', 'attributionClean', 'reasoning', 'requiredRework'],
-  properties: {
-    packet: { type: 'string' },
-    verdict: { enum: ['SOUND', 'SOUND_WITH_NITS', 'NEEDS_REWORK', 'REVERT'] },
-    sitesMissed: { type: 'array', items: { type: 'string' }, description: 'Money-in-text sites still raw at HEAD, re-derived by YOUR OWN grep.' },
-    comparisonsTouched: { type: 'string', description: 'Did the diff alter any money COMPARISON? Quote the diff if so — that is REVERT-grade.' },
-    testWouldFailOnRevert: { type: 'string' },
-    attributionClean: { type: 'string', description: 'Output of git log -1 --format=%(trailers) for the commit. Must be empty.' },
-    reasoning: { type: 'string' },
-    requiredRework: { type: 'array', items: { type: 'string' } },
-  },
-}
+	type: "object",
+	additionalProperties: false,
+	required: [
+		"packet",
+		"verdict",
+		"sitesMissed",
+		"comparisonsTouched",
+		"testWouldFailOnRevert",
+		"attributionClean",
+		"reasoning",
+		"requiredRework",
+	],
+	properties: {
+		packet: { type: "string" },
+		verdict: { enum: ["SOUND", "SOUND_WITH_NITS", "NEEDS_REWORK", "REVERT"] },
+		sitesMissed: {
+			type: "array",
+			items: { type: "string" },
+			description:
+				"Money-in-text sites still raw at HEAD, re-derived by YOUR OWN grep.",
+		},
+		comparisonsTouched: {
+			type: "string",
+			description:
+				"Did the diff alter any money COMPARISON? Quote the diff if so — that is REVERT-grade.",
+		},
+		testWouldFailOnRevert: { type: "string" },
+		attributionClean: {
+			type: "string",
+			description:
+				"Output of git log -1 --format=%(trailers) for the commit. Must be empty.",
+		},
+		reasoning: { type: "string" },
+		requiredRework: { type: "array", items: { type: "string" } },
+	},
+};
 
 function buildStage(p) {
-  return agent(
-    LAW +
-    '\n═══════════════════════════════════════════════════════════════\n' +
-    'YOUR PACKET: ' + p.id + '\n' +
-    'OWNED SCOPE: ' + p.files + '\n' +
-    'FORBIDDEN: every other file; all shared gates; any money COMPARISON in your own file.\n' +
-    'YOUR SIGNAL: ' + p.gate + '\n' +
-    'PACKET DIR (create first, one line in state.md): ' + p.dir + '\n' +
-    '═══════════════════════════════════════════════════════════════\n' + p.brief +
-    '\nCOMMIT AS SOON AS IT COMPILES, then add the test in a second commit if you have room.\n',
-    { label: p.label, phase: 'Build', schema: BUILD_SCHEMA }
-  )
+	return agent(
+		LAW +
+			"\n═══════════════════════════════════════════════════════════════\n" +
+			"YOUR PACKET: " +
+			p.id +
+			"\n" +
+			"OWNED SCOPE: " +
+			p.files +
+			"\n" +
+			"FORBIDDEN: every other file; all shared gates; any money COMPARISON in your own file.\n" +
+			"YOUR SIGNAL: " +
+			p.gate +
+			"\n" +
+			"PACKET DIR (create first, one line in state.md): " +
+			p.dir +
+			"\n" +
+			"═══════════════════════════════════════════════════════════════\n" +
+			p.brief +
+			"\nCOMMIT AS SOON AS IT COMPILES, then add the test in a second commit if you have room.\n",
+		{ label: p.label, phase: "Build", schema: BUILD_SCHEMA },
+	);
 }
 
 function reviewStage(built, p) {
-  if (!built) {
-    return { packet: p.id, verdict: 'NEEDS_REWORK', sitesMissed: [], comparisonsTouched: 'unknown', testWouldFailOnRevert: 'unknown', attributionClean: 'unknown', reasoning: 'Builder died. Read ' + p.dir + '/state.md — work may already be committed.', requiredRework: ['Resume ' + p.id] }
-  }
-  if (!built.commitHash) {
-    return { packet: p.id, verdict: 'SOUND_WITH_NITS', sitesMissed: [], comparisonsTouched: 'n/a', testWouldFailOnRevert: 'n/a', attributionClean: 'n/a', reasoning: built.summary || 'No commit.', requiredRework: built.foundNotFixed || [] }
-  }
-  return agent(
-    'You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm) reporting to lead\n' +
-    '[ARCHON]. You did NOT write this code. READ-ONLY: no edits, no git add/commit/push, never\n' +
-    "'git remote -v' (live tokens). Do NOT run npm typecheck/build/test — other agents are mid-edit and you\n" +
-    'would read a half-written tree. You MAY run "node --import tsx --test <one file>", read-only rg/grep,\n' +
-    'git show/grep, and read-only node -e. Write findings to ' + p.dir + '/review.md AS YOU GO — reviewers\n' +
-    'die on credits here constantly and an unwritten finding is lost.\n\n' +
-    'COMMIT: ' + built.commitHash + '\nFILES: ' + JSON.stringify(built.filesChanged) + '\n' +
-    'CLAIMED INVENTORY: ' + JSON.stringify(built.inventory || []) + '\n' +
-    'CLAIMED PROVEN: ' + JSON.stringify(built.proven || []) + '\n\n' +
-    'CHECK EXACTLY FIVE THINGS, each by running something:\n' +
-    '1. **Did it miss a site?** Re-derive with YOUR OWN grep over guards.ts at HEAD — count interpolations\n' +
-    '   of a money value into text that are still raw. The lead measured 11 raw and 4 already correct at\n' +
-    '   dispatch; report YOUR numbers, not the brief\'s.\n' +
-    '2. **Did it touch a money COMPARISON?** That is REVERT-grade. The comparisons use integer kopecks with\n' +
-    '   NO epsilon on purpose: a tolerance that hides float drift also hides a genuine one-kopeck\n' +
-    '   discrepancy, and these gates release payment receipts. Quote the diff if any comparison changed.\n' +
-    '3. **Did it convert something that is NOT money?** «${index + 1}» is a line number. A count of rows is\n' +
-    '   a count. Converting either is a defect.\n' +
-    '4. **Would its test fail if the fix were reverted?** Name the assertion that breaks. A test that\n' +
-    '   passes either way is ceremony. If it added no test, say so plainly.\n' +
-    '5. **Attribution:** run "git log -1 --format=%(trailers) ' + built.commitHash + '" and report the\n' +
-    '   output. It MUST be empty. Also grep the body for «Co-Authored-By» and «anthropic».\n\n' +
-    'Also sweep for: «руб. ₽» (would mean formatKopecksRu was used where a decimal string belongs), a\n' +
-    'second money helper beside @dental/shared, mojibake in the diff or subject, and any English string\n' +
-    'reaching a user. Reserve REVERT for a changed comparison or a tolerance introduced. Never award SOUND\n' +
-    'to a claim you could not reproduce.',
-    { label: 'attack:' + p.id, phase: 'Attack', schema: REVIEW_SCHEMA }
-  )
+	if (!built) {
+		return {
+			packet: p.id,
+			verdict: "NEEDS_REWORK",
+			sitesMissed: [],
+			comparisonsTouched: "unknown",
+			testWouldFailOnRevert: "unknown",
+			attributionClean: "unknown",
+			reasoning:
+				"Builder died. Read " +
+				p.dir +
+				"/state.md — work may already be committed.",
+			requiredRework: ["Resume " + p.id],
+		};
+	}
+	if (!built.commitHash) {
+		return {
+			packet: p.id,
+			verdict: "SOUND_WITH_NITS",
+			sitesMissed: [],
+			comparisonsTouched: "n/a",
+			testWouldFailOnRevert: "n/a",
+			attributionClean: "n/a",
+			reasoning: built.summary || "No commit.",
+			requiredRework: built.foundNotFixed || [],
+		};
+	}
+	return agent(
+		"You are an ADVERSARIAL REVIEWER on the DENTE dental CRM (C:\\Clinic_MVP\\dental-crm) reporting to lead\n" +
+			"[ARCHON]. You did NOT write this code. READ-ONLY: no edits, no git add/commit/push, never\n" +
+			"'git remote -v' (live tokens). Do NOT run npm typecheck/build/test — other agents are mid-edit and you\n" +
+			'would read a half-written tree. You MAY run "node --import tsx --test <one file>", read-only rg/grep,\n' +
+			"git show/grep, and read-only node -e. Write findings to " +
+			p.dir +
+			"/review.md AS YOU GO — reviewers\n" +
+			"die on credits here constantly and an unwritten finding is lost.\n\n" +
+			"COMMIT: " +
+			built.commitHash +
+			"\nFILES: " +
+			JSON.stringify(built.filesChanged) +
+			"\n" +
+			"CLAIMED INVENTORY: " +
+			JSON.stringify(built.inventory || []) +
+			"\n" +
+			"CLAIMED PROVEN: " +
+			JSON.stringify(built.proven || []) +
+			"\n\n" +
+			"CHECK EXACTLY FIVE THINGS, each by running something:\n" +
+			"1. **Did it miss a site?** Re-derive with YOUR OWN grep over guards.ts at HEAD — count interpolations\n" +
+			"   of a money value into text that are still raw. The lead measured 11 raw and 4 already correct at\n" +
+			"   dispatch; report YOUR numbers, not the brief's.\n" +
+			"2. **Did it touch a money COMPARISON?** That is REVERT-grade. The comparisons use integer kopecks with\n" +
+			"   NO epsilon on purpose: a tolerance that hides float drift also hides a genuine one-kopeck\n" +
+			"   discrepancy, and these gates release payment receipts. Quote the diff if any comparison changed.\n" +
+			"3. **Did it convert something that is NOT money?** «${index + 1}» is a line number. A count of rows is\n" +
+			"   a count. Converting either is a defect.\n" +
+			"4. **Would its test fail if the fix were reverted?** Name the assertion that breaks. A test that\n" +
+			"   passes either way is ceremony. If it added no test, say so plainly.\n" +
+			'5. **Attribution:** run "git log -1 --format=%(trailers) ' +
+			built.commitHash +
+			'" and report the\n' +
+			"   output. It MUST be empty. Also grep the body for «Co-Authored-By» and «anthropic».\n\n" +
+			"Also sweep for: «руб. ₽» (would mean formatKopecksRu was used where a decimal string belongs), a\n" +
+			"second money helper beside @dental/shared, mojibake in the diff or subject, and any English string\n" +
+			"reaching a user. Reserve REVERT for a changed comparison or a tolerance introduced. Never award SOUND\n" +
+			"to a claim you could not reproduce.",
+		{ label: "attack:" + p.id, phase: "Attack", schema: REVIEW_SCHEMA },
+	);
 }
 
-const all = []
-log('Cycle 18: ' + PACKETS.map((p) => p.id).join(', '))
-const done = await pipeline(PACKETS, buildStage, reviewStage)
-for (let i = 0; i < PACKETS.length; i++) all.push({ packet: PACKETS[i].id, dir: PACKETS[i].dir, review: done[i] || null })
-log('Cycle 18 complete.')
+const all = [];
+log("Cycle 18: " + PACKETS.map((p) => p.id).join(", "));
+const done = await pipeline(PACKETS, buildStage, reviewStage);
+for (let i = 0; i < PACKETS.length; i++)
+	all.push({
+		packet: PACKETS[i].id,
+		dir: PACKETS[i].dir,
+		review: done[i] || null,
+	});
+log("Cycle 18 complete.");
 return { cycle: 18, results: all }

@@ -4,8 +4,20 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const decls = JSON.parse(fs.readFileSync(new URL("./critic-decls.json", import.meta.url), "utf8"));
-const SKIPDIR = new Set(["node_modules", "dist", ".git", "drizzle", ".agents", "build", "coverage", ".next", ".vite"]);
+const decls = JSON.parse(
+	fs.readFileSync(new URL("./critic-decls.json", import.meta.url), "utf8"),
+);
+const SKIPDIR = new Set([
+	"node_modules",
+	"dist",
+	".git",
+	"drizzle",
+	".agents",
+	"build",
+	"coverage",
+	".next",
+	".vite",
+]);
 const EXTS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
 const ROOT = process.argv[2] || ".";
 const INCLUDE_SCRATCH = process.argv.includes("--with-scratch");
@@ -31,9 +43,11 @@ const files = [];
 })(ROOT);
 
 const SCHEMA_FILES = new Set(
-	["apps/api/src/db/schema.ts", "apps/api/src/db/patientsSchema.ts", "apps/api/src/db/communicationsSchema.ts"].map(
-		(s) => path.normalize(s),
-	),
+	[
+		"apps/api/src/db/schema.ts",
+		"apps/api/src/db/patientsSchema.ts",
+		"apps/api/src/db/communicationsSchema.ts",
+	].map((s) => path.normalize(s)),
 );
 
 const blobs = [];

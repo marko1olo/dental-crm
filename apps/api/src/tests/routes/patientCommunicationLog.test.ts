@@ -30,17 +30,22 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { and, eq, sql } from "drizzle-orm";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
-import { communicationEvents, organizations, patients, users } from "../../db/schema.js";
+import {
+	communicationEvents,
+	organizations,
+	patients,
+	users,
+} from "../../db/schema.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER } from "../../security/identity.js";
 import {
-	PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT,
-	PATIENT_COMMUNICATION_LOG_MAX_LIMIT,
 	buildPatientCommunicationEntriesQuery,
 	buildPatientCommunicationTotalsQuery,
+	PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT,
+	PATIENT_COMMUNICATION_LOG_MAX_LIMIT,
 	parsePatientCommunicationLogLimit,
 } from "../../services/patients/patientCommunicationLog.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -81,9 +86,11 @@ const EVENT_FOREIGN = "cc110000-0000-4000-8000-0000000000e6";
 const DOCTOR_NAME = "Иванова Анна Петровна";
 const MESSAGE_NEWEST = "Напомнили о приёме 14 июля в 10:00.";
 const MESSAGE_INBOUND = "Спасибо, буду.";
-const MESSAGE_NEEDS_CALL = "Автоматический дозвон не удался, нужен звонок администратора.";
+const MESSAGE_NEEDS_CALL =
+	"Автоматический дозвон не удался, нужен звонок администратора.";
 const MESSAGE_SKIPPED = "Не отправляли: согласие на сообщения отозвано.";
-const MESSAGE_NEIGHBOUR = "Это обращение соседней карты, в чужом журнале его быть не должно.";
+const MESSAGE_NEIGHBOUR =
+	"Это обращение соседней карты, в чужом журнале его быть не должно.";
 const MESSAGE_FOREIGN = "Это обращение чужой клиники.";
 
 /** Метки времени фиксированные: порядок строк — часть договорённости с экраном. */
@@ -113,7 +120,9 @@ type LogResponse = {
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|does not exist|password authentication|ENOTFOUND/i.test(message);
+	return /ECONNREFUSED|does not exist|password authentication|ENOTFOUND/i.test(
+		message,
+	);
 }
 
 describe("журнал обращений пациента", () => {
@@ -133,13 +142,17 @@ describe("журнал обращений пациента", () => {
 	 */
 	async function purgeFixtures(): Promise<void> {
 		await withFixtureTenant(ORG_MINE, async () => {
-			await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_MINE));
+			await db
+				.delete(communicationEvents)
+				.where(eq(communicationEvents.organizationId, ORG_MINE));
 			await db.delete(patients).where(eq(patients.organizationId, ORG_MINE));
 			await db.delete(users).where(eq(users.organizationId, ORG_MINE));
 			await db.delete(organizations).where(eq(organizations.id, ORG_MINE));
 		});
 		await withFixtureTenant(ORG_FOREIGN, async () => {
-			await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_FOREIGN));
+			await db
+				.delete(communicationEvents)
+				.where(eq(communicationEvents.organizationId, ORG_FOREIGN));
 			await db.delete(patients).where(eq(patients.organizationId, ORG_FOREIGN));
 			await db.delete(organizations).where(eq(organizations.id, ORG_FOREIGN));
 		});
@@ -151,7 +164,11 @@ describe("журнал обращений пациента", () => {
 		resetAuthSecretCacheForTests();
 
 		clinicToken = signToken({ organizationId: ORG_MINE }, TEST_SECRET, 3600);
-		foreignToken = signToken({ organizationId: ORG_FOREIGN }, TEST_SECRET, 3600);
+		foreignToken = signToken(
+			{ organizationId: ORG_FOREIGN },
+			TEST_SECRET,
+			3600,
+		);
 
 		app = createTenantTestApp();
 		await registerPatientRoutes(app);
@@ -176,13 +193,26 @@ describe("журнал обращений пациента", () => {
 					.onConflictDoNothing();
 				await db
 					.insert(users)
-					.values({ id: DOCTOR_ID, organizationId: ORG_MINE, fullName: DOCTOR_NAME, role: "doctor" })
+					.values({
+						id: DOCTOR_ID,
+						organizationId: ORG_MINE,
+						fullName: DOCTOR_NAME,
+						role: "doctor",
+					})
 					.onConflictDoNothing();
 				await db
 					.insert(patients)
 					.values([
-						{ id: PATIENT_MAIN, organizationId: ORG_MINE, fullName: "Основной Пациент" },
-						{ id: PATIENT_NEIGHBOUR, organizationId: ORG_MINE, fullName: "Соседняя Карта" },
+						{
+							id: PATIENT_MAIN,
+							organizationId: ORG_MINE,
+							fullName: "Основной Пациент",
+						},
+						{
+							id: PATIENT_NEIGHBOUR,
+							organizationId: ORG_MINE,
+							fullName: "Соседняя Карта",
+						},
 					])
 					.onConflictDoNothing();
 
@@ -253,7 +283,11 @@ describe("журнал обращений пациента", () => {
 					.onConflictDoNothing();
 				await db
 					.insert(patients)
-					.values({ id: PATIENT_FOREIGN, organizationId: ORG_FOREIGN, fullName: "Пациент Соседней Клиники" })
+					.values({
+						id: PATIENT_FOREIGN,
+						organizationId: ORG_FOREIGN,
+						fullName: "Пациент Соседней Клиники",
+					})
 					.onConflictDoNothing();
 				await db
 					.insert(communicationEvents)
@@ -284,7 +318,11 @@ describe("журнал обращений пациента", () => {
 		resetAuthSecretCacheForTests();
 	});
 
-	async function readLog(token: string, patientId: string, query = ""): Promise<{ status: number; body: string }> {
+	async function readLog(
+		token: string,
+		patientId: string,
+		query = "",
+	): Promise<{ status: number; body: string }> {
 		const response = await app.inject({
 			method: "GET",
 			url: `/api/patients/${patientId}/communication-timelines${query}`,
@@ -294,7 +332,11 @@ describe("журнал обращений пациента", () => {
 	}
 
 	test("запрос строк не связывает пациента с самим собой: колонки квалифицированы таблицей", () => {
-		const entriesSql = buildPatientCommunicationEntriesQuery(ORG_MINE, PATIENT_MAIN, 100).toSQL().sql;
+		const entriesSql = buildPatientCommunicationEntriesQuery(
+			ORG_MINE,
+			PATIENT_MAIN,
+			100,
+		).toSQL().sql;
 
 		// Отбор по пациенту обязан идти по колонке ВНЕШНЕЙ таблицы. Голое
 		// "patient_id" = "id" — это и есть та ловушка: всегда ложь, пустой экран.
@@ -303,9 +345,15 @@ describe("журнал обращений пациента", () => {
 		assert.doesNotMatch(entriesSql, /"patient_id"\s*=\s*"id"/);
 		// ФИО сотрудника берётся join-ом, а не подзапросом по голому "id".
 		assert.match(entriesSql, /left join "users"/i);
-		assert.match(entriesSql, /"users"\."id"\s*=\s*"communication_events"\."actor_user_id"/);
+		assert.match(
+			entriesSql,
+			/"users"\."id"\s*=\s*"communication_events"\."actor_user_id"/,
+		);
 
-		const totalsSql = buildPatientCommunicationTotalsQuery(ORG_MINE, PATIENT_MAIN).toSQL().sql;
+		const totalsSql = buildPatientCommunicationTotalsQuery(
+			ORG_MINE,
+			PATIENT_MAIN,
+		).toSQL().sql;
 		assert.match(totalsSql, /"communication_events"\."status"/);
 		assert.match(totalsSql, /"communication_events"\."created_at"/);
 		// Без ::int count(*) приходит строкой, и «12» + 1 стало бы «121».
@@ -313,19 +361,40 @@ describe("журнал обращений пациента", () => {
 	});
 
 	test("разбор ?limit=: мусор не уносит журнал, потолок держит размер ответа", () => {
-		assert.equal(parsePatientCommunicationLogLimit(undefined), PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT);
-		assert.equal(parsePatientCommunicationLogLimit(null), PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT);
-		assert.equal(parsePatientCommunicationLogLimit(""), PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT);
-		assert.equal(parsePatientCommunicationLogLimit("не число"), PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT);
-		assert.equal(parsePatientCommunicationLogLimit(Number.NaN), PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT);
+		assert.equal(
+			parsePatientCommunicationLogLimit(undefined),
+			PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT,
+		);
+		assert.equal(
+			parsePatientCommunicationLogLimit(null),
+			PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT,
+		);
+		assert.equal(
+			parsePatientCommunicationLogLimit(""),
+			PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT,
+		);
+		assert.equal(
+			parsePatientCommunicationLogLimit("не число"),
+			PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT,
+		);
+		assert.equal(
+			parsePatientCommunicationLogLimit(Number.NaN),
+			PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT,
+		);
 		assert.equal(parsePatientCommunicationLogLimit(" 25 "), 25);
 		assert.equal(parsePatientCommunicationLogLimit("7.9"), 7);
 		assert.equal(parsePatientCommunicationLogLimit(1), 1);
 		// Ноль и отрицательное значение — не «показать всё» и не ошибка базы.
 		assert.equal(parsePatientCommunicationLogLimit(0), 1);
 		assert.equal(parsePatientCommunicationLogLimit(-40), 1);
-		assert.equal(parsePatientCommunicationLogLimit(Number.POSITIVE_INFINITY), PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT);
-		assert.equal(parsePatientCommunicationLogLimit(1_000_000), PATIENT_COMMUNICATION_LOG_MAX_LIMIT);
+		assert.equal(
+			parsePatientCommunicationLogLimit(Number.POSITIVE_INFINITY),
+			PATIENT_COMMUNICATION_LOG_DEFAULT_LIMIT,
+		);
+		assert.equal(
+			parsePatientCommunicationLogLimit(1_000_000),
+			PATIENT_COMMUNICATION_LOG_MAX_LIMIT,
+		);
 		// Fastify отдаёт повторённый параметр массивом: ?limit=5&limit=9.
 		assert.equal(parsePatientCommunicationLogLimit(["5", "9"]), 5);
 	});
@@ -353,7 +422,11 @@ describe("журнал обращений пациента", () => {
 			),
 		);
 		const inDatabase = (counted.rows[0] as { n: number }).n;
-		assert.equal(log.totalEvents, inDatabase, `маршрут ${log.totalEvents}, база ${inDatabase}`);
+		assert.equal(
+			log.totalEvents,
+			inDatabase,
+			`маршрут ${log.totalEvents}, база ${inDatabase}`,
+		);
 
 		// Порядок: сначала самое свежее — карточку читают сверху.
 		assert.deepEqual(
@@ -374,11 +447,20 @@ describe("журнал обращений пациента", () => {
 		// needs_call обязан быть видим: это «позвонить руками», и больше нигде на
 		// карточке такие задачи не показываются.
 		assert.equal(log.needsCallCount, 1);
-		assert.equal(new Date(String(log.lastNeedsCallAt)).toISOString(), AT_NEEDS_CALL.toISOString());
+		assert.equal(
+			new Date(String(log.lastNeedsCallAt)).toISOString(),
+			AT_NEEDS_CALL.toISOString(),
+		);
 
 		// Период нужен счётчику: «4 обращения» без срока — число без смысла.
-		assert.equal(new Date(String(log.firstEventAt)).toISOString(), AT_SKIPPED.toISOString());
-		assert.equal(new Date(String(log.lastEventAt)).toISOString(), AT_NEWEST.toISOString());
+		assert.equal(
+			new Date(String(log.firstEventAt)).toISOString(),
+			AT_SKIPPED.toISOString(),
+		);
+		assert.equal(
+			new Date(String(log.lastEventAt)).toISOString(),
+			AT_NEWEST.toISOString(),
+		);
 	});
 
 	test("обращения соседней карты в журнал не попадают", async (context) => {
@@ -386,10 +468,18 @@ describe("журнал обращений пациента", () => {
 
 		const { status, body } = await readLog(clinicToken, PATIENT_MAIN);
 		assert.equal(status, 200, body);
-		assert.ok(!body.includes(MESSAGE_NEIGHBOUR), "переписка другого пациента показана в этой карте");
-		assert.ok(!body.includes(MESSAGE_FOREIGN), "переписка другой клиники показана в этой карте");
+		assert.ok(
+			!body.includes(MESSAGE_NEIGHBOUR),
+			"переписка другого пациента показана в этой карте",
+		);
+		assert.ok(
+			!body.includes(MESSAGE_FOREIGN),
+			"переписка другой клиники показана в этой карте",
+		);
 
-		const neighbour = JSON.parse((await readLog(clinicToken, PATIENT_NEIGHBOUR)).body) as LogResponse;
+		const neighbour = JSON.parse(
+			(await readLog(clinicToken, PATIENT_NEIGHBOUR)).body,
+		) as LogResponse;
 		assert.equal(neighbour.totalEvents, 1);
 		assert.equal(neighbour.entries[0]?.message, MESSAGE_NEIGHBOUR);
 	});
@@ -416,7 +506,11 @@ describe("журнал обращений пациента", () => {
 	test("?limit= обрезает показанное, но не итог: обрезка видна отдельно", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const { status, body } = await readLog(clinicToken, PATIENT_MAIN, "?limit=2");
+		const { status, body } = await readLog(
+			clinicToken,
+			PATIENT_MAIN,
+			"?limit=2",
+		);
 		assert.equal(status, 200, body);
 		const log = JSON.parse(body) as LogResponse;
 
@@ -426,7 +520,10 @@ describe("журнал обращений пациента", () => {
 		assert.equal(log.totalEvents, 4);
 		assert.equal(log.truncated, true);
 		// Период тоже по всему журналу, а не по показанным двум строкам.
-		assert.equal(new Date(String(log.firstEventAt)).toISOString(), AT_SKIPPED.toISOString());
+		assert.equal(
+			new Date(String(log.firstEventAt)).toISOString(),
+			AT_SKIPPED.toISOString(),
+		);
 	});
 
 	test("адрес без карты пациента отвечает человеческим текстом, а не ошибкой типа uuid", async (context) => {
@@ -462,7 +559,11 @@ describe("журнал обращений пациента", () => {
 		await withFixtureTenant(ORG_MINE, async () => {
 			await db
 				.insert(patients)
-				.values({ id: PATIENT_EMPTY, organizationId: ORG_MINE, fullName: "Без Обращений" })
+				.values({
+					id: PATIENT_EMPTY,
+					organizationId: ORG_MINE,
+					fullName: "Без Обращений",
+				})
 				.onConflictDoNothing();
 		});
 

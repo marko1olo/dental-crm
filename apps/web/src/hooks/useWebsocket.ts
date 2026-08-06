@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { safeLocalStorageGetItem, DENTE_CLINIC_TOKEN_KEY, DENTE_STAFF_TOKEN_KEY } from "../lib/safeLocalStorage";
+import {
+	DENTE_CLINIC_TOKEN_KEY,
+	DENTE_STAFF_TOKEN_KEY,
+	safeLocalStorageGetItem,
+} from "../lib/safeLocalStorage";
 
 type WebSocketMessage = {
 	type: string;
@@ -14,7 +18,10 @@ const RECONNECT_MAX_MS = 30_000;
  * Токены живут в localStorage под этими ключами — те же, что использует
  * остальной интерфейс.
  */
-function readAuthPayload(): { clinicToken: string | null; staffToken: string | null } {
+function readAuthPayload(): {
+	clinicToken: string | null;
+	staffToken: string | null;
+} {
 	return {
 		clinicToken: safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY),
 		staffToken: safeLocalStorageGetItem(DENTE_STAFF_TOKEN_KEY),
@@ -49,7 +56,12 @@ export function useWebsocket(url: string) {
 			// соединение неподписанным и закрывает по таймауту.
 			const { clinicToken, staffToken } = readAuthPayload();
 			if (clinicToken || staffToken) {
-				socket.send(JSON.stringify({ type: "AUTH", payload: { clinicToken, staffToken } }));
+				socket.send(
+					JSON.stringify({
+						type: "AUTH",
+						payload: { clinicToken, staffToken },
+					}),
+				);
 			}
 		};
 
@@ -68,7 +80,10 @@ export function useWebsocket(url: string) {
 		socket.onclose = () => {
 			setIsConnected(false);
 			if (closedByUs.current) return;
-			const delay = Math.min(RECONNECT_BASE_MS * 2 ** attempts.current, RECONNECT_MAX_MS);
+			const delay = Math.min(
+				RECONNECT_BASE_MS * 2 ** attempts.current,
+				RECONNECT_MAX_MS,
+			);
 			attempts.current += 1;
 			reconnectTimeout.current = setTimeout(connect, delay);
 		};

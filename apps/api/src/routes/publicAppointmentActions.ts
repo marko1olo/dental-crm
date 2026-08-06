@@ -26,8 +26,17 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
-import { appointments, clinics, communicationTasks, organizations, patients } from "../db/schema.js";
-import { markActionCodeUsed, resolveActionCode } from "../services/communications/appointmentActionLinks.js";
+import {
+	appointments,
+	clinics,
+	communicationTasks,
+	organizations,
+	patients,
+} from "../db/schema.js";
+import {
+	markActionCodeUsed,
+	resolveActionCode,
+} from "../services/communications/appointmentActionLinks.js";
 import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
@@ -58,10 +67,19 @@ function isRateLimited(ip: string, now = Date.now()): boolean {
  * открывает её из SMS в любом браузере, включая старый, и внешние ресурсы могут
  * не загрузиться.
  */
-function renderPage(title: string, message: string, tone: "ok" | "warn" | "error"): string {
-	const accent = tone === "ok" ? "#0f766e" : tone === "warn" ? "#b45309" : "#b91c1c";
+function renderPage(
+	title: string,
+	message: string,
+	tone: "ok" | "warn" | "error",
+): string {
+	const accent =
+		tone === "ok" ? "#0f766e" : tone === "warn" ? "#b45309" : "#b91c1c";
 	const escape = (value: string) =>
-		value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+		value
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;");
 
 	return `<!doctype html>
 <html lang="ru">
@@ -83,8 +101,17 @@ function renderPage(title: string, message: string, tone: "ok" | "warn" | "error
 </html>`;
 }
 
-function sendPage(reply: FastifyReply, statusCode: number, title: string, message: string, tone: "ok" | "warn" | "error") {
-	return reply.code(statusCode).type("text/html; charset=utf-8").send(renderPage(title, message, tone));
+function sendPage(
+	reply: FastifyReply,
+	statusCode: number,
+	title: string,
+	message: string,
+	tone: "ok" | "warn" | "error",
+) {
+	return reply
+		.code(statusCode)
+		.type("text/html; charset=utf-8")
+		.send(renderPage(title, message, tone));
 }
 
 /** Название клиники для страницы. Пациент должен понимать, куда он попал. */
@@ -111,19 +138,30 @@ function formatAppointmentMoment(startsAt: Date, timezone: string): string {
 			day: "numeric",
 			month: "long",
 			hour: "2-digit",
-			minute: "2-digit"
+			minute: "2-digit",
 		}).format(startsAt);
 	} catch {
-		return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(
-			startsAt
-		);
+		return new Intl.DateTimeFormat("ru-RU", {
+			day: "numeric",
+			month: "long",
+			hour: "2-digit",
+			minute: "2-digit",
+		}).format(startsAt);
 	}
 }
 
-export async function registerPublicAppointmentActionRoutes(app: FastifyInstance) {
+export async function registerPublicAppointmentActionRoutes(
+	app: FastifyInstance,
+) {
 	const handle = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (isRateLimited(request.ip)) {
-			return sendPage(reply, 429, "Слишком много запросов", "Попробуйте открыть ссылку через минуту.", "warn");
+			return sendPage(
+				reply,
+				429,
+				"Слишком много запросов",
+				"Попробуйте открыть ссылку через минуту.",
+				"warn",
+			);
 		}
 
 		const rawCode = (request.params as { code?: string }).code ?? "";
@@ -136,13 +174,16 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 				400,
 				"Ссылка недействительна",
 				"Срок действия ссылки истёк или она неполная. Позвоните в клинику, чтобы подтвердить или отменить приём.",
-				"error"
+				"error",
 			);
 		}
 
 		// Действие берётся из кода, а не из адреса: одну ссылку нельзя подменить
 		// другой, дописав к ней /cancel.
-		const payload = { organizationId: resolved.organizationId, appointmentId: resolved.appointmentId };
+		const payload = {
+			organizationId: resolved.organizationId,
+			appointmentId: resolved.appointmentId,
+		};
 		const expectedAction = resolved.action;
 
 		/*
@@ -166,15 +207,26 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 					id: appointments.id,
 					status: appointments.status,
 					startsAt: appointments.startsAt,
-					patientId: appointments.patientId
+					patientId: appointments.patientId,
 				})
 				.from(appointments)
-				.where(and(eq(appointments.id, payload.appointmentId), eq(appointments.organizationId, payload.organizationId)))
+				.where(
+					and(
+						eq(appointments.id, payload.appointmentId),
+						eq(appointments.organizationId, payload.organizationId),
+					),
+				)
 				.limit(1);
 
 			const title = await clinicTitle(payload.organizationId);
 			if (!appointment) {
-				return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
+				return sendPage(
+					reply,
+					404,
+					title,
+					"Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.",
+					"error",
+				);
 			}
 
 			const [clinic] = await db
@@ -182,18 +234,33 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 				.from(clinics)
 				.where(eq(clinics.organizationId, payload.organizationId))
 				.limit(1);
-			const moment = formatAppointmentMoment(appointment.startsAt, clinic?.timezone ?? "Europe/Moscow");
+			const moment = formatAppointmentMoment(
+				appointment.startsAt,
+				clinic?.timezone ?? "Europe/Moscow",
+			);
 
 			// Прошедший приём подтверждать и отменять нечего, а сообщение об этом
 			// понятнее, чем «ссылка недействительна».
 			if (appointment.startsAt.getTime() < Date.now()) {
-				return sendPage(reply, 409, title, `Приём ${moment} уже прошёл. Чтобы записаться снова, позвоните в клинику.`, "warn");
+				return sendPage(
+					reply,
+					409,
+					title,
+					`Приём ${moment} уже прошёл. Чтобы записаться снова, позвоните в клинику.`,
+					"warn",
+				);
 			}
 
 			if (expectedAction === "confirm") {
 				if (appointment.status === "confirmed") {
 					// Повторное нажатие — обычное дело: пациент открыл ссылку дважды.
-					return sendPage(reply, 200, title, `Приём ${moment} уже подтверждён. Ждём вас.`, "ok");
+					return sendPage(
+						reply,
+						200,
+						title,
+						`Приём ${moment} уже подтверждён. Ждём вас.`,
+						"ok",
+					);
 				}
 				if (appointment.status !== "planned") {
 					return sendPage(
@@ -201,7 +268,7 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 						409,
 						title,
 						`Приём ${moment} уже нельзя подтвердить: его статус изменила клиника. Позвоните нам.`,
-						"warn"
+						"warn",
 					);
 				}
 
@@ -224,21 +291,51 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 					)
 					.returning({ id: appointments.id });
 				if (!confirmed) {
-					return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
+					return sendPage(
+						reply,
+						404,
+						title,
+						"Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.",
+						"error",
+					);
 				}
 				await markActionCodeUsed(resolved.code);
 				wsBroker.broadcastToOrganization(payload.organizationId, {
 					type: "APPOINTMENT_UPDATED",
-					payload: { appointmentId: appointment.id, source: "patient_confirmation" }
+					payload: {
+						appointmentId: appointment.id,
+						source: "patient_confirmation",
+					},
 				});
-				return sendPage(reply, 200, title, `Спасибо! Приём ${moment} подтверждён. Ждём вас.`, "ok");
+				return sendPage(
+					reply,
+					200,
+					title,
+					`Спасибо! Приём ${moment} подтверждён. Ждём вас.`,
+					"ok",
+				);
 			}
 
 			if (appointment.status === "cancelled") {
-				return sendPage(reply, 200, title, `Приём ${moment} уже отменён. Чтобы записаться снова, позвоните в клинику.`, "ok");
+				return sendPage(
+					reply,
+					200,
+					title,
+					`Приём ${moment} уже отменён. Чтобы записаться снова, позвоните в клинику.`,
+					"ok",
+				);
 			}
-			if (appointment.status !== "planned" && appointment.status !== "confirmed") {
-				return sendPage(reply, 409, title, `Приём ${moment} уже нельзя отменить по ссылке. Позвоните в клинику.`, "warn");
+			if (
+				appointment.status !== "planned" &&
+				appointment.status !== "confirmed"
+			) {
+				return sendPage(
+					reply,
+					409,
+					title,
+					`Приём ${moment} уже нельзя отменить по ссылке. Позвоните в клинику.`,
+					"warn",
+				);
 			}
 
 			/*
@@ -257,13 +354,23 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 				)
 				.returning({ id: appointments.id });
 			if (!cancelled) {
-				return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
+				return sendPage(
+					reply,
+					404,
+					title,
+					"Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.",
+					"error",
+				);
 			}
 			await markActionCodeUsed(resolved.code);
 
 			// Напоминания об отменённом приёме снимаются сразу: иначе пациент,
 			// только что отказавшийся, получит «ждём вас завтра».
-			await invalidateAppointmentReminders(payload.organizationId, appointment.id, "Приём отменён пациентом по ссылке");
+			await invalidateAppointmentReminders(
+				payload.organizationId,
+				appointment.id,
+				"Приём отменён пациентом по ссылке",
+			);
 
 			// Отмена не должна проходить молча: администратор обязан узнать об
 			// освободившемся слоте и попробовать переставить пациента.
@@ -288,13 +395,16 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 					body:
 						`${patient?.fullName ?? "Пациент"} отменил приём ${moment} через ссылку в сообщении. ` +
 						"Слот освободился: предложите время другому пациенту из листа ожидания и уточните, нужен ли перенос.",
-					workflowCode: "appointment_reschedule_followup"
+					workflowCode: "appointment_reschedule_followup",
 				});
 			}
 
 			wsBroker.broadcastToOrganization(payload.organizationId, {
 				type: "APPOINTMENT_UPDATED",
-				payload: { appointmentId: appointment.id, source: "patient_cancellation" }
+				payload: {
+					appointmentId: appointment.id,
+					source: "patient_cancellation",
+				},
 			});
 
 			return sendPage(
@@ -302,7 +412,7 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 				200,
 				title,
 				`Приём ${moment} отменён. Мы получили ваш отказ; при необходимости администратор свяжется с вами для переноса.`,
-				"ok"
+				"ok",
 			);
 		});
 	};

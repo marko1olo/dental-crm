@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+	type DispatchReport,
 	describeDispatchReport,
 	describeReminderReport,
-	type DispatchReport,
-	type ReminderScheduleReport
+	type ReminderScheduleReport,
 } from "./deliveryReportNotice.js";
 
 /**
@@ -40,7 +40,7 @@ const cleanDispatch: DispatchReport = {
 	deferred: 0,
 	releasedStuck: 0,
 	awaitingRetry: 0,
-	awaitingSchedule: 0
+	awaitingSchedule: 0,
 };
 
 const cleanReminders: ReminderScheduleReport = {
@@ -51,7 +51,7 @@ const cleanReminders: ReminderScheduleReport = {
 	skippedNoChannel: 0,
 	skippedNoTemplateData: 0,
 	skipped: [],
-	problems: []
+	problems: [],
 };
 
 /** Ни одного латинского слова в тексте для врача: кода ошибки и англицизмов быть не должно. */
@@ -68,16 +68,29 @@ describe("разбор очереди: отчёт сервера превращ�
 			...cleanDispatch,
 			claimed: 5,
 			sent: 0,
-			retried: 5
+			retried: 5,
 		});
 
-		assert.equal(notice.kind, "fail", `спокойный серый блок при пяти недоставленных: ${notice.text}`);
+		assert.equal(
+			notice.kind,
+			"fail",
+			`спокойный серый блок при пяти недоставленных: ${notice.text}`,
+		);
 		assert.match(notice.text, /Пока не ушло/);
-		assert.match(notice.text, /попроб/i, `в тексте нет обещания повторить: ${notice.text}`);
+		assert.match(
+			notice.text,
+			/попроб/i,
+			`в тексте нет обещания повторить: ${notice.text}`,
+		);
 	});
 
 	it("след «взято N» восстановлен: видно, что сообщения брали, а не что их не было", () => {
-		const notice = describeDispatchReport({ ...cleanDispatch, claimed: 5, sent: 0, retried: 5 });
+		const notice = describeDispatchReport({
+			...cleanDispatch,
+			claimed: 5,
+			sent: 0,
+			retried: 5,
+		});
 		// Прежняя версия печатала только «Отправлено: 0 сообщений.» — из такой
 		// строки нельзя отличить «взяли пять и ни одно не ушло» от «брать было
 		// нечего».
@@ -86,15 +99,34 @@ describe("разбор очереди: отчёт сервера превращ�
 	});
 
 	it("тихие часы: отложенные сообщения не прячутся в спокойном блоке", () => {
-		const notice = describeDispatchReport({ ...cleanDispatch, claimed: 4, sent: 1, deferred: 3 });
-		assert.equal(notice.kind, "fail", `deferred пропал из текста: ${notice.text}`);
+		const notice = describeDispatchReport({
+			...cleanDispatch,
+			claimed: 4,
+			sent: 1,
+			deferred: 3,
+		});
+		assert.equal(
+			notice.kind,
+			"fail",
+			`deferred пропал из текста: ${notice.text}`,
+		);
 		assert.match(notice.text, /Отложено до утра: 3/);
 		assert.match(notice.text, /тихие часы/i);
 	});
 
 	it("канал не настроен — это дело администратора, а не осознанный отказ", () => {
-		const notConfigured = describeDispatchReport({ ...cleanDispatch, claimed: 2, sent: 0, notConfigured: 2 });
-		const suppressed = describeDispatchReport({ ...cleanDispatch, claimed: 2, sent: 0, suppressed: 2 });
+		const notConfigured = describeDispatchReport({
+			...cleanDispatch,
+			claimed: 2,
+			sent: 0,
+			notConfigured: 2,
+		});
+		const suppressed = describeDispatchReport({
+			...cleanDispatch,
+			claimed: 2,
+			sent: 0,
+			suppressed: 2,
+		});
 
 		assert.equal(notConfigured.kind, "fail");
 		assert.equal(suppressed.kind, "fail");
@@ -107,7 +139,10 @@ describe("разбор очереди: отчёт сервера превращ�
 	});
 
 	it("зависшие захваты названы, но сами по себе не делают итог красным", () => {
-		const notice = describeDispatchReport({ ...cleanDispatch, releasedStuck: 2 });
+		const notice = describeDispatchReport({
+			...cleanDispatch,
+			releasedStuck: 2,
+		});
 		assert.equal(notice.kind, "done", notice.text);
 		assert.match(notice.text, /зависли/);
 	});
@@ -121,8 +156,17 @@ describe("разбор очереди: отчёт сервера превращ�
 
 	describe("второе нажатие после отказа", () => {
 		it("взято 0, но пять лежат с выдержкой — спокойного «нечего отправлять» быть не должно", () => {
-			const notice = describeDispatchReport({ ...cleanDispatch, claimed: 0, sent: 0, awaitingRetry: 5 });
-			assert.equal(notice.kind, "fail", `второе нажатие снова врёт: ${notice.text}`);
+			const notice = describeDispatchReport({
+				...cleanDispatch,
+				claimed: 0,
+				sent: 0,
+				awaitingRetry: 5,
+			});
+			assert.equal(
+				notice.kind,
+				"fail",
+				`второе нажатие снова врёт: ${notice.text}`,
+			);
 			assert.match(notice.text, /5 сообщений ждут повторной попытки/);
 			// Кнопка «Повторить» в журнале действительно существует и действительно
 			// возвращает строку в очередь: обещание, которое интерфейс может сдержать.
@@ -130,13 +174,26 @@ describe("разбор очереди: отчёт сервера превращ�
 		});
 
 		it("взято 0, а в очереди только назначенное на будущее — это НЕ авария", () => {
-			const notice = describeDispatchReport({ ...cleanDispatch, claimed: 0, sent: 0, awaitingSchedule: 4 });
-			assert.equal(notice.kind, "done", `обычная работа покрашена в красный: ${notice.text}`);
+			const notice = describeDispatchReport({
+				...cleanDispatch,
+				claimed: 0,
+				sent: 0,
+				awaitingSchedule: 4,
+			});
+			assert.equal(
+				notice.kind,
+				"done",
+				`обычная работа покрашена в красный: ${notice.text}`,
+			);
 			assert.match(notice.text, /ждут назначенного времени/);
 		});
 
 		it("пустая очередь остаётся спокойной и говорит, откуда берутся сообщения", () => {
-			const notice = describeDispatchReport({ ...cleanDispatch, claimed: 0, sent: 0 });
+			const notice = describeDispatchReport({
+				...cleanDispatch,
+				claimed: 0,
+				sent: 0,
+			});
 			assert.equal(notice.kind, "done");
 			assert.match(notice.text, /Поставить напоминания/);
 		});
@@ -147,7 +204,7 @@ describe("разбор очереди: отчёт сервера превращ�
 				claimed: 0,
 				sent: 0,
 				awaitingRetry: 2,
-				awaitingSchedule: 7
+				awaitingSchedule: 7,
 			});
 			assert.equal(notice.kind, "fail");
 			assert.match(notice.text, /2 сообщения ждут повторной попытки/);
@@ -164,11 +221,14 @@ describe("разбор очереди: отчёт сервера превращ�
 			claimed: 25,
 			sent: 0,
 			retried: 25,
-			awaitingRetry: 5
+			awaitingRetry: 5,
 		});
 		assert.equal(notice.kind, "fail");
 		assert.match(notice.text, /Пока не ушло, попробуем ещё раз: 25/);
-		assert.match(notice.text, /Кроме этих, ждут повторной попытки: 5 сообщений/);
+		assert.match(
+			notice.text,
+			/Кроме этих, ждут повторной попытки: 5 сообщений/,
+		);
 	});
 });
 
@@ -180,13 +240,29 @@ describe("напоминания: пропущенные пациенты обя
 			queued: 7,
 			skippedNoChannel: 3,
 			skipped: [
-				{ patientName: "Орлова Марина Петровна", reason: "no_channel", appointmentAt: "2026-07-29T11:30:00.000Z" },
-				{ patientName: "Гущин Пётр Ильич", reason: "no_channel", appointmentAt: "2026-07-29T13:00:00.000Z" },
-				{ patientName: "Наумова Ольга Сергеевна", reason: "no_channel", appointmentAt: "2026-07-29T15:45:00.000Z" }
-			]
+				{
+					patientName: "Орлова Марина Петровна",
+					reason: "no_channel",
+					appointmentAt: "2026-07-29T11:30:00.000Z",
+				},
+				{
+					patientName: "Гущин Пётр Ильич",
+					reason: "no_channel",
+					appointmentAt: "2026-07-29T13:00:00.000Z",
+				},
+				{
+					patientName: "Наумова Ольга Сергеевна",
+					reason: "no_channel",
+					appointmentAt: "2026-07-29T15:45:00.000Z",
+				},
+			],
 		});
 
-		assert.equal(notice.kind, "fail", `трое пациентов пропали молча: ${notice.text}`);
+		assert.equal(
+			notice.kind,
+			"fail",
+			`трое пациентов пропали молча: ${notice.text}`,
+		);
 		assert.match(notice.text, /Поставлено напоминаний: 7/);
 		// Числа мало: чтобы позвонить, администратору нужно имя.
 		assert.match(notice.text, /Орлова Марина Петровна/);
@@ -203,18 +279,34 @@ describe("напоминания: пропущенные пациенты обя
 			skippedNoChannel: 1,
 			skippedNoTemplateData: 1,
 			skipped: [
-				{ patientName: "Орлова Марина Петровна", reason: "no_channel", appointmentAt: "2026-07-29T11:30:00.000Z" },
-				{ patientName: "Гущин Пётр Ильич", reason: "no_template_data", appointmentAt: "2026-07-29T13:00:00.000Z" }
-			]
+				{
+					patientName: "Орлова Марина Петровна",
+					reason: "no_channel",
+					appointmentAt: "2026-07-29T11:30:00.000Z",
+				},
+				{
+					patientName: "Гущин Пётр Ильич",
+					reason: "no_template_data",
+					appointmentAt: "2026-07-29T13:00:00.000Z",
+				},
+			],
 		});
 
 		assert.equal(notice.kind, "fail");
 		assert.match(notice.text, /нет способа связи[\s\S]*Орлова Марина Петровна/);
-		assert.match(notice.text, /не хватает данных о приёме[\s\S]*Гущин Пётр Ильич/);
+		assert.match(
+			notice.text,
+			/не хватает данных о приёме[\s\S]*Гущин Пётр Ильич/,
+		);
 	});
 
 	it("сервер прислал число, но не прислал имён — число не выдумывается в имена", () => {
-		const notice = describeReminderReport({ ...cleanReminders, examined: 5, queued: 2, skippedNoChannel: 3 });
+		const notice = describeReminderReport({
+			...cleanReminders,
+			examined: 5,
+			queued: 2,
+			skippedNoChannel: 3,
+		});
 		assert.equal(notice.kind, "fail");
 		/*
 		 * Здесь стояло /3 пациентов/, и ошибка была в ТЕСТЕ, а не в коде.
@@ -247,7 +339,13 @@ describe("напоминания: пропущенные пациенты обя
 			examined: 30,
 			queued: 5,
 			skippedNoChannel: 25,
-			skipped: [{ patientName: "Орлова Марина Петровна", reason: "no_channel", appointmentAt: "2026-07-29T11:30:00.000Z" }]
+			skipped: [
+				{
+					patientName: "Орлова Марина Петровна",
+					reason: "no_channel",
+					appointmentAt: "2026-07-29T11:30:00.000Z",
+				},
+			],
 		});
 		assert.match(notice.text, /25 пациентов/);
 		assert.match(notice.text, /Названы первые 1/);
@@ -260,7 +358,9 @@ describe("напоминания: пропущенные пациенты обя
 			...cleanReminders,
 			examined: 0,
 			queued: 0,
-			problems: ["Напоминания включены, но нет ни одного активного шаблона с назначением «Подтверждение приёма»."]
+			problems: [
+				"Напоминания включены, но нет ни одного активного шаблона с назначением «Подтверждение приёма».",
+			],
 		});
 		assert.equal(notice.kind, "fail");
 		assert.doesNotMatch(notice.text, /Но не для всех/);
@@ -268,13 +368,26 @@ describe("напоминания: пропущенные пациенты обя
 	});
 
 	it("напоминания выключены: ноль объяснён, а не подан как результат работы", () => {
-		const notice = describeReminderReport({ ...cleanReminders, organizations: 0, examined: 0, queued: 0 });
-		assert.equal(notice.kind, "fail", `нажали кнопку, ничего не произошло, и экран спокоен: ${notice.text}`);
+		const notice = describeReminderReport({
+			...cleanReminders,
+			organizations: 0,
+			examined: 0,
+			queued: 0,
+		});
+		assert.equal(
+			notice.kind,
+			"fail",
+			`нажали кнопку, ничего не произошло, и экран спокоен: ${notice.text}`,
+		);
 		assert.match(notice.text, /выключены/);
 	});
 
 	it("приёмов в окне нет: спокойно, но с объяснением, почему ноль", () => {
-		const notice = describeReminderReport({ ...cleanReminders, examined: 0, queued: 0 });
+		const notice = describeReminderReport({
+			...cleanReminders,
+			examined: 0,
+			queued: 0,
+		});
 		assert.equal(notice.kind, "done");
 		assert.match(notice.text, /Приёмов, о которых пора напоминать, сейчас нет/);
 	});
@@ -289,7 +402,13 @@ describe("напоминания: пропущенные пациенты обя
 		// Расхождение с сервером не должно повторить исходный дефект — молчание.
 		const notice = describeReminderReport({
 			...cleanReminders,
-			skipped: [{ patientName: "Орлова Марина Петровна", reason: "no_channel", appointmentAt: "2026-07-29T11:30:00.000Z" }]
+			skipped: [
+				{
+					patientName: "Орлова Марина Петровна",
+					reason: "no_channel",
+					appointmentAt: "2026-07-29T11:30:00.000Z",
+				},
+			],
 		});
 		assert.equal(notice.kind, "fail");
 		assert.match(notice.text, /Орлова Марина Петровна/);
@@ -317,10 +436,13 @@ describe("каждое поле отчёта слышно в тексте", () =
 		deferred: { ...cleanDispatch, deferred: 2 },
 		releasedStuck: { ...cleanDispatch, releasedStuck: 2 },
 		awaitingRetry: { ...cleanDispatch, awaitingRetry: 2 },
-		awaitingSchedule: { ...cleanDispatch, awaitingSchedule: 2 }
+		awaitingSchedule: { ...cleanDispatch, awaitingSchedule: 2 },
 	};
 
-	const reminderMutations: Record<keyof ReminderScheduleReport, ReminderScheduleReport> = {
+	const reminderMutations: Record<
+		keyof ReminderScheduleReport,
+		ReminderScheduleReport
+	> = {
 		organizations: { ...cleanReminders, organizations: 0 },
 		examined: { ...cleanReminders, examined: 0 },
 		queued: { ...cleanReminders, queued: 2 },
@@ -329,9 +451,20 @@ describe("каждое поле отчёта слышно в тексте", () =
 		skippedNoTemplateData: { ...cleanReminders, skippedNoTemplateData: 2 },
 		skipped: {
 			...cleanReminders,
-			skipped: [{ patientName: "Орлова Марина Петровна", reason: "no_channel", appointmentAt: "2026-07-29T11:30:00.000Z" }]
+			skipped: [
+				{
+					patientName: "Орлова Марина Петровна",
+					reason: "no_channel",
+					appointmentAt: "2026-07-29T11:30:00.000Z",
+				},
+			],
 		},
-		problems: { ...cleanReminders, problems: ["Напоминания поставить не удалось: соединение с базой потеряно."] }
+		problems: {
+			...cleanReminders,
+			problems: [
+				"Напоминания поставить не удалось: соединение с базой потеряно.",
+			],
+		},
 	};
 
 	const baselineDispatch = describeDispatchReport(cleanDispatch).text;
@@ -340,7 +473,7 @@ describe("каждое поле отчёта слышно в тексте", () =
 			assert.notEqual(
 				describeDispatchReport(mutated).text,
 				baselineDispatch,
-				`поле «${field}» не влияет на текст — оно молча выпадает из отчёта`
+				`поле «${field}» не влияет на текст — оно молча выпадает из отчёта`,
 			);
 		});
 	}
@@ -351,26 +484,50 @@ describe("каждое поле отчёта слышно в тексте", () =
 			assert.notEqual(
 				describeReminderReport(mutated).text,
 				baselineReminders,
-				`поле «${field}» не влияет на текст — оно молча выпадает из отчёта`
+				`поле «${field}» не влияет на текст — оно молча выпадает из отчёта`,
 			);
 		});
 	}
 
 	it("ни в одном итоге нет латиницы и нет идентификатора организации", () => {
 		const texts = [
-			...Object.values(dispatchMutations).map((report) => describeDispatchReport(report).text),
-			...Object.values(reminderMutations).map((report) => describeReminderReport(report).text),
+			...Object.values(dispatchMutations).map(
+				(report) => describeDispatchReport(report).text,
+			),
+			...Object.values(reminderMutations).map(
+				(report) => describeReminderReport(report).text,
+			),
 			describeDispatchReport({ ...cleanDispatch, claimed: 0, sent: 0 }).text,
-			describeDispatchReport({ ...cleanDispatch, claimed: 0, sent: 0, awaitingRetry: 3 }).text,
-			describeDispatchReport({ ...cleanDispatch, claimed: 0, sent: 0, awaitingSchedule: 3 }).text,
+			describeDispatchReport({
+				...cleanDispatch,
+				claimed: 0,
+				sent: 0,
+				awaitingRetry: 3,
+			}).text,
+			describeDispatchReport({
+				...cleanDispatch,
+				claimed: 0,
+				sent: 0,
+				awaitingSchedule: 3,
+			}).text,
 			describeReminderReport({
 				...cleanReminders,
-				problems: ["Напоминания поставить не удалось: соединение с базой потеряно."]
-			}).text
+				problems: [
+					"Напоминания поставить не удалось: соединение с базой потеряно.",
+				],
+			}).text,
 		];
 		for (const text of texts) {
-			assert.doesNotMatch(text, latinRun, `латинское слово в тексте для врача: ${text}`);
-			assert.doesNotMatch(text, rawUuid, `идентификатор организации попал на экран: ${text}`);
+			assert.doesNotMatch(
+				text,
+				latinRun,
+				`латинское слово в тексте для врача: ${text}`,
+			);
+			assert.doesNotMatch(
+				text,
+				rawUuid,
+				`идентификатор организации попал на экран: ${text}`,
+			);
 		}
 	});
 });

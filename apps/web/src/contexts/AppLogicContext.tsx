@@ -1,4 +1,5 @@
-import React, { createContext, useContext } from "react";
+import type React from "react";
+import { createContext, useContext } from "react";
 import type { useAppLogic } from "../useAppLogic";
 
 // Define the shape of our global AppLogic context
@@ -7,12 +8,18 @@ export type AppLogicContextType = ReturnType<typeof useAppLogic>;
 
 const AppLogicContext = createContext<AppLogicContextType | null>(null);
 
-export function AppLogicProvider({ children, value }: { children: React.ReactNode; value: AppLogicContextType }) {
-  return (
-    <AppLogicContext.Provider value={value}>
-      {children}
-    </AppLogicContext.Provider>
-  );
+export function AppLogicProvider({
+	children,
+	value,
+}: {
+	children: React.ReactNode;
+	value: AppLogicContextType;
+}) {
+	return (
+		<AppLogicContext.Provider value={value}>
+			{children}
+		</AppLogicContext.Provider>
+	);
 }
 
 /**
@@ -52,9 +59,11 @@ export function AppLogicProvider({ children, value }: { children: React.ReactNod
  * contexts/appLogicContextRefusesToInvent.test.tsx.
  */
 export function useAppLogicContext(): AppLogicContextType {
-  const context = useContext(AppLogicContext);
-  if (!context) {
-    throw new Error("ОШИБКА: useAppLogicContext вызван вне AppLogicProvider. Убедитесь, что компонент обернут в AppLogicProvider, иначе данные будут недоступны.");
-  }
-  return context;
+	const context = useContext(AppLogicContext);
+	if (!context) {
+		throw new Error(
+			"ОШИБКА: useAppLogicContext вызван вне AppLogicProvider. Убедитесь, что компонент обернут в AppLogicProvider, иначе данные будут недоступны.",
+		);
+	}
+	return context;
 }

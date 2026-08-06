@@ -13,11 +13,11 @@ import test from "node:test";
 import type { DoctorPayoutRow, DoctorPayoutTotals } from "./doctorPayouts.js";
 import { payoutRowNote } from "./doctorPayouts.js";
 import {
-	SUPERSEDED_METHOD_SENTENCE,
-	SUPERSEDED_NEGATIVE_SENTENCE,
 	explainNegativePayouts,
 	negativeRowExplanation,
 	negativeTotalsExplanation,
+	SUPERSEDED_METHOD_SENTENCE,
+	SUPERSEDED_NEGATIVE_SENTENCE,
 	splitPayoutsBySign,
 } from "./payoutNegativeExplain.js";
 
@@ -56,7 +56,9 @@ function rowOf(overrides: Partial<DoctorPayoutRow> = {}): DoctorPayoutRow {
 	};
 }
 
-function totalsOf(overrides: Partial<DoctorPayoutTotals> = {}): DoctorPayoutTotals {
+function totalsOf(
+	overrides: Partial<DoctorPayoutTotals> = {},
+): DoctorPayoutTotals {
 	return {
 		revenueRub: 3500.55,
 		paymentCount: 5,
@@ -141,7 +143,13 @@ test("при удержании меньше 100 % про вписанную с�
 
 test("при нулевой кассе порог не печатается: «дешевле 0 ₽» — бессмыслица", () => {
 	const text = negativeRowExplanation(
-		rowOf({ revenueRub: 0, paymentCount: 0, accruedRub: 0, withheldMaterialRub: 500, payoutRub: -500 }),
+		rowOf({
+			revenueRub: 0,
+			paymentCount: 0,
+			accruedRub: 0,
+			withheldMaterialRub: 500,
+			payoutRub: -500,
+		}),
 	);
 	assert.ok(text);
 	assert.doesNotMatch(text, /Порог/);
@@ -153,18 +161,40 @@ test("при нулевой кассе порог не печатается: «�
 
 test("правило четырёх: у неотрицательных строк не появляется ни одного слова", () => {
 	assert.equal(
-		negativeRowExplanation(rowOf({ payoutRub: 203.27, accruedRub: 450.17, withheldMaterialRub: 246.9 })),
-		null,
-	);
-	assert.equal(negativeRowExplanation(rowOf({ payoutRub: 0, accruedRub: 0, withheldMaterialRub: 0 })), null);
-	assert.equal(
 		negativeRowExplanation(
-			rowOf({ state: "rate_missing", accruedRub: null, withheldMaterialRub: null, payoutRub: null }),
+			rowOf({
+				payoutRub: 203.27,
+				accruedRub: 450.17,
+				withheldMaterialRub: 246.9,
+			}),
 		),
 		null,
 	);
 	assert.equal(
-		negativeRowExplanation(rowOf({ state: "material_policy_missing", withheldMaterialRub: null, payoutRub: null })),
+		negativeRowExplanation(
+			rowOf({ payoutRub: 0, accruedRub: 0, withheldMaterialRub: 0 }),
+		),
+		null,
+	);
+	assert.equal(
+		negativeRowExplanation(
+			rowOf({
+				state: "rate_missing",
+				accruedRub: null,
+				withheldMaterialRub: null,
+				payoutRub: null,
+			}),
+		),
+		null,
+	);
+	assert.equal(
+		negativeRowExplanation(
+			rowOf({
+				state: "material_policy_missing",
+				withheldMaterialRub: null,
+				payoutRub: null,
+			}),
+		),
 		null,
 	);
 });
@@ -196,9 +226,16 @@ test("фраза без чисел заменяется, а не дублиру�
 
 	const report = explainNegativePayouts(
 		{
-			period: { from: "2026-07-01T00:00:00.000Z", to: "2026-07-31T23:59:59.999Z" },
+			period: {
+				from: "2026-07-01T00:00:00.000Z",
+				to: "2026-07-31T23:59:59.999Z",
+			},
 			rows: [rowOf({ note: serverNote })],
-			totals: totalsOf({ payoutRub: -400, doctorsCounted: 1, doctorsWithoutRate: 0 }),
+			totals: totalsOf({
+				payoutRub: -400,
+				doctorsCounted: 1,
+				doctorsWithoutRate: 0,
+			}),
 			methodNote: "метод",
 			limitations: [],
 			isEmpty: false,
@@ -207,8 +244,16 @@ test("фраза без чисел заменяется, а не дублиру�
 	);
 
 	const note = report.rows[0]?.note ?? "";
-	assert.equal(note.includes(SUPERSEDED_NEGATIVE_SENTENCE), false, "старая фраза без чисел осталась в тексте");
-	assert.equal(note.includes(SUPERSEDED_METHOD_SENTENCE), false, "общая фраза о методе осталась висеть хвостом");
+	assert.equal(
+		note.includes(SUPERSEDED_NEGATIVE_SENTENCE),
+		false,
+		"старая фраза без чисел осталась в тексте",
+	);
+	assert.equal(
+		note.includes(SUPERSEDED_METHOD_SENTENCE),
+		false,
+		"общая фраза о методе осталась висеть хвостом",
+	);
 	// Важное стоит первым: объяснение с числами, а не общая фраза о методе.
 	assert.match(note, /^Выплаты за период нет/);
 	// Текст заканчивается действием, а не оборванным хвостом чужой фразы.
@@ -229,17 +274,32 @@ test("фраза без чисел заменяется, а не дублиру�
 		payoutRub: -400,
 		revenueRub: 1000,
 	});
-	const rich = explainNegativePayouts(
-		{
-			period: { from: "2026-07-01T00:00:00.000Z", to: "2026-07-31T23:59:59.999Z" },
-			rows: [rowOf({ note: richNote, materialsState: "cost_missing", materialMovementsUnpriced: 2, rateRowCount: 2 })],
-			totals: totalsOf({ payoutRub: -400, doctorsCounted: 1, doctorsWithoutRate: 0 }),
-			methodNote: "метод",
-			limitations: [],
-			isEmpty: false,
-		},
-		{ scope: "all" },
-	).rows[0]?.note ?? "";
+	const rich =
+		explainNegativePayouts(
+			{
+				period: {
+					from: "2026-07-01T00:00:00.000Z",
+					to: "2026-07-31T23:59:59.999Z",
+				},
+				rows: [
+					rowOf({
+						note: richNote,
+						materialsState: "cost_missing",
+						materialMovementsUnpriced: 2,
+						rateRowCount: 2,
+					}),
+				],
+				totals: totalsOf({
+					payoutRub: -400,
+					doctorsCounted: 1,
+					doctorsWithoutRate: 0,
+				}),
+				methodNote: "метод",
+				limitations: [],
+				isEmpty: false,
+			},
+			{ scope: "all" },
+		).rows[0]?.note ?? "";
 	assert.match(rich, /без цены или без количества: 2/);
 	assert.match(rich, /Активных ставок у врача найдено 2/);
 	assert.equal(rich.includes(SUPERSEDED_NEGATIVE_SENTENCE), false);
@@ -248,10 +308,26 @@ test("фраза без чисел заменяется, а не дублиру�
 
 test("итог раскладывается на два числа, и деньги считаются точно", () => {
 	const split = splitPayoutsBySign([
-		rowOf({ doctorUserId: "a", payoutRub: 203.27, accruedRub: 450.17, withheldMaterialRub: 246.9 }),
+		rowOf({
+			doctorUserId: "a",
+			payoutRub: 203.27,
+			accruedRub: 450.17,
+			withheldMaterialRub: 246.9,
+		}),
 		rowOf({ doctorUserId: "b", payoutRub: -400 }),
-		rowOf({ doctorUserId: "c", state: "rate_missing", accruedRub: null, withheldMaterialRub: null, payoutRub: null }),
-		rowOf({ doctorUserId: "d", payoutRub: 0, accruedRub: 0, withheldMaterialRub: 0 }),
+		rowOf({
+			doctorUserId: "c",
+			state: "rate_missing",
+			accruedRub: null,
+			withheldMaterialRub: null,
+			payoutRub: null,
+		}),
+		rowOf({
+			doctorUserId: "d",
+			payoutRub: 0,
+			accruedRub: 0,
+			withheldMaterialRub: 0,
+		}),
 	]);
 
 	assert.equal(split.payoutDueRub, 203.27);
@@ -272,7 +348,12 @@ test("итог раскладывается на два числа, и день�
 
 	// Наш итог остаётся ровным при том же накоплении из трёх строк.
 	const drifting = splitPayoutsBySign([
-		rowOf({ doctorUserId: "a", payoutRub: 203.27, accruedRub: 450.17, withheldMaterialRub: 246.9 }),
+		rowOf({
+			doctorUserId: "a",
+			payoutRub: 203.27,
+			accruedRub: 450.17,
+			withheldMaterialRub: 246.9,
+		}),
 		rowOf({ doctorUserId: "b", payoutRub: -400 }),
 		rowOf({ doctorUserId: "c", payoutRub: -0.01 }),
 	]);
@@ -283,7 +364,12 @@ test("итог раскладывается на два числа, и день�
 test("отрицательный итог по клинике объяснён двумя числами, а не оставлен красным", () => {
 	const text = negativeTotalsExplanation({
 		totals: totalsOf(),
-		split: { payoutDueRub: 203.27, debtToClinicRub: 400, doctorsDue: 1, doctorsInDebt: 1 },
+		split: {
+			payoutDueRub: 203.27,
+			debtToClinicRub: 400,
+			doctorsDue: 1,
+			doctorsInDebt: 1,
+		},
 		scope: "all",
 	});
 	assert.ok(text);
@@ -297,7 +383,12 @@ test("отрицательный итог по клинике объяснён �
 test("положительное сальдо с долгом внутри тоже названо разницей, а не выплатой", () => {
 	const text = negativeTotalsExplanation({
 		totals: totalsOf({ payoutRub: 600 }),
-		split: { payoutDueRub: 1000, debtToClinicRub: 400, doctorsDue: 2, doctorsInDebt: 1 },
+		split: {
+			payoutDueRub: 1000,
+			debtToClinicRub: 400,
+			doctorsDue: 2,
+			doctorsInDebt: 1,
+		},
 		scope: "all",
 	});
 	assert.ok(text);
@@ -309,7 +400,12 @@ test("положительное сальдо с долгом внутри то�
 test("если к выплате нет никого, подпись «к выплате всего» названа неверной", () => {
 	const text = negativeTotalsExplanation({
 		totals: totalsOf({ payoutRub: -400 }),
-		split: { payoutDueRub: 0, debtToClinicRub: 400, doctorsDue: 0, doctorsInDebt: 1 },
+		split: {
+			payoutDueRub: 0,
+			debtToClinicRub: 400,
+			doctorsDue: 0,
+			doctorsInDebt: 1,
+		},
 		scope: "all",
 	});
 	assert.ok(text);
@@ -320,7 +416,12 @@ test("если к выплате нет никого, подпись «к вып
 test("врачу про его собственный минус сказано, чем это число НЕ является", () => {
 	const text = negativeTotalsExplanation({
 		totals: totalsOf({ payoutRub: -400 }),
-		split: { payoutDueRub: 0, debtToClinicRub: 400, doctorsDue: 0, doctorsInDebt: 1 },
+		split: {
+			payoutDueRub: 0,
+			debtToClinicRub: 400,
+			doctorsDue: 0,
+			doctorsInDebt: 1,
+		},
 		scope: "own",
 	});
 	assert.ok(text);
@@ -334,18 +435,35 @@ test("клиника без долгов не видит ни одного но�
 	assert.equal(
 		negativeTotalsExplanation({
 			totals: totalsOf({ payoutRub: 5000 }),
-			split: { payoutDueRub: 5000, debtToClinicRub: 0, doctorsDue: 3, doctorsInDebt: 0 },
+			split: {
+				payoutDueRub: 5000,
+				debtToClinicRub: 0,
+				doctorsDue: 3,
+				doctorsInDebt: 0,
+			},
 			scope: "all",
 		}),
 		null,
 	);
 
-	const positive = rowOf({ payoutRub: 203.27, accruedRub: 450.17, withheldMaterialRub: 246.9, note: "как было" });
+	const positive = rowOf({
+		payoutRub: 203.27,
+		accruedRub: 450.17,
+		withheldMaterialRub: 246.9,
+		note: "как было",
+	});
 	const report = explainNegativePayouts(
 		{
-			period: { from: "2026-07-01T00:00:00.000Z", to: "2026-07-31T23:59:59.999Z" },
+			period: {
+				from: "2026-07-01T00:00:00.000Z",
+				to: "2026-07-31T23:59:59.999Z",
+			},
 			rows: [positive],
-			totals: totalsOf({ payoutRub: 203.27, doctorsCounted: 1, doctorsWithoutRate: 0 }),
+			totals: totalsOf({
+				payoutRub: 203.27,
+				doctorsCounted: 1,
+				doctorsWithoutRate: 0,
+			}),
 			methodNote: "метод",
 			limitations: ["ограничение расчёта"],
 			isEmpty: false,
@@ -358,10 +476,17 @@ test("клиника без долгов не видит ни одного но�
 
 test("объяснение не меняет ни одного числа расчёта", () => {
 	const rows = [rowOf({ note: "исходный текст" })];
-	const totals = totalsOf({ payoutRub: -400, doctorsCounted: 1, doctorsWithoutRate: 0 });
+	const totals = totalsOf({
+		payoutRub: -400,
+		doctorsCounted: 1,
+		doctorsWithoutRate: 0,
+	});
 	const report = explainNegativePayouts(
 		{
-			period: { from: "2026-07-01T00:00:00.000Z", to: "2026-07-31T23:59:59.999Z" },
+			period: {
+				from: "2026-07-01T00:00:00.000Z",
+				to: "2026-07-31T23:59:59.999Z",
+			},
 			rows,
 			totals,
 			methodNote: "метод",

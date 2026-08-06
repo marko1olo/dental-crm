@@ -71,11 +71,18 @@ function shouldPreloadWorkspaceRoutes(intent: WorkspacePreloadIntent): boolean {
 	if (!connection) return true;
 	if (connection.saveData) return false;
 	const effectiveType = connection.effectiveType?.toLowerCase() ?? "";
-	if (intent === "idle" && (effectiveType === "slow-2g" || effectiveType === "2g")) return false;
+	if (
+		intent === "idle" &&
+		(effectiveType === "slow-2g" || effectiveType === "2g")
+	)
+		return false;
 	return true;
 }
 
-export function preloadWorkspaceView(view: AppView, intent: WorkspacePreloadIntent = "explicit") {
+export function preloadWorkspaceView(
+	view: AppView,
+	intent: WorkspacePreloadIntent = "explicit",
+) {
 	if (!shouldPreloadWorkspaceRoutes(intent)) return;
 	void workspaceViewPreloaders[view]?.();
 }

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
 /**
  * Денежные и импортные поля обязаны начинаться пустыми.
@@ -24,11 +24,15 @@ import { dirname, join } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const webSrc = join(here, "..");
 
-const read = (relativePath: string) => readFileSync(join(webSrc, relativePath), "utf8");
+const read = (relativePath: string) =>
+	readFileSync(join(webSrc, relativePath), "utf8");
 
 /** Начальное значение поля в объекте хранилища. */
 function initialValueOf(source: string, field: string): string | null {
-	const match = new RegExp(`^\\s{2}${field}\\s*:\\s*(".*?"|'.*?'|[^,\\n]+),`, "m").exec(source);
+	const match = new RegExp(
+		`^\\s{2}${field}\\s*:\\s*(".*?"|'.*?'|[^,\\n]+),`,
+		"m",
+	).exec(source);
 	if (!match) return null;
 	return match[1]!.trim();
 }
@@ -66,7 +70,10 @@ describe("денежные и импортные поля начинаются �
 				!/\+7 9\d\d \d\d\d-\d\d-\d\d/.test(source),
 				`${name}: остался выдуманный телефон`,
 			);
-			assert.ok(!/\d{2} \d{3} руб/.test(source), `${name}: осталась выдуманная цена`);
+			assert.ok(
+				!/\d{2} \d{3} руб/.test(source),
+				`${name}: осталась выдуманная цена`,
+			);
 		}
 	});
 });

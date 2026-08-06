@@ -1,14 +1,14 @@
-import { describe, test } from "node:test";
 import assert from "node:assert";
+import { describe, test } from "node:test";
 import {
-	RU_MONEY_MINUS,
-	RU_MONEY_NBSP,
 	formatKopecksRu,
 	kopecksToNumericString,
 	kopecksToWholeRubles,
 	multiplyKopecks,
 	parseKopecks,
 	percentageOfKopecks,
+	RU_MONEY_MINUS,
+	RU_MONEY_NBSP,
 	rublesToKopecks,
 	splitKopecks,
 	sumKopecks,
@@ -173,6 +173,9 @@ describe("formatKopecksRu", () => {
 	});
 
 	test("долг показывается типографским минусом", () => {
-		assert.strictEqual(formatKopecksRu(-4275), `${RU_MONEY_MINUS}${money("42,75")}`);
+		assert.strictEqual(
+			formatKopecksRu(-4275),
+			`${RU_MONEY_MINUS}${money("42,75")}`,
+		);
 	});
 });

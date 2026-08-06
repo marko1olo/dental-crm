@@ -21,7 +21,7 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import { and, eq, sql } from "drizzle-orm";
-import { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	clinicalAuditLogs,
@@ -38,11 +38,11 @@ import {
 	visitDiaryRevisions,
 	visits,
 } from "../../db/schema.js";
+import registerDiaryRoutes from "../../routes/diary.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
-import registerDiaryRoutes from "../../routes/diary.js";
 
 /**
  * Склад: 10 на старте, правило списывает 2 на единицу услуги, услуг 2 -> остаток 6.
@@ -60,7 +60,8 @@ const EXPECTED_STOCK_AFTER = 6;
 const EXPECTED_DEDUCTION = -4;
 
 const ANAMNESIS = "Жалобы на боль при накусывании, вторые сутки.";
-const STATUS_LOCALIS = "Зуб 36: глубокая кариозная полость, перкуссия болезненна.";
+const STATUS_LOCALIS =
+	"Зуб 36: глубокая кариозная полость, перкуссия болезненна.";
 const TREATMENT = "Механическая и медикаментозная обработка, пломба.";
 const PKCS7 = "MIIB-test-signature-blob";
 
@@ -271,7 +272,8 @@ describe("церемония подписания дневника одинак�
 			const stockAfter = Number(item.stockQuantity);
 			return {
 				diaryLocked: diary.isLocked,
-				diaryHashPresent: typeof diary.diaryHash === "string" && diary.diaryHash.length === 64,
+				diaryHashPresent:
+					typeof diary.diaryHash === "string" && diary.diaryHash.length === 64,
 				diaryHashMatchesStoredRow: diary.diaryHash === diaryHashOf(diary),
 				lockedByDoctor: diary.lockedByUserId === doctorId,
 				coSignedByDoctor: diary.coSignedByUserId === doctorId,
@@ -279,10 +281,17 @@ describe("церемония подписания дневника одинак�
 				stockAfter,
 				stockDelta: stockAfter - Number(START_STOCK),
 				deductionRows: movements.length,
-				deductionQuantity: movements.reduce((sum, row) => sum + Number(row.quantityChanged), 0),
+				deductionQuantity: movements.reduce(
+					(sum, row) => sum + Number(row.quantityChanged),
+					0,
+				),
 				deductionType: movements[0]?.transactionType ?? null,
-				deductionUserIsDoctor: movements.every((row) => row.userId === doctorId),
-				deductionVisitMatches: movements.every((row) => row.visitId === scenario.visitId),
+				deductionUserIsDoctor: movements.every(
+					(row) => row.userId === doctorId,
+				),
+				deductionVisitMatches: movements.every(
+					(row) => row.visitId === scenario.visitId,
+				),
 				auditRows: audits.length,
 				auditAction: audits[0]?.action ?? null,
 				auditEntityType: audits[0]?.entityType ?? null,
@@ -360,7 +369,8 @@ describe("церемония подписания дневника одинак�
 			const auditPrivilege = await db.execute<{ deletable: boolean }>(
 				sql`SELECT has_table_privilege(current_user, 'public.clinical_audit_logs', 'DELETE') AS deletable`,
 			);
-			const clinicalAuditLogsDeletable = auditPrivilege.rows[0]?.deletable === true;
+			const clinicalAuditLogsDeletable =
+				auditPrivilege.rows[0]?.deletable === true;
 
 			/*
 			 * Уборка идёт под тенант-контекстом. DELETE без него не ошибается: политика
@@ -399,16 +409,22 @@ describe("церемония подписания дневника одинак�
 				await db
 					.delete(treatmentItems)
 					.where(eq(treatmentItems.organizationId, organizationId));
-				await db.delete(visits).where(eq(visits.organizationId, organizationId));
+				await db
+					.delete(visits)
+					.where(eq(visits.organizationId, organizationId));
 				await db
 					.delete(serviceCatalogItems)
 					.where(eq(serviceCatalogItems.organizationId, organizationId));
 				await db
 					.delete(inventoryItems)
 					.where(eq(inventoryItems.organizationId, organizationId));
-				await db.delete(patients).where(eq(patients.organizationId, organizationId));
+				await db
+					.delete(patients)
+					.where(eq(patients.organizationId, organizationId));
 				await db.delete(users).where(eq(users.organizationId, organizationId));
-				await db.delete(organizations).where(eq(organizations.id, organizationId));
+				await db
+					.delete(organizations)
+					.where(eq(organizations.id, organizationId));
 			});
 		}
 		process.env = originalEnv;
@@ -434,7 +450,11 @@ describe("церемония подписания дневника одинак�
 				},
 			});
 			assert.equal(draft.statusCode, 200, draft.body);
-			assert.equal(JSON.parse(draft.body).hash, null, "черновик не должен быть запечатан");
+			assert.equal(
+				JSON.parse(draft.body).hash,
+				null,
+				"черновик не должен быть запечатан",
+			);
 		}
 
 		// Путь A: подпись через POST со status "signed".
@@ -509,8 +529,16 @@ describe("церемония подписания дневника одинак�
 			treatmentItemStatus: "completed",
 			commissionRows: 1,
 		};
-		assert.deepEqual(postOutcome, expected, "POST провёл церемонию не полностью");
-		assert.deepEqual(lockOutcome, expected, "/lock провёл церемонию не полностью");
+		assert.deepEqual(
+			postOutcome,
+			expected,
+			"POST провёл церемонию не полностью",
+		);
+		assert.deepEqual(
+			lockOutcome,
+			expected,
+			"/lock провёл церемонию не полностью",
+		);
 	});
 
 	test("подпись через POST для визита без дневника тоже проводит церемонию", async () => {
@@ -640,10 +668,17 @@ describe("церемония подписания дневника одинак�
 		 * скрыла строки, а не тем, что церемония откатилась.
 		 */
 		const [item] = await withFixtureTenant(organizationId, async () =>
-			db.select().from(inventoryItems).where(eq(inventoryItems.id, scenario.inventoryItemId)),
+			db
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.id, scenario.inventoryItemId)),
 		);
 		assert.ok(item);
-		assert.equal(Number(item.stockQuantity), 0, "остаток пустой полки не должен вырасти");
+		assert.equal(
+			Number(item.stockQuantity),
+			0,
+			"остаток пустой полки не должен вырасти",
+		);
 
 		// Транзакция откатилась целиком: дневник не подписан, журнал пуст, услуга не закрыта.
 		const [diary] = await withFixtureTenant(organizationId, async () =>
@@ -657,7 +692,11 @@ describe("церемония подписания дневника одинак�
 					),
 				),
 		);
-		assert.equal(diary, undefined, "дневник не должен появиться при отказе церемонии");
+		assert.equal(
+			diary,
+			undefined,
+			"дневник не должен появиться при отказе церемонии",
+		);
 		const movements = await withFixtureTenant(organizationId, async () =>
 			db
 				.select()
@@ -666,7 +705,10 @@ describe("церемония подписания дневника одинак�
 		);
 		assert.equal(movements.length, 0);
 		const [treatment] = await withFixtureTenant(organizationId, async () =>
-			db.select().from(treatmentItems).where(eq(treatmentItems.id, scenario.treatmentItemId)),
+			db
+				.select()
+				.from(treatmentItems)
+				.where(eq(treatmentItems.id, scenario.treatmentItemId)),
 		);
 		assert.ok(treatment);
 		assert.equal(treatment.status, "approved", "услуга не должна закрыться");
@@ -856,7 +898,10 @@ describe("церемония подписания дневника одинак�
 		// Три чтения — под тенант-контекстом: без него ни одна из трёх строк не
 		// видна, и проверка типа numeric-нуля не нашла бы, что проверять.
 		const [item] = await withFixtureTenant(organizationId, async () =>
-			db.select().from(inventoryItems).where(eq(inventoryItems.id, scenario.inventoryItemId)),
+			db
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.id, scenario.inventoryItemId)),
 		);
 		assert.ok(item);
 		const [rule] = await withFixtureTenant(organizationId, async () =>
@@ -867,7 +912,10 @@ describe("церемония подписания дневника одинак�
 		);
 		assert.ok(rule);
 		const [treatment] = await withFixtureTenant(organizationId, async () =>
-			db.select().from(treatmentItems).where(eq(treatmentItems.id, scenario.treatmentItemId)),
+			db
+				.select()
+				.from(treatmentItems)
+				.where(eq(treatmentItems.id, scenario.treatmentItemId)),
 		);
 		assert.ok(treatment);
 
@@ -876,9 +924,16 @@ describe("церемония подписания дневника одинак�
 			["procedure_material_rules.quantity_to_deduct", rule.quantityToDeduct],
 			["treatment_items.quantity", treatment.quantity],
 		] as const) {
-			assert.equal(typeof value, "string", `${name}: drizzle должен отдать строку`);
+			assert.equal(
+				typeof value,
+				"string",
+				`${name}: drizzle должен отдать строку`,
+			);
 			assert.equal(Number(value), 0, `${name}: в базе лежит настоящий ноль`);
-			assert.ok(value, `${name}: строка нуля истинна, поэтому || не проваливается`);
+			assert.ok(
+				value,
+				`${name}: строка нуля истинна, поэтому || не проваливается`,
+			);
 		}
 	});
 });

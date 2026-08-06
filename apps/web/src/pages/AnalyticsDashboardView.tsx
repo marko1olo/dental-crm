@@ -1,5 +1,18 @@
-import { Activity, AlertTriangle, ArrowUpRight, BarChart3, Calendar, DollarSign, Filter, PieChart, RefreshCw, TrendingUp, Users } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import {
+	Activity,
+	AlertTriangle,
+	ArrowUpRight,
+	BarChart3,
+	Calendar,
+	DollarSign,
+	Filter,
+	PieChart,
+	RefreshCw,
+	TrendingUp,
+	Users,
+} from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Area,
 	AreaChart,
@@ -11,29 +24,29 @@ import {
 	Legend,
 	Line,
 	Pie,
-	PieChart as RechartsPie,
 	RadialBar,
 	RadialBarChart,
+	PieChart as RechartsPie,
 	Tooltip as RechartsTooltip,
 	ResponsiveContainer,
 	XAxis,
 	YAxis,
 } from "recharts";
 import { countLabel, money } from "../AppHelpers";
-import { useAppLogicContext } from "../contexts/AppLogicContext";
-import { useIsActiveTab } from "../hooks/useIsActiveTab";
-import { RecallListPanel } from "../components/patients/RecallListPanel";
-import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
 import { LostPatientsPanel } from "../components/analytics/LostPatientsPanel";
 import { EmptyState } from "../components/EmptyState.js";
+import { RecallListPanel } from "../components/patients/RecallListPanel";
+import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
+import { useAppLogicContext } from "../contexts/AppLogicContext";
+import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import {
+	type AnalyticsDashboardData,
 	formatCompletionRate,
 	formatMarginCell,
 	formatRub,
 	metricToneClass,
 	NETWORK_FAILURE_MESSAGE,
 	parseDashboardPayload,
-	type AnalyticsDashboardData,
 } from "./analyticsDoctorMetrics.js";
 import "./AnalyticsDashboardView.css";
 
@@ -66,13 +79,17 @@ function moneyTooltip(value: unknown): string {
 /** Склонение счётного слова: «1 план», «2 плана», «5 планов». */
 function planCountTooltip(value: unknown): string {
 	const parsed = tooltipNumber(value);
-	return parsed === null ? "—" : countLabel(Math.round(parsed), "план", "плана", "планов");
+	return parsed === null
+		? "—"
+		: countLabel(Math.round(parsed), "план", "плана", "планов");
 }
 
 /** Склонение счётного слова: «1 приём», «2 приёма», «5 приёмов». */
 function appointmentCountTooltip(value: unknown): string {
 	const parsed = tooltipNumber(value);
-	return parsed === null ? "—" : countLabel(Math.round(parsed), "приём", "приёма", "приёмов");
+	return parsed === null
+		? "—"
+		: countLabel(Math.round(parsed), "приём", "приёма", "приёмов");
 }
 
 export function AnalyticsDashboardView() {
@@ -85,10 +102,10 @@ export function AnalyticsDashboardView() {
 	const getReadHeaders = () =>
 		authContext
 			? authContext.denteClinicalReadHeaders()
-			// Без контекста авторизации заголовок организации не подставляем:
-			// глобальная обёртка fetch (lib/apiAuthFetch.ts) добавит токен кабинета,
-			// а без него сервер обязан ответить 401, а не выдать чужую клинику.
-			: {};
+			: // Без контекста авторизации заголовок организации не подставляем:
+				// глобальная обёртка fetch (lib/apiAuthFetch.ts) добавит токен кабинета,
+				// а без него сервер обязан ответить 401, а не выдать чужую клинику.
+				{};
 	const [data, setData] = useState<AnalyticsDashboardData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -189,9 +206,19 @@ export function AnalyticsDashboardView() {
 		// проверка готовности в сценарии снимков не могла подтвердить, что открыт
 		// именно этот раздел, — а это тот самый механизм, которым снимок одного
 		// раздела попадает под именем другого.
-		<div id="analytics" className="analytics-dashboard panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">
+		<div
+			id="analytics"
+			className="analytics-dashboard panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+			aria-label="Аналитика клиники"
+			data-testid="analytics-dashboard-view"
+		>
 			<header className="analytics-header flex flex-wrap gap-3 justify-between items-center mb-5 pb-3 border-b border-[var(--line)]">
-				<h2 className="m-0 text-xl font-bold text-[var(--ink)]" title="Панель руководителя: путь планов лечения, загрузка кресел, сколько приносит пациент со временем и выработка врачей">Аналитика клиники</h2>
+				<h2
+					className="m-0 text-xl font-bold text-[var(--ink)]"
+					title="Панель руководителя: путь планов лечения, загрузка кресел, сколько приносит пациент со временем и выработка врачей"
+				>
+					Аналитика клиники
+				</h2>
 				<select
 					value={dateRange}
 					onChange={(e) => setDateRange(e.target.value)}
@@ -209,7 +236,11 @@ export function AnalyticsDashboardView() {
 
 			{/* Состояние 1 — загрузка. */}
 			{loading && (
-				<EmptyState title="Загрузка аналитики" description="Пожалуйста, подождите, идёт формирование показателей..." className="my-6 py-8" />
+				<EmptyState
+					title="Загрузка аналитики"
+					description="Пожалуйста, подождите, идёт формирование показателей..."
+					className="my-6 py-8"
+				/>
 			)}
 
 			{/*
@@ -240,7 +271,11 @@ export function AnalyticsDashboardView() {
 							className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line-strong)] bg-[var(--warn-bg)] px-4 py-3 text-sm text-[var(--warn-fg)]"
 						>
 							<span className="flex items-start gap-2">
-								<AlertTriangle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+								<AlertTriangle
+									size={16}
+									aria-hidden="true"
+									className="mt-0.5 shrink-0"
+								/>
 								<span>
 									{error}
 									{updatedAt
@@ -302,123 +337,123 @@ export function AnalyticsDashboardView() {
 							</div>
 
 							<div className="analytics-grid">
-							{/* Виджет 1 — сколько денег приносит пациент со временем.
+								{/* Виджет 1 — сколько денег приносит пациент со временем.
 							    БЫЛО в заголовке: «Выручка по когортам (LTV)». Ни «когорта», ни
 							    «LTV» врачу и администратору ничего не говорят. Название теперь
 							    объясняет смысл, термин остался в подсказке для тех, кто ищет
 							    именно его. */}
-							<article className="glass-widget">
-								{/*
+								<article className="glass-widget">
+									{/*
 									Термины в подсказке оставлены намеренно — для тех, кто ищет
 									именно их, — но каждый объяснён по-русски, а заголовок
 									обходится без них.
 								*/}
-								<h3 title="Пациенты сгруппированы по месяцу первого визита (это и называют когортами), и для каждой группы видно, сколько денег она принесла за год — то есть LTV.">
-									<TrendingUp className="w-5 h-5 text-dente-teal" /> Сколько
-									приносит пациент со временем
-								</h3>
-								<div className="widget-chart-container">
-									{data.cohortLtvJson && data.cohortLtvJson.length > 0 ? (
-										<ResponsiveContainer width="100%" height="100%">
-											<AreaChart
-												data={data.cohortLtvJson as CohortChartRow[]}
-												margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-											>
-												<defs>
-													<linearGradient
-														id="colorMonth12"
-														x1="0"
-														y1="0"
-														x2="0"
-														y2="1"
-													>
-														<stop
-															offset="5%"
-															stopColor="#8b5cf6"
-															stopOpacity={0.8}
-														/>
-														<stop
-															offset="95%"
-															stopColor="#8b5cf6"
-															stopOpacity={0}
-														/>
-													</linearGradient>
-												</defs>
-												<CartesianGrid
-													strokeDasharray="3 3"
-													stroke="#27272a"
-													vertical={false}
-												/>
-												<XAxis
-													dataKey="cohort"
-													stroke="#a1a1aa"
-													fontSize={12}
-													tickLine={false}
-													axisLine={false}
-												/>
-												<YAxis
-													stroke="#a1a1aa"
-													fontSize={12}
-													tickLine={false}
-													axisLine={false}
-													/*
+									<h3 title="Пациенты сгруппированы по месяцу первого визита (это и называют когортами), и для каждой группы видно, сколько денег она принесла за год — то есть LTV.">
+										<TrendingUp className="w-5 h-5 text-dente-teal" /> Сколько
+										приносит пациент со временем
+									</h3>
+									<div className="widget-chart-container">
+										{data.cohortLtvJson && data.cohortLtvJson.length > 0 ? (
+											<ResponsiveContainer width="100%" height="100%">
+												<AreaChart
+													data={data.cohortLtvJson as CohortChartRow[]}
+													margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+												>
+													<defs>
+														<linearGradient
+															id="colorMonth12"
+															x1="0"
+															y1="0"
+															x2="0"
+															y2="1"
+														>
+															<stop
+																offset="5%"
+																stopColor="#8b5cf6"
+																stopOpacity={0.8}
+															/>
+															<stop
+																offset="95%"
+																stopColor="#8b5cf6"
+																stopOpacity={0}
+															/>
+														</linearGradient>
+													</defs>
+													<CartesianGrid
+														strokeDasharray="3 3"
+														stroke="#27272a"
+														vertical={false}
+													/>
+													<XAxis
+														dataKey="cohort"
+														stroke="#a1a1aa"
+														fontSize={12}
+														tickLine={false}
+														axisLine={false}
+													/>
+													<YAxis
+														stroke="#a1a1aa"
+														fontSize={12}
+														tickLine={false}
+														axisLine={false}
+														/*
 														БЫЛО: `${Math.round(val / 1000)}k` — латинская «k» в
 														русском интерфейсе, и округление до целых тысяч: и
 														1 400 ₽, и 1 500 ₽ давали одну подпись. Общий короткий
 														формат считает честно: «1,4 тыс. ₽».
 													*/
-													tickFormatter={(val: number) => formatRub(val)}
-												/>
-												<RechartsTooltip
-													contentStyle={{
-														backgroundColor: "var(--paper)",
-														borderColor: "var(--line)",
-														borderRadius: "8px",
-														color: "var(--ink)",
-													}}
-													itemStyle={{ color: "var(--ink)" }}
-													/*
+														tickFormatter={(val: number) => formatRub(val)}
+													/>
+													<RechartsTooltip
+														contentStyle={{
+															backgroundColor: "var(--paper)",
+															borderColor: "var(--line)",
+															borderRadius: "8px",
+															color: "var(--ink)",
+														}}
+														itemStyle={{ color: "var(--ink)" }}
+														/*
 														Подсказка показывает точную сумму, поэтому здесь полный
 														денежный формат `money` из AppHelpers. БЫЛО: местный
 														`val.toLocaleString("ru-RU") + " ₽"` — без ограничения
 														дробной части, а деньги приходят с копейками, поэтому в
 														подсказке появлялось «3 416,666666666667 ₽».
 													*/
-													formatter={moneyTooltip}
-												/>
-												<Legend />
-												{/*
+														formatter={moneyTooltip}
+													/>
+													<Legend />
+													{/*
 													БЫЛО: здесь стояла вторая область с dataKey="Month 1"
 													и подписью «1-й месяц». Сервер это поле считать
 													перестал (analytics.ts:213-218, `void m1;`), поэтому
 													в легенде висела строка, под которой никогда не было
 													линии. Осталась одна область — та, которую считают.
 												*/}
-												<Area
-													type="monotone"
-													name="За год"
-													dataKey="Month 12"
-													stroke="#8b5cf6"
-													fillOpacity={1}
-													fill="url(#colorMonth12)"
-												/>
-											</AreaChart>
-										</ResponsiveContainer>
-									) : (
-										/* БЫЛО: одна серая строка курсивом «Недостаточно данных по
+													<Area
+														type="monotone"
+														name="За год"
+														dataKey="Month 12"
+														stroke="#8b5cf6"
+														fillOpacity={1}
+														fill="url(#colorMonth12)"
+													/>
+												</AreaChart>
+											</ResponsiveContainer>
+										) : (
+											/* БЫЛО: одна серая строка курсивом «Недостаточно данных по
 										   когортам» в пустой рамке на 300 пикселей. Она сообщает, что
 										   всё плохо, но не говорит ни почему, ни что делать. */
-										<EmptyState
-											glass={false}
-											title="Пока нечего показать"
-											description="График появится, когда в клинике будут оплаты хотя бы за два месяца: он сравнивает, сколько принесли пациенты, пришедшие в разные месяцы."
-											style={{ height: "100%", padding: "20px" }}
-										/>
-									)}
-								</div>
-							</article>
+											<EmptyState
+												glass={false}
+												title="Пока нечего показать"
+												description="График появится, когда в клинике будут оплаты хотя бы за два месяца: он сравнивает, сколько принесли пациенты, пришедшие в разные месяцы."
+												style={{ height: "100%", padding: "20px" }}
+											/>
+										)}
+									</div>
+								</article>
 
-							{/*
+								{/*
 								Виджет 2 — состояния плана лечения: черновик, в работе,
 								согласован, завершён, отклонён. Подписи ветвей приходят с
 								сервера и выведены из перечисления `treatment_plan_status`.
@@ -430,152 +465,164 @@ export function AnalyticsDashboardView() {
 								«Запланированы». Пустое состояние ниже не показывалось никогда,
 								пока в клинике есть хоть один приём.
 							*/}
-							<article className="glass-widget">
-								<h3>
-									<BarChart3 className="w-5 h-5 text-sky-500" /> Воронка планов
-									лечения
-								</h3>
-								<div className="widget-chart-container">
-									{Array.isArray(data?.planFunnelJson) && data.planFunnelJson.filter((x) => x.value > 0).length > 0 ? (
-										<ResponsiveContainer width="100%" height="100%">
-											<ComposedChart
-												data={data.planFunnelJson as NamedValueChartRow[]}
-												layout="vertical"
-												margin={{ top: 10, right: 30, left: 20, bottom: 5 }}
-											>
-												<CartesianGrid
-													strokeDasharray="3 3"
-													stroke="#27272a"
-													horizontal={false}
-												/>
-												<XAxis
-													type="number"
-													stroke="#a1a1aa"
-													fontSize={12}
-													tickLine={false}
-													axisLine={false}
-												/>
-												<YAxis
-													dataKey="name"
-													type="category"
-													stroke="#a1a1aa"
-													fontSize={12}
-													tickLine={false}
-													axisLine={false}
-													width={90}
-												/>
-												<RechartsTooltip
-													contentStyle={{
-														backgroundColor: "var(--paper)",
-														borderColor: "var(--line)",
-														borderRadius: "8px",
-														color: "var(--ink)",
-													}}
-													itemStyle={{ color: "var(--ink)" }}
-													/* Склонение: «1 план», «2 плана», «5 планов». */
-													formatter={planCountTooltip}
-												/>
-												<Bar
-													dataKey="value"
-													name="Количество"
-													barSize={32}
-													radius={[0, 4, 4, 0]}
-												/>
-											</ComposedChart>
-										</ResponsiveContainer>
-									) : (
-										<EmptyState
-											glass={false}
-											title="Планов лечения ещё нет"
-											/*
+								<article className="glass-widget">
+									<h3>
+										<BarChart3 className="w-5 h-5 text-sky-500" /> Воронка
+										планов лечения
+									</h3>
+									<div className="widget-chart-container">
+										{Array.isArray(data?.planFunnelJson) &&
+										data.planFunnelJson.filter((x) => x.value > 0).length >
+											0 ? (
+											<ResponsiveContainer width="100%" height="100%">
+												<ComposedChart
+													data={data.planFunnelJson as NamedValueChartRow[]}
+													layout="vertical"
+													margin={{ top: 10, right: 30, left: 20, bottom: 5 }}
+												>
+													<CartesianGrid
+														strokeDasharray="3 3"
+														stroke="#27272a"
+														horizontal={false}
+													/>
+													<XAxis
+														type="number"
+														stroke="#a1a1aa"
+														fontSize={12}
+														tickLine={false}
+														axisLine={false}
+													/>
+													<YAxis
+														dataKey="name"
+														type="category"
+														stroke="#a1a1aa"
+														fontSize={12}
+														tickLine={false}
+														axisLine={false}
+														width={90}
+													/>
+													<RechartsTooltip
+														contentStyle={{
+															backgroundColor: "var(--paper)",
+															borderColor: "var(--line)",
+															borderRadius: "8px",
+															color: "var(--ink)",
+														}}
+														itemStyle={{ color: "var(--ink)" }}
+														/* Склонение: «1 план», «2 плана», «5 планов». */
+														formatter={planCountTooltip}
+													/>
+													<Bar
+														dataKey="value"
+														name="Количество"
+														barSize={32}
+														radius={[0, 4, 4, 0]}
+													/>
+												</ComposedChart>
+											</ResponsiveContainer>
+										) : (
+											<EmptyState
+												glass={false}
+												title="Планов лечения ещё нет"
+												/*
 												«сколько оплачено» здесь обещало ветвь, которой у плана
 												лечения нет: оплата — это платежи, отдельная сущность и
 												отдельный виджет. Названы настоящие состояния плана,
 												включая отказ пациента от сметы — ровно то, по чему
 												видно, что смета не продаётся.
 											*/
-											description="Составьте план в карточке пациента — здесь будет видно, сколько смет в черновиках, сколько согласовано, сколько доведено до конца и от скольких пациент отказался."
-											style={{ height: "100%", padding: "20px" }}
-										/>
-									)}
-								</div>
-							</article>
+												description="Составьте план в карточке пациента — здесь будет видно, сколько смет в черновиках, сколько согласовано, сколько доведено до конца и от скольких пациент отказался."
+												style={{ height: "100%", padding: "20px" }}
+											/>
+										)}
+									</div>
+								</article>
 
-							{/* Виджет 3 — загруженность кресел по фактическим приёмам. */}
-							<article className="glass-widget">
-								<h3>
-									<Activity className="w-5 h-5 text-emerald-500" /> Загруженность
-									кресел
-								</h3>
-								<div className="widget-chart-container">
-									{Array.isArray(data?.chairUtilizationJson) &&
-									data.chairUtilizationJson.filter((x) => x.value > 0).length > 0 ? (
-										<ResponsiveContainer width="100%" height="100%">
-											<RadialBarChart
-												cx="50%"
-												cy="50%"
-												innerRadius="20%"
-												outerRadius="100%"
-												barSize={16}
-												data={data.chairUtilizationJson as NamedValueChartRow[]}
-											>
-												<RadialBar
-													label={{
-														position: "insideStart",
-														fill: "#fff",
-														fontSize: 11,
-													}}
-													background={{ fill: "#27272a" }}
-													dataKey="value"
-													cornerRadius={8}
-												/>
-												<Legend
-													iconSize={10}
-													layout="vertical"
-													verticalAlign="middle"
-													wrapperStyle={{ right: 0, color: "#a1a1aa" }}
-												/>
-												<RechartsTooltip
-													contentStyle={{
-														backgroundColor: "var(--paper)",
-														borderColor: "var(--line)",
-														borderRadius: "8px",
-														color: "var(--ink)",
-													}}
-													itemStyle={{ color: "var(--ink)" }}
-													formatter={appointmentCountTooltip}
-												/>
-											</RadialBarChart>
-										</ResponsiveContainer>
-									) : (
-										<EmptyState
-											glass={false}
-											title="Приёмов за этот период нет"
-											description="Смените период вверху страницы или запишите пациента в разделе «Записи» — загруженность считается по фактическим приёмам в креслах."
-											style={{ height: "100%", padding: "20px" }}
-										/>
-									)}
-								</div>
-							</article>
+								{/* Виджет 3 — загруженность кресел по фактическим приёмам. */}
+								<article className="glass-widget">
+									<h3>
+										<Activity className="w-5 h-5 text-emerald-500" />{" "}
+										Загруженность кресел
+									</h3>
+									<div className="widget-chart-container">
+										{Array.isArray(data?.chairUtilizationJson) &&
+										data.chairUtilizationJson.filter((x) => x.value > 0)
+											.length > 0 ? (
+											<ResponsiveContainer width="100%" height="100%">
+												<RadialBarChart
+													cx="50%"
+													cy="50%"
+													innerRadius="20%"
+													outerRadius="100%"
+													barSize={16}
+													data={
+														data.chairUtilizationJson as NamedValueChartRow[]
+													}
+												>
+													<RadialBar
+														label={{
+															position: "insideStart",
+															fill: "#fff",
+															fontSize: 11,
+														}}
+														background={{ fill: "#27272a" }}
+														dataKey="value"
+														cornerRadius={8}
+													/>
+													<Legend
+														iconSize={10}
+														layout="vertical"
+														verticalAlign="middle"
+														wrapperStyle={{ right: 0, color: "#a1a1aa" }}
+													/>
+													<RechartsTooltip
+														contentStyle={{
+															backgroundColor: "var(--paper)",
+															borderColor: "var(--line)",
+															borderRadius: "8px",
+															color: "var(--ink)",
+														}}
+														itemStyle={{ color: "var(--ink)" }}
+														formatter={appointmentCountTooltip}
+													/>
+												</RadialBarChart>
+											</ResponsiveContainer>
+										) : (
+											<EmptyState
+												glass={false}
+												title="Приёмов за этот период нет"
+												description="Смените период вверху страницы или запишите пациента в разделе «Записи» — загруженность считается по фактическим приёмам в креслах."
+												style={{ height: "100%", padding: "20px" }}
+											/>
+										)}
+									</div>
+								</article>
 
-							{/* Виджет 4 — выработка врачей по завершённым визитам. */}
-							<article className="glass-widget">
-								<h3>
-									<Users className="w-5 h-5 text-purple-500" /> Эффективность врачей
-								</h3>
-								<div className="widget-chart-container" style={{ overflowY: "auto" }}>
-									{data.doctorProfitabilityJson.filter((x) => x.revenue > 0).length > 0 ? (
-										<DoctorProfitabilityTable rows={data.doctorProfitabilityJson} />
-									) : (
-										<EmptyState
-											glass={false}
-											title="Закрытых приёмов пока нет"
-											description="Эффективность считается по завершённым визитам. Закройте приём в разделе «Приём» — врач появится в этом списке."
-											style={{ height: "100%", padding: "20px" }}
-										/>
-									)}
-								</div>
-							</article>
+								{/* Виджет 4 — выработка врачей по завершённым визитам. */}
+								<article className="glass-widget">
+									<h3>
+										<Users className="w-5 h-5 text-purple-500" /> Эффективность
+										врачей
+									</h3>
+									<div
+										className="widget-chart-container"
+										style={{ overflowY: "auto" }}
+									>
+										{data.doctorProfitabilityJson.filter((x) => x.revenue > 0)
+											.length > 0 ? (
+											<DoctorProfitabilityTable
+												rows={data.doctorProfitabilityJson}
+											/>
+										) : (
+											<EmptyState
+												glass={false}
+												title="Закрытых приёмов пока нет"
+												description="Эффективность считается по завершённым визитам. Закройте приём в разделе «Приём» — врач появится в этом списке."
+												style={{ height: "100%", padding: "20px" }}
+											/>
+										)}
+									</div>
+								</article>
 							</div>
 						</>
 					)}
@@ -680,9 +727,16 @@ type NamedValueChartRow = { name: string; value: number; fill: string };
 function DoctorProfitabilityTable({
 	rows,
 }: {
-	rows: readonly { name: string; revenue: number; margin: number | null; completionRate: number | null }[];
+	rows: readonly {
+		name: string;
+		revenue: number;
+		margin: number | null;
+		completionRate: number | null;
+	}[];
 }) {
-	const hasUnknownMetric = rows.some((row) => row.margin === null || row.completionRate === null);
+	const hasUnknownMetric = rows.some(
+		(row) => row.margin === null || row.completionRate === null,
+	);
 
 	return (
 		<>
@@ -704,7 +758,10 @@ function DoctorProfitabilityTable({
 								<td>{doc.name}</td>
 								{/* Таблица — точная сумма с копейками, а не короткий вид плитки. */}
 								<td>{money(doc.revenue)}</td>
-								<td className={`font-semibold ${metricToneClass(margin.tone)}`} title={margin.title}>
+								<td
+									className={`font-semibold ${metricToneClass(margin.tone)}`}
+									title={margin.title}
+								>
 									{margin.text}
 								</td>
 								<td>
@@ -727,9 +784,9 @@ function DoctorProfitabilityTable({
 			*/}
 			{hasUnknownMetric && (
 				<p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
-					Прочерк — величина не рассчитывается, а не ноль. Прибыль по врачу требует
-					себестоимости материалов и процента врача; в системе они не заданы. Выручка —
-					только фактически полученные платежи.
+					Прочерк — величина не рассчитывается, а не ноль. Прибыль по врачу
+					требует себестоимости материалов и процента врача; в системе они не
+					заданы. Выручка — только фактически полученные платежи.
 				</p>
 			)}
 		</>
@@ -785,7 +842,14 @@ function KpiCard({
 				</span>
 				{label}
 			</div>
-			<div style={{ fontSize: "22px", fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
+			<div
+				style={{
+					fontSize: "22px",
+					fontWeight: 700,
+					color: "var(--ink)",
+					letterSpacing: "-0.01em",
+				}}
+			>
 				{value}
 			</div>
 		</div>

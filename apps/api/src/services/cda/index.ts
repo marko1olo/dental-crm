@@ -7,10 +7,7 @@ import { generateCdaAuthorAndCustodian } from "./author.js";
 import { generateCdaBody } from "./body.js";
 import { generateCdaHeader } from "./header.js";
 import { generateCdaPatient } from "./patient.js";
-import {
-	egiszCdaParamsSchema,
-	type EgiszCdaParams,
-} from "./schema.js";
+import { type EgiszCdaParams, egiszCdaParamsSchema } from "./schema.js";
 import { buildCdaContext } from "./util.js";
 
 export type { EgiszCdaParams };
@@ -31,11 +28,10 @@ export function generateDentalCdaXml(params: unknown): CdaResult {
 		return { success: false, error: parsedResult.error };
 	}
 	const ctx = buildCdaContext(parsedResult.data);
-	const xml = (
+	const xml =
 		generateCdaHeader(ctx) +
 		generateCdaPatient(ctx) +
 		generateCdaAuthorAndCustodian(ctx) +
-		generateCdaBody(ctx)
-	);
+		generateCdaBody(ctx);
 	return { success: true, xml };
 }

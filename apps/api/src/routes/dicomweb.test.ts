@@ -1,14 +1,14 @@
+import assert from "node:assert";
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import assert from "node:assert";
-import { test } from "node:test";
 import type { TestContext } from "node:test";
+import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import cors from "@fastify/cors";
 import Fastify from "fastify";
+import { denteAdminSecretHeader } from "../accessGuard.js";
 import { db, dbRaw } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { denteAdminSecretHeader } from "../accessGuard.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { registerDicomwebRoutes } from "./dicomweb.js";
@@ -24,7 +24,9 @@ import { registerDicomwebRoutes } from "./dicomweb.js";
  * передаётся через DENTE_DICOM_SAMPLE_PATH и указывает на существующий файл.
  */
 
-const SAMPLE_DICOM_PATH = fileURLToPath(new URL("../../../../.data/dicom/test.dcm", import.meta.url));
+const SAMPLE_DICOM_PATH = fileURLToPath(
+	new URL("../../../../.data/dicom/test.dcm", import.meta.url),
+);
 
 /**
  * Подлинные идентификаторы, физически записанные в образце (публичный набор
@@ -47,7 +49,9 @@ const MISSING_ORGANIZATION_ID = "00000000-0000-0000-0000-000000000000";
 /** Строка, которую PostgreSQL не приведёт к типу uuid: до базы дойти не должна. */
 const MALFORMED_ORGANIZATION_ID = "not-a-uuid-at-all";
 
-const OTHER_STORAGE_PATH = fileURLToPath(new URL("./dicomweb.test.ts", import.meta.url));
+const OTHER_STORAGE_PATH = fileURLToPath(
+	new URL("./dicomweb.test.ts", import.meta.url),
+);
 
 /**
  * Секрет администратора для проверки гейта клинического чтения генерируется на
@@ -68,27 +72,29 @@ process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
 
 assert.ok(
-  existsSync(SAMPLE_DICOM_PATH),
-  `Образец DICOM отсутствует: ${SAMPLE_DICOM_PATH}. Без него проверять нечего.`
+	existsSync(SAMPLE_DICOM_PATH),
+	`Образец DICOM отсутствует: ${SAMPLE_DICOM_PATH}. Без него проверять нечего.`,
 );
 assert.strictEqual(readFileSync(SAMPLE_DICOM_PATH).length, SAMPLE_BYTES);
 
 type SelectRow = Record<string, unknown>;
 
 interface DbFixture {
-  /** Строки organizations. Пустой массив = организации с таким id не существует. */
-  organizations?: SelectRow[];
-  /** Строки ветки imaging_instances (индекс объектов). */
-  instances?: SelectRow[];
-  /** Строки ветки imaging_studies (storage_path исследования). */
-  studies?: SelectRow[];
-  /** Если задано — db.select бросает это исключение: имитация недоступной базы. */
-  failure?: Error;
+	/** Строки organizations. Пустой массив = организации с таким id не существует. */
+	organizations?: SelectRow[];
+	/** Строки ветки imaging_instances (индекс объектов). */
+	instances?: SelectRow[];
+	/** Строки ветки imaging_studies (storage_path исследования). */
+	studies?: SelectRow[];
+	/** Если задано — db.select бросает это исключение: имитация недоступной базы. */
+	failure?: Error;
 }
 
 /** Организация, которая действительно есть в базе. */
-function existingOrganization(organizationId: string = ORGANIZATION_ID): SelectRow[] {
-  return [{ id: organizationId }];
+function existingOrganization(
+	organizationId: string = ORGANIZATION_ID,
+): SelectRow[] {
+	return [{ id: organizationId }];
 }
 
 /**
@@ -103,388 +109,425 @@ function existingOrganization(organizationId: string = ORGANIZATION_ID): SelectR
  * идентификатор организации в базу не отправляется вовсе.
  */
 function mockDb(t: TestContext, fixture: DbFixture): { calls: number } {
-  const counter = { calls: 0 };
-  const select = () => {
-    counter.calls += 1;
-    if (fixture.failure) throw fixture.failure;
-    let table: unknown = null;
-    const node: Record<string, unknown> = {};
-    node.from = (source: unknown) => {
-      table = source;
-      return node;
-    };
-    node.innerJoin = () => node;
-    node.where = () => node;
-    node.limit = async () => {
-      if (table === schema.organizations) return fixture.organizations ?? [];
-      if (table === schema.imagingInstances) return fixture.instances ?? [];
-      if (table === schema.imagingStudies) return fixture.studies ?? [];
-      throw new Error("Маршрут dicomweb запросил таблицу, которой нет в фикстуре теста");
-    };
-    return node;
-  };
-  t.mock.method(db, "select", select);
-  /*
-   * ЗАЧЕМ ЗАГЛУШКА dbRaw.transaction, А НЕ ТОЛЬКО db.select.
-   *
-   * Маршрут больше не полагается на автоматическую обёртку server.ts и открывает
-   * контекст арендатора сам (withTenantCtx), чтобы не держать транзакцию всё
-   * время передачи снимка. Как только транзакция открыта, прокси `db`
-   * (db/client.ts) отдаёт свойства ТРАНЗАКЦИИ, а не dbRaw — и подмена
-   * `db.select` перестаёт действовать: запрос ушёл бы в настоящий PostgreSQL,
-   * которого у этого файла нет и быть не должно.
-   *
-   * Здесь подменяется сама транзакция: withTenantCtx получает объект с
-   * `execute` (его он зовёт для set_config) и с тем же `select`, что и раньше.
-   * Обещание файла «в PostgreSQL не ходим» сохранено, а проверяется настоящий
-   * код маршрута вместе с его контекстом арендатора.
-   */
-  t.mock.method(dbRaw, "transaction", async (callback: (tx: unknown) => Promise<unknown>) =>
-    callback({ execute: async () => ({ rows: [] }), select })
-  );
-  return counter;
+	const counter = { calls: 0 };
+	const select = () => {
+		counter.calls += 1;
+		if (fixture.failure) throw fixture.failure;
+		let table: unknown = null;
+		const node: Record<string, unknown> = {};
+		node.from = (source: unknown) => {
+			table = source;
+			return node;
+		};
+		node.innerJoin = () => node;
+		node.where = () => node;
+		node.limit = async () => {
+			if (table === schema.organizations) return fixture.organizations ?? [];
+			if (table === schema.imagingInstances) return fixture.instances ?? [];
+			if (table === schema.imagingStudies) return fixture.studies ?? [];
+			throw new Error(
+				"Маршрут dicomweb запросил таблицу, которой нет в фикстуре теста",
+			);
+		};
+		return node;
+	};
+	t.mock.method(db, "select", select);
+	/*
+	 * ЗАЧЕМ ЗАГЛУШКА dbRaw.transaction, А НЕ ТОЛЬКО db.select.
+	 *
+	 * Маршрут больше не полагается на автоматическую обёртку server.ts и открывает
+	 * контекст арендатора сам (withTenantCtx), чтобы не держать транзакцию всё
+	 * время передачи снимка. Как только транзакция открыта, прокси `db`
+	 * (db/client.ts) отдаёт свойства ТРАНЗАКЦИИ, а не dbRaw — и подмена
+	 * `db.select` перестаёт действовать: запрос ушёл бы в настоящий PostgreSQL,
+	 * которого у этого файла нет и быть не должно.
+	 *
+	 * Здесь подменяется сама транзакция: withTenantCtx получает объект с
+	 * `execute` (его он зовёт для set_config) и с тем же `select`, что и раньше.
+	 * Обещание файла «в PostgreSQL не ходим» сохранено, а проверяется настоящий
+	 * код маршрута вместе с его контекстом арендатора.
+	 */
+	t.mock.method(
+		dbRaw,
+		"transaction",
+		async (callback: (tx: unknown) => Promise<unknown>) =>
+			callback({ execute: async () => ({ rows: [] }), select }),
+	);
+	return counter;
 }
 
 async function buildApp(): Promise<ReturnType<typeof Fastify>> {
-  const app = Fastify();
-  await app.register(cors, { origin: "http://example.com" });
-  await registerDicomwebRoutes(app);
-  return app;
+	const app = Fastify();
+	await app.register(cors, { origin: "http://example.com" });
+	await registerDicomwebRoutes(app);
+	return app;
 }
 
-function clinicHeaders(organizationId: string = ORGANIZATION_ID): Record<string, string> {
-  return { "x-dente-clinic-token": signToken({ organizationId }, authTokenSecret()) };
+function clinicHeaders(
+	organizationId: string = ORGANIZATION_ID,
+): Record<string, string> {
+	return {
+		"x-dente-clinic-token": signToken({ organizationId }, authTokenSecret()),
+	};
 }
 
-function instanceUrl(studyUid: string, seriesUid: string, instanceUid: string): string {
-  return `/api/dicomweb/studies/${studyUid}/series/${seriesUid}/instances/${instanceUid}`;
+function instanceUrl(
+	studyUid: string,
+	seriesUid: string,
+	instanceUid: string,
+): string {
+	return `/api/dicomweb/studies/${studyUid}/series/${seriesUid}/instances/${instanceUid}`;
 }
 
 /** Включает настоящий гейт клинического чтения на время одного теста. */
 function enableClinicalReadGate(t: TestContext): void {
-  process.env.DENTE_CLINICAL_ADMIN_SECRET = ADMIN_GATE_PROBE;
-  t.after(() => {
-    delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
-  });
+	process.env.DENTE_CLINICAL_ADMIN_SECRET = ADMIN_GATE_PROBE;
+	t.after(() => {
+		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+	});
 }
 
 /** Снимает владельца образца на время одного теста. */
 function clearSampleOwner(t: TestContext): void {
-  const previous = process.env.DENTE_DICOM_SAMPLE_ORGANIZATION_ID;
-  delete process.env.DENTE_DICOM_SAMPLE_ORGANIZATION_ID;
-  t.after(() => {
-    if (previous === undefined) return;
-    process.env.DENTE_DICOM_SAMPLE_ORGANIZATION_ID = previous;
-  });
+	const previous = process.env.DENTE_DICOM_SAMPLE_ORGANIZATION_ID;
+	delete process.env.DENTE_DICOM_SAMPLE_ORGANIZATION_ID;
+	t.after(() => {
+		if (previous === undefined) return;
+		process.env.DENTE_DICOM_SAMPLE_ORGANIZATION_ID = previous;
+	});
 }
 
 /** Ни один отказ не имеет права нести байты DICOM. */
-function assertNoDicomBytes(response: { headers: Record<string, unknown>; rawPayload: Buffer }): void {
-  assert.ok(!String(response.headers["content-type"] ?? "").includes("application/dicom"));
-  assert.notStrictEqual(response.rawPayload.length, SAMPLE_BYTES);
+function assertNoDicomBytes(response: {
+	headers: Record<string, unknown>;
+	rawPayload: Buffer;
+}): void {
+	assert.ok(
+		!String(response.headers["content-type"] ?? "").includes(
+			"application/dicom",
+		),
+	);
+	assert.notStrictEqual(response.rawPayload.length, SAMPLE_BYTES);
 }
 
 test("выдуманный UID больше не получает байты снимка", async (t) => {
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl("1", "1", "1"),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl("1", "1", "1"),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 404);
-  assertNoDicomBytes(response);
-  assert.strictEqual(response.json().error, "DicomInstanceNotFound");
+	assert.strictEqual(response.statusCode, 404);
+	assertNoDicomBytes(response);
+	assert.strictEqual(response.json().error, "DicomInstanceNotFound");
 
-  await app.close();
+	await app.close();
 });
 
 test("образец отдаётся организации-владельцу под её собственными UID", async (t) => {
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 200);
-  assert.strictEqual(response.headers["content-type"], "application/dicom");
-  assert.strictEqual(response.rawPayload.length, SAMPLE_BYTES);
-  assert.strictEqual(response.rawPayload.subarray(128, 132).toString("latin1"), "DICM");
+	assert.strictEqual(response.statusCode, 200);
+	assert.strictEqual(response.headers["content-type"], "application/dicom");
+	assert.strictEqual(response.rawPayload.length, SAMPLE_BYTES);
+	assert.strictEqual(
+		response.rawPayload.subarray(128, 132).toString("latin1"),
+		"DICM",
+	);
 
-  await app.close();
+	await app.close();
 });
 
 test("вторая клиника установки не получает демонстрационный снимок владельца", async (t) => {
-  // Проба G ревьюера: подписанный токен ДРУГОЙ организации + подлинные UID
-  // образца давали 200 application/dicom и 121356 байт. Организация в базе есть,
-  // владельцем образца она не является — байтов быть не должно.
-  mockDb(t, { organizations: existingOrganization(OTHER_ORGANIZATION_ID) });
-  const app = await buildApp();
+	// Проба G ревьюера: подписанный токен ДРУГОЙ организации + подлинные UID
+	// образца давали 200 application/dicom и 121356 байт. Организация в базе есть,
+	// владельцем образца она не является — байтов быть не должно.
+	mockDb(t, { organizations: existingOrganization(OTHER_ORGANIZATION_ID) });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: clinicHeaders(OTHER_ORGANIZATION_ID)
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: clinicHeaders(OTHER_ORGANIZATION_ID),
+	});
 
-  assert.strictEqual(response.statusCode, 404);
-  assert.strictEqual(response.json().error, "DicomInstanceNotFound");
-  assertNoDicomBytes(response);
+	assert.strictEqual(response.statusCode, 404);
+	assert.strictEqual(response.json().error, "DicomInstanceNotFound");
+	assertNoDicomBytes(response);
 
-  await app.close();
+	await app.close();
 });
 
 test("организации, которой нет в базе, снимок не выдаётся", async (t) => {
-  // Проба H ревьюера: токен с UUID, отсутствующим во всех строках organizations,
-  // получал 200 и 121356 байт. Подпись токена не доказывает существование
-  // арендатора — теперь это проверяется запросом к organizations.
-  mockDb(t, { organizations: [] });
-  const app = await buildApp();
+	// Проба H ревьюера: токен с UUID, отсутствующим во всех строках organizations,
+	// получал 200 и 121356 байт. Подпись токена не доказывает существование
+	// арендатора — теперь это проверяется запросом к organizations.
+	mockDb(t, { organizations: [] });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: clinicHeaders(MISSING_ORGANIZATION_ID)
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: clinicHeaders(MISSING_ORGANIZATION_ID),
+	});
 
-  assert.strictEqual(response.statusCode, 403);
-  assert.strictEqual(response.json().error, "OrganizationUnknown");
-  assertNoDicomBytes(response);
+	assert.strictEqual(response.statusCode, 403);
+	assert.strictEqual(response.json().error, "OrganizationUnknown");
+	assertNoDicomBytes(response);
 
-  await app.close();
+	await app.close();
 });
 
 test("идентификатор организации не в формате UUID отклоняется без обращения к базе", async (t) => {
-  // organizations.id — колонка uuid. Строка неверного формата, отданная в
-  // сравнение, вызвала бы ошибку 22P02 и ответ 500 вместо честного отказа.
-  const dbCalls = mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	// organizations.id — колонка uuid. Строка неверного формата, отданная в
+	// сравнение, вызвала бы ошибку 22P02 и ответ 500 вместо честного отказа.
+	const dbCalls = mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: clinicHeaders(MALFORMED_ORGANIZATION_ID)
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: clinicHeaders(MALFORMED_ORGANIZATION_ID),
+	});
 
-  assert.strictEqual(response.statusCode, 403);
-  assert.strictEqual(response.json().error, "OrganizationUnknown");
-  assert.strictEqual(dbCalls.calls, 0);
-  assertNoDicomBytes(response);
+	assert.strictEqual(response.statusCode, 403);
+	assert.strictEqual(response.json().error, "OrganizationUnknown");
+	assert.strictEqual(dbCalls.calls, 0);
+	assertNoDicomBytes(response);
 
-  await app.close();
+	await app.close();
 });
 
 test("без назначенного владельца образец не отдаётся никому", async (t) => {
-  clearSampleOwner(t);
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	clearSampleOwner(t);
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 404);
-  assert.strictEqual(response.json().error, "DicomInstanceNotFound");
-  assertNoDicomBytes(response);
+	assert.strictEqual(response.statusCode, 404);
+	assert.strictEqual(response.json().error, "DicomInstanceNotFound");
+	assertNoDicomBytes(response);
 
-  await app.close();
+	await app.close();
 });
 
 test("недоступная база не превращается в вывод «такой организации нет»", async (t) => {
-  // Разница принципиальная: 403 OrganizationUnknown — проверенный факт, 503 —
-  // признание, что проверить не удалось. Подставлять первое вместо второго
-  // значило бы выдавать выдумку за проверку.
-  mockDb(t, { failure: new Error("соединение с PostgreSQL потеряно") });
-  const app = await buildApp();
+	// Разница принципиальная: 403 OrganizationUnknown — проверенный факт, 503 —
+	// признание, что проверить не удалось. Подставлять первое вместо второго
+	// значило бы выдавать выдумку за проверку.
+	mockDb(t, { failure: new Error("соединение с PostgreSQL потеряно") });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 503);
-  assert.strictEqual(response.json().error, "OrganizationCheckUnavailable");
-  assertNoDicomBytes(response);
+	assert.strictEqual(response.statusCode, 503);
+	assert.strictEqual(response.json().error, "OrganizationCheckUnavailable");
+	assertNoDicomBytes(response);
 
-  await app.close();
+	await app.close();
 });
 
 test("гейт клинического чтения отказывает токену клиники без секрета администратора", async (t) => {
-  // Этот путь не исполнялся ни одним тестом и ни одним запросом к живому
-  // серверу: и тесты, и apps/api/.env держат DENTE_CLINICAL_ALLOW_UNGUARDED_READS=1
-  // при пустом секрете, поэтому accessGuard возвращал true безусловно. Здесь
-  // секрет задан, значит послабление не действует и гейт работает по-настоящему.
-  enableClinicalReadGate(t);
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	// Этот путь не исполнялся ни одним тестом и ни одним запросом к живому
+	// серверу: и тесты, и apps/api/.env держат DENTE_CLINICAL_ALLOW_UNGUARDED_READS=1
+	// при пустом секрете, поэтому accessGuard возвращал true безусловно. Здесь
+	// секрет задан, значит послабление не действует и гейт работает по-настоящему.
+	enableClinicalReadGate(t);
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 403);
-  assert.strictEqual(response.json().error, "ClinicalReadSecretRequired");
-  assert.strictEqual(response.json().protectedArea, "dicom instance read");
-  assertNoDicomBytes(response);
+	assert.strictEqual(response.statusCode, 403);
+	assert.strictEqual(response.json().error, "ClinicalReadSecretRequired");
+	assert.strictEqual(response.json().protectedArea, "dicom instance read");
+	assertNoDicomBytes(response);
 
-  await app.close();
+	await app.close();
 });
 
 test("гейт клинического чтения с верным секретом администратора отдаёт снимок владельцу", async (t) => {
-  enableClinicalReadGate(t);
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	enableClinicalReadGate(t);
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: { ...clinicHeaders(), [denteAdminSecretHeader]: ADMIN_GATE_PROBE }
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: { ...clinicHeaders(), [denteAdminSecretHeader]: ADMIN_GATE_PROBE },
+	});
 
-  assert.strictEqual(response.statusCode, 200);
-  assert.strictEqual(response.headers["content-type"], "application/dicom");
-  assert.strictEqual(response.rawPayload.length, SAMPLE_BYTES);
-  assert.strictEqual(response.rawPayload.subarray(128, 132).toString("latin1"), "DICM");
+	assert.strictEqual(response.statusCode, 200);
+	assert.strictEqual(response.headers["content-type"], "application/dicom");
+	assert.strictEqual(response.rawPayload.length, SAMPLE_BYTES);
+	assert.strictEqual(
+		response.rawPayload.subarray(128, 132).toString("latin1"),
+		"DICM",
+	);
 
-  await app.close();
+	await app.close();
 });
 
 test("гейт клинического чтения отказывает при неверном секрете администратора", async (t) => {
-  enableClinicalReadGate(t);
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	enableClinicalReadGate(t);
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: { ...clinicHeaders(), [denteAdminSecretHeader]: `${ADMIN_GATE_PROBE}x` }
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: {
+			...clinicHeaders(),
+			[denteAdminSecretHeader]: `${ADMIN_GATE_PROBE}x`,
+		},
+	});
 
-  assert.strictEqual(response.statusCode, 403);
-  assert.strictEqual(response.json().error, "ClinicalReadSecretRequired");
-  assertNoDicomBytes(response);
+	assert.strictEqual(response.statusCode, 403);
+	assert.strictEqual(response.json().error, "ClinicalReadSecretRequired");
+	assertNoDicomBytes(response);
 
-  await app.close();
+	await app.close();
 });
 
 test("верный UID исследования с чужой серией не отдаёт снимок", async (t) => {
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, "1.2.3.чужая.серия", SAMPLE_SOP_UID),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, "1.2.3.чужая.серия", SAMPLE_SOP_UID),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 404);
-  assert.strictEqual(response.json().error, "DicomInstanceNotFound");
+	assert.strictEqual(response.statusCode, 404);
+	assert.strictEqual(response.json().error, "DicomInstanceNotFound");
 
-  await app.close();
+	await app.close();
 });
 
 test("верные UID исследования и серии с чужим объектом не отдают снимок", async (t) => {
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, "9.9.9.чужой.объект"),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, "9.9.9.чужой.объект"),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 404);
-  assert.strictEqual(response.json().error, "DicomInstanceNotFound");
+	assert.strictEqual(response.statusCode, 404);
+	assert.strictEqual(response.json().error, "DicomInstanceNotFound");
 
-  await app.close();
+	await app.close();
 });
 
 test("строка imaging_instances отдаёт файл именно по своему storage_path", async (t) => {
-  // UID запроса не встречаются в самом файле: если бы маршрут проверял байты,
-  // ответ был бы 404. Двести означает, что сработала именно ветка базы —
-  // индекс объектов, единственный путь, пригодный для многокадровых томов.
-  mockDb(t, {
-    organizations: existingOrganization(),
-    instances: [{ storagePath: SAMPLE_DICOM_PATH }]
-  });
-  const app = await buildApp();
+	// UID запроса не встречаются в самом файле: если бы маршрут проверял байты,
+	// ответ был бы 404. Двести означает, что сработала именно ветка базы —
+	// индекс объектов, единственный путь, пригодный для многокадровых томов.
+	mockDb(t, {
+		organizations: existingOrganization(),
+		instances: [{ storagePath: SAMPLE_DICOM_PATH }],
+	});
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl("1.2.826.0.1.3680043.8.498.1", "1.2.826.0.1.3680043.8.498.2", "1.2.826.0.1.3680043.8.498.3"),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(
+			"1.2.826.0.1.3680043.8.498.1",
+			"1.2.826.0.1.3680043.8.498.2",
+			"1.2.826.0.1.3680043.8.498.3",
+		),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 200);
-  assert.strictEqual(response.headers["content-type"], "application/dicom");
-  assert.strictEqual(response.rawPayload.length, SAMPLE_BYTES);
+	assert.strictEqual(response.statusCode, 200);
+	assert.strictEqual(response.headers["content-type"], "application/dicom");
+	assert.strictEqual(response.rawPayload.length, SAMPLE_BYTES);
 
-  await app.close();
+	await app.close();
 });
 
 test("storage_path исследования не отдаётся, если байты не подтверждают серию и объект", async (t) => {
-  // Ветка исследования: строка подтверждает только UID исследования. Файл
-  // указан не-DICOM, значит подтвердить серию и объект нечем — 404.
-  mockDb(t, {
-    organizations: existingOrganization(),
-    studies: [{ storagePath: OTHER_STORAGE_PATH }]
-  });
-  const app = await buildApp();
+	// Ветка исследования: строка подтверждает только UID исследования. Файл
+	// указан не-DICOM, значит подтвердить серию и объект нечем — 404.
+	mockDb(t, {
+		organizations: existingOrganization(),
+		studies: [{ storagePath: OTHER_STORAGE_PATH }],
+	});
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl("1.2.826.0.1.3680043.8.498.10", "1.2.826.0.1.3680043.8.498.11", "1.2.826.0.1.3680043.8.498.12"),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(
+			"1.2.826.0.1.3680043.8.498.10",
+			"1.2.826.0.1.3680043.8.498.11",
+			"1.2.826.0.1.3680043.8.498.12",
+		),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 404);
-  assert.strictEqual(response.json().error, "DicomInstanceNotFound");
+	assert.strictEqual(response.statusCode, 404);
+	assert.strictEqual(response.json().error, "DicomInstanceNotFound");
 
-  await app.close();
+	await app.close();
 });
 
 test("storage_path исследования отдаётся, когда байты подтверждают все три UID", async (t) => {
-  mockDb(t, {
-    organizations: existingOrganization(),
-    studies: [{ storagePath: SAMPLE_DICOM_PATH }]
-  });
-  const app = await buildApp();
+	mockDb(t, {
+		organizations: existingOrganization(),
+		studies: [{ storagePath: SAMPLE_DICOM_PATH }],
+	});
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: clinicHeaders()
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: clinicHeaders(),
+	});
 
-  assert.strictEqual(response.statusCode, 200);
-  assert.strictEqual(response.rawPayload.length, SAMPLE_BYTES);
+	assert.strictEqual(response.statusCode, 200);
+	assert.strictEqual(response.rawPayload.length, SAMPLE_BYTES);
 
-  await app.close();
+	await app.close();
 });
 
 test("без токена клиники снимок не выдаётся", async (t) => {
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID)
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+	});
 
-  assert.strictEqual(response.statusCode, 401);
-  assert.strictEqual(response.json().error, "AuthRequired");
+	assert.strictEqual(response.statusCode, 401);
+	assert.strictEqual(response.json().error, "AuthRequired");
 
-  await app.close();
+	await app.close();
 });
 
 /**
@@ -493,17 +536,20 @@ test("без токена клиники снимок не выдаётся", as
  * Проверяется главное — что обработчик не подменяет политику звёздочкой.
  */
 test("DICOM route does not return wildcard CORS", async (t) => {
-  mockDb(t, { organizations: existingOrganization() });
-  const app = await buildApp();
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
 
-  const response = await app.inject({
-    method: "GET",
-    url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
-    headers: { ...clinicHeaders(), origin: "http://example.com" }
-  });
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: { ...clinicHeaders(), origin: "http://example.com" },
+	});
 
-  assert.strictEqual(response.headers["access-control-allow-origin"], "http://example.com");
-  assert.notStrictEqual(response.headers["access-control-allow-origin"], "*");
+	assert.strictEqual(
+		response.headers["access-control-allow-origin"],
+		"http://example.com",
+	);
+	assert.notStrictEqual(response.headers["access-control-allow-origin"], "*");
 
-  await app.close();
+	await app.close();
 });

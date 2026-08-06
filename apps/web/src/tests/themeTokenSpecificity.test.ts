@@ -23,14 +23,17 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cssPath = path.join(webSrc, "styles/token-aliases.css");
 
 /** Состояние корневого элемента: значение data-theme и классы на <html>. */
-type RootState = { readonly theme: string | null; readonly classes: readonly string[] };
+type RootState = {
+	readonly theme: string | null;
+	readonly classes: readonly string[];
+};
 
 type Specificity = readonly [number, number, number];
 
@@ -47,7 +50,8 @@ function blankComments(source: string): string {
 		result += source.slice(index, start);
 		const closing = source.indexOf("*/", start + 2);
 		const end = closing < 0 ? source.length : closing + 2;
-		for (const character of source.slice(start, end)) result += character === "\n" ? "\n" : " ";
+		for (const character of source.slice(start, end))
+			result += character === "\n" ? "\n" : " ";
 		index = end;
 	}
 	return result;
@@ -66,7 +70,8 @@ function parseCompound(selector: string): string[] {
 			/^:not\([^()]*\)/.exec(rest) ??
 			/^\.[\w-]+/.exec(rest) ??
 			/^\[[^\]]*\]/.exec(rest);
-		if (!match) throw new Error(`селектор не разобран: «${selector}» на «${rest}»`);
+		if (!match)
+			throw new Error(`селектор не разобран: «${selector}» на «${rest}»`);
 		parts.push(match[0]);
 		index += match[0].length;
 	}
@@ -76,18 +81,23 @@ function parseCompound(selector: string): string[] {
 
 function matchesPart(part: string, state: RootState): boolean {
 	if (part === "html" || part === ":root") return true;
-	if (part.startsWith(":not(")) return !matchesPart(part.slice(5, -1).trim(), state);
+	if (part.startsWith(":not("))
+		return !matchesPart(part.slice(5, -1).trim(), state);
 	if (part.startsWith(".")) return state.classes.includes(part.slice(1));
 	const attribute = /^\[([\w-]+)(?:=["']?([^"'\]]*)["']?)?\]$/.exec(part);
 	if (!attribute) throw new Error(`часть селектора не разобрана: «${part}»`);
-	if (attribute[1] !== "data-theme") throw new Error(`неожиданный атрибут: «${part}»`);
-	return attribute[2] === undefined ? state.theme !== null : state.theme === attribute[2];
+	if (attribute[1] !== "data-theme")
+		throw new Error(`неожиданный атрибут: «${part}»`);
+	return attribute[2] === undefined
+		? state.theme !== null
+		: state.theme === attribute[2];
 }
 
 function specificityOfPart(part: string): Specificity {
 	if (part === "html") return [0, 0, 1];
 	// :not() не добавляет ничего от себя — берётся специфичность самого сильного аргумента.
-	if (part.startsWith(":not(")) return specificityOfPart(part.slice(5, -1).trim());
+	if (part.startsWith(":not("))
+		return specificityOfPart(part.slice(5, -1).trim());
 	return [0, 1, 0]; // :root, класс, атрибут
 }
 
@@ -105,7 +115,11 @@ function matchesSelector(selector: string, state: RootState): boolean {
 	return parseCompound(selector).every((part) => matchesPart(part, state));
 }
 
-type Declaration = { readonly selectors: string[]; readonly properties: Map<string, string>; readonly order: number };
+type Declaration = {
+	readonly selectors: string[];
+	readonly properties: Map<string, string>;
+	readonly order: number;
+};
 
 /** Плоский разбор `селекторы { свойства }`. Вложенных правил в этом файле нет. */
 function parseRules(css: string): Declaration[] {
@@ -115,7 +129,8 @@ function parseRules(css: string): Declaration[] {
 	for (const match of source.matchAll(pattern)) {
 		// Обе группы обязательны по самому шаблону; проверка нужна типам.
 		const [, selectorList, body] = match;
-		if (selectorList === undefined || body === undefined) throw new Error(`правило не разобрано: «${match[0]}»`);
+		if (selectorList === undefined || body === undefined)
+			throw new Error(`правило не разобрано: «${match[0]}»`);
 		const selectors = selectorList
 			.split(",")
 			.map((selector) => selector.trim())
@@ -134,8 +149,13 @@ function parseRules(css: string): Declaration[] {
 }
 
 /** Значение токена, которое победит на <html> в заданном состоянии, — как это решает браузер. */
-function winningValue(rules: Declaration[], token: string, state: RootState): string | null {
-	let best: { specificity: Specificity; order: number; value: string } | null = null;
+function winningValue(
+	rules: Declaration[],
+	token: string,
+	state: RootState,
+): string | null {
+	let best: { specificity: Specificity; order: number; value: string } | null =
+		null;
 	for (const rule of rules) {
 		const value = rule.properties.get(token);
 		if (value === undefined) continue;
@@ -149,7 +169,8 @@ function winningValue(rules: Declaration[], token: string, state: RootState): st
 					(specificity[1] > best.specificity[1] ||
 						(specificity[1] === best.specificity[1] &&
 							(specificity[2] > best.specificity[2] ||
-								(specificity[2] === best.specificity[2] && rule.order >= best.order)))))
+								(specificity[2] === best.specificity[2] &&
+									rule.order >= best.order)))))
 			) {
 				best = { specificity, order: rule.order, value };
 			}
@@ -212,7 +233,10 @@ describe("token-aliases.css: палитру решает data-theme, а не к�
 	test("все шесть токенов имеют значение в каждой из трёх тем", () => {
 		for (const theme of ["light", "dark", "night"] as const) {
 			for (const token of SURFACE_TOKENS) {
-				const value = winningValue(rules, token, { theme, classes: [theme === "night" ? "" : theme] });
+				const value = winningValue(rules, token, {
+					theme,
+					classes: [theme === "night" ? "" : theme],
+				});
 				assert.ok(value, `${token} не имеет значения в теме ${theme}`);
 			}
 		}

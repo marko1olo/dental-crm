@@ -1,10 +1,8 @@
 export const meta = {
-  name: 'dente-cycle26-OO',
-  description: 'Цикл 26, волна OO: зелёный тест на сломанном коде, английский unknown на экране, мёртвые пропсы, четыре куста красных стражей',
-  phases: [
-    { title: 'Build' },
-    { title: 'Review' }
-  ]
+	name: "dente-cycle26-OO",
+	description:
+		"Цикл 26, волна OO: зелёный тест на сломанном коде, английский unknown на экране, мёртвые пропсы, четыре куста красных стражей",
+	phases: [{ title: "Build" }, { title: "Review" }],
 };
 
 const LAW = `Ты исполнитель в волне OO. Проект: C:\\Clinic_MVP\\dental-crm (Windows, bash). Работай молча и коммить.
@@ -53,11 +51,12 @@ const LAW = `Ты исполнитель в волне OO. Проект: C:\\Cli
 | CONTRADICTED: <где бриф неверен или none> | FOUND: <новые дефекты, по одному на строку>`;
 
 const PACKETS = [
-  {
-    id: 'OO1',
-    label: 'пять проверок нейро-ветки зелены на полностью сломанном коде',
-    files: 'apps/api/src/pricelist/pricelistYearPrice.test.ts (правишь ТОЛЬКО набор). apps/api/src/pricelist/analyzer.ts — ЧИТАТЬ, менять только если без этого ветку не поднять, и тогда сказать',
-    brief: `P0. Проверка, которая проходит на сломанном коде, хуже отсутствующей: она создаёт уверенность.
+	{
+		id: "OO1",
+		label: "пять проверок нейро-ветки зелены на полностью сломанном коде",
+		files:
+			"apps/api/src/pricelist/pricelistYearPrice.test.ts (правишь ТОЛЬКО набор). apps/api/src/pricelist/analyzer.ts — ЧИТАТЬ, менять только если без этого ветку не поднять, и тогда сказать",
+		brief: `P0. Проверка, которая проходит на сломанном коде, хуже отсутствующей: она создаёт уверенность.
 
 ИЗМЕРЕНО РЕВЬЮЕРОМ ВОЛНЫ NN, не выведено: он восстановил в копии РОВНО тот дефект, который чинил коммит
 b1cb29df3 — нейро-ветка \`analyzePricelist\` снова зовёт \`responseFromItems\` с \`parsedRows.items\` без
@@ -89,13 +88,14 @@ fetch нельзя, потому что \`recordProviderKeySuccess\` писал�
 
 EXIT_BITE ОБЯЗАТЕЛЕН И ЗДЕСЬ ОН — ВЕСЬ СМЫСЛ ПАКЕТА: мутация должна быть той же, что у ревьюера (нейро-ветка
 зовёт \`responseFromItems\` напрямую, без гейта и без счётчика), и твой набор ОБЯЗАН на ней покраснеть.
-Регресс: батарея из семи наборов прайса должна остаться зелёной, 102 теста были до тебя.`
-  },
-  {
-    id: 'OO2',
-    label: 'клинике выводится английский unknown с нейро-пути',
-    files: 'apps/web/src/pricelistUiMeta.ts + при необходимости apps/api/src/pricelist/analyzer.ts (промпт) — но analyzer.ts держит OO1, поэтому согласуй: правь ТОЛЬКО промпт и скажи об этом',
-    brief: `P0. Пакет прошлой волны включил мёртвую функцию — и вместе с ней включил спавший в ней дефект.
+Регресс: батарея из семи наборов прайса должна остаться зелёной, 102 теста были до тебя.`,
+	},
+	{
+		id: "OO2",
+		label: "клинике выводится английский unknown с нейро-пути",
+		files:
+			"apps/web/src/pricelistUiMeta.ts + при необходимости apps/api/src/pricelist/analyzer.ts (промпт) — но analyzer.ts держит OO1, поэтому согласуй: правь ТОЛЬКО промпт и скажи об этом",
+		brief: `P0. Пакет прошлой волны включил мёртвую функцию — и вместе с ней включил спавший в ней дефект.
 
 ИЗМЕРЕНО РЕВЬЮЕРОМ ВОЛНЫ NN НА ЖИВОЙ ФУНКЦИИ, вывод дословно:
   Материал по разбору: unknown
@@ -127,13 +127,14 @@ EXIT_BITE ОБЯЗАТЕЛЕН И ЗДЕСЬ ОН — ВЕСЬ СМЫСЛ ПАК
 Побочное наблюдение ревьюера, проверь его: при всех значениях «unknown» резервная фраза тоже вырождается.
 
 EXIT_BITE: проверка обязана краснеть, если в карту подать значение, которого в ней нет. Проверяй ИСПОЛНЕНИЕМ
-функции на таком значении, а не чтением — ревьюер прошлой волны так и сделал, повтори.`
-  },
-  {
-    id: 'OO3',
-    label: 'три вкладки настроек всё ещё держат мёртвые пропсы',
-    files: 'apps/web/src/components/settings/SettingsPricesTab.tsx, SettingsAuditTab.tsx, SettingsImportsTab.tsx + при необходимости App.tsx, AppHelpers.tsx, useAppLogic.tsx (последний ГРЯЗНЫЙ — точечно!)',
-    brief: `P1, остаток требования, которое прошлая волна не закрыла: «оставить протянутым нельзя».
+функции на таком значении, а не чтением — ревьюер прошлой волны так и сделал, повтори.`,
+	},
+	{
+		id: "OO3",
+		label: "три вкладки настроек всё ещё держат мёртвые пропсы",
+		files:
+			"apps/web/src/components/settings/SettingsPricesTab.tsx, SettingsAuditTab.tsx, SettingsImportsTab.tsx + при необходимости App.tsx, AppHelpers.tsx, useAppLogic.tsx (последний ГРЯЗНЫЙ — точечно!)",
+		brief: `P1, остаток требования, которое прошлая волна не закрыла: «оставить протянутым нельзя».
 
 ПЕРЕПИСЬ ВЕДУЩЕГО ПО HEAD, признак мёртвого пропса — \`rg -c <имя>\` по файлу-потребителю даёт РОВНО 1,
 единственную строку деструктуризации (0 = не протянут, >1 = используется):
@@ -166,13 +167,14 @@ EXIT_BITE: проверка обязана краснеть, если в кар�
 ДОКАЗАТЬ: \`npm run smoke:pricelist-analyzer > /tmp/oo3.log 2>&1; echo $?\` обязан быть 0 — он читает и
 \`SettingsView.tsx\`, и три вкладки, и требует локализованных подписей. Плюс \`rg -c\` по каждому тронутому
 имени во всех файлах цепочки, вывод дословно: ни одной единицы остаться не должно.
-EXIT_BITE: покажи, что смоук КРАСНЕЕТ, если убрать одну из требуемых им локализованных подписей в копии.`
-  },
-  {
-    id: 'OO4',
-    label: 'куст красных стражей: речь и диктовка',
-    files: 'ТОЛЬКО: scripts/smoke-speech-queue-source.mjs, scripts/smoke-speech-recorder-resilience-source.mjs, scripts/smoke-speech-final-ready-status-source.mjs, scripts/smoke-visit-dictation-simplified-actions-source.mjs',
-    brief: `P1. Четыре стража речи и диктовки красные. Замер ведущего: из 41 стража \`-source\` было красных 31,
+EXIT_BITE: покажи, что смоук КРАСНЕЕТ, если убрать одну из требуемых им локализованных подписей в копии.`,
+	},
+	{
+		id: "OO4",
+		label: "куст красных стражей: речь и диктовка",
+		files:
+			"ТОЛЬКО: scripts/smoke-speech-queue-source.mjs, scripts/smoke-speech-recorder-resilience-source.mjs, scripts/smoke-speech-final-ready-status-source.mjs, scripts/smoke-visit-dictation-simplified-actions-source.mjs",
+		brief: `P1. Четыре стража речи и диктовки красные. Замер ведущего: из 41 стража \`-source\` было красных 31,
 после двух пакетов прошлой волны стало 21 — твои четыре из них.
 
 ТАКСОНОМИЯ УЖЕ ПОСТРОЕНА ПРЕДЫДУЩЕЙ ВОЛНОЙ, пять классов. Ставь по каждому стражу ОДИН:
@@ -200,13 +202,14 @@ EXIT_BITE: покажи, что смоук КРАСНЕЕТ, если убрат
 
 ДОКАЗАТЬ: таблица страж | класс | код выхода ДО | ПОСЛЕ, истинный код без конвейера по каждому из четырёх.
 EXIT_BITE обязателен для КАЖДОГО ослабленного требования: прогон образца по искусственно сломанной копии
-исходника в памяти, продукт не трогая. Класс REAL остаётся красным законно — так и напиши, это не провал.`
-  },
-  {
-    id: 'OO5',
-    label: 'куст красных стражей: dicom и снимки',
-    files: 'ТОЛЬКО: scripts/smoke-imaging-viewer-usability-source.mjs, scripts/smoke-browser-imaging-scan-progress-source.mjs, scripts/smoke-api-dicom-scan-abort-yield-source.mjs, scripts/smoke-dicom-workbench-offline-source.mjs, scripts/smoke-dicom-workbench-ui-cancel-source.mjs',
-    brief: `P1. Пять стражей dicom и снимков красные — самый крупный куст из оставшихся 21.
+исходника в памяти, продукт не трогая. Класс REAL остаётся красным законно — так и напиши, это не провал.`,
+	},
+	{
+		id: "OO5",
+		label: "куст красных стражей: dicom и снимки",
+		files:
+			"ТОЛЬКО: scripts/smoke-imaging-viewer-usability-source.mjs, scripts/smoke-browser-imaging-scan-progress-source.mjs, scripts/smoke-api-dicom-scan-abort-yield-source.mjs, scripts/smoke-dicom-workbench-offline-source.mjs, scripts/smoke-dicom-workbench-ui-cancel-source.mjs",
+		brief: `P1. Пять стражей dicom и снимков красные — самый крупный куст из оставшихся 21.
 
 ТАКСОНОМИЯ, ставь по каждому ОДИН класс:
   BROKEN       — скрипт не работает: путь собран сложением строк, вызов без обязательного аргумента, needles
@@ -231,13 +234,14 @@ EXIT_BITE обязателен для КАЖДОГО ослабленного т
 это отдельный пункт очереди ведущего.
 
 ДОКАЗАТЬ: таблица страж | класс | код выхода ДО | ПОСЛЕ по каждому из пяти, истинный код без конвейера.
-EXIT_BITE обязателен для каждого ослабленного требования — прогон по искусственно сломанной копии в памяти.`
-  },
-  {
-    id: 'OO6',
-    label: 'куст красных стражей: telegram и документы',
-    files: 'ТОЛЬКО: scripts/smoke-telegram-outbox-sla-source.mjs, scripts/smoke-telegram-url-ui-source.mjs, scripts/smoke-telegram-handoff-source.mjs, scripts/smoke-document-html-preview-source.mjs, scripts/smoke-document-payload-ui-source.mjs',
-    brief: `P1. Пять стражей telegram и документов красные.
+EXIT_BITE обязателен для каждого ослабленного требования — прогон по искусственно сломанной копии в памяти.`,
+	},
+	{
+		id: "OO6",
+		label: "куст красных стражей: telegram и документы",
+		files:
+			"ТОЛЬКО: scripts/smoke-telegram-outbox-sla-source.mjs, scripts/smoke-telegram-url-ui-source.mjs, scripts/smoke-telegram-handoff-source.mjs, scripts/smoke-document-html-preview-source.mjs, scripts/smoke-document-payload-ui-source.mjs",
+		brief: `P1. Пять стражей telegram и документов красные.
 
 ТАКСОНОМИЯ, ставь по каждому ОДИН класс: BROKEN (скрипт не работает — путь сложением строк, вызов без
 обязательного аргумента, needles про МЁРТВУЮ КОПИЮ) · STALE (текст переехал при разборе монолита, поведение
@@ -262,23 +266,23 @@ REAL (поведения нет — в FOUND с точной строкой и �
 предмет — стражи в \`scripts/\`. Если найдёшь дефект в самом \`telegram.ts\` — в FOUND, не в правку.
 
 ДОКАЗАТЬ: таблица страж | класс | код выхода ДО | ПОСЛЕ по каждому из пяти, истинный код без конвейера.
-EXIT_BITE обязателен для каждого ослабленного требования.`
-  }
+EXIT_BITE обязателен для каждого ослабленного требования.`,
+	},
 ];
 
-phase('Build');
+phase("Build");
 
 const done = await pipeline(
-  PACKETS,
-  (packet) =>
-    agent(
-      `${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
-      { label: `build:${packet.id}`, phase: 'Build', effort: 'high' }
-    ),
-  (buildResult, packet) => {
-    if (!buildResult) return null;
-    return agent(
-      `Ты ревьюер пакета ${packet.id} в волне OO. Проект C:\\Clinic_MVP\\dental-crm.
+	PACKETS,
+	(packet) =>
+		agent(
+			`${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
+			{ label: `build:${packet.id}`, phase: "Build", effort: "high" },
+		),
+	(buildResult, packet) => {
+		if (!buildResult) return null;
+		return agent(
+			`Ты ревьюер пакета ${packet.id} в волне OO. Проект C:\\Clinic_MVP\\dental-crm.
 Ты НЕ ПРАВИШЬ КОД. Пишешь ОДИН файл: .agents/archon/packets/${packet.id}/review.md, коммитишь только его
 (ретрай 20×6 с вокруг git add И git commit, сообщение в файл, [ARCHON] в теме, без атрибуции инструмента,
 git log -1 --format='%(trailers)' пуст). НЕ ПУШИТЬ.
@@ -319,12 +323,14 @@ ${buildResult}
 FOUND — самая ценная часть твоей работы: в прошлых двух волнах ревьюеры нашли то, чего не видел никто —
 год как цену услуги, зелёный тест на сломанном коде, английский токен на экране и регресс, вернувший уже
 закрытый P0. Не оставляй раздел пустым из вежливости, но и выдуманный дефект хуже пустого.`,
-      { label: `review:${packet.id}`, phase: 'Review', effort: 'high' }
-    );
-  }
+			{ label: `review:${packet.id}`, phase: "Review", effort: "high" },
+		);
+	},
 );
 
-log(`волна OO завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`);
+log(
+	`волна OO завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`,
+);
 
 return {
   packets: PACKETS.map((packet, index) => ({ id: packet.id, label: packet.label, review: done[index] ?? null }))

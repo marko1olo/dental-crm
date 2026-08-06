@@ -21,7 +21,9 @@ const browserCandidates = [
 	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
 	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
 ].filter(Boolean);
-const browserPath = browserCandidates.find((candidate) => existsSync(candidate));
+const browserPath = browserCandidates.find((candidate) =>
+	existsSync(candidate),
+);
 if (!browserPath) throw new Error("Браузер не найден");
 
 const browser = spawn(
@@ -63,7 +65,9 @@ function connect(wsUrl) {
 		send(method, params = {}) {
 			id += 1;
 			socket.send(JSON.stringify({ id, method, params }));
-			return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+			return new Promise((resolve, reject) =>
+				pending.set(id, { resolve, reject }),
+			);
 		},
 	};
 }
@@ -76,7 +80,9 @@ const evaluate = async (cdp, expression) => {
 		awaitPromise: true,
 	});
 	if (response.exceptionDetails) {
-		return { __error: response.exceptionDetails.text ?? "исключение при вычислении" };
+		return {
+			__error: response.exceptionDetails.text ?? "исключение при вычислении",
+		};
 	}
 	return response.result.value;
 };
@@ -143,8 +149,16 @@ try {
       }
     })()`,
 	);
-	console.log(JSON.stringify({ step: "вход", ok: session?.ok === true, status: session?.status, reason: session?.reason ?? null }));
-	if (session?.ok !== true) throw new Error("без сессии дальше смотреть нечего");
+	console.log(
+		JSON.stringify({
+			step: "вход",
+			ok: session?.ok === true,
+			status: session?.status,
+			reason: session?.reason ?? null,
+		}),
+	);
+	if (session?.ok !== true)
+		throw new Error("без сессии дальше смотреть нечего");
 
 	await cdp.send("Page.navigate", { url: targetUrl });
 	await sleep(11000);
@@ -193,7 +207,13 @@ try {
       };
     })()`,
 	);
-	console.log(JSON.stringify({ step: "клик по вкладке Жалобы", tabClick, afterTab }, null, 1));
+	console.log(
+		JSON.stringify(
+			{ step: "клик по вкладке Жалобы", tabClick, afterTab },
+			null,
+			1,
+		),
+	);
 
 	// Клик по зубу 24 без штампа: должна открыться карточка зуба.
 	const toothClick = await evaluate(
@@ -217,7 +237,9 @@ try {
       };
     })()`,
 	);
-	console.log(JSON.stringify({ step: "клик по зубу 24", toothClick, modal }, null, 1));
+	console.log(
+		JSON.stringify({ step: "клик по зубу 24", toothClick, modal }, null, 1),
+	);
 
 	const capture = await cdp.send("Page.captureScreenshot", {
 		format: "png",

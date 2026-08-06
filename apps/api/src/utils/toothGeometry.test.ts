@@ -5,13 +5,25 @@ import { getToothPath, TOOTH_GEOMETRY } from "./toothGeometry.js";
 describe("toothGeometry", () => {
 	describe("getToothPath", () => {
 		test("returns UPPER_CENTRAL_INCISOR for upper quadrants (1, 2) and index 1", () => {
-			assert.strictEqual(getToothPath(11), TOOTH_GEOMETRY.UPPER_CENTRAL_INCISOR);
-			assert.strictEqual(getToothPath(21), TOOTH_GEOMETRY.UPPER_CENTRAL_INCISOR);
+			assert.strictEqual(
+				getToothPath(11),
+				TOOTH_GEOMETRY.UPPER_CENTRAL_INCISOR,
+			);
+			assert.strictEqual(
+				getToothPath(21),
+				TOOTH_GEOMETRY.UPPER_CENTRAL_INCISOR,
+			);
 		});
 
 		test("returns UPPER_LATERAL_INCISOR for upper quadrants (1, 2) and index 2", () => {
-			assert.strictEqual(getToothPath(12), TOOTH_GEOMETRY.UPPER_LATERAL_INCISOR);
-			assert.strictEqual(getToothPath(22), TOOTH_GEOMETRY.UPPER_LATERAL_INCISOR);
+			assert.strictEqual(
+				getToothPath(12),
+				TOOTH_GEOMETRY.UPPER_LATERAL_INCISOR,
+			);
+			assert.strictEqual(
+				getToothPath(22),
+				TOOTH_GEOMETRY.UPPER_LATERAL_INCISOR,
+			);
 		});
 
 		test("returns UPPER_CANINE for upper quadrants (1, 2) and index 3", () => {

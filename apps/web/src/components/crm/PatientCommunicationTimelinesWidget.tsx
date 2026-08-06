@@ -32,7 +32,9 @@
 import type React from "react";
 import { PatientCommunicationTimelineWidget } from "../patients/PatientCommunicationTimelineWidget";
 
-export const PatientCommunicationTimelinesWidget: React.FC<{ patientId?: string | null }> = ({ patientId }) => {
+export const PatientCommunicationTimelinesWidget: React.FC<{
+	patientId?: string | null;
+}> = ({ patientId }) => {
 	if (!patientId) {
 		return (
 			<div
@@ -41,7 +43,8 @@ export const PatientCommunicationTimelinesWidget: React.FC<{ patientId?: string 
 			>
 				<h3 className="font-semibold text-sm mb-2">Звонки и сообщения</h3>
 				<p className="text-xs m-0 text-slate-500 dark:text-slate-400">
-					Выберите пациента в списке слева — журнал показывается по конкретной карте.
+					Выберите пациента в списке слева — журнал показывается по конкретной
+					карте.
 				</p>
 			</div>
 		);

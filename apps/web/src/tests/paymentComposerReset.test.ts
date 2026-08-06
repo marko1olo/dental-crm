@@ -45,10 +45,13 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webSrc = join(here, "..");
-const read = (relativePath: string) => readFileSync(join(webSrc, relativePath), "utf8");
+const read = (relativePath: string) =>
+	readFileSync(join(webSrc, relativePath), "utf8");
 
 /** Подставное хранилище: держит значения и отдаёт сеттеры того же вида. */
-function makeStore(initial: PaymentComposerFields & { paymentFeedback: string }) {
+function makeStore(
+	initial: PaymentComposerFields & { paymentFeedback: string },
+) {
 	const state = { ...initial };
 	const setters: PaymentComposerSetters = {
 		setPaymentAmount: (value) => {
@@ -101,7 +104,9 @@ function makeStore(initial: PaymentComposerFields & { paymentFeedback: string })
 }
 
 /** Форма, заполненная под пациента А: сумма, чек, плательщик для вычета. */
-const composerFilledForPatientA: PaymentComposerFields & { paymentFeedback: string } = {
+const composerFilledForPatientA: PaymentComposerFields & {
+	paymentFeedback: string;
+} = {
 	paymentAmount: "12000,50",
 	paymentFiscalCashierName: "Соколова Марина Львовна",
 	paymentFiscalFd: "104517",
@@ -109,7 +114,8 @@ const composerFilledForPatientA: PaymentComposerFields & { paymentFeedback: stri
 	paymentFiscalFpd: "2871004155",
 	paymentFiscalReceiptIssuedAt: "2026-07-27T14:35",
 	paymentFiscalReceiptNumber: "00042",
-	paymentFiscalReceiptUrl: "https://check.ofd.ru/rec/9960440301234567/104517/2871004155",
+	paymentFiscalReceiptUrl:
+		"https://check.ofd.ru/rec/9960440301234567/104517/2871004155",
 	paymentPayerBirthDate: "1984-03-11",
 	paymentPayerFullName: "Абросимова Елена Петровна",
 	paymentPayerIdentityDocument: "паспорт 4512 778901",
@@ -161,7 +167,11 @@ describe("свежая форма приёма оплаты", () => {
 				assert.equal(value, DEFAULT_PAYER_RELATIONSHIP);
 				continue;
 			}
-			assert.equal(value, "", `поле ${field} подставлено значением ${String(value)}`);
+			assert.equal(
+				value,
+				"",
+				`поле ${field} подставлено значением ${String(value)}`,
+			);
 		}
 	});
 
@@ -198,7 +208,10 @@ describe("смена пациента гасит форму предыдущег
 		assert.equal(store.state.paymentPayerInn, "");
 		assert.equal(store.state.paymentPayerBirthDate, "");
 		assert.equal(store.state.paymentPayerIdentityDocument, "");
-		assert.equal(store.state.paymentPayerRelationship, DEFAULT_PAYER_RELATIONSHIP);
+		assert.equal(
+			store.state.paymentPayerRelationship,
+			DEFAULT_PAYER_RELATIONSHIP,
+		);
 		assert.equal(store.state.paymentTaxDeductionCode, "");
 	});
 
@@ -249,7 +262,12 @@ describe("смена пациента гасит форму предыдущег
 describe("монтирование не считается сменой пациента", () => {
 	it("перезагрузка сводки при том же пациенте сбросов не даёт вовсе", () => {
 		const store = makeStore(composerFilledForPatientA);
-		const resets = applyPatientSwitches(store, ["pat-a", "pat-a", "pat-a", "pat-a"]);
+		const resets = applyPatientSwitches(store, [
+			"pat-a",
+			"pat-a",
+			"pat-a",
+			"pat-a",
+		]);
 		assert.equal(resets, 0);
 		assert.equal(store.state.paymentAmount, "12000,50");
 		assert.equal(store.state.paymentFiscalFn, "9960440301234567");
@@ -302,7 +320,8 @@ describe("оба сброса перечисляют все поля формы"
 		emptyPaymentComposerFields(),
 	) as (keyof PaymentComposerFields)[];
 
-	const setterName = (field: string) => `set${field[0]!.toUpperCase()}${field.slice(1)}`;
+	const setterName = (field: string) =>
+		`set${field[0]!.toUpperCase()}${field.slice(1)}`;
 
 	/** Значение поля попадает в выражение как текст: спецсимволы обезвреживаем. */
 	const escapeForRegExp = (value: string) =>
@@ -345,9 +364,15 @@ describe("оба сброса перечисляют все поля формы"
 	it("сброс после записанного платежа гасит каждое поле формы свежим значением", () => {
 		const source = read("useAppLogic.tsx");
 		const start = source.indexOf("paymentMutationIdRef.current = null;");
-		assert.ok(start > 0, "не найдено начало сброса после платежа в useAppLogic.tsx");
+		assert.ok(
+			start > 0,
+			"не найдено начало сброса после платежа в useAppLogic.tsx",
+		);
 		const end = source.indexOf("await loadDashboard();", start);
-		assert.ok(end > start, "не найден конец сброса после платежа в useAppLogic.tsx");
+		assert.ok(
+			end > start,
+			"не найден конец сброса после платежа в useAppLogic.tsx",
+		);
 		const block = source.slice(start, end);
 		const freshFields = emptyPaymentComposerFields();
 		for (const field of composerFieldNames) {

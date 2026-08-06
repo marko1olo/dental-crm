@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { type FastifyInstance } from "fastify";
 import { and, eq, inArray } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	communicationOutbox,
@@ -9,7 +9,7 @@ import {
 	communicationTemplates,
 	organizations,
 	patientCommunicationConsents,
-	patients
+	patients,
 } from "../../db/schema.js";
 import { registerCommunicationOutboxRoutes } from "../../routes/communicationsOutbox.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
@@ -35,7 +35,9 @@ const ORG_HEADERS = { "x-organization-id": ORG_ID };
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
+	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(
+		message,
+	);
 }
 
 /**
@@ -58,10 +60,18 @@ async function purgeFixtures(): Promise<void> {
 	 * считается — сообщения прошлого прогона попали бы в журнал и в разбор.
 	 */
 	await withFixtureTenant(ORG_ID, async () => {
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-		await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-		await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
-		await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
+		await db
+			.delete(communicationOutbox)
+			.where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db
+			.delete(patientCommunicationConsents)
+			.where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+		await db
+			.delete(communicationTemplates)
+			.where(eq(communicationTemplates.organizationId, ORG_ID));
+		await db
+			.delete(communicationSettings)
+			.where(eq(communicationSettings.organizationId, ORG_ID));
 		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
 	});
@@ -87,7 +97,7 @@ describe("маршруты сообщений пациентам", () => {
 			"DENTE_SMTP_USER",
 			"DENTE_SMTP_PASSWORD",
 			"DENTE_TELEGRAM_BOT_TOKEN",
-			"TELEGRAM_BOT_TOKEN"
+			"TELEGRAM_BOT_TOKEN",
 		]) {
 			delete process.env[key];
 		}
@@ -105,13 +115,15 @@ describe("маршруты сообщений пациентам", () => {
 			 * отвергается кодом 42501 ещё до первой проверки.
 			 */
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Тестовая клиника (сообщения)" });
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Тестовая клиника (сообщения)" });
 				await db.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
 					fullName: "Тестов Тест Тестович",
 					phone: "+7 916 000-00-01",
-					email: "test-patient@example.ru"
+					email: "test-patient@example.ru",
 				});
 
 				/*
@@ -134,11 +146,14 @@ describe("маршруты сообщений пациентам", () => {
 						organizationId: ORG_ID,
 						timezone: "Europe/Moscow",
 						deferServiceInQuietHours: false,
-						blockMarketingInQuietHours: false
+						blockMarketingInQuietHours: false,
 					})
 					.onConflictDoUpdate({
 						target: communicationSettings.organizationId,
-						set: { deferServiceInQuietHours: false, blockMarketingInQuietHours: false }
+						set: {
+							deferServiceInQuietHours: false,
+							blockMarketingInQuietHours: false,
+						},
 					});
 			});
 		} catch (error) {
@@ -166,8 +181,8 @@ describe("маршруты сообщений пациентам", () => {
 				title: "Напоминание",
 				channel: "sms",
 				intent: "appointment_confirmation",
-				body: "Здравствуйте, {pacient}! Приём {date}."
-			}
+				body: "Здравствуйте, {pacient}! Приём {date}.",
+			},
 		});
 
 		assert.equal(response.statusCode, 400);
@@ -187,12 +202,14 @@ describe("маршруты сообщений пациентам", () => {
 				title: "Памятка",
 				channel: "sms",
 				intent: "post_visit_instruction",
-				body: "Напоминаем о процедуре {procedure} и зубе {tooth}."
-			}
+				body: "Напоминаем о процедуре {procedure} и зубе {tooth}.",
+			},
 		});
 
 		assert.equal(response.statusCode, 400);
-		assert.ok(JSON.parse(response.body).message.includes("Медицинские сведения"));
+		assert.ok(
+			JSON.parse(response.body).message.includes("Медицинские сведения"),
+		);
 	});
 
 	test("слишком длинная SMS отклоняется с указанием числа сегментов", async (context) => {
@@ -206,8 +223,8 @@ describe("маршруты сообщений пациентам", () => {
 				title: "Длинная",
 				channel: "sms",
 				intent: "general",
-				body: "я".repeat(500)
-			}
+				body: "я".repeat(500),
+			},
 		});
 
 		assert.equal(response.statusCode, 400);
@@ -227,14 +244,18 @@ describe("маршруты сообщений пациентам", () => {
 				title: "Напоминание о приёме",
 				channel: "sms",
 				intent: "appointment_confirmation",
-				body: "{patient}, ждём вас {date} в {time}."
-			}
+				body: "{patient}, ждём вас {date} в {time}.",
+			},
 		});
 
 		assert.equal(response.statusCode, 201, response.body);
 		const body = JSON.parse(response.body);
 		templateId = body.template.id;
-		assert.deepEqual(JSON.parse(body.template.variablesJson), ["patient", "date", "time"]);
+		assert.deepEqual(JSON.parse(body.template.variablesJson), [
+			"patient",
+			"date",
+			"time",
+		]);
 		assert.equal(body.sms.encoding, "ucs2");
 		assert.equal(body.sms.segments, 1);
 	});
@@ -246,7 +267,11 @@ describe("маршруты сообщений пациентам", () => {
 			method: "POST",
 			url: "/api/communications/templates/preview",
 			headers: ORG_HEADERS,
-			payload: { body: "{patient}, ждём вас {date} в {time}.", channel: "sms", values: { patient: "Марина" } }
+			payload: {
+				body: "{patient}, ждём вас {date} в {time}.",
+				channel: "sms",
+				values: { patient: "Марина" },
+			},
 		});
 
 		assert.equal(response.statusCode, 200, response.body);
@@ -264,7 +289,12 @@ describe("маршруты сообщений пациентам", () => {
 			method: "POST",
 			url: "/api/communications/outbox",
 			headers: ORG_HEADERS,
-			payload: { patientId: PATIENT_ID, channel: "sms", templateId, values: { patient: "Марина" } }
+			payload: {
+				patientId: PATIENT_ID,
+				channel: "sms",
+				templateId,
+				values: { patient: "Марина" },
+			},
 		});
 
 		assert.equal(response.statusCode, 400, response.body);
@@ -287,8 +317,8 @@ describe("маршруты сообщений пациентам", () => {
 				channel: "sms",
 				templateId,
 				values: { patient: "Марина", date: "12 августа", time: "14:30" },
-				dedupeKey: "test:appointment:1"
-			}
+				dedupeKey: "test:appointment:1",
+			},
 		});
 
 		assert.equal(response.statusCode, 201, response.body);
@@ -297,7 +327,10 @@ describe("маршруты сообщений пациентам", () => {
 		// Чтение тоже под контекстом: без него выборка пуста молча, и проверка
 		// содержимого сообщения краснела бы на undefined, а не на дефекте.
 		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, outboxId))
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.id, outboxId)),
 		);
 		assert.equal(row?.status, "queued");
 		assert.equal(row?.body, "Марина, ждём вас 12 августа в 14:30.");
@@ -317,8 +350,8 @@ describe("маршруты сообщений пациентам", () => {
 				channel: "sms",
 				templateId,
 				values: { patient: "Марина", date: "12 августа", time: "14:30" },
-				dedupeKey: "test:appointment:1"
-			}
+				dedupeKey: "test:appointment:1",
+			},
 		});
 
 		assert.equal(response.statusCode, 200, response.body);
@@ -330,7 +363,12 @@ describe("маршруты сообщений пациентам", () => {
 			db
 				.select({ id: communicationOutbox.id })
 				.from(communicationOutbox)
-				.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.dedupeKey, "test:appointment:1")))
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.dedupeKey, "test:appointment:1"),
+					),
+				),
 		);
 		assert.equal(rows.length, 1);
 	});
@@ -342,7 +380,7 @@ describe("маршруты сообщений пациентам", () => {
 			method: "POST",
 			url: "/api/communications/outbox/dispatch",
 			headers: ORG_HEADERS,
-			payload: { batchSize: 10 }
+			payload: { batchSize: 10 },
 		});
 
 		assert.equal(response.statusCode, 200, response.body);
@@ -351,11 +389,17 @@ describe("маршруты сообщений пациентам", () => {
 		assert.equal(report.sent, 0);
 
 		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, outboxId))
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.id, outboxId)),
 		);
 		assert.equal(row?.status, "suppressed");
 		assert.equal(row?.lastErrorClass, "not_configured");
-		assert.ok(row?.lastErrorMessage?.includes("SMS-шлюз не настроен"), row?.lastErrorMessage ?? "");
+		assert.ok(
+			row?.lastErrorMessage?.includes("SMS-шлюз не настроен"),
+			row?.lastErrorMessage ?? "",
+		);
 		// Строка освобождена: захват не остаётся висеть после разбора.
 		assert.equal(row?.lockedAt, null);
 	});
@@ -367,7 +411,16 @@ describe("маршруты сообщений пациентам", () => {
 			method: "PUT",
 			url: `/api/communications/consents/${PATIENT_ID}`,
 			headers: ORG_HEADERS,
-			payload: { entries: [{ channel: "sms", scope: "service", state: "revoked", source: "staff" }] }
+			payload: {
+				entries: [
+					{
+						channel: "sms",
+						scope: "service",
+						state: "revoked",
+						source: "staff",
+					},
+				],
+			},
 		});
 		assert.equal(consentResponse.statusCode, 200, consentResponse.body);
 
@@ -379,8 +432,8 @@ describe("маршруты сообщений пациентам", () => {
 				patientId: PATIENT_ID,
 				channel: "sms",
 				body: "Проверка отказа",
-				dedupeKey: "test:consent:1"
-			}
+				dedupeKey: "test:consent:1",
+			},
 		});
 		assert.equal(enqueued.statusCode, 201, enqueued.body);
 		const secondId = JSON.parse(enqueued.body).outboxId;
@@ -389,20 +442,30 @@ describe("маршруты сообщений пациентам", () => {
 			method: "POST",
 			url: "/api/communications/outbox/dispatch",
 			headers: ORG_HEADERS,
-			payload: { batchSize: 10 }
+			payload: { batchSize: 10 },
 		});
 
 		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, secondId))
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.id, secondId)),
 		);
 		assert.equal(row?.status, "suppressed");
-		assert.ok(row?.lastErrorMessage?.includes("отказался"), row?.lastErrorMessage ?? "");
+		assert.ok(
+			row?.lastErrorMessage?.includes("отказался"),
+			row?.lastErrorMessage ?? "",
+		);
 	});
 
 	test("журнал показывает сводку по статусам", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/communications/outbox", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/communications/outbox",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 		assert.ok(Array.isArray(body.items));
@@ -416,19 +479,22 @@ describe("маршруты сообщений пациентам", () => {
 		const cancel = await app.inject({
 			method: "POST",
 			url: `/api/communications/outbox/${outboxId}/cancel`,
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(cancel.statusCode, 409, cancel.body);
 
 		const retry = await app.inject({
 			method: "POST",
 			url: `/api/communications/outbox/${outboxId}/retry`,
-			headers: ORG_HEADERS
+			headers: ORG_HEADERS,
 		});
 		assert.equal(retry.statusCode, 200, retry.body);
 
 		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, outboxId))
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.id, outboxId)),
 		);
 		assert.equal(row?.status, "queued");
 		assert.equal(row?.attempts, 0);
@@ -437,7 +503,11 @@ describe("маршруты сообщений пациентам", () => {
 	test("состояние шлюзов сообщает, что не настроено", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const response = await app.inject({ method: "GET", url: "/api/communications/gateway-status", headers: ORG_HEADERS });
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/communications/gateway-status",
+			headers: ORG_HEADERS,
+		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 		assert.equal(body.channels.sms.configured, false);
@@ -445,7 +515,12 @@ describe("маршруты сообщений пациентам", () => {
 		// VK и MAX отправку не поддерживают — так и написано.
 		assert.equal(body.channels.vk.configured, false);
 		assert.equal(body.channels.max.configured, false);
-		assert.deepEqual(body.deliverableChannels, ["sms", "email", "whatsapp", "telegram"]);
+		assert.deepEqual(body.deliverableChannels, [
+			"sms",
+			"email",
+			"whatsapp",
+			"telegram",
+		]);
 	});
 
 	test("настройки рассылки сохраняются и читаются", async (context) => {
@@ -455,11 +530,19 @@ describe("маршруты сообщений пациентам", () => {
 			method: "PUT",
 			url: "/api/communications/settings",
 			headers: ORG_HEADERS,
-			payload: { timezone: "Europe/Samara", quietHoursStartMinute: 22 * 60, dailyLimitPerPatient: 2 }
+			payload: {
+				timezone: "Europe/Samara",
+				quietHoursStartMinute: 22 * 60,
+				dailyLimitPerPatient: 2,
+			},
 		});
 		assert.equal(saved.statusCode, 200, saved.body);
 
-		const read = await app.inject({ method: "GET", url: "/api/communications/settings", headers: ORG_HEADERS });
+		const read = await app.inject({
+			method: "GET",
+			url: "/api/communications/settings",
+			headers: ORG_HEADERS,
+		});
 		const body = JSON.parse(read.body);
 		assert.equal(body.settings.timezone, "Europe/Samara");
 		assert.equal(body.settings.quietHoursStartMinute, 22 * 60);
@@ -473,7 +556,7 @@ describe("маршруты сообщений пациентам", () => {
 			method: "PUT",
 			url: "/api/communications/settings",
 			headers: ORG_HEADERS,
-			payload: { retryBaseSeconds: 600, retryMaxSeconds: 120 }
+			payload: { retryBaseSeconds: 600, retryMaxSeconds: 120 },
 		});
 		assert.equal(response.statusCode, 400, response.body);
 	});
@@ -485,7 +568,12 @@ describe("маршруты сообщений пациентам", () => {
 			db
 				.select({ organizationId: communicationOutbox.organizationId })
 				.from(communicationOutbox)
-				.where(inArray(communicationOutbox.dedupeKey, ["test:appointment:1", "test:consent:1"]))
+				.where(
+					inArray(communicationOutbox.dedupeKey, [
+						"test:appointment:1",
+						"test:consent:1",
+					]),
+				),
 		);
 
 		// Обе строки принадлежат тестовой организации: маршрут не мог бы

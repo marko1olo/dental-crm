@@ -58,7 +58,12 @@ export function formatMoment(value: string | null): string {
 	if (!value) return "—";
 	const parsed = new Date(value);
 	if (Number.isNaN(parsed.getTime())) return "—";
-	return parsed.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+	return parsed.toLocaleString("ru-RU", {
+		day: "2-digit",
+		month: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
 }
 
 // ─── Контракт сервера ────────────────────────────────────────────────────────
@@ -139,14 +144,20 @@ type SpokenPart = { readonly role: CounterRole; readonly text: string };
 function speakField<TReport extends object, Field extends keyof TReport>(
 	report: TReport,
 	voice: ReportVoice<TReport>,
-	field: Field
+	field: Field,
 ): { readonly order: number; readonly part: SpokenPart | null } {
 	const entry = voice[field];
 	const text = entry.say(report[field], report);
-	return { order: entry.order, part: text === null ? null : { role: entry.role, text } };
+	return {
+		order: entry.order,
+		part: text === null ? null : { role: entry.role, text },
+	};
 }
 
-function speak<TReport extends object>(report: TReport, voice: ReportVoice<TReport>): SpokenPart[] {
+function speak<TReport extends object>(
+	report: TReport,
+	voice: ReportVoice<TReport>,
+): SpokenPart[] {
 	const fields = Object.keys(voice) as (keyof TReport)[];
 	return fields
 		.map((field) => speakField(report, voice, field))
@@ -158,7 +169,7 @@ function speak<TReport extends object>(report: TReport, voice: ReportVoice<TRepo
 function noticeFrom(parts: SpokenPart[]): Notice {
 	return {
 		kind: parts.some((part) => part.role === "undelivered") ? "fail" : "done",
-		text: parts.map((part) => part.text).join(" ")
+		text: parts.map((part) => part.text).join(" "),
 	};
 }
 
@@ -175,8 +186,16 @@ const dispatchVoice: ReportVoice<DispatchReport> = {
 	 * видно, что сообщения взяты, а не ушли. Следующая версия её потеряла: осталось
 	 * «Отправлено: 0 сообщений» без числа взятых.
 	 */
-	claimed: { role: "total", order: 10, say: (claimed) => `Взято из очереди: ${messages(claimed)}.` },
-	sent: { role: "delivered", order: 20, say: (sent) => `Отправлено: ${messages(sent)}.` },
+	claimed: {
+		role: "total",
+		order: 10,
+		say: (claimed) => `Взято из очереди: ${messages(claimed)}.`,
+	},
+	sent: {
+		role: "delivered",
+		order: 20,
+		say: (sent) => `Отправлено: ${messages(sent)}.`,
+	},
 	retried: {
 		role: "undelivered",
 		order: 30,
@@ -185,7 +204,7 @@ const dispatchVoice: ReportVoice<DispatchReport> = {
 				? `Пока не ушло, попробуем ещё раз: ${retried}. Шлюз отказал — причина по каждому сообщению в ` +
 					"журнале ниже. Следующая попытка будет позже сама; чтобы не ждать, нажмите «Отправить из очереди» " +
 					"снова через несколько минут."
-				: null
+				: null,
 	},
 	failed: {
 		role: "undelivered",
@@ -194,7 +213,7 @@ const dispatchVoice: ReportVoice<DispatchReport> = {
 			failed > 0
 				? `Не ушло совсем: ${failed}. Попытки закончились — причина в журнале ниже, там же кнопка ` +
 					"«Повторить» в строке сообщения."
-				: null
+				: null,
 	},
 	notConfigured: {
 		role: "undelivered",
@@ -203,7 +222,7 @@ const dispatchVoice: ReportVoice<DispatchReport> = {
 			notConfigured > 0
 				? `Отправлять нечем: ${notConfigured}. Канал связи не настроен, и сами эти сообщения не уйдут ` +
 					"никогда — сначала нужно подключить канал выше."
-				: null
+				: null,
 	},
 	suppressed: {
 		role: "undelivered",
@@ -212,7 +231,7 @@ const dispatchVoice: ReportVoice<DispatchReport> = {
 			suppressed > 0
 				? `Отправлять не стали: ${suppressed}. Пациент отказался от сообщений, исчерпан суточный предел ` +
 					"или это реклама в тихие часы — в журнале ниже состояние «Не отправлено» и причина."
-				: null
+				: null,
 	},
 	deferred: {
 		role: "undelivered",
@@ -221,7 +240,7 @@ const dispatchVoice: ReportVoice<DispatchReport> = {
 			deferred > 0
 				? `Отложено до утра: ${deferred}. Сейчас тихие часы — эти сообщения уйдут сами, когда тишина ` +
 					"закончится (границы указаны в правилах рассылки ниже)."
-				: null
+				: null,
 	},
 	releasedStuck: {
 		role: "detail",
@@ -229,7 +248,7 @@ const dispatchVoice: ReportVoice<DispatchReport> = {
 		say: (releasedStuck) =>
 			releasedStuck > 0
 				? `Заодно возвращено в очередь: ${releasedStuck} — эти сообщения зависли на предыдущей отправке.`
-				: null
+				: null,
 	},
 	/*
 	 * Остаток очереди. Строки этого прохода сервер из обоих счётчиков исключил, так
@@ -244,7 +263,7 @@ const dispatchVoice: ReportVoice<DispatchReport> = {
 			awaitingRetry > 0
 				? `Кроме этих, ждут повторной попытки: ${messages(awaitingRetry)} — их уже пробовали отправить, и ` +
 					"не получилось. Нажмите «Отправить из очереди» ещё раз через несколько минут."
-				: null
+				: null,
 	},
 	awaitingSchedule: {
 		role: "detail",
@@ -252,8 +271,8 @@ const dispatchVoice: ReportVoice<DispatchReport> = {
 		say: (awaitingSchedule) =>
 			awaitingSchedule > 0
 				? `Ещё ${messages(awaitingSchedule)} ждут своего времени — они уйдут, когда наступит срок.`
-				: null
-	}
+				: null,
+	},
 };
 
 export function describeDispatchReport(report: DispatchReport): Notice {
@@ -272,7 +291,9 @@ export function describeDispatchReport(report: DispatchReport): Notice {
 					`Ничего не отправлено: ${messages(report.awaitingRetry)} ждут повторной попытки после неудачной ` +
 					"отправки, и раньше срока их брать нельзя. Причина по каждому — в журнале ниже; там же кнопка " +
 					"«Повторить», если ждать не нужно." +
-					(report.awaitingSchedule > 0 ? ` Ещё ${report.awaitingSchedule} ждут назначенного времени.` : "")
+					(report.awaitingSchedule > 0
+						? ` Ещё ${report.awaitingSchedule} ждут назначенного времени.`
+						: ""),
 			};
 		}
 		if (report.awaitingSchedule > 0) {
@@ -282,7 +303,7 @@ export function describeDispatchReport(report: DispatchReport): Notice {
 				kind: "done",
 				text:
 					`Отправлять сейчас нечего: ${messages(report.awaitingSchedule)} в очереди ждут назначенного ` +
-					"времени и уйдут сами, когда оно наступит. Неудачных отправок нет."
+					"времени и уйдут сами, когда оно наступит. Неудачных отправок нет.",
 			};
 		}
 		// Пустая очередь при живом канале — нормальное состояние, а не сбой.
@@ -290,7 +311,7 @@ export function describeDispatchReport(report: DispatchReport): Notice {
 			kind: "done",
 			text:
 				"Отправлять было нечего: в очереди нет сообщений. Они появятся после кнопки «Поставить напоминания» " +
-				"или после запуска рассылки."
+				"или после запуска рассылки.",
 		};
 	}
 
@@ -300,8 +321,10 @@ export function describeDispatchReport(report: DispatchReport): Notice {
 // ─── Напоминания ─────────────────────────────────────────────────────────────
 
 const skipReasonWords: Record<ReminderSkipReason, string> = {
-	no_channel: "нет способа связи: не указан телефон или почта, нет привязки к мессенджеру либо пациент отказался",
-	no_template_data: "в шаблоне напоминания не хватает данных о приёме, а отправлять с пропуском нельзя"
+	no_channel:
+		"нет способа связи: не указан телефон или почта, нет привязки к мессенджеру либо пациент отказался",
+	no_template_data:
+		"в шаблоне напоминания не хватает данных о приёме, а отправлять с пропуском нельзя",
 };
 
 /** «Орлова Марина Петровна (29.07, 14:30)» — кому звонить и о каком приёме. */
@@ -309,16 +332,24 @@ function describeSkip(skip: ReminderSkip): string {
 	return `${skip.patientName} (${formatMoment(skip.appointmentAt)})`;
 }
 
-function namesFor(skips: readonly ReminderSkip[], reason: ReminderSkipReason): string[] {
+function namesFor(
+	skips: readonly ReminderSkip[],
+	reason: ReminderSkipReason,
+): string[] {
 	return skips.filter((skip) => skip.reason === reason).map(describeSkip);
 }
 
 const reminderVoice: ReportVoice<ReminderScheduleReport> = {
-	queued: { role: "delivered", order: 10, say: (queued) => `Поставлено напоминаний: ${queued}.` },
+	queued: {
+		role: "delivered",
+		order: 10,
+		say: (queued) => `Поставлено напоминаний: ${queued}.`,
+	},
 	alreadyQueued: {
 		role: "detail",
 		order: 20,
-		say: (alreadyQueued) => (alreadyQueued > 0 ? `Уже стояли в очереди: ${alreadyQueued}.` : null)
+		say: (alreadyQueued) =>
+			alreadyQueued > 0 ? `Уже стояли в очереди: ${alreadyQueued}.` : null,
 	},
 	/*
 	 * `organizations` — сколько клиник с ВКЛЮЧЁННЫМИ напоминаниями обработано
@@ -336,20 +367,28 @@ const reminderVoice: ReportVoice<ReminderScheduleReport> = {
 			organizations === 0
 				? "Автоматические напоминания у клиники выключены, поэтому ставить их сейчас не из чего. Включите " +
 					"их в правилах рассылки ниже — для этого нужен активный шаблон «Подтверждение приёма»."
-				: null
+				: null,
 	},
-	problems: { role: "undelivered", order: 40, say: (problems) => (problems.length > 0 ? problems.join(" ") : null) },
+	problems: {
+		role: "undelivered",
+		order: 40,
+		say: (problems) => (problems.length > 0 ? problems.join(" ") : null),
+	},
 	skippedNoChannel: {
 		role: "undelivered",
 		order: 50,
 		say: (skippedNoChannel, report) =>
-			skippedNoChannel > 0 ? saySkipped(skippedNoChannel, "no_channel", report) : null
+			skippedNoChannel > 0
+				? saySkipped(skippedNoChannel, "no_channel", report)
+				: null,
 	},
 	skippedNoTemplateData: {
 		role: "undelivered",
 		order: 60,
 		say: (skippedNoTemplateData, report) =>
-			skippedNoTemplateData > 0 ? saySkipped(skippedNoTemplateData, "no_template_data", report) : null
+			skippedNoTemplateData > 0
+				? saySkipped(skippedNoTemplateData, "no_template_data", report)
+				: null,
 	},
 	/*
 	 * Имена печатаются рядом со своим счётчиком (см. saySkipped), поэтому само поле
@@ -361,9 +400,11 @@ const reminderVoice: ReportVoice<ReminderScheduleReport> = {
 		role: "undelivered",
 		order: 70,
 		say: (skipped, report) =>
-			skipped.length > 0 && report.skippedNoChannel === 0 && report.skippedNoTemplateData === 0
+			skipped.length > 0 &&
+			report.skippedNoChannel === 0 &&
+			report.skippedNoTemplateData === 0
 				? `Без напоминания остались: ${skipped.map(describeSkip).join(", ")}. Этим пациентам нужно позвонить.`
-				: null
+				: null,
 	},
 	/*
 	 * `examined` — сколько приёмов посмотрели. Ноль при включённых напоминаниях
@@ -377,8 +418,8 @@ const reminderVoice: ReportVoice<ReminderScheduleReport> = {
 			examined === 0 && report.organizations > 0 && report.problems.length === 0
 				? "Приёмов, о которых пора напоминать, сейчас нет: напоминание ставится за столько часов до приёма, " +
 					"сколько указано в правилах рассылки ниже."
-				: null
-	}
+				: null,
+	},
 };
 
 /**
@@ -386,7 +427,11 @@ const reminderVoice: ReportVoice<ReminderScheduleReport> = {
  * точный, имён столько, сколько прислал сервер: он ограничивает список
  * (MAX_NAMED_REMINDER_SKIPS), и умалчивать об обрезке нельзя.
  */
-function saySkipped(count: number, reason: ReminderSkipReason, report: ReminderScheduleReport): string {
+function saySkipped(
+	count: number,
+	reason: ReminderSkipReason,
+	report: ReminderScheduleReport,
+): string {
 	const named = namesFor(report.skipped, reason);
 	const head = `Без напоминания остались ${countLabel(count, "пациент", "пациента", "пациентов")} — ${skipReasonWords[reason]}.`;
 	if (named.length === 0) {

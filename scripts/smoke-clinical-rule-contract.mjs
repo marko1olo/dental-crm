@@ -133,7 +133,11 @@ const { db } = await import(
 const { organizations } = await import(
 	pathToFileURL(path.resolve("apps/api/dist/db/schema.js")).href
 );
-const orgs = await db.select().from(organizations).limit(1).catch(() => []);
+const orgs = await db
+	.select()
+	.from(organizations)
+	.limit(1)
+	.catch(() => []);
 const org = orgs[0];
 const orgId = org ? org.id : "00000000-0000-0000-0000-000000000001";
 
@@ -161,7 +165,10 @@ const { authTokenSecret } = await import(
  */
 const headers = {
 	"x-dente-admin-secret": "synthetic-clinical-secret",
-	"x-dente-clinic-token": signToken({ organizationId: orgId }, authTokenSecret()),
+	"x-dente-clinic-token": signToken(
+		{ organizationId: orgId },
+		authTokenSecret(),
+	),
 };
 const invalidCreate = await app.inject({
 	method: "POST",

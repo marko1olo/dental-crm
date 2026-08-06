@@ -94,7 +94,8 @@ export function patientCardSavePill(
 		return {
 			className: "save-pill save-pill-error",
 			label: "Ошибка",
-			title: "Сервер не принял данные пациента. Введённое осталось в полях — исправьте и сохраните снова.",
+			title:
+				"Сервер не принял данные пациента. Введённое осталось в полях — исправьте и сохраните снова.",
 			tone: "error",
 		};
 	}
@@ -112,7 +113,8 @@ export function patientCardSavePill(
 		return {
 			className: "save-pill save-pill-dirty",
 			label: "Не сохранено",
-			title: "Изменения ещё не отправлены на сервер. Нажмите кнопку сохранения ниже.",
+			title:
+				"Изменения ещё не отправлены на сервер. Нажмите кнопку сохранения ниже.",
 			tone: "dirty",
 		};
 	}
@@ -140,7 +142,11 @@ export function PatientCardSavePill(input: PatientCardSavePillInput) {
 	const pill = patientCardSavePill(input);
 	if (!pill) return null;
 	return (
-		<span className={pill.className} data-save-tone={pill.tone} title={pill.title}>
+		<span
+			className={pill.className}
+			data-save-tone={pill.tone}
+			title={pill.title}
+		>
 			{pill.label}
 		</span>
 	);

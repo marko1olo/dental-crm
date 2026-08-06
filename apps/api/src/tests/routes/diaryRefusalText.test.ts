@@ -56,7 +56,8 @@ const VISIT = "8356141b-7cfa-4221-95f7-70f47e7344b1";
 /** Номер дневника, которого в базе нет: SELECT вернёт пусто, записи не будет. */
 const MISSING_DIARY = "0c9a1e77-1f4f-4a55-9f1d-6a2f0c3b7e11";
 const LATIN = /[A-Za-z]/;
-const NEXT_STEP = /Войдите|войдите|Откройте|откройте|Позовите|позовите|Обратитесь/;
+const NEXT_STEP =
+	/Войдите|войдите|Откройте|откройте|Позовите|позовите|Обратитесь/;
 
 type Probe = {
 	name: string;
@@ -171,8 +172,7 @@ describe("отказ дневника приёма объяснён врачу",
 	): Promise<{ statusCode: number; error: string; message: string }> {
 		const headers: Record<string, string> = {
 			"content-type": "application/json",
-			"x-dente-admin-secret": process.env
-				.DENTE_CLINICAL_ADMIN_SECRET as string,
+			"x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET as string,
 		};
 		if (probe.withClinicToken) {
 			headers["x-dente-clinic-token"] = signToken(

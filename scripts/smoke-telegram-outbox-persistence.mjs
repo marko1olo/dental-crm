@@ -38,7 +38,9 @@ const Fastify = requireFromApi("fastify");
 const { registerTelegramRoutes, registerTelegramWebhookRoutes } = await import(
 	pathToFileURL(routePath).href
 );
-const { activeVisit, documents } = await import(pathToFileURL(legacyMocksPath).href);
+const { activeVisit, documents } = await import(
+	pathToFileURL(legacyMocksPath).href
+);
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -138,9 +140,9 @@ try {
 		payload: {
 			postVisitRecommendations: {
 				safeForTelegramSending: true,
-				telegramText: "Памятка по уходу"
-			}
-		}
+				telegramText: "Памятка по уходу",
+			},
+		},
 	});
 
 	const outboxResponse = await app.inject({
@@ -218,10 +220,7 @@ try {
 		"status must register active chat link from persistent storage",
 	);
 
-	assert(
-		existsSync(stateFilePath),
-		"persistent state file must exist on disk",
-	);
+	assert(existsSync(stateFilePath), "persistent state file must exist on disk");
 
 	console.log(
 		JSON.stringify(

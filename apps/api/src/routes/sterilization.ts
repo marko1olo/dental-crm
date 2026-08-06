@@ -77,7 +77,8 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 		if (!scanParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Проверьте данные стерилизации: barcode, autoclaveId и status.",
+				message:
+					"Проверьте данные стерилизации: barcode, autoclaveId и status.",
 			});
 		}
 		const data = scanParsed.data;
@@ -267,6 +268,5 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			payload: diary.diary,
 		});
 		return diary.diary;
-
 	});
 }

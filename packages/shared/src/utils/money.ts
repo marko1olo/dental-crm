@@ -50,7 +50,9 @@ export const RU_MONEY_MINUS = "−";
  * в базе таких значений быть не должно (numeric(12, 2)), и если они появились,
  * это повреждение данных, о котором нужно узнать.
  */
-export function parseKopecks(value: string | number | null | undefined): Kopecks {
+export function parseKopecks(
+	value: string | number | null | undefined,
+): Kopecks {
 	if (value === null || value === undefined || value === "") return 0;
 
 	if (typeof value === "number") {

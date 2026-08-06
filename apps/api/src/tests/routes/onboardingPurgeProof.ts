@@ -41,7 +41,9 @@ async function main(): Promise<void> {
 
 		console.log("=== ПОИСК ПО ЖИВОМУ ДЕРЕВУ МАРШРУТОВ ===");
 		for (const probe of PROBE_PATHS) {
-			console.log(`${probe}: ${tree.includes(probe) ? "ЕСТЬ в дереве" : "НЕТ в дереве"}`);
+			console.log(
+				`${probe}: ${tree.includes(probe) ? "ЕСТЬ в дереве" : "НЕТ в дереве"}`,
+			);
 		}
 
 		console.log("\n=== ВСЕ МАРШРУТЫ, СОДЕРЖАЩИЕ migration ИЛИ imports ===");
@@ -55,24 +57,53 @@ async function main(): Promise<void> {
 		 * проверяется запросом: 404 значит маршрута нет, любой другой код — есть.
 		 */
 		console.log("\n=== КОНВЕЙЕР ПЕРЕНОСА, КОТОРЫЙ ЗОВЁТ MigrationWizard ===");
-		const pipeline: ReadonlyArray<{ method: "GET" | "POST"; url: string; caller: string }> = [
-			{ method: "POST", url: "/api/migration/upload", caller: "MigrationWizard.tsx:239" },
-			{ method: "POST", url: "/api/migration/00000000-0000-0000-0000-000000000000/map", caller: ":274" },
-			{ method: "GET", url: "/api/migration/00000000-0000-0000-0000-000000000000", caller: ":296" },
-			{ method: "GET", url: "/api/migration/00000000-0000-0000-0000-000000000000/reconciliation", caller: ":304" },
-			{ method: "POST", url: "/api/migration/00000000-0000-0000-0000-000000000000/execute", caller: ":321" },
+		const pipeline: ReadonlyArray<{
+			method: "GET" | "POST";
+			url: string;
+			caller: string;
+		}> = [
+			{
+				method: "POST",
+				url: "/api/migration/upload",
+				caller: "MigrationWizard.tsx:239",
+			},
+			{
+				method: "POST",
+				url: "/api/migration/00000000-0000-0000-0000-000000000000/map",
+				caller: ":274",
+			},
+			{
+				method: "GET",
+				url: "/api/migration/00000000-0000-0000-0000-000000000000",
+				caller: ":296",
+			},
+			{
+				method: "GET",
+				url: "/api/migration/00000000-0000-0000-0000-000000000000/reconciliation",
+				caller: ":304",
+			},
+			{
+				method: "POST",
+				url: "/api/migration/00000000-0000-0000-0000-000000000000/execute",
+				caller: ":321",
+			},
 			{ method: "POST", url: "/api/migration/rollback", caller: ":369" },
 			{ method: "POST", url: "/api/migration/discover", caller: ":394" },
 		];
 		for (const probe of pipeline) {
-			const response = await app.inject({ method: probe.method, url: probe.url });
+			const response = await app.inject({
+				method: probe.method,
+				url: probe.url,
+			});
 			console.log(
 				`${probe.method} ${probe.url} → HTTP ${response.statusCode} ` +
 					`(${response.statusCode === 404 ? "МАРШРУТА НЕТ" : "маршрут есть"}) зовёт ${probe.caller}`,
 			);
 		}
 
-		console.log("\n=== ОТВЕТ МАРШРУТА ОНБОРДИНГА БЕЗ ЗАГОЛОВКОВ АВТОРИЗАЦИИ ===");
+		console.log(
+			"\n=== ОТВЕТ МАРШРУТА ОНБОРДИНГА БЕЗ ЗАГОЛОВКОВ АВТОРИЗАЦИИ ===",
+		);
 		console.log("(именно так его зовёт useOnboardingLogic.ts:158)");
 		const unauthorized = await app.inject({
 			method: "POST",
@@ -84,14 +115,18 @@ async function main(): Promise<void> {
 				workHours: [9, 20],
 				modules: { lab: true },
 				theme: "teal",
-				staff: [{ id: "1", fullName: "Иванов И.И.", role: "Врач", percentage: 25 }],
+				staff: [
+					{ id: "1", fullName: "Иванов И.И.", role: "Врач", percentage: 25 },
+				],
 				legal: { inn: "", ogrn: "", address: "" },
 			},
 		});
 		console.log(`HTTP ${unauthorized.statusCode}`);
 		console.log(unauthorized.body.slice(0, 500));
 
-		console.log("\n=== ОТВЕТ analyze-legacy-db БЕЗ ЗАГОЛОВКОВ (наличие маршрута) ===");
+		console.log(
+			"\n=== ОТВЕТ analyze-legacy-db БЕЗ ЗАГОЛОВКОВ (наличие маршрута) ===",
+		);
 		const legacy = await app.inject({
 			method: "POST",
 			url: "/api/system/analyze-legacy-db",

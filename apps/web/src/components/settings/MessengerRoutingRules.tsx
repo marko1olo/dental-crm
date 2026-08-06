@@ -52,7 +52,10 @@ export function messengerRoutingChanged(
 	draft: StaffRouting,
 	saved: StaffRouting | null | undefined,
 ): boolean {
-	const savedRouting: StaffRouting = saved ?? { defaultUserId: null, rules: [] };
+	const savedRouting: StaffRouting = saved ?? {
+		defaultUserId: null,
+		rules: [],
+	};
 	if ((draft.defaultUserId ?? null) !== (savedRouting.defaultUserId ?? null))
 		return true;
 	if (draft.rules.length !== savedRouting.rules.length) return true;

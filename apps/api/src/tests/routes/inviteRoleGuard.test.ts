@@ -35,7 +35,11 @@ describe("приглашение сотрудника: роль проверяе
 
 	function tokenFor(role: string): string {
 		return signToken(
-			{ userId: "11111111-1111-4111-8111-111111111111", role, organizationId: "22222222-2222-4222-8222-222222222222" },
+			{
+				userId: "11111111-1111-4111-8111-111111111111",
+				role,
+				organizationId: "22222222-2222-4222-8222-222222222222",
+			},
 			authTokenSecret(),
 			60 * 60,
 		);
@@ -71,7 +75,11 @@ describe("приглашение сотрудника: роль проверяе
 
 	test("выдуманная роль тоже не принимается", async () => {
 		const response = await createInvite("glavnyj-po-vsemu", "owner");
-		assert.equal(response.statusCode, 400, "в приглашение прошла произвольная строка вместо должности");
+		assert.equal(
+			response.statusCode,
+			400,
+			"в приглашение прошла произвольная строка вместо должности",
+		);
 	});
 
 	test("отказ объяснён по-русски и без имён полей запроса", async () => {
@@ -116,6 +124,10 @@ describe("приглашение сотрудника: роль проверяе
 
 	test("врач приглашать сотрудников не может", async () => {
 		const response = await createInvite("doctor", "doctor");
-		assert.equal(response.statusCode, 403, "врач смог выдать приглашение — административное действие открыто всем");
+		assert.equal(
+			response.statusCode,
+			403,
+			"врач смог выдать приглашение — административное действие открыто всем",
+		);
 	});
 });

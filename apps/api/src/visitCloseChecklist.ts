@@ -156,9 +156,14 @@ export type VisitCloseChecklistFacts = {
 	readonly billing: VisitCloseChecklistBillingFacts;
 };
 
-function buildVisitNoteChecklistItem(visit: VisitCloseChecklistVisit): ChecklistItem {
+function buildVisitNoteChecklistItem(
+	visit: VisitCloseChecklistVisit,
+): ChecklistItem {
 	const visitNoteReady = Boolean(
-		visit.complaint && visit.objectiveStatus && visit.diagnosis && visit.treatmentPlan,
+		visit.complaint &&
+			visit.objectiveStatus &&
+			visit.diagnosis &&
+			visit.treatmentPlan,
 	);
 	return {
 		id: "visit-note",
@@ -200,9 +205,12 @@ function buildImagingReviewChecklistItem(
 	imagingStudies: readonly VisitCloseChecklistImagingStudy[],
 ): ChecklistItem {
 	const activeImages = imagingStudies.filter(
-		(study) => study.patientId === visit.patientId && study.visitId === visit.id,
+		(study) =>
+			study.patientId === visit.patientId && study.visitId === visit.id,
 	);
-	const reviewImages = activeImages.filter((study) => study.status === "needs_review");
+	const reviewImages = activeImages.filter(
+		(study) => study.status === "needs_review",
+	);
 	return {
 		id: "imaging-review",
 		visitId: visit.id,
@@ -339,10 +347,12 @@ function buildPostVisitInstructionsChecklistItem(
 	communicationTasks: readonly VisitCloseChecklistCommunicationTask[],
 ): ChecklistItem {
 	const postVisitInstruction = communicationTasks.find(
-		(task) => task.visitId === visit.id && task.intent === "post_visit_instruction",
+		(task) =>
+			task.visitId === visit.id && task.intent === "post_visit_instruction",
 	);
 	const postVisitInstructionReady =
-		postVisitInstruction?.status === "completed" || postVisitInstruction?.status === "sent";
+		postVisitInstruction?.status === "completed" ||
+		postVisitInstruction?.status === "sent";
 	return {
 		id: "post-visit-instructions",
 		visitId: visit.id,
@@ -365,7 +375,9 @@ function buildPostVisitInstructionsChecklistItem(
  * снимков, документов и памяток. Два разных приёма дают две разные карточки —
  * это проверяется в apps/api/src/db/visitsQuery.test.ts.
  */
-export function buildVisitCloseChecklist(facts: VisitCloseChecklistFacts): VisitCloseChecklist {
+export function buildVisitCloseChecklist(
+	facts: VisitCloseChecklistFacts,
+): VisitCloseChecklist {
 	const { visit } = facts;
 
 	const items: VisitCloseChecklist["items"] = [
@@ -381,7 +393,9 @@ export function buildVisitCloseChecklist(facts: VisitCloseChecklistFacts): Visit
 	const readyItems = items.filter((item) => item.ready).length;
 	const firstOpenBlocking = items.find((item) => item.blocking && !item.ready);
 	const firstOpenOptional = items.find((item) => !item.ready);
-	const blockingItems = items.filter((item) => item.blocking && !item.ready).length;
+	const blockingItems = items.filter(
+		(item) => item.blocking && !item.ready,
+	).length;
 
 	return {
 		visitId: visit.id,

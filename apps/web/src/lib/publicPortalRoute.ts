@@ -90,7 +90,9 @@ function decodeSegment(rawSegment: string): string {
  * увела бы зуботехника в рабочее место клиники. Существование заказа проверяет
  * сервер, и на неизвестный токен портал показывает человеческую ошибку.
  */
-export function publicPortalRouteFromHash(hash: string): PublicPortalRoute | null {
+export function publicPortalRouteFromHash(
+	hash: string,
+): PublicPortalRoute | null {
 	const path = hash.startsWith("#") ? hash.slice(1) : hash;
 
 	/*
@@ -125,7 +127,8 @@ export function publicPortalRouteFromHash(hash: string): PublicPortalRoute | nul
 
 	// Хвост после токена отбрасывается: ссылку копируют в мессенджер, и он умеет
 	// дописать к ней и «/», и параметры. Токен — только первый сегмент.
-	const rawToken = path.slice(LAB_ORDER_PORTAL_PATH.length).split(/[/?#&]/)[0] ?? "";
+	const rawToken =
+		path.slice(LAB_ORDER_PORTAL_PATH.length).split(/[/?#&]/)[0] ?? "";
 	if (!rawToken) return null;
 
 	const token = decodeSegment(rawToken);

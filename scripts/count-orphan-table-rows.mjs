@@ -65,7 +65,7 @@
  * Код возврата: 0 — счёт снят и контроль пройден; 1 — контроль не пройден
  * (нули ничего не значат); 2 — до базы не дошли.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -88,7 +88,14 @@ const FIXTURE_ORG_PREFIXES = ["d0000000", "dce70000"];
  * Контроль: таблицы, которые в рабочей базе обязаны быть непустыми. Ноль здесь
  * означает «подключились не туда», а не «данных нет».
  */
-const CONTROL_TABLES = ["organizations", "patients", "appointments", "payments", "visits", "generated_documents"];
+const CONTROL_TABLES = [
+	"organizations",
+	"patients",
+	"appointments",
+	"payments",
+	"visits",
+	"generated_documents",
+];
 
 /**
  * Таблицы без объявления в Drizzle: состав повторяет `undeclaredTables` реестра,
@@ -107,21 +114,43 @@ const ORPHAN_TABLES = [
 	{ table: "clinic_workflows", twin: null },
 	{ table: "clinical_tasks", twin: null },
 	{ table: "dental_lab_orders", twin: { table: "lab_orders" } },
-	{ table: "doctor_assistants", twin: { table: "appointments", column: "assistant_user_id" } },
+	{
+		table: "doctor_assistants",
+		twin: { table: "appointments", column: "assistant_user_id" },
+	},
 	{ table: "doctor_payrolls", twin: { table: "pricelist_doctor_payrolls" } },
 	{ table: "document_templates", twin: { table: "generated_documents" } },
 	{ table: "drill_protocols", twin: { table: "patient_ct_plannings" } },
-	{ table: "ingested_patients_mapping", twin: { table: "migration_entity_links" } },
+	{
+		table: "ingested_patients_mapping",
+		twin: { table: "migration_entity_links" },
+	},
 	{ table: "ingestion_sources", twin: { table: "migration_runs" } },
-	{ table: "migration_templates", twin: { table: "migration_runs", column: "vendor_profile" } },
+	{
+		table: "migration_templates",
+		twin: { table: "migration_runs", column: "vendor_profile" },
+	},
 	{ table: "patient_anamnesis", twin: null },
 	{
 		table: "payment_installments",
-		twin: { table: "generated_documents", kindColumn: "kind", kindValue: "installment_payment_schedule" },
+		twin: {
+			table: "generated_documents",
+			kindColumn: "kind",
+			kindValue: "installment_payment_schedule",
+		},
 	},
-	{ table: "scheduler_reservations", twin: { table: "schedule_time_reservations" } },
-	{ table: "signed_outpatient_cards", twin: { table: "visit_diaries", column: "crypto_signature_pkcs7" } },
-	{ table: "treatment_plan_stages_auto_archive", twin: { table: "treatment_plan_stages" } },
+	{
+		table: "scheduler_reservations",
+		twin: { table: "schedule_time_reservations" },
+	},
+	{
+		table: "signed_outpatient_cards",
+		twin: { table: "visit_diaries", column: "crypto_signature_pkcs7" },
+	},
+	{
+		table: "treatment_plan_stages_auto_archive",
+		twin: { table: "treatment_plan_stages" },
+	},
 	{ table: "ztl_lab_orders", twin: { table: "lab_orders" } },
 ];
 
@@ -149,8 +178,23 @@ const ORPHAN_TABLES = [
  * входит: колонка называется «в api» и означает именно сервер.
  * ------------------------------------------------------------------------- */
 
-const SKIPPED_DIRS = new Set(["node_modules", "dist", ".git", "build", "coverage"]);
-const SCANNED_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
+const SKIPPED_DIRS = new Set([
+	"node_modules",
+	"dist",
+	".git",
+	"build",
+	"coverage",
+]);
+const SCANNED_EXTENSIONS = [
+	".ts",
+	".tsx",
+	".mts",
+	".cts",
+	".js",
+	".jsx",
+	".mjs",
+	".cjs",
+];
 
 /** Рекурсивный обход `apps/api/src`. `null` — каталога нет, и это не ноль ссылок. */
 function collectApiSourceFiles(root) {
@@ -171,7 +215,8 @@ function collectApiSourceFiles(root) {
 				continue;
 			}
 			if (!entry.isFile()) continue;
-			if (SCANNED_EXTENSIONS.some((ext) => entry.name.endsWith(ext))) files.push(full);
+			if (SCANNED_EXTENSIONS.some((ext) => entry.name.endsWith(ext)))
+				files.push(full);
 		}
 	};
 	walk(root, entries);
@@ -191,11 +236,14 @@ function isTestFile(path) {
  * разметка комментариев дальше по файлу становится случайной.
  */
 const REGEX_ALLOWED_AFTER_CHAR = /[([{,;:=!&|?+\-*%~^<>]$/;
-const REGEX_ALLOWED_AFTER_WORD = /(?:^|[^A-Za-z0-9_$])(return|typeof|case|in|of|new|delete|void|instanceof|do|else|yield|await)$/;
+const REGEX_ALLOWED_AFTER_WORD =
+	/(?:^|[^A-Za-z0-9_$])(return|typeof|case|in|of|new|delete|void|instanceof|do|else|yield|await)$/;
 
 function regexAllowedAfter(tail) {
 	if (tail === "") return true;
-	return REGEX_ALLOWED_AFTER_CHAR.test(tail) || REGEX_ALLOWED_AFTER_WORD.test(tail);
+	return (
+		REGEX_ALLOWED_AFTER_CHAR.test(tail) || REGEX_ALLOWED_AFTER_WORD.test(tail)
+	);
 }
 
 function skipSimpleString(text, start) {
@@ -287,7 +335,8 @@ function markComments(text, start, mask, stopAtCloseBrace = false) {
 		if (c === "/" && text[i + 1] === "*") {
 			mask[i++] = 1;
 			mask[i++] = 1;
-			while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) mask[i++] = 1;
+			while (i < text.length && !(text[i] === "*" && text[i + 1] === "/"))
+				mask[i++] = 1;
 			if (i < text.length) {
 				mask[i++] = 1;
 				mask[i++] = 1;
@@ -360,7 +409,16 @@ function measureApiReferences(names) {
 	const files = collectApiSourceFiles(API_SOURCE_ROOT);
 	if (files === null || files.length === 0) return null;
 	const byName = new Map(
-		names.map((name) => [name, { productionCode: 0, productionComment: 0, testCode: 0, testComment: 0, files: [] }]),
+		names.map((name) => [
+			name,
+			{
+				productionCode: 0,
+				productionComment: 0,
+				testCode: 0,
+				testComment: 0,
+				files: [],
+			},
+		]),
 	);
 	for (const file of files) {
 		let text;
@@ -388,12 +446,21 @@ function measureApiReferences(names) {
 				bucket.productionCode += code;
 				bucket.productionComment += comment;
 			}
-			bucket.files.push({ file: relative(REPO_ROOT, file).replace(/\\/g, "/"), code, comment, test });
+			bucket.files.push({
+				file: relative(REPO_ROOT, file).replace(/\\/g, "/"),
+				code,
+				comment,
+				test,
+			});
 		}
 	}
 	const references = new Map();
 	for (const [name, bucket] of byName) {
-		const total = bucket.productionCode + bucket.productionComment + bucket.testCode + bucket.testComment;
+		const total =
+			bucket.productionCode +
+			bucket.productionComment +
+			bucket.testCode +
+			bucket.testComment;
 		references.set(name, { ...bucket, total });
 	}
 	return { scannedFiles: files.length, references };
@@ -405,13 +472,17 @@ function databaseUrl() {
 	const line = readFileSync(join(REPO_ROOT, ".env"), "utf8")
 		.split(/\r?\n/)
 		.find((l) => l.startsWith("DATABASE_URL="));
-	if (!line) throw new Error("DATABASE_URL не найден ни в окружении, ни в корневом .env");
+	if (!line)
+		throw new Error(
+			"DATABASE_URL не найден ни в окружении, ни в корневом .env",
+		);
 	return line.slice("DATABASE_URL=".length).trim();
 }
 
 /** Квотирование идентификатора: имена зашиты в файле, но подстановка без квот — привычка, а не аргумент. */
 function quoteIdent(name) {
-	if (!/^[a-z_][a-z0-9_]*$/.test(name)) throw new Error(`недопустимое имя объекта: ${name}`);
+	if (!/^[a-z_][a-z0-9_]*$/.test(name))
+		throw new Error(`недопустимое имя объекта: ${name}`);
 	return `"${name}"`;
 }
 
@@ -420,7 +491,8 @@ function quoteIdent(name) {
  * до отправки: скрипт разведки не имеет права ни `delete`, ни `alter`, ни `drop`.
  */
 function readOnly(client, text, values) {
-	if (!/^\s*select\b/i.test(text)) throw new Error(`не select — запрос отклонён: ${text.slice(0, 40)}`);
+	if (!/^\s*select\b/i.test(text))
+		throw new Error(`не select — запрос отклонён: ${text.slice(0, 40)}`);
 	return client.query(text, values);
 }
 
@@ -450,7 +522,10 @@ async function columnsOf(client, table) {
 }
 
 async function countRows(client, table, where = "") {
-	const { rows } = await readOnly(client, `select count(*)::int as n from ${quoteIdent(table)} ${where}`);
+	const { rows } = await readOnly(
+		client,
+		`select count(*)::int as n from ${quoteIdent(table)} ${where}`,
+	);
 	return rows[0].n;
 }
 
@@ -480,17 +555,23 @@ async function twinRows(client, twin) {
 	const columns = await columnsOf(client, twin.table);
 	if (columns.length === 0) return { ...twin, exists: false };
 	if (twin.column) {
-		if (!columns.includes(twin.column)) return { ...twin, exists: false, columnMissing: true };
+		if (!columns.includes(twin.column))
+			return { ...twin, exists: false, columnMissing: true };
 		return {
 			...twin,
 			exists: true,
 			total: await countRows(client, twin.table),
-			matching: await countRows(client, twin.table, `where ${quoteIdent(twin.column)} is not null`),
+			matching: await countRows(
+				client,
+				twin.table,
+				`where ${quoteIdent(twin.column)} is not null`,
+			),
 			predicate: `${twin.column} is not null`,
 		};
 	}
 	if (twin.kindValue) {
-		if (!columns.includes(twin.kindColumn)) return { ...twin, exists: false, columnMissing: true };
+		if (!columns.includes(twin.kindColumn))
+			return { ...twin, exists: false, columnMissing: true };
 		const { rows } = await readOnly(
 			client,
 			`select count(*)::int as n from ${quoteIdent(twin.table)} where ${quoteIdent(twin.kindColumn)}::text = $1`,
@@ -505,7 +586,13 @@ async function twinRows(client, twin) {
 		};
 	}
 	const total = await countRows(client, twin.table);
-	return { ...twin, exists: true, total, matching: total, predicate: "вся таблица" };
+	return {
+		...twin,
+		exists: true,
+		total,
+		matching: total,
+		predicate: "вся таблица",
+	};
 }
 
 /**
@@ -525,14 +612,22 @@ async function twinRows(client, twin) {
  */
 function summarizeRowsOutsideFixtures(results) {
 	const existing = results.filter((r) => r.exists);
-	const known = existing.filter((r) => r.rowsOutsideFixtures !== null && r.rowsOutsideFixtures !== undefined);
-	const undetermined = existing.filter((r) => r.rowsOutsideFixtures === null || r.rowsOutsideFixtures === undefined);
+	const known = existing.filter(
+		(r) =>
+			r.rowsOutsideFixtures !== null && r.rowsOutsideFixtures !== undefined,
+	);
+	const undetermined = existing.filter(
+		(r) =>
+			r.rowsOutsideFixtures === null || r.rowsOutsideFixtures === undefined,
+	);
 	// Существующая таблица без числа в `total` — сломанный вызов, а не «ноль строк».
 	// Тихий `?? 0` здесь был бы тем же дефектом, который правит этот пакет, поэтому
 	// такой случай падает, а не занижает число строк с неустановленной принадлежностью.
 	for (const r of undetermined) {
 		if (typeof r.total !== "number") {
-			throw new Error(`у таблицы ${r.table} нет счёта строк — итог не может быть посчитан честно`);
+			throw new Error(
+				`у таблицы ${r.table} нет счёта строк — итог не может быть посчитан честно`,
+			);
 		}
 	}
 	return {
@@ -540,7 +635,10 @@ function summarizeRowsOutsideFixtures(results) {
 		knownTables: known.length,
 		undeterminedTables: undetermined.map((r) => r.table),
 		undeterminedRowsTotal: undetermined.reduce((n, r) => n + r.total, 0),
-		naiveZeroCoalesced: existing.reduce((n, r) => n + (r.rowsOutsideFixtures ?? 0), 0),
+		naiveZeroCoalesced: existing.reduce(
+			(n, r) => n + (r.rowsOutsideFixtures ?? 0),
+			0,
+		),
 	};
 }
 
@@ -569,12 +667,16 @@ async function main() {
 			control.push({ table, rows: await countRows(client, table) });
 		}
 
-		const measuredReferences = measureApiReferences(ORPHAN_TABLES.map((t) => t.table));
+		const measuredReferences = measureApiReferences(
+			ORPHAN_TABLES.map((t) => t.table),
+		);
 
 		const results = [];
 		for (const { table, twin } of ORPHAN_TABLES) {
 			// `null`, если каталог исходников не найден: «не знаем» вместо ноля и здесь.
-			const references = measuredReferences ? measuredReferences.references.get(table) : null;
+			const references = measuredReferences
+				? measuredReferences.references.get(table)
+				: null;
 			const columns = await columnsOf(client, table);
 			if (columns.length === 0) {
 				results.push({ table, references, exists: false });
@@ -585,7 +687,10 @@ async function main() {
 			let byOrganization = null;
 			let rowsOutsideFixtures = null;
 			if (hasOrg) {
-				({ byOrganization, rowsOutsideFixtures } = await organizationBreakdown(client, table));
+				({ byOrganization, rowsOutsideFixtures } = await organizationBreakdown(
+					client,
+					table,
+				));
 			} else {
 				// Колонки организации нет — вычитать фикстуры не из чего. Для пустой
 				// таблицы это безразлично; для непустой честный ответ «принадлежность
@@ -604,7 +709,13 @@ async function main() {
 				twin: await twinRows(client, twin),
 			});
 		}
-		return { control, results, scannedApiFiles: measuredReferences ? measuredReferences.scannedFiles : null };
+		return {
+			control,
+			results,
+			scannedApiFiles: measuredReferences
+				? measuredReferences.scannedFiles
+				: null,
+		};
 	} finally {
 		await client.end();
 	}
@@ -631,8 +742,20 @@ if (selfCheckOnly) {
 	};
 
 	const fixture = [
-		{ table: "cash_shifts", exists: true, total: 0, hasOrganizationColumn: true, rowsOutsideFixtures: 0 },
-		{ table: "clinical_tasks", exists: true, total: 7, hasOrganizationColumn: true, rowsOutsideFixtures: 7 },
+		{
+			table: "cash_shifts",
+			exists: true,
+			total: 0,
+			hasOrganizationColumn: true,
+			rowsOutsideFixtures: 0,
+		},
+		{
+			table: "clinical_tasks",
+			exists: true,
+			total: 7,
+			hasOrganizationColumn: true,
+			rowsOutsideFixtures: 7,
+		},
 		{
 			table: "payment_installments",
 			exists: true,
@@ -652,7 +775,9 @@ if (selfCheckOnly) {
 	const line = renderRowsOutsideFixturesLine(summary);
 	const brokenLine = `строк вне фикстур ${summary.naiveZeroCoalesced}`;
 
-	console.log("НАБОР: 500 строк рассрочек и 12 подписанных карт БЕЗ колонки organization_id, 7 строк с ней.");
+	console.log(
+		"НАБОР: 500 строк рассрочек и 12 подписанных карт БЕЗ колонки organization_id, 7 строк с ней.",
+	);
 	console.log(`  сломанный вариант печатал:  ${brokenLine}`);
 	console.log(`  исправленный печатает:      ${line}`);
 	console.log("");
@@ -660,15 +785,29 @@ if (selfCheckOnly) {
 	expect(summary.knownSum === 7, "сумма по известным таблицам обязана быть 7");
 	expect(summary.knownTables === 2, "известных таблиц обязано быть 2");
 	expect(
-		summary.undeterminedTables.join(",") === "payment_installments,signed_outpatient_cards",
+		summary.undeterminedTables.join(",") ===
+			"payment_installments,signed_outpatient_cards",
 		"неизвестные таблицы обязаны быть названы обе",
 	);
-	expect(summary.undeterminedRowsTotal === 512, "строк с неустановленной принадлежностью обязано быть 512");
-	expect(line.includes("НЕ ОПРЕДЕЛЯЕТСЯ"), "итоговая строка обязана назвать неизвестное неизвестным");
-	expect(line.includes("payment_installments"), "итоговая строка обязана назвать payment_installments");
-	expect(line.includes("signed_outpatient_cards"), "итоговая строка обязана назвать signed_outpatient_cards");
 	expect(
-		!brokenLine.includes("payment_installments") && !brokenLine.includes("не определ"),
+		summary.undeterminedRowsTotal === 512,
+		"строк с неустановленной принадлежностью обязано быть 512",
+	);
+	expect(
+		line.includes("НЕ ОПРЕДЕЛЯЕТСЯ"),
+		"итоговая строка обязана назвать неизвестное неизвестным",
+	);
+	expect(
+		line.includes("payment_installments"),
+		"итоговая строка обязана назвать payment_installments",
+	);
+	expect(
+		line.includes("signed_outpatient_cards"),
+		"итоговая строка обязана назвать signed_outpatient_cards",
+	);
+	expect(
+		!brokenLine.includes("payment_installments") &&
+			!brokenLine.includes("не определ"),
 		"старая строка обязана быть воспроизведена именно как молчащая — иначе проверка ничего не проверяет",
 	);
 	// Ложной тревоги быть не должно: когда неизвестного нет (сегодняшняя база), строка молчит про него.
@@ -691,19 +830,37 @@ if (selfCheckOnly) {
 	].join("\n");
 	const sampleMask = new Uint8Array(sample.length);
 	markComments(sample, 0, sampleMask);
-	const sampleCount = countOccurrences(sample, sampleMask, "payment_installments");
-	console.log(`ОБРАЗЕЦ РАЗБОРЩИКА: код ${sampleCount.code}, комментарии ${sampleCount.comment} (ожидается 2 и 3).`);
-	expect(sampleCount.code === 2, "в образце ровно два вхождения в коде (шаблон sql и вложенный шаблон)");
-	expect(sampleCount.comment === 3, "в образце ровно три вхождения в комментариях, включая строку после регулярки");
+	const sampleCount = countOccurrences(
+		sample,
+		sampleMask,
+		"payment_installments",
+	);
+	console.log(
+		`ОБРАЗЕЦ РАЗБОРЩИКА: код ${sampleCount.code}, комментарии ${sampleCount.comment} (ожидается 2 и 3).`,
+	);
+	expect(
+		sampleCount.code === 2,
+		"в образце ровно два вхождения в коде (шаблон sql и вложенный шаблон)",
+	);
+	expect(
+		sampleCount.comment === 3,
+		"в образце ровно три вхождения в комментариях, включая строку после регулярки",
+	);
 
 	// Инвариант замера на настоящем дереве: сумма корзин равна общему числу вхождений.
 	const measuredRefs = measureApiReferences(ORPHAN_TABLES.map((t) => t.table));
 	if (measuredRefs === null) {
-		console.log("apps/api/src не найден с этого пути — замер ссылок не проверялся (и нулём не подменялся).");
+		console.log(
+			"apps/api/src не найден с этого пути — замер ссылок не проверялся (и нулём не подменялся).",
+		);
 	} else {
 		for (const [name, ref] of measuredRefs.references) {
 			expect(
-				ref.total === ref.productionCode + ref.productionComment + ref.testCode + ref.testComment,
+				ref.total ===
+					ref.productionCode +
+						ref.productionComment +
+						ref.testCode +
+						ref.testComment,
 				`корзины ${name} не сходятся с общим числом вхождений`,
 			);
 		}
@@ -726,7 +883,9 @@ let measured;
 try {
 	measured = await main();
 } catch (error) {
-	console.error("Нет доступа к живой базе — счёт не снят, и скрипт не выдаёт ноль за результат.");
+	console.error(
+		"Нет доступа к живой базе — счёт не снят, и скрипт не выдаёт ноль за результат.",
+	);
 	console.error(`  ${error.message}`);
 	process.exit(2);
 }
@@ -752,7 +911,10 @@ if (asJson) {
 					undeterminedTables: outsideFixtures.undeterminedTables,
 					undeterminedRowsTotal: outsideFixtures.undeterminedRowsTotal,
 				},
-				apiReferences: { scannedFiles: scannedApiFiles, measuredThisRun: scannedApiFiles !== null },
+				apiReferences: {
+					scannedFiles: scannedApiFiles,
+					measuredThisRun: scannedApiFiles !== null,
+				},
 				tables: results,
 			},
 			null,
@@ -764,7 +926,9 @@ if (asJson) {
 
 const pad = (s, n) => String(s).padEnd(n);
 
-console.log("КОНТРОЛЬ: база, к которой подключились, обязана быть рабочей и непустой.");
+console.log(
+	"КОНТРОЛЬ: база, к которой подключились, обязана быть рабочей и непустой.",
+);
 for (const c of control) console.log(`  ${pad(c.table, 22)} ${c.rows}`);
 if (!controlOk) {
 	console.error(
@@ -775,7 +939,9 @@ if (!controlOk) {
 }
 console.log("");
 
-console.log(`Фикстурные префиксы organization_id исключены: ${FIXTURE_ORG_PREFIXES.join(", ")}`);
+console.log(
+	`Фикстурные префиксы organization_id исключены: ${FIXTURE_ORG_PREFIXES.join(", ")}`,
+);
 console.log("");
 console.log(
 	`${pad("таблица", 36)} ${pad("колонок", 8)} ${pad("org_id", 7)} ${pad("всего", 6)} ${pad("вне фикстур", 15)} код api`,
@@ -787,8 +953,11 @@ for (const r of results) {
 		continue;
 	}
 	// Ноль и «не знаю» — разные ответы, и в решающей колонке обязаны выглядеть по-разному.
-	const outside = r.rowsOutsideFixtures === null ? "не определяется" : r.rowsOutsideFixtures;
-	const apiCode = r.references ? r.references.productionCode : "не определяется";
+	const outside =
+		r.rowsOutsideFixtures === null ? "не определяется" : r.rowsOutsideFixtures;
+	const apiCode = r.references
+		? r.references.productionCode
+		: "не определяется";
 	console.log(
 		`${pad(r.table, 36)} ${pad(r.columnCount, 8)} ${pad(r.hasOrganizationColumn ? "да" : "НЕТ", 7)} ` +
 			`${pad(r.total, 6)} ${pad(outside, 15)} ${apiCode}`,
@@ -834,42 +1003,63 @@ if (scannedApiFiles === null) {
 }
 
 console.log("");
-console.log("ОБЪЯВЛЕННЫЙ ДВОЙНИК: непустой двойник = функция работает через него; пустой = функции нет нигде.");
-console.log(`${pad("брошенная", 36)} ${pad("двойник", 34)} ${pad("строк", 7)} условие`);
+console.log(
+	"ОБЪЯВЛЕННЫЙ ДВОЙНИК: непустой двойник = функция работает через него; пустой = функции нет нигде.",
+);
+console.log(
+	`${pad("брошенная", 36)} ${pad("двойник", 34)} ${pad("строк", 7)} условие`,
+);
 console.log("-".repeat(96));
 for (const r of results) {
 	if (!r.exists) continue;
 	if (!r.twin) {
-		console.log(`${pad(r.table, 36)} ${pad("двойника нет", 34)} ${pad("—", 7)} понятие не реализовано нигде`);
+		console.log(
+			`${pad(r.table, 36)} ${pad("двойника нет", 34)} ${pad("—", 7)} понятие не реализовано нигде`,
+		);
 		continue;
 	}
 	if (!r.twin.exists) {
-		console.log(`${pad(r.table, 36)} ${pad(r.twin.table, 34)} ${pad("—", 7)} двойника нет в базе`);
+		console.log(
+			`${pad(r.table, 36)} ${pad(r.twin.table, 34)} ${pad("—", 7)} двойника нет в базе`,
+		);
 		continue;
 	}
 	console.log(
 		`${pad(r.table, 36)} ${pad(r.twin.table, 34)} ${pad(r.twin.matching, 7)} ${r.twin.predicate}` +
-			(r.twin.matching === r.twin.total ? "" : ` (всего в таблице ${r.twin.total})`),
+			(r.twin.matching === r.twin.total
+				? ""
+				: ` (всего в таблице ${r.twin.total})`),
 	);
 }
 
 const withRows = results.filter((r) => r.exists && r.total > 0);
 console.log("");
 if (withRows.length === 0) {
-	console.log("Ни одной строки ни в одной брошенной таблице: разбивать по организациям нечего.");
+	console.log(
+		"Ни одной строки ни в одной брошенной таблице: разбивать по организациям нечего.",
+	);
 } else {
 	console.log("Разбивка по организациям (только непустые брошенные таблицы):");
 	for (const r of withRows) {
 		console.log(`  ${r.table}:`);
 		for (const org of r.byOrganization ?? []) {
-			console.log(`    ${org.organizationId ?? "NULL"}  ${org.rows}  (${org.kind})`);
+			console.log(
+				`    ${org.organizationId ?? "NULL"}  ${org.rows}  (${org.kind})`,
+			);
 		}
-		if (!r.byOrganization) console.log("    колонки organization_id нет — принадлежность не определяется");
+		if (!r.byOrganization)
+			console.log(
+				"    колонки organization_id нет — принадлежность не определяется",
+			);
 	}
 }
 
-const liveTwins = results.filter((r) => r.exists && r.twin?.exists && r.twin.matching > 0).length;
-const namedInApiCode = results.filter((r) => r.references && r.references.productionCode > 0).length;
+const liveTwins = results.filter(
+	(r) => r.exists && r.twin?.exists && r.twin.matching > 0,
+).length;
+const namedInApiCode = results.filter(
+	(r) => r.references && r.references.productionCode > 0,
+).length;
 console.log("");
 console.log(
 	`Итого брошенных таблиц ${results.length}, непустых ${withRows.length}, двойников с данными ${liveTwins}, ` +

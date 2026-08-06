@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { sql } from "drizzle-orm";
-import { organizations, patients } from "../../db/schema.js";
 import { withSuperuserBypass } from "../../db/rls.js";
+import { organizations, patients } from "../../db/schema.js";
 import {
-	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	fixtureUuid,
 	isDatabaseUnavailable,
+	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "./fixtureOrganizations.js";
@@ -21,7 +21,8 @@ import {
  * из живой базы действительно ушли.
  */
 
-const UUID_V4_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/;
+const UUID_V4_SHAPE =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/;
 
 /**
  * Настоящие идентификаторы клиник, которые удалять нельзя — взяты из живой базы
@@ -60,13 +61,30 @@ describe("инвентарь тестовых клиник", () => {
 
 		// Разные файлы — разные блоки. Ровно этого и не было, когда блок
 		// dce70000-…-09xx оказался выдан трём файлам сразу.
-		const namespaces = ["portalOtp", "patientCreateDuplicateGuard", "speechTranscribeChunkAccess"];
-		const issued = namespaces.flatMap((namespace) => [1, 2, 3, 4].map((slot) => fixtureUuid(namespace, slot)));
-		assert.equal(new Set(issued).size, issued.length, "два файла получили один и тот же идентификатор");
+		const namespaces = [
+			"portalOtp",
+			"patientCreateDuplicateGuard",
+			"speechTranscribeChunkAccess",
+		];
+		const issued = namespaces.flatMap((namespace) =>
+			[1, 2, 3, 4].map((slot) => fixtureUuid(namespace, slot)),
+		);
+		assert.equal(
+			new Set(issued).size,
+			issued.length,
+			"два файла получили один и тот же идентификатор",
+		);
 
 		for (const id of issued) {
-			assert.match(id, UUID_V4_SHAPE, `${id} не UUID версии 4 — колонка uuid такое значение не примет`);
-			assert.ok(id.startsWith("dce70000-"), `${id} вне тестового пространства dce70000-…`);
+			assert.match(
+				id,
+				UUID_V4_SHAPE,
+				`${id} не UUID версии 4 — колонка uuid такое значение не примет`,
+			);
+			assert.ok(
+				id.startsWith("dce70000-"),
+				`${id} вне тестового пространства dce70000-…`,
+			);
 		}
 	});
 
@@ -82,14 +100,27 @@ describe("инвентарь тестовых клиник", () => {
 	test("уборка отказывается удалять клиники, которые не являются фикстурой", async () => {
 		// Главная граница безопасности: маски здесь нет вообще, а всё, что вне
 		// пространства dce70000-…, функция обязана отвергнуть до первого запроса.
-		await assert.rejects(() => purgeFixtureOrganizations([SCREENSHOT_DEMO_ORG]), /не из тестового пространства/);
-		await assert.rejects(() => purgeFixtureOrganizations([WORKING_CLINIC_ORG]), /не из тестового пространства/);
-		// Один чужой идентификатор в списке отменяет весь вызов, а не только себя.
 		await assert.rejects(
-			() => purgeFixtureOrganizations([fixtureUuid("guardCheck", 1), WORKING_CLINIC_ORG]),
+			() => purgeFixtureOrganizations([SCREENSHOT_DEMO_ORG]),
 			/не из тестового пространства/,
 		);
-		await assert.rejects(() => purgeFixtureOrganizations(["не-uuid-вовсе"]), /не UUID/);
+		await assert.rejects(
+			() => purgeFixtureOrganizations([WORKING_CLINIC_ORG]),
+			/не из тестового пространства/,
+		);
+		// Один чужой идентификатор в списке отменяет весь вызов, а не только себя.
+		await assert.rejects(
+			() =>
+				purgeFixtureOrganizations([
+					fixtureUuid("guardCheck", 1),
+					WORKING_CLINIC_ORG,
+				]),
+			/не из тестового пространства/,
+		);
+		await assert.rejects(
+			() => purgeFixtureOrganizations(["не-uuid-вовсе"]),
+			/не UUID/,
+		);
 	});
 
 	test("остатков прежнего общего блока в живой базе нет", async (context) => {
@@ -109,7 +140,9 @@ describe("инвентарь тестовых клиник", () => {
 				const found = await tx.execute<{ id: string; name: string }>(sql`
 					SELECT id::text AS id, name FROM organizations
 					WHERE id IN (${sql.join(
-						LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS.map((id) => sql`${id}::uuid`),
+						LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS.map(
+							(id) => sql`${id}::uuid`,
+						),
 						sql`, `,
 					)})
 				`);
@@ -143,7 +176,9 @@ describe("инвентарь тестовых клиник", () => {
 			// кодом 42501 (WITH CHECK у organizations сверяет id = current_tenant,
 			// у patients — organization_id = current_tenant).
 			await withFixtureTenant(ORG_ID, async (tx) => {
-				await tx.insert(organizations).values({ id: ORG_ID, name: "Клиника самопроверки инвентаря" });
+				await tx
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника самопроверки инвентаря" });
 				await tx.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
@@ -158,17 +193,28 @@ describe("инвентарь тестовых клиник", () => {
 		// Строки действительно легли — считано под обходом, потому что вне
 		// тенант-контекста роль приложения их не видит и получила бы ложный ноль.
 		const seeded = await withSuperuserBypass(async (tx) => {
-			const found = await tx.execute<{ organizations: number; patients: number }>(sql`
+			const found = await tx.execute<{
+				organizations: number;
+				patients: number;
+			}>(sql`
 				SELECT
 					(SELECT count(*)::int FROM organizations WHERE id = ${ORG_ID}::uuid) AS organizations,
 					(SELECT count(*)::int FROM patients WHERE id = ${PATIENT_ID}::uuid) AS patients
 			`);
 			return found.rows[0];
 		});
-		assert.deepEqual(seeded, { organizations: 1, patients: 1 }, "фикстура не засеялась");
+		assert.deepEqual(
+			seeded,
+			{ organizations: 1, patients: 1 },
+			"фикстура не засеялась",
+		);
 
 		const report = await purgeFixtureOrganizations([ORG_ID]);
-		assert.equal(report.organizationsRemoved, 1, "уборка не сняла саму организацию");
+		assert.equal(
+			report.organizationsRemoved,
+			1,
+			"уборка не сняла саму организацию",
+		);
 		assert.ok(
 			report.rowsRemoved >= 1,
 			`уборка не сняла ни одной зависимой строки: ${JSON.stringify(report)}`,
@@ -179,14 +225,21 @@ describe("инвентарь тестовых клиник", () => {
 		);
 
 		const left = await withSuperuserBypass(async (tx) => {
-			const found = await tx.execute<{ organizations: number; patients: number }>(sql`
+			const found = await tx.execute<{
+				organizations: number;
+				patients: number;
+			}>(sql`
 				SELECT
 					(SELECT count(*)::int FROM organizations WHERE id = ${ORG_ID}::uuid) AS organizations,
 					(SELECT count(*)::int FROM patients WHERE id = ${PATIENT_ID}::uuid) AS patients
 			`);
 			return found.rows[0];
 		});
-		assert.deepEqual(left, { organizations: 0, patients: 0 }, "уборка отчиталась об успехе, но строки на месте");
+		assert.deepEqual(
+			left,
+			{ organizations: 0, patients: 0 },
+			"уборка отчиталась об успехе, но строки на месте",
+		);
 
 		// Повторный вызов на пустом месте — это НЕ ошибка и не должен ею стать:
 		// уборка на входе фикстуры вызывается всегда, чаще всего убирать нечего.
@@ -212,7 +265,9 @@ describe("инвентарь тестовых клиник", () => {
 		await assert.rejects(
 			() =>
 				withFixtureTenant(OWN, async (tx) => {
-					await tx.insert(organizations).values({ id: FOREIGN, name: "Чужая клиника" });
+					await tx
+						.insert(organizations)
+						.values({ id: FOREIGN, name: "Чужая клиника" });
 				}),
 			// Drizzle заворачивает отказ базы в свою ошибку «Failed query: …», а
 			// подлинный SQLSTATE кладёт в `cause`. Смотреть надо туда: проверка по

@@ -25,8 +25,12 @@ export function VisitSpecialtyFocus() {
 	  разметке приёма.
 	*/
 	const currentSpecialtyLabel =
-		(selectedSpecialty && specialtyLabels[selectedSpecialty]) || selectedSpecialty || "Прием";
-	const focusOptions = Array.isArray(visibleVisitSpecialtyFocusOptions) ? visibleVisitSpecialtyFocusOptions : [];
+		(selectedSpecialty && specialtyLabels[selectedSpecialty]) ||
+		selectedSpecialty ||
+		"Прием";
+	const focusOptions = Array.isArray(visibleVisitSpecialtyFocusOptions)
+		? visibleVisitSpecialtyFocusOptions
+		: [];
 
 	return (
 		<section

@@ -130,17 +130,29 @@ function fail(message, ...details) {
 	// Слепые пятна, за которые соседний гейт заплатил четырьмя пропущенными
 	// вызовами (scripts/check-guarded-route-headers.mjs, блок blindSpots).
 	const mustMatch = [
-		["/api/communications/outbox/:param/cancel", "/api/communications/outbox/:param/:param"],
+		[
+			"/api/communications/outbox/:param/cancel",
+			"/api/communications/outbox/:param/:param",
+		],
 		["/api/settings/staff/:param", "/api/settings/staff/:param"],
-		["/api/communications/outbox", normalizeRoutePath("/api/communications/outbox${query}")],
+		[
+			"/api/communications/outbox",
+			normalizeRoutePath("/api/communications/outbox${query}"),
+		],
 	];
 	for (const [routePath, callPath] of mustMatch) {
 		if (!pathsMatch(routePath, callPath)) {
-			fail(`«${callPath}» не сведён с «${routePath}» — вызывающий потерян, маршрут выглядел бы мёртвым.`);
+			fail(
+				`«${callPath}» не сведён с «${routePath}» — вызывающий потерян, маршрут выглядел бы мёртвым.`,
+			);
 		}
 	}
-	if (pathsMatch("/api/patients/duplicates", "/api/patients/:param/duplicates")) {
-		fail("адреса с разным числом сегментов сведены — вызовы приписываются чужим маршрутам.");
+	if (
+		pathsMatch("/api/patients/duplicates", "/api/patients/:param/duplicates")
+	) {
+		fail(
+			"адреса с разным числом сегментов сведены — вызовы приписываются чужим маршрутам.",
+		);
 	}
 	if (pathsMatch("/api/settings/staff", "/api/settings/chairs")) {
 		fail("разные адреса сведены — весь отчёт был бы случайным.");
@@ -152,8 +164,14 @@ function fail(message, ...details) {
 	// оценки выходили равными, упоминание приписывалось обоим, и
 	// `GET /api/settings/staff/commissions` выглядел вызываемым, хотя его не зовёт
 	// никто. Ничья в пользу неверного кандидата ПРЯЧЕТ находку.
-	const exactScore = matchPrecision("/api/settings/staff/:param", "/api/settings/staff/:param");
-	const bridgedScore = matchPrecision("/api/settings/staff/commissions", "/api/settings/staff/:param");
+	const exactScore = matchPrecision(
+		"/api/settings/staff/:param",
+		"/api/settings/staff/:param",
+	);
+	const bridgedScore = matchPrecision(
+		"/api/settings/staff/commissions",
+		"/api/settings/staff/:param",
+	);
 	if (!(exactScore > bridgedScore)) {
 		fail(
 			"сведение через подстановку оценено не хуже точного — упоминание приписывается лишним маршрутам,",
@@ -166,7 +184,11 @@ function fail(message, ...details) {
 	// Четыре вызывающих /api/ws/schedule написаны как "ws://host:4100/api/ws/..."
 	// и `${protocol}//${host}/api/ws/schedule`. Разбор, требующий /api/ в начале
 	// литерала, объявит работающий эндпоинт живых обновлений мёртвым.
-	if (normalizeRoutePath("ws://localhost:4100/api/ws/schedule".slice("ws://localhost:4100".length)) !== "/api/ws/schedule") {
+	if (
+		normalizeRoutePath(
+			"ws://localhost:4100/api/ws/schedule".slice("ws://localhost:4100".length),
+		) !== "/api/ws/schedule"
+	) {
 		fail("нормализация испортила адрес живых обновлений.");
 	}
 
@@ -174,31 +196,96 @@ function fail(message, ...details) {
 	// Оба класса на выдуманных данных, потому что настоящий пример первого класса
 	// (deleteChair) уже починен, а гейт обязан продолжать его ловить.
 	const probeRoutes = [
-		{ method: "DELETE", path: "/api/самопроверка/кресла/:param", where: "fixture.ts:1", file: "fixture.ts", prefix: "", receiver: "app", declaredPath: "" },
-		{ method: "POST", path: "/api/самопроверка/сотрудники", where: "fixture.ts:2", file: "fixture.ts", prefix: "", receiver: "app", declaredPath: "" },
-		{ method: "GET", path: "/api/самопроверка/выгрузка/:param", where: "fixture.ts:3", file: "fixture.ts", prefix: "", receiver: "app", declaredPath: "" },
+		{
+			method: "DELETE",
+			path: "/api/самопроверка/кресла/:param",
+			where: "fixture.ts:1",
+			file: "fixture.ts",
+			prefix: "",
+			receiver: "app",
+			declaredPath: "",
+		},
+		{
+			method: "POST",
+			path: "/api/самопроверка/сотрудники",
+			where: "fixture.ts:2",
+			file: "fixture.ts",
+			prefix: "",
+			receiver: "app",
+			declaredPath: "",
+		},
+		{
+			method: "GET",
+			path: "/api/самопроверка/выгрузка/:param",
+			where: "fixture.ts:3",
+			file: "fixture.ts",
+			prefix: "",
+			receiver: "app",
+			declaredPath: "",
+		},
 	];
 	const probeCalls = [
-		{ file: "A.tsx", line: 10, fromTest: false, method: "POST", path: "/api/самопроверка/сотрудники", raw: "" },
-		{ file: "A.tsx", line: 90, fromTest: false, method: "POST", path: "/api/самопроверка/сотрудники", raw: "" },
-		{ file: "B.tsx", line: 20, fromTest: false, method: "POST", path: "/api/самопроверка/сотрудники", raw: "" },
+		{
+			file: "A.tsx",
+			line: 10,
+			fromTest: false,
+			method: "POST",
+			path: "/api/самопроверка/сотрудники",
+			raw: "",
+		},
+		{
+			file: "A.tsx",
+			line: 90,
+			fromTest: false,
+			method: "POST",
+			path: "/api/самопроверка/сотрудники",
+			raw: "",
+		},
+		{
+			file: "B.tsx",
+			line: 20,
+			fromTest: false,
+			method: "POST",
+			path: "/api/самопроверка/сотрудники",
+			raw: "",
+		},
 		// Вызов ИЗ ТЕСТА не делает маршрут живым: пользователя у него по-прежнему нет.
-		{ file: "x.test.ts", line: 5, fromTest: true, method: "DELETE", path: "/api/самопроверка/кресла/:param", raw: "" },
+		{
+			file: "x.test.ts",
+			line: 5,
+			fromTest: true,
+			method: "DELETE",
+			path: "/api/самопроверка/кресла/:param",
+			raw: "",
+		},
 	];
 	const probeReferences = [
 		// Ссылка на выгрузку — настоящий пользователь маршрута, хотя это не fetch.
-		{ file: "C.tsx", line: 7, fromTest: false, path: "/api/самопроверка/выгрузка/:param" },
+		{
+			file: "C.tsx",
+			line: 7,
+			fromTest: false,
+			path: "/api/самопроверка/выгрузка/:param",
+		},
 	];
-	const probe = buildTopology({ routes: probeRoutes, calls: probeCalls, references: probeReferences });
+	const probe = buildTopology({
+		routes: probeRoutes,
+		calls: probeCalls,
+		references: probeReferences,
+	});
 	const probeByKey = new Map(probe.map((entry) => [entry.key, entry]));
 	const dead = probeByKey.get("DELETE /api/самопроверка/кресла/:param");
 	const duplicated = probeByKey.get("POST /api/самопроверка/сотрудники");
 	const viaHref = probeByKey.get("GET /api/самопроверка/выгрузка/:param");
 	if (!dead || dead.callers.length !== 0) {
-		fail("маршрут без вызывающих получил вызывающего — класс «deleteChair» больше не ловится.");
+		fail(
+			"маршрут без вызывающих получил вызывающего — класс «deleteChair» больше не ловится.",
+		);
 	}
 	if (dead.referrers.length !== 0) {
-		fail("вызов из теста посчитан пользователем маршрута — мёртвый маршрут выглядел бы живым.");
+		fail(
+			"вызов из теста посчитан пользователем маршрута — мёртвый маршрут выглядел бы живым.",
+		);
 	}
 	if (!duplicated || duplicated.callers.length !== 3) {
 		fail(
@@ -206,7 +293,9 @@ function fail(message, ...details) {
 		);
 	}
 	if (!viaHref || viaHref.referrers.length !== 1) {
-		fail("ссылка <a href> не признана пользователем маршрута — гейт потребует удалить работающую выгрузку.");
+		fail(
+			"ссылка <a href> не признана пользователем маршрута — гейт потребует удалить работающую выгрузку.",
+		);
 	}
 
 	// ── Обращение через общий помощник запросов ─────────────────────────────────
@@ -218,7 +307,14 @@ function fail(message, ...details) {
 	const viaHelper = buildTopology({
 		routes: [probeRoutes[1]],
 		calls: probeCalls.filter((call) => call.file !== "B.tsx" && !call.fromTest),
-		references: [{ file: "SettingsStaffTab.tsx", line: 117, fromTest: false, path: "/api/самопроверка/сотрудники" }],
+		references: [
+			{
+				file: "SettingsStaffTab.tsx",
+				line: 117,
+				fromTest: false,
+				path: "/api/самопроверка/сотрудники",
+			},
+		],
 	})[0];
 	const helperSites = callSitesOf(viaHelper);
 	if (helperSites.length !== 3) {
@@ -239,10 +335,12 @@ function fail(message, ...details) {
 	// искать копию, которой нет, — и на такой гейт перестают смотреть.
 	const doubleCountProbe = clientUsageIn(
 		"fixture.tsx",
-		"const response = await fetch(\n\t`/api/самопроверка/двойной-счёт/${id}`,\n\t{ method: \"PUT\" },\n);",
+		'const response = await fetch(\n\t`/api/самопроверка/двойной-счёт/${id}`,\n\t{ method: "PUT" },\n);',
 	);
 	if (doubleCountProbe.calls.length !== 1) {
-		fail(`разбор нашёл ${doubleCountProbe.calls.length} вызовов вместо одного.`);
+		fail(
+			`разбор нашёл ${doubleCountProbe.calls.length} вызовов вместо одного.`,
+		);
 	}
 	if (doubleCountProbe.references.length !== 0) {
 		fail(
@@ -265,13 +363,16 @@ function fail(message, ...details) {
 			"async function load() {",
 			"	await fetch(`${API_URL}/самопроверка/лиды`);",
 			"	await fetch(uiPreferencesServerPath);",
-			'	await fetch(`${externalHost}/самопроверка/чужое`);',
+			"	await fetch(`${externalHost}/самопроверка/чужое`);",
 			'	await fetch("https://example.ru/внешний");',
 			"}",
 		].join("\n"),
 	);
 	const baseProbePaths = baseProbe.calls.map((call) => call.path).sort();
-	if (JSON.stringify(baseProbePaths) !== JSON.stringify(["/api/самопроверка/лиды", "/api/самопроверка/настройки"])) {
+	if (
+		JSON.stringify(baseProbePaths) !==
+		JSON.stringify(["/api/самопроверка/лиды", "/api/самопроверка/настройки"])
+	) {
 		fail(
 			"адрес, собранный из основания в постоянной, не развернулся.",
 			`получено: ${JSON.stringify(baseProbePaths)}`,
@@ -287,10 +388,18 @@ function fail(message, ...details) {
 		);
 	}
 
-	console.log("самопроверка: регистрация на не-`app` найдена, комментарий и словарь маршрутом не считаются,");
-	console.log("              мёртвый маршрут найден, три реализации сосчитаны (включая обращение через");
-	console.log("              общий помощник), один вызов не сосчитан дважды, вызов из теста не в счёт,");
-	console.log("              ссылка href признана пользователем маршрута, сведение через подстановку");
+	console.log(
+		"самопроверка: регистрация на не-`app` найдена, комментарий и словарь маршрутом не считаются,",
+	);
+	console.log(
+		"              мёртвый маршрут найден, три реализации сосчитаны (включая обращение через",
+	);
+	console.log(
+		"              общий помощник), один вызов не сосчитан дважды, вызов из теста не в счёт,",
+	);
+	console.log(
+		"              ссылка href признана пользователем маршрута, сведение через подстановку",
+	);
 	console.log("              слабее точного");
 }
 
@@ -298,7 +407,11 @@ function fail(message, ...details) {
 
 const server = collectServerRoutes();
 const client = collectClientUsage();
-const topology = buildTopology({ routes: server.routes, calls: client.calls, references: client.references });
+const topology = buildTopology({
+	routes: server.routes,
+	calls: client.calls,
+	references: client.references,
+});
 
 /*
  * НИЖНИЕ ГРАНИЦЫ НА САМ РАЗБОР. Одна опечатка в поиске — и гейт станет зелёным на
@@ -319,71 +432,136 @@ if (client.calls.filter((call) => !call.fromTest).length < 100) {
 }
 
 const productionCalls = client.calls.filter((call) => !call.fromTest);
-const unresolvedProduction = client.unresolved.filter((entry) => !entry.fromTest);
+const unresolvedProduction = client.unresolved.filter(
+	(entry) => !entry.fromTest,
+);
 
 const withoutCallers = topology.filter(
-	(entry) => entry.callers.length === 0 && entry.methodUnknownCallers.length === 0 && entry.referrers.length === 0,
+	(entry) =>
+		entry.callers.length === 0 &&
+		entry.methodUnknownCallers.length === 0 &&
+		entry.referrers.length === 0,
 );
-const internalWithoutCallers = withoutCallers.filter((entry) => classifySurface(entry.path) === surfaceInternal);
-const externalWithoutCallers = withoutCallers.filter((entry) => classifySurface(entry.path) !== surfaceInternal);
-const withSites = topology.map((entry) => ({ entry, sites: callSitesOf(entry) }));
+const internalWithoutCallers = withoutCallers.filter(
+	(entry) => classifySurface(entry.path) === surfaceInternal,
+);
+const externalWithoutCallers = withoutCallers.filter(
+	(entry) => classifySurface(entry.path) !== surfaceInternal,
+);
+const withSites = topology.map((entry) => ({
+	entry,
+	sites: callSitesOf(entry),
+}));
 const multipleImplementations = withSites
 	.filter((row) => row.sites.length > 1)
 	.sort((left, right) => right.sites.length - left.sites.length);
 const multipleFetchOnly = topology.filter((entry) => entry.callers.length > 1);
 const methodUnknownOnly = topology.filter(
-	(entry) => entry.callers.length === 0 && entry.methodUnknownCallers.length > 0,
+	(entry) =>
+		entry.callers.length === 0 && entry.methodUnknownCallers.length > 0,
 );
 const referencedNotFetched = topology.filter(
-	(entry) => entry.callers.length === 0 && entry.methodUnknownCallers.length === 0 && entry.referrers.length > 0,
+	(entry) =>
+		entry.callers.length === 0 &&
+		entry.methodUnknownCallers.length === 0 &&
+		entry.referrers.length > 0,
 );
 
 /* ═══ ОТЧЁТ ══════════════════════════════════════════════════════════════════ */
 
 console.log("");
-console.log("─── что разобрано ──────────────────────────────────────────────────────");
+console.log(
+	"─── что разобрано ──────────────────────────────────────────────────────",
+);
 console.log(`файлов сервера просмотрено:            ${server.fileCount}`);
 console.log(`маршрутов /api найдено:                ${server.routes.length}`);
 console.log(`маршрутов вне /api (не проверяются):   ${server.nonApi.length}`);
 console.log(`файлов клиента просмотрено:            ${client.fileCount}`);
-console.log(`вызовов fetch к своему серверу:        ${productionCalls.length} (плюс ${client.calls.length - productionCalls.length} из тестов)`);
-console.log(`упоминаний адреса вне fetch:           ${client.references.filter((r) => !r.fromTest).length}`);
-console.log(`получатели регистраций:                ${server.receivers.map(([name, count]) => `${name}=${count}`).join(", ")}`);
-console.log(`файлов с префиксом плагина:            ${server.prefixedFiles.length}${server.prefixedFiles.length ? ` (${server.prefixedFiles.map((entry) => entry.prefix).join(", ")})` : ""}`);
+console.log(
+	`вызовов fetch к своему серверу:        ${productionCalls.length} (плюс ${client.calls.length - productionCalls.length} из тестов)`,
+);
+console.log(
+	`упоминаний адреса вне fetch:           ${client.references.filter((r) => !r.fromTest).length}`,
+);
+console.log(
+	`получатели регистраций:                ${server.receivers.map(([name, count]) => `${name}=${count}`).join(", ")}`,
+);
+console.log(
+	`файлов с префиксом плагина:            ${server.prefixedFiles.length}${server.prefixedFiles.length ? ` (${server.prefixedFiles.map((entry) => entry.prefix).join(", ")})` : ""}`,
+);
 
 console.log("");
-console.log("─── чего гейт НЕ знает (НЕИЗВЕСТНО, а не «нет вызывающего») ────────────");
-console.log(`fetch с неразобранным адресом:         ${unresolvedProduction.length}`);
-console.log(`вызовов с неразобранным методом:       ${productionCalls.filter((call) => call.method === null).length}`);
-console.log(`регистраций с двойным префиксом:       ${server.ambiguous.length}`);
-console.log(`префиксов без найденного файла:        ${server.unresolvedPrefixes.length}`);
+console.log(
+	"─── чего гейт НЕ знает (НЕИЗВЕСТНО, а не «нет вызывающего») ────────────",
+);
+console.log(
+	`fetch с неразобранным адресом:         ${unresolvedProduction.length}`,
+);
+console.log(
+	`вызовов с неразобранным методом:       ${productionCalls.filter((call) => call.method === null).length}`,
+);
+console.log(
+	`регистраций с двойным префиксом:       ${server.ambiguous.length}`,
+);
+console.log(
+	`префиксов без найденного файла:        ${server.unresolvedPrefixes.length}`,
+);
 if (unresolvedProduction.length > 0) {
 	console.log("");
-	console.log("  Адрес этих запросов собран вне вызова. Гейт про них НЕ УТВЕРЖДАЕТ НИЧЕГО —");
-	console.log("  любой из них может быть тем самым вызывающим для маршрута из списка ниже.");
-	console.log("  Пока они здесь, ни одна находка «никто не зовёт» не является доказанной.");
-	for (const entry of printAll ? unresolvedProduction : unresolvedProduction.slice(0, 12)) {
+	console.log(
+		"  Адрес этих запросов собран вне вызова. Гейт про них НЕ УТВЕРЖДАЕТ НИЧЕГО —",
+	);
+	console.log(
+		"  любой из них может быть тем самым вызывающим для маршрута из списка ниже.",
+	);
+	console.log(
+		"  Пока они здесь, ни одна находка «никто не зовёт» не является доказанной.",
+	);
+	for (const entry of printAll
+		? unresolvedProduction
+		: unresolvedProduction.slice(0, 12)) {
 		console.log(`    ${entry.file}:${entry.line}  fetch(${entry.expression})`);
 	}
-	if (!printAll && unresolvedProduction.length > 12) console.log(`    … и ещё ${unresolvedProduction.length - 12}`);
+	if (!printAll && unresolvedProduction.length > 12)
+		console.log(`    … и ещё ${unresolvedProduction.length - 12}`);
 }
 for (const entry of server.ambiguous) {
-	console.log(`    ДВОЙНОЙ ПРЕФИКС: ${entry.where} — префикс «${entry.prefix}» + путь «${entry.declaredPath}»`);
-	console.log("        Маршрут в набор НЕ включён: угадывать, склеены они или нет, значит выдумать адрес.");
+	console.log(
+		`    ДВОЙНОЙ ПРЕФИКС: ${entry.where} — префикс «${entry.prefix}» + путь «${entry.declaredPath}»`,
+	);
+	console.log(
+		"        Маршрут в набор НЕ включён: угадывать, склеены они или нет, значит выдумать адрес.",
+	);
 }
 for (const entry of server.unresolvedPrefixes) {
-	console.log(`    ПРЕФИКС БЕЗ ФАЙЛА: ${entry.where} — «${entry.plugin}» с префиксом «${entry.prefix}»`);
-	console.log("        Маршруты этого файла попадут в набор БЕЗ префикса и будут выглядеть мёртвыми.");
+	console.log(
+		`    ПРЕФИКС БЕЗ ФАЙЛА: ${entry.where} — «${entry.plugin}» с префиксом «${entry.prefix}»`,
+	);
+	console.log(
+		"        Маршруты этого файла попадут в набор БЕЗ префикса и будут выглядеть мёртвыми.",
+	);
 }
 
 console.log("");
-console.log("═══ НАХОДКА 1: маршрут есть, звать его некому ══════════════════════════");
-console.log(`внутренних экранных маршрутов без вызывающего:  ${internalWithoutCallers.length}`);
-console.log(`внешних поверхностей без вызывающего:           ${externalWithoutCallers.length} (вебхуки, портал, публичный виджет — клиента здесь нет)`);
+console.log(
+	"═══ НАХОДКА 1: маршрут есть, звать его некому ══════════════════════════",
+);
+console.log(
+	`внутренних экранных маршрутов без вызывающего:  ${internalWithoutCallers.length}`,
+);
+console.log(
+	`внешних поверхностей без вызывающего:           ${externalWithoutCallers.length} (вебхуки, портал, публичный виджет — клиента здесь нет)`,
+);
 console.log("");
-console.log("Класс дефекта: `DELETE /api/settings/chairs/:chairId` был живым маршрутом,");
-console.log("который не звала ни одна кнопка. Такое не видит ни компилятор, ни тесты.");
-console.log("Красным должен становиться ТОЛЬКО первый список: у вебхука клиента в этом");
+console.log(
+	"Класс дефекта: `DELETE /api/settings/chairs/:chairId` был живым маршрутом,",
+);
+console.log(
+	"который не звала ни одна кнопка. Такое не видит ни компилятор, ни тесты.",
+);
+console.log(
+	"Красным должен становиться ТОЛЬКО первый список: у вебхука клиента в этом",
+);
 console.log("репозитории нет по построению, и требовать его — ложная тревога.");
 if (internalWithoutCallers.length > 0) {
 	console.log("");
@@ -395,10 +573,15 @@ if (internalWithoutCallers.length > 0) {
 	const shown = printAll ? [...byFile] : [...byFile].slice(0, 25);
 	for (const [file, entries] of shown) {
 		console.log(`  ${file}`);
-		for (const entry of entries) console.log(`      :${entry.where.split(":").pop()}  ${entry.method} ${entry.path}`);
+		for (const entry of entries)
+			console.log(
+				`      :${entry.where.split(":").pop()}  ${entry.method} ${entry.path}`,
+			);
 	}
 	if (!printAll && byFile.size > shown.length) {
-		console.log(`  … и ещё ${byFile.size - shown.length} файлов, полностью — с ключом --all`);
+		console.log(
+			`  … и ещё ${byFile.size - shown.length} файлов, полностью — с ключом --all`,
+		);
 	}
 }
 if (externalWithoutCallers.length > 0) {
@@ -409,47 +592,92 @@ if (externalWithoutCallers.length > 0) {
 		const surface = classifySurface(entry.path);
 		bySurface.set(surface, (bySurface.get(surface) ?? 0) + 1);
 	}
-	for (const [surface, count] of [...bySurface].sort((left, right) => right[1] - left[1])) {
+	for (const [surface, count] of [...bySurface].sort(
+		(left, right) => right[1] - left[1],
+	)) {
 		console.log(`    ${String(count).padStart(4)}  ${surface}`);
 	}
 }
 
 console.log("");
-console.log("═══ НАХОДКА 2: у одного маршрута несколько реализаций вызова ════════════");
-console.log(`маршрутов с более чем одним обращением:  ${multipleImplementations.length}`);
-console.log(`из них более одного прямого fetch:       ${multipleFetchOnly.length}`);
-console.log(`самый обросший:                          ${multipleImplementations[0] ? `${multipleImplementations[0].sites.length} обращения у ${multipleImplementations[0].entry.key}` : "нет"}`);
+console.log(
+	"═══ НАХОДКА 2: у одного маршрута несколько реализаций вызова ════════════",
+);
+console.log(
+	`маршрутов с более чем одним обращением:  ${multipleImplementations.length}`,
+);
+console.log(
+	`из них более одного прямого fetch:       ${multipleFetchOnly.length}`,
+);
+console.log(
+	`самый обросший:                          ${multipleImplementations[0] ? `${multipleImplementations[0].sites.length} обращения у ${multipleImplementations[0].entry.key}` : "нет"}`,
+);
 console.log("");
-console.log("Класс дефекта: `POST /api/settings/staff` оброс тремя отдельными реализациями,");
-console.log("`PUT /api/settings/staff/:staffId` — двумя. Каждая копия — своё тело запроса,");
-console.log("свой разбор отказа и своё место, где можно забыть заголовок охраны.");
-console.log("Обращения считаются вместе с теми, что идут через общий помощник запросов:");
-console.log("иначе третья реализация POST /api/settings/staff не видна вовсе (её адрес");
-console.log("уходит свойством `url:` в staffMutationRequest.ts, а fetch там получает");
-console.log("переменную). Обращение вне fetch метода НЕ несёт, поэтому в таких строках");
+console.log(
+	"Класс дефекта: `POST /api/settings/staff` оброс тремя отдельными реализациями,",
+);
+console.log(
+	"`PUT /api/settings/staff/:staffId` — двумя. Каждая копия — своё тело запроса,",
+);
+console.log(
+	"свой разбор отказа и своё место, где можно забыть заголовок охраны.",
+);
+console.log(
+	"Обращения считаются вместе с теми, что идут через общий помощник запросов:",
+);
+console.log(
+	"иначе третья реализация POST /api/settings/staff не видна вовсе (её адрес",
+);
+console.log(
+	"уходит свойством `url:` в staffMutationRequest.ts, а fetch там получает",
+);
+console.log(
+	"переменную). Обращение вне fetch метода НЕ несёт, поэтому в таких строках",
+);
 console.log("метод в ключе — метод МАРШРУТА, а не доказанный метод вызова.");
-console.log("Больше одного обращения — НЕ автоматически дефект: список законно зовут из");
-console.log("двух экранов. Дефект — когда копий три и они разошлись. Разбирать глазами.");
+console.log(
+	"Больше одного обращения — НЕ автоматически дефект: список законно зовут из",
+);
+console.log(
+	"двух экранов. Дефект — когда копий три и они разошлись. Разбирать глазами.",
+);
 if (multipleImplementations.length > 0) {
 	console.log("");
-	const shown = printAll ? multipleImplementations : multipleImplementations.slice(0, 20);
+	const shown = printAll
+		? multipleImplementations
+		: multipleImplementations.slice(0, 20);
 	for (const { entry, sites } of shown) {
 		console.log(`  ${sites.length}x  ${entry.key}`);
 		console.log(`        маршрут: ${entry.where}`);
-		for (const site of sites) console.log(`        ${site.via === "fetch" ? "fetch " : "адрес "} ${site.file}:${site.line}`);
+		for (const site of sites)
+			console.log(
+				`        ${site.via === "fetch" ? "fetch " : "адрес "} ${site.file}:${site.line}`,
+			);
 	}
 	if (!printAll && multipleImplementations.length > shown.length) {
-		console.log(`  … и ещё ${multipleImplementations.length - shown.length}, полностью — с ключом --all`);
+		console.log(
+			`  … и ещё ${multipleImplementations.length - shown.length}, полностью — с ключом --all`,
+		);
 	}
 }
 
 if (referencedNotFetched.length > 0 || methodUnknownOnly.length > 0) {
 	console.log("");
-	console.log("─── справочно: чем оправдан маршрут без fetch ──────────────────────────");
-	console.log(`адрес упомянут вне fetch (href, WebSocket, window.open):  ${referencedNotFetched.length}`);
-	console.log(`вызывающий есть, но метод его вызова не разобран:         ${methodUnknownOnly.length}`);
-	for (const entry of printAll ? methodUnknownOnly : methodUnknownOnly.slice(0, 8)) {
-		console.log(`    ${entry.key} — ${entry.methodUnknownCallers.map((call) => `${call.file}:${call.line}`).join(", ")}`);
+	console.log(
+		"─── справочно: чем оправдан маршрут без fetch ──────────────────────────",
+	);
+	console.log(
+		`адрес упомянут вне fetch (href, WebSocket, window.open):  ${referencedNotFetched.length}`,
+	);
+	console.log(
+		`вызывающий есть, но метод его вызова не разобран:         ${methodUnknownOnly.length}`,
+	);
+	for (const entry of printAll
+		? methodUnknownOnly
+		: methodUnknownOnly.slice(0, 8)) {
+		console.log(
+			`    ${entry.key} — ${entry.methodUnknownCallers.map((call) => `${call.file}:${call.line}`).join(", ")}`,
+		);
 	}
 }
 
@@ -466,7 +694,9 @@ if (referencedNotFetched.length > 0 || methodUnknownOnly.length > 0) {
  */
 if (withLiveCensus) {
 	console.log("");
-	console.log("─── сверка со таблицей маршрутов живого Fastify ────────────────────────");
+	console.log(
+		"─── сверка со таблицей маршрутов живого Fastify ────────────────────────",
+	);
 	try {
 		const census = await import("./lib/api-route-census.mjs");
 		const { app } = await census.createRealApiApp();
@@ -481,18 +711,33 @@ if (withLiveCensus) {
 		const onlyStatic = [...staticSet].filter((key) => !liveSet.has(key));
 		console.log(`в живой таблице:            ${liveSet.size}`);
 		console.log(`в статическом разборе:      ${staticSet.size}`);
-		console.log(`есть живьём, нет в разборе:  ${onlyLive.length}  (разбор слеп на них — маршрут не проверяется)`);
-		console.log(`есть в разборе, нет живьём:  ${onlyStatic.length}  (разбор выдумал — они попали бы в находки зря)`);
-		for (const key of onlyLive.slice(0, 20)) console.log(`    только живьём: ${key}`);
-		for (const key of onlyStatic.slice(0, 20)) console.log(`    только в разборе: ${key}`);
+		console.log(
+			`есть живьём, нет в разборе:  ${onlyLive.length}  (разбор слеп на них — маршрут не проверяется)`,
+		);
+		console.log(
+			`есть в разборе, нет живьём:  ${onlyStatic.length}  (разбор выдумал — они попали бы в находки зря)`,
+		);
+		for (const key of onlyLive.slice(0, 20))
+			console.log(`    только живьём: ${key}`);
+		for (const key of onlyStatic.slice(0, 20))
+			console.log(`    только в разборе: ${key}`);
 	} catch (error) {
-		console.log("ПРОПУЩЕНА, и вот почему (это не зелёный результат, это отсутствие результата):");
-		for (const line of String(error?.message ?? error).split("\n").slice(0, 4)) console.log(`    ${line}`);
+		console.log(
+			"ПРОПУЩЕНА, и вот почему (это не зелёный результат, это отсутствие результата):",
+		);
+		for (const line of String(error?.message ?? error)
+			.split("\n")
+			.slice(0, 4))
+			console.log(`    ${line}`);
 	}
 } else {
 	console.log("");
-	console.log("─── сверка со таблицей маршрутов живого Fastify ────────────────────────");
-	console.log("НЕ ПРОВОДИЛАСЬ: нужен ключ --live и свежий apps/api/dist. Числа выше получены");
+	console.log(
+		"─── сверка со таблицей маршрутов живого Fastify ────────────────────────",
+	);
+	console.log(
+		"НЕ ПРОВОДИЛАСЬ: нужен ключ --live и свежий apps/api/dist. Числа выше получены",
+	);
 	console.log("статическим разбором исходников, а не с работающего сервера.");
 }
 
@@ -514,10 +759,18 @@ if (withLiveCensus) {
  * краснеющий на верном коде, выключают целиком, и тогда он не поймает ничего.
  */
 console.log("");
-console.log("─── ИТОГ ───────────────────────────────────────────────────────────────");
-console.log(`маршрут есть, звать некому (внутренние):  ${internalWithoutCallers.length}`);
-console.log(`несколько реализаций одного вызова:      ${multipleImplementations.length}`);
-console.log(`НЕИЗВЕСТНО (адрес собран вне вызова):    ${unresolvedProduction.length}`);
+console.log(
+	"─── ИТОГ ───────────────────────────────────────────────────────────────",
+);
+console.log(
+	`маршрут есть, звать некому (внутренние):  ${internalWithoutCallers.length}`,
+);
+console.log(
+	`несколько реализаций одного вызова:      ${multipleImplementations.length}`,
+);
+console.log(
+	`НЕИЗВЕСТНО (адрес собран вне вызова):    ${unresolvedProduction.length}`,
+);
 
 /*
  * ХРАПОВИК: поимённый список известного долга.
@@ -589,9 +842,9 @@ const KNOWN_DEAD_ROUTES = new Set([
 	"PUT /api/xray/scans/:param",
 ]);
 
-const currentDeadKeys = new Set(internalWithoutCallers.map(e => e.key));
-const newDead = [...currentDeadKeys].filter(k => !KNOWN_DEAD_ROUTES.has(k));
-const fixedDead = [...KNOWN_DEAD_ROUTES].filter(k => !currentDeadKeys.has(k));
+const currentDeadKeys = new Set(internalWithoutCallers.map((e) => e.key));
+const newDead = [...currentDeadKeys].filter((k) => !KNOWN_DEAD_ROUTES.has(k));
+const fixedDead = [...KNOWN_DEAD_ROUTES].filter((k) => !currentDeadKeys.has(k));
 
 let exitCode = 0;
 

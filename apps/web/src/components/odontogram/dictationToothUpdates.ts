@@ -66,9 +66,11 @@ const UNAMBIGUOUS_STATE: Partial<Record<DictationState, ToothState>> = {
  * Формулировка — словами врача, а не кодом разбора.
  */
 const AMBIGUOUS_LABEL: Partial<Record<DictationState, string>> = {
-	treatment: "лечение (кариес, пульпит или пломба — программа не знает, что именно)",
+	treatment:
+		"лечение (кариес, пульпит или пломба — программа не знает, что именно)",
 	done: "«вылечен» или «здоров» — программа не знает, что именно",
-	prosthetics: "протезирование (коронка, винир или мост — программа не знает, что именно)",
+	prosthetics:
+		"протезирование (коронка, винир или мост — программа не знает, что именно)",
 	watch: "наблюдение — такого состояния на схеме нет",
 	calculus: "налёт или зубной камень — такого состояния на схеме нет",
 };
@@ -82,7 +84,10 @@ export interface DictationApplyPlan {
 	/** Что можно отметить на схеме: перевод однозначный. */
 	readonly applied: readonly DictatedToothUpdate[];
 	/** Зубы, где распознанное схема выразить не может — их отмечает человек. */
-	readonly manual: readonly { readonly toothNumber: number; readonly label: string }[];
+	readonly manual: readonly {
+		readonly toothNumber: number;
+		readonly label: string;
+	}[];
 	/**
 	 * Строки, где номер зуба не читается как номер зуба по FDI. Молча
 	 * выбрасывать их нельзя: врач назвал зуб, и он вправе знать, что его не
@@ -112,7 +117,9 @@ function dictationStateOf(value: unknown): DictationState | null {
  * Пустое тело считается пустым планом: сервер отвечает `null`, когда разобрать
  * фразу не смог (localDictationParser.ts:406, затем ai.ts:238).
  */
-export function dictationApplyPlanFromResponseBody(rawBody: string): DictationApplyPlan | null {
+export function dictationApplyPlanFromResponseBody(
+	rawBody: string,
+): DictationApplyPlan | null {
 	const trimmed = rawBody.trim();
 	if (trimmed === "" || trimmed === "null") return emptyPlan();
 	let parsed: unknown;
@@ -122,7 +129,8 @@ export function dictationApplyPlanFromResponseBody(rawBody: string): DictationAp
 		// Текст исключения английский, человеку он не показывается никогда.
 		return null;
 	}
-	if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+	if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
+		return null;
 	const body = parsed as Record<string, unknown>;
 
 	/*
@@ -133,7 +141,9 @@ export function dictationApplyPlanFromResponseBody(rawBody: string): DictationAp
 	 * во второй, недостижимой ветке — то есть не совпадал ни с одним из двух.
 	 */
 	const payload =
-		typeof body.payload === "object" && body.payload !== null && !Array.isArray(body.payload)
+		typeof body.payload === "object" &&
+		body.payload !== null &&
+		!Array.isArray(body.payload)
 			? (body.payload as Record<string, unknown>)
 			: null;
 	const rawUpdates = Array.isArray(payload?.toothUpdates)
@@ -150,7 +160,8 @@ export function dictationApplyPlanFromResponseBody(rawBody: string): DictationAp
 	for (const raw of rawUpdates) {
 		if (typeof raw !== "object" || raw === null || Array.isArray(raw)) continue;
 		const row = raw as Record<string, unknown>;
-		const rawCode = typeof row.code === "string" ? row.code.trim() : String(row.code ?? "");
+		const rawCode =
+			typeof row.code === "string" ? row.code.trim() : String(row.code ?? "");
 		/*
 		 * Номер зуба проверяется общим правилом FDI, а не `parseInt` без проверки:
 		 * `parseInt("верхний")` даёт NaN, и NaN уходил в тело запроса как null.
@@ -165,7 +176,10 @@ export function dictationApplyPlanFromResponseBody(rawBody: string): DictationAp
 		const dictated = dictationStateOf(row.state);
 		if (dictated === null) {
 			// Слово состояния не из словаря сервера: придумывать диагноз нельзя.
-			manual.push({ toothNumber, label: "распознанное состояние программе не знакомо" });
+			manual.push({
+				toothNumber,
+				label: "распознанное состояние программе не знакомо",
+			});
 			continue;
 		}
 		const state = UNAMBIGUOUS_STATE[dictated];
@@ -178,7 +192,9 @@ export function dictationApplyPlanFromResponseBody(rawBody: string): DictationAp
 		}
 		manual.push({
 			toothNumber,
-			label: AMBIGUOUS_LABEL[dictated] ?? "распознанное состояние на схеме не выразить",
+			label:
+				AMBIGUOUS_LABEL[dictated] ??
+				"распознанное состояние на схеме не выразить",
 		});
 	}
 
@@ -197,20 +213,30 @@ export interface DictationMessage {
  * состояния в тексте для врача, причём зелёным даже когда ничего не записалось.
  * Счётные слова согласуются общим countLabel: «1 зуб», «2 зуба», «5 зубов».
  */
-export function dictationApplyMessage(plan: DictationApplyPlan): DictationMessage {
+export function dictationApplyMessage(
+	plan: DictationApplyPlan,
+): DictationMessage {
 	const parts: string[] = [];
 	if (plan.applied.length > 0) {
 		const listed = plan.applied
 			.map((item) => `${item.toothNumber} — ${TOOTH_STATE_LABELS[item.state]}`)
 			.join("; ");
-		parts.push(`Отмечено на схеме, ${countLabel(plan.applied.length, "зуб", "зуба", "зубов")}: ${listed}.`);
+		parts.push(
+			`Отмечено на схеме, ${countLabel(plan.applied.length, "зуб", "зуба", "зубов")}: ${listed}.`,
+		);
 	}
 	if (plan.manual.length > 0) {
-		const listed = plan.manual.map((item) => `${item.toothNumber} — ${item.label}`).join("; ");
-		parts.push(`Отметьте сами, ${countLabel(plan.manual.length, "зуб", "зуба", "зубов")}: ${listed}.`);
+		const listed = plan.manual
+			.map((item) => `${item.toothNumber} — ${item.label}`)
+			.join("; ");
+		parts.push(
+			`Отметьте сами, ${countLabel(plan.manual.length, "зуб", "зуба", "зубов")}: ${listed}.`,
+		);
 	}
 	if (plan.unreadableCodes.length > 0) {
-		parts.push(`Не разобран номер зуба: ${plan.unreadableCodes.join(", ")}. Назовите номер по схеме, например «двадцать шестой».`);
+		parts.push(
+			`Не разобран номер зуба: ${plan.unreadableCodes.join(", ")}. Назовите номер по схеме, например «двадцать шестой».`,
+		);
 	}
 	if (parts.length === 0) {
 		return {
@@ -223,7 +249,9 @@ export function dictationApplyMessage(plan: DictationApplyPlan): DictationMessag
 		// Зелёным — только когда на схеме действительно что-то изменилось и
 		// ничего не осталось на совести врача.
 		tone:
-			plan.applied.length > 0 && plan.manual.length === 0 && plan.unreadableCodes.length === 0
+			plan.applied.length > 0 &&
+			plan.manual.length === 0 &&
+			plan.unreadableCodes.length === 0
 				? "success"
 				: "warning",
 	};

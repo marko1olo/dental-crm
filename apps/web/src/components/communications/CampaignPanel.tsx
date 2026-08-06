@@ -38,19 +38,39 @@ type CampaignItem = {
 	createdAt: string;
 };
 
-type TemplateOption = { id: string; title: string; channel: string; intent: string; isActive: boolean };
-type TemplateVariable = { key: string; label: string; example: string; phi: boolean };
+type TemplateOption = {
+	id: string;
+	title: string;
+	channel: string;
+	intent: string;
+	isActive: boolean;
+};
+type TemplateVariable = {
+	key: string;
+	label: string;
+	example: string;
+	phi: boolean;
+};
 
 type CampaignPreview = {
 	criteria: string[];
 	audience: {
 		matched: number;
 		deliverable: number;
-		excluded: { no_contact: number; no_consent: number; excluded_by_criteria: number };
+		excluded: {
+			no_contact: number;
+			no_consent: number;
+			excluded_by_criteria: number;
+		};
 		candidates: { patientId: string; fullName: string }[];
 		notes: string[];
 	};
-	cost: { recipients: number; segmentsPerMessage: number | null; billableUnits: number; note: string };
+	cost: {
+		recipients: number;
+		segmentsPerMessage: number | null;
+		billableUnits: number;
+		note: string;
+	};
 	sampleText: string | null;
 	problems: string[];
 };
@@ -75,7 +95,7 @@ const outboxStatusLabels: Record<string, string> = {
 	delivered: "Доставлено",
 	failed: "Не удалось",
 	cancelled: "Снято",
-	suppressed: "Задержано"
+	suppressed: "Задержано",
 };
 
 const campaignStatusLabels: Record<string, string> = {
@@ -83,21 +103,24 @@ const campaignStatusLabels: Record<string, string> = {
 	scheduled: "Запланирована",
 	running: "Выполняется",
 	completed: "Завершена",
-	cancelled: "Отменена"
+	cancelled: "Отменена",
 };
 
 const channelLabels: Record<string, string> = {
 	sms: "SMS",
 	email: "Почта",
 	whatsapp: "WhatsApp",
-	telegram: "Телеграм"
+	telegram: "Телеграм",
 };
 
 async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch(() => null)) as unknown;
 	if (!response.ok) {
 		const message =
-			payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+			payload &&
+			typeof payload === "object" &&
+			"message" in payload &&
+			typeof payload.message === "string"
 				? payload.message
 				: `Сервер ответил ${response.status}`;
 		throw new Error(message);
@@ -125,13 +148,18 @@ function formatMoment(value: string | null): string {
 	const parsed = new Date(value);
 	return Number.isNaN(parsed.getTime())
 		? "—"
-		: parsed.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+		: parsed.toLocaleString("ru-RU", {
+				day: "2-digit",
+				month: "2-digit",
+				hour: "2-digit",
+				minute: "2-digit",
+			});
 }
 
-import { useCommunicationsQueries } from '../../hooks/domains/useCommunicationsQueries';
+import { useCommunicationsQueries } from "../../hooks/domains/useCommunicationsQueries";
 
 export function CampaignPanel() {
-  const commQueries = useCommunicationsQueries();
+	const commQueries = useCommunicationsQueries();
 	/*
 	 * ПОЧЕМУ ЗДЕСЬ ЗАГОЛОВКИ, А НЕ ГОЛЫЙ fetch. БЫЛО СЛОМАНО НАСМЕРТЬ, но только у
 	 * заказчика. Все адреса этой панели закрыты охраной `apps/api/src/accessGuard.ts`
@@ -194,16 +222,25 @@ export function CampaignPanel() {
 	const load = useCallback(async () => {
 		setLoadError(null);
 		try {
-			const [campaignResponse, templateResponse, variablesResponse] = await Promise.all([
-				commQueries.getCampaigns(),
-				commQueries.getCampaignsTemplates(),
-				commQueries.getCampaignsVariables()
-			]);
-			const campaignData = await readJson<{ campaigns: CampaignItem[] }>(campaignResponse);
-			const templateData = await readJson<{ templates: TemplateOption[] }>(templateResponse);
-			const variablesData = await readJson<{ variables: TemplateVariable[] }>(variablesResponse);
+			const [campaignResponse, templateResponse, variablesResponse] =
+				await Promise.all([
+					commQueries.getCampaigns(),
+					commQueries.getCampaignsTemplates(),
+					commQueries.getCampaignsVariables(),
+				]);
+			const campaignData = await readJson<{ campaigns: CampaignItem[] }>(
+				campaignResponse,
+			);
+			const templateData = await readJson<{ templates: TemplateOption[] }>(
+				templateResponse,
+			);
+			const variablesData = await readJson<{ variables: TemplateVariable[] }>(
+				variablesResponse,
+			);
 			setCampaigns(campaignData.campaigns);
-			setTemplates(templateData.templates.filter((template) => template.isActive));
+			setTemplates(
+				templateData.templates.filter((template) => template.isActive),
+			);
 			setVariables(variablesData.variables ?? []);
 		} catch (error) {
 			setLoadError(error instanceof Error ? error.message : String(error));
@@ -235,9 +272,17 @@ export function CampaignPanel() {
 		setBusy(true);
 		setNotice(null);
 		try {
-			const response = await commQueries.createCampaign({ title, templateId, scope, criteria: buildCriteria() });
+			const response = await commQueries.createCampaign({
+				title,
+				templateId,
+				scope,
+				criteria: buildCriteria(),
+			});
 			const data = await readJson<{ campaign: CampaignItem }>(response);
-			setNotice({ kind: "done", text: "Рассылка создана. Проверьте предпросмотр перед запуском." });
+			setNotice({
+				kind: "done",
+				text: "Рассылка создана. Проверьте предпросмотр перед запуском.",
+			});
 			setTitle("");
 			await load();
 			// Сразу открыть предпросмотр: запускать вслепую не нужно.
@@ -248,8 +293,8 @@ export function CampaignPanel() {
 			setNotice(
 				failNotice(
 					error,
-					"Рассылка не создана, никому ничего не отправлено. Заполненное ниже не пропало — исправьте и нажмите ещё раз."
-				)
+					"Рассылка не создана, никому ничего не отправлено. Заполненное ниже не пропало — исправьте и нажмите ещё раз.",
+				),
 			);
 		} finally {
 			setBusy(false);
@@ -296,16 +341,18 @@ export function CampaignPanel() {
 				}>(response);
 				setProgress({
 					byStatus: data.byStatus ?? {},
-					total: typeof data.total === "number" ? data.total : 0
+					total: typeof data.total === "number" ? data.total : 0,
 				});
 			} catch (error) {
 				setProgress(null);
-				setProgressError(error instanceof Error ? error.message : String(error));
+				setProgressError(
+					error instanceof Error ? error.message : String(error),
+				);
 			} finally {
 				setProgressLoading(false);
 			}
 		},
-		[auth]
+		[auth],
 	);
 
 	// Пока рассылка «Выполняется» и открыт её ход — опрашивать, иначе цифры
@@ -320,7 +367,10 @@ export function CampaignPanel() {
 		return () => window.clearInterval(timer);
 	}, [progressFor, campaigns, loadProgress]);
 
-	async function campaignAction(campaignId: string, action: "launch" | "cancel") {
+	async function campaignAction(
+		campaignId: string,
+		action: "launch" | "cancel",
+	) {
 		setBusy(true);
 		setNotice(null);
 		try {
@@ -335,14 +385,18 @@ export function CampaignPanel() {
 			 * рассылку было нечем.
 			 */
 			const response = await commQueries.campaignAction(campaignId, action);
-			const data = await readJson<{ queued?: number; alreadyQueued?: number; cancelledMessages?: number }>(response);
+			const data = await readJson<{
+				queued?: number;
+				alreadyQueued?: number;
+				cancelledMessages?: number;
+			}>(response);
 			setNotice({
 				kind: "done",
 				text:
 					action === "launch"
 						? `Поставлено в очередь: ${data.queued ?? 0}. Уже стояли: ${data.alreadyQueued ?? 0}. ` +
 							"Отправка идёт через общую очередь и подчиняется тихим часам."
-						: `Снято с очереди: ${data.cancelledMessages ?? 0}. Уже отправленное осталось в журнале.`
+						: `Снято с очереди: ${data.cancelledMessages ?? 0}. Уже отправленное осталось в журнале.`,
 			});
 			await load();
 			if (previewFor === campaignId) await openPreview(campaignId);
@@ -353,8 +407,8 @@ export function CampaignPanel() {
 					error,
 					action === "launch"
 						? "Рассылка не запущена: в очередь ничего не поставлено, пациентам ничего не ушло. Проверьте предпросмотр и попробуйте ещё раз."
-						: "Рассылка не остановлена — она продолжает отправляться. Попробуйте ещё раз."
-				)
+						: "Рассылка не остановлена — она продолжает отправляться. Попробуйте ещё раз.",
+				),
 			);
 		} finally {
 			setBusy(false);
@@ -367,8 +421,14 @@ export function CampaignPanel() {
 				<div className="panel-heading">
 					<h2>Рассылки</h2>
 				</div>
-				<p className="ops-notice ops-notice--error" role="alert">Не удалось получить рассылки: {loadError}</p>
-				<button className="secondary-button" type="button" onClick={() => void load()}>
+				<p className="ops-notice ops-notice--error" role="alert">
+					Не удалось получить рассылки: {loadError}
+				</p>
+				<button
+					className="secondary-button"
+					type="button"
+					onClick={() => void load()}
+				>
 					Повторить
 				</button>
 			</section>
@@ -397,55 +457,65 @@ export function CampaignPanel() {
 				<p className="ops-empty">Рассылок пока нет.</p>
 			) : (
 				<div className="ops-table-wrap">
-				<table className="ops-table">
-					<thead>
-						<tr>
-							<th scope="col">Название</th>
-							<th scope="col">Канал</th>
-							<th scope="col">Вид</th>
-							<th scope="col">Состояние</th>
-							<th scope="col">Запущена</th>
-							<th scope="col">Действие</th>
-						</tr>
-					</thead>
-					<tbody>
-						{campaigns.map((campaign) => (
-							<tr key={campaign.id}>
-								<td className="ops-strong" data-label="Название">
-									{campaign.title}
-								</td>
-								<td data-label="Канал">{channelLabels[campaign.channel] ?? campaign.channel}</td>
-								<td data-label="Вид">
-									{campaign.scope === "marketing" ? (
-										// Рекламная требует согласия — это должно быть заметно.
-										<span className="ops-state ops-state--warn">Рекламная</span>
-									) : (
-										<span className="ops-state ops-state--info">Сервисная</span>
-									)}
-								</td>
-								<td data-label="Состояние">
-									<span
-										className={`ops-state ops-state--${
-											campaign.status === "completed"
-												? "ok"
-												: campaign.status === "running"
-													? "info"
-													: campaign.status === "cancelled"
-														? "bad"
-														: "muted"
-										}`}
-									>
-										{campaignStatusLabels[campaign.status] ?? campaign.status}
-									</span>
-								</td>
-								<td className="ops-time" data-label="Запущена">
-									{formatMoment(campaign.launchedAt)}
-								</td>
-								<td data-label="Действие">
-									<button className="secondary-button" type="button" onClick={() => void openPreview(campaign.id)}>
-										Предпросмотр
-									</button>
-									{/*
+					<table className="ops-table">
+						<thead>
+							<tr>
+								<th scope="col">Название</th>
+								<th scope="col">Канал</th>
+								<th scope="col">Вид</th>
+								<th scope="col">Состояние</th>
+								<th scope="col">Запущена</th>
+								<th scope="col">Действие</th>
+							</tr>
+						</thead>
+						<tbody>
+							{campaigns.map((campaign) => (
+								<tr key={campaign.id}>
+									<td className="ops-strong" data-label="Название">
+										{campaign.title}
+									</td>
+									<td data-label="Канал">
+										{channelLabels[campaign.channel] ?? campaign.channel}
+									</td>
+									<td data-label="Вид">
+										{campaign.scope === "marketing" ? (
+											// Рекламная требует согласия — это должно быть заметно.
+											<span className="ops-state ops-state--warn">
+												Рекламная
+											</span>
+										) : (
+											<span className="ops-state ops-state--info">
+												Сервисная
+											</span>
+										)}
+									</td>
+									<td data-label="Состояние">
+										<span
+											className={`ops-state ops-state--${
+												campaign.status === "completed"
+													? "ok"
+													: campaign.status === "running"
+														? "info"
+														: campaign.status === "cancelled"
+															? "bad"
+															: "muted"
+											}`}
+										>
+											{campaignStatusLabels[campaign.status] ?? campaign.status}
+										</span>
+									</td>
+									<td className="ops-time" data-label="Запущена">
+										{formatMoment(campaign.launchedAt)}
+									</td>
+									<td data-label="Действие">
+										<button
+											className="secondary-button"
+											type="button"
+											onClick={() => void openPreview(campaign.id)}
+										>
+											Предпросмотр
+										</button>
+										{/*
 										У ИДУЩЕЙ рассылки кнопки «Запустить» нет вовсе.
 										Раньше она показывалась и при состоянии «Выполняется»,
 										причём единственной залитой кнопкой в строке — то есть
@@ -454,27 +524,53 @@ export function CampaignPanel() {
 										Пока рассылка идёт, осмысленное действие ровно одно —
 										остановить, и оно теперь главное.
 									*/}
-									{campaign.status === "draft" || campaign.status === "scheduled" ? (
-										<>
-											<button
-												className="primary-button"
-												type="button"
-												disabled={busy}
-												onClick={() => void campaignAction(campaign.id, "launch")}
-											>
-												Запустить
-											</button>
-											<button
-												className="secondary-button"
-												type="button"
-												disabled={busy}
-												onClick={() => void campaignAction(campaign.id, "cancel")}
-											>
-												Отменить
-											</button>
-										</>
-									) : campaign.status === "running" ? (
-										<>
+										{campaign.status === "draft" ||
+										campaign.status === "scheduled" ? (
+											<>
+												<button
+													className="primary-button"
+													type="button"
+													disabled={busy}
+													onClick={() =>
+														void campaignAction(campaign.id, "launch")
+													}
+												>
+													Запустить
+												</button>
+												<button
+													className="secondary-button"
+													type="button"
+													disabled={busy}
+													onClick={() =>
+														void campaignAction(campaign.id, "cancel")
+													}
+												>
+													Отменить
+												</button>
+											</>
+										) : campaign.status === "running" ? (
+											<>
+												<button
+													className="secondary-button"
+													type="button"
+													data-testid={`campaign-progress-btn-${campaign.id}`}
+													onClick={() => void loadProgress(campaign.id)}
+												>
+													Ход отправки
+												</button>
+												<button
+													className="primary-button"
+													type="button"
+													disabled={busy}
+													onClick={() =>
+														void campaignAction(campaign.id, "cancel")
+													}
+												>
+													Остановить
+												</button>
+											</>
+										) : campaign.status === "completed" ||
+											campaign.status === "cancelled" ? (
 											<button
 												className="secondary-button"
 												type="button"
@@ -483,30 +579,12 @@ export function CampaignPanel() {
 											>
 												Ход отправки
 											</button>
-											<button
-												className="primary-button"
-												type="button"
-												disabled={busy}
-												onClick={() => void campaignAction(campaign.id, "cancel")}
-											>
-												Остановить
-											</button>
-										</>
-									) : campaign.status === "completed" || campaign.status === "cancelled" ? (
-										<button
-											className="secondary-button"
-											type="button"
-											data-testid={`campaign-progress-btn-${campaign.id}`}
-											onClick={() => void loadProgress(campaign.id)}
-										>
-											Ход отправки
-										</button>
-									) : null}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
+										) : null}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
 				</div>
 			)}
 
@@ -535,7 +613,10 @@ export function CampaignPanel() {
 					) : null}
 					{progress ? (
 						<>
-							<ul className="ops-metrics" data-testid="campaign-progress-metrics">
+							<ul
+								className="ops-metrics"
+								data-testid="campaign-progress-metrics"
+							>
 								<li className="ops-metric ops-metric--primary">
 									<span className="ops-metric__value">{progress.total}</span>
 									<span className="ops-metric__label">всего в очереди</span>
@@ -548,34 +629,43 @@ export function CampaignPanel() {
 										["sending", ""],
 										["failed", "ops-metric--danger"],
 										["cancelled", ""],
-										["suppressed", ""]
+										["suppressed", ""],
 									] as const
 								).map(([status, cls]) => {
 									const count = progress.byStatus[status] ?? 0;
 									if (count <= 0) return null;
 									return (
-										<li className={`ops-metric ${cls}`.trim()} key={status} data-testid={`campaign-progress-${status}`}>
+										<li
+											className={`ops-metric ${cls}`.trim()}
+											key={status}
+											data-testid={`campaign-progress-${status}`}
+										>
 											<span className="ops-metric__value">{count}</span>
-											<span className="ops-metric__label">{outboxStatusLabels[status] ?? status}</span>
+											<span className="ops-metric__label">
+												{outboxStatusLabels[status] ?? status}
+											</span>
 										</li>
 									);
 								})}
 							</ul>
 							{progress.total === 0 ? (
 								<p className="ops-hint">
-									Сообщений этой рассылки в очереди пока нет — либо она ещё не запускалась, либо все строки уже
-									сняты.
+									Сообщений этой рассылки в очереди пока нет — либо она ещё не
+									запускалась, либо все строки уже сняты.
 								</p>
 							) : null}
 							{(progress.byStatus.failed ?? 0) > 0 ? (
 								<p className="ops-notice ops-notice--error" role="alert">
-									Не удалось отправить: {progress.byStatus.failed}. Откройте журнал доставки и повторите
-									отказные по одной, либо проверьте шлюз.
+									Не удалось отправить: {progress.byStatus.failed}. Откройте
+									журнал доставки и повторите отказные по одной, либо проверьте
+									шлюз.
 								</p>
 							) : null}
-							{campaigns.find((c) => c.id === progressFor)?.status === "running" ? (
+							{campaigns.find((c) => c.id === progressFor)?.status ===
+							"running" ? (
 								<p className="ops-hint" role="status" aria-live="polite">
-									Рассылка выполняется — цифры обновляются сами каждые несколько секунд.
+									Рассылка выполняется — цифры обновляются сами каждые несколько
+									секунд.
 								</p>
 							) : null}
 						</>
@@ -614,8 +704,9 @@ export function CampaignPanel() {
 						   вечная загрузка. */
 						<>
 							<p className="ops-notice ops-notice--error" role="alert">
-								Не удалось посчитать получателей: {previewError}. Пока не посчитано, запускать рассылку не стоит — неизвестно,
-								сколько человек её получит и сколько это будет стоить.
+								Не удалось посчитать получателей: {previewError}. Пока не
+								посчитано, запускать рассылку не стоит — неизвестно, сколько
+								человек её получит и сколько это будет стоить.
 							</p>
 							<button
 								className="secondary-button"
@@ -640,21 +731,35 @@ export function CampaignPanel() {
 					) : (
 						<>
 							<p className="ops-hint">
-								Условия: {preview.criteria.length > 0 ? preview.criteria.join("; ") : "без ограничений"}.
+								Условия:{" "}
+								{preview.criteria.length > 0
+									? preview.criteria.join("; ")
+									: "без ограничений"}
+								.
 							</p>
 							<ul className="ops-metrics">
 								<li className="ops-metric">
-									<span className="ops-metric__value">{preview.audience.matched}</span>
+									<span className="ops-metric__value">
+										{preview.audience.matched}
+									</span>
 									<span className="ops-metric__label">подошло по условиям</span>
 								</li>
-								<li className={`ops-metric ${preview.audience.deliverable > 0 ? "ops-metric--primary" : "ops-metric--danger"}`}>
-									<span className="ops-metric__value">{preview.audience.deliverable}</span>
+								<li
+									className={`ops-metric ${preview.audience.deliverable > 0 ? "ops-metric--primary" : "ops-metric--danger"}`}
+								>
+									<span className="ops-metric__value">
+										{preview.audience.deliverable}
+									</span>
 									<span className="ops-metric__label">получат сообщение</span>
 								</li>
 								<li className="ops-metric">
-									<span className="ops-metric__value">{preview.cost.billableUnits}</span>
+									<span className="ops-metric__value">
+										{preview.cost.billableUnits}
+									</span>
 									<span className="ops-metric__label">
-										{preview.cost.segmentsPerMessage === null ? "сообщений к отправке" : "сегментов к оплате"}
+										{preview.cost.segmentsPerMessage === null
+											? "сообщений к отправке"
+											: "сегментов к оплате"}
 									</span>
 								</li>
 							</ul>
@@ -664,10 +769,16 @@ export function CampaignPanel() {
 									<li>без согласия: {preview.audience.excluded.no_consent}</li>
 								) : null}
 								{preview.audience.excluded.no_contact > 0 ? (
-									<li>без пригодного контакта: {preview.audience.excluded.no_contact}</li>
+									<li>
+										без пригодного контакта:{" "}
+										{preview.audience.excluded.no_contact}
+									</li>
 								) : null}
 								{preview.audience.excluded.excluded_by_criteria > 0 ? (
-									<li>не подошли по условиям: {preview.audience.excluded.excluded_by_criteria}</li>
+									<li>
+										не подошли по условиям:{" "}
+										{preview.audience.excluded.excluded_by_criteria}
+									</li>
 								) : null}
 							</ul>
 							<p className="ops-hint">{preview.cost.note}</p>
@@ -689,12 +800,19 @@ export function CampaignPanel() {
 							) : null}
 							{preview.audience.candidates.length > 0 ? (
 								<p className="ops-hint">
-									Например: {preview.audience.candidates.map((candidate) => candidate.fullName).join(", ")}
+									Например:{" "}
+									{preview.audience.candidates
+										.map((candidate) => candidate.fullName)
+										.join(", ")}
 								</p>
 							) : null}
 						</>
 					)}
-					<button className="secondary-button" type="button" onClick={() => setPreviewFor(null)}>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={() => setPreviewFor(null)}
+					>
 						Закрыть предпросмотр
 					</button>
 				</div>
@@ -702,55 +820,62 @@ export function CampaignPanel() {
 
 			<h3 className="ops-section-title">Новая рассылка</h3>
 			{templates.length === 0 ? (
-				<p className="ops-empty">Нет активных шаблонов — сначала создайте шаблон для нужного канала.</p>
+				<p className="ops-empty">
+					Нет активных шаблонов — сначала создайте шаблон для нужного канала.
+				</p>
 			) : (
 				<div className="ops-toolbar">
 					<span className="ops-field ops-field--grow">
-					<label htmlFor="campaign-title">Название</label>
-					<input
-						id="campaign-title"
-						type="text"
-						value={title}
-						onChange={(event) => setTitle(event.target.value)}
-						placeholder="Приглашение на осмотр"
-					/>
-
+						<label htmlFor="campaign-title">Название</label>
+						<input
+							id="campaign-title"
+							type="text"
+							value={title}
+							onChange={(event) => setTitle(event.target.value)}
+							placeholder="Приглашение на осмотр"
+						/>
 					</span>
 					<span className="ops-field">
-					<label htmlFor="campaign-template">Шаблон</label>
-					<select id="campaign-template" value={templateId} onChange={(event) => setTemplateId(event.target.value)}>
-						<option value="">Выберите шаблон</option>
-						{templates.map((template) => (
-							<option key={template.id} value={template.id}>
-								{template.title} · {channelLabels[template.channel] ?? template.channel}
+						<label htmlFor="campaign-template">Шаблон</label>
+						<select
+							id="campaign-template"
+							value={templateId}
+							onChange={(event) => setTemplateId(event.target.value)}
+						>
+							<option value="">Выберите шаблон</option>
+							{templates.map((template) => (
+								<option key={template.id} value={template.id}>
+									{template.title} ·{" "}
+									{channelLabels[template.channel] ?? template.channel}
+								</option>
+							))}
+						</select>
+					</span>
+					<span className="ops-field">
+						<label htmlFor="campaign-scope">Вид</label>
+						<select
+							id="campaign-scope"
+							value={scope}
+							onChange={(event) =>
+								setScope(event.target.value as "service" | "marketing")
+							}
+						>
+							<option value="marketing">
+								Рекламная — нужно согласие пациента
 							</option>
-						))}
-					</select>
-
+							<option value="service">Сервисная — в рамках договора</option>
+						</select>
 					</span>
 					<span className="ops-field">
-					<label htmlFor="campaign-scope">Вид</label>
-					<select
-						id="campaign-scope"
-						value={scope}
-						onChange={(event) => setScope(event.target.value as "service" | "marketing")}
-					>
-						<option value="marketing">Рекламная — нужно согласие пациента</option>
-						<option value="service">Сервисная — в рамках договора</option>
-					</select>
-
-					</span>
-					<span className="ops-field">
-					<label htmlFor="campaign-months">Не был, месяцев</label>
-					<input
-						id="campaign-months"
-						type="number"
-						min={0}
-						max={120}
-						value={monthsSinceVisit}
-						onChange={(event) => setMonthsSinceVisit(event.target.value)}
-					/>
-
+						<label htmlFor="campaign-months">Не был, месяцев</label>
+						<input
+							id="campaign-months"
+							type="number"
+							min={0}
+							max={120}
+							value={monthsSinceVisit}
+							onChange={(event) => setMonthsSinceVisit(event.target.value)}
+						/>
 					</span>
 					<label className="ops-checkbox" htmlFor="campaign-exclude-booked">
 						<input
@@ -774,7 +899,9 @@ export function CampaignPanel() {
 					{variables.length > 0 ? (
 						<p className="ops-hint ops-variable-catalog__title">
 							<strong>Доступные переменные шаблонов:</strong>{" "}
-							{variables.map((variable) => `{${variable.key}} (${variable.label})`).join(", ")}
+							{variables
+								.map((variable) => `{${variable.key}} (${variable.label})`)
+								.join(", ")}
 						</p>
 					) : null}
 				</div>

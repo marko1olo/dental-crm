@@ -243,8 +243,13 @@ const stringValidationAccusative: Record<string, string> = {
 	emoji: "значок",
 };
 
-function readWord(dictionary: Record<string, string>, key: unknown): string | null {
-	return typeof key === "string" && key in dictionary ? (dictionary[key] as string) : null;
+function readWord(
+	dictionary: Record<string, string>,
+	key: unknown,
+): string | null {
+	return typeof key === "string" && key in dictionary
+		? (dictionary[key] as string)
+		: null;
 }
 
 function readNumberWord(value: unknown): string | null {
@@ -272,7 +277,9 @@ function fieldLabelFrom(
 	 * ключуется именно так (`visualCardUrls.review` в настройках телеграма), —
 	 * затем отрезки с конца.
 	 */
-	const stringParts = issue.path.filter((part): part is string => typeof part === "string");
+	const stringParts = issue.path.filter(
+		(part): part is string => typeof part === "string",
+	);
 	const candidates = [
 		issue.path.join("."),
 		stringParts.join("."),
@@ -487,7 +494,9 @@ export function schemaIssueWords(
 							 * чем 2 знаков».
 							 */
 							label,
-							cause: bound ? `${named} короче ${bound} знаков` : `${named} слишком короткое`,
+							cause: bound
+								? `${named} короче ${bound} знаков`
+								: `${named} слишком короткое`,
 							action: `допишите ${namedAccusative}`,
 						};
 			}
@@ -537,7 +546,9 @@ export function schemaIssueWords(
 				return {
 					kind: "too_long",
 					label,
-					cause: bound ? `${named} длиннее ${bound} знаков` : `${named} слишком длинное`,
+					cause: bound
+						? `${named} длиннее ${bound} знаков`
+						: `${named} слишком длинное`,
 					action: `сократите ${namedAccusative}`,
 				};
 			}
@@ -662,7 +673,10 @@ function quotedLabels(labels: readonly string[]): string {
  * стоит информации, — это экономия за счёт человека.
  */
 const pluralMerge: Partial<
-	Record<SchemaIssueKind, (labels: readonly string[]) => { cause: string; action: string }>
+	Record<
+		SchemaIssueKind,
+		(labels: readonly string[]) => { cause: string; action: string }
+	>
 > = {
 	empty: (labels) => ({
 		cause: `не заполнены поля ${quotedLabels(labels)}`,
@@ -725,7 +739,9 @@ export type SchemaRefusalOptions = {
 export function schemaRefusalMessage(options: SchemaRefusalOptions): string {
 	const labels = options.fieldLabels ?? {};
 	const limit = options.namedLimit ?? 3;
-	const named = options.issues.slice(0, limit).map((issue) => schemaIssueWords(issue, labels));
+	const named = options.issues
+		.slice(0, limit)
+		.map((issue) => schemaIssueWords(issue, labels));
 	if (named.length === 0) return options.fallbackMessage;
 
 	/*
@@ -733,7 +749,8 @@ export function schemaRefusalMessage(options: SchemaRefusalOptions): string {
 	 * сохраняется: первым человек должен прочитать про то поле, которое разборщик
 	 * назвал первым.
 	 */
-	const blocks: Array<{ kind: SchemaIssueKind; words: SchemaRefusalWords[] }> = [];
+	const blocks: Array<{ kind: SchemaIssueKind; words: SchemaRefusalWords[] }> =
+		[];
 	for (const words of named) {
 		const existing = blocks.find((block) => block.kind === words.kind);
 		if (existing) existing.words.push(words);
@@ -745,7 +762,11 @@ export function schemaRefusalMessage(options: SchemaRefusalOptions): string {
 	for (const block of blocks) {
 		const merge = pluralMerge[block.kind];
 		const mergeableLabels = block.words.map((words) => words.label);
-		if (merge && block.words.length > 1 && mergeableLabels.every((label) => label !== null)) {
+		if (
+			merge &&
+			block.words.length > 1 &&
+			mergeableLabels.every((label) => label !== null)
+		) {
 			const merged = merge(mergeableLabels as string[]);
 			causes.push(merged.cause);
 			actions.push(merged.action);

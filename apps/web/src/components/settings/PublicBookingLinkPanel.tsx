@@ -13,9 +13,9 @@
  * буфер, открывает в новой вкладке. Без orgId — честный отказ, не битая ссылка.
  */
 
+import { CalendarDays, Check, Copy, ExternalLink } from "lucide-react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
-import { CalendarDays, Check, Copy, ExternalLink } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { buildPublicBookingPortalUrl } from "../../lib/publicPortalRoute";
 import { showToast } from "../GlobalToast";
@@ -23,7 +23,9 @@ import { showToast } from "../GlobalToast";
 export const PublicBookingLinkPanel: React.FC = () => {
 	const { dashboard } = useAppLogicContext() as {
 		dashboard?: {
-			clinicSettings?: { profile?: { organizationId?: string | null } | null } | null;
+			clinicSettings?: {
+				profile?: { organizationId?: string | null } | null;
+			} | null;
 		} | null;
 	};
 
@@ -49,7 +51,11 @@ export const PublicBookingLinkPanel: React.FC = () => {
 		try {
 			await navigator.clipboard.writeText(bookingUrl);
 			setCopied(true);
-			showToast("Ссылка онлайн-записи скопирована в буфер обмена", "success", 6000);
+			showToast(
+				"Ссылка онлайн-записи скопирована в буфер обмена",
+				"success",
+				6000,
+			);
 			window.setTimeout(() => setCopied(false), 2500);
 		} catch (e) {
 			console.error("[public-booking-link] clipboard failed", e);
@@ -80,8 +86,8 @@ export const PublicBookingLinkPanel: React.FC = () => {
 					<h3>Онлайн-запись для пациентов</h3>
 					<p>
 						Публичная страница: пациент выбирает врача и слот без входа в
-						кабинет. Разместите ссылку на сайте клиники, в соцсетях или на
-						QR у стойки.
+						кабинет. Разместите ссылку на сайте клиники, в соцсетях или на QR у
+						стойки.
 					</p>
 				</div>
 			</div>
@@ -98,7 +104,10 @@ export const PublicBookingLinkPanel: React.FC = () => {
 					</p>
 				) : (
 					<>
-						<label className="profile-form-group full-width" htmlFor="public-booking-link-url">
+						<label
+							className="profile-form-group full-width"
+							htmlFor="public-booking-link-url"
+						>
 							<span className="profile-form-label">Ссылка для сайта и QR</span>
 							<input
 								id="public-booking-link-url"
@@ -111,7 +120,9 @@ export const PublicBookingLinkPanel: React.FC = () => {
 								aria-readonly="true"
 							/>
 							<span className="profile-form-hint">
-								{"Формат: #/portal/booking/<id клиники> — тот же путь, что читает виджет записи и API /api/public/booking."}
+								{
+									"Формат: #/portal/booking/<id клиники> — тот же путь, что читает виджет записи и API /api/public/booking."
+								}
 							</span>
 						</label>
 

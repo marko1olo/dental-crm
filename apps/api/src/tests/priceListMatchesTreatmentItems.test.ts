@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { sql } from "drizzle-orm";
 import { describe, test } from "node:test";
+import { sql } from "drizzle-orm";
 
 import { db } from "../db/client.js";
 
@@ -60,8 +60,14 @@ describe("прайс и позиции лечения", () => {
 			rows = result.rows as Mismatch[];
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			if (/ECONNREFUSED|ENOTFOUND|password authentication|does not exist|Connection terminated/i.test(message)) {
-				return context.skip("база недоступна — проверка НЕ выполнена, это пропуск, а не успех");
+			if (
+				/ECONNREFUSED|ENOTFOUND|password authentication|does not exist|Connection terminated/i.test(
+					message,
+				)
+			) {
+				return context.skip(
+					"база недоступна — проверка НЕ выполнена, это пропуск, а не успех",
+				);
 			}
 			throw error;
 		}
@@ -92,8 +98,14 @@ describe("прайс и позиции лечения", () => {
 			linked = result.rows[0]?.n ?? 0;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			if (/ECONNREFUSED|ENOTFOUND|password authentication|does not exist|Connection terminated/i.test(message)) {
-				return context.skip("база недоступна — проверка НЕ выполнена, это пропуск, а не успех");
+			if (
+				/ECONNREFUSED|ENOTFOUND|password authentication|does not exist|Connection terminated/i.test(
+					message,
+				)
+			) {
+				return context.skip(
+					"база недоступна — проверка НЕ выполнена, это пропуск, а не успех",
+				);
 			}
 			throw error;
 		}

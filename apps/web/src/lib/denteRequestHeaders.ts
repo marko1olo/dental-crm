@@ -29,7 +29,9 @@ export function denteAdminSecretRequestHeaders(
 	adminSecret?: string,
 ): Record<string, string> {
 	const secret = adminSecret?.trim();
-	const headers = secret ? { ...extra, [denteAdminSecretHeaderName]: secret } : { ...extra };
+	const headers = secret
+		? { ...extra, [denteAdminSecretHeaderName]: secret }
+		: { ...extra };
 
 	const clinicToken = readDenteClinicToken();
 	const staffToken = readDenteStaffToken();

@@ -17,9 +17,9 @@
 
 import type React from "react";
 import { useCallback, useState } from "react";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { showToast } from "./components/GlobalToast";
 import { operatorReadableErrorDetail } from "./AppHelpers";
+import { showToast } from "./components/GlobalToast";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast, requestFailureCause } from "./lib/panelStateText";
 
 const SPECIALTIES = [
@@ -43,14 +43,16 @@ export type VisitNoteDraftResult = {
 	objectiveStatus: string | null;
 	diagnosis: string | null;
 	treatmentPlan: string | null;
-	quality?: {
-		level?: string;
-		confidence?: number;
-		specialty?: string;
-		detectedToothCodes?: string[];
-		signals?: string[];
-		missing?: string[];
-	} | undefined;
+	quality?:
+		| {
+				level?: string;
+				confidence?: number;
+				specialty?: string;
+				detectedToothCodes?: string[];
+				signals?: string[];
+				missing?: string[];
+		  }
+		| undefined;
 	warnings?: string[] | undefined;
 };
 
@@ -145,7 +147,10 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 						? "Черновик не собран: проверьте текст диктовки и специальность."
 						: res.status === 404
 							? "Пациент не найден в клинике — обновите карточку и повторите."
-							: actionFailureToast("Черновик заметки приёма не собран", res.status));
+							: actionFailureToast(
+									"Черновик заметки приёма не собран",
+									res.status,
+								));
 				setError(msg);
 				showToast(msg, "error", 12000);
 				setDraft(null);
@@ -159,7 +164,9 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 				treatmentPlan: fieldText(json?.treatmentPlan) || null,
 			};
 			if (json?.quality && typeof json.quality === "object") {
-				next.quality = json.quality as NonNullable<VisitNoteDraftResult["quality"]>;
+				next.quality = json.quality as NonNullable<
+					VisitNoteDraftResult["quality"]
+				>;
 			}
 			if (Array.isArray(json?.warnings)) {
 				next.warnings = (json!.warnings as unknown[]).filter(
@@ -167,7 +174,11 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 				);
 			}
 			setDraft(next);
-			showToast("Черновик заметки приёма собран. Проверьте поля перед вставкой.", "success", 8000);
+			showToast(
+				"Черновик заметки приёма собран. Проверьте поля перед вставкой.",
+				"success",
+				8000,
+			);
 		} catch (e) {
 			console.error("[visit-note-draft] request failed", e);
 			const msg = `Черновик не собран: ${requestFailureCause(null)}. Текст диктовки остался на экране.`;
@@ -182,7 +193,11 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 		if (!draft) return;
 		if (onApply) {
 			onApply(draft);
-			showToast("Поля заметки приёма заполнены из ИИ-черновика. Проверьте перед сохранением.", "success", 9000);
+			showToast(
+				"Поля заметки приёма заполнены из ИИ-черновика. Проверьте перед сохранением.",
+				"success",
+				9000,
+			);
 			return;
 		}
 		// Fallback: copy combined text
@@ -195,10 +210,18 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 		]
 			.filter(Boolean)
 			.join("\n");
-		if (block && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+		if (
+			block &&
+			typeof navigator !== "undefined" &&
+			navigator.clipboard?.writeText
+		) {
 			void navigator.clipboard.writeText(block).then(
 				() => showToast("Черновик скопирован в буфер обмена.", "success"),
-				() => showToast("Не удалось скопировать — выделите текст вручную.", "error"),
+				() =>
+					showToast(
+						"Не удалось скопировать — выделите текст вручную.",
+						"error",
+					),
 			);
 		}
 	}, [draft, onApply]);
@@ -224,8 +247,8 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 						ИИ · Черновик заметки из диктовки
 					</h3>
 					<p className="text-xs text-zinc-500 mt-0.5">
-						Разложит жалобу, анамнез, статус, диагноз и план. Врач всегда проверяет перед
-						сохранением.
+						Разложит жалобу, анамнез, статус, диагноз и план. Врач всегда
+						проверяет перед сохранением.
 					</p>
 				</div>
 				{qualityLabel && (
@@ -313,14 +336,15 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 							</div>
 						</div>
 					))}
-					{draft.quality?.detectedToothCodes && draft.quality.detectedToothCodes.length > 0 && (
-						<p className="text-xs text-zinc-400">
-							Зубы:{" "}
-							<span className="font-mono text-violet-200">
-								{draft.quality.detectedToothCodes.join(", ")}
-							</span>
-						</p>
-					)}
+					{draft.quality?.detectedToothCodes &&
+						draft.quality.detectedToothCodes.length > 0 && (
+							<p className="text-xs text-zinc-400">
+								Зубы:{" "}
+								<span className="font-mono text-violet-200">
+									{draft.quality.detectedToothCodes.join(", ")}
+								</span>
+							</p>
+						)}
 					{draft.warnings && draft.warnings.length > 0 && (
 						<ul className="text-xs text-amber-200/90 list-disc pl-4 space-y-0.5">
 							{draft.warnings.map((w) => (

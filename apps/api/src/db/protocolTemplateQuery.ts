@@ -29,32 +29,32 @@
  * отличие от услуги прайса, на которую ссылаются позиции лечения и счёта.
  */
 
+import { type ProtocolTemplate, protocolTemplateSchema } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { protocolTemplateSchema, type ProtocolTemplate } from "@dental/shared";
-import { db } from "./client.js";
-import * as schema from "./schema.js";
 /*
  * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
  * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
  */
 import { schemaIssueWords } from "../utils/schemaRefusalWords.js";
+import { db } from "./client.js";
+import * as schema from "./schema.js";
 
 /** Строка шаблона ровно в той форме, в которой её отдаёт база. */
 export type ProtocolTemplateRow = typeof schema.protocolTemplates.$inferSelect;
 
 /** Поля шаблона, которые задаёт администратор клиники. */
 export interface ProtocolTemplateInput {
-  readonly specialty: ProtocolTemplate["specialty"];
-  readonly title: string;
-  readonly visitReason: string;
-  readonly defaultDurationMinutes: number;
-  readonly complaintPrompt: string;
-  readonly objectiveTemplate: string;
-  readonly treatmentPlanTemplate: string;
-  readonly diagnosisHints: readonly string[];
-  readonly requiredDocuments: readonly ProtocolTemplate["requiredDocuments"][number][];
-  readonly suggestedImaging: readonly ProtocolTemplate["suggestedImaging"][number][];
-  readonly safetyWarnings: readonly string[];
+	readonly specialty: ProtocolTemplate["specialty"];
+	readonly title: string;
+	readonly visitReason: string;
+	readonly defaultDurationMinutes: number;
+	readonly complaintPrompt: string;
+	readonly objectiveTemplate: string;
+	readonly treatmentPlanTemplate: string;
+	readonly diagnosisHints: readonly string[];
+	readonly requiredDocuments: readonly ProtocolTemplate["requiredDocuments"][number][];
+	readonly suggestedImaging: readonly ProtocolTemplate["suggestedImaging"][number][];
+	readonly safetyWarnings: readonly string[];
 }
 
 /**
@@ -63,11 +63,13 @@ export interface ProtocolTemplateInput {
  * undefined, а разбор zod-схемы с optional() возвращает именно такой объект.
  */
 export type ProtocolTemplatePatch = {
-  readonly [Field in keyof ProtocolTemplateInput]?: ProtocolTemplateInput[Field] | undefined;
+	readonly [Field in keyof ProtocolTemplateInput]?:
+		| ProtocolTemplateInput[Field]
+		| undefined;
 };
 
 function useInMemory() {
-  return process.env.DENTAL_STATE_PERSISTENCE === "off";
+	return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
 
 /**
@@ -76,21 +78,21 @@ function useInMemory() {
  * администратора, и посылать его искать опечатку было бы ложью.
  */
 export class ProtocolTemplateStorageDisabledError extends Error {
-  constructor() {
-    super(
-      "Шаблон не сохранён: хранение состояния отключено (DENTAL_STATE_PERSISTENCE=off), " +
-        "поэтому шаблоны существуют только в памяти процесса и записать их некуда."
-    );
-    this.name = "ProtocolTemplateStorageDisabledError";
-  }
+	constructor() {
+		super(
+			"Шаблон не сохранён: хранение состояния отключено (DENTAL_STATE_PERSISTENCE=off), " +
+				"поэтому шаблоны существуют только в памяти процесса и записать их некуда.",
+		);
+		this.name = "ProtocolTemplateStorageDisabledError";
+	}
 }
 
 /** Шаблон не найден в этой клинике. Текст разбирает маршрут. */
 export class ProtocolTemplateNotFoundError extends Error {
-  constructor() {
-    super("Шаблон не найден.");
-    this.name = "ProtocolTemplateNotFoundError";
-  }
+	constructor() {
+		super("Шаблон не найден.");
+		this.name = "ProtocolTemplateNotFoundError";
+	}
 }
 
 /**
@@ -185,48 +187,48 @@ const protocolTemplateFieldLabels: Record<string, string> = {
  * поступает проекция прайса (db/pricelistQuery.ts).
  */
 function projectRow(row: ProtocolTemplateRow): ProtocolTemplate {
-  const parsed = protocolTemplateSchema.safeParse({
-    id: row.id,
-    organizationId: row.organizationId,
-    specialty: row.specialty,
-    title: row.title,
-    visitReason: row.visitReason,
-    defaultDurationMinutes: row.defaultDurationMinutes,
-    complaintPrompt: row.complaintPrompt,
-    objectiveTemplate: row.objectiveTemplate,
-    diagnosisHints: row.diagnosisHints ?? [],
-    treatmentPlanTemplate: row.treatmentPlanTemplate,
-    requiredDocuments: row.requiredDocuments ?? [],
-    suggestedImaging: row.suggestedImaging ?? [],
-    safetyWarnings: row.safetyWarnings ?? [],
-    updatedAt: templateUpdatedAt(row)
-  });
-  if (parsed.success) return parsed.data;
-  /*
-   * ПРИЧИНА НАЗЫВАЕТСЯ ПО-РУССКИ, включая имя поля.
-   *
-   * БЫЛО: `поле «${field}»: ${issue.message}` — латинский ключ контракта плюс
-   * слово разборщика, например «поле «requiredDocuments»: Required». Эта ошибка
-   * доходит до администратора через общий разборщик ответов сервера, а он гасит
-   * фразу с латинским словом из шести и более знаков ЦЕЛИКОМ
-   * (`apps/web/src/AppHelpers.tsx`, `technicalWorkflowFailurePattern` под флагом
-   * `/i`; `requiredDocuments` — 17 знаков). Администратор жал «Сохранить»,
-   * получал отказ без причины и не знал, какое из десяти полей формы поправить —
-   * то есть повторялся ровно тот дефект, из-за которого этот файл и появился.
-   *
-   * Перевод машинных слов берётся из общего дома `utils/schemaRefusalWords.ts`.
-   */
-  const issue = parsed.error.issues[0];
-  if (!issue) {
-    throw new Error(
-      "Шаблон сохранён в базу, но не проходит контракт протокола: строка не соответствует контракту шаблона. " +
-        "Откройте шаблон в настройках протоколов, заполните поля заново и сохраните его."
-    );
-  }
-  const words = schemaIssueWords(issue, protocolTemplateFieldLabels);
-  throw new Error(
-    `Шаблон сохранён в базу, но не проходит контракт протокола: ${words.cause} — ${words.action} в настройках протоколов.`
-  );
+	const parsed = protocolTemplateSchema.safeParse({
+		id: row.id,
+		organizationId: row.organizationId,
+		specialty: row.specialty,
+		title: row.title,
+		visitReason: row.visitReason,
+		defaultDurationMinutes: row.defaultDurationMinutes,
+		complaintPrompt: row.complaintPrompt,
+		objectiveTemplate: row.objectiveTemplate,
+		diagnosisHints: row.diagnosisHints ?? [],
+		treatmentPlanTemplate: row.treatmentPlanTemplate,
+		requiredDocuments: row.requiredDocuments ?? [],
+		suggestedImaging: row.suggestedImaging ?? [],
+		safetyWarnings: row.safetyWarnings ?? [],
+		updatedAt: templateUpdatedAt(row),
+	});
+	if (parsed.success) return parsed.data;
+	/*
+	 * ПРИЧИНА НАЗЫВАЕТСЯ ПО-РУССКИ, включая имя поля.
+	 *
+	 * БЫЛО: `поле «${field}»: ${issue.message}` — латинский ключ контракта плюс
+	 * слово разборщика, например «поле «requiredDocuments»: Required». Эта ошибка
+	 * доходит до администратора через общий разборщик ответов сервера, а он гасит
+	 * фразу с латинским словом из шести и более знаков ЦЕЛИКОМ
+	 * (`apps/web/src/AppHelpers.tsx`, `technicalWorkflowFailurePattern` под флагом
+	 * `/i`; `requiredDocuments` — 17 знаков). Администратор жал «Сохранить»,
+	 * получал отказ без причины и не знал, какое из десяти полей формы поправить —
+	 * то есть повторялся ровно тот дефект, из-за которого этот файл и появился.
+	 *
+	 * Перевод машинных слов берётся из общего дома `utils/schemaRefusalWords.ts`.
+	 */
+	const issue = parsed.error.issues[0];
+	if (!issue) {
+		throw new Error(
+			"Шаблон сохранён в базу, но не проходит контракт протокола: строка не соответствует контракту шаблона. " +
+				"Откройте шаблон в настройках протоколов, заполните поля заново и сохраните его.",
+		);
+	}
+	const words = schemaIssueWords(issue, protocolTemplateFieldLabels);
+	throw new Error(
+		`Шаблон сохранён в базу, но не проходит контракт протокола: ${words.cause} — ${words.action} в настройках протоколов.`,
+	);
 }
 
 /**
@@ -235,97 +237,103 @@ function projectRow(row: ProtocolTemplateRow): ProtocolTemplate {
  * правился бы протокол чужой клиники.
  */
 async function selectOwnedRow(
-  organizationId: string,
-  templateId: string
+	organizationId: string,
+	templateId: string,
 ): Promise<ProtocolTemplateRow | null> {
-  const [row] = await db
-    .select()
-    .from(schema.protocolTemplates)
-    .where(
-      and(
-        eq(schema.protocolTemplates.id, templateId),
-        eq(schema.protocolTemplates.organizationId, organizationId)
-      )
-    )
-    .limit(1);
-  return row ?? null;
+	const [row] = await db
+		.select()
+		.from(schema.protocolTemplates)
+		.where(
+			and(
+				eq(schema.protocolTemplates.id, templateId),
+				eq(schema.protocolTemplates.organizationId, organizationId),
+			),
+		)
+		.limit(1);
+	return row ?? null;
 }
 
 /** Новый шаблон протокола. */
 export async function createProtocolTemplateInDb(
-  organizationId: string,
-  input: ProtocolTemplateInput
+	organizationId: string,
+	input: ProtocolTemplateInput,
 ): Promise<ProtocolTemplate> {
-  if (useInMemory()) throw new ProtocolTemplateStorageDisabledError();
-  const [row] = await db
-    .insert(schema.protocolTemplates)
-    .values({
-      organizationId,
-      specialty: input.specialty,
-      title: input.title,
-      visitReason: input.visitReason,
-      defaultDurationMinutes: input.defaultDurationMinutes,
-      complaintPrompt: input.complaintPrompt,
-      objectiveTemplate: input.objectiveTemplate,
-      treatmentPlanTemplate: input.treatmentPlanTemplate,
-      diagnosisHints: [...input.diagnosisHints],
-      requiredDocuments: [...input.requiredDocuments],
-      suggestedImaging: [...input.suggestedImaging],
-      safetyWarnings: [...input.safetyWarnings],
-      updatedAt: new Date()
-    })
-    .returning();
-  if (!row) throw new Error("Шаблон не создан: база не вернула ни одной строки.");
-  return projectRow(row);
+	if (useInMemory()) throw new ProtocolTemplateStorageDisabledError();
+	const [row] = await db
+		.insert(schema.protocolTemplates)
+		.values({
+			organizationId,
+			specialty: input.specialty,
+			title: input.title,
+			visitReason: input.visitReason,
+			defaultDurationMinutes: input.defaultDurationMinutes,
+			complaintPrompt: input.complaintPrompt,
+			objectiveTemplate: input.objectiveTemplate,
+			treatmentPlanTemplate: input.treatmentPlanTemplate,
+			diagnosisHints: [...input.diagnosisHints],
+			requiredDocuments: [...input.requiredDocuments],
+			suggestedImaging: [...input.suggestedImaging],
+			safetyWarnings: [...input.safetyWarnings],
+			updatedAt: new Date(),
+		})
+		.returning();
+	if (!row)
+		throw new Error("Шаблон не создан: база не вернула ни одной строки.");
+	return projectRow(row);
 }
 
 /** Правка шаблона. Меняются только переданные поля. */
 export async function updateProtocolTemplateInDb(
-  organizationId: string,
-  templateId: string,
-  patch: ProtocolTemplatePatch
+	organizationId: string,
+	templateId: string,
+	patch: ProtocolTemplatePatch,
 ): Promise<ProtocolTemplate> {
-  if (useInMemory()) throw new ProtocolTemplateStorageDisabledError();
-  // Существование проверяется ДО обновления: drizzle на несовпавшем условии
-  // вернёт пустой массив, и «не найдено» стало бы неотличимо от «не изменилось».
-  const existing = await selectOwnedRow(organizationId, templateId);
-  if (!existing) throw new ProtocolTemplateNotFoundError();
+	if (useInMemory()) throw new ProtocolTemplateStorageDisabledError();
+	// Существование проверяется ДО обновления: drizzle на несовпавшем условии
+	// вернёт пустой массив, и «не найдено» стало бы неотличимо от «не изменилось».
+	const existing = await selectOwnedRow(organizationId, templateId);
+	if (!existing) throw new ProtocolTemplateNotFoundError();
 
-  const updates: Partial<typeof schema.protocolTemplates.$inferInsert> = {
-    // Дата правки обновляется всегда: шаблон меняет заполнение карты приёма, и
-    // «когда это стало таким» — часть ответа на вопрос, почему приём выглядит так.
-    updatedAt: new Date()
-  };
-  if (patch.specialty !== undefined) updates.specialty = patch.specialty;
-  if (patch.title !== undefined) updates.title = patch.title;
-  if (patch.visitReason !== undefined) updates.visitReason = patch.visitReason;
-  if (patch.defaultDurationMinutes !== undefined) {
-    updates.defaultDurationMinutes = patch.defaultDurationMinutes;
-  }
-  if (patch.complaintPrompt !== undefined) updates.complaintPrompt = patch.complaintPrompt;
-  if (patch.objectiveTemplate !== undefined) updates.objectiveTemplate = patch.objectiveTemplate;
-  if (patch.treatmentPlanTemplate !== undefined) {
-    updates.treatmentPlanTemplate = patch.treatmentPlanTemplate;
-  }
-  if (patch.diagnosisHints !== undefined) updates.diagnosisHints = [...patch.diagnosisHints];
-  if (patch.requiredDocuments !== undefined) {
-    updates.requiredDocuments = [...patch.requiredDocuments];
-  }
-  if (patch.suggestedImaging !== undefined) updates.suggestedImaging = [...patch.suggestedImaging];
-  if (patch.safetyWarnings !== undefined) updates.safetyWarnings = [...patch.safetyWarnings];
+	const updates: Partial<typeof schema.protocolTemplates.$inferInsert> = {
+		// Дата правки обновляется всегда: шаблон меняет заполнение карты приёма, и
+		// «когда это стало таким» — часть ответа на вопрос, почему приём выглядит так.
+		updatedAt: new Date(),
+	};
+	if (patch.specialty !== undefined) updates.specialty = patch.specialty;
+	if (patch.title !== undefined) updates.title = patch.title;
+	if (patch.visitReason !== undefined) updates.visitReason = patch.visitReason;
+	if (patch.defaultDurationMinutes !== undefined) {
+		updates.defaultDurationMinutes = patch.defaultDurationMinutes;
+	}
+	if (patch.complaintPrompt !== undefined)
+		updates.complaintPrompt = patch.complaintPrompt;
+	if (patch.objectiveTemplate !== undefined)
+		updates.objectiveTemplate = patch.objectiveTemplate;
+	if (patch.treatmentPlanTemplate !== undefined) {
+		updates.treatmentPlanTemplate = patch.treatmentPlanTemplate;
+	}
+	if (patch.diagnosisHints !== undefined)
+		updates.diagnosisHints = [...patch.diagnosisHints];
+	if (patch.requiredDocuments !== undefined) {
+		updates.requiredDocuments = [...patch.requiredDocuments];
+	}
+	if (patch.suggestedImaging !== undefined)
+		updates.suggestedImaging = [...patch.suggestedImaging];
+	if (patch.safetyWarnings !== undefined)
+		updates.safetyWarnings = [...patch.safetyWarnings];
 
-  const [row] = await db
-    .update(schema.protocolTemplates)
-    .set(updates)
-    .where(
-      and(
-        eq(schema.protocolTemplates.id, templateId),
-        eq(schema.protocolTemplates.organizationId, organizationId)
-      )
-    )
-    .returning();
-  if (!row) throw new ProtocolTemplateNotFoundError();
-  return projectRow(row);
+	const [row] = await db
+		.update(schema.protocolTemplates)
+		.set(updates)
+		.where(
+			and(
+				eq(schema.protocolTemplates.id, templateId),
+				eq(schema.protocolTemplates.organizationId, organizationId),
+			),
+		)
+		.returning();
+	if (!row) throw new ProtocolTemplateNotFoundError();
+	return projectRow(row);
 }
 
 /**
@@ -335,21 +343,21 @@ export async function updateProtocolTemplateInDb(
  * знать, что именно ушло.
  */
 export async function deleteProtocolTemplateInDb(
-  organizationId: string,
-  templateId: string
+	organizationId: string,
+	templateId: string,
 ): Promise<ProtocolTemplate> {
-  if (useInMemory()) throw new ProtocolTemplateStorageDisabledError();
-  const existing = await selectOwnedRow(organizationId, templateId);
-  if (!existing) throw new ProtocolTemplateNotFoundError();
-  const [row] = await db
-    .delete(schema.protocolTemplates)
-    .where(
-      and(
-        eq(schema.protocolTemplates.id, templateId),
-        eq(schema.protocolTemplates.organizationId, organizationId)
-      )
-    )
-    .returning();
-  if (!row) throw new ProtocolTemplateNotFoundError();
-  return projectRow(row);
+	if (useInMemory()) throw new ProtocolTemplateStorageDisabledError();
+	const existing = await selectOwnedRow(organizationId, templateId);
+	if (!existing) throw new ProtocolTemplateNotFoundError();
+	const [row] = await db
+		.delete(schema.protocolTemplates)
+		.where(
+			and(
+				eq(schema.protocolTemplates.id, templateId),
+				eq(schema.protocolTemplates.organizationId, organizationId),
+			),
+		)
+		.returning();
+	if (!row) throw new ProtocolTemplateNotFoundError();
+	return projectRow(row);
 }

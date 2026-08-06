@@ -34,7 +34,12 @@ export interface DocumentPayloadCardProps {
 	children: ReactNode;
 }
 
-export function DocumentPayloadCard({ title, description, notice, children }: DocumentPayloadCardProps) {
+export function DocumentPayloadCard({
+	title,
+	description,
+	notice,
+	children,
+}: DocumentPayloadCardProps) {
 	return (
 		<article className="document-payload-card">
 			<div>

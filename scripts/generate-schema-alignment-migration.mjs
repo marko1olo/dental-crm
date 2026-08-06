@@ -18,7 +18,7 @@
  *  • колонки с типом, который не удалось разобрать уверенно, не выдумываются,
  *    а выводятся отдельным списком для ручной доработки.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 const SCHEMA_FILE = "apps/api/src/db/schema.ts";
@@ -29,7 +29,9 @@ const schemaSource = readFileSync(SCHEMA_FILE, "utf8");
 
 /** Имена pgEnum: переменная → имя типа в базе. */
 const enumTypes = new Map();
-for (const match of schemaSource.matchAll(/export const (\w+) = pgEnum\(\s*"([a-z0-9_]+)"/gi)) {
+for (const match of schemaSource.matchAll(
+	/export const (\w+) = pgEnum\(\s*"([a-z0-9_]+)"/gi,
+)) {
 	enumTypes.set(match[1], match[2]);
 }
 
@@ -76,9 +78,10 @@ function sqlTypeOf(builder, declaration) {
 function sqlDefaultOf(declaration, sqlType) {
 	if (/\.defaultRandom\(\)/.test(declaration)) return "gen_random_uuid()";
 	if (/\.defaultNow\(\)/.test(declaration)) return "now()";
-	const explicit = /\.default\(\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|-?\d+(?:\.\d+)?|true|false|\[\]|\{\})\s*\)/.exec(
-		declaration,
-	);
+	const explicit =
+		/\.default\(\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|-?\d+(?:\.\d+)?|true|false|\[\]|\{\})\s*\)/.exec(
+			declaration,
+		);
 	if (!explicit) return null;
 	const raw = explicit[1];
 	if (raw === "true" || raw === "false") return raw;
@@ -170,12 +173,19 @@ function ddlColumns() {
 			for (const part of parts) {
 				const line = part.trim();
 				if (!line) continue;
-				if (/^(constraint|primary\s+key|foreign\s+key|unique|check)\b/i.test(line)) continue;
+				if (
+					/^(constraint|primary\s+key|foreign\s+key|unique|check)\b/i.test(line)
+				)
+					continue;
 				const name = /^"?([a-z0-9_]+)"?/i.exec(line);
 				if (!name) continue;
 				const column = name[1].toLowerCase();
 				columns.add(column);
-				if (/\bNOT NULL\b/i.test(line) && !/\bDEFAULT\b/i.test(line) && !/\bPRIMARY KEY\b/i.test(line)) {
+				if (
+					/\bNOT NULL\b/i.test(line) &&
+					!/\bDEFAULT\b/i.test(line) &&
+					!/\bPRIMARY KEY\b/i.test(line)
+				) {
 					const required = requiredWithoutDefault.get(table) ?? new Set();
 					required.add(column);
 					requiredWithoutDefault.set(table, required);
@@ -184,7 +194,8 @@ function ddlColumns() {
 			tables.set(table, columns);
 		}
 
-		const alterTable = /ALTER TABLE\s+(?:ONLY\s+)?"?(?:public"?\.")?([a-z0-9_]+)"?([\s\S]*?);/gi;
+		const alterTable =
+			/ALTER TABLE\s+(?:ONLY\s+)?"?(?:public"?\.")?([a-z0-9_]+)"?([\s\S]*?);/gi;
 		while ((match = alterTable.exec(text)) !== null) {
 			const table = match[1].toLowerCase();
 			const columns = tables.get(table) ?? new Set();
@@ -197,7 +208,9 @@ function ddlColumns() {
 		}
 	};
 
-	for (const name of readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql"))) {
+	for (const name of readdirSync(MIGRATIONS_DIR).filter((f) =>
+		f.endsWith(".sql"),
+	)) {
 		collect(readFileSync(path.join(MIGRATIONS_DIR, name), "utf8"));
 	}
 	const walk = (dir) => {
@@ -221,7 +234,9 @@ let touchedTables = 0;
 let addedColumns = 0;
 let relaxedColumns = 0;
 
-for (const [table, columns] of [...declared].sort((a, b) => a[0].localeCompare(b[0]))) {
+for (const [table, columns] of [...declared].sort((a, b) =>
+	a[0].localeCompare(b[0]),
+)) {
 	const existing = actual.get(table);
 	if (!existing || existing.size === 0) continue;
 
@@ -235,7 +250,9 @@ for (const [table, columns] of [...declared].sort((a, b) => a[0].localeCompare(b
 			continue;
 		}
 		const fallback = meta.sqlDefault ? ` DEFAULT ${meta.sqlDefault}` : "";
-		lines.push(`ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "${column}" ${meta.sqlType}${fallback};`);
+		lines.push(
+			`ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "${column}" ${meta.sqlType}${fallback};`,
+		);
 		addedColumns += 1;
 	}
 
@@ -243,7 +260,9 @@ for (const [table, columns] of [...declared].sort((a, b) => a[0].localeCompare(b
 	// никогда — вставка упала бы на NOT NULL уже после добавления новых колонок.
 	for (const column of requiredWithoutDefault.get(table) ?? []) {
 		if (columns.has(column)) continue;
-		lines.push(`ALTER TABLE "${table}" ALTER COLUMN "${column}" DROP NOT NULL;`);
+		lines.push(
+			`ALTER TABLE "${table}" ALTER COLUMN "${column}" DROP NOT NULL;`,
+		);
 		relaxedColumns += 1;
 	}
 

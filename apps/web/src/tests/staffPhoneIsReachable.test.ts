@@ -36,7 +36,12 @@ import { webSrcRoot } from "./utils/componentReachability";
  * видно. Здесь проверка через assert.ok, и в выводе остаётся только сообщение.
  */
 
-const STAFF_TAB = join(webSrcRoot, "components", "settings", "SettingsStaffTab.tsx");
+const STAFF_TAB = join(
+	webSrcRoot,
+	"components",
+	"settings",
+	"SettingsStaffTab.tsx",
+);
 const SETTINGS_VIEW = join(webSrcRoot, "SettingsView.tsx");
 
 /** Отказ печатает причину, а не содержимое файла. */
@@ -55,7 +60,11 @@ function staffTabCode(): string {
 		.split(/\r?\n/)
 		.filter((line) => {
 			const trimmed = line.trimStart();
-			return !trimmed.startsWith("*") && !trimmed.startsWith("//") && !trimmed.startsWith("/*");
+			return (
+				!trimmed.startsWith("*") &&
+				!trimmed.startsWith("//") &&
+				!trimmed.startsWith("/*")
+			);
 		})
 		.join("\n");
 }
@@ -75,8 +84,16 @@ test("телефон сотрудника можно ввести при зав�
 		/newStaffPhone.*useState|useState.*newStaffPhone/,
 		"В форме заведения сотрудника нет состояния телефона",
 	);
-	expectSource(code, /type="tel"/, 'В форме заведения сотрудника нет поля ввода телефона (type="tel")');
-	expectSource(code, /Телефон/, "Поле телефона без подписи «Телефон» — человек не найдёт его глазами");
+	expectSource(
+		code,
+		/type="tel"/,
+		'В форме заведения сотрудника нет поля ввода телефона (type="tel")',
+	);
+	expectSource(
+		code,
+		/Телефон/,
+		"Поле телефона без подписи «Телефон» — человек не найдёт его глазами",
+	);
 	expectSource(
 		code,
 		/phone:\s*newStaffPhone\.trim\(\)\s*\|\|\s*null/,
@@ -112,8 +129,16 @@ test("телефон сотрудника видно на его карточк�
 
 test("телефон уже заведённого сотрудника можно исправить", () => {
 	const code = staffTabCode();
-	expectSource(code, /handleUpdatePhone/, "Обработчика правки телефона нет — страж потерял цель проверки");
-	expectSource(code, /method:\s*"PUT"/, "Вкладка не делает ни одного PUT — карточку сотрудника нечем исправить");
+	expectSource(
+		code,
+		/handleUpdatePhone/,
+		"Обработчика правки телефона нет — страж потерял цель проверки",
+	);
+	expectSource(
+		code,
+		/method:\s*"PUT"/,
+		"Вкладка не делает ни одного PUT — карточку сотрудника нечем исправить",
+	);
 	expectSource(
 		code,
 		/\/api\/settings\/staff\/\$\{staffId\}/,

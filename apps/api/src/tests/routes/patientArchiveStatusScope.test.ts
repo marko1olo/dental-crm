@@ -7,7 +7,10 @@ import {
 	selectPatientArchiveRows,
 } from "../../routes/patients.js";
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
-import { CLINIC_TOKEN_HEADER, ORGANIZATION_HEADER } from "../../security/identity.js";
+import {
+	CLINIC_TOKEN_HEADER,
+	ORGANIZATION_HEADER,
+} from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 
 /**
@@ -45,7 +48,12 @@ type Row = {
 	tag: string;
 };
 
-function row(tag: string, patientId: string | null, patientName: string | null, blocked = true): Row {
+function row(
+	tag: string,
+	patientId: string | null,
+	patientName: string | null,
+	blocked = true,
+): Row {
 	return { tag, patientId, patientName, isBookingBlocked: blocked };
 }
 
@@ -86,7 +94,11 @@ describe("archive-status отдаёт запрет записи только п�
 			row("чужой-без-id", null, "Петров Пётр Петрович"),
 		];
 
-		const selected = selectPatientArchiveRows(clinicRows, PATIENT_MINE, "Иванов Иван Иванович");
+		const selected = selectPatientArchiveRows(
+			clinicRows,
+			PATIENT_MINE,
+			"Иванов Иван Иванович",
+		);
 
 		assert.deepEqual(
 			selected.map((r) => r.tag),
@@ -97,26 +109,44 @@ describe("archive-status отдаёт запрет записи только п�
 	test("одна блокировка в клинике не блокирует всех остальных", () => {
 		// Ровно тот сценарий, который ломал карточку: в клинике заблокирован один
 		// человек, открыт совершенно другой.
-		const clinicRows: Row[] = [row("единственная-блокировка", PATIENT_OTHER, "Петров Пётр Петрович")];
+		const clinicRows: Row[] = [
+			row("единственная-блокировка", PATIENT_OTHER, "Петров Пётр Петрович"),
+		];
 
-		const selected = selectPatientArchiveRows(clinicRows, PATIENT_MINE, "Иванов Иван Иванович");
+		const selected = selectPatientArchiveRows(
+			clinicRows,
+			PATIENT_MINE,
+			"Иванов Иван Иванович",
+		);
 
 		assert.deepEqual(selected, []);
 		assert.equal(patientArchiveRowsBlockBooking(selected), false);
 		// А тот, кто действительно в списке, по-прежнему заблокирован.
 		assert.equal(
 			patientArchiveRowsBlockBooking(
-				selectPatientArchiveRows(clinicRows, PATIENT_OTHER, "Петров Пётр Петрович"),
+				selectPatientArchiveRows(
+					clinicRows,
+					PATIENT_OTHER,
+					"Петров Пётр Петрович",
+				),
 			),
 			true,
 		);
 	});
 
 	test("строка без patient_id (до миграции 0136) находится по ФИО, регистр и пробелы не мешают", () => {
-		const clinicRows: Row[] = [row("старая-строка", null, "  иванов   иван Иванович ")];
+		const clinicRows: Row[] = [
+			row("старая-строка", null, "  иванов   иван Иванович "),
+		];
 
 		assert.equal(
-			patientArchiveRowsBlockBooking(selectPatientArchiveRows(clinicRows, PATIENT_MINE, "Иванов Иван Иванович")),
+			patientArchiveRowsBlockBooking(
+				selectPatientArchiveRows(
+					clinicRows,
+					PATIENT_MINE,
+					"Иванов Иван Иванович",
+				),
+			),
 			true,
 		);
 	});
@@ -124,27 +154,51 @@ describe("archive-status отдаёт запрет записи только п�
 	test("тезка не забирает строку, у которой указан чужой patient_id", () => {
 		// Иначе снятие запрета у однофамильца сняло бы его у настоящего нарушителя:
 		// ветка удаления в setPatientArchiveStatusInDb сверяет и ФИО тоже.
-		const clinicRows: Row[] = [row("чужая-строка-тот-же-ФИО", PATIENT_OTHER, "Иванов Иван Иванович")];
+		const clinicRows: Row[] = [
+			row("чужая-строка-тот-же-ФИО", PATIENT_OTHER, "Иванов Иван Иванович"),
+		];
 
-		assert.deepEqual(selectPatientArchiveRows(clinicRows, PATIENT_MINE, "Иванов Иван Иванович"), []);
+		assert.deepEqual(
+			selectPatientArchiveRows(
+				clinicRows,
+				PATIENT_MINE,
+				"Иванов Иван Иванович",
+			),
+			[],
+		);
 	});
 
 	test("снятый флаг is_booking_blocked запретом не считается", () => {
 		// Карточка и расписание должны читать один и тот же признак: запрет решает
 		// флаг, а не факт наличия строки архива.
-		const clinicRows: Row[] = [row("архив-без-запрета", PATIENT_MINE, "Иванов Иван Иванович", false)];
+		const clinicRows: Row[] = [
+			row("архив-без-запрета", PATIENT_MINE, "Иванов Иван Иванович", false),
+		];
 
-		const selected = selectPatientArchiveRows(clinicRows, PATIENT_MINE, "Иванов Иван Иванович");
+		const selected = selectPatientArchiveRows(
+			clinicRows,
+			PATIENT_MINE,
+			"Иванов Иван Иванович",
+		);
 
 		assert.equal(selected.length, 1);
 		assert.equal(patientArchiveRowsBlockBooking(selected), false);
 	});
 
 	test("пациент без ФИО не подбирает строки с пустым ФИО", () => {
-		const clinicRows: Row[] = [row("строка-без-ФИО", null, null), row("строка-с-пустым-ФИО", null, "   ")];
+		const clinicRows: Row[] = [
+			row("строка-без-ФИО", null, null),
+			row("строка-с-пустым-ФИО", null, "   "),
+		];
 
-		assert.deepEqual(selectPatientArchiveRows(clinicRows, PATIENT_MINE, null), []);
-		assert.deepEqual(selectPatientArchiveRows(clinicRows, PATIENT_MINE, "   "), []);
+		assert.deepEqual(
+			selectPatientArchiveRows(clinicRows, PATIENT_MINE, null),
+			[],
+		);
+		assert.deepEqual(
+			selectPatientArchiveRows(clinicRows, PATIENT_MINE, "   "),
+			[],
+		);
 	});
 
 	test("без удостоверения все семь обработчиков отвечают 401 AuthRequired", async () => {
@@ -152,17 +206,33 @@ describe("archive-status отдаёт запрет записи только п�
 			{ method: "GET", url: "/api/patients" },
 			{ method: "POST", url: "/api/patients" },
 			{ method: "PUT", url: `/api/patients/${PATIENT_MINE}` },
-			{ method: "PUT", url: `/api/patients/${PATIENT_MINE}/administrative-profile` },
-			{ method: "GET", url: `/api/patients/${PATIENT_MINE}/communication-timelines` },
+			{
+				method: "PUT",
+				url: `/api/patients/${PATIENT_MINE}/administrative-profile`,
+			},
+			{
+				method: "GET",
+				url: `/api/patients/${PATIENT_MINE}/communication-timelines`,
+			},
 			{ method: "GET", url: `/api/patients/${PATIENT_MINE}/archive-status` },
 			{ method: "POST", url: `/api/patients/${PATIENT_MINE}/archive-status` },
 		];
 
 		const observed: string[] = [];
 		for (const route of routes) {
-			const response = await app.inject({ method: route.method, url: route.url, payload: {} });
-			observed.push(`${route.method} ${route.url} -> ${response.statusCode} ${response.json().error}`);
-			assert.equal(response.statusCode, 401, `${route.method} ${route.url}: ${response.body}`);
+			const response = await app.inject({
+				method: route.method,
+				url: route.url,
+				payload: {},
+			});
+			observed.push(
+				`${route.method} ${route.url} -> ${response.statusCode} ${response.json().error}`,
+			);
+			assert.equal(
+				response.statusCode,
+				401,
+				`${route.method} ${route.url}: ${response.body}`,
+			);
 			assert.equal(response.json().error, "AuthRequired");
 		}
 		assert.equal(observed.length, 7);
@@ -199,7 +269,11 @@ describe("archive-status отдаёт запрет записи только п�
 	});
 
 	test("токен, подписанный другим секретом, отклонён", async () => {
-		const foreignToken = signToken({ organizationId: ORG_FOREIGN }, `${TEST_SECRET}-other`, 3600);
+		const foreignToken = signToken(
+			{ organizationId: ORG_FOREIGN },
+			`${TEST_SECRET}-other`,
+			3600,
+		);
 
 		const response = await app.inject({
 			method: "GET",
@@ -225,7 +299,11 @@ describe("archive-status отдаёт запрет записи только п�
 	});
 
 	test("токен без organizationId отклонён", async () => {
-		const noOrg = signToken({ userId: "aa110000-0000-4000-8000-0000000000c1" }, TEST_SECRET, 3600);
+		const noOrg = signToken(
+			{ userId: "aa110000-0000-4000-8000-0000000000c1" },
+			TEST_SECRET,
+			3600,
+		);
 
 		const response = await app.inject({
 			method: "GET",
@@ -252,18 +330,29 @@ describe("archive-status отдаёт запрет записи только п�
 			body.message,
 			"Не указано действие: запретить пациенту запись на приём или снять запрет.",
 		);
-		assert.ok(!/isBlacklisted/.test(response.body), `имя поля утекло в ответ: ${response.body}`);
+		assert.ok(
+			!/isBlacklisted/.test(response.body),
+			`имя поля утекло в ответ: ${response.body}`,
+		);
 	});
 
 	test("POST archive-status с нестроковым значением тоже отклонён до записи", async () => {
-		for (const payload of [{ isBlacklisted: "true" }, { isBlacklisted: 1 }, { isBlacklisted: null }]) {
+		for (const payload of [
+			{ isBlacklisted: "true" },
+			{ isBlacklisted: 1 },
+			{ isBlacklisted: null },
+		]) {
 			const response = await app.inject({
 				method: "POST",
 				url: `/api/patients/${PATIENT_MINE}/archive-status`,
 				headers: { [CLINIC_TOKEN_HEADER]: clinicToken },
 				payload,
 			});
-			assert.equal(response.statusCode, 400, `${JSON.stringify(payload)}: ${response.body}`);
+			assert.equal(
+				response.statusCode,
+				400,
+				`${JSON.stringify(payload)}: ${response.body}`,
+			);
 			assert.equal(response.json().error, "ValidationError");
 		}
 	});

@@ -1,18 +1,18 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
-	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	fixtureUuid,
 	isDatabaseUnavailable,
+	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	purgeFixtureOrganizations,
-	withFixtureTenant
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
@@ -80,8 +80,11 @@ describe("создание карты пациента: запрет дубле�
 		// попадает. Маршруты берут организацию ТОЛЬКО из проверенной подписью
 		// полезной нагрузки, поэтому заголовком организацию не подменить.
 		clinicHeaders = {
-			"x-dente-clinic-token": signToken({ organizationId: ORG_ID, clinicId: ORG_ID }, authTokenSecret()),
-			"content-type": "application/json"
+			"x-dente-clinic-token": signToken(
+				{ organizationId: ORG_ID, clinicId: ORG_ID },
+				authTokenSecret(),
+			),
+			"content-type": "application/json",
 		};
 
 		try {
@@ -89,13 +92,18 @@ describe("создание карты пациента: запрет дубле�
 			// after не доходит и оставляет свою клинику в живой базе. Вместе со
 			// своей снимается и общая клиника прежнего блока — она осталась
 			// именно от таких обрывов и больше никому не принадлежит.
-			await purgeFixtureOrganizations([ORG_ID, ...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS]);
+			await purgeFixtureOrganizations([
+				ORG_ID,
+				...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
+			]);
 			// Сев под тенант-контекстом клиники. Под FORCE RLS в WITH CHECK политик
 			// тенант-таблиц дизъюнкта обхода нет, поэтому вставка без
 			// `app.current_tenant` отвергается кодом 42501 и на организации, и на
 			// пациенте.
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника запрета дублей" });
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника запрета дублей" });
 				// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
 				// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
 				// Раньше он молчал, и тест шёл с чужой строкой вместо своей.
@@ -104,7 +112,7 @@ describe("создание карты пациента: запрет дубле�
 					organizationId: ORG_ID,
 					fullName: EXISTING_NAME,
 					birthDate: EXISTING_BIRTH_DATE,
-					phone: EXISTING_PHONE
+					phone: EXISTING_PHONE,
 				});
 			});
 		} catch (error) {
@@ -127,11 +135,14 @@ describe("создание карты пациента: запрет дубле�
 			headers: clinicHeaders,
 			// Ровно то, что отправляет картотека при вводе одного ФИО:
 			// hooks/domains/usePatientLogic.ts -> nullablePatientDraftValue("") = null.
-			payload: { fullName: EXISTING_NAME, phone: null, birthDate: null }
+			payload: { fullName: EXISTING_NAME, phone: null, birthDate: null },
 		});
 
 		assert.equal(response.statusCode, 409, response.body);
-		const body = JSON.parse(response.body) as { error?: string; message?: string };
+		const body = JSON.parse(response.body) as {
+			error?: string;
+			message?: string;
+		};
 		assert.equal(body.error, "PatientNameDuplicateError");
 		// Отказ обязан сказать, что делать: открыть существующую карту либо
 		// добавить телефон/дату рождения, если это другой человек.
@@ -142,7 +153,10 @@ describe("создание карты пациента: запрет дубле�
 		// Чтение под контекстом клиники: без него политика скрыла бы и первую
 		// карту, и «в базе 0 карт вместо одной» говорило бы о RLS, а не о запрете.
 		const rows = await withFixtureTenant(ORG_ID, async () =>
-			db.select({ id: patients.id }).from(patients).where(eq(patients.organizationId, ORG_ID))
+			db
+				.select({ id: patients.id })
+				.from(patients)
+				.where(eq(patients.organizationId, ORG_ID)),
 		);
 		assert.equal(rows.length, 1, `в базе ${rows.length} карт вместо одной`);
 	});
@@ -154,7 +168,7 @@ describe("создание карты пациента: запрет дубле�
 			method: "POST",
 			url: "/api/patients",
 			headers: clinicHeaders,
-			payload: { fullName: "  тихонов   аркадий валентинович " }
+			payload: { fullName: "  тихонов   аркадий валентинович " },
 		});
 		assert.equal(response.statusCode, 409, response.body);
 	});
@@ -166,7 +180,7 @@ describe("создание карты пациента: запрет дубле�
 			method: "POST",
 			url: "/api/patients",
 			headers: clinicHeaders,
-			payload: { fullName: EXISTING_NAME, phone: "+7 916 111-22-33" }
+			payload: { fullName: EXISTING_NAME, phone: "+7 916 111-22-33" },
 		});
 		assert.equal(response.statusCode, 201, response.body);
 		const created = JSON.parse(response.body) as { id: string };
@@ -180,7 +194,7 @@ describe("создание карты пациента: запрет дубле�
 			method: "POST",
 			url: "/api/patients",
 			headers: clinicHeaders,
-			payload: { fullName: EXISTING_NAME, birthDate: "1991-08-03" }
+			payload: { fullName: EXISTING_NAME, birthDate: "1991-08-03" },
 		});
 		assert.equal(response.statusCode, 201, response.body);
 	});
@@ -192,10 +206,13 @@ describe("создание карты пациента: запрет дубле�
 			method: "POST",
 			url: "/api/patients",
 			headers: clinicHeaders,
-			payload: { fullName: EXISTING_NAME, phone: EXISTING_PHONE }
+			payload: { fullName: EXISTING_NAME, phone: EXISTING_PHONE },
 		});
 		assert.equal(response.statusCode, 409, response.body);
-		assert.equal((JSON.parse(response.body) as { error?: string }).error, "PatientDuplicateError");
+		assert.equal(
+			(JSON.parse(response.body) as { error?: string }).error,
+			"PatientDuplicateError",
+		);
 	});
 
 	test("новое ФИО создаётся без помех", async (context) => {
@@ -205,7 +222,7 @@ describe("создание карты пациента: запрет дубле�
 			method: "POST",
 			url: "/api/patients",
 			headers: clinicHeaders,
-			payload: { fullName: "Незнакомцев Пётр Ильич" }
+			payload: { fullName: "Незнакомцев Пётр Ильич" },
 		});
 		assert.equal(response.statusCode, 201, response.body);
 	});
@@ -221,7 +238,7 @@ describe("создание карты пациента: запрет дубле�
 			method: "POST",
 			url: "/api/patients",
 			headers: clinicHeaders,
-			payload: { fullName: nameless, phone: "+7 916 555-00-11" }
+			payload: { fullName: nameless, phone: "+7 916 555-00-11" },
 		});
 		assert.equal(first.statusCode, 201, first.body);
 		const twinId = (JSON.parse(first.body) as { id: string }).id;
@@ -230,7 +247,7 @@ describe("создание карты пациента: запрет дубле�
 			method: "POST",
 			url: "/api/patients",
 			headers: clinicHeaders,
-			payload: { fullName: nameless, birthDate: "2000-02-02" }
+			payload: { fullName: nameless, birthDate: "2000-02-02" },
 		});
 		assert.equal(plain.statusCode, 201, plain.body);
 		const plainId = (JSON.parse(plain.body) as { id: string }).id;
@@ -240,10 +257,18 @@ describe("создание карты пациента: запрет дубле�
 			method: "PUT",
 			url: `/api/patients/${plainId}`,
 			headers: clinicHeaders,
-			payload: { fullName: nameless, phone: null, birthDate: null, notes: "аллергия на лидокаин" }
+			payload: {
+				fullName: nameless,
+				phone: null,
+				birthDate: null,
+				notes: "аллергия на лидокаин",
+			},
 		});
 		assert.equal(saved.statusCode, 200, saved.body);
-		assert.equal((JSON.parse(saved.body) as { notes?: string }).notes, "аллергия на лидокаин");
+		assert.equal(
+			(JSON.parse(saved.body) as { notes?: string }).notes,
+			"аллергия на лидокаин",
+		);
 		void twinId;
 	});
 });

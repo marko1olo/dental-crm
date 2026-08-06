@@ -22,6 +22,7 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { SettingsModuleDisabled } from "./SettingsModuleDisabled";
 import { CLINICAL_RULES_GATE } from "./settingsModuleGate";
+
 /*
  * Импорта CustomCrmTaskTypesWidget здесь больше нет намеренно: панель нечем
  * заполнить. Причина подробно — в конце разметки, у места, откуда она убрана.

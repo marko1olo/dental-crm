@@ -1,9 +1,9 @@
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { patientCtPlannings, patients } from "../db/schema.js";
-import { and, eq } from "drizzle-orm";
-import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { clinicSessionMissingMessage } from "../utils/clinicSessionRefusal.js";
 
@@ -145,18 +145,24 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 	app.post("/api/imaging/planning/save", async (request, reply) => {
 		try {
 			if (!getRequestIdentity(request).organizationId) {
-				return reply
-					.status(401)
-					.send({ error: "AuthRequired", message: CLINIC_UNKNOWN_SAVE_MESSAGE });
+				return reply.status(401).send({
+					error: "AuthRequired",
+					message: CLINIC_UNKNOWN_SAVE_MESSAGE,
+				});
 			}
-			const orgId = await requireResolvedOrganizationId(request, reply, "save ct planning");
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"save ct planning",
+			);
 			if (!orgId) return;
 
 			const parsed = savePlanningSchema.safeParse(request.body);
 			if (!parsed.success) {
-				return reply
-					.status(400)
-					.send({ error: "InvalidPlanningPayload", message: BAD_SAVE_BODY_MESSAGE });
+				return reply.status(400).send({
+					error: "InvalidPlanningPayload",
+					message: BAD_SAVE_BODY_MESSAGE,
+				});
 			}
 			const {
 				patientId,
@@ -170,13 +176,16 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 			const [patient] = await db
 				.select({ id: patients.id })
 				.from(patients)
-				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+				.where(
+					and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+				)
 				.limit(1);
 
 			if (!patient) {
-				return reply
-					.status(404)
-					.send({ error: "Patient not found", message: PATIENT_NOT_FOUND_SAVE_MESSAGE });
+				return reply.status(404).send({
+					error: "Patient not found",
+					message: PATIENT_NOT_FOUND_SAVE_MESSAGE,
+				});
 			}
 
 			// Check if planning already exists
@@ -213,9 +222,10 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 					)
 					.returning({ id: patientCtPlannings.id });
 				if (!updated) {
-					return reply
-						.status(500)
-						.send({ error: "Internal server error", message: SAVE_FAILED_MESSAGE });
+					return reply.status(500).send({
+						error: "Internal server error",
+						message: SAVE_FAILED_MESSAGE,
+					});
 				}
 			} else {
 				const [inserted] = await db
@@ -230,16 +240,19 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 					})
 					.returning({ id: patientCtPlannings.id });
 				if (!inserted) {
-					return reply
-						.status(500)
-						.send({ error: "Internal server error", message: SAVE_FAILED_MESSAGE });
+					return reply.status(500).send({
+						error: "Internal server error",
+						message: SAVE_FAILED_MESSAGE,
+					});
 				}
 			}
 
 			return reply.status(200).send({ success: true });
 		} catch (err) {
 			request.log.error(err);
-			return reply.status(500).send({ error: "Internal server error", message: SAVE_FAILED_MESSAGE });
+			return reply
+				.status(500)
+				.send({ error: "Internal server error", message: SAVE_FAILED_MESSAGE });
 		}
 	});
 
@@ -247,18 +260,24 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 	app.get("/api/imaging/planning/load", async (request, reply) => {
 		try {
 			if (!getRequestIdentity(request).organizationId) {
-				return reply
-					.status(401)
-					.send({ error: "AuthRequired", message: CLINIC_UNKNOWN_LOAD_MESSAGE });
+				return reply.status(401).send({
+					error: "AuthRequired",
+					message: CLINIC_UNKNOWN_LOAD_MESSAGE,
+				});
 			}
-			const orgId = await requireResolvedOrganizationId(request, reply, "load ct planning");
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"load ct planning",
+			);
 			if (!orgId) return;
 
 			const parsed = loadPlanningQuerySchema.safeParse(request.query);
 			if (!parsed.success) {
-				return reply
-					.status(400)
-					.send({ error: "InvalidPlanningQuery", message: BAD_LOAD_QUERY_MESSAGE });
+				return reply.status(400).send({
+					error: "InvalidPlanningQuery",
+					message: BAD_LOAD_QUERY_MESSAGE,
+				});
 			}
 			const { studyUid, patientId } = parsed.data;
 
@@ -266,13 +285,16 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 			const [patient] = await db
 				.select({ id: patients.id })
 				.from(patients)
-				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+				.where(
+					and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+				)
 				.limit(1);
 
 			if (!patient) {
-				return reply
-					.status(404)
-					.send({ error: "Patient not found", message: PATIENT_NOT_FOUND_LOAD_MESSAGE });
+				return reply.status(404).send({
+					error: "Patient not found",
+					message: PATIENT_NOT_FOUND_LOAD_MESSAGE,
+				});
 			}
 
 			const [planning] = await db
@@ -293,7 +315,9 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 			return reply.send({ success: true, planning: null });
 		} catch (err) {
 			request.log.error(err);
-			return reply.status(500).send({ error: "Internal server error", message: LOAD_FAILED_MESSAGE });
+			return reply
+				.status(500)
+				.send({ error: "Internal server error", message: LOAD_FAILED_MESSAGE });
 		}
 	});
 }

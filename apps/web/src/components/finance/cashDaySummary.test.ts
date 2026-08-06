@@ -192,7 +192,10 @@ describe("итог дня", () => {
 
 	it("отменённую запись не считает вовсе", () => {
 		const summary = summarizeCashDay(
-			[payment({ amountRub: 9999, status: "voided" }), payment({ amountRub: 100 })],
+			[
+				payment({ amountRub: 9999, status: "voided" }),
+				payment({ amountRub: 100 }),
+			],
 			TODAY,
 		);
 		assert.equal(summary.receivedRub, 100);

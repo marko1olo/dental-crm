@@ -1,6 +1,6 @@
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import type React from "react";
-import { panelStateText, type PanelSubject } from "../lib/panelStateText";
+import { type PanelSubject, panelStateText } from "../lib/panelStateText";
 
 /**
  * Панель не смогла прочитать свои данные.

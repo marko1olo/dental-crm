@@ -23,10 +23,10 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { eq, inArray, sql } from "drizzle-orm";
-import Fastify from "fastify";
-import type { FastifyInstance } from "fastify";
 import { protocolTemplateSchema } from "@dental/shared";
+import { eq, inArray, sql } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { db, pool } from "../../db/client.js";
 import { organizations, protocolTemplates } from "../../db/schema.js";
 import { registerSettingsRoutes } from "../../routes/settings.js";
@@ -58,7 +58,10 @@ function checkRussianRefusal(label: string, message: unknown): void {
 
 function seeded<Row>(rows: Row[], what: string): Row {
 	const row = rows[0];
-	if (!row) throw new Error(`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`);
+	if (!row)
+		throw new Error(
+			`Посев не состоялся: вставка «${what}» не вернула ни одной строки.`,
+		);
 	return row;
 }
 
@@ -80,7 +83,10 @@ async function buildApp(): Promise<FastifyInstance> {
  * бы доказательство, а не маршрут. Интерфейс на удалении content-type не шлёт
  * (SettingsProtocolsTab.tsx:143-145).
  */
-function headersFor(organizationId: string, withBody: boolean): Record<string, string> {
+function headersFor(
+	organizationId: string,
+	withBody: boolean,
+): Record<string, string> {
 	const headers: Record<string, string> = {
 		"x-dente-admin-secret": settingsAdminSecret,
 		"x-dente-clinic-token": signToken({ organizationId }, authTokenSecret()),
@@ -89,7 +95,11 @@ function headersFor(organizationId: string, withBody: boolean): Record<string, s
 	return headers;
 }
 
-type Injected = { statusCode: number; body: string; json: Record<string, unknown> };
+type Injected = {
+	statusCode: number;
+	body: string;
+	json: Record<string, unknown>;
+};
 
 async function call(
 	app: FastifyInstance,
@@ -143,14 +153,23 @@ async function independentCount(organizationId: string) {
 	return (result.rows[0] as { total: number }).total;
 }
 
-async function proveWrites(app: FastifyInstance, created: string[]): Promise<void> {
+async function proveWrites(
+	app: FastifyInstance,
+	created: string[],
+): Promise<void> {
 	const own = seeded(
-		await db.insert(organizations).values({ name: PROOF_ORGANIZATION_NAMES[0] }).returning({ id: organizations.id }),
+		await db
+			.insert(organizations)
+			.values({ name: PROOF_ORGANIZATION_NAMES[0] })
+			.returning({ id: organizations.id }),
 		PROOF_ORGANIZATION_NAMES[0],
 	);
 	created.push(own.id);
 	const foreign = seeded(
-		await db.insert(organizations).values({ name: PROOF_ORGANIZATION_NAMES[1] }).returning({ id: organizations.id }),
+		await db
+			.insert(organizations)
+			.values({ name: PROOF_ORGANIZATION_NAMES[1] })
+			.returning({ id: organizations.id }),
 		PROOF_ORGANIZATION_NAMES[1],
 	);
 	created.push(foreign.id);
@@ -159,19 +178,25 @@ async function proveWrites(app: FastifyInstance, created: string[]): Promise<voi
 	const before = await independentCount(own.id);
 	console.log(`  до создания шаблонов у клиники: ${before}`);
 
-	const createResponse = await call(app, "POST", "/api/settings/protocols", own.id, {
-		specialty: "therapist",
-		title: "Лечение кариеса",
-		visitReason: "Боль при накусывании",
-		defaultDurationMinutes: 60,
-		complaintPrompt: "Жалобы на боль от холодного",
-		objectiveTemplate: "Зуб под пломбой, перкуссия отрицательная",
-		treatmentPlanTemplate: "Препарирование, изоляция, реставрация",
-		diagnosisHints: ["K02.1 Кариес дентина"],
-		requiredDocuments: ["informed_consent", "treatment_plan"],
-		suggestedImaging: ["periapical"],
-		safetyWarnings: ["Уточнить аллергию на анестетик"],
-	});
+	const createResponse = await call(
+		app,
+		"POST",
+		"/api/settings/protocols",
+		own.id,
+		{
+			specialty: "therapist",
+			title: "Лечение кариеса",
+			visitReason: "Боль при накусывании",
+			defaultDurationMinutes: 60,
+			complaintPrompt: "Жалобы на боль от холодного",
+			objectiveTemplate: "Зуб под пломбой, перкуссия отрицательная",
+			treatmentPlanTemplate: "Препарирование, изоляция, реставрация",
+			diagnosisHints: ["K02.1 Кариес дентина"],
+			requiredDocuments: ["informed_consent", "treatment_plan"],
+			suggestedImaging: ["periapical"],
+			safetyWarnings: ["Уточнить аллергию на анестетик"],
+		},
+	);
 	check("шаблон создан", createResponse.statusCode, 201);
 	if (createResponse.statusCode !== 201) {
 		console.log(`  тело: ${createResponse.body.slice(0, 400)}`);
@@ -186,11 +211,23 @@ async function proveWrites(app: FastifyInstance, created: string[]): Promise<voi
 	check("клиника у строки своя", rowAfterCreate?.organization_id, own.id);
 	check("специальность записана", rowAfterCreate?.specialty, "therapist");
 	check("длительность записана", rowAfterCreate?.default_duration_minutes, 60);
-	check("список документов дошёл до jsonb", rowAfterCreate?.required_documents, ["informed_consent", "treatment_plan"]);
-	check("список снимков дошёл до jsonb", rowAfterCreate?.suggested_imaging, ["periapical"]);
-	check("предупреждения дошли до jsonb", rowAfterCreate?.safety_warnings, ["Уточнить аллергию на анестетик"]);
+	check(
+		"список документов дошёл до jsonb",
+		rowAfterCreate?.required_documents,
+		["informed_consent", "treatment_plan"],
+	);
+	check("список снимков дошёл до jsonb", rowAfterCreate?.suggested_imaging, [
+		"periapical",
+	]);
+	check("предупреждения дошли до jsonb", rowAfterCreate?.safety_warnings, [
+		"Уточнить аллергию на анестетик",
+	]);
 	check("дата правки заполнена", rowAfterCreate?.has_updated_at, true);
-	check("в прайсе шаблонов стало на один больше", await independentCount(own.id), before + 1);
+	check(
+		"в прайсе шаблонов стало на один больше",
+		await independentCount(own.id),
+		before + 1,
+	);
 
 	/*
 	 * САМАЯ ВАЖНАЯ СВЕРКА. Чтение экранов прогоняет строку через
@@ -214,27 +251,52 @@ async function proveWrites(app: FastifyInstance, created: string[]): Promise<voi
 		safetyWarnings: rowAfterCreate?.safety_warnings,
 		updatedAt: new Date().toISOString(),
 	});
-	check("ЗАПИСАННЫЙ ШАБЛОН ЧИТАЕМ ЭКРАНОМ (тот же контракт)", readable.success, true);
-	if (!readable.success) console.log(`  причина: ${JSON.stringify(readable.error.issues)}`);
+	check(
+		"ЗАПИСАННЫЙ ШАБЛОН ЧИТАЕМ ЭКРАНОМ (тот же контракт)",
+		readable.success,
+		true,
+	);
+	if (!readable.success)
+		console.log(`  причина: ${JSON.stringify(readable.error.issues)}`);
 
 	console.log("\n=== ПРАВКА (PUT /api/settings/protocols/:templateId) ===");
 	// Интерфейс шлёт объект ЦЕЛИКОМ, включая id, organizationId и updatedAt.
 	// Подсунутая чужая клиника в теле обязана быть отброшена.
-	const updateResponse = await call(app, "PUT", `/api/settings/protocols/${templateId}`, own.id, {
-		id: templateId,
-		organizationId: foreign.id,
-		updatedAt: "2020-01-01T00:00:00.000Z",
-		title: "Лечение кариеса (исправлено)",
-		defaultDurationMinutes: 90,
-		requiredDocuments: ["informed_consent"],
-	});
+	const updateResponse = await call(
+		app,
+		"PUT",
+		`/api/settings/protocols/${templateId}`,
+		own.id,
+		{
+			id: templateId,
+			organizationId: foreign.id,
+			updatedAt: "2020-01-01T00:00:00.000Z",
+			title: "Лечение кариеса (исправлено)",
+			defaultDurationMinutes: 90,
+			requiredDocuments: ["informed_consent"],
+		},
+	);
 	check("шаблон исправлен", updateResponse.statusCode, 200);
 	console.log(`  ответ маршрута: ${updateResponse.body}`);
 	const rowAfterUpdate = await independentRow(templateId);
-	check("новое название в базе", rowAfterUpdate?.title, "Лечение кариеса (исправлено)");
-	check("новая длительность в базе", rowAfterUpdate?.default_duration_minutes, 90);
-	check("список документов заменён", rowAfterUpdate?.required_documents, ["informed_consent"]);
-	check("непереданное поле не затёрто", rowAfterUpdate?.visit_reason, "Боль при накусывании");
+	check(
+		"новое название в базе",
+		rowAfterUpdate?.title,
+		"Лечение кариеса (исправлено)",
+	);
+	check(
+		"новая длительность в базе",
+		rowAfterUpdate?.default_duration_minutes,
+		90,
+	);
+	check("список документов заменён", rowAfterUpdate?.required_documents, [
+		"informed_consent",
+	]);
+	check(
+		"непереданное поле не затёрто",
+		rowAfterUpdate?.visit_reason,
+		"Боль при накусывании",
+	);
 	check(
 		"КЛИНИКА ИЗ ТЕЛА ЗАПРОСА ОТБРОШЕНА (осталась своя)",
 		rowAfterUpdate?.organization_id,
@@ -242,68 +304,169 @@ async function proveWrites(app: FastifyInstance, created: string[]): Promise<voi
 	);
 
 	console.log("\n=== ОТКАЗЫ ПО ВВОДУ ===");
-	const unknownDocument = await call(app, "POST", "/api/settings/protocols", own.id, {
-		title: "Шаблон с незнакомым документом",
-		requiredDocuments: ["выдуманный_документ"],
-	});
-	check("незнакомый вид документа отклонён НА ЗАПИСИ", unknownDocument.statusCode, 400);
-	checkRussianRefusal("текст отказа по видам документов", unknownDocument.json.message);
+	const unknownDocument = await call(
+		app,
+		"POST",
+		"/api/settings/protocols",
+		own.id,
+		{
+			title: "Шаблон с незнакомым документом",
+			requiredDocuments: ["выдуманный_документ"],
+		},
+	);
+	check(
+		"незнакомый вид документа отклонён НА ЗАПИСИ",
+		unknownDocument.statusCode,
+		400,
+	);
+	checkRussianRefusal(
+		"текст отказа по видам документов",
+		unknownDocument.json.message,
+	);
 
-	const unknownImaging = await call(app, "POST", "/api/settings/protocols", own.id, {
-		title: "Шаблон с незнакомым снимком",
-		suggestedImaging: ["мрт_головы"],
-	});
-	check("незнакомый вид снимка отклонён на записи", unknownImaging.statusCode, 400);
+	const unknownImaging = await call(
+		app,
+		"POST",
+		"/api/settings/protocols",
+		own.id,
+		{
+			title: "Шаблон с незнакомым снимком",
+			suggestedImaging: ["мрт_головы"],
+		},
+	);
+	check(
+		"незнакомый вид снимка отклонён на записи",
+		unknownImaging.statusCode,
+		400,
+	);
 
-	const emptyTitle = await call(app, "POST", "/api/settings/protocols", own.id, { title: "   " });
+	const emptyTitle = await call(
+		app,
+		"POST",
+		"/api/settings/protocols",
+		own.id,
+		{ title: "   " },
+	);
 	check("шаблон без названия не создан", emptyTitle.statusCode, 400);
 	checkRussianRefusal("текст отказа по названию", emptyTitle.json.message);
 
-	const badDuration = await call(app, "PUT", `/api/settings/protocols/${templateId}`, own.id, {
-		defaultDurationMinutes: 0,
-	});
+	const badDuration = await call(
+		app,
+		"PUT",
+		`/api/settings/protocols/${templateId}`,
+		own.id,
+		{
+			defaultDurationMinutes: 0,
+		},
+	);
 	check("нулевая длительность отклонена", badDuration.statusCode, 400);
 
-	const emptyPatch = await call(app, "PUT", `/api/settings/protocols/${templateId}`, own.id, {
-		какое_то_поле: 1,
-	});
-	check("правка без полей отклонена, а не выдана за успех", emptyPatch.statusCode, 400);
+	const emptyPatch = await call(
+		app,
+		"PUT",
+		`/api/settings/protocols/${templateId}`,
+		own.id,
+		{
+			какое_то_поле: 1,
+		},
+	);
+	check(
+		"правка без полей отклонена, а не выдана за успех",
+		emptyPatch.statusCode,
+		400,
+	);
 	checkRussianRefusal("текст отказа по пустой правке", emptyPatch.json.message);
 
-	const missing = await call(app, "PUT", "/api/settings/protocols/00000000-0000-0000-0000-000000000000", own.id, {
-		title: "Нет такого",
-	});
-	check("несуществующий шаблон даёт 404 маршрута, а не Fastify", missing.statusCode, 404);
-	checkRussianRefusal("текст отказа по ненайденному шаблону", missing.json.message);
+	const missing = await call(
+		app,
+		"PUT",
+		"/api/settings/protocols/00000000-0000-0000-0000-000000000000",
+		own.id,
+		{
+			title: "Нет такого",
+		},
+	);
+	check(
+		"несуществующий шаблон даёт 404 маршрута, а не Fastify",
+		missing.statusCode,
+		404,
+	);
+	checkRussianRefusal(
+		"текст отказа по ненайденному шаблону",
+		missing.json.message,
+	);
 
 	const rowAfterRefusals = await independentRow(templateId);
-	check("ни один отказ не изменил название", rowAfterRefusals?.title, "Лечение кариеса (исправлено)");
-	check("отказы не наплодили шаблонов", await independentCount(own.id), before + 1);
+	check(
+		"ни один отказ не изменил название",
+		rowAfterRefusals?.title,
+		"Лечение кариеса (исправлено)",
+	);
+	check(
+		"отказы не наплодили шаблонов",
+		await independentCount(own.id),
+		before + 1,
+	);
 
 	console.log("\n=== ИЗОЛЯЦИЯ КЛИНИК ===");
-	const foreignUpdate = await call(app, "PUT", `/api/settings/protocols/${templateId}`, foreign.id, {
-		title: "Захвачено чужой клиникой",
-	});
+	const foreignUpdate = await call(
+		app,
+		"PUT",
+		`/api/settings/protocols/${templateId}`,
+		foreign.id,
+		{
+			title: "Захвачено чужой клиникой",
+		},
+	);
 	check("чужая клиника не правит шаблон", foreignUpdate.statusCode, 404);
 	checkRussianRefusal("отказ чужой клинике", foreignUpdate.json.message);
-	const foreignDelete = await call(app, "DELETE", `/api/settings/protocols/${templateId}`, foreign.id);
+	const foreignDelete = await call(
+		app,
+		"DELETE",
+		`/api/settings/protocols/${templateId}`,
+		foreign.id,
+	);
 	check("чужая клиника не удаляет шаблон", foreignDelete.statusCode, 404);
-	check("шаблон после чужих попыток на месте", (await independentRow(templateId)) !== null, true);
+	check(
+		"шаблон после чужих попыток на месте",
+		(await independentRow(templateId)) !== null,
+		true,
+	);
 	check(
 		"название после чужих попыток то же",
 		(await independentRow(templateId))?.title,
 		"Лечение кариеса (исправлено)",
 	);
 
-	console.log("\n=== УДАЛЕНИЕ (DELETE /api/settings/protocols/:templateId) ===");
-	const deleteResponse = await call(app, "DELETE", `/api/settings/protocols/${templateId}`, own.id);
+	console.log(
+		"\n=== УДАЛЕНИЕ (DELETE /api/settings/protocols/:templateId) ===",
+	);
+	const deleteResponse = await call(
+		app,
+		"DELETE",
+		`/api/settings/protocols/${templateId}`,
+		own.id,
+	);
 	check("шаблон удалён", deleteResponse.statusCode, 200);
 	console.log(`  ответ маршрута: ${deleteResponse.body}`);
 	check("маршрут вернул удалённый шаблон", deleteResponse.json.id, templateId);
 	check("строки в базе больше нет", await independentRow(templateId), null);
-	check("шаблонов у клиники снова столько же", await independentCount(own.id), before);
-	const deleteAgain = await call(app, "DELETE", `/api/settings/protocols/${templateId}`, own.id);
-	check("повторное удаление даёт человеческий 404", deleteAgain.statusCode, 404);
+	check(
+		"шаблонов у клиники снова столько же",
+		await independentCount(own.id),
+		before,
+	);
+	const deleteAgain = await call(
+		app,
+		"DELETE",
+		`/api/settings/protocols/${templateId}`,
+		own.id,
+	);
+	check(
+		"повторное удаление даёт человеческий 404",
+		deleteAgain.statusCode,
+		404,
+	);
 	checkRussianRefusal("текст повторного удаления", deleteAgain.json.message);
 
 	console.log("\n=== ОХРАНА ДОСТУПА ===");
@@ -311,13 +474,23 @@ async function proveWrites(app: FastifyInstance, created: string[]): Promise<voi
 		method: "POST",
 		url: "/api/settings/protocols",
 		headers: {
-			"x-dente-clinic-token": signToken({ organizationId: own.id }, authTokenSecret()),
+			"x-dente-clinic-token": signToken(
+				{ organizationId: own.id },
+				authTokenSecret(),
+			),
 			"content-type": "application/json",
 		},
 		payload: JSON.stringify({ title: "Без секрета" }),
 	});
-	check("без секрета администратора запись отклонена", noSecret.statusCode, 403);
-	checkRussianRefusal("отказ без секрета", (JSON.parse(noSecret.body) as { message?: string }).message);
+	check(
+		"без секрета администратора запись отклонена",
+		noSecret.statusCode,
+		403,
+	);
+	checkRussianRefusal(
+		"отказ без секрета",
+		(JSON.parse(noSecret.body) as { message?: string }).message,
+	);
 
 	await proveOverRealHttp(own.id);
 }
@@ -358,7 +531,11 @@ async function proveOverRealHttp(organizationId: string): Promise<void> {
 		console.log(`  по сети: HTTP ${response.status} ${JSON.stringify(body)}`);
 		const row = await independentRow(String(body.id ?? ""));
 		check("шаблон из сети лежит в базе", row?.title, "Профгигиена по сети");
-		check("умолчания не выдуманы (причина визита пустая)", row?.visit_reason, "");
+		check(
+			"умолчания не выдуманы (причина визита пустая)",
+			row?.visit_reason,
+			"",
+		);
 	} finally {
 		await app.close();
 	}
@@ -366,7 +543,9 @@ async function proveOverRealHttp(organizationId: string): Promise<void> {
 
 async function cleanup(organizationIds: string[]): Promise<void> {
 	for (const organizationId of organizationIds) {
-		await db.delete(protocolTemplates).where(eq(protocolTemplates.organizationId, organizationId));
+		await db
+			.delete(protocolTemplates)
+			.where(eq(protocolTemplates.organizationId, organizationId));
 		await db.delete(organizations).where(eq(organizations.id, organizationId));
 	}
 }
@@ -378,7 +557,9 @@ async function sweepStaleProofOrganizations(): Promise<void> {
 		.from(organizations)
 		.where(inArray(organizations.name, [...PROOF_ORGANIZATION_NAMES]));
 	if (stale.length === 0) return;
-	console.log(`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`);
+	console.log(
+		`Следы прерванного прогона: организаций ${stale.length} — удаляю до начала проверки.`,
+	);
 	for (const row of stale) console.log(`  ${row.id}  ${row.name}`);
 	await cleanup(stale.map((row) => row.id));
 }
@@ -405,7 +586,9 @@ async function main(): Promise<void> {
 			.from(organizations)
 			.where(inArray(organizations.name, [...PROOF_ORGANIZATION_NAMES]));
 		check("тестовых клиник в базе не осталось", stillThere.length, 0);
-		console.log(failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`);
+		console.log(
+			failures === 0 ? "\nВСЕ СВЕРКИ СОШЛИСЬ" : `\nРАСХОЖДЕНИЙ: ${failures}`,
+		);
 		await pool.end();
 	}
 	if (failures > 0) process.exitCode = 1;

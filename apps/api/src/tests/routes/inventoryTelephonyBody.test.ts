@@ -168,7 +168,10 @@ describe("склад + АТС — Zod body (null → 400, не 500)", () => {
 	});
 
 	test("склад stock без токена → 401 (auth-first)", async () => {
-		const refused = await patchStock({ body: { adjustment: 1 }, withAuth: false });
+		const refused = await patchStock({
+			body: { adjustment: 1 },
+			withAuth: false,
+		});
 		assert.ok(
 			refused.statusCode === 401 || refused.statusCode === 403,
 			`ожидали 401/403 без токена, получили ${refused.statusCode}: ${refused.body}`,

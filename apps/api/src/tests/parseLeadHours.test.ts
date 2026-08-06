@@ -9,7 +9,7 @@ describe("parseLeadHours", () => {
 	});
 
 	test("parses string numbers and converts to numbers", () => {
-		const result = parseLeadHours("[\"12\", \"24.5\"]");
+		const result = parseLeadHours('["12", "24.5"]');
 		assert.deepEqual(result, [24.5, 12]);
 	});
 
@@ -24,7 +24,7 @@ describe("parseLeadHours", () => {
 	});
 
 	test("filters out unparseable string values", () => {
-		const result = parseLeadHours("[24, \"abc\", {}]");
+		const result = parseLeadHours('[24, "abc", {}]');
 		assert.deepEqual(result, [24]);
 	});
 
@@ -34,7 +34,7 @@ describe("parseLeadHours", () => {
 	});
 
 	test("returns default [24] for non-array JSON", () => {
-		const result = parseLeadHours("{\"hours\": 24}");
+		const result = parseLeadHours('{"hours": 24}');
 		assert.deepEqual(result, [24]);
 	});
 
@@ -44,7 +44,7 @@ describe("parseLeadHours", () => {
 	});
 
 	test("returns default [24] for array with only invalid values", () => {
-		const result = parseLeadHours("[-12, \"abc\"]");
+		const result = parseLeadHours('[-12, "abc"]');
 		assert.deepEqual(result, [24]);
 	});
 });

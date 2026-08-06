@@ -144,7 +144,8 @@ describe("отказ протоколов приёма объяснён врач
 		// Секрет периметра задаётся здесь: гейт clinicalAdminSecret() читает
 		// переменную на каждом вызове, поэтому тест не зависит от настроек машины и
 		// не трогает настоящий секрет установки.
-		process.env.DENTE_CLINICAL_ADMIN_SECRET = "секрет-сторожа-текста-протоколов";
+		process.env.DENTE_CLINICAL_ADMIN_SECRET =
+			"секрет-сторожа-текста-протоколов";
 		app = Fastify({ logger: false });
 		app.addHook("onRequest", async (request) => {
 			getRequestIdentity(request);
@@ -162,8 +163,7 @@ describe("отказ протоколов приёма объяснён врач
 	): Promise<{ statusCode: number; error: string; message: string }> {
 		const headers: Record<string, string> = {
 			"content-type": "application/json",
-			"x-dente-admin-secret": process.env
-				.DENTE_CLINICAL_ADMIN_SECRET as string,
+			"x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET as string,
 		};
 		if (probe.withClinicToken) {
 			headers["x-dente-clinic-token"] = signToken(
@@ -238,9 +238,7 @@ describe("отказ протоколов приёма объяснён врач
 		 * существует и работает, а врача отправляют звать администратора.
 		 */
 		const { message } = await refusal(
-			PROBES.find(
-				(probe) => probe.expectedError === "NotFound",
-			) as Probe,
+			PROBES.find((probe) => probe.expectedError === "NotFound") as Probe,
 		);
 		assert.match(
 			message,

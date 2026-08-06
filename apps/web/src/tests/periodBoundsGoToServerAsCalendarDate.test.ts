@@ -48,10 +48,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { fetchReportsSummary } from "../components/reports/ManagerReportsPanel.js";
-import { payoutMonthCalendarBounds, requestDoctorPayouts } from "../pages/DoctorPayoutDashboard.js";
+import {
+	payoutMonthCalendarBounds,
+	requestDoctorPayouts,
+} from "../pages/DoctorPayoutDashboard.js";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -59,8 +62,22 @@ const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const emptySummary = {
 	period: { from: "", to: "" },
 	revenue: { granularity: "day", points: [], totalRub: 0, isEmpty: true },
-	doctors: { rows: [], unattributedRevenueRub: 0, attributionNote: "", isEmpty: true },
-	chairs: { rows: [], basis: { workingDays: 0, minutesPerDay: 0, totalMinutesPerChair: 0, note: "" }, isEmpty: true },
+	doctors: {
+		rows: [],
+		unattributedRevenueRub: 0,
+		attributionNote: "",
+		isEmpty: true,
+	},
+	chairs: {
+		rows: [],
+		basis: {
+			workingDays: 0,
+			minutesPerDay: 0,
+			totalMinutesPerChair: 0,
+			note: "",
+		},
+		isEmpty: true,
+	},
 	appointments: {
 		byStatus: {},
 		total: 0,
@@ -69,20 +86,34 @@ const emptySummary = {
 		cancellationRate: null,
 		noShowRate: null,
 		lostAppointments: 0,
-		isEmpty: true
+		isEmpty: true,
 	},
 	reminderEffect: {
-		reminded: { appointments: 0, completed: 0, cancelled: 0, noShow: 0, lost: 0, lostRate: null },
-		notReminded: { appointments: 0, completed: 0, cancelled: 0, noShow: 0, lost: 0, lostRate: null },
+		reminded: {
+			appointments: 0,
+			completed: 0,
+			cancelled: 0,
+			noShow: 0,
+			lost: 0,
+			lostRate: null,
+		},
+		notReminded: {
+			appointments: 0,
+			completed: 0,
+			cancelled: 0,
+			noShow: 0,
+			lost: 0,
+			lostRate: null,
+		},
 		lostRateDifference: null,
 		caveat: "",
 		smallestGroupSize: 0,
 		enoughData: false,
-		isEmpty: true
+		isEmpty: true,
 	},
 	patientFlow: { points: [], newTotal: 0, returningTotal: 0 },
 	receivables: { totalDebtRub: 0, byBucket: {}, debtors: 0 },
-	isEmpty: true
+	isEmpty: true,
 };
 
 /**
@@ -91,7 +122,10 @@ const emptySummary = {
  * бы остальным проверкам всё, что зависит от даты, а оставленный перехват увёл бы
  * их запросы в пустоту.
  */
-async function requestedUrlIn(browserZone: string, run: () => Promise<unknown>): Promise<string> {
+async function requestedUrlIn(
+	browserZone: string,
+	run: () => Promise<unknown>,
+): Promise<string> {
 	const realFetch = globalThis.fetch;
 	const zoneWasSet = Object.hasOwn(process.env, "TZ");
 	const previousZone = process.env.TZ;
@@ -102,7 +136,7 @@ async function requestedUrlIn(browserZone: string, run: () => Promise<unknown>):
 		captured.push(typeof input === "string" ? input : String(input));
 		return new Response(JSON.stringify(emptySummary), {
 			status: 200,
-			headers: { "content-type": "application/json" }
+			headers: { "content-type": "application/json" },
 		});
 	}) as typeof globalThis.fetch;
 
@@ -114,7 +148,11 @@ async function requestedUrlIn(browserZone: string, run: () => Promise<unknown>):
 		else delete process.env.TZ;
 	}
 
-	assert.equal(captured.length, 1, `ожидался ровно один запрос, случилось ${captured.length}`);
+	assert.equal(
+		captured.length,
+		1,
+		`ожидался ровно один запрос, случилось ${captured.length}`,
+	);
 	return captured[0] ?? "";
 }
 
@@ -123,30 +161,40 @@ const LOOKS_LIKE_AN_INSTANT = /T\d{2}(:|%3A)\d{2}|\dZ|%2B\d{2}(:|%3A)\d{2}/;
 
 describe("границы периода уходят на сервер календарной датой", () => {
 	test("сводка отчётов: адрес не зависит от пояса браузера", async () => {
-		const period = { from: "2026-07-01", to: "2026-07-31", granularity: "day" } as const;
+		const period = {
+			from: "2026-07-01",
+			to: "2026-07-31",
+			granularity: "day",
+		} as const;
 
-		const fromMoscow = await requestedUrlIn("Europe/Moscow", () => fetchReportsSummary(period, {}));
-		const fromKamchatka = await requestedUrlIn("Asia/Kamchatka", () => fetchReportsSummary(period, {}));
-		const fromNewYork = await requestedUrlIn("America/New_York", () => fetchReportsSummary(period, {}));
+		const fromMoscow = await requestedUrlIn("Europe/Moscow", () =>
+			fetchReportsSummary(period, {}),
+		);
+		const fromKamchatka = await requestedUrlIn("Asia/Kamchatka", () =>
+			fetchReportsSummary(period, {}),
+		);
+		const fromNewYork = await requestedUrlIn("America/New_York", () =>
+			fetchReportsSummary(period, {}),
+		);
 
 		assert.equal(
 			fromMoscow,
 			"/api/reports/summary?from=2026-07-01&to=2026-07-31&granularity=day",
-			"панель снова считает границы сама: календарная дата не доходит до сервера как есть"
+			"панель снова считает границы сама: календарная дата не доходит до сервера как есть",
 		);
 		assert.equal(
 			fromKamchatka,
 			fromMoscow,
-			`запрос зависит от пояса браузера: Камчатка ${fromKamchatka}, Москва ${fromMoscow}`
+			`запрос зависит от пояса браузера: Камчатка ${fromKamchatka}, Москва ${fromMoscow}`,
 		);
 		assert.equal(
 			fromNewYork,
 			fromMoscow,
-			`запрос зависит от пояса браузера: Нью-Йорк ${fromNewYork}, Москва ${fromMoscow}`
+			`запрос зависит от пояса браузера: Нью-Йорк ${fromNewYork}, Москва ${fromMoscow}`,
 		);
 		assert.ok(
 			!LOOKS_LIKE_AN_INSTANT.test(fromMoscow),
-			`в адрес сводки вернулось мгновение вместо календарной даты: ${fromMoscow}`
+			`в адрес сводки вернулось мгновение вместо календарной даты: ${fromMoscow}`,
 		);
 	});
 
@@ -154,22 +202,26 @@ describe("границы периода уходят на сервер кале�
 		const bounds = payoutMonthCalendarBounds("2026-07");
 		assert.ok(bounds, "границы зарплатного месяца не разобраны");
 
-		const fromMoscow = await requestedUrlIn("Europe/Moscow", () => requestDoctorPayouts(bounds, {}));
-		const fromKamchatka = await requestedUrlIn("Asia/Kamchatka", () => requestDoctorPayouts(bounds, {}));
+		const fromMoscow = await requestedUrlIn("Europe/Moscow", () =>
+			requestDoctorPayouts(bounds, {}),
+		);
+		const fromKamchatka = await requestedUrlIn("Asia/Kamchatka", () =>
+			requestDoctorPayouts(bounds, {}),
+		);
 
 		assert.equal(
 			fromMoscow,
 			"/api/billing/payouts?from=2026-07-01&to=2026-07-31",
-			"экран выплат снова считает границы месяца сам — это зарплата, и граница здесь стоит денег"
+			"экран выплат снова считает границы месяца сам — это зарплата, и граница здесь стоит денег",
 		);
 		assert.equal(
 			fromKamchatka,
 			fromMoscow,
-			`запрос выплат зависит от пояса браузера: Камчатка ${fromKamchatka}, Москва ${fromMoscow}`
+			`запрос выплат зависит от пояса браузера: Камчатка ${fromKamchatka}, Москва ${fromMoscow}`,
 		);
 		assert.ok(
 			!LOOKS_LIKE_AN_INSTANT.test(fromMoscow),
-			`в адрес выплат вернулось мгновение вместо календарной даты: ${fromMoscow}`
+			`в адрес выплат вернулось мгновение вместо календарной даты: ${fromMoscow}`,
 		);
 	});
 
@@ -182,15 +234,36 @@ describe("границы периода уходят на сервер кале�
 		const zoneWasSet = Object.hasOwn(process.env, "TZ");
 		const previousZone = process.env.TZ;
 		try {
-			for (const zone of ["Pacific/Kiritimati", "Pacific/Niue", "Europe/Moscow"]) {
+			for (const zone of [
+				"Pacific/Kiritimati",
+				"Pacific/Niue",
+				"Europe/Moscow",
+			]) {
 				process.env.TZ = zone;
-				assert.deepEqual(payoutMonthCalendarBounds("2026-02"), { from: "2026-02-01", to: "2026-02-28" }, zone);
-				assert.deepEqual(payoutMonthCalendarBounds("2024-02"), { from: "2024-02-01", to: "2024-02-29" }, zone);
-				assert.deepEqual(payoutMonthCalendarBounds("2026-12"), { from: "2026-12-01", to: "2026-12-31" }, zone);
-				assert.deepEqual(payoutMonthCalendarBounds("2026-01"), { from: "2026-01-01", to: "2026-01-31" }, zone);
+				assert.deepEqual(
+					payoutMonthCalendarBounds("2026-02"),
+					{ from: "2026-02-01", to: "2026-02-28" },
+					zone,
+				);
+				assert.deepEqual(
+					payoutMonthCalendarBounds("2024-02"),
+					{ from: "2024-02-01", to: "2024-02-29" },
+					zone,
+				);
+				assert.deepEqual(
+					payoutMonthCalendarBounds("2026-12"),
+					{ from: "2026-12-01", to: "2026-12-31" },
+					zone,
+				);
+				assert.deepEqual(
+					payoutMonthCalendarBounds("2026-01"),
+					{ from: "2026-01-01", to: "2026-01-31" },
+					zone,
+				);
 			}
 		} finally {
-			if (zoneWasSet && previousZone !== undefined) process.env.TZ = previousZone;
+			if (zoneWasSet && previousZone !== undefined)
+				process.env.TZ = previousZone;
 			else delete process.env.TZ;
 		}
 		assert.equal(payoutMonthCalendarBounds("2026-13"), null);
@@ -206,7 +279,10 @@ describe("границы периода уходят на сервер кале�
 	 * ставится здесь: в этих двух файлах его быть не должно вовсе.
 	 */
 	test("ни в панели отчётов, ни в выплатах не осталось превращения даты в мгновение", () => {
-		for (const relative of ["components/reports/ManagerReportsPanel.tsx", "pages/DoctorPayoutDashboard.tsx"]) {
+		for (const relative of [
+			"components/reports/ManagerReportsPanel.tsx",
+			"pages/DoctorPayoutDashboard.tsx",
+		]) {
 			const source = readFileSync(path.join(webSrc, relative), "utf8");
 			/*
 			 * Считается ВЕСЬ файл, включая пояснения. Это осознанно: разбирать
@@ -220,7 +296,7 @@ describe("границы периода уходят на сервер кале�
 			assert.equal(
 				calls.length,
 				0,
-				`${relative}: вернулось ${calls.length} превращений даты в мгновение. Пояс клиники знает сервер, браузер — нет.`
+				`${relative}: вернулось ${calls.length} превращений даты в мгновение. Пояс клиники знает сервер, браузер — нет.`,
 			);
 		}
 	});

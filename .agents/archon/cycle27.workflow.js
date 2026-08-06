@@ -1,10 +1,8 @@
 export const meta = {
-  name: 'dente-cycle27-PP',
-  description: 'Цикл 27, волна PP: null печатается клинике как «0 ₽» в 138 местах, as any скрывает мёртвые пропсы в 8 компонентах, 9 красных стражей, год на системных часах',
-  phases: [
-    { title: 'Build' },
-    { title: 'Review' }
-  ]
+	name: "dente-cycle27-PP",
+	description:
+		"Цикл 27, волна PP: null печатается клинике как «0 ₽» в 138 местах, as any скрывает мёртвые пропсы в 8 компонентах, 9 красных стражей, год на системных часах",
+	phases: [{ title: "Build" }, { title: "Review" }],
 };
 
 const LAW = `Ты исполнитель в волне PP. Проект: C:\\Clinic_MVP\\dental-crm (Windows, bash). Работай молча и коммить.
@@ -44,11 +42,12 @@ const LAW = `Ты исполнитель в волне PP. Проект: C:\\Cli
 ВОЗВРАТ: COMMITS | EXIT_PASS / EXIT_BITE / MUTATION | MEASURED | CLAIM | CONTRADICTED | FOUND`;
 
 const PACKETS = [
-  {
-    id: 'PP1',
-    label: 'null печатается клинике как «0 ₽» — 138 вызовов в 28 файлах',
-    files: 'apps/web/src/AppHelpers.tsx (сама функция) + вызывающие места ВНЕ apps/web/src/components/settings/** — папку настроек держит PP2. Новый тест положить в apps/web/src или apps/api/src по месту, где он запускается',
-    brief: `P0, САМЫЙ ШИРОКИЙ ЭКЗЕМПЛЯР ТЕМЫ «НЕИЗВЕСТНО СТАНОВИТСЯ НУЛЁМ» В ПРОДУКТЕ.
+	{
+		id: "PP1",
+		label: "null печатается клинике как «0 ₽» — 138 вызовов в 28 файлах",
+		files:
+			"apps/web/src/AppHelpers.tsx (сама функция) + вызывающие места ВНЕ apps/web/src/components/settings/** — папку настроек держит PP2. Новый тест положить в apps/web/src или apps/api/src по месту, где он запускается",
+		brief: `P0, САМЫЙ ШИРОКИЙ ЭКЗЕМПЛЯР ТЕМЫ «НЕИЗВЕСТНО СТАНОВИТСЯ НУЛЁМ» В ПРОДУКТЕ.
 
 ЗАМЕР ВЕДУЩЕГО ПО HEAD. \`apps/web/src/AppHelpers.tsx:2588\`:
 
@@ -86,13 +85,15 @@ const PACKETS = [
 Набор обязан закрыть ОБЕ стороны: \`money(null)\` НЕ содержит «0 ₽», а \`money(0)\` содержит; \`money(1500.5)\`
 даёт «1 500,50 ₽», \`money(1500)\` — «1 500 ₽» без «,00» (это записано в комментарии как решение),
 \`money("1500.50")\` работает как раньше.
-EXIT_BITE: верни \`? amount : 0\` в копии и покажи, что набор краснеет.`
-  },
-  {
-    id: 'PP2',
-    label: '`as any` в 8 компонентах настроек скрывает мёртвые пропсы от компилятора',
-    files: 'apps/web/src/components/settings/** — ВСЯ папка твоя, включая sources/. Никто другой в волне её не трогает',
-    brief: `P0 архитектурный. ЭТО ПРИЧИНА, ПО КОТОРОЙ ДЕВЯТЬ МЁРТВЫХ ПРОПСОВ ЖИЛИ НЕЗАМЕЧЕННЫМИ.
+EXIT_BITE: верни \`? amount : 0\` в копии и покажи, что набор краснеет.`,
+	},
+	{
+		id: "PP2",
+		label:
+			"`as any` в 8 компонентах настроек скрывает мёртвые пропсы от компилятора",
+		files:
+			"apps/web/src/components/settings/** — ВСЯ папка твоя, включая sources/. Никто другой в волне её не трогает",
+		brief: `P0 архитектурный. ЭТО ПРИЧИНА, ПО КОТОРОЙ ДЕВЯТЬ МЁРТВЫХ ПРОПСОВ ЖИЛИ НЕЗАМЕЧЕННЫМИ.
 
 ЗАМЕР ВЕДУЩЕГО ПО HEAD — идиом стоит в ВОСЬМИ файлах (в ревью прошлой волны было названо шесть, я перемерил):
 
@@ -141,13 +142,14 @@ EXIT_BITE: верни \`? amount : 0\` в копии и покажи, что н�
 
 ДОКАЗАТЬ: EXIT_BITE здесь особенный и это ЛУЧШАЯ ПРОВЕРКА ПАКЕТА — в копии файла добавь чтение
 несуществующего пропса (\`mergedProps.thisPropDoesNotExist\`) и покажи, что компилятор теперь ЛОВИТ это,
-а с \`as any\` — молчал. Приведи оба вывода. Это доказывает, что связь стала проверяемой.`
-  },
-  {
-    id: 'PP3',
-    label: 'девять последних красных стражей -source',
-    files: 'ТОЛЬКО scripts/smoke-*-source.mjs из списка ниже. Продукт НЕ править',
-    brief: `P1, добить слой. Замер ведущего прогоном всех 41: было зелёных 10 / красных 31, сейчас **32 / 9**.
+а с \`as any\` — молчал. Приведи оба вывода. Это доказывает, что связь стала проверяемой.`,
+	},
+	{
+		id: "PP3",
+		label: "девять последних красных стражей -source",
+		files:
+			"ТОЛЬКО scripts/smoke-*-source.mjs из списка ниже. Продукт НЕ править",
+		brief: `P1, добить слой. Замер ведущего прогоном всех 41: было зелёных 10 / красных 31, сейчас **32 / 9**.
 Твои девять — последние. Прогони каждый и определи класс.
 
 ТАКСОНОМИЯ ИЗ ПЯТИ КЛАССОВ, построена предыдущими волнами:
@@ -190,13 +192,15 @@ speech-final-ready-status-source, visit-dictation-simplified-actions-source, ima
 
 ДОКАЗАТЬ: таблица страж | класс | код выхода ДО | ПОСЛЕ, истинный код без конвейера по каждому.
 EXIT_BITE обязателен для КАЖДОГО ослабленного требования: прогон образца по искусственно сломанной копии
-исходника в памяти, продукт не трогая. Класс REAL остаётся красным законно — это не провал пакета.`
-  },
-  {
-    id: 'PP4',
-    label: 'окно года привязано к системным часам + нейро-ветка принимает год ценой',
-    files: 'apps/api/src/pricelist/analyzer.ts + apps/api/src/pricelist/pricelistYearPrice.test.ts. ТЫ ЕДИНСТВЕННЫЙ ВЛАДЕЛЕЦ analyzer.ts в этой волне',
-    brief: `Две находки ревьюера прошлой волны, обе НЕ проверены ведущим — проверь сам первым делом и скажи, если
+исходника в памяти, продукт не трогая. Класс REAL остаётся красным законно — это не провал пакета.`,
+	},
+	{
+		id: "PP4",
+		label:
+			"окно года привязано к системным часам + нейро-ветка принимает год ценой",
+		files:
+			"apps/api/src/pricelist/analyzer.ts + apps/api/src/pricelist/pricelistYearPrice.test.ts. ТЫ ЕДИНСТВЕННЫЙ ВЛАДЕЛЕЦ analyzer.ts в этой волне",
+		brief: `Две находки ревьюера прошлой волны, обе НЕ проверены ведущим — проверь сам первым делом и скажи, если
 замер их не подтвердит. Файл только что правил ведущий тремя коммитами, читай его текущее состояние.
 
 === ЗАДАЧА 1 (P1): РАЗБОР МЕНЯЕТ ПОВЕДЕНИЕ КАЖДОЕ 1 ЯНВАРЯ ===
@@ -247,23 +251,23 @@ EXIT_BITE обязателен для КАЖДОГО ослабленного т
 cd apps/api && node --import tsx --test src/pricelist/pricelistYearPrice.test.ts src/pricelist/pricelistRowGate.test.ts src/pricelist/pricelistKopecks.test.ts src/pricelist/analyzer.test.ts src/pricelist/pricelistLastNumber.test.ts src/pricelist/pricelistBrandDigits.test.ts src/pricelist/groqPricelistKopecks.test.ts
 Плюс зонды ведущего, они воспроизводимы и лежат в git:
 cd apps/api && npx tsx ../../scratch/probe-year-as-price.ts   (истинный код 0)
-cd apps/api && npx tsx ../../scratch/probe-price-window.ts    (истинный код 0)`
-  }
+cd apps/api && npx tsx ../../scratch/probe-price-window.ts    (истинный код 0)`,
+	},
 ];
 
-phase('Build');
+phase("Build");
 
 const done = await pipeline(
-  PACKETS,
-  (packet) =>
-    agent(
-      `${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
-      { label: `build:${packet.id}`, phase: 'Build', effort: 'high' }
-    ),
-  (buildResult, packet) => {
-    if (!buildResult) return null;
-    return agent(
-      `Ты ревьюер пакета ${packet.id} в волне PP. Проект C:\\Clinic_MVP\\dental-crm.
+	PACKETS,
+	(packet) =>
+		agent(
+			`${LAW}\n\n=== ТВОЙ ПАКЕТ ${packet.id}: ${packet.label} ===\nФАЙЛЫ, КОТОРЫЕ ТЫ ДЕРЖИШЬ: ${packet.files}\nЧужих файлов не трогай — их держат другие агенты этой же волны.\n\n${packet.brief}`,
+			{ label: `build:${packet.id}`, phase: "Build", effort: "high" },
+		),
+	(buildResult, packet) => {
+		if (!buildResult) return null;
+		return agent(
+			`Ты ревьюер пакета ${packet.id} в волне PP. Проект C:\\Clinic_MVP\\dental-crm.
 Ты НЕ ПРАВИШЬ КОД. Пишешь ОДИН файл: .agents/archon/packets/${packet.id}/review.md, коммитишь только его
 (ретрай 20×6 с вокруг git add И git commit, сообщение в файл, [ARCHON] в теме, без атрибуции, трейлеры пусты).
 НЕ ПУШИТЬ.
@@ -304,12 +308,14 @@ ${buildResult}
 FOUND — самая ценная часть: за три волны ревьюеры нашли то, чего не видел никто, — год как цену услуги,
 зелёный тест на сломанном коде, английский токен на экране, регресс, вернувший закрытый P0, и подделку
 требований комментарием. Не оставляй пустым из вежливости, но выдуманный дефект хуже пустого.`,
-      { label: `review:${packet.id}`, phase: 'Review', effort: 'high' }
-    );
-  }
+			{ label: `review:${packet.id}`, phase: "Review", effort: "high" },
+		);
+	},
 );
 
-log(`волна PP завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`);
+log(
+	`волна PP завершена: ${done.filter(Boolean).length}/${PACKETS.length} пакетов вернули ревью`,
+);
 
 return {
   packets: PACKETS.map((packet, index) => ({ id: packet.id, label: packet.label, review: done[index] ?? null }))

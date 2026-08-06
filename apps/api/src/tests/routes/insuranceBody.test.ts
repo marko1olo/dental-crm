@@ -13,11 +13,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
-import {
-	insuranceContracts,
-	organizations,
-	users,
-} from "../../db/schema.js";
+import { insuranceContracts, organizations, users } from "../../db/schema.js";
 import { registerInsuranceRoutes } from "../../routes/insurance.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -74,7 +70,11 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: String(response.body || "") };
+		return {
+			statusCode: response.statusCode,
+			json,
+			body: String(response.body || ""),
+		};
 	}
 
 	async function putContract(
@@ -113,7 +113,11 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: String(response.body || "") };
+		return {
+			statusCode: response.statusCode,
+			json,
+			body: String(response.body || ""),
+		};
 	}
 
 	before(async () => {

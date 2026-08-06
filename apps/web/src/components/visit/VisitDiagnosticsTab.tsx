@@ -35,23 +35,36 @@ import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 */
 export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 	let ctx: any = null;
-	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider: fall back to props */ }
+	try {
+		ctx = useAppLogicContext();
+	} catch {
+		/* rendered outside AppLogic provider: fall back to props */
+	}
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const workspaceFlags = useWorkspaceProfile();
 
 	const selectedPatientId = usePatientStore((state) => state.selectedPatientId);
-	const setSelectedPatientId = usePatientStore((state) => state.setSelectedPatientId);
+	const setSelectedPatientId = usePatientStore(
+		(state) => state.setSelectedPatientId,
+	);
 
 	const dashboard = ctx?.dashboard;
 	const visitPatientId = realVisitFieldId(dashboard?.activeVisit?.patientId);
-	const patients: any[] = Array.isArray(dashboard?.patients) ? dashboard.patients : [];
+	const patients: any[] = Array.isArray(dashboard?.patients)
+		? dashboard.patients
+		: [];
 	const nameOf = (patientId: string | null): string | null => {
 		if (!patientId) return null;
 		const found = patients.find((patient) => patient?.id === patientId);
-		const fullName = typeof found?.fullName === "string" ? found.fullName.trim() : "";
+		const fullName =
+			typeof found?.fullName === "string" ? found.fullName.trim() : "";
 		return fullName || null;
 	};
-	const visitPatientName = nameOf(visitPatientId) ?? (typeof activePatient?.fullName === "string" ? activePatient.fullName : null);
+	const visitPatientName =
+		nameOf(visitPatientId) ??
+		(typeof activePatient?.fullName === "string"
+			? activePatient.fullName
+			: null);
 	const selectedPatientName = nameOf(realVisitFieldId(selectedPatientId));
 
 	const target = imagingWriteTarget(selectedPatientId, visitPatientId);
@@ -72,14 +85,16 @@ export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 						Снимок сохранится в карту другого пациента
 					</strong>
 					<p className="m-0">
-						Приём идёт у {visitPatientName ?? "пациента этого приёма"}, а открыта карта{" "}
-						{selectedPatientName ?? "другого пациента"}. Снимок, заключение и отметки
-						зубов лягут в открытую карту — не в карту приёма. Нажмите кнопку ниже,
-						прежде чем загружать снимок.
+						Приём идёт у {visitPatientName ?? "пациента этого приёма"}, а
+						открыта карта {selectedPatientName ?? "другого пациента"}. Снимок,
+						заключение и отметки зубов лягут в открытую карту — не в карту
+						приёма. Нажмите кнопку ниже, прежде чем загружать снимок.
 					</p>
 					<button
 						type="button"
-						onClick={() => visitPatientId && setSelectedPatientId(visitPatientId)}
+						onClick={() =>
+							visitPatientId && setSelectedPatientId(visitPatientId)
+						}
 						className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors"
 					>
 						Писать в карту {visitPatientName ?? "пациента приёма"}
@@ -95,13 +110,15 @@ export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 				>
 					<strong className="block mb-1">Карта пациента не открыта</strong>
 					<p className="m-0">
-						Снимок разберётся и заключение вы увидите, но в карту оно НЕ попадёт и
-						после перезагрузки страницы потеряется. Откройте карту пациента приёма
-						кнопкой ниже, и только потом загружайте снимок.
+						Снимок разберётся и заключение вы увидите, но в карту оно НЕ попадёт
+						и после перезагрузки страницы потеряется. Откройте карту пациента
+						приёма кнопкой ниже, и только потом загружайте снимок.
 					</p>
 					<button
 						type="button"
-						onClick={() => visitPatientId && setSelectedPatientId(visitPatientId)}
+						onClick={() =>
+							visitPatientId && setSelectedPatientId(visitPatientId)
+						}
 						className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors"
 					>
 						Открыть карту {visitPatientName ?? "пациента приёма"}
@@ -114,7 +131,8 @@ export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 					className="m-0 text-xs text-slate-500 dark:text-slate-400"
 					data-testid="visit-imaging-target-ok"
 				>
-					Снимок и заключение сохранятся в карту {visitPatientName ?? "пациента приёма"}.
+					Снимок и заключение сохранятся в карту{" "}
+					{visitPatientName ?? "пациента приёма"}.
 				</p>
 			) : null}
 
@@ -154,8 +172,9 @@ export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 						<strong className="block mb-1 text-slate-900 dark:text-white">
 							Наряды в лабораторию пока не показать
 						</strong>
-						Пациент не выбран, а наряды читаются по конкретному человеку. Выберите
-						пациента в разделе «Пациенты» или начните приём — список появится здесь.
+						Пациент не выбран, а наряды читаются по конкретному человеку.
+						Выберите пациента в разделе «Пациенты» или начните приём — список
+						появится здесь.
 					</div>
 				)
 			) : null}

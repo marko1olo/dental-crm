@@ -137,16 +137,26 @@ describe("выданное заявление на возврат снимает
 	let partialPaymentId = "";
 	const originalEnv = { ...process.env };
 
-	async function call(method: "GET" | "POST" | "PUT", url: string, payload?: unknown): Promise<Injected> {
+	async function call(
+		method: "GET" | "POST" | "PUT",
+		url: string,
+		payload?: unknown,
+	): Promise<Injected> {
 		const requestHeaders =
 			payload === undefined
-				? Object.fromEntries(Object.entries(headers).filter(([name]) => name.toLowerCase() !== "content-type"))
+				? Object.fromEntries(
+						Object.entries(headers).filter(
+							([name]) => name.toLowerCase() !== "content-type",
+						),
+					)
 				: headers;
 		const response = await app.inject({
 			method,
 			url,
 			headers: requestHeaders,
-			...(payload === undefined ? {} : { payload: payload as Record<string, unknown> }),
+			...(payload === undefined
+				? {}
+				: { payload: payload as Record<string, unknown> }),
 		});
 		let json: any = null;
 		try {
@@ -186,7 +196,11 @@ describe("выданное заявление на возврат снимает
 			payerIdentityDocument: "паспорт 12 34 567890",
 			payerRelationship: "пациент",
 		});
-		assert.equal(response.statusCode, 201, `касса не приняла оплату: ${response.body}`);
+		assert.equal(
+			response.statusCode,
+			201,
+			`касса не приняла оплату: ${response.body}`,
+		);
 		return response.json.id as string;
 	}
 
@@ -209,12 +223,14 @@ describe("выданное заявление на возврат снимает
 					action: "full_refund",
 					selectedPaymentIds: [options.paymentId],
 					amountRub: options.amountRub,
-					reason: "Сторож шва «возврат → касса»: возврат согласован бухгалтерией.",
+					reason:
+						"Сторож шва «возврат → касса»: возврат согласован бухгалтерией.",
 					refundMethod: "cash",
 					recipientFullName: "Плательщик сторожа возврата",
 					recipientIdentityDocument: "паспорт 12 34 567890",
 					originalFiscalReceiptNumber: options.receiptNumber,
-					accountantDecision: "Возврат согласован: сверка кассы за день подтверждена.",
+					accountantDecision:
+						"Возврат согласован: сверка кассы за день подтверждена.",
 				},
 			},
 		});
@@ -286,7 +302,10 @@ describe("выданное заявление на возврат снимает
 			authTokenSecret(),
 		);
 		headers = {
-			"x-dente-clinic-token": signToken({ organizationId: ORGANIZATION_ID }, authTokenSecret()),
+			"x-dente-clinic-token": signToken(
+				{ organizationId: ORGANIZATION_ID },
+				authTokenSecret(),
+			),
 			"x-dente-staff-token": staffToken,
 			"x-dente-admin-secret": adminSecret,
 			"content-type": "application/json",
@@ -321,7 +340,11 @@ describe("выданное заявление на возврат снимает
 			signatoryTitle: "главный врач",
 			timezone: "Europe/Moscow",
 		});
-		assert.equal(profile.statusCode, 200, `реквизиты клиники не записаны: ${profile.body}`);
+		assert.equal(
+			profile.statusCode,
+			200,
+			`реквизиты клиники не записаны: ${profile.body}`,
+		);
 
 		fullPaymentId = await acceptPayment({
 			patientId: PATIENT_FULL,
@@ -350,14 +373,22 @@ describe("выданное заявление на возврат снимает
 				select count(*)::int as n from payments where organization_id = ${ORGANIZATION_ID}::uuid
 			`),
 		);
-		assert.equal((leftovers.rows as { n: number }[])[0]?.n, 0, "сторож не убрал свои платежи из живой базы");
+		assert.equal(
+			(leftovers.rows as { n: number }[])[0]?.n,
+			0,
+			"сторож не убрал свои платежи из живой базы",
+		);
 		process.env = originalEnv;
 		await pool.end();
 	});
 
 	test("черновик заявления кассы не касается: деньги ещё не выходили", async () => {
 		const revenueBefore = await revenueText();
-		assert.equal(revenueBefore, "900.00", `в кассе не два посеянных чека: ${revenueBefore}`);
+		assert.equal(
+			revenueBefore,
+			"900.00",
+			`в кассе не два посеянных чека: ${revenueBefore}`,
+		);
 
 		const draft = await createRefundDraft({
 			patientId: PATIENT_FULL,
@@ -367,7 +398,11 @@ describe("выданное заявление на возврат снимает
 			receiptNumber: FULL_RECEIPT_NUMBER,
 			title: "Заявление на возврат (сторож, полная сумма)",
 		});
-		assert.equal(draft.statusCode, 201, `черновик возврата не создан: ${draft.body}`);
+		assert.equal(
+			draft.statusCode,
+			201,
+			`черновик возврата не создан: ${draft.body}`,
+		);
 
 		assert.equal(
 			await paymentStatus(fullPaymentId),
@@ -375,7 +410,11 @@ describe("выданное заявление на возврат снимает
 			"ЧЕРНОВИК заявления снял деньги с кассы. Черновик можно изменить или удалить, " +
 				"деньги ещё не покидали ящик — снимать их с выручки без юридического основания нельзя.",
 		);
-		assert.equal(await revenueText(), revenueBefore, "выручка изменилась от одного черновика");
+		assert.equal(
+			await revenueText(),
+			revenueBefore,
+			"выручка изменилась от одного черновика",
+		);
 	});
 
 	test("ВЫДАЧА заявления на полный возврат уменьшает выручку РОВНО на сумму чека", async () => {
@@ -388,11 +427,23 @@ describe("выданное заявление на возврат снимает
 			receiptNumber: FULL_RECEIPT_NUMBER,
 			title: "Заявление на возврат (сторож, выдаётся)",
 		});
-		assert.equal(draft.statusCode, 201, `черновик возврата не создан: ${draft.body}`);
-		assert.equal(await paymentStatus(fullPaymentId), "paid", "до выдачи платёж обязан быть «paid»");
+		assert.equal(
+			draft.statusCode,
+			201,
+			`черновик возврата не создан: ${draft.body}`,
+		);
+		assert.equal(
+			await paymentStatus(fullPaymentId),
+			"paid",
+			"до выдачи платёж обязан быть «paid»",
+		);
 
 		const issued = await issueDocument(draft.json.id as string);
-		assert.equal(issued.statusCode, 200, `заявление на возврат не выдано: ${issued.body}`);
+		assert.equal(
+			issued.statusCode,
+			200,
+			`заявление на возврат не выдано: ${issued.body}`,
+		);
 
 		assert.equal(
 			await paymentStatus(fullPaymentId),
@@ -412,8 +463,14 @@ describe("выданное заявление на возврат снимает
 			`выручка уменьшилась не на ${FULL_RECEIPT_RUB}.00 ₽: было ${revenueBefore}, стало ${revenueAfter} ` +
 				`(разница ${delta} коп.). Касса обязана сойтись до копейки.`,
 		);
-		assert.equal(revenueAfter, "400.00", `в кассе должен остаться только чек частичного пациента: ${revenueAfter}`);
-		console.log(`  выручка: было ${revenueBefore} ₽ → стало ${revenueAfter} ₽ (−${delta / 100} ₽)`);
+		assert.equal(
+			revenueAfter,
+			"400.00",
+			`в кассе должен остаться только чек частичного пациента: ${revenueAfter}`,
+		);
+		console.log(
+			`  выручка: было ${revenueBefore} ₽ → стало ${revenueAfter} ₽ (−${delta / 100} ₽)`,
+		);
 	});
 
 	test("повторный возврат по тому же чеку по-прежнему отклоняется", async () => {
@@ -432,7 +489,11 @@ describe("выданное заявление на возврат снимает
 			`второй возврат по чеку на ${FULL_RECEIPT_RUB}.00 ₽ принят (HTTP ${repeat.statusCode}). ` +
 				`Клиника выплатила бы ${FULL_RECEIPT_RUB * 2} ₽ по одному чеку — прямая утрата денег. ${repeat.body}`,
 		);
-		assert.equal(await revenueText(), revenueBefore, "отклонённый возврат всё равно сдвинул выручку");
+		assert.equal(
+			await revenueText(),
+			revenueBefore,
+			"отклонённый возврат всё равно сдвинул выручку",
+		);
 	});
 
 	test("аннулирование выданного заявления возвращает деньги в выручку", async () => {
@@ -457,26 +518,42 @@ describe("выданное заявление на возврат снимает
 			`),
 		);
 		const refundDocumentId = (issuedRefund.rows as { id: string }[])[0]?.id;
-		assert.ok(refundDocumentId, "выданного заявления на возврат нет — аннулировать нечего");
+		assert.ok(
+			refundDocumentId,
+			"выданного заявления на возврат нет — аннулировать нечего",
+		);
 
-		assert.equal(await paymentStatus(fullPaymentId), "refunded", "предпосылка теста не выполнена");
+		assert.equal(
+			await paymentStatus(fullPaymentId),
+			"refunded",
+			"предпосылка теста не выполнена",
+		);
 		const revenueBefore = await revenueText();
 
-		const voided = await call("POST", `/api/documents/${refundDocumentId}/void`, {
-			voidAttestation: {
-				reasonCode: "payment_correction",
-				reasonText: "Возврат отменён: деньги пациенту не выдавались, чек остаётся действующим.",
-				voidedAt: RECEIPT_DATE,
-				staffFullName: "Владелец сторожа возврата",
-				staffRole: "владелец клиники",
-				correctionDocumentId: null,
-				replacementRequired: false,
-				patientOrPayerNotified: true,
-				archivePreserved: true,
-				statusReviewed: true,
+		const voided = await call(
+			"POST",
+			`/api/documents/${refundDocumentId}/void`,
+			{
+				voidAttestation: {
+					reasonCode: "payment_correction",
+					reasonText:
+						"Возврат отменён: деньги пациенту не выдавались, чек остаётся действующим.",
+					voidedAt: RECEIPT_DATE,
+					staffFullName: "Владелец сторожа возврата",
+					staffRole: "владелец клиники",
+					correctionDocumentId: null,
+					replacementRequired: false,
+					patientOrPayerNotified: true,
+					archivePreserved: true,
+					statusReviewed: true,
+				},
 			},
-		});
-		assert.equal(voided.statusCode, 200, `заявление на возврат не аннулировано: ${voided.body}`);
+		);
+		assert.equal(
+			voided.statusCode,
+			200,
+			`заявление на возврат не аннулировано: ${voided.body}`,
+		);
 
 		assert.equal(
 			await paymentStatus(fullPaymentId),
@@ -491,7 +568,9 @@ describe("выданное заявление на возврат снимает
 			FULL_RECEIPT_RUB * 100,
 			`выручка вернулась не на ${FULL_RECEIPT_RUB}.00 ₽: было ${revenueBefore}, стало ${revenueAfter}`,
 		);
-		console.log(`  после аннулирования: выручка ${revenueBefore} ₽ → ${revenueAfter} ₽`);
+		console.log(
+			`  после аннулирования: выручка ${revenueBefore} ₽ → ${revenueAfter} ₽`,
+		);
 	});
 
 	test("частичный возврат оставляет чек в выручке, а последняя часть закрывает его до копейки", async () => {
@@ -518,7 +597,11 @@ describe("выданное заявление на возврат снимает
 			);
 
 			const issued = await issueDocument(draft.json.id as string);
-			assert.equal(issued.statusCode, 200, `частичный возврат ${part} ₽ не выдан: ${issued.body}`);
+			assert.equal(
+				issued.statusCode,
+				200,
+				`частичный возврат ${part} ₽ не выдан: ${issued.body}`,
+			);
 			issuedSoFarKopecks += Math.round(part * 100);
 
 			const status = await paymentStatus(partialPaymentId);

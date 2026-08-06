@@ -1,5 +1,5 @@
-import { describe, test } from "node:test";
 import assert from "node:assert/strict";
+import { describe, test } from "node:test";
 import type { ServiceCatalogItem } from "@dental/shared";
 import { analyzePricelist } from "./analyzer.js";
 
@@ -78,9 +78,20 @@ describe("цифра в коде модели ценой не становитс
 			["Брекеты Damon Q 38000", 38000],
 		] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.priceRub, expectedPrice, `ценой стал хвост кода модели (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, null, `выдуман диапазон (строка «${line}»)`);
-			assert.ok(!item.warnings.includes("price_not_found"), `цена не прочитана (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				expectedPrice,
+				`ценой стал хвост кода модели (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				null,
+				`выдуман диапазон (строка «${line}»)`,
+			);
+			assert.ok(
+				!item.warnings.includes("price_not_found"),
+				`цена не прочитана (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -94,16 +105,28 @@ describe("цифра в коде модели ценой не становитс
 			["Коронка цирконий Т3 21000", 21000],
 		] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.priceRub, expectedPrice, `ценой стал хвост кода модели (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				expectedPrice,
+				`ценой стал хвост кода модели (строка «${line}»)`,
+			);
 		}
 	});
 
 	test("копейки и разряды цены рядом с кодом модели остаются целы", async () => {
 		const withKopecks = await itemOf("Пломба Filtek Z550 3500,50");
-		assert.equal(withKopecks.priceRub, 3500.5, "копейки цены потеряны рядом с кодом модели");
+		assert.equal(
+			withKopecks.priceRub,
+			3500.5,
+			"копейки цены потеряны рядом с кодом модели",
+		);
 
 		const withGroups = await itemOf("Пломба Filtek Z550 12 500");
-		assert.equal(withGroups.priceRub, 12500, "разряды цены потеряны рядом с кодом модели");
+		assert.equal(
+			withGroups.priceRub,
+			12500,
+			"разряды цены потеряны рядом с кодом модели",
+		);
 	});
 
 	test("код модели остаётся в названии услуги", async () => {
@@ -112,10 +135,18 @@ describe("цифра в коде модели ценой не становитс
 		// в каталог, в план лечения и в подписываемый пациентом документ, а без
 		// «Z550» врач не знает, какой материал он продаёт.
 		const item = await itemOf("Пломба Filtek Z550 3500");
-		assert.equal(item.title, "Пломба Filtek Z550", `название разрушено: «${item.title}»`);
+		assert.equal(
+			item.title,
+			"Пломба Filtek Z550",
+			`название разрушено: «${item.title}»`,
+		);
 
 		const zoom = await itemOf("Отбеливание Zoom 4 25000");
-		assert.equal(zoom.title, "Отбеливание Zoom 4", `название разрушено: «${zoom.title}»`);
+		assert.equal(
+			zoom.title,
+			"Отбеливание Zoom 4",
+			`название разрушено: «${zoom.title}»`,
+		);
 	});
 });
 
@@ -129,22 +160,42 @@ describe("понижение в ранге не превращается в за
 		 * распознавании фотографии, то есть форма приходит от живых клиник.
 		 */
 		const glued = await itemOf("Осмотр1500");
-		assert.equal(glued.priceRub, 1500, "цена, приклеенная к названию услуги, потеряна");
+		assert.equal(
+			glued.priceRub,
+			1500,
+			"цена, приклеенная к названию услуги, потеряна",
+		);
 
 		const gluedWithCurrency = await itemOf("Осмотр1500 руб");
-		assert.equal(gluedWithCurrency.priceRub, 1500, "цена со знаком рубля, приклеенная к названию, потеряна");
+		assert.equal(
+			gluedWithCurrency.priceRub,
+			1500,
+			"цена со знаком рубля, приклеенная к названию, потеряна",
+		);
 
 		// Короткая заглавная аббревиатура настоящей услуги неотличима от кода
 		// модели: ни регистром, ни длиной. Только тем, что других чисел в строке нет.
 		const abbreviation = await itemOf("ОПТГ1200");
-		assert.equal(abbreviation.priceRub, 1200, "аббревиатура услуги принята за код модели");
+		assert.equal(
+			abbreviation.priceRub,
+			1200,
+			"аббревиатура услуги принята за код модели",
+		);
 	});
 
 	test("предлог, приклеенный к границе диапазона, диапазон не разрушает", async () => {
 		for (const line of ["от12000 до 18000", "от 12000 до18000"] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.priceRub, 12000, `нижняя граница диапазона потеряна (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, 18000, `верхняя граница диапазона потеряна (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				12000,
+				`нижняя граница диапазона потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				18000,
+				`верхняя граница диапазона потеряна (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -159,10 +210,22 @@ describe("понижение в ранге не превращается в за
 	test("разделитель диапазона приклеенностью не считается", async () => {
 		// В «12000-18000» слева от дефиса стоит цифра, а не буква: диапазон обязан
 		// уцелеть при любом виде записи.
-		for (const line of ["Отбеливание 12000-18000", "Отбеливание 12000 - 18000", "Отбеливание от 12000 до 18000"] as const) {
+		for (const line of [
+			"Отбеливание 12000-18000",
+			"Отбеливание 12000 - 18000",
+			"Отбеливание от 12000 до 18000",
+		] as const) {
 			const item = await itemOf(line);
-			assert.equal(item.priceRub, 12000, `нижняя граница диапазона потеряна (строка «${line}»)`);
-			assert.equal(item.priceMaxRub, 18000, `верхняя граница диапазона потеряна (строка «${line}»)`);
+			assert.equal(
+				item.priceRub,
+				12000,
+				`нижняя граница диапазона потеряна (строка «${line}»)`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				18000,
+				`верхняя граница диапазона потеряна (строка «${line}»)`,
+			);
 		}
 	});
 
@@ -174,7 +237,14 @@ describe("понижение в ранге не превращается в за
 		 * для них нет, и отказ от цены здесь остаётся верным исходом.
 		 */
 		const item = await itemOf("Пломба 3500 4000");
-		assert.equal(item.priceRub, null, "выдумана цена там, где строка неоднозначна");
-		assert.ok(item.warnings.includes("price_not_found"), "отказ от цены не показан клинике");
+		assert.equal(
+			item.priceRub,
+			null,
+			"выдумана цена там, где строка неоднозначна",
+		);
+		assert.ok(
+			item.warnings.includes("price_not_found"),
+			"отказ от цены не показан клинике",
+		);
 	});
 });

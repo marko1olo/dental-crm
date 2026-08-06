@@ -61,7 +61,9 @@ function fail(message) {
  * они перечислены в реестре долга ниже, с храповиком в обе стороны.
  */
 function matches(source, needle) {
-	return needle instanceof RegExp ? needle.test(source) : source.includes(needle);
+	return needle instanceof RegExp
+		? needle.test(source)
+		: source.includes(needle);
 }
 
 function indexOfMatch(source, needle) {
@@ -124,10 +126,7 @@ const KNOWN_MISSING_SPEECH_QUEUE = new Map([
 		'Speech primary recording path missing marker: "CRM запишет голос нормально и проверит Groq при старте.',
 		"NOWHERE",
 	],
-	[
-		'Speech primary recording path missing marker: "Записать голос"',
-		"NOWHERE",
-	],
+	['Speech primary recording path missing marker: "Записать голос"', "NOWHERE"],
 	[
 		"Speech queued-audio auto flush missing marker: pendingSpeechChunkCount > 0",
 		"NOWHERE",
@@ -255,9 +254,13 @@ const applyBlock = sourceSlice(
  * следующего объявления того же уровня отступа, и страж не умрёт молча.
  */
 const flushBlock =
-	sourceSlice("async function flushPendingSpeechChunks", "function scrollToVisitArea(", {
-		optional: true,
-	}) ?? declarationBlock("async function flushPendingSpeechChunks");
+	sourceSlice(
+		"async function flushPendingSpeechChunks",
+		"function scrollToVisitArea(",
+		{
+			optional: true,
+		},
+	) ?? declarationBlock("async function flushPendingSpeechChunks");
 
 function declarationBlock(startMarker) {
 	const start = source.indexOf(startMarker);

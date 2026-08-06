@@ -1,19 +1,11 @@
-import { db } from "./client.js";
-import * as schema from "./schema.js";
-import { eq, and } from "drizzle-orm";
 import {
-	patientSchema,
-	type Patient,
 	type CreatePatientInput,
+	type Patient,
+	patientSchema,
+	type UpdatePatientAdministrativeProfileInput,
 	type UpdatePatientInput,
-	type UpdatePatientAdministrativeProfileInput
 } from "@dental/shared";
-import {
-	createPatient as createPatientInMemory,
-	patients as inMemoryPatients,
-	updatePatientAdministrativeProfile as updatePatientAdministrativeProfileInMemory,
-	updatePatient as updatePatientInMemory,
-} from "../sampleData.js";
+import { and, eq } from "drizzle-orm";
 import {
 	buildPatientLedgers,
 	MoneyPrecisionError,
@@ -23,6 +15,14 @@ import {
 	rublesFromKopecks,
 	type TreatmentChargeRow,
 } from "../money/patientDebt.js";
+import {
+	createPatient as createPatientInMemory,
+	patients as inMemoryPatients,
+	updatePatientAdministrativeProfile as updatePatientAdministrativeProfileInMemory,
+	updatePatient as updatePatientInMemory,
+} from "../sampleData.js";
+import { db } from "./client.js";
+import * as schema from "./schema.js";
 
 function useInMemory(): boolean {
 	return process.env.DENTAL_STATE_PERSISTENCE === "off";
@@ -92,25 +92,37 @@ async function patientAccountBalancesRub(
 	 */
 	const singlePatientId = patientIds.length === 1 ? patientIds[0] : null;
 	const chargeScope = singlePatientId
-		? and(eq(schema.treatmentItems.organizationId, organizationId), eq(schema.treatmentItems.patientId, singlePatientId))
+		? and(
+				eq(schema.treatmentItems.organizationId, organizationId),
+				eq(schema.treatmentItems.patientId, singlePatientId),
+			)
 		: eq(schema.treatmentItems.organizationId, organizationId);
 	const paymentScope = singlePatientId
-		? and(eq(schema.payments.organizationId, organizationId), eq(schema.payments.patientId, singlePatientId))
+		? and(
+				eq(schema.payments.organizationId, organizationId),
+				eq(schema.payments.patientId, singlePatientId),
+			)
 		: eq(schema.payments.organizationId, organizationId);
 
 	const [chargeRows, paymentRows] = await Promise.all([
-		db.select({
-			patientId: schema.treatmentItems.patientId,
-			status: schema.treatmentItems.status,
-			unitPriceRub: schema.treatmentItems.unitPriceRub,
-			quantity: schema.treatmentItems.quantity,
-			discountRub: schema.treatmentItems.discountRub,
-		}).from(schema.treatmentItems).where(chargeScope),
-		db.select({
-			patientId: schema.payments.patientId,
-			status: schema.payments.status,
-			amountRub: schema.payments.amountRub,
-		}).from(schema.payments).where(paymentScope),
+		db
+			.select({
+				patientId: schema.treatmentItems.patientId,
+				status: schema.treatmentItems.status,
+				unitPriceRub: schema.treatmentItems.unitPriceRub,
+				quantity: schema.treatmentItems.quantity,
+				discountRub: schema.treatmentItems.discountRub,
+			})
+			.from(schema.treatmentItems)
+			.where(chargeScope),
+		db
+			.select({
+				patientId: schema.payments.patientId,
+				status: schema.payments.status,
+				amountRub: schema.payments.amountRub,
+			})
+			.from(schema.payments)
+			.where(paymentScope),
 	]);
 
 	/* Группировка по пациенту — один проход на таблицу. Фильтрация массива в
@@ -133,17 +145,25 @@ async function patientAccountBalancesRub(
 		const charges = chargesByPatient.get(patientId) ?? [];
 		const patientPayments = paymentsByPatient.get(patientId) ?? [];
 		try {
-			const ledger = buildPatientLedgers(charges, patientPayments).get(patientId);
+			const ledger = buildPatientLedgers(charges, patientPayments).get(
+				patientId,
+			);
 			/* Сальдо нет в ответе модуля, когда ни одна строка не пошла в зачёт:
 			   нет денежных строк вовсе либо все позиции отменены и оплат нет. Это
 			   ИЗМЕРЕННЫЙ ноль, и он обязан отличаться от «не рассчитано» ниже. */
-			balances.set(patientId, ledger ? rublesFromKopecks(patientAccountBalanceKopecks(ledger)) : 0);
+			balances.set(
+				patientId,
+				ledger ? rublesFromKopecks(patientAccountBalanceKopecks(ledger)) : 0,
+			);
 		} catch (error) {
-			if (error instanceof MoneyPrecisionError || error instanceof QuantityContractError) {
+			if (
+				error instanceof MoneyPrecisionError ||
+				error instanceof QuantityContractError
+			) {
 				console.error(
 					`[patientsQuery] Сальдо пациента ${patientId} (клиника ${organizationId}) не рассчитано: ${error.message} ` +
 						"В карточке будет 0, потому что поле balanceRub контракта не умеет говорить «не рассчитано». " +
-						"Это не измеренный ноль: почините строку денег, названную в причине."
+						"Это не измеренный ноль: почините строку денег, названную в причине.",
 				);
 				balances.set(patientId, null);
 				continue;
@@ -165,23 +185,31 @@ async function patientAccountBalancesRub(
  * между процессами), поэтому оба вида принимаются, а отсутствие значения
  * называется прямо.
  */
-function rowTimestampToIso(value: unknown, field: string, patientId: unknown): string {
+function rowTimestampToIso(
+	value: unknown,
+	field: string,
+	patientId: unknown,
+): string {
 	if (value instanceof Date) {
 		if (Number.isNaN(value.getTime())) {
-			throw new Error(`Пациент ${String(patientId)}: поле ${field} содержит недопустимую дату.`);
+			throw new Error(
+				`Пациент ${String(patientId)}: поле ${field} содержит недопустимую дату.`,
+			);
 		}
 		return value.toISOString();
 	}
 	if (typeof value === "string" && value.trim()) {
 		const parsed = new Date(value);
 		if (Number.isNaN(parsed.getTime())) {
-			throw new Error(`Пациент ${String(patientId)}: поле ${field} не разбирается как дата: ${value}`);
+			throw new Error(
+				`Пациент ${String(patientId)}: поле ${field} не разбирается как дата: ${value}`,
+			);
 		}
 		return parsed.toISOString();
 	}
 	throw new Error(
 		`Пациент ${String(patientId)}: в строке таблицы нет поля ${field}. ` +
-			"Карточка не собрана: подставлять текущее время нельзя, оно исказит историю."
+			"Карточка не собрана: подставлять текущее время нельзя, оно исказит историю.",
 	);
 }
 
@@ -198,7 +226,10 @@ function rowTimestampToIso(value: unknown, field: string, patientId: unknown): s
  *  (`moneyRubSchema.default(0)`). Раньше здесь стояла явная константа
  *  `balanceRub: 0` — она выглядела измеренным нулём и была им ноль раз из семи
  *  на живых данных. Все четыре боевых пути этого файла передают сальдо явно. */
-export function rowToPatient(p: typeof schema.patients.$inferSelect, balanceRub: number | null = null): Patient {
+export function rowToPatient(
+	p: typeof schema.patients.$inferSelect,
+	balanceRub: number | null = null,
+): Patient {
 	return patientSchema.parse({
 		id: p.id,
 		organizationId: p.organizationId,
@@ -223,12 +254,25 @@ export function rowToPatient(p: typeof schema.patients.$inferSelect, balanceRub:
 	});
 }
 
-export async function getPatientByIdFromDb(organizationId: string, id: string): Promise<Patient | null> {
+export async function getPatientByIdFromDb(
+	organizationId: string,
+	id: string,
+): Promise<Patient | null> {
 	if (useInMemory()) {
-		return (inMemoryPatients.find((p) => p.id === id) as unknown as Patient) ?? null;
+		return (
+			(inMemoryPatients.find((p) => p.id === id) as unknown as Patient) ?? null
+		);
 	}
 	try {
-		const [p] = await db.select().from(schema.patients).where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, id)));
+		const [p] = await db
+			.select()
+			.from(schema.patients)
+			.where(
+				and(
+					eq(schema.patients.organizationId, organizationId),
+					eq(schema.patients.id, id),
+				),
+			);
 		if (!p) return null;
 		const balances = await patientAccountBalancesRub(organizationId, [p.id]);
 		return rowToPatient(p, balances.get(p.id) ?? null);
@@ -243,18 +287,29 @@ export async function getPatientByIdFromDb(organizationId: string, id: string): 
 		   Тот же класс дефекта уже убран у getPatientsFromDb / createPatientInDb:
 		   подмена памятью только в useInMemory(); живой сбой базы обязан дойти
 		   до маршрута честной ошибкой. */
-		console.error("[patientsQuery] Не удалось прочитать карточку пациента из базы:", error);
+		console.error(
+			"[patientsQuery] Не удалось прочитать карточку пациента из базы:",
+			error,
+		);
 		throw error;
 	}
 }
 
-export async function getPatientsFromDb(organizationId: string): Promise<Patient[]> {
+export async function getPatientsFromDb(
+	organizationId: string,
+): Promise<Patient[]> {
 	if (useInMemory()) {
 		return inMemoryPatients as unknown as Patient[];
 	}
 	try {
-		const pts = await db.select().from(schema.patients).where(eq(schema.patients.organizationId, organizationId));
-		const balances = await patientAccountBalancesRub(organizationId, pts.map((p) => p.id));
+		const pts = await db
+			.select()
+			.from(schema.patients)
+			.where(eq(schema.patients.organizationId, organizationId));
+		const balances = await patientAccountBalancesRub(
+			organizationId,
+			pts.map((p) => p.id),
+		);
 		return pts.map((p) => rowToPatient(p, balances.get(p.id) ?? null));
 	} catch (error) {
 		/* БЫЛО: при сбое базы возвращался глобальный массив-образец
@@ -265,24 +320,33 @@ export async function getPatientsFromDb(organizationId: string): Promise<Patient
 		   мог записать на приём не того человека.
 		   Молчаливая подмена данных в медицинской системе опаснее честной
 		   ошибки. Режим работы без базы задаётся выше, в useInMemory(). */
-		console.error("[patientsQuery] Не удалось прочитать список пациентов из базы:", error);
+		console.error(
+			"[patientsQuery] Не удалось прочитать список пациентов из базы:",
+			error,
+		);
 		throw error;
 	}
 }
 
-export async function createPatientInDb(organizationId: string, input: CreatePatientInput): Promise<Patient> {
+export async function createPatientInDb(
+	organizationId: string,
+	input: CreatePatientInput,
+): Promise<Patient> {
 	if (useInMemory()) {
 		return createPatientInMemory(input);
 	}
 	try {
-		const [created] = await db.insert(schema.patients).values({
-			organizationId,
-			fullName: input.fullName,
-			birthDate: input.birthDate ?? null,
-			phone: input.phone ?? null,
-			email: input.email ?? null,
-			notes: input.notes ?? null,
-		}).returning();
+		const [created] = await db
+			.insert(schema.patients)
+			.values({
+				organizationId,
+				fullName: input.fullName,
+				birthDate: input.birthDate ?? null,
+				phone: input.phone ?? null,
+				email: input.email ?? null,
+				notes: input.notes ?? null,
+			})
+			.returning();
 
 		if (!created) throw new Error("Failed to create patient in DB");
 
@@ -308,7 +372,11 @@ export async function createPatientInDb(organizationId: string, input: CreatePat
 	}
 }
 
-export async function updatePatientInDb(organizationId: string, patientId: string, input: UpdatePatientInput): Promise<Patient | null> {
+export async function updatePatientInDb(
+	organizationId: string,
+	patientId: string,
+	input: UpdatePatientInput,
+): Promise<Patient | null> {
 	if (useInMemory()) {
 		/*
 		 * ОТСУТСТВИЕ КАРТЫ — ЭТО `null`, А НЕ ИСКЛЮЧЕНИЕ.
@@ -336,7 +404,8 @@ export async function updatePatientInDb(organizationId: string, patientId: strin
 		 * организацию в памяти процесса. Межарендную проверку делает ветка базы —
 		 * `organizationId` в её `where`, и причина этого названа ниже.
 		 */
-		if (!inMemoryPatients.some((candidate) => candidate.id === patientId)) return null;
+		if (!inMemoryPatients.some((candidate) => candidate.id === patientId))
+			return null;
 		return updatePatientInMemory(patientId, input);
 	}
 	try {
@@ -411,21 +480,28 @@ export async function updatePatientInDb(organizationId: string, patientId: strin
 					)
 					.limit(1);
 				if (!family) {
-					throw new Error("Указанная семейная группа не найдена в вашей организации");
+					throw new Error(
+						"Указанная семейная группа не найдена в вашей организации",
+					);
 				}
 			}
 			updateData.familyGroupId = input.familyGroupId;
 		}
 
-
-		const [updated] = await db.update(schema.patients)
+		const [updated] = await db
+			.update(schema.patients)
 			.set(updateData)
 			/* organizationId обязателен в условии. Без него запись шла только
 			   по идентификатору пациента, и клиника переписывала карточку
 			   чужой клиники: проверено на живой базе — PUT /api/patients/<uuid
 			   чужого пациента> с токеном первой клиники вернул 200 и заменил
 			   ФИО и телефон в чужой организации. */
-			.where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, patientId)))
+			.where(
+				and(
+					eq(schema.patients.organizationId, organizationId),
+					eq(schema.patients.id, patientId),
+				),
+			)
 			.returning();
 
 		if (!updated) return null;
@@ -435,7 +511,9 @@ export async function updatePatientInDb(organizationId: string, patientId: strin
 		   экран: отдать в ней ноль значило бы гасить долг нажатием «Сохранить» в
 		   анкете. У пациента с долгом 6 000,00 ₽ так и было бы — проверено
 		   маршрутом PUT /api/patients/:id в tests/routes/patientCardBalanceIsReal. */
-		const balances = await patientAccountBalancesRub(organizationId, [updated.id]);
+		const balances = await patientAccountBalancesRub(organizationId, [
+			updated.id,
+		]);
 		return rowToPatient(updated, balances.get(updated.id) ?? null);
 	} catch (error) {
 		/* См. комментарий в createPatientInDb. Здесь подмена памятью давала
@@ -443,12 +521,19 @@ export async function updatePatientInDb(organizationId: string, patientId: strin
 		   правка теряется молча и обнаруживается только после перезагрузки
 		   карточки. Маршрут уже умеет отвечать честно — «Не удалось сохранить
 		   изменения», — но получал успех вместо ошибки. */
-		console.error("[patientsQuery] Не удалось обновить пациента в базе:", error);
+		console.error(
+			"[patientsQuery] Не удалось обновить пациента в базе:",
+			error,
+		);
 		throw error;
 	}
 }
 
-export async function updatePatientAdministrativeProfileInDb(organizationId: string, patientId: string, input: UpdatePatientAdministrativeProfileInput): Promise<Patient | null> {
+export async function updatePatientAdministrativeProfileInDb(
+	organizationId: string,
+	patientId: string,
+	input: UpdatePatientAdministrativeProfileInput,
+): Promise<Patient | null> {
 	if (useInMemory()) {
 		return updatePatientAdministrativeProfileInMemory(patientId, input);
 	}
@@ -489,28 +574,40 @@ export async function updatePatientAdministrativeProfileInDb(organizationId: str
 			...(input as Record<string, unknown>),
 		};
 
-		const [updated] = await db.update(schema.patients)
+		const [updated] = await db
+			.update(schema.patients)
 			.set({
-				administrativeProfile: mergedProfile as typeof schema.patients.$inferSelect["administrativeProfile"],
+				administrativeProfile:
+					mergedProfile as (typeof schema.patients.$inferSelect)["administrativeProfile"],
 				updatedAt: new Date(),
 			})
 			/* Тот же пропуск, что и в updatePatientInDb. Здесь маршрут сейчас
 			   прикрыт проверкой getPatientByIdFromDb(orgId, ...) перед вызовом,
 			   но полагаться на порядок вызовов в маршруте нельзя: ограничение
 			   области принадлежит запросу. */
-			.where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, patientId)))
+			.where(
+				and(
+					eq(schema.patients.organizationId, organizationId),
+					eq(schema.patients.id, patientId),
+				),
+			)
 			.returning();
 
 		if (!updated) return null;
 
 		/* Та же причина, что в updatePatientInDb: ответ — полная карточка, и
 		   сальдо в ней обязано быть настоящим, а не нулём после правки анкеты. */
-		const balances = await patientAccountBalancesRub(organizationId, [updated.id]);
+		const balances = await patientAccountBalancesRub(organizationId, [
+			updated.id,
+		]);
 		return rowToPatient(updated, balances.get(updated.id) ?? null);
 	} catch (error) {
 		/* См. комментарий в createPatientInDb: сбой базы не должен выглядеть
 		   как успешное сохранение административного профиля. */
-		console.error("[patientsQuery] Не удалось обновить профиль пациента в базе:", error);
+		console.error(
+			"[patientsQuery] Не удалось обновить профиль пациента в базе:",
+			error,
+		);
 		throw error;
 	}
 }

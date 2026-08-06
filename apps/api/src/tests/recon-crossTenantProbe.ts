@@ -15,7 +15,12 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import Fastify from "fastify";
 import { db, pool } from "../db/client.js";
-import { appointmentWaitlists, organizations, patients, users } from "../db/schema.js";
+import {
+	appointmentWaitlists,
+	organizations,
+	patients,
+	users,
+} from "../db/schema.js";
 import { registerLabRoutes } from "../routes/lab.js";
 import registerToothHistoryRoutes from "../routes/toothHistory.js";
 import { registerWaitlistRoutes } from "../routes/waitlist.js";
@@ -56,7 +61,9 @@ async function cleanup(): Promise<void> {
 		const blocked: string[] = [];
 		for (const table of remaining) {
 			try {
-				await db.execute(sql`DELETE FROM ${sql.identifier(table)} WHERE organization_id IN (${idList})`);
+				await db.execute(
+					sql`DELETE FROM ${sql.identifier(table)} WHERE organization_id IN (${idList})`,
+				);
 			} catch {
 				blocked.push(table);
 			}
@@ -73,12 +80,32 @@ async function seed(): Promise<void> {
 		{ id: ORG_B, name: "Разведка изоляции — клиника Б" },
 	]);
 	await db.insert(users).values([
-		{ id: DOCTOR_A, organizationId: ORG_A, fullName: "Свой Врач Клиники А", role: "doctor" },
-		{ id: DOCTOR_B, organizationId: ORG_B, fullName: FOREIGN_DOCTOR_NAME, role: "doctor" },
+		{
+			id: DOCTOR_A,
+			organizationId: ORG_A,
+			fullName: "Свой Врач Клиники А",
+			role: "doctor",
+		},
+		{
+			id: DOCTOR_B,
+			organizationId: ORG_B,
+			fullName: FOREIGN_DOCTOR_NAME,
+			role: "doctor",
+		},
 	]);
 	await db.insert(patients).values([
-		{ id: PATIENT_A, organizationId: ORG_A, fullName: "Свой Пациент Клиники А", phone: "+79990000001" },
-		{ id: PATIENT_B, organizationId: ORG_B, fullName: FOREIGN_PATIENT_NAME, phone: "+79990001122" },
+		{
+			id: PATIENT_A,
+			organizationId: ORG_A,
+			fullName: "Свой Пациент Клиники А",
+			phone: "+79990000001",
+		},
+		{
+			id: PATIENT_B,
+			organizationId: ORG_B,
+			fullName: FOREIGN_PATIENT_NAME,
+			phone: "+79990001122",
+		},
 	]);
 }
 
@@ -87,7 +114,12 @@ function headersForOrgA(): Record<string, string> {
 	return {
 		"x-dente-clinic-token": signToken({ organizationId: ORG_A }, secret),
 		"x-dente-staff-token": signToken(
-			{ organizationId: ORG_A, userId: DOCTOR_A, role: "admin", fullName: "Админ Клиники А" },
+			{
+				organizationId: ORG_A,
+				userId: DOCTOR_A,
+				role: "admin",
+				fullName: "Админ Клиники А",
+			},
 			secret,
 		),
 		"content-type": "application/json",
@@ -133,7 +165,11 @@ async function main(): Promise<void> {
 		method: "POST",
 		url: "/api/waitlist",
 		headers: h,
-		payload: { patientId: PATIENT_A, preferredDoctorId: DOCTOR_B, priorityLevel: "high" },
+		payload: {
+			patientId: PATIENT_A,
+			preferredDoctorId: DOCTOR_B,
+			priorityLevel: "high",
+		},
 	});
 	report(
 		"КОНТРОЛЬ POST /api/waitlist с preferredDoctorId клиники Б",
@@ -148,7 +184,9 @@ async function main(): Promise<void> {
 		payload: { patientId: PATIENT_A, priorityLevel: "medium" },
 	});
 	if (created.statusCode >= 300) {
-		console.log(`посев своей записи не удался: ${created.statusCode} ${created.body.slice(0, 200)}`);
+		console.log(
+			`посев своей записи не удался: ${created.statusCode} ${created.body.slice(0, 200)}`,
+		);
 	} else {
 		const entryId = JSON.parse(created.body).id as string;
 		const put = await app.inject({
@@ -157,9 +195,15 @@ async function main(): Promise<void> {
 			headers: h,
 			payload: { preferredDoctorId: DOCTOR_B },
 		});
-		console.log(`         PUT /api/waitlist/<своя запись> с чужим врачом -> статус ${put.statusCode}`);
+		console.log(
+			`         PUT /api/waitlist/<своя запись> с чужим врачом -> статус ${put.statusCode}`,
+		);
 
-		const list = await app.inject({ method: "GET", url: "/api/waitlist", headers: h });
+		const list = await app.inject({
+			method: "GET",
+			url: "/api/waitlist",
+			headers: h,
+		});
 		const leakedName = list.body.includes(FOREIGN_DOCTOR_NAME);
 		report(
 			"GET /api/waitlist после PUT с preferredDoctorId клиники Б",
@@ -170,8 +214,15 @@ async function main(): Promise<void> {
 		const [row] = await db
 			.select({ doc: appointmentWaitlists.preferredDoctorId })
 			.from(appointmentWaitlists)
-			.where(and(eq(appointmentWaitlists.id, entryId), eq(appointmentWaitlists.organizationId, ORG_A)));
-		console.log(`         база: строка клиники А ссылается на preferred_doctor_id=${row?.doc} (врач Б = ${DOCTOR_B})`);
+			.where(
+				and(
+					eq(appointmentWaitlists.id, entryId),
+					eq(appointmentWaitlists.organizationId, ORG_A),
+				),
+			);
+		console.log(
+			`         база: строка клиники А ссылается на preferred_doctor_id=${row?.doc} (врач Б = ${DOCTOR_B})`,
+		);
 	}
 
 	const lab = await app.inject({

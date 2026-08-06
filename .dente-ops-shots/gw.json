@@ -1,1 +1,52 @@
-{"channels":{"sms":{"configured":false,"provider":null,"sender":null,"balance":null,"balanceError":null},"email":{"configured":false,"host":null,"from":null,"requireTls":true},"whatsapp":{"configured":false},"telegram":{"configured":false},"max":{"configured":false,"detail":"Бот MAX не подключён: нет токена или интеграция выключена."},"vk":{"configured":false,"detail":"Отправка во ВКонтакте не подключена: нет ключа сообщества."}},"automaticSending":{"enabled":false,"intervalSeconds":null,"batchSize":null,"detail":"Автоматическая отправка выключена на сервере: сообщения копятся в очереди и никуда не уходят. Пока она выключена, очередь разбирается вручную кнопкой «Отправить из очереди».","enableWith":"DENTE_COMMUNICATION_WORKER_ENABLED","waiting":1,"oldestWaitingAt":"2026-07-28 00:29:08.082895+04"},"deliverableChannels":["sms","email","whatsapp","telegram"],"defaults":{"timezone":"Europe/Moscow","quietHoursStartMinute":1260,"quietHoursEndMinute":540,"deferServiceInQuietHours":true,"blockMarketingInQuietHours":true,"dailyLimitPerPatient":3,"maxAttempts":5,"retryBaseSeconds":60,"retryMaxSeconds":3600,"channelFallback":["telegram","whatsapp","sms","email"],"appointmentReminderEnabled":false,"appointmentReminderLeadHours":[24],"appointmentReminderWindowMinutes":90}}
+{
+	"channels": {
+		"sms": {
+			"configured": false,
+			"provider": null,
+			"sender": null,
+			"balance": null,
+			"balanceError": null
+		},
+		"email": {
+			"configured": false,
+			"host": null,
+			"from": null,
+			"requireTls": true
+		},
+		"whatsapp": { "configured": false },
+		"telegram": { "configured": false },
+		"max": {
+			"configured": false,
+			"detail": "Бот MAX не подключён: нет токена или интеграция выключена."
+		},
+		"vk": {
+			"configured": false,
+			"detail": "Отправка во ВКонтакте не подключена: нет ключа сообщества."
+		}
+	},
+	"automaticSending": {
+		"enabled": false,
+		"intervalSeconds": null,
+		"batchSize": null,
+		"detail": "Автоматическая отправка выключена на сервере: сообщения копятся в очереди и никуда не уходят. Пока она выключена, очередь разбирается вручную кнопкой «Отправить из очереди».",
+		"enableWith": "DENTE_COMMUNICATION_WORKER_ENABLED",
+		"waiting": 1,
+		"oldestWaitingAt": "2026-07-28 00:29:08.082895+04"
+	},
+	"deliverableChannels": ["sms", "email", "whatsapp", "telegram"],
+	"defaults": {
+		"timezone": "Europe/Moscow",
+		"quietHoursStartMinute": 1260,
+		"quietHoursEndMinute": 540,
+		"deferServiceInQuietHours": true,
+		"blockMarketingInQuietHours": true,
+		"dailyLimitPerPatient": 3,
+		"maxAttempts": 5,
+		"retryBaseSeconds": 60,
+		"retryMaxSeconds": 3600,
+		"channelFallback": ["telegram", "whatsapp", "sms", "email"],
+		"appointmentReminderEnabled": false,
+		"appointmentReminderLeadHours": [24],
+		"appointmentReminderWindowMinutes": 90
+	}
+}

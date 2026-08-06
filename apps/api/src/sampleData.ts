@@ -147,12 +147,6 @@ import {
 	uiPreferencesSchema,
 } from "@dental/shared";
 import {
-	type DentalMutableState,
-	loadPersistentState,
-	savePersistentState,
-} from "./persistentState.js";
-import { createTelegramQrSvg } from "./telegramQr.js";
-import {
 	buildPatientLedger,
 	buildVisitLedger,
 	debtNumericText,
@@ -165,6 +159,12 @@ import {
 	visitOutstandingKopecks,
 	visitOverpaidKopecks,
 } from "./money/patientDebt.js";
+import {
+	type DentalMutableState,
+	loadPersistentState,
+	savePersistentState,
+} from "./persistentState.js";
+import { createTelegramQrSvg } from "./telegramQr.js";
 import {
 	repairMojibakeDeep,
 	repairMojibakeText,
@@ -279,7 +279,7 @@ function syncDenteTelegramOutboxDeliveryReceiptsMap(): void {
 export const denteTelegramLinkCodes: DenteTelegramLinkCode[] = [];
 export const denteTelegramChatLinks: DenteTelegramChatLink[] = [];
 
-export const clinicProfile: ClinicProfile = ({
+export const clinicProfile: ClinicProfile = {
 	organizationId,
 	clinicName: "Стоматология, 1 кабинет",
 	legalName: "ИП Иванова М.С.",
@@ -307,30 +307,30 @@ export const clinicProfile: ClinicProfile = ({
 	themeColor: "teal",
 	logoUrl: null,
 	stampUrl: null,
-hasAssistants: true,
-hasMultipleChairs: true,
-hasDentalLab: true,
-hasInsuranceCoPay: true,
-hasInstallments: true,
-hasOrthodontics: true,
+	hasAssistants: true,
+	hasMultipleChairs: true,
+	hasDentalLab: true,
+	hasInsuranceCoPay: true,
+	hasInstallments: true,
+	hasOrthodontics: true,
 	hasGnathology: false,
 	hasCsoScanner: false,
 	hasLeadsKanban: false,
 	hasOmnichannel: false,
 	hasTasks: true,
-hasReclamations: true,
-workspacePreset: 'enterprise',
-onboardingCompleted: false,
-hasPediatricMode: false,
-isOmniRole: false,
-hasPayrollModule: true,
-hasMarketingModule: true,
-hasAnalyticsModule: true,
-hasInventoryModule: true,
-aiEnableTreatmentPlan: true,
-aiEnableRecommendations: true,
-aiEnableDocuments: true,
-}) as any;
+	hasReclamations: true,
+	workspacePreset: "enterprise",
+	onboardingCompleted: false,
+	hasPediatricMode: false,
+	isOmniRole: false,
+	hasPayrollModule: true,
+	hasMarketingModule: true,
+	hasAnalyticsModule: true,
+	hasInventoryModule: true,
+	aiEnableTreatmentPlan: true,
+	aiEnableRecommendations: true,
+	aiEnableDocuments: true,
+} as any;
 
 export const staffMembers: StaffMember[] = [
 	{
@@ -602,11 +602,15 @@ export function getServiceCatalogItem(
 	 * срезу базы ищем в его собственном списке и ничего не запоминаем.
 	 */
 	if (state !== inMemoryDomainState) {
-		return state.serviceCatalog.find((catalogItem) => catalogItem.id === serviceId);
+		return state.serviceCatalog.find(
+			(catalogItem) => catalogItem.id === serviceId,
+		);
 	}
 	const indexed = serviceCatalogMap.get(serviceId);
 	if (indexed !== undefined) return indexed;
-	const found = serviceCatalog.find((catalogItem) => catalogItem.id === serviceId);
+	const found = serviceCatalog.find(
+		(catalogItem) => catalogItem.id === serviceId,
+	);
 	if (found) serviceCatalogMap.set(serviceId, found);
 	return found;
 }
@@ -1477,7 +1481,8 @@ export function visitCloseChecklistFactsFor(
 	visit: Visit,
 	state: DomainState = inMemoryDomainState,
 ): VisitCloseChecklistFacts {
-	const { imagingStudies, documents, aiRecognitionJobs, communicationTasks } = state;
+	const { imagingStudies, documents, aiRecognitionJobs, communicationTasks } =
+		state;
 	return {
 		visit,
 		imagingStudies,
@@ -1634,7 +1639,9 @@ export function buildClinicalRuleSummary(
 	patientId: string,
 	state: DomainState = inMemoryDomainState,
 ): ClinicalRuleSummary {
-	return summarizeClinicalEvaluations(buildClinicalRuleEvaluations(patientId, state));
+	return summarizeClinicalEvaluations(
+		buildClinicalRuleEvaluations(patientId, state),
+	);
 }
 
 function normalizedClinicalRuleServiceIds(values: string[]): string[] {
@@ -2161,7 +2168,9 @@ export function validScheduleTimeZone(
  * день начинается на три часа раньше UTC, и по UTC-дате утренние приёмы
  * попадали бы во «вчера».
  */
-export function clinicTodayIso(timeZone: string = clinicProfile.timezone): string {
+export function clinicTodayIso(
+	timeZone: string = clinicProfile.timezone,
+): string {
 	const zone = validScheduleTimeZone(timeZone);
 	try {
 		const parts = new Map(
@@ -2282,7 +2291,8 @@ function appointmentWeekday(
 	timeZone?: string,
 	state: DomainState = inMemoryDomainState,
 ): number {
-	return appointmentClinicTimeParts(appointment.startsAt, timeZone, state).weekday;
+	return appointmentClinicTimeParts(appointment.startsAt, timeZone, state)
+		.weekday;
 }
 
 function appointmentStartMinute(
@@ -2290,7 +2300,8 @@ function appointmentStartMinute(
 	timeZone?: string,
 	state: DomainState = inMemoryDomainState,
 ): number {
-	return appointmentClinicTimeParts(appointment.startsAt, timeZone, state).minute;
+	return appointmentClinicTimeParts(appointment.startsAt, timeZone, state)
+		.minute;
 }
 
 function appointmentEndMinute(
@@ -2579,7 +2590,10 @@ function buildAppointmentReadiness(
 			(study) => study.status === "needs_review",
 		);
 		const hasBalance = (insight?.balanceDueRub ?? 0) > 0;
-		const clinicScheduleCheck = appointmentWithinClinicSchedule(appointment, domainState);
+		const clinicScheduleCheck = appointmentWithinClinicSchedule(
+			appointment,
+			domainState,
+		);
 		const patientScheduleCheck = appointmentWithinPatientPreference(
 			appointment,
 			patient,
@@ -3203,7 +3217,9 @@ function buildResourceLoad(input: {
 	};
 }
 
-function buildDoctorLoads(state: DomainState = inMemoryDomainState): ResourceLoad[] {
+function buildDoctorLoads(
+	state: DomainState = inMemoryDomainState,
+): ResourceLoad[] {
 	const { staffMembers, appointments } = state;
 	const activeDoctors = staffMembers.filter(
 		(member) =>
@@ -3234,7 +3250,9 @@ function buildDoctorLoads(state: DomainState = inMemoryDomainState): ResourceLoa
 	});
 }
 
-function buildAssistantLoads(state: DomainState = inMemoryDomainState): ResourceLoad[] {
+function buildAssistantLoads(
+	state: DomainState = inMemoryDomainState,
+): ResourceLoad[] {
 	const { staffMembers, appointments } = state;
 	const activeAssistants = staffMembers.filter(
 		(member) => member.active && member.role === "assistant",
@@ -3264,7 +3282,9 @@ function buildAssistantLoads(state: DomainState = inMemoryDomainState): Resource
 	});
 }
 
-function buildChairLoads(state: DomainState = inMemoryDomainState): ResourceLoad[] {
+function buildChairLoads(
+	state: DomainState = inMemoryDomainState,
+): ResourceLoad[] {
 	const { chairs, appointments } = state;
 	const shiftDate = activeShiftDateKey(state);
 	return chairs
@@ -3295,9 +3315,17 @@ function buildChairLoads(state: DomainState = inMemoryDomainState): ResourceLoad
 		});
 }
 
-function buildRoleQueues(state: DomainState = inMemoryDomainState): RoleQueue[] {
-	const { appointments, clinicProfile, documents, imagingStudies, importBatches, staffMembers } =
-		state;
+function buildRoleQueues(
+	state: DomainState = inMemoryDomainState,
+): RoleQueue[] {
+	const {
+		appointments,
+		clinicProfile,
+		documents,
+		imagingStudies,
+		importBatches,
+		staffMembers,
+	} = state;
 	const billing = buildBillingSummary(state);
 	const communication = buildCommunicationSummary(state);
 	const draftDocuments = documents.filter(
@@ -3386,8 +3414,14 @@ function buildRoleQueues(state: DomainState = inMemoryDomainState): RoleQueue[] 
 function buildScheduleWarnings(
 	state: DomainState = inMemoryDomainState,
 ): ScheduleWarning[] {
-	const { activeVisit, appointments, clinicProfile, documents, imagingStudies, staffMembers } =
-		state;
+	const {
+		activeVisit,
+		appointments,
+		clinicProfile,
+		documents,
+		imagingStudies,
+		staffMembers,
+	} = state;
 	const warnings: ScheduleWarning[] = [];
 	const billing = buildBillingSummary(state);
 	const communication = buildCommunicationSummary(state);
@@ -10678,7 +10712,10 @@ export function buildDashboard(
 		auditEvents,
 	} = state;
 	const patientInsights = buildPatientInsights(state);
-	const appointmentReadiness = buildAppointmentReadiness(patientInsights, state);
+	const appointmentReadiness = buildAppointmentReadiness(
+		patientInsights,
+		state,
+	);
 
 	return {
 		clinicName: repairMojibakeText(clinicProfile.clinicName),
@@ -10722,7 +10759,10 @@ export function buildDashboard(
 		 * читают пациента заготовки и дают пустые наборы, это прежнее поведение и
 		 * оно правильное.
 		 */
-		activeVisit: activeVisit.id === NIL_VISIT_UUID ? null : repairMojibakeDeep(activeVisit),
+		activeVisit:
+			activeVisit.id === NIL_VISIT_UUID
+				? null
+				: repairMojibakeDeep(activeVisit),
 		visitCloseChecklist: repairMojibakeDeep(
 			buildVisitCloseChecklist(visitCloseChecklistFactsFor(activeVisit, state)),
 		),
@@ -10937,7 +10977,6 @@ export function updatePatient(
 	});
 	return patient;
 }
-
 
 export function updatePatientAdministrativeProfile(
 	patientId: string,

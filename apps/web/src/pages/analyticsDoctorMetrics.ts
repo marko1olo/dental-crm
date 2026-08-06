@@ -93,7 +93,10 @@ export function formatRub(value: number): string {
 	const sign = value < 0 ? "−" : "";
 	const abs = Math.abs(value);
 	const short = (divided: number) =>
-		divided.toLocaleString("ru-RU", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+		divided.toLocaleString("ru-RU", {
+			minimumFractionDigits: 1,
+			maximumFractionDigits: 1,
+		});
 	if (abs >= 1_000_000) return `${sign}${short(abs / 1_000_000)} млн ₽`;
 	if (abs >= 1_000) return `${sign}${short(abs / 1_000)} тыс. ₽`;
 	const kopecks = Math.round(abs * 100) % 100;
@@ -116,9 +119,15 @@ function isRealNumber(value: number | null | undefined): value is number {
  * Плюс ставится только у прибыли, которая действительно больше нуля.
  * Ноль нейтрален: это не прибыль и не убыток.
  */
-export function formatMarginCell(margin: number | null | undefined): MetricCell {
+export function formatMarginCell(
+	margin: number | null | undefined,
+): MetricCell {
 	if (!isRealNumber(margin)) {
-		return { text: UNKNOWN_METRIC_TEXT, tone: "neutral", title: UNKNOWN_MARGIN_TITLE };
+		return {
+			text: UNKNOWN_METRIC_TEXT,
+			tone: "neutral",
+			title: UNKNOWN_MARGIN_TITLE,
+		};
 	}
 	if (margin > 0) return { text: `+${formatRub(margin)}`, tone: "positive" };
 	if (margin < 0) return { text: formatRub(margin), tone: "negative" };
@@ -133,9 +142,15 @@ export function formatMarginCell(margin: number | null | undefined): MetricCell 
  * вовсе: покрасить прочерк красным — значит выставить врачу оценку, которой
  * никто не считал.
  */
-export function formatCompletionRate(rate: number | null | undefined): MetricCell {
+export function formatCompletionRate(
+	rate: number | null | undefined,
+): MetricCell {
 	if (!isRealNumber(rate)) {
-		return { text: UNKNOWN_METRIC_TEXT, tone: "neutral", title: UNKNOWN_COMPLETION_TITLE };
+		return {
+			text: UNKNOWN_METRIC_TEXT,
+			tone: "neutral",
+			title: UNKNOWN_COMPLETION_TITLE,
+		};
 	}
 	const rounded = Math.round(rate);
 	const tone: MetricTone =
@@ -273,7 +288,12 @@ function toCohortPoints(value: unknown): CohortLtvPoint[] {
 	return value.flatMap((item) => {
 		const row = asRecord(item);
 		if (!row) return [];
-		return [{ cohort: typeof row.cohort === "string" ? row.cohort : "", "Month 12": numberOr(row["Month 12"], 0) }];
+		return [
+			{
+				cohort: typeof row.cohort === "string" ? row.cohort : "",
+				"Month 12": numberOr(row["Month 12"], 0),
+			},
+		];
 	});
 }
 
@@ -288,19 +308,28 @@ function toCohortPoints(value: unknown): CohortLtvPoint[] {
  * Функция чистая: ни fetch, ни DOM, ни таймеров. Поэтому «пустое тело» —
  * обычный тест-кейс, а не то, что можно проверить только скриншотом.
  */
-export function parseDashboardPayload(status: number, rawBody: string): DashboardParseResult {
+export function parseDashboardPayload(
+	status: number,
+	rawBody: string,
+): DashboardParseResult {
 	const trimmed = rawBody.trim();
 
 	if (trimmed.length === 0) {
 		// Пустое тело при любом статусе. Статус важнее: 503 с пустым телом — сбой сервера.
-		return { ok: false, message: status >= 400 ? statusMessage(status) : EMPTY_BODY_MESSAGE };
+		return {
+			ok: false,
+			message: status >= 400 ? statusMessage(status) : EMPTY_BODY_MESSAGE,
+		};
 	}
 
 	let payload: unknown;
 	try {
 		payload = JSON.parse(trimmed);
 	} catch {
-		return { ok: false, message: status >= 400 ? statusMessage(status) : MALFORMED_BODY_MESSAGE };
+		return {
+			ok: false,
+			message: status >= 400 ? statusMessage(status) : MALFORMED_BODY_MESSAGE,
+		};
 	}
 
 	const envelope = asRecord(payload);
@@ -308,7 +337,9 @@ export function parseDashboardPayload(status: number, rawBody: string): Dashboar
 	// У сервера уже есть готовое русское сообщение (analytics.ts:280-284).
 	// Прежний код его выбрасывал и печатал голый код состояния.
 	const serverMessage =
-		envelope && typeof envelope.message === "string" && envelope.message.trim().length > 0
+		envelope &&
+		typeof envelope.message === "string" &&
+		envelope.message.trim().length > 0
 			? envelope.message.trim()
 			: null;
 

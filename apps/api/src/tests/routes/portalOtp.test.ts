@@ -6,9 +6,9 @@ import { db } from "../../db/client.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
 import { portalRoutes } from "../../routes/portal.js";
 import {
-	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	fixtureUuid,
 	isDatabaseUnavailable,
+	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
@@ -240,14 +240,25 @@ describe("одноразовый код входа в личный кабине�
 
 		// Пять неверных попыток — это ровно потолок по умолчанию.
 		for (let attempt = 1; attempt <= 5; attempt += 1) {
-			const wrong = await verifyOtp(PATIENT_PHONE, code === "000001" ? "000002" : "000001");
-			assert.equal(wrong.statusCode, 401, `попытка ${attempt} должна быть отвергнута`);
+			const wrong = await verifyOtp(
+				PATIENT_PHONE,
+				code === "000001" ? "000002" : "000001",
+			);
+			assert.equal(
+				wrong.statusCode,
+				401,
+				`попытка ${attempt} должна быть отвергнута`,
+			);
 		}
 
 		// Шестая попытка — уже с ВЕРНЫМ кодом. Он не должен пройти: иначе потолок
 		// попыток не защищает, а лишь замедляет перебор.
 		const burned = await verifyOtp(PATIENT_PHONE, code);
-		assert.equal(burned.statusCode, 401, "верный код прошёл после исчерпания попыток");
+		assert.equal(
+			burned.statusCode,
+			401,
+			"верный код прошёл после исчерпания попыток",
+		);
 
 		// Чтение тоже под контекстом: без него политика вернула бы пустой список, и
 		// «все коды погашены» оказалось бы истиной на пустом множестве.

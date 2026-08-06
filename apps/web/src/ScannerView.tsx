@@ -1,11 +1,5 @@
 import { motion } from "framer-motion";
-import {
-	Activity,
-	Box,
-	CheckCircle2,
-	ScanLine,
-	XCircle,
-} from "lucide-react";
+import { Activity, Box, CheckCircle2, ScanLine, XCircle } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
@@ -54,13 +48,20 @@ function formatLogTime(value: string): string {
  * пользователя, поэтому «нет доступа» здесь не годится: сказать надо, что войти
  * нужно именно сотрудником по PIN, иначе он будет перезаходить в кабинет по кругу.
  */
-async function accessFailureMessage(response: Response, prefix: string): Promise<string> {
+async function accessFailureMessage(
+	response: Response,
+	prefix: string,
+): Promise<string> {
 	let code = "";
 	let serverMessage = "";
 	try {
-		const payload = (await response.json()) as { error?: unknown; message?: unknown };
+		const payload = (await response.json()) as {
+			error?: unknown;
+			message?: unknown;
+		};
 		if (typeof payload.error === "string") code = payload.error;
-		if (typeof payload.message === "string") serverMessage = payload.message.trim();
+		if (typeof payload.message === "string")
+			serverMessage = payload.message.trim();
 	} catch {
 		// Тело не разобралось — останется код ответа.
 	}
@@ -143,7 +144,9 @@ export function ScannerView() {
 				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!res.ok) {
-				setLoadError(await accessFailureMessage(res, "Журнал стерилизации не показан"));
+				setLoadError(
+					await accessFailureMessage(res, "Журнал стерилизации не показан"),
+				);
 				return;
 			}
 			const data: unknown = await res.json();
@@ -242,7 +245,10 @@ export function ScannerView() {
 				 * БЫЛО: «Ошибка валидации лотка» на любой отказ, включая отсутствие
 				 * входа сотрудника и недоступный сервер. Лоток при этом ни при чём.
 				 */
-				showToast(await accessFailureMessage(res, "Запись в журнал не создана"), "error");
+				showToast(
+					await accessFailureMessage(res, "Запись в журнал не создана"),
+					"error",
+				);
 				return;
 			}
 
@@ -352,7 +358,11 @@ export function ScannerView() {
 				{loadError ? (
 					<div className="scanner-load-error" role="alert">
 						<p>{loadError}</p>
-						<button type="button" className="secondary-button" onClick={() => void loadLogs()}>
+						<button
+							type="button"
+							className="secondary-button"
+							onClick={() => void loadLogs()}
+						>
 							Повторить
 						</button>
 					</div>

@@ -92,13 +92,16 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const data = await (request as unknown as { file: () => Promise<MultipartFilePayload | undefined> }).file();
+		const data = await (
+			request as unknown as {
+				file: () => Promise<MultipartFilePayload | undefined>;
+			}
+		).file();
 		if (!data) {
 			return reply.code(400).send({
-	error: "MissingFilePayload",
-	message:
-		"Файл не получен: выберите снимок и повторите загрузку.",
-});
+				error: "MissingFilePayload",
+				message: "Файл не получен: выберите снимок и повторите загрузку.",
+			});
 		}
 
 		const uniqueSuffix = crypto.randomUUID();
@@ -154,7 +157,6 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 		});
 	});
 
-
 	/*
 	 * Выдача файла вложения.
 	 *
@@ -172,47 +174,48 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 		"/api/attachments/:attachmentId/download",
 		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
-		const { attachmentId } = request.params as { attachmentId: string };
+			const orgId = await requireResolvedOrganizationId(request, reply);
+			if (!orgId) return;
+			const { attachmentId } = request.params as { attachmentId: string };
 
-		const [attachment] = await withTenantCtx(orgId, (tx) =>
-			tx
-				.select()
-				.from(attachments)
-				.where(
-					and(
-						eq(attachments.id, attachmentId),
-						eq(attachments.organizationId, orgId),
-					),
-				)
-				.limit(1),
-		);
-
-		if (!attachment) {
-			return reply.code(404).send({
-	error: "AttachmentNotFound",
-	message: "Вложение не найдено в этой клинике.",
-});
-		}
-
-		const filePath = path.join(UPLOADS_DIR, attachment.storagePath);
-		try {
-			await fs.access(filePath);
-			reply.header(
-				"Content-Disposition",
-				`attachment; filename="${encodeURIComponent(attachment.fileName)}"`,
+			const [attachment] = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select()
+					.from(attachments)
+					.where(
+						and(
+							eq(attachments.id, attachmentId),
+							eq(attachments.organizationId, orgId),
+						),
+					)
+					.limit(1),
 			);
-			reply.type(attachment.mimeType);
-			return reply.send(createReadStream(filePath));
-		} catch (e) {
-			return reply.code(404).send({
-	error: "FileNotFoundOnDisk",
-	message:
-		"Файл вложения отсутствует на диске сервера. Сообщите администратору клиники.",
-});
-		}
-	});
+
+			if (!attachment) {
+				return reply.code(404).send({
+					error: "AttachmentNotFound",
+					message: "Вложение не найдено в этой клинике.",
+				});
+			}
+
+			const filePath = path.join(UPLOADS_DIR, attachment.storagePath);
+			try {
+				await fs.access(filePath);
+				reply.header(
+					"Content-Disposition",
+					`attachment; filename="${encodeURIComponent(attachment.fileName)}"`,
+				);
+				reply.type(attachment.mimeType);
+				return reply.send(createReadStream(filePath));
+			} catch (e) {
+				return reply.code(404).send({
+					error: "FileNotFoundOnDisk",
+					message:
+						"Файл вложения отсутствует на диске сервера. Сообщите администратору клиники.",
+				});
+			}
+		},
+	);
 
 	app.get("/api/files/visits/:visitId/attachments", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
@@ -246,12 +249,14 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 				),
 			);
 
-		return reply.send({ files: visitAttachments.map(a => ({
-			id: a.id,
-			url: `/api/attachments/${a.id}/download`,
-			name: a.fileName,
-			type: a.mimeType
-		}))});
+		return reply.send({
+			files: visitAttachments.map((a) => ({
+				id: a.id,
+				url: `/api/attachments/${a.id}/download`,
+				name: a.fileName,
+				type: a.mimeType,
+			})),
+		});
 	});
 
 	app.post("/api/files/visits/:visitId/attachments", async (request, reply) => {
@@ -308,13 +313,16 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const data = await (request as unknown as { file: () => Promise<MultipartFilePayload | undefined> }).file();
+		const data = await (
+			request as unknown as {
+				file: () => Promise<MultipartFilePayload | undefined>;
+			}
+		).file();
 		if (!data) {
 			return reply.code(400).send({
-	error: "MissingFilePayload",
-	message:
-		"Файл не получен: выберите снимок и повторите загрузку.",
-});
+				error: "MissingFilePayload",
+				message: "Файл не получен: выберите снимок и повторите загрузку.",
+			});
 		}
 
 		const uniqueSuffix = crypto.randomUUID();
@@ -350,14 +358,14 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			});
 		}
 
-		return reply.code(201).send({ 
-			success: true, 
+		return reply.code(201).send({
+			success: true,
 			file: {
 				id: attachment.id,
 				url: `/api/attachments/${attachment.id}/download`,
 				name: attachment.fileName,
-				type: attachment.mimeType
-			} 
+				type: attachment.mimeType,
+			},
 		});
 	});
 }

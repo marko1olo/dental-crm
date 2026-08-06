@@ -20,17 +20,23 @@
  */
 
 import Fastify from "fastify";
-import { registerDocumentRoutes } from "../../routes/documents.js";
 import { register as registerSignUkepDirectly } from "../../routes/documents/signUkep.js";
+import { registerDocumentRoutes } from "../../routes/documents.js";
 
 const DOCUMENT_ID = "00000000-0000-0000-0000-000000000000";
 
 let failures = 0;
 
-function report(label: string, statusCode: number, expectation: "404" | "not-404"): void {
+function report(
+	label: string,
+	statusCode: number,
+	expectation: "404" | "not-404",
+): void {
 	const ok = expectation === "404" ? statusCode === 404 : statusCode !== 404;
 	if (!ok) failures += 1;
-	console.log(`${ok ? "OK  " : "FAIL"} ${label}: HTTP ${statusCode} (ожидалось ${expectation})`);
+	console.log(
+		`${ok ? "OK  " : "FAIL"} ${label}: HTTP ${statusCode} (ожидалось ${expectation})`,
+	);
 }
 
 async function main(): Promise<void> {
@@ -43,21 +49,33 @@ async function main(): Promise<void> {
 		url: `/api/documents/${DOCUMENT_ID}/sign-ukep`,
 		payload: { pkcs7Signature: "проб-разведки" },
 	});
-	report("POST /api/documents/:id/sign-ukep через registerDocumentRoutes", ukep.statusCode, "404");
+	report(
+		"POST /api/documents/:id/sign-ukep через registerDocumentRoutes",
+		ukep.statusCode,
+		"404",
+	);
 
 	const simpleSign = await app.inject({
 		method: "POST",
 		url: `/api/documents/${DOCUMENT_ID}/sign`,
 		payload: { signatureSvg: "<svg/>" },
 	});
-	report("POST /api/documents/:id/sign через registerDocumentRoutes", simpleSign.statusCode, "404");
+	report(
+		"POST /api/documents/:id/sign через registerDocumentRoutes",
+		simpleSign.statusCode,
+		"404",
+	);
 
 	const issue = await app.inject({
 		method: "POST",
 		url: `/api/documents/${DOCUMENT_ID}/issue`,
 		payload: {},
 	});
-	report("КОНТРОЛЬ А, живой сосед POST /api/documents/:id/issue", issue.statusCode, "not-404");
+	report(
+		"КОНТРОЛЬ А, живой сосед POST /api/documents/:id/issue",
+		issue.statusCode,
+		"not-404",
+	);
 
 	console.log(`   тело ответа sign-ukep: ${ukep.body.slice(0, 200)}`);
 	await app.close();
@@ -70,11 +88,19 @@ async function main(): Promise<void> {
 		url: `/api/documents/${DOCUMENT_ID}/sign-ukep`,
 		payload: { pkcs7Signature: "проб-разведки" },
 	});
-	report("КОНТРОЛЬ Б, signUkep подключён напрямую", directUkep.statusCode, "not-404");
-	console.log(`   тело ответа при прямой регистрации: ${directUkep.body.slice(0, 200)}`);
+	report(
+		"КОНТРОЛЬ Б, signUkep подключён напрямую",
+		directUkep.statusCode,
+		"not-404",
+	);
+	console.log(
+		`   тело ответа при прямой регистрации: ${directUkep.body.slice(0, 200)}`,
+	);
 	await direct.close();
 
-	console.log(failures === 0 ? "ИТОГ: проб сошёлся" : `ИТОГ: расхождений ${failures}`);
+	console.log(
+		failures === 0 ? "ИТОГ: проб сошёлся" : `ИТОГ: расхождений ${failures}`,
+	);
 	process.exit(failures === 0 ? 0 : 1);
 }
 

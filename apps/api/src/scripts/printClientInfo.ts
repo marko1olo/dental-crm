@@ -11,8 +11,8 @@ import "dotenv/config";
 
 const raw = process.env.DATABASE_URL;
 if (!raw) {
-  console.error("DATABASE_URL не задан.");
-  process.exit(1);
+	console.error("DATABASE_URL не задан.");
+	process.exit(1);
 }
 
 const url = new URL(raw);

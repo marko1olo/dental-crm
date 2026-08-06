@@ -46,10 +46,7 @@ describe("Visiograph AI — body guard (null → 400, не 500)", () => {
 	});
 
 	async function postVisiograph(
-		opts: {
-			body?: unknown;
-			rawPayload?: string | Buffer | null;
-		} = {},
+		opts: { body?: unknown; rawPayload?: string | Buffer | null } = {},
 	) {
 		const headers: Record<string, string> = {
 			"content-type": "application/json",

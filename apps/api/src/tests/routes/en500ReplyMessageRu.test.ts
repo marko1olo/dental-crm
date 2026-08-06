@@ -8,8 +8,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { after, before, describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
 import { registerWaitlistRoutes } from "../../routes/waitlist.js";
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
@@ -78,7 +78,8 @@ describe("EN 500 reply → RU message (files/waitlist/lab/inventory)", () => {
 			);
 		}
 		// Every new 500 block pairs error with message containing Cyrillic.
-		const messageHits = combined.match(/message:\s*\n?\s*"[^"]*[А-Яа-яЁё][^"]*"/g) ?? [];
+		const messageHits =
+			combined.match(/message:\s*\n?\s*"[^"]*[А-Яа-яЁё][^"]*"/g) ?? [];
 		assert.ok(
 			messageHits.length >= 6,
 			`expected ≥6 RU message strings on four routes, got ${messageHits.length}`,

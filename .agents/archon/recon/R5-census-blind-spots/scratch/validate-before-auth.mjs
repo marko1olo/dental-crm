@@ -6,12 +6,19 @@
  *
  * READ-ONLY. Text on stdout.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "..");
+const REPO_ROOT = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"..",
+	"..",
+	"..",
+);
 const ROUTES_DIR = join(REPO_ROOT, "apps", "api", "src", "routes");
 const SKIP = new Set(["node_modules", "dist"]);
 
@@ -47,14 +54,28 @@ const GUARDS = [
 	"resolveOrganizationId",
 	"getRequestIdentity",
 ];
-const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete", "options"]);
+const HTTP_METHODS = new Set([
+	"get",
+	"post",
+	"put",
+	"patch",
+	"delete",
+	"options",
+]);
 
 const rows = [];
 let handlersSeen = 0;
 for (const file of walk(ROUTES_DIR)) {
 	const src = readFileSync(file, "utf8");
-	const sf = ts.createSourceFile(file, src, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
-	const lineOf = (n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+	const sf = ts.createSourceFile(
+		file,
+		src,
+		ts.ScriptTarget.ESNext,
+		true,
+		ts.ScriptKind.TS,
+	);
+	const lineOf = (n) =>
+		sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
 
 	const visit = (node) => {
 		if (
@@ -68,7 +89,11 @@ for (const file of walk(ROUTES_DIR)) {
 			const method = node.expression.name.text.toUpperCase();
 			const routePath = node.arguments[0].text;
 			const handler = node.arguments[node.arguments.length - 1];
-			if ((ts.isArrowFunction(handler) || ts.isFunctionExpression(handler)) && handler.body && ts.isBlock(handler.body)) {
+			if (
+				(ts.isArrowFunction(handler) || ts.isFunctionExpression(handler)) &&
+				handler.body &&
+				ts.isBlock(handler.body)
+			) {
 				handlersSeen++;
 				const stmts = handler.body.statements;
 				let firstGuard = -1;
@@ -83,11 +108,19 @@ for (const file of walk(ROUTES_DIR)) {
 					//  - a hand-rolled identity check: verifyToken, or a 401/403 return
 					if (firstGuard === -1) {
 						let g = GUARDS.find((n) => new RegExp(`\\b${n}\\s*\\(`).test(text));
-						if (!g && /\b(require|resolve|enforce|assert)[A-Z]\w*\s*\(/.test(text)) {
-							g = text.match(/\b((?:require|resolve|enforce|assert)[A-Z]\w*)\s*\(/)?.[1] ?? "require*Helper";
+						if (
+							!g &&
+							/\b(require|resolve|enforce|assert)[A-Z]\w*\s*\(/.test(text)
+						) {
+							g =
+								text.match(
+									/\b((?:require|resolve|enforce|assert)[A-Z]\w*)\s*\(/,
+								)?.[1] ?? "require*Helper";
 						}
-						if (!g && /\bverifyToken\s*\(/.test(text)) g = "verifyToken (hand-rolled)";
-						if (!g && /\.(code|status)\(\s*(401|403)\s*\)/.test(text)) g = "inline 401/403 reject";
+						if (!g && /\bverifyToken\s*\(/.test(text))
+							g = "verifyToken (hand-rolled)";
+						if (!g && /\.(code|status)\(\s*(401|403)\s*\)/.test(text))
+							g = "inline 401/403 reject";
 						if (g) {
 							firstGuard = i;
 							guardName = g;
@@ -101,7 +134,10 @@ for (const file of walk(ROUTES_DIR)) {
 						const emits400 = /\.(code|status)\(\s*400\s*\)/.test(text);
 						if (touchesBody || emits400) {
 							firstBody = i;
-							bodyDetail = [touchesBody ? "reads request.body" : null, emits400 ? "returns 400" : null]
+							bodyDetail = [
+								touchesBody ? "reads request.body" : null,
+								emits400 ? "returns 400" : null,
+							]
 								.filter(Boolean)
 								.join(" + ");
 						}
@@ -116,7 +152,10 @@ for (const file of walk(ROUTES_DIR)) {
 						bodyStmt: firstBody,
 						bodyLine: lineOf(stmts[firstBody]),
 						bodyDetail,
-						guard: firstGuard === -1 ? "NO GUARD IN TOP-LEVEL STATEMENTS" : `${guardName} @stmt ${firstGuard} line ${lineOf(stmts[firstGuard])}`,
+						guard:
+							firstGuard === -1
+								? "NO GUARD IN TOP-LEVEL STATEMENTS"
+								: `${guardName} @stmt ${firstGuard} line ${lineOf(stmts[firstGuard])}`,
 					});
 				}
 			}
@@ -126,13 +165,25 @@ for (const file of walk(ROUTES_DIR)) {
 	visit(sf);
 }
 
-const mutating = rows.filter((r) => r.method !== "GET" && r.method !== "OPTIONS");
+const mutating = rows.filter(
+	(r) => r.method !== "GET" && r.method !== "OPTIONS",
+);
 console.log(`inline route handlers examined: ${handlersSeen}`);
-console.log(`handlers where body inspection / 400 precedes any guard: ${rows.length}`);
-console.log(`  of those mutating (POST/PUT/PATCH/DELETE): ${mutating.length}\n`);
-for (const r of rows.sort((a, b) => (a.method === b.method ? a.file.localeCompare(b.file) : a.method.localeCompare(b.method)))) {
+console.log(
+	`handlers where body inspection / 400 precedes any guard: ${rows.length}`,
+);
+console.log(
+	`  of those mutating (POST/PUT/PATCH/DELETE): ${mutating.length}\n`,
+);
+for (const r of rows.sort((a, b) =>
+	a.method === b.method
+		? a.file.localeCompare(b.file)
+		: a.method.localeCompare(b.method),
+)) {
 	console.log(`${r.method} ${r.routePath}`);
 	console.log(`  registered ${r.file}:${r.line}`);
-	console.log(`  body first: line ${r.bodyLine} (stmt ${r.bodyStmt}) - ${r.bodyDetail}`);
+	console.log(
+		`  body first: line ${r.bodyLine} (stmt ${r.bodyStmt}) - ${r.bodyDetail}`,
+	);
 	console.log(`  guard:      ${r.guard}\n`);
 }

@@ -102,14 +102,18 @@ function erasedClauseHint(what: string): string {
 export function paidContractRequiredFieldsReview(
 	input: PaidContractRequiredFieldsInput,
 ): PaidContractRequiredFieldsReview {
-	const customer = filled(input.customerFullName) || filled(input.patientFullName);
+	const customer =
+		filled(input.customerFullName) || filled(input.patientFullName);
 	const careReason =
-		filled(input.careReason) || filled(input.visitComplaint) || CARE_REASON_FALLBACK;
+		filled(input.careReason) ||
+		filled(input.visitComplaint) ||
+		CARE_REASON_FALLBACK;
 	const serviceScope =
 		filled(input.serviceScope) ||
 		filled(input.visitTreatmentPlan) ||
 		filled(input.visitDoctorSummary);
-	const doctor = filled(input.doctorFullName) || filled(input.activeDoctorFullName);
+	const doctor =
+		filled(input.doctorFullName) || filled(input.activeDoctorFullName);
 
 	/*
 	 * Порядок — как в валидаторе. `ok` описывает заполненность, а не наличие
@@ -168,7 +172,9 @@ export function paidContractRequiredFieldsReview(
 		{
 			field: "paidContractPriceChangeRules",
 			label: "Изменение цены и объема",
-			hint: erasedClauseHint("как оформляется изменение состава услуг или стоимости"),
+			hint: erasedClauseHint(
+				"как оформляется изменение состава услуг или стоимости",
+			),
 			ok: filled(input.priceChangeRules) !== "",
 		},
 		{

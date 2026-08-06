@@ -71,7 +71,10 @@ export interface VisiographFindingPlan {
 	 * один запрос на группу вместо запроса на зуб — это и меньше нагрузки, и одна
 	 * запись в истории зуба на группу, как при работе врача групповым выбором.
 	 */
-	readonly groups: ReadonlyArray<{ readonly state: ToothState; readonly teeth: readonly VisiographFinding[] }>;
+	readonly groups: ReadonlyArray<{
+		readonly state: ToothState;
+		readonly teeth: readonly VisiographFinding[];
+	}>;
 	/** Непонятое состояние или номер зуба вне FDI — врач смотрит место сам. */
 	readonly unreadableCodes: readonly string[];
 	/** Состояние понятно, места в формуле нет — врач ставит отметку руками. */
@@ -103,7 +106,8 @@ export function planVisiographFindings(
 		const validTooth = isValidFdiToothNumber(toothNumber);
 		const mapped = validTooth ? AI_TO_TOOTH_STATE[state] : undefined;
 		if (!mapped) {
-			if (validTooth && AI_STATES_WITHOUT_FORMULA_STATE[state]) noFormulaStateCodes.push(code);
+			if (validTooth && AI_STATES_WITHOUT_FORMULA_STATE[state])
+				noFormulaStateCodes.push(code);
 			else unreadableCodes.push(code);
 			continue;
 		}

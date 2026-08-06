@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 /**
  * Страж числа колонок в группе виджетов под карточкой пациента.
@@ -36,14 +36,22 @@ function read(relativePath: string): string {
  * Обязательное совпадение: отсутствие — это провал проверки с внятным текстом, а
  * не падение по undefined через две строки.
  */
-function requireMatch(pattern: RegExp, source: string, message: string): RegExpExecArray {
+function requireMatch(
+	pattern: RegExp,
+	source: string,
+	message: string,
+): RegExpExecArray {
 	const found = pattern.exec(source);
 	if (found === null) throw new assert.AssertionError({ message });
 	return found;
 }
 
 /** Обязательная группа совпадения. */
-function requireGroup(match: RegExpExecArray, index: number, message: string): string {
+function requireGroup(
+	match: RegExpExecArray,
+	index: number,
+	message: string,
+): string {
 	const value = match[index];
 	if (typeof value !== "string") throw new assert.AssertionError({ message });
 	return value;
@@ -74,26 +82,32 @@ function readWidgetsGrid(): WidgetsGrid {
 	const block = requireMatch(
 		/\.patients-widgets-grid\s*\{([^}]*)\}/,
 		css,
-		"правило .patients-widgets-grid не найдено в patients-redesign.css"
+		"правило .patients-widgets-grid не найдено в patients-redesign.css",
 	);
 	const body = requireGroup(block, 1, "правило .patients-widgets-grid пустое");
 
-	assert.match(body, /display:\s*grid/, "группа виджетов перестала быть сеткой");
+	assert.match(
+		body,
+		/display:\s*grid/,
+		"группа виджетов перестала быть сеткой",
+	);
 
 	const template = requireMatch(
 		/grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\(\s*min\(\s*([\d.]+)rem\s*,\s*100%\s*\)\s*,\s*1fr\s*\)\s*\)/,
 		body,
-		"ожидалось grid-template-columns: repeat(auto-fit, minmax(min(<N>rem, 100%), 1fr)) — без min(...,100%) колонка не ужимается ниже минимума и карточки срезаются"
+		"ожидалось grid-template-columns: repeat(auto-fit, minmax(min(<N>rem, 100%), 1fr)) — без min(...,100%) колонка не ужимается ниже минимума и карточки срезаются",
 	);
 	const gap = requireMatch(
 		/(?:^|[\s;])gap:\s*([\d.]+)rem/,
 		body,
-		"просвет между дорожками задан не в rem — пересчёт числа колонок станет неверным"
+		"просвет между дорожками задан не в rem — пересчёт числа колонок станет неверным",
 	);
 
 	return {
-		trackMinPx: Number(requireGroup(template, 1, "минимум дорожки не прочитан")) * ROOT_FONT_PX,
-		gapPx: Number(requireGroup(gap, 1, "просвет не прочитан")) * ROOT_FONT_PX
+		trackMinPx:
+			Number(requireGroup(template, 1, "минимум дорожки не прочитан")) *
+			ROOT_FONT_PX,
+		gapPx: Number(requireGroup(gap, 1, "просвет не прочитан")) * ROOT_FONT_PX,
 	};
 }
 
@@ -101,7 +115,10 @@ function readWidgetsGrid(): WidgetsGrid {
 function columnCount(containerPx: number, grid: WidgetsGrid): number {
 	// min(<N>rem, 100%): в контейнере уже минимума побеждает сам контейнер.
 	const trackMin = Math.min(grid.trackMinPx, containerPx);
-	return Math.max(1, Math.floor((containerPx + grid.gapPx) / (trackMin + grid.gapPx)));
+	return Math.max(
+		1,
+		Math.floor((containerPx + grid.gapPx) / (trackMin + grid.gapPx)),
+	);
 }
 
 /** Ширина одной дорожки при таком числе колонок. */
@@ -142,10 +159,14 @@ test("группа виджетов пациента идёт одной кол�
 		assert.equal(
 			columns,
 			1,
-			`при ширине группы ${width}px получается ${columns} колонок: вторая дорожка растянется до высоты разбора дублей и станет пустой панелью`
+			`при ширине группы ${width}px получается ${columns} колонок: вторая дорожка растянется до высоты разбора дублей и станет пустой панелью`,
 		);
 		// Одна колонка и есть отсутствие мёртвой ширины: дорожка равна контейнеру.
-		assert.equal(trackWidth(width, grid), width, `при ${width}px дорожка не занимает всю ширину группы`);
+		assert.equal(
+			trackWidth(width, grid),
+			width,
+			`при ${width}px дорожка не занимает всю ширину группы`,
+		);
 	}
 });
 
@@ -154,14 +175,23 @@ test("три судимые ширины окна дают одну колонк
 
 	// 390 (телефон) и 720 (планшет в портрете): группа во всю ширину панели.
 	for (const viewport of [390, 720]) {
-		const available = viewport - NARROW_WORKSPACE_INLINE_PX - PATIENTS_PANEL_CHROME_PX;
-		assert.equal(columnCount(available, grid), 1, `окно ${viewport}px: группе ${available}px, колонок больше одной`);
+		const available =
+			viewport - NARROW_WORKSPACE_INLINE_PX - PATIENTS_PANEL_CHROME_PX;
+		assert.equal(
+			columnCount(available, grid),
+			1,
+			`окно ${viewport}px: группе ${available}px, колонок больше одной`,
+		);
 	}
 
 	// 1440 (рабочий стол): группа сидит в дорожке minmax(260px, 320px)
 	// .patients-main-grid, поэтому ширина окна на неё не влияет.
 	for (const trackPx of [260, 320]) {
-		assert.equal(columnCount(trackPx, grid), 1, `дорожка карточки пациента ${trackPx}px: колонок больше одной`);
+		assert.equal(
+			columnCount(trackPx, grid),
+			1,
+			`дорожка карточки пациента ${trackPx}px: колонок больше одной`,
+		);
 	}
 });
 
@@ -172,19 +202,27 @@ test("проверка отличает починку от дефекта: пр
 	// Ширина группы на окне 720px по опубликованным отступам: 654px. Вертикальная
 	// полоса прокрутки, если она классическая, отнимает ещё ~15px и даёт 639px —
 	// на число колонок это не влияет, поэтому в расчёте её нет.
-	const availableAt720 = 720 - NARROW_WORKSPACE_INLINE_PX - PATIENTS_PANEL_CHROME_PX;
-	assert.equal(columnCount(availableAt720, before), 2, "прежнее правило не воспроизводит дефект — проверка ничего не стоит");
+	const availableAt720 =
+		720 - NARROW_WORKSPACE_INLINE_PX - PATIENTS_PANEL_CHROME_PX;
+	assert.equal(
+		columnCount(availableAt720, before),
+		2,
+		"прежнее правило не воспроизводит дефект — проверка ничего не стоит",
+	);
 
 	const beforeTrack = trackWidth(availableAt720, before);
 	// Дорожка уже 320px — та самая узкая колонка, из-за которой разбор дублей
 	// перестраивается в высокую стопку (dente-operations.css, @container opsPanel).
-	assert.ok(beforeTrack < 320, `прежняя дорожка ${beforeTrack}px — ожидалась узкая, меньше 320px`);
+	assert.ok(
+		beforeTrack < 320,
+		`прежняя дорожка ${beforeTrack}px — ожидалась узкая, меньше 320px`,
+	);
 
 	// И доля окна, которую занимала пустая дорожка: ведущий увидел «около 45 %».
 	const deadShare = beforeTrack / 720;
 	assert.ok(
 		deadShare > 0.4 && deadShare < 0.5,
-		`пустая дорожка занимала ${(deadShare * 100).toFixed(1)} % окна — расчёт расходится с осмотром снимка`
+		`пустая дорожка занимала ${(deadShare * 100).toFixed(1)} % окна — расчёт расходится с осмотром снимка`,
 	);
 
 	// И та же ширина по новому правилу — одна колонка.
@@ -199,10 +237,13 @@ test("auto-fit не мёртвая форма: получив ширину се�
 	const columns = columnCount(fullSectionPx, grid);
 	assert.ok(
 		columns >= 2,
-		`на полной ширине секции (${fullSectionPx}px) группа осталась бы ${columns} колонкой — правило превратилось в жёсткую одну`
+		`на полной ширине секции (${fullSectionPx}px) группа осталась бы ${columns} колонкой — правило превратилось в жёсткую одну`,
 	);
 	// Дорожка при этом не уходит обратно в узкую: смысл минимума именно в этом.
-	assert.ok(trackWidth(fullSectionPx, grid) >= grid.trackMinPx, "дорожка на полной ширине уже объявленного минимума");
+	assert.ok(
+		trackWidth(fullSectionPx, grid) >= grid.trackMinPx,
+		"дорожка на полной ширине уже объявленного минимума",
+	);
 });
 
 test("перестроение таблицы дублей в карточки сохранено", () => {
@@ -213,14 +254,17 @@ test("перестроение таблицы дублей в карточки �
 	const threshold = requireMatch(
 		/@container\s+opsPanel\s*\(max-width:\s*(\d+)px\)/,
 		operationsCss,
-		"container-запрос перестроения таблицы в карточки не найден"
+		"container-запрос перестроения таблицы в карточки не найден",
 	);
-	const thresholdPx = Number(requireGroup(threshold, 1, "порог перестроения не прочитан"));
+	const thresholdPx = Number(
+		requireGroup(threshold, 1, "порог перестроения не прочитан"),
+	);
 
-	const availableAt720 = 720 - NARROW_WORKSPACE_INLINE_PX - PATIENTS_PANEL_CHROME_PX;
+	const availableAt720 =
+		720 - NARROW_WORKSPACE_INLINE_PX - PATIENTS_PANEL_CHROME_PX;
 	assert.ok(
 		availableAt720 <= thresholdPx,
-		`на окне 720px панели достаётся ${availableAt720}px при пороге ${thresholdPx}px — таблица перестанет быть карточками`
+		`на окне 720px панели достаётся ${availableAt720}px при пороге ${thresholdPx}px — таблица перестанет быть карточками`,
 	);
 });
 
@@ -229,15 +273,18 @@ test("раскладка группы задана классом, а не ат�
 	// !important: именно поэтому инлайн у .patients-main-grid приходится глушить
 	// через display: flex !important в dente-redesign.css:1067.
 	const view = read("PatientsView.tsx");
-	assert.ok(view.includes('className="patients-widgets-grid"'), "группа виджетов не помечена классом");
+	assert.ok(
+		view.includes('className="patients-widgets-grid"'),
+		"группа виджетов не помечена классом",
+	);
 	assert.ok(
 		!view.includes("minmax(min(280px, 100%), 1fr)"),
-		"в PatientsView вернулась инлайновая сетка с минимумом 280px"
+		"в PatientsView вернулась инлайновая сетка с минимумом 280px",
 	);
 
 	// Ширина дорожки карточки пациента — источник числа 260..320 в проверках выше.
 	assert.ok(
 		view.includes("minmax(260px, 320px) 1fr"),
-		"дорожка .patients-main-grid изменилась: пересчитайте достижимые ширины группы"
+		"дорожка .patients-main-grid изменилась: пересчитайте достижимые ширины группы",
 	);
 });

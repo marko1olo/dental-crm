@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
 	dayConfirmationsRequestPath,
-	dayConfirmationsShownDay
+	dayConfirmationsShownDay,
 } from "../components/schedule/DayConfirmationsPanel";
 
 /**
@@ -42,26 +42,38 @@ describe("панель обзвона: день выбирает сервер", 
 		const path = dayConfirmationsRequestPath("");
 		assert.equal(path, "/api/schedule/day-confirmations");
 		// Именно отсутствие date включает серверный tomorrowInTimeZone.
-		assert.ok(!path.includes("date="), `в первом запросе не должно быть дня: ${path}`);
+		assert.ok(
+			!path.includes("date="),
+			`в первом запросе не должно быть дня: ${path}`,
+		);
 	});
 
 	it("пробелы вместо дня — это тоже «дня нет»", () => {
-		assert.equal(dayConfirmationsRequestPath("   "), "/api/schedule/day-confirmations");
+		assert.equal(
+			dayConfirmationsRequestPath("   "),
+			"/api/schedule/day-confirmations",
+		);
 	});
 
 	it("выбранный человеком день уходит в запрос закодированным", () => {
 		assert.equal(
 			dayConfirmationsRequestPath("2026-11-01"),
-			"/api/schedule/day-confirmations?date=2026-11-01"
+			"/api/schedule/day-confirmations?date=2026-11-01",
 		);
 	});
 
 	it("поле ввода показывает день из ответа сервера, пока никто не выбирал", () => {
-		assert.equal(dayConfirmationsShownDay("", { date: "2026-11-02" }), "2026-11-02");
+		assert.equal(
+			dayConfirmationsShownDay("", { date: "2026-11-02" }),
+			"2026-11-02",
+		);
 	});
 
 	it("выбор человека главнее ответа сервера", () => {
-		assert.equal(dayConfirmationsShownDay("2026-12-31", { date: "2026-11-02" }), "2026-12-31");
+		assert.equal(
+			dayConfirmationsShownDay("2026-12-31", { date: "2026-11-02" }),
+			"2026-12-31",
+		);
 	});
 
 	it("до первого ответа поле пусто, а не заполнено выдуманным днём", () => {
@@ -71,8 +83,14 @@ describe("панель обзвона: день выбирает сервер", 
 
 describe("панель обзвона: календарного дня по миллисекундам в модуле нет", () => {
 	const source = readFileSync(
-		join(dirname(fileURLToPath(import.meta.url)), "..", "components", "schedule", "DayConfirmationsPanel.tsx"),
-		"utf8"
+		join(
+			dirname(fileURLToPath(import.meta.url)),
+			"..",
+			"components",
+			"schedule",
+			"DayConfirmationsPanel.tsx",
+		),
+		"utf8",
 	);
 
 	/**
@@ -87,14 +105,26 @@ describe("панель обзвона: календарного дня по ми
 	it("нет прибавления суток в миллисекундах", () => {
 		assert.ok(
 			!/24\s*\*\s*60\s*\*\s*60\s*\*\s*1000/.test(code),
-			"сутки нельзя прибавлять как 24 часа: в день перехода на зимнее время их 25"
+			"сутки нельзя прибавлять как 24 часа: в день перехода на зимнее время их 25",
 		);
-		assert.ok(!/86_?400_?000/.test(code), "86400000 — те же 24 часа, записанные числом");
+		assert.ok(
+			!/86_?400_?000/.test(code),
+			"86400000 — те же 24 часа, записанные числом",
+		);
 	});
 
 	it("панель не собирает календарный день из полей Date", () => {
-		assert.ok(!/getDate\(\)/.test(code), "день клиники в браузере не вычисляется — его отдаёт сервер");
-		assert.ok(!/getMonth\(\)/.test(code), "месяц клиники в браузере не вычисляется — его отдаёт сервер");
-		assert.ok(!/toISOString\(\)/.test(code), "toISOString даёт день по UTC, а не день клиники");
+		assert.ok(
+			!/getDate\(\)/.test(code),
+			"день клиники в браузере не вычисляется — его отдаёт сервер",
+		);
+		assert.ok(
+			!/getMonth\(\)/.test(code),
+			"месяц клиники в браузере не вычисляется — его отдаёт сервер",
+		);
+		assert.ok(
+			!/toISOString\(\)/.test(code),
+			"toISOString даёт день по UTC, а не день клиники",
+		);
 	});
 });

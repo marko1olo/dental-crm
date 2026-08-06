@@ -5,11 +5,11 @@ import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
+	type SchemaIssueLike,
 	schemaIssuePhrase,
 	schemaIssueWords,
 	schemaRefusalMessage,
 	textReachesOperator,
-	type SchemaIssueLike,
 } from "../../utils/schemaRefusalWords.js";
 
 /**
@@ -173,7 +173,12 @@ const ROUTE_CASES: RouteCase[] = [
 	{
 		label: "касса, сумма с запятой и способ оплаты своими словами",
 		url: "/api/billing/payments",
-		payload: { patientId: ORGANIZATION, amountRub: "1500,50", method: "нал", clientMutationId: 12 },
+		payload: {
+			patientId: ORGANIZATION,
+			amountRub: "1500,50",
+			method: "нал",
+			clientMutationId: 12,
+		},
 		machineCode: "BillingValidationError",
 		authorized: true,
 	},
@@ -216,22 +221,34 @@ describe("отказ разбора объяснён человеку, а не �
 	before(async () => {
 		process.env.NODE_ENV = "test";
 		process.env.DENTE_CLINICAL_ADMIN_SECRET = ADMIN_SECRET;
-		process.env.DENTE_AUTH_TOKEN_SECRET ??= "замок-человеческого-текста-подпись";
+		process.env.DENTE_AUTH_TOKEN_SECRET ??=
+			"замок-человеческого-текста-подпись";
 
 		const { registerBillingRoutes } = await import("../../routes/billing.js");
-		const { registerMigrationRoutes } = await import("../../routes/migration.js");
-		const { registerMigrationRunRoutes } = await import("../../routes/migrationRuns.js");
-		const { registerPublicBookingRoutes } = await import("../../routes/publicBooking.js");
+		const { registerMigrationRoutes } = await import(
+			"../../routes/migration.js"
+		);
+		const { registerMigrationRunRoutes } = await import(
+			"../../routes/migrationRuns.js"
+		);
+		const { registerPublicBookingRoutes } = await import(
+			"../../routes/publicBooking.js"
+		);
 		const { authTokenSecret } = await import("../../security/authSecret.js");
 		const { signToken } = await import("../../utils/cryptoHelper.js");
 
-		clinicToken = signToken({ organizationId: ORGANIZATION }, authTokenSecret());
+		clinicToken = signToken(
+			{ organizationId: ORGANIZATION },
+			authTokenSecret(),
+		);
 
 		app = Fastify({ logger: false });
 		await registerBillingRoutes(app);
 		await registerMigrationRoutes(app);
 		await registerMigrationRunRoutes(app);
-		await app.register(registerPublicBookingRoutes, { prefix: "/api/public/booking" });
+		await app.register(registerPublicBookingRoutes, {
+			prefix: "/api/public/booking",
+		});
 		await app.ready();
 	});
 
@@ -241,7 +258,9 @@ describe("отказ разбора объяснён человеку, а не �
 
 	for (const routeCase of ROUTE_CASES) {
 		test(routeCase.label, async () => {
-			const headers: Record<string, string> = { "content-type": "application/json" };
+			const headers: Record<string, string> = {
+				"content-type": "application/json",
+			};
 			if (routeCase.authorized) {
 				headers["x-dente-admin-secret"] = ADMIN_SECRET;
 				headers["x-dente-clinic-token"] = clinicToken;
@@ -252,11 +271,19 @@ describe("отказ разбора объяснён человеку, а не �
 				headers,
 				payload: routeCase.payload,
 			});
-			assert.equal(response.statusCode, 400, `${routeCase.label}: код ответа изменился`);
+			assert.equal(
+				response.statusCode,
+				400,
+				`${routeCase.label}: код ответа изменился`,
+			);
 
 			const body = response.json() as Record<string, unknown>;
 			const envelope = routeCase.envelope
-				? (body.error as { code?: unknown; message?: unknown; details?: unknown })
+				? (body.error as {
+						code?: unknown;
+						message?: unknown;
+						details?: unknown;
+					})
 				: null;
 
 			/*
@@ -271,7 +298,11 @@ describe("отказ разбора объяснён человеку, а не �
 			);
 
 			const message = envelope ? envelope.message : body.message;
-			assert.equal(typeof message, "string", `${routeCase.label}: поля message нет`);
+			assert.equal(
+				typeof message,
+				"string",
+				`${routeCase.label}: поля message нет`,
+			);
 			assertHumanRefusal(message as string, routeCase.label);
 
 			/* Список замечаний в конверте — тоже текст для человека. */
@@ -279,10 +310,20 @@ describe("отказ разбора объяснён человеку, а не �
 				? (envelope.details as { issues?: unknown } | undefined)?.issues
 				: undefined;
 			if (Array.isArray(issues)) {
-				assert.ok(issues.length > 0, `${routeCase.label}: список замечаний пуст`);
+				assert.ok(
+					issues.length > 0,
+					`${routeCase.label}: список замечаний пуст`,
+				);
 				for (const [index, entry] of issues.entries()) {
-					assert.equal(typeof entry, "string", `${routeCase.label}: замечание ${index} не строка`);
-					assertHumanRefusal(entry as string, `${routeCase.label}, замечание ${index}`);
+					assert.equal(
+						typeof entry,
+						"string",
+						`${routeCase.label}: замечание ${index} не строка`,
+					);
+					assertHumanRefusal(
+						entry as string,
+						`${routeCase.label}, замечание ${index}`,
+					);
 				}
 			}
 		});
@@ -301,22 +342,41 @@ describe("отказ разбора объяснён человеку, а не �
 			headers: { "content-type": "application/json" },
 			payload: {},
 		});
-		assert.equal(response.statusCode, 400, "запись с сайта: код ответа изменился");
+		assert.equal(
+			response.statusCode,
+			400,
+			"запись с сайта: код ответа изменился",
+		);
 
-		const body = response.json() as { error?: unknown; message?: unknown; details?: unknown };
+		const body = response.json() as {
+			error?: unknown;
+			message?: unknown;
+			details?: unknown;
+		};
 		assert.equal(
 			body.error,
 			"Некорректные данные записи",
 			"запись с сайта: значение поля error изменилось",
 		);
-		assert.equal(typeof body.message, "string", "запись с сайта: поля message нет");
+		assert.equal(
+			typeof body.message,
+			"string",
+			"запись с сайта: поля message нет",
+		);
 		assertHumanRefusal(body.message as string, "запись с сайта");
 
-		assert.ok(Array.isArray(body.details), "запись с сайта: списка замечаний нет");
+		assert.ok(
+			Array.isArray(body.details),
+			"запись с сайта: списка замечаний нет",
+		);
 		const details = body.details as unknown[];
 		assert.ok(details.length > 0, "запись с сайта: список замечаний пуст");
 		for (const [index, entry] of details.entries()) {
-			assert.equal(typeof entry, "string", `запись с сайта: замечание ${index} не строка`);
+			assert.equal(
+				typeof entry,
+				"string",
+				`запись с сайта: замечание ${index} не строка`,
+			);
 			assertHumanRefusal(entry as string, `запись с сайта, замечание ${index}`);
 		}
 	});
@@ -337,7 +397,11 @@ describe("отказ разбора объяснён человеку, а не �
  */
 function zodIssuesFor(schema: z.ZodTypeAny, value: unknown): SchemaIssueLike[] {
 	const parsed = schema.safeParse(value);
-	assert.equal(parsed.success, false, "схема обязана была отвергнуть это значение");
+	assert.equal(
+		parsed.success,
+		false,
+		"схема обязана была отвергнуть это значение",
+	);
 	return (parsed as { error: { issues: SchemaIssueLike[] } }).error.issues;
 }
 
@@ -352,10 +416,15 @@ const LABELS: Record<string, string> = {
 };
 
 const REAL_ISSUE_CASES: Array<{ code: string; issues: SchemaIssueLike[] }> = [
-	{ code: "invalid_type (значения нет)", issues: zodIssuesFor(z.object({ name: z.string() }), {}) },
+	{
+		code: "invalid_type (значения нет)",
+		issues: zodIssuesFor(z.object({ name: z.string() }), {}),
+	},
 	{
 		code: "invalid_type (другой вид)",
-		issues: zodIssuesFor(z.object({ amountRub: z.number() }), { amountRub: "1500,50" }),
+		issues: zodIssuesFor(z.object({ amountRub: z.number() }), {
+			amountRub: "1500,50",
+		}),
 	},
 	{
 		code: "invalid_literal",
@@ -363,11 +432,17 @@ const REAL_ISSUE_CASES: Array<{ code: string; issues: SchemaIssueLike[] }> = [
 	},
 	{
 		code: "unrecognized_keys",
-		issues: zodIssuesFor(z.object({ name: z.string() }).strict(), { name: "а", лишнее: 1 }),
+		issues: zodIssuesFor(z.object({ name: z.string() }).strict(), {
+			name: "а",
+			лишнее: 1,
+		}),
 	},
 	{
 		code: "invalid_union",
-		issues: zodIssuesFor(z.object({ name: z.union([z.string(), z.number()]) }), { name: true }),
+		issues: zodIssuesFor(
+			z.object({ name: z.union([z.string(), z.number()]) }),
+			{ name: true },
+		),
 	},
 	{
 		code: "invalid_union_discriminator",
@@ -381,28 +456,46 @@ const REAL_ISSUE_CASES: Array<{ code: string; issues: SchemaIssueLike[] }> = [
 	},
 	{
 		code: "invalid_enum_value",
-		issues: zodIssuesFor(z.object({ tag: z.enum(["нал", "карта"]) }), { tag: "чек" }),
+		issues: zodIssuesFor(z.object({ tag: z.enum(["нал", "карта"]) }), {
+			tag: "чек",
+		}),
 	},
-	{ code: "invalid_date", issues: zodIssuesFor(z.object({ when: z.date() }), { when: new Date("нет") }) },
+	{
+		code: "invalid_date",
+		issues: zodIssuesFor(z.object({ when: z.date() }), {
+			when: new Date("нет"),
+		}),
+	},
 	{
 		code: "invalid_string (опознавательный номер)",
-		issues: zodIssuesFor(z.object({ name: z.string().uuid() }), { name: "не номер" }),
+		issues: zodIssuesFor(z.object({ name: z.string().uuid() }), {
+			name: "не номер",
+		}),
 	},
 	{
 		code: "invalid_string (почта)",
-		issues: zodIssuesFor(z.object({ name: z.string().email() }), { name: "не почта" }),
+		issues: zodIssuesFor(z.object({ name: z.string().email() }), {
+			name: "не почта",
+		}),
 	},
 	{
 		code: "invalid_string (дата со временем)",
-		issues: zodIssuesFor(z.object({ when: z.string().datetime({ offset: true }) }), { when: "вчера" }),
+		issues: zodIssuesFor(
+			z.object({ when: z.string().datetime({ offset: true }) }),
+			{ when: "вчера" },
+		),
 	},
 	{
 		code: "invalid_string (по образцу)",
-		issues: zodIssuesFor(z.object({ name: z.string().regex(/^\d+$/) }), { name: "буквы" }),
+		issues: zodIssuesFor(z.object({ name: z.string().regex(/^\d+$/) }), {
+			name: "буквы",
+		}),
 	},
 	{
 		code: "invalid_string (начинается с)",
-		issues: zodIssuesFor(z.object({ name: z.string().startsWith("нужно") }), { name: "другое" }),
+		issues: zodIssuesFor(z.object({ name: z.string().startsWith("нужно") }), {
+			name: "другое",
+		}),
 	},
 	{
 		code: "too_small (пустой текст)",
@@ -414,7 +507,9 @@ const REAL_ISSUE_CASES: Array<{ code: string; issues: SchemaIssueLike[] }> = [
 	},
 	{
 		code: "too_small (пустой список)",
-		issues: zodIssuesFor(z.object({ items: z.array(z.string()).min(1) }), { items: [] }),
+		issues: zodIssuesFor(z.object({ items: z.array(z.string()).min(1) }), {
+			items: [],
+		}),
 	},
 	{
 		code: "too_small (число)",
@@ -422,17 +517,24 @@ const REAL_ISSUE_CASES: Array<{ code: string; issues: SchemaIssueLike[] }> = [
 	},
 	{
 		code: "too_small (дата)",
-		issues: zodIssuesFor(z.object({ when: z.date().min(new Date("2026-01-01")) }), {
-			when: new Date("2020-01-01"),
-		}),
+		issues: zodIssuesFor(
+			z.object({ when: z.date().min(new Date("2026-01-01")) }),
+			{
+				when: new Date("2020-01-01"),
+			},
+		),
 	},
 	{
 		code: "too_big (длинный текст)",
-		issues: zodIssuesFor(z.object({ name: z.string().max(2) }), { name: "слишком длинно" }),
+		issues: zodIssuesFor(z.object({ name: z.string().max(2) }), {
+			name: "слишком длинно",
+		}),
 	},
 	{
 		code: "too_big (длинный список)",
-		issues: zodIssuesFor(z.object({ items: z.array(z.string()).max(1) }), { items: ["а", "б"] }),
+		issues: zodIssuesFor(z.object({ items: z.array(z.string()).max(1) }), {
+			items: ["а", "б"],
+		}),
 	},
 	{
 		code: "too_big (число)",
@@ -440,11 +542,15 @@ const REAL_ISSUE_CASES: Array<{ code: string; issues: SchemaIssueLike[] }> = [
 	},
 	{
 		code: "not_multiple_of",
-		issues: zodIssuesFor(z.object({ count: z.number().multipleOf(5) }), { count: 7 }),
+		issues: zodIssuesFor(z.object({ count: z.number().multipleOf(5) }), {
+			count: 7,
+		}),
 	},
 	{
 		code: "not_finite",
-		issues: zodIssuesFor(z.object({ count: z.number().finite() }), { count: Number.POSITIVE_INFINITY }),
+		issues: zodIssuesFor(z.object({ count: z.number().finite() }), {
+			count: Number.POSITIVE_INFINITY,
+		}),
 	},
 	{
 		code: "custom (без своего текста)",
@@ -458,14 +564,29 @@ const REAL_ISSUE_CASES: Array<{ code: string; issues: SchemaIssueLike[] }> = [
 ];
 
 /** Коды, которые схемой на данных не воспроизвести — собраны вручную. */
-const HAND_BUILT_ISSUE_CASES: Array<{ code: string; issues: SchemaIssueLike[] }> = [
+const HAND_BUILT_ISSUE_CASES: Array<{
+	code: string;
+	issues: SchemaIssueLike[];
+}> = [
 	{
 		code: "invalid_arguments (вручную)",
-		issues: [{ code: "invalid_arguments", path: ["name"], message: "Invalid function arguments" }],
+		issues: [
+			{
+				code: "invalid_arguments",
+				path: ["name"],
+				message: "Invalid function arguments",
+			},
+		],
 	},
 	{
 		code: "invalid_return_type (вручную)",
-		issues: [{ code: "invalid_return_type", path: ["name"], message: "Invalid function return type" }],
+		issues: [
+			{
+				code: "invalid_return_type",
+				path: ["name"],
+				message: "Invalid function return type",
+			},
+		],
 	},
 	{
 		code: "invalid_intersection_types (вручную)",
@@ -479,18 +600,33 @@ const HAND_BUILT_ISSUE_CASES: Array<{ code: string; issues: SchemaIssueLike[] }>
 	},
 	{
 		code: "неизвестный код будущей версии (вручную)",
-		issues: [{ code: "код_которого_ещё_нет", path: ["name"], message: "Something Entirely New" }],
+		issues: [
+			{
+				code: "код_которого_ещё_нет",
+				path: ["name"],
+				message: "Something Entirely New",
+			},
+		],
 	},
 ];
 
 describe("перевод накрывает все коды замечаний разборщика", () => {
 	for (const issueCase of [...REAL_ISSUE_CASES, ...HAND_BUILT_ISSUE_CASES]) {
 		test(issueCase.code, () => {
-			assert.ok(issueCase.issues.length > 0, `${issueCase.code}: замечаний не пришло`);
+			assert.ok(
+				issueCase.issues.length > 0,
+				`${issueCase.code}: замечаний не пришло`,
+			);
 			for (const issue of issueCase.issues) {
 				const words = schemaIssueWords(issue, LABELS);
-				assert.ok(words.cause.trim().length > 0, `${issueCase.code}: причины нет`);
-				assert.ok(words.action.trim().length > 0, `${issueCase.code}: действия нет`);
+				assert.ok(
+					words.cause.trim().length > 0,
+					`${issueCase.code}: причины нет`,
+				);
+				assert.ok(
+					words.action.trim().length > 0,
+					`${issueCase.code}: действия нет`,
+				);
 				assertHumanRefusal(schemaIssuePhrase(issue, LABELS), issueCase.code);
 			}
 			assertHumanRefusal(
@@ -498,7 +634,8 @@ describe("перевод накрывает все коды замечаний �
 					issues: issueCase.issues,
 					fieldLabels: LABELS,
 					retryAction: "действие",
-					fallbackMessage: "Поля не заполнены. Заполните их и повторите действие.",
+					fallbackMessage:
+						"Поля не заполнены. Заполните их и повторите действие.",
 				}),
 				`${issueCase.code}, собранный отказ`,
 			);
@@ -506,7 +643,8 @@ describe("перевод накрывает все коды замечаний �
 	}
 
 	test("замечаний нет вовсе — отдаётся запасной текст с причиной и действием", () => {
-		const fallback = "Ни одно поле не прошло проверку. Проверьте поля формы и повторите действие.";
+		const fallback =
+			"Ни одно поле не прошло проверку. Проверьте поля формы и повторите действие.";
 		assert.equal(
 			schemaRefusalMessage({
 				issues: [],
@@ -524,7 +662,10 @@ describe("перевод накрывает все коды замечаний �
 	 * гасило фразу целиком: «назвали поле» превращалось в «не сказали ничего».
 	 */
 	test("поле без русской подписи не называется латинским ключом схемы", () => {
-		const issues = zodIssuesFor(z.object({ someLatinFieldName: z.string() }), {});
+		const issues = zodIssuesFor(
+			z.object({ someLatinFieldName: z.string() }),
+			{},
+		);
 		for (const issue of issues) {
 			assertHumanRefusal(schemaIssuePhrase(issue, {}), "поле без подписи");
 		}
@@ -563,7 +704,10 @@ describe("русский текст автора схемы не перепис�
 			words.cause.includes(authored),
 			`причина обязана нести текст автора схемы дословно, получено: ${words.cause}`,
 		);
-		assertHumanRefusal(schemaIssuePhrase(issues[0] as SchemaIssueLike, LABELS), "текст автора");
+		assertHumanRefusal(
+			schemaIssuePhrase(issues[0] as SchemaIssueLike, LABELS),
+			"текст автора",
+		);
 	});
 
 	/*
@@ -576,7 +720,9 @@ describe("русский текст автора схемы не перепис�
 		const issues = zodIssuesFor(
 			z
 				.object({ name: z.string().optional() })
-				.refine((value) => Boolean(value.name), { message: "Нужен либо rawText, либо contentBase64." }),
+				.refine((value) => Boolean(value.name), {
+					message: "Нужен либо rawText, либо contentBase64.",
+				}),
 			{},
 		);
 		for (const issue of issues) {

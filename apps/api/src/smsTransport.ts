@@ -75,7 +75,7 @@ export type SmsCredentials = {
 
 export const DEFAULT_SMS_BASE_URL: Readonly<Record<SmsProviderId, string>> = {
 	smsru: "https://sms.ru",
-	smsc: "https://smsc.ru"
+	smsc: "https://smsc.ru",
 };
 
 export type SendSmsInput = {
@@ -96,9 +96,14 @@ export type SendSmsInput = {
  * Возвращает null, если номер не похож на российский мобильный: отправлять
  * «куда получится» дороже, чем не отправить и показать администратору ошибку.
  */
-export function normalizeRussianMsisdn(raw: string | null | undefined): string | null {
+export function normalizeRussianMsisdn(
+	raw: string | null | undefined,
+): string | null {
 	const digits = (raw ?? "").replace(/\D/g, "");
-	if (digits.length === 11 && (digits.startsWith("7") || digits.startsWith("8"))) {
+	if (
+		digits.length === 11 &&
+		(digits.startsWith("7") || digits.startsWith("8"))
+	) {
 		return `7${digits.slice(1)}`;
 	}
 	if (digits.length === 10 && digits.startsWith("9")) {
@@ -114,7 +119,9 @@ export function normalizeRussianMsisdn(raw: string | null | undefined): string |
  * пустым значением». Иначе отправка молча уходит в шлюз без ключа и падает с
  * невнятным «auth» на каждом сообщении.
  */
-export function readSmsCredentialsFromEnv(env: NodeJS.ProcessEnv = process.env): SmsCredentials | null {
+export function readSmsCredentialsFromEnv(
+	env: NodeJS.ProcessEnv = process.env,
+): SmsCredentials | null {
 	const provider = env.DENTE_SMS_PROVIDER?.trim().toLowerCase();
 	const sender = env.DENTE_SMS_SENDER?.trim() || null;
 
@@ -130,7 +137,7 @@ export function readSmsCredentialsFromEnv(env: NodeJS.ProcessEnv = process.env):
 			login: null,
 			password: null,
 			sender,
-			baseUrl: baseUrlOverride ?? DEFAULT_SMS_BASE_URL.smsru
+			baseUrl: baseUrlOverride ?? DEFAULT_SMS_BASE_URL.smsru,
 		};
 	}
 
@@ -144,7 +151,7 @@ export function readSmsCredentialsFromEnv(env: NodeJS.ProcessEnv = process.env):
 			login,
 			password,
 			sender,
-			baseUrl: baseUrlOverride ?? DEFAULT_SMS_BASE_URL.smsc
+			baseUrl: baseUrlOverride ?? DEFAULT_SMS_BASE_URL.smsc,
 		};
 	}
 
@@ -203,7 +210,7 @@ const SMS_RU_STATUS_TEXT: Readonly<Record<number, string>> = {
 	230: "Превышен дневной лимит сообщений на этот номер.",
 	300: "Ключ доступа SMS.RU недействителен.",
 	301: "Неверный пароль SMS.RU.",
-	302: "Пользователь SMS.RU авторизован, но аккаунт не подтверждён."
+	302: "Пользователь SMS.RU авторизован, но аккаунт не подтверждён.",
 };
 
 /**
@@ -239,7 +246,7 @@ const SMSC_ERROR_TEXT: Readonly<Record<number, string>> = {
 	6: "Сообщение запрещено настройками аккаунта SMSC.",
 	7: "Шлюз SMSC считает номер получателя некорректным.",
 	8: "Сообщение невозможно доставить на этот номер.",
-	9: "Слишком много запросов к SMSC за короткое время."
+	9: "Слишком много запросов к SMSC за короткое время.",
 };
 
 function abortableTimeout(timeoutMs: number) {
@@ -248,7 +255,11 @@ function abortableTimeout(timeoutMs: number) {
 	return { controller, done: () => clearTimeout(timer) };
 }
 
-function networkFailure(error: unknown, timeoutMs: number, gateway: string): Extract<SmsTransportResult, { ok: false }> {
+function networkFailure(
+	error: unknown,
+	timeoutMs: number,
+	gateway: string,
+): Extract<SmsTransportResult, { ok: false }> {
 	const aborted = error instanceof Error && error.name === "AbortError";
 	return {
 		ok: false,
@@ -258,26 +269,31 @@ function networkFailure(error: unknown, timeoutMs: number, gateway: string): Ext
 		errorClass: aborted ? "timeout" : "network",
 		errorMessage: aborted
 			? `Шлюз ${gateway} не ответил за ${timeoutMs} мс`
-			: `Сеть недоступна: ${error instanceof Error ? error.message : String(error)}`
+			: `Сеть недоступна: ${error instanceof Error ? error.message : String(error)}`,
 	};
 }
 
-async function sendViaSmsRu(input: SendSmsInput, timeoutMs: number): Promise<SmsTransportResult> {
+async function sendViaSmsRu(
+	input: SendSmsInput,
+	timeoutMs: number,
+): Promise<SmsTransportResult> {
 	const { controller, done } = abortableTimeout(timeoutMs);
 	const form = new URLSearchParams({
 		api_id: input.credentials.apiId ?? "",
 		to: input.toMsisdn,
 		msg: input.text,
-		json: "1"
+		json: "1",
 	});
 	if (input.credentials.sender) form.set("from", input.credentials.sender);
 
 	try {
 		const response = await fetch(`${input.credentials.baseUrl}/sms/send`, {
 			method: "POST",
-			headers: { "content-type": "application/x-www-form-urlencoded; charset=utf-8" },
+			headers: {
+				"content-type": "application/x-www-form-urlencoded; charset=utf-8",
+			},
 			body: form.toString(),
-			signal: controller.signal
+			signal: controller.signal,
 		});
 
 		if (!response.ok) {
@@ -287,7 +303,7 @@ async function sendViaSmsRu(input: SendSmsInput, timeoutMs: number): Promise<Sms
 				segments: null,
 				errorCode: response.status,
 				errorClass: response.status >= 500 ? "server" : "bad_request",
-				errorMessage: `Шлюз SMS.RU ответил ${response.status}`
+				errorMessage: `Шлюз SMS.RU ответил ${response.status}`,
 			};
 		}
 
@@ -295,7 +311,15 @@ async function sendViaSmsRu(input: SendSmsInput, timeoutMs: number): Promise<Sms
 			status?: unknown;
 			status_code?: unknown;
 			status_text?: unknown;
-			sms?: Record<string, { status?: unknown; status_code?: unknown; status_text?: unknown; sms_id?: unknown }>;
+			sms?: Record<
+				string,
+				{
+					status?: unknown;
+					status_code?: unknown;
+					status_text?: unknown;
+					sms_id?: unknown;
+				}
+			>;
 		};
 
 		// Ответ двухуровневый: общий статус запроса и статус по каждому номеру.
@@ -316,7 +340,7 @@ async function sendViaSmsRu(input: SendSmsInput, timeoutMs: number): Promise<Sms
 				segments: null,
 				errorCode: null,
 				errorClass: null,
-				errorMessage: null
+				errorMessage: null,
 			};
 		}
 
@@ -332,11 +356,12 @@ async function sendViaSmsRu(input: SendSmsInput, timeoutMs: number): Promise<Sms
 			providerMessageId: null,
 			segments: null,
 			errorCode: statusCode,
-			errorClass: statusCode === null ? "unknown" : classifySmsRuStatus(statusCode),
+			errorClass:
+				statusCode === null ? "unknown" : classifySmsRuStatus(statusCode),
 			errorMessage:
 				(statusCode !== null ? SMS_RU_STATUS_TEXT[statusCode] : null) ??
 				statusText ??
-				`Шлюз SMS.RU вернул код ${statusCode ?? "без кода"}`
+				`Шлюз SMS.RU вернул код ${statusCode ?? "без кода"}`,
 		};
 	} catch (error) {
 		return networkFailure(error, timeoutMs, "SMS.RU");
@@ -345,7 +370,10 @@ async function sendViaSmsRu(input: SendSmsInput, timeoutMs: number): Promise<Sms
 	}
 }
 
-async function sendViaSmsc(input: SendSmsInput, timeoutMs: number): Promise<SmsTransportResult> {
+async function sendViaSmsc(
+	input: SendSmsInput,
+	timeoutMs: number,
+): Promise<SmsTransportResult> {
 	const { controller, done } = abortableTimeout(timeoutMs);
 	const form = new URLSearchParams({
 		login: input.credentials.login ?? "",
@@ -355,17 +383,20 @@ async function sendViaSmsc(input: SendSmsInput, timeoutMs: number): Promise<SmsT
 		charset: "utf-8",
 		// fmt=3 — ответ в JSON, cost=3 — вместе со стоимостью и числом частей.
 		fmt: "3",
-		cost: "3"
+		cost: "3",
 	});
 	if (input.credentials.sender) form.set("sender", input.credentials.sender);
-	if (input.idempotencyKey) form.set("id", numericIdFromKey(input.idempotencyKey));
+	if (input.idempotencyKey)
+		form.set("id", numericIdFromKey(input.idempotencyKey));
 
 	try {
 		const response = await fetch(`${input.credentials.baseUrl}/sys/send.php`, {
 			method: "POST",
-			headers: { "content-type": "application/x-www-form-urlencoded; charset=utf-8" },
+			headers: {
+				"content-type": "application/x-www-form-urlencoded; charset=utf-8",
+			},
 			body: form.toString(),
-			signal: controller.signal
+			signal: controller.signal,
 		});
 
 		if (!response.ok) {
@@ -375,7 +406,7 @@ async function sendViaSmsc(input: SendSmsInput, timeoutMs: number): Promise<SmsT
 				segments: null,
 				errorCode: response.status,
 				errorClass: response.status >= 500 ? "server" : "bad_request",
-				errorMessage: `Шлюз SMSC ответил ${response.status}`
+				errorMessage: `Шлюз SMSC ответил ${response.status}`,
 			};
 		}
 
@@ -387,26 +418,36 @@ async function sendViaSmsc(input: SendSmsInput, timeoutMs: number): Promise<SmsT
 		};
 
 		if (payload.error !== undefined || typeof payload.error_code === "number") {
-			const errorCode = typeof payload.error_code === "number" ? payload.error_code : null;
+			const errorCode =
+				typeof payload.error_code === "number" ? payload.error_code : null;
 			return {
 				ok: false,
 				providerMessageId: null,
 				segments: null,
 				errorCode,
-				errorClass: errorCode === null ? "unknown" : classifySmscError(errorCode),
+				errorClass:
+					errorCode === null ? "unknown" : classifySmscError(errorCode),
 				errorMessage:
 					(errorCode !== null ? SMSC_ERROR_TEXT[errorCode] : null) ??
-					(typeof payload.error === "string" ? payload.error : "Шлюз SMSC отклонил отправку")
+					(typeof payload.error === "string"
+						? payload.error
+						: "Шлюз SMSC отклонил отправку"),
 			};
 		}
 
 		return {
 			ok: true,
-			providerMessageId: payload.id === undefined || payload.id === null ? null : String(payload.id),
-			segments: typeof payload.cnt === "number" && Number.isFinite(payload.cnt) ? payload.cnt : null,
+			providerMessageId:
+				payload.id === undefined || payload.id === null
+					? null
+					: String(payload.id),
+			segments:
+				typeof payload.cnt === "number" && Number.isFinite(payload.cnt)
+					? payload.cnt
+					: null,
 			errorCode: null,
 			errorClass: null,
-			errorMessage: null
+			errorMessage: null,
 		};
 	} catch (error) {
 		return networkFailure(error, timeoutMs, "SMSC");
@@ -429,7 +470,9 @@ function numericIdFromKey(key: string): string {
 	return String(Math.abs(hash));
 }
 
-export async function sendSms(input: SendSmsInput): Promise<SmsTransportResult> {
+export async function sendSms(
+	input: SendSmsInput,
+): Promise<SmsTransportResult> {
 	const timeoutMs = Math.max(1000, Math.min(60_000, input.timeoutMs ?? 12_000));
 
 	if (!input.text.trim()) {
@@ -439,7 +482,7 @@ export async function sendSms(input: SendSmsInput): Promise<SmsTransportResult> 
 			segments: null,
 			errorCode: null,
 			errorClass: "bad_request",
-			errorMessage: "Пустой текст сообщения."
+			errorMessage: "Пустой текст сообщения.",
 		};
 	}
 	if (!/^\d{10,15}$/.test(input.toMsisdn)) {
@@ -449,7 +492,7 @@ export async function sendSms(input: SendSmsInput): Promise<SmsTransportResult> 
 			segments: null,
 			errorCode: null,
 			errorClass: "recipient_unavailable",
-			errorMessage: "Номер получателя не приведён к международному формату."
+			errorMessage: "Номер получателя не приведён к международному формату.",
 		};
 	}
 
@@ -465,7 +508,7 @@ export async function sendSms(input: SendSmsInput): Promise<SmsTransportResult> 
 				segments: null,
 				errorCode: null,
 				errorClass: "not_configured",
-				errorMessage: "SMS-шлюз не настроен."
+				errorMessage: "SMS-шлюз не настроен.",
 			};
 	}
 }
@@ -479,25 +522,42 @@ export type SmsBalanceResult =
  * деньги на SMS означают, что завтра никто не получит напоминание о приёме, а
  * узнают об этом по пустым креслам.
  */
-export async function fetchSmsBalance(credentials: SmsCredentials, timeoutMs = 8000): Promise<SmsBalanceResult> {
-	const { controller, done } = abortableTimeout(Math.max(1000, Math.min(30_000, timeoutMs)));
+export async function fetchSmsBalance(
+	credentials: SmsCredentials,
+	timeoutMs = 8000,
+): Promise<SmsBalanceResult> {
+	const { controller, done } = abortableTimeout(
+		Math.max(1000, Math.min(30_000, timeoutMs)),
+	);
 
 	try {
 		if (credentials.provider === "smsru") {
-			const form = new URLSearchParams({ api_id: credentials.apiId ?? "", json: "1" });
+			const form = new URLSearchParams({
+				api_id: credentials.apiId ?? "",
+				json: "1",
+			});
 			const response = await fetch(`${credentials.baseUrl}/my/balance`, {
 				method: "POST",
-				headers: { "content-type": "application/x-www-form-urlencoded; charset=utf-8" },
+				headers: {
+					"content-type": "application/x-www-form-urlencoded; charset=utf-8",
+				},
 				body: form.toString(),
-				signal: controller.signal
+				signal: controller.signal,
 			});
-			const payload = (await response.json().catch(() => ({}))) as { status_code?: unknown; balance?: unknown };
+			const payload = (await response.json().catch(() => ({}))) as {
+				status_code?: unknown;
+				balance?: unknown;
+			};
 			if (payload.status_code !== 100 || typeof payload.balance !== "number") {
-				const statusCode = typeof payload.status_code === "number" ? payload.status_code : null;
+				const statusCode =
+					typeof payload.status_code === "number" ? payload.status_code : null;
 				return {
 					ok: false,
-					errorClass: statusCode === null ? "unknown" : classifySmsRuStatus(statusCode),
-					errorMessage: (statusCode !== null ? SMS_RU_STATUS_TEXT[statusCode] : null) ?? "Шлюз SMS.RU не вернул баланс."
+					errorClass:
+						statusCode === null ? "unknown" : classifySmsRuStatus(statusCode),
+					errorMessage:
+						(statusCode !== null ? SMS_RU_STATUS_TEXT[statusCode] : null) ??
+						"Шлюз SMS.RU не вернул баланс.",
 				};
 			}
 			return { ok: true, balanceRub: payload.balance, currency: "RUB" };
@@ -506,13 +566,15 @@ export async function fetchSmsBalance(credentials: SmsCredentials, timeoutMs = 8
 		const form = new URLSearchParams({
 			login: credentials.login ?? "",
 			psw: credentials.password ?? "",
-			fmt: "3"
+			fmt: "3",
 		});
 		const response = await fetch(`${credentials.baseUrl}/sys/balance.php`, {
 			method: "POST",
-			headers: { "content-type": "application/x-www-form-urlencoded; charset=utf-8" },
+			headers: {
+				"content-type": "application/x-www-form-urlencoded; charset=utf-8",
+			},
 			body: form.toString(),
-			signal: controller.signal
+			signal: controller.signal,
 		});
 		const payload = (await response.json().catch(() => ({}))) as {
 			balance?: unknown;
@@ -524,20 +586,32 @@ export async function fetchSmsBalance(credentials: SmsCredentials, timeoutMs = 8
 			return {
 				ok: false,
 				errorClass: classifySmscError(payload.error_code),
-				errorMessage: SMSC_ERROR_TEXT[payload.error_code] ?? "Шлюз SMSC не вернул баланс."
+				errorMessage:
+					SMSC_ERROR_TEXT[payload.error_code] ?? "Шлюз SMSC не вернул баланс.",
 			};
 		}
-		const balance = typeof payload.balance === "string" ? Number.parseFloat(payload.balance) : payload.balance;
+		const balance =
+			typeof payload.balance === "string"
+				? Number.parseFloat(payload.balance)
+				: payload.balance;
 		if (typeof balance !== "number" || !Number.isFinite(balance)) {
-			return { ok: false, errorClass: "unknown", errorMessage: "Шлюз SMSC не вернул баланс." };
+			return {
+				ok: false,
+				errorClass: "unknown",
+				errorMessage: "Шлюз SMSC не вернул баланс.",
+			};
 		}
-		return { ok: true, balanceRub: balance, currency: typeof payload.currency === "string" ? payload.currency : "RUB" };
+		return {
+			ok: true,
+			balanceRub: balance,
+			currency: typeof payload.currency === "string" ? payload.currency : "RUB",
+		};
 	} catch (error) {
 		const aborted = error instanceof Error && error.name === "AbortError";
 		return {
 			ok: false,
 			errorClass: aborted ? "timeout" : "network",
-			errorMessage: aborted ? "Шлюз не ответил вовремя." : "Шлюз недоступен."
+			errorMessage: aborted ? "Шлюз не ответил вовремя." : "Шлюз недоступен.",
 		};
 	} finally {
 		done();
