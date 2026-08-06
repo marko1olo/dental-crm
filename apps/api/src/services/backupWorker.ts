@@ -36,7 +36,7 @@
  *     файла не отличает схему от копии; отличает только содержимое.
  */
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -241,14 +241,70 @@ function resolveEncryptionKey(): { key: Buffer } | { error: string } {
 	return { key };
 }
 
-function pgDumpExecutable(): string {
+/** Мажорная версия из вывода `pg_dump --version` ("pg_dump (PostgreSQL) 18.4"). */
+function pgDumpMajorVersion(binary: string): number | null {
+	const probe = spawnSync(binary, ["--version"], { encoding: "utf8" });
+	if (probe.error || probe.status !== 0) return null;
+	const match = /(\d+)(?:\.\d+)*\s*$/.exec(String(probe.stdout).trim());
+	return match ? Number(match[1]) : null;
+}
+
+/**
+ * Выбирает бинарь pg_dump и ОТКАЗЫВАЕТСЯ, если выбрать нечего.
+ *
+ * БЫЛО: молчаливая цепочка фоллбэков, заканчивавшаяся голым именем "pg_dump"
+ * из PATH. Три отдельных тихих отказа: (1) PG_DUMP_PATH задан, но файла по
+ * нему нет — значение молча игнорировалось; (2) выбранный бинарь мог быть
+ * любой версии; (3) в PATH pg_dump могло не быть вовсе. Измерено 2026-08-07 на
+ * этой машине: PG_DUMP_PATH не задан нигде, в PATH pg_dump отсутствует, и
+ * выбирался фоллбэк .postgres/bin/pg_dump.exe версии 14.13 против сервера
+ * 18.4. pg_dump 14.13 отказывается дампить сервер новее себя
+ * ("aborting because of server version mismatch", код 1, ноль байт на выходе),
+ * то есть копии не создавались вообще, и до прав под RLS дело не доходило.
+ * Версия бинаря не проверялась ни разу.
+ */
+function resolvePgDump(): { binary: string; major: number } | { error: string } {
 	const configured = process.env.PG_DUMP_PATH?.trim();
-	if (configured && fs.existsSync(configured)) return configured;
+	if (configured && !fs.existsSync(configured)) {
+		return {
+			error: `PG_DUMP_PATH указывает на несуществующий файл (${configured}). Раньше это значение молча игнорировалось и подставлялся другой бинарь.`,
+		};
+	}
 	const portable = path.resolve(
 		process.cwd(),
 		"../../.postgres/bin/pg_dump.exe",
 	);
-	return fs.existsSync(portable) ? portable : "pg_dump";
+	const candidates = [
+		configured,
+		fs.existsSync(portable) ? portable : null,
+		"pg_dump",
+	].filter((value): value is string => Boolean(value));
+
+	const rejected: string[] = [];
+	for (const candidate of candidates) {
+		const major = pgDumpMajorVersion(candidate);
+		if (major === null) {
+			rejected.push(`${candidate}: не запускается`);
+			continue;
+		}
+		return { binary: candidate, major };
+	}
+	return {
+		error: `Не найден работоспособный pg_dump. Проверено: ${rejected.join("; ")}. Укажите путь в PG_DUMP_PATH.`,
+	};
+}
+
+/**
+ * Возвращает путь к бинарю pg_dump, пригодному для работы с текущим сервером.
+ * Бросает Error, если работоспособный бинарь не найден — ошибка перехватывается
+ * в createEncryptedBackup и превращается в BackupResult { success: false }.
+ */
+function pgDumpExecutable(): string {
+	const result = resolvePgDump();
+	if ("error" in result) {
+		throw new Error(result.error);
+	}
+	return result.binary;
 }
 
 /**

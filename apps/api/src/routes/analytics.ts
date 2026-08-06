@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireClinicalReadAccess,
@@ -7,8 +7,10 @@ import {
 import { db } from "../db/client.js";
 import {
 	appointments,
+	appointmentWaitlists,
 	chairs,
 	patients,
+	patientTaskTickets,
 	payments,
 	treatmentPlans,
 	users,
@@ -438,6 +440,67 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				error: "AnalyticsUnavailable",
 				message:
 					"Не удалось построить аналитику. Данные не потеряны, повторите позже.",
+			});
+		}
+	});
+
+	app.get("/api/analytics/lost-patients-filters", async (request, reply) => {
+		const readAllowed = await requireClinicalReadAccess(
+			request,
+			reply,
+			"lost patients filters",
+		);
+		if (!readAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"lost patients filters",
+		);
+		if (!orgId) return;
+
+		try {
+			const waitlistCount = sql<number>`(
+				SELECT count(*) FROM ${appointmentWaitlists} w
+				WHERE w.patient_id = ${patients.id} AND w.status = 'active'
+			)`;
+
+			const activeTasksCount = sql<number>`(
+				SELECT count(*) FROM ${patientTaskTickets} t
+				WHERE t.patient_id = ${patients.id} AND t.status = 'pending'
+			)`;
+
+			const futureAppointmentsCount = sql<number>`(
+				SELECT count(*) FROM ${appointments} a
+				WHERE a.patient_id = ${patients.id}
+				  AND a.starts_at > now()
+				  AND a.status IN ('planned', 'confirmed', 'arrived', 'in_treatment')
+			)`;
+
+			const lostPatients = await db
+				.select({ id: patients.id })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						eq(patients.status, "active"),
+						isNull(patients.mergedIntoPatientId),
+						eq(waitlistCount, 0),
+						eq(activeTasksCount, 0),
+						eq(futureAppointmentsCount, 0),
+					),
+				);
+
+			return lostPatients;
+		} catch (e) {
+			request.log.error(
+				{ err: e },
+				"Не удалось загрузить фильтр потерянных пациентов",
+			);
+			return reply.code(503).send({
+				success: false,
+				error: "AnalyticsUnavailable",
+				message: "Не удалось загрузить фильтр потерянных пациентов.",
 			});
 		}
 	});

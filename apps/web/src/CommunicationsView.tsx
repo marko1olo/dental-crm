@@ -95,6 +95,7 @@ function CommunicationTaskCard({
 	openCommunicationTaskDocumentWorkflow,
 	staffRoleLabels,
 	task,
+	appointments,
 }: {
 	communicationChannelLabels: Record<CommunicationTask["channel"], string>;
 	communicationDocumentTaskActionLabels: Partial<
@@ -118,14 +119,50 @@ function CommunicationTaskCard({
 	) => void;
 	staffRoleLabels: Record<StaffRole, string>;
 	task: CommunicationTask;
+	appointments: Dashboard["appointments"];
 }) {
 	const [selectedOutcome, setSelectedOutcome] = useState<
 		CommunicationTaskOutcome | ""
 	>("");
+	const [apptActionLoading, setApptActionLoading] = useState(false);
+	const [apptActionDone, setApptActionDone] = useState<
+		"confirmed" | "cancelled" | null
+	>(null);
+	const [apptActionError, setApptActionError] = useState<string | null>(null);
 	const isTaskSaving = communicationSavingTaskId === task.id;
 	const communicationSaveInProgress = communicationSavingTaskId !== null;
 	const outcomeSelectId = `communication-task-outcome-${task.id}`;
 	const savingStatusId = `communication-task-saving-${task.id}`;
+
+	const linkedAppointment =
+		task.intent === "appointment_confirmation" && task.appointmentId
+			? (appointments.find((a) => a.id === task.appointmentId) ?? null)
+			: null;
+
+	async function handleConfirmAppointment(
+		status: "confirmed" | "cancelled",
+	) {
+		if (!task.appointmentId) return;
+		setApptActionLoading(true);
+		setApptActionError(null);
+		try {
+			const res = await fetch(`/api/appointments/${task.appointmentId}`, {
+				method: "PATCH",
+				credentials: "include",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ status }),
+			});
+			if (!res.ok) {
+				setApptActionError("Ошибка обновления приёма");
+			} else {
+				setApptActionDone(status);
+			}
+		} catch {
+			setApptActionError("Ошибка сети при обновлении приёма");
+		} finally {
+			setApptActionLoading(false);
+		}
+	}
 
 	function handleCompleteTask() {
 		if (!selectedOutcome) return;
@@ -160,6 +197,58 @@ function CommunicationTaskCard({
 				</span>
 			) : (
 				<div className="communication-task-actions">
+					{linkedAppointment ? (
+						<div
+							className="appointment-confirm-widget"
+							style={{
+								borderLeft: "3px solid var(--teal)",
+								paddingLeft: "10px",
+								marginBottom: "10px",
+							}}
+						>
+							<p style={{ margin: "0 0 6px", fontSize: "13px", color: "var(--muted)" }}>
+								Приём:{" "}
+								<strong>{formatDateTime(linkedAppointment.startsAt)}</strong>
+							</p>
+							{apptActionDone ? (
+								<span className={`status-pill status-${apptActionDone}`}>
+									Приём{" "}
+									{apptActionDone === "confirmed"
+										? "подтверждён"
+										: "отменён"}
+								</span>
+							) : (
+								<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+									<button
+										type="button"
+										className="primary-button"
+										onClick={() => void handleConfirmAppointment("confirmed")}
+										disabled={apptActionLoading || communicationSaveInProgress}
+										aria-label="Подтвердить приём"
+									>
+										Подтвердил
+									</button>
+									<button
+										type="button"
+										className="secondary-button"
+										onClick={() => void handleConfirmAppointment("cancelled")}
+										disabled={apptActionLoading || communicationSaveInProgress}
+										aria-label="Отменить приём"
+									>
+										Отменил
+									</button>
+								</div>
+							)}
+							{apptActionError ? (
+								<p
+									role="alert"
+									style={{ color: "var(--bad-fg, #b42318)", fontSize: "12px", marginTop: "4px" }}
+								>
+									{apptActionError}
+								</p>
+							) : null}
+						</div>
+					) : null}
 					{documentKinds.map((kind, index) => {
 						const documentActionLabel =
 							communicationDocumentTaskActionLabels[kind] ??
@@ -611,6 +700,7 @@ export function CommunicationsView({
 								}
 								staffRoleLabels={staffRoleLabels}
 								task={task}
+								appointments={dashboard.appointments}
 							/>
 						))
 					) : (
