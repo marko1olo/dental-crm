@@ -222,14 +222,18 @@ after(async () => {
 
 describe("GET /api/dashboard: время строки берётся из базы, а не из часов сервера", () => {
 	it("посев проверен: в базе есть и читаемое, и нечитаемое время", async () => {
-		const seeded = await db.execute<{ broken_appointments: number; broken_patients: number; ok_appointments: number }>(sql`
-			select
-				(select count(*)::int from appointments
-				  where organization_id = ${ORGANIZATION_ID}::uuid and starts_at = 'infinity') as broken_appointments,
-				(select count(*)::int from patients
-				  where organization_id = ${ORGANIZATION_ID}::uuid and created_at = 'infinity') as broken_patients,
-				(select count(*)::int from appointments
-				  where organization_id = ${ORGANIZATION_ID}::uuid and starts_at = ${OK_STARTS_AT}) as ok_appointments`);
+		// Счёт посеянного — под тенант-контекстом: без него все три числа равны нулю
+		// не потому, что сев не удался, а потому, что политика скрыла строки.
+		const seeded = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ broken_appointments: number; broken_patients: number; ok_appointments: number }>(sql`
+				select
+					(select count(*)::int from appointments
+					  where organization_id = ${ORGANIZATION_ID}::uuid and starts_at = 'infinity') as broken_appointments,
+					(select count(*)::int from patients
+					  where organization_id = ${ORGANIZATION_ID}::uuid and created_at = 'infinity') as broken_patients,
+					(select count(*)::int from appointments
+					  where organization_id = ${ORGANIZATION_ID}::uuid and starts_at = ${OK_STARTS_AT}) as ok_appointments`),
+		);
 		const row = seeded.rows[0];
 		assert.equal(row?.broken_appointments, 1, "Приём с нечитаемым временем не посеян — проверка была бы ни о чём.");
 		assert.equal(row?.broken_patients, 1, "Пациент с нечитаемым временем не посеян.");
@@ -343,10 +347,12 @@ describe("GET /api/dashboard: время строки берётся из баз
 		 * ему поставил DEFAULT now() при посеве, и записывать это значение в тест
 		 * значило бы сверять код с самим собой.
 		 */
-		const stored = await db
-			.select({ createdAt: patients.createdAt, updatedAt: patients.updatedAt })
-			.from(patients)
-			.where(eq(patients.id, PATIENT_OK_ID));
+		const stored = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db
+				.select({ createdAt: patients.createdAt, updatedAt: patients.updatedAt })
+				.from(patients)
+				.where(eq(patients.id, PATIENT_OK_ID)),
+		);
 		assert.equal(
 			okPatient.createdAt,
 			stored[0]?.createdAt?.toISOString(),

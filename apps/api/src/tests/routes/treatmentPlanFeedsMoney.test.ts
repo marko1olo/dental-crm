@@ -52,7 +52,6 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import Fastify from "fastify";
 import { db } from "../../db/client.js";
 import {
 	organizations,
@@ -62,13 +61,14 @@ import {
 } from "../../db/schema.js";
 import { registerOdontogramRoutes } from "../../routes/odontogram.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "treatmentPlanFeedsMoney";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
@@ -109,22 +109,27 @@ type LedgerRow = {
  * визуально не отличалось бы от `4500.299999999999`, округлённого при печати.
  */
 async function ledgerRows(patientId: string): Promise<LedgerRow[]> {
-	const result = await db.execute<LedgerRow>(sql`
-		select id::text as id,
-		       title,
-		       tooth_code,
-		       quantity::text as quantity,
-		       unit_price_rub::text as unit_price_rub,
-		       price_rub::text as price_rub,
-		       discount_rub::text as discount_rub,
-		       status::text as status,
-		       visit_id::text as visit_id,
-		       service_id::text as service_id
-		  from treatment_items
-		 where organization_id = ${ORGANIZATION_ID}::uuid
-		   and patient_id = ${patientId}::uuid
-		 order by unit_price_rub, title
-	`);
+	// Чтение под тенант-контекстом: под FORCE RLS запрос без `app.current_tenant`
+	// не падает, а возвращает НОЛЬ строк. Независимый оракул без контекста
+	// подтверждал бы «денег нет» на любой, в том числе исправной, записи.
+	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<LedgerRow>(sql`
+			select id::text as id,
+			       title,
+			       tooth_code,
+			       quantity::text as quantity,
+			       unit_price_rub::text as unit_price_rub,
+			       price_rub::text as price_rub,
+			       discount_rub::text as discount_rub,
+			       status::text as status,
+			       visit_id::text as visit_id,
+			       service_id::text as service_id
+			  from treatment_items
+			 where organization_id = ${ORGANIZATION_ID}::uuid
+			   and patient_id = ${patientId}::uuid
+			 order by unit_price_rub, title
+		`),
+	);
 	return result.rows as LedgerRow[];
 }
 
@@ -140,31 +145,33 @@ async function moneyForPatient(patientId: string): Promise<{
 	debt: string;
 	items: number;
 }> {
-	const result = await db.execute<{
-		planned: string;
-		paid: string;
-		debt: string;
-		items: number;
-	}>(sql`
-		with planned as (
-		  select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as amount,
-		         count(*)::int as items
-		    from treatment_items
-		   where organization_id = ${ORGANIZATION_ID}::uuid
-		     and patient_id = ${patientId}::uuid
-		     and status <> 'cancelled'
-		), paid as (
-		  select coalesce(sum(amount_rub), 0)::numeric(12,2) as amount
-		    from payments
-		   where organization_id = ${ORGANIZATION_ID}::uuid
-		     and patient_id = ${patientId}::uuid
-		     and status = 'paid'
-		)
-		select (select amount from planned)::text as planned,
-		       (select amount from paid)::text as paid,
-		       ((select amount from planned) - (select amount from paid))::text as debt,
-		       (select items from planned) as items
-	`);
+	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<{
+			planned: string;
+			paid: string;
+			debt: string;
+			items: number;
+		}>(sql`
+			with planned as (
+			  select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as amount,
+			         count(*)::int as items
+			    from treatment_items
+			   where organization_id = ${ORGANIZATION_ID}::uuid
+			     and patient_id = ${patientId}::uuid
+			     and status <> 'cancelled'
+			), paid as (
+			  select coalesce(sum(amount_rub), 0)::numeric(12,2) as amount
+			    from payments
+			   where organization_id = ${ORGANIZATION_ID}::uuid
+			     and patient_id = ${patientId}::uuid
+			     and status = 'paid'
+			)
+			select (select amount from planned)::text as planned,
+			       (select amount from paid)::text as paid,
+			       ((select amount from planned) - (select amount from paid))::text as debt,
+			       (select items from planned) as items
+		`),
+	);
 	const row = result.rows[0];
 	assert.ok(row, "независимый SQL не вернул строку — сверять нечего");
 	return row;
@@ -172,8 +179,10 @@ async function moneyForPatient(patientId: string): Promise<{
 
 /** Позиции сметы-документа: смета обязана продолжать работать. */
 async function planItemCount(planId: string): Promise<number> {
-	const result = await db.execute<{ n: number }>(
-		sql`select count(*)::int as n from treatment_plan_items_new where plan_id = ${planId}::uuid`,
+	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<{ n: number }>(
+			sql`select count(*)::int as n from treatment_plan_items_new where plan_id = ${planId}::uuid`,
+		),
 	);
 	return result.rows[0]?.n ?? 0;
 }
@@ -195,11 +204,17 @@ async function planItemCount(planId: string): Promise<number> {
  * клинике» — разные утверждения, и второе без первого проходит на пустой выборке.
  */
 async function planItemOwnership(planId: string): Promise<{ total: number; orphans: number; mine: number }> {
-	const result = await db.execute<{ total: number; orphans: number; mine: number }>(
-		sql`select count(*)::int as total,
-		           count(*) filter (where organization_id is null)::int as orphans,
-		           count(*) filter (where organization_id = ${ORGANIZATION_ID}::uuid)::int as mine
-		      from treatment_plan_items_new where plan_id = ${planId}::uuid`,
+	// Под тенант-контекстом строка без организации не видна ни этому запросу, ни
+	// какому-либо другому: `organization_id = current_tenant` на NULL не истинно.
+	// Поэтому сирота теперь проявляется нулевым `total`, а не ненулевым `orphans`,
+	// и обе формы одинаково валят сверку ниже.
+	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<{ total: number; orphans: number; mine: number }>(
+			sql`select count(*)::int as total,
+			           count(*) filter (where organization_id is null)::int as orphans,
+			           count(*) filter (where organization_id = ${ORGANIZATION_ID}::uuid)::int as mine
+			      from treatment_plan_items_new where plan_id = ${planId}::uuid`,
+		),
 	);
 	return result.rows[0] ?? { total: 0, orphans: 0, mine: 0 };
 }
@@ -259,63 +274,64 @@ describe("сохранённый план лечения виден деньга
 			return;
 		}
 
-		await db.insert(organizations).values({
-			id: ORGANIZATION_ID,
-			name: "Клиника сторожа шва план→деньги",
-		});
-		await db.insert(users).values({
-			id: DOCTOR_ID,
-			organizationId: ORGANIZATION_ID,
-			fullName: "Врач сторожа шва план→деньги",
-			role: "doctor",
-		});
-		for (const [patientId, fullName] of [
-			[PATIENT_MONEY, "Пациент основного шва"],
-			[PATIENT_KOPECKS, "Пациент проверки копеек"],
-			[PATIENT_PERFORMED, "Пациент выполненного лечения"],
-			[PATIENT_SUBKOPECK, "Пациент подкопеечной суммы"],
-		] as const) {
-			await db.insert(patients).values({
-				id: patientId,
-				organizationId: ORGANIZATION_ID,
-				fullName,
-				status: "active",
+		// Весь сев — под контекстом своей клиники: в WITH CHECK тенант-таблиц стоит
+		// только `organization_id = current_tenant`, дизъюнкта обхода там нет,
+		// поэтому вставка без контекста отвергается кодом 42501.
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.insert(organizations).values({
+				id: ORGANIZATION_ID,
+				name: "Клиника сторожа шва план→деньги",
 			});
-		}
-		/*
-		 * Прайс с копейками: позиция плана обязана уметь ссылаться на услугу
-		 * (`treatment_items.service_id` — внешний ключ на этот справочник), иначе
-		 * назначенное лечение «висит в воздухе» и правила материалов его не найдут.
-		 */
-		await db.insert(serviceCatalogItems).values([
-			{
-				id: SERVICE_ONE_ID,
+			await db.insert(users).values({
+				id: DOCTOR_ID,
 				organizationId: ORGANIZATION_ID,
-				code: "TPM-1",
-				title: "Лечение кариеса (сторож шва)",
-				basePriceRub: PRICE_ONE,
-				priceRub: PRICE_ONE,
-			},
-			{
-				id: SERVICE_TWO_ID,
-				organizationId: ORGANIZATION_ID,
-				code: "TPM-2",
-				title: "Пломба светового отверждения (сторож шва)",
-				basePriceRub: PRICE_TWO,
-				priceRub: PRICE_TWO,
-			},
-		]);
+				fullName: "Врач сторожа шва план→деньги",
+				role: "doctor",
+			});
+			for (const [patientId, fullName] of [
+				[PATIENT_MONEY, "Пациент основного шва"],
+				[PATIENT_KOPECKS, "Пациент проверки копеек"],
+				[PATIENT_PERFORMED, "Пациент выполненного лечения"],
+				[PATIENT_SUBKOPECK, "Пациент подкопеечной суммы"],
+			] as const) {
+				await db.insert(patients).values({
+					id: patientId,
+					organizationId: ORGANIZATION_ID,
+					fullName,
+					status: "active",
+				});
+			}
+			/*
+			 * Прайс с копейками: позиция плана обязана уметь ссылаться на услугу
+			 * (`treatment_items.service_id` — внешний ключ на этот справочник), иначе
+			 * назначенное лечение «висит в воздухе» и правила материалов его не найдут.
+			 */
+			await db.insert(serviceCatalogItems).values([
+				{
+					id: SERVICE_ONE_ID,
+					organizationId: ORGANIZATION_ID,
+					code: "TPM-1",
+					title: "Лечение кариеса (сторож шва)",
+					basePriceRub: PRICE_ONE,
+					priceRub: PRICE_ONE,
+				},
+				{
+					id: SERVICE_TWO_ID,
+					organizationId: ORGANIZATION_ID,
+					code: "TPM-2",
+					title: "Пломба светового отверждения (сторож шва)",
+					basePriceRub: PRICE_TWO,
+					priceRub: PRICE_TWO,
+				},
+			]);
+		});
 
 		staffToken = signToken(
 			{ organizationId: ORGANIZATION_ID, userId: DOCTOR_ID, role: "doctor" },
 			authTokenSecret(),
 		);
 
-		app = Fastify();
-		// Тот же хук, что в apps/api/src/server.ts: он наполняет request.user.
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		app = createTenantTestApp();
 		await registerOdontogramRoutes(app);
 		await app.ready();
 	});
@@ -324,11 +340,16 @@ describe("сохранённый план лечения виден деньга
 		await app?.close();
 		if (!databaseReady) return;
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
-		const leftovers = await db.execute<{ n: number }>(sql`
-			select count(*)::int as n
-			  from treatment_items
-			 where organization_id = ${ORGANIZATION_ID}::uuid
-		`);
+		// Счёт остатка — под контекстом убранной клиники: политика оставляет видимой
+		// ровно её строки, поэтому уцелевшая позиция была бы видна. Без контекста
+		// запрос вернул бы ноль всегда и подтвердил бы уборку, ничего не измерив.
+		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(sql`
+				select count(*)::int as n
+				  from treatment_items
+				 where organization_id = ${ORGANIZATION_ID}::uuid
+			`),
+		);
 		assert.equal(
 			leftovers.rows[0]?.n ?? 0,
 			0,
@@ -407,8 +428,10 @@ describe("сохранённый план лечения виден деньга
 
 		// Итог в ответе маршрута и итог плана в базе — те же копейки.
 		assert.equal(String(saved.json.totalPrice), "3491.49");
-		const planRow = await db.execute<{ total_price: string }>(
-			sql`select total_price::text as total_price from treatment_plans where id = ${planId}::uuid`,
+		const planRow = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ total_price: string }>(
+				sql`select total_price::text as total_price from treatment_plans where id = ${planId}::uuid`,
+			),
 		);
 		assert.equal(planRow.rows[0]?.total_price, PLAN_TOTAL_TEXT);
 
@@ -417,10 +440,14 @@ describe("сохранённый план лечения виден деньга
 		 * этой части проверка прошла бы и на писателе, который пишет позиции в
 		 * таблицу, из которой дебиторка их не берёт.
 		 */
-		await db.execute(sql`
-			insert into payments (organization_id, patient_id, amount_rub, method, status)
-			values (${ORGANIZATION_ID}::uuid, ${PATIENT_MONEY}::uuid, 1500.50, 'card', 'paid')
-		`);
+		// Оплата заводится под контекстом клиники: без него WITH CHECK отвергает
+		// вставку кодом 42501, и вычитание оплаты из долга проверять было бы нечем.
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.execute(sql`
+				insert into payments (organization_id, patient_id, amount_rub, method, status)
+				values (${ORGANIZATION_ID}::uuid, ${PATIENT_MONEY}::uuid, 1500.50, 'card', 'paid')
+			`);
+		});
 		const afterPayment = await moneyForPatient(PATIENT_MONEY);
 		assert.equal(afterPayment.paid, "1500.50");
 		assert.equal(
@@ -463,8 +490,10 @@ describe("сохранённый план лечения виден деньга
 	test("повторное сохранение плана не удваивает долг и снятая услуга уходит из денег", async (t) => {
 		if (!databaseReady) return t.skip("база недоступна");
 
-		const plans = await db.execute<{ id: string }>(
-			sql`select id::text as id from treatment_plans where patient_id = ${PATIENT_MONEY}::uuid`,
+		const plans = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ id: string }>(
+				sql`select id::text as id from treatment_plans where patient_id = ${PATIENT_MONEY}::uuid`,
+			),
 		);
 		const planId = plans.rows[0]?.id;
 		assert.ok(planId, "план предыдущей проверки не найден");
@@ -564,10 +593,12 @@ describe("сохранённый план лечения виден деньга
 			`назначено ${money.planned} ₽ вместо 4500.30 ₽`,
 		);
 
-		const planRow = await db.execute<{ total_price: string }>(sql`
-			select total_price::text as total_price from treatment_plans
-			 where patient_id = ${PATIENT_KOPECKS}::uuid
-		`);
+		const planRow = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ total_price: string }>(sql`
+				select total_price::text as total_price from treatment_plans
+				 where patient_id = ${PATIENT_KOPECKS}::uuid
+			`),
+		);
 		assert.equal(planRow.rows[0]?.total_price, "4500.30");
 
 		const rows = await ledgerRows(PATIENT_KOPECKS);
@@ -605,11 +636,16 @@ describe("сохранённый план лечения виден деньга
 		 * здесь состояние ставится прямым SQL, потому что проверяется НЕ переход
 		 * статуса, а то, что правка сметы его не отменяет.
 		 */
-		await db.execute(sql`
-			update treatment_items set status = 'completed'
-			 where organization_id = ${ORGANIZATION_ID}::uuid
-			   and patient_id = ${PATIENT_PERFORMED}::uuid
-		`);
+		// UPDATE без контекста не падает, а меняет НОЛЬ строк: политика скрывает их,
+		// и «выполненная позиция» осталась бы в статусе proposed, то есть проверка
+		// шла бы не по тому состоянию, которое заявлено.
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.execute(sql`
+				update treatment_items set status = 'completed'
+				 where organization_id = ${ORGANIZATION_ID}::uuid
+				   and patient_id = ${PATIENT_PERFORMED}::uuid
+			`);
+		});
 
 		// Врач переписал смету дешевле. Выполненное подорожать или подешеветь от
 		// этого не может: оно уже оказано и подлежит оплате как оказано.
@@ -676,8 +712,10 @@ describe("сохранённый план лечения виден деньга
 			0,
 			"отклонённый план всё равно оставил позиции в деньгах",
 		);
-		const plans = await db.execute<{ n: number }>(
-			sql`select count(*)::int as n from treatment_plans where patient_id = ${PATIENT_SUBKOPECK}::uuid`,
+		const plans = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(
+				sql`select count(*)::int as n from treatment_plans where patient_id = ${PATIENT_SUBKOPECK}::uuid`,
+			),
 		);
 		assert.equal(
 			plans.rows[0]?.n,

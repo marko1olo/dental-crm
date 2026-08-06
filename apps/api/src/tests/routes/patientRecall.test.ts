@@ -7,12 +7,18 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { appointments, chairs, clinics, communicationOutbox, organizations, patients, users } from "../../db/schema.js";
 import { registerPatientRecallRoutes } from "../../routes/patientRecall.js";
-import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+	withFixtureTenant
+} from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /*
  * БЛОК ИДЕНТИФИКАТОРОВ ВЫВЕДЕН ИЗ ИМЕНИ ФАЙЛА.
@@ -69,7 +75,11 @@ describe("возврат пациентов", () => {
 
 	before(async () => {
 		process.env = { ...originalEnv, DENTE_DEV_ALLOW_HEADER_ORG: "1" };
-		app = Fastify();
+		// Оба хука боевого server.ts: организация из запроса кладётся в
+		// request.tenantId, а каждый обработчик оборачивается в withTenantCtx. Без
+		// второго список возврата под FORCE RLS всегда пуст, и «зовут давних»
+		// краснело бы на верно засеянных данных.
+		app = createTenantTestApp();
 		await registerPatientRecallRoutes(app);
 
 		try {

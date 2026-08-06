@@ -40,7 +40,6 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import Fastify from "fastify";
 import { db } from "../../db/client.js";
 import {
 	organizations,
@@ -50,13 +49,14 @@ import {
 } from "../../db/schema.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "patientInsightDropsCancelledTreatment";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
@@ -87,42 +87,48 @@ type PatientInsightDto = {
  * изменились; снята вторая, противоречащая спецификация. SQL оставлен ручным
  * намеренно: вызов канона `chargeLineKopecks` сделал бы оракул зависимым от
  * проверяемого пути, и сторож проходил бы на сломанной формуле.
+ *
+ * ЧТЕНИЕ ИДЁТ ПОД ТЕНАНТ-КОНТЕКСТОМ. Под FORCE RLS запрос без
+ * `app.current_tenant` не видит ни одной строки клиники и ошибки не даёт: обе
+ * суммы пришли бы нулями, и зеркало подтвердило бы любой ответ маршрута.
  */
 async function debtBothWays(patientId: string): Promise<{
 	canon: string;
 	with_cancelled: string;
 	paid: string;
 }> {
-	const result = await db.execute<{
-		canon: string;
-		with_cancelled: string;
-		paid: string;
-	}>(sql`
-		with active as (
-		  select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as amount
-		    from treatment_items
-		   where organization_id = ${ORGANIZATION_ID}::uuid
-		     and patient_id = ${patientId}::uuid
-		     and status <> 'cancelled'
-		), everything as (
-		  select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as amount
-		    from treatment_items
-		   where organization_id = ${ORGANIZATION_ID}::uuid
-		     and patient_id = ${patientId}::uuid
-		), paid as (
-		  select coalesce(sum(amount_rub), 0)::numeric(12,2) as amount
-		    from payments
-		   where organization_id = ${ORGANIZATION_ID}::uuid
-		     and patient_id = ${patientId}::uuid
-		     and status = 'paid'
-		)
-		select greatest((select amount from active) - (select amount from paid), 0)::text as canon,
-		       greatest((select amount from everything) - (select amount from paid), 0)::text as with_cancelled,
-		       (select amount from paid)::text as paid
-	`);
-	const row = result.rows[0];
-	assert.ok(row, "независимый SQL не вернул строку — сверять нечего");
-	return row;
+	return withFixtureTenant(ORGANIZATION_ID, async () => {
+		const result = await db.execute<{
+			canon: string;
+			with_cancelled: string;
+			paid: string;
+		}>(sql`
+			with active as (
+			  select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as amount
+			    from treatment_items
+			   where organization_id = ${ORGANIZATION_ID}::uuid
+			     and patient_id = ${patientId}::uuid
+			     and status <> 'cancelled'
+			), everything as (
+			  select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as amount
+			    from treatment_items
+			   where organization_id = ${ORGANIZATION_ID}::uuid
+			     and patient_id = ${patientId}::uuid
+			), paid as (
+			  select coalesce(sum(amount_rub), 0)::numeric(12,2) as amount
+			    from payments
+			   where organization_id = ${ORGANIZATION_ID}::uuid
+			     and patient_id = ${patientId}::uuid
+			     and status = 'paid'
+			)
+			select greatest((select amount from active) - (select amount from paid), 0)::text as canon,
+			       greatest((select amount from everything) - (select amount from paid), 0)::text as with_cancelled,
+			       (select amount from paid)::text as paid
+		`);
+		const row = result.rows[0];
+		assert.ok(row, "независимый SQL не вернул строку — сверять нечего");
+		return row;
+	});
 }
 
 describe("подсказка администратору не считает отменённое лечение долгом", () => {
@@ -171,116 +177,123 @@ describe("подсказка администратору не считает о
 			return;
 		}
 
-		await db.insert(organizations).values({
-			id: ORGANIZATION_ID,
-			name: "Клиника замка отменённого лечения",
-		});
-		for (const [patientId, fullName] of [
-			[PATIENT_MIXED, "Смешанин Смешан Смешанович"],
-			[PATIENT_ALL_CANCELLED, "Отменин Отмен Отменович"],
-			[PATIENT_KOPECKS, "Копейкин Копей Копейкович"],
-		] as const) {
-			await db.insert(patients).values({
-				id: patientId,
-				organizationId: ORGANIZATION_ID,
-				fullName,
-				status: "active",
-			});
-		}
-
-		await db.insert(treatmentItems).values([
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_MIXED,
-				title: "Активное лечение 1",
-				quantity: "1",
-				priceRub: 5000,
-				unitPriceRub: 5000,
-				discountRub: 0,
-				status: "completed",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_MIXED,
-				title: "Активное лечение 2",
-				quantity: "1",
-				priceRub: 5000,
-				unitPriceRub: 5000,
-				discountRub: 0,
-				status: "proposed",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_MIXED,
-				title: "Отменённое лечение",
-				quantity: "1",
-				priceRub: 5000,
-				unitPriceRub: 5000,
-				discountRub: 0,
-				status: "cancelled",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_ALL_CANCELLED,
-				title: "Отменённый план целиком",
-				quantity: "1",
-				priceRub: 26500,
-				unitPriceRub: 26500,
-				discountRub: 0,
-				status: "cancelled",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_KOPECKS,
-				title: "Позиция 1",
-				quantity: "1",
-				priceRub: 1000,
-				unitPriceRub: 1000,
-				discountRub: 0,
-				status: "completed",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_KOPECKS,
-				title: "Позиция 2",
-				quantity: "1",
-				priceRub: 1001.82,
-				unitPriceRub: 1001.82,
-				discountRub: 0,
-				status: "completed",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_KOPECKS,
-				title: "Позиция 3",
-				quantity: "1",
-				priceRub: 1489.67,
-				unitPriceRub: 1489.67,
-				discountRub: 0,
-				status: "proposed",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_KOPECKS,
-				title: "Отменённая позиция с копейками",
-				quantity: "1",
-				priceRub: 1500.5,
-				unitPriceRub: 1500.5,
-				discountRub: 0,
-				status: "cancelled",
-			},
-		]);
 		/*
-		 * Оплата у пациента с копейками есть намеренно: долг обязан считаться
-		 * вычитанием, а не «суммой активных позиций». Без оплаты проверка прошла
-		 * бы и на расчёте, который оплаты не видит вовсе.
+		 * Весь сев — под тенант-контекстом клиники. Под FORCE RLS в WITH CHECK
+		 * политик тенант-таблиц дизъюнкта обхода нет, поэтому вставка без
+		 * `app.current_tenant` отвергается кодом 42501 на каждой строке.
 		 */
-		await db.insert(payments).values({
-			organizationId: ORGANIZATION_ID,
-			patientId: PATIENT_KOPECKS,
-			amountRub: 1000,
-			method: "card",
-			status: "paid",
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.insert(organizations).values({
+				id: ORGANIZATION_ID,
+				name: "Клиника замка отменённого лечения",
+			});
+			for (const [patientId, fullName] of [
+				[PATIENT_MIXED, "Смешанин Смешан Смешанович"],
+				[PATIENT_ALL_CANCELLED, "Отменин Отмен Отменович"],
+				[PATIENT_KOPECKS, "Копейкин Копей Копейкович"],
+			] as const) {
+				await db.insert(patients).values({
+					id: patientId,
+					organizationId: ORGANIZATION_ID,
+					fullName,
+					status: "active",
+				});
+			}
+
+			await db.insert(treatmentItems).values([
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_MIXED,
+					title: "Активное лечение 1",
+					quantity: "1",
+					priceRub: 5000,
+					unitPriceRub: 5000,
+					discountRub: 0,
+					status: "completed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_MIXED,
+					title: "Активное лечение 2",
+					quantity: "1",
+					priceRub: 5000,
+					unitPriceRub: 5000,
+					discountRub: 0,
+					status: "proposed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_MIXED,
+					title: "Отменённое лечение",
+					quantity: "1",
+					priceRub: 5000,
+					unitPriceRub: 5000,
+					discountRub: 0,
+					status: "cancelled",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_ALL_CANCELLED,
+					title: "Отменённый план целиком",
+					quantity: "1",
+					priceRub: 26500,
+					unitPriceRub: 26500,
+					discountRub: 0,
+					status: "cancelled",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_KOPECKS,
+					title: "Позиция 1",
+					quantity: "1",
+					priceRub: 1000,
+					unitPriceRub: 1000,
+					discountRub: 0,
+					status: "completed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_KOPECKS,
+					title: "Позиция 2",
+					quantity: "1",
+					priceRub: 1001.82,
+					unitPriceRub: 1001.82,
+					discountRub: 0,
+					status: "completed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_KOPECKS,
+					title: "Позиция 3",
+					quantity: "1",
+					priceRub: 1489.67,
+					unitPriceRub: 1489.67,
+					discountRub: 0,
+					status: "proposed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_KOPECKS,
+					title: "Отменённая позиция с копейками",
+					quantity: "1",
+					priceRub: 1500.5,
+					unitPriceRub: 1500.5,
+					discountRub: 0,
+					status: "cancelled",
+				},
+			]);
+			/*
+			 * Оплата у пациента с копейками есть намеренно: долг обязан считаться
+			 * вычитанием, а не «суммой активных позиций». Без оплаты проверка прошла
+			 * бы и на расчёте, который оплаты не видит вовсе.
+			 */
+			await db.insert(payments).values({
+				organizationId: ORGANIZATION_ID,
+				patientId: PATIENT_KOPECKS,
+				amountRub: 1000,
+				method: "card",
+				status: "paid",
+			});
 		});
 
 		clinicToken = signToken(
@@ -292,10 +305,11 @@ describe("подсказка администратору не считает о
 			authTokenSecret(),
 		);
 
-		app = Fastify();
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		// Оба хука боевого server.ts: onRequest кладёт организацию из подписанного
+		// токена в request.tenantId, onRoute оборачивает обработчик в withTenantCtx.
+		// Без второго сводка под FORCE RLS читает ноль строк и подсказок по
+		// пациентам в ответе нет вовсе.
+		app = createTenantTestApp();
 		await registerDashboardRoutes(app);
 		await app.ready();
 	});
@@ -304,11 +318,16 @@ describe("подсказка администратору не считает о
 		await app?.close();
 		if (!databaseReady) return;
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
-		const leftovers = await db.execute<{ n: number }>(sql`
-			select (select count(*) from treatment_items where organization_id = ${ORGANIZATION_ID}::uuid)
-			     + (select count(*) from payments where organization_id = ${ORGANIZATION_ID}::uuid)
-			     + (select count(*) from patients where organization_id = ${ORGANIZATION_ID}::uuid) as n
-		`);
+		// Счёт остатков — тоже под тенант-контекстом. Без него SELECT не видит ни
+		// одной строки клиники и вернул бы 0 при любом содержимом базы, то есть
+		// проверка уборки стала бы её имитацией.
+		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(sql`
+				select (select count(*) from treatment_items where organization_id = ${ORGANIZATION_ID}::uuid)
+				     + (select count(*) from payments where organization_id = ${ORGANIZATION_ID}::uuid)
+				     + (select count(*) from patients where organization_id = ${ORGANIZATION_ID}::uuid) as n
+			`),
+		);
 		assert.equal(
 			Number(leftovers.rows[0]?.n ?? 0),
 			0,

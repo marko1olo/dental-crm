@@ -445,76 +445,111 @@ function hasActiveScheduleConflict(message: string): boolean {
   return message.includes("активная запись") || message.includes("активные записи");
 }
 
+/**
+ * ФОРМА ОТВЕТА В ЭТОМ ФАЙЛЕ: КОД СТАВИМ, ЗНАЧЕНИЕ ВОЗВРАЩАЕМ.
+ *
+ * `return reply.code(N).send(x)` возвращает из обработчика сам `reply`, а он
+ * thenable: `Reply.prototype.then` (fastify/lib/reply.js:466) разрешается по
+ * `eos(reply.raw)` — когда ответ уже ушёл клиенту. server.ts (хук onRoute)
+ * оборачивает КАЖДЫЙ обработчик в withTenantCtx, то есть в транзакцию, и ждёт
+ * разрешения его промиса, чтобы зафиксировать её: COMMIT уходил ПОСЛЕ ответа.
+ * Замерено поллером pg_stat_activity на живом сервере — дельта «коммит минус
+ * заголовки» положительная во всех прогонах. При отказе на самом COMMIT клиент
+ * уже держит 2xx, и fastify может только записать ошибку в журнал
+ * (lib/wrap-thenable.js:63): «сохранено» на экране при нуле строк в базе.
+ *
+ * Здесь это видно на POST /api/settings/staff/:staffId/credentials —
+ * SettingsStaffTab.tsx сразу после него перечитывает GET /api/dashboard.
+ *
+ * Возврат значения снимает это: fastify зовёт `reply.send(payload)` уже после
+ * разрешения промиса (lib/wrap-thenable.js:14), то есть после COMMIT.
+ *
+ * НЕ ПЕРЕВЕДЕНО: три отказа внутри `requireSettingsAccess`. Эта функция
+ * возвращает `string | null` (организацию либо «ответ уже отправлен»), поэтому
+ * вернуть из неё тело ответа нельзя, не переписав контракт всех её вызовов.
+ * Записи до этих отказов не происходит: это барьер доступа, он стоит первой
+ * строкой каждого обработчика.
+ */
+
 // Экспортируется ради теста settings.test.ts: он импортирует эту функцию, а она
 // была объявлена без export, и весь файл теста падал при загрузке с
 // «does not provide an export named 'clinicProfileMutationRejection'».
 export function clinicProfileMutationRejection(reply: FastifyReply, error: unknown) {
   const message = settingsDomainMessage(error);
   if (message.includes("часовой пояс")) {
-    return reply.code(409).send({
+    reply.code(409);
+    return {
       error: "ClinicProfileMutationRejected",
       reason: "clinic_time_zone_invalid",
       message: clinicProfileTimezoneMessage
-    });
+    };
   }
   if (hasActiveScheduleConflict(message)) {
-    return reply.code(409).send({
+    reply.code(409);
+    return {
       error: "ClinicProfileMutationRejected",
       reason: "active_schedule_conflict",
       message: clinicProfileScheduleConflictMessage
-    });
+    };
   }
-  return reply.code(409).send({
+  reply.code(409);
+  return {
     error: "ClinicProfileMutationRejected",
     reason: "clinic_profile_rejected",
     message: clinicProfileMutationRejectedMessage
-  });
+  };
 }
 
 function staffWorkingHoursRejection(reply: FastifyReply, error: unknown) {
   const message = settingsDomainMessage(error);
   if (message === "Сотрудник не найден.") {
-    return reply.code(404).send({
+    reply.code(404);
+    return {
       error: "StaffScheduleNotFound",
       reason: "staff_not_found",
       message: staffWorkingHoursNotFoundMessage
-    });
+    };
   }
   if (hasActiveScheduleConflict(message)) {
-    return reply.code(409).send({
+    reply.code(409);
+    return {
       error: "StaffScheduleRejected",
       reason: "active_schedule_conflict",
       message: staffWorkingHoursConflictMessage
-    });
+    };
   }
-  return reply.code(409).send({
+  reply.code(409);
+  return {
     error: "StaffScheduleRejected",
     reason: "schedule_rejected",
     message: staffWorkingHoursRejectedMessage
-  });
+  };
 }
 
 function chairWorkingHoursRejection(reply: FastifyReply, error: unknown) {
   const message = settingsDomainMessage(error);
   if (message === "Кресло не найдено.") {
-    return reply.code(404).send({
+    reply.code(404);
+    return {
       error: "ChairScheduleNotFound",
       reason: "chair_not_found",
       message: chairWorkingHoursNotFoundMessage
-    });
+    };
   }
   if (hasActiveScheduleConflict(message)) {
-    return reply.code(409).send({
+    reply.code(409);
+    return {
       error: "ChairScheduleRejected",
       reason: "active_schedule_conflict",
       message: chairWorkingHoursConflictMessage
-    });
+    };
   }
-  return reply.code(409).send({
+  reply.code(409);
+  return {
     error: "ChairScheduleRejected",
     reason: "schedule_rejected",
     message: chairWorkingHoursRejectedMessage
-  });
+  };
 }
 
 /**
@@ -531,17 +566,19 @@ function staffMutationRejection(
 ) {
   const message = settingsDomainMessage(error);
   if (message === "Сотрудник не найден.") {
-    return reply.code(404).send({
+    reply.code(404);
+    return {
       error: `${errorCode}NotFound`,
       reason: "staff_not_found",
       message: notFoundMessage
-    });
+    };
   }
-  return reply.code(409).send({
+  reply.code(409);
+  return {
     error: `${errorCode}Rejected`,
     reason: "staff_mutation_rejected",
     message: rejectedMessage
-  });
+  };
 }
 
 /**
@@ -558,27 +595,30 @@ function serviceCatalogMutationRejection(
   errorCode: string
 ) {
   if (error instanceof ServiceCatalogStorageDisabledError) {
-    return reply.code(503).send({
+    reply.code(503);
+    return {
       error: "ServiceCatalogStorageUnavailable",
       reason: "state_persistence_off",
       message: error.message
-    });
+    };
   }
   if (error instanceof ServiceCatalogItemNotFoundError) {
-    return reply.code(404).send({
+    reply.code(404);
+    return {
       error: `${errorCode}NotFound`,
       reason: "service_not_found",
       message: notFoundMessage
-    });
+    };
   }
   // Причина уходит в журнал целиком: без записи отказ по прайсу неотличим от
   // опечатки оператора, а разбирать его было бы нечем.
   console.error("[настройки] прайс не изменён:", error);
-  return reply.code(409).send({
+  reply.code(409);
+  return {
     error: `${errorCode}Rejected`,
     reason: "service_mutation_rejected",
     message: rejectedMessage
-  });
+  };
 }
 
 /**
@@ -594,25 +634,28 @@ function protocolTemplateMutationRejection(
   errorCode: string
 ) {
   if (error instanceof ProtocolTemplateStorageDisabledError) {
-    return reply.code(503).send({
+    reply.code(503);
+    return {
       error: "ProtocolTemplateStorageUnavailable",
       reason: "state_persistence_off",
       message: error.message
-    });
+    };
   }
   if (error instanceof ProtocolTemplateNotFoundError) {
-    return reply.code(404).send({
+    reply.code(404);
+    return {
       error: `${errorCode}NotFound`,
       reason: "protocol_template_not_found",
       message: notFoundMessage
-    });
+    };
   }
   console.error("[настройки] шаблон протокола не изменён:", error);
-  return reply.code(409).send({
+  reply.code(409);
+  return {
     error: `${errorCode}Rejected`,
     reason: "protocol_template_mutation_rejected",
     message: rejectedMessage
-  });
+  };
 }
 
 /**
@@ -623,18 +666,20 @@ function protocolTemplateMutationRejection(
  */
 function staffAuthorityMutationRejection(reply: FastifyReply, error: unknown) {
   if (error instanceof StaffAuthorityStorageDisabledError) {
-    return reply.code(503).send({
+    reply.code(503);
+    return {
       error: "StaffAuthorityStorageUnavailable",
       reason: "state_persistence_off",
       message: error.message
-    });
+    };
   }
   if (error instanceof StaffAuthorityStaffNotFoundError) {
-    return reply.code(404).send({
+    reply.code(404);
+    return {
       error: "StaffAuthorityNotFound",
       reason: "staff_not_found",
       message: staffAuthorityNotFoundMessage
-    });
+    };
   }
   if (error instanceof StaffAuthorityRevocationUnsupportedError) {
     /*
@@ -649,23 +694,25 @@ function staffAuthorityMutationRejection(reply: FastifyReply, error: unknown) {
      * их в прежнее положение, а не перечитывать всю карточку.
      */
     const titles = error.flags.map((flag) => staffAuthorityFlagTitles[flag]).join(", ");
-    return reply.code(409).send({
+    reply.code(409);
+    return {
       error: "StaffAuthorityRevocationUnsupported",
       reason: "role_grants_authority",
       flags: error.flags,
       message:
         `Полномочия не сохранены: сотруднику это даёт его роль в клинике (${titles}), ` +
         "поэтому отдельной галочкой снять их нельзя — измените роль в карточке сотрудника."
-    });
+    };
   }
   // Причина уходит в журнал целиком: наружу идёт текст для человека, но без
   // записи здесь отказ по полномочиям был бы неотличим от опечатки в запросе.
   console.error("[настройки] полномочия сотрудника не сохранены:", error);
-  return reply.code(409).send({
+  reply.code(409);
+  return {
     error: "StaffAuthorityRejected",
     reason: "staff_authority_rejected",
     message: staffAuthorityRejectedMessage
-  });
+  };
 }
 
 function chairMutationRejection(
@@ -677,17 +724,19 @@ function chairMutationRejection(
 ) {
   const message = settingsDomainMessage(error);
   if (message === "Кресло не найдено.") {
-    return reply.code(404).send({
+    reply.code(404);
+    return {
       error: `${errorCode}NotFound`,
       reason: "chair_not_found",
       message: notFoundMessage
-    });
+    };
   }
-  return reply.code(409).send({
+  reply.code(409);
+  return {
     error: `${errorCode}Rejected`,
     reason: "chair_mutation_rejected",
     message: rejectedMessage
-  });
+  };
 }
 
 function configuredSettingsAdminSecret(): string | null {
@@ -787,7 +836,8 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const input = parseSettingsPayload(uiPreferencesInputSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: uiPreferencesValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: uiPreferencesValidationMessage };
     }
     const updated = { ...input, version: 1 as const, savedAt: stampedUiPreferencesSavedAt(input.savedAt) };
     let outcome: Awaited<ReturnType<typeof saveUiPreferencesInDb>>;
@@ -799,23 +849,25 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       // администратору вместо того, чтобы обновить страницу и повторить правку.
       if (error instanceof UiPreferencesConcurrentSaveError) {
         console.error("[настройки] настройки рабочего места не сохранены:", error);
-        return reply.code(409).send({
+        reply.code(409);
+        return {
           error: "UiPreferencesConcurrentSave",
           reason: "concurrent_ui_preferences_save",
           message: uiPreferencesConcurrentSaveMessage
-        });
+        };
       }
       throw error;
     }
     if (!outcome.applied) {
       // Действующее значение приложено к отказу: клиенту не нужен второй запрос,
       // чтобы показать человеку, чем именно перебита его копия.
-      return reply.code(409).send({
+      reply.code(409);
+      return {
         error: "UiPreferencesStaleSave",
         reason: "stale_ui_preferences_copy",
         message: uiPreferencesStaleSaveMessage,
         preferences: uiPreferencesSchema.parse(outcome.stored)
-      });
+      };
     }
     return uiPreferencesSchema.parse(outcome.stored);
   });
@@ -825,7 +877,8 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const input = parseSettingsPayload(updateClinicModeSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: clinicModeValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: clinicModeValidationMessage };
     }
     await updateClinicModeInDb(orgId, input.mode);
     const settings = await getClinicSettingsFromDb(orgId);
@@ -837,7 +890,8 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const input = parseSettingsPayload(updateClinicProfileSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "ClinicProfileValidationFailed", message: clinicProfileValidationMessage });
+      reply.code(400);
+      return { error: "ClinicProfileValidationFailed", message: clinicProfileValidationMessage };
     }
     try {
       await updateClinicProfileInDb(orgId, input);

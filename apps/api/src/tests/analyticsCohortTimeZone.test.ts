@@ -95,6 +95,61 @@ async function removeFixtureRows(): Promise<void> {
 	});
 }
 
+/** Соединение пула, каким его видит перехватчик текста SQL. */
+type SpyableClient = { query: (...args: unknown[]) => unknown };
+
+/**
+ * Тексты SQL, действительно ушедшие в базу за время `run`.
+ *
+ * ПОЧЕМУ ПЕРЕХВАТ СТОИТ И НА `connect`, А НЕ ТОЛЬКО НА `query` ПУЛА. Боевой
+ * сервер (и `createTenantTestApp` вслед за ним) выполняет каждый обработчик
+ * внутри `withTenantCtx`, то есть внутри транзакции. Drizzle берёт под
+ * транзакцию ОТДЕЛЬНОЕ соединение через `pool.connect()` и шлёт операторы уже
+ * ему — мимо `pool.query`. Перехватчик, стоящий только на пуле, при этом видит
+ * НОЛЬ запросов и проверка текста SQL превращается в проверку пустого списка.
+ */
+async function captureSqlTexts(run: () => Promise<void>): Promise<string[]> {
+	const seen: string[] = [];
+	const record = (args: unknown[]): void => {
+		const first = args[0] as { text?: string } | string;
+		const text = typeof first === "string" ? first : first?.text;
+		if (typeof text === "string") seen.push(text);
+	};
+
+	const pool = db.$client as unknown as SpyableClient & {
+		connect: (...args: unknown[]) => Promise<SpyableClient>;
+	};
+	const originalQuery = pool.query.bind(pool);
+	const originalConnect = pool.connect.bind(pool);
+	const restoreClients: (() => void)[] = [];
+
+	pool.query = (...args: unknown[]) => {
+		record(args);
+		return originalQuery(...args);
+	};
+	pool.connect = async (...args: unknown[]) => {
+		const acquired = await originalConnect(...args);
+		const acquiredQuery = acquired.query.bind(acquired);
+		restoreClients.push(() => {
+			acquired.query = acquiredQuery;
+		});
+		acquired.query = (...inner: unknown[]) => {
+			record(inner);
+			return acquiredQuery(...inner);
+		};
+		return acquired;
+	};
+
+	try {
+		await run();
+	} finally {
+		pool.query = originalQuery;
+		pool.connect = originalConnect;
+		for (const restore of restoreClients) restore();
+	}
+	return seen;
+}
+
 describe("месяц когорты берётся в поясе клиники", () => {
 	let app: FastifyInstance;
 	let databaseAvailable = true;
@@ -118,30 +173,38 @@ describe("месяц когорты берётся в поясе клиники"
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.NODE_ENV = "development";
 
-		app = Fastify();
+		// Те же два хука, что боевой `server.ts` вешает на настоящее приложение:
+		// без них дашборд идёт в базу без `app.current_tenant`, читает НОЛЬ строк и
+		// отвечает пустыми когортами на только что засеянный платёж.
+		app = createTenantTestApp();
 		await registerAnalyticsRoutes(app);
 
 		try {
 			// Подчистить за упавшим прогоном ДО засева: иначе к своему платежу
 			// добавится вчерашний и сумма когорты перестанет сходиться.
 			await removeFixtureRows();
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника когорт" });
-			await db
-				.insert(clinics)
-				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: FAR_ZONE });
-			await db.insert(patients).values({
-				id: PATIENT_ID,
-				organizationId: ORG_ID,
-				fullName: "Границевич Ночной Пациентович",
-				createdAt: boundary,
-			});
-			await db.insert(payments).values({
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				amountRub: REVENUE_RUB,
-				status: "paid",
-				paidAt: boundary,
-				createdAt: boundary,
+			// Сев под тенант-контекстом: `WITH CHECK` тенант-таблиц сверяет
+			// `organization_id` с `app.current_tenant` и дизъюнкта обхода не имеет,
+			// поэтому вставка без контекста отвергается кодом 42501.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника когорт" });
+				await db
+					.insert(clinics)
+					.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: FAR_ZONE });
+				await db.insert(patients).values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Границевич Ночной Пациентович",
+					createdAt: boundary,
+				});
+				await db.insert(payments).values({
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					amountRub: REVENUE_RUB,
+					status: "paid",
+					paidAt: boundary,
+					createdAt: boundary,
+				});
 			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
@@ -153,8 +216,11 @@ describe("месяц когорты берётся в поясе клиники"
 		if (app) await app.close();
 		if (!databaseAvailable) return;
 		// Пояс фикстуры возвращается обязательно: он ставится в +12, а остальные
-		// тесты считают период по умолчанию в поясе клиники.
-		await db.update(clinics).set({ timezone: RESTORED_ZONE }).where(eq(clinics.id, CLINIC_ID));
+		// тесты считают период по умолчанию в поясе клиники. `UPDATE` без
+		// тенант-контекста тронул бы ноль строк и промолчал бы об этом.
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.update(clinics).set({ timezone: RESTORED_ZONE }).where(eq(clinics.id, CLINIC_ID));
+		});
 		await removeFixtureRows();
 	});
 
@@ -199,25 +265,14 @@ describe("месяц когорты берётся в поясе клиники"
 	test("в SQL когорты имя пояса стоит литералом и выражение во всех трёх местах одно", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const client = db.$client as unknown as { query: (...args: unknown[]) => unknown };
-		const originalQuery = client.query.bind(client);
-		const seen: string[] = [];
-		client.query = (...args: unknown[]) => {
-			const first = args[0] as { text?: string } | string;
-			const text = typeof first === "string" ? first : first?.text;
-			if (typeof text === "string") seen.push(text);
-			return originalQuery(...args);
-		};
-		try {
+		const seen = await captureSqlTexts(async () => {
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/analytics/dashboard",
 				headers: ORG_HEADERS,
 			});
 			assert.equal(response.statusCode, 200, response.body);
-		} finally {
-			client.query = originalQuery;
-		}
+		});
 
 		const cohortSql = seen.find((text) => text.includes("date_trunc('month'"));
 		assert.ok(cohortSql, `запроса когорты нет среди ${seen.length} перехваченных`);
@@ -238,11 +293,18 @@ describe("месяц когорты берётся в поясе клиники"
 	test("фоновая задача runBiAnalyticsAggregation режет когорту в поясе клиники", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.execute(sql`delete from bi_analytics_snapshots where organization_id = ${ORG_ID}`);
+		// И удаление прежних снимков, и чтение записанного идут под
+		// тенант-контекстом: без него `DELETE` снял бы ноль строк молча, а `SELECT`
+		// вернул бы пустоту независимо от того, что записала агрегация.
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.execute(sql`delete from bi_analytics_snapshots where organization_id = ${ORG_ID}`);
+		});
 		await runBiAnalyticsAggregation(ORG_ID);
 
-		const snapshot = await db.execute(
-			sql`select cohort_ltv_json from bi_analytics_snapshots where organization_id = ${ORG_ID} order by snapshot_date desc limit 1`,
+		const snapshot = await withFixtureTenant(ORG_ID, async () =>
+			db.execute(
+				sql`select cohort_ltv_json from bi_analytics_snapshots where organization_id = ${ORG_ID} order by snapshot_date desc limit 1`,
+			),
 		);
 		assert.equal(
 			snapshot.rows.length,
@@ -268,14 +330,22 @@ describe("месяц когорты берётся в поясе клиники"
 	test("computeBiAnalyticsSnapshots режет когорту в поясе клиники и печатает YYYY-MM", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const existing = await db.execute(sql`select id from bi_analytics_snapshots`);
+		// Перепись снимков идёт под тенант-контекстом клиники фикстуры, и это же
+		// делает уборку в `finally` заведомо безопасной: политика оставляет видимыми
+		// ровно свои строки, поэтому «чужие исторические не трогаем» перестаёт
+		// зависеть от аккуратности предиката.
+		const existing = await withFixtureTenant(ORG_ID, async () =>
+			db.execute(sql`select id from bi_analytics_snapshots`),
+		);
 		const existingIds = new Set(existing.rows.map((row) => (row as { id: string }).id));
 
 		try {
 			await computeBiAnalyticsSnapshots();
 
-			const snapshot = await db.execute(
-				sql`select cohort_ltv_json from bi_analytics_snapshots where organization_id = ${ORG_ID} order by snapshot_date desc limit 1`,
+			const snapshot = await withFixtureTenant(ORG_ID, async () =>
+				db.execute(
+					sql`select cohort_ltv_json from bi_analytics_snapshots where organization_id = ${ORG_ID} order by snapshot_date desc limit 1`,
+				),
 			);
 			assert.equal(
 				snapshot.rows.length,
@@ -301,13 +371,15 @@ describe("месяц когорты берётся в поясе клиники"
 		} finally {
 			// Сборка пишет снимок КАЖДОЙ организации базы, включая чужие. Свои
 			// строки убираем поимённо по id, чужие исторические не трогаем.
-			const after = await db.execute(sql`select id from bi_analytics_snapshots`);
-			const created = after.rows
-				.map((row) => (row as { id: string }).id)
-				.filter((id) => !existingIds.has(id));
-			for (const id of created) {
-				await db.execute(sql`delete from bi_analytics_snapshots where id = ${id}`);
-			}
+			await withFixtureTenant(ORG_ID, async () => {
+				const written = await db.execute(sql`select id from bi_analytics_snapshots`);
+				const created = written.rows
+					.map((row) => (row as { id: string }).id)
+					.filter((id) => !existingIds.has(id));
+				for (const id of created) {
+					await db.execute(sql`delete from bi_analytics_snapshots where id = ${id}`);
+				}
+			});
 		}
 	});
 
@@ -323,24 +395,21 @@ describe("месяц когорты берётся в поясе клиники"
 	test("неизвестный пояс клиники не превращает дашборд в 500", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const client = db.$client as unknown as { query: (...args: unknown[]) => unknown };
-		const originalQuery = client.query.bind(client);
-		const seen: string[] = [];
-
-		await db.update(clinics).set({ timezone: UNKNOWN_ZONE }).where(eq(clinics.id, CLINIC_ID));
-		client.query = (...args: unknown[]) => {
-			const first = args[0] as { text?: string } | string;
-			const text = typeof first === "string" ? first : first?.text;
-			if (typeof text === "string") seen.push(text);
-			return originalQuery(...args);
-		};
+		// Смена пояса — тот же `UPDATE` по тенант-таблице: без контекста он тронул бы
+		// ноль строк и промолчал, а дашборд остался бы на +12, то есть проверка
+		// неизвестного пояса не состоялась бы вовсе.
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.update(clinics).set({ timezone: UNKNOWN_ZONE }).where(eq(clinics.id, CLINIC_ID));
+		});
 		try {
-			const response = await app.inject({
-				method: "GET",
-				url: "/api/analytics/dashboard",
-				headers: ORG_HEADERS,
+			const seen = await captureSqlTexts(async () => {
+				const response = await app.inject({
+					method: "GET",
+					url: "/api/analytics/dashboard",
+					headers: ORG_HEADERS,
+				});
+				assert.equal(response.statusCode, 200, `неизвестный пояс уронил дашборд: ${response.body}`);
 			});
-			assert.equal(response.statusCode, 200, `неизвестный пояс уронил дашборд: ${response.body}`);
 
 			const cohortSql = seen.find((text) => text.includes("date_trunc('month'"));
 			assert.ok(cohortSql, `запроса когорты нет среди ${seen.length} перехваченных`);
@@ -349,8 +418,9 @@ describe("месяц когорты берётся в поясе клиники"
 				`неизвестный пояс всё же попал в SQL и бросит 22023: ${cohortSql}`,
 			);
 		} finally {
-			client.query = originalQuery;
-			await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
+			});
 		}
 	});
 });

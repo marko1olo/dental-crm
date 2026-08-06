@@ -64,14 +64,21 @@ function isMissingDatabase(error: unknown): boolean {
  * чужих данных оно не задевает.
  */
 async function purgeFixtures(): Promise<void> {
-	await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-	await db.delete(communicationCampaigns).where(eq(communicationCampaigns.organizationId, ORG_ID));
-	await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-	await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
-	await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
-	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	/*
+	 * Уборка идёт под тенант-контекстом клиники: под FORCE RLS DELETE без
+	 * `app.current_tenant` не видит своих строк и снимает НОЛЬ, ошибки при этом
+	 * нет — отозванное согласие прошлого прогона пережило бы «успешную» уборку.
+	 */
+	await withFixtureTenant(ORG_ID, async () => {
+		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db.delete(communicationCampaigns).where(eq(communicationCampaigns.organizationId, ORG_ID));
+		await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
+		await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	});
 }
 
 describe("рассылки пациентам", () => {
@@ -89,50 +96,57 @@ describe("рассылки пациентам", () => {
 			delete process.env[key];
 		}
 
-		app = Fastify();
+		app = createTenantTestApp();
 		await registerCommunicationOutboxRoutes(app);
 
 		try {
 			// Сначала расчистить место за оборванным прогоном, потом сеять.
 			await purgeFixtures();
 
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника рассылок" });
-			await db
-				.insert(patients)
-				.values([
-					{ id: CONSENTED, organizationId: ORG_ID, fullName: "Согласный Пётр Иванович", phone: "+7 916 000-01-01" },
-					{ id: NO_CONSENT, organizationId: ORG_ID, fullName: "Отказной Иван Петрович", phone: "+7 916 000-01-02" },
-					{ id: NO_PHONE, organizationId: ORG_ID, fullName: "Безномера Сергей Сергеевич", phone: null }
-				]);
+			/*
+			 * Сев под тенант-контекстом: в WITH CHECK тенант-таблиц стоит только
+			 * `organization_id = current_tenant`, поэтому INSERT без контекста
+			 * отвергается кодом 42501, и обход RLS этого не лечит.
+			 */
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника рассылок" });
+				await db
+					.insert(patients)
+					.values([
+						{ id: CONSENTED, organizationId: ORG_ID, fullName: "Согласный Пётр Иванович", phone: "+7 916 000-01-01" },
+						{ id: NO_CONSENT, organizationId: ORG_ID, fullName: "Отказной Иван Петрович", phone: "+7 916 000-01-02" },
+						{ id: NO_PHONE, organizationId: ORG_ID, fullName: "Безномера Сергей Сергеевич", phone: null }
+					]);
 
-			// Приём годичной давности — для отбора «давно не были».
-			const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-			await db
-				.insert(appointments)
-				.values({
-					id: OLD_VISIT_APPOINTMENT,
+				// Приём годичной давности — для отбора «давно не были».
+				const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+				await db
+					.insert(appointments)
+					.values({
+						id: OLD_VISIT_APPOINTMENT,
+						organizationId: ORG_ID,
+						patientId: CONSENTED,
+						status: "completed",
+						startsAt: yearAgo,
+						endsAt: new Date(yearAgo.getTime() + 3_600_000)
+					});
+
+				/*
+				 * Согласие на рекламу есть только у одного пациента.
+				 *
+				 * Без onConflictDoNothing НАМЕРЕННО: место расчищено выше, и конфликт
+				 * по unique(org, patient, channel, scope) здесь означал бы, что уборка
+				 * не сработала. Прежде он молчал и подменял выданное согласие остатком
+				 * прошлого прогона — см. purgeFixtures выше.
+				 */
+				await db.insert(patientCommunicationConsents).values({
 					organizationId: ORG_ID,
 					patientId: CONSENTED,
-					status: "completed",
-					startsAt: yearAgo,
-					endsAt: new Date(yearAgo.getTime() + 3_600_000)
+					channel: "sms",
+					scope: "marketing",
+					state: "granted",
+					source: "contract"
 				});
-
-			/*
-			 * Согласие на рекламу есть только у одного пациента.
-			 *
-			 * Без onConflictDoNothing НАМЕРЕННО: место расчищено выше, и конфликт
-			 * по unique(org, patient, channel, scope) здесь означал бы, что уборка
-			 * не сработала. Прежде он молчал и подменял выданное согласие остатком
-			 * прошлого прогона — см. purgeFixtures выше.
-			 */
-			await db.insert(patientCommunicationConsents).values({
-				organizationId: ORG_ID,
-				patientId: CONSENTED,
-				channel: "sms",
-				scope: "marketing",
-				state: "granted",
-				source: "contract"
 			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
@@ -167,13 +181,18 @@ describe("рассылки пациентам", () => {
 	test("рекламная рассылка отбирает только тех, кто дал согласие", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const audience = await resolveAudience({
-			organizationId: ORG_ID,
-			channel: "sms",
-			scope: "marketing",
-			criteria: { status: "active" },
-			now
-		});
+		// В бою отбор вызывается из previewCampaign/launchCampaign, а те — из
+		// маршрута под `withTenantCtx`. Прямой вызов без контекста читал бы ноль
+		// пациентов, и «отобран один» краснело бы на пустой выборке.
+		const audience = await withFixtureTenant(ORG_ID, async () =>
+			resolveAudience({
+				organizationId: ORG_ID,
+				channel: "sms",
+				scope: "marketing",
+				criteria: { status: "active" },
+				now
+			})
+		);
 
 		// Пациент без телефона отсеивается запросом, поэтому в matched его нет.
 		assert.equal(audience.matched, 2, JSON.stringify(audience));
@@ -187,13 +206,15 @@ describe("рассылки пациентам", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		// Напоминание о приёме — сервисное сообщение в рамках договора.
-		const audience = await resolveAudience({
-			organizationId: ORG_ID,
-			channel: "sms",
-			scope: "service",
-			criteria: { status: "active" },
-			now
-		});
+		const audience = await withFixtureTenant(ORG_ID, async () =>
+			resolveAudience({
+				organizationId: ORG_ID,
+				channel: "sms",
+				scope: "service",
+				criteria: { status: "active" },
+				now
+			})
+		);
 		assert.equal(audience.deliverable, 2, JSON.stringify(audience));
 	});
 
@@ -201,13 +222,15 @@ describe("рассылки пациентам", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const halfYearAgo = new Date(now.getTime() - 182 * 24 * 60 * 60 * 1000).toISOString();
-		const audience = await resolveAudience({
-			organizationId: ORG_ID,
-			channel: "sms",
-			scope: "service",
-			criteria: { status: "active", lastVisitBefore: halfYearAgo },
-			now
-		});
+		const audience = await withFixtureTenant(ORG_ID, async () =>
+			resolveAudience({
+				organizationId: ORG_ID,
+				channel: "sms",
+				scope: "service",
+				criteria: { status: "active", lastVisitBefore: halfYearAgo },
+				now
+			})
+		);
 
 		// Только у одного пациента есть приём, и он годичной давности.
 		assert.equal(audience.matched, 1, JSON.stringify(audience));
@@ -217,13 +240,15 @@ describe("рассылки пациентам", () => {
 	test("отбор «ни разу не были» исключает того, у кого приём есть", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const audience = await resolveAudience({
-			organizationId: ORG_ID,
-			channel: "sms",
-			scope: "service",
-			criteria: { status: "active", neverVisited: true },
-			now
-		});
+		const audience = await withFixtureTenant(ORG_ID, async () =>
+			resolveAudience({
+				organizationId: ORG_ID,
+				channel: "sms",
+				scope: "service",
+				criteria: { status: "active", neverVisited: true },
+				now
+			})
+		);
 		assert.equal(audience.matched, 1, JSON.stringify(audience));
 		assert.equal(audience.candidates[0]?.patientId, NO_CONSENT);
 	});
@@ -328,10 +353,12 @@ describe("рассылки пациентам", () => {
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).queued, 1);
 
-		const rows = await db
-			.select()
-			.from(communicationOutbox)
-			.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.campaignId, campaignId)));
+		const rows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.campaignId, campaignId)))
+		);
 		assert.equal(rows.length, 1);
 		assert.equal(rows[0]?.patientId, CONSENTED);
 		assert.equal(rows[0]?.scope, "marketing");
@@ -365,10 +392,12 @@ describe("рассылки пациентам", () => {
 		assert.ok(body.message.includes("уже выполняется"), body.message);
 		assert.ok(body.message.includes("отмените"), body.message);
 
-		const rows = await db
-			.select({ id: communicationOutbox.id })
-			.from(communicationOutbox)
-			.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.campaignId, campaignId)));
+		const rows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ id: communicationOutbox.id })
+				.from(communicationOutbox)
+				.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.campaignId, campaignId)))
+		);
 		assert.equal(rows.length, 1);
 	});
 
@@ -404,16 +433,20 @@ describe("рассылки пациентам", () => {
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).cancelledMessages, 1);
 
-		const [row] = await db
-			.select({ status: communicationOutbox.status })
-			.from(communicationOutbox)
-			.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.campaignId, campaignId)));
+		const [row] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ status: communicationOutbox.status })
+				.from(communicationOutbox)
+				.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.campaignId, campaignId)))
+		);
 		assert.equal(row?.status, "cancelled");
 
-		const [campaign] = await db
-			.select({ status: communicationCampaigns.status })
-			.from(communicationCampaigns)
-			.where(eq(communicationCampaigns.id, campaignId));
+		const [campaign] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ status: communicationCampaigns.status })
+				.from(communicationCampaigns)
+				.where(eq(communicationCampaigns.id, campaignId))
+		);
 		assert.equal(campaign?.status, "cancelled");
 	});
 
