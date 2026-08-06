@@ -20,7 +20,7 @@
 		"dcmjs": "^0.52.0",
 		"decimal.js": "^10.6.0",
 		"dicom-parser": "^1.8.21",
-		"fflate": "^0.7.3",
+		"fflate": "^0.8.3",
 		"framer-motion": "^12.42.2",
 		"fuse.js": "^7.4.2",
 		"gl-matrix": "^3.4.3",
