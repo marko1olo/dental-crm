@@ -14,7 +14,7 @@ import { inMemoryDomainState, visitCloseChecklistFactsFor } from "../sampleData.
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
 import { projectVisitRow } from "./visitsProjection.js";
-import type { TreatmentChargeRow, PaymentRow } from "../money/patientDebt.js";
+import { hydrateDomainStateFromDb } from "./domainStateHydration.js";
 
 /**
  * Действие в журнале для подписания карты приёма.
@@ -306,44 +306,40 @@ export async function acceptVisitDraftInDb(
      * ЭТОМУ приёму из базы. Замер: 10 приёмов клиники, все получали одну строку
      * «Остаток по плану 51 400 ₽», включая приём, оплаченный полностью.
      *
-     * СТАЛО: позиции и оплаты читаются из базы одним запросом по organizationId, затем
-     * передаются в visitCloseChecklistFactsFor объектом state с реальными данными
-     * billing и пустыми коллекциями остальных сущностей. Остальные коллекции
-     * (imagingStudies, documents и т.д.) не нужны расчёту billing: пункт «Оплата
-     * связана» смотрит только treatmentPlanItems и payments. Поэтому полная гидратация
-     * здесь не вызывается — читаются только две таблицы.
+     * СТАЛО: срез клиники берётся у `hydrateDomainStateFromDb` — того же модуля, что
+     * питает сводку. Расчёту billing нужны только `treatmentPlanItems` и `payments`,
+     * и соблазн прочитать эти две таблицы здесь напрямую велик. Так и было сделано
+     * сначала, и это оказалось неверно: сырая строка базы НЕ РАВНА доменной записи.
+     * Замерено компилятором 2026-08-06 — четыре расхождения на двух таблицах:
+     *   `quantity`   в базе `numeric` → драйвер отдаёт СТРОКУ, домен ждёт число;
+     *   `createdAt`  в базе `Date`    → домен ждёт ISO-строку;
+     *   `serviceId`  в базе nullable  → домен требует строку;
+     *   `snapshotServiceName` в строке отсутствует вовсе (в базе это `title`).
+     * Первая версия правки скрывала всё это `as unknown as TreatmentChargeRow[]`, то
+     * есть отдавала расчёту денег строку там, где он ждёт число. Копировать проекцию
+     * сюда тоже нельзя: две копии преобразования `numeric`→число разойдутся, и
+     * разойдутся молча, в расчёте ДЕНЕГ. Поэтому здесь один вызов гидратации, у
+     * которой проекция уже есть и проверяется схемой (`collect(...)`).
      *
-     * ПОЧЕМУ ЗАПРОС ПО КЛИНИКЕ, А НЕ ПО ПРИЁМУ. buildVisitLedger принимает
+     * ЦЕНА НАЗВАНА ЧЕСТНО: гидратация читает ~15 таблиц вместо двух нужных. Если
+     * подписание приёма станет узким местом, правильное лечение — `hydrateBillingSlice()`
+     * в самом модуле гидратации, рядом с существующей проекцией. НЕ копия здесь.
+     *
+     * ПОЧЕМУ СРЕЗ ПО КЛИНИКЕ, А НЕ ПО ПРИЁМУ. buildVisitLedger принимает
      * ОТФИЛЬТРОВАННЫЕ коллекции: он сам ищет строки с visit_id = signedVisit.id. Если
-     * здесь WHERE visit_id = :id, расчёт не увидит позиции БЕЗ приёма
+     * сузить до одного приёма, расчёт не увидит позиции БЕЗ приёма
      * (treatment_items.visit_id = null), которые входят в сальдо пациента, но не в
      * сальдо приёма. Эта разница важна для переплаты: если пациент переплатил по
      * приёму, а по клинике у него долг из-за позиций без приёма, карточка обязана
      * показать переплату ПО ПРИЁМУ, а не молчать из-за другой позиции.
+     *
+     * Транзакция здесь та же, что записала приём: `db` — Proxy над
+     * `transactionStorage`, поэтому гидратация видит только что вставленные строки.
      */
-    const [chargeRows, paymentRows] = await Promise.all([
-      db.select({
-        patientId: schema.treatmentItems.patientId,
-        visitId: schema.treatmentItems.visitId,
-        status: schema.treatmentItems.status,
-        unitPriceRub: schema.treatmentItems.unitPriceRub,
-        quantity: schema.treatmentItems.quantity,
-        discountRub: schema.treatmentItems.discountRub,
-      }).from(schema.treatmentItems).where(eq(schema.treatmentItems.organizationId, organizationId)),
-      db.select({
-        patientId: schema.payments.patientId,
-        visitId: schema.payments.visitId,
-        status: schema.payments.status,
-        amountRub: schema.payments.amountRub,
-      }).from(schema.payments).where(eq(schema.payments.organizationId, organizationId)),
-    ]);
+    const { state: clinicState } = await hydrateDomainStateFromDb(organizationId);
 
     const visitCloseChecklist = buildVisitCloseChecklist(
-      visitCloseChecklistFactsFor(signedVisit, {
-        ...inMemoryDomainState,
-        treatmentPlanItems: chargeRows as unknown as TreatmentChargeRow[],
-        payments: paymentRows as unknown as PaymentRow[],
-      })
+      visitCloseChecklistFactsFor(signedVisit, clinicState)
     );
 
     return {

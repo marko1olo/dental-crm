@@ -1,291 +1,223 @@
 /**
- * contract-breach-proofs.test.ts — HTTP-докази розходжень API між фронтом і сервером
+ * contract-breach-proofs.test.ts — ДОКАЗАТЕЛЬСТВА КОНТРАКТА «фронт зовёт ↔ сервер отвечает».
  *
- * Кожен тест доводить існування дефекту ВИМІРЮВАННЯМ: app.inject() на живому сервері.
- * Структура: ДО (404/405) → виправлення → ПІСЛЯ (200/201).
+ * ЧТО ЗДЕСЬ УТВЕРЖДАЕТСЯ И ПОЧЕМУ ИМЕННО ТАК.
  *
- * Відповідає звіту: API_DISCREPANCY_REPORT.md
+ * Первая редакция этого файла утверждала `statusCode === 404`, то есть была
+ * ЗЕЛЁНОЙ, пока дефект жив, и краснела в момент починки. Это ловушка для
+ * следующего: тест требовал, чтобы функция оставалась сломанной, и CI покраснел
+ * бы на правильной работе. Полярность здесь исправлена — утверждается КОНТРАКТ:
+ *
+ *     адрес, который зовёт интерфейс, ОБЯЗАН обслуживаться сервером.
+ *
+ * То есть «ответ не 404 от отсутствия маршрута». Такая форма переживает починку:
+ * сегодня она падает (маршрута нет), после реализации проходит, и переписывать
+ * её не нужно.
+ *
+ * ПОЧЕМУ ИЗВЕСТНО-ОТСУТСТВУЮЩИЕ ПОМЕЧЕНЫ `todo`. Восемь маршрутов не существуют,
+ * и реализовать их одной ходкой нельзя. Красный набор, который никто не может
+ * починить сегодня, приучает игнорировать вывод — поэтому они помечены `todo`:
+ * `node:test` не валит на них прогон, НО в момент, когда маршрут появится,
+ * печатает отдельную строку о прошедшем `todo`-тесте. Это ровно тот сигнал,
+ * который нужен: долг назван поимённо, снижение видно, рост виден тоже.
+ * `skip` здесь хуже: он молчит и о долге, и о починке.
+ *
+ * ПОЧЕМУ ТЕЛО ЗАПРОСА ВСЕГДА ЗАДАНО. Измерено на этом файле: `POST` с
+ * `content-type: application/json` и БЕЗ тела даёт 400
+ * (`FST_ERR_CTP_EMPTY_JSON_BODY`) от разборщика тела — ДО маршрутизации, для
+ * любого адреса, существующего или нет. Такое измерение о существовании
+ * маршрута не говорит ничего. Поэтому тело задано везде, где задан заголовок.
  */
 
-import { test } from "node:test";
 import assert from "node:assert/strict";
+import { test } from "node:test";
+import type { InjectOptions } from "fastify";
 import { createDenteApiApp } from "../server.js";
+import { routeNotFoundMessage } from "../utils/routeNotFound.js";
+
+/** Приложение без фоновых воркеров: нужна только таблица маршрутов. */
+async function realApp() {
+	return createDenteApiApp({
+		startTelegramWorker: false,
+		startCommunicationWorker: false,
+		startMigrationWorker: false,
+	});
+}
 
 /**
- * КАТЕГОРІЯ A: Маршрут потрібен — фронт кличе, сервер не реалізував
- * Критичність: ВИСОКА (призводить до 404 у production)
+ * Отсутствие маршрута отличается от отказа охранника ТОЛЬКО так.
+ *
+ * Fastify на несовпадении и пути, и метода отвечает 404 с телом
+ * `{"message":"Route POST:/api/x not found","error":"Not Found","statusCode":404}`.
+ * Охранник тоже может ответить 404 (например, «запись не найдена»), но его тело
+ * несёт доменный `error`, а не `Not Found` с текстом «Route … not found».
+ * Различать обязательно: иначе тест примет отказ охранника за отсутствие
+ * маршрута и наоборот.
+ */
+function routeIsUnserved(response: { statusCode: number; body: string }) {
+	if (response.statusCode !== 404) return false;
+	try {
+		const parsed = JSON.parse(response.body) as { error?: unknown; message?: unknown };
+		return parsed.error === "RouteNotFound" && parsed.message === routeNotFoundMessage;
+	} catch {
+		return false;
+	}
+}
+
+async function assertRouteIsServed(
+	method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+	url: string,
+	payload?: Record<string, unknown>,
+) {
+	const app = await realApp();
+	try {
+		/*
+		 * Опции собираются ОДНИМ объявленным объектом, а не условным спредом в
+		 * аргументе. При `exactOptionalPropertyTypes: true` спред давал
+		 * `payload?: {} | null`, что не сходится с `InjectPayload`, перегрузка
+		 * `inject` разрешалась в цепочечную (`Chain`), и `response.statusCode`
+		 * переставал существовать. Тип — не украшение: без него тест собирал
+		 * цепочку вместо ответа и не проверял ничего.
+		 */
+		const options: InjectOptions = { method, url };
+		if (payload !== undefined) {
+			options.headers = { "content-type": "application/json" };
+			options.payload = payload;
+		}
+		const response = await app.inject(options);
+		assert.ok(
+			!routeIsUnserved(response),
+			`${method} ${url} не обслуживается сервером: ответ ${response.statusCode}, тело ${response.body.slice(0, 200)}. ` +
+				"Этот адрес зовёт интерфейс, значит пользователь получает 404 на нажатие кнопки. " +
+				"Отказ охранника (401/403) или доменный 404 этот тест ПРОХОДИТ — проверяется существование маршрута, а не доступ.",
+		);
+	} finally {
+		await app.close();
+	}
+}
+
+/* ═══ (A) МАРШРУТА НЕТ, А ФУНКЦИЯ НУЖНА ═══════════════════════════════════════
+ *
+ * У каждого адреса ниже есть и вызывающий в интерфейсе, и таблица в схеме базы.
+ * Помечены `todo` до реализации — см. заголовок файла.
  */
 
-test("A1. POST /api/visits/quick — фронт кличе (useAppLogic.tsx:13904), сервера немає", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
+test(
+	"(A) POST /api/egisz/send — выгрузка в ЕГИСЗ, зовёт EgiszMonitor.tsx:164, таблица egisz_logs есть",
+	{ todo: "маршрут не реализован; EgiszMonitor смонтирован в VisitOdontogramTab.tsx:139" },
+	async () => {
+		await assertRouteIsServed("POST", "/api/egisz/send", { patientId: "x", visitId: "x" });
+	},
+);
 
-	const response = await app.inject({
-		method: "POST",
-		url: "/api/visits/quick",
-		headers: {
-			"content-type": "application/json",
-			// Заголовки auth додамо після реалізації guard
-		},
-		payload: {},
-	});
+test(
+	"(A) GET /api/integrations/egisz-blank-permissions — зовёт EgiszBlankPermissionsWidget.tsx:105, таблица egisz_blank_permissions есть",
+	{ todo: "маршрут не реализован; виджет смонтирован в SettingsView.tsx:1945" },
+	async () => {
+		await assertRouteIsServed("GET", "/api/integrations/egisz-blank-permissions");
+	},
+);
 
-	// ДО виправлення: очікуємо 404
-	assert.equal(
-		response.statusCode,
-		404,
-		`ДО: POST /api/visits/quick має повертати 404, бо маршрут не реалізований. ` +
-		`Отримано: ${response.statusCode}. Якщо це 200, дефект УЖЕ виправлено.`
-	);
+test(
+	"(A) GET /api/integrations/yandex-calendar-syncs — зовёт YandexCalendarSyncsWidget.tsx:260, таблица yandex_calendar_syncs есть",
+	{ todo: "маршрут не реализован; виджет смонтирован в SettingsView.tsx:1946" },
+	async () => {
+		await assertRouteIsServed("GET", "/api/integrations/yandex-calendar-syncs");
+	},
+);
 
-	await app.close();
-});
+test(
+	"(A) GET /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:39",
+	{ todo: "маршрут не реализован; вкладка смонтирована в SettingsView.tsx:1861, таблицы clinic_workflows в схеме НЕТ — нужна миграция" },
+	async () => {
+		await assertRouteIsServed("GET", "/api/clinic/workflows");
+	},
+);
 
-test("A2. POST /api/egisz/send — фронт кличе (EgiszMonitor.tsx:164), сервера немає", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
+test(
+	"(A) POST /api/clinic/workflows/:id/toggle — зовёт SettingsBpmnTab.tsx:77",
+	{ todo: "маршрут не реализован; ИЗМЕРЕНО: прежний 400 давал разборщик тела на пустом теле, а не маршрут" },
+	async () => {
+		await assertRouteIsServed("POST", "/api/clinic/workflows/00000000-0000-0000-0000-000000000000/toggle", {});
+	},
+);
 
-	const response = await app.inject({
-		method: "POST",
-		url: "/api/egisz/send",
-		headers: { "content-type": "application/json" },
-		payload: { patientId: "test", visitId: "test" },
-	});
+test(
+	"(A) DELETE /api/clinic/workflows/:id — зовёт SettingsBpmnTab.tsx:114",
+	{ todo: "маршрут не реализован" },
+	async () => {
+		await assertRouteIsServed("DELETE", "/api/clinic/workflows/00000000-0000-0000-0000-000000000000");
+	},
+);
 
-	assert.equal(
-		response.statusCode,
-		404,
-		`ДО: POST /api/egisz/send має повертати 404. Отримано: ${response.statusCode}`
-	);
+test(
+	"(A) POST /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:144",
+	{ todo: "маршрут не реализован" },
+	async () => {
+		await assertRouteIsServed("POST", "/api/clinic/workflows", { name: "x", definition: "{}" });
+	},
+);
 
-	await app.close();
-});
+test(
+	"(A) POST /api/ai/visit-flow — зовёт useVisitLogic.ts:1059, оркестратор ai/visitFlowOrchestrator.ts есть",
+	{ todo: "маршрут не реализован при существующем оркестраторе" },
+	async () => {
+		await assertRouteIsServed("POST", "/api/ai/visit-flow", {});
+	},
+);
 
-test("A3. GET /api/integrations/egisz-blank-permissions — фронт кличе, сервера немає", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "GET",
-		url: "/api/integrations/egisz-blank-permissions",
-	});
-
-	assert.equal(
-		response.statusCode,
-		404,
-		`ДО: GET /api/integrations/egisz-blank-permissions має повертати 404. Отримано: ${response.statusCode}`
-	);
-
-	await app.close();
-});
-
-test("A4. GET /api/integrations/yandex-calendar-syncs — фронт кличе, сервера немає", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "GET",
-		url: "/api/integrations/yandex-calendar-syncs",
-	});
-
-	assert.equal(
-		response.statusCode,
-		404,
-		`ДО: GET /api/integrations/yandex-calendar-syncs має повертати 404. Отримано: ${response.statusCode}`
-	);
-
-	await app.close();
-});
-
-test("A5. GET /api/clinic/workflows — фронт кличе (SettingsBpmnTab.tsx:39), сервера немає", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "GET",
-		url: "/api/clinic/workflows",
-	});
-
-	assert.equal(
-		response.statusCode,
-		404,
-		`ДО: GET /api/clinic/workflows має повертати 404. Отримано: ${response.statusCode}`
-	);
-
-	await app.close();
-});
-
-test("A6. POST /api/clinic/workflows/:id/toggle — фронт кличе, сервера немає", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "POST",
-		url: "/api/clinic/workflows/test-workflow-id/toggle",
-		headers: { "content-type": "application/json" },
-	});
-
-	assert.equal(
-		response.statusCode,
-		404,
-		`ДО: POST /api/clinic/workflows/:id/toggle має повертати 404. Отримано: ${response.statusCode}`
-	);
-
-	await app.close();
-});
-
-test("A7. DELETE /api/clinic/workflows/:id — фронт кличе, сервера немає", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "DELETE",
-		url: "/api/clinic/workflows/test-workflow-id",
-	});
-
-	assert.equal(
-		response.statusCode,
-		404,
-		`ДО: DELETE /api/clinic/workflows/:id має повертати 404. Отримано: ${response.statusCode}`
-	);
-
-	await app.close();
-});
-
-test("A8. POST /api/clinic/workflows — фронт кличе, сервера немає", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "POST",
-		url: "/api/clinic/workflows",
-		headers: { "content-type": "application/json" },
-		payload: { name: "test", definition: "{}" },
-	});
-
-	assert.equal(
-		response.statusCode,
-		404,
-		`ДО: POST /api/clinic/workflows має повертати 404. Отримано: ${response.statusCode}`
-	);
-
-	await app.close();
-});
-
-test("A9. POST /api/ai/visit-flow — фронт кличе (useVisitLogic.ts:1059), сервера немає", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "POST",
-		url: "/api/ai/visit-flow",
-		headers: { "content-type": "application/json" },
-		payload: {},
-	});
-
-	assert.equal(
-		response.statusCode,
-		404,
-		`ДО: POST /api/ai/visit-flow має повертати 404. Отримано: ${response.statusCode}`
-	);
-
-	await app.close();
-});
-
-/**
- * КАТЕГОРІЯ C: Розбіжність HTTP-методу
- * Критичність: СЕРЕДНЯ (405 Method Not Allowed)
+/* ═══ (C) МАРШРУТ ЕСТЬ, МЕТОД БЫЛ НАПИСАН ИНАЧЕ ══════════════════════════════
+ *
+ * Интерфейс звал PUT, сервер объявляет PATCH (communicationsOutbox.ts:276).
+ * Правлен ФРОНТ: у серверного PATCH есть другие живые клиенты, а менять метод
+ * работающего маршрута значит сломать их.
  */
 
-test("C1. PUT vs PATCH на /api/communications/templates/:id — фронт PUT, сервер PATCH", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	// Фронт відправляє PUT (useCommunicationsQueries.ts:18)
-	const putResponse = await app.inject({
-		method: "PUT",
-		url: "/api/communications/templates/test-template-id",
-		headers: { "content-type": "application/json" },
-		payload: { name: "test" },
-	});
-
-	// Сервер очікує PATCH (communicationsOutbox.ts:276)
-	const patchResponse = await app.inject({
-		method: "PATCH",
-		url: "/api/communications/templates/test-template-id",
-		headers: { "content-type": "application/json" },
-		payload: { name: "test" },
-	});
-
-	// ДО виправлення: PUT має давати 404/405, PATCH працює
-	assert.ok(
-		putResponse.statusCode === 404 || putResponse.statusCode === 405,
-		`ДО: PUT має давати 404/405, отримано: ${putResponse.statusCode}. ` +
-		`Якщо 200, дефект УЖЕ виправлено на сервері замість фронту.`
+test("(C) PATCH /api/communications/templates/:id обслуживается — метод, которым теперь зовёт интерфейс", async () => {
+	await assertRouteIsServed(
+		"PATCH",
+		"/api/communications/templates/00000000-0000-0000-0000-000000000000",
+		{ name: "x" },
 	);
-
-	// PATCH має працювати (може бути 401 через auth, але не 404/405)
-	assert.ok(
-		patchResponse.statusCode !== 404 && patchResponse.statusCode !== 405,
-		`PATCH має існувати (401/403 OK, але не 404/405). Отримано: ${patchResponse.statusCode}`
-	);
-
-	await app.close();
 });
 
-/**
- * КАТЕГОРІЯ D: Хибно-позитивні знахідки (інформаційні)
- * Ці маршрути ІСНУЮТЬ, census їх просто не розпізнав через префікси плагінів
- * або динамічні параметри action. Тести підтверджують, що вони працюють.
+test("(C) PUT на тот же адрес НЕ обслуживается — доказательство, что прежний вызов уходил в никуда", async () => {
+	const app = await realApp();
+	try {
+		const response = await app.inject({
+			method: "PUT",
+			url: "/api/communications/templates/00000000-0000-0000-0000-000000000000",
+			headers: { "content-type": "application/json" },
+			payload: { name: "x" },
+		});
+		assert.ok(
+			routeIsUnserved(response),
+			`PUT обязан быть необслуженным: сервер держит только PATCH. Получено ${response.statusCode}, тело ${response.body.slice(0, 300)}. ` +
+				"Если PUT вдруг обслуживается, кто-то добавил его на сервере, и правку фронта надо пересмотреть.",
+		);
+	} finally {
+		await app.close();
+	}
+});
+
+test("(C) PUT /api/communications/settings ЗАКОННЫЙ — соседний PUT в том же файле фронта трогать было нельзя", async () => {
+	await assertRouteIsServed("PUT", "/api/communications/settings", {});
+});
+
+/* ═══ (D) ЛОЖНЫЕ СРАБАТЫВАНИЯ ПЕРЕПИСИ ═══════════════════════════════════════
+ *
+ * Эти адреса перепись назвала мёртвыми, а они живые. Тесты закрепляют разбор:
+ * префикс плагина и динамический сегмент действия — не дефекты.
  */
 
-test("D1. GET /api/inventory/:orgId/rules/:serviceId — ІСНУЄ (хибно-позитивна знахідка census)", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "GET",
-		url: "/api/inventory/test-org/rules/test-service",
-	});
-
-	// Маршрут існує, може бути 401/403/404 (немає даних), але НЕ 404 від відсутності маршрута
-	// Fastify 404 має body.error === 'Not Found', а наш 404 — інший error
-	const notRouteMissing = response.statusCode !== 404 ||
-		(response.json() as any)?.error !== "Not Found";
-
-	assert.ok(
-		notRouteMissing,
-		`Маршрут має існувати. Якщо 404 з error="Not Found", він зник.`
-	);
-
-	await app.close();
+test("(D) GET /api/inventory/:orgId/rules/:serviceId живой — перепись слепа на префикс плагина", async () => {
+	await assertRouteIsServed("GET", "/api/inventory/00000000-0000-0000-0000-000000000000/rules/00000000-0000-0000-0000-000000000000");
 });
 
-test("D3. POST /api/communications/outbox/:id/cancel — ІСНУЄ як конкретний маршрут", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "POST",
-		url: "/api/communications/outbox/test-id/cancel",
-		headers: { "content-type": "application/json" },
-	});
-
-	const notRouteMissing = response.statusCode !== 404 ||
-		(response.json() as any)?.error !== "Not Found";
-
-	assert.ok(
-		notRouteMissing,
-		`Маршрут має існувати (фронт викликає через action-параметр).`
-	);
-
-	await app.close();
+test("(D) POST /api/communications/outbox/:id/cancel живой — интерфейс зовёт его через переменную действия", async () => {
+	await assertRouteIsServed("POST", "/api/communications/outbox/00000000-0000-0000-0000-000000000000/cancel", {});
 });
 
-test("D5. POST /api/documents/:id/sign — ІСНУЄ як конкретний маршрут", async () => {
-	const app = await createDenteApiApp({ skipMigrationWorker: true });
-
-	const response = await app.inject({
-		method: "POST",
-		url: "/api/documents/test-doc-id/sign",
-		headers: { "content-type": "application/json" },
-	});
-
-	const notRouteMissing = response.statusCode !== 404 ||
-		(response.json() as any)?.error !== "Not Found";
-
-	assert.ok(
-		notRouteMissing,
-		`Маршрут має існувати (фронт викликає через action-параметр).`
-	);
-
-	await app.close();
+test("(D) POST /api/documents/:id/sign живой — интерфейс зовёт его через переменную действия", async () => {
+	await assertRouteIsServed("POST", "/api/documents/00000000-0000-0000-0000-000000000000/sign", {});
 });
