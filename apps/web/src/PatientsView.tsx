@@ -624,7 +624,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									{insight &&
 									(riskDistinguishes ||
 										nextActionDistinguishes ||
-										insight.balanceDueRub) ? (
+										insight.balanceDueRub ||
+										patient.status === "archived") ? (
 										/*
                       Классы у плашек явные, а не «первый ребёнок / не первый».
                       Позиционные селекторы в main.css при скрытии метки риска
@@ -633,6 +634,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                       порядка отрисовки не зависит.
                     */
 										<div className="patient-row-meta">
+											{patient.status === "archived" ? (
+												<span className="patient-risk-label" style={{ backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5' }}>
+													Черный список / Архив
+												</span>
+											) : null}
 											{riskDistinguishes ? (
 												<span className="patient-risk-label">
 													{patientInsightRiskLabels[insight.riskLevel]}
@@ -649,7 +655,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												</span>
 											) : null}
 										</div>
-									) : null}
+									) : (
+										patient.status === "archived" ? (
+											<div className="patient-row-meta">
+												<span className="patient-risk-label" style={{ backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5' }}>
+													Черный список / Архив
+												</span>
+											</div>
+										) : null
+									)}
 								</div>
 								<button
 									aria-label={`Открыть карточку пациента: ${patient.fullName}`}

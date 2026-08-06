@@ -25,6 +25,7 @@ import {
 import { EmptyState } from "./components/EmptyState";
 import { PatientAvatar } from "./components/PatientAvatar";
 import { countLabel } from "./lib/russianPlural";
+import { EmkControlBoard } from "./components/visit/EmkControlBoard";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {
@@ -549,6 +550,10 @@ export function ShiftView({
 							style={{ padding: "18px 16px" }}
 						/>
 					)}
+				</section>
+
+				<section className="shift-emk-control" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", boxShadow: "var(--shadow-1)" }}>
+					<EmkControlBoard dashboard={dashboard} />
 				</section>
 
 				<section

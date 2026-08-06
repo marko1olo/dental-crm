@@ -146,3 +146,38 @@ export async function setPatientArchiveStatusInDb(
 		inMemoryBlacklist.delete(`${orgId}:${patientId}`);
 	}
 }
+
+export async function archivePatientInDb(
+	orgId: string,
+	patientId: string,
+	patientName: string | undefined,
+	archiveReason: string,
+	isBlacklisted: boolean,
+	blacklistReason: string,
+	userId: string | null,
+) {
+	await db.transaction(async (tx) => {
+		// Update patient status
+		await tx
+			.update(patients)
+			.set({ status: "archived" })
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)));
+
+		// Insert archive reason
+		await tx.insert(patientArchiveReasonsAndBlacklists).values({
+			organizationId: orgId,
+			patientId: patientId,
+			patientName: patientName || "Пациент",
+			archiveReason: archiveReason,
+			isBlacklisted: isBlacklisted,
+			blacklistReason: blacklistReason || null,
+			isBookingBlocked: isBlacklisted,
+			warningBadge: isBlacklisted ? "⛔ ЧЕРНЫЙ СПИСОК (Запрет записи)" : "📁 АРХИВ",
+			archivedBy: userId,
+		});
+
+		if (isBlacklisted) {
+			inMemoryBlacklist.add(`${orgId}:${patientId}`);
+		}
+	});
+}

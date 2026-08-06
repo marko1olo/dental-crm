@@ -54,6 +54,9 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 	const [selectedReason, setSelectedReason] = useState<string>("");
 	const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
 	const [isApplying, setIsApplying] = useState<boolean>(false);
+	const [archiveReason, setArchiveReason] = useState<string>("");
+	const [modalIsBlacklisted, setModalIsBlacklisted] = useState<boolean>(false);
+	const [blacklistReason, setBlacklistReason] = useState<string>("");
 
 	// БЫЛО: ручная загрузка без сброса и без отмены. При переключении
 	// пациента виджет продолжал показывать статус предыдущего, а
@@ -83,6 +86,9 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 	useEffect(() => {
 		setOptimisticBlacklist(null);
 		setConfirmModalOpen(false);
+		setArchiveReason("");
+		setBlacklistReason("");
+		setModalIsBlacklisted(false);
 	}, [patientId]);
 
 	const patientIdRef = useRef(patientId);
@@ -119,22 +125,34 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 		const targetPatientId = patientId;
 		const newStatus = !isBlacklisted;
 		setIsApplying(true);
+		
+		const endpoint = newStatus 
+			? `/api/patients/${targetPatientId}/archive` 
+			: `/api/patients/${targetPatientId}/archive-status`;
+
+		const bodyPayload = newStatus
+			? { archiveReason, isBlacklisted: modalIsBlacklisted, blacklistReason }
+			: { isBlacklisted: newStatus };
+
+		if (newStatus && !archiveReason.trim()) {
+			showToast(actionFailureToast("Укажите причину архивации", 400), "error");
+			setIsApplying(false);
+			return;
+		}
+
 		try {
-			const res = await fetch(
-				`/api/patients/${targetPatientId}/archive-status`,
-				{
-					method: "POST",
-					headers: auth
-						? {
-								...auth.denteClinicalMutationHeaders(),
-								"Content-Type": "application/json",
-							}
-						: {
-								"Content-Type": "application/json",
-							},
-					body: JSON.stringify({ isBlacklisted: newStatus }),
-				},
-			);
+			const res = await fetch(endpoint, {
+				method: "POST",
+				headers: auth
+					? {
+							...auth.denteClinicalMutationHeaders(),
+							"Content-Type": "application/json",
+						}
+					: {
+							"Content-Type": "application/json",
+						},
+				body: JSON.stringify(bodyPayload),
+			});
 			// БЫЛО: ни .catch, ни проверки res.ok. При отказе сервера кнопка
 			// просто ничего не делала — оператор считал, что заблокировал.
 			if (!res.ok) {
@@ -239,7 +257,10 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 						<div className="flex items-center space-x-2">
 							<button
 								type="button"
-								onClick={() => setConfirmModalOpen(true)}
+								onClick={() => {
+									setModalIsBlacklisted(true);
+									setConfirmModalOpen(true);
+								}}
 								// Пока статус не загружен, isBlacklisted равен false по
 								// умолчанию: нажатие в этот момент предлагало бы «добавить
 								// в ЧС» пациента, который в нём уже есть.
@@ -272,13 +293,53 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 				<div className="mt-3 p-3 rounded-lg border bg-rose-50 border-rose-200 dark:bg-slate-800 dark:border-rose-800 space-y-2">
 					<div className="flex items-center space-x-2 text-rose-800 dark:text-rose-300 font-bold text-xs">
 						<AlertTriangle className="w-4 h-4" />
-						<span>Подтверждение действия</span>
+						<span>{!isBlacklisted ? "Архивация пациента" : "Подтверждение действия"}</span>
 					</div>
 					<p className="text-xs text-rose-700 dark:text-rose-300">
 						{!isBlacklisted
-							? `Вы собираетесь добавить в черный список: ${patientName ?? "выбранного пациента"}. Запись на прием будет заблокирована во всех клиниках сети.`
+							? `Вы собираетесь отправить в архив: ${patientName ?? "выбранного пациента"}.`
 							: `Снять блокировку записи с пациента: ${patientName ?? "выбранный пациент"}?`}
 					</p>
+					
+					{!isBlacklisted && (
+						<div className="space-y-3 mt-2">
+							<div>
+								<label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+									Причина архивации *
+								</label>
+								<input
+									type="text"
+									className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+									value={archiveReason}
+									onChange={(e) => setArchiveReason(e.target.value)}
+									placeholder="Например: Переезд, дубль..."
+								/>
+							</div>
+							<label className="flex items-center space-x-2 cursor-pointer">
+								<input
+									type="checkbox"
+									className="rounded border-slate-300"
+									checked={modalIsBlacklisted}
+									onChange={(e) => setModalIsBlacklisted(e.target.checked)}
+								/>
+								<span className="text-xs font-semibold text-rose-700 dark:text-rose-300">Добавить в Черный Список (запрет записи)</span>
+							</label>
+							{modalIsBlacklisted && (
+								<div>
+									<label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+										Причина занесения в ЧС
+									</label>
+									<textarea
+										className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+										value={blacklistReason}
+										onChange={(e) => setBlacklistReason(e.target.value)}
+										placeholder="Например: Агрессивное поведение, долг..."
+										rows={2}
+									/>
+								</div>
+							)}
+						</div>
+					)}
 					<div className="flex space-x-2 pt-1">
 						<button
 							type="button"
