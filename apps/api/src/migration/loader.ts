@@ -1,6 +1,7 @@
 import type { MigrationEntityKind } from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { withTenantCtx, type TenantDb } from "../db/rls.js";
 import {
   appointments,
   auditEvents,
@@ -178,8 +179,15 @@ async function migrationTimeZone(organizationId: string, entityTitle: string): P
 }
 
 /**
- * Тип транзакции Drizzle. Выводится из сигнатуры db.transaction, а не пишется
- * руками: при обновлении драйвера тип поедет вместе с ним.
+ * Тип ТОЧКИ СОХРАНЕНИЯ (вложенной транзакции). Выводится из сигнатуры
+ * db.transaction, а не пишется руками: при обновлении драйвера тип поедет
+ * вместе с ним.
+ *
+ * ЭТО НЕ ТО ЖЕ, ЧТО ВНЕШНИЙ ДЕСКРИПТОР. Партию теперь открывает withTenantCtx,
+ * и он отдаёт `TenantDb` (NodePgDatabase), а не `PgTransaction`: у последнего
+ * есть rollback/setTransaction, которых у первого нет. Вложенный вызов
+ * `tx.transaction(...)` внутри партии по-прежнему даёт настоящий PgTransaction —
+ * это и есть SAVEPOINT, и именно он описывается этим типом.
  */
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -325,7 +333,7 @@ function explainDatabaseError(error: unknown): { message: string; suggestedFix: 
  * платить за это разумно: цена альтернативы измеряется сотнями потерянных строк.
  */
 async function loadRowInSavepoint(
-  tx: DbTransaction,
+  tx: TenantDb,
   row: StagedRow,
   outcome: LoadOutcome,
   entityTitle: string,
@@ -347,11 +355,17 @@ async function loadRowInSavepoint(
       suggestedFix: `${explained.suggestedFix} Остальные строки партии загружены, эта ждёт в карантине.`
     });
     /**
-     * Статус строки выставляется ОТДЕЛЬНОЙ транзакцией, а не в tx: точка
-     * сохранения уже откачена, и запись внутри той же транзакции про неудачу
-     * этой же строки откатилась бы вместе с ней при следующем сбое.
+     * Статус строки выставляется через `tx` — транзакцию ПАРТИИ, а не через
+     * откаченную точку сохранения `savepoint`: откат точки сохранения не отменяет
+     * то, что записано в объемлющей транзакции после него.
+     *
+     * БЫЛО `db.update(...)` с обоснованием «отдельной транзакцией, а не в tx».
+     * Обоснование было неверным уже тогда: `db` — это Proxy, подставляющий
+     * АКТИВНУЮ транзакцию из transactionStorage, поэтому внутри партии он и так
+     * разрешался в тот же самый `tx`. Отдельной транзакции здесь никогда не было,
+     * была лишь её видимость. Теперь зависимость названа явно.
      */
-    await db
+    await tx
       .update(migrationStagingRecords)
       .set({ status: "quarantined", updatedAt: new Date() })
       .where(eq(migrationStagingRecords.id, row.stagingId))
@@ -453,7 +467,15 @@ export async function stageRows(input: {
 
   for (let offset = 0; offset < pending.length; offset += LOAD_BATCH_SIZE) {
     const batch = pending.slice(offset, offset + LOAD_BATCH_SIZE);
-    const inserted = await db
+    /*
+     * БЫЛО: голый `db` — вне обработчика маршрута это соединение без
+     * тенант-контекста, и INSERT в migration_staging_records под FORCE RLS падал
+     * с 42501 (единственная операция, которая под RLS отказывает ГРОМКО).
+     * СТАЛО: партия укладывается в своей короткой транзакции с арендатором.
+     * Границы — одна партия, чтобы не держать длинную транзакцию на весь прогон.
+     */
+    const inserted = await withTenantCtx(input.organizationId, async (tx) =>
+      tx
       .insert(migrationStagingRecords)
       .values(
         batch.map((item) => ({
@@ -488,7 +510,8 @@ export async function stageRows(input: {
           migrationStagingRecords.sourceRowNumber
         ]
       })
-      .returning({ id: migrationStagingRecords.id, sourceRowNumber: migrationStagingRecords.sourceRowNumber });
+      .returning({ id: migrationStagingRecords.id, sourceRowNumber: migrationStagingRecords.sourceRowNumber })
+    );
 
     const idByRowNumber = new Map(inserted.map((record) => [record.sourceRowNumber, record.id]));
 
@@ -498,16 +521,19 @@ export async function stageRows(input: {
       .map((item) => item.sourceRowNumber)
       .filter((rowNumber) => !idByRowNumber.has(rowNumber));
     if (missingRowNumbers.length > 0) {
-      const existing = await db
+      const existing = await withTenantCtx(input.organizationId, async (tx) =>
+        tx
         .select({ id: migrationStagingRecords.id, sourceRowNumber: migrationStagingRecords.sourceRowNumber })
         .from(migrationStagingRecords)
         .where(
           and(
             eq(migrationStagingRecords.runId, input.runId),
+            eq(migrationStagingRecords.organizationId, input.organizationId),
             eq(migrationStagingRecords.sourceTable, input.sourceTable),
             inArray(migrationStagingRecords.sourceRowNumber, missingRowNumbers)
           )
-        );
+        )
+      );
       for (const record of existing) idByRowNumber.set(record.sourceRowNumber, record.id);
     }
 
@@ -561,9 +587,11 @@ export async function recordQuarantine(input: {
      * же строки не должен плодить одинаковые записи. Уникальный индекс по
      * (staging_record_id, reason, field_path) с onConflictDoNothing.
      */
-    const inserted = await db.insert(migrationQuarantineRecords).values(batch).onConflictDoNothing().returning({
-      id: migrationQuarantineRecords.id
-    });
+    const inserted = await withTenantCtx(input.organizationId, async (tx) =>
+      tx.insert(migrationQuarantineRecords).values(batch).onConflictDoNothing().returning({
+        id: migrationQuarantineRecords.id
+      })
+    );
     written += inserted.length;
   }
   return written;
@@ -588,7 +616,8 @@ export async function loadEntityLinks(
   sourceSystem: string,
   entityKind: MigrationEntityKind
 ): Promise<Map<string, string>> {
-  const rows = await db
+  const rows = await withTenantCtx(organizationId, async (tx) =>
+    tx
     .select({
       sourceEntityId: migrationEntityLinks.sourceEntityId,
       targetEntityId: migrationEntityLinks.targetEntityId
@@ -600,7 +629,8 @@ export async function loadEntityLinks(
         eq(migrationEntityLinks.sourceSystem, sourceSystem),
         eq(migrationEntityLinks.entityKind, entityKind)
       )
-    );
+    )
+  );
   return new Map(rows.map((row) => [row.sourceEntityId, row.targetEntityId]));
 }
 
@@ -609,7 +639,8 @@ export async function buildPatientIdentityIndex(
   organizationId: string
 ): Promise<IdentityIndex<IdentityCandidate & { id: string }>> {
   const index = new IdentityIndex<IdentityCandidate & { id: string }>();
-  const existing = await db
+  const existing = await withTenantCtx(organizationId, async (tx) =>
+    tx
     .select({
       id: patients.id,
       fullName: patients.fullName,
@@ -618,7 +649,8 @@ export async function buildPatientIdentityIndex(
       email: patients.email
     })
     .from(patients)
-    .where(eq(patients.organizationId, organizationId));
+    .where(eq(patients.organizationId, organizationId))
+  );
 
   for (const patient of existing) {
     index.add({
@@ -670,7 +702,15 @@ export async function loadPatients(input: {
     const batch = loadable.slice(offset, offset + LOAD_BATCH_SIZE);
 
     try {
-      await db.transaction(async (tx) => {
+      /**
+       * БЫЛО `db.transaction(...)`. Транзакция открывалась БЕЗ тенант-контекста,
+       * поэтому из фонового воркера (вне обработчика маршрута) все запросы внутри
+       * неё попадали под RLS без `app.current_tenant`: чтения отдавали 0 строк
+       * молча, а INSERT падал с 42501. СТАЛО: withTenantCtx открывает ту же
+       * транзакцию, но с установленным арендатором. Границы транзакции не
+       * изменились — она по-прежнему на ОДНУ ПАРТИЮ, а не на весь прогон.
+       */
+      await withTenantCtx(input.organizationId, async (tx) => {
         for (const row of batch) {
           // Каждая строка в своей точке сохранения: отказ по одной не уносит партию.
           await loadRowInSavepoint(tx, row, outcome, "пациент", async (sp) => {
@@ -935,7 +975,15 @@ export async function loadAppointments(input: {
   for (let offset = 0; offset < loadable.length; offset += LOAD_BATCH_SIZE) {
     const batch = loadable.slice(offset, offset + LOAD_BATCH_SIZE);
     try {
-      await db.transaction(async (tx) => {
+      /**
+       * БЫЛО `db.transaction(...)`. Транзакция открывалась БЕЗ тенант-контекста,
+       * поэтому из фонового воркера (вне обработчика маршрута) все запросы внутри
+       * неё попадали под RLS без `app.current_tenant`: чтения отдавали 0 строк
+       * молча, а INSERT падал с 42501. СТАЛО: withTenantCtx открывает ту же
+       * транзакцию, но с установленным арендатором. Границы транзакции не
+       * изменились — она по-прежнему на ОДНУ ПАРТИЮ, а не на весь прогон.
+       */
+      await withTenantCtx(input.organizationId, async (tx) => {
         for (const row of batch) {
           // Каждая строка в своей точке сохранения: отказ по одной не уносит партию.
           await loadRowInSavepoint(tx, row, outcome, "запись расписания", async (sp) => {
@@ -1103,7 +1151,15 @@ export async function loadPayments(input: {
   for (let offset = 0; offset < loadable.length; offset += LOAD_BATCH_SIZE) {
     const batch = loadable.slice(offset, offset + LOAD_BATCH_SIZE);
     try {
-      await db.transaction(async (tx) => {
+      /**
+       * БЫЛО `db.transaction(...)`. Транзакция открывалась БЕЗ тенант-контекста,
+       * поэтому из фонового воркера (вне обработчика маршрута) все запросы внутри
+       * неё попадали под RLS без `app.current_tenant`: чтения отдавали 0 строк
+       * молча, а INSERT падал с 42501. СТАЛО: withTenantCtx открывает ту же
+       * транзакцию, но с установленным арендатором. Границы транзакции не
+       * изменились — она по-прежнему на ОДНУ ПАРТИЮ, а не на весь прогон.
+       */
+      await withTenantCtx(input.organizationId, async (tx) => {
         for (const row of batch) {
           // Каждая строка в своей точке сохранения: отказ по одной не уносит партию.
           await loadRowInSavepoint(tx, row, outcome, "платёж", async (sp) => {
@@ -1290,7 +1346,15 @@ export async function loadVisits(input: {
   for (let offset = 0; offset < loadable.length; offset += LOAD_BATCH_SIZE) {
     const batch = loadable.slice(offset, offset + LOAD_BATCH_SIZE);
     try {
-      await db.transaction(async (tx) => {
+      /**
+       * БЫЛО `db.transaction(...)`. Транзакция открывалась БЕЗ тенант-контекста,
+       * поэтому из фонового воркера (вне обработчика маршрута) все запросы внутри
+       * неё попадали под RLS без `app.current_tenant`: чтения отдавали 0 строк
+       * молча, а INSERT падал с 42501. СТАЛО: withTenantCtx открывает ту же
+       * транзакцию, но с установленным арендатором. Границы транзакции не
+       * изменились — она по-прежнему на ОДНУ ПАРТИЮ, а не на весь прогон.
+       */
+      await withTenantCtx(input.organizationId, async (tx) => {
         for (const row of batch) {
           // Каждая строка в своей точке сохранения: отказ по одной не уносит партию.
           await loadRowInSavepoint(tx, row, outcome, "приём", async (sp) => {

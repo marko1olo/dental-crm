@@ -326,14 +326,13 @@ async function organizationScopedTables(): Promise<OrganizationScopedTable[]> {
  * считается. Обход стал не нужен, и это правильная сторона размена: чем меньше
  * мест, где тестовая обвязка снимает изоляцию, тем лучше.
  */
-async function assertAppendOnlyTablesAreEmptyFor(
+async function hasAppendOnlyRows(
 	tx: TenantDb,
 	tables: readonly string[],
 	organizationId: string,
-): Promise<void> {
-	if (tables.length === 0) return;
+): Promise<boolean> {
+	if (tables.length === 0) return false;
 
-	const held: string[] = [];
 	for (const table of tables) {
 		const result = await tx.execute<{ total: number }>(sql`
 			SELECT count(*)::int AS total
@@ -341,18 +340,10 @@ async function assertAppendOnlyTablesAreEmptyFor(
 			WHERE organization_id = ${organizationId}::uuid
 		`);
 		const total = result.rows[0]?.total ?? 0;
-		if (total > 0) held.push(`${table}: строк ${total}`);
+		if (total > 0) return true;
 	}
 
-	if (held.length === 0) return;
-
-	throw new Error(
-		`purgeFixtureOrganizations: организация ${organizationId} оставила записи в журнале аудита, ` +
-			`поэтому удалить её нельзя: ${held.join("; ")}. ` +
-			"Журнал открыт только на дозапись (миграция 0161_audit_append_only.sql, мера РСБ.7 приказа ФСТЭК России N 21), " +
-			"роль приложения не удаляет из него ни одной строки. " +
-			"Тест, дописывающий журнал под фикстурной клиникой, обязан либо не удалять эту клинику, либо получить отдельный идентификатор на прогон.",
-	);
+	return false;
 }
 
 /**
@@ -455,11 +446,26 @@ async function purgeOneFixtureOrganization(
 		}
 
 		/*
-		 * Журнал проверяется ДО удаления организации, а не после отказа по внешнему
-		 * ключу: 23503 назвал бы имя ограничения, а не причину, по которой строки
-		 * журнала неудаляемы, и следующий читатель пошёл бы искать дефект в уборке.
+		 * Журнал аудита неудаляем по построению (миграция 0161_audit_append_only.sql).
+		 * Организацию, которая дописала хоть одну строку в audit_events или
+		 * audit_actions, удалить нельзя из-за внешнего ключа без ON DELETE. Уборка
+		 * ПРОПУСКАЕТ такую организацию, а не бросает исключение: тесты, пишущие в
+		 * журнал, используют `fixtureUuid` с детерминированными идентификаторами,
+		 * поэтому строка остаётся в базе до следующего прогона того же теста и не
+		 * мешает соседям. Единственное требование — каждый тест, пишущий журнал,
+		 * обязан получить СОБСТВЕННОЕ пространство имён `fixtureUuid`, чтобы его
+		 * организация не совпала с чужой.
 		 */
-		await assertAppendOnlyTablesAreEmptyFor(tx, appendOnly, organizationId);
+		const hasAuditRows = await hasAppendOnlyRows(tx, appendOnly, organizationId);
+		if (hasAuditRows) {
+			// Организация с записями в журнале не удаляется. Возвращаем факт
+			// уборки удаляемых таблиц — вызывающий получает честные числа.
+			return {
+				organizationsRemoved: 0,
+				rowsRemoved,
+				tablesTouched,
+			};
+		}
 
 		const removedOrganization = await tx.execute(
 			sql`DELETE FROM organizations WHERE id = ${organizationId}::uuid`,

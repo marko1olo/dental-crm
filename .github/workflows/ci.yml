@@ -1,0 +1,406 @@
+# CI — первая в этом репозитории сборка, которая ДЕЙСТВИТЕЛЬНО что-то проверяет.
+#
+# ЧТО БЫЛО ДО НЕЁ. В .github/workflows/ лежали пять файлов: три Pages-публикации,
+# stale.yml и welcome.yml. Ни одного вызова npm, node или npx во всём каталоге,
+# ни checkout с установкой зависимостей, ни компилятора. То есть ни один гейт,
+# тест или смоук этого репозитория не выполнялся ни разу ни одним автоматом:
+# 146 скриптов package.json не запускались автоматически никогда. Проверено
+# лично чтением всех пяти файлов — утверждение подтвердилось.
+#
+# ПРИНЦИП: ХРАПОВИК, А НЕ «ВСЁ ДОЛЖНО БЫТЬ ЗЕЛЕНО». Дерево не зелёное. Требовать
+# зелёного от красного дерева — значит выпустить сборку, красную с первого дня,
+# и её выключат за неделю. Поэтому проверки разделены на три класса:
+#   1. БЛОКИРУЮЩИЕ — то, что зелёное сегодня, замерено: typecheck (6 стадий),
+#      check:encoding, check:dynamic-imports, тесты @dental/shared и @dental/web.
+#      Их падение валит сборку.
+#   2. ХРАПОВИК — тесты @dental/api. Красные (63 fail). Сравниваются с
+#      зафиксированным потолком, падение только на РОСТЕ.
+#   3. НАБЛЮДЕНИЕ (continue-on-error) — check:tracked-ignored и смоуки. Красные
+#      или неизвестные, видимы в каждом прогоне, сборку не валят.
+#
+# БЕЗОПАСНОСТЬ. Репозиторий пережил утечку через Pages: в дереве ОТСЛЕЖИВАЮТСЯ
+# local-secrets/ai.env и local-secrets/groq.env с живыми ключами. Поэтому здесь:
+#   • permissions: contents: read и ничего больше;
+#   • НИ ОДНОГО upload-artifact. Любой выгруженный путь может унести секреты, а
+#     actions/checkout по умолчанию ещё и оставляет токен в .git/config
+#     (persist-credentials), поэтому он выключен;
+#   • группа конкурентности СВОЯ, не `pages` — в той уже дерутся три workflow;
+#   • pull_request, никогда pull_request_target: последний выдаёт форку токен на
+#     запись и секреты репозитория;
+#   • секретов не требуется ни одному заданию: сборка проходит на пустом
+#     окружении.
+#
+# ГЛАВНОЕ ВОЗРАЖЕНИЕ, КОТОРОЕ ЭТА СБОРКА НЕ ЗАКРЫВАЕТ И НЕ МОЖЕТ ЗАКРЫТЬ.
+# `pull_request` из форка НЕ получает секретов и получает токен только на чтение,
+# но checkout восстанавливает merge-коммит, а в нём лежат отслеживаемые
+# local-secrets/*.env. Форк-PR, дописавший себе шаг с curl, выгрузит их наружу:
+# workflow на pull_request берётся ИЗ ФОРКА, не из базовой ветки. Первый барьер
+# здесь — настройка «Require approval for first-time contributors» (включена по
+# умолчанию), но она не защита, а задержка. Настоящая причина в другом: кто может
+# открыть форк-PR, тот может просто склонировать репозиторий и прочитать те же
+# файлы без всякого CI. Ключи из local-secrets/*.env обязаны быть ОТОЗВАНЫ И
+# ПЕРЕВЫПУЩЕНЫ владельцем, а файлы сняты с отслеживания. Эта сборка не делает
+# утечку хуже; она и не делает её лучше.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Минимум. Заданиям нужно только прочитать дерево: они не комментируют PR,
+# не пишут в Pages, не публикуют пакеты. Указание любого ключа сбрасывает все
+# остальные области в none — это здесь и требуется.
+permissions:
+  contents: read
+
+# СВОЯ группа, и github.workflow в ней обязателен: одинаковое имя группы в двух
+# workflow заставляет их отменять прогоны друг друга. Группу `pages` не трогаем.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Явно, потому что от версии Node зависят ЧИСЛА, на которые опирается храповик.
+  # На ubuntu-latest предустановлен Node 22 (Node 20 удалён из образов в мае
+  # 2026), но все базовые замеры этого репозитория сняты на Node 24.13.0, и
+  # менять компилятор одновременно с введением CI — значит не знать, чем вызвано
+  # расхождение. В репозитории нет ни engines, ни .nvmrc: это отдельный долг.
+  NODE_VERSION: '24'
+
+jobs:
+  # ===========================================================================
+  # СТАТИКА. Базы не требует, поэтому идёт первым и падает быстро.
+  # Все проверки здесь замерены зелёными локально 2026-08-05.
+  # ===========================================================================
+  static:
+    name: Статика (typecheck, кодировка, импорты)
+    runs-on: ubuntu-latest
+    # Локально typecheck занял ~2 минуты. 20 минут — потолок с запасом на
+    # холодный npm ci. Умолчание GitHub — 360 минут: без явного таймаута
+    # зависший процесс жжёт шесть часов оплаченного времени.
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # По умолчанию checkout оставляет GITHUB_TOKEN в .git/config. Здесь
+          # из CI никуда не пушат, а токен в рабочей копии — это утечка,
+          # ожидающая случая.
+          persist-credentials: false
+
+      - name: Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # Один package-lock.json в корне (npm workspaces больше и не делает),
+          # поэтому cache-dependency-path не нужен: глоб по **/package-lock.json
+          # в workspaces-репозитории только ловит чужие файлы и портит ключ.
+          cache: 'npm'
+
+      # npm ci, не npm install: ci падает при рассогласовании lock и package.json,
+      # а install молча их подгоняет. Рассогласование lock — самая частая причина
+      # «у меня работает».
+      - name: npm ci
+        run: npm ci
+
+      # ВАЖНО: пакет @dental/shared публикует dist/, и 38 тестов API плюс
+      # 17 тестов веба импортируют его. В дереве dist/ отслеживается (24 файла),
+      # но полагаться на это нельзя — сборка обязана работать от исходников.
+      - name: Сборка @dental/shared
+        run: npm run build -w @dental/shared
+
+      # 6 стадий. Признак полного прогона — 6 вхождений '> @dental'; если
+      # цепочка порвётся на середине, npm вернёт ненулевой код, но точное число
+      # стадий печатается в лог, чтобы усечённый прогон был виден глазами.
+      - name: typecheck (6 стадий)
+        run: |
+          set -o pipefail
+          npm run typecheck 2>&1 | tee /tmp/typecheck.log
+          stages=$(grep -c '^> @dental' /tmp/typecheck.log || true)
+          echo "стадий пройдено: ${stages} (ожидается 6)"
+          if [ "${stages}" -lt 6 ]; then
+            echo "::error::typecheck прошёл ${stages} стадий из 6 — цепочка порвалась"
+            exit 1
+          fi
+
+      - name: check:encoding
+        run: npm run check:encoding
+
+      - name: check:dynamic-imports
+        run: npm run check:dynamic-imports
+
+      # ХРАПОВИК ПО ДОЛГУ. check:tracked-ignored красный ПО ДЕЛУ: 3443 файла при
+      # бюджете 3168. Его собственное сообщение прямо запрещает поднимать бюджет
+      # ради зелёного. Обоснование continue-on-error здесь — в отчёте и в
+      # тексте ниже: бюджет НЕ ПОДНЯТ, проверка НЕ ВЫКЛЮЧЕНА, она печатает
+      # разрыв в каждом прогоне и в сводку, но не блокирует единственный способ
+      # вообще начать пользоваться CI. Снять continue-on-error нужно тем же
+      # коммитом, которым разрыв закроют.
+      - name: 'check:tracked-ignored (наблюдение, не блокирует)'
+        id: tracked
+        continue-on-error: true
+        run: npm run check:tracked-ignored
+
+      - name: 'check:tracked-ignored — вердикт в сводку'
+        if: always()
+        env:
+          OUTCOME: ${{ steps.tracked.outcome }}
+        run: |
+          {
+            echo "## check:tracked-ignored — ${OUTCOME}"
+            echo
+            if [ "${OUTCOME}" = "success" ]; then
+              echo "Разрыв закрыт. СНИМИТЕ continue-on-error с этого шага в ci.yml,"
+              echo "иначе проверка навсегда останется необязательной."
+            else
+              echo "Красный ПО ДЕЛУ (локальный замер 2026-08-05: 3443 файла при бюджете 3168)."
+              echo "Бюджет поднимать запрещено — это выключение проверки."
+              echo "Сборку намеренно не валит: иначе CI красный с первого дня и его выключат."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ===========================================================================
+  # ТЕСТЫ БЕЗ БАЗЫ. shared и web базы не требуют — проверено: ни один их тест
+  # не обращается к apps/api/src/db/client. Замер: web 1274/1274 зелёных.
+  # Блокирующее задание.
+  # ===========================================================================
+  tests-no-db:
+    name: Тесты shared + web (блокирующие)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Сборка @dental/shared
+        run: npm run build -w @dental/shared
+
+      - name: Тесты @dental/shared
+        run: npm run test -w @dental/shared
+
+      - name: Тесты @dental/web
+        run: npm run test -w @dental/web
+
+  # ===========================================================================
+  # ТЕСТЫ API — ХРАПОВИК. Набор красный (63 fail локально), поэтому исход
+  # задания решает не код возврата набора, а сравнение с потолком.
+  # ===========================================================================
+  tests-api:
+    name: Тесты API (храповик)
+    runs-on: ubuntu-latest
+    # Набор уже висел вечно (EXIT=124). Умолчание GitHub — 360 минут. Явный
+    # таймаут — единственное, что мешает зависанию сжечь шесть часов. Если
+    # задание убьют по таймауту, сводка node --test в лог не попадёт, и
+    # храповик завершится с EXIT=1 (см. api-test-ratchet.mjs): зависание не
+    # может притвориться успехом.
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        # Тег major, не latest: на этой машине сервер 18.4, и расхождение
+        # major уже приводило к отказам инструментов. postgres:18 — это 18.4.
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        # Эти опции И ЕСТЬ ожидание готовности: runner не начнёт шаги, пока
+        # контейнер не станет healthy. Отдельный цикл ожидания не нужен, а
+        # pg_isready выполняется ВНУТРИ контейнера, поэтому клиент на runner
+        # не требуется.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      ADMIN_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      CI_DB_NAME: dental_crm
+      CI_DB_ROLE: dental
+      CI_DB_PASSWORD: dental
+      # Тот же адрес читают и db:migrate, и тесты. Загрузчик окружения
+      # (apps/api/src/env/loadServerEnv.ts) выставляет значение ТОЛЬКО если
+      # переменной ещё нет, поэтому process.env побеждает любой .env-файл.
+      # Ни .env, ни apps/api/.env в git не отслеживаются, так что в CI их и нет.
+      DATABASE_URL: postgres://dental:dental@localhost:5432/dental_crm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # На машине разработчика npm ci ЗАПРЕЩЁН: он сносит недекларированный
+      # embedded-postgres и лишает машину сервера базы (.agents/DATABASE.md).
+      # Здесь это безопасно ровно потому, что на runner никакого локального
+      # сервера нет — база приезжает сервисным контейнером выше.
+      - name: npm ci
+        run: npm ci
+
+      - name: Сборка @dental/shared
+        run: npm run build -w @dental/shared
+
+      # Без этого шага миграция 0161 падает на «role "dental" does not exist»,
+      # а роль-суперпользователь молча отключила бы RLS. Подробности — в шапке
+      # ci-provision-db.mjs.
+      - name: Роль и база
+        run: node .github/workflows/ci-provision-db.mjs
+
+      - name: 'db:migrate:check (сухой прогон)'
+        run: npm run db:migrate:check
+
+      - name: 'db:migrate (132 файла)'
+        run: npm run db:migrate
+
+      # Код возврата набора здесь намеренно НЕ решает исход: набор красный, его
+      # EXIT=1 ожидаем. Решает храповик на следующем шаге.
+      - name: Прогон набора @dental/api
+        run: |
+          set +e
+          npm run test -w @dental/api 2>&1 | tee "$RUNNER_TEMP/api-tests.log"
+          echo "код возврата набора: ${PIPESTATUS[0]} (исход задания решает храповик)"
+          exit 0
+
+      # Лог кладётся в RUNNER_TEMP, а НЕ в рабочую копию: в дереве отслеживаются
+      # секреты и 270 сгенерированных документов, и любой файл, оставленный в
+      # рабочей копии, — кандидат на случайную выгрузку. Артефакты здесь не
+      # выгружаются вообще; в сводку уходят только разобранные числа.
+      - name: Храповик
+        run: |
+          node .github/workflows/api-test-ratchet.mjs \
+            --log "$RUNNER_TEMP/api-tests.log" \
+            --ceiling .github/workflows/api-test-ceiling.json
+
+  # ===========================================================================
+  # СМОУКИ — НАБЛЮДЕНИЕ. 126 скриптов, которые сегодня не входят никуда и
+  # потому гниют невидимо. Задание их прогоняет и печатает сводку, НЕ валя
+  # сборку.
+  #
+  # ЧЕСТНОЕ ПРЕДУПРЕЖДЕНИЕ О КАЧЕСТВЕ ЭТОГО СИГНАЛА. Часть смоуков писалась на
+  # Windows и на Linux упадёт по причинам, не связанным с кодом: 10 скриптов
+  # содержат жёсткие пути вида C:\Program Files\Microsoft\Edge\Application\
+  # msedge.exe, ещё 15 ждут живой сервер на 127.0.0.1, который здесь никто не
+  # поднимает. То есть первый прогон покажет заведомо завышенное число падений.
+  # Задание всё равно полезно: остальные ~100 смоуков — статический разбор
+  # исходников, они на Linux работают, и их гниение станет видимым впервые.
+  # Ставить сюда храповик по числу падений СЕЙЧАС нельзя: смешивать поломки
+  # кода с поломками платформы в одно число — это гейт, который обвиняет
+  # невиновного, ровно как check:guarded-headers с его 89 % ложных срабатываний.
+  # Сначала кто-то должен сделать эти 25 скриптов платформенно-нейтральными или
+  # завести им явный список исключений (правка scripts/ и package.json — вне
+  # границ этой задачи), и только потом храповик.
+  # ===========================================================================
+  smoke:
+    name: Смоуки (наблюдение, не блокирует)
+    runs-on: ubuntu-latest
+    # Прогон последовательный и БЕЗ таймаута на отдельный смоук
+    # (scripts/run-smoke-suite.mjs: цикл for с await, ограничения времени нет).
+    # Один зависший скрипт повесит все 126. Таймаут задания — единственная
+    # защита.
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      ADMIN_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      CI_DB_NAME: dental_crm
+      CI_DB_ROLE: dental
+      CI_DB_PASSWORD: dental
+      DATABASE_URL: postgres://dental:dental@localhost:5432/dental_crm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Сборка @dental/shared
+        run: npm run build -w @dental/shared
+
+      - name: Роль и база
+        run: node .github/workflows/ci-provision-db.mjs
+
+      - name: 'db:migrate'
+        run: npm run db:migrate
+
+      # smoke:all не запускает smoke:schedule-configuration: тот начинается с
+      # `npm run db:reset-seed`, а runner отбирает только команды, начинающиеся
+      # с `node `. Разрушительный сид в CI не выполняется — проверено чтением
+      # scripts/run-smoke-suite.mjs.
+      - name: 'smoke:all (126 скриптов)'
+        id: smoke
+        continue-on-error: true
+        run: |
+          set +e
+          npm run smoke:all 2>&1 | tee "$RUNNER_TEMP/smoke.log"
+          exit 0
+
+      - name: Сводка смоуков
+        if: always()
+        run: |
+          {
+            echo "## Смоуки — наблюдение, сборку не валят"
+            echo
+            if [ -f "$RUNNER_TEMP/smoke.log" ] && grep -m1 '^SUMMARY total=' "$RUNNER_TEMP/smoke.log"; then
+              echo
+              echo 'Упавшие:'
+              echo '```'
+              grep '^FAILED ' "$RUNNER_TEMP/smoke.log" | head -60 || true
+              echo '```'
+              echo 'Часть падений заведомо платформенные: 10 скриптов зашивают путь к msedge.exe,'
+              echo '15 ждут сервер на 127.0.0.1. Разбирать список глазами, а не по числу.'
+            else
+              echo 'Строка SUMMARY не найдена — прогон не дошёл до конца (таймаут или падение runner).'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+
+
+

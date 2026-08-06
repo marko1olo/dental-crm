@@ -6,7 +6,7 @@ import type {
 } from "@dental/shared";
 import { formatKopecksRu, kopecksToNumericString, parseKopecks } from "@dental/shared";
 import { and, count, eq, sql } from "drizzle-orm";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { migrationQuarantineRecords, migrationReconciliations, migrationStagingRecords } from "../db/schema.js";
 
 /**
@@ -58,16 +58,18 @@ interface StatusTally {
   total: number;
 }
 
-async function tallyByStatus(runId: string): Promise<Map<MigrationEntityKind, StatusTally>> {
-  const rows = await db
+async function tallyByStatus(runId: string, organizationId: string): Promise<Map<MigrationEntityKind, StatusTally>> {
+  const rows = await withTenantCtx(organizationId, async (tx) =>
+    tx
     .select({
       entityKind: migrationStagingRecords.entityKind,
       status: migrationStagingRecords.status,
       rows: count()
     })
     .from(migrationStagingRecords)
-    .where(eq(migrationStagingRecords.runId, runId))
-    .groupBy(migrationStagingRecords.entityKind, migrationStagingRecords.status);
+    .where(and(eq(migrationStagingRecords.runId, runId), eq(migrationStagingRecords.organizationId, organizationId)))
+    .groupBy(migrationStagingRecords.entityKind, migrationStagingRecords.status)
+  );
 
   const result = new Map<MigrationEntityKind, StatusTally>();
   for (const row of rows) {
@@ -153,21 +155,30 @@ interface MoneyTotals {
  * что колонка считалась целочисленной. Колонка — numeric(12, 2), и это
  * округление само порождало расхождение, которое отчёт затем «раскрывал».
  */
-async function moneyTotals(runId: string): Promise<MoneyTotals> {
+async function moneyTotals(runId: string, organizationId: string): Promise<MoneyTotals> {
   const kopecksExpression = sql`(${migrationStagingRecords.normalizedJson} ->> 'amountKopecks')::numeric`;
   const rublesExpression = sql`(${migrationStagingRecords.normalizedJson} ->> 'amountRub')::numeric`;
   const loadedCondition = sql`${migrationStagingRecords.status} in ('loaded','updated')`;
   const quarantinedCondition = sql`${migrationStagingRecords.status} = 'quarantined'`;
 
-  const [row] = await db
-    .select({
-      stagedKopecks: sql<string>`coalesce(sum(${kopecksExpression}), 0)`,
-      loadedKopecks: sql<string>`coalesce(sum(case when ${loadedCondition} then ${kopecksExpression} else 0 end), 0)`,
-      quarantinedKopecks: sql<string>`coalesce(sum(case when ${quarantinedCondition} then ${kopecksExpression} else 0 end), 0)`,
-      loadedRubles: sql<string>`coalesce(sum(case when ${loadedCondition} then ${rublesExpression} else 0 end), 0)`
-    })
-    .from(migrationStagingRecords)
-    .where(and(eq(migrationStagingRecords.runId, runId), eq(migrationStagingRecords.entityKind, "payment")));
+  const row = await withTenantCtx(organizationId, async (tx) => {
+    const [found] = await tx
+      .select({
+        stagedKopecks: sql<string>`coalesce(sum(${kopecksExpression}), 0)`,
+        loadedKopecks: sql<string>`coalesce(sum(case when ${loadedCondition} then ${kopecksExpression} else 0 end), 0)`,
+        quarantinedKopecks: sql<string>`coalesce(sum(case when ${quarantinedCondition} then ${kopecksExpression} else 0 end), 0)`,
+        loadedRubles: sql<string>`coalesce(sum(case when ${loadedCondition} then ${rublesExpression} else 0 end), 0)`
+      })
+      .from(migrationStagingRecords)
+      .where(
+        and(
+          eq(migrationStagingRecords.runId, runId),
+          eq(migrationStagingRecords.organizationId, organizationId),
+          eq(migrationStagingRecords.entityKind, "payment")
+        )
+      );
+    return found;
+  });
 
   return {
     // amountKopecks — уже целые копейки: сумма целых по numeric приходит строкой
@@ -187,7 +198,7 @@ function rublesFromKopecks(kopecks: number): number {
 }
 
 export async function reconcileRun(input: ReconcileInput): Promise<MigrationReconciliationReport> {
-  const byEntity = await tallyByStatus(input.runId);
+  const byEntity = await tallyByStatus(input.runId, input.organizationId);
   const checks: MigrationReconciliationCheck[] = [];
 
   const totals = {
@@ -279,16 +290,20 @@ export async function reconcileRun(input: ReconcileInput): Promise<MigrationReco
   // ------------------------------------------------------------------
   // Проверка 4: у каждой загруженной строки есть созданная сущность.
   // ------------------------------------------------------------------
-  const [orphan] = await db
-    .select({ rows: count() })
-    .from(migrationStagingRecords)
-    .where(
-      and(
-        eq(migrationStagingRecords.runId, input.runId),
-        sql`${migrationStagingRecords.status} in ('loaded','updated')`,
-        sql`${migrationStagingRecords.targetEntityId} is null`
-      )
-    );
+  const orphan = await withTenantCtx(input.organizationId, async (tx) => {
+    const [found] = await tx
+      .select({ rows: count() })
+      .from(migrationStagingRecords)
+      .where(
+        and(
+          eq(migrationStagingRecords.runId, input.runId),
+          eq(migrationStagingRecords.organizationId, input.organizationId),
+          sql`${migrationStagingRecords.status} in ('loaded','updated')`,
+          sql`${migrationStagingRecords.targetEntityId} is null`
+        )
+      );
+    return found;
+  });
   const orphanCount = Number(orphan?.rows ?? 0);
   checks.push({
     code: "loaded_rows_have_target",
@@ -305,7 +320,7 @@ export async function reconcileRun(input: ReconcileInput): Promise<MigrationReco
   // ------------------------------------------------------------------
   // Проверка 5: деньги. Отдельно от строк.
   // ------------------------------------------------------------------
-  const money = await moneyTotals(input.runId);
+  const money = await moneyTotals(input.runId, input.organizationId);
   const paymentTally = byEntity.get("payment");
 
   if (paymentTally && paymentTally.total > 0) {
@@ -387,10 +402,19 @@ export async function reconcileRun(input: ReconcileInput): Promise<MigrationReco
   // ------------------------------------------------------------------
   // Проверка 6: карантин соответствует изолированным строкам.
   // ------------------------------------------------------------------
-  const [quarantineRows] = await db
-    .select({ rows: sql<string>`count(distinct ${migrationQuarantineRecords.stagingRecordId})` })
-    .from(migrationQuarantineRecords)
-    .where(and(eq(migrationQuarantineRecords.runId, input.runId), eq(migrationQuarantineRecords.blocking, true)));
+  const quarantineRows = await withTenantCtx(input.organizationId, async (tx) => {
+    const [found] = await tx
+      .select({ rows: sql<string>`count(distinct ${migrationQuarantineRecords.stagingRecordId})` })
+      .from(migrationQuarantineRecords)
+      .where(
+        and(
+          eq(migrationQuarantineRecords.runId, input.runId),
+          eq(migrationQuarantineRecords.organizationId, input.organizationId),
+          eq(migrationQuarantineRecords.blocking, true)
+        )
+      );
+    return found;
+  });
   const quarantineDistinct = Number(quarantineRows?.rows ?? 0);
 
   checks.push({
@@ -434,15 +458,17 @@ export async function reconcileRun(input: ReconcileInput): Promise<MigrationReco
    * переноса должно быть воспроизводимым спустя год, когда содержимое боевых
    * таблиц уже изменилось работой клиники.
    */
-  await db.insert(migrationReconciliations).values({
-    runId: input.runId,
-    organizationId: input.organizationId,
-    balanced,
-    checksJson: checks,
-    entityBreakdownJson: entityBreakdown,
-    sourceMoneyTotalRub: report.sourceMoneyTotalRub,
-    loadedMoneyTotalRub: report.loadedMoneyTotalRub,
-    quarantinedMoneyTotalRub: report.quarantinedMoneyTotalRub
+  await withTenantCtx(input.organizationId, async (tx) => {
+    await tx.insert(migrationReconciliations).values({
+      runId: input.runId,
+      organizationId: input.organizationId,
+      balanced,
+      checksJson: checks,
+      entityBreakdownJson: entityBreakdown,
+      sourceMoneyTotalRub: report.sourceMoneyTotalRub,
+      loadedMoneyTotalRub: report.loadedMoneyTotalRub,
+      quarantinedMoneyTotalRub: report.quarantinedMoneyTotalRub
+    });
   });
 
   return report;

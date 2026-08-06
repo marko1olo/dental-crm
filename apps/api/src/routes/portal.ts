@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import { requireAuthTokenSecret } from "../accessGuard.js";
+import { namedDevelopmentModeActive, requireAuthTokenSecret } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
@@ -194,8 +194,43 @@ function readPortalOtpPolicy(): PortalOtpPolicy {
 	};
 }
 
-function isProductionRuntime(): boolean {
-	return process.env.NODE_ENV === "production";
+/**
+ * Разрешено ли выводить одноразовый код входа в журнал сервера вместо SMS.
+ *
+ * ЧТО ЗДЕСЬ БЫЛО ДЫРОЙ. Функция называлась isProductionRuntime() и возвращала
+ * `process.env.NODE_ENV === "production"`, а ветка журнала включалась условием
+ * `!smsConfigured && !isProductionRuntime()`. Комментарий над ней утверждал,
+ * что ветка «физически недостижима при NODE_ENV=production», и это правда — но
+ * ровно ничего не значит. `apps/api/package.json` объявляет
+ * `"start": "node dist/server.js"` и NODE_ENV не задаёт, ни один Dockerfile
+ * тоже: у заказчика NODE_ENV ПУСТ, `=== "production"` ложно, и ветка была
+ * достижима на боевом сервере. Клинике достаточно не подключить SMS-шлюз — и
+ * одноразовые коды входа в личный кабинет ВСЕХ пациентов начинают писаться в
+ * журнал сервера. Кто читает журналы (администратор, подрядчик, система сбора
+ * логов, любой, кто добрался до файла), входит в личный кабинет любого
+ * пациента: визиты, планы лечения, счета, выданные документы. Это CWE-532,
+ * запись секрета аутентификации в журнал.
+ *
+ * СТАЛО: `namedDevelopmentModeActive()` из accessGuard.ts — ветка журнала
+ * работает, только если ЯВНО назван режим разработки (`development`/`test`).
+ * Пустой, незаданный или незнакомый NODE_ENV («staging», «prod», опечатка)
+ * режимом разработки не считается: сервер честно отвечает 503
+ * OtpDeliveryNotConfigured и НЕ пишет код никуда. Предикат перевёрнут вместе с
+ * именем — функция теперь называет то, что разрешает, а не то, что запрещает,
+ * потому что прежнее имя описывало производственный режим, а решался по нему
+ * вопрос о режиме разработки.
+ *
+ * ТОМУ, КТО ЧЕРЕЗ ПОЛГОДА ЗАХОЧЕТ «ВЕРНУТЬ КАК БЫЛО». Симптом: «вход в личный
+ * кабинет отвечает 503, а раньше код появлялся в логе». Раньше он появлялся
+ * потому, что защита была выключена пустым окружением. Правильный выход один:
+ * подключить клинике SMS-шлюз (DENTE_SMS_PROVIDER и учётные данные) — тогда код
+ * уходит пациенту настоящей SMS и в журнал не попадает вовсе. Для локальной
+ * отладки без шлюза выставьте NODE_ENV=development. Возврат к проверке
+ * `=== "production"` в любом виде снова начнёт печатать коды доступа пациентов
+ * в журнал боевого сервера.
+ */
+function developerLogFallbackAllowed(): boolean {
+	return namedDevelopmentModeActive();
 }
 
 /**
@@ -321,12 +356,14 @@ export const portalRoutes: FastifyPluginAsync = async (
 			const smsConfigured = readSmsCredentialsFromEnv() !== null;
 			/*
 			 * Ветка для разработки. Условия, при которых она допустима, выполнены
-			 * все три: она физически недостижима при NODE_ENV=production, код в ней
-			 * генерируется на каждый запрос тем же CSPRNG (никаких «0000»), и о её
-			 * срабатывании громко пишется в журнал сервера. Код уходит ТОЛЬКО в
-			 * журнал — в теле HTTP-ответа его нет даже здесь.
+			 * все три: она достижима ТОЛЬКО при явно названном режиме разработки
+			 * (NODE_ENV=development либо test — см. developerLogFallbackAllowed
+			 * выше; пустой и незнакомый NODE_ENV её больше не открывают), код в
+			 * ней генерируется на каждый запрос тем же CSPRNG (никаких «0000»), и
+			 * о её срабатывании громко пишется в журнал сервера. Код уходит ТОЛЬКО
+			 * в журнал — в теле HTTP-ответа его нет даже здесь.
 			 */
-			const developerLogFallback = !smsConfigured && !isProductionRuntime();
+			const developerLogFallback = !smsConfigured && developerLogFallbackAllowed();
 
 			/*
 			 * Ответ, одинаковый для «пациент найден», «такого номера нет»,

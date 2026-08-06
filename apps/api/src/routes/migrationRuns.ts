@@ -461,7 +461,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
         sourceSystem: "legacy",
         mappingOverrides: []
       });
-      const counts = await countStagingByStatus(request.params.runId);
+      const counts = await countStagingByStatus(request.params.runId, context.organizationId);
       reply.code(200);
       return {
         runId: request.params.runId,
@@ -513,7 +513,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
       return fail(reply, 409, "RunAlreadyQueued", "Прогон уже стоит в очереди на выполнение.");
     }
 
-    const queued = await enqueueRun(request.params.runId, parsed.data.dryRun);
+    const queued = await enqueueRun(request.params.runId, context.organizationId, parsed.data.dryRun);
     if (!queued) {
       return fail(
         reply,
@@ -548,7 +548,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
     if (!run) {
       return fail(reply, 404, "RunNotFound", "Прогон переноса не найден в этой организации.");
     }
-    const staging = await countStagingByStatus(run.id);
+    const staging = await countStagingByStatus(run.id, context.organizationId);
     reply.code(200);
     return { run: runStatusPayload(run), staging, mapping: run.mappingJson };
   });

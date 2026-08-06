@@ -29,7 +29,17 @@ import {
 	type VisitCloseChecklist,
 } from "@dental/shared";
 import { db, pool } from "./client.js";
+import { organizations, patients, visits, imagingStudies } from "./schema.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../tests/support/fixtureOrganizations.js";
 import { acceptVisitDraftInDb } from "./visitsQuery.js";
+
+const NAMESPACE = "dbVisitsQuery";
+const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
+const FILLED_PATIENT_ID = fixtureUuid(NAMESPACE, 2);
+const EMPTY_PATIENT_ID = fixtureUuid(NAMESPACE, 3);
+const FILLED_VISIT_ID = fixtureUuid(NAMESPACE, 10);
+const EMPTY_VISIT_ID = fixtureUuid(NAMESPACE, 11);
+const IMAGING_STUDY_ID = fixtureUuid(NAMESPACE, 20);
 
 type IdRow = { readonly id: string };
 
@@ -66,80 +76,75 @@ function itemOf(checklist: VisitCloseChecklist, id: string) {
 const PATIENT_MARK = "Сторож подписания приёма (удалить)";
 
 describe("acceptVisitDraftInDb: ответ по контракту и привязка карточки к приёму", () => {
-	let organizationId = "";
-	let filledPatientId = "";
-	let emptyPatientId = "";
-	let filledVisitId = "";
-	let emptyVisitId = "";
-	let imagingStudyId = "";
 
 	before(async () => {
-		const organization = await firstRow<IdRow>(
-			sql`select id::text as id from organizations order by name limit 1`,
-		);
-		assert.ok(organization, "в базе нет ни одной клиники — подписывать приём не для кого");
-		organizationId = organization.id;
+		// Уборка следов прерванного прогона ДО посева: см. докстринг фикстуры.
+		await purgeFixtureOrganizations([ORGANIZATION_ID]);
 
-		const filledPatient = await firstRow<IdRow>(
-			sql`insert into patients (organization_id, full_name, status)
-			     values (${organizationId}, ${`${PATIENT_MARK} 1`}, 'active')
-			     returning id::text as id`,
-		);
-		const emptyPatient = await firstRow<IdRow>(
-			sql`insert into patients (organization_id, full_name, status)
-			     values (${organizationId}, ${`${PATIENT_MARK} 2`}, 'active')
-			     returning id::text as id`,
-		);
-		assert.ok(filledPatient && emptyPatient, "пациенты для проверки не созданы");
-		filledPatientId = filledPatient.id;
-		emptyPatientId = emptyPatient.id;
-
-		const filledVisit = await firstRow<IdRow>(
-			sql`insert into visits (organization_id, patient_id, status, revision)
-			     values (${organizationId}, ${filledPatientId}, 'draft', 1)
-			     returning id::text as id`,
-		);
-		const emptyVisit = await firstRow<IdRow>(
-			sql`insert into visits (organization_id, patient_id, status, revision)
-			     values (${organizationId}, ${emptyPatientId}, 'draft', 1)
-			     returning id::text as id`,
-		);
-		assert.ok(filledVisit && emptyVisit, "приёмы для проверки не созданы");
-		filledVisitId = filledVisit.id;
-		emptyVisitId = emptyVisit.id;
-
-		// Непроверенный снимок ровно у ОДНОГО приёма: если карточка соберётся по
-		// общему состоянию, а не по приёму, оба приёма получат один и тот же пункт.
-		const study = await firstRow<IdRow>(
-			sql`insert into imaging_studies
-			      (organization_id, patient_id, visit_id, kind, title, captured_at, source_kind, source_name, status)
-			     values (${organizationId}, ${filledPatientId}, ${filledVisitId}, 'periapical',
-			             ${"Прицельный снимок 36"}, now(), 'manual_upload', ${"Сторож подписания"}, 'needs_review')
-			     returning id::text as id`,
-		);
-		assert.ok(study, "снимок для проверки не создан");
-		imagingStudyId = study.id;
+		// Весь сев — под контекстом своей клиники: в WITH CHECK тенант-таблиц стоит
+		// только `organization_id = current_tenant`, без дизъюнкта обхода, поэтому
+		// вставка без контекста отвергается кодом 42501.
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.insert(organizations).values({
+				id: ORGANIZATION_ID,
+				name: "Сторож ответа acceptVisitDraftInDb",
+			});
+			await db.insert(patients).values({
+				id: FILLED_PATIENT_ID,
+				organizationId: ORGANIZATION_ID,
+				fullName: `${PATIENT_MARK} 1`,
+				status: "active",
+			});
+			await db.insert(patients).values({
+				id: EMPTY_PATIENT_ID,
+				organizationId: ORGANIZATION_ID,
+				fullName: `${PATIENT_MARK} 2`,
+				status: "active",
+			});
+			await db.insert(visits).values({
+				id: FILLED_VISIT_ID,
+				organizationId: ORGANIZATION_ID,
+				patientId: FILLED_PATIENT_ID,
+				status: "draft",
+				revision: 1,
+			});
+			await db.insert(visits).values({
+				id: EMPTY_VISIT_ID,
+				organizationId: ORGANIZATION_ID,
+				patientId: EMPTY_PATIENT_ID,
+				status: "draft",
+				revision: 1,
+			});
+			// Непроверенный снимок ровно у ОДНОГО приёма: если карточка соберётся по
+			// общему состоянию, а не по приёму, оба приёма получат один и тот же пункт.
+			await db.insert(imagingStudies).values({
+				id: IMAGING_STUDY_ID,
+				organizationId: ORGANIZATION_ID,
+				patientId: FILLED_PATIENT_ID,
+				visitId: FILLED_VISIT_ID,
+				kind: "periapical",
+				title: "Прицельный снимок 36",
+				capturedAt: new Date(),
+				sourceKind: "manual_upload",
+				sourceName: "Сторож подписания",
+				status: "needs_review",
+			});
+		});
 	});
 
 	after(async () => {
-		if (imagingStudyId) {
-			await db.execute(sql`delete from imaging_studies where id = ${imagingStudyId}`);
-		}
-		for (const visitId of [filledVisitId, emptyVisitId]) {
-			if (visitId) await db.execute(sql`delete from visits where id = ${visitId}`);
-		}
-		for (const patientId of [filledPatientId, emptyPatientId]) {
-			if (patientId) await db.execute(sql`delete from patients where id = ${patientId}`);
-		}
-		const leftovers = await firstRow<{ n: number }>(
-			sql`select count(*)::int as n from patients where full_name like ${`${PATIENT_MARK}%`}`,
+		await purgeFixtureOrganizations([ORGANIZATION_ID]);
+		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			firstRow<{ n: number }>(sql`select count(*)::int as n from patients where full_name like ${`${PATIENT_MARK}%`}`),
 		);
 		assert.equal(leftovers?.n, 0, "сторож не убрал за собой свои строки");
 		await pool.end();
 	});
 
 	it("отдаёт ПОЛНЫЙ ответ контракта: приём, карточку закрытия и квитанцию", async () => {
-		const result = await acceptVisitDraftInDb(organizationId, draftInput(filledVisitId, true));
+		const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			acceptVisitDraftInDb(ORGANIZATION_ID, draftInput(FILLED_VISIT_ID, true)),
+		);
 
 		const parsed = acceptVisitDraftResponseSchema.safeParse(result);
 		assert.ok(
@@ -149,7 +154,7 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 				JSON.stringify(parsed.success ? [] : parsed.error.issues.slice(0, 6)),
 		);
 
-		assert.equal(result.visit.id, filledVisitId);
+		assert.equal(result.visit.id, FILLED_VISIT_ID);
 		assert.equal(result.visit.status, "signed");
 		assert.equal(result.visit.revision, 2, "ревизия приёма обязана вырасти на подписании");
 		assert.equal(result.visit.diagnosis, "K02.1 Кариес дентина");
@@ -157,14 +162,14 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 
 		// Подпись действительно в базе, а не только в ответе.
 		const stored = await firstRow<{ status: string; revision: number; diagnosis: string | null }>(
-			sql`select status::text as status, revision, diagnosis from visits where id = ${filledVisitId}`,
+			sql`select status::text as status, revision, diagnosis from visits where id = ${FILLED_VISIT_ID}`,
 		);
 		assert.equal(stored?.status, "signed");
 		assert.equal(stored?.revision, 2);
 		assert.equal(stored?.diagnosis, "K02.1 Кариес дентина");
 
 		// Квитанция — из фактически сохранённой строки, а не выдуманная.
-		assert.equal(result.saveReceipt.visitId, filledVisitId);
+		assert.equal(result.saveReceipt.visitId, FILLED_VISIT_ID);
 		assert.equal(result.saveReceipt.status, "accepted");
 		assert.equal(result.saveReceipt.serverRevision, result.visit.revision);
 		assert.equal(result.saveReceipt.savedAt, result.visit.updatedAt);
@@ -172,13 +177,15 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 	});
 
 	it("квитанция называет конфликт ревизий, а не молчит о нём", async () => {
-		const input = draftInput(emptyVisitId, false);
-		const result = await acceptVisitDraftInDb(organizationId, {
-			...input,
-			// Клиент правил приём с ревизии 0, на сервере уже была 1.
-			baseRevision: 0,
-			clientMutationId: "storozh-konflikt",
-		});
+		const input = draftInput(EMPTY_VISIT_ID, false);
+		const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			acceptVisitDraftInDb(ORGANIZATION_ID, {
+				...input,
+				// Клиент правил приём с ревизии 0, на сервере уже была 1.
+				baseRevision: 0,
+				clientMutationId: "storozh-konflikt",
+			}),
+		);
 
 		assert.ok(acceptVisitDraftResponseSchema.safeParse(result).success);
 		assert.equal(result.saveReceipt.status, "conflict_accepted");
@@ -192,10 +199,10 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 	it("карточка закрытия относится к ЭТОМУ приёму: два приёма — две разные карточки", async () => {
 		// Приёмы подписаны предыдущими проверками; порядок в файле — часть сценария.
 		const filled = await firstRow<{ status: string }>(
-			sql`select status::text as status from visits where id = ${filledVisitId}`,
+			sql`select status::text as status from visits where id = ${FILLED_VISIT_ID}`,
 		);
 		const empty = await firstRow<{ status: string }>(
-			sql`select status::text as status from visits where id = ${emptyVisitId}`,
+			sql`select status::text as status from visits where id = ${EMPTY_VISIT_ID}`,
 		);
 		assert.equal(filled?.status, "signed");
 		assert.equal(empty?.status, "signed");
@@ -205,29 +212,27 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 		// два новых черновика тех же пациентов.
 		const secondFilledVisit = await firstRow<IdRow>(
 			sql`insert into visits (organization_id, patient_id, status, revision)
-			     values (${organizationId}, ${filledPatientId}, 'draft', 1)
+			     values (${ORGANIZATION_ID}, ${FILLED_PATIENT_ID}, 'draft', 1)
 			     returning id::text as id`,
 		);
 		const secondEmptyVisit = await firstRow<IdRow>(
 			sql`insert into visits (organization_id, patient_id, status, revision)
-			     values (${organizationId}, ${emptyPatientId}, 'draft', 1)
+			     values (${ORGANIZATION_ID}, ${EMPTY_PATIENT_ID}, 'draft', 1)
 			     returning id::text as id`,
 		);
 		assert.ok(secondFilledVisit && secondEmptyVisit, "приёмы для сравнения карточек не созданы");
 
 		// Снимок, ждущий проверки, переносим на новый приём того же пациента.
 		await db.execute(
-			sql`update imaging_studies set visit_id = ${secondFilledVisit.id} where id = ${imagingStudyId}`,
+			sql`update imaging_studies set visit_id = ${secondFilledVisit.id} where id = ${IMAGING_STUDY_ID}`,
 		);
 
 		try {
-			const withImaging = await acceptVisitDraftInDb(
-				organizationId,
-				draftInput(secondFilledVisit.id, true),
+			const withImaging = await withFixtureTenant(ORGANIZATION_ID, async () =>
+				acceptVisitDraftInDb(ORGANIZATION_ID, draftInput(secondFilledVisit.id, true)),
 			);
-			const withoutImaging = await acceptVisitDraftInDb(
-				organizationId,
-				draftInput(secondEmptyVisit.id, false),
+			const withoutImaging = await withFixtureTenant(ORGANIZATION_ID, async () =>
+				acceptVisitDraftInDb(ORGANIZATION_ID, draftInput(secondEmptyVisit.id, false)),
 			);
 
 			const cardWithImaging = withImaging.visitCloseChecklist;
@@ -266,7 +271,7 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 			);
 		} finally {
 			await db.execute(
-				sql`update imaging_studies set visit_id = ${filledVisitId} where id = ${imagingStudyId}`,
+				sql`update imaging_studies set visit_id = ${FILLED_VISIT_ID} where id = ${IMAGING_STUDY_ID}`,
 			);
 			await db.execute(sql`delete from visits where id = ${secondFilledVisit.id}`);
 			await db.execute(sql`delete from visits where id = ${secondEmptyVisit.id}`);
@@ -275,7 +280,10 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 
 	it("на закрытый приём отвечает доменным отказом, а не подписывает второй раз", async () => {
 		await assert.rejects(
-			() => acceptVisitDraftInDb(organizationId, draftInput(filledVisitId, true)),
+			() =>
+				withFixtureTenant(ORGANIZATION_ID, async () =>
+					acceptVisitDraftInDb(ORGANIZATION_ID, draftInput(FILLED_VISIT_ID, true)),
+				),
 			/Прием уже закрыт или аннулирован/,
 		);
 	});

@@ -534,7 +534,10 @@ const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
  * «Закрыть медицинскую запись» на несуществующего пациента, предупреждение
  * смены «Прием не подписан» и единицу в очереди врача.
  */
-export function hasUnsignedActiveVisit(): boolean {
+export function hasUnsignedActiveVisit(
+	state: DomainState = inMemoryDomainState,
+): boolean {
+	const { activeVisit, patients } = state;
 	if (activeVisit.status !== "draft") return false;
 	if (activeVisit.id === NIL_VISIT_UUID) return false;
 	if (activeVisit.patientId === NIL_VISIT_UUID) return false;
@@ -588,7 +591,19 @@ export const serviceCatalogMap = new Map<string, ServiceCatalogItem>();
  */
 export function getServiceCatalogItem(
 	serviceId: string,
+	state: DomainState = inMemoryDomainState,
 ): ServiceCatalogItem | undefined {
+	/*
+	 * ПАМЯТЬ ПОИСКА — ТОЛЬКО ДЛЯ ОБЩЕГО СРЕЗА.
+	 *
+	 * `serviceCatalogMap` общий на процесс. Для среза конкретной клиники он
+	 * непригоден: услуга с тем же идентификатором из ДРУГОЙ клиники осталась бы в
+	 * памяти и вернулась сюда — это межарендная утечка в чистом виде. Поэтому по
+	 * срезу базы ищем в его собственном списке и ничего не запоминаем.
+	 */
+	if (state !== inMemoryDomainState) {
+		return state.serviceCatalog.find((catalogItem) => catalogItem.id === serviceId);
+	}
 	const indexed = serviceCatalogMap.get(serviceId);
 	if (indexed !== undefined) return indexed;
 	const found = serviceCatalog.find((catalogItem) => catalogItem.id === serviceId);
@@ -1301,7 +1316,10 @@ function treatmentLineTotal(item: TreatmentPlanItem): number {
 	);
 }
 
-export function buildBillingSummary(): BillingSummary {
+export function buildBillingSummary(
+	state: DomainState = inMemoryDomainState,
+): BillingSummary {
+	const { treatmentPlanItems, payments, documents } = state;
 	let totalPlannedRub = 0;
 	let totalDiscountRub = 0;
 	let taxDeductionEligibleRub = 0;
@@ -1315,7 +1333,7 @@ export function buildBillingSummary(): BillingSummary {
 		totalPlannedRub += lineTotal;
 		totalDiscountRub += item.discountRub;
 
-		const service = getServiceCatalogItem(item.serviceId);
+		const service = getServiceCatalogItem(item.serviceId, state);
 		if (service?.taxDeductible) {
 			taxDeductionEligibleRub += lineTotal;
 		}
@@ -1399,7 +1417,9 @@ export function buildBillingSummary(): BillingSummary {
  */
 function visitBillingChecklistFacts(
 	visit: Visit,
+	state: DomainState = inMemoryDomainState,
 ): VisitCloseChecklistFacts["billing"] {
+	const { treatmentPlanItems, payments } = state;
 	let ledger: VisitLedger;
 	try {
 		ledger = buildVisitLedger(visit.id, treatmentPlanItems, payments);
@@ -1453,21 +1473,27 @@ function visitBillingChecklistFacts(
  * коллекции, копии совпадали; с появлением денег ПО ПРИЁМУ вторая копия стала бы
  * тем самым местом, куда правку не внесли. Теперь обе стороны зовут одну функцию.
  */
-export function visitCloseChecklistFactsFor(visit: Visit): VisitCloseChecklistFacts {
+export function visitCloseChecklistFactsFor(
+	visit: Visit,
+	state: DomainState = inMemoryDomainState,
+): VisitCloseChecklistFacts {
+	const { imagingStudies, documents, aiRecognitionJobs, communicationTasks } = state;
 	return {
 		visit,
 		imagingStudies,
 		documents,
 		aiRecognitionJobs,
 		communicationTasks,
-		clinical: buildClinicalRuleSummary(visit.patientId),
-		billing: visitBillingChecklistFacts(visit),
+		clinical: buildClinicalRuleSummary(visit.patientId, state),
+		billing: visitBillingChecklistFacts(visit, state),
 	};
 }
 
 function summarizeClinicalEvaluations(
 	evaluations: ClinicalRuleEvaluation[],
+	state: DomainState = inMemoryDomainState,
 ): ClinicalRuleSummary {
+	const { clinicalRules } = state;
 	const unresolved = evaluations.filter((evaluation) => !evaluation.resolved);
 	const requiredServiceIds = new Set(
 		unresolved.flatMap((evaluation) => evaluation.missingRequiredServiceIds),
@@ -1491,7 +1517,9 @@ function summarizeClinicalEvaluations(
 
 export function evaluateClinicalRules(
 	input: ClinicalRuleEvaluationInput,
+	state: DomainState = inMemoryDomainState,
 ): ClinicalRuleEvaluationResponse {
+	const { clinicalRules } = state;
 	const serviceIds = new Set(input.serviceIds);
 	const completedServiceIds = new Set(input.completedServiceIds);
 	const evaluations = clinicalRules.flatMap(
@@ -1571,7 +1599,11 @@ export function evaluateClinicalRules(
  * посчитать ни для одного приёма, кроме «последнего черновика клиники»: карточка
  * закрытия конкретного приёма получала предупреждения ЧУЖОГО пациента.
  */
-function buildClinicalRuleEvaluations(patientId: string): ClinicalRuleEvaluation[] {
+function buildClinicalRuleEvaluations(
+	patientId: string,
+	state: DomainState = inMemoryDomainState,
+): ClinicalRuleEvaluation[] {
+	const { treatmentPlanItems, treatmentPlanScenarios } = state;
 	const patientPlanItems = treatmentPlanItems.filter(
 		(item) => item.patientId === patientId && item.status !== "cancelled",
 	);
@@ -1588,15 +1620,21 @@ function buildClinicalRuleEvaluations(patientId: string): ClinicalRuleEvaluation
 		]),
 	);
 
-	return evaluateClinicalRules({
-		patientId,
-		serviceIds,
-		completedServiceIds,
-	}).evaluations;
+	return evaluateClinicalRules(
+		{
+			patientId,
+			serviceIds,
+			completedServiceIds,
+		},
+		state,
+	).evaluations;
 }
 
-export function buildClinicalRuleSummary(patientId: string): ClinicalRuleSummary {
-	return summarizeClinicalEvaluations(buildClinicalRuleEvaluations(patientId));
+export function buildClinicalRuleSummary(
+	patientId: string,
+	state: DomainState = inMemoryDomainState,
+): ClinicalRuleSummary {
+	return summarizeClinicalEvaluations(buildClinicalRuleEvaluations(patientId, state));
 }
 
 function normalizedClinicalRuleServiceIds(values: string[]): string[] {
@@ -1708,7 +1746,10 @@ function isOpenCommunicationTask(task: CommunicationTask): boolean {
 	return !["completed", "failed", "skipped"].includes(task.status);
 }
 
-export function buildCommunicationSummary(): CommunicationSummary {
+export function buildCommunicationSummary(
+	state: DomainState = inMemoryDomainState,
+): CommunicationSummary {
+	const { communicationTasks } = state;
 	const todayPrefix = "2026-05-12";
 	const openTasks = communicationTasks.filter(isOpenCommunicationTask);
 
@@ -1825,7 +1866,19 @@ function patientInsightDebt(
 	}
 }
 
-function buildPatientInsights(): PatientInsight[] {
+function buildPatientInsights(
+	state: DomainState = inMemoryDomainState,
+): PatientInsight[] {
+	const {
+		activeVisit,
+		appointments,
+		communicationTasks,
+		documents,
+		imagingStudies,
+		patients,
+		payments,
+		treatmentPlanItems,
+	} = state;
 	const requiredDocuments: Array<
 		PatientInsight["missingDocumentKinds"][number]
 	> = [
@@ -2154,8 +2207,10 @@ function getAppointmentTimeFormatter(timeZone: string): Intl.DateTimeFormat {
 
 function appointmentClinicTimeParts(
 	value: string,
-	sourceTimeZone = clinicProfile.timezone,
+	sourceTimeZone?: string,
+	state: DomainState = inMemoryDomainState,
 ): { weekday: number; minute: number; timeZone: string } {
+	sourceTimeZone ??= state.clinicProfile.timezone;
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) {
 		return {
@@ -2192,8 +2247,10 @@ function appointmentClinicTimeParts(
 
 function appointmentClinicDateKey(
 	value: string,
-	sourceTimeZone = clinicProfile.timezone,
+	sourceTimeZone?: string,
+	state: DomainState = inMemoryDomainState,
 ): string {
+	sourceTimeZone ??= state.clinicProfile.timezone;
 	const date = new Date(value);
 	const fallbackDateKey = value.slice(0, 10) || nowIso.slice(0, 10);
 	if (Number.isNaN(date.getTime())) return fallbackDateKey;
@@ -2222,23 +2279,26 @@ function appointmentsShareClinicDate(
 
 function appointmentWeekday(
 	appointment: Appointment,
-	timeZone = clinicProfile.timezone,
+	timeZone?: string,
+	state: DomainState = inMemoryDomainState,
 ): number {
-	return appointmentClinicTimeParts(appointment.startsAt, timeZone).weekday;
+	return appointmentClinicTimeParts(appointment.startsAt, timeZone, state).weekday;
 }
 
 function appointmentStartMinute(
 	appointment: Appointment,
-	timeZone = clinicProfile.timezone,
+	timeZone?: string,
+	state: DomainState = inMemoryDomainState,
 ): number {
-	return appointmentClinicTimeParts(appointment.startsAt, timeZone).minute;
+	return appointmentClinicTimeParts(appointment.startsAt, timeZone, state).minute;
 }
 
 function appointmentEndMinute(
 	appointment: Appointment,
-	timeZone = clinicProfile.timezone,
+	timeZone?: string,
+	state: DomainState = inMemoryDomainState,
 ): number {
-	return appointmentClinicTimeParts(appointment.endsAt, timeZone).minute;
+	return appointmentClinicTimeParts(appointment.endsAt, timeZone, state).minute;
 }
 
 function appointmentWithinClinicScheduleDefaults(
@@ -2271,10 +2331,14 @@ function appointmentWithinClinicScheduleDefaults(
 	};
 }
 
-function appointmentWithinClinicSchedule(appointment: Appointment): {
+function appointmentWithinClinicSchedule(
+	appointment: Appointment,
+	state: DomainState = inMemoryDomainState,
+): {
 	ready: boolean;
 	detail: string;
 } {
+	const { clinicProfile } = state;
 	return appointmentWithinClinicScheduleDefaults(
 		appointment,
 		clinicProfile.scheduleDefaults,
@@ -2286,7 +2350,9 @@ function appointmentWithinStaffSchedule(
 	appointment: Appointment,
 	staff: StaffMember | undefined | null,
 	label = "врач",
+	state: DomainState = inMemoryDomainState,
 ): { ready: boolean; detail: string } {
+	const { clinicProfile } = state;
 	if (!staff)
 		return { ready: false, detail: `нет ${label} для проверки расписания` };
 	const timeZone = validScheduleTimeZone(clinicProfile.timezone);
@@ -2317,7 +2383,9 @@ function appointmentWithinStaffSchedule(
 function appointmentWithinChairSchedule(
 	appointment: Appointment,
 	chair: Chair | undefined | null,
+	state: DomainState = inMemoryDomainState,
 ): { ready: boolean; detail: string } {
+	const { clinicProfile } = state;
 	if (!chair)
 		return { ready: false, detail: "нет кресла для проверки расписания" };
 	const timeZone = validScheduleTimeZone(clinicProfile.timezone);
@@ -2348,7 +2416,9 @@ function appointmentWithinChairSchedule(
 function appointmentWithinPatientPreference(
 	appointment: Appointment,
 	patient: Patient | undefined | null,
+	state: DomainState = inMemoryDomainState,
 ): { ready: boolean; detail: string } {
+	const { clinicProfile } = state;
 	const preference = patient?.administrativeProfile;
 	if (!preference)
 		return {
@@ -2394,9 +2464,11 @@ function appointmentWithinPatientPreference(
 			};
 }
 
-function clinicDailyCapacityMinutes(): number {
+function clinicDailyCapacityMinutes(
+	state: DomainState = inMemoryDomainState,
+): number {
 	const schedule = normalizeClinicScheduleDefaults(
-		clinicProfile.scheduleDefaults,
+		state.clinicProfile.scheduleDefaults,
 	);
 	return Math.max(
 		60,
@@ -2424,8 +2496,20 @@ function staffDailyCapacityMinutes(staff: StaffMember): number {
 }
 
 function buildAppointmentReadiness(
-	patientInsights = buildPatientInsights(),
+	patientInsights?: PatientInsight[],
+	domainState: DomainState = inMemoryDomainState,
 ): AppointmentReadiness[] {
+	const {
+		appointments,
+		patients,
+		staffMembers,
+		chairs,
+		communicationTasks,
+		documents,
+		imagingStudies,
+		clinicProfile,
+	} = domainState;
+	patientInsights ??= buildPatientInsights(domainState);
 	const patientsById = new Map(patients.map((p) => [p.id, p]));
 	const activeStaffById = new Map(
 		staffMembers.filter((m) => m.active).map((m) => [m.id, m]),
@@ -2495,15 +2579,17 @@ function buildAppointmentReadiness(
 			(study) => study.status === "needs_review",
 		);
 		const hasBalance = (insight?.balanceDueRub ?? 0) > 0;
-		const clinicScheduleCheck = appointmentWithinClinicSchedule(appointment);
+		const clinicScheduleCheck = appointmentWithinClinicSchedule(appointment, domainState);
 		const patientScheduleCheck = appointmentWithinPatientPreference(
 			appointment,
 			patient,
+			domainState,
 		);
 		const doctorScheduleCheck = appointmentWithinStaffSchedule(
 			appointment,
 			doctor,
 			"врача",
+			domainState,
 		);
 		const assistantRequired = clinicProfile.mode !== "solo_doctor";
 		const assistantScheduleCheck = assistantRequired
@@ -2511,11 +2597,13 @@ function buildAppointmentReadiness(
 					appointment,
 					finalAssistant,
 					"ассистента",
+					domainState,
 				)
 			: { ready: true, detail: "ассистент не требуется для режима клиники" };
 		const chairScheduleCheck = appointmentWithinChairSchedule(
 			appointment,
 			chair,
+			domainState,
 		);
 		const patientPreferenceWarnings = patientScheduleCheck.ready
 			? []
@@ -2680,8 +2768,20 @@ function buildAppointmentReadiness(
 }
 
 function buildRecommendedActions(
-	patientInsights = buildPatientInsights(),
+	patientInsights?: PatientInsight[],
+	state: DomainState = inMemoryDomainState,
 ): RecommendedAction[] {
+	const {
+		activeVisit,
+		appointments,
+		auditEvents,
+		communicationTasks,
+		documents,
+		imagingStudies,
+		importBatches,
+		patients,
+	} = state;
+	patientInsights ??= buildPatientInsights(state);
 	const actions: RecommendedAction[] = [];
 	const activeInsight = patientInsights.find(
 		(insight) => insight.patientId === activeVisit.patientId,
@@ -2713,7 +2813,7 @@ function buildRecommendedActions(
 
 	const add = (action: RecommendedAction) => actions.push(action);
 
-	if (hasUnsignedActiveVisit()) {
+	if (hasUnsignedActiveVisit(state)) {
 		add({
 			id: "action-sign-active-visit",
 			role: "doctor",
@@ -2880,8 +2980,11 @@ function buildRecommendedActions(
 }
 
 function buildScheduleSuggestions(
-	readiness = buildAppointmentReadiness(),
+	readiness?: AppointmentReadiness[],
+	state: DomainState = inMemoryDomainState,
 ): ScheduleSuggestion[] {
+	const { appointments, clinicProfile, patients } = state;
+	readiness ??= buildAppointmentReadiness(undefined, state);
 	const suggestions: ScheduleSuggestion[] = [];
 	const priorityRank: Record<ScheduleSuggestion["priority"], number> = {
 		urgent: 0,
@@ -3023,11 +3126,16 @@ function appointmentDurationMinutes(appointment: Appointment): number {
 	return Math.max(0, Math.round((endsAt - startsAt) / 60000));
 }
 
-function activeShiftDateKey(): string {
+function activeShiftDateKey(state: DomainState = inMemoryDomainState): string {
+	const { appointments, activeVisit } = state;
 	const activeAppointment = appointments.find(
 		(appointment) => appointment.id === activeVisit.appointmentId,
 	);
-	return appointmentClinicDateKey(activeAppointment?.startsAt ?? nowIso);
+	return appointmentClinicDateKey(
+		activeAppointment?.startsAt ?? nowIso,
+		undefined,
+		state,
+	);
 }
 
 function appointmentBelongsToShiftDate(
@@ -3095,12 +3203,13 @@ function buildResourceLoad(input: {
 	};
 }
 
-function buildDoctorLoads(): ResourceLoad[] {
+function buildDoctorLoads(state: DomainState = inMemoryDomainState): ResourceLoad[] {
+	const { staffMembers, appointments } = state;
 	const activeDoctors = staffMembers.filter(
 		(member) =>
 			member.active && (member.role === "doctor" || member.role === "owner"),
 	);
-	const shiftDate = activeShiftDateKey();
+	const shiftDate = activeShiftDateKey(state);
 
 	return activeDoctors.map((doctor) => {
 		const doctorAppointments = appointments.filter(
@@ -3125,11 +3234,12 @@ function buildDoctorLoads(): ResourceLoad[] {
 	});
 }
 
-function buildAssistantLoads(): ResourceLoad[] {
+function buildAssistantLoads(state: DomainState = inMemoryDomainState): ResourceLoad[] {
+	const { staffMembers, appointments } = state;
 	const activeAssistants = staffMembers.filter(
 		(member) => member.active && member.role === "assistant",
 	);
-	const shiftDate = activeShiftDateKey();
+	const shiftDate = activeShiftDateKey(state);
 
 	return activeAssistants.map((assistant) => {
 		const assistantAppointments = appointments.filter(
@@ -3154,8 +3264,9 @@ function buildAssistantLoads(): ResourceLoad[] {
 	});
 }
 
-function buildChairLoads(): ResourceLoad[] {
-	const shiftDate = activeShiftDateKey();
+function buildChairLoads(state: DomainState = inMemoryDomainState): ResourceLoad[] {
+	const { chairs, appointments } = state;
+	const shiftDate = activeShiftDateKey(state);
 	return chairs
 		.filter((chair) => chair.active)
 		.map((chair) => {
@@ -3184,13 +3295,15 @@ function buildChairLoads(): ResourceLoad[] {
 		});
 }
 
-function buildRoleQueues(): RoleQueue[] {
-	const billing = buildBillingSummary();
-	const communication = buildCommunicationSummary();
+function buildRoleQueues(state: DomainState = inMemoryDomainState): RoleQueue[] {
+	const { appointments, clinicProfile, documents, imagingStudies, importBatches, staffMembers } =
+		state;
+	const billing = buildBillingSummary(state);
+	const communication = buildCommunicationSummary(state);
 	const draftDocuments = documents.filter(
 		(document) => document.status === "draft",
 	).length;
-	const unsignedVisits = hasUnsignedActiveVisit() ? 1 : 0;
+	const unsignedVisits = hasUnsignedActiveVisit(state) ? 1 : 0;
 	const plannedAppointments = appointments.filter(
 		(appointment) => appointment.status === "planned",
 	).length;
@@ -3270,11 +3383,15 @@ function buildRoleQueues(): RoleQueue[] {
 	];
 }
 
-function buildScheduleWarnings(): ScheduleWarning[] {
+function buildScheduleWarnings(
+	state: DomainState = inMemoryDomainState,
+): ScheduleWarning[] {
+	const { activeVisit, appointments, clinicProfile, documents, imagingStudies, staffMembers } =
+		state;
 	const warnings: ScheduleWarning[] = [];
-	const billing = buildBillingSummary();
-	const communication = buildCommunicationSummary();
-	const clinical = buildClinicalRuleSummary(activeVisit.patientId);
+	const billing = buildBillingSummary(state);
+	const communication = buildCommunicationSummary(state);
+	const clinical = buildClinicalRuleSummary(activeVisit.patientId, state);
 	const activeAppointment = appointments.find(
 		(appointment) => appointment.id === activeAppointmentId,
 	);
@@ -3287,7 +3404,7 @@ function buildScheduleWarnings(): ScheduleWarning[] {
 			document.status === "draft",
 	);
 
-	if (hasUnsignedActiveVisit()) {
+	if (hasUnsignedActiveVisit(state)) {
 		warnings.push({
 			id: "unsigned-active-visit",
 			severity: "warning",
@@ -3404,7 +3521,10 @@ const modeTitles: Record<ClinicMode, string> = {
 	network_clinic: "Сеть",
 };
 
-function buildModeFit(): ShiftIntelligence["modeFit"] {
+function buildModeFit(
+	state: DomainState = inMemoryDomainState,
+): ShiftIntelligence["modeFit"] {
+	const { staffMembers, chairs, clinicProfile } = state;
 	const doctors = staffMembers.filter(
 		(member) => member.active && member.role === "doctor",
 	).length;
@@ -3492,14 +3612,16 @@ function buildModeFit(): ShiftIntelligence["modeFit"] {
 	};
 }
 
-export function buildShiftIntelligence(): ShiftIntelligence {
+export function buildShiftIntelligence(
+	state: DomainState = inMemoryDomainState,
+): ShiftIntelligence {
 	return {
-		modeFit: buildModeFit(),
-		doctorLoads: buildDoctorLoads(),
-		assistantLoads: buildAssistantLoads(),
-		chairLoads: buildChairLoads(),
-		roleQueues: buildRoleQueues(),
-		scheduleWarnings: buildScheduleWarnings(),
+		modeFit: buildModeFit(state),
+		doctorLoads: buildDoctorLoads(state),
+		assistantLoads: buildAssistantLoads(state),
+		chairLoads: buildChairLoads(state),
+		roleQueues: buildRoleQueues(state),
+		scheduleWarnings: buildScheduleWarnings(state),
 	};
 }
 
@@ -3800,6 +3922,108 @@ export const auditEvents: AuditEvent[] = [
 		createdAt: nowIso,
 	},
 ];
+
+/**
+ * СРЕЗ ДАННЫХ ОДНОЙ КЛИНИКИ — ЯВНЫЙ ПАРАМЕТР ВМЕСТО ОБЩИХ НА ПРОЦЕСС МАССИВОВ.
+ *
+ * ЗАЧЕМ. Раньше `db/domainStateHydration.ts` читал строки клиники из базы и
+ * перезаписывал ими объявленные выше массивы (`replaceAll`, 13 вызовов). Массивы
+ * общие на процесс, поэтому параллельный запрос ДРУГОЙ клиники видел чужие
+ * данные, и автор защищался глобальной промис-очередью, сериализовавшей запросы
+ * всех клиник разом. Под RLS каждый маршрут работает в транзакции, а пул
+ * ограничен десятью соединениями: запрос, ждущий своей очереди, держит
+ * транзакцию открытой, и на этом проект уже горел — десять занятых клиентов
+ * давали таймаут 8012 мс на любом обращении к базе.
+ *
+ * СТАЛО. Гидратация возвращает ЭТУ структуру, а расчёт принимает её параметром.
+ * Общие массивы на пути базы не участвуют вовсе, очередь не нужна: у каждого
+ * запроса свой срез, и пересечься им негде.
+ *
+ * ПОЧЕМУ ПАРАМЕТР НЕОБЯЗАТЕЛЬНЫЙ. Значение по умолчанию — `inMemoryDomainState`,
+ * то есть те же общие массивы. Это сохраняет поведение режима без базы
+ * (`DENTAL_STATE_PERSISTENCE=off`) и всех существующих вызовов из маршрутов и
+ * смоук-скриптов, которые правят массивы на месте и зовут расчёт без аргументов.
+ */
+export interface DomainState {
+	clinicProfile: ClinicProfile;
+	staffMembers: StaffMember[];
+	chairs: Chair[];
+	patients: Patient[];
+	appointments: Appointment[];
+	/**
+	 * Открытый приём клиники.
+	 *
+	 * Тип НЕ `| null` сознательно: расчётные помощники читают
+	 * `activeVisit.patientId` без защиты, и допуск `null` потребовал бы правки
+	 * каждого из них. Когда приёма нет, здесь лежит заготовка с
+	 * `id = NIL_VISIT_UUID`, а наружу `buildDashboard` отдаёт `null` — граница
+	 * между внутренней заготовкой и ответом уже проведена и охраняется тестом
+	 * `tests/routes/dashboardActiveVisitIsNotFabricated.test.ts`.
+	 */
+	activeVisit: Visit;
+	documents: GeneratedDocument[];
+	serviceCatalog: ServiceCatalogItem[];
+	treatmentPlanItems: TreatmentPlanItem[];
+	treatmentPlanScenarios: TreatmentPlanScenario[];
+	clinicalRules: ClinicalRule[];
+	payments: Payment[];
+	communicationTemplates: CommunicationTemplate[];
+	communicationTasks: CommunicationTask[];
+	communicationEvents: CommunicationEvent[];
+	imagingStudies: ImagingStudy[];
+	aiRecognitionJobs: AiRecognitionJob[];
+	importBatches: ImportBatch[];
+	protocolTemplates: ProtocolTemplate[];
+	auditEvents: AuditEvent[];
+	/**
+	 * Срезы, которые прочитать НЕ УДАЛОСЬ.
+	 *
+	 * ЗАЧЕМ ОТДЕЛЬНОЕ ПОЛЕ. Пустой массив — это утверждение «данных нет», и
+	 * отличить его от «прочитать не смогли» иначе невозможно. Врач, увидевший
+	 * нулевую выручку, полученную из проглоченного исключения, может на неё
+	 * опереться. Здесь перечислены имена сорвавшихся срезов, и вызывающий решает,
+	 * что с этим делать: для денег и клиники — отказ, для остального — журнал.
+	 */
+	unavailableSlices: string[];
+}
+
+/**
+ * Срез по умолчанию: те самые общие на процесс массивы.
+ *
+ * Ссылки, а не копии — смоук-скрипты и режим без базы правят коллекции на месте
+ * (`push`, `splice`, `Object.assign`), и расчёт обязан видеть их правки. Все
+ * коллекции объявлены через `const`, поэтому переприсвоить их нельзя и ссылки
+ * не устаревают.
+ */
+export const inMemoryDomainState: DomainState = {
+	get clinicProfile() {
+		return clinicProfile;
+	},
+	staffMembers,
+	chairs,
+	patients,
+	appointments,
+	get activeVisit() {
+		return activeVisit;
+	},
+	documents,
+	serviceCatalog,
+	treatmentPlanItems,
+	treatmentPlanScenarios,
+	clinicalRules,
+	payments,
+	communicationTemplates,
+	communicationTasks,
+	communicationEvents,
+	imagingStudies,
+	aiRecognitionJobs,
+	importBatches,
+	get protocolTemplates() {
+		return protocolTemplates;
+	},
+	auditEvents,
+	unavailableSlices: [],
+};
 
 export const integrationPresets: IntegrationPreset[] = [
 	{
@@ -5131,7 +5355,10 @@ function applyPersistentState(): void {
 applyPersistentState();
 normalizeMutableScheduleState();
 
-export function buildClinicSettings(): ClinicSettings {
+export function buildClinicSettings(
+	state: DomainState = inMemoryDomainState,
+): ClinicSettings {
+	const { clinicProfile, staffMembers, chairs } = state;
 	return {
 		profile: repairMojibakeDeep(clinicProfile),
 		staff: repairMojibakeDeep(staffMembers),
@@ -10422,33 +10649,53 @@ function buildDocumentChainSummary(
 	return null;
 }
 
-function buildDashboardDocuments() {
-	return documents.map((document) => ({
+function buildDashboardDocuments(state: DomainState = inMemoryDomainState) {
+	return state.documents.map((document) => ({
 		...document,
 		chainSummary: buildDocumentChainSummary(document),
 	}));
 }
 
-export function buildDashboard(): Dashboard {
-	const patientInsights = buildPatientInsights();
-	const appointmentReadiness = buildAppointmentReadiness(patientInsights);
+export function buildDashboard(
+	state: DomainState = inMemoryDomainState,
+): Dashboard {
+	const {
+		clinicProfile,
+		patients,
+		appointments,
+		activeVisit,
+		imagingStudies,
+		protocolTemplates,
+		serviceCatalog,
+		treatmentPlanItems,
+		treatmentPlanScenarios,
+		clinicalRules,
+		payments,
+		communicationTemplates,
+		communicationTasks,
+		communicationEvents,
+		importBatches,
+		auditEvents,
+	} = state;
+	const patientInsights = buildPatientInsights(state);
+	const appointmentReadiness = buildAppointmentReadiness(patientInsights, state);
 
 	return {
 		clinicName: repairMojibakeText(clinicProfile.clinicName),
 		// БЫЛО: "2026-05-12" — жёстко зашитая дата. Вкладка «Смена» всегда
 		// показывала приёмы за 12 мая 2026 года, а реальный день был пуст.
-		todayIso: clinicTodayIso(),
-		clinicSettings: buildClinicSettings(),
-		shiftIntelligence: repairMojibakeDeep(buildShiftIntelligence()),
+		todayIso: clinicTodayIso(clinicProfile.timezone),
+		clinicSettings: buildClinicSettings(state),
+		shiftIntelligence: repairMojibakeDeep(buildShiftIntelligence(state)),
 		patients: repairMojibakeDeep(patients),
 		patientInsights: repairMojibakeDeep(patientInsights),
 		recommendedActions: repairMojibakeDeep(
-			buildRecommendedActions(patientInsights),
+			buildRecommendedActions(patientInsights, state),
 		),
 		appointments: repairMojibakeDeep(appointments),
 		appointmentReadiness: repairMojibakeDeep(appointmentReadiness),
 		scheduleSuggestions: repairMojibakeDeep(
-			buildScheduleSuggestions(appointmentReadiness),
+			buildScheduleSuggestions(appointmentReadiness, state),
 		),
 		/*
 		 * ОТКРЫТОГО ПРИЁМА НЕТ — ТАК И СКАЗАНО, `null`, А НЕ НУЛЕВОЙ УУИД.
@@ -10477,9 +10724,9 @@ export function buildDashboard(): Dashboard {
 		 */
 		activeVisit: activeVisit.id === NIL_VISIT_UUID ? null : repairMojibakeDeep(activeVisit),
 		visitCloseChecklist: repairMojibakeDeep(
-			buildVisitCloseChecklist(visitCloseChecklistFactsFor(activeVisit)),
+			buildVisitCloseChecklist(visitCloseChecklistFactsFor(activeVisit, state)),
 		),
-		documents: repairMojibakeDeep(buildDashboardDocuments()),
+		documents: repairMojibakeDeep(buildDashboardDocuments(state)),
 		imagingStudies: repairMojibakeDeep(imagingStudies),
 		protocolTemplates: repairMojibakeDeep(protocolTemplates),
 		serviceCatalog: repairMojibakeDeep(serviceCatalog),
@@ -10487,17 +10734,17 @@ export function buildDashboard(): Dashboard {
 		treatmentPlanScenarios: repairMojibakeDeep(treatmentPlanScenarios),
 		clinicalRules: repairMojibakeDeep(clinicalRules),
 		clinicalRuleEvaluations: repairMojibakeDeep(
-			buildClinicalRuleEvaluations(activeVisit.patientId),
+			buildClinicalRuleEvaluations(activeVisit.patientId, state),
 		),
 		clinicalRuleSummary: repairMojibakeDeep(
-			buildClinicalRuleSummary(activeVisit.patientId),
+			buildClinicalRuleSummary(activeVisit.patientId, state),
 		),
 		payments: repairMojibakeDeep(payments),
-		billingSummary: repairMojibakeDeep(buildBillingSummary()),
+		billingSummary: repairMojibakeDeep(buildBillingSummary(state)),
 		communicationTemplates: repairMojibakeDeep(communicationTemplates),
 		communicationTasks: repairMojibakeDeep(communicationTasks),
 		communicationEvents: repairMojibakeDeep(communicationEvents.slice(0, 20)),
-		communicationSummary: repairMojibakeDeep(buildCommunicationSummary()),
+		communicationSummary: repairMojibakeDeep(buildCommunicationSummary(state)),
 		importBatches: repairMojibakeDeep(importBatches),
 		speechProviders: repairMojibakeDeep(speechProviders),
 		auditEvents: repairMojibakeDeep(auditEvents.slice(0, 12)),

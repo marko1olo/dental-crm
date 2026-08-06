@@ -1,4 +1,5 @@
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { unguardedBypassAllowed } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
@@ -743,8 +744,40 @@ function configuredSettingsAdminSecret(): string | null {
   return process.env.DENTE_SETTINGS_ADMIN_SECRET?.trim() || null;
 }
 
+/**
+ * Послабление для разработки на всех 23 обработчиках настроек клиники, каждый
+ * из которых начинается с `await requireSettingsAccess(request, reply)`
+ * (пересчитано 2026-08-06; цифра гниёт — пересчитывай, прежде чем ссылаться):
+ * работает ТОЛЬКО при явно названном режиме разработки и ТОЛЬКО при явно
+ * выставленном флаге.
+ *
+ * ПОЧЕМУ ЗДЕСЬ ОБЩИЙ ПРЕДИКАТ, А НЕ ПРЕЖНЕЕ `NODE_ENV !== "production"`.
+ * Прежнее условие истинно, когда NODE_ENV НЕ ЗАДАН ВОВСЕ, а незаданный NODE_ENV —
+ * типовое состояние настоящего сервера: `apps/api/package.json` объявляет
+ * `"start": "node dist/server.js"` и режим не задаёт. Значит у заказчика,
+ * поднявшего сервер этой командой, «мы не в production» было ИСТИНОЙ, и от
+ * правки прайс-листа, состава сотрудников, их полномочий и учётных данных без
+ * секрета администратора защищало только то, что второй флаг где-то не
+ * выставлен. Замерено на этом дереве до правки: пустой NODE_ENV +
+ * DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS=1 → охрана снята, маршрут доходил до
+ * разбора тела (400 по существу вместо 503).
+ *
+ * `accessGuard.ts` разбирает эту инверсию подробно и НАЗЫВАЕТ ЭТОТ ФАЙЛ как одну
+ * из четырёх копий, которую должен переписать владелец. Пятой копии условия
+ * безопасности здесь не будет: одно условие в одном месте — единственный способ
+ * не оставить следующую инверсию незамеченной.
+ *
+ * Смысл послабления не изменился: `development`/`test` плюс
+ * `DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS=1`. Закрылся ровно один случай —
+ * пустой или незнакомый NODE_ENV («staging», «prod», опечатка) больше не
+ * считается разработкой.
+ *
+ * ВЕРНУТЬ «КАК БЫЛО» — значит снова открыть настройки клиники на боевом
+ * сервере. Если нужно работать без секрета локально, задайте
+ * NODE_ENV=development, а не возвращайте отрицание.
+ */
 function settingsUnguardedMutationsAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" && process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS === "1";
+  return unguardedBypassAllowed("DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS");
 }
 
 /**

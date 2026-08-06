@@ -9,6 +9,7 @@ import {
   type SpeechRecordingRecoveryItem
 } from "@dental/shared";
 import { aiJobs, patients, visits } from "../db/schema.js";
+import { transactionStorage } from "../db/client.js";
 import { withTenantCtx, withSuperuserBypass } from "../db/rls.js";
 
 // Локальная копия, как в polish.ts: хранилище расшифровок не должно тянуть за
@@ -648,7 +649,16 @@ function readDurableEnvelope(recordingId: string, rawEnvelope: string | null): D
  * (organization_id, input_storage_path) в ai_jobs нет, он требует миграции.
  */
 async function loadDurableRecordingEnvelope(recordingId: string, organizationId: string): Promise<DurableEnvelopeRead> {
-  const [row] = await withSuperuserBypass(async (tx) =>
+  /*
+   * ТЕНАНТ-КОНТЕКСТ, А НЕ ОБХОД. Запрос уже сужен по organization_id, то есть
+   * читает строку СВОЕЙ клиники, и обход ему не нужен ни для чего. Он тут стоял
+   * лишь потому, что рядом стояла запись под обходом. Разница не косметическая:
+   * под обходом дизъюнкт `USING` истинен для КАЖДОЙ строки, и единственным
+   * барьером против чтения чужого конверта диктовки остаётся правильность
+   * предиката в коде; под тенант-контекстом чужую строку не отдаст сама
+   * политика. Для медицинского текста это разные уровни гарантии.
+   */
+  const [row] = await withTenantCtx(organizationId, async (tx) =>
     tx
       .select({ inputText: aiJobs.inputText })
       .from(aiJobs)
@@ -833,7 +843,41 @@ async function persistSpeechRecording(trigger: SpeechTranscriptionChunk, organiz
     updatedAt: new Date()
   };
 
-  const [updated] = await withSuperuserBypass(async (tx) =>
+  /*
+   * ЗАПИСЬ ДИКТОВКИ ИДЁТ ПОД ТЕНАНТ-КОНТЕКСТОМ СВОЕЙ КЛИНИКИ, А НЕ ПОД ОБХОДОМ.
+   *
+   * ЧТО БЫЛО СЛОМАНО. Обе команды стояли внутри `withSuperuserBypass`, и это
+   * единственное место в дереве, где мутация тенант-таблицы шла под обходом.
+   * Работало оно не потому, что обход что-то даёт записи, а по НАСЛЕДСТВУ:
+   * маршрут `POST /api/speech/transcribe-chunk` не помечен
+   * `tenantTxSelfManaged`, поэтому авто-обёртка `server.ts` открывает
+   * `withTenantCtx`, а `withSuperuserBypass` при живой транзакции переиспользует
+   * её и `app.current_tenant` НЕ трогает (`db/rls.ts:189-209`). То есть
+   * арендатор к моменту записи был выставлен вызывающим.
+   *
+   * Замерено на живой базе (роль `dental`, rolsuper=false, rolbypassrls=false;
+   * все транзакции откачены):
+   *   обход есть, арендатор НЕ задан ......... 42501
+   *   арендатор задан И обход ................ INSERT прошёл
+   *   арендатор ЧУЖОЙ, обход ................. 42501
+   *   арендатор задан, обхода нет ............ INSERT прошёл
+   * У `ai_jobs` в `WITH CHECK` дизъюнкта обхода нет вовсе, поэтому запись
+   * определяет РОВНО `app.current_tenant` — обход для неё бесполезен.
+   *
+   * ПОЧЕМУ ЭТО НАДО БЫЛО ЧИНИТЬ, ЕСЛИ «РАБОТАЛО». Гарантия бралась не из кода в
+   * точке записи, а из того, кто эту точку вызвал. Любой вызов вне запроса —
+   * фоновый обработчик, CLI-скрипт, тест, будущая очередь — попадает в первую
+   * строку таблицы замеров: медицинский текст молча не сохраняется, а врач
+   * получает 201 с предупреждением в теле. Вложенный `withTenantCtx` внутри
+   * активной транзакции переиспользует её, выставляет арендатора и гасит флаг
+   * обхода (`db/rls.ts:137-141`), возвращая всё в `finally`; вне транзакции —
+   * открывает свою. Запись перестаёт зависеть от вызывающего.
+   *
+   * `organizationId` — параметр этой функции, он выведен из приема или пациента
+   * фрагмента (`resolveSpeechChunkOrganizationId`), а не из запроса, поэтому
+   * строка ложится своей клинике и при чужом контексте вызывающего.
+   */
+  const [updated] = await withTenantCtx(organizationId, async (tx) =>
     tx
       .update(aiJobs)
       .set(values)
@@ -842,7 +886,7 @@ async function persistSpeechRecording(trigger: SpeechTranscriptionChunk, organiz
   );
 
   if (!updated) {
-    await withSuperuserBypass(async (tx) =>
+    await withTenantCtx(organizationId, async (tx) =>
       tx.insert(aiJobs).values({
         organizationId,
         kind: durableRecordingJobKind,
@@ -1108,10 +1152,90 @@ export function resetSpeechTranscriptionCacheForRestart(): void {
   speechRestoreCachedCharCount = 0;
 }
 
+/**
+ * Восстановление кэша НИКОГДА не выполняется внутри чужой транзакции.
+ *
+ * ЧТО ЭТО ЗА ЗАПРОС. `restoreSpeechTranscriptionChunks` — единственное
+ * настоящее межарендное чтение модуля: оно идёт под обходом и поднимает в
+ * общий для процесса массив расшифровки ВСЕХ клиник (ранжирование
+ * `PARTITION BY organization_id`). На старте процесса это осознанная форма
+ * горячего кэша. Внутри запроса — нет.
+ *
+ * ДЕФЕКТ 1: ОТКАЗ ЧТЕНИЯ УБИВАЛ ТРАНЗАКЦИЮ ЗАПРОСА. Вызов стоял первой строкой
+ * `recordSpeechTranscriptionChunk` и срабатывал внутри запроса, если старт не
+ * удался и истекла выдержка. `withSuperuserBypass` при живой транзакции
+ * переиспользует ЕЁ, то есть межарендный SELECT выполнялся прямо в транзакции
+ * арендатора. Любая ошибка оператора в PostgreSQL переводит транзакцию в
+ * состояние 25P02, и КАЖДЫЙ следующий оператор в ней падает с «текущая
+ * транзакция прервана». А отказ восстановления здесь глотается намеренно
+ * (иначе недоступная база рушила бы приём диктовки) — значит запрос продолжал
+ * работу на мёртвой транзакции, и продиктованный врачом текст не сохранялся с
+ * причиной, не имеющей отношения к настоящей. Одно временное чтение
+ * превращалось в тихую потерю медицинского текста с подменённой причиной.
+ *
+ * ДЕФЕКТ 2: ЧУЖОЙ МЕДИЦИНСКИЙ ТЕКСТ ПОДНИМАЛСЯ ПО ЗАПРОСУ ПОСТОРОННЕГО. Наружу
+ * он не течёт — выдача фильтруется по организации (`speechChunkMatchesScope`),
+ * — но расшифровки чужих клиник оказывались в памяти процесса в момент,
+ * выбираемый арендатором, который к ним отношения не имеет.
+ *
+ * ЧТО СДЕЛАНО. Внутри активной транзакции попытка НЕ присоединяется к ней и НЕ
+ * ожидается: `transactionStorage.exit` выводит вызов из контекста транзакции,
+ * поэтому `withSuperuserBypass` открывает СВОЁ соединение, а вызывающий идёт
+ * дальше немедленно.
+ *
+ * ПОЧЕМУ ИМЕННО НЕ ОЖИДАЕТСЯ, а не просто «выполняется на своём соединении».
+ * Пул конечен (`db/rls.ts:66-73`): запрос, который держит одно соединение и
+ * ЖДЁТ второго, при насыщении пула образует цикл ожидания. Здесь цикла нет —
+ * никто попытку не ждёт, а `speechRestorePromise` делает её единственной на
+ * процесс, поэтому лишнее соединение максимум одно.
+ *
+ * ЧТО ОТ ЭТОГО НЕ ЛОМАЕТСЯ. Долговременная запись не зависит от горячего кэша:
+ * `persistSpeechRecording` сливает фрагмент с СОХРАНЁННЫМ конвертом, прочитанным
+ * из базы (`loadDurableRecordingEnvelope`), а не с памятью. Кэш нужен чтению
+ * (`GET /api/speech/chunks`) и быстрому отказу по личности записи, гарантию
+ * которого даёт та же проверка над конвертом.
+ *
+ * ЧЕГО ЭТО НЕ ЧИНИТ И ЧТО ОСТАЁТСЯ ДОЛГОМ. Сам факт того, что горячий кэш
+ * общий для всех клиник, здесь не отменяется: его наполняет и загрузка при
+ * импорте модуля. Переход на ленивое чтение по recordingId объявлен отдельной
+ * задачей в шапке `restoreSpeechTranscriptionChunks`.
+ */
+function ensureSpeechCacheRestoredOutsideCallerTransaction(): Promise<void> {
+  if (!transactionStorage.getStore()) return ensureSpeechTranscriptionChunksRestored();
+  transactionStorage.exit(() => {
+    // Отказ уже разобран внутри: обработчик записывает причину, назначает
+    // выдержку и возвращает выполненный промис, поэтому непойманного отклонения
+    // здесь появиться не может.
+    void ensureSpeechTranscriptionChunksRestored();
+  });
+  return Promise.resolve();
+}
+
 export async function recordSpeechTranscriptionChunk(
   input: Omit<SpeechTranscriptionChunk, "id" | "organizationId" | "createdAt">
 ): Promise<SpeechTranscriptionChunk> {
-  await ensureSpeechTranscriptionChunksRestored();
+  await ensureSpeechCacheRestoredOutsideCallerTransaction();
+
+  /**
+   * КЛИНИКА ФРАГМЕНТА ОПРЕДЕЛЯЕТСЯ ДО ЛЮБОГО ОБРАЩЕНИЯ К ГОРЯЧЕМУ КЭШУ.
+   *
+   * ЧТО БЫЛО СЛОМАНО. Обе выборки ниже искали по общему для всех клиник массиву
+   * ТОЛЬКО по recordingId (и номеру фрагмента), без фильтра по организации, а
+   * найденная строка отдавала свой `organizationId` записи. recordingId
+   * приходит от клиента и уникальности между клиниками не имеет, поэтому при
+   * совпадении запись одной клиники решала судьбу фрагмента другой: либо
+   * фрагмент писался бы с чужим арендатором (42501 на `WITH CHECK`), либо
+   * законная диктовка получала бы 409 из-за чужой записи, а текст отказа ещё и
+   * называл бы, чем именно расходятся прием, пациент, источник и язык чужой
+   * записи. От первого исхода спасала только проверка личности строкой ниже —
+   * опора косвенная и держится на том, что приемы и пациенты не совпадают между
+   * клиниками.
+   *
+   * Организация берётся из приема или пациента фрагмента, а не из кэша, поэтому
+   * теперь она проверена базой, а не унаследована. Цена — один поиск по
+   * первичному ключу на повторный фрагмент; раньше он делался только для нового.
+   */
+  const organizationId = await resolveSpeechChunkOrganizationId(input);
 
   /**
    * Быстрый отказ по горячему кэшу: он экономит поход в базу, но НИЧЕГО не
@@ -1122,7 +1246,10 @@ export async function recordSpeechTranscriptionChunk(
    * попадает под эту же проверку.
    */
   const cachedConflict = speechTranscriptionChunks.find(
-    (chunk) => chunk.recordingId === input.recordingId && !speechRecordingIdentityMatches(chunk, input)
+    (chunk) =>
+      chunk.organizationId === organizationId &&
+      chunk.recordingId === input.recordingId &&
+      !speechRecordingIdentityMatches(chunk, input)
   );
   if (cachedConflict) {
     throw new SpeechChunkIdentityConflictError(
@@ -1131,7 +1258,10 @@ export async function recordSpeechTranscriptionChunk(
   }
 
   const existingIndex = speechTranscriptionChunks.findIndex(
-    (chunk) => chunk.recordingId === input.recordingId && chunk.chunkIndex === input.chunkIndex
+    (chunk) =>
+      chunk.organizationId === organizationId &&
+      chunk.recordingId === input.recordingId &&
+      chunk.chunkIndex === input.chunkIndex
   );
   const existing = existingIndex >= 0 ? speechTranscriptionChunks[existingIndex] : undefined;
 
@@ -1139,13 +1269,13 @@ export async function recordSpeechTranscriptionChunk(
     if (!shouldReplaceSpeechTranscriptionChunk(existing, input)) {
       // Повтор не улучшил фрагмент, но прошлая запись в базу могла не пройти.
       // Используем повтор как ещё одну попытку сохранить текст.
-      return await withDurableSpeechRecording(existing, existing.organizationId);
+      return await withDurableSpeechRecording(existing, organizationId);
     }
     const chunk: SpeechTranscriptionChunk = {
       ...existing,
       ...input,
       id: existing.id,
-      organizationId: existing.organizationId,
+      organizationId,
       createdAt: existing.createdAt,
       warnings: uniqueStrings([
         ...input.warnings,
@@ -1154,10 +1284,8 @@ export async function recordSpeechTranscriptionChunk(
     };
     speechTranscriptionChunks.splice(existingIndex, 1, chunk);
     durableChunkKeys.delete(speechChunkKey(chunk.recordingId, chunk.chunkIndex));
-    return await withDurableSpeechRecording(chunk, chunk.organizationId);
+    return await withDurableSpeechRecording(chunk, organizationId);
   }
-
-  const organizationId = await resolveSpeechChunkOrganizationId(input);
 
   const chunk: SpeechTranscriptionChunk = {
     id: randomUUID(),

@@ -7,6 +7,7 @@ import { withSuperuserBypass, withTenantCtx, type TenantDb } from "../db/rls.js"
 import { organizations, users, userInvitations, auditEvents } from "../db/schema.js";
 import { hashCredential, verifyCredential, signToken, verifyToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "../security/authSecret.js";
+import { unguardedBypassAllowed } from "../accessGuard.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import { resetRateLimit } from "../security/rateLimit.js";
 import { ADMIN_ROLES, getRequestIdentity } from "../security/identity.js";
@@ -20,14 +21,55 @@ import { staffRoleSchema } from "@dental/shared";
 export const TOKEN_SECRET = () => authTokenSecret();
 
 /**
- * Демо-вход (clinic@example.com / doctor@clinic.com) — это бэкдор в исходниках.
- * Теперь он выключен по умолчанию и включается только явным флагом в dev.
+ * Демо-вход (clinic@example.com / doctor@clinic.com) — это бэкдор в исходниках:
+ * пара логинов, зашитых в этот файл, пускает в систему БЕЗ обращения к базе и
+ * БЕЗ проверки пароля. `/api/auth/login` выдаёт по ним подписанные clinicToken и
+ * staffToken с ролью doctor на организацию 00000000-0000-0000-0000-000000000001
+ * — тот самый идентификатор, который ставит сидер (`scripts/seedAuth.ts`,
+ * `scripts/migrateStateToDb.ts`), то есть на настоящую клинику заказчика.
+ *
+ * ЧТО БЫЛО И ПОЧЕМУ ЭТО ДЫРА, А НЕ ТЕОРИЯ.
+ * Стояло:
+ *     if (process.env.NODE_ENV === "production") return false;
+ *     return process.env.DENTE_ALLOW_DEMO_LOGIN !== "0";
+ * Два независимых дефекта в двух строках.
+ *   1. ОТСУТСТВИЕ ПЕРЕМЕННОЙ ВКЛЮЧАЛО БЭКДОР. `!== "0"` истинно, когда
+ *      переменной нет вовсе. Небезопасное поведение было поведением по
+ *      умолчанию: чтобы закрыть вход, требовалось знать имя переменной и
+ *      выставить её — а чтобы открыть, не требовалось ничего.
+ *   2. NODE_ENV НЕ ПРИЗНАК БОЯ. `apps/api/package.json` объявляет
+ *      `"start": "node dist/server.js"` и режим не задаёт. У заказчика,
+ *      поднявшего сервер этой командой, NODE_ENV пуст, первая строка не
+ *      срабатывает, и обе защиты промахиваются мимо ровно того случая, ради
+ *      которого написаны.
+ * Замерено на этом дереве до правки: пустой NODE_ENV, переменная не задана,
+ * POST /api/auth/login {"email":"doctor@clinic.com","password":<заведомо
+ * неверный>} → 200 с clinicToken и staffToken, роль doctor. Комментарий над
+ * функцией при этом уже утверждал, что вход «выключен по умолчанию»: описание
+ * разошлось с кодом, и читатель получал ложное спокойствие.
+ *
+ * ЧТО СТАЛО. Тот же механизм, что у остальных послаблений репозитория
+ * (`accessGuard.unguardedBypassAllowed`, уже применён в routes/schedule.ts,
+ * routes/settings.ts, routes/imaging.ts, routes/telegram.ts): бэкдор открыт,
+ * только если ОДНОВРЕМЕННО названный режим разработки (`development`/`test`)
+ * И `DENTE_ALLOW_DEMO_LOGIN=1`. Незаданная переменная, пустой или незнакомый
+ * NODE_ENV («staging», «prod», опечатка) не открывают ничего. Направление
+ * отказа выбрано осознанно: ошибка в настройке теперь закрывает вход, а не
+ * открывает его.
+ *
+ * ЗАЩЁЛКА С ДВУХ СТОРОН. `server.ts:136-150` отказывает серверу в старте, если
+ * при NODE_ENV=production выставлен `DENTE_ALLOW_DEMO_LOGIN=1`. Раньше эта
+ * проверка была бесполезна против типового случая — она ловит значение "1",
+ * а бэкдор открывался ПУСТОТОЙ. Теперь единственный способ его включить это и
+ * есть "1", то есть та самая величина, на которую production-проверка ругается.
+ *
+ * ВЕРНУТЬ «КАК БЫЛО» — значит вернуть вход без учётных данных в медицинскую
+ * систему у заказчика. Разработчику нужен демо-вход: задайте
+ * `DENTE_ALLOW_DEMO_LOGIN=1` (это уже делает `apply-dev-env.ps1`), а не
+ * возвращайте `!== "0"`.
  */
 function demoLoginAllowed(): boolean {
-  // Вне production демо-вход работает без всякой настройки .env.
-  // Отключить явно: DENTE_ALLOW_DEMO_LOGIN=0. В production — никогда.
-  if (process.env.NODE_ENV === "production") return false;
-  return process.env.DENTE_ALLOW_DEMO_LOGIN !== "0";
+  return unguardedBypassAllowed("DENTE_ALLOW_DEMO_LOGIN");
 }
 
 /**

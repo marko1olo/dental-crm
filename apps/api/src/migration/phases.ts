@@ -113,7 +113,7 @@ export interface MapPhaseResult {
  */
 export async function mapRunPhase(context: PhaseContext): Promise<MapPhaseResult> {
   const run = await requireRunWithUpload(context.runId, context.organizationId);
-  await updateRun(context.runId, { status: "mapping", phase: "Определение колонок" });
+  await updateRun(context.runId, context.organizationId, { status: "mapping", phase: "Определение колонок" });
 
   const shape = await detectSourceShape({
     filePath: run.uploadPath!,
@@ -215,7 +215,7 @@ export async function mapRunPhase(context: PhaseContext): Promise<MapPhaseResult
     }
   }
 
-  await updateRun(context.runId, {
+  await updateRun(context.runId, context.organizationId, {
     status: "validated",
     phase: "Карта соответствия готова",
     mappingJson: mapping,
@@ -298,7 +298,7 @@ export async function stageRunPhase(context: PhaseContext): Promise<StagePhaseRe
     );
   }
 
-  await updateRun(context.runId, { status: "staging", phase: "Укладка строк источника" });
+  await updateRun(context.runId, context.organizationId, { status: "staging", phase: "Укладка строк источника" });
 
   const shape = await detectSourceShape({
     filePath: run.uploadPath!,
@@ -365,12 +365,12 @@ export async function stageRunPhase(context: PhaseContext): Promise<StagePhaseRe
 
     // Отметка живучести на каждой партии: укладка миллиона строк не должна
     // выглядеть как зависший процесс.
-    await heartbeat(context.runId, `Уложено строк: ${sourceRows}`, 0);
+    await heartbeat(context.runId, context.organizationId, `Уложено строк: ${sourceRows}`, 0);
   }
 
-  const counts = await countStagingByStatus(context.runId);
+  const counts = await countStagingByStatus(context.runId, context.organizationId);
 
-  await updateRun(context.runId, {
+  await updateRun(context.runId, context.organizationId, {
     status: "validated",
     phase: `Уложено ${counts.total} строк, готово к загрузке ${counts.ready}`,
     sourceRows,
@@ -421,9 +421,9 @@ export async function executeRunPhase(
     entitiesWithoutLoader: []
   };
 
-  const kinds = await readyEntityKinds(context.runId);
-  const totalBefore = await countStagingByStatus(context.runId);
-  await updateRun(context.runId, { progressTotal: totalBefore.total });
+  const kinds = await readyEntityKinds(context.runId, context.organizationId);
+  const totalBefore = await countStagingByStatus(context.runId, context.organizationId);
+  await updateRun(context.runId, context.organizationId, { progressTotal: totalBefore.total });
 
   for (const entityKind of kinds) {
     const loader = loaderFor(entityKind);
@@ -433,16 +433,16 @@ export async function executeRunPhase(
        * Иначе сверка справедливо признает их потерянными, а цикл ниже будет
        * крутиться на них без продвижения.
        */
-      const skipped = await markRemainingReadyAsSkipped(context.runId, entityKind);
+      const skipped = await markRemainingReadyAsSkipped(context.runId, context.organizationId, entityKind);
       if (skipped > 0) result.entitiesWithoutLoader.push(entityKind);
       continue;
     }
 
     result.entitiesProcessed.push(entityKind);
-    await heartbeat(context.runId, `Загрузка: ${migrationEntityKindTitles[entityKind]}`);
+    await heartbeat(context.runId, context.organizationId, `Загрузка: ${migrationEntityKindTitles[entityKind]}`);
 
     for (;;) {
-      const rows = await readReadyRows(context.runId, entityKind, STAGING_PAGE_SIZE);
+      const rows = await readReadyRows(context.runId, context.organizationId, entityKind, STAGING_PAGE_SIZE);
       if (rows.length === 0) break;
 
       const outcome = await loader({
@@ -478,12 +478,13 @@ export async function executeRunPhase(
        */
       if (context.dryRun) {
         const stagingIds = rows.map((row) => row.stagingId);
-        await markRowsSkipped(stagingIds);
+        await markRowsSkipped(context.organizationId, stagingIds);
       }
 
-      const counts = await countStagingByStatus(context.runId);
+      const counts = await countStagingByStatus(context.runId, context.organizationId);
       await heartbeat(
         context.runId,
+        context.organizationId,
         `Загрузка: ${migrationEntityKindTitles[entityKind]}, обработано ${counts.total - counts.ready} из ${counts.total}`,
         counts.total - counts.ready
       );
@@ -493,9 +494,9 @@ export async function executeRunPhase(
        * ready-строк не уменьшилось, продвижения нет. Помечаем эту партию
        * пропущенной и выходим — иначе воркер завис бы навсегда.
        */
-      const stillReady = await readReadyRows(context.runId, entityKind, 1);
+      const stillReady = await readReadyRows(context.runId, context.organizationId, entityKind, 1);
       if (stillReady.length > 0 && stillReady[0]!.stagingId === rows[0]!.stagingId) {
-        await markRowsSkipped(rows.map((row) => row.stagingId));
+        await markRowsSkipped(context.organizationId, rows.map((row) => row.stagingId));
         result.failed += rows.length;
         break;
       }
@@ -514,7 +515,7 @@ export async function finishRunPhase(context: {
   organizationId: string;
   dryRun: boolean;
 }): Promise<MigrationReconciliationReport> {
-  const counts = await countStagingByStatus(context.runId);
+  const counts = await countStagingByStatus(context.runId, context.organizationId);
   const run = await findRun(context.runId, context.organizationId);
 
   const reconciliation = await reconcileRun({
@@ -556,7 +557,7 @@ export async function finishRunPhase(context: {
         ? "completed"
         : "failed";
 
-  await updateRun(context.runId, {
+  await updateRun(context.runId, context.organizationId, {
     status,
     phase: context.dryRun
       ? "Сухой прогон завершён, боевые таблицы не тронуты"

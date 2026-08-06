@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { namedDevelopmentModeActive, unguardedBypassAllowed } from "../accessGuard.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
   createDenteTelegramLinkCodeSchema,
@@ -1537,8 +1538,40 @@ function configuredTelegramAdminSecret(): string | null {
   return process.env.DENTE_TELEGRAM_ADMIN_SECRET?.trim() || null;
 }
 
+/**
+ * Послабление для разработки на всей панели управления Telegram — 14 маршрутов,
+ * подключённых через `preHandler: requireTelegramControlPlaneAccess`
+ * (пересчитано 2026-08-06; цифра гниёт — пересчитывай, прежде чем ссылаться):
+ * работает ТОЛЬКО при явно названном режиме разработки и ТОЛЬКО при явно
+ * выставленном флаге.
+ *
+ * ПОЧЕМУ ЗДЕСЬ ОБЩИЙ ПРЕДИКАТ, А НЕ ПРЕЖНЕЕ `NODE_ENV !== "production"`.
+ * Прежнее условие истинно, когда NODE_ENV НЕ ЗАДАН ВОВСЕ, а незаданный NODE_ENV —
+ * типовое состояние настоящего сервера: `apps/api/package.json` объявляет
+ * `"start": "node dist/server.js"` и режим не задаёт. Значит у заказчика,
+ * поднявшего сервер этой командой, «мы не в production» было ИСТИНОЙ, и от
+ * чтения списка привязанных чатов пациентов, отзыва привязок, правки токена бота
+ * и ручной отправки сообщений без секрета администратора защищало только то, что
+ * второй флаг где-то не выставлен. Замерено на этом дереве до правки: пустой
+ * NODE_ENV + DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE=1 →
+ * GET /api/telegram/feature-plan отвечал 200 вместо 503.
+ *
+ * `accessGuard.ts` разбирает эту инверсию подробно и НАЗЫВАЕТ ЭТОТ ФАЙЛ как одну
+ * из четырёх копий, которую должен переписать владелец. Пятой копии условия
+ * безопасности здесь не будет: одно условие в одном месте — единственный способ
+ * не оставить следующую инверсию незамеченной.
+ *
+ * Смысл послабления не изменился: `development`/`test` плюс
+ * `DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE=1`. Закрылся ровно один случай —
+ * пустой или незнакомый NODE_ENV («staging», «prod», опечатка) больше не
+ * считается разработкой.
+ *
+ * ВЕРНУТЬ «КАК БЫЛО» — значит снова открыть переписку клиники с пациентами на
+ * боевом сервере. Если нужно работать без секрета локально, задайте
+ * NODE_ENV=development, а не возвращайте отрицание.
+ */
 function isExplicitlyUnguardedControlPlaneAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" && process.env.DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE === "1";
+  return unguardedBypassAllowed("DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE");
 }
 
 async function requireTelegramControlPlaneAccess(request: FastifyRequest, reply: FastifyReply) {
@@ -2469,7 +2502,32 @@ async function handleWebhook(
   const expectedSecret = runtime.webhookSecret;
   const providedSecret = stringFromUnknown(request.headers[telegramSecretHeader]) ?? null;
 
-  if (!expectedSecret && process.env.NODE_ENV === "production") {
+  // Webhook — единственный маршрут Telegram, открытый в интернет без охраны
+  // (`registerTelegramWebhookRoutes`, отдельно от панели управления). Секрет
+  // `x-telegram-bot-api-secret-token` — ЕДИНСТВЕННОЕ доказательство, что update
+  // пришёл от Telegram, а не от постороннего: без него кто угодно может прислать
+  // фальшивое сообщение от имени пациента, израсходовать код привязки чата и
+  // привязать СВОЙ чат к чужой карте — то есть начать получать напоминания о
+  // приёмах чужого человека.
+  //
+  // БЫЛО: `!expectedSecret && process.env.NODE_ENV === "production"` — требование
+  // секрета включалось ТОЛЬКО в явном production. Тот же промах, что в остальных
+  // четырёх местах, но с обратной стороны: `apps/api/package.json` объявляет
+  // `"start": "node dist/server.js"` и NODE_ENV не задаёт, поэтому у заказчика
+  // условие ЛОЖНО, проверка молчала, и незаданный DENTE_TELEGRAM_WEBHOOK_SECRET
+  // не вызывал ни отказа, ни жалобы: `expectedSecret` пуст → сравнение ниже
+  // пропускается целиком → update принимался от кого угодно.
+  //
+  // СТАЛО: отсутствие секрета допустимо только в НАЗВАННОМ режиме разработки
+  // (`development`/`test`). Пустой или незнакомый NODE_ENV теперь трактуется как
+  // бой и требует секрет. Разработку это не ломает: локальный прогон и тесты
+  // задают NODE_ENV=development/test, а `telegramChatLinkPersists.test.ts` вдобавок
+  // выставляет DENTE_TELEGRAM_WEBHOOK_SECRET.
+  //
+  // ВЕРНУТЬ «КАК БЫЛО» — значит снова принимать анонимные update у заказчика.
+  // Правильный способ поднять webhook в бою — задать DENTE_TELEGRAM_WEBHOOK_SECRET
+  // и тот же секрет отдать Telegram при setWebhook.
+  if (!expectedSecret && !namedDevelopmentModeActive()) {
     return reply.code(503).send({
       ok: false,
       error: "TelegramWebhookSecretRequired"

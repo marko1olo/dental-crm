@@ -24,6 +24,22 @@ import { cleanupExpiredUploads, deleteUpload } from "./uploadStore.js";
  * приложения — подберёт его и продолжит с тех строк стейджинга, которые ещё
  * ready. Уже загруженные помечены loaded и повторно не создаются; страховкой
  * служит уникальность в migration_entity_links.
+ *
+ * ПОЧЕМУ ВОРКЕР НЕ ВИДЕЛ ОЧЕРЕДЬ ВООБЩЕ (правка RLS)
+ * БЫЛО: runStore обращался к базе голым `db`. Это Proxy, подставляющий активную
+ * транзакцию из transactionStorage; в обработчике маршрута транзакцию открывает
+ * автообёртка withTenantCtx из server.ts, и тенант-контекст приходил сам собой.
+ * Но воркер живёт ВНЕ обработчика — транзакции нет, контекста нет. Таблица
+ * migration_runs стоит под ENABLE + FORCE ROW LEVEL SECURITY, роль приложения не
+ * имеет BYPASSRLS, и захватывающий UPDATE совпадал с нулём строк МОЛЧА: под RLS
+ * «не найдено» и «не видно» для UPDATE неразличимы. Прогон вечно висел «в
+ * очереди», оператор ждал бесконечно.
+ * СТАЛО: контекст ставится на каждую операцию внутри runStore (см. шапку
+ * runStore.ts). Здесь, в воркере, это видно по тому, что каждый вызов получает
+ * `run.organizationId` — арендатора, от имени которого выполняется операция.
+ * Один прогон = своя короткая транзакция на каждый шаг, а НЕ одна длинная на
+ * весь прогон: иначе отметка живучести была бы не видна снаружи до самого конца
+ * и подбор осиротевших прогонов перестал бы работать.
  */
 
 /** Пауза между опросами очереди, когда работы нет. */
@@ -91,16 +107,17 @@ async function processRun(run: Awaited<ReturnType<typeof claimNextRun>>): Promis
   };
 
   try {
-    const counts = await countStagingByStatus(run.id);
+    const counts = await countStagingByStatus(run.id, run.organizationId);
 
     if (counts.total === 0) {
       // Строк нет вовсе — значит укладка ещё не выполнялась.
-      await heartbeat(run.id, "Укладка строк источника");
+      await heartbeat(run.id, run.organizationId, "Укладка строк источника");
       await stageRunPhase({ ...context, mappingOverrides: [] });
-      await updateRun(run.id, { status: "loading" });
+      await updateRun(run.id, run.organizationId, { status: "loading" });
     } else if (run.resumeCount > 0) {
       await heartbeat(
         run.id,
+        run.organizationId,
         `Возобновление после перезапуска: осталось загрузить ${counts.ready} из ${counts.total} строк`
       );
     }
@@ -132,7 +149,7 @@ async function processRun(run: Awaited<ReturnType<typeof claimNextRun>>): Promis
      */
     if (!run.dryRun && reconciliation.balanced) {
       await deleteUpload(run.uploadPath);
-      await updateRun(run.id, { uploadPath: null });
+      await updateRun(run.id, run.organizationId, { uploadPath: null });
     }
   } catch (error) {
     state.failed += 1;
@@ -147,7 +164,7 @@ async function processRun(run: Awaited<ReturnType<typeof claimNextRun>>): Promis
      * выгрузки из старой системы. Оператор может исправить причину и запустить
      * выполнение заново.
      */
-    await updateRun(run.id, {
+    await updateRun(run.id, run.organizationId, {
       status: "failed",
       phase: "Прервано ошибкой",
       workerId: null,

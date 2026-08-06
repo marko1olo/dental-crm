@@ -47,6 +47,7 @@ import {
 	sendWhatsappTextMessage,
 } from "../whatsappTransport.js";
 import {
+	namedDevelopmentModeActive,
 	requireNonDoctorAccess,
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -386,10 +387,40 @@ export async function registerWhatsappRoutes(
 			const appSecret = configuredWhatsappAppSecret();
 
 			if (!appSecret) {
-				// Without an App Secret we cannot authenticate the sender. Refuse to
-				// ingest in production; allow (with a warning) in development so local
-				// webhook testing works without Meta credentials.
-				if (process.env.NODE_ENV === "production") {
+				/*
+				 * БЕЗ App Secret ОТПРАВИТЕЛЯ ПРОВЕРИТЬ НЕЧЕМ.
+				 *
+				 * БЫЛО: `if (process.env.NODE_ENV === "production")` — отказ включался
+				 * ТОЛЬКО в явно названном production, иначе управление шло дальше и
+				 * ingest принимался с одним console.warn. `apps/api/package.json`
+				 * объявляет `"start": "node dist/server.js"` и NODE_ENV не задаёт, ни
+				 * один Dockerfile тоже: у заказчика NODE_ENV ПУСТ, условие ложно, и
+				 * этот вебхук — открытый в интернет публичный маршрут — принимал любой
+				 * POST от кого угодно без подписи. Кто угодно мог вбрасывать «входящие
+				 * сообщения пациентов» в омниканальный ящик клиники и заводить по ним
+				 * записи. Измерено зондом: при пустом NODE_ENV ответ 200, при
+				 * NODE_ENV=staging тоже 200.
+				 *
+				 * СТАЛО: приём без подписи разрешён, только если ЯВНО НАЗВАН режим
+				 * разработки (`development`/`test`) — `namedDevelopmentModeActive()` из
+				 * accessGuard.ts, тот же самый предикат, что охраняет клинические
+				 * маршруты и вебхук Telegram. Пустой, незаданный или незнакомый
+				 * NODE_ENV («staging», «prod», опечатка) режимом разработки не
+				 * считается, и ingest в нём требует App Secret. Ошибка в имени режима
+				 * теперь закрывает вебхук, а не открывает его.
+				 *
+				 * ТОМУ, КТО ЧЕРЕЗ ПОЛГОДА ЗАХОЧЕТ «ВЕРНУТЬ КАК БЫЛО». Симптом будет
+				 * такой: «WhatsApp перестал доставлять сообщения, вебхук отвечает 503
+				 * WhatsappAppSecretRequired». Раньше он отвечал 200 не потому, что был
+				 * настроен, а потому, что проверка подписи была выключена пустым
+				 * окружением. Правильный выход один: задать WHATSAPP_APP_SECRET (или
+				 * META_APP_SECRET) в окружении сервера — тогда заработает настоящая
+				 * проверка x-hub-signature-256 в ветке else. Для локальной отладки без
+				 * учётных данных Meta выставьте NODE_ENV=development. Возврат к
+				 * `=== "production"` в любом виде снова откроет публичный вебхук
+				 * медицинской системы всему интернету.
+				 */
+				if (!namedDevelopmentModeActive()) {
 					// Имя переменной окружения ушло из тела ответа в журнал сервера:
 					// маршрут публичный, и его ответ читает кто угодно. Настройщику
 					// имя нужно, и оно есть — в журнале, а не в ответе наружу.

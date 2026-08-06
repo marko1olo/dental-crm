@@ -253,13 +253,18 @@ export const developmentEscapeFlagNames = Object.freeze([
 	"DENTE_ALLOW_DEMO_FIXTURES",
 ]);
 
-// Идиом послабления в этом коде один: «не production И флаг равен 1».
-// Ищется он в ОБОИХ порядках сравнения. Это поиск инвентаря переменных
-// окружения, а не доказательство защиты: вердикт гейта по-прежнему выносится
-// только по ответам приложения.
+// Идиомы послабления: СТАРЫЙ (`NODE_ENV !== "production" && флаг === "1"`) и
+// НОВЫЙ (`unguardedBypassAllowed("ИМЯ")` + `namedDevelopmentModeActive()`).
+// Старый идиом больше не применяется в коде, но остаётся в списке, чтобы
+// обнаруживать его возврат. Это поиск инвентаря переменных окружения, а не
+// доказательство защиты: вердикт гейта по-прежнему выносится только по ответам
+// приложения.
 const escapeFlagIdiomPatterns = Object.freeze([
+	// Старый идиом, оба порядка
 	/NODE_ENV\s*!==\s*["']production["']\s*&&\s*process\.env\.([A-Z0-9_]+)\s*===\s*["']1["']/g,
 	/process\.env\.([A-Z0-9_]+)\s*===\s*["']1["']\s*&&\s*process\.env\.NODE_ENV\s*!==\s*["']production["']/g,
+	// Новый идиом: unguardedBypassAllowed("FLAGNAME")
+	/unguardedBypassAllowed\s*\(\s*["']([A-Z0-9_]+)["']\s*\)/g,
 ]);
 
 let discoveredEscapeFlagsCache = null;

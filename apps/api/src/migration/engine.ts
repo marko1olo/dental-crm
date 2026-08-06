@@ -11,7 +11,7 @@ import {
   type MigrationTargetField
 } from "@dental/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
   appointments,
   auditEvents,
@@ -383,27 +383,29 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
   // ------------------------------------------------------------------
   // Прогон создаётся до любой обработки: если процесс упадёт, останется след.
   // ------------------------------------------------------------------
-  const [run] = await db
-    .insert(migrationRuns)
-    .values({
-      organizationId: input.organizationId,
-      sourceName: input.sourceName,
-      sourceKind: parsed.sourceKind,
-      sourceFingerprint: fingerprint,
-      sourceBytes: content?.length ?? Buffer.byteLength(input.rawText ?? ""),
-      detectedEncoding: parsed.detectedEncoding,
-      encodingConfidence: parsed.encodingConfidence,
-      vendorProfile: tables[0]!.mapping.vendorProfile,
-      status: "staging",
-      dryRun: input.dryRun,
-      sourceRows: totalSourceRows,
-      mappingJson: tables[0]!.mapping,
-      llmCalls: tables.reduce((sum, item) => sum + item.llmCalls, 0),
-      llmRejectedSuggestions: tables.reduce((sum, item) => sum + item.llmRejected, 0),
-      startedByUserId: input.startedByUserId ?? null,
-      startedAt: new Date()
-    })
-    .returning();
+  const [run] = await withTenantCtx(input.organizationId, async (tx) =>
+    tx
+      .insert(migrationRuns)
+      .values({
+        organizationId: input.organizationId,
+        sourceName: input.sourceName,
+        sourceKind: parsed.sourceKind,
+        sourceFingerprint: fingerprint,
+        sourceBytes: content?.length ?? Buffer.byteLength(input.rawText ?? ""),
+        detectedEncoding: parsed.detectedEncoding,
+        encodingConfidence: parsed.encodingConfidence,
+        vendorProfile: tables[0]!.mapping.vendorProfile,
+        status: "staging",
+        dryRun: input.dryRun,
+        sourceRows: totalSourceRows,
+        mappingJson: tables[0]!.mapping,
+        llmCalls: tables.reduce((sum, item) => sum + item.llmCalls, 0),
+        llmRejectedSuggestions: tables.reduce((sum, item) => sum + item.llmRejected, 0),
+        startedByUserId: input.startedByUserId ?? null,
+        startedAt: new Date()
+      })
+      .returning()
+  );
 
   if (!run) throw new Error("Не удалось создать запись прогона переноса.");
 
@@ -510,20 +512,36 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
         );
         // Строки помечаются пропущенными, а не остаются без исхода — иначе сверка
         // справедливо признает их потерянными.
-        await db
-          .update(migrationStagingRecords)
-          .set({ status: "skipped", updatedAt: new Date() })
-          .where(
-            and(
-              eq(migrationStagingRecords.runId, run.id),
-              eq(migrationStagingRecords.sourceTable, prepared.table.name),
-              eq(migrationStagingRecords.status, "ready")
-            )
-          );
+        // БЫЛО без контекста арендатора: UPDATE под FORCE RLS совпадал с нулём
+        // строк, и статус «skipped» не выставлялся. СТАЛО — с контекстом.
+        await withTenantCtx(input.organizationId, async (tx) => {
+          await tx
+            .update(migrationStagingRecords)
+            .set({ status: "skipped", updatedAt: new Date() })
+            .where(
+              and(
+                eq(migrationStagingRecords.runId, run.id),
+                eq(migrationStagingRecords.organizationId, input.organizationId),
+                eq(migrationStagingRecords.sourceTable, prepared.table.name),
+                eq(migrationStagingRecords.status, "ready")
+              )
+            );
+        });
         continue;
       }
 
-      await db.update(migrationRuns).set({ status: "loading", updatedAt: new Date() }).where(eq(migrationRuns.id, run.id));
+      /**
+       * БЫЛО `db.update(...)` без тенант-контекста: `migration_runs` под
+       * FORCE RLS, поэтому UPDATE молча совпадал с нулём строк и статус
+       * «loading» снаружи не появлялся никогда. СТАЛО — короткая транзакция
+       * с контекстом арендатора.
+       */
+      await withTenantCtx(input.organizationId, async (tx) => {
+        await tx
+          .update(migrationRuns)
+          .set({ status: "loading", updatedAt: new Date() })
+          .where(and(eq(migrationRuns.id, run.id), eq(migrationRuns.organizationId, input.organizationId)));
+      });
 
       const outcome = await loader({
         runId: run.id,
@@ -558,30 +576,47 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
        * пропущенными, чтобы баланс сверки был замкнут и в этом режиме.
        */
       if (input.dryRun) {
-        await db
-          .update(migrationStagingRecords)
-          .set({ status: "skipped", updatedAt: new Date() })
-          .where(
-            and(
-              eq(migrationStagingRecords.runId, run.id),
-              eq(migrationStagingRecords.sourceTable, prepared.table.name),
-              eq(migrationStagingRecords.status, "ready")
-            )
-          );
+        await withTenantCtx(input.organizationId, async (tx) => {
+          await tx
+            .update(migrationStagingRecords)
+            .set({ status: "skipped", updatedAt: new Date() })
+            .where(
+              and(
+                eq(migrationStagingRecords.runId, run.id),
+                eq(migrationStagingRecords.organizationId, input.organizationId),
+                eq(migrationStagingRecords.sourceTable, prepared.table.name),
+                eq(migrationStagingRecords.status, "ready")
+              )
+            );
+        });
       }
     }
 
     // ---- Фактическое число изолированных строк — из базы, а не из счётчиков.
-    const [quarantinedRow] = await db
-      .select({ rows: sql<string>`count(*)` })
-      .from(migrationStagingRecords)
-      .where(and(eq(migrationStagingRecords.runId, run.id), eq(migrationStagingRecords.status, "quarantined")));
+    const [quarantinedRow, skippedRow] = await withTenantCtx(input.organizationId, async (tx) => {
+      const [quarantined] = await tx
+        .select({ rows: sql<string>`count(*)` })
+        .from(migrationStagingRecords)
+        .where(
+          and(
+            eq(migrationStagingRecords.runId, run.id),
+            eq(migrationStagingRecords.organizationId, input.organizationId),
+            eq(migrationStagingRecords.status, "quarantined")
+          )
+        );
+      const [skipped] = await tx
+        .select({ rows: sql<string>`count(*)` })
+        .from(migrationStagingRecords)
+        .where(
+          and(
+            eq(migrationStagingRecords.runId, run.id),
+            eq(migrationStagingRecords.organizationId, input.organizationId),
+            eq(migrationStagingRecords.status, "skipped")
+          )
+        );
+      return [quarantined, skipped] as const;
+    });
     quarantinedTotal = Number(quarantinedRow?.rows ?? 0);
-
-    const [skippedRow] = await db
-      .select({ rows: sql<string>`count(*)` })
-      .from(migrationStagingRecords)
-      .where(and(eq(migrationStagingRecords.runId, run.id), eq(migrationStagingRecords.status, "skipped")));
     const skippedTotal = Number(skippedRow?.rows ?? 0);
 
     // ---- Сверка.
@@ -601,35 +636,41 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
           ? "completed"
           : "failed";
 
-    const [finished] = await db
-      .update(migrationRuns)
-      .set({
-        status,
-        stagedRows: stagedTotal,
-        loadedRows: loadedTotal,
-        updatedRows: updatedTotal,
-        duplicateRows: duplicateTotal,
-        quarantinedRows: quarantinedTotal,
-        skippedRows: skippedTotal,
-        finishedAt: new Date(),
-        updatedAt: new Date(),
-        errorMessage: reconciliation.balanced
-          ? null
-          : "Сверка не сошлась: часть строк не учтена. Подробности в отчёте сверки."
-      })
-      .where(eq(migrationRuns.id, run.id))
-      .returning();
+    const [finished] = await withTenantCtx(input.organizationId, async (tx) =>
+      tx
+        .update(migrationRuns)
+        .set({
+          status,
+          stagedRows: stagedTotal,
+          loadedRows: loadedTotal,
+          updatedRows: updatedTotal,
+          duplicateRows: duplicateTotal,
+          quarantinedRows: quarantinedTotal,
+          skippedRows: skippedTotal,
+          finishedAt: new Date(),
+          updatedAt: new Date(),
+          errorMessage: reconciliation.balanced
+            ? null
+            : "Сверка не сошлась: часть строк не учтена. Подробности в отчёте сверки."
+        })
+        .where(and(eq(migrationRuns.id, run.id), eq(migrationRuns.organizationId, input.organizationId)))
+        .returning()
+    );
 
     if (!input.dryRun) {
-      await db.insert(auditEvents).values({
-        organizationId: input.organizationId,
-        actorUserId: input.startedByUserId ?? null,
-        entityType: "migration_run",
-        entityId: run.id,
-        action: "migration_completed",
-        reason: `Перенос из «${input.sourceName}»: создано ${loadedTotal}, обновлено ${updatedTotal}, дублей ${duplicateTotal}, в карантине ${quarantinedTotal}. Сверка ${
-          reconciliation.balanced ? "сошлась" : "НЕ сошлась"
-        }.`
+      // БЫЛО без контекста: INSERT в таблицу под RLS падал бы с 42501 (запись
+      // громкая, в отличие от чтения). СТАЛО — контекст арендатора.
+      await withTenantCtx(input.organizationId, async (tx) => {
+        await tx.insert(auditEvents).values({
+          organizationId: input.organizationId,
+          actorUserId: input.startedByUserId ?? null,
+          entityType: "migration_run",
+          entityId: run.id,
+          action: "migration_completed",
+          reason: `Перенос из «${input.sourceName}»: создано ${loadedTotal}, обновлено ${updatedTotal}, дублей ${duplicateTotal}, в карантине ${quarantinedTotal}. Сверка ${
+            reconciliation.balanced ? "сошлась" : "НЕ сошлась"
+          }.`
+        });
       });
     }
 
@@ -651,16 +692,18 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
      * без повторной выгрузки из старой системы.
      */
     const message = error instanceof Error ? error.message : String(error);
-    await db
-      .update(migrationRuns)
-      .set({
-        status: "failed",
-        errorClass: error instanceof Error ? error.constructor.name : "UnknownError",
-        errorMessage: message.slice(0, 2000),
-        finishedAt: new Date(),
-        updatedAt: new Date()
-      })
-      .where(eq(migrationRuns.id, run.id));
+    await withTenantCtx(input.organizationId, async (tx) => {
+      await tx
+        .update(migrationRuns)
+        .set({
+          status: "failed",
+          errorClass: error instanceof Error ? error.constructor.name : "UnknownError",
+          errorMessage: message.slice(0, 2000),
+          finishedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(and(eq(migrationRuns.id, run.id), eq(migrationRuns.organizationId, input.organizationId)));
+    });
     throw error;
   }
 }
@@ -672,7 +715,8 @@ export async function listQuarantine(
   limit = 200,
   offset = 0
 ): Promise<MigrationQuarantineItem[]> {
-  const rows = await db
+  const rows = await withTenantCtx(organizationId, async (tx) =>
+    tx
     .select({
       id: migrationQuarantineRecords.id,
       stagingRecordId: migrationQuarantineRecords.stagingRecordId,
@@ -697,7 +741,8 @@ export async function listQuarantine(
     // Блокирующее вперёд: это то, что требует действия.
     .orderBy(desc(migrationQuarantineRecords.blocking), migrationQuarantineRecords.createdAt)
     .limit(limit)
-    .offset(offset);
+    .offset(offset)
+  );
 
   return rows.map((row) => ({
     id: row.id,
@@ -716,12 +761,14 @@ export async function listQuarantine(
 
 /** Прогоны организации, свежие первыми. */
 export async function listRuns(organizationId: string, limit = 50): Promise<MigrationRunSummary[]> {
-  const rows = await db
-    .select()
-    .from(migrationRuns)
-    .where(eq(migrationRuns.organizationId, organizationId))
-    .orderBy(desc(migrationRuns.createdAt))
-    .limit(limit);
+  const rows = await withTenantCtx(organizationId, async (tx) =>
+    tx
+      .select()
+      .from(migrationRuns)
+      .where(eq(migrationRuns.organizationId, organizationId))
+      .orderBy(desc(migrationRuns.createdAt))
+      .limit(limit)
+  );
   return rows.map(summaryFrom);
 }
 
@@ -760,28 +807,32 @@ export async function rollbackRun(input: {
   runId: string;
   actorUserId?: string | null;
 }): Promise<{ outcomes: RollbackOutcome[]; status: "rolled_back"; message: string }> {
-  const [run] = await db
-    .select()
-    .from(migrationRuns)
-    .where(and(eq(migrationRuns.id, input.runId), eq(migrationRuns.organizationId, input.organizationId)));
+  const [run] = await withTenantCtx(input.organizationId, async (tx) =>
+    tx
+      .select()
+      .from(migrationRuns)
+      .where(and(eq(migrationRuns.id, input.runId), eq(migrationRuns.organizationId, input.organizationId)))
+  );
 
   if (!run) throw new Error("Прогон переноса не найден в этой организации.");
   if (run.status === "rolled_back") throw new Error("Этот прогон уже откачен.");
   if (run.dryRun) throw new Error("Сухой прогон ничего не записывал — откатывать нечего.");
 
-  const links = await db
-    .select({
-      id: migrationEntityLinks.id,
-      entityKind: migrationEntityLinks.entityKind,
-      targetEntityId: migrationEntityLinks.targetEntityId
-    })
-    .from(migrationEntityLinks)
-    .where(
-      and(
-        eq(migrationEntityLinks.createdByRunId, input.runId),
-        eq(migrationEntityLinks.organizationId, input.organizationId)
+  const links = await withTenantCtx(input.organizationId, async (tx) =>
+    tx
+      .select({
+        id: migrationEntityLinks.id,
+        entityKind: migrationEntityLinks.entityKind,
+        targetEntityId: migrationEntityLinks.targetEntityId
+      })
+      .from(migrationEntityLinks)
+      .where(
+        and(
+          eq(migrationEntityLinks.createdByRunId, input.runId),
+          eq(migrationEntityLinks.organizationId, input.organizationId)
+        )
       )
-    );
+  );
 
   const byKind = new Map<MigrationEntityKind, string[]>();
   for (const link of links) {
@@ -792,7 +843,14 @@ export async function rollbackRun(input: {
 
   const outcomes: RollbackOutcome[] = [];
 
-  await db.transaction(async (tx) => {
+  /**
+   * БЫЛО `db.transaction(...)` без тенант-контекста. Откат — это DELETE по
+   * боевым таблицам под FORCE RLS, а DELETE под RLS МОЛЧА совпадает с нулём
+   * строк: откат «проходил» и отчитывался «удалено 0», ничего не удалив.
+   * СТАЛО: та же одна транзакция (откат обязан быть неделим — иначе половина
+   * удалена, половина нет), но с установленным арендатором.
+   */
+  await withTenantCtx(input.organizationId, async (tx) => {
     for (const entityKind of ROLLBACK_ORDER) {
       const ids = byKind.get(entityKind);
       if (!ids?.length) continue;
