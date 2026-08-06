@@ -13,6 +13,7 @@
 
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
@@ -112,6 +113,7 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
 
+	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [items, setItems] = useState<ClipboardItem[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -239,12 +241,36 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 	};
 
 	return (
-		<section className="panel ops-panel" data-testid="schedule-clipboard-panel">
-			<div className="panel-heading">
-				<h2>Буфер расписания</h2>
-				{items.length > 0 ? (
-					<span className="status-pill status-arrived">{items.length}</span>
-				) : null}
+		<section
+			className="panel ops-panel"
+			data-testid="schedule-clipboard-panel"
+			style={{
+				position: "fixed",
+				bottom: "24px",
+				right: "24px",
+				width: "380px",
+				maxHeight: isCollapsed ? "60px" : "500px",
+				overflowY: isCollapsed ? "hidden" : "auto",
+				zIndex: 1000,
+				boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+				transition: "max-height 0.3s ease",
+				border: "1px solid var(--line-strong)",
+				backgroundColor: "var(--surface)",
+				borderRadius: "12px",
+			}}
+		>
+			<div
+				className="panel-heading"
+				style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+				onClick={() => setIsCollapsed(!isCollapsed)}
+			>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+					<h2 style={{ margin: 0 }}>Буфер расписания</h2>
+					{items.length > 0 ? (
+						<span className="status-pill status-arrived">{items.length}</span>
+					) : null}
+				</div>
+				{isCollapsed ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
 			</div>
 
 			{error ? (

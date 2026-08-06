@@ -22,6 +22,7 @@ import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
+import { VisitTimer } from "./components/visit/VisitTimer";
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { parseVisitDictationLocal } from "./lib/smartVisitParser";
@@ -558,10 +559,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						<div>
 							<p className="eyebrow">Пациент сейчас</p>
 							<h3>{activePatient.fullName}</h3>
-							<p>
-								{activeAppointment?.reason ?? "прием"} ·{" "}
-								{activePatient.phone ?? "телефон не указан"}
-							</p>
+							<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+								<p style={{ margin: 0 }}>
+									{activeAppointment?.reason ?? "прием"} ·{" "}
+									{activePatient.phone ?? "телефон не указан"}
+								</p>
+								<VisitTimer createdAt={dashboard?.activeVisit?.createdAt} />
+							</div>
 						</div>
 					</div>
 					<div className="visit-focus-status">

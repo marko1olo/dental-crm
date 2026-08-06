@@ -348,7 +348,7 @@ describe("воронка планов лечения совпадает с пе�
 		 * `maintenance` попадал в `else` и объявлялся ЗАВЕРШЁННЫМ планом лечения.
 		 * Оба писателя колонки `plan_funnel_json` обязаны считать одно и то же.
 		 */
-		const funnels = await computePlanFunnelAll();
+		const funnels = await computePlanFunnelAll([ORG_ID]);
 		const funnel = funnels.get(ORG_ID) ?? [];
 		const byStatus = new Map(
 			funnel.map((stage) => [stage.status, stage.value]),
@@ -380,7 +380,7 @@ describe("воронка планов лечения совпадает с пе�
 			`клиника без платежей получила корзины выручки: ${JSON.stringify(cohorts.get(EMPTY_ORG_ID))}`,
 		);
 
-		const funnels = await computePlanFunnelAll();
+		const funnels = await computePlanFunnelAll([EMPTY_ORG_ID]);
 		assert.equal(
 			funnels.get(EMPTY_ORG_ID),
 			undefined,

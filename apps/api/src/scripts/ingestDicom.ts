@@ -42,10 +42,14 @@ export async function parseAndIngestDicomFile(
 		// In a real flow, we'd use DB transactions to upsert Study -> Series -> Instance
 		// Since we don't have a live postgres, we'll just demonstrate the queries:
 
-		const insertStudyQuery = db
+		const studyId = randomUUID();
+		const seriesId = randomUUID();
+		const instanceId = randomUUID();
+
+		await db
 			.insert(imagingStudies)
 			.values({
-				id: randomUUID(),
+				id: studyId,
 				organizationId,
 				patientId,
 				kind: "cbct",
@@ -57,28 +61,28 @@ export async function parseAndIngestDicomFile(
 			})
 			.onConflictDoNothing();
 
-		console.log("[Query] Insert Study:\n", insertStudyQuery.toSQL());
+		console.log(`[Ingest] Inserted Study: ${studyId}`);
 
-		const insertSeriesQuery = db
+		await db
 			.insert(imagingSeries)
 			.values({
-				id: randomUUID(),
+				id: seriesId,
 				organizationId,
-				studyId: randomUUID(), // mock
+				studyId,
 				dicomSeriesUid,
 				seriesNumber,
 				modality,
 			})
 			.onConflictDoNothing();
 
-		console.log("[Query] Insert Series:\n", insertSeriesQuery.toSQL());
+		console.log(`[Ingest] Inserted Series: ${seriesId}`);
 
-		const insertInstanceQuery = db
+		await db
 			.insert(imagingInstances)
 			.values({
-				id: randomUUID(),
+				id: instanceId,
 				organizationId,
-				seriesId: randomUUID(), // mock
+				seriesId,
 				dicomSopInstanceUid,
 				instanceNumber,
 				sopClassUid,
@@ -88,27 +92,15 @@ export async function parseAndIngestDicomFile(
 			})
 			.onConflictDoNothing();
 
-		console.log("[Query] Insert Instance:\n", insertInstanceQuery.toSQL());
+		console.log(`[Ingest] Inserted Instance: ${instanceId}`);
 
-		// Demonstration of an indexed query on the instance
-		const findInstanceQuery = db
+		const instance = await db
 			.select()
 			.from(imagingInstances)
-			.where(eq(imagingInstances.dicomSopInstanceUid, dicomSopInstanceUid));
+			.where(eq(imagingInstances.dicomSopInstanceUid, dicomSopInstanceUid))
+			.limit(1);
 
-		console.log(
-			"\n[Query] Find Instance (Should use Index `imaging_instances_uid_idx`):",
-		);
-		console.log(findInstanceQuery.toSQL());
-
-		// Demonstration of EXPLAIN ANALYZE wrapper:
-		console.log(
-			"\n[EXPLAIN ANALYZE Mocking] Since Postgres is offline (ECONNREFUSED 127.0.0.1:5432), we cannot execute the real EXPLAIN.",
-		);
-		console.log("If it was online, we would run:");
-		console.log(
-			`EXPLAIN ANALYZE ${findInstanceQuery.toSQL().sql.replace(/\$1/g, `'${dicomSopInstanceUid}'`)}`,
-		);
+		console.log(`[Verify] Found Instance in DB:`, instance.length > 0);
 	} catch (error) {
 		console.error(`[Error] Failed to process ${filePath}:`, error);
 	}

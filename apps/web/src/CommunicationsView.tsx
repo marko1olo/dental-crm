@@ -139,9 +139,7 @@ function CommunicationTaskCard({
 			? (appointments.find((a) => a.id === task.appointmentId) ?? null)
 			: null;
 
-	async function handleConfirmAppointment(
-		status: "confirmed" | "cancelled",
-	) {
+	async function handleConfirmAppointment(status: "confirmed" | "cancelled") {
 		if (!task.appointmentId) return;
 		setApptActionLoading(true);
 		setApptActionError(null);
@@ -206,16 +204,20 @@ function CommunicationTaskCard({
 								marginBottom: "10px",
 							}}
 						>
-							<p style={{ margin: "0 0 6px", fontSize: "13px", color: "var(--muted)" }}>
+							<p
+								style={{
+									margin: "0 0 6px",
+									fontSize: "13px",
+									color: "var(--muted)",
+								}}
+							>
 								Приём:{" "}
 								<strong>{formatDateTime(linkedAppointment.startsAt)}</strong>
 							</p>
 							{apptActionDone ? (
 								<span className={`status-pill status-${apptActionDone}`}>
 									Приём{" "}
-									{apptActionDone === "confirmed"
-										? "подтверждён"
-										: "отменён"}
+									{apptActionDone === "confirmed" ? "подтверждён" : "отменён"}
 								</span>
 							) : (
 								<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -242,7 +244,11 @@ function CommunicationTaskCard({
 							{apptActionError ? (
 								<p
 									role="alert"
-									style={{ color: "var(--bad-fg, #b42318)", fontSize: "12px", marginTop: "4px" }}
+									style={{
+										color: "var(--bad-fg, #b42318)",
+										fontSize: "12px",
+										marginTop: "4px",
+									}}
 								>
 									{apptActionError}
 								</p>

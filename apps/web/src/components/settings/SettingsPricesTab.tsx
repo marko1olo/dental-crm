@@ -449,6 +449,10 @@ export function SettingsPricesTab() {
 													{money(item.basePriceRub ?? item.priceRub ?? 0)}
 													<small>{item.durationMinutes} мин.</small>
 												</div>
+												<div style={{ fontSize: "11px", color: "var(--muted)", textAlign: "right", marginTop: "4px", lineHeight: 1.2 }}>
+													ЗП (25%): {money((item.basePriceRub ?? item.priceRub ?? 0) * 0.25)}<br/>
+													Маржа: {money((item.basePriceRub ?? item.priceRub ?? 0) * 0.75)}
+												</div>
 												<button
 													className="icon-button"
 													onClick={() => {

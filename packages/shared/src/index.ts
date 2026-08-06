@@ -11313,3 +11313,16 @@ export * from "./migration.js";
 export * from "./utils/dates.js";
 export * from "./utils/money.js";
 export * from "./utils/strings.js";
+
+export const urgentScheduleRequestSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	patientName: z.string(),
+	requestType: z.string(),
+	urgencyLevel: z.string(),
+	doctorName: z.string(),
+	preferredSlotTime: z.string(),
+	isResolved: z.boolean(),
+	createdAt: z.string(),
+});
+export type UrgentScheduleRequest = z.infer<typeof urgentScheduleRequestSchema>;

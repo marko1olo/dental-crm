@@ -560,7 +560,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			>
 				{/* Left Column: Patient List */}
 				<div className="patient-list">
-					{filteredPatients.map((patient) => {
+					{displayPatients.map((patient) => {
 						const insight = patientInsightById.get(patient.id);
 						const patientIsSelected = selectedPatient?.id === patient.id;
 						/*
@@ -672,7 +672,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							</article>
 						);
 					})}
-					{filteredPatients.length === 0 ? (
+					{displayPatients.length === 0 ? (
 						/* Класс patient-empty-state вернулся на общий компонент намеренно:
                в мобильной вёрстке (styles/dente-redesign.css) на него навешаны
                правила с !important на токенах темы, а гейт

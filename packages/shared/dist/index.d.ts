@@ -99253,7 +99253,39 @@ export declare const visitFlowResultSchema: z.ZodObject<{
     };
 }>;
 export type VisitFlowResult = z.infer<typeof visitFlowResultSchema>;
-export * from "./utils/strings.js";
+export * from "./migration.js";
 export * from "./utils/dates.js";
 export * from "./utils/money.js";
-export * from "./migration.js";
+export * from "./utils/strings.js";
+export declare const urgentScheduleRequestSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    patientName: z.ZodString;
+    requestType: z.ZodString;
+    urgencyLevel: z.ZodString;
+    doctorName: z.ZodString;
+    preferredSlotTime: z.ZodString;
+    isResolved: z.ZodBoolean;
+    createdAt: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    organizationId: string;
+    createdAt: string;
+    patientName: string;
+    requestType: string;
+    urgencyLevel: string;
+    doctorName: string;
+    preferredSlotTime: string;
+    isResolved: boolean;
+}, {
+    id: string;
+    organizationId: string;
+    createdAt: string;
+    patientName: string;
+    requestType: string;
+    urgencyLevel: string;
+    doctorName: string;
+    preferredSlotTime: string;
+    isResolved: boolean;
+}>;
+export type UrgentScheduleRequest = z.infer<typeof urgentScheduleRequestSchema>;

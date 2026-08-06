@@ -4,7 +4,7 @@ import {
 	updateAppointmentSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { unguardedBypassAllowed } from "../accessGuard.js";
+import { unguardedBypassAllowed, requireResolvedOrganizationId as requireOrganizationContext } from "../accessGuard.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import {
 	clinicSessionMissingMessage,
@@ -451,7 +451,7 @@ async function requireScheduleMutationContext(
 	return { organizationId };
 }
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, asc } from "drizzle-orm";
 import {
 	createAppointmentInDb,
 	updateAppointmentInDb,
@@ -463,6 +463,7 @@ import {
 	patients,
 	scheduleClipboardItems,
 	users,
+	urgentScheduleRequests,
 } from "../db/schema.js";
 import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
 import { wsBroker } from "../services/websocketBroker.js";
@@ -1018,5 +1019,44 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 				);
 			}
 		},
+	);
+	app.get("/api/schedule/urgent-schedule-requests", async (request, reply) => {
+		const orgId = await requireOrganizationContext(request, reply);
+		if (!orgId) return reply;
+
+		const requests = await db
+			.select()
+			.from(urgentScheduleRequests)
+			.where(
+				and(
+					eq(urgentScheduleRequests.organizationId, orgId),
+					eq(urgentScheduleRequests.isResolved, false)
+				)
+			)
+			.orderBy(asc(urgentScheduleRequests.createdAt));
+
+		return reply.code(200).send(requests);
+	});
+
+	app.patch(
+		"/api/schedule/urgent-schedule-requests/:id/resolve",
+		async (request, reply) => {
+			const orgId = await requireOrganizationContext(request, reply);
+			if (!orgId) return reply;
+
+			const params = request.params as { id: string };
+
+			await db
+				.update(urgentScheduleRequests)
+				.set({ isResolved: true })
+				.where(
+					and(
+						eq(urgentScheduleRequests.id, params.id),
+						eq(urgentScheduleRequests.organizationId, orgId)
+					)
+				);
+
+			return reply.code(200).send({ success: true });
+		}
 	);
 }

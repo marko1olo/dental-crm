@@ -371,7 +371,7 @@ export const imagingStudyStatus = pgEnum("imaging_study_status", [
 export const DEFAULT_CLINIC_MODE: ClinicMode = "one_chair";
 
 export const organizations = pgTable("organizations", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	name: text("name").notNull(),
 	loginId: text("login_id"),
 	passwordHash: text("password_hash"),
@@ -423,7 +423,7 @@ export const organizations = pgTable("organizations", {
 });
 
 export const clinics = pgTable("clinics", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -437,7 +437,7 @@ export const clinics = pgTable("clinics", {
 });
 
 export const users = pgTable("users", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -495,7 +495,7 @@ export const users = pgTable("users", {
 });
 
 export const userInvitations = pgTable("user_invitations", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -510,7 +510,7 @@ export const userInvitations = pgTable("user_invitations", {
 });
 
 export const chairs = pgTable("chairs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -527,7 +527,7 @@ export const chairs = pgTable("chairs", {
 export const patients = pgTable(
 	"patients",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -570,7 +570,7 @@ export const patients = pgTable(
 );
 
 export const patientConsents = pgTable("patient_consents", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -586,7 +586,7 @@ export const patientConsents = pgTable("patient_consents", {
 export const appointments = pgTable(
 	"appointments",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -618,7 +618,7 @@ export const appointments = pgTable(
 export const visits = pgTable(
 	"visits",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -627,6 +627,7 @@ export const visits = pgTable(
 			.references(() => patients.id),
 		appointmentId: uuid("appointment_id").references(() => appointments.id),
 		status: visitStatus("status").notNull().default("draft"),
+		qualityControlStatus: text("quality_control_status").default("pending"),
 		revision: integer("revision").notNull().default(1),
 		complaint: text("complaint"),
 		anamnesis: text("anamnesis"),
@@ -654,7 +655,7 @@ export const visits = pgTable(
 );
 
 export const serviceCatalogItems = pgTable("service_catalog_items", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -688,7 +689,7 @@ export const serviceCatalogItems = pgTable("service_catalog_items", {
 });
 
 export const treatmentItems = pgTable("treatment_items", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -754,7 +755,7 @@ export const treatmentItems = pgTable("treatment_items", {
 });
 
 export const treatmentScenarios = pgTable("treatment_scenarios", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -792,7 +793,7 @@ export const treatmentScenarios = pgTable("treatment_scenarios", {
 });
 
 export const clinicalRules = pgTable("clinical_rules", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -829,7 +830,7 @@ export const clinicalRules = pgTable("clinical_rules", {
 export const payments = pgTable(
 	"payments",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -894,7 +895,7 @@ export const payments = pgTable(
 export const generatedDocuments = pgTable(
 	"generated_documents",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -956,7 +957,7 @@ export const generatedDocuments = pgTable(
 );
 
 export const communicationTemplates = pgTable("communication_templates", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -971,7 +972,7 @@ export const communicationTemplates = pgTable("communication_templates", {
 });
 
 export const communicationTasks = pgTable("communication_tasks", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -999,7 +1000,7 @@ export const communicationTasks = pgTable("communication_tasks", {
 });
 
 export const communicationEvents = pgTable("communication_events", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1022,7 +1023,7 @@ export const communicationEvents = pgTable("communication_events", {
 export const denteTelegramBotConfigs = pgTable(
 	"dente_telegram_bot_configs",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1083,7 +1084,7 @@ export const denteTelegramBotConfigs = pgTable(
 export const denteTelegramLinkCodes = pgTable(
 	"dente_telegram_link_codes",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1113,7 +1114,7 @@ export const denteTelegramLinkCodes = pgTable(
 export const denteTelegramChatLinks = pgTable(
 	"dente_telegram_chat_links",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1145,7 +1146,7 @@ export const denteTelegramChatLinks = pgTable(
 export const denteTelegramWebhookEvents = pgTable(
 	"dente_telegram_webhook_events",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1174,7 +1175,7 @@ export const denteTelegramWebhookEvents = pgTable(
 export const denteTelegramOutboxDeliveryReceipts = pgTable(
 	"dente_telegram_outbox_delivery_receipts",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1208,7 +1209,7 @@ export const denteTelegramOutboxDeliveryReceipts = pgTable(
 );
 
 export const attachments = pgTable("attachments", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1224,7 +1225,7 @@ export const attachments = pgTable("attachments", {
 });
 
 export const imagingStudies = pgTable("imaging_studies", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1249,7 +1250,7 @@ export const imagingStudies = pgTable("imaging_studies", {
 });
 
 export const importBatches = pgTable("import_batches", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1268,7 +1269,7 @@ export const importBatches = pgTable("import_batches", {
 export const auditEvents = pgTable(
 	"audit_events",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1294,7 +1295,7 @@ export const auditEvents = pgTable(
 export const aiJobs = pgTable(
 	"ai_jobs",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1345,7 +1346,7 @@ export const aiJobs = pgTable(
 export const imagingSeries = pgTable(
 	"imaging_series",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1376,7 +1377,7 @@ export const imagingSeries = pgTable(
 export const imagingInstances = pgTable(
 	"imaging_instances",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1406,7 +1407,7 @@ export const imagingInstances = pgTable(
 );
 
 export const imagingAnnotations = pgTable("imaging_annotations", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1436,7 +1437,7 @@ export const imagingAnnotations = pgTable("imaging_annotations", {
 export const xrayScans = pgTable(
 	"xray_scans",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1478,7 +1479,7 @@ export const xrayScans = pgTable(
 );
 
 export const imagingViewerSessions = pgTable("imaging_viewer_sessions", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1508,7 +1509,7 @@ export const imagingViewerSessions = pgTable("imaging_viewer_sessions", {
 });
 
 export const dicomWorkbenchBundles = pgTable("dicom_workbench_bundles", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1544,7 +1545,7 @@ export const dicomWorkbenchBundles = pgTable("dicom_workbench_bundles", {
 
 // #46 — рабочее_место::история_последних_просмотренных_карточек
 export const recentPatientHistory = pgTable("recent_patient_history", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1561,7 +1562,7 @@ export const recentPatientHistory = pgTable("recent_patient_history", {
 
 // #47 — crm::конструктор_типов_задач_без_привязки_к_визиту
 export const customCrmTaskTypes = pgTable("custom_crm_task_types", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1579,7 +1580,7 @@ export const customCrmTaskTypes = pgTable("custom_crm_task_types", {
 
 // #50 — crm::прямая_отправка_планов_лечения_и_счетов_на_email
 export const crmEmailDispatchLogs = pgTable("crm_email_dispatch_logs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1595,7 +1596,7 @@ export const crmEmailDispatchLogs = pgTable("crm_email_dispatch_logs", {
 export const cancellationReasonsTwoLevel = pgTable(
 	"cancellation_reasons_two_level",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1612,7 +1613,7 @@ export const cancellationReasonsTwoLevel = pgTable(
 
 // #58 — финансы::закрепение_денег_за_врачами_или_услугами
 export const advanceDepositTaggings = pgTable("advance_deposit_taggings", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1631,7 +1632,7 @@ export const advanceDepositTaggings = pgTable("advance_deposit_taggings", {
 
 // #52 — план_лечения::конструктор_планов_лечения_2_0
 export const treatmentPlanLockTokens = pgTable("treatment_plan_lock_tokens", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1647,7 +1648,7 @@ export const treatmentPlanLockTokens = pgTable("treatment_plan_lock_tokens", {
 
 // #53 — финансы::отправка_электронных_кассовых_чеков_на_email_или_смс
 export const digitalReceiptDispatches = pgTable("digital_receipt_dispatches", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1668,7 +1669,7 @@ export const digitalReceiptDispatches = pgTable("digital_receipt_dispatches", {
 
 // #55 — пациенты::вкладка_приемы_рабочий_стол_администратора
 export const patientServiceLineages = pgTable("patient_service_lineages", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1685,7 +1686,7 @@ export const patientServiceLineages = pgTable("patient_service_lineages", {
 
 // #61 — интеграции::конструктор_лендингов_flexbe_и_сопоставление_полей
 export const landingFieldMappings = pgTable("landing_field_mappings", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1701,7 +1702,7 @@ export const landingFieldMappings = pgTable("landing_field_mappings", {
 
 // #63 — финансы::автоматическое_указание_меры_количества_в_kkm
 export const kkmItemQuantityUnits = pgTable("kkm_item_quantity_units", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1717,7 +1718,7 @@ export const kkmItemQuantityUnits = pgTable("kkm_item_quantity_units", {
 
 // #59 — коммуникации::мультимессенджер_uis_omni
 export const uisOmniMessengerQueues = pgTable("uis_omni_messenger_queues", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1739,7 +1740,7 @@ export const uisOmniMessengerQueues = pgTable("uis_omni_messenger_queues", {
 
 // #6 — маркетинг::фильтр_потерянных_пациентов_в_отчете
 export const lostPatientsFilters = pgTable("lost_patients_filters", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1759,7 +1760,7 @@ export const lostPatientsFilters = pgTable("lost_patients_filters", {
 export const quickAppointmentConfirmations = pgTable(
 	"quick_appointment_confirmations",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1775,7 +1776,7 @@ export const quickAppointmentConfirmations = pgTable(
 
 // #21 — расписание::виджет_срочные_обращения_под_календарем
 export const urgentScheduleRequests = pgTable("urgent_schedule_requests", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1794,7 +1795,7 @@ export const urgentScheduleRequests = pgTable("urgent_schedule_requests", {
 export const confirmationPerformanceReports = pgTable(
 	"confirmation_performance_reports",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1821,7 +1822,7 @@ export const confirmationPerformanceReports = pgTable(
 export const alternativeTreatmentPlans = pgTable(
 	"alternative_treatment_plans",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1842,7 +1843,7 @@ export const alternativeTreatmentPlans = pgTable(
 // #48 — расписание::буфер_обмена_в_расписании_для_быстрого_переноса
 
 export const scheduleClipboardItems = pgTable("schedule_clipboard_items", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1859,7 +1860,7 @@ export const scheduleClipboardItems = pgTable("schedule_clipboard_items", {
 
 // #37 — расписание::резервирование_времени_в_сетке
 export const scheduleTimeReservations = pgTable("schedule_time_reservations", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1879,7 +1880,7 @@ export const scheduleTimeReservations = pgTable("schedule_time_reservations", {
 export const customExaminationFormCatalogs = pgTable(
 	"custom_examination_form_catalogs",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1896,7 +1897,7 @@ export const customExaminationFormCatalogs = pgTable(
 
 // #36 — прием::несколько_диагнозов_егисз
 export const egiszMultipleDiagnoses = pgTable("egisz_multiple_diagnoses", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1914,7 +1915,7 @@ export const egiszMultipleDiagnoses = pgTable("egisz_multiple_diagnoses", {
 
 // #40 — прием::зубная_формула_пломба_кариес_и_детская_формула
 export const extendedOdontogramStates = pgTable("extended_odontogram_states", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1938,7 +1939,7 @@ export const extendedOdontogramStates = pgTable("extended_odontogram_states", {
 export const nonDentalExaminationForms = pgTable(
 	"non_dental_examination_forms",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1960,7 +1961,7 @@ export const nonDentalExaminationForms = pgTable(
 export const treatmentPlanPrintOdontograms = pgTable(
 	"treatment_plan_print_odontograms",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -1977,7 +1978,7 @@ export const treatmentPlanPrintOdontograms = pgTable(
 
 // #34 — план_лечения::управление_этапами_и_автоархивация
 export const treatmentPlanStages = pgTable("treatment_plan_stages", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -1995,7 +1996,7 @@ export const treatmentPlanStages = pgTable("treatment_plan_stages", {
 
 // #62 — финансы::отображение_суммы_начислений_врачам_в_прайс_листе
 export const pricelistDoctorPayrolls = pgTable("pricelist_doctor_payrolls", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2023,7 +2024,7 @@ export const pricelistDoctorPayrolls = pgTable("pricelist_doctor_payrolls", {
 
 // #61 — кадры::зачисление_повторной_записи_врачу_или_администратору
 export const rebookingConversionRules = pgTable("rebooking_conversion_rules", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2039,7 +2040,7 @@ export const rebookingConversionRules = pgTable("rebooking_conversion_rules", {
 
 // #55 — интеграции::продокторов_синхронизация_отзывов
 export const prodoctorovSyncExports = pgTable("prodoctorov_sync_exports", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2058,7 +2059,7 @@ export const prodoctorovSyncExports = pgTable("prodoctorov_sync_exports", {
 
 // #58 — пациенты::геокодинг_адресов_через_dadata
 export const dadataGeocodedAddresses = pgTable("dadata_geocoded_addresses", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2077,7 +2078,7 @@ export const dadataGeocodedAddresses = pgTable("dadata_geocoded_addresses", {
 export const singleSessionEnforcements = pgTable(
 	"single_session_enforcements",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -2101,7 +2102,7 @@ export const singleSessionEnforcements = pgTable(
 
 // lab orders (dental laboratory work)
 export const labOrders = pgTable("lab_orders", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2128,7 +2129,7 @@ export const labOrders = pgTable("lab_orders", {
 
 // treatment plans (multi-stage treatment planning)
 export const treatmentPlans = pgTable("treatment_plans", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	/**
 	 * Изоляция по клинике. `NOT NULL` в базе — с миграции 0146; до неё колонка
 	 * допускала NULL, то есть план лечения с суммой мог оказаться бесхозным и
@@ -2195,7 +2196,7 @@ export const treatmentPlans = pgTable("treatment_plans", {
 
 // treatment plan items new (items inside treatment plan)
 export const treatmentPlanItemsNew = pgTable("treatment_plan_items_new", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	/**
 	 * `NOT NULL` в базе — с миграции 0147.
 	 *
@@ -2265,7 +2266,7 @@ export const treatmentPlanItemsNew = pgTable("treatment_plan_items_new", {
 
 // visit templates (protocol templates for visits)
 export const visitTemplates = pgTable("visit_templates", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2287,7 +2288,7 @@ export const visitTemplates = pgTable("visit_templates", {
 
 // visit diaries (full clinical diary with structured fields)
 export const visitDiaries = pgTable("visit_diaries", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2330,7 +2331,7 @@ export const visitDiaries = pgTable("visit_diaries", {
 
 // visit diary revisions (audit trail for diary edits)
 export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2377,7 +2378,7 @@ export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
 export const visitExaminationPhotoLinks = pgTable(
 	"visit_examination_photo_links",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -2393,7 +2394,7 @@ export const visitExaminationPhotoLinks = pgTable(
 
 // tooth states (per-tooth status for odontogram)
 export const toothStates = pgTable("tooth_states", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2428,7 +2429,7 @@ export const toothStates = pgTable("tooth_states", {
 export const toothStateHistory = pgTable(
 	"tooth_state_history",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -2461,7 +2462,7 @@ export const toothStateHistory = pgTable(
 
 // insurance contracts (DMS / voluntary health insurance)
 export const insuranceContracts = pgTable("insurance_contracts", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2510,7 +2511,7 @@ export const insuranceContracts = pgTable("insurance_contracts", {
 export const inventoryItems = pgTable(
 	"inventory_items",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -2576,7 +2577,7 @@ export const inventoryItems = pgTable(
 
 // inventory transactions (stock movements)
 export const inventoryTransactions = pgTable("inventory_transactions", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2598,7 +2599,7 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
 
 // patient invoices (billing invoices sent to patients)
 export const patientInvoices = pgTable("patient_invoices", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2648,7 +2649,7 @@ export const patientInvoices = pgTable("patient_invoices", {
 
 // appointment waitlists (patient waiting queue)
 export const appointmentWaitlists = pgTable("appointment_waitlists", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2670,7 +2671,7 @@ export const appointmentWaitlists = pgTable("appointment_waitlists", {
 
 // clinic chairs (treatment chairs / workstations)
 export const clinicChairs = pgTable("clinic_chairs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2685,7 +2686,7 @@ export const clinicChairs = pgTable("clinic_chairs", {
 
 // doctor commissions (payroll commission rates)
 export const doctorCommissions = pgTable("doctor_commissions", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2717,7 +2718,7 @@ export const doctorCommissions = pgTable("doctor_commissions", {
 
 // family groups (linked family accounts)
 export const familyGroups = pgTable("family_groups", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	/**
 	 * NOT NULL с миграции 0119. Раньше колонка допускала NULL, а
 	 * routes/finance_family.ts выбирал группы условием
@@ -2755,7 +2756,7 @@ export const familyGroups = pgTable("family_groups", {
 
 // CRM leads (incoming lead tracking)
 export const crmLeads = pgTable("crm_leads", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2791,7 +2792,7 @@ export const crmLeads = pgTable("crm_leads", {
 
 // procedure material rules (material requirements per procedure)
 export const procedureMaterialRules = pgTable("procedure_material_rules", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id").references(() => organizations.id),
 	serviceCode: text("service_code"),
 	// FK to serviceCatalogItems (optional — some rules are code-only)
@@ -2814,7 +2815,7 @@ export const procedureMaterialRules = pgTable("procedure_material_rules", {
 
 // sterilization logs (autoclave / sterilization records)
 export const sterilizationLogs = pgTable("sterilization_logs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2839,7 +2840,7 @@ export const sterilizationLogs = pgTable("sterilization_logs", {
 
 // system RAM watchdogs (server health monitoring)
 export const systemRamWatchdogs = pgTable("system_ram_watchdogs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2855,7 +2856,7 @@ export const systemRamWatchdogs = pgTable("system_ram_watchdogs", {
 
 // clinical audit logs (HIPAA-style access audit trail)
 export const clinicalAuditLogs = pgTable("clinical_audit_logs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2912,7 +2913,7 @@ export const clinicalAuditLogs = pgTable("clinical_audit_logs", {
  * бывает пустая.
  */
 export const patientCtPlannings = pgTable("patient_ct_plannings", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -2948,7 +2949,7 @@ export const patientCtPlannings = pgTable("patient_ct_plannings", {
 export const patientDuplicateMergeQueues = pgTable(
 	"patient_duplicate_merge_queues",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -2968,7 +2969,7 @@ export const patientDuplicateMergeQueues = pgTable(
 export const appointmentChannelInheritances = pgTable(
 	"appointment_channel_inheritances",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -2984,7 +2985,7 @@ export const appointmentChannelInheritances = pgTable(
 
 // bulk image operation logs (batch DICOM operations)
 export const bulkImageOperationLogs = pgTable("bulk_image_operation_logs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3002,7 +3003,7 @@ export const bulkImageOperationLogs = pgTable("bulk_image_operation_logs", {
 export const chatMessageDispatchStatuses = pgTable(
 	"chat_message_dispatch_statuses",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3022,7 +3023,7 @@ export const chatMessageDispatchStatuses = pgTable(
 export const collaborativeChatProcessingStates = pgTable(
 	"collaborative_chat_processing_states",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3039,7 +3040,7 @@ export const collaborativeChatProcessingStates = pgTable(
 
 // diagnocat AI findings (AI-based radiograph analysis)
 export const diagnocatAiFindings = pgTable("diagnocat_ai_findings", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3056,7 +3057,7 @@ export const diagnocatAiFindings = pgTable("diagnocat_ai_findings", {
 
 // egisz blank permissions (EGISZ REMD form access control)
 export const egiszBlankPermissions = pgTable("egisz_blank_permissions", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3107,7 +3108,7 @@ export const egiszStatus = pgEnum("egisz_status_enum", [
  * незамеченным. Колонки перечислены по факту DDL, а не по догадке.
  */
 export const egiszLogs = pgTable("egisz_logs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	/**
 	 * Добавлена миграцией 0145. Это журнал передачи медицинских данных в
 	 * государственную систему: без принадлежности клинике он одинаково открыт
@@ -3139,7 +3140,7 @@ export const egiszLogs = pgTable("egisz_logs", {
 export const externalScheduleActionLogs = pgTable(
 	"external_schedule_action_logs",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3158,7 +3159,7 @@ export const externalScheduleActionLogs = pgTable(
 export const familyRecommendationSources = pgTable(
 	"family_recommendation_sources",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3176,7 +3177,7 @@ export const familyRecommendationSources = pgTable(
 
 // message template catalogs (reusable SMS/Telegram templates)
 export const messageTemplateCatalogs = pgTable("message_template_catalogs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3193,7 +3194,7 @@ export const messageTemplateCatalogs = pgTable("message_template_catalogs", {
 
 // messenger file attachments (files sent through chat)
 export const messengerFileAttachments = pgTable("messenger_file_attachments", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3220,7 +3221,7 @@ export const messengerFileAttachments = pgTable("messenger_file_attachments", {
  * разрешить событие без канала-источника, которое потом нечем разобрать.
  */
 export const messengerInboundEvents = pgTable("messenger_inbound_events", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3241,7 +3242,7 @@ export const messengerInboundEvents = pgTable("messenger_inbound_events", {
 
 // MKB-10 auto directories (ICD-10 diagnosis quick-select)
 export const mkb10AutoDirectories = pgTable("mkb10_auto_directories", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3256,7 +3257,7 @@ export const mkb10AutoDirectories = pgTable("mkb10_auto_directories", {
 
 // NDFL tax calculators (personal income tax deduction calc)
 export const ndflTaxCalculators = pgTable("ndfl_tax_calculators", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3288,7 +3289,7 @@ export const ndflTaxCalculators = pgTable("ndfl_tax_calculators", {
  * drizzle/0144_patient_task_tickets.sql.
  */
 export const patientTaskTickets = pgTable("patient_task_tickets", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3319,7 +3320,7 @@ export const patientTaskTickets = pgTable("patient_task_tickets", {
  * drizzle/0143_patient_reclamations.sql.
  */
 export const patientReclamations = pgTable("patient_reclamations", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3343,7 +3344,7 @@ export const patientReclamations = pgTable("patient_reclamations", {
 export const patientArchiveReasonsAndBlacklists = pgTable(
 	"patient_archive_reasons_and_blacklists",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3374,7 +3375,7 @@ export const patientArchiveReasonsAndBlacklists = pgTable(
 export const patientCommunicationTimelines = pgTable(
 	"patient_communication_timelines",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3393,7 +3394,7 @@ export const patientCommunicationTimelines = pgTable(
 export const previousChatDialogHistories = pgTable(
 	"previous_chat_dialog_histories",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3409,7 +3410,7 @@ export const previousChatDialogHistories = pgTable(
 
 // UIS call speech transcripts (telephony / callcenter transcripts)
 export const uisCallSpeechTranscripts = pgTable("uis_call_speech_transcripts", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3426,7 +3427,7 @@ export const uisCallSpeechTranscripts = pgTable("uis_call_speech_transcripts", {
 
 // UIS SMS chat quotas (SMS quota management)
 export const uisSmsChatQuotas = pgTable("uis_sms_chat_quotas", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3441,7 +3442,7 @@ export const uisSmsChatQuotas = pgTable("uis_sms_chat_quotas", {
 
 // Yandex calendar syncs (Yandex Calendar integration)
 export const yandexCalendarSyncs = pgTable("yandex_calendar_syncs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3457,7 +3458,7 @@ export const yandexCalendarSyncs = pgTable("yandex_calendar_syncs", {
 
 // Dente Max bot configs (MAX messenger bot settings)
 export const denteMaxBotConfigs = pgTable("dente_max_bot_configs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3477,7 +3478,7 @@ export const denteMaxBotConfigs = pgTable("dente_max_bot_configs", {
 
 // Dente WhatsApp bot configs (WABA / WhatsApp settings)
 export const denteWhatsappBotConfigs = pgTable("dente_whatsapp_bot_configs", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3501,7 +3502,7 @@ export const denteWhatsappBotConfigs = pgTable("dente_whatsapp_bot_configs", {
 
 // services (clinic price list / service catalog)
 export const services = pgTable("services", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3535,7 +3536,7 @@ export const services = pgTable("services", {
 
 // protocol templates (visit protocol / clinical workflow templates)
 export const protocolTemplates = pgTable("protocol_templates", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id")
 		.notNull()
 		.references(() => organizations.id),
@@ -3562,7 +3563,7 @@ export const protocolTemplates = pgTable("protocol_templates", {
 export const uisMassAppointmentConfirmations = pgTable(
 	"uis_mass_appointment_confirmations",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3591,7 +3592,7 @@ export const uisMassAppointmentConfirmations = pgTable(
  * потому что tsconfig исключал src/services из проверки типов.
  */
 export const outgoingNotifications = pgTable("outgoing_notifications", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id").notNull(),
 	patientId: uuid("patient_id").notNull(),
 	type: text("type").notNull(),
@@ -3617,7 +3618,7 @@ export const outgoingNotifications = pgTable("outgoing_notifications", {
  * scripts/cronAnalyticsWorker.ts.
  */
 export const biAnalyticsSnapshots = pgTable("bi_analytics_snapshots", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	organizationId: uuid("organization_id").notNull(),
 	snapshotDate: timestamp("snapshot_date", { withTimezone: true }).notNull(),
 	cohortLtvJson: jsonb("cohort_ltv_json").notNull().default({}),
@@ -3650,7 +3651,7 @@ export const ledgerPaymentMethod = pgEnum("ledger_payment_method", [
  * потеряются копейки.
  */
 export const cashLedger = pgTable("cash_ledger", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
 	invoiceId: uuid("invoice_id").notNull(),
 	paymentMethod: ledgerPaymentMethod("payment_method").notNull(),
 	amountRub: numeric("amount_rub", { precision: 12, scale: 2 }).notNull(),
@@ -3698,7 +3699,7 @@ export const communicationConsentState = pgEnum("communication_consent_state", [
 export const communicationOutbox = pgTable(
 	"communication_outbox",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3764,7 +3765,7 @@ export const communicationOutbox = pgTable(
 export const patientCommunicationConsents = pgTable(
 	"patient_communication_consents",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -3937,7 +3938,7 @@ export const migrationDecisionSource = pgEnum("migration_decision_source", [
 export const migrationRuns = pgTable(
 	"migration_runs",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -4006,7 +4007,7 @@ export const migrationRuns = pgTable(
 export const migrationStagingRecords = pgTable(
 	"migration_staging_records",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		runId: uuid("run_id")
 			.notNull()
 			.references(() => migrationRuns.id, { onDelete: "cascade" }),
@@ -4057,7 +4058,7 @@ export const migrationStagingRecords = pgTable(
 export const migrationQuarantineRecords = pgTable(
 	"migration_quarantine_records",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		runId: uuid("run_id")
 			.notNull()
 			.references(() => migrationRuns.id, { onDelete: "cascade" }),
@@ -4100,7 +4101,7 @@ export const migrationQuarantineRecords = pgTable(
 export const migrationEntityLinks = pgTable(
 	"migration_entity_links",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
@@ -4145,7 +4146,7 @@ export const migrationEntityLinks = pgTable(
 export const migrationReconciliations = pgTable(
 	"migration_reconciliations",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		runId: uuid("run_id")
 			.notNull()
 			.references(() => migrationRuns.id, { onDelete: "cascade" }),
@@ -4214,7 +4215,7 @@ export const migrationReconciliations = pgTable(
 export const portalOtpCodes = pgTable(
 	"portal_otp_codes",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),

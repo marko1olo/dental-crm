@@ -1,9 +1,11 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	appointments,
 	biAnalyticsSnapshots,
 	organizations,
+	patients,
 	payments,
 	treatmentPlanStatus,
 	treatmentPlans,
@@ -113,37 +115,39 @@ export async function computeCohortLtvAll(organizationIds: readonly string[]) {
 	const map = new Map<string, CohortRevenuePoint[]>();
 
 	for (const organizationId of organizationIds) {
-		const zone = await postgresKnowsTimeZone(
-			await clinicTimeZone(organizationId),
-		);
-		// Выражение месяца объявлено ОДИН раз на SELECT, GROUP BY и ORDER BY.
-		// Через три отдельных фрагмента имя пояса ушло бы параметром трижды и
-		// получило РАЗНЫЕ номера — PostgreSQL считает такие выражения разными и
-		// отвергает запрос целиком с «column must appear in the GROUP BY clause».
-		// Приведение `::text` тут не спасает: дело не в типе, а в номере.
-		const monthBucket = sql`date_trunc('month', ${inClinicZone(payments.createdAt, zone)})`;
+		await withTenantCtx(organizationId, async (tx) => {
+			const zone = await postgresKnowsTimeZone(
+				await clinicTimeZone(organizationId),
+			);
+			// Выражение месяца объявлено ОДИН раз на SELECT, GROUP BY и ORDER BY.
+			// Через три отдельных фрагмента имя пояса ушло бы параметром трижды и
+			// получило РАЗНЫЕ номера — PostgreSQL считает такие выражения разными и
+			// отвергает запрос целиком с «column must appear in the GROUP BY clause».
+			// Приведение `::text` тут не спасает: дело не в типе, а в номере.
+			const monthBucket = sql`date_trunc('month', ${inClinicZone(payments.createdAt, zone)})`;
 
-		const rows = await db
-			.select({
-				month: sql<string>`to_char(${monthBucket}, 'YYYY-MM')`,
-				total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
-			})
-			.from(payments)
-			.where(
-				and(eq(payments.organizationId, organizationId), PAID_PAYMENTS_ONLY),
-			)
-			.groupBy(monthBucket)
-			.orderBy(monthBucket);
+			const rows = await tx
+				.select({
+					month: sql<string>`to_char(${monthBucket}, 'YYYY-MM')`,
+					total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+				})
+				.from(payments)
+				.where(
+					and(eq(payments.organizationId, organizationId), PAID_PAYMENTS_ONLY),
+				)
+				.groupBy(monthBucket)
+				.orderBy(monthBucket);
 
-		if (!rows.length) continue;
+			if (!rows.length) return;
 
-		map.set(
-			organizationId,
-			rows.map((r) => ({
-				cohort: r.month,
-				"Month 1": Number(r.total ?? 0),
-			})),
-		);
+			map.set(
+				organizationId,
+				rows.map((r) => ({
+					cohort: r.month,
+					"Month 1": Number(r.total ?? 0),
+				})),
+			);
+		});
 	}
 
 	return map;
@@ -305,30 +309,32 @@ export function buildPlanFunnel(
  * есть и не «приведено к единому виду» тихой правкой, потому что это вопрос
  * правила аренды, а не оформления.
  */
-export async function computePlanFunnelAll(): Promise<
-	Map<string, PlanFunnelStage[]>
-> {
-	const stats = await db
-		.select({
-			organizationId: treatmentPlans.organizationId,
-			status: treatmentPlans.status,
-			count: sql<number>`count(*)::int`,
-		})
-		.from(treatmentPlans)
-		.groupBy(treatmentPlans.organizationId, treatmentPlans.status);
-
-	const byOrganization = new Map<string, PlanStatusCount[]>();
-	for (const row of stats) {
-		if (!row.organizationId) continue;
-		const rows = byOrganization.get(row.organizationId) ?? [];
-		rows.push({ status: row.status, count: row.count });
-		byOrganization.set(row.organizationId, rows);
-	}
-
+export async function computePlanFunnelAll(
+	organizationIds?: readonly string[],
+): Promise<Map<string, PlanFunnelStage[]>> {
 	const map = new Map<string, PlanFunnelStage[]>();
-	for (const [organizationId, rows] of byOrganization.entries()) {
-		map.set(organizationId, buildPlanFunnel(rows));
+	if (!organizationIds || organizationIds.length === 0) {
+		return map;
 	}
+
+	for (const organizationId of organizationIds) {
+		await withTenantCtx(organizationId, async (tx) => {
+			const stats = await tx
+				.select({
+					status: treatmentPlans.status,
+					count: sql<number>`count(*)::int`,
+				})
+				.from(treatmentPlans)
+				.innerJoin(patients, eq(treatmentPlans.patientId, patients.id))
+				.where(eq(patients.organizationId, organizationId))
+				.groupBy(treatmentPlans.status);
+
+			if (stats.length > 0) {
+				map.set(organizationId, buildPlanFunnel(stats));
+			}
+		});
+	}
+
 	return map;
 }
 
@@ -491,63 +497,44 @@ export async function computeBiAnalyticsSnapshots() {
 
 		const snapshotDate = new Date();
 
-		const [
-			cohortLtvMap,
-			planFunnelMap,
-			chairUtilizationMap,
-			doctorProfitabilityMap,
-		] = await Promise.all([
-			computeCohortLtvAll(orgs.map((org) => org.id)),
-			computePlanFunnelAll(),
-			computeChairUtilizationAll(),
-			computeDoctorProfitabilityAll(),
-		]);
-
-		const snapshots = orgs.map((org) => {
+		for (const org of orgs) {
 			const orgId = org.id;
+			try {
+				await withTenantCtx(orgId, async (tx) => {
+					const [
+						cohortLtvMap,
+						planFunnelMap,
+						chairUtilizationMap,
+						doctorProfitabilityMap,
+					] = await Promise.all([
+						computeCohortLtvAll([orgId]),
+						computePlanFunnelAll(),
+						computeChairUtilizationAll(),
+						computeDoctorProfitabilityAll(),
+					]);
 
-			/*
-			 * ЗДЕСЬ СТОЯЛИ ТРИ ВЫДУМАННЫХ ПОДСТАВНЫХ НАБОРА — на случай, когда у
-			 * клиники данных нет. Это худший из возможных случаев для подмены:
-			 * ровно НОВАЯ клиника, у которой ещё ничего не накопилось, получала чужие
-			 * показатели как свои и по ним принимала первые решения.
-			 *
-			 *   cohortLtvJson        → [{ cohort: "Jan", "Month 1": 0 }] — когорта
-			 *                          «Jan» вместо ярлыка `YYYY-MM`, которого требует
-			 *                          остальной код, и месяц, взятый из ниоткуда:
-			 *                          января в данных не было вовсе.
-			 *   planFunnelJson       → по одному плану в «Draft», «Proposed» и
-			 *                          «Active» при полном отсутствии планов.
-			 *   chairUtilizationJson → «Chair 1 — 10 приёмов», «Chair 2 — 5»: два
-			 *                          кресла, которых у клиники может не быть, и
-			 *                          пятнадцать приёмов, которых не было.
-			 *
-			 * Пустой массив честнее, и в этом узле он уже принят: `routes/analytics.ts`
-			 * отдаёт пустые массивы с отдельным признаком `isEmpty`, а экран рисует по
-			 * ним «Пока нечего показать» с объяснением, чего именно не хватает
-			 * (`AnalyticsDashboardView.tsx:400-408`). Ровно за это же — за
-			 * «Иванов И.И. — 240 000 ₽» и «Кресло 1 — 42 %» на пустой базе — подмену
-			 * там уже убирали.
-			 */
-			const cohortLtvJson = cohortLtvMap.get(orgId) ?? [];
-			const planFunnelJson = planFunnelMap.get(orgId) ?? [];
-			const chairUtilizationJson = chairUtilizationMap.get(orgId) ?? [];
-			const doctorProfitabilityJson = doctorProfitabilityMap.get(orgId) ?? [];
+					const cohortLtvJson = cohortLtvMap.get(orgId) ?? [];
+					const planFunnelJson = planFunnelMap.get(orgId) ?? [];
+					const chairUtilizationJson = chairUtilizationMap.get(orgId) ?? [];
+					const doctorProfitabilityJson =
+						doctorProfitabilityMap.get(orgId) ?? [];
 
-			return {
-				organizationId: orgId,
-				snapshotDate,
-				cohortLtvJson,
-				planFunnelJson,
-				chairUtilizationJson,
-				doctorProfitabilityJson,
-			};
-		});
+					await tx.insert(biAnalyticsSnapshots).values({
+						organizationId: orgId,
+						snapshotDate,
+						cohortLtvJson,
+						planFunnelJson,
+						chairUtilizationJson,
+						doctorProfitabilityJson,
+					});
 
-		if (snapshots.length > 0) {
-			await db.insert(biAnalyticsSnapshots).values(snapshots);
-			for (const org of orgs) {
-				console.log(`[BI Worker] Snapshot generated for org ${org.id}`);
+					console.log(`[BI Worker] Snapshot generated for org ${orgId}`);
+				});
+			} catch (err) {
+				console.error(
+					`[BI Worker] Error generating snapshot for organization ${orgId}:`,
+					err,
+				);
 			}
 		}
 	} catch (err) {

@@ -746,6 +746,11 @@ export async function createDenteApiApp(
 		});
 	}
 
+	app.addHook("onClose", async () => {
+		const { pool } = await import("./db/client.js");
+		if (pool) await pool.end();
+	});
+
 	return app;
 }
 

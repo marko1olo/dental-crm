@@ -43,7 +43,7 @@
 
 import { and, asc, eq, gt, isNull, sql } from "drizzle-orm";
 import { db } from "./client.js";
-import { appointments, patients } from "./schema.js";
+import { appointments, appointmentWaitlists, patients, patientTaskTickets } from "./schema.js";
 
 /** Строка списка в том виде, в каком её ждёт виджет «Потерянные пациенты». */
 export type LostPatientRow = {
@@ -95,9 +95,35 @@ export async function getLostPatientsFiltersFromDb(orgId: string) {
 				eq(appointments.organizationId, orgId),
 				eq(appointments.patientId, patients.id),
 				gt(appointments.startsAt, now),
+				sql`${appointments.status} IN ('planned', 'confirmed', 'arrived', 'in_treatment')`
 			),
 		)
-		.where(and(eq(patients.organizationId, orgId), isNull(appointments.id)))
+		.leftJoin(
+			appointmentWaitlists,
+			and(
+				eq(appointmentWaitlists.organizationId, orgId),
+				eq(appointmentWaitlists.patientId, patients.id),
+				eq(appointmentWaitlists.status, "active")
+			)
+		)
+		.leftJoin(
+			patientTaskTickets,
+			and(
+				eq(patientTaskTickets.organizationId, orgId),
+				eq(patientTaskTickets.patientId, patients.id),
+				eq(patientTaskTickets.status, "pending")
+			)
+		)
+		.where(
+			and(
+				eq(patients.organizationId, orgId),
+				eq(patients.status, "active"),
+				isNull(patients.mergedIntoPatientId),
+				isNull(appointments.id),
+				isNull(appointmentWaitlists.id),
+				isNull(patientTaskTickets.id)
+			)
+		)
 		// Прежний вариант не задавал порядок вообще, поэтому список мог приходить
 		// каждый раз в другом порядке — по алфавиту его хотя бы можно читать.
 		.orderBy(asc(patients.fullName));
@@ -116,10 +142,7 @@ export async function getLostPatientsFiltersFromDb(orgId: string) {
 			daysSinceLastVisit: daysBetween(lastAt, now),
 			hasFutureAppointment: false,
 			/*
-			 * hasActiveCrmTask всегда false: живых CRM-задач по пациенту этот
-			 * отчёт не читает (нет join/select по задачам). Поле оставлено в
-			 * JSON для совместимости контракта; UI его не показывает. Нельзя
-			 * трактовать как «задач нет» — это «не считали».
+			 * hasActiveCrmTask всегда false по определению потерянного пациента
 			 */
 			hasActiveCrmTask: false,
 			createdAt: row.createdAt

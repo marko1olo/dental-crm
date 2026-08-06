@@ -43,6 +43,7 @@ import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPan
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
+import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import {
 	type DayGroupingAppointment,
 	formatDayTitle,
@@ -1506,13 +1507,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				className="schedule-widgets-container mt-6"
 				style={{ display: "flex", flexDirection: "column", gap: "16px" }}
 			>
-				{/*
-                Здесь стоял <UrgentScheduleRequestsWidget />: «Срочных обращений
-                нет. Окна резерва готовы» — у таблицы urgent_schedule_requests
-                нет ни одного писателя, в живой базе ноль строк. Пациент с
-                острой болью попадает в систему обычной записью на приём, а не
-                в отдельную очередь, которую некому наполнить.
-              */}
+				<UrgentScheduleRequestsWidget />
 				{/*
                 Буфер расписания: раньше здесь висела пустая коробка без писателей.
                 Теперь — кнопка «Буфер» в шапке, «В буфер» на карточке, панель
