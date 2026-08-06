@@ -518,7 +518,102 @@ console.log("─── ИТОГ ────────────────
 console.log(`маршрут есть, звать некому (внутренние):  ${internalWithoutCallers.length}`);
 console.log(`несколько реализаций одного вызова:      ${multipleImplementations.length}`);
 console.log(`НЕИЗВЕСТНО (адрес собран вне вызова):    ${unresolvedProduction.length}`);
-console.log("");
-console.log("Гейт только печатает (код возврата 0). Порог и храповик — решение владельца");
-console.log("гейтов; как их ставить, написано в конце этого файла.");
-process.exit(0);
+
+/*
+ * ХРАПОВИК: поимённый список известного долга.
+ *
+ * Приём из apps/api/src/tests/webCallsExistingRoutes.test.ts — KNOWN_MISSING:
+ * - адреса названы явно, а не спрятаны в число
+ * - починенный маршрут удаляется из списка (проверка краснеет)
+ * - новый мёртвый маршрут не в списке (проверка краснеет)
+ * - порог по одному числу хуже: молча разрешает обменять починенный на новый
+ */
+const KNOWN_DEAD_ROUTES = new Set([
+	"DELETE /api/audit/logs",
+	"DELETE /api/audit/logs/:param",
+	"DELETE /api/finance/family/:param",
+	"GET /api/attachments/:param/download",
+	"GET /api/auth/status",
+	"GET /api/crm/custom-crm-task-types",
+	"GET /api/documents/:param/treatment-plan-pdf",
+	"GET /api/finance/family/:param",
+	"GET /api/imaging/studies",
+	"GET /api/imaging/studies/:param/file",
+	"GET /api/imaging/studies/:param/preview.svg",
+	"GET /api/integrations/dadata-addresses",
+	"GET /api/integrations/dadata-geocoded-addresses",
+	"GET /api/integrations/landing-field-mappings",
+	"GET /api/migration/runs",
+	"GET /api/migration/runs/:param",
+	"GET /api/migration/runs/:param/quarantine",
+	"GET /api/migration/runs/:param/reconciliation.csv",
+	"GET /api/migration/worker/status",
+	"GET /api/p/:param",
+	"GET /api/patients",
+	"GET /api/reports/appointments",
+	"GET /api/reports/chairs",
+	"GET /api/reports/doctors",
+	"GET /api/reports/patient-flow",
+	"GET /api/reports/reminder-effect",
+	"GET /api/reports/revenue",
+	"GET /api/settings/clinic",
+	"GET /api/settings/telegram",
+	"GET /api/system/single-session-enforcements",
+	"GET /api/telegram/status/:param",
+	"GET /api/templates/:param",
+	"GET /api/workspace/chairs",
+	"PATCH /api/audit/logs/:param",
+	"POST /api/appointments/:param/visit",
+	"POST /api/auth/clinic/set-password",
+	"POST /api/auth/setup/init",
+	"POST /api/auth/staff/set-pin",
+	"POST /api/communications/campaigns/:param/cancel",
+	"POST /api/communications/outbox/:param/retry",
+	"POST /api/diaries/sync-progress",
+	"POST /api/documents/:param/sign",
+	"POST /api/documents/:param/void",
+	"POST /api/imports/patients/preview",
+	"POST /api/max/send",
+	"POST /api/migration/:param/stage",
+	"POST /api/migration/analyze",
+	"POST /api/migration/dicom/inspect",
+	"POST /api/migration/run",
+	"POST /api/settings/reset-demo",
+	"POST /api/settings/reset-zero",
+	"POST /api/xray/scans/:param/analyze",
+	"PUT /api/audit/logs/:param",
+	"PUT /api/finance/family/:param",
+	"PUT /api/schedule/appointments/:param",
+	"PUT /api/settings/chairs/:param",
+	"PUT /api/treatment-plans/:param/signature",
+	"PUT /api/xray/scans/:param",
+]);
+
+const currentDeadKeys = new Set(internalWithoutCallers.map(e => e.key));
+const newDead = [...currentDeadKeys].filter(k => !KNOWN_DEAD_ROUTES.has(k));
+const fixedDead = [...KNOWN_DEAD_ROUTES].filter(k => !currentDeadKeys.has(k));
+
+let exitCode = 0;
+
+if (newDead.length > 0) {
+	console.log("");
+	console.log(`❌ НОВЫЙ ДОЛГ (${newDead.length} маршрутов):`);
+	for (const k of newDead.sort()) console.log(`   ${k}`);
+	console.log("Добавьте их в KNOWN_DEAD_ROUTES или почините.");
+	exitCode = 1;
+}
+
+if (fixedDead.length > 0) {
+	console.log("");
+	console.log(`⚠️  ДОЛГ ЗАКРЫТ (${fixedDead.length} маршрутов):`);
+	for (const k of fixedDead.sort()) console.log(`   ${k}`);
+	console.log("Удалите их из KNOWN_DEAD_ROUTES.");
+	exitCode = 1;
+}
+
+if (exitCode === 0) {
+	console.log("");
+	console.log("✅ Долг не вырос. Храповик пройден.");
+}
+
+process.exit(exitCode);

@@ -10,10 +10,11 @@ import type {
   VisitSaveReceipt
 } from "@dental/shared";
 import { createHash } from "node:crypto";
-import { visitCloseChecklistFactsFor } from "../sampleData.js";
+import { inMemoryDomainState, visitCloseChecklistFactsFor } from "../sampleData.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
 import { projectVisitRow } from "./visitsProjection.js";
+import type { TreatmentChargeRow, PaymentRow } from "../money/patientDebt.js";
 
 /**
  * Действие в журнале для подписания карты приёма.
@@ -294,7 +295,56 @@ export async function acceptVisitDraftInDb(
   await recordVisitDraftAcceptedAuditEvent(organizationId, signedVisit, input, previousRevision, saveReceipt.warning);
 
   try {
-    const visitCloseChecklist = buildVisitCloseChecklist(visitCloseChecklistFactsFor(signedVisit));
+    /*
+     * Строки денег читаются ИЗ БАЗЫ, а не из inMemoryDomainState.
+     *
+     * БЫЛО, замерено 2026-07-29: visitCloseChecklistFactsFor(signedVisit) БЕЗ второго
+     * аргумента → функция брала дефолт `state = inMemoryDomainState` → расчёт billing
+     * читал коллекции treatmentPlanItems и payments из демо-данных в памяти. Тест сеял
+     * реальные позиции и оплаты в PostgreSQL, но они не попадали в расчёт — карточка
+     * закрытия показывала остаток по клинике из демо-состояния вместо остатка по
+     * ЭТОМУ приёму из базы. Замер: 10 приёмов клиники, все получали одну строку
+     * «Остаток по плану 51 400 ₽», включая приём, оплаченный полностью.
+     *
+     * СТАЛО: позиции и оплаты читаются из базы одним запросом по organizationId, затем
+     * передаются в visitCloseChecklistFactsFor объектом state с реальными данными
+     * billing и пустыми коллекциями остальных сущностей. Остальные коллекции
+     * (imagingStudies, documents и т.д.) не нужны расчёту billing: пункт «Оплата
+     * связана» смотрит только treatmentPlanItems и payments. Поэтому полная гидратация
+     * здесь не вызывается — читаются только две таблицы.
+     *
+     * ПОЧЕМУ ЗАПРОС ПО КЛИНИКЕ, А НЕ ПО ПРИЁМУ. buildVisitLedger принимает
+     * ОТФИЛЬТРОВАННЫЕ коллекции: он сам ищет строки с visit_id = signedVisit.id. Если
+     * здесь WHERE visit_id = :id, расчёт не увидит позиции БЕЗ приёма
+     * (treatment_items.visit_id = null), которые входят в сальдо пациента, но не в
+     * сальдо приёма. Эта разница важна для переплаты: если пациент переплатил по
+     * приёму, а по клинике у него долг из-за позиций без приёма, карточка обязана
+     * показать переплату ПО ПРИЁМУ, а не молчать из-за другой позиции.
+     */
+    const [chargeRows, paymentRows] = await Promise.all([
+      db.select({
+        patientId: schema.treatmentItems.patientId,
+        visitId: schema.treatmentItems.visitId,
+        status: schema.treatmentItems.status,
+        unitPriceRub: schema.treatmentItems.unitPriceRub,
+        quantity: schema.treatmentItems.quantity,
+        discountRub: schema.treatmentItems.discountRub,
+      }).from(schema.treatmentItems).where(eq(schema.treatmentItems.organizationId, organizationId)),
+      db.select({
+        patientId: schema.payments.patientId,
+        visitId: schema.payments.visitId,
+        status: schema.payments.status,
+        amountRub: schema.payments.amountRub,
+      }).from(schema.payments).where(eq(schema.payments.organizationId, organizationId)),
+    ]);
+
+    const visitCloseChecklist = buildVisitCloseChecklist(
+      visitCloseChecklistFactsFor(signedVisit, {
+        ...inMemoryDomainState,
+        treatmentPlanItems: chargeRows as unknown as TreatmentChargeRow[],
+        payments: paymentRows as unknown as PaymentRow[],
+      })
+    );
 
     return {
       visit: signedVisit,

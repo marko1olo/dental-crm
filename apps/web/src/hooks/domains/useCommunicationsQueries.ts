@@ -16,7 +16,7 @@ export function useCommunicationsQueries() {
   });
 
   const updateTemplate = async (editingId: string, payload: any) => fetch(`/api/communications/templates/${editingId}`, {
-    method: "PUT", // wait, earlier the code said PATCH. Let me leave method as is but pass headers.
+    method: "PATCH", // Fixed: server expects PATCH (communicationsOutbox.ts:276), not PUT
     headers: auth?.denteClinicalMutationHeaders({ "content-type": "application/json" }),
     body: JSON.stringify(payload)
   });

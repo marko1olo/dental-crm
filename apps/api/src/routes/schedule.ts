@@ -395,7 +395,6 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
     }
     try {
       const created = await createAppointmentInDb(orgId, input);
-      const dashboard = await getDashboardFromDb(orgId);
       // Раньше маршрут расписания не рассылал НИЧЕГО, хотя эндпоинт живых
       // обновлений так и называется — /api/ws/schedule. Два администратора,
       // работающие в расписании одновременно, не видели действий друг друга
@@ -404,7 +403,43 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
         type: "APPOINTMENT_CREATED",
         payload: { appointmentId: created?.id ?? null, startsAt: created?.startsAt ?? null }
       });
-      return reply.code(201).send(dashboardSchema.parse(dashboard));
+
+      // КРИТИЧНО: мутация (createAppointmentInDb) УЖЕ СОВЕРШЕНА. Дальше —
+      // ТОЛЬКО отказы, которые НЕ откатывают её: сводка — опциональная услуга.
+      // Бросок getDashboardFromDb поймается внешним catch, но это уже 5xx
+      // (сбой базы), а не отказ по создаю. Клиент видит 409/404, создание
+      // остаётся в базе → двойная запись на слот.
+      //
+      // ПОЭТОМУ читаем сводку в отдельном try/catch, а внешний catch ловит
+      // только отказы createAppointmentInDb.
+      let dashboard;
+      try {
+        dashboard = await getDashboardFromDb(orgId);
+      } catch (dashErr) {
+        request.log.error({ err: dashErr, appointmentId: created?.id, orgId },
+          "[Schedule] Приём создан, но сводку прочитать не удалось — отдан успех без сводки");
+        return reply.code(201).send({
+          success: true,
+          appointmentId: created?.id ?? null,
+          startsAt: created?.startsAt ?? null,
+          message: "Запись создана. Сводка не обновлена — перезагрузите страницу.",
+        });
+      }
+
+      const parsed = dashboardSchema.safeParse(dashboard);
+      if (!parsed.success) {
+        request.log.warn(
+          { appointmentId: created?.id, orgId, errors: parsed.error.errors },
+          "[Schedule] Приём создан, сводка прочиталась, но не прошла контракт"
+        );
+        return reply.code(201).send({
+          success: true,
+          appointmentId: created?.id ?? null,
+          startsAt: created?.startsAt ?? null,
+          message: "Запись создана. Сводка не обновлена — перезагрузите страницу.",
+        });
+      }
+      return reply.code(201).send(parsed.data);
     } catch (error) {
       return sendAppointmentRejection(reply, appointmentRejectionResponse("create", error));
     }
@@ -445,14 +480,40 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
         request.log.error({ err: error }, "Не удалось снять устаревшие напоминания о приёме");
       });
 
-      const dashboard = await getDashboardFromDb(orgId);
       // Перенос и отмена приёма — то же самое: без рассылки коллега видит
       // слот занятым, хотя он уже освобождён, и наоборот.
       wsBroker.broadcastToOrganization(orgId, {
         type: "APPOINTMENT_UPDATED",
         payload: { appointmentId: params.appointmentId }
       });
-      return dashboardSchema.parse(dashboard);
+
+      // КРИТИЧНО: updateAppointmentInDb УЖЕ СОВЕРШЕНА. Дальше — опциональная услуга.
+      let dashboard;
+      try {
+        dashboard = await getDashboardFromDb(orgId);
+      } catch (dashErr) {
+        request.log.error({ err: dashErr, appointmentId: params.appointmentId, orgId },
+          "[Schedule] Приём изменён, но сводку прочитать не удалось");
+        return {
+          success: true,
+          appointmentId: params.appointmentId,
+          message: "Запись изменена. Сводка не обновлена — перезагрузите страницу.",
+        };
+      }
+
+      const parsed = dashboardSchema.safeParse(dashboard);
+      if (!parsed.success) {
+        request.log.warn(
+          { appointmentId: params.appointmentId, orgId, errors: parsed.error.errors },
+          "[Schedule] Приём изменён, сводка прочиталась, но не прошла контракт"
+        );
+        return {
+          success: true,
+          appointmentId: params.appointmentId,
+          message: "Запись изменена. Сводка не обновлена — перезагрузите страницу.",
+        };
+      }
+      return parsed.data;
     } catch (error) {
       return sendAppointmentRejection(reply, appointmentRejectionResponse("update", error));
     }
@@ -757,7 +818,21 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
         type: "APPOINTMENT_CREATED",
         payload: { appointmentId: created?.id ?? null, startsAt: created?.startsAt ?? null }
       });
-      return reply.code(201).send(dashboardSchema.parse(dashboard));
+      // БУЛО: parse() на кінці створення приёму через буфер обміну. Та ж ловушка.
+      const parsed = dashboardSchema.safeParse(dashboard);
+      if (!parsed.success) {
+        request.log.warn(
+          { appointmentId: created?.id, orgId, errors: parsed.error.errors },
+          "[Schedule/Clipboard] Приём створено, але сводка не пройшла контракт"
+        );
+        return reply.code(201).send({
+          success: true,
+          appointmentId: created?.id ?? null,
+          startsAt: created?.startsAt ?? null,
+          message: "Запис створено з буфера обміну. Сводка не оновлена — перезавантажте сторінку.",
+        });
+      }
+      return reply.code(201).send(parsed.data);
     } catch (error) {
       return sendAppointmentRejection(reply, appointmentRejectionResponse("create", error));
     }

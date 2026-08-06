@@ -22,10 +22,16 @@
  * семьдесят, вызовов охраны на сервере — больше двухсот. Руками это не
  * пересматривается, а без проверки завтра добавят следующий такой вызов.
  *
+ * ВЕРСИЯ 2: РАЗБОР ДЕРЕВОМ, А НЕ РЕГУЛЯРНЫМ ВЫРАЖЕНИЕМ. Прежний текстовый
+ * разбор давал 9 находок: 8 ложных, 1 настоящую, и пропускал ещё одну настоящую.
+ * Оба промаха — следствие «искать написание, а не свойство потока данных». Теперь
+ * разбор через TypeScript AST (`scripts/lib/guarded-header-analysis.mjs`).
+ *
  * Только чтение. Ненулевой код возврата при находках, чтобы ставить в гейт.
  */
-import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
+import { collectFetchCalls, findCallers, CONDUIT_REASON, isTestFile } from "./lib/guarded-header-analysis.mjs";
 
 const ROUTES_DIR = "apps/api/src/routes";
 const WEB_DIR = "apps/web/src";
@@ -142,20 +148,6 @@ function lineOf(text, index) {
 	return text.slice(0, index).split("\n").length;
 }
 
-/** Текст вызова от открывающей скобки до парной закрывающей. */
-function callText(text, openParenIndex) {
-	let depth = 0;
-	for (let i = openParenIndex; i < text.length; i += 1) {
-		const c = text[i];
-		if (c === "(") depth += 1;
-		else if (c === ")") {
-			depth -= 1;
-			if (depth === 0) return text.slice(openParenIndex, i + 1);
-		}
-	}
-	return text.slice(openParenIndex, openParenIndex + 2000);
-}
-
 /** Тело функции по её объявлению: от первой «{» после списка параметров. */
 function functionBody(text, declIndex) {
 	const open = text.indexOf("{", declIndex);
@@ -238,58 +230,73 @@ function routeMatcher(path) {
 }
 
 /**
- * Вызовы `fetch` к своему серверу из веба.
+ * Вызовы `fetch` к своему серверу из веба — РАЗБОРОМ ДЕРЕВА.
  *
- * ГРАНИЦЫ ЭТОЙ ПРОВЕРКИ, названы честно:
- * - учитываются только адреса, записанные в самом вызове строкой или шаблоном;
- *   адрес, собранный в переменной заранее, здесь не виден;
- * - наличие заголовка ищется в тексте вызова И в тридцати строках над ним (там
- *   обычно готовится объект заголовков). Это догадка, а не разбор кода: если
- *   заголовки собираются дальше, чем за тридцать строк, вызов может попасть в
- *   находки зря — поэтому в отчёте каждая находка указана с файлом и строкой,
- *   чтобы её можно было прочитать глазами.
+ * ЧТО ИЗМЕНИЛОСЬ ПРОТИВ ТЕКСТОВОГО РАЗБОРА и почему это не украшение:
+ *
+ * 1. АДРЕС РАЗВОРАЧИВАЕТСЯ. `fetch(dayConfirmationsRequestPath(date))` теперь
+ *    виден: имя сборщика адреса раскрывается до «/api/schedule/day-confirmations».
+ *    Текстовый разбор требовал литерала в скобках и МОЛЧА выбрасывал такой вызов —
+ *    это и была слепота на настоящее нарушение.
+ *
+ * 2. ЗАГОЛОВКИ ПРОСЛЕЖИВАЮТСЯ ЧЕРЕЗ ГРАНИЦУ ФУНКЦИИ. Если `fetch` берёт
+ *    заголовки из ПАРАМЕТРА своей функции, обвинять эту функцию нельзя: она
+ *    посредник, а помощника зовут её вызывающие. Гейт находит вызывающих по
+ *    имени и требует помощника у КАЖДОГО. Виноватым называется вызывающий,
+ *    который не передал, а не библиотека.
+ *
+ * ГРАНИЦЫ, названные честно. Вызывающие ищутся по ИМЕНИ функции по всему вебу, без
+ * разбора импортов: две разные функции с одним именем будут смешаны. Это делает
+ * проверку МЯГЧЕ (лишний «правильный» вызывающий может оправдать посредника), но
+ * не жёстче — ложных обвинений отсюда не появляется. Посредник, у которого не
+ * нашлось ни одного вызывающего, считается НЕ доказанным и попадает в находки.
  */
 function collectWebCalls() {
+	const files = sources(WEB_DIR, [".ts", ".tsx"]);
 	const calls = [];
-	for (const file of sources(WEB_DIR, [".ts", ".tsx"])) {
-		const code = stripComments(readFileSync(file, "utf8"));
-		for (const match of code.matchAll(/\bfetch\s*\(/g)) {
-			const open = code.indexOf("(", match.index);
-			const text = callText(code, open);
-			const url = text.match(/^\(\s*["'`](\/api\/[^"'`]*)["'`]/);
-			if (!url) continue;
-			const rawPath = url[1];
-			/* Шаблонная подстановка и строка запроса — не часть адреса маршрута. */
-			const path = rawPath.replace(/\$\{[^}]*\}/g, "SEGMENT").split("?")[0];
-			const methodMatch = text.match(/method\s*:\s*["'`](get|post|put|patch|delete)["'`]/i);
-			const method = (methodMatch ? methodMatch[1] : "get").toUpperCase();
-			const lineNumber = lineOf(code, match.index);
-			const above = code.split("\n").slice(Math.max(0, lineNumber - 31), lineNumber).join("\n");
-			const context = `${text}\n${above}`;
-			/*
-			 * МЁРТВЫЙ ИСТОЧНИК СЕКРЕТА. Имя помощника в коде не значит, что секрет
-			 * действительно уходит: помощник добавляет заголовок ТОЛЬКО если
-			 * секрет передан аргументом. Три места брали его из
-			 * localStorage["dente_clinical_admin_secret_session"], а этот ключ во
-			 * всём вебе НИКТО НЕ ПИШЕТ — только читают. Значит аргумент всегда
-			 * undefined и заголовка нет, хотя по имени помощника проверка считала
-			 * вызов защищённым. Это была её собственная ложная невиновность:
-			 * /api/speech/status при этом отвечает 403, проверено живьём.
-			 */
-			const deadSecretSource = context.includes("dente_clinical_admin_secret_session");
-			calls.push({
-				file,
-				line: lineNumber,
-				method,
-				path,
-				sendsSecret:
-					HEADER_HELPERS.some((helper) => context.includes(helper)) && !deadSecretSource,
-				deadSecretSource,
-			});
+	for (const file of files) calls.push(...collectFetchCalls(file));
+
+	/*
+	 * Посредники: `fetch` внутри них берёт заголовки из параметра. Спрашиваем
+	 * каждого вызывающего по всему вебу. Тесты в счёт не идут: тест может
+	 * передать секрет, которого нет у панели.
+	 */
+	const conduitNames = new Set(
+		calls.filter((call) => call.reason === CONDUIT_REASON && call.fnName).map((call) => call.fnName),
+	);
+	const callerVerdict = new Map();
+	if (conduitNames.size > 0) {
+		for (const file of files) {
+			if (isTestFile(file)) continue;
+			for (const name of conduitNames) {
+				for (const caller of findCallers(file, name)) {
+					const previous = callerVerdict.get(name) ?? { total: 0, guarded: 0, offenders: [] };
+					previous.total += 1;
+					if (caller.passesHelper) previous.guarded += 1;
+					else previous.offenders.push(`${caller.file}:${caller.line}`);
+					callerVerdict.set(name, previous);
+				}
+			}
 		}
 	}
+
+	for (const call of calls) {
+		if (call.reason !== CONDUIT_REASON) continue;
+		const verdict = callerVerdict.get(call.fnName);
+		if (verdict && verdict.total > 0 && verdict.offenders.length === 0) {
+			call.sendsSecret = true;
+			call.reason = `посредник: все ${verdict.total} вызывающих передают заголовки`;
+			continue;
+		}
+		call.offenders = verdict ? verdict.offenders : [];
+		call.reason = verdict
+			? `посредник: ${verdict.offenders.length} из ${verdict.total} вызывающих без заголовков`
+			: "посредник без единого найденного вызывающего";
+	}
+
 	return calls;
 }
+
 
 /**
  * Сведение адреса маршрута с адресом вызова, ПОЗВЕНЬЕВО.
