@@ -263,7 +263,9 @@ function pgDumpMajorVersion(binary: string): number | null {
  * то есть копии не создавались вообще, и до прав под RLS дело не доходило.
  * Версия бинаря не проверялась ни разу.
  */
-function resolvePgDump(): { binary: string; major: number } | { error: string } {
+function resolvePgDump():
+	| { binary: string; major: number }
+	| { error: string } {
 	const configured = process.env.PG_DUMP_PATH?.trim();
 	if (configured && !fs.existsSync(configured)) {
 		return {
