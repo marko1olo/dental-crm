@@ -8,11 +8,17 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { appointmentWaitlists, appointments, chairs, clinics, organizations, patients, users } from "../../db/schema.js";
 import { registerWaitlistMatchRoutes } from "../../routes/waitlistMatches.js";
-import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+	withFixtureTenant
+} from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /*
  * БЛОК ИДЕНТИФИКАТОРОВ ВЫВЕДЕН ИЗ ИМЕНИ ФАЙЛА.
@@ -81,7 +87,7 @@ describe("подбор на освободившееся окно", () => {
 
 	before(async () => {
 		process.env = { ...originalEnv, DENTE_DEV_ALLOW_HEADER_ORG: "1" };
-		app = Fastify();
+		app = createTenantTestApp();
 		await registerWaitlistMatchRoutes(app);
 
 		try {
@@ -94,105 +100,114 @@ describe("подбор на освободившееся окно", () => {
 			 */
 			await purgeFixtureOrganizations([ORG_ID, OTHER_ORG]);
 
-			await db
-				.insert(organizations)
-				.values([
-					{ id: ORG_ID, name: "Клиника листа ожидания" },
-					{ id: OTHER_ORG, name: "Соседняя клиника" }
-				]);
-			await db
-				.insert(users)
-				.values([
-					{ id: DOCTOR_A, organizationId: ORG_ID, fullName: "Врач Первый", role: "doctor" },
-					{ id: DOCTOR_B, organizationId: ORG_ID, fullName: "Врач Второй", role: "doctor" }
-				]);
-			// Кресло стоит в клинике: chairs.clinic_id объявлен notNull, поэтому
-			// клиника заводится здесь же, как в остальных тестах по живой базе.
-			await db
-				.insert(clinics)
-				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" });
-			await db
-				.insert(chairs)
-				.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло" });
+			/*
+			 * Клиник две, а `app.current_tenant` держит ровно одного арендатора:
+			 * WITH CHECK пропускает только строку своего тенанта, поэтому общий
+			 * `values([своя, соседняя])` отвергается кодом 42501 на второй строке.
+			 * Соседняя клиника заводится своим вызовом и остаётся пустой — её токеном
+			 * проверяется отказ по чужому приёму.
+			 */
+			await withFixtureTenant(OTHER_ORG, async () => {
+				await db.insert(organizations).values({ id: OTHER_ORG, name: "Соседняя клиника" });
+			});
+			await withFixtureTenant(ORG_ID, async () => {
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника листа ожидания" });
+				await db
+					.insert(users)
+					.values([
+						{ id: DOCTOR_A, organizationId: ORG_ID, fullName: "Врач Первый", role: "doctor" },
+						{ id: DOCTOR_B, organizationId: ORG_ID, fullName: "Врач Второй", role: "doctor" }
+					]);
+				// Кресло стоит в клинике: chairs.clinic_id объявлен notNull, поэтому
+				// клиника заводится здесь же, как в остальных тестах по живой базе.
+				await db
+					.insert(clinics)
+					.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" });
+				await db
+					.insert(chairs)
+					.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло" });
 
-			await db
-				.insert(patients)
-				.values([
-					{ id: CANCELLED_PATIENT, organizationId: ORG_ID, fullName: "Отменивший Пациент", phone: "+7 916 000-08-01" },
-					{ id: BEST_MATCH, organizationId: ORG_ID, fullName: "Подходящий Пациент", phone: "+7 916 000-08-02" },
-					{ id: OTHER_DOCTOR_WAITER, organizationId: ORG_ID, fullName: "Ждёт Другого", phone: "+7 916 000-08-03" },
-					{ id: URGENT_WRONG_TIME, organizationId: ORG_ID, fullName: "Срочный Неудобный", phone: "+7 916 000-08-04" }
-				]);
+				await db
+					.insert(patients)
+					.values([
+						{ id: CANCELLED_PATIENT, organizationId: ORG_ID, fullName: "Отменивший Пациент", phone: "+7 916 000-08-01" },
+						{ id: BEST_MATCH, organizationId: ORG_ID, fullName: "Подходящий Пациент", phone: "+7 916 000-08-02" },
+						{ id: OTHER_DOCTOR_WAITER, organizationId: ORG_ID, fullName: "Ждёт Другого", phone: "+7 916 000-08-03" },
+						{ id: URGENT_WRONG_TIME, organizationId: ORG_ID, fullName: "Срочный Неудобный", phone: "+7 916 000-08-04" }
+					]);
 
-			await db
-				.insert(appointments)
-				.values([
-					// Отменённое окно завтра в 10:00 у первого врача.
-					{
-						id: CANCELLED_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: CANCELLED_PATIENT,
-						doctorUserId: DOCTOR_A,
-						chairId: CHAIR_ID,
-						status: "cancelled",
-						startsAt: tomorrowAt(10),
-						endsAt: new Date(tomorrowAt(10).getTime() + 3_600_000)
-					},
-					// Живой приём: подбор по нему запрещён.
-					{
-						id: ACTIVE_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: CANCELLED_PATIENT,
-						doctorUserId: DOCTOR_A,
-						chairId: CHAIR_ID,
-						status: "planned",
-						startsAt: tomorrowAt(12),
-						endsAt: new Date(tomorrowAt(12).getTime() + 3_600_000)
-					},
-					// Отменённое окно в прошлом: предлагать некому.
-					{
-						id: PAST_CANCELLED,
-						organizationId: ORG_ID,
-						patientId: CANCELLED_PATIENT,
-						doctorUserId: DOCTOR_A,
-						chairId: CHAIR_ID,
-						status: "cancelled",
-						startsAt: new Date(Date.now() - 3 * 24 * 3_600_000),
-						endsAt: new Date(Date.now() - 3 * 24 * 3_600_000 + 3_600_000)
-					}
-				]);
+				await db
+					.insert(appointments)
+					.values([
+						// Отменённое окно завтра в 10:00 у первого врача.
+						{
+							id: CANCELLED_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: CANCELLED_PATIENT,
+							doctorUserId: DOCTOR_A,
+							chairId: CHAIR_ID,
+							status: "cancelled",
+							startsAt: tomorrowAt(10),
+							endsAt: new Date(tomorrowAt(10).getTime() + 3_600_000)
+						},
+						// Живой приём: подбор по нему запрещён.
+						{
+							id: ACTIVE_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: CANCELLED_PATIENT,
+							doctorUserId: DOCTOR_A,
+							chairId: CHAIR_ID,
+							status: "planned",
+							startsAt: tomorrowAt(12),
+							endsAt: new Date(tomorrowAt(12).getTime() + 3_600_000)
+						},
+						// Отменённое окно в прошлом: предлагать некому.
+						{
+							id: PAST_CANCELLED,
+							organizationId: ORG_ID,
+							patientId: CANCELLED_PATIENT,
+							doctorUserId: DOCTOR_A,
+							chairId: CHAIR_ID,
+							status: "cancelled",
+							startsAt: new Date(Date.now() - 3 * 24 * 3_600_000),
+							endsAt: new Date(Date.now() - 3 * 24 * 3_600_000 + 3_600_000)
+						}
+					]);
 
-			await db
-				.insert(appointmentWaitlists)
-				.values([
-					{
-						id: WAIT_BEST,
-						organizationId: ORG_ID,
-						patientId: BEST_MATCH,
-						preferredDoctorId: DOCTOR_A,
-						priorityLevel: "medium",
-						preferredTimeRanges: ["09:00-13:00"],
-						status: "waiting"
-					},
-					{
-						id: WAIT_OTHER_DOCTOR,
-						organizationId: ORG_ID,
-						patientId: OTHER_DOCTOR_WAITER,
-						preferredDoctorId: DOCTOR_B,
-						priorityLevel: "medium",
-						preferredTimeRanges: ["09:00-13:00"],
-						status: "waiting"
-					},
-					{
-						id: WAIT_URGENT,
-						organizationId: ORG_ID,
-						patientId: URGENT_WRONG_TIME,
-						preferredDoctorId: DOCTOR_A,
-						priorityLevel: "high",
-						preferredTimeRanges: ["18:00-20:00"],
-						status: "waiting"
-					}
-				]);
+				await db
+					.insert(appointmentWaitlists)
+					.values([
+						{
+							id: WAIT_BEST,
+							organizationId: ORG_ID,
+							patientId: BEST_MATCH,
+							preferredDoctorId: DOCTOR_A,
+							priorityLevel: "medium",
+							preferredTimeRanges: ["09:00-13:00"],
+							status: "waiting"
+						},
+						{
+							id: WAIT_OTHER_DOCTOR,
+							organizationId: ORG_ID,
+							patientId: OTHER_DOCTOR_WAITER,
+							preferredDoctorId: DOCTOR_B,
+							priorityLevel: "medium",
+							preferredTimeRanges: ["09:00-13:00"],
+							status: "waiting"
+						},
+						{
+							id: WAIT_URGENT,
+							organizationId: ORG_ID,
+							patientId: URGENT_WRONG_TIME,
+							preferredDoctorId: DOCTOR_A,
+							priorityLevel: "high",
+							preferredTimeRanges: ["18:00-20:00"],
+							status: "waiting"
+						}
+					]);
+			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;

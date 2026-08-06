@@ -45,15 +45,19 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { sql } from "drizzle-orm";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { denteAdminSecretHeader } from "../../accessGuard.js";
 import { db, pool } from "../../db/client.js";
 import { organizations, patients, visits } from "../../db/schema.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { authTokenSecret, clinicalAdminSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /** Пространство имён = имя этого файла: чужой тест таких же идентификаторов не получит. */
 const NAMESPACE = "visitDraftRefusalNamesCause";
@@ -129,51 +133,58 @@ before(async () => {
 	// свои строки в живой базе. Следующий прогон обязан начинать с чистого места.
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
 
-	await db.insert(organizations).values([
-		{ id: OWN_ORGANIZATION_ID, name: "Сторож отказа черновика — своя клиника" },
-		{ id: OTHER_ORGANIZATION_ID, name: "Сторож отказа черновика — чужая клиника" },
-	]);
-	await db.insert(patients).values({
-		id: PATIENT_ID,
-		organizationId: OWN_ORGANIZATION_ID,
-		fullName: "Приёмов Подписанный Черновикович",
-		birthDate: "1988-03-14",
-		phone: "+7 900 000-00-14",
+	// Клиник две, а `app.current_tenant` держит ровно одного арендатора: вставка
+	// организации проходит только при `id = current_tenant`, поэтому общий
+	// `values([своя, чужая])` отвергался бы кодом 42501 на второй строке. Пациент и
+	// приёмы сеются под контекстом СВОЕЙ клиники — они её и описывают.
+	await withFixtureTenant(OWN_ORGANIZATION_ID, async () => {
+		await db.insert(organizations).values({
+			id: OWN_ORGANIZATION_ID,
+			name: "Сторож отказа черновика — своя клиника",
+		});
+		await db.insert(patients).values({
+			id: PATIENT_ID,
+			organizationId: OWN_ORGANIZATION_ID,
+			fullName: "Приёмов Подписанный Черновикович",
+			birthDate: "1988-03-14",
+			phone: "+7 900 000-00-14",
+		});
+		await db.insert(visits).values([
+			{
+				id: SIGNED_VISIT_ID,
+				organizationId: OWN_ORGANIZATION_ID,
+				patientId: PATIENT_ID,
+				status: "signed",
+				revision: 2,
+				complaint: "боль при накусывании на 36",
+				diagnosis: "K02.1 Кариес дентина",
+				signedAt: new Date(),
+			},
+			{
+				id: VOIDED_VISIT_ID,
+				organizationId: OWN_ORGANIZATION_ID,
+				patientId: PATIENT_ID,
+				status: "voided",
+				revision: 1,
+			},
+			{
+				id: DRAFT_VISIT_ID,
+				organizationId: OWN_ORGANIZATION_ID,
+				patientId: PATIENT_ID,
+				status: "draft",
+				revision: 1,
+				complaint: "плановый осмотр",
+			},
+		]);
 	});
-	await db.insert(visits).values([
-		{
-			id: SIGNED_VISIT_ID,
-			organizationId: OWN_ORGANIZATION_ID,
-			patientId: PATIENT_ID,
-			status: "signed",
-			revision: 2,
-			complaint: "боль при накусывании на 36",
-			diagnosis: "K02.1 Кариес дентина",
-			signedAt: new Date(),
-		},
-		{
-			id: VOIDED_VISIT_ID,
-			organizationId: OWN_ORGANIZATION_ID,
-			patientId: PATIENT_ID,
-			status: "voided",
-			revision: 1,
-		},
-		{
-			id: DRAFT_VISIT_ID,
-			organizationId: OWN_ORGANIZATION_ID,
-			patientId: PATIENT_ID,
-			status: "draft",
-			revision: 1,
-			complaint: "плановый осмотр",
-		},
-	]);
+	await withFixtureTenant(OTHER_ORGANIZATION_ID, async () => {
+		await db.insert(organizations).values({
+			id: OTHER_ORGANIZATION_ID,
+			name: "Сторож отказа черновика — чужая клиника",
+		});
+	});
 
-	app = Fastify();
-	// Тот же хук, что в apps/api/src/server.ts: без него личность запроса пуста и
-	// маршрут отвечает 401 вместо проверяемых состояний.
-	app.addHook("onRequest", async (request) => {
-		getRequestIdentity(request);
-	});
+	app = createTenantTestApp();
 	await registerVisitRoutes(app);
 	await app.ready();
 });
@@ -181,14 +192,23 @@ before(async () => {
 after(async () => {
 	await app?.close();
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
-	const leftovers = await db.execute<{ rows_left: number }>(sql`
-		select (
-			(select count(*) from organizations where id in (${OWN_ORGANIZATION_ID}::uuid, ${OTHER_ORGANIZATION_ID}::uuid))
-			+ (select count(*) from visits where organization_id in (${OWN_ORGANIZATION_ID}::uuid, ${OTHER_ORGANIZATION_ID}::uuid))
-			+ (select count(*) from patients where organization_id in (${OWN_ORGANIZATION_ID}::uuid, ${OTHER_ORGANIZATION_ID}::uuid))
-		)::int as rows_left`);
+	// Счёт идёт по каждой клинике под ЕЁ контекстом и складывается: одним запросом
+	// с `in (своя, чужая)` под контекстом одной из них строки второй не видны, и
+	// уцелевший мусор соседней клиники прошёл бы мимо проверки.
+	let rowsLeft = 0;
+	for (const organizationId of FIXTURE_ORGANIZATION_IDS) {
+		const leftovers = await withFixtureTenant(organizationId, async () =>
+			db.execute<{ rows_left: number }>(sql`
+				select (
+					(select count(*) from organizations where id = ${organizationId}::uuid)
+					+ (select count(*) from visits where organization_id = ${organizationId}::uuid)
+					+ (select count(*) from patients where organization_id = ${organizationId}::uuid)
+				)::int as rows_left`),
+		);
+		rowsLeft += leftovers.rows[0]?.rows_left ?? 0;
+	}
 	assert.equal(
-		leftovers.rows[0]?.rows_left,
+		rowsLeft,
 		0,
 		"Сторож не убрал свои строки из живой базы. Оставленные фикстуры читаются следующим прогоном как " +
 			"данные клиники и дают ложный провал в чужом сценарии — так уже было.",
@@ -201,16 +221,20 @@ describe("GET /api/visits/:visitId/draft/autosave: отказ называет �
 		const refusal = await readDraft(OWN_ORGANIZATION_ID, SIGNED_VISIT_ID);
 
 		// Сверка НЕЗАВИСИМАЯ: своим SQL, а не тем же маршрутом. Без неё «приём есть»
-		// оставалось бы утверждением теста о самом себе.
-		const stored = await db.execute<{
-			id: string;
-			status: string;
-			revision: number;
-			signed_at: string | null;
-			no_draft: boolean;
-		}>(sql`select id::text as id, status::text as status, revision, signed_at::text as signed_at,
-		              draft_autosave is null as no_draft
-		         from visits where id = ${SIGNED_VISIT_ID}::uuid`);
+		// оставалось бы утверждением теста о самом себе. Тенант-контекст обязателен:
+		// под FORCE RLS запрос без него вернул бы ноль строк, и «посев не состоялся»
+		// стало бы ложным выводом о живой строке.
+		const stored = await withFixtureTenant(OWN_ORGANIZATION_ID, async () =>
+			db.execute<{
+				id: string;
+				status: string;
+				revision: number;
+				signed_at: string | null;
+				no_draft: boolean;
+			}>(sql`select id::text as id, status::text as status, revision, signed_at::text as signed_at,
+			              draft_autosave is null as no_draft
+			         from visits where id = ${SIGNED_VISIT_ID}::uuid`),
+		);
 		assert.equal(
 			stored.rows.length,
 			1,
@@ -277,8 +301,12 @@ describe("GET /api/visits/:visitId/draft/autosave: отказ называет �
 		const signed = await readDraft(OWN_ORGANIZATION_ID, SIGNED_VISIT_ID);
 
 		// Про отсутствующий приём «не найден» — правда, и трогать её не нужно.
-		const absentCount = await db.execute<{ n: number }>(
-			sql`select count(*)::int as n from visits where id = ${ABSENT_VISIT_ID}::uuid`,
+		// Считается под контекстом своей клиники — ровно то множество строк, которое
+		// видит и сам маршрут.
+		const absentCount = await withFixtureTenant(OWN_ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(
+				sql`select count(*)::int as n from visits where id = ${ABSENT_VISIT_ID}::uuid`,
+			),
 		);
 		assert.equal(absentCount.rows[0]?.n, 0, "Приём, объявленный отсутствующим, оказался в базе — проверка не о том.");
 		assert.equal(absent.error, "VisitNotFound", `Отсутствующий приём обязан называться ненайденным: ${absent.body}`);

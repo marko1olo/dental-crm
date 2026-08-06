@@ -21,7 +21,7 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import { and, eq, sql } from "drizzle-orm";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	clinicalAuditLogs,
@@ -39,7 +39,6 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
@@ -302,37 +301,43 @@ describe("церемония подписания дневника одинак�
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
 
-		const [organization] = await db
-			.insert(organizations)
-			.values({ id: organizationId, name: "U5 ceremony probe clinic" })
-			.returning({ id: organizations.id });
-		assert.ok(organization);
+		/*
+		 * Клиника, врач и пациент сеются под тенант-контекстом: WITH CHECK у `users`
+		 * и `patients` знает только `organization_id = current_tenant`, без дизъюнкта
+		 * обхода, поэтому вставка без контекста отвергается кодом 42501.
+		 */
+		await withFixtureTenant(organizationId, async () => {
+			const [organization] = await db
+				.insert(organizations)
+				.values({ id: organizationId, name: "U5 ceremony probe clinic" })
+				.returning({ id: organizations.id });
+			assert.ok(organization);
 
-		const [doctor] = await db
-			.insert(users)
-			.values({ organizationId, fullName: "Врач U5", role: "doctor" })
-			.returning({ id: users.id });
-		assert.ok(doctor);
-		doctorId = doctor.id;
+			const [doctor] = await db
+				.insert(users)
+				.values({ organizationId, fullName: "Врач U5", role: "doctor" })
+				.returning({ id: users.id });
+			assert.ok(doctor);
+			doctorId = doctor.id;
 
-		const [patient] = await db
-			.insert(patients)
-			.values({ organizationId, fullName: "Пациент U5" })
-			.returning({ id: patients.id });
-		assert.ok(patient);
-		patientId = patient.id;
+			const [patient] = await db
+				.insert(patients)
+				.values({ organizationId, fullName: "Пациент U5" })
+				.returning({ id: patients.id });
+			assert.ok(patient);
+			patientId = patient.id;
+		});
 
 		staffToken = signToken(
 			{ organizationId, userId: doctorId, role: "doctor" },
 			authTokenSecret(),
 		);
 
-		app = Fastify();
-		// Тот же хук, что в apps/api/src/server.ts:310 — именно он наполняет
-		// request.user, из которого diary.ts берёт роль и идентификатор врача.
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		// Оба хука изоляции боевого server.ts: первый наполняет request.user, из
+		// которого diary.ts берёт роль и идентификатор врача, второй оборачивает
+		// обработчик в `withTenantCtx` — без него церемония не видит ни визита, ни
+		// склада своей же клиники и читает ноль строк без единой ошибки.
+		app = createTenantTestApp();
 		await registerDiaryRoutes(app);
 		await app.ready();
 	});
@@ -340,45 +345,71 @@ describe("церемония подписания дневника одинак�
 	after(async () => {
 		await app?.close();
 		if (organizationId) {
-			await db
-				.delete(inventoryTransactions)
-				.where(eq(inventoryTransactions.organizationId, organizationId));
-			await db
-				.delete(clinicalAuditLogs)
-				.where(eq(clinicalAuditLogs.organizationId, organizationId));
-			await db
-				.delete(doctorCommissions)
-				.where(eq(doctorCommissions.organizationId, organizationId));
-			await db
-				.delete(visitDiaryRevisions)
-				.where(eq(visitDiaryRevisions.organizationId, organizationId));
-			await db
-				.delete(visitDiaries)
-				.where(eq(visitDiaries.organizationId, organizationId));
-			await db
-				.delete(procedureMaterialRules)
-				.where(eq(procedureMaterialRules.organizationId, organizationId));
-			// Правила без organization_id по организации не удаляются — их надо
-			// снимать по позиции склада, иначе фикстура остаётся в живой базе.
-			await db.execute(
-				sql`delete from procedure_material_rules
-				     where inventory_item_id in (
-				       select id from inventory_items where organization_id = ${organizationId}
-				     )`,
+			/*
+			 * ПРАВО НА УДАЛЕНИЕ ЖУРНАЛА СПРАШИВАЕТСЯ У КАТАЛОГА ЗАРАНЕЕ.
+			 *
+			 * С миграции 0161_audit_append_only.sql у роли приложения отозвано право
+			 * DELETE на `clinical_audit_logs`, а проверка прав срабатывает ДО того, как
+			 * база посмотрит на условие: отказ 42501 приходит даже когда под условие не
+			 * подпадает ни одной строки. Прежний безусловный `db.delete` обрывал этим
+			 * исключением весь `after`, и все следующие удаления не выполнялись — вся
+			 * клиника целиком оставалась в общей базе. Признак берётся из каталога, а
+			 * не из списка имён в коде: перечень устареет при первой же миграции,
+			 * закрывающей ещё одну таблицу, а `has_table_privilege` отстать не может.
+			 */
+			const auditPrivilege = await db.execute<{ deletable: boolean }>(
+				sql`SELECT has_table_privilege(current_user, 'public.clinical_audit_logs', 'DELETE') AS deletable`,
 			);
-			await db
-				.delete(treatmentItems)
-				.where(eq(treatmentItems.organizationId, organizationId));
-			await db.delete(visits).where(eq(visits.organizationId, organizationId));
-			await db
-				.delete(serviceCatalogItems)
-				.where(eq(serviceCatalogItems.organizationId, organizationId));
-			await db
-				.delete(inventoryItems)
-				.where(eq(inventoryItems.organizationId, organizationId));
-			await db.delete(patients).where(eq(patients.organizationId, organizationId));
-			await db.delete(users).where(eq(users.organizationId, organizationId));
-			await db.delete(organizations).where(eq(organizations.id, organizationId));
+			const clinicalAuditLogsDeletable = auditPrivilege.rows[0]?.deletable === true;
+
+			/*
+			 * Уборка идёт под тенант-контекстом. DELETE без него не ошибается: политика
+			 * просто не показывает ни одной строки, снимается ноль, и хук отчитывается
+			 * об успехе, оставив клинику в живой базе.
+			 */
+			await withFixtureTenant(organizationId, async () => {
+				await db
+					.delete(inventoryTransactions)
+					.where(eq(inventoryTransactions.organizationId, organizationId));
+				if (clinicalAuditLogsDeletable) {
+					await db
+						.delete(clinicalAuditLogs)
+						.where(eq(clinicalAuditLogs.organizationId, organizationId));
+				}
+				await db
+					.delete(doctorCommissions)
+					.where(eq(doctorCommissions.organizationId, organizationId));
+				await db
+					.delete(visitDiaryRevisions)
+					.where(eq(visitDiaryRevisions.organizationId, organizationId));
+				await db
+					.delete(visitDiaries)
+					.where(eq(visitDiaries.organizationId, organizationId));
+				await db
+					.delete(procedureMaterialRules)
+					.where(eq(procedureMaterialRules.organizationId, organizationId));
+				// Правила без organization_id по организации не удаляются — их надо
+				// снимать по позиции склада, иначе фикстура остаётся в живой базе.
+				await db.execute(
+					sql`delete from procedure_material_rules
+					     where inventory_item_id in (
+					       select id from inventory_items where organization_id = ${organizationId}
+					     )`,
+				);
+				await db
+					.delete(treatmentItems)
+					.where(eq(treatmentItems.organizationId, organizationId));
+				await db.delete(visits).where(eq(visits.organizationId, organizationId));
+				await db
+					.delete(serviceCatalogItems)
+					.where(eq(serviceCatalogItems.organizationId, organizationId));
+				await db
+					.delete(inventoryItems)
+					.where(eq(inventoryItems.organizationId, organizationId));
+				await db.delete(patients).where(eq(patients.organizationId, organizationId));
+				await db.delete(users).where(eq(users.organizationId, organizationId));
+				await db.delete(organizations).where(eq(organizations.id, organizationId));
+			});
 		}
 		process.env = originalEnv;
 	});
@@ -421,15 +452,19 @@ describe("церемония подписания дневника одинак�
 		assert.equal(postSign.statusCode, 200, postSign.body);
 
 		// Путь B: подпись через /lock.
-		const [lockDiary] = await db
-			.select({ id: visitDiaries.id })
-			.from(visitDiaries)
-			.where(
-				and(
-					eq(visitDiaries.visitId, viaLock.visitId),
-					eq(visitDiaries.organizationId, organizationId),
+		// Чтение — под тенант-контекстом: без него политика отдаёт ноль строк, и
+		// дневник выглядел бы несуществующим сразу после успешного создания.
+		const [lockDiary] = await withFixtureTenant(organizationId, async () =>
+			db
+				.select({ id: visitDiaries.id })
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, viaLock.visitId),
+						eq(visitDiaries.organizationId, organizationId),
+					),
 				),
-			);
+		);
 		assert.ok(lockDiary);
 		const lockSign = await app.inject({
 			method: "POST",
@@ -540,15 +575,17 @@ describe("церемония подписания дневника одинак�
 		assert.equal(sign.statusCode, 200, sign.body);
 		const signedHash = JSON.parse(sign.body).hash;
 
-		const [stored] = await db
-			.select()
-			.from(visitDiaries)
-			.where(
-				and(
-					eq(visitDiaries.visitId, scenario.visitId),
-					eq(visitDiaries.organizationId, organizationId),
+		const [stored] = await withFixtureTenant(organizationId, async () =>
+			db
+				.select()
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, scenario.visitId),
+						eq(visitDiaries.organizationId, organizationId),
+					),
 				),
-			);
+		);
 		assert.ok(stored);
 		assert.equal(stored.anamnesis, ANAMNESIS, "текст карты должен сохраниться");
 		assert.equal(stored.diaryHash, signedHash);
@@ -597,33 +634,40 @@ describe("церемония подписания дневника одинак�
 		assert.equal(body.error, "TransactionFailed");
 		assert.match(body.message, /Недостаточно материалов/);
 
-		const [item] = await db
-			.select()
-			.from(inventoryItems)
-			.where(eq(inventoryItems.id, scenario.inventoryItemId));
+		/*
+		 * Все четыре сверки — под тенант-контекстом. Без него SELECT отдаёт ноль
+		 * строк, и «дневника нет», «движений нет» подтверждались бы тем, что политика
+		 * скрыла строки, а не тем, что церемония откатилась.
+		 */
+		const [item] = await withFixtureTenant(organizationId, async () =>
+			db.select().from(inventoryItems).where(eq(inventoryItems.id, scenario.inventoryItemId)),
+		);
 		assert.ok(item);
 		assert.equal(Number(item.stockQuantity), 0, "остаток пустой полки не должен вырасти");
 
 		// Транзакция откатилась целиком: дневник не подписан, журнал пуст, услуга не закрыта.
-		const [diary] = await db
-			.select()
-			.from(visitDiaries)
-			.where(
-				and(
-					eq(visitDiaries.visitId, scenario.visitId),
-					eq(visitDiaries.organizationId, organizationId),
+		const [diary] = await withFixtureTenant(organizationId, async () =>
+			db
+				.select()
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, scenario.visitId),
+						eq(visitDiaries.organizationId, organizationId),
+					),
 				),
-			);
+		);
 		assert.equal(diary, undefined, "дневник не должен появиться при отказе церемонии");
-		const movements = await db
-			.select()
-			.from(inventoryTransactions)
-			.where(eq(inventoryTransactions.visitId, scenario.visitId));
+		const movements = await withFixtureTenant(organizationId, async () =>
+			db
+				.select()
+				.from(inventoryTransactions)
+				.where(eq(inventoryTransactions.visitId, scenario.visitId)),
+		);
 		assert.equal(movements.length, 0);
-		const [treatment] = await db
-			.select()
-			.from(treatmentItems)
-			.where(eq(treatmentItems.id, scenario.treatmentItemId));
+		const [treatment] = await withFixtureTenant(organizationId, async () =>
+			db.select().from(treatmentItems).where(eq(treatmentItems.id, scenario.treatmentItemId)),
+		);
 		assert.ok(treatment);
 		assert.equal(treatment.status, "approved", "услуга не должна закрыться");
 	});
@@ -654,15 +698,17 @@ describe("церемония подписания дневника одинак�
 		assert.equal(again.statusCode, 403, again.body);
 		assert.equal(JSON.parse(again.body).error, "DiaryLocked");
 
-		const [diary] = await db
-			.select({ id: visitDiaries.id })
-			.from(visitDiaries)
-			.where(
-				and(
-					eq(visitDiaries.visitId, scenario.visitId),
-					eq(visitDiaries.organizationId, organizationId),
+		const [diary] = await withFixtureTenant(organizationId, async () =>
+			db
+				.select({ id: visitDiaries.id })
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, scenario.visitId),
+						eq(visitDiaries.organizationId, organizationId),
+					),
 				),
-			);
+		);
 		assert.ok(diary);
 		const lockAgain = await app.inject({
 			method: "POST",
@@ -807,20 +853,22 @@ describe("церемония подписания дневника одинак�
 			treatmentQuantity: "0",
 		});
 
-		const [item] = await db
-			.select()
-			.from(inventoryItems)
-			.where(eq(inventoryItems.id, scenario.inventoryItemId));
+		// Три чтения — под тенант-контекстом: без него ни одна из трёх строк не
+		// видна, и проверка типа numeric-нуля не нашла бы, что проверять.
+		const [item] = await withFixtureTenant(organizationId, async () =>
+			db.select().from(inventoryItems).where(eq(inventoryItems.id, scenario.inventoryItemId)),
+		);
 		assert.ok(item);
-		const [rule] = await db
-			.select()
-			.from(procedureMaterialRules)
-			.where(eq(procedureMaterialRules.serviceId, scenario.serviceId));
+		const [rule] = await withFixtureTenant(organizationId, async () =>
+			db
+				.select()
+				.from(procedureMaterialRules)
+				.where(eq(procedureMaterialRules.serviceId, scenario.serviceId)),
+		);
 		assert.ok(rule);
-		const [treatment] = await db
-			.select()
-			.from(treatmentItems)
-			.where(eq(treatmentItems.id, scenario.treatmentItemId));
+		const [treatment] = await withFixtureTenant(organizationId, async () =>
+			db.select().from(treatmentItems).where(eq(treatmentItems.id, scenario.treatmentItemId)),
+		);
 		assert.ok(treatment);
 
 		for (const [name, value] of [

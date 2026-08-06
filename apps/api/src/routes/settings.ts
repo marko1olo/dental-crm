@@ -747,6 +747,17 @@ function settingsUnguardedMutationsAllowed(): boolean {
   return process.env.NODE_ENV !== "production" && process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS === "1";
 }
 
+/**
+ * Барьер доступа к настройкам: секрет администратора клиники плюс организация
+ * запроса, либо `null` — значит ответ уже отправлен и обработчику остаётся выйти.
+ *
+ * ЧЕТЫРЕ `reply.send` НИЖЕ ОСТАЮТСЯ И ЭТО НЕ ПРОПУСК. Контракт функции —
+ * `Promise<string | null>`: вернуть отсюда тело ответа нельзя, не переписав
+ * форму вызова во всех двадцати с лишним обработчиках файла. Отложенного COMMIT
+ * на этих ветках не возникает по существу: барьер стоит ПЕРВОЙ строкой каждого
+ * обработчика, до него не выполнено ни одного запроса на запись, и откладывать
+ * фиксацию нечего.
+ */
 async function requireSettingsAccess(request: FastifyRequest, reply: FastifyReply): Promise<string | null> {
   const adminSecret = configuredSettingsAdminSecret();
   let hasAccess = false;
@@ -907,14 +918,16 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const input = parseSettingsPayload(createStaffMemberSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: staffCreateValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: staffCreateValidationMessage };
     }
     await createStaffMemberInDb(orgId, input);
     const settings = await getClinicSettingsFromDb(orgId);
     // Find the newly created staff to return (for simplicity, we just return the full staff member object from settings list)
     // Actually, createStaffMemberSchema expects the created object, but frontend might just refetch. We'll return the last one matching.
     const created = settings.staff.find(s => s.fullName === input.fullName);
-    return reply.code(201).send(staffMemberSchema.parse(created));
+    reply.code(201);
+    return staffMemberSchema.parse(created);
   });
 
   app.post("/api/settings/staff/:staffId/credentials", async (request, reply) => {
@@ -922,22 +935,25 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { staffId?: string };
     if (!params.staffId) {
-      return reply.code(400).send({ error: "SettingsRouteValidationError", message: "ID сотрудника обязателен." });
+      reply.code(400);
+      return { error: "SettingsRouteValidationError", message: "ID сотрудника обязателен." };
     }
 
     const input = parseSettingsPayload(updateStaffCredentialsSchema, request.body);
     if (!input) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsValidationError",
         message: staffCredentialsValidationMessage
-      });
+      };
     }
     const { email, password, pinCode } = input;
     if (!email && !password && !pinCode) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsValidationError",
         message: staffCredentialsEmptyUpdateMessage
-      });
+      };
     }
 
     const updates: { email?: string; passwordHash?: string; pinCodeHash?: string } = {};
@@ -947,9 +963,19 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 
     try {
       await updateStaffCredentialsInDb(orgId, params.staffId, updates);
-      return reply.code(200).send({ ok: true });
+      /*
+       * ИМЕННО ЭТОТ ОТВЕТ ЧИТАЕТСЯ СРАЗУ. SettingsStaffTab.tsx после успеха
+       * перечитывает GET /api/dashboard. Пока здесь стоял
+       * `return reply.code(200).send({ ok: true })`, подтверждение уходило
+       * администратору ДО фиксации транзакции: сводка могла прийти со старыми
+       * доступами, а отказ на самом COMMIT оставил бы «сохранено» на экране при
+       * несменённом пароле сотрудника.
+       */
+      reply.code(200);
+      return { ok: true };
     } catch (err: unknown) {
-      return reply.code(500).send({ error: "InternalError", message: "Не удалось обновить доступы." });
+      reply.code(500);
+      return { error: "InternalError", message: "Не удалось обновить доступы." };
     }
   });
 
@@ -958,14 +984,16 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { staffId?: string };
     if (!params.staffId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: staffWorkingHoursRouteValidationMessage
-      });
+      };
     }
     const input = parseSettingsPayload(updateStaffWorkingHoursSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: staffWorkingHoursValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: staffWorkingHoursValidationMessage };
     }
     try {
       await updateStaffWorkingHoursInDb(orgId, params.staffId, input);
@@ -993,20 +1021,23 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { staffId?: string };
     if (!params.staffId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: staffProfileRouteValidationMessage
-      });
+      };
     }
     const input = parseSettingsPayload(updateStaffMemberProfileSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: staffProfileValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: staffProfileValidationMessage };
     }
     // Пустое тело и тело из одних неизвестных полей неотличимы после разбора:
     // схема отбрасывает лишние ключи. Молча отвечать 200 на запрос, который
     // ничего не меняет, нельзя — оператор решит, что правка сохранена.
     if (Object.keys(input).length === 0) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: staffProfileEmptyUpdateMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: staffProfileEmptyUpdateMessage };
     }
     try {
       await updateStaffMemberProfileInDb(orgId, params.staffId, input);
@@ -1036,10 +1067,11 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { staffId?: string };
     if (!params.staffId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: staffDeactivateRouteValidationMessage
-      });
+      };
     }
     try {
       await deactivateStaffMemberInDb(orgId, params.staffId);
@@ -1087,14 +1119,16 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { staffId?: string };
     if (!params.staffId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: doctorCommissionRouteValidationMessage
-      });
+      };
     }
     const input = parseSettingsPayload(updateDoctorCommissionSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: doctorCommissionValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: doctorCommissionValidationMessage };
     }
     try {
       const saved = await setDoctorCommissionRateInDb(orgId, params.staffId, input.commissionPct);
@@ -1105,11 +1139,12 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       // значило бы послать владельца искать опечатку там, где её нет.
       const message = settingsDomainMessage(error);
       if (message.includes("DENTAL_STATE_PERSISTENCE")) {
-        return reply.code(503).send({
+        reply.code(503);
+        return {
           error: "DoctorCommissionStorageUnavailable",
           reason: "state_persistence_off",
           message
-        });
+        };
       }
       // Причина уходит в журнал сервера целиком: наружу идёт текст для
       // оператора, но без записи здесь отказ по ставке был бы неотличим от
@@ -1183,36 +1218,41 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     const orgId = await requireSettingsAccess(request, reply);
     if (!orgId) return;
     if (!getRequestIdentity(request).verified) {
-      return reply.code(401).send({
+      reply.code(401);
+      return {
         error: "VerifiedOrganizationRequired",
         message: staffAuthorityUnverifiedMessage
-      });
+      };
     }
     const granter = await requirePermission(request, reply, "settings.write");
     if (!granter) return;
     const params = request.params as { staffId?: string };
     if (!params.staffId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: staffAuthorityRouteValidationMessage
-      });
+      };
     }
     if (params.staffId === granter.userId) {
-      return reply.code(403).send({
+      reply.code(403);
+      return {
         error: "StaffAuthoritySelfGrantRejected",
         reason: "self_grant",
         message: staffAuthoritySelfMessage
-      });
+      };
     }
     const input = parseSettingsPayload(updateStaffAuthorityGrantsSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: staffAuthorityValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: staffAuthorityValidationMessage };
     }
     // Тело из одних неизвестных полей после разбора неотличимо от пустого: схема
     // отбрасывает лишние ключи. Ответить 200 на запрос, который ничего не менял,
     // значило бы повторить исходный дефект — теперь с подтверждением на экране.
     if (Object.keys(input).length === 0) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: staffAuthorityEmptyUpdateMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: staffAuthorityEmptyUpdateMessage };
     }
     try {
       /*
@@ -1236,12 +1276,14 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const input = parseSettingsPayload(createChairSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: chairCreateValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: chairCreateValidationMessage };
     }
     await createChairInDb(orgId, input);
     const settings = await getClinicSettingsFromDb(orgId);
     const created = settings.chairs.find(c => c.name === input.name);
-    return reply.code(201).send(chairSchema.parse(created));
+    reply.code(201);
+    return chairSchema.parse(created);
   });
 
   app.put("/api/settings/chairs/:chairId/working-hours", async (request, reply) => {
@@ -1249,14 +1291,16 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { chairId?: string };
     if (!params.chairId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: chairWorkingHoursRouteValidationMessage
-      });
+      };
     }
     const input = parseSettingsPayload(updateChairWorkingHoursSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: chairWorkingHoursValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: chairWorkingHoursValidationMessage };
     }
     try {
       await updateChairWorkingHoursInDb(orgId, params.chairId, input);
@@ -1280,17 +1324,20 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { chairId?: string };
     if (!params.chairId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: chairProfileRouteValidationMessage
-      });
+      };
     }
     const input = parseSettingsPayload(updateChairProfileSchema, request.body);
     if (!input) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: chairProfileValidationMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: chairProfileValidationMessage };
     }
     if (Object.keys(input).length === 0) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: chairProfileEmptyUpdateMessage });
+      reply.code(400);
+      return { error: "SettingsValidationError", message: chairProfileEmptyUpdateMessage };
     }
     try {
       await updateChairProfileInDb(orgId, params.chairId, input);
@@ -1321,10 +1368,11 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { chairId?: string };
     if (!params.chairId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: chairDeactivateRouteValidationMessage
-      });
+      };
     }
     try {
       await deactivateChairInDb(orgId, params.chairId);
@@ -1370,14 +1418,16 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       request.body
     );
     if (!input) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsValidationError",
         message: serviceCatalogCreateValidationMessage
-      });
+      };
     }
     try {
       const created = await createServiceCatalogItemInDb(orgId, input);
-      return reply.code(201).send(created);
+      reply.code(201);
+      return created;
     } catch (error) {
       return serviceCatalogMutationRejection(
         reply,
@@ -1394,29 +1444,32 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { serviceId?: string };
     if (!params.serviceId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: serviceCatalogRouteValidationMessage
-      });
+      };
     }
     const input = parseSettingsPayload<UpdateServiceCatalogItemInput>(
       updateServiceCatalogItemSchema,
       request.body
     );
     if (!input) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsValidationError",
         message: serviceCatalogUpdateValidationMessage
-      });
+      };
     }
     // Тело из одних неизвестных полей после разбора неотличимо от пустого: схема
     // отбрасывает лишние ключи. Ответить 200 на запрос, который ничего не меняет,
     // нельзя — оператор решит, что новая цена сохранена.
     if (Object.keys(input).length === 0) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsValidationError",
         message: serviceCatalogEmptyUpdateMessage
-      });
+      };
     }
     try {
       const updated = await updateServiceCatalogItemInDb(orgId, params.serviceId, input);
@@ -1443,10 +1496,11 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { serviceId?: string };
     if (!params.serviceId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: serviceCatalogRouteValidationMessage
-      });
+      };
     }
     try {
       const deactivated = await deactivateServiceCatalogItemInDb(orgId, params.serviceId);
@@ -1485,14 +1539,16 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       request.body
     );
     if (!input) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsValidationError",
         message: protocolTemplateCreateValidationMessage
-      });
+      };
     }
     try {
       const created = await createProtocolTemplateInDb(orgId, input);
-      return reply.code(201).send(created);
+      reply.code(201);
+      return created;
     } catch (error) {
       return protocolTemplateMutationRejection(
         reply,
@@ -1509,29 +1565,32 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { templateId?: string };
     if (!params.templateId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: protocolTemplateRouteValidationMessage
-      });
+      };
     }
     const input = parseSettingsPayload<UpdateProtocolTemplateInput>(
       updateProtocolTemplateSchema,
       request.body
     );
     if (!input) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsValidationError",
         message: protocolTemplateUpdateValidationMessage
-      });
+      };
     }
     // Тело из одних неизвестных полей после разбора неотличимо от пустого. Ответ
     // 200 на запрос, который ничего не меняет, означал бы, что администратор
     // считает шаблон исправленным, а на приёме подставится прежний.
     if (Object.keys(input).length === 0) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsValidationError",
         message: protocolTemplateEmptyUpdateMessage
-      });
+      };
     }
     try {
       const updated = await updateProtocolTemplateInDb(orgId, params.templateId, input);
@@ -1558,10 +1617,11 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!orgId) return;
     const params = request.params as { templateId?: string };
     if (!params.templateId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "SettingsRouteValidationError",
         message: protocolTemplateRouteValidationMessage
-      });
+      };
     }
     try {
       const deleted = await deleteProtocolTemplateInDb(orgId, params.templateId);

@@ -5,7 +5,11 @@ import { and, eq, like } from "drizzle-orm";
 import type { SpeechTranscriptionChunk } from "@dental/shared";
 import { db, pool } from "../../db/client.js";
 import { aiJobs, organizations, patients, visits } from "../../db/schema.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../../tests/support/fixtureOrganizations.js";
+import {
+  fixtureUuid,
+  purgeFixtureOrganizations,
+  withFixtureTenant
+} from "../../tests/support/fixtureOrganizations.js";
 import {
   acquireSpeechDurableTestLock,
   type SpeechDurableTestLock
@@ -147,19 +151,28 @@ before(async () => {
   // доходит и оставляет свои клиники в живой базе. Наследовать оттуда записи
   // диктовки нельзя — они сдвинули бы ранг записи внутри клиники.
   await purgeFixtureOrganizations([ORG_MAIN, ORG_OTHER]);
-  await db.insert(organizations).values([
-    { id: ORG_MAIN, name: "Клиника хранения диктовки" },
-    { id: ORG_OTHER, name: "Соседняя клиника хранения диктовки" }
-  ]);
-  // Без onConflictDoNothing: он молча оставил бы чужую строку с тем же первичным
-  // ключом, и тест пошёл бы по данным соседнего файла.
-  await db.insert(patients).values([
-    { id: PATIENT_MAIN, organizationId: ORG_MAIN, fullName: "Тарасова Инна Петровна", birthDate: "1979-05-12" },
-    { id: PATIENT_OTHER, organizationId: ORG_OTHER, fullName: "Крылов Артём Игоревич", birthDate: "1985-11-03" }
-  ]);
-  await db
-    .insert(visits)
-    .values({ id: VISIT_MAIN, organizationId: ORG_MAIN, patientId: PATIENT_MAIN, status: "draft" });
+  // Сев идёт под тенант-контекстом, и на каждую клинику он свой:
+  // `app.current_tenant` хранит РОВНО одного арендатора, а `WITH CHECK`
+  // тенант-таблиц сверяет с ним `organization_id` и дизъюнкта обхода не имеет —
+  // одним списком `values([...])` две клиники не завести, вторая строка получает
+  // 42501.
+  await withFixtureTenant(ORG_MAIN, async () => {
+    await db.insert(organizations).values({ id: ORG_MAIN, name: "Клиника хранения диктовки" });
+    // Без onConflictDoNothing: он молча оставил бы чужую строку с тем же первичным
+    // ключом, и тест пошёл бы по данным соседнего файла.
+    await db
+      .insert(patients)
+      .values({ id: PATIENT_MAIN, organizationId: ORG_MAIN, fullName: "Тарасова Инна Петровна", birthDate: "1979-05-12" });
+    await db
+      .insert(visits)
+      .values({ id: VISIT_MAIN, organizationId: ORG_MAIN, patientId: PATIENT_MAIN, status: "draft" });
+  });
+  await withFixtureTenant(ORG_OTHER, async () => {
+    await db.insert(organizations).values({ id: ORG_OTHER, name: "Соседняя клиника хранения диктовки" });
+    await db
+      .insert(patients)
+      .values({ id: PATIENT_OTHER, organizationId: ORG_OTHER, fullName: "Крылов Артём Игоревич", birthDate: "1985-11-03" });
+  });
 });
 
 after(async () => {
@@ -234,22 +247,27 @@ describe("хранение расшифровок диктовки", () => {
       buildChunkInput({ recordingId, chunkIndex: 1, transcript: secondLine })
     );
 
-    const [row] = await db
-      .select({
-        organizationId: aiJobs.organizationId,
-        visitId: aiJobs.visitId,
-        kind: aiJobs.kind,
-        sourceLabel: aiJobs.sourceLabel,
-        resultText: aiJobs.resultText
-      })
-      .from(aiJobs)
-      .where(
-        and(
-          eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`),
-          eq(aiJobs.organizationId, scope.organizationId)
+    // Чтение под тенант-контекстом: под принудительным RLS запрос без
+    // `app.current_tenant` возвращает ноль строк и ошибки не даёт, то есть
+    // «строка расшифровки не найдена» было бы утверждением о самом чтении.
+    const [row] = await withFixtureTenant(scope.organizationId, async () =>
+      db
+        .select({
+          organizationId: aiJobs.organizationId,
+          visitId: aiJobs.visitId,
+          kind: aiJobs.kind,
+          sourceLabel: aiJobs.sourceLabel,
+          resultText: aiJobs.resultText
+        })
+        .from(aiJobs)
+        .where(
+          and(
+            eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`),
+            eq(aiJobs.organizationId, scope.organizationId)
+          )
         )
-      )
-      .limit(1);
+        .limit(1)
+    );
 
     assert.ok(row, "строка расшифровки не найдена в ai_jobs");
     assert.strictEqual(row.kind, "voice_transcription");
@@ -268,10 +286,12 @@ describe("хранение расшифровок диктовки", () => {
       );
     }
 
-    const rows = await db
-      .select({ id: aiJobs.id })
-      .from(aiJobs)
-      .where(like(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`));
+    const rows = await withFixtureTenant(clinicalScope.organizationId, async () =>
+      db
+        .select({ id: aiJobs.id })
+        .from(aiJobs)
+        .where(like(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`))
+    );
     assert.strictEqual(rows.length, 1, "на запись диктовки должна приходиться ровно одна строка ai_jobs");
 
     resetSpeechTranscriptionCacheForRestart();
@@ -323,11 +343,13 @@ describe("хранение расшифровок диктовки", () => {
         "кэш должен быть вытеснен до предела: иначе сценарий потери не воспроизводится"
       );
 
-      const [row] = await db
-        .select({ resultText: aiJobs.resultText, inputText: aiJobs.inputText })
-        .from(aiJobs)
-        .where(durableRowFilter(recordingId, scope.organizationId))
-        .limit(1);
+      const [row] = await withFixtureTenant(scope.organizationId, async () =>
+        db
+          .select({ resultText: aiJobs.resultText, inputText: aiJobs.inputText })
+          .from(aiJobs)
+          .where(durableRowFilter(recordingId, scope.organizationId))
+          .limit(1)
+      );
       assert.ok(row, "строка расшифровки не найдена в ai_jobs");
       assert.strictEqual(
         row.resultText,
@@ -357,21 +379,23 @@ describe("хранение расшифровок диктовки", () => {
     resetSpeechTranscriptionCacheForRestart();
     await recordSpeechTranscriptionChunk(buildChunkInput({ recordingId }));
 
-    const [foreignJob] = await db
-      .insert(aiJobs)
-      .values({
-        organizationId: scope.organizationId,
-        kind: "voice_transcription",
-        target: "visit_note",
-        status: "needs_review",
-        sourceLabel: "manual",
-        inputText: "Распознавание, созданное через POST /api/ai/recognition-jobs.",
-        resultText: "Распознавание, созданное через POST /api/ai/recognition-jobs.",
-        confidence: 0.72,
-        warnings: [],
-        suggestedNextStep: "review_result"
-      })
-      .returning({ id: aiJobs.id });
+    const [foreignJob] = await withFixtureTenant(scope.organizationId, async () =>
+      db
+        .insert(aiJobs)
+        .values({
+          organizationId: scope.organizationId,
+          kind: "voice_transcription",
+          target: "visit_note",
+          status: "needs_review",
+          sourceLabel: "manual",
+          inputText: "Распознавание, созданное через POST /api/ai/recognition-jobs.",
+          resultText: "Распознавание, созданное через POST /api/ai/recognition-jobs.",
+          confidence: 0.72,
+          warnings: [],
+          suggestedNextStep: "review_result"
+        })
+        .returning({ id: aiJobs.id })
+    );
     assert.ok(foreignJob, "не удалось создать чужую строку voice_transcription");
 
     await withEnv({ DENTAL_SPEECH_CACHED_RECORDINGS: "1" }, async () => {
@@ -463,11 +487,13 @@ describe("хранение расшифровок диктовки", () => {
         "вытеснение выбросило фрагмент, которого нет в базе: это потеря медицинского текста"
       );
 
-      const [row] = await db
-        .select({ id: aiJobs.id })
-        .from(aiJobs)
-        .where(durableRowFilter(recordingId, scope.organizationId))
-        .limit(1);
+      const [row] = await withFixtureTenant(scope.organizationId, async () =>
+        db
+          .select({ id: aiJobs.id })
+          .from(aiJobs)
+          .where(durableRowFilter(recordingId, scope.organizationId))
+          .limit(1)
+      );
       assert.strictEqual(row, undefined, "строка ai_jobs не должна была появиться при отказе записи");
     });
   });
@@ -489,11 +515,13 @@ describe("хранение расшифровок диктовки", () => {
       quality: { ...base.quality, confidence: null }
     });
 
-    const [row] = await db
-      .select({ confidence: aiJobs.confidence, warnings: aiJobs.warnings })
-      .from(aiJobs)
-      .where(durableRowFilter(recordingId, scope.organizationId))
-      .limit(1);
+    const [row] = await withFixtureTenant(scope.organizationId, async () =>
+      db
+        .select({ confidence: aiJobs.confidence, warnings: aiJobs.warnings })
+        .from(aiJobs)
+        .where(durableRowFilter(recordingId, scope.organizationId))
+        .limit(1)
+    );
     assert.ok(row, "строка расшифровки не найдена в ai_jobs");
     assert.strictEqual(row.confidence, 0, "колонка NOT NULL DEFAULT 0 не умеет хранить «неизвестно»");
     assert.ok(

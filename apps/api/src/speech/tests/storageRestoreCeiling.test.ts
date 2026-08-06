@@ -5,7 +5,11 @@ import { eq } from "drizzle-orm";
 import type { SpeechTranscriptionChunk } from "@dental/shared";
 import { db, pool } from "../../db/client.js";
 import { aiJobs, organizations, patients, visits } from "../../db/schema.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../../tests/support/fixtureOrganizations.js";
+import {
+  fixtureUuid,
+  purgeFixtureOrganizations,
+  withFixtureTenant
+} from "../../tests/support/fixtureOrganizations.js";
 import {
   acquireSpeechDurableTestLock,
   type SpeechDurableTestLock
@@ -168,17 +172,26 @@ before(async () => {
   // доходит и оставляет свои клиники в живой базе. Наследовать их нельзя —
   // старые записи диктовки исказили бы и ранг по клинике, и общий потолок.
   await purgeFixtureOrganizations([ORG_OWN, ORG_OTHER]);
-  await db.insert(organizations).values([
-    { id: ORG_OWN, name: "Клиника потолка восстановления" },
-    { id: ORG_OTHER, name: "Соседняя клиника потолка восстановления" }
-  ]);
-  // Без onConflictDoNothing: он молча оставил бы чужую строку с тем же первичным
-  // ключом, и тест пошёл бы по данным соседнего файла.
-  await db.insert(patients).values([
-    { id: PATIENT_OWN, organizationId: ORG_OWN, fullName: "Ефимова Ольга Дмитриевна", birthDate: "1981-04-09" },
-    { id: PATIENT_OTHER, organizationId: ORG_OTHER, fullName: "Носов Кирилл Андреевич", birthDate: "1990-09-21" }
-  ]);
-  await db.insert(visits).values({ id: VISIT_OWN, organizationId: ORG_OWN, patientId: PATIENT_OWN, status: "draft" });
+  // Сев идёт под тенант-контекстом, и на каждую клинику он свой:
+  // `app.current_tenant` хранит РОВНО одного арендатора, а `WITH CHECK`
+  // тенант-таблиц сверяет с ним `organization_id` и дизъюнкта обхода не имеет —
+  // одним списком `values([...])` две клиники не завести, вторая строка получает
+  // 42501.
+  await withFixtureTenant(ORG_OWN, async () => {
+    await db.insert(organizations).values({ id: ORG_OWN, name: "Клиника потолка восстановления" });
+    // Без onConflictDoNothing: он молча оставил бы чужую строку с тем же первичным
+    // ключом, и тест пошёл бы по данным соседнего файла.
+    await db
+      .insert(patients)
+      .values({ id: PATIENT_OWN, organizationId: ORG_OWN, fullName: "Ефимова Ольга Дмитриевна", birthDate: "1981-04-09" });
+    await db.insert(visits).values({ id: VISIT_OWN, organizationId: ORG_OWN, patientId: PATIENT_OWN, status: "draft" });
+  });
+  await withFixtureTenant(ORG_OTHER, async () => {
+    await db.insert(organizations).values({ id: ORG_OTHER, name: "Соседняя клиника потолка восстановления" });
+    await db
+      .insert(patients)
+      .values({ id: PATIENT_OTHER, organizationId: ORG_OTHER, fullName: "Носов Кирилл Андреевич", birthDate: "1990-09-21" });
+  });
 });
 
 after(async () => {
@@ -330,11 +343,15 @@ describe("потолок памяти восстановления расшиф�
 
         // Пропуск не теряет текст: строка в базе цела, и очередной фрагмент той
         // же записи сливается с сохранённым конвертом, а не с пустым кэшем.
-        const [rowBefore] = await db
-          .select({ resultText: aiJobs.resultText })
-          .from(aiJobs)
-          .where(eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`))
-          .limit(1);
+        // Чтение — под тенант-контекстом своей клиники: без него оно вернуло бы
+        // ноль строк и «строка расшифровки исчезла» было бы неправдой.
+        const [rowBefore] = await withFixtureTenant(own.organizationId, async () =>
+          db
+            .select({ resultText: aiJobs.resultText })
+            .from(aiJobs)
+            .where(eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`))
+            .limit(1)
+        );
         assert.ok(rowBefore, "строка расшифровки исчезла из ai_jobs");
         assert.strictEqual(
           rowBefore.resultText,
@@ -353,11 +370,13 @@ describe("потолок памяти восстановления расшиф�
           })
         );
 
-        const [rowAfter] = await db
-          .select({ resultText: aiJobs.resultText })
-          .from(aiJobs)
-          .where(eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`))
-          .limit(1);
+        const [rowAfter] = await withFixtureTenant(own.organizationId, async () =>
+          db
+            .select({ resultText: aiJobs.resultText })
+            .from(aiJobs)
+            .where(eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`))
+            .limit(1)
+        );
         assert.ok(rowAfter, "строка расшифровки исчезла из ai_jobs после дозаписи");
         assert.strictEqual(
           rowAfter.resultText,
@@ -404,11 +423,13 @@ describe("потолок памяти восстановления расшиф�
           `символьный бюджет пробит: в памяти ${state.cachedChars} символов при пределе ${longTranscript.length - 1}`
         );
 
-        const [row] = await db
-          .select({ resultText: aiJobs.resultText })
-          .from(aiJobs)
-          .where(eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`))
-          .limit(1);
+        const [row] = await withFixtureTenant(own.organizationId, async () =>
+          db
+            .select({ resultText: aiJobs.resultText })
+            .from(aiJobs)
+            .where(eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`))
+            .limit(1)
+        );
         assert.ok(row, "строка длинной расшифровки исчезла из ai_jobs");
         // result_text собирается через chunk.transcript.trim(), поэтому в базе
         // лежит текст без хвостового пробела; в конверте и в бюджете участвует

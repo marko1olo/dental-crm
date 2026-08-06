@@ -37,7 +37,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
@@ -52,8 +52,9 @@ import {
 } from "../../db/schema.js";
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /** Свой префикс идентификаторов: строки этого файла не пересекаются ни с чьими. */
 const ORG_ID = "dce70000-0000-4000-8000-0000000004b0";
@@ -73,15 +74,26 @@ function isMissingDatabase(error: unknown): boolean {
 	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
 }
 
+/**
+ * Уборка строк фикстуры под тенант-контекстом клиники.
+ *
+ * Под FORCE RLS `DELETE` без `app.current_tenant` не видит ни одной строки
+ * клиники и снимает ноль, а ноль удалённых строк ошибкой не является — уборка
+ * доходила бы до конца и молчала. Контекст заодно сужает удаление до своего
+ * арендатора: чужую клинику этими восемью строками не задеть даже при ошибке в
+ * предикате.
+ */
 async function removeFixtureRows(): Promise<void> {
-	await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
-	await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
-	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-	await db.delete(doctorCommissions).where(eq(doctorCommissions.organizationId, ORG_ID));
-	await db.delete(users).where(eq(users.organizationId, ORG_ID));
-	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	await withFixtureTenant(ORG_ID, async () => {
+		await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
+		await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
+		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(doctorCommissions).where(eq(doctorCommissions.organizationId, ORG_ID));
+		await db.delete(users).where(eq(users.organizationId, ORG_ID));
+		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	});
 }
 
 type PayoutAnswer = {
@@ -107,80 +119,88 @@ describe("зарплатный месяц: календарная дата в п
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 		process.env.NODE_ENV = "development";
 
-		app = Fastify();
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		// Оба хука боевого server.ts: организация из подписанного токена кладётся в
+		// request.tenantId, а обработчик оборачивается в withTenantCtx. Без второго
+		// расчёт выплат под FORCE RLS не увидел бы ни одной оплаты, и «первая смена
+		// не попала в расчёт» говорило бы о политике, а не о поясе.
+		app = createTenantTestApp();
 		await registerBillingRoutes(app);
 		await app.ready();
 
 		try {
 			await removeFixtureRows();
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника зарплатной границы" }).onConflictDoNothing();
-			await db
-				.insert(clinics)
-				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Камчатский филиал", timezone: FAR_ZONE })
-				.onConflictDoNothing();
-			await db
-				.insert(users)
-				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Сидоров Сидор Сидорович", role: "doctor" })
-				.onConflictDoNothing();
-			// Ставка нужна, чтобы расчёт состоялся: без неё строка приходит с
-			// признаком «ставка не задана», и касса в итогах не сложилась бы.
-			await db
-				.insert(doctorCommissions)
-				.values({
-					organizationId: ORG_ID,
-					userId: DOCTOR_ID,
-					// specialty и serviceCategory в схеме NOT NULL — те же значения,
-					// что и в doctorPayoutsProof.ts.
-					specialty: "universal",
-					serviceCategory: "therapy",
-					commissionPct: "40.00",
-					materialCostDeductionPct: "100.00",
-					isActive: true
-				})
-				.onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Ночной Пациент Первомаевич" })
-				.onConflictDoNothing();
-			await db
-				.insert(appointments)
-				.values({
-					id: APPOINTMENT_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					doctorUserId: DOCTOR_ID,
-					status: "completed",
-					startsAt: FIRST_SHIFT_PAID_AT,
-					endsAt: new Date(FIRST_SHIFT_PAID_AT.getTime() + 60 * 60_000)
-				})
-				.onConflictDoNothing();
-			await db
-				.insert(visits)
-				.values({
-					id: VISIT_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					// Только через приём оплата доходит до врача: своего поля «врач»
-					// у визита нет.
-					appointmentId: APPOINTMENT_ID,
-					status: "signed",
-					createdAt: FIRST_SHIFT_PAID_AT
-				})
-				.onConflictDoNothing();
-			await db
-				.insert(payments)
-				.values({
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					visitId: VISIT_ID,
-					amountRub: FIRST_SHIFT_AMOUNT_RUB,
-					status: "paid",
-					paidAt: FIRST_SHIFT_PAID_AT
-				})
-				.onConflictDoNothing();
+			/*
+			 * Весь сев — под тенант-контекстом клиники. Под FORCE RLS в WITH CHECK
+			 * политик тенант-таблиц дизъюнкта обхода нет, поэтому вставка без
+			 * `app.current_tenant` отвергается кодом 42501 на каждой из этих таблиц.
+			 */
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника зарплатной границы" }).onConflictDoNothing();
+				await db
+					.insert(clinics)
+					.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Камчатский филиал", timezone: FAR_ZONE })
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Сидоров Сидор Сидорович", role: "doctor" })
+					.onConflictDoNothing();
+				// Ставка нужна, чтобы расчёт состоялся: без неё строка приходит с
+				// признаком «ставка не задана», и касса в итогах не сложилась бы.
+				await db
+					.insert(doctorCommissions)
+					.values({
+						organizationId: ORG_ID,
+						userId: DOCTOR_ID,
+						// specialty и serviceCategory в схеме NOT NULL — те же значения,
+						// что и в doctorPayoutsProof.ts.
+						specialty: "universal",
+						serviceCategory: "therapy",
+						commissionPct: "40.00",
+						materialCostDeductionPct: "100.00",
+						isActive: true
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Ночной Пациент Первомаевич" })
+					.onConflictDoNothing();
+				await db
+					.insert(appointments)
+					.values({
+						id: APPOINTMENT_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						doctorUserId: DOCTOR_ID,
+						status: "completed",
+						startsAt: FIRST_SHIFT_PAID_AT,
+						endsAt: new Date(FIRST_SHIFT_PAID_AT.getTime() + 60 * 60_000)
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(visits)
+					.values({
+						id: VISIT_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						// Только через приём оплата доходит до врача: своего поля «врач»
+						// у визита нет.
+						appointmentId: APPOINTMENT_ID,
+						status: "signed",
+						createdAt: FIRST_SHIFT_PAID_AT
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(payments)
+					.values({
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						visitId: VISIT_ID,
+						amountRub: FIRST_SHIFT_AMOUNT_RUB,
+						status: "paid",
+						paidAt: FIRST_SHIFT_PAID_AT
+					})
+					.onConflictDoNothing();
+			});
 
 			staffToken = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "owner" }, authTokenSecret());
 		} catch (error) {

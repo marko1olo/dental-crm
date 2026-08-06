@@ -4,8 +4,13 @@ import { randomUUID } from "node:crypto";
 import { and, eq, like } from "drizzle-orm";
 import type { SpeechTranscriptionChunk } from "@dental/shared";
 import { db, pool } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { aiJobs, organizations, patients, visits } from "../../db/schema.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../../tests/support/fixtureOrganizations.js";
+import {
+  fixtureUuid,
+  purgeFixtureOrganizations,
+  withFixtureTenant
+} from "../../tests/support/fixtureOrganizations.js";
 import {
   acquireSpeechDurableTestLock,
   type SpeechDurableTestLock
@@ -143,17 +148,25 @@ function buildChunkInput(
   };
 }
 
+/**
+ * Чтение долговременной строки записи — под тенант-контекстом её клиники: под
+ * принудительным RLS запрос без `app.current_tenant` возвращает ноль строк и
+ * ошибки не даёт, то есть «строка не найдена» стало бы утверждением о чтении, а
+ * не о том, что записал разбор диктовки.
+ */
 async function readDurableRow(recordingId: string, organizationId: string) {
-  const [row] = await db
-    .select({
-      visitId: aiJobs.visitId,
-      patientId: aiJobs.patientId,
-      resultText: aiJobs.resultText,
-      inputText: aiJobs.inputText
-    })
-    .from(aiJobs)
-    .where(durableRowFilter(recordingId, organizationId))
-    .limit(1);
+  const [row] = await withFixtureTenant(organizationId, async () =>
+    db
+      .select({
+        visitId: aiJobs.visitId,
+        patientId: aiJobs.patientId,
+        resultText: aiJobs.resultText,
+        inputText: aiJobs.inputText
+      })
+      .from(aiJobs)
+      .where(durableRowFilter(recordingId, organizationId))
+      .limit(1)
+  );
   return row;
 }
 
@@ -177,17 +190,23 @@ before(async () => {
   // смешанным конвертом, и остаться она не должна: аудит всей таблицы принял бы её
   // за незакрытый дефект.
   await purgeFixtureOrganizations([ORG]);
-  await db.insert(organizations).values({ id: ORG, name: "Клиника личности записи диктовки" });
-  // Без onConflictDoNothing: он молча оставил бы чужую строку с тем же первичным
-  // ключом, и тест пошёл бы по данным соседнего файла.
-  await db.insert(patients).values([
-    { id: PATIENT_A, organizationId: ORG, fullName: "Ковалёва Мария Сергеевна", birthDate: "1983-07-24" },
-    { id: PATIENT_B, organizationId: ORG, fullName: "Мельник Павел Олегович", birthDate: "1976-02-15" }
-  ]);
-  await db.insert(visits).values([
-    { id: VISIT_A, organizationId: ORG, patientId: PATIENT_A, status: "draft" },
-    { id: VISIT_B, organizationId: ORG, patientId: PATIENT_B, status: "draft" }
-  ]);
+  // Сев под тенант-контекстом клиники: `WITH CHECK` тенант-таблиц сверяет
+  // `organization_id` (у `organizations` — `id`) с `app.current_tenant` и
+  // дизъюнкта обхода не имеет, поэтому вставка без контекста отвергается кодом
+  // 42501 и клиника не заводится вовсе.
+  await withFixtureTenant(ORG, async () => {
+    await db.insert(organizations).values({ id: ORG, name: "Клиника личности записи диктовки" });
+    // Без onConflictDoNothing: он молча оставил бы чужую строку с тем же первичным
+    // ключом, и тест пошёл бы по данным соседнего файла.
+    await db.insert(patients).values([
+      { id: PATIENT_A, organizationId: ORG, fullName: "Ковалёва Мария Сергеевна", birthDate: "1983-07-24" },
+      { id: PATIENT_B, organizationId: ORG, fullName: "Мельник Павел Олегович", birthDate: "1976-02-15" }
+    ]);
+    await db.insert(visits).values([
+      { id: VISIT_A, organizationId: ORG, patientId: PATIENT_A, status: "draft" },
+      { id: VISIT_B, organizationId: ORG, patientId: PATIENT_B, status: "draft" }
+    ]);
+  });
 });
 
 after(async () => {
@@ -381,10 +400,20 @@ describe("личность записи диктовки", () => {
    * чтобы увидеть такие строки везде, где они есть.
    */
   it("в базе нет строки диктовки с фрагментами двух приемов или двух пациентов", async () => {
-    const rows = await db
-      .select({ id: aiJobs.id, organizationId: aiJobs.organizationId, inputText: aiJobs.inputText })
-      .from(aiJobs)
-      .where(and(eq(aiJobs.kind, "voice_transcription"), like(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}%`)));
+    /*
+     * Обход RLS здесь — на ЧТЕНИЕ и только на него. Аудит по построению смотрит
+     * ВСЮ таблицу, а роль приложения под FORCE RLS видит строки только своего
+     * арендатора: под тенант-контекстом этот запрос перестал бы быть аудитом и
+     * молча отчитывался бы «чисто» о клиниках, которых не видел. Тот же приём
+     * применяет `assertNoFixtureOrganizationSurvived` в
+     * `tests/support/fixtureOrganizations.ts` и по той же причине.
+     */
+    const rows = await withSuperuserBypass(async (tx) =>
+      tx
+        .select({ id: aiJobs.id, organizationId: aiJobs.organizationId, inputText: aiJobs.inputText })
+        .from(aiJobs)
+        .where(and(eq(aiJobs.kind, "voice_transcription"), like(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}%`)))
+    );
 
     const mixed = rows
       .map((row) => ({ id: row.id, organizationId: row.organizationId, ...envelopeIdentities(row.inputText) }))
@@ -438,10 +467,15 @@ describe("личность записи диктовки", () => {
         recordingId,
         createdAt: new Date().toISOString()
       });
-      await db
-        .update(aiJobs)
-        .set({ inputText: JSON.stringify(envelope), resultText: `${visitAText}\n${visitBText}` })
-        .where(durableRowFilter(recordingId, pair.organizationId));
+      // Порча конверта — обычный `UPDATE` по тенант-таблице: без контекста он
+      // тронул бы ноль строк и промолчал, а сценарий «уже смешанная строка» просто
+      // не воспроизвёлся бы.
+      await withFixtureTenant(pair.organizationId, async () => {
+        await db
+          .update(aiJobs)
+          .set({ inputText: JSON.stringify(envelope), resultText: `${visitAText}\n${visitBText}` })
+          .where(durableRowFilter(recordingId, pair.organizationId));
+      });
 
       // Кэш записи опустошается вытеснением: иначе чужой фрагмент поднялся бы в
       // память при восстановлении и быстрый отказ по кэшу сработал бы раньше.
@@ -471,17 +505,19 @@ describe("личность записи диктовки", () => {
         })
       );
 
-      const [row] = await db
-        .select({
-          visitId: aiJobs.visitId,
-          patientId: aiJobs.patientId,
-          resultText: aiJobs.resultText,
-          inputText: aiJobs.inputText,
-          warnings: aiJobs.warnings
-        })
-        .from(aiJobs)
-        .where(durableRowFilter(recordingId, pair.organizationId))
-        .limit(1);
+      const [row] = await withFixtureTenant(pair.organizationId, async () =>
+        db
+          .select({
+            visitId: aiJobs.visitId,
+            patientId: aiJobs.patientId,
+            resultText: aiJobs.resultText,
+            inputText: aiJobs.inputText,
+            warnings: aiJobs.warnings
+          })
+          .from(aiJobs)
+          .where(durableRowFilter(recordingId, pair.organizationId))
+          .limit(1)
+      );
       assert.ok(row, "строка расшифровки исчезла");
       assert.ok(
         (row.resultText ?? "").includes(visitBText),
@@ -522,7 +558,12 @@ describe("личность записи диктовки", () => {
       );
 
       // Смешанная строка удаляется здесь же: она умышленно создана этим тестом.
-      await db.delete(aiJobs).where(durableRowFilter(recordingId, pair.organizationId));
+      // Под контекстом своей клиники, а не под обходом: у `DELETE` нет
+      // `WITH CHECK`, он смотрит только в `USING`, где дизъюнкт обхода истинен для
+      // КАЖДОЙ строки, — ошибка в предикате снесла бы чужие записи.
+      await withFixtureTenant(pair.organizationId, async () => {
+        await db.delete(aiJobs).where(durableRowFilter(recordingId, pair.organizationId));
+      });
     });
   });
 });

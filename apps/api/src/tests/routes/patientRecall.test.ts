@@ -92,72 +92,79 @@ describe("возврат пациентов", () => {
 			 */
 			await purgeFixtureOrganizations([ORG_ID]);
 
-			// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
-			// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника возврата" });
-			await db.insert(users).values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Врач Возвратов", role: "doctor" });
-			// Кресло стоит в клинике: chairs.clinic_id объявлен notNull, поэтому
-			// клиника заводится здесь же, как в остальных тестах по живой базе.
-			await db.insert(clinics).values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" });
-			await db
-				.insert(chairs)
-				.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1" });
+			/*
+			 * Весь сев — под тенант-контекстом клиники. Под FORCE RLS в WITH CHECK
+			 * политик тенант-таблиц дизъюнкта обхода нет, поэтому вставка без
+			 * `app.current_tenant` отвергается кодом 42501 на каждой из этих таблиц.
+			 */
+			await withFixtureTenant(ORG_ID, async () => {
+				// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
+				// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника возврата" });
+				await db.insert(users).values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Врач Возвратов", role: "doctor" });
+				// Кресло стоит в клинике: chairs.clinic_id объявлен notNull, поэтому
+				// клиника заводится здесь же, как в остальных тестах по живой базе.
+				await db.insert(clinics).values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" });
+				await db
+					.insert(chairs)
+					.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1" });
 
-			await db
-				.insert(patients)
-				.values([
-					{ id: DUE_PATIENT, organizationId: ORG_ID, fullName: "Давний Пациент", phone: "+7 916 000-09-01" },
-					{ id: RECENT_PATIENT, organizationId: ORG_ID, fullName: "Недавний Пациент", phone: "+7 916 000-09-02" },
-					{ id: BOOKED_PATIENT, organizationId: ORG_ID, fullName: "Уже Записан", phone: "+7 916 000-09-03" }
-				]);
+				await db
+					.insert(patients)
+					.values([
+						{ id: DUE_PATIENT, organizationId: ORG_ID, fullName: "Давний Пациент", phone: "+7 916 000-09-01" },
+						{ id: RECENT_PATIENT, organizationId: ORG_ID, fullName: "Недавний Пациент", phone: "+7 916 000-09-02" },
+						{ id: BOOKED_PATIENT, organizationId: ORG_ID, fullName: "Уже Записан", phone: "+7 916 000-09-03" }
+					]);
 
-			await db
-				.insert(appointments)
-				.values([
-					// Девять месяцев назад — попадает в список.
-					{
-						id: DUE_PAST_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: DUE_PATIENT,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "completed",
-						startsAt: monthsAgo(9),
-						endsAt: new Date(monthsAgo(9).getTime() + 3_600_000)
-					},
-					// Месяц назад — звать рано.
-					{
-						id: RECENT_PAST_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: RECENT_PATIENT,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "completed",
-						startsAt: monthsAgo(1),
-						endsAt: new Date(monthsAgo(1).getTime() + 3_600_000)
-					},
-					// Давно не был, НО уже записан на будущее — звать не нужно.
-					{
-						id: BOOKED_PAST_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: BOOKED_PATIENT,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "completed",
-						startsAt: monthsAgo(20),
-						endsAt: new Date(monthsAgo(20).getTime() + 3_600_000)
-					},
-					{
-						id: BOOKED_FUTURE_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: BOOKED_PATIENT,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "planned",
-						startsAt: new Date(Date.now() + 7 * 24 * 3_600_000),
-						endsAt: new Date(Date.now() + 7 * 24 * 3_600_000 + 3_600_000)
-					}
-				]);
+				await db
+					.insert(appointments)
+					.values([
+						// Девять месяцев назад — попадает в список.
+						{
+							id: DUE_PAST_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: DUE_PATIENT,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "completed",
+							startsAt: monthsAgo(9),
+							endsAt: new Date(monthsAgo(9).getTime() + 3_600_000)
+						},
+						// Месяц назад — звать рано.
+						{
+							id: RECENT_PAST_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: RECENT_PATIENT,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "completed",
+							startsAt: monthsAgo(1),
+							endsAt: new Date(monthsAgo(1).getTime() + 3_600_000)
+						},
+						// Давно не был, НО уже записан на будущее — звать не нужно.
+						{
+							id: BOOKED_PAST_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: BOOKED_PATIENT,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "completed",
+							startsAt: monthsAgo(20),
+							endsAt: new Date(monthsAgo(20).getTime() + 3_600_000)
+						},
+						{
+							id: BOOKED_FUTURE_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: BOOKED_PATIENT,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "planned",
+							startsAt: new Date(Date.now() + 7 * 24 * 3_600_000),
+							endsAt: new Date(Date.now() + 7 * 24 * 3_600_000 + 3_600_000)
+						}
+					]);
+			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;
@@ -201,10 +208,15 @@ describe("возврат пациентов", () => {
 		});
 		assert.equal(response.statusCode, 200, response.body);
 
-		const [row] = await db
-			.select({ scope: communicationOutbox.scope, intent: communicationOutbox.intent })
-			.from(communicationOutbox)
-			.where(eq(communicationOutbox.patientId, DUE_PATIENT));
+		// Очередь читается под тем же арендатором, под которым в неё писал маршрут:
+		// без `app.current_tenant` SELECT не видит ни одной строки, и «сообщение не
+		// поставлено в очередь» прозвучало бы о политике, а не о постановке.
+		const [row] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ scope: communicationOutbox.scope, intent: communicationOutbox.intent })
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.patientId, DUE_PATIENT))
+		);
 
 		assert.ok(row, "сообщение не поставлено в очередь");
 		// Приглашение прийти — продвижение услуги: без согласия его отправлять

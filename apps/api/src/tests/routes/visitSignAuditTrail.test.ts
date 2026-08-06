@@ -39,15 +39,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
 import { auditEvents, organizations, patients, users, visits } from "../../db/schema.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "visitSignAuditTrail";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
@@ -95,33 +98,41 @@ type VisitRow = {
  * аудита, и ни одного построителя проверяемого модуля не использует.
  */
 async function auditRowsForVisit(visitId: string): Promise<AuditRow[]> {
-	const result = await db.execute<AuditRow>(sql`
-		select id::text as id,
-		       organization_id::text as organization_id,
-		       actor_user_id::text as actor_user_id,
-		       entity_type,
-		       entity_id,
-		       action,
-		       reason,
-		       extract(epoch from (now() - created_at))::float8 as age_seconds
-		  from audit_events
-		 where organization_id = ${ORGANIZATION_ID}::uuid
-		   and entity_type = ${AUDIT_ENTITY_TYPE}
-		   and entity_id = ${visitId}
-		 order by created_at
-	`);
+	// Чтение журнала — под тенант-контекстом клиники: `audit_events` под
+	// принудительным RLS, и запрос без `app.current_tenant` вернул бы НОЛЬ строк на
+	// любом содержимом таблицы, то есть подтверждал бы и «событие есть», и «события
+	// нет» одинаково — одной и той же пустотой.
+	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<AuditRow>(sql`
+			select id::text as id,
+			       organization_id::text as organization_id,
+			       actor_user_id::text as actor_user_id,
+			       entity_type,
+			       entity_id,
+			       action,
+			       reason,
+			       extract(epoch from (now() - created_at))::float8 as age_seconds
+			  from audit_events
+			 where organization_id = ${ORGANIZATION_ID}::uuid
+			   and entity_type = ${AUDIT_ENTITY_TYPE}
+			   and entity_id = ${visitId}
+			 order by created_at
+		`),
+	);
 	return result.rows as AuditRow[];
 }
 
 async function visitRow(visitId: string): Promise<VisitRow> {
-	const result = await db.execute<VisitRow>(sql`
-		select status::text as status,
-		       revision,
-		       signed_at::text as signed_at,
-		       diagnosis
-		  from visits
-		 where id = ${visitId}::uuid and organization_id = ${ORGANIZATION_ID}::uuid
-	`);
+	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<VisitRow>(sql`
+			select status::text as status,
+			       revision,
+			       signed_at::text as signed_at,
+			       diagnosis
+			  from visits
+			 where id = ${visitId}::uuid and organization_id = ${ORGANIZATION_ID}::uuid
+		`),
+	);
 	const row = (result.rows as VisitRow[])[0];
 	assert.ok(row, `приём ${visitId} не найден в базе — сверять нечего`);
 	return row;
@@ -174,36 +185,37 @@ describe("подписание приёма оставляет след в audit
 		// Уборка следов прерванного прогона ДО посева: см. докстринг фикстуры.
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
 
-		await db.insert(organizations).values({
-			id: ORGANIZATION_ID,
-			name: "Сторож журнала подписания приёма",
+		// Весь сев — под контекстом своей клиники: WITH CHECK тенант-таблиц требует
+		// `organization_id = current_tenant`, поэтому без контекста первая же вставка
+		// отвергается кодом 42501, а под обходом RLS — тоже, кроме `organizations`.
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.insert(organizations).values({
+				id: ORGANIZATION_ID,
+				name: "Сторож журнала подписания приёма",
+			});
+			await db.insert(users).values({
+				id: DOCTOR_ID,
+				organizationId: ORGANIZATION_ID,
+				fullName: "Врач сторожа журнала",
+				role: "doctor",
+			});
+			await db.insert(patients).values({
+				id: PATIENT_ID,
+				organizationId: ORGANIZATION_ID,
+				fullName: "Пациент сторожа журнала",
+				status: "active",
+			});
+			for (const visitId of [VISIT_JOURNAL_OK, VISIT_JOURNAL_FAILS, VISIT_JOURNAL_CONFLICT]) {
+				await seedDraftVisit(visitId);
+			}
 		});
-		await db.insert(users).values({
-			id: DOCTOR_ID,
-			organizationId: ORGANIZATION_ID,
-			fullName: "Врач сторожа журнала",
-			role: "doctor",
-		});
-		await db.insert(patients).values({
-			id: PATIENT_ID,
-			organizationId: ORGANIZATION_ID,
-			fullName: "Пациент сторожа журнала",
-			status: "active",
-		});
-		for (const visitId of [VISIT_JOURNAL_OK, VISIT_JOURNAL_FAILS, VISIT_JOURNAL_CONFLICT]) {
-			await seedDraftVisit(visitId);
-		}
 
 		staffToken = signToken(
 			{ organizationId: ORGANIZATION_ID, userId: DOCTOR_ID, role: "doctor" },
 			authTokenSecret(),
 		);
 
-		app = Fastify();
-		// Тот же хук, что в apps/api/src/server.ts: он наполняет request.user.
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		app = createTenantTestApp();
 		await registerVisitRoutes(app);
 		await app.ready();
 	});
@@ -211,9 +223,13 @@ describe("подписание приёма оставляет след в audit
 	after(async () => {
 		await app?.close();
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
-		const leftovers = await db.execute<{ n: number }>(sql`
-			select count(*)::int as n from audit_events where organization_id = ${ORGANIZATION_ID}::uuid
-		`);
+		// Счёт под контекстом клиники: под ним видны ровно её строки журнала, то
+		// есть то самое множество, о котором утверждает проверка ниже.
+		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(sql`
+				select count(*)::int as n from audit_events where organization_id = ${ORGANIZATION_ID}::uuid
+			`),
+		);
 		assert.equal((leftovers.rows as { n: number }[])[0]?.n, 0, "сторож не убрал свои строки журнала");
 		process.env = originalEnv;
 		await pool.end();

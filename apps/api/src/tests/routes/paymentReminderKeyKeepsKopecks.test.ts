@@ -48,6 +48,7 @@ import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
 
 const NAMESPACE = "paymentReminderKeyKeepsKopecks";
@@ -128,92 +129,99 @@ describe("ключ напоминания об оплате хранит коп�
 			return;
 		}
 
-		await db.insert(organizations).values({
-			id: ORGANIZATION_ID,
-			name: "Клиника замка ключа напоминаний",
-		});
-		for (const [patientId, fullName] of [
-			[PATIENT_KOPECK_DEBT, "Копейкин Долг Копейкович"],
-			[PATIENT_FLOAT_DEBT, "Плавающих Точка Хвостовна"],
-			[PATIENT_CANCELLED, "Отменин Отмен Отменович"],
-			[PATIENT_SETTLED, "Расчётов Расчёт Расчётович"],
-		] as const) {
-			await db.insert(patients).values({
-				id: patientId,
-				organizationId: ORGANIZATION_ID,
-				fullName,
-				status: "active",
+		/*
+		 * Весь сев — под тенант-контекстом клиники. Под FORCE RLS в WITH CHECK
+		 * политик тенант-таблиц дизъюнкта обхода нет, поэтому вставка без
+		 * `app.current_tenant` отвергается кодом 42501 на каждой строке.
+		 */
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.insert(organizations).values({
+				id: ORGANIZATION_ID,
+				name: "Клиника замка ключа напоминаний",
 			});
-		}
+			for (const [patientId, fullName] of [
+				[PATIENT_KOPECK_DEBT, "Копейкин Долг Копейкович"],
+				[PATIENT_FLOAT_DEBT, "Плавающих Точка Хвостовна"],
+				[PATIENT_CANCELLED, "Отменин Отмен Отменович"],
+				[PATIENT_SETTLED, "Расчётов Расчёт Расчётович"],
+			] as const) {
+				await db.insert(patients).values({
+					id: patientId,
+					organizationId: ORGANIZATION_ID,
+					fullName,
+					status: "active",
+				});
+			}
 
-		await db.insert(treatmentItems).values([
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_KOPECK_DEBT,
-				title: "Лечение с копейками",
-				quantity: "1",
-				priceRub: 1000.49,
-				unitPriceRub: 1000.49,
-				discountRub: 0,
-				status: "completed",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_FLOAT_DEBT,
-				title: "Позиция 1",
-				quantity: "1",
-				priceRub: 1000,
-				unitPriceRub: 1000,
-				discountRub: 0,
-				status: "completed",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_FLOAT_DEBT,
-				title: "Позиция 2",
-				quantity: "1",
-				priceRub: 1001.82,
-				unitPriceRub: 1001.82,
-				discountRub: 0,
-				status: "completed",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_FLOAT_DEBT,
-				title: "Позиция 3",
-				quantity: "1",
-				priceRub: 1489.67,
-				unitPriceRub: 1489.67,
-				discountRub: 0,
-				status: "proposed",
-			},
-			{
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_CANCELLED,
-				title: "Отменённое лечение",
-				quantity: "1",
-				priceRub: 26500,
-				unitPriceRub: 26500,
-				discountRub: 0,
-				status: "cancelled",
-			},
-			{
+			await db.insert(treatmentItems).values([
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_KOPECK_DEBT,
+					title: "Лечение с копейками",
+					quantity: "1",
+					priceRub: 1000.49,
+					unitPriceRub: 1000.49,
+					discountRub: 0,
+					status: "completed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_FLOAT_DEBT,
+					title: "Позиция 1",
+					quantity: "1",
+					priceRub: 1000,
+					unitPriceRub: 1000,
+					discountRub: 0,
+					status: "completed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_FLOAT_DEBT,
+					title: "Позиция 2",
+					quantity: "1",
+					priceRub: 1001.82,
+					unitPriceRub: 1001.82,
+					discountRub: 0,
+					status: "completed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_FLOAT_DEBT,
+					title: "Позиция 3",
+					quantity: "1",
+					priceRub: 1489.67,
+					unitPriceRub: 1489.67,
+					discountRub: 0,
+					status: "proposed",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_CANCELLED,
+					title: "Отменённое лечение",
+					quantity: "1",
+					priceRub: 26500,
+					unitPriceRub: 26500,
+					discountRub: 0,
+					status: "cancelled",
+				},
+				{
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_SETTLED,
+					title: "Оплаченное лечение",
+					quantity: "1",
+					priceRub: 3491.49,
+					unitPriceRub: 3491.49,
+					discountRub: 0,
+					status: "completed",
+				},
+			]);
+			await db.insert(payments).values({
 				organizationId: ORGANIZATION_ID,
 				patientId: PATIENT_SETTLED,
-				title: "Оплаченное лечение",
-				quantity: "1",
-				priceRub: 3491.49,
-				unitPriceRub: 3491.49,
-				discountRub: 0,
-				status: "completed",
-			},
-		]);
-		await db.insert(payments).values({
-			organizationId: ORGANIZATION_ID,
-			patientId: PATIENT_SETTLED,
-			amountRub: 3491.49,
-			method: "card",
-			status: "paid",
+				amountRub: 3491.49,
+				method: "card",
+				status: "paid",
+			});
 		});
 
 		app = Fastify();
@@ -230,11 +238,16 @@ describe("ключ напоминания об оплате хранит коп�
 		delete process.env.DENTE_TELEGRAM_CLINIC_BOTS_JSON;
 		if (!databaseReady) return;
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
-		const leftovers = await db.execute<{ n: number }>(sql`
-			select (select count(*) from treatment_items where organization_id = ${ORGANIZATION_ID}::uuid)
-			     + (select count(*) from payments where organization_id = ${ORGANIZATION_ID}::uuid)
-			     + (select count(*) from patients where organization_id = ${ORGANIZATION_ID}::uuid) as n
-		`);
+		// Счёт остатков — тоже под тенант-контекстом. Без него SELECT не видит ни
+		// одной строки клиники и вернул бы 0 при любом содержимом базы, то есть
+		// проверка уборки стала бы её имитацией.
+		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(sql`
+				select (select count(*) from treatment_items where organization_id = ${ORGANIZATION_ID}::uuid)
+				     + (select count(*) from payments where organization_id = ${ORGANIZATION_ID}::uuid)
+				     + (select count(*) from patients where organization_id = ${ORGANIZATION_ID}::uuid) as n
+			`),
+		);
 		assert.equal(
 			Number(leftovers.rows[0]?.n ?? 0),
 			0,
@@ -272,13 +285,17 @@ describe("ключ напоминания об оплате хранит коп�
 
 		const before = keyFor(await paymentReminderItems(), PATIENT_KOPECK_DEBT);
 
-		// Пациент доплатил 39 копеек: долг стал 1 000,10 ₽.
-		await db.insert(payments).values({
-			organizationId: ORGANIZATION_ID,
-			patientId: PATIENT_KOPECK_DEBT,
-			amountRub: 0.39,
-			method: "cash",
-			status: "paid",
+		// Пациент доплатил 39 копеек: долг стал 1 000,10 ₽. Досев внутри теста
+		// нуждается в тенант-контексте так же, как сев в before: под FORCE RLS
+		// вставка без `app.current_tenant` отвергается кодом 42501.
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.insert(payments).values({
+				organizationId: ORGANIZATION_ID,
+				patientId: PATIENT_KOPECK_DEBT,
+				amountRub: 0.39,
+				method: "cash",
+				status: "paid",
+			});
 		});
 
 		const after = keyFor(await paymentReminderItems(), PATIENT_KOPECK_DEBT);

@@ -130,36 +130,38 @@ describe("RecallScheduler", () => {
     itemDate.setMonth(itemDate.getMonth() - 3);
     itemDate.setDate(itemDate.getDate() - 1);
 
-    await db
-      .update(treatmentPlans)
-      .set({ updatedAt: itemDate })
-      .where(eq(treatmentPlans.id, planId));
+    await withFixtureTenant(orgId, async () => {
+      await db
+        .update(treatmentPlans)
+        .set({ updatedAt: itemDate })
+        .where(eq(treatmentPlans.id, planId));
 
-    await db.insert(treatmentPlanItemsNew).values({
-      id: randomUUID(),
-      // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
-      // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
-      // колонка пропускалась, и вставка опиралась на дырку изоляции.
-      organizationId: orgId,
-      planId,
-      priceId,
-      toothNumber: 31, // Lower jaw
-      phase: 2, // Surgery
-      quantity: 1,
-      price: "1000",
-      isBundle: false,
+      await db.insert(treatmentPlanItemsNew).values({
+        id: randomUUID(),
+        // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
+        // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
+        // колонка пропускалась, и вставка опиралась на дырку изоляции.
+        organizationId: orgId,
+        planId,
+        priceId,
+        toothNumber: 31, // Lower jaw
+        phase: 2, // Surgery
+        quantity: 1,
+        price: "1000",
+        isBundle: false,
+      });
+
+      await RecallScheduler.processOsteointegrationRecalls();
+
+      const tasks = await db
+        .select()
+        .from(communicationTasks)
+        .where(eq(communicationTasks.patientId, patientId));
+      assert.strictEqual(tasks.length, 1);
+      const task = tasks[0];
+      assert.ok(task);
+      assert.ok(task.title.includes("зуб 31"));
     });
-
-    await RecallScheduler.processOsteointegrationRecalls();
-
-    const tasks = await db
-      .select()
-      .from(communicationTasks)
-      .where(eq(communicationTasks.patientId, patientId));
-    assert.strictEqual(tasks.length, 1);
-    const task = tasks[0];
-    assert.ok(task);
-    assert.ok(task.title.includes("зуб 31"));
   });
 
   it("should not trigger recall if healing time has not elapsed", async () => {
@@ -168,96 +170,102 @@ describe("RecallScheduler", () => {
     const itemDate = new Date();
     itemDate.setMonth(itemDate.getMonth() - 5);
 
-    await db
-      .update(treatmentPlans)
-      .set({ updatedAt: itemDate })
-      .where(eq(treatmentPlans.id, planId));
+    await withFixtureTenant(orgId, async () => {
+      await db
+        .update(treatmentPlans)
+        .set({ updatedAt: itemDate })
+        .where(eq(treatmentPlans.id, planId));
 
-    await db.insert(treatmentPlanItemsNew).values({
-      id: randomUUID(),
-      // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
-      // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
-      // колонка пропускалась, и вставка опиралась на дырку изоляции.
-      organizationId: orgId,
-      planId,
-      priceId,
-      toothNumber: 11,
-      phase: 2,
-      quantity: 1,
-      price: "1000",
-      isBundle: false,
+      await db.insert(treatmentPlanItemsNew).values({
+        id: randomUUID(),
+        // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
+        // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
+        // колонка пропускалась, и вставка опиралась на дырку изоляции.
+        organizationId: orgId,
+        planId,
+        priceId,
+        toothNumber: 11,
+        phase: 2,
+        quantity: 1,
+        price: "1000",
+        isBundle: false,
+      });
+
+      await RecallScheduler.processOsteointegrationRecalls();
+
+      const tasks = await db
+        .select()
+        .from(communicationTasks)
+        .where(eq(communicationTasks.patientId, patientId));
+      assert.strictEqual(tasks.length, 0);
     });
-
-    await RecallScheduler.processOsteointegrationRecalls();
-
-    const tasks = await db
-      .select()
-      .from(communicationTasks)
-      .where(eq(communicationTasks.patientId, patientId));
-    assert.strictEqual(tasks.length, 0);
   });
 
   it("should ignore items not in phase 2", async () => {
     const itemDate = new Date();
     itemDate.setMonth(itemDate.getMonth() - 7);
-    await db
-      .update(treatmentPlans)
-      .set({ updatedAt: itemDate })
-      .where(eq(treatmentPlans.id, planId));
+    await withFixtureTenant(orgId, async () => {
+      await db
+        .update(treatmentPlans)
+        .set({ updatedAt: itemDate })
+        .where(eq(treatmentPlans.id, planId));
 
-    await db.insert(treatmentPlanItemsNew).values({
-      id: randomUUID(),
-      // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
-      // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
-      // колонка пропускалась, и вставка опиралась на дырку изоляции.
-      organizationId: orgId,
-      planId,
-      priceId,
-      toothNumber: 11,
-      phase: 3, // Prosthetics
-      quantity: 1,
-      price: "1000",
-      isBundle: false,
+      await db.insert(treatmentPlanItemsNew).values({
+        id: randomUUID(),
+        // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
+        // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
+        // колонка пропускалась, и вставка опиралась на дырку изоляции.
+        organizationId: orgId,
+        planId,
+        priceId,
+        toothNumber: 11,
+        phase: 3, // Prosthetics
+        quantity: 1,
+        price: "1000",
+        isBundle: false,
+      });
+
+      await RecallScheduler.processOsteointegrationRecalls();
+
+      const tasks = await db
+        .select()
+        .from(communicationTasks)
+        .where(eq(communicationTasks.patientId, patientId));
+      assert.strictEqual(tasks.length, 0);
     });
-
-    await RecallScheduler.processOsteointegrationRecalls();
-
-    const tasks = await db
-      .select()
-      .from(communicationTasks)
-      .where(eq(communicationTasks.patientId, patientId));
-    assert.strictEqual(tasks.length, 0);
   });
 
   it("should ignore items without toothNumber", async () => {
     const itemDate = new Date();
     itemDate.setMonth(itemDate.getMonth() - 7);
-    await db
-      .update(treatmentPlans)
-      .set({ updatedAt: itemDate })
-      .where(eq(treatmentPlans.id, planId));
+    await withFixtureTenant(orgId, async () => {
+      await db
+        .update(treatmentPlans)
+        .set({ updatedAt: itemDate })
+        .where(eq(treatmentPlans.id, planId));
 
-    await db.insert(treatmentPlanItemsNew).values({
-      id: randomUUID(),
-      // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
-      // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
-      // колонка пропускалась, и вставка опиралась на дырку изоляции.
-      organizationId: orgId,
-      planId,
-      priceId,
-      toothNumber: null,
-      phase: 2, // Surgery
-      quantity: 1,
-      price: "1000",
-      isBundle: false,
+      await db.insert(treatmentPlanItemsNew).values({
+        id: randomUUID(),
+        // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
+        // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
+        // колонка пропускалась, и вставка опиралась на дырку изоляции.
+        organizationId: orgId,
+        planId,
+        priceId,
+        toothNumber: null,
+        phase: 2, // Surgery
+        quantity: 1,
+        price: "1000",
+        isBundle: false,
+      });
+
+      await RecallScheduler.processOsteointegrationRecalls();
+
+      const tasks = await db
+        .select()
+        .from(communicationTasks)
+        .where(eq(communicationTasks.patientId, patientId));
+      assert.strictEqual(tasks.length, 0);
     });
-
-    await RecallScheduler.processOsteointegrationRecalls();
-
-    const tasks = await db
-      .select()
-      .from(communicationTasks)
-      .where(eq(communicationTasks.patientId, patientId));
-    assert.strictEqual(tasks.length, 0);
   });
 });
