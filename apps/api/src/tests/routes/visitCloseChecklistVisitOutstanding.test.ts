@@ -43,7 +43,7 @@ import {
 	type VisitCloseChecklist,
 } from "@dental/shared";
 import { sql } from "drizzle-orm";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
 import { TOKEN_SECRET } from "../../routes/auth.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
@@ -52,7 +52,9 @@ import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "visitCloseChecklistVisitOutstanding";
 
@@ -165,49 +167,55 @@ describe("карточка закрытия приёма: остаток ПО Э
 			// Уборка НА ВХОДЕ: прогон, убитый снаружи, до `after` не доходит.
 			await purgeFixtureOrganizations([ORG_ID]);
 
-			await db.execute(sql`
-				insert into organizations (id, name) values (${ORG_ID}, ${"Клиника замка остатка по приёму"})
-			`);
-			await db.execute(sql`
-				insert into patients (id, organization_id, full_name, status)
-				values (${PATIENT_ID}, ${ORG_ID}, ${"Замок остатка по приёму (удалить)"}, 'active')
-			`);
-			await db.execute(sql`
-				insert into patients (id, organization_id, full_name, status)
-				values (${SKEW_PATIENT_ID}, ${ORG_ID}, ${"Перекос итога клиники (удалить)"}, 'active')
-			`);
+			// Сев целиком под тенант-контекстом своей клиники: в WITH CHECK
+			// тенант-таблиц стоит только `organization_id = current_tenant`, поэтому
+			// без контекста первая же вставка отвергается кодом 42501, а счёт нетто
+			// без контекста вернул бы ноль вместо посеянных сумм.
+			clinicNetRub = await withFixtureTenant(ORG_ID, async () => {
+				await db.execute(sql`
+					insert into organizations (id, name) values (${ORG_ID}, ${"Клиника замка остатка по приёму"})
+				`);
+				await db.execute(sql`
+					insert into patients (id, organization_id, full_name, status)
+					values (${PATIENT_ID}, ${ORG_ID}, ${"Замок остатка по приёму (удалить)"}, 'active')
+				`);
+				await db.execute(sql`
+					insert into patients (id, organization_id, full_name, status)
+					values (${SKEW_PATIENT_ID}, ${ORG_ID}, ${"Перекос итога клиники (удалить)"}, 'active')
+				`);
 
-			await insertVisit(PAID_VISIT_ID, PATIENT_ID);
-			await insertVisit(UNDERPAID_VISIT_ID, PATIENT_ID);
-			await insertVisit(OVERPAID_VISIT_ID, PATIENT_ID);
-			await insertVisit(EMPTY_VISIT_ID, PATIENT_ID);
+				await insertVisit(PAID_VISIT_ID, PATIENT_ID);
+				await insertVisit(UNDERPAID_VISIT_ID, PATIENT_ID);
+				await insertVisit(OVERPAID_VISIT_ID, PATIENT_ID);
+				await insertVisit(EMPTY_VISIT_ID, PATIENT_ID);
 
-			await insertCharge(PAID_VISIT_ID, PATIENT_ID, PAID_CHARGE_RUB);
-			await insertPayment(PAID_VISIT_ID, PATIENT_ID, PAID_PAYMENT_RUB);
-			await insertCharge(UNDERPAID_VISIT_ID, PATIENT_ID, UNDERPAID_CHARGE_RUB);
-			await insertPayment(
-				UNDERPAID_VISIT_ID,
-				PATIENT_ID,
-				UNDERPAID_PAYMENT_RUB,
-			);
-			await insertCharge(OVERPAID_VISIT_ID, PATIENT_ID, OVERPAID_CHARGE_RUB);
-			await insertPayment(OVERPAID_VISIT_ID, PATIENT_ID, OVERPAID_PAYMENT_RUB);
-			// Приём EMPTY_VISIT_ID остаётся без позиций и без оплат намеренно.
-			await insertCharge(null, SKEW_PATIENT_ID, UNLINKED_CHARGE_RUB);
+				await insertCharge(PAID_VISIT_ID, PATIENT_ID, PAID_CHARGE_RUB);
+				await insertPayment(PAID_VISIT_ID, PATIENT_ID, PAID_PAYMENT_RUB);
+				await insertCharge(UNDERPAID_VISIT_ID, PATIENT_ID, UNDERPAID_CHARGE_RUB);
+				await insertPayment(
+					UNDERPAID_VISIT_ID,
+					PATIENT_ID,
+					UNDERPAID_PAYMENT_RUB,
+				);
+				await insertCharge(OVERPAID_VISIT_ID, PATIENT_ID, OVERPAID_CHARGE_RUB);
+				await insertPayment(OVERPAID_VISIT_ID, PATIENT_ID, OVERPAID_PAYMENT_RUB);
+				// Приём EMPTY_VISIT_ID остаётся без позиций и без оплат намеренно.
+				await insertCharge(null, SKEW_PATIENT_ID, UNLINKED_CHARGE_RUB);
 
-			const clinic = await firstRow<{ net: string }>(sql`
-				select (
-					coalesce((select sum(greatest(unit_price_rub * quantity - discount_rub, 0))
-					            from treatment_items
-					           where organization_id = ${ORG_ID} and status <> 'cancelled'), 0)
-					- coalesce((select sum(amount_rub) from payments
-					             where organization_id = ${ORG_ID} and status = 'paid'), 0)
-				)::numeric(12,2)::text as net
-			`);
-			assert.ok(clinic, "нетто по клинике не посчиталось");
-			clinicNetRub = clinic.net;
+				const clinic = await firstRow<{ net: string }>(sql`
+					select (
+						coalesce((select sum(greatest(unit_price_rub * quantity - discount_rub, 0))
+						            from treatment_items
+						           where organization_id = ${ORG_ID} and status <> 'cancelled'), 0)
+						- coalesce((select sum(amount_rub) from payments
+						             where organization_id = ${ORG_ID} and status = 'paid'), 0)
+					)::numeric(12,2)::text as net
+				`);
+				assert.ok(clinic, "нетто по клинике не посчиталось");
+				return clinic.net;
+			});
 
-			app = Fastify();
+			app = createTenantTestApp();
 			await registerVisitRoutes(app);
 			await app.ready();
 			clinicToken = signToken({ organizationId: ORG_ID }, TOKEN_SECRET());
@@ -258,8 +266,12 @@ describe("карточка закрытия приёма: остаток ПО Э
 		if (app) await app.close();
 		if (databaseAvailable) {
 			await purgeFixtureOrganizations([ORG_ID]);
-			const leftovers = await firstRow<{ n: number }>(
-				sql`select count(*)::int as n from organizations where id = ${ORG_ID}`,
+			// Проверка остатка — под контекстом убранной клиники: политика
+			// оставила бы её собственную строку видимой, если бы та уцелела.
+			const leftovers = await withFixtureTenant(ORG_ID, async () =>
+				firstRow<{ n: number }>(
+					sql`select count(*)::int as n from organizations where id = ${ORG_ID}`,
+				),
 			);
 			assert.equal(leftovers?.n, 0, "замок не убрал за собой свою клинику");
 		}
@@ -319,16 +331,20 @@ describe("карточка закрытия приёма: остаток ПО Э
 			UNDERPAID_VISIT_ID,
 			OVERPAID_VISIT_ID,
 		]) {
-			const row = await firstRow<{ outstanding: string }>(sql`
-				select greatest(
-					coalesce((select sum(greatest(unit_price_rub * quantity - discount_rub, 0))
-					            from treatment_items
-					           where visit_id = ${visitId} and status <> 'cancelled'), 0)
-					- coalesce((select sum(amount_rub) from payments
-					             where visit_id = ${visitId} and status = 'paid'), 0),
-					0
-				)::numeric(12,2)::text as outstanding
-			`);
+			// Сверка идёт под тем же тенант-контекстом, что и сев: без него обе
+			// суммы вышли бы нулями, и «остаток сошёлся» стало бы правдой о пустоте.
+			const row = await withFixtureTenant(ORG_ID, async () =>
+				firstRow<{ outstanding: string }>(sql`
+					select greatest(
+						coalesce((select sum(greatest(unit_price_rub * quantity - discount_rub, 0))
+						            from treatment_items
+						           where visit_id = ${visitId} and status <> 'cancelled'), 0)
+						- coalesce((select sum(amount_rub) from payments
+						             where visit_id = ${visitId} and status = 'paid'), 0),
+						0
+					)::numeric(12,2)::text as outstanding
+				`),
+			);
 			assert.ok(row, `SQL не посчитал остаток приёма ${visitId}`);
 
 			const kopecks = Math.round(Number(row.outstanding) * 100);

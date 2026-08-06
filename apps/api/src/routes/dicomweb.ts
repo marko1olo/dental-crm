@@ -312,6 +312,21 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
       const seriesUid = normalizeUid(request.params.seriesUid);
       const instanceUid = normalizeUid(request.params.instanceUid);
 
+      // Идентификатор организации не в формате UUID отсекается ДО открытия
+      // транзакции: соединение из пула на заведомо неверного арендатора не
+      // тратится, и в базу такой запрос не уходит вовсе. Тот же ответ дал бы
+      // organizationExists ниже — он тоже начинается с проверки формы.
+      if (!UUID_SHAPE.test(organizationId)) {
+        request.log.warn(
+          { organizationId },
+          "[dicomweb] Идентификатор организации не в формате UUID — снимок не выдан"
+        );
+        return reply.code(403).send({
+          error: "OrganizationUnknown",
+          message: "Снимок не выдан: организация из токена не существует."
+        });
+      }
+
       // Организация обязана существовать. Проверка стоит до разбора адреса:
       // неизвестному арендатору не сообщается даже то, правильно ли он составил
       // запрос. Отказ по причине недоступной базы отделён от отказа по причине

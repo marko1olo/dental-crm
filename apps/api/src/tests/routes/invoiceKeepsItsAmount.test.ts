@@ -40,15 +40,14 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
 import { registerDocumentRoutes } from "../../routes/documents.js";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "invoiceKeepsItsAmount";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
@@ -75,10 +74,17 @@ type Injected = { statusCode: number; body: string; json: any };
 
 /** Сумма документа — независимым SQL, ТЕКСТОМ из numeric-колонки. */
 async function storedTotalText(documentId: string): Promise<string | null> {
-	const result = await db.execute<{ total: string | null }>(sql`
-		select total_amount_rub::text as total from generated_documents
-		 where id = ${documentId}::uuid and organization_id = ${ORGANIZATION_ID}::uuid
-	`);
+	/*
+	 * Чтение под тенант-контекстом. Под принудительным RLS SELECT без него не
+	 * ошибается, а отдаёт ноль строк, и сверка суммы упиралась бы в «документа нет»
+	 * вместо самой суммы.
+	 */
+	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<{ total: string | null }>(sql`
+			select total_amount_rub::text as total from generated_documents
+			 where id = ${documentId}::uuid and organization_id = ${ORGANIZATION_ID}::uuid
+		`),
+	);
 	const row = (result.rows as { total: string | null }[])[0];
 	assert.ok(row !== undefined, `документ ${documentId} не найден в базе — сверять нечего`);
 	return row.total;
@@ -164,38 +170,46 @@ describe("сумма счёта не теряется по дороге в ба�
 		// Уборка следов прерванного прогона ДО посева: см. докстринг фикстуры.
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
 
-		await db.execute(sql`
-			insert into organizations (id, name)
-			values (${ORGANIZATION_ID}::uuid, ${"Сторож суммы счёта"})`);
-		await db.execute(sql`
-			insert into clinics (id, organization_id, name, timezone)
-			values (${CLINIC_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Кабинет сторожа суммы"}, 'Europe/Moscow')`);
-		await db.execute(sql`
-			insert into users (id, organization_id, full_name, role, is_active)
-			values (${OWNER_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Владелец сторожа суммы"}, 'owner', true)`);
-		// Дата рождения и телефон обязательны: без них шапка документа печатает
-		// «не указана»/«не указан», и выдача отбивается как незаполненный документ.
-		await db.execute(sql`
-			insert into patients (id, organization_id, full_name, birth_date, phone, status)
-			values (${PATIENT_NO_PLAN}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент без позиций плана"}, '1991-04-12', '+79000000031', 'active'),
-			       (${PATIENT_WITH_PLAN}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент с позициями плана"}, '1987-09-30', '+79000000032', 'active')`);
-		await db.execute(sql`
-			insert into visits (id, organization_id, patient_id, status)
-			values (${VISIT_NO_PLAN}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_NO_PLAN}::uuid, 'draft'),
-			       (${VISIT_WITH_PLAN}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_WITH_PLAN}::uuid, 'draft')`);
 		/*
-		 * ВТОРОЕ СОСТОЯНИЕ МИРА — позиции плана лечения существуют. Первопричина их
-		 * отсутствия закрывается другим инженером, поэтому здесь они ставятся прямым
-		 * SQL: правка обязана быть верной и когда суммы плана появятся. Второй
-		 * пациент намеренно оставлен БЕЗ позиций — на нём проверяется сегодняшнее
-		 * состояние живой базы.
+		 * Сев под тенант-контекстом клиники: у `clinics`, `users`, `patients`,
+		 * `visits` и `treatment_items` в WITH CHECK стоит только
+		 * `organization_id = current_tenant`, без дизъюнкта обхода, поэтому вставка
+		 * без контекста отвергается кодом 42501.
 		 */
-		await db.execute(sql`
-			insert into treatment_items
-			  (organization_id, patient_id, visit_id, tooth_code, title, quantity, price_rub, unit_price_rub, discount_rub, status, planned_doctor_user_id)
-			values
-			  (${ORGANIZATION_ID}::uuid, ${PATIENT_WITH_PLAN}::uuid, ${VISIT_WITH_PLAN}::uuid, '36', ${"Лечение кариеса 36"}, 1, ${PRICE_ONE}, ${PRICE_ONE}, 0, 'approved', ${OWNER_ID}::uuid),
-			  (${ORGANIZATION_ID}::uuid, ${PATIENT_WITH_PLAN}::uuid, ${VISIT_WITH_PLAN}::uuid, '46', ${"Пломба 46"}, 1, ${PRICE_TWO}, ${PRICE_TWO}, 0, 'approved', ${OWNER_ID}::uuid)`);
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.execute(sql`
+				insert into organizations (id, name)
+				values (${ORGANIZATION_ID}::uuid, ${"Сторож суммы счёта"})`);
+			await db.execute(sql`
+				insert into clinics (id, organization_id, name, timezone)
+				values (${CLINIC_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Кабинет сторожа суммы"}, 'Europe/Moscow')`);
+			await db.execute(sql`
+				insert into users (id, organization_id, full_name, role, is_active)
+				values (${OWNER_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Владелец сторожа суммы"}, 'owner', true)`);
+			// Дата рождения и телефон обязательны: без них шапка документа печатает
+			// «не указана»/«не указан», и выдача отбивается как незаполненный документ.
+			await db.execute(sql`
+				insert into patients (id, organization_id, full_name, birth_date, phone, status)
+				values (${PATIENT_NO_PLAN}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент без позиций плана"}, '1991-04-12', '+79000000031', 'active'),
+				       (${PATIENT_WITH_PLAN}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент с позициями плана"}, '1987-09-30', '+79000000032', 'active')`);
+			await db.execute(sql`
+				insert into visits (id, organization_id, patient_id, status)
+				values (${VISIT_NO_PLAN}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_NO_PLAN}::uuid, 'draft'),
+				       (${VISIT_WITH_PLAN}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_WITH_PLAN}::uuid, 'draft')`);
+			/*
+			 * ВТОРОЕ СОСТОЯНИЕ МИРА — позиции плана лечения существуют. Первопричина их
+			 * отсутствия закрывается другим инженером, поэтому здесь они ставятся прямым
+			 * SQL: правка обязана быть верной и когда суммы плана появятся. Второй
+			 * пациент намеренно оставлен БЕЗ позиций — на нём проверяется сегодняшнее
+			 * состояние живой базы.
+			 */
+			await db.execute(sql`
+				insert into treatment_items
+				  (organization_id, patient_id, visit_id, tooth_code, title, quantity, price_rub, unit_price_rub, discount_rub, status, planned_doctor_user_id)
+				values
+				  (${ORGANIZATION_ID}::uuid, ${PATIENT_WITH_PLAN}::uuid, ${VISIT_WITH_PLAN}::uuid, '36', ${"Лечение кариеса 36"}, 1, ${PRICE_ONE}, ${PRICE_ONE}, 0, 'approved', ${OWNER_ID}::uuid),
+				  (${ORGANIZATION_ID}::uuid, ${PATIENT_WITH_PLAN}::uuid, ${VISIT_WITH_PLAN}::uuid, '46', ${"Пломба 46"}, 1, ${PRICE_TWO}, ${PRICE_TWO}, 0, 'approved', ${OWNER_ID}::uuid)`);
+		});
 
 		headers = {
 			"x-dente-clinic-token": signToken({ organizationId: ORGANIZATION_ID }, authTokenSecret()),
@@ -207,11 +221,10 @@ describe("сумма счёта не теряется по дороге в ба�
 			"content-type": "application/json",
 		};
 
-		app = Fastify();
-		// Тот же хук, что в apps/api/src/server.ts: он наполняет request.user.
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		// Оба хука изоляции боевого server.ts: он наполняет request.user и
+		// оборачивает обработчик в `withTenantCtx`, без которого маршрут документов
+		// не видит ни клинику, ни план лечения.
+		app = createTenantTestApp();
 		await registerSettingsRoutes(app);
 		await registerDocumentRoutes(app);
 		await app.ready();
@@ -241,19 +254,27 @@ describe("сумма счёта не теряется по дороге в ба�
 	after(async () => {
 		await app?.close();
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
-		const leftovers = await db.execute<{ n: number }>(sql`
-			select count(*)::int as n from generated_documents where organization_id = ${ORGANIZATION_ID}::uuid
-		`);
+		// Счёт остатка — под тенант-контекстом: без него политика прячет от счёта
+		// любые уцелевшие документы, и проверка «мусора не осталось» стала бы тождеством.
+		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(sql`
+				select count(*)::int as n from generated_documents where organization_id = ${ORGANIZATION_ID}::uuid
+			`),
+		);
 		assert.equal((leftovers.rows as { n: number }[])[0]?.n, 0, "сторож не убрал свои документы из живой базы");
 		process.env = originalEnv;
 		await pool.end();
 	});
 
 	test("позиций плана НЕТ: сумма счёта берётся из его собственного тела, а не теряется", async () => {
-		const itemsBefore = await db.execute<{ n: number }>(sql`
-			select count(*)::int as n from treatment_items
-			 where organization_id = ${ORGANIZATION_ID}::uuid and patient_id = ${PATIENT_NO_PLAN}::uuid
-		`);
+		// Предпосылка проверяется под тенант-контекстом: без него счёт всегда ноль,
+		// и «плана нет» подтверждалось бы скрытием строк, а не их отсутствием.
+		const itemsBefore = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(sql`
+				select count(*)::int as n from treatment_items
+				 where organization_id = ${ORGANIZATION_ID}::uuid and patient_id = ${PATIENT_NO_PLAN}::uuid
+			`),
+		);
 		assert.equal(
 			(itemsBefore.rows as { n: number }[])[0]?.n,
 			0,

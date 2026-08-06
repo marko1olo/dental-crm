@@ -43,15 +43,18 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { eq } from "drizzle-orm";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations, users } from "../../db/schema.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * Имя своей организации вынесено в константу: по нему же идёт уборка следов
@@ -107,54 +110,79 @@ function staffNames(parsed: DashboardBody | null): string[] {
 }
 
 before(async () => {
-	// Следы прерванного прогона удаляются ДО посева: прогон, убитый снаружи, не
-	// доходит до after, и его организация осталась бы в живой базе навсегда.
-	const stale = await db
-		.select({ id: organizations.id })
-		.from(organizations)
-		.where(eq(organizations.name, GUARD_ORGANIZATION_NAME));
+	/*
+	 * Следы прерванного прогона удаляются ДО посева: прогон, убитый снаружи, не
+	 * доходит до after, и его организация осталась бы в живой базе навсегда.
+	 *
+	 * ПОИСК идёт под обходом, УДАЛЕНИЕ — под контекстом найденной клиники. Под
+	 * FORCE RLS выборка по имени без `app.current_tenant` возвращает ноль строк
+	 * при любом содержимом таблицы, то есть цикл ниже не выполнился бы ни разу и
+	 * молча отчитался об уборке. Обход накрывает РОВНО чтение списка: под ним
+	 * DELETE не ограничен арендатором и одной опечаткой в предикате снёс бы
+	 * данные соседней клиники.
+	 */
+	const stale = await withSuperuserBypass(async (tx) =>
+		tx
+			.select({ id: organizations.id })
+			.from(organizations)
+			.where(eq(organizations.name, GUARD_ORGANIZATION_NAME)),
+	);
 	for (const row of stale) {
-		await db.delete(users).where(eq(users.organizationId, row.id));
-		await db.delete(organizations).where(eq(organizations.id, row.id));
+		await withFixtureTenant(row.id, async () => {
+			await db.delete(users).where(eq(users.organizationId, row.id));
+			await db.delete(organizations).where(eq(organizations.id, row.id));
+		});
 	}
 
-	const absent = await db
-		.select({ id: organizations.id })
-		.from(organizations)
-		.where(eq(organizations.id, ABSENT_ORGANIZATION_ID));
+	const absent = await withSuperuserBypass(async (tx) =>
+		tx
+			.select({ id: organizations.id })
+			.from(organizations)
+			.where(eq(organizations.id, ABSENT_ORGANIZATION_ID)),
+	);
 	assert.equal(
 		absent.length,
 		0,
 		`Организация ${ABSENT_ORGANIZATION_ID} внезапно есть в базе — тест проверял бы не то, что написано. Возьмите другой идентификатор.`,
 	);
 
-	const [organization] = await db
-		.insert(organizations)
-		.values({ name: GUARD_ORGANIZATION_NAME })
-		.returning({ id: organizations.id });
+	/*
+	 * Идентификатор клиники выдаётся ДО вставки, а не берётся из вставленной
+	 * строки. Курицы и яйца здесь нет: в WITH CHECK у `organizations` стоит
+	 * `id = current_tenant`, поэтому вставить организацию можно только под её
+	 * собственным контекстом, а он задаётся строковым параметром сеанса. Тот же
+	 * приём применён в боевой регистрации (routes/auth.ts).
+	 */
+	organizationId = randomUUID();
+	const [organization] = await withFixtureTenant(organizationId, async () =>
+		db
+			.insert(organizations)
+			.values({ id: organizationId, name: GUARD_ORGANIZATION_NAME })
+			.returning({ id: organizations.id }),
+	);
 	assert.ok(
 		organization,
 		"Посев не состоялся: организация сторожа не создана.",
 	);
 	organizationId = organization.id;
 
-	const [doctor] = await db
-		.insert(users)
-		.values({
-			organizationId,
-			fullName: GUARD_DOCTOR_NAME,
-			role: "doctor",
-			isActive: true,
-		})
-		.returning({ id: users.id });
+	const [doctor] = await withFixtureTenant(organizationId, async () =>
+		db
+			.insert(users)
+			.values({
+				organizationId,
+				fullName: GUARD_DOCTOR_NAME,
+				role: "doctor",
+				isActive: true,
+			})
+			.returning({ id: users.id }),
+	);
 	assert.ok(doctor, "Посев не состоялся: сотрудник сторожа не создан.");
 	doctorUserId = doctor.id;
 
-	app = Fastify();
-	// Тот же хук, что в apps/api/src/server.ts — он наполняет личность запроса.
-	app.addHook("onRequest", async (request) => {
-		getRequestIdentity(request);
-	});
+	// Те же два хука, что вешает боевой server.ts: без второго обработчик сводки
+	// идёт без тенант-контекста и не видит ни одного сотрудника настоящей клиники.
+	app = createTenantTestApp();
 	await registerDashboardRoutes(app);
 	await app.ready();
 });
@@ -162,8 +190,10 @@ before(async () => {
 after(async () => {
 	await app?.close();
 	if (organizationId) {
-		await db.delete(users).where(eq(users.organizationId, organizationId));
-		await db.delete(organizations).where(eq(organizations.id, organizationId));
+		await withFixtureTenant(organizationId, async () => {
+			await db.delete(users).where(eq(users.organizationId, organizationId));
+			await db.delete(organizations).where(eq(organizations.id, organizationId));
+		});
 	}
 	await pool.end();
 });

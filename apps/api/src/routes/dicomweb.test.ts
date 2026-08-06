@@ -6,7 +6,7 @@ import { test } from "node:test";
 import type { TestContext } from "node:test";
 import cors from "@fastify/cors";
 import Fastify from "fastify";
-import { db } from "../db/client.js";
+import { db, dbRaw } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { denteAdminSecretHeader } from "../accessGuard.js";
 import { authTokenSecret } from "../security/authSecret.js";
@@ -104,7 +104,7 @@ function existingOrganization(organizationId: string = ORGANIZATION_ID): SelectR
  */
 function mockDb(t: TestContext, fixture: DbFixture): { calls: number } {
   const counter = { calls: 0 };
-  t.mock.method(db, "select", () => {
+  const select = () => {
     counter.calls += 1;
     if (fixture.failure) throw fixture.failure;
     let table: unknown = null;
@@ -122,7 +122,26 @@ function mockDb(t: TestContext, fixture: DbFixture): { calls: number } {
       throw new Error("Маршрут dicomweb запросил таблицу, которой нет в фикстуре теста");
     };
     return node;
-  });
+  };
+  t.mock.method(db, "select", select);
+  /*
+   * ЗАЧЕМ ЗАГЛУШКА dbRaw.transaction, А НЕ ТОЛЬКО db.select.
+   *
+   * Маршрут больше не полагается на автоматическую обёртку server.ts и открывает
+   * контекст арендатора сам (withTenantCtx), чтобы не держать транзакцию всё
+   * время передачи снимка. Как только транзакция открыта, прокси `db`
+   * (db/client.ts) отдаёт свойства ТРАНЗАКЦИИ, а не dbRaw — и подмена
+   * `db.select` перестаёт действовать: запрос ушёл бы в настоящий PostgreSQL,
+   * которого у этого файла нет и быть не должно.
+   *
+   * Здесь подменяется сама транзакция: withTenantCtx получает объект с
+   * `execute` (его он зовёт для set_config) и с тем же `select`, что и раньше.
+   * Обещание файла «в PostgreSQL не ходим» сохранено, а проверяется настоящий
+   * код маршрута вместе с его контекстом арендатора.
+   */
+  t.mock.method(dbRaw, "transaction", async (callback: (tx: unknown) => Promise<unknown>) =>
+    callback({ execute: async () => ({ rows: [] }), select })
+  );
   return counter;
 }
 

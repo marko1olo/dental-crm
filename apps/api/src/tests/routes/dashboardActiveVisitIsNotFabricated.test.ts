@@ -73,16 +73,17 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { dashboardSchema } from "@dental/shared";
 import { sql } from "drizzle-orm";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { denteAdminSecretHeader } from "../../accessGuard.js";
 import { db, pool } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations, patients, visits } from "../../db/schema.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { authTokenSecret, clinicalAdminSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * Нулевой идентификатор — теперь ЗАПРЕЩЁННОЕ значение в сводке, а не разрешённая
@@ -180,9 +181,14 @@ async function readActiveVisit(organizationId: string): Promise<ActiveVisit | nu
 
 /** Есть ли в базе строка приёма с таким идентификатором у этой клиники. */
 async function visitRowExists(organizationId: string, visitId: string): Promise<number> {
-	const found = await db.execute<{ n: number }>(sql`
-		select count(*)::int as n from visits
-		 where id = ${visitId}::uuid and organization_id = ${organizationId}::uuid`);
+	// Счёт идёт под тенант-контекстом этой клиники: под FORCE RLS чтение без
+	// `app.current_tenant` возвращает ноль строк молча, и «приём разрешается в
+	// строку visits» доказывалось бы нулём при любом состоянии базы.
+	const found = await withFixtureTenant(organizationId, async (tx) =>
+		tx.execute<{ n: number }>(sql`
+			select count(*)::int as n from visits
+			 where id = ${visitId}::uuid and organization_id = ${organizationId}::uuid`),
+	);
 	return found.rows[0]?.n ?? 0;
 }
 
@@ -191,31 +197,42 @@ before(async () => {
 	// в живой базе следующий прогон читает как данные клиники.
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
 
-	await db.insert(organizations).values([
-		{ id: EMPTY_ORGANIZATION_ID, name: "Сторож нулевого приёма — клиника без приёмов" },
-		{ id: STAFFED_ORGANIZATION_ID, name: "Сторож нулевого приёма — клиника с приёмом" },
-	]);
-	await db.insert(patients).values({
-		id: PATIENT_ID,
-		organizationId: STAFFED_ORGANIZATION_ID,
-		fullName: "Настоящев Приём Черновикович",
-		birthDate: "1979-11-02",
-		phone: "+7 900 000-00-02",
+	/*
+	 * Сев идёт ПО КЛИНИКАМ, каждая под своим тенант-контекстом. `app.current_tenant`
+	 * хранит ровно одного арендатора, а в WITH CHECK у `organizations` стоит
+	 * `id = current_tenant`: одним оператором на массив из двух организаций вставка
+	 * отвергается кодом 42501. Пациент и приём — строки клиники с приёмом, поэтому
+	 * сеются под её контекстом.
+	 */
+	await withFixtureTenant(EMPTY_ORGANIZATION_ID, async () => {
+		await db
+			.insert(organizations)
+			.values({ id: EMPTY_ORGANIZATION_ID, name: "Сторож нулевого приёма — клиника без приёмов" });
 	});
-	await db.insert(visits).values({
-		id: REAL_VISIT_ID,
-		organizationId: STAFFED_ORGANIZATION_ID,
-		patientId: PATIENT_ID,
-		status: "draft",
-		revision: 1,
-		complaint: "скол пломбы 46",
+	await withFixtureTenant(STAFFED_ORGANIZATION_ID, async () => {
+		await db
+			.insert(organizations)
+			.values({ id: STAFFED_ORGANIZATION_ID, name: "Сторож нулевого приёма — клиника с приёмом" });
+		await db.insert(patients).values({
+			id: PATIENT_ID,
+			organizationId: STAFFED_ORGANIZATION_ID,
+			fullName: "Настоящев Приём Черновикович",
+			birthDate: "1979-11-02",
+			phone: "+7 900 000-00-02",
+		});
+		await db.insert(visits).values({
+			id: REAL_VISIT_ID,
+			organizationId: STAFFED_ORGANIZATION_ID,
+			patientId: PATIENT_ID,
+			status: "draft",
+			revision: 1,
+			complaint: "скол пломбы 46",
+		});
 	});
 
-	app = Fastify();
-	// Тот же хук, что в apps/api/src/server.ts: он наполняет личность запроса.
-	app.addHook("onRequest", async (request) => {
-		getRequestIdentity(request);
-	});
+	// Те же два хука, что вешает боевой server.ts: без них обработчик сводки идёт
+	// без тенант-контекста и читает ноль строк у клиники, которую только что засеяли.
+	app = createTenantTestApp();
 	await registerDashboardRoutes(app);
 	await registerVisitRoutes(app);
 	await app.ready();
@@ -224,12 +241,20 @@ before(async () => {
 after(async () => {
 	await app?.close();
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
-	const leftovers = await db.execute<{ rows_left: number }>(sql`
-		select (
-			(select count(*) from organizations where id in (${EMPTY_ORGANIZATION_ID}::uuid, ${STAFFED_ORGANIZATION_ID}::uuid))
-			+ (select count(*) from visits where organization_id in (${EMPTY_ORGANIZATION_ID}::uuid, ${STAFFED_ORGANIZATION_ID}::uuid))
-			+ (select count(*) from patients where organization_id in (${EMPTY_ORGANIZATION_ID}::uuid, ${STAFFED_ORGANIZATION_ID}::uuid))
-		)::int as rows_left`);
+	/*
+	 * Остаток считается ПОД ОБХОДОМ, и только читается. Под контекстом своего
+	 * арендатора этот счёт бесполезен по построению: он не отличит «строку
+	 * удалили» от «строку скрыла политика», то есть всегда отвечал бы нулём и
+	 * подтверждал бы сам себя. Обход накрывает одно чтение трёх счётчиков.
+	 */
+	const leftovers = await withSuperuserBypass(async (tx) =>
+		tx.execute<{ rows_left: number }>(sql`
+			select (
+				(select count(*) from organizations where id in (${EMPTY_ORGANIZATION_ID}::uuid, ${STAFFED_ORGANIZATION_ID}::uuid))
+				+ (select count(*) from visits where organization_id in (${EMPTY_ORGANIZATION_ID}::uuid, ${STAFFED_ORGANIZATION_ID}::uuid))
+				+ (select count(*) from patients where organization_id in (${EMPTY_ORGANIZATION_ID}::uuid, ${STAFFED_ORGANIZATION_ID}::uuid))
+			)::int as rows_left`),
+	);
 	assert.equal(
 		leftovers.rows[0]?.rows_left,
 		0,
@@ -242,8 +267,10 @@ after(async () => {
 describe("GET /api/dashboard: приём в сводке либо есть в базе, либо назван отсутствующим", () => {
 	it("клиника без приёмов: сводка отдаёт РОВНО null, а не выдуманный приём", async () => {
 		// Посев проверяется отдельно: без этого «приёмов нет» было бы допущением.
-		const seeded = await db.execute<{ n: number }>(
-			sql`select count(*)::int as n from visits where organization_id = ${EMPTY_ORGANIZATION_ID}::uuid`,
+		const seeded = await withFixtureTenant(EMPTY_ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ n: number }>(
+				sql`select count(*)::int as n from visits where organization_id = ${EMPTY_ORGANIZATION_ID}::uuid`,
+			),
 		);
 		assert.equal(seeded.rows[0]?.n, 0, "У клиники фикстуры не должно быть ни одного приёма.");
 
@@ -405,8 +432,10 @@ describe("метка «приёма нет» в изменяющих маршр�
 	});
 
 	it("подписание по метке отказывает своим текстом и ничего не записывает в базу", async () => {
-		const before = await db.execute<{ n: number }>(
-			sql`select count(*)::int as n from visits where organization_id = ${EMPTY_ORGANIZATION_ID}::uuid`,
+		const before = await withFixtureTenant(EMPTY_ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ n: number }>(
+				sql`select count(*)::int as n from visits where organization_id = ${EMPTY_ORGANIZATION_ID}::uuid`,
+			),
 		);
 		const refusal = await callWithNilId("POST", "accept", {
 			draft: {
@@ -432,8 +461,10 @@ describe("метка «приёма нет» в изменяющих маршр�
 				`где нажал «подписать». Пришло: «${refusal.message}»`,
 		);
 
-		const after = await db.execute<{ n: number }>(
-			sql`select count(*)::int as n from visits where organization_id = ${EMPTY_ORGANIZATION_ID}::uuid`,
+		const after = await withFixtureTenant(EMPTY_ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ n: number }>(
+				sql`select count(*)::int as n from visits where organization_id = ${EMPTY_ORGANIZATION_ID}::uuid`,
+			),
 		);
 		assert.equal(
 			after.rows[0]?.n,

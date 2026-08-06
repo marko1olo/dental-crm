@@ -95,6 +95,35 @@ const PORTAL_TOKEN_KIND = "portal";
  * а не выигрыш в ёмкости.
  */
 
+/*
+ * ФОРМА ОТВЕТА В ЭТОМ ФАЙЛЕ: КОД СТАВИМ, ЗНАЧЕНИЕ ВОЗВРАЩАЕМ.
+ *
+ * `return reply.status(N).send(x)` возвращает из обработчика сам `reply`, а он
+ * thenable: `Reply.prototype.then` (fastify/lib/reply.js:466) разрешается по
+ * `eos(reply.raw)` — когда ответ уже ушёл клиенту. Любая обёртка, которая ждёт
+ * разрешения обработчика, чтобы зафиксировать транзакцию, получает COMMIT ПОСЛЕ
+ * ответа. В этом файле такая обёртка написана прямо в коде — `withTenantCtx` в
+ * `GET /me` ниже: `return reply.status(404).send(...)` внутри её колбэка держал
+ * транзакцию открытой до конца отправки ответа.
+ *
+ * Возврат значения этого не даёт: fastify зовёт `reply.send(payload)` уже после
+ * разрешения промиса (lib/wrap-thenable.js:14). Код, выставленный
+ * `reply.status()`, сохраняется — он живёт на объекте ответа, а не в аргументах
+ * `send`.
+ *
+ * ЧЕСТНО О ГРАНИЦАХ ЭТОЙ ПРАВКИ. Маршруты портала ПУБЛИЧНЫЕ: токена кабинета и
+ * токена сотрудника в них нет, `request.tenantId` не выставлен, и глобальная
+ * обёртка withTenantCtx из server.ts (хук onRoute) их не оборачивает. Проверено
+ * по построению: `/auth/verify-otp` вызывается вообще без заголовка
+ * авторизации. Поэтому здесь правится ФОРМА, а не действующий дефект: каждая
+ * транзакция в send-otp и verify-otp открывается и закрывается явно и до сборки
+ * ответа, а успешная ветка verify-otp значение возвращала и раньше.
+ *
+ * НЕ ПЕРЕВЕДЕНО: выдача HTML документа в самом низу файла —
+ * `reply.type("text/html; charset=utf-8").send(...)`. Тело там не JSON, а
+ * готовая архивная копия документа.
+ */
+
 /** Настройки одноразового кода. Значения по умолчанию рабочие, но переопределяемы. */
 interface PortalOtpPolicy {
 	readonly codeLength: number;
@@ -285,9 +314,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 			const rawPhone =
 				typeof request.body?.phone === "string" ? request.body.phone.trim() : "";
 			if (!rawPhone) {
-				return reply
-					.status(400)
-					.send({ error: "PhoneRequired", message: "Укажите номер телефона." });
+				reply.status(400);
+				return { error: "PhoneRequired", message: "Укажите номер телефона." };
 			}
 
 			const smsConfigured = readSmsCredentialsFromEnv() !== null;
@@ -346,15 +374,19 @@ export const portalRoutes: FastifyPluginAsync = async (
 					{ requiredEnv: ["DENTE_SMS_PROVIDER", "учётные данные выбранного SMS-провайдера"] },
 					"Вход пациента в личный кабинет отклонён: SMS-шлюз не настроен в окружении сервера",
 				);
-				return reply.status(503).send({
+				reply.status(503);
+				return {
 					error: "OtpDeliveryNotConfigured",
 					message:
 						"Вход в личный кабинет по коду из СМС сейчас не работает: клиника не подключила отправку СМС. Позвоните в клинику — записаться на приём и узнать план лечения можно у администратора.",
-				});
+				};
 			}
 
 			const patient = await findUniquePatientByPhone(rawPhone);
-			if (!patient) return reply.status(202).send(neutralAccepted);
+			if (!patient) {
+				reply.status(202);
+				return neutralAccepted;
+			}
 
 			const now = new Date();
 
@@ -401,7 +433,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 			if (throttledBeforeHashing) {
 				// Тоже нейтральный ответ: 429 именно здесь снова отличал бы
 				// существующего пациента от несуществующего.
-				return reply.status(202).send(neutralAccepted);
+				reply.status(202);
+				return neutralAccepted;
 			}
 
 			/*
@@ -498,14 +531,16 @@ export const portalRoutes: FastifyPluginAsync = async (
 			});
 
 			if (issuance.throttled) {
-				return reply.status(202).send(neutralAccepted);
+				reply.status(202);
+				return neutralAccepted;
 			}
 			const issuedId = issuance.issuedId;
 			if (!issuedId) {
-				return reply.status(500).send({
+				reply.status(500);
+				return {
 					error: "OtpNotIssued",
 					message: "Не удалось выдать код входа. Повторите попытку.",
-				});
+				};
 			}
 
 			if (developerLogFallback) {
@@ -521,7 +556,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 						.set({ deliveryStatus: "sent" })
 						.where(eq(portalOtpCodes.id, issuedId));
 				});
-				return reply.status(202).send(neutralAccepted);
+				reply.status(202);
+				return neutralAccepted;
 			}
 
 			const msisdn = normalizeRussianMsisdn(patient.phone);
@@ -601,13 +637,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 				 * несуществующего. Это состояние аварии, а не штатное; молчать
 				 * пациенту о том, что SMS не ушла, — хуже.
 				 */
-				return reply
-					.status(delivery.errorClass === "not_configured" ? 503 : 502)
-					.send({
-						error: "OtpDeliveryFailed",
-						errorClass: delivery.errorClass,
-						message: `Не удалось отправить код: ${delivery.errorMessage}`,
-					});
+				reply.status(delivery.errorClass === "not_configured" ? 503 : 502);
+				return {
+					error: "OtpDeliveryFailed",
+					errorClass: delivery.errorClass,
+					message: `Не удалось отправить код: ${delivery.errorMessage}`,
+				};
 			}
 
 			await withTenantCtx(patient.organizationId, async () => {
@@ -616,7 +651,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 					.set({ deliveryStatus: "sent" })
 					.where(eq(portalOtpCodes.id, issuedId));
 			});
-			return reply.status(202).send(neutralAccepted);
+			reply.status(202);
+			return neutralAccepted;
 		},
 	);
 
@@ -641,15 +677,19 @@ export const portalRoutes: FastifyPluginAsync = async (
 			const code =
 				typeof request.body?.code === "string" ? request.body.code.trim() : "";
 			if (!rawPhone || !code) {
-				return reply.status(400).send({
+				reply.status(400);
+				return {
 					error: "PhoneAndCodeRequired",
 					message: "Укажите номер телефона и код из SMS.",
-				});
+				};
 			}
 
 			const policy = readPortalOtpPolicy();
 			const patient = await findUniquePatientByPhone(rawPhone);
-			if (!patient) return reply.status(401).send(invalidOtp);
+			if (!patient) {
+				reply.status(401);
+				return invalidOtp;
+			}
 
 			const now = new Date();
 
@@ -730,14 +770,18 @@ export const portalRoutes: FastifyPluginAsync = async (
 					return found;
 				},
 			);
-			if (!candidate) return reply.status(401).send(invalidOtp);
+			if (!candidate) {
+				reply.status(401);
+				return invalidOtp;
+			}
 
 			/*
 			 * PBKDF2 — ВНЕ транзакции. Попытка уже посчитана и зафиксирована,
 			 * соединение с базой на время сверки не нужно никому.
 			 */
 			if (!(await verifyCredential(code, candidate.codeHash))) {
-				return reply.status(401).send(invalidOtp);
+				reply.status(401);
+				return invalidOtp;
 			}
 
 			/*
@@ -765,7 +809,10 @@ export const portalRoutes: FastifyPluginAsync = async (
 					)
 					.returning({ id: portalOtpCodes.id }),
 			);
-			if (consumed.length !== 1) return reply.status(401).send(invalidOtp);
+			if (consumed.length !== 1) {
+				reply.status(401);
+				return invalidOtp;
+			}
 
 			// Signed, expiring session token. Replaces the previous unsigned
 			// base64(`DENTE_TOKEN:<id>`) payload, which any caller could forge to read
@@ -787,11 +834,16 @@ export const portalRoutes: FastifyPluginAsync = async (
 	// 3. Get Patient Data (Protected)
 	server.get("/me", async (request, reply) => {
 		const authHeader = request.headers.authorization;
-		if (!authHeader?.startsWith("Bearer "))
-			return reply.status(401).send({ error: "Unauthorized" });
+		if (!authHeader?.startsWith("Bearer ")) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
 
 		const token = authHeader.slice("Bearer ".length).trim();
-		if (!token) return reply.status(401).send({ error: "Unauthorized" });
+		if (!token) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
 
 		const payload = verifyToken(token, requireAuthTokenSecret());
 		if (
@@ -800,7 +852,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 			typeof payload.sub !== "string" ||
 			typeof payload.organizationId !== "string"
 		) {
-			return reply.status(401).send({ error: "Invalid token" });
+			reply.status(401);
+			return { error: "Invalid token" };
 		}
 		const patientId = payload.sub;
 		const organizationId = payload.organizationId as string;
@@ -820,7 +873,18 @@ export const portalRoutes: FastifyPluginAsync = async (
 				)
 				.limit(1);
 			const patient = pResult[0];
-			if (!patient) return reply.status(404).send({ error: "Not found" });
+			if (!patient) {
+				/*
+				 * ЭТОТ ОТКАЗ — И ЕСТЬ ДЕЙСТВУЮЩИЙ СЛУЧАЙ, РАДИ КОТОРОГО ПРАВИЛСЯ
+				 * ФАЙЛ. Он стоит ВНУТРИ колбэка withTenantCtx, то есть внутри
+				 * открытой транзакции. `return reply.status(404).send(...)`
+				 * возвращал из колбэка thenable-`reply`, транзакция ждала конца
+				 * отправки ответа и фиксировалась уже после него. Возврат значения
+				 * выносит COMMIT вперёд.
+				 */
+				reply.status(404);
+				return { error: "Not found" };
+			}
 
 			const visits = await db
 				.select()
@@ -859,11 +923,16 @@ export const portalRoutes: FastifyPluginAsync = async (
 		"/documents/:documentId/html",
 		async (request, reply) => {
 			const authHeader = request.headers.authorization;
-			if (!authHeader?.startsWith("Bearer "))
-				return reply.status(401).send({ error: "Unauthorized" });
+			if (!authHeader?.startsWith("Bearer ")) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
 			const token = authHeader.slice("Bearer ".length).trim();
-			if (!token) return reply.status(401).send({ error: "Unauthorized" });
+			if (!token) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
 			const payload = verifyToken(token, requireAuthTokenSecret());
 			if (
@@ -872,7 +941,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 				typeof payload.sub !== "string" ||
 				typeof payload.organizationId !== "string"
 			) {
-				return reply.status(401).send({ error: "Invalid token" });
+				reply.status(401);
+				return { error: "Invalid token" };
 			}
 			const patientId = payload.sub;
 			const organizationId = payload.organizationId as string;
@@ -893,16 +963,22 @@ export const portalRoutes: FastifyPluginAsync = async (
 			);
 
 			if (!document || document.patientId !== patientId || document.status !== "issued") {
-				return reply.status(404).send({ error: "Not found" });
+				reply.status(404);
+				return { error: "Not found" };
 			}
 
 			const issuedSnapshot = readIssuedDocumentSnapshot(document);
 			if (!issuedSnapshot) {
-				return reply
-					.status(409)
-					.send({ error: "Архивная копия документа отсутствует" });
+				reply.status(409);
+				return { error: "Архивная копия документа отсутствует" };
 			}
 
+			/*
+			 * НЕ ПЕРЕВОДИТСЯ В ВОЗВРАТ ЗНАЧЕНИЯ: тело здесь — не JSON, а готовая
+			 * архивная копия документа под собственным Content-Type. Транзакция к
+			 * этому моменту уже закрыта — withTenantCtx выше отработал и вернул
+			 * документ значением, — поэтому откладывать COMMIT тут нечему.
+			 */
 			return reply.type("text/html; charset=utf-8").send(issuedSnapshot);
 		},
 	);

@@ -21,8 +21,7 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import { and, eq, sql } from "drizzle-orm";
-import Fastify from "fastify";
-import type { FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	clinicalAuditLogs,
@@ -42,6 +41,8 @@ import {
 import { authTokenSecret } from "../../security/authSecret.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 import registerDiaryRoutes from "../../routes/diary.js";
 
 /**
@@ -109,7 +110,13 @@ interface CeremonyOutcome {
 
 describe("церемония подписания дневника одинакова у POST и /lock", () => {
 	let app: FastifyInstance;
-	let organizationId: string;
+	/*
+	 * Идентификатор клиники известен ДО вставки, а не берётся из `returning`.
+	 * Под принудительным RLS вставка идёт внутри `withFixtureTenant`, а политика
+	 * `organizations` сверяет `id = current_tenant`: под таким контекстом создаётся
+	 * ровно названная строка, любая другая отвергается кодом 42501.
+	 */
+	const organizationId = crypto.randomUUID();
 	let doctorId: string;
 	let patientId: string;
 	let staffToken: string;
@@ -137,141 +144,156 @@ describe("церемония подписания дневника одинак�
 				: options.ruleOrganizationId;
 		const treatmentQuantity =
 			options.treatmentQuantity ?? String(TREATMENT_QUANTITY);
-		const [service] = await db
-			.insert(serviceCatalogItems)
-			.values({
-				organizationId,
-				code: `U5-${label}`,
-				title: `Лечение кариеса (${label})`,
-				basePriceRub: 4500,
-				priceRub: 4500,
-			})
-			.returning({ id: serviceCatalogItems.id });
-		assert.ok(service);
+		/*
+		 * Сценарий сеется под тенант-контекстом клиники: у прейскуранта, склада,
+		 * правил, визитов и позиций плана в WITH CHECK стоит только
+		 * `organization_id = current_tenant`, без дизъюнкта обхода, поэтому вставка
+		 * без контекста отвергается кодом 42501.
+		 */
+		return withFixtureTenant(organizationId, async () => {
+			const [service] = await db
+				.insert(serviceCatalogItems)
+				.values({
+					organizationId,
+					code: `U5-${label}`,
+					title: `Лечение кариеса (${label})`,
+					basePriceRub: 4500,
+					priceRub: 4500,
+				})
+				.returning({ id: serviceCatalogItems.id });
+			assert.ok(service);
 
-		const [item] = await db
-			.insert(inventoryItems)
-			.values({
-				organizationId,
-				name: `Композит U5-${label}`,
-				stockQuantity: stock,
-				currentQty: START_STOCK,
-				unitCostRub: "123.45",
-			})
-			.returning({ id: inventoryItems.id });
-		assert.ok(item);
+			const [item] = await db
+				.insert(inventoryItems)
+				.values({
+					organizationId,
+					name: `Композит U5-${label}`,
+					stockQuantity: stock,
+					currentQty: START_STOCK,
+					unitCostRub: "123.45",
+				})
+				.returning({ id: inventoryItems.id });
+			assert.ok(item);
 
-		await db.insert(procedureMaterialRules).values({
-			...(ruleOrganizationId ? { organizationId: ruleOrganizationId } : {}),
-			serviceId: service.id,
-			inventoryItemId: item.id,
-			materialName: `Композит U5-${label}`,
-			quantityToDeduct,
-		});
+			await db.insert(procedureMaterialRules).values({
+				...(ruleOrganizationId ? { organizationId: ruleOrganizationId } : {}),
+				serviceId: service.id,
+				inventoryItemId: item.id,
+				materialName: `Композит U5-${label}`,
+				quantityToDeduct,
+			});
 
-		const [visit] = await db
-			.insert(visits)
-			.values({ organizationId, patientId, status: "draft" })
-			.returning({ id: visits.id });
-		assert.ok(visit);
+			const [visit] = await db
+				.insert(visits)
+				.values({ organizationId, patientId, status: "draft" })
+				.returning({ id: visits.id });
+			assert.ok(visit);
 
-		const [treatmentItem] = await db
-			.insert(treatmentItems)
-			.values({
-				organizationId,
-				patientId,
+			const [treatmentItem] = await db
+				.insert(treatmentItems)
+				.values({
+					organizationId,
+					patientId,
+					visitId: visit.id,
+					serviceId: service.id,
+					title: `Лечение кариеса (${label})`,
+					quantity: treatmentQuantity,
+					priceRub: 4500,
+					unitPriceRub: 4500,
+					status: "approved",
+				})
+				.returning({ id: treatmentItems.id });
+			assert.ok(treatmentItem);
+
+			return {
 				visitId: visit.id,
 				serviceId: service.id,
-				title: `Лечение кариеса (${label})`,
-				quantity: treatmentQuantity,
-				priceRub: 4500,
-				unitPriceRub: 4500,
-				status: "approved",
-			})
-			.returning({ id: treatmentItems.id });
-		assert.ok(treatmentItem);
-
-		return {
-			visitId: visit.id,
-			serviceId: service.id,
-			inventoryItemId: item.id,
-			treatmentItemId: treatmentItem.id,
-		};
+				inventoryItemId: item.id,
+				treatmentItemId: treatmentItem.id,
+			};
+		});
 	}
 
 	async function observe(scenario: Scenario): Promise<CeremonyOutcome> {
-		const [diary] = await db
-			.select()
-			.from(visitDiaries)
-			.where(
-				and(
-					eq(visitDiaries.visitId, scenario.visitId),
-					eq(visitDiaries.organizationId, organizationId),
-				),
-			);
-		assert.ok(diary);
-		const [item] = await db
-			.select()
-			.from(inventoryItems)
-			.where(eq(inventoryItems.id, scenario.inventoryItemId));
-		assert.ok(item);
-		const movements = await db
-			.select()
-			.from(inventoryTransactions)
-			.where(
-				and(
-					eq(inventoryTransactions.visitId, scenario.visitId),
-					eq(inventoryTransactions.organizationId, organizationId),
-				),
-			);
-		const audits = await db
-			.select()
-			.from(clinicalAuditLogs)
-			.where(
-				and(
-					eq(clinicalAuditLogs.entityId, diary.id),
-					eq(clinicalAuditLogs.organizationId, organizationId),
-				),
-			);
-		const [treatment] = await db
-			.select()
-			.from(treatmentItems)
-			.where(eq(treatmentItems.id, scenario.treatmentItemId));
-		assert.ok(treatment);
-		const commissions = await db
-			.select()
-			.from(doctorCommissions)
-			.where(
-				and(
-					eq(doctorCommissions.userId, doctorId),
-					eq(doctorCommissions.organizationId, organizationId),
-				),
-			);
+		/*
+		 * Наблюдение идёт под тенант-контекстом. SELECT без него не ошибается, а
+		 * молча отдаёт ноль строк, и «списания не было», «журнал пуст» подтверждались
+		 * бы скрытием строк политикой, а не их отсутствием.
+		 */
+		return withFixtureTenant(organizationId, async () => {
+			const [diary] = await db
+				.select()
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, scenario.visitId),
+						eq(visitDiaries.organizationId, organizationId),
+					),
+				);
+			assert.ok(diary);
+			const [item] = await db
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.id, scenario.inventoryItemId));
+			assert.ok(item);
+			const movements = await db
+				.select()
+				.from(inventoryTransactions)
+				.where(
+					and(
+						eq(inventoryTransactions.visitId, scenario.visitId),
+						eq(inventoryTransactions.organizationId, organizationId),
+					),
+				);
+			const audits = await db
+				.select()
+				.from(clinicalAuditLogs)
+				.where(
+					and(
+						eq(clinicalAuditLogs.entityId, diary.id),
+						eq(clinicalAuditLogs.organizationId, organizationId),
+					),
+				);
+			const [treatment] = await db
+				.select()
+				.from(treatmentItems)
+				.where(eq(treatmentItems.id, scenario.treatmentItemId));
+			assert.ok(treatment);
+			const commissions = await db
+				.select()
+				.from(doctorCommissions)
+				.where(
+					and(
+						eq(doctorCommissions.userId, doctorId),
+						eq(doctorCommissions.organizationId, organizationId),
+					),
+				);
 
-		const stockAfter = Number(item.stockQuantity);
-		return {
-			diaryLocked: diary.isLocked,
-			diaryHashPresent: typeof diary.diaryHash === "string" && diary.diaryHash.length === 64,
-			diaryHashMatchesStoredRow: diary.diaryHash === diaryHashOf(diary),
-			lockedByDoctor: diary.lockedByUserId === doctorId,
-			coSignedByDoctor: diary.coSignedByUserId === doctorId,
-			signatureStored: diary.cryptoSignaturePkcs7 === PKCS7,
-			stockAfter,
-			stockDelta: stockAfter - Number(START_STOCK),
-			deductionRows: movements.length,
-			deductionQuantity: movements.reduce((sum, row) => sum + Number(row.quantityChanged), 0),
-			deductionType: movements[0]?.transactionType ?? null,
-			deductionUserIsDoctor: movements.every((row) => row.userId === doctorId),
-			deductionVisitMatches: movements.every((row) => row.visitId === scenario.visitId),
-			auditRows: audits.length,
-			auditAction: audits[0]?.action ?? null,
-			auditEntityType: audits[0]?.entityType ?? null,
-			auditUserIsDoctor: audits.every((row) => row.userId === doctorId),
-			auditPatientMatches: audits.every((row) => row.patientId === patientId),
-			auditEntityIsDiary: audits.every((row) => row.entityId === diary.id),
-			treatmentItemStatus: treatment.status,
-			commissionRows: commissions.length,
-		};
+			const stockAfter = Number(item.stockQuantity);
+			return {
+				diaryLocked: diary.isLocked,
+				diaryHashPresent: typeof diary.diaryHash === "string" && diary.diaryHash.length === 64,
+				diaryHashMatchesStoredRow: diary.diaryHash === diaryHashOf(diary),
+				lockedByDoctor: diary.lockedByUserId === doctorId,
+				coSignedByDoctor: diary.coSignedByUserId === doctorId,
+				signatureStored: diary.cryptoSignaturePkcs7 === PKCS7,
+				stockAfter,
+				stockDelta: stockAfter - Number(START_STOCK),
+				deductionRows: movements.length,
+				deductionQuantity: movements.reduce((sum, row) => sum + Number(row.quantityChanged), 0),
+				deductionType: movements[0]?.transactionType ?? null,
+				deductionUserIsDoctor: movements.every((row) => row.userId === doctorId),
+				deductionVisitMatches: movements.every((row) => row.visitId === scenario.visitId),
+				auditRows: audits.length,
+				auditAction: audits[0]?.action ?? null,
+				auditEntityType: audits[0]?.entityType ?? null,
+				auditUserIsDoctor: audits.every((row) => row.userId === doctorId),
+				auditPatientMatches: audits.every((row) => row.patientId === patientId),
+				auditEntityIsDiary: audits.every((row) => row.entityId === diary.id),
+				treatmentItemStatus: treatment.status,
+				commissionRows: commissions.length,
+			};
+		});
 	}
 
 	before(async () => {
@@ -282,10 +304,9 @@ describe("церемония подписания дневника одинак�
 
 		const [organization] = await db
 			.insert(organizations)
-			.values({ name: "U5 ceremony probe clinic" })
+			.values({ id: organizationId, name: "U5 ceremony probe clinic" })
 			.returning({ id: organizations.id });
 		assert.ok(organization);
-		organizationId = organization.id;
 
 		const [doctor] = await db
 			.insert(users)

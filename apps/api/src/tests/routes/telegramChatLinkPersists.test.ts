@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import pg from "pg";
 import { eq } from "drizzle-orm";
 import { registerTelegramRoutes, registerTelegramWebhookRoutes } from "../../routes/telegram.js";
@@ -12,6 +12,8 @@ import {
   countActiveDenteTelegramChatLinks,
   revokeDenteTelegramChatLink
 } from "../../telegram/chatLinks.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * ПРИВЯЗКА TELEGRAM ПЕРЕЖИВАЕТ ПЕРЕЗАПУСК СЕРВЕРА.
@@ -75,6 +77,13 @@ async function rawChatLinkRows(organizationId: string): Promise<
   const client = new pg.Client({ connectionString: url });
   await client.connect();
   try {
+    // Тенант-контекст ставится и на этом соединении. Роль приложения —
+    // NOSUPERUSER/NOBYPASSRLS, RLS в режиме FORCE, поэтому SELECT без
+    // `app.current_tenant` возвращает НОЛЬ СТРОК и ошибки не даёт: проверка
+    // «строка есть в базе» превратилась бы в проверку пустого списка. Соединение
+    // остаётся независимым от drizzle и маршрутов — меняется только то, что оно
+    // предъявляет базе своего арендатора, как это делает любой живой клиент.
+    await client.query("select set_config('app.current_tenant', $1, false)", [organizationId]);
     const result = await client.query<{
       id: string;
       clinic_id: string | null;
@@ -125,7 +134,8 @@ describe("привязка Telegram переживает перезапуск с
       json: async () => ({ ok: true, result: { message_id: 91001 } })
     })) as unknown as typeof fetch;
 
-    app = Fastify({ logger: false });
+    // Те же два хука, что боевой `server.ts` вешает на настоящее приложение.
+    app = createTenantTestApp();
     await registerTelegramRoutes(app);
     await registerTelegramWebhookRoutes(app);
     await app.ready();
@@ -141,26 +151,43 @@ describe("привязка Telegram переживает перезапуск с
 
     // Организация клиники должна быть в базе: у таблицы связок внешний ключ на
     // organizations. Филиал с этим uuid НЕ создаётся — см. заголовок теста.
-    const [existingOrg] = await db
-      .select({ id: organizations.id })
-      .from(organizations)
-      .where(eq(organizations.id, runtime.organizationId))
-      .limit(1);
-    if (!existingOrg) {
-      await db.insert(organizations).values({ id: runtime.organizationId, name: "Клиника привязки Telegram" });
-    }
+    //
+    // Проверка «уже есть» и вставка идут ОДНИМ тенант-контекстом: под
+    // принудительным RLS чтение без `app.current_tenant` вернуло бы ноль строк
+    // независимо от содержимого таблицы, и файл каждый раз пытался бы создать
+    // уже существующую клинику, падая на первичном ключе. Вставка без контекста
+    // отвергается кодом 42501: `WITH CHECK` политики `organizations` сверяет
+    // `id` с текущим арендатором и обхода не допускает.
+    await withFixtureTenant(runtime.organizationId, async () => {
+      const [existingOrg] = await db
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.id, runtime.organizationId))
+        .limit(1);
+      if (!existingOrg) {
+        await db.insert(organizations).values({ id: runtime.organizationId, name: "Клиника привязки Telegram" });
+      }
 
-    await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, runtime.organizationId));
-    await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG));
-    await db.delete(clinics).where(eq(clinics.organizationId, FOREIGN_ORG));
-    await db.delete(organizations).where(eq(organizations.id, FOREIGN_ORG));
-    await db.insert(organizations).values({ id: FOREIGN_ORG, name: "Чужая клиника привязки Telegram" });
+      await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, runtime.organizationId));
+    });
+
+    // Соседняя клиника — отдельный арендатор, поэтому и отдельный вызов:
+    // `app.current_tenant` хранит РОВНО одного, а `DELETE` без её контекста снял
+    // бы ноль строк молча и оставил бы связки прошлого прогона в живой базе.
+    await withFixtureTenant(FOREIGN_ORG, async () => {
+      await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG));
+      await db.delete(clinics).where(eq(clinics.organizationId, FOREIGN_ORG));
+      await db.delete(organizations).where(eq(organizations.id, FOREIGN_ORG));
+      await db.insert(organizations).values({ id: FOREIGN_ORG, name: "Чужая клиника привязки Telegram" });
+    });
   });
 
   after(async () => {
     await app?.close();
-    await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG));
-    await db.delete(organizations).where(eq(organizations.id, FOREIGN_ORG));
+    await withFixtureTenant(FOREIGN_ORG, async () => {
+      await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG));
+      await db.delete(organizations).where(eq(organizations.id, FOREIGN_ORG));
+    });
     process.env = originalEnv;
   });
 
@@ -265,20 +292,24 @@ describe("привязка Telegram переживает перезапуск с
   test("отбор по состоянию и страницы считаются базой, а не после выборки", async () => {
     // Вторая связка нужна ровно для страниц. Пишется прямо в базу: путь записи
     // уже доказан первым тестом через настоящий веб-хук, здесь проверяется ЧТЕНИЕ.
-    const [second] = await db
-      .insert(denteTelegramChatLinks)
-      .values({
-        organizationId: runtime.organizationId,
-        clinicId: null,
-        botConfigId: runtime.botConfigId,
-        subjectType: "patient",
-        subjectId: "3ebb4567-7777-4f19-8c23-2a78c9962797",
-        chatFingerprint: "e7c1a9b45de2f0138a6b4c11",
-        chatTransportRef: "synthetic-second-chat-transport-ref",
-        chatIdLast4: "0932",
-        status: "active"
-      })
-      .returning();
+    // Под тенант-контекстом своей клиники — без него `WITH CHECK` отвергает
+    // вставку кодом 42501.
+    const [second] = await withFixtureTenant(runtime.organizationId, async () =>
+      db
+        .insert(denteTelegramChatLinks)
+        .values({
+          organizationId: runtime.organizationId,
+          clinicId: null,
+          botConfigId: runtime.botConfigId,
+          subjectType: "patient",
+          subjectId: "3ebb4567-7777-4f19-8c23-2a78c9962797",
+          chatFingerprint: "e7c1a9b45de2f0138a6b4c11",
+          chatTransportRef: "synthetic-second-chat-transport-ref",
+          chatIdLast4: "0932",
+          status: "active"
+        })
+        .returning()
+    );
     assert.ok(second, "вторая связка не записана");
 
     const revokedOnly = await app.inject({ method: "GET", url: "/api/telegram/chat-links?status=revoked" });
@@ -324,7 +355,9 @@ describe("привязка Telegram переживает перезапуск с
     const pagedIds = [firstPageList.chatLinks[0]!.id, secondPageList.chatLinks[0]!.id];
     assert.equal(new Set(pagedIds).size, 2, `страницы пересеклись: ${pagedIds.join(", ")}`);
 
-    await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.id, second.id));
+    await withFixtureTenant(runtime.organizationId, async () => {
+      await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.id, second.id));
+    });
   });
 
   test("чужая клиника не видит связку и не может её отозвать", async () => {
@@ -360,20 +393,25 @@ describe("привязка Telegram переживает перезапуск с
      * Поэтому здесь вызывается сам модуль, обеими клиниками, и у каждой в базе
      * своя связка.
      */
-    const [foreignLink] = await db
-      .insert(denteTelegramChatLinks)
-      .values({
-        organizationId: FOREIGN_ORG,
-        clinicId: null,
-        botConfigId: runtime.botConfigId,
-        subjectType: "patient",
-        subjectId: "3ebb4567-7777-4f19-8c23-2a78c9962798",
-        chatFingerprint: "f10ba9c8d7e6543210fedcba",
-        chatTransportRef: "synthetic-foreign-chat-transport-ref",
-        chatIdLast4: "0933",
-        status: "active"
-      })
-      .returning();
+    // Связка соседней клиники сеется под ЕЁ контекстом: `WITH CHECK` сверяет
+    // `organization_id` с текущим арендатором, поэтому чужую строку из-под своей
+    // клиники не создать вовсе — 42501.
+    const [foreignLink] = await withFixtureTenant(FOREIGN_ORG, async () =>
+      db
+        .insert(denteTelegramChatLinks)
+        .values({
+          organizationId: FOREIGN_ORG,
+          clinicId: null,
+          botConfigId: runtime.botConfigId,
+          subjectType: "patient",
+          subjectId: "3ebb4567-7777-4f19-8c23-2a78c9962798",
+          chatFingerprint: "f10ba9c8d7e6543210fedcba",
+          chatTransportRef: "synthetic-foreign-chat-transport-ref",
+          chatIdLast4: "0933",
+          status: "active"
+        })
+        .returning()
+    );
     assert.ok(foreignLink, "связка чужой клиники не записана");
 
     const mine = await buildDenteTelegramChatLinkList({ organizationId: runtime.organizationId });
@@ -402,10 +440,12 @@ describe("привязка Telegram переживает перезапуск с
       null,
       "своя клиника отозвала связку чужой"
     );
-    const [untouched] = await db
-      .select({ status: denteTelegramChatLinks.status })
-      .from(denteTelegramChatLinks)
-      .where(eq(denteTelegramChatLinks.id, foreignLink.id));
+    const [untouched] = await withFixtureTenant(FOREIGN_ORG, async () =>
+      db
+        .select({ status: denteTelegramChatLinks.status })
+        .from(denteTelegramChatLinks)
+        .where(eq(denteTelegramChatLinks.id, foreignLink.id))
+    );
     assert.equal(untouched!.status, "active", "чужая связка изменена запросом другой клиники");
   });
 });

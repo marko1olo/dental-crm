@@ -90,15 +90,32 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { after, before, describe, test } from "node:test";
-import { eq, inArray, sql } from "drizzle-orm";
-import Fastify from "fastify";
+import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
 import { organizations, users } from "../../db/schema.js";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { CLINIC_TOKEN_HEADER, getRequestIdentity } from "../../security/identity.js";
+import { CLINIC_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
+
+/**
+ * ИДЕНТИФИКАТОРЫ КЛИНИК ПРОГОНА ЗАДАЮТСЯ ЗАРАНЕЕ, А НЕ БЕРУТСЯ ИЗ БАЗЫ.
+ *
+ * Раньше организация создавалась без `id` и получала случайный, а уборка искала
+ * свои строки по НАЗВАНИЮ. Под FORCE RLS ни то, ни другое не работает: вставка
+ * проходит только при `id = current_tenant` (иначе 42501), а поиск по названию
+ * без тенант-контекста возвращает ноль строк и удаляет ноль, не сообщая об этом.
+ * `fixtureUuid` выводит идентификатор из имени этого файла, поэтому и сев, и
+ * уборка на входе знают, что именно искать.
+ */
+const NAMESPACE = "uiPreferencesStaleSaveGuard";
 
 /** Секрет администратора настроек на прогон. В вывод не попадает никогда. */
 const settingsAdminSecret = randomBytes(24).toString("hex");
@@ -118,6 +135,8 @@ const SERVER_STAMP = "<штамп сервера>";
 type Scenario = {
 	key: string;
 	label: string;
+	/** Клиника сценария: идентификатор выведен из имени файла, а не из базы. */
+	organizationId: string;
 	/** Название организации прогона: удаляется по точному равенству, без маски. */
 	organizationName: string;
 	/** `savedAt` второго сохранения. `null` — поля в теле нет вовсе. */
@@ -133,6 +152,7 @@ const SCENARIOS: Scenario[] = [
 	{
 		key: "fresh",
 		label: "свежее поверх старого сохраняется",
+		organizationId: fixtureUuid(NAMESPACE, 1),
 		organizationName: "Проверка настроек рабочего места — свежее поверх старого",
 		incomingSavedAt: FRESH_SAVED_AT,
 		expectedStatus: 200,
@@ -142,6 +162,7 @@ const SCENARIOS: Scenario[] = [
 	{
 		key: "stale",
 		label: "старое поверх свежего отвергается",
+		organizationId: fixtureUuid(NAMESPACE, 2),
 		organizationName: "Проверка настроек рабочего места — старое поверх свежего",
 		incomingSavedAt: STALE_SAVED_AT,
 		expectedStatus: 409,
@@ -151,6 +172,7 @@ const SCENARIOS: Scenario[] = [
 	{
 		key: "equal",
 		label: "одинаковое время сохранения проходит, побеждает последний",
+		organizationId: fixtureUuid(NAMESPACE, 3),
 		organizationName: "Проверка настроек рабочего места — одинаковое время",
 		incomingSavedAt: BASE_SAVED_AT,
 		expectedStatus: 200,
@@ -160,6 +182,7 @@ const SCENARIOS: Scenario[] = [
 	{
 		key: "absent",
 		label: "сохранение без поля времени штампуется сервером и проходит",
+		organizationId: fixtureUuid(NAMESPACE, 4),
 		organizationName: "Проверка настроек рабочего места — без поля времени",
 		incomingSavedAt: null,
 		expectedStatus: 200,
@@ -169,6 +192,7 @@ const SCENARIOS: Scenario[] = [
 	{
 		key: "garbage",
 		label: "нечитаемая отметка порядка не ложится в хранилище, сохранение получает время сервера",
+		organizationId: fixtureUuid(NAMESPACE, 5),
 		organizationName: "Проверка настроек рабочего места — время не разбирается",
 		incomingSavedAt: "позавчера вечером",
 		expectedStatus: 200,
@@ -177,11 +201,12 @@ const SCENARIOS: Scenario[] = [
 	},
 ];
 
+const CONCURRENT_ORGANIZATION_ID = fixtureUuid(NAMESPACE, 90);
 const CONCURRENT_ORGANIZATION_NAME = "Проверка настроек рабочего места — одновременно";
 
-const PROOF_ORGANIZATION_NAMES = [
-	...SCENARIOS.map((scenario) => scenario.organizationName),
-	CONCURRENT_ORGANIZATION_NAME,
+const PROOF_ORGANIZATION_IDS = [
+	...SCENARIOS.map((scenario) => scenario.organizationId),
+	CONCURRENT_ORGANIZATION_ID,
 ];
 
 /** Что записано по итогу одного сценария. Формат один для обоих путей. */
@@ -266,13 +291,17 @@ async function getPreferences(organizationId: string): Promise<Record<string, un
 async function independentStoredPreferences(
 	organizationId: string,
 ): Promise<{ saved_at: string | null; role: string | null }[]> {
-	const result = await db.execute(sql`
-		select ui_preferences->>'savedAt' as saved_at,
-		       ui_preferences->>'selectedWorkspaceRole' as role
-		  from users
-		 where organization_id = ${organizationId}
-		   and ui_preferences is not null
-	`);
+	// Под тенант-контекстом: без него независимая сверка вернула бы пустой список
+	// на любых данных, то есть перестала бы быть сверкой.
+	const result = await withFixtureTenant(organizationId, async () =>
+		db.execute(sql`
+			select ui_preferences->>'savedAt' as saved_at,
+			       ui_preferences->>'selectedWorkspaceRole' as role
+			  from users
+			 where organization_id = ${organizationId}
+			   and ui_preferences is not null
+		`),
+	);
 	return result.rows as { saved_at: string | null; role: string | null }[];
 }
 
@@ -359,42 +388,52 @@ function assertRecordMatchesScenario(record: ScenarioRecord, scenario: Scenario,
 }
 
 async function seedOrganizations(): Promise<void> {
+	// Каждая клиника — свой вызов: `app.current_tenant` хранит ровно одного
+	// арендатора, и общий сев списком отвергался бы кодом 42501 на второй строке.
+	// Сотрудник заводится под тем же контекстом: настройки живут в его строке.
 	for (const scenario of SCENARIOS) {
-		const [org] = await db
-			.insert(organizations)
-			.values({ name: scenario.organizationName })
-			.returning({ id: organizations.id });
+		const [org] = await withFixtureTenant(scenario.organizationId, async () => {
+			const inserted = await db
+				.insert(organizations)
+				.values({ id: scenario.organizationId, name: scenario.organizationName })
+				.returning({ id: organizations.id });
+			await db.insert(users).values({
+				organizationId: scenario.organizationId,
+				fullName: "Владелец клиники проверки настроек",
+				role: "owner",
+			});
+			return inserted;
+		});
 		if (!org) throw new Error(`Посев не состоялся: организация «${scenario.organizationName}»`);
 		organizationIdByKey.set(scenario.key, org.id);
-		// Настройки живут в строке сотрудника, поэтому сотрудник обязателен.
+	}
+	const [concurrent] = await withFixtureTenant(CONCURRENT_ORGANIZATION_ID, async () => {
+		const inserted = await db
+			.insert(organizations)
+			.values({ id: CONCURRENT_ORGANIZATION_ID, name: CONCURRENT_ORGANIZATION_NAME })
+			.returning({ id: organizations.id });
 		await db.insert(users).values({
-			organizationId: org.id,
-			fullName: "Владелец клиники проверки настроек",
+			organizationId: CONCURRENT_ORGANIZATION_ID,
+			fullName: "Владелец клиники проверки одновременности",
 			role: "owner",
 		});
-	}
-	const [concurrent] = await db
-		.insert(organizations)
-		.values({ name: CONCURRENT_ORGANIZATION_NAME })
-		.returning({ id: organizations.id });
+		return inserted;
+	});
 	if (!concurrent) throw new Error(`Посев не состоялся: организация «${CONCURRENT_ORGANIZATION_NAME}»`);
 	organizationIdByKey.set("concurrent", concurrent.id);
-	await db.insert(users).values({
-		organizationId: concurrent.id,
-		fullName: "Владелец клиники проверки одновременности",
-		role: "owner",
-	});
 }
 
-async function removeProofOrganizations(): Promise<void> {
-	const rows = await db
-		.select({ id: organizations.id })
-		.from(organizations)
-		.where(inArray(organizations.name, PROOF_ORGANIZATION_NAMES));
-	for (const row of rows) {
-		await db.delete(users).where(eq(users.organizationId, row.id));
-		await db.delete(organizations).where(eq(organizations.id, row.id));
-	}
+/**
+ * Уборка клиник прогона.
+ *
+ * Идёт по идентификаторам, а не по названиям: под FORCE RLS выборка по названию
+ * без тенант-контекста не видит ни одной чужой строки, а `DELETE`, не увидевший
+ * строку, снимает ноль и ошибкой это не считается. Каталожная уборка ставит
+ * контекст каждой клиники сама и перечитывает результат под обходом RLS, то есть
+ * отвечает измеренным числом, а не фактом возврата из функции.
+ */
+async function removeProofOrganizations() {
+	return purgeFixtureOrganizations(PROOF_ORGANIZATION_IDS);
 }
 
 before(async () => {
@@ -409,11 +448,7 @@ before(async () => {
 	delete process.env.DENTAL_STATE_PERSISTENCE;
 	process.env.DENTE_SETTINGS_ADMIN_SECRET = settingsAdminSecret;
 
-	app = Fastify();
-	// Тот же хук, что в apps/api/src/server.ts — он наполняет личность запроса.
-	app.addHook("onRequest", async (request) => {
-		getRequestIdentity(request);
-	});
+	app = createTenantTestApp();
 	await registerSettingsRoutes(app);
 	await app.ready();
 
@@ -425,16 +460,16 @@ before(async () => {
 
 after(async () => {
 	await app.close();
-	await removeProofOrganizations();
-	const leftovers = await db
-		.select({ id: organizations.id })
-		.from(organizations)
-		.where(inArray(organizations.name, PROOF_ORGANIZATION_NAMES));
+	const purged = await removeProofOrganizations();
 	for (const [name, value] of Object.entries(savedEnv)) {
 		if (value === undefined) delete process.env[name];
 		else process.env[name] = value;
 	}
-	assert.equal(leftovers.length, 0, "организации прогона остались в базе");
+	assert.equal(
+		purged.organizationsRemoved,
+		PROOF_ORGANIZATION_IDS.length,
+		"организации прогона остались в базе",
+	);
 	await pool.end();
 });
 

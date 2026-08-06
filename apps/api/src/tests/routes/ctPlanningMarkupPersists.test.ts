@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import pg from "pg";
 import { and, eq } from "drizzle-orm";
 import { registerImagingPlanningRoutes } from "../../routes/imaging_planning.js";
@@ -9,6 +9,8 @@ import { organizations, patientCtPlannings, patients } from "../../db/schema.js"
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * РАЗМЕТКА ПЛАНИРОВАНИЯ ИМПЛАНТАЦИИ ДОХОДИТ ДО БАЗЫ И ВОЗВРАЩАЕТСЯ ОБРАТНО.
@@ -106,6 +108,18 @@ async function rawPlanningRows(): Promise<
 	const client = new pg.Client({ connectionString: url });
 	await client.connect();
 	try {
+		/*
+		 * Роль приложения работает под FORCE RLS, и это соединение своего
+		 * арендатора не называет: без флага обхода SELECT вернул бы НОЛЬ строк
+		 * независимо от содержимого таблицы, то есть проверка «в базе лежит
+		 * именно разметка» превратилась бы в проверку пустоты. Обход накрывает
+		 * РОВНО одно чтение трёх колонок и умирает вместе с соединением; ничего
+		 * не пишется и не удаляется. Тенант-контекст здесь не годится: под ним
+		 * счёт строк не отличил бы «строки нет» от «строку скрыла политика», и
+		 * утверждения `rows.length === 1` и `row.org === ORG_MINE` перестали бы
+		 * ловить чужую строку по тому же пациенту.
+		 */
+		await client.query("select set_config('app.superuser_bypass', 'on', false)");
 		const result = await client.query<{
 			spline_points_json: string;
 			nerve_points_json: string;
@@ -141,28 +155,41 @@ describe("разметка планирования имплантации до�
 		delete process.env.DENTE_DEV_ALLOW_HEADER_ORG;
 		resetAuthSecretCacheForTests();
 
-		for (const patientId of [PATIENT_MINE, PATIENT_FOREIGN]) {
-			await db.delete(patientCtPlannings).where(eq(patientCtPlannings.patientId, patientId));
-		}
-		await db.delete(patients).where(eq(patients.organizationId, ORG_MINE));
-		await db.delete(patients).where(eq(patients.organizationId, ORG_FOREIGN));
-		await db.delete(organizations).where(eq(organizations.id, ORG_MINE));
-		await db.delete(organizations).where(eq(organizations.id, ORG_FOREIGN));
-
-		await db.insert(organizations).values({ id: ORG_MINE, name: "Клиника разметки КЛКТ" });
-		await db.insert(organizations).values({ id: ORG_FOREIGN, name: "Чужая клиника разметки КЛКТ" });
-		await db.insert(patients).values({
-			id: PATIENT_MINE,
-			organizationId: ORG_MINE,
-			fullName: "Имплантов Пётр Сергеевич",
+		/*
+		 * Уборка и сев идут ПО КЛИНИКАМ, каждая под своим тенант-контекстом:
+		 * `app.current_tenant` хранит ровно одного арендатора, а под FORCE RLS
+		 * вставка чужой организации отвергается кодом 42501, тогда как DELETE без
+		 * контекста снимает ноль строк и об этом молчит.
+		 */
+		await withFixtureTenant(ORG_MINE, async () => {
+			await db.delete(patientCtPlannings).where(eq(patientCtPlannings.patientId, PATIENT_MINE));
+			await db.delete(patients).where(eq(patients.organizationId, ORG_MINE));
+			await db.delete(organizations).where(eq(organizations.id, ORG_MINE));
 		});
-		await db.insert(patients).values({
-			id: PATIENT_FOREIGN,
-			organizationId: ORG_FOREIGN,
-			fullName: "Чужов Иван Иванович",
+		await withFixtureTenant(ORG_FOREIGN, async () => {
+			await db.delete(patientCtPlannings).where(eq(patientCtPlannings.patientId, PATIENT_FOREIGN));
+			await db.delete(patients).where(eq(patients.organizationId, ORG_FOREIGN));
+			await db.delete(organizations).where(eq(organizations.id, ORG_FOREIGN));
 		});
 
-		app = Fastify({ logger: false });
+		await withFixtureTenant(ORG_MINE, async () => {
+			await db.insert(organizations).values({ id: ORG_MINE, name: "Клиника разметки КЛКТ" });
+			await db.insert(patients).values({
+				id: PATIENT_MINE,
+				organizationId: ORG_MINE,
+				fullName: "Имплантов Пётр Сергеевич",
+			});
+		});
+		await withFixtureTenant(ORG_FOREIGN, async () => {
+			await db.insert(organizations).values({ id: ORG_FOREIGN, name: "Чужая клиника разметки КЛКТ" });
+			await db.insert(patients).values({
+				id: PATIENT_FOREIGN,
+				organizationId: ORG_FOREIGN,
+				fullName: "Чужов Иван Иванович",
+			});
+		});
+
+		app = createTenantTestApp();
 		await registerImagingPlanningRoutes(app);
 		await app.ready();
 	});
@@ -334,14 +361,16 @@ describe("разметка планирования имплантации до�
 			"разметка чужой клиники по тому же исследованию подменила свою",
 		);
 
-		await db
-			.delete(patientCtPlannings)
-			.where(
-				and(
-					eq(patientCtPlannings.organizationId, ORG_FOREIGN),
-					eq(patientCtPlannings.patientId, PATIENT_FOREIGN),
-				),
-			);
+		await withFixtureTenant(ORG_FOREIGN, async () => {
+			await db
+				.delete(patientCtPlannings)
+				.where(
+					and(
+						eq(patientCtPlannings.organizationId, ORG_FOREIGN),
+						eq(patientCtPlannings.patientId, PATIENT_FOREIGN),
+					),
+				);
+		});
 	});
 
 	test("запрос без токена кабинета отказывает русским текстом с действием", async () => {
