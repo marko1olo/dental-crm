@@ -189,10 +189,13 @@ describe("подписание приёма оставляет след в audit
 		// `organization_id = current_tenant`, поэтому без контекста первая же вставка
 		// отвергается кодом 42501, а под обходом RLS — тоже, кроме `organizations`.
 		await withFixtureTenant(ORGANIZATION_ID, async () => {
-			await db.insert(organizations).values({
-				id: ORGANIZATION_ID,
-				name: "Сторож журнала подписания приёма",
-			});
+			await db
+				.insert(organizations)
+				.values({
+					id: ORGANIZATION_ID,
+					name: "Сторож журнала подписания приёма",
+				})
+				.onConflictDoNothing();
 			await db.insert(users).values({
 				id: DOCTOR_ID,
 				organizationId: ORGANIZATION_ID,

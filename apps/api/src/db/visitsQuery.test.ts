@@ -85,10 +85,13 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 		// только `organization_id = current_tenant`, без дизъюнкта обхода, поэтому
 		// вставка без контекста отвергается кодом 42501.
 		await withFixtureTenant(ORGANIZATION_ID, async () => {
-			await db.insert(organizations).values({
-				id: ORGANIZATION_ID,
-				name: "Сторож ответа acceptVisitDraftInDb",
-			});
+			await db
+				.insert(organizations)
+				.values({
+					id: ORGANIZATION_ID,
+					name: "Сторож ответа acceptVisitDraftInDb",
+				})
+				.onConflictDoNothing();
 			await db.insert(patients).values({
 				id: FILLED_PATIENT_ID,
 				organizationId: ORGANIZATION_ID,

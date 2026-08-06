@@ -179,7 +179,8 @@ describe("сумма счёта не теряется по дороге в ба�
 		await withFixtureTenant(ORGANIZATION_ID, async () => {
 			await db.execute(sql`
 				insert into organizations (id, name)
-				values (${ORGANIZATION_ID}::uuid, ${"Сторож суммы счёта"})`);
+				values (${ORGANIZATION_ID}::uuid, ${"Сторож суммы счёта"})
+				on conflict (id) do nothing`);
 			await db.execute(sql`
 				insert into clinics (id, organization_id, name, timezone)
 				values (${CLINIC_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Кабинет сторожа суммы"}, 'Europe/Moscow')`);

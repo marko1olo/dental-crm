@@ -174,6 +174,7 @@ describe("карточка закрытия приёма: остаток ПО Э
 			clinicNetRub = await withFixtureTenant(ORG_ID, async () => {
 				await db.execute(sql`
 					insert into organizations (id, name) values (${ORG_ID}, ${"Клиника замка остатка по приёму"})
+					on conflict (id) do nothing
 				`);
 				await db.execute(sql`
 					insert into patients (id, organization_id, full_name, status)

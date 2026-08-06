@@ -257,7 +257,8 @@ describe("выданное заявление на возврат снимает
 		await withFixtureTenant(ORGANIZATION_ID, async () => {
 			await db.execute(sql`
 				insert into organizations (id, name)
-				values (${ORGANIZATION_ID}::uuid, ${"Сторож шва возврат → касса"})`);
+				values (${ORGANIZATION_ID}::uuid, ${"Сторож шва возврат → касса"})
+				on conflict (id) do nothing`);
 			await db.execute(sql`
 				insert into clinics (id, organization_id, name, timezone)
 				values (${CLINIC_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Кабинет сторожа возврата"}, 'Europe/Moscow')`);
