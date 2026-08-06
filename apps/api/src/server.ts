@@ -26,6 +26,7 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerBillingRoutes } from "./routes/billing.js";
 import { registerClinicalRoutes } from "./routes/clinical.js";
 import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
+import { registerChatRoutes } from "./routes/chat.js";
 import { registerCommunicationRoutes } from "./routes/communications.js";
 import { registerCommunicationOutboxRoutes } from "./routes/communicationsOutbox.js";
 import { registerDashboardRoutes } from "./routes/dashboard.js";
@@ -61,6 +62,7 @@ import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmen
 import { registerPublicBookingRoutes } from "./routes/publicBooking.js";
 import { registerReportRoutes } from "./routes/reports.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
+import { registerYandexCalendarRoutes } from "./routes/yandexCalendar.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
@@ -575,6 +577,7 @@ export async function createDenteApiApp(
 	await registerAiRoutes(app);
 	await registerBillingRoutes(app);
 	await registerClinicalRoutes(app);
+	await registerChatRoutes(app);
 	await registerCommunicationRoutes(app);
 	await registerDashboardRoutes(app);
 	await registerDocumentRoutes(app);
@@ -628,8 +631,9 @@ export async function createDenteApiApp(
 	await registerScheduleRoutes(app);
 	await registerSettingsRoutes(app);
 	await registerSpeechRoutes(app);
-	await registerSmartImportRoutes(app);
-	await registerSystemRoutes(app);
+	void registerSmartImportRoutes(app);
+	void registerYandexCalendarRoutes(app);
+	void registerSystemRoutes(app);
 	// Живые обновления. Раньше плагин не регистрировался вовсе, поэтому
 	// /api/ws/schedule отвечал 404, а все wsBroker.broadcast* были пустышками.
 	await registerWebsocketRoutes(app);
@@ -769,15 +773,21 @@ export async function startDenteApiServer() {
 			app.log.info(
 				`[Shutdown] Received ${signal}, closing HTTP server and draining database pool...`,
 			);
+			const forceKillTimeout = setTimeout(() => {
+				app.log.error(`[Shutdown] Force killing process after 10s timeout. Pending connections or workers hung.`);
+				process.exit(1);
+			}, 10000);
 			try {
 				stopBackupDaemon();
 				await app.close();
 				const { pool } = await import("./db/client.js");
 				if (pool) await pool.end();
 				app.log.info("[Shutdown] Dente API server closed cleanly.");
+				clearTimeout(forceKillTimeout);
 				process.exit(0);
 			} catch (err) {
 				app.log.error(err, "[Shutdown] Error during server shutdown:");
+				clearTimeout(forceKillTimeout);
 				process.exit(1);
 			}
 		};

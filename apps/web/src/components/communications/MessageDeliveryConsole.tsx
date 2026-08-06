@@ -248,6 +248,7 @@ export function MessageDeliveryConsole() {
 	const [variableCatalog, setVariableCatalog] = useState<TemplateVariable[]>(
 		[],
 	);
+	const [uisQuota, setUisQuota] = useState<{ remaining: number, smsQuotaLimit: number } | null>(null);
 
 	/*
 	 * Разовая постановка в очередь (POST /api/communications/outbox).
@@ -282,12 +283,14 @@ export function MessageDeliveryConsole() {
 				outboxResponse,
 				settingsResponse,
 				variablesResponse,
+				quotaResponse,
 			] = await Promise.all([
 				commQueries.getGatewayStatus(),
 				commQueries.getTemplates(),
 				commQueries.getOutbox(query),
 				commQueries.getSettings(),
 				commQueries.getVariables(),
+				commQueries.getChatQuota(),
 			]);
 
 			const gatewayData = await readJson<GatewayStatus>(gatewayResponse);
@@ -303,6 +306,9 @@ export function MessageDeliveryConsole() {
 			);
 			const variablesData = await readJson<{ variables: TemplateVariable[] }>(
 				variablesResponse,
+			);
+			const quotaData = await readJson<{ remaining: number, smsQuotaLimit: number }>(
+				quotaResponse,
 			);
 
 			setGateways(gatewayData);
@@ -321,6 +327,7 @@ export function MessageDeliveryConsole() {
 						)
 					: [],
 			);
+			setUisQuota(quotaData);
 		} catch (error) {
 			// Пустой экран без объяснения — это то, от чего здесь уходим.
 			setLoadError(error instanceof Error ? error.message : String(error));
@@ -790,6 +797,11 @@ export function MessageDeliveryConsole() {
 								: gateways.channels.sms.balanceError
 									? `Остаток не получен: ${gateways.channels.sms.balanceError}`
 									: ""}
+							{uisQuota && (
+								<span className={uisQuota.remaining <= 0 ? "text-[var(--bad-fg,#b42318)] font-bold ml-2" : "ml-2"}>
+									Лимит UIS SMS: {uisQuota.smsQuotaLimit - uisQuota.remaining}/{uisQuota.smsQuotaLimit}
+								</span>
+							)}
 						</p>
 					) : null}
 				</>
@@ -1044,10 +1056,11 @@ export function MessageDeliveryConsole() {
 						<textarea
 							id="enqueue-body"
 							data-testid="outbox-enqueue-body"
-							rows={3}
 							value={enqueueBody}
 							onChange={(event) => setEnqueueBody(event.target.value)}
-							placeholder="Здравствуйте! Напоминаем о визите завтра в 10:00."
+							placeholder="Текст сообщения..."
+							rows={4}
+							disabled={enqueueChannel === "sms" && uisQuota !== null && uisQuota.remaining <= 0}
 						/>
 					</span>
 				)}
