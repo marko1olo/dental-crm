@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import type { MessageTemplateCatalog, CreateMessageTemplateCatalogInput } from "@dental/shared";
 import "./MessageTemplatesPanel.css"; // Optional if we want custom css
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 const DYNAMIC_TAGS = [
 	{ tag: "{{patient_name}}", label: "Имя пациента" },
@@ -12,6 +13,9 @@ const DYNAMIC_TAGS = [
 ];
 
 export function MessageTemplatesPanel() {
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
+
 	const [templates, setTemplates] = useState<MessageTemplateCatalog[]>([]);
 	const [isCreating, setIsCreating] = useState(false);
 	const [draftTitle, setDraftTitle] = useState("");
@@ -20,7 +24,8 @@ export function MessageTemplatesPanel() {
 
 	const loadTemplates = async () => {
 		try {
-			const res = await fetch("/api/settings/message-templates");
+			const headers = auth ? auth.denteClinicalReadHeaders() : {};
+			const res = await fetch("/api/settings/message-templates", { headers });
 			if (res.ok) {
 				const data = await res.json();
 				setTemplates(data);
@@ -45,9 +50,13 @@ export function MessageTemplatesPanel() {
 			isActive: true,
 		};
 		
+		const headers = auth
+			? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+			: { "Content-Type": "application/json" };
+		
 		await fetch("/api/settings/message-templates", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers,
 			body: JSON.stringify(payload),
 		});
 		
@@ -58,8 +67,10 @@ export function MessageTemplatesPanel() {
 	};
 
 	const handleDelete = async (id: string) => {
+		const headers = auth ? auth.denteClinicalMutationHeaders() : {};
 		await fetch(`/api/settings/message-templates/${id}`, {
 			method: "DELETE",
+			headers,
 		});
 		loadTemplates();
 	};

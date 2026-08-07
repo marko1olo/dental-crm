@@ -1,3 +1,4 @@
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import {
 	Bot,
 	ClipboardList,
@@ -150,6 +151,8 @@ function imagingStudyHasFile(study: any): boolean {
 type ImagingViewProps = Record<string, any>;
 
 export function ImagingView(props: ImagingViewProps) {
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
 	const {
 		activeAppointment,
 		activeImagingStudies,
@@ -372,8 +375,14 @@ export function ImagingView(props: ImagingViewProps) {
 		const studyId = selectedImagingStudy.id;
 		setIsAnalyzingAI(true);
 		try {
+			const headers = auth
+				? auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					})
+				: { "Content-Type": "application/json" };
 			const res = await fetch(`/api/imaging/studies/${studyId}/analyze`, {
 				method: "POST",
+				headers,
 			});
 			/*
 			 * Тело читается строкой и разбирается после проверки ответа.

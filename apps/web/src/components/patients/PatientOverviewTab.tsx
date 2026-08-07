@@ -11,6 +11,7 @@ import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQ
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
+import { LabOrdersPanel } from "../LabOrdersPanel";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
 import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
 import { PatientDuplicateAlert } from "./PatientDuplicateAlert";
@@ -185,6 +186,10 @@ export function PatientOverviewTab() {
 
 					{selectedPatientId && workspaceFlags.hasOrthodontics && (
 						<OrthodonticProgressWidget patientId={selectedPatientId} />
+					)}
+
+					{selectedPatientId && (
+						<LabOrdersPanel patientId={selectedPatientId} />
 					)}
 
 					{selectedPatientId && workspaceFlags.hasReclamations && (

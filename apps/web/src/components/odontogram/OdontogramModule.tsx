@@ -296,6 +296,45 @@ export const OdontogramModule = ({
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
 	const [activeSurfaces, setActiveSurfaces] = useState<string[]>([]);
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+	const [diagnocatLoading, setDiagnocatLoading] = useState(false);
+
+	const loadDiagnocatReport = async () => {
+		setDiagnocatLoading(true);
+		try {
+			const res = await fetch(`/api/integrations/diagnocat/reports/${patientId}`, {
+				headers: denteAdminSecretRequestHeaders(),
+			});
+			if (res.ok) {
+				const data = await res.json();
+				if (data.reports && data.reports.length > 0) {
+					const latest = data.reports[data.reports.length - 1];
+					showToast(`Найден отчёт Diagnocat от ${new Date(latest.createdAt).toLocaleDateString()}. Применяем автоформулу...`, "success", 5000);
+					if (latest.odontogramData && Array.isArray(latest.odontogramData.states)) {
+						// Merge states
+						const incoming = latest.odontogramData.states;
+						setTeethData((prev) => {
+							const merged = [...prev];
+							for (const tooth of incoming) {
+								const idx = merged.findIndex(
+									(x) => x.toothNumber === tooth.toothNumber,
+								);
+								if (idx > -1) merged[idx] = tooth;
+								else merged.push(tooth);
+							}
+							return merged;
+						});
+					}
+				} else {
+					showToast("Отчёты Diagnocat не найдены.", "info", 5000);
+				}
+			}
+		} catch (err) {
+			console.error(err);
+			showToast("Ошибка загрузки отчётов Diagnocat.", "error", 5000);
+		} finally {
+			setDiagnocatLoading(false);
+		}
+	};
 
 	const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -801,6 +840,15 @@ export const OdontogramModule = ({
 						/>
 						<span className="text-sm font-medium">Групповой выбор (Shift)</span>
 					</label>
+					
+					<button
+						onClick={loadDiagnocatReport}
+						disabled={diagnocatLoading}
+						className="ml-auto flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-md transition-colors"
+					>
+						<Stethoscope className="w-4 h-4" />
+						{diagnocatLoading ? "Загрузка..." : "Diagnocat Анализ"}
+					</button>
 				</div>
 				{/* Состояние формулы проговаривается словами. Пустая формула
 				    выглядит как «все зубы здоровы», а это утверждение о пациенте,

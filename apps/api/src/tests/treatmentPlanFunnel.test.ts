@@ -11,6 +11,7 @@ import {
 import { runBiAnalyticsAggregation } from "../scripts/cronAnalyticsWorker.js";
 import {
 	buildPlanFunnel,
+	computeBiAnalyticsSnapshots,
 	computeCohortLtvAll,
 	computePlanFunnelAll,
 } from "../services/biAnalyticsWorker.js";
@@ -400,6 +401,25 @@ describe("воронка планов лечения совпадает с пе�
 			planFunnel.filter((stage) => stage.value !== 0),
 			[],
 			`снимок клиники без планов содержит ненулевые ветви: ${JSON.stringify(planFunnel)}`,
+		);
+	});
+
+	test("computeBiAnalyticsSnapshots записывает не пустой массив [], а реальные данные воронки планов", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		await computeBiAnalyticsSnapshots();
+		const { planFunnel } = await readSnapshot(ORG_ID);
+
+		assert.ok(
+			planFunnel.length > 0,
+			"plan_funnel_json равен []: computeBiAnalyticsSnapshots вызывал computePlanFunnelAll без orgId",
+		);
+
+		const total = planFunnel.reduce((sum, stage) => sum + stage.value, 0);
+		assert.equal(
+			total,
+			SEEDED_TOTAL,
+			`В базе ${SEEDED_TOTAL} планов, а computeBiAnalyticsSnapshots насчитал ${total}: ${JSON.stringify(planFunnel)}`,
 		);
 	});
 });

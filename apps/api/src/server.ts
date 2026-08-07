@@ -24,6 +24,7 @@ import { registerAnalyticsRoutes } from "./routes/analytics.js";
 import { registerAuditRoutes } from "./routes/audit.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerBillingRoutes } from "./routes/billing.js";
+import { registerSberbankRoutes } from "./routes/sberbank.js";
 import { registerClinicalRoutes } from "./routes/clinical.js";
 import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
 import { registerChatRoutes } from "./routes/chat.js";
@@ -84,6 +85,8 @@ import { registerWebsocketRoutes } from "./routes/websocket.js";
 import { registerWhatsappRoutes } from "./routes/whatsapp.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { registerXrayRoutes } from "./routes/xray.js";
+import { registerFlexbeRoutes } from "./routes/integrations/flexbe.js";
+import { registerDiagnocatRoutes } from "./routes/integrations/diagnocat.js";
 import { authTokenSecret } from "./security/authSecret.js";
 import { getRequestIdentity } from "./security/identity.js";
 import {
@@ -217,9 +220,9 @@ function assertSecurityConfiguration(): void {
 			? "демо-фикстуры ЕГИСЗ"
 			: null,
 	].filter(Boolean);
-	console.warn(
+	process.stderr.write(
 		`[security] Режим разработки. Активные послабления: ${активные.join(", ")}. ` +
-			"В production все они выключены автоматически.",
+			"В production все они выключены автоматически.\n",
 	);
 }
 
@@ -257,7 +260,7 @@ async function checkProxyPortDirectly(
 export async function setupProxyAndTunnels() {
 	// 1. Проверяем наличие SSH-ключа. Если есть, пробуем поднять туннель на порту 1080
 	const hasTunnel = await ensureSshTunnel().catch((err) => {
-		console.warn("[Proxy Boot] SSH SOCKS5 tunnel autostart failed:", err);
+		process.stderr.write(`[Proxy Boot] SSH SOCKS5 tunnel autostart failed: ${err}\n`);
 		return false;
 	});
 
@@ -274,8 +277,8 @@ export async function setupProxyAndTunnels() {
 		if (proxyUrl) {
 			const isOnline = await checkProxyPortDirectly(proxyUrl);
 			if (!isOnline) {
-				console.warn(
-					`[Proxy Boot] Configured proxy ${proxyUrl} is offline. Disabling proxy env variables to force clean direct connections.`,
+				process.stderr.write(
+					`[Proxy Boot] Configured proxy ${proxyUrl} is offline. Disabling proxy env variables to force clean direct connections.\n`,
 				);
 				delete process.env.HTTPS_PROXY;
 				delete process.env.HTTP_PROXY;
@@ -576,6 +579,7 @@ export async function createDenteApiApp(
 
 	await registerAiRoutes(app);
 	await registerBillingRoutes(app);
+	await registerSberbankRoutes(app);
 	await registerClinicalRoutes(app);
 	await registerChatRoutes(app);
 	await registerCommunicationRoutes(app);
@@ -642,10 +646,12 @@ export async function createDenteApiApp(
 	await registerVisitRoutes(app);
 	await registerDicomwebRoutes(app);
 	await registerXrayRoutes(app);
+	await registerDiagnocatRoutes(app);
 	await registerAuthRoutes(app);
 	await registerAnalyticsRoutes(app);
 	await registerAuditRoutes(app);
 	await workspaceProfileRoutes(app);
+	await registerFlexbeRoutes(app);
 
 	// Вторая партия ранее незарегистрированных модулей.
 	//
@@ -760,9 +766,19 @@ export async function createDenteApiApp(
 
 export async function startDenteApiServer() {
 	await setupProxyAndTunnels().catch((err) => {
-		console.error("[Proxy Boot] Failed to run proxy/tunnel diagnostics:", err);
+		process.stderr.write(`[Proxy Boot] Failed to run proxy/tunnel diagnostics: ${err}\n`);
 	});
 	const app = await createDenteApiApp();
+
+	process.on("uncaughtException", (err) => {
+		app.log.fatal(err, "Uncaught Exception detected. Shutting down...");
+		process.exit(1);
+	});
+	process.on("unhandledRejection", (reason, promise) => {
+		app.log.fatal({ reason, promise }, "Unhandled Rejection detected. Shutting down...");
+		process.exit(1);
+	});
+
 	const host = process.env.API_HOST ?? "127.0.0.1";
 	const port = Number(process.env.API_PORT ?? 4100);
 

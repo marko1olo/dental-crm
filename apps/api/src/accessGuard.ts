@@ -217,7 +217,76 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 		});
 		return null;
 	}
+
+	if (identity.sessionId) {
+		const { db } = await import("./db/client.js");
+		const { users } = await import("./db/schema.js");
+		const { eq, and } = await import("drizzle-orm");
+		const [user] = await db
+			.select({ currentSessionId: users.currentSessionId })
+			.from(users)
+			.where(
+				and(
+					eq(users.id, identity.userId!),
+					eq(users.organizationId, identity.organizationId!),
+				),
+			)
+			.limit(1);
+
+		if (user && user.currentSessionId && user.currentSessionId !== identity.sessionId) {
+			reply.code(401).send({
+				error: "invalid_session",
+				message: "Выполнен вход с другого устройства. Текущая сессия завершена.",
+			});
+			return null;
+		}
+	}
+
 	return identity.organizationId;
+}
+
+/**
+ * Требует авторизованного сотрудника и возвращает его userId.
+ */
+export async function requireResolvedStaffUserId(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	_protectedArea?: string,
+): Promise<string | null> {
+	const identity = getRequestIdentity(request);
+	if (!identity.userId) {
+		reply.code(401).send({
+			error: "StaffAuthRequired",
+			message: "Требуется вход сотрудника.",
+		});
+		return null;
+	}
+
+	if (identity.sessionId) {
+		const { db } = await import("./db/client.js");
+		const { users } = await import("./db/schema.js");
+		const { eq, and } = await import("drizzle-orm");
+		const [user] = await db
+			.select({ currentSessionId: users.currentSessionId })
+			.from(users)
+			.where(
+				and(
+					eq(users.id, identity.userId!),
+					eq(users.organizationId, identity.organizationId!),
+				),
+			)
+			.limit(1);
+
+		if (user && user.currentSessionId && user.currentSessionId !== identity.sessionId) {
+			reply.code(401).send({
+				error: "invalid_session",
+				message: "Выполнен вход с другого устройства. Текущая сессия завершена.",
+			});
+			return null;
+		}
+	}
+
+	return identity.userId;
 }
 
 /**

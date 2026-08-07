@@ -43,6 +43,8 @@ export interface StaffProfile {
 	role: string;
 	email?: string | null;
 	organizationId?: string;
+	yandexCalendarId?: string | null;
+	yandexCalendarToken?: unknown | null;
 }
 
 /** Как называется содержимое вкладки для трёх состояний панели. */
@@ -129,6 +131,8 @@ export function parseProfilePayload(
 			role: textOrNull(user.role) ?? "",
 			email: textOrNull(user.email),
 			...(organizationId ? { organizationId } : {}),
+			yandexCalendarId: textOrNull(user.yandexCalendarId),
+			yandexCalendarToken: user.yandexCalendarToken ?? null,
 		},
 	};
 }

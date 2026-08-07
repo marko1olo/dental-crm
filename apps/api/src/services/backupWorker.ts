@@ -272,13 +272,18 @@ function resolvePgDump():
 			error: `PG_DUMP_PATH указывает на несуществующий файл (${configured}). Раньше это значение молча игнорировалось и подставлялся другой бинарь.`,
 		};
 	}
-	const portable = path.resolve(
+	const toolsPortable = path.resolve(
+		process.cwd(),
+		"../../.tools/pgsql/bin/pg_dump.exe",
+	);
+	const oldPortable = path.resolve(
 		process.cwd(),
 		"../../.postgres/bin/pg_dump.exe",
 	);
 	const candidates = [
 		configured,
-		fs.existsSync(portable) ? portable : null,
+		fs.existsSync(toolsPortable) ? toolsPortable : null,
+		fs.existsSync(oldPortable) ? oldPortable : null,
 		"pg_dump",
 	].filter((value): value is string => Boolean(value));
 
@@ -289,24 +294,46 @@ function resolvePgDump():
 			rejected.push(`${candidate}: не запускается`);
 			continue;
 		}
+		if (major < 18) {
+			rejected.push(`${candidate}: версия ${major}, ожидается 18.x`);
+			continue;
+		}
 		return { binary: candidate, major };
 	}
 	return {
-		error: `Не найден работоспособный pg_dump. Проверено: ${rejected.join("; ")}. Укажите путь в PG_DUMP_PATH.`,
+		error: `Не найден работоспособный pg_dump версии 18+. Проверено: ${rejected.join("; ")}. Укажите путь в PG_DUMP_PATH.`,
 	};
 }
 
 /**
- * Возвращает путь к бинарю pg_dump, пригодному для работы с текущим сервером.
- * Бросает Error, если работоспособный бинарь не найден — ошибка перехватывается
- * в createEncryptedBackup и превращается в BackupResult { success: false }.
+ * Мажорная версия СЕРВЕРА. Нужна, чтобы отказать до запуска дампа: pg_dump
+ * старше сервера не работает в принципе.
+ *
+ * Спрашиваем тем же пулом, что и остальные воркеры (db/client.js), новых
+ * зависимостей не добавляем. Недоступность сервера — не повод бросать:
+ * возвращаем null, и тогда проверка версии просто не применяется, а дальше
+ * отработают штатные проверки содержимого дампа.
  */
-function pgDumpExecutable(): string {
-	const result = resolvePgDump();
-	if ("error" in result) {
-		throw new Error(result.error);
+async function serverMajorVersion(): Promise<number | null> {
+	try {
+		// Берём pool напрямую, а не обёртку db: версия сервера не связана с
+		// тенантом, и прогонять её через RLS-контекст незачем.
+		const { pool } = await import("../db/client.js");
+		const result = await pool.query<{ v: string }>(
+			"SELECT current_setting('server_version_num') AS v",
+		);
+		const numeric = Number(result.rows[0]?.v);
+		// server_version_num — это 180004 для 18.4: major = целые десятки тысяч.
+		return Number.isFinite(numeric) && numeric > 0
+			? Math.floor(numeric / 10000)
+			: null;
+	} catch (error) {
+		console.warn(
+			"[BackupWorker] Не удалось узнать версию сервера, проверка версии pg_dump пропущена:",
+			error instanceof Error ? error.message : String(error),
+		);
+		return null;
 	}
-	return result.binary;
 }
 
 /**
@@ -393,7 +420,30 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 		// IV пишется в начало файла — он нужен для расшифровки.
 		writeStream.write(iv);
 
-		const pgDump = spawn(pgDumpExecutable(), pgDumpArguments(), {
+		const dumpTool = resolvePgDump();
+		if ("error" in dumpTool) {
+			removePartialFile(filePath);
+			console.error(`[BackupWorker] Копия НЕ создана: ${dumpTool.error}`);
+			return { success: false, error: dumpTool.error };
+		}
+
+		// Проверка версии стоит ДО spawn. pg_dump старше сервера отказывается
+		// работать сам, но делает это, отдав ноль байт в уже созданный файл
+		// копии: отказ выглядел как сбой копирования, а не как неверный бинарь.
+		// Измерено 2026-08-07: pg_dump 14.13 против сервера 18.4 —
+		// "aborting because of server version mismatch", код 1, ноль байт.
+		const serverMajor = await serverMajorVersion();
+		if (serverMajor !== null && dumpTool.major < serverMajor) {
+			removePartialFile(filePath);
+			const error =
+				`pg_dump версии ${dumpTool.major} старше сервера ${serverMajor} (${dumpTool.binary}). ` +
+				`pg_dump отказывается выгружать сервер новее себя, поэтому копии не создаются вообще. ` +
+				`Укажите в PG_DUMP_PATH путь к pg_dump версии ${serverMajor} или новее.`;
+			console.error(`[BackupWorker] ${error}`);
+			return { success: false, error };
+		}
+
+		const pgDump = spawn(dumpTool.binary, pgDumpArguments(), {
 			env: { ...process.env },
 		});
 

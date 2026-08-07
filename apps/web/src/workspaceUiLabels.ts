@@ -260,10 +260,7 @@ export const communicationChannelLabels: Record<
 	max: "MAX",
 };
 
-export const communicationIntentLabels: Record<
-	Dashboard["communicationTasks"][number]["intent"],
-	string
-> = {
+export const communicationIntentLabels: Record<string, string> = {
 	appointment_confirmation: "Подтверждение",
 	payment_reminder: "Оплата",
 	post_visit_instruction: "Инструкция",
@@ -271,6 +268,8 @@ export const communicationIntentLabels: Record<
 	document_ready: "Документы",
 	imaging_review: "Снимок",
 	general: "Связь",
+	lead_capture: "Лид с лендинга",
+	callback_requested: "Запрос обратного звонка",
 	// Ответ на «СТОП» или «СТАРТ» от пациента. В журнале должно быть видно, что
 	// это ответ на его обращение, а не наша рассылка.
 	transactional_reply: "Ответ пациенту",

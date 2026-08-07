@@ -46,6 +46,7 @@ export interface RequestIdentity {
 	userId: string | null;
 	role: StaffRole | null;
 	fullName: string | null;
+	sessionId: string | null;
 	/** true, если организация получена из проверенного токена, а не из dev-заголовка. */
 	verified: boolean;
 }
@@ -55,6 +56,7 @@ const EMPTY_IDENTITY: RequestIdentity = {
 	userId: null,
 	role: null,
 	fullName: null,
+	sessionId: null,
 	verified: false,
 };
 
@@ -237,6 +239,10 @@ export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
 				typeof staffPayload.fullName === "string"
 					? staffPayload.fullName
 					: null;
+			identity.sessionId =
+				typeof staffPayload.sessionId === "string"
+					? staffPayload.sessionId
+					: null;
 		}
 	}
 
@@ -325,11 +331,11 @@ export function requireOrganizationId(
  * Требует авторизованного сотрудника (не только токен кабинета).
  * Возвращает null и отправляет 401/403 при неудаче.
  */
-export function requireStaffIdentity(
+export async function requireStaffIdentity(
 	request: FastifyRequest,
 	reply: FastifyReply,
 	allowedRoles?: readonly StaffRole[],
-): RequestIdentity | null {
+): Promise<RequestIdentity | null> {
 	const identity = getRequestIdentity(request);
 	if (!identity.organizationId || !identity.userId) {
 		reply.code(401).send({
@@ -344,6 +350,29 @@ export function requireStaffIdentity(
 			reply.code(403).send({
 				error: "Forbidden",
 				message: "Недостаточно прав для этой операции.",
+			});
+			return null;
+		}
+	}
+	if (identity.sessionId) {
+		const { db } = await import("../db/client.js");
+		const { users } = await import("../db/schema.js");
+		const { eq, and } = await import("drizzle-orm");
+		const [user] = await db
+			.select({ currentSessionId: users.currentSessionId })
+			.from(users)
+			.where(
+				and(
+					eq(users.id, identity.userId!),
+					eq(users.organizationId, identity.organizationId!),
+				),
+			)
+			.limit(1);
+
+		if (user && user.currentSessionId && user.currentSessionId !== identity.sessionId) {
+			reply.code(401).send({
+				error: "invalid_session",
+				message: "Выполнен вход с другого устройства. Текущая сессия завершена.",
 			});
 			return null;
 		}

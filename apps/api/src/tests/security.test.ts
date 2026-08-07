@@ -245,8 +245,8 @@ test("изоляция: requireOrganizationId отвечает 401 без ток
 	);
 });
 
-test("роли: врач не проходит проверку административной роли", () => {
-	withEnv({ NODE_ENV: "development", AUTH_TOKEN_SECRET: TEST_SECRET }, () => {
+test("роли: врач не проходит проверку административной роли", async () => {
+	withEnv({ NODE_ENV: "development", AUTH_TOKEN_SECRET: TEST_SECRET }, async () => {
 		resetAuthSecretCacheForTests();
 		const clinic = signToken({ organizationId: ORG_A }, TEST_SECRET, 3600);
 		const doctor = signToken(
@@ -255,7 +255,7 @@ test("роли: врач не проходит проверку админист
 			3600,
 		);
 		const reply = fakeReply();
-		const result = requireStaffIdentity(
+		const result = await requireStaffIdentity(
 			fakeRequest({
 				"x-dente-clinic-token": clinic,
 				"x-dente-staff-token": doctor,

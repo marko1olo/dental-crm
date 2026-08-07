@@ -477,7 +477,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * не только идентификатор клиники, но и подписанный вход сотрудника.
 	 */
 	app.get("/api/hr/recent-patients", async (request, reply) => {
-		const identity = requireStaffIdentity(request, reply);
+		const identity = await requireStaffIdentity(request, reply);
 		if (!identity) return;
 		const { getRecentPatientHistoryFromDb } = await import(
 			"../db/recentPatientHistoryQuery.js"
@@ -501,7 +501,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * записи о карточках, которых нет.
 	 */
 	app.post("/api/hr/recent-patients", async (request, reply) => {
-		const identity = requireStaffIdentity(request, reply);
+		const identity = await requireStaffIdentity(request, reply);
 		if (!identity) return;
 		const parsedBody = recentPatientViewBodySchema.safeParse(
 			request.body ?? {},

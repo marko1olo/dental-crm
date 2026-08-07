@@ -376,6 +376,7 @@ export function FinanceView({
 					taxpayerInn:
 						documentPatient?.administrativeProfile?.taxpayerInn ?? null,
 				}}
+				patientId={documentPatient?.id ?? null}
 				payerBirthDate={paymentPayerBirthDate}
 				payerFullName={paymentPayerFullName}
 				payerIdentityDocument={paymentPayerIdentityDocument}

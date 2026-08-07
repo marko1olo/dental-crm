@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { withTenantCtx } from "../db/rls.js";
+import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	appointments,
 	biAnalyticsSnapshots,
@@ -492,7 +492,9 @@ async function computeDoctorProfitabilityAll() {
 
 export async function computeBiAnalyticsSnapshots() {
 	try {
-		const orgs = await db.select().from(organizations);
+		const orgs = await withSuperuserBypass((tx) =>
+			tx.select().from(organizations),
+		);
 		if (!orgs.length) return;
 
 		const snapshotDate = new Date();
@@ -508,7 +510,7 @@ export async function computeBiAnalyticsSnapshots() {
 						doctorProfitabilityMap,
 					] = await Promise.all([
 						computeCohortLtvAll([orgId]),
-						computePlanFunnelAll(),
+						computePlanFunnelAll([orgId]),
 						computeChairUtilizationAll(),
 						computeDoctorProfitabilityAll(),
 					]);

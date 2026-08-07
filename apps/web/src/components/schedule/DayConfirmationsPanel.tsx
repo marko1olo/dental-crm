@@ -21,6 +21,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 type ReminderState =
 	| "not_queued"
@@ -164,6 +165,11 @@ async function readJson<T>(response: Response): Promise<T> {
 }
 
 export function DayConfirmationsPanel() {
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
+	const authRef = useRef(auth);
+	authRef.current = auth;
+
 	// Пусто — день ещё не выбирали, его назовёт сервер в поясе клиники.
 	const [requestedDate, setRequestedDate] = useState("");
 	const [data, setData] = useState<DayConfirmations | null>(null);
@@ -177,7 +183,13 @@ export function DayConfirmationsPanel() {
 		setLoading(true);
 		setError(null);
 		try {
-			const response = await fetch(dayConfirmationsRequestPath(requestedDate));
+			const headers = authRef.current
+				? authRef.current.denteClinicalReadHeaders()
+				: {};
+			const response = await fetch(
+				dayConfirmationsRequestPath(requestedDate),
+				{ headers },
+			);
 			setData(await readJson<DayConfirmations>(response));
 			// Отметки «обзвонил» относятся к загруженному дню и при смене даты
 			// сбрасываются: иначе они переносятся на другой список.

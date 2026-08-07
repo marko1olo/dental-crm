@@ -679,12 +679,20 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
 			resetRateLimit(request);
 
+			const sessionId = crypto.randomUUID();
+			await withTenantCtx(orgId, async (tx) => {
+				await tx.update(users)
+					.set({ currentSessionId: sessionId })
+					.where(and(eq(users.id, user.id), eq(users.organizationId, orgId)));
+			});
+
 			const staffToken = signToken(
 				{
 					userId: user.id,
 					fullName: user.fullName,
 					role: user.role,
 					organizationId: orgId,
+					sessionId,
 				},
 				TOKEN_SECRET(),
 				60 * 60 * 8, // 8h staff session
@@ -1711,6 +1719,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					email: users.email,
 					organizationId: users.organizationId,
 					isActive: users.isActive,
+					yandexCalendarId: users.yandexCalendarId,
+					yandexCalendarToken: users.yandexCalendarToken,
 				})
 				.from(users)
 				.where(
