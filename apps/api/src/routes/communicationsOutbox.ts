@@ -227,7 +227,8 @@ function parseVariables(raw: string): string[] {
 		return Array.isArray(parsed)
 			? parsed.filter((value): value is string => typeof value === "string")
 			: [];
-	} catch {
+	} catch (err) {
+		console.error('[Dente] parseVariables failed:', err);
 		return [];
 	}
 }

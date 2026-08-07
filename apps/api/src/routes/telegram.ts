@@ -245,7 +245,8 @@ function parseTelegramRouteBody<T>(
 ): TelegramRouteBodyParseResult<T> {
 	try {
 		return { ok: true, value: schema.parse(body) };
-	} catch {
+	} catch (err) {
+		console.error('[Dente] parseTelegramRouteBody failed:', err);
 		return {
 			ok: false,
 			message:
@@ -1649,7 +1650,8 @@ function clinicBotEnvConfigs(): TelegramClinicBotEnvConfig[] {
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(raw);
-	} catch {
+	} catch (err) {
+		console.error('[Dente] clinicBotEnvConfigs JSON parse failed:', err);
 		return [];
 	}
 
@@ -2323,7 +2325,8 @@ function portalButton(
 		portal.searchParams.set("dente_section", section);
 		portal.hash = "";
 		return [{ text: "Открыть DENTE", url: portal.toString() }];
-	} catch {
+	} catch (err) {
+		console.error('[Dente] patientPortalButtons failed to construct URL:', err);
 		return [];
 	}
 }
@@ -2337,7 +2340,8 @@ function safeHttpsTelegramButton(
 	try {
 		const url = new URL(value);
 		return url.protocol === "https:" ? [{ text, url: url.toString() }] : [];
-	} catch {
+	} catch (err) {
+		console.error('[Dente] safeHttpsTelegramButton failed to construct URL:', err);
 		return [];
 	}
 }

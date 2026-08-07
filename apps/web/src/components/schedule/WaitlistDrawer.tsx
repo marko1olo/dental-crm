@@ -42,7 +42,14 @@ async function writeFailureText(
 	response: Response,
 	action: string,
 ): Promise<string> {
-	const body = await response.json().catch(() => null);
+	const body = await response.json().catch((err: any) => {
+		console.error(err);
+		showToast(
+			actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
+			"error"
+		);
+		return null;
+	});
 	const serverMessage =
 		body && typeof body.message === "string" ? body.message.trim() : "";
 	// Сообщение сервера уже написано по-русски и точнее любого домысла на клиенте.
