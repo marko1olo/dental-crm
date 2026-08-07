@@ -14,7 +14,7 @@ import {
 	Search,
 	ShieldCheck,
 } from "lucide-react";
-import type { ChangeEvent, } from "react";
+import type { ChangeEvent } from "react";
 import { useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";

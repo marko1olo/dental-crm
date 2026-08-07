@@ -248,7 +248,11 @@ export function CampaignPanel() {
 		// `auth` в зависимостях: секрет живёт в сеансе и появляется после разблокировки
 		// раздела. Без него панель навсегда осталась бы с заголовками того первого
 		// отрисовывания, когда секрета ещё не было, — то есть с 403 до перезагрузки страницы.
-	}, [commQueries.getCampaigns, commQueries.getCampaignsVariables, commQueries.getCampaignsTemplates]);
+	}, [
+		commQueries.getCampaigns,
+		commQueries.getCampaignsVariables,
+		commQueries.getCampaignsTemplates,
+	]);
 
 	useEffect(() => {
 		void load();

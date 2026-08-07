@@ -333,7 +333,14 @@ export function usePatientLogic({
 		setPatientCoreDraft(patientCoreDraftFromPatient(selectedPatient));
 		setPatientCoreSaveState("idle");
 		setPatientCoreDirty(false);
-	}, [selectedPatient?.id, selectedPatient?.updatedAt, setPatientCoreSaveState, setPatientCoreDirty, setPatientCoreDraft, selectedPatient]);
+	}, [
+		selectedPatient?.id,
+		selectedPatient?.updatedAt,
+		setPatientCoreSaveState,
+		setPatientCoreDirty,
+		setPatientCoreDraft,
+		selectedPatient,
+	]);
 
 	useEffect(() => {
 		// То же самое для реквизитов: их сохранение тоже двигает updatedAt.
@@ -349,7 +356,14 @@ export function usePatientLogic({
 		);
 		setPatientAdministrativeProfileSaveState("idle");
 		setPatientAdministrativeProfileDirty(false);
-	}, [selectedPatient?.id, selectedPatient?.updatedAt, selectedPatient, setPatientAdministrativeProfileDirty, setPatientAdministrativeProfileSaveState, setPatientAdministrativeProfileDraft]);
+	}, [
+		selectedPatient?.id,
+		selectedPatient?.updatedAt,
+		selectedPatient,
+		setPatientAdministrativeProfileDirty,
+		setPatientAdministrativeProfileSaveState,
+		setPatientAdministrativeProfileDraft,
+	]);
 
 	useEffect(() => {
 		patientCoreDraftRef.current = patientCoreDraft;
@@ -387,10 +401,12 @@ export function usePatientLogic({
 			}
 		};
 	}, [
-		selectedPatient?.id, 
-		patientAdministrativeProfileDirty, 
-		patientAdministrativeProfileSaveState, 
-		patientAdministrativeProfileValidationMessage, selectedPatient, savePatientAdministrativeProfile
+		selectedPatient?.id,
+		patientAdministrativeProfileDirty,
+		patientAdministrativeProfileSaveState,
+		patientAdministrativeProfileValidationMessage,
+		selectedPatient,
+		savePatientAdministrativeProfile,
 	]);
 
 	function updatePatientCoreDraft<K extends keyof PatientCoreDraft>(

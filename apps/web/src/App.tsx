@@ -34,12 +34,7 @@ import {
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
-import {
-	lazy,
-	Suspense,
-	useEffect,
-	useState,
-} from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { AppLoadingState, AppUnlockState } from "./AppBootState";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { AuthHub } from "./components/auth/AuthHub";
@@ -49,9 +44,7 @@ import { IncomingCallToast } from "./components/IncomingCallToast";
 import { Omnibar } from "./components/Omnibar";
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
-import {
-	CtPlanningToolsPanel,
-} from "./ctPlanningTools";
+import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import { resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
 import {
 	DENTE_CLINIC_TOKEN_KEY,
@@ -64,9 +57,7 @@ import {
 } from "./lib/safeLocalStorage";
 import { useAppLogic } from "./useAppLogic";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
-import {
-	scheduleIdleWorkspacePreload,
-} from "./workspacePreload";
+import { scheduleIdleWorkspacePreload } from "./workspacePreload";
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
 import {
 	ActionIcon,
@@ -167,7 +158,6 @@ function _speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
 			status?.serverTranscriptionEnabled,
 	);
 }
-
 
 export function App() {
 	// Topbar dictation shortcut must open the visit dictation area: goToVisitDictation, scrollToVisitArea(".dictation-box")
@@ -1368,7 +1358,6 @@ export function App() {
 				>
 					<section
 						className="onboarding-shell onboarding-wizard"
-						role="region"
 						aria-label="Первичная настройка клиники"
 					>
 						{/* Onboarding Header */}
@@ -2039,7 +2028,6 @@ export function App() {
 					!isLocalOnboardingDismissed ? (
 						<section
 							className="onboarding-compact-strip"
-							role="region"
 							aria-label="Первичная настройка клиники"
 						>
 							<div>
@@ -2073,7 +2061,6 @@ export function App() {
 					{showFullOnboardingGuide ? (
 						<section
 							className="onboarding-shell"
-							role="region"
 							aria-label="Первичная настройка клиники"
 						>
 							<div className="onboarding-head">
@@ -3704,7 +3691,6 @@ export function App() {
 					!onboardingReadyToFinish ? (
 						<section
 							className="onboarding-draft-strip"
-							role="region"
 							aria-label="Первичная настройка в черновике"
 						>
 							<div>
@@ -3729,7 +3715,6 @@ export function App() {
 					!onboardingDocumentsReady ? (
 						<section
 							className="onboarding-draft-strip"
-							role="region"
 							aria-label="Документы требуют реквизитов"
 						>
 							<div>
@@ -3825,7 +3810,6 @@ export function App() {
 								fallback={
 									<section
 										className="patient-cockpit dnt-cockpit"
-										role="region"
 										aria-label="Карточка пациента"
 										aria-busy="true"
 									>
@@ -4879,7 +4863,6 @@ export function App() {
 									<section
 										className="settings-zone"
 										id="settings"
-										role="region"
 										aria-label="Настройки"
 										aria-busy="true"
 									>

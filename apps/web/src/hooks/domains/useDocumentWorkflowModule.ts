@@ -20,11 +20,7 @@ import {
 	type TreatmentPlanItem,
 	type VoidDocumentInput,
 } from "@dental/shared";
-import {
-	useEffect,
-	useMemo,
-	useRef,
-} from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
 	type ClinicProfileDraft,
 	currentLocalDateTimeInputValue,
@@ -67,9 +63,7 @@ import {
 	confirmedDocumentLiteral,
 	documentTextLines,
 } from "../../utils/documentPayloadUtils";
-import {
-	postVisitCareTopicOptions,
-} from "../../workspaceStaticOptions";
+import { postVisitCareTopicOptions } from "../../workspaceStaticOptions";
 import {
 	clinicalRuleSummaryForUi,
 	completedActContractReferenceForUi,
@@ -965,7 +959,12 @@ export function useDocumentWorkflowModule({
 					document.visitId === null ||
 					document.visitId === dashboard?.activeVisit?.id),
 		);
-	}, [dashboard, documentPatient?.id, documentPatientMatchesActiveVisit, documentPatient]);
+	}, [
+		dashboard,
+		documentPatient?.id,
+		documentPatientMatchesActiveVisit,
+		documentPatient,
+	]);
 
 	const activeUsableDocuments = useMemo(() => {
 		return activeDocuments.filter((document) => document.status !== "voided");
@@ -1091,9 +1090,10 @@ export function useDocumentWorkflowModule({
 				completedActContractReferenceForUi(contract),
 			);
 	}, [
-		activeIssuedPaidContracts, 
-		completedActContractNumber, 
-		selectedCompletedActContractDocumentId, setCompletedActContractNumber
+		activeIssuedPaidContracts,
+		completedActContractNumber,
+		selectedCompletedActContractDocumentId,
+		setCompletedActContractNumber,
 	]);
 
 	const issuedMedicalCopyRequestDocuments = useMemo(() => {
@@ -1148,8 +1148,16 @@ export function useDocumentWorkflowModule({
 		setReleasePeriodStart(request.periodStart ?? "");
 		setReleasePeriodEnd(request.periodEnd ?? "");
 	}, [
-		issuedMedicalCopyRequestDocuments, 
-		selectedReleaseSourceRequestDocumentId, setReleaseRecipientAuthority, setReleaseChannel, setReleaseRecipientFullName, setReleaseRecipientIdentityDocument, setReleaseSourceRequestDocumentId, setReleaseDocumentTypes, setReleasePeriodEnd, setReleasePeriodStart
+		issuedMedicalCopyRequestDocuments,
+		selectedReleaseSourceRequestDocumentId,
+		setReleaseRecipientAuthority,
+		setReleaseChannel,
+		setReleaseRecipientFullName,
+		setReleaseRecipientIdentityDocument,
+		setReleaseSourceRequestDocumentId,
+		setReleaseDocumentTypes,
+		setReleasePeriodEnd,
+		setReleasePeriodStart,
 	]);
 
 	const inferredTreatmentArea = useMemo(() => {
@@ -1373,11 +1381,12 @@ export function useDocumentWorkflowModule({
 			insuranceCoverageRub,
 		};
 	}, [
-		activePayments, 
-		activeTreatmentPlanItems, 
-		activeUsableDocuments, 
-		dashboard, 
-		documentPatient?.id, documentPatient
+		activePayments,
+		activeTreatmentPlanItems,
+		activeUsableDocuments,
+		dashboard,
+		documentPatient?.id,
+		documentPatient,
 	]);
 	const documentLocalPersistenceOrganizationId =
 		dashboard?.clinicSettings?.profile?.organizationId ?? null;
@@ -1444,7 +1453,8 @@ export function useDocumentWorkflowModule({
 			) ?? null,
 		[selectedTaxDocumentPayerKey, taxDocumentPayerOptions],
 	);
-	const _selectedTaxDocumentPayerInn = selectedTaxDocumentPayerOption?.inn ?? "";
+	const _selectedTaxDocumentPayerInn =
+		selectedTaxDocumentPayerOption?.inn ?? "";
 
 	const selectedDocumentUsesTaxPaymentSelection =
 		taxPaymentSelectionDocumentKinds.has(selectedDocumentKind);
@@ -1560,19 +1570,21 @@ export function useDocumentWorkflowModule({
 		const payerKey = selectedTaxDocumentPayerKey || "all-payers";
 		return `tax:${organizationId}:${documentPatient.id}:${taxDocumentYear}:${payerKey}`;
 	}, [
-		documentLocalPersistenceOrganizationId, 
-		documentPatient?.id, 
-		selectedTaxDocumentPayerKey, 
-		taxDocumentYear, documentPatient
+		documentLocalPersistenceOrganizationId,
+		documentPatient?.id,
+		selectedTaxDocumentPayerKey,
+		taxDocumentYear,
+		documentPatient,
 	]);
 	const paymentReceiptSelectionPersistenceKey = useMemo(() => {
 		if (!documentPatient) return null;
 		const organizationId = documentLocalPersistenceOrganizationId ?? "clinic";
 		return `receipt:${organizationId}:${documentPatient.id}:${dashboard?.activeVisit?.id ?? "all-visits"}`;
 	}, [
-		dashboard?.activeVisit?.id, 
-		documentLocalPersistenceOrganizationId, 
-		documentPatient?.id, documentPatient
+		dashboard?.activeVisit?.id,
+		documentLocalPersistenceOrganizationId,
+		documentPatient?.id,
+		documentPatient,
 	]);
 
 	function selectRefundOriginalPayment(paymentId: string): void {
@@ -1612,7 +1624,11 @@ export function useDocumentWorkflowModule({
 		)
 			return;
 		setRefundSelectedPaymentId("");
-	}, [eligibleRefundCorrectionPayments, refundSelectedPaymentId, setRefundSelectedPaymentId]);
+	}, [
+		eligibleRefundCorrectionPayments,
+		refundSelectedPaymentId,
+		setRefundSelectedPaymentId,
+	]);
 	const outpatient025uDraftVisitId = documentPatientMatchesActiveVisit
 		? (dashboard?.activeVisit?.id ?? null)
 		: null;
@@ -1826,9 +1842,11 @@ export function useDocumentWorkflowModule({
 		taxPaymentSelectionHydratedKeyRef.current =
 			taxPaymentSelectionPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId, 
-		selectedDocumentUsesTaxPaymentSelection, 
-		taxPaymentSelectionPersistenceKey, eligibleTaxPayments.map, setSelectedTaxPaymentIds
+		documentLocalPersistenceOrganizationId,
+		selectedDocumentUsesTaxPaymentSelection,
+		taxPaymentSelectionPersistenceKey,
+		eligibleTaxPayments.map,
+		setSelectedTaxPaymentIds,
 	]);
 
 	useEffect(() => {
@@ -1848,9 +1866,10 @@ export function useDocumentWorkflowModule({
 			selectedTaxPaymentIdsForCurrentDocument(),
 		);
 	}, [
-		documentLocalPersistenceOrganizationId, 
-		selectedDocumentUsesTaxPaymentSelection, 
-		taxPaymentSelectionPersistenceKey, selectedTaxPaymentIdsForCurrentDocument
+		documentLocalPersistenceOrganizationId,
+		selectedDocumentUsesTaxPaymentSelection,
+		taxPaymentSelectionPersistenceKey,
+		selectedTaxPaymentIdsForCurrentDocument,
 	]);
 
 	useEffect(() => {
@@ -1878,9 +1897,11 @@ export function useDocumentWorkflowModule({
 		paymentReceiptSelectionHydratedKeyRef.current =
 			paymentReceiptSelectionPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId, 
-		selectedDocumentUsesPaymentReceiptSelection, 
-		paymentReceiptSelectionPersistenceKey, eligiblePaymentReceiptPayments.map, setSelectedPaymentReceiptIds
+		documentLocalPersistenceOrganizationId,
+		selectedDocumentUsesPaymentReceiptSelection,
+		paymentReceiptSelectionPersistenceKey,
+		eligiblePaymentReceiptPayments.map,
+		setSelectedPaymentReceiptIds,
 	]);
 
 	useEffect(() => {
@@ -1905,10 +1926,11 @@ export function useDocumentWorkflowModule({
 			),
 		);
 	}, [
-		documentLocalPersistenceOrganizationId, 
-		paymentReceiptSelectionPersistenceKey, 
-		selectedDocumentUsesPaymentReceiptSelection, 
-		selectedPaymentReceiptIds, eligiblePaymentReceiptPayments.map
+		documentLocalPersistenceOrganizationId,
+		paymentReceiptSelectionPersistenceKey,
+		selectedDocumentUsesPaymentReceiptSelection,
+		selectedPaymentReceiptIds,
+		eligiblePaymentReceiptPayments.map,
 	]);
 
 	useEffect(() => {
@@ -1929,9 +1951,10 @@ export function useDocumentWorkflowModule({
 		outpatient025uDraftHydratedKeyRef.current =
 			outpatient025uDraftPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId, 
-		outpatient025uDraftPersistenceKey, 
-		selectedDocumentKind, applyOutpatient025uDocumentDraftFields
+		documentLocalPersistenceOrganizationId,
+		outpatient025uDraftPersistenceKey,
+		selectedDocumentKind,
+		applyOutpatient025uDocumentDraftFields,
 	]);
 
 	useEffect(() => {
@@ -1954,11 +1977,12 @@ export function useDocumentWorkflowModule({
 			currentOutpatient025uDocumentDraftFields(),
 		);
 	}, [
-		documentPatient?.id, 
-		documentLocalPersistenceOrganizationId, 
-		outpatient025uDraftPersistenceKey, 
-		outpatient025uDraftVisitId, 
-		selectedDocumentKind, currentOutpatient025uDocumentDraftFields
+		documentPatient?.id,
+		documentLocalPersistenceOrganizationId,
+		outpatient025uDraftPersistenceKey,
+		outpatient025uDraftVisitId,
+		selectedDocumentKind,
+		currentOutpatient025uDocumentDraftFields,
 	]);
 
 	useEffect(() => {
@@ -1979,9 +2003,10 @@ export function useDocumentWorkflowModule({
 		medicalRecordExtractDraftHydratedKeyRef.current =
 			medicalRecordExtractDraftPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId, 
-		medicalRecordExtractDraftPersistenceKey, 
-		selectedDocumentKind, applyMedicalRecordExtractDocumentDraftFields
+		documentLocalPersistenceOrganizationId,
+		medicalRecordExtractDraftPersistenceKey,
+		selectedDocumentKind,
+		applyMedicalRecordExtractDocumentDraftFields,
 	]);
 
 	useEffect(() => {
@@ -2004,11 +2029,12 @@ export function useDocumentWorkflowModule({
 			currentMedicalRecordExtractDocumentDraftFields(),
 		);
 	}, [
-		documentPatient?.id, 
-		documentLocalPersistenceOrganizationId, 
-		medicalRecordExtractDraftPersistenceKey, 
-		medicalRecordExtractDraftVisitId, 
-		selectedDocumentKind, currentMedicalRecordExtractDocumentDraftFields
+		documentPatient?.id,
+		documentLocalPersistenceOrganizationId,
+		medicalRecordExtractDraftPersistenceKey,
+		medicalRecordExtractDraftVisitId,
+		selectedDocumentKind,
+		currentMedicalRecordExtractDocumentDraftFields,
 	]);
 
 	useEffect(() => {
@@ -2027,15 +2053,30 @@ export function useDocumentWorkflowModule({
 		setTaxApplicationRelationship("self");
 		setTaxApplicationContact(
 			administrativeProfile?.preferredDocumentRecipient?.trim() ||
-				documentPatient.phone ||
-				documentPatient.email ||
-				documentPatient.fullName,
+				documentPatient?.phone ||
+				documentPatient?.email ||
+				documentPatient?.fullName ||
+				"",
 		);
 		setTaxApplicationAuthorityDocument("");
 		setTaxApplicationRequestedAt(
 			toDateTimeLocalValue(new Date().toISOString()),
 		);
-	}, [documentPatient?.id, documentPatient?.phone, setTaxApplicationTaxpayerInn, setTaxApplicationContact, setTaxApplicationTaxpayerFullName, setTaxApplicationRequestedAt, documentPatient?.fullName, documentPatient?.email, setTaxApplicationTaxpayerIdentityDocument, setTaxApplicationAuthorityDocument, documentPatient, setTaxApplicationTaxpayerBirthDate, setTaxApplicationRelationship]);
+	}, [
+		documentPatient?.id,
+		documentPatient?.phone,
+		setTaxApplicationTaxpayerInn,
+		setTaxApplicationContact,
+		setTaxApplicationTaxpayerFullName,
+		setTaxApplicationRequestedAt,
+		documentPatient?.fullName,
+		documentPatient?.email,
+		setTaxApplicationTaxpayerIdentityDocument,
+		setTaxApplicationAuthorityDocument,
+		documentPatient,
+		setTaxApplicationTaxpayerBirthDate,
+		setTaxApplicationRelationship,
+	]);
 
 	useEffect(() => {
 		if (!selectedTaxApplicationPayment) return;
@@ -2066,7 +2107,15 @@ export function useDocumentWorkflowModule({
 				selectedTaxApplicationPayment.payerRelationship,
 			) ?? "self",
 		);
-	}, [documentPatient, selectedTaxApplicationPayment, setTaxApplicationTaxpayerFullName, setTaxApplicationTaxpayerInn, setTaxApplicationTaxpayerIdentityDocument, setTaxApplicationTaxpayerBirthDate, setTaxApplicationRelationship]);
+	}, [
+		documentPatient,
+		selectedTaxApplicationPayment,
+		setTaxApplicationTaxpayerFullName,
+		setTaxApplicationTaxpayerInn,
+		setTaxApplicationTaxpayerIdentityDocument,
+		setTaxApplicationTaxpayerBirthDate,
+		setTaxApplicationRelationship,
+	]);
 
 	useEffect(() => {
 		if (!inferredTreatmentArea) return;
@@ -2076,7 +2125,13 @@ export function useDocumentWorkflowModule({
 		if (!labTeethOrArea.trim()) {
 			setLabTeethOrArea(inferredTreatmentArea);
 		}
-	}, [anesthesiaZone, inferredTreatmentArea, labTeethOrArea, setAnesthesiaZone, setLabTeethOrArea]);
+	}, [
+		anesthesiaZone,
+		inferredTreatmentArea,
+		labTeethOrArea,
+		setAnesthesiaZone,
+		setLabTeethOrArea,
+	]);
 	function _treatmentAcceptanceStageRows() {
 		return documentTextLines(treatmentAcceptanceStages).map((line, index) => {
 			const [stageName, plannedServices, plannedTiming, amount] = line

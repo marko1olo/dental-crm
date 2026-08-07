@@ -198,7 +198,10 @@ export function CommandPalette({
 												</span>
 											)}
 										</div>
-										<ChevronRight size={16} className="cmd-palette-item-arrow" />
+										<ChevronRight
+											size={16}
+											className="cmd-palette-item-arrow"
+										/>
 									</button>
 								</li>
 							))}

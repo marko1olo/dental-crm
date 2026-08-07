@@ -1977,7 +1977,10 @@ export function ImagingView(props: ImagingViewProps) {
 										</button>
 									))}
 								</fieldset>
-								<fieldset className="mpr-preset-row" aria-label="Опорные КТ-срезы">
+								<fieldset
+									className="mpr-preset-row"
+									aria-label="Опорные КТ-срезы"
+								>
 									{mprSlicePresetFractions.map((preset: any) => {
 										const targetIndex = mprSliceIndexFromFraction(
 											preset.fraction,

@@ -171,7 +171,7 @@ export function WaitlistDrawer(props: Props) {
 		if (isOpen) {
 			fetchWaitlist();
 		}
-	}, [isOpen]);
+	}, [isOpen, fetchWaitlist]);
 
 	const handleAdd = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -206,7 +206,7 @@ export function WaitlistDrawer(props: Props) {
 					"error",
 				);
 			}
-		} catch (e) {
+		} catch (_e) {
 			showToast(
 				"Сервер клиники не ответил, пациент в очередь не добавлен. Проверьте, что программа клиники запущена и есть сеть, и повторите.",
 				"error",
@@ -234,7 +234,7 @@ export function WaitlistDrawer(props: Props) {
 					"error",
 				);
 			}
-		} catch (e) {
+		} catch (_e) {
 			showToast(
 				"Сервер клиники не ответил, запись осталась в очереди. Проверьте сеть и повторите.",
 				"error",
@@ -267,7 +267,7 @@ export function WaitlistDrawer(props: Props) {
 			} else {
 				showToast(await writeFailureText(res, "закрыть заявку"), "error");
 			}
-		} catch (e) {
+		} catch (_e) {
 			showToast(
 				"Сервер клиники не ответил, заявка осталась в очереди. Проверьте сеть и повторите.",
 				"error",
@@ -480,9 +480,9 @@ export function WaitlistDrawer(props: Props) {
 						</div>
 
 						<div className="space-y-1">
-							<label className="text-xs text-[var(--muted)] font-medium">
+							<span className="block text-xs text-[var(--muted)] font-medium">
 								Приоритет
-							</label>
+							</span>
 							<div className="flex gap-2">
 								{(["low", "medium", "high"] as const).map((p) => (
 									<button

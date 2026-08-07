@@ -1413,10 +1413,7 @@ button[data-tooth-state="missing"] {
 	display: grid;
 	/* min(420px, 100%): жёсткие 420px не помещаются ни на одном телефоне —
      колонка оставалась шире контейнера, и карточки обрезались справа. */
-	grid-template-columns: repeat(
-			auto-fit,
-			minmax(min(420px, 100%), 1fr)
-		);
+	grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
 	gap: 16px;
 	margin-top: 20px;
 }

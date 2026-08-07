@@ -232,7 +232,7 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 				</div>
 
 				<div className="form-group">
-					<label>Webhook URL</label>
+					<span>Webhook URL</span>
 					<div className="webhook-url-row">
 						<code className="webhook-url-code">{webhookUrl}</code>
 						<button

@@ -1,9 +1,7 @@
-
 import type { ChangeEvent } from "react";
 
 type MprClinicalPreset =
 	import("../../mprClinicalStatus").MprClinicalPresetFitTarget;
-
 
 type StringTokenGroup = { title: string; items: string[] };
 type CbctWorkbenchPlane = { key: string; title: string; detail: string };

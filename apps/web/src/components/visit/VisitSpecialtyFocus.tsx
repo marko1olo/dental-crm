@@ -1,4 +1,3 @@
-
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function VisitSpecialtyFocus() {

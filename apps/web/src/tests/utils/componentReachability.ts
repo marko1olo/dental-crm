@@ -264,8 +264,7 @@ function lazyNamedTarget(
 	const callee = call.callee as Node | undefined;
 	if (callee?.type !== "MemberExpression") return null;
 	const property = callee.property as Node | undefined;
-	if (property?.type !== "Identifier" || property.name !== "then")
-		return null;
+	if (property?.type !== "Identifier" || property.name !== "then") return null;
 	const inner = callee.object as Node | undefined;
 	if (inner?.type !== "CallExpression") return null;
 	const innerCallee = inner.callee as Node | undefined;

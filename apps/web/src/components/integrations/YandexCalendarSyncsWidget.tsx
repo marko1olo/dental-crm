@@ -324,9 +324,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 				/>
 				<div className="min-w-0">
 					<p
-						className={
-							`m-0 text-sm font-medium break-words ${TONE_HEADLINE[copy.tone]}`
-						}
+						className={`m-0 text-sm font-medium break-words ${TONE_HEADLINE[copy.tone]}`}
 					>
 						{copy.headline}
 					</p>
@@ -374,9 +372,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 									  СТАЛО: бейдж из фактического syncStatus ответа.
 									*/}
 									<span
-										className={
-											`px-2.5 py-1 rounded font-bold ${badge.className}`
-										}
+										className={`px-2.5 py-1 rounded font-bold ${badge.className}`}
 									>
 										{badge.label}
 									</span>

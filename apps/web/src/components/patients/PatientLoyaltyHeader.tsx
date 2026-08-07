@@ -186,10 +186,16 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 			<AnimatePresence>
 				{isOpen && (
 					<>
-						<div
-							role="button"
-							tabIndex={-1}
-							style={{ position: "fixed", inset: 0, zIndex: 99 }}
+						<button
+							type="button"
+							style={{
+								position: "fixed",
+								inset: 0,
+								zIndex: 99,
+								background: "none",
+								border: "none",
+								padding: 0,
+							}}
 							onClick={() => setIsOpen(false)}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") {

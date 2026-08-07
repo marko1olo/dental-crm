@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { countLabel } from "./AppHelpers";
@@ -420,8 +419,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			const sectionTitle =
 				(viewLabels as Record<string, string>)[section] ?? section;
 			const ownerTitle =
-				(staffRoleLabels?.[task?.ownerRole]) ||
-				"другой сотрудник";
+				staffRoleLabels?.[task?.ownerRole] || "другой сотрудник";
 			showToast(
 				`Шаг закрывают в разделе «${sectionTitle}», а он открыт другой роли: ${ownerTitle}. Приём остаётся открытым — попросите закрыть шаг с того рабочего места.`,
 				"info",
@@ -973,9 +971,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							<button
 								type="button"
 								key={phrase.label}
-								onClick={() =>
-									appendToTranscript?.(phrase.text)
-								}
+								onClick={() => appendToTranscript?.(phrase.text)}
 							>
 								{phrase.label}
 							</button>
@@ -2241,10 +2237,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<p>
 									{selectedProtocolTemplate.defaultDurationMinutes} мин · снимки{" "}
 									{(selectedProtocolTemplate.suggestedImaging || [])
-										.map(
-											(kind: any) =>
-												(imagingKindLabels?.[kind]) || kind,
-										)
+										.map((kind: any) => imagingKindLabels?.[kind] || kind)
 										.join(", ")}
 								</p>
 							</div>
@@ -2259,9 +2252,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										key={template.id}
 										type="button"
 										aria-pressed={selectedProtocolTemplate.id === template.id}
-										onClick={() =>
-											setSelectedProtocolId?.(template.id)
-										}
+										onClick={() => setSelectedProtocolId?.(template.id)}
 									>
 										{template.visitReason}
 									</button>
@@ -2426,7 +2417,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										<strong>{task.title}</strong>
 										<p>{task.detail}</p>
 										<small>
-											{(staffRoleLabels?.[task.ownerRole]) ||
+											{staffRoleLabels?.[task.ownerRole] ||
 												"исполнитель не указан"}{" "}
 											· {task.actionLabel}
 										</small>
@@ -2563,7 +2554,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								className="_ccm-overlay"
 								onClick={closeClinicalModal}
-								onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && closeClinicalModal()}
+								onKeyDown={(e) =>
+									(e.key === "Enter" || e.key === " ") && closeClinicalModal()
+								}
 							/>
 							<div
 								className="_ccm-content"

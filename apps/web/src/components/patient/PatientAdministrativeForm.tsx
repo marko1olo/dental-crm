@@ -285,9 +285,8 @@ export function PatientAdministrativeForm({
 			</p>
 			<div className="form-span-2 patient-appointment-preferences">
 				<span>Предпочитаемые дни приема</span>
-				<div
+				<fieldset
 					className="weekday-toggle-row"
-					role="group"
 					aria-label="Предпочитаемые дни приема пациента"
 				>
 					{weekdayOptions.map((day) => {
@@ -305,8 +304,11 @@ export function PatientAdministrativeForm({
 									const currentDays =
 										patientAdministrativeProfileDraft.preferredAppointmentWeekdays;
 									const nextDays = weekdaySelected
-										? currentDays.filter((item) => item !== day.value)
+										? currentDays.filter(
+												(selectedDay) => selectedDay !== day.value,
+											)
 										: [...currentDays, day.value];
+
 									updatePatientAdministrativeProfileDraft(
 										"preferredAppointmentWeekdays",
 										normalizeOptionalWorkingDaysDraft(nextDays),
@@ -317,7 +319,7 @@ export function PatientAdministrativeForm({
 							</button>
 						);
 					})}
-				</div>
+				</fieldset>
 			</div>
 			<label>
 				Удобно приходить с

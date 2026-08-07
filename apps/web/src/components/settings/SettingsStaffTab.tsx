@@ -1,10 +1,5 @@
 import type { StaffRole } from "@dental/shared";
-import {
-	KeyRound,
-	Phone,
-	ShieldCheck,
-	UserPlus,
-} from "lucide-react";
+import { KeyRound, Phone, ShieldCheck, UserPlus } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";

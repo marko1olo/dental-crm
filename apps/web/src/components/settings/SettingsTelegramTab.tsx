@@ -1426,7 +1426,7 @@ export function SettingsTelegramTab({
 					className="telegram-outbox-controls"
 					aria-label="Фильтры очереди Telegram"
 				>
-					<label>
+					<div>
 						Статус
 						<div className="quick-chips-row">
 							{typedTelegramOutboxStatusFilterOptions.map((status) => (
@@ -1440,8 +1440,8 @@ export function SettingsTelegramTab({
 								</button>
 							))}
 						</div>
-					</label>
-					<label>
+					</div>
+					<div>
 						Сценарий
 						<div className="quick-chips-row">
 							{typedTelegramOutboxTemplateFilterOptions.map((templateKind) => (
@@ -1457,7 +1457,7 @@ export function SettingsTelegramTab({
 								</button>
 							))}
 						</div>
-					</label>
+					</div>
 					<span>
 						Показано {typedVisibleTelegramOutboxItems.length} из{" "}
 						{typedTelegramOutbox?.filteredCount ??

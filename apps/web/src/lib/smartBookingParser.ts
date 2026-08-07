@@ -343,7 +343,8 @@ export function smartBookingParser(
 		}
 	}
 
-	if (foundChairs.length > 0 && foundChairs[0]?.id) parsed.chairId = foundChairs[0].id;
+	const firstChair = foundChairs[0];
+	if (foundChairs.length > 0 && firstChair?.id) parsed.chairId = firstChair.id;
 
 	// REMOVE EXTRACTED NAMES FROM REMAINING TO KEEP COMMENT CLEAN
 	const removeWordsSafely = (wordsToRemove: string[]) => {
@@ -675,7 +676,10 @@ export function smartBookingParser(
 				двенадцатого: 12,
 			};
 			const halfKey = halfMatch[1]?.toLowerCase();
-			hours = (halfKey ? halfMap[halfKey] : undefined) || 12;
+			hours =
+				(halfKey && halfKey in halfMap
+					? halfMap[halfKey as keyof typeof halfMap]
+					: undefined) || 12;
 			minutes = 30;
 			timeFound = true;
 			remaining = remaining.replace(halfMatch[0], " ");

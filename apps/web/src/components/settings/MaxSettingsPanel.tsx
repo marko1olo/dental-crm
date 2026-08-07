@@ -204,7 +204,7 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 				</div>
 
 				<div className="form-group">
-					<label>Webhook URL для MAX</label>
+					<span>Webhook URL для MAX</span>
 					<div className="webhook-url-row">
 						<code className="webhook-url-code">{myWebhookUrl}</code>
 						<button

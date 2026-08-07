@@ -1,11 +1,7 @@
 import type { DocumentPayload, GeneratedDocument } from "@dental/shared";
-import {
-	fromDateTimeLocalValue,
-} from "./AppHelpers";
+import { fromDateTimeLocalValue } from "./AppHelpers";
 import { documentPayloadValidators } from "./documentValidators";
-import {
-	normalizeRubAmountInput,
-} from "./rubAmountInput";
+import { normalizeRubAmountInput } from "./rubAmountInput";
 import { structuredPayloadDocumentKinds } from "./workspaceUiLabels";
 
 export type DocumentState = Record<string, any>;

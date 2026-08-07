@@ -183,7 +183,31 @@ export function useTelegramModule({
 		setTelegramPrivacyModeDraft(settings.privacyMode);
 		setTelegramSettingsSaveState("idle");
 		setTelegramSettingsSaveError(null);
-	}, [telegramStatus?.settings.updatedAt, telegramSettingsDirty, setTelegramStaffEscalationChannelDraft, telegramStatus?.settings, setTelegramBotUsernameDraft, setTelegramTokenTtlDraft, setTelegramVisualCardUrlDrafts, setTelegramWebhookBaseUrlDraft, setTelegramSettingsSaveState, setTelegramWelcomeImageUrlDraft, setTelegramSettingsSaveError, setTelegramReviewUrlDraft, setTelegramReviewRequestDelayDraft, setTelegramReminderLeadTimesDraft, setTelegramPrivacyModeDraft, setTelegramOwnBotUsernameDraft, setTelegramPostVisitCheckupDelayDrafts, setTelegramModeDraft, setTelegramAllowVoiceIntakeDraft, setTelegramPatientPortalBaseUrlDraft, setTelegramMapsUrlDraft, setTelegramEnabledFeaturesDraft, normalizeTelegramPostVisitCheckupDelayDrafts]);
+	}, [
+		telegramStatus?.settings.updatedAt,
+		telegramSettingsDirty,
+		setTelegramStaffEscalationChannelDraft,
+		telegramStatus?.settings,
+		setTelegramBotUsernameDraft,
+		setTelegramTokenTtlDraft,
+		setTelegramVisualCardUrlDrafts,
+		setTelegramWebhookBaseUrlDraft,
+		setTelegramSettingsSaveState,
+		setTelegramWelcomeImageUrlDraft,
+		setTelegramSettingsSaveError,
+		setTelegramReviewUrlDraft,
+		setTelegramReviewRequestDelayDraft,
+		setTelegramReminderLeadTimesDraft,
+		setTelegramPrivacyModeDraft,
+		setTelegramOwnBotUsernameDraft,
+		setTelegramPostVisitCheckupDelayDrafts,
+		setTelegramModeDraft,
+		setTelegramAllowVoiceIntakeDraft,
+		setTelegramPatientPortalBaseUrlDraft,
+		setTelegramMapsUrlDraft,
+		setTelegramEnabledFeaturesDraft,
+		normalizeTelegramPostVisitCheckupDelayDrafts,
+	]);
 
 	useEffect(() => {
 		if (!telegramSettingsDirty || !telegramStatus?.settings) return;
@@ -201,10 +225,11 @@ export function useTelegramModule({
 			void loadTelegramControlPlane({ silent: true });
 		}
 	}, [
-		currentView, 
-		settingsTab, 
-		onboardingDismissed, 
-		onboardingStep, loadTelegramControlPlane
+		currentView,
+		settingsTab,
+		onboardingDismissed,
+		onboardingStep,
+		loadTelegramControlPlane,
 	]);
 
 	useEffect(() => {
@@ -228,7 +253,12 @@ export function useTelegramModule({
 		}
 		setTelegramHandoffNotice(telegramHandoffTarget);
 		stripDenteTelegramHandoffQuery(telegramHandoffTarget);
-	}, [uiPreferencesHydrated, setTelegramHandoffNotice, setSelectedDocumentKind, setCurrentView]);
+	}, [
+		uiPreferencesHydrated,
+		setTelegramHandoffNotice,
+		setSelectedDocumentKind,
+		setCurrentView,
+	]);
 
 	function appendTelegramRuntimeScopeParams(
 		params: URLSearchParams,

@@ -1,12 +1,5 @@
 import { isValidFdiToothNumber } from "@dental/shared";
-import {
-	AlertTriangle,
-	Check,
-	History,
-	Mic,
-	Stethoscope,
-	X,
-} from "lucide-react";
+import { History, Mic, Stethoscope } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -123,7 +116,10 @@ const SurfaceSelector = ({
 				height="100"
 				viewBox="0 0 100 100"
 				className="drop-shadow-md cursor-pointer group"
+				role="img"
+				aria-label="Поверхности зуба"
 			>
+				<title>Поверхности зуба</title>
 				{/* Top (B/V) */}
 				<polygon
 					points="0,0 100,0 70,30 30,30"
@@ -273,7 +269,7 @@ export const OdontogramModule = ({
 		| { phase: "failed"; status: number | null }
 	>({ phase: "loading" });
 	/** Счётчик кнопки «Повторить»: меняется — формула читается заново. */
-	const [teethReloadToken, setTeethReloadToken] = useState(0);
+	const [_teethReloadToken, setTeethReloadToken] = useState(0);
 	/* Актуальная формула для снимка перед сохранением. Брать её внутри
 	   обновления состояния нельзя: обновление может быть вызвано повторно, и
 	   тогда снимок одного сохранения захватит правку другого. */
@@ -608,12 +604,9 @@ export const OdontogramModule = ({
 			window.removeEventListener("keyup", handleKeyUp);
 		};
 		// teethReloadToken — кнопка «Повторить» под сообщением об отказе.
-	}, [patientId, teethReloadToken]);
+	}, [patientId, updateToothState]);
 
-	const updateToothState = async (
-		toothNumbers: number[],
-		state: ToothState,
-	) => {
+	async function updateToothState(toothNumbers: number[], state: ToothState) {
 		/* БЫЛО: снимок «до» делался как `previousTeethData = [...prev]` внутри
 		   обновления состояния, а новое состояние проставлялось мутацией
 		   `item.state = state`. Копия массива поверхностная — объекты зубов в
@@ -728,7 +721,7 @@ export const OdontogramModule = ({
 		 * помнит, какие строки врач снял корзиной, чего очередь не умела.
 		 */
 		setActiveSurfaces([]);
-	};
+	}
 
 	const handleToothClick = (
 		toothNumber: number,
@@ -761,7 +754,7 @@ export const OdontogramModule = ({
 				const existing = teethData.find(
 					(t) => t.toothNumber === activeSelection[0],
 				);
-				if (existing && existing.surfaces) {
+				if (existing?.surfaces) {
 					currentSurfaces = [...existing.surfaces];
 				} else {
 					currentSurfaces = [];
@@ -916,6 +909,7 @@ export const OdontogramModule = ({
 						<>
 							{/* Backdrop */}
 							<div
+								role="presentation"
 								style={{
 									position: "fixed",
 									top: 0,
@@ -925,8 +919,10 @@ export const OdontogramModule = ({
 									zIndex: 9998,
 								}}
 								onClick={() => setMenuConfig(null)}
+								onKeyDown={(e) => { if (e.key === 'Escape') setMenuConfig(null); }}
 							/>
 							<div
+								role="menu"
 								className={`absolute grid grid-cols-2 gap-2 p-3 w-[254px] bg-zinc-950/40 backdrop-blur-md border border-zinc-800/50 shadow-2xl rounded-2xl`}
 								style={
 									{
@@ -936,10 +932,12 @@ export const OdontogramModule = ({
 									} as React.CSSProperties
 								}
 								onClick={(e) => e.stopPropagation()}
+								onKeyDown={(e) => e.stopPropagation()}
 							>
 								{/* SVG Caret (Tail) */}
 								{menuConfig.position === "bottom" ? (
 									<svg
+										aria-hidden="true"
 										className="absolute -top-3 text-zinc-800/50 drop-shadow-md"
 										style={{
 											left: `${menuConfig.caretOffset}%`,
@@ -959,6 +957,7 @@ export const OdontogramModule = ({
 									</svg>
 								) : (
 									<svg
+										aria-hidden="true"
 										className="absolute -bottom-3 text-zinc-800/50 drop-shadow-md"
 										style={{
 											left: `${menuConfig.caretOffset}%`,

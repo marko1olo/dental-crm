@@ -258,7 +258,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				const err = await res.json().catch(() => ({}));
 				showToast(err.message || "Ошибка создания заказа ЗТЛ", "error");
 			}
-		} catch (e) {
+		} catch (_e) {
 			showToast("Системная ошибка", "error");
 		} finally {
 			setIsCreating(false);
@@ -280,7 +280,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			} else {
 				showToast("Ошибка удаления", "error");
 			}
-		} catch (e) {
+		} catch (_e) {
 			showToast("Системная ошибка", "error");
 		} finally {
 			setDeletingId(null);
@@ -374,8 +374,11 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 				<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 					<div className="space-y-1">
-						<label className="text-xs text-slate-400">Зуб (FDI)</label>
+						<label htmlFor="lab-order-tooth" className="text-xs text-slate-400">
+							Зуб (FDI)
+						</label>
 						<input
+							id="lab-order-tooth"
 							type="text"
 							placeholder="Напр. 16, 24"
 							value={toothFdi}
@@ -385,8 +388,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					</div>
 
 					<div className="space-y-1">
-						<label className="text-xs text-slate-400">Материал</label>
+						<label
+							htmlFor="lab-order-material"
+							className="text-xs text-slate-400"
+						>
+							Материал
+						</label>
 						<select
+							id="lab-order-material"
 							value={material}
 							onChange={(e) => setMaterial(e.target.value)}
 							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
@@ -400,8 +409,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					</div>
 
 					<div className="space-y-1">
-						<label className="text-xs text-slate-400">Цвет (Vita)</label>
+						<label
+							htmlFor="lab-order-color-vita"
+							className="text-xs text-slate-400"
+						>
+							Цвет (Vita)
+						</label>
 						<select
+							id="lab-order-color-vita"
 							value={colorVita}
 							onChange={(e) => setColorVita(e.target.value)}
 							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
@@ -431,7 +446,9 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					</div>
 
 					<div className="space-y-1">
-						<label className="text-xs text-slate-400">Стоимость, ₽</label>
+						<label htmlFor="lab-order-price" className="text-xs text-slate-400">
+							Стоимость, ₽
+						</label>
 						{/*
 							Было type="number". Такое поле в русском браузере не принимает
 							запятую: «12500,50» стирается в пустоту прямо под рукой, и наряд
@@ -440,6 +457,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							normalizeRubAmountInput при отправке.
 						*/}
 						<input
+							id="lab-order-price"
 							type="text"
 							inputMode="decimal"
 							placeholder="например 12500"
@@ -452,8 +470,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 					<div className="space-y-1">
-						<label className="text-xs text-slate-400">Лечащий врач</label>
+						<label
+							htmlFor="lab-order-doctor"
+							className="text-xs text-slate-400"
+						>
+							Лечащий врач
+						</label>
 						<select
+							id="lab-order-doctor"
 							value={doctorId}
 							onChange={(e) => setDoctorId(e.target.value)}
 							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
@@ -468,8 +492,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					</div>
 
 					<div className="space-y-1">
-						<label className="text-xs text-slate-400">Срок готовности</label>
+						<label
+							htmlFor="lab-order-due-date"
+							className="text-xs text-slate-400"
+						>
+							Срок готовности
+						</label>
 						<input
+							id="lab-order-due-date"
 							type="datetime-local"
 							value={dueDate}
 							onChange={(e) => setDueDate(e.target.value)}
@@ -478,10 +508,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					</div>
 
 					<div className="space-y-1">
-						<label className="text-xs text-slate-400">
+						<label
+							htmlFor="lab-order-clinical-notes"
+							className="text-xs text-slate-400"
+						>
 							Клиническое примечание
 						</label>
 						<input
+							id="lab-order-clinical-notes"
 							type="text"
 							placeholder="Опишите особенности прикуса, уступы..."
 							value={clinicalNotes}

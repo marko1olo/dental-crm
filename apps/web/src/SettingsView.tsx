@@ -76,10 +76,7 @@ import type {
 	WeekdayIndex,
 } from "@dental/shared";
 import { motion } from "framer-motion";
-import {
-	ClipboardCheck,
-	ShieldCheck,
-} from "lucide-react";
+import { ClipboardCheck, ShieldCheck } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 /*
  * Разделы левого меню берутся из общего объявления, а не собираются здесь.
@@ -113,9 +110,7 @@ import { SettingsRulesTab } from "./components/settings/SettingsRulesTab";
 import { SettingsSourcesTab } from "./components/settings/SettingsSourcesTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
 
-import type {
-	MprProjection,
-} from "./imagingUiLabels";
+import type { MprProjection } from "./imagingUiLabels";
 import type {
 	ImagingConnectorCard,
 	ImagingViewerCapability,

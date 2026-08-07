@@ -1,5 +1,4 @@
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
-import dicomParser from "dicom-parser";
 import * as fflate from "fflate";
 import type React from "react";
 import { useCallback, useState } from "react";
@@ -153,7 +152,7 @@ export function DicomArchiveUploader({
 							for (let i = 0; i < entries.length; i++) {
 								const nestedFiles = await traverseFileTree(
 									entries[i],
-									path + item.name + "/",
+									`${path + item.name}/`,
 								);
 								files.push(...nestedFiles);
 							}
@@ -237,11 +236,13 @@ export function DicomArchiveUploader({
 				setLoading(false);
 			}
 		},
-		[loading, onImagesLoaded],
+		[loading, onImagesLoaded, traverseFileTree, processZip, processFile],
 	);
 
 	return (
 		<div
+			role="button"
+			tabIndex={0}
 			onDragOver={(e) => {
 				e.preventDefault();
 				setIsDragging(true);
@@ -249,6 +250,7 @@ export function DicomArchiveUploader({
 			onDragLeave={() => setIsDragging(false)}
 			onDrop={onDrop}
 			onClick={() => document.getElementById("dicom-folder-input")?.click()}
+			onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); document.getElementById("dicom-folder-input")?.click(); } }}
 			className={`w-full h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors cursor-pointer ${
 				isDragging
 					? "border-teal-500 bg-teal-500/10"

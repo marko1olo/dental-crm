@@ -246,11 +246,14 @@ describe("the fixtures are the curves they claim to be", () => {
 		assert.strictEqual(ELLIPSE_HANDLES.length, 7);
 		assert.ok(distanceMm(ELLIPSE_HANDLES[0]!, { x: -28, y: 11 }) < 1e-9);
 		assert.ok(distanceMm(ELLIPSE_HANDLES[6]!, { x: 28, y: 11 }) < 1e-9);
-		assert.ok(
-			Math.abs(ELLIPSE_HANDLES[3]!.x) < 1e-9 &&
-				Math.abs(ELLIPSE_HANDLES[3]!.y - (ARCH_B_MM + ARCH_Y_OFFSET_MM)) < 1e-9,
-			"the middle handle is not the apex of the semi-ellipse",
-		);
+		const h3 = ELLIPSE_HANDLES[3];
+		if (h3) {
+			assert.ok(
+				Math.abs(h3.x) < 1e-9 &&
+					Math.abs(h3.y - (ARCH_B_MM + ARCH_Y_OFFSET_MM)) < 1e-9,
+				"the middle handle is not the apex of the semi-ellipse",
+			);
+		}
 		for (const handle of ELLIPSE_HANDLES) {
 			assert.ok(
 				distanceToPolylineMm(handle, ANALYTIC_ARCH) < 1e-6,

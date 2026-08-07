@@ -52,7 +52,7 @@ export function SberbankTerminalPaymentModal({
 		if (isOpen && status === "idle") {
 			initiatePayment();
 		}
-	}, [isOpen, status]);
+	}, [isOpen, status, initiatePayment]);
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -139,7 +139,8 @@ export function SberbankTerminalPaymentModal({
 								marginTop: "6px",
 							}}
 						>
-							Внимание: при закрытии окна во время оплаты транзакция на терминале не отменяется.
+							Внимание: при закрытии окна во время оплаты транзакция на
+							терминале не отменяется.
 						</div>
 					</div>
 				)}

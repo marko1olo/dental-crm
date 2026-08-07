@@ -1,4 +1,3 @@
-
 import {
 	AlertTriangle,
 	Bot,
@@ -389,7 +388,7 @@ export function VisiographAnalyzer() {
 	 * По той же причине isLoadingHistory гасит только актуальный запрос — иначе
 	 * поздний ответ по A убирал бы индикатор загрузки у идущего запроса по B.
 	 */
-	const loadHistory = async (patientId: string) => {
+	async function loadHistory(patientId: string) {
 		setIsLoadingHistory(true);
 		setHistoryFailure(null);
 		setDeleteFailure(null);
@@ -431,7 +430,7 @@ export function VisiographAnalyzer() {
 		} finally {
 			if (!isStale()) setIsLoadingHistory(false);
 		}
-	};
+	}
 
 	// ── Load scan history when patient changes ──────────────────────────────
 	useEffect(() => {
@@ -786,7 +785,12 @@ export function VisiographAnalyzer() {
 			// теле компонента и пересоздаётся на каждом отрисовывании, а свежие данные
 			// берёт из authRef — по той же причине, что описана у authRef выше.
 		},
-		[selectedPatientId, writeToothStatesToChart, denteClinicalReadHeaders, denteClinicalMutationHeaders],
+		[
+			selectedPatientId,
+			writeToothStatesToChart,
+			denteClinicalReadHeaders,
+			denteClinicalMutationHeaders,
+		],
 	);
 
 	// ── Drag & Drop ─────────────────────────────────────────────────────────

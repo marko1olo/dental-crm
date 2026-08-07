@@ -38,9 +38,7 @@ import { postVisitCarePresets } from "../postVisitCareData";
  * документ дату, которую никто не вводил. Отметки времени подставляет
  * withDocumentCreationTimestamps в момент создания документа.
  */
-import {
-	currentLocalDateTimeInputValue,
-} from "../utils/dateUtils";
+import { currentLocalDateTimeInputValue } from "../utils/dateUtils";
 import { defaultClinicalToothRowsText } from "../utils/draftDefaults";
 import { loadUiPreferences } from "../utils/preferencesUtils";
 

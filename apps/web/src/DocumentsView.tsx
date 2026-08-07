@@ -1164,7 +1164,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 					для пациента.
 				</p>
 			) : null}
-			<div className="document-factory" role="region" aria-label="Быстро создать документ">
+			<div
+				className="document-factory"
+				role="region"
+				aria-label="Быстро создать документ"
+			>
 				<label className="document-factory-tax-year">
 					Налоговый год
 					<input

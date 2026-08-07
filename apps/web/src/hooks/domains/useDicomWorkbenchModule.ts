@@ -1416,7 +1416,10 @@ export function useDicomWorkbenchModule({
 			createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
 		};
 	}, [
-		imagingPreviewWorkset, auth.revokeObjectUrlMap, auth.revokeObjectUrlIfNeeded, auth.denteClinicalReadHeaders
+		imagingPreviewWorkset,
+		auth.revokeObjectUrlMap,
+		auth.revokeObjectUrlIfNeeded,
+		auth.denteClinicalReadHeaders,
 	]);
 
 	// ===== Return =====

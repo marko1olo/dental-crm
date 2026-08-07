@@ -8,12 +8,7 @@ import {
 	type LocalBridgeUsePlansResponse,
 	type StaffRole,
 } from "@dental/shared";
-import {
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type AppointmentScheduleDraft,
 	appointmentReadinessLabels,
@@ -162,9 +157,7 @@ import {
 	formatMegabytes,
 	inspectBrowserContinuity,
 } from "./browserContinuity";
-import {
-	communicationDocumentTaskActionLabels,
-} from "./communicationTaskData";
+import { communicationDocumentTaskActionLabels } from "./communicationTaskData";
 import { useAuthLogic } from "./hooks/domains/useAuthLogic";
 import { useClinicalVisitLogic } from "./hooks/domains/useClinicalVisitLogic";
 import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule";
@@ -174,9 +167,7 @@ import { usePatientLogic } from "./hooks/domains/usePatientLogic";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useTelegramModule } from "./hooks/domains/useTelegramModule";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
-import {
-	loadWorkspaceProfile,
-} from "./hooks/useWorkspaceProfile";
+import { loadWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import {
 	imagingCaptureDistanceMs,
 	imagingComparisonScore,
@@ -215,9 +206,7 @@ import {
 	pricelistParserModeLabels,
 } from "./imagingUiLabels";
 import { safeLocalStorageSetItem } from "./lib/safeLocalStorage";
-import {
-	describeMprClinicalPresetProjectionFallback,
-} from "./mprClinicalStatus";
+import { describeMprClinicalPresetProjectionFallback } from "./mprClinicalStatus";
 import {
 	dentalMaterialKindLabels,
 	dentalRestorationTypeLabels,
@@ -249,9 +238,7 @@ import {
 	mprSliceNudgeSteps,
 	mprSlicePresetFractions,
 } from "./utils/math/mprMath";
-import {
-	inferDashboardVisitSpecialty,
-} from "./visitSpecialtyData";
+import { inferDashboardVisitSpecialty } from "./visitSpecialtyData";
 import {
 	preloadWorkspaceView,
 	scheduleIdleWorkspacePreload,
@@ -2311,7 +2298,13 @@ export function useAppLogic(): any {
 		return () => {
 			cancelled = true;
 		};
-	}, [settingsAdminSecretSession, setUiPreferencesHydrated, queueUiPreferencesServerSync, setUiPreferencesSyncError, applyUiPreferences]);
+	}, [
+		settingsAdminSecretSession,
+		setUiPreferencesHydrated,
+		queueUiPreferencesServerSync,
+		setUiPreferencesSyncError,
+		applyUiPreferences,
+	]);
 
 	/*
 	 * Отметка об открытии карточки пациента.
@@ -2392,9 +2385,13 @@ export function useAppLogic(): any {
 		);
 		if (!scopedDismissal.dismissed) setOnboardingStep("intro");
 	}, [
-		dashboard?.clinicSettings?.profile?.organizationId, 
-		onboardingDismissedAt, 
-		uiPreferencesHydrated, setOnboardingStep, setOnboardingDismissedAt, setOnboardingDraftMode, setOnboardingDismissed
+		dashboard?.clinicSettings?.profile?.organizationId,
+		onboardingDismissedAt,
+		uiPreferencesHydrated,
+		setOnboardingStep,
+		setOnboardingDismissedAt,
+		setOnboardingDraftMode,
+		setOnboardingDismissed,
 	]);
 
 	useEffect(() => {
@@ -2409,7 +2406,10 @@ export function useAppLogic(): any {
 		queueUiPreferencesServerSync(savedPreferences, { delayMs: 600 });
 		return undefined;
 	}, [
-		uiPreferencesHydrated, setUiPreferencesSyncError, queueUiPreferencesServerSync, currentUiPreferencesInput
+		uiPreferencesHydrated,
+		setUiPreferencesSyncError,
+		queueUiPreferencesServerSync,
+		currentUiPreferencesInput,
 	]);
 
 	useEffect(() => {
@@ -2541,7 +2541,10 @@ export function useAppLogic(): any {
 			createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
 		};
 	}, [
-		imagingPreviewWorkset, auth.revokeObjectUrlIfNeeded, auth.denteClinicalReadHeaders, auth.revokeObjectUrlMap
+		imagingPreviewWorkset,
+		auth.revokeObjectUrlIfNeeded,
+		auth.denteClinicalReadHeaders,
+		auth.revokeObjectUrlMap,
 	]);
 
 	useEffect(() => {
@@ -2600,8 +2603,7 @@ export function useAppLogic(): any {
 
 	useEffect(() => {
 		reconcileDashboardScopedUiSelections();
-	}, [reconcileDashboardScopedUiSelections
-	]);
+	}, [reconcileDashboardScopedUiSelections]);
 
 	useEffect(() => {
 		if (!dashboard) return;
@@ -2612,9 +2614,7 @@ export function useAppLogic(): any {
 				newAppointmentPreferenceDefaults(),
 			),
 		);
-	}, [
-		dashboard, newAppointmentPreferenceDefaults, setNewAppointmentDraft
-	]);
+	}, [dashboard, newAppointmentPreferenceDefaults, setNewAppointmentDraft]);
 
 	useEffect(() => {
 		staffScheduleDraftsRef.current = staffScheduleDrafts;
@@ -2645,9 +2645,10 @@ export function useAppLogic(): any {
 		);
 		return () => window.clearTimeout(saveTimer);
 	}, [
-		dashboard, 
-		staffScheduleDirtyIds, 
-		staffScheduleSaveStates, saveStaffSchedule
+		dashboard,
+		staffScheduleDirtyIds,
+		staffScheduleSaveStates,
+		saveStaffSchedule,
 	]);
 
 	useEffect(() => {
@@ -2667,9 +2668,10 @@ export function useAppLogic(): any {
 		);
 		return () => window.clearTimeout(saveTimer);
 	}, [
-		dashboard, 
-		chairScheduleDirtyIds, 
-		chairScheduleSaveStates, saveChairSchedule
+		dashboard,
+		chairScheduleDirtyIds,
+		chairScheduleSaveStates,
+		saveChairSchedule,
 	]);
 
 	useEffect(() => {
@@ -2695,9 +2697,10 @@ export function useAppLogic(): any {
 		);
 		return () => window.clearTimeout(saveTimer);
 	}, [
-		dashboard, 
-		appointmentScheduleDirtyIds, 
-		appointmentScheduleSaveStates, saveAppointmentSchedule
+		dashboard,
+		appointmentScheduleDirtyIds,
+		appointmentScheduleSaveStates,
+		saveAppointmentSchedule,
 	]);
 
 	useEffect(() => {
@@ -2724,13 +2727,16 @@ export function useAppLogic(): any {
 		window.addEventListener("online", retryScheduleAutosaves);
 		return () => window.removeEventListener("online", retryScheduleAutosaves);
 	}, [
-		dashboard, 
-		staffScheduleDirtyIds, 
-		staffScheduleSaveStates, 
-		chairScheduleDirtyIds, 
-		chairScheduleSaveStates, 
-		appointmentScheduleDirtyIds, 
-		appointmentScheduleSaveStates, saveChairSchedule, saveAppointmentSchedule, saveStaffSchedule
+		dashboard,
+		staffScheduleDirtyIds,
+		staffScheduleSaveStates,
+		chairScheduleDirtyIds,
+		chairScheduleSaveStates,
+		appointmentScheduleDirtyIds,
+		appointmentScheduleSaveStates,
+		saveChairSchedule,
+		saveAppointmentSchedule,
+		saveStaffSchedule,
 	]);
 
 	useEffect(() => {
@@ -2747,10 +2753,11 @@ export function useAppLogic(): any {
 		}, 1400);
 		return () => window.clearTimeout(saveTimer);
 	}, [
-		clinicProfileDraft, 
-		clinicProfileDirty, 
-		clinicProfileSaveState, 
-		dashboard, saveClinicProfileFromDraft
+		clinicProfileDraft,
+		clinicProfileDirty,
+		clinicProfileSaveState,
+		dashboard,
+		saveClinicProfileFromDraft,
 	]);
 
 	useEffect(() => {
@@ -2794,7 +2801,12 @@ export function useAppLogic(): any {
 		return () => {
 			cancelled = true;
 		};
-	}, [activeOrganizationId, applyDicomWorkbenchManifest, loadDicomWorkbenchBundles, setDicomWorkbenchLocalSavedAt]);
+	}, [
+		activeOrganizationId,
+		applyDicomWorkbenchManifest,
+		loadDicomWorkbenchBundles,
+		setDicomWorkbenchLocalSavedAt,
+	]);
 
 	useEffect(() => {
 		const organizationId = activeOrganizationId?.trim() ?? "";
@@ -2810,7 +2822,12 @@ export function useAppLogic(): any {
 		setBrowserPickedImagingFolder(
 			loadBrowserPickedImagingFolderPreview(organizationId),
 		);
-	}, [activeOrganizationId, setImagingFolderPath, setLocalImagingFolderDraft, setBrowserPickedImagingFolder]);
+	}, [
+		activeOrganizationId,
+		setImagingFolderPath,
+		setLocalImagingFolderDraft,
+		setBrowserPickedImagingFolder,
+	]);
 
 	useEffect(() => {
 		if (currentView === "settings" && settingsTab === "audit") {
@@ -2818,7 +2835,13 @@ export function useAppLogic(): any {
 			void refreshBrowserContinuity({ silent: true });
 			void loadLocalBridgeUsePlans({ silent: true });
 		}
-	}, [currentView, settingsTab, refreshBrowserContinuity, loadPersistenceHealth, loadLocalBridgeUsePlans]);
+	}, [
+		currentView,
+		settingsTab,
+		refreshBrowserContinuity,
+		loadPersistenceHealth,
+		loadLocalBridgeUsePlans,
+	]);
 
 	useEffect(() => {
 		if (currentView === "settings") {
@@ -2920,7 +2943,15 @@ export function useAppLogic(): any {
 			window.removeEventListener("storage", refreshFromStorage);
 			window.clearTimeout(syncTimer);
 		};
-	}, [lastLocalSavedAt, setIsOnline, refreshPendingVisitSaveState, syncVisitDraftAutosave, flushPendingSpeechChunks, refreshPendingSpeechChunkState, flushPendingVisitSaves]);
+	}, [
+		lastLocalSavedAt,
+		setIsOnline,
+		refreshPendingVisitSaveState,
+		syncVisitDraftAutosave,
+		flushPendingSpeechChunks,
+		refreshPendingSpeechChunkState,
+		flushPendingVisitSaves,
+	]);
 
 	useEffect(() => {
 		if (!dashboard) return;
@@ -3019,11 +3050,26 @@ export function useAppLogic(): any {
 			cancelled = true;
 		};
 	}, [
-		activeOrganizationId, 
-		dashboard?.activeVisit?.id, 
-		dashboard?.activeVisit?.updatedAt, setTranscript, setVisitNoteForm, lastServerDraftSignatureRef, setLastServerDraftSavedAt, setSelectedSpecialty, setLocalDraftWasRestored, visitDraftUserEditedRef.current, visitDraftSignature, setLastLocalSavedAt, // Отметки зубов и ИИ-диагнозы относятся к КОНКРЕТНОМУ приёму. Без сброса
+		activeOrganizationId,
+		dashboard?.activeVisit?.id,
+		dashboard?.activeVisit?.updatedAt,
+		setTranscript,
+		setVisitNoteForm,
+		lastServerDraftSignatureRef,
+		setLastServerDraftSavedAt,
+		setSelectedSpecialty,
+		setLocalDraftWasRestored,
+		visitDraftUserEditedRef.current,
+		visitDraftSignature,
+		setLastLocalSavedAt, // Отметки зубов и ИИ-диагнозы относятся к КОНКРЕТНОМУ приёму. Без сброса
 		// они переносились на следующего пациента (см. resetVisitToothState).
-		resetVisitToothState, loadServerVisitDraft, dashboard?.activeVisit, setServerDraftSyncState, visitDraftUserEditedRef, dashboard, setLocalAutosaveReady
+		resetVisitToothState,
+		loadServerVisitDraft,
+		dashboard?.activeVisit,
+		setServerDraftSyncState,
+		visitDraftUserEditedRef,
+		dashboard,
+		setLocalAutosaveReady,
 	]);
 
 	useEffect(() => {
@@ -3049,12 +3095,15 @@ export function useAppLogic(): any {
 		}, 350);
 		return () => window.clearTimeout(timeout);
 	}, [
-		activeOrganizationId, 
-		dashboard?.activeVisit?.id, 
-		localAutosaveReady, 
-		selectedSpecialty, 
-		transcript, 
-		visitNoteForm, setLocalDraftWasRestored, setLastLocalSavedAt, dashboard
+		activeOrganizationId,
+		dashboard?.activeVisit?.id,
+		localAutosaveReady,
+		selectedSpecialty,
+		transcript,
+		visitNoteForm,
+		setLocalDraftWasRestored,
+		setLastLocalSavedAt,
+		dashboard,
 	]);
 
 	useEffect(() => {
@@ -3064,9 +3113,11 @@ export function useAppLogic(): any {
 		}, 1600);
 		return () => window.clearTimeout(timeout);
 	}, [
-		dashboard?.activeVisit?.id, 
-		lastLocalSavedAt, 
-		localAutosaveReady, syncVisitDraftAutosave, dashboard
+		dashboard?.activeVisit?.id,
+		lastLocalSavedAt,
+		localAutosaveReady,
+		syncVisitDraftAutosave,
+		dashboard,
 	]);
 
 	const sortedAppointments = useMemo(() => {
@@ -3167,7 +3218,12 @@ export function useAppLogic(): any {
 		)
 			return;
 		setTelegramLinkStaffId(telegramLinkStaffOptions[0]?.id ?? "");
-	}, [dashboard, telegramLinkStaffId, telegramLinkStaffOptions, setTelegramLinkStaffId]);
+	}, [
+		dashboard,
+		telegramLinkStaffId,
+		telegramLinkStaffOptions,
+		setTelegramLinkStaffId,
+	]);
 
 	const telegramLinkTargetKey = `${telegramLinkSubjectType}:${telegramLinkSubjectType === "patient" ? (activePatient?.id ?? "") : telegramLinkStaffId || ""}:${telegramModeDraft}:${telegramBotConfigId.trim()}`;
 	const previousTelegramLinkTargetKeyRef = useRef(telegramLinkTargetKey);
@@ -3179,7 +3235,13 @@ export function useAppLogic(): any {
 		if (!telegramLinkCode && !telegramLinkActionState) return;
 		setTelegramLinkCode(null);
 		setTelegramLinkActionState(null);
-	}, [telegramLinkActionState, telegramLinkCode, telegramLinkTargetKey, setTelegramLinkCode, setTelegramLinkActionState]);
+	}, [
+		telegramLinkActionState,
+		telegramLinkCode,
+		telegramLinkTargetKey,
+		setTelegramLinkCode,
+		setTelegramLinkActionState,
+	]);
 
 	function telegramSubjectName(
 		subjectType: DenteTelegramChatLinkPublic["subjectType"],

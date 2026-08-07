@@ -525,32 +525,21 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 										</div>
 									)}
 								{searchResults.map((f) => (
-									<div
+									<button
+										type="button"
 										key={f.id}
-										role="button"
-										tabIndex={0}
-										className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+										className="w-full text-left flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
 										onClick={() => handleLinkFamily(f.id)}
-										onKeyDown={(e) => {
-											if (e.key === "Enter" || e.key === " ") {
-												e.preventDefault();
-												handleLinkFamily(f.id);
-											}
-										}}
 									>
 										<div>
 											<div className="text-xs font-semibold text-slate-900 dark:text-white">
 												{f.name}
 											</div>
 										</div>
-										<button
-											type="button"
-											className="px-2 py-1 text-xs bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 rounded font-semibold border-0 cursor-pointer"
-											disabled={loading}
-										>
+										<span className="px-2 py-1 text-xs bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 rounded font-semibold">
 											Выбрать
-										</button>
-									</div>
+										</span>
+									</button>
 								))}
 							</div>
 

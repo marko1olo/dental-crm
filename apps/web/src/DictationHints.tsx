@@ -1,5 +1,3 @@
-
-
 interface DictationHintsProps {
 	isVisible: boolean;
 	type: "schedule" | "patient" | "visit" | "prices" | "payment";

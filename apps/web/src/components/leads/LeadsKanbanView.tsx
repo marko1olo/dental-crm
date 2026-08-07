@@ -914,10 +914,14 @@ export function LeadsKanbanView() {
 							style={{ display: "flex", flexDirection: "column", gap: 16 }}
 						>
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)" }}>
+								<label
+									htmlFor="convert-lead-doctor"
+									style={{ fontSize: 13, color: "var(--muted)" }}
+								>
 									Врач
 								</label>
 								<select
+									id="convert-lead-doctor"
 									value={selectedDoctorId}
 									onChange={(e) => setSelectedDoctorId(e.target.value)}
 									style={{
@@ -951,10 +955,14 @@ export function LeadsKanbanView() {
 							</div>
 
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)" }}>
+								<label
+									htmlFor="convert-lead-chair"
+									style={{ fontSize: 13, color: "var(--muted)" }}
+								>
 									Кресло
 								</label>
 								<select
+									id="convert-lead-chair"
 									value={selectedChairId}
 									onChange={(e) => setSelectedChairId(e.target.value)}
 									style={{
@@ -989,10 +997,14 @@ export function LeadsKanbanView() {
 										flex: 1,
 									}}
 								>
-									<label style={{ fontSize: 13, color: "var(--muted)" }}>
+									<label
+										htmlFor="convert-lead-date"
+										style={{ fontSize: 13, color: "var(--muted)" }}
+									>
 										Дата
 									</label>
 									<input
+										id="convert-lead-date"
 										type="date"
 										value={appointmentDate}
 										onChange={(e) => setAppointmentDate(e.target.value)}
@@ -1014,10 +1026,14 @@ export function LeadsKanbanView() {
 										flex: 1,
 									}}
 								>
-									<label style={{ fontSize: 13, color: "var(--muted)" }}>
+									<label
+										htmlFor="convert-lead-time"
+										style={{ fontSize: 13, color: "var(--muted)" }}
+									>
 										Время
 									</label>
 									<input
+										id="convert-lead-time"
 										type="time"
 										value={appointmentTime}
 										onChange={(e) => setAppointmentTime(e.target.value)}
@@ -1134,10 +1150,14 @@ export function LeadsKanbanView() {
 							style={{ display: "flex", flexDirection: "column", gap: 16 }}
 						>
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)" }}>
+								<label
+									htmlFor="edit-lead-name"
+									style={{ fontSize: 13, color: "var(--muted)" }}
+								>
 									Имя пациента / лида
 								</label>
 								<input
+									id="edit-lead-name"
 									type="text"
 									value={editForm.name}
 									onChange={(e) =>
@@ -1156,10 +1176,14 @@ export function LeadsKanbanView() {
 							</div>
 
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)" }}>
+								<label
+									htmlFor="edit-lead-phone"
+									style={{ fontSize: 13, color: "var(--muted)" }}
+								>
 									Телефон
 								</label>
 								<input
+									id="edit-lead-phone"
 									type="tel"
 									value={editForm.phone}
 									onChange={(e) =>
@@ -1177,10 +1201,14 @@ export function LeadsKanbanView() {
 							</div>
 
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)" }}>
+								<label
+									htmlFor="edit-lead-source"
+									style={{ fontSize: 13, color: "var(--muted)" }}
+								>
 									Источник (Откуда пришел)
 								</label>
 								<input
+									id="edit-lead-source"
 									type="text"
 									value={editForm.source}
 									onChange={(e) =>
@@ -1198,10 +1226,14 @@ export function LeadsKanbanView() {
 							</div>
 
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)" }}>
+								<label
+									htmlFor="edit-lead-revenue"
+									style={{ fontSize: 13, color: "var(--muted)" }}
+								>
 									Ожидаемая выручка (₽)
 								</label>
 								<input
+									id="edit-lead-revenue"
 									type="text"
 									value={editForm.expectedRevenue}
 									onChange={(e) =>

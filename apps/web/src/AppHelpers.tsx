@@ -65,13 +65,8 @@ import {
 	type XrayCbctReferralPriority,
 	type XrayCbctReferralStudyType,
 } from "@dental/shared";
-import {
-	type CSSProperties,
-	lazy,
-} from "react";
-import type {
-	CtImplantLibraryItem,
-} from "./ctPlanningTools";
+import { type CSSProperties, lazy } from "react";
+import type { CtImplantLibraryItem } from "./ctPlanningTools";
 import {
 	imagingKindLabels,
 	imagingSourceLabels,
@@ -90,12 +85,8 @@ import {
 	clampMprSlabMm,
 	clampMprSliceIndex,
 } from "./mprControlMath";
-import {
-	pricelistSourceKindLabels,
-} from "./pricelistUiMeta";
-import type {
-	AppView,
-} from "./workspaceShell";
+import { pricelistSourceKindLabels } from "./pricelistUiMeta";
+import type { AppView } from "./workspaceShell";
 import {
 	postVisitCareTopicOptions,
 	telegramVisualCardFields,

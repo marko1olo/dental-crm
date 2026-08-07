@@ -2157,9 +2157,7 @@ export function useSettingsDerivations() {
 				<summary>{title}</summary>
 				<div>
 					{visibleItems.map((item) => (
-						<small key={item}>
-							{humanizeMigrationText(item)}
-						</small>
+						<small key={item}>{humanizeMigrationText(item)}</small>
 					))}
 				</div>
 			</details>

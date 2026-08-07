@@ -1,10 +1,4 @@
-import {
-	Activity,
-	Calendar,
-	FileText,
-	History,
-	X,
-} from "lucide-react";
+import { Activity, Calendar, FileText, History, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { type PanelSubject, panelStateText } from "../../lib/panelStateText";

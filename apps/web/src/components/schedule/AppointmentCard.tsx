@@ -165,10 +165,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							}}
 						>
 							{appointmentSuggestions.map((suggestion) => (
-								<span
+								<button
+									type="button"
 									key={suggestion.id}
-									role="button"
-									tabIndex={0}
 									className={`chip chip-suggestion priority-${suggestion.priority} cursor-pointer px-2 py-0.5 rounded border text-xs font-semibold ${
 										suggestion.priority === "urgent"
 											? "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800"
@@ -188,7 +187,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									title={suggestion.detail}
 								>
 									⚠️ {suggestion.title}
-								</span>
+								</button>
 							))}
 							<span className="chip chip-reason">
 								{appointment.reason || "Причина не указана"}

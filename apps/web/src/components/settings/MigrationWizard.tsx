@@ -305,38 +305,35 @@ export function MigrationWizard() {
 	// -------------------------------------------------------------------
 	// Шаг 2: карта соответствия
 	// -------------------------------------------------------------------
-	const runMapping = useCallback(
-		async (runId: string, useLlm: boolean) => {
-			setBusy(true);
-			setError(null);
-			try {
-				const response = await fetch(`/api/migration/${runId}/map`, {
-					method: "POST",
-					headers: clinicalMutationHeaders({
-						"content-type": "application/json",
-					}),
-					body: JSON.stringify({ allowLlm: useLlm }),
-				});
-				const result = await readResponse<MapResponse>(response);
-				if (!result.ok) {
-					setError({ code: result.code, message: result.message });
-					return;
-				}
-				setMapping(result.data);
-			} catch (caught) {
-				setError({
-					code: "NetworkError",
-					message:
-						caught instanceof Error
-							? caught.message
-							: "Сопоставление не выполнено.",
-				});
-			} finally {
-				setBusy(false);
+	async function runMapping(runId: string, useLlm: boolean) {
+		setBusy(true);
+		setError(null);
+		try {
+			const response = await fetch(`/api/migration/${runId}/map`, {
+				method: "POST",
+				headers: clinicalMutationHeaders({
+					"content-type": "application/json",
+				}),
+				body: JSON.stringify({ allowLlm: useLlm }),
+			});
+			const result = await readResponse<MapResponse>(response);
+			if (!result.ok) {
+				setError({ code: result.code, message: result.message });
+				return;
 			}
-		},
-		[clinicalMutationHeaders],
-	);
+			setMapping(result.data);
+		} catch (caught) {
+			setError({
+				code: "NetworkError",
+				message:
+					caught instanceof Error
+						? caught.message
+						: "Сопоставление не выполнено.",
+			});
+		} finally {
+			setBusy(false);
+		}
+	}
 
 	// -------------------------------------------------------------------
 	// Шаг 1: заливка файла

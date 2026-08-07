@@ -146,13 +146,13 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	 */
 	const lockInProgress = isSigning || awaitingLockConfirmation;
 
-	const closeDialog = () => {
+	function closeDialog() {
 		setShowPinDialog(false);
 		setFailureText(null);
 		setAwaitingLockConfirmation(false);
 		// ПИН не держим в памяти дольше самого подписания.
 		setPinCode("");
-	};
+	}
 
 	// Окно перекрывает весь экран, поэтому обязано закрываться Escape — но не
 	// посреди подписания, когда закрытие выглядит как подтверждение подписи.

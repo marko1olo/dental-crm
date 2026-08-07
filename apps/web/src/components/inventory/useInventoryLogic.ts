@@ -759,8 +759,8 @@ export function useInventoryLogic(organizationId: string) {
 		return items.filter(
 			(i) =>
 				i.name.toLowerCase().includes(q) ||
-				(i.sku?.toLowerCase().includes(q)) ||
-				(i.barcode?.toLowerCase().includes(q)),
+				i.sku?.toLowerCase().includes(q) ||
+				i.barcode?.toLowerCase().includes(q),
 		);
 	}, [items, searchQuery]);
 

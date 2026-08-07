@@ -272,7 +272,7 @@ export function SettingsRulesTab() {
 					</div>
 
 					<div className="rules-builder-group">
-						<label>
+						<div>
 							Действие правила
 							<div className="rules-chip-group">
 								{typedClinicalRuleActions.map((action) => (
@@ -286,11 +286,11 @@ export function SettingsRulesTab() {
 									</button>
 								))}
 							</div>
-						</label>
+						</div>
 					</div>
 
 					<div className="rules-builder-group">
-						<label>
+						<div>
 							Уровень строгости
 							<div className="rules-chip-group">
 								{typedClinicalRuleSeverities.map((severity) => (
@@ -304,7 +304,7 @@ export function SettingsRulesTab() {
 									</button>
 								))}
 							</div>
-						</label>
+						</div>
 					</div>
 
 					<div className="rules-builder-group full-width rules-service-grid">

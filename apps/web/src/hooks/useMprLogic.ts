@@ -540,9 +540,13 @@ export function useMprLogic({
 			cancelled = true;
 		};
 	}, [
-		activeOrganizationId, 
-		cbctWorkbenchSeriesKey, 
-		mprControlsReady, setMprWorkbenchDraftRestored, setMprWorkbenchLocalSavedAt, applyMprWorkbenchState, applyDefaultMprWorkbenchState
+		activeOrganizationId,
+		cbctWorkbenchSeriesKey,
+		mprControlsReady,
+		setMprWorkbenchDraftRestored,
+		setMprWorkbenchLocalSavedAt,
+		applyMprWorkbenchState,
+		applyDefaultMprWorkbenchState,
 	]);
 
 	useEffect(() => {
@@ -565,10 +569,11 @@ export function useMprLogic({
 				window.clearTimeout(mprWorkbenchSaveTimerRef.current);
 		};
 	}, [
-		activeOrganizationId, 
-		cbctWorkbenchSeriesKey, 
-		currentMprWorkbenchState, 
-		mprControlsReady, setMprWorkbenchLocalSavedAt
+		activeOrganizationId,
+		cbctWorkbenchSeriesKey,
+		currentMprWorkbenchState,
+		mprControlsReady,
+		setMprWorkbenchLocalSavedAt,
 	]);
 
 	return {

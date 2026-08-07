@@ -498,6 +498,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 							{/* Company name */}
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 								<label
+									htmlFor="insurance-company-name"
 									style={{
 										fontSize: 13,
 										color: "var(--muted)",
@@ -507,6 +508,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 									Страховая компания *
 								</label>
 								<input
+									id="insurance-company-name"
 									type="text"
 									required
 									value={formData.companyName}
@@ -528,6 +530,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 							{/* Policy mask */}
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 								<label
+									htmlFor="insurance-policy-mask"
 									style={{
 										fontSize: 13,
 										color: "var(--muted)",
@@ -537,6 +540,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 									Маска номера полиса (опционально)
 								</label>
 								<input
+									id="insurance-policy-mask"
 									type="text"
 									value={formData.policyNumberMask}
 									onChange={(e) =>
@@ -586,6 +590,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 											}}
 										>
 											<label
+												htmlFor={`insurance-coverage-${key}`}
 												style={{
 													fontSize: 12,
 													color: "var(--muted)",
@@ -602,6 +607,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 												}}
 											>
 												<input
+													id={`insurance-coverage-${key}`}
 													type="number"
 													min="0"
 													max="100"
@@ -632,6 +638,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 							{/* Annual limit */}
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 								<label
+									htmlFor="insurance-annual-limit"
 									style={{
 										fontSize: 13,
 										color: "var(--muted)",
@@ -641,6 +648,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 									Годовой лимит (₽, опционально)
 								</label>
 								<input
+									id="insurance-annual-limit"
 									type="number"
 									min="0"
 									value={formData.annualLimitRub}

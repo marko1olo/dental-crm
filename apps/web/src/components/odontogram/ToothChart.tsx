@@ -261,7 +261,6 @@ const ToothSVG = ({
 							points="8,8 16,8 16,16 8,16"
 							fill={surfaces?.includes("O") ? "#ef4444" : "transparent"}
 							style={{ cursor: "pointer", transition: "fill 0.2s" }}
-							role="button"
 							tabIndex={0}
 							onMouseEnter={(e) => {
 								if (!surfaces?.includes("O"))
@@ -291,7 +290,6 @@ const ToothSVG = ({
 									: "transparent"
 							}
 							style={{ cursor: "pointer", transition: "fill 0.2s" }}
-							role="button"
 							tabIndex={0}
 							onMouseEnter={(e) => {
 								if (!(surfaces?.includes("V") || surfaces?.includes("B")))
@@ -325,7 +323,6 @@ const ToothSVG = ({
 									: "transparent"
 							}
 							style={{ cursor: "pointer", transition: "fill 0.2s" }}
-							role="button"
 							tabIndex={0}
 							onMouseEnter={(e) => {
 								if (!(surfaces?.includes("L") || surfaces?.includes("P")))
@@ -355,7 +352,6 @@ const ToothSVG = ({
 							points="0,0 8,8 8,16 0,24"
 							fill={surfaces?.includes("M") ? "#ef4444" : "transparent"}
 							style={{ cursor: "pointer", transition: "fill 0.2s" }}
-							role="button"
 							tabIndex={0}
 							onMouseEnter={(e) => {
 								if (!surfaces?.includes("M"))
@@ -381,7 +377,6 @@ const ToothSVG = ({
 							points="24,0 24,24 16,16 16,8"
 							fill={surfaces?.includes("D") ? "#ef4444" : "transparent"}
 							style={{ cursor: "pointer", transition: "fill 0.2s" }}
-							role="button"
 							tabIndex={0}
 							onMouseEnter={(e) => {
 								if (!surfaces?.includes("D"))
@@ -416,11 +411,10 @@ const ToothSVG = ({
 		   добраться. Теперь это кнопка по роли: Tab доводит до зуба,
 		   Enter и Пробел открывают то же меню состояний, а доступное имя
 		   содержит номер зуба и текущее состояние по-русски. */
-		<div
+		<button
+			type="button"
 			className={`tooth-svg-wrapper ${isTop ? "top" : "bottom"} ${isSelected ? "selected" : ""}`}
 			data-tooth-id={number}
-			role="button"
-			tabIndex={0}
 			aria-label={`Зуб ${number}, ${TOOTH_STATE_LABELS[state]}`}
 			aria-pressed={isSelected ? true : undefined}
 			onClick={(e) => onClick(e, number)}
@@ -460,7 +454,7 @@ const ToothSVG = ({
 					{number}
 				</span>
 			)}
-		</div>
+		</button>
 	);
 };
 

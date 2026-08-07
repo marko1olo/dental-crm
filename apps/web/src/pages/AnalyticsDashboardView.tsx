@@ -176,7 +176,12 @@ export function AnalyticsDashboardView() {
 			controller.abort();
 			clearInterval(interval);
 		};
-	}, [dateRange, getReadHeaders, authContext.denteClinicalReadHeaders, authContext]);
+	}, [
+		dateRange,
+		getReadHeaders,
+		authContext.denteClinicalReadHeaders,
+		authContext,
+	]);
 
 	const retryButton = (
 		<button

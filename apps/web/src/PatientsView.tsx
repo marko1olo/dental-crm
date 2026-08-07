@@ -74,7 +74,9 @@ export type PatientsViewProps = {
 	patientInsightById: Map<string, PatientInsight>;
 	patientInsightRiskLabels: Record<PatientInsight["riskLevel"], string>;
 	query: string;
-	savePatientAdministrativeProfile: () => undefined | Promise<undefined | boolean>;
+	savePatientAdministrativeProfile: () =>
+		| undefined
+		| Promise<undefined | boolean>;
 	savePatientCore: () => undefined | Promise<undefined | boolean>;
 	selectedPatient: Patient | null | undefined;
 	setQuery: (value: string) => void;

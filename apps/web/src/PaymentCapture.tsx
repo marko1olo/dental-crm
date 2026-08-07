@@ -563,7 +563,9 @@ function InstallmentCalculator({
 							max="80"
 							step="10"
 							value={downPaymentPercent}
-							onChange={(e) => setDownPaymentPercent(parseInt(e.target.value, 10))}
+							onChange={(e) =>
+								setDownPaymentPercent(parseInt(e.target.value, 10))
+							}
 							style={{ width: "100%" }}
 						/>
 						<div

@@ -349,9 +349,10 @@ export function usePatientIntakeLogic({
 		outpatient025uDraftHydratedKeyRef.current =
 			outpatient025uDraftPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId, 
-		outpatient025uDraftPersistenceKey, 
-		selectedDocumentKind, applyOutpatient025uDocumentDraftFields
+		documentLocalPersistenceOrganizationId,
+		outpatient025uDraftPersistenceKey,
+		selectedDocumentKind,
+		applyOutpatient025uDocumentDraftFields,
 	]);
 
 	useEffect(() => {
@@ -374,11 +375,12 @@ export function usePatientIntakeLogic({
 			currentOutpatient025uDocumentDraftFields(),
 		);
 	}, [
-		documentPatient?.id, 
-		documentLocalPersistenceOrganizationId, 
-		outpatient025uDraftPersistenceKey, 
-		outpatient025uDraftVisitId, 
-		selectedDocumentKind, currentOutpatient025uDocumentDraftFields
+		documentPatient?.id,
+		documentLocalPersistenceOrganizationId,
+		outpatient025uDraftPersistenceKey,
+		outpatient025uDraftVisitId,
+		selectedDocumentKind,
+		currentOutpatient025uDocumentDraftFields,
 	]);
 
 	useEffect(() => {
@@ -399,9 +401,10 @@ export function usePatientIntakeLogic({
 		medicalRecordExtractDraftHydratedKeyRef.current =
 			medicalRecordExtractDraftPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId, 
-		medicalRecordExtractDraftPersistenceKey, 
-		selectedDocumentKind, applyMedicalRecordExtractDocumentDraftFields
+		documentLocalPersistenceOrganizationId,
+		medicalRecordExtractDraftPersistenceKey,
+		selectedDocumentKind,
+		applyMedicalRecordExtractDocumentDraftFields,
 	]);
 
 	useEffect(() => {
@@ -424,11 +427,12 @@ export function usePatientIntakeLogic({
 			currentMedicalRecordExtractDocumentDraftFields(),
 		);
 	}, [
-		documentPatient?.id, 
-		documentLocalPersistenceOrganizationId, 
-		medicalRecordExtractDraftPersistenceKey, 
-		medicalRecordExtractDraftVisitId, 
-		selectedDocumentKind, currentMedicalRecordExtractDocumentDraftFields
+		documentPatient?.id,
+		documentLocalPersistenceOrganizationId,
+		medicalRecordExtractDraftPersistenceKey,
+		medicalRecordExtractDraftVisitId,
+		selectedDocumentKind,
+		currentMedicalRecordExtractDocumentDraftFields,
 	]);
 
 	function recordExtractComplaintAndAnamnesisValue(): string {
@@ -512,7 +516,7 @@ export function usePatientIntakeLogic({
 	}
 
 	function validateMedicalCardPayload(): string | null {
-		if (!documentPatient || !documentPatient.fullName?.trim()) {
+		if (!documentPatient?.fullName?.trim()) {
 			const error = "Выберите пациента";
 			setError?.(error);
 			return error;

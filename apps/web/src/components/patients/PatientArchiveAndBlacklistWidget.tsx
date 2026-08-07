@@ -1,7 +1,4 @@
-import {
-	AlertTriangle,
-	ShieldAlert,
-} from "lucide-react";
+import { AlertTriangle, ShieldAlert } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";

@@ -277,7 +277,13 @@ function PanelHeader({
 			type="button"
 			onClick={onToggle}
 			className="w-full flex justify-between items-center cursor-pointer pb-1.5 border-b select-none"
-			style={{ borderColor: "var(--line)", background: "none", borderLeft: "none", borderRight: "none", borderTop: "none" }}
+			style={{
+				borderColor: "var(--line)",
+				background: "none",
+				borderLeft: "none",
+				borderRight: "none",
+				borderTop: "none",
+			}}
 		>
 			<span className="text-xs font-bold flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
 				<Activity className="w-4 h-4 text-sky-500" />

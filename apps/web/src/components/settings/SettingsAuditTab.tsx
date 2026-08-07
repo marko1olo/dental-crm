@@ -1362,7 +1362,8 @@ export function SettingsAuditTab(props: Record<string, any>) {
 			: "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные, если для них включены отдельные секреты.";
 	const _typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
 	const _typedModeHints = dashboard.clinicSettings.modeHints as string[];
-	const _typedRoleQueues = dashboard.shiftIntelligence.roleQueues as RoleQueue[];
+	const _typedRoleQueues = dashboard.shiftIntelligence
+		.roleQueues as RoleQueue[];
 	const _typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
 	const _typedChairs = dashboard.clinicSettings.chairs as Chair[];
 	const _typedWeekdayOptions = weekdayOptions as WeekdayOption[];
@@ -1398,7 +1399,8 @@ export function SettingsAuditTab(props: Record<string, any>) {
 		browserMigrationDiscovery as MigrationLocalSourceDiscoveryResponse | null;
 	const typedSmartImportPreview =
 		smartImportPreview as SmartImportPreviewResponse | null;
-	const _typedImagingSourceChoices = imagingSourceChoices as ImagingSourceKind[];
+	const _typedImagingSourceChoices =
+		imagingSourceChoices as ImagingSourceKind[];
 	const _typedImagingImportPreview =
 		imagingImportPreview as ImagingImportPreviewResponse | null;
 	const typedBrowserContinuityChecks =
@@ -1591,8 +1593,8 @@ export function SettingsAuditTab(props: Record<string, any>) {
 		!isDicomFirstFramePreviewing;
 	const _typedDicomSeriesPreviewSeries = (dicomSeriesPreview?.series ??
 		[]) as DicomSeriesPreviewGroup[];
-	const _typedDicomSeriesPreviewParserNotes = (dicomSeriesPreview?.parserNotes ??
-		[]) as string[];
+	const _typedDicomSeriesPreviewParserNotes =
+		(dicomSeriesPreview?.parserNotes ?? []) as string[];
 	const typedCbctWorkbenchSeries =
 		cbctWorkbenchSeries as DicomSeriesPreviewGroup | null;
 	const typedDicomViewerWorkbenchManifest =

@@ -339,8 +339,8 @@ export function textToNumbers(text: string): string {
 					let lastIndex = result.length - 1;
 					while (lastIndex >= 0 && result[lastIndex]?.trim() === "")
 						lastIndex -= 1;
-					const lastEmitted =
-						(lastIndex >= 0 ? result[lastIndex]?.trim() : "") ?? "";
+					const rawToken = lastIndex >= 0 ? result[lastIndex] : "";
+					const lastEmitted = rawToken ? rawToken.trim() : "";
 					if (/^\d+$/.test(lastEmitted)) {
 						result.splice(lastIndex);
 						currentNum = Number.parseInt(lastEmitted, 10) * 1000;
@@ -403,11 +403,10 @@ export function textToNumbers(text: string): string {
 
 			let nextIsNumber = false;
 			for (let j = i + 1; j < tokens.length; j++) {
-				if (tokens[j]?.trim() !== "") {
-					const wMatch = tokens[j]?.match(/^([.,;!?]*)(.*?)([.,;!?]*)$/);
-					const nextWord = (
-						wMatch ? wMatch[2] || "" : tokens[j] ?? ""
-					).toLowerCase();
+				const tok = tokens[j];
+				if (tok && tok.trim() !== "") {
+					const wMatch = tok.match(/^([.,;!?]*)(.*?)([.,;!?]*)$/);
+					const nextWord = (wMatch ? wMatch[2] || "" : tok).toLowerCase();
 
 					/* Загляд вперёд обязан пользоваться тем же строгим правилом.
              С прежним isFuzzyRootMatch медицинское слово после числа
@@ -492,7 +491,9 @@ export function normalizeDentalSlang(text: string): string {
 			const searchStart = Math.max(0, i - 10);
 			const searchEnd = Math.min(words.length - 1, i + 10);
 			for (let j = searchStart; j <= searchEnd; j++) {
-				const ctxWord = words[j]?.trim();
+				const rawW = words[j];
+				if (!rawW) continue;
+				const ctxWord = rawW.trim();
 				if (!ctxWord) continue;
 				if (
 					isFuzzyRootMatch(ctxWord, "верхн") ||
@@ -527,8 +528,9 @@ export function normalizeDentalSlang(text: string): string {
 			else if (isLeft) quad = "2";
 			else if (isSlangWord) quad = "1"; // fallback only if it was an explicit slang word
 
-			if (quad) {
-				words[i] = (words[i] ?? "").replace(word, quad + toothDigit);
+			const currentTargetWord = words[i];
+			if (quad && currentTargetWord) {
+				words[i] = currentTargetWord.replace(word, quad + toothDigit);
 			}
 		}
 	}

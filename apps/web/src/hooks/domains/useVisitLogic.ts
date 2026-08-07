@@ -789,7 +789,7 @@ export function useVisitLogic({
 						.trim();
 					if (
 						!normalizedAssembled ||
-						(normalizedCurrent?.includes(normalizedAssembled))
+						normalizedCurrent?.includes(normalizedAssembled)
 					)
 						return safeCurrent;
 					return [safeCurrent.trim(), assembledTranscript]

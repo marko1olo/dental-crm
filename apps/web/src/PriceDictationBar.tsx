@@ -1,4 +1,4 @@
-import { Check, } from "lucide-react";
+import { Check } from "lucide-react";
 import { useState } from "react";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
@@ -38,11 +38,7 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 	};
 
 	const handleApply = (data: any) => {
-		if (
-			data?.serviceName &&
-			data.price !== null &&
-			data.price !== undefined
-		) {
+		if (data?.serviceName && data.price !== null && data.price !== undefined) {
 			onPriceParsed(data.serviceName, data.price, data.category);
 		}
 		setShowPreview(false);

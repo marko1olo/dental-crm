@@ -216,8 +216,7 @@ export class AiOrchestrator {
 		return {
 			source: "llm_required",
 			systemPrompt: `${Prompts.System.Base}\n${Prompts.System.StrictJSON}`,
-			suggestedPrompt:
-				`Extract serviceName, price (number), and category from: ${input}`,
+			suggestedPrompt: `Extract serviceName, price (number), and category from: ${input}`,
 		};
 	}
 

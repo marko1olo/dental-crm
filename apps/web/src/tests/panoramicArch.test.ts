@@ -570,8 +570,11 @@ describe("a closed contour does not grow a tail on the panorama", () => {
 		// An arch has one column per x; a loop comes back, so monotone x is a
 		// second, independent way of saying "no return sweep".
 		for (let i = 1; i < result.curve.length; i++) {
+			const curr = result.curve[i];
+			const prev = result.curve[i - 1];
+			if (!curr || !prev) continue;
 			assert.ok(
-				result.curve[i]!.x >= result.curve[i - 1]!.x - 1e-9,
+				curr.x >= prev.x - 1e-9,
 				`the reconstruction turns back on itself at index ${i}`,
 			);
 		}
@@ -769,15 +772,22 @@ describe("orientArchPatientRightFirst", () => {
 				`column ${i} moved when the trace direction changed`,
 			);
 		}
-		assert.ok(
-			forward.curve[0]!.x < forward.curve[forward.curve.length - 1]!.x,
-			"the arch must start on the patient's right (smallest world X)",
-		);
-		assert.ok(
-			backward.controlPoints[0]!.x <
-				backward.controlPoints[backward.controlPoints.length - 1]!.x,
-			"the reported control points must follow the same order as the columns",
-		);
+		const fFirst = forward.curve[0];
+		const fLast = forward.curve[forward.curve.length - 1];
+		if (fFirst && fLast) {
+			assert.ok(
+				fFirst.x < fLast.x,
+				"the arch must start on the patient's right (smallest world X)",
+			);
+		}
+		const bFirst = backward.controlPoints[0];
+		const bLast = backward.controlPoints[backward.controlPoints.length - 1];
+		if (bFirst && bLast) {
+			assert.ok(
+				bFirst.x < bLast.x,
+				"the reported control points must follow the same order as the columns",
+			);
+		}
 	});
 });
 

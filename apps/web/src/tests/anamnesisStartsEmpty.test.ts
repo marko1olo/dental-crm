@@ -42,7 +42,8 @@ function initialValueOf(field: string): string | null {
 		"m",
 	).exec(documentStore);
 	if (!match) return null;
-	return match[1]?.trim() ?? null;
+	const val = match[1];
+	return val ? val.trim() : null;
 }
 
 /**

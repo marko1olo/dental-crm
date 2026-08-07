@@ -133,10 +133,12 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 		const rect = canvas.getBoundingClientRect();
 		if ("touches" in e && e.touches.length > 0 && e.touches[0]) {
 			const touch = e.touches[0];
-			return {
-				x: touch.clientX - rect.left,
-				y: touch.clientY - rect.top,
-			};
+			if (touch) {
+				return {
+					x: touch.clientX - rect.left,
+					y: touch.clientY - rect.top,
+				};
+			}
 		}
 		return {
 			x: (e as React.MouseEvent).clientX - rect.left,

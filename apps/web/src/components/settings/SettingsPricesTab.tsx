@@ -141,7 +141,9 @@ export function SettingsPricesTab() {
 	const [priceRubInput, setPriceRubInput] = useState("");
 	const [priceProblem, setPriceProblem] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
-	const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
+	const [deletingServiceId, setDeletingServiceId] = useState<string | null>(
+		null,
+	);
 
 	const [isImporting, setIsImporting] = useState(false);
 	const [importResult, setImportResult] = useState<{

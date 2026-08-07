@@ -207,8 +207,7 @@ h6,
 /* Base Body Background with Mesh Gradients */
 body {
 	background-color: var(--bg-app);
-	background-image:
-		var(--mesh-bg-1), var(--mesh-bg-2), var(--mesh-bg-3);
+	background-image: var(--mesh-bg-1), var(--mesh-bg-2), var(--mesh-bg-3);
 	background-attachment: fixed;
 	color: var(--text-primary);
 }

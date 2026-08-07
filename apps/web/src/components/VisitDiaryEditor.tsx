@@ -233,14 +233,12 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			)
 			.join(", ");
 	})();
-	const doctorName =
-		diaryDoctorFullName?.trim()
-			? diaryDoctorFullName.trim()
-			: sessionDoctorName;
-	const doctorSpecialty =
-		diaryDoctorSpecialty?.trim()
-			? diaryDoctorSpecialty.trim()
-			: sessionDoctorSpecialty;
+	const doctorName = diaryDoctorFullName?.trim()
+		? diaryDoctorFullName.trim()
+		: sessionDoctorName;
+	const doctorSpecialty = diaryDoctorSpecialty?.trim()
+		? diaryDoctorSpecialty.trim()
+		: sessionDoctorSpecialty;
 
 	// ── ICD-10 select
 	const handleIcdSelect = (code: string) => {

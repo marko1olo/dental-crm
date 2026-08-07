@@ -1181,7 +1181,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														})()
 													) : item.lotNumber ? (
 														<span style={{ fontSize: 12 }}>
-																			Партия: {item.lotNumber}
+															Партия: {item.lotNumber}
 														</span>
 													) : (
 														<span style={{ fontStyle: "italic", opacity: 0.5 }}>
@@ -1349,6 +1349,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					}
 				>
 					<div
+						role="dialog"
+						aria-modal="true"
 						style={{
 							background: paperBg,
 							width: 440,
@@ -1359,6 +1361,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
 						}}
 						onClick={(e) => e.stopPropagation()}
+						onKeyDown={(e) => e.stopPropagation()}
 					>
 						<div
 							style={{

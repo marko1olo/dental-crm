@@ -1,11 +1,4 @@
-import {
-	ArrowRight,
-	Eye,
-	EyeOff,
-	KeyRound,
-	Mail,
-	Shield,
-} from "lucide-react";
+import { ArrowRight, Eye, EyeOff, KeyRound, Mail, Shield } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import {
