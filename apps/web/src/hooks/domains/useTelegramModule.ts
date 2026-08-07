@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import type {
 	DenteTelegramChatLinkListResponse,
 	DenteTelegramLinkCodeCreated,
@@ -8,6 +7,7 @@ import type {
 	DenteTelegramOutboxSendDueResponse,
 	DenteTelegramOutboxSendResponse,
 } from "@dental/shared";
+import { useEffect, useRef } from "react";
 import {
 	type DenteTelegramHandoffTarget,
 	operatorWorkflowFailureMessage,
@@ -16,11 +16,11 @@ import {
 	stripDenteTelegramHandoffQuery,
 	telegramHumanMessage,
 } from "../../AppHelpers";
-import { useTelegramSettings } from "../useTelegramSettings";
-import { emptyTelegramVisualCardUrlDrafts } from "../../utils/draftDefaults";
-import { defaultTelegramPostVisitCheckupDelayHoursByTopic } from "../../workspaceStaticOptions";
 import { useAppStore } from "../../store/appStore";
 import { useSettingsStore } from "../../store/settingsStore";
+import { emptyTelegramVisualCardUrlDrafts } from "../../utils/draftDefaults";
+import { defaultTelegramPostVisitCheckupDelayHoursByTopic } from "../../workspaceStaticOptions";
+import { useTelegramSettings } from "../useTelegramSettings";
 
 export type UseTelegramModuleOptions = {
 	settingsAdminSecretSession?: string | null;
@@ -191,10 +191,7 @@ export function useTelegramModule({
 			void saveTelegramSettings({ silent: true });
 		}, 900);
 		return () => window.clearTimeout(timeout);
-	}, [
-		telegramSettingsDirty,
-		telegramStatus?.settings,
-	]);
+	}, [telegramSettingsDirty, telegramStatus?.settings]);
 
 	useEffect(() => {
 		if (

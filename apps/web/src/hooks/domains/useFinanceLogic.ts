@@ -1,5 +1,5 @@
-import { useRef } from "react";
 import { documentKindMetadata } from "@dental/shared";
+import { useRef } from "react";
 import {
 	browserGeneratedId,
 	money,
@@ -15,8 +15,12 @@ import { useDocumentStore } from "../../store/documentStore";
 
 export type UseFinanceLogicOptions = {
 	auth: {
-		denteClinicalReadHeaders: (headers?: Record<string, string>) => Record<string, string>;
-		denteClinicalMutationHeaders: (headers?: Record<string, string>) => Record<string, string>;
+		denteClinicalReadHeaders: (
+			headers?: Record<string, string>,
+		) => Record<string, string>;
+		denteClinicalMutationHeaders: (
+			headers?: Record<string, string>,
+		) => Record<string, string>;
 	};
 	dashboard: any;
 	documentPatient: any;

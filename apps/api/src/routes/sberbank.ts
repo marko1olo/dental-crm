@@ -1,25 +1,29 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { z } from "zod";
 import { db } from "../db/client.js";
 import { sberbankTransactions } from "../db/schema.js";
 import { requirePermission } from "../security/permissions.js";
+import { requireResolvedOrganizationId as requireOrganizationContext } from "../accessGuard.js";
 
 export async function registerSberbankRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/sberbank/pay",
 		{
 			schema: {
-				body: z.object({
-					patientId: z.string().uuid(),
-					amount: z.number().int().positive(), // Enforce integer kopecks
-				}),
+				body: {
+					type: "object",
+					required: ["patientId", "amount"],
+					properties: {
+						patientId: { type: "string", format: "uuid" },
+						amount: { type: "integer", minimum: 1 },
+					},
+				},
 			},
 		},
 		async (request, reply) => {
 			const perm = await requirePermission(request, reply, "finance.write");
 			if (!perm) return;
-			
+
 			const _req = request as unknown as Record<string, unknown>;
 			const organizationId = _req.tenantId as string;
 			if (!organizationId) {
@@ -56,20 +60,31 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 		"/api/sberbank/status/:orderId",
 		{
 			schema: {
-				params: z.object({
-					orderId: z.string(),
-				}),
+				params: {
+					type: "object",
+					required: ["orderId"],
+					properties: {
+						orderId: { type: "string" },
+					},
+				},
 			},
 		},
 		async (request, reply) => {
 			const perm = await requirePermission(request, reply, "finance.write");
 			if (!perm) return;
 			const { orderId } = request.params as { orderId: string };
+			const orgId = await requireOrganizationContext(request, reply);
+			if (!orgId) return;
 
 			const [transaction] = await db
 				.select()
 				.from(sberbankTransactions)
-				.where(eq(sberbankTransactions.orderId, orderId))
+				.where(
+					and(
+						eq(sberbankTransactions.orderId, orderId),
+						eq(sberbankTransactions.organizationId, orgId),
+					),
+				)
 				.limit(1);
 
 			if (!transaction) {

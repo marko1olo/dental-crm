@@ -1,5 +1,6 @@
 import type {
 	Appointment,
+	Dashboard,
 	ScheduleWarning,
 	StaffWorkingHours,
 } from "@dental/shared";
@@ -692,7 +693,7 @@ export function useScheduleLogic({
 			}
 			setScheduleAdminSecretDemand("");
 			const payload = await response.json();
-			const nextDashboard = payload as any;
+			const nextDashboard = payload as Dashboard;
 			setDashboard(nextDashboard);
 			const savedAppointment = nextDashboard.appointments?.find(
 				(appointment) => appointment.id === appointmentId,
@@ -800,7 +801,7 @@ export function useScheduleLogic({
 			}
 			setScheduleAdminSecretDemand("");
 			const payload = await response.json();
-			const nextDashboard = payload as any;
+			const nextDashboard = payload as Dashboard;
 			const createdAppointment =
 				nextDashboard.appointments?.find(
 					(appointment) => !previousIds.has(appointment.id),
