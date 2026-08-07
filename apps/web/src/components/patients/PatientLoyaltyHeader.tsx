@@ -3,6 +3,7 @@ import { ChevronDown, Crown, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 
 type LoyaltyTier = "standard" | "silver" | "gold" | "platinum";
 
@@ -74,7 +75,14 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 			 * видно прямо здесь. Если статуса в ответе нет — говорим об этом прямо.
 			 * Когда поле появится в схеме, успешная ветка заработает сама.
 			 */
-			const saved = await res.json().catch(() => null);
+			const saved = await res.json().catch((err: any) => {
+				console.error(err);
+				showToast(
+					actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
+					"error"
+				);
+				return null;
+			});
 			const savedTier = saved?.administrativeProfile?.loyaltyTier ?? null;
 			if (savedTier !== tier) {
 				showToast(

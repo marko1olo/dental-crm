@@ -93,7 +93,8 @@ async function resolveClinicTimeZone(
 			.where(eq(clinics.organizationId, organizationId))
 			.limit(1);
 		return clinic?.timezone ?? null;
-	} catch {
+	} catch (err) {
+		console.error('[Dente] resolveClinicTimezone failed:', err);
 		return null;
 	}
 }

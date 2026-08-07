@@ -103,7 +103,8 @@ function decodeHeaderText(
 	if (!raw.includes("%")) return raw;
 	try {
 		return decodeURIComponent(raw);
-	} catch {
+	} catch (err) {
+		console.error('[Dente] decodeHeaderText failed:', err);
 		// Битая процентная последовательность — берём как есть, чем терять имя.
 		return raw;
 	}

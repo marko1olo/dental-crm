@@ -91,7 +91,7 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 	// внутри route() читает this[kSupportedHTTPMethods], поэтому оторванный
 	// от объекта метод падает с «Cannot read properties of undefined
 	// (reading Symbol(fastify.acceptedHTTPMethods))».
-	const wsApp = app as unknown as { get: WebsocketRouteRegistrar };
+	const wsApp = app as unknown as { get: WebsocketRouteRegistrar }; 
 
 	wsApp.get("/api/ws/schedule", { websocket: true }, (socket, request) => {
 		let authorized = false;

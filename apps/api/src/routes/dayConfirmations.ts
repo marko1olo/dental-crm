@@ -95,7 +95,8 @@ export function dayBoundsInTimeZone(
 		)
 			return null;
 		offsetMinutes = (renderedHour % 24) * 60 + renderedMinute - 12 * 60;
-	} catch {
+	} catch (err) {
+		console.error('[Dente] timeZoneLocalDayLimits failed:', err);
 		return null;
 	}
 
@@ -116,7 +117,8 @@ function dateInTimeZone(timeZone: string, moment: Date): string | null {
 			month: "2-digit",
 			day: "2-digit",
 		}).format(moment);
-	} catch {
+	} catch (err) {
+		console.error('[Dente] dateInTimeZone failed:', err);
 		return null;
 	}
 }

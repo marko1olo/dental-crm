@@ -1720,7 +1720,7 @@ async function fetchDadataClinicSuggestions(
 				? []
 				: ["Сервис реквизитов не вернул организаций по безопасному запросу."],
 		};
-	} catch {
+	} catch (err) { console.error('[Dente] context:', err);
 		return {
 			status: "error",
 			suggestions: [],
@@ -1832,7 +1832,7 @@ function migrationConfiguredRootsEnv(name: string) {
 function migrationRootExists(root: string) {
 	try {
 		return existsSync(root);
-	} catch {
+	} catch (err) { console.error('[Dente] context:', err);
 		return false;
 	}
 }
@@ -2671,7 +2671,7 @@ async function readWindowsMigrationWorkstationSignalValues(
 				};
 			})
 			.filter((row) => row.value.length >= 3);
-	} catch {
+	} catch (err) { console.error('[Dente] context:', err);
 		warnings.add(
 			"Системные сигналы рабочей станции не прочитаны: поиск продолжился по доступным папкам и ярлыкам без списка процессов, служб и установленных программ.",
 		);
@@ -2748,7 +2748,7 @@ function migrationExistingDirectory(value: string) {
 		if (stat.isDirectory()) return resolved;
 		if (stat.isFile()) return path.dirname(resolved);
 		return null;
-	} catch {
+	} catch (err) { console.error('[Dente] context:', err);
 		return null;
 	}
 }
@@ -3120,7 +3120,7 @@ async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
 		return uniqueStrings(roots)
 			.filter((root) => migrationRootExists(root))
 			.slice(0, 32);
-	} catch {
+	} catch (err) { console.error('[Dente] context:', err);
 		warnings.add(
 			"Сетевые и внешние диски не удалось прочитать автоматически: поиск продолжился по доступным папкам и вручную указанным корням.",
 		);
@@ -4421,7 +4421,7 @@ function buildMigrationLocalSourceWorkup(
 			sourceExists = true;
 			sourceIsDirectory = stat.isDirectory();
 			if (sourceIsDirectory) fileExtension = null;
-		} catch {
+		} catch (err) { console.error('[Dente] context:', err);
 			sourceExists = false;
 			warnings.push(
 				"Источник недоступен с этого компьютера сейчас; план построен по названию/расширению.",
@@ -4714,7 +4714,7 @@ function migrationProbeSafeArtifact(
 		const stat = statSync(filePath);
 		byteSize = stat.size;
 		modifiedAt = stat.mtime.toISOString();
-	} catch {
+	} catch (err) { console.error('[Dente] context:', err);
 		// Probe output stays best-effort; unreadable files are reported as warnings by caller.
 	}
 	const extension = path.extname(filePath).toLowerCase() || null;
@@ -4905,7 +4905,7 @@ async function inspectMigrationProbeFile(input: {
 			signals.forEach((signal) => {
 				input.formatSignals.add(signal);
 			});
-		} catch {
+		} catch (err) { console.error('[Dente] context:', err);
 			input.warnings.add(
 				"Один файл-кандидат не удалось прочитать даже для заголовка; он учтен без сигнатуры.",
 			);
@@ -5001,7 +5001,7 @@ async function scanMigrationProbeDirectory(
 		let entries: Dirent[];
 		try {
 			entries = await readdir(current.folderPath, { withFileTypes: true });
-		} catch {
+		} catch (err) { console.error('[Dente] context:', err);
 			warnings.add(
 				"Одну подпапку проверки не удалось прочитать; она пропущена.",
 			);
@@ -5043,7 +5043,7 @@ async function scanMigrationProbeDirectory(
 				const modified = (await stat(fullPath)).mtime.toISOString();
 				if (!latestModifiedAt || modified > latestModifiedAt)
 					latestModifiedAt = modified;
-			} catch {
+			} catch (err) { console.error('[Dente] context:', err);
 				// Metadata is best-effort only.
 			}
 			await inspectMigrationProbeFile({
@@ -5145,7 +5145,7 @@ async function buildMigrationLocalSourceProbe(
 			sourceIsDirectory = stat.isDirectory();
 			sourceByteSize = stat.isFile() ? stat.size : null;
 			latestModifiedAt = stat.mtime.toISOString();
-		} catch {
+		} catch (err) { console.error('[Dente] context:', err);
 			sourceExists = false;
 			warnings.add(
 				"Источник сейчас недоступен; подключите диск/сетевую папку и повторите проверку.",
@@ -6626,7 +6626,7 @@ async function buildMigrationAutopilot(
 				probe.privacyWarnings.forEach((warning) => {
 					privacyWarnings.add(warning);
 				});
-			} catch {
+			} catch (err) { console.error('[Dente] context:', err);
 				warnings.add(
 					`Источник ${candidate.safeDisplayName} найден, но быстрая проверка не завершилась. Откройте план источника или выберите папку вручную.`,
 				);
@@ -8327,7 +8327,7 @@ async function inspectMigrationDiscoveryFolder(
 	let entries: Dirent[];
 	try {
 		entries = await readdir(item.folderPath, { withFileTypes: true });
-	} catch {
+	} catch (err) { console.error('[Dente] context:', err);
 		warnings.add(
 			"Одну локальную папку миграционного поиска не удалось прочитать; она пропущена.",
 		);
@@ -8412,7 +8412,7 @@ async function inspectMigrationDiscoveryFolder(
 			const modified = (await stat(fullPath)).mtime.toISOString();
 			if (!latestModifiedAt || modified > latestModifiedAt)
 				latestModifiedAt = modified;
-		} catch {
+		} catch (err) { console.error('[Dente] context:', err);
 			// Best-effort metadata only.
 		}
 	}

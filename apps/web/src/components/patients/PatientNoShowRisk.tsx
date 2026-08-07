@@ -84,7 +84,14 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 				});
 				if (cancelled) return;
 				if (res.ok) {
-					const data = await res.json().catch(() => null);
+					const data = await res.json().catch((err: any) => {
+						console.error(err);
+						showToast(
+							actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
+							"error"
+						);
+						return null;
+					});
 					if (cancelled) return;
 					// Ответ 200 без разбираемого тела — тоже не расчёт.
 					if (data) setRiskData(data);

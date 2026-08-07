@@ -136,7 +136,8 @@ function isValidWhatsappSignature(
 function parseJsonSafe<T>(value: string, fallback: T): T {
 	try {
 		return JSON.parse(value) as T;
-	} catch {
+	} catch (err) {
+		console.error('[Dente] parseJsonSafe failed:', err);
 		return fallback;
 	}
 }
