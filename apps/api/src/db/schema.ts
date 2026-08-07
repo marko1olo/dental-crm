@@ -434,7 +434,9 @@ export const clinics = pgTable("clinics", {
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),
-});
+}, (t) => ({
+	organizationIdIdx: index("clinics_organization_id_idx").on(t.organizationId),
+}));
 
 export const users = pgTable("users", {
 	id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -492,7 +494,9 @@ export const users = pgTable("users", {
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),
-});
+}, (t) => ({
+	organizationIdIdx: index("users_organization_id_idx").on(t.organizationId),
+}));
 
 export const userInvitations = pgTable("user_invitations", {
 	id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -507,7 +511,9 @@ export const userInvitations = pgTable("user_invitations", {
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),
-});
+}, (t) => ({
+	organizationIdIdx: index("user_invitations_organization_id_idx").on(t.organizationId),
+}));
 
 export const chairs = pgTable("chairs", {
 	id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -522,7 +528,10 @@ export const chairs = pgTable("chairs", {
 	equipment: text("equipment"),
 	specializations: text("specializations"),
 	workingHours: jsonb("working_hours"),
-});
+}, (t) => ({
+	organizationIdIdx: index("chairs_organization_id_idx").on(t.organizationId),
+	clinicIdIdx: index("chairs_clinic_id_idx").on(t.clinicId),
+}));
 
 export const patients = pgTable(
 	"patients",
@@ -581,7 +590,11 @@ export const patientConsents = pgTable("patient_consents", {
 	grantedAt: timestamp("granted_at", { withTimezone: true }),
 	revokedAt: timestamp("revoked_at", { withTimezone: true }),
 	documentId: uuid("document_id"),
-});
+}, (t) => ({
+	organizationIdIdx: index("patient_consents_organization_id_idx").on(t.organizationId),
+	patientIdIdx: index("patient_consents_patient_id_idx").on(t.patientId),
+	documentIdIdx: index("patient_consents_document_id_idx").on(t.documentId),
+}));
 
 export const appointments = pgTable(
 	"appointments",
@@ -607,6 +620,10 @@ export const appointments = pgTable(
 				table.startsAt,
 				table.endsAt,
 			),
+			patientIdIdx: index("appointments_patient_id_idx").on(table.patientId),
+			doctorUserIdIdx: index("appointments_doctor_user_id_idx").on(table.doctorUserId),
+			assistantUserIdIdx: index("appointments_assistant_user_id_idx").on(table.assistantUserId),
+			chairIdIdx: index("appointments_chair_id_idx").on(table.chairId),
 			timeOrderCheck: check(
 				"appointments_time_order_check",
 				sql`${table.startsAt} < ${table.endsAt}`,
@@ -650,6 +667,9 @@ export const visits = pgTable(
 			visitPatientOrganizationUnique: unique(
 				"visits_id_patient_organization_unique",
 			).on(table.id, table.patientId, table.organizationId),
+			organizationIdIdx: index("visits_organization_id_idx").on(table.organizationId),
+			patientIdIdx: index("visits_patient_id_idx").on(table.patientId),
+			appointmentIdIdx: index("visits_appointment_id_idx").on(table.appointmentId),
 		};
 	},
 );
@@ -686,7 +706,9 @@ export const serviceCatalogItems = pgTable("service_catalog_items", {
 	taxDeductible: boolean("tax_deductible").notNull().default(true),
 	taxDeductionCode: text("tax_deduction_code"),
 	isActive: boolean("is_active").notNull().default(true),
-});
+}, (t) => ({
+	organizationIdIdx: index("service_catalog_items_organization_id_idx").on(t.organizationId),
+}));
 
 export const treatmentItems = pgTable("treatment_items", {
 	id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -752,7 +774,14 @@ export const treatmentItems = pgTable("treatment_items", {
 	 */
 	isSynced: boolean("is_synced").notNull().default(false),
 	version: integer("version").notNull().default(1),
-});
+}, (t) => ({
+	organizationIdIdx: index("treatment_items_organization_id_idx").on(t.organizationId),
+	patientIdIdx: index("treatment_items_patient_id_idx").on(t.patientId),
+	visitIdIdx: index("treatment_items_visit_id_idx").on(t.visitId),
+	serviceIdIdx: index("treatment_items_service_id_idx").on(t.serviceId),
+	plannedDoctorUserIdIdx: index("treatment_items_planned_doctor_user_id_idx").on(t.plannedDoctorUserId),
+	plannedChairIdIdx: index("treatment_items_planned_chair_id_idx").on(t.plannedChairId),
+}));
 
 export const treatmentScenarios = pgTable("treatment_scenarios", {
 	id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -790,7 +819,10 @@ export const treatmentScenarios = pgTable("treatment_scenarios", {
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),
-});
+}, (t) => ({
+	organizationIdIdx: index("treatment_scenarios_organization_id_idx").on(t.organizationId),
+	patientIdIdx: index("treatment_scenarios_patient_id_idx").on(t.patientId),
+}));
 
 export const clinicalRules = pgTable("clinical_rules", {
 	id: uuid("id").primaryKey().default(sql`uuidv7()`),
