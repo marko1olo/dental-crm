@@ -3,8 +3,10 @@ import type {
 	TaxDeductionApplicationForm as TaxDeductionApplicationFormKind,
 	TaxDeductionApplicationRelationship,
 } from "@dental/shared";
+import React, { useState } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
+import { NdflCalculatorModal } from "../NdflCalculatorModal";
 import { taxApplicationBlockersReview } from "../taxApplicationBlockers";
 import type { DocumentSelectOption } from "./documentFormTypes";
 
@@ -68,6 +70,8 @@ export function TaxDeductionApplicationForm({
 		setTaxApplicationTaxpayerIdentityDocument,
 		setTaxApplicationTaxpayerInn,
 	} = useDocumentStore();
+
+	const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
 	const review = taxApplicationBlockersReview({
 		taxpayerFullName: taxApplicationTaxpayerFullName,
