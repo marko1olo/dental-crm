@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 
 type ClipboardItem = {
 	id: string;
@@ -90,7 +91,11 @@ async function writeFailureText(
 	response: Response,
 	action: string,
 ): Promise<string> {
-	const body = await response.json().catch(() => null);
+	const body = await response.json().catch((err) => {
+		console.error('[Dente]', err);
+		showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
+		return null;
+	});
 	const serverMessage =
 		body && typeof body.message === "string" ? body.message.trim() : "";
 	if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
@@ -136,7 +141,11 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 				);
 				return;
 			}
-			const payload = (await response.json().catch(() => null)) as
+			const payload = (await response.json().catch((err) => {
+				console.error('[Dente]', err);
+				showToast(actionFailureToast('Ответ с буфером расписания не прочитан', (err as { status?: number })?.status ?? null), 'error');
+				return null;
+			})) as
 				| ClipboardItem[]
 				| { message?: string }
 				| null;
@@ -167,6 +176,7 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 	}, [load]);
 
 	const clearItem = async (item: ClipboardItem) => {
+		if (busyId) return;
 		setBusyId(item.id);
 		try {
 			let response: Response;
@@ -202,6 +212,7 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 			showToast("Укажите дату и время начала приёма для вставки.", "error");
 			return;
 		}
+		if (busyId) return;
 		setBusyId(item.id);
 		try {
 			let response: Response;
@@ -228,7 +239,11 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 				);
 				return;
 			}
-			const dashboard = await response.json().catch(() => null);
+			const dashboard = await response.json().catch((err) => {
+				console.error('[Dente]', err);
+				showToast(actionFailureToast('Ответ после вставки приёма не прочитан', (err as { status?: number })?.status ?? null), 'error');
+				return null;
+			});
 			setItems((prev) => prev.filter((row) => row.id !== item.id));
 			showToast(
 				`Приём «${item.patientName}» вставлен на выбранное время`,

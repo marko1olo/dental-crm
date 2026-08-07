@@ -1299,6 +1299,7 @@ export function useVisitLogic({
 		try {
 			recognition.start();
 		} catch {
+        showToast(actionFailureToast("Операция завершилась ошибкой", null), "error");
 			setIsVisitDictating(false);
 			setError(
 				"Браузер не смог запустить микрофон. Текст можно продолжить вручную.",
@@ -1573,6 +1574,7 @@ export function useVisitLogic({
 		try {
 			recognition.start();
 		} catch {
+        showToast(actionFailureToast("Операция завершилась ошибкой", null), "error");
 			setIsImportDictating(false);
 			setError(
 				"Браузер не смог запустить микрофон для импорта. Вставьте список пациентов вручную или загрузите файл.",

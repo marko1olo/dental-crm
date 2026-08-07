@@ -1,73 +1,76 @@
-# BRIEFING — 2026-08-01T02:34:45+04:00
+# BRIEFING — 2026-08-07T23:12:00Z
 
 ## Mission
-Lead the team to complete all requirements for DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`):
-1. R1: Form 043/у & Odontogram Completeness & UTF-8 Encoding.
-2. R2: Kopeck-Exact Financial Accounting & Strict Tenant Isolation.
-3. R3: 4-State Visual Verification & Automated Playwright Proof (Visit, Schedule, Patients, Finance, Settings).
-4. R4: Database & Security Safety (PostgreSQL 18.4 clean migrations, zero secrets/CSRF/credentials).
+Deep functional audit and architectural hardening of DENTE CRM codebase (React/TypeScript/PostgreSQL): eradicate silent async swallows (R1), harden race conditions & double submits (R2), enforce Biome & 0 TypeScript errors (R3).
 
 ## 🔒 My Identity
-- Archetype: Project Orchestrator
+- Archetype: teamwork_orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\orchestrator
-- Original parent: parent
-- Original parent conversation ID: 50fc49ec-128e-4353-8536-effb82541f04
+- Original parent: top-level
+- Original parent conversation ID: 18140198-ec7c-4e9b-b06a-2e5ee0f58176
 
 ## 🔒 My Workflow
-- **Pattern**: Project Pattern (Orchestrator Procedure: Assess -> Decompose & Delegate -> Iteration Loop per Milestone)
+- **Pattern**: Project Pattern
 - **Scope document**: C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md
-1. **Decompose**: Split sprint into 5 milestones:
-   - Milestone 1: Database & Security Safety Audit (DONE - 118 migrations, zero secrets, strict tenant isolation)
-   - Milestone 2: Form 043/у & Odontogram Completeness & UTF-8 Encoding Audit (DONE - 6,106 files clean, Form 043/у & Odontogram state-safe)
-   - Milestone 3: Kopeck-Exact Financial Accounting & Ledger Refactoring (DONE - 100% integer kopeck math across 5 refactored files)
-   - Milestone 4: 4-State Visual Proof Matrix & Quality Gates (IN_PROGRESS - Worker M4 executing Playwright screenshots, encoding & typecheck gates, per-file commits)
-   - Milestone 5: Forensic Audit & Sentinel Reporting (PLANNED)
+1. **Decompose**: Survey codebase via 3 Explorers, decompose scope into R1 (error swallows), R2 (race conditions), R3 (Biome & TS compilation).
 2. **Dispatch & Execute**:
-   - For each milestone: Explorer -> Worker -> Reviewer -> Auditor.
-3. **On failure**: Retry -> Replace -> Skip -> Redistribute -> Redesign
-4. **Succession**: Self-succeed at spawn count 16.
+   - Step 0: Survey codebase with 3 Explorers (COMPLETE: 500 R1 swallows, 51 R2 double submits, 0 TS errors).
+   - Milestone M1: Async error swallows eradication across `apps/web/src` via `showToast`/`actionFailureToast`. [IN_PROGRESS: Worker 1 executing]
+   - Milestone M2: Race conditions & double-submit hardening via `isSubmitting`/`isLoading` guards, `disabled={isSubmitting}`, `aria-busy={true}`. [PLANNED]
+   - Milestone M3: Structural search, Biome linter zero errors, and zero TypeScript compiler errors (`npm run typecheck`). [PLANNED]
+   - Iteration Loop per milestone: Explorer -> Worker -> Reviewer -> Challenger -> Forensic Auditor -> Gate.
+3. **On failure**: Retry -> Replace -> Skip -> Redistribute -> Redesign -> Escalate.
+4. **Succession**: Threshold = 20 spawns. Write handoff.md, spawn successor via `self`, exit.
+- **Work items**:
+  1. Survey & Reconnaissance [done]
+  2. M1: Async Error Swallows Remediation [in-progress]
+  3. M2: Race Condition & Double Submit Hardening [pending]
+  4. M3: Codebase Cleanliness, Biome & Typecheck Compliance [pending]
+- **Current phase**: 1 (Milestone 1 — Async Error Swallows Remediation)
+- **Current focus**: Worker 1 executing R1 async error swallow remediation across `apps/web/src`
 
 ## 🔒 Key Constraints
-- NEVER write, modify, or create source code files directly as orchestrator. All source modifications must be dispatched to workers.
-- Read C:\Clinic_MVP\dental-crm\.agents\AGENTS.md completely.
-- Commit every modified file individually per Clinic MVP Constitution.
-- Start reports with real `HEAD: <hash>`.
-- "compiles" != "works" — prove with numbers and visual proof.
-- Direct file editing only in workers.
-- `npm run check:encoding` must pass with 0 errors.
-- `npm run typecheck` must pass with 0 errors across `@dental/shared`, `@dental/api`, `@dental/web`.
+- NEVER write, modify, or create source code files directly.
+- NEVER run build/test commands directly — require workers to do so.
+- NEVER investigate code directly — dispatch Explorers.
+- Write ONLY to `.agents/orchestrator/` folder.
+- Enforce strict project authority (`C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`).
+- Zero mocks, zero placeholders, zero AI optimism, zero hardcoding.
+- No tool attribution in git commits.
 
 ## Current Parent
-- Conversation ID: 50fc49ec-128e-4353-8536-effb82541f04
-- Recipient Name: parent
+- Conversation ID: 18140198-ec7c-4e9b-b06a-2e5ee0f58176
+- Updated: not yet
 
 ## Key Decisions Made
-- Verified Milestone 3 completion from Worker M3.
-- Dispatched Worker M4 (`de3a119e-6e66-4f30-a8f2-7dbd99aa66da`) for Milestone 4 (4-state visual proof & repository quality gates).
+- Dispatched Worker 1 for Milestone 1 (R1 Async Error Swallows Remediation).
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| explorer_m1 | teamwork_preview_explorer | Milestone 1 Audit | completed | a0704f81-ac77-4b1c-b806-2885ed1ef8e4 |
-| explorer_m2 | teamwork_preview_explorer | Milestone 2 Audit | completed | aa1b1b63-8e25-40ef-93ea-d4a9d4e73af9 |
-| explorer_m3 | teamwork_preview_explorer | Milestone 3 Audit | completed | 7c792b6f-ce81-441b-b803-d092aefafd8b |
-| worker_m3 | teamwork_preview_worker | Milestone 3 Kopeck Math Refactoring | completed | 76537c4b-7980-4612-bd5e-499221d4dcb4 |
-| worker_m4 | teamwork_preview_worker | Milestone 4 Visual Proof & Gates | in-progress | de3a119e-6e66-4f30-a8f2-7dbd99aa66da |
+| explorer_1 | teamwork_preview_explorer | R1 Async Error Survey | completed | f2c75725-b434-47a1-a4d9-804b6367d31c |
+| explorer_2 | teamwork_preview_explorer | R2 Race Condition Survey | completed | d2dc71de-243e-4ed9-8f61-2a9cd18ec23a |
+| explorer_3 | teamwork_preview_explorer | R3 Quality & Compiler Survey | completed | 9eea6245-2a31-4b9b-9b41-ab0e8233a41d |
+| worker_1 | teamwork_preview_worker | M1 Async Error Remediation | in-progress | eb3785fe-06e8-42e8-871f-51becd78c48a |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 5 / 16
-- Pending subagents: de3a119e-6e66-4f30-a8f2-7dbd99aa66da
+- Spawn count: 4 / 20
+- Pending subagents: eb3785fe-06e8-42e8-871f-51becd78c48a
 - Predecessor: none
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: task-25 (schedule task-25, CronExpression="*/10 * * * *")
+- Heartbeat cron: task-19
 - Safety timer: none
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\ORIGINAL_REQUEST.md — Verbatim user request log
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md — Architecture & Milestone Decomposition
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\plan.md — Detailed step-by-step execution plan
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\progress.md — Dynamic progress tracker
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\BRIEFING.md — Persistent working memory index
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\progress.md — Liveness heartbeat and step checkpoint
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\plan.md — Operational plan
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md — Global architecture, feature inventory, milestones
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\DISPATCH.md — Task assignment record
+- C:\Clinic_MVP\dental-crm\.agents\explorer_1\handoff.md — R1 500 silent error swallows inventory
+- C:\Clinic_MVP\dental-crm\.agents\explorer_2\handoff.md — R2 51 double-submit UI targets inventory
+- C:\Clinic_MVP\dental-crm\.agents\explorer_3\handoff.md — R3 quality & compiler baseline audit

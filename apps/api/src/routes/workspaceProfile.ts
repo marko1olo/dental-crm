@@ -642,40 +642,90 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 	 * ключи из базы отбрасываются, отсутствующие берутся из умолчаний — набор
 	 * признаков растёт вместе с продуктом, и старая запись не должна ронять ответ.
 	 */
-	fastify.get("/api/workspace/profile", async (req, reply) => {
-		const organizationId = await resolveOrganizationId(req);
-		if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
+	fastify.get(
+		"/api/workspace/profile",
+		{
+			schema: {
+				response: {
+					200: { type: "object", additionalProperties: true },
+					400: { type: "object", additionalProperties: true },
+					401: { type: "object", additionalProperties: true },
+					404: { type: "object", additionalProperties: true },
+					500: { type: "object", additionalProperties: true },
+				},
+			},
+		},
+		async (req, reply) => {
+			try {
+				const organizationId = await resolveOrganizationId(req);
+				if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
-		const [organization] = await db
-			.select({ flags: schema.organizations.workspaceFeatureFlags })
-			.from(schema.organizations)
-			.where(eq(schema.organizations.id, organizationId))
-			.limit(1);
+				const [organization] = await db
+					.select({ flags: schema.organizations.workspaceFeatureFlags })
+					.from(schema.organizations)
+					.where(eq(schema.organizations.id, organizationId))
+					.limit(1);
 
-		return reply.send(workspaceFlagsFromStorage(organization?.flags));
-	});
+				return reply.send(workspaceFlagsFromStorage(organization?.flags));
+			} catch (error) {
+				console.error("[GET /api/workspace/profile] Error:", error);
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		}
+	);
 
 	// GET /api/workspace/chairs
-	fastify.get("/api/workspace/chairs", async (req, reply) => {
-		const organizationId = await resolveOrganizationId(req);
-		if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
+	fastify.get(
+		"/api/workspace/chairs",
+		{
+			schema: {
+				response: {
+					200: { type: "object", additionalProperties: true },
+					400: { type: "object", additionalProperties: true },
+					401: { type: "object", additionalProperties: true },
+					404: { type: "object", additionalProperties: true },
+					500: { type: "object", additionalProperties: true },
+				},
+			},
+		},
+		async (req, reply) => {
+			try {
+				const organizationId = await resolveOrganizationId(req);
+				if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
-		const chairs = await db
-			.select({ id: schema.chairs.id, name: schema.chairs.name })
-			.from(schema.chairs)
-			.where(eq(schema.chairs.organizationId, organizationId))
-			.orderBy(schema.chairs.name);
+				const chairs = await db
+					.select({ id: schema.chairs.id, name: schema.chairs.name })
+					.from(schema.chairs)
+					.where(eq(schema.chairs.organizationId, organizationId))
+					.orderBy(schema.chairs.name);
 
-		return reply.send({ success: true, data: chairs });
-	});
+				return reply.send({ success: true, data: chairs });
+			} catch (error) {
+				console.error("[GET /api/workspace/chairs] Error:", error);
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		}
+	);
 
 	// POST /api/workspace/profile — save arbitrary flags
 	fastify.post<{ Body: Partial<WorkspaceFeatureFlags> }>(
 		"/api/workspace/profile",
+		{
+			schema: {
+				response: {
+					200: { type: "object", additionalProperties: true },
+					400: { type: "object", additionalProperties: true },
+					401: { type: "object", additionalProperties: true },
+					404: { type: "object", additionalProperties: true },
+					500: { type: "object", additionalProperties: true },
+				},
+			},
+		},
 		async (req, reply) => {
-			const organizationId = await resolveOrganizationId(req);
-			if (!organizationId)
-				return reply.code(401).send({ error: "Unauthorized" });
+			try {
+				const organizationId = await resolveOrganizationId(req);
+				if (!organizationId)
+					return reply.code(401).send({ error: "Unauthorized" });
 
 			/*
 			 * Order (AUTH-first DoD, same as diary/preset):
@@ -745,16 +795,34 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 
 			// Возвращаем сохранённый набор: клиент видит, что именно легло в базу.
 			return reply.send({ ok: true, ...merged });
-		},
+			} catch (error) {
+				console.error("[POST /api/workspace/profile] Error:", error);
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		}
 	);
 
 	// POST /api/workspace/preset/:name — apply preset + seed
 	fastify.post<{
 		Params: { name: string };
 		Body?: { numberOfChairs?: number; hasPediatricMode?: boolean };
-	}>("/api/workspace/preset/:name", async (req, reply) => {
-		const organizationId = await resolveOrganizationId(req);
-		if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
+	}>(
+		"/api/workspace/preset/:name",
+		{
+			schema: {
+				response: {
+					200: { type: "object", additionalProperties: true },
+					400: { type: "object", additionalProperties: true },
+					401: { type: "object", additionalProperties: true },
+					404: { type: "object", additionalProperties: true },
+					500: { type: "object", additionalProperties: true },
+				},
+			},
+		},
+		async (req, reply) => {
+			try {
+				const organizationId = await resolveOrganizationId(req);
+				if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
 		const presetName = req.params.name as PresetName;
 		const flags =
@@ -826,7 +894,12 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 
 		// Отдаём то, что легло в базу, а не то, что было в справочнике пресетов.
 		return reply.send({ ok: true, preset: presetName, flags: savedFlags });
-	});
+			} catch (error) {
+				console.error("[POST /api/workspace/preset/:name] Error:", error);
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		}
+	);
 
 	/*
 	 * ЗДЕСЬ СТОЯЛ POST /api/workspace/onboarding/complete — 370 строк без единого

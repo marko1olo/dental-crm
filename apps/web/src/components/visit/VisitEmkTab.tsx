@@ -11,6 +11,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
@@ -167,12 +168,20 @@ export function VisitEmkTab() {
 			);
 			return;
 		}
+		if (isExportingCda) return;
 		setIsExportingCda(true);
 		try {
 			const headers = appLogic.auth?.denteClinicalReadHeaders?.() ?? {};
 			const res = await fetch(`/api/egisz/visits/${visitId}/cda`, { headers });
 			if (!res.ok) {
-				const errJson = await res.json().catch(() => null);
+				const errJson = await res.json().catch((err: any) => {
+					console.error(err);
+					showToast(
+						actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
+						"error"
+					);
+					return null;
+				});
 				showToast(
 					`Ошибка экспорта CDA R2: ${errJson?.message || errJson?.error || res.statusText}`,
 					"error",
@@ -214,6 +223,7 @@ export function VisitEmkTab() {
 			showToast("Укажите штрихкод простерилизованного лотка", "warning");
 			return;
 		}
+		if (isLinkingTray) return;
 		setIsLinkingTray(true);
 		try {
 			/*
@@ -231,7 +241,14 @@ export function VisitEmkTab() {
 				body: JSON.stringify({ visitId, barcode: trayBarcode.trim() }),
 			});
 			if (!res.ok) {
-				const errData = await res.json().catch(() => null);
+				const errData = await res.json().catch((err: any) => {
+					console.error(err);
+					showToast(
+						actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
+						"error"
+					);
+					return null;
+				});
 				showToast(
 					errData?.message ||
 						errData?.error ||

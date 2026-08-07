@@ -1,0 +1,199 @@
+﻿
+> apps\api\src\persistentState.ts:347:		backupsList.map(async (backup) => {
+  apps\api\src\persistentState.ts:348:			const backupPayload = readPersistedPayload(backup.filePath);
+  apps\api\src\persistentState.ts:349:			return {
+  apps\api\src\persistentState.ts:350:				fileName: fileNameOf(backup.filePath),
+  apps\api\src\persistentState.ts:351:				savedAt: backup.savedAt,
+  apps\api\src\persistentState.ts:352:				sizeBytes: backup.sizeBytes,
+  apps\api\src\persistentState.ts:353:				fileHash: await rawFileHash(backup.filePath),
+  apps\api\src\persistentState.ts:354:				checksumVerified: checksumVerified(backupPayload.payload),
+  apps\api\src\persistentState.ts:355:				readable: !backupPayload.error,
+  apps\api\src\persistentState.ts:356:				warning: backupPayload.error
+  apps\api\src\persistentState.ts:357:					? persistenceWarningText(backupPayload.error)
+  apps\api\src\persistentState.ts:358:					: null,
+  apps\api\src\persistentState.ts:359:			};
+  apps\api\src\persistentState.ts:360:		}),
+  apps\api\src\persistentState.ts:361:	);
+  apps\api\src\persistentState.ts:362:	const warningCodes: Array<PersistenceIntegrityWarning | null> = [
+> apps\api\src\routes\imaging.ts:1032:		(hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
+  apps\api\src\routes\imaging.ts:1033:			if (!hasHeader)
+  apps\api\src\routes\imaging.ts:1034:				return await parseManifestLine(
+  apps\api\src\routes\imaging.ts:1035:					orgId,
+  apps\api\src\routes\imaging.ts:1036:					line,
+  apps\api\src\routes\imaging.ts:1037:					index + 1,
+  apps\api\src\routes\imaging.ts:1038:					sourceKind,
+  apps\api\src\routes\imaging.ts:1039:					sourceName,
+  apps\api\src\routes\imaging.ts:1040:				);
+  apps\api\src\routes\imaging.ts:1041:			const cells = splitLine(line, delimiter);
+  apps\api\src\routes\imaging.ts:1042:			const draft: Partial<ImagingImportPreviewRow> = {
+  apps\api\src\routes\imaging.ts:1043:				rowNumber: index + 2,
+  apps\api\src\routes\imaging.ts:1044:				sourceKind: sourceKind,
+  apps\api\src\routes\imaging.ts:1045:				sourceName: sourceName,
+  apps\api\src\routes\imaging.ts:1046:				warnings: [],
+  apps\api\src\routes\imaging.ts:1047:			};
+> apps\api\src\routes\imaging.ts:1525:						chunk.map(async (entry) => {
+  apps\api\src\routes\imaging.ts:1526:							const prefix = await zipEntryPrefix(
+  apps\api\src\routes\imaging.ts:1527:								zip.fileHandle as FileHandle,
+  apps\api\src\routes\imaging.ts:1528:								entry,
+  apps\api\src\routes\imaging.ts:1529:								input.maxHeaderBytes,
+  apps\api\src\routes\imaging.ts:1530:							);
+  apps\api\src\routes\imaging.ts:1531:							return { entry, prefix };
+  apps\api\src\routes\imaging.ts:1532:						}),
+  apps\api\src\routes\imaging.ts:1533:					);
+  apps\api\src\routes\imaging.ts:1534:
+  apps\api\src\routes\imaging.ts:1535:					for (const { entry, prefix } of chunkResults) {
+  apps\api\src\routes\imaging.ts:1536:						if (!prefix.buffer) {
+  apps\api\src\routes\imaging.ts:1537:							if (prefix.warning)
+  apps\api\src\routes\imaging.ts:1538:								warnings.push(`${filePath}: ${prefix.warning}`);
+  apps\api\src\routes\imaging.ts:1539:							continue;
+  apps\api\src\routes\imaging.ts:1540:						}
+> apps\api\src\routes\imaging.ts:4029:		(hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
+  apps\api\src\routes\imaging.ts:4030:			if (!hasHeader)
+  apps\api\src\routes\imaging.ts:4031:				return await parseDicomManifestLine(
+  apps\api\src\routes\imaging.ts:4032:					orgId,
+  apps\api\src\routes\imaging.ts:4033:					line,
+  apps\api\src\routes\imaging.ts:4034:					index + 1,
+  apps\api\src\routes\imaging.ts:4035:					input.sourceKind,
+  apps\api\src\routes\imaging.ts:4036:					input.sourceName,
+  apps\api\src\routes\imaging.ts:4037:				);
+  apps\api\src\routes\imaging.ts:4038:			const cells = splitLine(line, delimiter);
+  apps\api\src\routes\imaging.ts:4039:			const draft: Partial<DicomSeriesPreviewRow> = {
+  apps\api\src\routes\imaging.ts:4040:				rowNumber: index + 2,
+  apps\api\src\routes\imaging.ts:4041:				sourceKind: input.sourceKind,
+  apps\api\src\routes\imaging.ts:4042:				sourceName: input.sourceName,
+  apps\api\src\routes\imaging.ts:4043:				warnings: [],
+  apps\api\src\routes\imaging.ts:4044:			};
+> apps\api\src\routes\imaging.ts:7626:		uniqueRoots.map(async (root) => {
+  apps\api\src\routes\imaging.ts:7627:			try {
+  apps\api\src\routes\imaging.ts:7628:				await stat(root);
+  apps\api\src\routes\imaging.ts:7629:				return true;
+  apps\api\src\routes\imaging.ts:7630:			} catch {
+  apps\api\src\routes\imaging.ts:7631:				return false;
+  apps\api\src\routes\imaging.ts:7632:			}
+  apps\api\src\routes\imaging.ts:7633:		}),
+  apps\api\src\routes\imaging.ts:7634:	);
+  apps\api\src\routes\imaging.ts:7635:	const roots = uniqueRoots.filter((_, index) => existsChecks[index]);
+  apps\api\src\routes\imaging.ts:7636:	const warnings = new Set<string>();
+  apps\api\src\routes\imaging.ts:7637:	const candidates: DicomLocalFolderDiscoveryCandidate[] = [];
+  apps\api\src\routes\imaging.ts:7638:	const visited = new Set<string>();
+  apps\api\src\routes\imaging.ts:7639:	const queue = roots.map((root) => ({ root, folderPath: root, depth: 0 }));
+  apps\api\src\routes\imaging.ts:7640:	let scannedFolders = 0;
+  apps\api\src\routes\imaging.ts:7641:	const yieldState = createApiDicomScanYieldState();
+> apps\api\src\routes\imaging.ts:8193:			batch.map(async (root) => {
+  apps\api\src\routes\imaging.ts:8194:				try {
+  apps\api\src\routes\imaging.ts:8195:					await access(root);
+  apps\api\src\routes\imaging.ts:8196:					return root;
+  apps\api\src\routes\imaging.ts:8197:				} catch {
+  apps\api\src\routes\imaging.ts:8198:					return null;
+  apps\api\src\routes\imaging.ts:8199:				}
+  apps\api\src\routes\imaging.ts:8200:			}),
+  apps\api\src\routes\imaging.ts:8201:		);
+  apps\api\src\routes\imaging.ts:8202:		for (const res of results) {
+  apps\api\src\routes\imaging.ts:8203:			if (res !== null) roots.push(res);
+  apps\api\src\routes\imaging.ts:8204:		}
+  apps\api\src\routes\imaging.ts:8205:	}
+  apps\api\src\routes\imaging.ts:8206:
+  apps\api\src\routes\imaging.ts:8207:	const warnings = new Set<string>();
+  apps\api\src\routes\imaging.ts:8208:	const cases: LocalImagingOrganizerCase[] = [];
+> apps\api\src\routes\imaging.ts:9517:		readyRows.map(async (row) => {
+  apps\api\src\routes\imaging.ts:9518:			const study = await createImagingStudyInDb(orgId, {
+  apps\api\src\routes\imaging.ts:9519:				patientId: row.patientId!,
+  apps\api\src\routes\imaging.ts:9520:				kind: row.kind!,
+  apps\api\src\routes\imaging.ts:9521:				title: row.title ?? kindLabels[row.kind!],
+  apps\api\src\routes\imaging.ts:9522:				toothCode: row.toothCode,
+  apps\api\src\routes\imaging.ts:9523:				region: row.region,
+  apps\api\src\routes\imaging.ts:9524:				sourceKind: row.sourceKind,
+  apps\api\src\routes\imaging.ts:9525:				sourceName: row.sourceName,
+  apps\api\src\routes\imaging.ts:9526:				storagePath: row.filePath,
+  apps\api\src\routes\imaging.ts:9527:				capturedAt: row.capturedAt ?? undefined,
+  apps\api\src\routes\imaging.ts:9528:				/*
+  apps\api\src\routes\imaging.ts:9529:				 * Здесь в aiSummary записывалось «Импортировано из …. Требует проверки
+  apps\api\src\routes\imaging.ts:9530:				 * снимка и привязки к ЭМК». Экран «Снимки» считает непустой aiSummary
+  apps\api\src\routes\imaging.ts:9531:				 * признаком состоявшегося разбора: у импортированного снимка загорался
+  apps\api\src\routes\imaging.ts:9532:				 * бейдж «AI» и раскрывалась панель «ShadowAnalyst · AI Expert», где в
+> apps\api\src\routes\smartImports.ts:6610:		probedCandidates.map(async (candidate) => {
+  apps\api\src\routes\smartImports.ts:6611:			let probe: MigrationLocalSourceProbeResponse | null = null;
+  apps\api\src\routes\smartImports.ts:6612:			try {
+  apps\api\src\routes\smartImports.ts:6613:				probe = await buildMigrationLocalSourceProbe({
+  apps\api\src\routes\smartImports.ts:6614:					sourceRef: candidate.sourceRef,
+  apps\api\src\routes\smartImports.ts:6615:					sourceKind: candidate.sourceKind,
+  apps\api\src\routes\smartImports.ts:6616:					safeDisplayName: candidate.safeDisplayName,
+  apps\api\src\routes\smartImports.ts:6617:					maxDepth: Math.min(2, input.maxDepth),
+  apps\api\src\routes\smartImports.ts:6618:					maxFolders: 100,
+  apps\api\src\routes\smartImports.ts:6619:					maxFiles: 600,
+  apps\api\src\routes\smartImports.ts:6620:					maxSampleArtifacts: 10,
+  apps\api\src\routes\smartImports.ts:6621:					readHeaderBytes: 4096,
+  apps\api\src\routes\smartImports.ts:6622:				});
+  apps\api\src\routes\smartImports.ts:6623:				probe.warnings.forEach((warning) => {
+  apps\api\src\routes\smartImports.ts:6624:					warnings.add(warning);
+  apps\api\src\routes\smartImports.ts:6625:				});
+> apps\api\src\routes\telegram.ts:1282:			dueItems.map(async (item) => {
+  apps\api\src\routes\telegram.ts:1283:				const sendResult = await executeTelegramOutboxSend(
+  apps\api\src\routes\telegram.ts:1284:					item.id,
+  apps\api\src\routes\telegram.ts:1285:					{
+  apps\api\src\routes\telegram.ts:1286:						dryRun: input.dryRun,
+  apps\api\src\routes\telegram.ts:1287:						clientMutationId: input.dryRun
+  apps\api\src\routes\telegram.ts:1288:							? null
+  apps\api\src\routes\telegram.ts:1289:							: dueOutboxClientMutationId(item.id, item.scheduledAt),
+  apps\api\src\routes\telegram.ts:1290:					},
+  apps\api\src\routes\telegram.ts:1291:					runtimeResult.runtime,
+  apps\api\src\routes\telegram.ts:1292:				);
+  apps\api\src\routes\telegram.ts:1293:				return {
+  apps\api\src\routes\telegram.ts:1294:					itemId: item.id,
+  apps\api\src\routes\telegram.ts:1295:					statusCode: sendResult.statusCode,
+  apps\api\src\routes\telegram.ts:1296:					result: sendResult.body,
+  apps\api\src\routes\telegram.ts:1297:				};
+> apps\api\src\scripts\migrateStateToDb.ts:400:		staffMembers.map(async (staff) => {
+  apps\api\src\scripts\migrateStateToDb.ts:401:			const isAdmin = staff.role === "owner" || staff.role === "administrat
+or";
+  apps\api\src\scripts\migrateStateToDb.ts:402:			const pin = isAdmin ? credentials.adminPin : credentials.staffPin;
+  apps\api\src\scripts\migrateStateToDb.ts:403:			return {
+  apps\api\src\scripts\migrateStateToDb.ts:404:				id: staff.id,
+  apps\api\src\scripts\migrateStateToDb.ts:405:				organizationId,
+  apps\api\src\scripts\migrateStateToDb.ts:406:				fullName: staff.fullName,
+  apps\api\src\scripts\migrateStateToDb.ts:407:				role: staff.role,
+  apps\api\src\scripts\migrateStateToDb.ts:408:				phone: staff.phone,
+  apps\api\src\scripts\migrateStateToDb.ts:409:				email: staff.email,
+  apps\api\src\scripts\migrateStateToDb.ts:410:				pinCodeHash: await hashCredential(pin),
+  apps\api\src\scripts\migrateStateToDb.ts:411:				isActive: staff.active,
+  apps\api\src\scripts\migrateStateToDb.ts:412:				createdAt: new Date(staff.createdAt),
+  apps\api\src\scripts\migrateStateToDb.ts:413:			};
+  apps\api\src\scripts\migrateStateToDb.ts:414:		}),
+  apps\api\src\scripts\migrateStateToDb.ts:415:	);
+> apps\api\src\scripts\seedAuth.ts:317:		WORKING_STAFF.map(async (staff) => ({
+  apps\api\src\scripts\seedAuth.ts:318:			staff,
+  apps\api\src\scripts\seedAuth.ts:319:			pinCodeHash: await hashCredential(
+  apps\api\src\scripts\seedAuth.ts:320:				staff.isAdmin ? credentials.adminPin : credentials.staffPin,
+  apps\api\src\scripts\seedAuth.ts:321:			),
+  apps\api\src\scripts\seedAuth.ts:322:			/*
+  apps\api\src\scripts\seedAuth.ts:323:			 * Владелец входит и как клиника (пароль организации), и как пользователь,
+  apps\api\src\scripts\seedAuth.ts:324:			 * поэтому его строка получает тот же пароль. У остальных
+  apps\api\src\scripts\seedAuth.ts:325:			 * `users.password_hash` остаётся пустым: вход по PIN-коду.
+  apps\api\src\scripts\seedAuth.ts:326:			 */
+  apps\api\src\scripts\seedAuth.ts:327:			passwordHash: staff.email === "owner@example.com" ? passwordHash : null,
+  apps\api\src\scripts\seedAuth.ts:328:		})),
+  apps\api\src\scripts\seedAuth.ts:329:	);
+  apps\api\src\scripts\seedAuth.ts:330:
+  apps\api\src\scripts\seedAuth.ts:331:	await withTenantCtx(WORKING_ORG_ID, async (tx) => {
+  apps\api\src\scripts\seedAuth.ts:332:		const existingOrg = await tx
+> apps\api\src\services\patients\patientMerge.ts:225:				const updatePromises = columns.map(async (column) => {
+  apps\api\src\services\patients\patientMerge.ts:226:					const updated = await inner.execute(sql`
+  apps\api\src\services\patients\patientMerge.ts:227:					update ${sql.identifier(column.tableName)}
+  apps\api\src\services\patients\patientMerge.ts:228:					set ${sql.identifier(column.columnName)} = ${input.primaryPat
+ientId}
+  apps\api\src\services\patients\patientMerge.ts:229:					where ${sql.identifier(column.columnName)} = ${input.duplicat
+ePatientId}
+  apps\api\src\services\patients\patientMerge.ts:230:					returning 1
+  apps\api\src\services\patients\patientMerge.ts:231:				`);
+  apps\api\src\services\patients\patientMerge.ts:232:					const count = rowCount(updated);
+  apps\api\src\services\patients\patientMerge.ts:233:					return { key: `${column.tableName}.${column.columnName}`, cou
+nt };
+  apps\api\src\services\patients\patientMerge.ts:234:				});
+  apps\api\src\services\patients\patientMerge.ts:235:
+  apps\api\src\services\patients\patientMerge.ts:236:				const updateResults = await Promise.all(updatePromises);
+  apps\api\src\services\patients\patientMerge.ts:237:				for (const { key, count } of updateResults) {
+  apps\api\src\services\patients\patientMerge.ts:238:					if (count > 0) movedRows[key] = count;
+  apps\api\src\services\patients\patientMerge.ts:239:				}
+  apps\api\src\services\patients\patientMerge.ts:240:
+
+

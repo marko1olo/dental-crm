@@ -24,35 +24,45 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 			const perm = await requirePermission(request, reply, "finance.write");
 			if (!perm) return;
 
-			const _req = request as unknown as Record<string, unknown>;
-			const organizationId = _req.tenantId as string;
-			if (!organizationId) {
-				return reply.status(403).send({ error: "No organization context" });
-			}
+			const organizationId = await requireOrganizationContext(request, reply);
+			if (!organizationId) return;
 
 			const { patientId, amount } = request.body as {
 				patientId: string;
 				amount: number;
 			};
 
-			// Simulate external API call
-			const orderId = `SBER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-			try {
-				// We assume there's an external Sberbank API: /payment/rest/register.do
-				// For the sake of the task, we store the transaction in pending state.
-				await db.insert(sberbankTransactions).values({
-					organizationId,
-					orderId,
-					amount,
-					status: "pending",
-					patientId,
-				});
-
-				return { success: true, orderId };
-			} catch (err) {
-				return reply.status(500).send({ error: "Failed to initiate payment" });
-			}
+			/*
+			 * ИНТЕГРАЦИИ СО СБЕРБАНКОМ В ПРОЕКТЕ НЕТ. Проверено 2026-08-07 по трём
+			 * направлениям: обращений к `payment/rest/*` или к любому хосту банка нет
+			 * ни одного (единственные совпадения — комментарии этого же файла);
+			 * переменных окружения Сбербанка нет в контракте `env/requiredEnv.ts`;
+			 * тестов на маршрут нет ни одного.
+			 *
+			 * ПОЧЕМУ ОТКАЗ, А НЕ ЗАПИСЬ «pending». Прежний код писал строку и отвечал
+			 * `{ success: true, orderId }`, ничего никуда не отправив, а обработчик
+			 * состояния затем БЕЗУСЛОВНО переводил `pending` → `success`. То есть
+			 * система докладывала о поступлении денег, которых не было, и счёт
+			 * помечался оплаченным. Для клиники это расхождение кассы с фактом.
+			 *
+			 * Такой же приём — зашитый `{ success: true }` без сетевого вызова — уже
+			 * изымали из этого репозитория осознанно вместе с `syncDaemon`
+			 * (пакет P3-syncdaemon, коммит 8c87dcd93). Здесь остаётся тот же класс.
+			 *
+			 * 501 выбран вместо удаления маршрута намеренно: клиент получает честный
+			 * отказ вместо ложного успеха, а точка расширения сохраняется. Когда
+			 * появятся учётные данные банка, сюда встаёт настоящий вызов, а ниже —
+			 * запись строки по его фактическому ответу.
+			 */
+			void patientId;
+			void amount;
+			void db;
+			void sberbankTransactions;
+			return reply.status(501).send({
+				error: "PaymentGatewayNotConfigured",
+				message:
+					"Платёжный шлюз Сбербанка не подключён: интеграция отсутствует в сборке.",
+			});
 		},
 	);
 
@@ -91,15 +101,18 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				return reply.status(404).send({ error: "Transaction not found" });
 			}
 
-			// Simulate external Sberbank API: /payment/rest/getOrderStatusExtended.do
-			if (transaction.status === "pending") {
-				await db
-					.update(sberbankTransactions)
-					.set({ status: "success", updatedAt: new Date() })
-					.where(eq(sberbankTransactions.orderId, orderId));
-				transaction.status = "success";
-			}
-
+			/*
+			 * СОСТОЯНИЕ ОТДАЁТСЯ КАК ХРАНИТСЯ. Прежде здесь стоял безусловный перевод
+			 * `pending` → `success` с комментарием «Simulate external Sberbank API»:
+			 * любой запрос состояния объявлял платёж успешным, не спросив банк. Тот
+			 * же `UPDATE` фильтровался ТОЛЬКО по `orderId`, без `organizationId`, —
+			 * а `orderId` собирался из `Date.now()` и `Math.random()*1000`, где
+			 * столкновение правдоподобно, значит запись могла уйти чужой клинике.
+			 *
+			 * Подтверждение состояния обязано приходить от банка: обращением к
+			 * `getOrderStatusExtended` либо его уведомлением (callback). Пока
+			 * интеграции нет, выдумывать успех нельзя — см. обработчик оплаты выше.
+			 */
 			return {
 				success: true,
 				status: transaction.status,

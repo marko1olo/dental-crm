@@ -20,6 +20,9 @@ type TextFieldChangeEvent = React.ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
 >;
 
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
+
 export function PatientOverviewTab() {
 	const appLogic = useAppLogicContext();
 	const {
@@ -85,11 +88,18 @@ export function PatientOverviewTab() {
 		const headers = appLogic?.auth
 			? appLogic.auth.denteClinicalReadHeaders()
 			: {};
-		fetch(`/api/finance/family/patient/${requestedPatientId}`, { headers })
+			fetch(`/api/finance/family/patient/${requestedPatientId}`, { headers })
 			.then(async (res) => {
 				if (selectedPatientIdRef.current !== requestedPatientId) return;
 				if (res.ok) {
-					const data = await res.json().catch(() => null);
+					const data = await res.json().catch((err: any) => {
+						console.error(err);
+						showToast(
+							actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
+							"error"
+						);
+						return null;
+					});
 					setFamilyData(data ?? null);
 					// Ответ 200 без тела — тоже не прочитанные данные, а не «нет семьи».
 					setFamilyLoadFailure(data ? null : { status: res.status });
@@ -100,7 +110,12 @@ export function PatientOverviewTab() {
 					res.status === 404 ? null : { status: res.status },
 				);
 			})
-			.catch(() => {
+			.catch((err: any) => {
+				console.error(err);
+				showToast(
+					actionFailureToast("Ошибка загрузки семьи", (err as { status?: number })?.status ?? null),
+					"error"
+				);
 				if (selectedPatientIdRef.current !== requestedPatientId) return;
 				setFamilyData(null);
 				setFamilyLoadFailure({ status: null });

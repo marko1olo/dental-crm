@@ -5,6 +5,8 @@ import {
 } from "../../AppHelpers";
 import { useAppStore } from "../../store/appStore";
 import { useSettingsStore } from "../../store/settingsStore";
+import { showToast } from "../../components/GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 
 export function useAuthLogic({
 	setError,
@@ -176,6 +178,7 @@ export function useAuthLogic({
 					void loadTelegramControlPlane({ adminSecret: secret, silent: true });
 			})
 			.catch((loadError: unknown) => {
+                showToast(actionFailureToast("Операция завершилась ошибкой", (loadError as { status?: number })?.status ?? null), "error");
 				forgetAdminSecret(domain);
 				setError(
 					operatorWorkflowFailureMessage(
@@ -194,6 +197,7 @@ export function useAuthLogic({
 			return;
 		setDashboard(null);
 		void loadDashboard().catch((loadError: unknown) => {
+            showToast(actionFailureToast("Операция завершилась ошибкой", (loadError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Не удалось загрузить данные клиники",

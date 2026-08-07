@@ -11,6 +11,8 @@ import { DictationHints } from "../../DictationHints";
 import { smartBookingParser } from "../../lib/smartBookingParser";
 import { SmartParsePreview } from "../../SmartParsePreview";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -136,7 +138,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					setBlacklistStatus(null);
 				}
 			})
-			.catch(() => {
+			.catch((err) => {
+				console.error('[Dente]', err);
+				showToast(actionFailureToast('Статус блокировки записи не прочитан', (err as { status?: number })?.status ?? null), 'error');
 				// Не выдаём отказ чтения за «не заблокирован» — иначе админ запишет вслепую.
 				if (!cancelled) {
 					setBlacklistStatus({

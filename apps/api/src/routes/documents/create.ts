@@ -48,7 +48,6 @@ import {
 	documentAttachmentFileName,
 	documentCreateValidationMessageForRequest,
 	documentHasIssuedArchiveMetadata,
-	documentIssueBlockReason,
 	documentIssueChainBlockReason,
 	documentIssueValidationMessage,
 	documentRequiresIssuedArchive,
@@ -62,7 +61,7 @@ import {
 	taxSnapshotDocument,
 	taxXmlSourceSnapshotForIssue,
 	taxXmlSourceSnapshotSha256,
-} from "../documents.js";
+} from "./shared.js";
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents", async (request, reply) => {

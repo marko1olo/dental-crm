@@ -9,7 +9,10 @@ import {
 } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
-import { taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
+import {
+	documentIssueBlockReason,
+	taxFiscalDocumentBlockReason,
+} from "../../documents/renderDocument.js";
 import {
 	buildTaxPaymentSnapshotForIssue,
 	taxDocumentUsesPaymentSnapshot,
@@ -19,7 +22,6 @@ import { requireOrganizationId } from "../../security/identity.js";
 import {
 	apiError,
 	configuredTaxOfficeCode,
-	documentIssueBlockReason,
 	documentIssueChainBlockReason,
 	findIssuedDuplicateTaxCertificate,
 	frozenTaxXmlClinicProfile,
@@ -28,7 +30,7 @@ import {
 	resolveDocumentRenderContext,
 	taxSnapshotDocument,
 	taxXmlSourceSnapshotSha256,
-} from "../documents.js";
+} from "./shared.js";
 
 export async function register(app: FastifyInstance) {
 	app.get("/api/documents/:id/tax-xml", handleGetTaxXml);

@@ -122,7 +122,8 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 			let message: { type?: unknown; payload?: Record<string, unknown> };
 			try {
 				message = JSON.parse(text);
-			} catch {
+			} catch (err) {
+				app.log.error(err, 'Failed to parse incoming WebSocket JSON message');
 				return;
 			}
 			if (message?.type !== "AUTH") return;

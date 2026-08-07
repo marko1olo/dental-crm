@@ -161,7 +161,11 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				{ headers: denteAdminSecretRequestHeaders() },
 			);
 			if (!res.ok) return null;
-			const data = await res.json().catch(() => null);
+			const data = await res.json().catch((err) => {
+				console.error('[Dente]', err);
+				showToast(actionFailureToast('Семья пациента не прочитана', (err as { status?: number })?.status ?? null), 'error');
+				return null;
+			});
 			return data && typeof data.id === "string" ? data.id : null;
 		} catch {
 			return null;
@@ -192,7 +196,11 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				}),
 			});
 			if (!res.ok) {
-				const body = await res.json().catch(() => ({}) as { message?: string });
+				const body = await res.json().catch((err) => {
+					console.error('[Dente]', err);
+					showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
+					return {} as { message?: string };
+				});
 				if (res.status === 409) {
 					throw new Error(
 						body.message ||
@@ -262,7 +270,11 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			if (!linkRes.ok) {
 				const body = await linkRes
 					.json()
-					.catch(() => ({}) as { message?: string });
+					.catch((err) => {
+						console.error('[Dente]', err);
+						showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
+						return {} as { message?: string };
+					});
 				throw new Error(body.message || "Ошибка при привязке пациента к семье");
 			}
 
@@ -321,7 +333,11 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				body: JSON.stringify({ familyGroupId: null }),
 			});
 			if (!res.ok) {
-				const body = await res.json().catch(() => ({}) as { message?: string });
+				const body = await res.json().catch((err) => {
+					console.error('[Dente]', err);
+					showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
+					return {} as { message?: string };
+				});
 				throw new Error(body.message || "Не удалось отвязать от семьи");
 			}
 			const stillIn = await familyIdOfPatient(patientId);

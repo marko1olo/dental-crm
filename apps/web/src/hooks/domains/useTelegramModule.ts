@@ -502,6 +502,7 @@ export function useTelegramModule({
 			setTelegramLinkActionState(`${label} скопирован`);
 			setError(null);
 		} catch {
+        showToast(actionFailureToast("Операция завершилась ошибкой", null), "error");
 			setTelegramLinkActionState(null);
 			setError(
 				`${label} не скопирован. Откройте ссылку или выделите код вручную.`,

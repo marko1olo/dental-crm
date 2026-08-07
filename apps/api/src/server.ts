@@ -26,6 +26,7 @@ import { registerAuditRoutes } from "./routes/audit.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerBillingRoutes } from "./routes/billing.js";
 import { registerSberbankRoutes } from "./routes/sberbank.js";
+import { registerClinicWorkflowRoutes } from "./routes/clinicWorkflows.js";
 import { registerClinicalRoutes } from "./routes/clinical.js";
 import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
 import { registerChatRoutes } from "./routes/chat.js";
@@ -644,6 +645,7 @@ export async function createDenteApiApp(
 	await registerSpeechRoutes(app);
 	void registerSmartImportRoutes(app);
 	void registerYandexCalendarRoutes(app);
+	await registerClinicWorkflowRoutes(app);
 	void registerSystemRoutes(app);
 	// Живые обновления. Раньше плагин не регистрировался вовсе, поэтому
 	// /api/ws/schedule отвечал 404, а все wsBroker.broadcast* были пустышками.
@@ -763,10 +765,24 @@ export async function createDenteApiApp(
 		});
 	}
 
-	app.addHook("onClose", async () => {
-		const { pool } = await import("./db/client.js");
-		if (pool) await pool.end();
-	});
+	/*
+	 * ЗДЕСЬ НЕТ ЗАКРЫТИЯ ПУЛА — И ЭТО НАМЕРЕННО.
+	 *
+	 * БЫЛО: хук onClose закрывал модульный синглтон-пул из db/client.ts. Фабрика
+	 * пул не создавала, а закрывала: приложение гасило чужой ресурс. Прогон,
+	 * строящий по приложению на проверку (tests/contract-breach-proofs.test.ts),
+	 * получал 13 листовых падений «Called end on pool more than once» — первый
+	 * app.close() побеждал, остальные падали, и падение приписывалось маршрутам,
+	 * а не сносу пула. Образец из @fastify/postgres: переданный извне пул плагин
+	 * не закрывает, хук вешается только на пул, созданный самим плагином.
+	 *
+	 * Закрытие — одно на процесс, у владельца: gracefulShutdown по SIGINT/SIGTERM
+	 * в startDenteApiServer, а в автоматических прогонах
+	 * tests/support/poolTeardown.ts (подключён --import в npm test -w @dental/api).
+	 * Выход процесса снятие хука не ломает: db/client.ts:69 держит
+	 * allowExitOnIdle: isAutomatedRun(), поэтому в тестах и скриптах простаивающий
+	 * пул event loop не пинит.
+	 */
 
 	return app;
 }
@@ -810,8 +826,11 @@ export async function startDenteApiServer() {
 			try {
 				stopBackupDaemon();
 				await app.close();
-				const { pool } = await import("./db/client.js");
-				if (pool) await pool.end();
+				// Единственное закрытие пула на процесс: владелец — процесс, не
+				// приложение. endPool идемпотентен, повторный вызов дожидается
+				// первого вместо отказа pg.
+				const { endPool } = await import("./db/client.js");
+				await endPool();
 				app.log.info("[Shutdown] Dente API server closed cleanly.");
 				clearTimeout(forceKillTimeout);
 				process.exit(0);

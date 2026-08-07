@@ -57,7 +57,8 @@ const poolMax =
  * раннера вроде --test-force-exit.
  *
  * В рабочем API isAutomatedRun() ложно, опция выключена и пул живёт столько же,
- * сколько сервер: закрытием по сигналу по-прежнему занимается server.ts:766.
+ * сколько сервер: закрытием по сигналу занимается gracefulShutdown в server.ts,
+ * ровно один раз на процесс, через endPool ниже.
  * Признак автоматического прогона берём готовый — env/requiredEnv.ts:185, там
  * же измерено, что `node --test` выставляет NODE_TEST_CONTEXT, а NODE_ENV нет.
  */
@@ -68,6 +69,25 @@ export const pool = new pg.Pool({
 	connectionTimeoutMillis: 5000,
 	allowExitOnIdle: isAutomatedRun(),
 });
+
+/**
+ * Закрытие пула, безопасное при повторном вызове.
+ *
+ * ЗАЧЕМ: `pg.Pool.end()` при втором вызове отвергает промис сообщением
+ * «Called end on pool more than once». Мейнтейнеры node-postgres считают такой
+ * отказ ПРАВИЛЬНЫМ (issue #1858) и сохраняют его намеренно: повторное закрытие
+ * — признак того, что закрывающий не владеет пулом. Лечить обязана сторона
+ * приложения, а не библиотека.
+ *
+ * Пул здесь — модульный синглтон на процесс, поэтому и закрытие одно на процесс.
+ * Кто зовёт вторым — получает ТОТ ЖЕ промис первого закрытия и дожидается его,
+ * вместо отказа. Владелец пула — процесс: в рабочем API закрывает
+ * gracefulShutdown по SIGINT/SIGTERM, в прогонах — tests/support/poolTeardown.ts.
+ * Фабрика приложения (createDenteApiApp) пул НЕ создаёт и потому НЕ закрывает:
+ * одно приложение из многих не вправе гасить общий ресурс.
+ */
+let poolEnding: Promise<void> | undefined;
+export const endPool = (): Promise<void> => (poolEnding ??= pool.end());
 
 export const dbRaw = drizzle(pool, { schema });
 type TenantDb = typeof dbRaw;

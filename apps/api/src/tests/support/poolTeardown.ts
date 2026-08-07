@@ -1,9 +1,11 @@
 import { after } from "node:test";
-import { pool } from "../../db/client.js";
+import { endPool } from "../../db/client.js";
 
 after(async () => {
 	try {
-		await pool.end();
+		// endPool вместо pool.end(): закрытие одно на процесс и идемпотентно, так
+		// что этот хук не спорит с файлами, закрывающими пул своим after().
+		await endPool();
 	} catch {
 		// pool may already be closed
 	}

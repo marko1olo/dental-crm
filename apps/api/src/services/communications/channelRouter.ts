@@ -37,19 +37,12 @@ import {
 	sendWhatsappTextMessage,
 	type WhatsappCredentials,
 } from "../../whatsappTransport.js";
-import type { DeliveryErrorClass } from "./deliveryPolicy.js";
-
-export type CommunicationChannelCode =
-	| "phone"
-	| "sms"
-	| "whatsapp"
-	| "telegram"
-	| "email"
-	| "in_person"
-	| "vk"
-	| "max";
-
-export type CommunicationConsentScope = "service" | "marketing";
+import type {
+	CommunicationChannelCode,
+	CommunicationConsentScope,
+	DeliveryErrorClass,
+} from "./types.js";
+export type { CommunicationChannelCode, CommunicationConsentScope, DeliveryErrorClass };
 
 /** Каналы, по которым сообщение действительно уходит машиной. */
 export const MACHINE_DELIVERABLE_CHANNELS: readonly CommunicationChannelCode[] =

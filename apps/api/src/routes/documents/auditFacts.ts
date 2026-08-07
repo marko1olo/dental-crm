@@ -39,7 +39,6 @@ import {
 	documentAttachmentFileName,
 	documentCreateValidationMessageForRequest,
 	documentHasIssuedArchiveMetadata,
-	documentIssueBlockReason,
 	documentIssueChainBlockReason,
 	documentIssueValidationMessage,
 	documentRequiresIssuedArchive,
@@ -53,7 +52,7 @@ import {
 	taxSnapshotDocument,
 	taxXmlSourceSnapshotForIssue,
 	taxXmlSourceSnapshotSha256,
-} from "../documents.js";
+} from "./shared.js";
 
 export async function register(app: FastifyInstance) {
 	app.get("/api/documents/:id/audit-facts", async (request, reply) => {

@@ -22,6 +22,7 @@ import { getVisitByIdInDb } from "../../db/visitsQuery.js";
 import { paymentRefundCorrectionSelectionErrorForDocument } from "../../documents/guards.js";
 import { settleRefundedPaymentsForPatient } from "../../documents/refundSettlement.js";
 import {
+	documentIssueBlockReason,
 	renderDocumentHtml,
 	taxFiscalDocumentBlockReason,
 } from "../../documents/renderDocument.js";
@@ -46,7 +47,6 @@ import {
 	documentAttachmentFileName,
 	documentCreateValidationMessageForRequest,
 	documentHasIssuedArchiveMetadata,
-	documentIssueBlockReason,
 	documentIssueChainBlockReason,
 	documentIssueValidationMessage,
 	documentRequiresIssuedArchive,
@@ -61,7 +61,7 @@ import {
 	taxSnapshotDocument,
 	taxXmlSourceSnapshotForIssue,
 	taxXmlSourceSnapshotSha256,
-} from "../documents.js";
+} from "./shared.js";
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents/:id/issue", async (request, reply) => {

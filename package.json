@@ -152,6 +152,7 @@
 		"db:migrate:strict": "npm run db:migrate:strict -w @dental/api",
 		"smoke:dist-freshness": "node scripts/smoke-dist-freshness.mjs",
 		"smoke:schema-ddl-coverage": "node scripts/smoke-schema-ddl-coverage.mjs",
+		"smoke:schema-duplicate-ddl": "node scripts/smoke-schema-duplicate-ddl.mjs",
 		"smoke:schema-column-parity": "node scripts/smoke-schema-column-parity.mjs",
 		"smoke:persistent-state-save": "node scripts/smoke-persistent-state-save.mjs",
 		"smoke:imaging-manifest-parser": "node scripts/smoke-imaging-manifest-parser.mjs",

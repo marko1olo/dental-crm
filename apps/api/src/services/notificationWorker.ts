@@ -161,10 +161,38 @@ export async function processNotificationQueue() {
 	}
 }
 
-// In a real env, you would run setInterval(() => processNotificationQueue(), 60000)
-// Exporting start worker
+let notificationInterval: NodeJS.Timeout | null = null;
+
+/**
+ * Запускает разбор очереди исходящих сообщений.
+ *
+ * БЫЛО: `setInterval` без сохранённого handle, без `unref()` и без парного
+ * `clearInterval` во всём файле. Таймер нельзя было остановить, он пинил event
+ * loop, и процесс не выходил по SIGTERM без форс-килла. Образец взят из
+ * backupWorker.ts:670-722: модульный handle, защита от повторного старта,
+ * unref() на таймере, парная функция остановки.
+ *
+ * ВНИМАНИЕ: этот воркер — СИРОТА. `startNotificationWorker` не зовёт никто,
+ * кроме notificationWorker.test.ts; живой разбор очереди делает
+ * services/communications/dispatchWorker.ts, подключённый в server.ts:740.
+ * Здесь починен только жизненный цикл таймера — подключать воркер к серверу
+ * НЕЛЬЗЯ, иначе очередь получит второго разборщика на те же строки.
+ */
 export function startNotificationWorker() {
-	setInterval(() => {
+	if (notificationInterval) return;
+
+	notificationInterval = setInterval(() => {
 		processNotificationQueue().catch(console.error);
 	}, 10000); // 10s for fast demo feedback
+
+	// unref, чтобы таймер не удерживал процесс: без него выход только по форс-киллу.
+	// Через optional call, потому что тесты подменяют setInterval и возвращают число.
+	(notificationInterval as unknown as { unref?: () => void }).unref?.();
+}
+
+export function stopNotificationWorker(): void {
+	if (notificationInterval) {
+		clearInterval(notificationInterval);
+		notificationInterval = null;
+	}
 }

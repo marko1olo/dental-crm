@@ -15,7 +15,9 @@
 import type {
 	CommunicationChannelCode,
 	CommunicationConsentScope,
-} from "./channelRouter.js";
+	DeliveryErrorClass,
+} from "./types.js";
+export type { DeliveryErrorClass };
 
 // ─── Тихие часы ──────────────────────────────────────────────────────────────
 
@@ -187,26 +189,22 @@ export function decideConsent(
 
 // ─── Повторы ─────────────────────────────────────────────────────────────────
 
-/**
- * Классы ошибок общие для всех транспортов. Значения совпадают с теми, что
- * возвращают telegramTransport / whatsappTransport / smsTransport /
- * emailTransport, чтобы диспетчеру не приходилось их переводить.
+/*
+ * `DeliveryErrorClass` ОБЪЯВЛЕН ОДИН РАЗ — в `./types.js`, откуда импортируется
+ * на :17-18 и реэкспортируется на :20 (потребители продолжают брать его отсюда).
+ *
+ * Здесь лежала ВТОРАЯ копия того же объединения — побайтово совпадавшая с
+ * канонической на все четырнадцать членов. Два объявления одного имени в одном
+ * модуле не собираются вовсе: TS2440 (импорт спорит с локальным объявлением) и
+ * TS2484 (экспорт спорит с экспортом). Сборка apps/api была красной.
+ *
+ * Восстанавливать копию нельзя и после починки сборки: разъехавшийся дубль —
+ * уже пройденный в этом проекте отказ. Список `HEADER_HELPERS` держали в двух
+ * файлах, копии разошлись (десять имён против девяти), и гейт молча перестал
+ * видеть целый класс нарушений. Значения классов ошибок обязаны совпадать с
+ * теми, что возвращают telegramTransport / whatsappTransport / smsTransport /
+ * emailTransport, и сверять их надо с ОДНИМ объявлением.
  */
-export type DeliveryErrorClass =
-	| "not_configured"
-	| "rate_limited"
-	| "auth"
-	| "insufficient_funds"
-	| "recipient_unavailable"
-	| "recipient_rejected"
-	| "sender_rejected"
-	| "message_rejected"
-	| "chat_blocked"
-	| "bad_request"
-	| "timeout"
-	| "network"
-	| "server"
-	| "unknown";
 
 /**
  * Повторять есть смысл только там, где причина преходящая. Неверный ключ

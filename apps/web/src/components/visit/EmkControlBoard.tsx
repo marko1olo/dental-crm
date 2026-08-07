@@ -1,5 +1,5 @@
 import { Activity, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatShortDate } from "../../AppHelpers";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { EmptyState } from "../EmptyState";
@@ -68,8 +68,9 @@ export function EmkControlBoard({ dashboard }: any) {
 	const [visits, setVisits] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [submittingId, setSubmittingId] = useState<string | null>(null);
 
-	async function loadVisits() {
+	const loadVisits = useCallback(async () => {
 		try {
 			setLoading(true);
 			setError(null);
@@ -86,14 +87,16 @@ export function EmkControlBoard({ dashboard }: any) {
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, []);
 
 	useEffect(() => {
 		loadVisits();
 	}, [loadVisits]);
 
 	async function updateStatus(visitId: string, status: string) {
+		if (submittingId) return;
 		try {
+			setSubmittingId(visitId);
 			const res = await fetch(`/api/visits/${visitId}/quality-control`, {
 				method: "PUT",
 				headers: denteAdminSecretRequestHeaders({
@@ -107,6 +110,8 @@ export function EmkControlBoard({ dashboard }: any) {
 			await loadVisits();
 		} catch (err: any) {
 			setError(err.message || "Ошибка обновления");
+		} finally {
+			setSubmittingId(null);
 		}
 	}
 
@@ -200,6 +205,8 @@ export function EmkControlBoard({ dashboard }: any) {
 										color: "var(--red-dark)",
 									}}
 									onClick={() => updateStatus(visit.id, "needs_correction")}
+									disabled={submittingId === visit.id}
+									aria-busy={submittingId === visit.id}
 								>
 									<AlertTriangle size={16} /> На доработку
 								</button>
@@ -207,6 +214,8 @@ export function EmkControlBoard({ dashboard }: any) {
 									type="button"
 									className="primary-button focus:outline-none focus:ring-2 focus:ring-teal-600"
 									onClick={() => updateStatus(visit.id, "approved")}
+									disabled={submittingId === visit.id}
+									aria-busy={submittingId === visit.id}
 								>
 									<CheckCircle2 size={16} /> Одобрить
 								</button>

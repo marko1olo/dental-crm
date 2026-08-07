@@ -100,4 +100,68 @@ Every primary UI route (Visit, Schedule, Patients, Finance, Settings) must pass 
 - All database queries enforce strict tenant/organization isolation (organization_id filter).
 - Zero hardcoded secrets, CSRF tokens, or plain-text credentials in source or committed files.
 
+## 2026-08-07T23:06:48Z
+
+# Teamwork Project Prompt - Draft
+
+> Status: Step 1 - Eliciting project idea
+> Goal: Craft prompt -> get user approval -> delegate to teamwork_preview
+
+Deep functional audit and architectural hardening of the DENTE CRM codebase (React/TypeScript/PostgreSQL), fixing runtime bugs, linter errors, and circular dependencies with strict adherence to existing system rules.
+
+Working directory: `C:\Clinic_MVP\dental-crm`
+
+## Extreme Directives & Operating Constraints
+
+### T.A.R.S. Mode: Absolute Pragmatism
+You are operating in a highly critical, zero-tolerance environment. Do NOT exhibit "AI-optimism". Do NOT assume a fix works just because the syntax looks correct. Do NOT use phrases like "this should fix the issue" or "now it is working". You are forbidden from second-guessing architectural rules. If you find garbage, you do not gloss over it - you document it, isolate the root cause, and purge it according to the highest industrial standards.
+
+### The "Dead Code" Trap & Execution Chain Verification
+Never assume an algorithm or function is active just because it exists in a file. Before you modify a piece of logic, you must manually verify its call stack. Who instantiates it? Who calls `Execute()`? Is it an orphaned component? You must use tools like `ast-grep` and `rg` to perform a multi-vectored, global codebase census. If the system manifest implies a feature should exist but you cannot find it immediately, SOUND THE ALARM and dig deeper. 
+
+## Industrial Standards & Best Practices
+
+To ensure all fixes align with the highest tiers of software engineering, you must strictly adhere to the following principles during your audit:
+
+1. **React State & Render Lifecycle**:
+   - **No Stale Closures**: When resolving async functions inside `useEffect` or event handlers, ensure state updates rely on functional updaters (`setState(prev => ...)`).
+   - **AbortControllers**: For any newly implemented or refactored network requests (`fetch`), you must ensure an `AbortController` is attached and triggered upon component unmount to prevent memory leaks and "setState on unmounted component" memory warnings.
+   - **Idempotency in UI States**: Repeatedly clicking a submit button should not result in multiple network requests. The `isLoading` state must be set synchronously before the async execution context yields.
+
+2. **Network & Error Handling**:
+   - **Granular Error Parsing**: Do not just show "An error occurred". Parse the HTTP status code. If it's a 403, notify the user of expired access. If it's a 400, show validation errors. If it's 500, indicate a server failure. 
+   - **Graceful Degradation**: If an async operation fails, the UI must revert cleanly to its previous state without leaving the user trapped in an infinite loading spinner.
+
+3. **Accessibility & Layout (A11y & CLS)**:
+   - **Cumulative Layout Shift (CLS)**: When injecting spinners or disabling buttons, ensure the button's dimensions are fixed or min-width is set so the UI does not violently jump.
+   - **ARIA Attributes**: Always use `aria-busy={true}` alongside `disabled={true}` for accessibility tools to recognize the loading state.
+
+## Deep Architectural Requirements
+
+### R1. Eradication of "Silent Swallows" and Unhandled Async Errors
+The current system suffers from critical functional defects where asynchronous operations (API fetches, tRPC calls, document generation) fail silently. When a promise rejects or a `try/catch` block catches an error, it is currently being swallowed (e.g., `catch (e) { console.error(e) }`) without any user-facing feedback. 
+Your task is to hunt down every single instance of unhandled or poorly handled async errors across the entire React frontend (`apps/web/src`). 
+For every discovered instance, you must explicitly route the error to the UI using the project's established toast infrastructure (`showToast`, `actionFailureToast`). The medical staff (dentists, administrators) must receive clear, localized, and actionable feedback when a network request fails, rather than staring at a frozen screen while the console silently bleeds errors.
+
+### R2. Annihilation of Race Conditions and Double Submits (State Hardening)
+Critical user flows-specifically financial transactions (Sberbank terminal integrations), appointment bookings, and document signing-are vulnerable to double-submit race conditions. Forms and action buttons are currently failing to lock their UI state during pending asynchronous operations. 
+You must identify all buttons and forms that trigger mutations or API requests and ensure they are fortified with strict loading states. You must implement robust `isSubmitting`, `isLoading`, or `isPending` state guards. Buttons must be physically disabled (`disabled={isSubmitting}`) and visually indicate their loading state (`aria-busy={true}`) to prevent users from spam-clicking and corrupting the PostgreSQL database with duplicate records. 
+
+### R3. Exhaustive Discovery and Code Health Enforcement
+Your reconnaissance must be paranoid and exhaustive. Before applying any fixes to the functional bugs mentioned in R1 and R2, you must execute a structural search of the codebase. You are required to run `rg "await fetch|catch" apps/web/src` and `rg "onSubmit" apps/web/src` to map the battlefield. 
+Furthermore, you are strictly bound by the project's linter and compiler rules. Every piece of code you touch must comply with the existing Biome rules and TypeScript strict mode configurations. You must never bypass a type check with `any` or `@ts-ignore`. 
+
+## Acceptance Criteria
+
+### Technical Correctness (Objective Verification)
+- [ ] **Type Safety:** The entire workspace must compile cleanly. You must run `npm run typecheck -w @dental/web` and `npm run typecheck -w @dental/api`. The exit code MUST be `0`.
+- [ ] **Linter Compliance:** You must run `npx biome lint apps/web/src`. The command must return zero errors for all files modified during your operation.
+- [ ] **Proof of Execution:** You must not claim a task is complete without providing the actual terminal `stdout` logs demonstrating that the compiler and linter passed.
+
+### Functional Integrity
+- [ ] Every modified action button or form submit handler actively blocks secondary interactions while the initial promise is resolving.
+- [ ] Every modified `catch` block explicitly informs the user of the failure state via `showToast` or an equivalent established UI pattern.
+- [ ] No regression of existing functionality: Context providers, custom hooks, and memoization dependencies must remain intact and functionally identical in their positive paths.
+
+
 

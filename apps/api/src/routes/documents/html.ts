@@ -28,6 +28,7 @@ import {
 	validateDocumentCreation,
 } from "../../documents/guards.js";
 import {
+	documentIssueBlockReason,
 	renderDocumentHtml,
 	taxFiscalDocumentBlockReason,
 } from "../../documents/renderDocument.js";
@@ -49,7 +50,6 @@ import {
 	documentAttachmentFileName,
 	documentCreateValidationMessageForRequest,
 	documentHasIssuedArchiveMetadata,
-	documentIssueBlockReason,
 	documentIssueChainBlockReason,
 	documentIssueValidationMessage,
 	documentRequiresIssuedArchive,
@@ -64,7 +64,7 @@ import {
 	taxSnapshotDocument,
 	taxXmlSourceSnapshotForIssue,
 	taxXmlSourceSnapshotSha256,
-} from "../documents.js";
+} from "./shared.js";
 
 export async function register(app: FastifyInstance) {
 	app.get<{ Params: { id: string }; Querystring: { download?: string } }>(

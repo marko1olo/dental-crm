@@ -506,7 +506,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			});
 
 			if (!res.ok) {
-				const err = await res.json().catch(() => ({}) as { message?: string });
+				const err = await res.json().catch((err) => {
+					console.error('[Dente]', err);
+					showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
+					return {} as { message?: string };
+				});
 				showToast(
 					refusalToast(
 						"Списание с семейного счёта не прошло",
@@ -529,7 +533,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			 * Сервер отвечает `duplicate: true`, когда узнал ключ и денег НЕ тронул, —
 			 * это и говорим словами: деньги ушли раньше, второй раз не ушли.
 			 */
-			const payResult = (await res.json().catch(() => null)) as {
+			const payResult = (await res.json().catch((err) => {
+				console.error('[Dente]', err);
+				showToast(actionFailureToast('Ответ об оплате не прочитан', (err as { status?: number })?.status ?? null), 'error');
+				return null;
+			})) as {
 				duplicate?: boolean;
 			} | null;
 			showToast(
@@ -601,7 +609,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				}),
 			});
 			if (!res.ok) {
-				const err = await res.json().catch(() => ({}) as { message?: string });
+				const err = await res.json().catch((err) => {
+					console.error('[Dente]', err);
+					showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
+					return {} as { message?: string };
+				});
 				showToast(
 					refusalToast(
 						"Пополнение семейного счёта не прошло",
@@ -619,7 +631,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// по одной непрошедшей попытке, увидела бы два подтверждения на один взнос.
 			// Сумма — через общий money(): своё toLocaleString печатало «1 500,5 ₽»
 			// вместо «1 500,50 ₽», а полтинник в такой записи читается как пять копеек.
-			const topupResult = (await res.json().catch(() => null)) as {
+			const topupResult = (await res.json().catch((err) => {
+				console.error('[Dente]', err);
+				showToast(actionFailureToast('Ответ о пополнении не прочитан', (err as { status?: number })?.status ?? null), 'error');
+				return null;
+			})) as {
 				duplicate?: boolean;
 			} | null;
 			showToast(

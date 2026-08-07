@@ -85,7 +85,7 @@ const KNOWN_MISSING: readonly string[] = [
 	 * fetch. Виджет разбора дублей переведён на живой адрес, а адрес, которого
 	 * никто не зовёт, — не долг, а мусор в списке.
 	 */
-	"/api/integrations/egisz-blank-permissions",
+
 	/*
 	 * Отсюда убрана строка /api/marketing/family-recommendation-sources: её звал
 	 * ровно один виджет, FamilyRecommendationSourcesWidget, и он удалён вместе с
@@ -133,7 +133,7 @@ const KNOWN_MISSING: readonly string[] = [
 	 * формы с них уже переведены, и в списках других тестов — но ни один файл
 	 * интерфейса их не запрашивает.
 	 */
-	"/api/clinic/workflows",
+
 	/*
 	 * Отсюда убраны /api/communications/inbox и /api/communications/patients/search,
 	 * и эти две показательнее всех прежних: каждая встречалась в дереве РОВНО ОДИН
@@ -143,7 +143,7 @@ const KNOWN_MISSING: readonly string[] = [
 	 * адреса, которых он не зовёт. Ровно тот мусор, о котором предупреждает
 	 * правило выше, — и он появляется в списке долга сам, если этого не проверять.
 	 */
-	"/api/egisz/send",
+
 	"/api/egisz/logs",
 	/*
 	 * Отсюда убрана строка /api/settings/catalog-import: маршрут подключён на
@@ -1215,7 +1215,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * уменьшите и это число.
 		 */
 		assert.ok(
-			KNOWN_MISSING.length <= 7,
+			KNOWN_MISSING.length <= 4,
 			`Известных отсутствующих адресов стало больше: ${KNOWN_MISSING.length}. ` +
 				"Долг должен уменьшаться, а не расти.",
 		);

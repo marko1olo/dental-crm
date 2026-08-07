@@ -1,29 +1,34 @@
-# Project: DENTE Dental CRM Quality, Security & Visual Proof Sprint
+# Project: DENTE CRM Architectural & Functional Hardening
 
 ## Architecture
-- **Frontend**: React monorepo client (`apps/web/src`) styled with CSS modules / variables / theme tokens (Light, Dark, Night).
-- **Backend API**: Fastify API (`apps/api`) with Drizzle ORM over native PostgreSQL 18 at `127.0.0.1:5432` (`pg.Pool`).
-- **Shared Package**: `@dental/shared` containing queries, types, financial logic (`money.ts`), XML generators.
-- **Visual Testing Matrix**: Playwright/CDP screenshot tools (`scripts/dente-redesign-shots.mjs` / `scripts/ops-panels-shots.mjs`) generating 4-state matrix (PC Light, PC Dark, Mobile Light, Mobile Dark).
+- **Frontend**: React 18, Vite, TypeScript monorepo package `@dental/web` (`apps/web/src`)
+- **Backend**: Fastify API, TypeScript monorepo package `@dental/api` (`apps/api/src`)
+- **Database**: Drizzle ORM over native PostgreSQL 18.4 (`127.0.0.1:5432`)
+- **State Management**: Zustand stores + React Context / hooks
+- **Toast Infra**: `showToast`, `actionFailureToast`
 
-## Code Layout
-- `apps/api/src/db/` — Drizzle ORM schema (`schema.ts`), migrations (`drizzle/`), db connection.
-- `apps/api/src/routes/` — Fastify API endpoints (finance, patients, visits, documents, etc.).
-- `apps/web/src/views/` — `VisitView.tsx` (Form 043/у & Odontogram), `ScheduleView.tsx`, `PatientsView.tsx`, `FinanceView.tsx`, `SettingsView.tsx`.
-- `apps/web/src/components/` — `OdontogramModule.tsx`, `VisitDiaryEditor.tsx`, financial ledgers, settings tabs.
-- `scripts/dente-redesign-shots.mjs` — Automated 4-state visual testing runner.
+## Feature Inventory
+| # | Feature | Description | Milestone | Source |
+|---|---------|-------------|-----------|--------|
+| 1 | Async Error Routing | Route silent catch blocks (500 sites) to user-facing toasts (`showToast`, `actionFailureToast`) | M1 | ORIGINAL_REQUEST.md §R1 |
+| 2 | Double Submit & Race Condition Prevention | Implement `isSubmitting`/`isLoading` guards, `disabled={isSubmitting}`, `aria-busy={true}` (51 UI sites) | M2 | ORIGINAL_REQUEST.md §R2 |
+| 3 | Linter & Compiler Enforcement | Biome linter compliance (`npx biome lint apps/web/src`) & 0 TS errors (`npm run typecheck`) | M3 | ORIGINAL_REQUEST.md §R3 |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| 1 | Database & Security Safety Audit | Verify PostgreSQL 18.4 clean migrations, zero secrets/CSRF tokens/plain-text credentials, strict tenant isolation (`organization_id` filter). | None | DONE |
-| 2 | Form 043/у & Odontogram Completeness | Fix clinical diary layout shifts, clipped text, missing data, verify zero Cyrillic mojibake. | None | DONE |
-| 3 | Kopeck-Exact Financial Accounting | Ensure integer arithmetic (1 RUB = 100 kopecks) across all pricing, ledgers, and transaction endpoints; zero float ops. | None | DONE |
-| 4 | 4-State Visual Proof Matrix | Run Playwright 4-state visual proof across Visit, Schedule, Patients, Finance, Settings routes; pass `typecheck` and `check:encoding`. | M1, M2, M3 | IN_PROGRESS |
-| 5 | Forensic Audit & Sentinel Report | Run independent forensic audit (`teamwork_preview_auditor`) for integrity, commit per-file, report to Sentinel. | M4 | PLANNED |
+| 1 | M1: Async Error Swallows Remediation | Eradicate 500 silent async error swallows in `apps/web/src` | Survey | IN_PROGRESS |
+| 2 | M2: Race Condition Hardening | Prevent double-submits & lock UI state on 51 form/button sites | M1 | PLANNED |
+| 3 | M3: Code Base Cleanliness & Typecheck | 0 Biome linter errors, 0 TS compiler errors, circular dependency check | M2 | PLANNED |
 
 ## Interface Contracts
-- `apps/api/src/db/schema.ts`: `organization_id` column enforced on all tenant-specific tables with non-null foreign keys / filters.
-- Financial arithmetic: All money fields stored and processed in kopecks (`packages/shared/src/utils/money.ts`). Zero `float` or JS float division for currency.
-- `Form 043/у` & `Odontogram`: Complete patient anamnesis, objective data, tooth formula 11–48 rendered with proper Tailwind/CSS flex-grid responsive styling without text truncation or layout shifts.
-- 4-State Matrix: Visual screenshots output for 5 primary routes x 4 states (Mobile Light, Mobile Dark, PC Light, PC Dark) in workspace artifacts directory.
+- **Toast Utility**: `showToast(text, type)` from `apps/web/src/components/GlobalToast.tsx` / `actionFailureToast(actionName, status)` from `apps/web/src/lib/panelStateText.ts`.
+- **State Guard Contract**: `isSubmitting`/`isLoading` set synchronously before async operation yield, reset in `finally` block.
+- **Button Props Contract**: `disabled={isSubmitting}` and `aria-busy={isSubmitting || isLoading}` on all mutating buttons/forms.
+
+## Code Layout
+- `apps/web/src/` — React frontend root
+- `apps/web/src/components/` — UI components and views
+- `apps/web/src/useAppLogic.tsx` — Main application logic context hook
+- `apps/web/src/store/` — Zustand state stores
+- `apps/api/src/` — Backend Fastify API

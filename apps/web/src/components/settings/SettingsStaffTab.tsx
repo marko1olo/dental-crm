@@ -111,6 +111,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 
 	const handleCreateStaff = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (loading) return;
 		if (!newStaffName.trim()) {
 			showToast("Укажите ФИО сотрудника", "warning");
 			return;
@@ -191,6 +192,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 	 */
 	const handleUpdatePhone = async (e: React.FormEvent, staffId: string) => {
 		e.preventDefault();
+		if (loading) return;
 		const staffName = staffNameById(staffId);
 		setLoading(true);
 		const failedAction = `Телефон ${staffName} не сохранён`;
@@ -251,6 +253,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 		kind: StaffCredentialKind,
 	) => {
 		e.preventDefault();
+		if (loading) return;
 		const staffName = staffNameById(staffId);
 		const plan = planStaffCredentialUpdate(
 			kind,
