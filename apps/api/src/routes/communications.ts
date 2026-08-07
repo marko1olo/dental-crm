@@ -221,4 +221,60 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 			return reply.code(404).send({ error: "NotFound" });
 		}
 	});
+
+	app.get("/api/communications/recordings/:id", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { id } = request.params as { id: string };
+		const [event] = await db
+			.select()
+			.from(communicationEvents)
+			.where(
+				and(
+					eq(communicationEvents.id, id),
+					eq(communicationEvents.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!event) {
+			return reply.code(404).send({ error: "NotFound" });
+		}
+
+		if (!event.recordingUrl) {
+			return reply.code(404).send({ error: "NoRecording", message: "This event does not have a recording attached." });
+		}
+
+		return reply.send({
+			id: event.id,
+			recordingUrl: event.recordingUrl,
+			durationSeconds: event.durationSeconds,
+			audioFormat: event.audioFormat,
+		});
+	});
+
+	app.get("/api/communications/recordings/:id/stream", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { id } = request.params as { id: string };
+		const [event] = await db
+			.select()
+			.from(communicationEvents)
+			.where(
+				and(
+					eq(communicationEvents.id, id),
+					eq(communicationEvents.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!event || !event.recordingUrl) {
+			return reply.code(404).send({ error: "NotFound" });
+		}
+
+		// Simple redirect proxy for now
+		return reply.redirect(event.recordingUrl);
+	});
 }

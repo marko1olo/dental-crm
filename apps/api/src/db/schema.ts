@@ -1050,6 +1050,9 @@ export const communicationEvents = pgTable("communication_events", {
 	direction: communicationDirection("direction").notNull(),
 	status: communicationStatus("status").notNull(),
 	message: text("message").notNull(),
+	recordingUrl: text("recording_url"),
+	durationSeconds: integer("duration_seconds"),
+	audioFormat: text("audio_format").default("audio/mpeg"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),

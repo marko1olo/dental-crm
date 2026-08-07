@@ -17,6 +17,7 @@ const telephonyCallBodySchema = z.object({
 	from: z.string().optional(),
 	to: z.string().optional(),
 	call_id: z.string().optional(),
+	recording_url: z.string().optional(),
 });
 
 const telephonySmsBodySchema = z.object({
@@ -35,6 +36,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			from: string;
 			to: string;
 			call_id?: string;
+			recording_url?: string;
 		};
 	}>("/:organizationId/webhook", async (request, reply) => {
 		// БЫЛО: вебхук АТС принимал любой POST — посторонний мог показывать
@@ -130,6 +132,33 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 						timestamp: new Date().toISOString(),
 					},
 				});
+			} else if (event === "ended" && parsedCall.data.recording_url) {
+				const rawPhone = from.replace(/\D/g, "");
+				const phoneSuffix = rawPhone.length >= 10 ? rawPhone.slice(-10) : rawPhone;
+				if (phoneSuffix.length >= 7) {
+					const searchResult = await db
+						.select()
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								ilike(patients.phone, `%${phoneSuffix}%`),
+							),
+						)
+						.limit(1);
+					const patient = searchResult[0] || null;
+					if (patient) {
+						await db.insert(communicationEvents).values({
+							organizationId,
+							patientId: patient.id,
+							channel: "phone",
+							direction: "inbound",
+							status: "completed",
+							message: "Звонок завершён (запись приложена)",
+							recordingUrl: parsedCall.data.recording_url,
+						});
+					}
+				}
 			}
 
 			// Возвращаем 200 OK чтобы АТС поняла, что хук принят
