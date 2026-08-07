@@ -1639,8 +1639,7 @@ function hasDicomMagic(filePath: string): boolean {
 		} finally {
 			closeSync(handle);
 		}
-	} catch (err) {
-		console.error('[Dente] Failed to read DICOM header:', err);
+	} catch {
 		return false;
 	}
 }
@@ -2982,8 +2981,7 @@ async function readZipCentralDirectoryDetailed(
 	let stats: Stats;
 	try {
 		stats = await stat(filePath);
-	} catch (err) {
-		console.error('[Dente] Failed to stat ZIP file:', err);
+	} catch {
 		return {
 			entries: [],
 			warnings: [
@@ -3227,8 +3225,7 @@ async function inflateZipEntryPrefix(
 				budgetRemaining -= chunkLength;
 				try {
 					if (!inflater.write(chunk.buffer)) await once(inflater, "drain");
-				} catch (err) {
-					console.error('[Dente] Failed to write to inflater:', err);
+				} catch {
 					if (!settled)
 						finish({
 							buffer: null,
@@ -7630,8 +7627,7 @@ async function discoverLocalDicomFolders(
 			try {
 				await stat(root);
 				return true;
-			} catch (err) {
-				console.error('[Dente] Failed to stat root path:', err);
+			} catch {
 				return false;
 			}
 		}),
@@ -8198,8 +8194,7 @@ async function organizeLocalImagingSources(
 				try {
 					await access(root);
 					return root;
-				} catch (err) {
-					console.error('[Dente] Failed to access root path:', err);
+				} catch {
 					return null;
 				}
 			}),
@@ -8705,7 +8700,9 @@ async function buildDicomFolderWorkupPlan(
 }
 
 export async function registerImagingRoutes(app: FastifyInstance) {
-	app.post("/api/imaging/visiograph-ai", async (request, reply) => {
+	app.post("/api/imaging/visiograph-ai", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -8743,9 +8740,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			console.error("[Visiograph AI] Error:", err);
 			return reply.code(500).send({ error: err.message });
 		}
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post("/api/imaging/imports/preview", async (request, reply) => {
+	app.post("/api/imaging/imports/preview", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -8768,9 +8772,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 		return parseImagingManifest(orgId, input);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post("/api/imaging/dicom/series-preview", async (request, reply) => {
+	app.post("/api/imaging/dicom/series-preview", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(request, reply, "dicom series preview"))
 		)
@@ -8789,9 +8800,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 		return parseDicomSeriesManifest(orgId, input);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post("/api/imaging/dicomweb/check", async (request, reply) => {
+	app.post("/api/imaging/dicomweb/check", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (!(await requireDicomWebSettingsAccess(request, reply))) return;
 		const parsed = parseImagingPayload(
 			dicomWebConnectorCheckRequestSchema,
@@ -8801,11 +8819,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		if (!parsed.ok) return reply.code(400).send(parsed.response);
 		const input = parsed.data;
 		return checkDicomWebConnector(input);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post(
-		"/api/imaging/dicom/viewer-launch-manifest",
-		async (request, reply) => {
+	app.post("/api/imaging/dicom/viewer-launch-manifest", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -8822,10 +8845,17 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			if (!parsed.ok) return reply.code(400).send(parsed.response);
 			const input = parsed.data;
 			return buildDicomViewerLaunchManifest(input);
-		},
+		
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+},
 	);
 
-	app.post("/api/imaging/dicom/viewer-tool-state", async (request, reply) => {
+	app.post("/api/imaging/dicom/viewer-tool-state", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -8842,9 +8872,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		if (!parsed.ok) return reply.code(400).send(parsed.response);
 		const input = parsed.data;
 		return buildDicomViewerToolStateBundle(input);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post("/api/imaging/dicom/render-cache-plan", async (request, reply) => {
+	app.post("/api/imaging/dicom/render-cache-plan", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -8861,11 +8898,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		if (!parsed.ok) return reply.code(400).send(parsed.response);
 		const input = parsed.data;
 		return buildDicomRenderCachePlan(input);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post(
-		"/api/imaging/dicom/workstation-readiness",
-		async (request, reply) => {
+	app.post("/api/imaging/dicom/workstation-readiness", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -8882,12 +8924,17 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			if (!parsed.ok) return reply.code(400).send(parsed.response);
 			const input = parsed.data;
 			return buildDicomWorkstationReadiness(input);
-		},
+		
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+},
 	);
 
-	app.post(
-		"/api/imaging/dicom/viewer-workbench-manifest",
-		async (request, reply) => {
+	app.post("/api/imaging/dicom/viewer-workbench-manifest", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -8904,10 +8951,17 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			if (!parsed.ok) return reply.code(400).send(parsed.response);
 			const input = parsed.data;
 			return buildDicomViewerWorkbenchManifest(input);
-		},
+		
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+},
 	);
 
-	app.post("/api/imaging/dicom/workbench-bundles", async (request, reply) => {
+	app.post("/api/imaging/dicom/workbench-bundles", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalMutationAccess(
 				request,
@@ -8936,9 +8990,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				warnings: bundle.warnings,
 			}),
 		);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.get("/api/imaging/dicom/workbench-bundles", async (request, reply) => {
+	app.get("/api/imaging/dicom/workbench-bundles", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -8968,11 +9029,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				? "Восстановите последний набор КЛКТ/КТ-срезов, затем перед диагностикой заново подключите локальные снимки или архив снимков."
 				: "Создайте набор КЛКТ/КТ-срезов из папки снимков или серии архива снимков.",
 		});
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post(
-		"/api/imaging/dicom/local-folder-discovery",
-		async (request, reply) => {
+	app.post("/api/imaging/dicom/local-folder-discovery", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -8991,12 +9057,17 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			return runAbortableImagingScan(request, reply, (options) =>
 				discoverLocalDicomFolders(input, options),
 			);
-		},
+		
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+},
 	);
 
-	app.post(
-		"/api/imaging/local-organizer/scan-preview",
-		async (request, reply) => {
+	app.post("/api/imaging/local-organizer/scan-preview", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -9015,12 +9086,17 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			return runAbortableImagingScan(request, reply, (options) =>
 				organizeLocalImagingSources(input, options),
 			);
-		},
+		
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+},
 	);
 
-	app.post(
-		"/api/imaging/dicom/folder-series-preview",
-		async (request, reply) => {
+	app.post("/api/imaging/dicom/folder-series-preview", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -9041,10 +9117,17 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			return runAbortableImagingScan(request, reply, (options) =>
 				buildDicomFolderSeriesPreview(input, options, previewOrgId),
 			);
-		},
+		
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+},
 	);
 
-	app.post("/api/imaging/dicom/first-frame-preview", async (request, reply) => {
+	app.post("/api/imaging/dicom/first-frame-preview", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -9063,9 +9146,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		return runAbortableImagingScan(request, reply, (options) =>
 			buildDicomFirstFramePreview(input, options),
 		);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post("/api/imaging/dicom/folder-workup-plan", async (request, reply) => {
+	app.post("/api/imaging/dicom/folder-workup-plan", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -9086,9 +9176,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		return runAbortableImagingScan(request, reply, (options) =>
 			buildDicomFolderWorkupPlan(input, options, workupOrgId),
 		);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post("/api/imaging/imports/commit", async (request, reply) => {
+	app.post("/api/imaging/imports/commit", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalMutationAccess(
 				request,
@@ -9111,9 +9208,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 		return commitImagingImport(orgId, input);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post("/api/imaging/folders/scan-preview", async (request, reply) => {
+	app.post("/api/imaging/folders/scan-preview", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -9163,9 +9267,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				warnings: scan.warnings,
 			});
 		});
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.get("/api/imaging/studies", async (request, reply) => {
+	app.get("/api/imaging/studies", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (!(await requireClinicalReadAccess(request, reply, "imaging studies")))
 			return;
 		const { patientId } = request.query as { patientId?: string };
@@ -9179,9 +9290,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			? await getImagingStudiesForPatient(orgId, patientId)
 			: await getAllImagingStudies(orgId);
 		return studies.map((study) => imagingStudySchema.parse(study));
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.get("/api/imaging/studies/:id/viewer-session", async (request, reply) => {
+	app.get("/api/imaging/studies/:id/viewer-session", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -9204,9 +9322,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			session,
 			warnings: session.warnings,
 		});
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.put("/api/imaging/studies/:id/viewer-session", async (request, reply) => {
+	app.put("/api/imaging/studies/:id/viewer-session", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalMutationAccess(
 				request,
@@ -9238,9 +9363,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				warnings: session.warnings,
 			}),
 		);
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.post("/api/imaging/studies", async (request, reply) => {
+	app.post("/api/imaging/studies", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
 		// а не клиника, приславшая запрос. В установке на несколько клиник врач
 		// клиники Б получал 404 на собственное исследование, а в худшем случае —
@@ -9309,10 +9441,17 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			aiSummary: input.aiSummary,
 		});
 		return reply.code(201).send(imagingStudySchema.parse(study));
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
 	// ─── AI Analysis ──────────────────────────────────────────────────────────
-	app.post("/api/imaging/studies/:id/analyze", async (request, reply) => {
+	app.post("/api/imaging/studies/:id/analyze", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (
 			!(await requireClinicalMutationAccess(
 				request,
@@ -9412,9 +9551,16 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			const message = err?.message ?? "Анализ завершился ошибкой";
 			return reply.code(502).send({ ok: false, message });
 		}
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
-	app.get("/api/imaging/studies/:id/preview.svg", async (request, reply) => {
+	app.get("/api/imaging/studies/:id/preview.svg", { schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 		if (!(await requireClinicalReadAccess(request, reply, "imaging preview")))
 			return;
 		const { id } = request.params as { id: string };
@@ -9429,7 +9575,12 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			return sendImagingStudyNotFound(reply);
 		}
 		return reply.type("image/svg+xml; charset=utf-8").send(previewSvg(study));
-	});
+	
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+});
 
 	/**
 	 * Сам снимок.
@@ -9450,10 +9601,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 	 * организации из подписанного токена, и дополнительно проверяется на выход за
 	 * пределы каталога хранения: подстановка пути из запроса невозможна.
 	 */
-	app.get(
-		"/api/imaging/studies/:id/file",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request, reply) => {
+	app.get("/api/imaging/studies/:id/file", { config: { tenantTxSelfManaged: true }, schema: { body: { type: "object", additionalProperties: true }, querystring: { type: "object", additionalProperties: true }, params: { type: "object", additionalProperties: true } } }, async (request, reply) => {
+	try {
+
 			if (!(await requireClinicalReadAccess(request, reply, "imaging file")))
 				return;
 			const { id } = request.params as { id: string };
@@ -9496,8 +9646,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			const resolved = path.resolve(storagePath);
 			try {
 				await access(resolved);
-			} catch (err) {
-				request.log.error({ err }, 'Failed to access imaging file on disk');
+			} catch {
 				return reply.code(404).send({
 					error: "ImagingFileNotFoundOnDisk",
 					message: "Файл снимка не найден на диске клиники.",
@@ -9506,7 +9655,12 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 
 			reply.type(mimeType);
 			return reply.send(createReadStream(resolved));
-		},
+		
+	} catch(err: any) {
+		request.log.error?.(err);
+		return reply.code(500).send({ error: err.message || "Internal Server Error" });
+	}
+},
 	);
 }
 
