@@ -504,6 +504,7 @@ export function SmartParsePreview({
 					<div className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700/60 p-3 flex justify-between items-center">
 						<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
 							<svg
+								aria-hidden="true"
 								className="w-4 h-4 text-emerald-500"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -519,10 +520,12 @@ export function SmartParsePreview({
 							Результат распознавания
 						</h4>
 						<button
+							type="button"
 							onClick={onClose}
 							className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
 						>
 							<svg
+								aria-hidden="true"
 								className="w-4 h-4"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -549,11 +552,13 @@ export function SmartParsePreview({
 
 					<div className="bg-slate-50 dark:bg-slate-800/80 p-3 border-t border-slate-100 dark:border-slate-700/60 flex gap-2">
 						<button
+							type="button"
 							onClick={() => onApply(internalData)}
 							disabled={isAiLoading}
 							className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1"
 						>
 							<svg
+								aria-hidden="true"
 								className="w-4 h-4"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -569,11 +574,13 @@ export function SmartParsePreview({
 							Применить
 						</button>
 						<button
+							type="button"
 							onClick={handleAiParse}
 							disabled={isAiLoading}
 							className="flex-1 bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/80 dark:hover:bg-purple-900 dark:text-purple-300 text-purple-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1"
 						>
 							<svg
+								aria-hidden="true"
 								className="w-4 h-4"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -589,6 +596,7 @@ export function SmartParsePreview({
 							ИИ-Анализ
 						</button>
 						<button
+							type="button"
 							onClick={onManual}
 							disabled={isAiLoading}
 							className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-200 font-medium text-sm py-2 px-3 rounded-lg transition-colors"

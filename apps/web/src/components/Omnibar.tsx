@@ -263,6 +263,7 @@ export function Omnibar() {
 										}}
 									/>
 									<button
+										type="button"
 										onClick={() => setOmnibarOpen(false)}
 										className="p-1.5 hover:bg-neutral-100 dark:hover:bg-slate-800 rounded-md transition-colors text-neutral-400 hover:text-neutral-600 dark:hover:text-slate-200"
 									>

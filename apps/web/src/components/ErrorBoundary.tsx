@@ -164,6 +164,7 @@ export class ErrorBoundary extends Component<Props, State> {
 						</pre>
 					) : null}
 					<button
+						type="button"
 						onClick={this.handleReset}
 						className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 hover:scale-105 active:scale-95 transition-all duration-200"
 					>

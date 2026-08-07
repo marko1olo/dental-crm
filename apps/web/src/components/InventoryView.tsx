@@ -804,7 +804,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								}}
 							/>
 						</div>
-						<button className="primary-button" onClick={openAddModal}>
+						<button type="button" className="primary-button" onClick={openAddModal}>
 							<Plus size={18} /> Добавить позицию
 						</button>
 					</div>
@@ -1220,6 +1220,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														}}
 													>
 														<button
+															type="button"
 															onClick={() => openEditModal(item)}
 															style={{
 																background: "rgba(245, 158, 11, 0.1)",
@@ -1238,6 +1239,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															<Edit2 size={14} />
 														</button>
 														<button
+															type="button"
 															onClick={() =>
 																handleDeleteItem(item.id, item.name)
 															}
@@ -1258,6 +1260,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															<Trash2 size={14} />
 														</button>
 														<button
+															type="button"
 															onClick={() => {
 																setAdjustingItem(item);
 																setAdjustType("in");
@@ -1281,6 +1284,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															<ArrowDownToLine size={14} /> ПРИХОД
 														</button>
 														<button
+															type="button"
 															onClick={() => {
 																setAdjustingItem(item);
 																setAdjustType("out");
@@ -1361,6 +1365,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								{editingItem ? "Редактировать материал" : "Добавить материал"}
 							</h2>
 							<button
+								type="button"
 								onClick={() => setShowModal(false)}
 								style={{
 									background: "none",
@@ -1389,7 +1394,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								<input
 									type="text"
 									required
-									autoFocus
 									value={formData.name}
 									onChange={(e) =>
 										setFormData({ ...formData, name: e.target.value })
@@ -1629,6 +1633,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								{adjustType === "in" ? "Приход на склад" : "Списание со склада"}
 							</h2>
 							<button
+								type="button"
 								onClick={() => setAdjustingItem(null)}
 								style={{
 									background: "none",
@@ -1736,7 +1741,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									type="number"
 									min="1"
 									required
-									autoFocus
 									value={adjustAmount}
 									onChange={(e) => setAdjustAmount(e.target.value)}
 									style={{

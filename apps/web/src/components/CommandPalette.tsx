@@ -150,6 +150,7 @@ export function CommandPalette({
 						onKeyDown={handleKeyDown}
 					/>
 					<button
+						type="button"
 						className="cmd-palette-close"
 						onClick={() => setIsOpen(false)}
 					>
