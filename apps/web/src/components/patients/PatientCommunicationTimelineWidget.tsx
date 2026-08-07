@@ -32,6 +32,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import { countLabel } from "../../lib/russianPlural";
 import { formatShortDate, formatTime } from "../../utils/formatting";
+import { CallPlayer } from "../communications/CallPlayer";
 
 type CommunicationDirection = "inbound" | "outbound";
 
@@ -64,6 +65,8 @@ interface PatientCommunicationEntry {
 	message: string;
 	actorName: string | null;
 	createdAt: string;
+	recordingUrl?: string | null;
+	durationSeconds?: number | null;
 }
 
 /** Ответ маршрута GET /api/patients/:patientId/communication-timelines. */
@@ -323,6 +326,12 @@ export const PatientCommunicationTimelineWidget: React.FC<{
 											<p className="mt-1 mb-0 text-slate-800 dark:text-slate-200 break-words whitespace-pre-wrap">
 												{entry.message}
 											</p>
+											{entry.recordingUrl ? (
+												<CallPlayer
+													recordingUrl={entry.recordingUrl}
+													durationSeconds={entry.durationSeconds ?? null}
+												/>
+											) : null}
 											<p className="mt-1 mb-0 text-slate-500 dark:text-slate-400">
 												{entry.actorName
 													? `Сотрудник: ${entry.actorName}`
