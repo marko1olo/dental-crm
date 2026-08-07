@@ -83,7 +83,9 @@ export const CallPlayer: React.FC<{
 
 	return (
 		<div className="flex flex-wrap items-center gap-2 mt-2 p-2 bg-slate-100 dark:bg-slate-900/50 rounded-md border border-slate-200 dark:border-slate-800">
-			<audio ref={audioRef} src={recordingUrl} preload="metadata" />
+		<audio ref={audioRef} src={recordingUrl} preload="metadata">
+				{/* biome-ignore lint/a11y/useMediaCaption: call recording player, captions not applicable */}
+			</audio>
 			<button
 				type="button"
 				onClick={togglePlayPause}
