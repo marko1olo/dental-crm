@@ -19,6 +19,7 @@ import {
 	validateRubAmountInput,
 } from "./rubAmountInput";
 import { SmartParsePreview } from "./SmartParsePreview";
+import { SberbankTerminalPaymentModal } from "./components/finance/SberbankTerminalPaymentModal";
 
 type TaxDeductionCode = "" | "1" | "2";
 
@@ -59,6 +60,7 @@ type PaymentCaptureProps = {
 		identityDocument?: string | null;
 		taxpayerInn?: string | null;
 	};
+	patientId?: string | null;
 	payerBirthDate: string;
 	payerFullName: string;
 	payerIdentityDocument: string;
@@ -711,6 +713,7 @@ export function PaymentCapture({
 	patientContextMessage,
 	patientContextReady,
 	patientDefaults,
+	patientId,
 	payerBirthDate,
 	payerFullName,
 	payerIdentityDocument,
@@ -732,6 +735,7 @@ export function PaymentCapture({
 	);
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 	const [showHints, setShowHints] = useState(false);
+	const [isSberbankModalOpen, setIsSberbankModalOpen] = useState(false);
 
 	const handleSmartDictation = (text: string) => {
 		if (!text.trim()) return;
@@ -1113,18 +1117,38 @@ export function PaymentCapture({
 				Каждая оплата добавляет новую строку в историю. Ошибку закрывайте
 				возвратом или коррекцией, не повторной записью.
 			</p>
-			<button
-				className="primary-button"
-				type="button"
-				onClick={onSubmit}
-				aria-busy={isSaving || undefined}
-				aria-describedby={!paymentReadyToSubmit ? paymentMissingId : undefined}
-				disabled={isSaving || !paymentReadyToSubmit}
-			>
-				{/* Было «Записываэ»: опечатка на кнопке кассы, видна каждому кассиру. */}
-				<CreditCard aria-hidden="true" />{" "}
-				{isSaving ? "Записываю" : "Принять оплату"}
-			</button>
+			<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+				<button
+					className="primary-button"
+					type="button"
+					onClick={onSubmit}
+					aria-busy={isSaving || undefined}
+					aria-describedby={!paymentReadyToSubmit ? paymentMissingId : undefined}
+					disabled={isSaving || !paymentReadyToSubmit}
+				>
+					<CreditCard aria-hidden="true" />{" "}
+					{isSaving ? "Записываю" : "Принять оплату"}
+				</button>
+				<button
+					className="secondary-button"
+					type="button"
+					onClick={() => setIsSberbankModalOpen(true)}
+					aria-describedby={!paymentReadyToSubmit ? paymentMissingId : undefined}
+					disabled={isSaving || !paymentReadyToSubmit || !patientId}
+				>
+					<CreditCard aria-hidden="true" />{" "}
+					Оплатить картой (Терминал Сбербанк)
+				</button>
+			</div>
+			{patientId && (
+				<SberbankTerminalPaymentModal
+					isOpen={isSberbankModalOpen}
+					patientId={patientId}
+					amountInRubles={Number(normalizeRubAmountInput(amount) ?? 0)}
+					onClose={() => setIsSberbankModalOpen(false)}
+					onSuccess={() => onSubmit()}
+				/>
+			)}
 		</div>
 	);
 }

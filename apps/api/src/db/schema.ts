@@ -4377,3 +4377,29 @@ export const visitsRelations = relations(visits, ({ one }) => ({
 		references: [appointments.id],
 	}),
 }));
+
+export const sberbankTransactions = pgTable("sberbank_transactions", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id")
+		.notNull()
+		.references(() => organizations.id),
+	patientId: uuid("patient_id")
+		.notNull()
+		.references(() => patients.id),
+	orderId: varchar("order_id", { length: 255 }).notNull(),
+	amount: integer("amount").notNull(),
+	status: varchar("status", { length: 50 }).notNull().default("pending"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
+});
+
+export const sberbankTransactionsRelations = relations(sberbankTransactions, ({ one }) => ({
+	organization: one(organizations, {
+		fields: [sberbankTransactions.organizationId],
+		references: [organizations.id],
+	}),
+	patient: one(patients, {
+		fields: [sberbankTransactions.patientId],
+		references: [patients.id],
+	}),
+}));
