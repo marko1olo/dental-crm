@@ -123,6 +123,7 @@ export const PatientAttachmentsPanel: React.FC<
 			}
 			setFiles(parseFilesPayload(raw));
 		} catch (e) {
+			showToast(actionFailureToast("Список вложений не загружен: ${requestFailureCause(null)}.", (e as { status?: number })?.status ?? null), "error");
 			console.error("[patient-attachments] list failed", e);
 			setError(`Список вложений не загружен: ${requestFailureCause(null)}.`);
 			setFiles([]);

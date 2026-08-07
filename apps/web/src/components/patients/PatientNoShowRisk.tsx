@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import {
 	AlertTriangle,
 	BrainCircuit,
@@ -91,6 +93,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 					setFailure({ status: res.status });
 				}
 			} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 				if (cancelled || (e as Error)?.name === "AbortError") return;
 				console.error("Failed to fetch AI no-show risk", e);
 				setFailure({ status: null });

@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { Activity, Calendar, FileText, History, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -94,6 +96,7 @@ export function ToothHistoryChronicle({
 				setEvents(parsed);
 				setLoad({ phase: "ready" });
 			} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 				console.error("[tooth history] запрос не выполнен", e);
 				// До сервера не дошли: кода ответа нет, и придумывать его нельзя.
 				if (active) setLoad({ phase: "failed", status });

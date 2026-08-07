@@ -1,3 +1,5 @@
+import { showToast } from "../../components/GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import type {
 	DenteTelegramChatLinkListResponse,
 	DenteTelegramLinkCodeCreated,
@@ -315,6 +317,7 @@ export function useTelegramModule({
 				};
 			});
 		} catch (telegramError) {
+			showToast(actionFailureToast("Очередь Telegram не загрузилась", (telegramError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Очередь Telegram не загрузилась",
@@ -354,6 +357,7 @@ export function useTelegramModule({
 			setTelegramLinkCodes(linkCodes);
 			setTelegramLinkCodeLedger({ ...nextPage, linkCodes });
 		} catch (telegramError) {
+			showToast(actionFailureToast("Коды Telegram не загрузились", (telegramError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Коды Telegram не загрузились",
@@ -395,6 +399,7 @@ export function useTelegramModule({
 			setTelegramChatLinks(chatLinks);
 			setTelegramChatLinkLedger({ ...nextPage, chatLinks });
 		} catch (telegramError) {
+			showToast(actionFailureToast("Связанные Telegram-чаты не загрузились", (telegramError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Связанные Telegram-чаты не загрузились",
@@ -460,6 +465,7 @@ export function useTelegramModule({
 			await loadTelegramControlPlane({ silent: true });
 			setError(null);
 		} catch (telegramError) {
+			showToast(actionFailureToast("Telegram-код не создан", (telegramError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage("Telegram-код не создан", telegramError),
 			);
@@ -547,6 +553,7 @@ export function useTelegramModule({
 			await loadTelegramControlPlane({ silent: true });
 			setError(null);
 		} catch (telegramError) {
+			showToast(actionFailureToast("Связка Telegram не отозвана", (telegramError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Связка Telegram не отозвана",
@@ -604,6 +611,7 @@ export function useTelegramModule({
 			);
 			setError(null);
 		} catch (telegramError) {
+			showToast(actionFailureToast("Предпросмотр Telegram не создан", (telegramError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Предпросмотр Telegram не создан",
@@ -662,6 +670,7 @@ export function useTelegramModule({
 			await loadTelegramControlPlane({ silent: true });
 			if (result.status === "sent") await loadDashboard();
 		} catch (telegramError) {
+			showToast(actionFailureToast("Сообщение Telegram не отправлено", (telegramError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Сообщение Telegram не отправлено",
@@ -711,6 +720,7 @@ export function useTelegramModule({
 					: "Telegram: готовых сообщений к отправке нет.",
 			);
 		} catch (telegramError) {
+			showToast(actionFailureToast("Готовые Telegram-сообщения не отправлены", (telegramError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Готовые Telegram-сообщения не отправлены",

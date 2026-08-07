@@ -1,3 +1,5 @@
+import { showToast } from "../../components/GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import {
 	type Appointment,
 	type ClinicalToothRow,
@@ -3155,6 +3157,7 @@ export function useDocumentWorkflowModule({
 				await loadDashboard();
 				setError(null);
 			} catch (error) {
+			showToast(actionFailureToast("Статус документа обновлен, но список документов не перезагружен", (error as { status?: number })?.status ?? null), "error");
 				setError(
 					requestFailureMessage(
 						"Статус документа обновлен, но список документов не перезагружен",
@@ -3164,6 +3167,7 @@ export function useDocumentWorkflowModule({
 			}
 			return true;
 		} catch (error) {
+			showToast(actionFailureToast("Статус документа не обновлен", (error as { status?: number })?.status ?? null), "error");
 			setError(requestFailureMessage("Статус документа не обновлен", error));
 			return false;
 		} finally {
@@ -3328,6 +3332,7 @@ export function useDocumentWorkflowModule({
 			URL.revokeObjectURL(url);
 			setError(null);
 		} catch (error) {
+			showToast(actionFailureToast("XML ФНС не выгружен", (error as { status?: number })?.status ?? null), "error");
 			setError(requestFailureMessage("XML ФНС не выгружен", error));
 		}
 	}
@@ -3348,6 +3353,7 @@ export function useDocumentWorkflowModule({
 			setDocumentAuditFacts((await response.json()) as DocumentAuditFacts);
 			setError(null);
 		} catch (error) {
+			showToast(actionFailureToast("Паспорт выдачи не загружен", (error as { status?: number })?.status ?? null), "error");
 			setError(requestFailureMessage("Паспорт выдачи не загружен", error));
 		} finally {
 			setDocumentAuditFactsLoadingId(null);
@@ -3393,6 +3399,7 @@ export function useDocumentWorkflowModule({
 			URL.revokeObjectURL(url);
 			if (!options.preserveError) setError(null);
 		} catch (error) {
+			showToast(actionFailureToast("Архивный HTML не скачан", (error as { status?: number })?.status ?? null), "error");
 			setError(requestFailureMessage("Архивный HTML не скачан", error));
 		}
 	}
@@ -3419,6 +3426,7 @@ export function useDocumentWorkflowModule({
 			);
 			await downloadIssuedDocumentHtml(documentId, { preserveError: true });
 		} catch (error) {
+			showToast(actionFailureToast("HTML документа не открыт", (error as { status?: number })?.status ?? null), "error");
 			setError(requestFailureMessage("HTML документа не открыт", error));
 		}
 	}
@@ -3449,6 +3457,7 @@ export function useDocumentWorkflowModule({
 			URL.revokeObjectURL(url);
 			setError(null);
 		} catch (error) {
+			showToast(actionFailureToast("PDF не сформирован", (error as { status?: number })?.status ?? null), "error");
 			setError(requestFailureMessage("PDF не сформирован", error));
 		}
 	}

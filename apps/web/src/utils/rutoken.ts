@@ -1,3 +1,5 @@
+import { showToast } from "../components/GlobalToast";
+import { actionFailureToast } from "../lib/panelStateText";
 /**
  * Utility module to interface with Rutoken Web Plugin
  * for signing documents with GOST Hardware Tokens.
@@ -46,6 +48,7 @@ export async function checkRutokenPlugin(): Promise<boolean> {
 
 		return false;
 	} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 		console.warn("Rutoken plugin check failed:", e);
 		return false;
 	}
@@ -161,6 +164,7 @@ export async function signDataWithRutoken(
 		try {
 			await plugin.logout(deviceId);
 		} catch (_e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (_e as { status?: number })?.status ?? null), "error");
 			// ignore logout errors on failure
 		}
 

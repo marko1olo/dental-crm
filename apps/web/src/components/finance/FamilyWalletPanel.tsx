@@ -291,6 +291,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			setFamily(null);
 			setLoadFailure(res.status === 404 ? null : { status: res.status });
 		} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 			if (isStale()) return;
 			// Текст исключения английский и наружу не идёт: пользователю сообщение
 			// собирает panelStateText по коду, здесь — «сервер не ответил».

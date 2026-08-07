@@ -1,3 +1,4 @@
+import { actionFailureToast } from "../lib/panelStateText";
 import { useCallback, useEffect } from "react";
 import { showToast } from "../components/GlobalToast";
 
@@ -97,11 +98,13 @@ export function useOfflineQueue() {
 						await deleteFromQueue(item.id);
 					}
 				} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 					console.error("Failed to sync offline request", e);
 					break; // Stop syncing if fetch fails again (likely still offline)
 				}
 			}
 		} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 			console.error("Error processing offline queue", e);
 		}
 	}, []);

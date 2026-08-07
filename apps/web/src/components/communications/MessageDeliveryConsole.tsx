@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 /**
  * Пульт отправки сообщений: шлюзы, журнал, шаблоны, правила рассылки.
  *
@@ -333,6 +335,7 @@ export function MessageDeliveryConsole() {
 			);
 			setUisQuota(quotaData);
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			// Пустой экран без объяснения — это то, от чего здесь уходим.
 			setLoadError(error instanceof Error ? error.message : String(error));
 		}
@@ -362,6 +365,7 @@ export function MessageDeliveryConsole() {
 					setPreview(await readJson<PreviewResult>(response));
 					setPreviewError(null);
 				} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 					setPreview(null);
 					setPreviewError(
 						error instanceof Error ? error.message : String(error),
@@ -438,6 +442,7 @@ export function MessageDeliveryConsole() {
 			resetDraft();
 			await loadAll();
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			// Черновик специально НЕ очищается: набранный текст должен остаться на
 			// экране, чтобы человек исправил его и отправил снова, а не набирал заново.
 			setNotice(
@@ -468,6 +473,7 @@ export function MessageDeliveryConsole() {
 			});
 			await loadAll();
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			setNotice(
 				failNotice(
 					error,
@@ -490,6 +496,7 @@ export function MessageDeliveryConsole() {
 			setNotice(describeDispatchReport(data.report));
 			await loadAll();
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			setNotice(
 				failNotice(
 					error,
@@ -510,6 +517,7 @@ export function MessageDeliveryConsole() {
 			setNotice(describeReminderReport(data.report));
 			await loadAll();
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			setNotice(
 				failNotice(
 					error,
@@ -532,6 +540,7 @@ export function MessageDeliveryConsole() {
 			setSettings(data.settings);
 			setNotice({ kind: "done", text: "Правила рассылки сохранены." });
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			// Отдельно сказано, что на экране осталось прежнее правило: иначе человек
 			// уходит с экрана в уверенности, что тихие часы или предел уже изменены.
 			setNotice(
@@ -597,6 +606,7 @@ export function MessageDeliveryConsole() {
 			setEnqueueSubject("");
 			await loadAll();
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			setNotice(
 				failNotice(
 					error,

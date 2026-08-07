@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 /**
  * Разбор дублей пациентов: найти, сверить, объединить или отклонить.
  *
@@ -61,6 +63,7 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 				await fetchDuplicateReport(auth ? auth.denteClinicalReadHeaders() : {}),
 			);
 		} catch (loadError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (loadError as { status?: number })?.status ?? null), "error");
 			setReport(null);
 			setError(
 				loadError instanceof Error ? loadError.message : String(loadError),
@@ -95,6 +98,7 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 			setConfirming(null);
 			await load();
 		} catch (mergeError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (mergeError as { status?: number })?.status ?? null), "error");
 			setNotice(
 				mergeError instanceof Error ? mergeError.message : String(mergeError),
 			);
@@ -119,6 +123,7 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 			setNotice(data.message);
 			await load();
 		} catch (dismissError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (dismissError as { status?: number })?.status ?? null), "error");
 			setNotice(
 				dismissError instanceof Error
 					? dismissError.message

@@ -1,3 +1,5 @@
+import { showToast } from "../components/GlobalToast";
+import { actionFailureToast } from "./panelStateText";
 import {
 	checkCryptoProPlugin,
 	getPersonalCertificates,
@@ -48,6 +50,7 @@ export class DigitalSignatureService {
 				console.warn("[CryptoPro] Plugin not found or not working.");
 			}
 		} catch (_e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (_e as { status?: number })?.status ?? null), "error");
 			this.isCryptoProAvailable = false;
 		}
 
@@ -58,6 +61,7 @@ export class DigitalSignatureService {
 				console.warn("[Rutoken] Plugin not found or not working.");
 			}
 		} catch (_e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (_e as { status?: number })?.status ?? null), "error");
 			this.isRutokenAvailable = false;
 		}
 	}
@@ -82,6 +86,7 @@ export class DigitalSignatureService {
 					})),
 				);
 			} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 				console.error("Failed to fetch CryptoPro certificates:", error);
 			}
 		}
@@ -102,6 +107,7 @@ export class DigitalSignatureService {
 					})),
 				);
 			} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 				console.error("Failed to fetch Rutoken certificates:", error);
 			}
 		}

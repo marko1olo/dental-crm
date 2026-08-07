@@ -1,3 +1,4 @@
+import { actionFailureToast } from "../../lib/panelStateText";
 import { useEffect, useState } from "react";
 import { showToast } from "../GlobalToast";
 
@@ -83,6 +84,7 @@ export function SberbankTerminalPaymentModal({
 					clearInterval(interval);
 				}
 			} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 				console.error("Polling error", err);
 				setStatus("error");
 				setErrorMsg("Ошибка связи с терминалом");

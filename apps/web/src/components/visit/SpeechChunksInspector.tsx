@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 /**
  * Фрагменты диктовки текущего приёма — GET /api/speech/chunks.
  *
@@ -331,6 +333,7 @@ export const SpeechChunksInspector: React.FC = () => {
 					void loadSpeechRecordingRecovery({ silent: true });
 				}
 			} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 				const msg =
 					err instanceof Error && err.message.trim()
 						? err.message

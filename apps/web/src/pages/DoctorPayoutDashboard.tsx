@@ -1,3 +1,5 @@
+import { showToast } from "../components/GlobalToast";
+import { actionFailureToast } from "../lib/panelStateText";
 /**
  * Выплаты врачам за месяц: касса врача, удержание за материалы, к выплате.
  *
@@ -369,6 +371,7 @@ export function DoctorPayoutDashboard() {
 			}
 			setState({ kind: "ready", report });
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			setState({
 				kind: "failed",
 				message:
@@ -441,6 +444,7 @@ export function DoctorPayoutDashboard() {
 				// Деньги пересчитывает сервер, поэтому отчёт перечитывается целиком.
 				await load(month);
 			} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 				setRateSave({
 					kind: "failed",
 					message:

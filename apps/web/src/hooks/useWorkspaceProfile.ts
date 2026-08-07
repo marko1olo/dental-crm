@@ -1,3 +1,5 @@
+import { showToast } from "../components/GlobalToast";
+import { actionFailureToast } from "../lib/panelStateText";
 /**
  * useWorkspaceProfile — Feature Toggle Engine
  * Reads flags from the server once, stores in Zustand + localStorage,
@@ -248,6 +250,7 @@ export async function applyWorkspacePreset(
 		const body = await res.json();
 		flags = body.flags as WorkspaceFeatureFlags;
 	} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 		console.warn(
 			"Пресет с сервера не получен, используем локальный набор:",
 			error instanceof Error ? error.message : error,

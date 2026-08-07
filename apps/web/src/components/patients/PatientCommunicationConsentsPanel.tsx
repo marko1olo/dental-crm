@@ -196,6 +196,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			setBaseline({ ...next });
 			setLoaded(true);
 		} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 			console.error("[comm-consents] load failed", e);
 			const msg = `Согласия не загружены: ${requestFailureCause(null)}.`;
 			setError(msg);

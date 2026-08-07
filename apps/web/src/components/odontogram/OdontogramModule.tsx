@@ -461,6 +461,7 @@ export const OdontogramModule = ({
 				console.error(`[tooth states] ${status}: в ответе нет формулы`);
 				setTeethLoad({ phase: "failed", status });
 			} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 				// Отменённый запрос — не отказ: пациента переключили, и об этом
 				// сообщать нечего.
 				if (cancelled) return;

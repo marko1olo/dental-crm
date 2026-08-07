@@ -1,3 +1,4 @@
+import { actionFailureToast } from "./lib/panelStateText";
 import {
 	AlignLeft,
 	Beaker,
@@ -119,6 +120,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 				const data = (await res.json()) as LabOrderData;
 				if (!cancelled) setOrder(data);
 			} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 				// Сетевой отказ fetch не несёт кода ответа вовсе — про него нужен
 				// свой текст, иначе он выглядел бы как ошибка сервера.
 				if (!cancelled)

@@ -1,3 +1,4 @@
+import { actionFailureToast } from "./lib/panelStateText";
 import { motion } from "framer-motion";
 import { Activity, Box, CheckCircle2, ScanLine, XCircle } from "lucide-react";
 import type React from "react";
@@ -153,6 +154,7 @@ export function ScannerView() {
 			setLogs(Array.isArray(data) ? data.filter(isSterilizationLog) : []);
 			setLoadError(null);
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			console.error(error);
 			setLoadError(
 				/*

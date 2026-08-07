@@ -1,3 +1,4 @@
+import { actionFailureToast } from "../../lib/panelStateText";
 import { Calendar, FlaskConical, Link, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -139,6 +140,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				setLoadError(loadFailureText(res.status));
 			}
 		} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 			console.error("Failed to load lab orders", e);
 			if (shownPatientIdRef.current !== requestedPatientId) return;
 			setLoadError(

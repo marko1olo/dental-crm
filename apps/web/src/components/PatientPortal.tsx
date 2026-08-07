@@ -1,3 +1,4 @@
+import { showToast } from "./GlobalToast";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { countLabel, money } from "../AppHelpers";
@@ -230,6 +231,7 @@ export const PatientPortal: React.FC = () => {
 			setIsAuthenticated(false);
 			setSessionError(actionFailureToast("Кабинет не открылся", res.status));
 		} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 			// Текст исключения английский, наружу не идёт.
 			console.error("[portal] не удалось прочитать кабинет пациента:", e);
 			setIsAuthenticated(false);
@@ -375,6 +377,7 @@ export const PatientPortal: React.FC = () => {
 					setOtpError(data.error || "Неверный код. Попробуйте ещё раз.");
 				}
 			} catch (_e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (_e as { status?: number })?.status ?? null), "error");
 				setOtpError("Ошибка соединения.");
 			} finally {
 				setIsVerifying(false);

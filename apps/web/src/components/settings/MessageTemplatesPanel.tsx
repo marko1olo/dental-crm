@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import type {
 	CreateMessageTemplateCatalogInput,
 	MessageTemplateCatalog,
@@ -34,6 +36,7 @@ export function MessageTemplatesPanel() {
 				setTemplates(data);
 			}
 		} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 			console.error(e);
 		}
 	};

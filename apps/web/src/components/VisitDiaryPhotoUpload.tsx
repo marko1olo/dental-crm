@@ -1,3 +1,4 @@
+import { actionFailureToast } from "../lib/panelStateText";
 import { Camera, Paperclip, Search } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -142,6 +143,7 @@ export function VisitDiaryPhotoUpload({
 					files.length === 0 ? { phase: "empty" } : { phase: "ready" },
 				);
 			} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 				if (cancelled) return;
 				// abort при смене приёма — не failed
 				if (error instanceof DOMException && error.name === "AbortError") {

@@ -1,3 +1,4 @@
+import { showToast } from "../components/GlobalToast";
 /**
  * Настройки MAX-бота: чтение с сервера, черновики полей формы и сохранение.
  *
@@ -341,6 +342,7 @@ export function useMaxSettings() {
 			setDraftsSeeded(true);
 			setLoadState({ phase: "ready", configured: data !== null });
 		} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 			// До сервера не дошли вовсе: status = null, текст об этом так и скажет.
 			console.error("[настройки MAX] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });
@@ -363,6 +365,7 @@ export function useMaxSettings() {
 			console.error("[состояние MAX] не прочитано, ответ", res.status);
 			setStatusUnknown(true);
 		} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 			console.error("[состояние MAX] запрос не дошёл до сервера", err);
 			setStatusUnknown(true);
 		}
@@ -420,6 +423,7 @@ export function useMaxSettings() {
 				setSaveState("error");
 			}
 		} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 			// Текст исключения наружу не идёт ни при каких условиях: он английский.
 			console.error("[настройки MAX] сохранение не дошло до сервера", err);
 			setSaveError(actionFailureToast("Настройки MAX не сохранены", null));

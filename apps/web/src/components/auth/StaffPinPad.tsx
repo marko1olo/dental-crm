@@ -204,6 +204,7 @@ export function StaffPinPad({
 			try {
 				safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, staffToken);
 			} catch (storageError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (storageError as { status?: number })?.status ?? null), "error");
 				/*
 				 * Запись в localStorage запрещена (приватный режим, переполненное
 				 * хранилище). PIN при этом верен, и говорить «нет связи» было бы ложью.

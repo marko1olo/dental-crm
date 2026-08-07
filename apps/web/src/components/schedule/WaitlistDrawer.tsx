@@ -1,3 +1,4 @@
+import { actionFailureToast } from "../../lib/panelStateText";
 import { Calendar, CheckCircle2, Trash2, UserPlus, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -159,6 +160,7 @@ export function WaitlistDrawer(props: Props) {
 			// что ждущих нет, и раздал бы освободившееся окно мимо очереди.
 			setLoadFailureStatus(res.status);
 		} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 			console.error("Failed to load waitlist", e);
 			// До сервера не дошли вовсе — это отдельный случай от «ответил отказом».
 			setLoadFailureStatus(null);

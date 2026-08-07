@@ -1,3 +1,5 @@
+import { showToast } from "../components/GlobalToast";
+import { actionFailureToast } from "../lib/panelStateText";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -91,6 +93,7 @@ export const unifiedPdfGenerator = {
 						currentY += h + 15;
 					}
 				} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 					console.error(`Failed to capture ${view.id}`, e);
 				}
 			}
@@ -181,6 +184,7 @@ export const unifiedPdfGenerator = {
 				doc.addImage(imgData, "JPEG", 20, currentY, w, h);
 				currentY += h + 15;
 			} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 				console.error("Failed to capture odontogram", e);
 			}
 		}

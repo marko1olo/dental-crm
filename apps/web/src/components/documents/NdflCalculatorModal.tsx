@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { AlertTriangle, Calculator } from "lucide-react";
 import { useState } from "react";
 import { useAppLogic } from "../../useAppLogic";
@@ -39,6 +41,7 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 			const data = await res.json();
 			setResult(data);
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			console.error(error);
 		} finally {
 			setLoading(false);

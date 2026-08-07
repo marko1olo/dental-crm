@@ -67,6 +67,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 			setProfile(outcome.profile);
 			setLoadState({ phase: "ready" });
 		} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 			console.error("[мой профиль] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });
 		}

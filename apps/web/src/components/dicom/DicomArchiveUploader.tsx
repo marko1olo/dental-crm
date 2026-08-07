@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as fflate from "fflate";
 import type React from "react";
@@ -46,6 +48,7 @@ export function DicomArchiveUploader({
 						cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
 					resolve(imageId);
 				} catch (e) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
 					console.error("Failed to parse file", file.name, e);
 					resolve(null);
 				}
@@ -228,6 +231,7 @@ export function DicomArchiveUploader({
 					}
 				}
 			} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 				console.error("[DicomArchiveUploader] Ошибка обработки:", error);
 				setStatus(
 					"Не удалось прочитать файлы: архив повреждён, зашифрован или не содержит DICOM. Попробуйте другой архив или распакуйте его вручную.",

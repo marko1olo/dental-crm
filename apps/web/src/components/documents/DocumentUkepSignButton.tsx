@@ -1,3 +1,4 @@
+import { actionFailureToast } from "../../lib/panelStateText";
 import { AlertCircle, FileSignature, Loader2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -257,6 +258,7 @@ export function DocumentUkepSignButton({
 			showToast("Документ подписан УКЭП (КриптоПро)", "success");
 			onSuccess?.();
 		} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 			/*
 			 * Сюда приходят отказы самого КриптоПро. Их текст пишет плагин, и он
 			 * бывает нерусским, поэтому проходит тот же разбор, что и ответы сервера:

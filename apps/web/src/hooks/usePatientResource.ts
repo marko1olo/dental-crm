@@ -1,3 +1,5 @@
+import { showToast } from "../components/GlobalToast";
+import { actionFailureToast } from "../lib/panelStateText";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { panelFailureCause } from "../lib/panelStateText";
 
@@ -112,6 +114,7 @@ export function usePatientResource<T>(
 				if (cancelled) return;
 				setData(parsed);
 			} catch (requestError) {
+			showToast(actionFailureToast("${panelFailureCause(null)}.", (requestError as { status?: number })?.status ?? null), "error");
 				if (cancelled) return;
 				if ((requestError as Error)?.name === "AbortError") return;
 				console.error(`[usePatientResource ${patientId}]`, requestError);

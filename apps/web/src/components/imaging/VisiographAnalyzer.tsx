@@ -1,3 +1,4 @@
+import { showToast } from "../GlobalToast";
 import {
 	AlertTriangle,
 	Bot,
@@ -423,6 +424,7 @@ export function VisiographAnalyzer() {
 			}
 			setScanHistory((data as XrayScan[]).filter((s) => s.status === "done"));
 		} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 			// Код ответа человеку не показываем — он уходит в консоль разработчику.
 			console.error("[VisiographAnalyzer] Архив снимков не прочитан:", err);
 			if (isStale()) return;
@@ -490,6 +492,7 @@ export function VisiographAnalyzer() {
 			}
 			return null;
 		} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 			console.error(
 				"[VisiographAnalyzer] запрос обновления формулы не выполнен",
 				err,
@@ -758,6 +761,7 @@ export function VisiographAnalyzer() {
 							setScanHistory((prev) => [saved, ...prev]);
 						}
 					} catch (saveErr) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (saveErr as { status?: number })?.status ?? null), "error");
 						console.error(
 							"[VisiographAnalyzer] запись снимка в карту не выполнена",
 							saveErr,
@@ -868,6 +872,7 @@ export function VisiographAnalyzer() {
 				);
 			}
 		} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 			console.error(
 				"[VisiographAnalyzer] запрос полного снимка не выполнен",
 				err,
@@ -943,6 +948,7 @@ export function VisiographAnalyzer() {
 				setIsSpeaking(false);
 			}
 		} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 			console.error("[VisiographAnalyzer] scan delete failed", err);
 			setDeleteFailure(
 				"Снимок не удалён: нет связи с сервером. Проверьте сеть и повторите.",

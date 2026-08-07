@@ -1,3 +1,4 @@
+import { actionFailureToast } from "../lib/panelStateText";
 import type {
 	SpeechChunkUploadInput,
 	SpeechGatewayStatus,
@@ -228,6 +229,7 @@ export function useShortDictation(
 				}
 			}, 10000);
 		} catch (err) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
 			console.error("Microphone access denied or error:", err);
 			startBrowserNative();
 		}

@@ -1,3 +1,5 @@
+import { showToast } from "./components/GlobalToast";
+import { actionFailureToast } from "./lib/panelStateText";
 import {
 	type CommunicationTaskOutcome,
 	type Dashboard,
@@ -1259,6 +1261,7 @@ export function useAppLogic(): any {
 			setAccessUnlockRequired(false);
 			setAccessUnlockMessage("");
 		} catch (err) {
+			showToast(actionFailureToast("Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.", (err as { status?: number })?.status ?? null), "error");
 			if (isStaleResponse()) return;
 			// БЫЛО: любая ошибка загрузки (обрыв сети, 401, 500) подменяла реальные
 			// данные клиники ВЫМЫШЛЕННЫМИ: «Демо Клиника DENTE» и пациент
@@ -1577,6 +1580,7 @@ export function useAppLogic(): any {
 			setError(null);
 			return true;
 		} catch (saveError) {
+			showToast(actionFailureToast("Профиль клиники не сохранен", (saveError as { status?: number })?.status ?? null), "error");
 			const message = operatorWorkflowFailureMessage(
 				"Профиль клиники не сохранен",
 				saveError,
@@ -1836,6 +1840,7 @@ export function useAppLogic(): any {
 			await saveServerUiPreferences(preferences, settingsAdminSecretSession);
 			if (!pendingUiPreferencesSyncRef.current) setUiPreferencesSyncError(null);
 		} catch (preferencesError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (preferencesError as { status?: number })?.status ?? null), "error");
 			if (!pendingUiPreferencesSyncRef.current)
 				pendingUiPreferencesSyncRef.current = preferences;
 			setUiPreferencesSyncError(
@@ -1875,6 +1880,7 @@ export function useAppLogic(): any {
 				pendingUiPreferencesSyncRef.current = null;
 				setUiPreferencesSyncError(null);
 			} catch (preferencesError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (preferencesError as { status?: number })?.status ?? null), "error");
 				const message = uiPreferencesSyncErrorMessage(preferencesError);
 				pendingUiPreferencesSyncRef.current = null;
 				setUiPreferencesSyncError(message);
@@ -1933,6 +1939,7 @@ export function useAppLogic(): any {
 				);
 				setUiPreferencesSyncError(null);
 			} catch (preferencesError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (preferencesError as { status?: number })?.status ?? null), "error");
 				queueUiPreferencesServerSync(savedPreferences, { delayMs: 5000 });
 				setUiPreferencesSyncError(
 					uiPreferencesSyncErrorMessage(preferencesError),
@@ -2009,6 +2016,7 @@ export function useAppLogic(): any {
 			setPersistenceIntegrity(report);
 			setPersistenceHealth(normalizePersistenceHealth(report));
 		} catch (healthError) {
+			showToast(actionFailureToast("Статус сохранности недоступен", (healthError as { status?: number })?.status ?? null), "error");
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
@@ -2039,6 +2047,7 @@ export function useAppLogic(): any {
 			setPersistenceIntegrity(report);
 			if (report.meta) setPersistenceHealth(report.meta);
 		} catch (verifyError) {
+			showToast(actionFailureToast("Проверка резервной копии не выполнена", (verifyError as { status?: number })?.status ?? null), "error");
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
@@ -2082,6 +2091,7 @@ export function useAppLogic(): any {
 			await loadPersistenceIntegrity({ silent: true });
 			setError(null);
 		} catch (exportError) {
+			showToast(actionFailureToast("Экспорт резервной копии не выполнен", (exportError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Экспорт резервной копии не выполнен",
@@ -2097,6 +2107,7 @@ export function useAppLogic(): any {
 		try {
 			setBrowserContinuity(await inspectBrowserContinuity());
 		} catch (continuityError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (continuityError as { status?: number })?.status ?? null), "error");
 			if (!options.silent) {
 				setError(
 					browserCapabilityFailureMessage(
@@ -2125,6 +2136,7 @@ export function useAppLogic(): any {
 				(await response.json()) as LocalBridgeReadinessResponse,
 			);
 		} catch (bridgeError) {
+			showToast(actionFailureToast("Готовность локального модуля не проверена", (bridgeError as { status?: number })?.status ?? null), "error");
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
@@ -2153,6 +2165,7 @@ export function useAppLogic(): any {
 			setLocalBridgeUsePlans(payload);
 			setLocalBridgeReadiness(payload.readiness);
 		} catch (planError) {
+			showToast(actionFailureToast("План локального модуля недоступен", (planError as { status?: number })?.status ?? null), "error");
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
@@ -2182,6 +2195,7 @@ export function useAppLogic(): any {
 				);
 			}
 		} catch (storageError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (storageError as { status?: number })?.status ?? null), "error");
 			setError(
 				browserCapabilityFailureMessage(
 					"Запрос постоянного хранилища не выполнен",
@@ -3307,6 +3321,7 @@ export function useAppLogic(): any {
 			await loadDashboard();
 			setError(null);
 		} catch (communicationError) {
+			showToast(actionFailureToast("Задача связи не закрыта", (communicationError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Задача связи не закрыта",
@@ -3362,6 +3377,7 @@ export function useAppLogic(): any {
 			setNewRuleTitle("");
 			setNewRuleWarningText("");
 		} catch (ruleError) {
+			showToast(actionFailureToast("Не удалось создать клиническое правило", (ruleError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage(
 					"Не удалось создать клиническое правило",
@@ -3450,6 +3466,7 @@ export function useAppLogic(): any {
 			if (createdStudy.id) setSelectedImagingStudyId(createdStudy.id);
 			setError(null);
 		} catch (imagingError) {
+			showToast(actionFailureToast("Снимок не добавлен", (imagingError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage("Снимок не добавлен", imagingError),
 			);

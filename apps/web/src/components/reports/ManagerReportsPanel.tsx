@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 /**
  * Отчёты руководителю: выручка, врачи, кресла, потери, дебиторка.
  *
@@ -581,6 +583,7 @@ export function ManagerReportsPanel({
 			setDebtors(sliceOf(debtorsResult));
 			setScheduleLoad(sliceOf(scheduleResult));
 		} catch (loadError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (loadError as { status?: number })?.status ?? null), "error");
 			/*
 			 * Сюда попадает только сбой ДО запросов — сборка заголовков:
 			 * `localStorage` в приватном режиме браузера бросает исключение

@@ -1,3 +1,5 @@
+import { showToast } from "../../components/GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { documentKindMetadata } from "@dental/shared";
 import { useRef } from "react";
 import {
@@ -280,6 +282,7 @@ export function useFinanceLogic({
 			);
 			setError(null);
 		} catch (paymentError) {
+			showToast(actionFailureToast("Оплата не записана", (paymentError as { status?: number })?.status ?? null), "error");
 			setError(
 				operatorWorkflowFailureMessage("Оплата не записана", paymentError),
 			);

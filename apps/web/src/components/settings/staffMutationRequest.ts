@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 /**
  * Один путь для всех изменений сотрудника: заголовки, отправка, разбор ответа.
  *
@@ -134,6 +136,7 @@ export async function requestStaffMutation(
 				: { body: JSON.stringify(request.body) }),
 		});
 	} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 		// Текст исключения наружу не идёт: он английский («Failed to fetch»).
 		console.error(
 			`[персонал] ${request.logLabel}: запрос не дошёл до сервера`,
@@ -146,6 +149,7 @@ export async function requestStaffMutation(
 	try {
 		rawBody = await response.text();
 	} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 		console.error(
 			`[персонал] ${request.logLabel}: тело ответа не дочитано`,
 			error,
@@ -178,6 +182,7 @@ export async function reloadStaffList(
 		await (loadDashboard as () => unknown)();
 		return true;
 	} catch (error) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
 		console.error(
 			"[персонал] список сотрудников не перечитан после изменения",
 			error,

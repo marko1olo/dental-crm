@@ -1,3 +1,5 @@
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 /**
  * Кого пора пригласить обратно.
  *
@@ -115,6 +117,7 @@ export const RecallListPanel: React.FC = () => {
 				throw new Error(payload.message ?? `Сервер ответил ${response.status}`);
 			setReport(payload);
 		} catch (loadError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (loadError as { status?: number })?.status ?? null), "error");
 			setReport(null);
 			setError(
 				loadError instanceof Error ? loadError.message : String(loadError),
@@ -150,6 +153,7 @@ export const RecallListPanel: React.FC = () => {
 						: `Сервер ответил ${response.status}`),
 			);
 		} catch (inviteError) {
+			showToast(actionFailureToast("Ошибка выполнения операции", (inviteError as { status?: number })?.status ?? null), "error");
 			setNotice(
 				inviteError instanceof Error
 					? inviteError.message
