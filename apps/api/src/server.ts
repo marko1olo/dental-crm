@@ -12,6 +12,7 @@ import "./env/assertEnvOnBoot.js";
 import net from "node:net";
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
 import Fastify from "fastify";
 import { ZodError } from "zod";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
@@ -433,6 +434,10 @@ export async function createDenteApiApp(
 		maxAge: 600,
 	});
 
+	await app.register(helmet, {
+		contentSecurityPolicy: false,
+	});
+
 	// Ограничение частоты запросов для аутентификации и публичных маршрутов.
 	// Раньше в routes/auth.ts стоял config.rateLimit, но плагин @fastify/rate-limit
 	// не установлен — конфигурация игнорировалась, и пароль кабинета можно было
@@ -779,7 +784,7 @@ export async function startDenteApiServer() {
 		process.exit(1);
 	});
 
-	const host = process.env.API_HOST ?? "127.0.0.1";
+	const host = process.env.API_HOST ?? "0.0.0.0";
 	const port = Number(process.env.API_PORT ?? 4100);
 
 	try {
