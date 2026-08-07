@@ -100,169 +100,204 @@ async function resolveClinicTimeZone(
 
 export async function registerAiRoutes(app: FastifyInstance) {
 	app.get("/api/ai/recognition-jobs", async (request, reply) => {
-		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
-		// то есть задания распознавания читались из чужой клиники. Организация
-		// берётся из подписанного токена. Заодно исправлен порядок: запрос к базе
-		// шёл ДО проверки доступа, и неавторизованный вызов всё равно нагружал БД.
-		if (
-			!(await requireClinicalReadAccess(request, reply, "ai recognition jobs"))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"ai recognition jobs",
-		);
-		if (!orgId) return;
-		return z
-			.array(aiRecognitionJobSchema)
-			.parse(await listAiRecognitionJobsFromDb(orgId));
-	});
+    try {
+
+    		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+    		// то есть задания распознавания читались из чужой клиники. Организация
+    		// берётся из подписанного токена. Заодно исправлен порядок: запрос к базе
+    		// шёл ДО проверки доступа, и неавторизованный вызов всё равно нагружал БД.
+    		if (
+    			!(await requireClinicalReadAccess(request, reply, "ai recognition jobs"))
+    		)
+    			return;
+    		const orgId = await requireResolvedOrganizationId(
+    			request,
+    			reply,
+    			"ai recognition jobs",
+    		);
+    		if (!orgId) return;
+    		return z
+    			.array(aiRecognitionJobSchema)
+    			.parse(await listAiRecognitionJobsFromDb(orgId));
+    	
+    } catch (error: any) {
+    request.log.error(error);
+    return reply.status(500).send({ error: "InternalServerError", message: "Internal server error" });
+    }
+    });
 
 	app.post("/api/ai/recognition-jobs", async (request, reply) => {
-		// БЫЛО: getDefaultOrganizationId() — задание создавалось в первой
-		// организации таблицы, а не в клинике вызывающего.
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"ai recognition job create",
-			))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"ai recognition job create",
-		);
-		if (!orgId) return;
-		const parsedInput = createAiRecognitionJobSchema.safeParse(request.body);
-		if (!parsedInput.success) {
-			console.error(
-				"SMOKE TEST DEBUG: createAiRecognitionJobSchema failed validation:",
-				parsedInput.error.format(),
-			);
-			return reply.code(400).send({
-				error: "AiRecognitionValidationError",
-				message: aiRecognitionValidationMessage,
-			});
-		}
-		const input = parsedInput.data;
-		const patient = input.patientId
-			? await getPatientByIdFromDb(orgId, input.patientId)
-			: null;
-		if (input.patientId && !patient) {
-			return sendAiRecognitionScopeError(
-				reply,
-				404,
-				aiRecognitionPatientMissingMessage,
-			);
-		}
-		const imagingStudy = input.imagingStudyId
-			? await getImagingStudyById(orgId, input.imagingStudyId)
-			: null;
-		if (input.imagingStudyId && !imagingStudy) {
-			return sendAiRecognitionScopeError(
-				reply,
-				404,
-				aiRecognitionStudyMissingMessage,
-			);
-		}
-		if (patient && imagingStudy && imagingStudy.patientId !== patient.id) {
-			return sendAiRecognitionScopeError(
-				reply,
-				409,
-				aiRecognitionStudyPatientMismatchMessage,
-			);
-		}
-		const job = await createAiRecognitionJobInDb(orgId, {
-			...input,
-			patientId:
-				patient?.id ?? imagingStudy?.patientId ?? input.patientId ?? null,
-		});
-		return reply.code(201).send(aiRecognitionJobResponseSchema.parse({ job }));
-	});
+    try {
+
+    		// БЫЛО: getDefaultOrganizationId() — задание создавалось в первой
+    		// организации таблицы, а не в клинике вызывающего.
+    		if (
+    			!(await requireClinicalMutationAccess(
+    				request,
+    				reply,
+    				"ai recognition job create",
+    			))
+    		)
+    			return;
+    		const orgId = await requireResolvedOrganizationId(
+    			request,
+    			reply,
+    			"ai recognition job create",
+    		);
+    		if (!orgId) return;
+    		const parsedInput = createAiRecognitionJobSchema.safeParse(request.body);
+    		if (!parsedInput.success) {
+    			console.error(
+    				"SMOKE TEST DEBUG: createAiRecognitionJobSchema failed validation:",
+    				parsedInput.error.format(),
+    			);
+    			return reply.code(400).send({
+    				error: "AiRecognitionValidationError",
+    				message: aiRecognitionValidationMessage,
+    			});
+    		}
+    		const input = parsedInput.data;
+    		const patient = input.patientId
+    			? await getPatientByIdFromDb(orgId, input.patientId)
+    			: null;
+    		if (input.patientId && !patient) {
+    			return sendAiRecognitionScopeError(
+    				reply,
+    				404,
+    				aiRecognitionPatientMissingMessage,
+    			);
+    		}
+    		const imagingStudy = input.imagingStudyId
+    			? await getImagingStudyById(orgId, input.imagingStudyId)
+    			: null;
+    		if (input.imagingStudyId && !imagingStudy) {
+    			return sendAiRecognitionScopeError(
+    				reply,
+    				404,
+    				aiRecognitionStudyMissingMessage,
+    			);
+    		}
+    		if (patient && imagingStudy && imagingStudy.patientId !== patient.id) {
+    			return sendAiRecognitionScopeError(
+    				reply,
+    				409,
+    				aiRecognitionStudyPatientMismatchMessage,
+    			);
+    		}
+    		const job = await createAiRecognitionJobInDb(orgId, {
+    			...input,
+    			patientId:
+    				patient?.id ?? imagingStudy?.patientId ?? input.patientId ?? null,
+    		});
+    		return reply.code(201).send(aiRecognitionJobResponseSchema.parse({ job }));
+    	
+    } catch (error: any) {
+    request.log.error(error);
+    return reply.status(500).send({ error: "InternalServerError", message: "Internal server error" });
+    }
+    });
 
 	app.post("/api/ai/visit-note-draft", async (request, reply) => {
-		// БЫЛО: getDefaultOrganizationId() — черновик собирался по данным пациента
-		// из первой организации таблицы.
-		if (
-			!(await requireClinicalReadAccess(request, reply, "ai visit note draft"))
-		)
-			return;
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"ai visit note draft",
-		);
-		if (!orgId) return;
-		const parsedInput = visitNoteDraftRequestSchema.safeParse(request.body);
-		if (!parsedInput.success) {
-			return reply.code(400).send({
-				error: "VisitNoteDraftValidationError",
-				message: visitNoteDraftValidationMessage,
-			});
-		}
-		const input = parsedInput.data;
-		const patient = await getPatientByIdFromDb(orgId, input.patientId);
-		if (!patient) {
-			return sendVisitNoteDraftScopeError(
-				reply,
-				404,
-				aiRecognitionPatientMissingMessage,
-			);
-		}
+    try {
 
-		return visitNoteDraftSchema.parse(
-			await buildVisitDraftFromTranscript(input.transcript, input.specialty),
-		);
-	});
+    		// БЫЛО: getDefaultOrganizationId() — черновик собирался по данным пациента
+    		// из первой организации таблицы.
+    		if (
+    			!(await requireClinicalReadAccess(request, reply, "ai visit note draft"))
+    		)
+    			return;
+    		const orgId = await requireResolvedOrganizationId(
+    			request,
+    			reply,
+    			"ai visit note draft",
+    		);
+    		if (!orgId) return;
+    		const parsedInput = visitNoteDraftRequestSchema.safeParse(request.body);
+    		if (!parsedInput.success) {
+    			return reply.code(400).send({
+    				error: "VisitNoteDraftValidationError",
+    				message: visitNoteDraftValidationMessage,
+    			});
+    		}
+    		const input = parsedInput.data;
+    		const patient = await getPatientByIdFromDb(orgId, input.patientId);
+    		if (!patient) {
+    			return sendVisitNoteDraftScopeError(
+    				reply,
+    				404,
+    				aiRecognitionPatientMissingMessage,
+    			);
+    		}
+
+    		return visitNoteDraftSchema.parse(
+    			await buildVisitDraftFromTranscript(input.transcript, input.specialty),
+    		);
+    	
+    } catch (error: any) {
+    request.log.error(error);
+    return reply.status(500).send({ error: "InternalServerError", message: "Internal server error" });
+    }
+    });
 
 	app.post("/api/ai/treatment-plan-personalize", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"personalize treatment plan",
-			))
-		)
-			return;
-		const parsedInput = treatmentPlanPayloadSchema.safeParse(request.body);
-		if (!parsedInput.success) {
-			return reply.code(400).send({
-				error: "TreatmentPlanValidationError",
-				message: "Оекорректный план лечения для ИИ-персонализации.",
-			});
-		}
-		const result = await personalizeTreatmentPlan(parsedInput.data);
-		return reply.send(result);
-	});
+    try {
+
+    		if (
+    			!(await requireClinicalReadAccess(
+    				request,
+    				reply,
+    				"personalize treatment plan",
+    			))
+    		)
+    			return;
+    		const parsedInput = treatmentPlanPayloadSchema.safeParse(request.body);
+    		if (!parsedInput.success) {
+    			return reply.code(400).send({
+    				error: "TreatmentPlanValidationError",
+    				message: "Оекорректный план лечения для ИИ-персонализации.",
+    			});
+    		}
+    		const result = await personalizeTreatmentPlan(parsedInput.data);
+    		return reply.send(result);
+    	
+    } catch (error: any) {
+    request.log.error(error);
+    return reply.status(500).send({ error: "InternalServerError", message: "Internal server error" });
+    }
+    });
 
 	app.post("/api/ai/post-visit-personalize", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"personalize post visit recommendations",
-			))
-		)
-			return;
-		const schema = z.object({
-			careTopic: z.string(),
-			procedureName: z.string(),
-			toothOrArea: z.string(),
-			doctorFullName: z.string(),
-		});
-		const parsedInput = schema.safeParse(request.body);
-		if (!parsedInput.success) {
-			return reply.code(400).send({
-				error: "PostVisitPersonalizeValidationError",
-				message: "Оекорректные параметры для ИИ-рекомендаций после приема.",
-			});
-		}
-		const result = await personalizePostVisitRecommendations(parsedInput.data);
-		return reply.send(result);
-	});
+    try {
+
+    		if (
+    			!(await requireClinicalReadAccess(
+    				request,
+    				reply,
+    				"personalize post visit recommendations",
+    			))
+    		)
+    			return;
+    		const schema = z.object({
+    			careTopic: z.string(),
+    			procedureName: z.string(),
+    			toothOrArea: z.string(),
+    			doctorFullName: z.string(),
+    		});
+    		const parsedInput = schema.safeParse(request.body);
+    		if (!parsedInput.success) {
+    			return reply.code(400).send({
+    				error: "PostVisitPersonalizeValidationError",
+    				message: "Оекорректные параметры для ИИ-рекомендаций после приема.",
+    			});
+    		}
+    		const result = await personalizePostVisitRecommendations(parsedInput.data);
+    		return reply.send(result);
+    	
+    } catch (error: any) {
+    request.log.error(error);
+    return reply.status(500).send({ error: "InternalServerError", message: "Internal server error" });
+    }
+    });
 
 	app.post("/api/ai/parse-dictation", async (request, reply) => {
 		if (

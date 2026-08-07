@@ -24,7 +24,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { unguardedBypassAllowed } from "../accessGuard.js";
+import { unguardedBypassAllowed } from "./bypass.js";
 import { verifyToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "./authSecret.js";
 

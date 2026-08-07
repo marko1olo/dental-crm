@@ -4492,6 +4492,28 @@ export const portalOtpCodes = pgTable(
 	},
 );
 
+export const clinicWorkflows = pgTable(
+	"clinic_workflows",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id, { onDelete: "cascade" }),
+		name: varchar("name", { length: 255 }).notNull(),
+		trigger: varchar("trigger", { length: 255 }).notNull(),
+		active: boolean("active").notNull().default(false),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("clinic_workflows_org_idx").on(table.organizationId),
+	],
+);
+
 import { relations } from "drizzle-orm";
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
