@@ -7,13 +7,14 @@ import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { MaxSettingsPanel } from "./MaxSettingsPanel.js";
 import { SettingsTelegramTab } from "./SettingsTelegramTab.js";
 import { WhatsappSettingsPanel } from "./WhatsappSettingsPanel.js";
+import { MessageTemplatesPanel } from "./MessageTemplatesPanel.js";
 
 interface StaffOption {
 	id: string;
 	fullName: string;
 }
 
-type MessengerTabId = "telegram" | "whatsapp" | "max";
+type MessengerTabId = "telegram" | "whatsapp" | "max" | "templates";
 
 /*
  * Контракт вкладки: только то, что она реально читает из объединённого мешка.
@@ -122,42 +123,70 @@ export function SettingsMessengersTab({
 					<span className="messenger-tab-badge max-badge" aria-hidden="true">
 						MAX
 					</span>
-					MAX (VK Max)
+					MAX by 1C
+				</button>
+
+				<button
+					role="tab"
+					aria-selected={activeMessenger === "templates"}
+					aria-controls="messenger-panel-templates"
+					id="messenger-tab-templates"
+					type="button"
+					onClick={() => setActiveMessenger("templates")}
+					className={`messenger-channel-tab${activeMessenger === "templates" ? " active" : ""}`}
+				>
+					<span className="messenger-tab-badge bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded px-1.5 py-0.5 text-xs font-medium" aria-hidden="true">
+						TXT
+					</span>
+					Шаблоны
 				</button>
 			</div>
 
-			<div
-				role="tabpanel"
-				id="messenger-panel-telegram"
-				aria-labelledby="messenger-tab-telegram"
-				hidden={activeMessenger !== "telegram"}
-			>
-				<SettingsTelegramTab props={mergedBag} settingsTab="telegram" />
-			</div>
+			{activeMessenger === "telegram" && (
+				<div
+					id="messenger-panel-telegram"
+					role="tabpanel"
+					aria-labelledby="messenger-tab-telegram"
+				>
+					<SettingsTelegramTab props={mergedBag} settingsTab="telegram" />
+				</div>
+			)}
 
-			<div
-				role="tabpanel"
-				id="messenger-panel-whatsapp"
-				aria-labelledby="messenger-tab-whatsapp"
-				hidden={activeMessenger !== "whatsapp"}
-			>
-				<WhatsappSettingsPanel
-					staffOptions={staffOptions}
-					serverBaseUrl={serverBaseUrl}
-				/>
-			</div>
+			{activeMessenger === "whatsapp" && (
+				<div
+					id="messenger-panel-whatsapp"
+					role="tabpanel"
+					aria-labelledby="messenger-tab-whatsapp"
+				>
+					<WhatsappSettingsPanel
+						staffOptions={staffOptions}
+						serverBaseUrl={serverBaseUrl}
+					/>
+				</div>
+			)}
 
-			<div
-				role="tabpanel"
-				id="messenger-panel-max"
-				aria-labelledby="messenger-tab-max"
-				hidden={activeMessenger !== "max"}
-			>
-				<MaxSettingsPanel
-					staffOptions={staffOptions}
-					serverBaseUrl={serverBaseUrl}
-				/>
-			</div>
+			{activeMessenger === "max" && (
+				<div
+					id="messenger-panel-max"
+					role="tabpanel"
+					aria-labelledby="messenger-tab-max"
+				>
+					<MaxSettingsPanel
+						staffOptions={staffOptions}
+						serverBaseUrl={serverBaseUrl}
+					/>
+				</div>
+			)}
+
+			{activeMessenger === "templates" && (
+				<div
+					id="messenger-panel-templates"
+					role="tabpanel"
+					aria-labelledby="messenger-tab-templates"
+				>
+					<MessageTemplatesPanel />
+				</div>
+			)}
 		</section>
 	);
 }

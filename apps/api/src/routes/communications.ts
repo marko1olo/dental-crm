@@ -153,4 +153,72 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 			throw error;
 		}
 	});
+
+	app.get("/api/settings/message-templates", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const templates = await import("../db/messageTemplateCatalogsQuery.js").then((m) =>
+			m.getMessageTemplateCatalogs(orgId),
+		);
+		return reply.send(templates);
+	});
+
+	app.post("/api/settings/message-templates", async (request, reply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "create message template")))
+			return;
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { createMessageTemplateCatalogSchema } = await import("@dental/shared");
+		const parsedInput = createMessageTemplateCatalogSchema.safeParse(request.body);
+		if (!parsedInput.success) {
+			return reply.code(400).send({ error: "ValidationError", details: parsedInput.error.errors });
+		}
+
+		const template = await import("../db/messageTemplateCatalogsQuery.js").then((m) =>
+			m.createMessageTemplateCatalog(orgId, parsedInput.data),
+		);
+		return reply.send(template);
+	});
+
+	app.put("/api/settings/message-templates/:id", async (request, reply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "update message template")))
+			return;
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { id } = request.params as { id: string };
+		const { updateMessageTemplateCatalogSchema } = await import("@dental/shared");
+		const parsedInput = updateMessageTemplateCatalogSchema.safeParse(request.body);
+		if (!parsedInput.success) {
+			return reply.code(400).send({ error: "ValidationError", details: parsedInput.error.errors });
+		}
+
+		try {
+			const template = await import("../db/messageTemplateCatalogsQuery.js").then((m) =>
+				m.updateMessageTemplateCatalog(orgId, id, parsedInput.data),
+			);
+			return reply.send(template);
+		} catch (error) {
+			return reply.code(404).send({ error: "NotFound" });
+		}
+	});
+
+	app.delete("/api/settings/message-templates/:id", async (request, reply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "delete message template")))
+			return;
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { id } = request.params as { id: string };
+		try {
+			await import("../db/messageTemplateCatalogsQuery.js").then((m) =>
+				m.deleteMessageTemplateCatalog(orgId, id),
+			);
+			return reply.send({ success: true });
+		} catch (error) {
+			return reply.code(404).send({ error: "NotFound" });
+		}
+	});
 }

@@ -1130,6 +1130,8 @@ export const communicationIntentSchema = z.enum([
 	"document_ready",
 	"imaging_review",
 	"general",
+	"lead_capture",
+	"callback_requested",
 	/*
 	 * Ответ на прямое обращение пациента: он написал «СТОП» или «СТАРТ», мы
 	 * подтверждаем, что услышали. Единственное назначение, которому диспетчер
@@ -11326,3 +11328,30 @@ export const urgentScheduleRequestSchema = z.object({
 	createdAt: z.string(),
 });
 export type UrgentScheduleRequest = z.infer<typeof urgentScheduleRequestSchema>;
+
+export const messageTemplateCatalogSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	title: z.string().min(1, "Название обязательно"),
+	channel: z.string(),
+	intent: z.string(),
+	templateText: z.string().min(1, "Текст шаблона обязателен"),
+	variables: z.any().optional().nullable(),
+	isActive: z.boolean(),
+	createdAt: z.any().optional(), // Can be string or Date, handle flexibly
+});
+export type MessageTemplateCatalog = z.infer<typeof messageTemplateCatalogSchema>;
+
+export const createMessageTemplateCatalogSchema = messageTemplateCatalogSchema.pick({
+	title: true,
+	channel: true,
+	intent: true,
+	templateText: true,
+	variables: true,
+}).extend({
+	isActive: z.boolean().optional(),
+});
+export type CreateMessageTemplateCatalogInput = z.infer<typeof createMessageTemplateCatalogSchema>;
+
+export const updateMessageTemplateCatalogSchema = createMessageTemplateCatalogSchema.partial();
+export type UpdateMessageTemplateCatalogInput = z.infer<typeof updateMessageTemplateCatalogSchema>;

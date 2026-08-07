@@ -377,7 +377,7 @@ export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
  */
 export declare const communicationChannelSchema: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
 export type CommunicationChannel = z.infer<typeof communicationChannelSchema>;
-export declare const communicationIntentSchema: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "transactional_reply"]>;
+export declare const communicationIntentSchema: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "lead_capture", "callback_requested", "transactional_reply"]>;
 export type CommunicationIntent = z.infer<typeof communicationIntentSchema>;
 export declare const communicationTaskWorkflowCodeSchema: z.ZodEnum<["telegram_tax_document_request", "telegram_billing_document_request", "telegram_medical_document_request", "telegram_patient_forms_request", "telegram_care_extraction_request", "telegram_care_implant_request", "telegram_care_filling_request", "telegram_care_endo_request", "telegram_care_surgery_request", "telegram_care_anesthesia_request", "telegram_care_hygiene_request", "telegram_care_prosthetics_request", "telegram_care_orthodontics_request", "telegram_care_periodontology_request", "telegram_appointment_reschedule_request", "telegram_appointment_call_request", "telegram_contact_request"]>;
 export type CommunicationTaskWorkflowCode = z.infer<typeof communicationTaskWorkflowCodeSchema>;
@@ -5177,7 +5177,7 @@ export declare const communicationTemplateSchema: z.ZodObject<{
     organizationId: z.ZodString;
     title: z.ZodString;
     channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
-    intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "transactional_reply"]>;
+    intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "lead_capture", "callback_requested", "transactional_reply"]>;
     audienceRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
     body: z.ZodString;
     variables: z.ZodArray<z.ZodString, "many">;
@@ -5188,7 +5188,7 @@ export declare const communicationTemplateSchema: z.ZodObject<{
     active: boolean;
     organizationId: string;
     channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-    intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+    intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
     audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     body: string;
     variables: string[];
@@ -5198,7 +5198,7 @@ export declare const communicationTemplateSchema: z.ZodObject<{
     active: boolean;
     organizationId: string;
     channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-    intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+    intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
     audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     body: string;
     variables: string[];
@@ -5213,7 +5213,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     documentId: z.ZodNullable<z.ZodString>;
     assignedRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
     channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
-    intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "transactional_reply"]>;
+    intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "lead_capture", "callback_requested", "transactional_reply"]>;
     status: z.ZodEnum<["queued", "scheduled", "needs_call", "sent", "delivered", "completed", "failed", "skipped"]>;
     priority: z.ZodEnum<["low", "normal", "high", "urgent"]>;
     dueAt: z.ZodString;
@@ -5234,14 +5234,14 @@ export declare const communicationTaskSchema: z.ZodObject<{
     priority: "urgent" | "low" | "normal" | "high";
     documentId: string | null;
     channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-    intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+    intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
     body: string;
     appointmentId: string | null;
     assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     dueAt: string;
     lastEventAt: string | null;
     workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
-    lastOutcome?: "no_answer" | "callback_requested" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
+    lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
 }, {
     status: "queued" | "completed" | "failed" | "skipped" | "scheduled" | "needs_call" | "sent" | "delivered";
     title: string;
@@ -5253,14 +5253,14 @@ export declare const communicationTaskSchema: z.ZodObject<{
     priority: "urgent" | "low" | "normal" | "high";
     documentId: string | null;
     channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-    intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+    intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
     body: string;
     appointmentId: string | null;
     assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     dueAt: string;
     lastEventAt: string | null;
     workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
-    lastOutcome?: "no_answer" | "callback_requested" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
+    lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
 }>;
 export type CommunicationTask = z.infer<typeof communicationTaskSchema>;
 export declare const communicationEventSchema: z.ZodObject<{
@@ -40511,7 +40511,7 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: z.ZodString;
         title: z.ZodString;
         channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
-        intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "transactional_reply"]>;
+        intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "lead_capture", "callback_requested", "transactional_reply"]>;
         audienceRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
         body: z.ZodString;
         variables: z.ZodArray<z.ZodString, "many">;
@@ -40522,7 +40522,7 @@ export declare const dashboardSchema: z.ZodObject<{
         active: boolean;
         organizationId: string;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         body: string;
         variables: string[];
@@ -40532,7 +40532,7 @@ export declare const dashboardSchema: z.ZodObject<{
         active: boolean;
         organizationId: string;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         body: string;
         variables: string[];
@@ -40546,7 +40546,7 @@ export declare const dashboardSchema: z.ZodObject<{
         documentId: z.ZodNullable<z.ZodString>;
         assignedRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
         channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
-        intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "transactional_reply"]>;
+        intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "lead_capture", "callback_requested", "transactional_reply"]>;
         status: z.ZodEnum<["queued", "scheduled", "needs_call", "sent", "delivered", "completed", "failed", "skipped"]>;
         priority: z.ZodEnum<["low", "normal", "high", "urgent"]>;
         dueAt: z.ZodString;
@@ -40567,14 +40567,14 @@ export declare const dashboardSchema: z.ZodObject<{
         priority: "urgent" | "low" | "normal" | "high";
         documentId: string | null;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         body: string;
         appointmentId: string | null;
         assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
-        lastOutcome?: "no_answer" | "callback_requested" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
+        lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
     }, {
         status: "queued" | "completed" | "failed" | "skipped" | "scheduled" | "needs_call" | "sent" | "delivered";
         title: string;
@@ -40586,14 +40586,14 @@ export declare const dashboardSchema: z.ZodObject<{
         priority: "urgent" | "low" | "normal" | "high";
         documentId: string | null;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         body: string;
         appointmentId: string | null;
         assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
-        lastOutcome?: "no_answer" | "callback_requested" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
+        lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
     }>, "many">;
     communicationEvents: z.ZodArray<z.ZodObject<{
         id: z.ZodString;
@@ -41347,7 +41347,7 @@ export declare const dashboardSchema: z.ZodObject<{
         active: boolean;
         organizationId: string;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         body: string;
         variables: string[];
@@ -41363,14 +41363,14 @@ export declare const dashboardSchema: z.ZodObject<{
         priority: "urgent" | "low" | "normal" | "high";
         documentId: string | null;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         body: string;
         appointmentId: string | null;
         assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
-        lastOutcome?: "no_answer" | "callback_requested" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
+        lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
     }[];
     communicationEvents: {
         message: string;
@@ -42012,7 +42012,7 @@ export declare const dashboardSchema: z.ZodObject<{
         active: boolean;
         organizationId: string;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         body: string;
         variables: string[];
@@ -42028,14 +42028,14 @@ export declare const dashboardSchema: z.ZodObject<{
         priority: "urgent" | "low" | "normal" | "high";
         documentId: string | null;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
-        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "transactional_reply";
+        intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         body: string;
         appointmentId: string | null;
         assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
-        lastOutcome?: "no_answer" | "callback_requested" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
+        lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
     }[];
     communicationEvents: {
         message: string;
@@ -51133,11 +51133,11 @@ export declare const completeCommunicationTaskSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     taskId: string;
     note?: string | undefined;
-    outcome?: "no_answer" | "callback_requested" | "reschedule_requested" | "promised_payment" | "document_pickup" | undefined;
+    outcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | undefined;
 }, {
     taskId: string;
     note?: string | undefined;
-    outcome?: "no_answer" | "callback_requested" | "reschedule_requested" | "promised_payment" | "document_pickup" | undefined;
+    outcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | undefined;
 }>;
 export type CompleteCommunicationTaskInput = z.infer<typeof completeCommunicationTaskSchema>;
 export declare const createImagingStudySchema: z.ZodObject<{
@@ -99289,3 +99289,86 @@ export declare const urgentScheduleRequestSchema: z.ZodObject<{
     isResolved: boolean;
 }>;
 export type UrgentScheduleRequest = z.infer<typeof urgentScheduleRequestSchema>;
+export declare const messageTemplateCatalogSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    title: z.ZodString;
+    channel: z.ZodString;
+    intent: z.ZodString;
+    templateText: z.ZodString;
+    variables: z.ZodNullable<z.ZodOptional<z.ZodAny>>;
+    isActive: z.ZodBoolean;
+    createdAt: z.ZodOptional<z.ZodAny>;
+}, "strip", z.ZodTypeAny, {
+    title: string;
+    id: string;
+    organizationId: string;
+    channel: string;
+    intent: string;
+    templateText: string;
+    isActive: boolean;
+    createdAt?: any;
+    variables?: any;
+}, {
+    title: string;
+    id: string;
+    organizationId: string;
+    channel: string;
+    intent: string;
+    templateText: string;
+    isActive: boolean;
+    createdAt?: any;
+    variables?: any;
+}>;
+export type MessageTemplateCatalog = z.infer<typeof messageTemplateCatalogSchema>;
+export declare const createMessageTemplateCatalogSchema: z.ZodObject<Pick<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    title: z.ZodString;
+    channel: z.ZodString;
+    intent: z.ZodString;
+    templateText: z.ZodString;
+    variables: z.ZodNullable<z.ZodOptional<z.ZodAny>>;
+    isActive: z.ZodBoolean;
+    createdAt: z.ZodOptional<z.ZodAny>;
+}, "title" | "channel" | "intent" | "variables" | "templateText"> & {
+    isActive: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    title: string;
+    channel: string;
+    intent: string;
+    templateText: string;
+    variables?: any;
+    isActive?: boolean | undefined;
+}, {
+    title: string;
+    channel: string;
+    intent: string;
+    templateText: string;
+    variables?: any;
+    isActive?: boolean | undefined;
+}>;
+export type CreateMessageTemplateCatalogInput = z.infer<typeof createMessageTemplateCatalogSchema>;
+export declare const updateMessageTemplateCatalogSchema: z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
+    channel: z.ZodOptional<z.ZodString>;
+    intent: z.ZodOptional<z.ZodString>;
+    variables: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodAny>>>;
+    templateText: z.ZodOptional<z.ZodString>;
+    isActive: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+}, "strip", z.ZodTypeAny, {
+    title?: string | undefined;
+    channel?: string | undefined;
+    intent?: string | undefined;
+    variables?: any;
+    templateText?: string | undefined;
+    isActive?: boolean | undefined;
+}, {
+    title?: string | undefined;
+    channel?: string | undefined;
+    intent?: string | undefined;
+    variables?: any;
+    templateText?: string | undefined;
+    isActive?: boolean | undefined;
+}>;
+export type UpdateMessageTemplateCatalogInput = z.infer<typeof updateMessageTemplateCatalogSchema>;
