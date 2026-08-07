@@ -225,7 +225,7 @@ async function readJson<T>(response: Response): Promise<T> {
 export function MessageDeliveryConsole() {
 	const commQueries = useCommunicationsQueries();
 	const appLogic = useAppLogicContext();
-	const auth = appLogic?.auth;
+	const _auth = appLogic?.auth;
 
 	const [gateways, setGateways] = useState<GatewayStatus | null>(null);
 	const [templates, setTemplates] = useState<TemplateItem[]>([]);

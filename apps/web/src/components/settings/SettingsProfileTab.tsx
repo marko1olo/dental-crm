@@ -3,7 +3,6 @@ import {
 	Eye,
 	EyeOff,
 	KeyRound,
-	Lock,
 	ShieldCheck,
 	User,
 } from "lucide-react";
@@ -118,7 +117,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 			if (yandexCalendarToken.trim()) {
 				try {
 					parsedToken = JSON.parse(yandexCalendarToken);
-				} catch (e) {
+				} catch (_e) {
 					showToast("Токен должен быть валидным JSON объектом", "warning");
 					setYandexLoading(false);
 					return;
@@ -165,7 +164,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 	};
 
 	const strength = passwordStrength(newPassword);
-	const passwordMismatch = confirmPassword && newPassword !== confirmPassword;
+	const _passwordMismatch = confirmPassword && newPassword !== confirmPassword;
 
 	const handleUpdatePassword = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -341,7 +340,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 		);
 	}
 
-	const strengthClass = newPassword
+	const _strengthClass = newPassword
 		? strength.score === 1
 			? "weak"
 			: strength.score === 2

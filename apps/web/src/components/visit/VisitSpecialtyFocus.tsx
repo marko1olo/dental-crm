@@ -1,4 +1,4 @@
-import React from "react";
+
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function VisitSpecialtyFocus() {

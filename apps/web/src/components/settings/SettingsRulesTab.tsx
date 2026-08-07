@@ -7,16 +7,13 @@ import type {
 import {
 	Activity,
 	Library,
-	Plus,
 	Power,
 	PowerOff,
 	Settings,
 	ShieldCheck,
-	Stethoscope,
 	Trash2,
 } from "lucide-react";
 import "./SettingsRulesTab.css";
-import type React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
@@ -29,7 +26,7 @@ import { CLINICAL_RULES_GATE } from "./settingsModuleGate";
  * Не возвращай импорт, не прочитав тот комментарий.
  */
 
-const clinicalRuleOwnerRoles: StaffRole[] = [
+const _clinicalRuleOwnerRoles: StaffRole[] = [
 	"doctor",
 	"assistant",
 	"administrator",
@@ -101,7 +98,7 @@ export function SettingsRulesTab() {
 		ServiceCategory,
 		string
 	>;
-	const typedServiceCategories = Object.keys(
+	const _typedServiceCategories = Object.keys(
 		typedServiceCategoryLabels,
 	) as ServiceCategory[];
 

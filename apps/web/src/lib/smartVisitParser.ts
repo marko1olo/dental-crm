@@ -21,7 +21,7 @@ export function parseVisitDictationLocal(input: string): ParsedVisitData {
 		/(?:^|[^0-9])([1-4])\s*[.,]\s*([1-8])(?:[^0-9]|$)/g,
 		" $1$2 ",
 	);
-	const lower = normalizedInput.toLowerCase();
+	const _lower = normalizedInput.toLowerCase();
 
 	// Clause-based tooth extraction
 	const clauses = normalizedInput

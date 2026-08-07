@@ -36,7 +36,7 @@ export function useCommunicationsQueries() {
 			body: JSON.stringify(payload),
 		});
 
-	const previewTemplate = async (templateId: string | null, payload: any) =>
+	const previewTemplate = async (_templateId: string | null, payload: any) =>
 		fetch("/api/communications/templates/preview", {
 			method: "POST",
 			headers: auth?.denteClinicalMutationHeaders({

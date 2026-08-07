@@ -62,7 +62,7 @@ export function VisitDiaryPhotoUpload({
 	const [loadState, setLoadState] = useState<AttachmentsLoadState>({
 		phase: "loading",
 	});
-	const [reloadToken, setReloadToken] = useState(0);
+	const [_reloadToken, setReloadToken] = useState(0);
 	/* Объектные адреса снимков по идентификатору вложения.
 	   ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ: адрес сервера подставлялся прямо в <img src>,
 	   а такой запрос посылает браузер без единого заголовка — подмена fetch из
@@ -163,7 +163,7 @@ export function VisitDiaryPhotoUpload({
 			}
 			createdPhotoObjectUrls.current = new Map();
 		};
-	}, [visitId, reloadToken]);
+	}, [visitId]);
 
 	/* Снимки забираются через fetch по тому же адресу, который отдал сервер в
 	   поле url (apps/api/src/routes/files.ts:137,185), и только потом попадают в
@@ -236,7 +236,7 @@ export function VisitDiaryPhotoUpload({
 		return () => {
 			onPrintPhotosChange?.([]);
 		};
-	}, [visitId, onPrintPhotosChange]);
+	}, [onPrintPhotosChange]);
 	const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
@@ -424,7 +424,7 @@ export function VisitDiaryPhotoUpload({
 
 	return (
 		<div className="space-y-1.5 lg:col-span-2">
-			<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center justify-between">
+			<div className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center justify-between">
 				<span className="flex items-center gap-1.5">
 					<Camera className="w-3 h-3 text-rose-400" /> Вложения (Фотографии)
 				</span>
@@ -441,7 +441,7 @@ export function VisitDiaryPhotoUpload({
 						/>
 					</label>
 				)}
-			</label>
+			</div>
 			{attachments.length > 0 ? (
 				<div className="flex gap-3 overflow-x-auto pb-2">
 					{attachments.map((att) => {

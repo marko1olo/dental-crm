@@ -61,7 +61,7 @@ export function ShadowAnalystImageSlider({
 	};
 
 	const handleTouchMove = (e: React.TouchEvent) => {
-		if (e.touches && e.touches[0]) {
+		if (e.touches?.[0]) {
 			calcPos(e.touches[0].clientX);
 		}
 	};
@@ -99,8 +99,23 @@ export function ShadowAnalystImageSlider({
 		<div
 			className="sa-image-container"
 			ref={containerRef}
+			role="slider"
+			tabIndex={0}
+			aria-valuenow={Math.round(sliderPos)}
+			aria-valuemin={0}
+			aria-valuemax={100}
+			aria-label="Сравнение изображений"
 			onMouseDown={handleMouseDown}
 			onTouchMove={handleTouchMove}
+			onKeyDown={(e) => {
+				if (e.key === "ArrowLeft") {
+					e.preventDefault();
+					setSliderPos((prev) => Math.max(0, prev - 5));
+				} else if (e.key === "ArrowRight") {
+					e.preventDefault();
+					setSliderPos((prev) => Math.min(100, prev + 5));
+				}
+			}}
 			style={{
 				...viewerVariables,
 				cursor: isDragging ? "grabbing" : "col-resize",
@@ -132,8 +147,8 @@ export function ShadowAnalystImageSlider({
 			{/* Divider handle */}
 			<div
 				className="sa-slider-handle"
+				aria-hidden="true"
 				style={{ left: `${sliderPos}%` }}
-				onMouseDown={handleMouseDown}
 			>
 				<div className="sa-slider-line" />
 				<div className="sa-slider-button">
@@ -147,6 +162,7 @@ export function ShadowAnalystImageSlider({
 						strokeLinecap="round"
 						strokeLinejoin="round"
 					>
+						<title>Слайдер</title>
 						<polyline points="8 17 3 12 8 7" />
 						<polyline points="16 7 21 12 16 17" />
 					</svg>

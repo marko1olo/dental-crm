@@ -241,7 +241,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * Счётчик принудительного перечитывания. PanelLoadFailure требует onRetry —
 	 * без отдельного токена повтор был бы только через смену visitId (её нет).
 	 */
-	const [reloadToken, setReloadToken] = useState(0);
+	const [_reloadToken, setReloadToken] = useState(0);
 	/** Режим правки уже подписанного дневника (только admin на API). */
 	const [isRevising, setIsRevising] = useState(false);
 	const [revisionReason, setRevisionReason] = useState("");
@@ -497,7 +497,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			if (autosaveRef.current) clearInterval(autosaveRef.current);
 			useVisitStore.getState().setDraft(null);
 		};
-	}, [visitId, reloadToken]);
+	}, [visitId]);
 
 	/** Повторное чтение с сервера (кнопка в PanelLoadFailure). */
 	const reloadDiary = useCallback(() => {
@@ -584,12 +584,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	useEffect(() => {
 		const autoResize = (el: HTMLTextAreaElement) => {
 			el.style.height = "auto";
-			el.style.height = el.scrollHeight + "px";
+			el.style.height = `${el.scrollHeight}px`;
 		};
 		document
 			.querySelectorAll<HTMLTextAreaElement>(".auto-resize-ta")
 			.forEach(autoResize);
-	}, [diary, isLocked]);
+	}, []);
 
 	// ── Click outside ICD dropdown
 	useEffect(() => {

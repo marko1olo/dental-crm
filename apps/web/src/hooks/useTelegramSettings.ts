@@ -8,7 +8,6 @@ import type {
 	DenteTelegramVisualCardKey,
 	DenteTelegramVisualCardUrls,
 } from "@dental/shared";
-import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	denteAdminSecretRequestHeaders,
 	normalizeTelegramBotUsernameDraft,

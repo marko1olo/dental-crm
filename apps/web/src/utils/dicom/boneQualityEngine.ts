@@ -242,7 +242,7 @@ export function generateDrillProtocol(
 	const systemNote = getSystemNote(system, mischClass, diameterMm);
 	if (systemNote) {
 		steps[steps.length - 1]!.note =
-			(steps[steps.length - 1]!.note || "") + " | " + systemNote;
+			`${steps[steps.length - 1]?.note || ""} | ${systemNote}`;
 	}
 
 	// Angulation note if zones differ significantly (rough heuristic)

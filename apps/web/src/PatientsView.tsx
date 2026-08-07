@@ -74,8 +74,8 @@ export type PatientsViewProps = {
 	patientInsightById: Map<string, PatientInsight>;
 	patientInsightRiskLabels: Record<PatientInsight["riskLevel"], string>;
 	query: string;
-	savePatientAdministrativeProfile: () => void | Promise<void | boolean>;
-	savePatientCore: () => void | Promise<void | boolean>;
+	savePatientAdministrativeProfile: () => undefined | Promise<undefined | boolean>;
+	savePatientCore: () => undefined | Promise<undefined | boolean>;
 	selectedPatient: Patient | null | undefined;
 	setQuery: (value: string) => void;
 	updatePatientAdministrativeProfileDraft: (
@@ -607,8 +607,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<article
 								className={`patient-row ${insight && riskDistinguishes ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
 								key={patient.id}
-								role="button"
-								tabIndex={0}
 								aria-label={`Карточка пациента: ${patient.fullName}`}
 								onClick={() => setSelectedPatientId(patient.id)}
 								onKeyDown={(e) => {

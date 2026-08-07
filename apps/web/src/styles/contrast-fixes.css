@@ -23,13 +23,13 @@
  * !important здесь необходим: исходные объявления тоже с !important.
  */
 .default-clinic-banner .banner-btn {
-	background: #b45309 !important;
-	border-color: #b45309 !important;
+	background: #b45309;
+	border-color: #b45309;
 }
 
 .default-clinic-banner .banner-btn:hover {
-	background: #92400e !important;
-	border-color: #92400e !important;
+	background: #92400e;
+	border-color: #92400e;
 }
 
 /* --- 2. Подпись «Демо-режим.» в тёмной теме ---
@@ -39,7 +39,7 @@
  */
 [data-theme="dark"] .default-clinic-banner strong,
 [data-theme="night"] .default-clinic-banner strong {
-	color: var(--warn-fg) !important;
+	color: var(--warn-fg);
 }
 
 /* --- 3. Основная кнопка в светлой теме ---

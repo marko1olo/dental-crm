@@ -1,5 +1,5 @@
 import { Check, Mic, X } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	VOICE_DICTATION_UNSUPPORTED_TEXT,
 	voiceDictationErrorText,
@@ -168,18 +168,20 @@ export function VoiceDictationOverlay({
 				}}
 			>
 				{isListening ? (
-					waves.map((h, barIndex) => (
-						<div
-							key={`wave-bar-${barIndex}`}
-							style={{
-								width: 8,
-								height: h,
-								background: "var(--primary-color, #a082ff)",
-								borderRadius: 4,
-								transition: "height 0.15s ease",
-							}}
-						/>
-					))
+					waves
+						.map((h, barIndex) => ({ barId: `wave-bar-${barIndex}`, h }))
+						.map(({ barId, h }) => (
+							<div
+								key={barId}
+								style={{
+									width: 8,
+									height: h,
+									background: "var(--primary-color, #a082ff)",
+									borderRadius: 4,
+									transition: "height 0.15s ease",
+								}}
+							/>
+						))
 				) : (
 					<div
 						style={{

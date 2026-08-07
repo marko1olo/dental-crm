@@ -1,5 +1,5 @@
 import { AlertTriangle, Calculator } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAppLogic } from "../../useAppLogic";
 
 export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {

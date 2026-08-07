@@ -1,7 +1,5 @@
 import {
 	AlertTriangle,
-	Archive,
-	CheckCircle2,
 	ShieldAlert,
 } from "lucide-react";
 import type React from "react";
@@ -51,7 +49,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 	patientId: string;
 }> = ({ patientId }) => {
 	const { auth, dashboard } = useAppLogicContext();
-	const [selectedReason, setSelectedReason] = useState<string>("");
+	const [_selectedReason, _setSelectedReason] = useState<string>("");
 	const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
 	const [isApplying, setIsApplying] = useState<boolean>(false);
 	const [archiveReason, setArchiveReason] = useState<string>("");
@@ -89,7 +87,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 		setArchiveReason("");
 		setBlacklistReason("");
 		setModalIsBlacklisted(false);
-	}, [patientId]);
+	}, []);
 
 	const patientIdRef = useRef(patientId);
 	patientIdRef.current = patientId;

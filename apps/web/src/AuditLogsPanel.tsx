@@ -114,7 +114,7 @@ export const AuditLogsPanel: React.FC = () => {
 				return;
 			}
 
-			const list = Array.isArray(payload?.logs) ? payload!.logs! : [];
+			const list = Array.isArray(payload?.logs) ? payload?.logs : [];
 			setLogs(list);
 		} finally {
 			setLoading(false);
@@ -274,12 +274,11 @@ export const AuditLogsPanel: React.FC = () => {
 			) : null}
 
 			{logs !== null && logs.length > 0 ? (
-				<div className="ops-list" data-testid="audit-logs-list" role="list">
+				<ul className="ops-list" data-testid="audit-logs-list">
 					{logs.map((event) => (
-						<article
+						<li
 							className="ops-row"
 							key={event.id}
-							role="listitem"
 							data-testid="audit-logs-row"
 							data-entity-type={event.entityType}
 							data-action={event.action}
@@ -301,9 +300,9 @@ export const AuditLogsPanel: React.FC = () => {
 								{event.reason ? <p>{event.reason}</p> : null}
 							</div>
 							<span>{formatMoment(event.createdAt)}</span>
-						</article>
+						</li>
 					))}
-				</div>
+				</ul>
 			) : null}
 		</section>
 	);

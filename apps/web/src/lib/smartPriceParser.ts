@@ -41,7 +41,7 @@ export function parsePriceDictationLocal(input: string): ParsedPriceData {
 
 	for (const regex of priceRegexes) {
 		const match = normalized.match(regex);
-		if (match && match[1]) {
+		if (match?.[1]) {
 			const rawNum = match[1].replace(/\s+/g, "");
 			let price = parseInt(rawNum, 10);
 

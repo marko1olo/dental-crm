@@ -158,7 +158,7 @@ export class ErrorBoundary extends Component<Props, State> {
 						<br />
 						{presentation ? presentation.detail : moduleErrorDetail(null)}
 					</p>
-					{presentation && presentation.diagnostics ? (
+					{presentation?.diagnostics ? (
 						<pre className="mb-6 max-w-full overflow-x-auto whitespace-pre-wrap break-words font-mono text-xs text-foreground/60">
 							{presentation.diagnostics}
 						</pre>

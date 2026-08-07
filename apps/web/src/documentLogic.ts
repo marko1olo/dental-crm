@@ -1,13 +1,10 @@
 import type { DocumentPayload, GeneratedDocument } from "@dental/shared";
 import {
 	fromDateTimeLocalValue,
-	isDateInputValue,
-	isDateTimeLocalInputValue,
 } from "./AppHelpers";
 import { documentPayloadValidators } from "./documentValidators";
 import {
 	normalizeRubAmountInput,
-	validateRubAmountInput,
 } from "./rubAmountInput";
 import { structuredPayloadDocumentKinds } from "./workspaceUiLabels";
 

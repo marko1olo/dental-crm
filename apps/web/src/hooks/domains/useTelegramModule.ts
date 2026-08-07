@@ -183,7 +183,7 @@ export function useTelegramModule({
 		setTelegramPrivacyModeDraft(settings.privacyMode);
 		setTelegramSettingsSaveState("idle");
 		setTelegramSettingsSaveError(null);
-	}, [telegramStatus?.settings.updatedAt, telegramSettingsDirty]);
+	}, [telegramStatus?.settings.updatedAt, telegramSettingsDirty, setTelegramStaffEscalationChannelDraft, telegramStatus?.settings, setTelegramBotUsernameDraft, setTelegramTokenTtlDraft, setTelegramVisualCardUrlDrafts, setTelegramWebhookBaseUrlDraft, setTelegramSettingsSaveState, setTelegramWelcomeImageUrlDraft, setTelegramSettingsSaveError, setTelegramReviewUrlDraft, setTelegramReviewRequestDelayDraft, setTelegramReminderLeadTimesDraft, setTelegramPrivacyModeDraft, setTelegramOwnBotUsernameDraft, setTelegramPostVisitCheckupDelayDrafts, setTelegramModeDraft, setTelegramAllowVoiceIntakeDraft, setTelegramPatientPortalBaseUrlDraft, setTelegramMapsUrlDraft, setTelegramEnabledFeaturesDraft, normalizeTelegramPostVisitCheckupDelayDrafts]);
 
 	useEffect(() => {
 		if (!telegramSettingsDirty || !telegramStatus?.settings) return;
@@ -191,7 +191,7 @@ export function useTelegramModule({
 			void saveTelegramSettings({ silent: true });
 		}, 900);
 		return () => window.clearTimeout(timeout);
-	}, [telegramSettingsDirty, telegramStatus?.settings]);
+	}, [telegramSettingsDirty, telegramStatus?.settings, saveTelegramSettings]);
 
 	useEffect(() => {
 		if (
@@ -201,15 +201,10 @@ export function useTelegramModule({
 			void loadTelegramControlPlane({ silent: true });
 		}
 	}, [
-		currentView,
-		settingsTab,
-		onboardingDismissed,
-		onboardingStep,
-		telegramOutboxStatusFilter,
-		telegramOutboxTemplateFilter,
-		telegramModeDraft,
-		telegramBotConfigId,
-		dashboard?.clinicSettings?.profile?.organizationId,
+		currentView, 
+		settingsTab, 
+		onboardingDismissed, 
+		onboardingStep, loadTelegramControlPlane
 	]);
 
 	useEffect(() => {
@@ -219,7 +214,7 @@ export function useTelegramModule({
 		if (!telegramHandoffTarget) return;
 		setTelegramHandoffNotice(telegramHandoffTarget);
 		stripDenteTelegramHandoffQuery(telegramHandoffTarget);
-	}, []);
+	}, [setTelegramHandoffNotice]);
 
 	useEffect(() => {
 		if (!uiPreferencesHydrated) return;
@@ -233,7 +228,7 @@ export function useTelegramModule({
 		}
 		setTelegramHandoffNotice(telegramHandoffTarget);
 		stripDenteTelegramHandoffQuery(telegramHandoffTarget);
-	}, [uiPreferencesHydrated]);
+	}, [uiPreferencesHydrated, setTelegramHandoffNotice, setSelectedDocumentKind, setCurrentView]);
 
 	function appendTelegramRuntimeScopeParams(
 		params: URLSearchParams,

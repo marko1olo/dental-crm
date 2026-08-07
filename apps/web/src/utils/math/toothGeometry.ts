@@ -4,12 +4,7 @@ import type {
 	ImagingViewerAnnotationSemanticRole,
 	ImagingViewerImplantPlan,
 } from "@dental/shared";
-import {
-	finiteOrNull,
-	polylineLengthMm,
-	round1,
-	round2,
-} from "./mprMath";
+import { finiteOrNull, polylineLengthMm, round1, round2 } from "./mprMath";
 
 export type CtPlanningGeometryMetric = {
 	id: string;

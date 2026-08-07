@@ -208,8 +208,8 @@
 
 .vde-043__label-mic button,
 .vde-043__label-mic [role="button"] {
-	min-width: 40px !important;
-	min-height: 40px !important;
+	min-width: 40px;
+	min-height: 40px;
 }
 
 .vde-043__badge {
@@ -845,44 +845,44 @@ html.dark .vde-043__letter--p {
 /* Print: force paper white / black ink */
 @media print {
 	body > *:not(.print-layer) {
-		display: none !important;
+		display: none;
 	}
 	html,
 	body {
-		background: white !important;
-		height: auto !important;
-		overflow: visible !important;
+		background: white;
+		height: auto;
+		overflow: visible;
 	}
 	.print-layer {
-		display: block !important;
+		display: block;
 		position: absolute;
 		left: 0;
 		top: 0;
-		width: 100% !important;
-		background: white !important;
-		color: black !important;
-		padding: 0 !important;
-		backdrop-filter: none !important;
+		width: 100%;
+		background: white;
+		color: black;
+		padding: 0;
+		backdrop-filter: none;
 	}
 	.no-print {
-		display: none !important;
+		display: none;
 	}
 	.print-content,
 	.vde-043-print-sheet {
-		box-shadow: none !important;
-		max-height: none !important;
-		overflow: visible !important;
-		border-radius: 0 !important;
-		border: none !important;
-		background: white !important;
-		color: black !important;
+		box-shadow: none;
+		max-height: none;
+		overflow: visible;
+		border-radius: 0;
+		border: none;
+		background: white;
+		color: black;
 	}
 	#print-043 {
-		overflow: visible !important;
-		padding: 0 !important;
+		overflow: visible;
+		padding: 0;
 	}
 	#print-043 .vde-043-doc-header {
-		border-bottom-color: #000 !important;
+		border-bottom-color: #000;
 	}
 	#print-043 .vde-043-doc-header h1,
 	#print-043 .vde-043-soap-block h4,
@@ -890,15 +890,15 @@ html.dark .vde-043__letter--p {
 	#print-043 .vde-043-sign-row,
 	#print-043 .vde-043-doc-meta,
 	#print-043 .vde-043-ecp {
-		color: #000 !important;
-		background: transparent !important;
+		color: #000;
+		background: transparent;
 	}
 	#print-043 .vde-043-doc-meta {
-		border-color: #ccc !important;
+		border-color: #ccc;
 	}
 	#print-043 .vde-043-ecp {
-		border-color: #86efac !important;
-		background: #f0fdf4 !important;
+		border-color: #86efac;
+		background: #f0fdf4;
 	}
 	.page-break-avoid {
 		page-break-inside: avoid;

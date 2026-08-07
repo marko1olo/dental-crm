@@ -3,7 +3,7 @@ import type {
 	MessageTemplateCatalog,
 } from "@dental/shared";
 import { Plus, Trash2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
@@ -40,7 +40,7 @@ export function MessageTemplatesPanel() {
 
 	useEffect(() => {
 		loadTemplates();
-	}, []);
+	}, [loadTemplates]);
 
 	const handleCreate = async () => {
 		if (!draftTitle || !draftText) return;

@@ -30,10 +30,18 @@ export function InventoryConfirmDialog({
 	onCancel,
 }: InventoryConfirmDialogProps) {
 	return (
-		<div
+		<button
+			type="button"
 			className="inventory-confirm-backdrop"
-			role="presentation"
 			onClick={(event) => event.target === event.currentTarget && onCancel()}
+			onKeyDown={(event) => {
+				if (
+					event.target === event.currentTarget &&
+					(event.key === "Enter" || event.key === " ")
+				) {
+					onCancel();
+				}
+			}}
 		>
 			<div
 				className="inventory-confirm-window"
@@ -64,6 +72,6 @@ export function InventoryConfirmDialog({
 					</button>
 				</div>
 			</div>
-		</div>
+		</button>
 	);
 }

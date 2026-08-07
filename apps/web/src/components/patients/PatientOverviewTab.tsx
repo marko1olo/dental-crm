@@ -1,16 +1,12 @@
-import { Dashboard } from "@dental/shared";
-import { motion } from "framer-motion";
-import { UserCheck } from "lucide-react";
+
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
-import { formatPhoneNumber } from "../../utils/inputSanitation";
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
 import { LabOrdersPanel } from "../LabOrdersPanel";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
-import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
 import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
@@ -39,15 +35,15 @@ export function PatientOverviewTab() {
 	const dashboard = appLogic.dashboard;
 	const { savePatientCore, updatePatientCoreDraft, selectedPatient } = appLogic;
 
-	const patientCoreReadyToSave =
+	const _patientCoreReadyToSave =
 		(patientCoreDraft?.fullName ?? "").trim().length > 0 && patientCoreDirty;
-	const patientCoreSaveGuidance =
+	const _patientCoreSaveGuidance =
 		patientCoreSaveState === "error"
 			? "Ошибка сохранения"
 			: patientCoreSaveState === "saved"
 				? "Сохранено"
 				: null;
-	const patientCoreSaveGuidanceId = "patientCoreSaveGuidanceId";
+	const _patientCoreSaveGuidanceId = "patientCoreSaveGuidanceId";
 	const [familyData, setFamilyData] = useState<any>(null);
 	/*
 	 * БЫЛО: любой неудачный ответ приравнивался к «семьи нет» — `if (!res.ok)

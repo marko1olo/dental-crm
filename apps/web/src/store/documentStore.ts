@@ -40,7 +40,6 @@ import { postVisitCarePresets } from "../postVisitCareData";
  */
 import {
 	currentLocalDateTimeInputValue,
-	toDateTimeLocalValue,
 } from "../utils/dateUtils";
 import { defaultClinicalToothRowsText } from "../utils/draftDefaults";
 import { loadUiPreferences } from "../utils/preferencesUtils";

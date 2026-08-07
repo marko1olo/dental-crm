@@ -21,16 +21,16 @@ export function formatPhoneNumber(value: string): string {
 
 	if (rest.length === 0) return prefix;
 
-	let formatted = prefix + "(" + rest.substring(0, 3);
+	let formatted = `${prefix}(${rest.substring(0, 3)}`;
 
 	if (rest.length >= 4) {
-		formatted += ") " + rest.substring(3, 6);
+		formatted += `) ${rest.substring(3, 6)}`;
 	}
 	if (rest.length >= 7) {
-		formatted += "-" + rest.substring(6, 8);
+		formatted += `-${rest.substring(6, 8)}`;
 	}
 	if (rest.length >= 9) {
-		formatted += "-" + rest.substring(8, 10);
+		formatted += `-${rest.substring(8, 10)}`;
 	}
 
 	return formatted;
@@ -46,5 +46,5 @@ export function formatCurrencyNumeric(value: string | number): string {
 	if (!digits) return "";
 
 	const num = parseInt(digits, 10);
-	return isNaN(num) ? "" : num.toString();
+	return Number.isNaN(num) ? "" : num.toString();
 }

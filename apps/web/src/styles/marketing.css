@@ -2,8 +2,8 @@
    MARKETING VIEW STYLES
    ------------------------------------------- */
 .marketing-zone {
-	display: grid !important;
-	grid-template-columns: 1fr !important;
+	display: grid;
+	grid-template-columns: 1fr;
 	gap: 20px;
 }
 

@@ -1,5 +1,4 @@
 import { Activity, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
-import type React from "react";
 import { useState } from "react";
 import {
 	type DrillProtocol,
@@ -187,9 +186,9 @@ export function BoneQualityPanel({
 					{/* Warnings */}
 					{protocol.warnings.length > 0 && (
 						<div className="space-y-1">
-							{protocol.warnings.map((w, i) => (
+							{protocol.warnings.map((w) => (
 								<div
-									key={`warning-${w.slice(0, 15)}-${i}`}
+									key={w}
 									className="text-[11px] p-2 rounded bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800 flex items-center gap-1.5"
 								>
 									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -274,10 +273,11 @@ function PanelHeader({
 	toothFdi?: number | undefined;
 }) {
 	return (
-		<div
+		<button
+			type="button"
 			onClick={onToggle}
-			className="flex justify-between items-center cursor-pointer pb-1.5 border-b select-none"
-			style={{ borderColor: "var(--line)" }}
+			className="w-full flex justify-between items-center cursor-pointer pb-1.5 border-b select-none"
+			style={{ borderColor: "var(--line)", background: "none", borderLeft: "none", borderRight: "none", borderTop: "none" }}
 		>
 			<span className="text-xs font-bold flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
 				<Activity className="w-4 h-4 text-sky-500" />
@@ -290,7 +290,7 @@ function PanelHeader({
 					<ChevronDown className="w-4 h-4" />
 				)}
 			</span>
-		</div>
+		</button>
 	);
 }
 

@@ -1,7 +1,7 @@
 import type React from "react";
 
 export function guessGender(fullName?: string): "male" | "female" | "unknown" {
-	if (!fullName || !fullName.trim()) return "unknown";
+	if (!fullName?.trim()) return "unknown";
 	const parts = fullName.trim().split(/\s+/);
 
 	if (parts.length >= 3 && parts[2]) {
@@ -84,7 +84,7 @@ export function guessGender(fullName?: string): "male" | "female" | "unknown" {
 }
 
 export function getInitials(fullName?: string): string {
-	if (!fullName || !fullName.trim()) return "";
+	if (!fullName?.trim()) return "";
 	const parts = fullName.trim().split(/\s+/).filter(Boolean);
 	const first = parts[0];
 	if (!first) return "";

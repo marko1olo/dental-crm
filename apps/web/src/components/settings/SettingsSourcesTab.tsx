@@ -1,28 +1,9 @@
-import type {
-	DicomViewerWorkbenchManifestResponse,
-	DicomWorkstationReadinessResponse,
-	MprWindowPreset,
-} from "@dental/shared";
-import {
-	CheckCircle2,
-	ClipboardCheck,
-	Database,
-	ExternalLink,
-	FileText,
-	Gauge,
-	History,
-	ImageIcon,
-	Layers3,
-	RefreshCw,
-	RotateCcw,
-	ScanSearch,
-} from "lucide-react";
+
 import type { ChangeEvent } from "react";
 
 type MprClinicalPreset =
 	import("../../mprClinicalStatus").MprClinicalPresetFitTarget;
 
-import { useSettingsDerivations } from "../../useSettingsDerivations";
 
 type StringTokenGroup = { title: string; items: string[] };
 type CbctWorkbenchPlane = { key: string; title: string; detail: string };

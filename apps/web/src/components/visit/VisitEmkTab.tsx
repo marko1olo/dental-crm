@@ -574,13 +574,12 @@ export function VisitEmkTab() {
 				<div className={`visit-draft-quality quality-${draft.quality.level}`}>
 					<div>
 						<strong>
-							{(visitDraftQualityLabels &&
-								visitDraftQualityLabels[draft.quality.level]) ||
+							{(visitDraftQualityLabels?.[draft.quality.level]) ||
 								draft.quality.level}
 						</strong>
 						<span>
 							{Math.round(draft.quality.confidence * 100)}% ·{" "}
-							{(specialtyLabels && specialtyLabels[draft.quality.specialty]) ||
+							{(specialtyLabels?.[draft.quality.specialty]) ||
 								draft.quality.specialty}
 						</span>
 					</div>

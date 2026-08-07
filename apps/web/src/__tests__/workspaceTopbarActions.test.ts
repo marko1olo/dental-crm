@@ -78,21 +78,21 @@ const shellAst = parse(shellSource, {
 
 /** Строковое значение атрибута, если оно записано литералом. */
 function literalAttribute(element: AstNode, name: string): string | null {
-	const attributes = (element["attributes"] ?? []) as AstNode[];
+	const attributes = (element.attributes ?? []) as AstNode[];
 	for (const attribute of attributes) {
 		if (attribute.type !== "JSXAttribute") continue;
-		const attributeName = attribute["name"] as AstNode | undefined;
-		if (!attributeName || attributeName["name"] !== name) continue;
-		const value = attribute["value"] as AstNode | undefined;
-		if (value?.type === "StringLiteral") return String(value["value"]);
+		const attributeName = attribute.name as AstNode | undefined;
+		if (!attributeName || attributeName.name !== name) continue;
+		const value = attribute.value as AstNode | undefined;
+		if (value?.type === "StringLiteral") return String(value.value);
 		return null;
 	}
 	return null;
 }
 
 function elementName(element: AstNode): string {
-	const name = element["name"] as AstNode | undefined;
-	return name && typeof name["name"] === "string" ? name["name"] : "";
+	const name = element.name as AstNode | undefined;
+	return name && typeof name.name === "string" ? name.name : "";
 }
 
 /**
@@ -102,17 +102,17 @@ function elementName(element: AstNode): string {
  * наведении на касании не существует.
  */
 function visibleLabelSource(element: AstNode): string | null {
-	const children = (element["children"] ?? []) as AstNode[];
+	const children = (element.children ?? []) as AstNode[];
 	for (const child of children) {
-		if (child.type === "JSXText" && String(child["value"]).trim().length > 0) {
-			return String(child["value"]).trim();
+		if (child.type === "JSXText" && String(child.value).trim().length > 0) {
+			return String(child.value).trim();
 		}
 		if (child.type === "JSXExpressionContainer") {
-			const expression = child["expression"] as AstNode | undefined;
+			const expression = child.expression as AstNode | undefined;
 			if (!expression) continue;
 			const text = shellSource.slice(
-				Number(expression["start"]),
-				Number(expression["end"]),
+				Number(expression.start),
+				Number(expression.end),
 			);
 			if (text.includes("Labels.")) return text;
 		}
@@ -149,7 +149,7 @@ function collectTopActions(): {
 	walk(shellAst.program, (node) => {
 		if (element) return;
 		if (node.type !== "JSXElement") return;
-		if ((node["openingElement"] as AstNode | undefined) !== container) return;
+		if ((node.openingElement as AstNode | undefined) !== container) return;
 		element = node;
 	});
 	assert.ok(element, "у контейнера top-actions не найдено тело элемента");
@@ -168,14 +168,14 @@ function collectTopActions(): {
 					let owner: AstNode = node;
 					walk(element as unknown as AstNode, (candidate) => {
 						if (candidate.type !== "JSXElement") return;
-						if ((candidate["openingElement"] as AstNode | undefined) !== node)
+						if ((candidate.openingElement as AstNode | undefined) !== node)
 							return;
 						owner = candidate;
 					});
 					return owner;
 				})(),
 			),
-			start: Number(node["start"]),
+			start: Number(node.start),
 		});
 	});
 	return { container: element as unknown as AstNode, controls };

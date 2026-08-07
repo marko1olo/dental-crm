@@ -303,6 +303,42 @@ export function MigrationWizard() {
 	const resetError = useCallback(() => setError(null), []);
 
 	// -------------------------------------------------------------------
+	// Шаг 2: карта соответствия
+	// -------------------------------------------------------------------
+	const runMapping = useCallback(
+		async (runId: string, useLlm: boolean) => {
+			setBusy(true);
+			setError(null);
+			try {
+				const response = await fetch(`/api/migration/${runId}/map`, {
+					method: "POST",
+					headers: clinicalMutationHeaders({
+						"content-type": "application/json",
+					}),
+					body: JSON.stringify({ allowLlm: useLlm }),
+				});
+				const result = await readResponse<MapResponse>(response);
+				if (!result.ok) {
+					setError({ code: result.code, message: result.message });
+					return;
+				}
+				setMapping(result.data);
+			} catch (caught) {
+				setError({
+					code: "NetworkError",
+					message:
+						caught instanceof Error
+							? caught.message
+							: "Сопоставление не выполнено.",
+				});
+			} finally {
+				setBusy(false);
+			}
+		},
+		[clinicalMutationHeaders],
+	);
+
+	// -------------------------------------------------------------------
 	// Шаг 1: заливка файла
 	// -------------------------------------------------------------------
 	const handleFile = useCallback(
@@ -345,43 +381,7 @@ export function MigrationWizard() {
 			}
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 		},
-		[allowLlm, clinicalMutationHeaders],
-	);
-
-	// -------------------------------------------------------------------
-	// Шаг 2: карта соответствия
-	// -------------------------------------------------------------------
-	const runMapping = useCallback(
-		async (runId: string, useLlm: boolean) => {
-			setBusy(true);
-			setError(null);
-			try {
-				const response = await fetch(`/api/migration/${runId}/map`, {
-					method: "POST",
-					headers: clinicalMutationHeaders({
-						"content-type": "application/json",
-					}),
-					body: JSON.stringify({ allowLlm: useLlm }),
-				});
-				const result = await readResponse<MapResponse>(response);
-				if (!result.ok) {
-					setError({ code: result.code, message: result.message });
-					return;
-				}
-				setMapping(result.data);
-			} catch (caught) {
-				setError({
-					code: "NetworkError",
-					message:
-						caught instanceof Error
-							? caught.message
-							: "Сопоставление не выполнено.",
-				});
-			} finally {
-				setBusy(false);
-			}
-		},
-		[clinicalMutationHeaders],
+		[allowLlm, clinicalMutationHeaders, runMapping],
 	);
 
 	// -------------------------------------------------------------------
@@ -686,6 +686,8 @@ function SourcePanel(props: {
 	return (
 		<div className="mw-panel">
 			<div
+				role="region"
+				aria-label="Зона загрузки файла"
 				className={`mw-drop ${dragging ? "is-dragging" : ""}`}
 				onDragOver={(event) => {
 					event.preventDefault();
@@ -843,16 +845,29 @@ function MappingPanel(props: {
 						role="table"
 						aria-label="Соответствие колонок"
 					>
-						<div className="mw-mapping-row mw-mapping-head" role="row">
-							<span role="columnheader">Колонка источника</span>
-							<span role="columnheader">Поле карточки</span>
-							<span role="columnheader">Решение</span>
-							<span role="columnheader">Форма значений</span>
+						<div
+							className="mw-mapping-row mw-mapping-head"
+							role="row"
+							tabIndex={0}
+						>
+							<span role="columnheader" tabIndex={0}>
+								Колонка источника
+							</span>
+							<span role="columnheader" tabIndex={0}>
+								Поле карточки
+							</span>
+							<span role="columnheader" tabIndex={0}>
+								Решение
+							</span>
+							<span role="columnheader" tabIndex={0}>
+								Форма значений
+							</span>
 						</div>
 						{mapping.mapping.columns.map((column) => (
 							<div
 								className="mw-mapping-row"
 								role="row"
+								tabIndex={0}
 								key={column.sourceColumn}
 							>
 								<span className="mw-col-source" role="cell">
@@ -900,9 +915,9 @@ function MappingPanel(props: {
 								)}
 							</summary>
 							<ul>
-								{mapping.qualityFindings.slice(0, 20).map((finding, index) => (
+								{mapping.qualityFindings.slice(0, 20).map((finding) => (
 									<li
-										key={`finding-${finding.severity}-${index}`}
+										key={`finding-${finding.severity}-${finding.message}`}
 										className={`mw-finding mw-finding-${finding.severity}`}
 									>
 										{finding.message}
@@ -1300,11 +1315,8 @@ function DiscoveryPanel(props: {
 				</section>
 			)}
 
-			{discovery.warnings.map((warning, index) => (
-				<p
-					className="mw-discovery-warning"
-					key={`warning-${warning.slice(0, 15)}-${index}`}
-				>
+			{discovery.warnings.map((warning) => (
+				<p className="mw-discovery-warning" key={warning}>
 					{warning}
 				</p>
 			))}

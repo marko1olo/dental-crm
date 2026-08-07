@@ -354,7 +354,7 @@ textarea:focus,
 input:focus,
 select:focus {
 	outline: none;
-	border-color: var(--teal) !important;
+	border-color: var(--teal);
 	box-shadow: 0 0 0 3px var(--focus-ring);
 }
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
@@ -453,10 +453,10 @@ select:focus {
 	height: 16px;
 }
 .top-lock-button {
-	color: var(--bad-fg) !important;
+	color: var(--bad-fg);
 }
 .top-lock-button:hover {
-	border-color: var(--bad-fg) !important;
+	border-color: var(--bad-fg);
 }
 
 .text-button {
@@ -675,11 +675,11 @@ select:focus {
 .dnt-content {
 	flex: 1;
 	overflow-y: auto;
-	padding: 20px 24px 32px !important;
-	max-width: 1560px !important;
-	width: 100% !important;
-	margin: 0 auto !important;
-	box-sizing: border-box !important;
+	padding: 20px 24px 32px;
+	max-width: 1560px;
+	width: 100%;
+	margin: 0 auto;
+	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
@@ -687,32 +687,32 @@ select:focus {
 
 .shift-hero,
 .dnt-hero {
-	display: grid !important;
-	grid-template-columns: 1.05fr 0.95fr !important;
-	gap: 16px !important;
+	display: grid;
+	grid-template-columns: 1.05fr 0.95fr;
+	gap: 16px;
 }
 
 .shift-queues,
 .dnt-queues {
-	display: grid !important;
-	grid-template-columns: repeat(3, 1fr) !important;
-	gap: 12px !important;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
 }
 
 .shift-cockpit,
 .dnt-cockpit {
-	display: grid !important;
-	grid-template-columns: 360px 1fr !important;
-	gap: 16px !important;
-	margin-top: 16px !important;
+	display: grid;
+	grid-template-columns: 360px 1fr;
+	gap: 16px;
+	margin-top: 16px;
 }
 
 .visit-emk-grid,
 .dnt-emk {
-	display: grid !important;
-	grid-template-columns: 1fr 1fr !important;
-	gap: 16px !important;
-	margin-top: 16px !important;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	margin-top: 16px;
 }
 
 @container dnt (max-width: 1140px) 
@@ -722,15 +722,15 @@ select:focus {
 	.dnt-hero,
 	.visit-emk-grid,
 	.dnt-emk {
-		grid-template-columns: 1fr !important;
+		grid-template-columns: 1fr;
 	}
 	.shift-queues,
 	.dnt-queues {
-		grid-template-columns: 1fr 1fr !important;
+		grid-template-columns: 1fr 1fr;
 	}
 	.shift-cockpit,
 	.dnt-cockpit {
-		grid-template-columns: 1fr !important;
+		grid-template-columns: 1fr;
 	}
 }
 
@@ -743,11 +743,11 @@ select:focus {
 	.dnt-cockpit,
 	.visit-emk-grid,
 	.dnt-emk {
-		grid-template-columns: 1fr !important;
+		grid-template-columns: 1fr;
 	}
 	.workspace,
 	.dnt-content {
-		padding: 14px 14px 100px !important;
+		padding: 14px 14px 100px;
 	}
 }
 .workspace-role-switcher summary {
@@ -1028,20 +1028,20 @@ select:focus {
 
 /* ---------- 9. РАСПИСАНИЕ ДНЯ (Смена) ---------- */
 .today-schedule-item {
-	background: var(--paper) !important;
-	border: 1px solid var(--line) !important;
-	border-radius: 10px !important;
-	transition: all 0.15s !important;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	transition: all 0.15s;
 }
 .today-schedule-item:hover {
-	border-color: var(--teal-ring) !important;
+	border-color: var(--teal-ring);
 	box-shadow: var(--shadow-1);
 	transform: translateY(-1px);
 }
 .today-schedule-item.current-active {
-	background: var(--teal-surface) !important;
-	border: 1px solid var(--teal-ring) !important;
-	border-left: 3px solid var(--teal) !important;
+	background: var(--teal-surface);
+	border: 1px solid var(--teal-ring);
+	border-left: 3px solid var(--teal);
 }
 .today-schedule-time {
 	font-variant-numeric: tabular-nums;
@@ -1105,7 +1105,7 @@ select:focus {
 }
 .recording-icon-pulse {
 	animation: dntPulse 1.2s ease infinite;
-	color: var(--bad-fg) !important;
+	color: var(--bad-fg);
 }
 .skeleton-wave {
 	animation: dntWave 1s ease-in-out infinite;
@@ -1131,36 +1131,36 @@ select:focus {
 	box-shadow: var(--shadow-1);
 }
 button[data-tooth-state="planned"] {
-	background: var(--info-bg) !important;
-	color: var(--info-fg) !important;
-	border-color: var(--info-fg) !important;
+	background: var(--info-bg);
+	color: var(--info-fg);
+	border-color: var(--info-fg);
 }
 button[data-tooth-state="treatment"] {
-	background: var(--bad-bg) !important;
-	color: var(--bad-fg) !important;
-	border-color: var(--bad-fg) !important;
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border-color: var(--bad-fg);
 }
 button[data-tooth-state="watch"] {
-	background: var(--warn-bg) !important;
-	color: var(--warn-fg) !important;
-	border-color: var(--warn-fg) !important;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--warn-fg);
 }
 button[data-tooth-state="done"] {
-	background: var(--ok-bg) !important;
-	color: var(--ok-fg) !important;
-	border-color: var(--ok-fg) !important;
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border-color: var(--ok-fg);
 }
 button[data-tooth-state="missing"] {
-	background: transparent !important;
-	color: var(--muted) !important;
-	border-style: dashed !important;
-	border-color: var(--line-strong) !important;
-	opacity: 0.55 !important;
+	background: transparent;
+	color: var(--muted);
+	border-style: dashed;
+	border-color: var(--line-strong);
+	opacity: 0.55;
 }
 .stamp-btn.active {
-	background: var(--teal-soft) !important;
-	color: var(--teal-dark) !important;
-	border-color: var(--teal-ring) !important;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	border-color: var(--teal-ring);
 }
 
 /* ---------- 13. АДАПТИВ ---------- */
@@ -1207,8 +1207,8 @@ button[data-tooth-state="missing"] {
 		font-size: 10px;
 	}
 	.topbar-context {
-		gap: 6px !important;
-		flex-wrap: nowrap !important;
+		gap: 6px;
+		flex-wrap: nowrap;
 		overflow: hidden;
 	}
 	.topbar-clinic {
@@ -1219,22 +1219,22 @@ button[data-tooth-state="missing"] {
 	.compact-top-button,
 	.top-lock-button,
 	.top-dictation-button {
-		display: none !important;
+		display: none;
 	}
 	/* Role switcher on mobile — collapse to compact pill */
 	.workspace-role-switcher {
-		border: none !important;
-		background: none !important;
-		padding: 0 !important;
+		border: none;
+		background: none;
+		padding: 0;
 	}
 	.workspace-role-switcher > summary {
-		background: var(--teal-surface) !important;
-		color: var(--teal-dark) !important;
-		border-radius: 999px !important;
-		padding: 4px 10px !important;
-		font-size: 11px !important;
-		font-weight: 700 !important;
-		border: 1px solid var(--teal-ring) !important;
+		background: var(--teal-surface);
+		color: var(--teal-dark);
+		border-radius: 999px;
+		padding: 4px 10px;
+		font-size: 11px;
+		font-weight: 700;
+		border: 1px solid var(--teal-ring);
 		white-space: nowrap;
 		display: inline-flex;
 		align-items: center;
@@ -1242,20 +1242,20 @@ button[data-tooth-state="missing"] {
 	}
 	[data-theme="dark"] .workspace-role-switcher > summary,
 	[data-theme="night"] .workspace-role-switcher > summary {
-		color: var(--teal) !important;
+		color: var(--teal);
 	}
 	/* Recent patients dropdown on mobile — hide entirely from topbar */
 	.recent-patients-header-dropdown {
-		display: none !important;
+		display: none;
 	}
 	/* top-actions strip */
 	.top-actions {
-		gap: 4px !important;
+		gap: 4px;
 		flex-shrink: 0;
 	}
 	.top-actions .primary-button {
-		padding: 6px 12px !important;
-		font-size: 12px !important;
+		padding: 6px 12px;
+		font-size: 12px;
 	}
 }
 
@@ -1332,7 +1332,7 @@ button[data-tooth-state="missing"] {
      специфичность (0,2,1) перебивает (0,1,0) при равном !important и слое.
      Диапазон 841-860px не тронут: там легаси-полоса реальна и 96px нужны. */
 	main.app-shell.dente-redesign {
-		padding-bottom: 0 !important;
+		padding-bottom: 0;
 	}
 }
 
@@ -1346,8 +1346,8 @@ button[data-tooth-state="missing"] {
 	*,
 	*::before,
 	*::after {
-		animation: none !important;
-		transition: none !important;
+		animation: none;
+		transition: none;
 	}
 }
 
@@ -1356,9 +1356,9 @@ button[data-tooth-state="missing"] {
 [data-theme="night"] [class*="bg-white"],
 [data-theme="dark"] .bg-white,
 [data-theme="night"] .bg-white {
-	background-color: var(--paper) !important;
-	color: var(--ink) !important;
-	border-color: var(--line) !important;
+	background-color: var(--paper);
+	color: var(--ink);
+	border-color: var(--line);
 }
 
 [data-theme="dark"] [class*="bg-slate-50"],
@@ -1368,18 +1368,18 @@ button[data-tooth-state="missing"] {
 [data-theme="dark"] [class*="bg-slate-100"],
 [data-theme="night"] [class*="bg-slate-100"],
 [data-theme="dark"] .bg-slate-100 {
-	background-color: var(--paper-soft) !important;
-	color: var(--ink) !important;
-	border-color: var(--line) !important;
+	background-color: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line);
 }
 
 [data-theme="light"] [class*="bg-slate-800"],
 [data-theme="light"] [class*="bg-slate-900"],
 [data-theme="light"] .bg-slate-800,
 [data-theme="light"] .bg-slate-900 {
-	background-color: var(--paper-soft) !important;
-	color: var(--ink) !important;
-	border-color: var(--line) !important;
+	background-color: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line);
 }
 
 [data-theme="dark"] [class*="text-slate-900"],
@@ -1388,14 +1388,14 @@ button[data-tooth-state="missing"] {
 [data-theme="night"] [class*="text-slate-800"],
 [data-theme="dark"] [class*="text-slate-700"],
 [data-theme="night"] [class*="text-slate-700"] {
-	color: var(--ink) !important;
+	color: var(--ink);
 }
 
 [data-theme="dark"] [class*="text-slate-500"],
 [data-theme="night"] [class*="text-slate-500"],
 [data-theme="dark"] [class*="text-slate-400"],
 [data-theme="night"] [class*="text-slate-400"] {
-	color: var(--muted) !important;
+	color: var(--muted);
 }
 
 [data-theme="dark"] [class*="border-slate-200"],
@@ -1404,69 +1404,69 @@ button[data-tooth-state="missing"] {
 [data-theme="night"] [class*="border-slate-100"],
 [data-theme="dark"] [class*="border-slate-300"],
 [data-theme="night"] [class*="border-slate-300"] {
-	border-color: var(--line) !important;
+	border-color: var(--line);
 }
 
 /* ---------- 16. СТРУКТУРИРОВАНИЕ И ЕДИНЫЙ ДИЗАЙН КАРТОЧЕК И СЕТОК ---------- */
 .schedule-widgets-container,
 .dnt-widgets-grid {
-	display: grid !important;
+	display: grid;
 	/* min(420px, 100%): жёсткие 420px не помещаются ни на одном телефоне —
      колонка оставалась шире контейнера, и карточки обрезались справа. */
 	grid-template-columns: repeat(
 			auto-fit,
 			minmax(min(420px, 100%), 1fr)
-		) !important;
-	gap: 16px !important;
-	margin-top: 20px !important;
+		);
+	gap: 16px;
+	margin-top: 20px;
 }
 
 .panel,
 .section-card,
 [data-testid*="-widget"],
 .schedule-widgets-container > * {
-	background: var(--paper) !important;
-	border: 1px solid var(--line) !important;
-	border-radius: 14px !important;
-	padding: 20px !important;
-	box-shadow: var(--shadow-1) !important;
-	margin: 0 !important;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 20px;
+	box-shadow: var(--shadow-1);
+	margin: 0;
 }
 
 @media (max-width: 840px) {
 	.schedule-widgets-container,
 	.dnt-widgets-grid {
-		grid-template-columns: 1fr !important;
+		grid-template-columns: 1fr;
 	}
 }
 
 /* ---------- 17. БАЗОВЫЙ LAYOUT SHELL, DEMO BANNER И OMNIBAR ---------- */
 .app-shell.dente-redesign {
-	display: flex !important;
-	flex-direction: row !important;
-	min-height: 100vh !important;
-	width: 100% !important;
-	max-width: 100vw !important;
-	overflow-x: hidden !important;
-	background: var(--bg) !important;
+	display: flex;
+	flex-direction: row;
+	min-height: 100vh;
+	width: 100%;
+	max-width: 100vw;
+	overflow-x: hidden;
+	background: var(--bg);
 }
 
 .app-shell.dente-redesign .workspace {
-	flex: 1 !important;
-	min-width: 0 !important;
-	display: flex !important;
-	flex-direction: column !important;
-	overflow-y: auto !important;
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
 	/* Низ задан ОТДЕЛЬНЫМ правилом ниже и больше не входит в этот shorthand.
      Пока он входил, у `.workspace` было два конкурирующих объявления
      `padding-bottom` при равной специфичности, и победитель определялся порядком
      строк в файле — так и вышло, что на <=840px резерв проигрывал зашитому
      числу. Долгота вместо shorthand убирает саму возможность спора. */
-	padding-top: 20px !important;
-	padding-inline: 24px !important;
-	max-width: 1560px !important;
-	width: 100% !important;
-	box-sizing: border-box !important;
+	padding-top: 20px;
+	padding-inline: 24px;
+	max-width: 1560px;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 /* НИЗ КОЛОНКИ КОНТЕНТА. РЕЗЕРВА ПОД ПЛАВАЮЩИЙ УГОЛ ЗДЕСЬ БОЛЬШЕ НЕТ.
@@ -1488,41 +1488,41 @@ button[data-tooth-state="missing"] {
    shorthand, у `.workspace` было два конкурирующих `padding-bottom` при равной
    специфичности, и победитель определялся порядком строк в файле. */
 .app-shell.dente-redesign .workspace {
-	padding-bottom: 48px !important;
+	padding-bottom: 48px;
 }
 
 .default-clinic-banner {
-	background: var(--paper) !important;
-	border: 1px solid var(--warn-fg) !important;
-	border-radius: 12px !important;
-	padding: 10px 16px !important;
-	margin-bottom: 16px !important;
-	display: flex !important;
-	align-items: center !important;
-	justify-content: space-between !important;
-	gap: 12px !important;
-	color: var(--ink) !important;
-	box-shadow: var(--shadow-1) !important;
+	background: var(--paper);
+	border: 1px solid var(--warn-fg);
+	border-radius: 12px;
+	padding: 10px 16px;
+	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	color: var(--ink);
+	box-shadow: var(--shadow-1);
 }
 
 .default-clinic-banner .banner-content {
-	display: flex !important;
-	align-items: center !important;
-	gap: 10px !important;
-	font-size: 13px !important;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
 }
 
 .default-clinic-banner p {
-	margin: 0 !important;
-	color: var(--ink-2) !important;
+	margin: 0;
+	color: var(--ink-2);
 }
 
 .default-clinic-banner .banner-btn {
-	min-height: 32px !important;
-	padding: 0 14px !important;
-	font-size: 12px !important;
-	white-space: nowrap !important;
-	flex-shrink: 0 !important;
+	min-height: 32px;
+	padding: 0 14px;
+	font-size: 12px;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 /* ПЛАВАЮЩЕГО УГЛА БОЛЬШЕ НЕ СУЩЕСТВУЕТ.
@@ -1558,37 +1558,37 @@ button[data-tooth-state="missing"] {
    замеренные 64px с запасом 8px и не зависят от настроек шрифта. */
 @media (max-width: 840px) {
 	.app-shell.dente-redesign {
-		flex-direction: column !important;
+		flex-direction: column;
 	}
 	.app-shell.dente-redesign .workspace {
-		padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+		padding-bottom: calc(72px + env(safe-area-inset-bottom));
 	}
 	.dnt-bottom-nav {
-		display: flex !important;
-		position: fixed !important;
-		left: 0 !important;
-		right: 0 !important;
-		bottom: 0 !important;
-		z-index: 9999 !important;
-		background: var(--paper) !important;
-		border-top: 1px solid var(--line) !important;
-		padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) !important;
+		display: flex;
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 9999;
+		background: var(--paper);
+		border-top: 1px solid var(--line);
+		padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
 	}
 }
 
 @media (min-width: 841px) {
 	.dnt-bottom-nav {
-		display: none !important;
+		display: none;
 	}
 }
 
 /* ---------- 18. ТЕМАТИЧЕСКИЕ ПЕРЕОПРЕДЕЛЕНИЯ ДЛЯ CHIPS, SELECT И DETAILS ---------- */
 .quick-chip.active {
-	background: var(--teal-soft) !important;
-	border-color: var(--teal-ring) !important;
-	color: var(--teal-dark) !important;
-	box-shadow: 0 4px 12px var(--teal-surface) !important;
-	font-weight: 700 !important;
+	background: var(--teal-soft);
+	border-color: var(--teal-ring);
+	color: var(--teal-dark);
+	box-shadow: 0 4px 12px var(--teal-surface);
+	font-weight: 700;
 }
 
 /* Активный чип: непрозрачная подложка и явный светлый текст.
@@ -1603,9 +1603,9 @@ button[data-tooth-state="missing"] {
  * даёт контраст около 11:1, бирюзовая рамка сохраняет смысл «выбрано». */
 [data-theme="dark"] .quick-chip.active,
 [data-theme="night"] .quick-chip.active {
-	background: var(--elev) !important;
-	border-color: var(--teal) !important;
-	color: var(--teal-2) !important;
+	background: var(--elev);
+	border-color: var(--teal);
+	color: var(--teal-2);
 }
 
 /* Чипы специализации врача — тот же дефект, что у .quick-chip выше, но зашитый
@@ -1651,59 +1651,59 @@ button[data-tooth-state="missing"] {
 }
 
 select {
-	appearance: none !important;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235d746f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
-	background-repeat: no-repeat !important;
-	background-position: right 12px center !important;
-	background-size: 16px !important;
-	padding-right: 36px !important;
-	background-color: var(--paper-soft) !important;
-	border: 1px solid var(--line-strong) !important;
-	color: var(--ink) !important;
-	border-radius: 10px !important;
+	appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235d746f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 16px;
+	padding-right: 36px;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line-strong);
+	color: var(--ink);
+	border-radius: 10px;
 }
 
 details.schedule-secret-collapsible,
 details {
-	border: 1px solid var(--line) !important;
-	border-radius: 12px !important;
-	background: var(--paper-soft) !important;
-	padding: 10px 14px !important;
-	color: var(--ink) !important;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--paper-soft);
+	padding: 10px 14px;
+	color: var(--ink);
 }
 
 details summary {
-	cursor: pointer !important;
-	font-weight: 600 !important;
-	color: var(--ink) !important;
-	user-select: none !important;
+	cursor: pointer;
+	font-weight: 600;
+	color: var(--ink);
+	user-select: none;
 }
 
 details summary:hover {
-	color: var(--teal-dark) !important;
+	color: var(--teal-dark);
 }
 
 /* ---------- 19. ТЕМАТИЧЕСКИЕ И СЕТОЧНЫЕ ПРАВИЛА ДЛЯ ВСЕХ ПАНЕЛЕЙ ---------- */
 .topbar-context {
-	display: flex !important;
-	align-items: center !important;
-	gap: 14px !important;
-	flex-wrap: wrap !important;
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	flex-wrap: wrap;
 }
 
 .topbar-clinic h1 {
-	margin: 0 !important;
-	font-size: 17px !important;
-	font-weight: 700 !important;
-	color: var(--ink) !important;
+	margin: 0;
+	font-size: 17px;
+	font-weight: 700;
+	color: var(--ink);
 }
 
 .topbar-clinic .eyebrow {
-	margin: 0 0 2px 0 !important;
-	font-size: 11px !important;
-	color: var(--muted) !important;
-	text-transform: uppercase !important;
-	letter-spacing: 0.08em !important;
+	margin: 0 0 2px 0;
+	font-size: 11px;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
 }
 
 /* Принудительная нейтрализация жестких Tailwind карт и фона блоков.
@@ -1724,14 +1724,14 @@ details summary:hover {
 	[class*="bg-sky-"]:not(.primary-button):not(.secondary-button),
 [data-theme="night"]
 	[class*="bg-sky-"]:not(.primary-button):not(.secondary-button) {
-	background-color: var(--teal-surface) !important;
-	color: var(--teal) !important;
-	border-color: var(--teal-ring) !important;
+	background-color: var(--teal-surface);
+	color: var(--teal);
+	border-color: var(--teal-ring);
 }
 
 [data-theme="dark"] [class*="text-sky-"],
 [data-theme="night"] [class*="text-sky-"] {
-	color: var(--teal) !important;
+	color: var(--teal);
 }
 
 /* Единые адаптивные формы и карточки во всех видах */
@@ -1741,27 +1741,27 @@ details summary:hover {
 .settings-panel,
 .visit-panel,
 .schedule-panel {
-	background: var(--paper) !important;
-	border: 1px solid var(--line) !important;
-	border-radius: 14px !important;
-	padding: 20px !important;
-	box-shadow: var(--shadow-1) !important;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 20px;
+	box-shadow: var(--shadow-1);
 }
 
 input,
 textarea {
-	background-color: var(--paper-soft) !important;
-	border: 1px solid var(--line-strong) !important;
-	color: var(--ink) !important;
-	border-radius: 10px !important;
-	padding: 8px 12px !important;
-	font-size: 13px !important;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line-strong);
+	color: var(--ink);
+	border-radius: 10px;
+	padding: 8px 12px;
+	font-size: 13px;
 }
 
 input:focus,
 textarea:focus {
-	border-color: var(--teal) !important;
-	box-shadow: 0 0 0 3px var(--teal-surface) !important;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-surface);
 }
 
 /* ---------- 20. МОБИЛЬНЫЙ ПУСТОЙ СТЕЙТ ПАЦИЕНТА И ПОИСК ---------- */
@@ -1774,16 +1774,16 @@ textarea:focus {
      при опубликованном резерве 144px. То есть на телефоне механизм резерва не
      работал вообще, хотя высота навигации измерялась и публиковалась. */
 	.app-shell.dente-redesign .workspace {
-		padding-top: 10px !important;
-		padding-inline: 12px !important;
+		padding-top: 10px;
+		padding-inline: 12px;
 	}
 
 	/* Пациенты — принудительно одна колонка (override inline style) */
 	.patients-main-grid {
-		display: flex !important;
-		flex-direction: column !important;
-		gap: 12px !important;
-		margin-top: 12px !important;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin-top: 12px;
 	}
 
 	.patient-list {
@@ -1794,16 +1794,16 @@ textarea:focus {
 
 	/* Правая панель пациента на мобиле — полный экран */
 	.patient-admin-panel {
-		border-radius: 14px !important;
-		padding: 16px !important;
+		border-radius: 14px;
+		padding: 16px;
 	}
 
 	/* Пациент не выбран — компактный инфо-стейт */
 	.patient-admin-panel:not(:has([data-testid="patient-overview-tab"])) {
-		background: var(--paper) !important;
-		border: 1px solid var(--line) !important;
-		border-radius: 14px !important;
-		padding: 24px 20px !important;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: 14px;
+		padding: 24px 20px;
 		text-align: center;
 	}
 
@@ -1816,24 +1816,24 @@ textarea:focus {
 		align-items: center;
 		justify-content: center;
 		text-align: center;
-		padding: 32px 24px !important;
-		background: var(--paper) !important;
-		border: 1px solid var(--line) !important;
-		border-radius: 16px !important;
+		padding: 32px 24px;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: 16px;
 		box-shadow: var(--shadow-1);
-		margin: 0 !important;
+		margin: 0;
 		gap: 12px;
 	}
 
 	/* Строка поиска пациентов на мобиле */
 	.patients-search-bar,
 	.patient-search-row {
-		display: flex !important;
-		align-items: center !important;
-		gap: 8px !important;
-		padding: 8px 12px !important;
-		background: var(--paper) !important;
-		border-top: 1px solid var(--line) !important;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 12px;
+		background: var(--paper);
+		border-top: 1px solid var(--line);
 		position: sticky;
 		bottom: 60px;
 		z-index: 20;
@@ -1842,26 +1842,26 @@ textarea:focus {
 	/* Кнопка создать у поиска */
 	.patient-create-btn,
 	.patients-search-bar .primary-button {
-		background: var(--teal) !important;
-		color: var(--on-teal) !important;
-		border-radius: 10px !important;
-		padding: 6px 14px !important;
-		font-size: 12px !important;
-		font-weight: 700 !important;
+		background: var(--teal);
+		color: var(--on-teal);
+		border-radius: 10px;
+		padding: 6px 14px;
+		font-size: 12px;
+		font-weight: 700;
 		white-space: nowrap;
 		flex-shrink: 0;
-		border: none !important;
+		border: none;
 	}
 
 	/* Demo/onboarding banner на мобиле — компактнее */
 	.default-clinic-banner {
-		padding: 8px 12px !important;
-		border-radius: 10px !important;
-		font-size: 12px !important;
+		padding: 8px 12px;
+		border-radius: 10px;
+		font-size: 12px;
 	}
 
 	.default-clinic-banner p {
-		font-size: 11px !important;
+		font-size: 11px;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
@@ -1871,20 +1871,20 @@ textarea:focus {
 	/* Грид шифта и пилюли на мобиле — одна колонка */
 	.shift-hero,
 	.dnt-hero {
-		grid-template-columns: 1fr !important;
-		gap: 10px !important;
+		grid-template-columns: 1fr;
+		gap: 10px;
 	}
 
 	.shift-queues,
 	.dnt-queues {
-		grid-template-columns: 1fr 1fr !important;
-		gap: 8px !important;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
 	}
 
 	.shift-cockpit,
 	.dnt-cockpit {
-		grid-template-columns: 1fr !important;
-		gap: 10px !important;
+		grid-template-columns: 1fr;
+		gap: 10px;
 	}
 }
 
@@ -2060,11 +2060,11 @@ textarea:focus {
 
 /* today-schedule-item полная раскладка (override всё) */
 .today-schedule-item {
-	display: flex !important;
-	justify-content: space-between !important;
-	align-items: flex-start !important;
-	gap: 10px !important;
-	padding: 11px 13px !important;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 11px 13px;
 	cursor: pointer;
 }
 .today-schedule-item-info {
@@ -2141,8 +2141,8 @@ textarea:focus {
 .secondary-button:focus-visible,
 .feature-tile:focus-visible,
 button:focus-visible {
-	outline: 2px solid var(--teal) !important;
-	outline-offset: 2px !important;
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
 }
 
 /* patient-row hover */
@@ -2153,12 +2153,12 @@ button:focus-visible {
 		box-shadow var(--transition-fast);
 }
 .patient-row:hover {
-	border-color: var(--teal-ring) !important;
+	border-color: var(--teal-ring);
 	box-shadow: var(--shadow-1);
 }
 .patient-row.selected {
-	border-color: var(--teal) !important;
-	background: var(--teal-surface) !important;
+	border-color: var(--teal);
+	background: var(--teal-surface);
 }
 
 /* hero call guidance */
@@ -2192,35 +2192,35 @@ button:focus-visible {
 
 /* ---------- 22. ДОКУМЕНТЫ — КЛАССЫ ДЛЯ DOCUMENT OVERRIDE БЛОКОВ ---------- */
 .document-manual-override {
-	background: var(--paper-soft) !important;
-	padding: 12px 16px !important;
-	border-radius: 10px !important;
-	border: 1px solid var(--line) !important;
-	margin-top: 12px !important;
+	background: var(--paper-soft);
+	padding: 12px 16px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	margin-top: 12px;
 }
 
 .document-manual-override > summary {
-	cursor: pointer !important;
-	font-weight: 600 !important;
-	color: var(--teal-dark) !important;
-	user-select: none !important;
+	cursor: pointer;
+	font-weight: 600;
+	color: var(--teal-dark);
+	user-select: none;
 }
 
 [data-theme="dark"] .document-manual-override > summary,
 [data-theme="night"] .document-manual-override > summary {
-	color: var(--teal) !important;
+	color: var(--teal);
 }
 
 .document-payload-collapsed-content {
-	margin-top: 16px !important;
-	display: flex !important;
-	flex-direction: column !important;
-	gap: 10px !important;
+	margin-top: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 }
 
 .quick-chips-row {
-	display: flex !important;
-	gap: 6px !important;
-	flex-wrap: wrap !important;
-	margin-top: 6px !important;
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-top: 6px;
 }

@@ -74,7 +74,7 @@ function renderPage(
 ): string {
 	const accent =
 		tone === "ok" ? "#0f766e" : tone === "warn" ? "#b45309" : "#b91c1c";
-	const escape = (value: string) =>
+	const escapeHtml = (value: string) =>
 		value
 			.replace(/&/g, "&amp;")
 			.replace(/</g, "&lt;")
@@ -87,7 +87,7 @@ function renderPage(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>${escape(title)}</title>
+<title>${escapeHtml(title)}</title>
 <style>
   body { margin: 0; padding: 32px 20px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
          background: #f8fafc; color: #0f172a; line-height: 1.5; }
@@ -97,7 +97,7 @@ function renderPage(
   p { margin: 0; font-size: 16px; }
 </style>
 </head>
-<body><main><h1>${escape(title)}</h1><p>${escape(message)}</p></main></body>
+<body><main><h1>${escapeHtml(title)}</h1><p>${escapeHtml(message)}</p></main></body>
 </html>`;
 }
 

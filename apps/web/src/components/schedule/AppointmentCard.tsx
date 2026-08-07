@@ -121,9 +121,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 				<p style={{ display: "none" }}>{appointment.reason}</p>
 				<article
 					data-testid="appointment-card"
-					role="article"
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
-					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm ${readiness ? "readiness-" + readiness.state : ""}`}
+					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm ${readiness ? `readiness-${readiness.state}` : ""}`}
 					style={{
 						display: "flex",
 						flexDirection: "column",
@@ -168,6 +167,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							{appointmentSuggestions.map((suggestion) => (
 								<span
 									key={suggestion.id}
+									role="button"
+									tabIndex={0}
 									className={`chip chip-suggestion priority-${suggestion.priority} cursor-pointer px-2 py-0.5 rounded border text-xs font-semibold ${
 										suggestion.priority === "urgent"
 											? "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800"
@@ -176,6 +177,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									onClick={(e) => {
 										e.stopPropagation();
 										openScheduleSuggestion(suggestion.section);
+									}}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" || e.key === " ") {
+											e.stopPropagation();
+											e.preventDefault();
+											openScheduleSuggestion(suggestion.section);
+										}
 									}}
 									title={suggestion.detail}
 								>

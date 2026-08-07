@@ -70,7 +70,7 @@ function defaultPasteLocalValue(): string {
 
 /** Convert datetime-local string to ISO with timezone offset. */
 function localValueToIso(localValue: string): string | null {
-	if (!localValue || !localValue.trim()) return null;
+	if (!localValue?.trim()) return null;
 	const parsed = new Date(localValue);
 	if (Number.isNaN(parsed.getTime())) return null;
 	return parsed.toISOString();
@@ -164,7 +164,7 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 
 	useEffect(() => {
 		void load();
-	}, [load, reloadToken]);
+	}, [load]);
 
 	const clearItem = async (item: ClipboardItem) => {
 		setBusyId(item.id);
@@ -261,6 +261,8 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 		>
 			<div
 				className="panel-heading"
+				role="button"
+				tabIndex={0}
 				style={{
 					cursor: "pointer",
 					display: "flex",
@@ -268,6 +270,12 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 					alignItems: "center",
 				}}
 				onClick={() => setIsCollapsed(!isCollapsed)}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						setIsCollapsed(!isCollapsed);
+					}
+				}}
 			>
 				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 					<h2 style={{ margin: 0 }}>Буфер расписания</h2>

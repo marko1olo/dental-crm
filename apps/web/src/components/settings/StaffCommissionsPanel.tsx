@@ -110,7 +110,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 					.clinicSettings
 			: undefined;
 	const staff: StaffMemberLite[] = Array.isArray(clinicSettings?.staff)
-		? clinicSettings!.staff!
+		? clinicSettings?.staff
 		: [];
 
 	const staffNameById = useMemo(() => {

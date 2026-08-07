@@ -1,4 +1,4 @@
-import { containsAnyFuzzyRoot, textToNumbers } from "./stringUtils";
+import { textToNumbers } from "./stringUtils";
 
 export interface ParsedPatientData {
 	fullName: string;
@@ -58,13 +58,13 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
 	normalizedInput = normalizedInput.replace(/\s+@\s+/g, "@");
 	normalizedInput = normalizedInput.replace(/\s+\.\s+/g, ".");
 
-	let remaining = " " + normalizedInput + " ";
+	let remaining = ` ${normalizedInput} `;
 
 	// 0. Notes & Tags extraction
 	const notesMatch = remaining.match(
 		/(?:^|[^а-яёa-z0-9])(заметка|примечание|комментарий|важно|пометка|жалоба|жалобы)\s*[:-]?\s*(.*)/i,
 	);
-	if (notesMatch && notesMatch[2]) {
+	if (notesMatch?.[2]) {
 		result.notes = notesMatch[2].trim();
 		remaining = remaining.substring(0, notesMatch.index);
 	}
@@ -109,7 +109,7 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
 
 	for (const t of tagRegexes) {
 		const match = remaining.match(t.regex);
-		if (match && match[1]) {
+		if (match?.[1]) {
 			medicalTags.push(
 				t.tag ||
 					match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase(),
@@ -127,7 +127,7 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
 	const emailRegex =
 		/(?:^|[^a-z0-9._%+-])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})(?:[^a-z0-9._%+-]|$)/i;
 	const emailMatch = remaining.match(emailRegex);
-	if (emailMatch && emailMatch[1]) {
+	if (emailMatch?.[1]) {
 		result.email = emailMatch[1].trim();
 		remaining = remaining.replace(emailMatch[1], " ");
 	}
@@ -136,14 +136,14 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
 	const phoneRegex =
 		/((?:\+7|8|7)?[\s\-()]*[98][\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d(?:[^0-9]|$))/i;
 	const phoneMatch = remaining.match(phoneRegex);
-	if (phoneMatch && phoneMatch[1]) {
+	if (phoneMatch?.[1]) {
 		const raw = phoneMatch[1];
 		let cleaned = raw.replace(/\D/g, "");
-		if (cleaned.length === 10) cleaned = "7" + cleaned;
+		if (cleaned.length === 10) cleaned = `7${cleaned}`;
 		if (cleaned.length === 11 && cleaned.startsWith("8"))
-			cleaned = "7" + cleaned.slice(1);
+			cleaned = `7${cleaned.slice(1)}`;
 		if (cleaned.length === 11) {
-			result.phone = "+" + cleaned;
+			result.phone = `+${cleaned}`;
 			remaining = remaining.replace(raw, " ");
 		}
 	}
@@ -152,7 +152,7 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
 	const dobRegexNum =
 		/(?:^|[^0-9])(\d{1,2})[./\-\s]+(?:0\s+)?(\d{1,2})[./\-\s]+(?:0\s+)?(\d{2,4})(?:[^0-9]|$)/;
 	const dobMatchNum = remaining.match(dobRegexNum);
-	if (dobMatchNum && dobMatchNum[1] && dobMatchNum[2] && dobMatchNum[3]) {
+	if (dobMatchNum?.[1] && dobMatchNum[2] && dobMatchNum[3]) {
 		const day = dobMatchNum[1];
 		const month = dobMatchNum[2];
 		let year = dobMatchNum[3];
@@ -214,7 +214,7 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
 			const w2 = wordsTokens[i + 1] || "";
 
 			const dayNum = parseInt(w1, 10);
-			if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= 31) {
+			if (!Number.isNaN(dayNum) && dayNum >= 1 && dayNum <= 31) {
 				let matchedMonth = -1;
 				for (const root of monthRoots) {
 					if (w2.toLowerCase().startsWith(root.substring(0, 3))) {

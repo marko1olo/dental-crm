@@ -113,7 +113,7 @@ export function FinancePlanningOverview({
         дефект. Разница именно в этом знаке, и охрана (tests/moneyUnknownNotZero)
         ловит только нулевой вариант.
       */}
-			<div
+			<section
 				className="finance-summary-grid bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3 mb-4"
 				aria-label="Финансовая сводка"
 				data-testid="finance-planning"
@@ -159,7 +159,7 @@ export function FinancePlanningOverview({
 					</strong>
 					<p>медицинские услуги, пригодные для справки</p>
 				</article>
-			</div>
+			</section>
 
 			<section className="plan-scenarios" aria-label="Варианты плана лечения">
 				<div
@@ -273,7 +273,7 @@ export function ServiceCatalogStrip({
 	const visibleServices = (services ?? []).slice(0, 6);
 
 	return (
-		<div className="service-catalog-strip" aria-label="Каталог услуг">
+		<section className="service-catalog-strip" aria-label="Каталог услуг">
 			{visibleServices.length ? (
 				visibleServices.map((service) => (
 					<article key={service.id}>
@@ -297,6 +297,6 @@ export function ServiceCatalogStrip({
 					</button>
 				</article>
 			)}
-		</div>
+		</section>
 	);
 }

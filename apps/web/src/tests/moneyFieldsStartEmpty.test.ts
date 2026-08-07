@@ -34,7 +34,7 @@ function initialValueOf(source: string, field: string): string | null {
 		"m",
 	).exec(source);
 	if (!match) return null;
-	return match[1]!.trim();
+	return match[1]?.trim() ?? null;
 }
 
 describe("денежные и импортные поля начинаются пустыми", () => {

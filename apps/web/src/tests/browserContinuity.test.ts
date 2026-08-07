@@ -172,7 +172,7 @@ describe("browserIndexedDbWritable", () => {
 	test("returns false when indexedDB open triggers onerror", async () => {
 		global.window = {
 			indexedDB: {
-				open: (name: string, version: number) => {
+				open: (_name: string, _version: number) => {
 					const request: any = {};
 					setTimeout(() => {
 						if (request.onerror) {
@@ -191,7 +191,7 @@ describe("browserIndexedDbWritable", () => {
 	test("returns true when indexedDB operations succeed", async () => {
 		global.window = {
 			indexedDB: {
-				open: (name: string, version: number) => {
+				open: (_name: string, _version: number) => {
 					const request: any = {};
 					setTimeout(() => {
 						if (request.onsuccess) {
@@ -203,7 +203,7 @@ describe("browserIndexedDbWritable", () => {
 					}, 0);
 					return request;
 				},
-				deleteDatabase: (name: string) => {},
+				deleteDatabase: (_name: string) => {},
 			},
 		} as any;
 

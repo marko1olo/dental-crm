@@ -99,7 +99,7 @@ export async function browserIndexedDbWritable(): Promise<boolean> {
 		idb.close();
 		window.indexedDB.deleteDatabase("test-dente-db-support");
 		idbWorks = true;
-	} catch (e) {
+	} catch (_e) {
 		idbWorks = false;
 	}
 	return idbWorks;

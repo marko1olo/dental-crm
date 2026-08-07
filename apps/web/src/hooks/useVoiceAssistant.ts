@@ -86,7 +86,7 @@ function looksLikeSpeechGatewayStatus(
 }
 
 export function useVoiceAssistant(
-	context: "visit" | "schedule" | "general" = "visit",
+	_context: "visit" | "schedule" | "general" = "visit",
 	options?: UseVoiceAssistantOptions,
 ): UseVoiceAssistantReturn {
 	const [isListening, setIsListening] = useState(false);
@@ -329,7 +329,7 @@ export function useVoiceAssistant(
 				const audioBase64 = await base64Promise;
 
 				const input: SpeechChunkUploadInput = {
-					recordingId: "assistant_" + Date.now(),
+					recordingId: `assistant_${Date.now()}`,
 					chunkIndex: 0,
 					mimeType: audioBlob.type || "audio/webm",
 					audioBase64,
@@ -433,7 +433,7 @@ export function useVoiceAssistant(
 				playBeep("error");
 			}
 		},
-		[dashboard, handleCommand, playBeep],
+		[dashboard, handleCommand, playBeep, clinicalAdminSecretSession.trim],
 	);
 
 	const startBrowserNative = useCallback(async () => {

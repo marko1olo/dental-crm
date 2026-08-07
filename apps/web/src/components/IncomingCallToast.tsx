@@ -1,13 +1,12 @@
 import {
 	AlertTriangle,
 	BookOpen,
-	CheckSquare,
 	PhoneIncoming,
 	ShieldAlert,
 	User,
 	X,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useWebsocket } from "../hooks/useWebsocket";
 import { useAppStore } from "../store/appStore";
@@ -176,7 +175,7 @@ export function IncomingCallToast() {
 							setCurrentView("patients");
 							setIncomingCall(null);
 							showToast(
-								"Добавьте нового пациента с номером " + incomingCall.phone,
+								`Добавьте нового пациента с номером ${incomingCall.phone}`,
 								"info",
 							);
 						}}

@@ -262,14 +262,14 @@ function lazyNamedTarget(
 	call: Node,
 ): { source: string; exported: string } | null {
 	const callee = call.callee as Node | undefined;
-	if (!callee || callee.type !== "MemberExpression") return null;
+	if (callee?.type !== "MemberExpression") return null;
 	const property = callee.property as Node | undefined;
-	if (!property || property.type !== "Identifier" || property.name !== "then")
+	if (property?.type !== "Identifier" || property.name !== "then")
 		return null;
 	const inner = callee.object as Node | undefined;
-	if (!inner || inner.type !== "CallExpression") return null;
+	if (inner?.type !== "CallExpression") return null;
 	const innerCallee = inner.callee as Node | undefined;
-	if (!innerCallee || innerCallee.type !== "Import") return null;
+	if (innerCallee?.type !== "Import") return null;
 	const source = stringLiteralValue((inner.arguments as unknown[])?.[0]);
 	if (!source) return null;
 

@@ -11,11 +11,8 @@ import {
 	X,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
 import { money } from "../AppHelpers";
-import { showToast } from "./GlobalToast";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
-import type { InventoryItem } from "./inventory/useInventoryLogic";
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
 
 /**
@@ -1184,7 +1181,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														})()
 													) : item.lotNumber ? (
 														<span style={{ fontSize: 12 }}>
-															Партия: {item.lotNumber}
+																			Партия: {item.lotNumber}
 														</span>
 													) : (
 														<span style={{ fontStyle: "italic", opacity: 0.5 }}>
@@ -1331,20 +1328,20 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 
 			{/* ADD/EDIT MODAL */}
 			{showModal && (
-				<div
+				<button
+					type="button"
 					style={{
 						position: "fixed",
 						inset: 0,
 						zIndex: 1000,
 						background: "rgba(0,0,0,0.5)",
-						backdropFilter: "blur(4px)",
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
+						border: "none",
+						padding: 0,
 					}}
 					onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
-					role="button"
-					tabIndex={0}
 					onKeyDown={(e) =>
 						e.target === e.currentTarget &&
 						(e.key === "Enter" || e.key === " ") &&
@@ -1361,6 +1358,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							border: `1px solid ${borderColor}`,
 							boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
 						}}
+						onClick={(e) => e.stopPropagation()}
 					>
 						<div
 							style={{
@@ -1605,12 +1603,13 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							</button>
 						</form>
 					</div>
-				</div>
+				</button>
 			)}
 
 			{/* ADJUST STOCK MODAL */}
 			{adjustingItem && (
-				<div
+				<button
+					type="button"
 					style={{
 						position: "fixed",
 						inset: 0,
@@ -1620,12 +1619,12 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
+						border: "none",
+						padding: 0,
 					}}
 					onClick={(e) =>
 						e.target === e.currentTarget && setAdjustingItem(null)
 					}
-					role="button"
-					tabIndex={0}
 					onKeyDown={(e) =>
 						e.target === e.currentTarget &&
 						(e.key === "Enter" || e.key === " ") &&
@@ -1856,7 +1855,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							</button>
 						</form>
 					</div>
-				</div>
+				</button>
 			)}
 
 			{/*

@@ -69,7 +69,7 @@ export function useStaffSettingsLogic({
 				return;
 			}
 			await loadDashboard();
-		} catch (error) {
+		} catch (_error) {
 			setError("Сетевая ошибка при добавлении сотрудника");
 		}
 	}

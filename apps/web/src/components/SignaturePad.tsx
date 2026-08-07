@@ -131,10 +131,11 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 		canvas: HTMLCanvasElement,
 	) => {
 		const rect = canvas.getBoundingClientRect();
-		if ("touches" in e && e.touches.length > 0) {
+		if ("touches" in e && e.touches.length > 0 && e.touches[0]) {
+			const touch = e.touches[0];
 			return {
-				x: e.touches[0]!.clientX - rect.left,
-				y: e.touches[0]!.clientY - rect.top,
+				x: touch.clientX - rect.left,
+				y: touch.clientY - rect.top,
 			};
 		}
 		return {
@@ -198,6 +199,7 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 						onMouseMove={draw}
 						onMouseUp={stopDrawing}
 						onMouseOut={stopDrawing}
+						onBlur={stopDrawing}
 						onTouchStart={startDrawing}
 						onTouchMove={draw}
 						onTouchEnd={stopDrawing}

@@ -511,7 +511,7 @@ export function CommunicationsView({
         пустому списку ниже. Показываем сводку, когда есть о чём сводить.
       */}
 			{communicationSummaryHasNumbers ? (
-				<div className="communications-summary-grid" aria-label="Сводка связи">
+				<div className="communications-summary-grid" role="region" aria-label="Сводка связи">
 					<article
 						className={
 							dashboard?.communicationSummary?.urgentTasks

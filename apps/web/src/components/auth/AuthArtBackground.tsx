@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage";
 import {
 	type AuthArtItem,

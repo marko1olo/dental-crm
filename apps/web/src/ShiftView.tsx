@@ -103,7 +103,7 @@ export function ShiftView({
 	 */
 	const visitPatient = useMemo(() => {
 		const visit = dashboard?.activeVisit;
-		if (!visit || !visit.id || visit.id === NIL_UUID) return null;
+		if (!visit?.id || visit.id === NIL_UUID) return null;
 		if (!visit.patientId || visit.patientId === NIL_UUID) return null;
 		if (visit.status !== "draft") return null;
 		return patientsById.get(visit.patientId) ?? null;
@@ -1057,8 +1057,7 @@ export function PatientCockpit({
 	}
 
 	return (
-		<>
-			<section
+		<section
 				className="patient-cockpit dnt-cockpit"
 				aria-label="Карточка пациента"
 			>
@@ -1446,6 +1445,5 @@ export function PatientCockpit({
 					</button>
 				</div>
 			</section>
-		</>
 	);
 }

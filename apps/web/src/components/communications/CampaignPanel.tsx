@@ -187,7 +187,7 @@ export function CampaignPanel() {
 	 * должна падать в изолированном показе из-за отсутствующей функции.
 	 */
 	const appLogic = useAppLogicContext();
-	const auth = appLogic?.auth;
+	const _auth = appLogic?.auth;
 
 	const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
 	const [templates, setTemplates] = useState<TemplateOption[]>([]);
@@ -248,7 +248,7 @@ export function CampaignPanel() {
 		// `auth` в зависимостях: секрет живёт в сеансе и появляется после разблокировки
 		// раздела. Без него панель навсегда осталась бы с заголовками того первого
 		// отрисовывания, когда секрета ещё не было, — то есть с 403 до перезагрузки страницы.
-	}, [auth]);
+	}, [commQueries.getCampaigns, commQueries.getCampaignsVariables, commQueries.getCampaignsTemplates]);
 
 	useEffect(() => {
 		void load();
@@ -352,7 +352,7 @@ export function CampaignPanel() {
 				setProgressLoading(false);
 			}
 		},
-		[auth],
+		[commQueries.getCampaignProgress],
 	);
 
 	// Пока рассылка «Выполняется» и открыт её ход — опрашивать, иначе цифры
@@ -360,7 +360,7 @@ export function CampaignPanel() {
 	useEffect(() => {
 		if (!progressFor) return;
 		const row = campaigns.find((c) => c.id === progressFor);
-		if (!row || row.status !== "running") return;
+		if (row?.status !== "running") return;
 		const timer = window.setInterval(() => {
 			void loadProgress(progressFor);
 		}, 8000);

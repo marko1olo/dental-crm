@@ -3,7 +3,7 @@
  * Вызывает работающий роут Fastify: GET /api/analytics/lost-patients-filters
  */
 
-import { AlertTriangle, Calendar, Phone, RefreshCw, UserX } from "lucide-react";
+import { AlertTriangle, Phone, RefreshCw, UserX } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -54,7 +54,7 @@ export const LostPatientsPanel: React.FC = () => {
 
 	useEffect(() => {
 		fetchLostPatients();
-	}, []);
+	}, [fetchLostPatients]);
 
 	const handleOpenPatientCard = (patientId: string) => {
 		setSelectedPatientId?.(patientId);

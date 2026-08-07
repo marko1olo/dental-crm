@@ -31,7 +31,7 @@ export async function checkRutokenPlugin(): Promise<boolean> {
 		}
 
 		// Basic check if the script is loaded
-		if (window.rutoken && window.rutoken.ready) {
+		if (window.rutoken?.ready) {
 			await window.rutoken.ready;
 			const isExtensionInstalled = await window.rutoken.isExtensionInstalled();
 			if (!isExtensionInstalled) return false;
@@ -160,12 +160,12 @@ export async function signDataWithRutoken(
 		console.error("Rutoken signing error:", error);
 		try {
 			await plugin.logout(deviceId);
-		} catch (e) {
+		} catch (_e) {
 			// ignore logout errors on failure
 		}
 
 		// Common error codes mapped to user-friendly messages
-		if (error.message && error.message.includes("PIN")) {
+		if (error.message?.includes("PIN")) {
 			throw new Error("Неверный PIN-код устройства.");
 		}
 
@@ -176,7 +176,7 @@ export async function signDataWithRutoken(
 // Helpers
 function parseCommonName(dnInfo: string): string {
 	const match = dnInfo.match(/CN=(.*?)(?:,|$)/);
-	return match && match[1] ? match[1].trim() : dnInfo;
+	return match?.[1] ? match[1].trim() : dnInfo;
 }
 
 function hexToBase64(hexstring: string): string {

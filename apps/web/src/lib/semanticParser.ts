@@ -63,7 +63,7 @@ export function parseDictation(text: string): ParsedDictation {
 		hasMedicalTerms: false,
 	};
 
-	const lowerText = text.toLowerCase();
+	const _lowerText = text.toLowerCase();
 
 	// Find teeth
 	const teeth = text.match(toothRegex);

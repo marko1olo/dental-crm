@@ -129,7 +129,7 @@ export function ClinicalRulePanel({
 		setLiveAt(null);
 		setEvaluateError(null);
 		setEvaluateNotice(null);
-	}, [patientId]);
+	}, []);
 
 	const displayEvaluations = liveEvaluations ?? evaluations;
 	const displaySummary = liveSummary ?? summary ?? EMPTY_SUMMARY;
@@ -268,7 +268,7 @@ export function ClinicalRulePanel({
 				}
 
 				const nextEvaluations = Array.isArray(body?.evaluations)
-					? (body!.evaluations as ClinicalRuleEvaluation[])
+					? (body?.evaluations as ClinicalRuleEvaluation[])
 					: [];
 				const nextSummary =
 					body?.summary && typeof body.summary === "object"
@@ -292,7 +292,7 @@ export function ClinicalRulePanel({
 				setEvaluating(false);
 			}
 		},
-		[auth, dashboard, patientId],
+		[auth, dashboard, patientId, failureText],
 	);
 
 	const liveControls = patientId ? (

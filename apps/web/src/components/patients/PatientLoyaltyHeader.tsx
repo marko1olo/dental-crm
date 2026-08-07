@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Crown, Loader2 } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 
@@ -87,7 +87,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 
 			showToast("Статус лояльности обновлен", "success");
 			await loadDashboard();
-		} catch (err) {
+		} catch (_err) {
 			showToast("Ошибка при сохранении", "error");
 		} finally {
 			setSaving(false);
@@ -187,8 +187,15 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 				{isOpen && (
 					<>
 						<div
+							role="button"
+							tabIndex={-1}
 							style={{ position: "fixed", inset: 0, zIndex: 99 }}
 							onClick={() => setIsOpen(false)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									setIsOpen(false);
+								}
+							}}
 						/>
 						<motion.div
 							initial={{ opacity: 0, y: 5, scale: 0.95 }}

@@ -62,7 +62,7 @@ export function usePatientResource<T>(
 	const [isLoading, setIsLoading] = useState<boolean>(Boolean(patientId));
 	const [error, setError] = useState<string | null>(null);
 	const [failureStatus, setFailureStatus] = useState<number | null>(null);
-	const [reloadToken, setReloadToken] = useState(0);
+	const [_reloadToken, setReloadToken] = useState(0);
 
 	// Функции приходят новыми на каждом рендере. Держим их в ref, иначе
 	// эффект перезапускался бы постоянно и бомбил бы API.
@@ -128,7 +128,7 @@ export function usePatientResource<T>(
 			cancelled = true;
 			controller.abort();
 		};
-	}, [patientId, reloadToken]);
+	}, [patientId]);
 
 	const reload = useCallback(() => setReloadToken((token) => token + 1), []);
 

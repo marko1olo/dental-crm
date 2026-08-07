@@ -37,7 +37,7 @@ export function useCountUp(endValue: number, duration: number = 1000) {
 		animationFrameId = requestAnimationFrame(step);
 
 		return () => cancelAnimationFrame(animationFrameId);
-	}, [endValue, duration]);
+	}, [endValue, duration, value]);
 
 	return value;
 }

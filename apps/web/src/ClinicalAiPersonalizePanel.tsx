@@ -400,8 +400,8 @@ function ListBlock({
 		<div className="ops-block" style={{ marginTop: "0.75rem" }}>
 			<strong>{title}</strong>
 			<ul style={{ margin: "0.35rem 0 0", paddingLeft: "1.2rem" }}>
-				{items.map((item, idx) => (
-					<li key={`${title}-${idx}`}>{item}</li>
+				{items.map((item) => (
+					<li key={item}>{item}</li>
 				))}
 			</ul>
 		</div>
@@ -413,11 +413,11 @@ function MarkdownishText({ text }: { text: string }) {
 	const parts = text.split(/(\*\*[^*]+\*\*)/g);
 	return (
 		<div style={{ whiteSpace: "pre-wrap", lineHeight: 1.45 }}>
-			{parts.map((part, partIndex) => {
+			{parts.map((part) => {
 				if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
-					return <strong key={`part-bold-${partIndex}-${part.slice(0, 10)}`}>{part.slice(2, -2)}</strong>;
+					return <strong key={`bold-${part}`}>{part.slice(2, -2)}</strong>;
 				}
-				return <span key={`part-text-${partIndex}-${part.slice(0, 10)}`}>{part}</span>;
+				return <span key={`text-${part}`}>{part}</span>;
 			})}
 		</div>
 	);

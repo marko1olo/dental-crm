@@ -411,6 +411,7 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 											<td
 												style={{ padding: "8px 6px" }}
 												onClick={(e) => e.stopPropagation()}
+												onKeyDown={(e) => e.stopPropagation()}
 											>
 												<button
 													type="button"

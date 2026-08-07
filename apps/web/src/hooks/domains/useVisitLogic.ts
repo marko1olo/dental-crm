@@ -2,7 +2,6 @@ import {
 	type AcceptVisitDraftResponse,
 	buildRuleBasedVisitDraftFromTranscript,
 	type DentalSpecialty,
-	LocalBridgeReadinessResponse,
 	normalizeDentalSpeechTranscript,
 	type SpeechChunkUploadInput,
 	type SpeechGatewayHealthReport,
@@ -17,7 +16,7 @@ import {
 	type VisitFlowResult,
 	type VisitNoteDraft,
 } from "@dental/shared";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import {
 	acceptedVisitSaveFailureIsRetryable,
 	appendSpeechTextWithoutDuplicateTail,
@@ -790,8 +789,7 @@ export function useVisitLogic({
 						.trim();
 					if (
 						!normalizedAssembled ||
-						(normalizedCurrent &&
-							normalizedCurrent.includes(normalizedAssembled))
+						(normalizedCurrent?.includes(normalizedAssembled))
 					)
 						return safeCurrent;
 					return [safeCurrent.trim(), assembledTranscript]
@@ -1404,7 +1402,7 @@ export function useVisitLogic({
 
 	function requestSpeechChunk(reason: "silence" | "max_time" | "manual") {
 		const recorder = mediaRecorderRef.current;
-		if (!recorder || recorder.state !== "recording") return;
+		if (recorder?.state !== "recording") return;
 		try {
 			const now = Date.now();
 			const durationMs = Math.max(

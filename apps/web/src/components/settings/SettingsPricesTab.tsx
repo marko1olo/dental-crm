@@ -3,7 +3,6 @@ import {
 	Bot,
 	CheckCircle2,
 	ChevronDown,
-	ChevronUp,
 	Database,
 	Edit3,
 	FileJson,
@@ -142,6 +141,7 @@ export function SettingsPricesTab() {
 	const [priceRubInput, setPriceRubInput] = useState("");
 	const [priceProblem, setPriceProblem] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
+	const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
 
 	const [isImporting, setIsImporting] = useState(false);
 	const [importResult, setImportResult] = useState<{
@@ -339,6 +339,7 @@ export function SettingsPricesTab() {
 	};
 
 	const handleDeleteService = async (id: string) => {
+		if (deletingServiceId === id) return;
 		if (
 			!window.confirm(
 				"Удалить услугу из каталога? (Связанные счета сохранятся, но услуга уйдет в архив)",
@@ -346,10 +347,13 @@ export function SettingsPricesTab() {
 		)
 			return;
 		if (!deleteServiceCatalogItem) return;
+		setDeletingServiceId(id);
 		try {
 			await deleteServiceCatalogItem(id);
 		} catch (error: any) {
 			mergedProps.setError?.(error.message || "Ошибка удаления");
+		} finally {
+			setDeletingServiceId(null);
 		}
 	};
 
@@ -510,6 +514,8 @@ export function SettingsPricesTab() {
 												<button
 													type="button"
 													className="icon-button danger"
+													disabled={deletingServiceId === item.id}
+													aria-busy={deletingServiceId === item.id}
 													onClick={() => handleDeleteService(item.id)}
 												>
 													<Trash2 size={16} />
@@ -591,7 +597,7 @@ export function SettingsPricesTab() {
 											type="file"
 											accept="image/png, image/jpeg, image/webp"
 											onChange={(e) => {
-												if (e.target.files && e.target.files[0]) {
+												if (e.target.files?.[0]) {
 													attachPricelistImage(e.target.files[0]);
 												}
 											}}
@@ -639,7 +645,7 @@ export function SettingsPricesTab() {
 									<PriceDictationBar
 										onPriceParsed={(srv, pr) =>
 											setPricelistText(
-												(prev: string) => prev + "\n" + srv + " " + pr + " руб",
+												(prev: string) => `${prev}\n${srv} ${pr} руб`,
 											)
 										}
 									/>
@@ -862,8 +868,18 @@ export function SettingsPricesTab() {
 			{editServiceId && (
 				<div
 					className="premium-modal-overlay"
+					role="button"
+					tabIndex={-1}
 					onClick={(e) => {
 						if (e.target === e.currentTarget) setEditServiceId(null);
+					}}
+					onKeyDown={(e) => {
+						if (
+							e.target === e.currentTarget &&
+							(e.key === "Enter" || e.key === " ")
+						) {
+							setEditServiceId(null);
+						}
 					}}
 				>
 					<div className="premium-modal-content" style={{ maxWidth: "500px" }}>
@@ -998,7 +1014,9 @@ export function SettingsPricesTab() {
 									</select>
 								</div>
 								<div className="staff-form-group">
-									<label htmlFor="service-specialty-select">Специализация врача</label>
+									<label htmlFor="service-specialty-select">
+										Специализация врача
+									</label>
 									<select
 										id="service-specialty-select"
 										value={editServiceForm.specialty}
@@ -1020,14 +1038,16 @@ export function SettingsPricesTab() {
 
 							<div className="staff-form-grid">
 								<div className="staff-form-group">
-									<label htmlFor="service-duration-select">Длительность (мин)</label>
+									<label htmlFor="service-duration-select">
+										Длительность (мин)
+									</label>
 									<select
 										id="service-duration-select"
 										value={editServiceForm.durationMinutes}
 										onChange={(e) =>
 											setEditServiceForm({
 												...editServiceForm,
-												durationMinutes: parseInt(e.target.value),
+												durationMinutes: parseInt(e.target.value, 10),
 											})
 										}
 									>
@@ -1083,6 +1103,7 @@ export function SettingsPricesTab() {
 									type="submit"
 									className="primary-button"
 									disabled={isSaving}
+									aria-busy={isSaving}
 								>
 									{isSaving ? "Сохранение..." : "Сохранить"}
 								</button>

@@ -241,8 +241,7 @@ export function SourcesDicomCapability() {
 	const typedDicomRenderCachePlan = mergedProps.dicomRenderCachePlan as any;
 
 	return (
-		<>
-			<section
+		<section
 				className="dicom-capability-panel"
 				aria-label="Рентген и КТ-просмотрщик"
 			>
@@ -1711,6 +1710,5 @@ export function SourcesDicomCapability() {
 					</div>
 				</div>
 			</section>
-		</>
 	);
 }

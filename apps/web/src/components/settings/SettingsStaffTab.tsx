@@ -1,7 +1,5 @@
 import type { StaffRole } from "@dental/shared";
 import {
-	AlertTriangle,
-	Edit2,
 	KeyRound,
 	Phone,
 	ShieldCheck,

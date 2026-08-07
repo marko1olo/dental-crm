@@ -68,7 +68,7 @@ const EXTRACT_DIAGNOSIS_CHIPS = [
 	"Гингивит",
 	"Норма",
 ];
-const EXTRACT_TREATMENT_CHIPS = [
+const _EXTRACT_TREATMENT_CHIPS = [
 	"Препарирование",
 	"Пломбирование",
 	"Экстирпация пульпы",
@@ -76,14 +76,14 @@ const EXTRACT_TREATMENT_CHIPS = [
 	"Профессиональная гигиена",
 	"Консультация",
 ];
-const EXTRACT_REC_CHIPS = [
+const _EXTRACT_REC_CHIPS = [
 	"Осмотр через 6 месяцев",
 	"Рентген-контроль",
 	"Санация полости рта",
 	"Консультация ортопеда",
 	"Прием НПВС при болях",
 ];
-const REFUND_REASON_CHIPS = [
+const _REFUND_REASON_CHIPS = [
 	"Ошибка при оплате",
 	"Отказ от продолжения лечения",
 	"Оплата авансом",
@@ -1114,7 +1114,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 			documentSourceStatusLabels[
 				documentKindMetadata[document.kind].sourceStatus
 			];
-		const hasIssuedArchive = Boolean(
+		const _hasIssuedArchive = Boolean(
 			document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt,
 		);
 		if (document.status === "draft") {
@@ -1164,7 +1164,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 					для пациента.
 				</p>
 			) : null}
-			<div className="document-factory" aria-label="Быстро создать документ">
+			<div className="document-factory" role="region" aria-label="Быстро создать документ">
 				<label className="document-factory-tax-year">
 					Налоговый год
 					<input
@@ -1352,6 +1352,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 					{typedSelectedDocumentMetadata.sourceUrls.length ? (
 						<div
 							className="document-source-links"
+							role="region"
 							aria-label="Официальные источники формы"
 						>
 							{typedSelectedDocumentMetadata.sourceUrls.map(
@@ -5417,7 +5418,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 													className="quick-chip quick-chip--sm"
 													onClick={() =>
 														setRecordExtractDiagnosis((prev) =>
-															prev ? prev + ", " + chip : chip,
+															prev ? `${prev}, ${chip}` : chip,
 														)
 													}
 												>
@@ -6944,6 +6945,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 							{documentAuditFacts.sourceUrls.length ? (
 								<div
 									className="document-source-links"
+									role="region"
 									aria-label="Официальные источники паспорта документа"
 								>
 									{documentAuditFacts.sourceUrls.map(
@@ -7260,6 +7262,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<div
 								className="document-actions"
+								role="group"
 								aria-label={`Действия с документом: ${documentActionContext}`}
 							>
 								<button

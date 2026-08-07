@@ -72,7 +72,7 @@
      специфичности (0,1,1). Без !important правило проигрывает, и вкладки
      остаются 29px — именно это и замерено на 768px. */
 	.settings-tabs button {
-		min-height: 44px !important;
+		min-height: 44px;
 	}
 
 	/* --- Плотные наборы чипов ---
@@ -89,11 +89,11 @@
        main.css  .appointment-edit-button { min-height: 28px !important }
      Замерено до правки: чипы быстрых сумм оплаты 55x24, 56x24, 41x24. */
 	.quick-chip--sm {
-		min-height: 36px !important;
+		min-height: 36px;
 	}
 
 	.appointment-edit-button {
-		min-height: 40px !important;
+		min-height: 40px;
 	}
 
 	.quick-chips-row,

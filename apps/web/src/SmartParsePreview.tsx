@@ -1,15 +1,10 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import {
-	DICTATION_PARSING_TITLE,
 	type DictationContext,
-	dictationComplexHint,
-	dictationEmptyHint,
 	dictationFailureText,
-	isDictationResultEmpty,
-	resolveDictationPhase,
 	serverParsesDictation,
 } from "./lib/panelStateText";
 
@@ -170,7 +165,7 @@ export function SmartParsePreview({
 
 	// Render logic depending on type
 	const renderSchedulePreview = (data: any) => {
-		if (data && data.isAiTask)
+		if (data?.isAiTask)
 			return (
 				<div className="space-y-2 text-sm">
 					{data.isAiTask && (
@@ -270,7 +265,7 @@ export function SmartParsePreview({
 	};
 
 	const renderPricesPreview = (data: any) => {
-		if (data && data.isAiTask)
+		if (data?.isAiTask)
 			return (
 				<div className="space-y-2 text-sm">
 					{data.isAiTask && (
@@ -288,7 +283,7 @@ export function SmartParsePreview({
 					)}
 				</div>
 			);
-		if (!data || !data.serviceName)
+		if (!data?.serviceName)
 			return (
 				<div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
 					Название услуги не распознано. Скажите название и цену одной фразой —
@@ -326,7 +321,7 @@ export function SmartParsePreview({
 	};
 
 	const renderPatientPreview = (data: any) => {
-		if (data && data.isAiTask)
+		if (data?.isAiTask)
 			return (
 				<div className="space-y-2 text-sm">
 					{data.isAiTask && (
@@ -384,7 +379,7 @@ export function SmartParsePreview({
 	};
 
 	const renderVisitPreview = (data: any) => {
-		if (data && data.isAiTask)
+		if (data?.isAiTask)
 			return (
 				<div className="space-y-2 text-sm">
 					{data.isAiTask && (

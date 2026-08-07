@@ -155,7 +155,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		status: number | null;
 	} | null>(null);
 	/** Счётчик кнопки «Повторить»: меняется — оба запроса идут заново. */
-	const [reloadToken, setReloadToken] = useState(0);
+	const [_reloadToken, setReloadToken] = useState(0);
 	/**
 	 * Что врач снял корзиной. Без этого списка автоподбор возвращал снятую
 	 * строку в смету при следующей же отметке любого зуба: подбор идёт от зубной
@@ -232,7 +232,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		return () => {
 			active = false;
 		};
-	}, [insuranceContractId, reloadToken]);
+	}, [insuranceContractId]);
 
 	/*
 	 * Договор ДМС читается в четыре проверенных процента.
@@ -321,7 +321,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		return () => {
 			active = false;
 		};
-	}, [patientId, reloadToken]);
+	}, [patientId]);
 
 	/*
 	 * Автоподбор услуг по зубной формуле.
@@ -691,7 +691,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							</h3>
 
 							<div className="phase-items-list">
-								{phaseItems.map((item, idx) => {
+								{phaseItems.map((item, _idx) => {
 									const globalIdx = items.indexOf(item);
 									return (
 										<div key={globalIdx} className="plan-item-card">
@@ -807,7 +807,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 												<select
 													value={item.phase}
 													onChange={(e) =>
-														setPhase(globalIdx, parseInt(e.target.value))
+														setPhase(globalIdx, parseInt(e.target.value, 10))
 													}
 													className="select-phase"
 												>

@@ -676,7 +676,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		if (!focusCreateFormRequestedRef.current) return;
 		focusCreateFormRequestedRef.current = false;
 		focusVisibleCreateFormControl();
-	}, [showCreateForm]);
+	}, [showCreateForm, focusVisibleCreateFormControl]);
 	const openScheduleSuggestion = (section: string) => {
 		window.location.hash = section;
 		const sectionId = section.replace(/^#/, "");
@@ -1161,10 +1161,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					))}
 			</div>
 			{scheduleAdminSecretNeeded ? (
-				<div
+				<fieldset
 					className="appointment-editor schedule-admin-unlock"
 					aria-label="Секрет администратора для сохранения расписания"
-					role="group"
 					style={{
 						display: "flex",
 						flexDirection: "column",
@@ -1244,7 +1243,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							</button>
 						</div>
 					)}
-				</div>
+				</fieldset>
 			) : null}
 
 			<NewAppointmentForm
@@ -1311,11 +1310,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 									: ""}
 							</span>
 						</div>
-						{group.rows.map((row, rowIndex) => {
+						{group.rows.map((row) => {
 							if (row.kind === "gap") {
 								return (
 									<p
-										key={`gap-${group.dateKey}-${row.afterAppointmentId}-${rowIndex}`}
+										key={`gap-${group.dateKey}-${row.afterAppointmentId ?? "start"}-${row.minutes}`}
 										className="schedule-day-gap"
 										data-testid="schedule-day-gap"
 										style={{
@@ -1347,7 +1346,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 											: "одно и то же кресло";
 								return (
 									<p
-										key={`overlap-${group.dateKey}-${row.withAppointmentId}-${rowIndex}`}
+										key={`overlap-${group.dateKey}-${row.withAppointmentId}`}
 										className="schedule-day-overlap"
 										data-testid="schedule-day-overlap"
 										role="alert"

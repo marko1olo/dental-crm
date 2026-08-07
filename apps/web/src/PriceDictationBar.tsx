@@ -1,5 +1,5 @@
-import { Check, Mic } from "lucide-react";
-import React, { useState } from "react";
+import { Check, } from "lucide-react";
+import { useState } from "react";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
@@ -14,7 +14,7 @@ interface PriceDictationBarProps {
 }
 
 export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
-	const [isDictating, setIsDictating] = useState(false);
+	const [isDictating, _setIsDictating] = useState(false);
 	const [inputText, setInputText] = useState("");
 	const [showHints, setShowHints] = useState(false);
 	const [showPreview, setShowPreview] = useState(false);
@@ -39,8 +39,7 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 
 	const handleApply = (data: any) => {
 		if (
-			data &&
-			data.serviceName &&
+			data?.serviceName &&
 			data.price !== null &&
 			data.price !== undefined
 		) {

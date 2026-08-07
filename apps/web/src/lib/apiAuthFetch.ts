@@ -39,7 +39,7 @@ const PUBLIC_API_PREFIXES = [
 
 function readToken(key: string): string | null {
 	const value = safeLocalStorageGetItem(key);
-	return value && value.trim() ? value : null;
+	return value?.trim() ? value : null;
 }
 
 function requestUrlOf(input: RequestInfo | URL): string {

@@ -159,7 +159,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 					.clinicSettings
 			: undefined;
 	const staff: StaffMemberLite[] = Array.isArray(clinicSettings?.staff)
-		? clinicSettings!.staff!
+		? clinicSettings?.staff
 		: [];
 
 	/**

@@ -1,6 +1,5 @@
 import {
 	Link as LinkIcon,
-	Plus,
 	Search,
 	Unlink,
 	UserPlus,
@@ -528,8 +527,16 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 								{searchResults.map((f) => (
 									<div
 										key={f.id}
+										role="button"
+										tabIndex={0}
 										className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
 										onClick={() => handleLinkFamily(f.id)}
+										onKeyDown={(e) => {
+											if (e.key === "Enter" || e.key === " ") {
+												e.preventDefault();
+												handleLinkFamily(f.id);
+											}
+										}}
 									>
 										<div>
 											<div className="text-xs font-semibold text-slate-900 dark:text-white">

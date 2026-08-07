@@ -106,7 +106,7 @@ function runTests() {
 	let passed = 0;
 	console.log("=== RUNNING SMART PARSER TESTS ===");
 
-	testCases.forEach((tc, index) => {
+	testCases.forEach((tc, _index) => {
 		const result = smartBookingParser(tc.input, mockDashboard);
 		let ok = true;
 		const errors: string[] = [];

@@ -1,12 +1,11 @@
 import {
 	Activity,
 	Calendar,
-	ChevronRight,
 	FileText,
 	History,
 	X,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { type PanelSubject, panelStateText } from "../../lib/panelStateText";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -55,7 +54,7 @@ export function ToothHistoryChronicle({
 	const [events, setEvents] = useState<ToothHistoryEvent[]>([]);
 	const [load, setLoad] = useState<HistoryLoadState>({ phase: "loading" });
 	/** Счётчик кнопки «Повторить»: меняется — запрос идёт заново. */
-	const [reloadToken, setReloadToken] = useState(0);
+	const [_reloadToken, setReloadToken] = useState(0);
 
 	useEffect(() => {
 		let active = true;
@@ -110,7 +109,7 @@ export function ToothHistoryChronicle({
 		return () => {
 			active = false;
 		};
-	}, [patientId, toothNumber, reloadToken]);
+	}, [patientId, toothNumber]);
 
 	return (
 		<div className="history-panel">
@@ -152,62 +151,64 @@ export function ToothHistoryChronicle({
 					</div>
 				) : (
 					<div className="history-timeline">
-						{events.map((evt, idx) => (
-							<div
-								key={`evt-${evt.kind}-${evt.dateIso || idx}-${idx}`}
-								className="timeline-item"
-							>
-								<div className="timeline-icon">
-									{evt.kind === "diary" ? (
-										<FileText className="w-4 h-4 text-emerald-500" />
-									) : evt.kind === "plan" ? (
-										<Calendar className="w-4 h-4 text-blue-500" />
-									) : evt.kind === "state_change" ? (
-										<Activity className="w-4 h-4 text-amber-500" />
-									) : (
-										/* Вид события неизвестен. Значок смены статуса здесь стоял
+						{events
+							.map((evt, idx) => ({
+								evt,
+								keyId: `evt-${evt.kind}-${evt.dateIso ?? "nodate"}-${evt.description ?? ""}-${idx}`,
+							}))
+							.map(({ evt, keyId }) => (
+								<div key={keyId} className="timeline-item">
+									<div className="timeline-icon">
+										{evt.kind === "diary" ? (
+											<FileText className="w-4 h-4 text-emerald-500" />
+										) : evt.kind === "plan" ? (
+											<Calendar className="w-4 h-4 text-blue-500" />
+										) : evt.kind === "state_change" ? (
+											<Activity className="w-4 h-4 text-amber-500" />
+										) : (
+											/* Вид события неизвестен. Значок смены статуса здесь стоял
 										   как «иначе», то есть незнакомое событие выдавалось за
 										   смену статуса зуба. Нейтральный значок ничего не
 										   утверждает. */
-										<History className="w-4 h-4 text-slate-400" />
-									)}
-								</div>
-								<div className="timeline-content">
-									<div className="timeline-date">
-										{/* БЫЛО: new Date(evt.date).toLocaleDateString() — на
+											<History className="w-4 h-4 text-slate-400" />
+										)}
+									</div>
+									<div className="timeline-content">
+										<div className="timeline-date">
+											{/* БЫЛО: new Date(evt.date).toLocaleDateString() — на
 										    нечитаемой дате браузер печатал латиницей «Invalid
 										    Date», а на дате без года читалось непонятно что.
 										    Год полный: в карте важно, 2016-й это или 2026-й.
 										    Часовой пояс тот же, что в AppHelpers.tsx, иначе одна
 										    и та же запись показывала бы разные дни на разных
 										    экранах. */}
-										{evt.dateIso === null
-											? "Дата не указана"
-											: new Intl.DateTimeFormat("ru-RU", {
-													day: "2-digit",
-													month: "2-digit",
-													year: "numeric",
-													timeZone: "Europe/Samara",
-												}).format(new Date(evt.dateIso))}
-									</div>
-									<div className="timeline-desc">
-										{/* Описание на сервере — treatmentDescription || anamnesis,
+											{evt.dateIso === null
+												? "Дата не указана"
+												: new Intl.DateTimeFormat("ru-RU", {
+														day: "2-digit",
+														month: "2-digit",
+														year: "numeric",
+														timeZone: "Europe/Samara",
+													}).format(new Date(evt.dateIso))}
+										</div>
+										<div className="timeline-desc">
+											{/* Описание на сервере — treatmentDescription || anamnesis,
 										    и оба бывают пустыми. Пустая строка выглядела как
 										    пропавшая запись. */}
-										{evt.description ?? "Описание не заполнено"}
-									</div>
-									{/* БЫЛО: `Автор: {evt.authorId.substring(0, 8)}...` — ФИО врача
+											{evt.description ?? "Описание не заполнено"}
+										</div>
+										{/* БЫЛО: `Автор: {evt.authorId.substring(0, 8)}...` — ФИО врача
 									    обрезалось до восьми знаков («Автор: Иванова ...»), слово
 									    "System" печаталось латиницей, а «Не указан» превращалось
 									    в обрубок «Не указа...». Кто лечил зуб — не мелочь, и
 									    строка автора теперь есть у каждой записи, а не только
 									    когда поле непустое. */}
-									<div className="timeline-author">
-										{toothHistoryAuthorLabel(evt.author)}
+										<div className="timeline-author">
+											{toothHistoryAuthorLabel(evt.author)}
+										</div>
 									</div>
 								</div>
-							</div>
-						))}
+							))}
 					</div>
 				)}
 			</div>

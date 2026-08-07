@@ -44,7 +44,9 @@ function DiagnocatReportWidget({ patientId }: { patientId: string }) {
 			<div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
 				{reports.map((r, reportIdx) => (
 					<a
-						key={r.id || r.reportUrl || `report-item-${r.createdAt || reportIdx}`}
+						key={
+							r.id || r.reportUrl || `report-item-${r.createdAt || reportIdx}`
+						}
 						href={r.reportUrl}
 						target="_blank"
 						rel="noreferrer"
@@ -88,7 +90,7 @@ export function EmkControlBoard({ dashboard }: any) {
 
 	useEffect(() => {
 		loadVisits();
-	}, []);
+	}, [loadVisits]);
 
 	async function updateStatus(visitId: string, status: string) {
 		try {

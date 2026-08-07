@@ -197,7 +197,7 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
 								{[1, 2, 3].map((num) => (
 									<div
 										key={`strength-bar-${num}`}
-										className={`auth-password-strength-bar${strength.score >= num ? " " + strengthClass : ""}`}
+										className={`auth-password-strength-bar${strength.score >= num ? ` ${strengthClass}` : ""}`}
 									/>
 								))}
 								<span className="auth-password-strength-label">

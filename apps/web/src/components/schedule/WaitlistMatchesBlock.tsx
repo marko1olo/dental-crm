@@ -150,7 +150,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 			setError(null);
 			setLoading(false);
 		}
-	}, [appointmentId, lazy]);
+	}, [lazy]);
 
 	if (lazy && !started) {
 		return (

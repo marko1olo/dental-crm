@@ -529,12 +529,12 @@
 	position: absolute;
 	bottom: 3px;
 	right: 3px;
-	display: inline-flex !important;
+	display: inline-flex;
 	align-items: center;
 	gap: 2px;
 	padding: 1px 5px;
 	background: #0f172a;
-	color: #38bdf8 !important;
+	color: #38bdf8;
 	border: 1px solid rgba(56, 189, 248, 0.45);
 	border-radius: 4px;
 	font-size: 0.6rem;

@@ -112,8 +112,8 @@
 }
 
 .cmd-palette-item-selected {
-	background: var(--teal-soft, rgba(13, 148, 136, 0.12)) !important;
-	color: var(--ink, #fff) !important;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	color: var(--ink, #fff);
 }
 
 .cmd-palette-item-icon {
@@ -123,7 +123,7 @@
 }
 
 .cmd-palette-item-selected .cmd-palette-item-icon {
-	color: var(--teal, #0d9488) !important;
+	color: var(--teal, #0d9488);
 }
 
 .cmd-palette-item-label {

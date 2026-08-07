@@ -8,17 +8,14 @@ import type {
 } from "@dental/shared";
 import {
 	CalendarDays,
-	CheckCircle2,
-	Copy,
 	ExternalLink,
 	KeyRound,
 	Plus,
-	RefreshCw,
 	Search,
 	ShieldCheck,
 } from "lucide-react";
-import type { ChangeEvent, KeyboardEvent } from "react";
-import React, { useState } from "react";
+import type { ChangeEvent, } from "react";
+import { useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import {
@@ -996,8 +993,12 @@ export function SettingsClinicTab({
 							<div className="clinic-public-suggestions">
 								{typedClinicPublicLookupSuggestions
 									.slice(0, 4)
-									.map((suggestion, index) => (
-										<article key={`${suggestion.source}-${index}`}>
+									.map((suggestion, index) => ({
+										suggestion,
+										suggestionId: `${suggestion.source}-${suggestion.confidence}-${index}`,
+									}))
+									.map(({ suggestion, suggestionId }) => (
+										<article key={suggestionId}>
 											<strong>
 												{clinicPublicLookupSuggestionSourceLabels[
 													suggestion.source

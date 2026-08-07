@@ -156,6 +156,7 @@ export const VisitFlowProgress: React.FC<{
 						stroke="currentColor"
 						strokeWidth="2"
 					>
+						<title>Иконка ассистента</title>
 						<path
 							strokeLinecap="round"
 							strokeLinejoin="round"
@@ -250,8 +251,8 @@ export const VisitFlowProgress: React.FC<{
 						</strong>
 						{temporaryRestrictions.length > 0 && (
 							<ul style={{ margin: "0.5rem 0", paddingLeft: "1.2rem" }}>
-								{temporaryRestrictions.map((r, i) => (
-									<li key={`restriction-${r.slice(0, 15)}-${i}`}>{r}</li>
+								{temporaryRestrictions.map((r) => (
+									<li key={r}>{r}</li>
 								))}
 							</ul>
 						)}
@@ -261,8 +262,8 @@ export const VisitFlowProgress: React.FC<{
 					<div className="vfp-output-card">
 						<strong>Предложенные документы:</strong>
 						<div className="vfp-tags">
-							{documentSuggestions.map((s: string, i: number) => (
-								<span key={`doc-${s.slice(0, 15)}-${i}`} className="vfp-tag">
+							{documentSuggestions.map((s: string) => (
+								<span key={s} className="vfp-tag">
 									{s}
 								</span>
 							))}

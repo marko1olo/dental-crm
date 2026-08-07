@@ -1,7 +1,6 @@
 import { AlertCircle, RefreshCw, Stethoscope } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { showToast } from "../GlobalToast";
 
 export interface EgiszMultipleDiagnosisItem {
 	id: string;
@@ -41,7 +40,7 @@ export function EgiszMultipleDiagnosesWidget() {
 
 	useEffect(() => {
 		fetchDiagnoses();
-	}, []);
+	}, [fetchDiagnoses]);
 
 	return (
 		<div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-900/50 space-y-2 text-xs">

@@ -4,11 +4,10 @@ import {
 	percentageOfKopecks,
 	splitKopecks,
 } from "@dental/shared";
-import { Bot, CreditCard, Mic, UserRound } from "lucide-react";
+import { Bot, CreditCard, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
 import { SberbankTerminalPaymentModal } from "./components/finance/SberbankTerminalPaymentModal";
-import { showToast } from "./components/GlobalToast";
 import { rubAmountForInput } from "./components/payments/cashDeskAmounts";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
@@ -16,7 +15,6 @@ import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { textToNumbers } from "./lib/stringUtils";
 import {
 	normalizeRubAmountInput,
-	rubAmountInputMissingStep,
 	validateRubAmountInput,
 } from "./rubAmountInput";
 import { SmartParsePreview } from "./SmartParsePreview";
@@ -522,7 +520,7 @@ function InstallmentCalculator({
 							max="24"
 							step="1"
 							value={months}
-							onChange={(e) => setMonths(parseInt(e.target.value))}
+							onChange={(e) => setMonths(parseInt(e.target.value, 10))}
 							style={{ width: "100%" }}
 						/>
 						<div
@@ -565,7 +563,7 @@ function InstallmentCalculator({
 							max="80"
 							step="10"
 							value={downPaymentPercent}
-							onChange={(e) => setDownPaymentPercent(parseInt(e.target.value))}
+							onChange={(e) => setDownPaymentPercent(parseInt(e.target.value, 10))}
 							style={{ width: "100%" }}
 						/>
 						<div
@@ -749,7 +747,7 @@ export function PaymentCapture({
 
 			setSmartParsedData({
 				isAiTask: false,
-				text: "Успешно распознано: " + text,
+				text: `Успешно распознано: ${text}`,
 				parsed,
 			});
 			setShowSmartPreview(true);

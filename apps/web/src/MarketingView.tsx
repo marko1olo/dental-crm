@@ -7,7 +7,6 @@ import {
 	MessageSquare,
 	MinusCircle,
 	Search,
-	Star,
 	ThumbsDown,
 	ThumbsUp,
 	TrendingUp,
@@ -464,9 +463,8 @@ export function MarketingView({
 
 						<div>
 							<span className="field-label">Тональность отзыва</span>
-							<div
+							<fieldset
 								className="marketing-tone-group"
-								role="group"
 								aria-label="Тональность"
 							>
 								<button
@@ -493,7 +491,7 @@ export function MarketingView({
 								>
 									<ThumbsDown aria-hidden="true" /> Негатив
 								</button>
-							</div>
+							</fieldset>
 						</div>
 					</div>
 

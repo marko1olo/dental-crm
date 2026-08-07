@@ -202,7 +202,7 @@ export function useInventoryLogic(organizationId: string) {
 		if (activeSubTab === "rules" && selectedServiceId) {
 			fetchRules(selectedServiceId);
 		}
-	}, [activeSubTab, selectedServiceId]);
+	}, [activeSubTab, selectedServiceId, fetchRules]);
 
 	/*
 	 * Замок на кнопку «Добавить материал в расходники».
@@ -220,8 +220,8 @@ export function useInventoryLogic(organizationId: string) {
 		if (!selectedServiceId || !selectedInventoryItemId || !quantityToDeduct)
 			return;
 
-		const qty = parseInt(quantityToDeduct);
-		if (isNaN(qty) || qty <= 0) {
+		const qty = parseInt(quantityToDeduct, 10);
+		if (Number.isNaN(qty) || qty <= 0) {
 			showToast("Введите корректное количество", "error");
 			return;
 		}
@@ -521,7 +521,7 @@ export function useInventoryLogic(organizationId: string) {
 			return;
 		}
 		setIsLoading(false);
-	}, [organizationId]);
+	}, [organizationId, fetchItems]);
 
 	const openAddModal = () => {
 		setEditingItem(null);
@@ -591,7 +591,7 @@ export function useInventoryLogic(organizationId: string) {
 		 * минимальный остаток, и склад начинал сигналить о дефиците материала,
 		 * для которого порога никто не задавал. Ноль означает «следить не просили».
 		 */
-		const threshold = Math.max(0, parseInt(formData.threshold) || 0);
+		const threshold = Math.max(0, parseInt(formData.threshold, 10) || 0);
 		if (isSavingItemRef.current) return;
 		isSavingItemRef.current = true;
 		setIsSavingItem(true);
@@ -690,8 +690,8 @@ export function useInventoryLogic(organizationId: string) {
 		e.preventDefault();
 		if (!adjustingItem || !adjustAmount) return;
 
-		const amount = parseInt(adjustAmount);
-		if (isNaN(amount) || amount <= 0) return;
+		const amount = parseInt(adjustAmount, 10);
+		if (Number.isNaN(amount) || amount <= 0) return;
 		/*
 		 * Списать больше, чем лежит на полке, нельзя.
 		 *
@@ -759,8 +759,8 @@ export function useInventoryLogic(organizationId: string) {
 		return items.filter(
 			(i) =>
 				i.name.toLowerCase().includes(q) ||
-				(i.sku && i.sku.toLowerCase().includes(q)) ||
-				(i.barcode && i.barcode.toLowerCase().includes(q)),
+				(i.sku?.toLowerCase().includes(q)) ||
+				(i.barcode?.toLowerCase().includes(q)),
 		);
 	}, [items, searchQuery]);
 

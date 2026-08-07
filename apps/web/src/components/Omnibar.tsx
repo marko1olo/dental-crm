@@ -294,8 +294,9 @@ export function Omnibar() {
 																{cmd.category}
 															</div>
 														)}
-														<div
-															className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
+														<button
+															type="button"
+															className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
 																idx === selectedIndex
 																	? "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300"
 																	: "text-neutral-700 dark:text-slate-200 hover:bg-neutral-50 dark:hover:bg-slate-800/60"
@@ -305,14 +306,6 @@ export function Omnibar() {
 																setOmnibarOpen(false);
 															}}
 															onMouseEnter={() => setSelectedIndex(idx)}
-															role="button"
-															tabIndex={0}
-															onKeyDown={(e) => {
-																if (e.key === "Enter" || e.key === " ") {
-																	cmd.action();
-																	setOmnibarOpen(false);
-																}
-															}}
 														>
 															<div
 																className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? "bg-teal-100/50 dark:bg-teal-900/50 text-teal-600 dark:text-teal-300" : "bg-neutral-100 dark:bg-slate-800 text-neutral-500 dark:text-slate-400"}`}
@@ -329,7 +322,7 @@ export function Omnibar() {
 																	↵ Выбрать
 																</span>
 															)}
-														</div>
+														</button>
 													</React.Fragment>
 												);
 											})}

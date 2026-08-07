@@ -1,15 +1,5 @@
-// ShieldCheck убран из импорта вместе с дублирующей панелью ЭМК: он рисовался
-// только в её блоке .ai-draft, а тот теперь живёт в components/visit/VisitEmkTab.tsx.
-import {
-	AlertTriangle,
-	Bot,
-	Check,
-	CheckCircle2,
-	ClipboardCheck,
-	Mic,
-	Sparkles,
-} from "lucide-react";
-import React, { Suspense, useState } from "react";
+
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { countLabel } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
@@ -25,7 +15,6 @@ import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import { VisitTimer } from "./components/visit/VisitTimer";
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
-import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { useVisitStore } from "./store/visitStore";
 import { getToothConfig, getToothPath } from "./utils/toothGeometry";
@@ -288,7 +277,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 
-	const visitAiDiagnosesByCode = useVisitStore(
+	const _visitAiDiagnosesByCode = useVisitStore(
 		(state) => state.visitAiDiagnosesByCode,
 	);
 	const [activeQuadrant, setActiveQuadrant] = React.useState<number | null>(
@@ -356,7 +345,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [selectedToothForMenu]);
+	}, [selectedToothForMenu, closeClinicalModal]);
 
 	const handleSelectDiagnosis = (
 		state: string,
@@ -431,7 +420,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			const sectionTitle =
 				(viewLabels as Record<string, string>)[section] ?? section;
 			const ownerTitle =
-				(staffRoleLabels && staffRoleLabels[task?.ownerRole]) ||
+				(staffRoleLabels?.[task?.ownerRole]) ||
 				"другой сотрудник";
 			showToast(
 				`Шаг закрывают в разделе «${sectionTitle}», а он открыт другой роли: ${ownerTitle}. Приём остаётся открытым — попросите закрыть шаг с того рабочего места.`,
@@ -985,7 +974,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								key={phrase.label}
 								onClick={() =>
-									appendToTranscript && appendToTranscript(phrase.text)
+									appendToTranscript?.(phrase.text)
 								}
 							>
 								{phrase.label}
@@ -2254,7 +2243,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									{(selectedProtocolTemplate.suggestedImaging || [])
 										.map(
 											(kind: any) =>
-												(imagingKindLabels && imagingKindLabels[kind]) || kind,
+												(imagingKindLabels?.[kind]) || kind,
 										)
 										.join(", ")}
 								</p>
@@ -2271,8 +2260,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										type="button"
 										aria-pressed={selectedProtocolTemplate.id === template.id}
 										onClick={() =>
-											setSelectedProtocolId &&
-											setSelectedProtocolId(template.id)
+											setSelectedProtocolId?.(template.id)
 										}
 									>
 										{template.visitReason}
@@ -2438,7 +2426,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										<strong>{task.title}</strong>
 										<p>{task.detail}</p>
 										<small>
-											{(staffRoleLabels && staffRoleLabels[task.ownerRole]) ||
+											{(staffRoleLabels?.[task.ownerRole]) ||
 												"исполнитель не указан"}{" "}
 											· {task.actionLabel}
 										</small>
@@ -2571,11 +2559,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 					return createPortal(
 						<>
-							<div
+							<button
+								type="button"
 								className="_ccm-overlay"
 								onClick={closeClinicalModal}
-								role="button"
-								tabIndex={0}
 								onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && closeClinicalModal()}
 							/>
 							<div
@@ -2886,8 +2873,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												data-color="violet"
 												onClick={() => {
 													if (
-														visitWarnings &&
-														visitWarnings.some((w: any) =>
+														visitWarnings?.some((w: any) =>
 															/бисфосф|bisph/i.test(w.title + w.detail),
 														)
 													) {

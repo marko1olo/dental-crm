@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
+import { showToast } from "./GlobalToast";
 import "./LabOrdersPanel.css";
 
 export interface LabOrder {
@@ -66,12 +67,12 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 	useEffect(() => {
 		fetchOrders();
-	}, [patientId]);
+	}, [fetchOrders]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!formPatientId) {
-			alert("Patient ID is required");
+			showToast("Patient ID is required", "error");
 			return;
 		}
 
@@ -107,7 +108,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			setPriceRub("");
 			await fetchOrders();
 		} catch (err: any) {
-			alert(err.message);
+			showToast(err.message || "Failed to create lab order", "error");
 		} finally {
 			setSubmitting(false);
 		}

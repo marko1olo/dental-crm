@@ -1,16 +1,13 @@
 import {
 	AlertTriangle,
-	Bot,
 	CheckCircle,
 	FileText,
-	Play,
 	Printer,
 	Sparkles,
-	Square,
 	Volume2,
 	VolumeX,
 } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ToothUpdate {
 	code: string;
@@ -165,7 +162,7 @@ export function ShadowAnalystReport({
 							Детализация по зубам · {toothUpdates.length} поз.
 						</div>
 						<div className="sa-tooth-grid">
-							{toothUpdates.map((update, idx) => {
+							{toothUpdates.map((update) => {
 								const isCritical =
 									update.state.toLowerCase().includes("caries") ||
 									update.state.toLowerCase().includes("pulpitis") ||
@@ -176,7 +173,7 @@ export function ShadowAnalystReport({
 									update.state === "prosthetic";
 								return (
 									<div
-										key={`tooth-${update.code}-${idx}`}
+										key={`tooth-${update.code}-${update.diagnosisOrFinding}`}
 										className={`sa-tooth-row ${isCritical ? "sa-tooth-row--critical" : ""} ${isDone ? "sa-tooth-row--done" : ""}`}
 									>
 										<span className="sa-tooth-num">{update.code}</span>

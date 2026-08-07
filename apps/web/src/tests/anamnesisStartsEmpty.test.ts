@@ -42,7 +42,7 @@ function initialValueOf(field: string): string | null {
 		"m",
 	).exec(documentStore);
 	if (!match) return null;
-	return match[1]!.trim();
+	return match[1]?.trim() ?? null;
 }
 
 /**

@@ -200,7 +200,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 			}
 			setTasks(payload);
 
-			if (customTypesResponse && customTypesResponse.ok) {
+			if (customTypesResponse?.ok) {
 				const customData = await customTypesResponse.json().catch(() => null);
 				if (Array.isArray(customData)) {
 					setCustomTaskTypes(customData as CustomTaskType[]);
@@ -209,7 +209,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 		} finally {
 			setLoading(false);
 		}
-	}, [auth, patientId]);
+	}, [auth, patientId, loadFailureText]);
 
 	useEffect(() => {
 		void load();

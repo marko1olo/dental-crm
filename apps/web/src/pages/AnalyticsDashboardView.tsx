@@ -1,12 +1,9 @@
 import {
 	Activity,
 	AlertTriangle,
-	ArrowUpRight,
 	BarChart3,
 	Calendar,
 	DollarSign,
-	Filter,
-	PieChart,
 	RefreshCw,
 	TrendingUp,
 	Users,
@@ -17,16 +14,11 @@ import {
 	Area,
 	AreaChart,
 	Bar,
-	BarChart,
 	CartesianGrid,
-	Cell,
 	ComposedChart,
 	Legend,
-	Line,
-	Pie,
 	RadialBar,
 	RadialBarChart,
-	PieChart as RechartsPie,
 	Tooltip as RechartsTooltip,
 	ResponsiveContainer,
 	XAxis,
@@ -38,7 +30,6 @@ import { EmptyState } from "../components/EmptyState.js";
 import { RecallListPanel } from "../components/patients/RecallListPanel";
 import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
-import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import {
 	type AnalyticsDashboardData,
 	formatCompletionRate,
@@ -113,7 +104,7 @@ export function AnalyticsDashboardView() {
 	const [dateRange, setDateRange] = useState<string>("all");
 	// Счётчик ручных повторов. Кнопка «Повторить» без него не работает: период
 	// не менялся, значит зависимости эффекта те же и он бы не перезапустился.
-	const [retryToken, setRetryToken] = useState(0);
+	const [_retryToken, setRetryToken] = useState(0);
 
 	const retry = useCallback(() => setRetryToken((token) => token + 1), []);
 
@@ -185,7 +176,7 @@ export function AnalyticsDashboardView() {
 			controller.abort();
 			clearInterval(interval);
 		};
-	}, [dateRange, retryToken]);
+	}, [dateRange, getReadHeaders, authContext.denteClinicalReadHeaders, authContext]);
 
 	const retryButton = (
 		<button
@@ -750,11 +741,11 @@ function DoctorProfitabilityTable({
 					</tr>
 				</thead>
 				<tbody>
-					{rows.map((doc, idx) => {
+					{rows.map((doc) => {
 						const margin = formatMarginCell(doc.margin);
 						const completion = formatCompletionRate(doc.completionRate);
 						return (
-							<tr key={`${doc.name}-${idx}`}>
+							<tr key={doc.name}>
 								<td>{doc.name}</td>
 								{/* Таблица — точная сумма с копейками, а не короткий вид плитки. */}
 								<td>{money(doc.revenue)}</td>

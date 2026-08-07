@@ -206,88 +206,88 @@ h6,
 
 /* Base Body Background with Mesh Gradients */
 body {
-	background-color: var(--bg-app) !important;
+	background-color: var(--bg-app);
 	background-image:
-		var(--mesh-bg-1), var(--mesh-bg-2), var(--mesh-bg-3) !important;
-	background-attachment: fixed !important;
-	color: var(--text-primary) !important;
+		var(--mesh-bg-1), var(--mesh-bg-2), var(--mesh-bg-3);
+	background-attachment: fixed;
+	color: var(--text-primary);
 }
 
 /* Sidebar Redesign - Glassmorphism */
 .sidebar,
 .app-shell .sidebar {
-	background: var(--glass-panel) !important;
-	backdrop-filter: var(--glass-blur) saturate(180%) !important;
-	-webkit-backdrop-filter: var(--glass-blur) saturate(180%) !important;
-	border-right: 1px solid var(--glass-border) !important;
-	box-shadow: var(--glass-shadow) !important;
+	background: var(--glass-panel);
+	backdrop-filter: var(--glass-blur) saturate(180%);
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);
+	border-right: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
 }
 
 /* Sidebar Nav Items Redesign */
 .nav-item {
-	background: transparent !important;
-	border: 1px solid transparent !important;
-	transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
-	color: var(--text-secondary) !important;
+	background: transparent;
+	border: 1px solid transparent;
+	transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+	color: var(--text-secondary);
 }
 
 .nav-item:hover {
-	background: rgba(255, 255, 255, 0.05) !important;
-	transform: translateX(4px) !important;
-	border: 1px solid var(--glass-border) !important;
-	color: var(--text-primary) !important;
+	background: rgba(255, 255, 255, 0.05);
+	transform: translateX(4px);
+	border: 1px solid var(--glass-border);
+	color: var(--text-primary);
 }
 
 .nav-item.active {
-	background: var(--active-item-bg) !important;
-	border: 1px solid var(--active-item-border) !important;
-	box-shadow: var(--teal-glow) !important;
-	color: #fff !important;
+	background: var(--active-item-bg);
+	border: 1px solid var(--active-item-border);
+	box-shadow: var(--teal-glow);
+	color: #fff;
 	text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-	transform: scale(1.02) !important;
+	transform: scale(1.02);
 }
 
 .nav-item.active .nav-label,
 .nav-item.active svg,
 .nav-item.active .nav-copy small,
 .nav-item:hover .nav-copy small {
-	color: #fff !important;
-	opacity: 0.9 !important;
+	color: #fff;
+	opacity: 0.9;
 }
 
 /* Light Mode Overrides for active nav item to ensure maximum high contrast */
 :root[data-theme="light"] .nav-item.active,
 html.light .nav-item.active,
 [data-theme="light"] .nav-item.active {
-	background: #ccfbf1 !important;
-	border: 1px solid #0d9488 !important;
-	color: #0f172a !important;
-	text-shadow: none !important;
+	background: #ccfbf1;
+	border: 1px solid #0d9488;
+	color: #0f172a;
+	text-shadow: none;
 }
 
 :root[data-theme="light"] .nav-item.active .nav-label,
 html.light .nav-item.active .nav-label,
 [data-theme="light"] .nav-item.active .nav-label {
-	color: #0f172a !important;
-	font-weight: 800 !important;
+	color: #0f172a;
+	font-weight: 800;
 }
 
 :root[data-theme="light"] .nav-item.active svg,
 html.light .nav-item.active svg,
 [data-theme="light"] .nav-item.active svg {
-	color: #0f766e !important;
+	color: #0f766e;
 }
 
 :root[data-theme="light"] .nav-item.active .nav-copy small,
 html.light .nav-item.active .nav-copy small,
 [data-theme="light"] .nav-item.active .nav-copy small {
-	color: #0f766e !important;
-	font-weight: 700 !important;
-	opacity: 1 !important;
+	color: #0f766e;
+	font-weight: 700;
+	opacity: 1;
 }
 
 .nav-copy small {
-	color: var(--text-secondary) !important;
+	color: var(--text-secondary);
 }
 
 /* Cards & Panels */
@@ -295,63 +295,63 @@ html.light .nav-item.active .nav-copy small,
 .boot-unlock-form,
 .app-notice,
 .workspace-continuity-strip {
-	background: var(--glass-panel) !important;
-	backdrop-filter: var(--glass-blur) saturate(180%) !important;
-	-webkit-backdrop-filter: var(--glass-blur) saturate(180%) !important;
-	border: 1px solid var(--glass-border) !important;
-	box-shadow: var(--glass-shadow) !important;
-	border-radius: 16px !important;
+	background: var(--glass-panel);
+	backdrop-filter: var(--glass-blur) saturate(180%);
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
+	border-radius: 16px;
 	transition:
 		transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
-		box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+		box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .onboarding-shell:hover {
-	transform: translateY(-2px) !important;
-	box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.5) !important;
+	transform: translateY(-2px);
+	box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="light"] .onboarding-shell:hover {
-	box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.15) !important;
+	box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.15);
 }
 
 /* Remove clunky active left border */
 .nav-item.active::before {
-	display: none !important;
+	display: none;
 }
 
 /* Mobile Bottom Nav Fixes */
 @media (max-width: 860px) {
 	.sidebar,
 	.app-shell .sidebar {
-		border-right: none !important;
-		border-top: 1px solid var(--glass-border) !important;
-		border-radius: 20px 20px 0 0 !important;
-		padding-bottom: env(safe-area-inset-bottom) !important;
+		border-right: none;
+		border-top: 1px solid var(--glass-border);
+		border-radius: 20px 20px 0 0;
+		padding-bottom: env(safe-area-inset-bottom);
 	}
 
 	.nav-item {
-		min-height: auto !important;
-		padding: 8px 4px !important;
+		min-height: auto;
+		padding: 8px 4px;
 	}
 
 	.nav-item.active {
-		transform: translateY(-2px) !important;
-		border-bottom: 2px solid var(--active-item-border) !important;
-		box-shadow: none !important;
+		transform: translateY(-2px);
+		border-bottom: 2px solid var(--active-item-border);
+		box-shadow: none;
 	}
 
 	.nav-item .nav-copy {
-		display: none !important; /* Hide subtext on mobile to save space */
+		display: none; /* Hide subtext on mobile to save space */
 	}
 
 	.nav-label {
-		font-size: 11px !important;
-		font-weight: 600 !important;
-		white-space: nowrap !important;
-		overflow: hidden !important;
-		text-overflow: ellipsis !important;
-		max-width: 60px !important; /* Force truncation if needed */
+		font-size: 11px;
+		font-weight: 600;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 60px; /* Force truncation if needed */
 	}
 }
 
@@ -362,16 +362,16 @@ html.light .nav-item.active .nav-copy small,
 .glass-panel,
 .card,
 article {
-	background: var(--glass-panel) !important;
-	backdrop-filter: var(--glass-blur) saturate(180%) !important;
-	-webkit-backdrop-filter: var(--glass-blur) saturate(180%) !important;
-	border: 1px solid var(--glass-border) !important;
-	box-shadow: var(--glass-shadow) !important;
-	border-radius: 16px !important;
-	color: var(--text-primary) !important;
+	background: var(--glass-panel);
+	backdrop-filter: var(--glass-blur) saturate(180%);
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
+	border-radius: 16px;
+	color: var(--text-primary);
 	transition:
 		transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
-		box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+		box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .mode-fit-card:hover,
@@ -381,5 +381,5 @@ article {
 .glass-panel:hover {
 	box-shadow:
 		var(--glass-shadow),
-		0 12px 30px rgba(0, 0, 0, 0.15) !important;
+		0 12px 30px rgba(0, 0, 0, 0.15);
 }

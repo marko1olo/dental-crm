@@ -368,7 +368,7 @@ export function WorkspaceFeaturesSelector() {
 							borderRadius: 14,
 							background: "rgba(255,255,255,.04)",
 							backdropFilter: "blur(10px)",
-							border: `1.5px solid ${isOn ? def.color + "55" : "rgba(255,255,255,.08)"}`,
+							border: `1.5px solid ${isOn ? `${def.color}55` : "rgba(255,255,255,.08)"}`,
 							transition: "border-color .3s",
 						}}
 					>
@@ -378,7 +378,7 @@ export function WorkspaceFeaturesSelector() {
 								width: 36,
 								height: 36,
 								borderRadius: 10,
-								background: isOn ? def.color + "20" : "rgba(255,255,255,.06)",
+								background: isOn ? `${def.color}20` : "rgba(255,255,255,.06)",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",

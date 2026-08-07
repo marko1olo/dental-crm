@@ -2,7 +2,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
 	Calendar,
 	CalendarClock,
-	ChevronRight,
 	DollarSign,
 	Edit2,
 	Filter,
@@ -210,7 +209,7 @@ export function LeadsKanbanView() {
 		 * ему безразличны.
 		 */
 		setAppointmentDate(dateInputValuePlusDays(1, clinicTimeZone));
-	}, []);
+	}, [fetchLeads, clinicTimeZone]);
 
 	/*
 	 * ВРАЧИ И КРЕСЛА БЕРУТСЯ ИЗ УЖЕ ЗАГРУЖЕННЫХ НАСТРОЕК, А НЕ ДВУМЯ СВОИМИ
@@ -608,8 +607,9 @@ export function LeadsKanbanView() {
 					);
 
 					return (
-						<div
+						<section
 							key={col.id}
+							aria-label={col.label}
 							onDragOver={handleDragOver}
 							onDrop={(e) => handleDrop(e, col.id)}
 							style={{
@@ -842,7 +842,7 @@ export function LeadsKanbanView() {
 									</div>
 								)}
 							</div>
-						</div>
+						</section>
 					);
 				})}
 			</div>

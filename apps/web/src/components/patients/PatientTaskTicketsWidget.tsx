@@ -4,7 +4,6 @@ import {
 	CheckCircle2,
 	Circle,
 	Clock,
-	MoreVertical,
 	Plus,
 	Trash2,
 	User,
@@ -41,6 +40,8 @@ const TICKETS_SUBJECT: PanelSubject = {
 export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const { dashboard, auth } = useAppLogicContext();
 	const [isAdding, setIsAdding] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	const getReadHeaders = () => (auth ? auth.denteClinicalReadHeaders() : {});
 	const getMutationHeaders = (extra?: Record<string, string>) =>
@@ -106,7 +107,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 
 	const handleAdd = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!newTitle || !assignedToId) return;
+		if (isSubmitting) return;
+		if (!newTitle.trim() || !assignedToId) return;
+		setIsSubmitting(true);
 		try {
 			const res = await fetch(`/api/patients/${patientId}/tickets`, {
 				method: "POST",
@@ -114,7 +117,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
-					title: newTitle,
+					title: newTitle.trim(),
 					description: newDescription,
 					assignedToId,
 					priority: "normal",
@@ -140,6 +143,8 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				`${actionFailureToast("Задача не создана", null)} Введённый текст остался в форме.`,
 				"error",
 			);
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -184,7 +189,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	};
 
 	const handleDelete = async (ticketId: string) => {
+		if (deletingId === ticketId) return;
 		if (!confirm("Вы действительно хотите удалить эту задачу?")) return;
+		setDeletingId(ticketId);
 		try {
 			const res = await fetch(
 				`/api/patients/${patientId}/tickets/${ticketId}`,
@@ -210,6 +217,8 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				`${actionFailureToast("Задача не удалена", null)} Она осталась в списке.`,
 				"error",
 			);
+		} finally {
+			setDeletingId(null);
 		}
 	};
 
@@ -354,9 +363,11 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 								</button>
 								<button
 									type="submit"
-									className="primary-button bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold cursor-pointer"
+									disabled={isSubmitting}
+									aria-busy={isSubmitting}
+									className="primary-button bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 								>
-									Создать задачу
+									{isSubmitting ? "Создание..." : "Создать задачу"}
 								</button>
 							</div>
 						</motion.form>
@@ -467,8 +478,10 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 
 									<button
 										type="button"
+										disabled={deletingId === ticket.id}
+										aria-busy={deletingId === ticket.id}
 										onClick={() => handleDelete(ticket.id)}
-										className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 rounded-lg cursor-pointer transition-colors"
+										className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 rounded-lg cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 										title="Удалить задачу"
 									>
 										<Trash2 size={16} />

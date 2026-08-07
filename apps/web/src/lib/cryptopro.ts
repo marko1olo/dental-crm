@@ -47,7 +47,7 @@ export class DigitalSignatureService {
 			if (!this.isCryptoProAvailable) {
 				console.warn("[CryptoPro] Plugin not found or not working.");
 			}
-		} catch (e) {
+		} catch (_e) {
 			this.isCryptoProAvailable = false;
 		}
 
@@ -57,7 +57,7 @@ export class DigitalSignatureService {
 			if (!this.isRutokenAvailable) {
 				console.warn("[Rutoken] Plugin not found or not working.");
 			}
-		} catch (e) {
+		} catch (_e) {
 			this.isRutokenAvailable = false;
 		}
 	}

@@ -1,4 +1,4 @@
-import { Calendar, FlaskConical, Link, Plus, Trash2 } from "lucide-react";
+import { Calendar, FlaskConical, Link, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
@@ -79,6 +79,8 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		повторить; честная пустота — с указанием, откуда здесь берутся наряды.
 	*/
 	const [loadError, setLoadError] = useState<string | null>(null);
+	const [isCreating, setIsCreating] = useState(false);
+	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	// Form state for new ZTL order
 	const [toothFdi, setToothFdi] = useState("");
@@ -185,7 +187,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		if (patientId) {
 			void fetchOrders();
 		}
-	}, [patientId]);
+	}, [patientId, fetchOrders]);
 
 	// A technician changing an order from the guest portal broadcasts over WS
 	// into the app store; refetch so the clinic view reflects it live instead of
@@ -194,10 +196,11 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		if (patientId && liveStatus) {
 			fetchOrders();
 		}
-	}, [liveStatus]);
+	}, [liveStatus, patientId, fetchOrders]);
 
 	const handleCreateOrder = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isCreating) return;
 		/*
 			ЦЕНА РАБОТЫ СЧИТАЛАСЬ ЦЕЛЫМИ РУБЛЯМИ И МОЛЧА ТЕРЯЛАСЬ.
 
@@ -222,6 +225,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			);
 			return;
 		}
+		setIsCreating(true);
 		try {
 			const res = await fetch("/api/clinical/lab-orders", {
 				method: "POST",
@@ -256,11 +260,15 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			}
 		} catch (e) {
 			showToast("Системная ошибка", "error");
+		} finally {
+			setIsCreating(false);
 		}
 	};
 
 	const handleDeleteOrder = async (id: string) => {
+		if (deletingId === id) return;
 		if (!window.confirm("Удалить заказ зуботехнической лаборатории?")) return;
+		setDeletingId(id);
 		try {
 			const res = await fetch(`/api/clinical/lab-orders/${id}`, {
 				method: "DELETE",
@@ -274,6 +282,8 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			}
 		} catch (e) {
 			showToast("Системная ошибка", "error");
+		} finally {
+			setDeletingId(null);
 		}
 	};
 
@@ -299,7 +309,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				const err = await res.json().catch(() => ({}));
 				showToast(err.message || "Ошибка обновления статуса", "error");
 			}
-		} catch (e) {
+		} catch (_e) {
 			setOrders(previous);
 			showToast("Системная ошибка", "error");
 		}
@@ -483,9 +493,11 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 				<button
 					type="submit"
-					className="w-full py-2 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-[#1e293b] font-bold rounded-lg text-xs transition-colors shadow-md shadow-teal-500/10"
+					disabled={isCreating}
+					aria-busy={isCreating}
+					className="w-full py-2 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-[#1e293b] font-bold rounded-lg text-xs transition-colors shadow-md shadow-teal-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					Создать наряд ЗТЛ
+					{isCreating ? "Создание..." : "Создать наряд ЗТЛ"}
 				</button>
 			</form>
 
@@ -653,8 +665,10 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 									</button>
 									<button
 										type="button"
+										disabled={deletingId === order.id}
+										aria-busy={deletingId === order.id}
 										onClick={() => handleDeleteOrder(order.id)}
-										className="p-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors"
+										className="p-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 									>
 										<Trash2 className="w-3.5 h-3.5" />
 									</button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { showToast } from "../GlobalToast";
 
 export type SberbankTerminalPaymentModalProps = {
@@ -21,20 +21,6 @@ export function SberbankTerminalPaymentModal({
 	>("idle");
 	const [orderId, setOrderId] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState("");
-
-	useEffect(() => {
-		if (isOpen && status === "idle") {
-			initiatePayment();
-		}
-	}, [isOpen, status]);
-
-	useEffect(() => {
-		if (!isOpen) {
-			setStatus("idle");
-			setOrderId(null);
-			setErrorMsg("");
-		}
-	}, [isOpen]);
 
 	const initiatePayment = async () => {
 		if (!patientId || !amountInRubles) return;
@@ -61,6 +47,20 @@ export function SberbankTerminalPaymentModal({
 			setErrorMsg(err.message || "Не удалось запустить терминал");
 		}
 	};
+
+	useEffect(() => {
+		if (isOpen && status === "idle") {
+			initiatePayment();
+		}
+	}, [isOpen, status]);
+
+	useEffect(() => {
+		if (!isOpen) {
+			setStatus("idle");
+			setOrderId(null);
+			setErrorMsg("");
+		}
+	}, [isOpen]);
 
 	useEffect(() => {
 		if (status !== "polling" || !orderId) return;
@@ -93,6 +93,16 @@ export function SberbankTerminalPaymentModal({
 		return () => clearInterval(interval);
 	}, [status, orderId, onSuccess, onClose]);
 
+	const handleClose = () => {
+		if (
+			status === "polling" &&
+			!window.confirm("Оплата в процессе. Вы уверены, что хотите закрыть?")
+		) {
+			return;
+		}
+		onClose();
+	};
+
 	if (!isOpen) return null;
 
 	return (
@@ -118,8 +128,19 @@ export function SberbankTerminalPaymentModal({
 				)}
 
 				{status === "polling" && (
-					<div style={{ color: "var(--brand-600)", fontWeight: "bold" }}>
-						Ожидание оплаты клиентом на терминале...
+					<div style={{ marginBottom: "16px" }}>
+						<div style={{ color: "var(--brand-600)", fontWeight: "bold" }}>
+							Ожидание оплаты клиентом на терминале...
+						</div>
+						<div
+							style={{
+								color: "var(--rust, #c53030)",
+								fontSize: "13px",
+								marginTop: "6px",
+							}}
+						>
+							Внимание: при закрытии окна во время оплаты транзакция на терминале не отменяется.
+						</div>
 					</div>
 				)}
 
@@ -155,7 +176,7 @@ export function SberbankTerminalPaymentModal({
 					<button
 						type="button"
 						className="secondary-button"
-						onClick={onClose}
+						onClick={handleClose}
 						disabled={status === "initiating" || status === "success"}
 					>
 						Отмена

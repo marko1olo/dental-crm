@@ -125,6 +125,8 @@ export function WaitlistDrawer(props: Props) {
 	const [loadFailureStatus, setLoadFailureStatus] = useState<
 		number | null | undefined
 	>(undefined);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [loadingId, setLoadingId] = useState<string | null>(null);
 
 	// Form State
 	const [selectedPatientId, setSelectedPatientId] = useState("");
@@ -173,11 +175,13 @@ export function WaitlistDrawer(props: Props) {
 
 	const handleAdd = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isSubmitting) return;
 		if (!selectedPatientId) {
 			showToast("Выберите пациента", "error");
 			return;
 		}
 
+		setIsSubmitting(true);
 		try {
 			const res = await fetch("/api/waitlist", {
 				method: "POST",
@@ -207,11 +211,15 @@ export function WaitlistDrawer(props: Props) {
 				"Сервер клиники не ответил, пациент в очередь не добавлен. Проверьте, что программа клиники запущена и есть сеть, и повторите.",
 				"error",
 			);
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
 	const handleDelete = async (id: string) => {
+		if (loadingId === id) return;
 		if (!window.confirm("Удалить запись из листа ожидания?")) return;
+		setLoadingId(id);
 		try {
 			const res = await fetch(`/api/waitlist/${id}`, {
 				method: "DELETE",
@@ -231,6 +239,8 @@ export function WaitlistDrawer(props: Props) {
 				"Сервер клиники не ответил, запись осталась в очереди. Проверьте сеть и повторите.",
 				"error",
 			);
+		} finally {
+			setLoadingId(null);
 		}
 	};
 
@@ -240,6 +250,8 @@ export function WaitlistDrawer(props: Props) {
 	 * вообще позвали», и оценить, работает ли очередь, становится нечем.
 	 */
 	const handleFulfill = async (item: WaitlistItem) => {
+		if (loadingId === item.id) return;
+		setLoadingId(item.id);
 		try {
 			const res = await fetch(`/api/waitlist/${item.id}`, {
 				method: "PUT",
@@ -260,60 +272,42 @@ export function WaitlistDrawer(props: Props) {
 				"Сервер клиники не ответил, заявка осталась в очереди. Проверьте сеть и повторите.",
 				"error",
 			);
+		} finally {
+			setLoadingId(null);
 		}
 	};
 
 	const handleBook = (item: WaitlistItem) => {
-		// Prefill new appointment draft
-		updateNewAppointmentDraft("patientId", item.patientId);
-		if (item.preferredDoctorId) {
-			updateNewAppointmentDraft("doctorUserId", item.preferredDoctorId);
+		if (loadingId === item.id) return;
+		setLoadingId(item.id);
+		try {
+			// Prefill new appointment draft
+			updateNewAppointmentDraft("patientId", item.patientId);
+			if (item.preferredDoctorId) {
+				updateNewAppointmentDraft("doctorUserId", item.preferredDoctorId);
+			}
+
+			const formWrapper = document.querySelector<HTMLElement>(
+				".appointment-create-wrapper",
+			);
+			const toggleBtn = formWrapper?.querySelector<HTMLButtonElement>(
+				"[data-schedule-create-toggle]",
+			);
+			if (toggleBtn && toggleBtn.getAttribute("aria-expanded") !== "true") {
+				toggleBtn.click();
+			}
+
+			// Close waitlist drawer and focus appointment editor
+			onClose();
+			focusNewAppointmentEditor();
+
+			showToast(
+				`Пациент ${item.patientName || ""} выбран. Укажите время записи.`,
+				"success",
+			);
+		} finally {
+			setLoadingId(null);
 		}
-
-		/*
-			«ЗАПИСАТЬ НА ПРИЁМ» ИЗ ОЧЕРЕДИ НЕ РАСКРЫВАЛО ФОРМУ ЗАПИСИ.
-
-			ЧТО БЫЛО СЛОМАНО. Кнопку «Показать все поля» искали по классу
-			`.text-button` внутри формы создания. В самой форме
-			(NewAppointmentForm.tsx) у этой кнопки класс `secondary-button`, а
-			`.text-button` там не встречается ни разу — querySelector возвращал null,
-			условие не выполнялось, и форма оставалась свёрнутой. Поиск по подписи
-			ломался вторым концом: подпись сменилась на «Показать все поля / Ручной
-			ввод», и любая её будущая правка снова тихо выключила бы раскрытие.
-
-			ЧТО ВИДЕЛ АДМИНИСТРАТОР. В листе ожидания у пациента нажимал «Записать
-			на приём» — ящик закрывался, всплывало «Пациент выбран. Укажите время
-			записи», и указывать время было НЕГДЕ: форма свёрнута, полей нет.
-			Пациент при этом уже подставлен в черновик. Дальше два исхода: человек
-			решает, что кнопка сломана, и очередь стоит; либо жмёт «Создать запись»
-			(она рядом и активна, когда черновику хватает полей) — и запись уходит в
-			базу со временем, которого он ни разу не видел на экране.
-
-			ЧТО СТАЛО. Кнопку ищем по опознавательной метке
-			data-schedule-create-toggle, не зависящей ни от оформления, ни от текста,
-			а раскрыта форма или нет — читаем из aria-expanded той же кнопки, а не
-			из её подписи.
-		*/
-		const formWrapper = document.querySelector<HTMLElement>(
-			".appointment-create-wrapper",
-		);
-		const toggleBtn = formWrapper?.querySelector<HTMLButtonElement>(
-			"[data-schedule-create-toggle]",
-		);
-		if (toggleBtn && toggleBtn.getAttribute("aria-expanded") !== "true") {
-			toggleBtn.click();
-		}
-
-		// Close waitlist drawer and focus appointment editor
-		onClose();
-		focusNewAppointmentEditor();
-
-		// Auto-remove/fulfill waitlist item after booking or let the user complete it
-		// The user can now mark it as completed using the CheckCircle2 button, avoiding orphaned waitlist entries.
-		showToast(
-			`Пациент ${item.patientName || ""} выбран. Укажите время записи.`,
-			"success",
-		);
 	};
 
 	const [isMinimized, setIsMinimized] = useState(false);
@@ -375,7 +369,17 @@ export function WaitlistDrawer(props: Props) {
 			className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm"
 			data-testid="waitlist-drawer"
 		>
-			<div className="absolute inset-0" onClick={onClose} />
+			<div
+				className="absolute inset-0"
+				role="button"
+				tabIndex={-1}
+				onClick={onClose}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						onClose();
+					}
+				}}
+			/>
 			<div className="relative w-full max-w-md h-full bg-[var(--paper)] border-l border-[var(--line)] shadow-2xl flex flex-col z-10 text-[var(--ink)] animate-slide-in">
 				{/* Header */}
 				<div className="p-6 border-b border-[var(--line)] flex items-center justify-between">
@@ -403,6 +407,7 @@ export function WaitlistDrawer(props: Props) {
 								strokeLinecap="round"
 								strokeLinejoin="round"
 							>
+								<title>Свернуть окно</title>
 								<line x1="5" y1="12" x2="19" y2="12"></line>
 							</svg>
 						</button>
@@ -527,7 +532,9 @@ export function WaitlistDrawer(props: Props) {
 						*/}
 						<button
 							type="submit"
-							className="w-full py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-sm transition-all shadow-md shadow-[var(--teal-surface)]"
+							disabled={isSubmitting}
+							aria-busy={isSubmitting}
+							className="w-full py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-sm transition-all shadow-md shadow-[var(--teal-surface)] disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							Добавить в очередь
 						</button>
@@ -562,6 +569,8 @@ export function WaitlistDrawer(props: Props) {
 								{items.map((item) => (
 									<div
 										key={item.id}
+										role="button"
+										tabIndex={0}
 										draggable
 										onDragStart={(e) => {
 											e.dataTransfer.setData(
@@ -602,8 +611,10 @@ export function WaitlistDrawer(props: Props) {
 										<div className="flex gap-2 mt-1">
 											<button
 												type="button"
+												disabled={loadingId === item.id}
+												aria-busy={loadingId === item.id}
 												onClick={() => handleBook(item)}
-												className="flex-1 py-1.5 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-lg text-xs transition-colors border border-[var(--teal-ring)]"
+												className="flex-1 py-1.5 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-lg text-xs transition-colors border border-[var(--teal-ring)] disabled:opacity-50 disabled:cursor-not-allowed"
 											>
 												Записать на прием
 											</button>
@@ -619,8 +630,10 @@ export function WaitlistDrawer(props: Props) {
 											*/}
 											<button
 												type="button"
+												disabled={loadingId === item.id}
+												aria-busy={loadingId === item.id}
 												onClick={() => handleFulfill(item)}
-												className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors"
+												className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 												title="Дождался приёма: убрать из очереди, запись о заявке сохранить"
 												aria-label="Дождался приёма: убрать из очереди, запись о заявке сохранить"
 											>
@@ -628,8 +641,10 @@ export function WaitlistDrawer(props: Props) {
 											</button>
 											<button
 												type="button"
+												disabled={loadingId === item.id}
+												aria-busy={loadingId === item.id}
 												onClick={() => handleDelete(item.id)}
-												className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-colors"
+												className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 												title="Убрать совсем: заявка ошибочная или человек больше не хочет"
 												aria-label="Убрать совсем: заявка ошибочная или человек больше не хочет"
 											>

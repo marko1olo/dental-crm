@@ -7,8 +7,6 @@ import {
 	ShieldAlert,
 	Stethoscope,
 	Trash2,
-	User,
-	UserX,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
@@ -47,6 +45,8 @@ export function PatientReclamationsWidget({
 }) {
 	const { dashboard, auth } = useAppLogicContext();
 	const [isAdding, setIsAdding] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	const getReadHeaders = () => (auth ? auth.denteClinicalReadHeaders() : {});
 	const getMutationHeaders = (extra?: Record<string, string>) =>
@@ -119,7 +119,9 @@ export function PatientReclamationsWidget({
 
 	const handleAdd = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!newComplicationDetails || !doctorId) return;
+		if (isSubmitting) return;
+		if (!newComplicationDetails.trim() || !doctorId) return;
+		setIsSubmitting(true);
 		try {
 			const res = await fetch(`/api/patients/${patientId}/reclamations`, {
 				method: "POST",
@@ -127,7 +129,7 @@ export function PatientReclamationsWidget({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
-					complicationDetails: newComplicationDetails,
+					complicationDetails: newComplicationDetails.trim(),
 					proposedAction: newProposedAction,
 					doctorId,
 				}),
@@ -153,6 +155,8 @@ export function PatientReclamationsWidget({
 				`${actionFailureToast("Рекламация не зафиксирована", null)} Введённый текст остался в форме.`,
 				"error",
 			);
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -205,12 +209,14 @@ export function PatientReclamationsWidget({
 	};
 
 	const handleDelete = async (recId: string) => {
+		if (deletingId === recId) return;
 		if (
 			!confirm(
 				"Вы действительно хотите полностью удалить запись об этом инциденте? Это действие нельзя отменить.",
 			)
 		)
 			return;
+		setDeletingId(recId);
 		try {
 			const res = await fetch(
 				`/api/patients/${patientId}/reclamations/${recId}`,
@@ -236,6 +242,8 @@ export function PatientReclamationsWidget({
 				`${actionFailureToast("Рекламация не удалена", null)} Запись осталась в карте.`,
 				"error",
 			);
+		} finally {
+			setDeletingId(null);
 		}
 	};
 
@@ -491,9 +499,11 @@ export function PatientReclamationsWidget({
 								</button>
 								<button
 									type="submit"
-									className="primary-button bg-rose-600 hover:bg-rose-700 text-white border-0 px-4 py-2 rounded-lg font-semibold cursor-pointer"
+									disabled={isSubmitting}
+									aria-busy={isSubmitting}
+									className="primary-button bg-rose-600 hover:bg-rose-700 text-white border-0 px-4 py-2 rounded-lg font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 								>
-									Зафиксировать в карту
+									{isSubmitting ? "Фиксация..." : "Зафиксировать в карту"}
 								</button>
 							</div>
 						</motion.form>
@@ -560,8 +570,10 @@ export function PatientReclamationsWidget({
 												</button>
 												<button
 													type="button"
+													disabled={deletingId === rec.id}
+													aria-busy={deletingId === rec.id}
 													onClick={() => handleDelete(rec.id)}
-													className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-1.5 rounded-md cursor-pointer transition-colors"
+													className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-1.5 rounded-md cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 													title="Удалить безвозвратно"
 												>
 													<Trash2 size={16} />

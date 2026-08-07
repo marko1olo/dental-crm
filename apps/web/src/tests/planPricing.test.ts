@@ -47,10 +47,10 @@ describe("resolvePlanSuggestions — цена только из прайса", (
 			],
 		);
 		assert.equal(rows.length, 1);
-		assert.equal(rows[0]!.serviceId, "svc-caries");
-		assert.equal(rows[0]!.serviceTitle, "Лечение кариеса");
-		assert.equal(rows[0]!.priceRub, 3450.5);
-		assert.equal(rows[0]!.issue, null);
+		assert.equal(rows[0]?.serviceId, "svc-caries");
+		assert.equal(rows[0]?.serviceTitle, "Лечение кариеса");
+		assert.equal(rows[0]?.priceRub, 3450.5);
+		assert.equal(rows[0]?.issue, null);
 	});
 
 	it("пустой прайс не даёт ни цены, ни нуля", () => {
@@ -58,9 +58,9 @@ describe("resolvePlanSuggestions — цена только из прайса", (
 			[{ toothNumber: 16, state: "Caries" }],
 			[],
 		);
-		assert.equal(rows[0]!.priceRub, null);
-		assert.notEqual(rows[0]!.priceRub, 0);
-		assert.equal(rows[0]!.issue?.kind, "catalog_empty");
+		assert.equal(rows[0]?.priceRub, null);
+		assert.notEqual(rows[0]?.priceRub, 0);
+		assert.equal(rows[0]?.issue?.kind, "catalog_empty");
 	});
 
 	it("ни одна из пяти прежних выдуманных цен не появляется", () => {
@@ -96,9 +96,9 @@ describe("resolvePlanSuggestions — цена только из прайса", (
 				}),
 			],
 		);
-		assert.equal(rows[0]!.serviceId, null);
-		assert.equal(rows[0]!.priceRub, null);
-		assert.equal(rows[0]!.issue?.kind, "not_in_catalog");
+		assert.equal(rows[0]?.serviceId, null);
+		assert.equal(rows[0]?.priceRub, null);
+		assert.equal(rows[0]?.issue?.kind, "not_in_catalog");
 	});
 
 	it("несколько подходящих услуг — выбирает врач, а не программа", () => {
@@ -117,9 +117,9 @@ describe("resolvePlanSuggestions — цена только из прайса", (
 				}),
 			],
 		);
-		assert.equal(rows[0]!.priceRub, null);
-		assert.equal(rows[0]!.issue?.kind, "ambiguous");
-		assert.equal(rows[0]!.issue?.matches, 2);
+		assert.equal(rows[0]?.priceRub, null);
+		assert.equal(rows[0]?.issue?.kind, "ambiguous");
+		assert.equal(rows[0]?.issue?.matches, 2);
 	});
 
 	it("выключенная позиция прайса не попадает в смету", () => {
@@ -134,8 +134,8 @@ describe("resolvePlanSuggestions — цена только из прайса", (
 				}),
 			],
 		);
-		assert.equal(rows[0]!.priceRub, null);
-		assert.equal(rows[0]!.issue?.kind, "catalog_empty");
+		assert.equal(rows[0]?.priceRub, null);
+		assert.equal(rows[0]?.issue?.kind, "catalog_empty");
 	});
 
 	it("«ё» в названии услуги не мешает совпадению", () => {
@@ -149,7 +149,7 @@ describe("resolvePlanSuggestions — цена только из прайса", (
 				}),
 			],
 		);
-		assert.equal(rows[0]!.priceRub, 9000);
+		assert.equal(rows[0]?.priceRub, 9000);
 	});
 });
 
@@ -364,8 +364,8 @@ describe("validateDraftPlanRows — заполненная строка не и�
 		assert.equal(result.ok, true);
 		if (!result.ok) return;
 		assert.equal(result.items.length, 1);
-		assert.equal(result.items[0]!.price, 1500.5);
-		assert.equal(result.items[0]!.toothNumber, 16);
+		assert.equal(result.items[0]?.price, 1500.5);
+		assert.equal(result.items[0]?.toothNumber, 16);
 		assert.equal(result.totalKopecks, 300100);
 	});
 

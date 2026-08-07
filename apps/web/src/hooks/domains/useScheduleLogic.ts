@@ -4,6 +4,7 @@ import type {
 	ScheduleWarning,
 	StaffWorkingHours,
 } from "@dental/shared";
+import { useRef } from "react";
 import {
 	type AppointmentScheduleDraft,
 	appointmentCreateInputFromDraft,
@@ -73,6 +74,7 @@ export function useScheduleLogic({
 	loadDashboard,
 	selectedSpecialty,
 }: any) {
+	const appointmentMutationIdRef = useRef<string | null>(null);
 	const scheduleStore = useScheduleStore();
 	const { setScheduleAdminSecretDemand } = useSettingsStore();
 	const {
@@ -676,12 +678,22 @@ export function useScheduleLogic({
 			[appointmentId]: null,
 		}));
 		try {
+			if (!appointmentMutationIdRef.current) {
+				appointmentMutationIdRef.current =
+					typeof crypto !== "undefined" && "randomUUID" in crypto
+						? crypto.randomUUID()
+						: `appointment-${Date.now()}`;
+			}
+			const mutationId = appointmentMutationIdRef.current;
 			const response = await fetch(`/api/appointments/${appointmentId}`, {
 				method: "PATCH",
 				headers: auth.scheduleMutationHeaders({
 					"Content-Type": "application/json",
 				}),
-				body: JSON.stringify(appointmentUpdateInputFromDraft(draft)),
+				body: JSON.stringify({
+					...appointmentUpdateInputFromDraft(draft),
+					clientMutationId: mutationId,
+				}),
 			});
 			if (!response.ok) {
 				setScheduleAdminSecretDemand(
@@ -691,6 +703,7 @@ export function useScheduleLogic({
 					await responseErrorMessage(response, "Запись не сохранена"),
 				);
 			}
+			appointmentMutationIdRef.current = null;
 			setScheduleAdminSecretDemand("");
 			const payload = await response.json();
 			const nextDashboard = payload as Dashboard;
@@ -782,14 +795,22 @@ export function useScheduleLogic({
 			(dashboard?.appointments ?? []).map((appointment) => appointment.id),
 		);
 		try {
+			if (!appointmentMutationIdRef.current) {
+				appointmentMutationIdRef.current =
+					typeof crypto !== "undefined" && "randomUUID" in crypto
+						? crypto.randomUUID()
+						: `appointment-${Date.now()}`;
+			}
+			const mutationId = appointmentMutationIdRef.current;
 			const response = await fetch("/api/appointments", {
 				method: "POST",
 				headers: auth.scheduleMutationHeaders({
 					"Content-Type": "application/json",
 				}),
-				body: JSON.stringify(
-					appointmentCreateInputFromDraft(newAppointmentDraft),
-				),
+				body: JSON.stringify({
+					...appointmentCreateInputFromDraft(newAppointmentDraft),
+					clientMutationId: mutationId,
+				}),
 			});
 			if (!response.ok) {
 				setScheduleAdminSecretDemand(
@@ -799,6 +820,7 @@ export function useScheduleLogic({
 					await responseErrorMessage(response, "Запись не создана"),
 				);
 			}
+			appointmentMutationIdRef.current = null;
 			setScheduleAdminSecretDemand("");
 			const payload = await response.json();
 			const nextDashboard = payload as Dashboard;

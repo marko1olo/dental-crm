@@ -5,7 +5,6 @@ import type {
 	ImagingViewerImplantPlan,
 } from "@dental/shared";
 import {
-	distanceMm,
 	finiteOrNull,
 	polylineLengthMm,
 	round1,

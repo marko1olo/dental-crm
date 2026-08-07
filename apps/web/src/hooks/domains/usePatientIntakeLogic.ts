@@ -38,6 +38,7 @@ export interface UsePatientIntakeLogicOptions {
 	activeAppointment: Appointment | null;
 	visitNoteForm: VisitNoteForm;
 	clinicalToothRowsValue: () => ClinicalToothRow[];
+	setError?: (error: string | null) => void;
 }
 
 export function usePatientIntakeLogic({
@@ -50,6 +51,7 @@ export function usePatientIntakeLogic({
 	activeAppointment,
 	visitNoteForm,
 	clinicalToothRowsValue,
+	setError,
 }: UsePatientIntakeLogicOptions) {
 	const {
 		selectedDocumentKind,
@@ -347,9 +349,9 @@ export function usePatientIntakeLogic({
 		outpatient025uDraftHydratedKeyRef.current =
 			outpatient025uDraftPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId,
-		outpatient025uDraftPersistenceKey,
-		selectedDocumentKind,
+		documentLocalPersistenceOrganizationId, 
+		outpatient025uDraftPersistenceKey, 
+		selectedDocumentKind, applyOutpatient025uDocumentDraftFields
 	]);
 
 	useEffect(() => {
@@ -372,43 +374,11 @@ export function usePatientIntakeLogic({
 			currentOutpatient025uDocumentDraftFields(),
 		);
 	}, [
-		documentPatient?.id,
-		documentLocalPersistenceOrganizationId,
-		outpatient025uDraftPersistenceKey,
-		outpatient025uDraftVisitId,
-		outpatient025uMedicalCardNumber,
-		outpatient025uOpenedAt,
-		outpatient025uPatientSexCode,
-		outpatient025uCitizenship,
-		outpatient025uRegistrationUrbanRuralCode,
-		outpatient025uStayUrbanRuralCode,
-		outpatient025uOmsIssuedAt,
-		outpatient025uInsurerName,
-		outpatient025uSocialSupportCode,
-		outpatient025uHealthStatusDisclosureContact,
-		outpatient025uEmploymentCode,
-		outpatient025uDisabilityGroup,
-		outpatient025uWorkOrStudyPlace,
-		outpatient025uPalliativeCareNeedCode,
-		outpatient025uBloodGroup,
-		outpatient025uRhFactor,
-		outpatient025uKellK1,
-		outpatient025uOtherBloodData,
-		outpatient025uAllergyHistory,
-		outpatient025uFinalEpicrisis,
-		recordExtractPeriodStart,
-		recordExtractPeriodEnd,
-		recordExtractSourceVisitIds,
-		recordExtractComplaintAndAnamnesis,
-		recordExtractObjectiveStatus,
-		recordExtractDiagnosis,
-		recordExtractTreatmentProvided,
-		recordExtractRecommendations,
-		recordExtractDoctorFullName,
-		recordExtractPreparedFromSignedRecords,
-		outpatient025uOfficialForm274nChecked,
-		outpatient025uThirdPartyDataChecked,
-		selectedDocumentKind,
+		documentPatient?.id, 
+		documentLocalPersistenceOrganizationId, 
+		outpatient025uDraftPersistenceKey, 
+		outpatient025uDraftVisitId, 
+		selectedDocumentKind, currentOutpatient025uDocumentDraftFields
 	]);
 
 	useEffect(() => {
@@ -429,9 +399,9 @@ export function usePatientIntakeLogic({
 		medicalRecordExtractDraftHydratedKeyRef.current =
 			medicalRecordExtractDraftPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId,
-		medicalRecordExtractDraftPersistenceKey,
-		selectedDocumentKind,
+		documentLocalPersistenceOrganizationId, 
+		medicalRecordExtractDraftPersistenceKey, 
+		selectedDocumentKind, applyMedicalRecordExtractDocumentDraftFields
 	]);
 
 	useEffect(() => {
@@ -454,25 +424,11 @@ export function usePatientIntakeLogic({
 			currentMedicalRecordExtractDocumentDraftFields(),
 		);
 	}, [
-		documentPatient?.id,
-		documentLocalPersistenceOrganizationId,
-		medicalRecordExtractDraftPersistenceKey,
-		medicalRecordExtractDraftVisitId,
-		recordExtractPeriodStart,
-		recordExtractPeriodEnd,
-		recordExtractSourceVisitIds,
-		recordExtractComplaintAndAnamnesis,
-		recordExtractObjectiveStatus,
-		recordExtractDiagnosis,
-		recordExtractTreatmentProvided,
-		recordExtractRecommendations,
-		recordExtractDoctorFullName,
-		recordExtractRecipientFullName,
-		recordExtractRecipientAuthority,
-		recordExtractIssuedAt,
-		recordExtractPreparedFromSignedRecords,
-		recordExtractThirdPartyDataChecked,
-		selectedDocumentKind,
+		documentPatient?.id, 
+		documentLocalPersistenceOrganizationId, 
+		medicalRecordExtractDraftPersistenceKey, 
+		medicalRecordExtractDraftVisitId, 
+		selectedDocumentKind, currentMedicalRecordExtractDocumentDraftFields
 	]);
 
 	function recordExtractComplaintAndAnamnesisValue(): string {
@@ -555,7 +511,35 @@ export function usePatientIntakeLogic({
 		);
 	}
 
+	function validateMedicalCardPayload(): string | null {
+		if (!documentPatient || !documentPatient.fullName?.trim()) {
+			const error = "Выберите пациента";
+			setError?.(error);
+			return error;
+		}
+		const doctorFullName =
+			recordExtractDoctorFullName.trim() || activeDoctor?.fullName?.trim();
+		if (!doctorFullName) {
+			const error = "Не определён лечащий врач";
+			setError?.(error);
+			return error;
+		}
+		const clinicName =
+			clinicProfileDraft?.legalName?.trim() ||
+			clinicProfileDraft?.clinicName?.trim();
+		if (!clinicName) {
+			const error = "Не заполнено название клиники в настройках";
+			setError?.(error);
+			return error;
+		}
+		return null;
+	}
+
 	function dentalMedicalCard043uPayloadValue(): DentalMedicalCard043uPayload {
+		const validationError = validateMedicalCardPayload();
+		if (validationError) {
+			throw new Error(validationError);
+		}
 		const doctor = outpatient025uDoctorValue();
 		const visitDate = outpatient025uVisitDateValue();
 		const patientProfile = documentPatient?.administrativeProfile;
@@ -657,6 +641,10 @@ export function usePatientIntakeLogic({
 	}
 
 	function outpatient025uPayloadValue(): OutpatientMedicalCard025uPayload {
+		const validationError = validateMedicalCardPayload();
+		if (validationError) {
+			throw new Error(validationError);
+		}
 		const patientProfile = documentPatient?.administrativeProfile;
 		const doctor = outpatient025uDoctorValue();
 		const sourceVisitIds = outpatient025uSourceVisitIdsValue();
@@ -887,6 +875,7 @@ export function usePatientIntakeLogic({
 		outpatient025uLicenseValue,
 		outpatient025uDoctorValue,
 		outpatient025uVisitDateValue,
+		validateMedicalCardPayload,
 		dentalMedicalCard043uPayloadValue,
 		outpatient025uPayloadValue,
 	};

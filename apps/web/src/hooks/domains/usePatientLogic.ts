@@ -277,7 +277,7 @@ export function usePatientLogic({
 				? current
 				: (activePatient?.id ?? null),
 		);
-	}, [activePatient?.id, dashboard?.patients]);
+	}, [activePatient?.id, dashboard?.patients, setSelectedPatientId, dashboard]);
 
 	/*
 	 * СМЕНИЛСЯ ПАЦИЕНТ — ФОРМА ОПЛАТЫ ПУСТАЯ.
@@ -333,7 +333,7 @@ export function usePatientLogic({
 		setPatientCoreDraft(patientCoreDraftFromPatient(selectedPatient));
 		setPatientCoreSaveState("idle");
 		setPatientCoreDirty(false);
-	}, [selectedPatient?.id, selectedPatient?.updatedAt]);
+	}, [selectedPatient?.id, selectedPatient?.updatedAt, setPatientCoreSaveState, setPatientCoreDirty, setPatientCoreDraft, selectedPatient]);
 
 	useEffect(() => {
 		// То же самое для реквизитов: их сохранение тоже двигает updatedAt.
@@ -349,7 +349,7 @@ export function usePatientLogic({
 		);
 		setPatientAdministrativeProfileSaveState("idle");
 		setPatientAdministrativeProfileDirty(false);
-	}, [selectedPatient?.id, selectedPatient?.updatedAt]);
+	}, [selectedPatient?.id, selectedPatient?.updatedAt, selectedPatient, setPatientAdministrativeProfileDirty, setPatientAdministrativeProfileSaveState, setPatientAdministrativeProfileDraft]);
 
 	useEffect(() => {
 		patientCoreDraftRef.current = patientCoreDraft;
@@ -387,11 +387,10 @@ export function usePatientLogic({
 			}
 		};
 	}, [
-		selectedPatient?.id,
-		patientAdministrativeProfileDirty,
-		patientAdministrativeProfileDraft,
-		patientAdministrativeProfileSaveState,
-		patientAdministrativeProfileValidationMessage,
+		selectedPatient?.id, 
+		patientAdministrativeProfileDirty, 
+		patientAdministrativeProfileSaveState, 
+		patientAdministrativeProfileValidationMessage, selectedPatient, savePatientAdministrativeProfile
 	]);
 
 	function updatePatientCoreDraft<K extends keyof PatientCoreDraft>(

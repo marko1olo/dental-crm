@@ -234,11 +234,11 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			.join(", ");
 	})();
 	const doctorName =
-		diaryDoctorFullName && diaryDoctorFullName.trim()
+		diaryDoctorFullName?.trim()
 			? diaryDoctorFullName.trim()
 			: sessionDoctorName;
 	const doctorSpecialty =
-		diaryDoctorSpecialty && diaryDoctorSpecialty.trim()
+		diaryDoctorSpecialty?.trim()
 			? diaryDoctorSpecialty.trim()
 			: sessionDoctorSpecialty;
 
@@ -282,7 +282,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			| React.FocusEvent<HTMLTextAreaElement>,
 	) => {
 		e.target.style.height = "auto";
-		e.target.style.height = e.target.scrollHeight + "px";
+		e.target.style.height = `${e.target.scrollHeight}px`;
 	};
 
 	const icdEntry = ICD10_DICTIONARY.find(
@@ -726,7 +726,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									onResult={(text) =>
 										setDiary((p) => ({
 											...p,
-											anamnesis: p.anamnesis ? p.anamnesis + " " + text : text,
+											anamnesis: p.anamnesis ? `${p.anamnesis} ${text}` : text,
 										}))
 									}
 								/>
@@ -764,7 +764,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 										setDiary((p) => ({
 											...p,
 											statusLocalis: p.statusLocalis
-												? p.statusLocalis + " " + text
+												? `${p.statusLocalis} ${text}`
 												: text,
 										}))
 									}
@@ -863,9 +863,18 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 												<div
 													key={icd.code}
 													className="vde-043__icd-opt"
+													role="option"
+													aria-selected={false}
+													tabIndex={0}
 													onMouseDown={(e) => {
 														e.preventDefault();
 														handleIcdSelect(icd.code);
+													}}
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault();
+															handleIcdSelect(icd.code);
+														}
 													}}
 												>
 													<span
@@ -924,7 +933,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 										setDiary((p) => ({
 											...p,
 											treatmentDescription: p.treatmentDescription
-												? p.treatmentDescription + " " + text
+												? `${p.treatmentDescription} ${text}`
 												: text,
 										}))
 									}

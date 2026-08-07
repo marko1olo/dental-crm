@@ -84,7 +84,7 @@ function parseLegacyOrthoNotes(notesText: string | null | undefined): {
 				startDate: orthoData.start || getTodayString(),
 			},
 		};
-	} catch (e) {
+	} catch (_e) {
 		return { cleanNotes: text, legacyOrtho: null };
 	}
 }

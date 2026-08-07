@@ -549,11 +549,7 @@ import type {
 	ClinicMode,
 	ClinicPublicLookupResponse,
 	Dashboard,
-	DentalMaterialKind,
 	DentalModelWorkbenchManifest,
-	DentalPricelistAnalysisResponse,
-	DentalRestorationType,
-	DentalSpecialty,
 	DenteTelegramBotStatus,
 	DenteTelegramChatLinkPublic,
 	DenteTelegramFeature,
@@ -589,7 +585,6 @@ import type {
 	LocalBridgeUsePlansResponse,
 	LocalImagingOrganizerResponse,
 	MigrationAutopilotHandoffChecklistItem,
-	MigrationAutopilotOperatorScriptAction,
 	MigrationAutopilotOperatorScriptStep,
 	MigrationAutopilotPacketLane,
 	MigrationAutopilotResponse,
@@ -597,118 +592,55 @@ import type {
 	MigrationAutopilotStep,
 	MigrationLocalSourceDiscoveryCandidate,
 	MigrationLocalSourceDiscoveryResponse,
-	MigrationLocalSourceHandoff,
 	MigrationLocalSourceProbeResponse,
 	MigrationLocalSourceWorkupResponse,
-	MigrationLocalSourceWorkupStep,
-	MigrationProbeAdapter,
-	MigrationProbeArtifact,
 	MigrationReadinessItem,
-	PricelistSourceKind,
-	ProtocolTemplate,
 	RoleQueue,
 	ServiceCatalogItem,
 	ServiceCategory,
-	SmartImportMode,
 	SmartImportPreviewResponse,
 	SpeechProvider,
 	SpeechRecordingRecoveryList,
 	StaffMember,
-	StaffRole,
 	WeekdayIndex,
 } from "@dental/shared";
-import { motion } from "framer-motion";
 import {
-	Bot,
-	CalendarDays,
-	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
-	CircleStop,
 	ClipboardCheck,
-	Copy,
-	CreditCard,
 	Database,
-	Download,
-	ExternalLink,
 	FileCheck2,
-	FileText,
-	FlipHorizontal,
-	Gauge,
-	History,
-	Image as ImageIcon,
-	Layers3,
-	Mic,
-	Plus,
-	ReceiptText,
 	RefreshCw,
-	RotateCcw,
-	RotateCw,
 	ScanSearch,
 	Search,
-	Send,
-	ShieldCheck,
-	SlidersHorizontal,
-	Sparkles,
 	UploadCloud,
 	UserCheck,
-	Users,
-	ZoomIn,
-	ZoomOut,
 } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
-import { InventoryView } from "./components/InventoryView";
-import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
-import { InsuranceContractsPanel } from "./components/settings/InsuranceContractsPanel";
-import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
-import { SettingsAiTab } from "./components/settings/SettingsAiTab";
-import { SettingsAuditTab } from "./components/settings/SettingsAuditTab";
-import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
-import { SettingsImportsTab } from "./components/settings/SettingsImportsTab";
-import { SettingsMessengersTab } from "./components/settings/SettingsMessengersTab";
-import { SettingsPricesTab } from "./components/settings/SettingsPricesTab";
-import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
-import { SettingsProtocolsTab } from "./components/settings/SettingsProtocolsTab";
-import { SettingsRulesTab } from "./components/settings/SettingsRulesTab";
-import { SettingsSourcesTab } from "./components/settings/SettingsSourcesTab";
-import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
-import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
 import {
-	clinicalRuleOwnerRoles,
 	clinicPublicLookupFieldLabels,
-	clinicPublicLookupWarningText,
 	humanizeMigrationText,
 	migrationOperatorSourceBoundActions,
 	migrationTriageStatusPriority,
 } from "./components/settings/SettingsViewHelpers";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
-import {
-	type CtImplantLibraryItem,
-	type CtPlanningQuickAction,
-	CtPlanningToolsPanel,
+import type {
+	CtImplantLibraryItem,
+	CtPlanningQuickAction,
 } from "./ctPlanningTools";
 import {
 	type MprClinicalPreset,
 	type MprProjection,
-	type MprWindowPreset,
-	mprAxisPresetDeg,
 	mprClinicalPresets,
 	mprProjectionOrientationLabels,
-	mprSeriesRequiredProjectionLabel,
-	mprSlabPresetMm,
-	mprUnavailableProjectionLabel,
 } from "./imagingUiLabels";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import {
 	buildMprClinicalChecklist,
 	buildMprOperatorSummary,
 	buildMprWorkbenchSummary,
-	describeMprClinicalPresetProjectionFallback,
 	findNearestMprClinicalPreset,
 	mprClinicalNextAction,
 	resolveMprClinicalPresetProjection,
 } from "./mprClinicalStatus";
-import { PriceDictationBar } from "./PriceDictationBar";
 import type {
 	ImagingConnectorCard,
 	ImagingViewerCapability,
@@ -728,16 +660,9 @@ import {
 	formatMprSlabRangeValue,
 	formatMprSliceBadge,
 	formatMprSliceRangeValue,
-	formatSignedMprStep,
-	mprAxisBounds,
-	mprAxisNudgeDeg,
 	mprProjectionCompassLabels,
-	mprSlabBounds,
-	mprSlabNudgeMm,
 	mprSliceFraction,
 	mprSliceIndexFromFraction,
-	mprSliceNudgeSteps,
-	mprSlicePresetFractions,
 	resolveMprKeyboardAdjustment,
 } from "./utils/math/mprMath";
 
@@ -772,7 +697,7 @@ type TelegramInlineButton = { text: string; target: string; kind: string };
 type TelegramInlineButtonRow = TelegramInlineButton[];
 type StringTokenGroup = { title: string; items: string[] };
 
-function formatBrowserImagingScanElapsed(
+function _formatBrowserImagingScanElapsed(
 	elapsedMs: number | null | undefined,
 ): string {
 	const safeMs =
@@ -1340,146 +1265,146 @@ export function useSettingsDerivations() {
 		setTelegramAdminSecretDraft,
 	} = useSettingsStore();
 
-	const recognitionInputReady = (recognitionText || "").trim().length > 0;
+	const _recognitionInputReady = (recognitionText || "").trim().length > 0;
 	const smartImportInputReady = (smartImportText || "").trim().length > 0;
-	const imagingImportInputReady = (imagingImportText || "").trim().length > 0;
-	const patientImportInputReady = (importText || "").trim().length > 0;
-	const localImagingFolderReady = (imagingFolderPath || "").trim().length > 0;
-	const newStaffReadyToCreate = (newStaffName || "").trim().length > 0;
-	const newChairReadyToCreate = (newChairName || "").trim().length > 0;
-	const adminSecretReady = (telegramAdminSecretDraft || "").trim().length > 0;
-	const adminSecretScopeWarning =
+	const _imagingImportInputReady = (imagingImportText || "").trim().length > 0;
+	const _patientImportInputReady = (importText || "").trim().length > 0;
+	const _localImagingFolderReady = (imagingFolderPath || "").trim().length > 0;
+	const _newStaffReadyToCreate = (newStaffName || "").trim().length > 0;
+	const _newChairReadyToCreate = (newChairName || "").trim().length > 0;
+	const _adminSecretReady = (telegramAdminSecretDraft || "").trim().length > 0;
+	const _adminSecretScopeWarning =
 		settingsTab === "telegram"
 			? "Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные, если для них включены отдельные секреты."
 			: "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные, если для них включены отдельные секреты.";
-	const typedClinicModes = Object.keys(clinicModeLabels ?? {}) as ClinicMode[];
-	const typedModeHints = (dashboard?.clinicSettings?.modeHints ??
+	const _typedClinicModes = Object.keys(clinicModeLabels ?? {}) as ClinicMode[];
+	const _typedModeHints = (dashboard?.clinicSettings?.modeHints ??
 		[]) as string[];
-	const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ??
+	const _typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ??
 		[]) as RoleQueue[];
-	const typedStaffMembers = (dashboard?.clinicSettings?.staff ??
+	const _typedStaffMembers = (dashboard?.clinicSettings?.staff ??
 		[]) as StaffMember[];
-	const typedChairs = (dashboard?.clinicSettings?.chairs ?? []) as Chair[];
-	const typedWeekdayOptions = (weekdayOptions ?? []) as WeekdayOption[];
-	const typedUiLanguageOptions = (uiLanguageOptions ?? []) as Array<{
+	const _typedChairs = (dashboard?.clinicSettings?.chairs ?? []) as Chair[];
+	const _typedWeekdayOptions = (weekdayOptions ?? []) as WeekdayOption[];
+	const _typedUiLanguageOptions = (uiLanguageOptions ?? []) as Array<{
 		value: string;
 		label: string;
 		detail: string;
 	}>;
-	const typedTelegramLinkStaffOptions = (telegramLinkStaffOptions ??
+	const _typedTelegramLinkStaffOptions = (telegramLinkStaffOptions ??
 		[]) as StaffMember[];
 
-	const typedImagingConnectorCards = (imagingConnectorCards ??
+	const _typedImagingConnectorCards = (imagingConnectorCards ??
 		[]) as ImagingConnectorCard[];
-	const typedImagingViewerCapabilities = (imagingViewerCapabilities ??
+	const _typedImagingViewerCapabilities = (imagingViewerCapabilities ??
 		[]) as ImagingViewerCapability[];
-	const typedCtPlanningImplantPlan =
+	const _typedCtPlanningImplantPlan =
 		ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
-	const typedCtPlanningActiveQuickActionId =
+	const _typedCtPlanningActiveQuickActionId =
 		typeof ctPlanningActiveQuickActionId === "string"
 			? ctPlanningActiveQuickActionId
 			: null;
-	const typedImagingViewerActiveTool =
+	const _typedImagingViewerActiveTool =
 		imagingViewerActiveTool as ImagingViewerTool;
-	const typedIntegrationPresets = (dashboard?.clinicSettings
+	const _typedIntegrationPresets = (dashboard?.clinicSettings
 		?.integrationPresets ?? []) as IntegrationPreset[];
-	const typedSpeechProviders = (dashboard?.speechProviders ??
+	const _typedSpeechProviders = (dashboard?.speechProviders ??
 		[]) as SpeechProvider[];
-	const typedRecognitionPresets = (recognitionPresets ??
+	const _typedRecognitionPresets = (recognitionPresets ??
 		[]) as RecognitionPreset[];
-	const typedRecognitionJob = recognitionJob as AiRecognitionJob | null;
-	const typedSpeechRecordingRecovery =
+	const _typedRecognitionJob = recognitionJob as AiRecognitionJob | null;
+	const _typedSpeechRecordingRecovery =
 		speechRecordingRecovery as SpeechRecordingRecoveryList | null;
 	const typedBrowserMigrationDiscovery =
 		browserMigrationDiscovery as MigrationLocalSourceDiscoveryResponse | null;
 	const typedSmartImportPreview =
 		smartImportPreview as SmartImportPreviewResponse | null;
-	const typedImagingSourceChoices = (imagingSourceChoices ??
+	const _typedImagingSourceChoices = (imagingSourceChoices ??
 		[]) as ImagingSourceKind[];
-	const typedImagingImportPreview =
+	const _typedImagingImportPreview =
 		imagingImportPreview as ImagingImportPreviewResponse | null;
-	const typedBrowserContinuityChecks = (browserContinuityChecks ??
+	const _typedBrowserContinuityChecks = (browserContinuityChecks ??
 		[]) as BrowserContinuityCheck[];
-	const typedLocalBridgeReadiness =
+	const _typedLocalBridgeReadiness =
 		localBridgeReadiness as LocalBridgeReadinessResponse | null;
-	const typedLocalBridgeUsePlans =
+	const _typedLocalBridgeUsePlans =
 		localBridgeUsePlans as LocalBridgeUsePlansResponse | null;
-	const typedPersistenceIntegrity =
+	const _typedPersistenceIntegrity =
 		persistenceIntegrity as PersistenceIntegrityReport | null;
-	const typedImportBatches = (dashboard?.importBatches ?? []) as ImportBatch[];
-	const typedAuditEvents = (dashboard?.auditEvents ?? []) as AuditEvent[];
-	const typedImportSourceKinds = Object.keys(
+	const _typedImportBatches = (dashboard?.importBatches ?? []) as ImportBatch[];
+	const _typedAuditEvents = (dashboard?.auditEvents ?? []) as AuditEvent[];
+	const _typedImportSourceKinds = Object.keys(
 		importSourceLabels ?? {},
 	) as ImportSourceKind[];
-	const typedDocumentIngestionTargets = Object.keys(
+	const _typedDocumentIngestionTargets = Object.keys(
 		ingestionTargetLabels ?? {},
 	) as DocumentIngestionTarget[];
-	const typedDocumentIngestion =
+	const _typedDocumentIngestion =
 		documentIngestion as DocumentIngestionResponse | null;
-	const typedImportIntake = importIntake as ImportIntakeResponse | null;
-	const typedImportPreview = importPreview as ImportPreviewResponse | null;
-	const typedActiveWorkspaceProfile =
+	const _typedImportIntake = importIntake as ImportIntakeResponse | null;
+	const _typedImportPreview = importPreview as ImportPreviewResponse | null;
+	const _typedActiveWorkspaceProfile =
 		activeWorkspaceProfile as WorkspaceProfile | null;
-	const typedWorkspaceProfiles = (dashboard?.clinicSettings
+	const _typedWorkspaceProfiles = (dashboard?.clinicSettings
 		?.workspaceProfiles ?? []) as WorkspaceProfile[];
-	const typedRoleAccessPolicies = (dashboard?.clinicSettings
+	const _typedRoleAccessPolicies = (dashboard?.clinicSettings
 		?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
-	const typedTelegramChatLinks =
+	const _typedTelegramChatLinks =
 		(telegramChatLinks as DenteTelegramChatLinkPublic[]) ?? [];
-	const typedTelegramLinkCodes =
+	const _typedTelegramLinkCodes =
 		(telegramLinkCodes as DenteTelegramLinkCodePublic[]) ?? [];
-	const typedTelegramPreview =
+	const _typedTelegramPreview =
 		telegramPreview as DenteTelegramMessagePreview | null;
 	const typedTelegramOutbox =
 		telegramOutbox as DenteTelegramOutboxResponse | null;
 	const typedVisibleTelegramOutboxItems = (visibleTelegramOutboxItems ??
 		[]) as DenteTelegramOutboxItem[];
-	const telegramOutboxRemainingCount = typedTelegramOutbox
+	const _telegramOutboxRemainingCount = typedTelegramOutbox
 		? Math.max(
 				0,
 				typedTelegramOutbox.filteredCount -
 					typedVisibleTelegramOutboxItems.length,
 			)
 		: hiddenTelegramOutboxItemCount;
-	const typedTelegramStatus = telegramStatus as DenteTelegramBotStatus | null;
-	const typedTelegramOutboxStatusFilterOptions =
+	const _typedTelegramStatus = telegramStatus as DenteTelegramBotStatus | null;
+	const _typedTelegramOutboxStatusFilterOptions =
 		(telegramOutboxStatusFilterOptions ?? []) as string[];
-	const typedTelegramOutboxTemplateFilterOptions =
+	const _typedTelegramOutboxTemplateFilterOptions =
 		(telegramOutboxTemplateFilterOptions ?? []) as string[];
-	const typedTelegramInlineButtonKindLabels =
+	const _typedTelegramInlineButtonKindLabels =
 		telegramInlineButtonKindLabels as Record<string, string>;
-	const typedTelegramFeaturePlan =
+	const _typedTelegramFeaturePlan =
 		telegramFeaturePlan as TelegramFeaturePlan | null;
-	const typedTelegramEnabledFeaturesDraft =
+	const _typedTelegramEnabledFeaturesDraft =
 		telegramEnabledFeaturesDraft as DenteTelegramFeature[];
-	const typedTelegramFeatureOptions =
+	const _typedTelegramFeatureOptions =
 		telegramFeatureOptions as DenteTelegramFeature[];
-	const typedTelegramFeatureHelp = telegramFeatureHelp as Record<
+	const _typedTelegramFeatureHelp = telegramFeatureHelp as Record<
 		DenteTelegramFeature,
 		string
 	>;
-	const typedTelegramPostVisitCheckupDelayFields =
+	const _typedTelegramPostVisitCheckupDelayFields =
 		telegramPostVisitCheckupDelayFields as TelegramPostVisitCheckupDelayField[];
-	const typedTelegramPostVisitCheckupDelayDrafts =
+	const _typedTelegramPostVisitCheckupDelayDrafts =
 		telegramPostVisitCheckupDelayDrafts as Record<
 			TelegramPostVisitCheckupDelayKey,
 			string
 		>;
-	const typedTelegramVisualCardFields =
+	const _typedTelegramVisualCardFields =
 		telegramVisualCardFields as TelegramVisualCardField[];
-	const getTypedTelegramInlineButtonRows = (
+	const _getTypedTelegramInlineButtonRows = (
 		replyMarkup: Record<string, unknown> | null,
 	) =>
 		telegramInlineButtonRowsFromReplyMarkup(
 			replyMarkup,
 		) as TelegramInlineButtonRow[];
 
-	const telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance";
-	const telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance";
-	const telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance";
-	const telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance";
-	const dicomWorkbenchSeriesGuidanceId = "dicom-workbench-series-guidance";
-	const dicomWorkstationGuidanceId = "dicom-workstation-guidance";
+	const _telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance";
+	const _telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance";
+	const _telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance";
+	const _telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance";
+	const _dicomWorkbenchSeriesGuidanceId = "dicom-workbench-series-guidance";
+	const _dicomWorkstationGuidanceId = "dicom-workstation-guidance";
 	const dicomArchiveAddressGuidanceId = "dicom-archive-address-guidance";
 	const localDicomFolderGuidanceId = "local-dicom-folder-guidance";
 	const migrationHandoffReportGuidanceId = "migration-handoff-report-guidance";
@@ -1606,7 +1531,7 @@ export function useSettingsDerivations() {
 		dicomLocalFolderDiscovery as DicomLocalFolderDiscoveryResponse | null;
 	const typedLocalImagingOrganizer =
 		localImagingOrganizer as LocalImagingOrganizerResponse | null;
-	const activeDentalModelWorkbenchManifest: DentalModelWorkbenchManifest | null =
+	const _activeDentalModelWorkbenchManifest: DentalModelWorkbenchManifest | null =
 		typedLocalImagingOrganizer?.cases.find(
 			(caseItem) =>
 				localImagingFolderDraft?.folderFingerprint &&
@@ -1702,7 +1627,7 @@ export function useSettingsDerivations() {
 		sliceIndex: mprSafeSliceIndex,
 		maxIndex: mprSliceMaxIndex,
 	});
-	const mprAxisVisualizerStyle: MprAxisVisualizerStyle = {
+	const _mprAxisVisualizerStyle: MprAxisVisualizerStyle = {
 		"--mpr-axis-deg": `${mprAxisDeg}deg`,
 		"--mpr-slab-width": mprSlabVisualWidth,
 		"--mpr-slice-position": mprSlicePositionPercent,
@@ -2231,8 +2156,8 @@ export function useSettingsDerivations() {
 			<details className="migration-technical-boundary" data-testid={testId}>
 				<summary>{title}</summary>
 				<div>
-					{visibleItems.map((item, index) => (
-						<small key={`item-${item}-${index}`}>
+					{visibleItems.map((item) => (
+						<small key={item}>
 							{humanizeMigrationText(item)}
 						</small>
 					))}

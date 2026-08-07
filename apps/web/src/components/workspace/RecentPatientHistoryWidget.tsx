@@ -1,4 +1,4 @@
-import { ChevronRight, Clock, UserCheck } from "lucide-react";
+import { ChevronRight, Clock, } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -41,7 +41,7 @@ export const RecentPatientHistoryWidget: React.FC<{
 	 * происходит, а список читается раньше, чем отметка доедет. Проверено
 	 * живьём: строка в базе была, а счётчик в шапке показывал ноль.
 	 */
-	const recordedViews = context?.recentPatientViewsVersion;
+	const _recordedViews = context?.recentPatientViewsVersion;
 
 	/*
 	 * Заголовки берутся через ссылку, а не из зависимостей.
@@ -87,7 +87,7 @@ export const RecentPatientHistoryWidget: React.FC<{
 		return () => {
 			active = false;
 		};
-	}, [recordedViews]);
+	}, []);
 
 	const handleOpenPatient = (patId: string) => {
 		selectPatientById?.(patId);

@@ -117,7 +117,7 @@ export function smartBookingParser(
 ): Partial<AppointmentScheduleDraft> {
 	const normalizedInput = textToNumbers(text);
 	const parsed: Partial<AppointmentScheduleDraft> = {};
-	let remaining = " " + normalizedInput.toLowerCase().trim() + " ";
+	let remaining = ` ${normalizedInput.toLowerCase().trim()} `;
 
 	const words = remaining.split(/[^а-яёa-z0-9]+/i).filter((w) => w.length > 0);
 
@@ -343,7 +343,7 @@ export function smartBookingParser(
 		}
 	}
 
-	if (foundChairs.length > 0) parsed.chairId = foundChairs[0]!.id;
+	if (foundChairs.length > 0 && foundChairs[0]?.id) parsed.chairId = foundChairs[0].id;
 
 	// REMOVE EXTRACTED NAMES FROM REMAINING TO KEEP COMMENT CLEAN
 	const removeWordsSafely = (wordsToRemove: string[]) => {
@@ -538,7 +538,7 @@ export function smartBookingParser(
 		if (explicitDateMatch) {
 			const day = parseInt(explicitDateMatch[1]!, 10);
 			const monthStr = explicitDateMatch[2]
-				? explicitDateMatch[2]!.slice(0, 3).toLowerCase()
+				? explicitDateMatch[2]?.slice(0, 3).toLowerCase()
 				: undefined;
 			const monthIndex =
 				monthStr && MONTHS[monthStr] !== undefined ? MONTHS[monthStr]! : null;
@@ -674,7 +674,8 @@ export function smartBookingParser(
 				"12": 12,
 				двенадцатого: 12,
 			};
-			hours = halfMap[halfMatch[1]!.toLowerCase()] || 12;
+			const halfKey = halfMatch[1]?.toLowerCase();
+			hours = (halfKey ? halfMap[halfKey] : undefined) || 12;
 			minutes = 30;
 			timeFound = true;
 			remaining = remaining.replace(halfMatch[0], " ");

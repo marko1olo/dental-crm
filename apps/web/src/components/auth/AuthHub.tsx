@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AcceptInvite } from "./AcceptInvite";
 import { AuthArtBackground } from "./AuthArtBackground";
 import { ClinicLogin } from "./ClinicLogin";

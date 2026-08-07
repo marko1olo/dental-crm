@@ -21,20 +21,20 @@ export function levenshteinDistance(a: string, b: string): number {
 	for (let i = 1; i <= b.length; i++) {
 		for (let j = 1; j <= a.length; j++) {
 			if (b.charAt(i - 1) === a.charAt(j - 1)) {
-				matrix[i]![j] = matrix[i - 1]![j - 1] as number;
+				matrix[i]![j] = matrix[i - 1]?.[j - 1] as number;
 			} else {
 				matrix[i]![j] = Math.min(
-					(matrix[i - 1]![j - 1] as number) + 1,
+					(matrix[i - 1]?.[j - 1] as number) + 1,
 					Math.min(
-						(matrix[i]![j - 1] as number) + 1,
-						(matrix[i - 1]![j] as number) + 1,
+						(matrix[i]?.[j - 1] as number) + 1,
+						(matrix[i - 1]?.[j] as number) + 1,
 					),
 				);
 			}
 		}
 	}
 
-	return matrix[b.length]![a.length] as number;
+	return matrix[b.length]?.[a.length] as number;
 }
 
 /**
@@ -319,12 +319,12 @@ export function textToNumbers(text: string): string {
 
 			if (matchedVal === 0) {
 				if (currentNum > 0) {
-					result.push(prefix + currentNum.toString() + " ");
+					result.push(`${prefix + currentNum.toString()} `);
 				}
 				/* БЫЛО: после этой ветки поток шёл к общему завершению, где ноль
            дописывался второй раз, и «ноль» превращалось в «0 0». Ветка
            полностью самодостаточна, поэтому переходим к следующему слову. */
-				result.push(prefix + "0" + suffix + " ");
+				result.push(`${prefix}0${suffix} `);
 				currentNum = 0;
 				inNumber = false;
 				continue;
@@ -337,9 +337,10 @@ export function textToNumbers(text: string): string {
               заменили, и «5 1000» уходило в название услуги.
               Забираем последнее уже выданное целое число и умножаем его. */
 					let lastIndex = result.length - 1;
-					while (lastIndex >= 0 && result[lastIndex]!.trim() === "")
+					while (lastIndex >= 0 && result[lastIndex]?.trim() === "")
 						lastIndex -= 1;
-					const lastEmitted = lastIndex >= 0 ? result[lastIndex]!.trim() : "";
+					const lastEmitted =
+						(lastIndex >= 0 ? result[lastIndex]?.trim() : "") ?? "";
 					if (/^\d+$/.test(lastEmitted)) {
 						result.splice(lastIndex);
 						currentNum = Number.parseInt(lastEmitted, 10) * 1000;
@@ -374,7 +375,7 @@ export function textToNumbers(text: string): string {
 					if (isValidMultiplier) {
 						currentNum *= 1000;
 					} else {
-						result.push(prefix + currentNum.toString() + " ");
+						result.push(`${prefix + currentNum.toString()} `);
 						currentNum = 1000;
 					}
 				}
@@ -383,7 +384,7 @@ export function textToNumbers(text: string): string {
 				matchedVal >= 100 &&
 				currentNum % 1000 !== 0
 			) {
-				result.push(prefix + currentNum.toString() + " ");
+				result.push(`${prefix + currentNum.toString()} `);
 				currentNum = matchedVal;
 			} else if (
 				currentNum > 0 &&
@@ -391,10 +392,10 @@ export function textToNumbers(text: string): string {
 				matchedVal < 100 &&
 				currentNum % 100 !== 0
 			) {
-				result.push(prefix + currentNum.toString() + " ");
+				result.push(`${prefix + currentNum.toString()} `);
 				currentNum = matchedVal;
 			} else if (currentNum > 0 && matchedVal < 10 && currentNum % 10 !== 0) {
-				result.push(prefix + currentNum.toString() + " ");
+				result.push(`${prefix + currentNum.toString()} `);
 				currentNum = matchedVal;
 			} else {
 				currentNum += matchedVal;
@@ -402,11 +403,11 @@ export function textToNumbers(text: string): string {
 
 			let nextIsNumber = false;
 			for (let j = i + 1; j < tokens.length; j++) {
-				if (tokens[j]!.trim() !== "") {
-					const wMatch = tokens[j]!.match(/^([.,;!?]*)(.*?)([.,;!?]*)$/);
-					const nextWord = wMatch
-						? (wMatch[2] || "").toLowerCase()
-						: tokens[j]!.toLowerCase();
+				if (tokens[j]?.trim() !== "") {
+					const wMatch = tokens[j]?.match(/^([.,;!?]*)(.*?)([.,;!?]*)$/);
+					const nextWord = (
+						wMatch ? wMatch[2] || "" : tokens[j] ?? ""
+					).toLowerCase();
 
 					/* Загляд вперёд обязан пользоваться тем же строгим правилом.
              С прежним isFuzzyRootMatch медицинское слово после числа
@@ -433,7 +434,7 @@ export function textToNumbers(text: string): string {
 			}
 		} else {
 			if (inNumber) {
-				result.push(currentNum.toString() + " ");
+				result.push(`${currentNum.toString()} `);
 				currentNum = 0;
 				inNumber = false;
 			}
@@ -463,7 +464,7 @@ export function normalizeDentalSlang(text: string): string {
 
 	const words = text.split(/(\s+)/);
 	for (let i = 0; i < words.length; i++) {
-		const word = words[i]!.trim();
+		const word = words[i]?.trim();
 		if (!word) continue;
 
 		let toothDigit = "";
@@ -491,7 +492,8 @@ export function normalizeDentalSlang(text: string): string {
 			const searchStart = Math.max(0, i - 10);
 			const searchEnd = Math.min(words.length - 1, i + 10);
 			for (let j = searchStart; j <= searchEnd; j++) {
-				const ctxWord = words[j]!.trim();
+				const ctxWord = words[j]?.trim();
+				if (!ctxWord) continue;
 				if (
 					isFuzzyRootMatch(ctxWord, "верхн") ||
 					isFuzzyRootMatch(ctxWord, "сверх")
@@ -526,7 +528,7 @@ export function normalizeDentalSlang(text: string): string {
 			else if (isSlangWord) quad = "1"; // fallback only if it was an explicit slang word
 
 			if (quad) {
-				words[i] = words[i]!.replace(word, quad + toothDigit);
+				words[i] = (words[i] ?? "").replace(word, quad + toothDigit);
 			}
 		}
 	}

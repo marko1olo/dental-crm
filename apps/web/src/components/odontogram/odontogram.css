@@ -323,68 +323,68 @@
 }
 
 .tooth-menu-btn.caries {
-	background-color: rgba(239, 68, 68, 0.1) !important;
-	color: #ef4444 !important;
-	border-color: rgba(239, 68, 68, 0.2) !important;
+	background-color: rgba(239, 68, 68, 0.1);
+	color: #ef4444;
+	border-color: rgba(239, 68, 68, 0.2);
 }
 .tooth-menu-btn.caries:hover {
-	background-color: rgba(239, 68, 68, 0.2) !important;
-	border-color: rgba(239, 68, 68, 0.5) !important;
+	background-color: rgba(239, 68, 68, 0.2);
+	border-color: rgba(239, 68, 68, 0.5);
 	box-shadow: 0 8px 24px -6px rgba(239, 68, 68, 0.4);
 }
 
 .tooth-menu-btn.pulpitis {
-	background-color: rgba(245, 158, 11, 0.1) !important;
-	color: #fbbf24 !important;
-	border-color: rgba(245, 158, 11, 0.2) !important;
+	background-color: rgba(245, 158, 11, 0.1);
+	color: #fbbf24;
+	border-color: rgba(245, 158, 11, 0.2);
 }
 .tooth-menu-btn.pulpitis:hover {
-	background-color: rgba(245, 158, 11, 0.2) !important;
-	border-color: rgba(245, 158, 11, 0.5) !important;
+	background-color: rgba(245, 158, 11, 0.2);
+	border-color: rgba(245, 158, 11, 0.5);
 	box-shadow: 0 8px 24px -6px rgba(245, 158, 11, 0.4);
 }
 
 .tooth-menu-btn.implant {
-	background-color: rgba(234, 179, 8, 0.1) !important;
-	color: #fbbf24 !important;
-	border-color: rgba(234, 179, 8, 0.2) !important;
+	background-color: rgba(234, 179, 8, 0.1);
+	color: #fbbf24;
+	border-color: rgba(234, 179, 8, 0.2);
 }
 .tooth-menu-btn.implant:hover {
-	background-color: rgba(234, 179, 8, 0.2) !important;
-	border-color: rgba(234, 179, 8, 0.5) !important;
+	background-color: rgba(234, 179, 8, 0.2);
+	border-color: rgba(234, 179, 8, 0.5);
 	box-shadow: 0 8px 24px -6px rgba(234, 179, 8, 0.4);
 }
 
 .tooth-menu-btn.crown {
-	background-color: rgba(59, 130, 246, 0.1) !important;
-	color: #60a5fa !important;
-	border-color: rgba(59, 130, 246, 0.2) !important;
+	background-color: rgba(59, 130, 246, 0.1);
+	color: #60a5fa;
+	border-color: rgba(59, 130, 246, 0.2);
 }
 .tooth-menu-btn.crown:hover {
-	background-color: rgba(59, 130, 246, 0.2) !important;
-	border-color: rgba(59, 130, 246, 0.5) !important;
+	background-color: rgba(59, 130, 246, 0.2);
+	border-color: rgba(59, 130, 246, 0.5);
 	box-shadow: 0 8px 24px -6px rgba(59, 130, 246, 0.4);
 }
 
 .tooth-menu-btn.missing {
-	background-color: rgba(63, 63, 70, 0.4) !important;
-	color: #a1a1aa !important;
-	border-color: rgba(63, 63, 70, 0.3) !important;
+	background-color: rgba(63, 63, 70, 0.4);
+	color: #a1a1aa;
+	border-color: rgba(63, 63, 70, 0.3);
 }
 .tooth-menu-btn.missing:hover {
-	background-color: rgba(63, 63, 70, 0.6) !important;
-	border-color: rgba(63, 63, 70, 0.5) !important;
+	background-color: rgba(63, 63, 70, 0.6);
+	border-color: rgba(63, 63, 70, 0.5);
 	box-shadow: 0 8px 24px -6px rgba(63, 63, 70, 0.4);
 }
 
 .tooth-menu-btn.filled {
-	background-color: rgba(16, 185, 129, 0.1) !important;
-	color: #34d399 !important;
-	border-color: rgba(16, 185, 129, 0.2) !important;
+	background-color: rgba(16, 185, 129, 0.1);
+	color: #34d399;
+	border-color: rgba(16, 185, 129, 0.2);
 }
 .tooth-menu-btn.filled:hover {
-	background-color: rgba(16, 185, 129, 0.2) !important;
-	border-color: rgba(16, 185, 129, 0.5) !important;
+	background-color: rgba(16, 185, 129, 0.2);
+	border-color: rgba(16, 185, 129, 0.5);
 	box-shadow: 0 8px 24px -6px rgba(16, 185, 129, 0.4);
 } /* Modals and Overlays */
 .modal-overlay {

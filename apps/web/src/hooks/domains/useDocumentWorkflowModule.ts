@@ -1,925 +1,83 @@
 import {
-	type AcceptVisitDraftResponse,
-	type AiJobKind,
-	type AiRecognitionJob,
-	type AiRecognitionJobResponse,
-	type AiRecognitionTarget,
 	type Appointment,
-	buildRuleBasedVisitDraftFromTranscript,
 	type ClinicalToothRow,
-	type ClinicMode,
-	type ClinicProfile,
-	type ClinicPublicLookupResponse,
-	type CommunicationTaskOutcome,
-	type CreateAppointmentInput,
 	type Dashboard,
 	type DentalMedicalCard043uPayload,
-	type DentalPricelistAnalysisResponse,
-	type DentalSpecialty,
-	type DenteTelegramBotMode,
-	type DenteTelegramBotStatus,
-	type DenteTelegramChatLinkListResponse,
-	type DenteTelegramChatLinkPublic,
-	type DenteTelegramFeature,
-	type DenteTelegramLinkCodeCreated,
-	type DenteTelegramLinkCodeListResponse,
-	type DenteTelegramLinkCodePublic,
-	type DenteTelegramMessagePreview,
-	type DenteTelegramOutboxResponse,
-	type DenteTelegramOutboxSendDueResponse,
-	type DenteTelegramOutboxSendResponse,
-	type DenteTelegramPostVisitCheckupDelayHoursByTopic,
-	type DenteTelegramPrivacyMode,
-	type DenteTelegramVisualCardKey,
-	type DenteTelegramVisualCardUrls,
-	type DicomFirstFramePreviewResponse,
-	type DicomFolderSeriesPreviewResponse,
-	type DicomFolderWorkupPath,
-	type DicomFolderWorkupPlanResponse,
-	type DicomLocalFolderDiscoveryResponse,
-	type DicomRenderCachePlanResponse,
-	type DicomSeriesPreviewGroup,
-	type DicomSeriesPreviewResponse,
-	type DicomViewerLaunchManifestResponse,
-	type DicomViewerToolStateBundleResponse,
-	type DicomViewerWorkbenchManifestResponse,
-	type DicomWebConnectorCheckResponse,
-	type DicomWorkbenchBundle,
-	type DicomWorkbenchBundleListResponse,
-	type DicomWorkbenchBundleResponse,
-	type DicomWorkstationClientFacts,
-	type DicomWorkstationReadinessResponse,
 	type DocumentAuditFacts,
-	type DocumentChainSummary,
-	type DocumentIngestionResponse,
-	type DocumentIngestionTarget,
-	type DocumentIssueSignatureMode,
-	type DocumentPayload,
-	type DocumentSourceStatus,
-	type DocumentVoidReasonCode,
-	documentAmountSource,
-	documentFactoryGroups,
 	documentKindMetadata,
-	documentSourceStatusLabels,
 	type GeneratedDocument,
-	type ImagingFolderScanResponse,
-	type ImagingImportCommitResponse,
-	type ImagingImportPreviewResponse,
-	type ImagingSourceKind,
-	type ImagingStudyKind,
-	type ImagingViewerAnnotation,
-	type ImagingViewerImplantPlan,
-	type ImagingViewerSessionResponse,
-	type ImagingViewerSessionState,
-	type ImagingViewerTool,
-	type ImagingViewerWindowPreset,
-	type ImportCommitResponse,
-	type ImportIntakeResponse,
-	type ImportPreviewResponse,
-	type ImportSourceKind,
-	type InstallmentPaymentStatus,
-	type IntegrationCapability,
-	type IntegrationCategory,
-	type IntegrationPresetStatus,
 	type IssueDocumentInput,
-	type LocalBridgeReadinessResponse,
-	type LocalBridgeStatus,
-	type LocalBridgeUsePath,
-	type LocalBridgeUsePlansResponse,
-	type LocalImagingOrganizerResponse,
-	type MigrationAutopilotResponse,
-	type MigrationLocalSourceDiscoveryResponse,
-	type MigrationLocalSourceProbeResponse,
-	type MigrationLocalSourceWorkupResponse,
 	multiplyKopecks,
-	normalizeDentalSpeechTranscript,
 	type OutpatientMedicalCard025uPayload,
 	type Patient,
-	type PatientAdministrativeProfile,
-	type PatientIntakePregnancyStatus,
 	type Payment,
-	type PaymentMethod,
 	type PhotoVideoConsentMaterial,
 	type PostVisitCareTopic,
-	type PricelistSourceKind,
-	type ProcedureSpecificConsentProcedure,
-	type ProtocolTemplate,
 	parseKopecks,
 	percentageOfKopecks,
-	type ResourceLoad,
-	type ScheduleWarning,
-	type SmartImportCommitResponse,
-	type SmartImportMode,
-	type SmartImportPreviewResponse,
-	type SpeechChunkUploadInput,
-	type SpeechGatewayHealthReport,
-	type SpeechGatewayStatus,
-	type SpeechProvider,
-	type SpeechProviderConnector,
-	type SpeechProviderRuntimeStatus,
-	type SpeechRecordingAssembly,
-	type SpeechRecordingRecoveryList,
-	type SpeechRecordingStrategy,
-	type SpeechTranscriptionResponse,
-	type SpeechTranscriptPolishResponse,
 	type StaffMember,
-	type StaffRole,
-	type StaffWorkingHours,
 	sumKopecks,
-	type TaxDeductionApplicationDeliveryChannel,
-	type TaxDeductionApplicationForm,
-	type TaxDeductionApplicationRelationship,
-	type TreatmentPlanAcceptanceVariant,
 	type TreatmentPlanItem,
-	type UiLanguage,
-	type UpdateAppointmentInput,
-	type UpdateClinicProfileInput,
-	type UpdatePatientAdministrativeProfileInput,
-	type UpdatePatientInput,
-	type VisitDraftAutosaveResponse,
-	type VisitNoteDraft,
 	type VoidDocumentInput,
-	type XrayCbctReferralPregnancyStatus,
-	type XrayCbctReferralPriority,
 } from "@dental/shared";
 import {
-	AlertTriangle,
-	ArrowRight,
-	Bot,
-	Building2,
-	CalendarDays,
-	Check,
-	CheckCircle2,
-	ClipboardCheck,
-	ClipboardList,
-	Copy,
-	CreditCard,
-	Database,
-	Download,
-	ExternalLink,
-	FileCheck2,
-	FileText,
-	FlipHorizontal,
-	Gauge,
-	History,
-	Image as ImageIcon,
-	MessageSquare,
-	Mic,
-	Phone,
-	Plus,
-	ReceiptText,
-	RefreshCw,
-	RotateCcw,
-	RotateCw,
-	Search,
-	Send,
-	ShieldCheck,
-	Sparkles,
-	UploadCloud,
-	UserCheck,
-	Users,
-	ZoomIn,
-	ZoomOut,
-} from "lucide-react";
-import {
-	type CSSProperties,
-	type KeyboardEvent,
-	lazy,
-	Suspense,
 	useEffect,
 	useMemo,
 	useRef,
-	useState,
 } from "react";
-import { AppLoadingState, AppUnlockState } from "../../AppBootState";
 import {
-	AdminSecretSessionDomain,
-	type AdminSecretUnlockDomain,
-	type AppointmentScheduleDraft,
-	AppointmentScheduleSaveState,
-	acceptedVisitSaveFailureIsRetryable,
-	addBrowserMigrationKindToScanStats,
-	addMinutesToClinicDateTimeLocal,
-	aiJobKindLabels,
-	aiJobKindPreferenceValues,
-	appendSpeechTextWithoutDuplicateTail,
-	appointmentCreateInputFromDraft,
-	appointmentReadinessLabels,
-	appointmentScheduleDateMissingSteps,
-	appointmentScheduleDraftFromAppointment,
-	appointmentScheduleDraftSignature,
-	appointmentScheduleMissingFields,
-	appointmentUpdateInputFromDraft,
-	assertSpeechChunkDbStores,
-	type BrowserDirectoryPickerWindow,
-	type BrowserFileSystemDirectoryHandle,
-	BrowserFileSystemFileHandle,
-	BrowserFileSystemHandle,
-	type BrowserImagingScanOptions,
-	BrowserImagingScanPhase,
-	BrowserImagingScanProgress,
-	BrowserImagingScanRuntime,
-	type BrowserMigrationFileKind,
-	type BrowserMigrationFolderStats,
-	type BrowserMigrationScanOptions,
-	BrowserMigrationScanPhase,
-	BrowserMigrationScanProgress,
-	BrowserMigrationScanRuntime,
-	type BrowserMigrationScanStats,
-	BrowserMigrationSourceKind,
-	type BrowserPickedImagingFolderPreview,
-	type BrowserPickedImagingScanStats,
-	BrowserSpeechRecognition,
-	type BrowserWindowWithSpeech,
-	blobToBase64,
-	browserCapabilityFailureMessage,
-	browserFileHasDicomMagic,
-	browserGeneratedId,
-	browserImagingScanDirectoryEntryLimit,
-	browserImagingScanElapsedFromIso,
-	browserImagingScanFileLimit,
-	browserImagingScanFolderLimit,
-	browserImagingScanMagicReadLimit,
-	browserImagingScanNowMs,
-	browserImagingScanProgressEveryMs,
-	browserImagingScanProgressEveryUnits,
-	browserImagingScanProgressFromStats,
-	browserImagingScanYield,
-	browserImagingScanYieldEveryMs,
-	browserImagingScanYieldEveryUnits,
-	browserLegacyMisTextPattern,
-	browserLocalSourceErrorMessage,
-	browserMigrationFolderHintScore,
-	browserMigrationScanDirectoryEntryLimit,
-	browserMigrationScanFileLimit,
-	browserMigrationScanFolderLimit,
-	browserMigrationScanMagicReadLimit,
-	browserMigrationScanProgressEveryMs,
-	browserMigrationScanProgressEveryUnits,
-	browserMigrationScanProgressFromStats,
-	browserMigrationScanYieldEveryMs,
-	browserMigrationScanYieldEveryUnits,
-	browserMigrationSourceKindFromStats,
-	browserMigrationSourceTitles,
-	browserPickedFolderFingerprint,
-	browserPickedImagingFolderStorageKey,
-	buildBrowserMigrationDiscovery,
-	buildBrowserPickedImagingFolderPreview,
-	buildClinicProfileUpdatePayload,
-	buildOfflineVisitDraftFromTranscript,
-	buildPatientAdministrativeProfilePayload,
-	buildPatientCorePayload,
-	type CbctWorkbenchPlane,
 	type ClinicProfileDraft,
-	ClinicProfileSaveState,
-	classifyBrowserImagingFileName,
-	classifyBrowserMigrationFileName,
-	clinicLegalMissingFields,
-	clinicLegalReadinessPercent,
-	clinicProfileDraftFromProfile,
-	clinicProfileDraftSignature,
-	clinicProfileEndpoint,
-	collectDicomWorkstationClientFacts,
-	createBrowserImagingScanRuntime,
-	createBrowserMigrationScanRuntime,
-	createLocalDicomWorkbenchDraft,
-	createLocalQueueId,
-	ctImplantPlanFromLibraryItem,
 	currentLocalDateTimeInputValue,
-	DentalDesktopRuntimeWindow,
-	type DenteTelegramHandoffTarget,
-	DenteTelegramPortalSection,
-	type DicomFirstFramePreviewMetadata,
-	type DicomFirstFramePreviewOptions,
-	type DicomFirstFramePreviewRequestContext,
-	DicomWorkbenchIndexedDbDraft,
-	DicomWorkbenchLocalDraft,
-	type DocumentIssueSignatureDraft,
-	DocumentPayloadDraftEntry,
-	DocumentPayloadDraftStore,
-	DocumentPaymentSelectionEntry,
-	DocumentPaymentSelectionStore,
 	dateInputValuePlusDays,
-	defaultAppointmentStartLocal,
-	defaultClinicalToothRowsText,
-	defaultDicomFirstFrameViewerState,
-	defaultImagingViewerState,
-	defaultStaffScheduleDraft,
-	defaultUiLanguageOption,
-	defaultUiPreferences,
-	defaultWorkingDays,
-	deleteLocalDicomWorkbenchDraftFromIndexedDb,
-	deleteLocalMprWorkbenchDraftFromIndexedDb,
-	deletePendingSpeechChunkFromIndexedDb,
-	deletePendingVisitSaveFromIndexedDb,
-	denteAdminSecretHeaderName,
-	denteAdminSecretRequestHeaders,
-	denteTelegramHandoffTargets,
-	detectDicomRuntimeSurfaceHint,
-	dicomDownloadRedactionWarning,
-	dicomFirstFrameStatusLabels,
-	dicomWorkbenchDraftStoreName,
-	dicomWorkbenchIndexedDbKey,
-	dicomWorkbenchLocalStorageKey,
-	dicomWorkbenchManifestHasRedactedSource,
-	dicomWorkbenchSeriesKey,
-	documentDetectedKindLabel,
-	documentDetectedKindLabels,
-	documentIngestionQualityLabels,
-	documentIssueSignatureLocalKey,
-	documentIssueSignatureModeLabels,
-	documentIssueSignatureStorageKey,
 	documentPayloadDraftKey,
-	documentPayloadDraftLocalKey,
-	documentPayloadDraftStorageKey,
-	documentPaymentSelectionLocalKey,
-	documentPaymentSelectionStorageKey,
-	documentVoidReasonLabels,
-	emptyAppointmentScheduleDraft,
-	emptyClinicProfileDraft,
-	emptyDocumentPayloadDraftStore,
-	emptyDocumentPaymentSelectionStore,
 	emptyMedicalRecordExtractDocumentDraftFields,
 	emptyOutpatient025uDocumentDraftFields,
-	emptyPatientAdministrativeProfileDraft,
-	emptyPatientCoreDraft,
-	emptyTelegramVisualCardUrlDrafts,
-	emptyVisitNoteForm,
-	findPatient,
-	formatDateTime,
-	formatShortDate,
-	formatTime,
-	fromDateTimeLocalValue,
-	hasDentalDesktopShellBridge,
-	ImagingViewerLocalDraft,
-	ImagingViewerPlan,
-	type ImagingViewerSaveState,
-	ImagingViewerState,
-	imagingSourceChoices,
-	imagingViewerLocalKey,
-	imagingViewerLocalStoragePrefix,
-	imagingViewerPlans,
-	importSourceLabels,
-	ingestionTargetLabels,
 	installmentPaymentStatusAliases,
-	isAiJobKind,
-	isAiRecognitionTarget,
-	isAppointmentStatusFilterPreference,
-	isBooleanPreference,
-	isBoundedPreferenceString,
-	isBrowserImagingScanAbortError,
-	isBrowserMigrationScanAbortError,
-	isDateInputValue,
-	isDateTimeLocalInputValue,
-	isDentalSpecialty,
-	isDenteTelegramPortalSection,
-	isDocumentIngestionTarget,
-	isDocumentIssueSignatureModePreference,
-	isDocumentKindPreference,
-	isImagingKindFilter,
-	isImagingSourceKind,
-	isImportSourceKind,
-	isLocalDicomDownloadPath,
-	isMprProjection,
-	isMprWindowPreset,
-	isNullablePreferenceString,
-	isNullableString,
-	isOnboardingStepPreference,
-	isOptionValue,
-	isPaymentMethod,
-	isPendingSpeechChunk,
-	isPostVisitCareTopicPreference,
-	isPricelistSourceKind,
-	isProcedureSpecificConsentProcedurePreference,
-	isRecordKey,
-	isSmartImportMode,
-	isStaffRole,
-	isStringUnionValue,
-	isTaxApplicationDeliveryChannelPreference,
-	isTaxApplicationFormPreference,
-	isTaxDocumentYearPreference,
-	isTelegramLinkSubjectTypePreference,
-	isTelegramOutboxItemDueForUi,
-	isTelegramOutboxStatusFilterPreference,
-	isTelegramOutboxTemplateFilterPreference,
-	isUiLanguage,
-	isValidDateParts,
-	isVisitNoteDraft,
-	isVisitNoteForm,
-	type LocalDicomOperationOptions,
-	type LocalImagingFolderDraft,
-	latestPendingVisitSaveAt,
-	loadBrowserPickedImagingFolderPreview,
-	loadDocumentIssueSignatureDraft,
-	loadDocumentPayloadDraftStore,
 	loadDocumentPaymentSelection,
-	loadDocumentPaymentSelectionStore,
-	loadImageFromDataUrl,
-	loadLocalDicomWorkbenchDraft,
-	loadLocalDicomWorkbenchDraftFromLocalStorage,
-	loadLocalImagingFolderDraft,
-	loadLocalImagingViewerDraft,
-	loadLocalMprWorkbenchDraft,
-	loadLocalMprWorkbenchDraftFromLocalStorage,
 	loadMedicalRecordExtractDocumentDraft,
-	loadOnboardingDismissalState,
 	loadOutpatient025uDocumentDraft,
-	loadPendingSpeechChunks,
-	loadPendingSpeechChunksFromLocalStorage,
-	loadPendingVisitSaves,
-	loadPendingVisitSavesFromLocalStorage,
-	loadServerUiPreferences,
-	loadUiPreferences,
-	loadVisitLocalDraft,
-	localConvenienceRetentionMs,
-	localDraftString,
-	localImagingFolderFingerprint,
-	localImagingFolderStorageKey,
-	localQueueOrganizationMatches,
-	localSavedAtFresh,
-	MedicalDocumentReleaseChannel,
 	type MedicalRecordExtractDocumentDraftFields,
-	type MprAxisVisualizerStyle,
-	MprWorkbenchIndexedDbDraft,
-	MprWorkbenchLocalDraft,
-	type MprWorkbenchState,
-	maxPricelistImageBase64Chars,
-	maybeYieldBrowserImagingScan,
-	maybeYieldBrowserMigrationScan,
-	medicalDocumentReleaseChannelLabels,
-	mergeLocalOnboardingDismissal,
-	migrateLocalDicomWorkbenchDraftFromLocalStorage,
-	migrateLocalMprWorkbenchDraftFromLocalStorage,
-	migratePendingVisitSavesFromLocalStorage,
-	migrateSpeechChunksFromLocalStorage,
-	minutesLabel,
-	money,
-	mprWorkbenchDraftStoreName,
-	mprWorkbenchIndexedDbKey,
-	mprWorkbenchLocalKey,
-	mprWorkbenchLocalStoragePrefix,
-	mprWorkbenchSeriesKey,
-	newAppointmentDraftFromDashboard,
-	newerDicomWorkbenchDraft,
-	normalizeClockTime,
-	normalizedAppointmentStatus,
-	normalizedAppointmentStatusFilter,
-	normalizedClinicalRuleAction,
-	normalizedClinicalRuleSeverity,
-	normalizedDentalSpecialty,
-	normalizedDocumentIssueSignatureMode,
-	normalizedDocumentKind,
-	normalizedDocumentPaymentSelectionIds,
-	normalizedDocumentVoidReasonCode,
-	normalizedLocalOrganizationId,
-	normalizedMedicalDocumentReleaseChannel,
-	normalizedOutpatient025uCode,
-	normalizedOutpatient025uDemographicCode,
-	normalizedPatientIntakePregnancyStatus,
-	normalizedPaymentRefundCorrectionAction,
-	normalizedPaymentRefundCorrectionMethod,
-	normalizedPostVisitCareTopic,
-	normalizedProcedureSpecificConsentProcedure,
-	normalizedServiceCategory,
-	normalizedStaffRole,
-	normalizedTaxApplicationDeliveryChannel,
-	normalizedTaxApplicationForm,
-	normalizedTaxApplicationRelationshipSelect,
-	normalizedTelegramBotMode,
-	normalizedTelegramLinkSubjectType,
-	normalizedTelegramOutboxStatusFilter,
-	normalizedTelegramOutboxTemplateFilter,
-	normalizedTelegramPrivacyMode,
-	normalizedTreatmentPlanAcceptanceVariant,
-	normalizedXrayPregnancyStatus,
-	normalizedXrayPriority,
-	normalizedXrayStudyType,
-	normalizeLocalDicomWorkbenchDraft,
-	normalizeMedicalRecordExtractDocumentDraftFields,
-	normalizeMprWorkbenchDraft,
-	normalizeMprWorkbenchState,
-	normalizeOptionalWorkingDaysDraft,
-	normalizeOutpatient025uDocumentDraftFields,
-	normalizePendingSpeechChunk,
-	normalizePendingVisitSave,
-	normalizePersistenceHealth,
-	normalizeSpeechAppendText,
 	normalizeTaxApplicationRelationship,
-	normalizeTelegramBotUsernameDraft,
-	normalizeTelegramPublicHttpsUrlDraft,
-	normalizeTelegramVisualCardUrlDraftsForSave,
-	normalizeUiLanguageInput,
-	normalizeUiPreferencesPayload,
-	normalizeWorkingDaysDraft,
-	nullableAppointmentDraftValue,
-	nullableClinicDraftValue,
-	nullablePatientDraftValue,
-	OnboardingDismissalState,
-	type OnboardingStep,
-	Outpatient025uDemographicCode,
 	type Outpatient025uDocumentDraftFields,
-	offlineDraftOrganizationKey,
-	onboardingLocalKey,
-	onboardingSteps,
-	onboardingStepValues,
-	onboardingStorageKey,
-	onboardingTelegramVisualCardKeys,
-	openSpeechChunkDb,
-	operatorReadableErrorDetail,
-	operatorReadableErrorDetailFromUnknown,
-	operatorWorkflowFailureMessage,
-	organizationScopedLocalStorageKey,
-	outpatient025uDemographicCodeOptions,
-	type PatientAdministrativeProfileDraft,
-	PatientAdministrativeProfileSaveState,
-	type PatientCoreDraft,
-	PatientCoreSaveState,
-	PaymentRefundCorrectionAction,
-	PaymentRefundCorrectionMethod,
-	PendingSpeechChunk,
-	PendingVisitSave,
-	PersistenceBackupCheck,
-	type PersistenceHealth,
-	type PersistenceIntegrityReport,
-	PricelistImageMimeType,
-	parseOnboardingDismissalState,
-	parsePendingVisitSaveQueue,
-	patientAdministrativeProfileDraftFromPatient,
-	patientAdministrativeProfileDraftIssue,
-	patientAdministrativeProfileDraftSignature,
-	patientCoreDraftFromPatient,
-	patientCoreDraftSignature,
-	patientInsightRiskLabels,
-	patientIntakePregnancyStatusOptions,
 	patientName,
-	paymentRefundCorrectionActionOptions,
-	paymentRefundCorrectionMethodOptions,
-	pendingSpeechChunkQueueKey,
-	pendingSpeechChunkQueueLocalKey,
-	pendingVisitSaveIndexedDbAvailable,
-	pendingVisitSaveQueueKey,
-	pendingVisitSaveQueueLocalKey,
-	pendingVisitSaveStoreName,
-	persistUiPreferences,
-	photoVideoMaterialOptions,
-	pickUiPreference,
-	preparePricelistImage,
-	pricelistImageMimeTypes,
-	procedureSpecificConsentProcedureOptions,
-	publishBrowserImagingScanProgress,
-	publishBrowserMigrationScanProgress,
-	putPendingSpeechChunkToIndexedDb,
-	queuePendingSpeechChunk,
-	queuePendingVisitSave,
-	readDenteTelegramHandoffTarget,
-	readFileAsDataUrl,
-	readLocalDicomWorkbenchDraftFromIndexedDb,
-	readLocalMprWorkbenchDraftFromIndexedDb,
-	readPendingSpeechChunksFromIndexedDb,
-	readPendingVisitSavesFromIndexedDb,
-	recommendedActionPriorityLabels,
-	redactDicomDownloadText,
-	redactedDicomDownloadReferenceId,
-	redactedDicomDownloadWarnings,
-	redactedDicomViewerToolStateBundleForDownload,
-	redactedDicomWorkbenchManifestForDownload,
-	redactedLocalDicomDownloadPath,
-	removeBrowserPickedImagingFolderPreview,
-	removeLocalDicomWorkbenchDraft,
-	removeLocalDicomWorkbenchDraftFromLocalStorage,
-	removeLocalImagingFolderDraft,
-	removePendingSpeechChunkById,
 	requestFailureMessage,
-	requiredSpeechChunkDbStoreNames,
-	resolveMprWorkbenchProjection,
 	responseErrorMessage,
-	responseStatusFailureLabel,
-	roleFocusOrder,
-	SettingsTab,
-	type StaffScheduleDraft,
-	StaffScheduleSaveState,
-	saveBrowserPickedImagingFolderPreview,
 	saveDocumentIssueSignatureDraft,
 	saveDocumentPaymentSelection,
-	saveLocalDicomWorkbenchDraft,
-	saveLocalDicomWorkbenchDraftToIndexedDb,
-	saveLocalDicomWorkbenchDraftToLocalStorage,
-	saveLocalImagingFolderDraft,
-	saveLocalImagingViewerDraft,
-	saveLocalMprWorkbenchDraft,
-	saveLocalMprWorkbenchDraftToIndexedDb,
-	saveLocalMprWorkbenchDraftToLocalStorage,
 	saveMedicalRecordExtractDocumentDraft,
-	saveOnboardingDismissed,
 	saveOutpatient025uDocumentDraft,
-	savePendingSpeechChunksToIndexedDb,
-	savePendingSpeechChunksToLocalStorage,
-	savePendingVisitSaves,
-	savePendingVisitSavesToIndexedDb,
-	savePendingVisitSavesToLocalStorage,
-	saveServerUiPreferences,
-	saveUiPreferences,
-	saveVisitLocalDraft,
-	sensitiveLocalDraftRetentionMs,
-	settingsTabFromHash,
-	settingsTabs,
-	smartImportModeLabels,
-	sortPendingSpeechChunks,
-	sortPendingVisitSaves,
-	speechAudioQueueRetentionMs,
-	speechChunkDbName,
-	speechChunkDbPromise,
-	speechChunkDbVersion,
-	speechChunkIndexedDbAvailable,
-	speechChunkStoreName,
-	speechGatewayCanUpload,
-	speechLocalStorageFallbackMaxBytes,
-	speechProviderConnectorLabels,
-	speechQualityLabels,
-	staffScheduleDraftFromWorkingHours,
-	staffScheduleDraftSignature,
-	staffWorkingHoursFromDraft,
-	staffWorkingHoursFromSimpleDraft,
-	stripDenteTelegramHandoffQuery,
-	type TelegramFeaturePlan,
-	TelegramInlineButtonPreview,
-	TelegramLinkSubjectType,
-	TelegramOutboxStatusFilter,
-	TelegramOutboxTemplateFilter,
-	taxApplicationDeliveryChannelOptions,
-	taxApplicationFormOptions,
-	taxApplicationRelationshipOptions,
-	technicalWorkflowFailurePattern,
-	telegramBlockedReasonLabels,
-	telegramClassificationLabels,
-	telegramDeliveryStatusLabels,
-	telegramHumanMessage,
-	telegramInlineButtonKindLabels,
-	telegramInlineButtonRowsFromReplyMarkup,
-	telegramInlineButtonsFromPreview,
-	telegramInlineButtonsFromReplyMarkup,
-	telegramLinkCodeStatusLabels,
-	telegramModeHints,
-	telegramModeLabels,
-	telegramOutboxStatusFilterLabels,
-	telegramOutboxStatusFilterOptions,
-	telegramOutboxTemplateFilterLabels,
-	telegramOutboxTemplateFilterOptions,
-	telegramPrivacyModeHints,
-	telegramPrivacyModeLabels,
-	telegramPublicUrlSensitivePathSegments,
-	telegramPublicUrlSensitiveQueryKeys,
-	telegramQrSvgToDataUrl,
-	telegramTemplateLabels,
-	telegramWarningLabels,
-	throwIfBrowserImagingScanAborted,
-	throwIfBrowserMigrationScanAborted,
-	timeZoneDateParts,
-	timeZoneOffsetMinutes,
-	timeZoneOffsetSuffix,
 	toDateInputValue,
 	toDateTimeLocalValue,
-	todayDateInputValue,
-	toothRows,
-	treatmentAcceptanceVariantOptions,
-	UiLanguageOption,
-	type UiPreferences,
-	type UiPreferencesInput,
-	uiLanguageLabels,
-	uiLanguageOptions,
-	uiPreferencesServerPath,
-	uiPreferencesStorageKey,
-	uiPreferencesSyncErrorMessage,
-	uniqueDicomDownloadWarnings,
-	VisitLocalDraft,
-	type VisitNoteField,
 	type VisitNoteForm,
-	validClockTime,
-	viewerWindowPresetForStudy,
-	viewFromHash,
-	visitDraftMissingFieldLabel,
-	visitDraftMissingFieldLabels,
-	visitDraftQualityLabels,
-	visitDraftSignalLabel,
-	visitDraftSignalLabels,
-	visitLocalDraftKey,
-	visitNoteDraftFromForm,
-	visitNoteFieldDefinitions,
-	visitNoteFormFromDraft,
-	visitNoteFormFromVisit,
-	visitSaveReceiptText,
-	WorkflowResponseError,
-	weekdayFromDateInput,
-	weekdayOptions,
-	withSavedUiPreferenceTimestamp,
-	workspaceScopeLabels,
-	xrayPregnancyStatusOptions,
-	xrayPriorityOptions,
-	xrayStudyTypeOptions,
 } from "../../AppHelpers";
 import {
-	type BrowserContinuityStatus,
-	browserContinuityRegistrationLabels,
-	formatByteSize,
-	formatMegabytes,
-	inspectBrowserContinuity,
-} from "../../browserContinuity";
-import {
-	communicationDocumentTaskActionLabels,
 	telegramCareRequestTaskCareTopics,
 	telegramCareRequestWorkflowCareTopics,
 	telegramDocumentRequestTaskDocumentKinds,
 	telegramDocumentRequestWorkflowDocumentKinds,
 } from "../../communicationTaskData";
-import {
-	documentPayloadForKind,
-	validateDocumentPayloadForKind,
-	withDocumentCreationTimestamps,
-} from "../../documentLogic";
 import type { useAuthLogic } from "../../hooks/domains/useAuthLogic";
-import { useDicomWorkbenchModule } from "../../hooks/domains/useDicomWorkbenchModule";
-import { useFinanceLogic } from "../../hooks/domains/useFinanceLogic";
-import { usePatientLogic } from "../../hooks/domains/usePatientLogic";
-import { useScheduleLogic } from "../../hooks/domains/useScheduleLogic";
-import { useStaffSettingsLogic } from "../../hooks/domains/useStaffSettingsLogic";
-import { useTelegramModule } from "../../hooks/domains/useTelegramModule";
-import { useVisitLogic } from "../../hooks/domains/useVisitLogic";
-import {
-	loadWorkspaceProfile,
-	useWorkspaceProfileStore,
-} from "../../hooks/useWorkspaceProfile";
-import {
-	type ImagingStudyRow,
-	imagingCaptureDistanceMs,
-	imagingComparisonReason,
-	imagingComparisonScore,
-} from "../../imagingComparison";
-import {
-	dicomDiagnosticPixelPolicyLabels,
-	dicomExecutionLaneLabels,
-	dicomGpuClassLabels,
-	dicomLabel,
-	dicomQualityModeLabels,
-	dicomReadinessCheckLabels,
-	dicomRenderMemoryBudgetClassLabels,
-	dicomRuntimeTierLabels,
-	dicomSeriesViewerLabels,
-	dicomTextureStrategyLabels,
-	dicomViewerLaunchModeLabels,
-	dicomWebStatusLabels,
-	imagingKindLabels,
-	imagingSourceDetails,
-	imagingSourceLabels,
-	imagingViewerToolLabels,
-	localImagingModelRoleLabels,
-	localImagingOrganizerActionLabels,
-	type MprClinicalPreset,
-	type MprProjection,
-	type MprWindowPreset,
-	mprAxisPresetDeg,
-	mprCacheModeLabels,
-	mprClinicalPresets,
-	mprLoadStrategyLabels,
-	mprProjectionLabels,
-	mprProjectionOrientationLabels,
-	mprResourceTierLabels,
-	mprSeriesRequiredProjectionLabel,
-	mprSlabPresetMm,
-	mprToolLabels,
-	mprUnavailableProjectionLabel,
-	mprWindowPresetLabels,
-	policyAuditEventLabels,
-	pricelistParserModeLabels,
-} from "../../imagingUiLabels";
-import { safeLocalStorageSetItem } from "../../lib/safeLocalStorage";
-import { motionSafeScrollIntoView } from "../../motionPreference";
-import {
-	buildMprClinicalChecklist,
-	buildMprOperatorSummary,
-	buildMprWorkbenchSummary,
-	describeMprClinicalPresetProjectionFallback,
-	findNearestMprClinicalPreset,
-	mprClinicalNextAction,
-	resolveMprClinicalPresetProjection,
-} from "../../mprClinicalStatus";
 import { postVisitCarePresets } from "../../postVisitCareData";
-import {
-	dentalMaterialKindLabels,
-	dentalRestorationTypeLabels,
-	pricelistItemMaterialText,
-	pricelistMaterialSummaryText,
-	pricelistRecognitionBrandGroups,
-	pricelistRecognitionServiceGroups,
-	pricelistSourceKindLabels,
-	pricelistWarningsText,
-} from "../../pricelistUiMeta";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
-import {
-	imagingConnectorCards,
-	imagingViewerCapabilities,
-	recognitionPresets,
-} from "../../settingsStaticData";
-import { useAppStore } from "../../store/appStore";
 import { useDocumentStore } from "../../store/documentStore";
-import { useImagingStore } from "../../store/imagingStore";
-import { useScheduleStore } from "../../store/scheduleStore";
-import { useSettingsStore } from "../../store/settingsStore";
-import { useVisitStore } from "../../store/visitStore";
 import {
 	clinicalToothStatusValue,
 	clinicalToothSurfacesValue,
 	compactDocumentText,
 	confirmedDocumentLiteral,
 	documentTextLines,
-	normalizeClinicalToothAlias,
 } from "../../utils/documentPayloadUtils";
 import {
-	buildMprAxisGuidance,
-	clampMprAxisDeg,
-	clampMprSlabMm,
-	clampMprSliceIndex,
-	formatMprAxisAngleBadge,
-	formatMprAxisDirectionLabel,
-	formatMprAxisRangeValue,
-	formatMprAxisVisualizerLabel,
-	formatMprSlabBadge,
-	formatMprSlabRangeValue,
-	formatMprSliceBadge,
-	formatMprSliceRangeValue,
-	formatSignedMprStep,
-	mprAxisBounds,
-	mprAxisNudgeDeg,
-	mprProjectionCompassLabels,
-	mprSlabBounds,
-	mprSlabNudgeMm,
-	mprSliceFraction,
-	mprSliceIndexFromFraction,
-	mprSliceNudgeSteps,
-	mprSlicePresetFractions,
-	resolveMprKeyboardAdjustment,
-} from "../../utils/math/mprMath";
-import { specialtyQuickPhraseLibrary } from "../../visitDictationData";
-import {
-	inferDashboardVisitSpecialty,
-	inferSpecialtyFromText,
-	visitSpecialtyFocusOptions,
-} from "../../visitSpecialtyData";
-import {
-	defaultTelegramPostVisitCheckupDelayDrafts,
-	defaultTelegramPostVisitCheckupDelayHoursByTopic,
 	postVisitCareTopicOptions,
-	type TelegramPostVisitCheckupDelayDrafts,
-	type TelegramPostVisitCheckupDelayKey,
-	telegramFeatureHelp,
-	telegramFeatureLabels,
-	telegramFeatureOptions,
-	telegramPostVisitCheckupDelayFields,
-	telegramVisualCardFields,
 } from "../../workspaceStaticOptions";
 import {
-	appointmentLabels,
-	clinicalRuleActionLabels,
-	clinicalRuleSeverityLabels,
 	clinicalRuleSummaryForUi,
-	clinicModeLabels,
-	communicationChannelLabels,
-	communicationIntentLabels,
-	communicationPriorityLabels,
-	communicationStatusLabels,
 	completedActContractReferenceForUi,
-	dicomFolderWorkupPathLabels,
-	documentActionLabels,
 	documentLabels,
-	documentSourceStatusClassNames,
-	documentStatusLabels,
-	integrationCapabilityLabels,
-	integrationCategoryLabels,
-	integrationStatusLabels,
-	localBridgeStatusLabels,
-	localBridgeUsePathLabels,
-	moneyDocumentKinds,
-	paymentFiscalReceiptLabelForUi,
-	paymentMethodLabels,
 	paymentTaxYearForUi,
-	recognitionTargetLabels,
-	scenarioPriorityLabels,
-	scenarioStrategyLabels,
-	serviceCategoryLabels,
-	specialtyLabels,
-	speechProviderHealthLabels,
-	speechProviderModeLabels,
-	speechProviderSelectionLabels,
-	speechProviderStatusLabels,
-	speechRecordingPathLabels,
-	speechRecoveryStateLabels,
 	staffRoleLabels,
-	structuredPayloadDocumentKinds,
 	taxPaymentPayerKeyForUi,
 	taxPaymentSelectionDocumentKinds,
-	taxPaymentSelectionPayloadDocumentKinds,
-	treatmentStatusLabels,
-	warningSeverityLabels,
-	workloadStateLabels,
 } from "../../workspaceUiLabels";
 
 export interface DocumentWorkflowModuleProps {
@@ -1807,7 +965,7 @@ export function useDocumentWorkflowModule({
 					document.visitId === null ||
 					document.visitId === dashboard?.activeVisit?.id),
 		);
-	}, [dashboard, documentPatient?.id, documentPatientMatchesActiveVisit]);
+	}, [dashboard, documentPatient?.id, documentPatientMatchesActiveVisit, documentPatient]);
 
 	const activeUsableDocuments = useMemo(() => {
 		return activeDocuments.filter((document) => document.status !== "voided");
@@ -1933,9 +1091,9 @@ export function useDocumentWorkflowModule({
 				completedActContractReferenceForUi(contract),
 			);
 	}, [
-		activeIssuedPaidContracts,
-		completedActContractNumber,
-		selectedCompletedActContractDocumentId,
+		activeIssuedPaidContracts, 
+		completedActContractNumber, 
+		selectedCompletedActContractDocumentId, setCompletedActContractNumber
 	]);
 
 	const issuedMedicalCopyRequestDocuments = useMemo(() => {
@@ -1990,8 +1148,8 @@ export function useDocumentWorkflowModule({
 		setReleasePeriodStart(request.periodStart ?? "");
 		setReleasePeriodEnd(request.periodEnd ?? "");
 	}, [
-		issuedMedicalCopyRequestDocuments,
-		selectedReleaseSourceRequestDocumentId,
+		issuedMedicalCopyRequestDocuments, 
+		selectedReleaseSourceRequestDocumentId, setReleaseRecipientAuthority, setReleaseChannel, setReleaseRecipientFullName, setReleaseRecipientIdentityDocument, setReleaseSourceRequestDocumentId, setReleaseDocumentTypes, setReleasePeriodEnd, setReleasePeriodStart
 	]);
 
 	const inferredTreatmentArea = useMemo(() => {
@@ -2002,12 +1160,12 @@ export function useDocumentWorkflowModule({
 		return Array.from(new Set(toothCodes)).slice(0, 6).join(", ");
 	}, [activeTreatmentPlanItems]);
 
-	const activeTreatmentPlanScenarios = useMemo(() => {
+	const _activeTreatmentPlanScenarios = useMemo(() => {
 		if (!dashboard || !documentPatient) return [];
 		return (dashboard.treatmentPlanScenarios || []).filter(
 			(scenario) => scenario.patientId === documentPatient.id,
 		);
-	}, [dashboard, documentPatient?.id]);
+	}, [dashboard, documentPatient?.id, documentPatient]);
 
 	const activeVisitClinicalRuleEvaluations = useMemo(() => {
 		if (!dashboard) return [];
@@ -2034,9 +1192,9 @@ export function useDocumentWorkflowModule({
 					Number(left.resolved) - Number(right.resolved) ||
 					severityRank[left.severity] - severityRank[right.severity],
 			);
-	}, [dashboard, documentPatient?.id]);
+	}, [dashboard, documentPatient?.id, documentPatient]);
 
-	const activeVisitClinicalRuleSummary = useMemo(
+	const _activeVisitClinicalRuleSummary = useMemo(
 		() =>
 			clinicalRuleSummaryForUi(
 				activeVisitClinicalRuleEvaluations,
@@ -2048,7 +1206,7 @@ export function useDocumentWorkflowModule({
 		],
 	);
 
-	const patientClinicalRuleSummary = useMemo(
+	const _patientClinicalRuleSummary = useMemo(
 		() =>
 			clinicalRuleSummaryForUi(
 				patientClinicalRuleEvaluations,
@@ -2155,7 +1313,7 @@ export function useDocumentWorkflowModule({
 			const contract = dashboard?.insuranceContracts?.find(
 				(c: any) => c.id === contractId,
 			);
-			if (contract && contract.isActive) {
+			if (contract?.isActive) {
 				let accumulatedKopecks = 0;
 				for (const item of activePlanItems) {
 					const service = dashboard.serviceCatalog?.find(
@@ -2215,11 +1373,11 @@ export function useDocumentWorkflowModule({
 			insuranceCoverageRub,
 		};
 	}, [
-		activePayments,
-		activeTreatmentPlanItems,
-		activeUsableDocuments,
-		dashboard,
-		documentPatient?.id,
+		activePayments, 
+		activeTreatmentPlanItems, 
+		activeUsableDocuments, 
+		dashboard, 
+		documentPatient?.id, documentPatient
 	]);
 	const documentLocalPersistenceOrganizationId =
 		dashboard?.clinicSettings?.profile?.organizationId ?? null;
@@ -2286,11 +1444,11 @@ export function useDocumentWorkflowModule({
 			) ?? null,
 		[selectedTaxDocumentPayerKey, taxDocumentPayerOptions],
 	);
-	const selectedTaxDocumentPayerInn = selectedTaxDocumentPayerOption?.inn ?? "";
+	const _selectedTaxDocumentPayerInn = selectedTaxDocumentPayerOption?.inn ?? "";
 
 	const selectedDocumentUsesTaxPaymentSelection =
 		taxPaymentSelectionDocumentKinds.has(selectedDocumentKind);
-	const selectedDocumentMetadata = documentKindMetadata[selectedDocumentKind];
+	const _selectedDocumentMetadata = documentKindMetadata[selectedDocumentKind];
 	const eligibleTaxPayments = useMemo(() => {
 		return activePayments
 			.filter(
@@ -2307,7 +1465,7 @@ export function useDocumentWorkflowModule({
 				),
 			);
 	}, [activePayments, selectedTaxDocumentPayerKey, taxDocumentYear]);
-	const eligibleTaxPaymentIdsKey = eligibleTaxPayments
+	const _eligibleTaxPaymentIdsKey = eligibleTaxPayments
 		.map((payment) => payment.id)
 		.join("|");
 	const selectedTaxPaymentIdSet = useMemo(
@@ -2321,7 +1479,7 @@ export function useDocumentWorkflowModule({
 			),
 		[eligibleTaxPayments, selectedTaxPaymentIdSet],
 	);
-	const selectedTaxPaymentTotalRub = selectedEligibleTaxPayments.reduce(
+	const _selectedTaxPaymentTotalRub = selectedEligibleTaxPayments.reduce(
 		(total, payment) => total + payment.amountRub,
 		0,
 	);
@@ -2355,7 +1513,7 @@ export function useDocumentWorkflowModule({
 				),
 			);
 	}, [activePayments, dashboard?.activeVisit?.id]);
-	const eligiblePaymentReceiptIdsKey = eligiblePaymentReceiptPayments
+	const _eligiblePaymentReceiptIdsKey = eligiblePaymentReceiptPayments
 		.map((payment) => payment.id)
 		.join("|");
 	const selectedPaymentReceiptIdSet = useMemo(
@@ -2369,7 +1527,7 @@ export function useDocumentWorkflowModule({
 			),
 		[eligiblePaymentReceiptPayments, selectedPaymentReceiptIdSet],
 	);
-	const selectedPaymentReceiptTotalRub = selectedPaymentReceiptPayments.reduce(
+	const _selectedPaymentReceiptTotalRub = selectedPaymentReceiptPayments.reduce(
 		(total, payment) => total + payment.amountRub,
 		0,
 	);
@@ -2389,7 +1547,7 @@ export function useDocumentWorkflowModule({
 				),
 			);
 	}, [activePayments, dashboard?.activeVisit?.id]);
-	const selectedRefundCorrectionPayment = useMemo(
+	const _selectedRefundCorrectionPayment = useMemo(
 		() =>
 			eligibleRefundCorrectionPayments?.find(
 				(payment) => payment.id === refundSelectedPaymentId,
@@ -2402,19 +1560,19 @@ export function useDocumentWorkflowModule({
 		const payerKey = selectedTaxDocumentPayerKey || "all-payers";
 		return `tax:${organizationId}:${documentPatient.id}:${taxDocumentYear}:${payerKey}`;
 	}, [
-		documentLocalPersistenceOrganizationId,
-		documentPatient?.id,
-		selectedTaxDocumentPayerKey,
-		taxDocumentYear,
+		documentLocalPersistenceOrganizationId, 
+		documentPatient?.id, 
+		selectedTaxDocumentPayerKey, 
+		taxDocumentYear, documentPatient
 	]);
 	const paymentReceiptSelectionPersistenceKey = useMemo(() => {
 		if (!documentPatient) return null;
 		const organizationId = documentLocalPersistenceOrganizationId ?? "clinic";
 		return `receipt:${organizationId}:${documentPatient.id}:${dashboard?.activeVisit?.id ?? "all-visits"}`;
 	}, [
-		dashboard?.activeVisit?.id,
-		documentLocalPersistenceOrganizationId,
-		documentPatient?.id,
+		dashboard?.activeVisit?.id, 
+		documentLocalPersistenceOrganizationId, 
+		documentPatient?.id, documentPatient
 	]);
 
 	function selectRefundOriginalPayment(paymentId: string): void {
@@ -2454,7 +1612,7 @@ export function useDocumentWorkflowModule({
 		)
 			return;
 		setRefundSelectedPaymentId("");
-	}, [eligibleRefundCorrectionPayments, refundSelectedPaymentId]);
+	}, [eligibleRefundCorrectionPayments, refundSelectedPaymentId, setRefundSelectedPaymentId]);
 	const outpatient025uDraftVisitId = documentPatientMatchesActiveVisit
 		? (dashboard?.activeVisit?.id ?? null)
 		: null;
@@ -2644,7 +1802,7 @@ export function useDocumentWorkflowModule({
 		if (taxDocumentYear >= 2024 && taxApplicationForm === "legacy_2021_2023") {
 			setTaxApplicationForm("knd_1151156");
 		}
-	}, [taxDocumentYear, taxApplicationForm]);
+	}, [taxDocumentYear, taxApplicationForm, setTaxApplicationForm]);
 
 	useEffect(() => {
 		if (
@@ -2668,10 +1826,9 @@ export function useDocumentWorkflowModule({
 		taxPaymentSelectionHydratedKeyRef.current =
 			taxPaymentSelectionPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId,
-		eligibleTaxPaymentIdsKey,
-		selectedDocumentUsesTaxPaymentSelection,
-		taxPaymentSelectionPersistenceKey,
+		documentLocalPersistenceOrganizationId, 
+		selectedDocumentUsesTaxPaymentSelection, 
+		taxPaymentSelectionPersistenceKey, eligibleTaxPayments.map, setSelectedTaxPaymentIds
 	]);
 
 	useEffect(() => {
@@ -2691,11 +1848,9 @@ export function useDocumentWorkflowModule({
 			selectedTaxPaymentIdsForCurrentDocument(),
 		);
 	}, [
-		documentLocalPersistenceOrganizationId,
-		eligibleTaxPaymentIdsKey,
-		selectedDocumentUsesTaxPaymentSelection,
-		selectedTaxPaymentIds,
-		taxPaymentSelectionPersistenceKey,
+		documentLocalPersistenceOrganizationId, 
+		selectedDocumentUsesTaxPaymentSelection, 
+		taxPaymentSelectionPersistenceKey, selectedTaxPaymentIdsForCurrentDocument
 	]);
 
 	useEffect(() => {
@@ -2723,10 +1878,9 @@ export function useDocumentWorkflowModule({
 		paymentReceiptSelectionHydratedKeyRef.current =
 			paymentReceiptSelectionPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId,
-		eligiblePaymentReceiptIdsKey,
-		selectedDocumentUsesPaymentReceiptSelection,
-		paymentReceiptSelectionPersistenceKey,
+		documentLocalPersistenceOrganizationId, 
+		selectedDocumentUsesPaymentReceiptSelection, 
+		paymentReceiptSelectionPersistenceKey, eligiblePaymentReceiptPayments.map, setSelectedPaymentReceiptIds
 	]);
 
 	useEffect(() => {
@@ -2751,11 +1905,10 @@ export function useDocumentWorkflowModule({
 			),
 		);
 	}, [
-		documentLocalPersistenceOrganizationId,
-		eligiblePaymentReceiptIdsKey,
-		paymentReceiptSelectionPersistenceKey,
-		selectedDocumentUsesPaymentReceiptSelection,
-		selectedPaymentReceiptIds,
+		documentLocalPersistenceOrganizationId, 
+		paymentReceiptSelectionPersistenceKey, 
+		selectedDocumentUsesPaymentReceiptSelection, 
+		selectedPaymentReceiptIds, eligiblePaymentReceiptPayments.map
 	]);
 
 	useEffect(() => {
@@ -2776,9 +1929,9 @@ export function useDocumentWorkflowModule({
 		outpatient025uDraftHydratedKeyRef.current =
 			outpatient025uDraftPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId,
-		outpatient025uDraftPersistenceKey,
-		selectedDocumentKind,
+		documentLocalPersistenceOrganizationId, 
+		outpatient025uDraftPersistenceKey, 
+		selectedDocumentKind, applyOutpatient025uDocumentDraftFields
 	]);
 
 	useEffect(() => {
@@ -2801,43 +1954,11 @@ export function useDocumentWorkflowModule({
 			currentOutpatient025uDocumentDraftFields(),
 		);
 	}, [
-		documentPatient?.id,
-		documentLocalPersistenceOrganizationId,
-		outpatient025uDraftPersistenceKey,
-		outpatient025uDraftVisitId,
-		outpatient025uMedicalCardNumber,
-		outpatient025uOpenedAt,
-		outpatient025uPatientSexCode,
-		outpatient025uCitizenship,
-		outpatient025uRegistrationUrbanRuralCode,
-		outpatient025uStayUrbanRuralCode,
-		outpatient025uOmsIssuedAt,
-		outpatient025uInsurerName,
-		outpatient025uSocialSupportCode,
-		outpatient025uHealthStatusDisclosureContact,
-		outpatient025uEmploymentCode,
-		outpatient025uDisabilityGroup,
-		outpatient025uWorkOrStudyPlace,
-		outpatient025uPalliativeCareNeedCode,
-		outpatient025uBloodGroup,
-		outpatient025uRhFactor,
-		outpatient025uKellK1,
-		outpatient025uOtherBloodData,
-		outpatient025uAllergyHistory,
-		outpatient025uFinalEpicrisis,
-		recordExtractPeriodStart,
-		recordExtractPeriodEnd,
-		recordExtractSourceVisitIds,
-		recordExtractComplaintAndAnamnesis,
-		recordExtractObjectiveStatus,
-		recordExtractDiagnosis,
-		recordExtractTreatmentProvided,
-		recordExtractRecommendations,
-		recordExtractDoctorFullName,
-		recordExtractPreparedFromSignedRecords,
-		outpatient025uOfficialForm274nChecked,
-		outpatient025uThirdPartyDataChecked,
-		selectedDocumentKind,
+		documentPatient?.id, 
+		documentLocalPersistenceOrganizationId, 
+		outpatient025uDraftPersistenceKey, 
+		outpatient025uDraftVisitId, 
+		selectedDocumentKind, currentOutpatient025uDocumentDraftFields
 	]);
 
 	useEffect(() => {
@@ -2858,9 +1979,9 @@ export function useDocumentWorkflowModule({
 		medicalRecordExtractDraftHydratedKeyRef.current =
 			medicalRecordExtractDraftPersistenceKey;
 	}, [
-		documentLocalPersistenceOrganizationId,
-		medicalRecordExtractDraftPersistenceKey,
-		selectedDocumentKind,
+		documentLocalPersistenceOrganizationId, 
+		medicalRecordExtractDraftPersistenceKey, 
+		selectedDocumentKind, applyMedicalRecordExtractDocumentDraftFields
 	]);
 
 	useEffect(() => {
@@ -2883,25 +2004,11 @@ export function useDocumentWorkflowModule({
 			currentMedicalRecordExtractDocumentDraftFields(),
 		);
 	}, [
-		documentPatient?.id,
-		documentLocalPersistenceOrganizationId,
-		medicalRecordExtractDraftPersistenceKey,
-		medicalRecordExtractDraftVisitId,
-		recordExtractPeriodStart,
-		recordExtractPeriodEnd,
-		recordExtractSourceVisitIds,
-		recordExtractComplaintAndAnamnesis,
-		recordExtractObjectiveStatus,
-		recordExtractDiagnosis,
-		recordExtractTreatmentProvided,
-		recordExtractRecommendations,
-		recordExtractDoctorFullName,
-		recordExtractRecipientFullName,
-		recordExtractRecipientAuthority,
-		recordExtractIssuedAt,
-		recordExtractPreparedFromSignedRecords,
-		recordExtractThirdPartyDataChecked,
-		selectedDocumentKind,
+		documentPatient?.id, 
+		documentLocalPersistenceOrganizationId, 
+		medicalRecordExtractDraftPersistenceKey, 
+		medicalRecordExtractDraftVisitId, 
+		selectedDocumentKind, currentMedicalRecordExtractDocumentDraftFields
 	]);
 
 	useEffect(() => {
@@ -2928,7 +2035,7 @@ export function useDocumentWorkflowModule({
 		setTaxApplicationRequestedAt(
 			toDateTimeLocalValue(new Date().toISOString()),
 		);
-	}, [documentPatient?.id]);
+	}, [documentPatient?.id, documentPatient?.phone, setTaxApplicationTaxpayerInn, setTaxApplicationContact, setTaxApplicationTaxpayerFullName, setTaxApplicationRequestedAt, documentPatient?.fullName, documentPatient?.email, setTaxApplicationTaxpayerIdentityDocument, setTaxApplicationAuthorityDocument, documentPatient, setTaxApplicationTaxpayerBirthDate, setTaxApplicationRelationship]);
 
 	useEffect(() => {
 		if (!selectedTaxApplicationPayment) return;
@@ -2959,7 +2066,7 @@ export function useDocumentWorkflowModule({
 				selectedTaxApplicationPayment.payerRelationship,
 			) ?? "self",
 		);
-	}, [documentPatient, selectedTaxApplicationPayment]);
+	}, [documentPatient, selectedTaxApplicationPayment, setTaxApplicationTaxpayerFullName, setTaxApplicationTaxpayerInn, setTaxApplicationTaxpayerIdentityDocument, setTaxApplicationTaxpayerBirthDate, setTaxApplicationRelationship]);
 
 	useEffect(() => {
 		if (!inferredTreatmentArea) return;
@@ -2969,8 +2076,8 @@ export function useDocumentWorkflowModule({
 		if (!labTeethOrArea.trim()) {
 			setLabTeethOrArea(inferredTreatmentArea);
 		}
-	}, [anesthesiaZone, inferredTreatmentArea, labTeethOrArea]);
-	function treatmentAcceptanceStageRows() {
+	}, [anesthesiaZone, inferredTreatmentArea, labTeethOrArea, setAnesthesiaZone, setLabTeethOrArea]);
+	function _treatmentAcceptanceStageRows() {
 		return documentTextLines(treatmentAcceptanceStages).map((line, index) => {
 			const [stageName, plannedServices, plannedTiming, amount] = line
 				.split("|")
@@ -3005,14 +2112,14 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function treatmentAcceptanceTotalRubValue(): number {
+	function _treatmentAcceptanceTotalRubValue(): number {
 		const manual = Number(
 			treatmentAcceptanceEstimatedTotalRub.replace(/[^\d]/g, ""),
 		);
 		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
 	}
 
-	function treatmentPlanStageRows() {
+	function _treatmentPlanStageRows() {
 		return documentTextLines(treatmentPlanStages).map((line, index) => {
 			const [stageName, plannedServices, plannedTiming, clinicalNotes, amount] =
 				line.split("|").map((part) => part.trim());
@@ -3030,7 +2137,7 @@ export function useDocumentWorkflowModule({
 		});
 	}
 
-	function treatmentPlanTotalRubValue(): number {
+	function _treatmentPlanTotalRubValue(): number {
 		const manual = Number(treatmentPlanEstimatedTotalRub.replace(/[^\d]/g, ""));
 		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
 	}
@@ -3108,7 +2215,7 @@ export function useDocumentWorkflowModule({
 		});
 	}
 
-	function treatmentPlanDoctorFullNameValue(): string {
+	function _treatmentPlanDoctorFullNameValue(): string {
 		return treatmentPlanDoctorFullName.trim() || activeDoctor?.fullName || "";
 	}
 
@@ -3139,18 +2246,18 @@ export function useDocumentWorkflowModule({
 		return normalizeRubAmountInput(withoutCurrency) ?? 0;
 	}
 
-	function paidContractTotalRubValue(): number {
+	function _paidContractTotalRubValue(): number {
 		const manual = manualRubAmount(paidContractTotalRub);
 		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
 	}
 
-	function paidContractCustomerFullNameValue(): string {
+	function _paidContractCustomerFullNameValue(): string {
 		return (
 			paidContractCustomerFullName.trim() || documentPatient?.fullName || ""
 		);
 	}
 
-	function paidContractCareReasonValue(): string {
+	function _paidContractCareReasonValue(): string {
 		return (
 			paidContractCareReason.trim() ||
 			dashboard?.activeVisit?.complaint?.trim() ||
@@ -3158,7 +2265,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function paidContractServiceScopeValue(): string {
+	function _paidContractServiceScopeValue(): string {
 		return (
 			paidContractServiceScope.trim() ||
 			dashboard?.activeVisit?.treatmentPlan?.trim() ||
@@ -3167,7 +2274,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function paidContractDoctorFullNameValue(): string {
+	function _paidContractDoctorFullNameValue(): string {
 		return paidContractDoctorFullName.trim() || activeDoctor?.fullName || "";
 	}
 
@@ -3180,12 +2287,12 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function completedActTotalRubValue(): number {
+	function _completedActTotalRubValue(): number {
 		const manual = Number(completedActTotalRub.replace(/[^\d]/g, ""));
 		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
 	}
 
-	function completedActFiscalReceiptLines(): string[] {
+	function _completedActFiscalReceiptLines(): string[] {
 		const manual = documentTextLines(completedActFiscalReceipts);
 		if (manual.length) return manual;
 		return activePaidPaymentsForVisit()
@@ -3193,7 +2300,7 @@ export function useDocumentWorkflowModule({
 			.filter((value): value is string => Boolean(value));
 	}
 
-	function completedActServicesSummaryValue(): string {
+	function _completedActServicesSummaryValue(): string {
 		return (
 			completedActServicesSummary.trim() ||
 			dashboard?.activeVisit?.doctorSummary?.trim() ||
@@ -3202,7 +2309,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function completedActDoctorFullNameValue(): string {
+	function _completedActDoctorFullNameValue(): string {
 		return completedActDoctorFullName.trim() || activeDoctor?.fullName || "";
 	}
 
@@ -3233,7 +2340,7 @@ export function useDocumentWorkflowModule({
 			});
 	}
 
-	function treatmentEstimatePatientOrPayerFullNameValue(): string {
+	function _treatmentEstimatePatientOrPayerFullNameValue(): string {
 		return (
 			treatmentEstimatePatientOrPayerFullName.trim() ||
 			documentPatient?.fullName ||
@@ -3241,7 +2348,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function treatmentEstimateTreatmentBasisValue(): string {
+	function _treatmentEstimateTreatmentBasisValue(): string {
 		return (
 			treatmentEstimateTreatmentBasis.trim() ||
 			compactDocumentText(
@@ -3253,12 +2360,12 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function treatmentEstimateTotalRubValue(): number {
+	function _treatmentEstimateTotalRubValue(): number {
 		const manual = manualRubAmount(treatmentEstimateTotalRub);
 		return manual > 0 ? manual : paymentInvoiceTotalRubValue();
 	}
 
-	function treatmentEstimateDoctorFullNameValue(): string {
+	function _treatmentEstimateDoctorFullNameValue(): string {
 		return (
 			treatmentEstimateDoctorFullName.trim() || activeDoctor?.fullName || ""
 		);
@@ -3273,13 +2380,13 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function paymentInvoicePayerFullNameValue(): string {
+	function _paymentInvoicePayerFullNameValue(): string {
 		return (
 			paymentInvoicePayerFullName.trim() || documentPatient?.fullName || ""
 		);
 	}
 
-	function paymentInvoiceBankDetailsValue(): string {
+	function _paymentInvoiceBankDetailsValue(): string {
 		return (
 			paymentInvoiceBankDetails.trim() ||
 			dashboard?.clinicSettings?.profile?.bankDetails?.trim() ||
@@ -3291,7 +2398,7 @@ export function useDocumentWorkflowModule({
 		return selectedPaymentReceiptPayments[0] ?? null;
 	}
 
-	function paymentReceiptPayerFullNameValue(): string {
+	function _paymentReceiptPayerFullNameValue(): string {
 		return (
 			paymentReceiptPayerFullName.trim() ||
 			firstPaymentReceiptPayment()?.payerFullName?.trim() ||
@@ -3299,7 +2406,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function paymentReceiptPayerBirthDateValue(): string {
+	function _paymentReceiptPayerBirthDateValue(): string {
 		return (
 			paymentReceiptPayerBirthDate.trim() ||
 			firstPaymentReceiptPayment()?.payerBirthDate?.trim() ||
@@ -3307,7 +2414,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function paymentReceiptPayerInnValue(): string {
+	function _paymentReceiptPayerInnValue(): string {
 		return (
 			paymentReceiptPayerInn.trim() ||
 			firstPaymentReceiptPayment()?.payerInn?.trim() ||
@@ -3315,7 +2422,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function paymentReceiptPayerIdentityDocumentValue(): string {
+	function _paymentReceiptPayerIdentityDocumentValue(): string {
 		return (
 			paymentReceiptPayerIdentityDocument.trim() ||
 			firstPaymentReceiptPayment()?.payerIdentityDocument?.trim() ||
@@ -3323,7 +2430,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function paymentReceiptPayerRelationshipValue(): string {
+	function _paymentReceiptPayerRelationshipValue(): string {
 		return (
 			paymentReceiptPayerRelationship.trim() ||
 			firstPaymentReceiptPayment()?.payerRelationship?.trim() ||
@@ -3331,7 +2438,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function paymentReceiptIssuedByValue(): string {
+	function _paymentReceiptIssuedByValue(): string {
 		return (
 			paymentReceiptIssuedBy.trim() ||
 			activeDoctor?.fullName ||
@@ -3339,7 +2446,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function paymentReceiptFiscalReceiptLines(): string[] {
+	function _paymentReceiptFiscalReceiptLines(): string[] {
 		return selectedPaymentReceiptPayments
 			.map((payment) => payment.fiscalReceiptNumber?.trim())
 			.filter((value): value is string => Boolean(value));
@@ -3366,7 +2473,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function installmentScheduleInstallmentRows() {
+	function _installmentScheduleInstallmentRows() {
 		const rows = documentTextLines(installmentScheduleRows).map(
 			(line, index) => {
 				const [label, dueDate, amount, status] = line
@@ -3416,7 +2523,7 @@ export function useDocumentWorkflowModule({
 		];
 	}
 
-	function installmentScheduleBaseDocumentTitleValue(): string {
+	function _installmentScheduleBaseDocumentTitleValue(): string {
 		return (
 			installmentScheduleBaseDocumentTitle.trim() ||
 			activeUsableDocuments?.find(
@@ -3426,13 +2533,13 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function installmentSchedulePayerFullNameValue(): string {
+	function _installmentSchedulePayerFullNameValue(): string {
 		return (
 			installmentSchedulePayerFullName.trim() || documentPatient?.fullName || ""
 		);
 	}
 
-	function installmentScheduleResponsibleFullNameValue(): string {
+	function _installmentScheduleResponsibleFullNameValue(): string {
 		return (
 			installmentScheduleResponsibleFullName.trim() ||
 			activeDoctor?.fullName ||
@@ -3440,7 +2547,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function minorRepresentativeFullNameValue(): string {
+	function _minorRepresentativeFullNameValue(): string {
 		return (
 			minorRepresentativeFullName.trim() ||
 			documentPatient?.administrativeProfile?.legalRepresentativeFullName?.trim() ||
@@ -3448,7 +2555,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function minorRepresentativeRelationshipValue(): string {
+	function _minorRepresentativeRelationshipValue(): string {
 		return (
 			minorRepresentativeRelationship.trim() ||
 			documentPatient?.administrativeProfile?.legalRepresentativeRelationship?.trim() ||
@@ -3456,7 +2563,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function minorRepresentativeIdentityDocumentValue(): string {
+	function _minorRepresentativeIdentityDocumentValue(): string {
 		return (
 			minorRepresentativeIdentityDocument.trim() ||
 			documentPatient?.administrativeProfile?.legalRepresentativeIdentityDocument?.trim() ||
@@ -3464,7 +2571,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function minorRepresentativePhoneValue(): string {
+	function _minorRepresentativePhoneValue(): string {
 		return (
 			minorRepresentativePhone.trim() ||
 			documentPatient?.administrativeProfile?.legalRepresentativePhone?.trim() ||
@@ -3472,19 +2579,19 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function minorConsentPatientFullNameValue(): string {
+	function _minorConsentPatientFullNameValue(): string {
 		return (
 			minorConsentPatientFullName.trim() || documentPatient?.fullName || ""
 		);
 	}
 
-	function minorConsentPatientBirthDateValue(): string {
+	function _minorConsentPatientBirthDateValue(): string {
 		return (
 			minorConsentPatientBirthDate.trim() || documentPatient?.birthDate || ""
 		);
 	}
 
-	function minorConsentInterventionScopeValue(): string {
+	function _minorConsentInterventionScopeValue(): string {
 		return (
 			minorConsentInterventionScope.trim() ||
 			dashboard?.activeVisit?.treatmentPlan?.trim() ||
@@ -3492,7 +2599,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function minorConsentDiagnosisOrIndicationValue(): string {
+	function _minorConsentDiagnosisOrIndicationValue(): string {
 		return (
 			minorConsentDiagnosisOrIndication.trim() ||
 			dashboard?.activeVisit?.diagnosis?.trim() ||
@@ -3501,11 +2608,11 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function minorConsentDoctorFullNameValue(): string {
+	function _minorConsentDoctorFullNameValue(): string {
 		return minorConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
 	}
 
-	function warrantyServiceOrWorkNameValue(): string {
+	function _warrantyServiceOrWorkNameValue(): string {
 		return (
 			warrantyServiceOrWorkName.trim() ||
 			dashboard?.activeVisit?.treatmentPlan?.trim() ||
@@ -3514,7 +2621,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function warrantyTeethOrAreaValue(): string {
+	function _warrantyTeethOrAreaValue(): string {
 		return (
 			warrantyTeethOrArea.trim() ||
 			inferredTreatmentArea ||
@@ -3522,7 +2629,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function warrantyLinkedActOrContractValue(): string {
+	function _warrantyLinkedActOrContractValue(): string {
 		return (
 			warrantyLinkedActOrContract.trim() ||
 			activeUsableDocuments?.find(
@@ -3534,11 +2641,11 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function warrantyDoctorFullNameValue(): string {
+	function _warrantyDoctorFullNameValue(): string {
 		return warrantyDoctorFullName.trim() || activeDoctor?.fullName || "";
 	}
 
-	function postVisitProcedureNameValue(): string {
+	function _postVisitProcedureNameValue(): string {
 		return (
 			postVisitProcedureName.trim() ||
 			dashboard?.activeVisit?.treatmentPlan?.trim() ||
@@ -3546,7 +2653,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function postVisitToothOrAreaValue(): string {
+	function _postVisitToothOrAreaValue(): string {
 		return (
 			postVisitToothOrArea.trim() ||
 			inferredTreatmentArea ||
@@ -3554,7 +2661,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function postVisitDoctorFullNameValue(): string {
+	function _postVisitDoctorFullNameValue(): string {
 		return postVisitDoctorFullName.trim() || activeDoctor?.fullName || "";
 	}
 
@@ -3597,7 +2704,7 @@ export function useDocumentWorkflowModule({
 		applyPostVisitCarePreset(topic);
 	}
 
-	function markPostVisitManualEdited() {
+	function _markPostVisitManualEdited() {
 		setPostVisitManualEdited(true);
 		setPostVisitPresetFeedback("");
 	}

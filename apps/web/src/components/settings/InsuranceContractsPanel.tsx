@@ -54,7 +54,6 @@ export const InsuranceContractsPanel: React.FC = () => {
 	const derivations = useSettingsDerivations();
 	const mergedProps = Object.assign({}, appLogic, derivations);
 	const { auth } = mergedProps;
-	const {} = derivations;
 	/* Признак модуля нужен и разметке (ниже), и загрузке: при выключенном ДМС
 	   запрос за договорами уходил бы в никуда при каждом открытии адреса. */
 	const flags = useWorkspaceProfile();
@@ -423,6 +422,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 			{/* Add/Edit Modal */}
 			{showModal && (
 				<div
+					role="button"
+					tabIndex={-1}
 					style={{
 						position: "fixed",
 						inset: 0,
@@ -434,6 +435,14 @@ export const InsuranceContractsPanel: React.FC = () => {
 						justifyContent: "center",
 					}}
 					onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
+					onKeyDown={(e) => {
+						if (
+							e.target === e.currentTarget &&
+							(e.key === "Enter" || e.key === " ")
+						) {
+							setShowModal(false);
+						}
+					}}
 				>
 					<div
 						style={{

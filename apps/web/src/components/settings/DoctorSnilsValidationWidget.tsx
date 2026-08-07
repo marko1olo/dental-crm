@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface DoctorSnilsValidationWidgetProps {
@@ -75,7 +75,7 @@ export function DoctorSnilsValidationWidget({
 						"СНИЛС врача не прошёл проверку формата или контрольного числа ЕГИСЗ.",
 				});
 			}
-		} catch (err) {
+		} catch (_err) {
 			setValidationResult({
 				ok: false,
 				message: "Сбой сети при проверке СНИЛС в ЕГИСЗ.",

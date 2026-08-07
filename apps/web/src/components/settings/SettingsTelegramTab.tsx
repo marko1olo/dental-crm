@@ -2,7 +2,6 @@ import type { DenteTelegramFeature } from "@dental/shared";
 import {
 	Bot,
 	CalendarDays,
-	CheckCircle2,
 	ClipboardCheck,
 	Copy,
 	CreditCard,
@@ -196,7 +195,7 @@ export function SettingsTelegramTab({
 		return (replyMarkup.inline_keyboard ?? []) as TelegramInlineButtonRow[];
 	};
 
-	const telegramTestMessageTargets = [
+	const _telegramTestMessageTargets = [
 		{ value: "me", label: "Мне" },
 		{ value: "phone", label: "По номеру телефона" },
 	];
@@ -1509,27 +1508,32 @@ export function SettingsTelegramTab({
 												className="telegram-outbox-buttons"
 												aria-label="Кнопки Telegram"
 											>
-												{itemButtonRows.map((row, rowIndex) => (
-													<div
-														className="telegram-inline-button-row"
-														key={`${item.id}-row-${rowIndex}`}
-													>
-														{row.map((button) => (
-															<span
-																key={`${item.id}-${button.text}-${button.target}`}
-															>
-																{button.text}
-																<small>
-																	{
-																		typedTelegramInlineButtonKindLabels[
-																			button.kind
-																		]
-																	}
-																</small>
-															</span>
-														))}
-													</div>
-												))}
+												{itemButtonRows
+													.map((row, rowIndex) => ({
+														row,
+														rowId: `${item.id}-row-${rowIndex}`,
+													}))
+													.map(({ row, rowId }) => (
+														<div
+															className="telegram-inline-button-row"
+															key={rowId}
+														>
+															{row.map((button) => (
+																<span
+																	key={`${item.id}-${button.text}-${button.target}`}
+																>
+																	{button.text}
+																	<small>
+																		{
+																			typedTelegramInlineButtonKindLabels[
+																				button.kind
+																			]
+																		}
+																	</small>
+																</span>
+															))}
+														</div>
+													))}
 											</div>
 										) : null}
 									</div>

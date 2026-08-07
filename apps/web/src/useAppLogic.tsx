@@ -1,468 +1,63 @@
 import {
-	type AcceptVisitDraftResponse,
-	type AiJobKind,
-	type AiRecognitionJob,
-	type AiRecognitionJobResponse,
-	type AiRecognitionTarget,
-	type Appointment,
-	buildRuleBasedVisitDraftFromTranscript,
-	type ClinicalToothRow,
-	type ClinicMode,
-	type ClinicProfile,
-	type ClinicPublicLookupResponse,
 	type CommunicationTaskOutcome,
-	type CreateAppointmentInput,
 	type Dashboard,
-	type DentalMedicalCard043uPayload,
-	type DentalPricelistAnalysisResponse,
-	type DentalSpecialty,
-	type DenteTelegramBotMode,
-	type DenteTelegramBotStatus,
-	type DenteTelegramChatLinkListResponse,
 	type DenteTelegramChatLinkPublic,
-	type DenteTelegramFeature,
-	type DenteTelegramLinkCodeCreated,
-	type DenteTelegramLinkCodeListResponse,
-	type DenteTelegramLinkCodePublic,
-	type DenteTelegramMessagePreview,
-	type DenteTelegramOutboxResponse,
-	type DenteTelegramOutboxSendDueResponse,
-	type DenteTelegramOutboxSendResponse,
-	type DenteTelegramPostVisitCheckupDelayHoursByTopic,
-	type DenteTelegramPrivacyMode,
-	type DenteTelegramVisualCardKey,
-	type DenteTelegramVisualCardUrls,
-	type DicomFirstFramePreviewResponse,
-	type DicomFolderSeriesPreviewResponse,
-	type DicomFolderWorkupPath,
-	type DicomFolderWorkupPlanResponse,
-	type DicomLocalFolderDiscoveryResponse,
-	type DicomRenderCachePlanResponse,
-	type DicomSeriesPreviewGroup,
-	type DicomSeriesPreviewResponse,
-	type DicomViewerLaunchManifestResponse,
-	type DicomViewerToolStateBundleResponse,
-	type DicomViewerWorkbenchManifestResponse,
-	type DicomWebConnectorCheckResponse,
-	type DicomWorkbenchBundle,
-	type DicomWorkbenchBundleListResponse,
-	type DicomWorkbenchBundleResponse,
-	type DicomWorkstationClientFacts,
-	type DicomWorkstationReadinessResponse,
-	type DocumentAuditFacts,
-	type DocumentChainSummary,
-	type DocumentIngestionResponse,
-	type DocumentIngestionTarget,
-	type DocumentIssueSignatureMode,
-	type DocumentPayload,
-	type DocumentSourceStatus,
-	type DocumentVoidReasonCode,
-	documentAmountSource,
 	documentFactoryGroups,
-	documentKindMetadata,
-	documentSourceStatusLabels,
-	type GeneratedDocument,
-	type ImagingFolderScanResponse,
-	type ImagingImportCommitResponse,
-	type ImagingImportPreviewResponse,
-	type ImagingSourceKind,
 	type ImagingStudyKind,
-	type ImagingViewerAnnotation,
-	type ImagingViewerImplantPlan,
-	type ImagingViewerSessionResponse,
-	type ImagingViewerSessionState,
-	type ImagingViewerTool,
-	type ImagingViewerWindowPreset,
-	type ImportCommitResponse,
-	type ImportIntakeResponse,
-	type ImportPreviewResponse,
-	type ImportSourceKind,
-	type InstallmentPaymentStatus,
-	type IntegrationCapability,
-	type IntegrationCategory,
-	type IntegrationPresetStatus,
-	type IssueDocumentInput,
 	type LocalBridgeReadinessResponse,
-	type LocalBridgeStatus,
-	type LocalBridgeUsePath,
 	type LocalBridgeUsePlansResponse,
-	type LocalImagingOrganizerResponse,
-	type MigrationAutopilotResponse,
-	type MigrationLocalSourceDiscoveryResponse,
-	type MigrationLocalSourceProbeResponse,
-	type MigrationLocalSourceWorkupResponse,
-	multiplyKopecks,
-	normalizeDentalSpeechTranscript,
-	type OutpatientMedicalCard025uPayload,
-	type Patient,
-	type PatientAdministrativeProfile,
-	type PatientIntakePregnancyStatus,
-	type PaymentMethod,
-	type PhotoVideoConsentMaterial,
-	type PostVisitCareTopic,
-	type PricelistSourceKind,
-	type ProcedureSpecificConsentProcedure,
-	type ProtocolTemplate,
-	parseKopecks,
-	percentageOfKopecks,
-	type ResourceLoad,
-	type ScheduleWarning,
-	type SmartImportCommitResponse,
-	type SmartImportMode,
-	type SmartImportPreviewResponse,
-	type SpeechChunkUploadInput,
-	type SpeechGatewayHealthReport,
-	type SpeechGatewayStatus,
-	type SpeechProvider,
-	type SpeechProviderConnector,
-	type SpeechProviderRuntimeStatus,
-	type SpeechRecordingAssembly,
-	type SpeechRecordingRecoveryList,
-	type SpeechRecordingStrategy,
-	type SpeechTranscriptionResponse,
-	type SpeechTranscriptPolishResponse,
 	type StaffRole,
-	type StaffWorkingHours,
-	sumKopecks,
-	type TaxDeductionApplicationDeliveryChannel,
-	type TaxDeductionApplicationForm,
-	type TaxDeductionApplicationRelationship,
-	type TreatmentPlanAcceptanceVariant,
-	type UiLanguage,
-	type UpdateAppointmentInput,
-	type UpdateClinicProfileInput,
-	type UpdatePatientAdministrativeProfileInput,
-	type UpdatePatientInput,
-	type VisitDraftAutosaveResponse,
-	type VisitNoteDraft,
-	type VoidDocumentInput,
-	type XrayCbctReferralPregnancyStatus,
-	type XrayCbctReferralPriority,
 } from "@dental/shared";
 import {
-	AlertTriangle,
-	ArrowRight,
-	Bot,
-	Building2,
-	CalendarDays,
-	Check,
-	CheckCircle2,
-	ClipboardCheck,
-	ClipboardList,
-	Copy,
-	CreditCard,
-	Database,
-	Download,
-	ExternalLink,
-	FileCheck2,
-	FileText,
-	FlipHorizontal,
-	Gauge,
-	History,
-	Image as ImageIcon,
-	MessageSquare,
-	Mic,
-	Phone,
-	Plus,
-	ReceiptText,
-	RefreshCw,
-	RotateCcw,
-	RotateCw,
-	Search,
-	Send,
-	ShieldCheck,
-	Sparkles,
-	UploadCloud,
-	UserCheck,
-	Users,
-	ZoomIn,
-	ZoomOut,
-} from "lucide-react";
-import {
-	type CSSProperties,
-	type KeyboardEvent,
-	lazy,
-	Suspense,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
-import { AppLoadingState, AppUnlockState } from "./AppBootState";
 import {
-	AdminSecretSessionDomain,
-	type AdminSecretUnlockDomain,
 	type AppointmentScheduleDraft,
-	AppointmentScheduleSaveState,
-	acceptedVisitSaveFailureIsRetryable,
-	addBrowserMigrationKindToScanStats,
-	addMinutesToClinicDateTimeLocal,
-	aiJobKindLabels,
-	aiJobKindPreferenceValues,
-	appendSpeechTextWithoutDuplicateTail,
-	appointmentCreateInputFromDraft,
 	appointmentReadinessLabels,
-	appointmentScheduleDateMissingSteps,
 	appointmentScheduleDraftFromAppointment,
-	appointmentScheduleDraftSignature,
-	appointmentScheduleMissingFields,
-	appointmentUpdateInputFromDraft,
-	assertSpeechChunkDbStores,
 	type BrowserDirectoryPickerWindow,
-	type BrowserFileSystemDirectoryHandle,
-	BrowserFileSystemFileHandle,
-	BrowserFileSystemHandle,
-	type BrowserImagingScanOptions,
-	BrowserImagingScanPhase,
-	BrowserImagingScanProgress,
-	BrowserImagingScanRuntime,
-	type BrowserMigrationFileKind,
-	type BrowserMigrationFolderStats,
-	type BrowserMigrationScanOptions,
-	BrowserMigrationScanPhase,
-	BrowserMigrationScanProgress,
-	BrowserMigrationScanRuntime,
-	type BrowserMigrationScanStats,
-	BrowserMigrationSourceKind,
-	type BrowserPickedImagingFolderPreview,
-	type BrowserPickedImagingScanStats,
-	BrowserSpeechRecognition,
-	type BrowserWindowWithSpeech,
-	blobToBase64,
 	browserCapabilityFailureMessage,
-	browserFileHasDicomMagic,
-	browserGeneratedId,
-	browserImagingScanDirectoryEntryLimit,
-	browserImagingScanElapsedFromIso,
-	browserImagingScanFileLimit,
-	browserImagingScanFolderLimit,
-	browserImagingScanMagicReadLimit,
-	browserImagingScanNowMs,
-	browserImagingScanProgressEveryMs,
-	browserImagingScanProgressEveryUnits,
-	browserImagingScanProgressFromStats,
-	browserImagingScanYield,
-	browserImagingScanYieldEveryMs,
-	browserImagingScanYieldEveryUnits,
-	browserLegacyMisTextPattern,
-	browserLocalSourceErrorMessage,
-	browserMigrationFolderHintScore,
-	browserMigrationScanDirectoryEntryLimit,
-	browserMigrationScanFileLimit,
-	browserMigrationScanFolderLimit,
-	browserMigrationScanMagicReadLimit,
-	browserMigrationScanProgressEveryMs,
-	browserMigrationScanProgressEveryUnits,
-	browserMigrationScanProgressFromStats,
-	browserMigrationScanYieldEveryMs,
-	browserMigrationScanYieldEveryUnits,
-	browserMigrationSourceKindFromStats,
-	browserMigrationSourceTitles,
-	browserPickedFolderFingerprint,
-	browserPickedImagingFolderStorageKey,
-	buildBrowserMigrationDiscovery,
-	buildBrowserPickedImagingFolderPreview,
 	buildClinicProfileUpdatePayload,
-	buildOfflineVisitDraftFromTranscript,
-	buildPatientAdministrativeProfilePayload,
-	buildPatientCorePayload,
-	type CbctWorkbenchPlane,
-	type ClinicalToothStatus,
-	type ClinicalToothSurface,
 	type ClinicProfileDraft,
-	ClinicProfileSaveState,
-	classifyBrowserImagingFileName,
-	classifyBrowserMigrationFileName,
-	clinicalToothStatusAliases,
-	clinicalToothSurfaceAliases,
 	clinicLegalMissingFields,
 	clinicLegalReadinessPercent,
 	clinicProfileDraftFromProfile,
 	clinicProfileDraftSignature,
 	clinicProfileEndpoint,
-	collectDicomWorkstationClientFacts,
-	createBrowserImagingScanRuntime,
-	createBrowserMigrationScanRuntime,
-	createLocalDicomWorkbenchDraft,
-	createLocalQueueId,
-	ctImplantPlanFromLibraryItem,
-	currentLocalDateTimeInputValue,
-	DentalDesktopRuntimeWindow,
-	type DenteTelegramHandoffTarget,
-	DenteTelegramPortalSection,
-	type DicomFirstFramePreviewMetadata,
-	type DicomFirstFramePreviewOptions,
 	type DicomFirstFramePreviewRequestContext,
-	DicomWorkbenchIndexedDbDraft,
-	DicomWorkbenchLocalDraft,
-	type DocumentIssueSignatureDraft,
-	DocumentPayloadDraftEntry,
-	DocumentPayloadDraftStore,
-	DocumentPaymentSelectionEntry,
-	DocumentPaymentSelectionStore,
-	dateInputValuePlusDays,
-	defaultAppointmentStartLocal,
-	defaultClinicalToothRowsText,
 	defaultDicomFirstFrameViewerState,
 	defaultImagingViewerState,
 	defaultStaffScheduleDraft,
 	defaultUiLanguageOption,
 	defaultUiPreferences,
-	defaultWorkingDays,
-	deleteLocalDicomWorkbenchDraftFromIndexedDb,
-	deleteLocalMprWorkbenchDraftFromIndexedDb,
-	deletePendingSpeechChunkFromIndexedDb,
-	deletePendingVisitSaveFromIndexedDb,
-	denteAdminSecretHeaderName,
-	denteAdminSecretRequestHeaders,
-	denteTelegramHandoffTargets,
-	detectDicomRuntimeSurfaceHint,
-	dicomDownloadRedactionWarning,
 	dicomFirstFrameStatusLabels,
-	dicomWorkbenchDraftStoreName,
-	dicomWorkbenchIndexedDbKey,
-	dicomWorkbenchLocalStorageKey,
-	dicomWorkbenchManifestHasRedactedSource,
-	dicomWorkbenchSeriesKey,
 	documentDetectedKindLabel,
-	documentDetectedKindLabels,
 	documentIngestionQualityLabels,
-	documentIssueSignatureLocalKey,
 	documentIssueSignatureModeLabels,
-	documentIssueSignatureStorageKey,
-	documentPayloadDraftKey,
-	documentPayloadDraftLocalKey,
-	documentPayloadDraftStorageKey,
-	documentPaymentSelectionLocalKey,
-	documentPaymentSelectionStorageKey,
 	documentVoidReasonLabels,
-	emptyAppointmentScheduleDraft,
 	emptyClinicProfileDraft,
-	emptyDocumentPayloadDraftStore,
-	emptyDocumentPaymentSelectionStore,
-	emptyMedicalRecordExtractDocumentDraftFields,
-	emptyOutpatient025uDocumentDraftFields,
-	emptyPatientAdministrativeProfileDraft,
-	emptyPatientCoreDraft,
-	emptyTelegramVisualCardUrlDrafts,
-	emptyVisitNoteForm,
-	findPatient,
 	formatDateTime,
 	formatShortDate,
 	formatTime,
 	fromDateTimeLocalValue,
-	hasDentalDesktopShellBridge,
-	ImagingViewerLocalDraft,
-	ImagingViewerPlan,
 	type ImagingViewerSaveState,
-	ImagingViewerState,
 	imagingSourceChoices,
-	imagingViewerLocalKey,
-	imagingViewerLocalStoragePrefix,
-	imagingViewerPlans,
 	importSourceLabels,
 	ingestionTargetLabels,
-	installmentPaymentStatusAliases,
-	isAiJobKind,
-	isAiRecognitionTarget,
-	isAppointmentStatusFilterPreference,
-	isBooleanPreference,
-	isBoundedPreferenceString,
-	isBrowserImagingScanAbortError,
-	isBrowserMigrationScanAbortError,
-	isDateInputValue,
-	isDateTimeLocalInputValue,
-	isDentalSpecialty,
-	isDenteTelegramPortalSection,
-	isDocumentIngestionTarget,
-	isDocumentIssueSignatureModePreference,
-	isDocumentKindPreference,
-	isImagingKindFilter,
-	isImagingSourceKind,
-	isImportSourceKind,
-	isLocalDicomDownloadPath,
-	isMprProjection,
-	isMprWindowPreset,
-	isNullablePreferenceString,
-	isNullableString,
-	isOnboardingStepPreference,
-	isOptionValue,
-	isPaymentMethod,
-	isPendingSpeechChunk,
-	isPostVisitCareTopicPreference,
-	isPricelistSourceKind,
-	isProcedureSpecificConsentProcedurePreference,
-	isRecordKey,
-	isSmartImportMode,
-	isStaffRole,
-	isStringUnionValue,
-	isTaxApplicationDeliveryChannelPreference,
-	isTaxApplicationFormPreference,
-	isTaxDocumentYearPreference,
-	isTelegramLinkSubjectTypePreference,
 	isTelegramOutboxItemDueForUi,
-	isTelegramOutboxStatusFilterPreference,
-	isTelegramOutboxTemplateFilterPreference,
-	isUiLanguage,
-	isValidDateParts,
-	isVisitNoteDraft,
-	isVisitNoteForm,
-	type LocalDicomOperationOptions,
-	type LocalImagingFolderDraft,
-	latestPendingVisitSaveAt,
 	loadBrowserPickedImagingFolderPreview,
-	loadDocumentIssueSignatureDraft,
-	loadDocumentPayloadDraftStore,
-	loadDocumentPaymentSelection,
-	loadDocumentPaymentSelectionStore,
-	loadImageFromDataUrl,
 	loadLocalDicomWorkbenchDraft,
-	loadLocalDicomWorkbenchDraftFromLocalStorage,
 	loadLocalImagingFolderDraft,
-	loadLocalImagingViewerDraft,
-	loadLocalMprWorkbenchDraft,
-	loadLocalMprWorkbenchDraftFromLocalStorage,
-	loadMedicalRecordExtractDocumentDraft,
 	loadOnboardingDismissalState,
-	loadOutpatient025uDocumentDraft,
-	loadPendingSpeechChunks,
-	loadPendingSpeechChunksFromLocalStorage,
-	loadPendingVisitSaves,
-	loadPendingVisitSavesFromLocalStorage,
 	loadServerUiPreferences,
 	loadUiPreferences,
 	loadVisitLocalDraft,
-	localConvenienceRetentionMs,
-	localDraftString,
-	localImagingFolderFingerprint,
-	localImagingFolderStorageKey,
-	localQueueOrganizationMatches,
-	localSavedAtFresh,
-	MedicalDocumentReleaseChannel,
-	type MedicalRecordExtractDocumentDraftFields,
-	type MprAxisVisualizerStyle,
-	MprWorkbenchIndexedDbDraft,
-	MprWorkbenchLocalDraft,
-	type MprWorkbenchState,
-	maxPricelistImageBase64Chars,
-	maybeYieldBrowserImagingScan,
-	maybeYieldBrowserMigrationScan,
 	medicalDocumentReleaseChannelLabels,
-	mergeLocalOnboardingDismissal,
-	migrateLocalDicomWorkbenchDraftFromLocalStorage,
-	migrateLocalMprWorkbenchDraftFromLocalStorage,
-	migratePendingVisitSavesFromLocalStorage,
-	migrateSpeechChunksFromLocalStorage,
-	minutesLabel,
 	money,
-	mprWorkbenchDraftStoreName,
-	mprWorkbenchIndexedDbKey,
-	mprWorkbenchLocalKey,
-	mprWorkbenchLocalStoragePrefix,
-	mprWorkbenchSeriesKey,
 	newAppointmentDraftFromDashboard,
-	newerDicomWorkbenchDraft,
-	normalizeClockTime,
 	normalizedAppointmentStatus,
 	normalizedAppointmentStatusFilter,
 	normalizedClinicalRuleAction,
@@ -470,11 +65,8 @@ import {
 	normalizedDentalSpecialty,
 	normalizedDocumentIssueSignatureMode,
 	normalizedDocumentKind,
-	normalizedDocumentPaymentSelectionIds,
 	normalizedDocumentVoidReasonCode,
-	normalizedLocalOrganizationId,
 	normalizedMedicalDocumentReleaseChannel,
-	normalizedOutpatient025uCode,
 	normalizedOutpatient025uDemographicCode,
 	normalizedPatientIntakePregnancyStatus,
 	normalizedPaymentRefundCorrectionAction,
@@ -495,170 +87,44 @@ import {
 	normalizedXrayPregnancyStatus,
 	normalizedXrayPriority,
 	normalizedXrayStudyType,
-	normalizeLocalDicomWorkbenchDraft,
-	normalizeMedicalRecordExtractDocumentDraftFields,
-	normalizeMprWorkbenchDraft,
-	normalizeMprWorkbenchState,
 	normalizeOptionalWorkingDaysDraft,
-	normalizeOutpatient025uDocumentDraftFields,
-	normalizePendingSpeechChunk,
-	normalizePendingVisitSave,
 	normalizePersistenceHealth,
-	normalizeSpeechAppendText,
-	normalizeTaxApplicationRelationship,
-	normalizeTelegramBotUsernameDraft,
-	normalizeTelegramPublicHttpsUrlDraft,
-	normalizeTelegramVisualCardUrlDraftsForSave,
 	normalizeUiLanguageInput,
-	normalizeUiPreferencesPayload,
 	normalizeWorkingDaysDraft,
-	nullableAppointmentDraftValue,
-	nullableClinicDraftValue,
-	nullablePatientDraftValue,
-	OnboardingDismissalState,
 	type OnboardingStep,
-	Outpatient025uDemographicCode,
-	type Outpatient025uDocumentDraftFields,
-	offlineDraftOrganizationKey,
-	onboardingLocalKey,
 	onboardingSteps,
-	onboardingStepValues,
-	onboardingStorageKey,
 	onboardingTelegramVisualCardKeys,
-	openSpeechChunkDb,
-	operatorReadableErrorDetail,
-	operatorReadableErrorDetailFromUnknown,
 	operatorWorkflowFailureMessage,
-	organizationScopedLocalStorageKey,
-	outpatient025uDemographicCodeOptions,
-	type PatientAdministrativeProfileDraft,
-	PatientAdministrativeProfileSaveState,
-	type PatientCoreDraft,
-	PatientCoreSaveState,
-	PaymentRefundCorrectionAction,
-	PaymentRefundCorrectionMethod,
-	PendingSpeechChunk,
-	PendingVisitSave,
-	PersistenceBackupCheck,
 	type PersistenceHealth,
 	type PersistenceIntegrityReport,
-	PricelistImageMimeType,
-	parseOnboardingDismissalState,
-	parsePendingVisitSaveQueue,
-	patientAdministrativeProfileDraftFromPatient,
-	patientAdministrativeProfileDraftIssue,
-	patientAdministrativeProfileDraftSignature,
-	patientCoreDraftFromPatient,
-	patientCoreDraftSignature,
 	patientInsightRiskLabels,
 	patientIntakePregnancyStatusOptions,
 	patientName,
-	paymentRefundCorrectionActionOptions,
-	paymentRefundCorrectionMethodOptions,
-	pendingSpeechChunkQueueKey,
-	pendingSpeechChunkQueueLocalKey,
-	pendingVisitSaveIndexedDbAvailable,
-	pendingVisitSaveQueueKey,
-	pendingVisitSaveQueueLocalKey,
-	pendingVisitSaveStoreName,
 	persistUiPreferences,
 	photoVideoMaterialOptions,
-	pickUiPreference,
-	preparePricelistImage,
-	pricelistImageMimeTypes,
 	procedureSpecificConsentProcedureOptions,
-	publishBrowserImagingScanProgress,
-	publishBrowserMigrationScanProgress,
-	putPendingSpeechChunkToIndexedDb,
-	queuePendingSpeechChunk,
-	queuePendingVisitSave,
-	readDenteTelegramHandoffTarget,
-	readFileAsDataUrl,
-	readLocalDicomWorkbenchDraftFromIndexedDb,
-	readLocalMprWorkbenchDraftFromIndexedDb,
-	readPendingSpeechChunksFromIndexedDb,
-	readPendingVisitSavesFromIndexedDb,
 	recommendedActionPriorityLabels,
-	redactDicomDownloadText,
-	redactedDicomDownloadReferenceId,
-	redactedDicomDownloadWarnings,
-	redactedDicomViewerToolStateBundleForDownload,
-	redactedDicomWorkbenchManifestForDownload,
-	redactedLocalDicomDownloadPath,
-	removeBrowserPickedImagingFolderPreview,
-	removeLocalDicomWorkbenchDraft,
-	removeLocalDicomWorkbenchDraftFromLocalStorage,
-	removeLocalImagingFolderDraft,
-	removePendingSpeechChunkById,
-	requestFailureMessage,
-	requiredSpeechChunkDbStoreNames,
-	resolveMprWorkbenchProjection,
 	responseErrorMessage,
-	responseStatusFailureLabel,
 	roleFocusOrder,
-	SettingsTab,
 	type StaffScheduleDraft,
-	StaffScheduleSaveState,
-	saveBrowserPickedImagingFolderPreview,
-	saveDocumentIssueSignatureDraft,
-	saveDocumentPaymentSelection,
-	saveLocalDicomWorkbenchDraft,
-	saveLocalDicomWorkbenchDraftToIndexedDb,
-	saveLocalDicomWorkbenchDraftToLocalStorage,
-	saveLocalImagingFolderDraft,
-	saveLocalImagingViewerDraft,
-	saveLocalMprWorkbenchDraft,
-	saveLocalMprWorkbenchDraftToIndexedDb,
-	saveLocalMprWorkbenchDraftToLocalStorage,
-	saveMedicalRecordExtractDocumentDraft,
 	saveOnboardingDismissed,
-	saveOutpatient025uDocumentDraft,
-	savePendingSpeechChunksToIndexedDb,
-	savePendingSpeechChunksToLocalStorage,
-	savePendingVisitSaves,
-	savePendingVisitSavesToIndexedDb,
-	savePendingVisitSavesToLocalStorage,
 	saveServerUiPreferences,
 	saveUiPreferences,
 	saveVisitLocalDraft,
-	sensitiveLocalDraftRetentionMs,
 	settingsTabFromHash,
 	settingsTabs,
 	smartImportModeLabels,
-	sortPendingSpeechChunks,
-	sortPendingVisitSaves,
-	speechAudioQueueRetentionMs,
-	speechChunkDbName,
-	speechChunkDbPromise,
-	speechChunkDbVersion,
-	speechChunkIndexedDbAvailable,
-	speechChunkStoreName,
 	speechGatewayCanUpload,
-	speechLocalStorageFallbackMaxBytes,
 	speechProviderConnectorLabels,
-	speechQualityLabels,
 	staffScheduleDraftFromWorkingHours,
-	staffScheduleDraftSignature,
-	staffWorkingHoursFromDraft,
-	staffWorkingHoursFromSimpleDraft,
-	stripDenteTelegramHandoffQuery,
-	type TelegramFeaturePlan,
-	TelegramInlineButtonPreview,
-	TelegramLinkSubjectType,
-	TelegramOutboxStatusFilter,
-	TelegramOutboxTemplateFilter,
 	taxApplicationDeliveryChannelOptions,
 	taxApplicationFormOptions,
 	taxApplicationRelationshipOptions,
-	technicalWorkflowFailurePattern,
-	telegramBlockedReasonLabels,
 	telegramClassificationLabels,
 	telegramDeliveryStatusLabels,
 	telegramHumanMessage,
 	telegramInlineButtonKindLabels,
 	telegramInlineButtonRowsFromReplyMarkup,
-	telegramInlineButtonsFromPreview,
-	telegramInlineButtonsFromReplyMarkup,
 	telegramLinkCodeStatusLabels,
 	telegramModeHints,
 	telegramModeLabels,
@@ -668,83 +134,37 @@ import {
 	telegramOutboxTemplateFilterOptions,
 	telegramPrivacyModeHints,
 	telegramPrivacyModeLabels,
-	telegramPublicUrlSensitivePathSegments,
-	telegramPublicUrlSensitiveQueryKeys,
 	telegramQrSvgToDataUrl,
 	telegramTemplateLabels,
-	telegramWarningLabels,
-	throwIfBrowserImagingScanAborted,
-	throwIfBrowserMigrationScanAborted,
-	timeZoneDateParts,
-	timeZoneOffsetMinutes,
-	timeZoneOffsetSuffix,
-	toDateInputValue,
 	toDateTimeLocalValue,
-	todayDateInputValue,
 	toothRows,
-	treatmentAcceptanceVariantOptions,
-	UiLanguageOption,
 	type UiPreferences,
 	type UiPreferencesInput,
-	uiLanguageLabels,
 	uiLanguageOptions,
-	uiPreferencesServerPath,
 	uiPreferencesStorageKey,
 	uiPreferencesSyncErrorMessage,
-	uniqueDicomDownloadWarnings,
-	VisitLocalDraft,
-	type VisitNoteField,
-	type VisitNoteForm,
-	validClockTime,
-	viewerWindowPresetForStudy,
 	viewFromHash,
 	visitDraftMissingFieldLabel,
-	visitDraftMissingFieldLabels,
 	visitDraftQualityLabels,
 	visitDraftSignalLabel,
-	visitDraftSignalLabels,
-	visitLocalDraftKey,
-	visitNoteDraftFromForm,
 	visitNoteFieldDefinitions,
 	visitNoteFormFromDraft,
 	visitNoteFormFromVisit,
 	visitSaveReceiptText,
 	WorkflowResponseError,
-	weekdayFromDateInput,
 	weekdayOptions,
-	withSavedUiPreferenceTimestamp,
 	workspaceScopeLabels,
 	xrayPregnancyStatusOptions,
-	xrayPriorityOptions,
 	xrayStudyTypeOptions,
 } from "./AppHelpers";
 import {
-	type BrowserContinuityStatus,
-	browserContinuityRegistrationLabels,
 	formatByteSize,
 	formatMegabytes,
 	inspectBrowserContinuity,
 } from "./browserContinuity";
-import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import {
 	communicationDocumentTaskActionLabels,
-	telegramCareRequestTaskCareTopics,
-	telegramCareRequestWorkflowCareTopics,
-	telegramDocumentRequestTaskDocumentKinds,
-	telegramDocumentRequestWorkflowDocumentKinds,
 } from "./communicationTaskData";
-import type { CtPlanningArtifactCommand } from "./ctPlanningArtifactCommands";
-import {
-	type CtImplantLibraryItem,
-	type CtPlanningQuickAction,
-	CtPlanningToolsPanel,
-	findCtPlanningQuickActionForArtifactCommand,
-} from "./ctPlanningTools";
-import {
-	documentPayloadForKind,
-	validateDocumentPayloadForKind,
-	withDocumentCreationTimestamps,
-} from "./documentLogic";
 import { useAuthLogic } from "./hooks/domains/useAuthLogic";
 import { useClinicalVisitLogic } from "./hooks/domains/useClinicalVisitLogic";
 import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule";
@@ -756,12 +176,9 @@ import { useTelegramModule } from "./hooks/domains/useTelegramModule";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import {
 	loadWorkspaceProfile,
-	useWorkspaceProfileStore,
 } from "./hooks/useWorkspaceProfile";
 import {
-	type ImagingStudyRow,
 	imagingCaptureDistanceMs,
-	imagingComparisonReason,
 	imagingComparisonScore,
 } from "./imagingComparison";
 import {
@@ -783,15 +200,11 @@ import {
 	imagingViewerToolLabels,
 	localImagingModelRoleLabels,
 	localImagingOrganizerActionLabels,
-	type MprClinicalPreset,
-	type MprProjection,
-	type MprWindowPreset,
 	mprAxisPresetDeg,
 	mprCacheModeLabels,
 	mprClinicalPresets,
 	mprLoadStrategyLabels,
 	mprProjectionLabels,
-	mprProjectionOrientationLabels,
 	mprResourceTierLabels,
 	mprSeriesRequiredProjectionLabel,
 	mprSlabPresetMm,
@@ -802,17 +215,9 @@ import {
 	pricelistParserModeLabels,
 } from "./imagingUiLabels";
 import { safeLocalStorageSetItem } from "./lib/safeLocalStorage";
-import { motionSafeScrollIntoView } from "./motionPreference";
 import {
-	buildMprClinicalChecklist,
-	buildMprOperatorSummary,
-	buildMprWorkbenchSummary,
 	describeMprClinicalPresetProjectionFallback,
-	findNearestMprClinicalPreset,
-	mprClinicalNextAction,
-	resolveMprClinicalPresetProjection,
 } from "./mprClinicalStatus";
-import { postVisitCarePresets } from "./postVisitCareData";
 import {
 	dentalMaterialKindLabels,
 	dentalRestorationTypeLabels,
@@ -823,7 +228,6 @@ import {
 	pricelistSourceKindLabels,
 	pricelistWarningsText,
 } from "./pricelistUiMeta";
-import { normalizeRubAmountInput } from "./rubAmountInput";
 import {
 	imagingConnectorCards,
 	imagingViewerCapabilities,
@@ -831,64 +235,36 @@ import {
 } from "./settingsStaticData";
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
-import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
-import { useVisitStore } from "./store/visitStore";
 import {
-	buildMprAxisGuidance,
 	clampMprAxisDeg,
 	clampMprSlabMm,
 	clampMprSliceIndex,
-	formatMprAxisAngleBadge,
-	formatMprAxisDirectionLabel,
-	formatMprAxisRangeValue,
-	formatMprAxisVisualizerLabel,
-	formatMprSlabBadge,
-	formatMprSlabRangeValue,
-	formatMprSliceBadge,
-	formatMprSliceRangeValue,
 	formatSignedMprStep,
 	mprAxisBounds,
 	mprAxisNudgeDeg,
-	mprProjectionCompassLabels,
 	mprSlabBounds,
 	mprSlabNudgeMm,
-	mprSliceFraction,
 	mprSliceIndexFromFraction,
 	mprSliceNudgeSteps,
 	mprSlicePresetFractions,
-	resolveMprKeyboardAdjustment,
 } from "./utils/math/mprMath";
-import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import {
 	inferDashboardVisitSpecialty,
-	inferSpecialtyFromText,
-	visitSpecialtyFocusOptions,
 } from "./visitSpecialtyData";
-import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
 import {
 	preloadWorkspaceView,
 	scheduleIdleWorkspacePreload,
 } from "./workspacePreload";
-import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
 import {
-	ActionIcon,
 	type AppView,
-	appViews,
 	getFallbackAppView,
 	getFilteredAppViews,
 	viewLabels,
-	WorkspaceSidebar,
-	WorkspaceTopbar,
 } from "./workspaceShell";
 import {
-	defaultTelegramPostVisitCheckupDelayDrafts,
-	defaultTelegramPostVisitCheckupDelayHoursByTopic,
 	postVisitCareTopicOptions,
-	type TelegramPostVisitCheckupDelayDrafts,
-	type TelegramPostVisitCheckupDelayKey,
 	telegramFeatureHelp,
-	telegramFeatureLabels,
 	telegramFeatureOptions,
 	telegramPostVisitCheckupDelayFields,
 	telegramVisualCardFields,
@@ -897,7 +273,6 @@ import {
 	appointmentLabels,
 	clinicalRuleActionLabels,
 	clinicalRuleSeverityLabels,
-	clinicalRuleSummaryForUi,
 	clinicModeLabels,
 	communicationChannelLabels,
 	communicationIntentLabels,
@@ -914,10 +289,8 @@ import {
 	integrationStatusLabels,
 	localBridgeStatusLabels,
 	localBridgeUsePathLabels,
-	moneyDocumentKinds,
 	paymentFiscalReceiptLabelForUi,
 	paymentMethodLabels,
-	paymentTaxYearForUi,
 	recognitionTargetLabels,
 	scenarioPriorityLabels,
 	scenarioStrategyLabels,
@@ -931,12 +304,8 @@ import {
 	speechRecoveryStateLabels,
 	staffRoleLabels,
 	structuredPayloadDocumentKinds,
-	taxPaymentPayerKeyForUi,
-	taxPaymentSelectionDocumentKinds,
-	taxPaymentSelectionPayloadDocumentKinds,
 	treatmentStatusLabels,
 	warningSeverityLabels,
-	workloadStateLabels,
 } from "./workspaceUiLabels";
 
 export function useAppLogic(): any {
@@ -1454,10 +823,10 @@ export function useAppLogic(): any {
 	// Порядковый номер запроса данных клиники: применяем только последний ответ.
 	const dashboardRequestSeqRef = useRef(0);
 	// Защита от двойного создания сотрудников и кресел (двойной клик по кнопке).
-	const staffCreateInFlightRef = useRef(false);
-	const chairCreateInFlightRef = useRef(false);
-	const [isStaffCreating, setIsStaffCreating] = useState(false);
-	const [isChairCreating, setIsChairCreating] = useState(false);
+	const _staffCreateInFlightRef = useRef(false);
+	const _chairCreateInFlightRef = useRef(false);
+	const [isStaffCreating, _setIsStaffCreating] = useState(false);
+	const [isChairCreating, _setIsChairCreating] = useState(false);
 	const uiPreferencesServerReadyRef = useRef(false);
 	const uiPreferencesHydratedRef = useRef(false);
 	const pendingUiPreferencesSyncRef = useRef<UiPreferences | null>(null);
@@ -1501,7 +870,7 @@ export function useAppLogic(): any {
 	}
 	const initialUiPreferences =
 		initialUiPreferencesRef.current ?? defaultUiPreferences;
-	const initialRecognitionText =
+	const _initialRecognitionText =
 		recognitionPresets?.find(
 			(preset) =>
 				preset.kind === initialUiPreferences.recognitionKind &&
@@ -1514,24 +883,24 @@ export function useAppLogic(): any {
 	>({});
 	const activeOrganizationId =
 		dashboard?.clinicSettings?.profile?.organizationId ?? null;
-	const isOmniRoleMode =
+	const _isOmniRoleMode =
 		(dashboard?.clinicSettings?.profile as { isOmniRole?: boolean } | undefined)
 			?.isOmniRole ?? false;
 
-	const [dicomFirstFramePreviewRequest, setDicomFirstFramePreviewRequest] =
+	const [_dicomFirstFramePreviewRequest, _setDicomFirstFramePreviewRequest] =
 		useState<DicomFirstFramePreviewRequestContext | null>(null);
 	const browserDirectoryInputRef = useRef<HTMLInputElement | null>(null);
 	const browserMigrationInputRef = useRef<HTMLInputElement | null>(null);
-	const browserImagingScanAbortRef = useRef<AbortController | null>(null);
-	const browserMigrationScanAbortRef = useRef<AbortController | null>(null);
-	const localDicomOperationAbortRef = useRef<AbortController | null>(null);
+	const _browserImagingScanAbortRef = useRef<AbortController | null>(null);
+	const _browserMigrationScanAbortRef = useRef<AbortController | null>(null);
+	const _localDicomOperationAbortRef = useRef<AbortController | null>(null);
 	const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
 	const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
 	const appointmentScheduleDraftsRef = useRef<
 		Record<string, AppointmentScheduleDraft>
 	>({});
-	const imagingViewerSaveTimerRef = useRef<number | null>(null);
-	const mprWorkbenchSaveTimerRef = useRef<number | null>(null);
+	const _imagingViewerSaveTimerRef = useRef<number | null>(null);
+	const _mprWorkbenchSaveTimerRef = useRef<number | null>(null);
 
 	const auth = useAuthLogic({
 		setError,
@@ -2304,7 +1673,7 @@ export function useAppLogic(): any {
 		return issues;
 	}
 
-	function buildOnboardingReadinessIssues(): string[] {
+	function _buildOnboardingReadinessIssues(): string[] {
 		return [
 			...buildOnboardingFirstAppointmentIssues(),
 			...buildOnboardingDocumentReadinessIssues(),
@@ -2752,7 +2121,7 @@ export function useAppLogic(): any {
 		}
 	}
 
-	async function loadLocalBridgeReadiness(options: { silent?: boolean } = {}) {
+	async function _loadLocalBridgeReadiness(options: { silent?: boolean } = {}) {
 		try {
 			const response = await fetch("/api/system/local-bridges/readiness", {
 				cache: "no-store",
@@ -2942,7 +2311,7 @@ export function useAppLogic(): any {
 		return () => {
 			cancelled = true;
 		};
-	}, [settingsAdminSecretSession]);
+	}, [settingsAdminSecretSession, setUiPreferencesHydrated, queueUiPreferencesServerSync, setUiPreferencesSyncError, applyUiPreferences]);
 
 	/*
 	 * Отметка об открытии карточки пациента.
@@ -2995,7 +2364,7 @@ export function useAppLogic(): any {
 				if (response.ok) setRecentPatientViewsVersion((version) => version + 1);
 			})
 			.catch(() => {});
-	}, [selectedPatientId, dashboard]);
+	}, [selectedPatientId, dashboard, auth.denteClinicalMutationHeaders]);
 
 	useEffect(() => {
 		const organizationId =
@@ -3023,9 +2392,9 @@ export function useAppLogic(): any {
 		);
 		if (!scopedDismissal.dismissed) setOnboardingStep("intro");
 	}, [
-		dashboard?.clinicSettings?.profile?.organizationId,
-		onboardingDismissedAt,
-		uiPreferencesHydrated,
+		dashboard?.clinicSettings?.profile?.organizationId, 
+		onboardingDismissedAt, 
+		uiPreferencesHydrated, setOnboardingStep, setOnboardingDismissedAt, setOnboardingDraftMode, setOnboardingDismissed
 	]);
 
 	useEffect(() => {
@@ -3040,52 +2409,7 @@ export function useAppLogic(): any {
 		queueUiPreferencesServerSync(savedPreferences, { delayMs: 600 });
 		return undefined;
 	}, [
-		selectedWorkspaceRole,
-		uiLanguage,
-		selectedSpecialty,
-		selectedProtocolId,
-		selectedPatientId,
-		scheduleDoctorFilterId,
-		scheduleAssistantFilterId,
-		scheduleChairFilterId,
-		scheduleDefaultDoctorUserId,
-		scheduleDefaultAssistantUserId,
-		scheduleDefaultChairId,
-		scheduleStatusFilter,
-		scheduleDateFilter,
-		paymentMethod,
-		taxDocumentYear,
-		selectedDocumentKind,
-		taxApplicationForm,
-		taxApplicationDeliveryChannel,
-		paymentReceiptTaxSupportRequested,
-		documentIssueSignatureMode,
-		documentIssueStaffFullName,
-		documentIssueStaffRole,
-		procedureConsentProcedureType,
-		postVisitCareTopic,
-		pricelistSourceKind,
-		usePricelistAi,
-		odontogramUseSurfaces,
-		recognitionKind,
-		recognitionTarget,
-		importSourceKind,
-		documentIngestionTarget,
-		imagingImportSourceKind,
-		smartImportMode,
-		imagingKindFilter,
-		dicomWebEndpointUrl,
-		ohifBaseUrl,
-		telegramBotConfigId,
-		telegramLinkSubjectType,
-		telegramLinkStaffId,
-		telegramOutboxStatusFilter,
-		telegramOutboxTemplateFilter,
-		onboardingDismissed,
-		onboardingDismissedAt,
-		onboardingStep,
-		onboardingDraftMode,
-		uiPreferencesHydrated,
+		uiPreferencesHydrated, setUiPreferencesSyncError, queueUiPreferencesServerSync, currentUiPreferencesInput
 	]);
 
 	useEffect(() => {
@@ -3101,7 +2425,7 @@ export function useAppLogic(): any {
 			window.removeEventListener("online", retryPendingUiPreferences);
 			clearUiPreferencesRetryTimer();
 		};
-	}, []);
+	}, [clearUiPreferencesRetryTimer, queueUiPreferencesServerSync]);
 
 	const imagingPreviewWorkset = useMemo(() => {
 		if (currentView !== "imaging" || !dashboard?.imagingStudies?.length)
@@ -3148,7 +2472,7 @@ export function useAppLogic(): any {
 		);
 		return Array.from(workset.values());
 	}, [currentView, dashboard, imagingKindFilter, selectedImagingStudyId]);
-	const imagingPreviewSignature = imagingPreviewWorkset
+	const _imagingPreviewSignature = imagingPreviewWorkset
 		.map((study) => `${study.id}:${study.previewUrl}`)
 		.join("|");
 	useEffect(() => {
@@ -3217,9 +2541,7 @@ export function useAppLogic(): any {
 			createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
 		};
 	}, [
-		imagingPreviewSignature,
-		imagingPreviewWorkset,
-		clinicalAdminSecretSession,
+		imagingPreviewWorkset, auth.revokeObjectUrlIfNeeded, auth.denteClinicalReadHeaders, auth.revokeObjectUrlMap
 	]);
 
 	useEffect(() => {
@@ -3233,7 +2555,7 @@ export function useAppLogic(): any {
 		}
 		setClinicProfileDirty(false);
 		clinicProfileDraftHydratedRef.current = true;
-	}, [dashboard]);
+	}, [dashboard, setClinicProfileDirty, setClinicProfileDraft]);
 
 	useEffect(() => {
 		if (!dashboard) return;
@@ -3246,7 +2568,7 @@ export function useAppLogic(): any {
 			});
 			return next;
 		});
-	}, [dashboard]);
+	}, [dashboard, setStaffScheduleDrafts]);
 
 	useEffect(() => {
 		if (!dashboard) return;
@@ -3259,7 +2581,7 @@ export function useAppLogic(): any {
 			});
 			return next;
 		});
-	}, [dashboard]);
+	}, [dashboard, setChairScheduleDrafts]);
 
 	useEffect(() => {
 		if (!dashboard) return;
@@ -3274,20 +2596,11 @@ export function useAppLogic(): any {
 				{},
 			);
 		});
-	}, [dashboard]);
+	}, [dashboard, setAppointmentScheduleDrafts]);
 
 	useEffect(() => {
 		reconcileDashboardScopedUiSelections();
-	}, [
-		dashboard,
-		scheduleAssistantFilterId,
-		scheduleChairFilterId,
-		scheduleDefaultAssistantUserId,
-		scheduleDefaultChairId,
-		scheduleDefaultDoctorUserId,
-		scheduleDoctorFilterId,
-		selectedProtocolId,
-		telegramLinkStaffId,
+	}, [reconcileDashboardScopedUiSelections
 	]);
 
 	useEffect(() => {
@@ -3300,12 +2613,7 @@ export function useAppLogic(): any {
 			),
 		);
 	}, [
-		dashboard,
-		selectedPatientId,
-		selectedSpecialty,
-		scheduleDefaultAssistantUserId,
-		scheduleDefaultChairId,
-		scheduleDefaultDoctorUserId,
+		dashboard, newAppointmentPreferenceDefaults, setNewAppointmentDraft
 	]);
 
 	useEffect(() => {
@@ -3337,10 +2645,9 @@ export function useAppLogic(): any {
 		);
 		return () => window.clearTimeout(saveTimer);
 	}, [
-		dashboard,
-		staffScheduleDirtyIds,
-		staffScheduleDrafts,
-		staffScheduleSaveStates,
+		dashboard, 
+		staffScheduleDirtyIds, 
+		staffScheduleSaveStates, saveStaffSchedule
 	]);
 
 	useEffect(() => {
@@ -3360,10 +2667,9 @@ export function useAppLogic(): any {
 		);
 		return () => window.clearTimeout(saveTimer);
 	}, [
-		dashboard,
-		chairScheduleDirtyIds,
-		chairScheduleDrafts,
-		chairScheduleSaveStates,
+		dashboard, 
+		chairScheduleDirtyIds, 
+		chairScheduleSaveStates, saveChairSchedule
 	]);
 
 	useEffect(() => {
@@ -3389,10 +2695,9 @@ export function useAppLogic(): any {
 		);
 		return () => window.clearTimeout(saveTimer);
 	}, [
-		dashboard,
-		appointmentScheduleDirtyIds,
-		appointmentScheduleDrafts,
-		appointmentScheduleSaveStates,
+		dashboard, 
+		appointmentScheduleDirtyIds, 
+		appointmentScheduleSaveStates, saveAppointmentSchedule
 	]);
 
 	useEffect(() => {
@@ -3419,13 +2724,13 @@ export function useAppLogic(): any {
 		window.addEventListener("online", retryScheduleAutosaves);
 		return () => window.removeEventListener("online", retryScheduleAutosaves);
 	}, [
-		dashboard,
-		staffScheduleDirtyIds,
-		staffScheduleSaveStates,
-		chairScheduleDirtyIds,
-		chairScheduleSaveStates,
-		appointmentScheduleDirtyIds,
-		appointmentScheduleSaveStates,
+		dashboard, 
+		staffScheduleDirtyIds, 
+		staffScheduleSaveStates, 
+		chairScheduleDirtyIds, 
+		chairScheduleSaveStates, 
+		appointmentScheduleDirtyIds, 
+		appointmentScheduleSaveStates, saveChairSchedule, saveAppointmentSchedule, saveStaffSchedule
 	]);
 
 	useEffect(() => {
@@ -3442,15 +2747,15 @@ export function useAppLogic(): any {
 		}, 1400);
 		return () => window.clearTimeout(saveTimer);
 	}, [
-		clinicProfileDraft,
-		clinicProfileDirty,
-		clinicProfileSaveState,
-		dashboard,
+		clinicProfileDraft, 
+		clinicProfileDirty, 
+		clinicProfileSaveState, 
+		dashboard, saveClinicProfileFromDraft
 	]);
 
 	useEffect(() => {
 		setNewStaffSpecialty(selectedSpecialty);
-	}, [selectedSpecialty]);
+	}, [selectedSpecialty, setNewStaffSpecialty]);
 
 	useEffect(() => {
 		setBrowserDirectoryPickerAvailable(
@@ -3468,7 +2773,7 @@ export function useAppLogic(): any {
 			migrationInput.setAttribute("webkitdirectory", "");
 			migrationInput.setAttribute("directory", "");
 		}
-	}, []);
+	}, [setBrowserDirectoryPickerAvailable]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -3489,7 +2794,7 @@ export function useAppLogic(): any {
 		return () => {
 			cancelled = true;
 		};
-	}, [activeOrganizationId]);
+	}, [activeOrganizationId, applyDicomWorkbenchManifest, loadDicomWorkbenchBundles, setDicomWorkbenchLocalSavedAt]);
 
 	useEffect(() => {
 		const organizationId = activeOrganizationId?.trim() ?? "";
@@ -3505,7 +2810,7 @@ export function useAppLogic(): any {
 		setBrowserPickedImagingFolder(
 			loadBrowserPickedImagingFolderPreview(organizationId),
 		);
-	}, [activeOrganizationId]);
+	}, [activeOrganizationId, setImagingFolderPath, setLocalImagingFolderDraft, setBrowserPickedImagingFolder]);
 
 	useEffect(() => {
 		if (currentView === "settings" && settingsTab === "audit") {
@@ -3513,7 +2818,7 @@ export function useAppLogic(): any {
 			void refreshBrowserContinuity({ silent: true });
 			void loadLocalBridgeUsePlans({ silent: true });
 		}
-	}, [currentView, settingsTab]);
+	}, [currentView, settingsTab, refreshBrowserContinuity, loadPersistenceHealth, loadLocalBridgeUsePlans]);
 
 	useEffect(() => {
 		if (currentView === "settings") {
@@ -3526,7 +2831,7 @@ export function useAppLogic(): any {
 		} else {
 			setOnboardingGuideExpanded(false);
 		}
-	}, [currentView, settingsTab]);
+	}, [currentView, settingsTab, setOnboardingGuideExpanded]);
 
 	useEffect(() => {
 		const syncView = () => {
@@ -3539,7 +2844,7 @@ export function useAppLogic(): any {
 		syncView();
 		window.addEventListener("hashchange", syncView);
 		return () => window.removeEventListener("hashchange", syncView);
-	}, []);
+	}, [setSettingsTab, setCurrentView]);
 
 	useEffect(() => {
 		/*
@@ -3585,7 +2890,7 @@ export function useAppLogic(): any {
 				onControllerChange,
 			);
 		};
-	}, []);
+	}, [setBrowserContinuity]);
 
 	useEffect(() => {
 		void refreshPendingVisitSaveState();
@@ -3615,12 +2920,12 @@ export function useAppLogic(): any {
 			window.removeEventListener("storage", refreshFromStorage);
 			window.clearTimeout(syncTimer);
 		};
-	}, [activeOrganizationId, dashboard?.activeVisit?.id, lastLocalSavedAt]);
+	}, [lastLocalSavedAt, setIsOnline, refreshPendingVisitSaveState, syncVisitDraftAutosave, flushPendingSpeechChunks, refreshPendingSpeechChunkState, flushPendingVisitSaves]);
 
 	useEffect(() => {
 		if (!dashboard) return;
 		void loadSpeechRecordingStrategy({ silent: true });
-	}, [dashboard?.activeVisit?.id, isOnline, selectedSpecialty]);
+	}, [dashboard?.activeVisit?.id, loadSpeechRecordingStrategy, dashboard]);
 
 	useEffect(() => {
 		if (!dashboard) return;
@@ -3714,9 +3019,11 @@ export function useAppLogic(): any {
 			cancelled = true;
 		};
 	}, [
-		activeOrganizationId,
-		dashboard?.activeVisit?.id,
-		dashboard?.activeVisit?.updatedAt,
+		activeOrganizationId, 
+		dashboard?.activeVisit?.id, 
+		dashboard?.activeVisit?.updatedAt, setTranscript, setVisitNoteForm, lastServerDraftSignatureRef, setLastServerDraftSavedAt, setSelectedSpecialty, setLocalDraftWasRestored, visitDraftUserEditedRef.current, visitDraftSignature, setLastLocalSavedAt, // Отметки зубов и ИИ-диагнозы относятся к КОНКРЕТНОМУ приёму. Без сброса
+		// они переносились на следующего пациента (см. resetVisitToothState).
+		resetVisitToothState, loadServerVisitDraft, dashboard?.activeVisit, setServerDraftSyncState, visitDraftUserEditedRef, dashboard, setLocalAutosaveReady
 	]);
 
 	useEffect(() => {
@@ -3742,12 +3049,12 @@ export function useAppLogic(): any {
 		}, 350);
 		return () => window.clearTimeout(timeout);
 	}, [
-		activeOrganizationId,
-		dashboard?.activeVisit?.id,
-		localAutosaveReady,
-		selectedSpecialty,
-		transcript,
-		visitNoteForm,
+		activeOrganizationId, 
+		dashboard?.activeVisit?.id, 
+		localAutosaveReady, 
+		selectedSpecialty, 
+		transcript, 
+		visitNoteForm, setLocalDraftWasRestored, setLastLocalSavedAt, dashboard
 	]);
 
 	useEffect(() => {
@@ -3757,13 +3064,9 @@ export function useAppLogic(): any {
 		}, 1600);
 		return () => window.clearTimeout(timeout);
 	}, [
-		dashboard?.activeVisit?.id,
-		isOnline,
-		lastLocalSavedAt,
-		localAutosaveReady,
-		selectedSpecialty,
-		transcript,
-		visitNoteForm,
+		dashboard?.activeVisit?.id, 
+		lastLocalSavedAt, 
+		localAutosaveReady, syncVisitDraftAutosave, dashboard
 	]);
 
 	const sortedAppointments = useMemo(() => {
@@ -3864,7 +3167,7 @@ export function useAppLogic(): any {
 		)
 			return;
 		setTelegramLinkStaffId(telegramLinkStaffOptions[0]?.id ?? "");
-	}, [dashboard, telegramLinkStaffId, telegramLinkStaffOptions]);
+	}, [dashboard, telegramLinkStaffId, telegramLinkStaffOptions, setTelegramLinkStaffId]);
 
 	const telegramLinkTargetKey = `${telegramLinkSubjectType}:${telegramLinkSubjectType === "patient" ? (activePatient?.id ?? "") : telegramLinkStaffId || ""}:${telegramModeDraft}:${telegramBotConfigId.trim()}`;
 	const previousTelegramLinkTargetKeyRef = useRef(telegramLinkTargetKey);
@@ -3876,7 +3179,7 @@ export function useAppLogic(): any {
 		if (!telegramLinkCode && !telegramLinkActionState) return;
 		setTelegramLinkCode(null);
 		setTelegramLinkActionState(null);
-	}, [telegramLinkActionState, telegramLinkCode, telegramLinkTargetKey]);
+	}, [telegramLinkActionState, telegramLinkCode, telegramLinkTargetKey, setTelegramLinkCode, setTelegramLinkActionState]);
 
 	function telegramSubjectName(
 		subjectType: DenteTelegramChatLinkPublic["subjectType"],

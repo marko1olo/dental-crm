@@ -301,7 +301,7 @@ export function useDicomWorkbenchModule({
 		return Array.from(workset.values());
 	}, [currentView, dashboard, imagingKindFilter, selectedImagingStudyId]);
 
-	const imagingPreviewSignature = imagingPreviewWorkset
+	const _imagingPreviewSignature = imagingPreviewWorkset
 		.map((study) => `${study.id}:${study.previewUrl}`)
 		.join("|");
 
@@ -1416,9 +1416,7 @@ export function useDicomWorkbenchModule({
 			createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
 		};
 	}, [
-		imagingPreviewSignature,
-		imagingPreviewWorkset,
-		clinicalAdminSecretSession,
+		imagingPreviewWorkset, auth.revokeObjectUrlMap, auth.revokeObjectUrlIfNeeded, auth.denteClinicalReadHeaders
 	]);
 
 	// ===== Return =====

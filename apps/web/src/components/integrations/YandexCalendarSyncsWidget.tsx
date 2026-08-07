@@ -227,7 +227,7 @@ function stateCopy(state: LoadState): {
 			};
 		case "ok":
 			return {
-				headline: "Подключено календарей: " + String(state.items.length),
+				headline: `Подключено календарей: ${String(state.items.length)}`,
 				detail: "Статус каждой строки — из ответа сервера, не подставлен.",
 				tone: "info",
 				canRetry: true,
@@ -325,7 +325,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 				<div className="min-w-0">
 					<p
 						className={
-							"m-0 text-sm font-medium break-words " + TONE_HEADLINE[copy.tone]
+							`m-0 text-sm font-medium break-words ${TONE_HEADLINE[copy.tone]}`
 						}
 					>
 						{copy.headline}
@@ -375,7 +375,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 									*/}
 									<span
 										className={
-											"px-2.5 py-1 rounded font-bold " + badge.className
+											`px-2.5 py-1 rounded font-bold ${badge.className}`
 										}
 									>
 										{badge.label}

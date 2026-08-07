@@ -2,7 +2,6 @@ import {
 	type AdminSecretUnlockDomain,
 	denteAdminSecretRequestHeaders,
 	operatorWorkflowFailureMessage,
-	WorkflowResponseError,
 } from "../../AppHelpers";
 import { useAppStore } from "../../store/appStore";
 import { useSettingsStore } from "../../store/settingsStore";

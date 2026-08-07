@@ -146,6 +146,14 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	 */
 	const lockInProgress = isSigning || awaitingLockConfirmation;
 
+	const closeDialog = () => {
+		setShowPinDialog(false);
+		setFailureText(null);
+		setAwaitingLockConfirmation(false);
+		// ПИН не держим в памяти дольше самого подписания.
+		setPinCode("");
+	};
+
 	// Окно перекрывает весь экран, поэтому обязано закрываться Escape — но не
 	// посреди подписания, когда закрытие выглядит как подтверждение подписи.
 	useEffect(() => {
@@ -155,7 +163,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [showPinDialog, lockInProgress]);
+	}, [showPinDialog, lockInProgress, closeDialog]);
 
 	// Ожидание подтверждения подписи: истекло, а признак isLocked не пришёл —
 	// значит, подписание отказало без исключения (см. пояснение выше).
@@ -169,14 +177,6 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 		}, 1500);
 		return () => clearTimeout(timer);
 	}, [awaitingLockConfirmation]);
-
-	const closeDialog = () => {
-		setShowPinDialog(false);
-		setFailureText(null);
-		setAwaitingLockConfirmation(false);
-		// ПИН не держим в памяти дольше самого подписания.
-		setPinCode("");
-	};
 
 	const loadCertificates = async () => {
 		setIsLoadingCerts(true);

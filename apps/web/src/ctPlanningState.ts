@@ -190,7 +190,6 @@ function targetToolForLocalAnnotation(
 		case "bone_density_probe":
 		case "landmark":
 			return "ProbeTool";
-		case "note":
 		default:
 			return "ArrowAnnotateTool";
 	}

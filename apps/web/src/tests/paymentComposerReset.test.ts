@@ -321,7 +321,7 @@ describe("оба сброса перечисляют все поля формы"
 	) as (keyof PaymentComposerFields)[];
 
 	const setterName = (field: string) =>
-		`set${field[0]!.toUpperCase()}${field.slice(1)}`;
+		`set${field[0]?.toUpperCase()}${field.slice(1)}`;
 
 	/** Значение поля попадает в выражение как текст: спецсимволы обезвреживаем. */
 	const escapeForRegExp = (value: string) =>

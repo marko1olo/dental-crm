@@ -85,7 +85,6 @@ function qualityModeWeight(renderPlan: DicomGpuRenderPlan | null) {
 			return 0.42;
 		case "external":
 			return 0.35;
-		case "metadata_only":
 		default:
 			return 0.18;
 	}
@@ -102,7 +101,6 @@ function gpuClassWeight(renderPlan: DicomGpuRenderPlan | null) {
 			return 0.58;
 		case "integrated_low":
 			return 0.35;
-		case "none":
 		default:
 			return 0.18;
 	}
@@ -200,7 +198,7 @@ function routeStatus(
 	return "blocked";
 }
 
-function statusLabel(status: CtPlanningReconstructionStatus) {
+function _statusLabel(status: CtPlanningReconstructionStatus) {
 	if (status === "ready") return "готово";
 	if (status === "draft") return "черновик";
 	return "нет данных";

@@ -14,7 +14,7 @@ export function parsePaymentDictationLocal(input: string): {
 	// Extract amount
 	let amount = "";
 	const thousandsMatch = lower.match(/(\d+)[\s]*(тыс|тысяч|т\.р\.|тр)/i);
-	if (thousandsMatch && thousandsMatch[1]) {
+	if (thousandsMatch?.[1]) {
 		amount = String(parseInt(thousandsMatch[1], 10) * 1000);
 	} else {
 		const match = input.replace(/\s+/g, "").match(/\d{2,7}/);
@@ -217,7 +217,7 @@ export class AiOrchestrator {
 			source: "llm_required",
 			systemPrompt: `${Prompts.System.Base}\n${Prompts.System.StrictJSON}`,
 			suggestedPrompt:
-				"Extract serviceName, price (number), and category from: " + input,
+				`Extract serviceName, price (number), and category from: ${input}`,
 		};
 	}
 
@@ -312,7 +312,7 @@ export class AiOrchestrator {
 		const searchMatch = lower.match(
 			/^(?:найди|открой|ищи|поиск|найди пациента|открой карту|открой карточку)\s+(.+)$/i,
 		);
-		if (searchMatch && searchMatch[1]) {
+		if (searchMatch?.[1]) {
 			const queryName = searchMatch[1].trim();
 			// Capitalize first letter for visual query cleanliness if possible
 			const capitalizedQuery =

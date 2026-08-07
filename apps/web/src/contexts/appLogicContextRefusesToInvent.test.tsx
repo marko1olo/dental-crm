@@ -168,10 +168,9 @@ describe("хук в отрыве от экрана", () => {
 			return createElement("i", null, "готово");
 		}
 		renderToStaticMarkup(
-			createElement(AppLogicProvider, {
-				value: marker,
-				children: createElement(ValueProbe),
-			}),
+			<AppLogicProvider value={marker}>
+				<ValueProbe />
+			</AppLogicProvider>,
 		);
 		assert.equal(
 			seen,

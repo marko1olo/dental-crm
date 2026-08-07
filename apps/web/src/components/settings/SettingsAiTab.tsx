@@ -4,7 +4,6 @@ import {
 	CheckCircle2,
 	Cpu,
 	ExternalLink,
-	Server,
 	ShieldAlert,
 	Sparkles,
 	UploadCloud,

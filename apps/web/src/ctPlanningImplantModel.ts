@@ -4,7 +4,6 @@ import type {
 	DentalModelWorkbenchManifest,
 	DicomGpuRenderPlan,
 	DicomViewerToolStateAnnotation,
-	DicomViewerToolStatePoint,
 	ImagingViewerImplantPlan,
 	LocalBridgeReadinessResponse,
 } from "@dental/shared";

@@ -275,22 +275,22 @@ button:disabled {
 	*,
 	*::before,
 	*::after {
-		animation-duration: 0.01ms !important;
+		animation-duration: 0.01ms;
 		/* Обнулённой длительности НЕ ДОСТАТОЧНО. Задержка здесь не гасилась, а при
        `animation-fill-mode: backwards`/`both` элемент всё время задержки держит
        кадр `from` — у входных анимаций это `opacity: 0`. Врач, выключивший
        анимацию в системе, всё равно получал раздел, невидимый до 0,22 с.
        Отрицательная задержка сдвигает анимацию за её собственный конец, поэтому
        элемент сразу показывается в конечном кадре. */
-		animation-delay: -0.01ms !important;
-		animation-iteration-count: 1 !important;
-		scroll-behavior: auto !important;
-		transition-duration: 0.01ms !important;
+		animation-delay: -0.01ms;
+		animation-iteration-count: 1;
+		scroll-behavior: auto;
+		transition-duration: 0.01ms;
 	}
 }
 
 [hidden] {
-	display: none !important;
+	display: none;
 }
 
 .boot-state {
@@ -859,9 +859,9 @@ button:disabled {
 	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 999px;
-	color: var(--teal-dark) !important;
-	font-size: 12px !important;
-	font-weight: 900 !important;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
 	padding: 7px 10px;
 	white-space: nowrap;
 }
@@ -870,23 +870,23 @@ button:disabled {
 .dark .onboarding-draft-strip,
 html.dark .onboarding-draft-strip,
 body.dark-mode .onboarding-draft-strip {
-	background: rgba(45, 26, 0, 0.75) !important;
-	border-color: #b45309 !important;
-	color: #fef3c7 !important;
+	background: rgba(45, 26, 0, 0.75);
+	border-color: #b45309;
+	color: #fef3c7;
 }
 
 [data-theme="dark"] .onboarding-draft-strip strong,
 .dark .onboarding-draft-strip strong,
 html.dark .onboarding-draft-strip strong,
 body.dark-mode .onboarding-draft-strip strong {
-	color: #fef3c7 !important;
+	color: #fef3c7;
 }
 
 [data-theme="dark"] .onboarding-draft-strip span,
 .dark .onboarding-draft-strip span,
 html.dark .onboarding-draft-strip span,
 body.dark-mode .onboarding-draft-strip span {
-	color: #fde68a !important;
+	color: #fde68a;
 }
 
 .onboarding-shell {
@@ -1114,7 +1114,7 @@ body.dark-mode .onboarding-draft-strip span {
 
 .checkbox-line {
 	align-items: center;
-	display: flex !important;
+	display: flex;
 	gap: 9px;
 }
 
@@ -1541,7 +1541,6 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .avatar {
-	align-items: center;
 	background: var(--teal);
 	border-radius: 50%;
 	color: #ffffff;
@@ -1656,7 +1655,6 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .path-step span {
-	align-items: center;
 	background: #e7ddd0;
 	border-radius: 50%;
 	display: grid;
@@ -5588,8 +5586,8 @@ section.imaging-panel {
 }
 
 .rule-danger {
-	background: #fffaf0 !important;
-	border-color: rgba(184, 120, 31, 0.42) !important;
+	background: #fffaf0;
+	border-color: rgba(184, 120, 31, 0.42);
 }
 
 .rule-studio-layout {
@@ -9979,7 +9977,6 @@ section.imaging-panel {
 }
 
 .round-link {
-	align-items: center;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-radius: 50%;
@@ -10958,9 +10955,9 @@ section.imaging-panel {
 
 html.dark .visit-note-panel,
 [data-theme="dark"] .visit-note-panel {
-	background: var(--glass-panel, rgba(15, 23, 42, 0.7)) !important;
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
-	color: var(--ink, #f8fafc) !important;
+	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
 }
 
 html.dark .visit-note-panel h3,
@@ -10969,24 +10966,24 @@ html.dark .visit-note-panel strong,
 [data-theme="dark"] .visit-note-panel h3,
 [data-theme="dark"] .visit-note-panel h4,
 [data-theme="dark"] .visit-note-panel strong {
-	color: var(--ink, #f8fafc) !important;
+	color: var(--ink, #f8fafc);
 }
 
 html.dark .emk-tabs-container,
 [data-theme="dark"] .emk-tabs-container {
-	background: rgba(30, 41, 59, 0.8) !important;
-	border-color: rgba(255, 255, 255, 0.1) !important;
+	background: rgba(30, 41, 59, 0.8);
+	border-color: rgba(255, 255, 255, 0.1);
 }
 
 html.dark .emk-tab-button,
 [data-theme="dark"] .emk-tab-button {
-	color: var(--muted, #94a3b8) !important;
+	color: var(--muted, #94a3b8);
 }
 
 html.dark .emk-tab-button.active,
 [data-theme="dark"] .emk-tab-button.active {
-	background: var(--primary-strong, #0d9488) !important;
-	color: #ffffff !important;
+	background: var(--primary-strong, #0d9488);
+	color: #ffffff;
 }
 
 .visit-note-head {
@@ -12151,7 +12148,7 @@ html.dark .payment-capture h3,
 [data-theme="dark"] .plan-scenarios h3,
 [data-theme="dark"] .payment-capture h2,
 [data-theme="dark"] .payment-capture h3 {
-	color: #f8fafc !important;
+	color: #f8fafc;
 }
 
 .finance-summary-grid article {
@@ -12233,8 +12230,8 @@ html.dark .payment-capture h3,
  * прежнего. Поправка на «Ночь» удалена как ставшая лишней.
  */
 .finance-due {
-	border-color: var(--bad-fg) !important;
-	background: var(--bad-bg) !important;
+	border-color: var(--bad-fg);
+	background: var(--bad-bg);
 }
 
 .payment-capture {
@@ -12830,8 +12827,8 @@ html.dark .payment-capture h3,
 }
 
 .communication-urgent {
-	background: #fff8f6 !important;
-	border-color: rgba(163, 79, 50, 0.42) !important;
+	background: #fff8f6;
+	border-color: rgba(163, 79, 50, 0.42);
 }
 
 .communication-note-row {
@@ -13003,7 +13000,7 @@ html.dark .payment-capture h3,
 
 .communication-side section h3,
 .communication-side .panel-heading h3 {
-	color: var(--ink, #0f172a) !important;
+	color: var(--ink, #0f172a);
 	font-size: 16px;
 	margin: 0;
 }
@@ -13012,7 +13009,7 @@ html.dark .communication-side section h3,
 html.dark .communication-side .panel-heading h3,
 [data-theme="dark"] .communication-side section h3,
 [data-theme="dark"] .communication-side .panel-heading h3 {
-	color: #f8fafc !important;
+	color: #f8fafc;
 }
 
 .template-list article {
@@ -13545,7 +13542,7 @@ html.dark .communication-side .panel-heading h3,
 		height: 52px;
 		min-height: 52px;
 		flex-direction: column;
-		font-size: 10px !important;
+		font-size: 10px;
 		gap: 2px;
 		justify-content: center;
 		align-items: center;
@@ -13559,11 +13556,11 @@ html.dark .communication-side .panel-heading h3,
 	}
 
 	.nav-label {
-		display: block !important;
-		font-size: 10px !important;
-		font-weight: 600 !important;
-		line-height: 1.05 !important;
-		color: inherit !important;
+		display: block;
+		font-size: 10px;
+		font-weight: 600;
+		line-height: 1.05;
+		color: inherit;
 		max-width: 56px;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -13587,7 +13584,7 @@ html.dark .communication-side .panel-heading h3,
 	.finance-panel,
 	.visit-panel,
 	.schedule-panel {
-		padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+		padding-bottom: calc(96px + env(safe-area-inset-bottom));
 	}
 
 	.workspace {
@@ -14467,10 +14464,10 @@ html.dark .communication-side .panel-heading h3,
    HIDDEN PANELS (role-filtered / noise reduction)
    ─────────────────────────────────────────────── */
 .specialty-focus-bar {
-	display: none !important;
+	display: none;
 }
 .clinical-rule-panel {
-	display: none !important;
+	display: none;
 }
 
 /* ───────────────────────────────────────────────
@@ -14904,16 +14901,16 @@ body {
 }
 @media (max-width: 860px) {
 	.visit-next-step-main {
-		flex-direction: column !important;
-		align-items: stretch !important;
-		gap: 12px !important;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
 	}
 	.visit-primary-action {
-		width: 100% !important;
-		font-size: 16px !important;
-		padding: 13px 20px !important;
-		white-space: nowrap !important;
-		justify-content: center !important;
+		width: 100%;
+		font-size: 16px;
+		padding: 13px 20px;
+		white-space: nowrap;
+		justify-content: center;
 	}
 }
 
@@ -14958,46 +14955,46 @@ textarea:focus {
 }
 /* SETTINGS VIEW PREMIUM REDESIGN */
 .settings-zone {
-	grid-template-columns: 260px minmax(0, 1fr) !important;
+	grid-template-columns: 260px minmax(0, 1fr);
 	align-items: start;
-	gap: 24px !important;
-	padding: 24px !important;
-	background: var(--glass-bg) !important;
-	backdrop-filter: var(--glass-blur) !important;
-	border-radius: 16px !important;
-	box-shadow: var(--shadow-premium) !important;
-	border: 1px solid var(--glass-border) !important;
+	gap: 24px;
+	padding: 24px;
+	background: var(--glass-bg);
+	backdrop-filter: var(--glass-blur);
+	border-radius: 16px;
+	box-shadow: var(--shadow-premium);
+	border: 1px solid var(--glass-border);
 }
 @media (max-width: 860px) {
 	.settings-zone {
-		grid-template-columns: minmax(0, 1fr) !important;
-		padding: 12px !important;
-		gap: 12px !important;
-		border-radius: 8px !important;
+		grid-template-columns: minmax(0, 1fr);
+		padding: 12px;
+		gap: 12px;
+		border-radius: 8px;
 	}
 	.settings-tabs {
-		position: static !important;
-		flex-direction: row !important;
-		flex-wrap: wrap !important;
-		gap: 4px !important;
+		position: static;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 4px;
 	}
 	.settings-tabs button {
-		padding: 8px 12px !important;
-		font-size: 13px !important;
+		padding: 8px 12px;
+		font-size: 13px;
 	}
 	.settings-tab-panel {
-		padding: 16px !important;
-		border-radius: 8px !important;
+		padding: 16px;
+		border-radius: 8px;
 	}
 	.settings-tabs-group {
-		flex-direction: row !important;
-		flex-wrap: wrap !important;
-		gap: 4px !important;
-		margin-bottom: 8px !important;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 4px;
+		margin-bottom: 8px;
 	}
 	.settings-tabs-group-header {
-		width: 100% !important;
-		padding-left: 4px !important;
+		width: 100%;
+		padding-left: 4px;
 	}
 }
 .settings-heading {
@@ -15005,26 +15002,26 @@ textarea:focus {
 	margin-bottom: 8px;
 }
 .settings-tabs {
-	display: flex !important;
-	flex-direction: column !important;
-	gap: 6px !important;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 	position: sticky;
 	top: 100px;
 }
 .settings-tabs button {
 	text-align: left;
 	justify-content: flex-start;
-	padding: 12px 16px !important;
-	border: none !important;
-	background: transparent !important;
-	border-radius: 10px !important;
-	transition: all 0.2s ease !important;
-	font-weight: 500 !important;
-	color: var(--ink) !important;
-	min-height: auto !important;
+	padding: 12px 16px;
+	border: none;
+	background: transparent;
+	border-radius: 10px;
+	transition: all 0.2s ease;
+	font-weight: 500;
+	color: var(--ink);
+	min-height: auto;
 }
 .settings-tabs button:hover {
-	background: rgba(13, 148, 136, 0.08) !important;
+	background: rgba(13, 148, 136, 0.08);
 	transform: translateX(4px);
 }
 .settings-tabs button.active {
@@ -15032,11 +15029,11 @@ textarea:focus {
 		135deg,
 		var(--teal-fill),
 		var(--teal-dark)
-	) !important;
-	color: white !important;
-	box-shadow: 0 4px 12px var(--teal-glow) !important;
+	);
+	color: white;
+	box-shadow: 0 4px 12px var(--teal-glow);
 	transform: translateX(6px);
-	font-weight: 600 !important;
+	font-weight: 600;
 }
 .settings-tab-panel {
 	background: var(--paper);
@@ -15070,31 +15067,31 @@ textarea:focus {
 .appointment-row,
 .patient-row,
 .document-row {
-	background: var(--paper) !important;
-	border: 1px solid var(--line) !important;
-	border-radius: 16px !important;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
-	transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
-	position: relative !important;
-	overflow: hidden !important;
-	margin-bottom: 8px !important;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+	transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+	position: relative;
+	overflow: hidden;
+	margin-bottom: 8px;
 }
 .appointment-row:hover,
 .patient-row:hover,
 .document-row:hover {
-	transform: translateY(-2px) !important;
-	box-shadow: 0 8px 24px rgba(15, 118, 110, 0.08) !important;
-	border-color: var(--line-strong) !important;
-	z-index: 10 !important;
+	transform: translateY(-2px);
+	box-shadow: 0 8px 24px rgba(15, 118, 110, 0.08);
+	border-color: var(--line-strong);
+	z-index: 10;
 }
 .appointment-row.readiness-needs_attention {
-	border-left: 6px solid var(--amber) !important;
+	border-left: 6px solid var(--amber);
 }
 .appointment-row.readiness-ready {
-	border-left: 6px solid var(--teal) !important;
+	border-left: 6px solid var(--teal);
 }
 .appointment-row.readiness-unknown {
-	border-left: 6px solid var(--muted) !important;
+	border-left: 6px solid var(--muted);
 }
 /* DECLUTTER ROWS: Action buttons appear only on hover */
 .appointment-row .appointment-edit-button,
@@ -15152,25 +15149,25 @@ textarea:focus {
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	color: var(--muted);
-	display: flex !important;
-	flex-direction: column !important;
-	gap: 12px !important;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
 	grid-column: 1 / -1;
-	padding: 16px !important;
-	align-items: stretch !important;
+	padding: 16px;
+	align-items: stretch;
 }
 
 .document-factory-selected-kind label {
-	display: flex !important;
-	flex-direction: column !important;
-	gap: 6px !important;
-	font-size: 13px !important;
-	font-weight: 700 !important;
-	color: var(--muted) !important;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--muted);
 }
 
 .document-factory-selected-kind select {
-	width: 100% !important;
+	width: 100%;
 	background: #fff;
 	border: 1px solid var(--line-strong);
 	border-radius: 8px;
@@ -15205,11 +15202,11 @@ textarea:focus {
 
 /* DOCUMENTS VIEW READABILITY ENHANCEMENTS */
 .documents-panel {
-	font-size: 14.5px !important;
+	font-size: 14.5px;
 }
 
 .documents-panel h2 {
-	font-size: 24px !important;
+	font-size: 24px;
 }
 
 .documents-panel p,
@@ -15218,53 +15215,53 @@ textarea:focus {
 .document-row-guidance,
 .document-source-card p,
 .document-payload-card p {
-	font-size: 13.5px !important;
-	line-height: 1.5 !important;
+	font-size: 13.5px;
+	line-height: 1.5;
 }
 
 .document-factory-kind-button-text > span {
-	font-size: 14px !important;
-	font-weight: 700 !important;
+	font-size: 14px;
+	font-weight: 700;
 }
 
 .documents-panel select,
 .documents-panel input,
 .documents-panel textarea {
-	font-size: 14.5px !important;
+	font-size: 14.5px;
 }
 
 /* SETTINGS SIDEBAR GROUPING STYLES */
 .settings-tabs-group {
-	display: flex !important;
-	flex-direction: column !important;
-	gap: 4px !important;
-	margin-bottom: 16px !important;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 16px;
 }
 
 .settings-tabs-group-header {
-	font-size: 11px !important;
-	font-weight: 800 !important;
-	text-transform: uppercase !important;
-	letter-spacing: 0.08em !important;
-	color: var(--muted) !important;
-	margin-bottom: 6px !important;
-	padding-left: 16px !important;
-	opacity: 0.8 !important;
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--muted);
+	margin-bottom: 6px;
+	padding-left: 16px;
+	opacity: 0.8;
 }
 
 /* VISIT VIEW READABILITY ENHANCEMENTS */
 .visit-fields textarea,
 .dictation-box textarea {
-	font-size: 14.5px !important;
-	line-height: 1.5 !important;
+	font-size: 14.5px;
+	line-height: 1.5;
 }
 
 .visit-fields label {
-	font-size: 14px !important;
+	font-size: 14px;
 }
 
 .protocol-library {
-	font-size: 14px !important;
+	font-size: 14px;
 }
 
 /* ================================================================
@@ -15343,24 +15340,24 @@ textarea:focus {
 }
 
 [data-theme="dark"] .settings-advanced-toggle {
-	background: var(--glass-panel, rgba(15, 23, 42, 0.7)) !important;
-	color: var(--ink, #f8fafc) !important;
+	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+	color: var(--ink, #f8fafc);
 }
 
 [data-theme="dark"] .settings-advanced-toggle:hover {
-	background: rgba(30, 41, 59, 0.9) !important;
+	background: rgba(30, 41, 59, 0.9);
 }
 
 [data-theme="dark"] .settings-advanced-label {
-	color: var(--ink, #f8fafc) !important;
+	color: var(--ink, #f8fafc);
 }
 
 [data-theme="dark"] .settings-advanced-hint {
-	color: var(--muted, #94a3b8) !important;
+	color: var(--muted, #94a3b8);
 }
 
 [data-theme="dark"] .settings-advanced-form {
-	background: rgba(15, 23, 42, 0.85) !important;
+	background: rgba(15, 23, 42, 0.85);
 }
 .settings-advanced-form {
 	padding: 1.25rem 1.1rem 1rem;
@@ -15470,59 +15467,59 @@ textarea:focus {
    ================================================================ */
 @media (max-width: 860px) {
 	.settings-zone {
-		grid-template-columns: minmax(0, 1fr) !important;
-		padding: 12px !important;
-		gap: 16px !important;
-		border-radius: 8px !important;
+		grid-template-columns: minmax(0, 1fr);
+		padding: 12px;
+		gap: 16px;
+		border-radius: 8px;
 	}
 
 	/* Horizontal scroll for settings tabs group */
 	.settings-tabs {
-		position: static !important;
-		display: flex !important;
-		flex-direction: row !important;
-		overflow-x: auto !important;
-		gap: 12px !important;
-		padding: 4px 0 8px !important;
-		scrollbar-width: none !important;
-		width: 100% !important;
-		border-bottom: 1px solid var(--line) !important;
+		position: static;
+		display: flex;
+		flex-direction: row;
+		overflow-x: auto;
+		gap: 12px;
+		padding: 4px 0 8px;
+		scrollbar-width: none;
+		width: 100%;
+		border-bottom: 1px solid var(--line);
 	}
 	.settings-tabs::-webkit-scrollbar {
 		display: none;
 	}
 
 	.settings-tabs-group {
-		display: flex !important;
-		flex-direction: row !important;
-		align-items: center !important;
-		gap: 6px !important;
-		margin-bottom: 0 !important;
-		flex-shrink: 0 !important;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: 0;
+		flex-shrink: 0;
 	}
 
 	.settings-tabs-group-header {
-		font-size: 10px !important;
-		margin-bottom: 0 !important;
-		padding-left: 0 !important;
-		width: auto !important;
-		white-space: nowrap !important;
-		opacity: 0.6 !important;
-		margin-right: 4px !important;
+		font-size: 10px;
+		margin-bottom: 0;
+		padding-left: 0;
+		width: auto;
+		white-space: nowrap;
+		opacity: 0.6;
+		margin-right: 4px;
 	}
 
 	.settings-tabs button {
-		padding: 6px 12px !important;
-		font-size: 12px !important;
-		white-space: nowrap !important;
-		border: 1px solid var(--line) !important;
-		border-radius: 8px !important;
-		background: var(--paper) !important;
-		min-height: auto !important;
+		padding: 6px 12px;
+		font-size: 12px;
+		white-space: nowrap;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--paper);
+		min-height: auto;
 	}
 
 	.settings-tabs button:hover {
-		transform: none !important;
+		transform: none;
 	}
 
 	.settings-tabs button.active {
@@ -15530,16 +15527,16 @@ textarea:focus {
 			135deg,
 			var(--teal-fill),
 			var(--teal-dark)
-		) !important;
-		color: white !important;
-		box-shadow: 0 2px 8px var(--teal-glow) !important;
-		transform: none !important;
+		);
+		color: white;
+		box-shadow: 0 2px 8px var(--teal-glow);
+		transform: none;
 	}
 
 	.settings-tab-panel {
-		padding: 16px !important;
-		border-radius: 8px !important;
-		width: 100% !important;
+		padding: 16px;
+		border-radius: 8px;
+		width: 100%;
 	}
 }
 
@@ -15587,20 +15584,20 @@ textarea:focus {
 }
 
 .default-clinic-banner .banner-btn {
-	font-size: 13px !important;
-	padding: 8px 16px !important;
-	min-height: auto !important;
-	height: 36px !important;
-	background: #d97706 !important;
-	color: white !important;
-	border-color: #d97706 !important;
+	font-size: 13px;
+	padding: 8px 16px;
+	min-height: auto;
+	height: 36px;
+	background: #d97706;
+	color: white;
+	border-color: #d97706;
 	flex-shrink: 0;
 }
 
 .default-clinic-banner .banner-btn:hover {
-	background: #b45309 !important;
-	border-color: #b45309 !important;
-	box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25) !important;
+	background: #b45309;
+	border-color: #b45309;
+	box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25);
 }
 
 @media (max-width: 860px) {
@@ -15637,18 +15634,18 @@ textarea:focus {
 }
 
 .role-queue-header-row .toggle-queues-btn {
-	font-size: 13px !important;
-	color: var(--teal) !important;
-	font-weight: 600 !important;
+	font-size: 13px;
+	color: var(--teal);
+	font-weight: 600;
 	cursor: pointer;
-	background: transparent !important;
-	border: none !important;
-	padding: 4px 8px !important;
+	background: transparent;
+	border: none;
+	padding: 4px 8px;
 }
 
 .role-queue-header-row .toggle-queues-btn:hover {
-	color: var(--teal-dark) !important;
-	text-decoration: underline !important;
+	color: var(--teal-dark);
+	text-decoration: underline;
 }
 
 /* --- CLINICIAN WORKSPACE OPTIMIZATIONS --- */
@@ -16058,8 +16055,8 @@ textarea:focus {
 
 /* Today's Schedule interactive hover states */
 .today-schedule-item:hover {
-	background: rgba(13, 148, 136, 0.08) !important;
-	border-color: var(--teal) !important;
+	background: rgba(13, 148, 136, 0.08);
+	border-color: var(--teal);
 	transform: translateY(-1px);
 	box-shadow:
 		0 4px 6px -1px rgba(0, 0, 0, 0.05),
@@ -16181,7 +16178,7 @@ textarea:focus {
 }
 
 .tooth-arch-wrapper.zoom-active .tooth-half {
-	justify-content: center !important;
+	justify-content: center;
 }
 
 .tooth-arch-wrapper.zoom-active .tooth {
@@ -16359,61 +16356,61 @@ textarea:focus {
 
 /* --- UX REDESIGN OVERRIDES --- */
 .visit-fields {
-	padding: 12px !important;
+	padding: 12px;
 }
 .close-task {
-	display: flex !important;
-	flex-wrap: wrap !important;
-	gap: 8px !important;
-	padding: 6px 10px !important;
-	min-height: auto !important;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 6px 10px;
+	min-height: auto;
 }
 .close-task strong {
-	font-size: 13px !important;
-	display: inline-block !important;
+	font-size: 13px;
+	display: inline-block;
 }
 .close-task p {
-	font-size: 12px !important;
-	display: inline-block !important;
-	margin: 0 0 0 6px !important;
+	font-size: 12px;
+	display: inline-block;
+	margin: 0 0 0 6px;
 }
 .close-task small {
-	font-size: 11px !important;
-	display: inline-block !important;
-	margin: 0 0 0 6px !important;
+	font-size: 11px;
+	display: inline-block;
+	margin: 0 0 0 6px;
 }
 .close-checklist {
-	gap: 4px !important;
-	padding: 8px !important;
+	gap: 4px;
+	padding: 8px;
 }
 
 .dictation-box textarea {
-	min-height: 80px !important;
+	min-height: 80px;
 }
 .visit-dictation,
 .dictation-box {
-	padding: 12px !important;
+	padding: 12px;
 }
 .dictation-header h3 {
-	font-size: 15px !important;
-	margin: 0 !important;
+	font-size: 15px;
+	margin: 0;
 }
 .dictation-header p {
-	font-size: 12px !important;
-	margin: 2px 0 0 !important;
+	font-size: 12px;
+	margin: 2px 0 0;
 }
 
 .patient-row {
-	padding: 12px 16px !important;
-	align-items: center !important;
+	padding: 12px 16px;
+	align-items: center;
 }
 .patient-row h3 {
-	font-size: 15px !important;
-	margin: 0 0 4px !important;
+	font-size: 15px;
+	margin: 0 0 4px;
 }
 .patient-row p {
-	font-size: 13px !important;
-	margin: 0 !important;
+	font-size: 13px;
+	margin: 0;
 }
 .patient-row-meta {
 	display: flex;
@@ -16423,48 +16420,48 @@ textarea:focus {
 }
 .patient-row-meta span,
 .patient-row-meta strong {
-	font-size: 11px !important;
-	padding: 2px 6px !important;
+	font-size: 11px;
+	padding: 2px 6px;
 	border-radius: 4px;
 }
 .clinic-profile-form-grid label {
 	margin-bottom: 8px;
-	font-size: 13px !important;
+	font-size: 13px;
 }
 .clinic-profile-form-grid input,
 .clinic-profile-form-grid select,
 .clinic-profile-form-grid textarea {
-	padding: 8px !important;
-	font-size: 13px !important;
+	padding: 8px;
+	font-size: 13px;
 }
 
 .shift-panel .patient-row {
-	flex-direction: row !important;
-	padding: 12px 16px !important;
+	flex-direction: row;
+	padding: 12px 16px;
 }
 .shift-dashboard-grid {
-	display: flex !important;
-	flex-wrap: wrap !important;
-	gap: 8px !important;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
 }
 .shift-dashboard-grid > * {
-	flex: 1 1 150px !important;
+	flex: 1 1 150px;
 }
 .shift-dashboard-grid .metric-card {
-	padding: 12px !important;
+	padding: 12px;
 }
 .shift-dashboard-grid .metric-card h3 {
-	font-size: 20px !important;
-	margin-bottom: 4px !important;
+	font-size: 20px;
+	margin-bottom: 4px;
 }
 .shift-focus-bar {
-	padding: 12px 16px !important;
-	margin: 12px 0 !important;
-	border-radius: 8px !important;
+	padding: 12px 16px;
+	margin: 12px 0;
+	border-radius: 8px;
 }
 .shift-focus-bar h3 {
-	font-size: 16px !important;
-	margin: 0 0 4px !important;
+	font-size: 16px;
+	margin: 0 0 4px;
 }
 
 /* QUICK CHIPS REFACTOR */
@@ -16611,10 +16608,10 @@ textarea:focus {
 .local-bridge-grid,
 .local-bridge-plan-grid,
 .backup-check-grid {
-	display: flex !important;
-	flex-wrap: wrap !important;
-	gap: 1rem !important;
-	align-items: start !important;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	align-items: start;
 	padding: 0.5rem 0;
 }
 
@@ -16652,8 +16649,8 @@ textarea:focus {
 
 /* Wide elements */
 .form-span-2 {
-	flex: 1 1 100% !important;
-	min-width: 100% !important;
+	flex: 1 1 100%;
+	min-width: 100%;
 }
 
 /* Card aesthetics for forms to reduce clutter */
@@ -16741,10 +16738,10 @@ html.dark .clinic-profile-form-grid textarea,
 .schedule-shift-summary-grid,
 .seo-keys-grid,
 .viewer-slider-grid {
-	display: flex !important;
-	flex-wrap: wrap !important;
-	gap: 1rem !important;
-	align-items: start !important;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	align-items: start;
 	padding: 0.5rem 0;
 }
 
@@ -16914,8 +16911,8 @@ html.dark .clinic-profile-form-grid textarea,
 	pointer-events: none;
 	background: transparent;
 	padding: 0 4px;
-	border: none !important;
-	margin: 0 !important;
+	border: none;
+	margin: 0;
 }
 .smart-field input:focus ~ label,
 .smart-field input:not(:placeholder-shown) ~ label,
@@ -17076,8 +17073,8 @@ html.dark .clinic-profile-form-grid textarea,
 }
 
 .smart-ai-booking:focus-within {
-	border-color: var(--brand-400) !important;
-	box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15) !important;
+	border-color: var(--brand-400);
+	box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
 }
 
 /* CLINICAL CONTEXT MODAL STYLES (from VisitView) */
@@ -17409,7 +17406,7 @@ html.dark .clinic-profile-form-grid textarea,
 }
 
 .omnibar-item-selected {
-	background-color: var(--teal-soft) !important;
+	background-color: var(--teal-soft);
 	color: var(--teal-dark);
 }
 
@@ -17657,21 +17654,21 @@ html.dark .clinic-profile-form-grid textarea,
 }
 
 .chip-suggestion.priority-urgent {
-	background: #fee2e2 !important;
-	color: #991b1b !important;
-	border-color: #fca5a5 !important;
+	background: #fee2e2;
+	color: #991b1b;
+	border-color: #fca5a5;
 }
 
 .chip-suggestion.priority-important {
-	background: #fef3c7 !important;
-	color: #92400e !important;
-	border-color: #fcd34d !important;
+	background: #fef3c7;
+	color: #92400e;
+	border-color: #fcd34d;
 }
 
 .appointment-edit-button {
-	padding: 4px 12px !important;
-	min-height: 28px !important;
-	font-size: 12px !important;
+	padding: 4px 12px;
+	min-height: 28px;
+	font-size: 12px;
 }
 
 /* ========== SMART AI BOOKING BLOCK ========== */
@@ -17713,9 +17710,9 @@ html.dark .clinic-profile-form-grid textarea,
 }
 
 .quick-chip--sm {
-	font-size: 11px !important;
-	padding: 2px 8px !important;
-	min-height: 24px !important;
+	font-size: 11px;
+	padding: 2px 8px;
+	min-height: 24px;
 }
 
 /* --- APPOINTMENT CARD PREMIUM AESTHETICS --- */
@@ -17897,9 +17894,9 @@ html.dark .clinic-profile-form-grid textarea,
 
 /* Patient List CLS Fixes */
 .patient-row {
-	display: grid !important;
-	grid-template-columns: 1fr auto !important;
-	min-height: 80px !important;
+	display: grid;
+	grid-template-columns: 1fr auto;
+	min-height: 80px;
 }
 
 @media (max-width: 768px) {
@@ -17913,40 +17910,40 @@ html.dark .clinic-profile-form-grid textarea,
 [data-theme="dark"] .schedule-shift-summary,
 .dark .schedule-shift-summary,
 body.dark-mode .schedule-shift-summary {
-	background: var(--surface-alt, #1e293b) !important;
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
-	color: var(--text-color, #f8fafc) !important;
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
 }
 
 [data-theme="dark"] .schedule-shift-summary-grid article,
 .dark .schedule-shift-summary-grid article,
 body.dark-mode .schedule-shift-summary-grid article {
-	background: var(--surface, #0f172a) !important;
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
-	color: var(--text-color, #f8fafc) !important;
+	background: var(--surface, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
 }
 
 [data-theme="dark"] .schedule-filter-strip,
 .dark .schedule-filter-strip,
 body.dark-mode .schedule-filter-strip {
-	background: var(--surface-alt, #1e293b) !important;
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
 }
 
 [data-theme="dark"] .schedule-secret-collapsible,
 .dark .schedule-secret-collapsible,
 body.dark-mode .schedule-secret-collapsible {
-	background: var(--surface-alt, #1e293b) !important;
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
-	color: var(--text-color, #f8fafc) !important;
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
 }
 
 [data-theme="dark"] .schedule-secret-collapsible .schedule-admin-unlock,
 .dark .schedule-secret-collapsible .schedule-admin-unlock,
 body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
-	background: var(--surface, #0f172a) !important;
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
-	color: var(--text-color, #f8fafc) !important;
+	background: var(--surface, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
 }
 
 /* --- Communications Dark Mode Theme Harmony --- */
@@ -17968,9 +17965,9 @@ body.dark-mode .template-list article,
 [data-theme="dark"] .communication-empty-state,
 .dark .communication-empty-state,
 body.dark-mode .communication-empty-state {
-	background: var(--surface-alt, #1e293b) !important;
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
-	color: var(--text-color, #f8fafc) !important;
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
 }
 
 /* --- Finance Dark Mode Theme Harmony --- */
@@ -18001,9 +17998,9 @@ body.dark-mode .service-catalog-strip article,
 [data-theme="dark"] .payment-capture-detail-section,
 .dark .payment-capture-detail-section,
 body.dark-mode .payment-capture-detail-section {
-	background: var(--surface-alt, #1e293b) !important;
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
-	color: var(--text-color, #f8fafc) !important;
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
 }
 
 /* Dark mode: document manual override details (DocumentsView) */
@@ -18011,7 +18008,7 @@ html.dark .document-manual-override,
 [data-theme="dark"] .document-manual-override,
 .dark .document-manual-override,
 body.dark-mode .document-manual-override {
-	background: var(--glass-panel) !important;
-	border-color: var(--line) !important;
-	color: var(--ink) !important;
+	background: var(--glass-panel);
+	border-color: var(--line);
+	color: var(--ink);
 }

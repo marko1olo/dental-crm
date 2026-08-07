@@ -168,7 +168,7 @@ export const FreedSlotsPanel: React.FC = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [auth]);
+	}, [auth, loadFailureText]);
 
 	useEffect(() => {
 		void load();
