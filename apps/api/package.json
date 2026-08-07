@@ -10,7 +10,7 @@
 		"check:contract-breach": "node ../../scripts/contract-breach-analysis.mjs",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
 		"typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",
-		"test": "node --import tsx --test \"src/**/*.test.ts\"",
+		"test": "node --import tsx --import ./src/tests/support/poolTeardown.ts --test \"src/**/*.test.ts\"",
 		"test:contract": "node --import tsx --test src/tests/contract-breach-proofs.test.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx src/scripts/migrate.ts",
@@ -24,6 +24,7 @@
 	"dependencies": {
 		"@dental/shared": "*",
 		"@fastify/cors": "^10.0.1",
+		"@fastify/helmet": "^13.1.0",
 		"@fastify/rate-limit": "^11.2.0",
 		"@fastify/websocket": "^11.2.0",
 		"chokidar": "^5.0.0",
