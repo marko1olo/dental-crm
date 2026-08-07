@@ -80,7 +80,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 			if (transaction.status === "pending") {
 				await db
 					.update(sberbankTransactions)
-					.set({ status: "success", updatedAt: new Date().toISOString() })
+					.set({ status: "success", updatedAt: new Date() })
 					.where(eq(sberbankTransactions.orderId, orderId));
 				transaction.status = "success";
 			}

@@ -491,6 +491,9 @@ export const users = pgTable("users", {
 	specialties: jsonb("specialties"),
 	uiPreferences: jsonb("ui_preferences"),
 	workingHours: jsonb("working_hours"),
+	currentSessionId: text("current_session_id"),
+	yandexCalendarId: text("yandex_calendar_id"),
+	yandexCalendarToken: jsonb("yandex_calendar_token"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),
@@ -3087,6 +3090,27 @@ export const diagnocatAiFindings = pgTable("diagnocat_ai_findings", {
 		.defaultNow(),
 });
 
+export const diagnocatReports = pgTable("diagnocat_reports", {
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
+	patientId: uuid("patient_id").notNull(),
+	reportUrl: text("report_url").notNull(),
+	odontogramData: jsonb("odontogram_data"),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+});
+
+export const sberbankTransactions = pgTable("sberbank_transactions", {
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
+	organizationId: uuid("organization_id").notNull(),
+	orderId: text("order_id").notNull(),
+	amount: integer("amount").notNull(),
+	status: text("status").notNull(),
+	patientId: uuid("patient_id").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true }),
+});
+
 // egisz blank permissions (EGISZ REMD form access control)
 export const egiszBlankPermissions = pgTable("egisz_blank_permissions", {
 	id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -3480,6 +3504,7 @@ export const yandexCalendarSyncs = pgTable("yandex_calendar_syncs", {
 		.references(() => organizations.id),
 	doctorId: uuid("doctor_id").notNull(),
 	yandexCalendarId: text("yandex_calendar_id"),
+	currentSessionId: uuid("current_session_id"),
 	lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
 	syncStatus: text("sync_status").notNull().default("pending"),
 	errorMessage: text("error_message"),
@@ -4375,31 +4400,5 @@ export const visitsRelations = relations(visits, ({ one }) => ({
 	appointment: one(appointments, {
 		fields: [visits.appointmentId],
 		references: [appointments.id],
-	}),
-}));
-
-export const sberbankTransactions = pgTable("sberbank_transactions", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id),
-	orderId: varchar("order_id", { length: 255 }).notNull(),
-	amount: integer("amount").notNull(),
-	status: varchar("status", { length: 50 }).notNull().default("pending"),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
-});
-
-export const sberbankTransactionsRelations = relations(sberbankTransactions, ({ one }) => ({
-	organization: one(organizations, {
-		fields: [sberbankTransactions.organizationId],
-		references: [organizations.id],
-	}),
-	patient: one(patients, {
-		fields: [sberbankTransactions.patientId],
-		references: [patients.id],
 	}),
 }));
