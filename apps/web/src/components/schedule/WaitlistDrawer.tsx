@@ -568,6 +568,7 @@ export function WaitlistDrawer(props: Props) {
 								{items.map((item) => (
 									<div
 										key={item.id}
+										role="listitem"
 										draggable
 										onDragStart={(e) => {
 											e.dataTransfer.setData(
