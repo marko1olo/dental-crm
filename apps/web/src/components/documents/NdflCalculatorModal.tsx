@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useAppLogic } from "../../useAppLogic";
 
 export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
-	const { patientId } = useAppLogic();
+	const { patientId, auth } = useAppLogic();
 	const [startDate, setStartDate] = useState(
 		new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0],
 	);
@@ -23,8 +23,18 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 		if (!patientId) return;
 		setLoading(true);
 		try {
+			// Маршрут закрыт requireClinicalMutationAccess (routes/documents/
+			// ndflCalculator.ts:23). Без заголовка сеанса настоящая клиника
+			// отвечает 403, и раздел выглядит пустым: локально этого не видно,
+			// потому что в .env секрет закомментирован и лазейка открыта.
 			const res = await fetch(
-				`/api/documents/ndfl-calculator?patientId=${patientId}&startDate=${startDate}T00:00:00.000Z&endDate=${endDate}T23:59:59.999Z`,
+				`/api/documents/ndfl-calculator?patientId=${encodeURIComponent(patientId)}&startDate=${encodeURIComponent(`${startDate}T00:00:00.000Z`)}&endDate=${encodeURIComponent(`${endDate}T23:59:59.999Z`)}`,
+				{
+					headers:
+						auth && typeof auth.denteClinicalMutationHeaders === "function"
+							? auth.denteClinicalMutationHeaders()
+							: {},
+				},
 			);
 			const data = await res.json();
 			setResult(data);
@@ -36,29 +46,12 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 	};
 
 	return (
-		<div
-			className="modal-overlay"
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				right: 0,
-				bottom: 0,
-				backgroundColor: "rgba(0,0,0,0.5)",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				zIndex: 9999,
-			}}
-		>
+		<div className="modal-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
 			<div
-				className="modal-content"
+				className="modal-content w-full max-w-md p-6 rounded-lg"
 				style={{
-					background: "white",
-					padding: "24px",
-					borderRadius: "8px",
-					width: "100%",
-					maxWidth: "500px",
+					background: "var(--paper)",
+					color: "var(--ink)",
 				}}
 			>
 				<h2 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -88,17 +81,10 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 				</div>
 
 				<button
+					type="button"
 					onClick={handleCalculate}
 					disabled={loading}
-					style={{
-						padding: "8px 16px",
-						background: "#0066cc",
-						color: "white",
-						border: "none",
-						borderRadius: "4px",
-						cursor: "pointer",
-						width: "100%",
-					}}
+					className="primary-button w-full"
 				>
 					{loading ? "Вычисление..." : "Рассчитать"}
 				</button>
@@ -108,11 +94,13 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 						{result.isBlocked ? (
 							<div
 								style={{
-									background: "#fff1f0",
-									border: "1px solid #ffa39e",
+									background: "var(--red-soft)",
+									borderColor: "var(--red-light)",
+									borderWidth: "1px",
+									borderStyle: "solid",
 									padding: "16px",
 									borderRadius: "4px",
-									color: "#cf1322",
+									color: "var(--red-dark)",
 								}}
 							>
 								<div
@@ -135,11 +123,13 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 						) : (
 							<div
 								style={{
-									background: "#f6ffed",
-									border: "1px solid #b7eb8f",
+									background: "var(--success-soft)",
+									borderColor: "var(--success-light)",
+									borderWidth: "1px",
+									borderStyle: "solid",
 									padding: "16px",
 									borderRadius: "4px",
-									color: "#389e0d",
+									color: "var(--success-dark)",
 								}}
 							>
 								<h3 style={{ margin: "0 0 12px 0" }}>Суммы для справки:</h3>
@@ -161,16 +151,7 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 				)}
 
 				<div style={{ marginTop: "24px", textAlign: "right" }}>
-					<button
-						onClick={onClose}
-						style={{
-							padding: "8px 16px",
-							background: "#f0f0f0",
-							border: "none",
-							borderRadius: "4px",
-							cursor: "pointer",
-						}}
-					>
+					<button type="button" onClick={onClose} className="secondary-button">
 						Закрыть
 					</button>
 				</div>

@@ -159,12 +159,14 @@ export function BoneQualityPanel({
 					{/* Implant System Selector */}
 					<div>
 						<label
+							htmlFor="bone-implant-system-select"
 							className="text-[11px] font-medium block mb-1"
 							style={{ color: "var(--muted)" }}
 						>
 							Система имплантации
 						</label>
 						<select
+							id="bone-implant-system-select"
 							value={implantSystem}
 							onChange={(e) => onSystemChange(e.target.value as ImplantSystem)}
 							className="w-full text-xs p-1.5 rounded-md border"
@@ -187,7 +189,7 @@ export function BoneQualityPanel({
 						<div className="space-y-1">
 							{protocol.warnings.map((w, i) => (
 								<div
-									key={i}
+									key={`warning-${w.slice(0, 15)}-${i}`}
 									className="text-[11px] p-2 rounded bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800 flex items-center gap-1.5"
 								>
 									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />

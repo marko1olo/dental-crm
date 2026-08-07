@@ -83,10 +83,11 @@ export function AcceptInvite({
 
 				<form onSubmit={handleSubmit} className="auth-form">
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="accept-invite-fullname" className="auth-label">
 							<User size={12} className="auth-icon-inline" /> ФИО
 						</label>
 						<input
+							id="accept-invite-fullname"
 							type="text"
 							value={fullName}
 							onChange={(e) => setFullName(e.target.value)}
@@ -96,11 +97,12 @@ export function AcceptInvite({
 						/>
 					</div>
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="accept-invite-password" className="auth-label">
 							<KeyRound size={12} className="auth-icon-inline" /> Придумайте
 							пароль (для входа из дома)
 						</label>
 						<input
+							id="accept-invite-password"
 							type="password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
@@ -110,11 +112,12 @@ export function AcceptInvite({
 						/>
 					</div>
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="accept-invite-pincode" className="auth-label">
 							<KeyRound size={12} className="auth-icon-inline" /> Придумайте
 							PIN-код (4 цифры для работы в клинике)
 						</label>
 						<input
+							id="accept-invite-pincode"
 							type="text"
 							maxLength={4}
 							value={pinCode}

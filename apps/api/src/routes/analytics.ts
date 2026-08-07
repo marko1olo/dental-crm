@@ -443,6 +443,4 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			});
 		}
 	});
-
-
 }

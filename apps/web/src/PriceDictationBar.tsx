@@ -82,6 +82,7 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 
 				{inputText.length > 0 && !isDictating && (
 					<button
+						type="button"
 						onClick={() => handleParse(inputText)}
 						className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 shadow-sm"
 					>

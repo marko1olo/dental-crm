@@ -1189,6 +1189,7 @@ export function VisiographAnalyzer() {
 						{currentScan?.aiReport && (
 							<>
 								<button
+									type="button"
 									onClick={handleSpeak}
 									disabled={!voicesReady && !isSpeaking}
 									title={isSpeaking ? "Стоп" : "Озвучить"}
@@ -1213,6 +1214,7 @@ export function VisiographAnalyzer() {
 									{isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
 								</button>
 								<button
+									type="button"
 									onClick={handlePrint}
 									title="Печать"
 									style={{
@@ -1231,6 +1233,7 @@ export function VisiographAnalyzer() {
 									<Printer size={14} />
 								</button>
 								<button
+									type="button"
 									onClick={handleClear}
 									title="Закрыть результат"
 									style={{
@@ -1348,6 +1351,7 @@ export function VisiographAnalyzer() {
 										периодонтит, обновит формулу зубов.
 									</p>
 									<button
+										type="button"
 										className="btn-primary"
 										style={{
 											marginTop: "8px",
@@ -1393,6 +1397,7 @@ export function VisiographAnalyzer() {
 								<div style={{ marginTop: "4px" }}>{error}</div>
 							</div>
 							<button
+								type="button"
 								onClick={() => setError(null)}
 								style={{
 									marginLeft: "auto",
@@ -1684,26 +1689,27 @@ export function VisiographAnalyzer() {
 											)}
 										</span>
 									</div>
-									{reportSections.map((section, idx) => (
+									{reportSections.map((section, sIndex) => (
 										<div
-											key={idx}
+											key={section.title || `section-${section.content.slice(0, 10)}`}
 											style={{
 												borderBottom:
-													idx < reportSections.length - 1
+													sIndex < reportSections.length - 1
 														? "1px solid var(--line)"
 														: "none",
 											}}
 										>
 											<button
+												type="button"
 												onClick={() =>
-													setActiveSection(activeSection === idx ? null : idx)
+													setActiveSection(activeSection === sIndex ? null : sIndex)
 												}
 												style={{
 													width: "100%",
 													textAlign: "left",
 													padding: "10px 14px",
 													background:
-														activeSection === idx
+														activeSection === sIndex
 															? "var(--paper-soft)"
 															: "transparent",
 													border: "none",
@@ -1728,13 +1734,13 @@ export function VisiographAnalyzer() {
 													size={14}
 													style={{
 														transform:
-															activeSection === idx ? "rotate(180deg)" : "none",
+															activeSection === sIndex ? "rotate(180deg)" : "none",
 														transition: "transform 0.2s",
 														color: "var(--muted)",
 													}}
 												/>
 											</button>
-											{activeSection === idx && (
+											{activeSection === sIndex && (
 												<div
 													style={{
 														padding: "8px 14px 14px 34px",
@@ -1879,6 +1885,7 @@ export function VisiographAnalyzer() {
 					{!currentScan && historyPhase === "ready" && (
 						<div style={{ marginTop: "16px" }}>
 							<button
+								type="button"
 								onClick={() => setHistoryExpanded(!historyExpanded)}
 								style={{
 									display: "flex",

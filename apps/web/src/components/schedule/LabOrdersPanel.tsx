@@ -638,6 +638,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										)}
 									</select>
 									<button
+										type="button"
 										onClick={() => copyPortalLink(order.secureToken)}
 										className="py-1 px-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/20 rounded-lg font-semibold transition-colors flex items-center gap-1"
 									>
@@ -651,6 +652,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										Ссылка технику
 									</button>
 									<button
+										type="button"
 										onClick={() => handleDeleteOrder(order.id)}
 										className="p-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors"
 									>

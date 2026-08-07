@@ -8,7 +8,8 @@
 		"build": "tsc -b && vite build",
 		"typecheck": "tsc -b --noEmit",
 		"test": "node --import tsx --import ./testCssStub.mjs --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
-		"preview": "vite preview --host 127.0.0.1 --port 4173"
+		"preview": "vite preview --host 127.0.0.1 --port 4173",
+		"smoke:documents-lifecycle": "playwright test tests/e2e/documents-lifecycle.spec.ts"
 	},
 	"dependencies": {
 		"@cornerstonejs/core": "^5.1.3",
@@ -35,6 +36,7 @@
 		"zustand": "^5.0.14"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.51.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/gl-matrix": "^2.4.5",
 		"@types/react": "^19.2.15",

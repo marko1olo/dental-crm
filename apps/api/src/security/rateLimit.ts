@@ -55,7 +55,7 @@ function clientKey(request: FastifyRequest): string {
 }
 
 export function resetRateLimit(request: FastifyRequest): void {
-	// With @fastify/rate-limit, we can clear the internal store if needed, but since our limits 
+	// With @fastify/rate-limit, we can clear the internal store if needed, but since our limits
 	// are 1 minute, letting them naturally expire is fine for auth actions in most cases.
 }
 

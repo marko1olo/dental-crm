@@ -37,7 +37,9 @@ export const ClinicalStore = {
 	},
 
 	notify() {
-		this.listeners.forEach((l) => l());
+		this.listeners.forEach((l) => {
+			l();
+		});
 	},
 
 	addNervePoint(nerveId: string, pt: Point3D) {

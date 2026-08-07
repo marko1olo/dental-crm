@@ -4,7 +4,10 @@ import {
 	updateAppointmentSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { unguardedBypassAllowed, requireResolvedOrganizationId as requireOrganizationContext } from "../accessGuard.js";
+import {
+	unguardedBypassAllowed,
+	requireResolvedOrganizationId as requireOrganizationContext,
+} from "../accessGuard.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import {
 	clinicSessionMissingMessage,
@@ -518,7 +521,7 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			//
 			// ПОЭТОМУ читаем сводку в отдельном try/catch, а внешний catch ловит
 			// только отказы createAppointmentInDb.
-			let dashboard;
+			let dashboard: Awaited<ReturnType<typeof getDashboardFromDb>>;
 			try {
 				dashboard = await getDashboardFromDb(orgId);
 			} catch (dashErr) {
@@ -617,7 +620,7 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			});
 
 			// КРИТИЧНО: updateAppointmentInDb УЖЕ СОВЕРШЕНА. Дальше — опциональная услуга.
-			let dashboard;
+			let dashboard: Awaited<ReturnType<typeof getDashboardFromDb>>;
 			try {
 				dashboard = await getDashboardFromDb(orgId);
 			} catch (dashErr) {
@@ -966,27 +969,31 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			const startsAt = new Date(startsMs).toISOString();
 
 			try {
-				const created = await createAppointmentInDb(orgId, {
-					patientId: original.patientId,
-					doctorUserId,
-					assistantUserId: original.assistantUserId ?? null,
-					chairId,
-					status: "planned",
-					startsAt,
-					endsAt,
-					reason: original.reason ?? undefined,
-					comment: original.comment ?? undefined,
-				});
+				const created = await db.transaction(async (tx) => {
+					const newAppt = await createAppointmentInDb(orgId, {
+						patientId: original.patientId!,
+						doctorUserId,
+						assistantUserId: original.assistantUserId ?? null,
+						chairId,
+						status: "planned",
+						startsAt,
+						endsAt,
+						reason: original.reason ?? undefined,
+						comment: original.comment ?? undefined,
+					});
 
-				await db
-					.update(scheduleClipboardItems)
-					.set({ clipboardStatus: "pasted" })
-					.where(
-						and(
-							eq(scheduleClipboardItems.id, clipItem.id),
-							eq(scheduleClipboardItems.organizationId, orgId),
-						),
-					);
+					await tx
+						.update(scheduleClipboardItems)
+						.set({ clipboardStatus: "pasted" })
+						.where(
+							and(
+								eq(scheduleClipboardItems.id, clipItem.id),
+								eq(scheduleClipboardItems.organizationId, orgId),
+							),
+						);
+
+					return newAppt;
+				});
 
 				const dashboard = await getDashboardFromDb(orgId);
 				wsBroker.broadcastToOrganization(orgId, {
@@ -1030,8 +1037,8 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			.where(
 				and(
 					eq(urgentScheduleRequests.organizationId, orgId),
-					eq(urgentScheduleRequests.isResolved, false)
-				)
+					eq(urgentScheduleRequests.isResolved, false),
+				),
 			)
 			.orderBy(asc(urgentScheduleRequests.createdAt));
 
@@ -1052,11 +1059,11 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 				.where(
 					and(
 						eq(urgentScheduleRequests.id, params.id),
-						eq(urgentScheduleRequests.organizationId, orgId)
-					)
+						eq(urgentScheduleRequests.organizationId, orgId),
+					),
 				);
 
 			return reply.code(200).send({ success: true });
-		}
+		},
 	);
 }

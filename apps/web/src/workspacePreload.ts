@@ -96,7 +96,9 @@ export function scheduleIdleWorkspacePreload(
 	if (!preloadViews.length) return undefined;
 	const idleWindow = window as IdlePreloadWindow;
 	const preloadLikelyRoutes = () => {
-		preloadViews.forEach((view) => preloadWorkspaceView(view, "idle"));
+		preloadViews.forEach((view) => {
+			preloadWorkspaceView(view, "idle");
+		});
 	};
 	if (idleWindow.requestIdleCallback) {
 		const idleHandle = idleWindow.requestIdleCallback(preloadLikelyRoutes, {

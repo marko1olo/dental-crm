@@ -149,7 +149,9 @@ function runTests() {
 			console.log(`[FAIL] ${tc.name}`);
 			console.log(`       Input: "${tc.input}"`);
 			console.log(`       Output: ${JSON.stringify(result)}`);
-			errors.forEach((e) => console.log(`       -> ${e}`));
+			errors.forEach((e) => {
+				console.log(`       -> ${e}`);
+			});
 		}
 	});
 

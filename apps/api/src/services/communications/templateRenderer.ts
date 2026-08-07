@@ -245,7 +245,11 @@ export type RenderTemplateOptions = ValidateTemplateBodyOptions & {
  * их приводит к общему виду `normalizeRenderedText`.
  */
 function stripControlCharacters(value: string): string {
-	return value.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+	return value.replace(
+		// biome-ignore lint/complexity/useRegexLiterals: control character range
+		new RegExp("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]", "g"),
+		"",
+	);
 }
 
 function normalizeRenderedText(value: string): string {

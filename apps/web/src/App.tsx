@@ -2085,13 +2085,15 @@ export function App() {
 			);
 		};
 		const events = ["mousemove", "keydown", "pointerdown", "touchstart"];
-		events.forEach((e) =>
-			document.addEventListener(e, resetTimer, { passive: true }),
-		);
+		events.forEach((e) => {
+			document.addEventListener(e, resetTimer, { passive: true });
+		});
 		resetTimer();
 		return () => {
 			clearTimeout(timer);
-			events.forEach((e) => document.removeEventListener(e, resetTimer));
+			events.forEach((e) => {
+				document.removeEventListener(e, resetTimer);
+			});
 		};
 	}, [clinicAuthed]);
 

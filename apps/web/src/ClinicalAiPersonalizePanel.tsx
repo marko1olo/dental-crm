@@ -413,11 +413,11 @@ function MarkdownishText({ text }: { text: string }) {
 	const parts = text.split(/(\*\*[^*]+\*\*)/g);
 	return (
 		<div style={{ whiteSpace: "pre-wrap", lineHeight: 1.45 }}>
-			{parts.map((part, idx) => {
+			{parts.map((part, partIndex) => {
 				if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
-					return <strong key={idx}>{part.slice(2, -2)}</strong>;
+					return <strong key={`part-bold-${partIndex}-${part.slice(0, 10)}`}>{part.slice(2, -2)}</strong>;
 				}
-				return <span key={idx}>{part}</span>;
+				return <span key={`part-text-${partIndex}-${part.slice(0, 10)}`}>{part}</span>;
 			})}
 		</div>
 	);

@@ -11,12 +11,7 @@ export function VisitOdontogramTab(props?: {
 	activeAppointment?: any;
 	dashboard?: any;
 }) {
-	let ctx: any = null;
-	try {
-		ctx = useAppLogicContext();
-	} catch {
-		/* rendered outside AppLogic provider: fall back to props */
-	}
+	const ctx = useAppLogicContext();
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
 	const dashboard = props?.dashboard ?? ctx?.dashboard;

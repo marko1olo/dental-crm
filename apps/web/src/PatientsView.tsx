@@ -635,7 +635,14 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                     */
 										<div className="patient-row-meta">
 											{patient.status === "archived" ? (
-												<span className="patient-risk-label" style={{ backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5' }}>
+												<span
+													className="patient-risk-label"
+													style={{
+														backgroundColor: "#fee2e2",
+														color: "#991b1b",
+														borderColor: "#fca5a5",
+													}}
+												>
 													Черный список / Архив
 												</span>
 											) : null}
@@ -655,15 +662,20 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												</span>
 											) : null}
 										</div>
-									) : (
-										patient.status === "archived" ? (
-											<div className="patient-row-meta">
-												<span className="patient-risk-label" style={{ backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5' }}>
-													Черный список / Архив
-												</span>
-											</div>
-										) : null
-									)}
+									) : patient.status === "archived" ? (
+										<div className="patient-row-meta">
+											<span
+												className="patient-risk-label"
+												style={{
+													backgroundColor: "#fee2e2",
+													color: "#991b1b",
+													borderColor: "#fca5a5",
+												}}
+											>
+												Черный список / Архив
+											</span>
+										</div>
+									) : null}
 								</div>
 								<button
 									aria-label={`Открыть карточку пациента: ${patient.fullName}`}

@@ -284,6 +284,40 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		const text = typeof textValue === "string" ? textValue : null;
 		const chatId = typeof chat?.chatId === "string" ? chat.chatId : "unknown";
 
+		const rawTs =
+			typeof payload.timestamp === "number"
+				? payload.timestamp
+				: typeof payload.timestamp === "string"
+					? Number.parseInt(payload.timestamp, 10)
+					: typeof body.timestamp === "number"
+						? body.timestamp
+						: typeof body.timestamp === "string"
+							? Number.parseInt(body.timestamp, 10)
+							: Number.NaN;
+		if (!Number.isNaN(rawTs) && rawTs > 0) {
+			const msgTsSec = rawTs > 1e11 ? Math.floor(rawTs / 1000) : rawTs;
+			const nowSec = Math.floor(Date.now() / 1000);
+			if (Math.abs(nowSec - msgTsSec) > 300) {
+				request.log.warn(
+					{ msgTsSec, nowSec },
+					"MAX webhook timestamp drift > 300s, skipping ingestion",
+				);
+				return;
+			}
+		}
+
+		const msgIdRaw =
+			payload.msgId ??
+			payload.msg_id ??
+			payload.messageId ??
+			body.msgId ??
+			body.eventId ??
+			body.event_id;
+		const msgId =
+			typeof msgIdRaw === "string" || typeof msgIdRaw === "number"
+				? String(msgIdRaw).trim()
+				: null;
+
 		// Identify org by bot ID passed in header or query param
 		const botIdRaw =
 			request.headers["x-max-bot-id"] ??
@@ -315,9 +349,30 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		// терялось окончательно.
 		const inboundOrganizationId = orgConfig.organizationId;
 		await withTenantCtx(inboundOrganizationId, async (tx) => {
+			if (msgId) {
+				const existing = await tx
+					.select({ id: messengerInboundEvents.id })
+					.from(messengerInboundEvents)
+					.where(
+						and(
+							eq(messengerInboundEvents.organizationId, inboundOrganizationId),
+							eq(messengerInboundEvents.externalId, msgId),
+						),
+					)
+					.limit(1);
+				if (existing.length > 0) {
+					request.log.info(
+						{ msgId, inboundOrganizationId },
+						"MAX message already ingested (replay skipped)",
+					);
+					return;
+				}
+			}
+
 			await tx.insert(messengerInboundEvents).values({
 				organizationId: inboundOrganizationId,
 				channel: "max",
+				externalId: msgId,
 				externalChatId: chatId,
 				messageText: text,
 				eventKind: "message",

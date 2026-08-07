@@ -949,7 +949,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 
 				{/* Complications */}
 				<div className="vde-043__field vde-043__field--span2">
-					<label className="vde-043__label">
+					<label className="vde-043__label" htmlFor="vde-complications">
 						<AlertTriangle
 							className="w-3 h-3"
 							style={{ color: "var(--rust, #b91c1c)" }}
@@ -958,6 +958,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					</label>
 					<div className="vde-043__complications-grid">
 						<textarea
+							id="vde-complications"
 							disabled={fieldsDisabled}
 							style={{ minHeight: "72px", overflowY: "hidden" }}
 							className="auto-resize-ta vde-043__ta vde-043__ta--sm"
@@ -1312,7 +1313,6 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 								вручную.
 							</p>
 							<input
-								autoFocus
 								className="vde-043-scanner__input"
 								placeholder="000000000000"
 								onKeyDown={(e) => {

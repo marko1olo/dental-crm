@@ -176,7 +176,7 @@ export function ShadowAnalystReport({
 									update.state === "prosthetic";
 								return (
 									<div
-										key={idx}
+										key={`tooth-${update.code}-${idx}`}
 										className={`sa-tooth-row ${isCritical ? "sa-tooth-row--critical" : ""} ${isDone ? "sa-tooth-row--done" : ""}`}
 									>
 										<span className="sa-tooth-num">{update.code}</span>

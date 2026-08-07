@@ -896,6 +896,7 @@ export function LeadsKanbanView() {
 								<Calendar size={20} color="var(--teal)" /> Записать лида
 							</h3>
 							<button
+								type="button"
 								onClick={() => setIsConvertOpen(false)}
 								style={{
 									background: "none",
@@ -1115,6 +1116,7 @@ export function LeadsKanbanView() {
 									: "Редактировать лида"}
 							</h3>
 							<button
+								type="button"
 								onClick={() => setIsEditOpen(false)}
 								style={{
 									background: "none",

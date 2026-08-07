@@ -5,9 +5,9 @@ import "./SettingsMessengersTab.css";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { MaxSettingsPanel } from "./MaxSettingsPanel.js";
+import { MessageTemplatesPanel } from "./MessageTemplatesPanel.js";
 import { SettingsTelegramTab } from "./SettingsTelegramTab.js";
 import { WhatsappSettingsPanel } from "./WhatsappSettingsPanel.js";
-import { MessageTemplatesPanel } from "./MessageTemplatesPanel.js";
 
 interface StaffOption {
 	id: string;
@@ -135,7 +135,10 @@ export function SettingsMessengersTab({
 					onClick={() => setActiveMessenger("templates")}
 					className={`messenger-channel-tab${activeMessenger === "templates" ? " active" : ""}`}
 				>
-					<span className="messenger-tab-badge bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded px-1.5 py-0.5 text-xs font-medium" aria-hidden="true">
+					<span
+						className="messenger-tab-badge bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded px-1.5 py-0.5 text-xs font-medium"
+						aria-hidden="true"
+					>
 						TXT
 					</span>
 					Шаблоны

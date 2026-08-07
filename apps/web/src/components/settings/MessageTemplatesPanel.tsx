@@ -1,7 +1,10 @@
+import type {
+	CreateMessageTemplateCatalogInput,
+	MessageTemplateCatalog,
+} from "@dental/shared";
 import { Plus, Trash2 } from "lucide-react";
-import React, { useState, useEffect } from "react";
-import type { MessageTemplateCatalog, CreateMessageTemplateCatalogInput } from "@dental/shared";
-import "./MessageTemplatesPanel.css"; // Optional if we want custom css
+import React, { useEffect, useState } from "react";
+
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 const DYNAMIC_TAGS = [
@@ -41,7 +44,7 @@ export function MessageTemplatesPanel() {
 
 	const handleCreate = async () => {
 		if (!draftTitle || !draftText) return;
-		
+
 		const payload: CreateMessageTemplateCatalogInput = {
 			title: draftTitle,
 			channel: draftChannel,
@@ -49,17 +52,19 @@ export function MessageTemplatesPanel() {
 			templateText: draftText,
 			isActive: true,
 		};
-		
+
 		const headers = auth
-			? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+			? auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				})
 			: { "Content-Type": "application/json" };
-		
+
 		await fetch("/api/settings/message-templates", {
 			method: "POST",
 			headers,
 			body: JSON.stringify(payload),
 		});
-		
+
 		setIsCreating(false);
 		setDraftTitle("");
 		setDraftText("");
@@ -83,8 +88,8 @@ export function MessageTemplatesPanel() {
 		<div className="message-templates-panel">
 			<div className="flex justify-between items-center mb-4">
 				<h3 className="text-lg font-medium">Шаблоны сообщений</h3>
-				<button 
-					type="button" 
+				<button
+					type="button"
 					className="btn btn-primary"
 					onClick={() => setIsCreating(true)}
 				>
@@ -95,15 +100,15 @@ export function MessageTemplatesPanel() {
 			{isCreating && (
 				<div className="template-editor border p-4 mb-4 rounded-lg bg-slate-50 dark:bg-slate-800">
 					<div className="flex flex-col gap-3 mb-4">
-						<input 
-							type="text" 
-							placeholder="Название шаблона" 
+						<input
+							type="text"
+							placeholder="Название шаблона"
 							value={draftTitle}
 							onChange={(e) => setDraftTitle(e.target.value)}
 							className="input"
 						/>
-						<select 
-							value={draftChannel} 
+						<select
+							value={draftChannel}
 							onChange={(e) => setDraftChannel(e.target.value)}
 							className="select"
 						>
@@ -111,10 +116,10 @@ export function MessageTemplatesPanel() {
 							<option value="whatsapp">WhatsApp</option>
 							<option value="sms">SMS</option>
 						</select>
-						
+
 						<div className="tags flex gap-2 flex-wrap mb-2">
-							{DYNAMIC_TAGS.map(tag => (
-								<button 
+							{DYNAMIC_TAGS.map((tag) => (
+								<button
 									key={tag.tag}
 									type="button"
 									className="badge badge-outline cursor-pointer"
@@ -124,31 +129,53 @@ export function MessageTemplatesPanel() {
 								</button>
 							))}
 						</div>
-						
-						<textarea 
+
+						<textarea
 							placeholder="Текст сообщения..."
 							value={draftText}
 							onChange={(e) => setDraftText(e.target.value)}
 							className="textarea min-h-[100px]"
 						/>
 					</div>
-					
+
 					<div className="flex gap-2">
-						<button type="button" className="btn btn-primary" onClick={handleCreate}>Сохранить</button>
-						<button type="button" className="btn btn-ghost" onClick={() => setIsCreating(false)}>Отмена</button>
+						<button
+							type="button"
+							className="btn btn-primary"
+							onClick={handleCreate}
+						>
+							Сохранить
+						</button>
+						<button
+							type="button"
+							className="btn btn-ghost"
+							onClick={() => setIsCreating(false)}
+						>
+							Отмена
+						</button>
 					</div>
 				</div>
 			)}
 
 			<div className="templates-list flex flex-col gap-3">
-				{templates?.map(template => (
-					<div key={template.id} className="template-card border p-3 rounded flex justify-between">
+				{templates?.map((template) => (
+					<div
+						key={template.id}
+						className="template-card border p-3 rounded flex justify-between"
+					>
 						<div>
-							<div className="font-medium">{template.title} <span className="text-sm text-slate-500">({template.channel})</span></div>
-							<div className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{template.templateText}</div>
+							<div className="font-medium">
+								{template.title}{" "}
+								<span className="text-sm text-slate-500">
+									({template.channel})
+								</span>
+							</div>
+							<div className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">
+								{template.templateText}
+							</div>
 						</div>
-						<button 
-							type="button" 
+						<button
+							type="button"
 							className="btn btn-ghost text-red-500 p-2"
 							onClick={() => handleDelete(template.id)}
 							aria-label="Удалить"
@@ -157,7 +184,7 @@ export function MessageTemplatesPanel() {
 						</button>
 					</div>
 				))}
-				
+
 				{templates?.length === 0 && !isCreating && (
 					<div className="text-center text-slate-500 py-8">
 						Нет сохранённых шаблонов

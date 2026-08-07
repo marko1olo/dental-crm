@@ -7,6 +7,7 @@ import {
 import { Bot, CreditCard, Mic, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
+import { SberbankTerminalPaymentModal } from "./components/finance/SberbankTerminalPaymentModal";
 import { showToast } from "./components/GlobalToast";
 import { rubAmountForInput } from "./components/payments/cashDeskAmounts";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
@@ -19,7 +20,6 @@ import {
 	validateRubAmountInput,
 } from "./rubAmountInput";
 import { SmartParsePreview } from "./SmartParsePreview";
-import { SberbankTerminalPaymentModal } from "./components/finance/SberbankTerminalPaymentModal";
 
 type TaxDeductionCode = "" | "1" | "2";
 
@@ -993,7 +993,7 @@ export function PaymentCapture({
 					onChange={(event) => onAmountChange(event.target.value)}
 					placeholder=" "
 				/>
-				<label>Сумма к оплате (₽)</label>
+				<label htmlFor="payment-amount-input">Сумма к оплате (₽)</label>
 				{remainingDebt !== undefined && (
 					<div
 						className="quick-chips-row"
@@ -1123,7 +1123,9 @@ export function PaymentCapture({
 					type="button"
 					onClick={onSubmit}
 					aria-busy={isSaving || undefined}
-					aria-describedby={!paymentReadyToSubmit ? paymentMissingId : undefined}
+					aria-describedby={
+						!paymentReadyToSubmit ? paymentMissingId : undefined
+					}
 					disabled={isSaving || !paymentReadyToSubmit}
 				>
 					<CreditCard aria-hidden="true" />{" "}
@@ -1133,11 +1135,12 @@ export function PaymentCapture({
 					className="secondary-button"
 					type="button"
 					onClick={() => setIsSberbankModalOpen(true)}
-					aria-describedby={!paymentReadyToSubmit ? paymentMissingId : undefined}
+					aria-describedby={
+						!paymentReadyToSubmit ? paymentMissingId : undefined
+					}
 					disabled={isSaving || !paymentReadyToSubmit || !patientId}
 				>
-					<CreditCard aria-hidden="true" />{" "}
-					Оплатить картой (Терминал Сбербанк)
+					<CreditCard aria-hidden="true" /> Оплатить картой (Терминал Сбербанк)
 				</button>
 			</div>
 			{patientId && (

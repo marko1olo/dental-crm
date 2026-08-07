@@ -36,6 +36,26 @@ import ts from "typescript";
 /**
  * Признаки того, что вызов посылает админский секрет. Правильный приём в проекте
  * уже есть, и его зовут десятки панелей — второй способ изобретать не нужно.
+ *
+ * ЭТОТ СПИСОК — ДЕЙСТВУЮЩИЙ. Такой же по виду список лежит в
+ * `check-guarded-route-headers.mjs`, но тот участвует только в самопроверке;
+ * разбор дерева читает ЭТОТ. Правка одной копии без второй выглядит как
+ * работающее расширение и молча ничего не меняет — проверено 2026-08-07: пять
+ * правильно закрытых панелей были обвинены именно так.
+ *
+ * ДОБАВЛЕНО 2026-08-07 вместе с расширением гейта на секретные охраны
+ * (requireSettingsAccess, requireScheduleMutation*, requireTelegramControlPlaneAccess,
+ * requireDicomWebSettingsAccess, requirePayoutAccess, requireNonDoctorAccess).
+ * Каждое имя ниже проверено ЧТЕНИЕМ ОБЪЯВЛЕНИЯ: все они — обёртки над
+ * `denteAdminSecretRequestHeaders`, различающиеся только тем, КАКОЙ сеансовый
+ * секрет подставляют по умолчанию (у охран разные переменные окружения):
+ *   settingsAccessHeaders       hooks/domains/useAuthLogic.ts:105   DENTE_SETTINGS_ADMIN_SECRET
+ *   scheduleMutationHeaders     hooks/domains/useAuthLogic.ts:115   DENTE_SCHEDULE_ADMIN_SECRET
+ *   telegramControlPlaneHeaders hooks/useTelegramSettings.ts:238    DENTE_TELEGRAM_ADMIN_SECRET
+ *   clipboardWriteHeaders       components/schedule/ScheduleClipboardPanel.tsx:39
+ *   staffMutationHeaders        components/settings/staffMutationRequest.ts:98
+ * Без них расширение обвиняло бы панели, закрытые ПРАВИЛЬНО, — ровно та ошибка,
+ * из-за которой гейт когда-то выкинули из CI с ярлыком «89 % ложных».
  */
 export const HEADER_HELPERS = [
 	"denteAdminSecretRequestHeaders",
@@ -43,6 +63,11 @@ export const HEADER_HELPERS = [
 	"denteClinicalMutationHeaders",
 	"denteAdminSecretHeaderName",
 	"x-dente-admin-secret",
+	"settingsAccessHeaders",
+	"scheduleMutationHeaders",
+	"telegramControlPlaneHeaders",
+	"clipboardWriteHeaders",
+	"staffMutationHeaders",
 ];
 
 /**
@@ -295,6 +320,20 @@ export function buildHelperBindings(sourceFile) {
 			ts.isIdentifier(node.name) &&
 			node.initializer
 		) {
+			/*
+			 * ЗАЩИТА ОТ САМОВЫПРАВДАНИЯ: `const res = await fetch(url, {headers:
+			 * helper()})` — переменная РЕЗУЛЬТАТА, а не источник заголовков. Её
+			 * инициализатор — это вызов fetch, и помощник в нём стоит в аргументах.
+			 * Если занести такое имя в список, любой ДРУГОЙ `const res = await
+			 * fetch(...)` в том же файле (даже без единого заголовка) оправдается
+			 * згадкой «res». Проверено прогоном 2026-08-07: из-за этого мутация
+			 * (удаление заголовка у DELETE /api/settings/protocols/:id) не давала
+			 * EXIT=1.
+			 */
+			if (ts.isCallExpression(node.initializer)) {
+				const callee = node.initializer.expression;
+				if (ts.isIdentifier(callee) && callee.text === "fetch") return;
+			}
 			if (
 				mentionsHelper(node.initializer) &&
 				!mentionsDeadSecret(node.initializer)
@@ -399,10 +438,39 @@ export function collectFetchCalls(file) {
 		let sendsSecret = false;
 		let reason = null;
 
+		// Вызов, у которого ВООБЩЕ НЕТ свойства `headers`, не отправляет заголовков —
+		// сколько бы раз помощник ни упоминался в объемлющей функции. Прежде «Случай 1»
+		// оправдывал такой вызов по одному лишь упоминанию рядом, и точечная потеря
+		// заголовков была невидима: измерено 2026-08-07 на MessageTemplatesPanel.tsx —
+		// убрал `{ headers }` у одного из трёх fetch, два других помощника оставил,
+		// гейт дал EXIT=0. У заказчика этот вызов отвечает 403.
+		// Осторожно: `fetch(url)` без второго аргумента здесь НЕ ловится намеренно —
+		// это разбирает Случай 3 ниже, где учтены обёртки и библиотечные функции.
+		//
+		// РАСПРОСТРАНЕНИЕ ЧЕРЕЗ СПРЕД. `fetch(url, { ...base, method: "POST" })`
+		// СОДЕРЖИТ заголовки, если они лежат в `base`, но свойства `headers` в
+		// литерале нет. Без проверки ниже такой вызов объявлялся беззаголовочным:
+		// измерено 2026-08-07 на образце `{ headers: denteClinicalReadHeaders() }`
+		// в постоянной `base` — HEAD давал sendsSecret=true, а первая версия этого
+		// условия false, то есть ЛОЖНУЮ находку. Гейт блокирующий в CI, поэтому
+		// цена ложной находки — упавшая сборка у всех. Спред означает «источник
+		// заголовков не разобран», а не «заголовков нет»; неразобранный случай
+		// уходит в Случай 1 и решается упоминанием помощника, как было до правки.
+		const spreadsOptions =
+			optionsArg &&
+			ts.isObjectLiteralExpression(optionsArg) &&
+			optionsArg.properties.some((p) => ts.isSpreadAssignment(p));
+		const optionsWithoutHeaders =
+			optionsArg &&
+			ts.isObjectLiteralExpression(optionsArg) &&
+			!headersProp &&
+			!spreadsOptions;
+
 		// Случай 1: помощник упомянут в самом вызове или в объемлющей функции (через имя или прямо)
 		if (
-			mentionsHelperResolved(node, bindings) ||
-			mentionsHelperResolved(fn, bindings)
+			!optionsWithoutHeaders &&
+			(mentionsHelperResolved(node, bindings) ||
+				mentionsHelperResolved(fn, bindings))
 		) {
 			if (mentionsDeadSecret(node) || mentionsDeadSecret(fn)) {
 				sendsSecret = false;

@@ -902,7 +902,7 @@ function MappingPanel(props: {
 							<ul>
 								{mapping.qualityFindings.slice(0, 20).map((finding, index) => (
 									<li
-										key={index}
+										key={`finding-${finding.severity}-${index}`}
 										className={`mw-finding mw-finding-${finding.severity}`}
 									>
 										{finding.message}
@@ -1301,7 +1301,10 @@ function DiscoveryPanel(props: {
 			)}
 
 			{discovery.warnings.map((warning, index) => (
-				<p className="mw-discovery-warning" key={index}>
+				<p
+					className="mw-discovery-warning"
+					key={`warning-${warning.slice(0, 15)}-${index}`}
+				>
 					{warning}
 				</p>
 			))}

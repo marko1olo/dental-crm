@@ -357,6 +357,7 @@ export function SettingsPricesTab() {
 		<div className="pricelist-studio-container animate-fade-in">
 			<div className="pricelist-tabs-header">
 				<button
+					type="button"
 					className={`pricelist-tab-btn ${activeTab === "catalog" ? "active" : ""}`}
 					onClick={() => setActiveTab("catalog")}
 				>
@@ -364,6 +365,7 @@ export function SettingsPricesTab() {
 					<span>Каталог клиники</span>
 				</button>
 				<button
+					type="button"
 					className={`pricelist-tab-btn ${activeTab === "ai_import" ? "active" : ""}`}
 					onClick={() => setActiveTab("ai_import")}
 				>
@@ -399,6 +401,7 @@ export function SettingsPricesTab() {
 								/>
 							</div>
 							<button
+								type="button"
 								className="primary-button"
 								onClick={() => {
 									setEditServiceForm(NEW_SERVICE_TEMPLATE);
@@ -449,11 +452,27 @@ export function SettingsPricesTab() {
 													{money(item.basePriceRub ?? item.priceRub ?? 0)}
 													<small>{item.durationMinutes} мин.</small>
 												</div>
-												<div style={{ fontSize: "11px", color: "var(--muted)", textAlign: "right", marginTop: "4px", lineHeight: 1.2 }}>
-													ЗП (25%): {money((item.basePriceRub ?? item.priceRub ?? 0) * 0.25)}<br/>
-													Маржа: {money((item.basePriceRub ?? item.priceRub ?? 0) * 0.75)}
+												<div
+													style={{
+														fontSize: "11px",
+														color: "var(--muted)",
+														textAlign: "right",
+														marginTop: "4px",
+														lineHeight: 1.2,
+													}}
+												>
+													ЗП (25%):{" "}
+													{money(
+														(item.basePriceRub ?? item.priceRub ?? 0) * 0.25,
+													)}
+													<br />
+													Маржа:{" "}
+													{money(
+														(item.basePriceRub ?? item.priceRub ?? 0) * 0.75,
+													)}
 												</div>
 												<button
+													type="button"
 													className="icon-button"
 													onClick={() => {
 														setEditServiceForm({
@@ -489,6 +508,7 @@ export function SettingsPricesTab() {
 													<Edit3 size={16} />
 												</button>
 												<button
+													type="button"
 													className="icon-button danger"
 													onClick={() => handleDeleteService(item.id)}
 												>
@@ -859,6 +879,7 @@ export function SettingsPricesTab() {
 								</h3>
 							</div>
 							<button
+								type="button"
 								className="premium-modal-close"
 								onClick={() => setEditServiceId(null)}
 							>
@@ -868,8 +889,9 @@ export function SettingsPricesTab() {
 
 						<form onSubmit={handleSaveService} className="premium-modal-body">
 							<div className="staff-form-group full-width">
-								<label>Название услуги</label>
+								<label htmlFor="service-title-input">Название услуги</label>
 								<input
+									id="service-title-input"
 									type="text"
 									value={editServiceForm.title}
 									onChange={(e) =>
@@ -885,8 +907,9 @@ export function SettingsPricesTab() {
 
 							<div className="staff-form-grid">
 								<div className="staff-form-group">
-									<label>Код (внутренний)</label>
+									<label htmlFor="service-code-input">Код (внутренний)</label>
 									<input
+										id="service-code-input"
 										type="text"
 										value={editServiceForm.code}
 										onChange={(e) =>
@@ -899,7 +922,7 @@ export function SettingsPricesTab() {
 									/>
 								</div>
 								<div className="staff-form-group">
-									<label>Цена (₽)</label>
+									<label htmlFor="service-price-input">Цена (₽)</label>
 									{/*
 										ЦЕНА УНИЧТОЖАЛАСЬ ЗДЕСЬ ТРЕМЯ СПОСОБАМИ СРАЗУ.
 
@@ -931,6 +954,7 @@ export function SettingsPricesTab() {
 										normalizeRubAmountInput при сохранении.
 									*/}
 									<input
+										id="service-price-input"
 										type="text"
 										inputMode="decimal"
 										value={priceRubInput}
@@ -953,8 +977,9 @@ export function SettingsPricesTab() {
 
 							<div className="staff-form-grid">
 								<div className="staff-form-group">
-									<label>Категория</label>
+									<label htmlFor="service-category-select">Категория</label>
 									<select
+										id="service-category-select"
 										value={editServiceForm.category}
 										onChange={(e) =>
 											setEditServiceForm({
@@ -973,8 +998,9 @@ export function SettingsPricesTab() {
 									</select>
 								</div>
 								<div className="staff-form-group">
-									<label>Специализация врача</label>
+									<label htmlFor="service-specialty-select">Специализация врача</label>
 									<select
+										id="service-specialty-select"
 										value={editServiceForm.specialty}
 										onChange={(e) =>
 											setEditServiceForm({
@@ -994,8 +1020,9 @@ export function SettingsPricesTab() {
 
 							<div className="staff-form-grid">
 								<div className="staff-form-group">
-									<label>Длительность (мин)</label>
+									<label htmlFor="service-duration-select">Длительность (мин)</label>
 									<select
+										id="service-duration-select"
 										value={editServiceForm.durationMinutes}
 										onChange={(e) =>
 											setEditServiceForm({

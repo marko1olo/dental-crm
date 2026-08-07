@@ -559,7 +559,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						<div>
 							<p className="eyebrow">Пациент сейчас</p>
 							<h3>{activePatient.fullName}</h3>
-							<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+							<div
+								style={{ display: "flex", alignItems: "center", gap: "8px" }}
+							>
 								<p style={{ margin: 0 }}>
 									{activeAppointment?.reason ?? "прием"} ·{" "}
 									{activePatient.phone ?? "телефон не указан"}
@@ -1108,9 +1110,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							onApply={(data: any) => {
 								if (data) {
 									if (data.toothUpdates) {
-										data.toothUpdates.forEach((t: any) =>
-											setToothState(t.code, t.state),
-										);
+										data.toothUpdates.forEach((t: any) => {
+											setToothState(t.code, t.state);
+										});
 									}
 									if (data.emkUpdates) {
 										Object.entries(data.emkUpdates).forEach(([k, v]) => {
@@ -1451,11 +1453,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</p>
 
 					{/* Панель выбора квадранта (Focus Mode) */}
-					<div
-						className="tooth-quadrant-nav"
-						role="navigation"
-						aria-label="Фокус на квадрант"
-					>
+					<nav className="tooth-quadrant-nav" aria-label="Фокус на квадрант">
 						<button
 							type="button"
 							className={`quadrant-nav-btn ${activeQuadrant === null ? "active" : ""}`}
@@ -1502,7 +1500,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						>
 							Низ справа
 						</button>
-					</div>
+					</nav>
 
 					{/* Зубная схема с квадрантами */}
 					<div
@@ -1561,6 +1559,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 														}}
 													>
 														<svg
+															aria-hidden="true"
 															width={cfg.width}
 															height={cfg.height}
 															viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
@@ -1714,6 +1713,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 														}}
 													>
 														<svg
+															aria-hidden="true"
 															width={cfg.width}
 															height={cfg.height}
 															viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
@@ -1880,6 +1880,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 														}}
 													>
 														<svg
+															aria-hidden="true"
 															width={cfg.width}
 															height={cfg.height}
 															viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
@@ -2034,6 +2035,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 														}}
 													>
 														<svg
+															aria-hidden="true"
 															width={cfg.width}
 															height={cfg.height}
 															viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
@@ -2496,6 +2498,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 					const toothSvg = (
 						<svg
+							aria-hidden="true"
 							width={cfg.width}
 							height={cfg.height}
 							viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
@@ -2568,7 +2571,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 					return createPortal(
 						<>
-							<div className="_ccm-overlay" onClick={closeClinicalModal} />
+							<div
+								className="_ccm-overlay"
+								onClick={closeClinicalModal}
+								role="button"
+								tabIndex={0}
+								onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && closeClinicalModal()}
+							/>
 							<div
 								className="_ccm-content"
 								role="dialog"

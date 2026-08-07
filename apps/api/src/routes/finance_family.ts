@@ -497,68 +497,58 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 
 		const { id } = req.params as { id: string };
 
-		// Check if it has members
-		const members = await familyMembersForOrganization(id, organizationId);
-		if (members.length > 0) {
-			return reply
-				.code(400)
-				.send({ error: "Cannot delete family group with members" });
-		}
+		const deleteResult = await db.transaction(async (tx) => {
+			// Check if it has members
+			const members = await familyMembersForOrganization(id, organizationId);
+			if (members.length > 0) {
+				return {
+					status: 400,
+					body: { error: "Cannot delete family group with members" },
+				};
+			}
 
-		/*
-		 * УДАЛЕНИЕ СЕМЬИ С ДЕНЬГАМИ НА КОШЕЛЬКЕ ОСТАНОВЛЕНО.
-		 *
-		 * ЧТО БЫЛО. Проверялись только участники. Группа без участников, но с
-		 * остатком на балансе, удалялась `db.delete(familyGroups)` вместе с
-		 * кошельком: строка исчезала, а деньги, которые семья внесла авансом
-		 * (маршрут `topup` пишет их со статусом `planned`, то есть это ещё НЕ
-		 * выручка клиники, а обязательство перед семьёй), переставали
-		 * существовать как обязательство. В журнале платежей пополнение при этом
-		 * оставалось — то есть после удаления клиника получала запись «семья
-		 * внесла деньги» без строки, где эти деньги лежат. Ни вернуть, ни
-		 * потратить их после этого нечем.
-		 *
-		 * Условие «нет участников» этому не мешает: главу семьи можно отвязать, а
-		 * баланс остаётся. Поэтому проверка отдельная и стоит ПОСЛЕ проверки
-		 * участников — так администратор видит сначала более понятную причину.
-		 *
-		 * Отрицательный баланс тоже блокирует удаление: это долг семьи клинике, и
-		 * стереть его так же нельзя, как и остаток. Сравнение идёт в целых
-		 * копейках — `Number(balance) !== 0` на строке "0.00" из драйвера дал бы
-		 * верный ответ случайно, а на "0.001" (испорченные данные) — молча ложный.
-		 */
-		const family = await familyGroupForOrganization(id, organizationId);
-		if (!family) {
-			return reply.code(404).send({ error: "Family group not found" });
-		}
-		const balanceKopecks = parseKopecks(family.balance);
-		if (balanceKopecks !== 0) {
-			return reply.code(409).send({
-				error: "FamilyWalletNotEmpty",
-				message:
-					`На семейном кошельке ${kopecksToNumericString(balanceKopecks)} ₽. ` +
-					"Группу с ненулевым балансом удалить нельзя: вместе с ней исчезнут деньги семьи. " +
-					"Верните остаток или израсходуйте его, а затем удаляйте группу.",
+			const family = await familyGroupForOrganization(id, organizationId);
+			if (!family) {
+				return { status: 404, body: { error: "Family group not found" } };
+			}
+			const balanceKopecks = parseKopecks(family.balance);
+			if (balanceKopecks !== 0) {
+				return {
+					status: 409,
+					body: {
+						error: "FamilyWalletNotEmpty",
+						message:
+							`На семейном кошельке ${kopecksToNumericString(balanceKopecks)} ₽. ` +
+							"Группу с ненулевым балансом удалить нельзя: вместе с ней исчезнут деньги семьи. " +
+							"Верните остаток или израсходуйте его, а затем удаляйте группу.",
+					},
+				};
+			}
+
+			const [deleted] = await tx
+				.delete(familyGroups)
+				.where(
+					and(
+						eq(familyGroups.id, id),
+						eq(familyGroups.organizationId, organizationId),
+					),
+				)
+				.returning({ id: familyGroups.id });
+
+			if (!deleted) {
+				return { status: 404, body: { error: "Family group not found" } };
+			}
+
+			return { status: 200, body: { success: true } };
+		});
+
+		if (deleteResult.status === 200) {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "FAMILY_GROUP_DELETED",
+				payload: { id },
 			});
 		}
-
-		const [deleted] = await db
-			.delete(familyGroups)
-			.where(
-				and(
-					eq(familyGroups.id, id),
-					eq(familyGroups.organizationId, organizationId),
-				),
-			)
-			.returning({ id: familyGroups.id });
-
-		if (!deleted)
-			return reply.code(404).send({ error: "Family group not found" });
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "FAMILY_GROUP_DELETED",
-			payload: { id },
-		});
-		return { success: true };
+		return reply.code(deleteResult.status).send(deleteResult.body);
 	});
 
 	// POST /api/finance/family/pay — deduct balance in transaction

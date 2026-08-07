@@ -176,10 +176,10 @@ export function SettingsTelegramTab({
 		SettingsTelegramTab,
 	} = props;
 
-	if (settingsTab !== "telegram") return null;
-
 	const [showPatientPortalPreview, setShowPatientPortalPreview] =
 		React.useState(false);
+
+	if (settingsTab !== "telegram") return null;
 
 	const typedTelegramPostVisitCheckupDelayFields =
 		telegramPostVisitCheckupDelayFields as any[];
@@ -1344,10 +1344,10 @@ export function SettingsTelegramTab({
 								>
 									{getTypedTelegramInlineButtonRows(
 										typedTelegramPreview.replyMarkup,
-									).map((row, rowIndex) => (
+									).map((row) => (
 										<div
 											className="telegram-inline-button-row"
-											key={`preview-row-${rowIndex}`}
+											key={`preview-row-${row.map((b) => `${b.text}:${b.target}`).join("|")}`}
 										>
 											{row.map((button) => (
 												<span

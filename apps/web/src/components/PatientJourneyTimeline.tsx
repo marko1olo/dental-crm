@@ -286,6 +286,7 @@ export const PatientJourneyTimeline: React.FC<{
 								) : null}
 								{evt.actionUrl && (
 									<button
+										type="button"
 										className="timeline-action-btn"
 										onClick={() => {
 											window.location.hash = evt.actionUrl ?? "";

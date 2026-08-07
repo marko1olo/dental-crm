@@ -287,20 +287,24 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 							<div className="grid grid-cols-1 gap-3">
 								<div className="smart-field">
 									<input
+										id="ticket-title-input"
 										value={newTitle}
 										onChange={(e) => setNewTitle(e.target.value)}
 										placeholder=" "
 										required
-										autoFocus
 										className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
 									/>
-									<label className="text-xs text-slate-500 dark:text-slate-400">
+									<label
+										htmlFor="ticket-title-input"
+										className="text-xs text-slate-500 dark:text-slate-400"
+									>
 										Название задачи
 									</label>
 								</div>
 
 								<div className="smart-field">
 									<select
+										id="ticket-assigned-select"
 										value={assignedToId}
 										onChange={(e) => setAssignedToId(e.target.value)}
 										required
@@ -315,19 +319,26 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 											</option>
 										))}
 									</select>
-									<label className="text-xs text-slate-500 dark:text-slate-400">
+									<label
+										htmlFor="ticket-assigned-select"
+										className="text-xs text-slate-500 dark:text-slate-400"
+									>
 										Кому назначена
 									</label>
 								</div>
 
 								<div className="smart-field">
 									<textarea
+										id="ticket-description-textarea"
 										value={newDescription}
 										onChange={(e) => setNewDescription(e.target.value)}
 										placeholder=" "
 										className="w-full p-3 rounded-lg min-h-[80px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none resize-y"
 									/>
-									<label className="text-xs text-slate-500 dark:text-slate-400">
+									<label
+										htmlFor="ticket-description-textarea"
+										className="text-xs text-slate-500 dark:text-slate-400"
+									>
 										Описание и комментарии (опционально)
 									</label>
 								</div>
@@ -403,6 +414,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									}`}
 								>
 									<button
+										type="button"
 										onClick={() => handleToggleStatus(ticket.id, ticket.status)}
 										className={`bg-transparent border-0 p-0 cursor-pointer transition-colors flex mt-0.5 ${
 											isPending
@@ -454,6 +466,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									</div>
 
 									<button
+										type="button"
 										onClick={() => handleDelete(ticket.id)}
 										className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 rounded-lg cursor-pointer transition-colors"
 										title="Удалить задачу"

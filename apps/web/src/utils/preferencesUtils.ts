@@ -1,4 +1,3 @@
-import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../lib/safeLocalStorage";
 import type {
 	AiJobKind,
 	AiRecognitionTarget,
@@ -24,6 +23,10 @@ import type {
 	TaxDeductionApplicationForm,
 	UiLanguage,
 } from "@dental/shared";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../lib/safeLocalStorage";
 
 export type TelegramLinkSubjectType = DenteTelegramSubjectType;
 
@@ -32,9 +35,7 @@ export type TelegramOutboxStatusFilter =
 	| "all"
 	| "due";
 
-export type TelegramOutboxTemplateFilter =
-	| "all"
-	| DenteTelegramTemplateKind;
+export type TelegramOutboxTemplateFilter = "all" | DenteTelegramTemplateKind;
 
 export type UiPreferences = {
 	version: 1;

@@ -263,6 +263,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							</h4>
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 								<label
+									htmlFor="writeoff-inv-item"
 									style={{
 										fontSize: 12,
 										color: "var(--muted)",
@@ -272,6 +273,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									Расходный материал со склада
 								</label>
 								<select
+									id="writeoff-inv-item"
 									required
 									value={selectedInventoryItemId}
 									onChange={(e) => setSelectedInventoryItemId(e.target.value)}
@@ -295,6 +297,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							</div>
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 								<label
+									htmlFor="writeoff-qty"
 									style={{
 										fontSize: 12,
 										color: "var(--muted)",
@@ -304,6 +307,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									Количество для списания
 								</label>
 								<input
+									id="writeoff-qty"
 									type="number"
 									min="1"
 									required
@@ -804,7 +808,11 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								}}
 							/>
 						</div>
-						<button type="button" className="primary-button" onClick={openAddModal}>
+						<button
+							type="button"
+							className="primary-button"
+							onClick={openAddModal}
+						>
 							<Plus size={18} /> Добавить позицию
 						</button>
 					</div>
@@ -1335,6 +1343,13 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						justifyContent: "center",
 					}}
 					onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) =>
+						e.target === e.currentTarget &&
+						(e.key === "Enter" || e.key === " ") &&
+						setShowModal(false)
+					}
 				>
 					<div
 						style={{
@@ -1383,6 +1398,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						>
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 								<label
+									htmlFor="inv-item-name"
 									style={{
 										fontSize: 13,
 										color: "var(--muted)",
@@ -1392,6 +1408,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									Наименование *
 								</label>
 								<input
+									id="inv-item-name"
 									type="text"
 									required
 									value={formData.name}
@@ -1419,6 +1436,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									}}
 								>
 									<label
+										htmlFor="inv-item-threshold"
 										style={{
 											fontSize: 13,
 											color: "var(--muted)",
@@ -1428,6 +1446,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										Минимальный остаток (шт)
 									</label>
 									<input
+										id="inv-item-threshold"
 										type="number"
 										min="0"
 										required
@@ -1455,6 +1474,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									}}
 								>
 									<label
+										htmlFor="inv-item-price"
 										style={{
 											fontSize: 13,
 											color: "var(--muted)",
@@ -1475,6 +1495,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									  inputMode="decimal" оставляет на телефоне цифровую клавиатуру.
 									*/}
 									<input
+										id="inv-item-price"
 										type="text"
 										inputMode="decimal"
 										value={formData.unitCostRub}
@@ -1603,6 +1624,13 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					onClick={(e) =>
 						e.target === e.currentTarget && setAdjustingItem(null)
 					}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) =>
+						e.target === e.currentTarget &&
+						(e.key === "Enter" || e.key === " ") &&
+						setAdjustingItem(null)
+					}
 				>
 					<div
 						style={{
@@ -1729,6 +1757,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						>
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 								<label
+									htmlFor="inv-adjust-amount"
 									style={{
 										fontSize: 13,
 										color: "var(--muted)",
@@ -1738,6 +1767,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									Количество (шт.)
 								</label>
 								<input
+									id="inv-adjust-amount"
 									type="number"
 									min="1"
 									required

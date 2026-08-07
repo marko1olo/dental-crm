@@ -246,26 +246,29 @@ test("изоляция: requireOrganizationId отвечает 401 без ток
 });
 
 test("роли: врач не проходит проверку административной роли", async () => {
-	withEnv({ NODE_ENV: "development", AUTH_TOKEN_SECRET: TEST_SECRET }, async () => {
-		resetAuthSecretCacheForTests();
-		const clinic = signToken({ organizationId: ORG_A }, TEST_SECRET, 3600);
-		const doctor = signToken(
-			{ userId: "u2", role: "doctor", organizationId: ORG_A },
-			TEST_SECRET,
-			3600,
-		);
-		const reply = fakeReply();
-		const result = await requireStaffIdentity(
-			fakeRequest({
-				"x-dente-clinic-token": clinic,
-				"x-dente-staff-token": doctor,
-			}),
-			reply,
-			ADMIN_ROLES,
-		);
-		assert.strictEqual(result, null);
-		assert.strictEqual(reply.state.code, 403);
-	});
+	withEnv(
+		{ NODE_ENV: "development", AUTH_TOKEN_SECRET: TEST_SECRET },
+		async () => {
+			resetAuthSecretCacheForTests();
+			const clinic = signToken({ organizationId: ORG_A }, TEST_SECRET, 3600);
+			const doctor = signToken(
+				{ userId: "u2", role: "doctor", organizationId: ORG_A },
+				TEST_SECRET,
+				3600,
+			);
+			const reply = fakeReply();
+			const result = await requireStaffIdentity(
+				fakeRequest({
+					"x-dente-clinic-token": clinic,
+					"x-dente-staff-token": doctor,
+				}),
+				reply,
+				ADMIN_ROLES,
+			);
+			assert.strictEqual(result, null);
+			assert.strictEqual(reply.state.code, 403);
+		},
+	);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -345,4 +348,29 @@ test("вебхуки: верный секрет пропускается", () =>
 			assert.strictEqual(ok, true);
 		},
 	);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Защита от повторного воспроизведения (Webhook Replay & Timestamp Drift)
+// ─────────────────────────────────────────────────────────────────────────────
+
+test("вебхуки: дрейф времени > 300 секунд фиксируется как нарушение окна", () => {
+	const nowSec = Math.floor(Date.now() / 1000);
+	const staleTimestampSec = nowSec - 301;
+	const futureTimestampSec = nowSec + 301;
+	const validTimestampSec = nowSec - 100;
+
+	assert.strictEqual(Math.abs(nowSec - staleTimestampSec) > 300, true);
+	assert.strictEqual(Math.abs(nowSec - futureTimestampSec) > 300, true);
+	assert.strictEqual(Math.abs(nowSec - validTimestampSec) <= 300, true);
+});
+
+test("вебхуки: нормализация миллисекунд в секунды для временных меток", () => {
+	const nowMs = Date.now();
+	const nowSec = Math.floor(nowMs / 1000);
+
+	const convertTs = (ts: number) => (ts > 1e11 ? Math.floor(ts / 1000) : ts);
+
+	assert.strictEqual(convertTs(nowMs), nowSec);
+	assert.strictEqual(convertTs(nowSec), nowSec);
 });

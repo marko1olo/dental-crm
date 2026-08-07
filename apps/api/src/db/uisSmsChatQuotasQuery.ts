@@ -4,15 +4,15 @@ import { uisSmsChatQuotas } from "./schema.js";
 
 export async function getDailySmsQuota(organizationId: string) {
 	const today = new Date().toISOString().split("T")[0]!; // YYYY-MM-DD
-	
+
 	const [quota] = await db
 		.select()
 		.from(uisSmsChatQuotas)
 		.where(
 			and(
 				eq(uisSmsChatQuotas.organizationId, organizationId),
-				eq(uisSmsChatQuotas.monthYear, today)
-			)
+				eq(uisSmsChatQuotas.monthYear, today),
+			),
 		)
 		.limit(1);
 
@@ -33,15 +33,15 @@ export async function getDailySmsQuota(organizationId: string) {
 
 export async function incrementDailySmsQuota(organizationId: string) {
 	const today = new Date().toISOString().split("T")[0]!; // YYYY-MM-DD
-	
+
 	const [existing] = await db
 		.select()
 		.from(uisSmsChatQuotas)
 		.where(
 			and(
 				eq(uisSmsChatQuotas.organizationId, organizationId),
-				eq(uisSmsChatQuotas.monthYear, today)
-			)
+				eq(uisSmsChatQuotas.monthYear, today),
+			),
 		)
 		.limit(1);
 
@@ -54,8 +54,8 @@ export async function incrementDailySmsQuota(organizationId: string) {
 			.where(
 				and(
 					eq(uisSmsChatQuotas.organizationId, organizationId),
-					eq(uisSmsChatQuotas.monthYear, today)
-				)
+					eq(uisSmsChatQuotas.monthYear, today),
+				),
 			);
 	} else {
 		await db.insert(uisSmsChatQuotas).values({

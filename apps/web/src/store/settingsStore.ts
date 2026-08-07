@@ -13,16 +13,19 @@ import type {
 	DenteTelegramVisualCardUrls,
 } from "@dental/shared";
 import { create } from "zustand";
-import {
-	type DenteTelegramHandoffTarget,
-	type OnboardingStep,
-	type TelegramFeaturePlan,
-	type TelegramLinkSubjectType,
-	type TelegramOutboxStatusFilter,
-	type TelegramOutboxTemplateFilter,
+import type {
+	DenteTelegramHandoffTarget,
+	OnboardingStep,
+	TelegramFeaturePlan,
+	TelegramLinkSubjectType,
+	TelegramOutboxStatusFilter,
+	TelegramOutboxTemplateFilter,
 } from "../AppHelpers";
 import { emptyTelegramVisualCardUrlDrafts } from "../utils/draftDefaults";
-import { defaultUiPreferences, loadUiPreferences } from "../utils/preferencesUtils";
+import {
+	defaultUiPreferences,
+	loadUiPreferences,
+} from "../utils/preferencesUtils";
 import {
 	defaultTelegramPostVisitCheckupDelayDrafts,
 	type TelegramPostVisitCheckupDelayDrafts,

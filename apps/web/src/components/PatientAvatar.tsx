@@ -123,7 +123,13 @@ export function PatientAvatar({
 		mode === "initials" || (mode === "auto" && Boolean(initials));
 
 	const femaleSilhouette = (
-		<svg viewBox="0 0 100 100" width="100%" height="100%" fill="currentColor">
+		<svg
+			viewBox="0 0 100 100"
+			width="100%"
+			height="100%"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path
 				d="M50 55c11.046 0 20-8.954 20-20S61.046 15 50 15s-20 8.954-20 20 8.954 20 20 20zm-8 4c-14.359 0-26 11.641-26 26v4h68v-4c0-14.359-11.641-26-26-26H42z"
 				opacity="0.9"
@@ -136,13 +142,25 @@ export function PatientAvatar({
 	);
 
 	const maleSilhouette = (
-		<svg viewBox="0 0 100 100" width="100%" height="100%" fill="currentColor">
+		<svg
+			viewBox="0 0 100 100"
+			width="100%"
+			height="100%"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path d="M50 55c11.046 0 20-8.954 20-20S61.046 15 50 15s-20 8.954-20 20 8.954 20 20 20zm-8 4c-14.359 0-26 11.641-26 26v4h68v-4c0-14.359-11.641-26-26-26H42z" />
 		</svg>
 	);
 
 	const neutralSilhouette = (
-		<svg viewBox="0 0 100 100" width="100%" height="100%" fill="currentColor">
+		<svg
+			viewBox="0 0 100 100"
+			width="100%"
+			height="100%"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path
 				d="M50 50c9.94 0 18-8.06 18-18s-8.06-18-18-18-18 8.06-18 18 18zm0 8c-12.01 0-36 6.03-36 18v6h72v-6c0-11.97-23.99-18-36-18z"
 				opacity="0.65"

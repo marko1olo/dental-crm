@@ -43,7 +43,6 @@ import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPan
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
-import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import {
 	type DayGroupingAppointment,
 	formatDayTitle,
@@ -51,6 +50,7 @@ import {
 	groupAppointmentsByClinicDay,
 	shiftDayKey,
 } from "./components/schedule/scheduleDayGrouping";
+import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { useScheduleStore } from "./store/scheduleStore";

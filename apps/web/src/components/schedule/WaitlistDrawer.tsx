@@ -111,12 +111,7 @@ export function WaitlistDrawer(props: Props) {
 		auth: propAuth,
 	} = props;
 
-	let ctx: any = null;
-	try {
-		ctx = useAppLogicContext();
-	} catch (e) {
-		ctx = null;
-	}
+	const ctx = useAppLogicContext();
 	const dashboard = propDashboard || ctx?.dashboard;
 	const auth = propAuth || ctx?.auth;
 	const [items, setItems] = useState<WaitlistItem[]>([]);
@@ -361,6 +356,7 @@ export function WaitlistDrawer(props: Props) {
 		return createPortal(
 			<div className="fixed bottom-4 right-4 z-50">
 				<button
+					type="button"
 					onClick={() => setIsMinimized(false)}
 					className="bg-[var(--paper)] border border-[var(--line-strong)] shadow-xl rounded-lg p-3 flex items-center gap-3 hover:bg-[var(--paper-soft)] transition-colors"
 				>
@@ -391,6 +387,7 @@ export function WaitlistDrawer(props: Props) {
 					</div>
 					<div className="flex items-center gap-1">
 						<button
+							type="button"
 							onClick={() => setIsMinimized(true)}
 							className="p-1 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 							title="Свернуть окно"
@@ -410,6 +407,7 @@ export function WaitlistDrawer(props: Props) {
 							</svg>
 						</button>
 						<button
+							type="button"
 							onClick={onClose}
 							aria-label="Закрыть"
 							className="p-1 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
@@ -432,10 +430,14 @@ export function WaitlistDrawer(props: Props) {
 						</h4>
 
 						<div className="space-y-1">
-							<label className="text-xs text-[var(--muted)] font-medium">
+							<label
+								htmlFor="waitlist-patient-select"
+								className="text-xs text-[var(--muted)] font-medium"
+							>
 								Пациент *
 							</label>
 							<select
+								id="waitlist-patient-select"
 								value={selectedPatientId}
 								onChange={(e) => setSelectedPatientId(e.target.value)}
 								className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
@@ -451,10 +453,14 @@ export function WaitlistDrawer(props: Props) {
 						</div>
 
 						<div className="space-y-1">
-							<label className="text-xs text-[var(--muted)] font-medium">
+							<label
+								htmlFor="waitlist-doctor-select"
+								className="text-xs text-[var(--muted)] font-medium"
+							>
 								Желаемый врач
 							</label>
 							<select
+								id="waitlist-doctor-select"
 								value={preferredDoctorId}
 								onChange={(e) => setPreferredDoctorId(e.target.value)}
 								className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
@@ -595,6 +601,7 @@ export function WaitlistDrawer(props: Props) {
 
 										<div className="flex gap-2 mt-1">
 											<button
+												type="button"
 												onClick={() => handleBook(item)}
 												className="flex-1 py-1.5 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-lg text-xs transition-colors border border-[var(--teal-ring)]"
 											>
@@ -611,6 +618,7 @@ export function WaitlistDrawer(props: Props) {
 												очереди уходит, а из базы — нет.
 											*/}
 											<button
+												type="button"
 												onClick={() => handleFulfill(item)}
 												className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors"
 												title="Дождался приёма: убрать из очереди, запись о заявке сохранить"
@@ -619,6 +627,7 @@ export function WaitlistDrawer(props: Props) {
 												<CheckCircle2 className="w-3.5 h-3.5" />
 											</button>
 											<button
+												type="button"
 												onClick={() => handleDelete(item.id)}
 												className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-colors"
 												title="Убрать совсем: заявка ошибочная или человек больше не хочет"

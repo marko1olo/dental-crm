@@ -1,3 +1,0 @@
-feat: implement Phase 8.1 Sberbank POS Acquiring
-
-Adds Sberbank terminal polling and modal UI. Updates sberbank API routes to enforce integer kopecks.

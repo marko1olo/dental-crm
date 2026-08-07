@@ -1,8 +1,8 @@
+import { Activity, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatShortDate } from "../../AppHelpers";
-import { CheckCircle2, AlertTriangle, FileText, Activity } from "lucide-react";
-import { EmptyState } from "../EmptyState";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { EmptyState } from "../EmptyState";
 
 function DiagnocatReportWidget({ patientId }: { patientId: string }) {
 	const [reports, setReports] = useState<any[]>([]);
@@ -27,11 +27,11 @@ function DiagnocatReportWidget({ patientId }: { patientId: string }) {
 			style={{
 				marginTop: "12px",
 				padding: "10px",
-				background: "var(--teal-soft, #e6fffa)",
-				border: "1px solid var(--teal-light, #b2f5ea)",
+				background: "var(--teal-soft)",
+				border: "1px solid var(--teal-light)",
 				borderRadius: "6px",
 				fontSize: "13px",
-				color: "var(--teal-dark, #234e52)",
+				color: "var(--teal-dark)",
 				display: "flex",
 				alignItems: "center",
 				gap: "8px",
@@ -42,15 +42,19 @@ function DiagnocatReportWidget({ patientId }: { patientId: string }) {
 				<strong>Diagnocat AI:</strong> Найдено отчетов ({reports.length})
 			</div>
 			<div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
-				{reports.map((r, i) => (
+				{reports.map((r, reportIdx) => (
 					<a
-						key={r.id || i}
+						key={r.id || r.reportUrl || `report-item-${r.createdAt || reportIdx}`}
 						href={r.reportUrl}
 						target="_blank"
 						rel="noreferrer"
-						style={{ color: "var(--teal-dark, #234e52)", textDecoration: "underline", fontWeight: 500 }}
+						style={{
+							color: "var(--teal-dark)",
+							textDecoration: "underline",
+							fontWeight: 500,
+						}}
 					>
-						Смотреть #{i + 1}
+						Смотреть #{reportIdx + 1}
 					</a>
 				))}
 			</div>
@@ -124,33 +128,75 @@ export function EmkControlBoard({ dashboard }: any) {
 	}
 
 	return (
-		<div className="emk-control-board p-4" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-			<h2 style={{ fontSize: "18px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+		<div
+			className="emk-control-board p-4"
+			style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+		>
+			<h2
+				style={{
+					fontSize: "18px",
+					fontWeight: "600",
+					display: "flex",
+					alignItems: "center",
+					gap: "8px",
+				}}
+			>
 				<Activity size={20} />
 				Проверка историй болезни главврачом
 			</h2>
 			<div className="grid gap-4">
 				{visits.map((visit) => (
-					<div key={visit.id} style={{ border: "1px solid var(--line)", padding: "16px", borderRadius: "8px", background: "var(--paper)" }}>
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+					<div
+						key={visit.id}
+						style={{
+							border: "1px solid var(--line)",
+							padding: "16px",
+							borderRadius: "8px",
+							background: "var(--paper)",
+						}}
+					>
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "flex-start",
+								marginBottom: "12px",
+							}}
+						>
 							<div style={{ flex: 1 }}>
 								<h3 style={{ margin: "0 0 4px", fontSize: "15px" }}>
-									<FileText size={16} style={{ display: "inline", marginRight: "6px", verticalAlign: "middle" }} />
+									<FileText
+										size={16}
+										style={{
+											display: "inline",
+											marginRight: "6px",
+											verticalAlign: "middle",
+										}}
+									/>
 									Прием от {formatShortDate(visit.createdAt)}
 								</h3>
-								<p style={{ margin: 0, fontSize: "13px", color: "var(--ink-2)" }}>
+								<p
+									style={{ margin: 0, fontSize: "13px", color: "var(--ink-2)" }}
+								>
 									Жалобы: {visit.complaint || "Нет данных"}
 								</p>
-								<p style={{ margin: 0, fontSize: "13px", color: "var(--ink-2)" }}>
+								<p
+									style={{ margin: 0, fontSize: "13px", color: "var(--ink-2)" }}
+								>
 									Диагноз: {visit.diagnosis || "Нет данных"}
 								</p>
-								{visit.patientId && <DiagnocatReportWidget patientId={visit.patientId} />}
+								{visit.patientId && (
+									<DiagnocatReportWidget patientId={visit.patientId} />
+								)}
 							</div>
 							<div style={{ display: "flex", gap: "8px", marginLeft: "16px" }}>
 								<button
 									type="button"
 									className="secondary-button focus:outline-none focus:ring-2 focus:ring-red-600"
-									style={{ borderColor: "var(--red-soft)", color: "var(--red-dark)" }}
+									style={{
+										borderColor: "var(--red-soft)",
+										color: "var(--red-dark)",
+									}}
 									onClick={() => updateStatus(visit.id, "needs_correction")}
 								>
 									<AlertTriangle size={16} /> На доработку

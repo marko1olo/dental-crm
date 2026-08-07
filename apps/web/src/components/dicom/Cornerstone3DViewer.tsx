@@ -878,6 +878,7 @@ export function Cornerstone3DViewer({
 					}}
 				>
 					<button
+						type="button"
 						style={{
 							padding: "8px 16px",
 							borderRadius: "8px",
@@ -900,6 +901,7 @@ export function Cornerstone3DViewer({
 						MPR (Oblique)
 					</button>
 					<button
+						type="button"
 						style={{
 							padding: "8px 16px",
 							borderRadius: "8px",
@@ -922,6 +924,7 @@ export function Cornerstone3DViewer({
 						Дуга (Spline)
 					</button>
 					<button
+						type="button"
 						style={{
 							padding: "8px 16px",
 							borderRadius: "8px",
@@ -944,6 +947,7 @@ export function Cornerstone3DViewer({
 						Probe (HU)
 					</button>
 					<button
+						type="button"
 						style={{
 							padding: "8px 16px",
 							borderRadius: "8px",
@@ -1005,6 +1009,7 @@ export function Cornerstone3DViewer({
 					}}
 				>
 					<button
+						type="button"
 						style={{
 							padding: "6px 12px",
 							borderRadius: "8px",
@@ -1023,6 +1028,7 @@ export function Cornerstone3DViewer({
 						MIP
 					</button>
 					<button
+						type="button"
 						style={{
 							padding: "6px 12px",
 							borderRadius: "8px",
@@ -1044,6 +1050,7 @@ export function Cornerstone3DViewer({
 				</div>
 
 				<button
+					type="button"
 					style={{
 						marginLeft: "8px",
 						background: "linear-gradient(to right, #2563eb, #4f46e5)",
@@ -1067,6 +1074,7 @@ export function Cornerstone3DViewer({
 						fill="none"
 						stroke="currentColor"
 						viewBox="0 0 24 24"
+						aria-hidden="true"
 					>
 						<path
 							strokeLinecap="round"
@@ -1300,6 +1308,7 @@ export function Cornerstone3DViewer({
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
+									aria-hidden="true"
 								>
 									<path
 										strokeLinecap="round"

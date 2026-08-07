@@ -1,5 +1,5 @@
+import type { UrgentScheduleRequest } from "@dental/shared";
 import { useEffect, useState } from "react";
-import { UrgentScheduleRequest } from "@dental/shared";
 
 export function UrgentScheduleRequestsWidget() {
 	const [requests, setRequests] = useState<UrgentScheduleRequest[]>([]);
@@ -27,7 +27,7 @@ export function UrgentScheduleRequestsWidget() {
 				{
 					method: "PATCH",
 					credentials: "include",
-				}
+				},
 			);
 			if (res.ok) {
 				setRequests((prev) => prev.filter((r) => r.id !== id));
@@ -67,7 +67,13 @@ export function UrgentScheduleRequestsWidget() {
 					<div style={{ fontWeight: 500, marginBottom: "4px" }}>
 						{r.patientName} - {r.requestType}
 					</div>
-					<div style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "8px" }}>
+					<div
+						style={{
+							fontSize: "14px",
+							color: "var(--muted)",
+							marginBottom: "8px",
+						}}
+					>
 						Уровень срочности: {r.urgencyLevel}
 						<br />
 						Врач: {r.doctorName || "Любой"}
@@ -75,6 +81,7 @@ export function UrgentScheduleRequestsWidget() {
 						Желаемое время: {r.preferredSlotTime || "Не указано"}
 					</div>
 					<button
+						type="button"
 						onClick={() => handleResolve(r.id)}
 						style={{
 							background: "var(--primary)",

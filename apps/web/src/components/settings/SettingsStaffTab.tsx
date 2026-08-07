@@ -405,7 +405,6 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 												value={phoneDraft}
 												onChange={(e) => setPhoneDraft(e.target.value)}
 												className="min-w-[7rem] flex-1 px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-												autoFocus
 											/>
 											<button
 												type="submit"
@@ -436,7 +435,6 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 												value={newPin}
 												onChange={(e) => setNewPin(e.target.value)}
 												className="w-20 text-center px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-												autoFocus
 											/>
 											<button
 												type="submit"
@@ -466,7 +464,6 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 												value={newPassword}
 												onChange={(e) => setNewPassword(e.target.value)}
 												className="w-full px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-												autoFocus
 											/>
 											<button
 												type="submit"
@@ -488,6 +485,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
                        ряд на телефоне и обрезались бы справа. */
 										<div className="flex flex-wrap gap-2">
 											<button
+												type="button"
 												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
 												onClick={() => {
 													setEditingPinForId(member.id);
@@ -500,6 +498,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 												<KeyRound size={14} /> PIN
 											</button>
 											<button
+												type="button"
 												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
 												onClick={() => {
 													setEditingPasswordForId(member.id);
@@ -512,6 +511,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 												<ShieldCheck size={14} /> Пароль
 											</button>
 											<button
+												type="button"
 												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
 												onClick={() => {
 													setEditingPhoneForId(member.id);

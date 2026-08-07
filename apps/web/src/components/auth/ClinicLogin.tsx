@@ -71,10 +71,11 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
 
 				<form onSubmit={handleSubmit} className="auth-form">
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="clinic-login-email" className="auth-label">
 							<Building size={12} className="auth-icon-inline" /> Email клиники
 						</label>
 						<input
+							id="clinic-login-email"
 							type="email"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
@@ -82,16 +83,16 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
 							className="auth-input"
 							disabled={loading}
 							autoComplete="email"
-							autoFocus
 						/>
 					</div>
 
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="clinic-login-password" className="auth-label">
 							<KeyRound size={12} className="auth-icon-inline" /> Пароль
 						</label>
 						<div className="auth-input-wrapper">
 							<input
+								id="clinic-login-password"
 								type={showPassword ? "text" : "password"}
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}

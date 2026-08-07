@@ -312,6 +312,7 @@ export function SettingsProtocolsTab() {
 
 				<div style={{ marginTop: "2rem", display: "flex", gap: "1rem" }}>
 					<button
+						type="button"
 						className="primary-button"
 						onClick={handleSave}
 						disabled={loading}
@@ -319,6 +320,7 @@ export function SettingsProtocolsTab() {
 						{loading ? "Сохранение..." : "Сохранить"}
 					</button>
 					<button
+						type="button"
 						className="secondary-button"
 						onClick={handleCancel}
 						disabled={loading}
@@ -354,7 +356,11 @@ export function SettingsProtocolsTab() {
 						</p>
 					</div>
 				</div>
-				<button className="primary-button" onClick={handleCreateNew}>
+				<button
+					type="button"
+					className="primary-button"
+					onClick={handleCreateNew}
+				>
 					<Plus size={16} /> Добавить шаблон
 				</button>
 			</div>

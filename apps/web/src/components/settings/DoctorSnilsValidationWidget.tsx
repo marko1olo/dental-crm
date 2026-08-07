@@ -88,13 +88,17 @@ export function DoctorSnilsValidationWidget({
 	return (
 		<div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
 			<div className="flex items-center justify-between">
-				<label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+				<label
+					htmlFor="doctor-snils-input"
+					className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+				>
 					Проверка СНИЛС врача (ЕГИСЗ / ФРМР)
 				</label>
 			</div>
 
 			<div className="flex items-center gap-2">
 				<input
+					id="doctor-snils-input"
 					type="text"
 					value={snils}
 					onChange={(e) => setSnils(e.target.value)}

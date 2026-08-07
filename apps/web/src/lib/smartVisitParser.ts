@@ -46,8 +46,10 @@ export function parseVisitDictationLocal(input: string): ParsedVisitData {
 		const teethRegex =
 			/(?:^|[^0-9])([1-4][1-8]|[5-8][1-5])(?:[^0-9]|$)(?!\s*[:.-]\s*\d+)(?!\s*(?:часов|часа|ч|утра|дня|вечера|мин|минут|января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря|руб|рублей|тыс|лет|года|год|числа|число|триместр))/gi;
 		const teethMatches: string[] = [];
-		let match;
-		while ((match = teethRegex.exec(safeClause)) !== null) {
+		let match: RegExpExecArray | null = null;
+		while (true) {
+			match = teethRegex.exec(safeClause);
+			if (match === null) break;
 			if (match[1]) teethMatches.push(match[1]);
 		}
 
@@ -73,7 +75,9 @@ export function parseVisitDictationLocal(input: string): ParsedVisitData {
 				state = "implant";
 			else if (/(наблюд|осмотр)/i.test(clauseLower)) state = "watch";
 
-			teeth.forEach((t) => result.toothUpdates.push({ code: t, state }));
+			teeth.forEach((t) => {
+				result.toothUpdates.push({ code: t, state });
+			});
 		}
 	}
 

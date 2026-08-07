@@ -137,6 +137,7 @@ export function VoiceDictationOverlay({
 			}}
 		>
 			<button
+				type="button"
 				onClick={onClose}
 				style={{
 					position: "absolute",
@@ -167,9 +168,9 @@ export function VoiceDictationOverlay({
 				}}
 			>
 				{isListening ? (
-					waves.map((h, i) => (
+					waves.map((h, barIndex) => (
 						<div
-							key={i}
+							key={`wave-bar-${barIndex}`}
 							style={{
 								width: 8,
 								height: h,
@@ -258,6 +259,7 @@ export function VoiceDictationOverlay({
 			<div style={{ display: "flex", gap: 16, marginTop: 40 }}>
 				{isListening && (
 					<button
+						type="button"
 						/* БЫЛО: только setIsListening(false) — полоски гасли, а микрофон
 						   продолжал слушать кабинет и дописывать текст. */
 						onClick={stopListening}
@@ -277,6 +279,7 @@ export function VoiceDictationOverlay({
 				)}
 				{!isListening && transcript && (
 					<button
+						type="button"
 						onClick={() => onDictationSubmit(transcript)}
 						style={{
 							padding: "16px 32px",

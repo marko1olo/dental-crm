@@ -1,0 +1,3 @@
+perf: add drizzle indexes for foreign keys in 10 tables
+
+Drizzle ORM does not add indexes to `references()` by default, causing full table scans during joins and deletes. Added explicit `.index()` blocks to `pgTable` definitions for 10 tables to resolve this performance trap.

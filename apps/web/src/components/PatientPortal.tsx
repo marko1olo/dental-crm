@@ -156,23 +156,23 @@ const OTPInput: React.FC<OTPInputProps> = ({ onComplete }) => {
 
 	return (
 		<div className="otp-wrap">
-			{digits.map((d, i) => (
+			{digits.map((d, slotIndex) => (
 				<input
-					key={i}
+					key={`otp-slot-${slotIndex}`}
 					ref={(el) => {
-						refs.current[i] = el;
+						refs.current[slotIndex] = el;
 					}}
 					className={`otp-cell ${d ? "otp-cell--filled" : ""}`}
 					type="text"
 					inputMode="numeric"
 					maxLength={1}
 					value={d}
-					onChange={(e) => handleChange(e, i)}
-					onKeyDown={(e) => handleKeyDown(e, i)}
-					onPaste={(e) => handlePaste(e, i)}
+					onChange={(e) => handleChange(e, slotIndex)}
+					onKeyDown={(e) => handleKeyDown(e, slotIndex)}
+					onPaste={(e) => handlePaste(e, slotIndex)}
 					onFocus={(e) => e.target.select()}
 					autoComplete="one-time-code"
-					aria-label={`Цифра ${i + 1} из ${OTP_LENGTH}`}
+					aria-label={`Цифра ${slotIndex + 1} из ${OTP_LENGTH}`}
 				/>
 			))}
 		</div>
@@ -420,6 +420,7 @@ export const PatientPortal: React.FC = () => {
 							    проглатывается: раньше при сбое он ждал СМС, которого не было. */}
 							{otpSendError && <p className="auth-error">{otpSendError}</p>}
 							<button
+								type="button"
 								onClick={handleSendOtp}
 								className="auth-primary-btn"
 								disabled={isSendingOtp}
@@ -436,6 +437,7 @@ export const PatientPortal: React.FC = () => {
 							<OTPInput onComplete={handleOTPComplete} />
 							{otpError && <p className="auth-error">{otpError}</p>}
 							<button
+								type="button"
 								onClick={() => {
 									setStep("phone");
 									setOtpError("");
@@ -456,6 +458,7 @@ export const PatientPortal: React.FC = () => {
 			<header className="portal-header">
 				<h2>Мой кабинет пациента</h2>
 				<button
+					type="button"
 					className="logout-btn"
 					onClick={() => setIsAuthenticated(false)}
 				>
@@ -576,6 +579,7 @@ export const PatientPortal: React.FC = () => {
 						<div key={doc.id} className="doc-item">
 							<span>📄 {doc.title}</span>
 							<button
+								type="button"
 								className="btn-download"
 								onClick={() => setViewingDoc({ id: doc.id, title: doc.title })}
 							>
@@ -587,10 +591,20 @@ export const PatientPortal: React.FC = () => {
 			</div>
 
 			{viewingDoc && (
-				<div className="doc-overlay" onClick={() => setViewingDoc(null)}>
+				<div
+					className="doc-overlay"
+					onClick={() => setViewingDoc(null)}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) =>
+						(e.key === "Enter" || e.key === " ") && setViewingDoc(null)
+					}
+				>
 					<div
 						className="doc-overlay-content"
 						onClick={(e) => e.stopPropagation()}
+						role="presentation"
+						onKeyDown={(e) => e.stopPropagation()}
 						style={{
 							width: "90%",
 							maxWidth: "900px",
@@ -613,6 +627,7 @@ export const PatientPortal: React.FC = () => {
 								{viewingDoc.title}
 							</h3>
 							<button
+								type="button"
 								className="doc-close-btn"
 								onClick={() => setViewingDoc(null)}
 								style={{

@@ -229,6 +229,7 @@ export function SettingsAccessTab({
 							{inviteLink}
 						</span>
 						<button
+							type="button"
 							onClick={handleCopy}
 							className="ml-3 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-slate-700 dark:text-slate-200 text-xs font-medium cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1.5 shrink-0"
 						>

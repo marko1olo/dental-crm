@@ -161,7 +161,9 @@ export async function archivePatientInDb(
 		await tx
 			.update(patients)
 			.set({ status: "archived" })
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)));
+			.where(
+				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+			);
 
 		// Insert archive reason
 		await tx.insert(patientArchiveReasonsAndBlacklists).values({
@@ -172,7 +174,9 @@ export async function archivePatientInDb(
 			isBlacklisted: isBlacklisted,
 			blacklistReason: blacklistReason || null,
 			isBookingBlocked: isBlacklisted,
-			warningBadge: isBlacklisted ? "⛔ ЧЕРНЫЙ СПИСОК (Запрет записи)" : "📁 АРХИВ",
+			warningBadge: isBlacklisted
+				? "⛔ ЧЕРНЫЙ СПИСОК (Запрет записи)"
+				: "📁 АРХИВ",
 			archivedBy: userId,
 		});
 

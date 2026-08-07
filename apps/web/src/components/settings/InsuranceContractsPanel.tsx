@@ -52,7 +52,7 @@ const clampPct = (v: string) => Math.min(100, Math.max(0, parseFloat(v) || 0));
 export const InsuranceContractsPanel: React.FC = () => {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const mergedProps = Object.assign({}, appLogic, derivations);
 	const { auth } = mergedProps;
 	const {} = derivations;
 	/* Признак модуля нужен и разметке (ниже), и загрузке: при выключенном ДМС
@@ -273,7 +273,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 						Сравнительном конструкторе смет.
 					</p>
 				</div>
-				<button className="primary-button" onClick={openAddModal}>
+				<button type="button" className="primary-button" onClick={openAddModal}>
 					<Plus size={16} /> Добавить договор
 				</button>
 			</div>
@@ -345,6 +345,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 								</div>
 								<div style={{ display: "flex", gap: 8 }}>
 									<button
+										type="button"
 										onClick={() => openEditModal(contract)}
 										style={{
 											background: "rgba(245,158,11,0.15)",
@@ -363,6 +364,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 										<Edit2 size={14} />
 									</button>
 									<button
+										type="button"
 										onClick={() => handleDeactivate(contract)}
 										style={{
 											background: "rgba(239,68,68,0.15)",
@@ -467,6 +469,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 									: "Добавить договор ДМС"}
 							</h2>
 							<button
+								type="button"
 								onClick={() => setShowModal(false)}
 								style={{
 									background: "none",

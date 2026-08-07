@@ -2283,7 +2283,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 				<summary>{title}</summary>
 				<div>
 					{visibleItems.map((item, index) => (
-						<small key={`${index}:${item}`}>
+						<small key={`item-${item}-${index}`}>
 							{humanizeMigrationText(item)}
 						</small>
 					))}

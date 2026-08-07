@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import "./LabOrdersPanel.css";
 
@@ -45,7 +46,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 		setLoading(true);
 		setError(null);
 		try {
-			const query = patientId ? `?patientId=${encodeURIComponent(patientId)}` : "";
+			const query = patientId
+				? `?patientId=${encodeURIComponent(patientId)}`
+				: "";
 			const res = await fetch(`/api/clinical/lab-orders${query}`, {
 				headers: denteAdminSecretRequestHeaders(),
 			});
@@ -126,15 +129,44 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 	return (
 		<div className="lab-orders-panel">
-			<div className="lab-orders-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+			<div
+				className="lab-orders-header"
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+				}}
+			>
 				<h3>Заказы в лабораторию (ЗТЛ)</h3>
-				<button type="button" onClick={() => setShowForm(!showForm)} style={{ padding: "6px 12px", background: "rgba(59, 130, 246, 0.2)", color: "#93c5fd", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: "6px", cursor: "pointer" }}>
+				<button
+					type="button"
+					onClick={() => setShowForm(!showForm)}
+					style={{
+						padding: "6px 12px",
+						background: "rgba(59, 130, 246, 0.2)",
+						color: "#93c5fd",
+						border: "1px solid rgba(59, 130, 246, 0.3)",
+						borderRadius: "6px",
+						cursor: "pointer",
+					}}
+				>
 					{showForm ? "Отмена" : "+ Новый заказ"}
 				</button>
 			</div>
 
 			{showForm && (
-				<form onSubmit={handleSubmit} className="lab-order-form" style={{ display: "flex", flexDirection: "column", gap: "10px", background: "rgba(255,255,255,0.05)", padding: "16px", borderRadius: "8px" }}>
+				<form
+					onSubmit={handleSubmit}
+					className="lab-order-form"
+					style={{
+						display: "flex",
+						flexDirection: "column",
+						gap: "10px",
+						background: "rgba(255,255,255,0.05)",
+						padding: "16px",
+						borderRadius: "8px",
+					}}
+				>
 					{!patientId && (
 						<input
 							type="text"
@@ -142,7 +174,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 							value={formPatientId}
 							onChange={(e) => setFormPatientId(e.target.value)}
 							required
-							style={{ padding: "8px", borderRadius: "4px", border: "1px solid #52525b", background: "#27272a", color: "#fff" }}
+							style={{
+								padding: "8px",
+								borderRadius: "4px",
+								border: "1px solid #52525b",
+								background: "#27272a",
+								color: "#fff",
+							}}
 						/>
 					)}
 					<input
@@ -150,34 +188,65 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						placeholder="Зубы (FDI), напр. 11, 21"
 						value={toothFdi}
 						onChange={(e) => setToothFdi(e.target.value)}
-						style={{ padding: "8px", borderRadius: "4px", border: "1px solid #52525b", background: "#27272a", color: "#fff" }}
+						style={{
+							padding: "8px",
+							borderRadius: "4px",
+							border: "1px solid #52525b",
+							background: "#27272a",
+							color: "#fff",
+						}}
 					/>
 					<input
 						type="text"
 						placeholder="Материал (Диоксид циркония, E.max...)"
 						value={material}
 						onChange={(e) => setMaterial(e.target.value)}
-						style={{ padding: "8px", borderRadius: "4px", border: "1px solid #52525b", background: "#27272a", color: "#fff" }}
+						style={{
+							padding: "8px",
+							borderRadius: "4px",
+							border: "1px solid #52525b",
+							background: "#27272a",
+							color: "#fff",
+						}}
 					/>
 					<input
 						type="text"
 						placeholder="Цвет (Vita)"
 						value={colorVita}
 						onChange={(e) => setColorVita(e.target.value)}
-						style={{ padding: "8px", borderRadius: "4px", border: "1px solid #52525b", background: "#27272a", color: "#fff" }}
+						style={{
+							padding: "8px",
+							borderRadius: "4px",
+							border: "1px solid #52525b",
+							background: "#27272a",
+							color: "#fff",
+						}}
 					/>
 					<input
 						type="date"
 						placeholder="Срок сдачи"
 						value={dueDate}
 						onChange={(e) => setDueDate(e.target.value)}
-						style={{ padding: "8px", borderRadius: "4px", border: "1px solid #52525b", background: "#27272a", color: "#fff" }}
+						style={{
+							padding: "8px",
+							borderRadius: "4px",
+							border: "1px solid #52525b",
+							background: "#27272a",
+							color: "#fff",
+						}}
 					/>
 					<textarea
 						placeholder="Клинические заметки"
 						value={clinicalNotes}
 						onChange={(e) => setClinicalNotes(e.target.value)}
-						style={{ padding: "8px", borderRadius: "4px", border: "1px solid #52525b", background: "#27272a", color: "#fff", minHeight: "60px" }}
+						style={{
+							padding: "8px",
+							borderRadius: "4px",
+							border: "1px solid #52525b",
+							background: "#27272a",
+							color: "#fff",
+							minHeight: "60px",
+						}}
 					/>
 					<input
 						type="number"
@@ -185,9 +254,28 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						placeholder="Стоимость лаборатории (Руб)"
 						value={priceRub}
 						onChange={(e) => setPriceRub(e.target.value)}
-						style={{ padding: "8px", borderRadius: "4px", border: "1px solid #52525b", background: "#27272a", color: "#fff" }}
+						style={{
+							padding: "8px",
+							borderRadius: "4px",
+							border: "1px solid #52525b",
+							background: "#27272a",
+							color: "#fff",
+						}}
 					/>
-					<button type="submit" disabled={submitting} style={{ padding: "10px", borderRadius: "4px", background: "#3b82f6", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold", opacity: submitting ? 0.7 : 1 }}>
+					<button
+						type="submit"
+						disabled={submitting}
+						style={{
+							padding: "10px",
+							borderRadius: "4px",
+							background: "#3b82f6",
+							color: "#fff",
+							border: "none",
+							cursor: "pointer",
+							fontWeight: "bold",
+							opacity: submitting ? 0.7 : 1,
+						}}
+					>
 						{submitting ? "Создание..." : "Создать заказ"}
 					</button>
 				</form>
@@ -196,7 +284,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			{error && <div className="lab-order-warning">{error}</div>}
 
 			{loading ? (
-				<div style={{ color: "#a1a1aa", textAlign: "center", padding: "20px" }}>Загрузка...</div>
+				<div style={{ color: "#a1a1aa", textAlign: "center", padding: "20px" }}>
+					Загрузка...
+				</div>
 			) : orders.length === 0 ? (
 				<div className="lab-orders-empty">Нет заказов</div>
 			) : (

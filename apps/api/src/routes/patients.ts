@@ -1386,50 +1386,50 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 		},
 	);
 
-	app.post(
-		"/api/patients/:patientId/archive",
-		async (request, reply) => {
-			const orgId = requireClinicOrganizationId(request, reply);
-			if (!orgId) return reply;
-			const { patientId } = request.params as { patientId?: string };
-			if (!patientId) return sendPatientRouteValidationError(reply);
+	app.post("/api/patients/:patientId/archive", async (request, reply) => {
+		const orgId = requireClinicOrganizationId(request, reply);
+		if (!orgId) return reply;
+		const { patientId } = request.params as { patientId?: string };
+		if (!patientId) return sendPatientRouteValidationError(reply);
 
-			const parsedBody = patientArchiveBodySchema.safeParse(request.body ?? {});
-			if (!parsedBody.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Проверьте правильность заполнения формы архивации.",
-					issues: parsedBody.error.issues,
-				});
-			}
-			const { archiveReason, isBlacklisted, blacklistReason } = parsedBody.data;
-
-			const userId = null; // Removed requireUserId
-
-			try {
-				const { getPatientByIdFromDb } = await import("../db/patientsQuery.js");
-				const patient = await getPatientByIdFromDb(orgId, patientId);
-				if (!patient) return sendPatientNotFound(reply);
-
-				const { archivePatientInDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
-				await archivePatientInDb(
-					orgId,
-					patientId,
-					patient.fullName,
-					archiveReason,
-					isBlacklisted,
-					blacklistReason || "",
-					userId
-				);
-
-				return reply.status(200).send({ success: true });
-			} catch (e) {
-				request.log.error({ err: e }, "[Patients] Ошибка при архивации пациента");
-				return reply.code(500).send({
-					error: "PatientArchiveError",
-					message: "Не удалось архивировать пациента. Пожалуйста, попробуйте еще раз.",
-				});
-			}
+		const parsedBody = patientArchiveBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте правильность заполнения формы архивации.",
+				issues: parsedBody.error.issues,
+			});
 		}
-	);
+		const { archiveReason, isBlacklisted, blacklistReason } = parsedBody.data;
+
+		const userId = null; // Removed requireUserId
+
+		try {
+			const { getPatientByIdFromDb } = await import("../db/patientsQuery.js");
+			const patient = await getPatientByIdFromDb(orgId, patientId);
+			if (!patient) return sendPatientNotFound(reply);
+
+			const { archivePatientInDb } = await import(
+				"../db/patientArchiveReasonsAndBlacklistsQuery.js"
+			);
+			await archivePatientInDb(
+				orgId,
+				patientId,
+				patient.fullName,
+				archiveReason,
+				isBlacklisted,
+				blacklistReason || "",
+				userId,
+			);
+
+			return reply.status(200).send({ success: true });
+		} catch (e) {
+			request.log.error({ err: e }, "[Patients] Ошибка при архивации пациента");
+			return reply.code(500).send({
+				error: "PatientArchiveError",
+				message:
+					"Не удалось архивировать пациента. Пожалуйста, попробуйте еще раз.",
+			});
+		}
+	});
 }

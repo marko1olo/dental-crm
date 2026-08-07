@@ -305,6 +305,14 @@ export function Omnibar() {
 																setOmnibarOpen(false);
 															}}
 															onMouseEnter={() => setSelectedIndex(idx)}
+															role="button"
+															tabIndex={0}
+															onKeyDown={(e) => {
+																if (e.key === "Enter" || e.key === " ") {
+																	cmd.action();
+																	setOmnibarOpen(false);
+																}
+															}}
 														>
 															<div
 																className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? "bg-teal-100/50 dark:bg-teal-900/50 text-teal-600 dark:text-teal-300" : "bg-neutral-100 dark:bg-slate-800 text-neutral-500 dark:text-slate-400"}`}

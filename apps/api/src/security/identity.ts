@@ -369,10 +369,15 @@ export async function requireStaffIdentity(
 			)
 			.limit(1);
 
-		if (user && user.currentSessionId && user.currentSessionId !== identity.sessionId) {
+		if (
+			user &&
+			user.currentSessionId &&
+			user.currentSessionId !== identity.sessionId
+		) {
 			reply.code(401).send({
 				error: "invalid_session",
-				message: "Выполнен вход с другого устройства. Текущая сессия завершена.",
+				message:
+					"Выполнен вход с другого устройства. Текущая сессия завершена.",
 			});
 			return null;
 		}

@@ -340,20 +340,43 @@ import {
 
 export { imagingSourceLabels } from "./imagingUiLabels";
 export { pricelistSourceKindLabels } from "./pricelistUiMeta";
-
-export { defaultUiPreferences, loadUiPreferences, saveUiPreferences, type UiPreferences, type UiPreferencesInput, uiPreferencesStorageKey } from "./utils/preferencesUtils";
-export { viewFromHash, settingsTabFromHash, settingsTabs, type SettingsTab } from "./utils/routeUtils";
-export { currentLocalDateTimeInputValue, toDateTimeLocalValue } from "./utils/dateUtils";
-export { emptyPatientCoreDraft, emptyPatientAdministrativeProfileDraft, emptyAppointmentScheduleDraft, emptyTelegramVisualCardUrlDrafts, emptyVisitNoteForm, defaultClinicalToothRowsText, defaultImagingViewerState, defaultDicomFirstFrameViewerState } from "./utils/draftDefaults";
-
-import {
+export {
+	currentLocalDateTimeInputValue,
+	toDateTimeLocalValue,
+} from "./utils/dateUtils";
+export {
+	defaultClinicalToothRowsText,
+	defaultDicomFirstFrameViewerState,
+	defaultImagingViewerState,
+	emptyAppointmentScheduleDraft,
+	emptyPatientAdministrativeProfileDraft,
+	emptyPatientCoreDraft,
+	emptyTelegramVisualCardUrlDrafts,
+	emptyVisitNoteForm,
+} from "./utils/draftDefaults";
+export {
 	defaultUiPreferences,
-	uiPreferencesStorageKey,
+	loadUiPreferences,
+	saveUiPreferences,
 	type UiPreferences,
 	type UiPreferencesInput,
+	uiPreferencesStorageKey,
 } from "./utils/preferencesUtils";
-import { settingsTabs, type SettingsTab } from "./utils/routeUtils";
+export {
+	type SettingsTab,
+	settingsTabFromHash,
+	settingsTabs,
+	viewFromHash,
+} from "./utils/routeUtils";
+
 import { toDateTimeLocalValue } from "./utils/dateUtils";
+import {
+	defaultUiPreferences,
+	type UiPreferences,
+	type UiPreferencesInput,
+	uiPreferencesStorageKey,
+} from "./utils/preferencesUtils";
+import { type SettingsTab, settingsTabs } from "./utils/routeUtils";
 
 import {
 	appointmentLabels,
@@ -4673,7 +4696,6 @@ export const photoVideoMaterialOptions: Array<{
 	{ value: "other", label: "Иные материалы" },
 ];
 
-
 export const aiJobKindPreferenceValues: readonly AiJobKind[] = [
 	"voice_transcription",
 	"visit_note_draft",
@@ -8191,3 +8213,28 @@ export const auth = {
 		return headers;
 	},
 };
+
+export function confirmedDocumentLiteral(value: boolean, label: string): true {
+	if (!value) {
+		throw new Error(
+			`Не подтверждено обязательное условие документа: ${label}.`,
+		);
+	}
+	return true;
+}
+
+export function documentTextLines(value: string): string[] {
+	return value
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter(Boolean);
+}
+
+export function compactDocumentText(
+	...values: Array<string | null | undefined>
+): string {
+	return values
+		.map((value) => value?.trim() ?? "")
+		.filter(Boolean)
+		.join("\n");
+}

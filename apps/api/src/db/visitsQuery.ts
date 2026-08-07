@@ -692,8 +692,8 @@ export async function getVisitsForQualityControlInDb(organizationId: string) {
 			and(
 				eq(schema.visits.organizationId, organizationId),
 				eq(schema.visits.status, "signed"),
-				eq(schema.visits.qualityControlStatus, "pending")
-			)
+				eq(schema.visits.qualityControlStatus, "pending"),
+			),
 		);
 	return res.map(projectVisitRow);
 }
@@ -701,7 +701,7 @@ export async function getVisitsForQualityControlInDb(organizationId: string) {
 export async function updateVisitQualityControlStatusInDb(
 	organizationId: string,
 	visitId: string,
-	qualityControlStatus: string
+	qualityControlStatus: string,
 ) {
 	const [updated] = await db
 		.update(schema.visits)
@@ -709,8 +709,8 @@ export async function updateVisitQualityControlStatusInDb(
 		.where(
 			and(
 				eq(schema.visits.organizationId, organizationId),
-				eq(schema.visits.id, visitId)
-			)
+				eq(schema.visits.id, visitId),
+			),
 		)
 		.returning();
 	if (!updated) throw new Error("Визит не найден");

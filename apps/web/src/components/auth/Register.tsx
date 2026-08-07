@@ -119,11 +119,12 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
 
 				<form onSubmit={handleSubmit} className="auth-form">
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="register-clinic-name" className="auth-label">
 							<Building size={12} className="auth-icon-inline" /> Название
 							клиники
 						</label>
 						<input
+							id="register-clinic-name"
 							type="text"
 							value={clinicName}
 							onChange={(e) => setClinicName(e.target.value)}
@@ -135,10 +136,11 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
 						/>
 					</div>
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="register-owner-name" className="auth-label">
 							<User size={12} className="auth-icon-inline" /> ФИО Владельца
 						</label>
 						<input
+							id="register-owner-name"
 							type="text"
 							value={ownerName}
 							onChange={(e) => setOwnerName(e.target.value)}
@@ -150,10 +152,11 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
 						/>
 					</div>
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="register-email" className="auth-label">
 							<Mail size={12} className="auth-icon-inline" /> Email
 						</label>
 						<input
+							id="register-email"
 							type="email"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
@@ -165,11 +168,12 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
 						/>
 					</div>
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="register-password" className="auth-label">
 							<KeyRound size={12} className="auth-icon-inline" /> Пароль
 						</label>
 						<div className="auth-input-wrapper">
 							<input
+								id="register-password"
 								type={showPassword ? "text" : "password"}
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
@@ -190,10 +194,10 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
 						</div>
 						{password && (
 							<div className="auth-password-strength">
-								{[1, 2, 3].map((i) => (
+								{[1, 2, 3].map((num) => (
 									<div
-										key={i}
-										className={`auth-password-strength-bar${strength.score >= i ? " " + strengthClass : ""}`}
+										key={`strength-bar-${num}`}
+										className={`auth-password-strength-bar${strength.score >= num ? " " + strengthClass : ""}`}
 									/>
 								))}
 								<span className="auth-password-strength-label">
@@ -203,12 +207,13 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
 						)}
 					</div>
 					<div className="auth-form-group">
-						<label className="auth-label">
+						<label htmlFor="register-confirm-password" className="auth-label">
 							<KeyRound size={12} className="auth-icon-inline" /> Подтвердите
 							пароль
 						</label>
 						<div className="auth-input-wrapper">
 							<input
+								id="register-confirm-password"
 								type={showConfirm ? "text" : "password"}
 								value={confirmPassword}
 								onChange={(e) => setConfirmPassword(e.target.value)}

@@ -42,7 +42,8 @@ function fakeSocket(): FakeSocket {
 		readyState: WS_OPEN,
 		sent: [],
 		on(event, cb) {
-			(handlers[event] ||= []).push(cb);
+			handlers[event] ??= [];
+			handlers[event].push(cb);
 		},
 		send(data) {
 			this.sent.push(data);

@@ -137,8 +137,21 @@ export function CommandPalette({
 	if (!isOpen) return null;
 
 	return (
-		<div className="cmd-palette-overlay" onClick={() => setIsOpen(false)}>
-			<div className="cmd-palette-modal" onClick={(e) => e.stopPropagation()}>
+		<div
+			className="cmd-palette-overlay"
+			onClick={() => setIsOpen(false)}
+			role="button"
+			tabIndex={0}
+			onKeyDown={(e) =>
+				(e.key === "Enter" || e.key === " ") && setIsOpen(false)
+			}
+		>
+			<div
+				className="cmd-palette-modal"
+				onClick={(e) => e.stopPropagation()}
+				role="presentation"
+				onKeyDown={(e) => e.stopPropagation()}
+			>
 				<div className="cmd-palette-header">
 					<Search size={20} className="cmd-palette-icon" />
 					<input
@@ -170,6 +183,14 @@ export function CommandPalette({
 									onClick={() => {
 										item.action();
 										setIsOpen(false);
+									}}
+									role="button"
+									tabIndex={0}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" || e.key === " ") {
+											item.action();
+											setIsOpen(false);
+										}
 									}}
 								>
 									<div className="cmd-palette-item-icon">{item.icon}</div>

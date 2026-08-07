@@ -381,10 +381,10 @@ export function StaffPinPad({
 
 					{/* Dots */}
 					<div className={`auth-pin-dots ${errorShake ? "animate-shake" : ""}`}>
-						{[0, 1, 2, 3].map((idx) => (
+						{[0, 1, 2, 3].map((slot) => (
 							<div
-								key={idx}
-								className={`auth-pin-dot ${pin.length > idx ? "filled" : ""}`}
+								key={`pin-dot-slot-${slot}`}
+								className={`auth-pin-dot ${pin.length > slot ? "filled" : ""}`}
 							/>
 						))}
 					</div>

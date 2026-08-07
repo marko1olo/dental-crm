@@ -469,8 +469,8 @@ function cp1251EncodeMap(): Map<number, number> {
 export function normalizeDecodedText(value: string): string {
 	return (
 		value
-			.replace(/^﻿/, "")
-			.replace(/\u0000/g, "")
+			.replace(/^\uFEFF/, "")
+			.replace(new RegExp("\\u0000", "g"), "")
 			// Мягкий перенос и неразрывный пробел нулевой ширины из копипаста Word.
 			.replace(/[­​‌‍⁠]/g, "")
 			.replace(/\r\n/g, "\n")

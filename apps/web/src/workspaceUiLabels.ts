@@ -14,7 +14,6 @@ import {
 	type IntegrationPresetStatus,
 	type LocalBridgeStatus,
 	type LocalBridgeUsePath,
-	type PaymentMethod,
 	type ResourceLoad,
 	type ScheduleWarning,
 	type SpeechGatewayStatus,

@@ -594,7 +594,9 @@ export function useVoiceAssistant(
 		}
 
 		if (streamRef.current) {
-			streamRef.current.getTracks().forEach((track) => track.stop());
+			streamRef.current.getTracks().forEach((track) => {
+				track.stop();
+			});
 		}
 
 		if (audioContextRef.current) {

@@ -593,14 +593,61 @@ export async function registerWhatsappRoutes(
 						const textBody =
 							typeof textObj?.body === "string" ? textObj.body : null;
 
+						const rawTs =
+							typeof m.timestamp === "number"
+								? m.timestamp
+								: typeof m.timestamp === "string"
+									? Number.parseInt(m.timestamp, 10)
+									: Number.NaN;
+						if (!Number.isNaN(rawTs) && rawTs > 0) {
+							const msgTsSec = rawTs > 1e11 ? Math.floor(rawTs / 1000) : rawTs;
+							const nowSec = Math.floor(Date.now() / 1000);
+							if (Math.abs(nowSec - msgTsSec) > 300) {
+								request.log.warn(
+									{ msgTsSec, nowSec },
+									"WhatsApp webhook message timestamp drift > 300s, skipping ingestion",
+								);
+								continue;
+							}
+						}
+
+						const msgId =
+							typeof m.id === "string" && m.id.trim().length > 0
+								? m.id.trim()
+								: null;
+
 						// Клиника уже известна из настроек бота, найденных выше, —
 						// вставка идёт под её контекстом. Без него `INSERT` не
 						// «возвращал ноль строк», а падал с 42501: в WITH CHECK
 						// политики messenger_inbound_events обхода нет.
 						await withTenantCtx(inboundOrganizationId, async (tx) => {
+							if (msgId) {
+								const existing = await tx
+									.select({ id: messengerInboundEvents.id })
+									.from(messengerInboundEvents)
+									.where(
+										and(
+											eq(
+												messengerInboundEvents.organizationId,
+												inboundOrganizationId,
+											),
+											eq(messengerInboundEvents.externalId, msgId),
+										),
+									)
+									.limit(1);
+								if (existing.length > 0) {
+									request.log.info(
+										{ msgId, inboundOrganizationId },
+										"WhatsApp message already ingested (replay skipped)",
+									);
+									return;
+								}
+							}
+
 							await tx.insert(messengerInboundEvents).values({
 								organizationId: inboundOrganizationId,
 								channel: "whatsapp",
+								externalId: msgId,
 								externalChatId: fromId,
 								messageText: textBody,
 								eventKind: "message",

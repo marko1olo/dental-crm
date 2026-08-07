@@ -251,7 +251,7 @@ export const VisitFlowProgress: React.FC<{
 						{temporaryRestrictions.length > 0 && (
 							<ul style={{ margin: "0.5rem 0", paddingLeft: "1.2rem" }}>
 								{temporaryRestrictions.map((r, i) => (
-									<li key={i}>{r}</li>
+									<li key={`restriction-${r.slice(0, 15)}-${i}`}>{r}</li>
 								))}
 							</ul>
 						)}
@@ -262,7 +262,7 @@ export const VisitFlowProgress: React.FC<{
 						<strong>Предложенные документы:</strong>
 						<div className="vfp-tags">
 							{documentSuggestions.map((s: string, i: number) => (
-								<span key={i} className="vfp-tag">
+								<span key={`doc-${s.slice(0, 15)}-${i}`} className="vfp-tag">
 									{s}
 								</span>
 							))}

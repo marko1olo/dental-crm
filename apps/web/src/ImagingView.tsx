@@ -1,4 +1,3 @@
-import { useAppLogicContext } from "./contexts/AppLogicContext";
 import {
 	Bot,
 	ClipboardList,
@@ -15,6 +14,7 @@ import {
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 const IMAGING_QUICK_CHIPS = [
 	"Без видимых патологий",

@@ -554,10 +554,10 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 		const context = await requireClinicalReadContext(
 			request,
 			reply,
-			"visit quality control read"
+			"visit quality control read",
 		);
 		if (!context) return;
-		
+
 		const visits = await getVisitsForQualityControlInDb(context.organizationId);
 		return { visits };
 	});
@@ -566,22 +566,22 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
-			"visit quality control mutate"
+			"visit quality control mutate",
 		);
 		if (!context) return;
-		
+
 		const { visitId } = request.params as { visitId: string };
 		const body = request.body as { status: string };
 		if (!body || !body.status) {
 			reply.code(400);
 			return { error: "ValidationError", message: "Missing status" };
 		}
-		
+
 		try {
 			const updated = await updateVisitQualityControlStatusInDb(
 				context.organizationId,
 				visitId,
-				body.status
+				body.status,
 			);
 			return { visit: updated };
 		} catch (error) {

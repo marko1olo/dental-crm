@@ -463,7 +463,7 @@ export function MarketingView({
 						</div>
 
 						<div>
-							<label className="field-label">Тональность отзыва</label>
+							<span className="field-label">Тональность отзыва</span>
 							<div
 								className="marketing-tone-group"
 								role="group"

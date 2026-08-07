@@ -1,6 +1,8 @@
 # Build stage
 FROM node:22-alpine AS builder
 
+RUN apk add --no-cache libc6-compat
+
 WORKDIR /app
 
 # Install turbo globally to filter workspaces
@@ -14,6 +16,7 @@ RUN turbo prune @dental/api --docker
 
 # Production dependencies stage
 FROM node:22-alpine AS installer
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy pruned lockfiles and package.json
@@ -31,6 +34,7 @@ RUN npx turbo run build --filter=@dental/api
 
 # Runner stage
 FROM node:22-alpine AS runner
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy the built output and dependencies

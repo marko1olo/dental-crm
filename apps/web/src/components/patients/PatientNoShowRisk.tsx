@@ -216,7 +216,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 							</span>
 							<ul className="mt-1 space-y-1 text-xs text-slate-600 dark:text-slate-400 pl-4 list-disc">
 								{riskData.factors.map((factor: string, idx: number) => (
-									<li key={idx}>{factor}</li>
+									<li key={`factor-${factor.slice(0, 15)}-${idx}`}>{factor}</li>
 								))}
 							</ul>
 						</div>

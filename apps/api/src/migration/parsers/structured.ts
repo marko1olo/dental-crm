@@ -337,7 +337,9 @@ function parseXmlTree(xml: string): {
 	let lastIndex = 0;
 	let match: RegExpExecArray | null;
 
-	while ((match = tagPattern.exec(working)) !== null) {
+	while (true) {
+		match = tagPattern.exec(working);
+		if (match === null) break;
 		const text = working.slice(lastIndex, match.index);
 		if (text.trim() && stack.length > 0) {
 			stack[stack.length - 1]!.text += decodeXmlEntities(text);

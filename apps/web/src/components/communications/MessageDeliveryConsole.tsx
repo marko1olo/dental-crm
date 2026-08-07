@@ -248,7 +248,10 @@ export function MessageDeliveryConsole() {
 	const [variableCatalog, setVariableCatalog] = useState<TemplateVariable[]>(
 		[],
 	);
-	const [uisQuota, setUisQuota] = useState<{ remaining: number, smsQuotaLimit: number } | null>(null);
+	const [uisQuota, setUisQuota] = useState<{
+		remaining: number;
+		smsQuotaLimit: number;
+	} | null>(null);
 
 	/*
 	 * Разовая постановка в очередь (POST /api/communications/outbox).
@@ -307,9 +310,10 @@ export function MessageDeliveryConsole() {
 			const variablesData = await readJson<{ variables: TemplateVariable[] }>(
 				variablesResponse,
 			);
-			const quotaData = await readJson<{ remaining: number, smsQuotaLimit: number }>(
-				quotaResponse,
-			);
+			const quotaData = await readJson<{
+				remaining: number;
+				smsQuotaLimit: number;
+			}>(quotaResponse);
 
 			setGateways(gatewayData);
 			setTemplates(templateData.templates);
@@ -798,8 +802,15 @@ export function MessageDeliveryConsole() {
 									? `Остаток не получен: ${gateways.channels.sms.balanceError}`
 									: ""}
 							{uisQuota && (
-								<span className={uisQuota.remaining <= 0 ? "text-[var(--bad-fg,#b42318)] font-bold ml-2" : "ml-2"}>
-									Лимит UIS SMS: {uisQuota.smsQuotaLimit - uisQuota.remaining}/{uisQuota.smsQuotaLimit}
+								<span
+									className={
+										uisQuota.remaining <= 0
+											? "text-[var(--bad-fg,#b42318)] font-bold ml-2"
+											: "ml-2"
+									}
+								>
+									Лимит UIS SMS: {uisQuota.smsQuotaLimit - uisQuota.remaining}/
+									{uisQuota.smsQuotaLimit}
 								</span>
 							)}
 						</p>
@@ -809,11 +820,11 @@ export function MessageDeliveryConsole() {
 
 			{/* ── Журнал ────────────────────────────────────────────────────── */}
 			<h3 className="ops-section-title">Журнал отправки</h3>
-			<div
+			<fieldset
 				className="quick-chips-row"
-				role="group"
-				aria-label="Фильтр по состоянию"
+				style={{ border: 0, padding: 0, margin: 0 }}
 			>
+				<legend className="sr-only">Фильтр по состоянию</legend>
 				<button
 					type="button"
 					className={`quick-chip ${statusFilter === "" ? "selected" : ""}`}
@@ -834,7 +845,7 @@ export function MessageDeliveryConsole() {
 						{summary[code] ? ` · ${summary[code]}` : ""}
 					</button>
 				))}
-			</div>
+			</fieldset>
 
 			{outbox.length === 0 ? (
 				<p className="ops-empty">Сообщений с такими условиями нет.</p>
@@ -1060,7 +1071,11 @@ export function MessageDeliveryConsole() {
 							onChange={(event) => setEnqueueBody(event.target.value)}
 							placeholder="Текст сообщения..."
 							rows={4}
-							disabled={enqueueChannel === "sms" && uisQuota !== null && uisQuota.remaining <= 0}
+							disabled={
+								enqueueChannel === "sms" &&
+								uisQuota !== null &&
+								uisQuota.remaining <= 0
+							}
 						/>
 					</span>
 				)}

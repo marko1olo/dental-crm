@@ -2287,7 +2287,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 				<summary>{title}</summary>
 				<div>
 					{visibleItems.map((item, index) => (
-						<small key={`${index}:${item}`}>
+						<small key={`item-${item}-${index}`}>
 							{humanizeMigrationText(item)}
 						</small>
 					))}
@@ -4158,7 +4158,9 @@ export function SettingsImportsTab(props: Record<string, any>) {
 										{typedClinicPublicLookupSuggestions
 											.slice(0, 3)
 											.map((suggestion, index) => (
-												<article key={`${suggestion.source}-${index}`}>
+												<article
+													key={`suggestion-${suggestion.source}-${index}`}
+												>
 													<strong>
 														{clinicPublicLookupSuggestionSourceLabels[
 															suggestion.source
@@ -4325,7 +4327,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 											(source, index) => (
 												<article
 													className={`import-row import-${source.automationLevel === "ready_for_preview" ? "ready" : source.automationLevel === "manual_review" ? "blocked" : "warning"}`}
-													key={`${source.kind}:${source.sourceRef ?? index}`}
+													key={`source-${source.kind}-${source.sourceRef ?? index}`}
 												>
 													<strong>
 														{source.title} ·{" "}

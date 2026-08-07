@@ -522,7 +522,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			//
 			// Демо-вход сохраняет прежнее поведение: он не обращается к базе и остаётся
 			// доступен, если таблиц ещё нет (свежая установка до миграций).
-			let org;
+			let org: typeof organizations.$inferSelect | Record<string, any> | undefined;
 			try {
 				const lookup = await readUnderBypass((tx) =>
 					tx
@@ -681,7 +681,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
 			const sessionId = crypto.randomUUID();
 			await withTenantCtx(orgId, async (tx) => {
-				await tx.update(users)
+				await tx
+					.update(users)
 					.set({ currentSessionId: sessionId })
 					.where(and(eq(users.id, user.id), eq(users.organizationId, orgId)));
 			});

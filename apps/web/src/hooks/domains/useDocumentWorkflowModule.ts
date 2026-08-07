@@ -736,7 +736,7 @@ import {
 	validateDocumentPayloadForKind,
 	withDocumentCreationTimestamps,
 } from "../../documentLogic";
-import { useAuthLogic } from "../../hooks/domains/useAuthLogic";
+import type { useAuthLogic } from "../../hooks/domains/useAuthLogic";
 import { useDicomWorkbenchModule } from "../../hooks/domains/useDicomWorkbenchModule";
 import { useFinanceLogic } from "../../hooks/domains/useFinanceLogic";
 import { usePatientLogic } from "../../hooks/domains/usePatientLogic";

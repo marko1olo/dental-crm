@@ -1,4 +1,4 @@
-import { Play, Pause } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 
@@ -66,7 +66,8 @@ export const CallPlayer: React.FC<{
 
 	const handleRateChange = () => {
 		const rates = [1, 1.25, 1.5, 2];
-		const nextRate = rates[(rates.indexOf(playbackRate) + 1) % rates.length] ?? 1;
+		const nextRate =
+			rates[(rates.indexOf(playbackRate) + 1) % rates.length] ?? 1;
 		if (audioRef.current) {
 			audioRef.current.playbackRate = nextRate;
 			setPlaybackRate(nextRate);

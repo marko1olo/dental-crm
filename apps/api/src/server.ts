@@ -261,7 +261,9 @@ async function checkProxyPortDirectly(
 export async function setupProxyAndTunnels() {
 	// 1. Проверяем наличие SSH-ключа. Если есть, пробуем поднять туннель на порту 1080
 	const hasTunnel = await ensureSshTunnel().catch((err) => {
-		process.stderr.write(`[Proxy Boot] SSH SOCKS5 tunnel autostart failed: ${err}\n`);
+		process.stderr.write(
+			`[Proxy Boot] SSH SOCKS5 tunnel autostart failed: ${err}\n`,
+		);
 		return false;
 	});
 
@@ -771,7 +773,9 @@ export async function createDenteApiApp(
 
 export async function startDenteApiServer() {
 	await setupProxyAndTunnels().catch((err) => {
-		process.stderr.write(`[Proxy Boot] Failed to run proxy/tunnel diagnostics: ${err}\n`);
+		process.stderr.write(
+			`[Proxy Boot] Failed to run proxy/tunnel diagnostics: ${err}\n`,
+		);
 	});
 	const app = await createDenteApiApp();
 
@@ -780,7 +784,10 @@ export async function startDenteApiServer() {
 		process.exit(1);
 	});
 	process.on("unhandledRejection", (reason, promise) => {
-		app.log.fatal({ reason, promise }, "Unhandled Rejection detected. Shutting down...");
+		app.log.fatal(
+			{ reason, promise },
+			"Unhandled Rejection detected. Shutting down...",
+		);
 		process.exit(1);
 	});
 
@@ -795,7 +802,9 @@ export async function startDenteApiServer() {
 				`[Shutdown] Received ${signal}, closing HTTP server and draining database pool...`,
 			);
 			const forceKillTimeout = setTimeout(() => {
-				app.log.error(`[Shutdown] Force killing process after 10s timeout. Pending connections or workers hung.`);
+				app.log.error(
+					`[Shutdown] Force killing process after 10s timeout. Pending connections or workers hung.`,
+				);
 				process.exit(1);
 			}, 10000);
 			try {

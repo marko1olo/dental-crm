@@ -912,7 +912,9 @@ export const treatmentPlanScenarios: TreatmentPlanScenario[] = [
 	},
 ];
 
-serviceCatalog.forEach((s) => serviceCatalogMap.set(s.id, s));
+serviceCatalog.forEach((s) => {
+	serviceCatalogMap.set(s.id, s);
+});
 
 export const clinicalRules: ClinicalRule[] = [
 	{

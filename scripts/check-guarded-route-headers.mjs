@@ -32,6 +32,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
 import {
+	HEADER_HELPERS as ANALYSIS_HEADER_HELPERS,
 	CONDUIT_REASON,
 	collectFetchCalls,
 	findCallers,
@@ -42,35 +43,85 @@ const ROUTES_DIR = "apps/api/src/routes";
 const WEB_DIR = "apps/web/src";
 
 /**
- * Охрана, которая требует админский секрет. Имена — из accessGuard.ts.
+ * Охрана, которая требует админский секрет. Имена — из accessGuard.ts и маршрутов.
  *
- * ЧЕГО ЗДЕСЬ НЕТ И ПОЧЕМУ. В маршрутах встречаются ещё `requireSettingsAccess`
- * (16 вызовов), `requireNonDoctorAccess`, `requireTelegramControlPlaneAccess`,
- * `requirePayoutAccess`, `requireDicomWebSettingsAccess`,
- * `requireScheduleMutationAccess`. Они СОЗНАТЕЛЬНО не внесены: я не проверял, что
- * каждая из них требует именно `x-dente-admin-secret`, а не роль или отдельный
- * секрет настроек. Внести их наугад значило бы получить ложные находки, а проверка,
- * обвиняющая невиновных, тратит время дороже пропущенной поломки. Это НЕ значит,
- * что там всё в порядке: это незакрытая часть, и она названа вслух.
+ * РАСШИРЕНО 2026-08-07: добавлены секретные охраны (requireSettingsAccess,
+ * requireScheduleMutationAccess/Context, requireTelegramControlPlaneAccess,
+ * requireDicomWebSettingsAccess, requirePayoutAccess, requireNonDoctorAccess).
+ * Каждая читает x-dente-admin-secret, сверяя с ОТДЕЛЬНОЙ переменной окружения
+ * (DENTE_SETTINGS_ADMIN_SECRET, DENTE_SCHEDULE_ADMIN_SECRET и т.п.). Клиент
+ * обязан слать заголовок сам через denteAdminSecretRequestHeaders() или
+ * auth.settingsAccessHeaders() / auth.scheduleMutationHeaders() /
+ * telegramControlPlaneHeaders().
  */
 const GUARD_NAMES = [
 	"requireClinicalReadAccess",
 	"requireClinicalMutationAccess",
 	"requireClinicalReadContext",
 	"requireClinicalMutationContext",
+	"requireSettingsAccess",
+	"requireScheduleMutationAccess",
+	"requireScheduleMutationContext",
+	"requireTelegramControlPlaneAccess",
+	"requireDicomWebSettingsAccess",
+	"requirePayoutAccess",
+	"requireNonDoctorAccess",
 ];
 
 /**
- * Признаки того, что вызов посылает админский секрет. Правильный приём в проекте
- * уже есть, и его зовут десятки панелей — второй способ изобретать не нужно.
+ * ОХРАНА, КОТОРУЮ ЭТОТ ГЕЙТ НЕ ПРОВЕРЯЕТ, — НАЗВАНА ВСЛУХ, ЧТОБЫ ВЫВОД НЕ
+ * ЗВУЧАЛ КАК «ПРОВЕРЕНО ВСЁ».
+ *
+ * «охраняемых маршрутов сервера: N» — про маршруты под ЧЕТЫРЬМЯ функциями из
+ * accessGuard.ts, и только про них. В routes/ живут ещё минимум две СИСТЕМЫ
+ * охраны, и судьба голого `fetch` у них разная:
+ *
+ * 1. СВОЙ АДМИНСКИЙ СЕКРЕТ — клиент ОБЯЗАН слать заголовок вручную. Каждая из
+ *    этих функций читает `x-dente-admin-secret` (у нескольких — отдельный секрет
+ *    настроек из env), а глобальная обёртка fetch (apps/web/src/lib/apiAuthFetch.ts)
+ *    этот заголовок НЕ подставляет. Голый fetch на таком маршруте в клинике
+ *    ответит 403, но здесь он не ищется — непроверенная часть, и она названа.
+ *
+ * 2. ПРАВО ПО ТОКЕНУ — клиенту слать нечего. `requirePermission` и её мягкий
+ *    вариант читают только x-dente-clinic-token / x-dente-staff-token, которые
+ *    глобальная обёртка fetch вставляет САМА (installApiAuthFetch в main.tsx).
+ *    Голый fetch для таких маршрутов НОРМАЛЕН, а включение этих имён в
+ *    GUARD_NAMES дало бы ложную находку на каждом вызове — ровно тот провал,
+ *    против которого предостерегает комментарий выше («89 % ложных
+ *    срабатываний»). Проверено прогоном 2026-08-07: /api/sberbank/status при
+ *    токенах кабинета и сотрудника отвечает одинаково с админским секретом и
+ *    без него, а без токенов — 401.
  */
-const HEADER_HELPERS = [
-	"denteAdminSecretRequestHeaders",
-	"denteClinicalReadHeaders",
-	"denteClinicalMutationHeaders",
-	"denteAdminSecretHeaderName",
-	"x-dente-admin-secret",
+const SECRET_BASED_OTHER_GUARDS = [
+	"requireSettingsAccess",
+	"requireScheduleMutationAccess",
+	"requireScheduleMutationContext",
+	"requireTelegramControlPlaneAccess",
+	"requireDicomWebSettingsAccess",
+	"requirePayoutAccess",
+	"requireNonDoctorAccess",
 ];
+
+const TOKEN_ONLY_OTHER_GUARDS = [
+	"requirePermission",
+	"enforcePermissionWhenStaffKnown",
+	"requireStaffIdentity",
+];
+
+/**
+ * Признаки того, что вызов посылает админский секрет, — ОДИН на оба файла.
+ * Состав и обоснование каждого имени лежат рядом с объявлением в
+ * `lib/guarded-header-analysis.mjs`; держать перечень ещё и здесь незачем.
+ */
+/*
+ * СПИСОК ЗДЕСЬ БОЛЬШЕ НЕ ДУБЛИРУЕТСЯ. Прежде тут лежала вторая копия
+ * HEADER_HELPERS, и она разъехалась с действующей: в анализаторе было десять
+ * имён, здесь девять — не хватало `staffMutationHeaders` (замер 2026-08-07).
+ * Комментарий выше сам предупреждает, что правка одной копии без второй выглядит
+ * как работающее расширение и молча ничего не меняет, — и ровно это произошло.
+ * Одно объявление на оба файла лишает расхождение возможности возникнуть.
+ */
+const HEADER_HELPERS = ANALYSIS_HEADER_HELPERS;
 
 function sources(dir, extensions) {
 	const out = [];
@@ -228,14 +279,60 @@ function collectGuardedRoutes() {
 }
 
 /**
- * Адрес маршрута в виде выражения. `:param` совпадает с одним звеном пути,
- * потому что на клиенте на его месте стоит подставленное значение.
+ * Маршруты под охраной, которой этот гейт НЕ ЗНАЕТ. Нужны только для честного
+ * вывода: в находки они не попадают, потому что механика каждой системы другая.
+ *
+ * Числа СЧИТАЮТСЯ, а не вписаны: вписанное число гниёт со следующим маршрутом,
+ * и тогда честная строка станет очередным ложным успокоением.
+ *
+ * Уже проверенные маршруты (под requireClinical* напрямую или через местную
+ * обёртку) исключаются по паре файл+строка, иначе одно и то же считалось бы
+ * дважды и «не проверено» выглядело бы больше, чем есть.
  */
-function routeMatcher(path) {
-	const escaped = path
-		.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-		.replace(/\/:[^/\\]+/g, "/[^/]+");
-	return new RegExp(`^${escaped}$`);
+function collectOtherGuardedRoutes(alreadyChecked) {
+	const registration =
+		/\bapp\.(get|post|put|patch|delete)\s*\(\s*["'`](\/api\/[^"'`]*)["'`]/g;
+	const checked = new Set(
+		alreadyChecked.map((route) => `${route.file}:${route.line}`),
+	);
+	const secret = [];
+	const token = [];
+	for (const file of sources(ROUTES_DIR, [".ts"])) {
+		const code = stripComments(readFileSync(file, "utf8"));
+		const found = [...code.matchAll(registration)];
+		for (let i = 0; i < found.length; i += 1) {
+			const match = found[i];
+			const line = lineOf(code, match.index);
+			if (checked.has(`${file}:${line}`)) continue;
+			const bodyEnd = i + 1 < found.length ? found[i + 1].index : code.length;
+			const body = code.slice(match.index, bodyEnd);
+			const entry = {
+				file,
+				line,
+				method: match[1].toUpperCase(),
+				path: match[2],
+			};
+			/*
+			 * Секрет проверяется ПЕРВЫМ и это не порядок ради порядка: у маршрута
+			 * может стоять и право по токену, и секрет настроек (например
+			 * PUT /api/settings/staff/:staffId/authority). Клиент там обязан слать
+			 * секрет, значит маршрут относится к непроверенной части, а не к
+			 * безопасной.
+			 */
+			const secretGuard = SECRET_BASED_OTHER_GUARDS.find((name) =>
+				body.includes(name),
+			);
+			if (secretGuard) {
+				secret.push({ ...entry, guard: secretGuard });
+				continue;
+			}
+			const tokenGuard = TOKEN_ONLY_OTHER_GUARDS.find((name) =>
+				body.includes(name),
+			);
+			if (tokenGuard) token.push({ ...entry, guard: tokenGuard });
+		}
+	}
+	return { secret, token };
 }
 
 /**
@@ -521,6 +618,16 @@ if (!guarded.some((route) => route.path === "/api/reports/summary")) {
 console.log(
 	"самопроверка: /api/reports/summary опознан охраняемым через обёртку scopeFor",
 );
+
+/*
+ * Маршруты под другой охраной — в находки не идут, печатаются для честности.
+ * Непроверенных маршрутов под админским секретом здесь объективно больше, чем
+ * можно было бы решить по слову «охраняемых» в старой сводке. Внести их в
+ * GUARD_NAMES нельзя (у каждой системы свой секрет и своя логика), но «0 находок»
+ * без этого контекста звучит как «весь проект чист».
+ */
+const other = collectOtherGuardedRoutes(guarded);
+
 const calls = collectWebCalls();
 
 const findings = [];
@@ -537,8 +644,23 @@ for (const call of calls) {
 	findings.push({ call, route });
 }
 
-console.log(`\nохраняемых маршрутов сервера:        ${guarded.length}`);
-console.log(`вызовов fetch к своему серверу:      ${calls.length}`);
+/*
+ * ОХВАТ НАЗЫВАЕТСЯ ПЕРВЫМ И ЧЕСТНО. Прежняя строка была «охраняемых маршрутов
+ * сервера: N», и она читалась как «все охраняемые маршруты проверены». Это
+ * неправда: проверяются только маршруты под четырьмя именами из accessGuard.ts,
+ * а охрана в проекте не одна.
+ */
+console.log(`\nПРОВЕРЕНО под requireClinical*:       ${guarded.length}`);
+console.log(
+	`НЕ ПРОВЕРЯЕТСЯ, под другой охраной:  ${other.secret.length + other.token.length}`,
+);
+console.log(
+	`  под своим секретом админа:         ${other.secret.length}  (клиент обязан слать заголовок сам — голый fetch здесь ответит 403, и гейт этого НЕ УВИДИТ)`,
+);
+console.log(
+	`  под правом по токену:              ${other.token.length}  (заголовки подставляет installApiAuthFetch — голый fetch нормален, находкой быть не может)`,
+);
+console.log(`\nвызовов fetch к своему серверу:      ${calls.length}`);
 console.log(
 	`из них без админского секрета:       ${calls.filter((c) => !c.sendsSecret).length}`,
 );
@@ -579,4 +701,12 @@ if (findings.length > 0) {
 	process.exit(1);
 }
 
-console.log("\nкаждый охраняемый адрес зовут с админским секретом");
+console.log("\nкаждый маршрут ПОД requireClinical* зовут с админским секретом");
+if (other.secret.length > 0) {
+	console.log(
+		`это НЕ значит «весь проект чист»: ${other.secret.length} маршрутов под другой охраной с админским`,
+	);
+	console.log(
+		"секретом здесь не проверялись вовсе. Список охран — в SECRET_BASED_OTHER_GUARDS выше.",
+	);
+}

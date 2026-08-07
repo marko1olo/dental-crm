@@ -185,6 +185,10 @@ export function useFinanceLogic({
 					return;
 				}
 				const famData = await famRes.json();
+				if (!paymentMutationIdRef.current) {
+					paymentMutationIdRef.current = browserGeneratedId("family-payment");
+				}
+				const familyClientMutationId = paymentMutationIdRef.current;
 				response = await fetch("/api/finance/family/pay", {
 					method: "POST",
 					headers: auth.denteClinicalMutationHeaders({
@@ -200,8 +204,7 @@ export function useFinanceLogic({
 						amountRub,
 						visitId: realActiveVisitId ?? undefined,
 						documentId: documentForPayment?.id || undefined,
-						clientMutationId: (paymentMutationIdRef.current ||=
-							browserGeneratedId("family-payment")),
+						clientMutationId: familyClientMutationId,
 					}),
 				});
 			} else {

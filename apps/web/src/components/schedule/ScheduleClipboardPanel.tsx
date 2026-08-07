@@ -11,9 +11,9 @@
  * на месте: буфер копирует, а не вырезает.
  */
 
+import { ChevronDown, ChevronUp } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
@@ -261,7 +261,12 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 		>
 			<div
 				className="panel-heading"
-				style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+				style={{
+					cursor: "pointer",
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+				}}
 				onClick={() => setIsCollapsed(!isCollapsed)}
 			>
 				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>

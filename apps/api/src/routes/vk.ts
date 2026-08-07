@@ -1,16 +1,23 @@
 import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { withTenantCtx } from "../db/rls.js";
-import { communicationEvents, patients } from "../db/schema.js";
+import {
+	communicationEvents,
+	messengerInboundEvents,
+	patients,
+} from "../db/schema.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 type VkWebhookBody = {
 	type?: string;
+	event_id?: string;
 	object?: {
 		message?: {
+			id?: number | string;
 			from_id?: number | string;
 			text?: string;
+			date?: number;
 		};
 	};
 };
@@ -73,7 +80,30 @@ export async function registerVkRoutes(server: FastifyInstance) {
 			const vkId = body.object?.message?.from_id?.toString();
 			const text = body.object?.message?.text || "";
 
-			if (!vkId) return { success: true };
+			if (!vkId) return "ok";
+
+			const msgDate =
+				body.object?.message?.date ?? (body as { date?: number }).date;
+			if (typeof msgDate === "number" && msgDate > 0) {
+				const msgTsSec = msgDate > 1e11 ? Math.floor(msgDate / 1000) : msgDate;
+				const nowSec = Math.floor(Date.now() / 1000);
+				if (Math.abs(nowSec - msgTsSec) > 300) {
+					request.log.warn(
+						{ msgTsSec, nowSec },
+						"VK webhook message timestamp drift > 300s, skipping ingestion",
+					);
+					return "ok";
+				}
+			}
+
+			const rawExternalId =
+				body.object?.message?.id != null
+					? String(body.object.message.id).trim()
+					: body.event_id
+						? String(body.event_id).trim()
+						: null;
+			const externalId =
+				rawExternalId && rawExternalId.length > 0 ? rawExternalId : null;
 
 			/*
 			 * КОНТЕКСТ АРЕНДАТОРА НА ПУБЛИЧНОМ ВЕБХУКЕ. Событие присылает
@@ -89,6 +119,36 @@ export async function registerVkRoutes(server: FastifyInstance) {
 			 * этот обработчик не увидит и не тронет.
 			 */
 			await withTenantCtx(organizationId, async (tx) => {
+				if (externalId) {
+					const existingInbound = await tx
+						.select({ id: messengerInboundEvents.id })
+						.from(messengerInboundEvents)
+						.where(
+							and(
+								eq(messengerInboundEvents.organizationId, organizationId),
+								eq(messengerInboundEvents.externalId, externalId),
+							),
+						)
+						.limit(1);
+					if (existingInbound.length > 0) {
+						request.log.info(
+							{ externalId, organizationId },
+							"VK message already ingested (replay skipped)",
+						);
+						return;
+					}
+
+					await tx.insert(messengerInboundEvents).values({
+						organizationId,
+						channel: "vk",
+						externalId,
+						externalChatId: vkId,
+						messageText: text,
+						eventKind: "message",
+						rawPayload: body as Record<string, unknown>,
+					});
+				}
+
 				let patient: typeof patients.$inferSelect | null = null;
 				const searchResult = await tx
 					.select()

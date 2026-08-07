@@ -378,7 +378,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 				);
 			}
 
-			let stored;
+			let stored: Awaited<ReturnType<typeof storeUploadStream>>;
 			try {
 				stored = await storeUploadStream(bodyStream, rawFileName);
 			} catch (error) {
@@ -399,7 +399,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 			 * на фазе сопоставления. Файл при отказе удаляется — держать на диске
 			 * персональные данные, с которыми ничего нельзя сделать, незачем.
 			 */
-			let shape;
+			let shape: Awaited<ReturnType<typeof detectSourceShape>>;
 			try {
 				shape = await detectSourceShape({
 					filePath: stored.filePath,

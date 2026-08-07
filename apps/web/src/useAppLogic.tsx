@@ -1,5 +1,3 @@
-import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule";
-import { useDocumentWorkflowModule } from "./hooks/domains/useDocumentWorkflowModule";
 import {
 	type AcceptVisitDraftResponse,
 	type AiJobKind,
@@ -748,12 +746,14 @@ import {
 	withDocumentCreationTimestamps,
 } from "./documentLogic";
 import { useAuthLogic } from "./hooks/domains/useAuthLogic";
+import { useClinicalVisitLogic } from "./hooks/domains/useClinicalVisitLogic";
+import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule";
+import { useDocumentWorkflowModule } from "./hooks/domains/useDocumentWorkflowModule";
 import { useFinanceLogic } from "./hooks/domains/useFinanceLogic";
 import { usePatientLogic } from "./hooks/domains/usePatientLogic";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
-import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import { useTelegramModule } from "./hooks/domains/useTelegramModule";
-import { useClinicalVisitLogic } from "./hooks/domains/useClinicalVisitLogic";
+import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import {
 	loadWorkspaceProfile,
 	useWorkspaceProfileStore,
@@ -3985,7 +3985,10 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				setError(
-					await responseErrorMessage(response, "Не удалось создать клиническое правило"),
+					await responseErrorMessage(
+						response,
+						"Не удалось создать клиническое правило",
+					),
 				);
 				return;
 			}

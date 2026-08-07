@@ -419,9 +419,9 @@ export function SmartParsePreview({
 					<div className="mb-2">
 						<span className="text-slate-500 block mb-1">Зубы:</span>
 						<div className="flex flex-wrap gap-1">
-							{data.toothUpdates.map((t: any, i: number) => (
+							{data.toothUpdates.map((t: any, toothIndex: number) => (
 								<span
-									key={i}
+									key={t.code ? `tooth-${t.code}` : `tooth-${t.state || 'update'}-${toothIndex}`}
 									className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs border border-blue-100"
 								>
 									{t.code}: {t.state}

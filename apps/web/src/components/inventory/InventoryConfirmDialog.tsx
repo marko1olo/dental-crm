@@ -52,7 +52,6 @@ export function InventoryConfirmDialog({
 						type="button"
 						className="inventory-confirm-cancel"
 						onClick={onCancel}
-						autoFocus
 					>
 						Отмена
 					</button>

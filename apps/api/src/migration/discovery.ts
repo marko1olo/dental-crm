@@ -1,3 +1,4 @@
+import type { Dirent, Stats } from "node:fs";
 import { open, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -406,7 +407,7 @@ export async function discoverLocalSources(
 		if (visited.has(normalized)) continue;
 		visited.add(normalized);
 
-		let entries;
+		let entries: Dirent[];
 		try {
 			entries = await readdir(item.directory, { withFileTypes: true });
 			directoriesScanned += 1;
@@ -432,7 +433,7 @@ export async function discoverLocalSources(
 			const extension = extensionOf(entry.name);
 			if (SKIP_EXTENSIONS.has(extension)) continue;
 
-			let info;
+			let info: Stats;
 			try {
 				info = await stat(fullPath);
 			} catch {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { showToast } from "../GlobalToast";
 
 export type SberbankTerminalPaymentModalProps = {
@@ -16,7 +16,9 @@ export function SberbankTerminalPaymentModal({
 	onClose,
 	onSuccess,
 }: SberbankTerminalPaymentModalProps) {
-	const [status, setStatus] = useState<"idle" | "initiating" | "polling" | "success" | "error">("idle");
+	const [status, setStatus] = useState<
+		"idle" | "initiating" | "polling" | "success" | "error"
+	>("idle");
 	const [orderId, setOrderId] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState("");
 
@@ -51,7 +53,7 @@ export function SberbankTerminalPaymentModal({
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error || "Failed to initiate payment");
-			
+
 			setOrderId(data.orderId);
 			setStatus("polling");
 		} catch (err: any) {
@@ -94,65 +96,68 @@ export function SberbankTerminalPaymentModal({
 	if (!isOpen) return null;
 
 	return (
-		<div
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				right: 0,
-				bottom: 0,
-				background: "rgba(0,0,0,0.5)",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				zIndex: 9999,
-			}}
-		>
+		<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
 			<div
+				className="w-full max-w-md p-6 rounded-xl shadow-xl"
 				style={{
-					background: "var(--paper, white)",
-					padding: "24px",
-					borderRadius: "12px",
-					width: "400px",
-					maxWidth: "90%",
-					color: "var(--slate-900, black)",
-					boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+					background: "var(--paper)",
+					color: "var(--ink)",
 				}}
 			>
-				<h2 style={{ marginTop: 0, marginBottom: "16px", fontSize: "20px" }}>Оплата через терминал Сбербанка</h2>
+				<h2 style={{ marginTop: 0, marginBottom: "16px", fontSize: "20px" }}>
+					Оплата через терминал Сбербанка
+				</h2>
 				<div style={{ fontSize: "16px", marginBottom: "20px" }}>
 					Сумма к оплате: <strong>{amountInRubles} ₽</strong>
 				</div>
-				
+
 				{status === "initiating" && (
-					<div style={{ color: "var(--brand-600, blue)" }}>Отправка запроса на терминал...</div>
+					<div style={{ color: "var(--brand-600)" }}>
+						Отправка запроса на терминал...
+					</div>
 				)}
-				
+
 				{status === "polling" && (
-					<div style={{ color: "var(--brand-600, blue)", fontWeight: "bold" }}>
+					<div style={{ color: "var(--brand-600)", fontWeight: "bold" }}>
 						Ожидание оплаты клиентом на терминале...
 					</div>
 				)}
 
 				{status === "success" && (
-					<div style={{ color: "var(--success-600, green)", fontWeight: "bold" }}>
+					<div style={{ color: "var(--success-600)", fontWeight: "bold" }}>
 						Оплата успешно проведена!
 					</div>
 				)}
 
 				{status === "error" && (
-					<div style={{ color: "var(--rust, red)", marginBottom: "16px" }}>
+					<div style={{ color: "var(--rust)", marginBottom: "16px" }}>
 						Ошибка: {errorMsg}
 					</div>
 				)}
 
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "24px" }}>
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "flex-end",
+						gap: "12px",
+						marginTop: "24px",
+					}}
+				>
 					{status === "error" && (
-						<button type="button" className="primary-button" onClick={initiatePayment}>
+						<button
+							type="button"
+							className="primary-button"
+							onClick={initiatePayment}
+						>
 							Повторить
 						</button>
 					)}
-					<button type="button" className="secondary-button" onClick={onClose} disabled={status === "initiating" || status === "success"}>
+					<button
+						type="button"
+						className="secondary-button"
+						onClick={onClose}
+						disabled={status === "initiating" || status === "success"}
+					>
 						Отмена
 					</button>
 				</div>

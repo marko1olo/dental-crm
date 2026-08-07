@@ -269,6 +269,18 @@ export function TaxDeductionApplicationForm({
 				/>
 				Перед выдачей будет проверен дубль по тем же расходам
 			</label>
+			<div style={{ marginTop: "16px" }}>
+				<button
+					type="button"
+					className="primary-button"
+					onClick={() => setIsCalculatorOpen(true)}
+				>
+					Рассчитать сумму вычета (НДФЛ)
+				</button>
+			</div>
+			{isCalculatorOpen && (
+				<NdflCalculatorModal onClose={() => setIsCalculatorOpen(false)} />
+			)}
 		</DocumentPayloadCard>
 	);
 }

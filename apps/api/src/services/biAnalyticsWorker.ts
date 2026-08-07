@@ -490,14 +490,51 @@ async function computeDoctorProfitabilityAll() {
 	return map;
 }
 
-export async function computeBiAnalyticsSnapshots() {
+/**
+ * Итог прогона снимков. Числа ИЗМЕРЕНЫ, а не предположены: `failed` — список
+ * организаций, чей снимок не записан, и он единственное, что отличает частичный
+ * отказ от полного успеха.
+ *
+ * ЗАЧЕМ ВОЗВРАТ, А НЕ ИСКЛЮЧЕНИЕ НА ПАДЕНИИ ОДНОЙ КЛИНИКИ. Отказ внутри цикла
+ * обязан оставлять остальным клиникам их снимки — падение одной не должно ронять
+ * остальные, и `catch` внутри цикла для этого и стоит. Но «залогировал и пошёл
+ * дальше» означало, что прогон, не записавший НИ ОДНОГО снимка из-за 42501,
+ * возвращал вызывающему ровно то же, что полностью успешный. По этим отчётам
+ * принимают клинические и денежные решения, поэтому неотличимость недопустима:
+ * счётчик отказов уходит наружу, а решение, что с ним делать, принимает
+ * вызывающий.
+ */
+export interface BiAnalyticsSnapshotRun {
+	/** Сколько организаций вернул каталог. */
+	readonly organizations: number;
+	/** Сколько снимков действительно записано. */
+	readonly succeeded: number;
+	/** Организации, чей снимок НЕ записан. Пустой список — полный успех. */
+	readonly failed: readonly string[];
+}
+
+/**
+ * ВНЕШНИЙ `catch` БОЛЬШЕ НЕ ПРЕВРАЩАЕТ ОТКАЗ В УСПЕХ.
+ *
+ * Он покрывал в том числе чтение списка организаций
+ * (`withSuperuserBypass(... select ... organizations)`). Отказ этого чтения
+ * означает, что не посчитано НИЧЕГО, — сохранять нечего, поэтому он пробрасывается.
+ * Частичного результата этот проброс не отнимает: ошибки отдельных клиник до него
+ * не доходят, их раньше перехватывает `catch` ВНУТРИ цикла, и цикл продолжается.
+ *
+ * Функция `async`, поэтому до правки вызывающий получал исполненный `Promise` и
+ * отказ прав RLS `42501` был неотличим от успешно собранной аналитики.
+ */
+export async function computeBiAnalyticsSnapshots(): Promise<BiAnalyticsSnapshotRun> {
 	try {
 		const orgs = await withSuperuserBypass((tx) =>
 			tx.select().from(organizations),
 		);
-		if (!orgs.length) return;
+		if (!orgs.length) return { organizations: 0, succeeded: 0, failed: [] };
 
 		const snapshotDate = new Date();
+		const failed: string[] = [];
+		let succeeded = 0;
 
 		for (const org of orgs) {
 			const orgId = org.id;
@@ -532,25 +569,58 @@ export async function computeBiAnalyticsSnapshots() {
 
 					console.log(`[BI Worker] Snapshot generated for org ${orgId}`);
 				});
+				succeeded += 1;
 			} catch (err) {
+				// Падение ОДНОЙ клиники не роняет остальные — цикл продолжается, как и
+				// до правки. Но факт отказа больше не остаётся только в логе: он уходит
+				// вызывающему числом.
+				failed.push(orgId);
 				console.error(
 					`[BI Worker] Error generating snapshot for organization ${orgId}:`,
 					err,
 				);
 			}
 		}
+
+		if (failed.length > 0) {
+			console.error(
+				`[BI Worker] Снимки не записаны у ${failed.length} организаций из ${orgs.length}: ${failed.join(", ")}`,
+			);
+		}
+
+		return { organizations: orgs.length, succeeded, failed };
 	} catch (err) {
 		console.error("[BI Worker] Error generating snapshots:", err);
+		throw err;
 	}
+}
+
+/**
+ * ОТКАЗ ЛОВИТСЯ ЗДЕСЬ, НА ГРАНИЦЕ ТАЙМЕРА, И ЭТО НЕ ВОЗВРАТ К ПРЕЖНЕМУ
+ * ПОВЕДЕНИЮ. `computeBiAnalyticsSnapshots` теперь пробрасывает отказ, а таймеру
+ * `Promise` вернуть некуда: `setTimeout`/`setInterval` его не ждут, поэтому
+ * необработанное отклонение уронило бы ВЕСЬ процесс API (`unhandledRejection`
+ * в Node по умолчанию завершает процесс). Планировщик — единственное место, где
+ * отказ действительно некому передать, поэтому он его и записывает.
+ *
+ * Разница с прежним кодом в том, ЧТО именно проглатывается: раньше отказ не
+ * доходил ни до одного вызывающего вообще, теперь его видит каждый, кто
+ * `await`-ит функцию, а фоновое расписание продолжает работать по своему часовому
+ * циклу вместо того, чтобы умереть на первой же ошибке.
+ */
+function runScheduledSnapshots(): void {
+	void computeBiAnalyticsSnapshots().catch((err) => {
+		console.error("[BI Worker] Плановый прогон снимков отказал:", err);
+	});
 }
 
 export function startBiAnalyticsWorker() {
 	// Run async without blocking startup
-	setTimeout(() => computeBiAnalyticsSnapshots(), 5000);
+	setTimeout(() => runScheduledSnapshots(), 5000);
 
 	return setInterval(
 		() => {
-			computeBiAnalyticsSnapshots();
+			runScheduledSnapshots();
 		},
 		1000 * 60 * 60,
 	);

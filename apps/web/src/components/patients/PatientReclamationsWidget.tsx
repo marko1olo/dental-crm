@@ -424,6 +424,7 @@ export function PatientReclamationsWidget({
 							<div className="grid grid-cols-1 gap-4">
 								<div className="smart-field">
 									<select
+										id="reclamation-doctor-select"
 										value={doctorId}
 										onChange={(e) => setDoctorId(e.target.value)}
 										required
@@ -438,32 +439,43 @@ export function PatientReclamationsWidget({
 											</option>
 										))}
 									</select>
-									<label className="text-xs text-rose-700 dark:text-rose-400 font-medium">
+									<label
+										htmlFor="reclamation-doctor-select"
+										className="text-xs text-rose-700 dark:text-rose-400 font-medium"
+									>
 										Врач (автор работы)
 									</label>
 								</div>
 
 								<div className="smart-field">
 									<textarea
+										id="reclamation-details"
 										value={newComplicationDetails}
 										onChange={(e) => setNewComplicationDetails(e.target.value)}
 										placeholder=" "
 										required
 										className="w-full p-3 rounded-lg min-h-[80px] bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900 text-slate-900 dark:text-white outline-none resize-y"
 									/>
-									<label className="text-xs text-rose-700 dark:text-rose-400 font-medium">
+									<label
+										htmlFor="reclamation-details"
+										className="text-xs text-rose-700 dark:text-rose-400 font-medium"
+									>
 										Суть жалобы или осложнения
 									</label>
 								</div>
 
 								<div className="smart-field">
 									<textarea
+										id="reclamation-proposed-action"
 										value={newProposedAction}
 										onChange={(e) => setNewProposedAction(e.target.value)}
 										placeholder=" "
 										className="w-full p-3 rounded-lg min-h-[60px] bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900 text-slate-900 dark:text-white outline-none resize-y"
 									/>
-									<label className="text-xs text-rose-700 dark:text-rose-400 font-medium">
+									<label
+										htmlFor="reclamation-proposed-action"
+										className="text-xs text-rose-700 dark:text-rose-400 font-medium"
+									>
 										Предложенное решение (гарантия, возврат, переделка)
 									</label>
 								</div>
@@ -525,6 +537,7 @@ export function PatientReclamationsWidget({
 											</div>
 											<div className="flex gap-2">
 												<button
+													type="button"
 													onClick={() => handleToggleStatus(rec.id, rec.status)}
 													className={`border-0 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
 														isUnderReview
@@ -546,6 +559,7 @@ export function PatientReclamationsWidget({
 													)}
 												</button>
 												<button
+													type="button"
 													onClick={() => handleDelete(rec.id)}
 													className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-1.5 rounded-md cursor-pointer transition-colors"
 													title="Удалить безвозвратно"

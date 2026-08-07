@@ -119,7 +119,7 @@ export function ToothHistoryChronicle({
 					<History className="w-5 h-5 text-indigo-500" />
 					<h3>История зуба {toothNumber}</h3>
 				</div>
-				<button onClick={onClose} className="history-close-btn">
+				<button type="button" onClick={onClose} className="history-close-btn">
 					<X className="w-5 h-5" />
 				</button>
 			</div>
@@ -153,7 +153,10 @@ export function ToothHistoryChronicle({
 				) : (
 					<div className="history-timeline">
 						{events.map((evt, idx) => (
-							<div key={idx} className="timeline-item">
+							<div
+								key={`evt-${evt.kind}-${evt.dateIso || idx}-${idx}`}
+								className="timeline-item"
+							>
 								<div className="timeline-icon">
 									{evt.kind === "diary" ? (
 										<FileText className="w-4 h-4 text-emerald-500" />

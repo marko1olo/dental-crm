@@ -154,9 +154,11 @@
 		"smoke:schema-ddl-coverage": "node scripts/smoke-schema-ddl-coverage.mjs",
 		"smoke:schema-column-parity": "node scripts/smoke-schema-column-parity.mjs",
 		"smoke:persistent-state-save": "node scripts/smoke-persistent-state-save.mjs",
-		"smoke:imaging-manifest-parser": "node scripts/smoke-imaging-manifest-parser.mjs"
+		"smoke:imaging-manifest-parser": "node scripts/smoke-imaging-manifest-parser.mjs",
+		"smoke": "npm run smoke:documents-lifecycle --workspace=@dental/web"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.51.0",
 		"@types/node": "^26.0.0",
 		"concurrently": "^9.1.2",
 		"playwright": "^1.61.1",

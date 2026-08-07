@@ -458,6 +458,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 						</h3>
 						<div style={{ display: "flex", gap: "12px" }}>
 							<button
+								type="button"
 								onClick={() => updateStatus("in_progress")}
 								disabled={isUpdating || order.status === "in_progress"}
 								className={`secondary-button ${order.status === "in_progress" ? "active" : ""}`}
@@ -466,6 +467,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								Взять в работу
 							</button>
 							<button
+								type="button"
 								onClick={() => updateStatus("shipped")}
 								disabled={isUpdating || order.status === "shipped"}
 								className={`secondary-button ${order.status === "shipped" ? "active" : ""}`}
@@ -474,6 +476,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								Работа готова
 							</button>
 							<button
+								type="button"
 								onClick={() => updateStatus("refitting")}
 								disabled={isUpdating || order.status === "refitting"}
 								className={`secondary-button ${order.status === "refitting" ? "active" : ""}`}

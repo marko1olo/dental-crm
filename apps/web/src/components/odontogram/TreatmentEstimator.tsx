@@ -547,6 +547,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					    потраченной впустую. Подсказка в title объясняет, почему кнопка
 					    выключена — выключенная кнопка без причины выглядит как поломка. */}
 					<button
+						type="button"
 						onClick={() => setShowSignModal(true)}
 						disabled={blockedReason !== null}
 						title={blockedReason ?? "Подписать план у пациента"}
@@ -556,6 +557,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						Подписать
 					</button>
 					<button
+						type="button"
 						onClick={savePlan}
 						disabled={isSaving || blockedReason !== null}
 						title={blockedReason ?? "Сохранить план лечения"}
@@ -793,6 +795,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 													</div>
 												</div>
 												<button
+													type="button"
 													onClick={() => removeItem(globalIdx)}
 													className="btn-remove-item"
 													title="Удалить"

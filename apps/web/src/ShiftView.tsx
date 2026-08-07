@@ -24,8 +24,8 @@ import {
 } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { PatientAvatar } from "./components/PatientAvatar";
-import { countLabel } from "./lib/russianPlural";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
+import { countLabel } from "./lib/russianPlural";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {
@@ -415,12 +415,12 @@ export function ShiftView({
 								};
 
 								return (
-									<div
+									<button
+										type="button"
 										key={app.id}
-										role="button"
-										tabIndex={0}
 										aria-label={`Прием: ${patient ? patient.fullName : "Неизвестный пациент"}, ${timeStart} – ${timeEnd}`}
 										className={`today-schedule-item focus:ring-2 focus:ring-teal-600 focus:outline-none ${isCurrent ? "current-active" : ""}`}
+										style={{ textAlign: "left", width: "100%" }}
 										onClick={() => {
 											if (patient) {
 												setSelectedPatientId(patient.id);
@@ -453,7 +453,7 @@ export function ShiftView({
 										<span className={`status-pill status-${statusKey}`}>
 											{statusLabels[statusKey] ?? "статус неизвестен"}
 										</span>
-									</div>
+									</button>
 								);
 							})}
 						</div>
@@ -552,7 +552,15 @@ export function ShiftView({
 					)}
 				</section>
 
-				<section className="shift-emk-control" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", boxShadow: "var(--shadow-1)" }}>
+				<section
+					className="shift-emk-control"
+					style={{
+						background: "var(--paper)",
+						border: "1px solid var(--line)",
+						borderRadius: "14px",
+						boxShadow: "var(--shadow-1)",
+					}}
+				>
 					<EmkControlBoard dashboard={dashboard} />
 				</section>
 
@@ -1295,11 +1303,11 @@ export function PatientCockpit({
 				</div>
 
 				<div className="patient-feature-grid">
-					<article
-						role="button"
-						tabIndex={0}
+					<button
+						type="button"
 						aria-label="Открыть ЭМК и историю"
 						className="clickable-card"
+						style={{ textAlign: "left" }}
 						onClick={() => {
 							window.location.hash = "visit";
 						}}
@@ -1315,12 +1323,12 @@ export function PatientCockpit({
 							<h3>ЭМК / История</h3>
 							<p className="tile-meta">Приёмы · диагнозы · зубная карта</p>
 						</div>
-					</article>
-					<article
-						role="button"
-						tabIndex={0}
+					</button>
+					<button
+						type="button"
 						aria-label="Открыть документы"
 						className="clickable-card"
+						style={{ textAlign: "left" }}
 						onClick={() => {
 							window.location.hash = "documents";
 						}}
@@ -1342,12 +1350,12 @@ export function PatientCockpit({
 									: "по визиту документов нет"}
 							</p>
 						</div>
-					</article>
-					<article
-						role="button"
-						tabIndex={0}
+					</button>
+					<button
+						type="button"
 						aria-label="Открыть оплаты"
 						className="clickable-card"
+						style={{ textAlign: "left" }}
 						onClick={() => {
 							window.location.hash = "finance";
 						}}
@@ -1375,12 +1383,12 @@ export function PatientCockpit({
 								{money(dashboard?.billingSummary?.totalDueRub)}
 							</p>
 						</div>
-					</article>
-					<article
-						role="button"
-						tabIndex={0}
+					</button>
+					<button
+						type="button"
 						aria-label="Открыть связь и задачи"
 						className="clickable-card"
+						style={{ textAlign: "left" }}
 						onClick={() => {
 							window.location.hash = "communications";
 						}}
@@ -1405,12 +1413,12 @@ export function PatientCockpit({
 									: "задач нет"}
 							</p>
 						</div>
-					</article>
-					<article
-						role="button"
-						tabIndex={0}
+					</button>
+					<button
+						type="button"
 						aria-label="Открыть снимки пациента"
 						className="clickable-card"
+						style={{ textAlign: "left" }}
 						onClick={() => {
 							window.location.hash = "imaging";
 						}}
@@ -1435,7 +1443,7 @@ export function PatientCockpit({
 									: "снимков нет"}
 							</p>
 						</div>
-					</article>
+					</button>
 				</div>
 			</section>
 		</>

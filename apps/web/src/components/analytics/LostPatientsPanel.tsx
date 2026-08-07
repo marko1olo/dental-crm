@@ -21,7 +21,7 @@ export interface LostPatientRow {
 }
 
 export const LostPatientsPanel: React.FC = () => {
-	const { auth, setSelectedPatientId } = useAppLogicContext() as any;
+	const { auth, setSelectedPatientId } = useAppLogicContext();
 	const [patients, setPatients] = useState<LostPatientRow[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);

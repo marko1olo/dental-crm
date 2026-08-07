@@ -307,5 +307,6 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			`[BI Analytics] Failed to run aggregation for organization ${orgId}:`,
 			err,
 		);
+		throw err;
 	}
 }

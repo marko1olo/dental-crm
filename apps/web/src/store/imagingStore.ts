@@ -26,17 +26,20 @@ import type {
 	MprWindowPreset,
 } from "@dental/shared";
 import { create } from "zustand";
-import {
-	type BrowserImagingScanProgress,
-	type BrowserPickedImagingFolderPreview,
-	type ImagingViewerSaveState,
-	type LocalImagingFolderDraft,
+import type {
+	BrowserImagingScanProgress,
+	BrowserPickedImagingFolderPreview,
+	ImagingViewerSaveState,
+	LocalImagingFolderDraft,
 } from "../AppHelpers";
 import {
 	defaultDicomFirstFrameViewerState,
 	defaultImagingViewerState,
 } from "../utils/draftDefaults";
-import { defaultUiPreferences, loadUiPreferences } from "../utils/preferencesUtils";
+import {
+	defaultUiPreferences,
+	loadUiPreferences,
+} from "../utils/preferencesUtils";
 import { resolveUpdater } from "./updater";
 
 // БЫЛО: настройки брались из initialUiPreferences — заглушки `{} as any` в

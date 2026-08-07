@@ -11,6 +11,17 @@ const SettingsSchema = z.object({
 });
 
 export async function registerYandexCalendarRoutes(app: FastifyInstance) {
+	app.get("/api/integrations/yandex-calendar/auth", async (request, reply) => {
+		const identity = await requireStaffIdentity(request, reply);
+		if (!identity?.organizationId) return;
+
+		return {
+			authUrl:
+				"https://oauth.yandex.ru/authorize?response_type=code&client_id=dente_crm",
+			connected: false,
+		};
+	});
+
 	app.post(
 		"/api/integrations/yandex-calendar/settings",
 		async (request, reply) => {
@@ -83,8 +94,8 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 			.where(
 				and(
 					eq(yandexCalendarSyncs.organizationId, orgId),
-					eq(yandexCalendarSyncs.doctorId, staffId)
-				)
+					eq(yandexCalendarSyncs.doctorId, staffId),
+				),
 			)
 			.then((r) => r[0]);
 

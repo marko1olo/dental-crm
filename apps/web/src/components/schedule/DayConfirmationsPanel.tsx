@@ -186,10 +186,9 @@ export function DayConfirmationsPanel() {
 			const headers = authRef.current
 				? authRef.current.denteClinicalReadHeaders()
 				: {};
-			const response = await fetch(
-				dayConfirmationsRequestPath(requestedDate),
-				{ headers },
-			);
+			const response = await fetch(dayConfirmationsRequestPath(requestedDate), {
+				headers,
+			});
 			setData(await readJson<DayConfirmations>(response));
 			// Отметки «обзвонил» относятся к загруженному дню и при смене даты
 			// сбрасываются: иначе они переносятся на другой список.

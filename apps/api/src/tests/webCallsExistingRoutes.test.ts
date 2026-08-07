@@ -86,7 +86,6 @@ const KNOWN_MISSING: readonly string[] = [
 	 * никто не зовёт, — не долг, а мусор в списке.
 	 */
 	"/api/integrations/egisz-blank-permissions",
-	"/api/integrations/yandex-calendar-syncs",
 	/*
 	 * Отсюда убрана строка /api/marketing/family-recommendation-sources: её звал
 	 * ровно один виджет, FamilyRecommendationSourcesWidget, и он удалён вместе с

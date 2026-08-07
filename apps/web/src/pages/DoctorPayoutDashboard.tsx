@@ -624,7 +624,6 @@ export function DoctorPayoutDashboard() {
 															max={100}
 															step={0.01}
 															value={rateDraft}
-															autoFocus
 															onChange={(event) =>
 																setRateDraft(event.target.value)
 															}

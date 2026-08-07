@@ -1,13 +1,15 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import type { 
-	MessageTemplateCatalog, 
-	CreateMessageTemplateCatalogInput, 
-	UpdateMessageTemplateCatalogInput 
+import type {
+	MessageTemplateCatalog,
+	CreateMessageTemplateCatalogInput,
+	UpdateMessageTemplateCatalogInput,
 } from "@dental/shared";
 
-export async function getMessageTemplateCatalogs(organizationId: string): Promise<MessageTemplateCatalog[]> {
+export async function getMessageTemplateCatalogs(
+	organizationId: string,
+): Promise<MessageTemplateCatalog[]> {
 	const rows = await db
 		.select()
 		.from(schema.messageTemplateCatalogs)
@@ -18,7 +20,7 @@ export async function getMessageTemplateCatalogs(organizationId: string): Promis
 
 export async function createMessageTemplateCatalog(
 	organizationId: string,
-	input: CreateMessageTemplateCatalogInput
+	input: CreateMessageTemplateCatalogInput,
 ): Promise<MessageTemplateCatalog> {
 	const [row] = await db
 		.insert(schema.messageTemplateCatalogs)
@@ -39,7 +41,7 @@ export async function createMessageTemplateCatalog(
 export async function updateMessageTemplateCatalog(
 	organizationId: string,
 	templateId: string,
-	input: UpdateMessageTemplateCatalogInput
+	input: UpdateMessageTemplateCatalogInput,
 ): Promise<MessageTemplateCatalog> {
 	const [row] = await db
 		.update(schema.messageTemplateCatalogs)
@@ -54,26 +56,28 @@ export async function updateMessageTemplateCatalog(
 		.where(
 			and(
 				eq(schema.messageTemplateCatalogs.id, templateId),
-				eq(schema.messageTemplateCatalogs.organizationId, organizationId)
-			)
+				eq(schema.messageTemplateCatalogs.organizationId, organizationId),
+			),
 		)
 		.returning();
-	if (!row) throw new Error("Message template catalog not found or update failed");
+	if (!row)
+		throw new Error("Message template catalog not found or update failed");
 	return row as any;
 }
 
 export async function deleteMessageTemplateCatalog(
 	organizationId: string,
-	templateId: string
+	templateId: string,
 ): Promise<void> {
 	const [row] = await db
 		.delete(schema.messageTemplateCatalogs)
 		.where(
 			and(
 				eq(schema.messageTemplateCatalogs.id, templateId),
-				eq(schema.messageTemplateCatalogs.organizationId, organizationId)
-			)
+				eq(schema.messageTemplateCatalogs.organizationId, organizationId),
+			),
 		)
 		.returning();
-	if (!row) throw new Error("Message template catalog not found or delete failed");
+	if (!row)
+		throw new Error("Message template catalog not found or delete failed");
 }

@@ -102,7 +102,11 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 	useEffect(() => {
 		if (profile) {
 			setYandexCalendarId(profile.yandexCalendarId || "");
-			setYandexCalendarToken(profile.yandexCalendarToken ? JSON.stringify(profile.yandexCalendarToken) : "");
+			setYandexCalendarToken(
+				profile.yandexCalendarToken
+					? JSON.stringify(profile.yandexCalendarToken)
+					: "",
+			);
 		}
 	}, [profile]);
 
@@ -126,7 +130,10 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 					"Content-Type": "application/json",
 					"x-dente-staff-token": readDenteStaffToken() ?? "",
 				},
-				body: JSON.stringify({ yandexCalendarId: yandexCalendarId || null, yandexCalendarToken: parsedToken }),
+				body: JSON.stringify({
+					yandexCalendarId: yandexCalendarId || null,
+					yandexCalendarToken: parsedToken,
+				}),
 			});
 			if (!r.ok) throw new Error("Settings update failed");
 			showToast("Настройки Яндекс.Календаря сохранены", "success");
@@ -493,15 +500,15 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 							</div>
 							{newPassword && (
 								<div className="flex gap-1 mt-1.5 items-center">
-									{[1, 2, 3].map((i) => (
+									{[1, 2, 3].map((level) => (
 										<div
-											key={i}
+											key={`strength-bar-${level}`}
 											style={{
 												height: 3,
 												flex: 1,
 												borderRadius: 2,
 												background:
-													strength.score >= i
+													strength.score >= level
 														? strength.score === 1
 															? "var(--danger,#ef4444)"
 															: strength.score === 2
@@ -569,7 +576,8 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 							color: "var(--text-secondary)",
 						}}
 					>
-						Подключите свой Яндекс.Календарь для синхронизации расписания приёмов.
+						Подключите свой Яндекс.Календарь для синхронизации расписания
+						приёмов.
 					</p>
 					<form onSubmit={handleUpdateYandexSettings} className="form-grid">
 						<label className="form-span-1">
@@ -594,7 +602,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 								className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
 							/>
 						</label>
-						<div className="form-actions form-span-2 flex gap-4">
+						<div className="form-actions form-span-2 flex gap-4 flex-wrap">
 							<button
 								className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
 								type="submit"
@@ -609,6 +617,16 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 								disabled={yandexSyncLoading || !yandexCalendarId}
 							>
 								{yandexSyncLoading ? "Запуск..." : "Запустить синхронизацию"}
+							</button>
+							<button
+								type="button"
+								className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+								onClick={() => {
+									window.location.href =
+										"/api/integrations/yandex-calendar/auth";
+								}}
+							>
+								Подключить Яндекс.Календарь
 							</button>
 						</div>
 					</form>

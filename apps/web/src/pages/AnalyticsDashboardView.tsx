@@ -97,7 +97,7 @@ export function AnalyticsDashboardView() {
 	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
 	// выдумывает, и вторая ветка была недостижима. Проверка на сам `auth` ниже
 	// остаётся: контекст может быть, а раздела авторизации в нём — нет.
-	const appLogic = useAppLogicContext() as any;
+	const appLogic = useAppLogicContext();
 	const authContext = appLogic?.auth;
 	const getReadHeaders = () =>
 		authContext

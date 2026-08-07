@@ -63,7 +63,8 @@ export interface StoredUpload {
 export function safeUploadFileName(rawName: string | undefined): string {
 	const base = (rawName ?? "").split(/[\\/]/).pop()?.trim() ?? "";
 	const cleaned = base
-		.replace(/[\u0000-\u001F]/g, "")
+		// biome-ignore lint/complexity/useRegexLiterals: control character range
+		.replace(new RegExp("[\\x00-\\x1F]", "g"), "")
 		.replace(/[<>:"|?*]/g, "_")
 		.slice(0, 180);
 	return cleaned || "upload.bin";

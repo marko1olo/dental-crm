@@ -421,7 +421,6 @@ export const StaffCommissionsPanel: React.FC = () => {
 															aria-label={`Ставка для ${row.name}`}
 															className="w-24 px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
 															data-testid={`staff-commission-draft-${row.userId}`}
-															autoFocus
 														/>
 													) : row.rate ? (
 														<span

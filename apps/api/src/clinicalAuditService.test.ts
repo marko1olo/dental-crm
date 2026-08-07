@@ -6,7 +6,7 @@ import { db } from "./db/client.js";
 
 describe("auditFromRequest", () => {
 	test("extracts ip and user-agent from fastify request when both headers are present", async (t) => {
-		let capturedValues;
+		let capturedValues: any;
 		t.mock.method(db, "insert", () => ({
 			values: (vals: any) => {
 				capturedValues = vals;
@@ -44,7 +44,7 @@ describe("auditFromRequest", () => {
 	});
 
 	test("uses request.ip when x-forwarded-for is missing", async (t) => {
-		let capturedValues;
+		let capturedValues: any;
 		t.mock.method(db, "insert", () => ({
 			values: (vals: any) => {
 				capturedValues = vals;
@@ -81,7 +81,7 @@ describe("auditFromRequest", () => {
 	});
 
 	test("handles missing ip and user-agent", async (t) => {
-		let capturedValues;
+		let capturedValues: any;
 		t.mock.method(db, "insert", () => ({
 			values: (vals: any) => {
 				capturedValues = vals;
@@ -115,7 +115,7 @@ describe("auditFromRequest", () => {
 	});
 
 	test("handles single ip in x-forwarded-for header without spaces", async (t) => {
-		let capturedValues;
+		let capturedValues: any;
 		t.mock.method(db, "insert", () => ({
 			values: (vals: any) => {
 				capturedValues = vals;

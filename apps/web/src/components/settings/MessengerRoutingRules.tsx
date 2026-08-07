@@ -121,7 +121,10 @@ export function MessengerRoutingRules({
 			</div>
 
 			{routing.rules.map((rule, i) => (
-				<div key={i} className="routing-rule-row">
+				<div
+					key={`rule-${rule.intent}-${i}`}
+					className="routing-rule-row"
+				>
 					<select
 						value={rule.intent}
 						onChange={(e) => updateRule(i, { intent: e.target.value })}

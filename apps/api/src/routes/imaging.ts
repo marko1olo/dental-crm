@@ -8,6 +8,8 @@ import {
 	openSync,
 	readSync,
 	statSync,
+	type Dirent,
+	type Stats,
 } from "node:fs";
 import {
 	access,
@@ -2976,7 +2978,7 @@ async function readZipCentralDirectoryDetailed(
 	filePath: string,
 ): Promise<ZipCentralDirectoryDetailedResult> {
 	const warnings: string[] = [];
-	let stats;
+	let stats: Stats;
 	try {
 		stats = await stat(filePath);
 	} catch {
@@ -3791,8 +3793,12 @@ function buildDicomSeriesGroups(rows: DicomSeriesPreviewRow[]) {
 					studyInstanceUidNull && seriesInstanceUidNull,
 				),
 			});
-			mprReadiness.blockers.forEach((blocker) => warnings.add(blocker));
-			mprReadiness.warnings.forEach((warning) => warnings.add(warning));
+			mprReadiness.blockers.forEach((blocker) => {
+				warnings.add(blocker);
+			});
+			mprReadiness.warnings.forEach((warning) => {
+				warnings.add(warning);
+			});
 			const status = blocked
 				? "blocked"
 				: patientIdNull && warnings.size === 0
@@ -5541,9 +5547,11 @@ function buildDicomViewerToolStateBundle(
 			"План загрузки выбрал внешний просмотр; используйте этот файл только для передачи метаданных и аннотаций.",
 		);
 	}
-	annotations.forEach((annotation) =>
-		annotation.warnings.forEach((warning) => warnings.add(warning)),
-	);
+	annotations.forEach((annotation) => {
+		annotation.warnings.forEach((warning) => {
+			warnings.add(warning);
+		});
+	});
 
 	const target =
 		input.target === "ohif"
@@ -6031,7 +6039,9 @@ function buildGpuRenderPlan(input: {
 			forceMetadataOnly || forceExternal || !series.mprReadiness.canOpenMpr,
 	});
 
-	runtimeProfile.warnings.forEach((warning) => warnings.add(warning));
+	runtimeProfile.warnings.forEach((warning) => {
+		warnings.add(warning);
+	});
 	if (gpuClass === "none")
 		warnings.add(
 			"Графика браузера недоступна: КТ-срезы не могут работать в этом браузере.",
@@ -7286,9 +7296,14 @@ function collectReadinessWarnings(
 			"Источник архива снимков требует сеть; офлайн-режим должен оставаться только с метаданными.",
 		);
 	}
-	runtimeProfile.warnings.forEach((warning) => warnings.add(warning));
-	if (!series.mprReadiness.canOpenMpr)
-		series.mprReadiness.blockers.forEach((blocker) => warnings.add(blocker));
+	runtimeProfile.warnings.forEach((warning) => {
+		warnings.add(warning);
+	});
+	if (!series.mprReadiness.canOpenMpr) {
+		series.mprReadiness.blockers.forEach((blocker) => {
+			warnings.add(blocker);
+		});
+	}
 	if (!tierOk)
 		warnings.add(
 			"Текущая рабочая станция ниже рекомендованного класса для выбранной политики ресурсов КЛКТ.",
@@ -7303,7 +7318,9 @@ function collectReadinessWarnings(
 		);
 	if (!connectorReady)
 		warnings.add("Архив снимков не готов к передаче срезов.");
-	renderPlan.warnings.forEach((warning) => warnings.add(warning));
+	renderPlan.warnings.forEach((warning) => {
+		warnings.add(warning);
+	});
 	return warnings;
 }
 
@@ -7632,7 +7649,7 @@ async function discoverLocalDicomFolders(
 		visited.add(currentKey);
 		scannedFolders += 1;
 
-		let entries;
+		let entries: Dirent[];
 		try {
 			entries = await readdir(item.folderPath, { withFileTypes: true });
 		} catch (error) {
@@ -8085,7 +8102,9 @@ function buildDentalModelWorkbenchManifest(input: {
 				"Крупная сетка должна открываться локально; браузерная карточка хранит только маршрут и метаданные.",
 			);
 		}
-		itemWarnings.forEach((warning) => warnings.add(warning));
+		itemWarnings.forEach((warning) => {
+			warnings.add(warning);
+		});
 		const pairingHint: DentalModelWorkbenchPairingHint =
 			input.dicomLikeFiles > 0 ? "same_folder_ct_series" : "model_only_folder";
 		const ctSurfaceManifest = buildCtSurfaceModelManifest({
@@ -8201,7 +8220,7 @@ async function organizeLocalImagingSources(
 		visited.add(currentKey);
 		scannedFolders += 1;
 
-		let entries;
+		let entries: Dirent[];
 		try {
 			entries = await readdir(item.folderPath, { withFileTypes: true });
 		} catch (error) {

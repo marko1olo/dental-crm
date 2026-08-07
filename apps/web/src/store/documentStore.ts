@@ -31,6 +31,7 @@ import type {
 	XrayCbctReferralPriority,
 	XrayCbctReferralStudyType,
 } from "@dental/shared";
+import { postVisitCarePresets } from "../postVisitCareData";
 /*
  * dateInputValuePlusDays отсюда убран вместе со сроком оплаты счёта и графиком
  * рассрочки: в значении поля он считался при загрузке модуля и подсовывал в
@@ -43,7 +44,6 @@ import {
 } from "../utils/dateUtils";
 import { defaultClinicalToothRowsText } from "../utils/draftDefaults";
 import { loadUiPreferences } from "../utils/preferencesUtils";
-import { postVisitCarePresets } from "../postVisitCareData";
 
 const initialUiPreferences = loadUiPreferences();
 
