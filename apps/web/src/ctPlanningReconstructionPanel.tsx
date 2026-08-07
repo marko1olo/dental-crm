@@ -8,7 +8,7 @@ export function CtPlanningReconstructionPanel({
 	plan,
 }: CtPlanningReconstructionPanelProps) {
 	return (
-		<div
+		<section
 			className="ct-planning-reconstruction-board"
 			data-testid="ct-planning-reconstruction-board"
 			aria-label="Построение ОПТГ и поперечных КТ-срезов"
@@ -45,14 +45,14 @@ export function CtPlanningReconstructionPanel({
 				))}
 			</div>
 			{plan.warnings.length > 0 ? (
-				<div
+				<section
 					className="ct-planning-reconstruction-warnings"
 					aria-label="Предупреждения по построению ОПТГ"
 				>
 					<span>Контроль</span>
 					<p>{plan.warnings.join(" · ")}</p>
-				</div>
+				</section>
 			) : null}
-		</div>
+		</section>
 	);
 }

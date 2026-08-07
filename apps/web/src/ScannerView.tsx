@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Activity, Box, CheckCircle2, ScanLine, XCircle } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { requestFailureCause } from "./lib/panelStateText";
@@ -137,7 +137,7 @@ export function ScannerView() {
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	const loadLogs = async () => {
+	const loadLogs = useCallback(async () => {
 		setIsLoadingLogs(true);
 		try {
 			const res = await fetch("/api/sterilization/logs", {
@@ -168,7 +168,10 @@ export function ScannerView() {
 		} finally {
 			setIsLoadingLogs(false);
 		}
-	};
+	}, [auth]);
+
+	
+
 
 	useEffect(() => {
 		// Поле под фокусом сразу: физический сканер печатает штрих-код как клавиатура.

@@ -182,7 +182,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			: null);
 
 	return (
-		<div className="appointment-create-wrapper" aria-label="Создание записи">
+		<section className="appointment-create-wrapper" aria-label="Создание записи">
 			{/*
         ЗДЕСЬ БЫЛА ВТОРАЯ, НЕВИДИМАЯ ФОРМА СОЗДАНИЯ ЗАПИСИ (.appointment-create-editor:
         position absolute, opacity 0, ширина и высота 0). Убрана целиком, и вот почему.
@@ -897,6 +897,6 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					</div>
 				</div>
 			)}
-		</div>
+		</section>
 	);
 }

@@ -119,7 +119,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 	const [actionNotice, setActionNotice] = useState<string | null>(null);
 	const [notes, setNotes] = useState("");
 
-	const loadFailureText = (
+	const loadFailureText = useCallback((
 		status: number,
 		serverMessage: string | null,
 	): string => {
@@ -130,9 +130,9 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 		if (status >= 500)
 			return "Сбой на сервере клиники: список задач не собран.";
 		return `Программа не смогла получить список задач (ответ ${status}).`;
-	};
+	}, []);
 
-	const actionFailureText = (
+	const actionFailureText = useCallback((
 		status: number,
 		serverMessage: string | null,
 	): string => {
@@ -146,7 +146,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 		if (status >= 500)
 			return "Сбой на сервере клиники: передачу между этапами не записали.";
 		return `Программа не смогла зафиксировать этап (ответ ${status}).`;
-	};
+	}, []);
 
 	const load = useCallback(async () => {
 		if (!patientId) {

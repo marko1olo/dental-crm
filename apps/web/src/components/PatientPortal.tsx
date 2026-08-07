@@ -600,10 +600,9 @@ export const PatientPortal: React.FC = () => {
 			</div>
 
 			{viewingDoc && (
-				<div
+				<button
+					type="button"
 					className="doc-overlay"
-					role="button"
-					tabIndex={0}
 					onClick={(e) => {
 						if (e.target === e.currentTarget) setViewingDoc(null);
 					}}
@@ -685,7 +684,7 @@ export const PatientPortal: React.FC = () => {
 							)}
 						</div>
 					</div>
-				</div>
+				</button>
 			)}
 		</div>
 	);

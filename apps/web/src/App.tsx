@@ -1587,10 +1587,10 @@ export function App() {
 								<div className="wizard-field-list">
 									<div className="wizard-field">
 										<span id="onboarding-role-label">Ваша рабочая роль</span>
-										<div
+										<fieldset
 											className="wizard-role-row"
-											role="group"
 											aria-labelledby="onboarding-role-label"
+											style={{ border: "none", padding: 0, margin: 0 }}
 										>
 											{onboardingRoleChoices.map((role) => (
 												<button
@@ -1603,7 +1603,7 @@ export function App() {
 													{staffRoleLabels[role]}
 												</button>
 											))}
-										</div>
+										</fieldset>
 									</div>
 									<div className="wizard-field">
 										<label htmlFor="onboarding-staff-name">
@@ -2082,9 +2082,8 @@ export function App() {
 								</div>
 							</div>
 
-							<div
+							<section
 								className="onboarding-fast-start"
-								role="region"
 								aria-label="Быстрый старт работы"
 							>
 								<div>
@@ -2115,13 +2114,14 @@ export function App() {
 								>
 									<ShieldCheck aria-hidden="true" /> Реквизиты
 								</button>
-							</div>
+							</section>
 
-							<div
+							<fieldset
 								className="onboarding-step-list"
-								role="group"
 								aria-label="Шаги знакомства"
+								style={{ border: "none", padding: 0, margin: 0 }}
 							>
+								<legend className="sr-only">Шаги знакомства</legend>
 								{onboardingSteps.map((step, index) => (
 									<button
 										className={
@@ -2150,7 +2150,7 @@ export function App() {
 										<small>{step.detail}</small>
 									</button>
 								))}
-							</div>
+							</fieldset>
 
 							{onboardingStep === "intro" ? (
 								<div className="onboarding-panel">
@@ -2181,11 +2181,12 @@ export function App() {
 										</p>
 									</div>
 									<div className="onboarding-form-grid">
-										<div
+										<fieldset
 											className="role-picker form-span-2"
-											role="group"
 											aria-label="Роль нового сотрудника"
+											style={{ border: "none", padding: 0, margin: 0 }}
 										>
+											<legend className="sr-only">Роль нового сотрудника</legend>
 											{onboardingRoleChoices.map((role) => (
 												<button
 													className={
@@ -2199,12 +2200,13 @@ export function App() {
 													{staffRoleLabels[role]}
 												</button>
 											))}
-										</div>
-										<div
+										</fieldset>
+										<fieldset
 											className="specialty-strip form-span-2"
-											role="group"
 											aria-label="Специализация врача"
+											style={{ border: "none", padding: 0, margin: 0 }}
 										>
+											<legend className="sr-only">Специализация врача</legend>
 											{(Object.keys(specialtyLabels) as DentalSpecialty[]).map(
 												(specialty) => (
 													<button
@@ -2220,7 +2222,7 @@ export function App() {
 													</button>
 												),
 											)}
-										</div>
+										</fieldset>
 									</div>
 								</div>
 							) : null}
@@ -2234,11 +2236,12 @@ export function App() {
 											ручной перенастройки интерфейса.
 										</p>
 									</div>
-									<div
+									<fieldset
 										className="mode-grid form-span-2"
-										role="group"
 										aria-label="Режим клиники"
+										style={{ border: "none", padding: 0, margin: 0 }}
 									>
+										<legend className="sr-only">Режим клиники</legend>
 										{(Object.keys(clinicModeLabels) as ClinicMode[]).map(
 											(mode) => (
 												<button
@@ -2255,7 +2258,7 @@ export function App() {
 												</button>
 											),
 										)}
-									</div>
+									</fieldset>
 									<div className="onboarding-form-grid">
 										<label>
 											Название клиники
@@ -2366,11 +2369,12 @@ export function App() {
 												}
 											/>
 										</label>
-										<div
+										<fieldset
 											className="weekday-toggle-row form-span-2"
-											role="group"
 											aria-label="Рабочие дни клиники"
+											style={{ border: "none", padding: 0, margin: 0 }}
 										>
+											<legend className="sr-only">Рабочие дни клиники</legend>
 											<span>Рабочие дни</span>
 											{weekdayOptions.map((day: any) => (
 												<button
@@ -2389,7 +2393,7 @@ export function App() {
 													{day.label}
 												</button>
 											))}
-										</div>
+										</fieldset>
 									</div>
 								</div>
 							) : null}
@@ -2539,11 +2543,12 @@ export function App() {
 												}
 											/>
 										</label>
-										<div
+										<fieldset
 											className="role-picker form-span-2"
-											role="group"
 											aria-label="Роль нового сотрудника"
+											style={{ border: "none", padding: 0, margin: 0 }}
 										>
+											<legend className="sr-only">Роль нового сотрудника</legend>
 											{(
 												[
 													"doctor",
@@ -2562,14 +2567,15 @@ export function App() {
 													{staffRoleLabels[role]}
 												</button>
 											))}
-										</div>
+										</fieldset>
 										{newStaffRole === "doctor" ||
 										newStaffRole === "assistant" ? (
-											<div
+											<fieldset
 												className="specialty-strip staff-specialty-picker form-span-2"
-												role="group"
 												aria-label="Специальность нового сотрудника"
+												style={{ border: "none", padding: 0, margin: 0 }}
 											>
+												<legend className="sr-only">Специальность нового сотрудника</legend>
 												{(
 													Object.keys(specialtyLabels) as DentalSpecialty[]
 												).map((specialty) => (
@@ -2585,7 +2591,7 @@ export function App() {
 														{specialtyLabels[specialty]}
 													</button>
 												))}
-											</div>
+											</fieldset>
 										) : null}
 										<button
 											className="secondary-button"
@@ -2643,9 +2649,8 @@ export function App() {
 											</p>
 										) : null}
 									</div>
-									<div
+									<section
 										className="onboarding-schedule-grid form-span-2"
-										role="region"
 										aria-label="Расписание команды при первом запуске"
 									>
 										<div className="onboarding-schedule-section">
@@ -2727,11 +2732,12 @@ export function App() {
 																			}
 																		/>
 																	</label>
-																	<div
+																	<fieldset
 																		className="weekday-toggle-row staff-weekday-row"
-																		role="group"
 																		aria-label={`Рабочие дни сотрудника: ${member.fullName}`}
+																		style={{ border: "none", padding: 0, margin: 0 }}
 																	>
+																		<legend className="sr-only">{`Рабочие дни сотрудника: ${member.fullName}`}</legend>
 																		{weekdayOptions.map((day: any) => (
 																			<button
 																				className={
@@ -2756,7 +2762,7 @@ export function App() {
 																				{day.label}
 																			</button>
 																		))}
-																	</div>
+																	</fieldset>
 																	<div className="staff-schedule-actions">
 																		<span
 																			className={`save-state save-state-${scheduleSaveState}`}
@@ -2855,11 +2861,12 @@ export function App() {
 																			}
 																		/>
 																	</label>
-																	<div
+																	<fieldset
 																		className="weekday-toggle-row staff-weekday-row"
-																		role="group"
 																		aria-label={`Рабочие дни кресла: ${chair.name}`}
+																		style={{ border: "none", padding: 0, margin: 0 }}
 																	>
+																		<legend className="sr-only">{`Рабочие дни кресла: ${chair.name}`}</legend>
 																		{weekdayOptions.map((day: any) => (
 																			<button
 																				className={
@@ -2884,7 +2891,7 @@ export function App() {
 																				{day.label}
 																			</button>
 																		))}
-																	</div>
+																	</fieldset>
 																	<div className="staff-schedule-actions">
 																		<span
 																			className={`save-state save-state-${scheduleSaveState}`}
@@ -2910,7 +2917,7 @@ export function App() {
 													})}
 											</div>
 										</div>
-									</div>
+									</section>
 								</div>
 							) : null}
 
@@ -2926,9 +2933,8 @@ export function App() {
 										</p>
 									</div>
 
-									<div
+									<section
 										className="onboarding-source-config"
-										role="region"
 										aria-label="Быстрая настройка источников данных"
 									>
 										<section className="onboarding-source-section">
@@ -2939,11 +2945,12 @@ export function App() {
 													материалы.
 												</span>
 											</div>
-											<div
+											<fieldset
 												className="onboarding-source-choice-row"
-												role="group"
 												aria-label="Источник прайса"
+												style={{ border: "none", padding: 0, margin: 0 }}
 											>
+												<legend className="sr-only">Источник прайса</legend>
 												{(
 													Object.keys(
 														pricelistSourceKindLabels,
@@ -2965,7 +2972,7 @@ export function App() {
 														{pricelistSourceKindLabels[kind]}
 													</button>
 												))}
-											</div>
+											</fieldset>
 										</section>
 
 										<section className="onboarding-source-section">
@@ -2975,11 +2982,12 @@ export function App() {
 													Основной формат старой базы или бумажного журнала.
 												</span>
 											</div>
-											<div
+											<fieldset
 												className="onboarding-source-choice-row"
-												role="group"
 												aria-label="Источник переноса пациентов"
+												style={{ border: "none", padding: 0, margin: 0 }}
 											>
+												<legend className="sr-only">Источник переноса пациентов</legend>
 												{(
 													Object.keys(importSourceLabels) as ImportSourceKind[]
 												).map((kind) => (
@@ -2999,7 +3007,7 @@ export function App() {
 														{importSourceLabels[kind].title}
 													</button>
 												))}
-											</div>
+											</fieldset>
 										</section>
 
 										<section className="onboarding-source-section">
@@ -3010,11 +3018,12 @@ export function App() {
 													служебные строки.
 												</span>
 											</div>
-											<div
+											<fieldset
 												className="onboarding-source-choice-row"
-												role="group"
 												aria-label="Режим смешанного импорта"
+												style={{ border: "none", padding: 0, margin: 0 }}
 											>
+												<legend className="sr-only">Режим смешанного импорта</legend>
 												{(
 													Object.keys(
 														smartImportModeLabels,
@@ -3034,7 +3043,7 @@ export function App() {
 														{smartImportModeLabels[mode].title}
 													</button>
 												))}
-											</div>
+											</fieldset>
 										</section>
 
 										<section className="onboarding-source-section">
@@ -3045,11 +3054,12 @@ export function App() {
 													таблицу, архив или фото.
 												</span>
 											</div>
-											<div
+											<fieldset
 												className="onboarding-source-choice-row"
-												role="group"
 												aria-label="Маршрут распознанных документов"
+												style={{ border: "none", padding: 0, margin: 0 }}
 											>
+												<legend className="sr-only">Маршрут распознанных документов</legend>
 												{(
 													Object.keys(
 														ingestionTargetLabels,
@@ -3067,7 +3077,7 @@ export function App() {
 														{ingestionTargetLabels[target]}
 													</button>
 												))}
-											</div>
+											</fieldset>
 										</section>
 
 										<section className="onboarding-source-section onboarding-source-section-wide">
@@ -3078,11 +3088,12 @@ export function App() {
 													локальных папок.
 												</span>
 											</div>
-											<div
+											<fieldset
 												className="onboarding-source-choice-row"
-												role="group"
 												aria-label="Источник снимков"
+												style={{ border: "none", padding: 0, margin: 0 }}
 											>
+												<legend className="sr-only">Источник снимков</legend>
 												{imagingSourceChoices.map((kind) => (
 													<button
 														className={
@@ -3101,7 +3112,7 @@ export function App() {
 														{imagingSourceLabels[kind]}
 													</button>
 												))}
-											</div>
+											</fieldset>
 										</section>
 
 										<section className="onboarding-source-section onboarding-source-section-wide">
@@ -3141,7 +3152,7 @@ export function App() {
 												</label>
 											</div>
 										</section>
-									</div>
+									</section>
 
 									<div className="onboarding-source-grid">
 										<span>
@@ -3418,11 +3429,12 @@ export function App() {
 											</select>
 										</label>
 									</div>
-									<div
+									<fieldset
 										className="onboarding-feature-list"
-										role="group"
 										aria-label="Быстрые сценарии Telegram"
+										style={{ border: "none", padding: 0, margin: 0 }}
 									>
+										<legend className="sr-only">Быстрые сценарии Telegram</legend>
 										<div className="onboarding-telegram-visual-cards">
 											{telegramVisualCardFields
 												.filter((field) =>
@@ -3489,7 +3501,7 @@ export function App() {
 													<span>{telegramFeatureLabel(feature)}</span>
 												</label>
 											))}
-									</div>
+									</fieldset>
 									<div className="onboarding-inline-actions">
 										<button
 											className="secondary-button"
@@ -3758,10 +3770,9 @@ export function App() {
 						>
 							<Suspense
 								fallback={
-									<div
+									<section
 										className="panel shift-panel"
 										id="shift"
-										role="region"
 										aria-label={viewLabels.shift}
 										aria-busy="true"
 									>
@@ -3771,7 +3782,7 @@ export function App() {
 												загрузка
 											</span>
 										</div>
-									</div>
+									</section>
 								}
 							>
 								<ShiftView
@@ -3852,10 +3863,9 @@ export function App() {
 						>
 							<Suspense
 								fallback={
-									<div
+									<section
 										className="panel imaging-panel"
 										id="imaging"
-										role="region"
 										aria-label="Снимки пациента"
 										aria-busy="true"
 									>
@@ -3865,7 +3875,7 @@ export function App() {
 												загрузка
 											</span>
 										</div>
-									</div>
+									</section>
 								}
 							>
 								<ImagingView
@@ -4046,10 +4056,9 @@ export function App() {
 								>
 									<Suspense
 										fallback={
-											<div
+											<section
 												className="panel schedule-panel"
 												id="schedule"
-												role="region"
 												aria-label="Расписание"
 												aria-busy="true"
 											>
@@ -4059,7 +4068,7 @@ export function App() {
 														загрузка
 													</span>
 												</div>
-											</div>
+											</section>
 										}
 									>
 										<ScheduleView
@@ -4145,10 +4154,9 @@ export function App() {
 								>
 									<Suspense
 										fallback={
-											<div
+											<section
 												className="panel patients-panel"
 												id="patients"
-												role="region"
 												aria-label="Пациенты"
 												aria-busy="true"
 											>
@@ -4158,7 +4166,7 @@ export function App() {
 														загрузка
 													</span>
 												</div>
-											</div>
+											</section>
 										}
 									>
 										<PatientsView
@@ -4199,10 +4207,9 @@ export function App() {
 								>
 									<Suspense
 										fallback={
-											<div
+											<section
 												className="panel visit-panel"
 												id="visit"
-												role="region"
 												aria-label="Текущий прием"
 												aria-busy="true"
 											>
@@ -4212,7 +4219,7 @@ export function App() {
 														загрузка
 													</span>
 												</div>
-											</div>
+											</section>
 										}
 									>
 										<VisitView
@@ -4629,10 +4636,9 @@ export function App() {
 								>
 									<Suspense
 										fallback={
-											<div
+											<section
 												className="panel finance-panel"
 												id="finance"
-												role="region"
 												aria-label="Финансы"
 												aria-busy="true"
 											>
@@ -4642,7 +4648,7 @@ export function App() {
 														загрузка
 													</span>
 												</div>
-											</div>
+											</section>
 										}
 									>
 										<FinanceView
@@ -4740,10 +4746,9 @@ export function App() {
 								>
 									<Suspense
 										fallback={
-											<div
+											<section
 												className="panel communications-panel"
 												id="communications"
-												role="region"
 												aria-label="Обращения"
 												aria-busy="true"
 											>
@@ -4753,7 +4758,7 @@ export function App() {
 														загрузка
 													</span>
 												</div>
-											</div>
+											</section>
 										}
 									>
 										<CommunicationsView

@@ -293,7 +293,7 @@ export function MarketingView({
 			</div>
 
 			{/* STATS STRIP */}
-			<div className="marketing-stats-strip" aria-label="Рейтинги клиники">
+			<section className="marketing-stats-strip" aria-label="Рейтинги клиники">
 				<article className="marketing-stat-card">
 					<MapPin aria-hidden="true" className="text-[var(--danger,#e63946)]" />
 					<div>
@@ -407,7 +407,7 @@ export function MarketingView({
 						</p>
 					</div>
 				</article>
-			</div>
+			</section>
 
 			{/* TAB NAV */}
 			<div className="marketing-tab-nav" role="tablist">

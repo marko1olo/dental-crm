@@ -9,7 +9,7 @@ export function CtPlanningTaskBoardPanel({
 }: CtPlanningTaskBoardPanelProps) {
 	return (
 		<>
-			<div
+			<section
 				className="ct-planning-task-board"
 				data-testid="ct-planning-task-board"
 				aria-label="Задачи КТ-планирования для просмотрщика"
@@ -27,9 +27,9 @@ export function CtPlanningTaskBoardPanel({
 						<p>{route.detail}</p>
 					</article>
 				))}
-			</div>
+			</section>
 			{planningSnapshot.cards.length > 0 ? (
-				<div
+				<section
 					className="ct-planning-task-list"
 					data-testid="ct-planning-task-list"
 					aria-label="Переносимые задачи КТ-планирования"
@@ -49,7 +49,7 @@ export function CtPlanningTaskBoardPanel({
 							) : null}
 						</article>
 					))}
-				</div>
+				</section>
 			) : null}
 		</>
 	);

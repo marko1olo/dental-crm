@@ -260,9 +260,10 @@ export function SettingsRulesTab() {
 
 				<div className="rules-builder-grid">
 					<div className="rules-builder-group full-width">
-						<label>
+						<label htmlFor="new-rule-title-input">
 							Название правила
 							<input
+								id="new-rule-title-input"
 								className="rules-builder-input"
 								placeholder="Например: Обязательный снимок КТ перед имплантацией"
 								value={newRuleTitle}
@@ -411,9 +412,10 @@ export function SettingsRulesTab() {
 					</div>
 
 					<div className="rules-builder-group">
-						<label>
+						<label htmlFor="new-rule-warning-text">
 							Предупреждение для врача (внутреннее)
 							<textarea
+								id="new-rule-warning-text"
 								className="rules-builder-textarea"
 								value={newRuleWarningText}
 								onChange={(e) => setNewRuleWarningText(e.target.value)}
@@ -439,9 +441,10 @@ export function SettingsRulesTab() {
 					</div>
 
 					<div className="rules-builder-group">
-						<label>
+						<label htmlFor="new-rule-patient-text">
 							Объяснение для пациента (в плане лечения)
 							<textarea
+								id="new-rule-patient-text"
 								className="rules-builder-textarea"
 								value={newRulePatientText}
 								onChange={(e) => setNewRulePatientText(e.target.value)}

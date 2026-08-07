@@ -202,7 +202,7 @@ export function AnalyticsDashboardView() {
 		// проверка готовности в сценарии снимков не могла подтвердить, что открыт
 		// именно этот раздел, — а это тот самый механизм, которым снимок одного
 		// раздела попадает под именем другого.
-		<div
+		<section
 			id="analytics"
 			className="analytics-dashboard panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 			aria-label="Аналитика клиники"
@@ -697,7 +697,7 @@ export function AnalyticsDashboardView() {
 					*/}
 				</>
 			)}
-		</div>
+		</section>
 	);
 }
 

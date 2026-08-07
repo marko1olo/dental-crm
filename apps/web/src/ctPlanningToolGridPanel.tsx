@@ -8,7 +8,7 @@ export function CtPlanningToolGridPanel({
 	canPlan,
 }: CtPlanningToolGridPanelProps) {
 	return (
-		<div
+		<section
 			className="ct-planning-tool-grid"
 			data-testid="ct-planning-tool-grid"
 			aria-label="Инструменты КТ-планирования"
@@ -33,6 +33,6 @@ export function CtPlanningToolGridPanel({
 					</article>
 				);
 			})}
-		</div>
+		</section>
 	);
 }

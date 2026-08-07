@@ -19,7 +19,7 @@ export function CtPlanningArtifactPanel({
 	).length;
 
 	return (
-		<div
+		<section
 			className="ct-planning-artifact-board"
 			data-testid="ct-planning-artifact-board"
 			aria-label="Создание разметок КТ-плана"
@@ -58,6 +58,6 @@ export function CtPlanningArtifactPanel({
 					</article>
 				))}
 			</div>
-		</div>
+		</section>
 	);
 }

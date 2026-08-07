@@ -429,10 +429,14 @@ export function VisitDiaryPhotoUpload({
 					<Camera className="w-3 h-3 text-rose-400" /> Вложения (Фотографии)
 				</span>
 				{!isLocked && diaryId && (
-					<label className="cursor-pointer text-xs flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-lg transition-colors border border-zinc-700">
+					<label
+						htmlFor="visit-diary-photo-upload"
+						className="cursor-pointer text-xs flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-lg transition-colors border border-zinc-700"
+					>
 						<Paperclip className="w-3 h-3" />
 						{isUploading ? "Сжатие..." : "Прикрепить фото"}
 						<input
+							id="visit-diary-photo-upload"
 							type="file"
 							accept="image/*"
 							className="hidden"

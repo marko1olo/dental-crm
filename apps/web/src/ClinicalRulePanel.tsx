@@ -165,20 +165,23 @@ export function ClinicalRulePanel({
 		return evaluation.message;
 	};
 
-	const failureText = (
-		status: number,
-		serverMessage: string | null,
-	): string => {
-		if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
-		if (status === 401 || status === 403)
-			return "Нет прав проверять клинические правила: доступ закрыт или истёк вход в программу.";
-		if (status === 404) return "Раздел клинических правил не отвечает.";
-		if (status === 400)
-			return "Не удалось пересчитать правила: проверьте, что у пациента есть услуги в плане.";
-		if (status >= 500)
-			return "Сбой на сервере клиники: правила не пересчитаны.";
-		return `Программа не смогла пересчитать клинические правила (ответ ${status}).`;
-	};
+	const failureText = useCallback(
+		(
+			status: number,
+			serverMessage: string | null,
+		): string => {
+			if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
+			if (status === 401 || status === 403)
+				return "Нет прав проверять клинические правила: доступ закрыт или истёк вход в программу.";
+			if (status === 404) return "Раздел клинических правил не отвечает.";
+			if (status === 400)
+				return "Не удалось пересчитать правила: проверьте, что у пациента есть услуги в плане.";
+			if (status >= 500)
+				return "Сбой на сервере клиники: правила не пересчитаны.";
+			return `Программа не смогла пересчитать клинические правила (ответ ${status}).`;
+		},
+		[],
+	);
 
 	const runLiveEvaluate = useCallback(
 		async (enforceBlockers: boolean) => {

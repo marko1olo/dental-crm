@@ -369,10 +369,9 @@ export function WaitlistDrawer(props: Props) {
 			className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm"
 			data-testid="waitlist-drawer"
 		>
-			<div
+			<button
+				type="button"
 				className="absolute inset-0"
-				role="button"
-				tabIndex={-1}
 				onClick={onClose}
 				onKeyDown={(e) => {
 					if (e.key === "Enter" || e.key === " ") {
@@ -569,8 +568,6 @@ export function WaitlistDrawer(props: Props) {
 								{items.map((item) => (
 									<div
 										key={item.id}
-										role="button"
-										tabIndex={0}
 										draggable
 										onDragStart={(e) => {
 											e.dataTransfer.setData(

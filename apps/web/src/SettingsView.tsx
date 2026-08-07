@@ -1245,7 +1245,6 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		return (
 			<button
 				aria-controls={settingsTabPanelId(tab.id)}
-				aria-pressed={tabSelected}
 				aria-selected={tabSelected}
 				className={tabSelected ? "active" : ""}
 				id={settingsTabButtonId(tab.id)}
@@ -1599,7 +1598,6 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 						{typeof pricelistImageNote === "string" &&
 						pricelistImageNote.trim() ? (
 							<p
-								aria-label="Как подготовлено фото прайса"
 								style={{
 									margin: "0 0 16px",
 									padding: "10px 14px",

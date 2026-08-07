@@ -385,6 +385,7 @@ function TaxPayerDetails({
 						</div>
 					</div>
 					<div
+						role="toolbar"
 						className="quick-chips-row"
 						style={{ marginBottom: "20px" }}
 						aria-label="Код медицинской услуги для налогового вычета"
@@ -1034,6 +1035,7 @@ export function PaymentCapture({
 				)}
 			</div>
 			<div
+				role="toolbar"
 				className="quick-chips-row"
 				style={{ marginBottom: "20px" }}
 				aria-label="Способ оплаты"

@@ -15,7 +15,7 @@ export function CtPlanningImplantLibraryPanel({
 	onSelectImplant,
 }: CtPlanningImplantLibraryPanelProps) {
 	return (
-		<div
+		<section
 			className="ct-implant-library-strip"
 			data-testid="ct-implant-library-strip"
 			aria-label="Библиотека имплантов для КТ-планирования"
@@ -50,6 +50,6 @@ export function CtPlanningImplantLibraryPanel({
 					</button>
 				))}
 			</div>
-		</div>
+		</section>
 	);
 }

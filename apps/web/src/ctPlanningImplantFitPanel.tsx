@@ -56,26 +56,26 @@ export function CtPlanningImplantFitPanel({
 							{marginLabel(candidate.lengthMarginMm)} · канал{" "}
 							{marginLabel(candidate.canalMarginMm)}
 						</small>
-						<div
+						<section
 							className="ct-planning-implant-fit-reasons"
 							aria-label="Причины решения по типоразмеру"
 						>
 							{candidate.decisionReasons.map((reason) => (
 								<em key={reason}>{reason}</em>
 							))}
-						</div>
+						</section>
 						<p>{candidate.nextAction}</p>
 					</article>
 				))}
 			</div>
 			{plan.warnings.length > 0 ? (
-				<div
+				<section
 					className="ct-planning-implant-fit-warnings"
 					aria-label="Ограничения скрининга типоразмера импланта"
 				>
 					<span>Ограничения</span>
 					<p>{plan.warnings.join(" · ")}</p>
-				</div>
+				</section>
 			) : null}
 		</section>
 	);

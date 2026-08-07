@@ -259,15 +259,20 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 				borderRadius: "12px",
 			}}
 		>
-			<div
+			<button
+				type="button"
 				className="panel-heading"
-				role="button"
-				tabIndex={0}
 				style={{
 					cursor: "pointer",
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "center",
+					width: "100%",
+					background: "transparent",
+					border: "none",
+					padding: 0,
+					textAlign: "inherit",
+					font: "inherit",
 				}}
 				onClick={() => setIsCollapsed(!isCollapsed)}
 				onKeyDown={(e) => {
@@ -284,7 +289,7 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 					) : null}
 				</div>
 				{isCollapsed ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-			</div>
+			</button>
 
 			{error ? (
 				<div className="ops-notice ops-notice--error" role="alert">

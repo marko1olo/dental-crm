@@ -2233,11 +2233,11 @@ export function SettingsAuditTab(props: Record<string, any>) {
 		return (
 			<details className="migration-technical-boundary" data-testid={testId}>
 				<summary>{title}</summary>
-				<div>
+				<section>
 					{visibleItems.map((item) => (
 						<small key={item}>{humanizeMigrationText(item)}</small>
 					))}
-				</div>
+				</section>
 			</details>
 		);
 	};
@@ -2310,7 +2310,6 @@ export function SettingsAuditTab(props: Record<string, any>) {
 		return (
 			<button
 				aria-controls={settingsTabPanelId(tab.id)}
-				aria-pressed={tabSelected}
 				aria-selected={tabSelected}
 				className={tabSelected ? "active" : ""}
 				id={settingsTabButtonId(tab.id)}
@@ -2374,7 +2373,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 								</div>
 								<span>{browserContinuityValue}</span>
 							</article>
-							<div
+							<section
 								className="browser-continuity-grid"
 								aria-label="Проверки сохранения в браузере"
 							>
@@ -2385,7 +2384,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 										<p>{check.detail}</p>
 									</article>
 								))}
-							</div>
+							</section>
 							<div className="persistence-actions persistence-inline-actions">
 								<button
 									className="secondary-button"
@@ -2422,7 +2421,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 								</div>
 								<span>{localBridgeStatusValue}</span>
 							</article>
-							<div
+							<section
 								className="local-bridge-grid"
 								aria-label="Готовность локальных модулей рабочей станции"
 							>
@@ -2465,7 +2464,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 										</p>
 									</article>
 								) : null}
-							</div>
+							</section>
 							<div className="persistence-actions persistence-inline-actions">
 								<button
 									className="secondary-button"
@@ -2478,7 +2477,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 								</button>
 							</div>
 							{typedLocalBridgeUsePlans ? (
-								<div
+								<section
 									className="local-bridge-plan-grid"
 									aria-label="Планы использования локальных модулей"
 								>
@@ -2511,7 +2510,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 											))}
 										</article>
 									))}
-								</div>
+								</section>
 							) : null}
 							{persistenceHealth ? (
 								<>
@@ -2577,7 +2576,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 													{formatDateTime(typedPersistenceIntegrity.checkedAt)}
 												</span>
 											</article>
-											<div
+											<section
 												className="backup-check-grid"
 												aria-label="Последние резервные копии"
 											>
@@ -2593,7 +2592,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 															{backup.fileName}
 														</span>
 													))}
-											</div>
+											</section>
 										</>
 									) : null}
 									<article className="ops-row">

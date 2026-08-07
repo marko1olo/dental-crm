@@ -192,7 +192,7 @@ export function CtPlanningExportPanel({
 		? buildImplantFitHandoff(implantFitPlan)
 		: null;
 	return (
-		<div
+		<section
 			className="ct-planning-export-board"
 			data-testid="ct-planning-export-board"
 			aria-label="Пакет передачи КТ-плана"
@@ -205,6 +205,7 @@ export function CtPlanningExportPanel({
 				<p>{packet.handoffSummary}</p>
 				<small>{packet.nextAction}</small>
 				<div
+					role="toolbar"
 					className="ct-planning-export-actions"
 					aria-label="Действия с отчетом КТ-плана"
 				>
@@ -272,7 +273,7 @@ export function CtPlanningExportPanel({
 					<small>{implantFitHandoff.action}</small>
 				</article>
 			) : null}
-			<div
+			<section
 				className="ct-planning-export-facts"
 				aria-label="Ключевые факты КТ-плана"
 			>
@@ -286,7 +287,7 @@ export function CtPlanningExportPanel({
 						<p>{fact.detail}</p>
 					</article>
 				))}
-			</div>
+			</section>
 			<div className="ct-planning-export-lanes">
 				{packet.lanes.map((lane) => (
 					<article
@@ -302,14 +303,14 @@ export function CtPlanningExportPanel({
 				))}
 			</div>
 			{packet.missingArtifacts.length > 0 ? (
-				<div
+				<section
 					className="ct-planning-export-missing"
 					aria-label="Чего не хватает для передачи КТ-плана"
 				>
 					<span>Не хватает</span>
 					<p>{packet.missingArtifacts.join(" · ")}</p>
-				</div>
+				</section>
 			) : null}
-		</div>
+		</section>
 	);
 }

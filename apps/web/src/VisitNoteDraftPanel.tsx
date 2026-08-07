@@ -169,7 +169,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 				>;
 			}
 			if (Array.isArray(json?.warnings)) {
-				next.warnings = (json?.warnings as unknown[]).filter(
+				next.warnings = ((json?.warnings ?? []) as unknown[]).filter(
 					(w): w is string => typeof w === "string",
 				);
 			}

@@ -33,7 +33,6 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	min-height: 100vh;
 	min-height: 100dvh;
 	overflow-y: auto;
 	padding: clamp(16px, 4vw, 40px) clamp(12px, 3vw, 20px);

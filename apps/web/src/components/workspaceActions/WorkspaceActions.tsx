@@ -285,7 +285,7 @@ function WorkspaceActionsNavSheet(): React.ReactElement {
 				<Mic aria-hidden="true" />
 				<span>{trigger.label}</span>
 			</button>
-			<div
+			<section
 				className="dnt-actions__sheet"
 				id={sheetId}
 				hidden={!expanded}
@@ -310,7 +310,7 @@ function WorkspaceActionsNavSheet(): React.ReactElement {
 				    `hidden` на панели прячет её через display, но НЕ размонтирует
 				    жильцов — включённый микрофон переживает закрытие панели. */}
 				<div className="dnt-actions__sheet-body" ref={anchorRef} />
-			</div>
+			</section>
 		</>
 	);
 }

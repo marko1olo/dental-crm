@@ -756,6 +756,10 @@ export function ShiftView({
 											)}
 										</p>
 										<div
+											role="progressbar"
+											aria-valuenow={mostLoadedResource.utilizationPercent}
+											aria-valuemin={0}
+											aria-valuemax={100}
 											className="load-meter"
 											aria-label={`Загрузка ${mostLoadedResource.utilizationPercent}%`}
 											style={{

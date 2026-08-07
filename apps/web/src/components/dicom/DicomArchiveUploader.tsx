@@ -169,7 +169,7 @@ export function DicomArchiveUploader({
 	};
 
 	const onDrop = useCallback(
-		async (e: React.DragEvent<HTMLDivElement>) => {
+		async (e: React.DragEvent<HTMLElement>) => {
 			e.preventDefault();
 			setIsDragging(false);
 
@@ -240,9 +240,9 @@ export function DicomArchiveUploader({
 	);
 
 	return (
-		<div
-			role="button"
-			tabIndex={0}
+		<button
+			type="button"
+			aria-label="Зона загрузки DICOM"
 			onDragOver={(e) => {
 				e.preventDefault();
 				setIsDragging(true);
@@ -250,8 +250,13 @@ export function DicomArchiveUploader({
 			onDragLeave={() => setIsDragging(false)}
 			onDrop={onDrop}
 			onClick={() => document.getElementById("dicom-folder-input")?.click()}
-			onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); document.getElementById("dicom-folder-input")?.click(); } }}
-			className={`w-full h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors cursor-pointer ${
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					document.getElementById("dicom-folder-input")?.click();
+				}
+			}}
+			className={`w-full h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors cursor-pointer bg-transparent ${
 				isDragging
 					? "border-teal-500 bg-teal-500/10"
 					: "border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 hover:bg-slate-100 dark:hover:bg-neutral-800"
@@ -300,6 +305,6 @@ export function DicomArchiveUploader({
 				Локальная обработка в браузере. Данные не передаются на сторонние
 				сервера.
 			</div>
-		</div>
+		</button>
 	);
 }

@@ -301,7 +301,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					</div>
 
 					{appointmentEditing ? (
-						<div
+						<section
 							className="appointment-editor form-span-2"
 							id={appointmentEditorId}
 							aria-label={`Редактирование записи: ${appointmentPatientName}`}
@@ -763,7 +763,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									Сохранить запись
 								</button>
 							</div>
-						</div>
+						</section>
 					) : null}
 				</article>
 			</div>

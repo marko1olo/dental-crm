@@ -421,9 +421,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 
 			{/* Add/Edit Modal */}
 			{showModal && (
-				<div
-					role="button"
-					tabIndex={-1}
+				<button
+					type="button"
 					style={{
 						position: "fixed",
 						inset: 0,
@@ -433,6 +432,12 @@ export const InsuranceContractsPanel: React.FC = () => {
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
+						width: "100%",
+						border: "none",
+						padding: 0,
+						margin: 0,
+						textAlign: "inherit",
+						font: "inherit",
 					}}
 					onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
 					onKeyDown={(e) => {
@@ -468,7 +473,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 							<h2
 								style={{
 									margin: 0,
-									fontSize: 18,
+									fontSize: 20,
 									fontWeight: 700,
 									color: "var(--ink)",
 								}}
@@ -483,8 +488,10 @@ export const InsuranceContractsPanel: React.FC = () => {
 								style={{
 									background: "none",
 									border: "none",
-									color: "var(--muted)",
+									fontSize: 20,
 									cursor: "pointer",
+									color: "var(--muted)",
+									padding: 4,
 								}}
 							>
 								<X size={20} />
@@ -687,7 +694,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 							</button>
 						</form>
 					</div>
-				</div>
+				</button>
 			)}
 		</div>
 	);

@@ -45,7 +45,7 @@ export function CtPlanningPlanBoardPanel({
 	).length;
 
 	return (
-		<div
+		<section
 			className="ct-planning-plan-board"
 			data-testid="ct-planning-plan-board"
 			aria-label="Текущий КТ-план"
@@ -122,6 +122,6 @@ export function CtPlanningPlanBoardPanel({
 				</strong>
 				<p>{bundleSummary}</p>
 			</article>
-		</div>
+		</section>
 	);
 }

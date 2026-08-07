@@ -37,6 +37,7 @@ export function VisitTimer({ createdAt }: { createdAt?: string | null }) {
 
 	return (
 		<div
+			role="timer"
 			className="visit-timer"
 			style={{
 				display: "inline-flex",

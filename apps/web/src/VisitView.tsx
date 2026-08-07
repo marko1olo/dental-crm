@@ -809,7 +809,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									{safeVisitPrimaryAction.label}
 								</button>
 							</div>
-							<div
+							<section
 								className="visit-progress-strip"
 								data-testid="visit-progress-strip"
 								aria-label="Прогресс приема"
@@ -826,7 +826,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										</div>
 									</article>
 								))}
-							</div>
+							</section>
 						</section>
 					</div>
 				</details>
@@ -961,6 +961,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 					</div>
 					<div
+						role="toolbar"
 						className="dictation-quick-row"
 						aria-label="Быстрые фразы для диктовки"
 					>
@@ -1295,7 +1296,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 				<VisiographAnalyzer />
 
-				<div className="tooth-map" aria-label="Зубная карта">
+				<section className="tooth-map" aria-label="Зубная карта">
 					{/*
                 НЕ УДАЛЯТЬ: это не забытая кнопка, а зацепка для дымовых прогонов.
                 scripts/smoke-visit-live-workflow.mjs и
@@ -2160,7 +2161,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							</div>
 						)}
 					</div>
-				</div>
+				</section>
 
 				{/*
               ЗДЕСЬ СТОЯЛА ВТОРАЯ ПАНЕЛЬ ЭМК — ПОЛНЫЙ ДУБЛЬ ТОЙ, ЧТО ВО ВКЛАДКЕ.
@@ -2381,7 +2382,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				) : null}
 
 				{visitCloseChecklist ? (
-					<div
+					<section
 						className="close-checklist"
 						aria-label="Предупреждения перед закрытием приема"
 					>
@@ -2424,7 +2425,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									</div>
 								</button>
 							))}
-					</div>
+					</section>
 				) : null}
 			</div>
 

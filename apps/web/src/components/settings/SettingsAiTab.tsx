@@ -325,8 +325,8 @@ export function SettingsAiTab() {
 				 * закрытой.
 				 */}
 				<div
-					className="ai-target-row"
-					role="radiogroup"
+					role="toolbar"
+					className="ai-target-grid"
 					aria-label="Цель распознавания"
 				>
 					{typedRecognitionPresets.map((preset) => {
@@ -335,10 +335,9 @@ export function SettingsAiTab() {
 							recognitionTarget === preset.target;
 						return (
 							<button
-								aria-checked={selected}
+								aria-pressed={selected}
 								className={`ai-target-card ${selected ? "active" : ""}`}
 								key={preset.key}
-								role="radio"
 								/*
 								 * Из пяти кнопок в обходе клавиатурой участвует ВЫБРАННАЯ, а
 								 * остальные исключены (`tabIndex={-1}`): так группа

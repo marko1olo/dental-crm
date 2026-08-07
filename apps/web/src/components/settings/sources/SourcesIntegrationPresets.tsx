@@ -114,7 +114,7 @@ export function SourcesIntegrationPresets() {
 							</div>
 							<span>{integrationStatusLabels[preset.status]}</span>
 						</summary>
-						<div
+						<section
 							className="preset-capabilities"
 							aria-label="Что переносит источник"
 						>
@@ -123,7 +123,7 @@ export function SourcesIntegrationPresets() {
 									{integrationCapabilityLabels[capability]}
 								</span>
 							))}
-						</div>
+						</section>
 						<ul>
 							{preset.migrationNotes.slice(0, 2).map((note) => (
 								<li key={note}>{note}</li>

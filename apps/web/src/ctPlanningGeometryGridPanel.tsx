@@ -11,7 +11,7 @@ export function CtPlanningGeometryGridPanel({
 		return null;
 	}
 	return (
-		<div
+		<section
 			className="ct-planning-geometry-grid"
 			data-testid="ct-planning-geometry-grid"
 			aria-label="Расчетные измерения КТ-плана"
@@ -27,6 +27,6 @@ export function CtPlanningGeometryGridPanel({
 					<small>{metric.source}</small>
 				</article>
 			))}
-		</div>
+		</section>
 	);
 }

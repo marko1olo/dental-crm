@@ -1743,7 +1743,8 @@ export function VisiographAnalyzer() {
 														lineHeight: 1.65,
 														color: "var(--ink)",
 													}}
-													dangerouslySetInnerHTML={{
+													// biome-ignore lint/security/noDangerouslySetInnerHtml: content sanitized via escapeHtml() before renderMarkdown()
+												dangerouslySetInnerHTML={{
 														__html: renderMarkdown(section.content),
 													}}
 												/>

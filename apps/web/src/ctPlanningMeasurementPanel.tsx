@@ -41,14 +41,14 @@ export function CtPlanningMeasurementPanel({
 				))}
 			</div>
 			{plan.warnings.length > 0 ? (
-				<div
+				<section
 					className="ct-planning-measurement-warnings"
 					aria-label="Предупреждения по измерениям КТ"
 				>
 					{plan.warnings.map((warning) => (
 						<span key={warning}>{warning}</span>
 					))}
-				</div>
+				</section>
 			) : null}
 		</section>
 	);

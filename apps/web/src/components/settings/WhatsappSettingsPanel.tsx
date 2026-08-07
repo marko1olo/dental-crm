@@ -270,11 +270,12 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 					</div>
 				</div>
 
-				<div className="premium-feature-grid" aria-label="Функции WhatsApp">
+				<div className="premium-feature-grid" role="group" aria-label="Функции WhatsApp">
 					{Object.entries(WHATSAPP_FEATURE_LABELS).map(([key, label]) => {
 						const enabled = enabledFeaturesDraft.includes(key);
 						return (
 							<label
+								htmlFor={`wa-feature-${key}`}
 								key={key}
 								className={`premium-feature-card ${enabled ? "active" : ""}`}
 							>
@@ -287,6 +288,7 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 								</div>
 								<div className="premium-switch">
 									<input
+										id={`wa-feature-${key}`}
 										type="checkbox"
 										checked={enabled}
 										onChange={() => {

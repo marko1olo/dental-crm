@@ -510,9 +510,8 @@ export function CommunicationsView({
         пустому списку ниже. Показываем сводку, когда есть о чём сводить.
       */}
 			{communicationSummaryHasNumbers ? (
-				<div
+				<section
 					className="communications-summary-grid"
-					role="region"
 					aria-label="Сводка связи"
 				>
 					<article
@@ -559,7 +558,7 @@ export function CommunicationsView({
 						</strong>
 						<p>инструкции пациентам</p>
 					</article>
-				</div>
+				</section>
 			) : null}
 
 			{/*

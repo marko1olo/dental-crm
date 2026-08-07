@@ -1200,6 +1200,7 @@ export function MessageDeliveryConsole() {
 				*/}
 				{variableCatalog.length > 0 ? (
 					<div
+						role="toolbar"
 						className="ops-variable-catalog"
 						data-testid="comm-template-variables"
 						aria-label="Подстановки для шаблона"

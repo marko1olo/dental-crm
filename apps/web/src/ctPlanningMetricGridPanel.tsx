@@ -8,7 +8,7 @@ export function CtPlanningMetricGridPanel({
 	canPlan,
 }: CtPlanningMetricGridPanelProps) {
 	return (
-		<div
+		<section
 			className="ct-planning-metric-grid"
 			data-testid="ct-planning-metric-grid"
 			aria-label="Измерения КТ-плана"
@@ -21,6 +21,6 @@ export function CtPlanningMetricGridPanel({
 					<small>{metric.source}</small>
 				</article>
 			))}
-		</div>
+		</section>
 	);
 }

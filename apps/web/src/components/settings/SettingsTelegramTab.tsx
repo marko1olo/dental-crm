@@ -304,9 +304,10 @@ export function SettingsTelegramTab({
 					</p>
 					<p>{adminSecretScopeWarning}</p>
 					<div className="telegram-link-controls">
-						<label>
+						<label htmlFor="telegram-admin-secret-draft">
 							Секрет администратора клиники для Telegram
 							<input
+								id="telegram-admin-secret-draft"
 								type="password"
 								autoComplete="current-password"
 								value={telegramAdminSecretDraft}
@@ -417,9 +418,10 @@ export function SettingsTelegramTab({
 							</div>
 						</div>
 						{telegramLinkSubjectType === "staff" ? (
-							<label>
+							<label htmlFor="telegram-link-staff-select">
 								Сотрудник
 								<select
+									id="telegram-link-staff-select"
 									value={telegramLinkStaffId}
 									onChange={(event: SelectChangeEvent) => {
 										setTelegramLinkStaffId(event.target.value);
@@ -438,9 +440,10 @@ export function SettingsTelegramTab({
 								</select>
 							</label>
 						) : (
-							<label>
+							<label htmlFor="telegram-link-patient-input">
 								Пациент
 								<input
+									id="telegram-link-patient-input"
 									readOnly
 									value={activePatient?.fullName ?? "Нет активного пациента"}
 								/>
@@ -731,9 +734,10 @@ export function SettingsTelegramTab({
 								{telegramModeHints[telegramModeDraft]}
 							</small>
 						</div>
-						<label>
+						<label htmlFor="telegram-bot-username-draft">
 							Имя общего бота в Telegram
 							<input
+								id="telegram-bot-username-draft"
 								inputMode="text"
 								placeholder="dentecrm_bot"
 								value={telegramBotUsernameDraft}
@@ -743,9 +747,10 @@ export function SettingsTelegramTab({
 								}}
 							/>
 						</label>
-						<label>
+						<label htmlFor="telegram-own-bot-username-draft">
 							Имя бота клиники в Telegram
 							<input
+								id="telegram-own-bot-username-draft"
 								inputMode="text"
 								placeholder="clinic_bot"
 								value={telegramOwnBotUsernameDraft}
@@ -755,9 +760,10 @@ export function SettingsTelegramTab({
 								}}
 							/>
 						</label>
-						<label>
+						<label htmlFor="telegram-bot-config-id">
 							Профиль бота клиники
 							<input
+								id="telegram-bot-config-id"
 								inputMode="text"
 								placeholder="clinic-main"
 								value={telegramBotConfigId}
@@ -770,9 +776,10 @@ export function SettingsTelegramTab({
 								нескольких ботов используйте понятную метку вроде clinic-main.
 							</small>
 						</label>
-						<label>
+						<label htmlFor="telegram-webhook-base-url-draft">
 							Адрес приема сообщений Telegram
 							<input
+								id="telegram-webhook-base-url-draft"
 								type="url"
 								inputMode="url"
 								placeholder="https://crm.clinic.ru"
@@ -835,9 +842,10 @@ export function SettingsTelegramTab({
 							</div>
 						)}
 
-						<label>
+						<label htmlFor="telegram-welcome-image-url-draft">
 							Картинка приветствия
 							<input
+								id="telegram-welcome-image-url-draft"
 								type="url"
 								inputMode="url"
 								placeholder="https://.../welcome.jpg"
@@ -848,9 +856,10 @@ export function SettingsTelegramTab({
 								}}
 							/>
 						</label>
-						<label>
+						<label htmlFor="telegram-token-ttl-draft">
 							Срок QR-кода, минут
 							<input
+								id="telegram-token-ttl-draft"
 								type="number"
 								min={5}
 								max={1440}
@@ -862,9 +871,10 @@ export function SettingsTelegramTab({
 								}}
 							/>
 						</label>
-						<label>
+						<label htmlFor="telegram-reminder-lead-times-draft">
 							Напоминания до приема, часы
 							<input
+								id="telegram-reminder-lead-times-draft"
 								inputMode="text"
 								placeholder="24, 2"
 								value={telegramReminderLeadTimesDraft}
@@ -877,9 +887,10 @@ export function SettingsTelegramTab({
 								Напоминания до приема в часах: от 1 до 168, максимум 6 значений.
 							</small>
 						</label>
-						<label>
+						<label htmlFor="telegram-review-request-delay-draft">
 							Просьба оценить клинику, часы после визита
 							<input
+								id="telegram-review-request-delay-draft"
 								type="number"
 								min={1}
 								max={720}
@@ -902,9 +913,10 @@ export function SettingsTelegramTab({
 								самочувствии через выбранное число часов после памятки.
 							</small>
 							{typedTelegramPostVisitCheckupDelayFields.map((field) => (
-								<label key={field.key}>
+								<label htmlFor={`telegram-checkup-delay-${field.key}`} key={field.key}>
 									{field.label}
 									<input
+										id={`telegram-checkup-delay-${field.key}`}
 										type="number"
 										min={1}
 										max={720}
@@ -921,9 +933,10 @@ export function SettingsTelegramTab({
 								</label>
 							))}
 						</fieldset>
-						<label>
+						<label htmlFor="telegram-staff-escalation-channel-draft">
 							Канал эскалации
 							<input
+								id="telegram-staff-escalation-channel-draft"
 								inputMode="text"
 								placeholder="@clinic_admins"
 								value={telegramStaffEscalationChannelDraft}
@@ -1012,9 +1025,10 @@ export function SettingsTelegramTab({
 							</small>
 						</div>
 					</div>
-					<div className="telegram-feature-grid" aria-label="Функции Telegram">
+					<div className="telegram-feature-grid" role="group" aria-label="Функции Telegram">
 						{typedTelegramFeatureOptions.map((feature) => (
 							<label
+								htmlFor={`telegram-feature-${feature}`}
 								className={
 									typedTelegramEnabledFeaturesDraft.includes(feature)
 										? "feature-enabled"
@@ -1023,6 +1037,7 @@ export function SettingsTelegramTab({
 								key={feature}
 							>
 								<input
+									id={`telegram-feature-${feature}`}
 									type="checkbox"
 									className="toggle-switch"
 									checked={typedTelegramEnabledFeaturesDraft.includes(feature)}
@@ -1035,8 +1050,9 @@ export function SettingsTelegramTab({
 							</label>
 						))}
 					</div>
-					<label className="telegram-voice-toggle">
+					<label htmlFor="telegram-allow-voice-intake-draft" className="telegram-voice-toggle">
 						<input
+							id="telegram-allow-voice-intake-draft"
 							type="checkbox"
 							className="toggle-switch"
 							checked={telegramAllowVoiceIntakeDraft}
@@ -1069,9 +1085,10 @@ export function SettingsTelegramTab({
 					</label>
 					<div className="telegram-visual-card-fields">
 						{typedTelegramVisualCardFields.map((field) => (
-							<label key={field.key}>
+							<label htmlFor={`telegram-visual-card-${field.key}`} key={field.key}>
 								{field.label}
 								<input
+									id={`telegram-visual-card-${field.key}`}
 									type="url"
 									inputMode="url"
 									placeholder={field.placeholder}
@@ -1091,9 +1108,10 @@ export function SettingsTelegramTab({
 						))}
 					</div>
 					<div className="telegram-external-links">
-						<label>
+						<label htmlFor="telegram-review-url-draft">
 							Ссылка на отзыв
 							<input
+								id="telegram-review-url-draft"
 								type="url"
 								inputMode="url"
 								placeholder="https://..."
@@ -1104,9 +1122,10 @@ export function SettingsTelegramTab({
 								}}
 							/>
 						</label>
-						<label>
+						<label htmlFor="telegram-maps-url-draft">
 							Ссылка на карту
 							<input
+								id="telegram-maps-url-draft"
 								type="url"
 								inputMode="url"
 								placeholder="https://..."
@@ -1339,6 +1358,7 @@ export function SettingsTelegramTab({
 							).length ? (
 								<div
 									className="telegram-preview-buttons"
+									role="group"
 									aria-label="Кнопки Telegram-сообщения"
 								>
 									{getTypedTelegramInlineButtonRows(
@@ -1424,6 +1444,7 @@ export function SettingsTelegramTab({
 				</div>
 				<div
 					className="telegram-outbox-controls"
+					role="group"
 					aria-label="Фильтры очереди Telegram"
 				>
 					<div>
@@ -1506,6 +1527,7 @@ export function SettingsTelegramTab({
 										{itemButtonRows.length ? (
 											<div
 												className="telegram-outbox-buttons"
+												role="group"
 												aria-label="Кнопки Telegram"
 											>
 												{itemButtonRows
@@ -1540,6 +1562,7 @@ export function SettingsTelegramTab({
 									{itemBlockingNote || itemWarningNotes.length ? (
 										<div
 											className="telegram-outbox-notes"
+											role="group"
 											aria-label="Причины и предупреждения Telegram"
 										>
 											{itemBlockingNote ? (

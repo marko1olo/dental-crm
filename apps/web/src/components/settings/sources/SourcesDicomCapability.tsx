@@ -272,7 +272,7 @@ export function SourcesDicomCapability() {
 					);
 				})}
 			</div>
-			<div className="dicom-series-lab" aria-label="Предпросмотр серий снимков">
+			<section className="dicom-series-lab" aria-label="Предпросмотр серий снимков">
 				<div>
 					<strong>Предпросмотр серий снимков</strong>
 					<p>
@@ -352,8 +352,8 @@ export function SourcesDicomCapability() {
 						</div>
 					</div>
 				) : null}
-			</div>
-			<div
+			</section>
+			<section
 				className="dicom-mpr-workbench"
 				aria-label="Готовность рабочего места КЛКТ и КТ-срезов"
 			>
@@ -382,7 +382,7 @@ export function SourcesDicomCapability() {
 					Не диагностическое заключение. Подтверждайте КТ-находки в
 					сертифицированном просмотрщике/рабочей станции клиники.
 				</small>
-				<div
+				<section
 					className="mpr-clinical-roadmap"
 					data-testid="ct-mpr-clinical-roadmap"
 					aria-label="Клиническая готовность КТ-срезов"
@@ -402,8 +402,8 @@ export function SourcesDicomCapability() {
 							</article>
 						))}
 					</div>
-				</div>
-				<div
+				</section>
+				<section
 					className="mpr-operator-summary"
 					data-testid="ct-mpr-operator-summary"
 					aria-label="Быстрая сводка настройки КТ-срезов"
@@ -415,7 +415,7 @@ export function SourcesDicomCapability() {
 							<p>{card.detail}</p>
 						</article>
 					))}
-				</div>
+				</section>
 				<CtPlanningToolsPanel
 					canPlan={mprControlsReady}
 					compact
@@ -584,7 +584,7 @@ export function SourcesDicomCapability() {
 								}
 							/>
 						</label>
-						<div
+						<div role="toolbar"
 							className="mpr-stepper-row"
 							data-testid="ct-mpr-axis-nudge"
 							aria-label="Точная правка угла КТ-срезов"
@@ -603,7 +603,7 @@ export function SourcesDicomCapability() {
 								</button>
 							))}
 						</div>
-						<div className="mpr-preset-row" aria-label="Быстрые углы КТ-срезов">
+						<div role="toolbar" className="mpr-preset-row" aria-label="Быстрые углы КТ-срезов">
 							{mprAxisPresetDeg.map((angle) => (
 								<button
 									className={mprAxisDeg === angle ? "active" : ""}
@@ -633,7 +633,7 @@ export function SourcesDicomCapability() {
 								}
 							/>
 						</label>
-						<div
+						<div role="toolbar"
 							className="mpr-stepper-row"
 							data-testid="ct-mpr-slab-nudge"
 							aria-label="Точная правка толщины слоя КТ-срезов"
@@ -652,7 +652,7 @@ export function SourcesDicomCapability() {
 								</button>
 							))}
 						</div>
-						<div
+						<div role="toolbar"
 							className="mpr-preset-row"
 							aria-label="Быстрая толщина слоя КТ-срезов"
 						>
@@ -699,7 +699,7 @@ export function SourcesDicomCapability() {
 								}
 							/>
 						</label>
-						<div
+						<div role="toolbar"
 							className="mpr-manual-grid"
 							data-testid="ct-mpr-manual-inputs"
 							aria-label="Точные числовые настройки КТ-срезов"
@@ -755,7 +755,7 @@ export function SourcesDicomCapability() {
 								/>
 							</label>
 						</div>
-						<div
+						<div role="toolbar"
 							className="mpr-stepper-row"
 							data-testid="ct-mpr-slice-nudge"
 							aria-label="Точная навигация по КТ-срезам"
@@ -779,7 +779,7 @@ export function SourcesDicomCapability() {
 								</button>
 							))}
 						</div>
-						<div className="mpr-preset-row" aria-label="Опорные КТ-срезы">
+						<div role="toolbar" className="mpr-preset-row" aria-label="Опорные КТ-срезы">
 							{mprSlicePresetFractions.map((preset) => {
 								const targetIndex = mprSliceIndexFromFraction(
 									preset.fraction,
@@ -831,7 +831,7 @@ export function SourcesDicomCapability() {
 								<History aria-hidden="true" /> Вернуть вид
 							</button>
 						</div>
-						<div
+						<div role="toolbar"
 							className="mpr-clinical-preset-grid"
 							data-testid="ct-mpr-clinical-presets"
 							aria-label="Клинические протоколы КТ-срезов"
@@ -932,7 +932,7 @@ export function SourcesDicomCapability() {
 					))}
 				</div>
 				{cbctWorkbenchSeries ? (
-					<div
+					<section
 						className="dicom-resource-policy"
 						aria-label="Политика ресурсов КТ-просмотра"
 					>
@@ -986,9 +986,9 @@ export function SourcesDicomCapability() {
 						{typedCbctResourceSafetyCaps.slice(0, 4).map((cap) => (
 							<small key={cap}>{cap}</small>
 						))}
-					</div>
+					</section>
 				) : null}
-				<div
+				<section
 					className="dicomweb-launch-panel"
 					aria-label="Запуск архива снимков и внешнего просмотра"
 				>
@@ -1219,13 +1219,14 @@ export function SourcesDicomCapability() {
 							</article>
 						</div>
 					) : null}
-					{typedDicomViewerWorkbenchManifest ? (
-						<div
-							className="dicom-workbench-bundle-result"
-							data-testid="dicom-workbench-bundle-result"
-							aria-label="Просмотр КЛКТ/КТ"
-						>
-							<div>
+				</section>
+				{typedDicomViewerWorkbenchManifest ? (
+					<section
+						className="dicom-workbench-bundle-result"
+						data-testid="dicom-workbench-bundle-result"
+						aria-label="Просмотр КЛКТ/КТ"
+					>
+						<div>
 								<strong>
 									готовность загрузки{" "}
 									{typedDicomViewerWorkbenchManifest.readiness.readinessScore}%
@@ -1407,10 +1408,10 @@ export function SourcesDicomCapability() {
 										</span>
 									))}
 							</div>
-						</div>
+						</section>
 					) : null}
 					{typedDicomWorkstationReadiness ? (
-						<div
+						<section
 							className="dicom-workstation-result"
 							aria-label="Готовность станции просмотра"
 						>
@@ -1522,10 +1523,10 @@ export function SourcesDicomCapability() {
 								))}
 							</div>
 							<p>{typedDicomWorkstationReadiness.nextAction}</p>
-						</div>
+						</section>
 					) : null}
 					{typedDicomRenderCachePlan ? (
-						<div
+						<section
 							className="dicom-cache-plan-result"
 							aria-label="План быстрой загрузки снимков"
 						>
@@ -1615,10 +1616,10 @@ export function SourcesDicomCapability() {
 									</span>
 								))}
 							</div>
-						</div>
+						</section>
 					) : null}
 					{dicomViewerLaunchManifest ? (
-						<div
+						<section
 							className="dicomweb-manifest-result"
 							aria-label="План открытия внешнего просмотра"
 						>
@@ -1679,10 +1680,9 @@ export function SourcesDicomCapability() {
 									.map(humanizeMigrationText)
 									.join(" · ")}
 							</p>
-						</div>
+						</section>
 					) : null}
-				</div>
-			</div>
-		</section>
+				</section>
+			</section>
 	);
 }

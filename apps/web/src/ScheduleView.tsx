@@ -1041,7 +1041,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					</div>
 				)}
 			</section>
-			<div
+			<section
 				className="schedule-filter-strip"
 				aria-label="Сохраненные фильтры расписания"
 				style={{
@@ -1159,7 +1159,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							{chair.name}
 						</button>
 					))}
-			</div>
+			</section>
 			{scheduleAdminSecretNeeded ? (
 				<fieldset
 					className="appointment-editor schedule-admin-unlock"

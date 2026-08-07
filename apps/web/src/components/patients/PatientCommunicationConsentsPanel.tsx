@@ -170,7 +170,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 						: ("revoked" as const),
 			};
 			const rows: ConsentRow[] = Array.isArray(json?.consents)
-				? (json?.consents as unknown[])
+				? ((json?.consents ?? []) as unknown[])
 						.filter(
 							(r): r is Record<string, unknown> =>
 								typeof r === "object" && r !== null,

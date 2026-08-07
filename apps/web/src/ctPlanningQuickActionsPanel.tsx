@@ -15,7 +15,7 @@ export function CtPlanningQuickActionsPanel({
 	onActivateTool,
 }: CtPlanningQuickActionsPanelProps) {
 	return (
-		<div
+		<section
 			className="ct-planning-quick-actions"
 			data-testid="ct-planning-quick-actions"
 			aria-label="Быстрые сценарии КТ-планирования"
@@ -45,6 +45,6 @@ export function CtPlanningQuickActionsPanel({
 					</button>
 				);
 			})}
-		</div>
+		</section>
 	);
 }

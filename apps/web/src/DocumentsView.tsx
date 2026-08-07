@@ -1164,9 +1164,8 @@ export function DocumentsView(props: DocumentsViewProps) {
 					для пациента.
 				</p>
 			) : null}
-			<div
+			<section
 				className="document-factory"
-				role="region"
 				aria-label="Быстро создать документ"
 			>
 				<label className="document-factory-tax-year">
@@ -1354,9 +1353,8 @@ export function DocumentsView(props: DocumentsViewProps) {
 						{isoDateLabel(typedSelectedDocumentMetadata.sourceCheckedAt)}
 					</small>
 					{typedSelectedDocumentMetadata.sourceUrls.length ? (
-						<div
+						<section
 							className="document-source-links"
-							role="region"
 							aria-label="Официальные источники формы"
 						>
 							{typedSelectedDocumentMetadata.sourceUrls.map(
@@ -1374,7 +1372,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 									</a>
 								),
 							)}
-						</div>
+						</section>
 					) : null}
 				</article>
 				<section
@@ -6383,7 +6381,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 						))}
 					</div>
 				</details>
-			</div>
+			</section>
 			{documentIssueConfirmation ? (
 				<section
 					className="document-issue-confirmation"
@@ -6947,9 +6945,8 @@ export function DocumentsView(props: DocumentsViewProps) {
 								источником {isoDateLabel(documentAuditFacts.sourceCheckedAt)}
 							</small>
 							{documentAuditFacts.sourceUrls.length ? (
-								<div
+								<section
 									className="document-source-links"
-									role="region"
 									aria-label="Официальные источники паспорта документа"
 								>
 									{documentAuditFacts.sourceUrls.map(
@@ -6967,7 +6964,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											</a>
 										),
 									)}
-								</div>
+								</section>
 							) : null}
 						</div>
 						<div>
@@ -7264,11 +7261,12 @@ export function DocumentsView(props: DocumentsViewProps) {
 									{documentLifecycleGuidance}
 								</small>
 							</div>
-							<div
+							<fieldset
 								className="document-actions"
-								role="group"
 								aria-label={`Действия с документом: ${documentActionContext}`}
+								style={{ border: "none", padding: 0, margin: 0 }}
 							>
+								<legend className="sr-only">{`Действия с документом: ${documentActionContext}`}</legend>
 								<button
 									className="doc-link"
 									type="button"
@@ -7356,7 +7354,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										Аннулировать
 									</button>
 								) : null}
-							</div>
+							</fieldset>
 						</article>
 					);
 				})}

@@ -8,7 +8,7 @@ export function CtPlanningValidationGrid({
 	summary,
 }: CtPlanningValidationGridProps) {
 	return (
-		<div
+		<section
 			className="ct-planning-validation-grid"
 			data-testid="ct-planning-validation-grid"
 			aria-label="Проверка готовности КТ-плана"
@@ -28,6 +28,6 @@ export function CtPlanningValidationGrid({
 					<p>{check.detail}</p>
 				</article>
 			))}
-		</div>
+		</section>
 	);
 }

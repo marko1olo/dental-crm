@@ -588,7 +588,7 @@ function ThemeSwitcher() {
 		// В слове «интерфейса» предпоследняя буква была латинской c: подпись
 		// выглядела верно, но программа чтения с экрана произносила её неправильно,
 		// и поиск по тексту такую строку не находил.
-		<div className="theme-switcher" aria-label="Тема интерфейса">
+		<div role="toolbar" className="theme-switcher" aria-label="Тема интерфейса">
 			{options.map((option) => (
 				<button
 					key={option.mode}

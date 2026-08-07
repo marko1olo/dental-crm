@@ -332,11 +332,12 @@ export function DayConfirmationsPanel() {
 							) : null}
 						</ul>
 
-						<div
+						<fieldset
 							className="quick-chips-row"
-							role="group"
 							aria-label="Что показывать в списке"
+							style={{ border: "none", padding: 0, margin: 0 }}
 						>
+							<legend className="sr-only">Что показывать в списке</legend>
 							<button
 								type="button"
 								className={`quick-chip ${showAll ? "" : "selected"}`}
@@ -353,7 +354,7 @@ export function DayConfirmationsPanel() {
 							>
 								Все приёмы дня
 							</button>
-						</div>
+						</fieldset>
 
 						{visibleRows.length === 0 ? (
 							<p className="ops-empty ops-empty--good">

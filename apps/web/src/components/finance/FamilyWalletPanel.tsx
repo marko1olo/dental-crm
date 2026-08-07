@@ -805,7 +805,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					{/* Чем внесли аванс. БЫЛО: способ не спрашивали и не отправляли, а
 					    сервер записывал в журнал наличные. Вечером наличных в ящике
 					    не хватало ровно на сумму пополнения картой. */}
-					<div className="quick-chips-row" aria-label="Чем внесли аванс">
+					<div role="toolbar" className="quick-chips-row" aria-label="Чем внесли аванс">
 						{FAMILY_TOPUP_METHODS.map((methodKey) => (
 							<button
 								key={methodKey}

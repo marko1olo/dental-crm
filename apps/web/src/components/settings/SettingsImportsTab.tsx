@@ -2329,7 +2329,6 @@ export function SettingsImportsTab(props: Record<string, any>) {
 		return (
 			<button
 				aria-controls={settingsTabPanelId(tab.id)}
-				aria-pressed={tabSelected}
 				aria-selected={tabSelected}
 				className={tabSelected ? "active" : ""}
 				id={settingsTabButtonId(tab.id)}
@@ -2369,6 +2368,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 					</div>
 
 					<div
+						role="toolbar"
 						className="import-source-grid smart-mode-grid"
 						aria-label="Режим умного разбора"
 					>
@@ -2392,7 +2392,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 						))}
 					</div>
 
-					<div
+					<section
 						className="migration-kickstart-panel"
 						data-testid="migration-kickstart-panel"
 						aria-label="Быстрый перенос старой базы"
@@ -2405,7 +2405,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									: "Выберите самый простой вход: поиск на ПК, папка старой программы, вставленная выгрузка или реквизиты клиники."}
 							</span>
 						</div>
-						<div
+						<section
 							className="migration-progress-strip"
 							data-testid="migration-progress-strip"
 							aria-label="Готовность переноса"
@@ -2419,7 +2419,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									<span>{item.detail}</span>
 								</article>
 							))}
-						</div>
+						</section>
 						<div className="migration-kickstart-grid">
 							<article>
 								<strong>Старая программа на этом ПК</strong>
@@ -2538,7 +2538,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								</button>
 							</article>
 						</div>
-					</div>
+					</section>
 
 					<div className="import-workbench">
 						<textarea
@@ -2743,7 +2743,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 					) : null}
 
 					{typedBrowserMigrationDiscovery ? (
-						<div
+						<section
 							className="dicom-discovery-result browser-migration-manifest-result"
 							data-testid="browser-migration-manifest-result"
 							aria-label="Выбранная папка старых баз, выгрузок и снимков"
@@ -2834,11 +2834,11 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								.map((warning) => (
 									<small key={warning}>{humanizeMigrationText(warning)}</small>
 								))}
-						</div>
+						</section>
 					) : null}
 
 					{migrationAutopilot ? (
-						<div
+						<section
 							className="dicom-discovery-result migration-autopilot-result"
 							data-testid="migration-autopilot-result"
 							aria-label="Автоплан миграции старых баз, снимков и реквизитов клиники"
@@ -2900,7 +2900,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 										</span>
 									</div>
 									{migrationDryRunSummary ? (
-										<div
+										<section
 											className="migration-dry-run-summary"
 											data-testid="migration-dry-run-summary"
 											aria-label="Быстрый прогон миграции"
@@ -2932,10 +2932,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 													migrationDryRunSummary.nextBestAction,
 												)}
 											</p>
-										</div>
+										</section>
 									) : null}
 									{migrationPrimaryOperatorStep ? (
-										<div
+										<section
 											className="migration-primary-action"
 											data-testid="migration-autopilot-primary-action"
 											aria-label="Главное действие миграции сейчас"
@@ -2968,10 +2968,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 												migrationPrimaryOperatorCandidate,
 												"primary",
 											)}
-										</div>
+										</section>
 									) : null}
 									{migrationTriageItems.length ? (
-										<div
+										<section
 											className="migration-triage-queue"
 											data-testid="migration-triage-queue"
 											aria-label="Короткая очередь миграции для администратора"
@@ -3014,10 +3014,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 													</div>
 												))}
 											</div>
-										</div>
+										</section>
 									) : null}
 									{migrationAutopilot.operatorPacket.operatorScript ? (
-										<div
+										<section
 											className="migration-autopilot-script"
 											data-testid="migration-autopilot-operator-script"
 											aria-label="Что делать сейчас для миграции"
@@ -3076,7 +3076,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 														);
 													})}
 											</div>
-										</div>
+										</section>
 									) : null}
 									<div className="migration-autopilot-summary">
 										{typedMigrationOperatorLanes.slice(0, 5).map((lane) => (
@@ -3095,7 +3095,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 											</article>
 										))}
 									</div>
-									<div
+									<section
 										className="migration-source-artifact-list"
 										aria-label="Первые действия миграции"
 									>
@@ -3106,8 +3106,8 @@ export function SettingsImportsTab(props: Record<string, any>) {
 													{humanizeMigrationText(action)}
 												</span>
 											))}
-									</div>
-									<div
+									</section>
+									<section
 										className="migration-autopilot-summary"
 										data-testid="migration-autopilot-handoff-checklist"
 										aria-label="Чеклист передачи миграции"
@@ -3132,7 +3132,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 												<small>{humanizeMigrationText(item.doneWhen)}</small>
 											</article>
 										))}
-									</div>
+									</section>
 									{renderMigrationTechnicalNotes(
 										"Границы онлайн-поиска",
 										[
@@ -3467,11 +3467,11 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								migrationAutopilot.privacyWarnings,
 								"migration-autopilot-privacy-notes",
 							)}
-						</div>
+						</section>
 					) : null}
 
 					{typedMigrationSourceDiscovery ? (
-						<div
+						<section
 							className="dicom-discovery-result migration-source-discovery-result"
 							data-testid="migration-source-discovery-result"
 							aria-label="Автопоиск старых баз, выгрузок и снимков"
@@ -3646,11 +3646,11 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								.map((warning) => (
 									<small key={warning}>{humanizeMigrationText(warning)}</small>
 								))}
-						</div>
+						</section>
 					) : null}
 
 					{typedMigrationSourceWorkup ? (
-						<div
+						<section
 							className="dicom-discovery-result migration-source-workup-result"
 							data-testid="migration-source-workup-result"
 							aria-label="План миграции найденного источника"
@@ -3688,7 +3688,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									)}
 								</span>
 							</div>
-							<div
+							<section
 								className="migration-source-workup-lanes"
 								aria-label="Готовность источника к миграции"
 							>
@@ -3732,8 +3732,8 @@ export function SettingsImportsTab(props: Record<string, any>) {
 											</span>
 										))}
 								</article>
-							</div>
-							<div
+							</section>
+							<section
 								className="migration-source-workup-lanes"
 								aria-label="План подключения источника миграции"
 							>
@@ -3782,7 +3782,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 										)}
 									</small>
 								</article>
-							</div>
+							</section>
 							<div className="migration-source-workup-lanes">
 								<article>
 									<strong>Что можно вытянуть</strong>
@@ -3836,11 +3836,11 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								typedMigrationSourceWorkup.privacyWarnings,
 								"migration-source-workup-privacy-notes",
 							)}
-						</div>
+						</section>
 					) : null}
 
 					{typedMigrationSourceProbe ? (
-						<div
+						<section
 							className="dicom-discovery-result migration-source-probe-result"
 							data-testid="migration-source-probe-result"
 							aria-label="Проверка найденного источника миграции без записи"
@@ -3867,7 +3867,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									)}
 								</span>
 							</div>
-							<div
+							<section
 								className="migration-source-workup-lanes"
 								aria-label="Готовность пробы источника к миграции"
 							>
@@ -3911,8 +3911,8 @@ export function SettingsImportsTab(props: Record<string, any>) {
 											</span>
 										))}
 								</article>
-							</div>
-							<div
+							</section>
+							<section
 								className="migration-source-workup-lanes"
 								aria-label="План проверки источника миграции"
 							>
@@ -3960,7 +3960,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 										)}
 									</small>
 								</article>
-							</div>
+							</section>
 							<div className="migration-source-workup-lanes">
 								<article>
 									<strong>Инвентарь</strong>
@@ -4013,7 +4013,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									))}
 							</div>
 							{typedMigrationSourceProbe.artifactSamples.length ? (
-								<div
+								<section
 									className="migration-source-artifact-list"
 									aria-label="Безопасные примеры найденных артефактов"
 								>
@@ -4028,7 +4028,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 													: ""}
 											</span>
 										))}
-								</div>
+								</section>
 							) : null}
 							{typedMigrationSourceProbe.warnings.slice(0, 4).map((warning) => (
 								<small key={warning}>{humanizeMigrationText(warning)}</small>
@@ -4038,11 +4038,11 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								typedMigrationSourceProbe.privacyWarnings,
 								"migration-source-probe-privacy-notes",
 							)}
-						</div>
+						</section>
 					) : null}
 
 					{clinicPublicLookup && settingsTab === "imports" ? (
-						<div
+						<section
 							className="clinic-public-lookup-result smart-clinic-public-lookup"
 							aria-label="Публичные источники для профиля клиники"
 						>
@@ -4150,7 +4150,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									попадут в документы и платежные формы.
 								</small>
 							</div>
-						</div>
+						</section>
 					) : null}
 
 					{typedSmartImportPreview ? (
@@ -4408,6 +4408,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 					</div>
 
 					<div
+						role="toolbar"
 						className="import-source-grid imaging-source-grid"
 						aria-label="Источник снимков"
 					>
@@ -4731,7 +4732,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 							</div>
 						) : null}
 						{browserPickedImagingFolder ? (
-							<div
+							<section
 								className="browser-picked-folder-result"
 								data-testid="browser-picked-imaging-folder-result"
 								aria-label="Предпросмотр локальной папки снимков браузера"
@@ -4787,10 +4788,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 											{humanizeMigrationText(warning)}
 										</small>
 									))}
-							</div>
+							</section>
 						) : null}
 						{typedDicomLocalFolderDiscovery ? (
-							<div
+							<section
 								className="dicom-discovery-result"
 								data-testid="local-dicom-discovery-result"
 								aria-label="Поиск локальной папки снимков"
@@ -4906,10 +4907,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 											{humanizeMigrationText(warning)}
 										</small>
 									))}
-							</div>
+							</section>
 						) : null}
 						{typedLocalImagingOrganizer ? (
-							<div
+							<section
 								className="local-imaging-organizer-result"
 								data-testid="local-imaging-organizer-result"
 								aria-label="Органайзер локальных снимков"
@@ -5092,7 +5093,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 											{humanizeMigrationText(warning)}
 										</small>
 									))}
-							</div>
+							</section>
 						) : null}
 						{typedImagingFolderScan ? (
 							<div className="recognition-notes">
@@ -5122,7 +5123,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 							</div>
 						) : null}
 						{typedDicomFolderWorkupPlan ? (
-							<div
+							<section
 								className="dicom-folder-workup-result"
 								aria-label="План разбора папки снимков"
 							>
@@ -5171,10 +5172,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 											{humanizeMigrationText(warning)}
 										</small>
 									))}
-							</div>
+							</section>
 						) : null}
 						{dicomFirstFramePreview ? (
-							<div
+							<section
 								className={`dicom-first-frame-preview preview-${dicomFirstFramePreview.status}`}
 								data-testid="dicom-first-frame-preview-result"
 								aria-label="Предпросмотр первого среза снимков"
@@ -5203,6 +5204,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								{dicomFirstFramePreview.imageDataUrl ? (
 									<>
 										<div
+											role="toolbar"
 											className="dicom-first-frame-tools"
 											aria-label="Инструменты предпросмотра первого среза"
 										>
@@ -5364,6 +5366,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 												</button>
 												{dicomFirstFrameLandmarkSlices.length ? (
 													<div
+														role="toolbar"
 														className="dicom-first-frame-slice-presets"
 														data-testid="dicom-first-frame-slice-presets"
 														aria-label="Быстрые срезы снимков"
@@ -5470,7 +5473,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									.map((warning: string) => (
 										<small key={warning}>{warning}</small>
 									))}
-							</div>
+							</section>
 						) : null}
 						<textarea
 							aria-label="Данные импорта снимков"
@@ -5682,7 +5685,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 						</div>
 					</div>
 
-					<div className="import-source-grid" aria-label="Источник импорта">
+					<div role="toolbar" className="import-source-grid" aria-label="Источник импорта">
 						{typedImportSourceKinds.map((kind) => (
 							<button
 								className={`source-card ${importSourceKind === kind ? "active" : ""}`}
@@ -5701,7 +5704,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 						))}
 					</div>
 
-					<div
+					<section
 						className="document-ingestion-panel"
 						aria-label="Извлечение текста из файла"
 					>
@@ -5715,7 +5718,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								</span>
 							</div>
 						</div>
-						<div
+						<section
 							className="document-ingestion-targets"
 							aria-label="Куда отправить извлеченный текст"
 						>
@@ -5730,7 +5733,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									{ingestionTargetLabels[target]}
 								</button>
 							))}
-						</div>
+						</section>
 						<label className="document-file-upload">
 							<UploadCloud aria-hidden="true" />
 							<span>
@@ -5802,7 +5805,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 									) : null}
 								</div>
 								{typedDocumentIngestion.extractedFiles.length ? (
-									<div
+									<section
 										className="document-extracted-files"
 										aria-label="Извлеченные файлы архива"
 									>
@@ -5814,7 +5817,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 													{file.rowCount} строк · {file.fileName}
 												</span>
 											))}
-									</div>
+									</section>
 								) : null}
 								<p>
 									{typedDocumentIngestion.textPreview || "Текст не извлечен"}
@@ -5832,7 +5835,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								</div>
 							</div>
 						) : null}
-					</div>
+					</section>
 
 					<div className="import-workbench">
 						<textarea

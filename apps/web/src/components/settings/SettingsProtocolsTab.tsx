@@ -409,22 +409,22 @@ export function SettingsProtocolsTab() {
 									{template.visitReason} · {template.defaultDurationMinutes} мин
 								</p>
 							</div>
-							<div
+							<section
 								className="protocol-token-row"
 								aria-label="Документы протокола"
 							>
 								{template.requiredDocuments.map((kind) => (
 									<span key={kind}>{documentLabels[kind]}</span>
 								))}
-							</div>
-							<div
+							</section>
+							<section
 								className="protocol-token-row protocol-token-row-soft"
 								aria-label="Снимки протокола"
 							>
 								{template.suggestedImaging.map((kind) => (
 									<span key={kind}>{imagingKindLabels[kind]}</span>
 								))}
-							</div>
+							</section>
 							<ul>
 								{template.safetyWarnings.slice(0, 2).map((warning) => (
 									<li key={warning}>{warning}</li>

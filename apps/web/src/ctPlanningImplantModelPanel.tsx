@@ -63,7 +63,7 @@ export function CtPlanningImplantModelPanel({
 		: null;
 
 	return (
-		<div
+		<section
 			className="ct-planning-implant-board"
 			data-testid="ct-planning-implant-board"
 			aria-label="Моделирование импланта и хирургической втулки"
@@ -96,13 +96,13 @@ export function CtPlanningImplantModelPanel({
 				))}
 			</div>
 			{plan.warnings.length > 0 ? (
-				<div
+				<section
 					className="ct-planning-implant-warnings"
 					aria-label="Предупреждения по модели импланта"
 				>
 					<span>Контроль</span>
 					<p>{plan.warnings.join(" · ")}</p>
-				</div>
+				</section>
 			) : null}
 			{local3DReadinessPlan ? (
 				<section
@@ -141,7 +141,7 @@ export function CtPlanningImplantModelPanel({
 							</article>
 						))}
 					</div>
-					<div
+					<section
 						className="ct-planning-implant-warnings"
 						aria-label="Граница локального 3D-кейса"
 					>
@@ -151,9 +151,9 @@ export function CtPlanningImplantModelPanel({
 								? local3DReadinessPlan.warnings.join(" · ")
 								: local3DReadinessPlan.nextAction}
 						</p>
-					</div>
+					</section>
 				</section>
 			) : null}
-		</div>
+		</section>
 	);
 }
