@@ -15,15 +15,14 @@ import type {
 import { create } from "zustand";
 import {
 	type DenteTelegramHandoffTarget,
-	defaultUiPreferences,
-	emptyTelegramVisualCardUrlDrafts,
-	loadUiPreferences,
 	type OnboardingStep,
 	type TelegramFeaturePlan,
 	type TelegramLinkSubjectType,
 	type TelegramOutboxStatusFilter,
 	type TelegramOutboxTemplateFilter,
 } from "../AppHelpers";
+import { emptyTelegramVisualCardUrlDrafts } from "../utils/draftDefaults";
+import { defaultUiPreferences, loadUiPreferences } from "../utils/preferencesUtils";
 import {
 	defaultTelegramPostVisitCheckupDelayDrafts,
 	type TelegramPostVisitCheckupDelayDrafts,

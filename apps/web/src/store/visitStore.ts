@@ -6,12 +6,9 @@ import type {
 	VisitNoteDraft,
 } from "@dental/shared";
 import { create } from "zustand";
-import {
-	defaultUiPreferences,
-	emptyVisitNoteForm,
-	loadUiPreferences,
-	type VisitNoteForm,
-} from "../AppHelpers";
+import { type VisitNoteForm } from "../AppHelpers";
+import { emptyVisitNoteForm } from "../utils/draftDefaults";
+import { defaultUiPreferences, loadUiPreferences } from "../utils/preferencesUtils";
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 

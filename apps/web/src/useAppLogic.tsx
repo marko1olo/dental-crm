@@ -746,10 +746,11 @@ import {
 	withDocumentCreationTimestamps,
 } from "./documentLogic";
 import { useAuthLogic } from "./hooks/domains/useAuthLogic";
+import { useFinanceLogic } from "./hooks/domains/useFinanceLogic";
 import { usePatientLogic } from "./hooks/domains/usePatientLogic";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
-import { useTelegramSettings } from "./hooks/useTelegramSettings.js";
+import { useTelegramModule } from "./hooks/domains/useTelegramModule";
 import {
 	loadWorkspaceProfile,
 	useWorkspaceProfileStore,
@@ -821,7 +822,6 @@ import {
 } from "./pricelistUiMeta";
 import {
 	normalizeRubAmountInput,
-	validateRubAmountInput,
 } from "./rubAmountInput";
 import {
 	imagingConnectorCards,
@@ -1836,38 +1836,6 @@ export function useAppLogic(): any {
 		setRefusalSecondOpinionOffered,
 		refusalEmergencyCareExplained,
 		setRefusalEmergencyCareExplained,
-		paymentAmount,
-		setPaymentAmount,
-		paymentMethod,
-		setPaymentMethod,
-		paymentFiscalReceiptNumber,
-		setPaymentFiscalReceiptNumber,
-		paymentFiscalReceiptIssuedAt,
-		setPaymentFiscalReceiptIssuedAt,
-		paymentFiscalFn,
-		setPaymentFiscalFn,
-		paymentFiscalFd,
-		setPaymentFiscalFd,
-		paymentFiscalFpd,
-		setPaymentFiscalFpd,
-		paymentFiscalCashierName,
-		setPaymentFiscalCashierName,
-		paymentFiscalReceiptUrl,
-		setPaymentFiscalReceiptUrl,
-		paymentPayerFullName,
-		setPaymentPayerFullName,
-		paymentPayerInn,
-		setPaymentPayerInn,
-		paymentPayerBirthDate,
-		setPaymentPayerBirthDate,
-		paymentPayerIdentityDocument,
-		setPaymentPayerIdentityDocument,
-		paymentPayerRelationship,
-		setPaymentPayerRelationship,
-		paymentTaxDeductionCode,
-		setPaymentTaxDeductionCode,
-		paymentFeedback,
-		setPaymentFeedback,
 		documentIssueConfirmationId,
 		setDocumentIssueConfirmationId,
 		documentIssueSignatureMode,
@@ -2134,8 +2102,6 @@ export function useAppLogic(): any {
 		setIsPricelistAnalyzing,
 		isServerVoiceRecording,
 		setIsServerVoiceRecording,
-		isPaymentSaving,
-		setIsPaymentSaving,
 		communicationSavingTaskId,
 		setCommunicationSavingTaskId,
 		isClinicalRuleSaving,
@@ -2316,38 +2282,8 @@ export function useAppLogic(): any {
 		telegramRevokingLinkId,
 		setTelegramRevokingLinkId,
 	} = useSettingsStore();
-	const telegramSettingsModule = useTelegramSettings({
-		apiFetch: null,
-		setError,
-		settingsAdminSecretSession: settingsAdminSecretSession || undefined,
-		loadDashboard,
-	});
-	const {
-		markTelegramSettingsDirty,
-		updateTelegramVisualCardUrlDraft,
-		toggleTelegramFeature,
-		parseTelegramLinkTtlMinutes,
-		parseTelegramReminderLeadTimesHours,
-		parseTelegramReviewRequestDelayHours,
-		parseTelegramPostVisitCheckupDelayHours,
-		normalizeTelegramPostVisitCheckupDelayDrafts,
-		updateTelegramPostVisitCheckupDelayDraft,
-		telegramFeatureLabel,
-		saveTelegramSettings,
-		telegramControlPlaneHeaders,
-		loadTelegramControlPlane,
-		telegramStatusEndpoint,
-		telegramOutboxRequestParams,
-		telegramLinkCodeLedgerRequestParams,
-		telegramChatLinkLedgerRequestParams,
-	} = telegramSettingsModule;
 	const activeSettingsTabButtonRef = useRef<HTMLButtonElement | null>(null);
-	const initialTelegramHandoffTargetRef =
-		useRef<DenteTelegramHandoffTarget | null>(readDenteTelegramHandoffTarget());
 	const initialUiPreferencesRef = useRef<UiPreferences | null>(null);
-	// Ключ идемпотентности платежа. Живёт между повторными нажатиями «Принять
-	// оплату», чтобы сервер распознал повтор и не создал второй платёж.
-	const paymentMutationIdRef = useRef<string | null>(null);
 	// Порядковый номер запроса данных клиники: применяем только последний ответ.
 	const dashboardRequestSeqRef = useRef(0);
 	// Защита от двойного создания сотрудников и кресел (двойной клик по кнопке).
@@ -2412,10 +2348,6 @@ export function useAppLogic(): any {
 	}
 	const initialUiPreferences =
 		initialUiPreferencesRef.current ?? defaultUiPreferences;
-	const initialDocumentIssueSignatureDraft =
-		initialDocumentIssueSignatureDraftRef.current ??
-		loadDocumentIssueSignatureDraft();
-	const initialTelegramHandoffTarget = initialTelegramHandoffTargetRef.current;
 	const initialRecognitionText =
 		recognitionPresets?.find(
 			(preset) =>
@@ -2451,7 +2383,8 @@ export function useAppLogic(): any {
 	const auth = useAuthLogic({
 		setError,
 		loadDashboard,
-		loadTelegramControlPlane: telegramSettingsModule.loadTelegramControlPlane,
+		loadTelegramControlPlane: (options) =>
+			telegramSettingsModule.loadTelegramControlPlane(options),
 	});
 
 	/*
@@ -2854,6 +2787,74 @@ export function useAppLogic(): any {
 		});
 		void refreshSpeechRuntime({ silent: true });
 	}
+
+	const telegram = useTelegramModule({
+		settingsAdminSecretSession,
+		loadDashboard,
+		setError,
+		dashboard,
+		currentView,
+		settingsTab,
+		onboardingDismissed,
+		onboardingStep,
+		activePatient,
+		activeDoctor,
+		activeAppointment,
+		uiPreferencesHydrated,
+		setCurrentView,
+		setSelectedDocumentKind,
+	});
+	const { telegramSettingsModule } = telegram;
+	const { saveTelegramSettings } = telegramSettingsModule;
+
+	const finance = useFinanceLogic({
+		auth,
+		dashboard,
+		documentPatient,
+		paymentPatientContextReady,
+		paymentPatientContextMessage,
+		realActiveVisitId,
+		loadDashboard,
+		setError,
+	});
+
+	const {
+		paymentMutationIdRef,
+		paymentAmount,
+		setPaymentAmount,
+		paymentMethod,
+		setPaymentMethod,
+		paymentFiscalReceiptNumber,
+		setPaymentFiscalReceiptNumber,
+		paymentFiscalReceiptIssuedAt,
+		setPaymentFiscalReceiptIssuedAt,
+		paymentFiscalFn,
+		setPaymentFiscalFn,
+		paymentFiscalFd,
+		setPaymentFiscalFd,
+		paymentFiscalFpd,
+		setPaymentFiscalFpd,
+		paymentFiscalCashierName,
+		setPaymentFiscalCashierName,
+		paymentFiscalReceiptUrl,
+		setPaymentFiscalReceiptUrl,
+		paymentPayerFullName,
+		setPaymentPayerFullName,
+		paymentPayerInn,
+		setPaymentPayerInn,
+		paymentPayerBirthDate,
+		setPaymentPayerBirthDate,
+		paymentPayerIdentityDocument,
+		setPaymentPayerIdentityDocument,
+		paymentPayerRelationship,
+		setPaymentPayerRelationship,
+		paymentTaxDeductionCode,
+		setPaymentTaxDeductionCode,
+		paymentFeedback,
+		setPaymentFeedback,
+		isPaymentSaving,
+		recordPayment,
+	} = finance;
 
 	function updateClinicProfileDraft<K extends keyof ClinicProfileDraft>(
 		key: K,
@@ -4026,74 +4027,7 @@ export function useAppLogic(): any {
 		clinicalAdminSecretSession,
 	]);
 
-	useEffect(() => {
-		const settings = telegramStatus?.settings;
-		if (!settings || telegramSettingsDirty) return;
-		setTelegramModeDraft(settings.mode);
-		setTelegramBotUsernameDraft(settings.botUsername ?? "");
-		setTelegramOwnBotUsernameDraft(settings.ownBotUsername ?? "");
-		setTelegramWebhookBaseUrlDraft(settings.webhookBaseUrl ?? "");
-		setTelegramPatientPortalBaseUrlDraft(settings.patientPortalBaseUrl ?? "");
-		setTelegramWelcomeImageUrlDraft(settings.welcomeImageUrl ?? "");
-		setTelegramVisualCardUrlDrafts({
-			...emptyTelegramVisualCardUrlDrafts(),
-			...(settings.visualCardUrls ?? {}),
-		});
-		setTelegramReviewUrlDraft(settings.clinicReviewUrl ?? "");
-		setTelegramMapsUrlDraft(settings.clinicMapsUrl ?? "");
-		setTelegramEnabledFeaturesDraft(settings.enabledFeatures);
-		setTelegramTokenTtlDraft(String(settings.patientLinkTokenTtlMinutes));
-		setTelegramReminderLeadTimesDraft(
-			(settings.appointmentReminderLeadTimesHours?.length
-				? settings.appointmentReminderLeadTimesHours
-				: [24]
-			).join(", "),
-		);
-		setTelegramReviewRequestDelayDraft(
-			String(settings.reviewRequestDelayHours ?? 2),
-		);
-		setTelegramPostVisitCheckupDelayDrafts(
-			normalizeTelegramPostVisitCheckupDelayDrafts(
-				settings.postVisitCheckupDelayHoursByTopic ??
-					defaultTelegramPostVisitCheckupDelayHoursByTopic,
-			),
-		);
-		setTelegramAllowVoiceIntakeDraft(settings.allowVoiceIntake);
-		setTelegramStaffEscalationChannelDraft(
-			settings.staffEscalationChannel ?? "",
-		);
-		setTelegramPrivacyModeDraft(settings.privacyMode);
-		setTelegramSettingsSaveState("idle");
-		setTelegramSettingsSaveError(null);
-	}, [telegramStatus?.settings.updatedAt, telegramSettingsDirty]);
 
-	useEffect(() => {
-		if (!telegramSettingsDirty || !telegramStatus?.settings) return;
-		const timeout = window.setTimeout(() => {
-			void saveTelegramSettings({ silent: true });
-		}, 900);
-		return () => window.clearTimeout(timeout);
-	}, [
-		telegramSettingsDirty,
-		telegramModeDraft,
-		telegramBotUsernameDraft,
-		telegramOwnBotUsernameDraft,
-		telegramWebhookBaseUrlDraft,
-		telegramPatientPortalBaseUrlDraft,
-		telegramWelcomeImageUrlDraft,
-		telegramVisualCardUrlDrafts,
-		telegramReviewUrlDraft,
-		telegramMapsUrlDraft,
-		telegramEnabledFeaturesDraft,
-		telegramTokenTtlDraft,
-		telegramReminderLeadTimesDraft,
-		telegramReviewRequestDelayDraft,
-		telegramPostVisitCheckupDelayDrafts,
-		telegramAllowVoiceIntakeDraft,
-		telegramStaffEscalationChannelDraft,
-		telegramPrivacyModeDraft,
-		telegramStatus?.settings,
-	]);
 
 	useEffect(() => {
 		if (!dashboard || clinicProfileDraftHydratedRef.current) return;
@@ -4388,24 +4322,7 @@ export function useAppLogic(): any {
 		}
 	}, [currentView, settingsTab]);
 
-	useEffect(() => {
-		if (
-			(currentView === "settings" && settingsTab === "telegram") ||
-			(!onboardingDismissed && onboardingStep === "telegram")
-		) {
-			void loadTelegramControlPlane({ silent: true });
-		}
-	}, [
-		currentView,
-		settingsTab,
-		onboardingDismissed,
-		onboardingStep,
-		telegramOutboxStatusFilter,
-		telegramOutboxTemplateFilter,
-		telegramModeDraft,
-		telegramBotConfigId,
-		dashboard?.clinicSettings?.profile?.organizationId,
-	]);
+
 
 	useEffect(() => {
 		if (currentView === "settings") {
@@ -4449,28 +4366,7 @@ export function useAppLogic(): any {
 
 	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 
-	useEffect(() => {
-		const telegramHandoffTarget =
-			initialTelegramHandoffTargetRef.current ??
-			readDenteTelegramHandoffTarget();
-		if (!telegramHandoffTarget) return;
-		setTelegramHandoffNotice(telegramHandoffTarget);
-		stripDenteTelegramHandoffQuery(telegramHandoffTarget);
-	}, []);
 
-	useEffect(() => {
-		if (!uiPreferencesHydrated) return;
-		const telegramHandoffTarget =
-			initialTelegramHandoffTargetRef.current ??
-			readDenteTelegramHandoffTarget();
-		if (!telegramHandoffTarget) return;
-		setCurrentView(telegramHandoffTarget.view);
-		if (telegramHandoffTarget.documentKind) {
-			setSelectedDocumentKind(telegramHandoffTarget.documentKind);
-		}
-		setTelegramHandoffNotice(telegramHandoffTarget);
-		stripDenteTelegramHandoffQuery(telegramHandoffTarget);
-	}, [uiPreferencesHydrated]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -12907,234 +12803,7 @@ export function useAppLogic(): any {
 		}
 	}
 
-	async function recordPayment() {
-		setPaymentFeedback("");
-		if (isPaymentSaving) {
-			setError("Дождитесь завершения текущей записи оплаты.");
-			return;
-		}
-		if (!documentPatient || !dashboard) {
-			setError("Выберите пациента, за которого принимаете оплату.");
-			return;
-		}
-		/*
-		 * Барьер стоял на совпадении пациента с пациентом открытого приёма, и
-		 * это запирало кассу наглухо: когда открытых приёмов нет, гидратация
-		 * кладёт в activeVisit заготовку с нулевым UUID, совпадения не бывает
-		 * никогда. Кнопка «Принять оплату» была доступна, нажатие молча
-		 * ничего не делало — деньги принять было нельзя.
-		 *
-		 * Сервер оплату без приёма принимает: visitId необязателен, пациент
-		 * платит и авансом, и по счёту, и по долгу. Опасен ровно один случай —
-		 * открыт приём ДРУГОГО пациента; его и не пропускаем. Условие живёт в
-		 * одном месте, в paymentPatientContextReady.
-		 */
-		if (!paymentPatientContextReady) {
-			setError(
-				paymentPatientContextMessage ||
-					"Оплата не записана: сначала переключите открытый прием на этого пациента.",
-			);
-			return;
-		}
-		const amountRub = normalizeRubAmountInput(paymentAmount);
-		const amountMissingStep = validateRubAmountInput(paymentAmount);
-		if (amountMissingStep || amountRub === null) {
-			setError(
-				`Сумма оплаты: ${amountMissingStep ?? "укажите сумму больше нуля"}.`,
-			);
-			return;
-		}
-		const paymentPayerName = paymentPayerFullName.trim();
-		const explicitPayerInn = paymentPayerInn.trim();
-		const explicitPayerBirthDate = paymentPayerBirthDate.trim();
-		const explicitPayerIdentityDocument = paymentPayerIdentityDocument.trim();
-		const paymentPayerRelation = paymentPayerRelationship.trim();
-		const explicitFiscalFn = paymentFiscalFn.trim();
-		const explicitFiscalFd = paymentFiscalFd.trim();
-		const explicitFiscalFpd = paymentFiscalFpd.trim();
-		const explicitFiscalReceiptUrl = paymentFiscalReceiptUrl.trim();
-		const taxReadyPaymentRequested =
-			paymentTaxDeductionCode === "1" || paymentTaxDeductionCode === "2";
-		if (taxReadyPaymentRequested) {
-			const missingTaxFields = [
-				[paymentFiscalReceiptIssuedAt.trim(), "дата фискального чека"],
-				[explicitFiscalFn, "ФН"],
-				[explicitFiscalFd, "ФД"],
-				[explicitFiscalFpd, "ФПД"],
-				[paymentPayerName, "ФИО плательщика"],
-				[explicitPayerBirthDate, "дата рождения плательщика"],
-				[explicitPayerIdentityDocument, "документ плательщика"],
-				[paymentPayerRelation, "родство плательщика"],
-			]
-				.filter(([value]) => !value)
-				.map(([, label]) => label);
-			if (missingTaxFields.length) {
-				setError(
-					`Для налоговой оплаты заполните явно: ${missingTaxFields.join(", ")}. Данные из карточки пациента не подставляются автоматически.`,
-				);
-				return;
-			}
-		}
-		if (
-			explicitFiscalReceiptUrl &&
-			!/^https?:\/\/\S+$/i.test(explicitFiscalReceiptUrl)
-		) {
-			setError("Ссылка ОФД должна начинаться с http:// или https://");
-			return;
-		}
-		const patientIsPayer =
-			(!paymentPayerName || paymentPayerName === documentPatient.fullName) &&
-			(!paymentPayerRelation ||
-				paymentPayerRelation.toLocaleLowerCase("ru-RU") === "пациент");
-		const administrativePayerInn = patientIsPayer
-			? (documentPatient.administrativeProfile?.taxpayerInn?.trim() ?? "")
-			: "";
-		const administrativePayerDocument = patientIsPayer
-			? (documentPatient.administrativeProfile?.identityDocument?.trim() ?? "")
-			: "";
-		const normalizedPayerInn = taxReadyPaymentRequested
-			? explicitPayerInn
-			: explicitPayerInn || administrativePayerInn;
-		if (normalizedPayerInn && !/^\d{10}$|^\d{12}$/.test(normalizedPayerInn)) {
-			setError("ИНН плательщика должен содержать 10 или 12 цифр");
-			return;
-		}
-		setIsPaymentSaving(true);
-		try {
-			const documentForPayment =
-				activeUsableDocuments?.find(
-					(document) =>
-						documentKindMetadata[document.kind].group === "payment" &&
-						document.kind !== "payment_refund_correction_request" &&
-						document.visitId === dashboard?.activeVisit?.id &&
-						(document.totalAmountRub ?? 0) > 0,
-				) ?? null;
-			let response;
-			if ((paymentMethod as string) === "family_wallet") {
-				// Family wallet payment
-				const famRes = await fetch(
-					`/api/finance/family/patient/${documentPatient.id}`,
-					{ headers: auth.denteClinicalReadHeaders() },
-				);
-				if (!famRes.ok) {
-					setError("У пациента не настроен семейный аккаунт для оплаты.");
-					setIsPaymentSaving(false);
-					return;
-				}
-				const famData = await famRes.json();
-				response = await fetch("/api/finance/family/pay", {
-					method: "POST",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						organizationId:
-							dashboard?.clinicSettings?.profile?.organizationId ||
-							dashboard?.activeVisit?.organizationId ||
-							"00000000-0000-0000-0000-000000000000",
-						patientId: documentPatient.id,
-						familyGroupId: famData.id,
-						amountRub,
-						/* Только настоящий приём: нулевой UUID заготовки сервер не найдёт. */
-						visitId: realActiveVisitId ?? undefined,
-						documentId: documentForPayment?.id || undefined,
-						// БЫЛО: оплата с семейного кошелька шла вообще без ключа
-						// идемпотентности. Повтор после обрыва связи списывал деньги
-						// с баланса семьи ДВАЖДЫ за одно лечение.
-						clientMutationId: (paymentMutationIdRef.current ||=
-							browserGeneratedId("family-payment")),
-					}),
-				});
-			} else {
-				// Normal payment
-				// БЫЛО: browserGeneratedId вызывался ЗДЕСЬ, то есть при каждом нажатии
-				// «Принять оплату» генерировался новый ключ. Серверная защита от
-				// дублей (findPaymentByClientMutationIdInDb) не могла сработать
-				// никогда. Сценарий: платёж 15 000 ₽ дошёл до сервера, ответ пропал
-				// из-за обрыва связи, оператор нажал повторно — в базе два платежа
-				// по 15 000 ₽, касса не сходится. Теперь ключ создаётся один раз на
-				// заполненную форму и сбрасывается только после успеха.
-				if (!paymentMutationIdRef.current) {
-					paymentMutationIdRef.current = browserGeneratedId("payment");
-				}
-				const paymentClientMutationId = paymentMutationIdRef.current;
-				response = await fetch("/api/billing/payments", {
-					method: "POST",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						patientId: documentPatient.id,
-						/* Только настоящий приём: нулевой UUID заготовки сервер не найдёт. */
-						visitId: realActiveVisitId,
-						documentId: documentForPayment?.id ?? null,
-						clientMutationId: paymentClientMutationId,
-						amountRub,
-						method: paymentMethod,
-						fiscalReceiptNumber: paymentFiscalReceiptNumber.trim() || null,
-						fiscalReceiptIssuedAt: paymentFiscalReceiptIssuedAt.trim() || null,
-						fiscalReceiptUrl: explicitFiscalReceiptUrl || null,
-						fiscalReceipt: {
-							fn: explicitFiscalFn || null,
-							fd: explicitFiscalFd || null,
-							fpd: explicitFiscalFpd || null,
-							cashierName: paymentFiscalCashierName.trim() || null,
-							receiptUrl: explicitFiscalReceiptUrl || null,
-							operationType: "income",
-						},
-						payerFullName: taxReadyPaymentRequested
-							? paymentPayerName
-							: paymentPayerName || documentPatient.fullName,
-						payerInn: normalizedPayerInn || null,
-						payerBirthDate: taxReadyPaymentRequested
-							? explicitPayerBirthDate
-							: explicitPayerBirthDate || documentPatient.birthDate,
-						payerIdentityDocument: taxReadyPaymentRequested
-							? explicitPayerIdentityDocument
-							: explicitPayerIdentityDocument ||
-								administrativePayerDocument ||
-								null,
-						payerRelationship: taxReadyPaymentRequested
-							? paymentPayerRelation
-							: paymentPayerRelation || "пациент",
-						taxDeductionCode: paymentTaxDeductionCode || null,
-						note: "Оплата из рабочего экрана CRM",
-					}),
-				});
-			}
-			if (!response.ok) {
-				setError(await responseErrorMessage(response, "Оплата не записана"));
-				return;
-			}
-			// Платёж принят — следующий платёж должен получить НОВЫЙ ключ.
-			paymentMutationIdRef.current = null;
-			setPaymentAmount("");
-			setPaymentFiscalReceiptNumber("");
-			setPaymentFiscalReceiptIssuedAt("");
-			setPaymentFiscalFn("");
-			setPaymentFiscalFd("");
-			setPaymentFiscalFpd("");
-			setPaymentFiscalCashierName("");
-			setPaymentFiscalReceiptUrl("");
-			setPaymentPayerFullName("");
-			setPaymentPayerInn("");
-			setPaymentPayerBirthDate("");
-			setPaymentPayerIdentityDocument("");
-			setPaymentPayerRelationship("пациент");
-			setPaymentTaxDeductionCode("");
-			await loadDashboard();
-			setPaymentFeedback(
-				`Оплата ${money(amountRub)} записана для ${documentPatient.fullName}. Фискальные и налоговые поля очищены для следующего платежа.`,
-			);
-			setError(null);
-		} catch (paymentError) {
-			setError(
-				operatorWorkflowFailureMessage("Оплата не записана", paymentError),
-			);
-		} finally {
-			setIsPaymentSaving(false);
-		}
-	}
+
 
 	function documentKindsForCommunicationTask(
 		task: Dashboard["communicationTasks"][number],
@@ -13224,467 +12893,7 @@ export function useAppLogic(): any {
 		}
 	}
 
-	function appendTelegramRuntimeScopeParams(
-		params: URLSearchParams,
-	): URLSearchParams {
-		const organizationId =
-			dashboard?.clinicSettings?.profile?.organizationId?.trim();
-		const botConfigId = telegramBotConfigId.trim();
-		if (
-			telegramModeDraft === "clinic_owned_bot" &&
-			organizationId &&
-			botConfigId
-		) {
-			params.set("organizationId", organizationId);
-			params.set("botConfigId", botConfigId);
-		}
-		return params;
-	}
 
-	function telegramOutboxActionQueryString(): string {
-		const params = appendTelegramRuntimeScopeParams(new URLSearchParams());
-		const query = params.toString();
-		return query ? `?${query}` : "";
-	}
-
-	async function loadMoreTelegramOutbox() {
-		if (!telegramOutbox?.nextCursor || isTelegramOutboxLoadingMore) return;
-		setIsTelegramOutboxLoadingMore(true);
-		try {
-			const headers = telegramControlPlaneHeaders(
-				{},
-				telegramAdminSecretSession || telegramAdminSecretDraft,
-			);
-			const outboxParams = telegramOutboxRequestParams(
-				telegramOutbox.nextCursor,
-			);
-			const response = await fetch(
-				`/api/telegram/outbox?${outboxParams.toString()}`,
-				{ cache: "no-store", headers },
-			);
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(response, "Очередь Telegram"),
-				);
-			const nextPage = (await response.json()) as DenteTelegramOutboxResponse;
-			setTelegramOutbox((current) => {
-				if (!current) return nextPage;
-				const knownIds = new Set(current.items.map((item) => item.id));
-				return {
-					...nextPage,
-					items: [
-						...current.items,
-						...nextPage.items.filter((item) => !knownIds.has(item.id)),
-					],
-				};
-			});
-		} catch (telegramError) {
-			setError(
-				operatorWorkflowFailureMessage(
-					"Очередь Telegram не загрузилась",
-					telegramError,
-				),
-			);
-		} finally {
-			setIsTelegramOutboxLoadingMore(false);
-		}
-	}
-
-	async function loadMoreTelegramLinkCodes() {
-		if (!telegramLinkCodeLedger?.nextCursor || isTelegramLinkCodesLoadingMore)
-			return;
-		setIsTelegramLinkCodesLoadingMore(true);
-		try {
-			const headers = telegramControlPlaneHeaders(
-				{},
-				telegramAdminSecretSession || telegramAdminSecretDraft,
-			);
-			const params = telegramLinkCodeLedgerRequestParams(
-				telegramLinkCodeLedger.nextCursor,
-			);
-			const response = await fetch(
-				`/api/telegram/link-codes?${params.toString()}`,
-				{ cache: "no-store", headers },
-			);
-			if (!response.ok)
-				throw new Error(await responseErrorMessage(response, "Коды Telegram"));
-			const nextPage =
-				(await response.json()) as DenteTelegramLinkCodeListResponse;
-			const knownIds = new Set(telegramLinkCodes.map((code) => code.id));
-			const linkCodes = [
-				...telegramLinkCodes,
-				...nextPage.linkCodes.filter((code) => !knownIds.has(code.id)),
-			];
-			setTelegramLinkCodes(linkCodes);
-			setTelegramLinkCodeLedger({ ...nextPage, linkCodes });
-		} catch (telegramError) {
-			setError(
-				operatorWorkflowFailureMessage(
-					"Коды Telegram не загрузились",
-					telegramError,
-				),
-			);
-		} finally {
-			setIsTelegramLinkCodesLoadingMore(false);
-		}
-	}
-
-	async function loadMoreTelegramChatLinks() {
-		if (!telegramChatLinkLedger?.nextCursor || isTelegramChatLinksLoadingMore)
-			return;
-		setIsTelegramChatLinksLoadingMore(true);
-		try {
-			const headers = telegramControlPlaneHeaders(
-				{},
-				telegramAdminSecretSession || telegramAdminSecretDraft,
-			);
-			const params = telegramChatLinkLedgerRequestParams(
-				telegramChatLinkLedger.nextCursor,
-			);
-			const response = await fetch(
-				`/api/telegram/chat-links?${params.toString()}`,
-				{ cache: "no-store", headers },
-			);
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(response, "Связанные Telegram-чаты"),
-				);
-			const nextPage =
-				(await response.json()) as DenteTelegramChatLinkListResponse;
-			const knownIds = new Set(telegramChatLinks.map((link) => link.id));
-			const chatLinks = [
-				...telegramChatLinks,
-				...nextPage.chatLinks.filter((link) => !knownIds.has(link.id)),
-			];
-			setTelegramChatLinks(chatLinks);
-			setTelegramChatLinkLedger({ ...nextPage, chatLinks });
-		} catch (telegramError) {
-			setError(
-				operatorWorkflowFailureMessage(
-					"Связанные Telegram-чаты не загрузились",
-					telegramError,
-				),
-			);
-		} finally {
-			setIsTelegramChatLinksLoadingMore(false);
-		}
-	}
-
-	async function createTelegramLinkCode() {
-		if (isTelegramLinkCreating) {
-			setError("Дождитесь завершения текущего создания Telegram-кода.");
-			return;
-		}
-		if (!dashboard) {
-			setError(
-				"Данные клиники еще не загружены. Повторите создание Telegram-кода после загрузки рабочего экрана.",
-			);
-			return;
-		}
-		const subjectId =
-			telegramLinkSubjectType === "patient"
-				? activePatient?.id
-				: telegramLinkStaffId;
-		if (!subjectId) {
-			setError(
-				telegramLinkSubjectType === "patient"
-					? "Выберите активного пациента для Telegram-кода."
-					: "Выберите сотрудника для Telegram-кода.",
-			);
-			return;
-		}
-		setIsTelegramLinkCreating(true);
-		setTelegramLinkActionState(null);
-		try {
-			const response = await fetch("/api/telegram/link-codes", {
-				method: "POST",
-				headers: telegramControlPlaneHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					organizationId: dashboard?.clinicSettings?.profile?.organizationId,
-					subjectType: telegramLinkSubjectType,
-					subjectId,
-					clinicId: dashboard?.clinicSettings?.profile?.organizationId,
-					botConfigId:
-						telegramModeDraft === "clinic_owned_bot"
-							? telegramBotConfigId.trim() || undefined
-							: undefined,
-					ttlMinutes: parseTelegramLinkTtlMinutes(),
-					createdByUserId: activeDoctor?.id ?? null,
-				}),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(response, "Telegram-код не создан"),
-				);
-			setTelegramLinkCode(
-				(await response.json()) as DenteTelegramLinkCodeCreated,
-			);
-			await loadTelegramControlPlane({ silent: true });
-			setError(null);
-		} catch (telegramError) {
-			setError(
-				operatorWorkflowFailureMessage("Telegram-код не создан", telegramError),
-			);
-		} finally {
-			setIsTelegramLinkCreating(false);
-		}
-	}
-
-	async function copyTelegramTextToClipboard(
-		value: string | null | undefined,
-		label: string,
-	) {
-		const text = value?.trim();
-		if (!text) {
-			const message = `${label} пустой. Сначала создайте новый Telegram-код или проверьте настройки бота.`;
-			setTelegramLinkActionState(message);
-			setError(message);
-			return;
-		}
-		try {
-			if (navigator.clipboard?.writeText) {
-				await navigator.clipboard.writeText(text);
-			} else {
-				const area = document.createElement("textarea");
-				area.value = text;
-				area.setAttribute("readonly", "true");
-				area.style.position = "fixed";
-				area.style.left = "-9999px";
-				document.body.appendChild(area);
-				area.select();
-				document.execCommand("copy");
-				document.body.removeChild(area);
-			}
-			setTelegramLinkActionState(`${label} скопирован`);
-			setError(null);
-		} catch {
-			setTelegramLinkActionState(null);
-			setError(
-				`${label} не скопирован. Откройте ссылку или выделите код вручную.`,
-			);
-		}
-	}
-
-	function downloadTelegramQrSvg() {
-		if (!telegramLinkCode?.qrSvg) {
-			const message =
-				"QR-код недоступен. Используйте текстовый код или создайте новый Telegram-код.";
-			setTelegramLinkActionState(message);
-			setError(message);
-			return;
-		}
-		const blob = new Blob([telegramLinkCode.qrSvg], {
-			type: "image/svg+xml;charset=utf-8",
-		});
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = `dente-telegram-qr-${telegramLinkCode.codeLast4}.svg`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-		setTelegramLinkActionState("QR-код скачан");
-		setError(null);
-	}
-
-	async function revokeTelegramChatLink(linkId: string) {
-		if (telegramRevokingLinkId) {
-			setError("Дождитесь завершения текущего отзыва Telegram-связки.");
-			return;
-		}
-		setTelegramRevokingLinkId(linkId);
-		try {
-			const response = await fetch(
-				`/api/telegram/chat-links/${encodeURIComponent(linkId)}/revoke${telegramOutboxActionQueryString()}`,
-				{
-					method: "POST",
-					headers: telegramControlPlaneHeaders(),
-				},
-			);
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(response, "Связка Telegram не отозИвана"),
-				);
-			await loadTelegramControlPlane({ silent: true });
-			setError(null);
-		} catch (telegramError) {
-			setError(
-				operatorWorkflowFailureMessage(
-					"Связка Telegram не отозИвана",
-					telegramError,
-				),
-			);
-		} finally {
-			setTelegramRevokingLinkId(null);
-		}
-	}
-
-	async function previewTelegramTemplate(
-		templateKind: DenteTelegramMessagePreview["templateKind"],
-	) {
-		const isStaffPreview = templateKind === "staff_daily_digest";
-		const staffId =
-			telegramLinkStaffId || telegramLinkStaffOptions[0]?.id || "";
-		if (!isStaffPreview && !activePatient) {
-			setError(
-				"Выберите активного пациента перед предпросмотром Telegram-сообщения.",
-			);
-			return;
-		}
-		if (isStaffPreview && !staffId) {
-			setError("Выберите сотрудника перед предпросмотром Telegram-дайджеста.");
-			return;
-		}
-		setIsTelegramLoading(true);
-		try {
-			const response = await fetch(
-				`/api/telegram/messages/preview${telegramOutboxActionQueryString()}`,
-				{
-					method: "POST",
-					headers: telegramControlPlaneHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						templateKind,
-						patientId: isStaffPreview ? undefined : activePatient?.id,
-						staffId: isStaffPreview ? staffId : undefined,
-						appointmentId: isStaffPreview ? undefined : activeAppointment?.id,
-						includePhi: false,
-					}),
-				},
-			);
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Предпросмотр Telegram не создан",
-					),
-				);
-			setTelegramPreview(
-				(await response.json()) as DenteTelegramMessagePreview,
-			);
-			setError(null);
-		} catch (telegramError) {
-			setError(
-				operatorWorkflowFailureMessage(
-					"Предпросмотр Telegram не создан",
-					telegramError,
-				),
-			);
-		} finally {
-			setIsTelegramLoading(false);
-		}
-	}
-
-	async function sendTelegramOutboxItem(itemId: string) {
-		if (telegramSendingItemId || isTelegramSendingDue) {
-			setError("Дождитесь завершения текущей отправки Telegram.");
-			return;
-		}
-		setTelegramSendingItemId(itemId);
-		try {
-			const mutationId =
-				typeof crypto !== "undefined" && "randomUUID" in crypto
-					? crypto.randomUUID()
-					: `telegram-send-${Date.now()}`;
-			const response = await fetch(
-				`/api/telegram/outbox/${encodeURIComponent(itemId)}/send${telegramOutboxActionQueryString()}`,
-				{
-					method: "POST",
-					headers: telegramControlPlaneHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						dryRun: false,
-						clientMutationId: mutationId,
-					}),
-				},
-			);
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Сообщение Telegram не отправлено",
-					),
-				);
-			const result = (await response.json()) as DenteTelegramOutboxSendResponse;
-			if (result.status === "blocked" || result.status === "failed") {
-				const warning = result.warnings?.[0]
-					? telegramHumanMessage(result.warnings?.[0])
-					: "";
-				const reason = telegramHumanMessage(result.blockedReason) || warning;
-				setError(
-					`Отправка Telegram заблокирована${reason ? `: ${reason}` : ""}`,
-				);
-				await loadTelegramControlPlane({ silent: true });
-				return;
-			}
-			setError(null);
-			await loadTelegramControlPlane({ silent: true });
-			if (result.status === "sent") await loadDashboard();
-		} catch (telegramError) {
-			setError(
-				operatorWorkflowFailureMessage(
-					"Сообщение Telegram не отправлено",
-					telegramError,
-				),
-			);
-		} finally {
-			setTelegramSendingItemId(null);
-		}
-	}
-
-	async function sendDueTelegramOutbox() {
-		if (isTelegramSendingDue || telegramSendingItemId) {
-			setError("Дождитесь завершения текущей отправки Telegram.");
-			return;
-		}
-		if (!telegramOutbox?.dueCount) {
-			setError("Telegram: готовых сообщений к отправке нет.");
-			return;
-		}
-		setIsTelegramSendingDue(true);
-		try {
-			const response = await fetch(
-				`/api/telegram/outbox/send-due${telegramOutboxActionQueryString()}`,
-				{
-					method: "POST",
-					headers: telegramControlPlaneHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({ dryRun: false, limit: 25 }),
-				},
-			);
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Готовые Telegram-сообщения не отправлены",
-					),
-				);
-			const result =
-				(await response.json()) as DenteTelegramOutboxSendDueResponse;
-			await loadTelegramControlPlane({ silent: true });
-			if (result.sentCount > 0) await loadDashboard();
-			setError(
-				result.sentCount > 0
-					? `Telegram: отправлено ${result.sentCount}, проверено ${result.attemptedCount}.`
-					: "Telegram: готовых сообщений к отправке нет.",
-			);
-		} catch (telegramError) {
-			setError(
-				operatorWorkflowFailureMessage(
-					"Готовые Telegram-сообщения не отправлены",
-					telegramError,
-				),
-			);
-		} finally {
-			setIsTelegramSendingDue(false);
-		}
-	}
 
 	async function createImagingStudy(kind: ImagingStudyKind) {
 		if (imagingCreateSavingKind) {
@@ -13965,6 +13174,8 @@ export function useAppLogic(): any {
 
 	return {
 		...telegramSettingsModule,
+		...telegram,
+		telegram,
 		...auth,
 		/*
 		 * auth отдаётся ещё и целиком, отдельным полем.
@@ -14104,14 +13315,7 @@ export function useAppLogic(): any {
 		confirmDocumentIssue,
 		confirmDocumentVoid,
 		continueOnboardingInDraftMode,
-		copyTelegramTextToClipboard,
 		createAppointmentFromDraft,
-		createClinicalRuleFromSettings,
-		createCtPlanningArtifact,
-		createDocument,
-		createImagingStudy,
-		createPatient,
-		createTelegramLinkCode,
 		ctPlanningActiveQuickActionId,
 		ctPlanningAnnotationRefs,
 		ctPlanningImplantPlan,
@@ -14184,7 +13388,6 @@ export function useAppLogic(): any {
 		downloadSmartImportReport,
 		downloadSmartImportSafeHandoffReport,
 		downloadTaxDocumentXml,
-		downloadTelegramQrSvg,
 		draft,
 		editingAppointmentId,
 		eligiblePaymentReceiptPayments,
@@ -14323,12 +13526,8 @@ export function useAppLogic(): any {
 		legalReadinessPercent,
 		loadDocumentAuditFacts,
 		loadLocalBridgeUsePlans,
-		loadMoreTelegramChatLinks,
-		loadMoreTelegramLinkCodes,
-		loadMoreTelegramOutbox,
 		loadPersistenceHealth,
 		loadPersistenceIntegrity,
-		loadTelegramControlPlane,
 		localBridgeReadiness,
 		localBridgeStatusLabels,
 		localBridgeStatusState,
@@ -14342,7 +13541,6 @@ export function useAppLogic(): any {
 		localImagingOrganizerActionLabels,
 		lookupClinicPublicProfile,
 		markPostVisitManualEdited,
-		markTelegramSettingsDirty,
 		medicalDocumentReleaseChannelLabels,
 		migrationAutopilot,
 		migrationSourceDiscovery,
@@ -14497,6 +13695,7 @@ export function useAppLogic(): any {
 		patientIntakePregnancyStatusOptions,
 		patientName,
 		paymentAmount,
+		paymentMutationIdRef,
 		paymentFeedback,
 		paymentFiscalCashierName,
 		paymentFiscalFd,
@@ -14548,7 +13747,6 @@ export function useAppLogic(): any {
 		previewMigrationAutopilotSources,
 		previewMigrationDiscoveryCandidate,
 		previewSmartImport,
-		previewTelegramTemplate,
 		previousOnboardingStep,
 		pricelistAnalysis,
 		pricelistImageBase64,
@@ -14590,7 +13788,6 @@ export function useAppLogic(): any {
 		restoreDicomWorkbenchServerBundle,
 		restoreMprWorkbenchLocalDraft,
 		retryImagingViewerSessionSave,
-		revokeTelegramChatLink,
 		roleFocusOrder,
 		runMigrationAutopilot,
 		runRecognitionJob,
@@ -14601,7 +13798,6 @@ export function useAppLogic(): any {
 		savePatientAdministrativeProfile,
 		savePatientCore,
 		saveStaffSchedule,
-		saveTelegramSettings,
 		scanDicomFolderSeries,
 		scanImagingFolder,
 		scenarioPriorityLabels,
@@ -14631,9 +13827,7 @@ export function useAppLogic(): any {
 		selectedTaxPaymentTotalRub,
 		selectedUiLanguageOption,
 		selectedWorkspaceRole,
-		sendDueTelegramOutbox,
 		sendRecognitionResultToImport,
-		sendTelegramOutboxItem,
 		serverDraftSyncState,
 		serviceCategoryLabels,
 		serviceTitle,
@@ -14715,6 +13909,7 @@ export function useAppLogic(): any {
 		setPaymentPayerInn,
 		setPaymentPayerRelationship,
 		setPaymentTaxDeductionCode,
+		setPaymentFeedback,
 		setPricelistAnalysis,
 		setPricelistSourceKind,
 		setPricelistText,
@@ -14807,10 +14002,6 @@ export function useAppLogic(): any {
 		telegramChatLinkLedger,
 		telegramChatLinks,
 		telegramClassificationLabels,
-		telegramDeliveryStatusLabels,
-		telegramEnabledFeaturesDraft,
-		telegramFeatureHelp,
-		telegramFeatureLabel,
 		telegramFeatureOptions,
 		telegramFeaturePlan,
 		telegramHandoffNotice,
@@ -14869,7 +14060,6 @@ export function useAppLogic(): any {
 		removeClinicalRule,
 		togglePhotoVideoMaterial,
 		toggleStaffWorkingDay,
-		toggleTelegramFeature,
 		toothRows,
 		toothStateByCode: visitToothStateByCode,
 		setToothState,
@@ -14892,8 +14082,6 @@ export function useAppLogic(): any {
 		updatePatientCoreDraft,
 		updateStaffScheduleDay,
 		updateStaffScheduleDraft,
-		updateTelegramPostVisitCheckupDelayDraft,
-		updateTelegramVisualCardUrlDraft,
 		updateVisitNoteField,
 		usePricelistAi,
 		odontogramUseSurfaces,

@@ -341,6 +341,20 @@ import {
 export { imagingSourceLabels } from "./imagingUiLabels";
 export { pricelistSourceKindLabels } from "./pricelistUiMeta";
 
+export { defaultUiPreferences, loadUiPreferences, saveUiPreferences, type UiPreferences, type UiPreferencesInput, uiPreferencesStorageKey } from "./utils/preferencesUtils";
+export { viewFromHash, settingsTabFromHash, settingsTabs, type SettingsTab } from "./utils/routeUtils";
+export { currentLocalDateTimeInputValue, toDateTimeLocalValue } from "./utils/dateUtils";
+export { emptyPatientCoreDraft, emptyPatientAdministrativeProfileDraft, emptyAppointmentScheduleDraft, emptyTelegramVisualCardUrlDrafts, emptyVisitNoteForm, defaultClinicalToothRowsText, defaultImagingViewerState, defaultDicomFirstFrameViewerState } from "./utils/draftDefaults";
+
+import {
+	defaultUiPreferences,
+	uiPreferencesStorageKey,
+	type UiPreferences,
+	type UiPreferencesInput,
+} from "./utils/preferencesUtils";
+import { settingsTabs, type SettingsTab } from "./utils/routeUtils";
+import { toDateTimeLocalValue } from "./utils/dateUtils";
+
 import {
 	appointmentLabels,
 	clinicalRuleActionLabels,
@@ -469,32 +483,6 @@ export function viewerWindowPresetForStudy(
 	if (kind === "opg") return "perio";
 	return "endo";
 }
-
-export const defaultImagingViewerState: ImagingViewerState = {
-	rotationDeg: 0,
-	flipHorizontal: false,
-	inverted: false,
-	brightness: 1,
-	contrast: 1.08,
-	zoom: 1,
-	panX: 0,
-	panY: 0,
-	projection: "axial",
-	preset: "bone",
-};
-
-export const defaultDicomFirstFrameViewerState: ImagingViewerState = {
-	rotationDeg: 0,
-	flipHorizontal: false,
-	inverted: false,
-	brightness: 1,
-	contrast: 1,
-	zoom: 1,
-	panX: 0,
-	panY: 0,
-	projection: "axial",
-	preset: "bone",
-};
 
 export type ImagingViewerLocalDraft = {
 	state: ImagingViewerSessionState;
@@ -760,7 +748,6 @@ export const browserImagingScanYieldEveryUnits = 24;
 export const browserImagingScanYieldEveryMs = 20;
 export const browserImagingScanProgressEveryUnits = 12;
 export const browserImagingScanProgressEveryMs = 96;
-export const uiPreferencesStorageKey = "dental-crm:web-ui-preferences:v1";
 export const documentPaymentSelectionStorageKey =
 	"dental-crm:document-payment-selection:v1";
 export const documentPayloadDraftStorageKey =
@@ -883,12 +870,6 @@ export const documentVoidReasonLabels: Record<DocumentVoidReasonCode, string> =
 
 export function browserGeneratedId(prefix: string): string {
 	return `${prefix}-${crypto.randomUUID()}`;
-}
-
-export function currentLocalDateTimeInputValue(): string {
-	const now = new Date();
-	const offsetMs = now.getTimezoneOffset() * 60_000;
-	return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
 export function normalizedDocumentIssueSignatureMode(
@@ -3634,14 +3615,6 @@ export const speechQualityLabels: Record<
 	failed: "сбой",
 };
 
-export const emptyVisitNoteForm: VisitNoteForm = {
-	complaint: "",
-	anamnesis: "",
-	objectiveStatus: "",
-	diagnosis: "",
-	treatmentPlan: "",
-};
-
 export function visitNoteFormFromVisit(
 	visit: Dashboard["activeVisit"],
 ): VisitNoteForm {
@@ -3856,57 +3829,6 @@ export function telegramQrSvgToDataUrl(svg: string): string {
 	return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-export type UiPreferences = {
-	version: 1;
-	uiLanguage: UiLanguage;
-	selectedWorkspaceRole: StaffRole;
-	selectedSpecialty: DentalSpecialty;
-	selectedProtocolId: string | null;
-	selectedPatientId: string | null;
-	scheduleDoctorFilterId: string | null;
-	scheduleAssistantFilterId: string | null;
-	scheduleChairFilterId: string | null;
-	scheduleDefaultDoctorUserId: string | null;
-	scheduleDefaultAssistantUserId: string | null;
-	scheduleDefaultChairId: string | null;
-	scheduleStatusFilter: Appointment["status"] | "all";
-	scheduleDateFilter: string;
-	paymentMethod: PaymentMethod;
-	taxDocumentYear: number;
-	selectedDocumentKind: GeneratedDocument["kind"];
-	taxApplicationForm: TaxDeductionApplicationForm;
-	taxApplicationDeliveryChannel: TaxDeductionApplicationDeliveryChannel;
-	paymentReceiptTaxSupportRequested: boolean;
-	documentIssueSignatureMode: DocumentIssueSignatureMode;
-	documentIssueStaffFullName: string;
-	documentIssueStaffRole: string;
-	procedureConsentProcedureType: ProcedureSpecificConsentProcedure;
-	postVisitCareTopic: PostVisitCareTopic;
-	pricelistSourceKind: PricelistSourceKind;
-	usePricelistAi: boolean;
-	odontogramUseSurfaces: boolean;
-	recognitionKind: AiJobKind;
-	recognitionTarget: AiRecognitionTarget;
-	importSourceKind: ImportSourceKind;
-	documentIngestionTarget: DocumentIngestionTarget;
-	imagingImportSourceKind: ImagingSourceKind;
-	smartImportMode: SmartImportMode;
-	imagingKindFilter: ImagingStudyKind | "all";
-	dicomWebEndpointUrl: string;
-	ohifBaseUrl: string;
-	telegramBotConfigId: string;
-	telegramLinkSubjectType: TelegramLinkSubjectType;
-	telegramLinkStaffId: string | null;
-	telegramOutboxStatusFilter: TelegramOutboxStatusFilter;
-	telegramOutboxTemplateFilter: TelegramOutboxTemplateFilter;
-	onboardingDismissed: boolean;
-	onboardingDismissedAt: string | null;
-	onboardingStep: OnboardingStep;
-	onboardingDraftMode: boolean;
-	savedAt: string;
-};
-
-export type UiPreferencesInput = Omit<UiPreferences, "version" | "savedAt">;
 export type TelegramOutboxStatusFilter =
 	| DenteTelegramOutboxResponse["items"][number]["deliveryStatus"]
 	| "all"
@@ -3933,18 +3855,6 @@ export const defaultUiLanguageOption: UiLanguageOption = {
 };
 
 export const uiLanguageOptions: UiLanguageOption[] = [defaultUiLanguageOption];
-
-export const emptyTelegramVisualCardUrlDrafts =
-	(): DenteTelegramVisualCardUrls => ({
-		mainMenu: null,
-		appointment: null,
-		documents: null,
-		tax: null,
-		billing: null,
-		care: null,
-		review: null,
-		staff: null,
-	});
 
 export const telegramPublicUrlSensitiveQueryKeys = new Set([
 	"patient",
@@ -4445,20 +4355,6 @@ export type AppointmentScheduleSaveState =
 	| "saved"
 	| "error";
 
-export function emptyAppointmentScheduleDraft(): AppointmentScheduleDraft {
-	return {
-		patientId: "",
-		doctorUserId: "",
-		assistantUserId: "",
-		chairId: "",
-		status: "planned",
-		startsAt: "",
-		endsAt: "",
-		reason: "",
-		comment: "",
-	};
-}
-
 export type MedicalDocumentReleaseChannel =
 	| "paper"
 	| "pdf"
@@ -4659,9 +4555,6 @@ export const installmentPaymentStatusAliases: Record<
 	cancelled: "cancelled",
 };
 
-export const defaultClinicalToothRowsText =
-	"36 | окклюзионная, дистальная | кариес | кариес дентина 36 зуба по осмотру и снимку | восстановление функции и профилактика осложнений | лечение кариеса и композитная реставрация | прогноз зависит от гигиены и контроля | десна без острого воспаления | | ";
-
 export function normalizeTaxApplicationRelationship(
 	value: string | null | undefined,
 ): TaxDeductionApplicationRelationship | null {
@@ -4780,55 +4673,6 @@ export const photoVideoMaterialOptions: Array<{
 	{ value: "other", label: "Иные материалы" },
 ];
 
-export const defaultUiPreferences: UiPreferences = {
-	version: 1,
-	uiLanguage: "ru",
-	selectedWorkspaceRole: "owner",
-	selectedSpecialty: "therapist",
-	selectedProtocolId: null,
-	selectedPatientId: null,
-	scheduleDoctorFilterId: null,
-	scheduleAssistantFilterId: null,
-	scheduleChairFilterId: null,
-	scheduleDefaultDoctorUserId: null,
-	scheduleDefaultAssistantUserId: null,
-	scheduleDefaultChairId: null,
-	scheduleStatusFilter: "all",
-	scheduleDateFilter: "",
-	paymentMethod: "card",
-	taxDocumentYear: new Date().getFullYear(),
-	selectedDocumentKind: "patient_intake_questionnaire",
-	taxApplicationForm: "knd_1151156",
-	taxApplicationDeliveryChannel: "paper",
-	paymentReceiptTaxSupportRequested: false,
-	documentIssueSignatureMode: "paper_signed",
-	documentIssueStaffFullName: "",
-	documentIssueStaffRole: "Врач/администратор",
-	procedureConsentProcedureType: "implantation_bone_graft",
-	postVisitCareTopic: "filling_restoration",
-	pricelistSourceKind: "spreadsheet_copy",
-	usePricelistAi: false,
-	odontogramUseSurfaces: false,
-	recognitionKind: "voice_transcription",
-	recognitionTarget: "visit_note",
-	importSourceKind: "csv_text",
-	documentIngestionTarget: "smart_import",
-	imagingImportSourceKind: "folder_watch",
-	smartImportMode: "auto",
-	imagingKindFilter: "all",
-	dicomWebEndpointUrl: "http://127.0.0.1:8042/dicom-web",
-	ohifBaseUrl: "http://127.0.0.1:3000",
-	telegramBotConfigId: "",
-	telegramLinkSubjectType: "patient",
-	telegramLinkStaffId: null,
-	telegramOutboxStatusFilter: "all",
-	telegramOutboxTemplateFilter: "all",
-	onboardingDismissed: false,
-	onboardingDismissedAt: null,
-	onboardingStep: "intro",
-	onboardingDraftMode: false,
-	savedAt: "",
-};
 
 export const aiJobKindPreferenceValues: readonly AiJobKind[] = [
 	"voice_transcription",
@@ -5533,19 +5377,6 @@ export function normalizeUiPreferencesPayload(
 	};
 }
 
-export function loadUiPreferences(): UiPreferences {
-	if (typeof window === "undefined") return defaultUiPreferences;
-	try {
-		const raw = safeLocalStorageGetItem(uiPreferencesStorageKey);
-		const preferences = raw
-			? (normalizeUiPreferencesPayload(JSON.parse(raw)) ?? defaultUiPreferences)
-			: defaultUiPreferences;
-		return mergeLocalOnboardingDismissal(preferences);
-	} catch {
-		return mergeLocalOnboardingDismissal(defaultUiPreferences);
-	}
-}
-
 export function withSavedUiPreferenceTimestamp(
 	preferences: UiPreferencesInput,
 ): UiPreferences {
@@ -5570,12 +5401,6 @@ export function persistUiPreferences(
 		// Preferences are convenience only. Clinical drafts use separate guarded storage.
 		return null;
 	}
-}
-
-export function saveUiPreferences(
-	preferences: UiPreferencesInput,
-): UiPreferences | null {
-	return persistUiPreferences(withSavedUiPreferenceTimestamp(preferences));
 }
 
 // Перенесено в ./lib/denteRequestHeaders (модуль без импортов) 2026-07-28. Эта функция была
@@ -6014,21 +5839,6 @@ export function timeZoneDateParts(
 	} catch {
 		return null;
 	}
-}
-
-export function toDateTimeLocalValue(
-	value: string,
-	timeZone?: string | null,
-): string {
-	if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
-	const zoned = timeZoneDateParts(value, timeZone);
-	if (zoned) return zoned;
-	const parsed = new Date(value);
-	if (Number.isNaN(parsed.getTime())) return value.slice(0, 16);
-	const local = new Date(
-		parsed.getTime() - parsed.getTimezoneOffset() * 60_000,
-	);
-	return local.toISOString().slice(0, 16);
 }
 
 export function fromDateTimeLocalValue(
@@ -6480,16 +6290,6 @@ export function nullableClinicDraftValue(value: string): string | null {
 	return trimmed ? trimmed : null;
 }
 
-export function emptyPatientCoreDraft(): PatientCoreDraft {
-	return {
-		fullName: "",
-		birthDate: "",
-		phone: "",
-		email: "",
-		notes: "",
-	};
-}
-
 export function patientCoreDraftFromPatient(
 	patient: Patient | null,
 ): PatientCoreDraft {
@@ -6499,37 +6299,6 @@ export function patientCoreDraftFromPatient(
 		phone: patient?.phone ?? "",
 		email: patient?.email ?? "",
 		notes: patient?.notes ?? "",
-	};
-}
-
-export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeProfileDraft {
-	return {
-		identityDocument: "",
-		taxpayerInn: "",
-		registrationAddress: "",
-		residentialAddress: "",
-		insurancePolicyNumber: "",
-		snils: "",
-		legalRepresentativeFullName: "",
-		legalRepresentativeRelationship: "",
-		legalRepresentativeIdentityDocument: "",
-		legalRepresentativePhone: "",
-		preferredDocumentRecipient: "",
-		preferredAppointmentWeekdays: [],
-		preferredAppointmentStart: "",
-		preferredAppointmentEnd: "",
-		preferredAppointmentNote: "",
-		dataProcessingBasisNote: "",
-		orthodonticProgress: "",
-		/*
-		 * БЫЛО: loyaltyTier добавили в PatientAdministrativeProfile (shared Zod),
-		 * draft-тип вывел его через keyof, а empty/fromPatient/payload — нет.
-		 * tsc падал; UI PatientLoyaltyHeader слал tier мимо формы, а сохранение
-		 * админ-формы (buildPatientAdministrativeProfilePayload) не включало tier
-		 * и могло затереть его partial PUT'ом (см. patients route merge).
-		 * СТАЛО: draft/payload несут loyaltyTier; пустое = standard (базовый).
-		 */
-		loyaltyTier: "standard",
 	};
 }
 
@@ -8357,37 +8126,6 @@ export const settingsTabGroups = [
 ] as const;
 export type SettingsTabGroup = (typeof settingsTabGroups)[number]["id"];
 
-export const settingsTabs = [
-	{ id: "profile", title: "Мой профиль", group: "account" },
-	{ id: "clinic", title: "Клиника", group: "main" },
-	{ id: "modules", title: "Модули", group: "main" },
-	{ id: "staff", title: "Сотрудники", group: "main" },
-	{ id: "access", title: "Доступы", group: "main" },
-	{ id: "telegram", title: "Мессенджеры", group: "main" },
-	{ id: "protocols", title: "Протоколы", group: "clinical" },
-	{ id: "rules", title: "Правила", group: "clinical" },
-	{ id: "prices", title: "Прайс", group: "clinical" },
-	{ id: "ai", title: "ИИ", group: "clinical" },
-	/*
-	 * «Склада» здесь больше нет намеренно.
-	 *
-	 * Экран был недоступен вовсе, и я открыл его вкладкой настроек — дешёвым
-	 * способом. Параллельно другой инженер сделал правильнее: склад стал разделом
-	 * рабочего места (#inventory) с правами по ролям, потому что приход и списание
-	 * материалов — ежедневная работа ассистента, а не настройка клиники.
-	 *
-	 * Две двери в одну комнату хуже одной: пользователь не понимает, какая из них
-	 * «настоящая», а правки начинают расходиться. Оставлен раздел, вкладка убрана.
-	 */
-	{ id: "insurance", title: "Страховые", group: "stock" },
-	{ id: "marketing", title: "Отзывы и NPS", group: "marketing" },
-	{ id: "bpmn", title: "Сценарии", group: "marketing" },
-	{ id: "sources", title: "Источники", group: "system" },
-	{ id: "reporting", title: "Отчёты", group: "system" },
-	{ id: "imports", title: "Импорт", group: "system" },
-	{ id: "audit", title: "Аудит", group: "system" },
-] as const;
-export type SettingsTab = (typeof settingsTabs)[number]["id"];
 export type AdminSecretSessionDomain =
 	| "clinical"
 	| "settings"
@@ -8425,23 +8163,6 @@ export const speechProviderConnectorLabels: Record<
 	local_bridge: "локальный модуль",
 	local_planned: "локально",
 };
-
-export function viewFromHash(): AppView {
-	if (typeof window === "undefined") return "shift";
-	const telegramHandoffTarget = readDenteTelegramHandoffTarget();
-	if (telegramHandoffTarget) return telegramHandoffTarget.view;
-	const hash = window.location.hash.replace("#", "");
-	const view = hash.split("/")[0];
-	return appViews.includes(view as AppView) ? (view as AppView) : "shift";
-}
-
-export function settingsTabFromHash(): SettingsTab {
-	if (typeof window === "undefined") return "clinic";
-	const [, tab] = window.location.hash.replace("#", "").split("/");
-	return settingsTabs.some((item) => item.id === tab)
-		? (tab as SettingsTab)
-		: "clinic";
-}
 
 export const initialUiPreferences = {} as any;
 

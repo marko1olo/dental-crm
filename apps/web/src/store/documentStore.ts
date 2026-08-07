@@ -39,10 +39,10 @@ import type {
  */
 import {
 	currentLocalDateTimeInputValue,
-	defaultClinicalToothRowsText,
-	loadUiPreferences,
 	toDateTimeLocalValue,
-} from "../AppHelpers";
+} from "../utils/dateUtils";
+import { defaultClinicalToothRowsText } from "../utils/draftDefaults";
+import { loadUiPreferences } from "../utils/preferencesUtils";
 import { postVisitCarePresets } from "../postVisitCareData";
 
 const initialUiPreferences = loadUiPreferences();

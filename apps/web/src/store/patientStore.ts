@@ -1,14 +1,15 @@
 import { create } from "zustand";
 import {
-	defaultUiPreferences,
-	emptyPatientAdministrativeProfileDraft,
-	emptyPatientCoreDraft,
-	loadUiPreferences,
 	type PatientAdministrativeProfileDraft,
 	type PatientAdministrativeProfileSaveState,
 	type PatientCoreDraft,
 	type PatientCoreSaveState,
 } from "../AppHelpers";
+import {
+	emptyPatientAdministrativeProfileDraft,
+	emptyPatientCoreDraft,
+} from "../utils/draftDefaults";
+import { defaultUiPreferences, loadUiPreferences } from "../utils/preferencesUtils";
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 

@@ -29,13 +29,14 @@ import { create } from "zustand";
 import {
 	type BrowserImagingScanProgress,
 	type BrowserPickedImagingFolderPreview,
-	defaultDicomFirstFrameViewerState,
-	defaultImagingViewerState,
-	defaultUiPreferences,
 	type ImagingViewerSaveState,
 	type LocalImagingFolderDraft,
-	loadUiPreferences,
 } from "../AppHelpers";
+import {
+	defaultDicomFirstFrameViewerState,
+	defaultImagingViewerState,
+} from "../utils/draftDefaults";
+import { defaultUiPreferences, loadUiPreferences } from "../utils/preferencesUtils";
 import { resolveUpdater } from "./updater";
 
 // БЫЛО: настройки брались из initialUiPreferences — заглушки `{} as any` в

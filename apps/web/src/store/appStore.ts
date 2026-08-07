@@ -1,11 +1,7 @@
 import type { Dashboard } from "@dental/shared";
 import { create } from "zustand";
-import {
-	defaultUiPreferences,
-	loadUiPreferences,
-	settingsTabFromHash,
-	viewFromHash,
-} from "../AppHelpers";
+import { defaultUiPreferences, loadUiPreferences } from "../utils/preferencesUtils";
+import { settingsTabFromHash, viewFromHash } from "../utils/routeUtils";
 
 interface AppStore {
 	isOmnibarOpen: boolean;

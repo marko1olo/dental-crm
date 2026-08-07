@@ -3,12 +3,11 @@ import { create } from "zustand";
 import {
 	type AppointmentScheduleDraft,
 	type AppointmentScheduleSaveState,
-	defaultUiPreferences,
-	emptyAppointmentScheduleDraft,
-	loadUiPreferences,
 	type StaffScheduleDraft,
 	type StaffScheduleSaveState,
 } from "../AppHelpers";
+import { emptyAppointmentScheduleDraft } from "../utils/draftDefaults";
+import { defaultUiPreferences, loadUiPreferences } from "../utils/preferencesUtils";
 import { resolveUpdater } from "./updater";
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
