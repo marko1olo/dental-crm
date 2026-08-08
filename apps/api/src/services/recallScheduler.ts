@@ -100,8 +100,6 @@ export class RecallScheduler {
 	 * Scans for completed surgical phases and triggers recall if the waiting period is over.
 	 */
 	static async processOsteointegrationRecalls() {
-		console.log("[RecallScheduler] Scanning for osteointegration recalls...");
-
 		try {
 			const readyForCrown = await db
 				.select({
