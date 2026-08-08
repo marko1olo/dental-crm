@@ -55,7 +55,7 @@ export async function scheduleNotification(input: {
 	organizationId: string;
 	patientId: string;
 	type: string;
-	payload: any;
+	payload: unknown;
 	scheduledAt?: Date;
 }) {
 	await db.insert(outgoingNotifications).values({
