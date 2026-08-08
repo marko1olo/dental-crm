@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -25,16 +25,46 @@ export function SberbankTerminalPaymentModal({
 	const [errorMsg, setErrorMsg] = useState("");
 	const { auth } = useAppLogicContext();
 
+	/*
+	 * СИНХРОННЫЙ ЗАМОК, А НЕ ФЛАГ СОСТОЯНИЯ. Состояние в React обновляется
+	 * асинхронно: между щелчком и перерисовкой с `disabled` есть окно, куда
+	 * проходит второй щелчок. Для кнопки, запускающей списание с карты, этого
+	 * окна достаточно, чтобы уйти двум запросам. `useRef` меняется синхронно и
+	 * закрывает окно; `status` остаётся для отрисовки.
+	 *
+	 * Клиентская защита — только удобство, а не гарантия. Настоящая защита от
+	 * повтора — ключ идемпотентности на стороне сервера; здесь его нет, потому
+	 * что нет и самой интеграции (см. ниже).
+	 */
+	const inFlight = useRef(false);
+
 	const initiatePayment = useCallback(async () => {
 		if (!patientId || !amountInRubles) return;
+		if (inFlight.current) return;
+		inFlight.current = true;
 		setStatus("initiating");
 		setErrorMsg("");
 		try {
-			const res = await fetch("/api/sberbank/initiate", {
+			/*
+			 * АДРЕС ИСПРАВЛЕН. Здесь стоял `/api/sberbank/initiate` — маршрута с
+			 * таким путём НЕ СУЩЕСТВУЕТ во всём API (проверено поиском по
+			 * apps/api: объявлены только `/api/sberbank/pay` и
+			 * `/api/sberbank/status/:orderId`). Кнопка оплаты всегда получала
+			 * 404, а кнопка «Повторить» повторяла тот же 404.
+			 *
+			 * Настоящий маршрут отвечает 501: интеграции со Сбербанком в сборке
+			 * нет (ни одного обращения к API банка, ни переменных окружения, ни
+			 * тестов). Прежде он отвечал выдуманным успехом и помечал счёт
+			 * оплаченным без денег — это убрано. Здесь показываем врачу честную
+			 * причину вместо безымянного отказа.
+			 */
+			const res = await fetch("/api/sberbank/pay", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					...(auth && typeof auth.denteClinicalReadHeaders === "function" ? auth.denteClinicalReadHeaders() : {}),
+					...(auth && typeof auth.denteClinicalReadHeaders === "function"
+						? auth.denteClinicalReadHeaders()
+						: {}),
 				},
 				body: JSON.stringify({
 					amount: Math.round(amountInRubles * 100),
@@ -42,14 +72,23 @@ export function SberbankTerminalPaymentModal({
 					description: `Оплата по пациенту ${patientId}`,
 				}),
 			});
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.error || "Failed to initiate payment");
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok) {
+				throw new Error(
+					data.message || data.error || "Не удалось запустить оплату",
+				);
+			}
 
 			setOrderId(data.orderId);
 			setStatus("polling");
-		} catch (err: any) {
+		} catch (err) {
 			setStatus("error");
-			setErrorMsg(err.message || "Не удалось запустить терминал");
+			setErrorMsg(
+				err instanceof Error ? err.message : "Не удалось запустить терминал",
+			);
+		} finally {
+			// Снимать замок обязательно и на отказе, иначе «Повторить» мертва.
+			inFlight.current = false;
 		}
 	}, [amountInRubles, patientId, auth]);
 
@@ -72,7 +111,26 @@ export function SberbankTerminalPaymentModal({
 
 		const interval = setInterval(async () => {
 			try {
-				const res = await fetch(`/api/sberbank/status/${orderId}`);
+				/*
+				 * ЗАГОЛОВКИ ЗДЕСЬ ОБЯЗАТЕЛЬНЫ. Запрос уходил голым, тогда как
+				 * маршрут закрыт `requirePermission(..., "finance.write")`, а
+				 * соседний вызов в этом же файле заголовки подставляет. Итог —
+				 * 403 на каждом опросе, и окно висело в «ожидании оплаты», пока
+				 * врач не закроет его вручную.
+				 *
+				 * `res.ok` проверяется отдельно: промис `fetch` на 403 и 500 не
+				 * отклоняется, поэтому без проверки тело отказа разбиралось как
+				 * состояние платежа, а `data.status` оказывался undefined —
+				 * ни ветка успеха, ни ветка отказа не срабатывали, и опрос шёл
+				 * вечно.
+				 */
+				const res = await fetch(`/api/sberbank/status/${orderId}`, {
+					headers:
+						auth && typeof auth.denteClinicalReadHeaders === "function"
+							? auth.denteClinicalReadHeaders()
+							: {},
+				});
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				const data = await res.json();
 				if (data.status === "success") {
 					setStatus("success");
@@ -182,6 +240,7 @@ export function SberbankTerminalPaymentModal({
 							type="button"
 							className="primary-button"
 							onClick={initiatePayment}
+							disabled={status !== "error"}
 						>
 							Повторить
 						</button>
