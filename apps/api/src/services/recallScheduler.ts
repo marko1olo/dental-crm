@@ -137,9 +137,6 @@ export class RecallScheduler {
 
 			if (tasksToInsert.length > 0) {
 				await db.insert(communicationTasks).values(tasksToInsert);
-				console.log(
-					`[RecallScheduler] Created ${tasksToInsert.length} recall tasks for admin.`,
-				);
 			}
 		} catch (e: any) {
 			console.warn("[RecallScheduler notice]:", e?.message || e);
