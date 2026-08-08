@@ -56,8 +56,14 @@ export function useImagingQueries(options?: { auth?: any }) {
 		});
 	};
 
-	const pickBrowserImagingFolder = async () => {};
-	const pickBrowserImagingFiles = () => {};
+	const pickBrowserImagingFolder = () => {
+		const el = document.querySelector<HTMLInputElement>('[data-testid="browser-local-imaging-folder-input"]');
+		if (el) el.click();
+	};
+	const pickBrowserImagingFiles = () => {
+		const el = document.querySelector<HTMLInputElement>('[data-testid="browser-local-imaging-files-input"]');
+		if (el) el.click();
+	};
 	const previewImagingImport = async (payload?: any) => {
 		return fetch("/api/imaging/imports/preview", {
 			method: "POST",
@@ -77,8 +83,24 @@ export function useImagingQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
-	const scanDicomFolderSeries = async () => {};
-	const scanImagingFolder = async () => {};
+	const scanDicomFolderSeries = async (payload?: any) => {
+		return fetch("/api/imaging/dicom/folder-workup-plan", {
+			method: "POST",
+			headers: auth.denteClinicalReadHeaders({
+				"content-type": "application/json",
+			}),
+			body: JSON.stringify(payload ?? {}),
+		});
+	};
+	const scanImagingFolder = async (payload?: any) => {
+		return fetch("/api/imaging/folders/scan-preview", {
+			method: "POST",
+			headers: auth.denteClinicalReadHeaders({
+				"content-type": "application/json",
+			}),
+			body: JSON.stringify(payload ?? {}),
+		});
+	};
 	const commitImagingImport = async (payload?: any) => {
 		return fetch("/api/imaging/imports/commit", {
 			method: "POST",

@@ -77,7 +77,10 @@ export function useMigrationQueries(options?: {
 		});
 	};
 
-	const pickBrowserMigrationSource = async () => {};
+	const pickBrowserMigrationSource = () => {
+		const el = document.querySelector<HTMLInputElement>('[data-testid="browser-migration-folder-input"]');
+		if (el) el.click();
+	};
 	const planMigrationDiscoveryCandidate = async (candidate: any) => {
 		return fetch("/api/imports/smart/local-source-workup", {
 			method: "POST",
@@ -128,13 +131,79 @@ export function useMigrationQueries(options?: {
 			headers: getHeaders(true, { "content-type": "application/json" }),
 		});
 	};
-	const downloadMigrationHandoffReport = async () => {};
-	const downloadSmartImportSafeHandoffReport = async () => {};
-	const downloadSmartImportReport = async () => {};
+	const downloadMigrationHandoffReport = async (payload?: any) => {
+		try {
+			const res = await fetch("/api/imports/smart/migration-autopilot/report.csv", {
+				method: "POST",
+				headers: getHeaders(true, { "content-type": "application/json" }),
+				body: JSON.stringify(payload ?? {}),
+			});
+			if (!res.ok) throw new Error("Failed to download report");
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = "migration_autopilot_handoff.csv";
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (e) {
+			console.error("downloadMigrationHandoffReport error", e);
+		}
+	};
+	const downloadSmartImportSafeHandoffReport = async (payload?: any) => {
+		try {
+			const res = await fetch("/api/imports/smart/report.safe.csv", {
+				method: "POST",
+				headers: getHeaders(true, { "content-type": "application/json" }),
+				body: JSON.stringify(payload ?? {}),
+			});
+			if (!res.ok) throw new Error("Failed to download safe report");
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = "smart_import_safe_handoff.csv";
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (e) {
+			console.error("downloadSmartImportSafeHandoffReport error", e);
+		}
+	};
+	const downloadSmartImportReport = async (payload?: any) => {
+		try {
+			const res = await fetch("/api/imports/smart/report.csv", {
+				method: "POST",
+				headers: getHeaders(true, { "content-type": "application/json" }),
+				body: JSON.stringify(payload ?? {}),
+			});
+			if (!res.ok) throw new Error("Failed to download report");
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = "smart_import_report.csv";
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (e) {
+			console.error("downloadSmartImportReport error", e);
+		}
+	};
 	const handleBrowserMigrationInputChange = async (_files: any) => {};
 	const ingestImportFile = async (_file: any) => {};
 	const addMigrationDiscoveryCandidateToSmartImport = (_candidate: any) => {};
-	const runMigrationAutopilot = async (_knownDiscovery?: any, _options?: any) => {};
+	const runMigrationAutopilot = async (knownDiscovery?: any, options?: any) => {
+		return fetch("/api/imports/smart/migration-autopilot", {
+			method: "POST",
+			headers: getHeaders(true, { "content-type": "application/json" }),
+			body: JSON.stringify({ knownDiscovery, options }),
+		});
+	};
 
 	return {
 		uploadFile,
