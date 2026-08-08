@@ -88,7 +88,16 @@ async function run() {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000); // Give React some time
 
-    const scratchDir = 'C:\\\\Users\\\\Admin\\\\.gemini\\\\antigravity\\\\brain\\\\afc46ccd-3c31-4b85-bb71-acc459335dff\\\\scratch';
+    try {
+        const onboardingBtn = page.locator('text="Сначала осмотреться"');
+        if (await onboardingBtn.isVisible({ timeout: 2000 })) {
+            console.log('Dismissing onboarding...');
+            await onboardingBtn.click();
+            await page.waitForTimeout(1000);
+        }
+    } catch(e) {}
+
+    const scratchDir = 'C:\\\\Users\\\\Admin\\\\.gemini\\\\antigravity\\\\brain\\\\a4816d4c-324b-4377-a1a5-7447446ea0af\\\\scratch';
     
     console.log('Taking dashboard screenshot...');
     await page.screenshot({ path: path.join(scratchDir, 'dashboard.png') });
@@ -101,12 +110,35 @@ async function run() {
     await page.screenshot({ path: path.join(scratchDir, 'patients.png') });
     
     console.log('Navigating to Schedule...');
-    // Assuming there's a link or button with text "Расписание"
-    await page.click('text="Расписание"');
+    await page.click('text="Записи"');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     await page.screenshot({ path: path.join(scratchDir, 'schedule.png') });
     
+    console.log('Navigating to Finance...');
+    await page.click('text="Оплаты"');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    await page.screenshot({ path: path.join(scratchDir, 'finance.png') });
+
+    console.log('Navigating to Imaging...');
+    await page.click('text="Снимки"');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    await page.screenshot({ path: path.join(scratchDir, 'imaging.png') });
+
+    console.log('Navigating to Documents...');
+    await page.click('text="Документы"');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    await page.screenshot({ path: path.join(scratchDir, 'documents.png') });
+
+    console.log('Navigating to Settings...');
+    await page.click('text="Изменить режим"');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    await page.screenshot({ path: path.join(scratchDir, 'settings.png') });
+
     console.log('SUCCESS: All steps completed.');
   } catch (err) {
     console.error(`SCRIPT_ERROR: ${err.message}`);

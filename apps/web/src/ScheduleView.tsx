@@ -802,7 +802,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			id: "control",
 			title: "Контроль",
 			value: shiftWarnings?.length ? `${shiftWarnings?.length}` : "0",
-			detail: shiftWarnings[0]?.title ?? "нет срочных предупреждений",
+			detail: shiftWarnings?.[0]?.title ?? "Нет предупреждений",
 		},
 	];
 
@@ -963,7 +963,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					<article>
 						<span>Контроль</span>
 						<strong>{shiftWarnings?.length}</strong>
-						<p>{shiftWarnings[0]?.title ?? "нет срочных предупреждений"}</p>
+						<p>{shiftWarnings?.[0]?.title ?? "Нет предупреждений"}</p>
 					</article>
 				</div>
 			)}
@@ -1042,7 +1042,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 говорил ничего. Теперь предупреждение называет себя и по нажатию
                 ведёт туда, где его закрывают.
               */}
-				{shiftWarnings.map((warning) => (
+				{(shiftWarnings || []).map((warning) => (
 					<button
 						key={warning.id}
 						type="button"

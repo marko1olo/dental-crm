@@ -965,7 +965,7 @@ export function ImagingView(props: ImagingViewProps) {
 										<span>ближайшие по зубу, области, типу или дате</span>
 									</div>
 									<div className="imaging-compare-list">
-										{imagingComparisonCandidates.map(
+										{(imagingComparisonCandidates || []).map(
 											({ study, reason }: any) => (
 												<button
 													key={study.id}
@@ -1423,7 +1423,7 @@ export function ImagingView(props: ImagingViewProps) {
 							/>
 						)
 					) : null}
-					{visibleImagingStudies.map((study: any) => (
+					{(visibleImagingStudies || []).map((study: any) => (
 						<article
 							className={`imaging-row imaging-${study.status} ${selectedImagingStudy?.id === study.id ? "active" : ""}`}
 							key={study.id}
@@ -2036,12 +2036,12 @@ export function ImagingView(props: ImagingViewProps) {
 										<History aria-hidden="true" /> Вернуть вид
 									</button>
 								</div>
-								<fieldset
-									className="mpr-clinical-preset-grid"
-									data-testid="ct-mpr-clinical-presets"
-									aria-label="Клинические протоколы КТ-срезов"
-								>
-									{mprClinicalPresets.map((preset: any) => {
+									<fieldset
+										className="mpr-clinical-preset-grid"
+										data-testid="ct-mpr-clinical-presets"
+										aria-label="Клинические протоколы КТ-срезов"
+									>
+										{(mprClinicalPresets || []).map((preset: any) => {
 										const projectionFallbackNote = mprControlsReady
 											? describeMprClinicalPresetProjectionFallback(
 													preset.projection,

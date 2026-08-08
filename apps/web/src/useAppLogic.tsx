@@ -4692,7 +4692,6 @@ export function useAppLogic(): any {
 		speechTranscriptionBusy: false,
 		startServerVoiceRecording: null,
 		stopServerVoiceRecording: null,
-		treatmentAcceptancePlannedTotalRub: 0,
 		visibleImagingStudies: null,
 		visibleVisitSpecialtyFocusOptions: [],
 		visitPrimaryAction: null,

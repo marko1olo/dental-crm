@@ -58,6 +58,7 @@ import { useImagingStore } from "../../store/imagingStore";
 import { useSettingsStore } from "../../store/settingsStore";
 import { defaultDicomFirstFrameViewerState } from "../../utils/draftDefaults";
 import { clampMprSliceIndex } from "../../utils/math/mprMath";
+import { readDenteStaffToken } from "../../lib/safeLocalStorage";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1093,6 +1094,7 @@ export function useDicomWorkbenchModule({
 	async function loadDicomWorkbenchBundles(
 		options: { silent?: boolean; restoreLatest?: boolean } = {},
 	) {
+		if (!readDenteStaffToken()) return;
 		try {
 			const response = await fetchWithHandling(
 				"/api/imaging/dicom/workbench-bundles?limit=6",
