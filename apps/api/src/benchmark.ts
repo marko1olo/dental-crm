@@ -39,7 +39,6 @@ async function runBenchmark() {
 	const largeObject = { data: "x".repeat(1024 * 1024 * 50) };
 	fs.writeFileSync(testFilePath, JSON.stringify(largeObject));
 
-	console.log("Measuring Sync Version (Event Loop Blocking)...");
 
 	let maxBlockSync = 0;
 	let syncLastTick = performance.now();
