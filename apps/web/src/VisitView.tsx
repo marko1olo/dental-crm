@@ -329,10 +329,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		}
 	};
 
-	const closeClinicalModal = () => {
+	const closeClinicalModal = useCallback(() => {
 		setSelectedToothForMenu(null);
 		setMaterialCategory(null);
-	};
+	}, []);
 
 	// Карточка зуба перекрывает весь экран, а закрывалась только кнопкой и щелчком
 	// по фону. Escape — привычный выход, и он же самый быстрый, когда руки в

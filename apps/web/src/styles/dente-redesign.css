@@ -715,8 +715,23 @@ select:focus {
 	margin-top: 16px;
 }
 
-@container dnt (max-width: 1140px) 
-,
+@container dnt (max-width: 1140px) {
+	.shift-hero,
+	.dnt-hero,
+	.visit-emk-grid,
+	.dnt-emk {
+		grid-template-columns: 1fr;
+	}
+	.shift-queues,
+	.dnt-queues {
+		grid-template-columns: 1fr 1fr;
+	}
+	.shift-cockpit,
+	.dnt-cockpit {
+		grid-template-columns: 1fr;
+	}
+}
+
 @media (max-width: 1140px) {
 	.shift-hero,
 	.dnt-hero,

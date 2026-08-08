@@ -48,10 +48,10 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	 * без секрета клинической зоны: токены клиники и сотрудника он берёт сам.
 	 * Когда контекст есть, работает прежний путь с секретом.
 	 */
-	const readHeaders = (extra: Record<string, string> = {}) =>
+	const readHeaders = useCallback((extra: Record<string, string> = {}) =>
 		auth?.denteClinicalReadHeaders
 			? auth.denteClinicalReadHeaders(extra)
-			: denteAdminSecretRequestHeaders(extra);
+			: denteAdminSecretRequestHeaders(extra), [auth]);
 	const liveStatus = useAppStore(
 		(state) => (state as any).labOrderStatuses?.[patientId],
 	);
@@ -111,14 +111,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	const shownPatientIdRef = useRef(patientId);
 
 	/** Отказ сервера словами, которые понятны без обучения. Кода состояния мало. */
-	const loadFailureText = (status: number): string => {
+	const loadFailureText = useCallback((status: number): string => {
 		if (status === 401 || status === 403)
 			return "Нет прав смотреть заказы в лабораторию: доступ к карте закрыт или истёк вход.";
 		if (status === 404) return "Раздел заказов в лабораторию не отвечает.";
 		if (status >= 500)
 			return "Программа не смогла получить список заказов: сбой на сервере клиники.";
 		return `Программа не смогла получить список заказов (ответ ${status}).`;
-	};
+	}, []);
 
 	const fetchOrders = useCallback(async () => {
 		const requestedPatientId = patientId;
@@ -157,7 +157,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				setIsLoading(false);
 			}
 		}
-	}, [patientId, auth]);
+	}, [patientId, readHeaders, loadFailureText]);
 
 	/*
 		ПАНЕЛЬ НЕ ПЕРЕСОЗДАЁТСЯ ПРИ СМЕНЕ ПАЦИЕНТА, И ЭТО СТОИЛО БЫ ЧУЖОГО НАРЯДА.
