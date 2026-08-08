@@ -106,6 +106,7 @@ import {
 	repairMojibakeDeep,
 	repairMojibakeText,
 } from "../text/repairMojibake.js";
+import { chunk } from "../utils/chunk.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
 const telegramSecretHeader = "x-telegram-bot-api-secret-token";
@@ -1278,9 +1279,10 @@ export async function executeDenteTelegramOutboxDueBatch(
 				blockedReason: telegramOutboxScheduleUnreadableBlockedReason,
 			}),
 		}));
-	const sendResults: DenteTelegramOutboxSendDueResponse["results"] =
-		await Promise.all(
-			dueItems.map(async (item) => {
+	const sendResults: DenteTelegramOutboxSendDueResponse["results"] = [];
+	for (const batch of chunk(dueItems, 10)) {
+		const batchResults = await Promise.all(
+			batch.map(async (item) => {
 				const sendResult = await executeTelegramOutboxSend(
 					item.id,
 					{
@@ -1298,6 +1300,8 @@ export async function executeDenteTelegramOutboxDueBatch(
 				};
 			}),
 		);
+		sendResults.push(...batchResults);
+	}
 	const results: DenteTelegramOutboxSendDueResponse["results"] = [
 		...sendResults,
 		...unreadableResults,
