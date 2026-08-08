@@ -4577,7 +4577,6 @@ export function useAppLogic(): any {
 		cbctWorkbenchPlanes: null,
 		cbctWorkbenchProjections: null,
 		cbctWorkbenchTools: null,
-		changeClinicMode: "",
 		chooseRecognitionPreset: null,
 		clearBrowserPickedImagingFolderPreview: null,
 		clearLocalImagingFolderRecovery: null,

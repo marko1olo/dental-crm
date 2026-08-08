@@ -59,7 +59,7 @@ const clinicModeBlock = sourceSlice(
 );
 const staffCreateBlock = sourceSlice(
 	"async function addStaffMember",
-	"async function saveStaffSchedule",
+	"async function addChair",
 );
 const staffScheduleBlock = sourceSlice(
 	"async function saveStaffSchedule",
@@ -67,7 +67,7 @@ const staffScheduleBlock = sourceSlice(
 );
 const chairCreateBlock = sourceSlice(
 	"async function addChair",
-	"function chooseRecognitionPreset",
+	"async function deleteChair",
 );
 
 const requiredPreferenceKeys = [

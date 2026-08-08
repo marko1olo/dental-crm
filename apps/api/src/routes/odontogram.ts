@@ -376,6 +376,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 					.from(toothStates)
 					.where(
 						and(
+							eq(toothStates.organizationId, organizationId),
 							eq(toothStates.patientId, patientId),
 							inArray(toothStates.toothNumber, toothNumbers),
 						),
@@ -399,6 +400,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 					.delete(toothStates)
 					.where(
 						and(
+							eq(toothStates.organizationId, organizationId),
 							eq(toothStates.patientId, patientId),
 							inArray(toothStates.toothNumber, toothNumbers),
 						),

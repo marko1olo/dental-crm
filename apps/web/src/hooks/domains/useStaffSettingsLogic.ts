@@ -119,6 +119,43 @@ export function useStaffSettingsLogic({
 		}
 	}
 
+	async function changeClinicMode(mode: string) {
+		if (!(await saveClinicProfileIfDirty())) return;
+		try {
+			const response = await fetch("/api/settings/clinic/mode", {
+				method: "POST",
+				headers: auth.settingsAccessHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({ mode }),
+			});
+			if (!response.ok) {
+				setError(
+					await responseErrorMessage(
+						response,
+						"Не удалось сменить режим клиники",
+					),
+				);
+				return;
+			}
+			await loadDashboard();
+		} catch (error) {
+			showToast(
+				actionFailureToast(
+					"Не удалось сменить режим клиники",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
+			setError(
+				operatorWorkflowFailureMessage(
+					"Не удалось сменить режим клиники",
+					error,
+				),
+			);
+		}
+	}
+
 	async function addStaffMember(role: StaffRole) {
 		const fullName = newStaffName.trim();
 		if (!fullName) {
@@ -297,6 +334,8 @@ export function useStaffSettingsLogic({
 		});
 	};
 
+	};
+
 	return {
 		isStaffCreating,
 		isChairCreating,
@@ -305,6 +344,7 @@ export function useStaffSettingsLogic({
 		addStaffMember,
 		addChair,
 		deleteChair,
+		changeClinicMode,
 		newStaffReadyToCreate,
 		newChairReadyToCreate,
 		lookupClinicPublicProfile,
