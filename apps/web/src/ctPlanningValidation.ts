@@ -25,7 +25,7 @@ function statusScore(status: CtPlanningValidationStatus) {
 	return 0;
 }
 
-function combinedStatus(
+export function combinedStatus(
 	checks: CtPlanningValidationCheck[],
 ): CtPlanningValidationStatus {
 	if (checks.some((check) => check.status === "fail")) return "fail";
