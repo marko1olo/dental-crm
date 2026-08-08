@@ -7930,9 +7930,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/preview",
 		{
-			schema: {
-				body: smartImportRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {
@@ -7968,9 +7965,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/local-source-discovery",
 		{
-			schema: {
-				body: migrationLocalSourceDiscoveryRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {
@@ -8000,9 +7994,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/local-source-workup",
 		{
-			schema: {
-				body: migrationLocalSourceWorkupRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {
@@ -8032,9 +8023,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/local-source-probe",
 		{
-			schema: {
-				body: migrationLocalSourceProbeRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {
@@ -8064,9 +8052,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/migration-autopilot",
 		{
-			schema: {
-				body: migrationAutopilotRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {
@@ -8102,9 +8087,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/migration-autopilot/report.csv",
 		{
-			schema: {
-				body: migrationAutopilotRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {
@@ -8148,9 +8130,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/clinic-public-lookup",
 		{
-			schema: {
-				body: clinicPublicLookupRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {
@@ -8180,9 +8159,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/report.csv",
 		{
-			schema: {
-				body: smartImportRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {
@@ -8226,9 +8202,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/report.safe.csv",
 		{
-			schema: {
-				body: smartImportRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {
@@ -8272,9 +8245,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/commit",
 		{
-			schema: {
-				body: smartImportRequestSchema,
-			},
 		},
 		async (request, reply) => {
 			try {

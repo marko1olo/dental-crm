@@ -297,7 +297,7 @@ import {
 	warningSeverityLabels,
 } from "./workspaceUiLabels";
 
-export function useAppLogic(): any {
+export function useAppLogic() {
 	const {
 		imagingImportText,
 		setImagingImportText,

@@ -18,8 +18,7 @@ import {
 	type StaffMember,
 	sumKopecks,
 	type TreatmentPlanItem,
-	type VoidDocumentInput,
-} from "@dental/shared";
+	type VoidDocumentInput, dentalMedicalCard043uPayloadSchema, outpatientMedicalCard025uPayloadSchema } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
 	type ClinicProfileDraft,
@@ -75,6 +74,7 @@ import {
 	taxPaymentPayerKeyForUi,
 	taxPaymentSelectionDocumentKinds,
 } from "../../workspaceUiLabels";
+import { ZodError } from "zod";
 
 export interface DocumentWorkflowModuleProps {
 	dashboard: Dashboard | null;
