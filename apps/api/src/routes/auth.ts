@@ -1774,10 +1774,17 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			}
 			const { oldPassword, newPassword } = parsed.data;
 
+			const userConditions = [eq(users.id, payload.userId as string)];
+			if (payload.organizationId) {
+				userConditions.push(
+					eq(users.organizationId, payload.organizationId as string),
+				);
+			}
+
 			const [user] = await db
 				.select()
 				.from(users)
-				.where(eq(users.id, payload.userId as string))
+				.where(and(...userConditions))
 				.limit(1);
 			if (!user || !user.passwordHash)
 				return reply.code(401).send({
@@ -1795,7 +1802,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			await db
 				.update(users)
 				.set({ passwordHash: newPasswordHash })
-				.where(eq(users.id, user.id));
+				.where(
+					and(
+						eq(users.id, user.id),
+						eq(users.organizationId, user.organizationId),
+					),
+				);
 
 			return reply.send({ ok: true, message: "Пароль успешно изменен." });
 		},

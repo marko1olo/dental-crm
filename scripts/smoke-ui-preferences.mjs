@@ -5,6 +5,8 @@ const appSource = [
 	await readFile("apps/web/src/App.tsx", "utf8"),
 	await readAppLogicSource(),
 	await readFile("apps/web/src/AppHelpers.tsx", "utf8"),
+	await readFile("apps/web/src/AppConstants.ts", "utf8"),
+	await readFile("apps/web/src/utils/preferencesUtils.ts", "utf8"),
 ].join("\n");
 const documentsViewSource = await readFile(
 	"apps/web/src/DocumentsView.tsx",
@@ -148,8 +150,8 @@ for (const marker of [
 	"const localConvenienceRetentionMs = 30 * 24 * 60 * 60 * 1000;",
 	"const sensitiveLocalDraftRetentionMs = 7 * 24 * 60 * 60 * 1000;",
 	"const speechAudioQueueRetentionMs = 48 * 60 * 60 * 1000;",
-	"function localSavedAtFresh(savedAt: string | null | undefined, retentionMs: number",
-	"function normalizedLocalOrganizationId(organizationId: string | null | undefined)",
+	"function localSavedAtFresh",
+	"function normalizedLocalOrganizationId",
 ]) {
 	if (!appSource.includes(marker))
 		fail(`Sensitive browser storage retention marker missing ${marker}.`);
