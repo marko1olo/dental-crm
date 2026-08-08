@@ -1,6 +1,8 @@
 import { AlertCircle, RefreshCw, Stethoscope } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 
 export interface EgiszMultipleDiagnosisItem {
 	id: string;
@@ -25,7 +27,7 @@ export function EgiszMultipleDiagnosesWidget() {
 				const headers = appLogic.auth?.denteClinicalReadHeaders?.() ?? {};
 				const res = await fetch("/api/egisz/multiple-diagnoses", { headers });
 				if (!res.ok) {
-					const errJson = await res.json().catch(() => null);
+					const errJson = await res.json();
 					throw new Error(
 						errJson?.message || errJson?.error || `HTTP ${res.status}`,
 					);
@@ -33,6 +35,13 @@ export function EgiszMultipleDiagnosesWidget() {
 				const data = await res.json();
 				setItems(Array.isArray(data) ? data : []);
 			} catch (err: any) {
+				showToast(
+					actionFailureToast(
+						"Загрузка диагнозов ЕГИСЗ",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setError(err?.message || "Ошибка загрузки сопутствующих диагнозов");
 			} finally {
 				setLoading(false);

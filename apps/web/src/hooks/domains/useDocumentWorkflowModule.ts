@@ -941,9 +941,7 @@ export function useDocumentWorkflowModule({
 			setSelectedDocumentKind,
 			isDocumentIngesting,
 			setIsDocumentIngesting,
-		},
-		[eligibleTaxPayments, selectedTaxPaymentIds];
-	)
+		} = documentState;
 
 	const releaseSourceRequestAutofillRef = useRef<string | null>(null);
 	const taxPaymentSelectionHydratedKeyRef = useRef<string | null>(null);

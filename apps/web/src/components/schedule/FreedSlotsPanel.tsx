@@ -18,6 +18,8 @@
  */
 
 import type React from "react";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
@@ -152,7 +154,10 @@ export const FreedSlotsPanel: React.FC = () => {
 				return;
 			}
 			// Тело читаем мягко: у страницы ошибки от прокси разбор JSON падает.
-			const payload = (await response.json().catch(() => null)) as
+			const payload = (await response.json().catch((err) => {
+				showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
+				return null;
+			})) as
 				| (FreedSlotsReport & { message?: string })
 				| null;
 			if (!response.ok) {

@@ -2,6 +2,8 @@ import type { AuditEvent } from "@dental/shared";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { showToast } from "./components/GlobalToast";
+import { actionFailureToast } from "./lib/panelStateText";
 
 type AuditLogsResponse = {
 	logs?: AuditEvent[];
@@ -105,9 +107,7 @@ export const AuditLogsPanel: React.FC = () => {
 				return;
 			}
 
-			const payload = (await response
-				.json()
-				.catch(() => null)) as AuditLogsResponse | null;
+			const payload = (await response.json()) as AuditLogsResponse | null;
 			if (!response.ok) {
 				setLogs(null);
 				setError(loadFailureText(response.status, readServerMessage(payload)));
@@ -116,6 +116,16 @@ export const AuditLogsPanel: React.FC = () => {
 
 			const list = Array.isArray(payload?.logs) ? payload?.logs : [];
 			setLogs(list);
+		} catch (err) {
+			setLogs(null);
+			showToast(
+				actionFailureToast(
+					"Чтение журнала аудита",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
+			setError("Не удалось прочитать журнал аудита.");
 		} finally {
 			setLoading(false);
 		}

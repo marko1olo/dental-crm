@@ -1493,9 +1493,16 @@ export function useDicomWorkbenchModule({
 					return next;
 				});
 			})
-			.catch(() => {
+			.catch((err) => {
 				createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
 				if (!cancelled) {
+					showToast(
+						actionFailureToast(
+							"Предпросмотр снимка",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setImagingPreviewObjectUrls((current) => {
 						auth.revokeObjectUrlMap(current);
 						return {};

@@ -157,7 +157,10 @@ export const StaffCommissionsPanel: React.FC = () => {
 					authRef.current?.settingsAdminSecretSession,
 				),
 			});
-			const payload = (await response.json().catch(() => null)) as unknown;
+			const payload = (await response.json().catch((err) => {
+				showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
+				return null;
+			})) as unknown;
 			if (!response.ok) {
 				const msg =
 					serverMessageOf(payload) ??
@@ -244,7 +247,10 @@ export const StaffCommissionsPanel: React.FC = () => {
 				),
 				body: JSON.stringify({ commissionPct: pct }),
 			});
-			const payload = (await response.json().catch(() => null)) as unknown;
+			const payload = (await response.json().catch((err) => {
+				showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
+				return null;
+			})) as unknown;
 			if (!response.ok) {
 				const msg =
 					serverMessageOf(payload) ??

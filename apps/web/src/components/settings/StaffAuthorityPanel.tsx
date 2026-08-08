@@ -246,7 +246,10 @@ export const StaffAuthorityPanel: React.FC = () => {
 					body: JSON.stringify(body),
 				},
 			);
-			const payload = (await response.json().catch(() => null)) as unknown;
+			const payload = (await response.json().catch((err) => {
+				showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
+				return null;
+			})) as unknown;
 			if (!response.ok) {
 				const refused = refusedFlagsOf(payload);
 				const msg =

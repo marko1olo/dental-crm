@@ -2,6 +2,8 @@ import { ChevronRight, Clock } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 interface RecentPatientItem {
 	id: string;
@@ -79,10 +81,11 @@ export const RecentPatientHistoryWidget: React.FC<{
 				setFailed(false);
 				setLoading(false);
 			})
-			.catch(() => {
+			.catch((err) => {
 				if (!active) return;
 				setFailed(true);
 				setLoading(false);
+				showToast(actionFailureToast("Ошибка загрузки истории", (err as { status?: number })?.status ?? null), "error");
 			});
 		return () => {
 			active = false;

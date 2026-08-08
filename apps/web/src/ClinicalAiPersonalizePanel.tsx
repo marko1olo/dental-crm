@@ -17,6 +17,8 @@
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { showToast } from "./components/GlobalToast";
+import { actionFailureToast } from "./lib/panelStateText";
 
 type PersonalizedPlanResult = {
 	patientFriendlyExplanation: string;
@@ -523,7 +525,7 @@ export const ClinicalAiPersonalizePanel: React.FC<
 				headers,
 				body: JSON.stringify(payloadOrError),
 			});
-			const body = await response.json().catch(() => null);
+			const body = (await response.json()) as unknown;
 			if (!response.ok) {
 				setPlanResult(null);
 				setPlanError(
@@ -544,8 +546,15 @@ export const ClinicalAiPersonalizePanel: React.FC<
 				return;
 			}
 			setPlanResult(result);
-		} catch {
+		} catch (error) {
 			setPlanResult(null);
+			showToast(
+				actionFailureToast(
+					"Персонализация плана",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setPlanError(
 				"Сеть недоступна: персонализация плана не получена. Проверьте связь и повторите.",
 			);
@@ -609,7 +618,7 @@ export const ClinicalAiPersonalizePanel: React.FC<
 					doctorFullName: resolvedDoctorName.slice(0, 240),
 				}),
 			});
-			const body = await response.json().catch(() => null);
+			const body = (await response.json()) as unknown;
 			if (!response.ok) {
 				setPostResult(null);
 				setPostError(
@@ -628,8 +637,15 @@ export const ClinicalAiPersonalizePanel: React.FC<
 				return;
 			}
 			setPostResult(result);
-		} catch {
+		} catch (error) {
 			setPostResult(null);
+			showToast(
+				actionFailureToast(
+					"Сборка памятки",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setPostError(
 				"Сеть недоступна: памятка после приёма не получена. Проверьте связь и повторите.",
 			);

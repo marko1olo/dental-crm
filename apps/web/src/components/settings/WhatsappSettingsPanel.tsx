@@ -270,11 +270,11 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 					</div>
 				</div>
 
-				<div
+				<fieldset
 					className="premium-feature-grid"
-					role="group"
+					
 					aria-label="Функции WhatsApp"
-				>
+				 style={{ border: 'none', padding: 0, margin: 0 }}>
 					{Object.entries(WHATSAPP_FEATURE_LABELS).map(([key, label]) => {
 						const enabled = enabledFeaturesDraft.includes(key);
 						return (
@@ -308,7 +308,7 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 							</label>
 						);
 					})}
-				</div>
+				</fieldset>
 
 				<div className="messenger-routing-section">
 					<h4>Роутинг входящих сообщений</h4>
