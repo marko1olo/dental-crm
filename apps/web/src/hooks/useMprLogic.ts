@@ -3,7 +3,7 @@ import type {
 	MprProjection,
 	MprWindowPreset,
 } from "@dental/shared";
-import { type KeyboardEvent, useEffect, useMemo, useRef } from "react";
+import { type KeyboardEvent, useEffect, useMemo, useRef, useCallback } from "react";
 import {
 	browserGeneratedId,
 	type CbctWorkbenchPlane,
@@ -306,7 +306,7 @@ export function useMprLogic({
 			.filter(Boolean)
 			.join(" ");
 
-	const applyDefaultMprWorkbenchState = () => {
+	const applyDefaultMprWorkbenchState = useCallback(() => {
 		const defaultProjection = cbctWorkbenchProjections.includes("axial")
 			? "axial"
 			: (cbctWorkbenchProjections?.[0] ?? "axial");
@@ -317,7 +317,11 @@ export function useMprLogic({
 		setMprWindowPreset("bone");
 		setMprCrosshairEnabled(true);
 		setMprLinkedPlanesEnabled(true);
-	};
+	}, [
+		cbctWorkbenchProjections, setMprProjection, setMprAxisDeg, setMprSlabMm,
+		mprCenterSliceIndex, setMprSliceIndex, setMprWindowPreset, setMprCrosshairEnabled,
+		setMprLinkedPlanesEnabled
+	]);
 
 	const resetMprControls = applyDefaultMprWorkbenchState;
 
@@ -463,7 +467,7 @@ export function useMprLogic({
 		if (adjustment.kind === "slice") setMprSliceIndex(adjustment.value);
 	};
 
-	const applyMprWorkbenchState = (state: MprWorkbenchState) => {
+	const applyMprWorkbenchState = useCallback((state: MprWorkbenchState) => {
 		const projection = resolveMprWorkbenchProjection(
 			state.projection,
 			cbctWorkbenchProjections,
@@ -475,7 +479,11 @@ export function useMprLogic({
 		setMprWindowPreset(state.windowPreset);
 		setMprCrosshairEnabled(state.crosshair);
 		setMprLinkedPlanesEnabled(state.linkedPlanes);
-	};
+	}, [
+		cbctWorkbenchProjections, setMprProjection, setMprAxisDeg, setMprSlabMm,
+		mprSliceMaxIndex, setMprSliceIndex, setMprWindowPreset, setMprCrosshairEnabled,
+		setMprLinkedPlanesEnabled
+	]);
 
 	async function restoreMprWorkbenchLocalDraft() {
 		if (!cbctWorkbenchSeriesKey) {

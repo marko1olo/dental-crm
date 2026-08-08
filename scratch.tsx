@@ -1,7 +1,5 @@
-import { useCallback, useEffect } from 'react';
-export function useTest(a: string, b: string) {
-    const fn = useCallback(() => {
-        return a + b;
-    }, []);
-    useEffect(() => { fn(); }, [fn]);
+import { useCallback } from "react";
+export function useLogic(a: any, b: any) {
+  const fn = useCallback(() => { return { a, b }; }, []);
+  return fn;
 }

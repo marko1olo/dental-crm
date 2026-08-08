@@ -3,7 +3,7 @@ import type {
 	MessageTemplateCatalog,
 } from "@dental/shared";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
@@ -26,7 +26,7 @@ export function MessageTemplatesPanel() {
 	const [draftText, setDraftText] = useState("");
 	const [draftChannel, setDraftChannel] = useState("telegram");
 
-	const loadTemplates = async () => {
+	const loadTemplates = useCallback(async () => {
 		try {
 			const headers = auth ? auth.denteClinicalReadHeaders() : {};
 			const res = await fetch("/api/settings/message-templates", { headers });
@@ -44,7 +44,7 @@ export function MessageTemplatesPanel() {
 			);
 			console.error(e);
 		}
-	};
+	}, [auth]);
 
 	useEffect(() => {
 		loadTemplates();

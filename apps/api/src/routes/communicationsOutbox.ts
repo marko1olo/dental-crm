@@ -653,19 +653,20 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 		}
 
 		const now = new Date();
-		for (const entry of parsed.data.entries) {
+		if (parsed.data.entries.length > 0) {
+			const valuesToInsert = parsed.data.entries.map((entry) => ({
+				organizationId: context.organizationId,
+				patientId,
+				channel: entry.channel,
+				scope: entry.scope,
+				state: entry.state,
+				source: entry.source,
+				evidence: entry.evidence ?? null,
+				decidedAt: now,
+			}));
 			await db
 				.insert(patientCommunicationConsents)
-				.values({
-					organizationId: context.organizationId,
-					patientId,
-					channel: entry.channel,
-					scope: entry.scope,
-					state: entry.state,
-					source: entry.source,
-					evidence: entry.evidence ?? null,
-					decidedAt: now,
-				})
+				.values(valuesToInsert)
 				.onConflictDoUpdate({
 					target: [
 						patientCommunicationConsents.organizationId,
@@ -674,9 +675,9 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 						patientCommunicationConsents.scope,
 					],
 					set: {
-						state: entry.state,
-						source: entry.source,
-						evidence: entry.evidence ?? null,
+						state: sql`EXCLUDED.state`,
+						source: sql`EXCLUDED.source`,
+						evidence: sql`EXCLUDED.evidence`,
 						decidedAt: now,
 						updatedAt: now,
 					},

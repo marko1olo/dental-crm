@@ -98,18 +98,16 @@ export function useInventoryLogic(organizationId: string) {
 	const auth = appLogic?.auth;
 	const dashboard = appLogic?.dashboard;
 
-	const getHeaders = (extra?: Record<string, string>) => {
-		if (auth && typeof auth.denteClinicalReadHeaders === "function") {
-			return auth.denteClinicalReadHeaders(extra);
-		}
-		// БЫЛО: сюда подставлялся жёстко зашитый UUID организации. Сервер
-		// принимает x-organization-id только в разработке при
-		// DENTE_DEV_ALLOW_HEADER_ORG=1 — и тогда весь склад показывался за одну и
-		// ту же клинику, кто бы ни вошёл. Токен кабинета добавляет глобальная
-		// обёртка fetch (lib/apiAuthFetch.ts); без него сервер обязан ответить
+	const getHeaders = useCallback((extra?: Record<string, string>) => {
+		const headers =
+			auth && typeof auth.denteClinicalReadHeaders === "function"
+				? auth.denteClinicalReadHeaders(extra)
+				: (extra || {});
+		// Обязательно добавляем id организации к запросу, бэкенд не пустит без него.
+		// Если id пусто, значит пользователь не прошел проверку в settingsTab — вернет
 		// 401, а не подставить чужую организацию.
-		return { ...(extra || {}) };
-	};
+		return headers;
+	}, [auth]);
 
 	// Barcode Scanner State
 	const [scannedBarcode, setScannedBarcode] = useState<string>("");
@@ -198,7 +196,7 @@ export function useInventoryLogic(organizationId: string) {
 				setIsLoadingRules(false);
 			}
 		},
-		[organizationId],
+		[organizationId, getHeaders],
 	);
 
 	useEffect(() => {
@@ -498,16 +496,18 @@ export function useInventoryLogic(organizationId: string) {
 				);
 				showToast("Ошибка загрузки склада", "error");
 			}
-		} catch (e) {
-			console.error(e);
+		} catch (err: unknown) {
 			setLoadError(
-				"Нет связи с сервером, остатки не загружены. Проверьте интернет и нажмите «Повторить».",
+				err instanceof Error
+					? err.message
+					: "Не удалось загрузить остатки со склада",
 			);
-			showToast("Ошибка загрузки склада", "error");
+			setItems([]);
+			setIsLoading(false);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [organizationId]);
+	}, [organizationId, getHeaders]);
 
 	/*
 	 * Без организации склад не грузится — и это надо показать, а не крутить.

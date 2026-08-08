@@ -90,13 +90,14 @@ export function AnalyticsDashboardView() {
 	// остаётся: контекст может быть, а раздела авторизации в нём — нет.
 	const appLogic = useAppLogicContext();
 	const authContext = appLogic?.auth;
-	const getReadHeaders = () =>
+	const getReadHeaders = useCallback(() => (
 		authContext
 			? authContext.denteClinicalReadHeaders()
 			: // Без контекста авторизации заголовок организации не подставляем:
 				// глобальная обёртка fetch (lib/apiAuthFetch.ts) добавит токен кабинета,
 				// а без него сервер обязан ответить 401, а не выдать чужую клинику.
-				{};
+				{}
+	), [authContext]);
 	const [data, setData] = useState<AnalyticsDashboardData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);

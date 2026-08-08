@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export type SberbankTerminalPaymentModalProps = {
 	isOpen: boolean;
@@ -22,20 +23,23 @@ export function SberbankTerminalPaymentModal({
 	>("idle");
 	const [orderId, setOrderId] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState("");
+	const { auth } = useAppLogicContext();
 
-	const initiatePayment = async () => {
+	const initiatePayment = useCallback(async () => {
 		if (!patientId || !amountInRubles) return;
 		setStatus("initiating");
 		setErrorMsg("");
 		try {
-			const res = await fetch("/api/sberbank/pay", {
+			const res = await fetch("/api/sberbank/initiate", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					...(auth && typeof auth.denteClinicalReadHeaders === "function" ? auth.denteClinicalReadHeaders() : {}),
 				},
 				body: JSON.stringify({
+					amount: Math.round(amountInRubles * 100),
 					patientId,
-					amount: Math.round(amountInRubles * 100), // Enforce integer kopecks
+					description: `Оплата по пациенту ${patientId}`,
 				}),
 			});
 			const data = await res.json();
@@ -47,7 +51,7 @@ export function SberbankTerminalPaymentModal({
 			setStatus("error");
 			setErrorMsg(err.message || "Не удалось запустить терминал");
 		}
-	};
+	}, [amountInRubles, patientId, auth]);
 
 	useEffect(() => {
 		if (isOpen && status === "idle") {

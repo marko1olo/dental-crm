@@ -66,9 +66,9 @@ const OTPInput: React.FC<OTPInputProps> = ({ onComplete, disabled }) => {
 	const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
 	const refs = useRef<(HTMLInputElement | null)[]>([]);
 
-	const focus = (idx: number) => {
+	const focus = useCallback((idx: number) => {
 		refs.current[idx]?.focus();
-	};
+	}, []);
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
@@ -203,7 +203,7 @@ export const PatientPortal: React.FC = () => {
 	// Отказ сервера при чтении кабинета — отдельно от «код неверный».
 	const [sessionError, setSessionError] = useState<string | null>(null);
 
-	const fetchPatientData = async (token: string) => {
+	const fetchPatientData = useCallback(async (token: string) => {
 		try {
 			setIsLoading(true);
 			setSessionError(null);
@@ -245,7 +245,7 @@ export const PatientPortal: React.FC = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, []);
 
 	// Повтор без нового СМС: пропуск сохранён, спрашивать код заново не за что.
 	const retrySession = useCallback(() => {

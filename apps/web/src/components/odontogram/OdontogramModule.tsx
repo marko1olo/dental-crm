@@ -122,7 +122,7 @@ const SurfaceSelector = ({
 				<title>Поверхности зуба</title>
 				{/* Top (B/V) */}
 				<polygon
-					role="button"
+					role="tab"
 					tabIndex={0}
 					points="0,0 100,0 70,30 30,30"
 					fill={selected.includes("B") ? "#3b82f6" : "#27272a"}
@@ -151,7 +151,7 @@ const SurfaceSelector = ({
 
 				{/* Bottom (L/P) */}
 				<polygon
-					role="button"
+					role="tab"
 					tabIndex={0}
 					points="30,70 70,70 100,100 0,100"
 					fill={selected.includes("L") ? "#3b82f6" : "#27272a"}
@@ -180,7 +180,7 @@ const SurfaceSelector = ({
 
 				{/* Left (M) */}
 				<polygon
-					role="button"
+					role="tab"
 					tabIndex={0}
 					points="0,0 30,30 30,70 0,100"
 					fill={selected.includes("M") ? "#3b82f6" : "#27272a"}
@@ -209,7 +209,7 @@ const SurfaceSelector = ({
 
 				{/* Right (D) */}
 				<polygon
-					role="button"
+					role="tab"
 					tabIndex={0}
 					points="100,0 70,30 70,70 100,100"
 					fill={selected.includes("D") ? "#3b82f6" : "#27272a"}
@@ -238,7 +238,7 @@ const SurfaceSelector = ({
 
 				{/* Center (O) */}
 				<polygon
-					role="button"
+					role="tab"
 					tabIndex={0}
 					points="30,30 70,30 70,70 30,70"
 					fill={selected.includes("O") ? "#3b82f6" : "#27272a"}
@@ -956,9 +956,8 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 					createPortal(
 						<>
 							{/* Backdrop */}
-							<div
-								role="button"
-								tabIndex={0}
+							<button
+								type="button"
 								style={{
 									position: "fixed",
 									top: 0,
@@ -966,6 +965,11 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 									right: 0,
 									bottom: 0,
 									zIndex: 9998,
+									background: "transparent",
+									border: "none",
+									padding: 0,
+									margin: 0,
+									cursor: "default"
 								}}
 								onClick={() => setMenuConfig(null)}
 								onKeyDown={(e) => {

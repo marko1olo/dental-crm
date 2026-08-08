@@ -6,7 +6,7 @@ import type {
 	OutpatientMedicalCard025uPayload,
 	Patient,
 } from "@dental/shared";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type {
 	ClinicProfileDraft,
 	MedicalRecordExtractDocumentDraftFields,
@@ -197,7 +197,7 @@ export function usePatientIntakeLogic({
 		],
 	);
 
-	function currentOutpatient025uDocumentDraftFields(): Outpatient025uDocumentDraftFields {
+	const currentOutpatient025uDocumentDraftFields = useCallback((): Outpatient025uDocumentDraftFields => {
 		return {
 			recordExtractPeriodStart,
 			recordExtractPeriodEnd,
@@ -232,11 +232,18 @@ export function usePatientIntakeLogic({
 			outpatient025uOfficialForm274nChecked,
 			outpatient025uThirdPartyDataChecked,
 		};
-	}
+	}, [
+			recordExtractPeriodStart, recordExtractPeriodEnd, recordExtractSourceVisitIds, recordExtractComplaintAndAnamnesis,
+			recordExtractObjectiveStatus, recordExtractDiagnosis, recordExtractTreatmentProvided, recordExtractRecommendations,
+			recordExtractDoctorFullName, recordExtractPreparedFromSignedRecords, outpatient025uMedicalCardNumber, outpatient025uOpenedAt,
+			outpatient025uPatientSexCode, outpatient025uCitizenship, outpatient025uRegistrationUrbanRuralCode, outpatient025uStayUrbanRuralCode,
+			outpatient025uOmsIssuedAt, outpatient025uInsurerName, outpatient025uSocialSupportCode, outpatient025uHealthStatusDisclosureContact,
+			outpatient025uEmploymentCode, outpatient025uDisabilityGroup, outpatient025uWorkOrStudyPlace, outpatient025uPalliativeCareNeedCode,
+			outpatient025uBloodGroup, outpatient025uRhFactor, outpatient025uKellK1, outpatient025uOtherBloodData, outpatient025uAllergyHistory,
+			outpatient025uFinalEpicrisis, outpatient025uOfficialForm274nChecked, outpatient025uThirdPartyDataChecked
+		]);
 
-	function applyOutpatient025uDocumentDraftFields(
-		fields: Outpatient025uDocumentDraftFields,
-	): void {
+	const applyOutpatient025uDocumentDraftFields = useCallback((fields: Outpatient025uDocumentDraftFields): void => {
 		setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
 		setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
 		setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
@@ -285,9 +292,18 @@ export function usePatientIntakeLogic({
 		setOutpatient025uThirdPartyDataChecked(
 			fields.outpatient025uThirdPartyDataChecked,
 		);
-	}
+	}, [
+			setRecordExtractPeriodStart, setRecordExtractPeriodEnd, setRecordExtractSourceVisitIds, setRecordExtractComplaintAndAnamnesis,
+			setRecordExtractObjectiveStatus, setRecordExtractDiagnosis, setRecordExtractTreatmentProvided, setRecordExtractRecommendations,
+			setRecordExtractDoctorFullName, setRecordExtractPreparedFromSignedRecords, setOutpatient025uMedicalCardNumber, setOutpatient025uOpenedAt,
+			setOutpatient025uPatientSexCode, setOutpatient025uCitizenship, setOutpatient025uRegistrationUrbanRuralCode, setOutpatient025uStayUrbanRuralCode,
+			setOutpatient025uOmsIssuedAt, setOutpatient025uInsurerName, setOutpatient025uSocialSupportCode, setOutpatient025uHealthStatusDisclosureContact,
+			setOutpatient025uEmploymentCode, setOutpatient025uDisabilityGroup, setOutpatient025uWorkOrStudyPlace, setOutpatient025uPalliativeCareNeedCode,
+			setOutpatient025uBloodGroup, setOutpatient025uRhFactor, setOutpatient025uKellK1, setOutpatient025uOtherBloodData, setOutpatient025uAllergyHistory,
+			setOutpatient025uFinalEpicrisis, setOutpatient025uOfficialForm274nChecked, setOutpatient025uThirdPartyDataChecked
+		]);
 
-	function currentMedicalRecordExtractDocumentDraftFields(): MedicalRecordExtractDocumentDraftFields {
+	const currentMedicalRecordExtractDocumentDraftFields = useCallback((): MedicalRecordExtractDocumentDraftFields => {
 		return {
 			recordExtractPeriodStart,
 			recordExtractPeriodEnd,
@@ -304,11 +320,14 @@ export function usePatientIntakeLogic({
 			recordExtractPreparedFromSignedRecords,
 			recordExtractThirdPartyDataChecked,
 		};
-	}
+	}, [
+			recordExtractPeriodStart, recordExtractPeriodEnd, recordExtractSourceVisitIds, recordExtractComplaintAndAnamnesis,
+			recordExtractObjectiveStatus, recordExtractDiagnosis, recordExtractTreatmentProvided, recordExtractRecommendations,
+			recordExtractDoctorFullName, recordExtractRecipientFullName, recordExtractRecipientAuthority, recordExtractIssuedAt,
+			recordExtractPreparedFromSignedRecords, recordExtractThirdPartyDataChecked
+		]);
 
-	function applyMedicalRecordExtractDocumentDraftFields(
-		fields: MedicalRecordExtractDocumentDraftFields,
-	): void {
+	const applyMedicalRecordExtractDocumentDraftFields = useCallback((fields: MedicalRecordExtractDocumentDraftFields): void => {
 		setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
 		setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
 		setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
@@ -329,7 +348,12 @@ export function usePatientIntakeLogic({
 		setRecordExtractThirdPartyDataChecked(
 			fields.recordExtractThirdPartyDataChecked,
 		);
-	}
+	}, [
+			setRecordExtractPeriodStart, setRecordExtractPeriodEnd, setRecordExtractSourceVisitIds, setRecordExtractComplaintAndAnamnesis,
+			setRecordExtractObjectiveStatus, setRecordExtractDiagnosis, setRecordExtractTreatmentProvided, setRecordExtractRecommendations,
+			setRecordExtractDoctorFullName, setRecordExtractRecipientFullName, setRecordExtractRecipientAuthority, setRecordExtractIssuedAt,
+			setRecordExtractPreparedFromSignedRecords, setRecordExtractThirdPartyDataChecked
+		]);
 
 	useEffect(() => {
 		if (

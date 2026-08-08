@@ -488,7 +488,7 @@ export function Cornerstone3DViewer({
 	 * снимок и ещё ничего не трогал), берутся восстановленные из базы точки —
 	 * иначе сохранение по любому поводу затёрло бы прочитанную разметку пустотой.
 	 */
-	const currentMarkup = (): CtPlanningMarkup => {
+	const currentMarkup = useCallback((): CtPlanningMarkup => {
 		const element = axialRef.current;
 		let splinePoints: WorldPoint3[] = [];
 		if (element) {
@@ -515,7 +515,7 @@ export function Cornerstone3DViewer({
 			nervePoints: restored?.nervePoints ?? emptyCtPlanningMarkup().nervePoints,
 			implants: storedImplantsOf(implantsRef.current),
 		};
-	};
+	}, []);
 
 	/**
 	 * Записать разметку сейчас. `silent` — для сохранения при уходе с экрана: там
@@ -565,7 +565,7 @@ export function Cornerstone3DViewer({
 					: { tone: "issue", text: outcome.message },
 			);
 		},
-		[saveCtPlanningMarkup],
+		[currentMarkup],
 	);
 
 	/**

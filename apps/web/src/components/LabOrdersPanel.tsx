@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { showToast } from "./GlobalToast";
 import "./LabOrdersPanel.css";
@@ -43,7 +43,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	const [priceRub, setPriceRub] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
-	const fetchOrders = async () => {
+	const fetchOrders = useCallback(async () => {
 		setLoading(true);
 		setError(null);
 		try {
@@ -63,7 +63,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [patientId]);
 
 	useEffect(() => {
 		fetchOrders();

@@ -876,16 +876,15 @@ function extractDicomFieldValue(line: string, labels: string[]) {
  * СТАЛО: телефон — сильный признак, только ФИО — слабый; при нескольких
  * кандидатах пациент не подставляется и строка требует ручного выбора.
  */
-async function matchPatient(
-	orgId: string,
+function matchPatient(
+	patients: Awaited<ReturnType<typeof getPatientsFromDb>>,
 	patientName: string | null,
 	phone: string | null,
-): Promise<{
+): {
 	patient: Awaited<ReturnType<typeof getPatientsFromDb>>[number] | undefined;
 	ambiguous: boolean;
 	weakMatch: boolean;
-}> {
-	const patients = await getPatientsFromDb(orgId);
+} {
 	const normalizedName = patientName?.trim().toLowerCase();
 
 	const phoneMatches = phone
@@ -915,13 +914,13 @@ async function matchPatient(
 	return { patient: undefined, ambiguous: false, weakMatch: false };
 }
 
-async function parseManifestLine(
-	orgId: string,
+function parseManifestLine(
+	patients: Awaited<ReturnType<typeof getPatientsFromDb>>,
 	line: string,
 	rowNumber: number,
 	sourceKind: ImagingSourceKind,
 	sourceName: string,
-): Promise<ImagingImportPreviewRow> {
+): ImagingImportPreviewRow {
 	const phone = extractPhone(line);
 	const filePath = extractFilePath(line);
 	const date = normalizeDate(
@@ -943,8 +942,8 @@ async function parseManifestLine(
 			.filter((part) => /^[A-Za-zА-Яа-яЁё-]{2,}$/.test(part))
 			.slice(0, 4)
 			.join(" ") || null;
-	const { patient, ambiguous, weakMatch } = await matchPatient(
-		orgId,
+	const { patient, ambiguous, weakMatch } = matchPatient(
+		patients,
 		patientName,
 		phone,
 	);
@@ -1027,12 +1026,13 @@ export async function parseImagingManifest(
 	const headers = splitLine(lines[0] ?? "", delimiter).map(
 		(cell) => headerAliases[normalizeHeader(cell)] ?? null,
 	);
+	const patients = await getPatientsFromDb(orgId);
 	const hasHeader = headers.some(Boolean);
 	const rows: ImagingImportPreviewRow[] = await Promise.all(
 		(hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
 			if (!hasHeader)
-				return await parseManifestLine(
-					orgId,
+				return parseManifestLine(
+					patients,
 					line,
 					index + 1,
 					sourceKind,
@@ -1054,8 +1054,8 @@ export async function parseImagingManifest(
 					draft.capturedAt = normalizeDate(value);
 				else draft[field] = value as never;
 			});
-			const { patient, ambiguous, weakMatch } = await matchPatient(
-				orgId,
+			const { patient, ambiguous, weakMatch } = matchPatient(
+				patients,
 				draft.patientName ?? null,
 				draft.phone ?? null,
 			);
@@ -3848,14 +3848,14 @@ function buildDicomSeriesGroups(rows: DicomSeriesPreviewRow[]) {
 }
 
 async function parseDicomManifestLine(
-	orgId: string,
+	patients: Awaited<ReturnType<typeof getPatientsFromDb>>,
 	line: string,
 	rowNumber: number,
 	sourceKind: ImagingSourceKind,
 	sourceName: string,
 ): Promise<DicomSeriesPreviewRow> {
-	const base = await parseManifestLine(
-		orgId,
+	const base = parseManifestLine(
+		patients,
 		line,
 		rowNumber,
 		sourceKind,
@@ -4027,12 +4027,13 @@ export async function parseDicomSeriesManifest(
 	const headers = splitLine(lines[0] ?? "", delimiter).map(
 		(cell) => dicomHeaderAliases[normalizeHeader(cell)] ?? null,
 	);
+	const patients = await getPatientsFromDb(orgId);
 	const hasHeader = headers.some(Boolean);
 	const rows: DicomSeriesPreviewRow[] = await Promise.all(
 		(hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
 			if (!hasHeader)
 				return await parseDicomManifestLine(
-					orgId,
+					patients,
 					line,
 					index + 1,
 					input.sourceKind,
@@ -4073,7 +4074,7 @@ export async function parseDicomSeriesManifest(
 				} else draft[field] = value as never;
 			});
 			const lineFallback = await parseDicomManifestLine(
-				orgId,
+				patients,
 				line,
 				index + 2,
 				input.sourceKind,
@@ -4083,8 +4084,8 @@ export async function parseDicomSeriesManifest(
 				patient,
 				ambiguous: patientAmbiguous,
 				weakMatch: patientWeakMatch,
-			} = await matchPatient(
-				orgId,
+			} = matchPatient(
+				patients,
 				draft.patientName ?? lineFallback.patientName,
 				draft.phone ?? lineFallback.phone,
 			);

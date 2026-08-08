@@ -1,3 +1,4 @@
+
 /**
  * Панель «Потерянные пациенты» — пациенты клиники без предстоящих записей.
  * Вызывает работающий роут Fastify: GET /api/analytics/lost-patients-filters
@@ -5,7 +6,7 @@
 
 import { AlertTriangle, Phone, RefreshCw, UserX } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { formatPhoneNumber } from "../../utils/inputSanitation";
 
@@ -26,7 +27,7 @@ export const LostPatientsPanel: React.FC = () => {
 	const [loading, setLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchLostPatients = async () => {
+	const fetchLostPatients = useCallback(async () => {
 		setLoading(true);
 		setError(null);
 		try {
@@ -50,7 +51,7 @@ export const LostPatientsPanel: React.FC = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [auth]);
 
 	useEffect(() => {
 		fetchLostPatients();

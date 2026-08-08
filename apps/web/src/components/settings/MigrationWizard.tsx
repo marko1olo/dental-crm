@@ -307,7 +307,7 @@ export function MigrationWizard() {
 	// -------------------------------------------------------------------
 	// Шаг 2: карта соответствия
 	// -------------------------------------------------------------------
-	async function runMapping(runId: string, useLlm: boolean) {
+	const runMapping = useCallback(async (runId: string, useLlm: boolean) => {
 		setBusy(true);
 		setError(null);
 		try {
@@ -342,7 +342,7 @@ export function MigrationWizard() {
 		} finally {
 			setBusy(false);
 		}
-	}
+	}, [clinicalMutationHeaders]);
 
 	// -------------------------------------------------------------------
 	// Шаг 1: заливка файла
