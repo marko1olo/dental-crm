@@ -14,7 +14,7 @@ import {
 	ShieldCheck,
 } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 /*
  * auth — обычный экспорт модуля, читающий токен из localStorage, а не значение
  * из контекста.
@@ -635,7 +635,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	 * Поэтому сначала раскрываем форму, а фокус ставим в следующем проходе
 	 * отрисовки — через focusCreateFormRequestedRef и эффект ниже.
 	 */
-	const focusVisibleCreateFormControl = () => {
+	const focusVisibleCreateFormControl = useCallback(() => {
 		const wrapper = document.querySelector<HTMLElement>(
 			".appointment-create-wrapper",
 		);
@@ -672,7 +672,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 		motionSafeScrollIntoView(target ?? scope, { block: "center" });
 		target?.focus({ preventScroll: true });
-	};
+	}, []);
 	const focusNewAppointmentEditor = () => {
 		if (!showCreateForm) {
 			focusCreateFormRequestedRef.current = true;
