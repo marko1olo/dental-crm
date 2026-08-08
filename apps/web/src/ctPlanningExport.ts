@@ -3,7 +3,6 @@ import type {
 	DicomViewerToolStateBundleResponse,
 	ImagingSourceKind,
 } from "@dental/shared";
-import type { CtPlanningExportScenarioSummary } from "./ctPlanningExportScenarioSummary";
 import type { CtPlanningImplantModelPlan } from "./ctPlanningImplantModel";
 import type { CtPlanningMeasurementPlan } from "./ctPlanningMeasurementPlan";
 import type { CtPlanningReconstructionPlan } from "./ctPlanningReconstruction";
@@ -12,73 +11,27 @@ import type {
 	CtPlanningValidationSummary,
 } from "./ctPlanningValidation";
 import type { CtPlanningGeometrySummary } from "./utils/math/toothGeometry";
-
-export type CtPlanningExportOwner = "doctor" | "admin" | "lab";
-export type CtPlanningExportStatus = "ready" | "warning" | "blocked";
-
-export type CtPlanningExportLane = {
-	id: string;
-	owner: CtPlanningExportOwner;
-	title: string;
-	status: CtPlanningExportStatus;
-	value: string;
-	detail: string;
-	nextAction: string;
-};
-
-export type CtPlanningExportFact = {
-	id: string;
-	title: string;
-	tone: CtPlanningExportStatus;
-	value: string;
-	detail: string;
-};
-
-export type CtPlanningRuntimeSourceMode =
-	| "local_offline_available"
-	| "remote_online_required"
-	| "server_or_uploaded_copy";
-export type CtPlanningRuntimeExecutionLane =
-	| "metadata_only_no_pixels"
-	| "mobile_or_constrained_preview"
-	| "desktop_browser_planning_preview"
-	| "desktop_app_or_external_diagnostic";
-
-export type CtPlanningRuntimeTruthPolicy = {
-	version: "dental-crm-ct-runtime-truth-v1";
-	sourceMode: CtPlanningRuntimeSourceMode;
-	executionLane: CtPlanningRuntimeExecutionLane;
-	memoryBudgetClass: DicomGpuRenderPlan["memoryBudgetClass"];
-	hardwareQualityWeight: number;
-	progressiveSliceWindowCap: number;
-	targetSliceBatch: number;
-	estimatedGpuMemoryMb: number;
-	diagnosticPixelPolicy: DicomGpuRenderPlan["diagnosticPixelPolicy"];
-	containsDiagnosticPixels: false;
-	containsMeshGeometry: false;
-	browserStoresHeavyGeometry: false;
-	heavyDataOwner: "external_viewer_or_local_3d_module";
-	summary: string;
-};
-
-export type CtPlanningExportPacket = {
-	version: "dental-crm-ct-planning-export-v1";
-	modelOutputKind: "planning_parameters_only";
-	cadExportReady: false;
-	surfaceModelRequired: true;
-	outputBoundarySummary: string;
-	runtimeTruthPolicy: CtPlanningRuntimeTruthPolicy;
-	activeQuickActionId: string | null;
-	activeScenarioSummary: CtPlanningExportScenarioSummary | null;
-	volumeReady: boolean;
-	score: number;
-	status: CtPlanningExportStatus;
-	title: string;
-	handoffSummary: string;
-	nextAction: string;
-	clinicalFacts: CtPlanningExportFact[];
-	lanes: CtPlanningExportLane[];
-	missingArtifacts: string[];
+import type {
+	CtPlanningExportFact,
+	CtPlanningExportLane,
+	CtPlanningExportOwner,
+	CtPlanningExportPacket,
+	CtPlanningExportScenarioSummary,
+	CtPlanningExportStatus,
+	CtPlanningRuntimeExecutionLane,
+	CtPlanningRuntimeSourceMode,
+	CtPlanningRuntimeTruthPolicy,
+} from "./ctPlanningExportTypes";
+export type {
+	CtPlanningExportFact,
+	CtPlanningExportLane,
+	CtPlanningExportOwner,
+	CtPlanningExportPacket,
+	CtPlanningExportScenarioSummary,
+	CtPlanningExportStatus,
+	CtPlanningRuntimeExecutionLane,
+	CtPlanningRuntimeSourceMode,
+	CtPlanningRuntimeTruthPolicy,
 };
 
 function exportStatusFromValidation(

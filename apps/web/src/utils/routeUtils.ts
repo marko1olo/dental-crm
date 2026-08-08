@@ -1,6 +1,6 @@
-import type { AppView } from "../workspaceShell";
+import type { StaffRole } from "@dental/shared";
 
-export const appViews: readonly AppView[] = [
+export const appViews = [
 	"shift",
 	"schedule",
 	"patients",
@@ -16,6 +16,104 @@ export const appViews: readonly AppView[] = [
 	"settings",
 	"marketing",
 ] as const;
+
+export type AppView = (typeof appViews)[number];
+
+export const viewLabels: Record<AppView, string> = {
+	shift: "Смена",
+	schedule: "Записи",
+	patients: "Пациенты",
+	imaging: "Снимки",
+	visit: "Прием",
+	documents: "Документы",
+	finance: "Оплаты",
+	analytics: "Аналитика",
+	communications: "Связь",
+	inventory: "Склад",
+	scanner: "Стерилизация",
+	leads: "Обращения",
+	settings: "Настройки",
+	marketing: "Маркетинг/SEO",
+};
+
+export const viewHints: Record<AppView, string> = {
+	shift: "что делать сейчас",
+	schedule: "очередь, врачи и кресла",
+	patients: "карточки и контакты",
+	imaging: "рентген, КЛКТ и КТ",
+	visit: "прием и диктовка",
+	documents: "договоры и справки",
+	finance: "оплаты и долги",
+	analytics: "отчеты и воронки",
+	communications: "сообщения и задачи",
+	inventory: "материалы, остатки и сроки",
+	scanner: "лотки и журнал автоклава",
+	leads: "звонки и заявки до записи",
+	settings: "клиника, импорт и доступы",
+	marketing: "продвижение и отзывы",
+};
+
+export function getFilteredAppViews(role: StaffRole): AppView[] {
+	if (role === "doctor") {
+		return [
+			"shift",
+			"schedule",
+			"patients",
+			"imaging",
+			"visit",
+			"documents",
+			"analytics",
+			"communications",
+			"inventory",
+			"scanner",
+		];
+	}
+	if (role === "assistant") {
+		return [
+			"shift",
+			"schedule",
+			"patients",
+			"imaging",
+			"documents",
+			"communications",
+			"inventory",
+			"scanner",
+		];
+	}
+	if (role === "administrator") {
+		return [
+			"schedule",
+			"patients",
+			"documents",
+			"finance",
+			"analytics",
+			"communications",
+			"inventory",
+			"leads",
+			"settings",
+		];
+	}
+	if (role === "manager") {
+		return [
+			"schedule",
+			"patients",
+			"finance",
+			"analytics",
+			"communications",
+			"leads",
+			"settings",
+		];
+	}
+	if (role === "owner") {
+		return Array.from(appViews);
+	}
+	return Array.from(appViews);
+}
+
+export function getFallbackAppView(role: StaffRole): AppView {
+	const [firstAllowed] = getFilteredAppViews(role);
+	return firstAllowed ?? "shift";
+}
 
 export const settingsTabs = [
 	{ id: "profile", title: "Мой профиль", group: "account" },
@@ -58,3 +156,4 @@ export function settingsTabFromHash(): SettingsTab {
 		? (candidate as SettingsTab)
 		: "clinic";
 }
+

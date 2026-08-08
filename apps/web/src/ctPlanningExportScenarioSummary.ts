@@ -3,7 +3,7 @@ import type {
 	CtPlanningExportOwner,
 	CtPlanningExportPacket,
 	CtPlanningExportStatus,
-} from "./ctPlanningExport";
+} from "./ctPlanningExportTypes";
 import {
 	buildCtPlanningViewerBridgeDataAttributes,
 	type CtPlanningViewerBridgeDataAttributes,

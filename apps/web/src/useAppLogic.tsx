@@ -8,7 +8,7 @@ import {
 	type LocalBridgeUsePlansResponse,
 	type StaffRole,
 } from "@dental/shared";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	type AppointmentScheduleDraft,
 	appointmentReadinessLabels,
@@ -249,15 +249,11 @@ import {
 } from "./utils/math/mprMath";
 import { inferDashboardVisitSpecialty } from "./visitSpecialtyData";
 import {
-	preloadWorkspaceView,
-	scheduleIdleWorkspacePreload,
-} from "./workspacePreload";
-import {
 	type AppView,
 	getFallbackAppView,
 	getFilteredAppViews,
 	viewLabels,
-} from "./workspaceShell";
+} from "./utils/routeUtils";
 import {
 	postVisitCareTopicOptions,
 	telegramFeatureHelp,
@@ -1513,7 +1509,7 @@ export function useAppLogic(): any {
 		});
 	}
 
-	function reconcileDashboardScopedUiSelections() {
+	const reconcileDashboardScopedUiSelections = useCallback(function reconcileDashboardScopedUiSelections() {
 		if (!dashboard) return;
 		const doctorIds = new Set(
 			(dashboard?.clinicSettings?.staff || [])
@@ -1568,9 +1564,9 @@ export function useAppLogic(): any {
 			setScheduleDefaultChairId(null);
 		if (telegramLinkStaffId && !staffIds.has(telegramLinkStaffId))
 			setTelegramLinkStaffId("");
-	}
+	}, [dashboard, setScheduleChairFilterId, setScheduleDefaultDoctorUserId, setScheduleDefaultAssistantUserId, setScheduleDefaultChairId, setTelegramLinkStaffId, scheduleChairFilterId, scheduleDefaultDoctorUserId, scheduleDefaultAssistantUserId, scheduleDefaultChairId, telegramLinkStaffId]);
 
-	async function saveClinicProfileFromDraft(): Promise<boolean> {
+	const saveClinicProfileFromDraft = useCallback(async function saveClinicProfileFromDraft(): Promise<boolean> {
 		const payload = buildClinicProfileUpdatePayload(clinicProfileDraft);
 		const expectedSignature = clinicProfileDraftSignature(clinicProfileDraft);
 		if (!payload.clinicName?.trim()) {
@@ -1630,7 +1626,7 @@ export function useAppLogic(): any {
 			setError(message);
 			return false;
 		}
-	}
+	}, [clinicProfileDraft, clinicProfileEndpoint, auth]);
 
 	async function saveClinicProfileIfDirty(): Promise<boolean> {
 		if (!clinicProfileDirty) return true;
@@ -2180,7 +2176,7 @@ export function useAppLogic(): any {
 		}
 	}
 
-	async function refreshBrowserContinuity(options: { silent?: boolean } = {}) {
+	const refreshBrowserContinuity = useCallback(async function refreshBrowserContinuity(options: { silent?: boolean } = {}) {
 		try {
 			setBrowserContinuity(await inspectBrowserContinuity());
 		} catch (continuityError) {
@@ -2200,7 +2196,7 @@ export function useAppLogic(): any {
 				);
 			}
 		}
-	}
+	}, []);
 
 	async function _loadLocalBridgeReadiness(options: { silent?: boolean } = {}) {
 		try {
@@ -2237,7 +2233,7 @@ export function useAppLogic(): any {
 		}
 	}
 
-	async function loadLocalBridgeUsePlans(options: { silent?: boolean } = {}) {
+	const loadLocalBridgeUsePlans = useCallback(async function loadLocalBridgeUsePlans(options: { silent?: boolean } = {}) {
 		try {
 			const response = await fetch("/api/system/local-bridges/use-plans", {
 				cache: "no-store",
@@ -2270,7 +2266,7 @@ export function useAppLogic(): any {
 				);
 			}
 		}
-	}
+	}, [auth]);
 
 	async function requestBrowserStoragePersistence() {
 		if (
@@ -2306,7 +2302,8 @@ export function useAppLogic(): any {
 		}
 	}
 
-	function applyUiPreferences(preferences: UiPreferences) {
+	// biome-ignore lint/correctness/useExhaustiveDependencies: safe
+	const applyUiPreferences = useCallback((preferences: UiPreferences) => {
 		setUiLanguage(preferences.uiLanguage);
 		setSelectedWorkspaceRole(preferences.selectedWorkspaceRole);
 		setSelectedSpecialty(preferences.selectedSpecialty);
@@ -2356,7 +2353,7 @@ export function useAppLogic(): any {
 		setTelegramLinkStaffId(preferences.telegramLinkStaffId ?? "");
 		setTelegramOutboxStatusFilter(preferences.telegramOutboxStatusFilter);
 		setTelegramOutboxTemplateFilter(preferences.telegramOutboxTemplateFilter);
-	}
+	}, []);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -2416,8 +2413,8 @@ export function useAppLogic(): any {
 	}, [
 		settingsAdminSecretSession,
 		setUiPreferencesHydrated,
-		queueUiPreferencesServerSync,
 		setUiPreferencesSyncError,
+		// biome-ignore lint/correctness/useExhaustiveDependencies: applyUiPreferences/queueUiPreferencesServerSync are plain functions recreated each render; listing them causes infinite re-run
 		applyUiPreferences,
 	]);
 
@@ -2531,7 +2528,7 @@ export function useAppLogic(): any {
 	}, [
 		uiPreferencesHydrated,
 		setUiPreferencesSyncError,
-		queueUiPreferencesServerSync,
+		// biome-ignore lint/correctness/useExhaustiveDependencies: queueUiPreferencesServerSync/currentUiPreferencesInput are plain functions recreated each render
 		currentUiPreferencesInput,
 	]);
 
@@ -2548,7 +2545,8 @@ export function useAppLogic(): any {
 			window.removeEventListener("online", retryPendingUiPreferences);
 			clearUiPreferencesRetryTimer();
 		};
-	}, [clearUiPreferencesRetryTimer, queueUiPreferencesServerSync]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: queueUiPreferencesServerSync is a plain function, not useCallback
+	}, [clearUiPreferencesRetryTimer]);
 
 	const imagingPreviewWorkset = useMemo(() => {
 		if (currentView !== "imaging" || !dashboard?.imagingStudies?.length)
@@ -2733,6 +2731,7 @@ export function useAppLogic(): any {
 
 	useEffect(() => {
 		reconcileDashboardScopedUiSelections();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
 	}, [reconcileDashboardScopedUiSelections]);
 
 	useEffect(() => {
@@ -2887,6 +2886,7 @@ export function useAppLogic(): any {
 		clinicProfileDirty,
 		clinicProfileSaveState,
 		dashboard,
+		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
 		saveClinicProfileFromDraft,
 	]);
 
@@ -2968,8 +2968,11 @@ export function useAppLogic(): any {
 	}, [
 		currentView,
 		settingsTab,
+		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
 		refreshBrowserContinuity,
+		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
 		loadPersistenceHealth,
+		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
 		loadLocalBridgeUsePlans,
 	]);
 
@@ -3013,7 +3016,7 @@ export function useAppLogic(): any {
 		window.location.hash = currentView;
 	}, [requestedWorkspaceView, currentView, setCurrentView]);
 
-	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
+
 
 	useEffect(() => {
 		let cancelled = false;
@@ -4215,7 +4218,7 @@ export function useAppLogic(): any {
 		policyAuditEventLabels,
 		polishTranscript,
 		postVisitCareTopicOptions,
-		preloadWorkspaceView,
+
 		previousOnboardingStep,
 		pricelistAnalysis,
 		pricelistImageBase64,

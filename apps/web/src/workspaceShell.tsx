@@ -28,8 +28,16 @@ import {
 } from "lucide-react";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
+import { useSettingsStore } from "./store/settingsStore";
+import {
+	appViews,
+	type AppView,
+	getFallbackAppView,
+	getFilteredAppViews,
+	viewHints,
+	viewLabels,
+} from "./utils/routeUtils";
 import {
 	type ClinicMode,
 	describeHiddenCapabilities,
@@ -57,56 +65,14 @@ import { clinicModeLabels, workspaceTopbarLabels } from "./workspaceUiLabels";
  * Связка «реестр → ветка в App.tsx → workspacePreload.ts» закрыта тестом
  * tests/panelsAreMounted.test.ts: запись здесь без ветки отрисовки валит сборку.
  */
-export const appViews = [
-	"shift",
-	"schedule",
-	"patients",
-	"imaging",
-	"visit",
-	"documents",
-	"finance",
-	"analytics",
-	"communications",
-	"inventory",
-	"scanner",
-	"leads",
-	"settings",
-	"marketing",
-] as const;
-export type AppView = (typeof appViews)[number];
-
-export const viewLabels: Record<AppView, string> = {
-	shift: "Смена",
-	schedule: "Записи",
-	patients: "Пациенты",
-	imaging: "Снимки",
-	visit: "Прием",
-	documents: "Документы",
-	finance: "Оплаты",
-	analytics: "Аналитика",
-	communications: "Связь",
-	inventory: "Склад",
-	scanner: "Стерилизация",
-	leads: "Обращения",
-	settings: "Настройки",
-	marketing: "Маркетинг/SEO",
-};
-
-export const viewHints: Record<AppView, string> = {
-	shift: "что делать сейчас",
-	schedule: "очередь, врачи и кресла",
-	patients: "карточки и контакты",
-	imaging: "рентген, КЛКТ и КТ",
-	visit: "прием и диктовка",
-	documents: "договоры и справки",
-	finance: "оплаты и долги",
-	analytics: "отчеты и воронки",
-	communications: "сообщения и задачи",
-	inventory: "материалы, остатки и сроки",
-	scanner: "лотки и журнал автоклава",
-	leads: "звонки и заявки до записи",
-	settings: "клиника, импорт и доступы",
-	marketing: "продвижение и отзывы",
+// Route helpers are re-exported from routeUtils to avoid circular deps
+export {
+	appViews,
+	type AppView,
+	getFallbackAppView,
+	getFilteredAppViews,
+	viewHints,
+	viewLabels,
 };
 
 type WorkspaceViewIntentHandler = (view: AppView) => void;
@@ -170,115 +136,6 @@ function SidebarIcon({ section }: { section: AppView }) {
 export function ActionIcon({ section }: { section: AppView }) {
 	const Glyph = actionIcons[section];
 	return <Glyph aria-hidden="true" />;
-}
-
-/**
- * ПРАВО ОТКРЫТЬ раздел. Именно это, а не видимость в меню: результат работает
- * охранником маршрута в useAppLogic (`if (!allowedViews.includes(currentView))`
- * — принудительный возврат на «Смену»). Поэтому режим клиники здесь сознательно
- * НЕ участвует: спрятать раздел в меню и запретить его открыть — разные вещи, а
- * запрет означал бы, что раздела больше нет.
- */
-export function getFilteredAppViews(role: StaffRole): AppView[] {
-	/*
-	 * Кому какие из трёх новых разделов открыты — по тому, кто этим занят в
-	 * кабинете, а не «всем на всякий случай»:
-	 *   склад — врач видит остаток и срок годности материала, которым лечит;
-	 *     ассистент ведёт приход и списание; администратор закупает;
-	 *   стерилизация — лотки готовит ассистент, он же ведёт журнал автоклава;
-	 *     врач связывает лоток с приёмом, поэтому раздел открыт и ему;
-	 *   обращения — звонки и заявки до записи ведёт администратор и управляющий.
-	 * Это не только меню: список работает охранником маршрута (см. шапку), и
-	 * забытый здесь раздел выбросит открывшего его на «Смену».
-	 */
-	if (role === "doctor") {
-		return [
-			"shift",
-			"schedule",
-			"patients",
-			"imaging",
-			"visit",
-			"documents",
-			"analytics",
-			"communications",
-			"inventory",
-			"scanner",
-		];
-	}
-	if (role === "assistant") {
-		return [
-			"shift",
-			"schedule",
-			"patients",
-			"imaging",
-			"documents",
-			"communications",
-			"inventory",
-			"scanner",
-		];
-	}
-	if (role === "administrator") {
-		return [
-			"schedule",
-			"patients",
-			"documents",
-			"finance",
-			"analytics",
-			"communications",
-			"inventory",
-			"leads",
-			"settings",
-		];
-	}
-	if (role === "manager") {
-		return [
-			"schedule",
-			"patients",
-			"finance",
-			"analytics",
-			"communications",
-			"leads",
-			"settings",
-		];
-	}
-	if (role === "owner") {
-		return Array.from(appViews);
-	}
-	return Array.from(appViews);
-}
-
-/**
- * КУДА ВЕРНУТЬ ЧЕЛОВЕКА, КОГДА ЗАПРОШЕННЫЙ РАЗДЕЛ ЕМУ НЕ ОТКРЫТ.
- *
- * ЧТО БЫЛО СЛОМАНО. Охранник маршрута (useAppLogic.tsx) на недопустимом разделе
- * возвращал КОНСТАНТУ «shift». Для врача, ассистента и владельца это первый
- * раздел их собственного списка и потому совпадало. А у «Администратора» и
- * «Управляющего» «shift» в списке НЕТ — ни разу за всю историю этой функции:
- * она заведена коммитом 4867a6afc «enforce role-based access for routing» уже
- * без него, и ни одна из пяти последующих правок его этим двум ролям не
- * добавляла. То есть охранник, поставленный СОБЛЮДАТЬ список, сам же отправлял
- * две роли в раздел вне списка — и «Смена» им показывалась, хотя в боковом меню
- * её пункта нет (getVisibleRailViews считается от того же списка), то есть
- * уйдя с неё, вернуться было уже нечем.
- *
- * ПОЧЕМУ ВЫЧИСЛЯЕТСЯ, А НЕ ДОПИСАН «shift» ДВУМ РОЛЯМ. Дописать значило бы
- * ВЫДАТЬ двум ролям раздел, которого у них не было, — это продуктовое решение,
- * а не починка. Здесь же прав не прибавляется ни у кого: запасной раздел по
- * определению берётся из списка самой роли. Для врача, ассистента, владельца и
- * неизвестной роли результат прежний — «shift» стоит у них первым.
- *
- * ПОЧЕМУ РЯДОМ С СПИСКОМ. Правило «первый из своего списка» и сам список обязаны
- * меняться вместе; разнесённые по файлам, они разъедутся при первой же правке
- * одного из них — ровно так этот дефект и появился.
- */
-export function getFallbackAppView(role: StaffRole): AppView {
-	const [firstAllowed] = getFilteredAppViews(role);
-	/*
-	 * Пустым список быть не может: каждая ветвь выше возвращает непустой литерал,
-	 * и это закреплено тестом __tests__/workspaceShellNav.test.ts. Ветка нужна
-	 * компилятору (noUncheckedIndexedAccess), а не выполнению.
-	 */
-	return firstAllowed ?? "shift";
 }
 
 /**
@@ -389,9 +246,7 @@ export function WorkspaceSidebar({
 	 * объект, режим оказывается null, и меню показывается целиком: пока режим не
 	 * известен, отнимать разделы нельзя.
 	 */
-	const clinicMode = resolveClinicMode(
-		useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode,
-	);
+	const clinicMode = useSettingsStore((s) => s.clinicMode);
 	/*
 	 * ВЫКЛЮЧЕННЫЙ МОДУЛЬ УБИРАЕТ РАЗДЕЛ ИЗ МЕНЮ.
 	 *
@@ -664,9 +519,7 @@ export function WorkspaceTopbar({
 	 * где его нет, и ни одна кнопка не была подсвечена. Текущая роль остаётся в
 	 * списке всегда — иначе человек не видит, где он находится.
 	 */
-	const clinicMode = resolveClinicMode(
-		useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode,
-	);
+	const clinicMode = useSettingsStore((s) => s.clinicMode);
 	const availableRoles = staffRoleChoices(
 		roleFocusOrder,
 		clinicMode,
