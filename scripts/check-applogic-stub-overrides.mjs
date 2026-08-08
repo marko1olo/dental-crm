@@ -82,16 +82,67 @@ function parse(file) {
 	);
 }
 
-/** Ключи, которые модуль-хук отдаёт наружу из своего возвращаемого объекта. */
-function exportedKeysOfHookModule(file) {
+/**
+ * Ключи, которые модуль-хук отдаёт наружу из СВОЕГО ВЕРХНЕУРОВНЕВОГО возврата.
+ *
+ * ПОЧЕМУ НЕ ИЗ ЛЮБОГО `return`. Первая версия собирала ключи из всех возвратов
+ * файла — и завышала список. Замер: в `useDocumentWorkflowModule.ts` ВОСЕМЬ
+ * объектов-возвратов (строки 1368, 2316, 2404, 2544, 2796, 2905, 2970, 3476), и
+ * семь из них принадлежат ВЛОЖЕННЫМ функциям. Ключ, возвращаемый внутренней
+ * функцией, наружу из модуля не выходит, и засчитывать его как экспорт нельзя:
+ * иначе гейт объявит перекрытием то, что модуль никогда не отдавал.
+ *
+ * Берётся возврат, объемлющая функция которого — сам экспортируемый хук.
+ */
+function exportedKeysOfHookModule(file, hookName) {
 	if (!existsSync(file)) return null;
 	const source = parse(file);
+
+	let hookFn = null;
+	const findHook = (node) => {
+		if (
+			ts.isFunctionDeclaration(node) &&
+			node.name?.text === hookName &&
+			node.body
+		) {
+			hookFn = node;
+		} else if (
+			ts.isVariableDeclaration(node) &&
+			ts.isIdentifier(node.name) &&
+			node.name.text === hookName &&
+			node.initializer &&
+			(ts.isArrowFunction(node.initializer) ||
+				ts.isFunctionExpression(node.initializer))
+		) {
+			hookFn = node.initializer;
+		}
+		node.forEachChild(findHook);
+	};
+	findHook(source);
+	if (!hookFn?.body) return null;
+
+	/* Возврат считается верхнеуровневым, если ближайшая объемлющая функция — сам хук. */
+	const enclosing = (node) => {
+		let cur = node.parent;
+		while (
+			cur &&
+			!ts.isFunctionDeclaration(cur) &&
+			!ts.isArrowFunction(cur) &&
+			!ts.isFunctionExpression(cur) &&
+			!ts.isMethodDeclaration(cur)
+		) {
+			cur = cur.parent;
+		}
+		return cur;
+	};
+
 	const keys = new Set();
 	const visit = (node) => {
 		if (
 			ts.isReturnStatement(node) &&
 			node.expression &&
-			ts.isObjectLiteralExpression(node.expression)
+			ts.isObjectLiteralExpression(node.expression) &&
+			enclosing(node) === hookFn
 		) {
 			for (const prop of node.expression.properties) {
 				if (
@@ -106,7 +157,7 @@ function exportedKeysOfHookModule(file) {
 		}
 		node.forEachChild(visit);
 	};
-	visit(source);
+	visit(hookFn.body);
 	return keys;
 }
 
@@ -145,7 +196,7 @@ const visitImports = (node) => {
 };
 visitImports(entrySource);
 
-const varToModule = new Map(); // имя переменной -> путь модуля
+const varToModule = new Map(); // имя переменной -> {путь модуля, имя хука}
 const visitDecls = (node) => {
 	if (
 		ts.isVariableDeclaration(node) &&
@@ -156,12 +207,101 @@ const visitDecls = (node) => {
 	) {
 		const hook = node.initializer.expression.text;
 		if (importedFrom.has(hook)) {
-			varToModule.set(node.name.text, importedFrom.get(hook));
+			varToModule.set(node.name.text, {
+				path: importedFrom.get(hook),
+				hook,
+			});
 		}
 	}
 	node.forEachChild(visitDecls);
 };
 visitDecls(entrySource);
+
+/*
+ * ТРАНЗИТИВНОЕ РАСКРЫТИЕ. Модуль может прийти не прямым вызовом хука, а
+ * извлечением из результата другого модуля:
+ *
+ *     const telegram = useTelegramModule({...});          // useAppLogic.tsx:1403
+ *     const { telegramSettingsModule } = telegram;        // useAppLogic.tsx:1419
+ *     ...
+ *     ...telegramSettingsModule,                          // раскрытие
+ *
+ * Первая версия такие места не сопоставляла и честно объявляла себя слепой.
+ * Слепое пятно в гейте опаснее отсутствия гейта: оно выглядит как проверка.
+ * Поэтому цепочка раскрывается: внутри модуля-владельца ищется, каким хуком
+ * порождено извлекаемое свойство, и берётся УЖЕ ЕГО файл.
+ */
+function resolveNestedModule(ownerModulePath, propertyName) {
+	if (!existsSync(ownerModulePath)) return null;
+	const source = parse(ownerModulePath);
+
+	const localImports = new Map();
+	const visitImp = (node) => {
+		if (
+			ts.isImportDeclaration(node) &&
+			ts.isStringLiteral(node.moduleSpecifier) &&
+			node.importClause?.namedBindings &&
+			ts.isNamedImports(node.importClause.namedBindings)
+		) {
+			const spec = node.moduleSpecifier.text;
+			if (spec.startsWith(".")) {
+				for (const el of node.importClause.namedBindings.elements) {
+					const base = resolve(dirname(ownerModulePath), spec);
+					for (const ext of [".ts", ".tsx", "/index.ts", "/index.tsx"]) {
+						if (existsSync(base + ext)) {
+							localImports.set(el.name.text, base + ext);
+							break;
+						}
+					}
+				}
+			}
+		}
+		node.forEachChild(visitImp);
+	};
+	visitImp(source);
+
+	let found = null;
+	const visitVar = (node) => {
+		if (
+			!found &&
+			ts.isVariableDeclaration(node) &&
+			ts.isIdentifier(node.name) &&
+			node.name.text === propertyName &&
+			node.initializer &&
+			ts.isCallExpression(node.initializer) &&
+			ts.isIdentifier(node.initializer.expression)
+		) {
+			const hook = node.initializer.expression.text;
+			if (localImports.has(hook)) {
+				found = { path: localImports.get(hook), hook };
+			}
+		}
+		node.forEachChild(visitVar);
+	};
+	visitVar(source);
+	return found;
+}
+
+const visitDestructured = (node) => {
+	if (
+		ts.isVariableDeclaration(node) &&
+		ts.isObjectBindingPattern(node.name) &&
+		node.initializer &&
+		ts.isIdentifier(node.initializer)
+	) {
+		const owner = varToModule.get(node.initializer.text);
+		if (owner) {
+			for (const el of node.name.elements) {
+				if (ts.isIdentifier(el.name) && !el.propertyName) {
+					const nested = resolveNestedModule(owner.path, el.name.text);
+					if (nested) varToModule.set(el.name.text, nested);
+				}
+			}
+		}
+	}
+	node.forEachChild(visitDestructured);
+};
+visitDestructured(entrySource);
 
 /*
  * Ищем ВОЗВРАЩАЕМЫЙ ОБЪЕКТ верхнего уровня — тот, что отдаёт сам `useAppLogic`.
@@ -207,18 +347,22 @@ const unresolved = [];
 for (const prop of target.properties) {
 	if (ts.isSpreadAssignment(prop) && ts.isIdentifier(prop.expression)) {
 		const varName = prop.expression.text;
-		const modulePath = varToModule.get(varName);
-		if (!modulePath) {
+		const mod = varToModule.get(varName);
+		if (!mod) {
 			unresolved.push({ varName, line: lineOf(prop) });
 			continue;
 		}
-		const keys = exportedKeysOfHookModule(modulePath);
+		const keys = exportedKeysOfHookModule(mod.path, mod.hook);
 		if (!keys) {
-			unresolved.push({ varName, line: lineOf(prop), modulePath });
+			unresolved.push({ varName, line: lineOf(prop), modulePath: mod.path });
 			continue;
 		}
 		for (const key of keys) {
-			spreadKeysSoFar.set(key, { varName, modulePath, line: lineOf(prop) });
+			spreadKeysSoFar.set(key, {
+				varName,
+				modulePath: mod.path,
+				line: lineOf(prop),
+			});
 		}
 		continue;
 	}
