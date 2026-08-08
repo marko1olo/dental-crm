@@ -782,7 +782,7 @@ export function Cornerstone3DViewer({
 		const avgHu = 650;
 
 		const newImplant: ImplantData = {
-			id: Math.random().toString(36).substring(7),
+			id: crypto.randomUUID(),
 			fdiCode: "36",
 			diameter: 4.0,
 			length: 10.0,
