@@ -1,0 +1,146 @@
+--- a/apps/api/src/db/imagingQuery.ts
++++ b/apps/api/src/db/imagingQuery.ts
+@@ -1,5 +1,5 @@
+ import type { ImagingStudy, ImagingViewerSessionState } from "@dental/shared";
+-import { and, eq } from "drizzle-orm";
++import { and, eq, inArray } from "drizzle-orm";
+ import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
+ import { db } from "./client.js";
+ import * as schema from "./schema.js";
+@@ -121,6 +121,71 @@ export async function getImagingStudyById(
+	return record ? mapImagingStudy(record) : null;
+ }
+
++export async function createImagingStudiesInDb(
++	organizationId: string,
++	inputs: Array<{
++		patientId: string;
++		visitId?: string | null | undefined;
++		kind: any;
++		title: string;
++		toothCode?: string | null | undefined;
++		region?: string | null | undefined;
++		sourceKind: any;
++		sourceName: string;
++		storagePath?: string | null | undefined;
++		dicomStudyUid?: string | null | undefined;
++		capturedAt?: string | null | undefined;
++		aiSummary?: string | null | undefined;
++	}>,
++): Promise<ImagingStudy[]> {
++	if (inputs.length === 0) return [];
++
++	// Get unique patient IDs
++	const patientIds = Array.from(new Set(inputs.map((i) => i.patientId)));
++
++	// Ownership assert: all patients must belong to caller org.
++	const ownedPatients = await db
++		.select({ id: schema.patients.id })
++		.from(schema.patients)
++		.where(
++			and(
++				eq(schema.patients.organizationId, organizationId),
++				inArray(schema.patients.id, patientIds),
++			),
++		);
++
++	if (ownedPatients.length !== patientIds.length) {
++		throw new Error("imaging create: some patients do not belong to organization");
++	}
++
++	const records = await db
++		.insert(schema.imagingStudies)
++		.values(
++			inputs.map((input) => ({
++				organizationId,
++				patientId: input.patientId,
++				visitId: input.visitId || null,
++				kind: input.kind,
++				title: input.title.length > 180 ? input.title.slice(0, 180) : input.title,
++				toothCode: input.toothCode || null,
++				region: input.region || null,
++				capturedAt: input.capturedAt ? new Date(input.capturedAt) : new Date(),
++				sourceKind: input.sourceKind,
++				sourceName:
++					input.sourceName.length > 160
++						? input.sourceName.slice(0, 160)
++						: input.sourceName,
++				storagePath: input.storagePath || null,
++				dicomStudyUid: input.dicomStudyUid || null,
++				status: "needs_review" as const,
++				aiSummary: input.aiSummary || null,
++			})),
++		)
++		.returning();
++
++	return records.map(mapImagingStudy);
++}
++
+ export async function createImagingStudyInDb(
+	organizationId: string,
+	input: {
+--- a/apps/api/src/routes/imaging.ts
++++ b/apps/api/src/routes/imaging.ts
+@@ -121,6 +121,7 @@ import { analyzeVisiographImage } from "../ai/visiograph.js";
+ import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
+ import {
+	createImagingStudyInDb,
++	createImagingStudiesInDb,
+	getAllImagingStudies,
+	getImagingStudiesForPatient,
+	getImagingStudyById,
+@@ -9522,31 +9523,30 @@ export async function commitImagingImport(
+		(row) =>
+			row.status === "ready" && row.patientId && row.kind && row.filePath,
+	);
+-	const createdStudyIds = await Promise.all(
+-		readyRows.map(async (row) => {
+-			const study = await createImagingStudyInDb(orgId, {
+-				patientId: row.patientId!,
+-				kind: row.kind!,
+-				title: row.title ?? kindLabels[row.kind!],
+-				toothCode: row.toothCode,
+-				region: row.region,
+-				sourceKind: row.sourceKind,
+-				sourceName: row.sourceName,
+-				storagePath: row.filePath,
+-				capturedAt: row.capturedAt ?? undefined,
+-				/*
+-				 * Здесь в aiSummary записывалось «Импортировано из …. Требует проверки
+-				 * снимка и привязки к ЭМК». Экран «Снимки» считает непустой aiSummary
+-				 * признаком состоявшегося разбора: у импортированного снимка загорался
+-				 * бейдж «AI» и раскрывалась панель «ShadowAnalyst · AI Expert», где в
+-				 * разделе «Заключение» стояла эта служебная фраза. Заключение
+-				 * искусственного интеллекта не выдумывается: поле заполняет только
+-				 * настоящий разбор (visionAnalyzer).
+-				 */
+-			});
+-			return study.id;
+-		}),
++	const createdStudies = await createImagingStudiesInDb(
++		orgId,
++		readyRows.map((row) => ({
++			patientId: row.patientId!,
++			kind: row.kind!,
++			title: row.title ?? kindLabels[row.kind!],
++			toothCode: row.toothCode,
++			region: row.region,
++			sourceKind: row.sourceKind,
++			sourceName: row.sourceName,
++			storagePath: row.filePath,
++			capturedAt: row.capturedAt ?? undefined,
++			/*
++			 * Здесь в aiSummary записывалось «Импортировано из …. Требует проверки
++			 * снимка и привязки к ЭМК». Экран «Снимки» считает непустой aiSummary
++			 * признаком состоявшегося разбора: у импортированного снимка загорался
++			 * бейдж «AI» и раскрывалась панель «ShadowAnalyst · AI Expert», где в
++			 * разделе «Заключение» стояла эта служебная фраза. Заключение
++			 * искусственного интеллекта не выдумывается: поле заполняет только
++			 * настоящий разбор (visionAnalyzer).
++			 */
++		})),
+	);
++	const createdStudyIds = createdStudies.map((s) => s.id);
+
+	return imagingImportCommitResponseSchema.parse({
+		sourceName: input.sourceName,
