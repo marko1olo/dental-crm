@@ -4,21 +4,74 @@ import { formatShortDate } from "../../AppHelpers";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { EmptyState } from "../EmptyState";
 
+/**
+ * Форма снята с маршрута, а не придумана: `routes/integrations/diagnocat.ts:41`
+ * делает `select()` по всей таблице и отвечает `{ success, reports }`.
+ * Отрисовка читает три поля — `id`, `reportUrl`, `createdAt`.
+ */
+type DiagnocatReport = {
+	readonly id: string;
+	readonly reportUrl: string;
+	readonly createdAt: string | null;
+};
+
 function DiagnocatReportWidget({ patientId }: { patientId: string }) {
-	const [reports, setReports] = useState<any[]>([]);
+	const [reports, setReports] = useState<DiagnocatReport[]>([]);
+	/*
+	 * ОТКАЗ ОБЯЗАН БЫТЬ ВИДЕН. Прежде состояние было `any[]`, ответ не
+	 * проверялся на `res.ok`, а отказ уходил в `console.error` — при пустом
+	 * списке виджет возвращает `null`, поэтому 403, 500 и «таблицы нет»
+	 * выглядели на экране ОДИНАКОВО с «отчётов не найдено». Врач не мог
+	 * отличить отсутствие снимков от неработающей интеграции.
+	 *
+	 * Это не догадка: таблицы `diagnocat_reports` не создавала ни одна из 135
+	 * миграций (замер 2026-08-08), то есть маршрут отвечал ошибкой, а виджет
+	 * молча прятался — неизвестно сколько времени.
+	 *
+	 * Всплывающее сообщение здесь не годится: виджет пассивный и грузится на
+	 * каждого пациента, всплытие на каждой карточке — шум. Поэтому отказ
+	 * показывается строкой внутри самого виджета.
+	 */
+	const [loadError, setLoadError] = useState<string | null>(null);
 	useEffect(() => {
 		if (!patientId) return;
+		let cancelled = false;
 		fetch(`/api/integrations/diagnocat/reports/${patientId}`, {
 			headers: denteAdminSecretRequestHeaders(),
 		})
-			.then((res) => res.json())
-			.then((data) => {
-				if (data.success && data.reports) {
-					setReports(data.reports);
-				}
+			.then(async (res) => {
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				return res.json();
 			})
-			.catch((err) => console.error("Failed to load AI reports", err));
+			.then((data: { success?: boolean; reports?: unknown }) => {
+				if (cancelled) return;
+				if (!data.success || !Array.isArray(data.reports)) {
+					throw new Error("Ответ сервера не содержит списка отчётов");
+				}
+				setReports(data.reports as DiagnocatReport[]);
+				setLoadError(null);
+			})
+			.catch((err) => {
+				if (cancelled) return;
+				console.error("Failed to load AI reports", err);
+				setLoadError("Отчёты Diagnocat недоступны");
+			});
+		/*
+		 * Смена пациента до ответа прежнего запроса иначе записала бы чужие
+		 * отчёты в открытую карточку — под именем другого человека.
+		 */
+		return () => {
+			cancelled = true;
+		};
 	}, [patientId]);
+
+	if (loadError) {
+		return (
+			<div style={{ color: "var(--red-dark)", fontSize: 13 }}>
+				<AlertTriangle size={14} /> {loadError}
+			</div>
+		);
+	}
 
 	if (reports.length === 0) return null;
 

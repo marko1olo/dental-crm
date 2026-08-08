@@ -8,16 +8,42 @@ export function UrgentScheduleRequestsWidget() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
+		/*
+		 * ОТВЕТ ПРОВЕРЯЕТСЯ ДО РАЗБОРА. Промис `fetch` отклоняется только на
+		 * сетевом отказе: 403 и 500 доходят сюда как обычный успех. Прежде тело
+		 * шло сразу в `res.json()` и оттуда в `setRequests`, поэтому при отказе в
+		 * состояние попадал объект `{ error: ... }` — а ниже по файлу стоит
+		 * `requests.map` (:66), и отрисовка падала на объекте. Врач видел белый
+		 * экран вместо списка срочных обращений.
+		 *
+		 * `Array.isArray` обязателен отдельно от `res.ok`: маршрут может ответить
+		 * 200 с телом другой формы, и тогда `.map` упадёт точно так же.
+		 */
 		fetch("/api/schedule/urgent-schedule-requests", {
 			credentials: "include",
 		})
-			.then((res) => res.json())
-			.then((data: UrgentScheduleRequest[]) => {
-				setRequests(data);
+			.then(async (res) => {
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}`);
+				}
+				return res.json();
+			})
+			.then((data: unknown) => {
+				if (!Array.isArray(data)) {
+					throw new Error("Ответ сервера не является списком обращений");
+				}
+				setRequests(data as UrgentScheduleRequest[]);
 				setLoading(false);
 			})
 			.catch((err) => {
 				console.error("Failed to fetch urgent requests", err);
+				showToast(
+					actionFailureToast(
+						"Не удалось загрузить срочные обращения",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setLoading(false);
 			});
 	}, []);
