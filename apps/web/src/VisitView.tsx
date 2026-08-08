@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { countLabel } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
@@ -449,10 +449,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
     только скрывается, но не размонтируется, чтобы не терялся набранный
     дневник приёма. Подробнее — в комментарии у самой вкладки.
   */
-	const [odontogramTabWasOpened, setOdontogramTabWasOpened] = useState(false);
-	React.useEffect(() => {
-		if (visitSubViewTab === "odontogram") setOdontogramTabWasOpened(true);
-	}, [visitSubViewTab]);
+	const odontogramTabWasOpened = useRef(false);
+	if (visitSubViewTab === "odontogram") {
+		odontogramTabWasOpened.current = true;
+	}
 
 	/*
     ЗАГРУЗКА И «ПАЦИЕНТ НЕ ВЫБРАН» — РАЗНЫЕ СОСТОЯНИЯ.
@@ -727,7 +727,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               жить. Заранее не монтируем — иначе дневник читался бы с сервера у
               каждого приёма, даже если врач в формулу не заходил.
             */}
-				{odontogramTabWasOpened && (
+				{odontogramTabWasOpened.current && (
 					<div
 						style={{
 							margin: "16px 0",
