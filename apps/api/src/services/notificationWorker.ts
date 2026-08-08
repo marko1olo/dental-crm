@@ -68,14 +68,6 @@ export async function scheduleNotification(input: {
 	});
 }
 
-// Neon styling for console
-const colors = {
-	reset: "\x1b[0m",
-	neonGreen: "\x1b[38;2;57;255;20px\x1b[1m",
-	neonBlue: "\x1b[38;2;0;255;255px\x1b[1m",
-	gray: "\x1b[90m",
-};
-
 export async function processNotificationQueue() {
 	try {
 		const pending = await db
