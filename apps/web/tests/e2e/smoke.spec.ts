@@ -145,14 +145,15 @@ test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => 
 		});
 
 		await page.goto("/", { waitUntil: "load" });
-		await page.waitForTimeout(2000);
+
+		// Login form should have an email input — wait for React lazy component hydration
+		const emailInput = page.locator("input[type=email], input[placeholder*='mail'], input[placeholder*='email']");
+		await expect(emailInput.first()).toBeVisible({ timeout: 10000 });
+
 		await screenshot(page, "02_login_screen");
 
 		const bodyHtml = await page.innerHTML("body");
 		expect(bodyHtml.length, "Login screen rendered empty body").toBeGreaterThan(200);
-		// Login form should have an email input
-		const emailInput = page.locator("input[type=email], input[placeholder*='mail'], input[placeholder*='email']");
-		await expect(emailInput.first()).toBeVisible({ timeout: 5000 });
 	});
 
 	test("3. Dashboard loads — sidebar navigation rail visible", async ({ page }) => {
@@ -210,6 +211,10 @@ test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => 
 		const bodyText = await page.locator("body").innerText();
 		expect(bodyText).not.toContain("Something went wrong");
 		expect(bodyText).not.toContain("Что-то пошло не так");
+		expect(bodyText).not.toContain("не открылось");
+		expect(bodyText).not.toContain("Раздел временно не открылся");
+		expect(bodyText).not.toContain("Не удалось открыть");
+		expect(bodyText).not.toContain("Ошибка рендеринга");
 		expect(pageErrors, `JS crashes:\n${pageErrors.join("\n")}`).toEqual([]);
 
 		if (consoleErrors.length > 0) {

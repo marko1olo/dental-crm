@@ -8,6 +8,7 @@ import type {
 	DenteTelegramOutboxSendResponse,
 } from "@dental/shared";
 import { useEffect, useRef } from "react";
+import type { DenteTelegramHandoffTarget } from "../../AppConstants";
 import {
 	operatorWorkflowFailureMessage,
 	readDenteTelegramHandoffTarget,
@@ -22,7 +23,6 @@ import { useSettingsStore } from "../../store/settingsStore";
 import { emptyTelegramVisualCardUrlDrafts } from "../../utils/draftDefaults";
 import { defaultTelegramPostVisitCheckupDelayHoursByTopic } from "../../workspaceStaticOptions";
 import { useTelegramSettings } from "../useTelegramSettings";
-import { DenteTelegramHandoffTarget } from "../../AppConstants";
 
 export type UseTelegramModuleOptions = {
 	settingsAdminSecretSession?: string | null;

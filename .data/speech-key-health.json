@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-08-08T16:41:43.295Z",
+  "savedAt": "2026-08-08T16:48:36.119Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
@@ -65,6 +65,22 @@
       "lastUsedAt": 1785952534389,
       "lastStatusCode": null,
       "lastError": "fetch failed"
+    },
+    "groq_whisper:4bda99f4f65e": {
+      "cooldownUntil": 1786208316118,
+      "failures": 1,
+      "successes": 0,
+      "lastUsedAt": 1786207716118,
+      "lastStatusCode": 401,
+      "lastError": "Invalid API Key"
+    },
+    "groq_whisper:ff6cbf984228": {
+      "cooldownUntil": 1786208315873,
+      "failures": 1,
+      "successes": 0,
+      "lastUsedAt": 1786207715873,
+      "lastStatusCode": 401,
+      "lastError": "Invalid API Key"
     }
   }
 }

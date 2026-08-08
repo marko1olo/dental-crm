@@ -5,6 +5,10 @@ import type {
 	StaffWorkingHours,
 } from "@dental/shared";
 import { useRef } from "react";
+import type {
+	AppointmentScheduleDraft,
+	StaffScheduleDraft,
+} from "../../AppConstants";
 import {
 	appointmentCreateInputFromDraft,
 	appointmentScheduleDraftFromAppointment,
@@ -24,7 +28,6 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
-import { AppointmentScheduleDraft, StaffScheduleDraft } from "../../AppConstants";
 
 /**
  * Сервер отказал в изменении расписания и требует секрет администратора.

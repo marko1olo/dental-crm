@@ -1,8 +1,8 @@
 import { AlertCircle, RefreshCw, Stethoscope } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 export interface EgiszMultipleDiagnosisItem {
 	id: string;

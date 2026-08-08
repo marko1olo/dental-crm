@@ -1,13 +1,13 @@
+import { logger } from "../../utils/logger";
 
 export function useMigrationQueries(options?: {
 	auth?: any;
 	clinicalMutationHeaders?: any;
 	clinicalReadHeaders?: any;
 }) {
-	let auth = options?.auth;
-	let clinicalMutationHeaders = options?.clinicalMutationHeaders;
-	let clinicalReadHeaders = options?.clinicalReadHeaders;
-
+	const auth = options?.auth;
+	const clinicalMutationHeaders = options?.clinicalMutationHeaders;
+	const clinicalReadHeaders = options?.clinicalReadHeaders;
 
 	const getHeaders = (isMutation: boolean, extra?: Record<string, string>) => {
 		if (auth) {
@@ -78,7 +78,9 @@ export function useMigrationQueries(options?: {
 	};
 
 	const pickBrowserMigrationSource = () => {
-		const el = document.querySelector<HTMLInputElement>('[data-testid="browser-migration-folder-input"]');
+		const el = document.querySelector<HTMLInputElement>(
+			'[data-testid="browser-migration-folder-input"]',
+		);
 		if (el) el.click();
 	};
 	const planMigrationDiscoveryCandidate = async (candidate: any) => {
@@ -89,7 +91,9 @@ export function useMigrationQueries(options?: {
 		});
 	};
 	const previewMigrationDiscoveryCandidate = async (candidate: any) => {};
-	const previewMigrationAutopilotSources = async (sourceFingerprint?: string | null) => {};
+	const previewMigrationAutopilotSources = async (
+		sourceFingerprint?: string | null,
+	) => {};
 	const probeMigrationDiscoveryCandidate = async (candidate: any) => {
 		return fetch("/api/imports/smart/local-source-probe", {
 			method: "POST",
@@ -133,11 +137,14 @@ export function useMigrationQueries(options?: {
 	};
 	const downloadMigrationHandoffReport = async (payload?: any) => {
 		try {
-			const res = await fetch("/api/imports/smart/migration-autopilot/report.csv", {
-				method: "POST",
-				headers: getHeaders(true, { "content-type": "application/json" }),
-				body: JSON.stringify(payload ?? {}),
-			});
+			const res = await fetch(
+				"/api/imports/smart/migration-autopilot/report.csv",
+				{
+					method: "POST",
+					headers: getHeaders(true, { "content-type": "application/json" }),
+					body: JSON.stringify(payload ?? {}),
+				},
+			);
 			if (!res.ok) throw new Error("Failed to download report");
 			const blob = await res.blob();
 			const url = URL.createObjectURL(blob);
@@ -149,7 +156,7 @@ export function useMigrationQueries(options?: {
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			console.error("downloadMigrationHandoffReport error", e);
+			logger.error("downloadMigrationHandoffReport error", e);
 		}
 	};
 	const downloadSmartImportSafeHandoffReport = async (payload?: any) => {
@@ -170,7 +177,7 @@ export function useMigrationQueries(options?: {
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			console.error("downloadSmartImportSafeHandoffReport error", e);
+			logger.error("downloadSmartImportSafeHandoffReport error", e);
 		}
 	};
 	const downloadSmartImportReport = async (payload?: any) => {
@@ -191,7 +198,7 @@ export function useMigrationQueries(options?: {
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			console.error("downloadSmartImportReport error", e);
+			logger.error("downloadSmartImportReport error", e);
 		}
 	};
 	const handleBrowserMigrationInputChange = async (_files: any) => {};

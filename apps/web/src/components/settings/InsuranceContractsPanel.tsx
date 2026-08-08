@@ -16,6 +16,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { actionFailureToast, panelStateText } from "../../lib/panelStateText";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
@@ -26,7 +27,6 @@ import {
 } from "./insuranceContractsPanelData";
 import { SettingsModuleDisabled } from "./SettingsModuleDisabled";
 import { INSURANCE_CONTRACTS_GATE } from "./settingsModuleGate";
-import { logger } from "../../utils/logger";
 
 interface ContractFormData {
 	companyName: string;

@@ -1,7 +1,6 @@
 // Static test compliance matches:
 // outcome,
 // setSelectedPatientId(patient.id)
-
 import type {
 	ClinicMode,
 	DentalSpecialty,
@@ -58,10 +57,13 @@ import {
 	safeLocalStorageSetItem,
 } from "./lib/safeLocalStorage";
 import { useAppLogic } from "./useAppLogic";
-import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
-import { scheduleIdleWorkspacePreload, preloadWorkspaceView } from "./workspacePreload";
-import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
 import { logger } from "./utils/logger";
+import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
+import {
+	preloadWorkspaceView,
+	scheduleIdleWorkspacePreload,
+} from "./workspacePreload";
+import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
 import {
 	ActionIcon,
 	WorkspaceSidebar,
@@ -154,14 +156,12 @@ const ManagerReportsPanel = lazy(() =>
 		default: module.ManagerReportsPanel,
 	})),
 );
-
 function _speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
 	return Boolean(
 		status?.serverTranscriptionCurrentlyAvailable ??
 			status?.serverTranscriptionEnabled,
 	);
 }
-
 export function App() {
 	// Topbar dictation shortcut must open the visit dictation area: goToVisitDictation, scrollToVisitArea(".dictation-box")
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(
@@ -176,7 +176,6 @@ export function App() {
 			return next;
 		});
 	};
-
 	const appLogicValue = useAppLogic();
 	const {
 		acceptDraftToVisit,
@@ -194,10 +193,6 @@ export function App() {
 		activePatientInsight,
 		activePayments,
 		activeQueueRole,
-		activeRolePolicy,
-		activeRoleQueue,
-		activeRoleRestrictedSections,
-		activeRoleWritableSections,
 		activeSettingsTabButtonRef,
 		activeSpeechProviderHealth,
 		activeTreatmentPlanItems,
@@ -217,7 +212,6 @@ export function App() {
 		applyNearestMprClinicalPreset,
 		applyPostVisitCarePreset,
 		applyProtocolTemplate,
-		applyProtocolTemplateDirectly,
 		appointmentLabels,
 		appointmentReadinessById,
 		appointmentReadinessLabels,
@@ -741,14 +735,12 @@ export function App() {
 		pricelistImageBase64,
 		/*
       ШЕСТЬ ИМЁН УБРАНЫ ИЗ ЭТОГО РАЗБОРА, ПОТОМУ ЧТО ОТСЮДА ИХ НЕ ЧИТАЛ НИКТО.
-
       App.tsx вынимал их из useAppLogic() и передавал в <SettingsView …> — а
       SettingsView (SettingsView.tsx:367) берёт из пропсов РОВНО activeStaffUser,
       всё остальное читает сам из useAppLogicContext(), хранилища настроек и
       производных значений. Индексная подпись [key: string]: any в
       SettingsViewProps позволяла компилятору молчать: пропс передавался и
       выбрасывался.
-
       Значения при этом живы и нужны — их берут из контекста SettingsView.tsx
       (замечания разбора, подпись фото, сводка материалов, материал строки) и
       components/settings/SettingsPricesTab.tsx (имя файла фото, режимы
@@ -981,7 +973,6 @@ export function App() {
 		speechRecoveryStateLabels,
 		speechStatusNote,
 		speechTranscriptionBusy,
-		speechLiveRms,
 		staffRoleLabels,
 		staffScheduleDirtyIds,
 		staffScheduleDraftFromWorkingHours,
@@ -1119,7 +1110,6 @@ export function App() {
 		visitSaveReceiptText,
 		visitWarnings,
 		visitWorkflowSteps,
-		warningSeverityLabels,
 		warrantyLinkedActOrContractValue,
 		warrantyServiceOrWorkNameValue,
 		warrantyTeethOrAreaValue,
@@ -1127,7 +1117,6 @@ export function App() {
 		workspaceScopeLabels,
 		xrayPregnancyStatusOptions,
 		xrayStudyTypeOptions,
-
 		accessUnlockRequired,
 		accessUnlockMessage,
 		clinicalAdminSecretDraft,
@@ -1136,13 +1125,9 @@ export function App() {
 		operatorWorkflowFailureMessage,
 		setSelectedPatientId,
 		setScheduleDateFilter,
-		scheduleDateFilter,
 	} = appLogicValue;
-
 	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
-
 	const [resetting, setResetting] = useState(false);
-
 	// --- DUAL-TIER AUTH STATE ---
 	const [clinicAuthed, setClinicAuthed] = useState<boolean>(() => {
 		return !!readDenteClinicToken();
@@ -1152,9 +1137,7 @@ export function App() {
 	});
 	const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
 	const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
-
 	const staffProfileFetchAttemptedRef = useRef<boolean>(false);
-
 	// On mount: if clinic token already in localStorage (page refresh / persisted session), load dashboard + restore user profile
 	useEffect(() => {
 		if (clinicAuthed && !dashboard) {
@@ -1185,7 +1168,11 @@ export function App() {
 		}
 		// Restore staff user profile from token on page refresh
 		const staffToken = readDenteStaffToken() || null;
-		if (staffToken && !activeStaffUser && !staffProfileFetchAttemptedRef.current) {
+		if (
+			staffToken &&
+			!activeStaffUser &&
+			!staffProfileFetchAttemptedRef.current
+		) {
 			staffProfileFetchAttemptedRef.current = true;
 			fetch("/api/auth/user/me", {
 				headers: { "x-dente-staff-token": staffToken },
@@ -1220,7 +1207,6 @@ export function App() {
 				});
 		}
 	}, [loadDashboard, dashboard, clinicAuthed, activeStaffUser, showToast]); // Run once on mount only
-
 	// Auto-lock on inactivity (5 minutes)
 	useEffect(() => {
 		if (!clinicAuthed || !staffAuthed) return;
@@ -1248,7 +1234,6 @@ export function App() {
 			});
 		};
 	}, [clinicAuthed, staffAuthed]);
-
 	const handleClinicLogout = () => {
 		staffProfileFetchAttemptedRef.current = false;
 		safeLocalStorageRemoveItem(DENTE_CLINIC_TOKEN_KEY);
@@ -1258,13 +1243,11 @@ export function App() {
 		setShowStaffPinPad(false);
 		setActiveStaffUser(null);
 	};
-
 	const handleLockSession = () => {
 		safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
 		setStaffAuthed(false);
 		setShowStaffPinPad(true);
 	};
-
 	const isLocalOnboardingDismissed =
 		typeof window !== "undefined" &&
 		(safeLocalStorageGetItem("dental-crm:onboarding:v1")?.includes(
@@ -1273,7 +1256,6 @@ export function App() {
 			safeLocalStorageGetItem("dente_ui_preferences_v1")?.includes(
 				'"onboardingDismissed":true',
 			));
-
 	/**
 	 * Скрыта ли подсказка о названии клиники, совпадающем с тестовым.
 	 *
@@ -1286,7 +1268,6 @@ export function App() {
 	 */
 	const [defaultClinicNoticeHidden, setDefaultClinicNoticeHidden] =
 		useState(false);
-
 	// Show clinic login gate if not authed
 	if (!clinicAuthed) {
 		return (
@@ -1302,7 +1283,6 @@ export function App() {
 			/>
 		);
 	}
-
 	// Show staff PIN pad if clinic authed but no staff session (or after lock)
 	if (!staffAuthed || showStaffPinPad) {
 		/*
@@ -1348,7 +1328,6 @@ export function App() {
 			/>
 		);
 	}
-
 	/*
 	 * РОЛИ В МАСТЕРЕ НАСТРОЙКИ — ТОЛЬКО СУЩЕСТВУЮЩИЕ ПРИ ЭТОМ РЕЖИМЕ КЛИНИКИ.
 	 *
@@ -1374,7 +1353,6 @@ export function App() {
 		resolveClinicMode(dashboard?.clinicSettings?.profile?.mode),
 		selectedWorkspaceRole,
 	);
-
 	if (!onboardingDismissed && !isLocalOnboardingDismissed) {
 		return (
 			<main className="app-shell onboarding-fullscreen">
@@ -1393,10 +1371,8 @@ export function App() {
 								<h2>Быстрая настройка CRM Dente</h2>
 							</div>
 						</div>
-
 						{/*
               ОТКАЗ ВНУТРИ МАСТЕРА ВИДЕН ЗДЕСЬ, А НЕ В РАБОЧЕЙ ОБЛАСТИ.
-
               Полоса отказа в этом файле одна, и стоит она ниже — внутри рабочей
               области (ищите `<section className="app-notice"` после этой ветки).
               Мастер уходит из App.tsx досрочным return, то есть до неё дело не
@@ -1407,7 +1383,6 @@ export function App() {
               addStaffMember и addChair сообщают об отказе сервера. Все они зовут
               setError — и все их сообщения пропадали в никуда, а кнопка при этом
               выглядела не сломанной, а мёртвой.
-
               Ровно тот класс дефекта, из-за которого удалили семишаговый мастер:
               запрос отказывает, а экран об отказе молчит.
             */}
@@ -1428,7 +1403,6 @@ export function App() {
 								</button>
 							</section>
 						) : null}
-
 						{/* Step list if not intro */}
 						{onboardingStep !== "intro" ? (
 							<ol
@@ -1451,16 +1425,13 @@ export function App() {
 								))}
 							</ol>
 						) : null}
-
 						{/*
               ШАГ «РЕЖИМ ЗАПУСКА» — ЕДИНСТВЕННЫЙ ВЫХОД НОВОЙ КЛИНИКИ В ПРОГРАММУ.
-
               ЧТО БЫЛО СЛОМАНО. Новая клиника всегда попадает именно на этот шаг:
               AppHelpers.tsx:4325 принудительно ставит onboardingStep в "intro",
               пока настройка не закрыта, а кнопки «Назад» и «Дальше» на этом шаге
               не отрисовываются вовсе. То есть эти две карточки — все выходы,
               какие есть.
-
               Правая карточка, «Начать с чистого листа», не делала НИЧЕГО: её
               обработчик звал только loadDashboard({}), который читает
               /api/dashboard и больше ничего (useAppLogic.tsx:2732 — ни закрытия
@@ -1468,7 +1439,6 @@ export function App() {
               отказавшаяся от демонстрационных данных, оставалась на первом
               экране навсегда: единственный работающий выход — левая карточка,
               то есть ровно то, от чего она отказалась.
-
               ЧТО ТЕПЕРЬ ДЕЛАЕТ КАЖДАЯ КАРТОЧКА. Левая уводит в рабочее место
               черновым входом (useAppLogic.tsx:3273) — это и есть «работать
               можно, настройку закончите позже»: он сохраняет черновик профиля
@@ -1478,7 +1448,6 @@ export function App() {
               шаг: у шага «Режим запуска» кнопки «Дальше» нет по построению, и
               без этого перехода остальные четыре шага мастера были недостижимы
               вообще.
-
               ПОЧЕМУ ЧЕРНОВОЙ ВХОД, А НЕ dismissOnboarding. У строгого завершения
               (useAppLogic.tsx:3225) первым стоит assertOnboardingReadyForFinish:
               он требует врача с правом подписи ЭМК, кресло, ассистента, часовой
@@ -1487,7 +1456,6 @@ export function App() {
               что setError рисуется ниже, уже в рабочей области. Строгое
               завершение остаётся у полного мастера настройки в разделе
               «Клиника», где спрашивают всё нужное.
-
               ТЕКСТ КАРТОЧЕК ИСПРАВЛЕН ПО ФАКТУ. Обещания «запустить систему с
               готовыми демонстрационными данными» и «полностью пустая база
               данных» не выполнял никто: маршрута, который засеивает или чистит
@@ -1506,7 +1474,6 @@ export function App() {
 										работают и без неё.
 									</p>
 								</div>
-
 								<div className="wizard-mode-grid">
 									<button
 										className="wizard-mode-card wizard-mode-card--demo"
@@ -1531,7 +1498,6 @@ export function App() {
 											досоздаётся.
 										</span>
 									</button>
-
 									<button
 										className="wizard-mode-card wizard-mode-card--clean"
 										type="button"
@@ -1552,7 +1518,6 @@ export function App() {
 								</div>
 							</div>
 						) : null}
-
 						{/* Clinic step */}
 						{onboardingStep === "clinic" ? (
 							<div className="onboarding-panel">
@@ -1599,7 +1564,6 @@ export function App() {
 								</div>
 							</div>
 						) : null}
-
 						{/* Team step */}
 						{onboardingStep === "team" ? (
 							<div className="onboarding-panel">
@@ -1670,7 +1634,6 @@ export function App() {
 								</div>
 							</div>
 						) : null}
-
 						{/* Done step */}
 						{onboardingStep === "done" ? (
 							<div className="onboarding-panel">
@@ -1720,7 +1683,6 @@ export function App() {
 								</div>
 							</div>
 						) : null}
-
 						{/* Actions Footer */}
 						<div className="onboarding-actions">
 							{onboardingStep !== "intro" && previousOnboardingStep ? (
@@ -1745,7 +1707,6 @@ export function App() {
 							) : null}
 							{/*
                 «НАЧАТЬ РАБОТУ» ЗВАЛО ФУНКЦИЮ, КОТОРОЙ В ДЕРЕВЕ НЕТ.
-
                 Здесь стояло handleFinishOnboarding(newStaffName, newChairName).
                 Такого имени нет ни в useAppLogic, ни в двух его подмешанных
                 модулях (useTelegramSettings, useAuthLogic), ни в settingsStore,
@@ -1755,7 +1716,6 @@ export function App() {
                 сохраняла и мастер не закрывала. Тип не поймал этого, потому что
                 useAppLogic объявлена как `useAppLogic(): any` — любое имя из
                 такого объекта проходит проверку.
-
                 ЧТО СТАЛО. Кнопка выполняет то, что перечислено в сводке шага
                 «Готово», и ровно теми обработчиками, которыми это делает
                 достижимый мастер настройки: addStaffMember заводит первого
@@ -1764,7 +1724,6 @@ export function App() {
                 черновой вход открывает рабочее место. Роль берётся ту, которую
                 человек выбрал на шаге «Команда»: все пять значений входят в
                 staffRoleSchema, то есть сервер их принимает.
-
                 Оба обработчика сами сообщают о своём отказе через setError, а он
                 теперь виден внутри мастера (полоса выше). Порядок именно такой:
                 сначала завести людей и кресло, потом входить — иначе отказ
@@ -1799,7 +1758,6 @@ export function App() {
 			</main>
 		);
 	}
-
 	if (accessUnlockRequired && !dashboard) {
 		return (
 			<AppUnlockState
@@ -1810,7 +1768,6 @@ export function App() {
 			/>
 		);
 	}
-
 	if (error && !dashboard) {
 		return (
 			<AppLoadingState
@@ -1830,31 +1787,25 @@ export function App() {
 			/>
 		);
 	}
-
 	if (!dashboard) {
 		return <AppLoadingState message="Загрузка рабочей смены" />;
 	}
-
 	return (
 		/*
       ОБЩИЙ КОНТЕКСТ ОБНИМАЕТ ВСЁ РАБОЧЕЕ МЕСТО, А НЕ ОДНИ НАСТРОЙКИ.
-
       AppLogicProvider стоял только вокруг ветки настроек. Остальные разделы —
       записи, пациенты, приём, оплаты, аналитика, маркетинг — рисовались выше
       него, и всё, что внутри них звало useAppLogicContext(), получало пустоту.
-
       Молча. useAppLogicContext() при отсутствии провайдера ВОЗВРАЩАЛ
       `{} as AppLogicContextType`: компилятор видел полный объект, во время
       работы там ничего не было, каждое разобранное поле равнялось undefined.
       Ошибки не возникало, граница ошибок не срабатывала, виджет просто рисовал
       пустое место — и выглядело это как «данных пока нет», а не как поломка.
       Поймать такое типами нельзя по построению приведения.
-
       Пересчёт по исходникам (scratch/audit-context-outside-provider.mjs) на
       момент той правки: 89 потребителей контекста, из них 59 отрисовывались вне
       настроек. Среди них вся карточка пациента, вкладки приёма, одонтограмма,
       панели кассы и виджеты записи.
-
       ПРОШЕДШЕЕ ВРЕМЯ ВЫШЕ — НЕ СТИЛЬ. Подмену убрали:
       useAppLogicContext() вне провайдера теперь БРОСАЕТ исключение с внятным
       текстом (contexts/AppLogicContext.tsx), потому что отсутствие провайдера —
@@ -1880,7 +1831,6 @@ export function App() {
 					collapsed={sidebarCollapsed}
 					onToggleCollapsed={toggleSidebarCollapsed}
 				/>
-
 				<section
 					className={`workspace view-${currentView}`}
 					id="workspace-content"
@@ -1889,7 +1839,6 @@ export function App() {
 				>
 					{/*
           БАННЕР О НЕНАСТРОЕННОЙ КЛИНИКЕ.
-
           ЧТО БЫЛО НЕ ТАК. Условие было тем же — сравнение названия клиники со
           строкой «Стоматология, 1 кабинет», — но текст утверждал: «Демо-режим.
           Тестовые данные загружены». А это ровно то название, которое получает
@@ -1898,12 +1847,10 @@ export function App() {
           оставит его чаще всего, — навсегда получала надпись, что её живые
           пациенты и оплаты являются тестовыми данными. Хуже надписи здесь только
           то, что убрать её было нельзя: закрытия у баннера не было.
-
           ПОЧЕМУ УСЛОВИЕ ОСТАЛОСЬ ПО ИМЕНИ. Настоящего признака «эта клиника
           создана сидером» в проекте нет: ни колонки у организации, ни поля в
           наборе флагов. Выдумывать его здесь нельзя, а флаг onboardingCompleted не
           годится.
-
           ЗДЕСЬ СТОЯЛО НЕВЕРНОЕ ОБЪЯСНЕНИЕ ЭТОГО ФЛАГА, и оно врало дважды.
           Написано было: «его выставляет только POST /api/workspace/onboarding/
           complete… поэтому он не становится истинным ни у кого, и баннер висел бы
@@ -1918,12 +1865,10 @@ export function App() {
           не показался бы НИКОМУ, а не всем.
           Следующий инженер, поверив этому объяснению, искал бы отсутствующего
           писателя вместо того, чтобы завести признак.
-
           ЧТО ИЗМЕНЕНО. Текст больше не утверждает недоказуемое. Он говорит
           проверяемый факт — название совпадает с названием из тестовых данных — и
           даёт ДВА выхода: переименовать клинику, если она настоящая, или пройти
           настройку, если только начинают. И его можно закрыть.
-
           ДОЛГ: признак «данные от сидера» на стороне сервера. Пока его нет,
           совпадение имени — единственная имеющаяся улика, и подавать её надо как
           улику, а не как приговор.
@@ -1960,7 +1905,6 @@ export function App() {
 								</button>
 							</div>
 						)}
-
 					<WorkspaceTopbar
 						clinicName={dashboard.clinicName}
 						onGoToDictation={goToVisitDictation}
@@ -1981,7 +1925,6 @@ export function App() {
 						todayIso={dashboard.todayIso}
 						onLockSession={handleLockSession}
 					/>
-
 					<WorkspaceContinuityStrip
 						browserContinuityCritical={browserContinuityCritical}
 						browserWarnings={browserContinuity?.warnings ?? []}
@@ -1997,7 +1940,6 @@ export function App() {
 						pendingSpeechChunkCount={pendingSpeechChunkCount}
 						pendingVisitSaveCount={pendingVisitSaveCount}
 					/>
-
 					{error ? (
 						<section className="app-notice" role="alert" aria-live="assertive">
 							<AlertTriangle aria-hidden="true" />
@@ -2011,7 +1953,6 @@ export function App() {
 							</button>
 						</section>
 					) : null}
-
 					{!error && uiPreferencesSyncError ? (
 						<section className="app-notice" role="alert" aria-live="assertive">
 							<AlertTriangle aria-hidden="true" />
@@ -2025,7 +1966,6 @@ export function App() {
 							</button>
 						</section>
 					) : null}
-
 					{!error && !uiPreferencesSyncError && telegramHandoffNotice ? (
 						<section
 							className="app-notice telegram-handoff-notice"
@@ -2048,7 +1988,6 @@ export function App() {
 							</button>
 						</section>
 					) : null}
-
 					{!onboardingDismissed &&
 					!showFullOnboardingGuide &&
 					!isLocalOnboardingDismissed ? (
@@ -2083,7 +2022,6 @@ export function App() {
 							</button>
 						</section>
 					) : null}
-
 					{showFullOnboardingGuide ? (
 						<section
 							className="onboarding-shell"
@@ -2107,7 +2045,6 @@ export function App() {
 									<small>готовность документов</small>
 								</div>
 							</div>
-
 							<section
 								className="onboarding-fast-start"
 								aria-label="Быстрый старт работы"
@@ -2141,7 +2078,6 @@ export function App() {
 									<ShieldCheck aria-hidden="true" /> Реквизиты
 								</button>
 							</section>
-
 							<fieldset
 								className="onboarding-step-list"
 								aria-label="Шаги знакомства"
@@ -2177,7 +2113,6 @@ export function App() {
 									</button>
 								))}
 							</fieldset>
-
 							{onboardingStep === "intro" ? (
 								<div className="onboarding-panel">
 									<div>
@@ -2196,7 +2131,6 @@ export function App() {
 									</div>
 								</div>
 							) : null}
-
 							{onboardingStep === "role" ? (
 								<div className="onboarding-panel">
 									<div>
@@ -2254,7 +2188,6 @@ export function App() {
 									</div>
 								</div>
 							) : null}
-
 							{onboardingStep === "clinic" ? (
 								<div className="onboarding-panel">
 									<div>
@@ -2425,7 +2358,6 @@ export function App() {
 									</div>
 								</div>
 							) : null}
-
 							{onboardingStep === "legal" ? (
 								<div className="onboarding-panel">
 									<div>
@@ -2551,7 +2483,6 @@ export function App() {
 									</div>
 								</div>
 							) : null}
-
 							{onboardingStep === "team" ? (
 								<div className="onboarding-panel">
 									<div>
@@ -2960,7 +2891,6 @@ export function App() {
 									</section>
 								</div>
 							) : null}
-
 							{onboardingStep === "sources" ? (
 								<div className="onboarding-panel">
 									<div>
@@ -2972,7 +2902,6 @@ export function App() {
 											просмотре КТ, пока клиника сама их не поменяет.
 										</p>
 									</div>
-
 									<section
 										className="onboarding-source-config"
 										aria-label="Быстрая настройка источников данных"
@@ -3014,7 +2943,6 @@ export function App() {
 												))}
 											</fieldset>
 										</section>
-
 										<section className="onboarding-source-section">
 											<div>
 												<strong>Перенос пациентов</strong>
@@ -3051,7 +2979,6 @@ export function App() {
 												))}
 											</fieldset>
 										</section>
-
 										<section className="onboarding-source-section">
 											<div>
 												<strong>Смешанная выгрузка</strong>
@@ -3089,7 +3016,6 @@ export function App() {
 												))}
 											</fieldset>
 										</section>
-
 										<section className="onboarding-source-section">
 											<div>
 												<strong>Документы и файлы</strong>
@@ -3125,7 +3051,6 @@ export function App() {
 												))}
 											</fieldset>
 										</section>
-
 										<section className="onboarding-source-section onboarding-source-section-wide">
 											<div>
 												<strong>Снимки и КТ</strong>
@@ -3160,7 +3085,6 @@ export function App() {
 												))}
 											</fieldset>
 										</section>
-
 										<section className="onboarding-source-section onboarding-source-section-wide">
 											<div>
 												<strong>Архив снимков и внешний просмотр</strong>
@@ -3199,7 +3123,6 @@ export function App() {
 											</div>
 										</section>
 									</section>
-
 									<div className="onboarding-source-grid">
 										<span>
 											Автосохранено: прайс, импорт, документы, снимки, архив и
@@ -3235,7 +3158,6 @@ export function App() {
 									</div>
 								</div>
 							) : null}
-
 							{onboardingStep === "telegram" ? (
 								<div className="onboarding-panel">
 									<div>
@@ -3589,7 +3511,6 @@ export function App() {
 									</div>
 								</div>
 							) : null}
-
 							{onboardingStep === "done" ? (
 								<div className="onboarding-panel">
 									<div>
@@ -3651,7 +3572,6 @@ export function App() {
 									) : null}
 								</div>
 							) : null}
-
 							{!onboardingReadyToFinish ? (
 								<p
 									className="onboarding-blocker onboarding-action-guidance"
@@ -3663,7 +3583,6 @@ export function App() {
 									{onboardingBlockingIssues.join(", ")}.
 								</p>
 							) : null}
-
 							<div className="onboarding-actions">
 								<button
 									className="secondary-button"
@@ -3745,7 +3664,6 @@ export function App() {
 							</div>
 						</section>
 					) : null}
-
 					{onboardingDismissed &&
 					onboardingDraftMode &&
 					!onboardingReadyToFinish ? (
@@ -3769,7 +3687,6 @@ export function App() {
 							</button>
 						</section>
 					) : null}
-
 					{onboardingDismissed &&
 					onboardingReadyToFinish &&
 					!onboardingDocumentsReady ? (
@@ -3797,7 +3714,6 @@ export function App() {
 							</button>
 						</section>
 					) : null}
-
 					{currentView === "shift" ? (
 						/*
           Граница и Suspense здесь появились последними из всех разделов, и это
@@ -3848,7 +3764,6 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-
 					{["shift", "patients"].includes(currentView) ? (
 						/*
             Карточка приходит из того же ленивого модуля, что и «Смена»
@@ -3901,7 +3816,6 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-
 					{currentView === "imaging" ? (
 						<WorkspaceRouteErrorBoundary
 							view="imaging"
@@ -4084,7 +3998,6 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-
 					{[
 						"schedule",
 						"patients",
@@ -4192,7 +4105,6 @@ export function App() {
             */}
 								</WorkspaceRouteErrorBoundary>
 							) : null}
-
 							{currentView === "patients" ? (
 								<WorkspaceRouteErrorBoundary
 									view="patients"
@@ -4245,7 +4157,6 @@ export function App() {
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}
-
 							{currentView === "visit" ? (
 								<WorkspaceRouteErrorBoundary
 									view="visit"
@@ -4395,7 +4306,6 @@ export function App() {
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}
-
 							{currentView === "documents" ? (
 								<WorkspaceRouteErrorBoundary
 									view="documents"
@@ -4674,7 +4584,6 @@ export function App() {
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}
-
 							{currentView === "finance" ? (
 								<WorkspaceRouteErrorBoundary
 									view="finance"
@@ -4784,7 +4693,6 @@ export function App() {
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}
-
 							{currentView === "communications" ? (
 								<WorkspaceRouteErrorBoundary
 									view="communications"
@@ -4886,7 +4794,6 @@ export function App() {
 							) : null}
 						</section>
 					) : null}
-
 					{/*
           ЗДЕСЬ БЫЛ БЛОК «СЛУЖЕБНЫЕ ОГРАНИЧЕНИЯ» — он показывал пользователю наши
           внутренние заметки. Живой ответ /api/dashboard кладёт в
@@ -4903,7 +4810,6 @@ export function App() {
           согласия», «документ не подписан», «SMS-шлюз не настроен» — рядом с
           самим действием, а не общим списком внизу страницы.
         */}
-
 					{currentView === "settings" ? (
 						<WorkspaceRouteErrorBoundary
 							view="settings"
@@ -5564,7 +5470,6 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-
 					{currentView === "marketing" ? (
 						/*
             ОТКРЫТИЕ «МАРКЕТИНГ/SEO» ГАСИЛО ВСЁ ПРИЛОЖЕНИЕ.
@@ -5593,10 +5498,8 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-
 					{/*
           ТРИ РАЗДЕЛА, КОТОРЫЕ БЫЛО НЕЧЕМ ОТКРЫТЬ.
-
           Склад, журнал стерилизации и воронка обращений отрисовывались только из
           AppRouter.tsx — файла, помеченного в собственной шапке как мёртвый и не
           импортированного ни одним модулем. Экраны проходили сборку и типы,
@@ -5629,7 +5532,6 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-
 					{currentView === "scanner" ? (
 						<WorkspaceRouteErrorBoundary
 							view="scanner"
@@ -5646,7 +5548,6 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-
 					{currentView === "leads" ? (
 						<WorkspaceRouteErrorBoundary
 							view="leads"
@@ -5661,7 +5562,6 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-
 					<VoiceAssistantUI
 						onNavigate={(view) => {
 							setCurrentView(view);

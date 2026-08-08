@@ -1,41 +1,83 @@
-# Project: DENTE CRM Architectural Restoration (`apps/web`)
+# Project: DENTE CRM Architectural Hardening & God-Object Dismantling
 
 ## Architecture
-- Monorepo: `apps/web` (React client), `apps/api` (Fastify backend).
-- Primary State Monolithic API: `apps/web/src/useAppLogic.tsx`
-- Domain Hooks Directory: `apps/web/src/hooks/domains/`
-  - `useDocumentWorkflowModule.ts`
-  - `useDicomWorkbenchModule.ts`
-  - `useMigrationQueries.ts`
-  - `useStaffSettingsLogic.ts`
-  - `useClinicalVisitLogic.ts` / `useVisitLogic.ts`
-  - `useScheduleLogic.ts`
-  - `usePatientLogic.ts` / `usePatientIntakeLogic.ts`
-  - `useVoiceAssistant.ts`
-  - `useMprLogic.ts`
-  - `useCommunicationsQueries.ts`
+- Frontend Client: `apps/web` (React 19, Vite 6, Tailwind CSS v4, hash-based routing).
+- Monorepo Packages: `@dental/web` (SPA client), `@dental/api` (Fastify server, PostgreSQL 18, Drizzle ORM), `@dental/shared` (Zod schemas, types).
+- Utilities Refactoring Architecture: Extract domain logic from monolithic `apps/web/src/AppHelpers.tsx` (8,078 lines) into modular domain utilities under `apps/web/src/utils/`, maintaining 100% backwards compatibility via `AppHelpers.tsx` as a barrel re-export.
+- E2E Verification Infra: Playwright test suite (`apps/web/tests/e2e/smoke.spec.ts`) + standalone CDP visual screenshot audit (`scripts/dente-redesign-shots.mjs`).
 
-## Feature Inventory (198 Dead Properties Restoration Map)
-
-| Category | Description | Property Count | Strategy | Assigned Milestone |
-|---|---|---|---|---|
-| **Category A** | Present in modern domain hooks or `useAppLogic.tsx` body, but omitted from `useAppLogic.tsx` return object | 81 | Wire pass-through destructuring in `useAppLogic.tsx` return | M1 |
-| **Category B (DICOM/MPR & Browser I/O)** | Missing DICOM, MPR Workbench, and Browser Storage/Picker logic | 38 | Surgically restore from `da92ab9507` into `useDicomWorkbenchModule.ts` and `useAppLogic.tsx` | M2 |
-| **Category B (Migration & Voice)** | Missing Migration Autopilot, Smart Import, Recognition & Speech logic | 35 | Surgically restore from `da92ab9507` into `useMigrationQueries.ts` and `useVoiceAssistant.ts` | M3 |
-| **Category B (Clinical, Finance & Admin)** | Missing Clinical Visit, Documents, Pricelist & Staff Settings logic | 40 | Surgically restore from `da92ab9507` into `useDocumentWorkflowModule.ts`, `useStaffSettingsLogic.ts`, `useVisitLogic.ts` | M4 |
-| **Category C** | Already present & returned in modern codebase | 4 | Verification only | M1 |
+## Feature Inventory
+| # | Feature | Description | Milestone | Source |
+|---|---------|-------------|-----------|--------|
+| 1 | Playwright E2E Setup & Auth Injection | Launch Playwright, inject `dente_clinic_token` & `dente_staff_token`, test login & load | M1 | R1 |
+| 2 | Panel Navigation & Error Boundary Check | Navigate `#schedule`, `#patients`, `#finance`, check console logs & Error Boundary exceptions | M1 | R1 |
+| 3 | Visual Screenshot Matrix Capture | Capture 4-state visual proof (PC Light, PC Dark, Mobile Light, Mobile Dark) | M1 | R1 |
+| 4 | Paranoid Symbols Census | Run ripgrep & ast-grep census on all 517 exported symbols of `AppHelpers.tsx` | M2 | R2 |
+| 5 | Execution Chain Verification | Map usages of Top 7 God-symbols and identify 161 orphaned exports | M2 | R2 |
+| 6 | Modular Domain Schema & Barrel Blueprint | Define contracts and module boundaries for 9 domain utility files in `apps/web/src/utils/` | M2 | R2 & R3 |
+| 7 | Incremental AppHelpers Extraction | Extract Finance, Auth, DateTime, Telegram, Patient, Clinic, UI Message, Format, and Document utilities | M3 | R3 |
+| 8 | Barrel Re-Export & Backward Compatibility | Wire `AppHelpers.tsx` as barrel re-exporter so existing imports continue working without breaking changes | M3 | R3 |
+| 9 | Circular Dependency Eradication | Audit circular dependencies with `npx madge --circular apps/web/src/main.tsx`, ensuring 0 cycles | M4 | R4 |
+| 10| Full System Typecheck & Quality Gates | Execute `npm run typecheck -w @dental/web` and `npm run check:encoding` with zero errors | M4 | R4 |
 
 ## Milestones
-
 | # | Name | Scope | Dependencies | Status |
-|---|---|---|---|---|
-| M1 | Pass-Through Return Object Wiring | Destructure and export 81 Category A properties in `useAppLogic.tsx` return object | None | PLANNED |
-| M2 | Surgical Restoration: DICOM / MPR / Browser I/O | Restore 38 Category B properties for DICOM/MPR and Local Storage/Browser file access | M1 | PLANNED |
-| M3 | Surgical Restoration: Migration & Voice Assistant | Restore 35 Category B properties for Migration Autopilot, Smart Import, and Dictation | M1 | PLANNED |
-| M4 | Surgical Restoration: Clinical, Documents & Admin | Restore 40 Category B properties for Clinical Visit, Payments, Documents, and Staff Settings | M1 | PLANNED |
-| M5 | Verification Gate & Typecheck Audit | Verify `npm run typecheck -w @dental/web` passes with exit code 0, zero UI/button regressions, clean audit | M1, M2, M3, M4 | PLANNED |
+|---|------|-------|-------------|--------|
+| M1 | E2E Browser Verification & Screenshot Matrix | Run Playwright E2E smoke tests, navigate Schedule/Patients/Finance, capture screenshots, intercept console/page errors | None | IN_PROGRESS |
+| M2 | Codebase Census & Utility Schema Definition | Execute paranoid `rg` and `ast-grep` census across `apps/web/src`, verify call stacks, map domain boundaries | M1 | PLANNED |
+| M3 | Modular Extraction of AppHelpers.tsx | Surgically extract 8,078-line `AppHelpers.tsx` into 9 `/utils/` domain modules with barrel re-exports; verify typecheck after every file move | M2 | PLANNED |
+| M4 | Zero AI Optimism & Circular Dependency Audit | Validate `npx madge --circular apps/web/src/main.tsx`, execute full monorepo typecheck, Playwright re-runs, and Forensic Audit | M3 | PLANNED |
 
-## Code Layout & Guidelines
-- All modifications must preserve modern bugfixes, tests, UI updates, and accessibility features added between July 30 and August 8.
-- No hardcoded test fallbacks or empty dummy functions `() => {}` allowed.
-- Zero token shortcuts, zero mocks.
+## Interface Contracts
+
+### 1. `apps/web/src/utils/auth/authHelpers.ts`
+- `auth`: constant authorization state object / helper functions.
+
+### 2. `apps/web/src/utils/finance/moneyUtils.ts`
+- `money(value: number | string | null | undefined): string` (kopeck-exact ruble formatting).
+- Additional finance helpers (`parseRubleAmount`, `formatKopecks`, etc.).
+
+### 3. `apps/web/src/utils/datetime/dateUtils.ts`
+- Date, time, ISO formatting, clinic schedule slot calculations.
+
+### 4. `apps/web/src/utils/telegram/telegramUtils.ts`
+- Telegram staff escalation, notification payload formatters.
+
+### 5. `apps/web/src/utils/clinic/clinicProfileUtils.ts`
+- Clinic info, staff profile, license & address helpers.
+
+### 6. `apps/web/src/utils/patient/patientUtils.ts`
+- `patientName(patient: any): string` (first, last, middle name formatting).
+- Anamnesis, OMS/DMS, Form 043/у helper functions.
+
+### 7. `apps/web/src/utils/ui/uiMessageUtils.ts`
+- `responseErrorMessage(err: unknown): string`.
+- `operatorWorkflowFailureMessage(reason: string): string`.
+
+### 8. `apps/web/src/utils/format/formatUtils.ts`
+- General text, phone number, passport, SNILS string formatters.
+
+### 9. `apps/web/src/utils/document/documentUtils.ts`
+- `documentTextLines(...)`, `confirmedDocumentLiteral(...)`.
+- EMK acts, fiscal receipts, NDFL certificates text generation.
+
+### Barrel File: `apps/web/src/AppHelpers.tsx`
+- Re-exports all exported symbols from the 9 utility modules above to ensure 100% backward compatibility for existing imports (`import { ... } from './AppHelpers'`).
+
+## Code Layout
+```
+apps/web/src/
+├── AppHelpers.tsx                # Barrel file re-exporting from utils/
+├── main.tsx                      # SPA Entry Point
+├── components/                   # UI View Components
+└── utils/                        # Extracted Domain Utility Modules
+    ├── auth/authHelpers.ts
+    ├── finance/moneyUtils.ts
+    ├── datetime/dateUtils.ts
+    ├── telegram/telegramUtils.ts
+    ├── clinic/clinicProfileUtils.ts
+    ├── patient/patientUtils.ts
+    ├── ui/uiMessageUtils.ts
+    ├── format/formatUtils.ts
+    └── document/documentUtils.ts
+```

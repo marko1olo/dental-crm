@@ -7,6 +7,12 @@ import type {
 	Patient,
 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import type {
+	ClinicProfileDraft,
+	MedicalRecordExtractDocumentDraftFields,
+	Outpatient025uDocumentDraftFields,
+	VisitNoteForm,
+} from "../../AppConstants";
 import {
 	compactDocumentText,
 	confirmedDocumentLiteral,
@@ -21,7 +27,6 @@ import {
 	toDateInputValue,
 } from "../../AppHelpers";
 import { useDocumentStore } from "../../store/documentStore";
-import { ClinicProfileDraft, MedicalRecordExtractDocumentDraftFields, Outpatient025uDocumentDraftFields, VisitNoteForm } from "../../AppConstants";
 
 export interface UsePatientIntakeLogicOptions {
 	documentPatient: Patient | null;
@@ -192,8 +197,43 @@ export function usePatientIntakeLogic({
 		],
 	);
 
-	const currentOutpatient025uDocumentDraftFields = useCallback((): Outpatient025uDocumentDraftFields => {
-		return {
+	const currentOutpatient025uDocumentDraftFields =
+		useCallback((): Outpatient025uDocumentDraftFields => {
+			return {
+				recordExtractPeriodStart,
+				recordExtractPeriodEnd,
+				recordExtractSourceVisitIds,
+				recordExtractComplaintAndAnamnesis,
+				recordExtractObjectiveStatus,
+				recordExtractDiagnosis,
+				recordExtractTreatmentProvided,
+				recordExtractRecommendations,
+				recordExtractDoctorFullName,
+				recordExtractPreparedFromSignedRecords,
+				outpatient025uMedicalCardNumber,
+				outpatient025uOpenedAt,
+				outpatient025uPatientSexCode,
+				outpatient025uCitizenship,
+				outpatient025uRegistrationUrbanRuralCode,
+				outpatient025uStayUrbanRuralCode,
+				outpatient025uOmsIssuedAt,
+				outpatient025uInsurerName,
+				outpatient025uSocialSupportCode,
+				outpatient025uHealthStatusDisclosureContact,
+				outpatient025uEmploymentCode,
+				outpatient025uDisabilityGroup,
+				outpatient025uWorkOrStudyPlace,
+				outpatient025uPalliativeCareNeedCode,
+				outpatient025uBloodGroup,
+				outpatient025uRhFactor,
+				outpatient025uKellK1,
+				outpatient025uOtherBloodData,
+				outpatient025uAllergyHistory,
+				outpatient025uFinalEpicrisis,
+				outpatient025uOfficialForm274nChecked,
+				outpatient025uThirdPartyDataChecked,
+			};
+		}, [
 			recordExtractPeriodStart,
 			recordExtractPeriodEnd,
 			recordExtractSourceVisitIds,
@@ -226,80 +266,118 @@ export function usePatientIntakeLogic({
 			outpatient025uFinalEpicrisis,
 			outpatient025uOfficialForm274nChecked,
 			outpatient025uThirdPartyDataChecked,
-		};
-	}, [
-			recordExtractPeriodStart, recordExtractPeriodEnd, recordExtractSourceVisitIds, recordExtractComplaintAndAnamnesis,
-			recordExtractObjectiveStatus, recordExtractDiagnosis, recordExtractTreatmentProvided, recordExtractRecommendations,
-			recordExtractDoctorFullName, recordExtractPreparedFromSignedRecords, outpatient025uMedicalCardNumber, outpatient025uOpenedAt,
-			outpatient025uPatientSexCode, outpatient025uCitizenship, outpatient025uRegistrationUrbanRuralCode, outpatient025uStayUrbanRuralCode,
-			outpatient025uOmsIssuedAt, outpatient025uInsurerName, outpatient025uSocialSupportCode, outpatient025uHealthStatusDisclosureContact,
-			outpatient025uEmploymentCode, outpatient025uDisabilityGroup, outpatient025uWorkOrStudyPlace, outpatient025uPalliativeCareNeedCode,
-			outpatient025uBloodGroup, outpatient025uRhFactor, outpatient025uKellK1, outpatient025uOtherBloodData, outpatient025uAllergyHistory,
-			outpatient025uFinalEpicrisis, outpatient025uOfficialForm274nChecked, outpatient025uThirdPartyDataChecked
 		]);
 
-	const applyOutpatient025uDocumentDraftFields = useCallback((fields: Outpatient025uDocumentDraftFields): void => {
-		setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
-		setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
-		setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
-		setRecordExtractComplaintAndAnamnesis(
-			fields.recordExtractComplaintAndAnamnesis,
-		);
-		setRecordExtractObjectiveStatus(fields.recordExtractObjectiveStatus);
-		setRecordExtractDiagnosis(fields.recordExtractDiagnosis);
-		setRecordExtractTreatmentProvided(fields.recordExtractTreatmentProvided);
-		setRecordExtractRecommendations(fields.recordExtractRecommendations);
-		setRecordExtractDoctorFullName(fields.recordExtractDoctorFullName);
-		setRecordExtractPreparedFromSignedRecords(
-			fields.recordExtractPreparedFromSignedRecords,
-		);
-		setOutpatient025uMedicalCardNumber(fields.outpatient025uMedicalCardNumber);
-		setOutpatient025uOpenedAt(fields.outpatient025uOpenedAt);
-		setOutpatient025uPatientSexCode(fields.outpatient025uPatientSexCode);
-		setOutpatient025uCitizenship(fields.outpatient025uCitizenship);
-		setOutpatient025uRegistrationUrbanRuralCode(
-			fields.outpatient025uRegistrationUrbanRuralCode,
-		);
-		setOutpatient025uStayUrbanRuralCode(
-			fields.outpatient025uStayUrbanRuralCode,
-		);
-		setOutpatient025uOmsIssuedAt(fields.outpatient025uOmsIssuedAt);
-		setOutpatient025uInsurerName(fields.outpatient025uInsurerName);
-		setOutpatient025uSocialSupportCode(fields.outpatient025uSocialSupportCode);
-		setOutpatient025uHealthStatusDisclosureContact(
-			fields.outpatient025uHealthStatusDisclosureContact,
-		);
-		setOutpatient025uEmploymentCode(fields.outpatient025uEmploymentCode);
-		setOutpatient025uDisabilityGroup(fields.outpatient025uDisabilityGroup);
-		setOutpatient025uWorkOrStudyPlace(fields.outpatient025uWorkOrStudyPlace);
-		setOutpatient025uPalliativeCareNeedCode(
-			fields.outpatient025uPalliativeCareNeedCode,
-		);
-		setOutpatient025uBloodGroup(fields.outpatient025uBloodGroup);
-		setOutpatient025uRhFactor(fields.outpatient025uRhFactor);
-		setOutpatient025uKellK1(fields.outpatient025uKellK1);
-		setOutpatient025uOtherBloodData(fields.outpatient025uOtherBloodData);
-		setOutpatient025uAllergyHistory(fields.outpatient025uAllergyHistory);
-		setOutpatient025uFinalEpicrisis(fields.outpatient025uFinalEpicrisis);
-		setOutpatient025uOfficialForm274nChecked(
-			fields.outpatient025uOfficialForm274nChecked,
-		);
-		setOutpatient025uThirdPartyDataChecked(
-			fields.outpatient025uThirdPartyDataChecked,
-		);
-	}, [
-			setRecordExtractPeriodStart, setRecordExtractPeriodEnd, setRecordExtractSourceVisitIds, setRecordExtractComplaintAndAnamnesis,
-			setRecordExtractObjectiveStatus, setRecordExtractDiagnosis, setRecordExtractTreatmentProvided, setRecordExtractRecommendations,
-			setRecordExtractDoctorFullName, setRecordExtractPreparedFromSignedRecords, setOutpatient025uMedicalCardNumber, setOutpatient025uOpenedAt,
-			setOutpatient025uPatientSexCode, setOutpatient025uCitizenship, setOutpatient025uRegistrationUrbanRuralCode, setOutpatient025uStayUrbanRuralCode,
-			setOutpatient025uOmsIssuedAt, setOutpatient025uInsurerName, setOutpatient025uSocialSupportCode, setOutpatient025uHealthStatusDisclosureContact,
-			setOutpatient025uEmploymentCode, setOutpatient025uDisabilityGroup, setOutpatient025uWorkOrStudyPlace, setOutpatient025uPalliativeCareNeedCode,
-			setOutpatient025uBloodGroup, setOutpatient025uRhFactor, setOutpatient025uKellK1, setOutpatient025uOtherBloodData, setOutpatient025uAllergyHistory,
-			setOutpatient025uFinalEpicrisis, setOutpatient025uOfficialForm274nChecked, setOutpatient025uThirdPartyDataChecked
-		]);
+	const applyOutpatient025uDocumentDraftFields = useCallback(
+		(fields: Outpatient025uDocumentDraftFields): void => {
+			setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
+			setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
+			setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
+			setRecordExtractComplaintAndAnamnesis(
+				fields.recordExtractComplaintAndAnamnesis,
+			);
+			setRecordExtractObjectiveStatus(fields.recordExtractObjectiveStatus);
+			setRecordExtractDiagnosis(fields.recordExtractDiagnosis);
+			setRecordExtractTreatmentProvided(fields.recordExtractTreatmentProvided);
+			setRecordExtractRecommendations(fields.recordExtractRecommendations);
+			setRecordExtractDoctorFullName(fields.recordExtractDoctorFullName);
+			setRecordExtractPreparedFromSignedRecords(
+				fields.recordExtractPreparedFromSignedRecords,
+			);
+			setOutpatient025uMedicalCardNumber(
+				fields.outpatient025uMedicalCardNumber,
+			);
+			setOutpatient025uOpenedAt(fields.outpatient025uOpenedAt);
+			setOutpatient025uPatientSexCode(fields.outpatient025uPatientSexCode);
+			setOutpatient025uCitizenship(fields.outpatient025uCitizenship);
+			setOutpatient025uRegistrationUrbanRuralCode(
+				fields.outpatient025uRegistrationUrbanRuralCode,
+			);
+			setOutpatient025uStayUrbanRuralCode(
+				fields.outpatient025uStayUrbanRuralCode,
+			);
+			setOutpatient025uOmsIssuedAt(fields.outpatient025uOmsIssuedAt);
+			setOutpatient025uInsurerName(fields.outpatient025uInsurerName);
+			setOutpatient025uSocialSupportCode(
+				fields.outpatient025uSocialSupportCode,
+			);
+			setOutpatient025uHealthStatusDisclosureContact(
+				fields.outpatient025uHealthStatusDisclosureContact,
+			);
+			setOutpatient025uEmploymentCode(fields.outpatient025uEmploymentCode);
+			setOutpatient025uDisabilityGroup(fields.outpatient025uDisabilityGroup);
+			setOutpatient025uWorkOrStudyPlace(fields.outpatient025uWorkOrStudyPlace);
+			setOutpatient025uPalliativeCareNeedCode(
+				fields.outpatient025uPalliativeCareNeedCode,
+			);
+			setOutpatient025uBloodGroup(fields.outpatient025uBloodGroup);
+			setOutpatient025uRhFactor(fields.outpatient025uRhFactor);
+			setOutpatient025uKellK1(fields.outpatient025uKellK1);
+			setOutpatient025uOtherBloodData(fields.outpatient025uOtherBloodData);
+			setOutpatient025uAllergyHistory(fields.outpatient025uAllergyHistory);
+			setOutpatient025uFinalEpicrisis(fields.outpatient025uFinalEpicrisis);
+			setOutpatient025uOfficialForm274nChecked(
+				fields.outpatient025uOfficialForm274nChecked,
+			);
+			setOutpatient025uThirdPartyDataChecked(
+				fields.outpatient025uThirdPartyDataChecked,
+			);
+		},
+		[
+			setRecordExtractPeriodStart,
+			setRecordExtractPeriodEnd,
+			setRecordExtractSourceVisitIds,
+			setRecordExtractComplaintAndAnamnesis,
+			setRecordExtractObjectiveStatus,
+			setRecordExtractDiagnosis,
+			setRecordExtractTreatmentProvided,
+			setRecordExtractRecommendations,
+			setRecordExtractDoctorFullName,
+			setRecordExtractPreparedFromSignedRecords,
+			setOutpatient025uMedicalCardNumber,
+			setOutpatient025uOpenedAt,
+			setOutpatient025uPatientSexCode,
+			setOutpatient025uCitizenship,
+			setOutpatient025uRegistrationUrbanRuralCode,
+			setOutpatient025uStayUrbanRuralCode,
+			setOutpatient025uOmsIssuedAt,
+			setOutpatient025uInsurerName,
+			setOutpatient025uSocialSupportCode,
+			setOutpatient025uHealthStatusDisclosureContact,
+			setOutpatient025uEmploymentCode,
+			setOutpatient025uDisabilityGroup,
+			setOutpatient025uWorkOrStudyPlace,
+			setOutpatient025uPalliativeCareNeedCode,
+			setOutpatient025uBloodGroup,
+			setOutpatient025uRhFactor,
+			setOutpatient025uKellK1,
+			setOutpatient025uOtherBloodData,
+			setOutpatient025uAllergyHistory,
+			setOutpatient025uFinalEpicrisis,
+			setOutpatient025uOfficialForm274nChecked,
+			setOutpatient025uThirdPartyDataChecked,
+		],
+	);
 
-	const currentMedicalRecordExtractDocumentDraftFields = useCallback((): MedicalRecordExtractDocumentDraftFields => {
-		return {
+	const currentMedicalRecordExtractDocumentDraftFields =
+		useCallback((): MedicalRecordExtractDocumentDraftFields => {
+			return {
+				recordExtractPeriodStart,
+				recordExtractPeriodEnd,
+				recordExtractSourceVisitIds,
+				recordExtractComplaintAndAnamnesis,
+				recordExtractObjectiveStatus,
+				recordExtractDiagnosis,
+				recordExtractTreatmentProvided,
+				recordExtractRecommendations,
+				recordExtractDoctorFullName,
+				recordExtractRecipientFullName,
+				recordExtractRecipientAuthority,
+				recordExtractIssuedAt,
+				recordExtractPreparedFromSignedRecords,
+				recordExtractThirdPartyDataChecked,
+			};
+		}, [
 			recordExtractPeriodStart,
 			recordExtractPeriodEnd,
 			recordExtractSourceVisitIds,
@@ -314,41 +392,50 @@ export function usePatientIntakeLogic({
 			recordExtractIssuedAt,
 			recordExtractPreparedFromSignedRecords,
 			recordExtractThirdPartyDataChecked,
-		};
-	}, [
-			recordExtractPeriodStart, recordExtractPeriodEnd, recordExtractSourceVisitIds, recordExtractComplaintAndAnamnesis,
-			recordExtractObjectiveStatus, recordExtractDiagnosis, recordExtractTreatmentProvided, recordExtractRecommendations,
-			recordExtractDoctorFullName, recordExtractRecipientFullName, recordExtractRecipientAuthority, recordExtractIssuedAt,
-			recordExtractPreparedFromSignedRecords, recordExtractThirdPartyDataChecked
 		]);
 
-	const applyMedicalRecordExtractDocumentDraftFields = useCallback((fields: MedicalRecordExtractDocumentDraftFields): void => {
-		setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
-		setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
-		setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
-		setRecordExtractComplaintAndAnamnesis(
-			fields.recordExtractComplaintAndAnamnesis,
-		);
-		setRecordExtractObjectiveStatus(fields.recordExtractObjectiveStatus);
-		setRecordExtractDiagnosis(fields.recordExtractDiagnosis);
-		setRecordExtractTreatmentProvided(fields.recordExtractTreatmentProvided);
-		setRecordExtractRecommendations(fields.recordExtractRecommendations);
-		setRecordExtractDoctorFullName(fields.recordExtractDoctorFullName);
-		setRecordExtractRecipientFullName(fields.recordExtractRecipientFullName);
-		setRecordExtractRecipientAuthority(fields.recordExtractRecipientAuthority);
-		setRecordExtractIssuedAt(fields.recordExtractIssuedAt);
-		setRecordExtractPreparedFromSignedRecords(
-			fields.recordExtractPreparedFromSignedRecords,
-		);
-		setRecordExtractThirdPartyDataChecked(
-			fields.recordExtractThirdPartyDataChecked,
-		);
-	}, [
-			setRecordExtractPeriodStart, setRecordExtractPeriodEnd, setRecordExtractSourceVisitIds, setRecordExtractComplaintAndAnamnesis,
-			setRecordExtractObjectiveStatus, setRecordExtractDiagnosis, setRecordExtractTreatmentProvided, setRecordExtractRecommendations,
-			setRecordExtractDoctorFullName, setRecordExtractRecipientFullName, setRecordExtractRecipientAuthority, setRecordExtractIssuedAt,
-			setRecordExtractPreparedFromSignedRecords, setRecordExtractThirdPartyDataChecked
-		]);
+	const applyMedicalRecordExtractDocumentDraftFields = useCallback(
+		(fields: MedicalRecordExtractDocumentDraftFields): void => {
+			setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
+			setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
+			setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
+			setRecordExtractComplaintAndAnamnesis(
+				fields.recordExtractComplaintAndAnamnesis,
+			);
+			setRecordExtractObjectiveStatus(fields.recordExtractObjectiveStatus);
+			setRecordExtractDiagnosis(fields.recordExtractDiagnosis);
+			setRecordExtractTreatmentProvided(fields.recordExtractTreatmentProvided);
+			setRecordExtractRecommendations(fields.recordExtractRecommendations);
+			setRecordExtractDoctorFullName(fields.recordExtractDoctorFullName);
+			setRecordExtractRecipientFullName(fields.recordExtractRecipientFullName);
+			setRecordExtractRecipientAuthority(
+				fields.recordExtractRecipientAuthority,
+			);
+			setRecordExtractIssuedAt(fields.recordExtractIssuedAt);
+			setRecordExtractPreparedFromSignedRecords(
+				fields.recordExtractPreparedFromSignedRecords,
+			);
+			setRecordExtractThirdPartyDataChecked(
+				fields.recordExtractThirdPartyDataChecked,
+			);
+		},
+		[
+			setRecordExtractPeriodStart,
+			setRecordExtractPeriodEnd,
+			setRecordExtractSourceVisitIds,
+			setRecordExtractComplaintAndAnamnesis,
+			setRecordExtractObjectiveStatus,
+			setRecordExtractDiagnosis,
+			setRecordExtractTreatmentProvided,
+			setRecordExtractRecommendations,
+			setRecordExtractDoctorFullName,
+			setRecordExtractRecipientFullName,
+			setRecordExtractRecipientAuthority,
+			setRecordExtractIssuedAt,
+			setRecordExtractPreparedFromSignedRecords,
+			setRecordExtractThirdPartyDataChecked,
+		],
+	);
 
 	useEffect(() => {
 		if (

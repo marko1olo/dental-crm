@@ -1,8 +1,8 @@
 import type { AuditEvent } from "@dental/shared";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { showToast } from "./components/GlobalToast";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
 
 type AuditLogsResponse = {

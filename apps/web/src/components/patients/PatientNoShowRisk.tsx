@@ -9,9 +9,9 @@ import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import type { PanelSubject } from "../../lib/panelStateText";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
-import { logger } from "../../utils/logger";
 
 export type PatientNoShowRiskProps = {
 	patientId: string | null;

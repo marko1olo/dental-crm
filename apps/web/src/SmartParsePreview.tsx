@@ -2,12 +2,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { logger } from "./utils/logger";
 import {
 	type DictationContext,
 	dictationFailureText,
 	serverParsesDictation,
 } from "./lib/panelStateText";
+import { logger } from "./utils/logger";
 
 /**
  * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО В ТЕКСТАХ (правится вместе с packet W4).

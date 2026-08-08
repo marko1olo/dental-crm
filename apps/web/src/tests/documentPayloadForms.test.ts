@@ -6,10 +6,17 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+	photoVideoMaterialOptions,
+	procedureSpecificConsentProcedureOptions,
+	taxApplicationDeliveryChannelOptions,
+	taxApplicationFormOptions,
+	taxApplicationRelationshipOptions,
+} from "../AppConstants";
+import {
 	normalizedProcedureSpecificConsentProcedure,
 	normalizedTaxApplicationDeliveryChannel,
 	normalizedTaxApplicationForm,
-	normalizedTaxApplicationRelationshipSelect
+	normalizedTaxApplicationRelationshipSelect,
 } from "../AppHelpers";
 import { appendChipToText } from "../components/documents/documentChipText";
 import { AnesthesiaConsentLogForm } from "../components/documents/forms/AnesthesiaConsentLogForm";
@@ -19,7 +26,6 @@ import { PersonalDataProcessingConsentForm } from "../components/documents/forms
 import { PhotoVideoConsentForm } from "../components/documents/forms/PhotoVideoConsentForm";
 import { ProcedureSpecificConsentForm } from "../components/documents/forms/ProcedureSpecificConsentForm";
 import { TaxDeductionApplicationForm } from "../components/documents/forms/TaxDeductionApplicationForm";
-import { photoVideoMaterialOptions, procedureSpecificConsentProcedureOptions, taxApplicationDeliveryChannelOptions, taxApplicationFormOptions, taxApplicationRelationshipOptions } from "../AppConstants";
 
 /**
  * СЕМЬ ФОРМ ДОКУМЕНТОВ ВЫНЕСЕНЫ ИЗ DocumentsView.tsx — И ДОЛЖНЫ РИСОВАТЬСЯ.

@@ -3,8 +3,8 @@ import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { type CertificateInfo, signatureService } from "../../lib/cryptopro";
 import { actionFailureToast } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 interface CryptoProSignerProps {
 	diaryHash: string | null;

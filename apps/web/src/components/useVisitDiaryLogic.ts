@@ -9,8 +9,8 @@ import {
 } from "../lib/panelStateText";
 import { useVisitStore } from "../store/visitStore";
 import { useAppLogic } from "../useAppLogic";
-import { showToast } from "./GlobalToast";
 import { logger } from "../utils/logger";
+import { showToast } from "./GlobalToast";
 
 export interface DiaryState {
 	anamnesis: string;

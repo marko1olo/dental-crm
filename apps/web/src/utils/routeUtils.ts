@@ -156,4 +156,3 @@ export function settingsTabFromHash(): SettingsTab {
 		? (candidate as SettingsTab)
 		: "clinic";
 }
-

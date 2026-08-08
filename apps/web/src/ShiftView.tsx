@@ -16,16 +16,12 @@ import {
 	UserCheck,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-	formatShortDate,
-	minutesLabel,
-	money
-} from "./AppHelpers";
+import { patientInsightRiskLabels } from "./AppConstants";
+import { formatShortDate, minutesLabel, money } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { PatientAvatar } from "./components/PatientAvatar";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
 import { countLabel } from "./lib/russianPlural";
-import { patientInsightRiskLabels } from "./AppConstants";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {

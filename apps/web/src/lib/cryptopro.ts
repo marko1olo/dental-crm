@@ -4,13 +4,13 @@ import {
 	getPersonalCertificates,
 	signBase64WithCertificate,
 } from "../utils/cryptoPro";
+import { logger } from "../utils/logger";
 import {
 	checkRutokenPlugin,
 	getRutokenCertificates,
 	signDataWithRutoken,
 } from "../utils/rutoken";
 import { actionFailureToast } from "./panelStateText";
-import { logger } from "../utils/logger";
 
 export interface CertificateInfo {
 	thumbprint: string; // For rutoken, this will be the cert id

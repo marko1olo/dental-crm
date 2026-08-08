@@ -85,7 +85,13 @@ export const RecentPatientHistoryWidget: React.FC<{
 				if (!active) return;
 				setFailed(true);
 				setLoading(false);
-				showToast(actionFailureToast("Ошибка загрузки истории", (err as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка загрузки истории",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 			});
 		return () => {
 			active = false;

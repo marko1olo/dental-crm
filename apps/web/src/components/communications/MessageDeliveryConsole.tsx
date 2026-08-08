@@ -27,7 +27,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
-
 import {
 	type DispatchReport,
 	describeDispatchReport,
@@ -204,7 +203,13 @@ function timeToMinutes(value: string): number | null {
 
 async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch((err) => {
-		showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
+		showToast(
+			actionFailureToast(
+				"Ошибка ответа сервера",
+				(err as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
 		return null;
 	})) as unknown;
 	if (!response.ok) {

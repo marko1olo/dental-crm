@@ -2,8 +2,8 @@ import { Activity, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { formatShortDate } from "../../AppHelpers";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { EmptyState } from "../EmptyState";
 import { logger } from "../../utils/logger";
+import { EmptyState } from "../EmptyState";
 
 /**
  * Форма снята с маршрута, а не придумана: `routes/integrations/diagnocat.ts:41`

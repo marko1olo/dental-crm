@@ -1,8 +1,8 @@
 import type { UrgentScheduleRequest } from "@dental/shared";
 import { useEffect, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 export function UrgentScheduleRequestsWidget() {
 	const [requests, setRequests] = useState<UrgentScheduleRequest[]>([]);

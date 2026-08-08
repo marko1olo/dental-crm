@@ -10,6 +10,7 @@ import {
 	type Point2D,
 	toTransferableScalarData,
 } from "../../mprMath";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import {
 	archControlPointsOf,
@@ -28,7 +29,6 @@ import {
 	PanoramicRendererWindow,
 	type PanoramicVolumeInput,
 } from "./PanoramicRendererWindow";
-import { logger } from "../../utils/logger";
 import {
 	buildPanoramicArch,
 	type DrawnArchAnnotation,

@@ -17,10 +17,7 @@ import {
 	repairMojibakeDeep,
 	repairMojibakeText,
 } from "../../text/repairMojibake.js";
-import {
-	apiError,
-	documentVoidValidationMessage,
-} from "./shared.js";
+import { apiError, documentVoidValidationMessage } from "./shared.js";
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents/:id/void", async (request, reply) => {

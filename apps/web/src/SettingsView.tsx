@@ -222,10 +222,10 @@ type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
+import { type SettingsTabGroup, settingsTabGroups } from "./AppConstants";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import { useSettingsDerivations } from "./useSettingsDerivations";
-import { SettingsTabGroup, settingsTabGroups } from "./AppConstants";
 
 export interface SettingsViewProps {
 	activeStaffUser?: any;
@@ -1491,7 +1491,10 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				) : null}
 				{settingsTab === "access" ? (
 					<SettingsAccessTab
-						{...({ props: settingsProps, settingsTab } as any)}
+						{...({ props: settingsProps, settingsTab } as {
+							props: typeof settingsProps;
+							settingsTab: string;
+						})}
 					/>
 				) : null}
 				{/*

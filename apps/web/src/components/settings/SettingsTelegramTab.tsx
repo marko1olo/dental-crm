@@ -1030,9 +1030,9 @@ export function SettingsTelegramTab({
 					</div>
 					<fieldset
 						className="telegram-feature-grid"
-						
 						aria-label="Функции Telegram"
-					 style={{ border: 'none', padding: 0, margin: 0 }}>
+						style={{ border: "none", padding: 0, margin: 0 }}
+					>
 						{typedTelegramFeatureOptions.map((feature) => (
 							<label
 								htmlFor={`telegram-feature-${feature}`}
@@ -1371,9 +1371,9 @@ export function SettingsTelegramTab({
 							).length ? (
 								<fieldset
 									className="telegram-preview-buttons"
-									
 									aria-label="Кнопки Telegram-сообщения"
-								 style={{ border: 'none', padding: 0, margin: 0 }}>
+									style={{ border: "none", padding: 0, margin: 0 }}
+								>
 									{getTypedTelegramInlineButtonRows(
 										typedTelegramPreview.replyMarkup,
 									).map((row) => (
@@ -1457,9 +1457,9 @@ export function SettingsTelegramTab({
 				</div>
 				<fieldset
 					className="telegram-outbox-controls"
-					
 					aria-label="Фильтры очереди Telegram"
-				 style={{ border: 'none', padding: 0, margin: 0 }}>
+					style={{ border: "none", padding: 0, margin: 0 }}
+				>
 					<div>
 						Статус
 						<div className="quick-chips-row">
@@ -1540,9 +1540,9 @@ export function SettingsTelegramTab({
 										{itemButtonRows.length ? (
 											<fieldset
 												className="telegram-outbox-buttons"
-												
 												aria-label="Кнопки Telegram"
-											 style={{ border: 'none', padding: 0, margin: 0 }}>
+												style={{ border: "none", padding: 0, margin: 0 }}
+											>
 												{itemButtonRows
 													.map((row, rowIndex) => ({
 														row,
@@ -1575,9 +1575,9 @@ export function SettingsTelegramTab({
 									{itemBlockingNote || itemWarningNotes.length ? (
 										<fieldset
 											className="telegram-outbox-notes"
-											
 											aria-label="Причины и предупреждения Telegram"
-										 style={{ border: 'none', padding: 0, margin: 0 }}>
+											style={{ border: "none", padding: 0, margin: 0 }}
+										>
 											{itemBlockingNote ? (
 												<small>{itemBlockingNote}</small>
 											) : null}

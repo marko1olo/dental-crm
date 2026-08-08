@@ -29,15 +29,6 @@ import {
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
-import { useSettingsStore } from "./store/settingsStore";
-import {
-	appViews,
-	type AppView,
-	getFallbackAppView,
-	getFilteredAppViews,
-	viewHints,
-	viewLabels,
-} from "./utils/routeUtils";
 import {
 	type ClinicMode,
 	describeHiddenCapabilities,
@@ -45,7 +36,16 @@ import {
 	resolveClinicMode,
 	staffRoleChoices,
 } from "./lib/clinicCapabilities";
+import { useSettingsStore } from "./store/settingsStore";
 import { type ThemeMode, useThemeStore } from "./store/themeStore";
+import {
+	type AppView,
+	appViews,
+	getFallbackAppView,
+	getFilteredAppViews,
+	viewHints,
+	viewLabels,
+} from "./utils/routeUtils";
 import { clinicModeLabels, workspaceTopbarLabels } from "./workspaceUiLabels";
 
 /*
@@ -67,8 +67,8 @@ import { clinicModeLabels, workspaceTopbarLabels } from "./workspaceUiLabels";
  */
 // Route helpers are re-exported from routeUtils to avoid circular deps
 export {
-	appViews,
 	type AppView,
+	appViews,
 	getFallbackAppView,
 	getFilteredAppViews,
 	viewHints,

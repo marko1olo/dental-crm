@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { countLabel } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
@@ -136,7 +136,10 @@ import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const logicContext = useAppLogicContext();
-	const props = { ...logicContext, ...rawProps } as any;
+	const props = { ...logicContext, ...rawProps } as ReturnType<
+		typeof useAppLogicContext
+	> &
+		Partial<VisitViewProps>;
 	const {
 		AlertTriangle,
 		Bot,

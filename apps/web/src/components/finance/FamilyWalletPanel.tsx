@@ -302,10 +302,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			if (isStale()) return;
 			// Текст исключения английский и наружу не идёт: пользователю сообщение
 			// собирает panelStateText по коду, здесь — «сервер не ответил».
-			logger.error(
-				"[family wallet] не удалось прочитать семейный кошелёк:",
-				e,
-			);
+			logger.error("[family wallet] не удалось прочитать семейный кошелёк:", e);
 			setFamily(null);
 			setLoadFailure({ status: null });
 		} finally {
@@ -681,10 +678,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// То же, что у списания: оборванный запрос не говорит, зачислены деньги
 			// или нет. Повтор безопасен по тому же ключу идемпотентности
 			// (topupMutationIdRef в этой ветке не сбрасывается).
-			logger.error(
-				"[family wallet] пополнение не получило ответа сервера:",
-				e,
-			);
+			logger.error("[family wallet] пополнение не получило ответа сервера:", e);
 			showToast(
 				actionFailureToast(
 					"Ответ по пополнению семейного счёта не получен",

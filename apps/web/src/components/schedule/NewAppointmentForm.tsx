@@ -2,18 +2,16 @@ import type { Appointment, Dashboard } from "@dental/shared";
 import { Bot, Plus } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-	appointmentScheduleMissingFields,
-} from "../../AppHelpers";
+import type { AppointmentScheduleDraft } from "../../AppConstants";
+import { appointmentScheduleMissingFields } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { smartBookingParser } from "../../lib/smartBookingParser";
 import { SmartParsePreview } from "../../SmartParsePreview";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import { AppointmentScheduleDraft } from "../../AppConstants";
-import { logger } from "../../utils/logger";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 

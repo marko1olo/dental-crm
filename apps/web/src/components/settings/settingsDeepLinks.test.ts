@@ -25,6 +25,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { settingsTabs } from "../../AppConstants";
 import { appViews, viewLabels } from "../../workspaceShell";
 import {
 	MESSENGERS_SETTINGS_TAB,
@@ -32,7 +33,6 @@ import {
 	settingsTabTitle,
 	workspaceViewTitle,
 } from "./settingsDeepLink";
-import { settingsTabs } from "../../AppConstants";
 
 const settingsDir = path.dirname(fileURLToPath(import.meta.url));
 

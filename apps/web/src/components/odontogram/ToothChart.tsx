@@ -299,13 +299,21 @@ const ToothSVG = ({
 							style={{ cursor: "pointer" }}
 							onClick={(e) => {
 								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, isTop ? "V" : "V");
+								onClick(
+									e as unknown as React.MouseEvent,
+									number,
+									isTop ? "V" : "V",
+								);
 							}}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") {
 									e.preventDefault();
 									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, isTop ? "V" : "V");
+									onClick(
+										e as unknown as React.MouseEvent,
+										number,
+										isTop ? "V" : "V",
+									);
 								}
 							}}
 							onMouseEnter={(e) => {
@@ -338,13 +346,21 @@ const ToothSVG = ({
 							style={{ cursor: "pointer" }}
 							onClick={(e) => {
 								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, isTop ? "P" : "L");
+								onClick(
+									e as unknown as React.MouseEvent,
+									number,
+									isTop ? "P" : "L",
+								);
 							}}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") {
 									e.preventDefault();
 									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, isTop ? "P" : "L");
+									onClick(
+										e as unknown as React.MouseEvent,
+										number,
+										isTop ? "P" : "L",
+									);
 								}
 							}}
 							onMouseEnter={(e) => {

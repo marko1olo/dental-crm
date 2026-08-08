@@ -1,10 +1,58 @@
-import { ImagingSourceKind, PricelistSourceKind, DenteTelegramVisualCardUrls, StaffRole, DentalSpecialty, Appointment, PaymentMethod, GeneratedDocument, TaxDeductionApplicationForm, TaxDeductionApplicationDeliveryChannel, DocumentIssueSignatureMode, ProcedureSpecificConsentProcedure, PostVisitCareTopic, AiJobKind, AiRecognitionTarget, ImportSourceKind, DocumentIngestionTarget, SmartImportMode, ImagingStudyKind, ImagingViewerSessionState, ImagingViewerAnnotation, DicomViewerWorkbenchManifestResponse, MigrationLocalSourceDiscoveryResponse, DocumentVoidReasonCode, DocumentIngestionResponse, VisitNoteDraft, SpeechTranscriptionResponse, SpeechChunkUploadInput, DenteTelegramOutboxResponse, DenteTelegramMessagePreview, DenteTelegramVisualCardKey, DenteTelegramFeature, DenteTelegramBotMode, DenteTelegramPrivacyMode, DenteTelegramLinkCodePublic, PatientAdministrativeProfile, StaffWorkingHours, TreatmentPlanAcceptanceVariant, XrayCbctReferralPriority, PatientIntakePregnancyStatus, TaxDeductionApplicationRelationship, ClinicalToothRow, InstallmentPaymentStatus, XrayCbctReferralStudyType, XrayCbctReferralPregnancyStatus, PhotoVideoConsentMaterial, Dashboard, SpeechProviderConnector } from "@dental/shared";
-import { CSSProperties } from "react";
-import { MprProjection, MprWindowPreset } from "./imagingUiLabels";
+import type {
+	AiJobKind,
+	AiRecognitionTarget,
+	Appointment,
+	ClinicalToothRow,
+	Dashboard,
+	DentalSpecialty,
+	DenteTelegramBotMode,
+	DenteTelegramFeature,
+	DenteTelegramLinkCodePublic,
+	DenteTelegramMessagePreview,
+	DenteTelegramOutboxResponse,
+	DenteTelegramPrivacyMode,
+	DenteTelegramVisualCardKey,
+	DenteTelegramVisualCardUrls,
+	DicomViewerWorkbenchManifestResponse,
+	DocumentIngestionResponse,
+	DocumentIngestionTarget,
+	DocumentIssueSignatureMode,
+	DocumentVoidReasonCode,
+	GeneratedDocument,
+	ImagingSourceKind,
+	ImagingStudyKind,
+	ImagingViewerAnnotation,
+	ImagingViewerSessionState,
+	ImportSourceKind,
+	InstallmentPaymentStatus,
+	MigrationLocalSourceDiscoveryResponse,
+	PatientAdministrativeProfile,
+	PatientIntakePregnancyStatus,
+	PaymentMethod,
+	PhotoVideoConsentMaterial,
+	PostVisitCareTopic,
+	PricelistSourceKind,
+	ProcedureSpecificConsentProcedure,
+	SmartImportMode,
+	SpeechChunkUploadInput,
+	SpeechProviderConnector,
+	SpeechTranscriptionResponse,
+	StaffRole,
+	StaffWorkingHours,
+	TaxDeductionApplicationDeliveryChannel,
+	TaxDeductionApplicationForm,
+	TaxDeductionApplicationRelationship,
+	TreatmentPlanAcceptanceVariant,
+	VisitNoteDraft,
+	XrayCbctReferralPregnancyStatus,
+	XrayCbctReferralPriority,
+	XrayCbctReferralStudyType,
+} from "@dental/shared";
+import type { CSSProperties } from "react";
+import type { MprProjection, MprWindowPreset } from "./imagingUiLabels";
 import { readDenteClinicToken } from "./lib/safeLocalStorage";
-import { UiLanguage } from "./store/uiStore";
+import type { UiLanguage } from "./store/uiStore";
 import type { AppView } from "./utils/routeUtils";
-
 
 export const imagingSourceLabels: Record<ImagingSourceKind, string> = {
 	manual_upload: "Файл",
@@ -16,7 +64,6 @@ export const imagingSourceLabels: Record<ImagingSourceKind, string> = {
 	folder_watch: "Папка",
 };
 
-
 export const pricelistSourceKindLabels: Record<PricelistSourceKind, string> = {
 	text: "Текст",
 	ocr_text: "OCR",
@@ -25,10 +72,8 @@ export const pricelistSourceKindLabels: Record<PricelistSourceKind, string> = {
 	manual: "Вручную",
 };
 
-
 export const defaultClinicalToothRowsText =
 	"36 | окклюзионная, дистальная | кариес | кариес дентина 36 зуба по осмотру и снимку | восстановление функции и профилактика осложнений | лечение кариеса и композитная реставрация | прогноз зависит от гигиены и контроля | десна без острого воспаления | | ";
-
 
 export const defaultDicomFirstFrameViewerState: ImagingViewerState = {
 	rotationDeg: 0,
@@ -43,7 +88,6 @@ export const defaultDicomFirstFrameViewerState: ImagingViewerState = {
 	preset: "bone",
 };
 
-
 export const defaultImagingViewerState: ImagingViewerState = {
 	rotationDeg: 0,
 	flipHorizontal: false,
@@ -57,7 +101,6 @@ export const defaultImagingViewerState: ImagingViewerState = {
 	preset: "bone",
 };
 
-
 export const emptyTelegramVisualCardUrlDrafts =
 	(): DenteTelegramVisualCardUrls => ({
 		mainMenu: null,
@@ -70,7 +113,6 @@ export const emptyTelegramVisualCardUrlDrafts =
 		staff: null,
 	});
 
-
 export const emptyVisitNoteForm: VisitNoteForm = {
 	complaint: "",
 	anamnesis: "",
@@ -78,7 +120,6 @@ export const emptyVisitNoteForm: VisitNoteForm = {
 	diagnosis: "",
 	treatmentPlan: "",
 };
-
 
 export const defaultUiPreferences: UiPreferences = {
 	version: 1,
@@ -130,7 +171,6 @@ export const defaultUiPreferences: UiPreferences = {
 	savedAt: "",
 };
 
-
 export type UiPreferences = {
 	version: 1;
 	uiLanguage: UiLanguage;
@@ -181,15 +221,11 @@ export type UiPreferences = {
 	savedAt: string;
 };
 
-
 export type UiPreferencesInput = Omit<UiPreferences, "version" | "savedAt">;
-
 
 export const uiPreferencesStorageKey = "dental-crm:web-ui-preferences:v1";
 
-
 export type SettingsTab = (typeof settingsTabs)[number]["id"];
-
 
 export const settingsTabs = [
 	{ id: "profile", title: "Мой профиль", group: "account" },
@@ -211,7 +247,6 @@ export const settingsTabs = [
 	{ id: "audit", title: "Аудит", group: "system" },
 ] as const;
 
-
 export type ImagingViewerState = {
 	rotationDeg: number;
 	flipHorizontal: boolean;
@@ -225,7 +260,6 @@ export type ImagingViewerState = {
 	preset: MprWindowPreset;
 };
 
-
 export type ImagingViewerPlan = {
 	label: string;
 	mode: "two_d" | "ceph" | "cbct_mpr" | "photo";
@@ -234,7 +268,6 @@ export type ImagingViewerPlan = {
 	nextAction: string;
 	warnings: string[];
 };
-
 
 export type CbctWorkbenchPlane = {
 	key: MprProjection;
@@ -248,14 +281,12 @@ export type MprAxisVisualizerStyle = CSSProperties & {
 	"--mpr-slice-position": string;
 };
 
-
 export type ImagingViewerLocalDraft = {
 	state: ImagingViewerSessionState;
 	annotations: ImagingViewerAnnotation[];
 	clientSavedAt: string;
 	serverSavedAt: string | null;
 };
-
 
 export type ImagingViewerSaveState =
 	| "idle"
@@ -265,19 +296,16 @@ export type ImagingViewerSaveState =
 	| "queued"
 	| "error";
 
-
 export type DicomWorkbenchLocalDraft = {
 	manifest: DicomViewerWorkbenchManifestResponse;
 	clientSavedAt: string;
 	seriesKey: string;
 };
 
-
 export type DicomWorkbenchIndexedDbDraft = DicomWorkbenchLocalDraft & {
 	storageKey: string;
 	organizationId: string | null;
 };
-
 
 export type MprWorkbenchState = {
 	projection: MprProjection;
@@ -289,7 +317,6 @@ export type MprWorkbenchState = {
 	linkedPlanes: boolean;
 };
 
-
 export type MprWorkbenchLocalDraft = {
 	version: 1;
 	seriesKey: string;
@@ -297,12 +324,10 @@ export type MprWorkbenchLocalDraft = {
 	clientSavedAt: string;
 };
 
-
 export type MprWorkbenchIndexedDbDraft = MprWorkbenchLocalDraft & {
 	storageKey: string;
 	organizationId: string | null;
 };
-
 
 export type LocalImagingFolderDraft = {
 	version: 1;
@@ -315,23 +340,19 @@ export type LocalImagingFolderDraft = {
 	savedAt: string;
 };
 
-
 export type DicomFirstFramePreviewMetadata = Partial<
 	Omit<LocalImagingFolderDraft, "version" | "folderPath" | "savedAt">
 >;
-
 
 export type DicomFirstFramePreviewRequestContext = {
 	folderPath: string;
 	metadata: DicomFirstFramePreviewMetadata;
 };
 
-
 export type DicomFirstFramePreviewOptions = {
 	preferredFileIndex?: number;
 	resetViewer?: boolean;
 };
-
 
 export type BrowserFileSystemFileHandle = {
 	kind: "file";
@@ -339,18 +360,15 @@ export type BrowserFileSystemFileHandle = {
 	getFile: () => Promise<File>;
 };
 
-
 export type BrowserFileSystemDirectoryHandle = {
 	kind: "directory";
 	name: string;
 	entries: () => AsyncIterable<[string, BrowserFileSystemHandle]>;
 };
 
-
 export type BrowserFileSystemHandle =
 	| BrowserFileSystemFileHandle
 	| BrowserFileSystemDirectoryHandle;
-
 
 export type BrowserDirectoryPickerWindow = Window & {
 	showDirectoryPicker?: (options?: {
@@ -360,14 +378,12 @@ export type BrowserDirectoryPickerWindow = Window & {
 	}) => Promise<BrowserFileSystemDirectoryHandle>;
 };
 
-
 export type DentalDesktopRuntimeWindow = BrowserDirectoryPickerWindow & {
 	dentalCrmDesktop?: { dicomBridge?: unknown; localFileBridge?: unknown };
 	__DENTAL_CRM_DESKTOP__?: unknown;
 	__TAURI__?: unknown;
 	electronAPI?: unknown;
 };
-
 
 export type BrowserPickedImagingFolderPreview = {
 	version: 1;
@@ -388,7 +404,6 @@ export type BrowserPickedImagingFolderPreview = {
 	warnings: string[];
 };
 
-
 export type BrowserPickedImagingScanStats = {
 	rootName: string;
 	sourceKind: BrowserPickedImagingFolderPreview["sourceKind"];
@@ -402,9 +417,7 @@ export type BrowserPickedImagingScanStats = {
 	warnings: string[];
 };
 
-
 export type BrowserImagingScanPhase = "scanning" | "done" | "cancelled";
-
 
 export type BrowserImagingScanProgress = BrowserPickedImagingScanStats & {
 	phase: BrowserImagingScanPhase;
@@ -418,18 +431,15 @@ export type BrowserImagingScanProgress = BrowserPickedImagingScanStats & {
 	magicReadLimit: number;
 };
 
-
 export type BrowserImagingScanOptions = {
 	signal?: AbortSignal;
 	startedAt: string;
 	onProgress?: (progress: BrowserImagingScanProgress) => void;
 };
 
-
 export type LocalDicomOperationOptions = {
 	signal?: AbortSignal;
 };
-
 
 export type BrowserImagingScanRuntime = {
 	startedAt: string;
@@ -439,10 +449,8 @@ export type BrowserImagingScanRuntime = {
 	lastProgressAtMs: number;
 };
 
-
 export type BrowserMigrationSourceKind =
 	MigrationLocalSourceDiscoveryResponse["candidates"][number]["sourceKind"];
-
 
 export type BrowserMigrationFileKind =
 	| "database"
@@ -453,7 +461,6 @@ export type BrowserMigrationFileKind =
 	| "image"
 	| "model"
 	| "other";
-
 
 export type BrowserMigrationFolderStats = {
 	folderKey: string;
@@ -471,7 +478,6 @@ export type BrowserMigrationFolderStats = {
 	totalBytes: number;
 };
 
-
 export type BrowserMigrationScanStats = {
 	rootName: string;
 	sourceKind: "browser_directory_picker" | "browser_file_input";
@@ -488,9 +494,7 @@ export type BrowserMigrationScanStats = {
 	warnings: string[];
 };
 
-
 export type BrowserMigrationScanPhase = "scanning" | "done" | "cancelled";
-
 
 export type BrowserMigrationScanProgress = BrowserMigrationScanStats & {
 	phase: BrowserMigrationScanPhase;
@@ -504,13 +508,11 @@ export type BrowserMigrationScanProgress = BrowserMigrationScanStats & {
 	magicReadLimit: number;
 };
 
-
 export type BrowserMigrationScanOptions = {
 	signal?: AbortSignal;
 	startedAt: string;
 	onProgress?: (progress: BrowserMigrationScanProgress) => void;
 };
-
 
 export type BrowserMigrationScanRuntime = {
 	startedAt: string;
@@ -519,7 +521,6 @@ export type BrowserMigrationScanRuntime = {
 	lastYieldAtMs: number;
 	lastProgressAtMs: number;
 };
-
 
 export const imagingViewerLocalStoragePrefix = "dental-crm:imaging-viewer:";
 
@@ -588,18 +589,15 @@ export const sensitiveLocalDraftRetentionMs = 7 * 24 * 60 * 60 * 1000;
 
 export const speechAudioQueueRetentionMs = 48 * 60 * 60 * 1000;
 
-
 export type DocumentPaymentSelectionEntry = {
 	paymentIds: string[];
 	savedAt: string;
 };
 
-
 export type DocumentPaymentSelectionStore = {
 	version: 1;
 	selections: Record<string, DocumentPaymentSelectionEntry>;
 };
-
 
 export type Outpatient025uDocumentDraftFields = {
 	recordExtractPeriodStart: string;
@@ -636,7 +634,6 @@ export type Outpatient025uDocumentDraftFields = {
 	outpatient025uThirdPartyDataChecked: boolean;
 };
 
-
 export type MedicalRecordExtractDocumentDraftFields = {
 	recordExtractPeriodStart: string;
 	recordExtractPeriodEnd: string;
@@ -654,7 +651,6 @@ export type MedicalRecordExtractDocumentDraftFields = {
 	recordExtractThirdPartyDataChecked: boolean;
 };
 
-
 export type DocumentPayloadDraftEntry = {
 	kind: "outpatient_medical_card_025u" | "medical_record_extract";
 	patientId: string;
@@ -665,12 +661,10 @@ export type DocumentPayloadDraftEntry = {
 		| MedicalRecordExtractDocumentDraftFields;
 };
 
-
 export type DocumentPayloadDraftStore = {
 	version: 1;
 	drafts: Record<string, DocumentPayloadDraftEntry>;
 };
-
 
 export type DocumentIssueSignatureDraft = {
 	version: 1;
@@ -680,7 +674,6 @@ export type DocumentIssueSignatureDraft = {
 	savedAt: string;
 };
 
-
 export const documentIssueSignatureModeLabels: Record<
 	DocumentIssueSignatureMode,
 	string
@@ -689,7 +682,6 @@ export const documentIssueSignatureModeLabels: Record<
 	simple_electronic_signature: "Простая электронная подпись",
 	qualified_electronic_signature: "УКЭП",
 };
-
 
 export const documentVoidReasonLabels: Record<DocumentVoidReasonCode, string> =
 	{
@@ -703,10 +695,8 @@ export const documentVoidReasonLabels: Record<DocumentVoidReasonCode, string> =
 		other: "Другая причина",
 	};
 
-
 export const dicomDownloadRedactionWarning =
 	"Скачанный пакет скрывает локальные пути снимков; перед загрузкой пикселей переподключите папку или устройство на рабочей станции.";
-
 
 export const browserMigrationSourceTitles: Record<
 	BrowserMigrationSourceKind,
@@ -728,10 +718,8 @@ export const browserMigrationSourceTitles: Record<
 	unknown_legacy_source: "Неопознанный источник старой системы",
 };
 
-
 export const browserLegacyMisTextPattern =
 	/1c|1с|\.1cd\b|мис|инфоклиника|infoclinica|infodent|инфодент|дента\s*офис|denta\s*office|clinic\s*cards|cliniccards|dental\s*4\s*windows|d4w|dental4windows|dental\s*pro|dentpro|dental\s*soft|dentasoft|dental\s*cloud|clinic\s*365|clinic365|medangel|медангел|medialog|медиалог|arnica|арника|sycret\s*dent|secret\s*dent|адента|adenta|dent\s*crm\s*24|dentcrm24|dent\.crm24|клиентикс|clientix|klientix|2v.*(?:стоматолог|dental)|future\s*it\s*dent|futureitdent|32\s*top|32top|medods|медодс|dental\s*tap|dentaltap|(?:^|[\\/])ident(?:[\\/]|$)|\bident\b|stomx|stom\s*x|стомx|стомикс|i[-\s]?stom|ай\s*стом|q[-\s]?stoma|кью\s*стома|бит\.?\s*стоматолог|bit\.?\s*stomatolog|1c.*стоматолог|1с.*стоматолог|mac\s*dent|macdent|stom\s*box|stombox|open\s*dent(?:al)?|opendental|opendent|open\s*dent\s*images|atoz|dentrix|eaglesoft|patterson|softdent|practice\s*works|curve\s*dental|denticon|tab32|dolphin\s*(?:imaging|management)|legacy|старая\s+баз/i;
-
 
 export const imagingViewerPlans: Record<ImagingStudyKind, ImagingViewerPlan> = {
 	periapical: {
@@ -803,7 +791,6 @@ export const imagingViewerPlans: Record<ImagingStudyKind, ImagingViewerPlan> = {
 	},
 };
 
-
 export const imagingSourceChoices: ImagingSourceKind[] = [
 	"folder_watch",
 	"sensor_bridge",
@@ -813,7 +800,6 @@ export const imagingSourceChoices: ImagingSourceKind[] = [
 	"twain_wia",
 	"manual_upload",
 ];
-
 
 export const smartImportModeLabels: Record<
 	SmartImportMode,
@@ -836,7 +822,6 @@ export const smartImportModeLabels: Record<
 		detail: "Принудительно разобрать как RVG/ОПТГ/КТ.",
 	},
 };
-
 
 export const importSourceLabels: Record<
 	ImportSourceKind,
@@ -870,7 +855,6 @@ export const importSourceLabels: Record<
 	},
 };
 
-
 export const ingestionTargetLabels: Record<DocumentIngestionTarget, string> = {
 	smart_import: "Умный импорт",
 	patients: "Пациенты",
@@ -878,7 +862,6 @@ export const ingestionTargetLabels: Record<DocumentIngestionTarget, string> = {
 	pricelist: "Прайс",
 	plain_text: "Текст",
 };
-
 
 export const documentIngestionQualityLabels: Record<
 	DocumentIngestionResponse["quality"]["extractionQuality"],
@@ -889,7 +872,6 @@ export const documentIngestionQualityLabels: Record<
 	ocr_required: "Нужен OCR / vision",
 	unsupported: "Формат не разобран",
 };
-
 
 export const telegramBlockedReasonLabels: Record<string, string> = {
 	missing_patient_portal_base_url: "Не настроена ссылка на портал пациента.",
@@ -923,11 +905,9 @@ export const telegramBlockedReasonLabels: Record<string, string> = {
 		"Время отправки в задаче не распознано как дата. Сообщение не отправлено; исправьте время в задаче коммуникации.",
 };
 
-
 export const telegramWarningLabels: Record<string, string> = {
 	idempotent_replay: "Повторная отправка распознана и не продублирована.",
 };
-
 
 export const documentDetectedKindLabels: Record<string, string> = {
 	archive: "архив",
@@ -951,13 +931,11 @@ export const documentDetectedKindLabels: Record<string, string> = {
 	zip: "архив",
 };
 
-
 export const dicomFirstFrameStatusLabels: Record<string, string> = {
 	ready: "готово",
 	unsupported: "не поддерживается",
 	not_found: "не найдено",
 };
-
 
 export const toothRows = [
 	[
@@ -998,7 +976,6 @@ export const toothRows = [
 	],
 ] as const;
 
-
 export const toothStateByCode: Record<
 	string,
 	"watch" | "planned" | "done" | "missing"
@@ -1010,7 +987,6 @@ export const toothStateByCode: Record<
 	"48": "missing",
 };
 
-
 /**
  * Что печатается вместо суммы, которой программа не знает.
  *
@@ -1019,7 +995,6 @@ export const toothStateByCode: Record<
  * не подсвечивать красным долг, которого никто не считал.
  */
 export const moneyUnknownLabel = "не определено";
-
 
 export type BrowserSpeechRecognition = {
 	continuous: boolean;
@@ -1033,14 +1008,12 @@ export type BrowserSpeechRecognition = {
 	start: () => void;
 };
 
-
 export type BrowserWindowWithSpeech = Window &
 	typeof globalThis & {
 		SpeechRecognition?: new () => BrowserSpeechRecognition;
 		webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
 		webkitAudioContext?: typeof AudioContext;
 	};
-
 
 export type VisitNoteField =
 	| "complaint"
@@ -1050,7 +1023,6 @@ export type VisitNoteField =
 	| "treatmentPlan";
 
 export type VisitNoteForm = Record<VisitNoteField, string>;
-
 
 export const visitNoteFieldDefinitions: Array<{
 	key: VisitNoteField;
@@ -1063,7 +1035,6 @@ export const visitNoteFieldDefinitions: Array<{
 	{ key: "treatmentPlan", label: "План" },
 ];
 
-
 export const visitDraftQualityLabels: Record<
 	NonNullable<VisitNoteDraft["quality"]>["level"],
 	string
@@ -1072,7 +1043,6 @@ export const visitDraftQualityLabels: Record<
 	review: "Нужна проверка",
 	needs_more_dictation: "Нужно дописать",
 };
-
 
 export const visitDraftSignalLabels: Record<string, string> = {
 	complaint_detected: "жалобы есть",
@@ -1087,7 +1057,6 @@ export const visitDraftSignalLabels: Record<string, string> = {
 	procedure_mentioned: "процедура упомянута",
 };
 
-
 export const visitDraftMissingFieldLabels: Record<string, string> = {
 	complaint: "жалобы",
 	anamnesis: "анамнез",
@@ -1096,7 +1065,6 @@ export const visitDraftMissingFieldLabels: Record<string, string> = {
 	treatment_plan: "план лечения",
 	tooth_or_region: "зуб или область",
 };
-
 
 export const speechQualityLabels: Record<
 	SpeechTranscriptionResponse["chunk"]["quality"]["level"],
@@ -1108,7 +1076,6 @@ export const speechQualityLabels: Record<
 	failed: "сбой",
 };
 
-
 export type VisitLocalDraft = {
 	version: 1;
 	visitId: string;
@@ -1117,7 +1084,6 @@ export type VisitLocalDraft = {
 	selectedSpecialty: DentalSpecialty;
 	visitNoteForm: VisitNoteForm;
 };
-
 
 export type PendingVisitSave = {
 	version: 1;
@@ -1133,14 +1099,12 @@ export type PendingVisitSave = {
 	selectedSpecialty: DentalSpecialty;
 };
 
-
 export type PendingSpeechChunk = SpeechChunkUploadInput & {
 	version: 1;
 	id: string;
 	organizationId: string | null;
 	queuedAt: string;
 };
-
 
 export type PersistenceHealth = {
 	enabled: boolean;
@@ -1156,7 +1120,6 @@ export type PersistenceHealth = {
 	maxBackupCount: number;
 };
 
-
 export type PersistenceBackupCheck = {
 	fileName: string;
 	savedAt: string;
@@ -1166,7 +1129,6 @@ export type PersistenceBackupCheck = {
 	readable: boolean;
 	warning: string | null;
 };
-
 
 export type PersistenceIntegrityReport = {
 	ok: boolean;
@@ -1178,7 +1140,6 @@ export type PersistenceIntegrityReport = {
 	warnings: string[];
 	nextAction: string;
 };
-
 
 export const pendingVisitSaveQueueKey = "dental-crm:pending-visit-saves";
 
@@ -1205,8 +1166,7 @@ export const requiredSpeechChunkDbStoreNames = [
 	speechChunkStoreName,
 ] as const;
 
-export let speechChunkDbPromise: Promise<IDBDatabase> | null = null;
-
+export const speechChunkDbPromise: Promise<IDBDatabase> | null = null;
 
 export type TelegramOutboxStatusFilter =
 	| DenteTelegramOutboxResponse["items"][number]["deliveryStatus"]
@@ -1217,19 +1177,16 @@ export type TelegramOutboxTemplateFilter =
 	| DenteTelegramMessagePreview["templateKind"]
 	| "all";
 
-
 export const uiLanguageLabels: Record<UiLanguage, string> = {
 	ru: "Русский",
 	en: "English",
 };
-
 
 export type UiLanguageOption = {
 	value: UiLanguage;
 	label: string;
 	detail: string;
 };
-
 
 export const defaultUiLanguageOption: UiLanguageOption = {
 	value: "ru",
@@ -1238,9 +1195,7 @@ export const defaultUiLanguageOption: UiLanguageOption = {
 		"Русский интерфейс включен сейчас. Выбор сохраняется автоматически и остается до смены языка.",
 };
 
-
 export const uiLanguageOptions: UiLanguageOption[] = [defaultUiLanguageOption];
-
 
 export const telegramPublicUrlSensitiveQueryKeys = new Set([
 	"patient",
@@ -1275,7 +1230,6 @@ export const telegramPublicUrlSensitiveQueryKeys = new Set([
 	"code",
 ]);
 
-
 export const telegramPublicUrlSensitivePathSegments = new Set([
 	"patient",
 	"patients",
@@ -1305,7 +1259,6 @@ export const telegramPublicUrlSensitivePathSegments = new Set([
 	"inn",
 ]);
 
-
 export const onboardingTelegramVisualCardKeys: DenteTelegramVisualCardKey[] = [
 	"mainMenu",
 	"appointment",
@@ -1317,7 +1270,6 @@ export const onboardingTelegramVisualCardKeys: DenteTelegramVisualCardKey[] = [
 	"staff",
 ];
 
-
 export type TelegramFeaturePlan = {
 	productName: string;
 	botUsername: string | null;
@@ -1328,16 +1280,13 @@ export type TelegramFeaturePlan = {
 	blockedByDefault: string[];
 };
 
-
 export type TelegramLinkSubjectType = "patient" | "staff";
-
 
 export const telegramModeLabels: Record<DenteTelegramBotMode, string> = {
 	disabled: "выключен",
 	shared_dente_bot: "общий бот платформы",
 	clinic_owned_bot: "бот клиники",
 };
-
 
 export const telegramModeHints: Record<DenteTelegramBotMode, string> = {
 	disabled: "Telegram не создает новые задачи и не отправляет сообщения.",
@@ -1347,7 +1296,6 @@ export const telegramModeHints: Record<DenteTelegramBotMode, string> = {
 		"Собственный бот клиники: имя сохраняется в настройках, секрет бота хранится в серверных настройках клиники.",
 };
 
-
 export const telegramPrivacyModeLabels: Record<
 	DenteTelegramPrivacyMode,
 	string
@@ -1356,7 +1304,6 @@ export const telegramPrivacyModeLabels: Record<
 	limited_admin_only: "Только административные сведения",
 	consented_phi_templates: "Чувствительные шаблоны только по согласию",
 };
-
 
 export const telegramPrivacyModeHints: Record<
 	DenteTelegramPrivacyMode,
@@ -1369,7 +1316,6 @@ export const telegramPrivacyModeHints: Record<
 	consented_phi_templates:
 		"Режим для будущих шаблонов с явным согласием пациента и аудитом.",
 };
-
 
 export const telegramTemplateLabels: Record<
 	DenteTelegramMessagePreview["templateKind"],
@@ -1388,7 +1334,6 @@ export const telegramTemplateLabels: Record<
 	staff_daily_digest: "сводка сотруднику",
 };
 
-
 export const telegramClassificationLabels: Record<
 	DenteTelegramMessagePreview["classification"],
 	string
@@ -1397,7 +1342,6 @@ export const telegramClassificationLabels: Record<
 	limited_admin: "административное",
 	phi_requires_consent: "медданные только с согласием",
 };
-
 
 export const telegramDeliveryStatusLabels: Record<
 	DenteTelegramOutboxResponse["items"][number]["deliveryStatus"],
@@ -1410,7 +1354,6 @@ export const telegramDeliveryStatusLabels: Record<
 	disabled: "выключено",
 };
 
-
 export const telegramLinkCodeStatusLabels: Record<
 	DenteTelegramLinkCodePublic["status"],
 	string
@@ -1420,7 +1363,6 @@ export const telegramLinkCodeStatusLabels: Record<
 	expired: "истек",
 	revoked: "отозван",
 };
-
 
 export const telegramOutboxStatusFilterOptions: TelegramOutboxStatusFilter[] = [
 	"all",
@@ -1432,7 +1374,6 @@ export const telegramOutboxStatusFilterOptions: TelegramOutboxStatusFilter[] = [
 	"disabled",
 ];
 
-
 export const telegramOutboxStatusFilterLabels: Record<
 	TelegramOutboxStatusFilter,
 	string
@@ -1442,7 +1383,6 @@ export const telegramOutboxStatusFilterLabels: Record<
 	...telegramDeliveryStatusLabels,
 };
 
-
 export const telegramOutboxTemplateFilterOptions: TelegramOutboxTemplateFilter[] =
 	[
 		"all",
@@ -1450,7 +1390,6 @@ export const telegramOutboxTemplateFilterOptions: TelegramOutboxTemplateFilter[]
 			telegramTemplateLabels,
 		) as DenteTelegramMessagePreview["templateKind"][]),
 	];
-
 
 export const telegramOutboxTemplateFilterLabels: Record<
 	TelegramOutboxTemplateFilter,
@@ -1460,13 +1399,11 @@ export const telegramOutboxTemplateFilterLabels: Record<
 	...telegramTemplateLabels,
 };
 
-
 export type TelegramInlineButtonPreview = {
 	text: string;
 	target: string;
 	kind: "url" | "callback" | "unknown";
 };
-
 
 export const telegramInlineButtonKindLabels: Record<
 	TelegramInlineButtonPreview["kind"],
@@ -1476,7 +1413,6 @@ export const telegramInlineButtonKindLabels: Record<
 	callback: "действие",
 	unknown: "кнопка",
 };
-
 
 export type OnboardingStep =
 	| "intro"
@@ -1488,7 +1424,6 @@ export type OnboardingStep =
 	| "telegram"
 	| "done";
 
-
 export const onboardingStepValues: readonly OnboardingStep[] = [
 	"intro",
 	"role",
@@ -1499,7 +1434,6 @@ export const onboardingStepValues: readonly OnboardingStep[] = [
 	"telegram",
 	"done",
 ];
-
 
 export type ClinicProfileDraft = {
 	clinicName: string;
@@ -1526,9 +1460,7 @@ export type ClinicProfileDraft = {
 	egiszEnabled: boolean;
 };
 
-
 export type ClinicProfileSaveState = "idle" | "saving" | "saved" | "error";
-
 
 export type PatientCoreDraft = {
 	fullName: string;
@@ -1539,7 +1471,6 @@ export type PatientCoreDraft = {
 };
 
 export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
-
 
 export type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
@@ -1556,7 +1487,6 @@ export type PatientAdministrativeProfileSaveState =
 	| "saved"
 	| "error";
 
-
 export type StaffScheduleDraft = {
 	start: string;
 	end: string;
@@ -1565,7 +1495,6 @@ export type StaffScheduleDraft = {
 };
 
 export type StaffScheduleSaveState = "idle" | "saving" | "saved" | "error";
-
 
 export type AppointmentScheduleDraft = {
 	patientId: string;
@@ -1584,7 +1513,6 @@ export type AppointmentScheduleSaveState =
 	| "saving"
 	| "saved"
 	| "error";
-
 
 export type MedicalDocumentReleaseChannel =
 	| "paper"
@@ -1605,7 +1533,6 @@ export const medicalDocumentReleaseChannelLabels: Record<
 	physical_media: "Физический носитель",
 	other: "Иной канал",
 };
-
 
 export type PaymentRefundCorrectionAction =
 	| "full_refund"
@@ -1650,7 +1577,6 @@ export const outpatient025uDemographicCodeOptions = [
 export type Outpatient025uDemographicCode =
 	(typeof outpatient025uDemographicCodeOptions)[number];
 
-
 export const patientIntakePregnancyStatusOptions: Array<{
 	value: PatientIntakePregnancyStatus;
 	label: string;
@@ -1663,7 +1589,6 @@ export const patientIntakePregnancyStatusOptions: Array<{
 	{ value: "unknown", label: "Не уточнено" },
 ];
 
-
 export const taxApplicationRelationshipOptions: Array<{
 	value: TaxDeductionApplicationRelationship;
 	label: string;
@@ -1675,7 +1600,6 @@ export const taxApplicationRelationshipOptions: Array<{
 	{ value: "ward", label: "Подопечный" },
 ];
 
-
 export const taxApplicationFormOptions: Array<{
 	value: TaxDeductionApplicationForm;
 	label: string;
@@ -1683,7 +1607,6 @@ export const taxApplicationFormOptions: Array<{
 	{ value: "knd_1151156", label: "КНД 1151156, расходы с 2024" },
 	{ value: "legacy_2021_2023", label: "Старая справка, оплаты 2021-2023" },
 ];
-
 
 export const taxApplicationDeliveryChannelOptions: Array<{
 	value: TaxDeductionApplicationDeliveryChannel;
@@ -1697,11 +1620,9 @@ export const taxApplicationDeliveryChannelOptions: Array<{
 	{ value: "other", label: "Иной канал" },
 ];
 
-
 export type ClinicalToothSurface = ClinicalToothRow["surfaces"][number];
 
 export type ClinicalToothStatus = ClinicalToothRow["status"];
-
 
 export const clinicalToothSurfaceAliases: Record<string, ClinicalToothSurface> =
 	{
@@ -1742,7 +1663,6 @@ export const clinicalToothSurfaceAliases: Record<string, ClinicalToothSurface> =
 		"-": "not_applicable",
 	};
 
-
 export const clinicalToothStatusAliases: Record<string, ClinicalToothStatus> = {
 	норма: "sound",
 	"без патологии": "sound",
@@ -1777,7 +1697,6 @@ export const clinicalToothStatusAliases: Record<string, ClinicalToothStatus> = {
 	другое: "other",
 };
 
-
 export const installmentPaymentStatusAliases: Record<
 	string,
 	InstallmentPaymentStatus
@@ -1804,7 +1723,6 @@ export const installmentPaymentStatusAliases: Record<
 	cancelled: "cancelled",
 };
 
-
 export const procedureSpecificConsentProcedureOptions: Array<{
 	value: ProcedureSpecificConsentProcedure;
 	label: string;
@@ -1823,7 +1741,6 @@ export const procedureSpecificConsentProcedureOptions: Array<{
 	{ value: "other", label: "Другая процедура" },
 ];
 
-
 export const xrayStudyTypeOptions: Array<{
 	value: XrayCbctReferralStudyType;
 	label: string;
@@ -1838,7 +1755,6 @@ export const xrayStudyTypeOptions: Array<{
 	{ value: "other", label: "Другое" },
 ];
 
-
 export const xrayPregnancyStatusOptions: Array<{
 	value: XrayCbctReferralPregnancyStatus;
 	label: string;
@@ -1849,7 +1765,6 @@ export const xrayPregnancyStatusOptions: Array<{
 	{ value: "confirmed", label: "Подтверждена" },
 	{ value: "unknown", label: "Не уточнено" },
 ];
-
 
 export const photoVideoMaterialOptions: Array<{
 	value: PhotoVideoConsentMaterial;
@@ -1864,7 +1779,6 @@ export const photoVideoMaterialOptions: Array<{
 	{ value: "other", label: "Иные материалы" },
 ];
 
-
 export const aiJobKindPreferenceValues: readonly AiJobKind[] = [
 	"voice_transcription",
 	"visit_note_draft",
@@ -1872,7 +1786,6 @@ export const aiJobKindPreferenceValues: readonly AiJobKind[] = [
 	"document_draft",
 	"paper_ocr",
 ];
-
 
 export const aiJobKindLabels: Record<AiJobKind, string> = {
 	voice_transcription: "диктовка врача",
@@ -1882,17 +1795,14 @@ export const aiJobKindLabels: Record<AiJobKind, string> = {
 	paper_ocr: "разбор бумажного журнала",
 };
 
-
 export const technicalWorkflowFailurePattern =
 	/\b(TypeError|DOMException|SyntaxError|ReferenceError|Failed to fetch|NetworkError|Load failed|fetch|JSON|ENOENT|EACCES|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EPIPE|stack|undefined|null|NaN|[A-Z][A-Z0-9_]{5,})\b|\/api\/|https?:\/\/|[A-Za-z]:\\|\\\\[^\\]+\\|\/(Users|home|var|tmp)\//i;
-
 
 export type OnboardingDismissalState = {
 	dismissed: boolean;
 	savedAt: string;
 	draftMode: boolean;
 };
-
 
 export const weekdayOptions = [
 	{ value: 1, label: "Пн" },
@@ -1904,12 +1814,9 @@ export const weekdayOptions = [
 	{ value: 0, label: "Вс" },
 ];
 
-
 export const defaultWorkingDays = [1, 2, 3, 4, 5];
 
-
 export type PricelistImageMimeType = "image/jpeg" | "image/png" | "image/webp";
-
 
 export const pricelistImageMimeTypes: PricelistImageMimeType[] = [
 	"image/jpeg",
@@ -1919,7 +1826,6 @@ export const pricelistImageMimeTypes: PricelistImageMimeType[] = [
 
 export const maxPricelistImageBase64Chars = 3_800_000;
 
-
 export type DenteTelegramPortalSection =
 	| "home"
 	| "documents"
@@ -1927,7 +1833,6 @@ export type DenteTelegramPortalSection =
 	| "billing"
 	| "care"
 	| "schedule";
-
 
 export type DenteTelegramHandoffTarget = {
 	section: DenteTelegramPortalSection;
@@ -1937,7 +1842,6 @@ export type DenteTelegramHandoffTarget = {
 	detail: string;
 	documentKind?: GeneratedDocument["kind"];
 };
-
 
 export const denteTelegramHandoffTargets: Record<
 	DenteTelegramPortalSection,
@@ -1992,7 +1896,6 @@ export const denteTelegramHandoffTargets: Record<
 	},
 };
 
-
 export const workspaceScopeLabels: Record<
 	Dashboard["clinicSettings"]["workspaceProfiles"][number]["scope"],
 	string
@@ -2003,7 +1906,6 @@ export const workspaceScopeLabels: Record<
 	network: "сеть",
 };
 
-
 export const patientInsightRiskLabels: Record<
 	Dashboard["patientInsights"][number]["riskLevel"],
 	string
@@ -2012,7 +1914,6 @@ export const patientInsightRiskLabels: Record<
 	watch: "контроль",
 	high: "срочно",
 };
-
 
 export const recommendedActionPriorityLabels: Record<
 	Dashboard["recommendedActions"][number]["priority"],
@@ -2023,7 +1924,6 @@ export const recommendedActionPriorityLabels: Record<
 	urgent: "срочно",
 };
 
-
 export const appointmentReadinessLabels: Record<
 	Dashboard["appointmentReadiness"][number]["state"],
 	string
@@ -2032,7 +1932,6 @@ export const appointmentReadinessLabels: Record<
 	needs_attention: "проверить",
 	blocked: "важно",
 };
-
 
 /*
  * Вкладки настроек.
@@ -2077,7 +1976,6 @@ export const settingsTabGroups = [
 
 export type SettingsTabGroup = (typeof settingsTabGroups)[number]["id"];
 
-
 export type AdminSecretSessionDomain =
 	| "clinical"
 	| "settings"
@@ -2085,7 +1983,6 @@ export type AdminSecretSessionDomain =
 	| "telegram";
 
 export type AdminSecretUnlockDomain = AdminSecretSessionDomain | "all";
-
 
 export const onboardingSteps: Array<{
 	id: OnboardingStep;
@@ -2099,7 +1996,6 @@ export const onboardingSteps: Array<{
 	{ id: "done", title: "Готово", detail: "проверка и старт" },
 ];
 
-
 export const roleFocusOrder: StaffRole[] = [
 	"doctor",
 	"administrator",
@@ -2107,7 +2003,6 @@ export const roleFocusOrder: StaffRole[] = [
 	"manager",
 	"owner",
 ];
-
 
 export const speechProviderConnectorLabels: Record<
 	SpeechProviderConnector,
@@ -2120,9 +2015,7 @@ export const speechProviderConnectorLabels: Record<
 	local_planned: "локально",
 };
 
-
 export const initialUiPreferences = {} as any;
-
 
 export const auth = {
 	denteClinicalReadHeaders: (

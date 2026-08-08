@@ -17,8 +17,8 @@ import { useCallback, useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 type ClipboardItem = {
 	id: string;

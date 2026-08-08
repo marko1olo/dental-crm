@@ -7,13 +7,13 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { auth } from "../../AppConstants";
 import {
 	classifyFailedHttpStatus,
 	type EgiszEndpointOutcome,
 	type EgiszTone,
 	resolveEgiszCatalogState,
 } from "./egiszAvailability";
-import { auth } from "../../AppConstants";
 
 /**
  * СПРАВОЧНИК ПРАВИЛ ВЫГРУЗКИ ПОЛЕЙ БЛАНКОВ В ЕГИСЗ.

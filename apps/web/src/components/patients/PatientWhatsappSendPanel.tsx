@@ -24,8 +24,8 @@ import {
 	actionFailureToast,
 	requestFailureCause,
 } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
 	const t = raw.trim();
@@ -81,9 +81,7 @@ export const PatientWhatsappSendPanel: React.FC<
 			const detail = operatorReadableErrorDetail(serverMsg || null);
 
 			if (!res.ok) {
-				logger.error(
-					`[whatsapp-send] POST ${res.status} ${raw.slice(0, 300)}`,
-				);
+				logger.error(`[whatsapp-send] POST ${res.status} ${raw.slice(0, 300)}`);
 				const msg =
 					detail ??
 					(res.status === 404

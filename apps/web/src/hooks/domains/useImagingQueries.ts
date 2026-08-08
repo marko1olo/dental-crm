@@ -1,7 +1,5 @@
-
 export function useImagingQueries(options?: { auth?: any }) {
-	let auth = options?.auth;
-
+	const auth = options?.auth;
 
 	const getScans = async (patientId: string) => {
 		return fetch(`/api/xray/scans?patientId=${patientId}`, {
@@ -57,11 +55,15 @@ export function useImagingQueries(options?: { auth?: any }) {
 	};
 
 	const pickBrowserImagingFolder = () => {
-		const el = document.querySelector<HTMLInputElement>('[data-testid="browser-local-imaging-folder-input"]');
+		const el = document.querySelector<HTMLInputElement>(
+			'[data-testid="browser-local-imaging-folder-input"]',
+		);
 		if (el) el.click();
 	};
 	const pickBrowserImagingFiles = () => {
-		const el = document.querySelector<HTMLInputElement>('[data-testid="browser-local-imaging-files-input"]');
+		const el = document.querySelector<HTMLInputElement>(
+			'[data-testid="browser-local-imaging-files-input"]',
+		);
 		if (el) el.click();
 	};
 	const previewImagingImport = async (payload?: any) => {

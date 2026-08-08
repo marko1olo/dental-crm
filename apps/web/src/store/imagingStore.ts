@@ -26,6 +26,12 @@ import type {
 	MprWindowPreset,
 } from "@dental/shared";
 import { create } from "zustand";
+import type {
+	BrowserImagingScanProgress,
+	BrowserPickedImagingFolderPreview,
+	ImagingViewerSaveState,
+	LocalImagingFolderDraft,
+} from "../AppConstants";
 import {
 	defaultDicomFirstFrameViewerState,
 	defaultImagingViewerState,
@@ -35,7 +41,6 @@ import {
 	loadUiPreferences,
 } from "../utils/preferencesUtils";
 import { resolveUpdater } from "./updater";
-import { BrowserImagingScanProgress, BrowserPickedImagingFolderPreview, ImagingViewerSaveState, LocalImagingFolderDraft } from "../AppConstants";
 
 // БЫЛО: настройки брались из initialUiPreferences — заглушки `{} as any` в
 // AppHelpers. Все поля были undefined, поэтому фильтр снимков сравнивался с

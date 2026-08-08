@@ -17,7 +17,6 @@ import {
 	type VisitNoteDraft,
 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { logger } from "../../utils/logger";
 import {
 	acceptedVisitSaveFailureIsRetryable,
 	appendSpeechTextWithoutDuplicateTail,
@@ -53,6 +52,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { motionSafeScrollIntoView } from "../../motionPreference";
 import { useAppStore } from "../../store/appStore";
 import { useVisitStore } from "../../store/visitStore";
+import { logger } from "../../utils/logger";
 import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
 
 export function useVisitLogic({

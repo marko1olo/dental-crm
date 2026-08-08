@@ -290,7 +290,9 @@ export const SpeechChunksInspector: React.FC = () => {
 					),
 					"error",
 				);
-				setChunksError("Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть.");
+				setChunksError(
+					"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть.",
+				);
 			} finally {
 				setChunksLoading(false);
 			}

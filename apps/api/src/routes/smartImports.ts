@@ -7927,45 +7927,39 @@ function parseSmartImportPayload<T>(
 }
 
 export async function registerSmartImportRoutes(app: FastifyInstance) {
-	app.post(
-		"/api/imports/smart/preview",
-		{
-		},
-		async (request, reply) => {
-			try {
-				if (
-					!(await requireClinicalReadAccess(
-						request,
-						reply,
-						"smart import preview",
-					))
-				)
-					return;
-				const parsed = parseSmartImportPayload(
-					smartImportRequestSchema,
-					request.body,
-					"Умный импорт не проверен: передайте непустой текст, таблицу или описание источника до 120000 символов.",
-				);
-				if (!parsed.ok) return reply.code(400).send(parsed.response);
-				const input = parsed.data;
-				const orgId = await requireResolvedOrganizationId(
+	app.post("/api/imports/smart/preview", {}, async (request, reply) => {
+		try {
+			if (
+				!(await requireClinicalReadAccess(
 					request,
 					reply,
-					"smart import",
-				);
-				if (!orgId) return;
-				return await buildSmartImportPreview(orgId, input);
-			} catch (error) {
-				request.log.error(error);
-				return reply.code(500).send({ error: "Internal Server Error" });
-			}
-		},
-	);
+					"smart import preview",
+				))
+			)
+				return;
+			const parsed = parseSmartImportPayload(
+				smartImportRequestSchema,
+				request.body,
+				"Умный импорт не проверен: передайте непустой текст, таблицу или описание источника до 120000 символов.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"smart import",
+			);
+			if (!orgId) return;
+			return await buildSmartImportPreview(orgId, input);
+		} catch (error) {
+			request.log.error(error);
+			return reply.code(500).send({ error: "Internal Server Error" });
+		}
+	});
 
 	app.post(
 		"/api/imports/smart/local-source-discovery",
-		{
-		},
+		{},
 		async (request, reply) => {
 			try {
 				if (
@@ -7993,8 +7987,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/local-source-workup",
-		{
-		},
+		{},
 		async (request, reply) => {
 			try {
 				if (
@@ -8022,8 +8015,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/local-source-probe",
-		{
-		},
+		{},
 		async (request, reply) => {
 			try {
 				if (
@@ -8051,8 +8043,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/migration-autopilot",
-		{
-		},
+		{},
 		async (request, reply) => {
 			try {
 				if (
@@ -8086,8 +8077,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/migration-autopilot/report.csv",
-		{
-		},
+		{},
 		async (request, reply) => {
 			try {
 				if (
@@ -8129,8 +8119,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/clinic-public-lookup",
-		{
-		},
+		{},
 		async (request, reply) => {
 			try {
 				if (
@@ -8156,149 +8145,134 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		},
 	);
 
-	app.post(
-		"/api/imports/smart/report.csv",
-		{
-		},
-		async (request, reply) => {
-			try {
-				if (
-					!(await requireClinicalReadAccess(
-						request,
-						reply,
-						"smart import report",
-					))
-				)
-					return;
-				const parsed = parseSmartImportPayload(
-					smartImportRequestSchema,
-					request.body,
-					"Отчет умного импорта не создан: передайте непустой текст, таблицу или описание источника.",
-				);
-				if (!parsed.ok) return reply.code(400).send(parsed.response);
-				const input = parsed.data;
-				const orgId = await requireResolvedOrganizationId(
+	app.post("/api/imports/smart/report.csv", {}, async (request, reply) => {
+		try {
+			if (
+				!(await requireClinicalReadAccess(
 					request,
 					reply,
-					"smart import",
-				);
-				if (!orgId) return;
-				const preview = await buildSmartImportPreview(orgId, input);
-				const csv = buildSmartImportReportCsv(preview);
-				return reply
-					.type("text/csv; charset=utf-8")
-					.header(
-						"Content-Disposition",
-						`attachment; filename="${safeSmartImportReportFilename(input.sourceName)}"`,
-					)
-					.send(`\uFEFF${csv}`);
-			} catch (error) {
-				request.log.error(error);
-				return reply.code(500).send({ error: "Internal Server Error" });
-			}
-		},
-	);
-
-	app.post(
-		"/api/imports/smart/report.safe.csv",
-		{
-		},
-		async (request, reply) => {
-			try {
-				if (
-					!(await requireClinicalReadAccess(
-						request,
-						reply,
-						"safe smart import handoff report",
-					))
+					"smart import report",
+				))
+			)
+				return;
+			const parsed = parseSmartImportPayload(
+				smartImportRequestSchema,
+				request.body,
+				"Отчет умного импорта не создан: передайте непустой текст, таблицу или описание источника.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"smart import",
+			);
+			if (!orgId) return;
+			const preview = await buildSmartImportPreview(orgId, input);
+			const csv = buildSmartImportReportCsv(preview);
+			return reply
+				.type("text/csv; charset=utf-8")
+				.header(
+					"Content-Disposition",
+					`attachment; filename="${safeSmartImportReportFilename(input.sourceName)}"`,
 				)
-					return;
-				const parsed = parseSmartImportPayload(
-					smartImportRequestSchema,
-					request.body,
-					"Безопасный отчет умного импорта не создан: передайте непустой текст, таблицу или описание источника.",
-				);
-				if (!parsed.ok) return reply.code(400).send(parsed.response);
-				const input = parsed.data;
-				const orgId = await requireResolvedOrganizationId(
+				.send(`\uFEFF${csv}`);
+		} catch (error) {
+			request.log.error(error);
+			return reply.code(500).send({ error: "Internal Server Error" });
+		}
+	});
+
+	app.post("/api/imports/smart/report.safe.csv", {}, async (request, reply) => {
+		try {
+			if (
+				!(await requireClinicalReadAccess(
 					request,
 					reply,
-					"smart import",
-				);
-				if (!orgId) return;
-				const preview = await buildSmartImportPreview(orgId, input);
-				const csv = buildSmartImportSafeHandoffReportCsv(preview);
-				return reply
-					.type("text/csv; charset=utf-8")
-					.header(
-						"Content-Disposition",
-						'attachment; filename="smart_import_safe_handoff.csv"',
-					)
-					.send(`\uFEFF${csv}`);
-			} catch (error) {
-				request.log.error(error);
-				return reply.code(500).send({ error: "Internal Server Error" });
-			}
-		},
-	);
-
-	app.post(
-		"/api/imports/smart/commit",
-		{
-		},
-		async (request, reply) => {
-			try {
-				if (
-					!(await requireClinicalMutationAccess(
-						request,
-						reply,
-						"smart import commit",
-					))
+					"safe smart import handoff report",
+				))
+			)
+				return;
+			const parsed = parseSmartImportPayload(
+				smartImportRequestSchema,
+				request.body,
+				"Безопасный отчет умного импорта не создан: передайте непустой текст, таблицу или описание источника.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"smart import",
+			);
+			if (!orgId) return;
+			const preview = await buildSmartImportPreview(orgId, input);
+			const csv = buildSmartImportSafeHandoffReportCsv(preview);
+			return reply
+				.type("text/csv; charset=utf-8")
+				.header(
+					"Content-Disposition",
+					'attachment; filename="smart_import_safe_handoff.csv"',
 				)
-					return;
-				const parsed = parseSmartImportPayload(
-					smartImportRequestSchema,
-					request.body,
-					"Умный импорт не записан: повторно передайте ту же непустую выгрузку перед записью.",
-				);
-				if (!parsed.ok) return reply.code(400).send(parsed.response);
-				const input = parsed.data;
-				const orgId = await requireResolvedOrganizationId(
+				.send(`\uFEFF${csv}`);
+		} catch (error) {
+			request.log.error(error);
+			return reply.code(500).send({ error: "Internal Server Error" });
+		}
+	});
+
+	app.post("/api/imports/smart/commit", {}, async (request, reply) => {
+		try {
+			if (
+				!(await requireClinicalMutationAccess(
 					request,
 					reply,
-					"smart import",
-				);
-				if (!orgId) return;
-				const preview = await buildSmartImportPreview(orgId, input);
+					"smart import commit",
+				))
+			)
+				return;
+			const parsed = parseSmartImportPayload(
+				smartImportRequestSchema,
+				request.body,
+				"Умный импорт не записан: повторно передайте ту же непустую выгрузку перед записью.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"smart import",
+			);
+			if (!orgId) return;
+			const preview = await buildSmartImportPreview(orgId, input);
 
-				const patientCommit =
-					preview.patientPreview.totalRows > 0
-						? await commitPatientImport(orgId, {
-								sourceName: `${input.sourceName}:patients`,
-								sourceKind: "mis_export",
-								rawText: preview.patientRawText,
-							})
-						: null;
-				const imagingCommit =
-					preview.imagingPreview.totalRows > 0
-						? await commitImagingImport(orgId, {
-								sourceName: `${input.sourceName}:imaging`,
-								sourceKind: "folder_watch",
-								rawText: preview.imagingRawText,
-							})
-						: null;
+			const patientCommit =
+				preview.patientPreview.totalRows > 0
+					? await commitPatientImport(orgId, {
+							sourceName: `${input.sourceName}:patients`,
+							sourceKind: "mis_export",
+							rawText: preview.patientRawText,
+						})
+					: null;
+			const imagingCommit =
+				preview.imagingPreview.totalRows > 0
+					? await commitImagingImport(orgId, {
+							sourceName: `${input.sourceName}:imaging`,
+							sourceKind: "folder_watch",
+							rawText: preview.imagingRawText,
+						})
+					: null;
 
-				return smartImportCommitResponseSchema.parse({
-					preview,
-					patientCommit,
-					imagingCommit,
-				});
-			} catch (error) {
-				request.log.error(error);
-				return reply.code(500).send({ error: "Internal Server Error" });
-			}
-		},
-	);
+			return smartImportCommitResponseSchema.parse({
+				preview,
+				patientCommit,
+				imagingCommit,
+			});
+		} catch (error) {
+			request.log.error(error);
+			return reply.code(500).send({ error: "Internal Server Error" });
+		}
+	});
 }
 
 export { buildSmartImportPreview };

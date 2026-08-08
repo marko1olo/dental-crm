@@ -381,7 +381,7 @@ export class DomainStateSliceUnavailableError extends Error {
 
 	constructor(slices: Array<{ slice: string; message: string }>) {
 		super(
-			`Не удалось прочитать данные клиники: ${slices.map((entry) => entry.slice).join(", ")}.`,
+			`Не удалось прочитать данные клиники: ${slices.map((entry) => entry.slice + " - " + (entry as any).error).join(", ")}.`,
 		);
 		this.name = "DomainStateSliceUnavailableError";
 		this.slices = slices;

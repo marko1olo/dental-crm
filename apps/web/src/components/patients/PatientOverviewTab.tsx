@@ -21,8 +21,8 @@ type TextFieldChangeEvent = React.ChangeEvent<
 >;
 
 import { actionFailureToast } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 export function PatientOverviewTab() {
 	const appLogic = useAppLogicContext();

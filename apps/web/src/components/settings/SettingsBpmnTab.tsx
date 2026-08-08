@@ -3,9 +3,9 @@ import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast, panelStateText } from "../../lib/panelStateText";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
-import { logger } from "../../utils/logger";
 import {
 	type ClinicWorkflow,
 	normalizeClinicWorkflow,

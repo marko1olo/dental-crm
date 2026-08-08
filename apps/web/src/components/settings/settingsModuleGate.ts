@@ -1,5 +1,5 @@
+import type { SettingsTab } from "../../AppConstants";
 import type { WorkspaceFeatureFlags } from "../../hooks/useWorkspaceProfile";
-import { SettingsTab } from "../../AppConstants";
 
 /** Вкладка, где модули включаются. Признаком не закрыта — попасть туда можно всегда. */
 export const MODULES_SETTINGS_TAB: SettingsTab = "modules";

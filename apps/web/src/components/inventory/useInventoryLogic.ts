@@ -2,8 +2,8 @@ import { multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 export interface InventoryItem {
 	id: string;
@@ -99,16 +99,19 @@ export function useInventoryLogic(organizationId: string) {
 	const auth = appLogic?.auth;
 	const dashboard = appLogic?.dashboard;
 
-	const getHeaders = useCallback((extra?: Record<string, string>) => {
-		const headers =
-			auth && typeof auth.denteClinicalReadHeaders === "function"
-				? auth.denteClinicalReadHeaders(extra)
-				: (extra || {});
-		// Обязательно добавляем id организации к запросу, бэкенд не пустит без него.
-		// Если id пусто, значит пользователь не прошел проверку в settingsTab — вернет
-		// 401, а не подставить чужую организацию.
-		return headers;
-	}, [auth]);
+	const getHeaders = useCallback(
+		(extra?: Record<string, string>) => {
+			const headers =
+				auth && typeof auth.denteClinicalReadHeaders === "function"
+					? auth.denteClinicalReadHeaders(extra)
+					: extra || {};
+			// Обязательно добавляем id организации к запросу, бэкенд не пустит без него.
+			// Если id пусто, значит пользователь не прошел проверку в settingsTab — вернет
+			// 401, а не подставить чужую организацию.
+			return headers;
+		},
+		[auth],
+	);
 
 	// Barcode Scanner State
 	const [scannedBarcode, setScannedBarcode] = useState<string>("");

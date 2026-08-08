@@ -7,8 +7,6 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { showToast } from "../components/GlobalToast";
-import { logger } from "../utils/logger";
-
 import { applyClinicModeToFlags } from "../lib/clinicCapabilities";
 /*
  * Заголовки авторизации. Все три запроса ниже уходили БЕЗ них, и это отменяло
@@ -27,6 +25,7 @@ import { applyClinicModeToFlags } from "../lib/clinicCapabilities";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { actionFailureToast } from "../lib/panelStateText";
 import { useSettingsStore } from "../store/settingsStore";
+import { logger } from "../utils/logger";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types

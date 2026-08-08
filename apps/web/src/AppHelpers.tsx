@@ -144,8 +144,6 @@ import {
 	staffRoleLabels,
 } from "./workspaceUiLabels";
 
-
-
 export function speechGatewayCanUpload(
 	status: SpeechGatewayStatus | null,
 ): boolean {
@@ -1441,10 +1439,7 @@ export function saveMedicalRecordExtractDocumentDraft(
 			),
 			"error",
 		);
-		logger.error(
-			"Failed to save medical record extract document draft",
-			error,
-		);
+		logger.error("Failed to save medical record extract document draft", error);
 		// Payload drafts are recovery data only; document issue still validates all facts server-side.
 	}
 }
@@ -2468,10 +2463,7 @@ export function saveBrowserPickedImagingFolderPreview(
 			),
 			"error",
 		);
-		logger.error(
-			"Failed to save browser picked imaging folder preview",
-			error,
-		);
+		logger.error("Failed to save browser picked imaging folder preview", error);
 		// Browser-picked folder summaries are best-effort and contain no raw local path.
 	}
 }
@@ -3192,69 +3184,9 @@ export function findPatient(patients: Patient[], patientId: string | null) {
  * ОТЛИЧИТЬ неизвестное от суммы, не разбирая текст на части, — например чтобы
  * не подсвечивать красным долг, которого никто не считал.
  */
-export const moneyUnknownLabel = "не определено";
+import { money, moneyUnknownLabel } from "./utils/financeUtils";
 
-/**
- * Сумма для показа человеку.
- *
- * Копейки печатаются, только если они есть, и всегда двумя знаками. Раньше
- * стоял голый toLocaleString без указания знаков: 1500,5 выводилось как
- * «1 500,5 ₽» — для денег это неверная запись, полтинник читается как пять
- * копеек. Круглые суммы при этом не обрастают «,00»: на экране, где почти все
- * цены круглые, это лишний шум.
- *
- * Строку на входе тоже переживаем: колонки numeric приходили из драйвера базы
- * строками, и такое значение могло долететь до форматирования.
- *
- * НЕИЗВЕСТНАЯ СУММА БОЛЬШЕ НЕ ПЕЧАТАЕТСЯ НУЛЁМ. Здесь стояло
- * `Number.isFinite(amount) ? amount : 0`, и любое значение, которого программа
- * не знает — null, undefined, нечитаемая строка, — выходило на экран как
- * «0 ₽», не отличимое от настоящего нуля. «Пациент не должен ничего» и
- * «сколько должен, не посчитано» — разные утверждения о деньгах, а показывались
- * одной строкой. Прежний автор `planItemFromServer` уже описал эту ловушку с
- * другой стороны (components/odontogram/treatmentEstimatorPricing.ts): он
- * подставлял ноль ИМЕННО ЧТОБЫ не показать «0 ₽», а получал гарантированный
- * «0 ₽», потому что подмена происходила до этой функции.
- *
- * Живой пример на момент правки: в списке документов
- * (`DocumentsView.tsx:4238`, `money(document.totalAmountRub)`) поле нулевое по
- * схеме — `nonNegativeMoneyRubSchema.nullable()`, и `useAppLogic.tsx:12362`
- * ставит null всем видам документов без денег. Таких видов 18 из 32 — согласия,
- * рецепты, выписки, направления, отказы, анкеты, — и каждый печатался в строке
- * как «· 0 ₽».
- *
- * ПОЧЕМУ «не определено», А НЕ ПРОЧЕРК. В русской финансовой записи прочерк в
- * денежной графе означает как раз НОЛЬ («операции не было»), поэтому «—»
- * поменяло бы одну двусмысленность на другую — ту же самую, которую здесь
- * убирают. «н/д» — сокращение для бухгалтера, а этот текст читают
- * администратор, врач и пациент. Слово «не определено» уже живёт в продукте в
- * этом же файле (`documentDetectedKindLabels.unknown`), так что словарь не
- * расширяется. Знак «₽» намеренно НЕ добавлен: «не определено ₽» читалось бы
- * снова как сумма.
- *
- * НАСТОЯЩИЙ НОЛЬ ОСТАЛСЯ НУЛЁМ. `money(0)` — это «0 ₽»: ноль рублей законная
- * сумма, и прятать её нельзя.
- *
- * Пустая строка отнесена к неизвестному, а не к нулю: `Number("")` в
- * JavaScript равно 0, и незаполненное поле или отсутствующая колонка проезжали
- * через `Number.isFinite` как честный ноль — тот же дефект другой дверью.
- */
-export function money(value: number | string | null | undefined) {
-	const amount =
-		typeof value === "string"
-			? value.trim() === ""
-				? Number.NaN
-				: Number(value)
-			: value;
-	if (typeof amount !== "number" || !Number.isFinite(amount))
-		return moneyUnknownLabel;
-	const kopecks = Math.round(amount * 100) % 100;
-	const fractionDigits = kopecks === 0 ? 0 : 2;
-	return `${amount.toLocaleString("ru-RU", {
-		minimumFractionDigits: fractionDigits,
-		maximumFractionDigits: fractionDigits,
-	})} ₽`;
-}
+export { money, moneyUnknownLabel };
 
 /**
  * Русское склонение счётного слова: 1 приём, 2 приёма, 5 приёмов.
@@ -5891,8 +5823,6 @@ export function appointmentUpdateInputFromDraft(
 	};
 }
 
-
-
 export function appointmentCreateInputFromDraft(
 	draft: AppointmentScheduleDraft,
 ): CreateAppointmentInput {
@@ -6285,8 +6215,19 @@ export function clinicProfileDraftSignature(draft: ClinicProfileDraft): string {
 	return JSON.stringify(buildClinicProfileUpdatePayload(draft));
 }
 
-export function clinicLegalMissingFields(profile?: ClinicProfile | null): string[] {
-	if (!profile) return ["Юр. лицо", "ИНН", "Адрес", "Телефон", "Номер лицензии", "Дата лицензии", "Кем выдана лицензия"];
+export function clinicLegalMissingFields(
+	profile?: ClinicProfile | null,
+): string[] {
+	if (!profile)
+		return [
+			"Юр. лицо",
+			"ИНН",
+			"Адрес",
+			"Телефон",
+			"Номер лицензии",
+			"Дата лицензии",
+			"Кем выдана лицензия",
+		];
 
 	const required: Array<[string, string | null | undefined]> = [
 		["Юр. лицо", profile.legalName],
@@ -6300,7 +6241,9 @@ export function clinicLegalMissingFields(profile?: ClinicProfile | null): string
 	return required.filter(([, value]) => !value?.trim()).map(([label]) => label);
 }
 
-export function clinicLegalReadinessPercent(profile?: ClinicProfile | null): number {
+export function clinicLegalReadinessPercent(
+	profile?: ClinicProfile | null,
+): number {
 	const missing = clinicLegalMissingFields(profile).length;
 	return Math.round(((7 - missing) / 7) * 100);
 }

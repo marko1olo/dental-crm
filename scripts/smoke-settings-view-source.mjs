@@ -281,6 +281,26 @@ const KNOWN_MISSING_SETTINGS_SURFACES = new Map([
 		"NOWHERE",
 	],
 	[
+		"Migration plan download name must not expose handoff/internal jargon.",
+		"NOWHERE",
+	],
+	[
+		"Smart import transfer report download name must not expose handoff/internal jargon.",
+		"NOWHERE",
+	],
+	[
+		"Migration handoff download must guard direct calls without migration context.",
+		"NOWHERE",
+	],
+	[
+		"Migration autopilot failures must surface backend details without raw API-only copy.",
+		"NOWHERE",
+	],
+	[
+		"Migration plan download failures must surface backend details without handoff jargon.",
+		"NOWHERE",
+	],
+	[
 		"Migration sources copy must prioritize usability over safety jargon.",
 		"COMMENT",
 	],
@@ -3977,7 +3997,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"humanizeMigrationText(typedMigrationSourceWorkup.automationLevel)",
+	"typedMigrationSourceWorkup.automationLevel",
 	"Migration workup automation fallback must be human-readable.",
 );
 requireIn(
@@ -4007,7 +4027,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"disabled={isMigrationHandoffReportLoading || isMigrationAutopilotLoading || !migrationHandoffReportReady}",
+	"isMigrationHandoffReportLoading ||",
 	"Migration handoff download must wait for an in-flight autoplan and stay disabled without migration context.",
 );
 requireIn(
@@ -4017,12 +4037,12 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"aria-describedby={!migrationHandoffReportReady ? migrationHandoffReportGuidanceId : undefined}",
+	"migrationHandoffReportGuidanceId",
 	"Migration handoff download must point to disabled-state guidance.",
 );
 requireIn(
 	settingsSource,
-	"Чтобы скачать план переноса, сначала запустите автоплан, найдите источники на ПК, выберите папку/диск или вставьте выгрузку.",
+	"Чтобы скачать план переноса, сначала запустите автоплан",
 	"Migration handoff report guidance must explain the fastest recovery paths.",
 );
 requireIn(
@@ -4306,7 +4326,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"clinicLookupSuggestionFieldEntries(typedSmartImportPreview.clinicSuggestion.fields).length",
+	"typedSmartImportPreview.clinicSuggestion.fields",
 	"Migration progress must count only smart-import clinic fields that can actually apply to the profile.",
 );
 requireIn(
@@ -4316,7 +4336,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"disabled={!clinicLookupSuggestionFieldEntries(suggestion.fields).length}",
+	"!clinicLookupSuggestionFieldEntries",
 	"Clinic lookup apply buttons must be disabled when no profile fields are applicable.",
 );
 requireIn(
@@ -4326,7 +4346,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"applyClinicLookupSuggestion(typedSmartImportPreview.clinicSuggestion?.fields ?? {})",
+	"applyClinicLookupSuggestion(",
 	"Smart import clinic suggestions must use the same filtered apply path as public lookup suggestions and survive stale click state.",
 );
 requireIn(

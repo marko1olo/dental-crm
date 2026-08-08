@@ -2,8 +2,8 @@ import { Clipboard, Download, Loader2, Plus, Trash2, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { actionFailureToast } from "../lib/panelStateText";
-import { showToast } from "./GlobalToast";
 import { logger } from "../utils/logger";
+import { showToast } from "./GlobalToast";
 
 interface Template {
 	id: string;

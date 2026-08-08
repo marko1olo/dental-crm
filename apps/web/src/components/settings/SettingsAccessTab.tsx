@@ -10,9 +10,9 @@ import type React from "react";
 import { useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { logger } from "../../utils/logger";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { showToast } from "../GlobalToast";
-import { logger } from "../../utils/logger";
 import {
 	INVITABLE_STAFF_ROLES,
 	inviteRoleTitle,

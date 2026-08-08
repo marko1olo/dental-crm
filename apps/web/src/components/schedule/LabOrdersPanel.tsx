@@ -6,8 +6,8 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useAppStore } from "../../store/appStore";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 interface LabOrder {
 	id: string;
@@ -49,10 +49,13 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	 * без секрета клинической зоны: токены клиники и сотрудника он берёт сам.
 	 * Когда контекст есть, работает прежний путь с секретом.
 	 */
-	const readHeaders = useCallback((extra: Record<string, string> = {}) =>
-		auth?.denteClinicalReadHeaders
-			? auth.denteClinicalReadHeaders(extra)
-			: denteAdminSecretRequestHeaders(extra), [auth]);
+	const readHeaders = useCallback(
+		(extra: Record<string, string> = {}) =>
+			auth?.denteClinicalReadHeaders
+				? auth.denteClinicalReadHeaders(extra)
+				: denteAdminSecretRequestHeaders(extra),
+		[auth],
+	);
 	const liveStatus = useAppStore(
 		(state) => (state as any).labOrderStatuses?.[patientId],
 	);

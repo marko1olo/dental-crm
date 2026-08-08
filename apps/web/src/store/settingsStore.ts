@@ -13,6 +13,14 @@ import type {
 	DenteTelegramVisualCardUrls,
 } from "@dental/shared";
 import { create } from "zustand";
+import type {
+	DenteTelegramHandoffTarget,
+	OnboardingStep,
+	TelegramFeaturePlan,
+	TelegramLinkSubjectType,
+	TelegramOutboxStatusFilter,
+	TelegramOutboxTemplateFilter,
+} from "../AppConstants";
 import { emptyTelegramVisualCardUrlDrafts } from "../utils/draftDefaults";
 import {
 	defaultUiPreferences,
@@ -23,7 +31,6 @@ import {
 	type TelegramPostVisitCheckupDelayDrafts,
 } from "../workspaceStaticOptions";
 import { resolveUpdater } from "./updater";
-import { DenteTelegramHandoffTarget, OnboardingStep, TelegramFeaturePlan, TelegramLinkSubjectType, TelegramOutboxStatusFilter, TelegramOutboxTemplateFilter } from "../AppConstants";
 
 export type ClinicMode =
 	| "solo_doctor"

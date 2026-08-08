@@ -26,6 +26,7 @@ import {
 	panelStateText,
 	requestFailureCause,
 } from "../../lib/panelStateText";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast.js";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import { SignaturePad } from "../SignaturePad";
@@ -33,7 +34,6 @@ import { SignaturePad } from "../SignaturePad";
 // он в списке значений и не использовался ни разу — во время сборки такой импорт
 // просят у модуля, который его не отдаёт.
 import type { ToothData } from "./ToothChart";
-import { logger } from "../../utils/logger";
 import {
 	type EstimatorContract,
 	estimatorContractFrom,

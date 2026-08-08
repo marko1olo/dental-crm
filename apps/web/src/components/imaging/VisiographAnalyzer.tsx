@@ -39,6 +39,7 @@ import {
 	resolvePanelPhase,
 } from "../../lib/panelStateText";
 import { usePatientStore } from "../../store/patientStore";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 // Состояния ЖИВОЙ зубной формулы и их русские названия. Берутся из того же
 // файла, что рисует формулу врачу (components/odontogram/ToothChart.tsx), а
@@ -48,7 +49,6 @@ import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import { ShadowAnalystImageSlider } from "./ShadowAnalystImageSlider";
 import { planVisiographFindings } from "./visiographFindings";
-import { logger } from "../../utils/logger";
 
 // ─── Типы ────────────────────────────────────────────────────────────────────
 

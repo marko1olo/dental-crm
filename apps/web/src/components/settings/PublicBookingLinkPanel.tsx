@@ -18,8 +18,8 @@ import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { buildPublicBookingPortalUrl } from "../../lib/publicPortalRoute";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 export const PublicBookingLinkPanel: React.FC = () => {
 	const { dashboard } = useAppLogicContext() as {

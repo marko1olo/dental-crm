@@ -1,6 +1,5 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { logger } from "./utils/logger";
 import { AppShell } from "./AppShell";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
@@ -14,6 +13,7 @@ import {
 } from "./lib/safeLocalStorage";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { PublicBookingWidget } from "./pages/PublicBookingWidget";
+import { logger } from "./utils/logger";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -163,10 +163,7 @@ function watchDenteServiceWorkerUpdates(
 	window.setInterval(
 		() => {
 			void registration.update().catch((err) => {
-				logger.warn(
-					"Обновление приложения недоступно (фоновая проверка)",
-					err,
-				);
+				logger.warn("Обновление приложения недоступно (фоновая проверка)", err);
 			});
 		},
 		30 * 60 * 1000,

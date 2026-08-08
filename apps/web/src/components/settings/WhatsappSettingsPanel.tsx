@@ -272,9 +272,9 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 
 				<fieldset
 					className="premium-feature-grid"
-					
 					aria-label="Функции WhatsApp"
-				 style={{ border: 'none', padding: 0, margin: 0 }}>
+					style={{ border: "none", padding: 0, margin: 0 }}
+				>
 					{Object.entries(WHATSAPP_FEATURE_LABELS).map(([key, label]) => {
 						const enabled = enabledFeaturesDraft.includes(key);
 						return (

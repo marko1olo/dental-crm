@@ -14,7 +14,14 @@ import {
 	ShieldCheck,
 } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	Fragment,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 /*
  * auth — обычный экспорт модуля, читающий токен из localStorage, а не значение
  * из контекста.
@@ -147,13 +154,16 @@ type ScheduleViewProps = {
 	loadDashboard?: (options?: { adminSecret?: string }) => Promise<void>;
 };
 
+import { auth } from "./AppConstants";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
-import { auth } from "./AppConstants";
 
 export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const logicContext = useAppLogicContext();
-	const props = { ...logicContext, ...rawProps } as any;
+	const props = { ...logicContext, ...rawProps } as ReturnType<
+		typeof useAppLogicContext
+	> &
+		Partial<ScheduleViewProps>;
 	// Расписание перечитывается, когда запись создал или перенёс кто-то другой.
 	// Без этого второй администратор видел устаревшую сетку до перезагрузки.
 	//

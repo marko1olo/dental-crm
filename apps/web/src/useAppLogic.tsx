@@ -17,7 +17,6 @@ import {
 	browserCapabilityFailureMessage,
 	buildClinicProfileUpdatePayload,
 	type ClinicProfileDraft,
-	type VisitNoteForm,
 	clinicLegalMissingFields,
 	clinicLegalReadinessPercent,
 	clinicProfileDraftFromProfile,
@@ -139,6 +138,7 @@ import {
 	uiLanguageOptions,
 	uiPreferencesStorageKey,
 	uiPreferencesSyncErrorMessage,
+	type VisitNoteForm,
 	viewFromHash,
 	visitDraftMissingFieldLabel,
 	visitDraftQualityLabels,
@@ -162,18 +162,18 @@ import { communicationDocumentTaskActionLabels } from "./communicationTaskData";
 import { showToast } from "./components/GlobalToast";
 import { useAuthLogic } from "./hooks/domains/useAuthLogic";
 import { useClinicalVisitLogic } from "./hooks/domains/useClinicalVisitLogic";
+import { useCommunicationsQueries } from "./hooks/domains/useCommunicationsQueries";
 import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule";
 import { useDocumentWorkflowModule } from "./hooks/domains/useDocumentWorkflowModule";
 import { useFinanceLogic } from "./hooks/domains/useFinanceLogic";
+import { useImagingQueries } from "./hooks/domains/useImagingQueries";
+import { useMigrationQueries } from "./hooks/domains/useMigrationQueries";
+import { usePatientIntakeLogic } from "./hooks/domains/usePatientIntakeLogic";
 import { usePatientLogic } from "./hooks/domains/usePatientLogic";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
+import { useStaffSettingsLogic } from "./hooks/domains/useStaffSettingsLogic";
 import { useTelegramModule } from "./hooks/domains/useTelegramModule";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
-import { useStaffSettingsLogic } from "./hooks/domains/useStaffSettingsLogic";
-import { usePatientIntakeLogic } from "./hooks/domains/usePatientIntakeLogic";
-import { useMigrationQueries } from "./hooks/domains/useMigrationQueries";
-import { useImagingQueries } from "./hooks/domains/useImagingQueries";
-import { useCommunicationsQueries } from "./hooks/domains/useCommunicationsQueries";
 
 import { loadWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import {
@@ -234,6 +234,7 @@ import {
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
 import { useSettingsStore } from "./store/settingsStore";
+import { logger } from "./utils/logger";
 import {
 	clampMprAxisDeg,
 	clampMprSlabMm,
@@ -247,13 +248,13 @@ import {
 	mprSliceNudgeSteps,
 	mprSlicePresetFractions,
 } from "./utils/math/mprMath";
-import { inferDashboardVisitSpecialty } from "./visitSpecialtyData";
 import {
 	type AppView,
 	getFallbackAppView,
 	getFilteredAppViews,
 	viewLabels,
 } from "./utils/routeUtils";
+import { inferDashboardVisitSpecialty } from "./visitSpecialtyData";
 import {
 	postVisitCareTopicOptions,
 	telegramFeatureHelp,
@@ -261,7 +262,6 @@ import {
 	telegramPostVisitCheckupDelayFields,
 	telegramVisualCardFields,
 } from "./workspaceStaticOptions";
-import { logger } from "./utils/logger";
 import {
 	appointmentLabels,
 	clinicalRuleActionLabels,
@@ -1510,124 +1510,142 @@ export function useAppLogic(): any {
 		});
 	}
 
-	const reconcileDashboardScopedUiSelections = useCallback(function reconcileDashboardScopedUiSelections() {
-		if (!dashboard) return;
-		const doctorIds = new Set(
-			(dashboard?.clinicSettings?.staff || [])
-				.filter(
-					(member) =>
-						member.active &&
-						(member.role === "doctor" || member.role === "owner"),
-				)
-				.map((member) => member.id),
-		);
-		const assistantIds = new Set(
-			(dashboard?.clinicSettings?.staff || [])
-				.filter((member) => member.active && member.role === "assistant")
-				.map((member) => member.id),
-		);
-		const staffIds = new Set(
-			(dashboard?.clinicSettings?.staff || [])
-				.filter((member) => member.active)
-				.map((member) => member.id),
-		);
-		const chairIds = new Set(
-			(dashboard?.clinicSettings?.chairs || [])
-				.filter((chair) => chair.active)
-				.map((chair) => chair.id),
-		);
-		const protocolIds = new Set(
-			dashboard?.protocolTemplates?.map((template) => template.id),
-		);
-
-		if (selectedProtocolId && !protocolIds.has(selectedProtocolId))
-			setSelectedProtocolId(null);
-		if (scheduleDoctorFilterId && !doctorIds.has(scheduleDoctorFilterId))
-			setScheduleDoctorFilterId(null);
-		if (
-			scheduleAssistantFilterId &&
-			!assistantIds.has(scheduleAssistantFilterId)
-		)
-			setScheduleAssistantFilterId(null);
-		if (scheduleChairFilterId && !chairIds.has(scheduleChairFilterId))
-			setScheduleChairFilterId(null);
-		if (
-			scheduleDefaultDoctorUserId &&
-			!doctorIds.has(scheduleDefaultDoctorUserId)
-		)
-			setScheduleDefaultDoctorUserId(null);
-		if (
-			scheduleDefaultAssistantUserId &&
-			!assistantIds.has(scheduleDefaultAssistantUserId)
-		)
-			setScheduleDefaultAssistantUserId(null);
-		if (scheduleDefaultChairId && !chairIds.has(scheduleDefaultChairId))
-			setScheduleDefaultChairId(null);
-		if (telegramLinkStaffId && !staffIds.has(telegramLinkStaffId))
-			setTelegramLinkStaffId("");
-	}, [dashboard, setScheduleChairFilterId, setScheduleDefaultDoctorUserId, setScheduleDefaultAssistantUserId, setScheduleDefaultChairId, setTelegramLinkStaffId, scheduleChairFilterId, scheduleDefaultDoctorUserId, scheduleDefaultAssistantUserId, scheduleDefaultChairId, telegramLinkStaffId]);
-
-	const saveClinicProfileFromDraft = useCallback(async function saveClinicProfileFromDraft(): Promise<boolean> {
-		const payload = buildClinicProfileUpdatePayload(clinicProfileDraft);
-		const expectedSignature = clinicProfileDraftSignature(clinicProfileDraft);
-		if (!payload.clinicName?.trim()) {
-			setError("Укажите рабочее название клиники.");
-			setClinicProfileSaveState("error");
-			return false;
-		}
-		setClinicProfileSaveState("saving");
-		try {
-			const response = await fetch(clinicProfileEndpoint, {
-				method: "PUT",
-				headers: auth.settingsAccessHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify(payload),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(response, "Профиль клиники не сохранен"),
-				);
-			const clinicSettings =
-				(await response.json()) as Dashboard["clinicSettings"];
-			setDashboard((current) =>
-				current
-					? {
-							...current,
-							clinicName: clinicSettings?.profile?.clinicName ?? "",
-							clinicSettings,
-						}
-					: current,
+	const reconcileDashboardScopedUiSelections = useCallback(
+		function reconcileDashboardScopedUiSelections() {
+			if (!dashboard) return;
+			const doctorIds = new Set(
+				(dashboard?.clinicSettings?.staff || [])
+					.filter(
+						(member) =>
+							member.active &&
+							(member.role === "doctor" || member.role === "owner"),
+					)
+					.map((member) => member.id),
 			);
-			const latestMatchesSaved =
-				clinicProfileDraftSignature(clinicProfileDraftRef.current) ===
-				expectedSignature;
-			if (latestMatchesSaved) {
-				setClinicProfileDraft(
-					clinicProfileDraftFromProfile(clinicSettings?.profile),
-				);
-				setClinicProfileDirty(false);
+			const assistantIds = new Set(
+				(dashboard?.clinicSettings?.staff || [])
+					.filter((member) => member.active && member.role === "assistant")
+					.map((member) => member.id),
+			);
+			const staffIds = new Set(
+				(dashboard?.clinicSettings?.staff || [])
+					.filter((member) => member.active)
+					.map((member) => member.id),
+			);
+			const chairIds = new Set(
+				(dashboard?.clinicSettings?.chairs || [])
+					.filter((chair) => chair.active)
+					.map((chair) => chair.id),
+			);
+			const protocolIds = new Set(
+				dashboard?.protocolTemplates?.map((template) => template.id),
+			);
+
+			if (selectedProtocolId && !protocolIds.has(selectedProtocolId))
+				setSelectedProtocolId(null);
+			if (scheduleDoctorFilterId && !doctorIds.has(scheduleDoctorFilterId))
+				setScheduleDoctorFilterId(null);
+			if (
+				scheduleAssistantFilterId &&
+				!assistantIds.has(scheduleAssistantFilterId)
+			)
+				setScheduleAssistantFilterId(null);
+			if (scheduleChairFilterId && !chairIds.has(scheduleChairFilterId))
+				setScheduleChairFilterId(null);
+			if (
+				scheduleDefaultDoctorUserId &&
+				!doctorIds.has(scheduleDefaultDoctorUserId)
+			)
+				setScheduleDefaultDoctorUserId(null);
+			if (
+				scheduleDefaultAssistantUserId &&
+				!assistantIds.has(scheduleDefaultAssistantUserId)
+			)
+				setScheduleDefaultAssistantUserId(null);
+			if (scheduleDefaultChairId && !chairIds.has(scheduleDefaultChairId))
+				setScheduleDefaultChairId(null);
+			if (telegramLinkStaffId && !staffIds.has(telegramLinkStaffId))
+				setTelegramLinkStaffId("");
+		},
+		[
+			dashboard,
+			setScheduleChairFilterId,
+			setScheduleDefaultDoctorUserId,
+			setScheduleDefaultAssistantUserId,
+			setScheduleDefaultChairId,
+			setTelegramLinkStaffId,
+			scheduleChairFilterId,
+			scheduleDefaultDoctorUserId,
+			scheduleDefaultAssistantUserId,
+			scheduleDefaultChairId,
+			telegramLinkStaffId,
+		],
+	);
+
+	const saveClinicProfileFromDraft = useCallback(
+		async function saveClinicProfileFromDraft(): Promise<boolean> {
+			const payload = buildClinicProfileUpdatePayload(clinicProfileDraft);
+			const expectedSignature = clinicProfileDraftSignature(clinicProfileDraft);
+			if (!payload.clinicName?.trim()) {
+				setError("Укажите рабочее название клиники.");
+				setClinicProfileSaveState("error");
+				return false;
 			}
-			setClinicProfileSaveState(latestMatchesSaved ? "saved" : "idle");
-			setError(null);
-			return true;
-		} catch (saveError) {
-			showToast(
-				actionFailureToast(
+			setClinicProfileSaveState("saving");
+			try {
+				const response = await fetch(clinicProfileEndpoint, {
+					method: "PUT",
+					headers: auth.settingsAccessHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify(payload),
+				});
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(response, "Профиль клиники не сохранен"),
+					);
+				const clinicSettings =
+					(await response.json()) as Dashboard["clinicSettings"];
+				setDashboard((current) =>
+					current
+						? {
+								...current,
+								clinicName: clinicSettings?.profile?.clinicName ?? "",
+								clinicSettings,
+							}
+						: current,
+				);
+				const latestMatchesSaved =
+					clinicProfileDraftSignature(clinicProfileDraftRef.current) ===
+					expectedSignature;
+				if (latestMatchesSaved) {
+					setClinicProfileDraft(
+						clinicProfileDraftFromProfile(clinicSettings?.profile),
+					);
+					setClinicProfileDirty(false);
+				}
+				setClinicProfileSaveState(latestMatchesSaved ? "saved" : "idle");
+				setError(null);
+				return true;
+			} catch (saveError) {
+				showToast(
+					actionFailureToast(
+						"Профиль клиники не сохранен",
+						(saveError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				const message = operatorWorkflowFailureMessage(
 					"Профиль клиники не сохранен",
-					(saveError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			const message = operatorWorkflowFailureMessage(
-				"Профиль клиники не сохранен",
-				saveError,
-			);
-			setClinicProfileSaveState("error");
-			setError(message);
-			return false;
-		}
-	}, [clinicProfileDraft, clinicProfileEndpoint, auth]);
+					saveError,
+				);
+				setClinicProfileSaveState("error");
+				setError(message);
+				return false;
+			}
+		},
+		[clinicProfileDraft, clinicProfileEndpoint, auth],
+	);
 
 	async function saveClinicProfileIfDirty(): Promise<boolean> {
 		if (!clinicProfileDirty) return true;
@@ -2054,42 +2072,48 @@ export function useAppLogic(): any {
 		window.location.hash = "settings/clinic";
 	}
 
-	const loadPersistenceHealth = useCallback(async function loadPersistenceHealth(
-		options: { silent?: boolean; adminSecret?: string | undefined } = {},
-	) {
-		try {
-			const response = await fetch("/api/system/persistence/verify", {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders({}, options.adminSecret),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(response, "Проверка сервера не выполнена"),
-				);
-			const report = (await response.json()) as PersistenceIntegrityReport & {
-				meta?: PersistenceHealth;
-			};
-			setPersistenceIntegrity(report);
-			setPersistenceHealth(normalizePersistenceHealth(report));
-		} catch (healthError) {
-			showToast(
-				actionFailureToast(
-					"Статус сохранности недоступен",
-					(healthError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
+	const loadPersistenceHealth = useCallback(
+		async function loadPersistenceHealth(
+			options: { silent?: boolean; adminSecret?: string | undefined } = {},
+		) {
+			try {
+				const response = await fetch("/api/system/persistence/verify", {
+					cache: "no-store",
+					headers: auth.denteClinicalReadHeaders({}, options.adminSecret),
+				});
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(
+							response,
+							"Проверка сервера не выполнена",
+						),
+					);
+				const report = (await response.json()) as PersistenceIntegrityReport & {
+					meta?: PersistenceHealth;
+				};
+				setPersistenceIntegrity(report);
+				setPersistenceHealth(normalizePersistenceHealth(report));
+			} catch (healthError) {
+				showToast(
+					actionFailureToast(
 						"Статус сохранности недоступен",
-						healthError,
+						(healthError as { status?: number })?.status ?? null,
 					),
+					"error",
 				);
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Статус сохранности недоступен",
+							healthError,
+						),
+					);
+				}
 			}
-		}
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Zustand setters are stable; auth is stable object
-	}, [auth]);
+			// biome-ignore lint/correctness/useExhaustiveDependencies: Zustand setters are stable; auth is stable object
+		},
+		[auth],
+	);
 
 	async function loadPersistenceIntegrity(options: { silent?: boolean } = {}) {
 		try {
@@ -2178,27 +2202,32 @@ export function useAppLogic(): any {
 		}
 	}
 
-	const refreshBrowserContinuity = useCallback(async function refreshBrowserContinuity(options: { silent?: boolean } = {}) {
-		try {
-			setBrowserContinuity(await inspectBrowserContinuity());
-		} catch (continuityError) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(continuityError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			if (!options.silent) {
-				setError(
-					browserCapabilityFailureMessage(
-						"Проверка сохранности браузера не выполнена",
-						continuityError,
+	const refreshBrowserContinuity = useCallback(
+		async function refreshBrowserContinuity(
+			options: { silent?: boolean } = {},
+		) {
+			try {
+				setBrowserContinuity(await inspectBrowserContinuity());
+			} catch (continuityError) {
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(continuityError as { status?: number })?.status ?? null,
 					),
+					"error",
 				);
+				if (!options.silent) {
+					setError(
+						browserCapabilityFailureMessage(
+							"Проверка сохранности браузера не выполнена",
+							continuityError,
+						),
+					);
+				}
 			}
-		}
-	}, []);
+		},
+		[],
+	);
 
 	async function _loadLocalBridgeReadiness(options: { silent?: boolean } = {}) {
 		try {
@@ -2235,40 +2264,43 @@ export function useAppLogic(): any {
 		}
 	}
 
-	const loadLocalBridgeUsePlans = useCallback(async function loadLocalBridgeUsePlans(options: { silent?: boolean } = {}) {
-		try {
-			const response = await fetch("/api/system/local-bridges/use-plans", {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders(),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
+	const loadLocalBridgeUsePlans = useCallback(
+		async function loadLocalBridgeUsePlans(options: { silent?: boolean } = {}) {
+			try {
+				const response = await fetch("/api/system/local-bridges/use-plans", {
+					cache: "no-store",
+					headers: auth.denteClinicalReadHeaders(),
+				});
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(
+							response,
+							"План локального модуля недоступен",
+						),
+					);
+				const payload = (await response.json()) as LocalBridgeUsePlansResponse;
+				setLocalBridgeUsePlans(payload);
+				setLocalBridgeReadiness(payload.readiness);
+			} catch (planError) {
+				showToast(
+					actionFailureToast(
 						"План локального модуля недоступен",
+						(planError as { status?: number })?.status ?? null,
 					),
+					"error",
 				);
-			const payload = (await response.json()) as LocalBridgeUsePlansResponse;
-			setLocalBridgeUsePlans(payload);
-			setLocalBridgeReadiness(payload.readiness);
-		} catch (planError) {
-			showToast(
-				actionFailureToast(
-					"План локального модуля недоступен",
-					(planError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"План локального модуля недоступен",
-						planError,
-					),
-				);
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"План локального модуля недоступен",
+							planError,
+						),
+					);
+				}
 			}
-		}
-	}, [auth]);
+		},
+		[auth],
+	);
 
 	async function requestBrowserStoragePersistence() {
 		if (
@@ -2735,16 +2767,22 @@ export function useAppLogic(): any {
 		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
 	}, [reconcileDashboardScopedUiSelections]);
 
+	const newAppointmentPreferenceDefaultsRef = useRef(
+		newAppointmentPreferenceDefaults,
+	);
+	newAppointmentPreferenceDefaultsRef.current =
+		newAppointmentPreferenceDefaults;
+
 	useEffect(() => {
 		if (!dashboard) return;
 		if (newAppointmentDraftUserEditedRef.current) return;
 		setNewAppointmentDraft(
 			newAppointmentDraftFromDashboard(
 				dashboard,
-				newAppointmentPreferenceDefaults(),
+				newAppointmentPreferenceDefaultsRef.current(),
 			),
 		);
-	}, [dashboard, newAppointmentPreferenceDefaults, setNewAppointmentDraft]);
+	}, [dashboard, setNewAppointmentDraft]);
 
 	useEffect(() => {
 		staffScheduleDraftsRef.current = staffScheduleDrafts;
@@ -3016,8 +3054,6 @@ export function useAppLogic(): any {
 		setCurrentView(currentView);
 		window.location.hash = currentView;
 	}, [requestedWorkspaceView, currentView, setCurrentView]);
-
-
 
 	useEffect(() => {
 		let cancelled = false;

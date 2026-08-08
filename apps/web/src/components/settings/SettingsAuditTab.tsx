@@ -81,6 +81,7 @@ import {
 	UserCheck,
 } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
+import { importSourceLabels, ingestionTargetLabels } from "../../AppConstants";
 import type {
 	CtImplantLibraryItem,
 	CtPlanningQuickAction,
@@ -130,7 +131,6 @@ import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
  * попадают, и Object.keys(undefined) роняет вкладку целиком.
  */
 import { clinicModeLabels } from "../../workspaceUiLabels";
-import { importSourceLabels, ingestionTargetLabels } from "../../AppConstants";
 
 type MprAxisVisualizerStyle = CSSProperties & {
 	"--mpr-axis-deg": string;

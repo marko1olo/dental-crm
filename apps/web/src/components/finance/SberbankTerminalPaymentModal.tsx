@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { actionFailureToast } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 export type SberbankTerminalPaymentModalProps = {
 	isOpen: boolean;

@@ -33,7 +33,7 @@ import {
 } from "../../db/documentQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
 import {
-	DocumentRenderContext,
+	type DocumentRenderContext,
 	documentIssueBlockReason,
 } from "../../documents/renderDocument.js";
 import {

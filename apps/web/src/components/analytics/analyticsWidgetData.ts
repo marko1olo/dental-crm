@@ -1,5 +1,6 @@
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+
 /**
  * Общая загрузка данных для виджетов раздела «Аналитика» и безопасный разбор
  * полей ответа.
@@ -25,8 +26,8 @@ import { showToast } from "../GlobalToast";
  * друга.
  */
 
-import { staffRoleLabels } from "../../workspaceUiLabels";
 import { logger } from "../../utils/logger";
+import { staffRoleLabels } from "../../workspaceUiLabels";
 
 /**
  * Единый текст ошибки для виджетов. Причину (401, 500, обрыв сети) пользователь

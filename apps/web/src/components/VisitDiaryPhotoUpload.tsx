@@ -7,8 +7,8 @@ import {
 } from "../lib/authedApiFile";
 import { actionFailureToast, requestFailureCause } from "../lib/panelStateText";
 import { readDenteClinicToken } from "../lib/safeLocalStorage";
-import { showToast } from "./GlobalToast";
 import { logger } from "../utils/logger";
+import { showToast } from "./GlobalToast";
 
 interface Attachment {
 	id: string;

@@ -1,5 +1,6 @@
 import { Check, Download, FileCode, ScanLine, ShieldCheck } from "lucide-react";
 import React from "react";
+import { visitDraftQualityLabels } from "../../AppConstants";
 import {
 	visitDraftMissingFieldLabel,
 	visitDraftSignalLabel,
@@ -10,6 +11,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
+import { logger } from "../../utils/logger";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
@@ -28,8 +30,6 @@ import {
 	peekNoteFormForeignVisit,
 	realVisitFieldId,
 } from "./visitIdentity";
-import { visitDraftQualityLabels } from "../../AppConstants";
-import { logger } from "../../utils/logger";
 
 /**
  * Дописывает текст к содержимому поля ЭМК так, как это сделал бы врач руками.

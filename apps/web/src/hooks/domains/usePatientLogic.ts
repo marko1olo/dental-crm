@@ -1,6 +1,10 @@
-import type { Dispatch, SetStateAction } from "react";
 import type { Dashboard, Patient } from "@dental/shared";
+import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type {
+	PatientAdministrativeProfileDraft,
+	PatientCoreDraft,
+} from "../../AppConstants";
 import {
 	buildPatientAdministrativeProfilePayload,
 	buildPatientCorePayload,
@@ -26,7 +30,6 @@ import { shouldResetPatientDraftState } from "../../components/patients/patientD
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useDocumentStore } from "../../store/documentStore";
 import { usePatientStore } from "../../store/patientStore";
-import { PatientAdministrativeProfileDraft, PatientCoreDraft } from "../../AppConstants";
 
 /** Заготовка приёма из гидратации базы: приёмов нет, объект есть. */
 const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
@@ -352,10 +355,18 @@ export function usePatientLogic({
 			return false;
 		}
 	}, [
-		patientAdministrativeProfileSaveState, setError, selectedPatient, patientAdministrativeProfileDirty,
-		patientAdministrativeProfileValidationMessage, patientAdministrativeProfileDraft, auth,
-		setPatientAdministrativeProfileSaveState, setDashboard, setPatientAdministrativeProfileDraft,
-		setPatientAdministrativeProfileDirty, setPatientAdministrativeProfileSaveState,
+		patientAdministrativeProfileSaveState,
+		setError,
+		selectedPatient,
+		patientAdministrativeProfileDirty,
+		patientAdministrativeProfileValidationMessage,
+		patientAdministrativeProfileDraft,
+		auth,
+		setPatientAdministrativeProfileSaveState,
+		setDashboard,
+		setPatientAdministrativeProfileDraft,
+		setPatientAdministrativeProfileDirty,
+		setPatientAdministrativeProfileSaveState,
 	]);
 
 	useEffect(() => {
@@ -593,7 +604,6 @@ export function usePatientLogic({
 		}
 	}
 
-	
 	async function createPatient() {
 		if (isPatientCreating) {
 			setError("Дождитесь завершения создания карточки пациента.");

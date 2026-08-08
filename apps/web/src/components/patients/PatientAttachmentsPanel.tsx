@@ -27,8 +27,8 @@ import {
 	actionFailureToast,
 	requestFailureCause,
 } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 type AttachmentFile = {
 	id: string;

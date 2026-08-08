@@ -10,6 +10,7 @@ import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { actionFailureToast, panelStateText } from "../../lib/panelStateText";
 import { readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import { settingsTabTitle } from "./settingsDeepLink";
@@ -17,7 +18,6 @@ import {
 	parseStaffMutationPayload,
 	staffRoleTitle,
 } from "./settingsInviteRoles";
-import { logger } from "../../utils/logger";
 import {
 	PROFILE_PANEL_SUBJECT,
 	type ProfileLoadState,

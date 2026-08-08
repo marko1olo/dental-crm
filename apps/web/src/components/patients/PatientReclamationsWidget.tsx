@@ -18,9 +18,9 @@ import {
 	panelStateText,
 	resolvePanelPhase,
 } from "../../lib/panelStateText";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
-import { logger } from "../../utils/logger";
 
 /**
  * Что показывать вместо списка. Заведено здесь, а не в разметке, потому что

@@ -28,6 +28,12 @@ import type {
 } from "@dental/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+	type DicomFirstFramePreviewMetadata,
+	type DicomFirstFramePreviewOptions,
+	imagingViewerPlans,
+	type LocalImagingFolderDraft,
+} from "../../AppConstants";
+import {
 	collectDicomWorkstationClientFacts,
 	dicomWorkbenchSeriesKey,
 	isBrowserImagingScanAbortError,
@@ -51,7 +57,6 @@ import { useImagingStore } from "../../store/imagingStore";
 import { useSettingsStore } from "../../store/settingsStore";
 import { defaultDicomFirstFrameViewerState } from "../../utils/draftDefaults";
 import { clampMprSliceIndex } from "../../utils/math/mprMath";
-import { DicomFirstFramePreviewMetadata, DicomFirstFramePreviewOptions, imagingViewerPlans, LocalImagingFolderDraft } from "../../AppConstants";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1491,7 +1496,8 @@ export function useDicomWorkbenchModule({
 				const nextUrls = new Set(Object.values(next));
 				setImagingPreviewObjectUrls((current) => {
 					Object.values(current).forEach((url) => {
-						if (!nextUrls.has(url)) authRef.current.revokeObjectUrlIfNeeded(url);
+						if (!nextUrls.has(url))
+							authRef.current.revokeObjectUrlIfNeeded(url);
 					});
 					return next;
 				});
@@ -1518,10 +1524,7 @@ export function useDicomWorkbenchModule({
 			abortController.abort();
 			createdUrls.forEach(authRef.current.revokeObjectUrlIfNeeded);
 		};
-	}, [
-		imagingPreviewWorkset,
-		_imagingPreviewSignature,
-	]);
+	}, [imagingPreviewWorkset, _imagingPreviewSignature]);
 
 	// ===== Return =====
 	return {

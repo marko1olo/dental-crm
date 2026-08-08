@@ -19,8 +19,8 @@ import { dateInputValuePlusDays } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 /*
  * Врач и кресло берутся из настроек клиники, а не из отдельного справочника:

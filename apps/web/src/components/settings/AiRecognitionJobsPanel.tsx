@@ -25,13 +25,13 @@ import type {
 import { ClipboardList, History, Loader2, RefreshCw } from "lucide-react";
 import type React from "react";
 import { Fragment, useCallback, useEffect, useState } from "react";
+import { aiJobKindLabels } from "../../AppConstants";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type { PanelSubject } from "../../lib/panelStateText";
+import { logger } from "../../utils/logger";
 import { recognitionTargetLabels } from "../../workspaceUiLabels";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
-import { aiJobKindLabels } from "../../AppConstants";
-import { logger } from "../../utils/logger";
 
 const AI_RECOGNITION_JOBS_SUBJECT: PanelSubject = {
 	notLoadedTitle: "История AI-задач не загружена",

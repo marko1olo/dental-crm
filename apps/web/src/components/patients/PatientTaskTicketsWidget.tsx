@@ -18,9 +18,9 @@ import {
 	panelStateText,
 	resolvePanelPhase,
 } from "../../lib/panelStateText";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
-import { logger } from "../../utils/logger";
 
 /**
  * Тексты трёх состояний списка. Прежде состояний было два: «загружается» ничего

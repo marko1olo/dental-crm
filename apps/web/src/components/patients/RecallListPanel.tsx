@@ -90,7 +90,10 @@ function invitationText(
 export const RecallListPanel: React.FC = () => {
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
-	const clinicName = appLogic?.clinicName || (appLogic?.dashboard as any)?.clinic?.name || "Клиника";
+	const clinicName =
+		appLogic?.clinicName ||
+		(appLogic?.dashboard as any)?.clinic?.name ||
+		"Клиника";
 
 	const [report, setReport] = useState<RecallReport | null>(null);
 	const [error, setError] = useState<string | null>(null);

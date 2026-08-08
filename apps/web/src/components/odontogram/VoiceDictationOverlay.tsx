@@ -1,8 +1,8 @@
 import { Check, Mic, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 import {
 	VOICE_DICTATION_UNSUPPORTED_TEXT,
 	voiceDictationErrorText,

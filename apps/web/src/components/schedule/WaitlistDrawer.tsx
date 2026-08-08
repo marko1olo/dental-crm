@@ -6,10 +6,10 @@ import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type { PanelSubject } from "../../lib/panelStateText";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { logger } from "../../utils/logger";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
-import { logger } from "../../utils/logger";
 
 /**
  * Как называется содержимое очереди для сообщений о загрузке и отказе. Общий

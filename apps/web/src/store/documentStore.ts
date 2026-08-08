@@ -27,6 +27,10 @@ import type {
 	XrayCbctReferralPriority,
 	XrayCbctReferralStudyType,
 } from "@dental/shared";
+import type {
+	PaymentRefundCorrectionAction,
+	PaymentRefundCorrectionMethod,
+} from "../AppConstants";
 import { postVisitCarePresets } from "../postVisitCareData";
 /*
  * dateInputValuePlusDays отсюда убран вместе со сроком оплаты счёта и графиком
@@ -37,7 +41,6 @@ import { postVisitCarePresets } from "../postVisitCareData";
 import { currentLocalDateTimeInputValue } from "../utils/dateUtils";
 import { defaultClinicalToothRowsText } from "../utils/draftDefaults";
 import { loadUiPreferences } from "../utils/preferencesUtils";
-import { PaymentRefundCorrectionAction, PaymentRefundCorrectionMethod } from "../AppConstants";
 
 const initialUiPreferences = loadUiPreferences();
 

@@ -3,7 +3,18 @@ import type {
 	MprProjection,
 	MprWindowPreset,
 } from "@dental/shared";
-import { type KeyboardEvent, useEffect, useMemo, useRef, useCallback } from "react";
+import {
+	type KeyboardEvent,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+} from "react";
+import type {
+	CbctWorkbenchPlane,
+	MprAxisVisualizerStyle,
+	MprWorkbenchState,
+} from "../AppConstants";
 import {
 	browserGeneratedId,
 	ctImplantPlanFromLibraryItem,
@@ -52,7 +63,6 @@ import {
 	mprSliceIndexFromFraction,
 	resolveMprKeyboardAdjustment,
 } from "../utils/math/mprMath";
-import { CbctWorkbenchPlane, MprAxisVisualizerStyle, MprWorkbenchState } from "../AppConstants";
 
 interface MprLogicParams {
 	selectedImagingStudy: any;
@@ -316,9 +326,15 @@ export function useMprLogic({
 		setMprCrosshairEnabled(true);
 		setMprLinkedPlanesEnabled(true);
 	}, [
-		cbctWorkbenchProjections, setMprProjection, setMprAxisDeg, setMprSlabMm,
-		mprCenterSliceIndex, setMprSliceIndex, setMprWindowPreset, setMprCrosshairEnabled,
-		setMprLinkedPlanesEnabled
+		cbctWorkbenchProjections,
+		setMprProjection,
+		setMprAxisDeg,
+		setMprSlabMm,
+		mprCenterSliceIndex,
+		setMprSliceIndex,
+		setMprWindowPreset,
+		setMprCrosshairEnabled,
+		setMprLinkedPlanesEnabled,
 	]);
 
 	const resetMprControls = applyDefaultMprWorkbenchState;
@@ -465,23 +481,32 @@ export function useMprLogic({
 		if (adjustment.kind === "slice") setMprSliceIndex(adjustment.value);
 	};
 
-	const applyMprWorkbenchState = useCallback((state: MprWorkbenchState) => {
-		const projection = resolveMprWorkbenchProjection(
-			state.projection,
+	const applyMprWorkbenchState = useCallback(
+		(state: MprWorkbenchState) => {
+			const projection = resolveMprWorkbenchProjection(
+				state.projection,
+				cbctWorkbenchProjections,
+			);
+			setMprProjection(projection);
+			setMprAxisDeg(clampMprAxisDeg(state.axisDeg ?? 0));
+			setMprSlabMm(clampMprSlabMm(state.slabMm ?? 1));
+			setMprSliceIndex(clampMprSliceIndex(state.sliceIndex, mprSliceMaxIndex));
+			setMprWindowPreset(state.windowPreset);
+			setMprCrosshairEnabled(state.crosshair);
+			setMprLinkedPlanesEnabled(state.linkedPlanes);
+		},
+		[
 			cbctWorkbenchProjections,
-		);
-		setMprProjection(projection);
-		setMprAxisDeg(clampMprAxisDeg(state.axisDeg ?? 0));
-		setMprSlabMm(clampMprSlabMm(state.slabMm ?? 1));
-		setMprSliceIndex(clampMprSliceIndex(state.sliceIndex, mprSliceMaxIndex));
-		setMprWindowPreset(state.windowPreset);
-		setMprCrosshairEnabled(state.crosshair);
-		setMprLinkedPlanesEnabled(state.linkedPlanes);
-	}, [
-		cbctWorkbenchProjections, setMprProjection, setMprAxisDeg, setMprSlabMm,
-		mprSliceMaxIndex, setMprSliceIndex, setMprWindowPreset, setMprCrosshairEnabled,
-		setMprLinkedPlanesEnabled
-	]);
+			setMprProjection,
+			setMprAxisDeg,
+			setMprSlabMm,
+			mprSliceMaxIndex,
+			setMprSliceIndex,
+			setMprWindowPreset,
+			setMprCrosshairEnabled,
+			setMprLinkedPlanesEnabled,
+		],
+	);
 
 	async function restoreMprWorkbenchLocalDraft() {
 		if (!cbctWorkbenchSeriesKey) {

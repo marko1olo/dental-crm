@@ -20,8 +20,8 @@ import {
 	actionFailureToast,
 	requestFailureCause,
 } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 const CHANNELS = [
 	{ value: "sms", label: "SMS" },

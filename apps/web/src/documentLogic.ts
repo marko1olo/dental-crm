@@ -1255,7 +1255,8 @@ export function documentPayloadForKind(
 			personalDataProcessingConsent: {
 				operatorLegalName:
 					clinicProfileDraft?.legalName?.trim() ||
-					clinicProfileDraft?.clinicName?.trim() || "",
+					clinicProfileDraft?.clinicName?.trim() ||
+					"",
 				operatorInn: clinicProfileDraft?.inn?.replace(/[^\d]/g, "") || "",
 				operatorAddress: clinicProfileDraft?.address?.trim() || "",
 				processingPurposes: documentTextLines(personalDataPurposes),

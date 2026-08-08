@@ -153,7 +153,13 @@ function formatTime(value: string, timeZone: string): string {
 
 async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch((err) => {
-		showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
+		showToast(
+			actionFailureToast(
+				"Ошибка ответа сервера",
+				(err as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
 		return null;
 	})) as unknown;
 	if (!response.ok) {

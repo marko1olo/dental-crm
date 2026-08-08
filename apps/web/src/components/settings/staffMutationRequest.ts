@@ -40,8 +40,8 @@ import { showToast } from "../GlobalToast";
  */
 
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { parseStaffMutationPayload } from "./settingsInviteRoles";
 import { logger } from "../../utils/logger";
+import { parseStaffMutationPayload } from "./settingsInviteRoles";
 
 /**
  * Сборщик заголовков домена настроек — `auth.settingsAccessHeaders` из

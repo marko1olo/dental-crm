@@ -3,8 +3,8 @@ import { ChevronDown, Crown, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 type LoyaltyTier = "standard" | "silver" | "gold" | "platinum";
 

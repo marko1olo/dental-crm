@@ -16,8 +16,8 @@
 
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { showToast } from "./components/GlobalToast";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
 
 type PersonalizedPlanResult = {

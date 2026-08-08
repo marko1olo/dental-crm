@@ -12,8 +12,8 @@ import {
 	DENTE_CLINIC_TOKEN_KEY,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
-import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 
 interface ClinicLoginProps {
 	onLoginSuccess: (clinicProfile: any) => void;
