@@ -1,5 +1,5 @@
 import { multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {  useEffect, useMemo, useRef, useState , useCallback } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { showToast } from "../GlobalToast";
@@ -155,7 +155,7 @@ export function useInventoryLogic(organizationId: string) {
 	 */
 	const [rulesError, setRulesError] = useState<string | null>(null);
 
-	const fetchRules = async (serviceId: string) => {
+	const fetchRules = useCallback(async (serviceId: string) => {
 		if (!serviceId) {
 			setRulesList([]);
 			setRulesError(null);
@@ -196,7 +196,7 @@ export function useInventoryLogic(organizationId: string) {
 		} finally {
 			setIsLoadingRules(false);
 		}
-	};
+	}, [organizationId]);;
 
 	useEffect(() => {
 		if (activeSubTab === "rules" && selectedServiceId) {
@@ -472,7 +472,7 @@ export function useInventoryLogic(organizationId: string) {
 	 */
 	const [loadError, setLoadError] = useState<string | null>(null);
 
-	const fetchItems = async () => {
+	const fetchItems = useCallback(async () => {
 		try {
 			setIsLoading(true);
 			const res = await fetch(`/api/inventory/${organizationId}`, {
@@ -504,7 +504,7 @@ export function useInventoryLogic(organizationId: string) {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [organizationId]);;
 
 	/*
 	 * Без организации склад не грузится — и это надо показать, а не крутить.

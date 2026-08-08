@@ -121,7 +121,7 @@ export const FreedSlotsPanel: React.FC = () => {
 		по-русски: тогда оно точнее любого нашего. И на экране появилась кнопка
 		повторить, потому что «не построен» без действия — тупик.
 	*/
-	const loadFailureText = (
+	const loadFailureText = useCallback((
 		status: number,
 		serverMessage: string | null,
 	): string => {
@@ -132,7 +132,7 @@ export const FreedSlotsPanel: React.FC = () => {
 		if (status === 404) return "Раздел освободившихся окон не отвечает.";
 		if (status >= 500) return "Сбой на сервере клиники: список окон не собран.";
 		return `Программа не смогла получить список окон (ответ ${status}).`;
-	};
+	}, []);;
 
 	const load = useCallback(async () => {
 		setError(null);

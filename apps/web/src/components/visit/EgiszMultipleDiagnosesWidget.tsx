@@ -17,7 +17,7 @@ export function EgiszMultipleDiagnosesWidget() {
 	const [items, setItems] = useState<EgiszMultipleDiagnosisItem[]>([]);
 	const [error, setError] = useState<string | null>(null);
 
-	async function fetchDiagnoses() {
+	const fetchDiagnoses = useCallback(async function fetchDiagnoses() {
 		setLoading(true);
 		setError(null);
 		try {
@@ -36,7 +36,7 @@ export function EgiszMultipleDiagnosesWidget() {
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, [patientId]);
 
 	useEffect(() => {
 		fetchDiagnoses();

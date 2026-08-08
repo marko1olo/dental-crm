@@ -2,7 +2,7 @@ import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { CheckCircle2, Lock, ShieldCheck } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import {  useEffect, useState , useCallback } from "react";
 import { type CertificateInfo, signatureService } from "../../lib/cryptopro";
 
 interface CryptoProSignerProps {
@@ -148,13 +148,13 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	 */
 	const lockInProgress = isSigning || awaitingLockConfirmation;
 
-	function closeDialog() {
+	const closeDialog = useCallback(() => {
 		setShowPinDialog(false);
 		setFailureText(null);
 		setAwaitingLockConfirmation(false);
 		// ПИН не держим в памяти дольше самого подписания.
 		setPinCode("");
-	}
+	}, [onSignComplete]);
 
 	// Окно перекрывает весь экран, поэтому обязано закрываться Escape — но не
 	// посреди подписания, когда закрытие выглядит как подтверждение подписи.

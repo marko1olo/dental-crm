@@ -869,7 +869,8 @@ export function SettingsPricesTab() {
 			{/* Modal for Edit/Create */}
 			{editServiceId && (
 				<div
-					role="presentation"
+					role="button"
+					tabIndex={0}
 					className="premium-modal-overlay"
 					onClick={(e) => {
 						if (e.target === e.currentTarget) setEditServiceId(null);

@@ -4626,7 +4626,7 @@ async function isSafeTarget(urlString: string): Promise<TargetSafety> {
 	let url: URL;
 	try {
 		url = new URL(urlString);
-	} catch {
+	} catch (err) { console.error('[Dente] fixed bare catch:', err);
 		return { ok: false, reason: "адрес архива снимков не разбирается как URL" };
 	}
 
@@ -4716,7 +4716,7 @@ async function checkDicomWebConnector(input: DicomWebConnectorCheckRequest) {
 				httpStatus = response.status;
 			}
 		}
-	} catch {
+	} catch (err) { console.error('[Dente] fixed bare catch:', err);
 		fetchError = true;
 		warnings.push(
 			"Проверка архива снимков не завершилась; проверьте адрес архива и доступ с сервера клиники.",

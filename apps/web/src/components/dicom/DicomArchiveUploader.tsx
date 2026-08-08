@@ -18,7 +18,7 @@ export function DicomArchiveUploader({
 		"Перетащите ZIP-архив или папку со снимками сюда",
 	);
 
-	const processFile = async (file: File): Promise<string | null> => {
+	const processFile = useCallback(async (file: File): Promise<string | null> => {
 		return new Promise((resolve) => {
 			const reader = new FileReader();
 			reader.onload = () => {
@@ -56,11 +56,11 @@ export function DicomArchiveUploader({
 			reader.onerror = () => resolve(null);
 			reader.readAsArrayBuffer(file.slice(0, 1024)); // Only read first 1KB for DICM check
 		});
-	};
+	}, []);
 
 	const MAX_SAFE_FILE_SIZE_BYTES = 1.5 * 1024 * 1024 * 1024; // 1.5 GB
 
-	const processZip = async (zipFile: File) => {
+	const processZip = useCallback(async (zipFile: File) => {
 		if (zipFile.size > MAX_SAFE_FILE_SIZE_BYTES) {
 			setStatus(
 				"Файл слишком велик для обработки в памяти браузера. Используйте просмотр по срезам.",
@@ -126,9 +126,9 @@ export function DicomArchiveUploader({
 				processEntry(0);
 			});
 		});
-	};
+	}, [onImagesLoaded]);;
 
-	const traverseFileTree = async (
+	const traverseFileTree = useCallback(async (
 		item: any,
 		path: string = "",
 	): Promise<File[]> => {
@@ -169,7 +169,7 @@ export function DicomArchiveUploader({
 				resolve([]);
 			}
 		});
-	};
+	}, []);;
 
 	const onDrop = useCallback(
 		async (e: React.DragEvent<HTMLElement>) => {

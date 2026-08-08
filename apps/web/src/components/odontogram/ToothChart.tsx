@@ -258,6 +258,7 @@ const ToothSVG = ({
 						strokeWidth="0.5"
 					>
 						<polygon
+							role="button"
 							points="8,8 16,8 16,16 8,16"
 							fill={surfaces?.includes("O") ? "#ef4444" : "transparent"}
 							style={{ cursor: "pointer", transition: "fill 0.2s" }}
@@ -283,6 +284,7 @@ const ToothSVG = ({
 							}}
 						/>
 						<polygon
+							role="button"
 							points="0,0 24,0 16,8 8,8"
 							fill={
 								surfaces?.includes("V") || surfaces?.includes("B")
@@ -316,6 +318,7 @@ const ToothSVG = ({
 							}}
 						/>
 						<polygon
+							role="button"
 							points="8,16 16,16 24,24 0,24"
 							fill={
 								surfaces?.includes("L") || surfaces?.includes("P")
@@ -349,6 +352,7 @@ const ToothSVG = ({
 							}}
 						/>
 						<polygon
+							role="button"
 							points="0,0 8,8 8,16 0,24"
 							fill={surfaces?.includes("M") ? "#ef4444" : "transparent"}
 							style={{ cursor: "pointer", transition: "fill 0.2s" }}
@@ -374,6 +378,7 @@ const ToothSVG = ({
 							}}
 						/>
 						<polygon
+							role="button"
 							points="24,0 24,24 16,16 16,8"
 							fill={surfaces?.includes("D") ? "#ef4444" : "transparent"}
 							style={{ cursor: "pointer", transition: "fill 0.2s" }}

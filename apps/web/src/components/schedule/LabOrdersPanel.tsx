@@ -1,7 +1,7 @@
 import { actionFailureToast } from "../../lib/panelStateText";
 import { Calendar, FlaskConical, Link, Trash2 } from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import {  useEffect, useRef, useState , useCallback } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
@@ -120,7 +120,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		return `Программа не смогла получить список заказов (ответ ${status}).`;
 	};
 
-	const fetchOrders = async () => {
+	const fetchOrders = useCallback(async () => {
 		const requestedPatientId = patientId;
 		try {
 			setIsLoading(true);
@@ -151,7 +151,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				setIsLoading(false);
 			}
 		}
-	};
+	}, [organizationId, auth]);;
 
 	/*
 		ПАНЕЛЬ НЕ ПЕРЕСОЗДАЁТСЯ ПРИ СМЕНЕ ПАЦИЕНТА, И ЭТО СТОИЛО БЫ ЧУЖОГО НАРЯДА.

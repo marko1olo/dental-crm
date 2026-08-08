@@ -266,23 +266,23 @@ export function VisiographAnalyzer() {
 	 * случае `extra` возвращается как есть: у запросов с телом там лежит Content-Type,
 	 * и потерять его значило бы сломать разбор тела на сервере ещё и без секрета.
 	 */
-	const denteClinicalReadHeaders = (
+	const denteClinicalReadHeaders = useCallback((
 		extra?: Record<string, string>,
 	): Record<string, string> => {
 		const auth = authRef.current;
 		return auth && typeof auth.denteClinicalReadHeaders === "function"
 			? auth.denteClinicalReadHeaders(extra ?? {})
 			: { ...(extra ?? {}) };
-	};
+	}, []);
 
-	const denteClinicalMutationHeaders = (
+	const denteClinicalMutationHeaders = useCallback((
 		extra?: Record<string, string>,
 	): Record<string, string> => {
 		const auth = authRef.current;
 		return auth && typeof auth.denteClinicalMutationHeaders === "function"
 			? auth.denteClinicalMutationHeaders(extra ?? {})
 			: { ...(extra ?? {}) };
-	};
+	}, []);
 
 	const [isDragOver, setIsDragOver] = useState(false);
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -389,7 +389,7 @@ export function VisiographAnalyzer() {
 	 * По той же причине isLoadingHistory гасит только актуальный запрос — иначе
 	 * поздний ответ по A убирал бы индикатор загрузки у идущего запроса по B.
 	 */
-	async function loadHistory(patientId: string) {
+	const loadHistory = useCallback(async function loadHistory(patientId: string) {
 		setIsLoadingHistory(true);
 		setHistoryFailure(null);
 		setDeleteFailure(null);
@@ -432,7 +432,7 @@ export function VisiographAnalyzer() {
 		} finally {
 			if (!isStale()) setIsLoadingHistory(false);
 		}
-	}
+	}, [denteClinicalReadHeaders]);
 
 	// ── Load scan history when patient changes ──────────────────────────────
 	useEffect(() => {
@@ -469,7 +469,7 @@ export function VisiographAnalyzer() {
 	 *
 	 * Возвращает null при успехе и человеческий текст отказа иначе.
 	 */
-	const writeToothStatesToChart = async (
+	const writeToothStatesToChart = useCallback(async (
 		patientId: string,
 		toothNumbers: number[],
 		state: ToothState,

@@ -1,7 +1,7 @@
 import { actionFailureToast } from "../../lib/panelStateText";
 import { Calendar, CheckCircle2, Trash2, UserPlus, X } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import {  useEffect, useState , useCallback } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -149,7 +149,7 @@ export function WaitlistDrawer(props: Props) {
 	);
 	const patientsList = dashboard?.patients ?? [];
 
-	const fetchWaitlist = async () => {
+	const fetchWaitlist = useCallback(async () => {
 		try {
 			setIsLoading(true);
 			setLoadFailureStatus(undefined);
@@ -174,7 +174,7 @@ export function WaitlistDrawer(props: Props) {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [organizationId]);;
 
 	useEffect(() => {
 		if (isOpen) {
@@ -573,11 +573,10 @@ export function WaitlistDrawer(props: Props) {
 								style={{ padding: "20px 16px" }}
 							/>
 						) : (
-							<div className="space-y-3">
+							<ul className="space-y-3">
 								{items.map((item) => (
-									<div
+									<li
 										key={item.id}
-										role="listitem"
 										draggable
 										onDragStart={(e) => {
 											e.dataTransfer.setData(
@@ -658,9 +657,9 @@ export function WaitlistDrawer(props: Props) {
 												<Trash2 className="w-3.5 h-3.5" />
 											</button>
 										</div>
-									</div>
+									</li>
 								))}
-							</div>
+							</ul>
 						)}
 					</div>
 				</div>

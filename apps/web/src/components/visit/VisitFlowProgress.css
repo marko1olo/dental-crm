@@ -2,10 +2,22 @@
    утилиты и сборка падает. До подключения Tailwind директивы @apply были
    недопустимым CSS и браузер выбрасывал эти правила целиком — компонент
    оставался вовсе без оформления. */
-@reference "../../styles/tailwind.css";
 
 .visit-flow-progress {
-	@apply bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-5 mb-6 flex flex-col gap-4 shadow-sm;
+	background-color: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.75rem;
+	padding: 1.25rem;
+	margin-bottom: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .visit-flow-progress {
+	background-color: rgba(15, 23, 42, 0.9);
+	border-color: #1e293b;
 }
 
 .vfp-header {
@@ -15,11 +27,22 @@
 }
 
 .vfp-title {
-	@apply m-0 text-base text-slate-800 dark:text-slate-200 flex items-center gap-2 font-semibold;
+	margin: 0;
+	font-size: 1rem;
+	line-height: 1.5rem;
+	color: #1e293b;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 600;
+}
+
+.dark .vfp-title {
+	color: #e2e8f0;
 }
 
 .vfp-title svg {
-	@apply text-sky-500;
+	color: #0ea5e9;
 }
 
 .vfp-badge {
@@ -32,27 +55,83 @@
 }
 
 .status-running {
-	@apply bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300;
+	background-color: #e0f2fe;
+	color: #0369a1;
+}
+
+.dark .status-running {
+	background-color: #082f49;
+	color: #7dd3fc;
 }
 
 .status-success {
-	@apply bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300;
+	background-color: #d1fae5;
+	color: #047857;
+}
+
+.dark .status-success {
+	background-color: #022c22;
+	color: #6ee7b7;
 }
 
 .status-partial {
-	@apply bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300;
+	background-color: #fef3c7;
+	color: #b45309;
+}
+
+.dark .status-partial {
+	background-color: #451a03;
+	color: #fcd34d;
 }
 
 .status-error {
-	@apply bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300;
+	background-color: #ffe4e6;
+	color: #be123c;
+}
+
+.dark .status-error {
+	background-color: #4c0519;
+	color: #fda4af;
 }
 
 .vfp-steps {
-	@apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-100 dark:border-slate-700/60;
+	display: grid;
+	grid-template-columns: repeat(1, minmax(0, 1fr));
+	gap: 0.75rem;
+	background-color: #ffffff;
+	padding: 1rem;
+	border-radius: 0.5rem;
+	border: 1px solid #f1f5f9;
+}
+
+@media (min-width: 640px) {
+	.vfp-steps {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 768px) {
+	.vfp-steps {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+.dark .vfp-steps {
+	background-color: rgba(30, 41, 59, 0.8);
+	border-color: rgba(51, 65, 85, 0.6);
 }
 
 .vfp-step {
-	@apply flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	color: #475569;
+}
+
+.dark .vfp-step {
+	color: #cbd5e1;
 }
 
 .vfp-step-label {
@@ -94,21 +173,53 @@
    названием шага. «Отключено в настройках клиники» читалось как «Отключено
    в…». Теперь причина выводится отдельным блоком и целиком. */
 .vfp-step-notes {
-	@apply bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-lg p-3 text-sm text-amber-900 dark:text-amber-200;
+	background-color: #fffbeb;
+	border: 1px solid #fde68a;
+	border-radius: 0.5rem;
+	padding: 0.75rem;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	color: #78350f;
+}
+
+.dark .vfp-step-notes {
+	background-color: rgba(69, 26, 3, 0.4);
+	border-color: rgba(120, 53, 15, 0.6);
+	color: #fde68a;
 }
 
 .vfp-step-notes strong {
-	@apply block mb-1.5 text-xs uppercase tracking-wider font-semibold;
+	display: block;
+	margin-bottom: 0.375rem;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	font-weight: 600;
 }
 
 .vfp-step-notes ul {
-	@apply m-0 pl-5 flex flex-col gap-1;
+	margin: 0;
+	padding-left: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
 	list-style: disc;
 }
 
 .vfp-step-notes p {
-	@apply m-0 mt-2 pt-2 border-t border-amber-200 dark:border-amber-900/60 text-xs text-amber-800 dark:text-amber-300;
+	margin: 0;
+	margin-top: 0.5rem;
+	padding-top: 0.5rem;
+	border-top: 1px solid #fde68a;
+	font-size: 0.75rem;
+	color: #92400e;
 	line-height: 1.5;
+}
+
+.dark .vfp-step-notes p {
+	border-top-color: rgba(120, 53, 15, 0.6);
+	color: #fcd34d;
 }
 
 .vfp-outputs {
@@ -118,11 +229,34 @@
 }
 
 .vfp-output-card {
-	@apply bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700/80 text-sm text-slate-700 dark:text-slate-300;
+	background-color: #ffffff;
+	padding: 1rem;
+	border-radius: 0.5rem;
+	border: 1px solid #e2e8f0;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	color: #334155;
+}
+
+.dark .vfp-output-card {
+	background-color: rgba(30, 41, 59, 0.8);
+	border-color: rgba(51, 65, 85, 0.8);
+	color: #cbd5e1;
 }
 
 .vfp-output-card strong {
-	@apply block mb-1.5 text-slate-900 dark:text-white text-xs uppercase tracking-wider font-semibold;
+	display: block;
+	margin-bottom: 0.375rem;
+	color: #0f172a;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	font-weight: 600;
+}
+
+.dark .vfp-output-card strong {
+	color: #ffffff;
 }
 
 .vfp-output-card p {
@@ -137,5 +271,17 @@
 }
 
 .vfp-tag {
-	@apply bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-md text-xs border border-slate-200 dark:border-slate-600;
+	background-color: #f1f5f9;
+	color: #475569;
+	padding: 0.25rem 0.75rem;
+	border-radius: 0.375rem;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	border: 1px solid #e2e8f0;
+}
+
+.dark .vfp-tag {
+	background-color: #334155;
+	color: #cbd5e1;
+	border-color: #475569;
 }

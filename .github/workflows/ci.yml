@@ -154,6 +154,22 @@ jobs:
       - name: smoke:schema-duplicate-ddl
         run: npm run smoke:schema-duplicate-ddl
 
+      # РАСХОЖДЕНИЕ МОДЕЛИ И DDL. Эти два гейта существовали и были КРАСНЫМИ,
+      # но не вызывались ни из workflow, ни из агрегатов package.json — поэтому
+      # девять позиций (users.current_session_id и ещё шесть колонок, таблицы
+      # sberbank_transactions и diagnocat_reports) дожили до релиза. Drizzle
+      # перечисляет все объявленные колонки в каждом select, так что одной
+      # недостающей хватает, чтобы вход в систему упал с 42703 на любой базе,
+      # поднятой из репозитория. Дефект выжил из-за отсутствия проводки, а не
+      # из-за дыры в проверке. Закрыто миграцией 0166, оба гейта EXIT=0, и
+      # каждый доказан мутацией (снятие колонки и снятие таблицы → EXIT=1 с
+      # точным именем). Базы данных не требуют: сверяют schema.ts с drizzle/*.sql.
+      - name: smoke:schema-column-parity
+        run: npm run smoke:schema-column-parity
+
+      - name: smoke:schema-ddl-coverage
+        run: npm run smoke:schema-ddl-coverage
+
       # ХРАПОВИК ПО ДОЛГУ. check:tracked-ignored красный ПО ДЕЛУ: 3443 файла при
       # бюджете 3168. Его собственное сообщение прямо запрещает поднимать бюджет
       # ради зелёного. Обоснование continue-on-error здесь — в отчёте и в

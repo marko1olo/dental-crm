@@ -122,11 +122,14 @@ const SurfaceSelector = ({
 				<title>Поверхности зуба</title>
 				{/* Top (B/V) */}
 				<polygon
+					role="button"
+					tabIndex={0}
 					points="0,0 100,0 70,30 30,30"
 					fill={selected.includes("B") ? "#3b82f6" : "#27272a"}
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("B")}
+					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("B"); } }}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -143,11 +146,14 @@ const SurfaceSelector = ({
 
 				{/* Bottom (L/P) */}
 				<polygon
+					role="button"
+					tabIndex={0}
 					points="30,70 70,70 100,100 0,100"
 					fill={selected.includes("L") ? "#3b82f6" : "#27272a"}
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("L")}
+					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("L"); } }}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -164,11 +170,14 @@ const SurfaceSelector = ({
 
 				{/* Left (M) */}
 				<polygon
+					role="button"
+					tabIndex={0}
 					points="0,0 30,30 30,70 0,100"
 					fill={selected.includes("M") ? "#3b82f6" : "#27272a"}
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("M")}
+					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("M"); } }}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -185,11 +194,14 @@ const SurfaceSelector = ({
 
 				{/* Right (D) */}
 				<polygon
+					role="button"
+					tabIndex={0}
 					points="100,0 70,30 70,70 100,100"
 					fill={selected.includes("D") ? "#3b82f6" : "#27272a"}
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("D")}
+					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("D"); } }}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -206,11 +218,14 @@ const SurfaceSelector = ({
 
 				{/* Center (O) */}
 				<polygon
+					role="button"
+					tabIndex={0}
 					points="30,30 70,30 70,70 30,70"
 					fill={selected.includes("O") ? "#3b82f6" : "#27272a"}
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("O")}
+					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("O"); } }}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -910,7 +925,8 @@ export const OdontogramModule = ({
 						<>
 							{/* Backdrop */}
 							<div
-								role="presentation"
+								role="button"
+								tabIndex={0}
 								style={{
 									position: "fixed",
 									top: 0,
@@ -920,7 +936,7 @@ export const OdontogramModule = ({
 									zIndex: 9998,
 								}}
 								onClick={() => setMenuConfig(null)}
-								onKeyDown={(e) => { if (e.key === 'Escape') setMenuConfig(null); }}
+								onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMenuConfig(null); } if (e.key === 'Escape') setMenuConfig(null); }}
 							/>
 							<div
 								role="menu"

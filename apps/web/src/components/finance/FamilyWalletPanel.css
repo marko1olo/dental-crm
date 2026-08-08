@@ -2,10 +2,24 @@
    утилиты и сборка падает. До подключения Tailwind директивы @apply были
    недопустимым CSS и браузер выбрасывал эти правила целиком — компонент
    оставался вовсе без оформления. */
-@reference "../../styles/tailwind.css";
 
 .family-wallet-panel {
-	@apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-5 shadow-sm relative overflow-hidden mt-4 transition-shadow duration-200;
+	background-color: #ffffff;
+	border: 1px solid #e2e8f0;
+	color: #0f172a;
+	border-radius: 0.75rem;
+	padding: 1.25rem;
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	position: relative;
+	overflow: hidden;
+	margin-top: 1rem;
+	transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .family-wallet-panel {
+	background-color: #0f172a;
+	border-color: #1e293b;
+	color: #f1f5f9;
 }
 
 .family-wallet-panel:hover {
@@ -35,11 +49,29 @@
 }
 
 .family-wallet-title-row {
-	@apply flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white m-0;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 1.125rem;
+	line-height: 1.75rem;
+	font-weight: 700;
+	color: #0f172a;
+	margin: 0;
+}
+
+.dark .family-wallet-title-row {
+	color: #ffffff;
 }
 
 .family-wallet-subtitle {
-	@apply text-sm text-slate-500 dark:text-slate-400 mt-1;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	color: #64748b;
+	margin-top: 0.25rem;
+}
+
+.dark .family-wallet-subtitle {
+	color: #94a3b8;
 }
 
 .family-wallet-balance-container {
@@ -47,12 +79,34 @@
 }
 
 .family-wallet-balance {
-	@apply text-3xl font-mono font-black text-emerald-600 dark:text-emerald-400 tracking-tight;
+	font-size: 1.875rem;
+	line-height: 2.25rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	font-weight: 900;
+	color: #059669;
+	letter-spacing: -0.025em;
 	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.dark .family-wallet-balance {
+	color: #34d399;
+}
+
 .family-wallet-balance-label {
-	@apply text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5 flex items-center justify-end gap-1;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	color: #64748b;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-top: 0.125rem;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.25rem;
+}
+
+.dark .family-wallet-balance-label {
+	color: #94a3b8;
 }
 
 .family-wallet-actions {
@@ -76,15 +130,39 @@
 }
 
 .family-wallet-input-label {
-	@apply text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #64748b;
+	font-weight: 600;
+}
+
+.dark .family-wallet-input-label {
+	color: #94a3b8;
 }
 
 .family-wallet-input {
-	@apply w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white outline-none transition-all;
+	width: 100%;
+	background-color: #f8fafc;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.5rem;
+	padding: 0.75rem;
+	color: #0f172a;
+	outline: 2px solid transparent;
+	outline-offset: 2px;
+	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .family-wallet-input {
+	background-color: #1e293b;
+	border-color: #334155;
+	color: #ffffff;
 }
 
 .family-wallet-input:focus {
-	@apply border-sky-500 ring-2 ring-sky-500/20;
+	border-color: #0ea5e9;
+	box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
 }
 
 .family-wallet-btn-container {
@@ -93,11 +171,42 @@
 }
 
 .family-wallet-btn {
-	@apply h-[46px] px-6 bg-sky-600 hover:bg-sky-700 text-white border-0 rounded-lg font-medium shadow-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+	height: 46px;
+	padding: 0 1.5rem;
+	background-color: #0284c7;
+	color: #ffffff;
+	border: 0;
+	border-radius: 0.5rem;
+	font-weight: 500;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	cursor: pointer;
+}
+
+.family-wallet-btn:hover {
+	background-color: #0369a1;
+}
+
+.family-wallet-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 .family-wallet-loading {
-	@apply text-slate-500 dark:text-slate-400 text-sm p-4 flex items-center gap-2;
+	color: #64748b;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	padding: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.dark .family-wallet-loading {
+	color: #94a3b8;
 }
 
 /* За кого списывают деньги. Читается как обычная фраза, а не как подпись поля,
@@ -105,11 +214,23 @@
    целиком. Размер тот же, что у остального текста панели, — на кассе в это место
    смотрят перед нажатием «Списать». */
 .family-wallet-payer {
-	@apply text-sm text-slate-700 dark:text-slate-200 m-0;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	color: #334155;
+	margin: 0;
+}
+
+.dark .family-wallet-payer {
+	color: #e2e8f0;
 }
 
 .family-wallet-payer strong {
-	@apply font-semibold text-slate-900 dark:text-white;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.dark .family-wallet-payer strong {
+	color: #ffffff;
 }
 
 /* Объяснение, почему «Списать с баланса» не нажимается. Тон предупреждения, а не
@@ -117,5 +238,12 @@
    Оформление — теми же утилитами, что и остальная панель, чтобы на экране кассы
    не появилось второго языка сообщений. */
 .family-wallet-hint {
-	@apply mt-3 text-sm leading-relaxed text-amber-800 dark:text-amber-200;
+	margin-top: 0.75rem;
+	font-size: 0.875rem;
+	line-height: 1.625;
+	color: #92400e;
+}
+
+.dark .family-wallet-hint {
+	color: #fde68a;
 }

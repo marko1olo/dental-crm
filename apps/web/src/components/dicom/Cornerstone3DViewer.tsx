@@ -2,7 +2,7 @@ import * as cornerstone from "@cornerstonejs/core";
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as cornerstoneTools from "@cornerstonejs/tools";
 import { vec3 } from "gl-matrix";
-import { useEffect, useRef, useState } from "react";
+import {  useEffect, useRef, useState , useCallback } from "react";
 import {
 	distancePointToSpline,
 	mat3ToMat4Direction,
@@ -512,7 +512,7 @@ export function Cornerstone3DViewer({
 	 * Записать разметку сейчас. `silent` — для сохранения при уходе с экрана: там
 	 * показывать что-либо уже некому, экран разбирается.
 	 */
-	const saveMarkupNow = async (silent = false): Promise<void> => {
+	const saveMarkupNow = useCallback(async (silent = false): Promise<void> => {
 		const patient = patientIdRef.current;
 		const study = studyUidRef.current;
 		const markup = currentMarkup();
@@ -554,7 +554,7 @@ export function Cornerstone3DViewer({
 				? { tone: "saved", text: "Разметка сохранена в карточке пациента." }
 				: { tone: "issue", text: outcome.message },
 		);
-	};
+	}, [saveCtPlanningMarkup]);;
 
 	/**
 	 * ВЫБРАННЫЙ МОМЕНТ СОХРАНЕНИЯ, И ПОЧЕМУ ИМЕННО ОН.
@@ -575,13 +575,13 @@ export function Cornerstone3DViewer({
 	 * Кнопка «Сохранить разметку» рядом тоже есть: на неё ссылаются тексты отказов,
 	 * и она даёт врачу способ убедиться, что работа записана, не угадывая.
 	 */
-	const scheduleMarkupSave = () => {
+	const scheduleMarkupSave = useCallback(() => {
 		if (saveTimerRef.current !== null) clearTimeout(saveTimerRef.current);
 		saveTimerRef.current = setTimeout(() => {
 			saveTimerRef.current = null;
 			void saveMarkupNow();
 		}, MARKUP_SAVE_DEBOUNCE_MS);
-	};
+	}, [saveMarkupNow]);;
 
 	useEffect(() => {
 		if (!isInitialized) return;
