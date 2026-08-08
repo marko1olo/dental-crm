@@ -58,9 +58,6 @@ async function runBenchmark() {
 
 	clearInterval(syncInterval);
 	console.log(`Sync Read total time: ${(syncEnd - syncStart).toFixed(2)}ms`);
-	console.log(
-		`Max event loop block during sync read (timer delay): ${maxBlockSync.toFixed(2)}ms`,
-	);
 
 	console.log("\nMeasuring Async Version...");
 
@@ -81,9 +78,6 @@ async function runBenchmark() {
 
 	clearInterval(asyncInterval);
 	console.log(`Async Read total time: ${(asyncEnd - asyncStart).toFixed(2)}ms`);
-	console.log(
-		`Max event loop block during async read (timer delay): ${maxBlockAsync.toFixed(2)}ms`,
-	);
 
 	fs.unlinkSync(testFilePath);
 }
