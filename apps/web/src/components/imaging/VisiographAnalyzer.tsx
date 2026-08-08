@@ -92,7 +92,7 @@ interface AiToothState {
  * увёл бы токен сотрудника. Экранируем ДО markdown-замен, чтобы теги,
  * которые генерируем мы сами, остались рабочими.
  */
-export function escapeHtml(value: string): string {
+function escapeHtml(value: string): string {
 	return String(value)
 		.replace(/&/g, "&amp;")
 		.replace(/</g, "&lt;")

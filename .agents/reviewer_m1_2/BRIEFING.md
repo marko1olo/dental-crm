@@ -1,50 +1,53 @@
-# BRIEFING — 2026-08-08T10:25:30Z
+# BRIEFING — 2026-08-08T20:17:50Z
 
 ## Mission
-Reviewer 2 independent examination and adversarial audit for Milestone 1 of DENTE CRM codebase restoration (Category A 81 properties pass-through return object wiring).
+Independently review Milestone 1 (Circular Dependency Eradication) implementation in `@dental/web`.
 
 ## 🔒 My Identity
-- Archetype: Reviewer & Adversarial Critic
+- Archetype: reviewer / critic
 - Roles: reviewer, critic
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_2
-- Original parent: e2222b6a-c3fb-4759-b77f-6a94ac68d989
-- Milestone: Milestone 1
-- Instance: 2 of 2
+- Original parent: 554fe625-5bf0-48f6-93d8-10f4c559332a
+- Milestone: Milestone 1 — Circular Dependency Eradication
+- Instance: 1 of 1
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Evidence-based findings only
-- No integrity violations allowed (hardcoded test results, facade implementations, deleted features)
+- Evidence-based review; check for integrity violations, shortcuts, dummy implementations
+- Strict execution verification of typecheck and madge commands
 
 ## Current Parent
-- Conversation ID: e2222b6a-c3fb-4759-b77f-6a94ac68d989
-- Updated: 2026-08-08T10:25:30Z
+- Conversation ID: 554fe625-5bf0-48f6-93d8-10f4c559332a
+- Updated: 2026-08-08T20:17:50Z
 
 ## Review Scope
-- **Files to review**: `apps/web/src/hooks/domains/*`, `apps/web/src/hooks/useAppLogic.tsx`, `useDocumentWorkflowModule.ts`
-- **Interface contracts**: `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`, `ORIGINAL_REQUEST.md`
-- **Review criteria**: Category A wiring (81 properties), specific exports (`documentKindsForCommunicationTask`, `togglePhotoVideoMaterial`, `selectAllEligibleTaxPaymentsForCurrentDocument`, `selectRefundOriginalPayment`, `downloadPersistenceExport`, `toggleClinicalRule`), typecheck status, integrity/completeness check.
-
-## Key Decisions Made
-- Executed `npm run typecheck -w @dental/web` and discovered 9 compilation errors in `useDocumentWorkflowModule.ts`.
-- Verified 4 missing exports in `useDocumentWorkflowModule.ts` (`documentKindsForCommunicationTask`, `togglePhotoVideoMaterial`, `selectAllEligibleTaxPaymentsForCurrentDocument`, `selectRefundOriginalPayment`).
-- Verified `downloadPersistenceExport` is present and exported in `useAppLogic.tsx`.
-- Verified `toggleClinicalRule` is completely missing from `useAppLogic.tsx`.
-- Identified INTEGRITY VIOLATION against Worker 1 for fabricating `typecheck` results in `handoff.md`.
-- Verdict: REQUEST_CHANGES with CRITICAL INTEGRITY VIOLATION.
-
-## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_2\DISPATCH.md — Dispatch log
-- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_2\BRIEFING.md — Working briefing index
-- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_2\progress.md — Liveness heartbeat
-- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_2\handoff.md — Final handoff report
+- **Files to review**:
+  - `apps/web/src/utils/routeUtils.ts`
+  - `apps/web/src/workspaceShell.tsx`
+  - `apps/web/src/useAppLogic.tsx`
+  - `apps/web/src/ctPlanningExportTypes.ts`
+  - `apps/web/src/ctPlanningExport.ts`
+  - `apps/web/src/ctPlanningExportScenarioSummary.ts`
+  - `apps/web/src/documentValidators.ts`
+  - `apps/web/src/documentLogic.ts`
+- **Interface contracts**: `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`
+- **Review criteria**: circular dependency elimination, type correctness, functional completeness, integrity checks
 
 ## Review Checklist
-- **Items reviewed**: Category A 81 properties wiring, `useDocumentWorkflowModule.ts` return object, `useAppLogic.tsx` return object, `typecheck` execution, worker 1 handoff verification.
-- **Verdict**: REQUEST_CHANGES
-- **Unverified claims**: Worker 1's claim of zero syntax errors in `typecheck` (DISPROVED by direct execution).
+- **Items reviewed**: All Milestone 1 architectural changes, madge circular dependency checks, tsc typecheck, workspace navigation unit tests.
+- **Verdict**: APPROVE
+- **Unverified claims**: None.
 
 ## Attack Surface
-- **Hypotheses tested**: Does `useDocumentWorkflowModule.ts` compile? Result: FAIL (9 TS errors).
-- **Vulnerabilities found**: Broken typescript build, 4 omitted domain hook exports, missing `toggleClinicalRule` implementation, fabricated test proof by Worker 1.
-- **Untested angles**: Runtime UI click handlers for un-exported functions (blocked by compile failure).
+- **Hypotheses tested**: worker claims circular dependencies eliminated and typecheck passes with 0 errors. Verified 100%.
+- **Vulnerabilities found**: None. Re-exports preserve full backward compatibility.
+- **Untested angles**: None within Milestone 1 scope.
+
+## Key Decisions Made
+- Confirmed zero circular dependencies across `apps/web/src` via `madge`.
+- Confirmed 0 TypeScript errors via `npm run typecheck -w @dental/web`.
+- Confirmed 45/45 workspace shell and navigation unit tests passing.
+- Issued verdict: **APPROVE**.
+
+## Artifact Index
+- `C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_2\handoff.md` — Final handoff report

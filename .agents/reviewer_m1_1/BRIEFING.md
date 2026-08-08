@@ -1,46 +1,54 @@
-# BRIEFING — 2026-08-08T14:25:00Z
+# BRIEFING — 2026-08-08T20:17:45Z
 
 ## Mission
-Review Milestone 1 implementation of DENTE CRM codebase restoration (`apps/web`), specifically Category A Pass-Through Return Object Wiring (81 properties) and restored functions.
+Review Milestone 1 (Circular Dependency Eradication) implementation in DENTE CRM frontend (`apps/web`).
 
 ## 🔒 My Identity
 - Archetype: reviewer / critic
 - Roles: reviewer, critic
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1
-- Original parent: e2222b6a-c3fb-4759-b77f-6a94ac68d989
-- Milestone: Milestone 1 Verification
+- Original parent: 554fe625-5bf0-48f6-93d8-10f4c559332a
+- Milestone: Milestone 1 — Circular Dependency Eradication
 - Instance: 1 of 1
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Evidence-based review, run typecheck, inspect source code, verify all claims independently
+- Evidence-based review and adversarial challenge
+- Absolute adherence to AGENTS.md mandates
 
 ## Current Parent
-- Conversation ID: e2222b6a-c3fb-4759-b77f-6a94ac68d989
-- Updated: 2026-08-08T14:25:00Z
+- Conversation ID: 554fe625-5bf0-48f6-93d8-10f4c559332a
+- Updated: 2026-08-08T20:17:45Z
 
 ## Review Scope
-- **Files to review**: apps/web/src/useAppLogic.tsx, apps/web/src/hooks/domains/useDocumentWorkflowModule.ts, apps/web/src/hooks/useSettingsDerivations.tsx, and related modules.
-- **Interface contracts**: ORIGINAL_REQUEST.md, C:\Clinic_MVP\dental-crm\.agents\AGENTS.md
-- **Review criteria**: Correctness, Logical completeness, Quality, Integrity, No deletions/regressions
-
-## Review Checklist
-- **Items reviewed**: `useAppLogic.tsx`, `useDocumentWorkflowModule.ts`, `npm run typecheck -w @dental/web` execution.
-- **Verdict**: **REQUEST_CHANGES**
-- **Unverified claims**: Worker 1 claimed 0 typecheck errors; verified false (9 TS errors in `useDocumentWorkflowModule.ts`).
-
-## Attack Surface
-- **Hypotheses tested**: Checked for broken TS syntax, unexported return properties, deleted functions, unexported `toggleClinicalRule`.
-- **Vulnerabilities found**:
-  1. 9 TS compilation errors in `useDocumentWorkflowModule.ts` due to shorthand property name mismatches.
-  2. 4 core domain functions (`documentKindsForCommunicationTask`, `togglePhotoVideoMaterial`, `selectAllEligibleTaxPaymentsForCurrentDocument`, `selectRefundOriginalPayment`) omitted from return object.
-  3. `toggleClinicalRule` missing from `useAppLogic.tsx` return object.
-- **Untested angles**: None.
+- **Files to review**:
+  - `apps/web/src/utils/routeUtils.ts`
+  - `apps/web/src/workspaceShell.tsx`
+  - `apps/web/src/useAppLogic.tsx`
+  - `apps/web/src/ctPlanningExport.ts`
+  - `apps/web/src/ctPlanningExportScenarioSummary.ts`
+  - `apps/web/src/documentValidators.ts`
+- **Interface contracts**: C:\Clinic_MVP\dental-crm\.agents\AGENTS.md
+- **Review criteria**: circular dependency elimination, type safety, runtime backwards compatibility, integrity checks.
 
 ## Key Decisions Made
-- Issued verdict **REQUEST_CHANGES** based on direct compiler failure, missing UI context exports, and integrity violation on worker verification claim.
+- Verified source extraction to `routeUtils.ts`, `ctPlanningExportTypes.ts`, and `documentValidators.ts`.
+- Verified `workspaceShell.tsx` context decoupling via `useSettingsStore`.
+- Verified backwards compatibility re-exports.
+- Verified 0 madge cycles and 0 typecheck errors.
+- Issued verdict: `APPROVE`.
+
+## Review Checklist
+- **Items reviewed**: all 6 modified files, 4 verification CLI gates, re-export consumers.
+- **Verdict**: APPROVE
+- **Unverified claims**: None.
+
+## Attack Surface
+- **Hypotheses tested**: Breaking public component interfaces via routeUtils extraction -> tested, all re-exports intact.
+- **Vulnerabilities found**: None.
+- **Untested angles**: None.
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1\DISPATCH.md — Dispatch prompt
-- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1\BRIEFING.md — Working briefing
-- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1\handoff.md — Final handoff report
+- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1\DISPATCH.md — Task dispatch
+- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1\BRIEFING.md — Working briefing index
+- C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1\handoff.md — Final review handoff report

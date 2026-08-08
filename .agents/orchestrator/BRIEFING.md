@@ -1,19 +1,19 @@
-# BRIEFING — 2026-08-08T14:09:04Z
+# BRIEFING — 2026-08-08T20:18:54+04:00
 
 ## Mission
-Deep architectural restoration of DENTE CRM codebase (`apps/web`): restore 198 deleted properties/logic from commit `da92ab9507` into modern domain hooks and `useAppLogic.tsx`, pass typecheck cleanly, verify zero UI regressions.
+Execute all requirements for DENTE CRM Hardening: Eradicate circular dependencies (R1), perform deep architectural & UI audit (R2), migrate console.log calls (R3), write & execute Playwright E2E verification tests (R4), and enforce zero AI optimism & strict verification (R5).
 
 ## 🔒 My Identity
 - Archetype: self
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\orchestrator
-- Original parent: top-level
-- Original parent conversation ID: top-level
+- Original parent: parent
+- Original parent conversation ID: c3d82e97-4e55-4443-b915-bab97e03ecc0
 
 ## 🔒 My Workflow
 - **Pattern**: Project Pattern
-- **Scope document**: C:\Clinic_MVP\dental-crm\PROJECT.md
-1. **Decompose**: 5 Milestones (M1: Pass-Through Return Object Wiring, M2: DICOM/MPR/Browser I/O, M3: Migration & Voice, M4: Clinical/Documents/Admin, M5: Typecheck Verification Gate).
+- **Scope document**: C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md
+1. **Decompose**: 5 Milestones (M1: Circular Dependency Eradication, M2: Deep Architectural & UI Audit, M3: console.log Migration, M4: Playwright E2E Verification, M5: Verification Gate & Audit).
 2. **Dispatch & Execute**: Iterate Explorer -> Worker -> Reviewer -> Challenger -> Auditor for each milestone.
 3. **On failure**: Retry -> Replace -> Skip -> Redistribute -> Redesign
 4. **Succession**: Self-succeed at 20 spawns.
@@ -21,52 +21,56 @@ Deep architectural restoration of DENTE CRM codebase (`apps/web`): restore 198 d
 ## 🔒 Key Constraints
 - NEVER write source code directly.
 - NEVER run build/test commands directly — delegate to workers/reviewers/auditors.
-- DO NOT delete any modern bugfixes, tests, UI changes, buttons, or views.
-- Ensure global execution chain integrity — no empty dummy fallbacks `() => {}`.
-- `npm run typecheck -w @dental/web` must exit with 0.
+- Ensure all 5 acceptance criteria are verified with objective proof:
+  1. `npx madge --circular apps/web/src/main.tsx` outputs 0 circular dependencies.
+  2. `npm run typecheck -w @dental/web` passes with 0 errors.
+  3. `rg "console\.(log|error|warn)" apps/web/src` returns 0 results (excluding logger module).
+  4. Playwright E2E tests execute successfully (`npx playwright test`) and verify UI without console errors.
+  5. Zero regressions or broken UI state remain.
 
 ## Current Parent
-- Conversation ID: top-level
-- Updated: not yet
+- Conversation ID: c3d82e97-4e55-4443-b915-bab97e03ecc0
+- Updated: 2026-08-08T20:12:16+04:00
 
 ## Key Decisions Made
-- Reviewer 2 rejected M1 gate due to 2 regressions (4 deleted exports in `useDocumentWorkflowModule.ts` and missing alias `downloadPersistenceExport`).
-- Created `GATE_STATUS.md` with FAIL verdict.
-- Dispatched Worker 6 to execute surgical fixes for M1 regressions.
+- Initialized Project Pattern workflow for DENTE CRM Hardening.
+- Decomposed work into 5 sequential, verifiable milestones.
+- Heartbeat task initialized (task-18).
+- Dispatched 3 initial Explorers (M1: Circular deps, M2/M3: Typecheck & console.log, M4: Playwright setup).
+- Received R2/R3 audit report from `explorer_m2_m3_1` (0 typecheck errors originally, 321 console matches).
+- Received R1 circular dependency report from `explorer_m1_1` (3 cycles mapped, severing plan defined).
+- Received R4 Playwright E2E report from `explorer_m4_1` (spec `workspace-e2e.spec.ts` designed with 4-state visual capture).
+- Dispatched `worker_m1_1` for M1 circular dependency refactoring (0 madge cycles achieved).
+- Reviewers and Forensic Auditor flagged syntax errors in `useAuthLogic.ts` and `useAppLogic.tsx` causing `npm run typecheck -w @dental/web` exit code 1.
+- Dispatched `worker_remediation_1` (`9fb853e0-e19c-444b-9755-80441021f897`) to repair TS syntax errors in `useAuthLogic.ts` and `useAppLogic.tsx`.
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| explorer_1 | teamwork_preview_explorer | Missing Props 1-66 survey | completed | 5a395c8d-7d62-4138-ac80-87dff5001530 |
-| explorer_4 | teamwork_preview_explorer | Missing Props 67-132 survey | completed | 03f3f86a-6d63-4880-9189-61c0f68d3b88 |
-| explorer_3 | teamwork_preview_explorer | Missing Props 133-198 survey | completed | a9fa35b1-348f-46b8-a74d-48614ba701d9 |
-| worker_1 | teamwork_preview_worker | Milestone 1 Pass-Through Wiring | completed | 39038aa8-5b2e-4885-853e-e79dd6d40fb9 |
-| reviewer_2 | teamwork_preview_reviewer | Milestone 1 Code Review | completed | 1c88a31b-c247-4f86-88ea-f53a8a63243c |
-| worker_6 | teamwork_preview_worker | M1 Regression Remediation | completed | 69fb2cb8-b4f2-4a04-b231-a356147a477c |
-| reviewer_m1_1 | teamwork_preview_reviewer | M1 Gate Review 1 | completed | d180b6b8-02e2-43a9-9a68-fe77157f0703 |
-| reviewer_m1_2 | teamwork_preview_reviewer | M1 Gate Review 2 | completed | a728c1ab-f8f5-428b-9ae9-d7cbd43f434e |
-| challenger_m1_1 | teamwork_preview_challenger | M1 Empirical Challenge | completed | ce958f4a-6ded-4ac6-a615-16dd31fea052 |
-| auditor_m1_1 | teamwork_preview_auditor | M1 Forensic Audit | completed | 060f855f-7bfe-49f2-b1d5-cf7404cb82cd |
-| worker_7 | teamwork_preview_worker | M1 Remediation (Syntax & Exports) | completed | 63f54cd0-f525-44ad-81ad-a0b5252ac905 |
-| reviewer_m1_3 | teamwork_preview_reviewer | M1 Iteration 3 Review 1 | in-progress | 7306b88b-7a19-40de-8593-3af004e52af9 |
-| reviewer_m1_4 | teamwork_preview_reviewer | M1 Iteration 3 Review 2 | in-progress | eb98377d-94ba-4875-b215-df9930f03cef |
-| challenger_m1_2 | teamwork_preview_challenger | M1 Iteration 3 Empirical Challenge | in-progress | 8f1146e7-bded-4d29-9846-a3e2a08df35e |
-| auditor_m1_2 | teamwork_preview_auditor | M1 Iteration 3 Forensic Audit | completed | b726a601-6af3-402e-9e4e-ffa16ad88bd2 |
-| worker_8 | teamwork_preview_worker | M1 Domain Hook Wiring & Type Safety | in-progress | ab8fc21c-669e-4a7e-b512-0ec310ba8e83 |
+| explorer_m1_1 | teamwork_preview_explorer | Circular Dependency Investigation (R1) | completed | 785146b6-337d-4e1f-ae68-617239d65b63 |
+| explorer_m2_m3_1 | teamwork_preview_explorer | Typecheck & Console.log Inventory (R2, R3) | completed | fba81ee6-86c6-4944-8daf-05fe32cb7b12 |
+| explorer_m4_1 | teamwork_preview_explorer | Playwright E2E Setup & Strategy (R4) | completed | bb973c9f-5618-499c-a697-c5eba4d1d1b4 |
+| worker_m1_1 | teamwork_preview_worker | Milestone 1 Circular Dep Eradication | completed | b13460da-ea3f-414e-b835-bff5003f476d |
+| reviewer_m1_rev1 | teamwork_preview_reviewer | M1 Code Review 1 | completed | 2880d317-f2dc-4f21-a9f2-cbf295e5d8f0 |
+| reviewer_m1_rev2 | teamwork_preview_reviewer | M1 Code Review 2 | completed | ec7b1819-dc00-46fd-a8be-61508a44a9cf |
+| worker_remediation_1 | teamwork_preview_worker | TS Syntax Remediation | in-progress | 9fb853e0-e19c-444b-9755-80441021f897 |
+| worker_m3_1 | teamwork_preview_worker | Milestone 3 Console.log Migration | in-progress | 757dec3b-c9de-4059-a3e6-2a87c7c5c4b3 |
+| worker_m4_1 | teamwork_preview_worker | Milestone 4 Playwright E2E Spec | in-progress | c66dd61e-d332-40f6-babe-01120111562b |
 
 ## Succession Status
-- Succession required: pending Worker 8 completion
-- Spawn count: 20 / 20
-- Pending subagents: ab8fc21c-669e-4a7e-b512-0ec310ba8e83
+- Succession required: no
+- Spawn count: 16 / 20
+- Pending subagents: 9fb853e0-e19c-444b-9755-80441021f897, 757dec3b-c9de-4059-a3e6-2a87c7c5c4b3, c66dd61e-d332-40f6-babe-01120111562b
 - Predecessor: none
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: task-17
+- Heartbeat cron: task-18
 - Safety timer: none
 
 ## Artifact Index
 - C:\Clinic_MVP\dental-crm\.agents\orchestrator\BRIEFING.md — Working memory & state
 - C:\Clinic_MVP\dental-crm\.agents\orchestrator\progress.md — Progress checklist & heartbeat
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\plan.md — Operational plan
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md — Global architecture & milestone decomposition
 - C:\Clinic_MVP\dental-crm\.agents\orchestrator\GATE_STATUS.md — Gate verdicts & failure analysis
-- C:\Clinic_MVP\dental-crm\PROJECT.md — Global architecture, feature inventory, milestones

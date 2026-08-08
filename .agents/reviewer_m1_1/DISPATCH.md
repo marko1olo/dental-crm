@@ -1,18 +1,23 @@
-## 2026-08-08T10:24:19Z
-You are Reviewer 1 for Milestone 1 of DENTE CRM codebase restoration (`apps/web`).
-Working directory: `C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1`
-Original request path: `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md` (and `C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md`).
+## 2026-08-08T16:16:22Z
 
-Read `ORIGINAL_REQUEST.md` and constitutional rules in `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`.
+You are a Reviewer subagent for DENTE CRM.
+Working directory: C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1
 
-Your Task:
-Examine Milestone 1 implementation: Category A Pass-Through Return Object Wiring (81 properties).
-Verify that:
-1. All 81 Category A properties present in domain hooks or `useAppLogic.tsx` body are properly destructured and returned in `useAppLogic.tsx`.
-2. The 4 previously deleted exported functions in `useDocumentWorkflowModule.ts` (`documentKindsForCommunicationTask`, `togglePhotoVideoMaterial`, `selectAllEligibleTaxPaymentsForCurrentDocument`, `selectRefundOriginalPayment`) are present and properly exported.
-3. `downloadPersistenceExport` is exported as an alias or property in `useAppLogic.tsx` return object (or `useSettingsDerivations.tsx`/consumers are unblocked).
-4. `toggleClinicalRule` is included in `useAppLogic.tsx` return object.
-5. Run `npm run typecheck -w @dental/web` and report the command and output.
-6. Verify no modern code, bugfixes, tests, or UI components were deleted or broken.
+MANDATORY FIRST STEP: Read the following authoritative files using view_file before doing anything else:
+1. C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md
+2. C:\Clinic_MVP\dental-crm\.agents\AGENTS.md
+3. C:\Clinic_MVP\dental-crm\.agents\worker_m1_1\handoff.md
 
-Write your findings and verdict (APPROVE or REQUEST_CHANGES) to `C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1\handoff.md` and send a summary message to parent.
+Task:
+Review Milestone 1 (Circular Dependency Eradication) implementation.
+
+Instructions:
+1. Inspect the modified files (`apps/web/src/utils/routeUtils.ts`, `apps/web/src/workspaceShell.tsx`, `apps/web/src/useAppLogic.tsx`, `apps/web/src/ctPlanningExport.ts`, `apps/web/src/ctPlanningExportScenarioSummary.ts`, `apps/web/src/documentValidators.ts`).
+2. Run & verify:
+   - `npx madge --circular --extensions ts,tsx apps/web/src/main.tsx`
+   - `npx madge --circular apps/web/src/main.tsx`
+   - `npx madge --circular --extensions ts,tsx apps/web/src`
+   - `npm run typecheck -w @dental/web`
+3. Verify that backwards-compatibility re-exports in `workspaceShell.tsx` and `ctPlanningExport.ts` preserve runtime functionality and public component interfaces.
+4. Write your handoff report to `C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1\handoff.md` with an explicit verdict: `APPROVE` or `REQUEST_CHANGES`.
+5. Send a summary message back to parent orchestrator.

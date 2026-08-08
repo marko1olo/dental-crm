@@ -1,35 +1,28 @@
-# Operational Plan — DENTE CRM Hardening
+# Operational Plan — DENTE CRM Hardening & Verification
 
 ## Overview
-Comprehensive functional audit and architectural hardening of DENTE CRM (`C:\Clinic_MVP\dental-crm`).
+Comprehensive circular dependency eradication, architectural/UI audit, console.log migration, and Playwright E2E verification of DENTE CRM (`apps/web`).
 
-## Phases & Strategy
+## Milestones & Strategy
 
-### Phase 0: Parallel Reconnaissance & Survey
-Dispatch 3 Explorer agents in parallel to perform structural analysis across `apps/web/src`:
-- **Explorer 1 (R1 Audit)**: Map all instances of `try/catch` and `catch()` blocks in `apps/web/src`. Identify silent error swallows (`console.error`, empty catch blocks) and list candidates for `showToast` / `actionFailureToast` error routing.
-- **Explorer 2 (R2 Audit)**: Map all form submit handlers (`onSubmit`), action buttons, async handlers, and network mutation triggers in `apps/web/src`. Identify missing `isSubmitting`/`isLoading` loading guards, un-disabled buttons, and missing `aria-busy={true}`.
-- **Explorer 3 (R3 Audit)**: Survey structural search targets (`rg "await fetch|catch"`, `rg "onSubmit"`), execute Biome linter check (`npx biome lint apps/web/src`), typecheck (`npm run typecheck`), and analyze circular dependencies using `npx madge --circular --extensions ts,tsx apps/api/src apps/web/src`.
+### Milestone 1: Circular Dependency Eradication (R1)
+- Dispatch Explorers to inspect the exact circular import edges reported by `madge` for `useAppLogic.tsx`, `workspaceShell.tsx`, `AppLogicContext.tsx`, `hooks/useWorkspaceProfile.ts`.
+- Dispatch Worker to sever static circular import dependencies (extracting shared types/helpers, converting to type imports, or decoupling imports).
+- Dispatch Reviewers, Challengers, and Forensic Auditor to verify `npx madge --circular apps/web/src/main.tsx` outputs 0 cycles and build/typecheck remains healthy.
 
-### Phase 1: Milestone 1 — Eradicate Silent Async Error Swallows (R1)
-- Dispatch Worker to route all unhandled/swallowed async errors across `apps/web/src` to user-facing toasts (`showToast`, `actionFailureToast`).
-- Dispatch 2 Reviewers to inspect error handling completeness.
-- Dispatch 2 Challengers to verify error state UI feedback.
-- Dispatch Forensic Auditor for integrity gate check.
+### Milestone 2: Deep Architectural & UI Audit (R2)
+- Dispatch Explorers to audit call stacks, orphaned state, form submit guards, button click handlers across UI modules.
+- Dispatch Worker to fix any broken call stacks or unhandled error boundaries and achieve 0 typecheck errors (`npm run typecheck -w @dental/web`).
+- Dispatch Reviewers, Challengers, and Auditor to verify zero regressions.
 
-### Phase 2: Milestone 2 — Harden Race Conditions & Double Submits (R2)
-- Dispatch Worker to implement `isSubmitting`/`isLoading` state guards, `disabled={isSubmitting}`, and `aria-busy={true}` across form submits and action buttons in `apps/web/src`.
-- Dispatch 2 Reviewers to review race-condition protection.
-- Dispatch 2 Challengers to test rapid double-clicking and state locking.
-- Dispatch Forensic Auditor for integrity gate check.
+### Milestone 3: console.log Migration (R3)
+- Dispatch Explorers to inventory all `console.log`, `console.warn`, `console.error` calls across `apps/web/src`.
+- Dispatch Worker to migrate all raw logging statements to `logger` module (`apps/web/src/utils/logger.ts` or appropriate logger helper).
+- Dispatch Reviewers & Auditor to verify `rg "console\.(log|error|warn)" apps/web/src` returns 0 results (excluding logger itself).
 
-### Phase 3: Milestone 3 — Code Quality, Biome & Typecheck Compliance (R3)
-- Dispatch Worker to resolve any remaining Biome linter errors (`npx biome lint apps/web/src`) and TypeScript compiler errors (`npm run typecheck -w @dental/web`, `npm run typecheck -w @dental/api`).
-- Dispatch 2 Reviewers for code quality verification.
-- Dispatch 2 Challengers for regression testing.
-- Dispatch Forensic Auditor for integrity gate check.
+### Milestone 4: Playwright E2E Verification (R4)
+- Dispatch Explorer/Worker to inspect E2E setup, write/update Playwright test scripts to simulate user login, workspace navigation, view inspection, and browser console error catching.
+- Run E2E test suite (`npx playwright test`), capture screenshots & logs.
 
-### Phase 4: Project Verification & Completion Synthesis
-- Synthesize all milestone handoff reports and terminal execution logs.
-- Confirm zero TypeScript errors, zero Biome lint errors, zero silent error swallows, and 100% fortified state guards.
-- Notify Sentinel / Parent of task completion.
+### Milestone 5: Verification Gate & Final Forensic Audit (R5)
+- Collect all gate verdicts (`GATE_STATUS.md`), verify all 5 acceptance criteria, run final forensic audit, and deliver handoff report to Sentinel / Parent.

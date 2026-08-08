@@ -1,10 +1,11 @@
 # Progress Log — challenger_m1_2
 
-Last visited: 2026-08-08T14:29:45Z
+Last visited: 2026-08-08T20:16:30Z
 
-- [x] Initialized DISPATCH.md, BRIEFING.md, and progress.md
-- [x] Task 1: Execute `npm run typecheck -w @dental/web` and record output/exit code (Exit code: 0)
-- [x] Task 2: Audit UI consumer imports across `apps/web/src` (App.tsx, DocumentsView.tsx, CommunicationsView.tsx, SettingsView.tsx, SettingsRulesTab.tsx, etc.) for undefined exports / missing functions (Found 128 undefined props in App.tsx and 67 in SettingsView.tsx due to 5 unwired domain hooks)
-- [x] Task 3: Audit codebase for dummy empty fallbacks `() => {}`, fake returns, or placeholder implementations (Found 52 instances across components and tests)
-- [x] Task 4: Write `handoff.md` with complete findings, logic chain, caveats, conclusion, and verdict (REQUEST_CHANGES)
-- [x] Task 5: Send summary message to parent
+- [x] Read mandatory files (`ORIGINAL_REQUEST.md`, `AGENTS.md`, `worker_m1_1/handoff.md`).
+- [x] Updated DISPATCH.md and BRIEFING.md.
+- [ ] Run `npm run typecheck -w @dental/web` to verify 0 errors.
+- [ ] Inspect `routeUtils.ts`, `workspaceShell.tsx`, and `useAppLogic.tsx`.
+- [ ] Verify `getFallbackAppView`, `getFilteredAppViews`, `viewLabels`, `viewHints` behavior & equivalence when imported/called from both `useAppLogic.tsx` and `workspaceShell.tsx`.
+- [ ] Write handoff report with explicit verdict: `APPROVE` or `REJECT`.
+- [ ] Send summary message to parent.

@@ -62,3 +62,48 @@ When restoring functions, ensure they are actually wired correctly to the backen
 - [ ] No existing UI buttons or views are deleted or commented out.
 - [ ] No bugfixes, structural changes, or accessibility fixes made between July 30 and August 8 are overwritten or lost.
 
+## 2026-08-08T20:12:03Z
+
+# Teamwork Project Prompt
+
+Deep architectural audit, circular dependency eradication, `console.log` migration, and Playwright E2E verification of the DENTE CRM frontend.
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: benchmark
+
+## Requirements
+
+### R1. Eradicate Circular Dependencies
+Resolve the remaining 4 circular dependencies in `apps/web/src` as reported by `madge`. Specifically address the cycles involving `useAppLogic.tsx`, `workspaceShell.tsx`, `AppLogicContext.tsx`, and `hooks/useWorkspaceProfile.ts`.
+
+### R2. Deep Architectural & UI Audit
+Perform a paranoid, exhaustive audit of the codebase to identify any broken call stacks, orphaned logic, or regressions introduced during the recent `useAppLogic` refactoring. Ensure every button, field, and widget is functional. Ground all architectural decisions using Google Search for industry best practices.
+
+### R3. `console.log` Migration
+Find and replace all raw `console.log`, `console.warn`, and `console.error` calls across the frontend with the project's unified logger module. 
+
+### R4. Playwright E2E Verification
+Write and execute Playwright E2E tests to physically simulate a browser, log in, navigate the workspace, and verify that the UI renders without crashing. Take screenshots and read browser logs to confirm health.
+
+### R5. Zero AI Optimism & Strict Verification
+Do not assume any code works. You must physically run tests, linters, AST parsers, and build tools to verify correctness. Never accept the first layer of truth.
+
+## Acceptance Criteria
+
+### Objective Programmatic Verification
+- [ ] `npx madge --circular apps/web/src/main.tsx` outputs exactly 0 circular dependencies.
+- [ ] `npm run typecheck -w @dental/web` passes with 0 errors.
+- [ ] `rg "console\.(log|error|warn)" apps/web/src` returns 0 results (excluding the logger module itself).
+- [ ] Playwright E2E tests execute successfully (npx playwright test) and verify the UI loads without console errors.
+- [ ] No regression or broken UI state remains.
+
+## 2026-08-08T20:19:36Z
+
+CRITICAL UPDATE:
+1. Circular dependencies are 100% eradicated (Madge reports 0). Milestone 1 is complete.
+2. TypeScript build is clean (tsc -b --noEmit has 0 errors).
+3. Playwright E2E testing cannot proceed locally due to missing database instance. Skip Milestone 4.
+
+IMMEDIATE MISSION:
+1. Complete Milestone 3: Migrate all console.log, console.error, console.warn calls across apps/web/src to use logger (import { logger } from "@/utils/logger").
+2. Complete Milestone 2: Finish deep architectural audit. Fix any broken call stacks or orphaned logic.

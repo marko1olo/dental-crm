@@ -1,13 +1,16 @@
-# Context Log — DENTE Dental CRM UI/UX Overhaul
+# Context & State Overview
 
-## Session Context
-- Working Directory: `C:\Clinic_MVP\dental-crm`
-- Agent Directory: `C:\Clinic_MVP\dental-crm\.agents\orchestrator`
-- Governance: `C:\Clinic_MVP\dental-crm\AGENTS.md` (Clinic MVP Constitution)
+## Project Scope
+- Codebase: `C:\Clinic_MVP\dental-crm`
+- Frontend: `apps/web/src`
+- E2E Tests: `apps/web/e2e` or `apps/web/tests`
 
-## Active Strategy
-Orchestration using Project Pattern:
-1. Milestone 1: Reconnaissance Explorer scan for hardcoded inline styles, theme variables, glassmorphism tokens, and accessibility attributes.
-2. Milestone 2: Worker refactoring of View Batch A (Shift, Schedule, Patients, Visit, Imaging).
-3. Milestone 3: Worker refactoring of View Batch B (Documents, Finance, Analytics, Communications, Settings, Marketing).
-4. Milestone 4: Worker / Challenger 4-state visual proof matrix generation via `dente-redesign-shots.mjs` + typecheck.
+## Current Mission Goals
+1. R1: Eradicate 4 circular dependencies reported by madge involving `useAppLogic.tsx`, `workspaceShell.tsx`, `AppLogicContext.tsx`, `hooks/useWorkspaceProfile.ts`. Target: `npx madge --circular apps/web/src/main.tsx` outputs 0 cycles.
+2. R2: Deep Architectural & UI Audit. Target: 0 typecheck errors (`npm run typecheck -w @dental/web`), 0 broken call stacks, no broken UI buttons/widgets.
+3. R3: console.log Migration. Target: `rg "console\.(log|error|warn)" apps/web/src` returns 0 results (excluding logger itself).
+4. R4: Playwright E2E Verification. Target: `npx playwright test` passes, UI renders without console errors.
+5. R5: Zero AI Optimism & Strict Verification. Target: verified with madge, typecheck, playwright, and forensic audit.
+
+## Current Stage
+Milestone 1 (Circular Dependency Eradication) — Dispatching Explorers.

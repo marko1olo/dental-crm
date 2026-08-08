@@ -1,34 +1,34 @@
-# Project: DENTE CRM Architectural & Functional Hardening
+# Project: DENTE CRM Architectural Hardening (`apps/web`)
 
 ## Architecture
-- **Frontend**: React 18, Vite, TypeScript monorepo package `@dental/web` (`apps/web/src`)
-- **Backend**: Fastify API, TypeScript monorepo package `@dental/api` (`apps/api/src`)
-- **Database**: Drizzle ORM over native PostgreSQL 18.4 (`127.0.0.1:5432`)
-- **State Management**: Zustand stores + React Context / hooks
-- **Toast Infra**: `showToast`, `actionFailureToast`
+- Monorepo: `apps/web` (React client), `apps/api` (Fastify backend).
+- Primary Entry: `apps/web/src/main.tsx`
+- State Context & Shell: `apps/web/src/useAppLogic.tsx`, `apps/web/src/components/workspace/workspaceShell.tsx`, `apps/web/src/contexts/AppLogicContext.tsx`, `apps/web/src/hooks/useWorkspaceProfile.ts`
+- Logging Module: `apps/web/src/utils/logger.ts` (or equivalent unified logger module)
+- E2E Tests: `apps/web/e2e/` (Playwright)
 
-## Feature Inventory
-| # | Feature | Description | Milestone | Source |
-|---|---------|-------------|-----------|--------|
-| 1 | Async Error Routing | Route silent catch blocks (500 sites) to user-facing toasts (`showToast`, `actionFailureToast`) | M1 | ORIGINAL_REQUEST.md §R1 |
-| 2 | Double Submit & Race Condition Prevention | Implement `isSubmitting`/`isLoading` guards, `disabled={isSubmitting}`, `aria-busy={true}` (51 UI sites) | M2 | ORIGINAL_REQUEST.md §R2 |
-| 3 | Linter & Compiler Enforcement | Biome linter compliance (`npx biome lint apps/web/src`) & 0 TS errors (`npm run typecheck`) | M3 | ORIGINAL_REQUEST.md §R3 |
+## Feature & Requirement Inventory
+
+| # | Feature / Requirement | Description | Target Files / Scope | Milestone |
+|---|---|---|---|---|
+| 1 | Circular Dependency Eradication | Resolve circular dependencies reported by madge involving useAppLogic.tsx, workspaceShell.tsx, AppLogicContext.tsx, hooks/useWorkspaceProfile.ts | apps/web/src/ | M1 |
+| 2 | Deep Architectural & UI Audit | Audit codebase for broken call stacks, orphaned logic, button/field functionality, and ensure 0 typecheck errors | apps/web/src/ | M2 |
+| 3 | console.log Migration | Replace raw console.log, console.warn, console.error calls across apps/web/src with unified logger module | apps/web/src/ | M3 |
+| 4 | Playwright E2E Verification | Write & execute Playwright E2E tests simulating browser, login, navigation, screenshots, browser logs check | apps/web/e2e/ | M4 |
+| 5 | Zero AI Optimism & Verification Gate | Verify all acceptance criteria with madge, typecheck, playwright tests, and forensic audit | Monorepo | M5 |
 
 ## Milestones
+
 | # | Name | Scope | Dependencies | Status |
-|---|------|-------|-------------|--------|
-| 1 | M1: Async Error Swallows Remediation | Eradicate 500 silent async error swallows in `apps/web/src` | Survey | IN_PROGRESS |
-| 2 | M2: Race Condition Hardening | Prevent double-submits & lock UI state on 51 form/button sites | M1 | PLANNED |
-| 3 | M3: Code Base Cleanliness & Typecheck | 0 Biome linter errors, 0 TS compiler errors, circular dependency check | M2 | PLANNED |
+|---|---|---|---|---|
+| M1 | Circular Dependency Eradication | Sever circular imports between useAppLogic.tsx, workspaceShell.tsx, AppLogicContext.tsx, and hooks/useWorkspaceProfile.ts | None | IN_PROGRESS |
+| M2 | Deep Architectural & UI Audit | Comprehensive audit of call stacks, orphaned logic, form button state guards, and 0 typecheck errors | M1 | PLANNED |
+| M3 | console.log Migration | Replace all raw console.log, console.warn, console.error calls across apps/web/src with logger | M1 | PLANNED |
+| M4 | Playwright E2E Verification | Create & run E2E Playwright tests verifying UI loads, logs in, navigates without console errors | M2, M3 | PLANNED |
+| M5 | Verification Gate & Forensic Audit | Final verification of all criteria (madge = 0, typecheck = 0, console.log = 0, E2E = PASS, clean audit) | M1, M2, M3, M4 | PLANNED |
 
-## Interface Contracts
-- **Toast Utility**: `showToast(text, type)` from `apps/web/src/components/GlobalToast.tsx` / `actionFailureToast(actionName, status)` from `apps/web/src/lib/panelStateText.ts`.
-- **State Guard Contract**: `isSubmitting`/`isLoading` set synchronously before async operation yield, reset in `finally` block.
-- **Button Props Contract**: `disabled={isSubmitting}` and `aria-busy={isSubmitting || isLoading}` on all mutating buttons/forms.
-
-## Code Layout
-- `apps/web/src/` — React frontend root
-- `apps/web/src/components/` — UI components and views
-- `apps/web/src/useAppLogic.tsx` — Main application logic context hook
-- `apps/web/src/store/` — Zustand state stores
-- `apps/api/src/` — Backend Fastify API
+## Code Layout & Guidelines
+- All modifications must preserve existing functionality, bugfixes, and UI features.
+- No hardcoded test fallbacks or dummy empty functions allowed.
+- All Russian strings written to files must be UTF-8 without BOM; use write_to_file tool.
+- Commit before reporting, include HEAD hash.
