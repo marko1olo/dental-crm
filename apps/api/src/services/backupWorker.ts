@@ -651,12 +651,6 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 			console.error(`[BackupWorker] ${error}`);
 			return { success: false, error };
 		}
-
-		console.log(
-			`[BackupWorker] Копия создана: ${filePath} (${Math.round(sizeBytes / 1024)} КБ, ` +
-				`секций COPY ${stats.copyBlocks}, строк данных ${stats.dataRows}, ` +
-				`таблиц со строками ${stats.populatedTables})`,
-		);
 		pruneOldBackups();
 		return outcome;
 	} catch (error) {
