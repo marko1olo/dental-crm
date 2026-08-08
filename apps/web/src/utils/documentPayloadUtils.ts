@@ -1,9 +1,4 @@
-import {
-	type ClinicalToothStatus,
-	type ClinicalToothSurface,
-	clinicalToothStatusAliases,
-	clinicalToothSurfaceAliases,
-} from "../AppHelpers";
+import { ClinicalToothStatus, ClinicalToothSurface, clinicalToothStatusAliases, clinicalToothSurfaceAliases } from "../AppConstants";
 
 export function confirmedDocumentLiteral(value: boolean, label: string): true {
 	if (!value) {

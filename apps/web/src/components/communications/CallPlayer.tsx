@@ -1,6 +1,7 @@
 import { Pause, Play } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { logger } from "../../utils/logger";
 
 export const CallPlayer: React.FC<{
 	recordingUrl: string;
@@ -49,7 +50,7 @@ export const CallPlayer: React.FC<{
 			} else {
 				// В браузерах play() возвращает Promise
 				audioRef.current.play().catch((err) => {
-					console.error("Audio play failed:", err);
+					logger.error("Audio play failed:", err);
 				});
 			}
 			setIsPlaying(!isPlaying);

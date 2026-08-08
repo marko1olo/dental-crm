@@ -26,6 +26,7 @@ import { showToast } from "../GlobalToast";
  */
 
 import { staffRoleLabels } from "../../workspaceUiLabels";
+import { logger } from "../../utils/logger";
 
 /**
  * Единый текст ошибки для виджетов. Причину (401, 500, обрыв сети) пользователь
@@ -124,7 +125,7 @@ export async function fetchWidgetList<T>(
 			"error",
 		);
 		// Текст исключения наружу не идёт ни при каких условиях: он английский.
-		console.error(`[analytics widget fetch error] ${url}:`, error);
+		logger.error(`[analytics widget fetch error] ${url}:`, error);
 		return { ok: false, message: WIDGET_LOAD_ERROR_MESSAGE };
 	}
 }

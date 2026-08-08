@@ -33,6 +33,7 @@ import { SignaturePad } from "../SignaturePad";
 // он в списке значений и не использовался ни разу — во время сборки такой импорт
 // просят у модуля, который его не отдаёт.
 import type { ToothData } from "./ToothChart";
+import { logger } from "../../utils/logger";
 import {
 	type EstimatorContract,
 	estimatorContractFrom,
@@ -202,7 +203,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					// БЫЛО: `res.ok ? res.json() : null` — отказ становился «договора
 					// нет», покрытие ДМС молча исчезало из сметы, и пациенту называли
 					// полную цену вместо со-оплаты.
-					console.error(
+					logger.error(
 						`[insurance contract] ${res.status} ${rawBody.slice(0, 300)}`,
 					);
 					if (!active) return;
@@ -213,7 +214,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				const contract = jsonObjectOrNull(rawBody);
 				if (!active) return;
 				if (!contract) {
-					console.error("[insurance contract] тело ответа не разобрано");
+					logger.error("[insurance contract] тело ответа не разобрано");
 					setActiveContract(null);
 					setContractFailure({ status: res.status });
 					return;
@@ -227,7 +228,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					),
 					"error",
 				);
-				console.error("[insurance contract] запрос не выполнен", err);
+				logger.error("[insurance contract] запрос не выполнен", err);
 				if (!active) return;
 				setActiveContract(null);
 				// До сервера не дошли: кода ответа нет, и придумывать его нельзя.
@@ -287,7 +288,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				// «пустую» смету.
 				const rawBody = await response.text();
 				if (!response.ok) {
-					console.error(
+					logger.error(
 						`[treatment plan load] ${status} ${rawBody.slice(0, 300)}`,
 					);
 					if (active) setPlanLoad({ phase: "failed", status });
@@ -297,7 +298,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				if (!payload || !Array.isArray(payload.plans)) {
 					// Успешный статус без списка планов — испорченный ответ, а не
 					// «планов нет»: сервер всегда отдаёт {success, plans: []}.
-					console.error(
+					logger.error(
 						`[treatment plan load] ${status}: в ответе нет списка планов`,
 					);
 					if (active) setPlanLoad({ phase: "failed", status });
@@ -325,7 +326,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					),
 					"error",
 				);
-				console.error("[treatment plan load] запрос не выполнен", error);
+				logger.error("[treatment plan load] запрос не выполнен", error);
 				if (active) setPlanLoad({ phase: "failed", status });
 			}
 		};
@@ -445,7 +446,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			const rawBody = await res.text();
 			const data = jsonObjectOrNull(rawBody);
 			if (!res.ok || data?.success !== true) {
-				console.error(
+				logger.error(
 					`[treatment plan save] ${res.status} ${rawBody.slice(0, 300)}`,
 				);
 				const detail = operatorReadableErrorDetail(
@@ -482,7 +483,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			}
 			showToast("План лечения успешно сохранен!", "success");
 		} catch (e) {
-			console.error("[treatment plan save] запрос не выполнен", e);
+			logger.error("[treatment plan save] запрос не выполнен", e);
 			showToast(
 				`${actionFailureToast("План лечения не сохранён", null)} Позиции остались на экране.`,
 				"error",

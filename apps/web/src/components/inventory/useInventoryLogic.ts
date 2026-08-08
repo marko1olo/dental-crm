@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 export interface InventoryItem {
 	id: string;
@@ -186,7 +187,7 @@ export function useInventoryLogic(organizationId: string) {
 					showToast("Ошибка загрузки правил", "error");
 				}
 			} catch (e) {
-				console.error(e);
+				logger.error(e);
 				setRulesList([]);
 				setRulesError(
 					"Нет связи с сервером: правила списания не загрузились. Неизвестно, списываются материалы по этой услуге или нет — проверьте интернет и нажмите «Повторить».",
@@ -252,7 +253,7 @@ export function useInventoryLogic(organizationId: string) {
 				showToast("Ошибка сохранения правила", "error");
 			}
 		} catch (e) {
-			console.error(e);
+			logger.error(e);
 			showToast("Системная ошибка", "error");
 		} finally {
 			// Снимаем в любом исходе: после отказа правило должно быть можно завести снова.
@@ -284,7 +285,7 @@ export function useInventoryLogic(organizationId: string) {
 						showToast("Ошибка удаления правила", "error");
 					}
 				} catch (e) {
-					console.error(e);
+					logger.error(e);
 					showToast("Системная ошибка", "error");
 				}
 			},
@@ -651,7 +652,7 @@ export function useInventoryLogic(organizationId: string) {
 				}
 			}
 		} catch (e) {
-			console.error(e);
+			logger.error(e);
 			showToast("Системная ошибка", "error");
 		} finally {
 			// Снимаем в любом исходе: после отказа сохранение должно быть можно повторить.
@@ -682,7 +683,7 @@ export function useInventoryLogic(organizationId: string) {
 						showToast("Ошибка удаления", "error");
 					}
 				} catch (e) {
-					console.error(e);
+					logger.error(e);
 					showToast("Системная ошибка", "error");
 				}
 			},
@@ -744,7 +745,7 @@ export function useInventoryLogic(organizationId: string) {
 				showToast("Ошибка изменения остатка", "error");
 			}
 		} catch (e) {
-			console.error(e);
+			logger.error(e);
 			showToast("Системная ошибка", "error");
 		} finally {
 			/*

@@ -27,6 +27,7 @@ import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import "./odontogram.css";
+import { logger } from "../../utils/logger";
 
 /**
  * Состояния зуба, доступные врачу в контекстном меню.
@@ -375,7 +376,7 @@ export const OdontogramModule = ({
 				}
 			}
 		} catch (err) {
-			console.error(err);
+			logger.error(err);
 			showToast("Ошибка загрузки отчётов Diagnocat.", "error", 5000);
 		} finally {
 			setDiagnocatLoading(false);
@@ -489,7 +490,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 				 * откатилась, и он вправе думать, что просто промахнулся по зубу.
 				 */
 				const rawBody = await res.text();
-				console.error(
+				logger.error(
 					`[tooth states batch] ${res.status} ${rawBody.slice(0, 300)}`,
 				);
 				setTeethData(previousTeethData);
@@ -504,7 +505,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 				return;
 			}
 		} catch (err) {
-			console.error("[tooth states batch] запрос не выполнен", err);
+			logger.error("[tooth states batch] запрос не выполнен", err);
 			setTeethData(previousTeethData);
 			showToast(
 				`${actionFailureToast(
@@ -595,7 +596,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 				const rawBody = await res.text();
 				if (cancelled) return;
 				if (!res.ok) {
-					console.error(`[tooth states] ${status} ${rawBody.slice(0, 300)}`);
+					logger.error(`[tooth states] ${status} ${rawBody.slice(0, 300)}`);
 					setTeethLoad({ phase: "failed", status });
 					return;
 				}
@@ -615,7 +616,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 					setTeethLoad({ phase: "ready" });
 					return;
 				}
-				console.error(`[tooth states] ${status}: в ответе нет формулы`);
+				logger.error(`[tooth states] ${status}: в ответе нет формулы`);
 				setTeethLoad({ phase: "failed", status });
 			} catch (err) {
 				showToast(
@@ -628,7 +629,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 				// Отменённый запрос — не отказ: пациента переключили, и об этом
 				// сообщать нечего.
 				if (cancelled) return;
-				console.error("[tooth states] запрос не выполнен", err);
+				logger.error("[tooth states] запрос не выполнен", err);
 				// До сервера не дошли: кода ответа нет, придумывать его нельзя.
 				setTeethLoad({ phase: "failed", status });
 			}
@@ -654,7 +655,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 				| undefined;
 			const toothNumber = Number(detail?.toothNumber);
 			if (!isValidFdiToothNumber(toothNumber)) {
-				console.error(
+				logger.error(
 					"[имплантат из 3D] номер зуба не читается",
 					detail?.toothNumber,
 				);
@@ -714,7 +715,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 			const toothNumber = Number(detail?.toothNumber);
 			const finding = detail?.finding;
 			if (!isValidFdiToothNumber(toothNumber)) {
-				console.error(
+				logger.error(
 					"[находка со снимка] номер зуба не читается",
 					detail?.toothNumber,
 				);
@@ -724,7 +725,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 				typeof finding !== "string" ||
 				!Object.hasOwn(TOOTH_STATE_LABELS, finding)
 			) {
-				console.error(
+				logger.error(
 					"[находка со снимка] состояние не из списка схемы",
 					finding,
 				);
@@ -1153,7 +1154,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 						// исключение, и отказ превращался в «Не удалось обработать».
 						const rawBody = await res.text();
 						if (!res.ok) {
-							console.error(
+							logger.error(
 								`[dictation parse] ${res.status} ${rawBody.slice(0, 300)}`,
 							);
 							showToast(
@@ -1172,7 +1173,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 						 */
 						const plan = dictationApplyPlanFromResponseBody(rawBody);
 						if (plan === null) {
-							console.error(
+							logger.error(
 								`[dictation parse] ${res.status}: ответ не по контракту`,
 							);
 							showToast(
@@ -1197,7 +1198,7 @@ const updateToothState = useCallback(async (toothNumbers: number[], state: Tooth
 							message.tone === "success" ? 6000 : 15000,
 						);
 					} catch (e) {
-						console.error("[dictation parse] запрос не выполнен", e);
+						logger.error("[dictation parse] запрос не выполнен", e);
 						showToast(
 							`${actionFailureToast("Надиктованное не разобрано", null)} Схема не изменена — отметьте зубы вручную.`,
 							"error",

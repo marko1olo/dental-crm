@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "../lib/panelStateText";
+import { logger } from "../utils/logger";
 
 const DB_NAME = "DenteOfflineDB";
 const STORE_NAME = "syncQueue";
@@ -105,7 +106,7 @@ export function useOfflineQueue() {
 						),
 						"error",
 					);
-					console.error("Failed to sync offline request", e);
+					logger.error("Failed to sync offline request", e);
 					break; // Stop syncing if fetch fails again (likely still offline)
 				}
 			}
@@ -117,7 +118,7 @@ export function useOfflineQueue() {
 				),
 				"error",
 			);
-			console.error("Error processing offline queue", e);
+			logger.error("Error processing offline queue", e);
 		}
 	}, []);
 

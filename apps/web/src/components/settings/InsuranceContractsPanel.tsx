@@ -26,6 +26,7 @@ import {
 } from "./insuranceContractsPanelData";
 import { SettingsModuleDisabled } from "./SettingsModuleDisabled";
 import { INSURANCE_CONTRACTS_GATE } from "./settingsModuleGate";
+import { logger } from "../../utils/logger";
 
 interface ContractFormData {
 	companyName: string;
@@ -91,7 +92,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 			const outcome = parseInsuranceContractsPayload(res.status, raw);
 			if (!outcome.ok) {
 				// Код ответа нужен разработчику, а не администратору: в консоль.
-				console.error("[договоры ДМС] не прочитаны, ответ", outcome.status);
+				logger.error("[договоры ДМС] не прочитаны, ответ", outcome.status);
 				setLoadState({ phase: "failed", status: outcome.status });
 				return;
 			}
@@ -106,7 +107,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 				"error",
 			);
 			// До сервера не дошли вовсе: status = null, текст об этом так и скажет.
-			console.error("[договоры ДМС] запрос не дошёл до сервера", err);
+			logger.error("[договоры ДМС] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });
 		}
 	}, [auth]);
@@ -184,7 +185,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 			}
 
 			if (!res.ok) {
-				console.error("[договоры ДМС] не сохранён, ответ", res.status);
+				logger.error("[договоры ДМС] не сохранён, ответ", res.status);
 				/* Окно НЕ закрываем: введённое останется на экране, и его не придётся
 				   набирать заново. Раньше окно закрывалось только при успехе — это
 				   было верно, и здесь это сохранено явно. */
@@ -201,7 +202,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 			await fetchContracts();
 		} catch (err) {
 			// Текст исключения наружу не идёт ни при каких условиях: он английский.
-			console.error("[договоры ДМС] сохранение не дошло до сервера", err);
+			logger.error("[договоры ДМС] сохранение не дошло до сервера", err);
 			showToast(actionFailureToast(failedAction, null), "error");
 		} finally {
 			setIsSaving(false);
@@ -228,14 +229,14 @@ export const InsuranceContractsPanel: React.FC = () => {
 				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!res.ok) {
-				console.error("[договоры ДМС] не убран из работы, ответ", res.status);
+				logger.error("[договоры ДМС] не убран из работы, ответ", res.status);
 				showToast(actionFailureToast(failedAction, res.status), "error");
 				return;
 			}
 			showToast(`Договор «${contract.companyName}» убран из работы`, "success");
 			await fetchContracts();
 		} catch (err) {
-			console.error("[договоры ДМС] удаление не дошло до сервера", err);
+			logger.error("[договоры ДМС] удаление не дошло до сервера", err);
 			showToast(actionFailureToast(failedAction, null), "error");
 		}
 	};

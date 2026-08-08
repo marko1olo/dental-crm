@@ -1,8 +1,4 @@
 import { create } from "zustand";
-import type {
-	PaymentRefundCorrectionAction,
-	PaymentRefundCorrectionMethod,
-} from "../AppHelpers";
 export type MedicalDocumentReleaseChannel =
 	| "paper"
 	| "pdf"
@@ -41,6 +37,7 @@ import { postVisitCarePresets } from "../postVisitCareData";
 import { currentLocalDateTimeInputValue } from "../utils/dateUtils";
 import { defaultClinicalToothRowsText } from "../utils/draftDefaults";
 import { loadUiPreferences } from "../utils/preferencesUtils";
+import { PaymentRefundCorrectionAction, PaymentRefundCorrectionMethod } from "../AppConstants";
 
 const initialUiPreferences = loadUiPreferences();
 

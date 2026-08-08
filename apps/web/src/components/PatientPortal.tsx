@@ -11,6 +11,7 @@ import {
 import { EmptyState } from "./EmptyState";
 import { showToast } from "./GlobalToast";
 import "./PatientPortal.css";
+import { logger } from "../utils/logger";
 
 interface TreatmentStage {
 	id: string;
@@ -239,7 +240,7 @@ export const PatientPortal: React.FC = () => {
 				"error",
 			);
 			// Текст исключения английский, наружу не идёт.
-			console.error("[portal] не удалось прочитать кабинет пациента:", e);
+			logger.error("[portal] не удалось прочитать кабинет пациента:", e);
 			setIsAuthenticated(false);
 			setSessionError(actionFailureToast("Кабинет не открылся", null));
 		} finally {
@@ -317,7 +318,7 @@ export const PatientPortal: React.FC = () => {
 				})
 				.then((html) => setViewingDocHtml(html))
 				.catch((err) => {
-					console.error(err);
+					logger.error(err);
 					setViewingDocHtml(
 						"<div style='padding:20px;color:red;font-family:sans-serif;'>Ошибка загрузки документа.</div>",
 					);

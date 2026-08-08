@@ -26,7 +26,7 @@ import { showToast } from "../GlobalToast";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { useCommunicationsQueries } from "../../hooks/domains/useCommunicationsQueries";
+
 
 import {
 	type DispatchReport,
@@ -228,7 +228,7 @@ async function readJson<T>(response: Response): Promise<T> {
  * браузере. Вынесенные чистые функции проверяются обычным тестом.
  */
 export function MessageDeliveryConsole() {
-	const commQueries = useCommunicationsQueries();
+	const commQueries = useAppLogicContext();
 	const appLogic = useAppLogicContext();
 	const _auth = appLogic?.auth;
 

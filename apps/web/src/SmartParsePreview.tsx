@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { logger } from "./utils/logger";
 import {
 	type DictationContext,
 	dictationFailureText,
@@ -124,7 +125,7 @@ export function SmartParsePreview({
 			if (!response.ok) {
 				// Код состояния нужен поддержке и остаётся в консоли; человеку идёт
 				// причина словами. Причину не выдумываем: она берётся из ответа.
-				console.error(
+				logger.error(
 					`[SmartParsePreview] /api/ai/parse-dictation ответил ${response.status}`,
 				);
 				setAiError(dictationFailureText(response.status));
@@ -133,7 +134,7 @@ export function SmartParsePreview({
 			const data = await response.json();
 			setInternalData(data);
 		} catch (err: any) {
-			console.error("[SmartParsePreview] /api/ai/parse-dictation", err);
+			logger.error("[SmartParsePreview] /api/ai/parse-dictation", err);
 			setAiError(dictationFailureText(null));
 		} finally {
 			setIsAiLoading(false);
@@ -479,7 +480,7 @@ export function SmartParsePreview({
 			// Внутреннее имя контекста наружу не показываем: оператору оно ничего не
 			// говорит. Оно уходит в консоль, а на экран — что делать дальше.
 			default:
-				console.error(
+				logger.error(
 					`[SmartParsePreview] неизвестный контекст диктовки: ${type}`,
 				);
 				return (

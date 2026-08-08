@@ -17,6 +17,7 @@ import {
 	parseStaffMutationPayload,
 	staffRoleTitle,
 } from "./settingsInviteRoles";
+import { logger } from "../../utils/logger";
 import {
 	PROFILE_PANEL_SUBJECT,
 	type ProfileLoadState,
@@ -60,7 +61,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 			const outcome = parseProfilePayload(res.status, await res.text());
 			if (!outcome.ok) {
 				// Код ответа нужен разработчику, а не сотруднику: в консоль.
-				console.error("[мой профиль] не прочитан, ответ", outcome.status);
+				logger.error("[мой профиль] не прочитан, ответ", outcome.status);
 				setLoadState({ phase: "failed", status: outcome.status });
 				return;
 			}
@@ -74,7 +75,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 				),
 				"error",
 			);
-			console.error("[мой профиль] запрос не дошёл до сервера", err);
+			logger.error("[мой профиль] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });
 		}
 	}, []);
@@ -144,7 +145,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 			if (!r.ok) throw new Error("Settings update failed");
 			showToast("Настройки Яндекс.Календаря сохранены", "success");
 		} catch (err) {
-			console.error("[Yandex] update failed", err);
+			logger.error("[Yandex] update failed", err);
 			showToast("Ошибка сохранения настроек", "error");
 		} finally {
 			setYandexLoading(false);
@@ -163,7 +164,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 			if (!r.ok) throw new Error("Sync failed");
 			showToast("Синхронизация Яндекс.Календаря запущена", "success");
 		} catch (err) {
-			console.error("[Yandex] sync failed", err);
+			logger.error("[Yandex] sync failed", err);
 			showToast("Ошибка запуска синхронизации", "error");
 		} finally {
 			setYandexSyncLoading(false);
@@ -207,7 +208,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 			 */
 			const outcome = parseStaffMutationPayload(r.status, await r.text());
 			if (!outcome.ok) {
-				console.error("[мой профиль] пароль не изменён, ответ", outcome.status);
+				logger.error("[мой профиль] пароль не изменён, ответ", outcome.status);
 				showToast(
 					outcome.message ??
 						actionFailureToast("Пароль не изменён", outcome.status),
@@ -223,7 +224,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 			setNewPassword("");
 			setConfirmPassword("");
 		} catch (err) {
-			console.error("[мой профиль] смена пароля не дошла до сервера", err);
+			logger.error("[мой профиль] смена пароля не дошла до сервера", err);
 			showToast(actionFailureToast("Пароль не изменён", null), "error");
 		} finally {
 			setPasswordLoading(false);
@@ -257,7 +258,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 			});
 			const outcome = parseStaffMutationPayload(r.status, await r.text());
 			if (!outcome.ok) {
-				console.error("[мой профиль] PIN не изменён, ответ", outcome.status);
+				logger.error("[мой профиль] PIN не изменён, ответ", outcome.status);
 				showToast(
 					outcome.message ??
 						actionFailureToast("PIN-код не изменён", outcome.status),
@@ -273,7 +274,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 			setNewPin("");
 			setConfirmPin("");
 		} catch (err) {
-			console.error("[мой профиль] смена PIN не дошла до сервера", err);
+			logger.error("[мой профиль] смена PIN не дошла до сервера", err);
 			showToast(actionFailureToast("PIN-код не изменён", null), "error");
 		} finally {
 			setPinLoading(false);

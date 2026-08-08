@@ -12,6 +12,7 @@ import {
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { logger } from "../../utils/logger";
 
 /**
  * Отказ чтения здесь дороже, чем в любом другом виджете карточки: пустой ответ
@@ -192,7 +193,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 				newStatus ? "warning" : "success",
 			);
 		} catch (error) {
-			console.error("[PatientArchiveAndBlacklistWidget apply error]:", error);
+			logger.error("[PatientArchiveAndBlacklistWidget apply error]:", error);
 			showToast(
 				actionFailureToast(
 					newStatus

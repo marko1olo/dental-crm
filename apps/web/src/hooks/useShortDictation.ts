@@ -12,6 +12,7 @@ import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "../lib/panelStateText";
 import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
+import { logger } from "../utils/logger";
 
 type ContextType =
 	| "schedule"
@@ -168,7 +169,7 @@ export function useShortDictation(
 					showToast("Не удалось распознать речь", "warning");
 				}
 			} catch (err: any) {
-				console.error("Server STT Error:", err);
+				logger.error("Server STT Error:", err);
 				showToast(
 					"Сбой сервера распознавания. Переключаем на ввод текстом.",
 					"error",
@@ -236,7 +237,7 @@ export function useShortDictation(
 				),
 				"error",
 			);
-			console.error("Microphone access denied or error:", err);
+			logger.error("Microphone access denied or error:", err);
 			startBrowserNative();
 		}
 	}, [

@@ -2,6 +2,7 @@ import { Check, Mic, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 import {
 	VOICE_DICTATION_UNSUPPORTED_TEXT,
 	voiceDictationErrorText,
@@ -53,7 +54,7 @@ export function VoiceDictationOverlay({
 				);
 				// Остановка уже остановленного распознавания бросает исключение в
 				// части браузеров. Человеку это не ошибка: запись и так не идёт.
-				console.error("[диктовка] остановка распознавания", err);
+				logger.error("[диктовка] остановка распознавания", err);
 			}
 		}
 		setIsListening(false);
@@ -101,7 +102,7 @@ export function VoiceDictationOverlay({
 				recognition.onerror = (event: any) => {
 					// Код ошибки английский и остаётся в консоли; врачу идёт причина
 					// словами и следующий шаг.
-					console.error("[диктовка] распознавание речи", event?.error);
+					logger.error("[диктовка] распознавание речи", event?.error);
 					setProblem(voiceDictationErrorText(event?.error));
 					setIsListening(false);
 				};

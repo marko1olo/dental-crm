@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { formatShortDate } from "../../AppHelpers";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { EmptyState } from "../EmptyState";
+import { logger } from "../../utils/logger";
 
 /**
  * Форма снята с маршрута, а не придумана: `routes/integrations/diagnocat.ts:41`
@@ -19,7 +20,7 @@ function DiagnocatReportWidget({ patientId }: { patientId: string }) {
 	const [reports, setReports] = useState<DiagnocatReport[]>([]);
 	/*
 	 * ОТКАЗ ОБЯЗАН БЫТЬ ВИДЕН. Прежде состояние было `any[]`, ответ не
-	 * проверялся на `res.ok`, а отказ уходил в `console.error` — при пустом
+	 * проверялся на `res.ok`, а отказ уходил в `logger.error` — при пустом
 	 * списке виджет возвращает `null`, поэтому 403, 500 и «таблицы нет»
 	 * выглядели на экране ОДИНАКОВО с «отчётов не найдено». Врач не мог
 	 * отличить отсутствие снимков от неработающей интеграции.
@@ -53,7 +54,7 @@ function DiagnocatReportWidget({ patientId }: { patientId: string }) {
 			})
 			.catch((err) => {
 				if (cancelled) return;
-				console.error("Failed to load AI reports", err);
+				logger.error("Failed to load AI reports", err);
 				setLoadError("Отчёты Diagnocat недоступны");
 			});
 		/*

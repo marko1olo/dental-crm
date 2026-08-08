@@ -1,5 +1,6 @@
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { logger } from "../utils/logger";
 
 /**
  * ГРАНИЦА ОШИБОК ВОКРУГ ТЯЖЁЛЫХ БЛОКОВ НАСТРОЕК. Смонтирована в SettingsView.tsx
@@ -125,7 +126,7 @@ export class ErrorBoundary extends Component<Props, State> {
 		 * (workspaceRouteErrorBoundary.tsx, bootErrorBoundary.tsx) пишут в консоль
 		 * безусловно с той же мотивировкой.
 		 */
-		console.error(
+		logger.error(
 			`ErrorBoundary caught an error in ${this.props.moduleName || "a component"}:`,
 			error,
 			errorInfo.componentStack,

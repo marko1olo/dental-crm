@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { logger } from "./utils/logger";
 import { AppShell } from "./AppShell";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
@@ -154,7 +155,7 @@ function watchDenteServiceWorkerUpdates(
 	document.addEventListener("visibilitychange", () => {
 		if (document.visibilityState === "visible") {
 			void registration.update().catch((err) => {
-				console.warn("Обновление приложения недоступно", err);
+				logger.warn("Обновление приложения недоступно", err);
 			});
 		}
 	});
@@ -162,7 +163,7 @@ function watchDenteServiceWorkerUpdates(
 	window.setInterval(
 		() => {
 			void registration.update().catch((err) => {
-				console.warn(
+				logger.warn(
 					"Обновление приложения недоступно (фоновая проверка)",
 					err,
 				);
@@ -195,11 +196,11 @@ if (
 			.then((registration) => {
 				watchDenteServiceWorkerUpdates(registration);
 				void registration.update().catch((err) => {
-					console.warn("Обновление приложения недоступно при старте", err);
+					logger.warn("Обновление приложения недоступно при старте", err);
 				});
 			})
 			.catch((err) => {
-				console.warn("Service Worker недоступен", err);
+				logger.warn("Service Worker недоступен", err);
 			});
 	});
 }

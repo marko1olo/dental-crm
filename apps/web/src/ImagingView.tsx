@@ -15,6 +15,7 @@ import {
 	ZoomOut,
 } from "lucide-react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { logger } from "./utils/logger";
 
 const IMAGING_QUICK_CHIPS = [
 	"Без видимых патологий",
@@ -413,7 +414,7 @@ export function ImagingView(props: ImagingViewProps) {
 				return;
 			}
 			if (!payload?.analysisResult) {
-				console.error(
+				logger.error(
 					`[imaging analyze] ответ не разобран: ${rawBody.slice(0, 300)}`,
 				);
 				showToast(
@@ -482,7 +483,7 @@ export function ImagingView(props: ImagingViewProps) {
 				"success",
 			);
 		} catch (error) {
-			console.error("[imaging analyze] запрос не выполнен", error);
+			logger.error("[imaging analyze] запрос не выполнен", error);
 			showToast(
 				"Сервер не ответил на разбор снимка. Проверьте связь и повторите.",
 				"error",

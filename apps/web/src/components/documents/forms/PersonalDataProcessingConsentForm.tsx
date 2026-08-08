@@ -1,10 +1,10 @@
-import type { ClinicProfileDraft } from "../../../AppHelpers";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import {
 	CLINIC_REQUISITES_LOCATION,
 	personalDataOperatorRequisitesReview,
 } from "../personalDataOperatorRequisites";
+import { ClinicProfileDraft } from "../../../AppConstants";
 
 /**
  * Оператор персональных данных: реквизиты клиники, которые форма только

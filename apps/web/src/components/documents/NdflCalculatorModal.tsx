@@ -3,6 +3,7 @@ import { useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppLogic } from "../../useAppLogic";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 	const { patientId, auth } = useAppLogic();
@@ -74,7 +75,7 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 				),
 				"error",
 			);
-			console.error(error);
+			logger.error(error);
 		} finally {
 			setLoading(false);
 		}

@@ -45,6 +45,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { type ClinicMode, hasCapability } from "../../lib/clinicCapabilities";
 import { formatRub as shortRub } from "../../pages/analyticsDoctorMetrics.js";
 import { DoctorPayoutDashboard } from "../../pages/DoctorPayoutDashboard.js";
+import { logger } from "../../utils/logger";
 
 type RevenuePoint = {
 	bucket: string;
@@ -209,7 +210,7 @@ function formatHours(minutes: number): string {
 
 async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch((err: any) => {
-		console.error(err);
+		logger.error(err);
 		showToast(
 			actionFailureToast(
 				"Ошибка чтения ответа",

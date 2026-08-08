@@ -3,6 +3,7 @@ import {
 	readDenteClinicToken,
 	readDenteStaffToken,
 } from "../lib/safeLocalStorage";
+import { logger } from "../utils/logger";
 
 export interface Lead {
 	id: string;
@@ -134,7 +135,7 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			}
 		} catch (e: unknown) {
 			set({ leads: previousLeads });
-			console.error("updateLeadStatus Error:", e);
+			logger.error("updateLeadStatus Error:", e);
 			// Rethrow so Kanban can toast the RU server message (gameplay).
 			if (e instanceof Error) throw e;
 			throw new Error("Статус обращения не изменён: нет связи с сервером.");
@@ -158,7 +159,7 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			const lead = await res.json();
 			set({ leads: [...get().leads, lead] });
 		} catch (e: unknown) {
-			console.error("addLead Error:", e);
+			logger.error("addLead Error:", e);
 			if (e instanceof Error) throw e;
 			throw new Error("Лид не создан: нет связи с сервером.");
 		}
@@ -185,7 +186,7 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				),
 			});
 		} catch (e: unknown) {
-			console.error("updateLeadDetails Error:", e);
+			logger.error("updateLeadDetails Error:", e);
 			if (e instanceof Error) throw e;
 			throw new Error("Лид не сохранён: нет связи с сервером.");
 		}
@@ -214,7 +215,7 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			}
 		} catch (e: unknown) {
 			set({ leads: previousLeads });
-			console.error("deleteLead Error:", e);
+			logger.error("deleteLead Error:", e);
 			if (e instanceof Error) throw e;
 			throw new Error("Обращение не удалено: нет связи с сервером.");
 		}

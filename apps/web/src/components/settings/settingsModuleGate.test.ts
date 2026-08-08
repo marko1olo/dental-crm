@@ -15,12 +15,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
-
-import { settingsTabs } from "../../AppHelpers";
 import {
 	MODULES_SETTINGS_TAB,
 	SETTINGS_MODULE_GATES,
 } from "./settingsModuleGate";
+import { settingsTabs } from "../../AppConstants";
 
 const webSrc = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),

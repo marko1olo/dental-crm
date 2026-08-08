@@ -261,6 +261,7 @@ import {
 	telegramPostVisitCheckupDelayFields,
 	telegramVisualCardFields,
 } from "./workspaceStaticOptions";
+import { logger } from "./utils/logger";
 import {
 	appointmentLabels,
 	clinicalRuleActionLabels,
@@ -1301,7 +1302,7 @@ export function useAppLogic(): any {
 			// Кроме того, catch никогда не пробрасывал ошибку дальше, поэтому
 			// все .catch() у вызывающих (в том числе принудительный релогин при 401)
 			// были мёртвым кодом, и истёкшая сессия не приводила к повторному входу.
-			console.error("[Dente] Не удалось загрузить данные клиники:", err);
+			logger.error("[Dente] Не удалось загрузить данные клиники:", err);
 			const isAuthError =
 				err instanceof Error &&
 				/401|403|Требуется авторизация|Сессия истекла/i.test(err.message);
@@ -2053,7 +2054,7 @@ export function useAppLogic(): any {
 		window.location.hash = "settings/clinic";
 	}
 
-	async function loadPersistenceHealth(
+	const loadPersistenceHealth = useCallback(async function loadPersistenceHealth(
 		options: { silent?: boolean; adminSecret?: string | undefined } = {},
 	) {
 		try {
@@ -2087,7 +2088,8 @@ export function useAppLogic(): any {
 				);
 			}
 		}
-	}
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Zustand setters are stable; auth is stable object
+	}, [auth]);
 
 	async function loadPersistenceIntegrity(options: { silent?: boolean } = {}) {
 		try {
@@ -2528,8 +2530,7 @@ export function useAppLogic(): any {
 	}, [
 		uiPreferencesHydrated,
 		setUiPreferencesSyncError,
-		// biome-ignore lint/correctness/useExhaustiveDependencies: queueUiPreferencesServerSync/currentUiPreferencesInput are plain functions recreated each render
-		currentUiPreferencesInput,
+		// biome-ignore lint/correctness/useExhaustiveDependencies: currentUiPreferencesInput/queueUiPreferencesServerSync are plain closures over component state; they are intentionally excluded to prevent infinite re-render loops
 	]);
 
 	useEffect(() => {
@@ -2545,8 +2546,8 @@ export function useAppLogic(): any {
 			window.removeEventListener("online", retryPendingUiPreferences);
 			clearUiPreferencesRetryTimer();
 		};
-		// biome-ignore lint/correctness/useExhaustiveDependencies: queueUiPreferencesServerSync is a plain function, not useCallback
-	}, [clearUiPreferencesRetryTimer]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: clearUiPreferencesRetryTimer is a plain function (uses only refs); including it causes infinite re-render
+	}, []);
 
 	const imagingPreviewWorkset = useMemo(() => {
 		if (currentView !== "imaging" || !dashboard?.imagingStudies?.length)

@@ -3,7 +3,6 @@ import { Bot, Plus } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
-	type AppointmentScheduleDraft,
 	appointmentScheduleMissingFields,
 } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -13,6 +12,8 @@ import { smartBookingParser } from "../../lib/smartBookingParser";
 import { SmartParsePreview } from "../../SmartParsePreview";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import { AppointmentScheduleDraft } from "../../AppConstants";
+import { logger } from "../../utils/logger";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -139,7 +140,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 				}
 			})
 			.catch((err) => {
-				console.error("[Dente]", err);
+				logger.error("[Dente]", err);
 				showToast(
 					actionFailureToast(
 						"Статус блокировки записи не прочитан",

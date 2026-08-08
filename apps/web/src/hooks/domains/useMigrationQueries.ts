@@ -1,4 +1,3 @@
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function useMigrationQueries(options?: {
 	auth?: any;
@@ -8,16 +7,7 @@ export function useMigrationQueries(options?: {
 	let auth = options?.auth;
 	let clinicalMutationHeaders = options?.clinicalMutationHeaders;
 	let clinicalReadHeaders = options?.clinicalReadHeaders;
-	if (!auth && (!clinicalMutationHeaders || !clinicalReadHeaders)) {
-		try {
-			const ctx = useAppLogicContext();
-			auth = ctx.auth;
-			clinicalMutationHeaders = ctx.clinicalMutationHeaders;
-			clinicalReadHeaders = ctx.clinicalReadHeaders;
-		} catch {
-			// Called inside useAppLogic before provider
-		}
-	}
+
 
 	const getHeaders = (isMutation: boolean, extra?: Record<string, string>) => {
 		if (auth) {

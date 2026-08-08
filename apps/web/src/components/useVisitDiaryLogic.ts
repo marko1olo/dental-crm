@@ -10,6 +10,7 @@ import {
 import { useVisitStore } from "../store/visitStore";
 import { useAppLogic } from "../useAppLogic";
 import { showToast } from "./GlobalToast";
+import { logger } from "../utils/logger";
 
 export interface DiaryState {
 	anamnesis: string;
@@ -377,7 +378,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				// то же ложное «дневник пуст».
 				const rawBody = await response.text();
 				if (!response.ok) {
-					console.error(`[diary load] ${status} ${rawBody.slice(0, 300)}`);
+					logger.error(`[diary load] ${status} ${rawBody.slice(0, 300)}`);
 					reportLoadFailure(status);
 					return;
 				}
@@ -385,7 +386,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				if (!payload) {
 					// Успешный статус с нечитаемым или пустым телом — испорченный
 					// ответ, а не отсутствие дневника.
-					console.error(`[diary load] ${status}: тело ответа не разобрано`);
+					logger.error(`[diary load] ${status}: тело ответа не разобрано`);
 					reportLoadFailure(status);
 					return;
 				}
@@ -456,7 +457,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						);
 						const revisionsBody = await revisionsResponse.text();
 						if (!revisionsResponse.ok) {
-							console.error(
+							logger.error(
 								`[diary revisions] ${revisionsResponse.status} ${revisionsBody.slice(0, 200)}`,
 							);
 							return;
@@ -478,7 +479,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 							),
 							"error",
 						);
-						console.error(
+						logger.error(
 							"[diary revisions] запрос не выполнен",
 							revisionsError,
 						);
@@ -496,7 +497,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				// так и остаётся null, и текст скажет «сервер не ответил». Если ответ
 				// уже пришёл, а порвалось чтение тела, код сохраняется — сообщение
 				// будет про непонятный ответ, а не про отсутствие сети.
-				console.error("[diary load] запрос не выполнен", error);
+				logger.error("[diary load] запрос не выполнен", error);
 				reportLoadFailure(status);
 			}
 		};
@@ -710,7 +711,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				if (!res.ok) {
 					// Код и сырое тело — в консоль. Врачу — русское message с сервера,
 					// иначе status-only fallback. ValidationError от Zod guard доходит.
-					console.error(`[diary save] ${res.status} ${rawBody.slice(0, 300)}`);
+					logger.error(`[diary save] ${res.status} ${rawBody.slice(0, 300)}`);
 					const payload = jsonObjectOrNull(rawBody);
 					const serverDetail = operatorReadableErrorDetail(
 						typeof payload?.message === "string"
@@ -764,7 +765,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				return { id: resolvedId, hash: resolvedHash };
 			} catch (err) {
 				// До сервера не дошли: сеть или выключенный сервер клиники.
-				console.error("[diary save] запрос не выполнен", err);
+				logger.error("[diary save] запрос не выполнен", err);
 				const message = `${actionFailureToast("Черновик дневника не сохранён", null)} Набранный текст остался на экране.`;
 				if (!silent) {
 					showToast(message, "error", 10000);
@@ -985,7 +986,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				);
 				return;
 			}
-			console.error(`[diary revise] ${res.status} ${rawBody.slice(0, 300)}`);
+			logger.error(`[diary revise] ${res.status} ${rawBody.slice(0, 300)}`);
 			const detail = operatorReadableErrorDetail(
 				typeof json?.message === "string" ? json.message : null,
 			);
@@ -999,7 +1000,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				14000,
 			);
 		} catch (error) {
-			console.error("[diary revise] запрос не выполнен", error);
+			logger.error("[diary revise] запрос не выполнен", error);
 			showToast(
 				`Правка не сохранена: ${requestFailureCause(null)}. Набранный текст остался на экране.`,
 				"error",
@@ -1054,7 +1055,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			});
 			if (!linkRes.ok) {
 				const rawBody = await linkRes.text();
-				console.error(
+				logger.error(
 					`[sterilization link] ${linkRes.status} ${rawBody.slice(0, 300)}`,
 				);
 				const payload = jsonObjectOrNull(rawBody);
@@ -1080,7 +1081,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			if (newHash) setDiaryHash(newHash);
 			return { ok: true, hash: newHash ?? fallbackHash ?? diaryHash };
 		} catch (e) {
-			console.error("[sterilization link] запрос не выполнен", e);
+			logger.error("[sterilization link] запрос не выполнен", e);
 			showToast(
 				`Штрихкод лотка не проверен: ${requestFailureCause(null)}. Дневник не подписан.`,
 				"error",
@@ -1314,7 +1315,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					12000,
 				);
 			} else {
-				console.error(`[diary lock] ${res.status} ${rawBody.slice(0, 300)}`);
+				logger.error(`[diary lock] ${res.status} ${rawBody.slice(0, 300)}`);
 				const detail = operatorReadableErrorDetail(
 					typeof json?.message === "string" ? json.message : null,
 				);
@@ -1325,7 +1326,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				);
 			}
 		} catch (error) {
-			console.error("[diary lock] запрос не выполнен", error);
+			logger.error("[diary lock] запрос не выполнен", error);
 			showToast(
 				`Дневник не подписан: ${requestFailureCause(null)}. Набранный текст остался на экране.`,
 				"error",
@@ -1396,7 +1397,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			});
 			const rawBody = await res.text();
 			if (!res.ok) {
-				console.error(
+				logger.error(
 					`[diary tray clear] ${res.status} ${rawBody.slice(0, 300)}`,
 				);
 				const payload = jsonObjectOrNull(rawBody);
@@ -1430,7 +1431,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			setLastSavedAt(new Date());
 			showToast("Лоток снят с черновика", "success", 6000);
 		} catch (err) {
-			console.error("[diary tray clear] запрос не выполнен", err);
+			logger.error("[diary tray clear] запрос не выполнен", err);
 			showToast(
 				`${actionFailureToast("Лоток не снят с черновика", null)} На экране лоток уже снят — сохраните черновик вручную.`,
 				"error",
@@ -1522,7 +1523,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				});
 				const rawBody = await res.text();
 				if (!res.ok) {
-					console.error(
+					logger.error(
 						`[diary tray assign] ${res.status} ${rawBody.slice(0, 300)}`,
 					);
 					const payload = jsonObjectOrNull(rawBody);
@@ -1555,7 +1556,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setLastSavedAt(new Date());
 				showToast("Лоток записан в черновик", "success", 6000);
 			} catch (err) {
-				console.error("[diary tray assign] запрос не выполнен", err);
+				logger.error("[diary tray assign] запрос не выполнен", err);
 				showToast(
 					actionFailureToast("Лоток не записан в черновик", null) +
 						" На экране лоток уже указан — сохраните черновик вручную.",

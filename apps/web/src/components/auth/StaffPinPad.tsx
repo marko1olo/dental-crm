@@ -13,6 +13,7 @@ import {
 } from "../../lib/safeLocalStorage";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { logger } from "../../utils/logger";
 import {
 	resolveStaffUnlockListState,
 	resolveStaffUnlockPhase,
@@ -150,7 +151,7 @@ export function StaffPinPad({
 					payload = JSON.parse(rawBody);
 				} catch {
 					// Диагностика — разработчику в консоль, человеку — человеческий текст ниже.
-					console.error(
+					logger.error(
 						"[StaffPinPad] ответ сервера не JSON",
 						response.status,
 						rawBody.slice(0, 200),
@@ -215,7 +216,7 @@ export function StaffPinPad({
 				 * Запись в localStorage запрещена (приватный режим, переполненное
 				 * хранилище). PIN при этом верен, и говорить «нет связи» было бы ложью.
 				 */
-				console.error(storageError);
+				logger.error(storageError);
 				failUnlock(
 					"PIN верный, но браузер не дал сохранить ключ смены. Отключите приватный режим или освободите место в браузере и повторите.",
 				);
@@ -238,7 +239,7 @@ export function StaffPinPad({
 			 * сервера нет на месте или сеть пропала. Это не «Неверный PIN-код», как
 			 * было написано раньше, и повторный набор тут не поможет.
 			 */
-			console.error(err);
+			logger.error(err);
 			failUnlock(`Смена не открыта: ${NO_RESPONSE_CAUSE}.`);
 		} finally {
 			setLoading(false);

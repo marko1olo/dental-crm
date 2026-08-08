@@ -6,11 +6,8 @@ import type {
 import { type KeyboardEvent, useEffect, useMemo, useRef, useCallback } from "react";
 import {
 	browserGeneratedId,
-	type CbctWorkbenchPlane,
 	ctImplantPlanFromLibraryItem,
 	loadLocalMprWorkbenchDraft,
-	type MprAxisVisualizerStyle,
-	type MprWorkbenchState,
 	mprWorkbenchSeriesKey,
 	resolveMprWorkbenchProjection,
 	saveLocalMprWorkbenchDraft,
@@ -55,6 +52,7 @@ import {
 	mprSliceIndexFromFraction,
 	resolveMprKeyboardAdjustment,
 } from "../utils/math/mprMath";
+import { CbctWorkbenchPlane, MprAxisVisualizerStyle, MprWorkbenchState } from "../AppConstants";
 
 interface MprLogicParams {
 	selectedImagingStudy: any;

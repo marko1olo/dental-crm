@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { logger } from "./utils/logger";
 
 /**
  * ГРАНИЦА ОШИБОК ТОЧКИ ВХОДА. Одна на оба контура, которые монтирует main.tsx.
@@ -128,7 +129,7 @@ export class BootErrorBoundary extends Component<
 		 * безусловно с той же мотивировкой; консоль сотруднику клиники не видна и
 		 * ничего ему не показывает.
 		 */
-		console.error(
+		logger.error(
 			`DENTE boot failed (${this.props.audience})`,
 			error,
 			errorInfo.componentStack,

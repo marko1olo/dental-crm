@@ -1,15 +1,7 @@
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function useImagingQueries(options?: { auth?: any }) {
 	let auth = options?.auth;
-	if (!auth) {
-		try {
-			const ctx = useAppLogicContext();
-			auth = ctx.auth;
-		} catch {
-			// Called inside useAppLogic before provider
-		}
-	}
+
 
 	const getScans = async (patientId: string) => {
 		return fetch(`/api/xray/scans?patientId=${patientId}`, {

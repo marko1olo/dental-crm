@@ -21,6 +21,7 @@ import { operatorReadableErrorDetail } from "./AppHelpers";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast, requestFailureCause } from "./lib/panelStateText";
+import { logger } from "./utils/logger";
 
 const SPECIALTIES = [
 	{ value: "universal", label: "Универсальная" },
@@ -137,7 +138,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 			const raw = await res.text();
 			const json = jsonObjectOrNull(raw);
 			if (!res.ok) {
-				console.error(`[visit-note-draft] ${res.status} ${raw.slice(0, 300)}`);
+				logger.error(`[visit-note-draft] ${res.status} ${raw.slice(0, 300)}`);
 				const detail = operatorReadableErrorDetail(
 					typeof json?.message === "string" ? json.message : null,
 				);
@@ -180,7 +181,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 				8000,
 			);
 		} catch (e) {
-			console.error("[visit-note-draft] request failed", e);
+			logger.error("[visit-note-draft] request failed", e);
 			const msg = `Черновик не собран: ${requestFailureCause(null)}. Текст диктовки остался на экране.`;
 			setError(msg);
 			showToast(msg, "error", 12000);

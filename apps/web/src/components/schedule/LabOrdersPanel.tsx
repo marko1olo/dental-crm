@@ -7,6 +7,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 interface LabOrder {
 	id: string;
@@ -66,7 +67,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 		ЧТО БЫЛО СЛОМАНО. Загрузка списка проверяла `if (res.ok)` и на любом другом
 		ответе не делала НИЧЕГО: ни сообщения, ни следа. Ошибка сети попадала в
-		catch и уходила в console.error — туда врач не смотрит. Список при этом
+		catch и уходила в logger.error — туда врач не смотрит. Список при этом
 		оставался пустым, и экран говорил «Нет активных заказов ЗТЛ».
 
 		ЧТО ВИДЕЛ ВРАЧ. Коронка заказана и делается в лаборатории, но сервер
@@ -147,7 +148,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				),
 				"error",
 			);
-			console.error("Failed to load lab orders", e);
+			logger.error("Failed to load lab orders", e);
 			if (shownPatientIdRef.current !== requestedPatientId) return;
 			setLoadError(
 				"Программа не смогла связаться с сервером клиники, чтобы получить список заказов.",

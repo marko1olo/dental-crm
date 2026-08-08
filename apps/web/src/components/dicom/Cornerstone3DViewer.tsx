@@ -28,6 +28,7 @@ import {
 	PanoramicRendererWindow,
 	type PanoramicVolumeInput,
 } from "./PanoramicRendererWindow";
+import { logger } from "../../utils/logger";
 import {
 	buildPanoramicArch,
 	type DrawnArchAnnotation,
@@ -411,7 +412,7 @@ export function Cornerstone3DViewer({
 			})
 			.catch((error) => {
 				if (cancelled) return;
-				console.error(
+				logger.error(
 					"[Cornerstone3DViewer] Не удалось построить реконструкцию:",
 					error,
 				);

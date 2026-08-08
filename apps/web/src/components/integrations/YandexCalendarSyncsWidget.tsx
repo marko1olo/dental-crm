@@ -1,7 +1,7 @@
 import { AlertTriangle, CalendarDays, Info, RefreshCcw } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { auth } from "../../AppConstants";
 
 /**
  * ДВУСТОРОННЯЯ СИНХРОНИЗАЦИЯ РАСПИСАНИЯ ВРАЧЕЙ С ЯНДЕКС КАЛЕНДАРЁМ.

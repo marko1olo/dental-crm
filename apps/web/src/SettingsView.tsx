@@ -86,7 +86,7 @@ import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
  * помнить про каждую вкладку. Забыть в нём вкладку означало убрать её из меню
  * без всякого следа.
  */
-import { money, type SettingsTabGroup, settingsTabGroups } from "./AppHelpers";
+import { money } from "./AppHelpers";
 import { AuditLogsPanel } from "./AuditLogsPanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { EgiszBlankPermissionsWidget } from "./components/integrations/EgiszBlankPermissionsWidget";
@@ -225,6 +225,7 @@ type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import { useSettingsDerivations } from "./useSettingsDerivations";
+import { SettingsTabGroup, settingsTabGroups } from "./AppConstants";
 
 export interface SettingsViewProps {
 	activeStaffUser?: any;

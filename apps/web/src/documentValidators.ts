@@ -1,9 +1,10 @@
 import { isDateInputValue, isDateTimeLocalInputValue } from "./AppHelpers";
-import type { DocumentState } from "./documentLogic";
 import {
 	normalizeRubAmountInput,
 	validateRubAmountInput,
 } from "./rubAmountInput";
+
+export type DocumentState = Record<string, any>;
 
 export function validatePaidMedicalServicesContract(
 	state: DocumentState,
@@ -1707,14 +1708,14 @@ export function validatePersonalDataProcessingConsent(
 		requiredDocumentField,
 	} = state;
 	const operatorName =
-		clinicProfileDraft.legalName.trim() || clinicProfileDraft.clinicName.trim();
-	const operatorInn = clinicProfileDraft.inn.replace(/[^\d]/g, "");
+		clinicProfileDraft?.legalName?.trim() || clinicProfileDraft?.clinicName?.trim() || "";
+	const operatorInn = clinicProfileDraft?.inn?.replace(/[^\d]/g, "") || "";
 	return (
 		requiredDocumentField(operatorName, "ПДн, оператор клиники") ??
 		(operatorInn.length === 10 || operatorInn.length === 12
 			? null
 			: "ИНН оператора ПДн должен содержать 10 или 12 цифр.") ??
-		requiredDocumentField(clinicProfileDraft.address, "ПДн, адрес оператора") ??
+		requiredDocumentField(clinicProfileDraft?.address, "ПДн, адрес оператора") ??
 		(documentTextLines(personalDataPurposes).length
 			? null
 			: "Добавьте цели обработки персональных данных.") ??

@@ -1254,10 +1254,10 @@ export function documentPayloadForKind(
 		return {
 			personalDataProcessingConsent: {
 				operatorLegalName:
-					clinicProfileDraft.legalName.trim() ||
-					clinicProfileDraft.clinicName.trim(),
-				operatorInn: clinicProfileDraft.inn.replace(/[^\d]/g, ""),
-				operatorAddress: clinicProfileDraft.address.trim(),
+					clinicProfileDraft?.legalName?.trim() ||
+					clinicProfileDraft?.clinicName?.trim() || "",
+				operatorInn: clinicProfileDraft?.inn?.replace(/[^\d]/g, "") || "",
+				operatorAddress: clinicProfileDraft?.address?.trim() || "",
 				processingPurposes: documentTextLines(personalDataPurposes),
 				personalDataCategories: documentTextLines(personalDataCategories),
 				processingActions: documentTextLines(personalDataActions),

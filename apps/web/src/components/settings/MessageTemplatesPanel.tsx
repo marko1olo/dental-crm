@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 const DYNAMIC_TAGS = [
 	{ tag: "{{patient_name}}", label: "Имя пациента" },
@@ -42,7 +43,7 @@ export function MessageTemplatesPanel() {
 				),
 				"error",
 			);
-			console.error(e);
+			logger.error(e);
 		}
 	}, [auth]);
 

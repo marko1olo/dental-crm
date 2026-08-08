@@ -7,6 +7,7 @@
  * On unmount, all registered resources for that module are destroyed.
  */
 import { useEffect, useRef } from "react";
+import { logger } from "../utils/logger";
 
 type CleanupFn = () => void;
 
@@ -33,7 +34,7 @@ export function flushModuleCleanup(moduleKey: string): void {
 		try {
 			fn();
 		} catch (err) {
-			console.warn(
+			logger.warn(
 				`[ModuleCleanup] Error in cleanup for module "${moduleKey}":`,
 				err,
 			);
@@ -100,13 +101,13 @@ export function destroyCornerstoneEngine(engineId: string): void {
 			const engine = enginesMap[engineId];
 			if (engine?.destroy) {
 				engine.destroy();
-				console.info(
+				logger.info(
 					`[ModuleCleanup] Cornerstone engine "${engineId}" destroyed.`,
 				);
 			}
 		}
 	} catch (err) {
-		console.warn(
+		logger.warn(
 			`[ModuleCleanup] Failed to destroy Cornerstone engine "${engineId}":`,
 			err,
 		);

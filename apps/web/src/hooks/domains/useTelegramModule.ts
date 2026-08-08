@@ -9,7 +9,6 @@ import type {
 } from "@dental/shared";
 import { useEffect, useRef } from "react";
 import {
-	type DenteTelegramHandoffTarget,
 	operatorWorkflowFailureMessage,
 	readDenteTelegramHandoffTarget,
 	responseErrorMessage,
@@ -23,6 +22,7 @@ import { useSettingsStore } from "../../store/settingsStore";
 import { emptyTelegramVisualCardUrlDrafts } from "../../utils/draftDefaults";
 import { defaultTelegramPostVisitCheckupDelayHoursByTopic } from "../../workspaceStaticOptions";
 import { useTelegramSettings } from "../useTelegramSettings";
+import { DenteTelegramHandoffTarget } from "../../AppConstants";
 
 export type UseTelegramModuleOptions = {
 	settingsAdminSecretSession?: string | null;

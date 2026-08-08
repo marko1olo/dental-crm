@@ -7,12 +7,6 @@ import type {
 	Patient,
 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type {
-	ClinicProfileDraft,
-	MedicalRecordExtractDocumentDraftFields,
-	Outpatient025uDocumentDraftFields,
-	VisitNoteForm,
-} from "../../AppHelpers";
 import {
 	compactDocumentText,
 	confirmedDocumentLiteral,
@@ -27,6 +21,7 @@ import {
 	toDateInputValue,
 } from "../../AppHelpers";
 import { useDocumentStore } from "../../store/documentStore";
+import { ClinicProfileDraft, MedicalRecordExtractDocumentDraftFields, Outpatient025uDocumentDraftFields, VisitNoteForm } from "../../AppConstants";
 
 export interface UsePatientIntakeLogicOptions {
 	documentPatient: Patient | null;

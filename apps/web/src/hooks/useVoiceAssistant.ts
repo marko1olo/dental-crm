@@ -12,6 +12,7 @@ import { type AiIntent, AiOrchestrator } from "../lib/aiOrchestrator";
 import { actionFailureToast, requestFailureCause } from "../lib/panelStateText";
 import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
+import { logger } from "../utils/logger";
 
 /** Объект из тела ответа или null. Массив и скаляр объектом не считаются. */
 function jsonObjectOrNull(rawBody: string): Record<string, unknown> | null {
@@ -148,7 +149,7 @@ export function useVoiceAssistant(
 				// и прежний catch не отличал его от отказа сервера.
 				const rawBody = await res.text();
 				if (!res.ok) {
-					console.error(
+					logger.error(
 						`[speech status] ${res.status} ${rawBody.slice(0, 300)}`,
 					);
 					if (alive) gatewayStatusUnknownRef.current = true;
@@ -165,10 +166,10 @@ export function useVoiceAssistant(
 						),
 						"error",
 					);
-					console.error("[speech status] тело ответа не разобрано", parseError);
+					logger.error("[speech status] тело ответа не разобрано", parseError);
 				}
 				if (!looksLikeSpeechGatewayStatus(parsed)) {
-					console.error(
+					logger.error(
 						"[speech status] ответ не похож на состояние шлюза, в стор не пишем",
 					);
 					if (alive) gatewayStatusUnknownRef.current = true;
@@ -185,7 +186,7 @@ export function useVoiceAssistant(
 					),
 					"error",
 				);
-				console.error("[speech status] запрос не выполнен", err);
+				logger.error("[speech status] запрос не выполнен", err);
 				if (alive) gatewayStatusUnknownRef.current = true;
 			}
 		};
@@ -264,7 +265,7 @@ export function useVoiceAssistant(
 				),
 				"error",
 			);
-			console.warn("Could not play synthesized audio feedback:", e);
+			logger.warn("Could not play synthesized audio feedback:", e);
 		}
 	}, []);
 
@@ -382,7 +383,7 @@ export function useVoiceAssistant(
 				const payload = jsonObjectOrNull(rawBody);
 
 				if (!response.ok) {
-					console.error(
+					logger.error(
 						`[speech transcribe] ${response.status} ${rawBody.slice(0, 300)}`,
 					);
 					const detail = operatorReadableErrorDetail(
@@ -415,7 +416,7 @@ export function useVoiceAssistant(
 					const detail = operatorReadableErrorDetail(
 						typeof firstWarning === "string" ? firstWarning : null,
 					);
-					console.error(
+					logger.error(
 						`[speech transcribe] фрагмент не распознан: ${rawBody.slice(0, 300)}`,
 					);
 					showToast(
@@ -445,7 +446,7 @@ export function useVoiceAssistant(
 				}
 			} catch (err: any) {
 				// Сюда попадает только обрыв связи: ответ сервера, включая отказ, разобран выше.
-				console.error("Voice Assistant Server STT Error:", err);
+				logger.error("Voice Assistant Server STT Error:", err);
 				showToast(
 					`Голос не распознан: ${requestFailureCause(null)}.`,
 					"error",
@@ -462,7 +463,7 @@ export function useVoiceAssistant(
 			(window as any).SpeechRecognition ||
 			(window as any).webkitSpeechRecognition;
 		if (!SpeechRecognition) {
-			console.error("Speech Recognition API not supported in this browser.");
+			logger.error("Speech Recognition API not supported in this browser.");
 			playTTS("Голосовой помощник не поддерживается в этом браузере.");
 			setIsListening(false);
 			playBeep("error");
@@ -490,7 +491,7 @@ export function useVoiceAssistant(
 		};
 
 		recognition.onerror = (event: any) => {
-			console.error("Speech recognition error", event.error);
+			logger.error("Speech recognition error", event.error);
 			setIsListening(false);
 			playBeep("error");
 		};
@@ -586,7 +587,7 @@ export function useVoiceAssistant(
 				),
 				"error",
 			);
-			console.error("Failed to start listening:", err);
+			logger.error("Failed to start listening:", err);
 			setIsListening(false);
 			playBeep("error");
 		}

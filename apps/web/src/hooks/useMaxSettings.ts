@@ -1,4 +1,5 @@
 import { showToast } from "../components/GlobalToast";
+import { logger } from "../utils/logger";
 /**
  * Настройки MAX-бота: чтение с сервера, черновики полей формы и сохранение.
  *
@@ -7,7 +8,7 @@ import { showToast } from "../components/GlobalToast";
  * 1. Провал чтения не выходил за пределы хука. `GET /api/max/settings` отвечает
  *    401/403, когда у смены нет прав (preHandler requireNonDoctorAccess), и 500
  *    при сбое базы; запрос может и вовсе не дойти до сервера. Всё это уходило
- *    только в console.error: наружу хук отдавал `settings: null` и пустые
+ *    только в logger.error: наружу хук отдавал `settings: null` и пустые
  *    черновики — ровно то же самое, что при честном 404 «бот ещё не настроен».
  *    Панель рисовала пустую форму и бейдж «Не подключён», то есть
  *    НЕПРОЧИТАННОЕ показывалось как «канала нет».
@@ -329,7 +330,7 @@ export function useMaxSettings() {
 			const outcome = parseMaxSettingsPayload(res.status, raw);
 			if (!outcome.ok) {
 				// Код состояния нужен разработчику, а не администратору: в консоль.
-				console.error("[настройки MAX] не прочитаны, ответ", outcome.status);
+				logger.error("[настройки MAX] не прочитаны, ответ", outcome.status);
 				setLoadState({ phase: "failed", status: outcome.status });
 				return;
 			}
@@ -350,7 +351,7 @@ export function useMaxSettings() {
 				"error",
 			);
 			// До сервера не дошли вовсе: status = null, текст об этом так и скажет.
-			console.error("[настройки MAX] запрос не дошёл до сервера", err);
+			logger.error("[настройки MAX] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });
 		} finally {
 			setLoading(false);
@@ -368,7 +369,7 @@ export function useMaxSettings() {
 				return;
 			}
 			// Отказ проверки состояния — это НЕ «не подключён»: состояние неизвестно.
-			console.error("[состояние MAX] не прочитано, ответ", res.status);
+			logger.error("[состояние MAX] не прочитано, ответ", res.status);
 			setStatusUnknown(true);
 		} catch (err) {
 			showToast(
@@ -378,7 +379,7 @@ export function useMaxSettings() {
 				),
 				"error",
 			);
-			console.error("[состояние MAX] запрос не дошёл до сервера", err);
+			logger.error("[состояние MAX] запрос не дошёл до сервера", err);
 			setStatusUnknown(true);
 		}
 	}, []);
@@ -443,7 +444,7 @@ export function useMaxSettings() {
 				"error",
 			);
 			// Текст исключения наружу не идёт ни при каких условиях: он английский.
-			console.error("[настройки MAX] сохранение не дошло до сервера", err);
+			logger.error("[настройки MAX] сохранение не дошло до сервера", err);
 			setSaveError(actionFailureToast("Настройки MAX не сохранены", null));
 			setSaveState("error");
 		}

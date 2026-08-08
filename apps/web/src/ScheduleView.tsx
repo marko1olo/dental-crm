@@ -33,7 +33,6 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
  */
 import {
 	appointmentScheduleMissingFields,
-	auth,
 	denteAdminSecretRequestHeaders,
 } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
@@ -150,6 +149,7 @@ type ScheduleViewProps = {
 
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
+import { auth } from "./AppConstants";
 
 export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const logicContext = useAppLogicContext();

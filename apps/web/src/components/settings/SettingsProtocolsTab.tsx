@@ -10,6 +10,7 @@ import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
 import "./SettingsProtocolsTab.css";
+import { logger } from "../../utils/logger";
 
 /**
  * Отказ сервера человеческими словами.
@@ -43,7 +44,7 @@ async function refusalMessage(
 		return `${action}: ${serverMessage}`;
 	}
 	// Код ответа и техническая строка нужны поддержке, а не человеку у стойки.
-	console.error(
+	logger.error(
 		`[SettingsProtocolsTab] ${response.url} ответил ${response.status}: ${serverMessage || "без сообщения"}`,
 	);
 	return actionFailureToast(action, response.status);
@@ -151,7 +152,7 @@ export function SettingsProtocolsTab() {
 			 * "Неизвестная ошибка"`, то есть в красной плашке появлялся английский
 			 * текст исключения браузера («Failed to fetch»).
 			 */
-			console.error(err);
+			logger.error(err);
 			showToast(
 				actionFailureToast(
 					"Шаблон не сохранён",
@@ -186,7 +187,7 @@ export function SettingsProtocolsTab() {
 			window.location.reload();
 		} catch (err: any) {
 			// БЫЛО: `err.message` — английский текст исключения браузера.
-			console.error(err);
+			logger.error(err);
 			showToast(
 				actionFailureToast(
 					"Шаблон не удалён",

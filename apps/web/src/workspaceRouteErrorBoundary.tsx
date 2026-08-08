@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type PropsWithChildren } from "react";
+import { logger } from "./utils/logger";
 import type { AppView } from "./workspaceShell";
 
 /**
@@ -148,7 +149,7 @@ export class WorkspaceRouteErrorBoundary extends Component<
 		// журналирование было закрыто проверкой `!import.meta.env.PROD`, и после того
 		// как стек убран с экрана, в production не осталось бы вообще ни одного следа
 		// сбоя. Консоль не видна сотруднику клиники и ничего ему не показывает.
-		console.error(
+		logger.error(
 			`DENTE route failed: ${this.props.view}`,
 			error,
 			errorInfo.componentStack,

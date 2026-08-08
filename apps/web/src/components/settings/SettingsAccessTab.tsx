@@ -12,6 +12,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 import {
 	INVITABLE_STAFF_ROLES,
 	inviteRoleTitle,
@@ -98,7 +99,7 @@ export function SettingsAccessTab({
 			const raw = await response.text();
 			const outcome = parseInviteCreationPayload(response.status, raw);
 			if (!outcome.ok) {
-				console.error("[приглашение] не создано, ответ", outcome.status);
+				logger.error("[приглашение] не создано, ответ", outcome.status);
 				showToast(
 					outcome.message ??
 						actionFailureToast(
@@ -120,7 +121,7 @@ export function SettingsAccessTab({
 			);
 		} catch (err) {
 			// Текст исключения наружу не идёт: он английский («Failed to fetch»).
-			console.error("[приглашение] запрос не дошёл до сервера", err);
+			logger.error("[приглашение] запрос не дошёл до сервера", err);
 			showToast(
 				actionFailureToast(
 					`Приглашение для ${inviteEmail.trim()} не создано`,

@@ -4,6 +4,7 @@ import type React from "react";
 import { useCallback, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 interface DicomArchiveUploaderProps {
 	onImagesLoaded: (imageIds: string[]) => void;
@@ -56,7 +57,7 @@ export function DicomArchiveUploader({
 							),
 							"error",
 						);
-						console.error("Failed to parse file", file.name, e);
+						logger.error("Failed to parse file", file.name, e);
 						resolve(null);
 					}
 				};
@@ -250,7 +251,7 @@ export function DicomArchiveUploader({
 					),
 					"error",
 				);
-				console.error("[DicomArchiveUploader] Ошибка обработки:", error);
+				logger.error("[DicomArchiveUploader] Ошибка обработки:", error);
 				setStatus(
 					"Не удалось прочитать файлы: архив повреждён, зашифрован или не содержит DICOM. Попробуйте другой архив или распакуйте его вручную.",
 				);

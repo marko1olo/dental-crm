@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast, panelFailureCause } from "../lib/panelStateText";
+import { logger } from "../utils/logger";
 
 /**
  * Загрузка ресурса, привязанного к конкретному пациенту.
@@ -37,7 +38,7 @@ import { actionFailureToast, panelFailureCause } from "../lib/panelStateText";
  * ЧЕТВЁРТАЯ ПРИЧИНА, ПОЧЕМУ ЭТОТ ФАЙЛ ПРАВИЛСЯ СНОВА. Текст отказа был
  * «Сервер ответил ошибкой 500. Данные не загружены.» — и три виджета карточки
  * печатали его дословно. Голый код состояния администратору не говорит ни что
- * случилось, ни что делать; номер нужен разработчику и уходит в console.error.
+ * случилось, ни что делать; номер нужен разработчику и уходит в logger.error.
  * Формулировки живут в одном месте — lib/panelStateText.ts.
  *
  * `failureStatus` отдаётся рядом с `error`, чтобы виджет мог собрать своё
@@ -100,7 +101,7 @@ export function usePatientResource<T>(
 				if (cancelled) return;
 				if (!res.ok) {
 					// Код состояния нужен поддержке, а не оператору: он в консоли.
-					console.error(
+					logger.error(
 						`[usePatientResource ${patientId}] ответ ${res.status} на ${urlRef.current(patientId)}`,
 					);
 					setFailureStatus(res.status);
@@ -122,7 +123,7 @@ export function usePatientResource<T>(
 				);
 				if (cancelled) return;
 				if ((requestError as Error)?.name === "AbortError") return;
-				console.error(`[usePatientResource ${patientId}]`, requestError);
+				logger.error(`[usePatientResource ${patientId}]`, requestError);
 				// null означает «до сервера не дошли вовсе» — это другая причина
 				// и другое действие, чем любой ответ сервера.
 				setFailureStatus(null);

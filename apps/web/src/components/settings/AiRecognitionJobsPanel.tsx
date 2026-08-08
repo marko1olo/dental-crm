@@ -25,12 +25,13 @@ import type {
 import { ClipboardList, History, Loader2, RefreshCw } from "lucide-react";
 import type React from "react";
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { aiJobKindLabels } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type { PanelSubject } from "../../lib/panelStateText";
 import { recognitionTargetLabels } from "../../workspaceUiLabels";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { aiJobKindLabels } from "../../AppConstants";
+import { logger } from "../../utils/logger";
 
 const AI_RECOGNITION_JOBS_SUBJECT: PanelSubject = {
 	notLoadedTitle: "История AI-задач не загружена",
@@ -178,7 +179,7 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 			});
 			const raw = await res.text();
 			if (!res.ok) {
-				console.error(
+				logger.error(
 					"[ai-recognition-jobs] list failed",
 					res.status,
 					raw.slice(0, 200),
@@ -188,7 +189,7 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 			}
 			const parsed = parseJobsPayload(raw);
 			if (!parsed) {
-				console.error("[ai-recognition-jobs] bad payload shape");
+				logger.error("[ai-recognition-jobs] bad payload shape");
 				setLoadState({ phase: "failed", status: res.status });
 				return;
 			}
@@ -208,7 +209,7 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 				),
 				"error",
 			);
-			console.error("[ai-recognition-jobs] request failed", err);
+			logger.error("[ai-recognition-jobs] request failed", err);
 			setLoadState({ phase: "failed", status: null });
 		}
 	}, [appLogic.auth]);

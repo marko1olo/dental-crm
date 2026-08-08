@@ -1,5 +1,6 @@
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "../lib/panelStateText";
+import { logger } from "./logger";
 
 /**
  * Utility module to interface with Rutoken Web Plugin
@@ -56,7 +57,7 @@ export async function checkRutokenPlugin(): Promise<boolean> {
 			),
 			"error",
 		);
-		console.warn("Rutoken plugin check failed:", e);
+		logger.warn("Rutoken plugin check failed:", e);
 		return false;
 	}
 }
@@ -121,7 +122,7 @@ export async function getRutokenCertificates(): Promise<RutokenCertificate[]> {
 
 		return certs;
 	} catch (error: any) {
-		console.error("Failed to read Rutoken certificates:", error);
+		logger.error("Failed to read Rutoken certificates:", error);
 		throw new Error(`Ошибка при чтении Рутокена: ${error.message || error}`);
 	}
 }
@@ -167,7 +168,7 @@ export async function signDataWithRutoken(
 		// Usually plugin.sign with addSignCertV2 produces CMS.
 		return hexToBase64(signatureHex);
 	} catch (error: any) {
-		console.error("Rutoken signing error:", error);
+		logger.error("Rutoken signing error:", error);
 		try {
 			await plugin.logout(deviceId);
 		} catch (_e) {

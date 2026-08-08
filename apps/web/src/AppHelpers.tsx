@@ -88,7 +88,7 @@ import {
 	clampMprSliceIndex,
 } from "./mprControlMath";
 import { pricelistSourceKindLabels } from "./pricelistUiMeta";
-import type { AppView } from "./workspaceShell";
+import type { AppView } from "./utils/routeUtils";
 import {
 	postVisitCareTopicOptions,
 	telegramVisualCardFields,
@@ -144,36 +144,7 @@ import {
 	staffRoleLabels,
 } from "./workspaceUiLabels";
 
-const _ImagingView = lazy(() =>
-	import("./ImagingView").then((module) => ({ default: module.ImagingView })),
-);
-const _VisitView = lazy(() =>
-	import("./VisitView").then((module) => ({ default: module.VisitView })),
-);
-const _CommunicationsView = lazy(() =>
-	import("./CommunicationsView").then((module) => ({
-		default: module.CommunicationsView,
-	})),
-);
-const _DocumentsView = lazy(() =>
-	import("./DocumentsView").then((module) => ({
-		default: module.DocumentsView,
-	})),
-);
-const _SettingsView = lazy(() =>
-	import("./SettingsView").then((module) => ({ default: module.SettingsView })),
-);
-const _ScheduleView = lazy(() =>
-	import("./ScheduleView").then((module) => ({ default: module.ScheduleView })),
-);
-const _PatientsView = lazy(() =>
-	import("./PatientsView").then((module) => ({ default: module.PatientsView })),
-);
-const _MarketingView = lazy(() =>
-	import("./MarketingView").then((module) => ({
-		default: module.MarketingView,
-	})),
-);
+
 
 export function speechGatewayCanUpload(
 	status: SpeechGatewayStatus | null,
@@ -738,7 +709,7 @@ export function loadDocumentIssueSignatureDraft(
 			),
 			"error",
 		);
-		console.warn(error);
+		logger.warn(error);
 		return fallback;
 	}
 }
@@ -769,7 +740,7 @@ export function saveDocumentIssueSignatureDraft(
 			),
 			"error",
 		);
-		console.warn(error);
+		logger.warn(error);
 		// Signature defaults are convenience only; the server still requires explicit attestation on issue.
 	}
 }
@@ -870,7 +841,7 @@ export function loadDocumentPaymentSelectionStore(
 			),
 			"error",
 		);
-		console.error("Failed to load signature draft", error);
+		logger.error("Failed to load signature draft", error);
 		// Document payment selection is local operator convenience; read failures are safe to ignore.
 		return emptyDocumentPaymentSelectionStore();
 	}
@@ -918,7 +889,7 @@ export function saveDocumentPaymentSelection(
 			),
 			"error",
 		);
-		console.error("Failed to save payment selection", error);
+		logger.error("Failed to save payment selection", error);
 		// Document payment selection is local operator convenience; failed storage must not block document issue.
 	}
 }
@@ -1415,7 +1386,7 @@ export function saveOutpatient025uDocumentDraft(
 			),
 			"error",
 		);
-		console.error("Failed to save outpatient 025u document draft", error);
+		logger.error("Failed to save outpatient 025u document draft", error);
 		// Payload drafts are recovery data only; document issue still validates all facts server-side.
 	}
 }
@@ -1470,7 +1441,7 @@ export function saveMedicalRecordExtractDocumentDraft(
 			),
 			"error",
 		);
-		console.error(
+		logger.error(
 			"Failed to save medical record extract document draft",
 			error,
 		);
@@ -1517,7 +1488,7 @@ export function loadLocalImagingViewerDraft(
 			),
 			"error",
 		);
-		console.warn("Failed to load local imaging viewer draft", error);
+		logger.warn("Failed to load local imaging viewer draft", error);
 		return null;
 	}
 }
@@ -1615,7 +1586,7 @@ export function loadLocalDicomWorkbenchDraftFromLocalStorage(
 			),
 			"error",
 		);
-		console.warn(
+		logger.warn(
 			"Failed to load local DICOM workbench draft from local storage:",
 			error,
 		);
@@ -1755,7 +1726,7 @@ export function loadLocalMprWorkbenchDraftFromLocalStorage(
 			),
 			"error",
 		);
-		console.warn(error);
+		logger.warn(error);
 		return null;
 	}
 }
@@ -2497,7 +2468,7 @@ export function saveBrowserPickedImagingFolderPreview(
 			),
 			"error",
 		);
-		console.error(
+		logger.error(
 			"Failed to save browser picked imaging folder preview",
 			error,
 		);
@@ -2538,7 +2509,7 @@ export function loadBrowserPickedImagingFolderPreview(
 			),
 			"error",
 		);
-		console.error(
+		logger.error(
 			"Failed to remove browser picked imaging folder preview",
 			error,
 		);
@@ -3306,6 +3277,7 @@ export function money(value: number | string | null | undefined) {
  * реэкспорта ломала четыре собственных вызова — поймано веб-гейтом.
  */
 import { countLabel } from "./lib/russianPlural.js";
+import { logger } from "./utils/logger";
 
 export { countLabel };
 
@@ -6882,7 +6854,7 @@ export async function migrateLocalDicomWorkbenchDraftFromLocalStorage(
 	const existing = await readLocalDicomWorkbenchDraftFromIndexedDb(
 		organizationId,
 	).catch((err) => {
-		console.error("[Dente] read draft error:", err);
+		logger.error("[Dente] read draft error:", err);
 		showToast(
 			actionFailureToast(
 				"Ошибка чтения черновика DICOM",
@@ -6988,7 +6960,7 @@ export async function readLocalMprWorkbenchDraftFromIndexedDb(
 			seriesKey,
 			organizationId,
 		).catch((err) => {
-			console.error("[Dente] delete draft error:", err);
+			logger.error("[Dente] delete draft error:", err);
 			showToast(
 				actionFailureToast(
 					"Не удалось удалить черновик MPR",
@@ -7073,7 +7045,7 @@ export async function migrateLocalMprWorkbenchDraftFromLocalStorage(
 		seriesKey,
 		organizationId,
 	).catch((err) => {
-		console.error("[Dente] read draft error:", err);
+		logger.error("[Dente] read draft error:", err);
 		showToast(
 			actionFailureToast(
 				"Ошибка чтения черновика MPR",
@@ -7315,7 +7287,7 @@ export async function migratePendingVisitSavesFromLocalStorage(
 	const existing = await readPendingVisitSavesFromIndexedDb(
 		normalizedOrganizationId,
 	).catch((err) => {
-		console.error("[Dente] read visit saves error:", err);
+		logger.error("[Dente] read visit saves error:", err);
 		showToast(
 			actionFailureToast(
 				"Ошибка чтения очереди приёмов",
@@ -7519,7 +7491,7 @@ export async function migrateSpeechChunksFromLocalStorage(
 	const existing = await readPendingSpeechChunksFromIndexedDb(
 		normalizedOrganizationId,
 	).catch((err) => {
-		console.error("[Dente] read speech chunks error:", err);
+		logger.error("[Dente] read speech chunks error:", err);
 		showToast(
 			actionFailureToast(
 				"Ошибка чтения очереди аудиофрагментов",

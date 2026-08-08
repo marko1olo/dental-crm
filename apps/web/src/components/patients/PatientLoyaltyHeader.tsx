@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 type LoyaltyTier = "standard" | "silver" | "gold" | "platinum";
 
@@ -76,7 +77,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 			 * Когда поле появится в схеме, успешная ветка заработает сама.
 			 */
 			const saved = await res.json().catch((err: any) => {
-				console.error(err);
+				logger.error(err);
 				showToast(
 					actionFailureToast(
 						"Ошибка чтения ответа",

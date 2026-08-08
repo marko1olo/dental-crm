@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast, requestFailureCause } from "./lib/panelStateText";
+import { logger } from "./utils/logger";
 import "./ScannerView.css";
 
 /**
@@ -98,7 +99,7 @@ async function accessFailureMessage(
 	 * случилось, ни что делать; он нужен поддержке и остаётся в консоли.
 	 * Формулировки причин общие с остальными панелями — lib/panelStateText.ts.
 	 */
-	console.error(`[ScannerView] ${response.url} ответил ${response.status}`);
+	logger.error(`[ScannerView] ${response.url} ответил ${response.status}`);
 	return `${prefix}: ${requestFailureCause(response.status)}.`;
 }
 
@@ -129,7 +130,7 @@ export function ScannerView() {
 	const [isLoadingLogs, setIsLoadingLogs] = useState(true);
 	/*
 	 * Текст ошибки загрузки журнала. Без него единственной реакцией на недоступный
-	 * сервер был console.error, а на экране оставалось «Журнал пуст. Начните
+	 * сервер был logger.error, а на экране оставалось «Журнал пуст. Начните
 	 * сканирование» — то же самое, что видит клиника в свой первый день. Пустой
 	 * журнал стерилизации и незагруженный журнал стерилизации — разные вещи: по
 	 * первому отвечают проверяющему, по второму зовут админа.
@@ -160,7 +161,7 @@ export function ScannerView() {
 				),
 				"error",
 			);
-			console.error(error);
+			logger.error(error);
 			setLoadError(
 				/*
 				 * БЫЛО: «нет связи с сервером. Список ниже неполный.» Два изъяна.
@@ -268,7 +269,7 @@ export function ScannerView() {
 			setBarcode("");
 			void loadLogs();
 		} catch (error) {
-			console.error(error);
+			logger.error(error);
 			showToast("Нет связи с сервером: запись в журнал не создана", "error");
 		} finally {
 			setIsScanning(false);

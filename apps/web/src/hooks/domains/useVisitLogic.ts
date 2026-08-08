@@ -16,7 +16,8 @@ import {
 	type VisitFlowResult,
 	type VisitNoteDraft,
 } from "@dental/shared";
-import { useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { logger } from "../../utils/logger";
 import {
 	acceptedVisitSaveFailureIsRetryable,
 	appendSpeechTextWithoutDuplicateTail,
@@ -243,512 +244,549 @@ export function useVisitLogic({
 			: "сохранено";
 	const visitHasSavedNote = hasVisitNoteFormText && !draft && !isVisitNoteDirty;
 
-	async function loadSpeechGatewayStatus(
-		options: { silent?: boolean } = {},
-	): Promise<SpeechGatewayStatus | null> {
-		try {
-			const response = await fetch("/api/speech/status", {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders(),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Состояние распознавания недоступно",
-					),
-				);
-			const status = (await response.json()) as SpeechGatewayStatus;
-			setSpeechGatewayStatus(status);
-			return status;
-		} catch (speechError) {
-			showToast(
-				actionFailureToast(
-					"Шлюз распознавания речи недоступен",
-					(speechError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Шлюз распознавания речи недоступен",
-						speechError,
-					),
-				);
-			}
-			return null;
-		}
-	}
-
-	async function loadSpeechGatewayHealthReport(
-		options: { silent?: boolean } = {},
-	) {
-		try {
-			const response = await fetch("/api/speech/gateway-health", {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders(),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Проверка распознавания недоступна",
-					),
-				);
-			setSpeechGatewayHealthReport(
-				(await response.json()) as SpeechGatewayHealthReport,
-			);
-		} catch (speechHealthError) {
-			showToast(
-				actionFailureToast(
-					"Проверка распознавания недоступна",
-					(speechHealthError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Проверка распознавания недоступна",
-						speechHealthError,
-					),
-				);
-			}
-		}
-	}
-
-	async function loadSpeechProviderRuntimeStatuses(
-		options: { silent?: boolean } = {},
-	) {
-		try {
-			const response = await fetch("/api/speech/providers/runtime", {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders(),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Провайдеры распознавания недоступны",
-					),
-				);
-			setSpeechProviderRuntimeStatuses(
-				(await response.json()) as SpeechProviderRuntimeStatus[],
-			);
-		} catch (speechRuntimeError) {
-			showToast(
-				actionFailureToast(
-					"Провайдер распознавания недоступен",
-					(speechRuntimeError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Провайдер распознавания недоступен",
-						speechRuntimeError,
-					),
-				);
-			}
-		}
-	}
-
-	async function loadSpeechRecordingStrategy(
-		options: { silent?: boolean } = {},
-	) {
-		try {
-			const response = await fetch("/api/speech/recording-strategy", {
-				method: "POST",
-				headers: auth.denteClinicalReadHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					expectedDurationMs: 180_000,
-					networkState: isOnline ? "online" : "offline",
-					privacyMode: "cloud_allowed",
-					specialty: selectedSpecialty,
-					source: "visit",
-				}),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Стратегия распознавания недоступна",
-					),
-				);
-			setSpeechRecordingStrategy(
-				(await response.json()) as SpeechRecordingStrategy,
-			);
-		} catch (speechStrategyError) {
-			showToast(
-				actionFailureToast(
-					"Стратегия распознавания недоступна",
-					(speechStrategyError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Стратегия распознавания недоступна",
-						speechStrategyError,
-					),
-				);
-			}
-		}
-	}
-
-	async function loadSpeechRecordingRecovery(
-		options: { silent?: boolean } = {},
-	) {
-		try {
-			if (!dashboard?.activeVisit?.id || !dashboard?.activeVisit?.patientId) {
-				setSpeechRecordingRecovery(null);
-				return;
-			}
-			const params = new URLSearchParams({ limit: "5" });
-			params.set("visitId", dashboard?.activeVisit?.id);
-			params.set("patientId", dashboard?.activeVisit?.patientId);
-			const response = await fetch(
-				`/api/speech/recordings/recovery?${params.toString()}`,
-				{
+	const loadSpeechGatewayStatus = useCallback(
+		async (
+			options: { silent?: boolean } = {},
+		): Promise<SpeechGatewayStatus | null> => {
+			try {
+				const response = await fetch("/api/speech/status", {
 					cache: "no-store",
 					headers: auth.denteClinicalReadHeaders(),
-				},
-			);
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Восстановление диктовки недоступно",
+				});
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(
+							response,
+							"Состояние распознавания недоступно",
+						),
+					);
+				const status = (await response.json()) as SpeechGatewayStatus;
+				setSpeechGatewayStatus(status);
+				return status;
+			} catch (speechError) {
+				showToast(
+					actionFailureToast(
+						"Шлюз распознавания речи недоступен",
+						(speechError as { status?: number })?.status ?? null,
 					),
+					"error",
 				);
-			setSpeechRecordingRecovery(
-				(await response.json()) as SpeechRecordingRecoveryList,
-			);
-		} catch (speechRecoveryError) {
-			showToast(
-				actionFailureToast(
-					"Восстановление диктовки недоступно",
-					(speechRecoveryError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Восстановление диктовки недоступно",
-						speechRecoveryError,
-					),
-				);
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Шлюз распознавания речи недоступен",
+							speechError,
+						),
+					);
+				}
+				return null;
 			}
-		}
-	}
+		},
+		[],
+	);
 
-	async function refreshSpeechRuntime(options: { silent?: boolean } = {}) {
-		await Promise.all([
-			loadSpeechGatewayStatus(options),
-			loadSpeechGatewayHealthReport(options),
-			loadSpeechProviderRuntimeStatuses(options),
-			loadSpeechRecordingStrategy(options),
-			loadSpeechRecordingRecovery(options),
-		]);
-	}
+	const loadSpeechGatewayHealthReport = useCallback(
+		async (options: { silent?: boolean } = {}) => {
+			try {
+				const response = await fetch("/api/speech/gateway-health", {
+					cache: "no-store",
+					headers: auth.denteClinicalReadHeaders(),
+				});
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(
+							response,
+							"Проверка распознавания недоступна",
+						),
+					);
+				setSpeechGatewayHealthReport(
+					(await response.json()) as SpeechGatewayHealthReport,
+				);
+			} catch (speechHealthError) {
+				showToast(
+					actionFailureToast(
+						"Проверка распознавания недоступна",
+						(speechHealthError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Проверка распознавания недоступна",
+							speechHealthError,
+						),
+					);
+				}
+			}
+		},
+		[],
+	);
 
-	async function refreshPendingVisitSaveState() {
-		const pending = await loadPendingVisitSaves(activeOrganizationId);
-		setPendingVisitSaveCount(pending.length);
-		setLastPendingVisitSaveAt(latestPendingVisitSaveAt(pending));
-	}
+	const loadSpeechProviderRuntimeStatuses = useCallback(
+		async (options: { silent?: boolean } = {}) => {
+			try {
+				const response = await fetch("/api/speech/providers/runtime", {
+					cache: "no-store",
+					headers: auth.denteClinicalReadHeaders(),
+				});
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(
+							response,
+							"Провайдеры распознавания недоступны",
+						),
+					);
+				setSpeechProviderRuntimeStatuses(
+					(await response.json()) as SpeechProviderRuntimeStatus[],
+				);
+			} catch (speechRuntimeError) {
+				showToast(
+					actionFailureToast(
+						"Провайдер распознавания недоступен",
+						(speechRuntimeError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Провайдер распознавания недоступен",
+							speechRuntimeError,
+						),
+					);
+				}
+			}
+		},
+		[],
+	);
 
-	async function refreshPendingSpeechChunkState() {
-		setPendingSpeechChunkCount(
-			(await loadPendingSpeechChunks(activeOrganizationId)).length,
-		);
-	}
-
-	function applyAcceptedVisitResponse(result: AcceptVisitDraftResponse) {
-		setDashboard((current) =>
-			current
-				? {
-						...current,
-						activeVisit: result.visit,
-						visitCloseChecklist: result.visitCloseChecklist,
-					}
-				: current,
-		);
-		setDraft(null);
-		setVisitNoteForm(visitNoteFormFromVisit(result.visit));
-		setLastVisitSaveReceipt(result.saveReceipt);
-		if (result.saveReceipt.warning) {
-			setError(result.saveReceipt.warning);
-		}
-	}
-
-	async function submitAcceptedVisitDraft(
-		visitId: string | null | undefined,
-		draftToAccept: VisitNoteDraft,
-		doctorSummary: string | null,
-		options: {
-			clientMutationId?: string | null;
-			baseRevision?: number | null;
-			clientSavedAt?: string | null;
-		} = {},
-	) {
-		if (!visitId)
-			throw new WorkflowResponseError(
-				"Откройте или создайте прием перед сохранением ЭМК.",
-				409,
-			);
-		const response = await fetch(`/api/visits/${visitId}/draft/accept`, {
-			method: "POST",
-			headers: auth.denteClinicalMutationHeaders({
-				"Content-Type": "application/json",
-			}),
-			body: JSON.stringify({
-				draft: draftToAccept,
-				doctorSummary,
-				clientMutationId: options.clientMutationId ?? null,
-				baseRevision: options.baseRevision ?? null,
-				clientSavedAt: options.clientSavedAt ?? new Date().toISOString(),
-			}),
-		});
-		if (!response.ok) {
-			throw new WorkflowResponseError(
-				await responseErrorMessage(response, "Прием не принят"),
-				response.status,
-			);
-		}
-		return (await response.json()) as AcceptVisitDraftResponse;
-	}
-
-	function visitDraftSignature(
-		nextTranscript: string,
-		nextSpecialty: DentalSpecialty,
-		nextForm: VisitNoteForm,
-	) {
-		return JSON.stringify([nextTranscript, nextSpecialty, nextForm]);
-	}
-
-	async function loadServerVisitDraft(
-		visitId: string | null | undefined,
-	): Promise<VisitDraftAutosaveResponse> {
-		if (!visitId) return { serverDraft: null };
-		const response = await fetch(`/api/visits/${visitId}/draft/autosave`, {
-			cache: "no-store",
-			headers: auth.denteClinicalReadHeaders(),
-		});
-		if (!response.ok)
-			throw new Error(
-				await responseErrorMessage(response, "Серверный черновик не загружен"),
-			);
-		return (await response.json()) as VisitDraftAutosaveResponse;
-	}
-
-	async function syncVisitDraftAutosave(
-		clientSavedAt: string,
-		options: { silent?: boolean } = {},
-	) {
-		if (!dashboard?.activeVisit?.id) return;
-		const signature = visitDraftSignature(
-			transcript,
-			selectedSpecialty,
-			visitNoteForm,
-		);
-		if (lastServerDraftSignatureRef.current === signature) return;
-		if (!transcript.trim() && !hasVisitNoteFormText) return;
-
-		if (!isOnline) {
-			setServerDraftSyncState("queued");
-			return;
-		}
-
-		setServerDraftSyncState("saving");
-		try {
-			const response = await fetch(
-				`/api/visits/${dashboard?.activeVisit?.id}/draft/autosave`,
-				{
-					method: "PUT",
-					headers: auth.denteClinicalMutationHeaders({
+	const loadSpeechRecordingStrategy = useCallback(
+		async (options: { silent?: boolean } = {}) => {
+			try {
+				const response = await fetch("/api/speech/recording-strategy", {
+					method: "POST",
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
-						patientId: dashboard?.activeVisit?.patientId,
-						selectedSpecialty,
-						transcript,
-						draft: visitNoteDraftFromForm(visitNoteForm, [
-							"Серверный снимок автосохранения. Перед принятием черновика ЭМК врач все равно проверяет текст.",
-						]),
-						baseRevision: dashboard?.activeVisit?.revision ?? null,
-						clientDraftId: `visit-draft-${dashboard?.activeVisit?.id}`,
-						clientSavedAt,
+						expectedDurationMs: 180_000,
+						networkState: isOnline ? "online" : "offline",
+						privacyMode: "cloud_allowed",
+						specialty: selectedSpecialty,
+						source: "visit",
 					}),
-				},
+				});
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(
+							response,
+							"Стратегия распознавания недоступна",
+						),
+					);
+				setSpeechRecordingStrategy(
+					(await response.json()) as SpeechRecordingStrategy,
+				);
+			} catch (speechStrategyError) {
+				showToast(
+					actionFailureToast(
+						"Стратегия распознавания недоступна",
+						(speechStrategyError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Стратегия распознавания недоступна",
+							speechStrategyError,
+						),
+					);
+				}
+			}
+		},
+		[],
+	);
+
+	const loadSpeechRecordingRecovery = useCallback(
+		async (options: { silent?: boolean } = {}) => {
+			try {
+				if (!dashboard?.activeVisit?.id || !dashboard?.activeVisit?.patientId) {
+					setSpeechRecordingRecovery(null);
+					return;
+				}
+				const params = new URLSearchParams({ limit: "5" });
+				params.set("visitId", dashboard?.activeVisit?.id);
+				params.set("patientId", dashboard?.activeVisit?.patientId);
+				const response = await fetch(
+					`/api/speech/recordings/recovery?${params.toString()}`,
+					{
+						cache: "no-store",
+						headers: auth.denteClinicalReadHeaders(),
+					},
+				);
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(
+							response,
+							"Восстановление диктовки недоступно",
+						),
+					);
+				setSpeechRecordingRecovery(
+					(await response.json()) as SpeechRecordingRecoveryList,
+				);
+			} catch (speechRecoveryError) {
+				showToast(
+					actionFailureToast(
+						"Восстановление диктовки недоступно",
+						(speechRecoveryError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Восстановление диктовки недоступно",
+							speechRecoveryError,
+						),
+					);
+				}
+			}
+		},
+		[],
+	);
+
+	const refreshSpeechRuntime = useCallback(
+		async (options: { silent?: boolean } = {}) => {
+			await Promise.all([
+				loadSpeechGatewayStatus(options),
+				loadSpeechGatewayHealthReport(options),
+				loadSpeechProviderRuntimeStatuses(options),
+				loadSpeechRecordingStrategy(options),
+				loadSpeechRecordingRecovery(options),
+			]);
+		},
+		[],
+	);
+
+	const refreshPendingVisitSaveState = useCallback(async () => {
+		const pending = await loadPendingVisitSaves(activeOrganizationId);
+		setPendingVisitSaveCount(pending.length);
+		setLastPendingVisitSaveAt(latestPendingVisitSaveAt(pending));
+	}, []);
+
+	const refreshPendingSpeechChunkState = useCallback(async () => {
+		setPendingSpeechChunkCount(
+			(await loadPendingSpeechChunks(activeOrganizationId)).length,
+		);
+	}, []);
+
+	const applyAcceptedVisitResponse = useCallback(
+		(result: AcceptVisitDraftResponse) => {
+			setDashboard((current) =>
+				current
+					? {
+							...current,
+							activeVisit: result.visit,
+							visitCloseChecklist: result.visitCloseChecklist,
+						}
+					: current,
 			);
+			setDraft(null);
+			setVisitNoteForm(visitNoteFormFromVisit(result.visit));
+			setLastVisitSaveReceipt(result.saveReceipt);
+			if (result.saveReceipt.warning) {
+				setError(result.saveReceipt.warning);
+			}
+		},
+		[],
+	);
+
+	const submitAcceptedVisitDraft = useCallback(
+		async (
+			visitId: string | null | undefined,
+			draftToAccept: VisitNoteDraft,
+			doctorSummary: string | null,
+			options: {
+				clientMutationId?: string | null;
+				baseRevision?: number | null;
+				clientSavedAt?: string | null;
+			} = {},
+		) => {
+			if (!visitId)
+				throw new WorkflowResponseError(
+					"Откройте или создайте прием перед сохранением ЭМК.",
+					409,
+				);
+			const response = await fetch(`/api/visits/${visitId}/draft/accept`, {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					draft: draftToAccept,
+					doctorSummary,
+					clientMutationId: options.clientMutationId ?? null,
+					baseRevision: options.baseRevision ?? null,
+					clientSavedAt: options.clientSavedAt ?? new Date().toISOString(),
+				}),
+			});
+			if (!response.ok) {
+				throw new WorkflowResponseError(
+					await responseErrorMessage(response, "Прием не принят"),
+					response.status,
+				);
+			}
+			return (await response.json()) as AcceptVisitDraftResponse;
+		},
+		[],
+	);
+
+	const visitDraftSignature = useCallback(
+		(
+			nextTranscript: string,
+			nextSpecialty: DentalSpecialty,
+			nextForm: VisitNoteForm,
+		) => {
+			return JSON.stringify([nextTranscript, nextSpecialty, nextForm]);
+		},
+		[],
+	);
+
+	const loadServerVisitDraft = useCallback(
+		async (
+			visitId: string | null | undefined,
+		): Promise<VisitDraftAutosaveResponse> => {
+			if (!visitId) return { serverDraft: null };
+			const response = await fetch(`/api/visits/${visitId}/draft/autosave`, {
+				cache: "no-store",
+				headers: auth.denteClinicalReadHeaders(),
+			});
 			if (!response.ok)
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Серверный черновик не сохранен",
+						"Серверный черновик не загружен",
 					),
 				);
-			const result = (await response.json()) as VisitDraftAutosaveResponse;
-			lastServerDraftSignatureRef.current = signature;
-			setLastServerDraftSavedAt(
-				result.serverDraft?.serverSavedAt ?? clientSavedAt,
+			return (await response.json()) as VisitDraftAutosaveResponse;
+		},
+		[],
+	);
+
+	const syncVisitDraftAutosave = useCallback(
+		async (clientSavedAt: string, options: { silent?: boolean } = {}) => {
+			if (!dashboard?.activeVisit?.id) return;
+			const signature = visitDraftSignature(
+				transcript,
+				selectedSpecialty,
+				visitNoteForm,
 			);
-			setServerDraftSyncState("saved");
-		} catch (syncError) {
-			showToast(
-				actionFailureToast(
-					"Серверный черновик не сохранен",
-					(syncError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			setServerDraftSyncState("error");
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Серверный черновик не сохранен",
-						syncError,
-					),
-				);
+			if (lastServerDraftSignatureRef.current === signature) return;
+			if (!transcript.trim() && !hasVisitNoteFormText) return;
+
+			if (!isOnline) {
+				setServerDraftSyncState("queued");
+				return;
 			}
-		}
-	}
 
-	async function flushPendingVisitSaves(options: { silent?: boolean } = {}) {
-		if (isPendingVisitSyncing) return;
-		const pending = await loadPendingVisitSaves(activeOrganizationId);
-		if (!pending.length) {
-			await refreshPendingVisitSaveState();
-			return;
-		}
-
-		setIsPendingVisitSyncing(true);
-		let remaining = [...pending];
-		try {
-			const promises = pending.map(async (item) => {
-				const result = await submitAcceptedVisitDraft(
-					item.visitId,
-					item.draft,
-					item.doctorSummary,
+			setServerDraftSyncState("saving");
+			try {
+				const response = await fetch(
+					`/api/visits/${dashboard?.activeVisit?.id}/draft/autosave`,
 					{
-						clientMutationId: item.clientMutationId,
-						baseRevision: item.baseRevision,
-						clientSavedAt: item.queuedAt,
+						method: "PUT",
+						headers: auth.denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							patientId: dashboard?.activeVisit?.patientId,
+							selectedSpecialty,
+							transcript,
+							draft: visitNoteDraftFromForm(visitNoteForm, [
+								"Серверный снимок автосохранения. Перед принятием черновика ЭМК врач все равно проверяет текст.",
+							]),
+							baseRevision: dashboard?.activeVisit?.revision ?? null,
+							clientDraftId: `visit-draft-${dashboard?.activeVisit?.id}`,
+							clientSavedAt,
+						}),
 					},
 				);
-				return { item, result };
-			});
-
-			const outcomes = await Promise.allSettled(promises);
-			const errors: unknown[] = [];
-
-			for (const outcome of outcomes) {
-				if (outcome.status === "fulfilled") {
-					const { item, result } = outcome.value;
-					remaining = remaining.filter((candidate) => candidate.id !== item.id);
-					// БЫЛО: сравнение с `dashboard` из замыкания — снимком на момент
-					// НАЧАЛА отправки, а не текущим приёмом. Пока шёл запрос, врач мог
-					// открыть другого пациента: условие проходило по старому приёму,
-					// а applyAcceptedVisitResponse писал в открытый на экране —
-					// пять полей ЭМК пациента Б затирались записью пациента А.
-					const liveVisitId = useAppStore.getState().dashboard?.activeVisit?.id;
-					if (liveVisitId === result.visit.id) {
-						applyAcceptedVisitResponse(result);
-					}
-					// БЫЛО: очередь целиком перезаписывалась снимком `remaining`,
-					// прочитанным до отправки. Если во время отправки в очередь
-					// попадала новая запись приёма, она стиралась безвозвратно —
-					// при том, что интерфейс сообщал «сохранено локально».
-					// Удаляем ровно отправленный элемент, не трогая остальные.
-					await deletePendingVisitSaveFromIndexedDb(item.id).catch((err) => {
-						console.error("[Dente] error deleting pending visit save:", err);
-						showToast(
-							actionFailureToast(
-								"Ошибка удаления локального сохранения приёма",
-								(err as { status?: number })?.status ?? null,
-							),
-							"error",
-						);
-					});
-				} else {
-					errors.push(outcome.reason);
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(
+							response,
+							"Серверный черновик не сохранен",
+						),
+					);
+				const result = (await response.json()) as VisitDraftAutosaveResponse;
+				lastServerDraftSignatureRef.current = signature;
+				setLastServerDraftSavedAt(
+					result.serverDraft?.serverSavedAt ?? clientSavedAt,
+				);
+				setServerDraftSyncState("saved");
+			} catch (syncError) {
+				showToast(
+					actionFailureToast(
+						"Серверный черновик не сохранен",
+						(syncError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				setServerDraftSyncState("error");
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Серверный черновик не сохранен",
+							syncError,
+						),
+					);
 				}
 			}
+		},
+		[],
+	);
 
-			if (errors.length > 0) {
-				throw errors[0];
+	const flushPendingVisitSaves = useCallback(
+		async (options: { silent?: boolean } = {}) => {
+			if (isPendingVisitSyncing) return;
+			const pending = await loadPendingVisitSaves(activeOrganizationId);
+			if (!pending.length) {
+				await refreshPendingVisitSaveState();
+				return;
 			}
 
-			await refreshPendingVisitSaveState();
-		} catch (syncError) {
-			showToast(
-				actionFailureToast(
-					"Сервер пока не принял очередь",
-					(syncError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			await refreshPendingVisitSaveState();
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
+			setIsPendingVisitSyncing(true);
+			let remaining = [...pending];
+			try {
+				const promises = pending.map(async (item) => {
+					const result = await submitAcceptedVisitDraft(
+						item.visitId,
+						item.draft,
+						item.doctorSummary,
+						{
+							clientMutationId: item.clientMutationId,
+							baseRevision: item.baseRevision,
+							clientSavedAt: item.queuedAt,
+						},
+					);
+					return { item, result };
+				});
+
+				const outcomes = await Promise.allSettled(promises);
+				const errors: unknown[] = [];
+
+				for (const outcome of outcomes) {
+					if (outcome.status === "fulfilled") {
+						const { item, result } = outcome.value;
+						remaining = remaining.filter(
+							(candidate) => candidate.id !== item.id,
+						);
+						// БЫЛО: сравнение с `dashboard` из замыкания — снимком на момент
+						// НАЧАЛА отправки, а не текущим приёмом. Пока шёл запрос, врач мог
+						// открыть другого пациента: условие проходило по старому приёму,
+						// а applyAcceptedVisitResponse писал в открытый на экране —
+						// пять полей ЭМК пациента Б затирались записью пациента А.
+						const liveVisitId =
+							useAppStore.getState().dashboard?.activeVisit?.id;
+						if (liveVisitId === result.visit.id) {
+							applyAcceptedVisitResponse(result);
+						}
+						// БЫЛО: очередь целиком перезаписывалась снимком `remaining`,
+						// прочитанным до отправки. Если во время отправки в очередь
+						// попадала новая запись приёма, она стиралась безвозвратно —
+						// при том, что интерфейс сообщал «сохранено локально».
+						// Удаляем ровно отправленный элемент, не трогая остальные.
+						await deletePendingVisitSaveFromIndexedDb(item.id).catch((err) => {
+							logger.error("[Dente] error deleting pending visit save:", err);
+							showToast(
+								actionFailureToast(
+									"Ошибка удаления локального сохранения приёма",
+									(err as { status?: number })?.status ?? null,
+								),
+								"error",
+							);
+						});
+					} else {
+						errors.push(outcome.reason);
+					}
+				}
+
+				if (errors.length > 0) {
+					throw errors[0];
+				}
+
+				await refreshPendingVisitSaveState();
+			} catch (syncError) {
+				showToast(
+					actionFailureToast(
 						"Сервер пока не принял очередь",
-						syncError,
+						(syncError as { status?: number })?.status ?? null,
 					),
+					"error",
+				);
+				await refreshPendingVisitSaveState();
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Сервер пока не принял очередь",
+							syncError,
+						),
+					);
+				}
+			} finally {
+				setIsPendingVisitSyncing(false);
+			}
+		},
+		[],
+	);
+
+	const submitSpeechChunk = useCallback(
+		async (
+			input: SpeechChunkUploadInput,
+		): Promise<SpeechTranscriptionResponse> => {
+			const response = await fetch("/api/speech/transcribe-chunk", {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(input),
+			});
+			const payload = (await response.json()) as SpeechTranscriptionResponse & {
+				error?: unknown;
+				message?: unknown;
+			};
+			if (
+				payload.chunk?.status === "needs_provider_key" &&
+				!payload.chunk.transcript.trim()
+			) {
+				throw new Error(
+					"Серверное распознавание сейчас недоступно; аудио осталось в локальной очереди.",
 				);
 			}
-		} finally {
-			setIsPendingVisitSyncing(false);
-		}
-	}
+			if (!response.ok) {
+				const rawDetail =
+					typeof payload.message === "string"
+						? payload.message
+						: typeof payload.error === "string"
+							? payload.error
+							: null;
+				const detail =
+					operatorReadableErrorDetail(rawDetail) ??
+					responseStatusFailureLabel(response);
+				throw new Error(`РаспознаИвание речи не выполнено: ${detail}`);
+			}
+			return payload;
+		},
+		[],
+	);
 
-	async function submitSpeechChunk(
-		input: SpeechChunkUploadInput,
-	): Promise<SpeechTranscriptionResponse> {
-		const response = await fetch("/api/speech/transcribe-chunk", {
-			method: "POST",
-			headers: auth.denteClinicalMutationHeaders({
-				"Content-Type": "application/json",
-			}),
-			body: JSON.stringify(input),
-		});
-		const payload = (await response.json()) as SpeechTranscriptionResponse & {
-			error?: unknown;
-			message?: unknown;
-		};
-		if (
-			payload.chunk?.status === "needs_provider_key" &&
-			!payload.chunk.transcript.trim()
-		) {
-			throw new Error(
-				"Серверное распознавание сейчас недоступно; аудио осталось в локальной очереди.",
-			);
-		}
-		if (!response.ok) {
-			const rawDetail =
-				typeof payload.message === "string"
-					? payload.message
-					: typeof payload.error === "string"
-						? payload.error
-						: null;
-			const detail =
-				operatorReadableErrorDetail(rawDetail) ??
-				responseStatusFailureLabel(response);
-			throw new Error(`РаспознаИвание речи не выполнено: ${detail}`);
-		}
-		return payload;
-	}
-
-	function speechChunkApplyKey(result: SpeechTranscriptionResponse): string {
-		return `${result.chunk.recordingId}:${result.chunk.chunkIndex}`;
-	}
+	const speechChunkApplyKey = useCallback(
+		(result: SpeechTranscriptionResponse): string => {
+			return `${result.chunk.recordingId}:${result.chunk.chunkIndex}`;
+		},
+		[],
+	);
 
 	/**
 	 * Относится ли расшифрованный фрагмент речи к ОТКРЫТОМУ сейчас приёму.
@@ -765,138 +803,142 @@ export function useVisitLogic({
 	 * СТАЛО: неопределённость трактуется как «НЕ совпадает» (fail closed).
 	 * Фрагменты не из приёма (например, диктовка цен) по-прежнему проходят.
 	 */
-	function speechTranscriptionMatchesActiveVisit(
-		result: SpeechTranscriptionResponse,
-	): boolean {
-		if (result.chunk.source !== "visit") return true;
-		const activeVisitId = useAppStore.getState().dashboard?.activeVisit?.id;
-		if (!result.chunk.visitId || !activeVisitId) return false;
-		return result.chunk.visitId === activeVisitId;
-	}
+	const speechTranscriptionMatchesActiveVisit = useCallback(
+		(result: SpeechTranscriptionResponse): boolean => {
+			if (result.chunk.source !== "visit") return true;
+			const activeVisitId = useAppStore.getState().dashboard?.activeVisit?.id;
+			if (!result.chunk.visitId || !activeVisitId) return false;
+			return result.chunk.visitId === activeVisitId;
+		},
+		[],
+	);
 
-	function applySpeechTranscription(result: SpeechTranscriptionResponse) {
-		setSpeechGatewayStatus(result.gateway);
-		void loadSpeechRecordingRecovery({ silent: true });
-		const applyKey = speechChunkApplyKey(result);
-		if (appliedSpeechChunkKeysRef.current.has(applyKey)) {
-			setSpeechStatusNote(
-				`Фрагмент ${result.chunk.chunkIndex + 1} уже учтен, дубль не добавлен.`,
-			);
-			return;
-		}
-		if (!speechTranscriptionMatchesActiveVisit(result)) {
-			setSpeechStatusNote(
-				"Фрагмент распознавания относится к другому приему и не добавлен в текущую карту.",
-			);
-			return;
-		}
-		const text = result.chunk.transcript.trim();
-		const quality = result.chunk.quality;
-		setSpeechLastQuality(quality);
-		const qualitySuffix =
-			quality.level === "clear"
-				? ""
-				: ` · ${speechQualityLabels[quality.level]}`;
-		if (text) {
-			appliedSpeechChunkKeysRef.current.add(applyKey);
-			appendVisitDictationText(text);
-			setSpeechStatusNote(
-				result.chunk.status === "transcribed"
-					? `${result.chunk.providerLabel}: фрагмент ${result.chunk.chunkIndex + 1}${qualitySuffix}`
-					: `Сохранен фрагмент ${result.chunk.chunkIndex + 1}${qualitySuffix}: ${quality.nextAction}`,
-			);
-			return;
-		}
-		setSpeechStatusNote(
-			`${speechQualityLabels[quality.level]}: ${quality.nextAction}`,
-		);
-	}
-
-	async function assembleSpeechRecording(
-		recordingId: string,
-		options: { silent?: boolean } = {},
-	) {
-		try {
-			const params = new URLSearchParams();
-			if (dashboard?.activeVisit?.id)
-				params.set("visitId", dashboard?.activeVisit?.id);
-			if (dashboard?.activeVisit?.patientId)
-				params.set("patientId", dashboard?.activeVisit?.patientId);
-			const scopedQuery = params.toString();
-			const response = await fetch(
-				`/api/speech/recordings/${encodeURIComponent(recordingId)}/assemble${scopedQuery ? `?${scopedQuery}` : ""}`,
-				{
-					cache: "no-store",
-					headers: auth.denteClinicalReadHeaders(),
-				},
-			);
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Запись распознавания не собрана",
-					),
-				);
-			const assembly = (await response.json()) as SpeechRecordingAssembly;
-			const assembledTranscript = assembly.transcript.trim();
-			if (assembledTranscript) {
-				visitDraftUserEditedRef.current = true;
-				setTranscript((current: any) => {
-					const safeCurrent = typeof current === "string" ? current : "";
-					const normalizedCurrent = safeCurrent.replace(/\s+/g, " ").trim();
-					const normalizedAssembled = assembledTranscript
-						.replace(/\s+/g, " ")
-						.trim();
-					if (
-						!normalizedAssembled ||
-						normalizedCurrent?.includes(normalizedAssembled)
-					)
-						return safeCurrent;
-					return [safeCurrent.trim(), assembledTranscript]
-						.filter(Boolean)
-						.join("\n");
-				});
-			}
-			if (
-				!options.silent ||
-				assembly.missingChunkIndexes.length ||
-				assembly.warnings.length
-			) {
-				const missing = assembly.missingChunkIndexes.length
-					? ` · пропуски ${assembly.missingChunkIndexes.join(", ")}`
-					: "";
-				setSpeechStatusNote(
-					`Запись собрана: ${assembly.chunkCount} фрагм.${missing}`,
-				);
-			}
+	const applySpeechTranscription = useCallback(
+		(result: SpeechTranscriptionResponse) => {
+			setSpeechGatewayStatus(result.gateway);
 			void loadSpeechRecordingRecovery({ silent: true });
-			return assembly;
-		} catch (assemblyError) {
-			showToast(
-				actionFailureToast(
-					"Не удалось собрать запись распознавания",
-					(assemblyError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Не удалось собрать запись распознавания",
-						assemblyError,
-					),
+			const applyKey = speechChunkApplyKey(result);
+			if (appliedSpeechChunkKeysRef.current.has(applyKey)) {
+				setSpeechStatusNote(
+					`Фрагмент ${result.chunk.chunkIndex + 1} уже учтен, дубль не добавлен.`,
 				);
+				return;
 			}
-			return null;
-		}
-	}
+			if (!speechTranscriptionMatchesActiveVisit(result)) {
+				setSpeechStatusNote(
+					"Фрагмент распознавания относится к другому приему и не добавлен в текущую карту.",
+				);
+				return;
+			}
+			const text = result.chunk.transcript.trim();
+			const quality = result.chunk.quality;
+			setSpeechLastQuality(quality);
+			const qualitySuffix =
+				quality.level === "clear"
+					? ""
+					: ` · ${speechQualityLabels[quality.level]}`;
+			if (text) {
+				appliedSpeechChunkKeysRef.current.add(applyKey);
+				appendVisitDictationText(text);
+				setSpeechStatusNote(
+					result.chunk.status === "transcribed"
+						? `${result.chunk.providerLabel}: фрагмент ${result.chunk.chunkIndex + 1}${qualitySuffix}`
+						: `Сохранен фрагмент ${result.chunk.chunkIndex + 1}${qualitySuffix}: ${quality.nextAction}`,
+				);
+				return;
+			}
+			setSpeechStatusNote(
+				`${speechQualityLabels[quality.level]}: ${quality.nextAction}`,
+			);
+		},
+		[],
+	);
 
-	function trackSpeechUpload(upload: Promise<void>) {
+	const assembleSpeechRecording = useCallback(
+		async (recordingId: string, options: { silent?: boolean } = {}) => {
+			try {
+				const params = new URLSearchParams();
+				if (dashboard?.activeVisit?.id)
+					params.set("visitId", dashboard?.activeVisit?.id);
+				if (dashboard?.activeVisit?.patientId)
+					params.set("patientId", dashboard?.activeVisit?.patientId);
+				const scopedQuery = params.toString();
+				const response = await fetch(
+					`/api/speech/recordings/${encodeURIComponent(recordingId)}/assemble${scopedQuery ? `?${scopedQuery}` : ""}`,
+					{
+						cache: "no-store",
+						headers: auth.denteClinicalReadHeaders(),
+					},
+				);
+				if (!response.ok)
+					throw new Error(
+						await responseErrorMessage(
+							response,
+							"Запись распознавания не собрана",
+						),
+					);
+				const assembly = (await response.json()) as SpeechRecordingAssembly;
+				const assembledTranscript = assembly.transcript.trim();
+				if (assembledTranscript) {
+					visitDraftUserEditedRef.current = true;
+					setTranscript((current: any) => {
+						const safeCurrent = typeof current === "string" ? current : "";
+						const normalizedCurrent = safeCurrent.replace(/\s+/g, " ").trim();
+						const normalizedAssembled = assembledTranscript
+							.replace(/\s+/g, " ")
+							.trim();
+						if (
+							!normalizedAssembled ||
+							normalizedCurrent?.includes(normalizedAssembled)
+						)
+							return safeCurrent;
+						return [safeCurrent.trim(), assembledTranscript]
+							.filter(Boolean)
+							.join("\n");
+					});
+				}
+				if (
+					!options.silent ||
+					assembly.missingChunkIndexes.length ||
+					assembly.warnings.length
+				) {
+					const missing = assembly.missingChunkIndexes.length
+						? ` · пропуски ${assembly.missingChunkIndexes.join(", ")}`
+						: "";
+					setSpeechStatusNote(
+						`Запись собрана: ${assembly.chunkCount} фрагм.${missing}`,
+					);
+				}
+				void loadSpeechRecordingRecovery({ silent: true });
+				return assembly;
+			} catch (assemblyError) {
+				showToast(
+					actionFailureToast(
+						"Не удалось собрать запись распознавания",
+						(assemblyError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Не удалось собрать запись распознавания",
+							assemblyError,
+						),
+					);
+				}
+				return null;
+			}
+		},
+		[],
+	);
+
+	const trackSpeechUpload = useCallback((upload: Promise<void>) => {
 		speechUploadPromisesRef.current.add(upload);
 		upload
 			.finally(() => speechUploadPromisesRef.current.delete(upload))
 			.catch((err) => {
-				console.error("[Dente] speech upload error:", err);
+				logger.error("[Dente] speech upload error:", err);
 				showToast(
 					actionFailureToast(
 						"Ошибка загрузки аудиозаписи",
@@ -905,96 +947,100 @@ export function useVisitLogic({
 					"error",
 				);
 			});
-	}
+	}, []);
 
-	async function waitForSpeechUploads() {
+	const waitForSpeechUploads = useCallback(async () => {
 		const pendingUploads = Array.from(speechUploadPromisesRef.current);
 		if (pendingUploads.length) {
 			await Promise.allSettled(pendingUploads);
 		}
-	}
+	}, []);
 
-	async function finalizeSpeechRecording(recordingId: string) {
+	const finalizeSpeechRecording = useCallback(async (recordingId: string) => {
 		await waitForSpeechUploads();
 		await flushPendingSpeechChunks({ silent: true });
 		await assembleSpeechRecording(recordingId, { silent: true });
-	}
+	}, []);
 
-	async function flushPendingSpeechChunks(options: { silent?: boolean } = {}) {
-		const queue = await loadPendingSpeechChunks(activeOrganizationId);
-		if (!queue.length) {
-			await refreshPendingSpeechChunkState();
-			return;
-		}
-
-		if (!isOnline) {
-			await refreshPendingSpeechChunkState();
-			if (!options.silent) {
-				setSpeechStatusNote(
-					`Очередь распознавания сохранена локально: ${queue.length} фрагм., отправка после подключения.`,
-				);
-			}
-			return;
-		}
-
-		const currentGateway =
-			(await loadSpeechGatewayStatus({ silent: true })) ?? speechGatewayStatus;
-		const hasAudioWaitingForServer = queue.some((item) =>
-			Boolean(item.audioBase64?.trim()),
-		);
-		if (hasAudioWaitingForServer && !speechGatewayCanUpload(currentGateway)) {
-			await refreshPendingSpeechChunkState();
-			if (!options.silent) {
-				setSpeechStatusNote(
-					`Очередь распознавания сохранена: ${queue.length} фрагм. Серверное распознавание еще не готово, аудио не удалено.`,
-				);
-			}
-			return;
-		}
-
-		const flushedRecordingIds = new Set<string>();
-		try {
-			for (const item of queue) {
-				const result = await submitSpeechChunk(item);
-				applySpeechTranscription(result);
-				await removePendingSpeechChunkById(item.id, activeOrganizationId);
-				if (speechTranscriptionMatchesActiveVisit(result))
-					flushedRecordingIds.add(item.recordingId);
+	const flushPendingSpeechChunks = useCallback(
+		async (options: { silent?: boolean } = {}) => {
+			const queue = await loadPendingSpeechChunks(activeOrganizationId);
+			if (!queue.length) {
 				await refreshPendingSpeechChunkState();
+				return;
 			}
-			for (const recordingId of flushedRecordingIds) {
-				await assembleSpeechRecording(recordingId, { silent: true });
-			}
-		} catch (syncError) {
-			showToast(
-				actionFailureToast(
-					"Очередь распознавания пока не отправлена",
-					(syncError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			await refreshPendingSpeechChunkState();
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Очередь распознавания пока не отправлена",
-						syncError,
-					),
-				);
-			}
-		}
-	}
 
-	function scrollToVisitArea(selector: string) {
+			if (!isOnline) {
+				await refreshPendingSpeechChunkState();
+				if (!options.silent) {
+					setSpeechStatusNote(
+						`Очередь распознавания сохранена локально: ${queue.length} фрагм., отправка после подключения.`,
+					);
+				}
+				return;
+			}
+
+			const currentGateway =
+				(await loadSpeechGatewayStatus({ silent: true })) ??
+				speechGatewayStatus;
+			const hasAudioWaitingForServer = queue.some((item) =>
+				Boolean(item.audioBase64?.trim()),
+			);
+			if (hasAudioWaitingForServer && !speechGatewayCanUpload(currentGateway)) {
+				await refreshPendingSpeechChunkState();
+				if (!options.silent) {
+					setSpeechStatusNote(
+						`Очередь распознавания сохранена: ${queue.length} фрагм. Серверное распознавание еще не готово, аудио не удалено.`,
+					);
+				}
+				return;
+			}
+
+			const flushedRecordingIds = new Set<string>();
+			try {
+				for (const item of queue) {
+					const result = await submitSpeechChunk(item);
+					applySpeechTranscription(result);
+					await removePendingSpeechChunkById(item.id, activeOrganizationId);
+					if (speechTranscriptionMatchesActiveVisit(result))
+						flushedRecordingIds.add(item.recordingId);
+					await refreshPendingSpeechChunkState();
+				}
+				for (const recordingId of flushedRecordingIds) {
+					await assembleSpeechRecording(recordingId, { silent: true });
+				}
+			} catch (syncError) {
+				showToast(
+					actionFailureToast(
+						"Очередь распознавания пока не отправлена",
+						(syncError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				await refreshPendingSpeechChunkState();
+				if (!options.silent) {
+					setError(
+						operatorWorkflowFailureMessage(
+							"Очередь распознавания пока не отправлена",
+							syncError,
+						),
+					);
+				}
+			}
+		},
+		[],
+	);
+
+	const scrollToVisitArea = useCallback((selector: string) => {
 		window.location.hash = "visit";
 		window.requestAnimationFrame(() => {
 			motionSafeScrollIntoView(document.querySelector(selector), {
 				block: "start",
 			});
 		});
-	}
+	}, []);
 
-	function appendToTranscript(text: string) {
+	const appendToTranscript = useCallback((text: string) => {
 		visitDraftUserEditedRef.current = true;
 		setClearedTranscriptSnapshot(null);
 		setTranscript((current: any) =>
@@ -1004,14 +1050,17 @@ export function useVisitLogic({
 				speechGatewayStatus?.chunkingPolicy.dedupeWindowChars ?? 600,
 			),
 		);
-	}
+	}, []);
 
-	function updateVisitNoteField(field: VisitNoteField, value: string) {
-		visitDraftUserEditedRef.current = true;
-		setVisitNoteForm((current) => ({ ...current, [field]: value }));
-	}
+	const updateVisitNoteField = useCallback(
+		(field: VisitNoteField, value: string) => {
+			visitDraftUserEditedRef.current = true;
+			setVisitNoteForm((current) => ({ ...current, [field]: value }));
+		},
+		[],
+	);
 
-	function buildOfflineDraft() {
+	const buildOfflineDraft = useCallback(() => {
 		if (!hasVisitTranscriptText) {
 			setError("Добавьте текст диктовки перед локальным разбором.");
 			return;
@@ -1024,9 +1073,9 @@ export function useVisitLogic({
 		setDraft(fallbackDraft);
 		setVisitNoteForm(visitNoteFormFromDraft(fallbackDraft));
 		scrollToVisitArea(".visit-note-panel");
-	}
+	}, []);
 
-	function openVisitWarningAction() {
+	const openVisitWarningAction = useCallback(() => {
 		if (!primaryVisitWarning) {
 			scrollToVisitArea(".close-checklist");
 			return;
@@ -1050,9 +1099,9 @@ export function useVisitLogic({
 			return;
 		}
 		window.location.hash = primaryVisitWarning.section;
-	}
+	}, []);
 
-	async function polishTranscript() {
+	const polishTranscript = useCallback(async () => {
 		if (!hasVisitTranscriptText) {
 			setError(
 				"Перед очисткой диктовки: добавьте текст диктовки или нажмите голосовую запись.",
@@ -1125,9 +1174,9 @@ export function useVisitLogic({
 		} finally {
 			setIsTranscriptPolishing(false);
 		}
-	}
+	}, []);
 
-	async function buildDraft() {
+	const buildDraft = useCallback(async () => {
 		if (!dashboard || !activePatient || !hasVisitTranscriptText) {
 			const missingSteps = [
 				!dashboard ? "дождитесь загрузки приема" : null,
@@ -1223,9 +1272,9 @@ export function useVisitLogic({
 		} finally {
 			setIsDraftLoading(false);
 		}
-	}
+	}, []);
 
-	async function acceptDraftToVisit() {
+	const acceptDraftToVisit = useCallback(async () => {
 		if (!dashboard?.activeVisit?.id) {
 			setError("Откройте или создайте прием перед сохранением ЭМК.");
 			return;
@@ -1310,9 +1359,9 @@ export function useVisitLogic({
 		} finally {
 			setIsDraftAccepting(false);
 		}
-	}
+	}, []);
 
-	function appendVisitDictationText(value: string) {
+	const appendVisitDictationText = useCallback((value: string) => {
 		const cleanValue = value.trim();
 		if (!cleanValue) return;
 		visitDraftUserEditedRef.current = true;
@@ -1325,9 +1374,9 @@ export function useVisitLogic({
 			),
 		);
 		setDraft(null);
-	}
+	}, []);
 
-	function clearTranscriptWithUndo() {
+	const clearTranscriptWithUndo = useCallback(() => {
 		const previousTranscript = transcript;
 		if (!previousTranscript.trim()) {
 			setSpeechStatusNote("Диктовка уже пустая. Нечего очищать.");
@@ -1339,9 +1388,9 @@ export function useVisitLogic({
 		setSpeechStatusNote(
 			"Диктовка очищена. Можно сразу вернуть текст кнопкой «Вернуть».",
 		);
-	}
+	}, []);
 
-	function undoTranscriptClear() {
+	const undoTranscriptClear = useCallback(() => {
 		if (!clearedTranscriptSnapshot) {
 			setSpeechStatusNote("Нет очищенной диктовки для восстановления.");
 			return;
@@ -1350,9 +1399,9 @@ export function useVisitLogic({
 		setTranscript(clearedTranscriptSnapshot);
 		setClearedTranscriptSnapshot(null);
 		setSpeechStatusNote("Диктовка восстановлена из локального черновика.");
-	}
+	}, []);
 
-	function startVisitDictation() {
+	const startVisitDictation = useCallback(() => {
 		if (isVisitDictating) {
 			setError("Дождитесь завершения текущей браузерной диктовки.");
 			return;
@@ -1398,9 +1447,9 @@ export function useVisitLogic({
 				"Браузер не смог запустить микрофон. Текст можно продолжить вручную.",
 			);
 		}
-	}
+	}, []);
 
-	function preferredSpeechMimeType(): string {
+	const preferredSpeechMimeType = useCallback((): string => {
 		const candidates = [
 			"audio/webm;codecs=opus",
 			"audio/webm",
@@ -1411,9 +1460,9 @@ export function useVisitLogic({
 			candidates?.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ??
 			""
 		);
-	}
+	}, []);
 
-	async function uploadSpeechBlob(blob: Blob) {
+	const uploadSpeechBlob = useCallback(async (blob: Blob) => {
 		// БЫЛО: обработчик recorder.ondataavailable назначается ОДИН раз при старте
 		// записи и навсегда захватывает значения того рендера. Из-за этого:
 		//  • isOnline оставался false до конца приёма — врач начинал диктовать
@@ -1503,15 +1552,15 @@ export function useVisitLogic({
 						}.`,
 			);
 		}
-	}
+	}, []);
 
-	function stopSpeechMonitor() {
+	const stopSpeechMonitor = useCallback(() => {
 		if (speechMonitorTimerRef.current !== null) {
 			window.clearInterval(speechMonitorTimerRef.current);
 			speechMonitorTimerRef.current = null;
 		}
 		speechAudioContextRef.current?.close().catch((err) => {
-			console.error("[Dente] audio context close error:", err);
+			logger.error("[Dente] audio context close error:", err);
 			showToast(
 				actionFailureToast(
 					"Ошибка завершения аудиосессии",
@@ -1522,122 +1571,131 @@ export function useVisitLogic({
 		});
 		speechAudioContextRef.current = null;
 		speechAnalyserRef.current = null;
-	}
+	}, []);
 
-	function requestSpeechChunk(reason: "silence" | "max_time" | "manual") {
-		const recorder = mediaRecorderRef.current;
-		if (recorder?.state !== "recording") return;
-		try {
-			const now = Date.now();
-			const durationMs = Math.max(
-				250,
-				Math.min(
-					now - speechSegmentStartedAtRef.current,
-					speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000,
-				),
-			);
-			speechPendingChunkDurationMsRef.current = durationMs;
-			recorder.requestData();
-			speechSegmentStartedAtRef.current = now;
-			speechLastSoundAtRef.current = now;
-			if (reason !== "manual") {
+	const requestSpeechChunk = useCallback(
+		(reason: "silence" | "max_time" | "manual") => {
+			const recorder = mediaRecorderRef.current;
+			if (recorder?.state !== "recording") return;
+			try {
+				const now = Date.now();
+				const durationMs = Math.max(
+					250,
+					Math.min(
+						now - speechSegmentStartedAtRef.current,
+						speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000,
+					),
+				);
+				speechPendingChunkDurationMsRef.current = durationMs;
+				recorder.requestData();
+				speechSegmentStartedAtRef.current = now;
+				speechLastSoundAtRef.current = now;
+				if (reason !== "manual") {
+					setSpeechStatusNote(
+						reason === "silence"
+							? "Фрагмент отправлен после паузы."
+							: "Фрагмент отправлен по лимиту времени.",
+					);
+				}
+			} catch {
 				setSpeechStatusNote(
-					reason === "silence"
-						? "Фрагмент отправлен после паузы."
-						: "Фрагмент отправлен по лимиту времени.",
+					"Браузер не отдал аудио-фрагмент, запись продолжается.",
 				);
 			}
-		} catch {
-			setSpeechStatusNote(
-				"Браузер не отдал аудио-фрагмент, запись продолжается.",
-			);
-		}
-	}
+		},
+		[],
+	);
 
-	function startSpeechMonitor(
-		stream: MediaStream,
-		recorder: MediaRecorder,
-		status: SpeechGatewayStatus | null,
-	) {
-		stopSpeechMonitor();
-		const audioWindow = window as BrowserWindowWithSpeech;
-		const AudioContextClass =
-			window.AudioContext ?? audioWindow.webkitAudioContext;
-		const providerLabel = status?.providerLabel ?? "Локальная запись";
-		const chunkingPolicy = status?.chunkingPolicy ?? {
-			strategy: "time_and_silence" as const,
-			minChunkMs: 10_000,
-			maxChunkMs: 25_000,
-			silenceMs: 900,
-			rmsThreshold: 0.015,
-			monitorIntervalMs: 250,
-			overlapMs: 500,
-			dedupeWindowChars: 600,
-		};
-		const recommendedChunkMs = status?.recommendedChunkMs ?? 15_000;
-		if (!AudioContextClass) {
-			recorder.start(recommendedChunkMs);
-			setSpeechStatusNote(
-				`${providerLabel}: запись идет по таймеру, Web Audio недоступен.`,
-			);
-			return;
-		}
-
-		try {
-			const audioContext = new AudioContextClass();
-			const source = audioContext.createMediaStreamSource(stream);
-			const analyser = audioContext.createAnalyser();
-			analyser.fftSize = 1024;
-			analyser.smoothingTimeConstant = 0.25;
-			source.connect(analyser);
-			speechAudioContextRef.current = audioContext;
-			speechAnalyserRef.current = analyser;
-			speechSegmentStartedAtRef.current = Date.now();
-			speechLastSoundAtRef.current = Date.now();
-			recorder.start(
-				Math.max(1000, Math.min(recommendedChunkMs, chunkingPolicy.maxChunkMs)),
-			);
-			const samples = new Uint8Array(analyser.fftSize);
-			speechMonitorTimerRef.current = window.setInterval(() => {
-				analyser.getByteTimeDomainData(samples);
-				let sumSquares = 0;
-				for (const sample of samples) {
-					const centered = (sample - 128) / 128;
-					sumSquares += centered * centered;
-				}
-				const rms = Math.sqrt(sumSquares / samples.length);
-				const now = Date.now();
-				const segmentAgeMs = now - speechSegmentStartedAtRef.current;
-				if (rms >= chunkingPolicy.rmsThreshold) {
-					speechLastSoundAtRef.current = now;
-				}
-				const silentForMs = now - speechLastSoundAtRef.current;
-				if (segmentAgeMs >= chunkingPolicy.maxChunkMs) {
-					requestSpeechChunk("max_time");
-					return;
-				}
-				if (
-					segmentAgeMs >= chunkingPolicy.minChunkMs &&
-					silentForMs >= chunkingPolicy.silenceMs
-				) {
-					requestSpeechChunk("silence");
-				}
-			}, chunkingPolicy.monitorIntervalMs);
-			setSpeechStatusNote(
-				`${providerLabel}: умные фрагменты ${Math.round(chunkingPolicy.minChunkMs / 1000)}-${Math.round(
-					chunkingPolicy.maxChunkMs / 1000,
-				)} сек., пауза ${chunkingPolicy.silenceMs} мс.`,
-			);
-		} catch {
+	const startSpeechMonitor = useCallback(
+		(
+			stream: MediaStream,
+			recorder: MediaRecorder,
+			status: SpeechGatewayStatus | null,
+		) => {
 			stopSpeechMonitor();
-			recorder.start(recommendedChunkMs);
-			setSpeechStatusNote(
-				`${providerLabel}: запись идет по таймеру, умное деление недоступно.`,
-			);
-		}
-	}
+			const audioWindow = window as BrowserWindowWithSpeech;
+			const AudioContextClass =
+				window.AudioContext ?? audioWindow.webkitAudioContext;
+			const providerLabel = status?.providerLabel ?? "Локальная запись";
+			const chunkingPolicy = status?.chunkingPolicy ?? {
+				strategy: "time_and_silence" as const,
+				minChunkMs: 10_000,
+				maxChunkMs: 25_000,
+				silenceMs: 900,
+				rmsThreshold: 0.015,
+				monitorIntervalMs: 250,
+				overlapMs: 500,
+				dedupeWindowChars: 600,
+			};
+			const recommendedChunkMs = status?.recommendedChunkMs ?? 15_000;
+			if (!AudioContextClass) {
+				recorder.start(recommendedChunkMs);
+				setSpeechStatusNote(
+					`${providerLabel}: запись идет по таймеру, Web Audio недоступен.`,
+				);
+				return;
+			}
 
-	function startImportDictation() {
+			try {
+				const audioContext = new AudioContextClass();
+				const source = audioContext.createMediaStreamSource(stream);
+				const analyser = audioContext.createAnalyser();
+				analyser.fftSize = 1024;
+				analyser.smoothingTimeConstant = 0.25;
+				source.connect(analyser);
+				speechAudioContextRef.current = audioContext;
+				speechAnalyserRef.current = analyser;
+				speechSegmentStartedAtRef.current = Date.now();
+				speechLastSoundAtRef.current = Date.now();
+				recorder.start(
+					Math.max(
+						1000,
+						Math.min(recommendedChunkMs, chunkingPolicy.maxChunkMs),
+					),
+				);
+				const samples = new Uint8Array(analyser.fftSize);
+				speechMonitorTimerRef.current = window.setInterval(() => {
+					analyser.getByteTimeDomainData(samples);
+					let sumSquares = 0;
+					for (const sample of samples) {
+						const centered = (sample - 128) / 128;
+						sumSquares += centered * centered;
+					}
+					const rms = Math.sqrt(sumSquares / samples.length);
+					const now = Date.now();
+					const segmentAgeMs = now - speechSegmentStartedAtRef.current;
+					if (rms >= chunkingPolicy.rmsThreshold) {
+						speechLastSoundAtRef.current = now;
+					}
+					const silentForMs = now - speechLastSoundAtRef.current;
+					if (segmentAgeMs >= chunkingPolicy.maxChunkMs) {
+						requestSpeechChunk("max_time");
+						return;
+					}
+					if (
+						segmentAgeMs >= chunkingPolicy.minChunkMs &&
+						silentForMs >= chunkingPolicy.silenceMs
+					) {
+						requestSpeechChunk("silence");
+					}
+				}, chunkingPolicy.monitorIntervalMs);
+				setSpeechStatusNote(
+					`${providerLabel}: умные фрагменты ${Math.round(chunkingPolicy.minChunkMs / 1000)}-${Math.round(
+						chunkingPolicy.maxChunkMs / 1000,
+					)} сек., пауза ${chunkingPolicy.silenceMs} мс.`,
+				);
+			} catch {
+				stopSpeechMonitor();
+				recorder.start(recommendedChunkMs);
+				setSpeechStatusNote(
+					`${providerLabel}: запись идет по таймеру, умное деление недоступно.`,
+				);
+			}
+		},
+		[],
+	);
+
+	const startImportDictation = useCallback(() => {
 		if (isImportDictating) {
 			setError("Дождитесь завершения текущей диктовки импорта.");
 			return;
@@ -1691,7 +1749,7 @@ export function useVisitLogic({
 				"Браузер не смог запустить микрофон для импорта. Вставьте список пациентов вручную или загрузите файл.",
 			);
 		}
-	}
+	}, []);
 
 	return {
 		...visitStore,

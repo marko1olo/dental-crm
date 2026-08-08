@@ -2,6 +2,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "../lib/panelStateText";
+import { logger } from "./logger";
 
 export type PdfReportType = "surgical" | "financial";
 
@@ -100,7 +101,7 @@ export const unifiedPdfGenerator = {
 						),
 						"error",
 					);
-					console.error(`Failed to capture ${view.id}`, e);
+					logger.error(`Failed to capture ${view.id}`, e);
 				}
 			}
 		}
@@ -197,7 +198,7 @@ export const unifiedPdfGenerator = {
 					),
 					"error",
 				);
-				console.error("Failed to capture odontogram", e);
+				logger.error("Failed to capture odontogram", e);
 			}
 		}
 

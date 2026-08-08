@@ -1,15 +1,7 @@
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function useCommunicationsQueries(options?: { auth?: any }) {
 	let auth = options?.auth;
-	if (!auth) {
-		try {
-			const ctx = useAppLogicContext();
-			auth = ctx.auth;
-		} catch {
-			// Called inside useAppLogic before provider
-		}
-	}
+
 
 	const getGatewayStatus = async () =>
 		fetch("/api/communications/gateway-status", {

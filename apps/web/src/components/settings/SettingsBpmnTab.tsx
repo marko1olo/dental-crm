@@ -5,6 +5,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast, panelStateText } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { logger } from "../../utils/logger";
 import {
 	type ClinicWorkflow,
 	normalizeClinicWorkflow,
@@ -46,7 +47,7 @@ export function SettingsBpmnTab() {
 			const outcome = parseWorkflowsPayload(res.status, raw);
 			if (!outcome.ok) {
 				// Код ответа нужен разработчику, а не администратору: в консоль.
-				console.error("[сценарии] список не прочитан, ответ", outcome.status);
+				logger.error("[сценарии] список не прочитан, ответ", outcome.status);
 				setLoadState({ phase: "failed", status: outcome.status });
 				return;
 			}
@@ -61,7 +62,7 @@ export function SettingsBpmnTab() {
 				"error",
 			);
 			// До сервера не дошли вовсе: status = null, текст об этом так и скажет.
-			console.error("[сценарии] запрос не дошёл до сервера", err);
+			logger.error("[сценарии] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });
 		}
 	}, [denteClinicalReadHeaders]);
@@ -106,7 +107,7 @@ export function SettingsBpmnTab() {
 					prev.map((w) => (w.id === wf.id ? { ...w, active: !wf.active } : w)),
 				);
 			} catch (err) {
-				console.error("[сценарии] переключение не дошло до сервера", err);
+				logger.error("[сценарии] переключение не дошло до сервера", err);
 				showToast(
 					actionFailureToast(`Сценарий «${wf.name}» не переключён`, null),
 					"error",
@@ -136,7 +137,7 @@ export function SettingsBpmnTab() {
 				setWorkflows((prev) => prev.filter((w) => w.id !== wf.id));
 				showToast(`Сценарий «${wf.name}» удалён`, "success");
 			} catch (err) {
-				console.error("[сценарии] удаление не дошло до сервера", err);
+				logger.error("[сценарии] удаление не дошло до сервера", err);
 				showToast(
 					actionFailureToast(`Сценарий «${wf.name}» не удалён`, null),
 					"error",
@@ -200,14 +201,14 @@ export function SettingsBpmnTab() {
 					showToast(`Сценарий «${created.name}» создан`, "success");
 					return;
 				}
-				console.error("[сценарии] сервер не вернул созданный сценарий");
+				logger.error("[сценарии] сервер не вернул созданный сценарий");
 				showToast(
 					"Сценарий создан, но сервер не показал его — перечитываем список.",
 					"success",
 				);
 				await fetchWorkflows();
 			} catch (err) {
-				console.error("[сценарии] создание не дошло до сервера", err);
+				logger.error("[сценарии] создание не дошло до сервера", err);
 				showToast(
 					actionFailureToast(`Сценарий «${newName.trim()}» не создан`, null),
 					"error",

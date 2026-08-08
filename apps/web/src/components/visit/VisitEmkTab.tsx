@@ -2,7 +2,6 @@ import { Check, Download, FileCode, ScanLine, ShieldCheck } from "lucide-react";
 import React from "react";
 import {
 	visitDraftMissingFieldLabel,
-	visitDraftQualityLabels,
 	visitDraftSignalLabel,
 	visitNoteFormFromVisit,
 	visitSaveReceiptText,
@@ -29,6 +28,8 @@ import {
 	peekNoteFormForeignVisit,
 	realVisitFieldId,
 } from "./visitIdentity";
+import { visitDraftQualityLabels } from "../../AppConstants";
+import { logger } from "../../utils/logger";
 
 /**
  * Дописывает текст к содержимому поля ЭМК так, как это сделал бы врач руками.
@@ -175,7 +176,7 @@ export function VisitEmkTab() {
 			const res = await fetch(`/api/egisz/visits/${visitId}/cda`, { headers });
 			if (!res.ok) {
 				const errJson = await res.json().catch((err: any) => {
-					console.error(err);
+					logger.error(err);
 					showToast(
 						actionFailureToast(
 							"Ошибка чтения ответа",
@@ -245,7 +246,7 @@ export function VisitEmkTab() {
 			});
 			if (!res.ok) {
 				const errData = await res.json().catch((err: any) => {
-					console.error(err);
+					logger.error(err);
 					showToast(
 						actionFailureToast(
 							"Ошибка чтения ответа",

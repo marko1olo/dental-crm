@@ -9,7 +9,7 @@ import {
 	User,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import {
@@ -20,6 +20,7 @@ import {
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { logger } from "../../utils/logger";
 
 /**
  * Тексты трёх состояний списка. Прежде состояний было два: «загружается» ничего
@@ -43,9 +44,15 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 
-	const getReadHeaders = () => (auth ? auth.denteClinicalReadHeaders() : {});
-	const getMutationHeaders = (extra?: Record<string, string>) =>
-		auth ? auth.denteClinicalMutationHeaders(extra) : { ...(extra || {}) };
+	const getReadHeaders = useCallback(
+		() => (auth ? auth.denteClinicalReadHeaders() : {}),
+		[auth],
+	);
+	const getMutationHeaders = useCallback(
+		(extra?: Record<string, string>) =>
+			auth ? auth.denteClinicalMutationHeaders(extra) : { ...(extra || {}) },
+		[auth],
+	);
 
 	const [newTitle, setNewTitle] = useState("");
 	const [newDescription, setNewDescription] = useState("");
@@ -67,10 +74,10 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	 * и чужой текст успел бы мигнуть на новой карточке. Тихо терять набранное
 	 * тоже нельзя — ниже об этом сообщается прямо в виджете.
 	 */
-	const [formPatientId, setFormPatientId] = useState(patientId);
 	const [draftDropped, setDraftDropped] = useState(false);
-	if (formPatientId !== patientId) {
-		setFormPatientId(patientId);
+	const [prevPatientId, setPrevPatientId] = useState(patientId);
+	if (patientId !== prevPatientId) {
+		setPrevPatientId(patientId);
 		const hadDraft = Boolean(
 			newTitle.trim() || newDescription.trim() || assignedToId,
 		);
@@ -138,7 +145,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				);
 			}
 		} catch (e) {
-			console.error("[PatientTaskTicketsWidget add]", e);
+			logger.error("[PatientTaskTicketsWidget add]", e);
 			showToast(
 				`${actionFailureToast("Задача не создана", null)} Введённый текст остался в форме.`,
 				"error",
@@ -179,7 +186,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 			}
 		} catch (e) {
 			// БЫЛО: молчаливый откат. Галочка возвращалась сама, без объяснения.
-			console.error("[PatientTaskTicketsWidget toggle]", e);
+			logger.error("[PatientTaskTicketsWidget toggle]", e);
 			showToast(
 				`${actionFailureToast("Отметка о выполнении не сохранена", null)} В списке возвращено прежнее значение.`,
 				"error",
@@ -210,9 +217,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				);
 			}
 		} catch (e) {
-			// БЫЛО: только console.error. Оператор подтвердил удаление, задача
+			// БЫЛО: только logger.error. Оператор подтвердил удаление, задача
 			// осталась на месте, и об этом не сообщалось.
-			console.error("[PatientTaskTicketsWidget delete]", e);
+			logger.error("[PatientTaskTicketsWidget delete]", e);
 			showToast(
 				`${actionFailureToast("Задача не удалена", null)} Она осталась в списке.`,
 				"error",

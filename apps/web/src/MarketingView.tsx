@@ -1,5 +1,6 @@
 import { showToast } from "./components/GlobalToast";
 import { actionFailureToast } from "./lib/panelStateText";
+import { logger } from "./utils/logger";
 import "./styles/marketing.css";
 import {
 	CheckCircle2,
@@ -79,7 +80,7 @@ export function MarketingView({
 				),
 				"error",
 			);
-			console.warn(
+			logger.warn(
 				"[Marketing] Failed to parse saved SEO keys from localStorage:",
 				e,
 			);
@@ -150,7 +151,7 @@ export function MarketingView({
 				),
 				"error",
 			);
-			console.warn(
+			logger.warn(
 				"[Marketing] Failed to parse saved stats from localStorage:",
 				e,
 			);
@@ -279,7 +280,7 @@ export function MarketingView({
 				setTimeout(() => setCopied(false), 2500);
 			})
 			.catch((copyFailure) => {
-				console.warn("[Маркетинг] Буфер обмена отказал:", copyFailure);
+				logger.warn("[Маркетинг] Буфер обмена отказал:", copyFailure);
 				setCopyError(
 					"Скопировать не получилось. Выделите текст ответа мышкой и скопируйте сами: Ctrl+C.",
 				);

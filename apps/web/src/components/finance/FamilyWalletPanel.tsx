@@ -29,6 +29,7 @@ import {
 	type MutationTicket,
 } from "./familyWalletMutationKey";
 import "./FamilyWalletPanel.css";
+import { logger } from "../../utils/logger";
 
 interface FamilyMember {
 	id: string;
@@ -265,7 +266,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	 * панель молча исчезала. Кассир не мог отличить «семейного счёта нет» от
 	 * «баланс не прочитан»: деньги на счёте были, а он брал всю сумму другим
 	 * способом. Ни текста, ни кнопки повтора при этом не было, а для отказа по
-	 * HTTP не вызывался даже console.error.
+	 * HTTP не вызывался даже logger.error.
 	 */
 	const loadFamily = useCallback(async () => {
 		const generation = requestGenerationRef.current + 1;
@@ -301,7 +302,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			if (isStale()) return;
 			// Текст исключения английский и наружу не идёт: пользователю сообщение
 			// собирает panelStateText по коду, здесь — «сервер не ответил».
-			console.error(
+			logger.error(
 				"[family wallet] не удалось прочитать семейный кошелёк:",
 				e,
 			);
@@ -513,7 +514,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 			if (!res.ok) {
 				const err = await res.json().catch((err) => {
-					console.error("[Dente]", err);
+					logger.error("[Dente]", err);
 					showToast(
 						actionFailureToast(
 							"Ответ сервера не прочитан",
@@ -546,7 +547,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			 * это и говорим словами: деньги ушли раньше, второй раз не ушли.
 			 */
 			const payResult = (await res.json().catch((err) => {
-				console.error("[Dente]", err);
+				logger.error("[Dente]", err);
 				showToast(
 					actionFailureToast(
 						"Ответ об оплате не прочитан",
@@ -579,7 +580,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// известно — ответ не получен, — и предложено повторить: повтор уходит с
 			// тем же ключом идемпотентности (payMutationIdRef не сбрасывается в этой
 			// ветке), поэтому второго списания не будет.
-			console.error("[family wallet] списание не получило ответа сервера:", e);
+			logger.error("[family wallet] списание не получило ответа сервера:", e);
 			showToast(
 				actionFailureToast(
 					"Ответ по списанию с семейного счёта не получен",
@@ -628,7 +629,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			});
 			if (!res.ok) {
 				const err = await res.json().catch((err) => {
-					console.error("[Dente]", err);
+					logger.error("[Dente]", err);
 					showToast(
 						actionFailureToast(
 							"Ответ сервера не прочитан",
@@ -656,7 +657,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// Сумма — через общий money(): своё toLocaleString печатало «1 500,5 ₽»
 			// вместо «1 500,50 ₽», а полтинник в такой записи читается как пять копеек.
 			const topupResult = (await res.json().catch((err) => {
-				console.error("[Dente]", err);
+				logger.error("[Dente]", err);
 				showToast(
 					actionFailureToast(
 						"Ответ о пополнении не прочитан",
@@ -680,7 +681,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// То же, что у списания: оборванный запрос не говорит, зачислены деньги
 			// или нет. Повтор безопасен по тому же ключу идемпотентности
 			// (topupMutationIdRef в этой ветке не сбрасывается).
-			console.error(
+			logger.error(
 				"[family wallet] пополнение не получило ответа сервера:",
 				e,
 			);

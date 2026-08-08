@@ -6,11 +6,12 @@ import { fileURLToPath } from "node:url";
 import type { Dashboard } from "@dental/shared";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { money, moneyUnknownLabel } from "../AppHelpers";
+import { money } from "../AppHelpers";
 import {
 	FinancePlanningOverview,
 	financeSummaryUnknownLabel,
 } from "../FinancePlanning";
+import { moneyUnknownLabel } from "../AppConstants";
 
 /**
  * НЕПОСЧИТАННЫЙ ФИНАНСОВЫЙ ИТОГ НЕ ИМЕЕТ ПРАВА ВЫГЛЯДЕТЬ КАК НУЛЕВОЙ ДОЛГ.

@@ -9,7 +9,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import {
@@ -20,6 +20,7 @@ import {
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { logger } from "../../utils/logger";
 
 /**
  * Что показывать вместо списка. Заведено здесь, а не в разметке, потому что
@@ -48,9 +49,15 @@ export function PatientReclamationsWidget({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 
-	const getReadHeaders = () => (auth ? auth.denteClinicalReadHeaders() : {});
-	const getMutationHeaders = (extra?: Record<string, string>) =>
-		auth ? auth.denteClinicalMutationHeaders(extra) : { ...(extra || {}) };
+	const getReadHeaders = useCallback(
+		() => (auth ? auth.denteClinicalReadHeaders() : {}),
+		[auth],
+	);
+	const getMutationHeaders = useCallback(
+		(extra?: Record<string, string>) =>
+			auth ? auth.denteClinicalMutationHeaders(extra) : { ...(extra || {}) },
+		[auth],
+	);
 
 	const [newComplicationDetails, setNewComplicationDetails] = useState("");
 	const [newProposedAction, setNewProposedAction] = useState("");
@@ -75,10 +82,10 @@ export function PatientReclamationsWidget({
 	 * Молча терять набранное тоже нельзя, поэтому ниже показывается строка о том,
 	 * что текст не перенесён и не сохранён.
 	 */
-	const [formPatientId, setFormPatientId] = useState(patientId);
 	const [draftDropped, setDraftDropped] = useState(false);
-	if (formPatientId !== patientId) {
-		setFormPatientId(patientId);
+	const [prevPatientId, setPrevPatientId] = useState(patientId);
+	if (patientId !== prevPatientId) {
+		setPrevPatientId(patientId);
 		const hadDraft = Boolean(
 			newComplicationDetails.trim() || newProposedAction.trim() || doctorId,
 		);
@@ -150,7 +157,7 @@ export function PatientReclamationsWidget({
 				);
 			}
 		} catch (e) {
-			console.error("[PatientReclamationsWidget add]", e);
+			logger.error("[PatientReclamationsWidget add]", e);
 			showToast(
 				`${actionFailureToast("Рекламация не зафиксирована", null)} Введённый текст остался в форме.`,
 				"error",
@@ -197,7 +204,7 @@ export function PatientReclamationsWidget({
 				);
 			}
 		} catch (e) {
-			console.error("[PatientReclamationsWidget toggle]", e);
+			logger.error("[PatientReclamationsWidget toggle]", e);
 			// БЫЛО: молчаливый откат. Оператор нажал «Урегулировано», строка
 			// вернулась в прежний вид, и почему — не сообщалось.
 			showToast(
@@ -235,9 +242,9 @@ export function PatientReclamationsWidget({
 				);
 			}
 		} catch (e) {
-			// БЫЛО: только console.error. Оператор подтвердил безвозвратное
+			// БЫЛО: только logger.error. Оператор подтвердил безвозвратное
 			// удаление, запись осталась на месте, и об этом ему не сказали.
-			console.error("[PatientReclamationsWidget delete]", e);
+			logger.error("[PatientReclamationsWidget delete]", e);
 			showToast(
 				`${actionFailureToast("Рекламация не удалена", null)} Запись осталась в карте.`,
 				"error",

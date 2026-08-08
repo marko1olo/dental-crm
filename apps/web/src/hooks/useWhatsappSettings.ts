@@ -1,4 +1,5 @@
 import { showToast } from "../components/GlobalToast";
+import { logger } from "../utils/logger";
 /**
  * Настройки WhatsApp Business: чтение с сервера, черновики полей и сохранение.
  *
@@ -6,7 +7,7 @@ import { showToast } from "../components/GlobalToast";
  *
  * 1. Провал чтения не выходил за пределы хука. `GET /api/whatsapp/settings`
  *    отвечает 401/403, когда у смены нет прав, и 500 при сбое базы; запрос может
- *    и вовсе не дойти до сервера. Всё это уходило только в console.error, а
+ *    и вовсе не дойти до сервера. Всё это уходило только в logger.error, а
  *    наружу хук отдавал `settings: null` и пустые черновики — ровно то же, что
  *    при честном 404 «канал ещё не настроен». Панель показывала пустые поля,
  *    выключенный тумблер и бейдж «Не подключён»: НЕПРОЧИТАННОЕ выглядело как
@@ -336,7 +337,7 @@ export function useWhatsappSettings() {
 			const outcome = parseWhatsappSettingsPayload(res.status, raw);
 			if (!outcome.ok) {
 				// Код состояния нужен разработчику, а не администратору: в консоль.
-				console.error(
+				logger.error(
 					"[настройки WhatsApp] не прочитаны, ответ",
 					outcome.status,
 				);
@@ -361,7 +362,7 @@ export function useWhatsappSettings() {
 				"error",
 			);
 			// До сервера не дошли вовсе: status = null, текст об этом так и скажет.
-			console.error("[настройки WhatsApp] запрос не дошёл до сервера", err);
+			logger.error("[настройки WhatsApp] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });
 		} finally {
 			setLoading(false);
@@ -379,7 +380,7 @@ export function useWhatsappSettings() {
 				return;
 			}
 			// Отказ проверки состояния — это НЕ «не подключён»: состояние неизвестно.
-			console.error("[состояние WhatsApp] не прочитано, ответ", res.status);
+			logger.error("[состояние WhatsApp] не прочитано, ответ", res.status);
 			setStatusUnknown(true);
 		} catch (err) {
 			showToast(
@@ -389,7 +390,7 @@ export function useWhatsappSettings() {
 				),
 				"error",
 			);
-			console.error("[состояние WhatsApp] запрос не дошёл до сервера", err);
+			logger.error("[состояние WhatsApp] запрос не дошёл до сервера", err);
 			setStatusUnknown(true);
 		}
 	}, []);
@@ -456,7 +457,7 @@ export function useWhatsappSettings() {
 				"error",
 			);
 			// Текст исключения наружу не идёт ни при каких условиях: он английский.
-			console.error("[настройки WhatsApp] сохранение не дошло до сервера", err);
+			logger.error("[настройки WhatsApp] сохранение не дошло до сервера", err);
 			setSaveError(actionFailureToast("Настройки WhatsApp не сохранены", null));
 			setSaveState("error");
 		}

@@ -1,17 +1,12 @@
 import type { Appointment } from "@dental/shared";
 import { create } from "zustand";
-import type {
-	AppointmentScheduleDraft,
-	AppointmentScheduleSaveState,
-	StaffScheduleDraft,
-	StaffScheduleSaveState,
-} from "../AppHelpers";
 import { emptyAppointmentScheduleDraft } from "../utils/draftDefaults";
 import {
 	defaultUiPreferences,
 	loadUiPreferences,
 } from "../utils/preferencesUtils";
 import { resolveUpdater } from "./updater";
+import { AppointmentScheduleDraft, AppointmentScheduleSaveState, StaffScheduleDraft, StaffScheduleSaveState } from "../AppConstants";
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 

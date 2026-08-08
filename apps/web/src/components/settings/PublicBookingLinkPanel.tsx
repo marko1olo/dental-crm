@@ -19,6 +19,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { buildPublicBookingPortalUrl } from "../../lib/publicPortalRoute";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 export const PublicBookingLinkPanel: React.FC = () => {
 	const { dashboard } = useAppLogicContext() as {
@@ -58,7 +59,7 @@ export const PublicBookingLinkPanel: React.FC = () => {
 			);
 			window.setTimeout(() => setCopied(false), 2500);
 		} catch (e) {
-			console.error("[public-booking-link] clipboard failed", e);
+			logger.error("[public-booking-link] clipboard failed", e);
 			showToast(
 				"Не удалось скопировать: браузер запретил доступ к буферу. Выделите ссылку вручную.",
 				"error",

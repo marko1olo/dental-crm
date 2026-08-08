@@ -20,6 +20,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 /*
  * Врач и кресло берутся из настроек клиники, а не из отдельного справочника:
@@ -348,7 +349,7 @@ export function LeadsKanbanView() {
 			updateLeadStatus(convertingLeadId, "consult_booked");
 			fetchLeads();
 		} catch (e) {
-			console.error(e);
+			logger.error(e);
 			showToast("Нет связи с сервером: запись не создана", "error");
 		} finally {
 			setIsBooking(false);

@@ -8,6 +8,7 @@ import {
 import { actionFailureToast, requestFailureCause } from "../lib/panelStateText";
 import { readDenteClinicToken } from "../lib/safeLocalStorage";
 import { showToast } from "./GlobalToast";
+import { logger } from "../utils/logger";
 
 interface Attachment {
 	id: string;
@@ -39,7 +40,7 @@ interface VisitDiaryPhotoUploadProps {
  * Список вложений дневника. Ровно одно из четырёх состояний чтения —
  * «пусто» и «не прочитано» не сливаются.
  *
- * БЫЛО: при !r.ok или сети then(null)/catch только console.error, attachments
+ * БЫЛО: при !r.ok или сети then(null)/catch только logger.error, attachments
  * оставался []. UI рисовал «Нажмите Прикрепить фото» / «Нет прикрепленных
  * фото» — как будто снимков нет, хотя они могли быть на сервере. Врач
  * считал, что фото не прикреплялись, и мог прикрепить повторно или не
@@ -118,7 +119,7 @@ export function VisitDiaryPhotoUpload({
 				);
 				status = response.status;
 				if (!response.ok) {
-					console.error(`[diary attachments] ${status} ${visitId}`);
+					logger.error(`[diary attachments] ${status} ${visitId}`);
 					if (!cancelled) setLoadState({ phase: "failed", status });
 					return;
 				}
@@ -142,7 +143,7 @@ export function VisitDiaryPhotoUpload({
 						: null;
 				if (!files) {
 					// 200 без files — испорченный ответ, не «снимков нет».
-					console.error(`[diary attachments] ${status}: тело без files`);
+					logger.error(`[diary attachments] ${status}: тело без files`);
 					setLoadState({ phase: "failed", status });
 					return;
 				}
@@ -163,7 +164,7 @@ export function VisitDiaryPhotoUpload({
 				if (error instanceof DOMException && error.name === "AbortError") {
 					return;
 				}
-				console.error("[diary attachments] запрос не выполнен", error);
+				logger.error("[diary attachments] запрос не выполнен", error);
 				setLoadState({ phase: "failed", status });
 			}
 		})();
@@ -364,7 +365,7 @@ export function VisitDiaryPhotoUpload({
 				 * БЫЛО: throw new Error("Upload failed") → «Ошибка загрузки:
 				 * Upload failed». Серверный message (RU) отбрасывался.
 				 */
-				console.error(
+				logger.error(
 					`[diary photo upload] ${res.status} ${rawBody.slice(0, 300)}`,
 				);
 				let serverMessage: string | null = null;
@@ -412,7 +413,7 @@ export function VisitDiaryPhotoUpload({
 				setLoadState({ phase: "ready" });
 				showToast("Фото сжато в WebP и загружено", "success");
 			} else {
-				console.error(
+				logger.error(
 					"[diary photo upload] 2xx без file",
 					rawBody.slice(0, 200),
 				);
@@ -425,7 +426,7 @@ export function VisitDiaryPhotoUpload({
 			}
 		} catch (err) {
 			// Сеть / выключенный API — без err.message латиницей.
-			console.error("[diary photo upload] запрос не выполнен", err);
+			logger.error("[diary photo upload] запрос не выполнен", err);
 			showToast(
 				`Снимок не загружен: ${requestFailureCause(null)}. Проверьте сеть и повторите.`,
 				"error",

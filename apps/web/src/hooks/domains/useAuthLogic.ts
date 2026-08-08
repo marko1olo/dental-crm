@@ -3,16 +3,24 @@ import {
 	denteAdminSecretRequestHeaders,
 	operatorWorkflowFailureMessage,
 } from "../../AppHelpers";
-import { showToast } from "../../components/GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../../components/GlobalToast";
+import { useCallback, useMemo, useRef } from "react";
 import { useAppStore } from "../../store/appStore";
 import { useSettingsStore } from "../../store/settingsStore";
 
+// biome-ignore lint/suspicious/noExplicitAny: expected any for loosely typed arguments
 export function useAuthLogic({
 	setError,
 	loadDashboard,
 	loadTelegramControlPlane,
 }: any) {
+	const setErrorRef = useRef(setError);
+	setErrorRef.current = setError;
+	const loadDashboardRef = useRef(loadDashboard);
+	loadDashboardRef.current = loadDashboard;
+	const loadTelegramControlPlaneRef = useRef(loadTelegramControlPlane);
+	loadTelegramControlPlaneRef.current = loadTelegramControlPlane;
 	const {
 		dashboard,
 		currentView,
@@ -43,7 +51,7 @@ export function useAuthLogic({
 		setTelegramAdminSecretSession,
 	} = useSettingsStore();
 
-	function rememberAdminSecret(
+	const rememberAdminSecret = useCallback(function rememberAdminSecret(
 		secret: string,
 		domain: AdminSecretUnlockDomain,
 	) {
@@ -57,9 +65,9 @@ export function useAuthLogic({
 			setScheduleAdminSecretSession(normalized);
 		if (domain === "all" || domain === "telegram")
 			setTelegramAdminSecretSession(normalized);
-	}
+	}, [setClinicalAdminSecretSession, setSettingsAdminSecretSession, setScheduleAdminSecretSession, setTelegramAdminSecretSession]);
 
-	function forgetAdminSecret(domain: AdminSecretUnlockDomain) {
+	const forgetAdminSecret = useCallback(function forgetAdminSecret(domain: AdminSecretUnlockDomain) {
 		if (domain === "all" || domain === "clinical")
 			setClinicalAdminSecretSession("");
 		if (domain === "all" || domain === "settings")
@@ -68,31 +76,31 @@ export function useAuthLogic({
 			setScheduleAdminSecretSession("");
 		if (domain === "all" || domain === "telegram")
 			setTelegramAdminSecretSession("");
-	}
+	}, [setClinicalAdminSecretSession, setSettingsAdminSecretSession, setScheduleAdminSecretSession, setTelegramAdminSecretSession]);
 
-	function currentAdminSecretUnlockDomain(): AdminSecretUnlockDomain {
+	const currentAdminSecretUnlockDomain = useCallback(function currentAdminSecretUnlockDomain(): AdminSecretUnlockDomain {
 		if (accessUnlockRequired || !dashboard) return "all";
 		if (currentView === "schedule") return "schedule";
 		if (currentView === "settings")
 			return settingsTab === "telegram" ? "telegram" : "settings";
 		if (onboardingStep === "telegram") return "telegram";
 		return "clinical";
-	}
+	}, [accessUnlockRequired, dashboard, currentView, settingsTab, onboardingStep]);
 
-	function resolvedAdminSecretUnlockDomain(
+	const resolvedAdminSecretUnlockDomain = useCallback(function resolvedAdminSecretUnlockDomain(
 		domainOverride?: AdminSecretUnlockDomain,
 	): AdminSecretUnlockDomain {
 		return domainOverride ?? currentAdminSecretUnlockDomain();
-	}
+	}, [currentAdminSecretUnlockDomain]);
 
-	function adminSecretDraftForDomain(domain: AdminSecretUnlockDomain): string {
+	const adminSecretDraftForDomain = useCallback(function adminSecretDraftForDomain(domain: AdminSecretUnlockDomain): string {
 		if (domain === "settings") return settingsAdminSecretDraft;
 		if (domain === "schedule") return scheduleAdminSecretDraft;
 		if (domain === "telegram") return telegramAdminSecretDraft;
 		return clinicalAdminSecretDraft;
-	}
+	}, [settingsAdminSecretDraft, scheduleAdminSecretDraft, telegramAdminSecretDraft, clinicalAdminSecretDraft]);
 
-	function clearAdminSecretDraft(domain: AdminSecretUnlockDomain) {
+	const clearAdminSecretDraft = useCallback(function clearAdminSecretDraft(domain: AdminSecretUnlockDomain) {
 		if (domain === "all" || domain === "clinical")
 			setClinicalAdminSecretDraft("");
 		if (domain === "all" || domain === "settings")
@@ -101,9 +109,9 @@ export function useAuthLogic({
 			setScheduleAdminSecretDraft("");
 		if (domain === "all" || domain === "telegram")
 			setTelegramAdminSecretDraft("");
-	}
+	}, [setClinicalAdminSecretDraft, setSettingsAdminSecretDraft, setScheduleAdminSecretDraft, setTelegramAdminSecretDraft]);
 
-	function settingsAccessHeaders(
+	const settingsAccessHeaders = useCallback(function settingsAccessHeaders(
 		extra: Record<string, string> = {},
 		adminSecretOverride?: string,
 	): Record<string, string> {
@@ -111,9 +119,9 @@ export function useAuthLogic({
 			extra,
 			adminSecretOverride ?? settingsAdminSecretSession,
 		);
-	}
+	}, [settingsAdminSecretSession]);
 
-	function scheduleMutationHeaders(
+	const scheduleMutationHeaders = useCallback(function scheduleMutationHeaders(
 		extra: Record<string, string> = {},
 		adminSecretOverride?: string,
 	): Record<string, string> {
@@ -121,9 +129,9 @@ export function useAuthLogic({
 			extra,
 			adminSecretOverride ?? scheduleAdminSecretSession,
 		);
-	}
+	}, [scheduleAdminSecretSession]);
 
-	function denteClinicalMutationHeaders(
+	const denteClinicalMutationHeaders = useCallback(function denteClinicalMutationHeaders(
 		extra: Record<string, string> = {},
 		adminSecretOverride?: string,
 	): Record<string, string> {
@@ -131,9 +139,9 @@ export function useAuthLogic({
 			extra,
 			adminSecretOverride ?? clinicalAdminSecretSession,
 		);
-	}
+	}, [clinicalAdminSecretSession]);
 
-	function denteClinicalReadHeaders(
+	const denteClinicalReadHeaders = useCallback(function denteClinicalReadHeaders(
 		extra: Record<string, string> = {},
 		adminSecretOverride?: string,
 	): Record<string, string> {
@@ -141,41 +149,41 @@ export function useAuthLogic({
 			extra,
 			adminSecretOverride ?? clinicalAdminSecretSession,
 		);
-	}
+	}, [clinicalAdminSecretSession]);
 
-	function revokeObjectUrlIfNeeded(url: string): void {
+	const revokeObjectUrlIfNeeded = useCallback(function revokeObjectUrlIfNeeded(url: string): void {
 		if (url.startsWith("blob:")) URL.revokeObjectURL(url);
-	}
+	}, []);
 
-	function revokeObjectUrlMap(urls: Record<string, string>): void {
+	const revokeObjectUrlMap = useCallback(function revokeObjectUrlMap(urls: Record<string, string>): void {
 		Object.values(urls).forEach(revokeObjectUrlIfNeeded);
-	}
+	}, [revokeObjectUrlIfNeeded]);
 
-	function unlockTelegramAdminSession(
+	const unlockTelegramAdminSession = useCallback((
 		domainOverride?: AdminSecretUnlockDomain,
-	) {
+	) => {
 		const domain = resolvedAdminSecretUnlockDomain(domainOverride);
 		const secret = adminSecretDraftForDomain(domain).trim();
 		if (!secret) {
-			setError(
+			setErrorRef.current(
 				"Введите секрет администратора клиники, если он включен в серверных настройках клиники.",
 			);
 			return;
 		}
 		rememberAdminSecret(secret, domain);
 		clearAdminSecretDraft(domain);
-		setError(null);
+		setErrorRef.current(null);
 		if (domain === "settings" || domain === "schedule") return;
 		if (domain === "telegram") {
-			void loadTelegramControlPlane({ adminSecret: secret });
+			void loadTelegramControlPlaneRef.current({ adminSecret: secret });
 			return;
 		}
 		setAccessUnlockRequired(false);
 		setAccessUnlockMessage("");
-		void loadDashboard({ adminSecret: secret })
+		void loadDashboardRef.current({ adminSecret: secret })
 			.then(() => {
 				if (domain === "all")
-					void loadTelegramControlPlane({ adminSecret: secret, silent: true });
+					void loadTelegramControlPlaneRef.current({ adminSecret: secret, silent: true });
 			})
 			.catch((loadError: unknown) => {
 				showToast(
@@ -186,23 +194,31 @@ export function useAuthLogic({
 					"error",
 				);
 				forgetAdminSecret(domain);
-				setError(
+				setErrorRef.current(
 					operatorWorkflowFailureMessage(
 						"Не удалось загрузить данные клиники",
 						loadError,
 					),
 				);
 			});
-	}
+	}, [
+		resolvedAdminSecretUnlockDomain,
+		adminSecretDraftForDomain,
+		rememberAdminSecret,
+		clearAdminSecretDraft,
+		setAccessUnlockRequired,
+		setAccessUnlockMessage,
+		forgetAdminSecret,
+	]);
 
-	function lockTelegramAdminSession(domainOverride?: AdminSecretUnlockDomain) {
+	const lockTelegramAdminSession = useCallback((domainOverride?: AdminSecretUnlockDomain) => {
 		const domain = resolvedAdminSecretUnlockDomain(domainOverride);
 		forgetAdminSecret(domain);
 		clearAdminSecretDraft(domain);
 		if (domain === "settings" || domain === "schedule" || domain === "telegram")
 			return;
 		setDashboard(null);
-		void loadDashboard().catch((loadError: unknown) => {
+		void loadDashboardRef.current().catch((loadError: unknown) => {
 			showToast(
 				actionFailureToast(
 					"Операция завершилась ошибкой",
@@ -210,14 +226,19 @@ export function useAuthLogic({
 				),
 				"error",
 			);
-			setError(
+			setErrorRef.current(
 				operatorWorkflowFailureMessage(
 					"Не удалось загрузить данные клиники",
 					loadError,
 				),
 			);
 		});
-	}
+	}, [
+		resolvedAdminSecretUnlockDomain,
+		forgetAdminSecret,
+		clearAdminSecretDraft,
+		setDashboard,
+	]);
 
 	const activeWorkspaceProfile =
 		dashboard?.clinicSettings?.workspaceProfiles?.find(
@@ -226,7 +247,7 @@ export function useAuthLogic({
 	const settingsAdminSecretDomain: AdminSecretUnlockDomain =
 		settingsTab === "telegram" ? "telegram" : "settings";
 
-	return {
+	return useMemo(() => ({
 		activeWorkspaceProfile,
 		settingsAdminSecretDomain,
 		rememberAdminSecret,
@@ -243,5 +264,22 @@ export function useAuthLogic({
 		lockTelegramAdminSession,
 		revokeObjectUrlIfNeeded,
 		revokeObjectUrlMap,
-	};
+	}), [
+		activeWorkspaceProfile,
+		settingsAdminSecretDomain,
+		rememberAdminSecret,
+		forgetAdminSecret,
+		currentAdminSecretUnlockDomain,
+		resolvedAdminSecretUnlockDomain,
+		adminSecretDraftForDomain,
+		clearAdminSecretDraft,
+		settingsAccessHeaders,
+		scheduleMutationHeaders,
+		denteClinicalMutationHeaders,
+		denteClinicalReadHeaders,
+		unlockTelegramAdminSession,
+		lockTelegramAdminSession,
+		revokeObjectUrlIfNeeded,
+		revokeObjectUrlMap,
+	]);
 }

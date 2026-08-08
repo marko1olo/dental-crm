@@ -21,19 +21,15 @@ import {
 	type VoidDocumentInput, dentalMedicalCard043uPayloadSchema, outpatientMedicalCard025uPayloadSchema } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
-	type ClinicProfileDraft,
 	currentLocalDateTimeInputValue,
 	dateInputValuePlusDays,
 	documentPayloadDraftKey,
 	emptyMedicalRecordExtractDocumentDraftFields,
 	emptyOutpatient025uDocumentDraftFields,
-	installmentPaymentStatusAliases,
 	loadDocumentPaymentSelection,
 	loadMedicalRecordExtractDocumentDraft,
 	loadOutpatient025uDocumentDraft,
-	type MedicalRecordExtractDocumentDraftFields,
 	normalizeTaxApplicationRelationship,
-	type Outpatient025uDocumentDraftFields,
 	patientName,
 	requestFailureMessage,
 	responseErrorMessage,
@@ -42,8 +38,7 @@ import {
 	saveMedicalRecordExtractDocumentDraft,
 	saveOutpatient025uDocumentDraft,
 	toDateInputValue,
-	toDateTimeLocalValue,
-	type VisitNoteForm,
+	toDateTimeLocalValue
 } from "../../AppHelpers";
 import {
 	telegramCareRequestTaskCareTopics,
@@ -75,6 +70,7 @@ import {
 	taxPaymentSelectionDocumentKinds,
 } from "../../workspaceUiLabels";
 import { ZodError } from "zod";
+import { ClinicProfileDraft, installmentPaymentStatusAliases, MedicalRecordExtractDocumentDraftFields, Outpatient025uDocumentDraftFields, VisitNoteForm } from "../../AppConstants";
 
 export interface DocumentWorkflowModuleProps {
 	dashboard: Dashboard | null;
@@ -2928,9 +2924,9 @@ export function useDocumentWorkflowModule({
 
 	function outpatient025uLicenseValue(): string | null {
 		const value = compactDocumentText(
-			clinicProfileDraft.medicalLicenseNumber,
-			clinicProfileDraft.medicalLicenseIssuedAt,
-			clinicProfileDraft.medicalLicenseIssuer,
+			clinicProfileDraft?.medicalLicenseNumber,
+			clinicProfileDraft?.medicalLicenseIssuedAt,
+			clinicProfileDraft?.medicalLicenseIssuer,
 		);
 		return value || null;
 	}
@@ -3044,8 +3040,8 @@ export function useDocumentWorkflowModule({
 					: null;
 		const birthDate = toDateInputValue(documentPatient?.birthDate) || null;
 		const orgFullName =
-			clinicProfileDraft.legalName?.trim() ||
-			clinicProfileDraft.clinicName?.trim() ||
+			clinicProfileDraft?.legalName?.trim() ||
+			clinicProfileDraft?.clinicName?.trim() ||
 			"Стоматологическая клиника";
 		const identityDocument = patientProfile?.identityDocument?.trim() || null;
 
@@ -3053,16 +3049,16 @@ export function useDocumentWorkflowModule({
 			formNumber: "043/у",
 			organization: {
 				fullName: orgFullName,
-				shortName: clinicProfileDraft.clinicName?.trim() || null,
-				address: clinicProfileDraft.address?.trim() || null,
-				phone: clinicProfileDraft.phone?.trim() || null,
-				ogrn: clinicProfileDraft.ogrn?.trim() || null,
-				inn: clinicProfileDraft.inn?.trim() || null,
-				licenseNumber: clinicProfileDraft.medicalLicenseNumber?.trim() || null,
+				shortName: clinicProfileDraft?.clinicName?.trim() || null,
+				address: clinicProfileDraft?.address?.trim() || null,
+				phone: clinicProfileDraft?.phone?.trim() || null,
+				ogrn: clinicProfileDraft?.ogrn?.trim() || null,
+				inn: clinicProfileDraft?.inn?.trim() || null,
+				licenseNumber: clinicProfileDraft?.medicalLicenseNumber?.trim() || null,
 				licenseIssueDate:
-					clinicProfileDraft.medicalLicenseIssuedAt?.trim() || null,
+					clinicProfileDraft?.medicalLicenseIssuedAt?.trim() || null,
 				licenseAuthority:
-					clinicProfileDraft.medicalLicenseIssuer?.trim() || null,
+					clinicProfileDraft?.medicalLicenseIssuer?.trim() || null,
 			},
 			patient: {
 				fullName: documentPatient?.fullName?.trim() || "—",
@@ -3118,10 +3114,10 @@ export function useDocumentWorkflowModule({
 			formNumber: "025/у",
 			sourceOrderReference: "Приказ Минздрава России от 13.05.2025 N 274н",
 			medicalOrganizationName:
-				clinicProfileDraft.legalName.trim() ||
-				clinicProfileDraft.clinicName.trim(),
-			medicalOrganizationAddress: clinicProfileDraft.address.trim() || null,
-			medicalOrganizationOgrnOrOgrnip: clinicProfileDraft.ogrn.trim() || null,
+				clinicProfileDraft?.legalName?.trim() ||
+				clinicProfileDraft?.clinicName?.trim() || "",
+			medicalOrganizationAddress: clinicProfileDraft?.address?.trim() || null,
+			medicalOrganizationOgrnOrOgrnip: clinicProfileDraft?.ogrn?.trim() || null,
 			medicalOrganizationLicense: outpatient025uLicenseValue(),
 			medicalCardNumber: outpatient025uMedicalCardNumberValue(),
 			openedAt: outpatient025uOpenedAt.trim(),
@@ -3174,7 +3170,7 @@ export function useDocumentWorkflowModule({
 				{
 					sourceVisitId: sourceVisitIds[0] ?? "",
 					visitDate,
-					location: clinicProfileDraft.clinicName.trim() || null,
+					location: clinicProfileDraft?.clinicName?.trim() || null,
 					doctorFullName: doctor.fullName,
 					doctorPosition: doctor.position,
 					doctorSpecialty: doctor.specialty,
@@ -3614,7 +3610,7 @@ export function useDocumentWorkflowModule({
 		}
 	}
 
-	const _inn = clinicProfileDraft.inn?.trim() || "";
+	const _inn = clinicProfileDraft?.inn?.trim() || "";
 	const _insuranceContractId =
 		(documentPatient as any)?.insuranceContractId ||
 		(documentPatient as any)?.administrativeProfile?.insuranceContractId ||

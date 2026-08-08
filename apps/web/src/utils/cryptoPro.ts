@@ -1,5 +1,6 @@
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "../lib/panelStateText";
+import { logger } from "./logger";
 
 /**
  * Utility module to interface with CryptoPro Browser Plug-in (cadesplugin)
@@ -48,7 +49,7 @@ export async function checkCryptoProPlugin(): Promise<boolean> {
 			),
 			"error",
 		);
-		console.warn("CryptoPro plugin check failed:", e);
+		logger.warn("CryptoPro plugin check failed:", e);
 		return false;
 	}
 }
@@ -112,14 +113,14 @@ export async function getPersonalCertificates(): Promise<
 					),
 					"error",
 				);
-				console.warn(`Failed to parse certificate index ${i}:`, certError);
+				logger.warn(`Failed to parse certificate index ${i}:`, certError);
 			}
 		}
 
 		await oStore.Close();
 		return certs;
 	} catch (error: any) {
-		console.error("Failed to read CryptoPro certificates store:", error);
+		logger.error("Failed to read CryptoPro certificates store:", error);
 		throw new Error(
 			`Ошибка при чтении хранилища сертификатов: ${error.message || error}`,
 		);
@@ -191,7 +192,7 @@ export async function signBase64WithCertificate(
 		await oStore.Close();
 		return pkcs7Signature;
 	} catch (error: any) {
-		console.error("CryptoPro signing error:", error);
+		logger.error("CryptoPro signing error:", error);
 		throw new Error(`Ошибка подписания документа: ${error.message || error}`);
 	}
 }

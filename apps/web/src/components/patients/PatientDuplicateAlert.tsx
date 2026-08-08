@@ -103,9 +103,9 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({
 	 * Заодно уходит сообщение вида «Объединено: перенесено 3 приёма», которое
 	 * висело на карточке уже другого пациента как отчёт о его слиянии.
 	 */
-	const [shownPatientId, setShownPatientId] = useState(patientId);
-	if (shownPatientId !== patientId) {
-		setShownPatientId(patientId);
+	const [prevPatientId, setPrevPatientId] = useState(patientId);
+	if (patientId !== prevPatientId) {
+		setPrevPatientId(patientId);
 		setCandidates([]);
 		setNotice(null);
 		setConfirmKey(null);

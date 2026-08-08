@@ -167,10 +167,8 @@ function formatMoment(value: string | null): string {
 			});
 }
 
-import { useCommunicationsQueries } from "../../hooks/domains/useCommunicationsQueries";
-
 export function CampaignPanel() {
-	const commQueries = useCommunicationsQueries();
+	const commQueries = useAppLogicContext();
 	/*
 	 * ПОЧЕМУ ЗДЕСЬ ЗАГОЛОВКИ, А НЕ ГОЛЫЙ fetch. БЫЛО СЛОМАНО НАСМЕРТЬ, но только у
 	 * заказчика. Все адреса этой панели закрыты охраной `apps/api/src/accessGuard.ts`

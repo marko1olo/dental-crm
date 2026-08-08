@@ -41,6 +41,7 @@ import { showToast } from "../GlobalToast";
 
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { parseStaffMutationPayload } from "./settingsInviteRoles";
+import { logger } from "../../utils/logger";
 
 /**
  * Сборщик заголовков домена настроек — `auth.settingsAccessHeaders` из
@@ -102,7 +103,7 @@ export function staffMutationHeaders(
 ): Record<string, string> {
 	const extra = { "Content-Type": "application/json" };
 	if (typeof accessHeaders === "function") return accessHeaders(extra);
-	console.error(
+	logger.error(
 		"[персонал] сборщик заголовков домена настроек не пришёл во вкладку: секрет " +
 			"администратора настроек не будет отправлен, и установка с заданным " +
 			"DENTE_SETTINGS_ADMIN_SECRET ответит 403 на любое изменение сотрудника",
@@ -144,7 +145,7 @@ export async function requestStaffMutation(
 			"error",
 		);
 		// Текст исключения наружу не идёт: он английский («Failed to fetch»).
-		console.error(
+		logger.error(
 			`[персонал] ${request.logLabel}: запрос не дошёл до сервера`,
 			error,
 		);
@@ -162,7 +163,7 @@ export async function requestStaffMutation(
 			),
 			"error",
 		);
-		console.error(
+		logger.error(
 			`[персонал] ${request.logLabel}: тело ответа не дочитано`,
 			error,
 		);
@@ -170,7 +171,7 @@ export async function requestStaffMutation(
 
 	const outcome = parseStaffMutationPayload(response.status, rawBody);
 	if (outcome.ok) return { ok: true };
-	console.error(
+	logger.error(
 		`[персонал] ${request.logLabel}: сервер ответил ${outcome.status}`,
 	);
 	return { ok: false, status: outcome.status, message: outcome.message };
@@ -201,7 +202,7 @@ export async function reloadStaffList(
 			),
 			"error",
 		);
-		console.error(
+		logger.error(
 			"[персонал] список сотрудников не перечитан после изменения",
 			error,
 		);

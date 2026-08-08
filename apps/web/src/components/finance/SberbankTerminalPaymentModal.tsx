@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { logger } from "../../utils/logger";
 
 export type SberbankTerminalPaymentModalProps = {
 	isOpen: boolean;
@@ -153,7 +154,7 @@ export function SberbankTerminalPaymentModal({
 					),
 					"error",
 				);
-				console.error("Polling error", err);
+				logger.error("Polling error", err);
 				setStatus("error");
 				setErrorMsg("Ошибка связи с терминалом");
 				clearInterval(interval);
@@ -161,7 +162,7 @@ export function SberbankTerminalPaymentModal({
 		}, 3000);
 
 		return () => clearInterval(interval);
-	}, [status, orderId, onSuccess, onClose]);
+	}, [status, orderId, onSuccess, onClose, auth]);
 
 	const handleClose = () => {
 		if (

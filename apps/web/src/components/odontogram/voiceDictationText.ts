@@ -1,15 +1,16 @@
+import { logger } from "../../utils/logger";
 /**
  * Что человек читает в окне диктовки, когда распознавание речи не работает.
  *
  * ЧТО БЫЛО СЛОМАНО. Обработчик ошибки распознавания делал только
- * `console.error("Speech recognition error", event.error); setIsListening(false)`.
+ * `logger.error("Speech recognition error", event.error); setIsListening(false)`.
  * На экране это выглядело так: окно диктовки открыто, полоски замерли, слов нет,
  * кнопок нет — и ни одного объяснения. Самая частая причина здесь
  * «not-allowed», то есть браузер не дал доступ к микрофону: пока врач не
  * разрешит его в браузере, диктовка не заработает никогда, а окно об этом
  * молчало.
  *
- * Код ошибки английский и человеку не показывается: он остаётся в console.error.
+ * Код ошибки английский и человеку не показывается: он остаётся в logger.error.
  * Коды взяты из живого перечня SpeechRecognitionErrorEvent.error.
  */
 export function voiceDictationErrorText(code: unknown): string {

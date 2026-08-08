@@ -28,6 +28,7 @@ import {
 	requestFailureCause,
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 type AttachmentFile = {
 	id: string;
@@ -105,7 +106,7 @@ export const PatientAttachmentsPanel: React.FC<
 			);
 			const raw = await res.text();
 			if (!res.ok) {
-				console.error(
+				logger.error(
 					`[patient-attachments] GET ${res.status} ${raw.slice(0, 300)}`,
 				);
 				const json = jsonObjectOrNull(raw);
@@ -130,7 +131,7 @@ export const PatientAttachmentsPanel: React.FC<
 				),
 				"error",
 			);
-			console.error("[patient-attachments] list failed", e);
+			logger.error("[patient-attachments] list failed", e);
 			setError(`Список вложений не загружен: ${requestFailureCause(null)}.`);
 			setFiles([]);
 		} finally {
@@ -172,7 +173,7 @@ export const PatientAttachmentsPanel: React.FC<
 				const detail = operatorReadableErrorDetail(serverMsg || null);
 
 				if (!res.ok) {
-					console.error(
+					logger.error(
 						`[patient-attachments] POST ${res.status} ${raw.slice(0, 300)}`,
 					);
 					const msg =
@@ -223,7 +224,7 @@ export const PatientAttachmentsPanel: React.FC<
 				}
 				showToast(`Файл «${file.name}» загружен в карточку.`, "success", 8000);
 			} catch (err) {
-				console.error("[patient-attachments] upload failed", err);
+				logger.error("[patient-attachments] upload failed", err);
 				const msg = `Файл не загружен: ${requestFailureCause(null)}.`;
 				setError(msg);
 				showToast(msg, "error", 12000);
@@ -250,7 +251,7 @@ export const PatientAttachmentsPanel: React.FC<
 			window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
 			showToast(`Скачивание: ${att.name}`, "success", 5000);
 		} catch (err) {
-			console.error("[patient-attachments] download failed", err);
+			logger.error("[patient-attachments] download failed", err);
 			const errText =
 				err instanceof Error ? err.message : typeof err === "string" ? err : "";
 			const msg = errText.includes(AUTHED_API_FILE_FAILURE)

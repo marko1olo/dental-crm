@@ -2,6 +2,7 @@ import type { UrgentScheduleRequest } from "@dental/shared";
 import { useEffect, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 export function UrgentScheduleRequestsWidget() {
 	const [requests, setRequests] = useState<UrgentScheduleRequest[]>([]);
@@ -36,7 +37,7 @@ export function UrgentScheduleRequestsWidget() {
 				setLoading(false);
 			})
 			.catch((err) => {
-				console.error("Failed to fetch urgent requests", err);
+				logger.error("Failed to fetch urgent requests", err);
 				showToast(
 					actionFailureToast(
 						"Не удалось загрузить срочные обращения",
@@ -68,7 +69,7 @@ export function UrgentScheduleRequestsWidget() {
 				),
 				"error",
 			);
-			console.error("Failed to resolve urgent request", err);
+			logger.error("Failed to resolve urgent request", err);
 		}
 	};
 

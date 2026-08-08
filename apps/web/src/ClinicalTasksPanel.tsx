@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
+import { logger } from "./utils/logger";
 
 type ClinicalTaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
 
@@ -181,7 +182,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				return;
 			}
 			const payload = (await response.json().catch((err) => {
-				console.error("[Dente]", err);
+				logger.error("[Dente]", err);
 				showToast(
 					actionFailureToast(
 						"Ответ со списком задач не прочитан",
@@ -211,7 +212,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 
 			if (customTypesResponse?.ok) {
 				const customData = await customTypesResponse.json().catch((err) => {
-					console.error("[Dente]", err);
+					logger.error("[Dente]", err);
 					showToast(
 						actionFailureToast(
 							"Типы задач не прочитаны",
@@ -270,7 +271,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				return;
 			}
 			const payload = (await response.json().catch((err) => {
-				console.error("[Dente]", err);
+				logger.error("[Dente]", err);
 				showToast(
 					actionFailureToast(
 						"Ответ о фиксации этапа не прочитан",

@@ -6,7 +6,6 @@ import type {
 } from "@dental/shared";
 import { useRef } from "react";
 import {
-	type AppointmentScheduleDraft,
 	appointmentCreateInputFromDraft,
 	appointmentScheduleDraftFromAppointment,
 	appointmentScheduleDraftSignature,
@@ -17,7 +16,6 @@ import {
 	normalizeWorkingDaysDraft,
 	operatorWorkflowFailureMessage,
 	responseErrorMessage,
-	type StaffScheduleDraft,
 	staffScheduleDraftSignature,
 	staffWorkingHoursFromDraft,
 } from "../../AppHelpers";
@@ -26,6 +24,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
+import { AppointmentScheduleDraft, StaffScheduleDraft } from "../../AppConstants";
 
 /**
  * Сервер отказал в изменении расписания и требует секрет администратора.

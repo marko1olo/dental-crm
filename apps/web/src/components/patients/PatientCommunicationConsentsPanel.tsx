@@ -21,6 +21,7 @@ import {
 	requestFailureCause,
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 const CHANNELS = [
 	{ value: "sms", label: "SMS" },
@@ -141,7 +142,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			const raw = await res.text();
 			const json = jsonObjectOrNull(raw);
 			if (!res.ok) {
-				console.error(`[comm-consents] GET ${res.status} ${raw.slice(0, 300)}`);
+				logger.error(`[comm-consents] GET ${res.status} ${raw.slice(0, 300)}`);
 				const detail = operatorReadableErrorDetail(
 					typeof json?.message === "string" ? json.message : null,
 				);
@@ -203,7 +204,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 				),
 				"error",
 			);
-			console.error("[comm-consents] load failed", e);
+			logger.error("[comm-consents] load failed", e);
 			const msg = `Согласия не загружены: ${requestFailureCause(null)}.`;
 			setError(msg);
 			setLoaded(false);
@@ -292,7 +293,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			const raw = await res.text();
 			const json = jsonObjectOrNull(raw);
 			if (!res.ok) {
-				console.error(`[comm-consents] PUT ${res.status} ${raw.slice(0, 300)}`);
+				logger.error(`[comm-consents] PUT ${res.status} ${raw.slice(0, 300)}`);
 				const detail = operatorReadableErrorDetail(
 					typeof json?.message === "string" ? json.message : null,
 				);
@@ -315,7 +316,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			// Reload to pick server decidedAt / canonical state
 			void load();
 		} catch (e) {
-			console.error("[comm-consents] save failed", e);
+			logger.error("[comm-consents] save failed", e);
 			const msg = `Согласия не сохранены: ${requestFailureCause(null)}.`;
 			setError(msg);
 			showToast(msg, "error", 12000);

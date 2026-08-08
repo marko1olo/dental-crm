@@ -10,6 +10,7 @@ import {
 	signDataWithRutoken,
 } from "../utils/rutoken";
 import { actionFailureToast } from "./panelStateText";
+import { logger } from "../utils/logger";
 
 export interface CertificateInfo {
 	thumbprint: string; // For rutoken, this will be the cert id
@@ -38,7 +39,7 @@ export class DigitalSignatureService {
 
 	constructor() {
 		this.ready = this.init().catch((error) => {
-			console.error("[DigitalSignature] Ошибка инициализации:", error);
+			logger.error("[DigitalSignature] Ошибка инициализации:", error);
 		});
 	}
 
@@ -47,7 +48,7 @@ export class DigitalSignatureService {
 		try {
 			this.isCryptoProAvailable = await checkCryptoProPlugin();
 			if (!this.isCryptoProAvailable) {
-				console.warn("[CryptoPro] Plugin not found or not working.");
+				logger.warn("[CryptoPro] Plugin not found or not working.");
 			}
 		} catch (_e) {
 			showToast(
@@ -64,7 +65,7 @@ export class DigitalSignatureService {
 		try {
 			this.isRutokenAvailable = await checkRutokenPlugin();
 			if (!this.isRutokenAvailable) {
-				console.warn("[Rutoken] Plugin not found or not working.");
+				logger.warn("[Rutoken] Plugin not found or not working.");
 			}
 		} catch (_e) {
 			showToast(
@@ -105,7 +106,7 @@ export class DigitalSignatureService {
 					),
 					"error",
 				);
-				console.error("Failed to fetch CryptoPro certificates:", error);
+				logger.error("Failed to fetch CryptoPro certificates:", error);
 			}
 		}
 
@@ -132,7 +133,7 @@ export class DigitalSignatureService {
 					),
 					"error",
 				);
-				console.error("Failed to fetch Rutoken certificates:", error);
+				logger.error("Failed to fetch Rutoken certificates:", error);
 			}
 		}
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 import {
 	type AuthArtItem,
 	getCurrentTimeSlot,
@@ -32,7 +33,7 @@ export function AuthArtBackground() {
 					),
 					"error",
 				);
-				console.error(
+				logger.error(
 					"Failed to parse auth art settings from local storage",
 					e,
 				);
@@ -57,7 +58,7 @@ export function AuthArtBackground() {
 				}
 				setManifest(data);
 			})
-			.catch((e) => console.error("Failed to load auth art manifest", e));
+			.catch((e) => logger.error("Failed to load auth art manifest", e));
 	}, []);
 
 	useEffect(() => {

@@ -13,6 +13,7 @@ import {
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 interface ClinicLoginProps {
 	onLoginSuccess: (clinicProfile: any) => void;
@@ -48,7 +49,7 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
 			showToast("Вход в рабочее пространство выполнен", "success");
 			onLoginSuccess(data.clinicProfile);
 		} catch (err: any) {
-			console.error(err);
+			logger.error(err);
 			showToast(err.message || "Неверный логин или пароль клиники", "error");
 		} finally {
 			setLoading(false);

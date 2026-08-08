@@ -8,6 +8,7 @@ import {
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { logger } from "../../utils/logger";
 import {
 	type ToothHistoryEvent,
 	toothHistoryAuthorLabel,
@@ -84,7 +85,7 @@ export function ToothHistoryChronicle({
 				if (!res.ok) {
 					// БЫЛО: `if (res.ok)` без ветки else — 403, 404 и 500 молча
 					// оставляли пустой список, и панель печатала «История пуста».
-					console.error(`[tooth history] ${status} ${rawBody.slice(0, 300)}`);
+					logger.error(`[tooth history] ${status} ${rawBody.slice(0, 300)}`);
 					if (active) setLoad({ phase: "failed", status });
 					return;
 				}
@@ -92,7 +93,7 @@ export function ToothHistoryChronicle({
 				if (!active) return;
 				if (parsed === null) {
 					// Успешный код и не тот ответ — это тоже непрочитанная история.
-					console.error(`[tooth history] ${status}: ответ не по контракту`);
+					logger.error(`[tooth history] ${status}: ответ не по контракту`);
 					setLoad({ phase: "failed", status });
 					return;
 				}
@@ -106,7 +107,7 @@ export function ToothHistoryChronicle({
 					),
 					"error",
 				);
-				console.error("[tooth history] запрос не выполнен", e);
+				logger.error("[tooth history] запрос не выполнен", e);
 				// До сервера не дошли: кода ответа нет, и придумывать его нельзя.
 				if (active) setLoad({ phase: "failed", status });
 			}

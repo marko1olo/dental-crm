@@ -25,6 +25,7 @@ import {
 	requestFailureCause,
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { logger } from "../../utils/logger";
 
 function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
 	const t = raw.trim();
@@ -80,7 +81,7 @@ export const PatientWhatsappSendPanel: React.FC<
 			const detail = operatorReadableErrorDetail(serverMsg || null);
 
 			if (!res.ok) {
-				console.error(
+				logger.error(
 					`[whatsapp-send] POST ${res.status} ${raw.slice(0, 300)}`,
 				);
 				const msg =
@@ -115,7 +116,7 @@ export const PatientWhatsappSendPanel: React.FC<
 			setMessage("");
 			showToast(okText, "success", 8000);
 		} catch (e) {
-			console.error("[whatsapp-send] request failed", e);
+			logger.error("[whatsapp-send] request failed", e);
 			const msg = `Сообщение в WhatsApp не отправлено: ${requestFailureCause(null)}.`;
 			setError(msg);
 			showToast(msg, "error", 12000);

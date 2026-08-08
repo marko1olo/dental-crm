@@ -15,6 +15,7 @@ import {
 } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { logger } from "../../utils/logger";
 
 export type PatientFamilyCardProps = {
 	patientId: string | null;
@@ -67,7 +68,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	const [searchLoading, setSearchLoading] = useState(false);
 	/*
 	 * БЫЛО: отказ поиска нигде не хранился. Ветка `if (res.ok)` без `else` и
-	 * `catch` с одним console.error оставляли searchResults пустым, а разметка
+	 * `catch` с одним logger.error оставляли searchResults пустым, а разметка
 	 * печатала «Семьи не найдены» — то есть упавший запрос выдавался за
 	 * достоверный ответ «такой семьи нет». Администратор по этому экрану создавал
 	 * ВТОРУЮ семью с тем же названием, и общий счёт родственников расходился на
@@ -104,7 +105,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						),
 						"error",
 					);
-					console.error("Family search failed", e);
+					logger.error("Family search failed", e);
 					setSearchResults([]);
 					setSearchFailed(true);
 				} finally {
@@ -136,9 +137,9 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	 * Сброс в фазе рендера, а не в useEffect: эффект срабатывает после отрисовки,
 	 * и чужое название семьи успело бы мигнуть на новой карточке.
 	 */
-	const [formPatientId, setFormPatientId] = useState(patientId);
-	if (formPatientId !== patientId) {
-		setFormPatientId(patientId);
+	const [prevPatientId, setPrevPatientId] = useState(patientId);
+	if (patientId !== prevPatientId) {
+		setPrevPatientId(patientId);
 		setIsCreating(false);
 		setIsLinking(false);
 		setNewFamilyName("");
@@ -170,7 +171,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			);
 			if (!res.ok) return null;
 			const data = await res.json().catch((err) => {
-				console.error("[Dente]", err);
+				logger.error("[Dente]", err);
 				showToast(
 					actionFailureToast(
 						"Семья пациента не прочитана",
@@ -211,7 +212,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			});
 			if (!res.ok) {
 				const body = await res.json().catch((err) => {
-					console.error("[Dente]", err);
+					logger.error("[Dente]", err);
 					showToast(
 						actionFailureToast(
 							"Ответ сервера не прочитан",
@@ -289,7 +290,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			});
 			if (!linkRes.ok) {
 				const body = await linkRes.json().catch((err) => {
-					console.error("[Dente]", err);
+					logger.error("[Dente]", err);
 					showToast(
 						actionFailureToast(
 							"Ответ сервера не прочитан",
@@ -358,7 +359,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			});
 			if (!res.ok) {
 				const body = await res.json().catch((err) => {
-					console.error("[Dente]", err);
+					logger.error("[Dente]", err);
 					showToast(
 						actionFailureToast(
 							"Ответ сервера не прочитан",
