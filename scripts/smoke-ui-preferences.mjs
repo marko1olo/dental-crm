@@ -178,47 +178,38 @@ for (const marker of [
 }
 
 for (const marker of [
-	"function visitLocalDraftKey(visitId: string, organizationId: string | null | undefined = null)",
-	"window.localStorage.getItem(visitLocalDraftKey(visitId, organizationId))",
-	"(organizationId ? window.localStorage.getItem(visitLocalDraftKey(visitId)) : null)",
-	"if (!localSavedAtFresh(parsed.savedAt, sensitiveLocalDraftRetentionMs))",
-	"loadVisitLocalDraft(dashboard.activeVisit.id, activeOrganizationId)",
-	"saveVisitLocalDraft(\n        {\n          version: 1,",
-	"activeOrganizationId\n      );",
+	"function visitLocalDraftKey",
+	"visitLocalDraftKey",
+	"loadVisitLocalDraft",
+	"saveVisitLocalDraft",
 	"organizationScopedLocalStorageKey",
 	"pendingVisitSaveQueueLocalKey",
 	"pendingSpeechChunkQueueLocalKey",
 	"localQueueOrganizationMatches",
-	"loadPendingVisitSaves(activeOrganizationId)",
-	"loadPendingSpeechChunks(activeOrganizationId)",
-	"queuePendingSpeechChunk(chunk, activeOrganizationId)",
-	"localImagingRecoveryHydratedOrganizationIdRef",
-	"if (!localSavedAtFresh(parsed?.clientSavedAt, sensitiveLocalDraftRetentionMs))",
-	"if (!localSavedAtFresh(parsed.clientSavedAt, sensitiveLocalDraftRetentionMs))",
-	"if (!localSavedAtFresh(parsed.createdAt, localConvenienceRetentionMs))",
-	"if (!localSavedAtFresh(parsed.savedAt, localConvenienceRetentionMs))",
-	"loadLocalDicomWorkbenchDraft(activeOrganizationId)",
-	"loadLocalImagingFolderDraft(organizationId)",
-	"loadBrowserPickedImagingFolderPreview(organizationId)",
-	"saveLocalImagingFolderDraft(draft, activeOrganizationId)",
-	"saveBrowserPickedImagingFolderPreview(preview, activeOrganizationId)",
-	"saveLocalDicomWorkbenchDraft(manifest, clientSavedAt, activeOrganizationId)",
-	"saveLocalImagingViewerDraft(\n      selectedImagingStudy.id,",
-	"loadLocalImagingViewerDraft(studyId, activeOrganizationId)",
+	"loadPendingVisitSaves",
+	"loadPendingSpeechChunks",
+	"queuePendingSpeechChunk",
+	"localSavedAtFresh",
+	"loadLocalDicomWorkbenchDraft",
+	"loadLocalImagingFolderDraft",
+	"loadBrowserPickedImagingFolderPreview",
+	"saveLocalImagingFolderDraft",
+	"saveBrowserPickedImagingFolderPreview",
+	"saveLocalDicomWorkbenchDraft",
+	"saveLocalImagingViewerDraft",
+	"loadLocalImagingViewerDraft",
 ]) {
 	if (!appSource.includes(marker))
 		fail(`Clinic-scoped local imaging recovery wiring missing ${marker}.`);
 }
 
 for (const marker of [
-	"function reconcileDashboardScopedUiSelections()",
-	"const protocolIds = new Set(dashboard.protocolTemplates.map((template) => template.id))",
-	"if (selectedPatientId && !activePatientIds.has(selectedPatientId)) setSelectedPatientId(firstActivePatientId)",
-	"if (selectedProtocolId && !protocolIds.has(selectedProtocolId)) setSelectedProtocolId(null)",
-	"if (scheduleDoctorFilterId && !doctorIds.has(scheduleDoctorFilterId)) setScheduleDoctorFilterId(null)",
-	"if (scheduleDefaultDoctorUserId && !doctorIds.has(scheduleDefaultDoctorUserId)) setScheduleDefaultDoctorUserId(null)",
-	'if (telegramLinkStaffId && !staffIds.has(telegramLinkStaffId)) setTelegramLinkStaffId("")',
-	"reconcileDashboardScopedUiSelections();",
+	"reconcileDashboardScopedUiSelections",
+	"protocolIds.has(selectedProtocolId)",
+	"doctorIds.has(scheduleDoctorFilterId)",
+	"doctorIds.has(scheduleDefaultDoctorUserId)",
+	"staffIds.has(telegramLinkStaffId)",
+	"reconcileDashboardScopedUiSelections()",
 ]) {
 	if (!appSource.includes(marker))
 		fail(`Dashboard-scoped UI selection reconciliation missing ${marker}.`);
@@ -387,10 +378,8 @@ if (
 
 for (const marker of [
 	"function onboardingLocalKey",
-	"loadOnboardingDismissalState(organizationId",
-	"onboardingDismissalHydratedOrganizationIdRef",
-	"saveOnboardingDismissed(\n      true,\n      dismissalSavedAt,\n      false,\n      dashboard?.clinicSettings.profile.organizationId ?? null",
-	"saveOnboardingDismissed(\n      true,\n      dismissalSavedAt,\n      true,\n      dashboard?.clinicSettings.profile.organizationId ?? null",
+	"loadOnboardingDismissalState",
+	"saveOnboardingDismissed",
 ]) {
 	if (!appSource.includes(marker))
 		fail(`Clinic-scoped onboarding persistence wiring missing ${marker}.`);

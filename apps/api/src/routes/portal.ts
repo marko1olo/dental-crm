@@ -604,7 +604,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 					await db
 						.update(portalOtpCodes)
 						.set({ deliveryStatus: "sent" })
-						.where(eq(portalOtpCodes.id, issuedId));
+						.where(
+							and(
+								eq(portalOtpCodes.id, issuedId),
+								eq(portalOtpCodes.organizationId, patient.organizationId),
+							),
+						);
 				});
 				reply.status(202);
 				return neutralAccepted;
@@ -670,7 +675,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 							deliveryStatus: "failed",
 							deliveryErrorClass: delivery.errorClass,
 						})
-						.where(eq(portalOtpCodes.id, issuedId));
+						.where(
+							and(
+								eq(portalOtpCodes.id, issuedId),
+								eq(portalOtpCodes.organizationId, patient.organizationId),
+							),
+						);
 				});
 				request.log.error(
 					{ patientId: patient.id, errorClass: delivery.errorClass },
@@ -699,7 +709,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 				await db
 					.update(portalOtpCodes)
 					.set({ deliveryStatus: "sent" })
-					.where(eq(portalOtpCodes.id, issuedId));
+					.where(
+						and(
+							eq(portalOtpCodes.id, issuedId),
+							eq(portalOtpCodes.organizationId, patient.organizationId),
+						),
+					);
 			});
 			reply.status(202);
 			return neutralAccepted;
@@ -800,7 +815,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 					const counted = await db
 						.update(portalOtpCodes)
 						.set({ attemptCount: sql`${portalOtpCodes.attemptCount} + 1` })
-						.where(eq(portalOtpCodes.id, found.id))
+						.where(
+							and(
+								eq(portalOtpCodes.id, found.id),
+								eq(portalOtpCodes.organizationId, patient.organizationId),
+							),
+						)
 						.returning({ attemptCount: portalOtpCodes.attemptCount });
 					const attemptNumber =
 						counted[0]?.attemptCount ?? policy.maxAttempts + 1;
@@ -814,6 +834,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 							.where(
 								and(
 									eq(portalOtpCodes.id, found.id),
+									eq(portalOtpCodes.organizationId, patient.organizationId),
 									isNull(portalOtpCodes.consumedAt),
 								),
 							);
@@ -856,6 +877,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 					.where(
 						and(
 							eq(portalOtpCodes.id, candidate.id),
+							eq(portalOtpCodes.organizationId, patient.organizationId),
 							isNull(portalOtpCodes.consumedAt),
 						),
 					)
