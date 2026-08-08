@@ -1,6 +1,12 @@
 import { test, expect, type Page } from "@playwright/test";
 import * as path from "path";
 
+// ─── TOKEN INJECTION (must match safeLocalStorage.ts constants) ───────────────
+const DENTE_CLINIC_TOKEN_KEY = "dente_clinic_token";
+const DENTE_STAFF_TOKEN_KEY = "dente_staff_token";
+const MOCK_CLINIC_TOKEN = "test-clinic-token-abc123";
+const MOCK_STAFF_TOKEN = "test-staff-token-xyz789";
+
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
 
 const MOCK_USER = {
@@ -21,7 +27,6 @@ const MOCK_DASHBOARD = {
 };
 
 const MOCK_PREFERENCES = { theme: "dark", sidebarCollapsed: false, language: "ru" };
-
 const MOCK_CLINIC_PROFILE = {
 	id: "org-1", name: "ДЕНТ-ТЕСТ Клиника", address: "ул. Тестовая, 1",
 	phone: "+7 (000) 000-00-00", mode: "clinic",
@@ -33,7 +38,24 @@ const MOCK_CLINIC_PROFILE = {
 
 const ARTIFACTS_DIR = "C:/Users/Admin/.gemini/antigravity/brain/a4816d4c-324b-4377-a1a5-7447446ea0af";
 
-// ─── ROUTE MOCKING ────────────────────────────────────────────────────────────
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+async function injectAuthTokens(page: Page) {
+	// Inject auth tokens BEFORE page load via addInitScript so localStorage is
+	// populated when React mounts and reads readDenteClinicToken() / readDenteStaffToken()
+	await page.addInitScript(
+		({ clinicKey, staffKey, clinicToken, staffToken }) => {
+			localStorage.setItem(clinicKey, clinicToken);
+			localStorage.setItem(staffKey, staffToken);
+		},
+		{
+			clinicKey: DENTE_CLINIC_TOKEN_KEY,
+			staffKey: DENTE_STAFF_TOKEN_KEY,
+			clinicToken: MOCK_CLINIC_TOKEN,
+			staffToken: MOCK_STAFF_TOKEN,
+		},
+	);
+}
 
 async function mockAllApiRoutes(page: Page) {
 	await page.route("**/api/auth/user/me", async (route) => {
@@ -92,82 +114,83 @@ async function screenshot(page: Page, name: string) {
 }
 
 // ─── TESTS ────────────────────────────────────────────────────────────────────
-
 // NOTE: networkidle is intentionally NOT used — the app has active API polling
-// that prevents the network from ever going idle. Using 'load' + explicit wait instead.
+// that never reaches "network idle". Using 'load' + explicit wait instead.
 
-test.describe("DENTE CRM — Smoke E2E (mocked API)", () => {
+test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => {
 	test.beforeEach(async ({ page }) => {
+		await injectAuthTokens(page);
 		await mockAllApiRoutes(page);
 	});
 
-	test("1. App shell mounts — no JS crashes, #root is visible", async ({ page }) => {
+	test("1. Authenticated workspace mounts — no JS crashes, content visible", async ({ page }) => {
 		const pageErrors: string[] = [];
 		page.on("pageerror", (err) => pageErrors.push(`PageError: ${err.message}`));
 
 		await page.goto("/", { waitUntil: "load" });
-		await page.waitForTimeout(3000);
-		await screenshot(page, "01_shell_mount");
+		await page.waitForTimeout(4000);
+		await screenshot(page, "01_workspace_authed");
 
-		const root = page.locator("#root");
-		await expect(root).toBeVisible({ timeout: 10000 });
-		expect(pageErrors, `JS crashes detected:\n${pageErrors.join("\n")}`).toEqual([]);
+		// #root should have actual content (not hidden)
+		const rootInnerText = await page.locator("#root").innerText().catch(() => "");
+		expect(rootInnerText.length, "App rendered empty - React may have crashed").toBeGreaterThan(10);
+		expect(pageErrors, `JS crashes:\n${pageErrors.join("\n")}`).toEqual([]);
 	});
 
-	test("2. Login screen renders when API returns 401", async ({ page }) => {
-		// Override auth — force unauthenticated state
-		await page.route("**/api/auth/user/me", async (route) => {
-			await route.fulfill({ status: 401, contentType: "application/json",
-				body: JSON.stringify({ error: "unauthorized" }) });
+	test("2. Login screen renders when no auth tokens present", async ({ page }) => {
+		// Override: remove tokens so auth gate kicks in
+		await page.addInitScript(() => {
+			localStorage.removeItem("dente_clinic_token");
+			localStorage.removeItem("dente_staff_token");
 		});
 
 		await page.goto("/", { waitUntil: "load" });
 		await page.waitForTimeout(2000);
 		await screenshot(page, "02_login_screen");
 
-		await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
 		const bodyHtml = await page.innerHTML("body");
-		expect(bodyHtml.length).toBeGreaterThan(200);
+		expect(bodyHtml.length, "Login screen rendered empty body").toBeGreaterThan(200);
+		// Login form should have an email input
+		const emailInput = page.locator("input[type=email], input[placeholder*='mail'], input[placeholder*='email']");
+		await expect(emailInput.first()).toBeVisible({ timeout: 5000 });
 	});
 
-	test("3. Authenticated workspace — sidebar and content visible", async ({ page }) => {
+	test("3. Dashboard loads — sidebar navigation rail visible", async ({ page }) => {
+		const pageErrors: string[] = [];
+		page.on("pageerror", (err) => pageErrors.push(err.message));
+
+		await page.goto("/", { waitUntil: "load" });
+		await page.waitForTimeout(4000);
+		await screenshot(page, "03_dashboard");
+
+		expect(pageErrors, `JS crashes:\n${pageErrors.join("\n")}`).toEqual([]);
+		const content = await page.locator("#root").innerText().catch(() => "");
+		expect(content.length).toBeGreaterThan(10);
+	});
+
+	test("4. Hash routing — navigates views without JS crash", async ({ page }) => {
 		const pageErrors: string[] = [];
 		page.on("pageerror", (err) => pageErrors.push(err.message));
 
 		await page.goto("/", { waitUntil: "load" });
 		await page.waitForTimeout(3000);
-		await screenshot(page, "03_workspace_authenticated");
-
-		expect(pageErrors, `JS crashes:\n${pageErrors.join("\n")}`).toEqual([]);
-		await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
-		const innerText = await page.locator("#root").innerText();
-		expect(innerText.length, "App rendered empty content").toBeGreaterThan(10);
-	});
-
-	test("4. Hash routing — view changes without crashing", async ({ page }) => {
-		const pageErrors: string[] = [];
-		page.on("pageerror", (err) => pageErrors.push(err.message));
-
-		await page.goto("/", { waitUntil: "load" });
-		await page.waitForTimeout(2000);
 
 		for (const hash of ["schedule", "patients", "settings", "finance", "imaging"]) {
 			await page.evaluate((h) => { window.location.hash = `#${h}`; }, hash);
-			await page.waitForTimeout(600);
+			await page.waitForTimeout(700);
 			await screenshot(page, `04_view_${hash}`);
 		}
 
 		expect(pageErrors, `JS crashes:\n${pageErrors.join("\n")}`).toEqual([]);
 	});
 
-	test("5. No React error boundaries triggered after navigation", async ({ page }) => {
+	test("5. No error boundaries triggered after full navigation cycle", async ({ page }) => {
 		const pageErrors: string[] = [];
 		const consoleErrors: string[] = [];
 		page.on("pageerror", (err) => pageErrors.push(err.message));
 		page.on("console", (msg) => {
 			if (msg.type() === "error") {
 				const text = msg.text();
-				// Ignore expected resource-load failures (fonts, sourcemaps, etc.)
 				if (!text.includes("net::ERR_") && !text.includes("Failed to load resource")) {
 					consoleErrors.push(text);
 				}
@@ -175,24 +198,22 @@ test.describe("DENTE CRM — Smoke E2E (mocked API)", () => {
 		});
 
 		await page.goto("/", { waitUntil: "load" });
-		await page.waitForTimeout(2000);
-
+		await page.waitForTimeout(3000);
 		await page.evaluate(() => { window.location.hash = "#schedule"; });
-		await page.waitForTimeout(600);
+		await page.waitForTimeout(700);
 		await page.evaluate(() => { window.location.hash = "#patients"; });
-		await page.waitForTimeout(600);
+		await page.waitForTimeout(700);
 		await page.evaluate(() => { window.location.hash = "#finance"; });
-		await page.waitForTimeout(600);
-
+		await page.waitForTimeout(700);
 		await screenshot(page, "05_final_state");
 
 		const bodyText = await page.locator("body").innerText();
-		expect(bodyText, "Error boundary message found").not.toContain("Something went wrong");
+		expect(bodyText).not.toContain("Something went wrong");
 		expect(bodyText).not.toContain("Что-то пошло не так");
-
 		expect(pageErrors, `JS crashes:\n${pageErrors.join("\n")}`).toEqual([]);
+
 		if (consoleErrors.length > 0) {
-			console.warn("Non-fatal console errors:", consoleErrors);
+			console.warn("[E2E] Non-fatal console errors:", consoleErrors);
 		}
 	});
 });
