@@ -1,2 +1,0 @@
-START: guards.ts read; adding non-throwing moneyRubText beside moneyRubEquals, routing the eleven kopecksToNumericString(parseKopecks(x)) rejection-message sites through it. No comparison touched.
-DONE 185f181ac: moneyRubText + moneyKopecksText (fallback "?.??", delegate to @dental/shared), all 11 sites routed, 10 new tests + 37 existing guards tests green under node --import tsx --test. Comparisons untouched. Typecheck is the lead's.

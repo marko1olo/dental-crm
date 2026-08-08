@@ -1,2 +1,0 @@
-LL4-egisz-status-only-postgres-validates: start — egisz_logs.status is text, enum exists only in Postgres; adding egiszStatusSchema contract + pgEnum declaration.
-LL4: committed — egiszStatusSchema (shared) + pgEnum("egisz_status_enum") on egisz_logs.status; no migration, DDL untouched. Contract REJECTS "sent"/"accepted", ACCEPTS "Sent"/"Pending"/"Error"/"Accepted". enumContractDrift is 4/5 until the lead runs `npm run build -w @dental/shared` — the api imports dist, and the failing assertion is stale dist, not drift.

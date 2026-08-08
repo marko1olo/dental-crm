@@ -1,2 +1,0 @@
-START: GG1 rework of FF4 — reproducing 4 reviewer findings in apps/api/src/pricelist/analyzer.ts (descending '/' pair collapses to higher price, title-strip at :501 deletes non-price numbers, currency-on-both-bounds range still broken).
-DONE: all 4 reproduced then fixed; one price scanner now feeds both price and title. Commit 1 f98692df5 (analyzer.ts), commit 2 pins 12 new tests in pricelistKopecks.test.ts. node --import tsx --test: 33/33 pass exit 0; analyzer.test.ts 6/6 exit 0; groqPricelistKopecks.test.ts 13/13 exit 0.
