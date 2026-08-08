@@ -2227,11 +2227,39 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 	app.post("/api/diaries/sync-progress", async (req, reply) => {
 		if (!(await requireClinicalMutationAccess(req, reply, "sync progress")))
 			return;
+			
+		const { patientId } = req.body as { patientId?: string };
+		const orgId = await resolveOrganizationId(req);
+		if (orgId && patientId) {
+			const { treatmentPlans, patients } = await import("../db/schema.js");
+			await db.select()
+				.from(treatmentPlans)
+				.innerJoin(patients, eq(treatmentPlans.patientId, patients.id))
+				.where(and(eq(treatmentPlans.patientId, patientId), eq(patients.organizationId, orgId)));
+		}
+		
 		return reply.send({ success: true });
 	});
 
 	app.put("/api/treatment-plans/:planId/signature", async (req, reply) => {
 		if (!(await requireClinicalMutationAccess(req, reply, "sign plan"))) return;
+		
+		const { planId } = req.params as { planId: string };
+		const { patientSignature } = req.body as { patientSignature: string };
+		const orgId = await resolveOrganizationId(req);
+		if (!orgId) return reply.code(403).send({error: "OrgRequired"});
+		
+		const { treatmentPlans, patients } = await import("../db/schema.js");
+		const [plan] = await db.select().from(treatmentPlans).where(eq(treatmentPlans.id, planId));
+		if (!plan) return reply.code(404).send({error: "Not found"});
+		
+		const [patient] = await db.select().from(patients).where(eq(patients.id, plan.patientId));
+		if (!patient || patient.organizationId !== orgId) return reply.code(403).send({error: "Forbidden"});
+
+		await db.update(treatmentPlans)
+			.set({ patientSignature, updatedAt: new Date() })
+			.where(eq(treatmentPlans.id, planId));
+			
 		return reply.send({ success: true });
 	});
 }
