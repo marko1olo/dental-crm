@@ -52,12 +52,9 @@ async function runBenchmark() {
 
 	await delay(50);
 
-	const syncStart = performance.now();
 	readPersistedPayloadSync(testFilePath);
-	const syncEnd = performance.now();
 
 	clearInterval(syncInterval);
-	console.log(`Sync Read total time: ${(syncEnd - syncStart).toFixed(2)}ms`);
 	console.log(
 		`Max event loop block during sync read (timer delay): ${maxBlockSync.toFixed(2)}ms`,
 	);
@@ -75,12 +72,9 @@ async function runBenchmark() {
 
 	await delay(50);
 
-	const asyncStart = performance.now();
 	await readPersistedPayloadAsync(testFilePath);
-	const asyncEnd = performance.now();
 
 	clearInterval(asyncInterval);
-	console.log(`Async Read total time: ${(asyncEnd - asyncStart).toFixed(2)}ms`);
 	console.log(
 		`Max event loop block during async read (timer delay): ${maxBlockAsync.toFixed(2)}ms`,
 	);
