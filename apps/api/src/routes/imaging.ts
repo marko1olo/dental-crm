@@ -121,6 +121,7 @@ import { analyzeVisiographImage } from "../ai/visiograph.js";
 import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
 import {
 	createImagingStudyInDb,
+	createImagingStudiesInDb,
 	getAllImagingStudies,
 	getImagingStudiesForPatient,
 	getImagingStudyById,
@@ -9522,31 +9523,30 @@ export async function commitImagingImport(
 		(row) =>
 			row.status === "ready" && row.patientId && row.kind && row.filePath,
 	);
-	const createdStudyIds = await Promise.all(
-		readyRows.map(async (row) => {
-			const study = await createImagingStudyInDb(orgId, {
-				patientId: row.patientId!,
-				kind: row.kind!,
-				title: row.title ?? kindLabels[row.kind!],
-				toothCode: row.toothCode,
-				region: row.region,
-				sourceKind: row.sourceKind,
-				sourceName: row.sourceName,
-				storagePath: row.filePath,
-				capturedAt: row.capturedAt ?? undefined,
-				/*
-				 * Здесь в aiSummary записывалось «Импортировано из …. Требует проверки
-				 * снимка и привязки к ЭМК». Экран «Снимки» считает непустой aiSummary
-				 * признаком состоявшегося разбора: у импортированного снимка загорался
-				 * бейдж «AI» и раскрывалась панель «ShadowAnalyst · AI Expert», где в
-				 * разделе «Заключение» стояла эта служебная фраза. Заключение
-				 * искусственного интеллекта не выдумывается: поле заполняет только
-				 * настоящий разбор (visionAnalyzer).
-				 */
-			});
-			return study.id;
-		}),
+	const createdStudies = await createImagingStudiesInDb(
+		orgId,
+		readyRows.map((row) => ({
+			patientId: row.patientId!,
+			kind: row.kind!,
+			title: row.title ?? kindLabels[row.kind!],
+			toothCode: row.toothCode,
+			region: row.region,
+			sourceKind: row.sourceKind,
+			sourceName: row.sourceName,
+			storagePath: row.filePath,
+			capturedAt: row.capturedAt ?? undefined,
+			/*
+			 * Здесь в aiSummary записывалось «Импортировано из …. Требует проверки
+			 * снимка и привязки к ЭМК». Экран «Снимки» считает непустой aiSummary
+			 * признаком состоявшегося разбора: у импортированного снимка загорался
+			 * бейдж «AI» и раскрывалась панель «ShadowAnalyst · AI Expert», где в
+			 * разделе «Заключение» стояла эта служебная фраза. Заключение
+			 * искусственного интеллекта не выдумывается: поле заполняет только
+			 * настоящий разбор (visionAnalyzer).
+			 */
+		})),
 	);
+	const createdStudyIds = createdStudies.map((s) => s.id);
 
 	return imagingImportCommitResponseSchema.parse({
 		sourceName: input.sourceName,
