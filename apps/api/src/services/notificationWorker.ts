@@ -125,6 +125,21 @@ export async function processNotificationQueue() {
 				messageText,
 			);
 
+			console.log(
+				`\n${colors.gray}--- [OUTGOING MESSAGE GATEWAY] ---${colors.reset}`,
+			);
+			console.log(
+				`${colors.neonBlue}TO PATIENT:${colors.reset} ${notif.patientId}`,
+			);
+			console.log(`${colors.neonGreen}TYPE:${colors.reset} ${notif.type}`);
+			console.log(`${colors.neonGreen}MESSAGE:${colors.reset} ${messageText}`);
+			console.log(
+				`${colors.neonGreen}STATUS:${colors.reset} ${deliveryStatus} ${failureReason ? `(${failureReason})` : ""}`,
+			);
+			console.log(
+				`${colors.gray}----------------------------------${colors.reset}\n`,
+			);
+
 			await db
 				.update(outgoingNotifications)
 				.set({
