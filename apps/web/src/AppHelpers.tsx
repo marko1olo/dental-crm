@@ -6275,4 +6275,35 @@ export { calendarDayInTimeZone, shiftCalendarDay, todayDateInputValue, dateInput
 export { clinicProfileEndpoint, isDentalSpecialty, isStaffRole, normalizedStaffRole, normalizedDentalSpecialty, staffWorkingHoursFromSimpleDraft, staffScheduleDraftFromWorkingHours, defaultAppointmentStartLocal, staffWorkingHoursFromDraft, staffScheduleDraftSignature, defaultStaffScheduleDraft, emptyClinicProfileDraft, clinicProfileDraftFromProfile, nullableClinicDraftValue, patientAdministrativeProfileDraftFromPatient, buildPatientAdministrativeProfilePayload, patientAdministrativeProfileDraftSignature, patientAdministrativeProfileDraftIssue, buildClinicProfileUpdatePayload, clinicProfileDraftSignature, clinicLegalMissingFields, clinicLegalReadinessPercent, roleFocusOrder, normalizeWorkingDaysDraft, defaultWorkingDays, normalizeOptionalWorkingDaysDraft, nullablePatientDraftValue };
 export type { StaffScheduleDraft, ClinicProfileDraft, PatientAdministrativeProfileDraft };
 
+/*
+ * РЕ-ЭКСПОРТ ДЛЯ РАБОЧЕГО СТОЛА DICOM. Без этих трёх строк приложение НЕ
+ * ЗАГРУЖАЛОСЬ ВООБЩЕ — белый экран, подменённый экраном BootErrorBoundary
+ * «Не удалось открыть рабочее место клиники».
+ *
+ * Замер в живом браузере 2026-08-08 (Playwright, http://127.0.0.1:5173):
+ *   SyntaxError: The requested module '/src/AppHelpers.tsx' does not provide
+ *   an export named 'collectDicomWorkstationClientFacts'
+ *
+ * Причина — разорванная цепочка ре-экспорта. `useDicomWorkbenchModule.ts:36-50`
+ * берёт эти символы ИЗ ЭТОГО ФАЙЛА, а файл их только импортировал у
+ * `./utils/browserScanUtils` (строки 21-27) и наружу не отдавал. Два из трёх
+ * (`collectDicomWorkstationClientFacts`, `isBrowserImagingScanAbortError`)
+ * вообще не использовались здесь ни разу — импортированы и забыты.
+ *
+ * ESM сообщает только о ПЕРВОМ недостающем экспорте, поэтому в консоли
+ * назывался один символ, а сломано было три. Чинить по тексту ошибки — значит
+ * получить тот же отказ на следующем имени.
+ *
+ * ПОЧЕМУ ЭТОГО НЕ ВИДЕЛ КОМПИЛЯТОР. `tsc -b apps/web --noEmit` даёт НОЛЬ
+ * ошибок на этом дефекте: TypeScript разрешает цепочку по типам, а
+ * Vite/браузер в рантайме требуют фактического `export` из запрошенного
+ * модуля. Зелёный typecheck доказал согласованность типов и ничего не сказал о
+ * достижимости — приложение при этом не стартовало ни разу.
+ */
+export {
+	collectDicomWorkstationClientFacts,
+	isBrowserImagingScanAbortError,
+	localImagingFolderFingerprint,
+};
+
 export * from "./utils/browserScanUtils";
