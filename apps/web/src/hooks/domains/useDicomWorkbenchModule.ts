@@ -1443,11 +1443,17 @@ export function useDicomWorkbenchModule({
 	// ===== Effects =====
 
 	// Blob-URL preview lifecycle for imaging studies
+	const authRef = useRef(auth);
+	useEffect(() => {
+		authRef.current = auth;
+	}, [auth]);
+
 	useEffect(() => {
 		if (typeof window === "undefined") return undefined;
 		if (!imagingPreviewWorkset.length) {
 			setImagingPreviewObjectUrls((current) => {
-				auth.revokeObjectUrlMap(current);
+				if (Object.keys(current).length === 0) return current;
+				authRef.current.revokeObjectUrlMap(current);
 				return {};
 			});
 			return undefined;
@@ -1463,13 +1469,13 @@ export function useDicomWorkbenchModule({
 						return [study.id, study.previewUrl];
 					const response = await fetch(study.previewUrl, {
 						cache: "no-store",
-						headers: auth.denteClinicalReadHeaders(),
+						headers: authRef.current.denteClinicalReadHeaders(),
 						signal: abortController.signal,
 					});
 					if (!response.ok) return null;
 					const blobUrl = URL.createObjectURL(await response.blob());
 					if (cancelled) {
-						auth.revokeObjectUrlIfNeeded(blobUrl);
+						authRef.current.revokeObjectUrlIfNeeded(blobUrl);
 						return null;
 					}
 					createdUrls.push(blobUrl);
@@ -1479,7 +1485,7 @@ export function useDicomWorkbenchModule({
 		)
 			.then((entries) => {
 				if (cancelled) {
-					createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
+					createdUrls.forEach(authRef.current.revokeObjectUrlIfNeeded);
 					return;
 				}
 				const next = Object.fromEntries(
@@ -1488,13 +1494,13 @@ export function useDicomWorkbenchModule({
 				const nextUrls = new Set(Object.values(next));
 				setImagingPreviewObjectUrls((current) => {
 					Object.values(current).forEach((url) => {
-						if (!nextUrls.has(url)) auth.revokeObjectUrlIfNeeded(url);
+						if (!nextUrls.has(url)) authRef.current.revokeObjectUrlIfNeeded(url);
 					});
 					return next;
 				});
 			})
 			.catch((err) => {
-				createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
+				createdUrls.forEach(authRef.current.revokeObjectUrlIfNeeded);
 				if (!cancelled) {
 					showToast(
 						actionFailureToast(
@@ -1504,7 +1510,7 @@ export function useDicomWorkbenchModule({
 						"error",
 					);
 					setImagingPreviewObjectUrls((current) => {
-						auth.revokeObjectUrlMap(current);
+						authRef.current.revokeObjectUrlMap(current);
 						return {};
 					});
 				}
@@ -1513,13 +1519,11 @@ export function useDicomWorkbenchModule({
 		return () => {
 			cancelled = true;
 			abortController.abort();
-			createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
+			createdUrls.forEach(authRef.current.revokeObjectUrlIfNeeded);
 		};
 	}, [
 		imagingPreviewWorkset,
-		auth.revokeObjectUrlMap,
-		auth.revokeObjectUrlIfNeeded,
-		auth.denteClinicalReadHeaders,
+		_imagingPreviewSignature,
 	]);
 
 	// ===== Return =====

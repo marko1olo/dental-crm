@@ -1,12 +1,12 @@
-# BRIEFING — 2026-08-07T23:06:48Z
+# BRIEFING — 2026-08-08T09:59:45Z
 
 ## Mission
-Deep functional audit and architectural hardening of the DENTE CRM codebase (React/TypeScript/PostgreSQL), fixing runtime bugs, linter errors, and circular dependencies.
+Deep architectural restoration of the DENTE CRM codebase (`apps/web`), restoring 198 missing properties and logic from golden commit `da92ab9507` without losing modern changes.
 
 ## 🔒 My Identity
 - Archetype: sentinel
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel
-- Orchestrator: 96829b05-95c3-4e10-bf0b-1e70b71d1eca
+- Orchestrator: e2222b6a-c3fb-4759-b77f-6a94ac68d989
 - Victory Auditor: TBD
 
 ## 🔒 Key Constraints
@@ -14,7 +14,7 @@ Deep functional audit and architectural hardening of the DENTE CRM codebase (Rea
 - Victory Audit is MANDATORY before reporting completion
 
 ## User Context
-- **Last user request**: Deep functional audit and architectural hardening of DENTE CRM codebase
+- **Last user request**: Deep architectural restoration of 198 missing properties from golden commit da92ab9507
 - **Pending clarifications**: none
 - **Delivered results**: none
 
@@ -27,4 +27,5 @@ Deep functional audit and architectural hardening of the DENTE CRM codebase (Rea
 - **Retry count**: 0
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md — Verbatim user request record
+- C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — Verbatim user request record
+- C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md — Verbatim user request record (root)

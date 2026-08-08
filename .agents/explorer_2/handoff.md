@@ -1,124 +1,154 @@
-# Technical Handoff Report: R2 Audit — Double Submit & Race Condition State Hardening
+# Handoff Report — Explorer 2 (Dead Props Part 2: #67 to #132)
 
-**HEAD**: `0000000000000000000000000000000000000000` (Read-only investigation)  
-**Agent**: Explorer 2 (R2 Audit)  
-**Target Directory**: `apps/web/src`  
-**Status**: `ПРОВЕРЕНО` (Investigation complete, full inventory compiled)
+**Agent**: Explorer 2 (`teamwork_preview_explorer`)
+**Working Directory**: `C:\Clinic_MVP\dental-crm\.agents\explorer_2`
+**Date**: 2026-08-08
+**Target Scope**: Part 2 — Missing Properties 67 through 132 in `dead_props.txt`
+**Golden Reference Commit**: `da92ab9507` (`da92ab9507:apps/web/src/useAppLogic.tsx`)
 
 ---
 
 ## 1. Observation
 
-A multi-vectored structural audit was conducted across all React components in `apps/web/src` using `fd` and `rg` searching for forms (`<form`), submit event handlers (`onSubmit`), and mutating action buttons (`onClick`) that trigger network and asynchronous operations (`fetch`, API mutations, state updates).
+### Summary of Scope & Census Findings
+- **Total Dead Properties in System**: 198 (verified via `C:\Clinic_MVP\dental-crm\dead_props.txt`).
+- **Explorer 2 Scope**: Properties **#67 to #132** (exactly 66 properties).
+- **Golden Reference Source**: Commit `da92ab9507` (dated July 30, 2026), `apps/web/src/useAppLogic.tsx` (14,557 lines total in pre-refactor state).
+- **Modern Architectural State**: `apps/web/src/useAppLogic.tsx` (4,525 lines) decomposed into 14 domain hooks in `apps/web/src/hooks/domains/` plus standalone utility hooks like `apps/web/src/hooks/useMprLogic.ts`.
 
-### Primary Findings Summary
-- Total forms & mutating buttons audited: **42 UI handlers/components**.
-- Total unfortified or partially fortified UI elements identified: **36 components / form blocks**.
-- Key Defect Categories discovered:
-  1. **Missing Loading Guard (`isSubmitting` / `isLoading` / `isPending`)**: Buttons trigger asynchronous API calls without setting a pending state variable or locking user interaction, enabling double submission and database duplicate record corruption.
-  2. **Missing `disabled` Attribute**: State guard exists in component state (e.g. `saving` or `isBooking`), but the action `<button>` element omits the `disabled={isSubmitting}` prop, leaving the button physically clickable during pending promises.
-  3. **Missing `aria-busy` Attribute (A11y & CLS Compliance)**: Buttons have `disabled` and visual text changes (e.g. "Сохраняю..."), but lack `aria-busy={isSubmitting}` or `aria-busy={true}`, violating ARIA accessibility specifications and leading to layout jumps.
+### Property Distribution Breakdown for Part 2 (#67 - #132)
+Of the 66 assigned properties:
+1. **Present in Modern `useAppLogic.tsx` Return Block**: **2 properties** (#75 `isDicomWebChecking`, #115 `name`).
+2. **Defined in Domain Hooks (`apps/web/src/hooks/domains/`) but Omitted from `useAppLogic` Return Block**: **31 properties** (mostly in `useDocumentWorkflowModule.ts`, `usePatientLogic.ts`, `useVisitLogic.ts`).
+3. **Defined in Utility Hooks (`apps/web/src/hooks/useMprLogic.ts`) but Omitted from `useAppLogic` Return Block**: **22 properties** (all MPR 3D imaging slice/slab visualization badge and checklist getters).
+4. **Purged Completely from Modern Codebase**: **11 properties** (#68 `ingestImportFile`, #76 `lastName`, #78 `localBridgeStatusState`, #79 `localBridgeStatusValue`, #80 `lookupClinicPublicProfile`, #81 `loyaltyTier`, #83 `middleName`, #92 `mostLoadedResource`, #117 `noShowRisk`, #118 `organizeLocalImagingSources`, #132 `pendingSpeechFlushActionLabel`).
+
+### Complete Property-by-Property Inspection Matrix (#67 - #132)
+
+| # | Property Name | Category | Golden Commit `da92ab9507` Line | Modern Codebase Location | Return Status | Restoration & Wiring Strategy |
+|---|---|---|---|---|---|---|
+| 67 | `inferredTreatmentArea` | Clinical Rules & Anamnesis | L4977 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 68 | `ingestImportFile` | Clinic Operations & Import | L7821 | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~7821) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 69 | `inn` | Patient Identity & Demographics | L3023 | Present in domain hook(s): useDocumentWorkflowModule.ts, usePatientIntakeLogic.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 70 | `installmentScheduleBaseDocumentTitleValue` | Document & Financial Workflow | L11653 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 71 | `installmentScheduleInstallmentRows` | Document & Financial Workflow | L11603 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 72 | `installmentSchedulePrepaidRubValue` | Document & Financial Workflow | L11587 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 73 | `installmentScheduleTotalRubValue` | Document & Financial Workflow | L11582 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 74 | `insuranceContractId` | Patient Identity & Demographics | L5131 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 75 | `isDicomWebChecking` | Imaging / DICOM / MPR | L1049 | Present in modern useAppLogic.tsx return block | ✅ Returned | Keep modern implementation; ensure type alignment and no regression. |
+| 76 | `lastName` | Patient Identity & Demographics | N/A (Model field) | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~-1) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 77 | `loadSpeechRecordingRecovery` | Voice & Local Bridge | L2579 | Present in domain hook(s): useVisitLogic.ts | ❌ Missing from return | Export/Pass-through from useVisitLogic.ts into useAppLogic.tsx return block. |
+| 78 | `localBridgeStatusState` | Voice & Local Bridge | L7301 | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~7301) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 79 | `localBridgeStatusValue` | Voice & Local Bridge | L7308 | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~7308) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 80 | `lookupClinicPublicProfile` | Clinic Operations & Import | L8588 | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~8588) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 81 | `loyaltyTier` | Patient Identity & Demographics | N/A (Model field) | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~-1) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 82 | `markPostVisitManualEdited` | Clinic Operations & Import | L11834 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 83 | `middleName` | Patient Identity & Demographics | N/A (Model field) | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~-1) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 84 | `minorConsentDiagnosisOrIndicationValue` | Document & Financial Workflow | L11729 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 85 | `minorConsentInterventionScopeValue` | Document & Financial Workflow | L11721 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 86 | `minorConsentPatientBirthDateValue` | Document & Financial Workflow | L11715 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 87 | `minorConsentPatientFullNameValue` | Document & Financial Workflow | L11709 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 88 | `minorRepresentativeFullNameValue` | Document & Financial Workflow | L11677 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 89 | `minorRepresentativeIdentityDocumentValue` | Document & Financial Workflow | L11693 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 90 | `minorRepresentativePhoneValue` | Document & Financial Workflow | L11701 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 91 | `minorRepresentativeRelationshipValue` | Document & Financial Workflow | L11685 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 92 | `mostLoadedResource` | Clinic Operations & Import | L7001 | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~7001) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 93 | `mprActiveProjectionLabel` | Imaging / DICOM / MPR | L6263 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 94 | `mprActiveProjectionOrientation` | Imaging / DICOM / MPR | L6265 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 95 | `mprAxisAngleBadge` | Imaging / DICOM / MPR | L6223 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 96 | `mprAxisDirectionLabel` | Imaging / DICOM / MPR | L6219 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 97 | `mprAxisGuidance` | Imaging / DICOM / MPR | L6269 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 98 | `mprAxisRangeValue` | Imaging / DICOM / MPR | L6245 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 99 | `mprAxisVisualizerLabel` | Imaging / DICOM / MPR | L6312 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 100 | `mprAxisVisualizerStyle` | Imaging / DICOM / MPR | L6258 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 101 | `mprClinicalChecklist` | Imaging / DICOM / MPR | L6318 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 102 | `mprClinicalNextStep` | Imaging / DICOM / MPR | L6319 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 103 | `mprClinicalPresetButtonClass` | Imaging / DICOM / MPR | L6320 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 104 | `mprControlsAutoOpen` | Imaging / DICOM / MPR | L6214 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 105 | `mprControlsReady` | Imaging / DICOM / MPR | L6211 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 106 | `mprNearestClinicalPreset` | Imaging / DICOM / MPR | L6275 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 107 | `mprOperatorSummaryCards` | Imaging / DICOM / MPR | L6308 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 108 | `mprProjectionCompass` | Imaging / DICOM / MPR | L6268 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 109 | `mprSlabBadge` | Imaging / DICOM / MPR | L6227 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 110 | `mprSlabRangeValue` | Imaging / DICOM / MPR | L6249 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 111 | `mprSliceBadge` | Imaging / DICOM / MPR | L6228 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 112 | `mprSliceLabel` | Imaging / DICOM / MPR | L6242 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 113 | `mprSliceRangeValue` | Imaging / DICOM / MPR | L6253 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 114 | `mprWorkbenchSummaryText` | Imaging / DICOM / MPR | L6307 | Present in utility hook(s): useMprLogic.ts | ❌ Missing from return | Wire useMprLogic.ts state into useAppLogic.tsx return block. |
+| 115 | `name` | Patient Identity & Demographics | L7620 | Present in modern useAppLogic.tsx return block | ✅ Returned | Keep modern implementation; ensure type alignment and no regression. |
+| 116 | `newRulePatientText` | Clinical Rules & Anamnesis | L2429 | Present in domain hook(s): usePatientLogic.ts | ❌ Missing from return | Export/Pass-through from usePatientLogic.ts into useAppLogic.tsx return block. |
+| 117 | `noShowRisk` | Patient Identity & Demographics | N/A (Model field) | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~-1) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 118 | `organizeLocalImagingSources` | Imaging / DICOM / MPR | L9676 | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~9676) into appropriate domain hook or useAppLogic.tsx, then return it. |
+| 119 | `outpatient025uMedicalCardNumberValue` | Document & Financial Workflow | L11875 | Present in domain hook(s): useDocumentWorkflowModule.ts, usePatientIntakeLogic.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 120 | `paidContractTotalRubValue` | Document & Financial Workflow | L11376 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 121 | `patientClinicalRuleEvaluations` | Clinical Rules & Anamnesis | L5007 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 122 | `patientClinicalRuleSummary` | Clinical Rules & Anamnesis | L5031 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 123 | `patientId` | Patient Identity & Demographics | L3744 | Present in domain hook(s): useDicomWorkbenchModule.ts, useDocumentWorkflowModule.ts, useFinanceLogic.ts, useImagingQueries.ts, usePatientLogic.ts, useScheduleLogic.ts, useTelegramModule.ts, useVisitLogic.ts | ❌ Missing from return | Export/Pass-through from useDicomWorkbenchModule.ts into useAppLogic.tsx return block. |
+| 124 | `paymentInvoiceTotalRubValue` | Document & Financial Workflow | L11501 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 125 | `paymentReceiptFiscalReceiptLines` | Document & Financial Workflow | L11576 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 126 | `paymentReceiptIssuedByValue` | Document & Financial Workflow | L11568 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 127 | `paymentReceiptPayerBirthDateValue` | Document & Financial Workflow | L11536 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 128 | `paymentReceiptPayerFullNameValue` | Document & Financial Workflow | L11528 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 129 | `paymentReceiptPayerIdentityDocumentValue` | Document & Financial Workflow | L11552 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 130 | `paymentReceiptPayerInnValue` | Document & Financial Workflow | L11544 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 131 | `paymentReceiptPayerRelationshipValue` | Document & Financial Workflow | L11560 | Present in domain hook(s): useDocumentWorkflowModule.ts | ❌ Missing from return | Export/Pass-through from useDocumentWorkflowModule.ts into useAppLogic.tsx return block. |
+| 132 | `pendingSpeechFlushActionLabel` | Voice & Local Bridge | L7137 | Purged from modern codebase | ❌ Missing from return | Restore definition from da92ab9507 (line ~7137) into appropriate domain hook or useAppLogic.tsx, then return it. |
 
 ---
 
 ## 2. Logic Chain
 
-1. **Premise 1 (Double Submit & Race Conditions)**: In asynchronous web applications, failing to lock form submit and mutating action buttons during pending network requests allows users to trigger multiple requests before the first promise settles. In financial (Sberbank terminal), scheduling (appointment creation, waitlist), and clinical (EMK, reclamation, quality control) flows, this causes duplicate records in PostgreSQL and inconsistent UI state.
-2. **Premise 2 (State Guard Requirement)**: A fully fortified action button or form submit handler must satisfy three requirements:
-   - **Synchronous Guard**: State (`isSubmitting` / `isLoading`) is set synchronously prior to any async yielding.
-   - **Physical Interlocking**: The button has `disabled={isSubmitting}` so pointer and keyboard events are rejected.
-   - **A11y & CLS Compliance**: The button has `aria-busy={isSubmitting}` (or `aria-busy={true}`) for screen readers and layout stability.
-3. **Audit Execution**:
-   - Every file in `apps/web/src` containing `<form`, `onSubmit`, or mutating `onClick` was inspected line-by-line.
-   - Form buttons were checked against the 3-point fortification standard.
-4. **Synthesis**: The findings were structured into a comprehensive inventory categorized by file path, line number, component name, defect type, and exact recommended fix.
+### 1. Architectural Deconstruction Analysis
+During the recent modular refactoring of `useAppLogic.tsx`, the original 14,557-line God Context was broken down into specialized domain hooks (`useDocumentWorkflowModule`, `usePatientLogic`, `useVisitLogic`, `useMprLogic`, etc.).
+However, the refactoring agent truncated the main return object of `useAppLogic.tsx`. While the underlying implementations for 53 out of 66 properties were successfully moved to domain hooks (e.g., document title formatters in `useDocumentWorkflowModule.ts` and MPR projection calculators in `useMprLogic.ts`), they were **never pass-through exported** in the return block of `useAppLogic.tsx`.
+
+### 2. Analysis of the 11 Purged Properties
+For the 11 properties not found in any modern hook file:
+- **`ingestImportFile` (L7821)**: Handles file upload & POST to `/api/ingestion/extract`. Belongs in `useDocumentWorkflowModule.ts` or `useMigrationQueries.ts`.
+- **`localBridgeStatusState` (L7301)** & **`localBridgeStatusValue` (L7308)**: Compute bridge readiness (`"ready" | "warn" | "busy"`). Belong in `useVisitLogic.ts`.
+- **`lookupClinicPublicProfile` (L8588)**: Calls `/api/imports/smart/clinic-public-lookup`. Belongs in `useStaffSettingsLogic.ts` or `useMigrationQueries.ts`.
+- **`mostLoadedResource` (L7001)**: Computes resource utilization from `allResourceLoads`. Belongs in `useScheduleLogic.ts`.
+- **`organizeLocalImagingSources` (L9676)**: Initiates local DICOM scan preview at `/api/imaging/local-organizer/scan-preview`. Belongs in `useDicomWorkbenchModule.ts` or `useImagingQueries.ts`.
+- **`pendingSpeechFlushActionLabel` (L7137)**: Helper returning button action text based on voice recognition state. Belongs in `useVisitLogic.ts` or `useShortDictation.ts`.
+- **`lastName`**, **`middleName`**, **`loyaltyTier`**, **`noShowRisk`**: Patient model fields originally unpacked directly in patient card contexts. Safe typed getter or draft properties should be exposed via `usePatientLogic.ts`.
+
+### 3. Preserving Modern Code & Bugfixes
+Re-injecting these properties must follow a strict **non-destructive pass-through pattern**:
+1. Modern domain hooks must **not** be overwritten. New functions will be appended or exported cleanly from existing hooks.
+2. `useAppLogic.tsx` will instantiate modern domain hooks (e.g. `const docWorkflow = useDocumentWorkflowModule(...)`, `const mpr = useMprLogic(...)`) and spread/destructure their returned values directly into `useAppLogic`'s return statement.
+3. This guarantees 100% backward compatibility for all UI components expecting these 66 properties on `useAppLogic()` context while preserving all recent bugfixes and optimizations.
 
 ---
 
-## 3. Comprehensive Inventory of Unfortified Forms & Action Buttons
-
-| # | File Path & Line Numbers | Component / Form Name | Defect Type | Recommended State Guard Implementation |
-|---|--------------------------|-----------------------|-------------|----------------------------------------|
-| 1 | `apps/web/src/AppBootState.tsx:58,85` | `AppUnlockState` (Unlock Form) | Missing loading guard, missing `disabled` during unlock, missing `aria-busy` | Add `const [isUnlocking, setIsUnlocking] = useState(false)` state; set `isUnlocking(true)` in `submitUnlock`; set `disabled={isUnlocking \|\| !secretReady}` and `aria-busy={isUnlocking}` on submit button (l.85). |
-| 2 | `apps/web/src/AppBootState.tsx:21` | `AppLoadingState` (Retry Button) | Missing loading guard, missing `disabled`, missing `aria-busy` | Add `disabled={isLoading}` and `aria-busy={isLoading}` on retry button. |
-| 3 | `apps/web/src/PaymentCapture.tsx:1136` | `PaymentCapture` (Sberbank Card Button) | Missing `aria-busy` attribute | Add `aria-busy={isSaving \|\| undefined}` prop to button. |
-| 4 | `apps/web/src/components/finance/SberbankTerminalPaymentModal.tsx:169` | `SberbankTerminalPaymentModal` ("Повторить" payment button) | Missing `disabled` during initiating/polling, missing `aria-busy` | Set `disabled={status === "initiating" \|\| status === "polling"}` and `aria-busy={status === "initiating"}` on retry button (l.169). |
-| 5 | `apps/web/src/ScannerView.tsx:346` | `ScannerView` (Sterilization Scan Form Submit) | Missing `aria-busy` attribute | Add `aria-busy={isScanning}` to submit button (l.346). |
-| 6 | `apps/web/src/ScannerView.tsx:364` | `ScannerView` ("Повторить" load logs button) | Missing `disabled`, missing `aria-busy` | Add `disabled={isScanning}` and `aria-busy={isScanning}` on reload button (l.364). |
-| 7 | `apps/web/src/pages/DoctorPayoutDashboard.tsx:609,631` | `DoctorPayoutDashboard` (Doctor Commission Rate Form) | Missing `aria-busy` attribute | Add `aria-busy={rateSave.kind === "saving"}` to submit button (l.631). |
-| 8 | `apps/web/src/pages/DoctorPayoutDashboard.tsx:520` | `DoctorPayoutDashboard` (Month Reload Button) | Missing `aria-busy` attribute | Add `aria-busy={state.kind === "loading"}` to button (l.520). |
-| 9 | `apps/web/src/pages/PublicBookingWidget.tsx:417,493` | `PublicBookingWidget` (Public Booking Form) | Missing `aria-busy` attribute | Add `aria-busy={isSubmitting}` to submit button (l.493). |
-| 10 | `apps/web/src/components/auth/ClinicLogin.tsx:72,116` | `ClinicLogin` (Terminal Auth Form) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to submit button (l.116). |
-| 11 | `apps/web/src/components/auth/Register.tsx:120,240` | `Register` (Clinic Registration Form) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to submit button (l.240). |
-| 12 | `apps/web/src/components/auth/UserLogin.tsx:74,117` | `UserLogin` (Doctor Login Form) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to submit button (l.117). |
-| 13 | `apps/web/src/components/auth/AcceptInvite.tsx:84,136` | `AcceptInvite` (Invite Activation Form) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to submit button (l.136). |
-| 14 | `apps/web/src/components/settings/InsuranceContractsPanel.tsx:501,683` | `InsuranceContractsPanel` (Contract Form) | Missing `aria-busy` attribute | Add `aria-busy={isSaving}` to submit button (l.683). |
-| 15 | `apps/web/src/components/settings/SettingsAccessTab.tsx:177,217` | `SettingsAccessTab` (Invite Generation Form) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to submit button (l.217). |
-| 16 | `apps/web/src/components/settings/SettingsBpmnTab.tsx:290,338` | `SettingsBpmnTab` (Workflow Scenario Form) | Missing `aria-busy` attribute | Add `aria-busy={adding}` to submit button (l.338). |
-| 17 | `apps/web/src/components/settings/SettingsProfileTab.tsx:457,553` | `SettingsProfileTab` (Update Password Form) | Missing `aria-busy` attribute | Add `aria-busy={passwordLoading}` to submit button (l.553). |
-| 18 | `apps/web/src/components/settings/SettingsProfileTab.tsx:581,605` | `SettingsProfileTab` (Yandex Calendar Form) | Missing `aria-busy` attribute | Add `aria-busy={yandexLoading}` to submit button (l.605). |
-| 19 | `apps/web/src/components/settings/SettingsProfileTab.tsx:612` | `SettingsProfileTab` (Yandex Sync Button) | Missing `aria-busy` attribute | Add `aria-busy={yandexSyncLoading}` to action button (l.612). |
-| 20 | `apps/web/src/components/settings/SettingsProfileTab.tsx:640,677` | `SettingsProfileTab` (Update PIN Form) | Missing `aria-busy` attribute | Add `aria-busy={pinLoading}` to submit button (l.677). |
-| 21 | `apps/web/src/components/settings/SettingsStaffTab.tsx:387,402` | `SettingsStaffTab` (Inline Staff Phone Form) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to inline submit button (l.402). |
-| 22 | `apps/web/src/components/settings/SettingsStaffTab.tsx:418,432` | `SettingsStaffTab` (Inline Staff PIN Form) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to inline submit button (l.432). |
-| 23 | `apps/web/src/components/settings/SettingsStaffTab.tsx:448,460` | `SettingsStaffTab` (Inline Staff Password Form) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to inline submit button (l.460). |
-| 24 | `apps/web/src/components/settings/SettingsStaffTab.tsx:538,597` | `SettingsStaffTab` (Create Staff Form) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to submit button (l.597). |
-| 25 | `apps/web/src/components/settings/DoctorSnilsValidationWidget.tsx:108` | `DoctorSnilsValidationWidget` (SNILS Validation Button) | Missing `aria-busy` attribute | Add `aria-busy={isValidating}` to button (l.108). |
-| 26 | `apps/web/src/components/settings/MessageTemplatesPanel.tsx:142` | `MessageTemplatesPanel` (Save Template Button) | Missing loading guard, missing `disabled`, missing `aria-busy` | Add `const [isCreatingTemplate, setIsCreatingTemplate] = useState(false)` state; set `disabled={isCreatingTemplate}` and `aria-busy={isCreatingTemplate}` on Save button (l.142). |
-| 27 | `apps/web/src/components/settings/MessageTemplatesPanel.tsx:177` | `MessageTemplatesPanel` (Delete Template Button) | Missing loading guard, missing `disabled`, missing `aria-busy` | Add `const [deletingId, setDeletingId] = useState<string \| null>(null)` state; set `disabled={deletingId === template.id}` and `aria-busy={deletingId === template.id}` on Delete button (l.177). |
-| 28 | `apps/web/src/components/settings/MigrationWizard.tsx:912,1109,1119,1160` | `MigrationWizard` (DryRun / LiveRun / Rollback / Download Act) | Missing `aria-busy` attributes | Add `aria-busy={props.busy}` to DryRun (l.912), LiveRun (l.1109), Rollback (l.1119); add `aria-busy={busy}` to DownloadAct (l.1160). |
-| 29 | `apps/web/src/components/leads/LeadsKanbanView.tsx:912,1052` | `LeadsKanbanView` (Convert Lead Form) | Missing `aria-busy` attribute | Add `aria-busy={isBooking}` to submit button (l.1052). |
-| 30 | `apps/web/src/components/leads/LeadsKanbanView.tsx:1149,1264` | `LeadsKanbanView` (Edit Lead Form - Save Button) | Missing loading guard, missing `disabled`, missing `aria-busy` | Add `isSaving` state to `handleEditSubmit`; set `disabled={isSaving \|\| isDeleting}` and `aria-busy={isSaving}` on Save button (l.1264). |
-| 31 | `apps/web/src/components/leads/LeadsKanbanView.tsx:1281` | `LeadsKanbanView` (Delete Lead Button) | Missing `aria-busy` attribute | Add `aria-busy={isDeleting}` to Delete button (l.1281). |
-| 32 | `apps/web/src/components/patients/OrthodonticProgressWidget.tsx:346,428` | `OrthodonticProgressWidget` (Save Tracker Form Submit) | Missing `disabled` attribute, missing `aria-busy` attribute | Add `disabled={saving}` and `aria-busy={saving}` to submit button (l.428). |
-| 33 | `apps/web/src/components/patients/OrthodonticProgressWidget.tsx:439` | `OrthodonticProgressWidget` (Delete Tracker Button) | Missing `aria-busy` attribute | Add `aria-busy={saving}` to Delete button (l.439). |
-| 34 | `apps/web/src/components/patients/PatientTaskTicketsWidget.tsx:427` | `PatientTaskTicketsWidget` (Toggle Ticket Status Button) | Missing loading guard, missing `disabled`, missing `aria-busy` | Add `const [togglingId, setTogglingId] = useState<string \| null>(null)` state; set `disabled={togglingId === ticket.id}` and `aria-busy={togglingId === ticket.id}` on status circle (l.427). |
-| 35 | `apps/web/src/components/patients/PatientReclamationsWidget.tsx:549` | `PatientReclamationsWidget` (Toggle Reclamation Status Button) | Missing loading guard, missing `disabled`, missing `aria-busy` | Add `const [togglingId, setTogglingId] = useState<string \| null>(null)` state; set `disabled={togglingId === rec.id}` and `aria-busy={togglingId === rec.id}` on status button (l.549). |
-| 36 | `apps/web/src/components/patients/PatientCommunicationConsentsPanel.tsx:355` | `PatientCommunicationConsentsPanel` (Save Consents Button) | Missing `aria-busy` attribute | Add `aria-busy={saving}` to Save button (l.355). |
-| 37 | `apps/web/src/components/patients/RecallListPanel.tsx:322` | `RecallListPanel` (Invite SMS Button) | Missing `aria-busy` attribute | Add `aria-busy={busy}` to invite button (l.322). |
-| 38 | `apps/web/src/components/patients/PatientArchiveAndBlacklistWidget.tsx:351` | `PatientArchiveAndBlacklistWidget` (Status Confirm Button) | Missing `aria-busy` attribute | Add `aria-busy={isApplying}` to confirm button (l.351). |
-| 39 | `apps/web/src/components/patients/PatientDuplicateAlert.tsx:246,285` | `PatientDuplicateAlert` (Merge Confirm / Dismiss Buttons) | Missing `aria-busy` attributes | Add `aria-busy={busy}` to Merge Confirm (l.246) and Dismiss (l.285) buttons. |
-| 40 | `apps/web/src/components/patients/PatientWhatsappSendPanel.tsx:185` | `PatientWhatsappSendPanel` (Send WhatsApp Button) | Missing `aria-busy` attribute | Add `aria-busy={busy}` to send button (l.185). |
-| 41 | `apps/web/src/components/patients/PatientLoyaltyHeader.tsx:219` | `PatientLoyaltyHeader` (Loyalty Tier Button) | Missing loading guard, missing `disabled`, missing `aria-busy` | Set `disabled={isUpdating}` and `aria-busy={isUpdating}` on tier buttons (l.219). |
-| 42 | `apps/web/src/InventoryView.tsx:239,329` | `InventoryView` (Add Writeoff Rule Form) | Missing `aria-busy` attribute | Add `aria-busy={isSavingRule}` to submit button (l.329). |
-| 43 | `apps/web/src/InventoryView.tsx:1396,1594` | `InventoryView` (Save Inventory Item Form) | Missing `aria-busy` attribute | Add `aria-busy={isSavingItem}` to submit button (l.1594). |
-| 44 | `apps/web/src/InventoryView.tsx:1756,1835` | `InventoryView` (Adjust Stock Quantity Form) | Missing `aria-busy` attribute | Add `aria-busy={isAdjustingStock}` to submit button (l.1835). |
-| 45 | `apps/web/src/components/schedule/UrgentScheduleRequestsWidget.tsx:83` | `UrgentScheduleRequestsWidget` (Resolve Request Button) | Missing loading guard, missing `disabled`, missing `aria-busy` | Add `const [resolvingId, setResolvingId] = useState<string \| null>(null)` state; set `disabled={resolvingId === r.id}` and `aria-busy={resolvingId === r.id}` on button (l.83). |
-| 46 | `apps/web/src/components/schedule/ScheduleClipboardPanel.tsx:393,402` | `ScheduleClipboardPanel` (Paste & Clear Buffer Buttons) | Missing `aria-busy` attributes | Add `aria-busy={busyId === item.id}` to Paste (l.393) and Clear (l.402) buttons. |
-| 47 | `apps/web/src/components/visit/VisitEmkTab.tsx:715,745` | `VisitEmkTab` (Link Tray Form) | Missing `aria-busy` attribute | Add `aria-busy={isLinkingTray}` to submit button (l.745). |
-| 48 | `apps/web/src/components/odontogram/TreatmentEstimator.tsx:560` | `TreatmentEstimator` (Save Plan Button) | Missing `aria-busy` attribute | Add `aria-busy={isSaving}` to button (l.560). |
-| 49 | `apps/web/src/components/visit/EmkControlBoard.tsx:202,209` | `EmkControlBoard` (Needs Correction / Approve Buttons) | Missing loading guard, missing `disabled`, missing `aria-busy` | Add `const [updatingId, setUpdatingId] = useState<string \| null>(null)` state; set `disabled={updatingId === visit.id}` and `aria-busy={updatingId === visit.id}` on both buttons (l.202, l.209). |
-| 50 | `apps/web/src/components/visit/SpeechChunksInspector.tsx:438,448,459` | `SpeechChunksInspector` (Refresh / Reload / Assemble Buttons) | Missing `aria-busy` attributes | Add `aria-busy={recoveryBusy}` (l.438), `aria-busy={chunksLoading}` (l.448), and `aria-busy={assembleBusyId === selectedRecordingId}` (l.459). |
-| 51 | `apps/web/src/components/visit/EgiszMultipleDiagnosesWidget.tsx:52` | `EgiszMultipleDiagnosesWidget` (Reload Diagnoses Button) | Missing `aria-busy` attribute | Add `aria-busy={loading}` to button (l.52). |
+## 3. Caveats
+- **Read-Only Scope**: Per Explorer role mandate, no code changes were executed in `apps/web/src/`. All proposals are purely analytical and ready for implementer agents.
+- **Cross-Domain Dependencies**: Some functions (e.g., `installmentSchedulePrepaidRubValue`) rely on helpers like `activePaidPaymentsForVisit()`. When restoring purged logic, helper functions from `da92ab9507` must be verified to exist in `AppHelpers.tsx` or modern domain hooks.
+- **Type Check Verification**: Full typechecking (`npm run typecheck -w @dental/web`) will be validated once Implementer agents execute the pass-through exports.
 
 ---
 
-## 4. Caveats
-
-1. **Scope Limit**: As an Explorer agent, no direct modifications were performed on the TypeScript/React code in `apps/web/src`. Implementers must apply the recommended state guards per file.
-2. **Third-Party Libraries**: `framer-motion` is used in several modal dialogs (`LeadsKanbanView`, `PatientTaskTicketsWidget`, `PatientReclamationsWidget`, `OrthodonticProgressWidget`). Ensure `disabled` and `aria-busy` are preserved when elements animate out during component unmounting.
-3. **Controlled State Propagation**: For components relying on parent handlers (e.g. `AppUnlockState`, `LeadsKanbanView`), the parent component must also correctly manage promise resolution to prevent premature unlocking of the child component's pending state.
-
----
-
-## 5. Conclusion
-
-The audit reveals that while many form components in `apps/web/src` disable submit buttons during saving (`disabled={isSaving}`), **over 80% of form submit buttons omit `aria-busy={isSubmitting}`**, violating A11y & CLS guidelines. Furthermore, several critical action buttons (e.g., `MessageTemplatesPanel` template creation/deletion, `OrthodonticProgressWidget` tracker saving, `EmkControlBoard` quality control decisions, `UrgentScheduleRequestsWidget` resolution, `PatientTaskTicketsWidget` and `PatientReclamationsWidget` status toggling) completely lack pending state guards, exposing the system to **race conditions and double submissions**.
-
-Fortifying all 51 inventoried UI targets with state guards, `disabled`, and `aria-busy` attributes will completely eliminate R2 double-submit vulnerabilities across DENTE CRM web client.
+## 4. Conclusion
+- All 66 Part 2 properties (#67 through #132) have been fully traced and mapped.
+- **55 properties** already exist in modern domain/utility hooks or modern `useAppLogic` and simply require **pass-through re-exporting** in `useAppLogic.tsx`'s return object.
+- **11 properties** need surgical restoration of their verbatim implementations from golden commit `da92ab9507` into their respective domain hooks before being re-exported.
+- Integrating these properties via domain hook pass-through will resolve all corresponding `TS2339` type errors without disrupting any modern features or fixes.
 
 ---
 
-## 6. Verification Method
+## 5. Verification Method
 
-To verify the audit findings and future fixes:
-1. **Source Inspection**: Use `view_file` on each file path listed in the inventory table to verify button attributes.
-2. **Linter & Typecheck Gate**: Run:
-   ```bash
-   npm run typecheck -w @dental/web
-   npx biome lint apps/web/src
-   ```
-3. **Automated Search Verification**: Run ripgrep to check for remaining unfortified forms:
-   ```bash
-   rg "<form" apps/web/src -A 25 | rg -v "aria-busy"
-   ```
+### Command Verification
+To verify the findings and check modern hook contents:
+```bash
+# 1. Verify existence of dead_props.txt count
+node -e "const fs=require('fs'); console.log(fs.readFileSync('dead_props.txt').toString('utf8').split('\n').filter(Boolean).length);"
+
+# 2. Inspect MPR logic hook containing 22 MPR props
+npx rg "mprActiveProjectionLabel|mprSliceBadge" apps/web/src/hooks/
+
+# 3. Inspect document workflow hook containing document props
+npx rg "installmentScheduleBaseDocumentTitleValue|minorConsent" apps/web/src/hooks/domains/
+
+# 4. Execute TypeScript check (to be run by implementers after merging)
+npm run typecheck -w @dental/web
+```

@@ -1,16 +1,14 @@
-## 2026-08-07T19:08:40Z
-You are Explorer 1 (R1 Audit). Your working directory is C:\Clinic_MVP\dental-crm\.agents\explorer_1. Create your directory if it does not exist.
+## 2026-08-08T14:00:18Z
 
-Your task is to conduct a thorough technical investigation of `apps/web/src` for silent async error swallows (R1):
-1. Read `C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md` and `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`.
-2. Perform structural search across `apps/web/src` for all `catch`, `try/catch`, and `.catch(` patterns using ripgrep (`rg`) or ast-grep (`npx @ast-grep/cli`).
-3. Audit every catch site:
-   - Identify silent swallows: empty catch blocks, catch blocks that only log to `console.error` or `console.log`, or catch blocks that set a local state without displaying user-facing notifications.
-   - Identify existing toast usages (`showToast`, `actionFailureToast`, etc.).
-4. Compile a comprehensive inventory of all silent async error swallows in `apps/web/src`, including:
-   - Exact file path and line numbers
-   - Context (function name, feature area)
-   - Current handling (e.g. `console.error(e)`)
-   - Recommended remediation (exact `showToast` or `actionFailureToast` call)
-5. Write your complete handoff report to `C:\Clinic_MVP\dental-crm\.agents\explorer_1\handoff.md` and update `progress.md` in your directory.
-6. Send a message to orchestrator when done with the path to your handoff report.
+You are Explorer 1 (teamwork_preview_explorer).
+Your working directory is `C:\Clinic_MVP\dental-crm\.agents\explorer_1`.
+You MUST read:
+1. `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md` (Constitutional rules)
+2. `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md` (Mission requirements)
+
+TASK:
+1. Inspect `C:\Clinic_MVP\dental-crm\dead_props.txt` to identify all 198 missing properties. Note: dead_props.txt may be UTF-16LE encoded, so use node or powershell script or ripgrep/git commands to process it cleanly.
+2. Focus on Part 1: The first 66 properties in `dead_props.txt`.
+3. Retrieve their original implementations from Golden Reference Commit `da92ab9507` via `git show da92ab9507:apps/web/src/useAppLogic.tsx`.
+4. Survey modern codebase (`apps/web/src/useAppLogic.tsx` and `apps/web/src/hooks/domains/`) to see which domain hooks currently exist, where these properties/logic used to live, and how they should be integrated into modern architecture without breaking or overwriting any modern code or bugfixes.
+5. Write your complete analysis and findings to `C:\Clinic_MVP\dental-crm\.agents\explorer_1\handoff.md` and report back to parent orchestrator.

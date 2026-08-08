@@ -25,7 +25,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
 	if (!patient) return null;
 
-	const adminProfile = patient.administrativeProfile || {};
+	const adminProfile = (patient.administrativeProfile as any) || {};
 	const currentTier: LoyaltyTier =
 		adminProfile.loyaltyTier === "silver" ||
 		adminProfile.loyaltyTier === "gold" ||

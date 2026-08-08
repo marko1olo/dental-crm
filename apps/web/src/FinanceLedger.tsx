@@ -44,8 +44,8 @@ export function FinanceLedger({
 	 * неверные деньги вместо того, чтобы не собраться.
 	 */
 	money,
-	onFocusPaymentCapture = () => {},
-	onGoToVisit = () => {},
+	onFocusPaymentCapture,
+	onGoToVisit,
 	paymentFiscalReceiptLabel = () => "",
 	paymentMethodLabels = {} as any,
 	payments = [],

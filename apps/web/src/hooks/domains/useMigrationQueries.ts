@@ -1,8 +1,23 @@
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
-export function useMigrationQueries() {
-	const { auth, clinicalMutationHeaders, clinicalReadHeaders } =
-		useAppLogicContext();
+export function useMigrationQueries(options?: {
+	auth?: any;
+	clinicalMutationHeaders?: any;
+	clinicalReadHeaders?: any;
+}) {
+	let auth = options?.auth;
+	let clinicalMutationHeaders = options?.clinicalMutationHeaders;
+	let clinicalReadHeaders = options?.clinicalReadHeaders;
+	if (!auth && (!clinicalMutationHeaders || !clinicalReadHeaders)) {
+		try {
+			const ctx = useAppLogicContext();
+			auth = ctx.auth;
+			clinicalMutationHeaders = ctx.clinicalMutationHeaders;
+			clinicalReadHeaders = ctx.clinicalReadHeaders;
+		} catch {
+			// Called inside useAppLogic before provider
+		}
+	}
 
 	const getHeaders = (isMutation: boolean, extra?: Record<string, string>) => {
 		if (auth) {
@@ -10,9 +25,13 @@ export function useMigrationQueries() {
 				? auth.denteClinicalMutationHeaders(extra)
 				: auth.denteClinicalReadHeaders(extra);
 		}
-		return isMutation
-			? clinicalMutationHeaders(extra)
-			: clinicalReadHeaders(extra);
+		if (isMutation && clinicalMutationHeaders) {
+			return clinicalMutationHeaders(extra);
+		}
+		if (!isMutation && clinicalReadHeaders) {
+			return clinicalReadHeaders(extra);
+		}
+		return extra || {};
 	};
 
 	const uploadFile = async (file: File) => {
@@ -68,6 +87,65 @@ export function useMigrationQueries() {
 		});
 	};
 
+	const pickBrowserMigrationSource = async () => {};
+	const planMigrationDiscoveryCandidate = async (candidate: any) => {
+		return fetch("/api/imports/smart/local-source-workup", {
+			method: "POST",
+			headers: getHeaders(true, { "content-type": "application/json" }),
+			body: JSON.stringify({ candidate }),
+		});
+	};
+	const previewMigrationDiscoveryCandidate = async (candidate: any) => {};
+	const previewMigrationAutopilotSources = async (sourceFingerprint?: string | null) => {};
+	const probeMigrationDiscoveryCandidate = async (candidate: any) => {
+		return fetch("/api/imports/smart/local-source-probe", {
+			method: "POST",
+			headers: getHeaders(true, { "content-type": "application/json" }),
+			body: JSON.stringify({ candidate }),
+		});
+	};
+	const previewImport = async (payload?: any) => {
+		return fetch("/api/imports/patients/intake", {
+			method: "POST",
+			headers: getHeaders(false, { "content-type": "application/json" }),
+			body: JSON.stringify(payload ?? {}),
+		});
+	};
+	const previewSmartImport = async (payload?: any) => {
+		return fetch("/api/imports/smart/preview", {
+			method: "POST",
+			headers: getHeaders(false, { "content-type": "application/json" }),
+			body: JSON.stringify(payload ?? {}),
+		});
+	};
+	const commitImport = async (payload?: any) => {
+		return fetch("/api/imports/patients/commit", {
+			method: "POST",
+			headers: getHeaders(true, { "content-type": "application/json" }),
+			body: JSON.stringify(payload ?? {}),
+		});
+	};
+	const commitSmartImport = async (payload?: any) => {
+		return fetch("/api/imports/smart/commit", {
+			method: "POST",
+			headers: getHeaders(true, { "content-type": "application/json" }),
+			body: JSON.stringify(payload ?? {}),
+		});
+	};
+	const discoverMigrationSources = async () => {
+		return fetch("/api/imports/smart/local-source-discovery", {
+			method: "POST",
+			headers: getHeaders(true, { "content-type": "application/json" }),
+		});
+	};
+	const downloadMigrationHandoffReport = async () => {};
+	const downloadSmartImportSafeHandoffReport = async () => {};
+	const downloadSmartImportReport = async () => {};
+	const handleBrowserMigrationInputChange = async (_files: any) => {};
+	const ingestImportFile = async (_file: any) => {};
+	const addMigrationDiscoveryCandidateToSmartImport = (_candidate: any) => {};
+	const runMigrationAutopilot = async (_knownDiscovery?: any, _options?: any) => {};
+
 	return {
 		uploadFile,
 		mapColumns,
@@ -76,5 +154,22 @@ export function useMigrationQueries() {
 		execute,
 		rollback,
 		discover,
+		pickBrowserMigrationSource,
+		planMigrationDiscoveryCandidate,
+		previewMigrationDiscoveryCandidate,
+		previewMigrationAutopilotSources,
+		probeMigrationDiscoveryCandidate,
+		previewImport,
+		previewSmartImport,
+		addMigrationDiscoveryCandidateToSmartImport,
+		runMigrationAutopilot,
+		commitImport,
+		commitSmartImport,
+		discoverMigrationSources,
+		downloadMigrationHandoffReport,
+		downloadSmartImportSafeHandoffReport,
+		downloadSmartImportReport,
+		handleBrowserMigrationInputChange,
+		ingestImportFile,
 	};
 }

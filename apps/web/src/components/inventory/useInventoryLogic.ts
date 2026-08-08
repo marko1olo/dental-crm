@@ -839,6 +839,6 @@ export function useInventoryLogic(organizationId: string) {
 		setQuantityToDeduct,
 		handleAddRule,
 		handleDeleteRule,
-		servicesList: dashboard?.prices || [],
+		servicesList: (dashboard as any)?.prices || dashboard?.serviceCatalog || [],
 	};
 }

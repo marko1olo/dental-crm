@@ -185,10 +185,13 @@ export function useClinicalVisitLogic() {
 		setTreatmentPlanNewApprovalAcknowledged(false);
 	};
 
+	const toggleClinicalRule = async (_rule: any) => {};
+
 	return {
 		// Odontogram Surface Option
 		odontogramUseSurfaces,
 		setOdontogramUseSurfaces,
+		toggleClinicalRule,
 
 		// Treatment Plan & Clinical Tooth Rows
 		clinicalToothRowsText,

@@ -1,15 +1,13 @@
-## 2026-08-07T23:08:40Z
-Conduct a thorough technical investigation of `apps/web/src` for race conditions and double-submit vulnerabilities (R2):
-1. Read `C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md` and `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`.
-2. Perform structural search across `apps/web/src` for all `onSubmit`, `<form`, and mutating `onClick` handlers triggering network/async operations using ripgrep (`rg`) or ast-grep (`npx @ast-grep/cli`).
-3. Audit every form and action button:
-   - Check if an `isSubmitting`, `isLoading`, or `isPending` state guard exists.
-   - Check if mutating buttons have `disabled={isSubmitting}` or `disabled={isLoading}`.
-   - Check if mutating buttons have `aria-busy={true}` or `aria-busy={isSubmitting}` for A11y & CLS compliance.
-4. Compile a comprehensive inventory of all unfortified forms and action buttons in `apps/web/src`, including:
-   - Exact file path and line numbers
-   - Component / form name
-   - Defect type (missing loading guard, missing disabled attribute, missing aria-busy)
-   - Recommended state guard implementation
-5. Write your complete handoff report to `C:\Clinic_MVP\dental-crm\.agents\explorer_2\handoff.md` and update `progress.md` in your directory.
-6. Send a message to orchestrator when done with the path to your handoff report.
+## 2026-08-08T10:00:18Z
+You are Explorer 2 (teamwork_preview_explorer).
+Your working directory is `C:\Clinic_MVP\dental-crm\.agents\explorer_2`.
+You MUST read:
+1. `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md` (Constitutional rules)
+2. `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md` (Mission requirements)
+
+TASK:
+1. Inspect `C:\Clinic_MVP\dental-crm\dead_props.txt` to identify all 198 missing properties. Note: dead_props.txt may be UTF-16LE encoded, so use node or powershell script or ripgrep/git commands to process it cleanly.
+2. Focus on Part 2: Properties 67 through 132 in `dead_props.txt`.
+3. Retrieve their original implementations from Golden Reference Commit `da92ab9507` via `git show da92ab9507:apps/web/src/useAppLogic.tsx`.
+4. Survey modern codebase (`apps/web/src/useAppLogic.tsx` and `apps/web/src/hooks/domains/`) to see which domain hooks currently exist, where these properties/logic used to live, and how they should be integrated into modern architecture without breaking or overwriting any modern code or bugfixes.
+5. Write your complete analysis and findings to `C:\Clinic_MVP\dental-crm\.agents\explorer_2\handoff.md` and report back to parent orchestrator.

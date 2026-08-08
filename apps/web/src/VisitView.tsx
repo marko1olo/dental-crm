@@ -257,7 +257,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		detail: "Готово к сохранению в историю",
 		disabled: false,
 		kind: "save",
-		onClick: () => {},
+		onClick: flushPendingVisitSaves,
 	};
 	const safeVisitWorkflowSteps = Array.isArray(visitWorkflowSteps)
 		? visitWorkflowSteps

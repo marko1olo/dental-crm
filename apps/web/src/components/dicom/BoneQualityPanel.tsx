@@ -55,7 +55,7 @@ export function BoneQualityPanel({
 	implantLengthMm = 10.0,
 	implantSystem = "osstem",
 	toothFdi,
-	onSystemChange = () => {},
+	onSystemChange,
 }: Props) {
 	const [expanded, setExpanded] = useState(true);
 
@@ -167,7 +167,7 @@ export function BoneQualityPanel({
 						<select
 							id="bone-implant-system-select"
 							value={implantSystem}
-							onChange={(e) => onSystemChange(e.target.value as ImplantSystem)}
+							onChange={(e) => onSystemChange?.(e.target.value as ImplantSystem)}
 							className="w-full text-xs p-1.5 rounded-md border"
 							style={{
 								background: "var(--surface-50)",

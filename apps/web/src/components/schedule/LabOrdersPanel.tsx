@@ -99,7 +99,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 	useEffect(() => {
 		if (doctors.length > 0 && !doctorId) {
-			setDoctorId(doctors[0].id);
+			setDoctorId(doctors[0]?.id || "");
 		}
 	}, [doctors, doctorId]);
 

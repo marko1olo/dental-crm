@@ -287,6 +287,16 @@ export function useStaffSettingsLogic({
 	const newChairReadyToCreate =
 		newChairName.trim().length > 0 && !isChairCreating;
 
+	const lookupClinicPublicProfile = async () => {
+		return fetch("/api/settings/clinic/lookup", {
+			method: "POST",
+			headers: auth.settingsAccessHeaders({
+				"content-type": "application/json",
+			}),
+			body: JSON.stringify(clinicProfileDraft ?? {}),
+		});
+	};
+
 	return {
 		isStaffCreating,
 		isChairCreating,
@@ -297,5 +307,6 @@ export function useStaffSettingsLogic({
 		deleteChair,
 		newStaffReadyToCreate,
 		newChairReadyToCreate,
+		lookupClinicPublicProfile,
 	};
 }

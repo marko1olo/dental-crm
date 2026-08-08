@@ -154,7 +154,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 				method: "GET",
 				headers: denteAdminSecretRequestHeaders(
 					undefined,
-					authRef.current?.settingsAdminSecretSession,
+					(authRef.current as any)?.settingsAdminSecretSession,
 				),
 			});
 			const payload = (await response.json().catch((err) => {

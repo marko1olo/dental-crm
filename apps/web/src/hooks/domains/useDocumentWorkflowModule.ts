@@ -3614,6 +3614,12 @@ export function useDocumentWorkflowModule({
 		}
 	}
 
+	const _inn = clinicProfileDraft.inn?.trim() || "";
+	const _insuranceContractId =
+		(documentPatient as any)?.insuranceContractId ||
+		(documentPatient as any)?.administrativeProfile?.insuranceContractId ||
+		"";
+
 	return {
 		...documentState,
 		requestDocumentIssue,
@@ -3651,5 +3657,60 @@ export function useDocumentWorkflowModule({
 		togglePhotoVideoMaterial,
 		selectAllEligibleTaxPaymentsForCurrentDocument,
 		selectRefundOriginalPayment,
+		createDocument: requestDocumentIssue,
+		activeTreatmentPlanScenarios: _activeTreatmentPlanScenarios,
+		activeVisitClinicalRuleEvaluations,
+		activeVisitClinicalRuleSummary: _activeVisitClinicalRuleSummary,
+		compactDocumentText,
+		completedActFiscalReceiptLines: _completedActFiscalReceiptLines,
+		eligibleRefundCorrectionPayments,
+		inferredTreatmentArea,
+		inn: _inn,
+		installmentScheduleBaseDocumentTitleValue: _installmentScheduleBaseDocumentTitleValue,
+		installmentScheduleInstallmentRows: _installmentScheduleInstallmentRows,
+		installmentSchedulePrepaidRubValue,
+		installmentScheduleTotalRubValue,
+		insuranceContractId: _insuranceContractId,
+		markPostVisitManualEdited: _markPostVisitManualEdited,
+		minorConsentDiagnosisOrIndicationValue: _minorConsentDiagnosisOrIndicationValue,
+		minorConsentInterventionScopeValue: _minorConsentInterventionScopeValue,
+		minorConsentPatientBirthDateValue: _minorConsentPatientBirthDateValue,
+		minorConsentPatientFullNameValue: _minorConsentPatientFullNameValue,
+		minorRepresentativeFullNameValue: _minorRepresentativeFullNameValue,
+		minorRepresentativeIdentityDocumentValue: _minorRepresentativeIdentityDocumentValue,
+		minorRepresentativePhoneValue: _minorRepresentativePhoneValue,
+		minorRepresentativeRelationshipValue: _minorRepresentativeRelationshipValue,
+		outpatient025uMedicalCardNumberValue,
+		paidContractTotalRubValue: _paidContractTotalRubValue,
+		patientClinicalRuleEvaluations,
+		patientClinicalRuleSummary: _patientClinicalRuleSummary,
+		paymentInvoiceTotalRubValue,
+		paymentReceiptFiscalReceiptLines: _paymentReceiptFiscalReceiptLines,
+		paymentReceiptIssuedByValue: _paymentReceiptIssuedByValue,
+		paymentReceiptPayerBirthDateValue: _paymentReceiptPayerBirthDateValue,
+		paymentReceiptPayerFullNameValue: _paymentReceiptPayerFullNameValue,
+		paymentReceiptPayerIdentityDocumentValue: _paymentReceiptPayerIdentityDocumentValue,
+		paymentReceiptPayerInnValue: _paymentReceiptPayerInnValue,
+		paymentReceiptPayerRelationshipValue: _paymentReceiptPayerRelationshipValue,
+		plannedServiceLinesForFinancialPayload,
+		selectedCompletedActContractDocumentId,
+		selectedDocumentMetadata: _selectedDocumentMetadata,
+		selectedDocumentUsesTaxPaymentSelection,
+		selectedEligibleTaxPayments,
+		selectedPaymentReceiptIdSet,
+		selectedPaymentReceiptPayments,
+		selectedPaymentReceiptTotalRub: _selectedPaymentReceiptTotalRub,
+		selectedRefundCorrectionPayment: _selectedRefundCorrectionPayment,
+		selectedReleaseSourceRequestDocumentId,
+		selectedTaxDocumentPayerKey,
+		selectedTaxPaymentIdSet,
+		selectedTaxPaymentTotalRub: _selectedTaxPaymentTotalRub,
+		treatmentAcceptancePlannedTotalRub,
+		treatmentEstimatePatientOrPayerFullNameValue: _treatmentEstimatePatientOrPayerFullNameValue,
+		treatmentEstimateTotalRubValue: _treatmentEstimateTotalRubValue,
+		treatmentEstimateTreatmentBasisValue: _treatmentEstimateTreatmentBasisValue,
+		warrantyLinkedActOrContractValue: _warrantyLinkedActOrContractValue,
+		warrantyServiceOrWorkNameValue: _warrantyServiceOrWorkNameValue,
+		warrantyTeethOrAreaValue: _warrantyTeethOrAreaValue,
 	};
 }

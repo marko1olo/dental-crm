@@ -54,11 +54,11 @@ export function IncomingCallToast() {
 		: null;
 
 	const hasDms = Boolean(
-		patient?.insuranceContractId ||
-			patient?.administrativeProfile?.insuranceContractId,
+		(patient as any)?.insuranceContractId ||
+			(patient?.administrativeProfile as any)?.insuranceContractId,
 	);
 	const hasNotes = Boolean(patient?.notes?.trim());
-	const noShowRisk = patient?.noShowRisk;
+	const noShowRisk = (patient as any)?.noShowRisk;
 
 	return (
 		<div
