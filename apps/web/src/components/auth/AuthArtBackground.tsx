@@ -41,8 +41,22 @@ export function AuthArtBackground() {
 
 		// Fetch manifest
 		fetch("/auth-art/manifest.json")
-			.then((res) => res.json())
-			.then((data) => setManifest(data))
+			.then((res) => {
+				/*
+				 * Промис `fetch` на 404 и 500 не отклоняется. Без этой проверки тело
+				 * отказа (или страница ошибки сервера) уходило бы в `setManifest`, и
+				 * `manifest.length` становился undefined — выбор оформления ниже
+				 * получал мусор вместо списка.
+				 */
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				return res.json();
+			})
+			.then((data) => {
+				if (!Array.isArray(data)) {
+					throw new Error("Манифест оформления не является списком");
+				}
+				setManifest(data);
+			})
 			.catch((e) => console.error("Failed to load auth art manifest", e));
 	}, []);
 
