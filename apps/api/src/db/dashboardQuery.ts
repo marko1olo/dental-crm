@@ -2,7 +2,6 @@ import { type Dashboard, dashboardSchema } from "@dental/shared";
 import { buildDashboard } from "../sampleData.js";
 import {
 	assertCriticalSlicesAvailable,
-	type DomainStateHydrationReport,
 	hydrateDomainStateFromDb,
 } from "./domainStateHydration.js";
 

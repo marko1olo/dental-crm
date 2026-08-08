@@ -1,10 +1,8 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type {
 	DocumentIssueSignatureAttestation,
-	DocumentKind,
-	DocumentPayload,
 	DocumentReleaseJournalEntry,
 	DocumentVoidAttestation,
 	GeneratedDocument,
@@ -13,7 +11,7 @@ import type {
 	TaxXmlSourceSnapshot,
 	TreatmentPlanItem,
 } from "@dental/shared";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "./client.js";
 import * as schema from "./schema.js";

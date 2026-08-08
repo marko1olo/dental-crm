@@ -223,7 +223,7 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 			1,
 			"правило клиники А удалено запросом клиники Б",
 		);
-		assert.strictEqual(rows[0]!.id, RULE_IN_ORG_A);
+		assert.strictEqual(rows[0]?.id, RULE_IN_ORG_A);
 		assert.strictEqual((await getClinicalRules(ORG_A)).length, 1);
 
 		// И организация действительно попала в WHERE, а не была проверена мимо базы.

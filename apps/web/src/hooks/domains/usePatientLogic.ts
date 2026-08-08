@@ -1,6 +1,5 @@
 import type { Dashboard, Patient } from "@dental/shared";
-import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type {
 	PatientAdministrativeProfileDraft,
 	PatientCoreDraft,
@@ -30,6 +29,7 @@ import { shouldResetPatientDraftState } from "../../components/patients/patientD
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useDocumentStore } from "../../store/documentStore";
 import { usePatientStore } from "../../store/patientStore";
+import { fetchWithHandling } from "../../utils/networkUtils";
 
 /** Заготовка приёма из гидратации базы: приёмов нет, объект есть. */
 const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
@@ -292,7 +292,7 @@ export function usePatientLogic({
 		);
 		setPatientAdministrativeProfileSaveState("saving");
 		try {
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/patients/${selectedPatient.id}/administrative-profile`,
 				{
 					method: "PUT",
@@ -366,7 +366,6 @@ export function usePatientLogic({
 		setDashboard,
 		setPatientAdministrativeProfileDraft,
 		setPatientAdministrativeProfileDirty,
-		setPatientAdministrativeProfileSaveState,
 	]);
 
 	useEffect(() => {
@@ -548,13 +547,16 @@ export function usePatientLogic({
 		}
 		setPatientCoreSaveState("saving");
 		try {
-			const response = await fetch(`/api/patients/${selectedPatient.id}`, {
-				method: "PUT",
-				headers: auth.denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify(payload),
-			});
+			const response = await fetchWithHandling(
+				`/api/patients/${selectedPatient.id}`,
+				{
+					method: "PUT",
+					headers: auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify(payload),
+				},
+			);
 			if (!response.ok)
 				throw new Error(
 					await responseErrorMessage(
@@ -621,7 +623,7 @@ export function usePatientLogic({
 		};
 		setIsPatientCreating(true);
 		try {
-			const response = await fetch("/api/patients", {
+			const response = await fetchWithHandling("/api/patients", {
 				method: "POST",
 				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",

@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { clinicWorkflows, organizations } from "../db/schema.js";
+import { clinicWorkflows } from "../db/schema.js";
 import { requireOrganizationId } from "../security/identity.js";
 
 const createWorkflowSchema = z.object({

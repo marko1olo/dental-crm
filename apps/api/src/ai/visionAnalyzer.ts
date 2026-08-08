@@ -6,7 +6,6 @@ import {
 	recordProviderKeyFailure,
 	recordProviderKeySuccess,
 	selectProviderKey,
-	shouldTryNextProviderKey,
 } from "../speech/keyPool.js";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -230,7 +229,7 @@ async function callVisionModel(
 	};
 
 	const resp = await fetchWithProviderTimeout(
-		baseUrl + "/chat/completions",
+		`${baseUrl}/chat/completions`,
 		{
 			method: "POST",
 			headers: {
@@ -437,11 +436,11 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 		return {
 			summary: pass1.text.slice(0, 2000),
 			toothUpdates: [],
-			_meta: { pass1Model: pass1Slots[pass1.slotIdx]!.model, pass2Model: null },
+			_meta: { pass1Model: pass1Slots[pass1.slotIdx]?.model ?? "unknown", pass2Model: null },
 		};
 	}
 
-	const pass1ModelName = pass1Slots[pass1.slotIdx]!.model;
+	const pass1ModelName = pass1Slots[pass1.slotIdx]?.model;
 
 	// ── PASS 2: Critic pass (different model from pass1 if possible) ──────────
 	// Use the other provider for critic, or cycle to the next slot
@@ -503,6 +502,6 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 				? finalResult.summary
 				: JSON.stringify(finalResult),
 		toothUpdates,
-		_meta: { pass1Model: pass1ModelName, pass2Model: pass2ModelName },
+		_meta: { pass1Model: pass1ModelName ?? "unknown", pass2Model: pass2ModelName },
 	};
 }

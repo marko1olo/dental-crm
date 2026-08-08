@@ -381,7 +381,7 @@ function requireClinicOrganizationId(
 		return null;
 	}
 	const payload = verifyToken(clinicToken, TOKEN_SECRET());
-	if (!payload || !payload.organizationId) {
+	if (!payload?.organizationId) {
 		reply
 			.code(401)
 			.send({ error: "AuthExpired", message: clinicSessionRejectedMessage });

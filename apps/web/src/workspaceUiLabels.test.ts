@@ -182,7 +182,13 @@ describe("workspaceUiLabels", () => {
 			assert.equal(
 				paymentFiscalReceiptLabelForUi({
 					id: "1234567890",
-					fiscalReceipt: { fn: "111", fd: "222", fpd: "333" } as any,
+					fiscalReceipt: {
+						fn: "111",
+						fd: "222",
+						fpd: "333",
+					} as unknown as NonNullable<
+						Dashboard["payments"][number]["fiscalReceipt"]
+					>,
 				} as unknown as Pick<
 					Dashboard["payments"][number],
 					"id" | "fiscalReceiptNumber" | "fiscalReceipt"
@@ -195,7 +201,9 @@ describe("workspaceUiLabels", () => {
 			assert.equal(
 				paymentFiscalReceiptLabelForUi({
 					id: "1234567890",
-					fiscalReceipt: { fn: "111", fd: "222" } as any,
+					fiscalReceipt: { fn: "111", fd: "222" } as unknown as NonNullable<
+						Dashboard["payments"][number]["fiscalReceipt"]
+					>,
 				} as unknown as Pick<
 					Dashboard["payments"][number],
 					"id" | "fiscalReceiptNumber" | "fiscalReceipt"
@@ -286,11 +294,15 @@ describe("workspaceUiLabels", () => {
 			);
 		});
 
-		it("returns title if no paidMedicalServicesContract", () => {
+		it("returns formatted string fallback to title when no chain summary", () => {
 			assert.equal(
 				completedActContractReferenceForUi({
 					title: "My Act",
-					chainSummary: {} as any,
+					chainSummary: {} as unknown as NonNullable<
+						Parameters<
+							typeof completedActContractReferenceForUi
+						>[0]["chainSummary"]
+					>,
 				}),
 				"My Act",
 			);
@@ -300,7 +312,13 @@ describe("workspaceUiLabels", () => {
 			assert.equal(
 				completedActContractReferenceForUi({
 					title: "My Act",
-					chainSummary: { paidMedicalServicesContract: {} as any } as any,
+					chainSummary: {
+						paidMedicalServicesContract: {},
+					} as unknown as NonNullable<
+						Parameters<
+							typeof completedActContractReferenceForUi
+						>[0]["chainSummary"]
+					>,
 				}),
 				"My Act",
 			);
@@ -311,8 +329,12 @@ describe("workspaceUiLabels", () => {
 				completedActContractReferenceForUi({
 					title: "My Act",
 					chainSummary: {
-						paidMedicalServicesContract: { contractNumber: "CN-123" } as any,
-					} as any,
+						paidMedicalServicesContract: { contractNumber: "CN-123" },
+					} as unknown as NonNullable<
+						Parameters<
+							typeof completedActContractReferenceForUi
+						>[0]["chainSummary"]
+					>,
 				}),
 				"CN-123",
 			);
@@ -326,8 +348,12 @@ describe("workspaceUiLabels", () => {
 						paidMedicalServicesContract: {
 							contractNumber: "CN-123",
 							contractDate: "2023-05-01",
-						} as any,
-					} as any,
+						},
+					} as unknown as NonNullable<
+						Parameters<
+							typeof completedActContractReferenceForUi
+						>[0]["chainSummary"]
+					>,
 				}),
 				"CN-123 от 2023-05-01",
 			);

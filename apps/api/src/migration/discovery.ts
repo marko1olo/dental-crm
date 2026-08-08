@@ -146,7 +146,7 @@ const CLINIC_DIRECTORY_HINTS = [
 	"patient",
 ];
 
-export interface DiscoveredSource {
+interface DiscoveredSource {
 	/** Полный путь к файлу. */
 	filePath: string;
 	fileName: string;
@@ -187,7 +187,7 @@ function shouldSkipDirectory(name: string): boolean {
 
 function extensionOf(fileName: string): string {
 	const parts = fileName.split(".");
-	return parts.length > 1 ? parts[parts.length - 1]!.toLowerCase() : "";
+	return parts.length > 1 ? (parts[parts.length - 1]?.toLowerCase() ?? "") : "";
 }
 
 /** Оценка для сортировки находок. */

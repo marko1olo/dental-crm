@@ -33,13 +33,16 @@ import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { DictationHints } from "./DictationHints";
 import { actionFailureToast } from "./lib/panelStateText";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
-import { SmartParsePreview } from "./SmartParsePreview";
+import {
+	type SmartParsedPayload,
+	SmartParsePreview,
+} from "./SmartParsePreview";
 import { usePatientStore } from "./store/patientStore";
 import { formatPhoneNumber } from "./utils/inputSanitation";
 
 type PatientInsight = Dashboard["patientInsights"][number];
-type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
-type PatientAdministrativeProfileSaveState =
+export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
+export type PatientAdministrativeProfileSaveState =
 	| "idle"
 	| "saving"
 	| "saved"
@@ -433,10 +436,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								<DictationHints isVisible={showHints} type="patient" />
 								<SmartParsePreview
 									isVisible={showSmartPreview}
-									parsedData={smartParsedData}
+									parsedData={smartParsedData as SmartParsedPayload | null}
 									rawText={newPatientName}
 									type="patient"
-									onApply={(data: Record<string, string | undefined>) => {
+									onApply={(payload: SmartParsedPayload) => {
+										const data = payload as any;
 										if (data) {
 											setNewPatientName(data.fullName || newPatientName);
 											if (data.phone) setNewPatientPhone(data.phone);

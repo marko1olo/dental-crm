@@ -1950,7 +1950,7 @@ function skippedRowsWarnings(skippedRows: number): string[] {
  * клинике важно число строк, которые надо проверить руками, а не то, на каком
  * шаге они выпали.
  */
-export function selectPricelistServiceRows(
+function selectPricelistServiceRows(
 	parsedRows: DentalPricelistItem[],
 	droppedBeforeGate = 0,
 ): { items: DentalPricelistItem[]; skippedRows: number } {
@@ -2538,7 +2538,7 @@ export function itemFromGroq(
  * (сколько отброшено, что стало с полями). А то, что боевая ветка их ЗОВЁТ,
  * проверяется только вызовом `analyzePricelist` с `useServerAi: true`.
  */
-export function pricelistItemsFromGroqRows(
+function pricelistItemsFromGroqRows(
 	rows: unknown[],
 	request: DentalPricelistAnalysisRequest,
 	catalog: ServiceCatalogItem[],

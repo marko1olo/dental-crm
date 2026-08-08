@@ -437,8 +437,3 @@ export function parseSource(input: ParseSourceInput): ParsedSource {
 		totalRows: parsed.rows.length,
 	};
 }
-
-export { looksLikeDbf, parseDbf } from "./dbf.js";
-export { detectDelimiter, parseDelimited } from "./delimited.js";
-export { looksLikeZipContainer, parseOds, parseXlsx } from "./spreadsheet.js";
-export { parseJsonSource, parseXmlSource } from "./structured.js";

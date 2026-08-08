@@ -54,12 +54,12 @@ function clientKey(request: FastifyRequest): string {
 	return `${request.ip ?? "unknown"}|${request.method}|${routeId}`;
 }
 
-export function resetRateLimit(request: FastifyRequest): void {
+export function resetRateLimit(_request: FastifyRequest): void {
 	// With @fastify/rate-limit, we can clear the internal store if needed, but since our limits
 	// are 1 minute, letting them naturally expire is fine for auth actions in most cases.
 }
 
-export function clearRateLimitState(): void {
+function _clearRateLimitState(): void {
 	// No-op for the external store.
 }
 
@@ -81,7 +81,7 @@ export function registerRateLimiting(app: FastifyInstance): void {
 			const rule = resolveRule(req);
 			return rule ? rule.max : 1000000;
 		},
-		errorResponseBuilder: (req, context) => {
+		errorResponseBuilder: (_req, _context) => {
 			return {
 				error: "TooManyRequests",
 				message: "Слишком много запросов. Пожалуйста, подождите.",

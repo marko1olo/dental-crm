@@ -22,7 +22,7 @@ export type { DeliveryErrorClass };
 
 // ─── Тихие часы ──────────────────────────────────────────────────────────────
 
-export const MINUTES_PER_DAY = 1440;
+const MINUTES_PER_DAY = 1440;
 
 /**
  * Локальные час и минута в часовом поясе организации. Без часового пояса
@@ -227,9 +227,7 @@ export function isRetryableErrorClass(errorClass: DeliveryErrorClass): boolean {
 }
 
 /** Класс ошибки, при котором отправлять нечем: это не отказ, а ненастроенность. */
-export function isSuppressingErrorClass(
-	errorClass: DeliveryErrorClass,
-): boolean {
+function isSuppressingErrorClass(errorClass: DeliveryErrorClass): boolean {
 	return errorClass === "not_configured";
 }
 
@@ -285,7 +283,7 @@ export function computeRetryDelaySeconds(
 	);
 }
 
-export type AttemptOutcome =
+type AttemptOutcome =
 	| {
 			readonly kind: "sent";
 			readonly providerMessageId: string | null;

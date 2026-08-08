@@ -1,14 +1,15 @@
+import { fetchWithHandling } from "../../utils/networkUtils";
 export function useImagingQueries(options?: { auth?: any }) {
 	const auth = options?.auth;
 
 	const getScans = async (patientId: string) => {
-		return fetch(`/api/xray/scans?patientId=${patientId}`, {
+		return fetchWithHandling(`/api/xray/scans?patientId=${patientId}`, {
 			headers: auth.denteClinicalReadHeaders(),
 		});
 	};
 
 	const saveBatchToothStates = async (patientId: string, updates: any[]) => {
-		return fetch(`/api/patients/${patientId}/tooth-states/batch`, {
+		return fetchWithHandling(`/api/patients/${patientId}/tooth-states/batch`, {
 			method: "POST",
 			headers: auth.denteClinicalMutationHeaders({
 				"content-type": "application/json",
@@ -22,7 +23,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 		imageBase64: string;
 		focus?: "caries" | "perio" | "endo" | null;
 	}) => {
-		return fetch("/api/imaging/visiograph-ai", {
+		return fetchWithHandling("/api/imaging/visiograph-ai", {
 			method: "POST",
 			headers: auth.denteClinicalMutationHeaders({
 				"content-type": "application/json",
@@ -32,7 +33,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 	};
 
 	const saveScan = async (payload: any) => {
-		return fetch("/api/xray/scans", {
+		return fetchWithHandling("/api/xray/scans", {
 			method: "POST",
 			headers: auth.denteClinicalMutationHeaders({
 				"content-type": "application/json",
@@ -42,13 +43,13 @@ export function useImagingQueries(options?: { auth?: any }) {
 	};
 
 	const getScan = async (scanId: string) => {
-		return fetch(`/api/xray/scans/${encodeURIComponent(scanId)}`, {
+		return fetchWithHandling(`/api/xray/scans/${encodeURIComponent(scanId)}`, {
 			headers: auth.denteClinicalReadHeaders(),
 		});
 	};
 
 	const deleteScan = async (scanId: string) => {
-		return fetch(`/api/xray/scans/${encodeURIComponent(scanId)}`, {
+		return fetchWithHandling(`/api/xray/scans/${encodeURIComponent(scanId)}`, {
 			method: "DELETE",
 			headers: auth.denteClinicalMutationHeaders(),
 		});
@@ -67,7 +68,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 		if (el) el.click();
 	};
 	const previewImagingImport = async (payload?: any) => {
-		return fetch("/api/imaging/imports/preview", {
+		return fetchWithHandling("/api/imaging/imports/preview", {
 			method: "POST",
 			headers: auth.denteClinicalMutationHeaders({
 				"content-type": "application/json",
@@ -77,7 +78,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 	};
 	const restoreMprWorkbenchLocalDraft = async () => {};
 	const runRecognitionJob = async (payload?: any) => {
-		return fetch("/api/ai/recognition-jobs", {
+		return fetchWithHandling("/api/ai/recognition-jobs", {
 			method: "POST",
 			headers: auth.denteClinicalMutationHeaders({
 				"content-type": "application/json",
@@ -86,7 +87,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 		});
 	};
 	const scanDicomFolderSeries = async (payload?: any) => {
-		return fetch("/api/imaging/dicom/folder-workup-plan", {
+		return fetchWithHandling("/api/imaging/dicom/folder-workup-plan", {
 			method: "POST",
 			headers: auth.denteClinicalReadHeaders({
 				"content-type": "application/json",
@@ -95,7 +96,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 		});
 	};
 	const scanImagingFolder = async (payload?: any) => {
-		return fetch("/api/imaging/folders/scan-preview", {
+		return fetchWithHandling("/api/imaging/folders/scan-preview", {
 			method: "POST",
 			headers: auth.denteClinicalReadHeaders({
 				"content-type": "application/json",
@@ -104,7 +105,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 		});
 	};
 	const commitImagingImport = async (payload?: any) => {
-		return fetch("/api/imaging/imports/commit", {
+		return fetchWithHandling("/api/imaging/imports/commit", {
 			method: "POST",
 			headers: auth.denteClinicalMutationHeaders({
 				"content-type": "application/json",
@@ -115,7 +116,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 	const dicomFirstFrameImageStyle = {};
 	const dicomWorkbenchSourceIsRedacted = false;
 	const discoverDicomFolders = async () => {
-		return fetch("/api/imaging/dicom/local-folder-discovery", {
+		return fetchWithHandling("/api/imaging/dicom/local-folder-discovery", {
 			method: "POST",
 			headers: auth.denteClinicalReadHeaders({
 				"content-type": "application/json",
@@ -124,7 +125,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 	};
 	const handleBrowserDirectoryInputChange = async (_files: any) => {};
 	const organizeLocalImagingSources = async () => {
-		return fetch("/api/imaging/local-organizer/scan-preview", {
+		return fetchWithHandling("/api/imaging/local-organizer/scan-preview", {
 			method: "POST",
 			headers: auth.denteClinicalReadHeaders({
 				"content-type": "application/json",

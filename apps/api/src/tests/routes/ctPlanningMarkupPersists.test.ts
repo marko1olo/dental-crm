@@ -312,7 +312,7 @@ describe("разметка планирования имплантации до�
 			`после второго сохранения строк ${rows.length}, ожидалась одна`,
 		);
 		assert.equal(
-			rows[0]!.spline,
+			rows[0]?.spline,
 			JSON.stringify(changed),
 			"правка дуги не доехала до базы",
 		);
@@ -365,7 +365,7 @@ describe("разметка планирования имплантации до�
 		const rows = await rawPlanningRows();
 		assert.equal(rows.length, 1);
 		assert.equal(
-			rows[0]!.spline,
+			rows[0]?.spline,
 			JSON.stringify(SPLINE_POINTS),
 			"чужая клиника перезаписала разметку пациента",
 		);

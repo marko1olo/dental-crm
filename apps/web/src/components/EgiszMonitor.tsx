@@ -287,7 +287,7 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 						Не заданы настройки сервера:
 					</p>
 					<ul className="m-0 pl-4 flex flex-col gap-0.5">
-						{state.missingConfiguration.map((name) => (
+						{state.missingConfiguration?.map((name) => (
 							<li
 								key={name}
 								className="text-xs font-mono text-amber-900 dark:text-amber-200 break-all"

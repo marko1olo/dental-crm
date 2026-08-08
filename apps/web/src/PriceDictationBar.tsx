@@ -18,7 +18,14 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 	const [inputText, setInputText] = useState("");
 	const [showHints, setShowHints] = useState(false);
 	const [showPreview, setShowPreview] = useState(false);
-	const [parsedData, setParsedData] = useState<any>(null);
+	type ParsedPriceData = {
+		serviceName?: string;
+		price?: number | null;
+		category?: string | null;
+		isAiTask?: boolean;
+		prompt?: string;
+	};
+	const [parsedData, setParsedData] = useState<ParsedPriceData | null>(null);
 
 	const handleParse = (text: string) => {
 		const result = AiOrchestrator.processPriceDictation(text);
@@ -29,7 +36,7 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 		} else {
 			setParsedData({
 				isAiTask: true,
-				prompt: result.suggestedPrompt,
+				prompt: result.suggestedPrompt || "",
 				serviceName: "Требуется ИИ",
 			});
 			setShowPreview(true);
@@ -37,9 +44,9 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 		}
 	};
 
-	const handleApply = (data: any) => {
+	const handleApply = (data: ParsedPriceData) => {
 		if (data?.serviceName && data.price !== null && data.price !== undefined) {
-			onPriceParsed(data.serviceName, data.price, data.category);
+			onPriceParsed(data.serviceName, data.price, data.category ?? null);
 		}
 		setShowPreview(false);
 		setInputText("");
@@ -90,7 +97,7 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 
 			<SmartParsePreview
 				isVisible={showPreview}
-				parsedData={parsedData}
+				parsedData={parsedData as any}
 				rawText={inputText}
 				type="prices"
 				onApply={handleApply}

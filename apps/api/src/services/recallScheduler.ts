@@ -40,7 +40,7 @@ interface RecallItem {
 	organizationId: string;
 }
 
-export function buildRecallTask(
+function buildRecallTask(
 	item: RecallItem,
 	now: Date,
 ): typeof communicationTasks.$inferInsert | null {

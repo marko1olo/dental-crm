@@ -341,7 +341,7 @@ export function patientArchiveRowsBlockBooking(
 }
 
 import {
-	createPatientInDb,
+	createPatientSafeInDb,
 	getPatientByIdFromDb,
 	getPatientsFromDb,
 	updatePatientAdministrativeProfileInDb,
@@ -435,7 +435,7 @@ function requireClinicOrganizationId(
 		return null;
 	}
 	const payload = verifyToken(clinicToken, TOKEN_SECRET());
-	if (!payload || !payload.organizationId) {
+	if (!payload?.organizationId) {
 		reply
 			.code(401)
 			.send({ error: "AuthExpired", message: clinicAuthRejectedMessage });
@@ -476,24 +476,27 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				message: patientCreateValidationMessage,
 			});
 		}
-		const dbPatients = await getPatientsFromDb(orgId);
-		const duplicate = findPatientDuplicate(dbPatients, input, undefined, {
-			requireDistinguishingData: true,
-		});
-		if (duplicate) {
-			// Один и тот же ответ 409, но объяснения разные: во что упёрся оператор —
-			// в совпадение имени с телефоном/датой или в то, что кроме имени в
-			// запросе не было ничего.
-			const nothingButName =
-				!(input.birthDate ?? "").trim() &&
-				!normalizePatientPhoneForDuplicate(input.phone);
-			return nothingButName
-				? sendPatientNameOnlyDuplicate(reply)
-				: sendPatientDuplicate(reply);
-		}
 		try {
-			const patient = await createPatientInDb(orgId, input);
-			return reply.code(201).send(patientSchema.parse(patient));
+			const safeResult = await createPatientSafeInDb(
+				orgId,
+				input,
+				(patients, inp) => {
+					return findPatientDuplicate(patients, inp as any, undefined, {
+						requireDistinguishingData: true,
+					});
+				},
+			);
+
+			if (safeResult.type === "duplicate") {
+				const nothingButName =
+					!(input.birthDate ?? "").trim() &&
+					!normalizePatientPhoneForDuplicate(input.phone);
+				return nothingButName
+					? sendPatientNameOnlyDuplicate(reply)
+					: sendPatientDuplicate(reply);
+			}
+
+			return reply.code(201).send(patientSchema.parse(safeResult.patient));
 		} catch (e) {
 			console.error("[Patients] Create error:", e);
 			/*

@@ -8,7 +8,7 @@ import type { FastifyRequest } from "fastify";
 import { db } from "./db/client.js";
 import { clinicalAuditLogs } from "./db/schema.js";
 
-export type ClinicalAuditAction =
+type ClinicalAuditAction =
 	| "VIEW_PATIENT"
 	| "VIEW_CBCT"
 	| "UPDATE_TOOTH_STATE"
@@ -56,9 +56,7 @@ export interface ClinicalAuditInput {
  * информации о событиях безопасности) без такой строки не выполняется:
  * потерянное событие обязано оставаться восстановимым.
  */
-export async function writeClinicalAuditLog(
-	input: ClinicalAuditInput,
-): Promise<void> {
+async function writeClinicalAuditLog(input: ClinicalAuditInput): Promise<void> {
 	try {
 		await db.insert(clinicalAuditLogs).values({
 			organizationId: input.organizationId,

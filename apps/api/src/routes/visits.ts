@@ -572,7 +572,7 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 
 		const { visitId } = request.params as { visitId: string };
 		const body = request.body as { status: string };
-		if (!body || !body.status) {
+		if (!body?.status) {
 			reply.code(400);
 			return { error: "ValidationError", message: "Missing status" };
 		}
@@ -584,7 +584,7 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 				body.status,
 			);
 			return { visit: updated };
-		} catch (error) {
+		} catch (_error) {
 			reply.code(404);
 			return { error: "NotFound", message: "Visit not found" };
 		}

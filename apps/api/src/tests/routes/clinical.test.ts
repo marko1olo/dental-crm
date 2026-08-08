@@ -2,7 +2,6 @@ import assert from "node:assert";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import Fastify from "fastify";
 import { db } from "../../db/client.js";
-import * as schema from "../../db/schema.js";
 import { registerClinicalRoutes } from "../../routes/clinical.js";
 
 /**

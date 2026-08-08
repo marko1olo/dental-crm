@@ -292,7 +292,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				<div className="lab-orders-empty">Нет заказов</div>
 			) : (
 				<div className="lab-orders-list">
-					{orders.map((order) => (
+					{orders?.map((order) => (
 						<div key={order.id} className="lab-order-card">
 							<div className="lab-order-main">
 								{order.toothFdi && (

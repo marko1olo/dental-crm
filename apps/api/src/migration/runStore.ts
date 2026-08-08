@@ -75,7 +75,7 @@ export const WORKER_ID = `${hostname()}#${process.pid}`;
  * медленной базе может занять десятки секунд, и слишком короткое окно привело бы
  * к тому, что живой прогон отбирают у работающего процесса.
  */
-export const HEARTBEAT_STALE_MS = 2 * 60 * 1000;
+const HEARTBEAT_STALE_MS = 2 * 60 * 1000;
 
 /** Сколько строк читать из стейджинга за один запрос. */
 export const STAGING_PAGE_SIZE = 500;
@@ -491,7 +491,7 @@ export async function releaseOwnRuns(): Promise<number> {
  * системному маршруту состояния, которому по смыслу и полагается видеть очередь
  * целиком.
  */
-export async function pendingRunCount(): Promise<number> {
+async function _pendingRunCount(): Promise<number> {
 	const staleBefore = new Date(Date.now() - HEARTBEAT_STALE_MS);
 	return withSuperuserBypass(async (tx) => {
 		const [row] = await tx
@@ -772,7 +772,7 @@ export async function markRemainingReadyAsSkipped(
  * лежит в стейджинге) вместе с этим предупреждением: без него следующий автор
  * вернёт её ровно на то место, откуда её убрали.
  */
-export async function stagedMoneyKopecks(
+async function _stagedMoneyKopecks(
 	runId: string,
 	organizationId: string,
 ): Promise<number | null> {

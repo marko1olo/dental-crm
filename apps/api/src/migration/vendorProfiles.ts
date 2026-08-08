@@ -57,7 +57,7 @@ export function canonicalColumnName(value: string): string {
  * систем; для самописных баз работает обобщённый российский профиль ниже, он же
  * покрывает «сохранить как CSV» из русского Excel.
  */
-export const VENDOR_PROFILES: VendorProfile[] = [
+const VENDOR_PROFILES: VendorProfile[] = [
 	{
 		code: "ident",
 		title: "IDENT",
@@ -606,7 +606,7 @@ export const VENDOR_PROFILES: VendorProfile[] = [
  * Живёт отдельно от VENDOR_PROFILES, потому что не должен участвовать в
  * состязании за лучшее совпадение — он всегда доступен как основа.
  */
-export const GENERIC_RU_RULES: Partial<
+const GENERIC_RU_RULES: Partial<
 	Record<MigrationEntityKind, VendorFieldRule[]>
 > = {
 	patient: [

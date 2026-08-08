@@ -231,8 +231,8 @@ describe("ClinicalRouter — передача между клиническим�
 		}
 		await assert.rejects(
 			() =>
-				new ClinicalRouter().handlePhaseCompletion(fixture!.organizationId, {
-					patientId: fixture!.foreignPatientId as string,
+				new ClinicalRouter().handlePhaseCompletion(fixture?.organizationId, {
+					patientId: fixture?.foreignPatientId as string,
 					completedPhaseCode: "PHASE_1_THERAPY",
 					notes: `${runTag} чужой пациент`,
 					toothCodes: ["11"],

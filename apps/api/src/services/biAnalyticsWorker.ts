@@ -154,8 +154,7 @@ export async function computeCohortLtvAll(organizationIds: readonly string[]) {
 }
 
 /** Состояние плана лечения так, как его называет перечисление базы. */
-export type TreatmentPlanStatus =
-	(typeof treatmentPlanStatus.enumValues)[number];
+type TreatmentPlanStatus = (typeof treatmentPlanStatus.enumValues)[number];
 
 /**
  * ВЕТВИ ВОРОНКИ ВЫВЕДЕНЫ ИЗ ПЕРЕЧИСЛЕНИЯ, А НЕ ЗАПИСАНЫ ВТОРЫМ СПИСКОМ.
@@ -480,7 +479,7 @@ async function computeDoctorProfitabilityAll() {
 		if (!map.has(r.organizationId)) {
 			map.set(r.organizationId, []);
 		}
-		map.get(r.organizationId)!.push(
+		map.get(r.organizationId)?.push(
 			// Счётчик платежей больше не нужен: он служил только выдуманной
 			// успешности `paymentCount > 0 ? 100 : 0`.
 			doctorProfitabilityRow(r.doctorName ?? "Врач не указан", r.totalRevenue),

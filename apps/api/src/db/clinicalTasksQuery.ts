@@ -27,13 +27,13 @@ import { db } from "./client.js";
  * писатель есть — insertClinicalTaskInDb ниже.
  */
 
-export const CLINICAL_TASK_STATUSES = [
+const CLINICAL_TASK_STATUSES = [
 	"pending",
 	"in_progress",
 	"completed",
 	"cancelled",
 ] as const;
-export type ClinicalTaskStatus = (typeof CLINICAL_TASK_STATUSES)[number];
+type ClinicalTaskStatus = (typeof CLINICAL_TASK_STATUSES)[number];
 
 /** Статусы, при которых задача считается ещё не отработанной. */
 const OPEN_CLINICAL_TASK_STATUSES: readonly ClinicalTaskStatus[] = [

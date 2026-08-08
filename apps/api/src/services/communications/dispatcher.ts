@@ -123,7 +123,7 @@ export type ResolvedCommunicationSettings = QuietHoursSettings &
  * Значение совпадает с умолчанием `clinics.timezone`, чтобы два умолчания больше
  * не расходились.
  */
-export const FALLBACK_COMMUNICATION_TIMEZONE = "Europe/Samara";
+const FALLBACK_COMMUNICATION_TIMEZONE = "Europe/Samara";
 
 export const DEFAULT_COMMUNICATION_SETTINGS: ResolvedCommunicationSettings = {
 	timezone: FALLBACK_COMMUNICATION_TIMEZONE,
@@ -747,7 +747,7 @@ async function markDeferred(
  * Что стало с одной строкой очереди. Ровно один из этих итогов на строку —
  * счётчики отчёта складываются в `claimed` без остатка.
  */
-export type RowOutcome =
+type RowOutcome =
 	| "sent"
 	| "retried"
 	| "failed"

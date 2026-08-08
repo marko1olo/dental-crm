@@ -780,7 +780,7 @@ function domainRuleIssues(
 }
 
 /** Краткое описание строки для сообщений — без персональных данных. */
-export function describeRowForOperator(
+function _describeRowForOperator(
 	profile: ColumnProfile[],
 	row: string[],
 ): string {

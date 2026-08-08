@@ -25,7 +25,7 @@ import { randomUUID } from "node:crypto";
 import { createConnection, type Socket } from "node:net";
 import { connect as connectTls, type TLSSocket } from "node:tls";
 
-export type EmailErrorClass =
+type EmailErrorClass =
 	| "not_configured"
 	| "auth"
 	| "recipient_rejected"

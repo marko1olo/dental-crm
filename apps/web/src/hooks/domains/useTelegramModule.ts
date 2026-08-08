@@ -21,6 +21,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppStore } from "../../store/appStore";
 import { useSettingsStore } from "../../store/settingsStore";
 import { emptyTelegramVisualCardUrlDrafts } from "../../utils/draftDefaults";
+import { fetchWithHandling } from "../../utils/networkUtils";
 import { defaultTelegramPostVisitCheckupDelayHoursByTopic } from "../../workspaceStaticOptions";
 import { useTelegramSettings } from "../useTelegramSettings";
 
@@ -296,7 +297,7 @@ export function useTelegramModule({
 			const outboxParams = telegramOutboxRequestParams(
 				telegramOutbox.nextCursor,
 			);
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/telegram/outbox?${outboxParams.toString()}`,
 				{ cache: "no-store", headers },
 			);
@@ -347,7 +348,7 @@ export function useTelegramModule({
 			const params = telegramLinkCodeLedgerRequestParams(
 				telegramLinkCodeLedger.nextCursor,
 			);
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/telegram/link-codes?${params.toString()}`,
 				{ cache: "no-store", headers },
 			);
@@ -393,7 +394,7 @@ export function useTelegramModule({
 			const params = telegramChatLinkLedgerRequestParams(
 				telegramChatLinkLedger.nextCursor,
 			);
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/telegram/chat-links?${params.toString()}`,
 				{ cache: "no-store", headers },
 			);
@@ -455,7 +456,7 @@ export function useTelegramModule({
 		setIsTelegramLinkCreating(true);
 		setTelegramLinkActionState(null);
 		try {
-			const response = await fetch("/api/telegram/link-codes", {
+			const response = await fetchWithHandling("/api/telegram/link-codes", {
 				method: "POST",
 				headers: telegramControlPlaneHeaders({
 					"Content-Type": "application/json",
@@ -567,7 +568,7 @@ export function useTelegramModule({
 		}
 		setTelegramRevokingLinkId(linkId);
 		try {
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/telegram/chat-links/${encodeURIComponent(linkId)}/revoke${telegramOutboxActionQueryString()}`,
 				{
 					method: "POST",
@@ -617,7 +618,7 @@ export function useTelegramModule({
 		}
 		setIsTelegramLoading(true);
 		try {
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/telegram/messages/preview${telegramOutboxActionQueryString()}`,
 				{
 					method: "POST",
@@ -674,7 +675,7 @@ export function useTelegramModule({
 				typeof crypto !== "undefined" && "randomUUID" in crypto
 					? crypto.randomUUID()
 					: `telegram-send-${Date.now()}`;
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/telegram/outbox/${encodeURIComponent(itemId)}/send${telegramOutboxActionQueryString()}`,
 				{
 					method: "POST",
@@ -739,7 +740,7 @@ export function useTelegramModule({
 		}
 		setIsTelegramSendingDue(true);
 		try {
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/telegram/outbox/send-due${telegramOutboxActionQueryString()}`,
 				{
 					method: "POST",

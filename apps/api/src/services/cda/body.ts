@@ -34,18 +34,15 @@ export function generateCdaBody(ctx: CdaContext): string {
 	 * or emitting an empty paragraph. We never fabricate clinical facts.
 	 */
 
-	const diagnosisText =
-		params.diagnosisText && params.diagnosisText.trim()
-			? params.diagnosisText
-			: "";
-	const icd10Code =
-		params.icd10Code && params.icd10Code.trim() ? params.icd10Code : "";
+	const diagnosisText = params.diagnosisText?.trim()
+		? params.diagnosisText
+		: "";
+	const icd10Code = params.icd10Code?.trim() ? params.icd10Code : "";
 	// ISO 3950 tooth number straight from visit_diaries.diagnosis_tooth (real DB
 	// column). Rendered only when a real value is present; never fabricated.
-	const diagnosisTooth =
-		params.diagnosisTooth && params.diagnosisTooth.trim()
-			? params.diagnosisTooth.trim()
-			: "";
+	const diagnosisTooth = params.diagnosisTooth?.trim()
+		? params.diagnosisTooth.trim()
+		: "";
 
 	/*
 	 * Never emit a fabricated/empty ICD10 value. If the code is missing,
@@ -83,65 +80,59 @@ export function generateCdaBody(ctx: CdaContext): string {
 			</component>`
 			: "";
 
-	const anamnesis =
-		params.anamnesis && params.anamnesis.trim()
-			? section({
-					loinc: "10164-2",
-					displayName: "Анамнез",
-					title: "Анамнез",
-					paragraph: params.anamnesis,
-				})
-			: "";
+	const anamnesis = params.anamnesis?.trim()
+		? section({
+				loinc: "10164-2",
+				displayName: "Анамнез",
+				title: "Анамнез",
+				paragraph: params.anamnesis,
+			})
+		: "";
 
-	const objective =
-		params.objectiveStatus && params.objectiveStatus.trim()
-			? section({
-					loinc: "29545-1",
-					displayName: "Physical findings",
-					title: "Объективный статус",
-					paragraph: params.objectiveStatus,
-				})
-			: "";
+	const objective = params.objectiveStatus?.trim()
+		? section({
+				loinc: "29545-1",
+				displayName: "Physical findings",
+				title: "Объективный статус",
+				paragraph: params.objectiveStatus,
+			})
+		: "";
 
-	const treatment =
-		params.treatmentDescription && params.treatmentDescription.trim()
-			? section({
-					loinc: "47519-4",
-					displayName: "Медицинские услуги",
-					title: "Проведенное лечение",
-					paragraph: params.treatmentDescription,
-				})
-			: "";
+	const treatment = params.treatmentDescription?.trim()
+		? section({
+				loinc: "47519-4",
+				displayName: "Медицинские услуги",
+				title: "Проведенное лечение",
+				paragraph: params.treatmentDescription,
+			})
+		: "";
 
-	const complications =
-		params.complications && params.complications.trim()
-			? section({
-					loinc: "55109-3",
-					displayName: "Complications",
-					title: "Осложнения",
-					paragraph: params.complications,
-				})
-			: "";
+	const complications = params.complications?.trim()
+		? section({
+				loinc: "55109-3",
+				displayName: "Complications",
+				title: "Осложнения",
+				paragraph: params.complications,
+			})
+		: "";
 
-	const comorbidities =
-		params.comorbidities && params.comorbidities.trim()
-			? section({
-					loinc: "11348-0",
-					displayName: "History of Past illness",
-					title: "Сопутствующие заболевания",
-					paragraph: params.comorbidities,
-				})
-			: "";
+	const comorbidities = params.comorbidities?.trim()
+		? section({
+				loinc: "11348-0",
+				displayName: "History of Past illness",
+				title: "Сопутствующие заболевания",
+				paragraph: params.comorbidities,
+			})
+		: "";
 
-	const traySection =
-		params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
-			? section({
-					loinc: "46264-8",
-					displayName: "Medical device identifier",
-					title: "Инструментальный лоток",
-					paragraph: `Штрихкод: ${params.instrumentTrayBarcode}`,
-				})
-			: "";
+	const traySection = params.instrumentTrayBarcode?.trim()
+		? section({
+				loinc: "46264-8",
+				displayName: "Medical device identifier",
+				title: "Инструментальный лоток",
+				paragraph: `Штрихкод: ${params.instrumentTrayBarcode}`,
+			})
+		: "";
 
 	return `
 	<component>

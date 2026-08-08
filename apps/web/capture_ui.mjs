@@ -1,4 +1,4 @@
-import path from "path";
+import path from "node:path";
 import { chromium } from "playwright";
 
 const ARTIFACT_DIR =
@@ -22,14 +22,12 @@ async function run() {
 		try {
 			await page.evaluate(() => {
 				const buttons = Array.from(document.querySelectorAll("button"));
-				const loginBtn = buttons.find(
-					(b) => b.textContent && b.textContent.includes("Войти"),
-				);
+				const loginBtn = buttons.find((b) => b.textContent?.includes("Войти"));
 				if (loginBtn) loginBtn.click();
 			});
 			await page.waitForTimeout(3000);
 			console.log("Login clicked");
-		} catch (e) {
+		} catch (_e) {
 			console.log("No login button found or already logged in.");
 		}
 
@@ -48,8 +46,8 @@ async function run() {
 		try {
 			await page.evaluate(() => {
 				const buttons = Array.from(document.querySelectorAll("button, a"));
-				const patientsBtn = buttons.find(
-					(b) => b.textContent && b.textContent.includes("Пациенты"),
+				const patientsBtn = buttons.find((b) =>
+					b.textContent?.includes("Пациенты"),
 				);
 				if (patientsBtn) patientsBtn.click();
 			});

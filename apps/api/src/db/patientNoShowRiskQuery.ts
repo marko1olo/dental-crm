@@ -24,9 +24,9 @@ import { db } from "./client.js";
 import * as schema from "./schema.js";
 
 /** Ровно те три значения, которые понимает экран. */
-export type NoShowRiskLevel = "low" | "medium" | "high";
+type NoShowRiskLevel = "low" | "medium" | "high";
 
-export type PatientNoShowRisk = {
+type PatientNoShowRisk = {
 	riskLevel: NoShowRiskLevel;
 	noShowProbability: number;
 	factors: string[];
@@ -48,7 +48,7 @@ export type PatientNoShowRisk = {
  * этом случае отвечает отказом с человеческим текстом, и экран показывает своё
  * честное «Риск неявки не рассчитан».
  */
-export const MINIMUM_HISTORY_FOR_RISK = 2;
+const MINIMUM_HISTORY_FOR_RISK = 2;
 
 export type NoShowRiskOutcome =
 	| { kind: "computed"; risk: PatientNoShowRisk }

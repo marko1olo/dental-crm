@@ -340,7 +340,7 @@ export function numberFromEnv(name: string, fallback: number): number {
 	return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
 }
 
-export function speechProviderTimeoutMs(): number {
+function speechProviderTimeoutMs(): number {
 	return numberFromEnv("DENTAL_SPEECH_PROVIDER_TIMEOUT_MS", 45_000);
 }
 

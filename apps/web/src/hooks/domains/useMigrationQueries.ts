@@ -1,4 +1,5 @@
 import { logger } from "../../utils/logger";
+import { fetchWithHandling } from "../../utils/networkUtils";
 
 export function useMigrationQueries(options?: {
 	auth?: any;
@@ -25,7 +26,7 @@ export function useMigrationQueries(options?: {
 	};
 
 	const uploadFile = async (file: File) => {
-		return fetch("/api/migration/upload", {
+		return fetchWithHandling("/api/migration/upload", {
 			method: "POST",
 			headers: getHeaders(true, {
 				"content-type": "application/octet-stream",
@@ -36,7 +37,7 @@ export function useMigrationQueries(options?: {
 	};
 
 	const mapColumns = async (runId: string, useLlm: boolean) => {
-		return fetch(`/api/migration/${runId}/map`, {
+		return fetchWithHandling(`/api/migration/${runId}/map`, {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify({ allowLlm: useLlm }),
@@ -44,17 +45,19 @@ export function useMigrationQueries(options?: {
 	};
 
 	const getStatus = async (runId: string) => {
-		return fetch(`/api/migration/${runId}`, { headers: getHeaders(false) });
+		return fetchWithHandling(`/api/migration/${runId}`, {
+			headers: getHeaders(false),
+		});
 	};
 
 	const getReconciliation = async (runId: string) => {
-		return fetch(`/api/migration/${runId}/reconciliation`, {
+		return fetchWithHandling(`/api/migration/${runId}/reconciliation`, {
 			headers: getHeaders(false),
 		});
 	};
 
 	const execute = async (runId: string, dryRun: boolean) => {
-		return fetch(`/api/migration/${runId}/execute`, {
+		return fetchWithHandling(`/api/migration/${runId}/execute`, {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify({ dryRun, sourceSystem: "legacy" }),
@@ -62,7 +65,7 @@ export function useMigrationQueries(options?: {
 	};
 
 	const rollback = async (runId: string) => {
-		return fetch("/api/migration/rollback", {
+		return fetchWithHandling("/api/migration/rollback", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify({ runId, confirm: true }),
@@ -70,7 +73,7 @@ export function useMigrationQueries(options?: {
 	};
 
 	const discover = async () => {
-		return fetch("/api/migration/discover", {
+		return fetchWithHandling("/api/migration/discover", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify({ roots: [], maxDepth: 5, timeBudgetMs: 30000 }),
@@ -84,60 +87,60 @@ export function useMigrationQueries(options?: {
 		if (el) el.click();
 	};
 	const planMigrationDiscoveryCandidate = async (candidate: any) => {
-		return fetch("/api/imports/smart/local-source-workup", {
+		return fetchWithHandling("/api/imports/smart/local-source-workup", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify({ candidate }),
 		});
 	};
-	const previewMigrationDiscoveryCandidate = async (candidate: any) => {};
+	const previewMigrationDiscoveryCandidate = async (_candidate: any) => {};
 	const previewMigrationAutopilotSources = async (
-		sourceFingerprint?: string | null,
+		_sourceFingerprint?: string | null,
 	) => {};
 	const probeMigrationDiscoveryCandidate = async (candidate: any) => {
-		return fetch("/api/imports/smart/local-source-probe", {
+		return fetchWithHandling("/api/imports/smart/local-source-probe", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify({ candidate }),
 		});
 	};
 	const previewImport = async (payload?: any) => {
-		return fetch("/api/imports/patients/intake", {
+		return fetchWithHandling("/api/imports/patients/intake", {
 			method: "POST",
 			headers: getHeaders(false, { "content-type": "application/json" }),
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
 	const previewSmartImport = async (payload?: any) => {
-		return fetch("/api/imports/smart/preview", {
+		return fetchWithHandling("/api/imports/smart/preview", {
 			method: "POST",
 			headers: getHeaders(false, { "content-type": "application/json" }),
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
 	const commitImport = async (payload?: any) => {
-		return fetch("/api/imports/patients/commit", {
+		return fetchWithHandling("/api/imports/patients/commit", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
 	const commitSmartImport = async (payload?: any) => {
-		return fetch("/api/imports/smart/commit", {
+		return fetchWithHandling("/api/imports/smart/commit", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
 	const discoverMigrationSources = async () => {
-		return fetch("/api/imports/smart/local-source-discovery", {
+		return fetchWithHandling("/api/imports/smart/local-source-discovery", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 		});
 	};
 	const downloadMigrationHandoffReport = async (payload?: any) => {
 		try {
-			const res = await fetch(
+			const res = await fetchWithHandling(
 				"/api/imports/smart/migration-autopilot/report.csv",
 				{
 					method: "POST",
@@ -161,11 +164,14 @@ export function useMigrationQueries(options?: {
 	};
 	const downloadSmartImportSafeHandoffReport = async (payload?: any) => {
 		try {
-			const res = await fetch("/api/imports/smart/report.safe.csv", {
-				method: "POST",
-				headers: getHeaders(true, { "content-type": "application/json" }),
-				body: JSON.stringify(payload ?? {}),
-			});
+			const res = await fetchWithHandling(
+				"/api/imports/smart/report.safe.csv",
+				{
+					method: "POST",
+					headers: getHeaders(true, { "content-type": "application/json" }),
+					body: JSON.stringify(payload ?? {}),
+				},
+			);
 			if (!res.ok) throw new Error("Failed to download safe report");
 			const blob = await res.blob();
 			const url = URL.createObjectURL(blob);
@@ -182,7 +188,7 @@ export function useMigrationQueries(options?: {
 	};
 	const downloadSmartImportReport = async (payload?: any) => {
 		try {
-			const res = await fetch("/api/imports/smart/report.csv", {
+			const res = await fetchWithHandling("/api/imports/smart/report.csv", {
 				method: "POST",
 				headers: getHeaders(true, { "content-type": "application/json" }),
 				body: JSON.stringify(payload ?? {}),
@@ -205,7 +211,7 @@ export function useMigrationQueries(options?: {
 	const ingestImportFile = async (_file: any) => {};
 	const addMigrationDiscoveryCandidateToSmartImport = (_candidate: any) => {};
 	const runMigrationAutopilot = async (knownDiscovery?: any, options?: any) => {
-		return fetch("/api/imports/smart/migration-autopilot", {
+		return fetchWithHandling("/api/imports/smart/migration-autopilot", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify({ knownDiscovery, options }),

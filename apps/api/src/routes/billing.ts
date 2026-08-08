@@ -575,7 +575,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			orgId,
 			input.clientMutationId,
 		);
-		if (existingPayment && existingPayment.patientId) {
+		if (existingPayment?.patientId) {
 			if (existingPayment.patientId !== input.patientId) {
 				return sendBillingPaymentScopeError(
 					reply,

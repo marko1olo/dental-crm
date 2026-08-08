@@ -7,13 +7,7 @@ import {
 } from "../accessGuard.js";
 import { createAppointmentInDb } from "../db/appointmentsQuery.js";
 import { db } from "../db/client.js";
-import {
-	appointments,
-	clinicChairs,
-	crmLeads,
-	patients,
-	users,
-} from "../db/schema.js";
+import { clinicChairs, crmLeads, patients, users } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 const leadSchema = z.object({

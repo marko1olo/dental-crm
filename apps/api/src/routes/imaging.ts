@@ -4970,9 +4970,6 @@ function targetToolForCrmTool(
 		case "panoramic_curve":
 		case "surgical_guide":
 			return "SplineROITool";
-		case "window_level":
-		case "invert":
-		case "reset":
 		default:
 			return "WindowLevelTool";
 	}
@@ -5001,7 +4998,6 @@ function targetToolForAnnotation(
 		case "bone_density_probe":
 		case "landmark":
 			return "ProbeTool";
-		case "note":
 		default:
 			return "ArrowAnnotateTool";
 	}
@@ -7927,7 +7923,7 @@ function detectDentalModelRole(
 }
 
 function hasDentalModelArchiveHint(fileName: string, folderPath: string) {
-	const text = normalizeOrganizerText(`${folderPath} ${fileName}`);
+	const _text = normalizeOrganizerText(`${folderPath} ${fileName}`);
 	return hasDentalModelFileHint(fileName, folderPath);
 }
 

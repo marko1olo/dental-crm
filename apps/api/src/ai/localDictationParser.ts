@@ -1,6 +1,6 @@
 import type { ParserContext } from "./dictationParser.js";
 
-export interface ToothUpdate {
+interface ToothUpdate {
 	code: string;
 	state:
 		| "treatment"
@@ -13,7 +13,7 @@ export interface ToothUpdate {
 		| "calculus";
 }
 
-export interface EmkUpdates {
+interface EmkUpdates {
 	complaint?: string;
 	anamnesis?: string;
 	objectiveStatus?: string;
@@ -250,7 +250,7 @@ function extractTime(text: string): string | null {
 	);
 	if (m) {
 		let h = parseInt(m[1] as string, 10);
-		if (isNaN(h)) h = parseWordNumber(m[1] as string) || 0;
+		if (Number.isNaN(h)) h = parseWordNumber(m[1] as string) || 0;
 		if (h > 0 && h <= 24) {
 			if ((text.includes("дня") || text.includes("вечера")) && h < 12) h += 12;
 			return `${h.toString().padStart(2, "0")}:00`;
@@ -271,7 +271,7 @@ function extractDate(text: string): {
 	const m = text.match(/(\d{1,2}|[а-яё]+)\s*([а-яё]+)/i);
 	if (m) {
 		let day = parseInt(m[1] as string, 10);
-		if (isNaN(day)) day = parseWordNumber(m[1] as string) || 0;
+		if (Number.isNaN(day)) day = parseWordNumber(m[1] as string) || 0;
 
 		if (day > 0 && day <= 31) {
 			const monthWord = (m[2] ?? "").substring(0, 5);
@@ -326,7 +326,7 @@ function extractCost(text: string): number | null {
 	);
 	if (m) {
 		let val = parseFloat((m[1] as string).replace(",", "."));
-		if (m[2] && m[2].startsWith("тыс")) val *= 1000;
+		if (m[2]?.startsWith("тыс")) val *= 1000;
 		if (val < 100 && !m[2]) val *= 1000;
 		return val;
 	}
@@ -409,7 +409,7 @@ function extractEmkSections(text: string, updates: EmkUpdates) {
 				// Save previous section if exists
 				if (currentSection && currentContent.trim()) {
 					updates[currentSection] =
-						(updates[currentSection] ? updates[currentSection] + " " : "") +
+						(updates[currentSection] ? `${updates[currentSection]} ` : "") +
 						currentContent
 							.trim()
 							.replace(/^[:-]+/, "")
@@ -420,7 +420,7 @@ function extractEmkSections(text: string, updates: EmkUpdates) {
 			}
 		} else {
 			if (currentSection) {
-				currentContent += " " + token;
+				currentContent += ` ${token}`;
 			}
 		}
 	}
@@ -428,7 +428,7 @@ function extractEmkSections(text: string, updates: EmkUpdates) {
 	// Finalize the last section
 	if (currentSection && currentContent.trim()) {
 		updates[currentSection] =
-			(updates[currentSection] ? updates[currentSection] + " " : "") +
+			(updates[currentSection] ? `${updates[currentSection]} ` : "") +
 			currentContent
 				.trim()
 				.replace(/^[:-]+/, "")
@@ -474,8 +474,8 @@ function expandToothRanges(text: string): string[] {
 		),
 	];
 	for (const m of rangeMatches) {
-		const start = parseInt(m[1] ?? "");
-		const end = parseInt(m[2] ?? "");
+		const start = parseInt(m[1] ?? "", 10);
+		const end = parseInt(m[2] ?? "", 10);
 		if (Math.floor(start / 10) === Math.floor(end / 10)) {
 			const min = Math.min(start, end);
 			const max = Math.max(start, end);
@@ -620,10 +620,7 @@ export function parseDictationLocally(
 				const localTeeth = expandToothRanges(clause);
 				let foundState: any = null;
 				for (const [keyword, state] of Object.entries(STATE_MAPPING)) {
-					const regex = new RegExp(
-						`(^|[^а-яё])` + keyword + `([^а-яё]|$)`,
-						"i",
-					);
+					const regex = new RegExp(`(^|[^а-яё])${keyword}([^а-яё]|$)`, "i");
 					if (regex.test(clause)) {
 						foundState = state;
 						if (!hasStructuredEmk) {

@@ -29,7 +29,7 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 			};
 			const toothNum = parseInt(toothId, 10);
 
-			if (isNaN(toothNum))
+			if (Number.isNaN(toothNum))
 				return reply.code(400).send({ error: "Invalid tooth ID" });
 
 			const [patient] = await db

@@ -21,7 +21,7 @@ import { TextDecoder } from "node:util";
  * каждого поля.
  */
 
-export type MemoFormat = "fpt" | "dbt3" | "dbt4";
+type MemoFormat = "fpt" | "dbt3" | "dbt4";
 
 export interface MemoFile {
 	format: MemoFormat;

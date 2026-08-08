@@ -219,7 +219,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						}}
 					>
 						<option value="">-- Выберите услугу --</option>
-						{serviceCatalog.map((s: any) => (
+						{serviceCatalog?.map((s: any) => (
 							<option key={s.id} value={s.id}>
 								{/*
 							  Цена через общую money(): в прайсе теперь копейки, и
@@ -285,7 +285,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									}}
 								>
 									<option value="">-- Выберите материал --</option>
-									{items.map((i) => (
+									{items?.map((i) => (
 										<option key={i.id} value={i.id}>
 											{i.name} (остаток: {i.stockQuantity} шт.)
 										</option>
@@ -430,7 +430,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								<div
 									style={{ display: "flex", flexDirection: "column", gap: 8 }}
 								>
-									{rulesList.map((rule) => (
+									{rulesList?.map((rule) => (
 										<div
 											key={rule.id}
 											style={{
@@ -1011,7 +1011,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										</td>
 									</tr>
 								) : (
-									filteredItems.map((item) => {
+									filteredItems?.map((item) => {
 										const isLowStock =
 											item.stockQuantity <= item.criticalThreshold;
 										/*
@@ -1709,7 +1709,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 
 						{/* Toggle direction */}
 						<div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-							{(["in", "out"] as const).map((t) => (
+							{(["in", "out"] as const)?.map((t) => (
 								<button
 									key={t}
 									type="button"

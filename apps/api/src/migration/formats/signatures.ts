@@ -460,14 +460,13 @@ export function identifyFormat(head: Buffer, fileName = ""): FormatSignature {
 }
 
 /** Форматы, которые движок читает сам, без участия оператора. */
-export const READABLE_FORMATS: ReadonlySet<SourceFormatId> =
-	new Set<SourceFormatId>([
-		"dbf",
-		"sqlite",
-		"zip_ooxml",
-		"json",
-		"xml",
-		"delimited",
-		"utf16_text",
-		"dicom",
-	]);
+const _READABLE_FORMATS: ReadonlySet<SourceFormatId> = new Set<SourceFormatId>([
+	"dbf",
+	"sqlite",
+	"zip_ooxml",
+	"json",
+	"xml",
+	"delimited",
+	"utf16_text",
+	"dicom",
+]);

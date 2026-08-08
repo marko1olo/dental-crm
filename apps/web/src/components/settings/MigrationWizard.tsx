@@ -396,7 +396,7 @@ export function MigrationWizard() {
 				setBusy(false);
 			}
 		},
-		[allowLlm, clinicalMutationHeaders, runMapping, showToast],
+		[allowLlm, clinicalMutationHeaders, runMapping],
 	);
 
 	// -------------------------------------------------------------------

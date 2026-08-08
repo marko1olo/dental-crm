@@ -484,5 +484,3 @@ function reminderStateRank(state: ReminderState): number {
 			return 0;
 	}
 }
-
-export default registerDayConfirmationRoutes;

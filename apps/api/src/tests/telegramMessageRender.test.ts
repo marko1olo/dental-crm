@@ -1,6 +1,5 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import type { DenteTelegramTemplateKind } from "@dental/shared";
 import {
 	buildDenteTelegramMessagePreviewData,
 	type TelegramMessageContext,

@@ -38,7 +38,7 @@ import { fileURLToPath } from "node:url";
  * цепочки.
  */
 
-export type RouteModuleCensusEntry = {
+type RouteModuleCensusEntry = {
 	/** Абсолютный путь к файлу. */
 	readonly file: string;
 	/** Путь относительно каталога маршрутов, всегда с прямыми косыми. */

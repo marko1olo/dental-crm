@@ -54,7 +54,7 @@ function asciiHead(buffer: Buffer, offset: number, length: number): string {
 }
 
 /** Строк в партии. 1000 при 20 колонках — порядка единиц мегабайт на партию. */
-export const STREAM_BATCH_ROWS = 1000;
+const STREAM_BATCH_ROWS = 1000;
 
 /** Сколько байт читать для определения формата, разделителя и заголовка. */
 const HEAD_PROBE_BYTES = 512 * 1024;
@@ -64,7 +64,7 @@ const HEAD_PROBE_BYTES = 512 * 1024;
  * это порядка полумиллиона строк, что выше любой реальной выгрузки из
  * стоматологической системы.
  */
-export const WHOLE_FILE_FORMAT_LIMIT_BYTES = 64 * 1024 * 1024;
+const WHOLE_FILE_FORMAT_LIMIT_BYTES = 64 * 1024 * 1024;
 
 export interface SourceShape {
 	sourceKind: MigrationSourceKind;

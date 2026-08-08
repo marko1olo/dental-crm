@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, Save, Smile, X } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";

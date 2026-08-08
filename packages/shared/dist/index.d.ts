@@ -1,7 +1,5 @@
 import { z } from "zod";
-export declare const moneyRubSchema: z.ZodEffects<z.ZodNumber, number, number>;
-export declare const positiveMoneyRubSchema: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
-export declare const nonNegativeMoneyRubSchema: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+export * from "./money.js";
 export declare function isHttpUrl(value: string): boolean;
 export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;

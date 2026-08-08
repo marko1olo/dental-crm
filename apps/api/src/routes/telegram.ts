@@ -14,7 +14,6 @@ import {
 	type DenteTelegramTemplateKind,
 	type DenteTelegramUpdateKind,
 	type DenteTelegramVisualCardUrls,
-	type DenteTelegramWebhookEvent,
 	denteTelegramBotStatusSchema,
 	denteTelegramChatLinkPublicSchema,
 	denteTelegramChatLinkStatusSchema,
@@ -123,7 +122,7 @@ export const telegramPhotoSentTextFailedBlockedReason =
 // Время отправки в позиции не разбирается как дата. Отправлять по такому значению нельзя: «не смогли
 // прочитать время» — это не «пора отправлять». Нужна отдельная причина отказа, иначе позиция молча
 // выпадает из очереди и никто не узнает, что в задаче битое время.
-export const telegramOutboxScheduleUnreadableBlockedReason =
+const telegramOutboxScheduleUnreadableBlockedReason =
 	"telegram_outbox_schedule_unreadable";
 
 type UnknownRecord = Record<string, unknown>;
@@ -796,8 +795,7 @@ const telegramOutboxNothingDelivered: TelegramOutboxDeliveredParts = {
 export function telegramOutboxDeliveredParts(
 	receipt: DenteTelegramOutboxDeliveryReceipt | null | undefined,
 ): TelegramOutboxDeliveredParts {
-	if (!receipt || receipt.status !== "failed")
-		return telegramOutboxNothingDelivered;
+	if (receipt?.status !== "failed") return telegramOutboxNothingDelivered;
 	if (receipt.blockedReason !== telegramPhotoSentTextFailedBlockedReason)
 		return telegramOutboxNothingDelivered;
 	return {
@@ -1208,7 +1206,7 @@ async function executeTelegramOutboxSend(
 	};
 }
 
-export async function executeDenteTelegramOutboxDueBatch(
+async function executeDenteTelegramOutboxDueBatch(
 	input: TelegramOutboxSendDueInput,
 	runtime?: TelegramResolvedOutboxRuntime,
 ): Promise<DenteTelegramOutboxSendDueResponse> {
@@ -2002,8 +2000,8 @@ function resolveTelegramOutboxRuntimeScopeFromQuery(
  * и ты всё равно упрёшься в сигнатуры `buildDenteTelegramOutbox`.
  */
 async function hydrateTelegramDomainState(
-	request: FastifyRequest,
-	organizationId: string,
+	_request: FastifyRequest,
+	_organizationId: string,
 ): Promise<void> {
 	// Намеренно пусто — см. докстринг выше.
 }

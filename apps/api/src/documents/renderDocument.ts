@@ -172,7 +172,7 @@ function hasPersonNameParts(value: string | null | undefined): boolean {
 
 function compactParts(parts: Array<string | null | undefined>): string {
 	return parts
-		.filter((part): part is string => Boolean(part && part.trim()))
+		.filter((part): part is string => Boolean(part?.trim()))
 		.join("; ");
 }
 
@@ -4164,7 +4164,7 @@ function structuredMedicalRecordCopyRequest(
     ${signatureBlock(signatureParty("Заявитель/получатель", payload.recipientFullName), "Ответственный сотрудник")}`;
 }
 
-function medicalRecordCopyRequest(patient: Patient) {
+function _medicalRecordCopyRequest(patient: Patient) {
 	return `<h2>Запрос на копии медицинской документации</h2>
     <table>
       ${row("Пациент", patient.fullName)}

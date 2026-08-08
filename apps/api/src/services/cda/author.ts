@@ -15,7 +15,6 @@ import {
 	escapeXml,
 	flatAssignedEntity,
 	flatRepresentedOrganization,
-	flatScopingOrganization,
 	orgIdXml,
 } from "./util.js";
 
@@ -37,9 +36,9 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 
 	const ambCode = `<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="\u0412\u0438\u0434\u044b \u043c\u0435\u0434\u0438\u0446\u0438\u043d\u0441\u043a\u043e\u0439 \u043f\u043e\u043c\u043e\u0449\u0438" displayName="\u0410\u043c\u0431\u0443\u043b\u0430\u0442\u043e\u0440\u043d\u0430\u044f \u043f\u043e\u043c\u043e\u0449\u044c"/>`;
 
-	const loincExam = `<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="\u041f\u0440\u043e\u0442\u043e\u043a\u043e\u043b \u0441\u0442\u043e\u043c\u0430\u0442\u043e\u043b\u043e\u0433\u0438\u0447\u0435\u0441\u043a\u043e\u0433\u043e \u043e\u0441\u043c\u043e\u0442\u0440\u0430"/>`;
+	const _loincExam = `<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="\u041f\u0440\u043e\u0442\u043e\u043a\u043e\u043b \u0441\u0442\u043e\u043c\u0430\u0442\u043e\u043b\u043e\u0433\u0438\u0447\u0435\u0441\u043a\u043e\u0433\u043e \u043e\u0441\u043c\u043e\u0442\u0440\u0430"/>`;
 
-	const assignedEntity = flatAssignedEntity(ctx);
+	const _assignedEntity = flatAssignedEntity(ctx);
 	const clinicName = escapeXml(params.clinicName);
 	const middleGiven = params.doctorName.middle
 		? `\n\t\t\t\t\t\t\t<given>${escapeXml(params.doctorName.middle)}</given>`

@@ -9,6 +9,7 @@ import { showToast } from "../../components/GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppStore } from "../../store/appStore";
 import { useVisitStore } from "../../store/visitStore";
+import { fetchWithHandling } from "../../utils/networkUtils";
 
 export type UseStaffSettingsLogicOptions = {
 	auth: {
@@ -54,7 +55,7 @@ export function useStaffSettingsLogic({
 
 	async function createStaffMember(data: any) {
 		try {
-			const response = await fetch("/api/settings/staff", {
+			const response = await fetchWithHandling("/api/settings/staff", {
 				method: "POST",
 				headers: auth.settingsAccessHeaders({
 					"Content-Type": "application/json",
@@ -85,13 +86,16 @@ export function useStaffSettingsLogic({
 
 	async function updateStaffMember(staffId: string, updates: any) {
 		try {
-			const response = await fetch(`/api/settings/staff/${staffId}`, {
-				method: "PUT",
-				headers: auth.settingsAccessHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify(updates),
-			});
+			const response = await fetchWithHandling(
+				`/api/settings/staff/${staffId}`,
+				{
+					method: "PUT",
+					headers: auth.settingsAccessHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify(updates),
+				},
+			);
 			if (!response.ok) {
 				setError(
 					await responseErrorMessage(
@@ -122,7 +126,7 @@ export function useStaffSettingsLogic({
 	async function changeClinicMode(mode: string) {
 		if (!(await saveClinicProfileIfDirty())) return;
 		try {
-			const response = await fetch("/api/settings/clinic/mode", {
+			const response = await fetchWithHandling("/api/settings/clinic/mode", {
 				method: "POST",
 				headers: auth.settingsAccessHeaders({
 					"Content-Type": "application/json",
@@ -171,7 +175,7 @@ export function useStaffSettingsLogic({
 			return;
 		}
 		try {
-			const response = await fetch("/api/settings/staff", {
+			const response = await fetchWithHandling("/api/settings/staff", {
 				method: "POST",
 				headers: auth.settingsAccessHeaders({
 					"Content-Type": "application/json",
@@ -230,7 +234,7 @@ export function useStaffSettingsLogic({
 			return;
 		}
 		try {
-			const response = await fetch("/api/settings/chairs", {
+			const response = await fetchWithHandling("/api/settings/chairs", {
 				method: "POST",
 				headers: auth.settingsAccessHeaders({
 					"Content-Type": "application/json",
@@ -281,10 +285,13 @@ export function useStaffSettingsLogic({
 		}
 
 		try {
-			const response = await fetch(`/api/settings/chairs/${chairId}`, {
-				method: "DELETE",
-				headers: auth.settingsAccessHeaders(),
-			});
+			const response = await fetchWithHandling(
+				`/api/settings/chairs/${chairId}`,
+				{
+					method: "DELETE",
+					headers: auth.settingsAccessHeaders(),
+				},
+			);
 
 			if (!response.ok) {
 				const errorData = await response.json().catch((err) => {
@@ -325,7 +332,7 @@ export function useStaffSettingsLogic({
 		newChairName.trim().length > 0 && !isChairCreating;
 
 	const lookupClinicPublicProfile = async () => {
-		return fetch("/api/settings/clinic/lookup", {
+		return fetchWithHandling("/api/imports/smart/clinic-public-lookup", {
 			method: "POST",
 			headers: auth.settingsAccessHeaders({
 				"content-type": "application/json",

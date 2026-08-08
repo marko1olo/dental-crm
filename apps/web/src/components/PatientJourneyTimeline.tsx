@@ -85,7 +85,7 @@ export const PatientJourneyTimeline: React.FC<{
 		 *    на каждой перерисовке.
 		 */
 		const staffById = new Map<string, { fullName?: string }>(
-			(dashboard?.clinicSettings?.staff ?? []).map((member) => [
+			(dashboard?.clinicSettings?.staff ?? [])?.map((member) => [
 				member.id,
 				member,
 			]),
@@ -98,7 +98,7 @@ export const PatientJourneyTimeline: React.FC<{
 		const appointments: any[] = dashboard?.appointments || [];
 		const visitEvents: JourneyEvent[] = appointments
 			.filter((a) => a.patientId === patientId)
-			.map((a) => {
+			?.map((a) => {
 				const statusKey = String(a.status ?? "").toLowerCase();
 				return {
 					id: a.id,
@@ -114,7 +114,7 @@ export const PatientJourneyTimeline: React.FC<{
 		const payments: any[] = dashboard?.payments || [];
 		const paymentEvents: JourneyEvent[] = payments
 			.filter((p) => p.patientId === patientId)
-			.map((p) => ({
+			?.map((p) => ({
 				id: p.id,
 				timestamp: p.paidAt || p.createdAt,
 				type: "transaction",
@@ -128,7 +128,7 @@ export const PatientJourneyTimeline: React.FC<{
 		const insights: any[] = dashboard?.patientInsights || [];
 		const insightEvents: JourneyEvent[] = insights
 			.filter((i) => i.patientId === patientId)
-			.map((i) => ({
+			?.map((i) => ({
 				id: i.id ?? `insight-${i.patientId}-${i.category}`,
 				timestamp: i.createdAt || new Date().toISOString(),
 				type: "medical_alert",
@@ -236,7 +236,7 @@ export const PatientJourneyTimeline: React.FC<{
 			) : null}
 
 			<div className="timeline-track">
-				{events.map((evt, index) => {
+				{events?.map((evt, index) => {
 					// Эффект Края (Serial Position Effect): выделяем первый и последний элементы
 					const isFirst = index === 0;
 					const isLast = index === events.length - 1;

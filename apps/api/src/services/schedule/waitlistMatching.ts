@@ -22,8 +22,7 @@
  */
 
 import { and, eq, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	appointmentWaitlists,

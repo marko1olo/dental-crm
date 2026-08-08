@@ -9,9 +9,7 @@ import {
 } from "node:crypto";
 import {
 	copyFileSync,
-	existsSync,
 	mkdirSync,
-	readFileSync,
 	renameSync,
 	unlinkSync,
 	writeFileSync,
@@ -51,7 +49,6 @@ import type {
 	CreatePaymentInput,
 	CreateStaffMemberInput,
 	Dashboard,
-	DentalSpecialty,
 	DenteTelegramBotSettings,
 	DenteTelegramChatLink,
 	DenteTelegramChatLinkListResponse,
@@ -131,7 +128,6 @@ import type {
 	Visit,
 	VisitDraftAutosave,
 	VisitDraftAutosaveRequest,
-	VisitNoteDraft,
 	VisitSaveReceipt,
 } from "@dental/shared";
 import {
@@ -200,7 +196,7 @@ const defaultClinicScheduleDefaults: ClinicScheduleDefaults = {
 	appointmentBufferMinutes: 10,
 };
 
-export const denteTelegramBotSettings: DenteTelegramBotSettings = {
+const denteTelegramBotSettings: DenteTelegramBotSettings = {
 	version: 1,
 	organizationId,
 	mode: "shared_dente_bot",
@@ -255,10 +251,10 @@ export const denteTelegramBotSettings: DenteTelegramBotSettings = {
 	updatedAt: nowIso,
 };
 
-export const denteTelegramWebhookEvents: DenteTelegramWebhookEvent[] = [];
+const denteTelegramWebhookEvents: DenteTelegramWebhookEvent[] = [];
 export const denteTelegramOutboxDeliveryReceipts: DenteTelegramOutboxDeliveryReceipt[] =
 	[];
-export const denteTelegramOutboxDeliveryReceiptsMap = new Map<
+const denteTelegramOutboxDeliveryReceiptsMap = new Map<
 	string,
 	DenteTelegramOutboxDeliveryReceipt
 >();
@@ -267,7 +263,7 @@ function syncDenteTelegramOutboxDeliveryReceiptsMap(): void {
 	denteTelegramOutboxDeliveryReceiptsMap.clear();
 	for (let i = denteTelegramOutboxDeliveryReceipts.length - 1; i >= 0; i--) {
 		const receipt = denteTelegramOutboxDeliveryReceipts[i];
-		if (receipt && receipt.clientMutationId) {
+		if (receipt?.clientMutationId) {
 			denteTelegramOutboxDeliveryReceiptsMap.set(
 				`${receipt.outboxItemId}:${receipt.clientMutationId}`,
 				receipt,
@@ -276,10 +272,10 @@ function syncDenteTelegramOutboxDeliveryReceiptsMap(): void {
 	}
 }
 
-export const denteTelegramLinkCodes: DenteTelegramLinkCode[] = [];
+const denteTelegramLinkCodes: DenteTelegramLinkCode[] = [];
 export const denteTelegramChatLinks: DenteTelegramChatLink[] = [];
 
-export const clinicProfile: ClinicProfile = {
+const clinicProfile: ClinicProfile = {
 	organizationId,
 	clinicName: "Стоматология, 1 кабинет",
 	legalName: "ИП Иванова М.С.",
@@ -332,7 +328,7 @@ export const clinicProfile: ClinicProfile = {
 	aiEnableDocuments: true,
 } as any;
 
-export const staffMembers: StaffMember[] = [
+const staffMembers: StaffMember[] = [
 	{
 		id: "e44d32ca-7777-4c00-a001-c88f01b92e21",
 		organizationId,
@@ -399,7 +395,7 @@ export const staffMembers: StaffMember[] = [
 	},
 ];
 
-export const chairs: Chair[] = [
+const chairs: Chair[] = [
 	{
 		id: chairId,
 		organizationId,
@@ -502,7 +498,7 @@ export const appointments: Appointment[] = [
 	},
 ];
 
-export const activeVisit: Visit = {
+const activeVisit: Visit = {
 	id: activeVisitId,
 	organizationId,
 	patientId: marinaPatientId,
@@ -534,7 +530,7 @@ const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
  * «Закрыть медицинскую запись» на несуществующего пациента, предупреждение
  * смены «Прием не подписан» и единицу в очереди врача.
  */
-export function hasUnsignedActiveVisit(
+function hasUnsignedActiveVisit(
 	state: DomainState = inMemoryDomainState,
 ): boolean {
 	const { activeVisit, patients } = state;
@@ -589,7 +585,7 @@ export const serviceCatalogMap = new Map<string, ServiceCatalogItem>();
  * находиться и не находиться. Здесь единая точка: индекс, а при промахе —
  * поиск по массиву с достройкой индекса.
  */
-export function getServiceCatalogItem(
+function getServiceCatalogItem(
 	serviceId: string,
 	state: DomainState = inMemoryDomainState,
 ): ServiceCatalogItem | undefined {
@@ -763,7 +759,7 @@ export const treatmentPlanItems: TreatmentPlanItem[] = [
 	},
 ];
 
-export const treatmentPlanScenarios: TreatmentPlanScenario[] = [
+const treatmentPlanScenarios: TreatmentPlanScenario[] = [
 	{
 		id: "scenario-urgent-marina",
 		organizationId,
@@ -1038,7 +1034,7 @@ export const payments: Payment[] = [
 
 let uiPreferences: UiPreferences | null = null;
 
-export const communicationTemplates: CommunicationTemplate[] = [
+const communicationTemplates: CommunicationTemplate[] = [
 	{
 		id: "tpl-appointment-confirm",
 		organizationId,
@@ -1085,7 +1081,7 @@ export const communicationTemplates: CommunicationTemplate[] = [
 	},
 ];
 
-export const communicationTasks: CommunicationTask[] = [
+const communicationTasks: CommunicationTask[] = [
 	{
 		id: "7195a20f-0aa8-4f0a-8d33-8db69fbb3d91",
 		organizationId,
@@ -1178,7 +1174,7 @@ export const communicationTasks: CommunicationTask[] = [
 	},
 ];
 
-export const communicationEvents: CommunicationEvent[] = [
+const communicationEvents: CommunicationEvent[] = [
 	{
 		id: "88ff10d9-e50a-4a67-8500-f1dfeff6b92c",
 		organizationId,
@@ -1193,7 +1189,7 @@ export const communicationEvents: CommunicationEvent[] = [
 	},
 ];
 
-export const imagingStudies: ImagingStudy[] = [
+const imagingStudies: ImagingStudy[] = [
 	{
 		id: "fbe3704c-9b37-4149-ae4b-e99e46d7599f",
 		organizationId,
@@ -1276,14 +1272,14 @@ export const imagingStudies: ImagingStudy[] = [
 	},
 ];
 
-export const importBatches: ImportBatch[] = [];
+const importBatches: ImportBatch[] = [];
 
-export const aiRecognitionJobs: AiRecognitionJob[] = [];
-export const imagingViewerSessions: ImagingViewerSession[] = [];
-export const dicomWorkbenchBundles: DicomWorkbenchBundle[] = [];
-export const speechTranscriptionChunks: SpeechTranscriptionChunk[] = [];
+const aiRecognitionJobs: AiRecognitionJob[] = [];
+const imagingViewerSessions: ImagingViewerSession[] = [];
+const dicomWorkbenchBundles: DicomWorkbenchBundle[] = [];
+const speechTranscriptionChunks: SpeechTranscriptionChunk[] = [];
 
-export class SpeechChunkIdentityConflictError extends Error {
+class SpeechChunkIdentityConflictError extends Error {
 	statusCode = 409;
 
 	constructor() {
@@ -1293,10 +1289,10 @@ export class SpeechChunkIdentityConflictError extends Error {
 		this.name = "SpeechChunkIdentityConflictError";
 	}
 }
-export const visitSaveReceipts: VisitSaveReceipt[] = [];
-export const visitDraftAutosaves: VisitDraftAutosave[] = [];
+const visitSaveReceipts: VisitSaveReceipt[] = [];
+const visitDraftAutosaves: VisitDraftAutosave[] = [];
 
-export function findVisitById(visitId: string): Visit | null {
+function findVisitById(visitId: string): Visit | null {
 	return activeVisit.id === visitId ? activeVisit : null;
 }
 
@@ -1637,7 +1633,7 @@ function buildClinicalRuleEvaluations(
 	).evaluations;
 }
 
-export function buildClinicalRuleSummary(
+function buildClinicalRuleSummary(
 	patientId: string,
 	state: DomainState = inMemoryDomainState,
 ): ClinicalRuleSummary {
@@ -1755,7 +1751,7 @@ function isOpenCommunicationTask(task: CommunicationTask): boolean {
 	return !["completed", "failed", "skipped"].includes(task.status);
 }
 
-export function buildCommunicationSummary(
+function buildCommunicationSummary(
 	state: DomainState = inMemoryDomainState,
 ): CommunicationSummary {
 	const { communicationTasks } = state;
@@ -2170,9 +2166,7 @@ export function validScheduleTimeZone(
  * день начинается на три часа раньше UTC, и по UTC-дате утренние приёмы
  * попадали бы во «вчера».
  */
-export function clinicTodayIso(
-	timeZone: string = clinicProfile.timezone,
-): string {
+function clinicTodayIso(timeZone: string = clinicProfile.timezone): string {
 	const zone = validScheduleTimeZone(timeZone);
 	try {
 		const parts = new Map(
@@ -2539,7 +2533,7 @@ function buildAppointmentReadiness(
 		if (doc.status !== "voided") {
 			if (!documentsByPatientId.has(doc.patientId))
 				documentsByPatientId.set(doc.patientId, []);
-			documentsByPatientId.get(doc.patientId)!.push(doc);
+			documentsByPatientId.get(doc.patientId)?.push(doc);
 		}
 	}
 
@@ -2547,7 +2541,7 @@ function buildAppointmentReadiness(
 	for (const study of imagingStudies) {
 		if (!imagesByPatientId.has(study.patientId))
 			imagesByPatientId.set(study.patientId, []);
-		imagesByPatientId.get(study.patientId)!.push(study);
+		imagesByPatientId.get(study.patientId)?.push(study);
 	}
 
 	const tasksByAppointmentId = new Map<string, typeof communicationTasks>();
@@ -2555,7 +2549,7 @@ function buildAppointmentReadiness(
 		if (isOpenCommunicationTask(task) && task.appointmentId !== null) {
 			if (!tasksByAppointmentId.has(task.appointmentId))
 				tasksByAppointmentId.set(task.appointmentId, []);
-			tasksByAppointmentId.get(task.appointmentId)!.push(task);
+			tasksByAppointmentId.get(task.appointmentId)?.push(task);
 		}
 	}
 
@@ -3648,7 +3642,7 @@ function buildModeFit(
 	};
 }
 
-export function buildShiftIntelligence(
+function buildShiftIntelligence(
 	state: DomainState = inMemoryDomainState,
 ): ShiftIntelligence {
 	return {
@@ -3932,7 +3926,7 @@ const protocolTemplateSeeds: Array<Omit<ProtocolTemplate, "updatedAt">> = [
 	},
 ];
 
-export const protocolTemplates: ProtocolTemplate[] = protocolTemplateSeeds.map(
+const protocolTemplates: ProtocolTemplate[] = protocolTemplateSeeds.map(
 	(template) => ({ ...template, updatedAt: nowIso }),
 );
 
@@ -4061,7 +4055,7 @@ export const inMemoryDomainState: DomainState = {
 	unavailableSlices: [],
 };
 
-export const integrationPresets: IntegrationPreset[] = [
+const integrationPresets: IntegrationPreset[] = [
 	{
 		id: "preset-32top",
 		title: "32top / МИС 32top",
@@ -4258,7 +4252,7 @@ export const integrationPresets: IntegrationPreset[] = [
 	},
 ];
 
-export const speechProviders: SpeechProvider[] = [
+const speechProviders: SpeechProvider[] = [
 	{
 		id: "browser_speech",
 		title: "Браузерная диктовка",
@@ -5173,7 +5167,7 @@ function normalizePostVisitCheckupDelayHoursByTopic(
 
 const originalDemoData = JSON.parse(JSON.stringify(mutableStateSnapshot()));
 
-export function resetToDemo(): void {
+function _resetToDemo(): void {
 	replaceCollection(patients, originalDemoData.patients);
 	replaceCollection(appointments, originalDemoData.appointments);
 	replaceCollection(payments, originalDemoData.payments);
@@ -5226,7 +5220,7 @@ export function resetToDemo(): void {
 	persistMutableState();
 }
 
-export function resetToZeroMode(role: StaffRole): void {
+function _resetToZeroMode(role: StaffRole): void {
 	patients.length = 0;
 	appointments.length = 0;
 	payments.length = 0;
@@ -6676,9 +6670,7 @@ export function buildDenteTelegramLinkCodeList(
 	});
 }
 
-export function listDenteTelegramChatLinks(
-	limit = 50,
-): DenteTelegramChatLink[] {
+function _listDenteTelegramChatLinks(limit = 50): DenteTelegramChatLink[] {
 	const currentClinicId = clinicProfile.organizationId;
 	const botConfigId = configuredTelegramBotConfigId();
 	return denteTelegramChatLinks
@@ -6691,7 +6683,7 @@ export function listDenteTelegramChatLinks(
 		.slice(0, Math.max(0, Math.min(100, limit)));
 }
 
-export function buildDenteTelegramChatLinkList(
+function _buildDenteTelegramChatLinkList(
 	input: number | BuildDenteTelegramChatLinkListOptions = 50,
 ): DenteTelegramChatLinkListResponse {
 	const options =
@@ -7307,7 +7299,7 @@ function appointmentCallbackExpiryBase36(
 	).toString(36);
 }
 
-export function buildDenteTelegramAppointmentCallbackData(
+function buildDenteTelegramAppointmentCallbackData(
 	action: DenteTelegramAppointmentCallbackAction,
 	appointmentId: string,
 	scope?: DenteTelegramAppointmentCallbackScope,
@@ -11841,11 +11833,11 @@ function buildRecognitionOutput(input: CreateAiRecognitionJobInput) {
 	};
 }
 
-export function listAiRecognitionJobs(): AiRecognitionJob[] {
+function _listAiRecognitionJobs(): AiRecognitionJob[] {
 	return aiRecognitionJobs.slice(0, 20);
 }
 
-export function createAiRecognitionJob(
+function _createAiRecognitionJob(
 	input: CreateAiRecognitionJobInput,
 ): AiRecognitionJob {
 	const normalizedInput = createAiRecognitionJobSchema.parse(input);
@@ -11896,7 +11888,7 @@ function speechChunkMatchesScope(
 	return true;
 }
 
-export function listSpeechTranscriptionChunks(
+function listSpeechTranscriptionChunks(
 	recordingId: string,
 	scope: SpeechRecordingScope = {},
 ): SpeechTranscriptionChunk[] {
@@ -12053,7 +12045,7 @@ function speechRecordingRecoveryFromChunks(
 	};
 }
 
-export function listSpeechRecordingRecoveries(
+function _listSpeechRecordingRecoveries(
 	input: {
 		visitId?: string | null;
 		patientId?: string | null;
@@ -12149,7 +12141,7 @@ function assembleSpeechRecordingFromChunks(
 	};
 }
 
-export function assembleSpeechRecording(
+function _assembleSpeechRecording(
 	recordingId: string,
 	scope: SpeechRecordingScope = {},
 ): SpeechRecordingAssembly {
@@ -12251,7 +12243,7 @@ function trimSpeechTranscriptionChunkRetention(): void {
 	);
 }
 
-export function recordSpeechTranscriptionChunk(
+function _recordSpeechTranscriptionChunk(
 	input: Omit<SpeechTranscriptionChunk, "id" | "organizationId" | "createdAt">,
 ): SpeechTranscriptionChunk {
 	const identityConflict = speechTranscriptionChunks.find(
@@ -12304,7 +12296,7 @@ export function recordSpeechTranscriptionChunk(
 	return chunk;
 }
 
-export function recordImportBatch(input: {
+function _recordImportBatch(input: {
 	sourceName: string;
 	totalRows: number;
 	importedRows: number;
@@ -12347,15 +12339,13 @@ function assertActiveVisitDraftMutationAllowed(): void {
 	}
 }
 
-export function getVisitDraftAutosave(
-	visitId: string,
-): VisitDraftAutosave | null {
+function _getVisitDraftAutosave(visitId: string): VisitDraftAutosave | null {
 	if (visitId !== activeVisit.id) return null;
 	if (activeVisit.status !== "draft") return null;
 	return visitDraftAutosaves.find((draft) => draft.visitId === visitId) ?? null;
 }
 
-export function upsertVisitDraftAutosave(
+function _upsertVisitDraftAutosave(
 	input: VisitDraftAutosaveRequest,
 ): VisitDraftAutosave {
 	if (
@@ -12403,7 +12393,7 @@ export function upsertVisitDraftAutosave(
 	return serverDraft;
 }
 
-export function acceptVisitDraft(
+function _acceptVisitDraft(
 	input: AcceptVisitDraftInput,
 ): AcceptVisitDraftResponse {
 	if (input.visitId !== activeVisit.id) {
@@ -12588,7 +12578,7 @@ function moveSnapshotTempFile(tempPath: string, snapshotPath: string): void {
 	}
 }
 
-export function writeIssuedDocumentSnapshot(
+function writeIssuedDocumentSnapshot(
 	documentId: string,
 	html: string,
 ): { snapshotPath: string; sha256: string; createdAt: string } {
@@ -12604,12 +12594,12 @@ export function writeIssuedDocumentSnapshot(
 	};
 }
 
-export function storeIssuedDocumentSnapshot(
+function _storeIssuedDocumentSnapshot(
 	documentId: string,
 	html: string,
 ): GeneratedDocument | null {
 	const document = documents.find((candidate) => candidate.id === documentId);
-	if (!document || document.status !== "issued") return null;
+	if (document?.status !== "issued") return null;
 
 	const snapshot = writeIssuedDocumentSnapshot(document.id, html);
 	document.storagePath = snapshot.snapshotPath;
@@ -12620,7 +12610,7 @@ export function storeIssuedDocumentSnapshot(
 	return document;
 }
 
-export function createGeneratedDocument(input: {
+function _createGeneratedDocument(input: {
 	patientId: string;
 	visitId?: string | null | undefined;
 	kind: DocumentKind;
@@ -12655,7 +12645,7 @@ export function createGeneratedDocument(input: {
 	return document;
 }
 
-export function issueGeneratedDocument(
+function _issueGeneratedDocument(
 	documentId: string,
 	options: {
 		issuedAt?: string;
@@ -12718,12 +12708,12 @@ export function issueGeneratedDocument(
 	return document;
 }
 
-export function storeTaxXmlSnapshot(
+function _storeTaxXmlSnapshot(
 	documentId: string,
 	input: Omit<TaxXmlSnapshot, "sha256" | "createdAt">,
 ): GeneratedDocument | null {
 	const document = documents.find((candidate) => candidate.id === documentId);
-	if (!document || document.status !== "issued") return null;
+	if (document?.status !== "issued") return null;
 
 	document.taxXmlSnapshot = {
 		...input,
@@ -12741,7 +12731,7 @@ export function storeTaxXmlSnapshot(
 	return document;
 }
 
-export function voidGeneratedDocument(
+function _voidGeneratedDocument(
 	documentId: string,
 	options: {
 		voidedAt?: string;
@@ -12822,7 +12812,7 @@ function assertPaidPaymentFiscalReceiptOperation(
 	}
 }
 
-export function findPaymentByClientMutationId(
+function _findPaymentByClientMutationId(
 	clientMutationId: string | null | undefined,
 ): Payment | null {
 	const normalizedClientMutationId = clientMutationId?.trim();
@@ -12834,7 +12824,7 @@ export function findPaymentByClientMutationId(
 	);
 }
 
-export function createPayment(input: CreatePaymentInput): Payment {
+function _createPayment(input: CreatePaymentInput): Payment {
 	const createdAt = new Date().toISOString();
 	assertPaidPaymentFiscalReceiptOperation(input);
 	const fiscalReceipt = normalizeFiscalReceiptDetails(input.fiscalReceipt);
@@ -12896,7 +12886,7 @@ const communicationTaskOutcomeLabels: Record<CommunicationTaskOutcome, string> =
 		document_pickup: "документы готовы к выдаче/получению",
 	};
 
-export function completeCommunicationTask(
+function _completeCommunicationTask(
 	input: CompleteCommunicationTaskInput,
 ): CommunicationTask {
 	const task = communicationTasks.find((item) => item.id === input.taskId);
@@ -13005,7 +12995,7 @@ function normalizeViewerAnnotations(
 	}));
 }
 
-export function getOrCreateImagingViewerSession(
+function _getOrCreateImagingViewerSession(
 	study: ImagingStudy,
 ): ImagingViewerSession {
 	const existing = imagingViewerSessions.find(
@@ -13038,7 +13028,7 @@ export function getOrCreateImagingViewerSession(
 	return session;
 }
 
-export function saveImagingViewerSession(
+function _saveImagingViewerSession(
 	studyId: string,
 	input: SaveImagingViewerSessionRequest,
 ): ImagingViewerSession {
@@ -13149,7 +13139,7 @@ const dicomRenderTextureStrategyAuditLabels: Record<
 	external_viewer: "внешний просмотр",
 };
 
-export function saveDicomWorkbenchBundle(
+function _saveDicomWorkbenchBundle(
 	input: SaveDicomWorkbenchBundleRequest,
 ): DicomWorkbenchBundle {
 	const now = new Date().toISOString();
@@ -13198,7 +13188,7 @@ export function saveDicomWorkbenchBundle(
 	return bundle;
 }
 
-export function listDicomWorkbenchBundles(limit = 8): DicomWorkbenchBundle[] {
+function _listDicomWorkbenchBundles(limit = 8): DicomWorkbenchBundle[] {
 	const normalizedLimit = Math.max(1, Math.min(limit, 30));
 	return dicomWorkbenchBundles
 		.slice()
@@ -13206,7 +13196,7 @@ export function listDicomWorkbenchBundles(limit = 8): DicomWorkbenchBundle[] {
 		.slice(0, normalizedLimit);
 }
 
-export function createImagingStudy(input: {
+function _createImagingStudy(input: {
 	patientId: string;
 	visitId?: string | null | undefined;
 	kind: ImagingStudyKind;

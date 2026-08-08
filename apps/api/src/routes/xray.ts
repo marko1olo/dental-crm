@@ -78,7 +78,7 @@ const createXrayScanSchema = z.object({
 	status: z.enum(["pending", "analyzing", "done", "error"]).optional(),
 });
 
-const xrayScanResponseSchema = z.object({
+const _xrayScanResponseSchema = z.object({
 	id: z.string(),
 	patientId: z.string(),
 	visitId: z.string().nullable().optional(),

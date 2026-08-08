@@ -282,7 +282,7 @@ export function Omnibar() {
 										</div>
 									) : (
 										<div className="flex flex-col gap-1">
-											{filteredCommands.map((cmd, idx) => {
+											{filteredCommands?.map((cmd, idx) => {
 												// Quick check if category changed to add a header
 												const showCategory =
 													idx === 0 ||

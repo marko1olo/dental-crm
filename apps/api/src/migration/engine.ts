@@ -453,11 +453,11 @@ export async function runMigration(
 				sourceBytes: content?.length ?? Buffer.byteLength(input.rawText ?? ""),
 				detectedEncoding: parsed.detectedEncoding,
 				encodingConfidence: parsed.encodingConfidence,
-				vendorProfile: tables[0]!.mapping.vendorProfile,
+				vendorProfile: tables[0]?.mapping.vendorProfile,
 				status: "staging",
 				dryRun: input.dryRun,
 				sourceRows: totalSourceRows,
-				mappingJson: tables[0]!.mapping,
+				mappingJson: tables[0]?.mapping,
 				llmCalls: tables.reduce((sum, item) => sum + item.llmCalls, 0),
 				llmRejectedSuggestions: tables.reduce(
 					(sum, item) => sum + item.llmRejected,
@@ -775,10 +775,19 @@ export async function runMigration(
 
 		return {
 			run: summaryFrom(finished ?? run),
-			mapping: {
-				...tables[0]!.mapping,
-				warnings: [...tables[0]!.mapping.warnings, ...warnings],
-			},
+			mapping: tables[0]?.mapping
+				? {
+						...tables[0].mapping,
+						warnings: [...tables[0].mapping.warnings, ...warnings],
+					}
+				: {
+						vendorProfile: null,
+						sourceTable: "",
+						entityKind: "unknown",
+						columns: [],
+						unmappedColumns: [],
+						warnings,
+					},
 			reconciliation,
 			quarantinePreview,
 		};

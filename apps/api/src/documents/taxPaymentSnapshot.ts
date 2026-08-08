@@ -40,7 +40,7 @@ export function taxPaymentYear(payment: Payment): number | null {
 	return Number.isNaN(parsed.getTime()) ? null : parsed.getFullYear();
 }
 
-export function taxPaymentReceiptKey(
+function taxPaymentReceiptKey(
 	payment: Pick<Payment, "id" | "fiscalReceiptNumber">,
 ): string {
 	return payment.fiscalReceiptNumber?.trim() || payment.id;
@@ -90,7 +90,7 @@ function paymentMatchesDocumentTaxScope(
 	);
 }
 
-export function baseTaxPaymentsForDocument(
+function baseTaxPaymentsForDocument(
 	document: GeneratedDocument,
 	payments: readonly Payment[],
 ): Payment[] {
@@ -110,7 +110,7 @@ export function baseTaxPaymentsForDocument(
 	return linkedPayments.length ? linkedPayments : matchingPayments;
 }
 
-export function snapshotPaymentsForDocument(
+function snapshotPaymentsForDocument(
 	document: GeneratedDocument,
 ): Payment[] | null {
 	const snapshot = document.taxPaymentSnapshot;
@@ -150,7 +150,7 @@ export function paymentIdsForTaxDocument(
 	);
 }
 
-export function coveredIdentifiersForIssuedTaxCertificates(
+function coveredIdentifiersForIssuedTaxCertificates(
 	document: GeneratedDocument,
 	documents: readonly GeneratedDocument[],
 	payments: readonly Payment[],

@@ -1,23 +1,21 @@
-
-import { countLabel } from "../lib/russianPlural";
-import { 
-  safeLocalStorageSetItem, 
-  safeLocalStorageGetItem, 
-  safeLocalStorageRemoveItem 
-} from "../lib/safeLocalStorage";
+import type {
+	DicomWorkstationClientFacts,
+	MigrationLocalSourceDiscoveryResponse,
+} from "@dental/shared";
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "../lib/panelStateText";
+import { countLabel } from "../lib/russianPlural";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
+	safeLocalStorageSetItem,
+} from "../lib/safeLocalStorage";
 import { logger } from "../utils/logger";
-import { 
-  organizationScopedLocalStorageKey, 
-  localSavedAtFresh, 
-  localConvenienceRetentionMs 
-} from "../AppHelpers";
-import type { 
-  MigrationLocalSourceDiscoveryResponse, 
-  DicomWorkstationClientFacts 
-} from "@dental/shared";
-
+import {
+	localConvenienceRetentionMs,
+	localSavedAtFresh,
+	organizationScopedLocalStorageKey,
+} from "./localStorageHelpers";
 
 export type BrowserFileSystemFileHandle = {
 	kind: "file";
@@ -101,7 +99,6 @@ export type BrowserImagingScanOptions = {
 	startedAt: string;
 	onProgress?: (progress: BrowserImagingScanProgress) => void;
 };
-
 
 export type BrowserImagingScanRuntime = {
 	startedAt: string;
@@ -223,7 +220,6 @@ export const browserImagingScanProgressEveryMs = 96;
 export const browserPickedImagingFolderStorageKey =
 	"dental-crm:browser-picked-imaging-folder:last";
 
-
 export const browserMigrationSourceTitles: Record<
 	BrowserMigrationSourceKind,
 	string
@@ -244,10 +240,8 @@ export const browserMigrationSourceTitles: Record<
 	unknown_legacy_source: "Неопознанный источник старой системы",
 };
 
-
 export const browserLegacyMisTextPattern =
 	/1c|1с|\.1cd\b|мис|инфоклиника|infoclinica|infodent|инфодент|дента\s*офис|denta\s*office|clinic\s*cards|cliniccards|dental\s*4\s*windows|d4w|dental4windows|dental\s*pro|dentpro|dental\s*soft|dentasoft|dental\s*cloud|clinic\s*365|clinic365|medangel|медангел|medialog|медиалог|arnica|арника|sycret\s*dent|secret\s*dent|адента|adenta|dent\s*crm\s*24|dentcrm24|dent\.crm24|клиентикс|clientix|klientix|2v.*(?:стоматолог|dental)|future\s*it\s*dent|futureitdent|32\s*top|32top|medods|медодс|dental\s*tap|dentaltap|(?:^|[\\/])ident(?:[\\/]|$)|\bident\b|stomx|stom\s*x|стомx|стомикс|i[-\s]?stom|ай\s*стом|q[-\s]?stoma|кью\s*стома|бит\.?\s*стоматолог|bit\.?\s*stomatolog|1c.*стоматолог|1с.*стоматолог|mac\s*dent|macdent|stom\s*box|stombox|open\s*dent(?:al)?|opendental|opendent|open\s*dent\s*images|atoz|dentrix|eaglesoft|patterson|softdent|practice\s*works|curve\s*dental|denticon|tab32|dolphin\s*(?:imaging|management)|legacy|старая\s+баз/i;
-
 
 export function classifyBrowserImagingFileName(
 	fileName: string,
@@ -265,7 +259,6 @@ export function classifyBrowserImagingFileName(
 		return "image";
 	return "other";
 }
-
 
 export function classifyBrowserMigrationFileName(
 	fileName: string,
@@ -345,7 +338,6 @@ export function classifyBrowserMigrationFileName(
 	return "other";
 }
 
-
 export function browserMigrationFolderHintScore(value: string): number {
 	const normalized = value.toLowerCase();
 	let score = 0;
@@ -374,7 +366,6 @@ export function browserMigrationFolderHintScore(value: string): number {
 		score += 0.18;
 	return score;
 }
-
 
 export function browserMigrationSourceKindFromStats(
 	stats: BrowserMigrationFolderStats,
@@ -426,7 +417,6 @@ export function browserMigrationSourceKindFromStats(
 	if (stats.databaseFiles > 0) return "mis_database";
 	return "unknown_legacy_source";
 }
-
 
 export function buildBrowserMigrationDiscovery(input: {
 	rootName: string;
@@ -552,7 +542,6 @@ export function buildBrowserMigrationDiscovery(input: {
 	};
 }
 
-
 export async function browserFileHasDicomMagic(file: File): Promise<boolean> {
 	if (file.size < 132) return false;
 	try {
@@ -568,14 +557,12 @@ export async function browserFileHasDicomMagic(file: File): Promise<boolean> {
 	}
 }
 
-
 export function browserImagingScanNowMs(): number {
 	return typeof performance !== "undefined" &&
 		typeof performance.now === "function"
 		? performance.now()
 		: Date.now();
 }
-
 
 export function createBrowserImagingScanRuntime(
 	startedAt: string,
@@ -590,7 +577,6 @@ export function createBrowserImagingScanRuntime(
 	};
 }
 
-
 export function browserImagingScanElapsedFromIso(
 	startedAt: string,
 	updatedAt: string,
@@ -601,14 +587,12 @@ export function browserImagingScanElapsedFromIso(
 	return end - start;
 }
 
-
 export function throwIfBrowserImagingScanAborted(signal?: AbortSignal): void {
 	if (!signal?.aborted) return;
 	const error = new Error("Browser imaging scan cancelled");
 	error.name = "AbortError";
 	throw error;
 }
-
 
 export function isBrowserImagingScanAbortError(error: unknown): boolean {
 	return (
@@ -618,7 +602,6 @@ export function isBrowserImagingScanAbortError(error: unknown): boolean {
 		String((error as { name?: unknown }).name) === "AbortError"
 	);
 }
-
 
 export async function browserImagingScanYield(): Promise<void> {
 	const scheduler = (
@@ -632,7 +615,6 @@ export async function browserImagingScanYield(): Promise<void> {
 	}
 	await new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
-
 
 export function browserImagingScanProgressFromStats(
 	stats: BrowserPickedImagingScanStats,
@@ -656,7 +638,6 @@ export function browserImagingScanProgressFromStats(
 	};
 }
 
-
 export function publishBrowserImagingScanProgress(
 	stats: BrowserPickedImagingScanStats,
 	options: BrowserImagingScanOptions,
@@ -678,7 +659,6 @@ export function publishBrowserImagingScanProgress(
 	);
 }
 
-
 export async function maybeYieldBrowserImagingScan(
 	runtime: BrowserImagingScanRuntime,
 	signal?: AbortSignal,
@@ -694,7 +674,6 @@ export async function maybeYieldBrowserImagingScan(
 	throwIfBrowserImagingScanAborted(signal);
 }
 
-
 export function createBrowserMigrationScanRuntime(
 	startedAt: string,
 ): BrowserMigrationScanRuntime {
@@ -708,14 +687,12 @@ export function createBrowserMigrationScanRuntime(
 	};
 }
 
-
 export function throwIfBrowserMigrationScanAborted(signal?: AbortSignal): void {
 	if (!signal?.aborted) return;
 	const error = new Error("Browser migration scan cancelled");
 	error.name = "AbortError";
 	throw error;
 }
-
 
 export function isBrowserMigrationScanAbortError(error: unknown): boolean {
 	return (
@@ -725,7 +702,6 @@ export function isBrowserMigrationScanAbortError(error: unknown): boolean {
 		String((error as { name?: unknown }).name) === "AbortError"
 	);
 }
-
 
 export function browserMigrationScanProgressFromStats(
 	stats: BrowserMigrationScanStats,
@@ -749,7 +725,6 @@ export function browserMigrationScanProgressFromStats(
 	};
 }
 
-
 export function publishBrowserMigrationScanProgress(
 	stats: BrowserMigrationScanStats,
 	options: BrowserMigrationScanOptions,
@@ -771,7 +746,6 @@ export function publishBrowserMigrationScanProgress(
 	);
 }
 
-
 export async function maybeYieldBrowserMigrationScan(
 	runtime: BrowserMigrationScanRuntime,
 	signal?: AbortSignal,
@@ -786,7 +760,6 @@ export async function maybeYieldBrowserMigrationScan(
 	await browserImagingScanYield();
 	throwIfBrowserMigrationScanAborted(signal);
 }
-
 
 export function addBrowserMigrationKindToScanStats(
 	stats: BrowserMigrationScanStats,
@@ -803,7 +776,6 @@ export function addBrowserMigrationKindToScanStats(
 	else if (kind === "model") stats.modelFiles += 1;
 }
 
-
 export function localImagingFolderFingerprint(folderPath: string): string {
 	let hash = 2166136261;
 	for (let index = 0; index < folderPath.length; index += 1) {
@@ -813,11 +785,9 @@ export function localImagingFolderFingerprint(folderPath: string): string {
 	return (hash >>> 0).toString(16).padStart(8, "0").toUpperCase();
 }
 
-
 export function browserPickedFolderFingerprint(input: string): string {
 	return localImagingFolderFingerprint(input || "browser-local-imaging-folder");
 }
-
 
 export function saveBrowserPickedImagingFolderPreview(
 	preview: BrowserPickedImagingFolderPreview,
@@ -844,7 +814,6 @@ export function saveBrowserPickedImagingFolderPreview(
 		// Browser-picked folder summaries are best-effort and contain no raw local path.
 	}
 }
-
 
 export function loadBrowserPickedImagingFolderPreview(
 	organizationId: string | null | undefined = null,
@@ -887,7 +856,6 @@ export function loadBrowserPickedImagingFolderPreview(
 	}
 }
 
-
 export function removeBrowserPickedImagingFolderPreview(
 	organizationId: string | null | undefined = null,
 ): void {
@@ -905,7 +873,6 @@ export function removeBrowserPickedImagingFolderPreview(
 		// ignore unavailable storage
 	}
 }
-
 
 export function buildBrowserPickedImagingFolderPreview(
 	stats: BrowserPickedImagingScanStats,
@@ -952,7 +919,6 @@ export function buildBrowserPickedImagingFolderPreview(
 	};
 }
 
-
 export function hasDentalDesktopShellBridge(): boolean {
 	if (typeof window === "undefined") return false;
 	const runtimeWindow = window as DentalDesktopRuntimeWindow;
@@ -965,7 +931,6 @@ export function hasDentalDesktopShellBridge(): boolean {
 	);
 }
 
-
 export function detectDicomRuntimeSurfaceHint(): DicomWorkstationClientFacts["runtimeSurfaceHint"] {
 	if (typeof navigator === "undefined") return "unknown";
 	if (hasDentalDesktopShellBridge()) return "desktop_app";
@@ -976,7 +941,6 @@ export function detectDicomRuntimeSurfaceHint(): DicomWorkstationClientFacts["ru
 	if (/win|mac|linux|x11|desktop/.test(text)) return "desktop_web";
 	return "unknown";
 }
-
 
 export async function collectDicomWorkstationClientFacts(): Promise<DicomWorkstationClientFacts> {
 	let webgl2Supported = false;

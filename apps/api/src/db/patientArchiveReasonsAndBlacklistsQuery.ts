@@ -59,7 +59,7 @@ export async function isPatientBookingBlocked(
 				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
 			)
 			.limit(1);
-		if (patientRow && patientRow.fullName) {
+		if (patientRow?.fullName) {
 			fullName = patientRow.fullName.trim();
 		}
 
@@ -84,7 +84,7 @@ export async function isPatientBookingBlocked(
 			.limit(1);
 
 		return rows.length > 0;
-	} catch (err) {
+	} catch (_err) {
 		/*
 		 * Текст предназначен администратору у стойки, поэтому называет и причину, и
 		 * последствие, и следующий шаг. Молча пропустить запись нельзя, но и пугать

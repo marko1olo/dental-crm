@@ -6346,7 +6346,7 @@ function buildMigrationOperatorPacket(input: {
 				? "Старую базу читать только с копии или резервной копии; прямая запись из старой системы запрещена."
 				: null,
 			"Массовую запись делать только после чернового предпросмотра и контрольной выборки врача.",
-		].filter((item): item is string => Boolean(item && item.trim())),
+		].filter((item): item is string => Boolean(item?.trim())),
 	).slice(0, 6);
 	const operatorScript = buildMigrationOperatorScript({
 		sources,
@@ -6518,7 +6518,7 @@ function clinicLookupInputFromSmartImport(
 		payload.legalName,
 		payload.address,
 		payload.medicalLicenseNumber,
-	].some((item) => item && item.trim())
+	].some((item) => item?.trim())
 		? payload
 		: null;
 }

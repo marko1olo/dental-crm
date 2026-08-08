@@ -8,10 +8,7 @@ import type {
 	VisitSaveReceipt,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import {
-	inMemoryDomainState,
-	visitCloseChecklistFactsFor,
-} from "../sampleData.js";
+import { visitCloseChecklistFactsFor } from "../sampleData.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
 import { db } from "./client.js";
@@ -30,7 +27,7 @@ import { projectVisitRow } from "./visitsProjection.js";
  * Второй экземпляр этой строки живёт в sampleData.ts. Общей константы на два
  * пути в проекте нет, а @dental/shared — не мой файл; долг назван в отчёте.
  */
-export const VISIT_DRAFT_ACCEPTED_AUDIT_ACTION = "visit_draft_accepted";
+const VISIT_DRAFT_ACCEPTED_AUDIT_ACTION = "visit_draft_accepted";
 
 function hashTranscript(value: string): string {
 	return createHash("sha256").update(value).digest("hex").slice(0, 16);
@@ -555,7 +552,7 @@ export async function getVisitByIdInDb(organizationId: string, id: string) {
 }
 
 /** Приём, открытый по записи расписания. */
-export type OpenedVisitForAppointment = {
+type OpenedVisitForAppointment = {
 	readonly id: string;
 	readonly organizationId: string;
 	readonly patientId: string;

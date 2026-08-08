@@ -1,6 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
-import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import {
 	getDocumentById,
 	storeTaxXmlSnapshotInDb,

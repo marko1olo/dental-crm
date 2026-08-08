@@ -122,7 +122,7 @@ function isHallucinatedTranscript(text: string): {
 	if (words.length >= 5) {
 		let runLen = 1;
 		for (let i = 1; i < words.length; i++) {
-			if (words[i]!.toLowerCase() === words[i - 1]!.toLowerCase()) {
+			if (words[i]?.toLowerCase() === words[i - 1]?.toLowerCase()) {
 				runLen++;
 				if (runLen >= 5) {
 					return {
@@ -2062,7 +2062,7 @@ function waitBetweenPolls(ms: number): Promise<void> {
 	});
 }
 
-export type SpeechRemoteArtifactDeletion = {
+type SpeechRemoteArtifactDeletion = {
 	deleted: boolean;
 	attempts: number;
 	failureReason: string | null;
@@ -2490,7 +2490,7 @@ async function transcribeGeminiMultimodal(input: {
 	const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text;
 	if (typeof text !== "string") {
 		throw new Error(
-			"Invalid response format from Gemini: " + JSON.stringify(payload),
+			`Invalid response format from Gemini: ${JSON.stringify(payload)}`,
 		);
 	}
 

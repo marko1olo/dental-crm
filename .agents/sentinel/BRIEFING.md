@@ -1,12 +1,12 @@
-# BRIEFING — 2026-08-08T20:52:30Z
+# BRIEFING — 2026-08-08T21:40:35Z
 
 ## Mission
-Audit DENTE CRM frontend, execute E2E Playwright verification, and dismantle God-Object AppHelpers.tsx into domain utility modules with 0 circular dependencies and clean typecheck.
+Paranoid, objective reassessment of all "dead code" removals and flagged variables in apps/web/src using useDocumentWorkflowModule.ts failure as baseline.
 
 ## 🔒 My Identity
 - Archetype: sentinel
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel
-- Orchestrator: e922dda7-e65d-472b-b0e5-727b9201e7c4
+- Orchestrator: 4edf34e8-8797-433f-af78-dcc2784b8ef0
 - Victory Auditor: to be spawned on victory claim
 
 ## 🔒 Key Constraints
@@ -15,7 +15,7 @@ Audit DENTE CRM frontend, execute E2E Playwright verification, and dismantle God
 - Must not write code, analyze problems, or make technical decisions
 
 ## User Context
-- **Last user request**: Deep architectural audit, E2E Playwright verification, and God-Object dismantling (AppHelpers.tsx) for DENTE CRM.
+- **Last user request**: Paranoid reassessment of dead code removals + USER OVERRIDE: Aggressively analyze Git history (git log -p, git diff) to trace any lost or broken logic from recent refactorings.
 - **Pending clarifications**: none
 - **Delivered results**: none
 

@@ -40,7 +40,7 @@ import { db } from "./client.js";
 import * as schema from "./schema.js";
 
 /** Строка шаблона ровно в той форме, в которой её отдаёт база. */
-export type ProtocolTemplateRow = typeof schema.protocolTemplates.$inferSelect;
+type ProtocolTemplateRow = typeof schema.protocolTemplates.$inferSelect;
 
 /** Поля шаблона, которые задаёт администратор клиники. */
 export interface ProtocolTemplateInput {

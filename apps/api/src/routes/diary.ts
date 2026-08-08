@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { and, count, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 
@@ -565,6 +565,7 @@ async function runDiarySigningCeremony(
 	// записывалась на нашу — то есть запись о расходе и сам расход оказывались в
 	// разных клиниках.
 	const deductions: DiaryStockDeduction[] = [];
+	const transactionsToInsert: any[] = [];
 	let completedTreatmentItems = 0;
 	if (diary.visitId) {
 		const visitTreatmentItems = await tx
@@ -701,22 +702,27 @@ async function runDiarySigningCeremony(
 							),
 						);
 
-					await tx.insert(inventoryTransactions).values({
+					transactionsToInsert.push({
 						organizationId,
 						visitId: diary.visitId,
 						inventoryItemId: inv.id,
 						quantityChanged,
 						unitCostRub:
 							inv.unitCostRub != null ? String(inv.unitCostRub) : null,
-						transactionType: "auto_deduct",
+						transactionType: "auto_deduct" as const,
 						userId,
 					});
+
 					deductions.push({
 						inventoryItemId: inv.id,
 						inventoryItemName: inv.name,
 						quantityChanged,
 					});
 				}
+			}
+
+			if (transactionsToInsert.length > 0) {
+				await tx.insert(inventoryTransactions).values(transactionsToInsert);
 			}
 		}
 	}
@@ -2050,7 +2056,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					)
 					.orderBy(desc(sterilizationLogs.timestamp))
 					.limit(1);
-				if (!trayLog || trayLog.status !== "passed") {
+				if (trayLog?.status !== "passed") {
 					return { kind: "invalid_tray" as const };
 				}
 			}

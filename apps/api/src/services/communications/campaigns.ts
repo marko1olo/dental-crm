@@ -51,7 +51,7 @@ import { isMachineDeliverableChannel } from "./channelRouter.js";
 import { type CommunicationIntentCode, enqueueMessage } from "./dispatcher.js";
 import { checkChannelFit, renderTemplate } from "./templateRenderer.js";
 
-export type CampaignRow = typeof communicationCampaigns.$inferSelect;
+type CampaignRow = typeof communicationCampaigns.$inferSelect;
 
 export function parseAudienceCriteria(raw: string): AudienceCriteria {
 	try {
@@ -89,8 +89,8 @@ const CAMPAIGN_SAFE_VARIABLES = new Set([
 	"reviewLink",
 ]);
 
-export function campaignTemplateProblems(
-	body: string,
+function campaignTemplateProblems(
+	_body: string,
 	variables: string[],
 ): string[] {
 	const unsupported = variables.filter(

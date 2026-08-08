@@ -4,13 +4,11 @@ import {
 	type Dashboard,
 	type DentalMedicalCard043uPayload,
 	type DocumentAuditFacts,
-	dentalMedicalCard043uPayloadSchema,
 	documentKindMetadata,
 	type GeneratedDocument,
 	type IssueDocumentInput,
 	multiplyKopecks,
 	type OutpatientMedicalCard025uPayload,
-	outpatientMedicalCard025uPayloadSchema,
 	type Patient,
 	type Payment,
 	type PhotoVideoConsentMaterial,
@@ -23,7 +21,6 @@ import {
 	type VoidDocumentInput,
 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { ZodError } from "zod";
 import {
 	type ClinicProfileDraft,
 	installmentPaymentStatusAliases,
@@ -70,6 +67,7 @@ import {
 	confirmedDocumentLiteral,
 	documentTextLines,
 } from "../../utils/documentPayloadUtils";
+import { fetchWithHandling } from "../../utils/networkUtils";
 import { postVisitCareTopicOptions } from "../../workspaceStaticOptions";
 import {
 	clinicalRuleSummaryForUi,
@@ -1480,7 +1478,9 @@ export function useDocumentWorkflowModule({
 				),
 			);
 	}, [activePayments, selectedTaxDocumentPayerKey, taxDocumentYear]);
-	const eligibleTaxPaymentIdsKey = eligibleTaxPayments.map((p) => p.id).join("|");
+	const _eligibleTaxPaymentIdsKey = eligibleTaxPayments
+		.map((p) => p.id)
+		.join("|");
 
 	const selectedTaxPaymentIdSet = useMemo(
 		() => new Set(selectedTaxPaymentIds),
@@ -1527,7 +1527,9 @@ export function useDocumentWorkflowModule({
 				),
 			);
 	}, [activePayments, dashboard?.activeVisit?.id]);
-	const eligiblePaymentReceiptIdsKey = eligiblePaymentReceiptPayments.map((p) => p.id).join("|");
+	const _eligiblePaymentReceiptIdsKey = eligiblePaymentReceiptPayments
+		.map((p) => p.id)
+		.join("|");
 
 	const selectedPaymentReceiptIdSet = useMemo(
 		() => new Set(selectedPaymentReceiptIds),
@@ -1959,8 +1961,8 @@ export function useDocumentWorkflowModule({
 		documentLocalPersistenceOrganizationId,
 		selectedDocumentUsesTaxPaymentSelection,
 		taxPaymentSelectionPersistenceKey,
-		eligibleTaxPaymentIdsKey,
 		setSelectedTaxPaymentIds,
+		eligibleTaxPayments.map,
 	]);
 
 	useEffect(() => {
@@ -1984,7 +1986,6 @@ export function useDocumentWorkflowModule({
 		selectedDocumentUsesTaxPaymentSelection,
 		taxPaymentSelectionPersistenceKey,
 		selectedTaxPaymentIdsForCurrentDocument,
-		eligibleTaxPaymentIdsKey,
 	]);
 
 	useEffect(() => {
@@ -2015,8 +2016,8 @@ export function useDocumentWorkflowModule({
 		documentLocalPersistenceOrganizationId,
 		selectedDocumentUsesPaymentReceiptSelection,
 		paymentReceiptSelectionPersistenceKey,
-		eligiblePaymentReceiptIdsKey,
 		setSelectedPaymentReceiptIds,
+		eligiblePaymentReceiptPayments.map,
 	]);
 
 	useEffect(() => {
@@ -2045,7 +2046,7 @@ export function useDocumentWorkflowModule({
 		paymentReceiptSelectionPersistenceKey,
 		selectedDocumentUsesPaymentReceiptSelection,
 		selectedPaymentReceiptIds,
-		eligiblePaymentReceiptIdsKey,
+		eligiblePaymentReceiptPayments.map,
 	]);
 
 	useEffect(() => {
@@ -3094,15 +3095,18 @@ export function useDocumentWorkflowModule({
 			const headers = auth.denteClinicalMutationHeaders(
 				payload ? { "Content-Type": "application/json" } : {},
 			);
-			const response = await fetch(`/api/documents/${documentId}/${action}`, {
-				method: "POST",
-				headers,
-				...(payload
-					? {
-							body: JSON.stringify(payload),
-						}
-					: {}),
-			});
+			const response = await fetchWithHandling(
+				`/api/documents/${documentId}/${action}`,
+				{
+					method: "POST",
+					headers,
+					...(payload
+						? {
+								body: JSON.stringify(payload),
+							}
+						: {}),
+				},
+			);
 			if (!response.ok) {
 				setError(
 					await responseErrorMessage(response, "Статус документа не обновлен"),
@@ -3278,10 +3282,13 @@ export function useDocumentWorkflowModule({
 
 	async function downloadTaxDocumentXml(documentId: string) {
 		try {
-			const response = await fetch(`/api/documents/${documentId}/tax-xml`, {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders(),
-			});
+			const response = await fetchWithHandling(
+				`/api/documents/${documentId}/tax-xml`,
+				{
+					cache: "no-store",
+					headers: auth.denteClinicalReadHeaders(),
+				},
+			);
 			if (!response.ok) {
 				setError(await responseErrorMessage(response, "XML ФНС не выгружен"));
 				return;
@@ -3315,10 +3322,13 @@ export function useDocumentWorkflowModule({
 	async function loadDocumentAuditFacts(documentId: string) {
 		setDocumentAuditFactsLoadingId(documentId);
 		try {
-			const response = await fetch(`/api/documents/${documentId}/audit-facts`, {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders(),
-			});
+			const response = await fetchWithHandling(
+				`/api/documents/${documentId}/audit-facts`,
+				{
+					cache: "no-store",
+					headers: auth.denteClinicalReadHeaders(),
+				},
+			);
 			if (!response.ok) {
 				setError(
 					await responseErrorMessage(response, "Паспорт выдачи не загружен"),
@@ -3354,10 +3364,13 @@ export function useDocumentWorkflowModule({
 		options: { preserveError?: boolean } = {},
 	) {
 		try {
-			const response = await fetch(issuedDocumentHtmlDownloadUrl(documentId), {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders(),
-			});
+			const response = await fetchWithHandling(
+				issuedDocumentHtmlDownloadUrl(documentId),
+				{
+					cache: "no-store",
+					headers: auth.denteClinicalReadHeaders(),
+				},
+			);
 			if (!response.ok) {
 				setError(
 					await responseErrorMessage(response, "Архивный HTML не скачан"),
@@ -3426,10 +3439,13 @@ export function useDocumentWorkflowModule({
 
 	async function downloadIssuedDocumentPdf(documentId: string) {
 		try {
-			const response = await fetch(`/api/documents/${documentId}/pdf`, {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders(),
-			});
+			const response = await fetchWithHandling(
+				`/api/documents/${documentId}/pdf`,
+				{
+					cache: "no-store",
+					headers: auth.denteClinicalReadHeaders(),
+				},
+			);
 			if (!response.ok) {
 				setError(await responseErrorMessage(response, "PDF не сформирован"));
 				return;

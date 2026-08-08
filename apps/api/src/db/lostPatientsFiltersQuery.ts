@@ -51,7 +51,7 @@ import {
 } from "./schema.js";
 
 /** Строка списка в том виде, в каком её ждёт виджет «Потерянные пациенты». */
-export type LostPatientRow = {
+type LostPatientRow = {
 	id: string;
 	organizationId: string;
 	patientName: string;

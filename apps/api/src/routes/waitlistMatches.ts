@@ -227,5 +227,3 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 		},
 	);
 }
-
-export default registerWaitlistMatchRoutes;

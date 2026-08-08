@@ -25,7 +25,7 @@ type FinanceLedgerProps = {
 };
 
 export function FinanceLedger({
-	categoryLabels = {} as any,
+	categoryLabels = {} as FinanceLedgerProps["categoryLabels"],
 	documents = [],
 	formatDateTime = (v: string) => v || "",
 	/*
@@ -47,11 +47,11 @@ export function FinanceLedger({
 	onFocusPaymentCapture,
 	onGoToVisit,
 	paymentFiscalReceiptLabel = () => "",
-	paymentMethodLabels = {} as any,
+	paymentMethodLabels = {} as FinanceLedgerProps["paymentMethodLabels"],
 	payments = [],
 	serviceCatalog = [],
 	treatmentItems = [],
-	treatmentStatusLabels = {} as any,
+	treatmentStatusLabels = {} as FinanceLedgerProps["treatmentStatusLabels"],
 	onCreateDocument,
 }: FinanceLedgerProps) {
 	const safeTreatmentItems = treatmentItems || [];

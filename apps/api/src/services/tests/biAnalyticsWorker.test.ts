@@ -112,11 +112,11 @@ test("startBiAnalyticsWorker scheduling and execution", async (t) => {
 	startBiAnalyticsWorker();
 
 	assert.strictEqual(setTimeoutMock.mock.calls.length, 1);
-	assert.strictEqual(setTimeoutMock.mock.calls[0]!.arguments[1], 5000);
+	assert.strictEqual(setTimeoutMock.mock.calls[0]?.arguments[1], 5000);
 
 	assert.strictEqual(setIntervalMock.mock.calls.length, 1);
 	assert.strictEqual(
-		setIntervalMock.mock.calls[0]!.arguments[1],
+		setIntervalMock.mock.calls[0]?.arguments[1],
 		1000 * 60 * 60,
 	);
 

@@ -1,9 +1,6 @@
 import { Readable } from "node:stream";
 import {
-	type MigrationEntityKind,
-	type MigrationTargetField,
 	migrationEntityKindSchema,
-	migrationRunRequestSchema,
 	migrationTargetFieldSchema,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -973,6 +970,3 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 		}
 	});
 }
-
-export type { MigrationEntityKind, MigrationTargetField };
-export { migrationRunRequestSchema };

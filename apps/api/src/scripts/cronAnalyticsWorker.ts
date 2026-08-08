@@ -1,9 +1,7 @@
 import { eq, sql } from "drizzle-orm";
-import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
 	biAnalyticsSnapshots,
-	patientInvoices,
 	patients,
 	treatmentPlans,
 } from "../db/schema.js";

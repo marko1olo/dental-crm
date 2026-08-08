@@ -33,7 +33,6 @@ import {
 	type ClinicMode,
 	describeHiddenCapabilities,
 	hasCapability,
-	resolveClinicMode,
 	staffRoleChoices,
 } from "./lib/clinicCapabilities";
 import { useSettingsStore } from "./store/settingsStore";

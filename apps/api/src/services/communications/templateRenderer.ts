@@ -133,9 +133,7 @@ const variableByKey = new Map(
 	communicationTemplateVariables.map((variable) => [variable.key, variable]),
 );
 
-export function findTemplateVariable(
-	key: string,
-): TemplateVariableDefinition | null {
+function _findTemplateVariable(key: string): TemplateVariableDefinition | null {
 	return variableByKey.get(key) ?? null;
 }
 
@@ -213,13 +211,13 @@ export function validateTemplateBody(
 	};
 }
 
-export type TemplateRenderSuccess = {
+type TemplateRenderSuccess = {
 	readonly ok: true;
 	readonly text: string;
 	readonly usedVariables: string[];
 };
 
-export type TemplateRenderFailure = {
+type TemplateRenderFailure = {
 	readonly ok: false;
 	/** Переменные, для которых не пришло значение. Отправка останавливается. */
 	readonly missingVariables: string[];

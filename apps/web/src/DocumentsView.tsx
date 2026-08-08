@@ -5614,7 +5614,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 												Object.entries(
 													medicalDocumentReleaseChannelLabels,
 												) as Array<[MedicalDocumentReleaseChannel, string]>
-											).map(([value, label]) => (
+											)?.map(([value, label]) => (
 												<option key={value} value={value}>
 													{label}
 												</option>
@@ -5939,7 +5939,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											<option value="">
 												Выберите выданный запрос на копии
 											</option>
-											{typedIssuedMedicalCopyRequestDocuments.map(
+											{typedIssuedMedicalCopyRequestDocuments?.map(
 												(document) => (
 													<option key={document.id} value={document.id}>
 														{releaseSourceRequestOptionLabel(document)}
@@ -6001,7 +6001,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 												Object.entries(
 													medicalDocumentReleaseChannelLabels,
 												) as Array<[MedicalDocumentReleaseChannel, string]>
-											).map(([value, label]) => (
+											)?.map(([value, label]) => (
 												<option key={value} value={value}>
 													{label}
 												</option>
@@ -6164,7 +6164,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											<option value="">
 												Выберите оплату с фискальным чеком
 											</option>
-											{typedEligibleRefundCorrectionPayments.map((payment) => (
+											{typedEligibleRefundCorrectionPayments?.map((payment) => (
 												<option key={payment.id} value={payment.id}>
 													{`${money(payment.amountRub)} · ${paymentFiscalReceiptLabelForUi(payment)} · ${
 														payment.fiscalReceiptIssuedAt ||
@@ -6334,11 +6334,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 						<span className="settings-advanced-chevron">{"\u25BC"}</span>
 					</summary>
 					<div className="settings-advanced-form">
-						{documentFactoryGroups.map((group) => (
+						{documentFactoryGroups?.map((group) => (
 							<section className="document-factory-group" key={group.title}>
 								<h3>{group.title}</h3>
 								<div>
-									{group.kinds.map((kind) => {
+									{group.kinds?.map((kind) => {
 										const metadata = documentKindMetadata[kind];
 										return (
 											<button
@@ -6462,7 +6462,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 									Object.entries(documentIssueSignatureModeLabels) as Array<
 										[string, string]
 									>
-								).map(([mode, label]) => (
+								)?.map(([mode, label]) => (
 									<option key={mode} value={mode}>
 										{label}
 									</option>
@@ -6587,7 +6587,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 									marginTop: "8px",
 								}}
 							>
-								{documentIssueMissingSteps.map((step) => (
+								{documentIssueMissingSteps?.map((step) => (
 									<div
 										key={step}
 										style={{
@@ -6720,7 +6720,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 									Object.entries(documentVoidReasonLabels) as Array<
 										[string, string]
 									>
-								).map(([code, label]) => (
+								)?.map(([code, label]) => (
 									<option key={code} value={code}>
 										{label}
 									</option>
@@ -6760,7 +6760,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 									.filter(
 										(document) => document.id !== documentVoidConfirmation.id,
 									)
-									.map((document) => (
+									?.map((document) => (
 										<option key={document.id} value={document.id}>
 											{documentLabels[document.kind]} ·{" "}
 											{documentStatusLabels[document.status]}
@@ -6837,7 +6837,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 									marginTop: "8px",
 								}}
 							>
-								{documentVoidMissingSteps.map((step) => (
+								{documentVoidMissingSteps?.map((step) => (
 									<div
 										key={step}
 										style={{
@@ -6949,7 +6949,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 									className="document-source-links"
 									aria-label="Официальные источники паспорта документа"
 								>
-									{documentAuditFacts.sourceUrls.map(
+									{documentAuditFacts.sourceUrls?.map(
 										(url: string, index: number) => (
 											<a
 												className="doc-link"
@@ -7136,7 +7136,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 							{[
 								...documentAuditFacts.blockers,
 								...documentAuditFacts.warnings,
-							].map((note) => (
+							]?.map((note) => (
 								<div
 									key={note}
 									style={{
@@ -7210,7 +7210,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 				</section>
 			) : null}
 			<div className="document-list">
-				{typedActiveDocuments.map((document) => {
+				{typedActiveDocuments?.map((document) => {
 					const documentActionLabel = documentActionLabels[document.kind];
 					const documentKindLabel = documentLabels[document.kind];
 					const documentTaxYearContext = document.taxYear

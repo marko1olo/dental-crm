@@ -45,7 +45,7 @@ type Knd1151156XmlPreflightIssue = {
 	message: string;
 };
 
-export function escapeXml(value: string | number | null | undefined): string {
+function escapeXml(value: string | number | null | undefined): string {
 	return String(value ?? "")
 		.replaceAll("&", "&amp;")
 		.replaceAll("<", "&lt;")

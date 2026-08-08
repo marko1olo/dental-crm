@@ -52,4 +52,13 @@
  * .dark оставлен в списке ради правил, которые исторически на него опираются
  * (VisitView.css, блоки первого запуска в main.css).
  */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="night"], [data-theme="night"] *, .dark, .dark *));
+@custom-variant dark (
+	&:where(
+		[data-theme="dark"],
+		[data-theme="dark"] *,
+		[data-theme="night"],
+		[data-theme="night"] *,
+		.dark,
+		.dark *
+	)
+);

@@ -60,7 +60,7 @@ export interface StoredUpload {
  * заголовка запроса попало бы в путь на диске. Имя приходит от клиента и
  * доверять ему нельзя.
  */
-export function safeUploadFileName(rawName: string | undefined): string {
+function safeUploadFileName(rawName: string | undefined): string {
 	const base = (rawName ?? "").split(/[\\/]/).pop()?.trim() ?? "";
 	const cleaned = base
 		// biome-ignore lint/complexity/useRegexLiterals: control character range
@@ -143,7 +143,7 @@ export async function storeUploadStream(
  * Кладёт уже собранный в памяти буфер. Нужно для источников, приходящих не
  * файлом: вставка из буфера обмена, текст выгрузки, вызовы из тестов.
  */
-export async function storeUploadBuffer(
+async function _storeUploadBuffer(
 	content: Buffer,
 	rawFileName: string | undefined,
 ): Promise<StoredUpload> {
@@ -173,7 +173,7 @@ export async function uploadExists(
 	}
 }
 
-export async function uploadSize(filePath: string): Promise<number> {
+async function _uploadSize(filePath: string): Promise<number> {
 	const info = await stat(filePath);
 	return info.size;
 }
@@ -257,5 +257,3 @@ export async function cleanupExpiredUploads(
 	}
 	return removed;
 }
-
-export { uploadRoot };

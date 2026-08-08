@@ -48,7 +48,7 @@ describe("runVisitFlow Orchestrator", () => {
 		planError?: boolean;
 		recsError?: boolean;
 	}) {
-		mock.method(globalThis, "fetch", async (url: any, init: any) => {
+		mock.method(globalThis, "fetch", async (_url: any, init: any) => {
 			const body = init?.body ? JSON.parse(init.body) : {};
 			const prompt =
 				body.messages?.[0]?.content || body.messages?.[1]?.content || "";

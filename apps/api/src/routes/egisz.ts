@@ -610,7 +610,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 
 					for (const uid of fallbackIds) {
 						const u = fallbackUsers.find((fu) => fu.id === uid);
-						if (u?.fullName && u.fullName.trim()) {
+						if (u?.fullName?.trim()) {
 							doctorName = splitFullName(u.fullName);
 							const pos = formatDoctorSpecialtyLabelForCda(u.specialties);
 							if (pos) doctorPosition = pos;

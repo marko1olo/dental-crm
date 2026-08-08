@@ -328,7 +328,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				});
 				if (!response.ok) return;
 				const rows = await response.json();
-				if (!cancelled) setWaitlistCount(Array.isArray(rows) ? rows.length : 0);
+				if (!cancelled)
+					setWaitlistCount(Array.isArray(rows) ? rows?.length : 0);
 			} catch {
 				/* Сеть отвалилась: кнопка остаётся без числа, но открывается. */
 			}
@@ -354,8 +355,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     проходят без секрета и с заведомо неверным секретом.
   */
 	const scheduleAdminSecretNeeded =
-		scheduleAdminSecretDemand.length > 0 ||
-		scheduleAdminSecretSession.length > 0;
+		scheduleAdminSecretDemand?.length > 0 ||
+		scheduleAdminSecretSession?.length > 0;
 	const scheduleAdminSecretReason =
 		scheduleAdminSecretDemand === "ScheduleAdminSecretMissing"
 			? "Сервер клиники не настроен на изменение расписания: в его настройках не задан секрет администратора. Секрет задаёт тот, кто устанавливал программу — без него запись не сохранится, сколько бы вы ни вводили здесь."
@@ -792,7 +793,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		{
 			id: "visible",
 			title: "На экране",
-			value: `${sortedAppointments.length}`,
+			value: `${sortedAppointments?.length}`,
 			detail: activeScheduleFilterCount
 				? `активных фильтров: ${activeScheduleFilterCount}`
 				: "показана вся очередь",
@@ -800,7 +801,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		{
 			id: "control",
 			title: "Контроль",
-			value: shiftWarnings.length ? `${shiftWarnings.length}` : "0",
+			value: shiftWarnings?.length ? `${shiftWarnings?.length}` : "0",
 			detail: shiftWarnings[0]?.title ?? "нет срочных предупреждений",
 		},
 	];
@@ -919,9 +920,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				<div className="schedule-command-grid">
 					<article>
 						<span>Врачи</span>
-						<strong>{dashboard.shiftIntelligence.doctorLoads.length}</strong>
+						<strong>
+							{dashboard.shiftIntelligence?.doctorLoads?.length ?? 0}
+						</strong>
 						<p>
-							{dashboard.shiftIntelligence.doctorLoads
+							{(dashboard.shiftIntelligence?.doctorLoads ?? [])
 								.map(
 									(load: ResourceLoad) =>
 										`${load.title.split(" ")[0]} ${load.utilizationPercent}%`,
@@ -931,9 +934,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					</article>
 					<article>
 						<span>Ассистенты</span>
-						<strong>{dashboard.shiftIntelligence.assistantLoads.length}</strong>
+						<strong>
+							{dashboard.shiftIntelligence?.assistantLoads?.length ?? 0}
+						</strong>
 						<p>
-							{dashboard.shiftIntelligence.assistantLoads
+							{(dashboard.shiftIntelligence?.assistantLoads ?? [])
 								.map(
 									(load: ResourceLoad) =>
 										`${load.title.split(" ")[0]} ${load.utilizationPercent}%`,
@@ -943,9 +948,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					</article>
 					<article>
 						<span>Кресла</span>
-						<strong>{dashboard.shiftIntelligence.chairLoads.length}</strong>
+						<strong>
+							{dashboard.shiftIntelligence?.chairLoads?.length ?? 0}
+						</strong>
 						<p>
-							{dashboard.shiftIntelligence.chairLoads
+							{(dashboard.shiftIntelligence?.chairLoads ?? [])
 								.map(
 									(load: ResourceLoad) =>
 										`${load.title} ${load.utilizationPercent}%`,
@@ -955,7 +962,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					</article>
 					<article>
 						<span>Контроль</span>
-						<strong>{shiftWarnings.length}</strong>
+						<strong>{shiftWarnings?.length}</strong>
 						<p>{shiftWarnings[0]?.title ?? "нет срочных предупреждений"}</p>
 					</article>
 				</div>
@@ -1007,10 +1014,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 года читается как сегодняшняя.
               */}
 				{activeScheduleFilterLabels.length === 0 &&
-				visibleDayGroups.length > 1 ? (
+				visibleDayGroups?.length > 1 ? (
 					<>
 						<span className="status-pill status-planned">
-							Показаны все дни: {visibleDayGroups.length}
+							Показаны все дни: {visibleDayGroups?.length}
 						</span>
 						<button
 							className="text-button"
@@ -1402,7 +1409,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								dashboard.activeVisit.appointmentId === appointment.id;
 
 							const missingSteps = appointmentDraftMissingSteps(draft);
-							const readyToSave = missingSteps.length === 0 && dirty;
+							const readyToSave = missingSteps?.length === 0 && dirty;
 
 							return (
 								<AppointmentCard

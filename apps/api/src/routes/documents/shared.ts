@@ -72,7 +72,7 @@ export function documentHasIssuedArchiveMetadata(
 export const issuedArchiveIntegrityError =
 	"Архивная копия выданного документа отсутствует или не прошла проверку целостности.";
 
-export function pdfBrowserCandidates(): string[] {
+function pdfBrowserCandidates(): string[] {
 	return [
 		"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
 		"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -103,7 +103,7 @@ function isSafeBrowserPath(candidate: string): boolean {
 	return basename ? allowedPdfBrowserExecutables.has(basename) : false;
 }
 
-export function findPdfBrowserPath(): string | null {
+function findPdfBrowserPath(): string | null {
 	return (
 		pdfBrowserCandidates().find(
 			(candidate) => isSafeBrowserPath(candidate) && existsSync(candidate),
@@ -111,15 +111,13 @@ export function findPdfBrowserPath(): string | null {
 	);
 }
 
-export function configuredPdfExportTimeoutMs(): number {
+function configuredPdfExportTimeoutMs(): number {
 	const raw = Number(process.env.DENTE_PDF_EXPORT_TIMEOUT_MS ?? "60000");
 	if (!Number.isFinite(raw)) return 60000;
 	return Math.min(180000, Math.max(10000, Math.trunc(raw)));
 }
 
-export async function readValidPdfFile(
-	pdfPath: string,
-): Promise<Buffer | null> {
+async function readValidPdfFile(pdfPath: string): Promise<Buffer | null> {
 	try {
 		const pdf = await readFile(pdfPath);
 		if (pdf.length >= 512 && pdf.subarray(0, 4).equals(Buffer.from("%PDF")))
@@ -269,7 +267,7 @@ type TaxCertificateAnnualTaxpayerScope = {
 	identityKey: string;
 };
 
-export function paymentAnnualTaxpayerScope(
+function paymentAnnualTaxpayerScope(
 	payment: Payment,
 ): TaxCertificateAnnualTaxpayerScope {
 	const relationship =
@@ -286,7 +284,7 @@ export function paymentAnnualTaxpayerScope(
 	};
 }
 
-export function annualTaxpayerScopesForDocument(
+function annualTaxpayerScopesForDocument(
 	document: GeneratedDocument,
 ): TaxCertificateAnnualTaxpayerScope[] {
 	const scopes = new Map<string, TaxCertificateAnnualTaxpayerScope>();
@@ -312,7 +310,7 @@ export function annualTaxpayerScopesForDocument(
 	return [...scopes.values()];
 }
 
-export function annualTaxpayerScopesOverlap(
+function annualTaxpayerScopesOverlap(
 	left: readonly TaxCertificateAnnualTaxpayerScope[],
 	right: readonly TaxCertificateAnnualTaxpayerScope[],
 ): boolean {
@@ -399,7 +397,7 @@ export function taxSnapshotDocument(
 	};
 }
 
-export function cloneSnapshotValue<T>(value: T): T {
+function cloneSnapshotValue<T>(value: T): T {
 	return JSON.parse(JSON.stringify(value)) as T;
 }
 
@@ -477,7 +475,7 @@ export function frozenTaxXmlPayments(
 	return document.taxXmlSourceSnapshot?.payments ?? fallbackPayments;
 }
 
-export function releasedDocumentTypesCoveredByRequest(
+function releasedDocumentTypesCoveredByRequest(
 	releasedTypes: readonly string[],
 	requestedTypes: readonly string[],
 ): boolean {
@@ -491,7 +489,7 @@ export function releasedDocumentTypesCoveredByRequest(
 	);
 }
 
-export function comparableDocumentChainDate(
+function comparableDocumentChainDate(
 	value: string | null | undefined,
 ): number | null {
 	const normalized = (value ?? "").trim();
@@ -512,14 +510,14 @@ export function comparableDocumentChainDate(
 	return parsed;
 }
 
-export function documentChainDateIsBlankOrValid(
+function documentChainDateIsBlankOrValid(
 	value: string | null | undefined,
 ): boolean {
 	const normalized = (value ?? "").trim();
 	return !normalized || comparableDocumentChainDate(normalized) !== null;
 }
 
-export function documentChainDateRangeIsChronological(
+function documentChainDateRangeIsChronological(
 	periodStart: string | null | undefined,
 	periodEnd: string | null | undefined,
 ): boolean {
@@ -533,7 +531,7 @@ export function documentChainDateRangeIsChronological(
 	return start === null || end === null || start <= end;
 }
 
-export function medicalRecordExtractPeriodIsChronological(
+function medicalRecordExtractPeriodIsChronological(
 	payload: MedicalRecordExtractPayload,
 ): boolean {
 	return documentChainDateRangeIsChronological(
@@ -542,7 +540,7 @@ export function medicalRecordExtractPeriodIsChronological(
 	);
 }
 
-export function medicalRecordExtractDatesAreValid(
+function medicalRecordExtractDatesAreValid(
 	payload: MedicalRecordExtractPayload,
 ): boolean {
 	return (
@@ -570,7 +568,7 @@ export function medicalRecordCopyRequestDatesAreValid(
 	);
 }
 
-export function outpatientMedicalCard025uDatesAreValid(
+function outpatientMedicalCard025uDatesAreValid(
 	payload: OutpatientMedicalCard025uPayload,
 ): boolean {
 	const dates = [
@@ -602,7 +600,7 @@ export function outpatientMedicalCard025uDatesAreValid(
 	);
 }
 
-export function dentalMedicalCard043uDatesAreValid(
+function dentalMedicalCard043uDatesAreValid(
 	payload: DentalMedicalCard043uPayload,
 ): boolean {
 	return (
@@ -613,7 +611,7 @@ export function dentalMedicalCard043uDatesAreValid(
 	);
 }
 
-export function medicalDocumentReleaseReceiptDatesAreValid(
+function medicalDocumentReleaseReceiptDatesAreValid(
 	payload: MedicalDocumentReleaseReceiptPayload,
 ): boolean {
 	const deliveredAt = comparableDocumentChainDate(payload.deliveredAt);
@@ -642,7 +640,7 @@ export function medicalDocumentReleaseReceiptDatesAreValid(
 	return true;
 }
 
-export function releaseMaterialKindForDelivery(
+function releaseMaterialKindForDelivery(
 	deliveryMethod: DocumentReleaseJournalEntry["deliveryMethod"],
 	documentTypes: readonly string[] = [],
 	includeDicomSourceData = false,
@@ -657,7 +655,7 @@ export function releaseMaterialKindForDelivery(
 	return "copy";
 }
 
-export function releaseSourceSnapshotSha256(
+function releaseSourceSnapshotSha256(
 	document: GeneratedDocument,
 	scope: string,
 ): string {
@@ -792,7 +790,7 @@ export async function buildMedicalDocumentReleaseJournalEntry(
 	return null;
 }
 
-export function releasePeriodCoveredByRequest(
+function releasePeriodCoveredByRequest(
 	release: MedicalDocumentReleaseReceiptPayload,
 	request: MedicalRecordCopyRequestPayload,
 ): boolean {
@@ -816,7 +814,7 @@ export function releasePeriodCoveredByRequest(
 	return true;
 }
 
-export function taxCertificateExpectedApplicationForm(
+function taxCertificateExpectedApplicationForm(
 	document: GeneratedDocument,
 ): TaxDeductionApplicationPayload["requestedForm"] | null {
 	if (document.kind === "tax_deduction_certificate") return "knd_1151156";
@@ -826,7 +824,7 @@ export function taxCertificateExpectedApplicationForm(
 	return null;
 }
 
-export function normalizeTaxApplicationRelationship(
+function normalizeTaxApplicationRelationship(
 	value: string | null | undefined,
 ): TaxDeductionApplicationRelationship | null {
 	const normalized = normalizedDocumentChainValue(value);
@@ -848,7 +846,7 @@ export function normalizeTaxApplicationRelationship(
 	return null;
 }
 
-export function paymentMatchesTaxApplication(
+function paymentMatchesTaxApplication(
 	payment: Payment,
 	application: TaxDeductionApplicationPayload,
 ): boolean {
@@ -866,7 +864,7 @@ export function paymentMatchesTaxApplication(
 	);
 }
 
-export function taxApplicationMatchesSelectedPayments(
+function taxApplicationMatchesSelectedPayments(
 	paymentsForDocument: Payment[],
 	application: TaxDeductionApplicationPayload,
 ): boolean {
@@ -881,7 +879,7 @@ export function taxApplicationMatchesSelectedPayments(
 	);
 }
 
-export async function hasIssuedTaxApplicationForCertificate(
+async function hasIssuedTaxApplicationForCertificate(
 	document: GeneratedDocument,
 ): Promise<boolean> {
 	const allDocuments = await getDocumentsByPatientId(
@@ -917,7 +915,7 @@ export async function hasIssuedTaxApplicationForCertificate(
 	});
 }
 
-export function releaseReceiptMatchesCopyRequest(
+function releaseReceiptMatchesCopyRequest(
 	release: MedicalDocumentReleaseReceiptPayload,
 	request: MedicalRecordCopyRequestPayload,
 ): boolean {
@@ -937,7 +935,7 @@ export function releaseReceiptMatchesCopyRequest(
 	);
 }
 
-export async function findIssuedMedicalCopyRequestForRelease(
+async function findIssuedMedicalCopyRequestForRelease(
 	document: GeneratedDocument,
 ): Promise<GeneratedDocument | null> {
 	const allDocuments = await getDocumentsByPatientId(
@@ -963,13 +961,13 @@ export async function findIssuedMedicalCopyRequestForRelease(
 	);
 }
 
-export async function hasIssuedMedicalCopyRequestForRelease(
+async function hasIssuedMedicalCopyRequestForRelease(
 	document: GeneratedDocument,
 ): Promise<boolean> {
 	return Boolean(await findIssuedMedicalCopyRequestForRelease(document));
 }
 
-export async function completedWorksActMatchesIssuedContract(
+async function completedWorksActMatchesIssuedContract(
 	document: GeneratedDocument,
 ): Promise<boolean> {
 	const allDocuments = await getDocumentsByPatientId(
@@ -993,7 +991,7 @@ export async function completedWorksActMatchesIssuedContract(
 	});
 }
 
-export async function medicalRecordExtractVisitDate(
+async function medicalRecordExtractVisitDate(
 	organizationId: string,
 	visitId: string,
 ): Promise<number | null> {
@@ -1023,7 +1021,7 @@ export async function medicalRecordExtractVisitDate(
 	);
 }
 
-export async function signedMedicalSourceVisitsAreValid(
+async function signedMedicalSourceVisitsAreValid(
 	sourceVisitIds: readonly string[],
 	document: GeneratedDocument,
 	periodStartRaw: string | null | undefined,
@@ -1053,7 +1051,7 @@ export async function signedMedicalSourceVisitsAreValid(
 	return true;
 }
 
-export async function medicalRecordExtractSourcesAreValid(
+async function medicalRecordExtractSourcesAreValid(
 	payload: MedicalRecordExtractPayload,
 	document: GeneratedDocument,
 ): Promise<boolean> {
@@ -1065,7 +1063,7 @@ export async function medicalRecordExtractSourcesAreValid(
 	);
 }
 
-export async function outpatientMedicalCard025uSourcesAreValid(
+async function outpatientMedicalCard025uSourcesAreValid(
 	payload: OutpatientMedicalCard025uPayload,
 	document: GeneratedDocument,
 ): Promise<boolean> {
@@ -1086,7 +1084,7 @@ export async function outpatientMedicalCard025uSourcesAreValid(
 	);
 }
 
-export function documentRenderContext(): DocumentRenderContext {
+function _documentRenderContext(): DocumentRenderContext {
 	return {};
 }
 
@@ -1112,14 +1110,14 @@ export function apiError(message: string, error = "DocumentOperationRejected") {
 	};
 }
 
-export const documentCreateValidationMessage =
+const documentCreateValidationMessage =
 	"Документ не создан: выберите пациента, тип документа и заполните обязательные поля формы.";
 export const documentIssueValidationMessage =
 	"Документ не выдан: подтвердите подпись или получение, проверку личности и ответственного сотрудника.";
 export const documentVoidValidationMessage =
 	"Документ не аннулирован: укажите причину, ответственного сотрудника, архив и проверку статуса.";
 
-export function objectRecord(value: unknown): Record<string, unknown> | null {
+function objectRecord(value: unknown): Record<string, unknown> | null {
 	return value && typeof value === "object" && !Array.isArray(value)
 		? (value as Record<string, unknown>)
 		: null;
@@ -1158,7 +1156,7 @@ export function configuredTaxOfficeCode(): string | null {
 export async function documentIssueChainBlockReason(
 	document: GeneratedDocument,
 ): Promise<string | null> {
-	const allDocuments = await getDocumentsByPatientId(
+	const _allDocuments = await getDocumentsByPatientId(
 		document.organizationId,
 		document.patientId,
 	);

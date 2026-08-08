@@ -101,19 +101,22 @@ describe("разбор таблиц с разделителем", () => {
 Петрова М.;89161112233;Обычный комментарий`;
 		const parsed = parseDelimited(csv);
 		assert.equal(parsed.rows.length, 2);
-		assert.equal(parsed.rows[0]![2], "Жалобы: боль в 16.\nНаправлен на снимок");
+		assert.equal(
+			parsed.rows[0]?.[2],
+			"Жалобы: боль в 16.\nНаправлен на снимок",
+		);
 	});
 
 	test("удвоенные кавычки внутри значения сохраняются как одна", () => {
 		const csv = `Плательщик;Сумма\n"ООО ""Ромашка"", договор 12";15000`;
 		const parsed = parseDelimited(csv);
-		assert.equal(parsed.rows[0]![0], 'ООО "Ромашка", договор 12');
+		assert.equal(parsed.rows[0]?.[0], 'ООО "Ромашка", договор 12');
 	});
 
 	test("кавычка в середине незакавыченного значения — это данные, а не цитата", () => {
 		const csv = `Услуга;Размер\nБор 6";10`;
 		const parsed = parseDelimited(csv);
-		assert.equal(parsed.rows[0]![0], 'Бор 6"');
+		assert.equal(parsed.rows[0]?.[0], 'Бор 6"');
 	});
 
 	test("разделитель выбирается по прямоугольности таблицы, а не по заголовку", () => {
@@ -130,7 +133,7 @@ describe("разбор таблиц с разделителем", () => {
 		);
 		assert.equal(parsed.hasHeader, false);
 		assert.equal(parsed.rows.length, 2);
-		assert.equal(parsed.rows[0]![0], "Иванов Иван");
+		assert.equal(parsed.rows[0]?.[0], "Иванов Иван");
 	});
 
 	test("строка с лишним разделителем не отбрасывается, а помечается", () => {
@@ -141,11 +144,11 @@ describe("разбор таблиц с разделителем", () => {
 		assert.deepEqual(parsed.raggedRowNumbers, [2, 3]);
 		// Хвост склеен в последнюю колонку — текст не потерян.
 		assert.equal(
-			parsed.rows[0]![2],
+			parsed.rows[0]?.[2],
 			"коммент;хвост после лишней точки с запятой",
 		);
 		// Недостающая ячейка дополнена пустой, а не сдвинула колонки.
-		assert.equal(parsed.rows[1]![2], "");
+		assert.equal(parsed.rows[1]?.[2], "");
 	});
 
 	test("повторяющиеся имена колонок разводятся, а безымянные получают номер", () => {
@@ -224,7 +227,7 @@ describe("чтение таблиц dBASE/FoxPro", () => {
 		);
 		assert.equal(dos.encoding, "ibm866");
 		assert.equal(dos.encodingFromHeader, true);
-		assert.equal(dos.rows[0]![1], "Иванов Иван Иванович");
+		assert.equal(dos.rows[0]?.[1], "Иванов Иван Иванович");
 
 		const windows = parseDbf(
 			buildDbfFile(fields, records, {
@@ -233,7 +236,7 @@ describe("чтение таблиц dBASE/FoxPro", () => {
 			}),
 		);
 		assert.equal(windows.encoding, "windows-1251");
-		assert.equal(windows.rows[3]![1], "Кузнецова Ольга Владимировна");
+		assert.equal(windows.rows[3]?.[1], "Кузнецова Ольга Владимировна");
 	});
 
 	test("типы полей читаются по спецификации, а не как текст", () => {
@@ -244,16 +247,16 @@ describe("чтение таблиц dBASE/FoxPro", () => {
 			}),
 		);
 		// Integer — 4 байта little-endian.
-		assert.equal(result.rows[1]![0], "2");
+		assert.equal(result.rows[1]?.[0], "2");
 		// Date — YYYYMMDD.
-		assert.equal(result.rows[1]![3], "19920315");
+		assert.equal(result.rows[1]?.[3], "19920315");
 		// Logical.
-		assert.equal(result.rows[1]![6], "1");
-		assert.equal(result.rows[2]![6], "0");
+		assert.equal(result.rows[1]?.[6], "1");
+		assert.equal(result.rows[2]?.[6], "0");
 		// Numeric сохраняет дробную часть.
-		assert.equal(result.rows[1]![5], "23400.50");
+		assert.equal(result.rows[1]?.[5], "23400.50");
 		// Currency — восемь байт целого с четырьмя знаками, через BigInt без потери точности.
-		assert.equal(result.rows[1]![7], "23400.7500");
+		assert.equal(result.rows[1]?.[7], "23400.7500");
 	});
 
 	test("записи, помеченные удалёнными, по умолчанию не переносятся, но пересчитываются", () => {
@@ -276,7 +279,7 @@ describe("чтение таблиц dBASE/FoxPro", () => {
 		// Оператор может затребовать удалённые — тогда они читаются полностью.
 		const included = parseDbf(file, { includeDeleted: true });
 		assert.equal(included.rows.length, 4);
-		assert.equal(included.rows[2]![1], "Сидоров Алексей Николаевич");
+		assert.equal(included.rows[2]?.[1], "Сидоров Алексей Николаевич");
 	});
 
 	test("отсутствие кодовой страницы в заголовке приводит к предупреждению, а не к тихой порче", () => {
@@ -329,7 +332,7 @@ describe("чтение таблиц dBASE/FoxPro", () => {
 				},
 			),
 		);
-		assert.equal(withBlankDate.rows[0]![3], "");
+		assert.equal(withBlankDate.rows[0]?.[3], "");
 	});
 });
 
@@ -353,9 +356,9 @@ describe("чтение книг Excel", () => {
 		]);
 		const result = parseXlsx(file);
 		assert.equal(result.sheets.length, 1);
-		assert.equal(result.sheets[0]!.name, "Пациенты");
+		assert.equal(result.sheets[0]?.name, "Пациенты");
 
-		const rows = result.sheets[0]!.rows;
+		const rows = result.sheets[0]?.rows;
 		assert.deepEqual(rows[0], ["ФИО", "Дата рождения", "Телефон"]);
 		assert.deepEqual(rows[1], ["Иванов Иван", "01.01.1980", "89001234567"]);
 		// Телефон обязан остаться в третьей колонке, а вторая — пустой.
@@ -370,8 +373,8 @@ describe("чтение книг Excel", () => {
 			// 33678 — 15.03.1992 в системе Excel (дней от 30.12.1899).
 			{ ref: "B2", value: "33678", type: "date" },
 		]);
-		const rows = parseXlsx(file).sheets[0]!.rows;
-		assert.equal(rows[1]![1], "1992-03-15");
+		const rows = parseXlsx(file).sheets[0]?.rows;
+		assert.equal(rows[1]?.[1], "1992-03-15");
 	});
 
 	test("число без формата даты остаётся числом", () => {
@@ -381,7 +384,7 @@ describe("чтение книг Excel", () => {
 			{ ref: "A2", value: "Пломба" },
 			{ ref: "B2", value: "4500", type: "n" },
 		]);
-		assert.equal(parseXlsx(file).sheets[0]!.rows[1]![1], "4500");
+		assert.equal(parseXlsx(file).sheets[0]?.rows[1]?.[1], "4500");
 	});
 
 	test("пропущенная строка не сдвигает нумерацию", () => {
@@ -391,7 +394,7 @@ describe("чтение книг Excel", () => {
 			// Строки 3 нет; следующая — 4.
 			{ ref: "A4", value: "Петрова" },
 		]);
-		const rows = parseXlsx(file).sheets[0]!.rows;
+		const rows = parseXlsx(file).sheets[0]?.rows;
 		assert.equal(rows.length, 3);
 		assert.deepEqual(
 			rows.map((row) => row[0]),
@@ -425,7 +428,7 @@ describe("разбор структурированных выгрузок", () 
 		// Вложенность разворачивается в путь, пригодный для сопоставления полей.
 		assert.ok(result.columns.includes("contacts.phone"));
 		assert.equal(
-			result.rows[0]![result.columns.indexOf("contacts.phone")],
+			result.rows[0]?.[result.columns.indexOf("contacts.phone")],
 			"89001234567",
 		);
 	});
@@ -452,11 +455,11 @@ describe("разбор структурированных выгрузок", () 
 			]),
 		);
 		assert.equal(
-			result.rows[0]![result.columns.indexOf("phones")],
+			result.rows[0]?.[result.columns.indexOf("phones")],
 			"89001234567; 89161112233",
 		);
 		assert.ok(
-			result.rows[0]![result.columns.indexOf("visits")]!.startsWith("[{"),
+			result.rows[0]?.[result.columns.indexOf("visits")]?.startsWith("[{"),
 		);
 	});
 
@@ -492,8 +495,11 @@ describe("разбор структурированных выгрузок", () 
 		assert.equal(result.rows.length, 2);
 		assert.ok(result.columns.includes("@id"));
 		assert.ok(result.columns.includes("fio"));
-		assert.equal(result.rows[0]![result.columns.indexOf("fio")], "Иванов Иван");
-		assert.equal(result.rows[1]![result.columns.indexOf("@id")], "2");
+		assert.equal(
+			result.rows[0]?.[result.columns.indexOf("fio")],
+			"Иванов Иван",
+		);
+		assert.equal(result.rows[1]?.[result.columns.indexOf("@id")], "2");
 	});
 
 	test("CDATA читается как текст, а внешние сущности не обрабатываются", () => {
@@ -505,7 +511,7 @@ describe("разбор структурированных выгрузок", () 
 		const result = parseXmlSource(xml);
 		assert.equal(result.rows.length, 2);
 		assert.equal(
-			result.rows[0]![result.columns.indexOf("note")],
+			result.rows[0]?.[result.columns.indexOf("note")],
 			"Жалобы: боль <при накусывании>",
 		);
 		assert.ok(
@@ -527,7 +533,7 @@ describe("выбор разбора по содержимому источник
 		const parsed = parseSource({ sourceName: "patients.txt", content: dbf });
 		assert.equal(parsed.sourceKind, "dbf");
 		assert.equal(parsed.detectedEncoding, "windows-1251");
-		assert.equal(parsed.tables[0]!.rows[0]![0], "Иванов Иван");
+		assert.equal(parsed.tables[0]?.rows[0]?.[0], "Иванов Иван");
 	});
 
 	test("CSV в windows-1251 читается через определение кодировки", () => {
@@ -538,7 +544,7 @@ describe("выбор разбора по содержимому источник
 		assert.equal(parsed.sourceKind, "delimited");
 		assert.equal(parsed.detectedEncoding, "windows-1251");
 		assert.equal(parsed.totalRows, 4);
-		assert.deepEqual(parsed.tables[0]!.columns, [
+		assert.deepEqual(parsed.tables[0]?.columns, [
 			"ФИО",
 			"Телефон",
 			"Дата рождения",
@@ -562,7 +568,7 @@ describe("выбор разбора по содержимому источник
 				"Иванов Иван Иванович 89001234567 01.01.1980 боль\nПетрова Мария 89161112233 плановый осмотр",
 		});
 		assert.equal(parsed.sourceKind, "free_text");
-		assert.deepEqual(parsed.tables[0]!.columns, ["Строка"]);
+		assert.deepEqual(parsed.tables[0]?.columns, ["Строка"]);
 		assert.equal(parsed.totalRows, 2);
 	});
 
@@ -590,8 +596,8 @@ describe("выбор разбора по содержимому источник
 			]),
 		});
 		assert.equal(parsed.sourceKind, "spreadsheet");
-		assert.equal(parsed.tables[0]!.name, "Пациенты");
-		assert.deepEqual(parsed.tables[0]!.rows[0], [
+		assert.equal(parsed.tables[0]?.name, "Пациенты");
+		assert.deepEqual(parsed.tables[0]?.rows[0], [
 			"Иванов Иван",
 			"",
 			"89001234567",

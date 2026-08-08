@@ -254,7 +254,7 @@ function CommunicationTaskCard({
 							) : null}
 						</div>
 					) : null}
-					{documentKinds.map((kind, index) => {
+					{documentKinds?.map((kind, index) => {
 						const documentActionLabel =
 							communicationDocumentTaskActionLabels[kind] ??
 							documentLabels[kind];
@@ -304,14 +304,14 @@ function CommunicationTaskCard({
 							style={{ display: "none" }} // keep chips visual but have a linked select for accessibility
 						>
 							<option value="">Выберите исход...</option>
-							{communicationTaskOutcomeOptions.map(([outcome, label]) => (
+							{communicationTaskOutcomeOptions?.map(([outcome, label]) => (
 								<option key={outcome} value={outcome}>
 									{label}
 								</option>
 							))}
 						</select>
 						<div className="quick-chips-row" style={{ flexWrap: "wrap" }}>
-							{communicationTaskOutcomeOptions.map(([outcome, label]) => (
+							{communicationTaskOutcomeOptions?.map(([outcome, label]) => (
 								<button
 									key={outcome}
 									type="button"
@@ -652,7 +652,7 @@ export function CommunicationsView({
 							"Подумает",
 							"Перезвонить позже",
 							"Запрос документов",
-						].map((chip) => (
+						]?.map((chip) => (
 							<button
 								key={chip}
 								type="button"
@@ -687,7 +687,7 @@ export function CommunicationsView({
 			<div className="communication-layout">
 				<section className="communication-task-list" aria-label="Очередь связи">
 					{(sortedCommunicationTasks ?? []).length ? (
-						(sortedCommunicationTasks ?? []).map((task) => (
+						(sortedCommunicationTasks ?? [])?.map((task) => (
 							<CommunicationTaskCard
 								communicationChannelLabels={communicationChannelLabels}
 								communicationDocumentTaskActionLabels={
@@ -801,7 +801,7 @@ export function CommunicationsView({
 							/>
 						) : (
 							<div className="template-list">
-								{journal.entries.map((event) => (
+								{journal.entries?.map((event) => (
 									<CommunicationEventRow
 										communicationChannelLabels={communicationChannelLabels}
 										communicationStatusLabels={communicationStatusLabels}

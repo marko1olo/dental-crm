@@ -2,7 +2,7 @@
  * Режимы, в которых вообще допустимо обсуждать обход охраны клинических данных.
  * Список ЗАКРЫТЫЙ и перечисляет режимы по имени.
  */
-export const namedDevelopmentModes = new Set(["development", "test"]);
+const namedDevelopmentModes = new Set(["development", "test"]);
 
 /**
  * namedDevelopmentModeActive — включён ли ЯВНО НАЗВАННЫЙ режим разработки.

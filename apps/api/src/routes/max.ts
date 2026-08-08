@@ -19,14 +19,12 @@ import {
 import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
-	communicationEvents,
 	denteMaxBotConfigs,
 	messengerInboundEvents,
 	patients,
 } from "../db/schema.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
-import { wsBroker } from "../services/websocketBroker.js";
 
 const updateMaxConfigSchema = z.object({
 	botId: z.string().trim().max(128).nullable().optional(),
@@ -222,7 +220,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			.where(eq(denteMaxBotConfigs.organizationId, orgId))
 			.limit(1);
 
-		if (!config || !config.botId || !config.tokenSecretRef) {
+		if (!config?.botId || !config.tokenSecretRef) {
 			return {
 				channel: "max",
 				connected: false,
@@ -322,7 +320,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		// Identify org by bot ID passed in header or query param
 		const botIdRaw =
 			request.headers["x-max-bot-id"] ??
-			(request.query as Record<string, string>)["botId"];
+			(request.query as Record<string, string>).botId;
 		const botIdHeader = Array.isArray(botIdRaw) ? botIdRaw[0] : botIdRaw;
 
 		if (!botIdHeader) return;
@@ -437,7 +435,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			.where(eq(denteMaxBotConfigs.organizationId, orgId))
 			.limit(1);
 
-		if (!config || !config.isActive) {
+		if (!config?.isActive) {
 			return reply.code(400).send({
 				error: "MaxInactive",
 				message: "Интеграция VK Max неактивна или не настроена.",

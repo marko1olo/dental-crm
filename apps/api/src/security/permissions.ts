@@ -358,7 +358,7 @@ function joinRoleLabels(labels: readonly string[]): string {
  * иначе отказ выглядит обрывком чужого текста.
  */
 function capitalizeFirst(text: string): string {
-	return text.length === 0 ? text : text[0]!.toUpperCase() + text.slice(1);
+	return text.length === 0 ? text : text[0]?.toUpperCase() + text.slice(1);
 }
 
 /**

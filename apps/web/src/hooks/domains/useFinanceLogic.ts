@@ -14,6 +14,7 @@ import {
 } from "../../rubAmountInput";
 import { useAppStore } from "../../store/appStore";
 import { useDocumentStore } from "../../store/documentStore";
+import { fetchWithHandling } from "../../utils/networkUtils";
 
 export type UseFinanceLogicOptions = {
 	auth: {
@@ -177,7 +178,7 @@ export function useFinanceLogic({
 				) ?? null;
 			let response: Response;
 			if ((paymentMethod as string) === "family_wallet") {
-				const famRes = await fetch(
+				const famRes = await fetchWithHandling(
 					`/api/finance/family/patient/${documentPatient.id}`,
 					{ headers: auth.denteClinicalReadHeaders() },
 				);
@@ -191,7 +192,7 @@ export function useFinanceLogic({
 					paymentMutationIdRef.current = browserGeneratedId("family-payment");
 				}
 				const familyClientMutationId = paymentMutationIdRef.current;
-				response = await fetch("/api/finance/family/pay", {
+				response = await fetchWithHandling("/api/finance/family/pay", {
 					method: "POST",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
@@ -214,7 +215,7 @@ export function useFinanceLogic({
 					paymentMutationIdRef.current = browserGeneratedId("payment");
 				}
 				const paymentClientMutationId = paymentMutationIdRef.current;
-				response = await fetch("/api/billing/payments", {
+				response = await fetchWithHandling("/api/billing/payments", {
 					method: "POST",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",

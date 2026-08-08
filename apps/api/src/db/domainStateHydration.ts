@@ -376,12 +376,12 @@ const CRITICAL_SLICES = new Set([
 ]);
 
 /** Отказ чтения среза, по которому принимают денежное или клиническое решение. */
-export class DomainStateSliceUnavailableError extends Error {
+class DomainStateSliceUnavailableError extends Error {
 	readonly slices: Array<{ slice: string; message: string }>;
 
 	constructor(slices: Array<{ slice: string; message: string }>) {
 		super(
-			`Не удалось прочитать данные клиники: ${slices.map((entry) => entry.slice + " - " + (entry as any).error).join(", ")}.`,
+			`Не удалось прочитать данные клиники: ${slices.map((entry) => `${entry.slice} - ${(entry as any).error}`).join(", ")}.`,
 		);
 		this.name = "DomainStateSliceUnavailableError";
 		this.slices = slices;
@@ -495,7 +495,7 @@ export async function hydrateDomainStateFromDb(
  * Осталась ради вызывающих, которым нужен и расчёт, и отчёт. Прежнего смысла
  * «не выпускать очередь» у неё больше нет — выпускать нечего.
  */
-export async function withHydratedDomainState<T>(
+async function _withHydratedDomainState<T>(
 	organizationId: string,
 	use: (
 		state: DomainState,
@@ -1383,7 +1383,7 @@ function applyActiveVisit(
 }
 
 /** Последний приём пациента — нужен маршрутам, которые открывают карточку. */
-export async function findLatestVisitIdForPatient(
+async function _findLatestVisitIdForPatient(
 	organizationId: string,
 	patientId: string,
 ): Promise<string | null> {

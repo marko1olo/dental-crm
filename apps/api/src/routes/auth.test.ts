@@ -433,16 +433,16 @@ describe("auth routes", () => {
 			}
 			// Побайтовая идентичность всех ответов: отказ не несёт ни бита сведений о теле.
 			for (const response of responses.slice(1)) {
-				assert.strictEqual(response.body, responses[0]!.body);
+				assert.strictEqual(response.body, responses[0]?.body);
 			}
 			// Политика длины пароля больше не утекает: ни числа, ни слова «символ».
 			assert.ok(
-				!/\d/.test(responses[0]!.body),
-				`в отказе осталось число: ${responses[0]!.body}`,
+				!/\d/.test(responses[0]?.body),
+				`в отказе осталось число: ${responses[0]?.body}`,
 			);
 			assert.ok(
-				!/символ/i.test(responses[0]!.body),
-				`в отказе осталась политика: ${responses[0]!.body}`,
+				!/символ/i.test(responses[0]?.body),
+				`в отказе осталась политика: ${responses[0]?.body}`,
 			);
 			assert.deepStrictEqual(dbCalls, []);
 		});
@@ -476,20 +476,20 @@ describe("auth routes", () => {
 				assert.strictEqual(response.json().error, "Forbidden");
 			}
 			for (const response of responses.slice(1)) {
-				assert.strictEqual(response.body, responses[0]!.body);
+				assert.strictEqual(response.body, responses[0]?.body);
 			}
 			// Границы 4–12 и текст «Не указан сотрудник.» в отказе отсутствуют.
 			assert.ok(
-				!/\d/.test(responses[0]!.body),
-				`в отказе осталось число: ${responses[0]!.body}`,
+				!/\d/.test(responses[0]?.body),
+				`в отказе осталось число: ${responses[0]?.body}`,
 			);
 			assert.ok(
-				!/цифр/i.test(responses[0]!.body),
-				`в отказе осталась политика PIN: ${responses[0]!.body}`,
+				!/цифр/i.test(responses[0]?.body),
+				`в отказе осталась политика PIN: ${responses[0]?.body}`,
 			);
 			assert.ok(
-				!/Не указан/i.test(responses[0]!.body),
-				`в отказе осталась проверка поля: ${responses[0]!.body}`,
+				!/Не указан/i.test(responses[0]?.body),
+				`в отказе осталась проверка поля: ${responses[0]?.body}`,
 			);
 			assert.deepStrictEqual(dbCalls, []);
 		});

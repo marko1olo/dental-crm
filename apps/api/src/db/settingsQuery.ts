@@ -223,7 +223,7 @@ export async function getUiPreferencesFromDb(
 ): Promise<UiPreferences | null> {
 	if (useInMemory()) return memoryUiPreferences.get(organizationId) ?? null;
 	const row = await uiPreferencesRow(organizationId);
-	if (!row || !row.uiPreferences) return null;
+	if (!row?.uiPreferences) return null;
 	return row.uiPreferences as UiPreferences;
 }
 
@@ -458,17 +458,44 @@ export async function updateClinicProfileInDb(
 export async function createStaffMemberInDb(
 	organizationId: string,
 	input: CreateStaffMemberInput,
-) {
-	if (useInMemory()) return createStaffMemberInMemory(input);
-	await db.insert(schema.users).values({
-		organizationId,
-		fullName: input.fullName,
-		role: input.role,
-		phone: input.phone || null,
-		email: input.email || null,
-		isActive: true,
-		workingHours: input.workingHours,
-	});
+): Promise<StaffMember> {
+	if (useInMemory()) {
+		createStaffMemberInMemory(input);
+		// InMemory is mock logic; we can just throw or return mock
+		throw new Error("InMemory backend cannot return created staff");
+	}
+	const [inserted] = await db
+		.insert(schema.users)
+		.values({
+			organizationId,
+			fullName: input.fullName,
+			role: input.role,
+			phone: input.phone || null,
+			email: input.email || null,
+			isActive: true,
+			workingHours: input.workingHours,
+		})
+		.returning();
+
+	if (!inserted) {
+		throw new Error("Failed to insert staff member into database.");
+	}
+
+	return {
+		id: inserted.id,
+		organizationId: inserted.organizationId,
+		fullName: inserted.fullName,
+		role: inserted.role as any,
+		specialties: ["universal"],
+		phone: inserted.phone,
+		email: inserted.email,
+		active: inserted.isActive,
+		...staffAuthorityFlags(inserted.role),
+		color: "#000000",
+		workingHours: inserted.workingHours as any,
+		createdAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
+	} as StaffMember;
 }
 
 export async function updateStaffWorkingHoursInDb(

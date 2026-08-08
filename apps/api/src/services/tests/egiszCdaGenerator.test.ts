@@ -269,7 +269,7 @@ describe("egiszCdaGenerator", () => {
 			"assignedAuthor representedOrganization must be closed",
 		);
 		assert.ok(
-			authorBlock.includes("<name>Clinic " + amp + " Co</name>"),
+			authorBlock.includes(`<name>Clinic ${amp} Co</name>`),
 			"assignedAuthor representedOrganization must carry XML-escaped clinicName",
 		);
 		// representedOrganization must sit after assignedPerson (CDA R2 order)
@@ -542,8 +542,7 @@ describe("egiszCdaGenerator", () => {
 		// Evil SNILS must be escaped
 		const lt = "&" + "lt;";
 		const amp = "&" + "amp;";
-		const evilSnils =
-			"12" + String.fromCharCode(60) + "3" + String.fromCharCode(38) + "4";
+		const evilSnils = `12${String.fromCharCode(60)}3${String.fromCharCode(38)}4`;
 		const evil_res = generateDentalCdaXml({
 			...base,
 			patientSnils: evilSnils,
@@ -551,7 +550,7 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(evil_res.success, evil_res.success ? "" : String(evil_res.error));
 		const evil = evil_res.xml;
 		assert.ok(
-			evil.includes('extension="12' + lt + "3" + amp + '4"'),
+			evil.includes(`extension="12${lt}3${amp}4"`),
 			"patientSnils must be XML-escaped in patientRole id extension",
 		);
 	});
@@ -597,7 +596,7 @@ describe("egiszCdaGenerator", () => {
 		const lt = "&" + "lt;";
 		const quot = "&" + "quot;";
 		assert.ok(
-			custodianBlock.includes("Clinic " + amp + " Co"),
+			custodianBlock.includes(`Clinic ${amp} Co`),
 			"custodian name must XML-escape clinicName",
 		);
 
@@ -626,21 +625,20 @@ describe("egiszCdaGenerator", () => {
 		);
 
 		// Evil OID must be escaped in custodian extension and document id/setId roots
-		const evilOid =
-			"1.2" + String.fromCharCode(60) + String.fromCharCode(34) + "x";
+		const evilOid = `1.2${String.fromCharCode(60)}${String.fromCharCode(34)}x`;
 		const evil_res = generateDentalCdaXml({
 			...base,
 			clinicOid: evilOid,
 		});
 		assert.ok(evil_res.success, evil_res.success ? "" : String(evil_res.error));
 		const evil = evil_res.xml;
-		const escapedEvil = "1.2" + lt + quot + "x";
+		const escapedEvil = `1.2${lt}${quot}x`;
 		assert.ok(
-			evil.includes('extension="' + escapedEvil + '"'),
+			evil.includes(`extension="${escapedEvil}"`),
 			"clinicOid must be XML-escaped in custodian extension",
 		);
 		assert.ok(
-			evil.includes('root="' + escapedEvil + '"'),
+			evil.includes(`root="${escapedEvil}"`),
 			"clinicOid must be XML-escaped in ClinicalDocument id/setId root",
 		);
 		assert.ok(
@@ -756,7 +754,7 @@ describe("egiszCdaGenerator", () => {
 		const timeMatch = laBlock.match(/<time value="(\d{14})"/);
 		assert.ok(timeMatch, "legalAuthenticator time must be yyyyMMddHHmmss");
 		assert.ok(
-			xml.includes(`<effectiveTime value="${timeMatch![1]}"`),
+			xml.includes(`<effectiveTime value="${timeMatch?.[1]}"`),
 			"legalAuthenticator time must equal document effectiveTime (documentClock)",
 		);
 
@@ -998,11 +996,11 @@ describe("egiszCdaGenerator", () => {
 		const gt = "&" + "gt;";
 		const amp = "&" + "amp;";
 		assert.ok(
-			evilTooth.includes('targetSiteCode code="3' + lt + "6" + gt + amp + 'x"'),
+			evilTooth.includes(`targetSiteCode code="3${lt}6${gt}${amp}x"`),
 			"diagnosisTooth must be XML-escaped in targetSiteCode@code",
 		);
 		assert.ok(
-			!evilTooth.includes('code="3' + String.fromCharCode(60) + "6"),
+			!evilTooth.includes(`code="3${String.fromCharCode(60)}6`),
 			"raw < must not appear in targetSiteCode@code",
 		);
 	});
@@ -1185,15 +1183,14 @@ describe("egiszCdaGenerator", () => {
 		/* encounterId XML-escaped */
 		const esc_res = generateDentalCdaXml({
 			...base,
-			encounterId:
-				"v" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
+			encounterId: `v${String.fromCharCode(60)}x${String.fromCharCode(38)}y`,
 		});
 		assert.ok(esc_res.success, esc_res.success ? "" : String(esc_res.error));
 		const esc = esc_res.xml;
 		const lt = "&" + "lt;";
 		const amp = "&" + "amp;";
 		assert.ok(
-			esc.includes('extension="v' + lt + "x" + amp + 'y"'),
+			esc.includes(`extension="v${lt}x${amp}y"`),
 			"encounterId must be XML-escaped in encompassingEncounter",
 		);
 	});
@@ -1240,7 +1237,7 @@ describe("egiszCdaGenerator", () => {
 		);
 		/* setId must not silently equal documentId when documentSetId is set */
 		const setIdLine = xml.split("\n").find((l) => l.includes("<setId "));
-		assert.ok(setIdLine && setIdLine.includes('extension="visit-set-stable"'));
+		assert.ok(setIdLine?.includes('extension="visit-set-stable"'));
 		assert.ok(setIdLine && !setIdLine.includes('extension="doc-version-2"'));
 
 		/* v1 and v2 share setId, differ on id */
@@ -1274,7 +1271,7 @@ describe("egiszCdaGenerator", () => {
 		const fb = fb_res.xml;
 		const fbSet = fb.split("\n").find((l) => l.includes("<setId "));
 		assert.ok(
-			fbSet && fbSet.includes('extension="doc-version-2"'),
+			fbSet?.includes('extension="doc-version-2"'),
 			"blank documentSetId falls back to documentId",
 		);
 
@@ -1288,15 +1285,14 @@ describe("egiszCdaGenerator", () => {
 		const omitted = omitted_res.xml;
 		const omSet = omitted.split("\n").find((l) => l.includes("<setId "));
 		assert.ok(
-			omSet && omSet.includes('extension="doc-version-2"'),
+			omSet?.includes('extension="doc-version-2"'),
 			"missing documentSetId falls back to documentId",
 		);
 
 		/* documentSetId XML-escaped */
 		const esc_res = generateDentalCdaXml({
 			...base,
-			documentSetId:
-				"s" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
+			documentSetId: `s${String.fromCharCode(60)}x${String.fromCharCode(38)}y`,
 		});
 		assert.ok(esc_res.success, esc_res.success ? "" : String(esc_res.error));
 		const esc = esc_res.xml;
@@ -1400,15 +1396,14 @@ describe("egiszCdaGenerator", () => {
 		/* replacesDocumentId XML-escaped */
 		const esc_res = generateDentalCdaXml({
 			...base,
-			replacesDocumentId:
-				"p" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
+			replacesDocumentId: `p${String.fromCharCode(60)}x${String.fromCharCode(38)}y`,
 		});
 		assert.ok(esc_res.success, esc_res.success ? "" : String(esc_res.error));
 		const esc = esc_res.xml;
 		const lt = "&" + "lt;";
 		const amp = "&" + "amp;";
 		assert.ok(
-			esc.includes('extension="p' + lt + "x" + amp + 'y"'),
+			esc.includes(`extension="p${lt}x${amp}y"`),
 			"replacesDocumentId must be XML-escaped in parentDocument/id",
 		);
 	});
@@ -1724,8 +1719,7 @@ describe("egiszCdaGenerator", () => {
 		const noOid_res = generateDentalCdaXml({
 			...withBoth,
 			clinicOid: undefined,
-			patientId:
-				"p" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
+			patientId: `p${String.fromCharCode(60)}x${String.fromCharCode(38)}y`,
 		});
 		assert.ok(
 			noOid_res.success,
@@ -1740,7 +1734,7 @@ describe("egiszCdaGenerator", () => {
 		const amp = "&" + "amp;";
 		assert.ok(
 			noRole.includes(
-				`root="1.2.643.5.1.13.13.12.2" extension="p` + lt + "x" + amp + 'y"',
+				`root="1.2.643.5.1.13.13.12.2" extension="p${lt}x${amp}y"`,
 			),
 			"missing clinicOid uses default root; patientId XML-escaped",
 		);
@@ -1903,7 +1897,7 @@ describe("egiszCdaGenerator", () => {
 		const lt = "&" + "lt;";
 		const amp = "&" + "amp;";
 		assert.ok(
-			noIr.includes("<name>Clinic " + lt + "X" + amp + "Y</name>"),
+			noIr.includes(`<name>Clinic ${lt}X${amp}Y</name>`),
 			"clinicName in informationRecipient must be XML-escaped",
 		);
 	});

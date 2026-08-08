@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { organizations, visitTemplates } from "../db/schema.js";
 
-export const BUILT_IN_TEMPLATES: Array<{
+const BUILT_IN_TEMPLATES: Array<{
 	title: string;
 	category: string;
 	specialty: string;
@@ -411,7 +411,7 @@ if (nodePath) {
 				process.exit(1);
 			});
 		}
-	} catch (e) {
+	} catch (_e) {
 		// Ignore URL conversion errors if run from custom environment
 	}
 }

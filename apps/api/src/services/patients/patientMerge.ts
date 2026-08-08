@@ -30,7 +30,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 
 /** Имя таблицы или колонки из каталога. Защита от подстановки в динамический SQL. */

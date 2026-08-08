@@ -21,7 +21,7 @@ import { TextDecoder } from "node:util";
  * чтение, а возвращается как сырая строка.
  */
 
-export interface DbfField {
+interface DbfField {
 	name: string;
 	/** Односимвольный код типа: C, N, F, D, L, M, T, I, B, Y, @, +, O, G, P, V. */
 	type: string;

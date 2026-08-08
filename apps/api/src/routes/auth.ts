@@ -1,5 +1,5 @@
+import crypto from "node:crypto";
 import { staffRoleSchema } from "@dental/shared";
-import crypto from "crypto";
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -1801,7 +1801,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				.from(users)
 				.where(and(...userConditions))
 				.limit(1);
-			if (!user || !user.passwordHash)
+			if (!user?.passwordHash)
 				return reply.code(401).send({
 					error: "AuthError",
 					message: "Пользователь не найден или пароль не установлен.",
@@ -1873,7 +1873,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				.from(users)
 				.where(and(...userConditions))
 				.limit(1);
-			if (!user || !user.pinCodeHash)
+			if (!user?.pinCodeHash)
 				return reply.code(401).send({
 					error: "AuthError",
 					message: "Пользователь не найден или PIN не установлен.",

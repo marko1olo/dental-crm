@@ -226,7 +226,7 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 				m.updateMessageTemplateCatalog(orgId, id, parsedInput.data),
 			);
 			return reply.send(template);
-		} catch (error) {
+		} catch (_error) {
 			return reply.code(404).send({ error: "NotFound" });
 		}
 	});
@@ -249,7 +249,7 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 				m.deleteMessageTemplateCatalog(orgId, id),
 			);
 			return reply.send({ success: true });
-		} catch (error) {
+		} catch (_error) {
 			return reply.code(404).send({ error: "NotFound" });
 		}
 	});
@@ -307,7 +307,7 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 				)
 				.limit(1);
 
-			if (!event || !event.recordingUrl) {
+			if (!event?.recordingUrl) {
 				return reply.code(404).send({ error: "NotFound" });
 			}
 

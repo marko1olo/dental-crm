@@ -31,7 +31,7 @@ import { db } from "../../db/client.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
 import { patients } from "../../db/schema.js";
 
-export type DuplicateReason =
+type DuplicateReason =
 	/** Совпали фамилия, имя, отчество и дата рождения. */
 	| "same_name_and_birth_date"
 	/** Совпало полное имя, дата рождения есть только у одного. */
@@ -48,7 +48,7 @@ export type DuplicateReason =
  * решает, один это человек или два, и без этих полей решение принимается
  * вслепую — по одним именам отличить дубль от тёзки невозможно.
  */
-export type DuplicateSide = {
+type DuplicateSide = {
 	readonly patientId: string;
 	readonly fullName: string;
 	readonly phone: string | null;

@@ -326,7 +326,7 @@ function promptTermsForSpecialty(specialty: DentalSpecialty): string[] {
 	]).slice(0, 72);
 }
 
-function sourceHint(source: SpeechTranscriptionSource): string {
+function _sourceHint(source: SpeechTranscriptionSource): string {
 	if (source === "visit") return "Диктовка приема у кресла.";
 	if (source === "import") return "Административная диктовка для импорта.";
 	if (source === "document") return "Диктовка для черновика документа.";
@@ -346,9 +346,9 @@ function trimPrompt(value: string, maxBytes: number): string {
 	const clipped = value.slice(0, end);
 	const lastComma = clipped.lastIndexOf(",");
 	if (lastComma > 0) {
-		return clipped.slice(0, lastComma).trimEnd() + ".";
+		return `${clipped.slice(0, lastComma).trimEnd()}.`;
 	}
-	return clipped.trimEnd() + ".";
+	return `${clipped.trimEnd()}.`;
 }
 
 export function buildDentalSttPrompt(input: {

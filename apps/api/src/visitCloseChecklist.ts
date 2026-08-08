@@ -54,7 +54,7 @@ type ChecklistItem = VisitCloseChecklist["items"][number];
  * шире брать нельзя, иначе построитель снова начнёт зависеть от того, откуда
  * приехал приём — из базы, из демо-состояния или из ответа маршрута.
  */
-export type VisitCloseChecklistVisit = {
+type VisitCloseChecklistVisit = {
 	readonly id: string;
 	readonly patientId: string;
 	readonly complaint: string | null;
@@ -63,33 +63,33 @@ export type VisitCloseChecklistVisit = {
 	readonly treatmentPlan: string | null;
 };
 
-export type VisitCloseChecklistImagingStudy = {
+type VisitCloseChecklistImagingStudy = {
 	readonly patientId: string;
 	readonly visitId: string | null;
 	readonly status: string;
 };
 
-export type VisitCloseChecklistDocument = {
+type VisitCloseChecklistDocument = {
 	readonly patientId: string;
 	readonly visitId: string | null;
 	readonly kind: string;
 	readonly status: string;
 };
 
-export type VisitCloseChecklistAiJob = {
+type VisitCloseChecklistAiJob = {
 	readonly patientId: string | null;
 	readonly target: string;
 	readonly status: string;
 };
 
-export type VisitCloseChecklistCommunicationTask = {
+type VisitCloseChecklistCommunicationTask = {
 	readonly visitId: string | null;
 	readonly intent: string;
 	readonly status: string;
 };
 
 /** Клинические правила: только итоги, которые видит пункт карточки. */
-export type VisitCloseChecklistClinicalFacts = {
+type VisitCloseChecklistClinicalFacts = {
 	readonly unresolved: number;
 	readonly blockers: number;
 };
@@ -114,7 +114,7 @@ export type VisitCloseChecklistClinicalFacts = {
  * `formatKopecksRu` — единственный путь, на котором сумма в карточке равна сумме
  * в базе.
  */
-export type VisitCloseChecklistBillingFacts =
+type VisitCloseChecklistBillingFacts =
 	| {
 			/**
 			 * Ответ ЕСТЬ. Остаток по приёму в копейках, ≥ 0

@@ -55,7 +55,7 @@
 import { Decimal } from "decimal.js";
 import { and, eq, gte, isNotNull, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	doctorCommissions,
@@ -68,13 +68,11 @@ import {
 	currentMonthPeriod,
 	type ReportPeriod,
 } from "../reports/managerReports.js";
-
 /**
  * Период по умолчанию берётся из отчётов руководителю, а не объявляется здесь
  * заново: «текущий месяц» должен быть одним и тем же и в отчёте по врачам, и в
  * выплатах, иначе два экрана покажут разные суммы за один и тот же месяц.
  */
-export { currentMonthPeriod };
 
 /**
  * Предел ширины периода — тот же, что у отчётов руководителю
@@ -250,7 +248,7 @@ export function percentOfMoney(amountRub: number, percent: number): number {
  * пациента; больше 100 % — что клиника отдаёт врачу больше, чем получила.
  * И то и другое — испорченные данные, а не политика: считать по ним нельзя.
  */
-export function isUsablePercent(value: number | null): value is number {
+function isUsablePercent(value: number | null): value is number {
 	return value !== null && Number.isFinite(value) && value >= 0 && value <= 100;
 }
 
@@ -454,7 +452,7 @@ export function payoutRowNote(input: {
  * дошёл до врача по цепочке визит → приём. Владелец увидел бы «выручки нет»
  * вместо «выручка есть, но не отнесена ни к кому».
  */
-export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
+function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 	const { organizationId, from, to } = scope;
 
 	/*

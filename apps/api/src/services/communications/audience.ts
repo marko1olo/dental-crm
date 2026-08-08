@@ -95,13 +95,13 @@ export type AudienceCriteria = {
 	readonly patientIds?: string[] | undefined;
 };
 
-export type AudienceCandidate = {
+type AudienceCandidate = {
 	readonly patientId: string;
 	readonly fullName: string;
 	readonly recipientAddress: string;
 };
 
-export type AudienceExclusionReason =
+type AudienceExclusionReason =
 	| "no_contact"
 	| "no_consent"
 	| "status_mismatch"
@@ -656,7 +656,7 @@ async function recipientAddressFor(
 		: normalizeRussianMsisdn(row.phone);
 }
 
-export const AUDIENCE_CRITERIA_KEYS: readonly (keyof AudienceCriteria)[] = [
+const _AUDIENCE_CRITERIA_KEYS: readonly (keyof AudienceCriteria)[] = [
 	"status",
 	"lastVisitBefore",
 	"lastVisitAfter",

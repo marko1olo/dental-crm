@@ -208,7 +208,7 @@ export type NumericText = string;
 export type MoneyInput = NumericText | number;
 
 /** Статус позиции лечения, который канон исключает из назначенного. */
-export const CANCELLED_ITEM_STATUS = "cancelled";
+const CANCELLED_ITEM_STATUS = "cancelled";
 
 /** Статус платежа, который канон считает полученными деньгами. */
 export const PAID_PAYMENT_STATUS = "paid";

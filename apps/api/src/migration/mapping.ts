@@ -5,7 +5,6 @@ import type {
 	MigrationTargetField,
 } from "@dental/shared";
 import type { ColumnProfile } from "./columnProfile.js";
-import { maskValueShape } from "./columnProfile.js";
 import {
 	canonicalColumnName,
 	detectEntityKind,
@@ -502,16 +501,16 @@ export function resolveDeterministicMapping(
 				// Второй телефон — это данные, а не мусор.
 				loser.candidate = {
 					targetField: overflow,
-					decidedBy: loser.candidate!.decidedBy,
-					confidence: Math.min(loser.candidate!.confidence, 0.8),
-					rationale: `Колонка «${loser.profile.name}» метила в то же поле, что «${ranked[0]!.profile.name}»; принята как дополнительное значение.`,
+					decidedBy: loser.candidate?.decidedBy ?? "deterministic",
+					confidence: Math.min(loser.candidate?.confidence ?? 0.8, 0.8),
+					rationale: `Колонка «${loser.profile.name}» метила в то же поле, что «${ranked[0]?.profile.name}»; принята как дополнительное значение.`,
 				};
 				loser.validation = validateAgainstData(overflow, loser.profile);
 				continue;
 			}
 			warnings.push(
-				`Колонки «${ranked[0]!.profile.name}» и «${loser.profile.name}» обе похожи на поле «${field}». Выбрана «${
-					ranked[0]!.profile.name
+				`Колонки «${ranked[0]?.profile.name}» и «${loser.profile.name}» обе похожи на поле «${field}». Выбрана «${
+					ranked[0]?.profile.name
 				}»; вторая оставлена без сопоставления, её содержимое сохранено в исходном виде.`,
 			);
 			loser.candidate = null;
@@ -558,7 +557,7 @@ export function resolveDeterministicMapping(
 }
 
 /** Целевые поля, обязательные для загрузки сущности. */
-export const REQUIRED_FIELDS: Partial<
+const REQUIRED_FIELDS: Partial<
 	Record<MigrationEntityKind, MigrationTargetField[]>
 > = {
 	patient: ["patient.fullName"],
@@ -598,6 +597,4 @@ export function missingRequiredFields(
 		return true;
 	});
 }
-
 /** Маска значения для отчётов — реэкспорт, чтобы вызывающему не тянуть профиль. */
-export { maskValueShape };

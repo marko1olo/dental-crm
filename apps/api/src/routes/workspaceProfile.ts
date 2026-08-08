@@ -217,7 +217,7 @@ export type PresetName =
  * сохранённым набором клиники. Поэтому Omit, а НЕ Partial — пропустить модуль,
  * который пресет обязан задать, по-прежнему нельзя.
  */
-export type WorkspacePresetFeatureFlags = Omit<
+type WorkspacePresetFeatureFlags = Omit<
 	WorkspaceFeatureFlags,
 	| "hasGnathology"
 	| "hasCsoScanner"
@@ -230,7 +230,7 @@ export type WorkspacePresetFeatureFlags = Omit<
 	| "numberOfDoctors"
 >;
 
-export const WORKSPACE_PRESETS: Record<
+const WORKSPACE_PRESETS: Record<
 	Exclude<PresetName, "custom">,
 	WorkspacePresetFeatureFlags
 > = {

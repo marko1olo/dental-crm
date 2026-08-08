@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -160,7 +160,7 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			)
 			.orderBy(desc(sterilizationLogs.timestamp))
 			.limit(1);
-		if (!log || log.status !== "passed") {
+		if (log?.status !== "passed") {
 			/*
 			 * БЫЛО: только error латиницей без message. Клиент doLock читает
 			 * payload.message; без него строил общий fallback. 404 ниже тоже

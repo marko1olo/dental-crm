@@ -20,11 +20,10 @@
  */
 
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { communicationOutbox } from "../../db/schema.js";
 
-export type ReceiptState = "delivered" | "failed" | "in_transit" | "unknown";
+type ReceiptState = "delivered" | "failed" | "in_transit" | "unknown";
 
 export type ParsedReceipt = {
 	readonly providerMessageId: string;

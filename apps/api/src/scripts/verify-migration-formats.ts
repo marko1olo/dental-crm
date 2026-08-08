@@ -276,7 +276,8 @@ const [org] = await db
 	.insert(organizations)
 	.values({ name: `E2E-formats-${Date.now()}` })
 	.returning();
-const ORG = org!.id;
+if (!org) throw new Error("Failed to create test organization");
+const ORG = org.id;
 
 try {
 	// =====================================================================
@@ -751,8 +752,8 @@ try {
 		.where(eq(patients.organizationId, ORG));
 	check(
 		"пациенты из SQLite добавились",
-		Number(afterSqlite[0]!.n) >= 6,
-		`всего ${afterSqlite[0]!.n}`,
+		Number(afterSqlite[0]?.n) >= 6,
+		`всего ${afterSqlite[0]?.n}`,
 	);
 	check(
 		"сверка сошлась",

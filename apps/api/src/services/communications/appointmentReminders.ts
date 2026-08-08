@@ -51,7 +51,7 @@ import { renderTemplate } from "./templateRenderer.js";
 const REMINDABLE_STATUSES = ["planned", "confirmed"] as const;
 
 /** Почему пациент остался без напоминания. Код, а не готовая фраза: формулировку выбирает интерфейс. */
-export type ReminderSkipReason = "no_channel" | "no_template_data";
+type ReminderSkipReason = "no_channel" | "no_template_data";
 
 /**
  * Пациент, которому напоминание не поставлено, — с ИМЕНЕМ.
@@ -63,7 +63,7 @@ export type ReminderSkipReason = "no_channel" | "no_template_data";
  * что трое не узнают о приёме. Числа мало: чтобы позвонить, администратору нужно
  * ИМЯ, а не количество.
  */
-export type ReminderSkip = {
+type ReminderSkip = {
 	readonly patientName: string;
 	readonly reason: ReminderSkipReason;
 	/** Время приёма, о котором не удалось напомнить (ISO). Формат выбирает интерфейс. */
@@ -76,7 +76,7 @@ export type ReminderSkip = {
  * пол-экрана, а ответ маршрута обязан оставаться конечным. Счётчики при этом
  * точные и не обрезаются никогда — интерфейс говорит «названы первые N из M».
  */
-export const MAX_NAMED_REMINDER_SKIPS = 20;
+const MAX_NAMED_REMINDER_SKIPS = 20;
 
 export type ReminderScheduleReport = {
 	readonly organizations: number;

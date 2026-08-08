@@ -33,10 +33,13 @@ import {
 	users,
 } from "./schema.js";
 
-export const communicationCampaignStatus = pgEnum(
-	"communication_campaign_status",
-	["draft", "scheduled", "running", "completed", "cancelled"],
-);
+const communicationCampaignStatus = pgEnum("communication_campaign_status", [
+	"draft",
+	"scheduled",
+	"running",
+	"completed",
+	"cancelled",
+]);
 
 export const communicationCampaigns = pgTable(
 	"communication_campaigns",

@@ -1,77 +1,73 @@
-# BRIEFING — 2026-08-08T21:07:15Z
+# BRIEFING — 2026-08-08T21:50:06Z
 
 ## Mission
-Deep architectural audit, E2E Playwright verification, and God-Object dismantling (AppHelpers.tsx) for the DENTE CRM frontend, with absolute paranoia and zero AI optimism.
+DENTE CRM Dead Code Reassessment & False-Positive Restoration Task. Analyze false positive flagging in `useDocumentWorkflowModule.ts` (`_selectedTaxDocumentPayerInn`, `_eligibleTaxPaymentIdsKey`, `_eligiblePaymentReceiptIdsKey`), re-audit `apps/web/src` for falsely deleted/flagged code, aggressively trace Git history (`git log -p`, `git diff`), physically trace execution chains, restore valid code, verify `npm run typecheck -w @dental/web`, and generate an incident report.
 
 ## 🔒 My Identity
 - Archetype: Project Orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\orchestrator
 - Original parent: parent
-- Original parent conversation ID: b862f498-ed96-4e24-8431-53902a8d2c42
+- Original parent conversation ID: 4a1c1387-e164-4a84-98d7-6855b66fc410
 
 ## 🔒 My Workflow
 - **Pattern**: Project Pattern
-- **Scope document**: C:\Clinic_MVP\dental-crm\PROJECT.md
-1. **Decompose**: Survey codebase via 3 Explorers, create PROJECT.md with Feature Inventory, Architecture, Milestones, and Interface Contracts.
+- **Scope document**: C:\Clinic_MVP\dental-crm\.agents\orchestrator\plan.md
+1. **Decompose**: Survey & investigation via Explorers (`teamwork_preview_explorer`), analysis of `useDocumentWorkflowModule.ts` and recent git commits / changes across `apps/web/src`.
 2. **Dispatch & Execute**:
-   - Implementation Track: Milestone decomposition & execution (Explorer → Worker → Reviewer → Challenger → Auditor gate).
-   - E2E Testing Track: Parallel E2E test suite creation & Playwright verification.
+   - Stage 1: Survey & Root Cause Analysis (Explorers - DONE).
+   - Stage 2: Restoration & Fix (Worker - IN PROGRESS).
+   - Stage 3: Audit & Review (Reviewers, Challengers, Forensic Auditor).
+   - Stage 4: Incident Report & Final Handoff.
 3. **On failure**: Retry → Replace → Skip → Redistribute → Redesign → Escalate.
 4. **Succession**: Self-succeed at 20 subagent spawns. Write handoff.md, spawn successor.
 - **Work items**:
-  1. Survey & Architecture Mapping [done]
-  2. M1: E2E Playwright Verification & Screenshot Matrix [in-progress: Iteration 2 Gate]
-  3. M2: Codebase Census & Utility Schema Definition [pending]
-  4. M3: Modular Extraction of AppHelpers.tsx [pending]
-  5. M4: Zero AI Optimism & Circular Dependency Audit [pending]
-- **Current phase**: 1 (Milestone Execution)
-- **Current focus**: Milestone 1 Iteration 2 Gate Evaluation
+  1. Root cause investigation of `useDocumentWorkflowModule.ts` false positives [done]
+  2. Codebase-wide dead code re-audit across `apps/web/src` with aggressive Git history scan [done]
+  3. Restoration of falsely deleted/flagged code & execution chain verification [in-progress]
+  4. Typecheck verification (`npm run typecheck -w @dental/web`) & Incident Report generation [pending]
+- **Current phase**: 2 (Restoration & Fix)
+- **Current focus**: Awaiting restoration worker execution report (`d501e596-038c-4992-899c-5ef7cc3a2574`)
 
 ## 🔒 Key Constraints
 - NEVER write, modify, or create source code files directly.
 - NEVER run build/test commands yourself — require workers to do so.
 - NEVER investigate or explore code directly — dispatch Explorers.
 - Strict clinic MVP rules: C:\Clinic_MVP\dental-crm\.agents\AGENTS.md.
-- Zero AI optimism: All changes verified by typechecks, madge circular dependency check, and Playwright screenshots.
+- Zero AI optimism: All changes verified by typechecks and forensic audit.
+- USER DIRECTIVE: Aggressively use Git history (`git log -p`, `git diff`) to trace lost/broken logic.
 
 ## Current Parent
-- Conversation ID: b862f498-ed96-4e24-8431-53902a8d2c42
-- Updated: 2026-08-08T21:07:15Z
+- Conversation ID: 4a1c1387-e164-4a84-98d7-6855b66fc410
+- Updated: 2026-08-08T21:50:06Z
 
 ## Key Decisions Made
-- Completed Step 0 Survey via 3 parallel subagents.
-- Formulated global PROJECT.md with 4 Milestones, 10 Features, and 9 Utility Module contracts.
-- Milestone 1 Iteration 1 failed due to Spec 2 timing flakiness.
-- Milestone 1 Iteration 2 executed via `m1_explorer_2` and `m1_worker_2`. `smoke.spec.ts` assertions updated to ensure DOM hydration and full Cyrillic Error Boundary coverage. All 5/5 Playwright specs passed cleanly in 9.1s.
-- Dispatched Iteration 2 Gate subagents (`m1_reviewer_3`, `m1_reviewer_4`, `m1_challenger_3`, `m1_challenger_4`, `m1_auditor_2`).
+- Initiated Dead Code Reassessment Task.
+- Stage 1 Explorers completed: Analyzed root cause of `useDocumentWorkflowModule.ts` false positives, audited recent git deletions, and executed codebase-wide AST reference scan.
+- Dispatched Stage 2 Worker (`reassessment_worker_1`, ID `d501e596-038c-4992-899c-5ef7cc3a2574`) to restore `useDocumentWorkflowModule.ts`, `OdontogramModule.tsx`, and `FamilyWalletPanel.tsx`.
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| m1_explorer_2 | teamwork_preview_explorer | M1 Remediation Strategy | completed | 9b57f62b-320d-4631-904b-e11291459fa0 |
-| m1_worker_2 | teamwork_preview_worker | M1 Remediation Execution | completed | ab4ad3cb-1b0c-493c-b09a-9d337d781d62 |
-| m1_reviewer_3 | teamwork_preview_reviewer | M1 Reviewer 3 | in-progress | 40be746b-766b-414f-95ae-286b04fe98dc |
-| m1_reviewer_4 | teamwork_preview_reviewer | M1 Reviewer 4 | in-progress | 03c7f946-3d1c-4715-b618-0778c0573f12 |
-| m1_challenger_3 | teamwork_preview_challenger | M1 Challenger 3 | in-progress | f527952e-e69e-4467-8196-9000c2bd1ca0 |
-| m1_challenger_4 | teamwork_preview_challenger | M1 Challenger 4 | in-progress | 55979e4e-c948-43b5-a39b-6172fb03bd83 |
-| m1_auditor_2 | teamwork_preview_auditor | M1 Forensic Auditor 2 | in-progress | 953829be-a5ef-449e-8d99-5073fe2de32c |
+| reassessment_explorer_1 | teamwork_preview_explorer | Root Cause Analysis of Workflow Module | completed | b37fd0ec-0eed-40c9-bc6d-b2d3385d0570 |
+| reassessment_explorer_2 | teamwork_preview_explorer | Git History & Recent Deletions Audit | completed | fdf218af-b351-4ef4-af96-3eaad98beba3 |
+| reassessment_explorer_3 | teamwork_preview_explorer | Codebase-Wide AST Scan | completed | e1903dff-a4b7-4de8-9f06-fc512bfc8e6e |
+| reassessment_worker_1 | teamwork_preview_worker | Code Restoration & Verification | in-progress | d501e596-038c-4992-899c-5ef7cc3a2574 |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 17 / 20
-- Pending subagents: 40be746b-766b-414f-95ae-286b04fe98dc, 03c7f946-3d1c-4715-b618-0778c0573f12, f527952e-e69e-4467-8196-9000c2bd1ca0, 55979e4e-c948-43b5-a39b-6172fb03bd83, 953829be-a5ef-449e-8d99-5073fe2de32c
+- Spawn count: 4 / 20
+- Pending subagents: d501e596-038c-4992-899c-5ef7cc3a2574
 - Predecessor: none
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: task-19
+- Heartbeat cron: task-21
 - Safety timer: none
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md — Verbatim user prompt
+- C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — Verbatim user prompt
 - C:\Clinic_MVP\dental-crm\.agents\orchestrator\DISPATCH.md — Task assignment log
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\plan.md — Detailed execution plan
 - C:\Clinic_MVP\dental-crm\.agents\orchestrator\progress.md — Execution heartbeat and checklist
-- C:\Clinic_MVP\dental-crm\PROJECT.md — Global architecture, feature inventory & milestone specification
-- C:\Clinic_MVP\dental-crm\TEST_INFRA.md — E2E test suite plan and verification thresholds
 - C:\Clinic_MVP\dental-crm\.agents\orchestrator\GATE_STATUS.md — Gate status evaluation log

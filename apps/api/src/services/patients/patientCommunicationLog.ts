@@ -46,11 +46,11 @@ import { communicationEvents, patients, users } from "../../db/schema.js";
 type CommunicationEventRow = typeof communicationEvents.$inferSelect;
 
 /** Значения берутся из enum схемы, а не переписываются руками: schema.ts:102,119,130. */
-export type PatientCommunicationChannel = CommunicationEventRow["channel"];
-export type PatientCommunicationDirection = CommunicationEventRow["direction"];
-export type PatientCommunicationStatus = CommunicationEventRow["status"];
+type PatientCommunicationChannel = CommunicationEventRow["channel"];
+type PatientCommunicationDirection = CommunicationEventRow["direction"];
+type PatientCommunicationStatus = CommunicationEventRow["status"];
 
-export type PatientCommunicationEntry = {
+type PatientCommunicationEntry = {
 	readonly id: string;
 	readonly channel: PatientCommunicationChannel;
 	readonly direction: PatientCommunicationDirection;

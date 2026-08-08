@@ -1,12 +1,9 @@
-
-
 export function isRecordKey<T extends string>(
 	value: unknown,
 	record: Record<T, unknown>,
 ): value is T {
 	return typeof value === "string" && Object.hasOwn(record, value);
 }
-
 
 export function isOptionValue<T extends string>(
 	value: unknown,
@@ -17,7 +14,6 @@ export function isOptionValue<T extends string>(
 		options.some((option) => option.value === value)
 	);
 }
-
 
 export function isStringUnionValue<T extends string>(
 	value: unknown,

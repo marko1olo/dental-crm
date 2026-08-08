@@ -50,7 +50,7 @@ const ENCRYPTION_KEY_MIN_BYTES = 32;
  */
 const PUBLIC_SAMPLE_ENCRYPTION_KEY = "dev-clinic-encryption-key-change-me";
 
-export interface RequiredEnvEntry {
+interface RequiredEnvEntry {
 	/** Имя переменной окружения. */
 	readonly name: string;
 	/** Что именно перестаёт работать без значения. */
@@ -80,7 +80,7 @@ export interface RequiredEnvEntry {
  * выключает необязательную функцию отказом — это предупреждение, а не отказ
  * старта.
  */
-export const REQUIRED_ENV: readonly RequiredEnvEntry[] = [
+const REQUIRED_ENV: readonly RequiredEnvEntry[] = [
 	{
 		name: "DATABASE_URL",
 		breaks:
@@ -121,7 +121,7 @@ export const REQUIRED_ENV: readonly RequiredEnvEntry[] = [
 			String(RECEIPT_SECRET_MIN_LENGTH) +
 			" символов считается незаданным",
 		readAt: "apps/api/src/routes/communicationReceipts.ts:45",
-		constraint: "не короче " + String(RECEIPT_SECRET_MIN_LENGTH) + " символов",
+		constraint: `не короче ${String(RECEIPT_SECRET_MIN_LENGTH)} символов`,
 	},
 	{
 		name: "CLINIC_ENCRYPTION_KEY",
@@ -166,7 +166,7 @@ export const REQUIRED_ENV: readonly RequiredEnvEntry[] = [
  * разработки считается ТОЛЬКО явное `development` или `test`. Пустая строка,
  * пробелы и незаданное значение режимом разработки НЕ являются.
  */
-export function isDevelopmentEnvironment(
+function isDevelopmentEnvironment(
 	env: NodeJS.ProcessEnv = process.env,
 ): boolean {
 	const mode = env.NODE_ENV?.trim().toLowerCase();
@@ -232,7 +232,7 @@ function secretSchema(entry: RequiredEnvEntry): z.ZodType<string> {
 }
 
 /** Схема окружения целиком. Собирается из `REQUIRED_ENV`, чтобы список был один. */
-export function buildRequiredEnvSchema(): z.ZodObject<
+function buildRequiredEnvSchema(): z.ZodObject<
 	Record<string, z.ZodType<string>>
 > {
 	const shape: Record<string, z.ZodType<string>> = {};
@@ -240,7 +240,7 @@ export function buildRequiredEnvSchema(): z.ZodObject<
 	return z.object(shape);
 }
 
-export interface EnvProblem {
+interface EnvProblem {
 	readonly entry: RequiredEnvEntry;
 	readonly reason: string;
 }
@@ -250,7 +250,7 @@ export interface EnvProblem {
  * последовательные `throw`: падение на первой переменной заставляет владельца
  * системы обходить список по одному перезапуску на имя.
  */
-export function collectEnvProblems(
+function collectEnvProblems(
 	env: NodeJS.ProcessEnv = process.env,
 ): EnvProblem[] {
 	const result = buildRequiredEnvSchema().safeParse(env);
@@ -271,7 +271,7 @@ export function collectEnvProblems(
 }
 
 /** Текст отказа: одним сообщением все имена, что ломается и где читается. */
-export function formatEnvFailure(problems: readonly EnvProblem[]): string {
+function formatEnvFailure(problems: readonly EnvProblem[]): string {
 	const lines: string[] = [
 		"",
 		"════════════════════════════════════════════════════════════════════",
@@ -287,11 +287,10 @@ export function formatEnvFailure(problems: readonly EnvProblem[]): string {
 	];
 
 	for (const { entry, reason } of problems) {
-		lines.push("  • " + entry.name + " — " + reason + ".");
-		lines.push("      ломается: " + entry.breaks + ".");
-		if (entry.constraint)
-			lines.push("      требуется: " + entry.constraint + ".");
-		lines.push("      читается: " + entry.readAt);
+		lines.push(`  • ${entry.name} — ${reason}.`);
+		lines.push(`      ломается: ${entry.breaks}.`);
+		if (entry.constraint) lines.push(`      требуется: ${entry.constraint}.`);
+		lines.push(`      читается: ${entry.readAt}`);
 		lines.push("");
 	}
 

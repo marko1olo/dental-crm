@@ -26,7 +26,7 @@ describe("accessGuard", () => {
 
 	beforeEach(() => {
 		sendMock = mock.fn();
-		codeMock = mock.fn((code: number) => ({ send: sendMock }));
+		codeMock = mock.fn((_code: number) => ({ send: sendMock }));
 
 		mockRequest = {
 			headers: {},

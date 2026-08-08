@@ -1,0 +1,323 @@
+﻿Unused files (38)
+audit_auth.cjs                                     
+audit_routes.cjs                                   
+check-tables.cjs                                   
+run_migration.mjs                                  
+src/ai/testParser.ts                               
+src/benchmark.ts                                   
+src/scripts/ingestDicom.ts                         
+src/scripts/inspectOutbox.ts                       
+src/scripts/inspectRecall.ts                       
+src/scripts/migrateStateToDb.ts                    
+src/scripts/printClientInfo.ts                     
+src/scripts/printDbPath.ts                         
+src/scripts/seedAuth.ts                            
+src/scripts/seedOpsScreenshotDemo.ts               
+src/telegram/benchmark.ts                          
+src/telegram/config.ts                             
+src/telegram/linkCodes.ts                          
+src/telegram/outbox.ts                             
+src/tests/chains/moneyChainProof.ts                
+src/tests/recon-crossTenantProbe.ts                
+src/tests/routes/_planTemplatesAuthProbe.ts        
+src/tests/routes/_reconRefusalTextProbe.ts         
+src/tests/routes/_reconSignUkepRegistrationProbe.ts
+src/tests/routes/chainReconProof.ts                
+src/tests/routes/chainWeldProof.ts                 
+src/tests/routes/diaryDeductionProof.ts            
+src/tests/routes/doctorCommissionRateProof.ts      
+src/tests/routes/doctorPayoutsProof.ts             
+src/tests/routes/documentUkepSignProof.ts          
+src/tests/routes/managerReportsReachabilityProof.ts
+src/tests/routes/onboardingPurgeProof.ts           
+src/tests/routes/patientNamesakeCreateProof.ts     
+src/tests/routes/protocolTemplateWriteProof.ts     
+src/tests/routes/publicBookingWorkHoursProof.ts    
+src/tests/routes/serviceCatalogWriteProof.ts       
+src/tests/security/crossTenantReconProof.ts        
+src/utils/cryptoHelper.bench.ts                    
+tmp-ready-probe.ts                                 
+Unused dependencies (4)
+chokidar           package.json:30:4
+fuse.js            package.json:36:4
+qrcode             package.json:38:4
+socks-proxy-agent  package.json:40:4
+Unused devDependencies (2)
+@types/qrcode  package.json:48:4
+ts-morph       package.json:50:4
+Unlisted dependencies (1)
+socks  src/speech/keyPool.ts:6:29
+Unused exports (196)
+requireResolvedStaffUserId                                     function  src/accessGuard.ts:204:23                      
+writeClinicalAuditLog                                          function  src/clinicalAuditService.ts:59:23              
+getClinicalRuleById                                            function  src/db/clinicalQuery.ts:73:23                  
+CLINICAL_TASK_STATUSES                                                   src/db/clinicalTasksQuery.ts:30:14             
+communicationCampaignStatus              communicationsSchema            src/db/communicationsSchema.ts:36:14           
+DomainStateSliceUnavailableError                               class     src/db/domainStateHydration.ts:379:14          
+withHydratedDomainState                                        function  src/db/domainStateHydration.ts:498:23          
+findLatestVisitIdForPatient                                    function  src/db/domainStateHydration.ts:1386:23         
+getDefaultOrganizationId                                       function  src/db/imagingQuery.ts:226:23                  
+parseNumericMoney                                              function  src/db/moneyTypeParsers.ts:34:17               
+MINIMUM_HISTORY_FOR_RISK                                                 src/db/patientNoShowRiskQuery.ts:51:14         
+VISIT_DRAFT_ACCEPTED_AUDIT_ACTION                                        src/db/visitsQuery.ts:33:14                    
+alreadyRefundedKopecksForPayment                               function  src/documents/guards.ts:492:17                 
+taxPaymentReceiptKey                                           function  src/documents/taxPaymentSnapshot.ts:43:17      
+baseTaxPaymentsForDocument                                     function  src/documents/taxPaymentSnapshot.ts:93:17      
+snapshotPaymentsForDocument                                    function  src/documents/taxPaymentSnapshot.ts:113:17     
+coveredIdentifiersForIssuedTaxCertificтАж                        function  src/documents/taxPaymentSnapshot.ts:153:17     
+escapeXml                                                      function  src/documents/taxXml.ts:48:17                  
+REQUIRED_ENV                                                             src/env/requiredEnv.ts:83:14                   
+isDevelopmentEnvironment                                       function  src/env/requiredEnv.ts:169:17                  
+buildRequiredEnvSchema                                         function  src/env/requiredEnv.ts:235:17                  
+collectEnvProblems                                             function  src/env/requiredEnv.ts:253:17                  
+formatEnvFailure                                               function  src/env/requiredEnv.ts:274:17                  
+profileColumn                                                  function  src/migration/columnProfile.ts:115:17          
+READABLE_FORMATS                                                         src/migration/formats/signatures.ts:463:14     
+levenshteinDistance                                            function  src/migration/identity.ts:35:17                
+stringSimilarity                                               function  src/migration/identity.ts:70:17                
+normalizeNameForComparison                                     function  src/migration/identity.ts:83:17                
+scoreIdentity                                                  function  src/migration/identity.ts:139:17               
+blockingKeys                                                   function  src/migration/identity.ts:231:17               
+REQUIRED_FIELDS                                                          src/migration/mapping.ts:561:14                
+maskValueShape                                                           src/migration/mapping.ts:603:10                
+looksLikeDbf                                                             src/migration/parsers/index.ts:441:10          
+parseDbf                                                                 src/migration/parsers/index.ts:441:24          
+detectDelimiter                                                          src/migration/parsers/index.ts:442:10          
+parseDelimited                                                           src/migration/parsers/index.ts:442:27          
+looksLikeZipContainer                                                    src/migration/parsers/index.ts:443:10          
+parseOds                                                                 src/migration/parsers/index.ts:443:33          
+parseXlsx                                                                src/migration/parsers/index.ts:443:43          
+parseJsonSource                                                          src/migration/parsers/index.ts:444:10          
+parseXmlSource                                                           src/migration/parsers/index.ts:444:27          
+describeRowForOperator                                         function  src/migration/rowTransform.ts:783:17           
+HEARTBEAT_STALE_MS                                                       src/migration/runStore.ts:78:14                
+pendingRunCount                                                function  src/migration/runStore.ts:494:23               
+stagedMoneyKopecks                                             function  src/migration/runStore.ts:775:23               
+STREAM_BATCH_ROWS                                                        src/migration/streamStage.ts:57:14             
+WHOLE_FILE_FORMAT_LIMIT_BYTES                                            src/migration/streamStage.ts:67:14             
+buildZip                                                       function  src/migration/tests/fixtures.ts:146:17         
+safeUploadFileName                                             function  src/migration/uploadStore.ts:63:17             
+storeUploadBuffer                                              function  src/migration/uploadStore.ts:146:23            
+uploadSize                                                     function  src/migration/uploadStore.ts:176:23            
+uploadRoot                                                               src/migration/uploadStore.ts:261:10            
+clinicLocalToUtc                                               function  src/migration/valueNormalize.ts:592:17         
+DEFAULT_CLINIC_TIME_ZONE                                                 src/migration/valueNormalize.ts:630:14         
+VENDOR_PROFILES                                                          src/migration/vendorProfiles.ts:60:14          
+GENERIC_RU_RULES                                                         src/migration/vendorProfiles.ts:609:14         
+CANCELLED_ITEM_STATUS                                                    src/money/patientDebt.ts:211:14                
+selectPricelistServiceRows                                     function  src/pricelist/analyzer.ts:1953:17              
+pricelistItemsFromGroqRows                                     function  src/pricelist/analyzer.ts:2541:17              
+default                                                        function  src/routes/dayConfirmations.ts:488:16          
+pdfBrowserCandidates                                           function  src/routes/documents/shared.ts:75:17           
+findPdfBrowserPath                                             function  src/routes/documents/shared.ts:106:17          
+configuredPdfExportTimeoutMs                                   function  src/routes/documents/shared.ts:114:17          
+readValidPdfFile                                               function  src/routes/documents/shared.ts:120:23          
+paymentAnnualTaxpayerScope                                     function  src/routes/documents/shared.ts:272:17          
+annualTaxpayerScopesForDocument                                function  src/routes/documents/shared.ts:289:17          
+annualTaxpayerScopesOverlap                                    function  src/routes/documents/shared.ts:315:17          
+cloneSnapshotValue                                             function  src/routes/documents/shared.ts:402:17          
+releasedDocumentTypesCoveredByRequest                          function  src/routes/documents/shared.ts:480:17          
+comparableDocumentChainDate                                    function  src/routes/documents/shared.ts:494:17          
+documentChainDateIsBlankOrValid                                function  src/routes/documents/shared.ts:515:17          
+documentChainDateRangeIsChronological                          function  src/routes/documents/shared.ts:522:17          
+medicalRecordExtractPeriodIsChronologiтАж                        function  src/routes/documents/shared.ts:536:17          
+medicalRecordExtractDatesAreValid                              function  src/routes/documents/shared.ts:545:17          
+outpatientMedicalCard025uDatesAreValid                         function  src/routes/documents/shared.ts:573:17          
+dentalMedicalCard043uDatesAreValid                             function  src/routes/documents/shared.ts:605:17          
+medicalDocumentReleaseReceiptDatesAreVтАж                        function  src/routes/documents/shared.ts:616:17          
+releaseMaterialKindForDelivery                                 function  src/routes/documents/shared.ts:645:17          
+releaseSourceSnapshotSha256                                    function  src/routes/documents/shared.ts:660:17          
+releasePeriodCoveredByRequest                                  function  src/routes/documents/shared.ts:795:17          
+taxCertificateExpectedApplicationForm                          function  src/routes/documents/shared.ts:819:17          
+normalizeTaxApplicationRelationship                            function  src/routes/documents/shared.ts:829:17          
+paymentMatchesTaxApplication                                   function  src/routes/documents/shared.ts:851:17          
+taxApplicationMatchesSelectedPayments                          function  src/routes/documents/shared.ts:869:17          
+hasIssuedTaxApplicationForCertificate                          function  src/routes/documents/shared.ts:884:23          
+releaseReceiptMatchesCopyRequest                               function  src/routes/documents/shared.ts:920:17          
+findIssuedMedicalCopyRequestForRelease                         function  src/routes/documents/shared.ts:940:23          
+hasIssuedMedicalCopyRequestForRelease                          function  src/routes/documents/shared.ts:966:23          
+completedWorksActMatchesIssuedContract                         function  src/routes/documents/shared.ts:972:23          
+medicalRecordExtractVisitDate                                  function  src/routes/documents/shared.ts:996:23          
+signedMedicalSourceVisitsAreValid                              function  src/routes/documents/shared.ts:1026:23         
+medicalRecordExtractSourcesAreValid                            function  src/routes/documents/shared.ts:1056:23         
+outpatientMedicalCard025uSourcesAreValтАж                        function  src/routes/documents/shared.ts:1068:23         
+documentRenderContext                                          function  src/routes/documents/shared.ts:1089:17         
+documentCreateValidationMessage                                          src/routes/documents/shared.ts:1115:14         
+objectRecord                                                   function  src/routes/documents/shared.ts:1122:17         
+migrationRunRequestSchema                                                src/routes/migrationRuns.ts:978:10             
+default                                                        function  src/routes/patientDuplicates.ts:212:16         
+default                                                        function  src/routes/patientRecall.ts:158:16             
+default                                                        function  src/routes/publicAppointmentActions.ts:429:16  
+default                                                        function  src/routes/reports.ts:448:16                   
+telegramOutboxScheduleUnreadableBlockeтАж                                  src/routes/telegram.ts:126:14                  
+executeDenteTelegramOutboxDueBatch                             function  src/routes/telegram.ts:1211:23                 
+default                                                        function  src/routes/waitlistMatches.ts:231:16           
+WORKSPACE_PRESETS                                                        src/routes/workspaceProfile.ts:233:14          
+denteTelegramBotSettings                                                 src/sampleData.ts:203:14                       
+denteTelegramWebhookEvents                                               src/sampleData.ts:258:14                       
+denteTelegramOutboxDeliveryReceiptsMap                                   src/sampleData.ts:261:14                       
+denteTelegramLinkCodes                                                   src/sampleData.ts:279:14                       
+clinicProfile                                                            src/sampleData.ts:282:14                       
+staffMembers                                                             src/sampleData.ts:335:14                       
+chairs                                                                   src/sampleData.ts:402:14                       
+activeVisit                                                              src/sampleData.ts:505:14                       
+hasUnsignedActiveVisit                                         function  src/sampleData.ts:537:17                       
+getServiceCatalogItem                                          function  src/sampleData.ts:592:17                       
+treatmentPlanScenarios                                                   src/sampleData.ts:766:14                       
+communicationTemplates                                                   src/sampleData.ts:1041:14                      
+communicationTasks                                                       src/sampleData.ts:1088:14                      
+communicationEvents                                                      src/sampleData.ts:1181:14                      
+imagingStudies                                                           src/sampleData.ts:1196:14                      
+importBatches                                                            src/sampleData.ts:1279:14                      
+aiRecognitionJobs                                                        src/sampleData.ts:1281:14                      
+imagingViewerSessions                                                    src/sampleData.ts:1282:14                      
+dicomWorkbenchBundles                                                    src/sampleData.ts:1283:14                      
+speechTranscriptionChunks                                                src/sampleData.ts:1284:14                      
+SpeechChunkIdentityConflictError                               class     src/sampleData.ts:1286:14                      
+visitSaveReceipts                                                        src/sampleData.ts:1296:14                      
+visitDraftAutosaves                                                      src/sampleData.ts:1297:14                      
+findVisitById                                                  function  src/sampleData.ts:1299:17                      
+buildClinicalRuleSummary                                       function  src/sampleData.ts:1640:17                      
+buildCommunicationSummary                                      function  src/sampleData.ts:1758:17                      
+clinicTodayIso                                                 function  src/sampleData.ts:2173:17                      
+buildShiftIntelligence                                         function  src/sampleData.ts:3651:17                      
+protocolTemplates                                                        src/sampleData.ts:3935:14                      
+integrationPresets                                                       src/sampleData.ts:4064:14                      
+speechProviders                                                          src/sampleData.ts:4261:14                      
+resetToDemo                                                    function  src/sampleData.ts:5176:17                      
+resetToZeroMode                                                function  src/sampleData.ts:5229:17                      
+listDenteTelegramChatLinks                                     function  src/sampleData.ts:6679:17                      
+buildDenteTelegramChatLinkList                                 function  src/sampleData.ts:6694:17                      
+buildDenteTelegramAppointmentCallbackDтАж                        function  src/sampleData.ts:7310:17                      
+listAiRecognitionJobs                                          function  src/sampleData.ts:11844:17                     
+createAiRecognitionJob                                         function  src/sampleData.ts:11848:17                     
+listSpeechTranscriptionChunks                                  function  src/sampleData.ts:11899:17                     
+listSpeechRecordingRecoveries                                  function  src/sampleData.ts:12056:17                     
+assembleSpeechRecording                                        function  src/sampleData.ts:12152:17                     
+recordSpeechTranscriptionChunk                                 function  src/sampleData.ts:12254:17                     
+recordImportBatch                                              function  src/sampleData.ts:12307:17                     
+getVisitDraftAutosave                                          function  src/sampleData.ts:12350:17                     
+upsertVisitDraftAutosave                                       function  src/sampleData.ts:12358:17                     
+acceptVisitDraft                                               function  src/sampleData.ts:12406:17                     
+writeIssuedDocumentSnapshot                                    function  src/sampleData.ts:12591:17                     
+storeIssuedDocumentSnapshot                                    function  src/sampleData.ts:12607:17                     
+createGeneratedDocument                                        function  src/sampleData.ts:12623:17                     
+issueGeneratedDocument                                         function  src/sampleData.ts:12658:17                     
+storeTaxXmlSnapshot                                            function  src/sampleData.ts:12721:17                     
+voidGeneratedDocument                                          function  src/sampleData.ts:12744:17                     
+findPaymentByClientMutationId                                  function  src/sampleData.ts:12825:17                     
+createPayment                                                  function  src/sampleData.ts:12837:17                     
+completeCommunicationTask                                      function  src/sampleData.ts:12899:17                     
+getOrCreateImagingViewerSession                                function  src/sampleData.ts:13008:17                     
+saveImagingViewerSession                                       function  src/sampleData.ts:13041:17                     
+saveDicomWorkbenchBundle                                       function  src/sampleData.ts:13152:17                     
+listDicomWorkbenchBundles                                      function  src/sampleData.ts:13201:17                     
+createImagingStudy                                             function  src/sampleData.ts:13209:17                     
+BUILT_IN_TEMPLATES                                                       src/scripts/seedTemplates.ts:5:14              
+namedDevelopmentModes                                                    src/security/bypass.ts:5:14                    
+clearRateLimitState                                            function  src/security/rateLimit.ts:62:17                
+WEBHOOK_SECRET_HEADER                                                    src/security/webhookAuth.ts:24:14              
+egiszCdaParamsSchema                                                     src/services/cda/index.ts:14:10                
+formatDate                                                     function  src/services/cda/util.ts:18:17                 
+addrXml                                                        function  src/services/cda/util.ts:125:17                
+telecomXml                                                     function  src/services/cda/util.ts:137:17                
+MAX_NAMED_REMINDER_SKIPS                                                 тАжs/communications/appointmentReminders.ts:79:14
+AUDIENCE_CRITERIA_KEYS                                                   src/services/communications/audience.ts:659:14 
+campaignTemplateProblems                                       function  src/services/communications/campaigns.ts:92:17 
+MINUTES_PER_DAY                                                          тАжervices/communications/deliveryPolicy.ts:25:14
+isSuppressingErrorClass                                        function  тАжrvices/communications/deliveryPolicy.ts:230:17
+FALLBACK_COMMUNICATION_TIMEZONE                                          тАжc/services/communications/dispatcher.ts:126:14
+findTemplateVariable                                           function  тАжices/communications/templateRenderer.ts:136:17
+egiszCdaParamsSchema                                                     src/services/egiszCdaGenerator.ts:2:10         
+currentMonthPeriod                                                       src/services/finance/doctorPayouts.ts:77:10    
+isUsablePercent                                                function  src/services/finance/doctorPayouts.ts:253:17   
+buildDoctorPayoutAggregateQuery                                function  src/services/finance/doctorPayouts.ts:457:17   
+scheduleNotification                     workerModule          function  src/services/notificationWorker.ts:54:23       
+processNotificationQueue                 workerModule          function  src/services/notificationWorker.ts:79:23       
+stopNotificationWorker                   workerModule          function  src/services/notificationWorker.ts:193:17      
+countRecallCandidates                                          function  тАжc/services/patients/recallCandidates.ts:244:23
+recallBandLabel                                                function  тАжc/services/patients/recallCandidates.ts:256:17
+RECALL_BANDS                                                             тАжc/services/patients/recallCandidates.ts:279:14
+buildRecallTask                                                function  src/services/recallScheduler.ts:43:17          
+DEFAULT_SMS_BASE_URL                                                     src/smsTransport.ts:76:14                      
+speechProviderTimeoutMs                                        function  src/speech/keyPool.ts:343:17                   
+SpeechDurableEnvelopeUnreadableError                           class     src/speech/storage.ts:100:14                   
+listDenteTelegramChatLinks                                     function  src/telegram/chatLinks.ts:129:23               
+getToothConfig                                                           src/utils/toothGeometry.ts:187:14              
+Unused exported types (67)
+ToothUpdate                           interface  src/ai/localDictationParser.ts:3:18                        
+EmkUpdates                            interface  src/ai/localDictationParser.ts:16:18                       
+ClinicalAuditAction                   type       src/clinicalAuditService.ts:11:13                          
+ClinicalTaskStatus                    type       src/db/clinicalTasksQuery.ts:36:13                         
+LostPatientRow                        type       src/db/lostPatientsFiltersQuery.ts:54:13                   
+NoShowRiskLevel                       type       src/db/patientNoShowRiskQuery.ts:27:13                     
+PatientNoShowRisk                     type       src/db/patientNoShowRiskQuery.ts:29:13                     
+RejectedServiceCatalogRow             interface  src/db/pricelistQuery.ts:54:18                             
+ProtocolTemplateRow                   type       src/db/protocolTemplateQuery.ts:43:13                      
+OpenedVisitForAppointment             type       src/db/visitsQuery.ts:558:13                               
+EmailErrorClass                       type       src/emailTransport.ts:28:13                                
+RequiredEnvEntry                      interface  src/env/requiredEnv.ts:53:18                               
+EnvProblem                            interface  src/env/requiredEnv.ts:243:18                              
+DiscoveredSource                      interface  src/migration/discovery.ts:149:18                          
+DetectedEncoding                      type       src/migration/encoding.ts:28:13                            
+MemoFormat                            type       src/migration/formats/dbfMemo.ts:24:13                     
+IdentityAction                        type       src/migration/identity.ts:112:13                           
+DbfField                              interface  src/migration/parsers/dbf.ts:24:18                         
+SpreadsheetSheet                      interface  src/migration/parsers/spreadsheet.ts:23:18                 
+DateOrder                             type       src/migration/valueNormalize.ts:176:13                     
+MigrationEntityKind                   type       src/routes/migrationRuns.ts:977:15                         
+MigrationTargetField                  type       src/routes/migrationRuns.ts:977:36                         
+WorkspacePresetFeatureFlags           type       src/routes/workspaceProfile.ts:220:13                      
+TreatmentPlanStatus                   type       src/services/biAnalyticsWorker.ts:157:13                   
+AppointmentAction                     type       src/services/communications/appointmentActionLinks.ts:39:13
+ReminderSkipReason                    type       src/services/communications/appointmentReminders.ts:54:13  
+ReminderSkip                          type       src/services/communications/appointmentReminders.ts:66:13  
+AudienceCandidate                     type       src/services/communications/audience.ts:98:13              
+AudienceExclusionReason               type       src/services/communications/audience.ts:104:13             
+CampaignRow                           type       src/services/communications/campaigns.ts:54:13             
+DeliveryErrorClass                    type       src/services/communications/channelRouter.ts:49:2          
+AttemptOutcome                        type       src/services/communications/deliveryPolicy.ts:288:13       
+ReceiptState                          type       src/services/communications/deliveryReceipts.ts:27:13      
+RowOutcome                            type       src/services/communications/dispatcher.ts:750:13           
+TemplateRenderSuccess                 type       src/services/communications/templateRenderer.ts:216:13     
+TemplateRenderFailure                 type       src/services/communications/templateRenderer.ts:222:13     
+DuplicateReason                       type       src/services/patients/duplicateDetection.ts:34:13          
+DuplicateSide                         type       src/services/patients/duplicateDetection.ts:51:13          
+PatientCommunicationChannel           type       src/services/patients/patientCommunicationLog.ts:49:13     
+PatientCommunicationDirection         type       src/services/patients/patientCommunicationLog.ts:50:13     
+PatientCommunicationStatus            type       src/services/patients/patientCommunicationLog.ts:51:13     
+PatientCommunicationEntry             type       src/services/patients/patientCommunicationLog.ts:53:13     
+RecallBand                            type       src/services/patients/recallCandidates.ts:40:13            
+RecallCandidate                       type       src/services/patients/recallCandidates.ts:42:13            
+RevenueTimelinePoint                  type       src/services/reports/managerReports.ts:318:13              
+DoctorPerformanceRow                  type       src/services/reports/managerReports.ts:396:13              
+ChairLoadRow                          type       src/services/reports/managerReports.ts:563:13              
+ReminderEffectGroup                   type       src/services/reports/managerReports.ts:739:13              
+PatientFlowPoint                      type       src/services/reports/managerReports.ts:924:13              
+ServiceSalesRow                       type       src/services/reports/managerReports.ts:1070:13             
+ReceivablesBucket                     type       src/services/reports/managerReports.ts:1205:13             
+ReceivablesRow                        type       src/services/reports/managerReports.ts:1212:13             
+ReceivablesPrepaymentRow              type       src/services/reports/managerReports.ts:1242:13             
+ScheduleLoadCell                      type       src/services/reports/managerReports.ts:1600:13             
+SmsProviderId                         type       src/smsTransport.ts:26:13                                  
+SmsErrorClass                         type       src/smsTransport.ts:28:13                                  
+SpeechRemoteArtifactDeletion          type       src/speech/gateway.ts:2065:13                              
+RouteModuleCensusEntry                type       src/tests/support/routeRegistrationCensus.ts:41:13         
+SchemaIssueKind                       type       src/utils/schemaRefusalWords.ts:122:13                     
+ToothGeometryType                     type       src/utils/toothGeometry.ts:1:13                            
+VisitCloseChecklistVisit              type       src/visitCloseChecklist.ts:57:13                           
+VisitCloseChecklistImagingStudy       type       src/visitCloseChecklist.ts:66:13                           
+VisitCloseChecklistDocument           type       src/visitCloseChecklist.ts:72:13                           
+VisitCloseChecklistAiJob              type       src/visitCloseChecklist.ts:79:13                           
+VisitCloseChecklistCommunicationTask  type       src/visitCloseChecklist.ts:85:13                           
+VisitCloseChecklistClinicalFacts      type       src/visitCloseChecklist.ts:92:13                           
+VisitCloseChecklistBillingFacts       type       src/visitCloseChecklist.ts:117:13                          
+Duplicate exports (8)
+registerCommunicationReceiptRoutes|default     src/routes/communicationReceipts.ts   
+registerCommunicationOutboxRoutes|default      src/routes/communicationsOutbox.ts    
+registerDayConfirmationRoutes|default          src/routes/dayConfirmations.ts        
+registerPatientDuplicateRoutes|default         src/routes/patientDuplicates.ts       
+registerPatientRecallRoutes|default            src/routes/patientRecall.ts           
+registerPublicAppointmentActionRoutes|default  src/routes/publicAppointmentActions.ts
+registerReportRoutes|default                   src/routes/reports.ts                 
+registerWaitlistMatchRoutes|default            src/routes/waitlistMatches.ts         

@@ -587,7 +587,7 @@ export async function executeRunPhase(
 			);
 			if (
 				stillReady.length > 0 &&
-				stillReady[0]!.stagingId === rows[0]!.stagingId
+				stillReady[0]?.stagingId === rows[0]?.stagingId
 			) {
 				await markRowsSkipped(
 					context.organizationId,

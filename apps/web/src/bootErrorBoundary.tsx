@@ -112,6 +112,9 @@ export class BootErrorBoundary extends Component<
 		// то есть от props, до которых у статического метода доступа нет, и потому
 		// считается в render(). Подстановка текста через setState() в
 		// componentDidCatch() объявлена в документации React устаревшей.
+		(
+			window as Window & typeof globalThis & { LAST_BOOT_ERROR?: string }
+		).LAST_BOOT_ERROR = String((error as { stack?: string })?.stack || error);
 		return { failed: true, error };
 	}
 

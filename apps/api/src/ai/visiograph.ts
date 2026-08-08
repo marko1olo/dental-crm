@@ -116,7 +116,7 @@ export async function analyzeVisiographImage(
 	try {
 		const trimmed = rawContent.trim();
 		resultObj = JSON.parse(trimmed);
-	} catch (e) {
+	} catch (_e) {
 		try {
 			const match = rawContent.match(/\{[\s\S]*\}/);
 			if (match?.[0]) resultObj = JSON.parse(match[0]);

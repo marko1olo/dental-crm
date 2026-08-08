@@ -21,7 +21,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { namedDevelopmentModeActive } from "../accessGuard.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
-export const WEBHOOK_SECRET_HEADER = "x-dente-webhook-secret";
+const WEBHOOK_SECRET_HEADER = "x-dente-webhook-secret";
 
 export interface WebhookAuthOptions {
 	/** Имя канала для сообщений об ошибке, например "vk". */

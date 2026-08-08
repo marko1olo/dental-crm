@@ -65,17 +65,17 @@ describe("портрет колонки", () => {
 			],
 		);
 		assert.ok(
-			profiles[0]!.parseRates.personName > 0.9,
+			profiles[0]?.parseRates.personName > 0.9,
 			"ФИО должно опознаваться как имена",
 		);
 		assert.ok(
-			profiles[1]!.parseRates.phone > 0.9,
+			profiles[1]?.parseRates.phone > 0.9,
 			"телефоны должны разбираться",
 		);
-		assert.ok(profiles[2]!.parseRates.date > 0.9, "даты должны разбираться");
-		assert.ok(profiles[3]!.parseRates.money > 0.9, "суммы должны разбираться");
+		assert.ok(profiles[2]?.parseRates.date > 0.9, "даты должны разбираться");
+		assert.ok(profiles[3]?.parseRates.money > 0.9, "суммы должны разбираться");
 		// Колонка ФИО не должна выглядеть как телефон и наоборот.
-		assert.ok(profiles[0]!.parseRates.phone < 0.2);
+		assert.ok(profiles[0]?.parseRates.phone < 0.2);
 	});
 
 	test("колонка целых уникальных чисел опознаётся как ключ", () => {
@@ -89,9 +89,9 @@ describe("портрет колонки", () => {
 				["5", "10"],
 			],
 		);
-		assert.equal(profiles[0]!.looksLikePrimaryKey, true);
+		assert.equal(profiles[0]?.looksLikePrimaryKey, true);
 		// Повторяющееся значение — не ключ.
-		assert.equal(profiles[1]!.looksLikePrimaryKey, false);
+		assert.equal(profiles[1]?.looksLikePrimaryKey, false);
 	});
 });
 

@@ -70,9 +70,9 @@ describe("createClinicalRule", () => {
 		assert.strictEqual(auditEvents.length, initialAuditCount + 1);
 		const lastAudit = auditEvents[0]; // recordAuditEvent unshifts to auditEvents array
 		assert.ok(lastAudit);
-		assert.strictEqual(lastAudit!.entityType, "clinical_rule");
-		assert.strictEqual(lastAudit!.entityId, rule.id);
-		assert.strictEqual(lastAudit!.action, "clinical_rule_created");
+		assert.strictEqual(lastAudit?.entityType, "clinical_rule");
+		assert.strictEqual(lastAudit?.entityId, rule.id);
+		assert.strictEqual(lastAudit?.action, "clinical_rule_created");
 	});
 
 	test("fails validation when blockedServiceIds is empty for block_service action", () => {

@@ -371,7 +371,7 @@ function parseXmlTree(xml: string): {
 			if (!root) root = node;
 			else root.children.push(node);
 		} else {
-			stack[stack.length - 1]!.children.push(node);
+			stack[stack.length - 1]?.children.push(node);
 		}
 		if (!selfClosing) stack.push(node);
 	}

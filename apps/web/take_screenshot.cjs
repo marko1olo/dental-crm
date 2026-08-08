@@ -1,6 +1,6 @@
 const { chromium } = require("playwright");
-const path = require("path");
-const fs = require("fs");
+const path = require("node:path");
+const _fs = require("node:fs");
 
 async function run() {
 	const browser = await chromium.launch({ headless: true });
@@ -14,7 +14,7 @@ async function run() {
 			await page.goto("http://localhost:5174", { timeout: 2000 });
 			isReady = true;
 			break;
-		} catch (e) {
+		} catch (_e) {
 			console.log(`Waiting for server... ${i}`);
 			await new Promise((r) => setTimeout(r, 1000));
 		}

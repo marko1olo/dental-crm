@@ -3,7 +3,7 @@ import {
 	parseKopecks,
 	positiveMoneyRubSchema,
 } from "@dental/shared";
-import { and, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, desc, eq, ilike, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -212,7 +212,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				),
 			)
 			.limit(1);
-		if (!patient || !patient.familyGroupId) {
+		if (!patient?.familyGroupId) {
 			return reply.code(404).send({ error: "Patient has no family group" });
 		}
 

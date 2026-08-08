@@ -239,7 +239,7 @@ async function checkProxyPortDirectly(
 			const url = new URL(
 				cleanUrl.includes("://") ? cleanUrl : `socks5://${cleanUrl}`,
 			);
-			const port = parseInt(url.port || "1080");
+			const port = parseInt(url.port || "1080", 10);
 			const host = url.hostname || "127.0.0.1";
 			const socket = net.connect(port, host, () => {
 				socket.end();

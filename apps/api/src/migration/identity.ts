@@ -32,7 +32,7 @@ import { normalizePhoneValue } from "./valueNormalize.js";
  * функция вызывается миллионы раз за прогон, и выделение матрицы 40×40 на
  * каждый вызов создаёт заметное давление на сборщик мусора.
  */
-export function levenshteinDistance(left: string, right: string): number {
+function levenshteinDistance(left: string, right: string): number {
 	if (left === right) return 0;
 	if (left.length === 0) return right.length;
 	if (right.length === 0) return left.length;
@@ -67,7 +67,7 @@ export function levenshteinDistance(left: string, right: string): number {
 }
 
 /** Сходство строк 0..1 на основе расстояния Левенштейна. */
-export function stringSimilarity(left: string, right: string): number {
+function stringSimilarity(left: string, right: string): number {
 	const maxLength = Math.max(left.length, right.length);
 	if (maxLength === 0) return 1;
 	/**
@@ -80,9 +80,7 @@ export function stringSimilarity(left: string, right: string): number {
 }
 
 /** Приводит ФИО к виду для сравнения: регистр, ё→е, порядок слов. */
-export function normalizeNameForComparison(
-	value: string | null | undefined,
-): string {
+function normalizeNameForComparison(value: string | null | undefined): string {
 	if (!value) return "";
 	return (
 		value
@@ -109,7 +107,7 @@ export interface IdentityCandidate {
 	email?: string | null;
 }
 
-export type IdentityAction = "same" | "needs_review" | "different";
+type IdentityAction = "same" | "needs_review" | "different";
 
 export interface IdentityVerdict {
 	score: number;
@@ -136,7 +134,7 @@ const REVIEW_THRESHOLD = 0.62;
  * намеренно, чтобы совпадение по всем трём признакам гарантированно перекрывало
  * порог, а результат ограничивается сверху.
  */
-export function scoreIdentity(
+function scoreIdentity(
 	incoming: IdentityCandidate,
 	existing: IdentityCandidate,
 ): IdentityVerdict {
@@ -228,7 +226,7 @@ export function scoreIdentity(
  *   - фамилия + имя без отчества: ловит отсутствие даты рождения;
  *   - последние семь цифр телефона: ловит расхождение в коде страны.
  */
-export function blockingKeys(candidate: IdentityCandidate): string[] {
+function blockingKeys(candidate: IdentityCandidate): string[] {
 	const keys: string[] = [];
 	const phone = normalizePhoneValue(candidate.phone).value?.e164 ?? null;
 	if (phone) {

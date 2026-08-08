@@ -173,7 +173,7 @@ export function normalizeText(
  * по отдельному значению: «03/04/2020» в одиночку неразличимо, но если где-то в
  * той же колонке встретилось «17/04/2020», порядок задан однозначно для всех.
  */
-export type DateOrder = "dmy" | "mdy" | "ymd" | "unknown";
+type DateOrder = "dmy" | "mdy" | "ymd" | "unknown";
 
 export interface DateFormatHint {
 	order: DateOrder;
@@ -589,10 +589,7 @@ function timeZoneOffsetMs(instantMs: number, timeZone: string): number {
  * Двойной пересчёт нужен для границы перехода на летнее время: смещение в
  * предполагаемый момент и в исправленный может различаться.
  */
-export function clinicLocalToUtc(
-	value: NormalizedDateTime,
-	timeZone: string,
-): Date {
+function clinicLocalToUtc(value: NormalizedDateTime, timeZone: string): Date {
 	const [year, month, day] = value.date.split("-").map(Number) as [
 		number,
 		number,
@@ -627,7 +624,7 @@ export function clinicLocalToUtc(
 }
 
 /** Часовой пояс по умолчанию, если у клиники он не задан. */
-export const DEFAULT_CLINIC_TIME_ZONE = "Europe/Moscow";
+const _DEFAULT_CLINIC_TIME_ZONE = "Europe/Moscow";
 
 /**
  * Строковое представление даты со временем для хранения в стейджинге.

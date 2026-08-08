@@ -12,7 +12,12 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 
 interface CommandPaletteProps {
-	patients: any[];
+	patients: {
+		id: string;
+		fullName: string;
+		phone?: string;
+		[key: string]: unknown;
+	}[];
 	onSelectPatient: (patientId: string) => void;
 	onNavigate: (view: string) => void;
 	onLogout?: () => void;
@@ -176,7 +181,7 @@ export function CommandPalette({
 						<div className="cmd-palette-empty">Ничего не найдено</div>
 					) : (
 						<ul className="cmd-palette-list">
-							{items.map((item, index) => (
+							{items?.map((item, index) => (
 								<li key={item.id}>
 									<button
 										type="button"

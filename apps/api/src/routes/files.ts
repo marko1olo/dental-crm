@@ -223,7 +223,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 				);
 				reply.type(attachment.mimeType);
 				return reply.send(createReadStream(filePath));
-			} catch (e) {
+			} catch (_e) {
 				return reply.code(404).send({
 					error: "FileNotFoundOnDisk",
 					message:

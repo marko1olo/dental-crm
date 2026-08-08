@@ -27,6 +27,7 @@ import { showToast } from "../../components/GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useSettingsStore } from "../../store/settingsStore";
+import { fetchWithHandling } from "../../utils/networkUtils";
 import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
 
 /**
@@ -494,7 +495,7 @@ export function useScheduleLogic({
 			[staffId]: "saving",
 		}));
 		try {
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/settings/staff/${staffId}/working-hours`,
 				{
 					method: "PUT",
@@ -570,7 +571,7 @@ export function useScheduleLogic({
 			[chairId]: "saving",
 		}));
 		try {
-			const response = await fetch(
+			const response = await fetchWithHandling(
 				`/api/settings/chairs/${chairId}/working-hours`,
 				{
 					method: "PUT",
@@ -703,16 +704,19 @@ export function useScheduleLogic({
 						: `appointment-${Date.now()}`;
 			}
 			const mutationId = appointmentMutationIdRef.current;
-			const response = await fetch(`/api/appointments/${appointmentId}`, {
-				method: "PATCH",
-				headers: auth.scheduleMutationHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					...appointmentUpdateInputFromDraft(draft),
-					clientMutationId: mutationId,
-				}),
-			});
+			const response = await fetchWithHandling(
+				`/api/appointments/${appointmentId}`,
+				{
+					method: "PATCH",
+					headers: auth.scheduleMutationHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						...appointmentUpdateInputFromDraft(draft),
+						clientMutationId: mutationId,
+					}),
+				},
+			);
 			if (!response.ok) {
 				setScheduleAdminSecretDemand(
 					(await scheduleAdminSecretRefusal(response)) ?? "",
@@ -827,7 +831,7 @@ export function useScheduleLogic({
 						: `appointment-${Date.now()}`;
 			}
 			const mutationId = appointmentMutationIdRef.current;
-			const response = await fetch("/api/appointments", {
+			const response = await fetchWithHandling("/api/appointments", {
 				method: "POST",
 				headers: auth.scheduleMutationHeaders({
 					"Content-Type": "application/json",

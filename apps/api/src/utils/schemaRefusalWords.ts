@@ -119,7 +119,7 @@ export type SchemaIssueLike = {
  * означают для человека одно и то же — «поле пустое», и шесть отдельных фраз об
  * этом читать невозможно.
  */
-export type SchemaIssueKind =
+type SchemaIssueKind =
 	| "empty"
 	| "wrong_type"
 	| "not_in_list"

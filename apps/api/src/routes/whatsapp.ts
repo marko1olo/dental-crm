@@ -116,7 +116,7 @@ function isValidWhatsappSignature(
 	signatureHeader: string | null,
 	appSecret: string,
 ): boolean {
-	if (!signatureHeader || !signatureHeader.startsWith("sha256=")) return false;
+	if (!signatureHeader?.startsWith("sha256=")) return false;
 	const provided = signatureHeader.slice("sha256=".length).trim();
 	if (!/^[0-9a-f]+$/i.test(provided)) return false;
 
@@ -299,7 +299,7 @@ export async function registerWhatsappRoutes(
 			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
 			.limit(1);
 
-		if (!config || !config.phoneNumberId || !config.tokenSecretRef) {
+		if (!config?.phoneNumberId || !config.tokenSecretRef) {
 			return {
 				channel: "whatsapp",
 				connected: false,
@@ -580,48 +580,52 @@ export async function registerWhatsappRoutes(
 						? (value.messages as unknown[])
 						: [];
 
-					for (const msg of messages) {
-						if (!msg || typeof msg !== "object" || Array.isArray(msg)) {
-							continue;
-						}
-						const m = msg as Record<string, unknown>;
-						const fromId = typeof m.from === "string" ? m.from : "unknown";
-						const textRaw = m.text;
-						const textObj =
-							textRaw && typeof textRaw === "object" && !Array.isArray(textRaw)
-								? (textRaw as Record<string, unknown>)
-								: undefined;
-						const textBody =
-							typeof textObj?.body === "string" ? textObj.body : null;
-
-						const rawTs =
-							typeof m.timestamp === "number"
-								? m.timestamp
-								: typeof m.timestamp === "string"
-									? Number.parseInt(m.timestamp, 10)
-									: Number.NaN;
-						if (!Number.isNaN(rawTs) && rawTs > 0) {
-							const msgTsSec = rawTs > 1e11 ? Math.floor(rawTs / 1000) : rawTs;
-							const nowSec = Math.floor(Date.now() / 1000);
-							if (Math.abs(nowSec - msgTsSec) > 300) {
-								request.log.warn(
-									{ msgTsSec, nowSec },
-									"WhatsApp webhook message timestamp drift > 300s, skipping ingestion",
-								);
+					const newEvents: any[] = [];
+					await withTenantCtx(inboundOrganizationId, async (tx) => {
+						for (const msg of messages) {
+							if (!msg || typeof msg !== "object" || Array.isArray(msg)) {
 								continue;
 							}
-						}
+							const m = msg as Record<string, unknown>;
+							const fromId = typeof m.from === "string" ? m.from : "unknown";
+							const textRaw = m.text;
+							const textObj =
+								textRaw &&
+								typeof textRaw === "object" &&
+								!Array.isArray(textRaw)
+									? (textRaw as Record<string, unknown>)
+									: undefined;
+							const textBody =
+								typeof textObj?.body === "string" ? textObj.body : null;
 
-						const msgId =
-							typeof m.id === "string" && m.id.trim().length > 0
-								? m.id.trim()
-								: null;
+							const rawTs =
+								typeof m.timestamp === "number"
+									? m.timestamp
+									: typeof m.timestamp === "string"
+										? Number.parseInt(m.timestamp, 10)
+										: Number.NaN;
+							if (!Number.isNaN(rawTs) && rawTs > 0) {
+								const msgTsSec =
+									rawTs > 1e11 ? Math.floor(rawTs / 1000) : rawTs;
+								const nowSec = Math.floor(Date.now() / 1000);
+								if (Math.abs(nowSec - msgTsSec) > 300) {
+									request.log.warn(
+										{ msgTsSec, nowSec },
+										"WhatsApp webhook message timestamp drift > 300s, skipping ingestion",
+									);
+									continue;
+								}
+							}
 
-						// Клиника уже известна из настроек бота, найденных выше, —
-						// вставка идёт под её контекстом. Без него `INSERT` не
-						// «возвращал ноль строк», а падал с 42501: в WITH CHECK
-						// политики messenger_inbound_events обхода нет.
-						await withTenantCtx(inboundOrganizationId, async (tx) => {
+							const msgId =
+								typeof m.id === "string" && m.id.trim().length > 0
+									? m.id.trim()
+									: null;
+
+							// Клиника уже известна из настроек бота, найденных выше, —
+							// вставка идёт под её контекстом. Без него `INSERT` не
+							// «возвращал ноль строк», а падал с 42501: в WITH CHECK
+							// политики messenger_inbound_events обхода нет.
 							if (msgId) {
 								const existing = await tx
 									.select({ id: messengerInboundEvents.id })
@@ -641,21 +645,25 @@ export async function registerWhatsappRoutes(
 										{ msgId, inboundOrganizationId },
 										"WhatsApp message already ingested (replay skipped)",
 									);
-									return;
+									continue;
 								}
 							}
 
-							await tx.insert(messengerInboundEvents).values({
+							newEvents.push({
 								organizationId: inboundOrganizationId,
-								channel: "whatsapp",
+								channel: "whatsapp" as const,
 								externalId: msgId,
 								externalChatId: fromId,
 								messageText: textBody,
-								eventKind: "message",
+								eventKind: "message" as const,
 								rawPayload: m as Record<string, unknown>,
 							});
-						});
-					}
+						}
+
+						if (newEvents.length > 0) {
+							await tx.insert(messengerInboundEvents).values(newEvents);
+						}
+					});
 				}
 			}
 
@@ -719,7 +727,7 @@ export async function registerWhatsappRoutes(
 			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
 			.limit(1);
 
-		if (!config || !config.isActive) {
+		if (!config?.isActive) {
 			reply.code(400);
 			return {
 				error: "WhatsappInactive",

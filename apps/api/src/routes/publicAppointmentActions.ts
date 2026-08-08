@@ -425,5 +425,3 @@ export async function registerPublicAppointmentActionRoutes(
 	 */
 	app.get("/api/p/:code", async (request, reply) => handle(request, reply));
 }
-
-export default registerPublicAppointmentActionRoutes;

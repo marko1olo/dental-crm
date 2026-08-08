@@ -1,9 +1,7 @@
 import { z } from "zod";
 
-// Только ради moneyRubSchema и только через z.lazy — почему именно так,
-// объяснено у migrationMoneyTotalRubSchema ниже. На верхнем уровне этот
-// импорт использовать НЕЛЬЗЯ: связка index.ts ↔ migration.ts циклическая.
-import { moneyRubSchema } from "./index.js";
+// Импорт теперь идет напрямую из money.ts, чтобы не было циклической зависимости
+import { moneyRubSchema } from "./money.js";
 
 /**
  * Контракты движка переноса данных из чужих систем.

@@ -15,10 +15,7 @@ export function escapeXml(value: string): string {
 		.replace(/'/g, "&\u0061pos;");
 }
 
-export function formatDate(
-	d: Date,
-	format: "yyyyMMdd" | "yyyyMMddHHmmss",
-): string {
+function formatDate(d: Date, format: "yyyyMMdd" | "yyyyMMddHHmmss"): string {
 	const pad = (n: number) => n.toString().padStart(2, "0");
 	const yyyy = d.getFullYear().toString();
 	const MM = pad(d.getMonth() + 1);
@@ -122,7 +119,7 @@ export function buildCdaContext(params: EgiszCdaParams): CdaContext {
  */
 
 /** Build a CDA R2 <addr> node from a real free-text address. */
-export function addrXml(address?: string | null): string {
+function addrXml(address?: string | null): string {
 	const trimmed = address ? String(address).trim() : "";
 	return trimmed
 		? `<addr><streetAddressLine>${escapeXml(trimmed)}</streetAddressLine></addr>`
@@ -134,9 +131,7 @@ export function addrXml(address?: string | null): string {
  * Phone strings become `tel:…`, email strings become `mailto:…`.
  * If none of the inputs resolve to a real value, emit a single nullFlavor.
  */
-export function telecomXml(
-	...values: Array<string | null | undefined>
-): string {
+function telecomXml(...values: Array<string | null | undefined>): string {
 	const parts: string[] = [];
 	for (const raw of values) {
 		const v = raw ? String(raw).trim() : "";

@@ -1,0 +1,31 @@
+{
+	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"files": {
+		"includes": [
+			"**",
+			"!**/dist",
+			"!**/node_modules",
+			"!**/playwright-report",
+			"!**/test-results",
+			"!**/scratch",
+			"!**/biome-lint-web.json",
+			"!**/apps/api/dente-db",
+			"!**/.data"
+		]
+	},
+	"css": {
+		"parser": {
+			"cssModules": true,
+			"tailwindDirectives": true
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"noExplicitAny": "warn"
+			}
+		}
+	}
+}

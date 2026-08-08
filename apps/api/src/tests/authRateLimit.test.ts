@@ -2,7 +2,7 @@ import assert from "node:assert";
 import test from "node:test";
 import { createDenteApiApp } from "../server.js";
 
-test("auth routes rate limiting - clinic login", async (t) => {
+test("auth routes rate limiting - clinic login", async (_t) => {
 	const app = await createDenteApiApp({ startTelegramWorker: false });
 
 	// Test successful requests under limit (5 requests allowed per minute)

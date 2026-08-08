@@ -8,7 +8,6 @@ import {
 	providerHttpError,
 	recordProviderKeyFailure,
 	recordProviderKeySuccess,
-	sanitizeProviderErrorMessage,
 	selectProviderKey,
 	shouldTryNextProviderKey,
 } from "../speech/keyPool.js";
@@ -230,11 +229,11 @@ async function callOpenAiCompatiblePlanPersonalize(input: {
 - Диагноз: ${input.payload.diagnosisSummary}
 - Область лечения (зубы): ${input.payload.teethOrArea}
 - Этапы лечения:
-${input.payload.plannedStages.map((s) => `  * ${s.stageName}: ${s.plannedServices} (${s.plannedTiming}), ориентировочная стоимость: ${s.estimatedAmountRub ? s.estimatedAmountRub + " руб." : "не указана"} [Заметки: ${s.clinicalNotes ?? "нет"}]`).join("\n")}
+${input.payload.plannedStages.map((s) => `  * ${s.stageName}: ${s.plannedServices} (${s.plannedTiming}), ориентировочная стоимость: ${s.estimatedAmountRub ? `${s.estimatedAmountRub} руб.` : "не указана"} [Заметки: ${s.clinicalNotes ?? "нет"}]`).join("\n")}
 - Альтернативы: ${input.payload.alternatives.join("; ")}
 - Риски: ${input.payload.risksAndLimitations.join("; ")}
 - Прогноз: ${input.payload.prognosisAndLimits}
-- Ориентировочная общая стоимость: ${input.payload.estimatedTotalRub ? input.payload.estimatedTotalRub + " руб." : "не указана"}`,
+- Ориентировочная общая стоимость: ${input.payload.estimatedTotalRub ? `${input.payload.estimatedTotalRub} руб.` : "не указана"}`,
 			},
 		],
 	};

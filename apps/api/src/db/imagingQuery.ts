@@ -223,18 +223,18 @@ export async function updateImagingStudyAiSummaryInDb(
 	return mapImagingStudy(record);
 }
 
-export async function getDefaultOrganizationId(): Promise<string | null> {
+async function _getDefaultOrganizationId(): Promise<string | null> {
 	const [org] = await db.select().from(schema.organizations).limit(1);
 	return org?.id || null;
 }
 
+import { randomUUID } from "node:crypto";
 import type {
 	DicomWorkbenchBundle,
 	ImagingViewerSession,
 	SaveDicomWorkbenchBundleRequest,
 	SaveImagingViewerSessionRequest,
 } from "@dental/shared";
-import { randomUUID } from "crypto";
 import { desc } from "drizzle-orm";
 import { dicomWorkbenchBundles, imagingViewerSessions } from "./schema.js";
 

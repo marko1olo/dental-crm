@@ -36,7 +36,7 @@ import { db } from "../../db/client.js";
 import { appointmentActionCodes } from "../../db/communicationsSchema.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 
-export type AppointmentAction = "confirm" | "cancel";
+type AppointmentAction = "confirm" | "cancel";
 
 /**
  * Алфавит без похожих знаков: ни 0/O, ни 1/l/I. Ссылку из SMS иногда

@@ -255,11 +255,11 @@ describe("ensureSshTunnel", () => {
 		// Verify that the error was caught and logged
 		assert.strictEqual(consoleErrorMock.mock.calls.length, 1);
 		assert.strictEqual(
-			consoleErrorMock.mock.calls[0]!.arguments[0],
+			consoleErrorMock.mock.calls[0]?.arguments[0],
 			"[SSH Tunnel] Failed to launch SSH tunnel:",
 		);
 		assert.strictEqual(
-			consoleErrorMock.mock.calls[0]!.arguments[1].message,
+			consoleErrorMock.mock.calls[0]?.arguments[1].message,
 			"Simulated spawn error",
 		);
 	});

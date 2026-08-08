@@ -10,20 +10,29 @@ export class IdentityResolutionEngine {
 			new Array(b.length + 1).fill(0),
 		);
 
-		for (let i = 0; i <= a.length; i++) matrix[i]![0] = i;
-		for (let j = 0; j <= b.length; j++) matrix[0]![j] = j;
+		for (let i = 0; i <= a.length; i++) {
+			const row = matrix[i];
+			if (row) row[0] = i;
+		}
+		for (let j = 0; j <= b.length; j++) {
+			const row = matrix[0];
+			if (row) row[j] = j;
+		}
 
 		for (let i = 1; i <= a.length; i++) {
+			const row = matrix[i];
+			const prevRow = matrix[i - 1];
+			if (!row || !prevRow) continue;
 			for (let j = 1; j <= b.length; j++) {
 				const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-				matrix[i]![j] = Math.min(
-					matrix[i - 1]![j]! + 1, // deletion
-					matrix[i]![j - 1]! + 1, // insertion
-					matrix[i - 1]![j - 1]! + cost, // substitution
+				row[j] = Math.min(
+					(prevRow[j] ?? 0) + 1, // deletion
+					(row[j - 1] ?? 0) + 1, // insertion
+					(prevRow[j - 1] ?? 0) + cost, // substitution
 				);
 			}
 		}
-		return matrix[a.length]![b.length]!;
+		return matrix[a.length]?.[b.length] ?? 0;
 	}
 
 	/**
@@ -34,12 +43,12 @@ export class IdentityResolutionEngine {
 		if (!phone) return null;
 		let cleaned = phone.replace(/\D/g, "");
 		if (cleaned.length === 11 && cleaned.startsWith("8")) {
-			cleaned = "7" + cleaned.substring(1);
+			cleaned = `7${cleaned.substring(1)}`;
 		}
 		if (cleaned.length === 10) {
-			cleaned = "7" + cleaned;
+			cleaned = `7${cleaned}`;
 		}
-		return "+" + cleaned;
+		return `+${cleaned}`;
 	}
 
 	/**
@@ -71,11 +80,11 @@ export class IdentityResolutionEngine {
 		// 1. Phone Match (E.164)
 		const phoneInc = IdentityResolutionEngine.normalizePhone(incoming.phone);
 		const phoneEx = IdentityResolutionEngine.normalizePhone(existing.phone);
-		let phoneMatch = false;
+		let _phoneMatch = false;
 
 		if (phoneInc && phoneEx && phoneInc === phoneEx) {
 			score += 0.4;
-			phoneMatch = true;
+			_phoneMatch = true;
 		} else if (phoneInc && phoneEx && phoneInc !== phoneEx) {
 			// Different phones mean lower confidence, unless other data perfectly matches
 			score -= 0.1;

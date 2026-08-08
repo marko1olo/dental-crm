@@ -1,6 +1,5 @@
 import {
 	fetchWithProviderTimeout,
-	getProviderKeyPoolSummary,
 	keyRetryLimit,
 	recordProviderKeyFailure,
 	recordProviderKeySuccess,

@@ -182,8 +182,7 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 			.limit(1);
 
 		if (
-			user &&
-			user.currentSessionId &&
+			user?.currentSessionId &&
 			user.currentSessionId !== identity.sessionId
 		) {
 			reply.code(401).send({
@@ -201,7 +200,7 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 /**
  * Требует авторизованного сотрудника и возвращает его userId.
  */
-export async function requireResolvedStaffUserId(
+async function _requireResolvedStaffUserId(
 	request: FastifyRequest,
 	reply: FastifyReply,
 	_protectedArea?: string,
@@ -231,8 +230,7 @@ export async function requireResolvedStaffUserId(
 			.limit(1);
 
 		if (
-			user &&
-			user.currentSessionId &&
+			user?.currentSessionId &&
 			user.currentSessionId !== identity.sessionId
 		) {
 			reply.code(401).send({

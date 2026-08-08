@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type {
 	ClinicalRule,
 	ClinicalRuleEvaluation,
@@ -10,12 +9,10 @@ import type {
 import { and, eq } from "drizzle-orm";
 import {
 	createClinicalRule as createClinicalRuleInMemory,
-	evaluateClinicalRules as evaluateClinicalRulesInMemory,
 	clinicalRules as inMemoryClinicalRules,
 	updateClinicalRule as updateClinicalRuleInMemory,
 } from "../sampleData.js";
 import { db } from "./client.js";
-import { getDefaultOrganizationId } from "./pricelistQuery.js";
 import * as schema from "./schema.js";
 
 function useInMemory() {
@@ -70,7 +67,7 @@ export async function getClinicalRules(
 	return records.map(mapClinicalRule);
 }
 
-export async function getClinicalRuleById(
+async function getClinicalRuleById(
 	organizationId: string,
 	ruleId: string,
 ): Promise<ClinicalRule | null> {

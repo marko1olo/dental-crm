@@ -162,7 +162,7 @@
 		"smoke": "npm run smoke:documents-lifecycle --workspace=@dental/web"
 	},
 	"devDependencies": {
-		"@playwright/test": "^1.51.0",
+		"@playwright/test": "^1.62.1",
 		"@types/node": "^26.0.0",
 		"concurrently": "^9.1.2",
 		"playwright": "^1.61.1",

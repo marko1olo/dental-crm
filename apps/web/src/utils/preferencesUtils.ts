@@ -127,8 +127,14 @@ export const defaultUiPreferences: UiPreferences = {
 	imagingImportSourceKind: "folder_watch",
 	smartImportMode: "auto",
 	imagingKindFilter: "all",
-	dicomWebEndpointUrl: "http://127.0.0.1:8042/dicom-web",
-	ohifBaseUrl: "http://127.0.0.1:3000",
+	dicomWebEndpointUrl:
+		typeof window !== "undefined"
+			? `http://${window.location.hostname}:8042/dicom-web`
+			: "http://127.0.0.1:8042/dicom-web",
+	ohifBaseUrl:
+		typeof window !== "undefined"
+			? `http://${window.location.hostname}:3000`
+			: "http://127.0.0.1:3000",
 	telegramBotConfigId: "",
 	telegramLinkSubjectType: "patient",
 	telegramLinkStaffId: null,

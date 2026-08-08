@@ -20,7 +20,7 @@ import {
  * Здесь адрес ячейки читается всегда, и пустые позиции сохраняются.
  */
 
-export interface SpreadsheetSheet {
+interface SpreadsheetSheet {
 	name: string;
 	/** Строки, выровненные по колонкам: длина каждой равна числу колонок листа. */
 	rows: string[][];

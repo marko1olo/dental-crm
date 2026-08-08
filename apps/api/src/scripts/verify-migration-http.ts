@@ -23,7 +23,7 @@ import {
 	organizations,
 	patients,
 } from "../db/schema.js";
-import { buildDbfFile, encodeSingleByte } from "../migration/tests/fixtures.js";
+import { buildDbfFile } from "../migration/tests/fixtures.js";
 import { drainMigrationQueue } from "../migration/worker.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import {
@@ -123,7 +123,8 @@ const [org] = await db
 	.insert(organizations)
 	.values({ name: `E2E-http-${Date.now()}` })
 	.returning();
-const ORG = org!.id;
+if (!org) throw new Error("Failed to create test organization");
+const ORG = org.id;
 
 const app = await createDenteApiApp({
 	startTelegramWorker: false,
@@ -425,7 +426,7 @@ try {
 		.select({ n: sql<string>`count(*)` })
 		.from(patients)
 		.where(eq(patients.organizationId, ORG));
-	same("создано 10 000 карточек", Number(patientCount!.n), ROWS);
+	same("создано 10 000 карточек", Number(patientCount?.n), ROWS);
 
 	const [sampleRow] = await db
 		.select({
@@ -544,7 +545,7 @@ try {
 		.where(eq(patients.organizationId, ORG));
 	same(
 		"повторный прогон не создал новых карточек",
-		Number(afterSecond!.n),
+		Number(afterSecond?.n),
 		ROWS,
 	);
 

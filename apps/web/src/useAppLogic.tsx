@@ -1579,6 +1579,12 @@ export function useAppLogic(): any {
 			scheduleDefaultAssistantUserId,
 			scheduleDefaultChairId,
 			telegramLinkStaffId,
+			setScheduleDoctorFilterId,
+			scheduleDoctorFilterId,
+			setSelectedProtocolId,
+			selectedProtocolId,
+			scheduleAssistantFilterId,
+			setScheduleAssistantFilterId,
 		],
 	);
 
@@ -1644,7 +1650,15 @@ export function useAppLogic(): any {
 				return false;
 			}
 		},
-		[clinicProfileDraft, clinicProfileEndpoint, auth],
+		[
+			clinicProfileDraft,
+			auth,
+			setClinicProfileDraft,
+			setError,
+			setClinicProfileSaveState,
+			setDashboard,
+			setClinicProfileDirty,
+		],
 	);
 
 	async function saveClinicProfileIfDirty(): Promise<boolean> {
@@ -2112,7 +2126,7 @@ export function useAppLogic(): any {
 			}
 			// biome-ignore lint/correctness/useExhaustiveDependencies: Zustand setters are stable; auth is stable object
 		},
-		[auth],
+		[auth, setError, setPersistenceIntegrity, setPersistenceHealth],
 	);
 
 	async function loadPersistenceIntegrity(options: { silent?: boolean } = {}) {
@@ -2226,7 +2240,7 @@ export function useAppLogic(): any {
 				}
 			}
 		},
-		[],
+		[setError, setBrowserContinuity],
 	);
 
 	async function _loadLocalBridgeReadiness(options: { silent?: boolean } = {}) {
@@ -2299,7 +2313,7 @@ export function useAppLogic(): any {
 				}
 			}
 		},
-		[auth],
+		[auth, setLocalBridgeUsePlans, setLocalBridgeReadiness, setError],
 	);
 
 	async function requestBrowserStoragePersistence() {
@@ -2389,6 +2403,7 @@ export function useAppLogic(): any {
 		setTelegramOutboxTemplateFilter(preferences.telegramOutboxTemplateFilter);
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: applyUiPreferences/queueUiPreferencesServerSync are plain functions recreated each render; listing them causes infinite re-run
 	useEffect(() => {
 		let cancelled = false;
 		const preferencesAccessSecret = settingsAdminSecretSession.trim();
@@ -2448,8 +2463,6 @@ export function useAppLogic(): any {
 		settingsAdminSecretSession,
 		setUiPreferencesHydrated,
 		setUiPreferencesSyncError,
-		// biome-ignore lint/correctness/useExhaustiveDependencies: applyUiPreferences/queueUiPreferencesServerSync are plain functions recreated each render; listing them causes infinite re-run
-		applyUiPreferences,
 	]);
 
 	/*
@@ -2548,6 +2561,7 @@ export function useAppLogic(): any {
 		setOnboardingDismissed,
 	]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: currentUiPreferencesInput/queueUiPreferencesServerSync are plain closures over component state; they are intentionally excluded to prevent infinite re-render loops
 	useEffect(() => {
 		if (!uiPreferencesHydrated) return undefined;
 		const savedPreferences = saveUiPreferences(currentUiPreferencesInput());
@@ -2559,12 +2573,9 @@ export function useAppLogic(): any {
 		}
 		queueUiPreferencesServerSync(savedPreferences, { delayMs: 600 });
 		return undefined;
-	}, [
-		uiPreferencesHydrated,
-		setUiPreferencesSyncError,
-		// biome-ignore lint/correctness/useExhaustiveDependencies: currentUiPreferencesInput/queueUiPreferencesServerSync are plain closures over component state; they are intentionally excluded to prevent infinite re-render loops
-	]);
+	}, [uiPreferencesHydrated, setUiPreferencesSyncError]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: clearUiPreferencesRetryTimer is a plain function (uses only refs); including it causes infinite re-render
 	useEffect(() => {
 		if (typeof window === "undefined") return undefined;
 		const retryPendingUiPreferences = () => {
@@ -2578,7 +2589,6 @@ export function useAppLogic(): any {
 			window.removeEventListener("online", retryPendingUiPreferences);
 			clearUiPreferencesRetryTimer();
 		};
-		// biome-ignore lint/correctness/useExhaustiveDependencies: clearUiPreferencesRetryTimer is a plain function (uses only refs); including it causes infinite re-render
 	}, []);
 
 	const imagingPreviewWorkset = useMemo(() => {
@@ -2762,10 +2772,10 @@ export function useAppLogic(): any {
 		});
 	}, [dashboard, setAppointmentScheduleDrafts]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
 	useEffect(() => {
 		reconcileDashboardScopedUiSelections();
-		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
-	}, [reconcileDashboardScopedUiSelections]);
+	}, []);
 
 	const newAppointmentPreferenceDefaultsRef = useRef(
 		newAppointmentPreferenceDefaults,
@@ -2907,6 +2917,7 @@ export function useAppLogic(): any {
 		saveStaffSchedule,
 	]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
 	useEffect(() => {
 		if (
 			!dashboard ||
@@ -2925,8 +2936,6 @@ export function useAppLogic(): any {
 		clinicProfileDirty,
 		clinicProfileSaveState,
 		dashboard,
-		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
-		saveClinicProfileFromDraft,
 	]);
 
 	useEffect(() => {
@@ -2971,7 +2980,12 @@ export function useAppLogic(): any {
 			cancelled = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeOrganizationId, setDicomWorkbenchLocalSavedAt]);
+	}, [
+		activeOrganizationId,
+		setDicomWorkbenchLocalSavedAt,
+		loadDicomWorkbenchBundles,
+		applyDicomWorkbenchManifest,
+	]);
 
 	useEffect(() => {
 		const organizationId = activeOrganizationId?.trim() ?? "";
@@ -2994,22 +3008,14 @@ export function useAppLogic(): any {
 		setBrowserPickedImagingFolder,
 	]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
 	useEffect(() => {
 		if (currentView === "settings" && settingsTab === "audit") {
 			void loadPersistenceHealth({ silent: true });
 			void refreshBrowserContinuity({ silent: true });
 			void loadLocalBridgeUsePlans({ silent: true });
 		}
-	}, [
-		currentView,
-		settingsTab,
-		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
-		refreshBrowserContinuity,
-		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
-		loadPersistenceHealth,
-		// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
-		loadLocalBridgeUsePlans,
-	]);
+	}, [currentView, settingsTab]);
 
 	useEffect(() => {
 		if (currentView === "settings") {
@@ -3225,7 +3231,6 @@ export function useAppLogic(): any {
 		setLastServerDraftSavedAt,
 		setSelectedSpecialty,
 		setLocalDraftWasRestored,
-		visitDraftUserEditedRef.current,
 		visitDraftSignature,
 		setLastLocalSavedAt, // Отметки зубов и ИИ-диагнозы относятся к КОНКРЕТНОМУ приёму. Без сброса
 		// они переносились на следующего пациента (см. resetVisitToothState).
@@ -3502,7 +3507,7 @@ export function useAppLogic(): any {
 		}
 		setIsClinicalRuleSaving(true);
 		try {
-			const response = await fetch("/api/settings/clinical-rules", {
+			const response = await fetch("/api/clinical/rules", {
 				method: "POST",
 				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
@@ -3514,11 +3519,20 @@ export function useAppLogic(): any {
 					ownerRole: newRuleOwnerRole || undefined,
 					specialty: newRuleSpecialty || undefined,
 					category: newRuleCategory || undefined,
-					triggerServiceId: newRuleTriggerServiceId || undefined,
-					requiredServiceId: newRuleRequiredServiceId || undefined,
-					completedServiceId: newRuleCompletedServiceId || undefined,
-					blockedServiceId: newRuleBlockedServiceId || undefined,
+					triggerServiceIds: newRuleTriggerServiceId
+						? [newRuleTriggerServiceId]
+						: [],
+					requiredServiceIds: newRuleRequiredServiceId
+						? [newRuleRequiredServiceId]
+						: [],
+					requiresCompletedServiceIds: newRuleCompletedServiceId
+						? [newRuleCompletedServiceId]
+						: [],
+					blockedServiceIds: newRuleBlockedServiceId
+						? [newRuleBlockedServiceId]
+						: [],
 					warningText: newRuleWarningText.trim() || undefined,
+					patientText: newRulePatientText?.trim() || "",
 				}),
 			});
 			if (!response.ok) {
@@ -3755,9 +3769,9 @@ export function useAppLogic(): any {
 		onboardingDocumentReadinessIssues.length === 0;
 	// Флаг «готово к созданию» дополнительно учитывает выполняющийся запрос,
 	// поэтому кнопки гаснут сразу после первого нажатия, а не после ответа сервера.
-	const newStaffReadyToCreate =
+	const _newStaffReadyToCreate =
 		newStaffName.trim().length > 0 && !isStaffCreating;
-	const newChairReadyToCreate =
+	const _newChairReadyToCreate =
 		newChairName.trim().length > 0 && !isChairCreating;
 	const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance";
 	const onboardingChairCreateGuidanceId = "onboarding-chair-create-guidance";

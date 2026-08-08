@@ -23,9 +23,9 @@
  * API, ни в текст ошибки.
  */
 
-export type SmsProviderId = "smsru" | "smsc";
+type SmsProviderId = "smsru" | "smsc";
 
-export type SmsErrorClass =
+type SmsErrorClass =
 	| "not_configured"
 	| "rate_limited"
 	| "auth"
@@ -73,7 +73,7 @@ export type SmsCredentials = {
 	readonly baseUrl: string;
 };
 
-export const DEFAULT_SMS_BASE_URL: Readonly<Record<SmsProviderId, string>> = {
+const DEFAULT_SMS_BASE_URL: Readonly<Record<SmsProviderId, string>> = {
 	smsru: "https://sms.ru",
 	smsc: "https://smsc.ru",
 };

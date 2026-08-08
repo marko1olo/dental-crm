@@ -611,3 +611,47 @@ export async function updatePatientAdministrativeProfileInDb(
 		throw error;
 	}
 }
+
+export async function createPatientSafeInDb(
+	organizationId: string,
+	input: CreatePatientInput,
+	duplicateCheckFn: (patients: any[], input: CreatePatientInput) => any,
+): Promise<
+	{ type: "duplicate"; duplicate: any } | { type: "success"; patient: Patient }
+> {
+	if (useInMemory()) {
+		const dbPatients = await getPatientsFromDb(organizationId);
+		const duplicate = duplicateCheckFn(dbPatients, input);
+		if (duplicate) return { type: "duplicate", duplicate };
+		return {
+			type: "success",
+			patient: await createPatientInDb(organizationId, input),
+		};
+	}
+
+	return await db.transaction(async (tx) => {
+		const rawPatients = await tx
+			.select()
+			.from(schema.patients)
+			.where(eq(schema.patients.organizationId, organizationId));
+
+		const duplicate = duplicateCheckFn(rawPatients, input);
+		if (duplicate) return { type: "duplicate", duplicate };
+
+		const [created] = await tx
+			.insert(schema.patients)
+			.values({
+				organizationId,
+				fullName: input.fullName,
+				birthDate: input.birthDate ?? null,
+				phone: input.phone ?? null,
+				email: input.email ?? null,
+				notes: input.notes ?? null,
+			})
+			.returning();
+
+		if (!created) throw new Error("Failed to create patient in DB");
+
+		return { type: "success", patient: rowToPatient(created, 0) };
+	});
+}

@@ -46,7 +46,8 @@ const [org] = await db
 	.insert(organizations)
 	.values({ name: `E2E-migration-${Date.now()}` })
 	.returning();
-const ORG = org!.id;
+if (!org) throw new Error("Failed to create test organization");
+const ORG = org.id;
 console.log(`\nОрганизация ${ORG}\n`);
 
 const base = {
@@ -106,7 +107,7 @@ try {
 		.select({ n: sql<string>`count(*)` })
 		.from(patients)
 		.where(eq(patients.organizationId, ORG));
-	same("пациентов в базе после сухого прогона", Number(afterDry[0]!.n), 0);
+	same("пациентов в базе после сухого прогона", Number(afterDry[0]?.n), 0);
 	same("статус сухого прогона", dry.run.status, "validated");
 	check(
 		"сверка сухого прогона сошлась",
@@ -249,7 +250,7 @@ try {
 	);
 	same(
 		"пациентов после второго прогона не выросло",
-		Number(afterSecond[0]!.n),
+		Number(afterSecond[0]?.n),
 		loaded.length,
 	);
 	same("второй прогон не создал новых карточек", again.run.loadedRows, 0);
@@ -397,7 +398,7 @@ try {
 		.select({ n: sql<string>`count(*)` })
 		.from(payments)
 		.where(eq(payments.organizationId, ORG));
-	same("платежей после отката", Number(afterRollback[0]!.n), 0);
+	same("платежей после отката", Number(afterRollback[0]?.n), 0);
 	const linksLeft = await db
 		.select({ n: sql<string>`count(*)` })
 		.from(migrationEntityLinks)
@@ -407,20 +408,20 @@ try {
 				eq(migrationEntityLinks.createdByRunId, payRun.run.runId),
 			),
 		);
-	same("ссылки удалённых сущностей убраны", Number(linksLeft[0]!.n), 0);
+	same("ссылки удалённых сущностей убраны", Number(linksLeft[0]?.n), 0);
 	const [rolledRun] = await db
 		.select({ status: migrationRuns.status })
 		.from(migrationRuns)
 		.where(eq(migrationRuns.id, payRun.run.runId));
-	same("статус прогона после отката", rolledRun!.status, "rolled_back");
+	same("статус прогона после отката", rolledRun?.status, "rolled_back");
 	const stagedAfterRb = await db
 		.select({ n: sql<string>`count(*)` })
 		.from(migrationStagingRecords)
 		.where(eq(migrationStagingRecords.runId, payRun.run.runId));
 	check(
 		"исходные строки сохранены после отката",
-		Number(stagedAfterRb[0]!.n) === 4,
-		`${stagedAfterRb[0]!.n} строк`,
+		Number(stagedAfterRb[0]?.n) === 4,
+		`${stagedAfterRb[0]?.n} строк`,
 	);
 
 	console.log("--- 10. Расписание: время приёма обязано сохраниться");
@@ -696,7 +697,7 @@ try {
 		.select({ encoding: migrationRuns.detectedEncoding })
 		.from(migrationRuns)
 		.where(eq(migrationRuns.id, dbfRun.run.runId));
-	same("кодировка взята из заголовка DBF", dbfRunRow!.encoding, "ibm866");
+	same("кодировка взята из заголовка DBF", dbfRunRow?.encoding, "ibm866");
 	const dbfPatients = await db
 		.select({ fullName: patients.fullName })
 		.from(patients)

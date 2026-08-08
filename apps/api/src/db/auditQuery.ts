@@ -1,5 +1,5 @@
+import { randomUUID } from "node:crypto";
 import type { AuditEvent } from "@dental/shared";
-import { randomUUID } from "crypto";
 import { db } from "./client.js";
 import { auditEvents } from "./schema.js";
 

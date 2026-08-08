@@ -345,11 +345,11 @@ describe("привязка Telegram переживает перезапуск с
 			1,
 			"после перезапуска активных связок нет — состояние не пережило перезапуск",
 		);
-		assert.equal(list.chatLinks[0]!.subjectId, PATIENT_SUBJECT);
-		assert.equal(list.chatLinks[0]!.status, "active");
+		assert.equal(list.chatLinks[0]?.subjectId, PATIENT_SUBJECT);
+		assert.equal(list.chatLinks[0]?.status, "active");
 		// Адрес чата — секрет периметра и в списке появляться не должен.
 		assert.equal(
-			list.chatLinks[0]!.chatTransportRef,
+			list.chatLinks[0]?.chatTransportRef,
 			undefined,
 			"в списке связок утёк адрес чата",
 		);
@@ -369,7 +369,7 @@ describe("привязка Telegram переживает перезапуск с
 
 	test("отзыв привязки доходит до базы, а не только до памяти", async () => {
 		const rowsBefore = await rawChatLinkRows(runtime.organizationId);
-		const linkId = rowsBefore[0]!.id;
+		const linkId = rowsBefore[0]?.id;
 
 		const revoked = await app.inject({
 			method: "POST",
@@ -385,7 +385,7 @@ describe("привязка Telegram переживает перезапуск с
 			"отзыв удалил строку вместо смены состояния",
 		);
 		assert.equal(
-			rowsAfter[0]!.status,
+			rowsAfter[0]?.status,
 			"revoked",
 			"в базе связка осталась активной после отзыва",
 		);
@@ -491,8 +491,8 @@ describe("привязка Telegram переживает перезапуск с
 		// Страницы не пересекаются и вместе покрывают обе связки: при неустойчивом
 		// порядке одна связка показалась бы дважды, а другая пропала.
 		const pagedIds = [
-			firstPageList.chatLinks[0]!.id,
-			secondPageList.chatLinks[0]!.id,
+			firstPageList.chatLinks[0]?.id,
+			secondPageList.chatLinks[0]?.id,
 		];
 		assert.equal(
 			new Set(pagedIds).size,
@@ -509,7 +509,7 @@ describe("привязка Telegram переживает перезапуск с
 
 	test("чужая клиника не видит связку и не может её отозвать", async () => {
 		const rows = await rawChatLinkRows(runtime.organizationId);
-		const linkId = rows[0]!.id;
+		const linkId = rows[0]?.id;
 
 		const foreignList = await app.inject({
 			method: "GET",
@@ -630,7 +630,7 @@ describe("привязка Telegram переживает перезапуск с
 				.where(eq(denteTelegramChatLinks.id, foreignLink.id)),
 		);
 		assert.equal(
-			untouched!.status,
+			untouched?.status,
 			"active",
 			"чужая связка изменена запросом другой клиники",
 		);

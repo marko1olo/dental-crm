@@ -208,5 +208,3 @@ export async function registerPatientDuplicateRoutes(app: FastifyInstance) {
 		};
 	});
 }
-
-export default registerPatientDuplicateRoutes;

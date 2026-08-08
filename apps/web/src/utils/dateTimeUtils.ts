@@ -1,7 +1,5 @@
 import { toDateTimeLocalValue } from "./dateUtils";
 
-
-
 /**
  * Календарный день в виде «ГГГГ-ММ-ДД»: в поясе клиники, если он известен, иначе
  * в местном поясе машины. День по UTC не возвращается никогда — см. разбор у
@@ -31,7 +29,6 @@ export function calendarDayInTimeZone(
 	return `${moment.getFullYear()}-${pad(moment.getMonth() + 1)}-${pad(moment.getDate())}`;
 }
 
-
 /**
  * Сдвиг календарного дня на целое число суток.
  *
@@ -53,7 +50,6 @@ export function shiftCalendarDay(day: string, days: number): string {
 		.toISOString()
 		.slice(0, 10);
 }
-
 
 /**
  * Сегодняшнее число для поля ввода типа `date`.
@@ -88,7 +84,6 @@ export function todayDateInputValue(timeZone?: string | null): string {
 	return calendarDayInTimeZone(new Date(), timeZone);
 }
 
-
 /** То же число, сдвинутое на `days` календарных суток: сроки оплаты и графики платежей. */
 export function dateInputValuePlusDays(
 	days: number,
@@ -97,7 +92,6 @@ export function dateInputValuePlusDays(
 	return shiftCalendarDay(calendarDayInTimeZone(new Date(), timeZone), days);
 }
 
-
 export function formatTime(value: string) {
 	return new Intl.DateTimeFormat("ru-RU", {
 		hour: "2-digit",
@@ -105,7 +99,6 @@ export function formatTime(value: string) {
 		timeZone: "Europe/Samara",
 	}).format(new Date(value));
 }
-
 
 /**
  * Дата вида «2026-05-24» человеческим видом: «24.05.2026».
@@ -120,14 +113,12 @@ export function isoDateLabel(value: unknown): string {
 	return `${day}.${month}.${year}`;
 }
 
-
 export function minutesLabel(value: number) {
 	if (value < 60) return `${value} мин`;
 	const hours = Math.floor(value / 60);
 	const minutes = value % 60;
 	return minutes ? `${hours} ч ${minutes} мин` : `${hours} ч`;
 }
-
 
 export function formatDateTime(value: string) {
 	return new Intl.DateTimeFormat("ru-RU", {
@@ -139,7 +130,6 @@ export function formatDateTime(value: string) {
 	}).format(new Date(value));
 }
 
-
 export function formatShortDate(value: string) {
 	return new Intl.DateTimeFormat("ru-RU", {
 		day: "2-digit",
@@ -149,16 +139,13 @@ export function formatShortDate(value: string) {
 	}).format(new Date(value));
 }
 
-
 export function validClockTime(value: string): boolean {
 	return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
-
 export function normalizeClockTime(value: string, fallback: string): string {
 	return validClockTime(value) ? value : fallback;
 }
-
 
 export function timeZoneOffsetMinutes(
 	timeZone: string | null | undefined,
@@ -188,7 +175,6 @@ export function timeZoneOffsetMinutes(
 	}
 }
 
-
 export function timeZoneOffsetSuffix(offsetMinutes: number): string {
 	const sign = offsetMinutes < 0 ? "-" : "+";
 	const absolute = Math.abs(offsetMinutes);
@@ -196,7 +182,6 @@ export function timeZoneOffsetSuffix(offsetMinutes: number): string {
 	const minutes = String(absolute % 60).padStart(2, "0");
 	return `${sign}${hours}:${minutes}`;
 }
-
 
 export function timeZoneDateParts(
 	value: string,
@@ -229,7 +214,6 @@ export function timeZoneDateParts(
 		return null;
 	}
 }
-
 
 export function fromDateTimeLocalValue(
 	value: string,
@@ -265,7 +249,6 @@ export function fromDateTimeLocalValue(
 	return Number.isNaN(parsed.getTime()) ? trimmed : parsed.toISOString();
 }
 
-
 export function addMinutesToClinicDateTimeLocal(
 	value: string,
 	minutes: number,
@@ -280,12 +263,10 @@ export function addMinutesToClinicDateTimeLocal(
 	);
 }
 
-
 export function weekdayFromDateInput(value: string): number {
 	const parsed = Date.parse(`${value}T12:00:00Z`);
 	return Number.isNaN(parsed) ? 1 : new Date(parsed).getUTCDay();
 }
-
 
 export function isValidDateParts(
 	year: number,
@@ -299,7 +280,6 @@ export function isValidDateParts(
 		parsed.getUTCDate() === day
 	);
 }
-
 
 export function toDateInputValue(value: string | null | undefined): string {
 	const trimmed = value?.trim() ?? "";
@@ -318,7 +298,6 @@ export function toDateInputValue(value: string | null | undefined): string {
 	return local.toISOString().slice(0, 10);
 }
 
-
 export function isDateInputValue(value: string): boolean {
 	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
 	return (
@@ -326,7 +305,6 @@ export function isDateInputValue(value: string): boolean {
 		isValidDateParts(Number(match[1]), Number(match[2]), Number(match[3]))
 	);
 }
-
 
 export function isDateTimeLocalInputValue(value: string): boolean {
 	const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value.trim());

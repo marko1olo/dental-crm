@@ -126,7 +126,7 @@ function toDenteTelegramChatLink(row: ChatLinkRow): DenteTelegramChatLink {
  * Вложенный вызов бесплатен: `withTenantCtx` переиспользует уже открытую
  * транзакцию и не берёт второго соединения из пула (db/rls.ts, REENTRANCY).
  */
-export async function listDenteTelegramChatLinks(
+async function _listDenteTelegramChatLinks(
 	scope: DenteTelegramChatLinkScope,
 	limit: number = 50,
 ): Promise<DenteTelegramChatLink[]> {
@@ -300,7 +300,7 @@ export async function upsertDenteTelegramChatLink(
 					eq(denteTelegramChatLinks.subjectType, input.subjectType),
 					eq(denteTelegramChatLinks.subjectId, input.subjectId),
 					eq(denteTelegramChatLinks.status, "active"),
-					sql`${denteTelegramChatLinks.id} <> ${saved!.id}`,
+					sql`${denteTelegramChatLinks.id} <> ${saved?.id}`,
 				),
 			);
 

@@ -209,8 +209,7 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 		assert.equal(result.saveReceipt.status, "conflict_accepted");
 		assert.equal(result.saveReceipt.clientMutationId, "storozh-konflikt");
 		assert.ok(
-			result.saveReceipt.warning &&
-				result.saveReceipt.warning.includes("ревизия 1"),
+			result.saveReceipt.warning?.includes("ревизия 1"),
 			"конфликт ревизий обязан быть назван в квитанции",
 		);
 	});

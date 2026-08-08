@@ -1,4 +1,4 @@
-export type ToothGeometryType = {
+type ToothGeometryType = {
 	root: string;
 	crown: string;
 	canals?: string;
@@ -184,7 +184,7 @@ export const getToothPath = (
 	}
 };
 
-export const getToothConfig = (toothId: number) => {
+const _getToothConfig = (toothId: number) => {
 	const num = toothId % 10;
 	if (num <= 2)
 		return { width: 36, height: 56, viewWidth: 100, viewHeight: 150 };

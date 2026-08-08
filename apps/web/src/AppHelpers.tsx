@@ -1,34 +1,3 @@
-
-import type {
-	BrowserDirectoryPickerWindow,
-	BrowserImagingScanOptions,
-	BrowserImagingScanPhase,
-	BrowserImagingScanProgress,
-	BrowserImagingScanRuntime,
-
-	BrowserMigrationFileKind,
-	BrowserMigrationFolderStats,
-	BrowserMigrationScanOptions,
-	BrowserMigrationScanPhase,
-	BrowserMigrationScanProgress,
-	BrowserMigrationScanRuntime,
-	BrowserMigrationScanStats,
-	BrowserMigrationSourceKind,
-	BrowserPickedImagingFolderPreview,
-	BrowserPickedImagingScanStats,
-	DentalDesktopRuntimeWindow,
-	LocalDicomOperationOptions,
-} from "./utils/browserScanUtils";
-import {
-	localImagingFolderFingerprint,
-	isBrowserMigrationScanAbortError,
-    isBrowserImagingScanAbortError,
-    collectDicomWorkstationClientFacts,
-} from "./utils/browserScanUtils";
-
-import { clinicProfileEndpoint, isDentalSpecialty, isStaffRole, normalizedStaffRole, normalizedDentalSpecialty, staffWorkingHoursFromSimpleDraft, staffScheduleDraftFromWorkingHours, defaultAppointmentStartLocal, staffWorkingHoursFromDraft, staffScheduleDraftSignature, defaultStaffScheduleDraft, emptyClinicProfileDraft, clinicProfileDraftFromProfile, nullableClinicDraftValue, patientAdministrativeProfileDraftFromPatient, buildPatientAdministrativeProfilePayload, patientAdministrativeProfileDraftSignature, patientAdministrativeProfileDraftIssue, buildClinicProfileUpdatePayload, clinicProfileDraftSignature, clinicLegalMissingFields, clinicLegalReadinessPercent, roleFocusOrder, StaffScheduleDraft, normalizeWorkingDaysDraft, defaultWorkingDays, ClinicProfileDraft, normalizeOptionalWorkingDaysDraft, PatientAdministrativeProfileDraft, nullablePatientDraftValue } from "./utils/clinicProfileUtils";
-
-import { calendarDayInTimeZone, shiftCalendarDay, todayDateInputValue, dateInputValuePlusDays, formatTime, isoDateLabel, minutesLabel, formatDateTime, formatShortDate, validClockTime, normalizeClockTime, timeZoneOffsetMinutes, timeZoneOffsetSuffix, timeZoneDateParts, fromDateTimeLocalValue, addMinutesToClinicDateTimeLocal, weekdayFromDateInput, isValidDateParts, toDateInputValue, isDateInputValue, isDateTimeLocalInputValue } from "./utils/dateTimeUtils";
 import {
 	type AcceptVisitDraftResponse,
 	type AiJobKind,
@@ -36,7 +5,6 @@ import {
 	type Appointment,
 	buildRuleBasedVisitDraftFromTranscript,
 	type ClinicalToothRow,
-	type ClinicProfile,
 	type CreateAppointmentInput,
 	type Dashboard,
 	type DentalSpecialty,
@@ -51,7 +19,6 @@ import {
 	type DicomSeriesPreviewGroup,
 	type DicomViewerToolStateBundleResponse,
 	type DicomViewerWorkbenchManifestResponse,
-	type DicomWorkstationClientFacts,
 	type DocumentIngestionResponse,
 	type DocumentIngestionTarget,
 	type DocumentIssueSignatureMode,
@@ -66,9 +33,7 @@ import {
 	type ImagingViewerWindowPreset,
 	type ImportSourceKind,
 	type InstallmentPaymentStatus,
-	type MigrationLocalSourceDiscoveryResponse,
 	type Patient,
-	type PatientAdministrativeProfile,
 	type PatientIntakePregnancyStatus,
 	type PaymentMethod,
 	type PhotoVideoConsentMaterial,
@@ -80,23 +45,19 @@ import {
 	type SpeechGatewayStatus,
 	type SpeechProviderConnector,
 	type SpeechTranscriptionResponse,
-	type StaffRole,
-	type StaffWorkingHours,
 	type TaxDeductionApplicationDeliveryChannel,
 	type TaxDeductionApplicationForm,
 	type TaxDeductionApplicationRelationship,
 	type TreatmentPlanAcceptanceVariant,
 	type UiLanguage,
 	type UpdateAppointmentInput,
-	type UpdateClinicProfileInput,
-	type UpdatePatientAdministrativeProfileInput,
 	type UpdatePatientInput,
 	type VisitNoteDraft,
 	type XrayCbctReferralPregnancyStatus,
 	type XrayCbctReferralPriority,
 	type XrayCbctReferralStudyType,
 } from "@dental/shared";
-import { type CSSProperties, lazy } from "react";
+import type { CSSProperties } from "react";
 import { showToast } from "./components/GlobalToast";
 import type { CtImplantLibraryItem } from "./ctPlanningTools";
 import {
@@ -119,6 +80,72 @@ import {
 	clampMprSliceIndex,
 } from "./mprControlMath";
 import { pricelistSourceKindLabels } from "./pricelistUiMeta";
+import {
+	collectDicomWorkstationClientFacts,
+	isBrowserImagingScanAbortError,
+	isBrowserMigrationScanAbortError,
+	localImagingFolderFingerprint,
+} from "./utils/browserScanUtils";
+import {
+	buildClinicProfileUpdatePayload,
+	buildPatientAdministrativeProfilePayload,
+	type ClinicProfileDraft,
+	clinicLegalMissingFields,
+	clinicLegalReadinessPercent,
+	clinicProfileDraftFromProfile,
+	clinicProfileDraftSignature,
+	clinicProfileEndpoint,
+	defaultAppointmentStartLocal,
+	defaultStaffScheduleDraft,
+	defaultWorkingDays,
+	emptyClinicProfileDraft,
+	isDentalSpecialty,
+	isStaffRole,
+	normalizedDentalSpecialty,
+	normalizedStaffRole,
+	normalizeOptionalWorkingDaysDraft,
+	normalizeWorkingDaysDraft,
+	nullableClinicDraftValue,
+	nullablePatientDraftValue,
+	type PatientAdministrativeProfileDraft,
+	patientAdministrativeProfileDraftFromPatient,
+	patientAdministrativeProfileDraftIssue,
+	patientAdministrativeProfileDraftSignature,
+	roleFocusOrder,
+	type StaffScheduleDraft,
+	staffScheduleDraftFromWorkingHours,
+	staffScheduleDraftSignature,
+	staffWorkingHoursFromDraft,
+	staffWorkingHoursFromSimpleDraft,
+} from "./utils/clinicProfileUtils";
+import {
+	addMinutesToClinicDateTimeLocal,
+	calendarDayInTimeZone,
+	dateInputValuePlusDays,
+	formatDateTime,
+	formatShortDate,
+	formatTime,
+	fromDateTimeLocalValue,
+	isDateInputValue,
+	isDateTimeLocalInputValue,
+	isoDateLabel,
+	isValidDateParts,
+	minutesLabel,
+	normalizeClockTime,
+	shiftCalendarDay,
+	timeZoneDateParts,
+	timeZoneOffsetMinutes,
+	timeZoneOffsetSuffix,
+	toDateInputValue,
+	todayDateInputValue,
+	validClockTime,
+	weekdayFromDateInput,
+} from "./utils/dateTimeUtils";
+import {
+	localConvenienceRetentionMs,
+	localSavedAtFresh,
+	organizationScopedLocalStorageKey,
+} from "./utils/localStorageHelpers";
 import type { AppView } from "./utils/routeUtils";
 import {
 	postVisitCareTopicOptions,
@@ -156,7 +183,6 @@ export {
 	viewFromHash,
 } from "./utils/routeUtils";
 
-import { toDateTimeLocalValue } from "./utils/dateUtils";
 import {
 	defaultUiPreferences,
 	type UiPreferences,
@@ -171,8 +197,6 @@ import {
 	paymentMethodLabels,
 	recognitionTargetLabels,
 	serviceCategoryLabels,
-	specialtyLabels,
-	staffRoleLabels,
 } from "./workspaceUiLabels";
 
 export function speechGatewayCanUpload(
@@ -313,7 +337,6 @@ export const documentIssueSignatureStorageKey =
 export const uiPreferencesServerPath = "/api/settings/preferences";
 export const onboardingStorageKey = "dental-crm:onboarding:v1";
 export const denteAdminSecretHeaderName = "x-dente-admin-secret";
-export const localConvenienceRetentionMs = 30 * 24 * 60 * 60 * 1000;
 export const sensitiveLocalDraftRetentionMs = 7 * 24 * 60 * 60 * 1000;
 export const speechAudioQueueRetentionMs = 48 * 60 * 60 * 1000;
 
@@ -437,32 +460,11 @@ export function normalizedDocumentIssueSignatureMode(
 		: "paper_signed";
 }
 
-export function organizationScopedLocalStorageKey(
-	baseKey: string,
-	organizationId: string | null | undefined,
-): string {
-	const normalizedOrganizationId = organizationId?.trim();
-	return normalizedOrganizationId
-		? `${baseKey}:${normalizedOrganizationId}`
-		: baseKey;
-}
-
 export function normalizedLocalOrganizationId(
 	organizationId: string | null | undefined,
 ): string | null {
 	const normalized = organizationId?.trim();
 	return normalized || null;
-}
-
-export function localSavedAtFresh(
-	savedAt: string | null | undefined,
-	retentionMs: number,
-	nowMs = Date.now(),
-): boolean {
-	if (!savedAt) return false;
-	const timestamp = Date.parse(savedAt);
-	if (!Number.isFinite(timestamp)) return false;
-	return timestamp <= nowMs + 5 * 60 * 1000 && nowMs - timestamp <= retentionMs;
 }
 
 export function documentIssueSignatureLocalKey(
@@ -6270,11 +6272,12 @@ export function compactDocumentText(
 		.join("\n");
 }
 
-export { calendarDayInTimeZone, shiftCalendarDay, todayDateInputValue, dateInputValuePlusDays, formatTime, isoDateLabel, minutesLabel, formatDateTime, formatShortDate, validClockTime, normalizeClockTime, timeZoneOffsetMinutes, timeZoneOffsetSuffix, timeZoneDateParts, fromDateTimeLocalValue, addMinutesToClinicDateTimeLocal, weekdayFromDateInput, isValidDateParts, toDateInputValue, isDateInputValue, isDateTimeLocalInputValue };
-
-export { clinicProfileEndpoint, isDentalSpecialty, isStaffRole, normalizedStaffRole, normalizedDentalSpecialty, staffWorkingHoursFromSimpleDraft, staffScheduleDraftFromWorkingHours, defaultAppointmentStartLocal, staffWorkingHoursFromDraft, staffScheduleDraftSignature, defaultStaffScheduleDraft, emptyClinicProfileDraft, clinicProfileDraftFromProfile, nullableClinicDraftValue, patientAdministrativeProfileDraftFromPatient, buildPatientAdministrativeProfilePayload, patientAdministrativeProfileDraftSignature, patientAdministrativeProfileDraftIssue, buildClinicProfileUpdatePayload, clinicProfileDraftSignature, clinicLegalMissingFields, clinicLegalReadinessPercent, roleFocusOrder, normalizeWorkingDaysDraft, defaultWorkingDays, normalizeOptionalWorkingDaysDraft, nullablePatientDraftValue };
-export type { StaffScheduleDraft, ClinicProfileDraft, PatientAdministrativeProfileDraft };
-
+export * from "./utils/browserScanUtils";
+export type {
+	ClinicProfileDraft,
+	PatientAdministrativeProfileDraft,
+	StaffScheduleDraft,
+};
 /*
  * РЕ-ЭКСПОРТ ДЛЯ РАБОЧЕГО СТОЛА DICOM. Без этих трёх строк приложение НЕ
  * ЗАГРУЖАЛОСЬ ВООБЩЕ — белый экран, подменённый экраном BootErrorBoundary
@@ -6301,9 +6304,58 @@ export type { StaffScheduleDraft, ClinicProfileDraft, PatientAdministrativeProfi
  * достижимости — приложение при этом не стартовало ни разу.
  */
 export {
+	addMinutesToClinicDateTimeLocal,
+	buildClinicProfileUpdatePayload,
+	buildPatientAdministrativeProfilePayload,
+	calendarDayInTimeZone,
+	clinicLegalMissingFields,
+	clinicLegalReadinessPercent,
+	clinicProfileDraftFromProfile,
+	clinicProfileDraftSignature,
+	clinicProfileEndpoint,
 	collectDicomWorkstationClientFacts,
+	dateInputValuePlusDays,
+	defaultAppointmentStartLocal,
+	defaultStaffScheduleDraft,
+	defaultWorkingDays,
+	emptyClinicProfileDraft,
+	formatDateTime,
+	formatShortDate,
+	formatTime,
+	fromDateTimeLocalValue,
 	isBrowserImagingScanAbortError,
+	isDateInputValue,
+	isDateTimeLocalInputValue,
+	isDentalSpecialty,
+	isoDateLabel,
+	isStaffRole,
+	isValidDateParts,
+	localConvenienceRetentionMs,
 	localImagingFolderFingerprint,
+	localSavedAtFresh,
+	minutesLabel,
+	normalizeClockTime,
+	normalizedDentalSpecialty,
+	normalizedStaffRole,
+	normalizeOptionalWorkingDaysDraft,
+	normalizeWorkingDaysDraft,
+	nullableClinicDraftValue,
+	nullablePatientDraftValue,
+	organizationScopedLocalStorageKey,
+	patientAdministrativeProfileDraftFromPatient,
+	patientAdministrativeProfileDraftIssue,
+	patientAdministrativeProfileDraftSignature,
+	roleFocusOrder,
+	shiftCalendarDay,
+	staffScheduleDraftFromWorkingHours,
+	staffScheduleDraftSignature,
+	staffWorkingHoursFromDraft,
+	staffWorkingHoursFromSimpleDraft,
+	timeZoneDateParts,
+	timeZoneOffsetMinutes,
+	timeZoneOffsetSuffix,
+	toDateInputValue,
+	todayDateInputValue,
+	validClockTime,
+	weekdayFromDateInput,
 };
-
-export * from "./utils/browserScanUtils";

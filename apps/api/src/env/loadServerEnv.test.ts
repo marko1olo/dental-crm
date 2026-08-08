@@ -77,7 +77,7 @@ describe("loadAdditionalServerEnv", () => {
 			"EXISTING_VAR=new_value\nTEST_VAR=new_test_value",
 		);
 
-		const loaded = loadAdditionalServerEnv();
+		const _loaded = loadAdditionalServerEnv();
 
 		assert.strictEqual(process.env.EXISTING_VAR, "existing_value"); // should remain
 		assert.strictEqual(process.env.TEST_VAR, "new_test_value"); // should be added

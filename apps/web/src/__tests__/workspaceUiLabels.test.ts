@@ -12,7 +12,15 @@ import {
 describe("workspaceUiLabels functions", () => {
 	describe("paymentTaxYearForUi", () => {
 		it("returns null if neither date is present", () => {
-			assert.strictEqual(paymentTaxYearForUi({} as any), null);
+			assert.strictEqual(
+				paymentTaxYearForUi(
+					{} as unknown as Pick<
+						Dashboard["payments"][number],
+						"fiscalReceiptIssuedAt" | "paidAt"
+					>,
+				),
+				null,
+			);
 		});
 
 		it("returns the year from fiscalReceiptIssuedAt if it starts with year", () => {
@@ -253,7 +261,9 @@ describe("workspaceUiLabels functions", () => {
 			assert.strictEqual(
 				completedActContractReferenceForUi({
 					title: "Doc Title",
-					chainSummary: { paidMedicalServicesContract: {} } as any,
+					chainSummary: { paidMedicalServicesContract: {} } as Parameters<
+						typeof completedActContractReferenceForUi
+					>[0]["chainSummary"],
 				}),
 				"Doc Title",
 			);
@@ -265,7 +275,9 @@ describe("workspaceUiLabels functions", () => {
 					title: "Doc Title",
 					chainSummary: {
 						paidMedicalServicesContract: { contractNumber: "C-123" },
-					} as any,
+					} as Parameters<
+						typeof completedActContractReferenceForUi
+					>[0]["chainSummary"],
 				}),
 				"C-123",
 			);
@@ -280,7 +292,9 @@ describe("workspaceUiLabels functions", () => {
 							contractNumber: "C-123",
 							contractDate: "2023-10-15",
 						},
-					} as any,
+					} as Parameters<
+						typeof completedActContractReferenceForUi
+					>[0]["chainSummary"],
 				}),
 				"C-123 от 2023-10-15",
 			);
@@ -295,7 +309,9 @@ describe("workspaceUiLabels functions", () => {
 							contractNumber: "C-123",
 							contractDate: " 2023-10-15 ",
 						},
-					} as any,
+					} as Parameters<
+						typeof completedActContractReferenceForUi
+					>[0]["chainSummary"],
 				}),
 				"C-123 от 2023-10-15",
 			);

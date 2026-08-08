@@ -8,41 +8,32 @@ import type {
 	UpdateClinicProfileInput,
 	UpdatePatientAdministrativeProfileInput,
 } from "@dental/shared";
+import { specialtyLabels, staffRoleLabels } from "../workspaceUiLabels";
 import {
-	specialtyLabels,
-	staffRoleLabels,
-} from "../workspaceUiLabels";
-import {
-	normalizeClockTime,
 	fromDateTimeLocalValue,
+	normalizeClockTime,
 	weekdayFromDateInput,
 } from "./dateTimeUtils";
 import { toDateTimeLocalValue } from "./dateUtils";
 import { isRecordKey } from "./typeGuards";
 
-
 export const clinicProfileEndpoint = "/api/settings/clinic/profile";
-
 
 export function isDentalSpecialty(value: unknown): value is DentalSpecialty {
 	return typeof value === "string" && value in specialtyLabels;
 }
 
-
 export function isStaffRole(value: unknown): value is StaffRole {
 	return isRecordKey(value, staffRoleLabels);
 }
-
 
 export function normalizedStaffRole(value: unknown): StaffRole {
 	return isStaffRole(value) ? value : "doctor";
 }
 
-
 export function normalizedDentalSpecialty(value: unknown): DentalSpecialty {
 	return isDentalSpecialty(value) ? value : "therapist";
 }
-
 
 export function staffWorkingHoursFromSimpleDraft(
 	startValue: string,
@@ -59,7 +50,6 @@ export function staffWorkingHoursFromSimpleDraft(
 		end,
 	}));
 }
-
 
 export function staffScheduleDraftFromWorkingHours(
 	workingHours: StaffWorkingHours | null | undefined,
@@ -93,7 +83,6 @@ export function staffScheduleDraftFromWorkingHours(
 	};
 }
 
-
 export function defaultAppointmentStartLocal(profile: ClinicProfile): string {
 	const schedule = profile.scheduleDefaults ?? {
 		workdayStart: "09:00",
@@ -121,7 +110,6 @@ export function defaultAppointmentStartLocal(profile: ClinicProfile): string {
 	return `${toDateTimeLocalValue(new Date(now.getTime() + 86_400_000).toISOString(), timezone).slice(0, 10)}T${schedule.workdayStart}`;
 }
 
-
 export function staffWorkingHoursFromDraft(
 	draft: StaffScheduleDraft,
 ): StaffWorkingHours {
@@ -138,16 +126,13 @@ export function staffWorkingHoursFromDraft(
 	}));
 }
 
-
 export function staffScheduleDraftSignature(draft: StaffScheduleDraft): string {
 	return JSON.stringify(staffWorkingHoursFromDraft(draft));
 }
 
-
 export function defaultStaffScheduleDraft(): StaffScheduleDraft {
 	return staffScheduleDraftFromWorkingHours(null);
 }
-
 
 export function emptyClinicProfileDraft(): ClinicProfileDraft {
 	return {
@@ -175,7 +160,6 @@ export function emptyClinicProfileDraft(): ClinicProfileDraft {
 		egiszEnabled: false,
 	};
 }
-
 
 export function clinicProfileDraftFromProfile(
 	profile: ClinicProfile,
@@ -212,12 +196,10 @@ export function clinicProfileDraftFromProfile(
 	};
 }
 
-
 export function nullableClinicDraftValue(value: string): string | null {
 	const trimmed = value.trim();
 	return trimmed ? trimmed : null;
 }
-
 
 export function patientAdministrativeProfileDraftFromPatient(
 	patient: Patient | null,
@@ -254,7 +236,6 @@ export function patientAdministrativeProfileDraftFromPatient(
 				: "standard",
 	};
 }
-
 
 export function buildPatientAdministrativeProfilePayload(
 	draft: PatientAdministrativeProfileDraft,
@@ -307,13 +288,11 @@ export function buildPatientAdministrativeProfilePayload(
 	};
 }
 
-
 export function patientAdministrativeProfileDraftSignature(
 	draft: PatientAdministrativeProfileDraft,
 ): string {
 	return JSON.stringify(buildPatientAdministrativeProfilePayload(draft));
 }
-
 
 export function patientAdministrativeProfileDraftIssue(
 	draft: PatientAdministrativeProfileDraft,
@@ -337,7 +316,6 @@ export function patientAdministrativeProfileDraftIssue(
 	}
 	return null;
 }
-
 
 export function buildClinicProfileUpdatePayload(
 	draft: ClinicProfileDraft,
@@ -381,11 +359,9 @@ export function buildClinicProfileUpdatePayload(
 	};
 }
 
-
 export function clinicProfileDraftSignature(draft: ClinicProfileDraft): string {
 	return JSON.stringify(buildClinicProfileUpdatePayload(draft));
 }
-
 
 export function clinicLegalMissingFields(
 	profile?: ClinicProfile | null,
@@ -413,14 +389,12 @@ export function clinicLegalMissingFields(
 	return required.filter(([, value]) => !value?.trim()).map(([label]) => label);
 }
 
-
 export function clinicLegalReadinessPercent(
 	profile?: ClinicProfile | null,
 ): number {
 	const missing = clinicLegalMissingFields(profile).length;
 	return Math.round(((7 - missing) / 7) * 100);
 }
-
 
 export const roleFocusOrder: StaffRole[] = [
 	"doctor",
@@ -430,14 +404,12 @@ export const roleFocusOrder: StaffRole[] = [
 	"owner",
 ];
 
-
 export type StaffScheduleDraft = {
 	start: string;
 	end: string;
 	workingDays: number[];
 	perDay: StaffWorkingHours;
 };
-
 
 export function normalizeWorkingDaysDraft(
 	value: readonly number[] | undefined,
@@ -455,9 +427,7 @@ export function normalizeWorkingDaysDraft(
 	).sort((left, right) => left - right);
 }
 
-
 export const defaultWorkingDays = [1, 2, 3, 4, 5];
-
 
 export type ClinicProfileDraft = {
 	clinicName: string;
@@ -484,7 +454,6 @@ export type ClinicProfileDraft = {
 	egiszEnabled: boolean;
 };
 
-
 export function normalizeOptionalWorkingDaysDraft(
 	value: readonly number[] | undefined,
 ): number[] {
@@ -497,7 +466,6 @@ export function normalizeOptionalWorkingDaysDraft(
 	).sort((left, right) => left - right);
 }
 
-
 export type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
 		keyof PatientAdministrativeProfile,
@@ -506,7 +474,6 @@ export type PatientAdministrativeProfileDraft = {
 } & {
 	preferredAppointmentWeekdays: number[];
 };
-
 
 export function nullablePatientDraftValue(value: string): string | null {
 	const trimmed = value.trim();

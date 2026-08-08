@@ -315,7 +315,7 @@ export function currentMonthPeriod(
 
 export type TimelineGranularity = "day" | "week" | "month";
 
-export type RevenueTimelinePoint = {
+type RevenueTimelinePoint = {
 	readonly bucket: string;
 	readonly revenueRub: number;
 	readonly paymentCount: number;
@@ -393,7 +393,7 @@ export async function revenueTimeline(
 	};
 }
 
-export type DoctorPerformanceRow = {
+type DoctorPerformanceRow = {
 	readonly doctorUserId: string | null;
 	readonly doctorName: string;
 	readonly revenueRub: number;
@@ -560,7 +560,7 @@ export async function doctorPerformance(
 	};
 }
 
-export type ChairLoadRow = {
+type ChairLoadRow = {
 	readonly chairId: string | null;
 	readonly chairName: string;
 	readonly appointments: number;
@@ -736,7 +736,7 @@ export async function appointmentFunnel(
 
 // ─── Эффект напоминаний ──────────────────────────────────────────────────────
 
-export type ReminderEffectGroup = {
+type ReminderEffectGroup = {
 	/** Сколько приёмов в группе. */
 	readonly appointments: number;
 	readonly completed: number;
@@ -921,7 +921,7 @@ export async function reminderEffect(
 	};
 }
 
-export type PatientFlowPoint = {
+type PatientFlowPoint = {
 	readonly bucket: string;
 	readonly newPatients: number;
 	readonly returningPatients: number;
@@ -1067,7 +1067,7 @@ export async function patientFlow(
 	};
 }
 
-export type ServiceSalesRow = {
+type ServiceSalesRow = {
 	readonly title: string;
 	readonly quantity: number;
 	readonly plannedRub: number;
@@ -1202,14 +1202,14 @@ export async function serviceSales(
 	};
 }
 
-export type ReceivablesBucket =
+type ReceivablesBucket =
 	| "current"
 	| "up_to_30"
 	| "up_to_90"
 	| "over_90"
 	| "undated";
 
-export type ReceivablesRow = {
+type ReceivablesRow = {
 	readonly patientId: string;
 	readonly patientName: string;
 	readonly debtRub: number;
@@ -1239,7 +1239,7 @@ function rubToKopeckText(kopecks: Kopecks): string {
 }
 
 /** Пациент заплатил больше, чем ему назначено: клиника должна ему, а не он ей. */
-export type ReceivablesPrepaymentRow = {
+type ReceivablesPrepaymentRow = {
 	readonly patientId: string;
 	readonly patientName: string;
 	readonly prepaidRub: number;
@@ -1597,7 +1597,7 @@ export async function receivables(
 	};
 }
 
-export type ScheduleLoadCell = {
+type ScheduleLoadCell = {
 	/** 1 — понедельник, 7 — воскресенье (ISO). */
 	readonly weekday: number;
 	readonly hour: number;

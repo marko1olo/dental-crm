@@ -14,7 +14,6 @@
  * администратору, но не врачу и не ассистенту.
  */
 
-import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
@@ -444,5 +443,3 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		};
 	});
 }
-
-export default registerReportRoutes;

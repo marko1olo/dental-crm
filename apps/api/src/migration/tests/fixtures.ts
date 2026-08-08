@@ -143,9 +143,7 @@ crc32.table = undefined as Int32Array | undefined;
  * Собирает ZIP без сжатия (метод 0). readZipEntries поддерживает и метод 0,
  * и deflate; несжатый вариант делает содержимое читаемым при отладке теста.
  */
-export function buildZip(
-	files: Array<{ name: string; content: string }>,
-): Buffer {
+function buildZip(files: Array<{ name: string; content: string }>): Buffer {
 	const locals: Buffer[] = [];
 	const centrals: Buffer[] = [];
 	let offset = 0;

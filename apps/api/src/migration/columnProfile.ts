@@ -112,7 +112,7 @@ function ratio(matched: number, total: number): number {
 	return total === 0 ? 0 : matched / total;
 }
 
-export function profileColumn(
+function profileColumn(
 	name: string,
 	index: number,
 	rows: string[][],

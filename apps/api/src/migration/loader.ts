@@ -1086,7 +1086,7 @@ export async function loadAppointments(input: {
 						row,
 						outcome,
 						"запись расписания",
-						async (sp) => {
+						async (_sp) => {
 							const values = row.transformed.values;
 							const patientRef = values.patientRef as string | undefined;
 							const patientId = patientRef
@@ -1539,7 +1539,7 @@ export async function loadVisits(input: {
 			await withTenantCtx(input.organizationId, async (tx) => {
 				for (const row of batch) {
 					// Каждая строка в своей точке сохранения: отказ по одной не уносит партию.
-					await loadRowInSavepoint(tx, row, outcome, "приём", async (sp) => {
+					await loadRowInSavepoint(tx, row, outcome, "приём", async (_sp) => {
 						const values = row.transformed.values;
 						const patientRef = values.patientRef as string | undefined;
 						const patientId = patientRef

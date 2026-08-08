@@ -37,9 +37,9 @@ import { appointments, patients } from "../../db/schema.js";
  * осмотра, год — человек пропустил один осмотр, два года — скорее всего лечится
  * в другом месте, и приглашение уже похоже на спам.
  */
-export type RecallBand = "due" | "overdue" | "probably_lost" | "never_arrived";
+type RecallBand = "due" | "overdue" | "probably_lost" | "never_arrived";
 
-export type RecallCandidate = {
+type RecallCandidate = {
 	readonly patientId: string;
 	readonly fullName: string;
 	readonly phone: string | null;
@@ -241,7 +241,7 @@ export async function findRecallCandidates(
 }
 
 /** Количество без выборки строк — для плитки на экране расписания. */
-export async function countRecallCandidates(
+async function _countRecallCandidates(
 	organizationId: string,
 	minMonths = 6,
 ): Promise<number> {
@@ -253,7 +253,7 @@ export async function countRecallCandidates(
 }
 
 /** Ярлык полосы — чтобы интерфейс не собирал текст сам и не расходился с сервером. */
-export function recallBandLabel(band: RecallBand): string {
+function _recallBandLabel(band: RecallBand): string {
 	return BAND_LABELS[band];
 }
 
@@ -276,7 +276,7 @@ export async function recallCandidateBelongsTo(
 }
 
 /** Экспортируется для тестов: границы полос — часть договорённости, а не деталь. */
-export const RECALL_BANDS = {
+const _RECALL_BANDS = {
 	dueMonths: 6,
 	overdueMonths: 12,
 	probablyLostMonths: 24,

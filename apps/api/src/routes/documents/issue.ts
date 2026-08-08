@@ -4,7 +4,6 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
-import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import {
 	getDocumentById,
 	issueGeneratedDocumentInDb,

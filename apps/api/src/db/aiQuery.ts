@@ -1,8 +1,8 @@
+import { randomUUID } from "node:crypto";
 import type {
 	AiRecognitionJob,
 	CreateAiRecognitionJobInput,
 } from "@dental/shared";
-import { randomUUID } from "crypto";
 import { desc, eq } from "drizzle-orm";
 import { recordAuditEventInDb } from "./auditQuery.js";
 import { db } from "./client.js";

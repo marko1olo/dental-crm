@@ -51,7 +51,7 @@ import * as schema from "./schema.js";
 export type ServiceCatalogRow = typeof schema.serviceCatalogItems.$inferSelect;
 
 /** Услуга, которую не удалось принять, и причина — человеческими словами. */
-export interface RejectedServiceCatalogRow {
+interface RejectedServiceCatalogRow {
 	code: string;
 	title: string;
 	reason: string;

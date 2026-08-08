@@ -154,5 +154,3 @@ export async function registerPatientRecallRoutes(app: FastifyInstance) {
 		};
 	});
 }
-
-export default registerPatientRecallRoutes;

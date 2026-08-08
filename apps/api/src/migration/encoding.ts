@@ -25,7 +25,7 @@ const CANDIDATE_ENCODINGS = [
 	"windows-1252",
 ] as const;
 
-export type DetectedEncoding =
+type DetectedEncoding =
 	| (typeof CANDIDATE_ENCODINGS)[number]
 	| "utf-16le"
 	| "utf-16be";
@@ -470,6 +470,7 @@ export function normalizeDecodedText(value: string): string {
 	return (
 		value
 			.replace(/^\uFEFF/, "")
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: NUL byte stripping for migration data
 			.replace(/\u0000/g, "")
 			// Мягкий перенос и неразрывный пробел нулевой ширины из копипаста Word.
 			.replace(/\u00AD|\u200B|\u200C|\u200D|\u2060/g, "")

@@ -29,7 +29,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {

@@ -774,7 +774,7 @@ function webCallsWithMethod(): Map<string, string[]> {
 			const args = callArguments(source, openParen);
 			if (!args || args.length === 0) continue;
 			const raw = literalValue(args[0] ?? "");
-			if (!raw || !raw.startsWith("/api/")) continue;
+			if (!raw?.startsWith("/api/")) continue;
 			const normalized = normalizePath(raw);
 			if (
 				!normalized.startsWith("/api/") ||

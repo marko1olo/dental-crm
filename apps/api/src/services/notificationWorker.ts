@@ -12,7 +12,7 @@ async function attemptTelegramDelivery(
 	botConfig: typeof denteTelegramBotConfigs.$inferSelect | undefined,
 	messageText: string,
 ): Promise<{ deliveryStatus: string; failureReason: string }> {
-	if (!chatLink || !chatLink.chatTransportRef) {
+	if (!chatLink?.chatTransportRef) {
 		return {
 			deliveryStatus: "failed",
 			failureReason:
@@ -51,7 +51,7 @@ async function attemptTelegramDelivery(
 	}
 }
 
-export async function scheduleNotification(input: {
+async function _scheduleNotification(input: {
 	organizationId: string;
 	patientId: string;
 	type: string;
@@ -76,7 +76,7 @@ const colors = {
 	gray: "\x1b[90m",
 };
 
-export async function processNotificationQueue() {
+async function processNotificationQueue() {
 	try {
 		const pending = await db
 			.select()
@@ -190,7 +190,7 @@ export function startNotificationWorker() {
 	(notificationInterval as unknown as { unref?: () => void }).unref?.();
 }
 
-export function stopNotificationWorker(): void {
+function _stopNotificationWorker(): void {
 	if (notificationInterval) {
 		clearInterval(notificationInterval);
 		notificationInterval = null;
