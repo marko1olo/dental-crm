@@ -334,8 +334,6 @@ export function useStaffSettingsLogic({
 		});
 	};
 
-	};
-
 	return {
 		isStaffCreating,
 		isChairCreating,

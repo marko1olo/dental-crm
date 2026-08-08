@@ -392,9 +392,8 @@ export function MigrationWizard() {
 			} finally {
 				setBusy(false);
 			}
-			// eslint-disable-next-line react-hooks/exhaustive-deps
 		},
-		[allowLlm, clinicalMutationHeaders, runMapping],
+		[allowLlm, clinicalMutationHeaders, runMapping, showToast],
 	);
 
 	// -------------------------------------------------------------------

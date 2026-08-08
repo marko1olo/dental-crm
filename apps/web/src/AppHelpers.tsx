@@ -5891,6 +5891,8 @@ export function appointmentUpdateInputFromDraft(
 	};
 }
 
+
+
 export function appointmentCreateInputFromDraft(
 	draft: AppointmentScheduleDraft,
 ): CreateAppointmentInput {
@@ -6283,7 +6285,9 @@ export function clinicProfileDraftSignature(draft: ClinicProfileDraft): string {
 	return JSON.stringify(buildClinicProfileUpdatePayload(draft));
 }
 
-export function clinicLegalMissingFields(profile: ClinicProfile): string[] {
+export function clinicLegalMissingFields(profile?: ClinicProfile | null): string[] {
+	if (!profile) return ["Юр. лицо", "ИНН", "Адрес", "Телефон", "Номер лицензии", "Дата лицензии", "Кем выдана лицензия"];
+
 	const required: Array<[string, string | null | undefined]> = [
 		["Юр. лицо", profile.legalName],
 		["ИНН", profile.inn],
@@ -6296,7 +6300,7 @@ export function clinicLegalMissingFields(profile: ClinicProfile): string[] {
 	return required.filter(([, value]) => !value?.trim()).map(([label]) => label);
 }
 
-export function clinicLegalReadinessPercent(profile: ClinicProfile): number {
+export function clinicLegalReadinessPercent(profile?: ClinicProfile | null): number {
 	const missing = clinicLegalMissingFields(profile).length;
 	return Math.round(((7 - missing) / 7) * 100);
 }

@@ -23,8 +23,7 @@ function withFixedNow<T>(iso: string, fn: () => T): T {
 	class FixedDate extends RealDate {
 		constructor(...args: unknown[]) {
 			if (args.length === 0) super(fixed);
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			else super(...(args as [any]));
+			else super(...(args as [string | number | Date]));
 		}
 		static now() {
 			return fixed;

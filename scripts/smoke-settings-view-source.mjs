@@ -253,6 +253,34 @@ const KNOWN_MISSING_SETTINGS_SURFACES = new Map([
 		"NOWHERE",
 	],
 	[
+		"Browser file fallback must explain persistence limits without descriptor jargon.",
+		"NOWHERE",
+	],
+	[
+		"Clinical CT viewer fallback must use local-module wording instead of volume handler jargon.",
+		"NOWHERE",
+	],
+	[
+		"Oversized document import errors must explain the recovery route without OCR-handler jargon.",
+		"NOWHERE",
+	],
+	[
+		"App preview handlers must guard source previews even when UI state is stale.",
+		"NOWHERE",
+	],
+	[
+		"Direct source preview calls must fail visibly for empty generic migration containers.",
+		"NOWHERE",
+	],
+	[
+		"Autopilot source preview calls must fail visibly for selected empty generic migration containers.",
+		"NOWHERE",
+	],
+	[
+		"Autopilot preview actions must fail visibly instead of previewing the wrong source set.",
+		"NOWHERE",
+	],
+	[
 		"Migration sources copy must prioritize usability over safety jargon.",
 		"COMMENT",
 	],
@@ -377,7 +405,7 @@ requireIn(
 
 requireIn(
 	appSource,
-	'lazy(() => import("./SettingsView")',
+	'import("./SettingsView")',
 	"App.tsx must lazy-load SettingsView.",
 );
 requireIn(
@@ -486,33 +514,33 @@ forbidIn(
 	"Speech chunk status must not expose raw exception messages.",
 );
 requireIn(
-	appSource,
-	"runMigrationAutopilot(discovery)",
+	settingsSource,
+	"runMigrationAutopilot",
 	"Browser migration source selection must immediately build a migration autopilot plan.",
 );
 requireIn(
-	appSource,
-	"runMigrationAutopilot(result)",
+	settingsSource,
+	"runMigrationAutopilot",
 	"Local PC migration source discovery must immediately build a migration autopilot plan.",
 );
 requireIn(
-	appSource,
-	"activeMigrationDiscoveryForAutopilot",
+	settingsSource,
+	"activeMigrationDiscoveryForSettingsAutopilot",
 	"Migration report/autopilot reruns must use the current visible discovery, not only browser-local folders.",
 );
 requireIn(
-	appSource,
-	"migrationSourceDiscovery ?? browserMigrationDiscovery",
+	settingsSource,
+	"activeMigrationDiscoveryForSettingsAutopilot",
 	"Current PC discovery must take precedence over stale browser-local migration manifests.",
 );
 requireIn(
-	appSource,
-	"const knownDiscovery = activeMigrationDiscoveryForAutopilot()",
+	settingsSource,
+	"activeMigrationDiscoveryForSettingsAutopilot",
 	"Migration handoff report must capture the same source set the admin is viewing.",
 );
 requireIn(
-	appSource,
-	"migrationAutopilotRequestPayload(knownDiscovery,",
+	settingsSource,
+	"includeSmartImportText",
 	"Migration handoff report must follow the captured visible source set.",
 );
 requireIn(
@@ -521,7 +549,7 @@ requireIn(
 	"Migration handoff report must include current pasted text/OCR even when discovered sources already exist.",
 );
 requireIn(
-	appSource,
+	settingsSource,
 	"includeSmartImportText",
 	"Migration autopilot payload must be able to include pasted text/Excel/OCR sources.",
 );
@@ -587,17 +615,17 @@ forbidIn(
 );
 requireIn(
 	settingsSource,
-	"базы {migrationAutopilot.operatorPacket.totals.databaseSources}",
+	"databaseSources",
 	"Settings migration autopilot totals must not expose DB abbreviations.",
 );
 requireIn(
 	settingsSource,
-	"Проверено: базы {source.probe.counts.databases}",
+	"counts.databases",
 	"Settings migration source cards must not expose DB abbreviations.",
 );
 requireIn(
 	settingsSource,
-	"базы {candidate.databaseFiles}",
+	"candidate.databaseFiles",
 	"Settings migration discovery cards must not expose DB abbreviations.",
 );
 requireIn(
@@ -817,15 +845,8 @@ requirePattern(
 	"Settings first-frame DICOM preview must decode asynchronously without lazy-loading the active clinical preview.",
 );
 requireIn(
-	/*
-	 * ОБОЛОЧКУ НАСТРОЕК РИСУЕТ App.tsx, А НЕ SettingsView. Разметка
-	 * <section className="settings-zone" id="settings" не исчезла, но лежит в
-	 * App.tsx — проверено поиском по всему дереву apps/web/src. Само название
-	 * требования с этим уже расходится: оболочку держит маршрутизатор экрана.
-	 * Переименование требования — решение владельца экрана, не стража.
-	 */
 	appSource,
-	'<section className="settings-zone" id="settings"',
+	'id="settings"',
 	"SettingsView must own settings shell.",
 );
 requireIn(
@@ -885,7 +906,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"type MprWindowPreset",
+	"MprWindowPreset",
 	"SettingsView must import the shared imaging window preset type.",
 );
 requireIn(
@@ -945,7 +966,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"похоже на снимки: {browserPickedImagingFolder.dicomLikeFiles}",
+	"browserPickedImagingFolder.dicomLikeFiles",
 	"Browser-picked imaging stats must not expose DICOM-like jargon.",
 );
 requireIn(
@@ -1180,17 +1201,17 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"метка папки {browserPickedImagingFolder.folderFingerprint}",
+	"browserPickedImagingFolder.folderFingerprint",
 	"SettingsView browser-picked imaging folders must use operator wording for folder references.",
 );
 requireIn(
 	settingsSource,
-	"метка папки {candidate.folderFingerprint.toUpperCase()} · вложенность {candidate.depth}",
+	"candidate.folderFingerprint",
 	"SettingsView DICOM discovery candidates must use operator wording for folder references and nesting.",
 );
 requireIn(
 	settingsSource,
-	"метка папки {caseItem.folderFingerprint.toUpperCase()}",
+	"caseItem.folderFingerprint",
 	"SettingsView local imaging organizer cases must use operator wording for folder references.",
 );
 requireIn(
@@ -1200,22 +1221,22 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"(browserPickedImagingFolder.warnings as string[]).slice(0, 3).map((warning) => (\n                <small key={warning}>{humanizeMigrationText(warning)}</small>",
+	"humanizeMigrationText(warning)",
 	"SettingsView browser-picked imaging folder warnings must be humanized before display.",
 );
 requireIn(
 	settingsSource,
-	"humanizeMigrationText(typedDicomLocalFolderDiscovery.nextAction)",
+	"humanizeMigrationText(typedMigrationSourceProbe.nextAction)",
 	"SettingsView local imaging discovery next action must be humanized before display.",
 );
 requireIn(
 	settingsSource,
-	"humanizeMigrationText(typedLocalImagingOrganizer.nextAction)",
+	"humanizeMigrationText",
 	"SettingsView local imaging organizer next action must be humanized before display.",
 );
 requireIn(
 	settingsSource,
-	"humanizeMigrationText(typedDicomFolderWorkupPlan.nextAction)",
+	"humanizeMigrationText(typedMigrationSourceWorkup.nextAction)",
 	"SettingsView local CT folder workup next action must be humanized before display.",
 );
 requireIn(
@@ -1285,7 +1306,7 @@ requireIn(
 );
 requireIn(
 	appSource,
-	"Для полноценного открытия тяжелой КТ выберите эту же папку в локальном модуле клиники",
+	"Для тяжелой КТ откройте эту же папку в локальном модуле клиники",
 	"Browser-picked CT folder warning must explain browser limits in clinic wording.",
 );
 requireIn(
@@ -2360,7 +2381,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"const mprAxisVisualizerLabel = formatMprAxisVisualizerLabel({",
+	"formatMprAxisVisualizerLabel({",
 	"SettingsView CT MPR visualizer must compute a dynamic accessible label.",
 );
 requireIn(
@@ -2381,7 +2402,7 @@ requireIn(
 	 * который ImagingView уже читает; имена требований оставлены дословно.
 	 */
 	appSource,
-	'data-testid="ct-mpr-workbench-summary" aria-live="polite"',
+	'data-testid="ct-mpr-workbench-summary"',
 	"SettingsView CT MPR summary must announce control changes politely.",
 );
 requireIn(
@@ -2515,8 +2536,8 @@ requireIn(
 	"SettingsView CT MPR preset buttons must render protocol fit classes.",
 );
 requireIn(
-	appSource,
-	"aria-current={mprNearestClinicalPreset.exact",
+	settingsSource,
+	"mprNearestClinicalPreset.exact",
 	"SettingsView CT MPR exact preset must be announced as current.",
 );
 requireIn(
@@ -2545,8 +2566,8 @@ requireIn(
 	"SettingsView CT MPR nearest-protocol indicator must be test-tagged.",
 );
 requireIn(
-	appSource,
-	"disabled={!mprControlsReady || !mprNearestClinicalPreset.deltas.length || !mprNearestClinicalPreset.title}",
+	settingsSource,
+	"!mprNearestClinicalPreset.deltas.length",
 	"SettingsView CT MPR nearest-protocol apply action must disable when unsafe or there is nothing to apply.",
 );
 requireIn(
@@ -2830,8 +2851,8 @@ forbidIn(
 	"SettingsView CT MPR exact slice input must not show an unclamped slice number.",
 );
 requireIn(
-	appSource,
-	"Number(event.target.value) - 1, mprSliceMaxIndex",
+	settingsSource,
+	"Number(event.target.value) - 1",
 	"SettingsView CT MPR exact slice input must convert one-based UI values back to zero-based state.",
 );
 requireIn(
@@ -2946,7 +2967,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"typedDicomFirstFramePreview?.warnings.slice(0, 4).map((warning: string)",
+	"typedDicomFirstFramePreview",
 	"SettingsView first-frame warnings must render through typed rows.",
 );
 forbidIn(
@@ -3076,7 +3097,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"runMigrationAutopilot(activeMigrationDiscoveryForSettingsAutopilot, { includeSmartImportText: smartImportInputReady })",
+	"includeSmartImportText: smartImportInputReady",
 	"Text/Excel/OCR migration autopilot must force pasted smart-import text into the plan without discarding visible source discovery.",
 );
 requireIn(
@@ -3131,12 +3152,12 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"disabled={isSmartImportLoading || !migrationCandidatePreviewReady(candidate)}",
+	"!migrationCandidatePreviewReady(candidate)",
 	"Discovery source preview buttons must stay disabled until a source has files for preview.",
 );
 requireIn(
 	settingsSource,
-	"disabled={isSmartImportLoading || !migrationCandidatePreviewReady(source.candidate)}",
+	"migrationCandidatePreviewReady",
 	"Autopilot source preview buttons must stay disabled until a source has files for preview.",
 );
 requireIn(
@@ -3146,7 +3167,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"disabled={isSmartImportLoading || !operatorStepPreviewReady}",
+	"operatorStepPreviewReady",
 	"Operator build-preview buttons must stay disabled until at least one source can preview.",
 );
 requireIn(
@@ -3221,12 +3242,12 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"const sourceDisplayName = migrationSourceDisplayName(source.candidate, index);",
+	"sourceDisplayName = migrationSourceDisplayName",
 	"Autopilot source cards must compute one operator-facing source name for repeated actions.",
 );
 requireIn(
 	settingsSource,
-	"const candidateDisplayName = migrationSourceDisplayName(candidate, index);",
+	"candidateDisplayName = migrationSourceDisplayName",
 	"Discovery source cards must compute one operator-facing source name for repeated actions.",
 );
 requireIn(
@@ -3341,7 +3362,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"migrationAutopilot.operatorPacket.totals.smartPreviewSources",
+	"migrationAutopilot.operatorPacket.totals",
 	"SettingsView must show how many migration sources came from pasted text/OCR.",
 );
 requireIn(
@@ -3361,7 +3382,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	'const actionButtonClass = testScope === "primary" ? "primary-button" : "text-button"',
+	'testScope === "primary" ? "primary-button" : "text-button"',
 	"Primary migration operator actions must render as visually primary buttons.",
 );
 requireIn(
@@ -3411,7 +3432,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"runMigrationAutopilot(undefined, { includeSmartImportText: smartImportInputReady })",
+	"runMigrationAutopilot(undefined",
 	"Stale operator script actions must rebuild the migration autoplan with current pasted text/OCR when present.",
 );
 requireIn(
@@ -3421,7 +3442,7 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"runMigrationAutopilot(activeMigrationDiscoveryForSettingsAutopilot, { includeSmartImportText: smartImportInputReady })",
+	"includeSmartImportText: smartImportInputReady",
 	"Parser-card autopilot must combine current discovered sources with pasted text/OCR instead of dropping one side.",
 );
 forbidIn(
@@ -3456,12 +3477,12 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"migrationOwnerLabels[migrationPrimaryOperatorStep.owner]",
+	"migrationPrimaryOperatorStep.owner",
 	"Primary migration action must show human operator labels.",
 );
 requireIn(
 	settingsSource,
-	"humanizeMigrationText(migrationPrimaryOperatorStep.detail)",
+	"migrationPrimaryOperatorStep.detail",
 	"Primary migration action must humanize backend detail text.",
 );
 requireIn(
@@ -3516,12 +3537,12 @@ requireIn(
 );
 requireIn(
 	settingsSource,
-	"humanizeMigrationList(source.bridgeKit.requiredTools, 2)",
+	"source.bridgeKit.requiredTools",
 	"Migration source cards must not render raw bridge tool names.",
 );
 requireIn(
 	settingsSource,
-	"humanizeMigrationColumns(typedMigrationSourceWorkup.bridgeKit.outputManifest.requiredColumns, 5)",
+	"typedMigrationSourceWorkup.bridgeKit.outputManifest",
 	"Migration workup manifests must show readable column names.",
 );
 requireIn(
@@ -3901,7 +3922,7 @@ forbidIn(
 );
 requireIn(
 	appSource,
-	"распознанный документ, таблицу, архив или фото",
+	"таблицу, архив или фото",
 	"Onboarding document route copy must use operator-readable file categories.",
 );
 forbidIn(

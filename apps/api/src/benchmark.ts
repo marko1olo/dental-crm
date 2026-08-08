@@ -23,8 +23,8 @@ async function readPersistedPayloadAsync(filePath: string) {
 	try {
 		const data = await fs.promises.readFile(filePath, "utf8");
 		return { payload: JSON.parse(data), error: null };
-	} catch (err: any) {
-		if (err.code === "ENOENT")
+	} catch (err: unknown) {
+		if ((err as NodeJS.ErrnoException).code === "ENOENT")
 			return { payload: null, error: "state_file_missing" };
 		return { payload: null, error: "state_file_unreadable" };
 	}

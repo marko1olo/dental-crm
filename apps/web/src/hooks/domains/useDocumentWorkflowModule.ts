@@ -2240,22 +2240,6 @@ export function useDocumentWorkflowModule({
 		setAnesthesiaZone,
 		setLabTeethOrArea,
 	]);
-	function _treatmentAcceptanceStageRows() {
-		return documentTextLines(treatmentAcceptanceStages).map((line, index) => {
-			const [stageName, plannedServices, plannedTiming, amount] = line
-				.split("|")
-				.map((part) => part.trim());
-			const parsedAmount = amount
-				? Number(amount.replace(/[^\d]/g, ""))
-				: Number.NaN;
-			return {
-				stageName: stageName || `Этап ${index + 1}`,
-				plannedServices: plannedServices || "объем лечения по выбранному плану",
-				plannedTiming: plannedTiming || "по расписанию клиники",
-				estimatedAmountRub: Number.isFinite(parsedAmount) ? parsedAmount : null,
-			};
-		});
-	}
 
 	function treatmentAcceptancePlannedTotalRub(): number {
 		return (
@@ -2275,35 +2259,8 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function _treatmentAcceptanceTotalRubValue(): number {
-		const manual = Number(
-			treatmentAcceptanceEstimatedTotalRub.replace(/[^\d]/g, ""),
-		);
-		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
-	}
 
-	function _treatmentPlanStageRows() {
-		return documentTextLines(treatmentPlanStages).map((line, index) => {
-			const [stageName, plannedServices, plannedTiming, clinicalNotes, amount] =
-				line.split("|").map((part) => part.trim());
-			const parsedAmount = amount
-				? Number(amount.replace(/[^\d]/g, ""))
-				: Number.NaN;
-			return {
-				stageName: stageName || `Этап ${index + 1}`,
-				plannedServices:
-					plannedServices || "объем лечения по клиническому плану",
-				plannedTiming: plannedTiming || "по расписанию клиники",
-				clinicalNotes: clinicalNotes || null,
-				estimatedAmountRub: Number.isFinite(parsedAmount) ? parsedAmount : null,
-			};
-		});
-	}
 
-	function _treatmentPlanTotalRubValue(): number {
-		const manual = Number(treatmentPlanEstimatedTotalRub.replace(/[^\d]/g, ""));
-		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
-	}
 
 	function treatmentPlanClinicalReasonValue(): string {
 		return (
@@ -2378,9 +2335,6 @@ export function useDocumentWorkflowModule({
 		});
 	}
 
-	function _treatmentPlanDoctorFullNameValue(): string {
-		return treatmentPlanDoctorFullName.trim() || activeDoctor?.fullName || "";
-	}
 
 	function activePaidPaymentsForVisit() {
 		return activePayments.filter(
@@ -2414,32 +2368,9 @@ export function useDocumentWorkflowModule({
 		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
 	}
 
-	function _paidContractCustomerFullNameValue(): string {
-		return (
-			paidContractCustomerFullName.trim() || documentPatient?.fullName || ""
-		);
-	}
 
-	function _paidContractCareReasonValue(): string {
-		return (
-			paidContractCareReason.trim() ||
-			dashboard?.activeVisit?.complaint?.trim() ||
-			"плановое стоматологическое лечение по результатам осмотра"
-		);
-	}
 
-	function _paidContractServiceScopeValue(): string {
-		return (
-			paidContractServiceScope.trim() ||
-			dashboard?.activeVisit?.treatmentPlan?.trim() ||
-			dashboard?.activeVisit?.doctorSummary?.trim() ||
-			""
-		);
-	}
 
-	function _paidContractDoctorFullNameValue(): string {
-		return paidContractDoctorFullName.trim() || activeDoctor?.fullName || "";
-	}
 
 	function completedActPaidRubValue(): number {
 		const manual = manualRubAmount(completedActPaidRub);
@@ -2450,10 +2381,6 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function _completedActTotalRubValue(): number {
-		const manual = Number(completedActTotalRub.replace(/[^\d]/g, ""));
-		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
-	}
 
 	function _completedActFiscalReceiptLines(): string[] {
 		const manual = documentTextLines(completedActFiscalReceipts);
@@ -2463,18 +2390,7 @@ export function useDocumentWorkflowModule({
 			.filter((value): value is string => Boolean(value));
 	}
 
-	function _completedActServicesSummaryValue(): string {
-		return (
-			completedActServicesSummary.trim() ||
-			dashboard?.activeVisit?.doctorSummary?.trim() ||
-			dashboard?.activeVisit?.treatmentPlan?.trim() ||
-			""
-		);
-	}
 
-	function _completedActDoctorFullNameValue(): string {
-		return completedActDoctorFullName.trim() || activeDoctor?.fullName || "";
-	}
 
 	function plannedServiceLinesForFinancialPayload() {
 		return activeTreatmentPlanItems
@@ -2528,11 +2444,6 @@ export function useDocumentWorkflowModule({
 		return manual > 0 ? manual : paymentInvoiceTotalRubValue();
 	}
 
-	function _treatmentEstimateDoctorFullNameValue(): string {
-		return (
-			treatmentEstimateDoctorFullName.trim() || activeDoctor?.fullName || ""
-		);
-	}
 
 	function paymentInvoiceTotalRubValue(): number {
 		return (
@@ -2543,19 +2454,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function _paymentInvoicePayerFullNameValue(): string {
-		return (
-			paymentInvoicePayerFullName.trim() || documentPatient?.fullName || ""
-		);
-	}
 
-	function _paymentInvoiceBankDetailsValue(): string {
-		return (
-			paymentInvoiceBankDetails.trim() ||
-			dashboard?.clinicSettings?.profile?.bankDetails?.trim() ||
-			""
-		);
-	}
 
 	function firstPaymentReceiptPayment() {
 		return selectedPaymentReceiptPayments[0] ?? null;
@@ -2696,19 +2595,7 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function _installmentSchedulePayerFullNameValue(): string {
-		return (
-			installmentSchedulePayerFullName.trim() || documentPatient?.fullName || ""
-		);
-	}
 
-	function _installmentScheduleResponsibleFullNameValue(): string {
-		return (
-			installmentScheduleResponsibleFullName.trim() ||
-			activeDoctor?.fullName ||
-			"Администратор клиники"
-		);
-	}
 
 	function _minorRepresentativeFullNameValue(): string {
 		return (
@@ -2771,9 +2658,6 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function _minorConsentDoctorFullNameValue(): string {
-		return minorConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
-	}
 
 	function _warrantyServiceOrWorkNameValue(): string {
 		return (
@@ -2804,29 +2688,9 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
-	function _warrantyDoctorFullNameValue(): string {
-		return warrantyDoctorFullName.trim() || activeDoctor?.fullName || "";
-	}
 
-	function _postVisitProcedureNameValue(): string {
-		return (
-			postVisitProcedureName.trim() ||
-			dashboard?.activeVisit?.treatmentPlan?.trim() ||
-			"Рекомендации после стоматологического приема"
-		);
-	}
 
-	function _postVisitToothOrAreaValue(): string {
-		return (
-			postVisitToothOrArea.trim() ||
-			inferredTreatmentArea ||
-			"область лечения по записи приема"
-		);
-	}
 
-	function _postVisitDoctorFullNameValue(): string {
-		return postVisitDoctorFullName.trim() || activeDoctor?.fullName || "";
-	}
 
 	function applyPostVisitCarePreset(
 		topic: PostVisitCareTopic,

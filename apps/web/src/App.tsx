@@ -1219,8 +1219,7 @@ export function App() {
 					);
 				});
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [loadDashboard, dashboard, clinicAuthed, activeStaffUser]); // Run once on mount only
+	}, [loadDashboard, dashboard, clinicAuthed, activeStaffUser, showToast]); // Run once on mount only
 
 	// Auto-lock on inactivity (5 minutes)
 	useEffect(() => {
