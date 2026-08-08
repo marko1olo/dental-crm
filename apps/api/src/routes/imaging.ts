@@ -4,12 +4,12 @@ import { once } from "node:events";
 import {
 	closeSync,
 	createReadStream,
+	type Dirent,
 	existsSync,
 	openSync,
 	readSync,
-	statSync,
-	type Dirent,
 	type Stats,
+	statSync,
 } from "node:fs";
 import {
 	access,
@@ -1640,7 +1640,7 @@ function hasDicomMagic(filePath: string): boolean {
 			closeSync(handle);
 		}
 	} catch (err) {
-		console.error('[Dente] Failed to read DICOM header:', err);
+		console.error("[Dente] Failed to read DICOM header:", err);
 		return false;
 	}
 }
@@ -2983,7 +2983,7 @@ async function readZipCentralDirectoryDetailed(
 	try {
 		stats = await stat(filePath);
 	} catch (err) {
-		console.error('[Dente] Failed to stat ZIP file:', err);
+		console.error("[Dente] Failed to stat ZIP file:", err);
 		return {
 			entries: [],
 			warnings: [
@@ -3228,7 +3228,7 @@ async function inflateZipEntryPrefix(
 				try {
 					if (!inflater.write(chunk.buffer)) await once(inflater, "drain");
 				} catch (err) {
-					console.error('[Dente] Failed to write to inflater:', err);
+					console.error("[Dente] Failed to write to inflater:", err);
 					if (!settled)
 						finish({
 							buffer: null,
@@ -4626,7 +4626,8 @@ async function isSafeTarget(urlString: string): Promise<TargetSafety> {
 	let url: URL;
 	try {
 		url = new URL(urlString);
-	} catch (err) { console.error('[Dente] fixed bare catch:', err);
+	} catch (err) {
+		console.error("[Dente] fixed bare catch:", err);
 		return { ok: false, reason: "адрес архива снимков не разбирается как URL" };
 	}
 
@@ -4716,7 +4717,8 @@ async function checkDicomWebConnector(input: DicomWebConnectorCheckRequest) {
 				httpStatus = response.status;
 			}
 		}
-	} catch (err) { console.error('[Dente] fixed bare catch:', err);
+	} catch (err) {
+		console.error("[Dente] fixed bare catch:", err);
 		fetchError = true;
 		warnings.push(
 			"Проверка архива снимков не завершилась; проверьте адрес архива и доступ с сервера клиники.",
@@ -7631,7 +7633,7 @@ async function discoverLocalDicomFolders(
 				await stat(root);
 				return true;
 			} catch (err) {
-				console.error('[Dente] Failed to stat root path:', err);
+				console.error("[Dente] Failed to stat root path:", err);
 				return false;
 			}
 		}),
@@ -8199,7 +8201,7 @@ async function organizeLocalImagingSources(
 					await access(root);
 					return root;
 				} catch (err) {
-					console.error('[Dente] Failed to access root path:', err);
+					console.error("[Dente] Failed to access root path:", err);
 					return null;
 				}
 			}),
@@ -9497,7 +9499,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			try {
 				await access(resolved);
 			} catch (err) {
-				request.log.error({ err }, 'Failed to access imaging file on disk');
+				request.log.error({ err }, "Failed to access imaging file on disk");
 				return reply.code(404).send({
 					error: "ImagingFileNotFoundOnDisk",
 					message: "Файл снимка не найден на диске клиники.",

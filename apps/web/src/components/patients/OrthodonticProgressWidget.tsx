@@ -85,7 +85,13 @@ function parseLegacyOrthoNotes(notesText: string | null | undefined): {
 			},
 		};
 	} catch (_e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (_e as { status?: number })?.status ?? null), "error");
+		showToast(
+			actionFailureToast(
+				"Ошибка выполнения операции",
+				(_e as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
 		return { cleanNotes: text, legacyOrtho: null };
 	}
 }

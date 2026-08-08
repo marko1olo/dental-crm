@@ -1,4 +1,3 @@
-import { actionFailureToast } from "../lib/panelStateText";
 import { Camera, Paperclip, Search } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -6,7 +5,7 @@ import {
 	AUTHED_API_FILE_FAILURE,
 	fetchAuthedApiFileObjectUrl,
 } from "../lib/authedApiFile";
-import { requestFailureCause } from "../lib/panelStateText";
+import { actionFailureToast, requestFailureCause } from "../lib/panelStateText";
 import { readDenteClinicToken } from "../lib/safeLocalStorage";
 import { showToast } from "./GlobalToast";
 
@@ -124,7 +123,13 @@ export function VisitDiaryPhotoUpload({
 					return;
 				}
 				const data: unknown = await response.json().catch((err) => {
-					showToast(actionFailureToast("Не удалось прочитать ответ сервера", (err as { status?: number })?.status ?? null), "error");
+					showToast(
+						actionFailureToast(
+							"Не удалось прочитать ответ сервера",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					return null;
 				});
 				if (cancelled) return;
@@ -146,7 +151,13 @@ export function VisitDiaryPhotoUpload({
 					files.length === 0 ? { phase: "empty" } : { phase: "ready" },
 				);
 			} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(error as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				if (cancelled) return;
 				// abort при смене приёма — не failed
 				if (error instanceof DOMException && error.name === "AbortError") {

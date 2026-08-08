@@ -1,5 +1,3 @@
-import { showToast } from "../../components/GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import type { StaffRole } from "@dental/shared";
 import { useRef, useState } from "react";
 import {
@@ -7,6 +5,8 @@ import {
 	responseErrorMessage,
 	staffWorkingHoursFromSimpleDraft,
 } from "../../AppHelpers";
+import { showToast } from "../../components/GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppStore } from "../../store/appStore";
 import { useVisitStore } from "../../store/visitStore";
 
@@ -72,7 +72,13 @@ export function useStaffSettingsLogic({
 			}
 			await loadDashboard();
 		} catch (_error) {
-			showToast(actionFailureToast("Сетевая ошибка при добавлении сотрудника", (_error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Сетевая ошибка при добавлении сотрудника",
+					(_error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setError("Сетевая ошибка при добавлении сотрудника");
 		}
 	}
@@ -97,7 +103,13 @@ export function useStaffSettingsLogic({
 			}
 			await loadDashboard();
 		} catch (error) {
-			showToast(actionFailureToast("Не удалось обновить профиль сотрудника", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Не удалось обновить профиль сотрудника",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setError(
 				operatorWorkflowFailureMessage(
 					"Не удалось обновить профиль сотрудника",
@@ -150,7 +162,13 @@ export function useStaffSettingsLogic({
 			setNewStaffSpecialty(selectedSpecialty);
 			await loadDashboard();
 		} catch (staffError) {
-			showToast(actionFailureToast("Сотрудник не добавлен", (staffError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Сотрудник не добавлен",
+					(staffError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setError(
 				operatorWorkflowFailureMessage("Сотрудник не добавлен", staffError),
 			);
@@ -204,7 +222,13 @@ export function useStaffSettingsLogic({
 			setNewChairHasSurgeryKit(false);
 			await loadDashboard();
 		} catch (chairError) {
-			showToast(actionFailureToast("Кресло не добавлено", (chairError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Кресло не добавлено",
+					(chairError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setError(
 				operatorWorkflowFailureMessage("Кресло не добавлено", chairError),
 			);
@@ -227,7 +251,13 @@ export function useStaffSettingsLogic({
 
 			if (!response.ok) {
 				const errorData = await response.json().catch((err) => {
-					showToast(actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null), "error");
+					showToast(
+						actionFailureToast(
+							"Ошибка чтения ответа",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					return {};
 				});
 				setError(
@@ -239,7 +269,13 @@ export function useStaffSettingsLogic({
 
 			await loadDashboard();
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка при удалении кресла", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка при удалении кресла",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setError(
 				operatorWorkflowFailureMessage("Ошибка при удалении кресла", error),
 			);

@@ -278,7 +278,10 @@ export function SettingsAccessTab({
 							<strong>{profile.title}</strong>
 							<p>{profile.description}</p>
 						</div>
-						<section className="workspace-token-row" aria-label="Разделы профиля">
+						<section
+							className="workspace-token-row"
+							aria-label="Разделы профиля"
+						>
 							{profile.visibleSections.map((section) => (
 								<span key={section}>{viewLabels[section]}</span>
 							))}

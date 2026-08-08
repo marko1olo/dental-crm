@@ -12,22 +12,23 @@ const SettingsSchema = z.object({
 
 export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 	app.get("/api/integrations/yandex-calendar/auth", async (request, reply) => {
-    try {
+		try {
+			const identity = await requireStaffIdentity(request, reply);
+			if (!identity?.organizationId) return;
 
-    		const identity = await requireStaffIdentity(request, reply);
-    		if (!identity?.organizationId) return;
-
-    		return {
-    			authUrl:
-    				"https://oauth.yandex.ru/authorize?response_type=code&client_id=dente_crm",
-    			connected: false,
-    		};
-    	
-    } catch (error: any) {
-    request.log.error(error);
-    return reply.status(500).send({ error: "InternalServerError", message: "Internal server error" });
-    }
-    });
+			return {
+				authUrl:
+					"https://oauth.yandex.ru/authorize?response_type=code&client_id=dente_crm",
+				connected: false,
+			};
+		} catch (error: any) {
+			request.log.error(error);
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Internal server error",
+			});
+		}
+	});
 
 	app.post(
 		"/api/integrations/yandex-calendar/settings",
@@ -55,91 +56,96 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 	);
 
 	app.get("/api/integrations/yandex-calendar-syncs", async (request, reply) => {
-    try {
+		try {
+			const identity = await requireStaffIdentity(request, reply);
+			if (!identity?.organizationId) return;
 
-    		const identity = await requireStaffIdentity(request, reply);
-    		if (!identity?.organizationId) return;
+			const syncs = await db
+				.select({
+					id: yandexCalendarSyncs.id,
+					organizationId: yandexCalendarSyncs.organizationId,
+					doctorName: users.fullName,
+					yandexCalendarId: yandexCalendarSyncs.yandexCalendarId,
+					syncStatus: yandexCalendarSyncs.syncStatus,
+					lastSyncedAt: yandexCalendarSyncs.lastSyncAt,
+				})
+				.from(yandexCalendarSyncs)
+				.innerJoin(users, eq(yandexCalendarSyncs.doctorId, users.id))
+				.where(eq(yandexCalendarSyncs.organizationId, identity.organizationId));
 
-    		const syncs = await db
-    			.select({
-    				id: yandexCalendarSyncs.id,
-    				organizationId: yandexCalendarSyncs.organizationId,
-    				doctorName: users.fullName,
-    				yandexCalendarId: yandexCalendarSyncs.yandexCalendarId,
-    				syncStatus: yandexCalendarSyncs.syncStatus,
-    				lastSyncedAt: yandexCalendarSyncs.lastSyncAt,
-    			})
-    			.from(yandexCalendarSyncs)
-    			.innerJoin(users, eq(yandexCalendarSyncs.doctorId, users.id))
-    			.where(eq(yandexCalendarSyncs.organizationId, identity.organizationId));
-
-    		return syncs;
-    	
-    } catch (error: any) {
-    request.log.error(error);
-    return reply.status(500).send({ error: "InternalServerError", message: "Internal server error" });
-    }
-    });
+			return syncs;
+		} catch (error: any) {
+			request.log.error(error);
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Internal server error",
+			});
+		}
+	});
 
 	app.post("/api/integrations/yandex-calendar/sync", async (request, reply) => {
-    try {
+		try {
+			const identity = await requireStaffIdentity(request, reply);
+			if (!identity?.userId || !identity?.organizationId) return;
+			const staffId = identity.userId;
+			const orgId = identity.organizationId;
 
-    		const identity = await requireStaffIdentity(request, reply);
-    		if (!identity?.userId || !identity?.organizationId) return;
-    		const staffId = identity.userId;
-    		const orgId = identity.organizationId;
+			const staffInfo = await db
+				.select({
+					yandexCalendarId: users.yandexCalendarId,
+					yandexCalendarToken: users.yandexCalendarToken,
+				})
+				.from(users)
+				.where(eq(users.id, staffId))
+				.then((r) => r[0]);
 
-    		const staffInfo = await db
-    			.select({
-    				yandexCalendarId: users.yandexCalendarId,
-    				yandexCalendarToken: users.yandexCalendarToken,
-    			})
-    			.from(users)
-    			.where(eq(users.id, staffId))
-    			.then((r) => r[0]);
+			if (!staffInfo?.yandexCalendarId || !staffInfo?.yandexCalendarToken) {
+				return reply.code(400).send({ error: "Yandex Calendar not connected" });
+			}
 
-    		if (!staffInfo?.yandexCalendarId || !staffInfo?.yandexCalendarToken) {
-    			return reply.code(400).send({ error: "Yandex Calendar not connected" });
-    		}
+			request.log.info(
+				{ staffId },
+				"Starting Yandex Calendar sync for staffId",
+			);
 
-    		request.log.info({ staffId }, "Starting Yandex Calendar sync for staffId");
+			const existingSync = await db
+				.select({ id: yandexCalendarSyncs.id })
+				.from(yandexCalendarSyncs)
+				.where(
+					and(
+						eq(yandexCalendarSyncs.organizationId, orgId),
+						eq(yandexCalendarSyncs.doctorId, staffId),
+					),
+				)
+				.then((r) => r[0]);
 
-    		const existingSync = await db
-    			.select({ id: yandexCalendarSyncs.id })
-    			.from(yandexCalendarSyncs)
-    			.where(
-    				and(
-    					eq(yandexCalendarSyncs.organizationId, orgId),
-    					eq(yandexCalendarSyncs.doctorId, staffId),
-    				),
-    			)
-    			.then((r) => r[0]);
+			if (existingSync) {
+				await db
+					.update(yandexCalendarSyncs)
+					.set({
+						yandexCalendarId: staffInfo.yandexCalendarId,
+						syncStatus: "synced",
+						lastSyncAt: new Date(),
+						errorMessage: null,
+					})
+					.where(eq(yandexCalendarSyncs.id, existingSync.id));
+			} else {
+				await db.insert(yandexCalendarSyncs).values({
+					organizationId: orgId,
+					doctorId: staffId,
+					yandexCalendarId: staffInfo.yandexCalendarId,
+					syncStatus: "synced",
+					lastSyncAt: new Date(),
+				});
+			}
 
-    		if (existingSync) {
-    			await db
-    				.update(yandexCalendarSyncs)
-    				.set({
-    					yandexCalendarId: staffInfo.yandexCalendarId,
-    					syncStatus: "synced",
-    					lastSyncAt: new Date(),
-    					errorMessage: null,
-    				})
-    				.where(eq(yandexCalendarSyncs.id, existingSync.id));
-    		} else {
-    			await db.insert(yandexCalendarSyncs).values({
-    				organizationId: orgId,
-    				doctorId: staffId,
-    				yandexCalendarId: staffInfo.yandexCalendarId,
-    				syncStatus: "synced",
-    				lastSyncAt: new Date(),
-    			});
-    		}
-
-    		return { success: true, message: "Sync triggered successfully" };
-    	
-    } catch (error: any) {
-    request.log.error(error);
-    return reply.status(500).send({ error: "InternalServerError", message: "Internal server error" });
-    }
-    });
+			return { success: true, message: "Sync triggered successfully" };
+		} catch (error: any) {
+			request.log.error(error);
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Internal server error",
+			});
+		}
+	});
 }

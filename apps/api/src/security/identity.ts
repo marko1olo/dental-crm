@@ -24,9 +24,9 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { unguardedBypassAllowed } from "./bypass.js";
 import { verifyToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "./authSecret.js";
+import { unguardedBypassAllowed } from "./bypass.js";
 
 export const CLINIC_TOKEN_HEADER = "x-dente-clinic-token";
 export const STAFF_TOKEN_HEADER = "x-dente-staff-token";

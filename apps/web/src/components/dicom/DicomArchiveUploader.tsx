@@ -1,9 +1,9 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as fflate from "fflate";
 import type React from "react";
 import { useCallback, useState } from "react";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 interface DicomArchiveUploaderProps {
 	onImagesLoaded: (imageIds: string[]) => void;
@@ -18,158 +18,170 @@ export function DicomArchiveUploader({
 		"Перетащите ZIP-архив или папку со снимками сюда",
 	);
 
-	const processFile = useCallback(async (file: File): Promise<string | null> => {
-		return new Promise((resolve) => {
-			const reader = new FileReader();
-			reader.onload = () => {
-				try {
-					const arrayBuffer = reader.result as ArrayBuffer;
-					const byteArray = new Uint8Array(arrayBuffer);
+	const processFile = useCallback(
+		async (file: File): Promise<string | null> => {
+			return new Promise((resolve) => {
+				const reader = new FileReader();
+				reader.onload = () => {
+					try {
+						const arrayBuffer = reader.result as ArrayBuffer;
+						const byteArray = new Uint8Array(arrayBuffer);
 
-					// Check DICOM magic number at offset 128
-					if (byteArray.length < 132) {
+						// Check DICOM magic number at offset 128
+						if (byteArray.length < 132) {
+							resolve(null);
+							return;
+						}
+
+						const dicmPrefix = String.fromCharCode(
+							byteArray[128] ?? 0,
+							byteArray[129] ?? 0,
+							byteArray[130] ?? 0,
+							byteArray[131] ?? 0,
+						);
+						if (dicmPrefix !== "DICM") {
+							resolve(null);
+							return;
+						}
+
+						// Generate imageId using cornerstone wado-uri fileManager
+						const imageId =
+							cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
+						resolve(imageId);
+					} catch (e) {
+						showToast(
+							actionFailureToast(
+								"Ошибка выполнения операции",
+								(e as { status?: number })?.status ?? null,
+							),
+							"error",
+						);
+						console.error("Failed to parse file", file.name, e);
 						resolve(null);
-						return;
 					}
-
-					const dicmPrefix = String.fromCharCode(
-						byteArray[128] ?? 0,
-						byteArray[129] ?? 0,
-						byteArray[130] ?? 0,
-						byteArray[131] ?? 0,
-					);
-					if (dicmPrefix !== "DICM") {
-						resolve(null);
-						return;
-					}
-
-					// Generate imageId using cornerstone wado-uri fileManager
-					const imageId =
-						cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
-					resolve(imageId);
-				} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
-					console.error("Failed to parse file", file.name, e);
-					resolve(null);
-				}
-			};
-			reader.onerror = () => resolve(null);
-			reader.readAsArrayBuffer(file.slice(0, 1024)); // Only read first 1KB for DICM check
-		});
-	}, []);
+				};
+				reader.onerror = () => resolve(null);
+				reader.readAsArrayBuffer(file.slice(0, 1024)); // Only read first 1KB for DICM check
+			});
+		},
+		[],
+	);
 
 	const MAX_SAFE_FILE_SIZE_BYTES = 1.5 * 1024 * 1024 * 1024; // 1.5 GB
 
-	const processZip = useCallback(async (zipFile: File) => {
-		if (zipFile.size > MAX_SAFE_FILE_SIZE_BYTES) {
-			setStatus(
-				"Файл слишком велик для обработки в памяти браузера. Используйте просмотр по срезам.",
-			);
-			return;
-		}
+	const processZip = useCallback(
+		async (zipFile: File) => {
+			if (zipFile.size > MAX_SAFE_FILE_SIZE_BYTES) {
+				setStatus(
+					"Файл слишком велик для обработки в памяти браузера. Используйте просмотр по срезам.",
+				);
+				return;
+			}
 
-		setStatus("Распаковка ZIP-архива в память...");
-		const buffer = new Uint8Array(await zipFile.arrayBuffer());
+			setStatus("Распаковка ZIP-архива в память...");
+			const buffer = new Uint8Array(await zipFile.arrayBuffer());
 
-		return new Promise<void>((resolve, reject) => {
-			const imageIds: string[] = [];
-			let totalFiles = 0;
-			let processedFiles = 0;
+			return new Promise<void>((resolve, reject) => {
+				const imageIds: string[] = [];
+				let totalFiles = 0;
+				let processedFiles = 0;
 
-			fflate.unzip(buffer, (err, unzipped) => {
-				if (err) {
-					reject(err);
-					return;
-				}
-
-				const entries = Object.keys(unzipped);
-				totalFiles = entries.length;
-
-				const processEntry = async (index: number) => {
-					if (index >= entries.length) {
-						if (imageIds.length > 0) {
-							setStatus(`Загружено объектов DICOM: ${imageIds.length}`);
-							onImagesLoaded(imageIds);
-						} else {
-							setStatus("Файлы DICOM в ZIP-архиве не найдены.");
-						}
-						resolve();
+				fflate.unzip(buffer, (err, unzipped) => {
+					if (err) {
+						reject(err);
 						return;
 					}
 
-					const filename = entries[index]!;
-					const fileData = unzipped[filename];
-					processedFiles++;
+					const entries = Object.keys(unzipped);
+					totalFiles = entries.length;
 
-					if (processedFiles % 10 === 0) {
-						setStatus(`Обработка ZIP: ${processedFiles}/${totalFiles}`);
-					}
-
-					if (fileData && fileData.length > 132) {
-						const dicmPrefix = String.fromCharCode(
-							fileData[128] ?? 0,
-							fileData[129] ?? 0,
-							fileData[130] ?? 0,
-							fileData[131] ?? 0,
-						);
-						if (dicmPrefix === "DICM") {
-							const file = new File([fileData], filename);
-							const imageId =
-								cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
-							imageIds.push(imageId);
+					const processEntry = async (index: number) => {
+						if (index >= entries.length) {
+							if (imageIds.length > 0) {
+								setStatus(`Загружено объектов DICOM: ${imageIds.length}`);
+								onImagesLoaded(imageIds);
+							} else {
+								setStatus("Файлы DICOM в ZIP-архиве не найдены.");
+							}
+							resolve();
+							return;
 						}
-					}
 
-					setTimeout(() => processEntry(index + 1), 0);
-				};
+						const filename = entries[index]!;
+						const fileData = unzipped[filename];
+						processedFiles++;
 
-				processEntry(0);
-			});
-		});
-	}, [onImagesLoaded]);;
+						if (processedFiles % 10 === 0) {
+							setStatus(`Обработка ZIP: ${processedFiles}/${totalFiles}`);
+						}
 
-	const traverseFileTree = useCallback(async (
-		item: any,
-		path: string = "",
-	): Promise<File[]> => {
-		return new Promise((resolve) => {
-			if (item.isFile) {
-				item.file((file: File) => {
-					resolve([file]);
+						if (fileData && fileData.length > 132) {
+							const dicmPrefix = String.fromCharCode(
+								fileData[128] ?? 0,
+								fileData[129] ?? 0,
+								fileData[130] ?? 0,
+								fileData[131] ?? 0,
+							);
+							if (dicmPrefix === "DICM") {
+								const file = new File([fileData], filename);
+								const imageId =
+									cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
+								imageIds.push(imageId);
+							}
+						}
+
+						setTimeout(() => processEntry(index + 1), 0);
+					};
+
+					processEntry(0);
 				});
-			} else if (item.isDirectory) {
-				// БЫЛО: readEntries вызывался ОДИН раз. По спецификации FileSystem API он
-				// отдаёт не больше ~100 записей за вызов и требует повторных вызовов,
-				// пока не вернёт пустой массив. Папка КЛКТ на 400 срезов загружалась
-				// на 100 файлов, реконструкция строилась по неполной челюсти,
-				// а статус бодро сообщал «Загружено объектов DICOM: 100».
-				const dirReader = item.createReader();
-				const files: File[] = [];
-				const readBatch = () => {
-					dirReader.readEntries(
-						async (entries: any[]) => {
-							if (!entries || entries.length === 0) {
-								resolve(files);
-								return;
-							}
-							for (let i = 0; i < entries.length; i++) {
-								const nestedFiles = await traverseFileTree(
-									entries[i],
-									`${path + item.name}/`,
-								);
-								files.push(...nestedFiles);
-							}
-							readBatch();
-						},
-						() => resolve(files),
-					);
-				};
-				readBatch();
-			} else {
-				resolve([]);
-			}
-		});
-	}, []);;
+			});
+		},
+		[onImagesLoaded],
+	);
+
+	const traverseFileTree = useCallback(
+		async (item: any, path: string = ""): Promise<File[]> => {
+			return new Promise((resolve) => {
+				if (item.isFile) {
+					item.file((file: File) => {
+						resolve([file]);
+					});
+				} else if (item.isDirectory) {
+					// БЫЛО: readEntries вызывался ОДИН раз. По спецификации FileSystem API он
+					// отдаёт не больше ~100 записей за вызов и требует повторных вызовов,
+					// пока не вернёт пустой массив. Папка КЛКТ на 400 срезов загружалась
+					// на 100 файлов, реконструкция строилась по неполной челюсти,
+					// а статус бодро сообщал «Загружено объектов DICOM: 100».
+					const dirReader = item.createReader();
+					const files: File[] = [];
+					const readBatch = () => {
+						dirReader.readEntries(
+							async (entries: any[]) => {
+								if (!entries || entries.length === 0) {
+									resolve(files);
+									return;
+								}
+								for (let i = 0; i < entries.length; i++) {
+									const nestedFiles = await traverseFileTree(
+										entries[i],
+										`${path + item.name}/`,
+									);
+									files.push(...nestedFiles);
+								}
+								readBatch();
+							},
+							() => resolve(files),
+						);
+					};
+					readBatch();
+				} else {
+					resolve([]);
+				}
+			});
+		},
+		[],
+	);
 
 	const onDrop = useCallback(
 		async (e: React.DragEvent<HTMLElement>) => {
@@ -231,7 +243,13 @@ export function DicomArchiveUploader({
 					}
 				}
 			} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(error as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				console.error("[DicomArchiveUploader] Ошибка обработки:", error);
 				setStatus(
 					"Не удалось прочитать файлы: архив повреждён, зашифрован или не содержит DICOM. Попробуйте другой архив или распакуйте его вручную.",

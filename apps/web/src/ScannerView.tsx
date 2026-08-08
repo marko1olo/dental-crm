@@ -1,11 +1,10 @@
-import { actionFailureToast } from "./lib/panelStateText";
 import { motion } from "framer-motion";
 import { Activity, Box, CheckCircle2, ScanLine, XCircle } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { requestFailureCause } from "./lib/panelStateText";
+import { actionFailureToast, requestFailureCause } from "./lib/panelStateText";
 import "./ScannerView.css";
 
 /**
@@ -154,7 +153,13 @@ export function ScannerView() {
 			setLogs(Array.isArray(data) ? data.filter(isSterilizationLog) : []);
 			setLoadError(null);
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error(error);
 			setLoadError(
 				/*
@@ -171,9 +176,6 @@ export function ScannerView() {
 			setIsLoadingLogs(false);
 		}
 	}, [auth]);
-
-	
-
 
 	useEffect(() => {
 		// Поле под фокусом сразу: физический сканер печатает штрих-код как клавиатура.

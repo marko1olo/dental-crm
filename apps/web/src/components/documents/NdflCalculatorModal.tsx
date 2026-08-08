@@ -1,8 +1,8 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { AlertTriangle, Calculator } from "lucide-react";
 import { useState } from "react";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppLogic } from "../../useAppLogic";
+import { showToast } from "../GlobalToast";
 
 export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 	const { patientId, auth } = useAppLogic();
@@ -41,7 +41,13 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 			const data = await res.json();
 			setResult(data);
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error(error);
 		} finally {
 			setLoading(false);

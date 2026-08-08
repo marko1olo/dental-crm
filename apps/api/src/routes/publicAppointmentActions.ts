@@ -141,7 +141,7 @@ function formatAppointmentMoment(startsAt: Date, timezone: string): string {
 			minute: "2-digit",
 		}).format(startsAt);
 	} catch (err) {
-		console.error('[Dente] formatAppointmentMoment failed:', err);
+		console.error("[Dente] formatAppointmentMoment failed:", err);
 		return new Intl.DateTimeFormat("ru-RU", {
 			day: "numeric",
 			month: "long",

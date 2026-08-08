@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, statSync, type Dirent } from "node:fs";
+import { type Dirent, existsSync, statSync } from "node:fs";
 import { open, readdir, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -1720,7 +1720,8 @@ async function fetchDadataClinicSuggestions(
 				? []
 				: ["Сервис реквизитов не вернул организаций по безопасному запросу."],
 		};
-	} catch (err) { console.error('[Dente] context:', err);
+	} catch (err) {
+		console.error("[Dente] context:", err);
 		return {
 			status: "error",
 			suggestions: [],
@@ -1832,7 +1833,8 @@ function migrationConfiguredRootsEnv(name: string) {
 function migrationRootExists(root: string) {
 	try {
 		return existsSync(root);
-	} catch (err) { console.error('[Dente] context:', err);
+	} catch (err) {
+		console.error("[Dente] context:", err);
 		return false;
 	}
 }
@@ -2671,7 +2673,8 @@ async function readWindowsMigrationWorkstationSignalValues(
 				};
 			})
 			.filter((row) => row.value.length >= 3);
-	} catch (err) { console.error('[Dente] context:', err);
+	} catch (err) {
+		console.error("[Dente] context:", err);
 		warnings.add(
 			"Системные сигналы рабочей станции не прочитаны: поиск продолжился по доступным папкам и ярлыкам без списка процессов, служб и установленных программ.",
 		);
@@ -2748,7 +2751,8 @@ function migrationExistingDirectory(value: string) {
 		if (stat.isDirectory()) return resolved;
 		if (stat.isFile()) return path.dirname(resolved);
 		return null;
-	} catch (err) { console.error('[Dente] context:', err);
+	} catch (err) {
+		console.error("[Dente] context:", err);
 		return null;
 	}
 }
@@ -3120,7 +3124,8 @@ async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
 		return uniqueStrings(roots)
 			.filter((root) => migrationRootExists(root))
 			.slice(0, 32);
-	} catch (err) { console.error('[Dente] context:', err);
+	} catch (err) {
+		console.error("[Dente] context:", err);
 		warnings.add(
 			"Сетевые и внешние диски не удалось прочитать автоматически: поиск продолжился по доступным папкам и вручную указанным корням.",
 		);
@@ -4421,7 +4426,8 @@ function buildMigrationLocalSourceWorkup(
 			sourceExists = true;
 			sourceIsDirectory = stat.isDirectory();
 			if (sourceIsDirectory) fileExtension = null;
-		} catch (err) { console.error('[Dente] context:', err);
+		} catch (err) {
+			console.error("[Dente] context:", err);
 			sourceExists = false;
 			warnings.push(
 				"Источник недоступен с этого компьютера сейчас; план построен по названию/расширению.",
@@ -4714,7 +4720,8 @@ function migrationProbeSafeArtifact(
 		const stat = statSync(filePath);
 		byteSize = stat.size;
 		modifiedAt = stat.mtime.toISOString();
-	} catch (err) { console.error('[Dente] context:', err);
+	} catch (err) {
+		console.error("[Dente] context:", err);
 		// Probe output stays best-effort; unreadable files are reported as warnings by caller.
 	}
 	const extension = path.extname(filePath).toLowerCase() || null;
@@ -4905,7 +4912,8 @@ async function inspectMigrationProbeFile(input: {
 			signals.forEach((signal) => {
 				input.formatSignals.add(signal);
 			});
-		} catch (err) { console.error('[Dente] context:', err);
+		} catch (err) {
+			console.error("[Dente] context:", err);
 			input.warnings.add(
 				"Один файл-кандидат не удалось прочитать даже для заголовка; он учтен без сигнатуры.",
 			);
@@ -5001,7 +5009,8 @@ async function scanMigrationProbeDirectory(
 		let entries: Dirent[];
 		try {
 			entries = await readdir(current.folderPath, { withFileTypes: true });
-		} catch (err) { console.error('[Dente] context:', err);
+		} catch (err) {
+			console.error("[Dente] context:", err);
 			warnings.add(
 				"Одну подпапку проверки не удалось прочитать; она пропущена.",
 			);
@@ -5043,7 +5052,8 @@ async function scanMigrationProbeDirectory(
 				const modified = (await stat(fullPath)).mtime.toISOString();
 				if (!latestModifiedAt || modified > latestModifiedAt)
 					latestModifiedAt = modified;
-			} catch (err) { console.error('[Dente] context:', err);
+			} catch (err) {
+				console.error("[Dente] context:", err);
 				// Metadata is best-effort only.
 			}
 			await inspectMigrationProbeFile({
@@ -5145,7 +5155,8 @@ async function buildMigrationLocalSourceProbe(
 			sourceIsDirectory = stat.isDirectory();
 			sourceByteSize = stat.isFile() ? stat.size : null;
 			latestModifiedAt = stat.mtime.toISOString();
-		} catch (err) { console.error('[Dente] context:', err);
+		} catch (err) {
+			console.error("[Dente] context:", err);
 			sourceExists = false;
 			warnings.add(
 				"Источник сейчас недоступен; подключите диск/сетевую папку и повторите проверку.",
@@ -6626,7 +6637,8 @@ async function buildMigrationAutopilot(
 				probe.privacyWarnings.forEach((warning) => {
 					privacyWarnings.add(warning);
 				});
-			} catch (err) { console.error('[Dente] context:', err);
+			} catch (err) {
+				console.error("[Dente] context:", err);
 				warnings.add(
 					`Источник ${candidate.safeDisplayName} найден, но быстрая проверка не завершилась. Откройте план источника или выберите папку вручную.`,
 				);
@@ -7920,13 +7932,16 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		{
 			schema: {
 				body: smartImportRequestSchema,
-				
 			},
 		},
 		async (request, reply) => {
 			try {
 				if (
-					!(await requireClinicalReadAccess(request, reply, "smart import preview"))
+					!(await requireClinicalReadAccess(
+						request,
+						reply,
+						"smart import preview",
+					))
 				)
 					return;
 				const parsed = parseSmartImportPayload(
@@ -7955,7 +7970,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		{
 			schema: {
 				body: migrationLocalSourceDiscoveryRequestSchema,
-				
 			},
 		},
 		async (request, reply) => {
@@ -7988,7 +8002,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		{
 			schema: {
 				body: migrationLocalSourceWorkupRequestSchema,
-				
 			},
 		},
 		async (request, reply) => {
@@ -8021,7 +8034,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		{
 			schema: {
 				body: migrationLocalSourceProbeRequestSchema,
-				
 			},
 		},
 		async (request, reply) => {
@@ -8054,13 +8066,16 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		{
 			schema: {
 				body: migrationAutopilotRequestSchema,
-				
 			},
 		},
 		async (request, reply) => {
 			try {
 				if (
-					!(await requireClinicalReadAccess(request, reply, "migration autopilot"))
+					!(await requireClinicalReadAccess(
+						request,
+						reply,
+						"migration autopilot",
+					))
 				)
 					return;
 				const parsed = parseSmartImportPayload(
@@ -8135,7 +8150,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		{
 			schema: {
 				body: clinicPublicLookupRequestSchema,
-				
 			},
 		},
 		async (request, reply) => {
@@ -8173,7 +8187,11 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		async (request, reply) => {
 			try {
 				if (
-					!(await requireClinicalReadAccess(request, reply, "smart import report"))
+					!(await requireClinicalReadAccess(
+						request,
+						reply,
+						"smart import report",
+					))
 				)
 					return;
 				const parsed = parseSmartImportPayload(
@@ -8256,7 +8274,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		{
 			schema: {
 				body: smartImportRequestSchema,
-				
 			},
 		},
 		async (request, reply) => {
@@ -8283,7 +8300,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 				);
 				if (!orgId) return;
 				const preview = await buildSmartImportPreview(orgId, input);
-				
+
 				const patientCommit =
 					preview.patientPreview.totalRows > 0
 						? await commitPatientImport(orgId, {
@@ -8314,7 +8331,6 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	);
 }
 
-
 export { buildSmartImportPreview };
 
 async function inspectMigrationDiscoveryFolder(
@@ -8327,7 +8343,8 @@ async function inspectMigrationDiscoveryFolder(
 	let entries: Dirent[];
 	try {
 		entries = await readdir(item.folderPath, { withFileTypes: true });
-	} catch (err) { console.error('[Dente] context:', err);
+	} catch (err) {
+		console.error("[Dente] context:", err);
 		warnings.add(
 			"Одну локальную папку миграционного поиска не удалось прочитать; она пропущена.",
 		);
@@ -8412,7 +8429,8 @@ async function inspectMigrationDiscoveryFolder(
 			const modified = (await stat(fullPath)).mtime.toISOString();
 			if (!latestModifiedAt || modified > latestModifiedAt)
 				latestModifiedAt = modified;
-		} catch (err) { console.error('[Dente] context:', err);
+		} catch (err) {
+			console.error("[Dente] context:", err);
 			// Best-effort metadata only.
 		}
 	}

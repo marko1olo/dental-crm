@@ -220,7 +220,13 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				}
 				setActiveContract(contract);
 			} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				console.error("[insurance contract] запрос не выполнен", err);
 				if (!active) return;
 				setActiveContract(null);
@@ -312,7 +318,13 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				);
 				setSignatureUrl(latestPlan.patientSignature ?? null);
 			} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(error as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				console.error("[treatment plan load] запрос не выполнен", error);
 				if (active) setPlanLoad({ phase: "failed", status });
 			}

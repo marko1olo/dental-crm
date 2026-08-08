@@ -17,6 +17,7 @@ import type {
 	CommunicationConsentScope,
 	DeliveryErrorClass,
 } from "./types.js";
+
 export type { DeliveryErrorClass };
 
 // ─── Тихие часы ──────────────────────────────────────────────────────────────

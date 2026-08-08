@@ -1,5 +1,5 @@
 import { AlertCircle, RefreshCw, Stethoscope } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export interface EgiszMultipleDiagnosisItem {
@@ -17,26 +17,29 @@ export function EgiszMultipleDiagnosesWidget() {
 	const [items, setItems] = useState<EgiszMultipleDiagnosisItem[]>([]);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchDiagnoses = useCallback(async function fetchDiagnoses() {
-		setLoading(true);
-		setError(null);
-		try {
-			const headers = appLogic.auth?.denteClinicalReadHeaders?.() ?? {};
-			const res = await fetch("/api/egisz/multiple-diagnoses", { headers });
-			if (!res.ok) {
-				const errJson = await res.json().catch(() => null);
-				throw new Error(
-					errJson?.message || errJson?.error || `HTTP ${res.status}`,
-				);
+	const fetchDiagnoses = useCallback(
+		async function fetchDiagnoses() {
+			setLoading(true);
+			setError(null);
+			try {
+				const headers = appLogic.auth?.denteClinicalReadHeaders?.() ?? {};
+				const res = await fetch("/api/egisz/multiple-diagnoses", { headers });
+				if (!res.ok) {
+					const errJson = await res.json().catch(() => null);
+					throw new Error(
+						errJson?.message || errJson?.error || `HTTP ${res.status}`,
+					);
+				}
+				const data = await res.json();
+				setItems(Array.isArray(data) ? data : []);
+			} catch (err: any) {
+				setError(err?.message || "Ошибка загрузки сопутствующих диагнозов");
+			} finally {
+				setLoading(false);
 			}
-			const data = await res.json();
-			setItems(Array.isArray(data) ? data : []);
-		} catch (err: any) {
-			setError(err?.message || "Ошибка загрузки сопутствующих диагнозов");
-		} finally {
-			setLoading(false);
-		}
-	}, [appLogic.auth]);
+		},
+		[appLogic.auth],
+	);
 
 	useEffect(() => {
 		fetchDiagnoses();

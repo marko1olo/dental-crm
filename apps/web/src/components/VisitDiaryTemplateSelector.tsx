@@ -120,7 +120,13 @@ export function VisitDiaryTemplateSelector({
 				}
 			}
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("Failed to load templates", error);
 			setTemplates([]);
 			setLoadFailed(true);

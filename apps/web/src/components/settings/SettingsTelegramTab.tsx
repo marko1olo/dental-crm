@@ -913,7 +913,10 @@ export function SettingsTelegramTab({
 								самочувствии через выбранное число часов после памятки.
 							</small>
 							{typedTelegramPostVisitCheckupDelayFields.map((field) => (
-								<label htmlFor={`telegram-checkup-delay-${field.key}`} key={field.key}>
+								<label
+									htmlFor={`telegram-checkup-delay-${field.key}`}
+									key={field.key}
+								>
 									{field.label}
 									<input
 										id={`telegram-checkup-delay-${field.key}`}
@@ -1025,7 +1028,11 @@ export function SettingsTelegramTab({
 							</small>
 						</div>
 					</div>
-					<div className="telegram-feature-grid" role="group" aria-label="Функции Telegram">
+					<div
+						className="telegram-feature-grid"
+						role="group"
+						aria-label="Функции Telegram"
+					>
 						{typedTelegramFeatureOptions.map((feature) => (
 							<label
 								htmlFor={`telegram-feature-${feature}`}
@@ -1050,7 +1057,10 @@ export function SettingsTelegramTab({
 							</label>
 						))}
 					</div>
-					<label htmlFor="telegram-allow-voice-intake-draft" className="telegram-voice-toggle">
+					<label
+						htmlFor="telegram-allow-voice-intake-draft"
+						className="telegram-voice-toggle"
+					>
 						<input
 							id="telegram-allow-voice-intake-draft"
 							type="checkbox"
@@ -1085,7 +1095,10 @@ export function SettingsTelegramTab({
 					</label>
 					<div className="telegram-visual-card-fields">
 						{typedTelegramVisualCardFields.map((field) => (
-							<label htmlFor={`telegram-visual-card-${field.key}`} key={field.key}>
+							<label
+								htmlFor={`telegram-visual-card-${field.key}`}
+								key={field.key}
+							>
 								{field.label}
 								<input
 									id={`telegram-visual-card-${field.key}`}

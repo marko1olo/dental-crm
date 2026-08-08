@@ -1,11 +1,11 @@
+import type {
+	CreateMessageTemplateCatalogInput,
+	MessageTemplateCatalog,
+	UpdateMessageTemplateCatalogInput,
+} from "@dental/shared";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import type {
-	MessageTemplateCatalog,
-	CreateMessageTemplateCatalogInput,
-	UpdateMessageTemplateCatalogInput,
-} from "@dental/shared";
 
 export async function getMessageTemplateCatalogs(
 	organizationId: string,

@@ -1102,7 +1102,11 @@ export function SettingsClinicTab({
 							Введите ФИО сотрудника, затем выберите роль.
 						</p>
 					) : null}
-					<div role="toolbar" className="role-picker" aria-label="Роль нового сотрудника">
+					<div
+						role="toolbar"
+						className="role-picker"
+						aria-label="Роль нового сотрудника"
+					>
 						{staffCreationRoles.map((role) => (
 							<button
 								className={newStaffRole === role ? "active" : ""}

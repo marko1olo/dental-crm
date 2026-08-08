@@ -1,5 +1,5 @@
 import { multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
-import {  useEffect, useMemo, useRef, useState , useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { showToast } from "../GlobalToast";
@@ -155,48 +155,51 @@ export function useInventoryLogic(organizationId: string) {
 	 */
 	const [rulesError, setRulesError] = useState<string | null>(null);
 
-	const fetchRules = useCallback(async (serviceId: string) => {
-		if (!serviceId) {
-			setRulesList([]);
-			setRulesError(null);
-			return;
-		}
-		try {
-			setIsLoadingRules(true);
-			const res = await fetch(
-				`/api/inventory/${organizationId}/rules/${serviceId}`,
-				{
-					headers: getHeaders(),
-				},
-			);
-			if (res.ok) {
-				const data = await res.json();
-				setRulesList(Array.isArray(data) ? data : []);
+	const fetchRules = useCallback(
+		async (serviceId: string) => {
+			if (!serviceId) {
+				setRulesList([]);
 				setRulesError(null);
-			} else {
-				/*
-				 * Список обнуляем и здесь: показывать правила от прошлой услуги, пока
-				 * рядом стоит выбор другой, — значит подсунуть чужие расходники.
-				 */
+				return;
+			}
+			try {
+				setIsLoadingRules(true);
+				const res = await fetch(
+					`/api/inventory/${organizationId}/rules/${serviceId}`,
+					{
+						headers: getHeaders(),
+					},
+				);
+				if (res.ok) {
+					const data = await res.json();
+					setRulesList(Array.isArray(data) ? data : []);
+					setRulesError(null);
+				} else {
+					/*
+					 * Список обнуляем и здесь: показывать правила от прошлой услуги, пока
+					 * рядом стоит выбор другой, — значит подсунуть чужие расходники.
+					 */
+					setRulesList([]);
+					setRulesError(
+						res.status === 401 || res.status === 403
+							? "Правила списания не показаны: доступ не подтверждён. Войдите в кабинет заново."
+							: "Правила списания не загрузились. Неизвестно, списываются материалы по этой услуге или нет — нажмите «Повторить».",
+					);
+					showToast("Ошибка загрузки правил", "error");
+				}
+			} catch (e) {
+				console.error(e);
 				setRulesList([]);
 				setRulesError(
-					res.status === 401 || res.status === 403
-						? "Правила списания не показаны: доступ не подтверждён. Войдите в кабинет заново."
-						: "Правила списания не загрузились. Неизвестно, списываются материалы по этой услуге или нет — нажмите «Повторить».",
+					"Нет связи с сервером: правила списания не загрузились. Неизвестно, списываются материалы по этой услуге или нет — проверьте интернет и нажмите «Повторить».",
 				);
 				showToast("Ошибка загрузки правил", "error");
+			} finally {
+				setIsLoadingRules(false);
 			}
-		} catch (e) {
-			console.error(e);
-			setRulesList([]);
-			setRulesError(
-				"Нет связи с сервером: правила списания не загрузились. Неизвестно, списываются материалы по этой услуге или нет — проверьте интернет и нажмите «Повторить».",
-			);
-			showToast("Ошибка загрузки правил", "error");
-		} finally {
-			setIsLoadingRules(false);
-		}
-	}, [organizationId]);;
+		},
+		[organizationId],
+	);
 
 	useEffect(() => {
 		if (activeSubTab === "rules" && selectedServiceId) {
@@ -504,7 +507,7 @@ export function useInventoryLogic(organizationId: string) {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [organizationId]);;
+	}, [organizationId]);
 
 	/*
 	 * Без организации склад не грузится — и это надо показать, а не крутить.

@@ -1,13 +1,12 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import type {
 	CreateMessageTemplateCatalogInput,
 	MessageTemplateCatalog,
 } from "@dental/shared";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 const DYNAMIC_TAGS = [
 	{ tag: "{{patient_name}}", label: "Имя пациента" },
@@ -36,7 +35,13 @@ export function MessageTemplatesPanel() {
 				setTemplates(data);
 			}
 		} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error(e);
 		}
 	};

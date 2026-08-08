@@ -1,11 +1,11 @@
-import { actionFailureToast } from "../../lib/panelStateText";
 import { Calendar, CheckCircle2, Trash2, UserPlus, X } from "lucide-react";
 import type React from "react";
-import {  useEffect, useState , useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type { PanelSubject } from "../../lib/panelStateText";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -45,8 +45,11 @@ async function writeFailureText(
 	const body = await response.json().catch((err: any) => {
 		console.error(err);
 		showToast(
-			actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
-			"error"
+			actionFailureToast(
+				"Ошибка чтения ответа",
+				(err as { status?: number })?.status ?? null,
+			),
+			"error",
 		);
 		return null;
 	});
@@ -167,7 +170,13 @@ export function WaitlistDrawer(props: Props) {
 			// что ждущих нет, и раздал бы освободившееся окно мимо очереди.
 			setLoadFailureStatus(res.status);
 		} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("Failed to load waitlist", e);
 			// До сервера не дошли вовсе — это отдельный случай от «ответил отказом».
 			setLoadFailureStatus(null);

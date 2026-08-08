@@ -1,5 +1,3 @@
-import { showToast } from "../../components/GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import type {
 	Appointment,
 	Dashboard,
@@ -23,6 +21,8 @@ import {
 	staffScheduleDraftSignature,
 	staffWorkingHoursFromDraft,
 } from "../../AppHelpers";
+import { showToast } from "../../components/GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
@@ -535,7 +535,13 @@ export function useScheduleLogic({
 			await loadDashboard();
 			return true;
 		} catch (scheduleSaveError) {
-			showToast(actionFailureToast("Расписание сотрудника не сохранено", (scheduleSaveError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Расписание сотрудника не сохранено",
+					(scheduleSaveError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setStaffScheduleSaveStates((current: any) => ({
 				...current,
 				[staffId]: "error",
@@ -605,7 +611,13 @@ export function useScheduleLogic({
 			await loadDashboard();
 			return true;
 		} catch (scheduleSaveError) {
-			showToast(actionFailureToast("Расписание кресла не сохранено", (scheduleSaveError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Расписание кресла не сохранено",
+					(scheduleSaveError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setChairScheduleSaveStates((current) => ({
 				...current,
 				[chairId]: "error",
@@ -742,7 +754,13 @@ export function useScheduleLogic({
 			setError(null);
 			return true;
 		} catch (saveError) {
-			showToast(actionFailureToast("Запись не сохранена", (saveError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Запись не сохранена",
+					(saveError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			const message = operatorWorkflowFailureMessage(
 				"Запись не сохранена",
 				saveError,
@@ -866,7 +884,13 @@ export function useScheduleLogic({
 			setError(null);
 			return true;
 		} catch (createError) {
-			showToast(actionFailureToast("Запись не создана", (createError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Запись не создана",
+					(createError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			const message = operatorWorkflowFailureMessage(
 				"Запись не создана",
 				createError,

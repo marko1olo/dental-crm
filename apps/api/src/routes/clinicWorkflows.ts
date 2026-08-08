@@ -50,9 +50,10 @@ export async function registerClinicWorkflowRoutes(app: FastifyInstance) {
 			return reply.status(200).send({ workflows: rows.map(serializeWorkflow) });
 		} catch (error: unknown) {
 			request.log.error(error);
-			return reply
-				.status(500)
-				.send({ error: "InternalServerError", message: "Не удалось получить список сценариев" });
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Не удалось получить список сценариев",
+			});
 		}
 	});
 
@@ -83,15 +84,19 @@ export async function registerClinicWorkflowRoutes(app: FastifyInstance) {
 				.returning();
 
 			if (!created) {
-				return reply.status(500).send({ error: "InternalServerError", message: "Сценарий не создан" });
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Сценарий не создан",
+				});
 			}
 
 			return reply.status(201).send({ workflow: serializeWorkflow(created) });
 		} catch (error: unknown) {
 			request.log.error(error);
-			return reply
-				.status(500)
-				.send({ error: "InternalServerError", message: "Не удалось создать сценарий" });
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Не удалось создать сценарий",
+			});
 		}
 	});
 
@@ -105,7 +110,10 @@ export async function registerClinicWorkflowRoutes(app: FastifyInstance) {
 
 			const params = workflowIdParamsSchema.safeParse(request.params);
 			if (!params.success) {
-				return reply.status(400).send({ error: "ValidationError", message: "Некорректный ID сценария" });
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный ID сценария",
+				});
 			}
 
 			const body = toggleWorkflowSchema.safeParse(request.body);
@@ -128,15 +136,18 @@ export async function registerClinicWorkflowRoutes(app: FastifyInstance) {
 				.returning();
 
 			if (!updated) {
-				return reply.status(404).send({ error: "NotFound", message: "Сценарий не найден" });
+				return reply
+					.status(404)
+					.send({ error: "NotFound", message: "Сценарий не найден" });
 			}
 
 			return reply.status(200).send({ workflow: serializeWorkflow(updated) });
 		} catch (error: unknown) {
 			request.log.error(error);
-			return reply
-				.status(500)
-				.send({ error: "InternalServerError", message: "Не удалось обновить сценарий" });
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Не удалось обновить сценарий",
+			});
 		}
 	});
 
@@ -151,7 +162,10 @@ export async function registerClinicWorkflowRoutes(app: FastifyInstance) {
 
 			const params = workflowIdParamsSchema.safeParse(request.params);
 			if (!params.success) {
-				return reply.status(400).send({ error: "ValidationError", message: "Некорректный ID сценария" });
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный ID сценария",
+				});
 			}
 
 			const [deleted] = await db
@@ -165,15 +179,18 @@ export async function registerClinicWorkflowRoutes(app: FastifyInstance) {
 				.returning({ id: clinicWorkflows.id });
 
 			if (!deleted) {
-				return reply.status(404).send({ error: "NotFound", message: "Сценарий не найден" });
+				return reply
+					.status(404)
+					.send({ error: "NotFound", message: "Сценарий не найден" });
 			}
 
 			return reply.status(200).send({ deleted: true });
 		} catch (error: unknown) {
 			request.log.error(error);
-			return reply
-				.status(500)
-				.send({ error: "InternalServerError", message: "Не удалось удалить сценарий" });
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Не удалось удалить сценарий",
+			});
 		}
 	});
 }

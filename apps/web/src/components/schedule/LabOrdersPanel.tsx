@@ -1,9 +1,9 @@
-import { actionFailureToast } from "../../lib/panelStateText";
 import { Calendar, FlaskConical, Link, Trash2 } from "lucide-react";
 import type React from "react";
-import {  useEffect, useRef, useState , useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
@@ -140,7 +140,13 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				setLoadError(loadFailureText(res.status));
 			}
 		} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("Failed to load lab orders", e);
 			if (shownPatientIdRef.current !== requestedPatientId) return;
 			setLoadError(

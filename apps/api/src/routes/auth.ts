@@ -522,7 +522,10 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			//
 			// Демо-вход сохраняет прежнее поведение: он не обращается к базе и остаётся
 			// доступен, если таблиц ещё нет (свежая установка до миграций).
-			let org: typeof organizations.$inferSelect | Record<string, any> | undefined;
+			let org:
+				| typeof organizations.$inferSelect
+				| Record<string, any>
+				| undefined;
 			try {
 				const lookup = await readUnderBypass((tx) =>
 					tx

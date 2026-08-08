@@ -17,7 +17,11 @@ export function configuredClinicalMutationSecret(): string | null {
 	return configuredClinicalAccessSecret();
 }
 
-import { namedDevelopmentModeActive, unguardedBypassAllowed } from "./security/bypass.js";
+import {
+	namedDevelopmentModeActive,
+	unguardedBypassAllowed,
+} from "./security/bypass.js";
+
 export { namedDevelopmentModeActive, unguardedBypassAllowed };
 
 function clinicalMutationsUnguardedAllowed(): boolean {

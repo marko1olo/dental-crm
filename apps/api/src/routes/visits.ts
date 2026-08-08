@@ -268,11 +268,11 @@ export function sendVisitDraftMutationError(
 import {
 	acceptVisitDraftInDb,
 	getVisitDraftAutosaveFromDb,
+	getVisitsForQualityControlInDb,
 	openVisitForAppointmentInDb,
+	updateVisitQualityControlStatusInDb,
 	upsertVisitDraftAutosaveInDb,
 	VisitSignedResponseIncompleteError,
-	getVisitsForQualityControlInDb,
-	updateVisitQualityControlStatusInDb,
 } from "../db/visitsQuery.js";
 import { wsBroker } from "../services/websocketBroker.js";
 

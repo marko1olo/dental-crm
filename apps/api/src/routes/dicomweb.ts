@@ -138,7 +138,7 @@ async function readDicomIdentity(
 			sopInstanceUid: normalizeUid(dataSet.string(TAG_SOP_INSTANCE_UID)),
 		};
 	} catch (err) {
-		console.error('[Dente] readDicomMetadata failed:', err);
+		console.error("[Dente] readDicomMetadata failed:", err);
 		return null;
 	} finally {
 		// Дескриптор закрывается всегда: при отказе разбора файл иначе остаётся

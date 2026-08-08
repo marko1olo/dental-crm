@@ -42,7 +42,12 @@ import type {
 	CommunicationConsentScope,
 	DeliveryErrorClass,
 } from "./types.js";
-export type { CommunicationChannelCode, CommunicationConsentScope, DeliveryErrorClass };
+
+export type {
+	CommunicationChannelCode,
+	CommunicationConsentScope,
+	DeliveryErrorClass,
+};
 
 /** Каналы, по которым сообщение действительно уходит машиной. */
 export const MACHINE_DELIVERABLE_CHANNELS: readonly CommunicationChannelCode[] =

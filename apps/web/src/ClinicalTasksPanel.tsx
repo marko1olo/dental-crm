@@ -19,8 +19,8 @@
 
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { showToast } from "./components/GlobalToast";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
 
 type ClinicalTaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
@@ -121,34 +121,34 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 	const [actionNotice, setActionNotice] = useState<string | null>(null);
 	const [notes, setNotes] = useState("");
 
-	const loadFailureText = useCallback((
-		status: number,
-		serverMessage: string | null,
-	): string => {
-		if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
-		if (status === 401 || status === 403)
-			return "Нет прав смотреть клинические задачи: доступ закрыт или истёк вход в программу.";
-		if (status === 404) return "Раздел клинических задач не отвечает.";
-		if (status >= 500)
-			return "Сбой на сервере клиники: список задач не собран.";
-		return `Программа не смогла получить список задач (ответ ${status}).`;
-	}, []);
+	const loadFailureText = useCallback(
+		(status: number, serverMessage: string | null): string => {
+			if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
+			if (status === 401 || status === 403)
+				return "Нет прав смотреть клинические задачи: доступ закрыт или истёк вход в программу.";
+			if (status === 404) return "Раздел клинических задач не отвечает.";
+			if (status >= 500)
+				return "Сбой на сервере клиники: список задач не собран.";
+			return `Программа не смогла получить список задач (ответ ${status}).`;
+		},
+		[],
+	);
 
-	const actionFailureText = useCallback((
-		status: number,
-		serverMessage: string | null,
-	): string => {
-		if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
-		if (status === 401 || status === 403)
-			return "Нет прав завершать этап: доступ закрыт или истёк вход в программу.";
-		if (status === 404)
-			return "Пациент, план или врач не найдены в этой клинике — передачу не создали.";
-		if (status === 400)
-			return "Не удалось зафиксировать этап: проверьте, что пациент выбран и этап указан верно.";
-		if (status >= 500)
-			return "Сбой на сервере клиники: передачу между этапами не записали.";
-		return `Программа не смогла зафиксировать этап (ответ ${status}).`;
-	}, []);
+	const actionFailureText = useCallback(
+		(status: number, serverMessage: string | null): string => {
+			if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
+			if (status === 401 || status === 403)
+				return "Нет прав завершать этап: доступ закрыт или истёк вход в программу.";
+			if (status === 404)
+				return "Пациент, план или врач не найдены в этой клинике — передачу не создали.";
+			if (status === 400)
+				return "Не удалось зафиксировать этап: проверьте, что пациент выбран и этап указан верно.";
+			if (status >= 500)
+				return "Сбой на сервере клиники: передачу между этапами не записали.";
+			return `Программа не смогла зафиксировать этап (ответ ${status}).`;
+		},
+		[],
+	);
 
 	const load = useCallback(async () => {
 		if (!patientId) {
@@ -181,13 +181,16 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				return;
 			}
 			const payload = (await response.json().catch((err) => {
-				console.error('[Dente]', err);
-				showToast(actionFailureToast('Ответ со списком задач не прочитан', (err as { status?: number })?.status ?? null), 'error');
+				console.error("[Dente]", err);
+				showToast(
+					actionFailureToast(
+						"Ответ со списком задач не прочитан",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				return null;
-			})) as
-				| ClinicalTask[]
-				| { message?: string }
-				| null;
+			})) as ClinicalTask[] | { message?: string } | null;
 			if (!response.ok) {
 				setTasks(null);
 				const message =
@@ -208,8 +211,14 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 
 			if (customTypesResponse?.ok) {
 				const customData = await customTypesResponse.json().catch((err) => {
-					console.error('[Dente]', err);
-					showToast(actionFailureToast('Типы задач не прочитаны', (err as { status?: number })?.status ?? null), 'error');
+					console.error("[Dente]", err);
+					showToast(
+						actionFailureToast(
+							"Типы задач не прочитаны",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					return null;
 				});
 				if (Array.isArray(customData)) {
@@ -261,8 +270,14 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				return;
 			}
 			const payload = (await response.json().catch((err) => {
-				console.error('[Dente]', err);
-				showToast(actionFailureToast('Ответ о фиксации этапа не прочитан', (err as { status?: number })?.status ?? null), 'error');
+				console.error("[Dente]", err);
+				showToast(
+					actionFailureToast(
+						"Ответ о фиксации этапа не прочитан",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				return null;
 			})) as
 				| (ClinicalTask & { message?: string })

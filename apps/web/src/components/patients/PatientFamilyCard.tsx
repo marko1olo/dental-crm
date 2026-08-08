@@ -1,4 +1,3 @@
-import { actionFailureToast } from "../../lib/panelStateText";
 import {
 	Link as LinkIcon,
 	Search,
@@ -6,11 +5,14 @@ import {
 	UserPlus,
 	Users,
 } from "lucide-react";
-
 import type React from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
-import { type PanelSubject, panelStateText } from "../../lib/panelStateText";
+import {
+	actionFailureToast,
+	type PanelSubject,
+	panelStateText,
+} from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 
@@ -95,7 +97,13 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						setSearchFailed(true);
 					}
 				} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+					showToast(
+						actionFailureToast(
+							"Ошибка выполнения операции",
+							(e as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					console.error("Family search failed", e);
 					setSearchResults([]);
 					setSearchFailed(true);
@@ -162,8 +170,14 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			);
 			if (!res.ok) return null;
 			const data = await res.json().catch((err) => {
-				console.error('[Dente]', err);
-				showToast(actionFailureToast('Семья пациента не прочитана', (err as { status?: number })?.status ?? null), 'error');
+				console.error("[Dente]", err);
+				showToast(
+					actionFailureToast(
+						"Семья пациента не прочитана",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				return null;
 			});
 			return data && typeof data.id === "string" ? data.id : null;
@@ -197,8 +211,14 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			});
 			if (!res.ok) {
 				const body = await res.json().catch((err) => {
-					console.error('[Dente]', err);
-					showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
+					console.error("[Dente]", err);
+					showToast(
+						actionFailureToast(
+							"Ответ сервера не прочитан",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					return {} as { message?: string };
 				});
 				if (res.status === 409) {
@@ -268,13 +288,17 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				}),
 			});
 			if (!linkRes.ok) {
-				const body = await linkRes
-					.json()
-					.catch((err) => {
-						console.error('[Dente]', err);
-						showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
-						return {} as { message?: string };
-					});
+				const body = await linkRes.json().catch((err) => {
+					console.error("[Dente]", err);
+					showToast(
+						actionFailureToast(
+							"Ответ сервера не прочитан",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
+					return {} as { message?: string };
+				});
 				throw new Error(body.message || "Ошибка при привязке пациента к семье");
 			}
 
@@ -334,8 +358,14 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			});
 			if (!res.ok) {
 				const body = await res.json().catch((err) => {
-					console.error('[Dente]', err);
-					showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
+					console.error("[Dente]", err);
+					showToast(
+						actionFailureToast(
+							"Ответ сервера не прочитан",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					return {} as { message?: string };
 				});
 				throw new Error(body.message || "Не удалось отвязать от семьи");

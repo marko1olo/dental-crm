@@ -5,8 +5,8 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
-	unguardedBypassAllowed,
 	requireResolvedOrganizationId as requireOrganizationContext,
+	unguardedBypassAllowed,
 } from "../accessGuard.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import {
@@ -454,7 +454,7 @@ async function requireScheduleMutationContext(
 	return { organizationId };
 }
 
-import { and, desc, eq, asc } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import {
 	createAppointmentInDb,
 	updateAppointmentInDb,
@@ -465,8 +465,8 @@ import {
 	appointments,
 	patients,
 	scheduleClipboardItems,
-	users,
 	urgentScheduleRequests,
+	users,
 } from "../db/schema.js";
 import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
 import { wsBroker } from "../services/websocketBroker.js";

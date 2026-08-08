@@ -1,9 +1,9 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { CheckCircle2, Lock, ShieldCheck } from "lucide-react";
 import type React from "react";
-import {  useEffect, useState , useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { type CertificateInfo, signatureService } from "../../lib/cryptopro";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 interface CryptoProSignerProps {
 	diaryHash: string | null;
@@ -189,7 +189,13 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 			setCertificatesLoaded(true);
 			if (certs.length > 0) setSelectedCert(certs[0]?.thumbprint ?? "");
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("[ЭЦП] список сертификатов не прочитан:", error);
 			setCertificates([]);
 			setCertificatesLoaded(true);
@@ -260,7 +266,13 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 				setPinCode("");
 				setAwaitingLockConfirmation(true);
 			} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(error as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				console.error("[ЭЦП] подписание не выполнено:", error);
 				setFailureText(readableSigningFailure(error));
 			} finally {
@@ -279,7 +291,13 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 			setPinCode("");
 			setAwaitingLockConfirmation(true);
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("[ЭЦП] простое подписание не выполнено:", error);
 			setFailureText(readableSigningFailure(error));
 		} finally {

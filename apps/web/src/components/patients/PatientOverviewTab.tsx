@@ -88,15 +88,18 @@ export function PatientOverviewTab() {
 		const headers = appLogic?.auth
 			? appLogic.auth.denteClinicalReadHeaders()
 			: {};
-			fetch(`/api/finance/family/patient/${requestedPatientId}`, { headers })
+		fetch(`/api/finance/family/patient/${requestedPatientId}`, { headers })
 			.then(async (res) => {
 				if (selectedPatientIdRef.current !== requestedPatientId) return;
 				if (res.ok) {
 					const data = await res.json().catch((err: any) => {
 						console.error(err);
 						showToast(
-							actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
-							"error"
+							actionFailureToast(
+								"Ошибка чтения ответа",
+								(err as { status?: number })?.status ?? null,
+							),
+							"error",
 						);
 						return null;
 					});
@@ -113,8 +116,11 @@ export function PatientOverviewTab() {
 			.catch((err: any) => {
 				console.error(err);
 				showToast(
-					actionFailureToast("Ошибка загрузки семьи", (err as { status?: number })?.status ?? null),
-					"error"
+					actionFailureToast(
+						"Ошибка загрузки семьи",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
 				);
 				if (selectedPatientIdRef.current !== requestedPatientId) return;
 				setFamilyData(null);

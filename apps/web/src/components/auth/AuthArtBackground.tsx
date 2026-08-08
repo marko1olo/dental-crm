@@ -1,7 +1,7 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { useEffect, useState } from "react";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage";
+import { showToast } from "../GlobalToast";
 import {
 	type AuthArtItem,
 	getCurrentTimeSlot,
@@ -25,7 +25,13 @@ export function AuthArtBackground() {
 			try {
 				setArtSettings(JSON.parse(saved));
 			} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(e as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				console.error(
 					"Failed to parse auth art settings from local storage",
 					e,

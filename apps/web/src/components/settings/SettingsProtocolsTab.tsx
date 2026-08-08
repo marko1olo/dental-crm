@@ -152,7 +152,13 @@ export function SettingsProtocolsTab() {
 			 * текст исключения браузера («Failed to fetch»).
 			 */
 			console.error(err);
-			showToast(actionFailureToast("Шаблон не сохранён", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Шаблон не сохранён",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setError(`Шаблон не сохранён: ${NO_RESPONSE_CAUSE}.`);
 		} finally {
 			setLoading(false);
@@ -181,7 +187,13 @@ export function SettingsProtocolsTab() {
 		} catch (err: any) {
 			// БЫЛО: `err.message` — английский текст исключения браузера.
 			console.error(err);
-			showToast(actionFailureToast("Шаблон не удалён", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Шаблон не удалён",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setLoading(false);
 		}
 	};

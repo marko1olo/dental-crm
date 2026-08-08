@@ -607,7 +607,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 								eq(schema.users.organizationId, orgId),
 							),
 						);
-					
+
 					for (const uid of fallbackIds) {
 						const u = fallbackUsers.find((fu) => fu.id === uid);
 						if (u?.fullName && u.fullName.trim()) {
@@ -986,51 +986,59 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 		visitId: z.string().uuid(),
 	});
 
-	app.post("/api/egisz/send", async (request: FastifyRequest, reply: FastifyReply) => {
-		try {
-			if (!(await requireClinicalReadAccess(request, reply, "egisz send"))) return;
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
+	app.post(
+		"/api/egisz/send",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			try {
+				if (!(await requireClinicalReadAccess(request, reply, "egisz send")))
+					return;
+				const orgId = requireOrganizationId(request, reply);
+				if (!orgId) return;
 
-			const parsed = egiszSendBodySchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.status(400).send({
-					error: "ValidationError",
-					message: parsed.error.issues.map((i) => i.message).join("; "),
+				const parsed = egiszSendBodySchema.safeParse(request.body);
+				if (!parsed.success) {
+					return reply.status(400).send({
+						error: "ValidationError",
+						message: parsed.error.issues.map((i) => i.message).join("; "),
+					});
+				}
+
+				const [logEntry] = await db
+					.insert(schema.egiszLogs)
+					.values({
+						organizationId: orgId,
+						patientId: parsed.data.patientId,
+						visitId: parsed.data.visitId,
+						status: "Pending",
+					})
+					.returning({
+						id: schema.egiszLogs.id,
+						status: schema.egiszLogs.status,
+					});
+
+				if (!logEntry) {
+					return reply.status(500).send({
+						error: "InternalServerError",
+						message: "Не удалось создать запись в журнале ЕГИСЗ",
+					});
+				}
+
+				return reply.status(202).send({
+					ok: true,
+					logId: logEntry.id,
+					status: logEntry.status,
+					message:
+						"Выгрузка поставлена в очередь. Статус обновится автоматически.",
 				});
-			}
-
-			const [logEntry] = await db
-				.insert(schema.egiszLogs)
-				.values({
-					organizationId: orgId,
-					patientId: parsed.data.patientId,
-					visitId: parsed.data.visitId,
-					status: "Pending",
-				})
-				.returning({ id: schema.egiszLogs.id, status: schema.egiszLogs.status });
-
-			if (!logEntry) {
+			} catch (error: unknown) {
+				request.log.error(error);
 				return reply.status(500).send({
 					error: "InternalServerError",
-					message: "Не удалось создать запись в журнале ЕГИСЗ",
+					message: "Ошибка при постановке выгрузки в очередь",
 				});
 			}
-
-			return reply.status(202).send({
-				ok: true,
-				logId: logEntry.id,
-				status: logEntry.status,
-				message: "Выгрузка поставлена в очередь. Статус обновится автоматически.",
-			});
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при постановке выгрузки в очередь",
-			});
-		}
-	});
+		},
+	);
 
 	/**
 	 * GET /api/integrations/egisz-blank-permissions — список разрешений на бланки.
@@ -1038,26 +1046,36 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 	 * Фронтенд: EgiszBlankPermissionsWidget.tsx:105.
 	 * Контракт из contract-breach-proofs.test.ts.
 	 */
-	app.get("/api/integrations/egisz-blank-permissions", async (request: FastifyRequest, reply: FastifyReply) => {
-		try {
-			if (!(await requireClinicalReadAccess(request, reply, "egisz blank permissions"))) return;
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
+	app.get(
+		"/api/integrations/egisz-blank-permissions",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			try {
+				if (
+					!(await requireClinicalReadAccess(
+						request,
+						reply,
+						"egisz blank permissions",
+					))
+				)
+					return;
+				const orgId = requireOrganizationId(request, reply);
+				if (!orgId) return;
 
-			const rows = await db
-				.select()
-				.from(schema.egiszBlankPermissions)
-				.where(eq(schema.egiszBlankPermissions.organizationId, orgId));
+				const rows = await db
+					.select()
+					.from(schema.egiszBlankPermissions)
+					.where(eq(schema.egiszBlankPermissions.organizationId, orgId));
 
-			return reply.status(200).send({ permissions: rows });
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Не удалось получить разрешения на бланки ЕГИСЗ",
-			});
-		}
-	});
+				return reply.status(200).send({ permissions: rows });
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Не удалось получить разрешения на бланки ЕГИСЗ",
+				});
+			}
+		},
+	);
 }
 
 /**

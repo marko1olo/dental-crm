@@ -38,7 +38,6 @@ import {
 } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
-import { actionFailureToast } from "./lib/panelStateText";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
@@ -53,6 +52,7 @@ import {
 } from "./components/schedule/scheduleDayGrouping";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
+import { actionFailureToast } from "./lib/panelStateText";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
@@ -473,7 +473,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			}
 			if (!response.ok) {
 				const body = await response.json().catch((err) => {
-					showToast(actionFailureToast("Не удалось прочитать ответ сервера", (err as { status?: number })?.status ?? null), "error");
+					showToast(
+						actionFailureToast(
+							"Не удалось прочитать ответ сервера",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					return null;
 				});
 				const serverMessage =

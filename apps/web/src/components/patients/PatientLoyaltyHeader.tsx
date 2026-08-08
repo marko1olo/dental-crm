@@ -2,8 +2,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Crown, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 type LoyaltyTier = "standard" | "silver" | "gold" | "platinum";
 
@@ -78,8 +78,11 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 			const saved = await res.json().catch((err: any) => {
 				console.error(err);
 				showToast(
-					actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
-					"error"
+					actionFailureToast(
+						"Ошибка чтения ответа",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
 				);
 				return null;
 			});

@@ -1,4 +1,3 @@
-import { showToast } from "../GlobalToast";
 import {
 	AlertTriangle,
 	Bot,
@@ -40,6 +39,7 @@ import {
 	resolvePanelPhase,
 } from "../../lib/panelStateText";
 import { usePatientStore } from "../../store/patientStore";
+import { showToast } from "../GlobalToast";
 // Состояния ЖИВОЙ зубной формулы и их русские названия. Берутся из того же
 // файла, что рисует формулу врачу (components/odontogram/ToothChart.tsx), а
 // перечисление там обязано совпадать с toothStateValues на сервере: свой
@@ -266,23 +266,25 @@ export function VisiographAnalyzer() {
 	 * случае `extra` возвращается как есть: у запросов с телом там лежит Content-Type,
 	 * и потерять его значило бы сломать разбор тела на сервере ещё и без секрета.
 	 */
-	const denteClinicalReadHeaders = useCallback((
-		extra?: Record<string, string>,
-	): Record<string, string> => {
-		const auth = authRef.current;
-		return auth && typeof auth.denteClinicalReadHeaders === "function"
-			? auth.denteClinicalReadHeaders(extra ?? {})
-			: { ...(extra ?? {}) };
-	}, []);
+	const denteClinicalReadHeaders = useCallback(
+		(extra?: Record<string, string>): Record<string, string> => {
+			const auth = authRef.current;
+			return auth && typeof auth.denteClinicalReadHeaders === "function"
+				? auth.denteClinicalReadHeaders(extra ?? {})
+				: { ...(extra ?? {}) };
+		},
+		[],
+	);
 
-	const denteClinicalMutationHeaders = useCallback((
-		extra?: Record<string, string>,
-	): Record<string, string> => {
-		const auth = authRef.current;
-		return auth && typeof auth.denteClinicalMutationHeaders === "function"
-			? auth.denteClinicalMutationHeaders(extra ?? {})
-			: { ...(extra ?? {}) };
-	}, []);
+	const denteClinicalMutationHeaders = useCallback(
+		(extra?: Record<string, string>): Record<string, string> => {
+			const auth = authRef.current;
+			return auth && typeof auth.denteClinicalMutationHeaders === "function"
+				? auth.denteClinicalMutationHeaders(extra ?? {})
+				: { ...(extra ?? {}) };
+		},
+		[],
+	);
 
 	const [isDragOver, setIsDragOver] = useState(false);
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -389,50 +391,59 @@ export function VisiographAnalyzer() {
 	 * По той же причине isLoadingHistory гасит только актуальный запрос — иначе
 	 * поздний ответ по A убирал бы индикатор загрузки у идущего запроса по B.
 	 */
-	const loadHistory = useCallback(async function loadHistory(patientId: string) {
-		setIsLoadingHistory(true);
-		setHistoryFailure(null);
-		setDeleteFailure(null);
-		setOpenFailure(null);
-		setScanHistory([]);
-		// null = до сервера не дошли; после ответа сюда попадает его код, поэтому
-		// «непонятный ответ при 200» и «сервер не ответил» дают разные тексты.
-		let status: number | null = null;
-		const isStale = () =>
-			usePatientStore.getState().selectedPatientId !== patientId;
-		try {
-			// Content-Type у этого запроса больше нет: тела у GET нет, и объявлять его
-			// формат было нечего — а место заголовков нужно тому, без чего охрана
-			// отвечает 403.
-			const res = await fetch(`/api/xray/scans?patientId=${patientId}`, {
-				headers: denteClinicalReadHeaders(),
-			});
-			status = res.status;
-			if (isStale()) return;
-			if (!res.ok) {
+	const loadHistory = useCallback(
+		async function loadHistory(patientId: string) {
+			setIsLoadingHistory(true);
+			setHistoryFailure(null);
+			setDeleteFailure(null);
+			setOpenFailure(null);
+			setScanHistory([]);
+			// null = до сервера не дошли; после ответа сюда попадает его код, поэтому
+			// «непонятный ответ при 200» и «сервер не ответил» дают разные тексты.
+			let status: number | null = null;
+			const isStale = () =>
+				usePatientStore.getState().selectedPatientId !== patientId;
+			try {
+				// Content-Type у этого запроса больше нет: тела у GET нет, и объявлять его
+				// формат было нечего — а место заголовков нужно тому, без чего охрана
+				// отвечает 403.
+				const res = await fetch(`/api/xray/scans?patientId=${patientId}`, {
+					headers: denteClinicalReadHeaders(),
+				});
+				status = res.status;
+				if (isStale()) return;
+				if (!res.ok) {
+					setHistoryFailure({ status });
+					return;
+				}
+				const data = (await res.json()) as unknown;
+				if (isStale()) return;
+				// Сервер обязан отдать массив (GET /api/xray/scans возвращает
+				// scans.map(...)). Если пришло что-то другое — это отказ, а не пустой
+				// архив: прежний код падал здесь на data.filter и уходил в пустой catch.
+				if (!Array.isArray(data)) {
+					setHistoryFailure({ status });
+					return;
+				}
+				setScanHistory((data as XrayScan[]).filter((s) => s.status === "done"));
+			} catch (err) {
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				// Код ответа человеку не показываем — он уходит в консоль разработчику.
+				console.error("[VisiographAnalyzer] Архив снимков не прочитан:", err);
+				if (isStale()) return;
 				setHistoryFailure({ status });
-				return;
+			} finally {
+				if (!isStale()) setIsLoadingHistory(false);
 			}
-			const data = (await res.json()) as unknown;
-			if (isStale()) return;
-			// Сервер обязан отдать массив (GET /api/xray/scans возвращает
-			// scans.map(...)). Если пришло что-то другое — это отказ, а не пустой
-			// архив: прежний код падал здесь на data.filter и уходил в пустой catch.
-			if (!Array.isArray(data)) {
-				setHistoryFailure({ status });
-				return;
-			}
-			setScanHistory((data as XrayScan[]).filter((s) => s.status === "done"));
-		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
-			// Код ответа человеку не показываем — он уходит в консоль разработчику.
-			console.error("[VisiographAnalyzer] Архив снимков не прочитан:", err);
-			if (isStale()) return;
-			setHistoryFailure({ status });
-		} finally {
-			if (!isStale()) setIsLoadingHistory(false);
-		}
-	}, [denteClinicalReadHeaders]);
+		},
+		[denteClinicalReadHeaders],
+	);
 
 	// ── Load scan history when patient changes ──────────────────────────────
 	useEffect(() => {
@@ -469,38 +480,50 @@ export function VisiographAnalyzer() {
 	 *
 	 * Возвращает null при успехе и человеческий текст отказа иначе.
 	 */
-	const writeToothStatesToChart = useCallback(async (
-		patientId: string,
-		toothNumbers: number[],
-		state: ToothState,
-	): Promise<string | null> => {
-		const action = `Отметка «${TOOTH_STATE_LABELS[state]}» по снимку на ${countLabel(toothNumbers.length, "зубе", "зубах", "зубах")} ${toothNumbers.join(", ")} не внесена в зубную формулу`;
-		try {
-			const res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
-				method: "POST",
-				headers: denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({ toothNumbers, state }),
-			});
-			if (!res.ok) {
-				const rawBody = await res.text();
-				console.error(
-					`[VisiographAnalyzer] формула не обновлена, ${res.status} ${rawBody.slice(0, 300)}`,
+	const writeToothStatesToChart = useCallback(
+		async (
+			patientId: string,
+			toothNumbers: number[],
+			state: ToothState,
+		): Promise<string | null> => {
+			const action = `Отметка «${TOOTH_STATE_LABELS[state]}» по снимку на ${countLabel(toothNumbers.length, "зубе", "зубах", "зубах")} ${toothNumbers.join(", ")} не внесена в зубную формулу`;
+			try {
+				const res = await fetch(
+					`/api/patients/${patientId}/tooth-states/batch`,
+					{
+						method: "POST",
+						headers: denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({ toothNumbers, state }),
+					},
 				);
-				return `${actionFailureToast(action, res.status)} Поставьте отметку на схеме зубов руками.`;
+				if (!res.ok) {
+					const rawBody = await res.text();
+					console.error(
+						`[VisiographAnalyzer] формула не обновлена, ${res.status} ${rawBody.slice(0, 300)}`,
+					);
+					return `${actionFailureToast(action, res.status)} Поставьте отметку на схеме зубов руками.`;
+				}
+				return null;
+			} catch (err) {
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				console.error(
+					"[VisiographAnalyzer] запрос обновления формулы не выполнен",
+					err,
+				);
+				// До сервера не дошли: кода ответа нет, придумывать его нельзя.
+				return `${actionFailureToast(action, null)} Поставьте отметку на схеме зубов руками.`;
 			}
-			return null;
-		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
-			console.error(
-				"[VisiographAnalyzer] запрос обновления формулы не выполнен",
-				err,
-			);
-			// До сервера не дошли: кода ответа нет, придумывать его нельзя.
-			return `${actionFailureToast(action, null)} Поставьте отметку на схеме зубов руками.`;
-		}
-	}, [denteClinicalMutationHeaders]);
+		},
+		[denteClinicalMutationHeaders],
+	);
 
 	// ── File processing ─────────────────────────────────────────────────────
 	const processFile = useCallback(
@@ -761,7 +784,13 @@ export function VisiographAnalyzer() {
 							setScanHistory((prev) => [saved, ...prev]);
 						}
 					} catch (saveErr) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (saveErr as { status?: number })?.status ?? null), "error");
+						showToast(
+							actionFailureToast(
+								"Ошибка выполнения операции",
+								(saveErr as { status?: number })?.status ?? null,
+							),
+							"error",
+						);
 						console.error(
 							"[VisiographAnalyzer] запись снимка в карту не выполнена",
 							saveErr,
@@ -872,7 +901,13 @@ export function VisiographAnalyzer() {
 				);
 			}
 		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error(
 				"[VisiographAnalyzer] запрос полного снимка не выполнен",
 				err,
@@ -948,7 +983,13 @@ export function VisiographAnalyzer() {
 				setIsSpeaking(false);
 			}
 		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("[VisiographAnalyzer] scan delete failed", err);
 			setDeleteFailure(
 				"Снимок не удалён: нет связи с сервером. Проверьте сеть и повторите.",
@@ -1750,7 +1791,7 @@ export function VisiographAnalyzer() {
 														color: "var(--ink)",
 													}}
 													// biome-ignore lint/security/noDangerouslySetInnerHtml: content sanitized via escapeHtml() before renderMarkdown()
-												dangerouslySetInnerHTML={{
+													dangerouslySetInnerHTML={{
 														__html: renderMarkdown(section.content),
 													}}
 												/>

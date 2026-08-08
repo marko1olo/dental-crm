@@ -166,10 +166,7 @@ export function ClinicalRulePanel({
 	};
 
 	const failureText = useCallback(
-		(
-			status: number,
-			serverMessage: string | null,
-		): string => {
+		(status: number, serverMessage: string | null): string => {
 			if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
 			if (status === 401 || status === 403)
 				return "Нет прав проверять клинические правила: доступ закрыт или истёк вход в программу.";

@@ -98,7 +98,13 @@ export const InsuranceContractsPanel: React.FC = () => {
 			setContracts(outcome.contracts);
 			setLoadState({ phase: "ready" });
 		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			// До сервера не дошли вовсе: status = null, текст об этом так и скажет.
 			console.error("[договоры ДМС] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });

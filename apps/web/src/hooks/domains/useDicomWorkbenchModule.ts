@@ -425,7 +425,13 @@ export function useDicomWorkbenchModule({
 				(await response.json()) as DicomFirstFramePreviewResponse,
 			);
 		} catch (previewError) {
-			showToast(actionFailureToast("Первый срез снимков не показан", (previewError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Первый срез снимков не показан",
+					(previewError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(previewError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -550,7 +556,13 @@ export function useDicomWorkbenchModule({
 			);
 			applyDicomFolderWorkupResult(result);
 		} catch (workupError) {
-			showToast(actionFailureToast("План папки снимков не подготовлен", (workupError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"План папки снимков не подготовлен",
+					(workupError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(workupError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -645,7 +657,13 @@ export function useDicomWorkbenchModule({
 				signal: controller.signal,
 			});
 		} catch (workbenchError) {
-			showToast(actionFailureToast("Просмотр КЛКТ/КТ не подготовлен", (workbenchError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Просмотр КЛКТ/КТ не подготовлен",
+					(workbenchError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(workbenchError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -701,7 +719,13 @@ export function useDicomWorkbenchModule({
 			setDicomRenderCachePlan(null);
 			setDicomFolderWorkupPlan(null);
 		} catch (seriesError) {
-			showToast(actionFailureToast("Серии снимков не разобраны", (seriesError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Серии снимков не разобраны",
+					(seriesError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(seriesError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -752,7 +776,13 @@ export function useDicomWorkbenchModule({
 			setDicomWorkbenchLocalSavedAt(null);
 			setDicomWorkstationReadiness(null);
 		} catch (checkError) {
-			showToast(actionFailureToast("Проверка архива снимков не выполнена", (checkError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Проверка архива снимков не выполнена",
+					(checkError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(checkError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -823,7 +853,13 @@ export function useDicomWorkbenchModule({
 				signal: controller.signal,
 			});
 		} catch (workbenchError) {
-			showToast(actionFailureToast("Просмотр КЛКТ/КТ не подготовлен", (workbenchError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Просмотр КЛКТ/КТ не подготовлен",
+					(workbenchError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(workbenchError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -880,7 +916,13 @@ export function useDicomWorkbenchModule({
 				(await response.json()) as DicomViewerLaunchManifestResponse,
 			);
 		} catch (manifestError) {
-			showToast(actionFailureToast("План открытия снимков не создан", (manifestError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"План открытия снимков не создан",
+					(manifestError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(manifestError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -933,7 +975,13 @@ export function useDicomWorkbenchModule({
 				(await response.json()) as DicomViewerToolStateBundleResponse,
 			);
 		} catch (toolStateError) {
-			showToast(actionFailureToast("Состояние просмотра снимков не собрано", (toolStateError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Состояние просмотра снимков не собрано",
+					(toolStateError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(toolStateError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -1051,7 +1099,13 @@ export function useDicomWorkbenchModule({
 				restoreDicomWorkbenchServerBundle(latest);
 			}
 		} catch (bundleError) {
-			showToast(actionFailureToast("Список сохраненных наборов просмотра не загружен", (bundleError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Список сохраненных наборов просмотра не загружен",
+					(bundleError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
@@ -1104,7 +1158,13 @@ export function useDicomWorkbenchModule({
 			);
 			return result.bundle;
 		} catch (saveError) {
-			showToast(actionFailureToast("Набор просмотра КЛКТ/КТ-срезов не сохранен", (saveError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Набор просмотра КЛКТ/КТ-срезов не сохранен",
+					(saveError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(saveError)) return null;
 			if (!options.silent) {
 				setError(
@@ -1238,7 +1298,13 @@ export function useDicomWorkbenchModule({
 				signal: controller.signal,
 			});
 		} catch (reconnectError) {
-			showToast(actionFailureToast("Источник снимков не переподключен", (reconnectError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Источник снимков не переподключен",
+					(reconnectError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(reconnectError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -1290,7 +1356,13 @@ export function useDicomWorkbenchModule({
 			setDicomWorkbenchLocalSavedAt(null);
 			setDicomRenderCachePlan(null);
 		} catch (readinessError) {
-			showToast(actionFailureToast("Готовность станции просмотра не проверена", (readinessError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Готовность станции просмотра не проверена",
+					(readinessError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(readinessError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
@@ -1344,7 +1416,13 @@ export function useDicomWorkbenchModule({
 				(await response.json()) as DicomRenderCachePlanResponse,
 			);
 		} catch (cachePlanError) {
-			showToast(actionFailureToast("План быстрой загрузки снимков не построен", (cachePlanError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"План быстрой загрузки снимков не построен",
+					(cachePlanError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (isLocalDicomOperationAbortError(cachePlanError)) return;
 			setError(
 				operatorWorkflowFailureMessage(

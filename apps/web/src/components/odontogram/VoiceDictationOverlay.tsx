@@ -1,7 +1,7 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { Check, Mic, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 import {
 	VOICE_DICTATION_UNSUPPORTED_TEXT,
 	voiceDictationErrorText,
@@ -44,7 +44,13 @@ export function VoiceDictationOverlay({
 			try {
 				recognition.stop();
 			} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				// Остановка уже остановленного распознавания бросает исключение в
 				// части браузеров. Человеку это не ошибка: запись и так не идёт.
 				console.error("[диктовка] остановка распознавания", err);

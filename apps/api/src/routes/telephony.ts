@@ -1,4 +1,4 @@
-import { type SQL, and, eq, ilike, or } from "drizzle-orm";
+import { and, eq, ilike, or, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";

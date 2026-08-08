@@ -371,7 +371,13 @@ export function DoctorPayoutDashboard() {
 			}
 			setState({ kind: "ready", report });
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setState({
 				kind: "failed",
 				message:
@@ -444,7 +450,13 @@ export function DoctorPayoutDashboard() {
 				// Деньги пересчитывает сервер, поэтому отчёт перечитывается целиком.
 				await load(month);
 			} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(error as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setRateSave({
 					kind: "failed",
 					message:

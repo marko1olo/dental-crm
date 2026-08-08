@@ -1,5 +1,6 @@
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "../lib/panelStateText";
+
 /**
  * Utility module to interface with CryptoPro Browser Plug-in (cadesplugin)
  * for signing documents with Qualified Electronic Signature (УКЭП).
@@ -40,7 +41,13 @@ export async function checkCryptoProPlugin(): Promise<boolean> {
 		await window.cadesplugin.then;
 		return true;
 	} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+		showToast(
+			actionFailureToast(
+				"Ошибка выполнения операции",
+				(e as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
 		console.warn("CryptoPro plugin check failed:", e);
 		return false;
 	}
@@ -98,7 +105,13 @@ export async function getPersonalCertificates(): Promise<
 					certObject: cert,
 				});
 			} catch (certError) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (certError as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(certError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				console.warn(`Failed to parse certificate index ${i}:`, certError);
 			}
 		}

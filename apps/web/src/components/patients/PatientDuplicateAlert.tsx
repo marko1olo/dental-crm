@@ -1,5 +1,5 @@
-import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 /**
  * Предупреждение о второй карточке того же человека — внутри открытой карточки.
  *
@@ -135,7 +135,13 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({
 			setConfirmKey(null);
 			await load();
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (patientIdRef.current !== keepPatientId) return;
 			setNotice(error instanceof Error ? error.message : String(error));
 		} finally {
@@ -162,7 +168,13 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({
 			setNotice(result.message);
 			await load();
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (patientIdRef.current !== decidedOnPatientId) return;
 			setNotice(error instanceof Error ? error.message : String(error));
 		} finally {

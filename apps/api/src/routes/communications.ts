@@ -275,12 +275,10 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 		}
 
 		if (!event.recordingUrl) {
-			return reply
-				.code(404)
-				.send({
-					error: "NoRecording",
-					message: "This event does not have a recording attached.",
-				});
+			return reply.code(404).send({
+				error: "NoRecording",
+				message: "This event does not have a recording attached.",
+			});
 		}
 
 		return reply.send({

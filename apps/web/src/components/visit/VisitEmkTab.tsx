@@ -8,10 +8,10 @@ import {
 	visitSaveReceiptText,
 } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
@@ -177,8 +177,11 @@ export function VisitEmkTab() {
 				const errJson = await res.json().catch((err: any) => {
 					console.error(err);
 					showToast(
-						actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
-						"error"
+						actionFailureToast(
+							"Ошибка чтения ответа",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
 					);
 					return null;
 				});
@@ -244,8 +247,11 @@ export function VisitEmkTab() {
 				const errData = await res.json().catch((err: any) => {
 					console.error(err);
 					showToast(
-						actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
-						"error"
+						actionFailureToast(
+							"Ошибка чтения ответа",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
 					);
 					return null;
 				});

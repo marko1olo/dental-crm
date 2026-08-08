@@ -1,5 +1,5 @@
-import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 /**
  * Фрагменты диктовки текущего приёма — GET /api/speech/chunks.
  *
@@ -228,7 +228,7 @@ export const SpeechChunksInspector: React.FC = () => {
 					);
 					return;
 				}
-				const payload = (await response.json().catch(() => null)) as
+				const payload = (await response.json()) as
 					| SpeechTranscriptionChunkRow[]
 					| { message?: string; error?: string }
 					| null;
@@ -281,6 +281,16 @@ export const SpeechChunksInspector: React.FC = () => {
 					})
 					.sort((a, b) => a.chunkIndex - b.chunkIndex);
 				setChunks(normalized);
+			} catch (err) {
+				setChunks([]);
+				showToast(
+					actionFailureToast(
+						"Загрузка результатов диктовки",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				setChunksError("Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть.");
 			} finally {
 				setChunksLoading(false);
 			}
@@ -333,7 +343,13 @@ export const SpeechChunksInspector: React.FC = () => {
 					void loadSpeechRecordingRecovery({ silent: true });
 				}
 			} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				const msg =
 					err instanceof Error && err.message.trim()
 						? err.message

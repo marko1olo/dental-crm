@@ -1,5 +1,5 @@
-import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 /**
  * Утренний обзвон: кому звонить, а кому не нужно.
  *
@@ -196,7 +196,13 @@ export function DayConfirmationsPanel() {
 			// сбрасываются: иначе они переносятся на другой список.
 			setHandled(new Set());
 		} catch (loadError) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (loadError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(loadError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setData(null);
 			setError(
 				loadError instanceof Error ? loadError.message : String(loadError),

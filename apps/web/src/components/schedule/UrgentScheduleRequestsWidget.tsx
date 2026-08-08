@@ -1,7 +1,7 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import type { UrgentScheduleRequest } from "@dental/shared";
 import { useEffect, useState } from "react";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 export function UrgentScheduleRequestsWidget() {
 	const [requests, setRequests] = useState<UrgentScheduleRequest[]>([]);
@@ -35,7 +35,13 @@ export function UrgentScheduleRequestsWidget() {
 				setRequests((prev) => prev.filter((r) => r.id !== id));
 			}
 		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("Failed to resolve urgent request", err);
 		}
 	};

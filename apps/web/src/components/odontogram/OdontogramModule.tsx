@@ -129,7 +129,12 @@ const SurfaceSelector = ({
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("B")}
-					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("B"); } }}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("B");
+						}
+					}}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -153,7 +158,12 @@ const SurfaceSelector = ({
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("L")}
-					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("L"); } }}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("L");
+						}
+					}}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -177,7 +187,12 @@ const SurfaceSelector = ({
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("M")}
-					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("M"); } }}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("M");
+						}
+					}}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -201,7 +216,12 @@ const SurfaceSelector = ({
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("D")}
-					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("D"); } }}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("D");
+						}
+					}}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -225,7 +245,12 @@ const SurfaceSelector = ({
 					stroke="#3f3f46"
 					strokeWidth="2"
 					onClick={() => toggle("O")}
-					onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle("O"); } }}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("O");
+						}
+					}}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
 				<text
@@ -476,7 +501,13 @@ export const OdontogramModule = ({
 				console.error(`[tooth states] ${status}: в ответе нет формулы`);
 				setTeethLoad({ phase: "failed", status });
 			} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				// Отменённый запрос — не отказ: пациента переключили, и об этом
 				// сообщать нечего.
 				if (cancelled) return;
@@ -936,7 +967,13 @@ export const OdontogramModule = ({
 									zIndex: 9998,
 								}}
 								onClick={() => setMenuConfig(null)}
-								onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMenuConfig(null); } if (e.key === 'Escape') setMenuConfig(null); }}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										setMenuConfig(null);
+									}
+									if (e.key === "Escape") setMenuConfig(null);
+								}}
 							/>
 							<div
 								role="menu"

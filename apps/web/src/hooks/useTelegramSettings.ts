@@ -1,5 +1,3 @@
-import { showToast } from "../components/GlobalToast";
-import { actionFailureToast } from "../lib/panelStateText";
 import type {
 	DenteTelegramBotStatus,
 	DenteTelegramChatLinkListResponse,
@@ -21,6 +19,8 @@ import {
 	type TelegramFeaturePlan,
 	telegramHumanMessage,
 } from "../AppHelpers.js";
+import { showToast } from "../components/GlobalToast";
+import { actionFailureToast } from "../lib/panelStateText";
 import { useAppStore } from "../store/appStore.js";
 import { useSettingsStore } from "../store/settingsStore.js";
 import {
@@ -327,7 +327,13 @@ export function useTelegramSettings(options: {
 				telegramMapsUrlDraft,
 			);
 		} catch (urlError) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (urlError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(urlError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			const message =
 				operatorReadableErrorDetailFromUnknown(urlError) ??
 				"Проверьте Telegram-настройки перед сохранением.";
@@ -407,7 +413,13 @@ export function useTelegramSettings(options: {
 			setError(null);
 			return true;
 		} catch (telegramError) {
-			showToast(actionFailureToast("Настройки Telegram не сохранены", (telegramError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Настройки Telegram не сохранены",
+					(telegramError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			const message = operatorWorkflowFailureMessage(
 				"Настройки Telegram не сохранены",
 				telegramError,
@@ -528,7 +540,13 @@ export function useTelegramSettings(options: {
 			setTelegramLinkCodes(nextLinkCodeLedger.linkCodes);
 			setTelegramChatLinks(nextChatLinkLedger.chatLinks);
 		} catch (telegramError) {
-			showToast(actionFailureToast("Панель управления Telegram недоступна", (telegramError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Панель управления Telegram недоступна",
+					(telegramError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(

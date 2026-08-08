@@ -162,7 +162,10 @@ function watchDenteServiceWorkerUpdates(
 	window.setInterval(
 		() => {
 			void registration.update().catch((err) => {
-				console.warn("Обновление приложения недоступно (фоновая проверка)", err);
+				console.warn(
+					"Обновление приложения недоступно (фоновая проверка)",
+					err,
+				);
 			});
 		},
 		30 * 60 * 1000,

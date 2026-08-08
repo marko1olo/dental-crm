@@ -1,5 +1,3 @@
-import { showToast } from "../components/GlobalToast";
-import { actionFailureToast } from "../lib/panelStateText";
 /**
  * useWorkspaceProfile — Feature Toggle Engine
  * Reads flags from the server once, stores in Zustand + localStorage,
@@ -8,6 +6,7 @@ import { actionFailureToast } from "../lib/panelStateText";
 import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { showToast } from "../components/GlobalToast";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import {
 	applyClinicModeToFlags,
@@ -28,6 +27,7 @@ import {
 // closed AppHelpers -> workspaceShell -> useWorkspaceProfile -> AppHelpers, a real static cycle
 // madge never printed. Nothing else here reaches AppHelpers.
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
+import { actionFailureToast } from "../lib/panelStateText";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -250,7 +250,13 @@ export async function applyWorkspacePreset(
 		const body = await res.json();
 		flags = body.flags as WorkspaceFeatureFlags;
 	} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+		showToast(
+			actionFailureToast(
+				"Ошибка выполнения операции",
+				(error as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
 		console.warn(
 			"Пресет с сервера не получен, используем локальный набор:",
 			error instanceof Error ? error.message : error,

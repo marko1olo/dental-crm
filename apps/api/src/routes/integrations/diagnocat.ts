@@ -1,8 +1,8 @@
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { diagnocatReports } from "../../db/schema.js";
-import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
 
 export async function registerDiagnocatRoutes(app: FastifyInstance) {
 	app.post("/api/integrations/diagnocat/webhook", async (request, reply) => {

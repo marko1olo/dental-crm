@@ -14,6 +14,7 @@ import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/Patie
 import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
 import { EmptyState } from "./components/EmptyState";
+import { showToast } from "./components/GlobalToast";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientAvatar } from "./components/PatientAvatar";
@@ -30,12 +31,11 @@ import {
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { DictationHints } from "./DictationHints";
+import { actionFailureToast } from "./lib/panelStateText";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { usePatientStore } from "./store/patientStore";
 import { formatPhoneNumber } from "./utils/inputSanitation";
-import { showToast } from "./components/GlobalToast";
-import { actionFailureToast } from "./lib/panelStateText";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -238,7 +238,13 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				setShowLostPatientsOnly(true);
 			})
 			.catch((err) => {
-				showToast(actionFailureToast("Не удалось загрузить фильтры потерянных пациентов", (err as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Не удалось загрузить фильтры потерянных пациентов",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setLostPatientIds(new Set());
 				setShowLostPatientsOnly(true);
 			})

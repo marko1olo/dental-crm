@@ -16,8 +16,8 @@ import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 type ClipboardItem = {
 	id: string;
@@ -92,8 +92,14 @@ async function writeFailureText(
 	action: string,
 ): Promise<string> {
 	const body = await response.json().catch((err) => {
-		console.error('[Dente]', err);
-		showToast(actionFailureToast('Ответ сервера не прочитан', (err as { status?: number })?.status ?? null), 'error');
+		console.error("[Dente]", err);
+		showToast(
+			actionFailureToast(
+				"Ответ сервера не прочитан",
+				(err as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
 		return null;
 	});
 	const serverMessage =
@@ -142,13 +148,16 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 				return;
 			}
 			const payload = (await response.json().catch((err) => {
-				console.error('[Dente]', err);
-				showToast(actionFailureToast('Ответ с буфером расписания не прочитан', (err as { status?: number })?.status ?? null), 'error');
+				console.error("[Dente]", err);
+				showToast(
+					actionFailureToast(
+						"Ответ с буфером расписания не прочитан",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				return null;
-			})) as
-				| ClipboardItem[]
-				| { message?: string }
-				| null;
+			})) as ClipboardItem[] | { message?: string } | null;
 			if (!response.ok) {
 				setItems([]);
 				const msg =
@@ -240,8 +249,14 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 				return;
 			}
 			const dashboard = await response.json().catch((err) => {
-				console.error('[Dente]', err);
-				showToast(actionFailureToast('Ответ после вставки приёма не прочитан', (err as { status?: number })?.status ?? null), 'error');
+				console.error("[Dente]", err);
+				showToast(
+					actionFailureToast(
+						"Ответ после вставки приёма не прочитан",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				return null;
 			});
 			setItems((prev) => prev.filter((row) => row.id !== item.id));

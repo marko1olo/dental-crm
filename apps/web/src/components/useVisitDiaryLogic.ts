@@ -471,7 +471,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 							setRevisionCount(rows.length);
 						}
 					} catch (revisionsError) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (revisionsError as { status?: number })?.status ?? null), "error");
+						showToast(
+							actionFailureToast(
+								"Ошибка выполнения операции",
+								(revisionsError as { status?: number })?.status ?? null,
+							),
+							"error",
+						);
 						console.error(
 							"[diary revisions] запрос не выполнен",
 							revisionsError,
@@ -479,7 +485,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					}
 				}
 			} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(error as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				// Сюда попадает обрыв сети и выключенный сервер клиники: тогда status
 				// так и остаётся null, и текст скажет «сервер не ответил». Если ответ
 				// уже пришёл, а порвалось чтение тела, код сохраняется — сообщение

@@ -353,7 +353,13 @@ export function useWhatsappSettings() {
 			setDraftsSeeded(true);
 			setLoadState({ phase: "ready", configured: data !== null });
 		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			// До сервера не дошли вовсе: status = null, текст об этом так и скажет.
 			console.error("[настройки WhatsApp] запрос не дошёл до сервера", err);
 			setLoadState({ phase: "failed", status: null });
@@ -376,7 +382,13 @@ export function useWhatsappSettings() {
 			console.error("[состояние WhatsApp] не прочитано, ответ", res.status);
 			setStatusUnknown(true);
 		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("[состояние WhatsApp] запрос не дошёл до сервера", err);
 			setStatusUnknown(true);
 		}
@@ -436,7 +448,13 @@ export function useWhatsappSettings() {
 				setSaveState("error");
 			}
 		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			// Текст исключения наружу не идёт ни при каких условиях: он английский.
 			console.error("[настройки WhatsApp] сохранение не дошло до сервера", err);
 			setSaveError(actionFailureToast("Настройки WhatsApp не сохранены", null));

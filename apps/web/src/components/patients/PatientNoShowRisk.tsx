@@ -1,5 +1,3 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import {
 	AlertTriangle,
 	BrainCircuit,
@@ -10,6 +8,8 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import type { PanelSubject } from "../../lib/panelStateText";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 
 export type PatientNoShowRiskProps = {
@@ -87,8 +87,11 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 					const data = await res.json().catch((err: any) => {
 						console.error(err);
 						showToast(
-							actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null),
-							"error"
+							actionFailureToast(
+								"Ошибка чтения ответа",
+								(err as { status?: number })?.status ?? null,
+							),
+							"error",
 						);
 						return null;
 					});
@@ -100,7 +103,13 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 					setFailure({ status: res.status });
 				}
 			} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(e as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				if (cancelled || (e as Error)?.name === "AbortError") return;
 				console.error("Failed to fetch AI no-show risk", e);
 				setFailure({ status: null });

@@ -885,42 +885,48 @@ export const treatmentScenarios = pgTable(
 	}),
 );
 
-export const clinicalRules = pgTable("clinical_rules", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	title: text("title").notNull(),
-	category: serviceCategory("category").notNull().default("other"),
-	specialty: dentalSpecialty("specialty").notNull().default("universal"),
-	action: clinicalRuleAction("action").notNull(),
-	severity: clinicalRuleSeverity("severity").notNull().default("warning"),
-	ownerRole: text("owner_role").$type<StaffRole>().notNull(),
-	triggerServiceIdsJson: text("trigger_service_ids_json")
-		.notNull()
-		.default("[]"),
-	requiredServiceIdsJson: text("required_service_ids_json")
-		.notNull()
-		.default("[]"),
-	requiresCompletedServiceIdsJson: text("requires_completed_service_ids_json")
-		.notNull()
-		.default("[]"),
-	blockedServiceIdsJson: text("blocked_service_ids_json")
-		.notNull()
-		.default("[]"),
-	condition: text("condition"),
-	warningText: text("warning_text").notNull(),
-	patientText: text("patient_text").notNull(),
-	isActive: boolean("is_active").notNull().default(true),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("clinical_rules_organizationId_idx").on(t.organizationId)
-}));
+export const clinicalRules = pgTable(
+	"clinical_rules",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		title: text("title").notNull(),
+		category: serviceCategory("category").notNull().default("other"),
+		specialty: dentalSpecialty("specialty").notNull().default("universal"),
+		action: clinicalRuleAction("action").notNull(),
+		severity: clinicalRuleSeverity("severity").notNull().default("warning"),
+		ownerRole: text("owner_role").$type<StaffRole>().notNull(),
+		triggerServiceIdsJson: text("trigger_service_ids_json")
+			.notNull()
+			.default("[]"),
+		requiredServiceIdsJson: text("required_service_ids_json")
+			.notNull()
+			.default("[]"),
+		requiresCompletedServiceIdsJson: text("requires_completed_service_ids_json")
+			.notNull()
+			.default("[]"),
+		blockedServiceIdsJson: text("blocked_service_ids_json")
+			.notNull()
+			.default("[]"),
+		condition: text("condition"),
+		warningText: text("warning_text").notNull(),
+		patientText: text("patient_text").notNull(),
+		isActive: boolean("is_active").notNull().default(true),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("clinical_rules_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 export const payments = pgTable(
 	"payments",
@@ -983,9 +989,9 @@ export const payments = pgTable(
 			paymentsOrgClientMutationUnique: unique(
 				"payments_org_client_mutation_unique",
 			).on(table.organizationId, table.clientMutationId),
-            patientIdIdx: index("payments_patientId_idx").on(table.patientId),
-            visitIdIdx: index("payments_visitId_idx").on(table.visitId)
-        };
+			patientIdIdx: index("payments_patientId_idx").on(table.patientId),
+			visitIdIdx: index("payments_visitId_idx").on(table.visitId),
+		};
 	},
 );
 
@@ -1253,9 +1259,13 @@ export const denteTelegramLinkCodes = pgTable(
 			denteTelegramLinkCodeFingerprintUnique: unique(
 				"dente_telegram_link_codes_org_config_fingerprint_unique",
 			).on(table.organizationId, table.botConfigId, table.codeFingerprint),
-            clinicIdIdx: index("dente_telegram_link_codes_clinicId_idx").on(table.clinicId),
-            createdByUserIdIdx: index("dente_telegram_link_codes_createdByUserId_idx").on(table.createdByUserId)
-        };
+			clinicIdIdx: index("dente_telegram_link_codes_clinicId_idx").on(
+				table.clinicId,
+			),
+			createdByUserIdIdx: index(
+				"dente_telegram_link_codes_createdByUserId_idx",
+			).on(table.createdByUserId),
+		};
 	},
 );
 
@@ -1287,8 +1297,10 @@ export const denteTelegramChatLinks = pgTable(
 			denteTelegramChatFingerprintUnique: unique(
 				"dente_telegram_chat_links_org_config_chat_unique",
 			).on(table.organizationId, table.botConfigId, table.chatFingerprint),
-            clinicIdIdx: index("dente_telegram_chat_links_clinicId_idx").on(table.clinicId)
-        };
+			clinicIdIdx: index("dente_telegram_chat_links_clinicId_idx").on(
+				table.clinicId,
+			),
+		};
 	},
 );
 
@@ -1317,8 +1329,10 @@ export const denteTelegramWebhookEvents = pgTable(
 			denteTelegramWebhookUpdateUnique: unique(
 				"dente_telegram_webhook_events_org_config_update_unique",
 			).on(table.organizationId, table.botConfigId, table.updateId),
-            clinicIdIdx: index("dente_telegram_webhook_events_clinicId_idx").on(table.clinicId)
-        };
+			clinicIdIdx: index("dente_telegram_webhook_events_clinicId_idx").on(
+				table.clinicId,
+			),
+		};
 	},
 );
 
@@ -1354,10 +1368,16 @@ export const denteTelegramOutboxDeliveryReceipts = pgTable(
 				table.outboxItemId,
 				table.clientMutationId,
 			),
-            clinicIdIdx: index("dente_telegram_outbox_delivery_receipts_clinicId_idx").on(table.clinicId),
-            taskIdIdx: index("dente_telegram_outbox_delivery_receipts_taskId_idx").on(table.taskId),
-            eventIdIdx: index("dente_telegram_outbox_delivery_receipts_eventId_idx").on(table.eventId)
-        };
+			clinicIdIdx: index(
+				"dente_telegram_outbox_delivery_receipts_clinicId_idx",
+			).on(table.clinicId),
+			taskIdIdx: index("dente_telegram_outbox_delivery_receipts_taskId_idx").on(
+				table.taskId,
+			),
+			eventIdIdx: index(
+				"dente_telegram_outbox_delivery_receipts_eventId_idx",
+			).on(table.eventId),
+		};
 	},
 );
 
@@ -1469,8 +1489,10 @@ export const auditEvents = pgTable(
 				table.organizationId,
 				table.createdAt,
 			),
-            actorUserIdIdx: index("audit_events_actorUserId_idx").on(table.actorUserId)
-        };
+			actorUserIdIdx: index("audit_events_actorUserId_idx").on(
+				table.actorUserId,
+			),
+		};
 	},
 );
 
@@ -1521,10 +1543,12 @@ export const aiJobs = pgTable(
 			aiJobsOrganizationStoragePathKey: uniqueIndex(
 				"ai_jobs_organization_storage_path_key",
 			).on(table.organizationId, table.inputStoragePath),
-            patientIdIdx: index("ai_jobs_patientId_idx").on(table.patientId),
-            visitIdIdx: index("ai_jobs_visitId_idx").on(table.visitId),
-            imagingStudyIdIdx: index("ai_jobs_imagingStudyId_idx").on(table.imagingStudyId)
-        };
+			patientIdIdx: index("ai_jobs_patientId_idx").on(table.patientId),
+			visitIdIdx: index("ai_jobs_visitId_idx").on(table.visitId),
+			imagingStudyIdIdx: index("ai_jobs_imagingStudyId_idx").on(
+				table.imagingStudyId,
+			),
+		};
 	},
 );
 
@@ -1555,8 +1579,10 @@ export const imagingSeries = pgTable(
 			imagingSeriesUidIdx: index("imaging_series_uid_idx").on(
 				table.dicomSeriesUid,
 			),
-            organizationIdIdx: index("imaging_series_organizationId_idx").on(table.organizationId)
-        };
+			organizationIdIdx: index("imaging_series_organizationId_idx").on(
+				table.organizationId,
+			),
+		};
 	},
 );
 
@@ -1588,42 +1614,50 @@ export const imagingInstances = pgTable(
 			imagingInstancesUidIdx: index("imaging_instances_uid_idx").on(
 				table.dicomSopInstanceUid,
 			),
-            organizationIdIdx: index("imaging_instances_organizationId_idx").on(table.organizationId)
-        };
+			organizationIdIdx: index("imaging_instances_organizationId_idx").on(
+				table.organizationId,
+			),
+		};
 	},
 );
 
-export const imagingAnnotations = pgTable("imaging_annotations", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	studyId: uuid("study_id")
-		.notNull()
-		.references(() => imagingStudies.id, { onDelete: "cascade" }),
-	seriesId: uuid("series_id").references(() => imagingSeries.id, {
-		onDelete: "cascade",
+export const imagingAnnotations = pgTable(
+	"imaging_annotations",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		studyId: uuid("study_id")
+			.notNull()
+			.references(() => imagingStudies.id, { onDelete: "cascade" }),
+		seriesId: uuid("series_id").references(() => imagingSeries.id, {
+			onDelete: "cascade",
+		}),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		toothCode: text("tooth_code"), // FDI numbering: "11", "36", etc.
+		annotationType: text("annotation_type").notNull(), // e.g., "point", "measurement", "roi", "nerve_trace", "panoramic_curve"
+		coordinates: jsonb("coordinates").notNull(), // 3D DICOM coordinates or 2D image coordinates
+		measurements: jsonb("measurements"), // e.g., length, HU, area
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("imaging_annotations_organizationId_idx").on(
+			t.organizationId,
+		),
+		studyIdIdx: index("imaging_annotations_studyId_idx").on(t.studyId),
+		seriesIdIdx: index("imaging_annotations_seriesId_idx").on(t.seriesId),
+		patientIdIdx: index("imaging_annotations_patientId_idx").on(t.patientId),
 	}),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id),
-	toothCode: text("tooth_code"), // FDI numbering: "11", "36", etc.
-	annotationType: text("annotation_type").notNull(), // e.g., "point", "measurement", "roi", "nerve_trace", "panoramic_curve"
-	coordinates: jsonb("coordinates").notNull(), // 3D DICOM coordinates or 2D image coordinates
-	measurements: jsonb("measurements"), // e.g., length, HU, area
-	notes: text("notes"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("imaging_annotations_organizationId_idx").on(t.organizationId),
-    studyIdIdx: index("imaging_annotations_studyId_idx").on(t.studyId),
-    seriesIdIdx: index("imaging_annotations_seriesId_idx").on(t.seriesId),
-    patientIdIdx: index("imaging_annotations_patientId_idx").on(t.patientId)
-}));
+);
 
 // 2D X-Ray (вisiograph) scans with AI analysis results, patient-scoped
 export const xrayScans = pgTable(
@@ -1667,8 +1701,8 @@ export const xrayScans = pgTable(
 	(table) => ({
 		xrayScansPatientIdx: index("xray_scans_patient_idx").on(table.patientId),
 		xrayScansOrgIdx: index("xray_scans_org_idx").on(table.organizationId),
-        visitIdIdx: index("xray_scans_visitId_idx").on(table.visitId)
-    }),
+		visitIdIdx: index("xray_scans_visitId_idx").on(table.visitId),
+	}),
 );
 
 export const imagingViewerSessions = pgTable(
@@ -1790,40 +1824,52 @@ export const recentPatientHistory = pgTable(
 );
 
 // #47 — crm::конструктор_типов_задач_без_привязки_к_визиту
-export const customCrmTaskTypes = pgTable("custom_crm_task_types", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	typeCode: text("type_code").notNull(),
-	typeLabel: text("type_label").notNull(),
-	colorHex: text("color_hex").default("#3b82f6").notNull(),
-	requiresPatientBinding: boolean("requires_patient_binding")
-		.default(true)
-		.notNull(),
-	defaultSlaHours: integer("default_sla_hours").default(24).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("custom_crm_task_types_organizationId_idx").on(t.organizationId)
-}));
+export const customCrmTaskTypes = pgTable(
+	"custom_crm_task_types",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		typeCode: text("type_code").notNull(),
+		typeLabel: text("type_label").notNull(),
+		colorHex: text("color_hex").default("#3b82f6").notNull(),
+		requiresPatientBinding: boolean("requires_patient_binding")
+			.default(true)
+			.notNull(),
+		defaultSlaHours: integer("default_sla_hours").default(24).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("custom_crm_task_types_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #50 — crm::прямая_отправка_планов_лечения_и_счетов_на_email
-export const crmEmailDispatchLogs = pgTable("crm_email_dispatch_logs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	recipientEmail: text("recipient_email").notNull(),
-	documentType: text("document_type").notNull(),
-	documentTitle: text("document_title").notNull(),
-	dispatchStatus: text("dispatch_status").default("sent").notNull(),
-	sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("crm_email_dispatch_logs_organizationId_idx").on(t.organizationId)
-}));
+export const crmEmailDispatchLogs = pgTable(
+	"crm_email_dispatch_logs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		recipientEmail: text("recipient_email").notNull(),
+		documentType: text("document_type").notNull(),
+		documentTitle: text("document_title").notNull(),
+		dispatchStatus: text("dispatch_status").default("sent").notNull(),
+		sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("crm_email_dispatch_logs_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #56 — пациенты::целевые_причины_отмены_приемов_клиника_vs_пациент
 export const cancellationReasonsTwoLevel = pgTable(
@@ -1841,171 +1887,226 @@ export const cancellationReasonsTwoLevel = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("cancellation_reasons_two_level_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"cancellation_reasons_two_level_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // #58 — финансы::закрепение_денег_за_врачами_или_услугами
-export const advanceDepositTaggings = pgTable("advance_deposit_taggings", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	depositAmountRub: numeric("deposit_amount_rub", {
-		precision: 12,
-		scale: 2,
-	}).notNull(),
-	taggedTargetType: text("tagged_target_type").notNull(),
-	taggedTargetName: text("tagged_target_name").notNull(),
-	allocationStatus: text("allocation_status").default("pinned").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("advance_deposit_taggings_organizationId_idx").on(t.organizationId)
-}));
+export const advanceDepositTaggings = pgTable(
+	"advance_deposit_taggings",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		depositAmountRub: numeric("deposit_amount_rub", {
+			precision: 12,
+			scale: 2,
+		}).notNull(),
+		taggedTargetType: text("tagged_target_type").notNull(),
+		taggedTargetName: text("tagged_target_name").notNull(),
+		allocationStatus: text("allocation_status").default("pinned").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("advance_deposit_taggings_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #52 — план_лечения::конструктор_планов_лечения_2_0
-export const treatmentPlanLockTokens = pgTable("treatment_plan_lock_tokens", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	treatmentPlanId: uuid("treatment_plan_id").notNull(),
-	lockedByDoctorName: text("locked_by_doctor_name").notNull(),
-	lockToken: text("lock_token").notNull(),
-	autoSaveDraftJson: text("auto_save_draft_json").notNull(),
-	isActiveLock: boolean("is_active_lock").default(true).notNull(),
-	lockedAt: timestamp("locked_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("treatment_plan_lock_tokens_organizationId_idx").on(t.organizationId)
-}));
+export const treatmentPlanLockTokens = pgTable(
+	"treatment_plan_lock_tokens",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		treatmentPlanId: uuid("treatment_plan_id").notNull(),
+		lockedByDoctorName: text("locked_by_doctor_name").notNull(),
+		lockToken: text("lock_token").notNull(),
+		autoSaveDraftJson: text("auto_save_draft_json").notNull(),
+		isActiveLock: boolean("is_active_lock").default(true).notNull(),
+		lockedAt: timestamp("locked_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"treatment_plan_lock_tokens_organizationId_idx",
+		).on(t.organizationId),
+	}),
+);
 
 // #53 — финансы::отправка_электронных_кассовых_чеков_на_email_или_смс
-export const digitalReceiptDispatches = pgTable("digital_receipt_dispatches", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	paymentId: uuid("payment_id").notNull(),
-	patientName: text("patient_name").notNull(),
-	dispatchChannel: text("dispatch_channel").default("email").notNull(),
-	targetDestination: text("target_destination").notNull(),
-	fiscalReceiptNumber: text("fiscal_receipt_number").notNull(),
-	receiptAmountRub: numeric("receipt_amount_rub", {
-		precision: 12,
-		scale: 2,
-	}).notNull(),
-	paperPrintSkipped: boolean("paper_print_skipped").default(true).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("digital_receipt_dispatches_organizationId_idx").on(t.organizationId)
-}));
+export const digitalReceiptDispatches = pgTable(
+	"digital_receipt_dispatches",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		paymentId: uuid("payment_id").notNull(),
+		patientName: text("patient_name").notNull(),
+		dispatchChannel: text("dispatch_channel").default("email").notNull(),
+		targetDestination: text("target_destination").notNull(),
+		fiscalReceiptNumber: text("fiscal_receipt_number").notNull(),
+		receiptAmountRub: numeric("receipt_amount_rub", {
+			precision: 12,
+			scale: 2,
+		}).notNull(),
+		paperPrintSkipped: boolean("paper_print_skipped").default(true).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"digital_receipt_dispatches_organizationId_idx",
+		).on(t.organizationId),
+	}),
+);
 
 // #55 — пациенты::вкладка_приемы_рабочий_стол_администратора
-export const patientServiceLineages = pgTable("patient_service_lineages", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	leadSource: text("lead_source").notNull(),
-	rescheduleCount: integer("reschedule_count").default(0).notNull(),
-	waitlistEntryId: uuid("waitlist_entry_id"),
-	finalVisitId: uuid("final_visit_id"),
-	lifecycleStage: text("lifecycle_stage").default("completed").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("patient_service_lineages_organizationId_idx").on(t.organizationId)
-}));
+export const patientServiceLineages = pgTable(
+	"patient_service_lineages",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		leadSource: text("lead_source").notNull(),
+		rescheduleCount: integer("reschedule_count").default(0).notNull(),
+		waitlistEntryId: uuid("waitlist_entry_id"),
+		finalVisitId: uuid("final_visit_id"),
+		lifecycleStage: text("lifecycle_stage").default("completed").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("patient_service_lineages_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #61 — интеграции::конструктор_лендингов_flexbe_и_сопоставление_полей
-export const landingFieldMappings = pgTable("landing_field_mappings", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	landingProvider: text("landing_provider").default("flexbe").notNull(),
-	formName: text("form_name").notNull(),
-	incomingFieldKey: text("incoming_field_key").notNull(),
-	mappedCrmTarget: text("mapped_crm_target").notNull(),
-	isActive: boolean("is_active").default(true).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("landing_field_mappings_organizationId_idx").on(t.organizationId)
-}));
+export const landingFieldMappings = pgTable(
+	"landing_field_mappings",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		landingProvider: text("landing_provider").default("flexbe").notNull(),
+		formName: text("form_name").notNull(),
+		incomingFieldKey: text("incoming_field_key").notNull(),
+		mappedCrmTarget: text("mapped_crm_target").notNull(),
+		isActive: boolean("is_active").default(true).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("landing_field_mappings_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #63 — финансы::автоматическое_указание_меры_количества_в_kkm
-export const kkmItemQuantityUnits = pgTable("kkm_item_quantity_units", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	serviceCode: text("service_code").notNull(),
-	serviceTitle: text("service_title").notNull(),
-	quantityUnitCode: integer("quantity_unit_code").default(0).notNull(),
-	quantityUnitLabel: text("quantity_unit_label").default("шт").notNull(),
-	itemPaymentType: text("item_payment_type").default("full_payment").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("kkm_item_quantity_units_organizationId_idx").on(t.organizationId)
-}));
+export const kkmItemQuantityUnits = pgTable(
+	"kkm_item_quantity_units",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		serviceCode: text("service_code").notNull(),
+		serviceTitle: text("service_title").notNull(),
+		quantityUnitCode: integer("quantity_unit_code").default(0).notNull(),
+		quantityUnitLabel: text("quantity_unit_label").default("шт").notNull(),
+		itemPaymentType: text("item_payment_type")
+			.default("full_payment")
+			.notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("kkm_item_quantity_units_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #59 — коммуникации::мультимессенджер_uis_omni
-export const uisOmniMessengerQueues = pgTable("uis_omni_messenger_queues", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	channelProvider: text("channel_provider").default("whatsapp_waba").notNull(),
-	messageBody: text("message_body").notNull(),
-	dispatchStatus: text("dispatch_status").default("queued").notNull(),
-	scheduledDelaySeconds: integer("scheduled_delay_seconds")
-		.default(60)
-		.notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("uis_omni_messenger_queues_organizationId_idx").on(t.organizationId)
-}));
+export const uisOmniMessengerQueues = pgTable(
+	"uis_omni_messenger_queues",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		channelProvider: text("channel_provider")
+			.default("whatsapp_waba")
+			.notNull(),
+		messageBody: text("message_body").notNull(),
+		dispatchStatus: text("dispatch_status").default("queued").notNull(),
+		scheduledDelaySeconds: integer("scheduled_delay_seconds")
+			.default(60)
+			.notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("uis_omni_messenger_queues_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // =====================================================
 // WAVE 12 — COMPETITOR PARITY SCHEMA TABLES
 // =====================================================
 
 // #6 — маркетинг::фильтр_потерянных_пациентов_в_отчете
-export const lostPatientsFilters = pgTable("lost_patients_filters", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	phone: text("phone").notNull(),
-	daysSinceLastVisit: integer("days_since_last_visit").default(90).notNull(),
-	hasFutureAppointment: boolean("has_future_appointment")
-		.default(false)
-		.notNull(),
-	hasActiveCrmTask: boolean("has_active_crm_task").default(false).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("lost_patients_filters_organizationId_idx").on(t.organizationId)
-}));
+export const lostPatientsFilters = pgTable(
+	"lost_patients_filters",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		phone: text("phone").notNull(),
+		daysSinceLastVisit: integer("days_since_last_visit").default(90).notNull(),
+		hasFutureAppointment: boolean("has_future_appointment")
+			.default(false)
+			.notNull(),
+		hasActiveCrmTask: boolean("has_active_crm_task").default(false).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("lost_patients_filters_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #9 — коммуникации::подтверждение_приема_при_обработке_обращения
 export const quickAppointmentConfirmations = pgTable(
@@ -2022,29 +2123,38 @@ export const quickAppointmentConfirmations = pgTable(
 		confirmedAt: timestamp("confirmed_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("quick_appointment_confirmations_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"quick_appointment_confirmations_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // #21 — расписание::виджет_срочные_обращения_под_календарем
-export const urgentScheduleRequests = pgTable("urgent_schedule_requests", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	requestType: text("request_type").notNull(),
-	urgencyLevel: text("urgency_level").default("high").notNull(),
-	doctorName: text("doctor_name").notNull(),
-	preferredSlotTime: text("preferred_slot_time").notNull(),
-	isResolved: boolean("is_resolved").default(false).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("urgent_schedule_requests_organizationId_idx").on(t.organizationId)
-}));
+export const urgentScheduleRequests = pgTable(
+	"urgent_schedule_requests",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		requestType: text("request_type").notNull(),
+		urgencyLevel: text("urgency_level").default("high").notNull(),
+		doctorName: text("doctor_name").notNull(),
+		preferredSlotTime: text("preferred_slot_time").notNull(),
+		isResolved: boolean("is_resolved").default(false).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("urgent_schedule_requests_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #23 — аналитика::отчет_эффективность_подтверждения_приемов
 export const confirmationPerformanceReports = pgTable(
@@ -2070,9 +2180,12 @@ export const confirmationPerformanceReports = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("confirmation_performance_reports_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"confirmation_performance_reports_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // #43 — план_лечения::альтернативные_планы_лечения
@@ -2094,50 +2207,65 @@ export const alternativeTreatmentPlans = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("alternative_treatment_plans_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"alternative_treatment_plans_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // #48 — расписание::буфер_обмена_в_расписании_для_быстрого_переноса
 
-export const scheduleClipboardItems = pgTable("schedule_clipboard_items", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	appointmentId: uuid("appointment_id").notNull(),
-	patientName: text("patient_name").notNull(),
-	doctorName: text("doctor_name").notNull(),
-	serviceTitle: text("service_title").notNull(),
-	durationMinutes: integer("duration_minutes").default(30).notNull(),
-	clipboardStatus: text("clipboard_status").default("copied").notNull(),
-	copiedAt: timestamp("copied_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("schedule_clipboard_items_organizationId_idx").on(t.organizationId)
-}));
+export const scheduleClipboardItems = pgTable(
+	"schedule_clipboard_items",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		appointmentId: uuid("appointment_id").notNull(),
+		patientName: text("patient_name").notNull(),
+		doctorName: text("doctor_name").notNull(),
+		serviceTitle: text("service_title").notNull(),
+		durationMinutes: integer("duration_minutes").default(30).notNull(),
+		clipboardStatus: text("clipboard_status").default("copied").notNull(),
+		copiedAt: timestamp("copied_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("schedule_clipboard_items_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #37 — расписание::резервирование_времени_в_сетке
-export const scheduleTimeReservations = pgTable("schedule_time_reservations", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	chairName: text("chair_name").notNull(),
-	reservationType: text("reservation_type").default("maintenance").notNull(),
-	startTime: text("start_time").notNull(),
-	endTime: text("end_time").notNull(),
-	bookingLocked: boolean("booking_locked").default(true).notNull(),
-	hatchingStyle: text("hatching_style").default("diagonal_red").notNull(),
-	note: text("note").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("schedule_time_reservations_organizationId_idx").on(t.organizationId)
-}));
+export const scheduleTimeReservations = pgTable(
+	"schedule_time_reservations",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		chairName: text("chair_name").notNull(),
+		reservationType: text("reservation_type").default("maintenance").notNull(),
+		startTime: text("start_time").notNull(),
+		endTime: text("end_time").notNull(),
+		bookingLocked: boolean("booking_locked").default(true).notNull(),
+		hatchingStyle: text("hatching_style").default("diagonal_red").notNull(),
+		note: text("note").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"schedule_time_reservations_organizationId_idx",
+		).on(t.organizationId),
+	}),
+);
 
 // #35 — прием::пользовательские_справочники_бланков_осмотра
 export const customExaminationFormCatalogs = pgTable(
@@ -2155,54 +2283,71 @@ export const customExaminationFormCatalogs = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("custom_examination_form_catalogs_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"custom_examination_form_catalogs_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // #36 — прием::несколько_диагнозов_егисз
-export const egiszMultipleDiagnoses = pgTable("egisz_multiple_diagnoses", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	mainDiagnosisMkb: text("main_diagnosis_mkb").notNull(),
-	mainDiagnosisName: text("main_diagnosis_name").notNull(),
-	accompanyingDiagnosesMkb: text("accompanying_diagnoses_mkb").notNull(),
-	cdaValidationStatus: text("cda_validation_status")
-		.default("cda_r2_valid")
-		.notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("egisz_multiple_diagnoses_organizationId_idx").on(t.organizationId)
-}));
+export const egiszMultipleDiagnoses = pgTable(
+	"egisz_multiple_diagnoses",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		mainDiagnosisMkb: text("main_diagnosis_mkb").notNull(),
+		mainDiagnosisName: text("main_diagnosis_name").notNull(),
+		accompanyingDiagnosesMkb: text("accompanying_diagnoses_mkb").notNull(),
+		cdaValidationStatus: text("cda_validation_status")
+			.default("cda_r2_valid")
+			.notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("egisz_multiple_diagnoses_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #40 — прием::зубная_формула_пломба_кариес_и_детская_формула
-export const extendedOdontogramStates = pgTable("extended_odontogram_states", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	toothNumber: integer("tooth_number").notNull(),
-	isPrimaryPediatric: boolean("is_primary_pediatric").default(false).notNull(),
-	secondaryCariesUnderFilling: boolean("secondary_caries_under_filling")
-		.default(false)
-		.notNull(),
-	mobilityDegree: integer("mobility_degree").default(0).notNull(),
-	pediatricCrownPresent: boolean("pediatric_crown_present")
-		.default(false)
-		.notNull(),
-	notes: text("notes").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("extended_odontogram_states_organizationId_idx").on(t.organizationId)
-}));
+export const extendedOdontogramStates = pgTable(
+	"extended_odontogram_states",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		toothNumber: integer("tooth_number").notNull(),
+		isPrimaryPediatric: boolean("is_primary_pediatric")
+			.default(false)
+			.notNull(),
+		secondaryCariesUnderFilling: boolean("secondary_caries_under_filling")
+			.default(false)
+			.notNull(),
+		mobilityDegree: integer("mobility_degree").default(0).notNull(),
+		pediatricCrownPresent: boolean("pediatric_crown_present")
+			.default(false)
+			.notNull(),
+		notes: text("notes").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"extended_odontogram_states_organizationId_idx",
+		).on(t.organizationId),
+	}),
+);
 
 // #38 — прием::формы_осмотра_без_зубной_формулы
 export const nonDentalExaminationForms = pgTable(
@@ -2222,9 +2367,12 @@ export const nonDentalExaminationForms = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("non_dental_examination_forms_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"non_dental_examination_forms_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // #41 — документы::печать_одонтограммы_в_плане_лечения
@@ -2244,118 +2392,153 @@ export const treatmentPlanPrintOdontograms = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("treatment_plan_print_odontograms_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"treatment_plan_print_odontograms_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // #34 — план_лечения::управление_этапами_и_автоархивация
-export const treatmentPlanStages = pgTable("treatment_plan_stages", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	planTitle: text("plan_title").notNull(),
-	stageOrder: integer("stage_order").default(1).notNull(),
-	stageName: text("stage_name").notNull(),
-	completionPercentage: integer("completion_percentage").default(0).notNull(),
-	autoArchived: boolean("auto_archived").default(false).notNull(),
-	archivedAt: timestamp("archived_at", { withTimezone: true }),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("treatment_plan_stages_organizationId_idx").on(t.organizationId)
-}));
+export const treatmentPlanStages = pgTable(
+	"treatment_plan_stages",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		planTitle: text("plan_title").notNull(),
+		stageOrder: integer("stage_order").default(1).notNull(),
+		stageName: text("stage_name").notNull(),
+		completionPercentage: integer("completion_percentage").default(0).notNull(),
+		autoArchived: boolean("auto_archived").default(false).notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("treatment_plan_stages_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #62 — финансы::отображение_суммы_начислений_врачам_в_прайс_листе
-export const pricelistDoctorPayrolls = pgTable("pricelist_doctor_payrolls", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	serviceCode: text("service_code").notNull(),
-	serviceName: text("service_name").notNull(),
-	priceRub: numeric("price_rub", { precision: 10, scale: 2 }).notNull(),
-	doctorPayrollPercent: numeric("doctor_payroll_percent", {
-		precision: 4,
-		scale: 2,
-	})
-		.default("25.00")
-		.notNull(),
-	doctorPayrollRub: numeric("doctor_payroll_rub", {
-		precision: 10,
-		scale: 2,
-	}).notNull(),
-	clinicMarginRub: numeric("clinic_margin_rub", {
-		precision: 10,
-		scale: 2,
-	}).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("pricelist_doctor_payrolls_organizationId_idx").on(t.organizationId)
-}));
+export const pricelistDoctorPayrolls = pgTable(
+	"pricelist_doctor_payrolls",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		serviceCode: text("service_code").notNull(),
+		serviceName: text("service_name").notNull(),
+		priceRub: numeric("price_rub", { precision: 10, scale: 2 }).notNull(),
+		doctorPayrollPercent: numeric("doctor_payroll_percent", {
+			precision: 4,
+			scale: 2,
+		})
+			.default("25.00")
+			.notNull(),
+		doctorPayrollRub: numeric("doctor_payroll_rub", {
+			precision: 10,
+			scale: 2,
+		}).notNull(),
+		clinicMarginRub: numeric("clinic_margin_rub", {
+			precision: 10,
+			scale: 2,
+		}).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("pricelist_doctor_payrolls_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #61 — кадры::зачисление_повторной_записи_врачу_или_администратору
-export const rebookingConversionRules = pgTable("rebooking_conversion_rules", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	rebookedBy: text("rebooked_by").notNull(),
-	timeDeltaMinutes: integer("time_delta_minutes").notNull(),
-	creditedRole: text("credited_role").notNull(),
-	appointmentDate: text("appointment_date").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("rebooking_conversion_rules_organizationId_idx").on(t.organizationId)
-}));
+export const rebookingConversionRules = pgTable(
+	"rebooking_conversion_rules",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		rebookedBy: text("rebooked_by").notNull(),
+		timeDeltaMinutes: integer("time_delta_minutes").notNull(),
+		creditedRole: text("credited_role").notNull(),
+		appointmentDate: text("appointment_date").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"rebooking_conversion_rules_organizationId_idx",
+		).on(t.organizationId),
+	}),
+);
 
 // #55 — интеграции::продокторов_синхронизация_отзывов
-export const prodoctorovSyncExports = pgTable("prodoctorov_sync_exports", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	priceListSyncStatus: text("price_list_sync_status")
-		.default("synced")
-		.notNull(),
-	availableSlotsCount: integer("available_slots_count").default(120).notNull(),
-	medflexClubBadge: boolean("medflex_club_badge").default(true).notNull(),
-	lastSyncedAt: timestamp("last_synced_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("prodoctorov_sync_exports_organizationId_idx").on(t.organizationId)
-}));
+export const prodoctorovSyncExports = pgTable(
+	"prodoctorov_sync_exports",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		priceListSyncStatus: text("price_list_sync_status")
+			.default("synced")
+			.notNull(),
+		availableSlotsCount: integer("available_slots_count")
+			.default(120)
+			.notNull(),
+		medflexClubBadge: boolean("medflex_club_badge").default(true).notNull(),
+		lastSyncedAt: timestamp("last_synced_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("prodoctorov_sync_exports_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #58 — пациенты::геокодинг_адресов_через_dadata
-export const dadataGeocodedAddresses = pgTable("dadata_geocoded_addresses", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientName: text("patient_name").notNull(),
-	rawAddress: text("raw_address").notNull(),
-	fiasId: text("fias_id").notNull(),
-	qcGeo: integer("qc_geo").default(0).notNull(),
-	geoLat: text("geo_lat").notNull(),
-	geoLon: text("geo_lon").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("dadata_geocoded_addresses_organizationId_idx").on(t.organizationId)
-}));
+export const dadataGeocodedAddresses = pgTable(
+	"dadata_geocoded_addresses",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientName: text("patient_name").notNull(),
+		rawAddress: text("raw_address").notNull(),
+		fiasId: text("fias_id").notNull(),
+		qcGeo: integer("qc_geo").default(0).notNull(),
+		geoLat: text("geo_lat").notNull(),
+		geoLon: text("geo_lon").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("dadata_geocoded_addresses_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // #56 — система::запрет_одновременной_авторизации_под_одной_учеткой
 export const singleSessionEnforcements = pgTable(
@@ -2376,9 +2559,12 @@ export const singleSessionEnforcements = pgTable(
 		lastActiveAt: timestamp("last_active_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("single_session_enforcements_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"single_session_enforcements_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // ─────────────────────────────────────────────────────────────
@@ -2386,292 +2572,328 @@ export const singleSessionEnforcements = pgTable(
 // ─────────────────────────────────────────────────────────────
 
 // lab orders (dental laboratory work)
-export const labOrders = pgTable("lab_orders", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id),
-	doctorId: uuid("doctor_id"),
-	doctorName: text("doctor_name"),
-	secureToken: text("secure_token").notNull().unique(),
-	toothFdi: text("tooth_fdi"),
-	material: text("material"),
-	colorVita: text("color_vita"),
-	status: text("status").notNull().default("draft"),
-	dueDate: timestamp("due_date", { withTimezone: true }),
-	clinicalNotes: text("clinical_notes"),
-	labComments: text("lab_comments"),
-	attachedImageUrl: text("attached_image_url"),
-	priceRub: numeric("price_rub", { precision: 12, scale: 2, mode: "number" }),
-	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("lab_orders_organizationId_idx").on(t.organizationId),
-    patientIdIdx: index("lab_orders_patientId_idx").on(t.patientId)
-}));
+export const labOrders = pgTable(
+	"lab_orders",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		doctorId: uuid("doctor_id"),
+		doctorName: text("doctor_name"),
+		secureToken: text("secure_token").notNull().unique(),
+		toothFdi: text("tooth_fdi"),
+		material: text("material"),
+		colorVita: text("color_vita"),
+		status: text("status").notNull().default("draft"),
+		dueDate: timestamp("due_date", { withTimezone: true }),
+		clinicalNotes: text("clinical_notes"),
+		labComments: text("lab_comments"),
+		attachedImageUrl: text("attached_image_url"),
+		priceRub: numeric("price_rub", { precision: 12, scale: 2, mode: "number" }),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("lab_orders_organizationId_idx").on(
+			t.organizationId,
+		),
+		patientIdIdx: index("lab_orders_patientId_idx").on(t.patientId),
+	}),
+);
 
 // treatment plans (multi-stage treatment planning)
-export const treatmentPlans = pgTable("treatment_plans", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	/**
-	 * Изоляция по клинике. `NOT NULL` в базе — с миграции 0146; до неё колонка
-	 * допускала NULL, то есть план лечения с суммой мог оказаться бесхозным и
-	 * достаться любому арендатору базы. Прецедент дословный:
-	 * `family_groups.organization_id` закрывали миграцией 0119 после того, как
-	 * бесхозная группа вместе с балансом семейного кошелька досталась первой
-	 * обратившейся клинике. Ограничение поставлено на пустую таблицу (0 строк на
-	 * 2026-07-29), поэтому backfill не потребовался ни на одну строку.
-	 */
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id),
-	doctorId: uuid("doctor_id"),
-	title: text("title").notNull().default(""),
-	/**
-	 * ЗДЕСЬ БЫЛО `.default("План лечения")`, И ЭТО УМОЛЧАНИЕ ДО БАЗЫ НЕ ДОХОДИЛО
-	 * НИКОГДА.
-	 *
-	 * Для колонки со статическим умолчанием, значение которой не передано, drizzle
-	 * пишет в SQL ключевое слово `default` — не значение из этого файла. У колонки
-	 * `name` в базе умолчания НЕТ (проверено `pg_attrdef`, 2026-07-29), а `NOT
-	 * NULL` есть: вставка без имени плана давала бы `null value in column "name"
-	 * violates not-null constraint`. Объявление обещало, что поле необязательно,
-	 * база это обещание отвергала.
-	 *
-	 * ПОЧЕМУ УМОЛЧАНИЕ НЕ ЗАВЕДЕНО В БАЗЕ, А СНЯТО ИЗ ОБЪЯВЛЕНИЯ. План лечения,
-	 * тихо сохранённый под общим именем «План лечения», врач не найдёт в списке из
-	 * десяти таких же, а подпись пациента будет стоять под безымянной сметой.
-	 * Требовать имя правильнее, и требовать его надо на этапе компиляции: без
-	 * `.default(...)` `name` обязателен в типе вставки, и пропуск поля становится
-	 * ошибкой компилятора вместо отказа базы на живом сохранении.
-	 */
-	name: text("name").notNull(),
-	/**
-	 * Перечисление, а не `text`: набор значений принадлежит базе. Умолчание `Draft`
-	 * повторяет `DEFAULT 'Draft'::treatment_plan_status` дословно — см. докстринг
-	 * `treatmentPlanStatus` выше о том, чем строчный `"draft"` стоил отчётам.
-	 */
-	status: treatmentPlanStatus("status").notNull().default("Draft"),
-	totalPriceRub: numeric("total_price_rub", { precision: 12, scale: 2 }),
-	/**
-	 * Итог сметы. `NOT NULL DEFAULT '0'` в базе с миграции 0000, а объявление
-	 * разрешало NULL: тип обещал `string | null` там, где база гарантирует
-	 * значение, и каждый читатель суммы обязан был проверять её на пустоту.
-	 * Смета без итога — это ноль, а не «неизвестно».
-	 */
-	totalPrice: numeric("total_price", { precision: 12, scale: 2 })
-		.notNull()
-		.default("0"),
-	patientSignature: text("patient_signature"),
-	isSynced: boolean("is_synced").notNull().default(false),
-	version: integer("version").notNull().default(1),
-	approvedAt: timestamp("approved_at", { withTimezone: true }),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("treatment_plans_organizationId_idx").on(t.organizationId),
-    patientIdIdx: index("treatment_plans_patientId_idx").on(t.patientId)
-}));
+export const treatmentPlans = pgTable(
+	"treatment_plans",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		/**
+		 * Изоляция по клинике. `NOT NULL` в базе — с миграции 0146; до неё колонка
+		 * допускала NULL, то есть план лечения с суммой мог оказаться бесхозным и
+		 * достаться любому арендатору базы. Прецедент дословный:
+		 * `family_groups.organization_id` закрывали миграцией 0119 после того, как
+		 * бесхозная группа вместе с балансом семейного кошелька досталась первой
+		 * обратившейся клинике. Ограничение поставлено на пустую таблицу (0 строк на
+		 * 2026-07-29), поэтому backfill не потребовался ни на одну строку.
+		 */
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		doctorId: uuid("doctor_id"),
+		title: text("title").notNull().default(""),
+		/**
+		 * ЗДЕСЬ БЫЛО `.default("План лечения")`, И ЭТО УМОЛЧАНИЕ ДО БАЗЫ НЕ ДОХОДИЛО
+		 * НИКОГДА.
+		 *
+		 * Для колонки со статическим умолчанием, значение которой не передано, drizzle
+		 * пишет в SQL ключевое слово `default` — не значение из этого файла. У колонки
+		 * `name` в базе умолчания НЕТ (проверено `pg_attrdef`, 2026-07-29), а `NOT
+		 * NULL` есть: вставка без имени плана давала бы `null value in column "name"
+		 * violates not-null constraint`. Объявление обещало, что поле необязательно,
+		 * база это обещание отвергала.
+		 *
+		 * ПОЧЕМУ УМОЛЧАНИЕ НЕ ЗАВЕДЕНО В БАЗЕ, А СНЯТО ИЗ ОБЪЯВЛЕНИЯ. План лечения,
+		 * тихо сохранённый под общим именем «План лечения», врач не найдёт в списке из
+		 * десяти таких же, а подпись пациента будет стоять под безымянной сметой.
+		 * Требовать имя правильнее, и требовать его надо на этапе компиляции: без
+		 * `.default(...)` `name` обязателен в типе вставки, и пропуск поля становится
+		 * ошибкой компилятора вместо отказа базы на живом сохранении.
+		 */
+		name: text("name").notNull(),
+		/**
+		 * Перечисление, а не `text`: набор значений принадлежит базе. Умолчание `Draft`
+		 * повторяет `DEFAULT 'Draft'::treatment_plan_status` дословно — см. докстринг
+		 * `treatmentPlanStatus` выше о том, чем строчный `"draft"` стоил отчётам.
+		 */
+		status: treatmentPlanStatus("status").notNull().default("Draft"),
+		totalPriceRub: numeric("total_price_rub", { precision: 12, scale: 2 }),
+		/**
+		 * Итог сметы. `NOT NULL DEFAULT '0'` в базе с миграции 0000, а объявление
+		 * разрешало NULL: тип обещал `string | null` там, где база гарантирует
+		 * значение, и каждый читатель суммы обязан был проверять её на пустоту.
+		 * Смета без итога — это ноль, а не «неизвестно».
+		 */
+		totalPrice: numeric("total_price", { precision: 12, scale: 2 })
+			.notNull()
+			.default("0"),
+		patientSignature: text("patient_signature"),
+		isSynced: boolean("is_synced").notNull().default(false),
+		version: integer("version").notNull().default(1),
+		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("treatment_plans_organizationId_idx").on(
+			t.organizationId,
+		),
+		patientIdIdx: index("treatment_plans_patientId_idx").on(t.patientId),
+	}),
+);
 
 // treatment plan items new (items inside treatment plan)
-export const treatmentPlanItemsNew = pgTable("treatment_plan_items_new", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	/**
-	 * `NOT NULL` в базе — с миграции 0147.
-	 *
-	 * ДОЛГ БЫЛ НЕ РАСХОЖДЕНИЕМ: колонка допускала NULL И в базе, И здесь, поэтому
-	 * сторож схемы молчал — сравнивать было нечего. Молчание сторожа и есть худшая
-	 * часть такого долга: он не всплывает сам.
-	 *
-	 * Позиция сметы без принадлежности клинике не принадлежит НИКОМУ: запрос с
-	 * отбором по клинике её не видит, а запрос без отбора видит её у всех. Смета —
-	 * документ, под которым пациент ставит подпись. Прецедент дословный и уже
-	 * оплаченный: так бесхозная семейная группа вместе с балансом кошелька
-	 * досталась чужой клинике (закрывала миграция 0119), и так же `POST
-	 * /api/appointments` принимал пациента, врача и кресло другой клиники
-	 * (закрывал `f18a261bb`).
-	 *
-	 * Закрыто с двух сторон одной волной: писатель заполняет колонку (`1abbed2c3`),
-	 * миграция 0147 запрещает пустоту. Цена посчитана ДО применения: таблица пуста,
-	 * `SET NOT NULL` нечего отвергать. Разбор:
-	 * `.agents/lead/recon-schema-vs-live-database.md`.
-	 */
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	planId: uuid("plan_id").notNull(),
-	toothNumber: integer("tooth_number"),
-	/** `NOT NULL` в базе — с миграции 0146: позицию без ссылки на прайс нечем сопоставить с услугой. */
-	priceId: text("price_id").notNull(),
-	quantity: integer("quantity").notNull().default(1),
-	/*
-	 * Точность повторяет базу: колонки созданы `numeric(12,2)`, а объявлены были
-	 * `numeric(10, 2)`. Объявление ОБЕЩАЛО МЕНЬШЕ, чем база принимает, — то есть
-	 * занижало предел суммы позиции на два разряда. Расхождение не ловил
-	 * `scripts/check-schema-type-drift.mjs`: он сверяет `data_type`, а он у обоих
-	 * `numeric`, без точности.
-	 *
-	 * Без `mode: "number"` — намеренно, как у `crm_leads.expected_revenue`:
-	 * `routes/odontogram.ts` пишет сюда `item.price.toString()`, то есть строковый
-	 * тип drizzle совпадает с контрактом единственного писателя.
-	 */
-	price: numeric("price", { precision: 12, scale: 2 }).notNull().default("0"),
-	discount: numeric("discount", { precision: 12, scale: 2 })
-		.notNull()
-		.default("0"),
-	phase: integer("phase").notNull().default(1),
-	isBundle: boolean("is_bundle").notNull().default(false),
-	/**
-	 * НАЧИСЛЕНИЕ ВРАЧУ ПО ПОЗИЦИИ СМЕТЫ — колонка есть в базе, читать её было нечем.
-	 *
-	 * Создана как `numeric(12,2) NOT NULL DEFAULT '0'` (проверено `pg_attribute`
-	 * живой базы, 2026-07-29) и здесь не объявлялась, поэтому через drizzle была
-	 * недостижима: ни прочитать, ни записать. Это деньги врача за оказанную
-	 * услугу — тот же класс, которым `patient_invoices.total_amount_rub` обнулял
-	 * выручку в отчётах руководителю.
-	 *
-	 * Точность и умолчание повторяют базу дословно; `mode: "number"` не ставится по
-	 * той же причине, что у `price` и `discount` рядом — иначе одна таблица
-	 * отдавала бы деньги двумя разными типами.
-	 */
-	commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 })
-		.notNull()
-		.default("0"),
-	/** `NOT NULL` в базе — с миграции 0146; умолчание `now()` там было и раньше. */
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("treatment_plan_items_new_organizationId_idx").on(t.organizationId)
-}));
+export const treatmentPlanItemsNew = pgTable(
+	"treatment_plan_items_new",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		/**
+		 * `NOT NULL` в базе — с миграции 0147.
+		 *
+		 * ДОЛГ БЫЛ НЕ РАСХОЖДЕНИЕМ: колонка допускала NULL И в базе, И здесь, поэтому
+		 * сторож схемы молчал — сравнивать было нечего. Молчание сторожа и есть худшая
+		 * часть такого долга: он не всплывает сам.
+		 *
+		 * Позиция сметы без принадлежности клинике не принадлежит НИКОМУ: запрос с
+		 * отбором по клинике её не видит, а запрос без отбора видит её у всех. Смета —
+		 * документ, под которым пациент ставит подпись. Прецедент дословный и уже
+		 * оплаченный: так бесхозная семейная группа вместе с балансом кошелька
+		 * досталась чужой клинике (закрывала миграция 0119), и так же `POST
+		 * /api/appointments` принимал пациента, врача и кресло другой клиники
+		 * (закрывал `f18a261bb`).
+		 *
+		 * Закрыто с двух сторон одной волной: писатель заполняет колонку (`1abbed2c3`),
+		 * миграция 0147 запрещает пустоту. Цена посчитана ДО применения: таблица пуста,
+		 * `SET NOT NULL` нечего отвергать. Разбор:
+		 * `.agents/lead/recon-schema-vs-live-database.md`.
+		 */
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		planId: uuid("plan_id").notNull(),
+		toothNumber: integer("tooth_number"),
+		/** `NOT NULL` в базе — с миграции 0146: позицию без ссылки на прайс нечем сопоставить с услугой. */
+		priceId: text("price_id").notNull(),
+		quantity: integer("quantity").notNull().default(1),
+		/*
+		 * Точность повторяет базу: колонки созданы `numeric(12,2)`, а объявлены были
+		 * `numeric(10, 2)`. Объявление ОБЕЩАЛО МЕНЬШЕ, чем база принимает, — то есть
+		 * занижало предел суммы позиции на два разряда. Расхождение не ловил
+		 * `scripts/check-schema-type-drift.mjs`: он сверяет `data_type`, а он у обоих
+		 * `numeric`, без точности.
+		 *
+		 * Без `mode: "number"` — намеренно, как у `crm_leads.expected_revenue`:
+		 * `routes/odontogram.ts` пишет сюда `item.price.toString()`, то есть строковый
+		 * тип drizzle совпадает с контрактом единственного писателя.
+		 */
+		price: numeric("price", { precision: 12, scale: 2 }).notNull().default("0"),
+		discount: numeric("discount", { precision: 12, scale: 2 })
+			.notNull()
+			.default("0"),
+		phase: integer("phase").notNull().default(1),
+		isBundle: boolean("is_bundle").notNull().default(false),
+		/**
+		 * НАЧИСЛЕНИЕ ВРАЧУ ПО ПОЗИЦИИ СМЕТЫ — колонка есть в базе, читать её было нечем.
+		 *
+		 * Создана как `numeric(12,2) NOT NULL DEFAULT '0'` (проверено `pg_attribute`
+		 * живой базы, 2026-07-29) и здесь не объявлялась, поэтому через drizzle была
+		 * недостижима: ни прочитать, ни записать. Это деньги врача за оказанную
+		 * услугу — тот же класс, которым `patient_invoices.total_amount_rub` обнулял
+		 * выручку в отчётах руководителю.
+		 *
+		 * Точность и умолчание повторяют базу дословно; `mode: "number"` не ставится по
+		 * той же причине, что у `price` и `discount` рядом — иначе одна таблица
+		 * отдавала бы деньги двумя разными типами.
+		 */
+		commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 })
+			.notNull()
+			.default("0"),
+		/** `NOT NULL` в базе — с миграции 0146; умолчание `now()` там было и раньше. */
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("treatment_plan_items_new_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // visit templates (protocol templates for visits)
-export const visitTemplates = pgTable("visit_templates", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	title: text("title").notNull(),
-	category: text("category"),
-	specialty: text("specialty").notNull().default("universal"),
-	prefilledAnamnesis: text("prefilled_anamnesis"),
-	prefilledObjective: text("prefilled_objective"),
-	prefilledTreatment: text("prefilled_treatment"),
-	defaultIcd10: text("default_icd10"),
-	defaultIcd10Label: text("default_icd10_label"),
-	suggestedProcedureIds: jsonb("suggested_procedure_ids"),
-	templateJson: jsonb("template_json"),
-	isBuiltIn: boolean("is_built_in").notNull().default(false),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("visit_templates_organizationId_idx").on(t.organizationId)
-}));
+export const visitTemplates = pgTable(
+	"visit_templates",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		title: text("title").notNull(),
+		category: text("category"),
+		specialty: text("specialty").notNull().default("universal"),
+		prefilledAnamnesis: text("prefilled_anamnesis"),
+		prefilledObjective: text("prefilled_objective"),
+		prefilledTreatment: text("prefilled_treatment"),
+		defaultIcd10: text("default_icd10"),
+		defaultIcd10Label: text("default_icd10_label"),
+		suggestedProcedureIds: jsonb("suggested_procedure_ids"),
+		templateJson: jsonb("template_json"),
+		isBuiltIn: boolean("is_built_in").notNull().default(false),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("visit_templates_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // visit diaries (full clinical diary with structured fields)
-export const visitDiaries = pgTable("visit_diaries", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	visitId: uuid("visit_id").notNull(),
-	patientId: uuid("patient_id"),
-	draftAuthorId: uuid("draft_author_id"),
-	authorId: uuid("author_id"),
-	doctorId: uuid("doctor_id"),
-	// clinical structured sections
-	anamnesis: text("anamnesis"),
-	statusLocalis: text("status_localis"),
-	diagnosisIcd10: text("diagnosis_icd10"),
-	diagnosisTooth: text("diagnosis_tooth"),
-	treatmentDescription: text("treatment_description"),
-	complications: text("complications"),
-	comorbidities: text("comorbidities"),
-	// legacy free-text content fallback
-	content: text("content").notNull().default(""),
-	// signing / locking
-	isLocked: boolean("is_locked").notNull().default(false),
-	lockedAt: timestamp("locked_at", { withTimezone: true }),
-	lockedByUserId: uuid("locked_by_user_id"),
-	coSignedByUserId: uuid("co_signed_by_user_id"),
-	diaryHash: text("diary_hash"),
-	// instrument tracking
-	instrumentTrayBarcode: text("instrument_tray_barcode"),
-	// optimistic concurrency version counter
-	version: integer("version").notNull().default(1),
-	// UKEP digital signature hash/blob attached on signing
-	cryptoSignaturePkcs7: text("crypto_signature_pkcs7"),
-	// Учёт офлайн-синхронизации. Колонка есть в 0000, но в модели её не было, и
-	// services/syncDaemon.ts не компилировался: обмен с офлайн-клиентом не работал.
-	// Счётчик version объявлен выше.
-	isSynced: boolean("is_synced").notNull().default(false),
-	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("visit_diaries_organizationId_idx").on(t.organizationId)
-}));
+export const visitDiaries = pgTable(
+	"visit_diaries",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		visitId: uuid("visit_id").notNull(),
+		patientId: uuid("patient_id"),
+		draftAuthorId: uuid("draft_author_id"),
+		authorId: uuid("author_id"),
+		doctorId: uuid("doctor_id"),
+		// clinical structured sections
+		anamnesis: text("anamnesis"),
+		statusLocalis: text("status_localis"),
+		diagnosisIcd10: text("diagnosis_icd10"),
+		diagnosisTooth: text("diagnosis_tooth"),
+		treatmentDescription: text("treatment_description"),
+		complications: text("complications"),
+		comorbidities: text("comorbidities"),
+		// legacy free-text content fallback
+		content: text("content").notNull().default(""),
+		// signing / locking
+		isLocked: boolean("is_locked").notNull().default(false),
+		lockedAt: timestamp("locked_at", { withTimezone: true }),
+		lockedByUserId: uuid("locked_by_user_id"),
+		coSignedByUserId: uuid("co_signed_by_user_id"),
+		diaryHash: text("diary_hash"),
+		// instrument tracking
+		instrumentTrayBarcode: text("instrument_tray_barcode"),
+		// optimistic concurrency version counter
+		version: integer("version").notNull().default(1),
+		// UKEP digital signature hash/blob attached on signing
+		cryptoSignaturePkcs7: text("crypto_signature_pkcs7"),
+		// Учёт офлайн-синхронизации. Колонка есть в 0000, но в модели её не было, и
+		// services/syncDaemon.ts не компилировался: обмен с офлайн-клиентом не работал.
+		// Счётчик version объявлен выше.
+		isSynced: boolean("is_synced").notNull().default(false),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("visit_diaries_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // visit diary revisions (audit trail for diary edits)
-export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	diaryId: uuid("diary_id").notNull(),
-	revisedContent: text("revised_content").notNull().default(""),
-	previousAnamnesis: text("previous_anamnesis"),
-	previousStatusLocalis: text("previous_status_localis"),
-	previousDiagnosisIcd10: text("previous_diagnosis_icd10"),
-	previousTreatmentDescription: text("previous_treatment_description"),
-	/*
-	 * Колонки из drizzle/0116_add_soap_template_fields.sql.
-	 * БЫЛО: schema отставала от БД — POST …/revise принимал revisionReason и
-	 * previousDiagnosisTooth в теле, но insert в visit_diary_revisions их не
-	 * писал. Причина правки и прежний зуб пропадали из forensic-истории 043/у.
-	 */
-	previousDiagnosisTooth: varchar("previous_diagnosis_tooth", { length: 10 }),
-	/*
-	 * Forensic 043/у (миграция 0149).
-	 * БЫЛО: revise принимал complications/comorbidities и писал их в visit_diaries,
-	 * но previous_* в visit_diary_revisions не сохранялись — при админ-правке
-	 * подписанного дневника терялся прежний текст осложнений и сопутствующих.
-	 */
-	previousComplications: text("previous_complications"),
-	previousComorbidities: text("previous_comorbidities"),
-	/*
-	 * Forensic 043/у (миграция 0150).
-	 * БЫЛО: revise не принимал instrumentTrayBarcode; previous_* лотка
-	 * не было. sterilization/link 409 обещал правку через ревизию,
-	 * а forensic-история 043/у не фиксировала прежний штрихкод лотка.
-	 */
-	previousInstrumentTrayBarcode: text("previous_instrument_tray_barcode"),
-	revisionReason: text("revision_reason"),
-	revisedByUserId: uuid("revised_by_user_id"),
-	revisedBy: uuid("revised_by"),
-	revisedAt: timestamp("revised_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("visit_diary_revisions_organizationId_idx").on(t.organizationId)
-}));
+export const visitDiaryRevisions = pgTable(
+	"visit_diary_revisions",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		diaryId: uuid("diary_id").notNull(),
+		revisedContent: text("revised_content").notNull().default(""),
+		previousAnamnesis: text("previous_anamnesis"),
+		previousStatusLocalis: text("previous_status_localis"),
+		previousDiagnosisIcd10: text("previous_diagnosis_icd10"),
+		previousTreatmentDescription: text("previous_treatment_description"),
+		/*
+		 * Колонки из drizzle/0116_add_soap_template_fields.sql.
+		 * БЫЛО: schema отставала от БД — POST …/revise принимал revisionReason и
+		 * previousDiagnosisTooth в теле, но insert в visit_diary_revisions их не
+		 * писал. Причина правки и прежний зуб пропадали из forensic-истории 043/у.
+		 */
+		previousDiagnosisTooth: varchar("previous_diagnosis_tooth", { length: 10 }),
+		/*
+		 * Forensic 043/у (миграция 0149).
+		 * БЫЛО: revise принимал complications/comorbidities и писал их в visit_diaries,
+		 * но previous_* в visit_diary_revisions не сохранялись — при админ-правке
+		 * подписанного дневника терялся прежний текст осложнений и сопутствующих.
+		 */
+		previousComplications: text("previous_complications"),
+		previousComorbidities: text("previous_comorbidities"),
+		/*
+		 * Forensic 043/у (миграция 0150).
+		 * БЫЛО: revise не принимал instrumentTrayBarcode; previous_* лотка
+		 * не было. sterilization/link 409 обещал правку через ревизию,
+		 * а forensic-история 043/у не фиксировала прежний штрихкод лотка.
+		 */
+		previousInstrumentTrayBarcode: text("previous_instrument_tray_barcode"),
+		revisionReason: text("revision_reason"),
+		revisedByUserId: uuid("revised_by_user_id"),
+		revisedBy: uuid("revised_by"),
+		revisedAt: timestamp("revised_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("visit_diary_revisions_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // visit examination photo links (links to uploaded exam photos)
 export const visitExaminationPhotoLinks = pgTable(
@@ -2688,35 +2910,44 @@ export const visitExaminationPhotoLinks = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("visit_examination_photo_links_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"visit_examination_photo_links_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // tooth states (per-tooth status for odontogram)
-export const toothStates = pgTable("tooth_states", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id),
-	toothNumber: integer("tooth_number").notNull(),
-	state: text("state").notNull().default("healthy"),
-	surfaces: jsonb("surfaces"),
-	notes: text("notes"),
-	// Учёт офлайн-синхронизации, см. комментарий у visit_diaries.
-	isSynced: boolean("is_synced").notNull().default(false),
-	version: integer("version").notNull().default(1),
-	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("tooth_states_organizationId_idx").on(t.organizationId),
-    patientIdIdx: index("tooth_states_patientId_idx").on(t.patientId)
-}));
+export const toothStates = pgTable(
+	"tooth_states",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		toothNumber: integer("tooth_number").notNull(),
+		state: text("state").notNull().default("healthy"),
+		surfaces: jsonb("surfaces"),
+		notes: text("notes"),
+		// Учёт офлайн-синхронизации, см. комментарий у visit_diaries.
+		isSynced: boolean("is_synced").notNull().default(false),
+		version: integer("version").notNull().default(1),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("tooth_states_organizationId_idx").on(
+			t.organizationId,
+		),
+		patientIdIdx: index("tooth_states_patientId_idx").on(t.patientId),
+	}),
+);
 
 /**
  * История изменений состояния зуба (только добавление, без перезаписи).
@@ -2761,58 +2992,66 @@ export const toothStateHistory = pgTable(
 			table.toothNumber,
 			table.changedAt,
 		),
-        organizationIdIdx: index("tooth_state_history_organizationId_idx").on(table.organizationId)
-    }),
+		organizationIdIdx: index("tooth_state_history_organizationId_idx").on(
+			table.organizationId,
+		),
+	}),
 );
 
 // insurance contracts (DMS / voluntary health insurance)
-export const insuranceContracts = pgTable("insurance_contracts", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	companyName: text("company_name").notNull(),
-	policyNumberMask: text("policy_number_mask"),
-	coverageTherapyPct: numeric("coverage_therapy_pct", {
-		precision: 5,
-		scale: 2,
-		mode: "number",
-	})
-		.notNull()
-		.default(0),
-	coverageSurgeryPct: numeric("coverage_surgery_pct", {
-		precision: 5,
-		scale: 2,
-		mode: "number",
-	})
-		.notNull()
-		.default(0),
-	coverageOrthoPct: numeric("coverage_ortho_pct", {
-		precision: 5,
-		scale: 2,
-		mode: "number",
-	})
-		.notNull()
-		.default(0),
-	coverageHygienePct: numeric("coverage_hygiene_pct", {
-		precision: 5,
-		scale: 2,
-		mode: "number",
-	})
-		.notNull()
-		.default(0),
-	annualLimitRub: numeric("annual_limit_rub", {
-		precision: 12,
-		scale: 2,
-		mode: "number",
+export const insuranceContracts = pgTable(
+	"insurance_contracts",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		companyName: text("company_name").notNull(),
+		policyNumberMask: text("policy_number_mask"),
+		coverageTherapyPct: numeric("coverage_therapy_pct", {
+			precision: 5,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		coverageSurgeryPct: numeric("coverage_surgery_pct", {
+			precision: 5,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		coverageOrthoPct: numeric("coverage_ortho_pct", {
+			precision: 5,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		coverageHygienePct: numeric("coverage_hygiene_pct", {
+			precision: 5,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		annualLimitRub: numeric("annual_limit_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		}),
+		isActive: boolean("is_active").notNull().default(true),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("insurance_contracts_organizationId_idx").on(
+			t.organizationId,
+		),
 	}),
-	isActive: boolean("is_active").notNull().default(true),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("insurance_contracts_organizationId_idx").on(t.organizationId)
-}));
+);
 
 // inventory items (clinic supplies and materials)
 export const inventoryItems = pgTable(
@@ -2878,337 +3117,405 @@ export const inventoryItems = pgTable(
 				"inventory_items_current_qty_check",
 				sql`CAST(${table.currentQty} AS NUMERIC) >= 0`,
 			),
-            organizationIdIdx: index("inventory_items_organizationId_idx").on(table.organizationId)
-        };
+			organizationIdIdx: index("inventory_items_organizationId_idx").on(
+				table.organizationId,
+			),
+		};
 	},
 );
 
 // inventory transactions (stock movements)
-export const inventoryTransactions = pgTable("inventory_transactions", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	itemId: uuid("item_id"),
-	// alias — some routes call it inventoryItemId
-	inventoryItemId: uuid("inventory_item_id"),
-	visitId: uuid("visit_id"),
-	transactionType: text("transaction_type").notNull().default("receipt"),
-	qty: numeric("qty", { precision: 10, scale: 3 }),
-	// alias — some routes call it quantityChanged
-	quantityChanged: numeric("quantity_changed", { precision: 10, scale: 3 }),
-	unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 }),
-	userId: uuid("user_id"),
-	notes: text("notes"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("inventory_transactions_organizationId_idx").on(t.organizationId)
-}));
+export const inventoryTransactions = pgTable(
+	"inventory_transactions",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		itemId: uuid("item_id"),
+		// alias — some routes call it inventoryItemId
+		inventoryItemId: uuid("inventory_item_id"),
+		visitId: uuid("visit_id"),
+		transactionType: text("transaction_type").notNull().default("receipt"),
+		qty: numeric("qty", { precision: 10, scale: 3 }),
+		// alias — some routes call it quantityChanged
+		quantityChanged: numeric("quantity_changed", { precision: 10, scale: 3 }),
+		unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 }),
+		userId: uuid("user_id"),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("inventory_transactions_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // patient invoices (billing invoices sent to patients)
-export const patientInvoices = pgTable("patient_invoices", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id),
-	visitId: uuid("visit_id"),
-	totalRub: numeric("total_rub", { precision: 12, scale: 2 }).notNull(),
-	/**
-	 * ИТОГ СЧЁТА ИЗ ИСХОДНОЙ СХЕМЫ — и это НЕ то же самое, что total_rub выше.
-	 *
-	 * Миграция 0000 (строка 841) создала `total_amount_rub numeric(12,2)
-	 * DEFAULT '0' NOT NULL` единственной суммой счёта; total_rub в ней нет
-	 * вообще. Объявления для total_amount_rub здесь не появилось, а миграция
-	 * 0118 «выравнивание таблиц по схеме» дописала в базу ВТОРУЮ денежную
-	 * колонку total_rub — под уже написанное объявление. Выравнивание пошло не в
-	 * ту сторону: вместо объявления живой колонки в базе завели дубль.
-	 *
-	 * Чем это кончилось на деньгах: аналитика в
-	 * apps/api/src/scripts/cronAnalyticsWorker.ts складывает сырым SQL именно
-	 * total_amount_rub — выручку когорт LTV и выручку по врачам, — а всё, что
-	 * пишет счёт через drizzle, заполняет total_rub. Незаявленная колонка
-	 * остаётся на своём DEFAULT 0, и оба отчёта суммируют нули.
-	 *
-	 * `mode: "number"` не украшение: registerMoneyTypeParsers() ставит разбор
-	 * numeric на весь процесс, поэтому драйвер отдаёт здесь число, и объявление
-	 * без mode обещало бы строку — ровно тот денежный дрейф типа, против
-	 * которого написан scripts/check-schema-type-drift.mjs.
-	 */
-	totalAmountRub: numeric("total_amount_rub", {
-		precision: 12,
-		scale: 2,
-		mode: "number",
-	})
-		.notNull()
-		.default(0),
-	status: text("status").notNull().default("draft"),
-	issuedAt: timestamp("issued_at", { withTimezone: true }),
-	paidAt: timestamp("paid_at", { withTimezone: true }),
-	// Учёт офлайн-синхронизации, см. комментарий у visit_diaries.
-	isSynced: boolean("is_synced").notNull().default(false),
-	version: integer("version").notNull().default(1),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("patient_invoices_organizationId_idx").on(t.organizationId),
-    patientIdIdx: index("patient_invoices_patientId_idx").on(t.patientId)
-}));
+export const patientInvoices = pgTable(
+	"patient_invoices",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		visitId: uuid("visit_id"),
+		totalRub: numeric("total_rub", { precision: 12, scale: 2 }).notNull(),
+		/**
+		 * ИТОГ СЧЁТА ИЗ ИСХОДНОЙ СХЕМЫ — и это НЕ то же самое, что total_rub выше.
+		 *
+		 * Миграция 0000 (строка 841) создала `total_amount_rub numeric(12,2)
+		 * DEFAULT '0' NOT NULL` единственной суммой счёта; total_rub в ней нет
+		 * вообще. Объявления для total_amount_rub здесь не появилось, а миграция
+		 * 0118 «выравнивание таблиц по схеме» дописала в базу ВТОРУЮ денежную
+		 * колонку total_rub — под уже написанное объявление. Выравнивание пошло не в
+		 * ту сторону: вместо объявления живой колонки в базе завели дубль.
+		 *
+		 * Чем это кончилось на деньгах: аналитика в
+		 * apps/api/src/scripts/cronAnalyticsWorker.ts складывает сырым SQL именно
+		 * total_amount_rub — выручку когорт LTV и выручку по врачам, — а всё, что
+		 * пишет счёт через drizzle, заполняет total_rub. Незаявленная колонка
+		 * остаётся на своём DEFAULT 0, и оба отчёта суммируют нули.
+		 *
+		 * `mode: "number"` не украшение: registerMoneyTypeParsers() ставит разбор
+		 * numeric на весь процесс, поэтому драйвер отдаёт здесь число, и объявление
+		 * без mode обещало бы строку — ровно тот денежный дрейф типа, против
+		 * которого написан scripts/check-schema-type-drift.mjs.
+		 */
+		totalAmountRub: numeric("total_amount_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		status: text("status").notNull().default("draft"),
+		issuedAt: timestamp("issued_at", { withTimezone: true }),
+		paidAt: timestamp("paid_at", { withTimezone: true }),
+		// Учёт офлайн-синхронизации, см. комментарий у visit_diaries.
+		isSynced: boolean("is_synced").notNull().default(false),
+		version: integer("version").notNull().default(1),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("patient_invoices_organizationId_idx").on(
+			t.organizationId,
+		),
+		patientIdIdx: index("patient_invoices_patientId_idx").on(t.patientId),
+	}),
+);
 
 // appointment waitlists (patient waiting queue)
-export const appointmentWaitlists = pgTable("appointment_waitlists", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id),
-	patientName: text("patient_name"),
-	patientPhone: text("patient_phone"),
-	preferredDoctorId: uuid("preferred_doctor_id"),
-	preferredDoctorName: text("preferred_doctor_name"),
-	priorityLevel: text("priority_level").notNull().default("medium"),
-	preferredTimeRanges: jsonb("preferred_time_ranges"),
-	status: text("status").notNull().default("waiting"),
-	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("appointment_waitlists_organizationId_idx").on(t.organizationId),
-    patientIdIdx: index("appointment_waitlists_patientId_idx").on(t.patientId)
-}));
+export const appointmentWaitlists = pgTable(
+	"appointment_waitlists",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		patientName: text("patient_name"),
+		patientPhone: text("patient_phone"),
+		preferredDoctorId: uuid("preferred_doctor_id"),
+		preferredDoctorName: text("preferred_doctor_name"),
+		priorityLevel: text("priority_level").notNull().default("medium"),
+		preferredTimeRanges: jsonb("preferred_time_ranges"),
+		status: text("status").notNull().default("waiting"),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("appointment_waitlists_organizationId_idx").on(
+			t.organizationId,
+		),
+		patientIdIdx: index("appointment_waitlists_patientId_idx").on(t.patientId),
+	}),
+);
 
 // clinic chairs (treatment chairs / workstations)
-export const clinicChairs = pgTable("clinic_chairs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	name: text("name").notNull(),
-	color: text("color"),
-	isActive: boolean("is_active").notNull().default(true),
-	sortOrder: integer("sort_order").notNull().default(0),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("clinic_chairs_organizationId_idx").on(t.organizationId)
-}));
+export const clinicChairs = pgTable(
+	"clinic_chairs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		name: text("name").notNull(),
+		color: text("color"),
+		isActive: boolean("is_active").notNull().default(true),
+		sortOrder: integer("sort_order").notNull().default(0),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("clinic_chairs_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // doctor commissions (payroll commission rates)
-export const doctorCommissions = pgTable("doctor_commissions", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	doctorId: uuid("doctor_id"),
-	// alias — some routes reference it as userId (user FK instead of staff FK)
-	userId: uuid("user_id"),
-	specialty: text("specialty").default("universal"),
-	serviceCategory: text("service_category"),
-	commissionPercent: numeric("commission_percent", { precision: 5, scale: 2 })
-		.notNull()
-		.default("25"),
-	commissionPct: numeric("commission_pct", { precision: 5, scale: 2 })
-		.notNull()
-		.default("25"),
-	materialCostDeductionPct: numeric("material_cost_deduction_pct", {
-		precision: 5,
-		scale: 2,
-	})
-		.notNull()
-		.default("0"),
-	isActive: boolean("is_active").notNull().default(true),
-	effectiveFrom: timestamp("effective_from", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("doctor_commissions_organizationId_idx").on(t.organizationId)
-}));
+export const doctorCommissions = pgTable(
+	"doctor_commissions",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		doctorId: uuid("doctor_id"),
+		// alias — some routes reference it as userId (user FK instead of staff FK)
+		userId: uuid("user_id"),
+		specialty: text("specialty").default("universal"),
+		serviceCategory: text("service_category"),
+		commissionPercent: numeric("commission_percent", { precision: 5, scale: 2 })
+			.notNull()
+			.default("25"),
+		commissionPct: numeric("commission_pct", { precision: 5, scale: 2 })
+			.notNull()
+			.default("25"),
+		materialCostDeductionPct: numeric("material_cost_deduction_pct", {
+			precision: 5,
+			scale: 2,
+		})
+			.notNull()
+			.default("0"),
+		isActive: boolean("is_active").notNull().default(true),
+		effectiveFrom: timestamp("effective_from", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("doctor_commissions_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // family groups (linked family accounts)
-export const familyGroups = pgTable("family_groups", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	/**
-	 * NOT NULL с миграции 0119. Раньше колонка допускала NULL, а
-	 * routes/finance_family.ts выбирал группы условием
-	 * `organization_id = :orgId OR organization_id IS NULL` и присваивал
-	 * найденную бесхозную группу первой обратившейся клинике — вместе с
-	 * балансом семейного кошелька.
-	 */
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	// Primary identifiers — 'name' is the display name, 'groupName' kept for compat
-	name: text("name"),
-	groupName: text("group_name").notNull().default(""),
-	// The head (primary) patient of the family; the billing wallet is tied here
-	headPatientId: uuid("head_patient_id"),
-	primaryPatientId: uuid("primary_patient_id"),
-	/**
-	 * Баланс семейного кошелька.
-	 *
-	 * Колонка физически создана как numeric(12, 2) (миграция 0000), и драйвер
-	 * отдаёт её СТРОКОЙ. Раньше здесь стояло integer("balance") с комментарием
-	 * «in whole rubles»: TypeScript был уверен, что это number, а в рантайме
-	 * приходило "150.50", и любое сложение без Number() давало склейку строк —
-	 * "150.50" + 1000 === "150.501000". Объявление приведено к настоящему типу,
-	 * чтобы компилятор требовал явного перевода через parseKopecks().
-	 */
-	balance: numeric("balance", { precision: 12, scale: 2 })
-		.notNull()
-		.default("0.00"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("family_groups_organizationId_idx").on(t.organizationId)
-}));
+export const familyGroups = pgTable(
+	"family_groups",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		/**
+		 * NOT NULL с миграции 0119. Раньше колонка допускала NULL, а
+		 * routes/finance_family.ts выбирал группы условием
+		 * `organization_id = :orgId OR organization_id IS NULL` и присваивал
+		 * найденную бесхозную группу первой обратившейся клинике — вместе с
+		 * балансом семейного кошелька.
+		 */
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		// Primary identifiers — 'name' is the display name, 'groupName' kept for compat
+		name: text("name"),
+		groupName: text("group_name").notNull().default(""),
+		// The head (primary) patient of the family; the billing wallet is tied here
+		headPatientId: uuid("head_patient_id"),
+		primaryPatientId: uuid("primary_patient_id"),
+		/**
+		 * Баланс семейного кошелька.
+		 *
+		 * Колонка физически создана как numeric(12, 2) (миграция 0000), и драйвер
+		 * отдаёт её СТРОКОЙ. Раньше здесь стояло integer("balance") с комментарием
+		 * «in whole rubles»: TypeScript был уверен, что это number, а в рантайме
+		 * приходило "150.50", и любое сложение без Number() давало склейку строк —
+		 * "150.50" + 1000 === "150.501000". Объявление приведено к настоящему типу,
+		 * чтобы компилятор требовал явного перевода через parseKopecks().
+		 */
+		balance: numeric("balance", { precision: 12, scale: 2 })
+			.notNull()
+			.default("0.00"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("family_groups_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // CRM leads (incoming lead tracking)
-export const crmLeads = pgTable("crm_leads", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	// alias — some routes call it name, some patientName
-	name: text("name"),
-	patientName: text("patient_name"),
-	phone: text("phone"),
-	source: text("source"),
-	status: text("status").notNull().default("new"),
-	assignedDoctorId: uuid("assigned_doctor_id"),
-	notes: text("notes"),
-	/**
-	 * ОЖИДАЕМАЯ ВЫРУЧКА ПО ЛИДУ — принималась маршрутом и терялась молча.
-	 *
-	 * Колонка создана миграцией 0000 (строка 293) как `numeric(12, 2)`, а
-	 * объявления здесь не было. При этом `POST /api/leads` принимает
-	 * `expectedRevenue` в своей схеме разбора и пишет лид через
-	 * `db.insert(crmLeads).values({ ...data, organizationId })`: ключа, которого
-	 * нет в форме таблицы, drizzle в запрос не переносит. Сумма, введённая
-	 * администратором, не доходила до базы, а `GET /api/leads` возвращает
-	 * `select()` по тем же объявлениям — то есть не вернул бы её и оттуда.
-	 * Канбан лидов (apps/web/src/components/leads/LeadsKanbanView.tsx) показывал
-	 * поле, которое нечем заполнить.
-	 *
-	 * Объявлено БЕЗ `mode: "number"` намеренно: маршрут разбирает это поле как
-	 * `z.string()`, и строковый тип drizzle совпадает с его контрактом.
-	 */
-	expectedRevenue: numeric("expected_revenue", { precision: 12, scale: 2 }),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("crm_leads_organizationId_idx").on(t.organizationId)
-}));
+export const crmLeads = pgTable(
+	"crm_leads",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		// alias — some routes call it name, some patientName
+		name: text("name"),
+		patientName: text("patient_name"),
+		phone: text("phone"),
+		source: text("source"),
+		status: text("status").notNull().default("new"),
+		assignedDoctorId: uuid("assigned_doctor_id"),
+		notes: text("notes"),
+		/**
+		 * ОЖИДАЕМАЯ ВЫРУЧКА ПО ЛИДУ — принималась маршрутом и терялась молча.
+		 *
+		 * Колонка создана миграцией 0000 (строка 293) как `numeric(12, 2)`, а
+		 * объявления здесь не было. При этом `POST /api/leads` принимает
+		 * `expectedRevenue` в своей схеме разбора и пишет лид через
+		 * `db.insert(crmLeads).values({ ...data, organizationId })`: ключа, которого
+		 * нет в форме таблицы, drizzle в запрос не переносит. Сумма, введённая
+		 * администратором, не доходила до базы, а `GET /api/leads` возвращает
+		 * `select()` по тем же объявлениям — то есть не вернул бы её и оттуда.
+		 * Канбан лидов (apps/web/src/components/leads/LeadsKanbanView.tsx) показывал
+		 * поле, которое нечем заполнить.
+		 *
+		 * Объявлено БЕЗ `mode: "number"` намеренно: маршрут разбирает это поле как
+		 * `z.string()`, и строковый тип drizzle совпадает с его контрактом.
+		 */
+		expectedRevenue: numeric("expected_revenue", { precision: 12, scale: 2 }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("crm_leads_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // procedure material rules (material requirements per procedure)
-export const procedureMaterialRules = pgTable("procedure_material_rules", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id").references(() => organizations.id),
-	serviceCode: text("service_code"),
-	// FK to serviceCatalogItems (optional — some rules are code-only)
-	serviceId: uuid("service_id"),
-	materialItemId: uuid("material_item_id"),
-	// alias used by diary.ts
-	inventoryItemId: uuid("inventory_item_id"),
-	materialName: text("material_name"),
-	requiredQty: numeric("required_qty", { precision: 12, scale: 4 })
-		.notNull()
-		.default("1.0000"),
-	// alias used by diary.ts for deduction logic
-	quantityToDeduct: numeric("quantity_to_deduct", { precision: 12, scale: 4 })
-		.notNull()
-		.default("1.0000"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("procedure_material_rules_organizationId_idx").on(t.organizationId)
-}));
+export const procedureMaterialRules = pgTable(
+	"procedure_material_rules",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id").references(() => organizations.id),
+		serviceCode: text("service_code"),
+		// FK to serviceCatalogItems (optional — some rules are code-only)
+		serviceId: uuid("service_id"),
+		materialItemId: uuid("material_item_id"),
+		// alias used by diary.ts
+		inventoryItemId: uuid("inventory_item_id"),
+		materialName: text("material_name"),
+		requiredQty: numeric("required_qty", { precision: 12, scale: 4 })
+			.notNull()
+			.default("1.0000"),
+		// alias used by diary.ts for deduction logic
+		quantityToDeduct: numeric("quantity_to_deduct", { precision: 12, scale: 4 })
+			.notNull()
+			.default("1.0000"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("procedure_material_rules_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // sterilization logs (autoclave / sterilization records)
-export const sterilizationLogs = pgTable("sterilization_logs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	deviceName: text("device_name").notNull().default("Автоклав 1"),
-	autoclaveId: text("autoclave_id"),
-	cycleNumber: integer("cycle_number").notNull().default(1),
-	temperatureCelsius: numeric("temperature_celsius", {
-		precision: 5,
-		scale: 1,
+export const sterilizationLogs = pgTable(
+	"sterilization_logs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		deviceName: text("device_name").notNull().default("Автоклав 1"),
+		autoclaveId: text("autoclave_id"),
+		cycleNumber: integer("cycle_number").notNull().default(1),
+		temperatureCelsius: numeric("temperature_celsius", {
+			precision: 5,
+			scale: 1,
+		}),
+		pressureBar: numeric("pressure_bar", { precision: 4, scale: 2 }),
+		itemsDescription: text("items_description"),
+		operatorId: uuid("operator_id"),
+		barcode: text("barcode"),
+		status: text("status").notNull().default("passed"),
+		passedIndicator: boolean("passed_indicator").notNull().default(true),
+		timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("sterilization_logs_organizationId_idx").on(
+			t.organizationId,
+		),
 	}),
-	pressureBar: numeric("pressure_bar", { precision: 4, scale: 2 }),
-	itemsDescription: text("items_description"),
-	operatorId: uuid("operator_id"),
-	barcode: text("barcode"),
-	status: text("status").notNull().default("passed"),
-	passedIndicator: boolean("passed_indicator").notNull().default(true),
-	timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("sterilization_logs_organizationId_idx").on(t.organizationId)
-}));
+);
 
 // system RAM watchdogs (server health monitoring)
-export const systemRamWatchdogs = pgTable("system_ram_watchdogs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	heapUsedMb: numeric("heap_used_mb", { precision: 8, scale: 2 }),
-	heapTotalMb: numeric("heap_total_mb", { precision: 8, scale: 2 }),
-	rssMb: numeric("rss_mb", { precision: 8, scale: 2 }),
-	externalMb: numeric("external_mb", { precision: 8, scale: 2 }),
-	gcCount: integer("gc_count"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("system_ram_watchdogs_organizationId_idx").on(t.organizationId)
-}));
+export const systemRamWatchdogs = pgTable(
+	"system_ram_watchdogs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		heapUsedMb: numeric("heap_used_mb", { precision: 8, scale: 2 }),
+		heapTotalMb: numeric("heap_total_mb", { precision: 8, scale: 2 }),
+		rssMb: numeric("rss_mb", { precision: 8, scale: 2 }),
+		externalMb: numeric("external_mb", { precision: 8, scale: 2 }),
+		gcCount: integer("gc_count"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("system_ram_watchdogs_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // clinical audit logs (HIPAA-style access audit trail)
-export const clinicalAuditLogs = pgTable("clinical_audit_logs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id"),
-	actorUserId: uuid("actor_user_id"),
-	userId: uuid("user_id"),
-	actorLogin: text("actor_login"),
-	eventType: text("event_type"),
-	action: text("action"),
-	resourceType: text("resource_type"),
-	entityType: text("entity_type"),
-	resourceId: uuid("resource_id"),
-	entityId: text("entity_id"),
-	ipAddress: text("ip_address"),
-	userAgent: text("user_agent"),
-	meta: jsonb("meta"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("clinical_audit_logs_organizationId_idx").on(t.organizationId)
-}));
+export const clinicalAuditLogs = pgTable(
+	"clinical_audit_logs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id"),
+		actorUserId: uuid("actor_user_id"),
+		userId: uuid("user_id"),
+		actorLogin: text("actor_login"),
+		eventType: text("event_type"),
+		action: text("action"),
+		resourceType: text("resource_type"),
+		entityType: text("entity_type"),
+		resourceId: uuid("resource_id"),
+		entityId: text("entity_id"),
+		ipAddress: text("ip_address"),
+		userAgent: text("user_agent"),
+		meta: jsonb("meta"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("clinical_audit_logs_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 /**
  * РАЗМЕТКА ПЛАНИРОВАНИЯ ИМПЛАНТАЦИИ ПО КЛКТ.
@@ -3244,41 +3551,47 @@ export const clinicalAuditLogs = pgTable("clinical_audit_logs", {
  * `.notNull().default("[]")` повторяет базу дословно: разметки «нет» не бывает,
  * бывает пустая.
  */
-export const patientCtPlannings = pgTable("patient_ct_plannings", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id),
-	imagingStudyId: uuid("imaging_study_id"),
-	/**
-	 * DICOM study instance UID — по нему разметка привязана к снимку. `NOT NULL` в
-	 * базе с миграции 0000, а объявление разрешало NULL: вставка без номера
-	 * исследования проходила компилятор и падала в PostgreSQL уже на живом
-	 * сохранении обведённой врачом дуги. Разметка без номера исследования вообще ни
-	 * к чему не привязана — её нечем найти.
-	 */
-	studyInstanceUid: text("study_instance_uid").notNull(),
-	implantPositions: jsonb("implant_positions"),
-	// Spline / curve planning points for surgical guide
-	splinePointsJson: text("spline_points_json").notNull().default("[]"),
-	nervePointsJson: text("nerve_points_json").notNull().default("[]"),
-	implantsJson: text("implants_json").notNull().default("[]"),
-	/** `NOT NULL` в базе — с миграции 0146: разметка операции без статуса не имеет смысла. */
-	planStatus: text("plan_status").notNull().default("draft"),
-	notes: text("notes"),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("patient_ct_plannings_organizationId_idx").on(t.organizationId),
-    patientIdIdx: index("patient_ct_plannings_patientId_idx").on(t.patientId)
-}));
+export const patientCtPlannings = pgTable(
+	"patient_ct_plannings",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		imagingStudyId: uuid("imaging_study_id"),
+		/**
+		 * DICOM study instance UID — по нему разметка привязана к снимку. `NOT NULL` в
+		 * базе с миграции 0000, а объявление разрешало NULL: вставка без номера
+		 * исследования проходила компилятор и падала в PostgreSQL уже на живом
+		 * сохранении обведённой врачом дуги. Разметка без номера исследования вообще ни
+		 * к чему не привязана — её нечем найти.
+		 */
+		studyInstanceUid: text("study_instance_uid").notNull(),
+		implantPositions: jsonb("implant_positions"),
+		// Spline / curve planning points for surgical guide
+		splinePointsJson: text("spline_points_json").notNull().default("[]"),
+		nervePointsJson: text("nerve_points_json").notNull().default("[]"),
+		implantsJson: text("implants_json").notNull().default("[]"),
+		/** `NOT NULL` в базе — с миграции 0146: разметка операции без статуса не имеет смысла. */
+		planStatus: text("plan_status").notNull().default("draft"),
+		notes: text("notes"),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("patient_ct_plannings_organizationId_idx").on(
+			t.organizationId,
+		),
+		patientIdIdx: index("patient_ct_plannings_patientId_idx").on(t.patientId),
+	}),
+);
 
 // patient duplicate merge queues (deduplication workflow)
 export const patientDuplicateMergeQueues = pgTable(
@@ -3297,9 +3610,12 @@ export const patientDuplicateMergeQueues = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("patient_duplicate_merge_queues_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"patient_duplicate_merge_queues_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // appointment channel inheritances (messenger channel routing)
@@ -3317,28 +3633,37 @@ export const appointmentChannelInheritances = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("appointment_channel_inheritances_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"appointment_channel_inheritances_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // bulk image operation logs (batch DICOM operations)
-export const bulkImageOperationLogs = pgTable("bulk_image_operation_logs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	operationType: text("operation_type").notNull(),
-	studyIds: jsonb("study_ids"),
-	requestedBy: uuid("requested_by"),
-	status: text("status").notNull().default("completed"),
-	errorDetails: jsonb("error_details"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("bulk_image_operation_logs_organizationId_idx").on(t.organizationId)
-}));
+export const bulkImageOperationLogs = pgTable(
+	"bulk_image_operation_logs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		operationType: text("operation_type").notNull(),
+		studyIds: jsonb("study_ids"),
+		requestedBy: uuid("requested_by"),
+		status: text("status").notNull().default("completed"),
+		errorDetails: jsonb("error_details"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("bulk_image_operation_logs_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // chat message dispatch statuses (outbound message delivery)
 export const chatMessageDispatchStatuses = pgTable(
@@ -3357,9 +3682,12 @@ export const chatMessageDispatchStatuses = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("chat_message_dispatch_statuses_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"chat_message_dispatch_statuses_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // collaborative chat processing states (concurrent agent sync)
@@ -3378,29 +3706,38 @@ export const collaborativeChatProcessingStates = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("collaborative_chat_processing_states_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"collaborative_chat_processing_states_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // diagnocat AI findings (AI-based radiograph analysis)
-export const diagnocatAiFindings = pgTable("diagnocat_ai_findings", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	imagingStudyId: uuid("imaging_study_id"),
-	patientId: uuid("patient_id"),
-	findingsJson: jsonb("findings_json"),
-	confidenceScore: numeric("confidence_score", { precision: 4, scale: 3 }),
-	reviewedBy: uuid("reviewed_by"),
-	reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("diagnocat_ai_findings_organizationId_idx").on(t.organizationId)
-}));
+export const diagnocatAiFindings = pgTable(
+	"diagnocat_ai_findings",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		imagingStudyId: uuid("imaging_study_id"),
+		patientId: uuid("patient_id"),
+		findingsJson: jsonb("findings_json"),
+		confidenceScore: numeric("confidence_score", { precision: 4, scale: 3 }),
+		reviewedBy: uuid("reviewed_by"),
+		reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("diagnocat_ai_findings_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 export const diagnocatReports = pgTable(
 	"diagnocat_reports",
@@ -3423,55 +3760,67 @@ export const diagnocatReports = pgTable(
 	}),
 );
 
-export const sberbankTransactions = pgTable("sberbank_transactions", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	orderId: text("order_id").notNull(),
-	amount: integer("amount").notNull(),
-	status: text("status").notNull(),
-	patientId: uuid("patient_id").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true }),
-}, (t) => ({
-    organizationIdIdx: index("sberbank_transactions_organizationId_idx").on(t.organizationId)
-}));
+export const sberbankTransactions = pgTable(
+	"sberbank_transactions",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		orderId: text("order_id").notNull(),
+		amount: integer("amount").notNull(),
+		status: text("status").notNull(),
+		patientId: uuid("patient_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }),
+	},
+	(t) => ({
+		organizationIdIdx: index("sberbank_transactions_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // egisz blank permissions (EGISZ REMD form access control)
-export const egiszBlankPermissions = pgTable("egisz_blank_permissions", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	doctorId: uuid("doctor_id").notNull(),
-	blankCode: text("blank_code").notNull(),
-	blankTitle: text("blank_title").notNull(),
-	isAllowed: boolean("is_allowed").notNull().default(true),
-	/**
-	 * СОГЛАСИЕ ПАЦИЕНТА НА ВЫГРУЗКУ В ЕГИСЗ — флаг есть в базе, читать его нечем.
-	 *
-	 * Колонка создана миграцией 0103 (строка 7) как
-	 * `boolean DEFAULT true NOT NULL` и здесь не объявлялась. Она решает, будет
-	 * ли отказ пациента учтён при выгрузке его медицинских данных в
-	 * государственный реестр, — то есть это не служебный признак, а согласие.
-	 *
-	 * Виджет apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx
-	 * уже показывает его словами «учитывается» / «не учитывается», но серверного
-	 * маршрута к этой таблице нет ни одного, а через drizzle колонка недостижима:
-	 * показывать было нечего. Объявление — первое, без чего маршрут не написать.
-	 */
-	patientOptOutRespect: boolean("patient_opt_out_respect")
-		.notNull()
-		.default(true),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("egisz_blank_permissions_organizationId_idx").on(t.organizationId)
-}));
+export const egiszBlankPermissions = pgTable(
+	"egisz_blank_permissions",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		doctorId: uuid("doctor_id").notNull(),
+		blankCode: text("blank_code").notNull(),
+		blankTitle: text("blank_title").notNull(),
+		isAllowed: boolean("is_allowed").notNull().default(true),
+		/**
+		 * СОГЛАСИЕ ПАЦИЕНТА НА ВЫГРУЗКУ В ЕГИСЗ — флаг есть в базе, читать его нечем.
+		 *
+		 * Колонка создана миграцией 0103 (строка 7) как
+		 * `boolean DEFAULT true NOT NULL` и здесь не объявлялась. Она решает, будет
+		 * ли отказ пациента учтён при выгрузке его медицинских данных в
+		 * государственный реестр, — то есть это не служебный признак, а согласие.
+		 *
+		 * Виджет apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx
+		 * уже показывает его словами «учитывается» / «не учитывается», но серверного
+		 * маршрута к этой таблице нет ни одного, а через drizzle колонка недостижима:
+		 * показывать было нечего. Объявление — первое, без чего маршрут не написать.
+		 */
+		patientOptOutRespect: boolean("patient_opt_out_respect")
+			.notNull()
+			.default(true),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("egisz_blank_permissions_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 /**
  * Статусы журнала обмена с ЕГИСЗ. Тип `egisz_status_enum` существует в базе с
@@ -3494,38 +3843,44 @@ export const egiszStatus = pgEnum("egisz_status_enum", [
  * ходит по объявлениям drizzle, и отсутствие изоляции по клинике прожило
  * незамеченным. Колонки перечислены по факту DDL, а не по догадке.
  */
-export const egiszLogs = pgTable("egisz_logs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	/**
-	 * Добавлена миграцией 0145. Это журнал передачи медицинских данных в
-	 * государственную систему: без принадлежности клинике он одинаково открыт
-	 * любому арендатору базы, а строка журнала называет пациента и приём.
-	 */
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id, { onDelete: "cascade" }),
-	visitId: uuid("visit_id")
-		.notNull()
-		.references(() => visits.id, { onDelete: "cascade" }),
-	/**
-	 * В базе колонка имеет тип `egisz_status_enum` со значениями
-	 * Pending/Sent/Error/Accepted (миграция 0000, строка 26) — тот же набор, что
-	 * у панели apps/web/src/components/integrations/egiszAvailability.ts.
-	 */
-	status: egiszStatus("status").notNull().default("Pending"),
-	transactionId: text("transaction_id"),
-	errorDetails: jsonb("error_details"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("egisz_logs_organizationId_idx").on(t.organizationId),
-    patientIdIdx: index("egisz_logs_patientId_idx").on(t.patientId),
-    visitIdIdx: index("egisz_logs_visitId_idx").on(t.visitId)
-}));
+export const egiszLogs = pgTable(
+	"egisz_logs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		/**
+		 * Добавлена миграцией 0145. Это журнал передачи медицинских данных в
+		 * государственную систему: без принадлежности клинике он одинаково открыт
+		 * любому арендатору базы, а строка журнала называет пациента и приём.
+		 */
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		visitId: uuid("visit_id")
+			.notNull()
+			.references(() => visits.id, { onDelete: "cascade" }),
+		/**
+		 * В базе колонка имеет тип `egisz_status_enum` со значениями
+		 * Pending/Sent/Error/Accepted (миграция 0000, строка 26) — тот же набор, что
+		 * у панели apps/web/src/components/integrations/egiszAvailability.ts.
+		 */
+		status: egiszStatus("status").notNull().default("Pending"),
+		transactionId: text("transaction_id"),
+		errorDetails: jsonb("error_details"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("egisz_logs_organizationId_idx").on(
+			t.organizationId,
+		),
+		patientIdIdx: index("egisz_logs_patientId_idx").on(t.patientId),
+		visitIdIdx: index("egisz_logs_visitId_idx").on(t.visitId),
+	}),
+);
 
 // external schedule action logs (Zabota2.0 / LoyalMed AI booking)
 export const externalScheduleActionLogs = pgTable(
@@ -3543,9 +3898,12 @@ export const externalScheduleActionLogs = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("external_schedule_action_logs_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"external_schedule_action_logs_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // family recommendation sources (family referral attribution)
@@ -3565,47 +3923,62 @@ export const familyRecommendationSources = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("family_recommendation_sources_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"family_recommendation_sources_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // message template catalogs (reusable SMS/Telegram templates)
-export const messageTemplateCatalogs = pgTable("message_template_catalogs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	title: text("title").notNull(),
-	channel: text("channel").notNull().default("telegram"),
-	intent: text("intent").notNull().default("general"),
-	templateText: text("template_text").notNull(),
-	variables: jsonb("variables"),
-	isActive: boolean("is_active").notNull().default(true),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("message_template_catalogs_organizationId_idx").on(t.organizationId)
-}));
+export const messageTemplateCatalogs = pgTable(
+	"message_template_catalogs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		title: text("title").notNull(),
+		channel: text("channel").notNull().default("telegram"),
+		intent: text("intent").notNull().default("general"),
+		templateText: text("template_text").notNull(),
+		variables: jsonb("variables"),
+		isActive: boolean("is_active").notNull().default(true),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("message_template_catalogs_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // messenger file attachments (files sent through chat)
-export const messengerFileAttachments = pgTable("messenger_file_attachments", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	chatId: uuid("chat_id"),
-	fileUrl: text("file_url").notNull(),
-	fileType: text("file_type").notNull().default("document"),
-	fileSizeBytes: integer("file_size_bytes"),
-	uploadedBy: uuid("uploaded_by"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("messenger_file_attachments_organizationId_idx").on(t.organizationId)
-}));
+export const messengerFileAttachments = pgTable(
+	"messenger_file_attachments",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		chatId: uuid("chat_id"),
+		fileUrl: text("file_url").notNull(),
+		fileType: text("file_type").notNull().default("document"),
+		fileSizeBytes: integer("file_size_bytes"),
+		uploadedBy: uuid("uploaded_by"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"messenger_file_attachments_organizationId_idx",
+		).on(t.organizationId),
+	}),
+);
 
 // messenger inbound events (raw incoming webhook events)
 /**
@@ -3619,69 +3992,89 @@ export const messengerFileAttachments = pgTable("messenger_file_attachments", {
  * приведено к базе, а не наоборот: ослаблять ограничение в базе значит
  * разрешить событие без канала-источника, которое потом нечем разобрать.
  */
-export const messengerInboundEvents = pgTable("messenger_inbound_events", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	channel: text("channel").notNull().default("telegram"),
-	externalId: text("external_id"),
-	externalChatId: text("external_chat_id").notNull(),
-	chatId: uuid("chat_id"),
-	patientId: uuid("patient_id"),
-	messageText: text("message_text"),
-	/** message | status | command — вид события у провайдера. */
-	eventKind: text("event_kind").notNull(),
-	rawPayload: jsonb("raw_payload"),
-	processedAt: timestamp("processed_at", { withTimezone: true }),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("messenger_inbound_events_organizationId_idx").on(t.organizationId)
-}));
+export const messengerInboundEvents = pgTable(
+	"messenger_inbound_events",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		channel: text("channel").notNull().default("telegram"),
+		externalId: text("external_id"),
+		externalChatId: text("external_chat_id").notNull(),
+		chatId: uuid("chat_id"),
+		patientId: uuid("patient_id"),
+		messageText: text("message_text"),
+		/** message | status | command — вид события у провайдера. */
+		eventKind: text("event_kind").notNull(),
+		rawPayload: jsonb("raw_payload"),
+		processedAt: timestamp("processed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("messenger_inbound_events_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // MKB-10 auto directories (ICD-10 diagnosis quick-select)
-export const mkb10AutoDirectories = pgTable("mkb10_auto_directories", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	specialty: text("specialty").notNull().default("universal"),
-	code: text("code").notNull(),
-	title: text("title").notNull(),
-	sortOrder: integer("sort_order").notNull().default(0),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("mkb10_auto_directories_organizationId_idx").on(t.organizationId)
-}));
+export const mkb10AutoDirectories = pgTable(
+	"mkb10_auto_directories",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		specialty: text("specialty").notNull().default("universal"),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		sortOrder: integer("sort_order").notNull().default(0),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("mkb10_auto_directories_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // NDFL tax calculators (personal income tax deduction calc)
-export const ndflTaxCalculators = pgTable("ndfl_tax_calculators", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id"),
-	taxYear: integer("tax_year").notNull(),
-	totalMedExpensesRub: numeric("total_med_expenses_rub", {
-		precision: 12,
-		scale: 2,
+export const ndflTaxCalculators = pgTable(
+	"ndfl_tax_calculators",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id"),
+		taxYear: integer("tax_year").notNull(),
+		totalMedExpensesRub: numeric("total_med_expenses_rub", {
+			precision: 12,
+			scale: 2,
+		}),
+		deductionAmountRub: numeric("deduction_amount_rub", {
+			precision: 12,
+			scale: 2,
+		}),
+		ndflReturnRub: numeric("ndfl_return_rub", { precision: 12, scale: 2 }),
+		calculatedAt: timestamp("calculated_at", {
+			withTimezone: true,
+		}).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("ndfl_tax_calculators_organizationId_idx").on(
+			t.organizationId,
+		),
 	}),
-	deductionAmountRub: numeric("deduction_amount_rub", {
-		precision: 12,
-		scale: 2,
-	}),
-	ndflReturnRub: numeric("ndfl_return_rub", { precision: 12, scale: 2 }),
-	calculatedAt: timestamp("calculated_at", { withTimezone: true }).defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("ndfl_tax_calculators_organizationId_idx").on(t.organizationId)
-}));
+);
 
 /**
  * Задачи (поручения) по пациенту: перезвонить, дослать документы, проверить
@@ -3693,28 +4086,34 @@ export const ndflTaxCalculators = pgTable("ndfl_tax_calculators", {
  * повторяют контракт, который экран уже отправляет. Физическая таблица:
  * drizzle/0144_patient_task_tickets.sql.
  */
-export const patientTaskTickets = pgTable("patient_task_tickets", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id").notNull(),
-	// Без внешнего ключа намеренно: сотрудника могут уволить и удалить, а
-	// поручение обязано остаться в карте. Экран показывает «Неизвестный сотрудник».
-	assignedToId: uuid("assigned_to_id"),
-	title: text("title").notNull(),
-	description: text("description"),
-	status: text("status").notNull().default("pending"),
-	priority: text("priority").notNull().default("normal"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("patient_task_tickets_organizationId_idx").on(t.organizationId)
-}));
+export const patientTaskTickets = pgTable(
+	"patient_task_tickets",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id").notNull(),
+		// Без внешнего ключа намеренно: сотрудника могут уволить и удалить, а
+		// поручение обязано остаться в карте. Экран показывает «Неизвестный сотрудник».
+		assignedToId: uuid("assigned_to_id"),
+		title: text("title").notNull(),
+		description: text("description"),
+		status: text("status").notNull().default("pending"),
+		priority: text("priority").notNull().default("normal"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("patient_task_tickets_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 /**
  * Рекламации и осложнения по пациенту — основание для гарантии, возврата и
@@ -3726,28 +4125,34 @@ export const patientTaskTickets = pgTable("patient_task_tickets", {
  * менять их значило бы ломать работающий клиент. Физическая таблица:
  * drizzle/0143_patient_reclamations.sql.
  */
-export const patientReclamations = pgTable("patient_reclamations", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id").notNull(),
-	// Без внешнего ключа намеренно: сотрудника могут уволить и удалить, а разбор
-	// по его работе обязан остаться в карте.
-	doctorId: uuid("doctor_id"),
-	complicationDetails: text("complication_details").notNull(),
-	proposedAction: text("proposed_action"),
-	status: text("status").notNull().default("under_review"),
-	resolvedAt: timestamp("resolved_at", { withTimezone: true }),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("patient_reclamations_organizationId_idx").on(t.organizationId)
-}));
+export const patientReclamations = pgTable(
+	"patient_reclamations",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id").notNull(),
+		// Без внешнего ключа намеренно: сотрудника могут уволить и удалить, а разбор
+		// по его работе обязан остаться в карте.
+		doctorId: uuid("doctor_id"),
+		complicationDetails: text("complication_details").notNull(),
+		proposedAction: text("proposed_action"),
+		status: text("status").notNull().default("under_review"),
+		resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("patient_reclamations_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // patient archive reasons and blacklists
 export const patientArchiveReasonsAndBlacklists = pgTable(
@@ -3771,9 +4176,12 @@ export const patientArchiveReasonsAndBlacklists = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("patient_archive_reasons_and_blacklists_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"patient_archive_reasons_and_blacklists_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // patient communication timelines (full comm history per patient)
@@ -3798,9 +4206,12 @@ export const patientCommunicationTimelines = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("patient_communication_timelines_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"patient_communication_timelines_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // previous chat dialog histories (chat context for AI)
@@ -3818,176 +4229,223 @@ export const previousChatDialogHistories = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("previous_chat_dialog_histories_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"previous_chat_dialog_histories_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 // UIS call speech transcripts (telephony / callcenter transcripts)
-export const uisCallSpeechTranscripts = pgTable("uis_call_speech_transcripts", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	callId: text("call_id").notNull(),
-	patientPhone: text("patient_phone"),
-	durationSeconds: integer("duration_seconds"),
-	transcript: text("transcript"),
-	sentiment: text("sentiment"),
-	aiSummary: text("ai_summary"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("uis_call_speech_transcripts_organizationId_idx").on(t.organizationId)
-}));
+export const uisCallSpeechTranscripts = pgTable(
+	"uis_call_speech_transcripts",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		callId: text("call_id").notNull(),
+		patientPhone: text("patient_phone"),
+		durationSeconds: integer("duration_seconds"),
+		transcript: text("transcript"),
+		sentiment: text("sentiment"),
+		aiSummary: text("ai_summary"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"uis_call_speech_transcripts_organizationId_idx",
+		).on(t.organizationId),
+	}),
+);
 
 // UIS SMS chat quotas (SMS quota management)
-export const uisSmsChatQuotas = pgTable("uis_sms_chat_quotas", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	monthYear: text("month_year").notNull(),
-	smsSentCount: integer("sms_sent_count").notNull().default(0),
-	smsQuotaLimit: integer("sms_quota_limit").notNull().default(1000),
-	costRub: numeric("cost_rub", { precision: 10, scale: 2 }),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("uis_sms_chat_quotas_organizationId_idx").on(t.organizationId)
-}));
+export const uisSmsChatQuotas = pgTable(
+	"uis_sms_chat_quotas",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		monthYear: text("month_year").notNull(),
+		smsSentCount: integer("sms_sent_count").notNull().default(0),
+		smsQuotaLimit: integer("sms_quota_limit").notNull().default(1000),
+		costRub: numeric("cost_rub", { precision: 10, scale: 2 }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("uis_sms_chat_quotas_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // Yandex calendar syncs (Yandex Calendar integration)
-export const yandexCalendarSyncs = pgTable("yandex_calendar_syncs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	doctorId: uuid("doctor_id").notNull(),
-	yandexCalendarId: text("yandex_calendar_id"),
-	currentSessionId: uuid("current_session_id"),
-	lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
-	syncStatus: text("sync_status").notNull().default("pending"),
-	errorMessage: text("error_message"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("yandex_calendar_syncs_organizationId_idx").on(t.organizationId)
-}));
+export const yandexCalendarSyncs = pgTable(
+	"yandex_calendar_syncs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		doctorId: uuid("doctor_id").notNull(),
+		yandexCalendarId: text("yandex_calendar_id"),
+		currentSessionId: uuid("current_session_id"),
+		lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+		syncStatus: text("sync_status").notNull().default("pending"),
+		errorMessage: text("error_message"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("yandex_calendar_syncs_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // Dente Max bot configs (MAX messenger bot settings)
-export const denteMaxBotConfigs = pgTable("dente_max_bot_configs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	botId: text("bot_id"),
-	maxBotToken: text("max_bot_token"),
-	tokenSecretRef: text("token_secret_ref"),
-	webhookUrl: text("webhook_url"),
-	enabledFeaturesJson: jsonb("enabled_features_json"),
-	staffRoutingJson: jsonb("staff_routing_json"),
-	isEnabled: boolean("is_enabled").notNull().default(false),
-	isActive: boolean("is_active").notNull().default(false),
-	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("dente_max_bot_configs_organizationId_idx").on(t.organizationId)
-}));
+export const denteMaxBotConfigs = pgTable(
+	"dente_max_bot_configs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		botId: text("bot_id"),
+		maxBotToken: text("max_bot_token"),
+		tokenSecretRef: text("token_secret_ref"),
+		webhookUrl: text("webhook_url"),
+		enabledFeaturesJson: jsonb("enabled_features_json"),
+		staffRoutingJson: jsonb("staff_routing_json"),
+		isEnabled: boolean("is_enabled").notNull().default(false),
+		isActive: boolean("is_active").notNull().default(false),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("dente_max_bot_configs_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // Dente WhatsApp bot configs (WABA / WhatsApp settings)
-export const denteWhatsappBotConfigs = pgTable("dente_whatsapp_bot_configs", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	wabaAccountId: text("waba_account_id"),
-	phoneNumberId: text("phone_number_id"),
-	accessToken: text("access_token"),
-	// Secret ref used for token rotation (Vault / env var name)
-	tokenSecretRef: text("token_secret_ref"),
-	// Webhook verification token for Meta WABA challenge
-	webhookVerifyToken: text("webhook_verify_token"),
-	isEnabled: boolean("is_enabled").notNull().default(false),
-	// Alias — some routes use isActive instead of isEnabled
-	isActive: boolean("is_active").notNull().default(false),
-	enabledFeaturesJson: jsonb("enabled_features_json"),
-	staffRoutingJson: jsonb("staff_routing_json"),
-	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("dente_whatsapp_bot_configs_organizationId_idx").on(t.organizationId)
-}));
+export const denteWhatsappBotConfigs = pgTable(
+	"dente_whatsapp_bot_configs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		wabaAccountId: text("waba_account_id"),
+		phoneNumberId: text("phone_number_id"),
+		accessToken: text("access_token"),
+		// Secret ref used for token rotation (Vault / env var name)
+		tokenSecretRef: text("token_secret_ref"),
+		// Webhook verification token for Meta WABA challenge
+		webhookVerifyToken: text("webhook_verify_token"),
+		isEnabled: boolean("is_enabled").notNull().default(false),
+		// Alias — some routes use isActive instead of isEnabled
+		isActive: boolean("is_active").notNull().default(false),
+		enabledFeaturesJson: jsonb("enabled_features_json"),
+		staffRoutingJson: jsonb("staff_routing_json"),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"dente_whatsapp_bot_configs_organizationId_idx",
+		).on(t.organizationId),
+	}),
+);
 
 // services (clinic price list / service catalog)
-export const services = pgTable("services", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	title: text("title").notNull(),
-	code: text("code"),
-	category: serviceCategory("category").notNull().default("therapy"),
-	specialty: dentalSpecialty("specialty").notNull().default("universal"),
-	/*
-	 * mode: "number" обязателен.
-	 *
-	 * Без него drizzle отдаёт numeric строкой вида "1500.50" независимо от
-	 * настроек драйвера — это его собственное преобразование, а не поведение
-	 * postgres. Строка дальше молча складывается с другими строками вместо
-	 * сложения чисел, и это не ловится типами, потому что склейка строк
-	 * допустима.
-	 */
-	basePriceRub: numeric("base_price_rub", {
-		precision: 10,
-		scale: 2,
-		mode: "number",
-	})
-		.notNull()
-		.default(0),
-	durationMinutes: integer("duration_minutes").notNull().default(30),
-	taxDeductible: boolean("tax_deductible").notNull().default(true),
-	active: boolean("active").notNull().default(true),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("services_organizationId_idx").on(t.organizationId)
-}));
+export const services = pgTable(
+	"services",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		title: text("title").notNull(),
+		code: text("code"),
+		category: serviceCategory("category").notNull().default("therapy"),
+		specialty: dentalSpecialty("specialty").notNull().default("universal"),
+		/*
+		 * mode: "number" обязателен.
+		 *
+		 * Без него drizzle отдаёт numeric строкой вида "1500.50" независимо от
+		 * настроек драйвера — это его собственное преобразование, а не поведение
+		 * postgres. Строка дальше молча складывается с другими строками вместо
+		 * сложения чисел, и это не ловится типами, потому что склейка строк
+		 * допустима.
+		 */
+		basePriceRub: numeric("base_price_rub", {
+			precision: 10,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		durationMinutes: integer("duration_minutes").notNull().default(30),
+		taxDeductible: boolean("tax_deductible").notNull().default(true),
+		active: boolean("active").notNull().default(true),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("services_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // protocol templates (visit protocol / clinical workflow templates)
-export const protocolTemplates = pgTable("protocol_templates", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	specialty: dentalSpecialty("specialty").notNull().default("universal"),
-	title: text("title").notNull(),
-	visitReason: text("visit_reason").notNull().default(""),
-	defaultDurationMinutes: integer("default_duration_minutes")
-		.notNull()
-		.default(30),
-	complaintPrompt: text("complaint_prompt").notNull().default(""),
-	objectiveTemplate: text("objective_template").notNull().default(""),
-	diagnosisHints: jsonb("diagnosis_hints"),
-	treatmentPlanTemplate: text("treatment_plan_template").notNull().default(""),
-	requiredDocuments: jsonb("required_documents"),
-	suggestedImaging: jsonb("suggested_imaging"),
-	safetyWarnings: jsonb("safety_warnings"),
-	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("protocol_templates_organizationId_idx").on(t.organizationId)
-}));
+export const protocolTemplates = pgTable(
+	"protocol_templates",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		specialty: dentalSpecialty("specialty").notNull().default("universal"),
+		title: text("title").notNull(),
+		visitReason: text("visit_reason").notNull().default(""),
+		defaultDurationMinutes: integer("default_duration_minutes")
+			.notNull()
+			.default(30),
+		complaintPrompt: text("complaint_prompt").notNull().default(""),
+		objectiveTemplate: text("objective_template").notNull().default(""),
+		diagnosisHints: jsonb("diagnosis_hints"),
+		treatmentPlanTemplate: text("treatment_plan_template")
+			.notNull()
+			.default(""),
+		requiredDocuments: jsonb("required_documents"),
+		suggestedImaging: jsonb("suggested_imaging"),
+		safetyWarnings: jsonb("safety_warnings"),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("protocol_templates_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // UIS mass appointment confirmations (bulk SMS confirmation campaigns)
 export const uisMassAppointmentConfirmations = pgTable(
@@ -4008,9 +4466,12 @@ export const uisMassAppointmentConfirmations = pgTable(
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-	}, (t) => ({
-        organizationIdIdx: index("uis_mass_appointment_confirmations_organizationId_idx").on(t.organizationId)
-    })
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"uis_mass_appointment_confirmations_organizationId_idx",
+		).on(t.organizationId),
+	}),
 );
 
 /**
@@ -4190,11 +4651,17 @@ export const communicationOutbox = pgTable(
 				table.organizationId,
 				table.createdAt,
 			),
-            clinicIdIdx: index("communication_outbox_clinicId_idx").on(table.clinicId),
-            patientIdIdx: index("communication_outbox_patientId_idx").on(table.patientId),
-            taskIdIdx: index("communication_outbox_taskId_idx").on(table.taskId),
-            templateIdIdx: index("communication_outbox_templateId_idx").on(table.templateId)
-        };
+			clinicIdIdx: index("communication_outbox_clinicId_idx").on(
+				table.clinicId,
+			),
+			patientIdIdx: index("communication_outbox_patientId_idx").on(
+				table.patientId,
+			),
+			taskIdIdx: index("communication_outbox_taskId_idx").on(table.taskId),
+			templateIdIdx: index("communication_outbox_templateId_idx").on(
+				table.templateId,
+			),
+		};
 	},
 );
 
@@ -4233,61 +4700,75 @@ export const patientCommunicationConsents = pgTable(
 				table.channel,
 				table.scope,
 			),
-            decidedByUserIdIdx: index("patient_communication_consents_decidedByUserId_idx").on(table.decidedByUserId)
-        };
+			decidedByUserIdIdx: index(
+				"patient_communication_consents_decidedByUserId_idx",
+			).on(table.decidedByUserId),
+		};
 	},
 );
 
-export const communicationSettings = pgTable("communication_settings", {
-	organizationId: uuid("organization_id")
-		.primaryKey()
-		.references(() => organizations.id),
-	timezone: text("timezone").notNull().default("Europe/Moscow"),
-	/** Минуты от полуночи. По умолчанию 21:00–09:00. */
-	quietHoursStartMinute: integer("quiet_hours_start_minute")
-		.notNull()
-		.default(1260),
-	quietHoursEndMinute: integer("quiet_hours_end_minute").notNull().default(540),
-	/** Сервисное в тихие часы откладывается до утра, а не отменяется. */
-	deferServiceInQuietHours: boolean("defer_service_in_quiet_hours")
-		.notNull()
-		.default(true),
-	blockMarketingInQuietHours: boolean("block_marketing_in_quiet_hours")
-		.notNull()
-		.default(true),
-	dailyLimitPerPatient: integer("daily_limit_per_patient").notNull().default(3),
-	maxAttempts: integer("max_attempts").notNull().default(5),
-	retryBaseSeconds: integer("retry_base_seconds").notNull().default(60),
-	retryMaxSeconds: integer("retry_max_seconds").notNull().default(3600),
-	channelFallbackJson: text("channel_fallback_json")
-		.notNull()
-		.default('["telegram","whatsapp","sms","email"]'),
-	/**
-	 * Автоматические напоминания о приёме (миграция 0124). Выключены по
-	 * умолчанию: включать рассылку пациентам без ведома клиники нельзя.
-	 */
-	appointmentReminderEnabled: boolean("appointment_reminder_enabled")
-		.notNull()
-		.default(false),
-	/** Часы до приёма: несколько значений — несколько напоминаний. */
-	appointmentReminderLeadHoursJson: text("appointment_reminder_lead_hours_json")
-		.notNull()
-		.default("[24]"),
-	/** Окно поиска, чтобы перезапуск не разослал напоминания о вчерашних приёмах. */
-	appointmentReminderWindowMinutes: integer(
-		"appointment_reminder_window_minutes",
-	)
-		.notNull()
-		.default(90),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-}, (t) => ({
-    organizationIdIdx: index("communication_settings_organizationId_idx").on(t.organizationId)
-}));
+export const communicationSettings = pgTable(
+	"communication_settings",
+	{
+		organizationId: uuid("organization_id")
+			.primaryKey()
+			.references(() => organizations.id),
+		timezone: text("timezone").notNull().default("Europe/Moscow"),
+		/** Минуты от полуночи. По умолчанию 21:00–09:00. */
+		quietHoursStartMinute: integer("quiet_hours_start_minute")
+			.notNull()
+			.default(1260),
+		quietHoursEndMinute: integer("quiet_hours_end_minute")
+			.notNull()
+			.default(540),
+		/** Сервисное в тихие часы откладывается до утра, а не отменяется. */
+		deferServiceInQuietHours: boolean("defer_service_in_quiet_hours")
+			.notNull()
+			.default(true),
+		blockMarketingInQuietHours: boolean("block_marketing_in_quiet_hours")
+			.notNull()
+			.default(true),
+		dailyLimitPerPatient: integer("daily_limit_per_patient")
+			.notNull()
+			.default(3),
+		maxAttempts: integer("max_attempts").notNull().default(5),
+		retryBaseSeconds: integer("retry_base_seconds").notNull().default(60),
+		retryMaxSeconds: integer("retry_max_seconds").notNull().default(3600),
+		channelFallbackJson: text("channel_fallback_json")
+			.notNull()
+			.default('["telegram","whatsapp","sms","email"]'),
+		/**
+		 * Автоматические напоминания о приёме (миграция 0124). Выключены по
+		 * умолчанию: включать рассылку пациентам без ведома клиники нельзя.
+		 */
+		appointmentReminderEnabled: boolean("appointment_reminder_enabled")
+			.notNull()
+			.default(false),
+		/** Часы до приёма: несколько значений — несколько напоминаний. */
+		appointmentReminderLeadHoursJson: text(
+			"appointment_reminder_lead_hours_json",
+		)
+			.notNull()
+			.default("[24]"),
+		/** Окно поиска, чтобы перезапуск не разослал напоминания о вчерашних приёмах. */
+		appointmentReminderWindowMinutes: integer(
+			"appointment_reminder_window_minutes",
+		)
+			.notNull()
+			.default(90),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("communication_settings_organizationId_idx").on(
+			t.organizationId,
+		),
+	}),
+);
 
 // ============================================================================
 // Движок переноса из чужих систем (миграция 0124).
@@ -4439,8 +4920,10 @@ export const migrationRuns = pgTable(
 				table.organizationId,
 				table.createdAt,
 			),
-            startedByUserIdIdx: index("migration_runs_startedByUserId_idx").on(table.startedByUserId)
-        };
+			startedByUserIdIdx: index("migration_runs_startedByUserId_idx").on(
+				table.startedByUserId,
+			),
+		};
 	},
 );
 
@@ -4491,8 +4974,10 @@ export const migrationStagingRecords = pgTable(
 				table.runId,
 				table.rawHash,
 			),
-            organizationIdIdx: index("migration_staging_records_organizationId_idx").on(table.organizationId)
-        };
+			organizationIdIdx: index(
+				"migration_staging_records_organizationId_idx",
+			).on(table.organizationId),
+		};
 	},
 );
 
@@ -4535,10 +5020,16 @@ export const migrationQuarantineRecords = pgTable(
 				table.resolution,
 				table.reason,
 			),
-            organizationIdIdx: index("migration_quarantine_records_organizationId_idx").on(table.organizationId),
-            stagingRecordIdIdx: index("migration_quarantine_records_stagingRecordId_idx").on(table.stagingRecordId),
-            resolvedByUserIdIdx: index("migration_quarantine_records_resolvedByUserId_idx").on(table.resolvedByUserId)
-        };
+			organizationIdIdx: index(
+				"migration_quarantine_records_organizationId_idx",
+			).on(table.organizationId),
+			stagingRecordIdIdx: index(
+				"migration_quarantine_records_stagingRecordId_idx",
+			).on(table.stagingRecordId),
+			resolvedByUserIdIdx: index(
+				"migration_quarantine_records_resolvedByUserId_idx",
+			).on(table.resolvedByUserId),
+		};
 	},
 );
 
@@ -4639,8 +5130,10 @@ export const migrationReconciliations = pgTable(
 				table.runId,
 				table.generatedAt,
 			),
-            organizationIdIdx: index("migration_reconciliations_organizationId_idx").on(table.organizationId)
-        };
+			organizationIdIdx: index(
+				"migration_reconciliations_organizationId_idx",
+			).on(table.organizationId),
+		};
 	},
 );
 
@@ -4711,9 +5204,7 @@ export const clinicWorkflows = pgTable(
 			.notNull()
 			.defaultNow(),
 	},
-	(table) => [
-		index("clinic_workflows_org_idx").on(table.organizationId),
-	],
+	(table) => [index("clinic_workflows_org_idx").on(table.organizationId)],
 );
 
 import { relations } from "drizzle-orm";

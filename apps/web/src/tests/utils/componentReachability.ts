@@ -1,9 +1,9 @@
-import { showToast } from "../../components/GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, extname, join, posix, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "@babel/parser";
+import { showToast } from "../../components/GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 
 /**
  * ПЕРЕПИСЬ КОМПОНЕНТОВ И ИХ ДОСТИЖИМОСТИ ОТ ТОЧКИ МОНТИРОВАНИЯ.
@@ -693,7 +693,13 @@ export function componentReachability(): ReachabilityCensus {
 		try {
 			program = parseFile(file, source);
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			// Молча пропущенный файл — это дырка в переписи, а перепись с дыркой
 			// хуже отсутствующей: она выдаёт зелёный на непроверенном.
 			throw new Error(

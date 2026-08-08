@@ -270,7 +270,11 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 					</div>
 				</div>
 
-				<div className="premium-feature-grid" role="group" aria-label="Функции WhatsApp">
+				<div
+					className="premium-feature-grid"
+					role="group"
+					aria-label="Функции WhatsApp"
+				>
 					{Object.entries(WHATSAPP_FEATURE_LABELS).map(([key, label]) => {
 						const enabled = enabledFeaturesDraft.includes(key);
 						return (

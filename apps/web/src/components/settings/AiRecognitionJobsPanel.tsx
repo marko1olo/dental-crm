@@ -201,7 +201,13 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 			setJobs(parsed);
 			setLoadState({ phase: "ready" });
 		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("[ai-recognition-jobs] request failed", err);
 			setLoadState({ phase: "failed", status: null });
 		}

@@ -104,7 +104,7 @@ function decodeHeaderText(
 	try {
 		return decodeURIComponent(raw);
 	} catch (err) {
-		console.error('[Dente] decodeHeaderText failed:', err);
+		console.error("[Dente] decodeHeaderText failed:", err);
 		// Битая процентная последовательность — берём как есть, чем терять имя.
 		return raw;
 	}

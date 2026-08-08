@@ -1,11 +1,11 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	AUTHED_API_FILE_FAILURE,
 	downloadAuthedApiFile,
 } from "../../lib/authedApiFile";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 import "./MigrationWizard.css";
 
 /**
@@ -325,7 +325,13 @@ export function MigrationWizard() {
 			}
 			setMapping(result.data);
 		} catch (caught) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (caught as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(caught as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setError({
 				code: "NetworkError",
 				message:
@@ -371,7 +377,13 @@ export function MigrationWizard() {
 				// Сразу строим карту: оператору нечего делать на пустом экране.
 				await runMapping(result.data.runId, allowLlm);
 			} catch (caught) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (caught as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(caught as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setError({
 					code: "NetworkError",
 					message:
@@ -479,7 +491,13 @@ export function MigrationWizard() {
 					})();
 				}, 1000);
 			} catch (caught) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (caught as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(caught as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setError({
 					code: "NetworkError",
 					message:
@@ -1176,7 +1194,13 @@ function ReconciliationActDownloadButton(props: { runId: string }) {
 							`акт-сверки-${props.runId}.csv`,
 						);
 					} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+						showToast(
+							actionFailureToast(
+								"Ошибка выполнения операции",
+								(error as { status?: number })?.status ?? null,
+							),
+							"error",
+						);
 						setFailure(
 							error instanceof Error ? error.message : AUTHED_API_FILE_FAILURE,
 						);

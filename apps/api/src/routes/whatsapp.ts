@@ -137,7 +137,7 @@ function parseJsonSafe<T>(value: string, fallback: T): T {
 	try {
 		return JSON.parse(value) as T;
 	} catch (err) {
-		console.error('[Dente] parseJsonSafe failed:', err);
+		console.error("[Dente] parseJsonSafe failed:", err);
 		return fallback;
 	}
 }

@@ -658,7 +658,8 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 		async (req, reply) => {
 			try {
 				const organizationId = await resolveOrganizationId(req);
-				if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
+				if (!organizationId)
+					return reply.code(401).send({ error: "Unauthorized" });
 
 				const [organization] = await db
 					.select({ flags: schema.organizations.workspaceFeatureFlags })
@@ -671,7 +672,7 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 				console.error("[GET /api/workspace/profile] Error:", error);
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
-		}
+		},
 	);
 
 	// GET /api/workspace/chairs
@@ -691,7 +692,8 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 		async (req, reply) => {
 			try {
 				const organizationId = await resolveOrganizationId(req);
-				if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
+				if (!organizationId)
+					return reply.code(401).send({ error: "Unauthorized" });
 
 				const chairs = await db
 					.select({ id: schema.chairs.id, name: schema.chairs.name })
@@ -704,7 +706,7 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 				console.error("[GET /api/workspace/chairs] Error:", error);
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
-		}
+		},
 	);
 
 	// POST /api/workspace/profile — save arbitrary flags
@@ -727,79 +729,79 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 				if (!organizationId)
 					return reply.code(401).send({ error: "Unauthorized" });
 
-			/*
-			 * Order (AUTH-first DoD, same as diary/preset):
-			 *   1) auth → 401
-			 *   2) body safeParse → 400 ValidationError RU (before any DB)
-			 *   3) org lookup → 404
-			 *   4) merge + write
-			 * Body BEFORE org: inject tests use a signed token whose org is not in DB;
-			 * if lookup ran first, array/string bodies returned 404 and hid the Zod
-			 * guard. Arrays are typeof object in JS — bare guard used to accept [].
-			 *
-			 * ЧТО БЫЛО. Здесь из тела разбирались семнадцать признаков — и не писался
-			 * НИ ОДИН: `.set({ updatedAt: new Date() })`, после чего ответ { ok: true }.
-			 * То есть «Сохранить» на вкладке «Модули» и выбор в мастере первого запуска
-			 * уходили в пустоту, а программа отвечала, что всё сохранено.
-			 *
-			 * ЧТО СТАЛО. Признаки сливаются с уже сохранённым набором и пишутся в
-			 * organizations.workspace_feature_flags. Слияние, а не замена: клиент
-			 * присылает Partial (WorkspaceFeaturesSelector отправляет один
-			 * переключённый признак), и замена целиком сбросила бы остальные к
-			 * умолчаниям — то есть включила бы обратно всё, что клиника выключила.
-			 *
-			 * Тело проходит через workspaceFlagsFromStorage: неизвестные ключи в базу не
-			 * попадают, а значения не того типа отбрасываются. Иначе одна строка вместо
-			 * true легла бы в базу и вернулась на клиент, где признак читается как
-			 * булев.
-			 */
-			// AUTH already passed. Non-object body (array/string/number) → 400 RU.
-			// null/undefined → empty partial (no-op merge is valid gameplay).
-			const rawBody = req.body;
-			const bodyCandidate =
-				rawBody === undefined || rawBody === null ? {} : rawBody;
-			const parsedBody = workspaceProfileBodySchema.safeParse(bodyCandidate);
-			if (!parsedBody.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message:
-						"Проверьте тело запроса: нужен JSON-объект с признаками модулей клиники (не массив и не строка).",
+				/*
+				 * Order (AUTH-first DoD, same as diary/preset):
+				 *   1) auth → 401
+				 *   2) body safeParse → 400 ValidationError RU (before any DB)
+				 *   3) org lookup → 404
+				 *   4) merge + write
+				 * Body BEFORE org: inject tests use a signed token whose org is not in DB;
+				 * if lookup ran first, array/string bodies returned 404 and hid the Zod
+				 * guard. Arrays are typeof object in JS — bare guard used to accept [].
+				 *
+				 * ЧТО БЫЛО. Здесь из тела разбирались семнадцать признаков — и не писался
+				 * НИ ОДИН: `.set({ updatedAt: new Date() })`, после чего ответ { ok: true }.
+				 * То есть «Сохранить» на вкладке «Модули» и выбор в мастере первого запуска
+				 * уходили в пустоту, а программа отвечала, что всё сохранено.
+				 *
+				 * ЧТО СТАЛО. Признаки сливаются с уже сохранённым набором и пишутся в
+				 * organizations.workspace_feature_flags. Слияние, а не замена: клиент
+				 * присылает Partial (WorkspaceFeaturesSelector отправляет один
+				 * переключённый признак), и замена целиком сбросила бы остальные к
+				 * умолчаниям — то есть включила бы обратно всё, что клиника выключила.
+				 *
+				 * Тело проходит через workspaceFlagsFromStorage: неизвестные ключи в базу не
+				 * попадают, а значения не того типа отбрасываются. Иначе одна строка вместо
+				 * true легла бы в базу и вернулась на клиент, где признак читается как
+				 * булев.
+				 */
+				// AUTH already passed. Non-object body (array/string/number) → 400 RU.
+				// null/undefined → empty partial (no-op merge is valid gameplay).
+				const rawBody = req.body;
+				const bodyCandidate =
+					rawBody === undefined || rawBody === null ? {} : rawBody;
+				const parsedBody = workspaceProfileBodySchema.safeParse(bodyCandidate);
+				if (!parsedBody.success) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message:
+							"Проверьте тело запроса: нужен JSON-объект с признаками модулей клиники (не массив и не строка).",
+					});
+				}
+				const incoming = parsedBody.data;
+
+				const [existing] = await db
+					.select({ flags: schema.organizations.workspaceFeatureFlags })
+					.from(schema.organizations)
+					.where(eq(schema.organizations.id, organizationId))
+					.limit(1);
+				if (!existing) {
+					return reply.code(404).send({
+						error: "OrganizationNotFound",
+						message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
+					});
+				}
+
+				const merged = workspaceFlagsFromStorage({
+					...workspaceFlagsFromStorage(existing.flags),
+					...incoming,
 				});
-			}
-			const incoming = parsedBody.data;
 
-			const [existing] = await db
-				.select({ flags: schema.organizations.workspaceFeatureFlags })
-				.from(schema.organizations)
-				.where(eq(schema.organizations.id, organizationId))
-				.limit(1);
-			if (!existing) {
-				return reply.code(404).send({
-					error: "OrganizationNotFound",
-					message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
-				});
-			}
+				await db
+					.update(schema.organizations)
+					.set({
+						workspaceFeatureFlags: merged,
+						updatedAt: new Date(),
+					})
+					.where(eq(schema.organizations.id, organizationId));
 
-			const merged = workspaceFlagsFromStorage({
-				...workspaceFlagsFromStorage(existing.flags),
-				...incoming,
-			});
-
-			await db
-				.update(schema.organizations)
-				.set({
-					workspaceFeatureFlags: merged,
-					updatedAt: new Date(),
-				})
-				.where(eq(schema.organizations.id, organizationId));
-
-			// Возвращаем сохранённый набор: клиент видит, что именно легло в базу.
-			return reply.send({ ok: true, ...merged });
+				// Возвращаем сохранённый набор: клиент видит, что именно легло в базу.
+				return reply.send({ ok: true, ...merged });
 			} catch (error) {
 				console.error("[POST /api/workspace/profile] Error:", error);
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
-		}
+		},
 	);
 
 	// POST /api/workspace/preset/:name — apply preset + seed
@@ -822,83 +824,86 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 		async (req, reply) => {
 			try {
 				const organizationId = await resolveOrganizationId(req);
-				if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
+				if (!organizationId)
+					return reply.code(401).send({ error: "Unauthorized" });
 
-		const presetName = req.params.name as PresetName;
-		const flags =
-			WORKSPACE_PRESETS[presetName as Exclude<PresetName, "custom">];
-		if (!flags)
-			return reply.code(400).send({ error: `Unknown preset: ${presetName}` });
+				const presetName = req.params.name as PresetName;
+				const flags =
+					WORKSPACE_PRESETS[presetName as Exclude<PresetName, "custom">];
+				if (!flags)
+					return reply
+						.code(400)
+						.send({ error: `Unknown preset: ${presetName}` });
 
-		// Body optional: missing/undefined → empty overrides. Non-object / bad types → 400.
-		const rawBody = req.body;
-		const bodyCandidate =
-			rawBody === undefined || rawBody === null ? {} : rawBody;
-		const parsedBody = workspacePresetBodySchema.safeParse(bodyCandidate);
-		if (!parsedBody.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message:
-					"Тело запроса должно быть JSON-объектом с опциональными numberOfChairs (целое > 0) и hasPediatricMode (boolean).",
-			});
-		}
+				// Body optional: missing/undefined → empty overrides. Non-object / bad types → 400.
+				const rawBody = req.body;
+				const bodyCandidate =
+					rawBody === undefined || rawBody === null ? {} : rawBody;
+				const parsedBody = workspacePresetBodySchema.safeParse(bodyCandidate);
+				if (!parsedBody.success) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message:
+							"Тело запроса должно быть JSON-объектом с опциональными numberOfChairs (целое > 0) и hasPediatricMode (boolean).",
+					});
+				}
 
-		const finalFlags = { ...flags };
-		if (parsedBody.data.hasPediatricMode !== undefined) {
-			finalFlags.hasPediatricMode = parsedBody.data.hasPediatricMode;
-		}
+				const finalFlags = { ...flags };
+				if (parsedBody.data.hasPediatricMode !== undefined) {
+					finalFlags.hasPediatricMode = parsedBody.data.hasPediatricMode;
+				}
 
-		/*
-		 * ЧТО БЫЛО. `.set({ ...finalFlags, updatedAt })` — признаки пресета
-		 * раскладывались так, будто это КОЛОНКИ таблицы organizations. Колонок с
-		 * такими именами нет; drizzle собирает SET только из известных колонок, а
-		 * остальные ключи молча отбрасывает. То есть применение пресета не меняло
-		 * ничего, кроме updatedAt, и отвечало { ok: true, preset, flags } — клиент
-		 * видел выбранный пресет, база о нём не знала.
-		 *
-		 * Ошибку не поймали типы: значения WORKSPACE_PRESETS описаны свободно, и
-		 * проверка типов на этом выражении проходит.
-		 *
-		 * Признаки складываются с уже сохранёнными: пресет задаёт не все, а
-		 * незаданные не должны сбрасываться к умолчаниям. Имя пресета пишется тем же
-		 * значением, что вернётся клиенту.
-		 */
-		const [existing] = await db
-			.select({ flags: schema.organizations.workspaceFeatureFlags })
-			.from(schema.organizations)
-			.where(eq(schema.organizations.id, organizationId))
-			.limit(1);
-		if (!existing) {
-			return reply.code(404).send({
-				error: "OrganizationNotFound",
-				message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
-			});
-		}
-		const savedFlags = workspaceFlagsFromStorage({
-			...workspaceFlagsFromStorage(existing.flags),
-			...finalFlags,
-			workspacePreset: presetName,
-		});
+				/*
+				 * ЧТО БЫЛО. `.set({ ...finalFlags, updatedAt })` — признаки пресета
+				 * раскладывались так, будто это КОЛОНКИ таблицы organizations. Колонок с
+				 * такими именами нет; drizzle собирает SET только из известных колонок, а
+				 * остальные ключи молча отбрасывает. То есть применение пресета не меняло
+				 * ничего, кроме updatedAt, и отвечало { ok: true, preset, flags } — клиент
+				 * видел выбранный пресет, база о нём не знала.
+				 *
+				 * Ошибку не поймали типы: значения WORKSPACE_PRESETS описаны свободно, и
+				 * проверка типов на этом выражении проходит.
+				 *
+				 * Признаки складываются с уже сохранёнными: пресет задаёт не все, а
+				 * незаданные не должны сбрасываться к умолчаниям. Имя пресета пишется тем же
+				 * значением, что вернётся клиенту.
+				 */
+				const [existing] = await db
+					.select({ flags: schema.organizations.workspaceFeatureFlags })
+					.from(schema.organizations)
+					.where(eq(schema.organizations.id, organizationId))
+					.limit(1);
+				if (!existing) {
+					return reply.code(404).send({
+						error: "OrganizationNotFound",
+						message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
+					});
+				}
+				const savedFlags = workspaceFlagsFromStorage({
+					...workspaceFlagsFromStorage(existing.flags),
+					...finalFlags,
+					workspacePreset: presetName,
+				});
 
-		await db
-			.update(schema.organizations)
-			.set({ workspaceFeatureFlags: savedFlags, updatedAt: new Date() })
-			.where(eq(schema.organizations.id, organizationId));
+				await db
+					.update(schema.organizations)
+					.set({ workspaceFeatureFlags: savedFlags, updatedAt: new Date() })
+					.where(eq(schema.organizations.id, organizationId));
 
-		// Async seeding — don't block response
-		seedDemoDataForPreset(
-			organizationId,
-			presetName,
-			parsedBody.data.numberOfChairs,
-		).catch((e) => console.error("[workspace preset] seeding error:", e));
+				// Async seeding — don't block response
+				seedDemoDataForPreset(
+					organizationId,
+					presetName,
+					parsedBody.data.numberOfChairs,
+				).catch((e) => console.error("[workspace preset] seeding error:", e));
 
-		// Отдаём то, что легло в базу, а не то, что было в справочнике пресетов.
-		return reply.send({ ok: true, preset: presetName, flags: savedFlags });
+				// Отдаём то, что легло в базу, а не то, что было в справочнике пресетов.
+				return reply.send({ ok: true, preset: presetName, flags: savedFlags });
 			} catch (error) {
 				console.error("[POST /api/workspace/preset/:name] Error:", error);
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
-		}
+		},
 	);
 
 	/*

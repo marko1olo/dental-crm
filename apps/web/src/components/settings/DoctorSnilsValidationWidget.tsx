@@ -1,8 +1,8 @@
-import { showToast } from "../GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { showToast } from "../GlobalToast";
 
 interface DoctorSnilsValidationWidgetProps {
 	initialSnils?: string;
@@ -78,7 +78,13 @@ export function DoctorSnilsValidationWidget({
 				});
 			}
 		} catch (_err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (_err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(_err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setValidationResult({
 				ok: false,
 				message: "Сбой сети при проверке СНИЛС в ЕГИСЗ.",

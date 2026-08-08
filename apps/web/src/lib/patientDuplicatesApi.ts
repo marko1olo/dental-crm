@@ -90,7 +90,13 @@ export type RequestHeaders = Record<string, string>;
  */
 async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch((err) => {
-		showToast(actionFailureToast("Ошибка чтения данных", (err as { status?: number })?.status ?? null), "error");
+		showToast(
+			actionFailureToast(
+				"Ошибка чтения данных",
+				(err as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
 		return null;
 	})) as unknown;
 	if (!response.ok) {

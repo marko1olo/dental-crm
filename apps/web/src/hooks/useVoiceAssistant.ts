@@ -1,4 +1,3 @@
-import { actionFailureToast } from "../lib/panelStateText";
 import type {
 	SpeechChunkUploadInput,
 	SpeechGatewayStatus,
@@ -10,7 +9,7 @@ import {
 } from "../AppHelpers";
 import { showToast } from "../components/GlobalToast";
 import { type AiIntent, AiOrchestrator } from "../lib/aiOrchestrator";
-import { requestFailureCause } from "../lib/panelStateText";
+import { actionFailureToast, requestFailureCause } from "../lib/panelStateText";
 import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
 
@@ -159,7 +158,13 @@ export function useVoiceAssistant(
 				try {
 					parsed = rawBody.trim() ? JSON.parse(rawBody) : null;
 				} catch (parseError) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (parseError as { status?: number })?.status ?? null), "error");
+					showToast(
+						actionFailureToast(
+							"Ошибка выполнения операции",
+							(parseError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					console.error("[speech status] тело ответа не разобрано", parseError);
 				}
 				if (!looksLikeSpeechGatewayStatus(parsed)) {
@@ -173,7 +178,13 @@ export function useVoiceAssistant(
 				gatewayStatusUnknownRef.current = false;
 				setSpeechGatewayStatus(parsed);
 			} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				console.error("[speech status] запрос не выполнен", err);
 				if (alive) gatewayStatusUnknownRef.current = true;
 			}
@@ -246,7 +257,13 @@ export function useVoiceAssistant(
 				osc.stop(audioCtx.currentTime + 0.15);
 			}
 		} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.warn("Could not play synthesized audio feedback:", e);
 		}
 	}, []);
@@ -562,7 +579,13 @@ export function useVoiceAssistant(
 
 			mediaRecorder.start();
 		} catch (err) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.error("Failed to start listening:", err);
 			setIsListening(false);
 			playBeep("error");

@@ -1,6 +1,9 @@
-import type { DicomMprProjection, DicomGpuRenderPlan } from "@dental/shared";
+import type { DicomGpuRenderPlan, DicomMprProjection } from "@dental/shared";
 import type { CtPlanningViewerBridgeDataAttributes } from "./ctPlanningViewerBridgeAttributes";
-import type { CtPlanningViewerRestoreCommand, CtPlanningViewerRestoreWindowPreset } from "./ctPlanningViewerRestore";
+import type {
+	CtPlanningViewerRestoreCommand,
+	CtPlanningViewerRestoreWindowPreset,
+} from "./ctPlanningViewerRestore";
 
 export type CtPlanningExportOwner = "doctor" | "admin" | "lab";
 export type CtPlanningExportStatus = "ready" | "warning" | "blocked";

@@ -1,5 +1,3 @@
-import { showToast } from "../../components/GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
 import type { Dashboard, Patient } from "@dental/shared";
 import { useEffect, useMemo, useRef } from "react";
 import type {
@@ -26,7 +24,9 @@ import {
 	resetPaymentComposerOnPatientChange,
 	type TrackedComposerPatientId,
 } from "../../components/finance/paymentComposerReset";
+import { showToast } from "../../components/GlobalToast";
 import { shouldResetPatientDraftState } from "../../components/patients/patientDraftResetDecision.js";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { useDocumentStore } from "../../store/documentStore";
 import { usePatientStore } from "../../store/patientStore";
 
@@ -488,7 +488,13 @@ export function usePatientLogic({
 			setError(null);
 			return true;
 		} catch (saveError) {
-			showToast(actionFailureToast("Карточка пациента не сохранена", (saveError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Карточка пациента не сохранена",
+					(saveError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setPatientCoreSaveState("error");
 			setError(
 				operatorWorkflowFailureMessage(
@@ -566,7 +572,13 @@ export function usePatientLogic({
 			setError(null);
 			return true;
 		} catch (saveError) {
-			showToast(actionFailureToast("Данные пациента не сохранены", (saveError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Данные пациента не сохранены",
+					(saveError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setPatientAdministrativeProfileSaveState("error");
 			setError(
 				operatorWorkflowFailureMessage(
@@ -625,7 +637,13 @@ export function usePatientLogic({
 			);
 			setError(null);
 		} catch (patientError) {
-			showToast(actionFailureToast("Пациент не создан", (patientError as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Пациент не создан",
+					(patientError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			setError(
 				operatorWorkflowFailureMessage("Пациент не создан", patientError),
 			);

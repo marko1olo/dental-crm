@@ -72,7 +72,13 @@ export function MarketingView({
 			if (Array.isArray(parsed) && parsed.every((k) => typeof k === "string"))
 				return parsed as string[];
 		} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.warn(
 				"[Marketing] Failed to parse saved SEO keys from localStorage:",
 				e,
@@ -137,7 +143,13 @@ export function MarketingView({
 				};
 			}
 		} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 			console.warn(
 				"[Marketing] Failed to parse saved stats from localStorage:",
 				e,

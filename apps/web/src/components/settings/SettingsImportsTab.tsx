@@ -5685,7 +5685,11 @@ export function SettingsImportsTab(props: Record<string, any>) {
 						</div>
 					</div>
 
-					<div role="toolbar" className="import-source-grid" aria-label="Источник импорта">
+					<div
+						role="toolbar"
+						className="import-source-grid"
+						aria-label="Источник импорта"
+					>
 						{typedImportSourceKinds.map((kind) => (
 							<button
 								className={`source-card ${importSourceKind === kind ? "active" : ""}`}
