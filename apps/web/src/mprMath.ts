@@ -94,29 +94,51 @@ export function interpolateSpline(
 ): Point2D[] {
 	if (points.length < 2) return points;
 
-	// Simple linear interpolation fallback for 2 points,
-	// or add a proper Catmull-Rom math here for >= 3 points.
-	// For the sake of hardcore math, let's do a basic subdivision for now
-	// to ensure equidistant points along the segments.
 	const result: Point2D[] = [];
 
-	for (let i = 0; i < points.length - 1; i++) {
-		const p0 = points[i]!;
-		const p1 = points[i + 1]!;
-
+	if (points.length === 2) {
+		const p0 = points[0]!;
+		const p1 = points[1]!;
 		const dx = p1.x - p0.x;
 		const dy = p1.y - p0.y;
+		const distance = Math.sqrt(dx * dx + dy * dy);
+		const steps = Math.max(1, Math.floor(distance / stepSize));
+		for (let j = 0; j < steps; j++) {
+			const t = j / steps;
+			result.push({ x: p0.x + dx * t, y: p0.y + dy * t });
+		}
+		result.push(p1);
+		return result;
+	}
+
+	for (let i = 0; i < points.length - 1; i++) {
+		const p0 = i === 0 ? points[0]! : points[i - 1]!;
+		const p1 = points[i]!;
+		const p2 = points[i + 1]!;
+		const p3 = i === points.length - 2 ? points[points.length - 1]! : points[i + 2]!;
+
+		const dx = p2.x - p1.x;
+		const dy = p2.y - p1.y;
 		const distance = Math.sqrt(dx * dx + dy * dy);
 
 		const steps = Math.max(1, Math.floor(distance / stepSize));
 		for (let j = 0; j < steps; j++) {
 			const t = j / steps;
+			const t2 = t * t;
+			const t3 = t2 * t;
+
+			const f0 = -0.5 * t3 + t2 - 0.5 * t;
+			const f1 = 1.5 * t3 - 2.5 * t2 + 1.0;
+			const f2 = -1.5 * t3 + 2.0 * t2 + 0.5 * t;
+			const f3 = 0.5 * t3 - 0.5 * t2;
+
 			result.push({
-				x: p0.x + dx * t,
-				y: p0.y + dy * t,
+				x: p0.x * f0 + p1.x * f1 + p2.x * f2 + p3.x * f3,
+				y: p0.y * f0 + p1.y * f1 + p2.y * f2 + p3.y * f3,
 			});
 		}
 	}
+
 	// push last point
 	result.push(points[points.length - 1]!);
 
