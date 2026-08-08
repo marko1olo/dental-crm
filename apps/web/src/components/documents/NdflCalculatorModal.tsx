@@ -38,7 +38,33 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 							: {},
 				},
 			);
-			const data = await res.json();
+			const data = await res.json().catch(() => null);
+			/*
+			 * ОТВЕТ ПРОВЕРЯЕТСЯ ДО ПОКАЗА. Комментарий выше предупреждает, что
+			 * настоящая клиника получает 403, — а следующая строка клала тело
+			 * этого 403 прямо в `result`. Промис `fetch` на 403 и 500 не
+			 * отклоняется, поэтому `catch` ниже не срабатывал: отрисовка
+			 * (:149, :155) читала `result.code1TotalRub` и `result.code2TotalRub`
+			 * из объекта ошибки и показывала пустые суммы. Врач видел «налог
+			 * посчитан, суммы нулевые» вместо «нет доступа».
+			 *
+			 * Проверка формы нужна отдельно от `res.ok`: маршрут может ответить
+			 * 200 с другим телом, и в справку 2-НДФЛ уйдут пустые поля.
+			 */
+			if (!res.ok) {
+				throw new Error(
+					(data && typeof data === "object" && "message" in data
+						? String((data as { message?: unknown }).message)
+						: null) ?? `HTTP ${res.status}`,
+				);
+			}
+			if (
+				!data ||
+				typeof data !== "object" ||
+				typeof (data as { code1TotalRub?: unknown }).code1TotalRub !== "number"
+			) {
+				throw new Error("Сервер вернул расчёт в неизвестном формате");
+			}
 			setResult(data);
 		} catch (error) {
 			showToast(
