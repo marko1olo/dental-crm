@@ -3,12 +3,9 @@ import { requireClinicalReadAccess } from "../../accessGuard.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import {
 	getDocumentById,
-	issueGeneratedDocumentInDb,
 	storeTaxXmlSnapshotInDb,
-	voidGeneratedDocumentInDb,
 } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { getVisitByIdInDb } from "../../db/visitsQuery.js";
 import {
 	documentIssueBlockReason,
 	taxFiscalDocumentBlockReason,

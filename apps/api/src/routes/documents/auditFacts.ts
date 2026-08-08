@@ -1,57 +1,11 @@
-import {
-	createDocumentSchema,
-	issueDocumentSchema,
-	publicGeneratedDocumentSchema,
-	voidDocumentSchema,
-} from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
-import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
-import {
-	getDocumentById,
-	issueGeneratedDocumentInDb,
-	readIssuedDocumentSnapshot,
-	storeTaxXmlSnapshotInDb,
-	voidGeneratedDocumentInDb,
-} from "../../db/documentQuery.js";
+import { getDocumentById } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { getVisitByIdInDb } from "../../db/visitsQuery.js";
-import {
-	paidAmountRubForDocument,
-	paymentReceiptSelectionErrorForDocument,
-	paymentRefundCorrectionSelectionErrorForDocument,
-	plannedAmountRubForDocument,
-	taxPaymentSelectionErrorForDocument,
-	validateDocumentCreation,
-} from "../../documents/guards.js";
-import {
-	buildTaxPaymentSnapshotForIssue,
-	taxDocumentUsesPaymentSnapshot,
-} from "../../documents/taxPaymentSnapshot.js";
-import { buildKnd1151156Xml } from "../../documents/taxXml.js";
 import { requireOrganizationId } from "../../security/identity.js";
-import { repairMojibakeText } from "../../text/repairMojibake.js";
 import {
 	apiError,
 	buildDocumentAuditFacts,
-	buildMedicalDocumentReleaseJournalEntry,
-	configuredTaxOfficeCode,
-	documentAttachmentFileName,
-	documentCreateValidationMessageForRequest,
-	documentHasIssuedArchiveMetadata,
-	documentIssueChainBlockReason,
-	documentIssueValidationMessage,
-	documentRequiresIssuedArchive,
-	documentVoidValidationMessage,
-	findIssuedDuplicateTaxCertificate,
-	frozenTaxXmlClinicProfile,
-	frozenTaxXmlPatient,
-	frozenTaxXmlPayments,
-	issuedArchiveIntegrityError,
-	renderIssuedHtmlToPdf,
-	taxSnapshotDocument,
-	taxXmlSourceSnapshotForIssue,
-	taxXmlSourceSnapshotSha256,
 } from "./shared.js";
 
 export async function register(app: FastifyInstance) {

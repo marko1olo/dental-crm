@@ -164,7 +164,10 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 			}
 			const data = await res
 				.json()
-				.catch(() => ({}) as Record<string, unknown>);
+				.catch((err) => {
+					showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
+					return {} as Record<string, unknown>;
+				});
 			if (!(data.success || data.isBlacklisted !== undefined)) {
 				showToast(
 					unconfirmedActionToast(

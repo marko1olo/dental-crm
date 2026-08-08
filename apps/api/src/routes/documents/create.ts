@@ -1,20 +1,14 @@
 import {
 	createDocumentSchema,
-	issueDocumentSchema,
 	publicGeneratedDocumentSchema,
-	voidDocumentSchema,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
-import {
-	requireClinicalMutationAccess,
-	requireClinicalReadAccess,
-} from "../../accessGuard.js";
+import { requireClinicalMutationAccess } from "../../accessGuard.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getTreatmentPlanItemsForPatient } from "../../db/clinicalQuery.js";
 import {
 	createGeneratedDocumentInDb,
 	getDocumentsByPatientId,
-	readIssuedDocumentSnapshot,
 } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
@@ -26,15 +20,6 @@ import {
 	taxPaymentSelectionErrorForDocument,
 	validateDocumentCreation,
 } from "../../documents/guards.js";
-import {
-	renderDocumentHtml,
-	taxFiscalDocumentBlockReason,
-} from "../../documents/renderDocument.js";
-import {
-	buildTaxPaymentSnapshotForIssue,
-	taxDocumentUsesPaymentSnapshot,
-} from "../../documents/taxPaymentSnapshot.js";
-import { buildKnd1151156Xml } from "../../documents/taxXml.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import {
 	repairMojibakeDeep,
@@ -42,25 +27,7 @@ import {
 } from "../../text/repairMojibake.js";
 import {
 	apiError,
-	buildDocumentAuditFacts,
-	buildMedicalDocumentReleaseJournalEntry,
-	configuredTaxOfficeCode,
-	documentAttachmentFileName,
 	documentCreateValidationMessageForRequest,
-	documentHasIssuedArchiveMetadata,
-	documentIssueChainBlockReason,
-	documentIssueValidationMessage,
-	documentRequiresIssuedArchive,
-	documentVoidValidationMessage,
-	findIssuedDuplicateTaxCertificate,
-	frozenTaxXmlClinicProfile,
-	frozenTaxXmlPatient,
-	frozenTaxXmlPayments,
-	issuedArchiveIntegrityError,
-	renderIssuedHtmlToPdf,
-	taxSnapshotDocument,
-	taxXmlSourceSnapshotForIssue,
-	taxXmlSourceSnapshotSha256,
 } from "./shared.js";
 
 export async function register(app: FastifyInstance) {

@@ -33,10 +33,8 @@ import {
 } from "../../db/documentQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
 import {
-	type DocumentRenderContext,
+	DocumentRenderContext,
 	documentIssueBlockReason,
-	renderDocumentHtml,
-	taxFiscalDocumentBlockReason,
 } from "../../documents/renderDocument.js";
 import {
 	paymentIdsForTaxDocument,
