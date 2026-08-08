@@ -28,19 +28,23 @@ function fail(message) {
 	throw new Error(message);
 }
 
-function sourceSlice(startMarker, endMarker) {
-	const start = appSource.indexOf(startMarker);
+function sourceSlice(startMarker, endMarker, source = appSource) {
+	const start = source.indexOf(startMarker);
 	if (start === -1) fail(`Missing marker: ${startMarker}`);
-	const end = appSource.indexOf(endMarker, start);
+	const end = source.indexOf(endMarker, start);
 	if (end === -1) fail(`Missing marker: ${endMarker}`);
-	return appSource.slice(start, end);
+	return source.slice(start, end);
 }
 
 const typeBlock = sourceSlice(
-	"type UiPreferences = {",
-	"type UiPreferencesInput",
+	"export const uiPreferencesSchema = z.object({",
+	"export type UiPreferences =",
+	sharedSource,
 );
-const saveEffectBlock = sourceSlice("saveUiPreferences({", "  }, [");
+const saveEffectBlock = sourceSlice(
+	"function currentUiPreferencesInput(): UiPreferencesInput {",
+	"function clearUiPreferencesRetryTimer(): void {",
+);
 const saveServerPreferencesBlock = sourceSlice(
 	"async function saveServerUiPreferences",
 	"async function responseErrorMessage",

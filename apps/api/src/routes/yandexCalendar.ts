@@ -34,8 +34,9 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 		"/api/integrations/yandex-calendar/settings",
 		async (request, reply) => {
 			const identity = await requireStaffIdentity(request, reply);
-			if (!identity?.userId) return;
+			if (!identity?.userId || !identity?.organizationId) return;
 			const staffId = identity.userId;
+			const orgId = identity.organizationId;
 
 			try {
 				const body = SettingsSchema.parse(request.body);
@@ -45,7 +46,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 						yandexCalendarId: body.yandexCalendarId,
 						yandexCalendarToken: body.yandexCalendarToken,
 					})
-					.where(eq(users.id, staffId));
+					.where(and(eq(users.id, staffId), eq(users.organizationId, orgId)));
 
 				return { success: true };
 			} catch (err: any) {
@@ -96,7 +97,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 					yandexCalendarToken: users.yandexCalendarToken,
 				})
 				.from(users)
-				.where(eq(users.id, staffId))
+				.where(and(eq(users.id, staffId), eq(users.organizationId, orgId)))
 				.then((r) => r[0]);
 
 			if (!staffInfo?.yandexCalendarId || !staffInfo?.yandexCalendarToken) {
@@ -128,7 +129,12 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 						lastSyncAt: new Date(),
 						errorMessage: null,
 					})
-					.where(eq(yandexCalendarSyncs.id, existingSync.id));
+					.where(
+						and(
+							eq(yandexCalendarSyncs.id, existingSync.id),
+							eq(yandexCalendarSyncs.organizationId, orgId),
+						),
+					);
 			} else {
 				await db.insert(yandexCalendarSyncs).values({
 					organizationId: orgId,
