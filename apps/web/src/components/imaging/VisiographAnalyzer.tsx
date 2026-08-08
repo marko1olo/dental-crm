@@ -500,7 +500,7 @@ export function VisiographAnalyzer() {
 			// До сервера не дошли: кода ответа нет, придумывать его нельзя.
 			return `${actionFailureToast(action, null)} Поставьте отметку на схеме зубов руками.`;
 		}
-	};
+	}, [denteClinicalMutationHeaders]);
 
 	// ── File processing ─────────────────────────────────────────────────────
 	const processFile = useCallback(
@@ -589,7 +589,7 @@ export function VisiographAnalyzer() {
 				});
 
 				if (!aiRes.ok) {
-					const errData = await aiRes.json().catch(() => ({}));
+					const errData = await aiRes.json();
 					throw new Error(
 						errData.error || `AI сервис недоступен (HTTP ${aiRes.status})`,
 					);

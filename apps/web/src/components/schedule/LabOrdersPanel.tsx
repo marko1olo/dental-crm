@@ -151,7 +151,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				setIsLoading(false);
 			}
 		}
-	}, [organizationId, auth]);;
+	}, [patientId, auth]);
 
 	/*
 		ПАНЕЛЬ НЕ ПЕРЕСОЗДАЁТСЯ ПРИ СМЕНЕ ПАЦИЕНТА, И ЭТО СТОИЛО БЫ ЧУЖОГО НАРЯДА.
@@ -257,11 +257,17 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				setPriceRub("");
 				fetchOrders();
 			} else {
-				const err = await res.json().catch(() => ({}));
+				const err = await res.json();
 				showToast(err.message || "Ошибка создания заказа ЗТЛ", "error");
 			}
-		} catch (_e) {
-			showToast("Системная ошибка", "error");
+		} catch (err) {
+			showToast(
+				actionFailureToast(
+					"Ошибка создания заказа ЗТЛ",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 		} finally {
 			setIsCreating(false);
 		}
@@ -282,8 +288,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			} else {
 				showToast("Ошибка удаления", "error");
 			}
-		} catch (_e) {
-			showToast("Системная ошибка", "error");
+		} catch (err) {
+			showToast(
+				actionFailureToast(
+					"Ошибка удаления заказа",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 		} finally {
 			setDeletingId(null);
 		}
@@ -308,12 +320,18 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				fetchOrders();
 			} else {
 				setOrders(previous);
-				const err = await res.json().catch(() => ({}));
+				const err = await res.json();
 				showToast(err.message || "Ошибка обновления статуса", "error");
 			}
-		} catch (_e) {
+		} catch (err) {
 			setOrders(previous);
-			showToast("Системная ошибка", "error");
+			showToast(
+				actionFailureToast(
+					"Ошибка обновления статуса",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 		}
 	};
 

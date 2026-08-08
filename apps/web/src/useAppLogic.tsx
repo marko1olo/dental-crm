@@ -2370,7 +2370,9 @@ export function useAppLogic(): any {
 			.then((response) => {
 				if (response.ok) setRecentPatientViewsVersion((version) => version + 1);
 			})
-			.catch(() => {});
+			.catch((err) => {
+				showToast(actionFailureToast("Ошибка обновления списка пациентов", (err as { status?: number })?.status ?? null), "error");
+			});
 	}, [selectedPatientId, dashboard, auth.denteClinicalMutationHeaders]);
 
 	useEffect(() => {
@@ -2539,7 +2541,8 @@ export function useAppLogic(): any {
 					return next;
 				});
 			})
-			.catch(() => {
+			.catch((err) => {
+				showToast(actionFailureToast("Ошибка при создании превью снимка", (err as { status?: number })?.status ?? null), "error");
 				createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
 				if (!cancelled) {
 					setImagingPreviewObjectUrls((current) => {
@@ -3636,7 +3639,10 @@ export function useAppLogic(): any {
 				}),
 			});
 			if (!response.ok) {
-				const msg = await response.text().catch(() => "Ошибка");
+				const msg = await response.text().catch((err) => {
+					showToast(actionFailureToast("Не удалось прочитать ошибку", (err as { status?: number })?.status ?? null), "error");
+					return "Ошибка";
+				});
 				setError(`Быстрый приём: ${msg}`);
 				return;
 			}

@@ -154,7 +154,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 		setAwaitingLockConfirmation(false);
 		// ПИН не держим в памяти дольше самого подписания.
 		setPinCode("");
-	}, [onSignComplete]);
+	}, []);
 
 	// Окно перекрывает весь экран, поэтому обязано закрываться Escape — но не
 	// посреди подписания, когда закрытие выглядит как подтверждение подписи.

@@ -34,6 +34,8 @@ import { parsePatientDictationLocal } from "./lib/smartPatientParser";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { usePatientStore } from "./store/patientStore";
 import { formatPhoneNumber } from "./utils/inputSanitation";
+import { showToast } from "./components/GlobalToast";
+import { actionFailureToast } from "./lib/panelStateText";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -235,7 +237,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				setLostPatientIds(ids);
 				setShowLostPatientsOnly(true);
 			})
-			.catch(() => {
+			.catch((err) => {
+				showToast(actionFailureToast("Не удалось загрузить фильтры потерянных пациентов", (err as { status?: number })?.status ?? null), "error");
 				setLostPatientIds(new Set());
 				setShowLostPatientsOnly(true);
 			})

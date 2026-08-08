@@ -153,16 +153,16 @@ function watchDenteServiceWorkerUpdates(
 
 	document.addEventListener("visibilitychange", () => {
 		if (document.visibilityState === "visible") {
-			void registration.update().catch(() => {
-				// Update polling is opportunistic; clinical work must not be blocked by SW checks.
+			void registration.update().catch((err) => {
+				console.warn("Обновление приложения недоступно", err);
 			});
 		}
 	});
 
 	window.setInterval(
 		() => {
-			void registration.update().catch(() => {
-				// Long clinic sessions recover when the network returns; failed checks are retried.
+			void registration.update().catch((err) => {
+				console.warn("Обновление приложения недоступно (фоновая проверка)", err);
 			});
 		},
 		30 * 60 * 1000,
@@ -191,12 +191,12 @@ if (
 			.register("/sw.js")
 			.then((registration) => {
 				watchDenteServiceWorkerUpdates(registration);
-				void registration.update().catch(() => {
-					// Offline support is optional in development-like hosts.
+				void registration.update().catch((err) => {
+					console.warn("Обновление приложения недоступно при старте", err);
 				});
 			})
-			.catch(() => {
-				// Offline support is optional in development-like hosts.
+			.catch((err) => {
+				console.warn("Service Worker недоступен", err);
 			});
 	});
 }

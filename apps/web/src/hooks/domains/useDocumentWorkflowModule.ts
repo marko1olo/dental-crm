@@ -941,7 +941,7 @@ export function useDocumentWorkflowModule({
 		setSelectedDocumentKind,
 		isDocumentIngesting,
 		setIsDocumentIngesting,
-	} = documentState;
+	}, [eligibleTaxPayments, selectedTaxPaymentIds]);
 
 	const releaseSourceRequestAutofillRef = useRef<string | null>(null);
 	const taxPaymentSelectionHydratedKeyRef = useRef<string | null>(null);
@@ -1502,7 +1502,7 @@ export function useDocumentWorkflowModule({
 		return selectedTaxPaymentIds.filter((paymentId) =>
 			eligibleTaxPaymentIdSet.has(paymentId),
 		);
-	}, [documentDraftState]);
+	}, [selectedTaxPaymentIds, eligibleTaxPayments]);
 
 	function selectAllEligibleTaxPaymentsForCurrentDocument(): void {
 		const eligiblePaymentIds = eligibleTaxPayments.map((payment) => payment.id);
@@ -1699,11 +1699,10 @@ export function useDocumentWorkflowModule({
 			outpatient025uFinalEpicrisis,
 			outpatient025uOfficialForm274nChecked,
 			outpatient025uThirdPartyDataChecked,
-		}), [documentDraftState]);
+		}), []);
 
-	const applyOutpatient025uDocumentDraftFields = useCallback(function 
-		fields: Outpatient025uDocumentDraftFields,
-	() {
+
+	const applyOutpatient025uDocumentDraftFields = useCallback((fields: Outpatient025uDocumentDraftFields) => {
 		setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
 		setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
 		setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
@@ -1752,7 +1751,8 @@ export function useDocumentWorkflowModule({
 		setOutpatient025uThirdPartyDataChecked(
 			fields.outpatient025uThirdPartyDataChecked,
 		);
-	}, [documentDraftState, updateDocumentDraft]);
+	}, []);
+
 
 	const currentMedicalRecordExtractDocumentDraftFields = useCallback(() => ({
 			recordExtractPeriodStart,
@@ -1769,11 +1769,10 @@ export function useDocumentWorkflowModule({
 			recordExtractIssuedAt,
 			recordExtractPreparedFromSignedRecords,
 			recordExtractThirdPartyDataChecked,
-		}), [documentDraftState]);
+		}), []);
 
-	const applyMedicalRecordExtractDocumentDraftFields = useCallback(function 
-		fields: MedicalRecordExtractDocumentDraftFields,
-	() {
+
+	const applyMedicalRecordExtractDocumentDraftFields = useCallback((fields: MedicalRecordExtractDocumentDraftFields) => {
 		setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
 		setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
 		setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
@@ -1794,7 +1793,8 @@ export function useDocumentWorkflowModule({
 		setRecordExtractThirdPartyDataChecked(
 			fields.recordExtractThirdPartyDataChecked,
 		);
-	}, [documentDraftState, updateDocumentDraft]);
+	}, []);
+
 
 	const selectedTaxApplicationPayment = useMemo(() => {
 		if (!selectedTaxDocumentPayerKey) return null;

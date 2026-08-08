@@ -631,7 +631,10 @@ export function useVisitLogic({
 					// попадала новая запись приёма, она стиралась безвозвратно —
 					// при том, что интерфейс сообщал «сохранено локально».
 					// Удаляем ровно отправленный элемент, не трогая остальные.
-					await deletePendingVisitSaveFromIndexedDb(item.id).catch(() => {});
+					await deletePendingVisitSaveFromIndexedDb(item.id).catch((err) => {
+						console.error('[Dente] error deleting pending visit save:', err);
+						showToast(actionFailureToast('Ошибка удаления локального сохранения приёма', (err as { status?: number })?.status ?? null), 'error');
+					});
 				} else {
 					errors.push(outcome.reason);
 				}
@@ -838,7 +841,10 @@ export function useVisitLogic({
 		speechUploadPromisesRef.current.add(upload);
 		upload
 			.finally(() => speechUploadPromisesRef.current.delete(upload))
-			.catch(() => undefined);
+			.catch((err) => {
+				console.error('[Dente] speech upload error:', err);
+				showToast(actionFailureToast('Ошибка загрузки аудиозаписи', (err as { status?: number })?.status ?? null), 'error');
+			});
 	}
 
 	async function waitForSpeechUploads() {
@@ -1411,7 +1417,10 @@ export function useVisitLogic({
 			window.clearInterval(speechMonitorTimerRef.current);
 			speechMonitorTimerRef.current = null;
 		}
-		speechAudioContextRef.current?.close().catch(() => undefined);
+		speechAudioContextRef.current?.close().catch((err) => {
+			console.error('[Dente] audio context close error:', err);
+			showToast(actionFailureToast('Ошибка завершения аудиосессии', (err as { status?: number })?.status ?? null), 'error');
+		});
 		speechAudioContextRef.current = null;
 		speechAnalyserRef.current = null;
 	}

@@ -174,7 +174,7 @@ export function WaitlistDrawer(props: Props) {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [organizationId]);;
+	}, [auth]);
 
 	useEffect(() => {
 		if (isOpen) {

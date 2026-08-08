@@ -38,6 +38,7 @@ import {
 } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
+import { actionFailureToast } from "./lib/panelStateText";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
@@ -471,7 +472,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				return;
 			}
 			if (!response.ok) {
-				const body = await response.json().catch(() => null);
+				const body = await response.json().catch((err) => {
+					showToast(actionFailureToast("Не удалось прочитать ответ сервера", (err as { status?: number })?.status ?? null), "error");
+					return null;
+				});
 				const serverMessage =
 					body && typeof body.message === "string" ? body.message.trim() : "";
 				if (serverMessage && /[а-яё]/i.test(serverMessage)) {

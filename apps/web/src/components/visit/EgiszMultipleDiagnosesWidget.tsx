@@ -1,5 +1,5 @@
 import { AlertCircle, RefreshCw, Stethoscope } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export interface EgiszMultipleDiagnosisItem {
@@ -36,7 +36,7 @@ export function EgiszMultipleDiagnosesWidget() {
 		} finally {
 			setLoading(false);
 		}
-	}, [patientId]);
+	}, [appLogic.auth]);
 
 	useEffect(() => {
 		fetchDiagnoses();

@@ -40,6 +40,9 @@
  * накрыло бы и соседние вызовы, и пятый добавленный без заголовков уже не нашли бы.
  */
 
+import { showToast } from "../components/GlobalToast";
+import { actionFailureToast } from "./panelStateText";
+
 export type DuplicateReason =
 	| "same_name_and_birth_date"
 	| "same_name_birth_date_unknown"
@@ -86,7 +89,10 @@ export type RequestHeaders = Record<string, string>;
  * экране администратора бесполезен: он не говорит, что делать.
  */
 async function readJson<T>(response: Response): Promise<T> {
-	const payload = (await response.json().catch(() => null)) as unknown;
+	const payload = (await response.json().catch((err) => {
+		showToast(actionFailureToast("Ошибка чтения данных", (err as { status?: number })?.status ?? null), "error");
+		return null;
+	})) as unknown;
 	if (!response.ok) {
 		const message =
 			payload &&

@@ -123,7 +123,10 @@ export function VisitDiaryPhotoUpload({
 					if (!cancelled) setLoadState({ phase: "failed", status });
 					return;
 				}
-				const data: unknown = await response.json().catch(() => null);
+				const data: unknown = await response.json().catch((err) => {
+					showToast(actionFailureToast("Не удалось прочитать ответ сервера", (err as { status?: number })?.status ?? null), "error");
+					return null;
+				});
 				if (cancelled) return;
 				const files =
 					data &&

@@ -41,6 +41,8 @@ import { AuthHub } from "./components/auth/AuthHub";
 import { StaffPinPad } from "./components/auth/StaffPinPad";
 import { CommandPalette } from "./components/CommandPalette";
 import { IncomingCallToast } from "./components/IncomingCallToast";
+import { showToast } from "./components/GlobalToast";
+import { actionFailureToast } from "./lib/panelStateText";
 import { Omnibar } from "./components/Omnibar";
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
@@ -1189,8 +1191,9 @@ export function App() {
 				.then((data) => {
 					if (data?.user) setActiveStaffUser(data.user);
 				})
-				.catch(() => {
-					/* silent - user will be prompted to re-login */
+				.catch((err) => {
+					console.error('[Dente] auth check error:', err);
+					showToast(actionFailureToast('Не удалось загрузить профиль пользователя', (err as { status?: number })?.status ?? null), 'error');
 				});
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps

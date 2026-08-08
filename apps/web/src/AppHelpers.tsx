@@ -6803,7 +6803,11 @@ export async function migrateLocalDicomWorkbenchDraftFromLocalStorage(
 	if (!legacyDraft) return;
 	const existing = await readLocalDicomWorkbenchDraftFromIndexedDb(
 		organizationId,
-	).catch(() => null);
+	).catch((err) => {
+		console.error('[Dente] read draft error:', err);
+		showToast(actionFailureToast('Ошибка чтения черновика DICOM', (err as { status?: number })?.status ?? null), 'error');
+		return null;
+	});
 	const draft = newerDicomWorkbenchDraft(existing, legacyDraft);
 	if (!draft) return;
 	await saveLocalDicomWorkbenchDraftToIndexedDb(draft, organizationId);
@@ -6899,7 +6903,11 @@ export async function readLocalMprWorkbenchDraftFromIndexedDb(
 		await deleteLocalMprWorkbenchDraftFromIndexedDb(
 			seriesKey,
 			organizationId,
-		).catch(() => undefined);
+		).catch((err) => {
+			console.error('[Dente] delete draft error:', err);
+			showToast(actionFailureToast('Не удалось удалить черновик MPR', (err as { status?: number })?.status ?? null), 'error');
+			return undefined;
+		});
 	}
 	return normalized;
 }
@@ -6974,7 +6982,11 @@ export async function migrateLocalMprWorkbenchDraftFromLocalStorage(
 	const existing = await readLocalMprWorkbenchDraftFromIndexedDb(
 		seriesKey,
 		organizationId,
-	).catch(() => null);
+	).catch((err) => {
+		console.error('[Dente] read draft error:', err);
+		showToast(actionFailureToast('Ошибка чтения черновика MPR', (err as { status?: number })?.status ?? null), 'error');
+		return null;
+	});
 	const draft =
 		existing &&
 		Date.parse(existing.clientSavedAt) >= Date.parse(legacyDraft.clientSavedAt)
@@ -7206,7 +7218,11 @@ export async function migratePendingVisitSavesFromLocalStorage(
 	if (!legacyQueue.length || !pendingVisitSaveIndexedDbAvailable()) return;
 	const existing = await readPendingVisitSavesFromIndexedDb(
 		normalizedOrganizationId,
-	).catch(() => []);
+	).catch((err) => {
+		console.error('[Dente] read visit saves error:', err);
+		showToast(actionFailureToast('Ошибка чтения очереди приёмов', (err as { status?: number })?.status ?? null), 'error');
+		return [];
+	});
 	const byId = new Map<string, PendingVisitSave>();
 	for (const item of [...existing, ...legacyQueue]) {
 		byId.set(item.id, item);
@@ -7400,7 +7416,11 @@ export async function migrateSpeechChunksFromLocalStorage(
 	if (!legacyQueue.length || !speechChunkIndexedDbAvailable()) return;
 	const existing = await readPendingSpeechChunksFromIndexedDb(
 		normalizedOrganizationId,
-	).catch(() => []);
+	).catch((err) => {
+		console.error('[Dente] read speech chunks error:', err);
+		showToast(actionFailureToast('Ошибка чтения очереди аудиофрагментов', (err as { status?: number })?.status ?? null), 'error');
+		return [];
+	});
 	const byId = new Map<string, PendingSpeechChunk>();
 	for (const chunk of [...existing, ...legacyQueue]) {
 		byId.set(chunk.id, chunk);

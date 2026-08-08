@@ -3,6 +3,8 @@ import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as cornerstoneTools from "@cornerstonejs/tools";
 import { vec3 } from "gl-matrix";
 import {  useEffect, useRef, useState , useCallback } from "react";
+import { showToast } from "../GlobalToast";
+import { actionFailureToast } from "../../lib/panelStateText";
 import {
 	distancePointToSpline,
 	mat3ToMat4Direction,
@@ -455,8 +457,15 @@ export function Cornerstone3DViewer({
 				const label = ctPlanningRestoredLabel(outcome.markup);
 				setMarkupStatus(label ? { tone: "saved", text: label } : null);
 			})
-			.catch(() => {
+			.catch((err) => {
 				if (!cancelled) {
+					showToast(
+						actionFailureToast(
+							"Чтение сохраненной разметки",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setMarkupStatus({
 						tone: "issue",
 						text:

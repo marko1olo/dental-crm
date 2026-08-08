@@ -226,7 +226,10 @@ export function useStaffSettingsLogic({
 			});
 
 			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({}));
+				const errorData = await response.json().catch((err) => {
+					showToast(actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null), "error");
+					return {};
+				});
 				setError(
 					errorData.message ||
 						"Не удалось удалить кресло. Возможно, к нему привязаны приёмы.",
