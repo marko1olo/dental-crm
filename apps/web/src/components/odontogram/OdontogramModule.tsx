@@ -310,7 +310,7 @@ export const OdontogramModule = ({
 		| { phase: "failed"; status: number | null }
 	>({ phase: "loading" });
 	/** Счётчик кнопки «Повторить»: меняется — формула читается заново. */
-	const [_teethReloadToken, setTeethReloadToken] = useState(0);
+	const [teethReloadToken, setTeethReloadToken] = useState(0);
 	/* Актуальная формула для снимка перед сохранением. Брать её внутри
 	   обновления состояния нельзя: обновление может быть вызвано повторно, и
 	   тогда снимок одного сохранения захватит правку другого. */
@@ -775,7 +775,7 @@ export const OdontogramModule = ({
 			window.removeEventListener("keyup", handleKeyUp);
 		};
 		// teethReloadToken — кнопка «Повторить» под сообщением об отказе.
-	}, [patientId, updateToothState]);
+	}, [patientId, teethReloadToken, updateToothState]);
 
 	const handleToothClick = (
 		toothNumber: number,

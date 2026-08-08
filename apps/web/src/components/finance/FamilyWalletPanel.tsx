@@ -510,22 +510,14 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			});
 
 			if (!res.ok) {
-				const err = await res.json().catch((err) => {
-					logger.error("[Dente]", err);
-					showToast(
-						actionFailureToast(
-							"Ответ сервера не прочитан",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					return {} as { message?: string };
-				});
+				const errPayload = (await res.json().catch(() => null)) as {
+					message?: string;
+				} | null;
 				showToast(
 					refusalToast(
 						"Списание с семейного счёта не прошло",
 						res.status,
-						err.message,
+						errPayload?.message,
 					),
 					"error",
 				);
@@ -543,17 +535,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			 * Сервер отвечает `duplicate: true`, когда узнал ключ и денег НЕ тронул, —
 			 * это и говорим словами: деньги ушли раньше, второй раз не ушли.
 			 */
-			const payResult = (await res.json().catch((err) => {
-				logger.error("[Dente]", err);
-				showToast(
-					actionFailureToast(
-						"Ответ об оплате не прочитан",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				return null;
-			})) as {
+			const payResult = (await res.json().catch(() => null)) as {
 				duplicate?: boolean;
 			} | null;
 			showToast(
@@ -625,22 +607,14 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				}),
 			});
 			if (!res.ok) {
-				const err = await res.json().catch((err) => {
-					logger.error("[Dente]", err);
-					showToast(
-						actionFailureToast(
-							"Ответ сервера не прочитан",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					return {} as { message?: string };
-				});
+				const errPayload = (await res.json().catch(() => null)) as {
+					message?: string;
+				} | null;
 				showToast(
 					refusalToast(
 						"Пополнение семейного счёта не прошло",
 						res.status,
-						err.message,
+						errPayload?.message,
 					),
 					"error",
 				);

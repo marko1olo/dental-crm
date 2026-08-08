@@ -1460,6 +1460,7 @@ export function useDocumentWorkflowModule({
 			) ?? null,
 		[selectedTaxDocumentPayerKey, taxDocumentPayerOptions],
 	);
+	const selectedTaxDocumentPayerInn = selectedTaxDocumentPayerOption?.inn ?? "";
 	const selectedDocumentUsesTaxPaymentSelection =
 		taxPaymentSelectionDocumentKinds.has(selectedDocumentKind);
 	const _selectedDocumentMetadata = documentKindMetadata[selectedDocumentKind];
@@ -1479,6 +1480,7 @@ export function useDocumentWorkflowModule({
 				),
 			);
 	}, [activePayments, selectedTaxDocumentPayerKey, taxDocumentYear]);
+	const eligibleTaxPaymentIdsKey = eligibleTaxPayments.map((p) => p.id).join("|");
 
 	const selectedTaxPaymentIdSet = useMemo(
 		() => new Set(selectedTaxPaymentIds),
@@ -1491,7 +1493,7 @@ export function useDocumentWorkflowModule({
 			),
 		[eligibleTaxPayments, selectedTaxPaymentIdSet],
 	);
-	const _selectedTaxPaymentTotalRub = selectedEligibleTaxPayments.reduce(
+	const selectedTaxPaymentTotalRub = selectedEligibleTaxPayments.reduce(
 		(total, payment) => total + payment.amountRub,
 		0,
 	);
@@ -1525,6 +1527,7 @@ export function useDocumentWorkflowModule({
 				),
 			);
 	}, [activePayments, dashboard?.activeVisit?.id]);
+	const eligiblePaymentReceiptIdsKey = eligiblePaymentReceiptPayments.map((p) => p.id).join("|");
 
 	const selectedPaymentReceiptIdSet = useMemo(
 		() => new Set(selectedPaymentReceiptIds),
@@ -1537,7 +1540,7 @@ export function useDocumentWorkflowModule({
 			),
 		[eligiblePaymentReceiptPayments, selectedPaymentReceiptIdSet],
 	);
-	const _selectedPaymentReceiptTotalRub = selectedPaymentReceiptPayments.reduce(
+	const selectedPaymentReceiptTotalRub = selectedPaymentReceiptPayments.reduce(
 		(total, payment) => total + payment.amountRub,
 		0,
 	);
@@ -1956,7 +1959,7 @@ export function useDocumentWorkflowModule({
 		documentLocalPersistenceOrganizationId,
 		selectedDocumentUsesTaxPaymentSelection,
 		taxPaymentSelectionPersistenceKey,
-		eligibleTaxPayments.map,
+		eligibleTaxPaymentIdsKey,
 		setSelectedTaxPaymentIds,
 	]);
 
@@ -1981,6 +1984,7 @@ export function useDocumentWorkflowModule({
 		selectedDocumentUsesTaxPaymentSelection,
 		taxPaymentSelectionPersistenceKey,
 		selectedTaxPaymentIdsForCurrentDocument,
+		eligibleTaxPaymentIdsKey,
 	]);
 
 	useEffect(() => {
@@ -2011,7 +2015,7 @@ export function useDocumentWorkflowModule({
 		documentLocalPersistenceOrganizationId,
 		selectedDocumentUsesPaymentReceiptSelection,
 		paymentReceiptSelectionPersistenceKey,
-		eligiblePaymentReceiptPayments.map,
+		eligiblePaymentReceiptIdsKey,
 		setSelectedPaymentReceiptIds,
 	]);
 
@@ -2041,7 +2045,7 @@ export function useDocumentWorkflowModule({
 		paymentReceiptSelectionPersistenceKey,
 		selectedDocumentUsesPaymentReceiptSelection,
 		selectedPaymentReceiptIds,
-		eligiblePaymentReceiptPayments.map,
+		eligiblePaymentReceiptIdsKey,
 	]);
 
 	useEffect(() => {
@@ -3546,12 +3550,13 @@ export function useDocumentWorkflowModule({
 		selectedEligibleTaxPayments,
 		selectedPaymentReceiptIdSet,
 		selectedPaymentReceiptPayments,
-		selectedPaymentReceiptTotalRub: _selectedPaymentReceiptTotalRub,
+		selectedPaymentReceiptTotalRub,
 		selectedRefundCorrectionPayment: _selectedRefundCorrectionPayment,
 		selectedReleaseSourceRequestDocumentId,
+		selectedTaxDocumentPayerInn,
 		selectedTaxDocumentPayerKey,
 		selectedTaxPaymentIdSet,
-		selectedTaxPaymentTotalRub: _selectedTaxPaymentTotalRub,
+		selectedTaxPaymentTotalRub,
 		treatmentAcceptancePlannedTotalRub,
 		treatmentEstimatePatientOrPayerFullNameValue:
 			_treatmentEstimatePatientOrPayerFullNameValue,

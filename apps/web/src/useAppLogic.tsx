@@ -2970,12 +2970,8 @@ export function useAppLogic(): any {
 		return () => {
 			cancelled = true;
 		};
-	}, [
-		activeOrganizationId,
-		applyDicomWorkbenchManifest,
-		loadDicomWorkbenchBundles,
-		setDicomWorkbenchLocalSavedAt,
-	]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeOrganizationId, setDicomWorkbenchLocalSavedAt]);
 
 	useEffect(() => {
 		const organizationId = activeOrganizationId?.trim() ?? "";
