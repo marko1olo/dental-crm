@@ -172,6 +172,7 @@ import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule
 import { useDocumentWorkflowModule } from "./hooks/domains/useDocumentWorkflowModule";
 import { useFinanceLogic } from "./hooks/domains/useFinanceLogic";
 import { useImagingLogic } from "./hooks/domains/useImagingLogic";
+import { useOnboardingLogic } from "./hooks/domains/useOnboardingLogic";
 import { useImagingQueries } from "./hooks/domains/useImagingQueries";
 import { useMigrationQueries } from "./hooks/domains/useMigrationQueries";
 import { usePatientIntakeLogic } from "./hooks/domains/usePatientIntakeLogic";
@@ -757,9 +758,6 @@ export function useAppLogic(): any {
 	const clinicProfileDraftHydratedRef = useRef(false);
 	const clinicProfileDraftRef = useRef<ClinicProfileDraft>(
 		emptyClinicProfileDraft(),
-	);
-	const onboardingDismissalHydratedOrganizationIdRef = useRef<string | null>(
-		null,
 	);
 	/*
 	 * Последняя карточка, о которой уже отправлена отметка просмотра.
@@ -1932,155 +1930,6 @@ export function useAppLogic(): any {
 		],
 	);
 
-	function buildOnboardingFirstAppointmentIssues(): string[] {
-		if (!clinicProfileDraft) return [];
-		const issues: string[] = [];
-		const requiredClinicDraftFields: Array<[string, string]> = [
-			["название клиники", clinicProfileDraft.clinicName],
-			["телефон клиники", clinicProfileDraft.phone],
-			["часовой пояс", clinicProfileDraft.timezone],
-		];
-		for (const [label, value] of requiredClinicDraftFields) {
-			if (!value.trim()) issues.push(label);
-		}
-		const activeStaff =
-			(dashboard?.clinicSettings?.staff || []).filter(
-				(member) => member.active,
-			) ?? [];
-		const activeDoctors = activeStaff.filter(
-			(member) => member.role === "doctor" || member.role === "owner",
-		);
-		const activeAssistants = activeStaff.filter(
-			(member) => member.role === "assistant",
-		);
-		const activeChairs =
-			(dashboard?.clinicSettings?.chairs || []).filter(
-				(chair) => chair.active,
-			) ?? [];
-		if (!activeDoctors.length) issues.push("врач для первого приема");
-		if (!activeDoctors.some((member) => member.canSignMedicalRecords))
-			issues.push("врач с правом подписи ЭМК");
-		if (!activeChairs.length) issues.push("кресло / кабинет");
-		if (
-			dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" &&
-			!activeAssistants.length
-		)
-			issues.push("ассистент");
-		const activeAppointmentReadiness = dashboard?.activeVisit?.appointmentId
-			? dashboard.appointmentReadiness?.find(
-					(readiness) =>
-						readiness.appointmentId === dashboard?.activeVisit?.appointmentId,
-				)
-			: null;
-		const activeAppointmentBlockingChecks =
-			(activeAppointmentReadiness?.checks || []).filter(
-				(check) =>
-					(check.key === "team" || check.key === "schedule") && !check.ready,
-			) ?? [];
-		for (const check of activeAppointmentBlockingChecks) {
-			issues.push(`${check.title.toLocaleLowerCase("ru-RU")}: ${check.detail}`);
-		}
-		return issues;
-	}
-
-	function buildOnboardingDocumentReadinessIssues(): string[] {
-		if (!clinicProfileDraft) return [];
-		const issues: string[] = [];
-		const requiredDocumentDraftFields: Array<[string, string]> = [
-			["юридическое наименование", clinicProfileDraft.legalName],
-			["ИНН", clinicProfileDraft.inn],
-			["адрес", clinicProfileDraft.address],
-			["номер медицинской лицензии", clinicProfileDraft.medicalLicenseNumber],
-			["дата медицинской лицензии", clinicProfileDraft.medicalLicenseIssuedAt],
-			["орган, выдавший лицензию", clinicProfileDraft.medicalLicenseIssuer],
-		];
-		for (const [label, value] of requiredDocumentDraftFields) {
-			if (!value.trim()) issues.push(label);
-		}
-		return issues;
-	}
-
-	function _buildOnboardingReadinessIssues(): string[] {
-		return [
-			...buildOnboardingFirstAppointmentIssues(),
-			...buildOnboardingDocumentReadinessIssues(),
-		];
-	}
-
-	function buildOnboardingTelegramRecommendations(): string[] {
-		const recommendations: string[] = [];
-		if (telegramModeDraft === "disabled")
-			recommendations.push("включить режим Telegram");
-		if (!telegramBotUsernameDraft.trim() && !telegramOwnBotUsernameDraft.trim())
-			recommendations.push("указать имя Telegram-бота");
-		if (!telegramPatientPortalBaseUrlDraft.trim())
-			recommendations.push("добавить адрес портала пациента");
-		if (!telegramReviewUrlDraft.trim())
-			recommendations.push("добавить ссылку для оценки клиники");
-		if (!telegramMapsUrlDraft.trim())
-			recommendations.push("добавить ссылку на карточку клиники на картах");
-		return recommendations;
-	}
-
-	function focusOnboardingIssue(issues: string[]): void {
-		if (
-			issues.some((issue) =>
-				[
-					"врач для первого приема",
-					"врач с правом подписи ЭМК",
-					"кресло / кабинет",
-					"ассистент",
-				].includes(issue),
-			)
-		) {
-			setOnboardingStep("team");
-			return;
-		}
-		if (
-			issues.some((issue) =>
-				["название клиники", "телефон клиники", "часовой пояс"].includes(issue),
-			)
-		) {
-			setOnboardingStep("clinic");
-			return;
-		}
-		if (
-			issues.some((issue) =>
-				[
-					"юридическое наименование",
-					"ИНН",
-					"адрес",
-					"номер медицинской лицензии",
-					"дата медицинской лицензии",
-					"орган, выдавший лицензию",
-				].includes(issue),
-			)
-		) {
-			setOnboardingStep("legal");
-			return;
-		}
-		if (
-			issues.some(
-				(issue) =>
-					issue.includes("Telegram") ||
-					issue.includes("бот") ||
-					issue.includes("портал") ||
-					issue.includes("оценки") ||
-					issue.includes("картах"),
-			)
-		) {
-			setOnboardingStep("telegram");
-		}
-	}
-
-	function assertOnboardingReadyForFinish(): boolean {
-		const issues = buildOnboardingFirstAppointmentIssues();
-		if (!issues.length) return true;
-		focusOnboardingIssue(issues);
-		setError(`Перед первым рабочим экраном заполните: ${issues.join(", ")}.`);
-		return false;
-	}
-
 	function currentUiPreferencesInput(): UiPreferencesInput {
 		return {
 			uiLanguage,
@@ -2196,160 +2045,6 @@ export function useAppLogic(): any {
 					delayMs: pending.savedAt === preferences.savedAt ? 5000 : 0,
 				});
 		}
-	}
-
-	async function dismissOnboarding() {
-		if (!assertOnboardingReadyForFinish()) return;
-		if (!(await clinicSettings.saveClinicProfileIfDirty())) return;
-		if (!(await saveOnboardingSchedulesIfDirty())) return;
-		if (telegramSettingsDirty && !(await saveTelegramSettings())) return;
-		const previousPreferencesInput = currentUiPreferencesInput();
-		const dismissalSavedAt = new Date().toISOString();
-		const savedPreferences: UiPreferences = {
-			version: 1,
-			...previousPreferencesInput,
-			onboardingDismissed: true,
-			onboardingDismissedAt: dismissalSavedAt,
-			onboardingDraftMode: false,
-			savedAt: dismissalSavedAt,
-		};
-		if (uiPreferencesServerReadyRef.current) {
-			try {
-				await saveServerUiPreferences(
-					savedPreferences,
-					settingsAdminSecretSession,
-				);
-				pendingUiPreferencesSyncRef.current = null;
-				setUiPreferencesSyncError(null);
-			} catch (preferencesError) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(preferencesError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				const message = uiPreferencesSyncErrorMessage(preferencesError);
-				pendingUiPreferencesSyncRef.current = null;
-				setUiPreferencesSyncError(message);
-				setError(message);
-				return;
-			}
-		}
-		if (!persistUiPreferences(savedPreferences)) {
-			const message =
-				"Настройки интерфейса не сохранены: браузер заблокировал локальное хранилище.";
-			setUiPreferencesSyncError(message);
-			setError(message);
-			return;
-		}
-		const dismissal = saveOnboardingDismissed(
-			true,
-			dismissalSavedAt,
-			false,
-			dashboard?.clinicSettings?.profile?.organizationId ?? null,
-		);
-		setOnboardingDismissed(true);
-		setOnboardingDismissedAt(dismissal.savedAt);
-		setOnboardingDraftMode(false);
-	}
-
-	async function continueOnboardingInDraftMode(targetView?: AppView) {
-		if (!(await clinicSettings.saveClinicProfileIfDirty())) return;
-		if (!(await saveOnboardingSchedulesIfDirty())) return;
-		if (
-			onboardingStep === "telegram" &&
-			telegramSettingsDirty &&
-			!(await saveTelegramSettings())
-		)
-			return;
-		const dismissalSavedAt = new Date().toISOString();
-		const savedPreferences: UiPreferences = {
-			version: 1,
-			...currentUiPreferencesInput(),
-			onboardingDismissed: true,
-			onboardingDismissedAt: dismissalSavedAt,
-			onboardingDraftMode: true,
-			savedAt: dismissalSavedAt,
-		};
-		if (!persistUiPreferences(savedPreferences)) {
-			const message =
-				"Настройки интерфейса не сохранены: браузер заблокировал локальное хранилище.";
-			setUiPreferencesSyncError(message);
-			setError(message);
-			return;
-		}
-		if (uiPreferencesServerReadyRef.current) {
-			try {
-				await saveServerUiPreferences(
-					savedPreferences,
-					settingsAdminSecretSession,
-				);
-				setUiPreferencesSyncError(null);
-			} catch (preferencesError) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(preferencesError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				queueUiPreferencesServerSync(savedPreferences, { delayMs: 5000 });
-				setUiPreferencesSyncError(
-					uiPreferencesSyncErrorMessage(preferencesError),
-				);
-			}
-		}
-		const dismissal = saveOnboardingDismissed(
-			true,
-			dismissalSavedAt,
-			true,
-			dashboard?.clinicSettings?.profile?.organizationId ?? null,
-		);
-		setOnboardingDismissed(true);
-		setOnboardingDismissedAt(dismissal.savedAt);
-		setOnboardingDraftMode(true);
-		if (targetView && typeof window !== "undefined") {
-			window.location.hash = targetView;
-		}
-	}
-
-	async function moveOnboardingTo(step: OnboardingStep) {
-		if (step === "done" && !assertOnboardingReadyForFinish()) return;
-		if (!(await clinicSettings.saveClinicProfileIfDirty())) return;
-		if (!(await saveOnboardingSchedulesIfDirty())) return;
-		if (
-			onboardingStep === "telegram" &&
-			telegramSettingsDirty &&
-			!(await saveTelegramSettings())
-		)
-			return;
-		setOnboardingStep(step);
-	}
-
-	function reopenOnboarding() {
-		const dismissal = saveOnboardingDismissed(
-			false,
-			new Date().toISOString(),
-			false,
-			dashboard?.clinicSettings?.profile?.organizationId ?? null,
-		);
-		setOnboardingDismissed(false);
-		setOnboardingDismissedAt(dismissal.savedAt);
-		setOnboardingStep("intro");
-		setOnboardingDraftMode(false);
-		setOnboardingGuideExpanded(true);
-		setCurrentView("settings");
-		setSettingsTab("clinic");
-		window.location.hash = "settings/clinic";
-	}
-
-	function openOnboardingGuide(step?: OnboardingStep) {
-		if (step) setOnboardingStep(step);
-		setOnboardingGuideExpanded(true);
-		setCurrentView("settings");
-		setSettingsTab("clinic");
-		window.location.hash = "settings/clinic";
 	}
 
 	const loadPersistenceHealth = useCallback(
@@ -2790,42 +2485,6 @@ export function useAppLogic(): any {
 				);
 			});
 	}, [selectedPatientId, dashboard, auth.denteClinicalMutationHeaders]);
-
-	useEffect(() => {
-		const organizationId =
-			dashboard?.clinicSettings?.profile?.organizationId?.trim() ?? "";
-		if (
-			!uiPreferencesHydrated ||
-			!organizationId ||
-			onboardingDismissalHydratedOrganizationIdRef.current === organizationId
-		)
-			return;
-		onboardingDismissalHydratedOrganizationIdRef.current = organizationId;
-		const scopedDismissal = loadOnboardingDismissalState(organizationId);
-		if (!scopedDismissal?.savedAt) return;
-		const preferenceDismissedAt =
-			onboardingDismissedAt ?? loadUiPreferences().savedAt;
-		if (
-			preferenceDismissedAt &&
-			scopedDismissal.savedAt < preferenceDismissedAt
-		)
-			return;
-		setOnboardingDismissed(scopedDismissal.dismissed);
-		setOnboardingDismissedAt(scopedDismissal.savedAt);
-		setOnboardingDraftMode(
-			scopedDismissal.dismissed ? scopedDismissal.draftMode : false,
-		);
-		if (!scopedDismissal.dismissed) setOnboardingStep("intro");
-	}, [
-		dashboard?.clinicSettings?.profile?.organizationId,
-		onboardingDismissedAt,
-		uiPreferencesHydrated,
-		setOnboardingStep,
-		setOnboardingDismissedAt,
-		setOnboardingDraftMode,
-		setOnboardingDismissed,
-	]);
-
 	// biome-ignore lint/correctness/useExhaustiveDependencies: currentUiPreferencesInput/queueUiPreferencesServerSync are plain closures over component state; they are intentionally excluded to prevent infinite re-render loops
 	useEffect(() => {
 		if (!uiPreferencesHydrated) return undefined;
@@ -3775,45 +3434,12 @@ export function useAppLogic(): any {
 	const legalReadinessPercent = dashboard
 		? clinicLegalReadinessPercent(dashboard?.clinicSettings?.profile)
 		: 0;
-	const onboardingFirstAppointmentIssues = dashboard
-		? buildOnboardingFirstAppointmentIssues()
-		: [];
-	const onboardingDocumentReadinessIssues = dashboard
-		? buildOnboardingDocumentReadinessIssues()
-		: [];
-	const onboardingBlockingIssues = onboardingFirstAppointmentIssues;
-	const onboardingTelegramRecommendations = dashboard
-		? buildOnboardingTelegramRecommendations()
-		: [];
-	const onboardingReadyToFinish = onboardingFirstAppointmentIssues.length === 0;
-	const onboardingDocumentsReady =
-		onboardingDocumentReadinessIssues.length === 0;
 	// Флаг «готово к созданию» дополнительно учитывает выполняющийся запрос,
 	// поэтому кнопки гаснут сразу после первого нажатия, а не после ответа сервера.
 	const _newStaffReadyToCreate =
 		newStaffName.trim().length > 0 && !isStaffCreating;
 	const _newChairReadyToCreate =
 		newChairName.trim().length > 0 && !isChairCreating;
-	const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance";
-	const onboardingChairCreateGuidanceId = "onboarding-chair-create-guidance";
-	const onboardingFinishGuidanceId = "onboarding-finish-guidance";
-	const currentOnboardingIndex = Math.max(
-		0,
-		onboardingSteps.findIndex((step) => step.id === onboardingStep),
-	);
-	const previousOnboardingStep =
-		currentOnboardingIndex > 0
-			? onboardingSteps[currentOnboardingIndex - 1]
-			: null;
-	const nextOnboardingStep =
-		currentOnboardingIndex < onboardingSteps.length - 1
-			? onboardingSteps[currentOnboardingIndex + 1]
-			: null;
-	const showFullOnboardingGuide =
-		!onboardingDismissed &&
-		currentView === "settings" &&
-		settingsTab === "clinic" &&
-		onboardingGuideExpanded;
 	const selectedUiLanguageOption =
 		uiLanguageOptions?.find((option) => option.value === uiLanguage) ??
 		defaultUiLanguageOption;
@@ -3956,4 +3582,876 @@ export function useAppLogic(): any {
 		loadDashboard,
 		saveClinicProfileIfDirty: clinicSettings.saveClinicProfileIfDirty,
 	});
+
+	const onboardingLogic = useOnboardingLogic({
+		clinicProfileDraft,
+		dashboard,
+		clinicSettings,
+		saveOnboardingSchedulesIfDirty,
+		telegramModeDraft,
+		telegramBotUsernameDraft,
+		telegramOwnBotUsernameDraft,
+		telegramPatientPortalBaseUrlDraft,
+		telegramReviewUrlDraft,
+		telegramMapsUrlDraft,
+		telegramSettingsDirty,
+		saveTelegramSettings,
+		setError,
+		currentUiPreferencesInput,
+		uiPreferencesServerReadyRef,
+		saveServerUiPreferences,
+		settingsAdminSecretSession,
+		pendingUiPreferencesSyncRef,
+		setUiPreferencesSyncError,
+		showToast,
+		actionFailureToast,
+		uiPreferencesSyncErrorMessage,
+		persistUiPreferences,
+		saveOnboardingDismissed,
+		setCurrentView,
+		setSettingsTab,
+		currentView,
+		settingsTab,
+		queueUiPreferencesServerSync,
+		uiPreferencesHydrated,
+		loadUiPreferences,
+	});
+	const {
+		onboardingFirstAppointmentIssues,
+		onboardingDocumentReadinessIssues,
+		onboardingBlockingIssues,
+		onboardingTelegramRecommendations,
+		onboardingReadyToFinish,
+		onboardingDocumentsReady,
+		onboardingStaffCreateGuidanceId,
+		onboardingChairCreateGuidanceId,
+		onboardingFinishGuidanceId,
+		currentOnboardingIndex,
+		previousOnboardingStep,
+		nextOnboardingStep,
+		showFullOnboardingGuide,
+		buildOnboardingFirstAppointmentIssues,
+		buildOnboardingDocumentReadinessIssues,
+		_buildOnboardingReadinessIssues,
+		buildOnboardingTelegramRecommendations,
+		focusOnboardingIssue,
+		assertOnboardingReadyForFinish,
+		dismissOnboarding,
+		continueOnboardingInDraftMode,
+		moveOnboardingTo,
+		reopenOnboarding,
+		openOnboardingGuide,
+	} = onboardingLogic;
+
+	return {
+		removeClinicalRule: clinicSettings.removeClinicalRule,
+		createServiceCatalogItem: clinicSettings.createServiceCatalogItem,
+		updateServiceCatalogItem: clinicSettings.updateServiceCatalogItem,
+		deleteServiceCatalogItem: clinicSettings.deleteServiceCatalogItem,
+		...pricelistLogic,
+		...onboardingLogic,
+		...documentWorkflow,
+		...dicomWorkbenchModule,
+		...telegramSettingsModule,
+		...telegram,
+		telegram,
+		...auth,
+		/*
+		 * auth отдаётся ещё и целиком, отдельным полем.
+		 *
+		 * Выше он разложен через `...auth`, поэтому denteClinicalReadHeaders и
+		 * соседние функции лежали в контексте по верхнему уровню — а поля `auth`
+		 * не было вовсе. При этом 31 файл достаёт из контекста именно его:
+		 * `const { auth } = useAppLogicContext()`. Большинство прикрывалось
+		 * проверкой `auth ? auth.denteClinicalReadHeaders() : {}` и молча уходило
+		 * на сервер БЕЗ заголовков клиники, полагаясь на общую обёртку fetch.
+		 * Те, кто проверку не поставил, падали: ScannerView.tsx:102 и
+		 * LandingFieldMappingsWidget.tsx:20 звали auth.denteClinicalReadHeaders()
+		 * напрямую.
+		 *
+		 * Поймано обходом разделов после того, как «Стерилизация» появилась в
+		 * списке проверяемых: экран открывался, но дважды писал в консоль
+		 * «Cannot read properties of undefined (reading
+		 * 'denteClinicalReadHeaders')», и журнал автоклава не загружался.
+		 */
+		auth,
+		acceptDraftToVisit,
+		activeAppointment,
+		activeChair,
+		activeDoctor,
+		activePatient,
+		activeVisitPatient,
+		activePatientCallablePhone,
+		activePatientHasCallablePhone,
+		activePatientInsight,
+		activeQueueRole,
+		activeRolePolicy,
+		activeRoleQueue,
+		activeRoleRestrictedSections,
+		activeRoleWritableSections,
+		activeSettingsTabButtonRef,
+		activeSpeechProviderHealth,
+		appendToTranscript,
+		appointmentLabels,
+		appointmentReadinessById,
+		appointmentReadinessLabels,
+		appointmentScheduleDraftFromAppointment,
+		browserContinuity,
+		browserDirectoryInputRef,
+		browserDirectoryPickerAvailable,
+		browserImagingScanProgress,
+		browserMigrationDiscovery,
+		browserMigrationInputRef,
+		browserMigrationScanProgress,
+		browserPickedImagingFolder,
+		buildDraft,
+		buildOfflineDraft,
+		canRetryImagingViewerSave,
+		chairScheduleDirtyIds,
+		chairScheduleDrafts,
+		chairScheduleSaveStates,
+		chairScheduleSavingId,
+		clampMprAxisDeg,
+		clampMprSlabMm,
+		clampMprSliceIndex,
+		clearTranscriptWithUndo,
+		clearedTranscriptSnapshot,
+		clinicModeLabels,
+		clinicProfileDraft,
+		clinicProfileSaveState,
+		clinicPublicLookup,
+		clinicalRuleActionLabels,
+		clinicalRuleSeverityLabels,
+		closeAppointmentEditor,
+		communicationChannelLabels,
+		communicationDocumentTaskActionLabels,
+		communicationIntentLabels,
+		communicationNote,
+		communicationPriorityLabels,
+		communicationSavingTaskId,
+		communicationStatusLabels,
+		completeCommunicationTask,
+		completedActContractReferenceForUi,
+		createAppointmentFromDraft,
+		createClinicalRuleFromSettings:
+			clinicSettings.createClinicalRuleFromSettings,
+		createImagingStudy,
+		ctPlanningActiveQuickActionId,
+		ctPlanningImplantPlan,
+		currentView,
+		dashboard,
+		defaultDicomFirstFrameViewerState,
+		defaultImagingViewerState,
+		dentalMaterialKindLabels,
+		dentalRestorationTypeLabels,
+		describeMprClinicalPresetProjectionFallback,
+		dicomDiagnosticPixelPolicyLabels,
+		dicomExecutionLaneLabels,
+		dicomFirstFramePreview,
+		dicomFirstFrameStatusLabels,
+		dicomFirstFrameViewerState,
+		dicomFolderSeriesScan,
+		dicomFolderWorkupPathLabels,
+		dicomFolderWorkupPlan,
+		dicomGpuClassLabels,
+		dicomLabel,
+		dicomLocalFolderDiscovery,
+		dicomQualityModeLabels,
+		dicomReadinessCheckLabels,
+		dicomRenderCachePlan,
+		dicomRenderMemoryBudgetClassLabels,
+		dicomRuntimeTierLabels,
+		dicomSeriesPreview,
+		dicomSeriesViewerLabels,
+		dicomTextureStrategyLabels,
+		dicomViewerLaunchManifest,
+		dicomViewerLaunchModeLabels,
+		dicomViewerToolStateBundle,
+		dicomViewerWorkbenchManifest,
+		dicomWebCheck,
+		dicomWebEndpointUrl,
+		dicomWebStatusLabels,
+		dicomWorkbenchLocalSavedAt,
+		dicomWorkbenchServerBundle,
+		dicomWorkstationReadiness,
+		documentActionLabels,
+		documentDetectedKindLabel,
+		documentFactoryGroups,
+		documentIngestionQualityLabels,
+		documentIngestionTarget,
+		documentIssueSignatureModeLabels,
+		documentLabels,
+		documentPatient,
+		documentSourceStatusClassNames,
+		documentStatusLabels,
+		documentVoidReasonLabels,
+		downloadPersistenceExport,
+		draft,
+		editingAppointmentId,
+		error,
+		filteredPatients,
+		filteredTelegramOutboxItems,
+		flushPendingSpeechChunks,
+		flushPendingVisitSaves,
+		formatByteSize,
+		formatDateTime,
+		formatMegabytes,
+		formatShortDate,
+		formatSignedMprStep,
+		formatTime,
+		fromDateTimeLocalValue,
+		goToVisitDictation,
+		handleQuickConsult,
+		isQuickConsultLoading,
+		hasVisitTranscriptText,
+		hiddenTelegramOutboxItemCount,
+		imagingConnectorCards,
+		imagingCreateSavingKind,
+		imagingFolderPath,
+		imagingFolderScan,
+		imagingImportCommit,
+		imagingImportPreview,
+		imagingImportSourceKind,
+		imagingImportText,
+		imagingKindFilter,
+		imagingKindLabels,
+		imagingPreviewSource,
+		imagingSourceChoices,
+		imagingSourceDetails,
+		imagingSourceLabels,
+		imagingViewerActiveTool,
+		imagingViewerAnnotations,
+		imagingViewerCapabilities,
+		imagingViewerHref,
+		recentPatientViewsVersion,
+		imagingViewerNote,
+		imagingViewerNoteMissingId,
+		imagingViewerNoteReady,
+		imagingViewerRetryMissingId,
+		imagingViewerSaveDetail,
+		imagingViewerSaveState,
+		imagingViewerSaveTitle,
+		imagingViewerSessionReady,
+		imagingViewerState,
+		imagingViewerToolLabels,
+		importCommit,
+		importIntake,
+		importPreview,
+		importSourceKind,
+		importSourceLabels,
+		importText,
+		ingestionTargetLabels,
+		integrationCapabilityLabels,
+		integrationCategoryLabels,
+		integrationStatusLabels,
+		isBrowserImagingFolderPicking,
+		isBrowserMigrationScanning,
+		isClinicPublicLookupLoading,
+		isClinicalRuleSaving,
+		isDicomFirstFramePreviewing,
+		isDicomFolderWorkupPlanning,
+		isDicomLocalDiscovering,
+		isDicomManifestBuilding,
+		isDicomRenderCachePlanning,
+		isDicomSeriesPreviewLoading,
+		isDicomToolStateBuilding,
+		isDicomWebChecking,
+		isDicomWorkbenchBuilding,
+		isDicomWorkbenchReconnecting,
+		isDicomWorkbenchServerSaving,
+		isDicomWorkstationChecking,
+		isDraftAccepting,
+		isDraftLoading,
+		isImagingFolderScanning,
+		isImagingImportCommitting,
+		isImagingImportLoading,
+		isImportCommitting,
+		isImportDictating,
+		isImportLoading,
+		isLocalDicomOperationActive,
+		isLocalImagingOrganizing,
+		isMigrationAutopilotLoading,
+		isMigrationHandoffReportLoading,
+		isMigrationSourceDiscovering,
+		isMigrationSourceProbeLoading,
+		isMigrationSourceWorkupLoading,
+		isOnline,
+		isPaymentSaving,
+		isPendingVisitSyncing,
+		isPersistenceExporting,
+		isRecognitionLoading,
+		isServerVoiceRecording,
+		isSmartImportCommitting,
+		isSmartImportLoading,
+		isSmartReportLoading,
+		isSmartSafeReportLoading,
+		isTelegramChatLinksLoadingMore,
+		isTelegramLinkCodesLoadingMore,
+		isTelegramLinkCreating,
+		isTelegramLoading,
+		isTelegramOutboxItemDueForUi,
+		isTelegramOutboxLoadingMore,
+		isTelegramSendingDue,
+		isTelegramSettingsSaving,
+		isTranscriptPolishing,
+		isVisitDictating,
+		isVisitNoteDirty,
+		lastLocalSavedAt,
+		lastPendingVisitSaveAt,
+		lastServerDraftSavedAt,
+		lastVisitSaveReceipt,
+		legalMissingFields,
+		legalReadinessPercent,
+		loadLocalBridgeUsePlans,
+		loadPersistenceHealth,
+		loadPersistenceIntegrity,
+		localBridgeReadiness,
+		localBridgeStatusLabels,
+		localBridgeUsePathLabels,
+		localBridgeUsePlans,
+		localDraftWasRestored,
+		localImagingFolderDraft,
+		localImagingModelRoleLabels,
+		localImagingOrganizer,
+		localImagingOrganizerActionLabels,
+		medicalDocumentReleaseChannelLabels,
+		migrationAutopilot,
+		migrationSourceDiscovery,
+		migrationSourceProbe,
+		migrationSourceWorkup,
+		money,
+		mprAxisBounds,
+		mprAxisDeg,
+		mprAxisNudgeDeg,
+		mprAxisPresetDeg,
+		mprCacheModeLabels,
+		mprClinicalPresets,
+		mprCrosshairEnabled,
+		mprLinkedPlanesEnabled,
+		mprLoadStrategyLabels,
+		mprProjection,
+		mprProjectionLabels,
+		mprResourceTierLabels,
+		mprSeriesRequiredProjectionLabel,
+		mprSlabBounds,
+		mprSlabMm,
+		mprSlabNudgeMm,
+		mprSlabPresetMm,
+		mprSliceIndex,
+		mprSliceIndexFromFraction,
+		mprSliceNudgeSteps,
+		mprSlicePresetFractions,
+		mprToolLabels,
+		mprUnavailableProjectionLabel,
+		mprWindowPreset,
+		mprWindowPresetLabels,
+		mprWorkbenchDraftRestored,
+		mprWorkbenchLocalSavedAt,
+		newAppointmentError,
+		newChairHasMicroscope,
+		newChairHasSurgeryKit,
+		newChairHasXraySensor,
+		newChairName,
+		newRuleAction,
+		newRuleBlockedServiceId,
+		newRuleCategory,
+		newRuleCompletedServiceId,
+		newRuleOwnerRole,
+		newRuleRequiredServiceId,
+		newRuleSeverity,
+		newRuleSpecialty,
+		newRuleTitle,
+		newRuleTriggerServiceId,
+		newRuleWarningText,
+		newStaffName,
+		newStaffRole,
+		newStaffSpecialty,
+		normalizeOptionalWorkingDaysDraft,
+		normalizeUiLanguageInput,
+		normalizedAppointmentStatus,
+		normalizedAppointmentStatusFilter,
+		normalizedClinicalRuleAction,
+		normalizedClinicalRuleSeverity,
+		normalizedDentalSpecialty,
+		normalizedDocumentIssueSignatureMode,
+		normalizedDocumentKind,
+		normalizedDocumentVoidReasonCode,
+		normalizedMedicalDocumentReleaseChannel,
+		normalizedOutpatient025uDemographicCode,
+		normalizedPatientIntakePregnancyStatus,
+		normalizedPaymentRefundCorrectionAction,
+		normalizedPaymentRefundCorrectionMethod,
+		normalizedPostVisitCareTopic,
+		normalizedProcedureSpecificConsentProcedure,
+		normalizedServiceCategory,
+		normalizedStaffRole,
+		normalizedTaxApplicationDeliveryChannel,
+		normalizedTaxApplicationForm,
+		normalizedTaxApplicationRelationshipSelect,
+		normalizedTelegramBotMode,
+		normalizedTelegramLinkSubjectType,
+		normalizedTelegramOutboxStatusFilter,
+		normalizedTelegramOutboxTemplateFilter,
+		normalizedTelegramPrivacyMode,
+		normalizedTreatmentPlanAcceptanceVariant,
+		normalizedXrayPregnancyStatus,
+		normalizedXrayPriority,
+		normalizedXrayStudyType,
+		ohifBaseUrl,
+		onboardingDismissed,
+		onboardingDraftMode,
+		onboardingStep,
+		onboardingSteps,
+		onboardingTelegramVisualCardKeys,
+		openAppointmentEditor,
+		openScheduleWarning,
+		openVisitWarningAction,
+		patientAdministrativeProfileValidationMessage,
+		patientInsightById,
+		patientInsightRiskLabels,
+		patientIntakePregnancyStatusOptions,
+		patientName,
+		paymentAmount,
+		paymentMutationIdRef,
+		paymentFeedback,
+		paymentFiscalCashierName,
+		paymentFiscalFd,
+		paymentFiscalFn,
+		paymentFiscalFpd,
+		paymentFiscalReceiptIssuedAt,
+		paymentFiscalReceiptLabelForUi,
+		paymentFiscalReceiptNumber,
+		paymentFiscalReceiptUrl,
+		paymentMethod,
+		paymentMethodLabels,
+		paymentPatientContextMessage,
+		paymentPatientContextReady,
+		paymentPayerBirthDate,
+		paymentPayerFullName,
+		paymentPayerIdentityDocument,
+		paymentPayerInn,
+		paymentPayerRelationship,
+		paymentTaxDeductionCode,
+		pendingSpeechChunkCount,
+		pendingVisitSaveCount,
+		persistenceHealth,
+		persistenceIntegrity,
+		photoVideoMaterialOptions,
+		policyAuditEventLabels,
+		polishTranscript,
+		postVisitCareTopicOptions,
+
+		primaryVisitWarning,
+		procedureSpecificConsentProcedureOptions,
+		query,
+		recognitionJob,
+		recognitionKind,
+		recognitionPresets,
+		recognitionTarget,
+		recognitionTargetLabels,
+		recognitionText,
+		recommendedActionPriorityLabels,
+		recordPayment,
+		refreshBrowserContinuity,
+		refreshSpeechRuntime,
+		releaseProtectionNote,
+		requestBrowserStoragePersistence,
+		resetNewAppointmentDraft,
+		roleFocusOrder,
+		saveAppointmentSchedule,
+		saveChairSchedule,
+		saveClinicProfileFromDraft: clinicSettings.saveClinicProfileFromDraft,
+		savePatientAdministrativeProfile,
+		savePatientCore,
+		createPatient,
+		saveStaffSchedule,
+		scenarioPriorityLabels,
+		scenarioStrategyLabels,
+		scheduleAdminSecretDraft,
+		scheduleAdminSecretSession,
+		scrollToVisitArea,
+		selectedImagingStudy,
+		selectedPatient,
+		selectedSpecialty,
+		selectedUiLanguageOption,
+		selectedWorkspaceRole,
+		serverDraftSyncState,
+		serviceCategoryLabels,
+		serviceTitle,
+		setClearedTranscriptSnapshot,
+		setCommunicationNote,
+		setCtPlanningActiveQuickActionId,
+		setCtPlanningImplantPlan,
+		setCurrentView,
+		setDicomFirstFramePreview,
+		setDicomFirstFrameViewerState,
+		setDicomFolderSeriesScan,
+		setDicomFolderWorkupPlan,
+		setDicomLocalFolderDiscovery,
+		setDicomRenderCachePlan,
+		setDicomSeriesPreview,
+		setDicomViewerLaunchManifest,
+		setDicomViewerToolStateBundle,
+		setDicomViewerWorkbenchManifest,
+		setDicomWebCheck,
+		setDicomWebEndpointUrl,
+		setDicomWorkbenchLocalSavedAt,
+		setDicomWorkstationReadiness,
+		setDocumentIngestionTarget,
+		setError,
+		setImagingFolderPath,
+		setImagingFolderScan,
+		setImagingImportCommit,
+		setImagingImportPreview,
+		setImagingImportSourceKind,
+		setImagingImportText,
+		setImagingKindFilter,
+		setImagingViewerActiveTool,
+		setImagingViewerNote,
+		setImagingViewerState,
+		setImportCommit,
+		setImportIntake,
+		setImportPreview,
+		setImportSourceKind,
+		setImportText,
+		setLocalImagingOrganizer,
+		setMprAxisDeg,
+		setMprCrosshairEnabled,
+		setMprLinkedPlanesEnabled,
+		setMprProjection,
+		setMprSlabMm,
+		setMprSliceIndex,
+		setMprWindowPreset,
+		setNewChairHasMicroscope,
+		setNewChairHasSurgeryKit,
+		setNewChairHasXraySensor,
+		setNewChairName,
+		setNewRuleAction,
+		setNewRuleBlockedServiceId,
+		setNewRuleCategory,
+		setNewRuleCompletedServiceId,
+		setNewRuleOwnerRole,
+		setNewRuleRequiredServiceId,
+		setNewRuleSeverity,
+		setNewRuleSpecialty,
+		setNewRuleTitle,
+		setNewRuleTriggerServiceId,
+		setNewRuleWarningText,
+		setNewStaffName,
+		setNewStaffRole,
+		setNewStaffSpecialty,
+		setOhifBaseUrl,
+		setPaymentAmount,
+		setPaymentFiscalCashierName,
+		setPaymentFiscalFd,
+		setPaymentFiscalFn,
+		setPaymentFiscalFpd,
+		setPaymentFiscalReceiptIssuedAt,
+		setPaymentFiscalReceiptNumber,
+		setPaymentFiscalReceiptUrl,
+		setPaymentMethod,
+		setPaymentPayerBirthDate,
+		setPaymentPayerFullName,
+		setPaymentPayerIdentityDocument,
+		setPaymentPayerInn,
+		setPaymentPayerRelationship,
+		setPaymentTaxDeductionCode,
+		setPaymentFeedback,
+		setQuery,
+		setRecognitionJob,
+		setRecognitionText,
+		setReleaseProtectionNote,
+		setSelectedImagingStudyId,
+		setSelectedProtocolId,
+		setSelectedSpecialty,
+		setSelectedWorkspaceRole,
+		setSettingsAdminSecretDraft,
+		setSettingsTab,
+		setSmartImportCommit,
+		setSmartImportMode,
+		setSmartImportPreview,
+		setSmartImportText,
+		setTelegramAdminSecretDraft,
+		setTelegramBotUsernameDraft,
+		setTelegramHandoffNotice,
+		setTelegramMapsUrlDraft,
+		setTelegramPatientPortalBaseUrlDraft,
+		setTelegramPrivacyModeDraft,
+		setTelegramReminderLeadTimesDraft,
+		setTelegramReviewRequestDelayDraft,
+		setTelegramReviewUrlDraft,
+		setTelegramTokenTtlDraft,
+		setTelegramWelcomeImageUrlDraft,
+		setTranscript,
+		setUiLanguage,
+		setUiPreferencesSyncError,
+		settingsAdminSecretDraft,
+		settingsAdminSecretSession,
+		settingsTab,
+		settingsTabs,
+		showAdministrationTopActions,
+		showDoctorVisitShortcut,
+		smartImportCommit,
+		smartImportMode,
+		smartImportModeLabels,
+		smartImportPreview,
+		smartImportText,
+		sortedAppointments,
+		specialtyLabels,
+		speechGatewayCanUpload,
+		speechGatewayHealthReport,
+		speechGatewayStatus,
+		speechProviderConnectorLabels,
+		speechProviderHealthById,
+		speechProviderHealthLabels,
+		speechProviderModeLabels,
+		speechProviderRuntimeById,
+		speechProviderSelectionLabels,
+		speechProviderStatusLabels,
+		speechRecordingPathLabels,
+		speechRecordingRecovery,
+		speechRecordingStrategy,
+		speechRecoveryStateLabels,
+		speechStatusNote,
+		staffRoleLabels,
+		staffScheduleDirtyIds,
+		staffScheduleDraftFromWorkingHours,
+		staffScheduleDrafts,
+		staffScheduleSaveStates,
+		staffScheduleSavingId,
+		startImportDictation,
+		startVisitDictation,
+		structuredPayloadDocumentKinds,
+		taxApplicationDeliveryChannelOptions,
+		taxApplicationFormOptions,
+		taxApplicationRelationshipOptions,
+		telegramAdminSecretDraft,
+		telegramAdminSecretSession,
+		telegramAllowVoiceIntakeDraft,
+		telegramBotConfigId,
+		telegramBotUsernameDraft,
+		telegramChatLinkLedger,
+		telegramChatLinks,
+		telegramClassificationLabels,
+		telegramDeliveryStatusLabels,
+		telegramFeatureHelp,
+		telegramFeatureOptions,
+		telegramFeaturePlan,
+		telegramHandoffNotice,
+		telegramHumanMessage,
+		telegramInlineButtonKindLabels,
+		telegramInlineButtonRowsFromReplyMarkup,
+		telegramLinkActionState,
+		telegramLinkCode,
+		telegramLinkCodeLedger,
+		telegramLinkCodeStatusLabels,
+		telegramLinkCodes,
+		telegramLinkStaffId,
+		telegramLinkStaffOptions,
+		telegramLinkSubjectType,
+		telegramMapsUrlDraft,
+		telegramModeDraft,
+		telegramModeHints,
+		telegramModeLabels,
+		telegramOutbox,
+		telegramOutboxStatusFilter,
+		telegramOutboxStatusFilterLabels,
+		telegramOutboxStatusFilterOptions,
+		telegramOutboxTemplateFilter,
+		telegramOutboxTemplateFilterLabels,
+		telegramOutboxTemplateFilterOptions,
+		telegramOwnBotUsernameDraft,
+		telegramPatientPortalBaseUrlDraft,
+		telegramPostVisitCheckupDelayDrafts,
+		telegramPostVisitCheckupDelayFields,
+		telegramPreview,
+		telegramPrivacyModeDraft,
+		telegramPrivacyModeHints,
+		telegramPrivacyModeLabels,
+		telegramQrSvgToDataUrl,
+		telegramReminderLeadTimesDraft,
+		telegramReviewRequestDelayDraft,
+		telegramReviewUrlDraft,
+		telegramRevokingLinkId,
+		telegramSendingItemId,
+		telegramSettingsDirty,
+		telegramSettingsSaveError,
+		telegramSettingsSaveState,
+		telegramStaffEscalationChannelDraft,
+		telegramStatus,
+		telegramSubjectName,
+		telegramTemplateLabels,
+		telegramTokenTtlDraft,
+		telegramVisualCardFields,
+		telegramVisualCardUrlDrafts,
+		telegramWebhookBaseUrlDraft,
+		telegramWelcomeImageUrlDraft,
+		toDateTimeLocalValue,
+		toggleChairWorkingDay: clinicSettings.toggleChairWorkingDay,
+		toggleClinicWorkingDay: clinicSettings.toggleClinicWorkingDay,
+		toggleStaffWorkingDay: clinicSettings.toggleStaffWorkingDay,
+		toothRows,
+		toothStateByCode: visitToothStateByCode,
+		setToothState,
+		transcript,
+		treatmentStatusLabels,
+		uiLanguage,
+		uiLanguageOptions,
+		uiPreferencesSyncError,
+		undoTranscriptClear,
+		updateAppointmentScheduleDraft,
+		updateChairScheduleDay,
+		updateChairScheduleDraft,
+		updateClinicProfileDraft: clinicSettings.updateClinicProfileDraft,
+		updateNewAppointmentDraft,
+		updatePatientAdministrativeProfileDraft,
+		updatePatientCoreDraft,
+		updateStaffScheduleDay,
+		updateStaffScheduleDraft,
+		updateVisitNoteField,
+		viewLabels,
+		visibleRecommendedActions,
+		visibleScheduleSuggestions,
+		visibleTelegramOutboxItems,
+		visitCloseChecklist,
+		visitDraftBuildMissingSteps,
+		visitDraftMissingFieldLabel,
+		visitDraftQualityLabels,
+		visitDraftReadyToBuild,
+		visitDraftSignalLabel,
+		visitDraftUserEditedRef,
+		visitNoteAcceptMissingSteps,
+		visitNoteActionLabel,
+		visitNoteFieldDefinitions,
+		visitNoteForm,
+		visitNoteReadyToAccept,
+		visitNoteStatusLabel,
+		visitSaveReceiptText,
+		visitWarnings,
+		warningSeverityLabels,
+		weekdayOptions,
+		workspaceScopeLabels,
+		xrayPregnancyStatusOptions,
+		xrayStudyTypeOptions,
+		accessUnlockRequired,
+		accessUnlockMessage,
+		clinicalAdminSecretDraft,
+		setClinicalAdminSecretDraft,
+		loadDashboard,
+		operatorWorkflowFailureMessage,
+		...clinicalVisitLogic,
+		...staffSettings,
+		...patientIntakeLogic,
+		...migrationQueries,
+		...imagingQueries,
+		...communicationsQueries,
+		// Обёртки previewImport/commitImport ЗАМЕЩАЮТ голые хуки из ...migrationQueries
+		previewImport,
+		commitImport,
+		activeCommunicationTasks: null,
+		activeImagingStudies: null,
+		activePayments,
+		activeTreatmentPlanItems,
+		addImagingViewerNoteAnnotation: null,
+		address: documentPatient?.administrativeProfile?.registrationAddress ?? "",
+		applyCtPlanningQuickAction: null,
+		applyMprClinicalPreset: null,
+		applyNearestMprClinicalPreset: null,
+		applyProtocolTemplate: null,
+		applyProtocolTemplateDirectly: null,
+		assembleSpeechRecording: async () => {},
+		browserCanRequestPersistentStorage: null,
+		browserContinuityChecks: null,
+		browserContinuityCritical: null,
+		browserContinuityState: "",
+		browserContinuityValue: null,
+		browserImagingFileInputAccept: ".dcm,.dicom,.zip,.png,.jpg,.jpeg,.stl,.obj",
+		browserImagingFilesInputRef: { current: null },
+		cancelBrowserImagingFolderScan: false,
+		cancelBrowserMigrationScan: false,
+		cbctWorkbenchPlanes: null,
+		cbctWorkbenchProjections: null,
+		cbctWorkbenchTools: null,
+		chooseRecognitionPreset: null,
+		clearBrowserPickedImagingFolderPreview: null,
+		clearLocalImagingFolderRecovery: null,
+		clinic: dashboard?.clinicSettings?.profile ?? null,
+		clinicalMutationHeaders: auth.denteClinicalMutationHeaders,
+		clinicalReadHeaders: auth.denteClinicalReadHeaders,
+		clinicName: dashboard?.clinicSettings?.profile?.clinicName ?? "",
+		createCtPlanningArtifact: null,
+		ctPlanningAnnotationRefs: { current: null },
+		dictationQuickPhrases: null,
+		emptyDictationVoiceActionLabel: null,
+		firstName: documentPatient?.fullName?.split(" ")[1] ?? "",
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+		handleMprKeyboardNavigation: async (..._args: any[]) => {},
+		imagingComparisonCandidates: [],
+		imagingKindOptions: [],
+		imagingViewerImageStyle: null,
+		inn: documentPatient?.administrativeProfile?.inn ?? "",
+		lastName: documentPatient?.fullName?.split(" ")[0] ?? "",
+		loadSpeechRecordingRecovery: async () => {},
+		localBridgeStatusState: "",
+		loyaltyTier: "standard",
+		middleName: documentPatient?.fullName?.split(" ")[2] ?? "",
+		mostLoadedResource: null,
+		mprActiveProjectionLabel: null,
+		mprActiveProjectionOrientation: null,
+		mprAxisAngleBadge: null,
+		mprAxisDirectionLabel: null,
+		mprAxisGuidance: null,
+		mprAxisRangeValue: null,
+		mprAxisVisualizerLabel: null,
+		mprAxisVisualizerStyle: null,
+		mprClinicalChecklist: null,
+		mprClinicalNextStep: null,
+		mprClinicalPresetButtonClass: null,
+		mprControlsAutoOpen: null,
+		mprControlsReady: null,
+		mprNearestClinicalPreset: null,
+		mprOperatorSummaryCards: [],
+		mprProjectionCompass: null,
+		mprSlabBadge: null,
+		mprSlabRangeValue: null,
+		mprSliceBadge: null,
+		mprSliceLabel: null,
+		mprSliceRangeValue: null,
+		mprWorkbenchSummaryText: null,
+		name: documentPatient?.fullName ?? "",
+		newRulePatientText: newRulePatientText,
+		noShowRisk: "low",
+		patientId: documentPatient?.id ?? "",
+		pendingSpeechFlushActionLabel: null,
+		pendingSpeechFlushActionTitle: "",
+		polishingField: null,
+		polishSingleField: async () => {},
+		prices: dashboard?.serviceCatalog ?? [],
+		renderClinicalToothRowsEditor,
+		resetMprControls: null,
+		retryImagingViewerSessionSave: null,
+		scheduleDateFilter: "",
+		selectedPaymentReceiptTotalRub: 0,
+		selectedProtocolTemplate: null,
+		selectedTaxPaymentTotalRub: 0,
+		setNewRulePatientText: setNewRulePatientText,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+		setScheduleDateFilter: (_date?: any) => {},
+		setSelectedPatientId: setSelectedPatientId,
+		shiftWarnings: null,
+		sortedCommunicationTasks: null,
+		specialtiesWithTemplates: [],
+		specialtyProtocolTemplates: [],
+		speechGatewayActiveProviderIsLocal: null,
+		speechLiveRms: 0,
+		speechRecognitionReady: null,
+		speechTranscriptionBusy: false,
+		startServerVoiceRecording: null,
+		stopServerVoiceRecording: null,
+		visibleImagingStudies: null,
+		visibleVisitSpecialtyFocusOptions: [],
+		visitPrimaryAction: null,
+		visitSafetyCards: [],
+		visitWorkflowSteps: [],
+	};
 }

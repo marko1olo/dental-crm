@@ -287,10 +287,18 @@ const visitDestructured = (node) => {
 	if (
 		ts.isVariableDeclaration(node) &&
 		ts.isObjectBindingPattern(node.name) &&
-		node.initializer &&
-		ts.isIdentifier(node.initializer)
+		node.initializer
 	) {
-		const owner = varToModule.get(node.initializer.text);
+		let owner = null;
+		if (ts.isIdentifier(node.initializer)) {
+			owner = varToModule.get(node.initializer.text);
+		} else if (ts.isCallExpression(node.initializer) && ts.isIdentifier(node.initializer.expression)) {
+			const hook = node.initializer.expression.text;
+			if (importedFrom.has(hook)) {
+				owner = { path: importedFrom.get(hook), hook };
+			}
+		}
+
 		if (owner) {
 			for (const el of node.name.elements) {
 				if (ts.isIdentifier(el.name) && !el.propertyName) {
