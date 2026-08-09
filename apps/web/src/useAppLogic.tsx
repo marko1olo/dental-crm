@@ -5,6 +5,8 @@ import {
 	type DentalPricelistAnalysisResponse,
 	documentFactoryGroups,
 	type ImagingStudyKind,
+	type ImportCommitResponse,
+	type ImportIntakeResponse,
 	type LocalBridgeReadinessResponse,
 	type LocalBridgeUsePlansResponse,
 	type StaffRole,
@@ -1034,6 +1036,130 @@ export function useAppLogic(): any {
 	const migrationQueries = useMigrationQueries({ auth });
 	const imagingQueries = useImagingQueries({ auth });
 	const communicationsQueries = useCommunicationsQueries({ auth });
+
+	/*
+	 * ПРЕДПРОСМОТР ИМПОРТА ПАЦИЕНТОВ: КНОПКА БЫЛА ОТВЯЗАНА ОТ ЭКРАНА.
+	 *
+	 * Что было. `migrationQueries.previewImport` (hooks/domains/useMigrationQueries.ts:114)
+	 * возвращает `Response` и НИЧЕГО не кладёт в хранилище. Кнопка «Проверить»
+	 * (components/settings/SettingsImportsTab.tsx:6226) звала её напрямую как
+	 * onClick, поэтому ответ выбрасывался: `importPreview` во всём дереве
+	 * присваивался только значением `null` (appStore.ts:639 — единственный
+	 * писатель, все вызовы setImportPreview(null)). Разметка предпросмотра
+	 * (SettingsImportsTab.tsx:6254 `typedImportPreview ? …`) не могла показаться
+	 * НИКОГДА, а вместе с ней и кнопка «Импортировать готовые», которая живёт
+	 * внутри этой ветки. Речь о медицинских данных: оператор не видел, сколько
+	 * строк готово, сколько с предупреждением и сколько заблокировано.
+	 *
+	 * Почему зовётся `/intake`, а не `/preview`. Это НЕ обход предпросмотра:
+	 * `/api/imports/patients/intake` (apps/api/src/routes/imports.ts:395)
+	 * вызывает `buildPatientImportIntake`, которая внутри строит тот же самый
+	 * `buildPatientImportPreview` (imports.ts:232) и отдаёт его в поле `preview`
+	 * (importIntakeResponseSchema, packages/shared/src/index.ts:10078). Плюс к
+	 * нему — `normalizedText` и `recognitionNotes`, нужные OCR и диктовке.
+	 * Второй запрос на `/preview` был бы вторым разбором того же текста, поэтому
+	 * ответ intake РАСКЛАДЫВАЕТСЯ на оба состояния, а не дублируется запросом.
+	 *
+	 * Тело разбирается только после проверки ответа: `fetchWithHandling` бросает
+	 * на любой не-2xx, поэтому разбор ниже недостижим для тела отказа.
+	 */
+	const previewImport = useCallback(async () => {
+		const rawText = (importText || "").trim();
+		if (!rawText) {
+			showToast(
+				"Предпросмотр не построен: вставьте список пациентов, OCR журнала или надиктуйте импорт.",
+				"error",
+			);
+			return;
+		}
+		setIsImportLoading(true);
+		try {
+			const res = await migrationQueries.previewImport({
+				sourceName: "manual_input",
+				sourceKind: importSourceKind || "csv_text",
+				rawText,
+			});
+			const intake = (await res.json()) as ImportIntakeResponse;
+			setImportIntake(intake);
+			// Предпросмотр берётся из ответа intake: отдельного запроса он не требует.
+			setImportPreview(intake?.preview ?? null);
+			setImportCommit(null);
+		} catch (e) {
+			logger.error("[import preview] запрос не выполнен", e);
+			setImportIntake(null);
+			setImportPreview(null);
+			showToast(
+				actionFailureToast(
+					"Предпросмотр импорта не построен",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
+		} finally {
+			setIsImportLoading(false);
+		}
+	}, [
+		importText,
+		importSourceKind,
+		migrationQueries,
+		setImportIntake,
+		setImportPreview,
+		setImportCommit,
+		setIsImportLoading,
+	]);
+
+	/*
+	 * Запись в базу разрешена только после ПОКАЗАННОГО предпросмотра: без него
+	 * оператор не видел, что именно приедет, а кнопка коммита уходила в
+	 * `/commit`, который строит предпросмотр заново у себя (imports.ts:454) и
+	 * пишет пациентов. Тот же самый текст передаётся повторно — так требует
+	 * importCommitRequestSchema (= importPreviewRequestSchema).
+	 */
+	const commitImport = useCallback(async () => {
+		const rawText = (importText || "").trim();
+		if (!rawText || !importPreview) {
+			showToast(
+				"Импорт не выполнен: сначала нажмите «Проверить» и посмотрите предпросмотр.",
+				"error",
+			);
+			return;
+		}
+		setIsImportCommitting(true);
+		try {
+			const res = await migrationQueries.commitImport({
+				sourceName: "manual_input",
+				sourceKind: importSourceKind || "csv_text",
+				rawText,
+			});
+			const commit = (await res.json()) as ImportCommitResponse;
+			setImportCommit(commit);
+			// Итог коммита содержит свой предпросмотр — экран показывает его же.
+			setImportPreview(commit?.preview ?? importPreview);
+			showToast(
+				`Импорт выполнен: записано ${commit?.importedCount ?? 0}, пропущено ${commit?.skippedCount ?? 0}.`,
+				"success",
+			);
+		} catch (e) {
+			logger.error("[import commit] запрос не выполнен", e);
+			showToast(
+				actionFailureToast(
+					"Импорт пациентов не выполнен",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
+		} finally {
+			setIsImportCommitting(false);
+		}
+	}, [
+		importText,
+		importSourceKind,
+		importPreview,
+		migrationQueries,
+		setImportCommit,
+		setImportPreview,
+		setIsImportCommitting,
+	]);
 
 	const {
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
@@ -4939,6 +5065,9 @@ export function useAppLogic(): any {
 		...migrationQueries,
 		...imagingQueries,
 		...communicationsQueries,
+		// Обёртки previewImport/commitImport ЗАМЕЩАЮТ голые хуки из ...migrationQueries
+		previewImport,
+		commitImport,
 		activeCommunicationTasks: null,
 		activeImagingStudies: null,
 		activePayments,
