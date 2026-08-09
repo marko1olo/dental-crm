@@ -12632,7 +12632,7 @@ function _storeIssuedDocumentSnapshot(
 	return document;
 }
 
-function _createGeneratedDocument(input: {
+export function createGeneratedDocument(input: {
 	patientId: string;
 	visitId?: string | null | undefined;
 	kind: DocumentKind;
@@ -12846,7 +12846,7 @@ function _findPaymentByClientMutationId(
 	);
 }
 
-function _createPayment(input: CreatePaymentInput): Payment {
+export function createPayment(input: CreatePaymentInput): Payment {
 	const createdAt = new Date().toISOString();
 	assertPaidPaymentFiscalReceiptOperation(input);
 	const fiscalReceipt = normalizeFiscalReceiptDetails(input.fiscalReceipt);
