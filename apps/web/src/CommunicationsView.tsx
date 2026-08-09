@@ -22,7 +22,9 @@ import { MessageDeliveryConsole } from "./components/communications/MessageDeliv
 import { EmptyState } from "./components/EmptyState";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { hasCapability } from "./lib/clinicCapabilities";
+import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
 import { countLabel } from "./lib/russianPlural";
+import { useSettingsStore } from "./store/settingsStore";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
@@ -138,6 +140,28 @@ function CommunicationTaskCard({
 			? (appointments.find((a) => a.id === task.appointmentId) ?? null)
 			: null;
 
+	/*
+	 * Секрет расписания берётся из хранилища настроек напрямую.
+	 *
+	 * ЗАЧЕМ. Маршрут PATCH /api/appointments/:id закрыт охраной
+	 * requireScheduleMutationContext (routes/schedule.ts:665 → :573). Она читает
+	 * заголовок x-dente-admin-secret, и глобальная обёртка fetch его НЕ
+	 * подставляет — этот заголовок клиент обязан слать сам. Без него настоящая
+	 * клиника отвечает 403, и кнопки «Подтвердить приём» и «Отменить приём»
+	 * мертвы. Локально дефект невидим: в .env этой машины секрет закомментирован,
+	 * а лазейки DENTE_CLINICAL_ALLOW_UNGUARDED_* включены и гасят охрану целиком.
+	 * Лазейки живут только пока NODE_ENV !== "production", то есть у заказчика их
+	 * нет. Найдено гейтом check:guarded-headers 2026-08-09.
+	 *
+	 * ПОЧЕМУ ИЗ ХРАНИЛИЩА, А НЕ ЧЕРЕЗ auth.scheduleMutationHeaders(). Канонический
+	 * помощник живёт в useAuthLogic и читает ТО ЖЕ САМОЕ поле того же хранилища
+	 * (useAuthLogic.ts:48,174). Дотянуть его сюда значит протащить пропс через
+	 * useAppLogic и App.tsx; источник данных при этом не изменится ни на байт.
+	 */
+	const scheduleAdminSecretSession = useSettingsStore(
+		(state) => state.scheduleAdminSecretSession,
+	);
+
 	async function handleConfirmAppointment(status: "confirmed" | "cancelled") {
 		if (!task.appointmentId) return;
 		setApptActionLoading(true);
@@ -146,11 +170,23 @@ function CommunicationTaskCard({
 			const res = await fetch(`/api/appointments/${task.appointmentId}`, {
 				method: "PATCH",
 				credentials: "include",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders(
+					{ "Content-Type": "application/json" },
+					scheduleAdminSecretSession,
+				),
 				body: JSON.stringify({ status }),
 			});
 			if (!res.ok) {
-				setApptActionError("Ошибка обновления приёма");
+				/*
+				 * 403 здесь означает не «сеть подвела», а «нет секрета расписания».
+				 * Общая надпись про ошибку обновления отправляла администратора
+				 * искать неисправность не там.
+				 */
+				setApptActionError(
+					res.status === 403
+						? "Нет доступа к изменению расписания: введите секрет расписания в настройках"
+						: `Ошибка обновления приёма (${res.status})`,
+				);
 			} else {
 				setApptActionDone(status);
 			}
