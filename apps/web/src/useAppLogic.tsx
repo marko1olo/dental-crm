@@ -173,6 +173,7 @@ import { useDocumentWorkflowModule } from "./hooks/domains/useDocumentWorkflowMo
 import { useFinanceLogic } from "./hooks/domains/useFinanceLogic";
 import { useImagingLogic } from "./hooks/domains/useImagingLogic";
 import { useOnboardingLogic } from "./hooks/domains/useOnboardingLogic";
+import { useTelegramLogic } from "./hooks/domains/useTelegramLogic";
 import { useImagingQueries } from "./hooks/domains/useImagingQueries";
 import { useMigrationQueries } from "./hooks/domains/useMigrationQueries";
 import { usePatientIntakeLogic } from "./hooks/domains/usePatientIntakeLogic";
@@ -1712,7 +1713,8 @@ export function useAppLogic(): any {
 		applyDicomWorkbenchManifest,
 		loadDicomWorkbenchBundles,
 	} = dicomWorkbenchModule;
-	const telegram = useTelegramModule({
+
+	const telegramLogic = useTelegramLogic({
 		settingsAdminSecretSession,
 		loadDashboard,
 		setError,
@@ -1727,10 +1729,29 @@ export function useAppLogic(): any {
 		uiPreferencesHydrated,
 		setCurrentView,
 		setSelectedDocumentKind,
+		telegramOutbox,
+		telegramOutboxStatusFilter,
+		telegramOutboxTemplateFilter,
+		telegramLinkStaffId,
+		setTelegramLinkStaffId,
+		telegramLinkSubjectType,
+		telegramModeDraft,
+		telegramBotConfigId,
+		telegramLinkCode,
+		telegramLinkActionState,
+		setTelegramLinkCode,
+		setTelegramLinkActionState,
 	});
-	const { telegramSettingsModule } = telegram;
-	const { saveTelegramSettings } = telegramSettingsModule;
-
+	const {
+		telegram,
+		telegramSettingsModule,
+		saveTelegramSettings,
+		telegramLinkStaffOptions,
+		filteredTelegramOutboxItems,
+		visibleTelegramOutboxItems,
+		hiddenTelegramOutboxItemCount,
+		telegramSubjectName,
+	} = telegramLogic;
 	const finance = useFinanceLogic({
 		auth,
 		dashboard,
@@ -3214,49 +3235,6 @@ export function useAppLogic(): any {
 	useEffect(() => {
 		clinicProfileDraftRef.current = clinicProfileDraft;
 	}, [clinicProfileDraft]);
-	const telegramLinkStaffOptions = useMemo(
-		() =>
-			(dashboard?.clinicSettings?.staff || []).filter(
-				(member) => member.active,
-			) ?? [],
-		[dashboard],
-	);
-
-	const filteredTelegramOutboxItems = useMemo(() => {
-		const items = telegramOutbox?.items ?? [];
-		return items.filter((item) => {
-			if (telegramOutboxStatusFilter === "due") {
-				if (
-					item.deliveryStatus !== "ready" ||
-					!isTelegramOutboxItemDueForUi(item)
-				)
-					return false;
-			} else if (
-				telegramOutboxStatusFilter !== "all" &&
-				item.deliveryStatus !== telegramOutboxStatusFilter
-			) {
-				return false;
-			}
-			if (
-				telegramOutboxTemplateFilter !== "all" &&
-				item.templateKind !== telegramOutboxTemplateFilter
-			)
-				return false;
-			return true;
-		});
-	}, [
-		telegramOutbox,
-		telegramOutboxStatusFilter,
-		telegramOutboxTemplateFilter,
-	]);
-
-	const visibleTelegramOutboxItems = filteredTelegramOutboxItems;
-	const hiddenTelegramOutboxItemCount = Math.max(
-		0,
-		(telegramOutbox?.filteredCount ?? filteredTelegramOutboxItems.length) -
-			visibleTelegramOutboxItems.length,
-	);
-
 	useEffect(() => {
 		if (!dashboard) return;
 		if (
@@ -3273,42 +3251,6 @@ export function useAppLogic(): any {
 		telegramLinkStaffOptions,
 		setTelegramLinkStaffId,
 	]);
-
-	const telegramLinkTargetKey = `${telegramLinkSubjectType}:${telegramLinkSubjectType === "patient" ? (activePatient?.id ?? "") : telegramLinkStaffId || ""}:${telegramModeDraft}:${telegramBotConfigId.trim()}`;
-	const previousTelegramLinkTargetKeyRef = useRef(telegramLinkTargetKey);
-
-	useEffect(() => {
-		if (previousTelegramLinkTargetKeyRef.current === telegramLinkTargetKey)
-			return;
-		previousTelegramLinkTargetKeyRef.current = telegramLinkTargetKey;
-		if (!telegramLinkCode && !telegramLinkActionState) return;
-		setTelegramLinkCode(null);
-		setTelegramLinkActionState(null);
-	}, [
-		telegramLinkActionState,
-		telegramLinkCode,
-		telegramLinkTargetKey,
-		setTelegramLinkCode,
-		setTelegramLinkActionState,
-	]);
-
-	function telegramSubjectName(
-		subjectType: DenteTelegramChatLinkPublic["subjectType"],
-		subjectId: string,
-	): string {
-		if (subjectType === "patient") {
-			return (
-				dashboard?.patients?.find((patient) => patient.id === subjectId)
-					?.fullName ?? "Пациент"
-			);
-		}
-		return (
-			dashboard?.clinicSettings?.staff?.find(
-				(member) => member.id === subjectId,
-			)?.fullName ?? "Сотрудник"
-		);
-	}
-
 	const appointmentReadinessById = useMemo(() => {
 		if (!dashboard)
 			return new Map<string, Dashboard["appointmentReadiness"][number]>();
@@ -3649,12 +3591,10 @@ export function useAppLogic(): any {
 		updateServiceCatalogItem: clinicSettings.updateServiceCatalogItem,
 		deleteServiceCatalogItem: clinicSettings.deleteServiceCatalogItem,
 		...pricelistLogic,
+		...telegramLogic,
 		...onboardingLogic,
 		...documentWorkflow,
 		...dicomWorkbenchModule,
-		...telegramSettingsModule,
-		...telegram,
-		telegram,
 		...auth,
 		/*
 		 * auth отдаётся ещё и целиком, отдельным полем.
