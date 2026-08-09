@@ -499,7 +499,24 @@ export const appointments: Appointment[] = [
 	},
 ];
 
-const activeVisit: Visit = {
+/*
+ * ЭКСПОРТ ВОССТАНОВЛЕН 2026-08-09. Слово `export` сняли коммитом 5da9b3a27
+ * («chore(sync): sweep outstanding agent and user changes», 2026-08-08 23:51),
+ * и это молча сломало девять смоук-скриптов: они разбирают `activeVisit` из
+ * этого модуля, получали `undefined` и падали с TypeError вида «Cannot read
+ * properties of undefined (reading 'patientId')» — smoke-payment-idempotency,
+ * smoke-document-lifecycle, smoke-visit-workflow-forms-lifecycle,
+ * smoke-schedule-active-visit-status-contract, smoke-telegram-outbox-lookup,
+ * smoke-clinical-rule-panel-source, smoke-onboarding-configuration-source,
+ * screenshot-docs и другие.
+ *
+ * Удаление не было решением: будь оно намеренным, эти девять потребителей
+ * обновили бы вместе с ним. Это третий случай за один сеанс, когда уборочный
+ * коммит снимает `export` с несущего символа и убивает проверки, — так же
+ * пропали REQUIRED_ENV (убило check:env-contract) и ре-экспорт
+ * documentIssueBlockReason.
+ */
+export const activeVisit: Visit = {
 	id: activeVisitId,
 	organizationId,
 	patientId: marinaPatientId,
@@ -1082,7 +1099,10 @@ const communicationTemplates: CommunicationTemplate[] = [
 	},
 ];
 
-const communicationTasks: CommunicationTask[] = [
+/* ЭКСПОРТ ВОССТАНОВЛЕН 2026-08-09, тот же коммит 5da9b3a27 и та же причина, что
+ * у `activeVisit` выше: smoke-communication-task-outcomes разбирает этот список
+ * из модуля и падал на `communicationTasks.find` по `undefined`. */
+export const communicationTasks: CommunicationTask[] = [
 	{
 		id: "7195a20f-0aa8-4f0a-8d33-8db69fbb3d91",
 		organizationId,

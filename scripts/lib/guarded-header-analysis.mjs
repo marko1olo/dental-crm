@@ -329,9 +329,22 @@ export function buildHelperBindings(sourceFile) {
 			 * згадкой «res». Проверено прогоном 2026-08-07: из-за этого мутация
 			 * (удаление заголовка у DELETE /api/settings/protocols/:id) не давала
 			 * EXIT=1.
+			 *
+			 * СЛЕПОЕ ПЯТНО, НАЙДЕННОЕ МУТАЦИЕЙ 2026-08-09: проверка была только
+			 * `isCallExpression`, а при `await` инициализатор — это
+			 * `AwaitExpression`, и защита НЕ срабатывала. Тогда `const response =
+			 * await fetch(...)` попадал в список биндингов, и ЛЮБОЙ другой fetch
+			 * того же файла оправдывался «переменная response уже несла
+			 * помощника». Комментарий описывал форму с await, код ловил форму
+			 * без него — документация и код разошлись. AwaitExpression
+			 * разворачивается перед проверкой.
 			 */
-			if (ts.isCallExpression(node.initializer)) {
-				const callee = node.initializer.expression;
+			let initializer = node.initializer;
+			while (ts.isAwaitExpression(initializer)) {
+				initializer = initializer.expression;
+			}
+			if (ts.isCallExpression(initializer)) {
+				const callee = initializer.expression;
 				if (ts.isIdentifier(callee) && callee.text === "fetch") return;
 			}
 			if (

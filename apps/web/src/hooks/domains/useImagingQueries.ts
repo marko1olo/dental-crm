@@ -147,29 +147,87 @@ export function useImagingQueries(options?: { auth?: any }) {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const selectCtPlanningImplant = (_implant: any) => {};
 
+	/*
+	 * У КАЖДОЙ ИЗ ТРЁХ ФУНКЦИЙ НИЖЕ БЫЛО ПО ТРИ ДЕФЕКТА, и ни один не виден
+	 * компилятору. Найдено гейтом check:guarded-headers 2026-08-09 — сразу после
+	 * того, как в самом гейте закрыли слепое пятно на форму `await fetch`: до
+	 * этого он оправдывал их «помощник уже в области видимости».
+	 *
+	 * 1. НЕ ПОСЫЛАЛСЯ ЗАГОЛОВОК ОХРАНЫ. Маршруты закрыты
+	 *    requireClinicalReadAccess (imaging.ts:9187, :9024) и
+	 *    requireClinicalMutationAccess (:9212). Обёртка fetch подставляет токены
+	 *    кабинета и сотрудника, но x-dente-admin-secret — никогда: его клиент
+	 *    обязан слать сам. В настоящей клинике это 403. Локально не видно: в .env
+	 *    секрет закомментирован, а лазейки DENTE_CLINICAL_ALLOW_UNGUARDED_*
+	 *    гасят охрану, пока NODE_ENV не "production" — у заказчика их нет.
+	 * 2. ОТВЕТ ВЫБРАСЫВАЛСЯ. Стояло `await fetch(...)` без `return` и без
+	 *    `.json()`: функция ходила на сервер и теряла результат. Даже с
+	 *    заголовком она не могла вернуть ни настройки просмотра, ни разбор папки.
+	 * 3. КОД ОТВЕТА НЕ ПРОВЕРЯЛСЯ. Промис fetch не отклоняется на 403, 404 и 500,
+	 *    поэтому отказ был неотличим от успеха.
+	 *
+	 * ОТДЕЛЬНО, РЕШЕНИЕ ВЛАДЕЛЬЦА: снаружи эти три функции не зовёт НИКТО
+	 * (замер по apps/web — ноль вызовов вне этого файла), хотя маршруты на
+	 * сервере живые. Сохранение настроек просмотра снимка недостроено с обеих
+	 * сторон: клиент теперь корректен, потребителя в интерфейсе нет.
+	 */
 	async function loadImagingViewerSession(studyId: string) {
-		await fetch(`/api/imaging/studies/${studyId}/viewer-session`);
+		const response = await fetch(
+			`/api/imaging/studies/${studyId}/viewer-session`,
+			{ headers: auth.denteClinicalReadHeaders() },
+		);
+		if (!response.ok) {
+			throw new Error(
+				response.status === 403
+					? "Нет доступа к настройкам просмотра снимка: требуется секрет клинического доступа"
+					: `Не удалось загрузить настройки просмотра снимка (${response.status})`,
+			);
+		}
+		return await response.json();
 	}
 	async function saveImagingViewerSession(
 		studyId: string,
 		payload: Record<string, unknown>,
 	) {
-		await fetch(`/api/imaging/studies/${studyId}/viewer-session`, {
-			method: "PUT",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(payload),
-		});
+		const response = await fetch(
+			`/api/imaging/studies/${studyId}/viewer-session`,
+			{
+				method: "PUT",
+				headers: auth.denteClinicalMutationHeaders({
+					"content-type": "application/json",
+				}),
+				body: JSON.stringify(payload),
+			},
+		);
+		if (!response.ok) {
+			throw new Error(
+				response.status === 403
+					? "Нет доступа к сохранению настроек просмотра: требуется секрет клинического доступа"
+					: `Не удалось сохранить настройки просмотра снимка (${response.status})`,
+			);
+		}
+		return await response.json();
 	}
 	async function scanImagingFolderSeriesPreview(
 		folderPath: string,
 		controller: AbortController,
 	) {
-		await fetch("/api/imaging/dicom/folder-series-preview", {
+		const response = await fetch("/api/imaging/dicom/folder-series-preview", {
 			method: "POST",
 			signal: controller.signal,
-			headers: { "Content-Type": "application/json" },
+			headers: auth.denteClinicalReadHeaders({
+				"content-type": "application/json",
+			}),
 			body: JSON.stringify({ folderPath }),
 		});
+		if (!response.ok) {
+			throw new Error(
+				response.status === 403
+					? "Нет доступа к разбору папки DICOM: требуется секрет клинического доступа"
+					: `Не удалось разобрать папку DICOM (${response.status})`,
+			);
+		}
+		return await response.json();
 	}
 	return {
 		loadImagingViewerSession,
