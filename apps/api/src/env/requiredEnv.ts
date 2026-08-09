@@ -80,7 +80,7 @@ interface RequiredEnvEntry {
  * выключает необязательную функцию отказом — это предупреждение, а не отказ
  * старта.
  */
-const REQUIRED_ENV: readonly RequiredEnvEntry[] = [
+export const REQUIRED_ENV: readonly RequiredEnvEntry[] = [
 	{
 		name: "DATABASE_URL",
 		breaks:
