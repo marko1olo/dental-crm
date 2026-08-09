@@ -1,8 +1,8 @@
 import {
 	type CommunicationTaskOutcome,
 	type Dashboard,
-	type DenteTelegramChatLinkPublic,
 	type DentalPricelistAnalysisResponse,
+	type DenteTelegramChatLinkPublic,
 	documentFactoryGroups,
 	type ImagingStudyKind,
 	type ImportCommitResponse,
@@ -166,19 +166,21 @@ import { communicationDocumentTaskActionLabels } from "./communicationTaskData";
 import { showToast } from "./components/GlobalToast";
 import { useAuthLogic } from "./hooks/domains/useAuthLogic";
 import { useClinicalVisitLogic } from "./hooks/domains/useClinicalVisitLogic";
+import { useClinicSettingsLogic } from "./hooks/domains/useClinicSettingsLogic";
 import { useCommunicationsQueries } from "./hooks/domains/useCommunicationsQueries";
 import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule";
 import { useDocumentWorkflowModule } from "./hooks/domains/useDocumentWorkflowModule";
 import { useFinanceLogic } from "./hooks/domains/useFinanceLogic";
+import { useImagingLogic } from "./hooks/domains/useImagingLogic";
 import { useImagingQueries } from "./hooks/domains/useImagingQueries";
 import { useMigrationQueries } from "./hooks/domains/useMigrationQueries";
 import { usePatientIntakeLogic } from "./hooks/domains/usePatientIntakeLogic";
 import { usePatientLogic } from "./hooks/domains/usePatientLogic";
+import { usePricelistLogic } from "./hooks/domains/usePricelistLogic";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useStaffSettingsLogic } from "./hooks/domains/useStaffSettingsLogic";
 import { useTelegramModule } from "./hooks/domains/useTelegramModule";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
-
 import { loadWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import {
 	imagingCaptureDistanceMs,
@@ -220,6 +222,10 @@ import {
 import { actionFailureToast } from "./lib/panelStateText";
 import { safeLocalStorageSetItem } from "./lib/safeLocalStorage";
 import { describeMprClinicalPresetProjectionFallback } from "./mprClinicalStatus";
+import {
+	dentalMaterialKindLabels,
+	dentalRestorationTypeLabels,
+} from "./pricelistUiMeta";
 import {
 	imagingConnectorCards,
 	imagingViewerCapabilities,
@@ -294,9 +300,6 @@ import {
 	treatmentStatusLabels,
 	warningSeverityLabels,
 } from "./workspaceUiLabels";
-import { usePricelistLogic } from "./hooks/domains/usePricelistLogic";
-import { dentalMaterialKindLabels, dentalRestorationTypeLabels } from "./pricelistUiMeta";
-import { useClinicSettingsLogic } from "./hooks/domains/useClinicSettingsLogic";
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function useAppLogic(): any {
@@ -982,7 +985,7 @@ export function useAppLogic(): any {
 	const _localDicomOperationAbortRef = useRef<AbortController | null>(null);
 	const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
 	const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
-    const appointmentScheduleDraftsRef = useRef<
+	const appointmentScheduleDraftsRef = useRef<
 		Record<string, AppointmentScheduleDraft>
 	>({});
 	const _imagingViewerSaveTimerRef = useRef<number | null>(null);
@@ -1002,7 +1005,6 @@ export function useAppLogic(): any {
 		initialPricelistSourceKind: "vendor",
 		initialUsePricelistAi: false,
 	});
-
 
 	/*
 	 * Россыпь сеттеров формы оплаты сюда больше не передаётся: сброс при смене
@@ -4235,7 +4237,8 @@ export function useAppLogic(): any {
 		completedActContractReferenceForUi,
 		continueOnboardingInDraftMode,
 		createAppointmentFromDraft,
-		createClinicalRuleFromSettings: clinicSettings.createClinicalRuleFromSettings,
+		createClinicalRuleFromSettings:
+			clinicSettings.createClinicalRuleFromSettings,
 		createImagingStudy,
 		ctPlanningActiveQuickActionId,
 		ctPlanningImplantPlan,
