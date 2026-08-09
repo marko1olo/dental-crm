@@ -26,7 +26,7 @@ export interface ImagingLogicProps {
 	dashboard: any;
 	showToast: any;
 	actionFailureToast: any;
-	refreshDashboard: any;
+
 	currentView: any;
 	setError: any;
 	activePatient: any;
@@ -40,7 +40,7 @@ export function useImagingLogic({
 	dashboard,
 	showToast,
 	actionFailureToast,
-	refreshDashboard,
+
 	currentView,
 	setError,
 	activePatient,

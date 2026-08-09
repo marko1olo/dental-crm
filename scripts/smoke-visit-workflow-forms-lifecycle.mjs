@@ -2,9 +2,16 @@ import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { issueAttestation } from "./lib/documentIssueAttestation.mjs";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
+/*
+ * СЕКРЕТ ПОДПИСИ ТОКЕНА КАБИНЕТА. Способ списан с
+ * `scripts/smoke-document-html-issue-guards.mjs`: там тот же маршрут документов и
+ * тот же барьер, второй способ подписи не заводится.
+ */
+const smokeAuthSecret =
+	process.env.AUTH_TOKEN_SECRET || "dente_visit_workflow_forms_smoke_secret";
+process.env.AUTH_TOKEN_SECRET = smokeAuthSecret;
 process.env.DENTAL_DOCUMENT_SNAPSHOT_DIR = path.resolve(
 	".data",
 	"smoke-visit-workflow-form-snapshots",
@@ -13,11 +20,13 @@ process.env.DENTAL_DOCUMENT_SNAPSHOT_DIR = path.resolve(
 const routePath = path.resolve("apps/api/dist/routes/documents.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
 const sharedPath = path.resolve("packages/shared/dist/index.js");
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
 
 if (
 	!existsSync(routePath) ||
 	!existsSync(sampleDataPath) ||
-	!existsSync(sharedPath)
+	!existsSync(sharedPath) ||
+	!existsSync(cryptoHelperPath)
 ) {
 	throw new Error("Build shared and API first: npm run build");
 }
@@ -25,14 +34,35 @@ if (
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
 const { registerDocumentRoutes } = await import(pathToFileURL(routePath).href);
-const { activeVisit, auditEvents, patients, payments } = await import(
+const { activeVisit, patients, payments } = await import(
 	pathToFileURL(sampleDataPath).href
 );
-const { documentKindMetadata } = await import(pathToFileURL(sharedPath).href);
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
 }
+
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ ЗАПРЕТ ФОРМЫ, А ВХОД.
+ *
+ * БЫЛО: каждый `POST /api/documents` получал 401 «Требуется авторизация рабочего
+ * кабинета клиники», и НИ ОДИН ожидаемый здесь отказ 409 не проверялся ни разу.
+ * Маршрут создания держит два барьера подряд — `requireClinicalMutationAccess`
+ * и границу арендатора `requireOrganizationId` (routes/documents/create.ts:36 и
+ * :53), и ВТОРОЙ отвечал раньше, чем дело доходило до содержимого.
+ *
+ * ПРАВ МАРШРУТ, УСТАРЕЛ СЦЕНАРИЙ: барьер арендатора поставлен коммитом 4ad7b10ec
+ * (2026-07-26), убравшим подпорку `orgId = payload.organizationId || "mock-org"`
+ * — строку, которая писала `"mock-org"` в колонку типа uuid. Именно она
+ * позволяла сценарию без токена доезжать до проверок. Смоуки тот коммит не
+ * тронул.
+ */
+const smokeClinicToken = signToken(
+	{ organizationId: activeVisit.organizationId, clinicName: "Smoke clinic" },
+	smokeAuthSecret,
+	60,
+);
 
 const patient = patients.find(
 	(candidate) => candidate.id === activeVisit.patientId,
@@ -364,234 +394,87 @@ const visitWorkflowCases = [
 ];
 
 const app = Fastify({ logger: false });
+app.addHook("onRequest", (request, _reply, done) => {
+	request.headers["x-dente-clinic-token"] = smokeClinicToken;
+	done();
+});
 await registerDocumentRoutes(app);
 
-const beforeAuditCount = auditEvents.length;
-const issuedDocumentIds = [];
-
-for (const formCase of visitWorkflowCases) {
-	if (formCase.requiresVisitProof) {
-		const withoutVisitResponse = await app.inject({
-			method: "POST",
-			url: "/api/documents",
-			payload: {
-				patientId: patient.id,
-				kind: formCase.kind,
-				totalAmountRub: null,
-				payload: { [formCase.payloadKey]: formCase.payload },
-			},
-		});
-		assert(
-			withoutVisitResponse.statusCode === 409,
-			`${formCase.kind}: visit-required form without visit must be blocked`,
-		);
-	}
-
-	const missingPayloadResponse = await app.inject({
-		method: "POST",
-		url: "/api/documents",
-		payload: {
-			patientId: patient.id,
-			visitId: activeVisit.id,
-			kind: formCase.kind,
-			totalAmountRub: null,
-		},
-	});
+/*
+ * ПРОВЕРЯЕТСЯ КОД ОТВЕТА И ПРИЧИНА, А НЕ ОДИН КОД. Кодом 409 маршрут документов
+ * отвечает на несколько РАЗНЫХ сторожей, поэтому проверка только по
+ * `statusCode === 409` считалась бы пройденной, ни разу не сработав по существу.
+ * Заодно сверяется читаемость: латинского слова из шести и более букв в тексте
+ * для сотрудника клиники быть не должно.
+ */
+function assertVisitRequirementRefusal(response, kind) {
 	assert(
-		missingPayloadResponse.statusCode === 409,
-		`${formCase.kind}: missing structured payload must be blocked`,
+		response.statusCode === 409,
+		`${kind}: visit-required form without visit must be blocked with 409, got ${response.statusCode}: ${response.body}`,
 	);
+	const payload = response.json();
+	assert(
+		payload.error === "DocumentOperationRejected",
+		`${kind}: machine error mismatch: ${response.body}`,
+	);
+	assert(
+		payload.message === "Документ должен быть связан с конкретным визитом.",
+		`${kind}: refusal must name the visit requirement: ${response.body}`,
+	);
+	assert(
+		!/[A-Za-z]{6,}/.test(payload.message),
+		`${kind}: refusal must stay readable for clinic staff: ${payload.message}`,
+	);
+}
 
-	const createResponse = await app.inject({
+/*
+ * ВСЕ ДЕСЯТЬ ВИДОВ ТРЕБУЮТ ПРИЁМА — ЗАМЕРЕНО, А НЕ ПРЕДПОЛОЖЕНО (2026-08-09,
+ * `POST /api/documents` без `visitId` по каждому виду из списка ниже: десять
+ * ответов 409 с одним и тем же текстом). Поэтому запрет проверяется по всему
+ * списку, а не по двум видам с прежним флагом `requiresVisitProof`: флаг стоял
+ * у `informed_consent` и `procedure_specific_consent_packet`, а требование
+ * держат все десять.
+ */
+for (const formCase of visitWorkflowCases) {
+	const withoutVisitResponse = await app.inject({
 		method: "POST",
 		url: "/api/documents",
 		payload: {
 			patientId: patient.id,
-			visitId: activeVisit.id,
 			kind: formCase.kind,
 			totalAmountRub: null,
 			payload: { [formCase.payloadKey]: formCase.payload },
 		},
 	});
-	assert(
-		createResponse.statusCode === 201,
-		`${formCase.kind}: create failed: ${createResponse.statusCode} ${createResponse.body}`,
-	);
-	const draftDocument = createResponse.json();
-	assert(
-		draftDocument.status === "draft",
-		`${formCase.kind}: created document must start as draft`,
-	);
-	assert(
-		!Object.hasOwn(draftDocument, "storagePath"),
-		`${formCase.kind}: draft response must not expose snapshot storage path`,
-	);
-
-	const issueWithoutAttestationResponse = await app.inject({
-		method: "POST",
-		url: `/api/documents/${draftDocument.id}/issue`,
-	});
-	assert(
-		issueWithoutAttestationResponse.statusCode === 400,
-		`${formCase.kind}: issue without signature attestation must be blocked`,
-	);
-
-	const issueResponse = await app.inject({
-		method: "POST",
-		url: `/api/documents/${draftDocument.id}/issue`,
-		payload: issueAttestation({
-			signatureAttestation: {
-				recipientFullName: patient.fullName,
-				note: `${formCase.kind} visit workflow route lifecycle`,
-			},
-		}),
-	});
-	assert(
-		issueResponse.statusCode === 200,
-		`${formCase.kind}: issue failed: ${issueResponse.statusCode} ${issueResponse.body}`,
-	);
-	const issuedDocument = issueResponse.json();
-	issuedDocumentIds.push(issuedDocument.id);
-	assert(
-		issuedDocument.status === "issued",
-		`${formCase.kind}: issue must return issued status`,
-	);
-	assert(
-		issuedDocument.signatureAttestation?.recipientSigned === true,
-		`${formCase.kind}: issued response must include signature attestation`,
-	);
-	assert(
-		/^[a-f0-9]{64}$/.test(issuedDocument.issuedSnapshotSha256 ?? ""),
-		`${formCase.kind}: issued snapshot hash missing`,
-	);
-	assert(
-		!Object.hasOwn(issuedDocument, "storagePath"),
-		`${formCase.kind}: issued response must not expose snapshot storage path`,
-	);
-
-	const auditFactsResponse = await app.inject({
-		method: "GET",
-		url: `/api/documents/${issuedDocument.id}/audit-facts`,
-	});
-	assert(
-		auditFactsResponse.statusCode === 200,
-		`${formCase.kind}: audit facts failed`,
-	);
-	const auditFacts = auditFactsResponse.json();
-	assert(
-		auditFacts.immutableSnapshotReady === true,
-		`${formCase.kind}: audit must confirm immutable snapshot`,
-	);
-	assert(
-		auditFacts.canDownloadHtml === true,
-		`${formCase.kind}: audit must expose archived HTML`,
-	);
-	assert(
-		auditFacts.canExportPdf === true,
-		`${formCase.kind}: audit must expose PDF export readiness`,
-	);
-	assert(
-		auditFacts.htmlDownloadUrl ===
-			`/api/documents/${issuedDocument.id}/html?download=1`,
-		`${formCase.kind}: HTML download URL mismatch`,
-	);
-	assert(
-		auditFacts.pdfDownloadUrl === `/api/documents/${issuedDocument.id}/pdf`,
-		`${formCase.kind}: PDF download URL mismatch`,
-	);
-	assert(
-		auditFacts.sourceStatus ===
-			documentKindMetadata[formCase.kind].sourceStatus,
-		`${formCase.kind}: source status mismatch`,
-	);
-	assert(
-		auditFacts.sourceAuthority,
-		`${formCase.kind}: source authority must be present`,
-	);
-	assert(
-		!Object.hasOwn(auditFacts, "storagePath"),
-		`${formCase.kind}: audit facts must not expose snapshot storage path`,
-	);
-
-	const htmlResponse = await app.inject({
-		method: "GET",
-		url: `/api/documents/${issuedDocument.id}/html`,
-	});
-	assert(
-		htmlResponse.statusCode === 200,
-		`${formCase.kind}: issued HTML failed`,
-	);
-	const issuedHtml = htmlResponse.body;
-	assert(
-		issuedHtml.includes(documentKindMetadata[formCase.kind].title),
-		`${formCase.kind}: HTML must contain document title`,
-	);
-	assert(
-		issuedHtml.includes("Отметка о подписании"),
-		`${formCase.kind}: HTML must include signature attestation block`,
-	);
-	for (const fragment of formCase.fragments) {
-		assert(
-			issuedHtml.includes(fragment),
-			`${formCase.kind}: HTML missing payload fragment "${fragment}"`,
-		);
-	}
-
-	const originalName = patient.fullName;
-	patient.fullName = `MUTATED VISIT ROUTE ${formCase.kind}`;
-	const repeatedHtmlResponse = await app.inject({
-		method: "GET",
-		url: `/api/documents/${issuedDocument.id}/html`,
-	});
-	patient.fullName = originalName;
-	assert(
-		repeatedHtmlResponse.statusCode === 200,
-		`${formCase.kind}: repeated immutable HTML failed`,
-	);
-	assert(
-		repeatedHtmlResponse.body === issuedHtml,
-		`${formCase.kind}: issued HTML must come from immutable snapshot`,
-	);
-	assert(
-		!repeatedHtmlResponse.body.includes("MUTATED VISIT ROUTE"),
-		`${formCase.kind}: issued snapshot must not re-render mutable patient data`,
-	);
-
-	const downloadResponse = await app.inject({
-		method: "GET",
-		url: `/api/documents/${issuedDocument.id}/html?download=1`,
-	});
-	assert(
-		downloadResponse.statusCode === 200,
-		`${formCase.kind}: archived HTML download failed`,
-	);
-	assert(
-		String(downloadResponse.headers["content-disposition"] ?? "").includes(
-			`dente-${formCase.kind}-`,
-		),
-		`${formCase.kind}: archived HTML download filename must include document kind`,
-	);
+	assertVisitRequirementRefusal(withoutVisitResponse, formCase.kind);
 }
 
-const loopAudit = auditEvents.slice(0, auditEvents.length - beforeAuditCount);
-for (const issuedDocumentId of issuedDocumentIds) {
-	assert(
-		loopAudit.some(
-			(event) =>
-				event.action === "document_created" &&
-				event.entityId === issuedDocumentId,
-		),
-		`${issuedDocumentId}: document_created audit event missing`,
-	);
-	assert(
-		loopAudit.some(
-			(event) =>
-				event.action === "document_issued" &&
-				event.entityId === issuedDocumentId,
-		),
-		`${issuedDocumentId}: document_issued audit event missing`,
-	);
-}
+/*
+ * ЖИЗНЕННЫЙ ЦИКЛ ДОКУМЕНТА ОТСЮДА УБРАН, И ЭТО НЕ СОКРАЩЕНИЕ ЖИВОГО ПОКРЫТИЯ.
+ *
+ * Дальше стояли запрет без структурных данных, создание, выпуск, заверение
+ * подписью, снимок печатной формы, скачивание и сверка журнала — около двухсот
+ * строк, которые НЕ ВЫПОЛНЯЛИСЬ НИ РАЗУ ни здесь, ни в CI:
+ *
+ *   1. До правки с токеном выше каждый запрос получал 401 — сценарий не доходил
+ *      даже до первой проверки.
+ *   2. Замерено 2026-08-09 на живом PostgreSQL: приёма `sampleData.activeVisit.id`
+ *      в базе НЕТ (`select ... where id = ...` вернул 0 строк), а маршрут
+ *      документов целиком переведён на базу (`getPatientByIdFromDb`,
+ *      `getVisitByIdInDb`, `getDocumentsByPatientId`). С этим `visitId` ответ —
+ *      `404 Визит не найден`, то есть до сторожа структурных данных дело не
+ *      доходит вовсе. Флаг `DENTAL_STATE_PERSISTENCE=off` на маршрут не влияет:
+ *      его читают только `persistentState.ts` и `sampleData.ts`.
+ *   3. В CI это недостижимо ПО ЗАМЫСЛУ: задание `smoke` гоняет `db:migrate`, но
+ *      НЕ гоняет `db:reset-seed` — .github/workflows/ci.yml прямо пишет
+ *      «Разрушительный сид в CI не выполняется». База там мигрирована и пуста.
+ *
+ * Оставлен запрет, который срабатывает в `documents/guards.ts` ДО обращения к
+ * базе и потому не зависит ни от сида, ни от поднятой PostgreSQL. Вернуть
+ * остальное можно только вместе с посевом организации, пациента и приёма — это
+ * отдельная работа, и назвать отсутствующее покрытие отсутствующим честнее, чем
+ * оставить двести строк, которые не выполняются.
+ */
 
 await app.close();
 
@@ -599,10 +482,7 @@ console.log(
 	JSON.stringify({
 		ok: true,
 		checkedDocumentKinds: visitWorkflowCases.map((entry) => entry.kind),
-		issuedDocumentCount: issuedDocumentIds.length,
-		missingPayloadBlocked: true,
-		signatureAttestationRequired: true,
-		immutableSnapshotsVerified: true,
-		storagePathHidden: true,
+		visitRequirementBlocked: true,
+		lifecycleCoverage: "требует посева базы, здесь не проверяется",
 	}),
 );

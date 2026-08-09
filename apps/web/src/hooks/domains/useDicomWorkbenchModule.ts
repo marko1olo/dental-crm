@@ -76,7 +76,7 @@ interface DicomAuthContext {
 	revokeObjectUrlIfNeeded(url: string): void;
 }
 
-interface DicomFirstFramePreviewRequestContext {
+export interface DicomFirstFramePreviewRequestContext {
 	folderPath: string;
 	metadata: DicomFirstFramePreviewMetadata;
 }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-08-09T14:08:31.247Z",
+  "savedAt": "2026-08-09T15:33:23.370Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
@@ -27,10 +27,10 @@
       "lastError": "401 Unauthorized"
     },
     "google_speech:5cdeb7e487c0": {
-      "cooldownUntil": 1786279675359,
-      "failures": 20,
+      "cooldownUntil": 1786289633370,
+      "failures": 21,
       "successes": 4,
-      "lastUsedAt": 1786279645359,
+      "lastUsedAt": 1786289603370,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },
@@ -43,28 +43,28 @@
       "lastError": "401 Unauthorized"
     },
     "google_speech:c5b553420348": {
-      "cooldownUntil": 1786279675360,
-      "failures": 99,
+      "cooldownUntil": 1786289633368,
+      "failures": 101,
       "successes": 2,
-      "lastUsedAt": 1786279645360,
+      "lastUsedAt": 1786289603368,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },
     "google_speech:c637bdf62cb7": {
-      "cooldownUntil": 1786279675351,
-      "failures": 90,
+      "cooldownUntil": 1786289524831,
+      "failures": 91,
       "successes": 0,
-      "lastUsedAt": 1786279645351,
+      "lastUsedAt": 1786289494831,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },
     "google_speech:c78fec9a5b53": {
-      "cooldownUntil": 1786285110921,
-      "failures": 134,
+      "cooldownUntil": 1786289633359,
+      "failures": 136,
       "successes": 0,
-      "lastUsedAt": 1786284510921,
-      "lastStatusCode": 401,
-      "lastError": "401 Unauthorized"
+      "lastUsedAt": 1786289603359,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
     },
     "groq_whisper:4bda99f4f65e": {
       "cooldownUntil": 1786208316118,

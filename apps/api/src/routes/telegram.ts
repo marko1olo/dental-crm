@@ -238,6 +238,34 @@ function readableTelegramPayload<T>(value: T): T {
 	return repairMojibakeDeep(value);
 }
 
+/**
+ * Разбор тела запроса Telegram: либо значение, либо ОДИН человеческий отказ.
+ *
+ * В ЖУРНАЛ УХОДИТ СТРОКА, А НЕ ОБЪЕКТ ИСКЛЮЧЕНИЯ, И ЭТО НЕ СТИЛЬ.
+ *
+ * БЫЛО, замерено `app.inject` 2026-08-09 на этой машине (node 24.13.0,
+ * zod 3.25.76): здесь стояло `console.error("[Dente] ... failed:", err)` с СЫРЫМ
+ * исключением (коммит 840904673, 2026-08-07). `console.error` показывает объект
+ * через `util.inspect`, а `util.inspect` НА ЭТОЙ ПАРЕ ВЕРСИЙ САМ БРОСАЕТ
+ * `TypeError: Cannot read properties of undefined (reading 'value')`
+ * (`node:internal/util/inspect`, `formatProperty`). Бросок происходил ВНУТРИ
+ * `catch`, то есть до `return` дело не доходило: разборщик не возвращал отказ
+ * никогда, исключение улетало в общий обработчик Fastify, и клиника получала
+ * `500 Internal Server Error` вместо подготовленного здесь русского `400`.
+ *
+ * Проверено отдельно: `util.inspect(zodError)` бросает, а `zodError.message` —
+ * обычная строка (159 знаков на пробном разборе). Поэтому в журнал идёт она.
+ *
+ * СКОЛЬКО МЕСТ ЭТО ЛОМАЛО: все шесть вызывающих участков — приём обновлений от
+ * Telegram, настройки бота, отправка очереди, отправка по сроку, выпуск кода
+ * привязки и предпросмотр сообщения. Каждый малоформатный запрос к любому из них
+ * отвечал 500. Для приёма обновлений это хуже прочего: Telegram повторяет
+ * доставку на 5xx, то есть один битый апдейт возвращался снова и снова, а на
+ * 400 он его отбрасывает.
+ *
+ * Текст замечаний разборщика остаётся в журнале сервера и НЕ уходит в ответ:
+ * наружу идёт единственная фраза ниже.
+ */
 function parseTelegramRouteBody<T>(
 	schema: TelegramRouteBodySchema<T>,
 	body: unknown,
@@ -245,7 +273,11 @@ function parseTelegramRouteBody<T>(
 	try {
 		return { ok: true, value: schema.parse(body) };
 	} catch (err) {
-		console.error("[Dente] parseTelegramRouteBody failed:", err);
+		console.error(
+			`[Dente] parseTelegramRouteBody failed: ${
+				err instanceof Error ? err.message : String(err)
+			}`,
+		);
 		return {
 			ok: false,
 			message:

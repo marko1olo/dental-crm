@@ -39,10 +39,28 @@ const documentExtractorSource = readFileSync(
 	"utf8",
 );
 const sharedSource = readFileSync("packages/shared/src/index.ts", "utf8");
+/*
+ * ЧИТАЕТСЯ И `utils/browserScanUtils.ts` — ЭТО ИСПРАВЛЕНИЕ ЛОЖНОГО ОТКАЗА.
+ *
+ * БЫЛО: три файла — App.tsx, логика приложения, AppHelpers.tsx. Коммит 68f7c1ab3
+ * («refactor(web): extract scanner and browser fs utils to browserScanUtils.ts»,
+ * 2026-08-08) перенёс сборку строки передачи браузерного импорта в отдельный
+ * файл, и проверка перестала находить ВСЕ ЧЕТЫРЕ своих образца
+ * (`Источник старой системы: ${browserMigrationSourceTitles[sourceKind]}`,
+ * `код источника browser-local:${fingerprint}`, `старых баз=${stats.databaseFiles}`,
+ * `КТ/снимков=${stats.dicomLikeFiles}`) — сверено `rg -l` по apps/web/src: все
+ * четыре живы и лежат в browserScanUtils.ts.
+ *
+ * ПРАВ ЭКРАН, УСТАРЕЛ СЦЕНАРИЙ: текст не менялся, поменялся файл. Общий
+ * `readAppLogicSourceSync()` расширять нельзя — его читают десятки других
+ * проверок, включая запрещающие («не должно содержать»), и новый файл в общем
+ * источнике менял бы их смысл молча. Поэтому файл добавлен поимённо здесь.
+ */
 const appSource = [
 	readFileSync("apps/web/src/App.tsx", "utf8"),
 	readAppLogicSourceSync(),
 	readFileSync("apps/web/src/AppHelpers.tsx", "utf8"),
+	readFileSync("apps/web/src/utils/browserScanUtils.ts", "utf8"),
 ].join("\n");
 const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 const systemSource = readFileSync("apps/api/src/routes/system.ts", "utf8");
