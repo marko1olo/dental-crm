@@ -198,24 +198,44 @@ async function requestJson(options, headers = clinicalHeaders) {
 	return { response, body, text: response.body };
 }
 
+/*
+ * НАХОДКИ СОБИРАЮТСЯ ВСЕ, А НЕ ПЕРВАЯ.
+ *
+ * Прежде каждая проверка бросала исключение немедленно, и прогон умирал на
+ * первом расхождении. Замер 2026-08-09: гейт сообщал ровно об одном отказе
+ * (`billing payment invalid payload`), а остальные ОДИННАДЦАТЬ проверок из
+ * двенадцати не выполнялись вовсе — их состояние было неизвестно и со стороны
+ * читалось как «сломано одно место». Это молчаливый предел: починка одного
+ * возвращает гейт в красное с новой находкой, а не в зелёное, и настоящий
+ * объём расхождений виден только после дюжины итераций.
+ *
+ * Теперь расхождения собираются и печатаются вместе. Ни одно утверждение не
+ * ослаблено: код возврата по-прежнему ненулевой при любой находке.
+ */
+const failures = [];
+
+function record(condition, message) {
+	if (!condition) failures.push(message);
+}
+
 function assertRouteValidationResponse(actual, label, expectedMessage) {
 	const boundedMessage =
 		routeValidationMessageOverrides.get(label) ?? expectedMessage;
-	assert(
+	record(
 		actual.response.statusCode === 400,
-		`${label} must return 400, got ${actual.response.statusCode}: ${actual.text}`,
+		`${label}: ожидался код 400, получен ${actual.response.statusCode} — ${actual.text}`,
 	);
-	assert(
+	record(
 		actual.body.message === boundedMessage,
-		`${label} must return bounded message, got: ${actual.text}`,
+		`${label}: текст отказа разошёлся\n      ожидалось: «${boundedMessage}»\n      получено:  «${actual.body.message}»`,
 	);
-	assert(
+	record(
 		!Object.hasOwn(actual.body, "issues"),
-		`${label} must not return zod issues`,
+		`${label}: наружу утекли issues из Zod`,
 	);
-	assert(
+	record(
 		!forbiddenValidationTerms.test(actual.text),
-		`${label} leaked schema/parser detail: ${actual.text}`,
+		`${label}: утекла внутренность схемы или разборщика — ${actual.text}`,
 	);
 }
 
@@ -250,7 +270,25 @@ const checks = [
 			url: "/api/billing/payments",
 			payload: {},
 		}),
-		"Оплата не записана: проверьте сумму, дату, способ оплаты, фискальный чек и явные данные плательщика.",
+		/*
+		 * ОЖИДАНИЕ ОБНОВЛЕНО 2026-08-09, И ЭТО ЕДИНСТВЕННЫЙ ИЗ ЧЕТЫРЁХ СЛУЧАЕВ,
+		 * ГДЕ ПРАВ ОКАЗАЛСЯ МАРШРУТ, А НЕ ГЕЙТ.
+		 *
+		 * Прежде здесь стояло «Оплата не записана: проверьте сумму, дату, способ
+		 * оплаты, фискальный чек и явные данные плательщика.» — перечисление ВСЕХ
+		 * полей независимо от того, какое из них незаполнено. Маршрут перешёл на
+		 * apps/api/src/utils/schemaRefusalWords.ts, который собирает отказ из
+		 * названий РЕАЛЬНО пропущенных полей, и на пустом теле даёт «Не заполнены
+		 * поля «пациент» и «сумма оплаты»…». Для администратора это строго лучше:
+		 * названы те два поля, которые он и должен заполнить.
+		 *
+		 * Остальные три расхождения того же прогона — регрессии продукта, и там
+		 * восстановлен маршрут (routes/clinical.ts:37-40). Ожидание в гейте
+		 * подгонять под испорченный текст НЕЛЬЗЯ: это превратило бы страж в
+		 * протокол порчи. Направление правки каждый раз решается сверкой с
+		 * историей, а не удобством.
+		 */
+		"Не заполнены поля «пациент» и «сумма оплаты». Заполните их, затем повторите запись оплаты.",
 	],
 	[
 		"ai recognition invalid payload",
@@ -334,10 +372,29 @@ for (const [label, actual, expectedMessage] of checks) {
 
 await app.close();
 
+if (failures.length > 0) {
+	console.error(
+		`Отказы маршрутов разошлись с закреплённым контрактом: ${failures.length} из ${checks.length * 4} проверок.\n`,
+	);
+	for (const failure of failures) console.error(`  ${failure}`);
+	console.error(
+		"\nЧто это значит. Маршрут обязан отвечать 400 с человеческим текстом и " +
+			"НЕ выдавать наружу внутренности Zod: пациент и администратор клиники " +
+			"читают этот текст на экране.\n" +
+			"Если текст изменён осознанно — обновите ожидание в `checks` или " +
+			"внесите ярлык в `routeValidationMessageOverrides` этого файла.\n" +
+			"Если текст собирается динамически (apps/api/src/utils/" +
+			"schemaRefusalWords.ts), сверяйте его тестом " +
+			"`schemaRefusalWordsAreHuman.test.ts`, а здесь держите закреплённую форму.",
+	);
+	process.exit(1);
+}
+
 console.log(
 	JSON.stringify({
 		ok: true,
 		checkedRoutes: checks.map(([label]) => label),
+		assertionsRun: checks.length * 4,
 		rawValidationHidden: true,
 	}),
 );
