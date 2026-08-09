@@ -112,9 +112,17 @@ export class BootErrorBoundary extends Component<
 		// то есть от props, до которых у статического метода доступа нет, и потому
 		// считается в render(). Подстановка текста через setState() в
 		// componentDidCatch() объявлена в документации React устаревшей.
-		(
-			window as Window & typeof globalThis & { LAST_BOOT_ERROR?: string }
-		).LAST_BOOT_ERROR = String((error as { stack?: string })?.stack || error);
+		//
+		// СЮДА НЕ ВОЗВРАЩАТЬ `window.LAST_BOOT_ERROR`. Строка
+		// `.LAST_BOOT_ERROR = String(error.stack || error)` пришла подметанием
+		// (коммит 5da9b3a27) и публиковала полный стек в глобальном свойстве
+		// страницы, прямо против инварианта из заголовка этого файла. Замерено:
+		// во всём репозитории её не читал НИКТО — одна запись, ноль чтений.
+		// Цена при этом настоящая: `audience: "public"` — это онлайн-запись
+		// пациента и портал зуботехника, страницы для посторонних, а `message`
+		// исключения в CRM способен нести данные пациента. Диагностика от
+		// удаления не пострадала: componentDidCatch ниже пишет и исключение, и
+		// componentStack в консоль безусловно, включая production.
 		return { failed: true, error };
 	}
 
