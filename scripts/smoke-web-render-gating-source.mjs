@@ -94,18 +94,39 @@ const requiredSnippets = [
  * строится по условию. Три вкладки (clinic, access, telegram) по-прежнему лежат
  * разметкой в самом SettingsView, остальные смонтированы компонентами: и то и
  * другое — законный способ, лишь бы ветка была условной.
+ *
+ * ПОЧЕМУ ПЯТЬ ЗАПИСЕЙ СТАЛИ ВЫРАЖЕНИЯМИ, А НЕ СТРОКАМИ. Заявленный выше договор
+ * («содержимое ветки НЕ закрепляется») расходился с реализацией: пять записей
+ * закрепляли ветку целиком, вплоть до `<SettingsRulesTab /> : null}`. Замерено
+ * 2026-08-09 — на этом и сломалось. Продукт обернул вкладку правил в
+ * ErrorBoundary с русским именем модуля, а вкладку журнала — во фрагмент рядом
+ * с AuditLogsPanel:
+ *   {settingsTab === "rules" ? (
+ *     <ErrorBoundary moduleName="Правила и регламенты">
+ *       <SettingsRulesTab />
+ *     </ErrorBoundary>
+ *   ) : null}
+ * Обе правки делают продукт ЛУЧШЕ, а смоук от них краснел и требовал снять
+ * границу ошибок — то есть требовал ухудшить продукт. Это ровно та ловушка, о
+ * которой предупреждает комментарий к forbiddenSnippets выше: следующий агент
+ * «чинит» стража, откатывая улучшение.
+ *
+ * Выражение закрепляет СМЫСЛ, а не набор символов: ветка условна по нужной
+ * вкладке И внутри неё смонтирован нужный компонент. Обёртки разрешены, порядок
+ * атрибутов и переносы строк безразличны. Окно в 400 символов не даёт условию
+ * одной вкладки дотянуться до компонента следующей.
  */
 const requiredSettingsTabGates = [
 	'{settingsTab === "clinic" ? (',
 	'{settingsTab === "access" ? (',
 	'{settingsTab === "telegram" ? (',
-	'{settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}',
-	'{settingsTab === "rules" ? <SettingsRulesTab /> : null}',
+	/\{settingsTab === "protocols" \?[\s\S]{0,400}?<SettingsProtocolsTab\b/,
+	/\{settingsTab === "rules" \?[\s\S]{0,400}?<SettingsRulesTab\b/,
 	'{settingsTab === "prices" ? (',
-	'{settingsTab === "sources" ? <SettingsSourcesTab /> : null}',
-	'{settingsTab === "ai" ? <SettingsAiTab /> : null}',
+	/\{settingsTab === "sources" \?[\s\S]{0,400}?<SettingsSourcesTab\b/,
+	/\{settingsTab === "ai" \?[\s\S]{0,400}?<SettingsAiTab\b/,
 	'{settingsTab === "imports" ? (',
-	'{settingsTab === "audit" ? <SettingsAuditTab',
+	/\{settingsTab === "audit" \?[\s\S]{0,400}?<SettingsAuditTab\b/,
 ];
 
 /*
