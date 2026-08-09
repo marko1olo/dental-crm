@@ -275,7 +275,7 @@ function syncDenteTelegramOutboxDeliveryReceiptsMap(): void {
 const denteTelegramLinkCodes: DenteTelegramLinkCode[] = [];
 export const denteTelegramChatLinks: DenteTelegramChatLink[] = [];
 
-const clinicProfile: ClinicProfile = {
+export const clinicProfile: ClinicProfile = {
 	organizationId,
 	clinicName: "Стоматология, 1 кабинет",
 	legalName: "ИП Иванова М.С.",
@@ -329,7 +329,7 @@ const clinicProfile: ClinicProfile = {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 } as any;
 
-const staffMembers: StaffMember[] = [
+export const staffMembers: StaffMember[] = [
 	{
 		id: "e44d32ca-7777-4c00-a001-c88f01b92e21",
 		organizationId,
@@ -396,7 +396,7 @@ const staffMembers: StaffMember[] = [
 	},
 ];
 
-const chairs: Chair[] = [
+export const chairs: Chair[] = [
 	{
 		id: chairId,
 		organizationId,
@@ -1195,7 +1195,7 @@ export const communicationTasks: CommunicationTask[] = [
 	},
 ];
 
-const communicationEvents: CommunicationEvent[] = [
+export const communicationEvents: CommunicationEvent[] = [
 	{
 		id: "88ff10d9-e50a-4a67-8500-f1dfeff6b92c",
 		organizationId,
@@ -1210,7 +1210,7 @@ const communicationEvents: CommunicationEvent[] = [
 	},
 ];
 
-const imagingStudies: ImagingStudy[] = [
+export const imagingStudies: ImagingStudy[] = [
 	{
 		id: "fbe3704c-9b37-4149-ae4b-e99e46d7599f",
 		organizationId,
@@ -1298,7 +1298,7 @@ const importBatches: ImportBatch[] = [];
 const aiRecognitionJobs: AiRecognitionJob[] = [];
 const imagingViewerSessions: ImagingViewerSession[] = [];
 const dicomWorkbenchBundles: DicomWorkbenchBundle[] = [];
-const speechTranscriptionChunks: SpeechTranscriptionChunk[] = [];
+export const speechTranscriptionChunks: SpeechTranscriptionChunk[] = [];
 
 class SpeechChunkIdentityConflictError extends Error {
 	statusCode = 409;
@@ -1311,7 +1311,7 @@ class SpeechChunkIdentityConflictError extends Error {
 	}
 }
 const visitSaveReceipts: VisitSaveReceipt[] = [];
-const visitDraftAutosaves: VisitDraftAutosave[] = [];
+export const visitDraftAutosaves: VisitDraftAutosave[] = [];
 
 function findVisitById(visitId: string): Visit | null {
 	return activeVisit.id === visitId ? activeVisit : null;
