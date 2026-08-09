@@ -73,9 +73,11 @@ export const ClinicalStore = {
 		const idx = this.implants.findIndex((i) => i.id === id);
 		if (idx !== -1) {
 			this.implants[idx] = {
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				...this.implants[idx]!,
 				...updates,
 			} as VirtualImplant;
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			if (checkImplantCollision(this.implants[idx]!, 2.0)) {
 				window.dispatchEvent(
 					new CustomEvent("clinical-collision", {

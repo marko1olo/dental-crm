@@ -9,6 +9,7 @@ import { logger } from "./logger";
 
 declare global {
 	interface Window {
+		// biome-ignore lint/suspicious/noExplicitAny: external plugin type
 		rutoken?: any;
 		rutokenPluginLoaded?: boolean;
 	}
@@ -121,6 +122,7 @@ export async function getRutokenCertificates(): Promise<RutokenCertificate[]> {
 		}
 
 		return certs;
+		// biome-ignore lint/suspicious/noExplicitAny: error types can vary
 	} catch (error: any) {
 		logger.error("Failed to read Rutoken certificates:", error);
 		throw new Error(`Ошибка при чтении Рутокена: ${error.message || error}`);
@@ -167,6 +169,7 @@ export async function signDataWithRutoken(
 		// Convert hex signature to Base64 (Assuming backend expects Base64 for PKCS7/CMS)
 		// Usually plugin.sign with addSignCertV2 produces CMS.
 		return hexToBase64(signatureHex);
+		// biome-ignore lint/suspicious/noExplicitAny: error types can vary
 	} catch (error: any) {
 		logger.error("Rutoken signing error:", error);
 		try {

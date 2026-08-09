@@ -44,6 +44,7 @@ describe("пациент карта — Zod body (AUTH-first 401; empty → 400 
 			method: "POST" | "PUT";
 			url: string;
 			headers: Record<string, string>;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			payload?: any;
 		} = { method, url, headers };
 		if (opts.rawPayload !== undefined) {

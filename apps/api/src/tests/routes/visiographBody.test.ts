@@ -55,6 +55,7 @@ describe("Visiograph AI — body guard (null → 400, не 500)", () => {
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			payload?: any;
 		} = {
 			method: "POST",

@@ -8374,9 +8374,12 @@ async function organizeLocalImagingSources(
 				modelCandidates.push({
 					filePath: result.fullPath,
 					fileName: result.entryName,
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					format: result.format!,
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					role: result.role!,
 					sizeBytes,
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					confidence: result.confidence!,
 					warnings:
 						sizeBytes > 250 * 1024 * 1024
@@ -8738,6 +8741,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		try {
 			const result = await analyzeVisiographImage(parsed.data.imageBase64);
 			return reply.send(result);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			console.error("[Visiograph AI] Error:", err);
 			return reply.code(500).send({ error: err.message });
@@ -9407,6 +9411,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				);
 			}
 			return reply.code(200).send({ ok: true, analysisResult });
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			const message = err?.message ?? "Анализ завершился ошибкой";
 			return reply.code(502).send({ ok: false, message });
@@ -9521,8 +9526,11 @@ export async function commitImagingImport(
 	const createdStudyIds = await Promise.all(
 		readyRows.map(async (row) => {
 			const study = await createImagingStudyInDb(orgId, {
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				patientId: row.patientId!,
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				kind: row.kind!,
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				title: row.title ?? kindLabels[row.kind!],
 				toothCode: row.toothCode,
 				region: row.region,

@@ -9,6 +9,7 @@ import { logger } from "./logger";
 
 declare global {
 	interface Window {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		cadesplugin?: any;
 	}
 }
@@ -23,6 +24,7 @@ export interface CryptoProCertificate {
 	thumbprint: string;
 	hasPrivateKey: boolean;
 	isValid: boolean;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	certObject: any;
 }
 
@@ -119,6 +121,7 @@ export async function getPersonalCertificates(): Promise<
 
 		await oStore.Close();
 		return certs;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	} catch (error: any) {
 		logger.error("Failed to read CryptoPro certificates store:", error);
 		throw new Error(
@@ -191,6 +194,7 @@ export async function signBase64WithCertificate(
 
 		await oStore.Close();
 		return pkcs7Signature;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	} catch (error: any) {
 		logger.error("CryptoPro signing error:", error);
 		throw new Error(`Ошибка подписания документа: ${error.message || error}`);

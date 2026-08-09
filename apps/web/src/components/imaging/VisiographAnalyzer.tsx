@@ -803,6 +803,7 @@ export function VisiographAnalyzer() {
 						setIsSaving(false);
 					}
 				}
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
 				logger.error("[VisiographAnalyzer] Error:", err);
 				setError(
@@ -1288,6 +1289,7 @@ export function VisiographAnalyzer() {
 					{!currentScan && (
 						<button
 							type="button"
+							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 							ref={dropRef as any}
 							onDrop={handleDrop}
 							onDragOver={handleDragOver}

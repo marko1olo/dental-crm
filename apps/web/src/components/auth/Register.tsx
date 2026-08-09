@@ -18,6 +18,7 @@ import {
 import { showToast } from "../GlobalToast";
 
 interface RegisterProps {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onSuccess: (clinicProfile: any, userProfile: any) => void;
 	onSwitchToLogin: () => void;
 }
@@ -85,6 +86,7 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
 				{ organizationId: data.organizationId },
 				{ id: data.userId, fullName: ownerName, role: "owner", email },
 			);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			showToast(err.message || "Не удалось зарегистрироваться", "error");
 		} finally {

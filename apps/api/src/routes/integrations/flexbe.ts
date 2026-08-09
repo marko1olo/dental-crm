@@ -46,10 +46,12 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 			return reply.status(400).send({ error: "Invalid payload format" });
 		}
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const data = payload.data.data || (req.body as any) || {};
 		const name = (data.name || "Лид с лендинга").toString();
 		const phone = data.phone ? data.phone.toString() : null;
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const rawTs = data.timestamp ?? data.time ?? (req.body as any)?.timestamp;
 		if (rawTs != null) {
 			const numTs =
@@ -70,6 +72,7 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 			data.submission_id ??
 			data.lead_id ??
 			data.req_id ??
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			(req.body as any)?.id;
 		const subId =
 			subIdRaw != null && String(subIdRaw).trim().length > 0

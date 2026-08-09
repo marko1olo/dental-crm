@@ -129,6 +129,7 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 					"Показаны будущие приёмы, которые отменили или на которые не пришли: время потеряно одинаково. " +
 					"Система никого не записывает сама — она подсказывает, кому позвонить.",
 			};
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -217,6 +218,7 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 				});
 
 				return { appointmentId: appointment.id, ...report };
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (error: any) {
 				request.log.error(error);
 				return reply.status(500).send({

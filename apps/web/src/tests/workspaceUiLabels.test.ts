@@ -11,6 +11,7 @@ describe("paymentFiscalReceiptLabelForUi", () => {
 				fd: "222",
 				fpd: "333",
 			},
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} as any);
 		assert.strictEqual(result, "ФН 111; ФД 222; ФПД 333");
 	});
@@ -22,6 +23,7 @@ describe("paymentFiscalReceiptLabelForUi", () => {
 				fn: "111",
 				fpd: "333",
 			},
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} as any);
 		assert.strictEqual(result, "ФН 111; ФПД 333");
 	});
@@ -30,6 +32,7 @@ describe("paymentFiscalReceiptLabelForUi", () => {
 		const result = paymentFiscalReceiptLabelForUi({
 			id: "1234567890",
 			fiscalReceiptNumber: "  RECEIPT-123  ",
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} as any);
 		assert.strictEqual(result, "RECEIPT-123");
 	});
@@ -39,6 +42,7 @@ describe("paymentFiscalReceiptLabelForUi", () => {
 			id: "1234567890",
 			fiscalReceipt: {},
 			fiscalReceiptNumber: "RECEIPT-456",
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} as any);
 		assert.strictEqual(result, "RECEIPT-456");
 	});
@@ -46,6 +50,7 @@ describe("paymentFiscalReceiptLabelForUi", () => {
 	test("falls back to truncated id if both fiscalReceipt and fiscalReceiptNumber are missing", () => {
 		const result = paymentFiscalReceiptLabelForUi({
 			id: "long-id-1234567890",
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} as any);
 		assert.strictEqual(result, "long-id-");
 	});
@@ -54,6 +59,7 @@ describe("paymentFiscalReceiptLabelForUi", () => {
 		const result = paymentFiscalReceiptLabelForUi({
 			id: "long-id-1234567890",
 			fiscalReceiptNumber: "   ",
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} as any);
 		assert.strictEqual(result, "long-id-");
 	});

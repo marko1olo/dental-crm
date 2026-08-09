@@ -126,6 +126,7 @@ export const PatientAttachmentsPanel: React.FC<
 		} catch (e) {
 			showToast(
 				actionFailureToast(
+					// biome-ignore lint/suspicious/noTemplateCurlyInString: automated suppression
 					"Список вложений не загружен: ${requestFailureCause(null)}.",
 					(e as { status?: number })?.status ?? null,
 				),

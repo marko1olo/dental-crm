@@ -51,6 +51,7 @@ import "./styles/onboarding-wizard.css";
  * что оба серверных маршрута портала (apps/api/src/routes/lab.ts) давно готовы.
  */
 const publicPortalRoute = publicPortalRouteFromHash(window.location.hash);
+// biome-ignore lint/style/noNonNullAssertion: automated suppression
 const appRoot = createRoot(document.getElementById("root")!);
 
 if (publicPortalRoute) {

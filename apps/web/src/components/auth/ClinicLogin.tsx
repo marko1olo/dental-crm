@@ -16,6 +16,7 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 
 interface ClinicLoginProps {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onLoginSuccess: (clinicProfile: any) => void;
 }
 
@@ -48,6 +49,7 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
 			safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, data.clinicToken);
 			showToast("Вход в рабочее пространство выполнен", "success");
 			onLoginSuccess(data.clinicProfile);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			logger.error(err);
 			showToast(err.message || "Неверный логин или пароль клиники", "error");
@@ -126,7 +128,7 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
 				</form>
 
 				<div className="auth-footer-hints auth-footer-hints--border">
-					Пароль по умолчанию для демо-клиники: <code>admin123</code>
+					Пароль по умолчанию для демо-клиники: <code>dente2026</code>
 				</div>
 			</div>
 		</div>

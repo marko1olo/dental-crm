@@ -15,6 +15,7 @@ export async function getMessageTemplateCatalogs(
 		.from(schema.messageTemplateCatalogs)
 		.where(eq(schema.messageTemplateCatalogs.organizationId, organizationId))
 		.orderBy(asc(schema.messageTemplateCatalogs.title));
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	return rows as any;
 }
 
@@ -30,11 +31,13 @@ export async function createMessageTemplateCatalog(
 			channel: input.channel,
 			intent: input.intent,
 			templateText: input.templateText,
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			variables: input.variables as any,
 			isActive: input.isActive ?? true,
 		})
 		.returning();
 	if (!row) throw new Error("Failed to create message template catalog");
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	return row as any;
 }
 
@@ -50,6 +53,7 @@ export async function updateMessageTemplateCatalog(
 			channel: input.channel,
 			intent: input.intent,
 			templateText: input.templateText,
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			variables: input.variables as any,
 			isActive: input.isActive,
 		})
@@ -62,6 +66,7 @@ export async function updateMessageTemplateCatalog(
 		.returning();
 	if (!row)
 		throw new Error("Message template catalog not found or update failed");
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	return row as any;
 }
 

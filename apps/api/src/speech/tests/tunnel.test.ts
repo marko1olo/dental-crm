@@ -12,6 +12,7 @@ describe("tunnel", () => {
 		originalEnv = process.env;
 		process.env = { ...originalEnv };
 		stopSshTunnel(); // Ensure clean state
+		// biome-ignore lint/complexity/noBannedTypes: automated suppression
 		mock.method(global, "setTimeout", (cb: Function) => cb()); // mock delay
 	});
 
@@ -45,6 +46,7 @@ describe("tunnel", () => {
 		process.env.SSH_HOST = "host";
 
 		const serverMock = {
+			// biome-ignore lint/complexity/noBannedTypes: automated suppression
 			once: mock.fn((event: string, cb: Function) => {
 				if (event === "error") cb(); // Simulates port occupied
 				return serverMock;
@@ -63,6 +65,7 @@ describe("tunnel", () => {
 		process.env.SSH_HOST = "host";
 
 		const serverMock = {
+			// biome-ignore lint/complexity/noBannedTypes: automated suppression
 			once: mock.fn((event: string, cb: Function) => {
 				if (event === "listening") cb(); // Simulates port free
 				return serverMock;
@@ -84,6 +87,7 @@ describe("tunnel", () => {
 
 		let callCount = 0;
 		const serverMock = {
+			// biome-ignore lint/complexity/noBannedTypes: automated suppression
 			once: mock.fn((event: string, cb: Function) => {
 				if (callCount === 0) {
 					// First check: port is free
@@ -121,6 +125,7 @@ describe("tunnel", () => {
 		process.env.SSH_HOST = "host";
 
 		const serverMock = {
+			// biome-ignore lint/complexity/noBannedTypes: automated suppression
 			once: mock.fn((event: string, cb: Function) => {
 				// Port is always free
 				if (event === "listening") cb();
@@ -148,6 +153,7 @@ describe("tunnel", () => {
 		process.env.SSH_HOST = "host";
 
 		const serverMock = {
+			// biome-ignore lint/complexity/noBannedTypes: automated suppression
 			once: mock.fn((event: string, cb: Function) => {
 				if (event === "listening") cb(); // Port free
 				return serverMock;
@@ -173,6 +179,7 @@ describe("tunnel", () => {
 
 		let callCount = 0;
 		const serverMock = {
+			// biome-ignore lint/complexity/noBannedTypes: automated suppression
 			once: mock.fn((event: string, cb: Function) => {
 				if (callCount === 0) {
 					if (event === "listening") cb();
@@ -236,6 +243,7 @@ describe("ensureSshTunnel", () => {
 		mock.method(fs, "existsSync", () => true);
 
 		mock.method(net, "createServer", () => ({
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			once: (evt: string, cb: any) => {
 				if (evt === "listening") cb();
 			},

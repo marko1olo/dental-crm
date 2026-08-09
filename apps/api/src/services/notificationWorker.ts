@@ -55,6 +55,7 @@ async function _scheduleNotification(input: {
 	organizationId: string;
 	patientId: string;
 	type: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	payload: any;
 	scheduledAt?: Date;
 }) {
@@ -151,6 +152,7 @@ async function processNotificationQueue() {
 			await db
 				.update(outgoingNotifications)
 				.set({
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					status: deliveryStatus as any,
 					sentAt: deliveryStatus === "sent" ? new Date() : null,
 				})

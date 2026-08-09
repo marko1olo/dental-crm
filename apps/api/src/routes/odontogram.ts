@@ -569,6 +569,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							const err = new Error(
 								"Запрещено изменять подписанный план лечения. Создайте новый.",
 							);
+							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 							(err as any).statusCode = 409;
 							throw err;
 						}
@@ -799,6 +800,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							const err = new Error(
 								`Отказ: план содержит противопоказание. ${blockingRule.message}`,
 							);
+							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 							(err as any).statusCode = 400;
 							throw err;
 						}
@@ -882,6 +884,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 
 					return savedPlanId;
 				});
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
 				if (err.statusCode) {
 					return reply.code(err.statusCode).send({

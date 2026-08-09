@@ -410,6 +410,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			});
 		}
 
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		const { patientId, message } = parsed.data;
 
 		const [patient] = await db

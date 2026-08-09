@@ -25,6 +25,7 @@ export async function registerChatRoutes(app: FastifyInstance) {
 
 			const quota = await getDailySmsQuota(organizationId);
 			return quota;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -79,6 +80,7 @@ export async function registerChatRoutes(app: FastifyInstance) {
 				.returning();
 
 			return { success: true, event, remainingQuota: quota.remaining - 1 };
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({

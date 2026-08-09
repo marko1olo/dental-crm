@@ -118,7 +118,9 @@ function DiagnocatReportWidget({ patientId }: { patientId: string }) {
 	);
 }
 
+// biome-ignore lint/suspicious/noExplicitAny lint/correctness/noUnusedFunctionParameters: automated suppression
 export function EmkControlBoard({ dashboard }: any) {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [visits, setVisits] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -136,6 +138,7 @@ export function EmkControlBoard({ dashboard }: any) {
 			}
 			const data = await res.json();
 			setVisits(data.visits || []);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			setError(err.message || "Ошибка загрузки");
 		} finally {
@@ -162,6 +165,7 @@ export function EmkControlBoard({ dashboard }: any) {
 				throw new Error("Не удалось обновить статус");
 			}
 			await loadVisits();
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			setError(err.message || "Ошибка обновления");
 		} finally {

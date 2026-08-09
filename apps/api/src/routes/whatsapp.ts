@@ -198,9 +198,11 @@ export async function registerWhatsappRoutes(
 			hasToken: Boolean(config.tokenSecretRef),
 			webhookVerifyToken: config.webhookVerifyToken ?? null,
 			enabledFeatures: parseJsonSafe<string[]>(
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				config.enabledFeaturesJson as any,
 				[],
 			),
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			staffRouting: parseJsonSafe(config.staffRoutingJson as any, {
 				defaultUserId: null,
 				rules: [],
@@ -580,6 +582,7 @@ export async function registerWhatsappRoutes(
 						? (value.messages as unknown[])
 						: [];
 
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					const newEvents: any[] = [];
 					await withTenantCtx(inboundOrganizationId, async (tx) => {
 						for (const msg of messages) {

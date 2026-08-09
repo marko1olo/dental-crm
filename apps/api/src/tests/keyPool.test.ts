@@ -17,6 +17,7 @@ describe("fetchWithProviderTimeout", () => {
 	test("returns successful response", async () => {
 		globalThis.fetch = mock.fn(async () => {
 			return new Response("ok", { status: 200 });
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		}) as any;
 
 		const response = await fetchWithProviderTimeout("https://example.com");
@@ -29,6 +30,7 @@ describe("fetchWithProviderTimeout", () => {
 	test("throws SpeechProviderRequestError on AbortError timeout", async () => {
 		globalThis.fetch = mock.fn(async () => {
 			throw new DOMException("The operation was aborted", "AbortError");
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		}) as any;
 
 		try {
@@ -52,6 +54,7 @@ describe("fetchWithProviderTimeout", () => {
 		const genericError = new Error("Network failure");
 		globalThis.fetch = mock.fn(async () => {
 			throw genericError;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		}) as any;
 
 		try {

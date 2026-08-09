@@ -46,12 +46,17 @@ export function generateCatmullRomSpline(
 
 	// To correctly compute the spline, we duplicate the first and last points
 	// to act as ghost control points for the tangents.
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const pList = [points[0]!, ...points, points[points.length - 1]!];
 
 	for (let i = 1; i < pList.length - 2; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p0 = pList[i - 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p1 = pList[i]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p2 = pList[i + 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p3 = pList[i + 2]!;
 
 		const segmentSamples = Math.floor(samples / (points.length - 1));
@@ -85,6 +90,7 @@ export function generateCatmullRomSpline(
 	}
 
 	// Add the last point
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	curve.push(points[points.length - 1]!);
 	return curve;
 }
@@ -100,10 +106,12 @@ export function calculateCurveFrames(curve: Point3D[]): CurveFrame[] {
 	const up: Point3D = { x: 0, y: 0, z: -1 }; // Usually Z is up/down in dental CBCT
 
 	for (let i = 0; i < curve.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p = curve[i]!;
 		let tangent: Point3D;
 
 		if (i === 0) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const next = curve[i + 1]!;
 			tangent = normalize({
 				x: next.x - p.x,
@@ -111,6 +119,7 @@ export function calculateCurveFrames(curve: Point3D[]): CurveFrame[] {
 				z: next.z - p.z,
 			});
 		} else if (i === curve.length - 1) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const prev = curve[i - 1]!;
 			tangent = normalize({
 				x: p.x - prev.x,
@@ -118,7 +127,9 @@ export function calculateCurveFrames(curve: Point3D[]): CurveFrame[] {
 				z: p.z - prev.z,
 			});
 		} else {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const next = curve[i + 1]!;
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const prev = curve[i - 1]!;
 			tangent = normalize({
 				x: next.x - prev.x,

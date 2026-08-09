@@ -291,6 +291,7 @@ export function VisitDiaryPhotoUpload({
 				await new Promise<void>((resolve, reject) => {
 					img.onload = () => resolve();
 					img.onerror = () => reject(new Error("FILE_NOT_IMAGE"));
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					img.src = localObjectUrl!;
 				});
 			} catch {

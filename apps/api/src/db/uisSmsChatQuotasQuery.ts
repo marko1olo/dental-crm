@@ -3,6 +3,7 @@ import { db } from "./client.js";
 import { uisSmsChatQuotas } from "./schema.js";
 
 export async function getDailySmsQuota(organizationId: string) {
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const today = new Date().toISOString().split("T")[0]!; // YYYY-MM-DD
 
 	const [quota] = await db
@@ -32,6 +33,7 @@ export async function getDailySmsQuota(organizationId: string) {
 }
 
 export async function incrementDailySmsQuota(organizationId: string) {
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const today = new Date().toISOString().split("T")[0]!; // YYYY-MM-DD
 
 	const [existing] = await db

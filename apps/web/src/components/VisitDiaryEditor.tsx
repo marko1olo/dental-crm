@@ -645,6 +645,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						{!diaryUnread && (
 							<VisitDiaryTemplateSelector
 								isLocked={isLocked}
+								// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 								onSelectTemplate={(tmpl: any) => {
 									setDiary((prev) => ({
 										...prev,

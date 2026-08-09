@@ -26,6 +26,7 @@ test("personalizeTreatmentPlan tests", async (t) => {
 		"returns rule-based fallback when neural configuration is disabled",
 		async () => {
 			process.env.DENTAL_AI_NEURAL_DRAFT = "false";
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const result = await personalizeTreatmentPlan(basePayload as any);
 			assert.match(
 				result.patientFriendlyExplanation,
@@ -61,6 +62,7 @@ test("personalizeTreatmentPlan tests", async (t) => {
 			};
 		});
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const result = await personalizeTreatmentPlan(basePayload as any);
 
 		assert.strictEqual(fetchMock.mock.callCount(), 1);
@@ -97,6 +99,7 @@ test("personalizeTreatmentPlan tests", async (t) => {
 			};
 		});
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const result = await personalizeTreatmentPlan(basePayload as any);
 		assert.strictEqual(result.patientFriendlyExplanation, "AI Expl2");
 		assert.strictEqual(result.patientHygieneAdvice, "AI Adv2");
@@ -145,6 +148,7 @@ test("personalizeTreatmentPlan tests", async (t) => {
 				};
 			});
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const result = await personalizeTreatmentPlan(basePayload as any);
 
 			assert.ok(fetchMock.mock.callCount() >= 2);
@@ -189,6 +193,7 @@ test("personalizeTreatmentPlan tests", async (t) => {
 				};
 			});
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const result = await personalizeTreatmentPlan(basePayload as any);
 
 			assert.ok(fetchMock.mock.callCount() >= 1);

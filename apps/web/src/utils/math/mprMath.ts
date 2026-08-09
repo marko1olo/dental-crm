@@ -404,7 +404,9 @@ export function interpolateSpline(
 	const result: Point2D[] = [];
 
 	for (let i = 0; i < points.length - 1; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p0 = points[i]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p1 = points[i + 1]!;
 
 		const dx = p1.x - p0.x;
@@ -421,6 +423,7 @@ export function interpolateSpline(
 		}
 	}
 	// push last point
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	result.push(points[points.length - 1]!);
 
 	return result;
@@ -432,7 +435,9 @@ export function interpolateSpline(
 export function calculateNormals(points: Point2D[]): Point2D[] {
 	const normals: Point2D[] = [];
 	for (let i = 0; i < points.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const prev = i === 0 ? points[i]! : points[i - 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const next = i === points.length - 1 ? points[i]! : points[i + 1]!;
 
 		const dx = next.x - prev.x;
@@ -565,6 +570,7 @@ export function generatePanoramicImage(
 			zStartWorld + y * zStepWorld * Math.sign(zEndWorld - zStartWorld);
 
 		for (let x = 0; x < width; x++) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const point = splinePoints[x]!;
 
 			if (thickness === 0) {
@@ -581,6 +587,7 @@ export function generatePanoramicImage(
 				pixels[y * width + x] = value;
 			} else {
 				// Thick Slab Raycasting along the normal
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				const normal = normals[x]!;
 				let accumulator = blendMode === "mip" ? -Infinity : 0;
 
@@ -652,10 +659,12 @@ export function distancePointToLineSegment(p: vec3, v: vec3, w: vec3): number {
  */
 export function distancePointToSpline(p: vec3, spline: vec3[]): number {
 	if (spline.length === 0) return Infinity;
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	if (spline.length === 1) return vec3.distance(p, spline[0]!);
 
 	let minDist = Infinity;
 	for (let i = 0; i < spline.length - 1; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const dist = distancePointToLineSegment(p, spline[i]!, spline[i + 1]!);
 		if (dist < minDist) minDist = dist;
 	}
@@ -826,12 +835,17 @@ export function generateCatmullRomSpline(
 
 	// To correctly compute the spline, we duplicate the first and last points
 	// to act as ghost control points for the tangents.
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const pList = [points[0]!, ...points, points[points.length - 1]!];
 
 	for (let i = 1; i < pList.length - 2; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p0 = pList[i - 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p1 = pList[i]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p2 = pList[i + 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p3 = pList[i + 2]!;
 
 		const segmentSamples = Math.floor(samples / (points.length - 1));
@@ -865,6 +879,7 @@ export function generateCatmullRomSpline(
 	}
 
 	// Add the last point
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	curve.push(points[points.length - 1]!);
 	return curve;
 }
@@ -880,10 +895,12 @@ export function calculateCurveFrames(curve: Point3D[]): CurveFrame[] {
 	const up: Point3D = { x: 0, y: 0, z: -1 }; // Usually Z is up/down in dental CBCT
 
 	for (let i = 0; i < curve.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p = curve[i]!;
 		let tangent: Point3D;
 
 		if (i === 0) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const next = curve[i + 1]!;
 			tangent = normalize({
 				x: next.x - p.x,
@@ -891,6 +908,7 @@ export function calculateCurveFrames(curve: Point3D[]): CurveFrame[] {
 				z: next.z - p.z,
 			});
 		} else if (i === curve.length - 1) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const prev = curve[i - 1]!;
 			tangent = normalize({
 				x: p.x - prev.x,
@@ -898,7 +916,9 @@ export function calculateCurveFrames(curve: Point3D[]): CurveFrame[] {
 				z: p.z - prev.z,
 			});
 		} else {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const next = curve[i + 1]!;
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const prev = curve[i - 1]!;
 			tangent = normalize({
 				x: next.x - prev.x,

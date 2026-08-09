@@ -312,6 +312,7 @@
 }
 
 /* Отработанная строка гаснет, но остаётся читаемой и не исчезает из списка. */
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .ops-row--done td {
 	color: var(--muted);
 }

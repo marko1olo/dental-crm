@@ -717,6 +717,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			});
 
 			return result;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			const statusCode = err.statusCode || 500;
 			const message = err.message || "Internal Server Error";
@@ -870,6 +871,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			});
 
 			return result;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			const statusCode = err.statusCode || 500;
 			return reply.code(statusCode).send({

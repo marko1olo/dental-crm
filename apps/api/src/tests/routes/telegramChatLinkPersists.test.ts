@@ -275,6 +275,7 @@ describe("привязка Telegram переживает перезапуск с
 			1,
 			`строк связки в базе ${rows.length}, ожидалась одна`,
 		);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const row = rows[0]!;
 		assert.equal(
 			row.subjectId,
@@ -510,6 +511,7 @@ describe("привязка Telegram переживает перезапуск с
 	test("чужая клиника не видит связку и не может её отозвать", async () => {
 		const rows = await rawChatLinkRows(runtime.organizationId);
 		const linkId = rows[0]?.id;
+		assert.ok(linkId, "linkId must be defined");
 
 		const foreignList = await app.inject({
 			method: "GET",

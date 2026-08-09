@@ -112,6 +112,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 				);
 				return;
 			}
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const payload = (await response.json().catch((err: any) => {
 				logger.error(err);
 				showToast(

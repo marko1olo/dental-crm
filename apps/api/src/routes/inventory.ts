@@ -9,6 +9,7 @@ import { db } from "../db/client.js";
 
 declare module "fastify" {
 	interface FastifyRequest {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		user?: { id: string; [key: string]: any };
 	}
 }

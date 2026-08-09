@@ -176,9 +176,12 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	 */
 	const [activeContract, setActiveContract] = useState<unknown>(null);
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
 	const insuranceContractId =
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(patient as any)?.insuranceContractId ||
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(patient?.administrativeProfile as any)?.insuranceContractId;
 
 	useEffect(() => {

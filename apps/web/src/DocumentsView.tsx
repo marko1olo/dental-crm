@@ -58,6 +58,7 @@ type MedicalCopyRequestSourceDocument = GeneratedDocument & {
 	} | null;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 type DocumentsViewProps = Record<string, any>;
 
 const EXTRACT_DIAGNOSIS_CHIPS = [

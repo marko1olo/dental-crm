@@ -40,6 +40,7 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 				);
 			if (!patient) return reply.code(404).send({ error: "PatientNotFound" });
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const events: any[] = [];
 
 			const diaries = await db

@@ -36,6 +36,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 	patientId,
 }) => {
 	const [loading, setLoading] = useState(false);
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [riskData, setRiskData] = useState<any>(null);
 	// Кнопка «Рассчитать AI-риск» перезапускает тот же эффект, а не отдельную
 	// функцию: иначе ручной запрос остался бы без отмены и снова мог бы
@@ -85,6 +86,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 				});
 				if (cancelled) return;
 				if (res.ok) {
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					const data = await res.json().catch((err: any) => {
 						logger.error(err);
 						showToast(

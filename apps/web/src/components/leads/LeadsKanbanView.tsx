@@ -721,6 +721,7 @@ export function LeadsKanbanView() {
 											exit={{ opacity: 0, scale: 0.95 }}
 											key={lead.id}
 											draggable
+											// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 											onDragStart={(e: any) => handleDragStart(e, lead.id)}
 											onClick={() => openEditModal(lead)}
 											style={{

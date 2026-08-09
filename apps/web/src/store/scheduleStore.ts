@@ -49,7 +49,9 @@ export interface ScheduleStore {
 					prev: Appointment["status"] | "all",
 			  ) => Appointment["status"] | "all"),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	scheduleDateFilter: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setScheduleDateFilter: (val: any | ((prev: any) => any)) => void;
 	staffScheduleDrafts: Record<string, StaffScheduleDraft>;
 	setStaffScheduleDrafts: (

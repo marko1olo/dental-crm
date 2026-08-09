@@ -47,6 +47,7 @@ describe("runVisitFlow Orchestrator", () => {
 							},
 						],
 					}),
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				}) as any,
 		);
 	});

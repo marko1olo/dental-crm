@@ -10,6 +10,7 @@ describe("assertSpeechChunkDbStores", () => {
 		const mockDb = {
 			objectStoreNames: {
 				contains: (storeName: string) =>
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					requiredSpeechChunkDbStoreNames.includes(storeName as any),
 			},
 		} as unknown as IDBDatabase;
@@ -23,6 +24,7 @@ describe("assertSpeechChunkDbStores", () => {
 			objectStoreNames: {
 				contains: (storeName: string) => {
 					if (storeName === missingStore) return false;
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					return requiredSpeechChunkDbStoreNames.includes(storeName as any);
 				},
 			},
@@ -41,7 +43,9 @@ describe("assertSpeechChunkDbStores", () => {
 		const mockDb = {
 			objectStoreNames: {
 				contains: (storeName: string) => {
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					if (missingStores.includes(storeName as any)) return false;
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					return requiredSpeechChunkDbStoreNames.includes(storeName as any);
 				},
 			},

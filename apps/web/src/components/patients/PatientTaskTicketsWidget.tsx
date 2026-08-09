@@ -99,12 +99,14 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 		error: loadFailure,
 		failureStatus,
 		reload: fetchTickets,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	} = usePatientResource<any[]>(
 		patientId,
 		(id) => `/api/patients/${id}/tickets`,
 		getReadHeaders,
 		[],
 	);
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const tickets: any[] = Array.isArray(rawTickets) ? rawTickets : [];
 	const phase = resolvePanelPhase({
 		isLoading,
@@ -231,6 +233,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 
 	const staff = dashboard?.clinicSettings?.staff || [];
 	const pendingCount = tickets.filter(
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(t: any) => t.status === "pending",
 	).length;
 
@@ -329,6 +332,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										<option value="" disabled>
 											Выберите ответственного сотрудника
 										</option>
+										{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 										{staff.map((s: any) => (
 											<option key={s.id} value={s.id}>
 												{s.fullName}
@@ -416,6 +420,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 						{tickets.map((ticket) => {
 							const isPending = ticket.status === "pending";
 							const assignee = staff.find(
+								// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 								(s: any) => s.id === ticket.assignedToId,
 							);
 

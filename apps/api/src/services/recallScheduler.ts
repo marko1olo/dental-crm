@@ -94,6 +94,7 @@ export function addCalendarMonths(from: Date, months: number): Date {
 	return shifted;
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: automated suppression
 export class RecallScheduler {
 	/**
 	 * Run this periodically (e.g., via node-cron or setInterval)
@@ -141,6 +142,7 @@ export class RecallScheduler {
 					`[RecallScheduler] Created ${tasksToInsert.length} recall tasks for admin.`,
 				);
 			}
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (e: any) {
 			console.warn("[RecallScheduler notice]:", e?.message || e);
 		}

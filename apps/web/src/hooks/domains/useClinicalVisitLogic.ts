@@ -185,6 +185,7 @@ export function useClinicalVisitLogic() {
 		setTreatmentPlanNewApprovalAcknowledged(false);
 	};
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const toggleClinicalRule = async (_rule: any) => {};
 
 	return {

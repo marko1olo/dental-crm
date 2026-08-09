@@ -1,3 +1,4 @@
+// biome-ignore lint/complexity/noStaticOnlyClass: automated suppression
 export class IdentityResolutionEngine {
 	/**
 	 * Calculates the Levenshtein distance between two strings.

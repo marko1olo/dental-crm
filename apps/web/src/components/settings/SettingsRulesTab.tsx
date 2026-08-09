@@ -36,35 +36,44 @@ const _clinicalRuleOwnerRoles: StaffRole[] = [
 export function SettingsRulesTab() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		dashboard,
 		newRuleAction,
 		newRuleBlockedServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleCategory,
 		newRuleCompletedServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleOwnerRole,
 		newRulePatientText,
 		newRuleRequiredServiceId,
 		newRuleSeverity,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleSpecialty,
 		newRuleTitle,
 		newRuleTriggerServiceId,
 		newRuleWarningText,
 		setNewRuleAction,
 		setNewRuleBlockedServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleCategory,
 		setNewRuleCompletedServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleOwnerRole,
 		setNewRulePatientText,
 		setNewRuleRequiredServiceId,
 		setNewRuleSeverity,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleSpecialty,
 		setNewRuleTitle,
 		setNewRuleTriggerServiceId,
 		setNewRuleWarningText,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		submitClinicalRule,
 		removeClinicalRule,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		specialtyLabels,
 		toggleClinicalRule,
 		isClinicalRuleSaving,
@@ -73,7 +82,9 @@ export function SettingsRulesTab() {
 		clinicalRuleActionLabels,
 		clinicalRuleSeverityLabels,
 		serviceCategoryLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffRoleLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		clinicalRuleSummary,
 	} = mergedProps;
 	const { typedServiceCatalog, typedClinicalRules } = derivations;

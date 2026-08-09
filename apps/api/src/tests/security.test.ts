@@ -37,6 +37,7 @@ type FakeRequest = {
 function fakeRequest(
 	headers: Record<string, string> = {},
 	extra: Partial<FakeRequest> = {},
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 ): any {
 	return {
 		headers,
@@ -49,7 +50,9 @@ function fakeRequest(
 }
 
 function fakeReply() {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const state: { code: number | null; body: any } = { code: null, body: null };
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const reply: any = {
 		code(value: number) {
 			state.code = value;

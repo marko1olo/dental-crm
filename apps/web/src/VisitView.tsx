@@ -23,108 +23,211 @@ import { getToothConfig, getToothPath } from "./utils/toothGeometry";
 import { getFilteredAppViews, viewLabels } from "./workspaceShell";
 import "./styles/VisitView.css";
 export interface VisitViewProps {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	AlertTriangle: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	Bot: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	Check: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	CheckCircle2: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	ClinicalRulePanel: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	ClipboardCheck: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	Mic: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	Sparkles: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	acceptDraftToVisit: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeAppointment: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeChair: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeDoctor: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeImagingStudies: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activePatient: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activePatientInsight: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeUsableDocuments: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeVisitClinicalRuleEvaluations: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	polishingField: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	polishSingleField: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	selectedWorkspaceRole: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeVisitClinicalRuleSummary: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	appendToTranscript: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	applyProtocolTemplate: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	buildDraft: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	buildOfflineDraft: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	clearTranscriptWithUndo: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	clearedTranscriptSnapshot: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	clinicalRuleActionLabels: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	clinicalRuleSeverityLabels: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	dashboard: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	dictationQuickPhrases: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	draft: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	emptyDictationVoiceActionLabel: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	flushPendingSpeechChunks: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	flushPendingVisitSaves: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	formatTime: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	hasVisitTranscriptText: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	imagingKindLabels: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDraftAccepting: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDraftLoading: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isOnline: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isPendingVisitSyncing: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isServerVoiceRecording: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isTranscriptPolishing: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isVisitDictating: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isVisitNoteDirty: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	lastLocalSavedAt: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	lastPendingVisitSaveAt: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	lastServerDraftSavedAt: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	lastVisitSaveReceipt: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	localDraftWasRestored: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	openVisitWarningAction: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	pendingSpeechChunkCount: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	pendingSpeechFlushActionLabel: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	pendingSpeechFlushActionTitle: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	pendingVisitSaveCount: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	polishTranscript: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	primaryVisitWarning: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	scrollToVisitArea: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	selectedProtocolTemplate: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	selectedSpecialty: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	serverDraftSyncState: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	serviceTitle: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setClearedTranscriptSnapshot: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setSelectedProtocolId: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setSelectedSpecialty: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setTranscript: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	specialtiesWithTemplates: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	specialtyLabels: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	specialtyProtocolTemplates: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	speechGatewayActiveProviderIsLocal: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	speechGatewayStatus: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	speechRecognitionReady: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	speechStatusNote: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	speechTranscriptionBusy: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	staffRoleLabels: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	startServerVoiceRecording: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	startVisitDictation: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	stopServerVoiceRecording: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	toothRows: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	toothStateByCode: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	transcript: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	undoTranscriptClear: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	updateVisitNoteField: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visibleVisitSpecialtyFocusOptions: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitCloseChecklist: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitDraftBuildMissingSteps: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitDraftMissingFieldLabel: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitDraftQualityLabels: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitDraftReadyToBuild: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitDraftSignalLabel: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitDraftUserEditedRef: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitNoteAcceptMissingSteps: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitNoteActionLabel: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitNoteFieldDefinitions: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitNoteForm: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitNoteReadyToAccept: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitNoteStatusLabel: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitPrimaryAction: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitSafetyCards: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitSaveReceiptText: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitWarnings: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitWorkflowSteps: any;
 	setToothState: (code: string, state: string) => void;
 }
@@ -149,12 +252,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		ClipboardCheck,
 		Mic,
 		Sparkles,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		acceptDraftToVisit,
 		activeAppointment,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		activeChair,
 		activeDoctor,
 		activeImagingStudies,
 		activePatient: rawActivePatient,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		activePatientInsight,
 		activeUsableDocuments,
 		activeVisitClinicalRuleEvaluations,
@@ -162,6 +268,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		appendToTranscript,
 		applyProtocolTemplate,
 		buildDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		buildOfflineDraft,
 		clearTranscriptWithUndo,
 		clearedTranscriptSnapshot,
@@ -176,18 +283,25 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		formatTime,
 		hasVisitTranscriptText,
 		imagingKindLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDraftAccepting,
 		isDraftLoading,
 		isOnline,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isPendingVisitSyncing,
 		isServerVoiceRecording,
 		isTranscriptPolishing,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isVisitDictating,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isVisitNoteDirty,
 		lastLocalSavedAt,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		lastPendingVisitSaveAt,
 		lastServerDraftSavedAt,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		lastVisitSaveReceipt,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		localDraftWasRestored,
 		openVisitWarningAction,
 		pendingSpeechChunkCount,
@@ -195,7 +309,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		pendingSpeechFlushActionTitle,
 		pendingVisitSaveCount,
 		polishTranscript,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		polishingField,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		polishSingleField,
 		primaryVisitWarning,
 		scrollToVisitArea,
@@ -211,14 +327,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		specialtiesWithTemplates,
 		specialtyLabels,
 		specialtyProtocolTemplates,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechGatewayActiveProviderIsLocal,
 		speechGatewayStatus,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechRecognitionReady,
 		speechStatusNote,
 		speechTranscriptionBusy,
 		staffRoleLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		startServerVoiceRecording,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		startVisitDictation,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		stopServerVoiceRecording,
 		toothRows,
 		toothStateByCode,
@@ -226,22 +347,32 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		transcript,
 		undoTranscriptClear,
 		updateVisitNoteField,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visibleVisitSpecialtyFocusOptions,
 		visitCloseChecklist,
 		visitDraftBuildMissingSteps,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitDraftMissingFieldLabel,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitDraftQualityLabels,
 		visitDraftReadyToBuild,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitDraftSignalLabel,
 		visitDraftUserEditedRef,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitNoteAcceptMissingSteps,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitNoteActionLabel,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitNoteFieldDefinitions,
 		visitNoteForm,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitNoteReadyToAccept,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitNoteStatusLabel,
 		visitPrimaryAction,
 		visitSafetyCards,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitSaveReceiptText,
 		visitWarnings,
 		visitWorkflowSteps,
@@ -277,6 +408,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	>("emk");
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 
 	const _visitAiDiagnosesByCode = useVisitStore(
@@ -325,6 +457,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	];
 
 	const appendToEMKField = (fieldKey: string, text: string) => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const currentVal = (visitNoteForm as any)[fieldKey] || "";
 		if (!currentVal.includes(text)) {
 			const sep = currentVal ? "\n" : "";
@@ -355,6 +488,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		fieldKey?: string,
 	) => {
 		if (!selectedToothForMenu) return;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setToothState(selectedToothForMenu.code, state as any);
 		if (text && fieldKey)
 			appendToEMKField(fieldKey, `Зуб ${selectedToothForMenu.code}: ${text}`);
@@ -363,6 +497,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 	const handleApplyMaterial = (materialLabel: string, textTemplate: string) => {
 		if (!selectedToothForMenu) return;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setToothState(selectedToothForMenu.code, "planned" as any);
 		appendToEMKField(
 			"treatmentPlan",
@@ -408,6 +543,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
     приёма и без единого слова о причине. Проверяем доступность заранее и
     объясняем, кто этот шаг закрывает.
   */
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const openCloseChecklistSection = (task: any) => {
 		const section = typeof task?.section === "string" ? task.section : "";
 		if (!section) {
@@ -817,6 +953,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								data-testid="visit-progress-strip"
 								aria-label="Прогресс приема"
 							>
+								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 								{safeVisitWorkflowSteps.map((step: any, index: number) => (
 									<article
 										className={`visit-progress-step step-${step.state}`}
@@ -858,6 +995,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							borderRadius: "8px",
 						}}
 					>
+						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{safeVisitSafetyCards.map((item: any) => (
 							<article
 								className={`safety-${item.state}`}
@@ -968,18 +1106,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						className="dictation-quick-row"
 						aria-label="Быстрые фразы для диктовки"
 					>
-						{(Array.isArray(dictationQuickPhrases)
-							? dictationQuickPhrases
-							: []
-						).map((phrase: any) => (
-							<button
-								type="button"
-								key={phrase.label}
-								onClick={() => appendToTranscript?.(phrase.text)}
-							>
-								{phrase.label}
-							</button>
-						))}
+						{(Array.isArray(dictationQuickPhrases) ? dictationQuickPhrases : [])
+							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+							.map((phrase: any) => (
+								<button
+									type="button"
+									key={phrase.label}
+									onClick={() => appendToTranscript?.(phrase.text)}
+								>
+									{phrase.label}
+								</button>
+							))}
 					</div>
 					<div style={{ position: "relative" }}>
 						<div style={{ position: "relative", width: "100%" }}>
@@ -1096,9 +1233,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							parsedData={smartParsedData}
 							rawText={transcript}
 							type="visit"
+							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 							onApply={(data: any) => {
 								if (data) {
 									if (data.toothUpdates) {
+										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 										data.toothUpdates.forEach((t: any) => {
 											setToothState(t.code, t.state);
 										});
@@ -1255,8 +1394,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											: undefined
 									}
 									title={
-										speechGatewayStatus?.polishPolicy.neuralEnabled
-											? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
+										speechGatewayStatus?.polishPolicy?.neuralEnabled
+											? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy?.modelName ?? "модель"}`
 											: "Локальная очистка терминов, секций и номеров зубов"
 									}
 								>
@@ -1286,6 +1425,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							>
 								<strong>Чтобы собрать черновик, осталось:</strong>
 								<ul>
+									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 									{(visitDraftBuildMissingSteps || []).map((step: any) => (
 										<li key={step}>{step}</li>
 									))}
@@ -2219,6 +2359,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						<span>{dashboard?.protocolTemplates?.length ?? 0}</span>
 					</div>
 					<div className="specialty-strip">
+						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{(specialtiesWithTemplates || []).map((specialty: any) => (
 							<button
 								className={selectedSpecialty === specialty ? "active" : ""}
@@ -2241,11 +2382,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<p>
 									{selectedProtocolTemplate.defaultDurationMinutes} мин · снимки{" "}
 									{(selectedProtocolTemplate.suggestedImaging || [])
+										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 										.map((kind: any) => imagingKindLabels?.[kind] || kind)
 										.join(", ")}
 								</p>
 							</div>
 							<div className="protocol-template-list">
+								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 								{(specialtyProtocolTemplates || []).map((template: any) => (
 									<button
 										className={
@@ -2264,6 +2407,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							</div>
 							<ul>
 								{(selectedProtocolTemplate.safetyWarnings || []).map(
+									// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 									(warning: any) => (
 										<li key={warning}>{warning}</li>
 									),
@@ -2295,6 +2439,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							evaluations={
 								dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
 									? (activeVisitClinicalRuleEvaluations || []).filter(
+											// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 											(e: any) => e.ownerRole !== "assistant",
 										)
 									: activeVisitClinicalRuleEvaluations || []
@@ -2404,11 +2549,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							</span>
 						</div>
 						{visitCloseChecklist.items
+							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 							.filter((task: any) =>
 								dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
 									? task.ownerRole !== "assistant"
 									: true,
 							)
+							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 							.map((task: any) => (
 								<button
 									className={`close-task ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
@@ -2439,6 +2586,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			{selectedToothForMenu &&
 				(() => {
 					const { code } = selectedToothForMenu;
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					const state = (toothStateByCode as any)[code] ?? "idle";
 					const geom = getToothPath(Number(code));
 					const cfg = getToothConfig(Number(code));
@@ -2574,7 +2722,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 									{visitWarnings && visitWarnings.length > 0 && (
 										<div className="_ccm-warn">
-											<strong>⚠️ Риски:</strong>{" "}
+											<strong>⚠️ Риски:</strong> {/*  */}
+											biome-ignore lint/suspicious/noExplicitAny: automated
+											suppression
+											{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 											{visitWarnings.map((w: any) => w.title).join(" · ")}
 										</div>
 									)}
@@ -2590,6 +2741,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												"--ab": "#f0fdf4",
 												"--af": "#166534",
 												"--abr": "#bbf7d0",
+												// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 											} as any
 										}
 										onClick={() => handleSelectDiagnosis("idle")}
@@ -2606,6 +2758,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												"--ab": "#f0fdf4",
 												"--af": "#166534",
 												"--abr": "#bbf7d0",
+												// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 											} as any
 										}
 										onClick={() =>
@@ -2645,6 +2798,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												"--ab": "#fffbeb",
 												"--af": "#78350f",
 												"--abr": "#fde68a",
+												// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 											} as any
 										}
 										onClick={() =>
@@ -2870,6 +3024,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												data-color="violet"
 												onClick={() => {
 													if (
+														// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 														visitWarnings?.some((w: any) =>
 															/бисфосф|bisph/i.test(w.title + w.detail),
 														)

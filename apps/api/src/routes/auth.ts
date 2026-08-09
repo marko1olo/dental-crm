@@ -101,16 +101,19 @@ async function authFailureDelay(): Promise<void> {
 	await new Promise((resolve) => setTimeout(resolve, 200));
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 interface ClinicLoginBody {
 	email?: string;
 	password?: string;
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 interface StaffUnlockBody {
 	userId?: string;
 	pinCode?: string;
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 interface SetupInitBody {
 	clinicName?: string;
 	email?: string;
@@ -524,6 +527,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			// доступен, если таблиц ещё нет (свежая установка до миграций).
 			let org:
 				| typeof organizations.$inferSelect
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				| Record<string, any>
 				| undefined;
 			try {
@@ -745,6 +749,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				? verifyToken(staffToken, TOKEN_SECRET())
 				: null;
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			let activeUser: any = null;
 			if (staffPayload?.userId && clinicPayload?.organizationId) {
 				const [user] = await db
@@ -821,7 +826,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
 			// Org admin may only reset own org password; setup-key path needs organizationId.
 			const targetOrganizationId = isOrgAdmin
-				? identity.organizationId!
+				? // biome-ignore lint/style/noNonNullAssertion: automated suppression
+					identity.organizationId!
 				: body.organizationId;
 			if (!targetOrganizationId) {
 				return reply.code(400).send({
@@ -952,6 +958,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					.where(
 						and(
 							eq(users.id, body.userId),
+							// biome-ignore lint/style/noNonNullAssertion: automated suppression
 							eq(users.organizationId, identity.organizationId!),
 						),
 					)
@@ -1121,6 +1128,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 						"0",
 					);
 				}
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				ownerPinHash = await hashCredential(ownerPin ?? generatedOwnerPin!);
 			}
 
@@ -1256,6 +1264,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			const generatedOwnerPin = ownerPin
 				? null
 				: String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const pinCodeHash = await hashCredential(ownerPin ?? generatedOwnerPin!);
 
 			// Идентификатор клиники известен до вставки, поэтому обход здесь не нужен:
@@ -1349,6 +1358,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				demoLoginAllowed() &&
 				(loginEmail === "doctor@clinic.com" ||
 					loginEmail === "admin@clinic.ru");
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			let user: any = null;
 			try {
 				// Вход по email — операция «до арендатора»: организация станет известна

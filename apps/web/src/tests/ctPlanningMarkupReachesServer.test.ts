@@ -204,6 +204,7 @@ describe("разметка планирования имплантации ух�
 			1,
 			`ожидался ровно один запрос, случилось ${requests.length}`,
 		);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const request = requests[0]!;
 		assert.equal(request.url, CT_PLANNING_SAVE_URL);
 		assert.equal(request.method, "POST");
@@ -274,6 +275,7 @@ describe("разметка планирования имплантации ух�
 			() => loadCtPlanningMarkup(PATIENT_ID, STUDY_UID),
 			{ body: { success: true, planning: null } },
 		);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const request = requests[0]!;
 
 		/*

@@ -374,6 +374,7 @@ describe("чтение книг Excel", () => {
 			{ ref: "B2", value: "33678", type: "date" },
 		]);
 		const rows = parseXlsx(file).sheets[0]?.rows;
+		assert.ok(rows, "rows must be defined");
 		assert.equal(rows[1]?.[1], "1992-03-15");
 	});
 
@@ -395,6 +396,7 @@ describe("чтение книг Excel", () => {
 			{ ref: "A4", value: "Петрова" },
 		]);
 		const rows = parseXlsx(file).sheets[0]?.rows;
+		assert.ok(rows, "rows must be defined");
 		assert.equal(rows.length, 3);
 		assert.deepEqual(
 			rows.map((row) => row[0]),

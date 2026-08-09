@@ -111,6 +111,7 @@ function distanceToPolylineMm(
 ): number {
 	let best = Number.POSITIVE_INFINITY;
 	for (let i = 1; i < reference.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const d = distanceToSegmentMm(p, reference[i - 1]!, reference[i]!);
 		if (d < best) best = d;
 	}
@@ -200,6 +201,7 @@ function archPortionOfClosed(
 	let splitIndex = 0;
 	let best = Number.POSITIVE_INFINITY;
 	for (let i = 0; i < closedPolyline.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const d = distanceMm(closedPolyline[i]!, lastControlPoint);
 		if (d < best) {
 			best = d;
@@ -230,10 +232,12 @@ function closedVsOpenWorstVertexMm(controlPoints: readonly Point2D[]): number {
 	const open = cornerstonePolyline(controlPoints, false);
 	const { archPortion } = archPortionOfClosed(
 		cornerstonePolyline(controlPoints, true),
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		controlPoints[controlPoints.length - 1]!,
 	);
 	assert.strictEqual(archPortion.length, open.length);
 	return archPortion.reduce(
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		(worst, point, i) => Math.max(worst, distanceMm(point, open[i]!)),
 		0,
 	);
@@ -244,7 +248,9 @@ describe("the fixtures are the curves they claim to be", () => {
 		// Same generator, so the two files describe one arch. Endpoints and apex
 		// pinned so a change to either fixture fails loudly here.
 		assert.strictEqual(ELLIPSE_HANDLES.length, 7);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.ok(distanceMm(ELLIPSE_HANDLES[0]!, { x: -28, y: 11 }) < 1e-9);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.ok(distanceMm(ELLIPSE_HANDLES[6]!, { x: 28, y: 11 }) < 1e-9);
 		const h3 = ELLIPSE_HANDLES[3];
 		if (h3) {
@@ -282,6 +288,7 @@ describe("closing the contour is what cornerstone does, and it moves the curve",
 		// 7 control points: 6 curve segments open, 7 closed, same resolution.
 		assert.strictEqual((closed.length - 1) / (open.length - 1), 7 / 6);
 		assert.ok(
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			distanceMm(closed[closed.length - 1]!, closed[0]!) < 1e-9,
 			"the closed polyline does not return to its own start",
 		);
@@ -291,6 +298,7 @@ describe("closing the contour is what cornerstone does, and it moves the curve",
 		const closed = cornerstonePolyline(ELLIPSE_HANDLES, true);
 		const { archPortion, splitIndex } = archPortionOfClosed(
 			closed,
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			ELLIPSE_HANDLES[6]!,
 		);
 		// The split is the found index, and it coincides with the open rendering's
@@ -314,6 +322,7 @@ describe("closing the contour is what cornerstone does, and it moves the curve",
 		const open = cornerstonePolyline(ELLIPSE_HANDLES, false);
 		const { archPortion, splitIndex } = archPortionOfClosed(
 			closed,
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			ELLIPSE_HANDLES[6]!,
 		);
 		assert.strictEqual(closed.length - 1 - splitIndex, 21);
@@ -363,6 +372,7 @@ describe("cost of not sampling the polyline, against the curve that exists", () 
 		test(`${fixture.name}: reported length sits ~7 % BELOW the arch on screen`, () => {
 			const { archPortion } = archPortionOfClosed(
 				cornerstonePolyline(fixture.handles, true),
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				fixture.handles[fixture.handles.length - 1]!,
 			);
 			const seenMm = polylineLengthMm(archPortion);
@@ -380,6 +390,7 @@ describe("cost of not sampling the polyline, against the curve that exists", () 
 		test(`${fixture.name}: max column deviation from the seen arch is ~4 mm, not 0.39 mm`, () => {
 			const { archPortion } = archPortionOfClosed(
 				cornerstonePolyline(fixture.handles, true),
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				fixture.handles[fixture.handles.length - 1]!,
 			);
 			const built = reconstruction(fixture.handles);
@@ -434,6 +445,7 @@ describe("the measurement itself, printed so it can be quoted", () => {
 			const open = cornerstonePolyline(fixture.handles, false);
 			const { archPortion, splitIndex } = archPortionOfClosed(
 				closed,
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				fixture.handles[fixture.handles.length - 1]!,
 			);
 			const seenMm = polylineLengthMm(archPortion);
@@ -460,6 +472,7 @@ describe("the measurement itself, printed so it can be quoted", () => {
 		}
 		const { archPortion } = archPortionOfClosed(
 			cornerstonePolyline(ELLIPSE_HANDLES, true),
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			ELLIPSE_HANDLES[6]!,
 		);
 		lines.push(
@@ -483,6 +496,7 @@ describe("the reconstruction is closer to the true arch than what cornerstone dr
 	test("max deviation from the analytic semi-ellipse: reconstruction << closed rendering", () => {
 		const { archPortion } = archPortionOfClosed(
 			cornerstonePolyline(ELLIPSE_HANDLES, true),
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			ELLIPSE_HANDLES[6]!,
 		);
 		const built = reconstruction(ELLIPSE_HANDLES);
@@ -508,6 +522,7 @@ describe("the reconstruction is closer to the true arch than what cornerstone dr
 		const analyticMm = polylineLengthMm(ANALYTIC_ARCH);
 		const { archPortion } = archPortionOfClosed(
 			cornerstonePolyline(ELLIPSE_HANDLES, true),
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			ELLIPSE_HANDLES[6]!,
 		);
 		const closedMm = polylineLengthMm(archPortion);

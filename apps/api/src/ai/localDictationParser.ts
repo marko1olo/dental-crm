@@ -32,6 +32,7 @@ export interface SmartAction {
 		| "add_implant"
 		| "create_patient"
 		| "complex_llm_fallback";
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	payload?: any;
 }
 
@@ -546,6 +547,7 @@ export function parseDictationLocally(
 				/(?:\+7|8)[\s-]*\(?\d{3}\)?[\s-]*\d{3}[\s-]*\d{2}[\s-]*\d{2}/,
 			);
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			let action: any = "schedule";
 			if (text.includes("новый пациент")) action = "create_patient";
 
@@ -618,6 +620,7 @@ export function parseDictationLocally(
 		if (teethCodes.length > 0) {
 			for (const clause of clauses) {
 				const localTeeth = expandToothRanges(clause);
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				let foundState: any = null;
 				for (const [keyword, state] of Object.entries(STATE_MAPPING)) {
 					const regex = new RegExp(`(^|[^а-яё])${keyword}([^а-яё]|$)`, "i");

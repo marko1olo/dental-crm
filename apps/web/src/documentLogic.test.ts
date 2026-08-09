@@ -18,6 +18,7 @@ describe("validateDocumentPayloadForKind", () => {
 		attendanceSignedByRole: "Doctor",
 		attendanceDiagnosisDisclosureExcluded: true,
 		attendanceNotSickLeaveAcknowledged: true,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		requiredDocumentField: (val: any, msg: string) => (val ? null : msg),
 		...overrides,
 	});

@@ -9,11 +9,11 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppStore } from "../../store/appStore";
 import { useSettingsStore } from "../../store/settingsStore";
 
-// biome-ignore lint/suspicious/noExplicitAny: expected any for loosely typed arguments
 export function useAuthLogic({
 	setError,
 	loadDashboard,
 	loadTelegramControlPlane,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 }: any) {
 	const setErrorRef = useRef(setError);
 	setErrorRef.current = setError;
@@ -47,6 +47,7 @@ export function useAuthLogic({
 		setSettingsAdminSecretSession,
 		scheduleAdminSecretSession,
 		setScheduleAdminSecretSession,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramAdminSecretSession,
 		setTelegramAdminSecretSession,
 	} = useSettingsStore();

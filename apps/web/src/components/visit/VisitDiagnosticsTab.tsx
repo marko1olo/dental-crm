@@ -32,6 +32,7 @@ import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
   невозможным, а не объяснённым. Файл components/imaging/VisiographAnalyzer.tsx
   в эту территорию не входит.
 */
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 	const ctx = useAppLogicContext();
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
@@ -44,6 +45,7 @@ export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 
 	const dashboard = ctx?.dashboard;
 	const visitPatientId = realVisitFieldId(dashboard?.activeVisit?.patientId);
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const patients: any[] = Array.isArray(dashboard?.patients)
 		? dashboard.patients
 		: [];

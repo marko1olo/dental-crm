@@ -6,6 +6,7 @@ import { Register } from "./Register";
 import { UserLogin } from "./UserLogin";
 
 interface AuthHubProps {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onSuccess: (clinicProfile: any, userProfile?: any) => void;
 }
 

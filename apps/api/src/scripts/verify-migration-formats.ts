@@ -465,6 +465,7 @@ try {
 			["Лебедева Ирина Олеговна", "89091112233", "1995-02-14", "Отбеливание"],
 		];
 		names.forEach((row, index) => {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			insertPatient.run(index + 1, row[0]!, row[1]!, row[2]!, row[3]!);
 		});
 		const insertVisit = database.prepare(

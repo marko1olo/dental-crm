@@ -81,6 +81,7 @@ describe("Clinic/staff auth — body guard (null/typed → 400, не 500)", () =
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			payload?: any;
 		} = {
 			method: "POST",

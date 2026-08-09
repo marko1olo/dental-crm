@@ -10,6 +10,7 @@ import { showToast } from "../GlobalToast";
 
 interface AcceptInviteProps {
 	token: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onSuccess: (clinicProfile: any, userProfile: any) => void;
 	onCancel: () => void;
 }
@@ -57,6 +58,7 @@ export function AcceptInvite({
 			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, data.staffToken);
 			showToast("Профиль успешно создан!", "success");
 			onSuccess({ organizationId: data.user.organizationId }, data.user);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			showToast(err.message || "Ссылка недействительна", "error");
 			onCancel();

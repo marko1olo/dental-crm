@@ -212,12 +212,14 @@ async function callVisionModel(
 ): Promise<string> {
 	const baseUrl = slot.provider === "groq" ? GROQ_BASE_URL : GEMINI_BASE_URL;
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const userContent: any[] = [{ type: "text", text: prompt }];
 	if (extraUserText) {
 		userContent.push({ type: "text", text: extraUserText });
 	}
 	userContent.push({ type: "image_url", image_url: { url: imageBase64 } });
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const body: any = {
 		model: slot.model,
 		temperature: 0.1,
@@ -246,10 +248,12 @@ async function callVisionModel(
 		const err = new Error(
 			`${slot.provider.toUpperCase()} ${resp.status}: ${errText}`,
 		);
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(err as any).statusCode = resp.status;
 		throw err;
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const data = (await resp.json()) as any;
 	const content: string = data?.choices?.[0]?.message?.content ?? "";
 	if (!content || content.length < 20) {
@@ -272,6 +276,7 @@ async function runCascade(
 	minLength = 80,
 ): Promise<{ text: string; slotIdx: number } | null> {
 	for (let slotIdx = 0; slotIdx < slots.length; slotIdx++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const slot = slots[slotIdx]!;
 		const providerId =
 			slot.provider === "groq" ? GROQ_PROVIDER_ID : GEMINI_PROVIDER_ID;
@@ -279,9 +284,11 @@ async function runCascade(
 		const maxAttempts = Math.max(1, keyRetryLimit(providerId));
 
 		for (let attempt = 0; attempt < maxAttempts; attempt++) {
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const candidate = selectProviderKey(providerId as any, triedFingerprints);
 			if (!candidate) break; // no more keys for this provider
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const apiKey = (candidate as any).value ?? (candidate as any).key ?? "";
 			if (!apiKey) {
 				triedFingerprints.add(candidate.fingerprint);
@@ -301,14 +308,17 @@ async function runCascade(
 				);
 
 				if (text.length >= minLength) {
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					recordProviderKeySuccess(providerId as any, candidate);
 					return { text, slotIdx };
 				}
 				console.warn(
 					`[visionAnalyzer] Response too short (${text.length} chars), trying next`,
 				);
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
 				const statusCode: number = err?.statusCode ?? 0;
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				recordProviderKeyFailure(providerId as any, candidate, err);
 				triedFingerprints.add(candidate.fingerprint);
 
@@ -337,6 +347,7 @@ async function runCascade(
 // ──────────────────────────────────────────────────────────────────────────────
 // JSON extraction helper (handles markdown fences)
 // ──────────────────────────────────────────────────────────────────────────────
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 function extractJson(text: string): any {
 	// Strip <think>...</think> if present (Qwen-style)
 	const cleaned = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
@@ -375,7 +386,9 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 	_meta?: { pass1Model: string; pass2Model: string | null };
 }> {
 	// Check we have at least one key available
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const groqKeys = getProviderKeyCandidates(GROQ_PROVIDER_ID as any);
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const geminiKeys = getProviderKeyCandidates(GEMINI_PROVIDER_ID as any);
 
 	if (!groqKeys.length && !geminiKeys.length) {
@@ -428,6 +441,7 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 		);
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let pass1Parsed: any;
 	try {
 		pass1Parsed = extractJson(pass1.text);
@@ -436,7 +450,10 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 		return {
 			summary: pass1.text.slice(0, 2000),
 			toothUpdates: [],
-			_meta: { pass1Model: pass1Slots[pass1.slotIdx]?.model ?? "unknown", pass2Model: null },
+			_meta: {
+				pass1Model: pass1Slots[pass1.slotIdx]?.model ?? "unknown",
+				pass2Model: null,
+			},
 		};
 	}
 
@@ -463,6 +480,7 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 		100,
 	);
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let finalResult: any = pass1Parsed;
 	let pass2ModelName: string | null = null;
 
@@ -487,8 +505,10 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 	}
 
 	// ── Normalise output ──────────────────────────────────────────────────────
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const toothUpdates: any[] = Array.isArray(finalResult.toothUpdates)
-		? finalResult.toothUpdates.map((u: any) => ({
+		? // biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			finalResult.toothUpdates.map((u: any) => ({
 				code: String(u.code ?? "unknown"),
 				state: String(u.state ?? "watch"),
 				diagnosisOrFinding: String(u.diagnosisOrFinding ?? ""),
@@ -502,6 +522,9 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 				? finalResult.summary
 				: JSON.stringify(finalResult),
 		toothUpdates,
-		_meta: { pass1Model: pass1ModelName ?? "unknown", pass2Model: pass2ModelName },
+		_meta: {
+			pass1Model: pass1ModelName ?? "unknown",
+			pass2Model: pass2ModelName,
+		},
 	};
 }

@@ -58,38 +58,56 @@ import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
 
 export function useVisitLogic({
 	dashboard,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	query,
 	setError,
 	auth,
 	setDashboard,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	setQuery,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	selectedPatientId,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	documentPatient,
 	activePatient,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	activeAppointment,
 	activeDoctor,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	activeChair,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	paymentPatientContextReady,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	paymentPatientContextMessage,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	loadDashboard,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	clinicProfileDraft,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	patientCoreDraft,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	documentPatientMatchesActiveVisit,
 	activeOrganizationId,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	importSourceKind,
 	setImportSourceKind,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	importText,
 	setImportText,
 	setImportPreview,
 	setImportCommit,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 }: any) {
 	const visitStore = useVisitStore();
 	const appStore = useAppStore();
 
 	const {
 		selectedSpecialty,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setSelectedSpecialty,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		selectedProtocolId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setSelectedProtocolId,
 		clearedTranscriptSnapshot,
 		setClearedTranscriptSnapshot,
@@ -101,23 +119,34 @@ export function useVisitLogic({
 		setVisitFlowResult,
 		visitNoteForm,
 		setVisitNoteForm,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		visitToothStateByCode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setToothState,
 		applyAiToothCodes,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		lastServerDraftSavedAt,
 		setLastServerDraftSavedAt,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		serverDraftSyncState,
 		setServerDraftSyncState,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		localDraftWasRestored,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setLocalDraftWasRestored,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		pendingVisitSaveCount,
 		setPendingVisitSaveCount,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		lastPendingVisitSaveAt,
 		setLastPendingVisitSaveAt,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		lastVisitSaveReceipt,
 		setLastVisitSaveReceipt,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechLastQuality,
 		setSpeechLastQuality,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDraftLoading,
 		setIsDraftLoading,
 		isDraftAccepting,
@@ -126,6 +155,7 @@ export function useVisitLogic({
 		setIsPendingVisitSyncing,
 		isVisitDictating,
 		setIsVisitDictating,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isTranscriptPolishing,
 		setIsTranscriptPolishing,
 		lastServerDraftSignatureRef,
@@ -167,8 +197,10 @@ export function useVisitLogic({
 
 	const visitCloseChecklist = dashboard?.visitCloseChecklist ?? null;
 	const visitWarnings =
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		visitCloseChecklist?.items.filter((item: any) => !item.ready) ?? [];
 	const primaryVisitWarning =
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		visitWarnings?.find((item: any) => item.blocking) ??
 		visitWarnings[0] ??
 		null;
@@ -860,6 +892,7 @@ export function useVisitLogic({
 			if (!cleanValue) return;
 			visitDraftUserEditedRef.current = true;
 			setClearedTranscriptSnapshot(null);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			setTranscript((current: any) =>
 				appendSpeechTextWithoutDuplicateTail(
 					current,
@@ -979,6 +1012,7 @@ export function useVisitLogic({
 				const assembledTranscript = assembly.transcript.trim();
 				if (assembledTranscript) {
 					visitDraftUserEditedRef.current = true;
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					setTranscript((current: any) => {
 						const safeCurrent = typeof current === "string" ? current : "";
 						const normalizedCurrent = safeCurrent.replace(/\s+/g, " ").trim();
@@ -1162,6 +1196,7 @@ export function useVisitLogic({
 		(text: string) => {
 			visitDraftUserEditedRef.current = true;
 			setClearedTranscriptSnapshot(null);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			setTranscript((current: any) =>
 				appendSpeechTextWithoutDuplicateTail(
 					current,

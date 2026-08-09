@@ -74,6 +74,7 @@ const WRONG_TOTAL_RUB = 1000;
 
 const TODAY_TEXT = new Date().toISOString().slice(0, 10);
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 type Injected = { statusCode: number; body: string; json: any };
 
 /** Сумма документа — независимым SQL, ТЕКСТОМ из numeric-колонки. */
@@ -123,6 +124,7 @@ describe("сумма счёта не теряется по дороге в ба�
 				? {}
 				: { payload: payload as Record<string, unknown> }),
 		});
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		let json: any = null;
 		try {
 			json = JSON.parse(response.body);

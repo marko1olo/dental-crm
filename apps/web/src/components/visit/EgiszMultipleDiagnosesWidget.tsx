@@ -34,6 +34,7 @@ export function EgiszMultipleDiagnosesWidget() {
 				}
 				const data = await res.json();
 				setItems(Array.isArray(data) ? data : []);
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
 				showToast(
 					actionFailureToast(

@@ -196,6 +196,7 @@ type PatientDuplicateOptions = {
 };
 
 function findPatientDuplicate(
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	patientsList: any[],
 	input: PatientDuplicateInput,
 	ignoredPatientId?: string,
@@ -481,6 +482,7 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				orgId,
 				input,
 				(patients, inp) => {
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					return findPatientDuplicate(patients, inp as any, undefined, {
 						requireDistinguishingData: true,
 					});

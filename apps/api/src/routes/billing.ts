@@ -670,6 +670,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 					"Заявление на возврат или коррекцию не принимает новую оплату. Оформите документ коррекции без повторной записи оплаты.",
 				);
 			}
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			if (!documentCanReceivePayment(document.kind as any)) {
 				return sendBillingPaymentScopeError(
 					reply,

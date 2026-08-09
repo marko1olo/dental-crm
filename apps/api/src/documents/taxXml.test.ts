@@ -14,6 +14,7 @@ describe("buildKnd1151156Xml", () => {
 		patientId: "patient-1",
 		payload: {
 			taxPaymentSelection: { selectedPaymentIds: ["payment-1"] },
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} as any,
 		kind: "tax_deduction_certificate",
 		taxYear: 2024,

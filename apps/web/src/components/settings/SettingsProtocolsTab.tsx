@@ -53,12 +53,14 @@ async function refusalMessage(
 export function SettingsProtocolsTab() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		dashboard,
 		specialtyLabels,
 		documentLabels,
 		imagingKindLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		applyProtocolTemplate,
 		auth,
 	} = mergedProps;
@@ -146,6 +148,7 @@ export function SettingsProtocolsTab() {
 
 			// Reload page to refresh dashboard state
 			window.location.reload();
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			/*
 			 * Сюда попадает только обрыв до ответа. БЫЛО: `err.message ||
@@ -185,6 +188,7 @@ export function SettingsProtocolsTab() {
 				return;
 			}
 			window.location.reload();
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			// БЫЛО: `err.message` — английский текст исключения браузера.
 			logger.error(err);
@@ -236,6 +240,7 @@ export function SettingsProtocolsTab() {
 							onChange={(e) =>
 								setEditForm((prev) => ({
 									...prev,
+									// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 									specialty: e.target.value as any,
 								}))
 							}

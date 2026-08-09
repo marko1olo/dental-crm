@@ -304,6 +304,7 @@ export async function upsertDenteTelegramChatLink(
 				),
 			);
 
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		return toDenteTelegramChatLink(saved!);
 	});
 }

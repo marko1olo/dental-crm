@@ -238,6 +238,7 @@ describe("список подтверждений на день", () => {
 		.split("-")
 		.map((value) => Number.parseInt(value, 10));
 	const isoDate = new Date(
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		Date.UTC(moscowYear!, moscowMonth! - 1, moscowDay! + 1),
 	)
 		.toISOString()

@@ -109,12 +109,14 @@ export function PatientReclamationsWidget({
 		error: loadFailure,
 		failureStatus,
 		reload: fetchReclamations,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	} = usePatientResource<any[]>(
 		patientId,
 		(id) => `/api/patients/${id}/reclamations`,
 		getReadHeaders,
 		[],
 	);
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const reclamations: any[] = Array.isArray(rawReclamations)
 		? rawReclamations
 		: [];
@@ -256,9 +258,11 @@ export function PatientReclamationsWidget({
 
 	const staff = dashboard?.clinicSettings?.staff || [];
 	const doctors = staff.filter(
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(s: any) => s.role === "doctor" || s.role === "Врач",
 	);
 	const reviewCount = reclamations.filter(
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(t: any) => t.status === "under_review",
 	).length;
 
@@ -448,6 +452,7 @@ export function PatientReclamationsWidget({
 										<option value="" disabled>
 											Выберите лечащего врача
 										</option>
+										{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 										{doctors.map((s: any) => (
 											<option key={s.id} value={s.id}>
 												{s.fullName}
@@ -521,6 +526,7 @@ export function PatientReclamationsWidget({
 					<AnimatePresence>
 						{reclamations.map((rec) => {
 							const isUnderReview = rec.status === "under_review";
+							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 							const doctor = staff.find((s: any) => s.id === rec.doctorId);
 
 							return (

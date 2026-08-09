@@ -24,6 +24,7 @@ import { signToken } from "../../utils/cryptoHelper.js";
 const ORG_ID = "123e4567-e89b-12d3-a456-4266141740ff";
 
 describe("visits routes integration", () => {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let app: any;
 	let clinicHeaders: Record<string, string>;
 	const originalEnv = process.env;
@@ -92,17 +93,20 @@ describe("visits routes integration", () => {
 	 * upsertVisitDraftAutosaveInDb, а он импортирован деструктуризацией.
 	 */
 	function captureReply() {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const sent: { statusCode?: number; body?: any } = {};
 		const reply = {
 			code(statusCode: number) {
 				sent.statusCode = statusCode;
 				return reply;
 			},
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			send(body: any) {
 				sent.body = body;
 				return reply;
 			},
 		};
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		return { reply: reply as any, sent };
 	}
 

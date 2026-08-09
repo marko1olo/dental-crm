@@ -338,6 +338,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 	// Sync balance with WS
 	const wsUrl = (() => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const wsHost = (import.meta as any).env.VITE_WS_URL;
 		if (wsHost) return wsHost;
 		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";

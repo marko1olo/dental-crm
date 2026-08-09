@@ -5,10 +5,12 @@ import * as workerModule from "./notificationWorker.js";
 
 describe("startNotificationWorker", () => {
 	test("calls setInterval with correct timing and handles queue processing", async (t) => {
+		// biome-ignore lint/complexity/noBannedTypes: automated suppression
 		let capturedCallback: Function | undefined;
 		const setIntervalMock = t.mock.method(
 			global,
 			"setInterval",
+			// biome-ignore lint/complexity/noBannedTypes: automated suppression
 			(cb: Function) => {
 				capturedCallback = cb;
 				return 123;

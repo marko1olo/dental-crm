@@ -65,6 +65,7 @@ export function AuthArtBackground() {
 		const isReducedMotion = window.matchMedia(
 			"(prefers-reduced-motion: reduce)",
 		).matches;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const nav = navigator as any;
 		const isSaveData =
 			nav.connection?.saveData || nav.connection?.effectiveType?.includes("2g");

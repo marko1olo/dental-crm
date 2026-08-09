@@ -54,6 +54,7 @@ describe("leads + finance_family + sterilization — body guards (AUTH-first; in
 			method: "GET" | "POST" | "PATCH" | "PUT";
 			url: string;
 			headers: Record<string, string>;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			payload?: any;
 		} = { method, url, headers };
 		if (opts.rawPayload !== undefined) {

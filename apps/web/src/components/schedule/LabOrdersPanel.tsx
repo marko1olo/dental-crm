@@ -57,6 +57,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		[auth],
 	);
 	const liveStatus = useAppStore(
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(state) => (state as any).labOrderStatuses?.[patientId],
 	);
 	const [orders, setOrders] = useState<LabOrder[]>([]);
@@ -98,6 +99,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 	const staff = dashboard?.clinicSettings?.staff || [];
 	const doctors = staff.filter(
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(s: any) => s.role === "doctor" || s.role === "Врач" || s.role === "admin",
 	);
 
@@ -513,6 +515,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
 						>
 							<option value="">Не указан</option>
+							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 							{doctors.map((doc: any) => (
 								<option key={doc.id} value={doc.id}>
 									{doc.fullName}

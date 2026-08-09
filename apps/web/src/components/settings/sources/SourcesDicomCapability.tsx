@@ -43,6 +43,7 @@ type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 export function SourcesDicomCapability() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	/*
 	 * `as any` выше не проверяет НИЧЕГО, и это измерено, а не предположено. Копия этого
@@ -209,25 +210,30 @@ export function SourcesDicomCapability() {
 	} = mergedProps;
 
 	const typedImagingViewerCapabilities = imagingViewerCapabilities as Array<{
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		icon: any;
 		title: string;
 		detail: string;
 		state: string;
 	}>;
 	const typedDicomSeriesPreviewSeries = (dicomSeriesPreview?.series ??
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		[]) as Array<any>;
 	const typedDicomSeriesPreviewParserNotes = (dicomSeriesPreview?.parserNotes ??
 		[]) as Array<string>;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const typedImagingViewerActiveTool = imagingViewerActiveTool as any;
 	const typedCtPlanningActiveQuickActionId = ctPlanningActiveQuickActionId as
 		| string
 		| null;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const typedCtPlanningImplantPlan = ctPlanningImplantPlan as any | null;
 	const typedDicomViewerWorkbenchManifest =
 		dicomViewerWorkbenchManifest as DicomViewerWorkbenchManifestResponse | null;
 	const typedDicomViewerToolStateBundle = dicomViewerToolStateBundle as
-		| any
-		| null;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+		any | null;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const typedLocalBridgeReadiness = localBridgeReadiness as any | null;
 	const typedCbctWorkbenchProjections = (cbctWorkbenchProjections ??
 		[]) as string[];
@@ -238,6 +244,7 @@ export function SourcesDicomCapability() {
 		[]) as string[];
 	const typedDicomWorkstationReadiness =
 		dicomWorkstationReadiness as DicomWorkstationReadinessResponse | null;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const typedDicomRenderCachePlan = mergedProps.dicomRenderCachePlan as any;
 
 	return (

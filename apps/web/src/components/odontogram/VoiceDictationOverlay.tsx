@@ -61,7 +61,9 @@ export function VoiceDictationOverlay({
 	};
 
 	useEffect(() => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		let recognition: any = null;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		let waveInterval: any = null;
 
 		if (isOpen) {
@@ -83,7 +85,9 @@ export function VoiceDictationOverlay({
 			}, 150);
 
 			const SpeechRecognition =
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				(window as any).SpeechRecognition ||
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				(window as any).webkitSpeechRecognition;
 			if (SpeechRecognition) {
 				recognition = new SpeechRecognition();
@@ -91,6 +95,7 @@ export function VoiceDictationOverlay({
 				recognition.continuous = true;
 				recognition.interimResults = true;
 
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				recognition.onresult = (event: any) => {
 					let currentTranscript = "";
 					for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -99,6 +104,7 @@ export function VoiceDictationOverlay({
 					setTranscript((prev) => prev + currentTranscript);
 				};
 
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				recognition.onerror = (event: any) => {
 					// Код ошибки английский и остаётся в консоли; врачу идёт причина
 					// словами и следующий шаг.

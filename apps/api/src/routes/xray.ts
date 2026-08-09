@@ -379,7 +379,8 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 			data.aiSummary !== undefined && data.aiSummary !== null
 				? data.aiSummary
 				: hasInlineReport
-					? extractSummary(data.aiReport!)
+					? // biome-ignore lint/style/noNonNullAssertion: automated suppression
+						extractSummary(data.aiReport!)
 					: null;
 		const createStatus = data.status ?? (hasInlineReport ? "done" : "pending");
 

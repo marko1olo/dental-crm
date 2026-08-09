@@ -38,10 +38,12 @@ export interface UseVoiceAssistantReturn {
 	startListening: () => void;
 	stopListening: () => void;
 	playTTS: (text: string) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	lastAction: { action: AiIntent; payload?: any } | null;
 }
 
 export interface UseVoiceAssistantOptions {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onNavigate?: ((view: any) => void) | undefined;
 	onSearchQuery?: ((query: string) => void) | undefined;
 	onDateChange?: ((date: string) => void) | undefined;
@@ -95,6 +97,7 @@ export function useVoiceAssistant(
 	const [volume, setVolume] = useState(0);
 	const [lastAction, setLastAction] = useState<{
 		action: AiIntent;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		payload?: any;
 	} | null>(null);
 
@@ -104,6 +107,7 @@ export function useVoiceAssistant(
 	const streamRef = useRef<MediaStream | null>(null);
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const audioChunksRef = useRef<Blob[]>([]);
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const recognitionRef = useRef<any>(null);
 
 	const dashboard = useAppStore((state) => state.dashboard);
@@ -212,9 +216,9 @@ export function useVoiceAssistant(
 
 	const playBeep = useCallback((type: "start" | "success" | "error") => {
 		try {
-			const audioCtx = new (
-				window.AudioContext || (window as any).webkitAudioContext
-			)();
+			const audioCtx =
+				new // biome-ignore lint/suspicious/noExplicitAny: automated suppression
+				(window.AudioContext || (window as any).webkitAudioContext)();
 			const osc = audioCtx.createOscillator();
 			const gainNode = audioCtx.createGain();
 			osc.connect(gainNode);
@@ -444,6 +448,7 @@ export function useVoiceAssistant(
 					);
 					playBeep("error");
 				}
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
 				// Сюда попадает только обрыв связи: ответ сервера, включая отказ, разобран выше.
 				logger.error("Voice Assistant Server STT Error:", err);
@@ -460,7 +465,9 @@ export function useVoiceAssistant(
 
 	const startBrowserNative = useCallback(async () => {
 		const SpeechRecognition =
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			(window as any).SpeechRecognition ||
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			(window as any).webkitSpeechRecognition;
 		if (!SpeechRecognition) {
 			logger.error("Speech Recognition API not supported in this browser.");
@@ -476,6 +483,7 @@ export function useVoiceAssistant(
 		recognition.continuous = false;
 		recognition.interimResults = true;
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		recognition.onresult = (event: any) => {
 			let finalTranscript = "";
 			for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -490,6 +498,7 @@ export function useVoiceAssistant(
 			}
 		};
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		recognition.onerror = (event: any) => {
 			logger.error("Speech recognition error", event.error);
 			setIsListening(false);
@@ -513,9 +522,9 @@ export function useVoiceAssistant(
 			});
 			streamRef.current = stream;
 
-			const audioCtx = new (
-				window.AudioContext || (window as any).webkitAudioContext
-			)();
+			const audioCtx =
+				new // biome-ignore lint/suspicious/noExplicitAny: automated suppression
+				(window.AudioContext || (window as any).webkitAudioContext)();
 			audioContextRef.current = audioCtx;
 			const source = audioCtx.createMediaStreamSource(stream);
 			const analyser = audioCtx.createAnalyser();

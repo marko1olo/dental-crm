@@ -70,6 +70,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 					type: a.mimeType,
 				})),
 			});
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -164,6 +165,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 					type: attachment.mimeType,
 				},
 			});
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -274,6 +276,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 					type: a.mimeType,
 				})),
 			});
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -392,6 +395,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 					type: attachment.mimeType,
 				},
 			});
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({

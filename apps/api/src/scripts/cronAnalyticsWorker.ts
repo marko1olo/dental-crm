@@ -169,6 +169,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 				LIMIT 6
 			`);
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const cohortLtvJson = rawLtv.rows.map((row: any) => ({
 				cohort: row.cohort,
 				"Month 1": Number(row.month_1_revenue),
@@ -222,6 +223,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 
 			const colors = ["#14b8a6", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444"];
 			const chairUtilizationJson = chairUsage.rows.map(
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				(row: any, idx: number) => ({
 					name: row.name,
 					value: Number(row.appointment_count),

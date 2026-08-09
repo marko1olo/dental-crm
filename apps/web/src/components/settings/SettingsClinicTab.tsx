@@ -229,6 +229,7 @@ function StaffCredentialsEditor({
 	accessHeaders,
 	loadDashboard,
 }: {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	member: any;
 	accessHeaders: SettingsAccessHeaders | undefined;
 	loadDashboard: unknown;
@@ -369,6 +370,7 @@ export function SettingsClinicTab({
 	props = {},
 	settingsTab,
 }: {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	props?: Record<string, any>;
 	settingsTab?: string;
 }) {
@@ -689,6 +691,7 @@ export function SettingsClinicTab({
 						aria-label="Рабочие дни клиники"
 					>
 						<span>Рабочие дни</span>
+						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{typedWeekdayOptions.map((day: any) => (
 							<button
 								className={
@@ -1208,18 +1211,21 @@ export function SettingsClinicTab({
 											style={{ border: "none", padding: 0, margin: 0 }}
 											aria-label={`Рабочие дни: ${member.fullName}`}
 										>
+											{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 											{typedWeekdayOptions.map((day: any) => (
 												<button
 													className={
-														scheduleDraft.workingDays.includes(day.value)
+														(scheduleDraft.workingDays ?? []).includes(
+															day.value,
+														)
 															? "active"
 															: ""
 													}
 													key={day.value}
 													type="button"
-													aria-pressed={scheduleDraft.workingDays.includes(
-														day.value,
-													)}
+													aria-pressed={(
+														scheduleDraft.workingDays ?? []
+													).includes(day.value)}
 													onClick={() =>
 														toggleStaffWorkingDay(member.id, day.value)
 													}
@@ -1241,8 +1247,11 @@ export function SettingsClinicTab({
 											>
 												{typedWeekdayOptions
 													.filter((day) =>
-														scheduleDraft.workingDays.includes(day.value),
+														(scheduleDraft.workingDays ?? []).includes(
+															day.value,
+														),
 													)
+													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 													.map((day: any) => {
 														const dayHours = scheduleDraft.perDay[day.value];
 														return (
@@ -1446,14 +1455,15 @@ export function SettingsClinicTab({
 											style={{ border: "none", padding: 0, margin: 0 }}
 											aria-label={`Рабочие дни кресла: ${chair.name}`}
 										>
+											{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 											{typedWeekdayOptions.map((day: any) => (
 												<button
-													className={`focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all hover:scale-[1.05] ${scheduleDraft.workingDays.includes(day.value) ? "active" : ""}`}
+													className={`focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all hover:scale-[1.05] ${(scheduleDraft.workingDays ?? []).includes(day.value) ? "active" : ""}`}
 													key={day.value}
 													type="button"
-													aria-pressed={scheduleDraft.workingDays.includes(
-														day.value,
-													)}
+													aria-pressed={(
+														scheduleDraft.workingDays ?? []
+													).includes(day.value)}
 													onClick={() =>
 														toggleChairWorkingDay(chair.id, day.value)
 													}
@@ -1475,8 +1485,11 @@ export function SettingsClinicTab({
 											>
 												{typedWeekdayOptions
 													.filter((day) =>
-														scheduleDraft.workingDays.includes(day.value),
+														(scheduleDraft.workingDays ?? []).includes(
+															day.value,
+														),
 													)
+													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 													.map((day: any) => {
 														const dayHours = scheduleDraft.perDay[day.value];
 														return (

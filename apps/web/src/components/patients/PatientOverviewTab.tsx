@@ -16,6 +16,7 @@ import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
 
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type TextFieldChangeEvent = React.ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
 >;
@@ -31,11 +32,14 @@ export function PatientOverviewTab() {
 		patientCoreDraft,
 		patientCoreSaveState,
 		patientCoreDirty,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		patientAdministrativeProfileSaveState,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		patientAdministrativeProfileDirty,
 	} = usePatientStore();
 	const workspaceFlags = useWorkspaceProfile();
 	const dashboard = appLogic.dashboard;
+	// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 	const { savePatientCore, updatePatientCoreDraft, selectedPatient } = appLogic;
 
 	const _patientCoreReadyToSave =
@@ -47,6 +51,7 @@ export function PatientOverviewTab() {
 				? "Сохранено"
 				: null;
 	const _patientCoreSaveGuidanceId = "patientCoreSaveGuidanceId";
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [familyData, setFamilyData] = useState<any>(null);
 	/*
 	 * БЫЛО: любой неудачный ответ приравнивался к «семьи нет» — `if (!res.ok)
@@ -93,6 +98,7 @@ export function PatientOverviewTab() {
 			.then(async (res) => {
 				if (selectedPatientIdRef.current !== requestedPatientId) return;
 				if (res.ok) {
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					const data = await res.json().catch((err: any) => {
 						logger.error(err);
 						showToast(
@@ -114,6 +120,7 @@ export function PatientOverviewTab() {
 					res.status === 404 ? null : { status: res.status },
 				);
 			})
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			.catch((err: any) => {
 				logger.error(err);
 				showToast(

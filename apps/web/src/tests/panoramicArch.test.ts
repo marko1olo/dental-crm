@@ -178,6 +178,7 @@ describe("sampleArchCurve", () => {
 		// Same physical arch, described with 7 points and with 4 of the same
 		// points. Column count must track arch LENGTH, not how many times the
 		// dentist clicked, otherwise a careful trace produces a narrower image.
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const sparse = [control[0]!, control[2]!, control[4]!, control[6]!];
 		const dense = sampleArchCurve(control);
 		const coarse = sampleArchCurve(sparse);
@@ -302,6 +303,7 @@ describe("resamplePolylineByArcLength", () => {
 			0.5,
 		);
 		for (let i = 1; i < resampled.length; i++) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			assert.ok(distanceMm(resampled[i - 1]!, resampled[i]!) <= 0.5 + 1e-9);
 		}
 		assert.strictEqual(resampled.length, 25);
@@ -420,8 +422,10 @@ describe("buildPanoramicArch", () => {
 
 		// Sampled from the rendered polyline: its endpoints are the polyline's,
 		// not the handle list's.
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.ok(distanceMm(result.curve[0]!, { x: -28, y: 11 }) < 1e-9);
 		assert.ok(
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			distanceMm(result.curve[result.curve.length - 1]!, { x: 28, y: 11 }) <
 				1e-9,
 		);
@@ -528,7 +532,9 @@ describe("a closed contour does not grow a tail on the panorama", () => {
 	const openArch = archPolyline(240);
 	const handles = archHandles(7);
 	const closingRun = straightRun(
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		openArch[openArch.length - 1]!,
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		openArch[0]!,
 		60,
 	);
@@ -602,6 +608,7 @@ describe("a closed contour does not grow a tail on the panorama", () => {
 		// open by 6 mm, so the geometric test would not catch it.
 		const almostClosed = [
 			...openArch,
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			...straightRun(openArch[openArch.length - 1]!, [-22, 11, -42.5], 55),
 		];
 		const result = buildPanoramicArch([
@@ -637,8 +644,10 @@ describe("a closed contour does not grow a tail on the panorama", () => {
 		]);
 		assert.strictEqual(result.status, "ready");
 		if (result.status !== "ready") return;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.ok(distanceMm(result.curve[0]!, { x: -28, y: 11 }) < 1e-9);
 		assert.ok(
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			distanceMm(result.curve[result.curve.length - 1]!, { x: 28, y: 11 }) <
 				1e-9,
 		);
@@ -658,6 +667,7 @@ describe("polylineReturnsToStart", () => {
 		const open = archPolyline(240);
 		const loop = [
 			...open,
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			...straightRun(open[open.length - 1]!, open[0]!, 60),
 		];
 		assert.strictEqual(polylineReturnsToStart(projectToAxialPlane(loop)), true);
@@ -669,6 +679,7 @@ describe("polylineReturnsToStart", () => {
 		const gap = total * CLOSED_CONTOUR_GAP_FRACTION * 0.5;
 		const loop = [
 			...open,
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			...straightRun(open[open.length - 1]!, [-28 + gap, 11, -42.5], 60),
 		];
 		assert.strictEqual(polylineReturnsToStart(projectToAxialPlane(loop)), true);
@@ -768,6 +779,7 @@ describe("orientArchPatientRightFirst", () => {
 		assert.strictEqual(forward.curve.length, backward.curve.length);
 		for (let i = 0; i < forward.curve.length; i++) {
 			assert.ok(
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				distanceMm(forward.curve[i]!, backward.curve[i]!) < 1e-9,
 				`column ${i} moved when the trace direction changed`,
 			);

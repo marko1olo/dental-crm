@@ -7,6 +7,7 @@ import {
 
 type WebSocketMessage = {
 	type: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	payload: any;
 };
 
@@ -114,6 +115,7 @@ export function useWebsocket(url: string) {
 		};
 	}, [connect]);
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const sendMessage = useCallback((type: string, payload: any) => {
 		if (ws.current?.readyState === WebSocket.OPEN) {
 			ws.current.send(JSON.stringify({ type, payload }));

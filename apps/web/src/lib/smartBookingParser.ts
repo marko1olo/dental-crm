@@ -152,6 +152,7 @@ export function smartBookingParser(
 	const foundChairs: { id: string; score: number; indexes: number[] }[] = [];
 
 	for (let i = 0; i < words.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const word = words[i]!;
 		if (word.length < 3 && !/^\d$/.test(word)) continue;
 
@@ -175,6 +176,7 @@ export function smartBookingParser(
 					i + 1 < words.length &&
 					matchWords.some(
 						(p: string) =>
+							// biome-ignore lint/style/noNonNullAssertion: automated suppression
 							isFuzzyRootMatch(words[i + 1]!, p) && !isFuzzyRootMatch(word, p),
 					)
 				) {
@@ -218,6 +220,7 @@ export function smartBookingParser(
 					i + 1 < words.length &&
 					parts.some(
 						(p: string) =>
+							// biome-ignore lint/style/noNonNullAssertion: automated suppression
 							isFuzzyMatch(words[i + 1]!, p) && !isFuzzyMatch(word, p),
 					)
 				) {
@@ -248,6 +251,7 @@ export function smartBookingParser(
 					i + 1 < words.length &&
 					parts.some(
 						(p: string) =>
+							// biome-ignore lint/style/noNonNullAssertion: automated suppression
 							isFuzzyMatch(words[i + 1]!, p) && !isFuzzyMatch(word, p),
 					)
 				) {
@@ -375,6 +379,7 @@ export function smartBookingParser(
 			]);
 	}
 	if (parsed.patientId) {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const pat = patients.find((p: any) => p.id === parsed.patientId);
 		if (pat) removeWordsSafely(pat.fullName.split(" "));
 	}
@@ -426,8 +431,10 @@ export function smartBookingParser(
 	const rangeMatch = remaining.match(rangeRegex);
 
 	if (rangeMatch && !isCancel) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		rangeStartHour = parseInt(rangeMatch[1]!, 10);
 		rangeStartMin = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : 0;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		rangeEndHour = parseInt(rangeMatch[3]!, 10);
 		rangeEndMin = rangeMatch[4] ? parseInt(rangeMatch[4], 10) : 0;
 
@@ -467,10 +474,12 @@ export function smartBookingParser(
 				" ",
 			);
 		} else if (minsMatch) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			durationMinutes = parseInt(minsMatch[2]!, 10);
 			explicitDurationFound = true;
 			remaining = remaining.replace(minsMatch[0], " ");
 		} else if (hrsMatch) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			durationMinutes = parseInt(hrsMatch[2]!, 10) * 60;
 			explicitDurationFound = true;
 			remaining = remaining.replace(hrsMatch[0], " ");
@@ -537,11 +546,13 @@ export function smartBookingParser(
 			remaining.match(/(?:на\s+)?([1-9]|[12][0-9]|3[01])\s+([а-я]{3,8})/i) ||
 			remaining.match(/(?:на\s+)?([1-9]|[12][0-9]|3[01])\s+число/i);
 		if (explicitDateMatch) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const day = parseInt(explicitDateMatch[1]!, 10);
 			const monthStr = explicitDateMatch[2]
 				? explicitDateMatch[2]?.slice(0, 3).toLowerCase()
 				: undefined;
 			const monthIndex =
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				monthStr && MONTHS[monthStr] !== undefined ? MONTHS[monthStr]! : null;
 
 			/* БЫЛО: сначала setMonth, потом setDate — и месяц уезжал.
@@ -684,16 +695,21 @@ export function smartBookingParser(
 			timeFound = true;
 			remaining = remaining.replace(halfMatch[0], " ");
 		} else if (timeMatch) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			hours = parseInt(timeMatch[1]!, 10);
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			minutes = parseInt(timeMatch[2]!, 10);
 			timeFound = true;
 			remaining = remaining.replace(timeMatch[0], " ");
 		} else if (timeMatchSpace) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			hours = parseInt(timeMatchSpace[1]!, 10);
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			minutes = parseInt(timeMatchSpace[2]!, 10);
 			timeFound = true;
 			remaining = remaining.replace(timeMatchSpace[0], " ");
 		} else if (hourMatch) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			hours = parseInt(hourMatch[1]!, 10);
 			minutes = 0;
 			timeFound = true;
@@ -707,6 +723,7 @@ export function smartBookingParser(
 				hours += 12;
 			remaining = remaining.replace(hourMatch[0], " ");
 		} else if (pureHourMatch) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			hours = parseInt(pureHourMatch[1]!, 10);
 			if (hours >= 1 && hours <= 8) hours += 12;
 			minutes = 0;

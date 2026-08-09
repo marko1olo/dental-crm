@@ -45,7 +45,9 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 		setBotIdDraft,
 		apiTokenDraft,
 		setApiTokenDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		webhookUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setWebhookUrlDraft,
 		isActiveDraft,
 		setIsActiveDraft,

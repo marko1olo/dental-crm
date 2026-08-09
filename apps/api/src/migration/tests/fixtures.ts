@@ -19,6 +19,7 @@ export function encodeSingleByte(text: string, encoding: string): Buffer {
 	}
 	// Незакодируемый символ становится «?» — так же поступают настоящие экспортёры.
 	return Buffer.from(
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		[...text].map((char) => map.get(char.codePointAt(0)!) ?? 0x3f),
 	);
 }
@@ -133,6 +134,7 @@ function crc32(buffer: Buffer): number {
 	}
 	let crc = -1;
 	for (const byte of buffer) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		crc = (crc >>> 8) ^ table[(crc ^ byte) & 0xff]!;
 	}
 	return (crc ^ -1) >>> 0;

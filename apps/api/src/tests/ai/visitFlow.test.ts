@@ -41,13 +41,17 @@ describe("runVisitFlow Orchestrator", () => {
 	});
 
 	function mockFetch(responses: {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		draft?: any;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		plan?: any;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		recs?: any;
 		draftError?: boolean;
 		planError?: boolean;
 		recsError?: boolean;
 	}) {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		mock.method(globalThis, "fetch", async (_url: any, init: any) => {
 			const body = init?.body ? JSON.parse(init.body) : {};
 			const prompt =
@@ -65,6 +69,7 @@ describe("runVisitFlow Orchestrator", () => {
 							{ message: { content: JSON.stringify(responses.draft || {}) } },
 						],
 					}),
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				} as any;
 			}
 
@@ -80,6 +85,7 @@ describe("runVisitFlow Orchestrator", () => {
 							{ message: { content: JSON.stringify(responses.plan || {}) } },
 						],
 					}),
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				} as any;
 			}
 
@@ -95,12 +101,14 @@ describe("runVisitFlow Orchestrator", () => {
 							{ message: { content: JSON.stringify(responses.recs || {}) } },
 						],
 					}),
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				} as any;
 			}
 
 			return {
 				ok: true,
 				json: async () => ({ choices: [{ message: { content: "{}" } }] }),
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} as any;
 		});
 	}

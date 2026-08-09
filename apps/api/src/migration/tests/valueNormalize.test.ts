@@ -179,6 +179,7 @@ describe("дата со временем", () => {
 		assert.equal(parsed.value?.timeMinutes, 14 * 60 + 30);
 		assert.equal(parsed.value?.absolute, false);
 		assert.equal(
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			formatNormalizedDateTime(parsed.value!),
 			"2019-03-12T14:30:00",
 		);
@@ -188,6 +189,7 @@ describe("дата со временем", () => {
 		const parsed = normalizeDateTimeValue("12.03.2019 14:30:45", hint);
 		assert.equal(parsed.value?.seconds, 45);
 		assert.equal(
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			formatNormalizedDateTime(parsed.value!),
 			"2019-03-12T14:30:45",
 		);
@@ -197,6 +199,7 @@ describe("дата со временем", () => {
 		const parsed = normalizeDateTimeValue("2019-03-12T14:30:00Z", hint);
 		assert.equal(parsed.value?.absolute, true);
 		assert.equal(
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			formatNormalizedDateTime(parsed.value!),
 			"2019-03-12T14:30:00Z",
 		);
@@ -206,6 +209,7 @@ describe("дата со временем", () => {
 		const parsed = normalizeDateTimeValue("12.03.2019", hint);
 		assert.equal(parsed.value?.timeMinutes, null);
 		// Без времени формат остаётся датой — загрузчик подставит осмысленное время.
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.equal(formatNormalizedDateTime(parsed.value!), "2019-03-12");
 	});
 

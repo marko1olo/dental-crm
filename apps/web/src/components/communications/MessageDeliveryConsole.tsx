@@ -399,7 +399,7 @@ export function MessageDeliveryConsole() {
 	const configuredChannels = useMemo(() => {
 		if (!gateways) return [];
 		return (
-			Object.entries(gateways.channels) as [
+			Object.entries(gateways.channels || {}) as [
 				ChannelCode,
 				{ configured: boolean },
 			][]

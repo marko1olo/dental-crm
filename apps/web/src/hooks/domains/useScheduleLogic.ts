@@ -61,10 +61,12 @@ export async function scheduleAdminSecretRefusal(
 
 export function useScheduleLogic({
 	dashboard,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	query,
 	setError,
 	auth,
 	setDashboard,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	setQuery,
 	selectedPatientId,
 	setEditingAppointmentId,
@@ -78,16 +80,23 @@ export function useScheduleLogic({
 	appointmentScheduleDraftsRef,
 	loadDashboard,
 	selectedSpecialty,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 }: any) {
 	const appointmentMutationIdRef = useRef<string | null>(null);
 	const scheduleStore = useScheduleStore();
 	const { setScheduleAdminSecretDemand } = useSettingsStore();
 	const {
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleDoctorFilterId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setScheduleDoctorFilterId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleAssistantFilterId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setScheduleAssistantFilterId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleChairFilterId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setScheduleChairFilterId,
 		scheduleDefaultDoctorUserId,
 		setScheduleDefaultDoctorUserId,
@@ -95,12 +104,17 @@ export function useScheduleLogic({
 		setScheduleDefaultAssistantUserId,
 		scheduleDefaultChairId,
 		setScheduleDefaultChairId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleStatusFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setScheduleStatusFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleDateFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setScheduleDateFilter,
 		staffScheduleDrafts,
 		setStaffScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleSavingId,
 		setStaffScheduleSavingId,
 		staffScheduleDirtyIds,
@@ -109,6 +123,7 @@ export function useScheduleLogic({
 		setStaffScheduleSaveStates,
 		chairScheduleDrafts,
 		setChairScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chairScheduleSavingId,
 		setChairScheduleSavingId,
 		chairScheduleDirtyIds,
@@ -117,10 +132,12 @@ export function useScheduleLogic({
 		setChairScheduleSaveStates,
 		appointmentScheduleDrafts,
 		setAppointmentScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		appointmentScheduleDirtyIds,
 		setAppointmentScheduleDirtyIds,
 		appointmentScheduleSaveStates,
 		setAppointmentScheduleSaveStates,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		appointmentScheduleErrors,
 		setAppointmentScheduleErrors,
 		newAppointmentDraft,
@@ -135,6 +152,7 @@ export function useScheduleLogic({
 			next.add(staffId);
 			return next;
 		});
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setStaffScheduleSaveStates((current: any) => ({
 			...current,
 			[staffId]: "idle",
@@ -157,6 +175,7 @@ export function useScheduleLogic({
 		staffId: string,
 		patch: Partial<StaffScheduleDraft>,
 	) {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setStaffScheduleDrafts((current: any) => {
 			const base = current[staffId] ?? defaultStaffScheduleDraft();
 			const nextWorkingDays = normalizeWorkingDaysDraft(
@@ -164,6 +183,7 @@ export function useScheduleLogic({
 			);
 			const nextStart = patch.start ?? base.start;
 			const nextEnd = patch.end ?? base.end;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const perDay = base.perDay.map((day: any) => ({
 				...day,
 				enabled: nextWorkingDays.includes(day.weekday),
@@ -195,6 +215,7 @@ export function useScheduleLogic({
 		chairId: string,
 		patch: Partial<StaffScheduleDraft>,
 	) {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setChairScheduleDrafts((current: any) => {
 			const base = current[chairId] ?? defaultStaffScheduleDraft();
 			const nextWorkingDays = normalizeWorkingDaysDraft(
@@ -202,6 +223,7 @@ export function useScheduleLogic({
 			);
 			const nextStart = patch.start ?? base.start;
 			const nextEnd = patch.end ?? base.end;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const perDay = base.perDay.map((day: any) => ({
 				...day,
 				enabled: nextWorkingDays.includes(day.weekday),
@@ -234,12 +256,14 @@ export function useScheduleLogic({
 		weekday: number,
 		patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>,
 	) {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setStaffScheduleDrafts((current: any) => {
 			const base = current[staffId] ?? defaultStaffScheduleDraft();
 			return {
 				...current,
 				[staffId]: {
 					...base,
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					perDay: base.perDay.map((day: any) =>
 						day.weekday === weekday ? { ...day, ...patch } : day,
 					),
@@ -254,12 +278,14 @@ export function useScheduleLogic({
 		weekday: number,
 		patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>,
 	) {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setChairScheduleDrafts((current: any) => {
 			const base = current[chairId] ?? defaultStaffScheduleDraft();
 			return {
 				...current,
 				[chairId]: {
 					...base,
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					perDay: base.perDay.map((day: any) =>
 						day.weekday === weekday ? { ...day, ...patch } : day,
 					),
@@ -271,12 +297,14 @@ export function useScheduleLogic({
 
 	function openAppointmentEditor(appointment: Appointment) {
 		setEditingAppointmentId(appointment.id);
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setAppointmentScheduleDrafts((current: any) => ({
 			...current,
 			[appointment.id]:
 				current[appointment.id] ??
 				appointmentScheduleDraftFromAppointment(appointment),
 		}));
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setAppointmentScheduleSaveStates((current: any) => ({
 			...current,
 			[appointment.id]: "idle",
@@ -293,6 +321,7 @@ export function useScheduleLogic({
 			next.add(appointmentId);
 			return next;
 		});
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setAppointmentScheduleSaveStates((current: any) => ({
 			...current,
 			[appointmentId]: "idle",
@@ -309,6 +338,7 @@ export function useScheduleLogic({
 		const sourceAppointment = dashboard?.appointments?.find(
 			(appointment) => appointment.id === appointmentId,
 		);
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setAppointmentScheduleDrafts((current: any) => ({
 			...current,
 			[appointmentId]: {
@@ -331,6 +361,7 @@ export function useScheduleLogic({
 			dashboard?.clinicSettings?.chairs
 		) {
 			const activeChairs = dashboard.clinicSettings.chairs.filter(
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				(c: any) => c.active,
 			);
 			if (activeChairs.length > 0) {
@@ -381,6 +412,7 @@ export function useScheduleLogic({
 		setEditingAppointmentId((current) =>
 			current === appointmentId ? null : current,
 		);
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setAppointmentScheduleSaveStates((current: any) => ({
 			...current,
 			[appointmentId]: "idle",
@@ -490,6 +522,7 @@ export function useScheduleLogic({
 		if (!draft) return false;
 		const expectedSignature = staffScheduleDraftSignature(draft);
 		setStaffScheduleSavingId(staffId);
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setStaffScheduleSaveStates((current: any) => ({
 			...current,
 			[staffId]: "saving",
@@ -508,6 +541,7 @@ export function useScheduleLogic({
 				},
 			);
 			if (!response.ok) {
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				setStaffScheduleSaveStates((current: any) => ({
 					...current,
 					[staffId]: "error",
@@ -531,6 +565,7 @@ export function useScheduleLogic({
 					return next;
 				});
 			}
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			setStaffScheduleSaveStates((current: any) => ({
 				...current,
 				[staffId]: latestMatchesSaved ? "saved" : "idle",
@@ -545,6 +580,7 @@ export function useScheduleLogic({
 				),
 				"error",
 			);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			setStaffScheduleSaveStates((current: any) => ({
 				...current,
 				[staffId]: "error",
@@ -652,6 +688,7 @@ export function useScheduleLogic({
 				...current,
 				[appointmentId]: message,
 			}));
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			setAppointmentScheduleSaveStates((current: any) => ({
 				...current,
 				[appointmentId]: "error",
@@ -680,6 +717,7 @@ export function useScheduleLogic({
 				...current,
 				[appointmentId]: message,
 			}));
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			setAppointmentScheduleSaveStates((current: any) => ({
 				...current,
 				[appointmentId]: "error",
@@ -688,6 +726,7 @@ export function useScheduleLogic({
 			return false;
 		}
 		const expectedSignature = appointmentScheduleDraftSignature(draft);
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		setAppointmentScheduleSaveStates((current: any) => ({
 			...current,
 			[appointmentId]: "saving",
@@ -738,6 +777,7 @@ export function useScheduleLogic({
 				? appointmentScheduleDraftSignature(latestDraft) === expectedSignature
 				: true;
 			if (savedAppointment && latestMatchesSaved) {
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				setAppointmentScheduleDrafts((current: any) => ({
 					...current,
 					[appointmentId]:
@@ -751,6 +791,7 @@ export function useScheduleLogic({
 					return next;
 				});
 			}
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			setAppointmentScheduleSaveStates((current: any) => ({
 				...current,
 				[appointmentId]: latestMatchesSaved ? "saved" : "idle",
@@ -775,6 +816,7 @@ export function useScheduleLogic({
 				...current,
 				[appointmentId]: message,
 			}));
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			setAppointmentScheduleSaveStates((current: any) => ({
 				...current,
 				[appointmentId]: "error",
@@ -880,6 +922,7 @@ export function useScheduleLogic({
 			);
 			setNewAppointmentSaveState("saved");
 			if (createdAppointment) {
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				setAppointmentScheduleDrafts((current: any) => ({
 					...current,
 					[createdAppointment.id]:

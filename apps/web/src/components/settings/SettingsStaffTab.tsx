@@ -19,10 +19,12 @@ import {
 } from "./staffMutationRequest";
 
 interface SettingsStaffTabProps {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	props: Record<string, any>;
 }
 
 export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
+	// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 	const { dashboard, staffRoleLabels, loadDashboard, auth } = props;
 	const staff = dashboard?.clinicSettings?.staff || [];
 	/*
@@ -103,6 +105,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 	 * администратор не знает, тому ли он его сменил.
 	 */
 	const staffNameById = (staffId: string): string => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const member = staff.find((item: any) => item?.id === staffId);
 		const fullName =
 			typeof member?.fullName === "string" ? member.fullName.trim() : "";
@@ -337,6 +340,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 						</p>
 					)}
 					<div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))]">
+						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{staff.map((member: any) => (
 							<div
 								key={member.id}

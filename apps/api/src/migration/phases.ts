@@ -134,6 +134,7 @@ export async function mapRunPhase(
 	});
 
 	const shape = await detectSourceShape({
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		filePath: run.uploadPath!,
 		fileName: run.uploadFileName ?? run.sourceName,
 		byteSize: run.sourceBytes ?? 0,
@@ -346,6 +347,7 @@ export async function stageRunPhase(
 	});
 
 	const shape = await detectSourceShape({
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		filePath: run.uploadPath!,
 		fileName: run.uploadFileName ?? run.sourceName,
 		byteSize: run.sourceBytes ?? 0,
@@ -360,6 +362,7 @@ export async function stageRunPhase(
 	let sourceRows = 0;
 
 	for await (const batch of streamSourceRows({
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		filePath: run.uploadPath!,
 		fileName: run.uploadFileName ?? run.sourceName,
 		shape,
@@ -543,6 +546,7 @@ export async function executeRunPhase(
 				.filter((row) => outcome.issuesByStagingId.has(row.stagingId))
 				.map((row) => ({
 					...row,
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					issues: [outcome.issuesByStagingId.get(row.stagingId)!],
 				}));
 			if (issueRows.length > 0) {

@@ -297,6 +297,7 @@ export async function analyzeSource(
 	}
 
 	// Анализ показывает первую таблицу; остальные упоминаются в предупреждениях.
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const primary = tables[0]!;
 
 	let projectedReady = 0;

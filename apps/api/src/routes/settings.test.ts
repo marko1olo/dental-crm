@@ -30,6 +30,7 @@ describe("clinicProfileMutationRejection", () => {
 	beforeEach(() => {
 		codeMock = mock.fn((_code: number) => mockReply as FastifyReply);
 		mockReply = {
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			code: codeMock as any,
 		};
 	});

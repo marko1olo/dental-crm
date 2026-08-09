@@ -930,6 +930,7 @@ select:focus {
 }
 
 /* ---------- 8. СТАТУСНЫЕ ЧИПЫ ---------- */
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .status-pill {
 	display: inline-flex;
 	align-items: center;
@@ -1684,6 +1685,7 @@ details {
 	color: var(--ink);
 }
 
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 details summary {
 	cursor: pointer;
 	font-weight: 600;
@@ -1691,6 +1693,7 @@ details summary {
 	user-select: none;
 }
 
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 details summary:hover {
 	color: var(--teal-dark);
 }

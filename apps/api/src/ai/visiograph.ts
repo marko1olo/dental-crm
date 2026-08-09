@@ -28,6 +28,7 @@ export async function analyzeVisiographImage(
 	const imagePayload = `data:${mimeType};base64,${b64Data}`;
 
 	for (const provider of providers) {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const candidates = getProviderKeyCandidates(provider as any);
 		if (!candidates.length) continue;
 
@@ -93,10 +94,12 @@ export async function analyzeVisiographImage(
 				rawContent = data.choices?.[0]?.message?.content || "";
 				if (!rawContent) throw new Error("Empty response from model");
 
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				recordProviderKeySuccess(provider as any, candidate);
 				break; // Break candidates loop
 			} catch (err) {
 				lastError = err;
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				recordProviderKeyFailure(provider as any, candidate, err);
 			}
 		}

@@ -32,6 +32,7 @@ function useInMemory() {
  * встречные вызовы могут заклиниться друг о друга.
  */
 async function lockAppointmentResources(
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	executor: any,
 	organizationId: string,
 	resources: {
@@ -93,6 +94,7 @@ async function lockAppointmentResources(
  * кресла на одно время, оба ответа 201.
  */
 async function assertNoResourceOverlap(
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	executor: any,
 	organizationId: string,
 	candidate: {
@@ -180,6 +182,7 @@ async function assertNoResourceOverlap(
  * устаревший список на экране.
  */
 async function assertAppointmentResourcesBelongToOrganization(
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	executor: any,
 	organizationId: string,
 	input: {
@@ -188,6 +191,7 @@ async function assertAppointmentResourcesBelongToOrganization(
 		chairId?: string | null | undefined;
 	},
 ): Promise<void> {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const checks: { id: string; table: any; what: string; action: string }[] = [];
 	if (input.patientId)
 		checks.push({
@@ -233,6 +237,7 @@ async function assertAppointmentResourcesBelongToOrganization(
 export async function createAppointmentInDb(
 	organizationId: string,
 	input: CreateAppointmentInput,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	tx?: any,
 ): Promise<Appointment> {
 	if (useInMemory()) {
@@ -258,6 +263,7 @@ export async function createAppointmentInDb(
 	const candidateStarts = new Date(startsAtMs);
 	const candidateEnds = new Date(endsAtMs);
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const insertChecked = async (executor: any) => {
 		// Принадлежность проверяется ДО блокировки ресурсов: блокировать чужую
 		// строку незачем, а отказ обязан прийти раньше любой записи.

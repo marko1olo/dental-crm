@@ -134,6 +134,8 @@
 :root:not([data-theme="dark"]):not([data-theme="night"])
 	.workspace-role-switcher
 	summary,
-html.light .workspace-role-switcher summary {
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	html.light .workspace-role-switcher
+	summary {
 	color: var(--ink);
 }

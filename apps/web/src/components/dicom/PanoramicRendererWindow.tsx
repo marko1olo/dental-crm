@@ -57,6 +57,7 @@ function paintPanorama(
 	let min = Infinity;
 	let max = -Infinity;
 	for (let i = 0; i < pixels.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const v = pixels[i]!;
 		if (v < min) min = v;
 		if (v > max) max = v;
@@ -66,6 +67,7 @@ function paintPanorama(
 	const img = ctx.createImageData(width, height);
 	const rgba = img.data;
 	for (let i = 0; i < pixels.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const g = Math.round(((pixels[i]! - min) / range) * 255);
 		const o = i * 4;
 		rgba[o] = g;

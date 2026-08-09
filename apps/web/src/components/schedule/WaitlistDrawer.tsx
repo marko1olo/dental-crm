@@ -43,6 +43,7 @@ async function writeFailureText(
 	response: Response,
 	action: string,
 ): Promise<string> {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const body = await response.json().catch((err: any) => {
 		logger.error(err);
 		showToast(
@@ -99,6 +100,7 @@ interface WaitlistItem {
 	preferredDoctorId: string | null;
 	preferredDoctorName: string | null;
 	priorityLevel: "high" | "medium" | "low";
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	preferredTimeRanges: any;
 	status: string;
 	createdAt: string;
@@ -107,9 +109,12 @@ interface WaitlistItem {
 interface Props {
 	isOpen: boolean;
 	onClose: () => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	updateNewAppointmentDraft: (key: any, value: any) => void;
 	focusNewAppointmentEditor: () => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	dashboard?: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	auth?: any;
 }
 
@@ -149,6 +154,7 @@ export function WaitlistDrawer(props: Props) {
 
 	const staff = dashboard?.clinicSettings?.staff ?? [];
 	const doctors = staff.filter(
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(s: any) => s.role === "doctor" || s.role === "Врач" || s.role === "admin",
 	);
 	const patientsList = dashboard?.patients ?? [];
@@ -489,6 +495,7 @@ export function WaitlistDrawer(props: Props) {
 								className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 							>
 								<option value="">-- Любой врач --</option>
+								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 								{doctors.map((d: any) => (
 									<option key={d.id} value={d.id}>
 										{d.fullName || d.name}

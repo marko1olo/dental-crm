@@ -108,6 +108,7 @@ export function DicomArchiveUploader({
 							return;
 						}
 
+						// biome-ignore lint/style/noNonNullAssertion: automated suppression
 						const filename = entries[index]!;
 						const fileData = unzipped[filename];
 						processedFiles++;
@@ -142,6 +143,7 @@ export function DicomArchiveUploader({
 	);
 
 	const traverseFileTree = useCallback(
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		async (item: any, path: string = ""): Promise<File[]> => {
 			return new Promise((resolve) => {
 				if (item.isFile) {
@@ -158,6 +160,7 @@ export function DicomArchiveUploader({
 					const files: File[] = [];
 					const readBatch = () => {
 						dirReader.readEntries(
+							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 							async (entries: any[]) => {
 								if (!entries || entries.length === 0) {
 									resolve(files);

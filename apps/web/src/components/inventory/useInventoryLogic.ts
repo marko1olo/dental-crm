@@ -121,6 +121,7 @@ export function useInventoryLogic(organizationId: string) {
 		"inventory",
 	);
 	const [selectedServiceId, setSelectedServiceId] = useState<string>("");
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [rulesList, setRulesList] = useState<any[]>([]);
 	const [isLoadingRules, setIsLoadingRules] = useState(false);
 	const [selectedInventoryItemId, setSelectedInventoryItemId] =
@@ -843,6 +844,7 @@ export function useInventoryLogic(organizationId: string) {
 		setQuantityToDeduct,
 		handleAddRule,
 		handleDeleteRule,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		servicesList: (dashboard as any)?.prices || dashboard?.serviceCatalog || [],
 	};
 }

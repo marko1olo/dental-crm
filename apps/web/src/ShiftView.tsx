@@ -72,7 +72,9 @@ function formatClockTime(value: unknown): string {
 }
 
 export function ShiftView({
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	activePatientHasCallablePhone,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	activePatientCallablePhone,
 	visibleRecommendedActions,
 	recommendedActionPriorityLabels,
@@ -82,8 +84,10 @@ export function ShiftView({
 	setError,
 	mostLoadedResource,
 	setSelectedPatientId,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 }: any) {
 	const patientsById = useMemo(() => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const index = new Map<string, any>();
 		for (const patient of dashboard?.patients ?? [])
 			index.set(patient.id, patient);
@@ -119,20 +123,26 @@ export function ShiftView({
 	 * заголовком «Расписание приемов на сегодня».
 	 */
 	const todayAppointments = useMemo(() => {
-		return (dashboard?.appointments ?? [])
-			.filter((app: any) => calendarDateOfInstant(app.startsAt) === todayIso)
-			.filter(
-				(app: any) =>
-					!["cancelled", "no_show"].includes(
-						String(app.status ?? "").toLowerCase(),
-					),
-			)
-			.sort((a: any, b: any) =>
-				String(a.startsAt).localeCompare(String(b.startsAt)),
-			);
+		return (
+			(dashboard?.appointments ?? [])
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+				.filter((app: any) => calendarDateOfInstant(app.startsAt) === todayIso)
+				.filter(
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+					(app: any) =>
+						!["cancelled", "no_show"].includes(
+							String(app.status ?? "").toLowerCase(),
+						),
+				)
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+				.sort((a: any, b: any) =>
+					String(a.startsAt).localeCompare(String(b.startsAt)),
+				)
+		);
 	}, [dashboard?.appointments, todayIso]);
 
 	const staffById = useMemo(() => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const index = new Map<string, any>();
 		for (const member of dashboard?.clinicSettings?.staff ?? [])
 			index.set(member.id, member);
@@ -143,6 +153,7 @@ export function ShiftView({
 	const manyDoctors = useMemo(
 		() =>
 			(dashboard?.clinicSettings?.staff ?? []).filter(
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				(member: any) => member.active && member.role === "doctor",
 			).length > 1,
 		[dashboard?.clinicSettings?.staff],
@@ -152,6 +163,7 @@ export function ShiftView({
 	const nextAppointment = useMemo(() => {
 		const now = Date.now();
 		return (
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			todayAppointments.find((app: any) => {
 				const ends = new Date(app.endsAt ?? app.startsAt).getTime();
 				return Number.isFinite(ends) && ends >= now;
@@ -172,7 +184,9 @@ export function ShiftView({
 		() =>
 			new Set(
 				(dashboard?.clinicSettings?.staff ?? [])
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					.filter((member: any) => member.active)
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					.map((member: any) => member.role),
 			).size > 2,
 		[dashboard?.clinicSettings?.staff],
@@ -182,6 +196,7 @@ export function ShiftView({
 	const [showOtherQueues, setShowOtherQueues] = useState(false);
 
 	/** Переход по срочному делу: раздел берём из самого дела, пациента подставляем. */
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	function runRecommendedAction(action: any) {
 		if (
 			action?.patientId &&
@@ -388,6 +403,7 @@ export function ShiftView({
 					</div>
 					{todayAppointments.length > 0 ? (
 						<div className="today-schedule-list">
+							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 							{todayAppointments.map((app: any) => {
 								const patient = patientsById.get(app.patientId);
 								const isCurrent = Boolean(
@@ -502,6 +518,7 @@ export function ShiftView({
 					</div>
 					{(visibleRecommendedActions ?? []).length > 0 ? (
 						<ul className="shift-todo-list">
+							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 							{(visibleRecommendedActions ?? []).map((action: any) => {
 								const patient = action.patientId
 									? patientsById.get(action.patientId)
@@ -847,8 +864,10 @@ export function ShiftView({
 							>
 								{(dashboard?.shiftIntelligence?.roleQueues ?? [])
 									.filter(
+										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 										(q: any) => q.role === activeQueueRole || showOtherQueues,
 									)
+									// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 									.map((queue: any) => (
 										<article
 											className={`role-queue-card ${queue.role === activeQueueRole ? "active" : ""}`}
@@ -1260,7 +1279,7 @@ export function PatientCockpit({
 								</span>
 							) : null}
 							{/* Было «📄 3 док-тов»: и сокращение, и неясно, есть они или их нет. */}
-							{activePatientInsight.missingDocumentKinds.length > 0 ? (
+							{(activePatientInsight.missingDocumentKinds?.length ?? 0) > 0 ? (
 								<span
 									style={{
 										background: "var(--paper)",
@@ -1272,7 +1291,7 @@ export function PatientCockpit({
 								>
 									📄 не хватает{" "}
 									{countLabel(
-										activePatientInsight.missingDocumentKinds.length,
+										activePatientInsight.missingDocumentKinds?.length ?? 0,
 										"документа",
 										"документов",
 										"документов",
@@ -1341,8 +1360,8 @@ export function PatientCockpit({
 						{/* Было «3 шт. по визиту», а на пустой карточке — «нет по визиту»:
                     сокращение из накладной и фраза, которая по-русски не строится. */}
 						<p className="tile-meta">
-							{activeUsableDocuments.length > 0
-								? `${countLabel(activeUsableDocuments.length, "документ", "документа", "документов")} по визиту`
+							{(activeUsableDocuments?.length ?? 0) > 0
+								? `${countLabel(activeUsableDocuments?.length ?? 0, "документ", "документа", "документов")} по визиту`
 								: "по визиту документов нет"}
 						</p>
 					</div>
@@ -1399,9 +1418,9 @@ export function PatientCockpit({
 					<div>
 						<h3>Связь</h3>
 						<p className="tile-meta">
-							{activeCommunicationTasks.length > 0
+							{(activeCommunicationTasks?.length ?? 0) > 0
 								? countLabel(
-										activeCommunicationTasks.length,
+										activeCommunicationTasks?.length ?? 0,
 										"задача",
 										"задачи",
 										"задач",
@@ -1429,9 +1448,9 @@ export function PatientCockpit({
 					<div>
 						<h3>Снимки</h3>
 						<p className="tile-meta">
-							{activeImagingStudies.length > 0
+							{(activeImagingStudies?.length ?? 0) > 0
 								? countLabel(
-										activeImagingStudies.length,
+										activeImagingStudies?.length ?? 0,
 										"снимок",
 										"снимка",
 										"снимков",

@@ -4,6 +4,7 @@ import type { FastifyInstance } from "fastify";
 
 declare module "fastify" {
 	interface FastifyRequest {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		user?: { id: string; [key: string]: any };
 	}
 }
@@ -565,6 +566,7 @@ async function runDiarySigningCeremony(
 	// записывалась на нашу — то есть запись о расходе и сам расход оказывались в
 	// разных клиниках.
 	const deductions: DiaryStockDeduction[] = [];
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const transactionsToInsert: any[] = [];
 	let completedTreatmentItems = 0;
 	if (diary.visitId) {

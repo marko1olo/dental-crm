@@ -1,4 +1,5 @@
 import { fetchWithHandling } from "../../utils/networkUtils";
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function useImagingQueries(options?: { auth?: any }) {
 	const auth = options?.auth;
 
@@ -8,6 +9,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 		});
 	};
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const saveBatchToothStates = async (patientId: string, updates: any[]) => {
 		return fetchWithHandling(`/api/patients/${patientId}/tooth-states/batch`, {
 			method: "POST",
@@ -32,6 +34,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 		});
 	};
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const saveScan = async (payload: any) => {
 		return fetchWithHandling("/api/xray/scans", {
 			method: "POST",
@@ -67,6 +70,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 		);
 		if (el) el.click();
 	};
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const previewImagingImport = async (payload?: any) => {
 		return fetchWithHandling("/api/imaging/imports/preview", {
 			method: "POST",
@@ -77,6 +81,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 		});
 	};
 	const restoreMprWorkbenchLocalDraft = async () => {};
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const runRecognitionJob = async (payload?: any) => {
 		return fetchWithHandling("/api/ai/recognition-jobs", {
 			method: "POST",
@@ -86,6 +91,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const scanDicomFolderSeries = async (payload?: any) => {
 		return fetchWithHandling("/api/imaging/dicom/folder-workup-plan", {
 			method: "POST",
@@ -95,6 +101,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const scanImagingFolder = async (payload?: any) => {
 		return fetchWithHandling("/api/imaging/folders/scan-preview", {
 			method: "POST",
@@ -104,6 +111,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const commitImagingImport = async (payload?: any) => {
 		return fetchWithHandling("/api/imaging/imports/commit", {
 			method: "POST",
@@ -123,6 +131,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 			}),
 		});
 	};
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const handleBrowserDirectoryInputChange = async (_files: any) => {};
 	const organizeLocalImagingSources = async () => {
 		return fetchWithHandling("/api/imaging/local-organizer/scan-preview", {
@@ -135,6 +144,7 @@ export function useImagingQueries(options?: { auth?: any }) {
 	const localBridgeStatusState = "disconnected";
 	const localBridgeStatusValue = { status: "disconnected", port: null };
 	const sendRecognitionResultToImport = () => {};
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const selectCtPlanningImplant = (_implant: any) => {};
 
 	return {

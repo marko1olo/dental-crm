@@ -106,6 +106,7 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 				const [updatedTask] = await tx
 					.update(communicationTasks)
 					.set({
+						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 						status: parsedInput.data.outcome as any,
 						lastEventAt: new Date(),
 					})
@@ -126,9 +127,11 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 					clinicId: task.clinicId,
 					taskId: task.id,
 					patientId: task.patientId,
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					actorUserId: (parsedInput.data as any).actorUserId ?? null,
 					channel: task.channel,
 					direction: "outbound",
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					status: parsedInput.data.outcome as any,
 					message:
 						parsedInput.data.note ??

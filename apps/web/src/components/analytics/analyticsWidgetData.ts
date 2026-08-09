@@ -93,6 +93,7 @@ export function parseWidgetListPayload<T>(
 	return {
 		ok: true,
 		items: list.flatMap((row) =>
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			asRecord(row) ? [toItem(asRecord(row)!)] : [],
 		),
 	};

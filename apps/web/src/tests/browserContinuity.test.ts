@@ -46,6 +46,7 @@ describe("inspectBrowserContinuity", () => {
 			if (originalWindowDescriptor) {
 				Object.defineProperty(globalThis, "window", originalWindowDescriptor);
 			} else {
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				delete (globalThis as any).window;
 			}
 			if (originalNavigatorDescriptor) {
@@ -55,6 +56,7 @@ describe("inspectBrowserContinuity", () => {
 					originalNavigatorDescriptor,
 				);
 			} else {
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				delete (globalThis as any).navigator;
 			}
 		}
@@ -105,6 +107,7 @@ describe("formatByteSize", () => {
 	test('returns "н/д" for non-numbers, null, and undefined', () => {
 		assert.strictEqual(formatByteSize(null), "н/д");
 		assert.strictEqual(formatByteSize(undefined), "н/д");
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		assert.strictEqual(formatByteSize("100" as any), "н/д");
 	});
 
@@ -160,11 +163,13 @@ describe("browserIndexedDbWritable", () => {
 	});
 
 	test("returns false when window is undefined", async () => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		global.window = undefined as any;
 		assert.strictEqual(await browserIndexedDbWritable(), false);
 	});
 
 	test("returns false when indexedDB is not in window", async () => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		global.window = {} as any;
 		assert.strictEqual(await browserIndexedDbWritable(), false);
 	});
@@ -173,6 +178,7 @@ describe("browserIndexedDbWritable", () => {
 		global.window = {
 			indexedDB: {
 				open: (_name: string, _version: number) => {
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					const request: any = {};
 					setTimeout(() => {
 						if (request.onerror) {
@@ -183,6 +189,7 @@ describe("browserIndexedDbWritable", () => {
 					return request;
 				},
 			},
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} as any;
 
 		assert.strictEqual(await browserIndexedDbWritable(), false);
@@ -192,6 +199,7 @@ describe("browserIndexedDbWritable", () => {
 		global.window = {
 			indexedDB: {
 				open: (_name: string, _version: number) => {
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					const request: any = {};
 					setTimeout(() => {
 						if (request.onsuccess) {
@@ -205,6 +213,7 @@ describe("browserIndexedDbWritable", () => {
 				},
 				deleteDatabase: (_name: string) => {},
 			},
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} as any;
 
 		const result = await browserIndexedDbWritable();

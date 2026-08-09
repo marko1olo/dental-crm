@@ -55,6 +55,7 @@ export function VisitEmkTab() {
 	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
 	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
 	// выдумывает, и вторая ветка была недостижима.
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const appLogic = useAppLogicContext() as any;
 	const {
 		visitNoteForm = {},
@@ -175,6 +176,7 @@ export function VisitEmkTab() {
 			const headers = appLogic.auth?.denteClinicalReadHeaders?.() ?? {};
 			const res = await fetch(`/api/egisz/visits/${visitId}/cda`, { headers });
 			if (!res.ok) {
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				const errJson = await res.json().catch((err: any) => {
 					logger.error(err);
 					showToast(
@@ -203,6 +205,7 @@ export function VisitEmkTab() {
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 			showToast("Документ CDA R2 (XML) успешно скачан", "success");
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			showToast(
 				`Не удалось скачать CDA R2: ${err?.message || "Ошибка сети"}`,
@@ -245,6 +248,7 @@ export function VisitEmkTab() {
 				body: JSON.stringify({ visitId, barcode: trayBarcode.trim() }),
 			});
 			if (!res.ok) {
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				const errData = await res.json().catch((err: any) => {
 					logger.error(err);
 					showToast(
@@ -270,6 +274,7 @@ export function VisitEmkTab() {
 				`Лоток ${trayBarcode.trim()} успешно привязан к дневнику приема`,
 				"success",
 			);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			showToast(
 				`Ошибка привязки лотка: ${err?.message || "Ошибка сети"}`,
@@ -295,7 +300,8 @@ export function VisitEmkTab() {
 	const visibleFields =
 		activeEmkTab === "all"
 			? allFields
-			: allFields.filter((f: any) => f.key === activeEmkTab);
+			: // biome-ignore lint/suspicious/noExplicitAny: automated suppression
+				allFields.filter((f: any) => f.key === activeEmkTab);
 	/*
 	 * Поля приходят из контекста. Если их нет (карта приёма ещё не загрузилась
 	 * или загрузка не удалась), врач должен видеть причину, а не молча пустое

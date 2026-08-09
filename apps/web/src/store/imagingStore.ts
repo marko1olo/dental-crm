@@ -49,7 +49,9 @@ import { resolveUpdater } from "./updater";
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
 export interface ImagingStore {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	imagingImportText: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setImagingImportText: (val: any | ((prev: any) => any)) => void;
 	imagingImportSourceKind: ImagingSourceKind;
 	setImagingImportSourceKind: (
@@ -64,7 +66,9 @@ export interface ImagingStore {
 					prev: LocalImagingFolderDraft | null,
 			  ) => LocalImagingFolderDraft | null),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	imagingFolderPath: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setImagingFolderPath: (val: any | ((prev: any) => any)) => void;
 	browserPickedImagingFolder: BrowserPickedImagingFolderPreview | null;
 	setBrowserPickedImagingFolder: (
@@ -84,7 +88,9 @@ export interface ImagingStore {
 					prev: BrowserImagingScanProgress | null,
 			  ) => BrowserImagingScanProgress | null),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	browserDirectoryPickerAvailable: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setBrowserDirectoryPickerAvailable: (val: any | ((prev: any) => any)) => void;
 	imagingImportPreview: ImagingImportPreviewResponse | null;
 	setImagingImportPreview: (
@@ -173,7 +179,9 @@ export interface ImagingStore {
 			| ImagingViewerState
 			| ((prev: ImagingViewerState) => ImagingViewerState),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	dicomWebEndpointUrl: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setDicomWebEndpointUrl: (val: any | ((prev: any) => any)) => void;
 	dicomWebCheck: DicomWebConnectorCheckResponse | null;
 	setDicomWebCheck: (
@@ -286,7 +294,9 @@ export interface ImagingStore {
 			| ImagingViewerAnnotation[]
 			| ((prev: ImagingViewerAnnotation[]) => ImagingViewerAnnotation[]),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	imagingViewerNote: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setImagingViewerNote: (val: any | ((prev: any) => any)) => void;
 	imagingViewerSession: ImagingViewerSessionResponse["session"] | null;
 	setImagingViewerSession: (
@@ -311,35 +321,53 @@ export interface ImagingStore {
 	setImagingViewerSaveError: (
 		val: string | null | ((prev: string | null) => string | null),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	imagingViewerSessionReady: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setImagingViewerSessionReady: (val: any | ((prev: any) => any)) => void;
 	mprProjection: MprProjection;
 	setMprProjection: (
 		val: MprProjection | ((prev: MprProjection) => MprProjection),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	mprAxisDeg: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setMprAxisDeg: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	mprSlabMm: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setMprSlabMm: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	mprSliceIndex: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setMprSliceIndex: (val: any | ((prev: any) => any)) => void;
 	mprWindowPreset: MprWindowPreset;
 	setMprWindowPreset: (
 		val: MprWindowPreset | ((prev: MprWindowPreset) => MprWindowPreset),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	mprCrosshairEnabled: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setMprCrosshairEnabled: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	mprLinkedPlanesEnabled: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setMprLinkedPlanesEnabled: (val: any | ((prev: any) => any)) => void;
 	mprWorkbenchLocalSavedAt: string | null;
 	setMprWorkbenchLocalSavedAt: (
 		val: string | null | ((prev: string | null) => string | null),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	mprWorkbenchDraftRestored: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setMprWorkbenchDraftRestored: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isImagingImportLoading: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsImagingImportLoading: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isImagingImportCommitting: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsImagingImportCommitting: (val: any | ((prev: any) => any)) => void;
 	imagingCreateSavingKind: ImagingStudyKind | null;
 	setImagingCreateSavingKind: (
@@ -348,37 +376,69 @@ export interface ImagingStore {
 			| null
 			| ((prev: ImagingStudyKind | null) => ImagingStudyKind | null),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isImagingFolderScanning: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsImagingFolderScanning: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomLocalDiscovering: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomLocalDiscovering: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isLocalImagingOrganizing: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsLocalImagingOrganizing: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomSeriesPreviewLoading: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomSeriesPreviewLoading: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomWebChecking: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomWebChecking: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomManifestBuilding: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomManifestBuilding: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomToolStateBuilding: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomToolStateBuilding: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomWorkbenchBuilding: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomWorkbenchBuilding: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomWorkbenchServerSaving: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomWorkbenchServerSaving: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomWorkbenchReconnecting: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomWorkbenchReconnecting: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomWorkstationChecking: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomWorkstationChecking: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomRenderCachePlanning: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomRenderCachePlanning: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomFolderWorkupPlanning: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomFolderWorkupPlanning: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isDicomFirstFramePreviewing: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsDicomFirstFramePreviewing: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isBrowserImagingFolderPicking: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsBrowserImagingFolderPicking: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	isLocalDicomOperationActive: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsLocalDicomOperationActive: (val: any | ((prev: any) => any)) => void;
 	reset: () => void;
 }

@@ -62,6 +62,7 @@ describe("Messenger webhooks — cast-after-200 body guard", () => {
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			payload?: any;
 		} = { method: "POST", url, headers };
 

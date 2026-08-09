@@ -22,6 +22,7 @@ describe("sendTelegramTextMessage", () => {
 				status: 200,
 				headers: { "content-type": "application/json" },
 			});
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		}) as any;
 
 		const result = await sendTelegramTextMessage(baseInput);
@@ -41,6 +42,7 @@ describe("sendTelegramTextMessage", () => {
 				status: 429,
 				headers: { "content-type": "application/json" },
 			});
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		}) as any;
 
 		const result = await sendTelegramTextMessage(baseInput);
@@ -60,6 +62,7 @@ describe("sendTelegramTextMessage", () => {
 				status: 401,
 				headers: { "content-type": "application/json" },
 			});
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		}) as any;
 
 		const result = await sendTelegramTextMessage(baseInput);
@@ -77,6 +80,7 @@ describe("sendTelegramTextMessage", () => {
 		globalThis.fetch = mock.fn(async () => {
 			const error = new DOMException("The operation was aborted", "AbortError");
 			throw error;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		}) as any;
 
 		const result = await sendTelegramTextMessage(baseInput);
@@ -93,6 +97,7 @@ describe("sendTelegramTextMessage", () => {
 	test("handles generic network error", async () => {
 		globalThis.fetch = mock.fn(async () => {
 			throw new Error("Network failure");
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		}) as any;
 
 		const result = await sendTelegramTextMessage(baseInput);

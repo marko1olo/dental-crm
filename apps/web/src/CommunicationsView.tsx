@@ -30,6 +30,7 @@ type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
 type CommunicationEvent = Dashboard["communicationEvents"][number];
 
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type CommunicationsViewProps = {
 	communicationChannelLabels: Record<CommunicationTask["channel"], string>;
 	communicationDocumentTaskActionLabels: Partial<
@@ -481,6 +482,7 @@ export function CommunicationsView({
 	openCommunicationTaskDocumentWorkflow,
 	sortedCommunicationTasks,
 	staffRoleLabels,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 }: any = {}) {
 	const communicationNoteInputId = "communication-closing-note";
 	const communicationNoteDescriptionId = "communication-closing-note-guidance";

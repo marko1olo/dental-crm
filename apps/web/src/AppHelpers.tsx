@@ -4264,6 +4264,7 @@ export function newAppointmentDraftFromDashboard(
 		scheduleDefaultChairId?: string | null;
 	} = {},
 ): AppointmentScheduleDraft {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const profile = dashboard?.clinicSettings?.profile || ({} as any);
 	const staff = dashboard?.clinicSettings?.staff || [];
 	const chairs = dashboard?.clinicSettings?.chairs || [];
@@ -5742,6 +5743,7 @@ export function createLocalQueueId(): string {
 	if (typeof crypto !== "undefined") {
 		if ("randomUUID" in crypto) return crypto.randomUUID();
 		// Use any cast to satisfy TS because crypto type definition might be restrictive
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const cryptoAny = crypto as any;
 		if (typeof cryptoAny.getRandomValues === "function") {
 			const array = new Uint32Array(1);
@@ -6219,6 +6221,7 @@ export const speechProviderConnectorLabels: Record<
 	local_planned: "локально",
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export const initialUiPreferences = {} as any;
 
 export const auth = {

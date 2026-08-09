@@ -202,7 +202,9 @@ export function projectToAxialPlane(points: readonly WorldPoint[]): Point2D[] {
 export function polylineLengthMm(points: readonly Point2D[]): number {
 	let total = 0;
 	for (let i = 1; i < points.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const a = points[i - 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const b = points[i]!;
 		total += Math.hypot(b.x - a.x, b.y - a.y);
 	}
@@ -231,7 +233,9 @@ export function polylineReturnsToStart(
 		Number.isFinite(gapFraction) && gapFraction >= 0
 			? gapFraction
 			: CLOSED_CONTOUR_GAP_FRACTION;
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const first = points[0]!;
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const last = points[points.length - 1]!;
 	return Math.hypot(last.x - first.x, last.y - first.y) <= totalMm * fraction;
 }
@@ -259,7 +263,9 @@ export function orientArchPatientRightFirst(
 ): Point2D[] {
 	const ordered = points.map((point) => ({ ...point }));
 	if (ordered.length < 2) return ordered;
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const first = ordered[0]!;
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const last = ordered[ordered.length - 1]!;
 	if (first.x > last.x) return ordered.reverse();
 	if (first.x === last.x && first.y > last.y) return ordered.reverse();
@@ -336,6 +342,7 @@ export function sampleArchCurve(
 	stepMm: number = DEFAULT_ARCH_SAMPLE_STEP_MM,
 ): Point2D[] {
 	if (controlPoints.length === 0) return [];
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	if (controlPoints.length === 1) return [{ ...controlPoints[0]! }];
 
 	const step = resolveStepMm(stepMm, polylineLengthMm(controlPoints));
@@ -343,9 +350,13 @@ export function sampleArchCurve(
 	const curve: Point2D[] = [];
 
 	for (let i = 0; i < last; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p1 = controlPoints[i]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p2 = controlPoints[i + 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p0 = i === 0 ? reflect(p1, p2) : controlPoints[i - 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p3 = i + 2 > last ? reflect(p2, p1) : controlPoints[i + 2]!;
 
 		const chordMm = Math.hypot(p2.x - p1.x, p2.y - p1.y);
@@ -355,6 +366,7 @@ export function sampleArchCurve(
 		}
 	}
 
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	curve.push({ ...controlPoints[last]! });
 	return curve;
 }
@@ -373,13 +385,17 @@ export function resamplePolylineByArcLength(
 
 	const totalMm = polylineLengthMm(points);
 	const step = resolveStepMm(stepMm, totalMm);
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	if (totalMm <= 0) return [{ ...points[0]! }];
 
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const out: Point2D[] = [{ ...points[0]! }];
 	let carriedMm = 0;
 
 	for (let i = 1; i < points.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const a = points[i - 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const b = points[i]!;
 		const segmentMm = Math.hypot(b.x - a.x, b.y - a.y);
 		if (segmentMm <= 0) continue;
@@ -392,7 +408,9 @@ export function resamplePolylineByArcLength(
 		carriedMm = segmentMm - (travelledMm - step);
 	}
 
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const tail = points[points.length - 1]!;
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const emittedTail = out[out.length - 1]!;
 	if (emittedTail.x !== tail.x || emittedTail.y !== tail.y) {
 		out.push({ ...tail });
@@ -461,6 +479,7 @@ export function buildPanoramicArch(
 	};
 
 	for (let i = annotations.length - 1; i >= 0; i--) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const annotation = annotations[i]!;
 		const rawHandles = annotation.data?.handles?.points ?? [];
 		const controlPoints = projectToAxialPlane(rawHandles);

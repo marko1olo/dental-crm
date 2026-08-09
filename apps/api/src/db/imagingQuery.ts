@@ -126,10 +126,12 @@ export async function createImagingStudyInDb(
 	input: {
 		patientId: string;
 		visitId?: string | null | undefined;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		kind: any;
 		title: string;
 		toothCode?: string | null | undefined;
 		region?: string | null | undefined;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		sourceKind: any;
 		sourceName: string;
 		storagePath?: string | null | undefined;

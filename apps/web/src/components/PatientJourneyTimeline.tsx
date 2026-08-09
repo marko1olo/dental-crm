@@ -95,6 +95,7 @@ export const PatientJourneyTimeline: React.FC<{
 			return staffById.get(doctorUserId)?.fullName ?? "врач не найден в списке";
 		};
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const appointments: any[] = dashboard?.appointments || [];
 		const visitEvents: JourneyEvent[] = appointments
 			.filter((a) => a.patientId === patientId)
@@ -111,6 +112,7 @@ export const PatientJourneyTimeline: React.FC<{
 				};
 			});
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const payments: any[] = dashboard?.payments || [];
 		const paymentEvents: JourneyEvent[] = payments
 			.filter((p) => p.patientId === patientId)
@@ -125,6 +127,7 @@ export const PatientJourneyTimeline: React.FC<{
 				actionUrl: `#finance`,
 			}));
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const insights: any[] = dashboard?.patientInsights || [];
 		const insightEvents: JourneyEvent[] = insights
 			.filter((i) => i.patientId === patientId)

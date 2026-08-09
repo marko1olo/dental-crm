@@ -27,10 +27,12 @@
 export function visitOwnedPlanItems(
 	treatmentPlanItems: unknown,
 	visitPatientId: string | null,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 ): any[] {
 	if (!visitPatientId) return [];
 	if (!Array.isArray(treatmentPlanItems)) return [];
 	return treatmentPlanItems.filter(
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(item: any) =>
 			item?.patientId === visitPatientId && item?.status !== "cancelled",
 	);

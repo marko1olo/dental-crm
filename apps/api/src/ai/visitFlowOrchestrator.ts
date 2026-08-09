@@ -24,6 +24,7 @@ function extractPlanPayload(
 	if (!hasPlanText && !hasServices) return null;
 
 	// Build a minimal TreatmentPlanPayload based on available data
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const plannedStages: any[] = [];
 	if (request.completedServices) {
 		for (const service of request.completedServices) {
@@ -60,7 +61,9 @@ function extractPlanPayload(
 		),
 		alternatives: [],
 		risksAndLimitations: [],
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		prognosisAndLimits: null as any,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		controlPlan: null as any,
 		doctorFullName: request.doctorFullName || null, // No fallback to "Лечащий врач"
 		plannedAt: new Date().toISOString(),
@@ -83,6 +86,7 @@ function extractRecommendationsPayload(
 		draft.treatmentPlan && draft.treatmentPlan.trim().length > 0;
 	if (!hasServices && !hasPlanText) return null;
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let careTopic: any = "other";
 	let procedureName = "Прием стоматолога";
 

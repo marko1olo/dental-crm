@@ -118,6 +118,7 @@ export async function parseDictationWithLLM(
 	transcript: string,
 	context: ParserContext,
 	timeZone?: string | null,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 ): Promise<any> {
 	const modelName = "llama-3.3-70b-versatile";
 	const baseUrl = "https://api.groq.com/openai/v1";
@@ -166,9 +167,11 @@ export async function parseDictationWithLLM(
 			const payload = await response.json().catch(() => ({}));
 			if (!response.ok) throw new Error("LLM Error");
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const content = (payload as any).choices?.[0]?.message?.content;
 			if (!content) throw new Error("Empty LLM response");
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			let parsed: any;
 			try {
 				parsed = JSON.parse(content.trim());

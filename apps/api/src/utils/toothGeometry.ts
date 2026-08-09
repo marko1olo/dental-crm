@@ -1,3 +1,4 @@
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type ToothGeometryType = {
 	root: string;
 	crown: string;

@@ -50,6 +50,7 @@ describe("egisz + vk + workspace preset — body guards (AUTH-first; inject)", (
 			method: "POST" | "GET";
 			url: string;
 			headers: Record<string, string>;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			payload?: any;
 		} = { method, url, headers };
 		if (opts.rawPayload !== undefined) {

@@ -164,8 +164,11 @@ describe("planPriceIssueMessages — человеку сказано, что д�
 		);
 		const messages = planPriceIssueMessages(rows);
 		assert.equal(messages.length, 1);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(messages[0]!, /«лечение кариеса»/);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(messages[0]!, /зубы 16, 26/);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(messages[0]!, /Добавьте её в прайс/);
 	});
 
@@ -179,9 +182,12 @@ describe("planPriceIssueMessages — человеку сказано, что д�
 		);
 		const messages = planPriceIssueMessages(rows);
 		assert.equal(messages.length, 1);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(messages[0]!, /прайс-лист пуст/i);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(messages[0]!, /Заполните прайс/);
 		// Ни одной латинской буквы: ошибка пишется человеческими словами.
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.ok(!/[A-Za-z]/.test(messages[0]!));
 	});
 
@@ -338,7 +344,9 @@ describe("validateDraftPlanRows — заполненная строка не и�
 		assert.equal(result.ok, false);
 		if (result.ok) return;
 		assert.equal(result.problems.length, 1);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(result.problems[0]!, /Лечение кариеса/);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(result.problems[0]!, /цену больше нуля/);
 	});
 
@@ -348,6 +356,7 @@ describe("validateDraftPlanRows — заполненная строка не и�
 		]);
 		assert.equal(result.ok, false);
 		if (result.ok) return;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(result.problems[0]!, /выберите услугу из прайса/);
 	});
 
@@ -382,6 +391,7 @@ describe("validateDraftPlanRows — заполненная строка не и�
 		]);
 		assert.equal(result.ok, false);
 		if (result.ok) return;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(result.problems[0]!, /нет ни одной услуги/);
 	});
 });

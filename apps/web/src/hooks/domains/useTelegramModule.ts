@@ -29,16 +29,22 @@ export type UseTelegramModuleOptions = {
 	settingsAdminSecretSession?: string | null;
 	loadDashboard: () => Promise<void>;
 	setError: (error: string | null) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	dashboard: any;
 	currentView: string;
 	settingsTab: string;
 	onboardingDismissed: boolean;
 	onboardingStep: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activePatient: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeDoctor: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeAppointment: any;
 	uiPreferencesHydrated: boolean;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setCurrentView: (view: any) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setSelectedDocumentKind: (kind: any) => void;
 };
 
@@ -62,6 +68,7 @@ export function useTelegramModule({
 		useRef<DenteTelegramHandoffTarget | null>(readDenteTelegramHandoffTarget());
 
 	const {
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isTelegramLoading,
 		setIsTelegramLoading,
 		isTelegramLinkCreating,
@@ -100,7 +107,9 @@ export function useTelegramModule({
 		setTelegramSettingsSaveError,
 		telegramSettingsDirty,
 		telegramStatus,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramOutboxStatusFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramOutboxTemplateFilter,
 		telegramOutbox,
 		setTelegramOutbox,

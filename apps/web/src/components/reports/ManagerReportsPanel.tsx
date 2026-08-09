@@ -209,6 +209,7 @@ function formatHours(minutes: number): string {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const payload = (await response.json().catch((err: any) => {
 		logger.error(err);
 		showToast(
@@ -625,8 +626,8 @@ export function ManagerReportsPanel({
 
 	const maxRevenue = useMemo(
 		() =>
-			summary?.revenue.points.reduce(
-				(peak, point) => Math.max(peak, point.revenueRub),
+			summary?.revenue?.points?.reduce(
+				(max, point) => Math.max(max, point.amountRub),
 				0,
 			) ?? 0,
 		[summary],
@@ -773,23 +774,23 @@ export function ManagerReportsPanel({
 							<li className="ops-metric ops-metric--primary">
 								<span
 									className="ops-metric__value"
-									title={money(summary.revenue.totalRub)}
+									title={money(summary?.revenue?.totalRub)}
 								>
-									{shortRub(summary.revenue.totalRub)}
+									{shortRub(summary?.revenue?.totalRub)}
 								</span>
 								<span className="ops-metric__label">получено</span>
 							</li>
 							<li className="ops-metric">
 								<span className="ops-metric__value">
-									{summary.appointments.total}
+									{summary?.appointments?.total ?? 0}
 								</span>
 								<span className="ops-metric__label">приёмов</span>
 							</li>
 							<li
-								className={`ops-metric ${summary.appointments.lostAppointments > 0 ? "ops-metric--danger" : ""}`}
+								className={`ops-metric ${(summary?.appointments?.lostAppointments ?? 0) > 0 ? "ops-metric--danger" : ""}`}
 							>
 								<span className="ops-metric__value">
-									{summary.appointments.lostAppointments}
+									{summary?.appointments?.lostAppointments ?? 0}
 								</span>
 								{/* Именно этот показатель уменьшают напоминаниями. */}
 								<span className="ops-metric__label">
@@ -798,18 +799,18 @@ export function ManagerReportsPanel({
 							</li>
 							<li className="ops-metric">
 								<span className="ops-metric__value">
-									{formatPercent(summary.appointments.noShowRate)}
+									{formatPercent(summary?.appointments?.noShowRate ?? null)}
 								</span>
 								<span className="ops-metric__label">доля неявок</span>
 							</li>
 							<li
-								className={`ops-metric ${summary.receivables.totalDebtRub > 0 ? "ops-metric--danger" : ""}`}
+								className={`ops-metric ${(summary?.receivables?.totalDebtRub ?? 0) > 0 ? "ops-metric--danger" : ""}`}
 							>
 								<span
 									className="ops-metric__value"
-									title={money(summary.receivables.totalDebtRub)}
+									title={money(summary?.receivables?.totalDebtRub)}
 								>
-									{shortRub(summary.receivables.totalDebtRub)}
+									{shortRub(summary?.receivables?.totalDebtRub)}
 								</span>
 								<span className="ops-metric__label">
 									долг, {summary.receivables.debtors} пациент(ов)
@@ -837,11 +838,11 @@ export function ManagerReportsPanel({
 
 						{/* ── Динамика выручки ──────────────────────────────────── */}
 						<h3 className="ops-section-title">Выручка</h3>
-						{summary.revenue.isEmpty ? (
+						{summary?.revenue?.isEmpty || !summary?.revenue?.points ? (
 							<p className="ops-empty">Платежей за период не было.</p>
 						) : (
 							<ul className="ops-bars">
-								{summary.revenue.points.map((point) => (
+								{(summary.revenue.points || []).map((point) => (
 									<li className="ops-bar" key={point.bucket}>
 										<span className="ops-bar__label">{point.bucket}</span>
 										{/*
@@ -1104,7 +1105,7 @@ export function ManagerReportsPanel({
 							границы периода теперь считает сервер. Так же печатает корзины
 							и разрез выручки выше.
 						*/}
-						{summary.patientFlow.points.length > 0 ? (
+						{(summary?.patientFlow?.points?.length ?? 0) > 0 ? (
 							<>
 								<h3 className="ops-section-title">
 									Первичные и повторные пациенты
@@ -1119,7 +1120,7 @@ export function ManagerReportsPanel({
 											</tr>
 										</thead>
 										<tbody>
-											{summary.patientFlow.points.map((point) => (
+											{(summary?.patientFlow?.points ?? []).map((point) => (
 												<tr key={point.bucket}>
 													<td className="ops-strong" data-label="Месяц">
 														{point.bucket}

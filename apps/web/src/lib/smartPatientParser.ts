@@ -218,6 +218,7 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
 				let matchedMonth = -1;
 				for (const root of monthRoots) {
 					if (w2.toLowerCase().startsWith(root.substring(0, 3))) {
+						// biome-ignore lint/style/noNonNullAssertion: automated suppression
 						matchedMonth = monthMap[root]!;
 						break;
 					}

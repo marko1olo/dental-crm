@@ -20,6 +20,7 @@ import {
 } from "./workspaceActions/workspaceActionsLabels";
 
 interface VoiceAssistantUIProps {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onNavigate?: (view: any) => void;
 	onSearchQuery?: (query: string) => void;
 	onDateChange?: (date: string) => void;
@@ -47,6 +48,7 @@ export function VoiceAssistantUI({
 
 	const [showTutorial, setShowTutorial] = useState(false);
 	const [activeTab, setActiveTab] = useState<WorkspaceActionHelpTab>("nav");
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [visibleAction, setVisibleAction] = useState<any>(null);
 
 	// Interaction mode refs

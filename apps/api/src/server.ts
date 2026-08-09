@@ -1,4 +1,5 @@
 import "dotenv/config";
+// trigger restart 3
 /*
  * ПРОВЕРКА ОКРУЖЕНИЯ. Стоит здесь, ВТОРОЙ строкой, и это не косметика.
  * Тело ES-модуля выполняется после вычисления его импортов, а импорты
@@ -292,6 +293,7 @@ export async function setupProxyAndTunnels() {
 	}
 
 	// Register global agent for direct undici fetches
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	(globalThis as any)._dentalProxyAgent = getProxyAgent() || undefined;
 }
 

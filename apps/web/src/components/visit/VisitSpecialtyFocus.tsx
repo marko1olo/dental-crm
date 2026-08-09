@@ -13,6 +13,7 @@ export function VisitSpecialtyFocus() {
 		setSelectedProtocolId,
 		specialtyLabels = {},
 		visibleVisitSpecialtyFocusOptions = [],
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	} = context as any;
 
 	/*
@@ -56,6 +57,7 @@ export function VisitSpecialtyFocus() {
 						на вкладке профиля; приём можно вести и без них.
 					</p>
 				) : null}
+				{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 				{focusOptions.map((option: any) => (
 					<button
 						className={selectedSpecialty === option.specialty ? "active" : ""}

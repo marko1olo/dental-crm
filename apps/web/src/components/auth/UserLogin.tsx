@@ -9,6 +9,7 @@ import {
 import { showToast } from "../GlobalToast";
 
 interface UserLoginProps {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onSuccess: (clinicProfile: any, userProfile: any) => void;
 	onSwitchToRegister: () => void;
 	onSwitchToClinicMode: () => void;
@@ -48,6 +49,7 @@ export function UserLogin({
 				{ organizationId: data.user?.organizationId ?? data.organizationId },
 				data.user,
 			);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			showToast(err.message || "Неверный Email или пароль", "error");
 		} finally {

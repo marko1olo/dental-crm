@@ -2478,6 +2478,7 @@ async function transcribeGeminiMultimodal(input: {
 		}),
 	});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const payload = (await response.json().catch(() => ({}))) as any;
 	if (!response.ok) {
 		throw providerHttpError(

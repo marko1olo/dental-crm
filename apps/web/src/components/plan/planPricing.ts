@@ -218,6 +218,7 @@ export function resolvePlanSuggestions(
 		});
 
 		if (matches.length === 1) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const service = matches[0]!;
 			rows.push({
 				toothNumber: suggestion.toothNumber,

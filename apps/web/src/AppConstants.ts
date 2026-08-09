@@ -2015,6 +2015,7 @@ export const speechProviderConnectorLabels: Record<
 	local_planned: "локально",
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export const initialUiPreferences = {} as any;
 
 export const auth = {

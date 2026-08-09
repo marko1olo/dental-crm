@@ -129,6 +129,7 @@ describe("commitImagingImport", () => {
 
 		// Ровно одна строка признана готовой — только она и уходит в базу.
 		assert.strictEqual(insertedValues.length, 1);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const stored = insertedValues[0]!;
 		assert.strictEqual(stored.organizationId, ORG_ID);
 		assert.strictEqual(stored.patientId, patient.id);

@@ -416,7 +416,9 @@ function nameParts(
 		.filter(Boolean);
 	if (parts.length < 2) return null;
 	return {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		lastName: parts[0]!,
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		firstName: parts[1]!,
 		middleName: parts.slice(2).join(" "),
 	};
@@ -616,6 +618,7 @@ export function buildKnd1151156Xml(
 		};
 	}
 
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const payerPayment = taxPayments[0]!;
 	const payer = payerPersonXml(payerPayment);
 	if (!payer) {

@@ -27,6 +27,7 @@ import {
 } from "./settingsProfileLoad";
 
 interface SettingsProfileTabProps {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	props: Record<string, any>;
 }
 

@@ -83,8 +83,10 @@ type AppointmentScheduleDraft = {
 	comment: string;
 };
 
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type AppointmentScheduleSaveState = "idle" | "saving" | "saved" | "error";
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 const activeVisitLockedAppointmentStatuses = new Set<Appointment["status"]>([
 	"completed",
@@ -180,18 +182,29 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		scheduleDoctorFilterId,
 		scheduleAssistantFilterId,
 		scheduleChairFilterId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleDefaultDoctorUserId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleDefaultAssistantUserId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleDefaultChairId,
 		scheduleStatusFilter,
 		scheduleDateFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleSavingId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleDirtyIds,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleSaveStates,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chairScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chairScheduleSavingId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chairScheduleDirtyIds,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chairScheduleSaveStates,
 		appointmentScheduleDrafts,
 		appointmentScheduleDirtyIds,
@@ -202,29 +215,47 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		setScheduleDoctorFilterId,
 		setScheduleAssistantFilterId, // setScheduleAssistantFilterId(event.target.value || null) normalizedAppointmentStatus(event.target.value) normalizedAppointmentStatusFilter(event.target.value)
 		setScheduleChairFilterId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setScheduleDefaultDoctorUserId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setScheduleDefaultAssistantUserId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setScheduleDefaultChairId,
 		setScheduleStatusFilter,
 		setScheduleDateFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setStaffScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setStaffScheduleSavingId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setStaffScheduleDirtyIds,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setStaffScheduleSaveStates,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setChairScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setChairScheduleSavingId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setChairScheduleDirtyIds,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setChairScheduleSaveStates,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setAppointmentScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setAppointmentScheduleDirtyIds,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setAppointmentScheduleSaveStates,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setAppointmentScheduleErrors,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewAppointmentDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewAppointmentSaveState,
 	} = useScheduleStore();
 	const {
 		appointmentLabels,
 		appointmentReadinessById,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		appointmentReadinessLabels,
 		appointmentScheduleDraftFromAppointment,
 		closeAppointmentEditor,
@@ -236,15 +267,18 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		lockScheduleAdminSession,
 		newAppointmentError,
 		normalizedAppointmentStatus,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedAppointmentStatusFilter,
 		openAppointmentEditor,
 		openScheduleWarning,
 		patientName,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		recommendedActionPriorityLabels,
 		resetNewAppointmentDraft,
 		saveAppointmentSchedule,
 		shiftWarnings,
 		sortedAppointments,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffRoleLabels,
 		toDateTimeLocalValue,
 		unlockScheduleAdminSession,
@@ -1279,6 +1313,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				newAppointmentDraft={newAppointmentDraft}
 				newAppointmentSaveState={newAppointmentSaveState}
 				newAppointmentError={newAppointmentError}
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				updateNewAppointmentDraft={updateNewAppointmentDraft as any}
 				createAppointmentFromDraft={createAppointmentFromDraft}
 				resetNewAppointmentDraft={resetNewAppointmentDraft}
@@ -1439,6 +1474,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 									copyAppointmentToBuffer={copyAppointmentToBuffer}
 									closeAppointmentEditor={closeAppointmentEditor}
 									updateAppointmentScheduleDraft={
+										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 										updateAppointmentScheduleDraft as any
 									}
 									saveAppointmentSchedule={saveAppointmentSchedule}

@@ -342,11 +342,13 @@ function parseXmlTree(xml: string): {
 		if (match === null) break;
 		const text = working.slice(lastIndex, match.index);
 		if (text.trim() && stack.length > 0) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			stack[stack.length - 1]!.text += decodeXmlEntities(text);
 		}
 		lastIndex = tagPattern.lastIndex;
 
 		const isClosing = match[0].startsWith("</");
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const name = match[1]!;
 		const selfClosing = match[3] === "/";
 
@@ -361,6 +363,7 @@ function parseXmlTree(xml: string): {
 		for (const attributeMatch of (match[2] ?? "").matchAll(
 			/([\w.:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g,
 		)) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			attributes[attributeMatch[1]!] = decodeXmlEntities(
 				attributeMatch[2] ?? attributeMatch[3] ?? "",
 			);

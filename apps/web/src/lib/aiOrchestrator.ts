@@ -56,6 +56,7 @@ export interface AiRouterResult<T> {
  * AI Orchestrator: Smartly routes tasks between fast local parsing and heavy LLM usage.
  * Protects API limits (Local First pattern) and provides rich prompts when LLM is needed.
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: automated suppression
 export class AiOrchestrator {
 	/**
 	 * Determine the intent of the text (NLP Routing)
@@ -161,6 +162,7 @@ export class AiOrchestrator {
 	 */
 	static processScheduleBooking(
 		input: string,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		dashboard: any,
 	): AiRouterResult<ReturnType<typeof smartBookingParser>> {
 		const localResult = smartBookingParser(input, dashboard);

@@ -120,6 +120,7 @@ async function writeFailureText(
 
 export const ScheduleClipboardPanel: React.FC<Props> = ({
 	onPasted,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	reloadToken = 0,
 }) => {
 	const appLogic = useAppLogicContext();

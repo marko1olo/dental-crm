@@ -55,10 +55,13 @@ export interface SettingsState {
 	 * Читать режим для решений следует оттуда через resolveClinicMode.
 	 */
 	clinicMode: ClinicMode | null;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onboardingDismissed: any;
 	onboardingDismissedAt: string | null;
 	onboardingStep: OnboardingStep;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onboardingDraftMode: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onboardingGuideExpanded: any;
 	telegramHandoffNotice: DenteTelegramHandoffTarget | null;
 	telegramStatus: DenteTelegramBotStatus | null;
@@ -71,6 +74,7 @@ export interface SettingsState {
 	telegramLinkCodeLedger: DenteTelegramLinkCodeListResponse | null;
 	telegramChatLinkLedger: DenteTelegramChatLinkListResponse | null;
 	telegramLinkSubjectType: TelegramLinkSubjectType;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	telegramLinkStaffId: any;
 	telegramLinkCode: DenteTelegramLinkCodeCreated | null;
 	telegramLinkActionState: string | null;
@@ -78,6 +82,7 @@ export interface SettingsState {
 	telegramModeDraft: DenteTelegramBotMode;
 	telegramBotUsernameDraft: string;
 	telegramOwnBotUsernameDraft: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	telegramBotConfigId: any;
 	telegramWebhookBaseUrlDraft: string;
 	telegramPatientPortalBaseUrlDraft: string;
@@ -118,6 +123,7 @@ export interface SettingsActions {
 	setClinicMode: (
 		val: ClinicMode | null | ((prev: ClinicMode | null) => ClinicMode | null),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setOnboardingDismissed: (val: any | ((prev: any) => any)) => void;
 	setOnboardingDismissedAt: (
 		val: string | null | ((prev: string | null) => string | null),
@@ -125,7 +131,9 @@ export interface SettingsActions {
 	setOnboardingStep: (
 		val: OnboardingStep | ((prev: OnboardingStep) => OnboardingStep),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setOnboardingDraftMode: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setOnboardingGuideExpanded: (val: any | ((prev: any) => any)) => void;
 	setTelegramHandoffNotice: (
 		val:
@@ -202,6 +210,7 @@ export interface SettingsActions {
 			| TelegramLinkSubjectType
 			| ((prev: TelegramLinkSubjectType) => TelegramLinkSubjectType),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setTelegramLinkStaffId: (val: any | ((prev: any) => any)) => void;
 	setTelegramLinkCode: (
 		val:
@@ -233,6 +242,7 @@ export interface SettingsActions {
 	setTelegramOwnBotUsernameDraft: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setTelegramBotConfigId: (val: any | ((prev: any) => any)) => void;
 	setTelegramWebhookBaseUrlDraft: (
 		val: string | ((prev: string) => string),

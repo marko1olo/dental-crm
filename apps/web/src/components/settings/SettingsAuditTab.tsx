@@ -216,12 +216,16 @@ type SettingsTabId =
 	| "imports"
 	| "audit";
 type SettingsTab = { id: SettingsTabId; title: string };
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type CbctWorkbenchPlane = { key: MprProjection; title: string; detail: string };
 type MigrationOperatorActionScope = "primary" | "script";
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
+// biome-ignore lint/suspicious/noExplicitAny lint/correctness/noUnusedVariables: automated suppression
 type SettingsViewProps = Record<string, any>;
 const _viewLabels = workspaceViewLabels as Record<string, string>;
 const _staffCreationRoles: StaffRole[] = [
@@ -821,197 +825,327 @@ const _dicomFirstFrameImageTypeLabel = (
 	return "тип изображения: особый";
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function SettingsAuditTab(props: Record<string, any>) {
 	const {
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		activePatient,
 		activeSettingsTabButtonRef,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		activeSpeechProviderHealth,
 		activeWorkspaceProfile,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		addChair,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		addStaffMember,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		applyProtocolTemplate,
 		browserCanRequestPersistentStorage,
 		browserContinuity,
 		browserContinuityChecks,
 		browserContinuityState,
 		browserContinuityValue,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		browserDirectoryInputRef,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		browserDirectoryPickerAvailable,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		browserImagingFileInputAccept,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		browserImagingFilesInputRef,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		browserImagingScanProgress,
 		browserMigrationDiscovery,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		browserMigrationScanProgress,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		browserMigrationInputRef,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		browserPickedImagingFolder,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		buildDicomFolderWorkupPlan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		buildDicomRenderCachePlan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		buildDicomViewerLaunchManifest,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		buildDicomViewerToolStateBundle,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		buildDicomViewerWorkbenchManifest,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		cancelLocalDicomOperation,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		cbctWorkbenchPlanes,
 		cbctWorkbenchProjections,
 		cbctWorkbenchSeries,
 		cbctWorkbenchTools,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chairScheduleDirtyIds,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chairScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chairScheduleSaveStates,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chairScheduleSavingId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		changeClinicMode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		checkDicomWebConnector,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		checkDicomWorkstationReadiness,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		chooseRecognitionPreset,
 		clinicPublicLookup,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		cancelBrowserImagingFolderScan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		cancelBrowserMigrationScan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		clearBrowserPickedImagingFolderPreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		clearDicomWorkbenchRecovery,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		clearLocalImagingFolderRecovery,
 		clinicalRuleActionLabels,
 		clinicalRuleSeverityLabels,
 		clinicProfileDraft,
 		clinicProfileSaveState,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		commitImagingImport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		commitImport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		commitSmartImport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		copyTelegramTextToClipboard,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		createClinicalRuleFromSettings,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		createTelegramLinkCode,
 		dashboard,
 		defaultDicomFirstFrameViewerState,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dentalMaterialKindLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dentalRestorationTypeLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomFirstFrameImageStyle,
 		dicomFirstFramePreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomFirstFrameStatusLabels,
 		dicomFirstFrameViewerState,
 		dicomFolderSeriesScan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomFolderWorkupPathLabels,
 		dicomFolderWorkupPlan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomDiagnosticPixelPolicyLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomExecutionLaneLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomGpuClassLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomLabel,
 		dicomLocalFolderDiscovery,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomQualityModeLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomReadinessCheckLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomRenderMemoryBudgetClassLabels,
 		dicomRenderCachePlan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomRuntimeTierLabels,
 		dicomSeriesPreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomSeriesViewerLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomTextureStrategyLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomViewerLaunchManifest,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomViewerLaunchModeLabels,
 		dicomViewerToolStateBundle,
 		dicomViewerWorkbenchManifest,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomWebCheck,
 		dicomWebEndpointUrl,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomWebStatusLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomWorkbenchLocalSavedAt,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomWorkbenchServerBundle,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomWorkbenchSourceIsRedacted,
 		dicomWorkstationReadiness,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		discoverDicomFolders,
 		discoverMigrationSources,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		documentDetectedKindLabel,
 		documentIngestion,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		documentIngestionQualityLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		documentIngestionTarget,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		documentLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		downloadDicomViewerToolStateBundle,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		downloadDicomWorkbenchManifest,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		downloadMigrationHandoffReport,
 		downloadPersistenceExport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		downloadSmartImportSafeHandoffReport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		downloadSmartImportReport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		downloadTelegramQrSvg,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		filteredTelegramOutboxItems,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		formatByteSize,
 		formatDateTime,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		formatMegabytes,
 		formatTime,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		handleBrowserDirectoryInputChange,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		handleBrowserMigrationInputChange,
 		hiddenTelegramOutboxItemCount,
 		imagingConnectorCards,
 		imagingFolderPath,
 		imagingFolderScan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		imagingImportCommit,
 		imagingImportPreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		imagingImportSourceKind,
 		imagingImportText,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		imagingKindLabels,
 		ctPlanningImplantPlan,
 		ctPlanningActiveQuickActionId,
 		imagingViewerActiveTool,
 		imagingSourceChoices,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		imagingSourceDetails,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		imagingSourceLabels,
 		imagingViewerCapabilities,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		importCommit,
 		importIntake,
 		importPreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		importSourceKind,
 		importText,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		ingestImportFile,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		integrationCapabilityLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		integrationCategoryLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		integrationStatusLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isBrowserImagingFolderPicking,
 		isBrowserMigrationScanning,
 		isClinicPublicLookupLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isClinicalRuleSaving,
 		isDicomFirstFramePreviewing,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomFolderWorkupPlanning,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomLocalDiscovering,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomManifestBuilding,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomRenderCachePlanning,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomSeriesPreviewLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomToolStateBuilding,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomWebChecking,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomWorkbenchBuilding,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomWorkbenchReconnecting,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomWorkbenchServerSaving,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDicomWorkstationChecking,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isDocumentIngesting,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isImagingFolderScanning,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isLocalDicomOperationActive,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isImagingImportCommitting,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isImagingImportLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isImportCommitting,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isImportDictating,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isImportLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isLocalImagingOrganizing,
 		isMigrationAutopilotLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isMigrationHandoffReportLoading,
 		isMigrationSourceDiscovering,
 		isMigrationSourceProbeLoading,
 		isMigrationSourceWorkupLoading,
 		isPersistenceExporting,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isRecognitionLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isSmartImportCommitting,
 		isSmartImportLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isSmartReportLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isSmartSafeReportLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isTelegramChatLinksLoadingMore,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isTelegramLinkCodesLoadingMore,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isTelegramLinkCreating,
 		isTelegramLoading,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isTelegramOutboxItemDueForUi,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isTelegramOutboxLoadingMore,
 		isTelegramSendingDue,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		isTelegramSettingsSaving,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		latestDicomWorkbenchServerBundle,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		legalMissingFields,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		legalReadinessPercent,
 		loadLocalBridgeUsePlans,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		loadMoreTelegramChatLinks,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		loadMoreTelegramLinkCodes,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		loadMoreTelegramOutbox,
 		loadPersistenceHealth,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		loadPersistenceIntegrity,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		loadTelegramControlPlane,
 		localBridgeReadiness,
 		localBridgeStatusLabels,
@@ -1020,80 +1154,132 @@ export function SettingsAuditTab(props: Record<string, any>) {
 		localBridgeUsePathLabels,
 		localBridgeUsePlans,
 		localImagingFolderDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		localImagingModelRoleLabels,
 		localImagingOrganizer,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		localImagingOrganizerActionLabels,
 		lookupClinicPublicProfile,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		lockTelegramAdminSession,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		markTelegramSettingsDirty,
 		migrationAutopilot,
 		migrationSourceDiscovery,
 		migrationSourceProbe,
 		migrationSourceWorkup,
 		mprAxisDeg,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		mprCacheModeLabels,
 		mprCrosshairEnabled,
 		mprLinkedPlanesEnabled,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		mprLoadStrategyLabels,
 		mprProjection,
 		mprProjectionLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		mprResourceTierLabels,
 		mprSliceIndex,
 		mprSlabMm,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		mprToolLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		mprWorkbenchDraftRestored,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		mprWorkbenchLocalSavedAt,
 		mprWindowPreset,
 		mprWindowPresetLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newChairHasMicroscope,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newChairHasSurgeryKit,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newChairHasXraySensor,
 		newChairName,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleAction,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleBlockedServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleCategory,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleCompletedServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleOwnerRole,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRulePatientText,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleRequiredServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleSeverity,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleSpecialty,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleTitle,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleTriggerServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newRuleWarningText,
 		newStaffName,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newStaffRole,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newStaffSpecialty,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedClinicalRuleAction,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedClinicalRuleSeverity,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedDentalSpecialty,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedServiceCategory,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedStaffRole,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedTelegramBotMode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedTelegramLinkSubjectType,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedTelegramOutboxStatusFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedTelegramOutboxTemplateFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizedTelegramPrivacyMode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		normalizeUiLanguageInput,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		ohifBaseUrl,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		organizeLocalImagingSources,
 		persistenceHealth,
 		persistenceIntegrity,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		pickBrowserImagingFolder,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		pickBrowserImagingFiles,
 		pickBrowserMigrationSource,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		policyAuditEventLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		prepareDicomWorkbenchFromFolder,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		previewDicomFirstFrame,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		previewDicomFirstFrameSlice,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		previewDicomSeries,
 		planMigrationDiscoveryCandidate,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		previewMigrationDiscoveryCandidate,
 		previewMigrationAutopilotSources,
 		probeMigrationDiscoveryCandidate,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		previewImagingImport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		previewImport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		previewSmartImport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		previewTelegramTemplate,
 		/*
       ВСЯ ПОВЕРХНОСТЬ РАЗБОРА ПРАЙСА УБРАНА ИЗ ЭТОЙ ВКЛАДКИ, ПОТОМУ ЧТО ЕЁ ЗДЕСЬ НЕ БЫЛО.
@@ -1112,65 +1298,114 @@ export function SettingsAuditTab(props: Record<string, any>) {
       components/settings/SettingsPricesTab.tsx.
     */
 		recognitionJob,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		recognitionKind,
 		recognitionPresets,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		recognitionTarget,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		recognitionTargetLabels,
 		recognitionText,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		reconnectDicomWorkbenchFromCurrentFolder,
 		refreshBrowserContinuity,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		refreshSpeechRuntime,
 		addMigrationDiscoveryCandidateToSmartImport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		rememberLocalImagingFolder,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		reopenOnboarding,
 		requestBrowserStoragePersistence,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		restoreDicomWorkbenchServerBundle,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		restoreMprWorkbenchLocalDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		revokeTelegramChatLink,
 		runMigrationAutopilot,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		runRecognitionJob,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		saveChairSchedule,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		saveClinicProfileFromDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		saveDicomWorkbenchBundleToServer,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		saveStaffSchedule,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		saveTelegramSettings,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scanDicomFolderSeries,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scanImagingFolder,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		selectedUiLanguageOption,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		sendDueTelegramOutbox,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		sendRecognitionResultToImport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		sendTelegramOutboxItem,
 		serviceCategoryLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		serviceTitle,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomFirstFramePreview,
 		setDicomFirstFrameViewerState,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomFolderSeriesScan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomFolderWorkupPlan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomLocalFolderDiscovery,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomRenderCachePlan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomSeriesPreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomViewerLaunchManifest,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomViewerToolStateBundle,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomViewerWorkbenchManifest,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomWebCheck,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomWebEndpointUrl,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomWorkbenchLocalSavedAt,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomWorkstationReadiness,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDocumentIngestionTarget,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImagingFolderPath,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImagingFolderScan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImagingImportCommit,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImagingImportPreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImagingImportSourceKind,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImagingImportText,
 		selectCtPlanningImplant,
 		setImagingViewerActiveTool,
 		setCtPlanningActiveQuickActionId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImportCommit,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImportIntake,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImportPreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImportSourceKind,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setImportText,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setLocalImagingOrganizer,
 		setMprAxisDeg,
 		setMprCrosshairEnabled,
@@ -1179,172 +1414,307 @@ export function SettingsAuditTab(props: Record<string, any>) {
 		setMprSliceIndex,
 		setMprSlabMm,
 		setMprWindowPreset,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewChairHasMicroscope,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewChairHasSurgeryKit,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewChairHasXraySensor,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewChairName,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleAction,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleBlockedServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleCategory,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleCompletedServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleOwnerRole,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRulePatientText,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleRequiredServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleSeverity,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleSpecialty,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleTitle,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleTriggerServiceId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewRuleWarningText,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewStaffName,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewStaffRole,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setNewStaffSpecialty,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setOhifBaseUrl,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setRecognitionJob,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setRecognitionText,
 		setSettingsTab,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setSmartImportCommit,
 		setSmartImportMode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setSmartImportPreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setSmartImportText,
 		settingsTab,
 		settingsTabs,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setUiLanguage,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		smartImportCommit,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		smartImportMode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		smartImportModeLabels,
 		smartImportPreview,
 		smartImportText,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		specialtyLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechGatewayCanUpload,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechGatewayHealthReport,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechGatewayStatus,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechProviderConnectorLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechProviderHealthById,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechProviderHealthLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechProviderModeLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechProviderRuntimeById,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechProviderSelectionLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechProviderStatusLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechRecordingPathLabels,
 		speechRecordingRecovery,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechRecordingStrategy,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		speechRecoveryStateLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffRoleLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleDirtyIds,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleDraftFromWorkingHours,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleSaveStates,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		staffScheduleSavingId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		stageLocalImagingFolderRecovery,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		startImportDictation,
 		telegramAdminSecretDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramAdminSecretSession,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramAllowVoiceIntakeDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramBotConfigId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramBotUsernameDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramChatLinkLedger,
 		telegramChatLinks,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramClassificationLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramDeliveryStatusLabels,
 		telegramEnabledFeaturesDraft,
 		telegramFeatureHelp,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramFeatureLabel,
 		telegramFeatureOptions,
 		telegramFeaturePlan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramHumanMessage,
 		telegramInlineButtonKindLabels,
 		telegramInlineButtonRowsFromReplyMarkup,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramLinkActionState,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramLinkCode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramLinkCodeLedger,
 		telegramLinkCodes,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramLinkCodeStatusLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramLinkStaffId,
 		telegramLinkStaffOptions,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramLinkSubjectType,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramMapsUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramModeDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramModeHints,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramModeLabels,
 		telegramOutbox,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramOutboxStatusFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramOutboxStatusFilterLabels,
 		telegramOutboxStatusFilterOptions,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramOutboxTemplateFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramOutboxTemplateFilterLabels,
 		telegramOutboxTemplateFilterOptions,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramOwnBotUsernameDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramPatientPortalBaseUrlDraft,
 		telegramPostVisitCheckupDelayDrafts,
 		telegramPostVisitCheckupDelayFields,
 		telegramPreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramPrivacyModeDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramPrivacyModeHints,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramPrivacyModeLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramQrSvgToDataUrl,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramReminderLeadTimesDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramReviewRequestDelayDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramReviewUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramRevokingLinkId,
 		telegramSendingItemId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramSettingsDirty,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramSettingsSaveError,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramSettingsSaveState,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramStaffEscalationChannelDraft,
 		telegramStatus,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramSubjectName,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramTemplateLabels,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramTokenTtlDraft,
 		telegramVisualCardFields,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramVisualCardUrlDrafts,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramWebhookBaseUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		telegramWelcomeImageUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		toggleChairWorkingDay,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		toggleClinicalRule,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		toggleClinicWorkingDay,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		toggleStaffWorkingDay,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		toggleTelegramFeature,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		uiLanguage,
 		uiLanguageOptions,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramAdminSecretDraft: propsSetTelegramAdminSecretDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		unlockTelegramAdminSession,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		updateChairScheduleDay,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		updateChairScheduleDraft,
 		updateClinicProfileDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		updateStaffScheduleDay,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		updateStaffScheduleDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		updateTelegramPostVisitCheckupDelayDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		updateTelegramVisualCardUrlDraft,
 		visibleTelegramOutboxItems,
 		weekdayOptions,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		workspaceScopeLabels,
 	} = props;
 	const {
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		clinicMode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setClinicMode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramOutbox,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramOutboxStatusFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramOutboxTemplateFilter,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramLinkSubjectType,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramLinkStaffId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramLinkCode,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramLinkActionState,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramModeDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramBotUsernameDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramOwnBotUsernameDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramBotConfigId,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramWebhookBaseUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramPatientPortalBaseUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramWelcomeImageUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramReviewUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramMapsUrlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramEnabledFeaturesDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramTokenTtlDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramReminderLeadTimesDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramReviewRequestDelayDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramAllowVoiceIntakeDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramStaffEscalationChannelDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramPrivacyModeDraft,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramAdminSecretDraft,
 	} = useSettingsStore();
 

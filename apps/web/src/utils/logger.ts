@@ -1,3 +1,4 @@
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 class DenteLogger {

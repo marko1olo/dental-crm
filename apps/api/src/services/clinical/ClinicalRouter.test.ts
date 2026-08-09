@@ -229,10 +229,12 @@ describe("ClinicalRouter — передача между клиническим�
 			);
 			return;
 		}
+		const orgId = fixture.organizationId;
+		const foreignPatientId = fixture.foreignPatientId;
 		await assert.rejects(
 			() =>
-				new ClinicalRouter().handlePhaseCompletion(fixture?.organizationId, {
-					patientId: fixture?.foreignPatientId as string,
+				new ClinicalRouter().handlePhaseCompletion(orgId, {
+					patientId: foreignPatientId,
 					completedPhaseCode: "PHASE_1_THERAPY",
 					notes: `${runTag} чужой пациент`,
 					toothCodes: ["11"],

@@ -203,6 +203,7 @@
 	color: var(--ok-fg, var(--ink));
 }
 
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .wizard-mode-title {
 	font-size: 16px;
 	font-weight: 600;

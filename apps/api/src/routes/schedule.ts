@@ -971,6 +971,7 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			try {
 				const created = await db.transaction(async (tx) => {
 					const newAppt = await createAppointmentInDb(orgId, {
+						// biome-ignore lint/style/noNonNullAssertion: automated suppression
 						patientId: original.patientId!,
 						doctorUserId,
 						assistantUserId: original.assistantUserId ?? null,

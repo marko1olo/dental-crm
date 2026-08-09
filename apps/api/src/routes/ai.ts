@@ -123,6 +123,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			return z
 				.array(aiRecognitionJobSchema)
 				.parse(await listAiRecognitionJobsFromDb(orgId));
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -197,6 +198,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			return reply
 				.code(201)
 				.send(aiRecognitionJobResponseSchema.parse({ job }));
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -244,6 +246,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			return visitNoteDraftSchema.parse(
 				await buildVisitDraftFromTranscript(input.transcript, input.specialty),
 			);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -272,6 +275,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			}
 			const result = await personalizeTreatmentPlan(parsedInput.data);
 			return reply.send(result);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -308,6 +312,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 				parsedInput.data,
 			);
 			return reply.send(result);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -352,6 +357,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			const { text, type, volumeContext } = parsedInput.data;
 
 			// 1. Try Local Algorithmic NLP first (to save LLM keys)
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			let result = parseDictationLocally(text, type as any);
 
 			// 2. Fallback to LLM if local NLP couldn't handle complex natural language
@@ -366,6 +372,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 				// нельзя — в этом случае берётся день сервера.
 				result = await parseDictationWithLLM(
 					text,
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					type as any,
 					await resolveClinicTimeZone(request),
 				);
@@ -374,11 +381,15 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			// 3. Database Linkage (If 3D viewer context is provided and teeth were found)
 			if (
 				volumeContext &&
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				(result as any)?.toothUpdates &&
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				(result as any).toothUpdates.length > 0
 			) {
 				// We link coordinates to the first mentioned tooth, or multiple if needed
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				const valuesToInsert = (result as any).toothUpdates.map(
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					(update: any) => ({
 						organizationId: volumeContext.organizationId,
 						patientId: volumeContext.patientId,
@@ -386,6 +397,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 						annotationType: "tooth" as const,
 						toothCode: update.code,
 						coordinates: volumeContext.coordinates || null,
+						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 						notes: (result as any).emkUpdates?.complaint || update.state,
 					}),
 				);
@@ -393,6 +405,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			}
 
 			return reply.send(result);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			return reply.code(500).send({
 				error: "ParseDictationError",

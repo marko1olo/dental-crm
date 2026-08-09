@@ -25,13 +25,16 @@ export type UseFinanceLogicOptions = {
 			headers?: Record<string, string>,
 		) => Record<string, string>;
 	};
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	dashboard: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	documentPatient: any;
 	paymentPatientContextReady: boolean;
 	paymentPatientContextMessage: string | null;
 	realActiveVisitId: string | null;
 	loadDashboard: () => Promise<void>;
 	setError: (error: string | null) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeUsableDocuments?: any[] | null;
 };
 

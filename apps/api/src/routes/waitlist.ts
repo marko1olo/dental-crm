@@ -64,6 +64,7 @@ export async function registerWaitlistRoutes(
 				.orderBy(desc(appointmentWaitlists.createdAt));
 
 			return items;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -170,6 +171,7 @@ export async function registerWaitlistRoutes(
 			});
 
 			return responseItem;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -246,6 +248,7 @@ export async function registerWaitlistRoutes(
 			});
 
 			return updated;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -294,6 +297,7 @@ export async function registerWaitlistRoutes(
 			});
 
 			return { success: true };
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({

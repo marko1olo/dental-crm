@@ -6,8 +6,11 @@ import { VisitDiaryEditor } from "../VisitDiaryEditor";
 import { realVisitFieldId } from "./visitIdentity";
 
 export function VisitOdontogramTab(props?: {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activePatient?: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeAppointment?: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	dashboard?: any;
 }) {
 	const ctx = useAppLogicContext();

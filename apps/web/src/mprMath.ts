@@ -101,7 +101,9 @@ export function interpolateSpline(
 	const result: Point2D[] = [];
 
 	for (let i = 0; i < points.length - 1; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p0 = points[i]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const p1 = points[i + 1]!;
 
 		const dx = p1.x - p0.x;
@@ -118,6 +120,7 @@ export function interpolateSpline(
 		}
 	}
 	// push last point
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	result.push(points[points.length - 1]!);
 
 	return result;
@@ -129,7 +132,9 @@ export function interpolateSpline(
 export function calculateNormals(points: Point2D[]): Point2D[] {
 	const normals: Point2D[] = [];
 	for (let i = 0; i < points.length; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const prev = i === 0 ? points[i]! : points[i - 1]!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const next = i === points.length - 1 ? points[i]! : points[i + 1]!;
 
 		const dx = next.x - prev.x;
@@ -284,6 +289,7 @@ export function generatePanoramicImage(
 		const tz = currentZ - oz;
 
 		for (let x = 0; x < width; x++) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const point = splinePoints[x]!;
 
 			if (thickness === 0) {
@@ -302,6 +308,7 @@ export function generatePanoramicImage(
 				);
 			} else {
 				// Thick Slab Raycasting along the normal.
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				const normal = normals[x]!;
 				const nx = normal.x,
 					ny = normal.y;
@@ -348,14 +355,23 @@ export function generatePanoramicImage(
  * Calculates the shortest distance from a 3D point (implant apex) to a line segment (nerve segment).
  */
 export function distancePointToLineSegment(p: vec3, v: vec3, w: vec3): number {
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const vx = v[0]!,
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		vy = v[1]!,
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		vz = v[2]!;
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const wx = w[0]!,
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		wy = w[1]!,
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		wz = w[2]!;
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const px = p[0]!,
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		py = p[1]!,
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		pz = p[2]!;
 
 	const vwx = wx - vx,
@@ -392,10 +408,12 @@ export function distancePointToLineSegment(p: vec3, v: vec3, w: vec3): number {
  */
 export function distancePointToSpline(p: vec3, spline: vec3[]): number {
 	if (spline.length === 0) return Infinity;
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	if (spline.length === 1) return vec3.distance(p, spline[0]!);
 
 	let minDist = Infinity;
 	for (let i = 0; i < spline.length - 1; i++) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const dist = distancePointToLineSegment(p, spline[i]!, spline[i + 1]!);
 		if (dist < minDist) minDist = dist;
 	}

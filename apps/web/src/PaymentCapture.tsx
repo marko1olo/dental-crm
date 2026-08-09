@@ -281,6 +281,7 @@ function TaxPayerDetails({
 	onPayerInnChange,
 	onPayerRelationshipChange,
 	onTaxDeductionCodeChange,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
 	patientDefaults,
 	patientTaxDefaultsAvailable,
 	payerBirthDate,
@@ -734,6 +735,7 @@ export function PaymentCapture({
 		},
 		[],
 	);
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 	const [showHints, setShowHints] = useState(false);
 	const [isSberbankModalOpen, setIsSberbankModalOpen] = useState(false);

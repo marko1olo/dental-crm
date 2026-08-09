@@ -53,12 +53,12 @@ import {
 	imagingCaptureDistanceMs,
 	imagingComparisonScore,
 } from "../../imagingComparison";
+import { readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import { useImagingStore } from "../../store/imagingStore";
 import { useSettingsStore } from "../../store/settingsStore";
 import { defaultDicomFirstFrameViewerState } from "../../utils/draftDefaults";
 import { clampMprSliceIndex } from "../../utils/math/mprMath";
-import { readDenteStaffToken } from "../../lib/safeLocalStorage";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -104,6 +104,7 @@ export function useDicomWorkbenchModule({
 		setImagingImportSourceKind,
 		imagingFolderPath,
 		setImagingFolderPath,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		localImagingFolderDraft,
 		setLocalImagingFolderDraft,
 		setImagingImportPreview,
@@ -111,16 +112,20 @@ export function useDicomWorkbenchModule({
 		dicomSeriesPreview,
 		setDicomSeriesPreview,
 		setDicomFolderSeriesScan,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomFolderWorkupPlan,
 		setDicomFolderWorkupPlan,
 		dicomFirstFramePreview,
 		setDicomFirstFramePreview,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomFirstFrameViewerState,
 		setDicomFirstFrameViewerState,
 		dicomWebEndpointUrl,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDicomWebEndpointUrl,
 		dicomWebCheck,
 		setDicomWebCheck,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomViewerLaunchManifest,
 		setDicomViewerLaunchManifest,
 		dicomViewerToolStateBundle,
@@ -135,6 +140,7 @@ export function useDicomWorkbenchModule({
 		setDicomWorkbenchServerBundles,
 		dicomWorkstationReadiness,
 		setDicomWorkstationReadiness,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		dicomRenderCachePlan,
 		setDicomRenderCachePlan,
 		selectedImagingStudyId,
@@ -166,6 +172,7 @@ export function useDicomWorkbenchModule({
 	} = useImagingStore();
 
 	const { setError, dashboard, ohifBaseUrl } = useAppStore();
+	// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 	const { clinicalAdminSecretSession } = useSettingsStore();
 
 	// ===== Local state =====

@@ -381,6 +381,7 @@ class DomainStateSliceUnavailableError extends Error {
 
 	constructor(slices: Array<{ slice: string; message: string }>) {
 		super(
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			`Не удалось прочитать данные клиники: ${slices.map((entry) => `${entry.slice} - ${(entry as any).error}`).join(", ")}.`,
 		);
 		this.name = "DomainStateSliceUnavailableError";
@@ -400,8 +401,8 @@ export interface HydratedDomainState {
  */
 function collect<T>(
 	rows: unknown[],
-	// biome-ignore lint/suspicious/noExplicitAny: zod-схемы из @dental/shared имеют разные дженерики
 	validator: {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		safeParse: (input: unknown) => { success: boolean; data?: any };
 	},
 	label: string,

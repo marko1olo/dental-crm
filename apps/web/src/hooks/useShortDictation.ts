@@ -54,7 +54,9 @@ export function useShortDictation(
 
 	const startBrowserNative = useCallback(() => {
 		const SpeechRecognition =
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			(window as any).SpeechRecognition ||
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			(window as any).webkitSpeechRecognition;
 		if (!SpeechRecognition) {
 			showToast(
@@ -71,11 +73,13 @@ export function useShortDictation(
 
 		recognition.onstart = () => setIsRecording(true);
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		recognition.onresult = (event: any) => {
 			const transcript = event.results[0][0].transcript;
 			if (transcript) onResult(transcript);
 		};
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		recognition.onerror = (e: any) => {
 			if (e.error !== "no-speech") {
 				showToast(`Ошибка распознавания: ${e.error}`, "error");
@@ -168,6 +172,7 @@ export function useShortDictation(
 				} else {
 					showToast("Не удалось распознать речь", "warning");
 				}
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
 				logger.error("Server STT Error:", err);
 				showToast(

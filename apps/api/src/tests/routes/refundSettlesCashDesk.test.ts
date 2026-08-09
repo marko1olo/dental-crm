@@ -82,6 +82,7 @@ const FULL_RECEIPT_NUMBER = "ФН 8888000000000101";
 const PARTIAL_RECEIPT_NUMBER = "ФН 8888000000000102";
 const RECEIPT_DATE = "2026-07-29";
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 type Injected = { statusCode: number; body: string; json: any };
 
 /**
@@ -158,6 +159,7 @@ describe("выданное заявление на возврат снимает
 				? {}
 				: { payload: payload as Record<string, unknown> }),
 		});
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		let json: any = null;
 		try {
 			json = JSON.parse(response.body);

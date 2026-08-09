@@ -23,9 +23,11 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [saving, setSaving] = useState(false);
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
 	if (!patient) return null;
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const adminProfile = (patient.administrativeProfile as any) || {};
 	const currentTier: LoyaltyTier =
 		adminProfile.loyaltyTier === "silver" ||
@@ -76,6 +78,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 			 * видно прямо здесь. Если статуса в ответе нет — говорим об этом прямо.
 			 * Когда поле появится в схеме, успешная ветка заработает сама.
 			 */
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const saved = await res.json().catch((err: any) => {
 				logger.error(err);
 				showToast(

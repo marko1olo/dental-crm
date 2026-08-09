@@ -336,6 +336,7 @@ export function Cornerstone3DViewer({
 				cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
 			if (!toolGroup) {
 				toolGroup =
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId)!;
 			}
 

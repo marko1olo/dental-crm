@@ -32,6 +32,7 @@ describe("accessGuard", () => {
 			headers: {},
 		};
 		mockReply = {
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			code: codeMock as any,
 		};
 	});

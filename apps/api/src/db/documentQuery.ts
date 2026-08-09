@@ -142,11 +142,13 @@ export async function createGeneratedDocumentInDb(
 	input: {
 		patientId: string;
 		visitId?: string | null | undefined;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		kind: any;
 		title?: string | undefined;
 		totalAmountRub?: number | null | undefined;
 		taxYear?: number | null | undefined;
 		taxPayerInn?: string | null | undefined;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		payload?: any | null | undefined;
 	},
 ): Promise<GeneratedDocument> {
@@ -394,6 +396,7 @@ export async function storeTaxXmlSnapshotInDb(
 	documentId: string,
 	snapshot: Omit<TaxXmlSnapshot, "createdAt" | "sha256"> &
 		Partial<Pick<TaxXmlSnapshot, "createdAt" | "sha256">>,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 ): Promise<any> {
 	const completeSnapshot: TaxXmlSnapshot = {
 		...snapshot,

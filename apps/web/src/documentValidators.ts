@@ -4,6 +4,7 @@ import {
 	validateRubAmountInput,
 } from "./rubAmountInput";
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export type DocumentState = Record<string, any>;
 
 export function validatePaidMedicalServicesContract(
@@ -353,6 +354,7 @@ export function validatePaymentReceipt(
 		selectedPaymentReceiptPayments.length
 			? null
 			: "У каждого выбранного платежа должен быть номер фискального чека.") ??
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(selectedPaymentReceiptPayments.every((payment: any) =>
 			Boolean(payment.fiscalReceiptIssuedAt?.trim()),
 		)

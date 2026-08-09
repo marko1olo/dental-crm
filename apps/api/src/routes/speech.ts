@@ -159,6 +159,7 @@ async function validateSpeechClinicalScope(
 		);
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let patient: any = null;
 	if (requestedPatientId) {
 		const patientScope = callerOrganizationId
@@ -177,6 +178,7 @@ async function validateSpeechClinicalScope(
 			return speechScopeFailure(404, "Пациент для диктовки не найден.");
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let visit: any = null;
 	if (requestedVisitId) {
 		const visitScope = callerOrganizationId

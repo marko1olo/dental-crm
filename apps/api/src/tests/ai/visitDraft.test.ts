@@ -27,6 +27,7 @@ describe("buildVisitDraftFromTranscript AI Errors", () => {
 				json: async () => ({
 					choices: [{ message: { content: null } }],
 				}),
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} as any;
 		});
 
@@ -58,6 +59,7 @@ describe("buildVisitDraftFromTranscript AI Errors", () => {
 				json: async () => ({
 					choices: [{ message: { content: "This is not JSON" } }],
 				}),
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} as any;
 		});
 
@@ -121,6 +123,7 @@ describe("buildVisitDraftFromTranscript AI Errors", () => {
 						},
 					],
 				}),
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} as any;
 		});
 
@@ -161,6 +164,7 @@ describe("buildVisitDraftFromTranscript AI Errors", () => {
 						},
 					],
 				}),
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} as any;
 		});
 

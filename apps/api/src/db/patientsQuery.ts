@@ -615,8 +615,10 @@ export async function updatePatientAdministrativeProfileInDb(
 export async function createPatientSafeInDb(
 	organizationId: string,
 	input: CreatePatientInput,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	duplicateCheckFn: (patients: any[], input: CreatePatientInput) => any,
 ): Promise<
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	{ type: "duplicate"; duplicate: any } | { type: "success"; patient: Patient }
 > {
 	if (useInMemory()) {

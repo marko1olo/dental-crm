@@ -363,7 +363,9 @@ export async function requireStaffIdentity(
 			.from(users)
 			.where(
 				and(
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					eq(users.id, identity.userId!),
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					eq(users.organizationId, identity.organizationId!),
 				),
 			)

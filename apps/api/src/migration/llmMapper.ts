@@ -170,6 +170,7 @@ function allowedFieldsFor(
 			"toothState.",
 		],
 	};
+	// biome-ignore lint/style/noNonNullAssertion: automated suppression
 	const prefixes = prefixByEntity[entityKind] ?? prefixByEntity.unknown!;
 	return [
 		...all.filter((field) =>

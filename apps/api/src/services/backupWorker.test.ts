@@ -24,6 +24,7 @@ import test, { afterEach, beforeEach, describe } from "node:test";
 const TEST_ENCRYPTION_KEY = "unit-test-key-do-not-use-in-prod!!";
 
 describe("BackupWorker start/stop", () => {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let backupWorker: any;
 	let tempDir: string;
 	let originalPath: string | undefined;
@@ -84,6 +85,7 @@ describe("BackupWorker start/stop", () => {
 
 		backupWorker.stopBackupDaemon();
 
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const logs = logMock.mock.calls.map((c: any) => c.arguments[0]).join(" ");
 		assert.match(logs, /Резервное копирование остановлено/);
 

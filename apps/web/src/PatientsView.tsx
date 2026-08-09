@@ -440,6 +440,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									rawText={newPatientName}
 									type="patient"
 									onApply={(payload: SmartParsedPayload) => {
+										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 										const data = payload as any;
 										if (data) {
 											setNewPatientName(data.fullName || newPatientName);

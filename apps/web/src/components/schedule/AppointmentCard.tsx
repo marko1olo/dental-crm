@@ -15,6 +15,7 @@ export type AppointmentCardProps = {
 	visibleScheduleSuggestions: ScheduleSuggestion[];
 	appointmentReadinessById: Map<string, AppointmentReadiness>;
 	appointmentLabels: Record<Appointment["status"], string>;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	appointmentDraft: Record<string, any>;
 	appointmentSaveState: string;
 	appointmentSaveError: string | null;
@@ -46,7 +47,9 @@ export type AppointmentCardProps = {
 	closeAppointmentEditor: (appointmentId: string) => void;
 	updateAppointmentScheduleDraft: (
 		appointmentId: string,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		key: any,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		value: any,
 	) => void;
 	saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
@@ -70,6 +73,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		appointmentDirty,
 		appointmentEditing,
 		appointmentHasOpenVisit,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		appointmentActiveVisitStatusLocked,
 		appointmentMissingSteps,
 		appointmentReadyToSave,

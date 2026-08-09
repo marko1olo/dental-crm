@@ -46,6 +46,7 @@ test("taxPaymentSelectionErrorForDocument", async (t) => {
 			const error = taxPaymentSelectionErrorForDocument(taxInput, [
 				validPayment,
 			]);
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			assert.match(error!, /нужно явно выбрать фискальные чеки/);
 		},
 	);
@@ -62,6 +63,7 @@ test("taxPaymentSelectionErrorForDocument", async (t) => {
 		const error = taxPaymentSelectionErrorForDocument(duplicateInput, [
 			validPayment,
 		]);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(error!, /В выбранных чеках есть дубли/);
 	});
 
@@ -76,6 +78,7 @@ test("taxPaymentSelectionErrorForDocument", async (t) => {
 
 	await t.test("returns error when a selected payment is not found", () => {
 		const error = taxPaymentSelectionErrorForDocument(validTaxInput, []);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(error!, /Выбранный фискальный чек не найден/);
 	});
 
@@ -86,6 +89,7 @@ test("taxPaymentSelectionErrorForDocument", async (t) => {
 			const error = taxPaymentSelectionErrorForDocument(validTaxInput, [
 				otherPatientPayment,
 			]);
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			assert.match(error!, /относится к другому пациенту/);
 		},
 	);
@@ -98,6 +102,7 @@ test("taxPaymentSelectionErrorForDocument", async (t) => {
 		const error = taxPaymentSelectionErrorForDocument(validTaxInput, [
 			unpaidPayment,
 		]);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(error!, /только проведенные положительные оплаты/);
 	});
 
@@ -106,6 +111,7 @@ test("taxPaymentSelectionErrorForDocument", async (t) => {
 		const error = taxPaymentSelectionErrorForDocument(validTaxInput, [
 			zeroAmountPayment,
 		]);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		assert.match(error!, /только проведенные положительные оплаты/);
 	});
 
@@ -119,6 +125,7 @@ test("taxPaymentSelectionErrorForDocument", async (t) => {
 			const error = taxPaymentSelectionErrorForDocument(validTaxInput, [
 				pastYearPayment,
 			]);
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			assert.match(error!, /не относится к выбранному налоговому году/);
 		},
 	);
@@ -130,6 +137,7 @@ test("taxPaymentSelectionErrorForDocument", async (t) => {
 			const error = taxPaymentSelectionErrorForDocument(validTaxInput, [
 				differentInnPayment,
 			]);
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			assert.match(error!, /относится к другому ИНН плательщика/);
 		},
 	);
@@ -153,6 +161,7 @@ test("taxPaymentSelectionErrorForDocument", async (t) => {
 						taxpayerInn: "123456789012",
 						selectedPaymentIds: ["payment-1"],
 					},
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				} as any, // Cast as any because we might not be providing all the required fields for the application payload mock
 			};
 			const error = taxPaymentSelectionErrorForDocument(applicationInput, [

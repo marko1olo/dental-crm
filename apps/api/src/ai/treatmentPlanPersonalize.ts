@@ -266,6 +266,7 @@ ${input.payload.plannedStages.map((s) => `  * ${s.stageName}: ${s.plannedService
 		throw new Error("ИИ-модель вернула неожиданный ответ.");
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let parsed: any;
 	try {
 		parsed = JSON.parse(content.trim());

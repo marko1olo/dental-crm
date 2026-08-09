@@ -400,6 +400,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					setLoadState({ phase: "empty" });
 					return;
 				}
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				const d = diaryRow as Record<string, any>;
 				setDiary({
 					anamnesis: d.anamnesis ?? "",

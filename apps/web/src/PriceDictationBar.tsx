@@ -97,6 +97,7 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 
 			<SmartParsePreview
 				isVisible={showPreview}
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				parsedData={parsedData as any}
 				rawText={inputText}
 				type="prices"

@@ -23,11 +23,13 @@
  */
 
 declare module "html2canvas" {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const html2canvas: any;
 	export default html2canvas;
 }
 
 declare module "jspdf" {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const jsPDF: any;
 
 	export { jsPDF };

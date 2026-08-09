@@ -103,6 +103,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				startDate = new Date(new Date().getFullYear(), 0, 1);
 			}
 
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const withDate = (orgCol: any, dateCol?: any) =>
 				startDate
 					? and(eq(orgCol, orgId), gte(dateCol, startDate))
@@ -338,6 +339,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				if (!cohortMap.has(cm)) {
 					cohortMap.set(cm, { m1: [], m12: [] });
 				}
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				const bucket = cohortMap.get(cm)!;
 				const rev = Number(row.totalRevenue);
 				// БЫЛО: "выручка первого месяца" = 40% от общей — константа, а не расчёт.

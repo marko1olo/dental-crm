@@ -427,6 +427,7 @@ describe("paidAmountRubForDocument", () => {
 			payload: {
 				paymentReceipt: {
 					selectedPaymentIds: ["payment-1", "payment-2", "payment-5"],
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				} as any,
 			},
 		};
@@ -448,6 +449,7 @@ describe("paidAmountRubForDocument", () => {
 					selectedPaymentIds: ["payment-1"],
 					amountRub: 50,
 					reason: "test",
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				} as any,
 			},
 		};

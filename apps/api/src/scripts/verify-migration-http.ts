@@ -215,10 +215,13 @@ try {
 			 * полных тёзок каждая — данные, которых не бывает в живой клинике.
 			 * Независимые индексы дают 2560 разных ФИО.
 			 */
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const surname = SURNAMES[index % SURNAMES.length]!;
 			const given =
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				GIVEN_NAMES[Math.floor(index / SURNAMES.length) % GIVEN_NAMES.length]!;
 			const patronymic =
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				PATRONYMICS[
 					Math.floor(index / (SURNAMES.length * GIVEN_NAMES.length)) %
 						PATRONYMICS.length
@@ -412,8 +415,10 @@ try {
 	const female5000 = index5000 % 2 === 1;
 	const surname5000 = `${SURNAMES[index5000 % SURNAMES.length]}${female5000 ? "а" : ""}`;
 	const given5000 =
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		GIVEN_NAMES[Math.floor(index5000 / SURNAMES.length) % GIVEN_NAMES.length]!;
 	const patronymic5000 =
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		PATRONYMICS[
 			Math.floor(index5000 / (SURNAMES.length * GIVEN_NAMES.length)) %
 				PATRONYMICS.length

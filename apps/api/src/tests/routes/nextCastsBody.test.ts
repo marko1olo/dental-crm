@@ -59,6 +59,7 @@ describe("next bare casts — Zod body (AUTH-first; empty → 400 ≠ 500)", () 
 			method: "POST" | "GET" | "PUT";
 			url: string;
 			headers: Record<string, string>;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			payload?: any;
 		} = { method, url, headers };
 		if (opts.rawPayload !== undefined) {

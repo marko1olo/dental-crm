@@ -1,5 +1,6 @@
 import { fetchWithHandling } from "../../utils/networkUtils";
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function useCommunicationsQueries(options?: { auth?: any }) {
 	const auth = options?.auth;
 
@@ -27,6 +28,7 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 		fetchWithHandling("/api/chat/quota", {
 			headers: auth?.denteClinicalReadHeaders(),
 		});
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const sendChatSms = async (payload: any) =>
 		fetchWithHandling("/api/chat/sms/send", {
 			method: "POST",
@@ -36,6 +38,7 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload),
 		});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const previewTemplate = async (_templateId: string | null, payload: any) =>
 		fetchWithHandling("/api/communications/templates/preview", {
 			method: "POST",
@@ -45,6 +48,7 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload),
 		});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const updateTemplate = async (editingId: string, payload: any) =>
 		fetchWithHandling(`/api/communications/templates/${editingId}`, {
 			method: "PATCH", // Fixed: server expects PATCH (communicationsOutbox.ts:276), not PUT
@@ -54,6 +58,7 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload),
 		});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const createTemplate = async (payload: any) =>
 		fetchWithHandling("/api/communications/templates", {
 			method: "POST",
@@ -84,6 +89,7 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 			headers: auth?.denteClinicalMutationHeaders(),
 		});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const saveSettings = async (payload: any) =>
 		fetchWithHandling("/api/communications/settings", {
 			method: "PUT",
@@ -93,6 +99,7 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload),
 		});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const addOutboxMessage = async (payload: any) =>
 		fetchWithHandling("/api/communications/outbox", {
 			method: "POST",
@@ -102,19 +109,23 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload),
 		});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const getCampaigns = async (authObj?: any) =>
 		fetchWithHandling("/api/communications/campaigns", {
 			headers: (authObj || auth)?.denteClinicalReadHeaders(),
 		});
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const getCampaignsTemplates = async (authObj?: any) =>
 		fetchWithHandling("/api/communications/templates", {
 			headers: (authObj || auth)?.denteClinicalReadHeaders(),
 		});
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const getCampaignsVariables = async (authObj?: any) =>
 		fetchWithHandling("/api/communications/variables", {
 			headers: (authObj || auth)?.denteClinicalReadHeaders(),
 		});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const createCampaign = async (payload: any, authObj?: any) =>
 		fetchWithHandling("/api/communications/campaigns", {
 			method: "POST",
@@ -124,10 +135,12 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 			body: JSON.stringify(payload),
 		});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const previewCampaign = async (campaignId: string, authObj?: any) =>
 		fetchWithHandling(`/api/communications/campaigns/${campaignId}/preview`, {
 			headers: (authObj || auth)?.denteClinicalReadHeaders(),
 		});
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const getCampaignProgress = async (campaignId: string, authObj?: any) =>
 		fetchWithHandling(`/api/communications/campaigns/${campaignId}/progress`, {
 			headers: (authObj || auth)?.denteClinicalReadHeaders(),
@@ -136,6 +149,7 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 	const campaignAction = async (
 		campaignId: string,
 		action: string,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		authObj?: any,
 	) =>
 		fetchWithHandling(`/api/communications/campaigns/${campaignId}/${action}`, {

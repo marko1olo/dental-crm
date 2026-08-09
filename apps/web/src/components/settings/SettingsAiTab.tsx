@@ -28,6 +28,7 @@ import { AiRecognitionJobsPanel } from "./AiRecognitionJobsPanel";
 import { aiRecognitionWarningText } from "./SettingsViewHelpers";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 
 /*

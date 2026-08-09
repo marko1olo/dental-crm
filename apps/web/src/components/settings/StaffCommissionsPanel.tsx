@@ -154,6 +154,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 				method: "GET",
 				headers: denteAdminSecretRequestHeaders(
 					undefined,
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					(authRef.current as any)?.settingsAdminSecretSession,
 				),
 			});

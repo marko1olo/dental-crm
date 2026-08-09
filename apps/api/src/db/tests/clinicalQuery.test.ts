@@ -11,6 +11,7 @@ describe("evaluateClinicalRulesInDb", () => {
 		mock.restoreAll();
 	});
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	function mockDbResponse(records: any[]) {
 		mock.method(db, "select", () => {
 			return {

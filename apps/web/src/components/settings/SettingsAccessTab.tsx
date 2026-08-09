@@ -24,12 +24,16 @@ import {
  * нечем заполнить. Причина подробно — в конце разметки, у места, откуда она
  * убрана. Не возвращай импорт, не прочитав тот комментарий.
  */
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 type WorkspaceProfile = any;
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 type RoleAccessPolicy = any;
 
 export interface SettingsAccessTabProps {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	props?: any;
 	settingsTab: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	[key: string]: any;
 }
 

@@ -40,6 +40,7 @@ interface StaffPinPadProps {
 	 * словаря, а не выдумывалась здесь.
 	 */
 	staffListStatus: number | null;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onUnlockSuccess: (user: any) => void;
 	onClinicLogout: () => void;
 	/** Перечитать данные клиники: единственный способ повторить, кроме перезахода. */
@@ -54,6 +55,7 @@ export function StaffPinPad({
 	onClinicLogout,
 	onRetryStaffList,
 }: StaffPinPadProps) {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [selectedUser, setSelectedUser] = useState<any>(null);
 	const [pin, setPin] = useState("");
 	const [errorShake, setErrorShake] = useState(false);
@@ -233,6 +235,7 @@ export function StaffPinPad({
 						: "коллега";
 			showToast(`Добро пожаловать, ${greetingName}!`, "success");
 			onUnlockSuccess(unlockedUser);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			/*
 			 * Сюда попадает только обрыв до ответа: fetch бросает TypeError, когда

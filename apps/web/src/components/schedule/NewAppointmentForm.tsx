@@ -21,9 +21,11 @@ type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 export type NewAppointmentFormProps = {
 	dashboard: Dashboard;
 	appointmentLabels: Record<Appointment["status"], string>;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	newAppointmentDraft: Record<string, any>;
 	newAppointmentSaveState: string;
 	newAppointmentError: string | null;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	updateNewAppointmentDraft: (key: any, value: any) => void;
 	createAppointmentFromDraft: () => Promise<boolean>;
 	resetNewAppointmentDraft: () => void;

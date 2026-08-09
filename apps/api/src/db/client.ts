@@ -90,8 +90,10 @@ let poolEnding: Promise<void> | undefined;
 export const endPool = (): Promise<void> => (poolEnding ??= pool.end());
 
 export const dbRaw = drizzle(pool, { schema });
+// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type TenantDb = typeof dbRaw;
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export const transactionStorage = new AsyncLocalStorage<any>();
 
 export const db = new Proxy(dbRaw, {

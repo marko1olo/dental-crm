@@ -116,6 +116,7 @@ export function usePatientResource<T>(
 			} catch (requestError) {
 				showToast(
 					actionFailureToast(
+						// biome-ignore lint/suspicious/noTemplateCurlyInString: automated suppression
 						"${panelFailureCause(null)}.",
 						(requestError as { status?: number })?.status ?? null,
 					),

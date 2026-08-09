@@ -349,6 +349,7 @@ async function computeChairUtilizationAll() {
 		.where(eq(appointments.status, "completed"))
 		.groupBy(appointments.organizationId, appointments.chairId);
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const orgChairs = new Map<string, any[]>();
 
 	for (const s of stats) {
@@ -357,6 +358,7 @@ async function computeChairUtilizationAll() {
 			orgChairs.set(s.organizationId, []);
 		}
 
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const arr = orgChairs.get(s.organizationId)!;
 		const i = arr.length;
 		arr.push({

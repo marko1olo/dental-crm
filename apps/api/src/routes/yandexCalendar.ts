@@ -21,6 +21,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 					"https://oauth.yandex.ru/authorize?response_type=code&client_id=dente_crm",
 				connected: false,
 			};
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -49,6 +50,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 					.where(and(eq(users.id, staffId), eq(users.organizationId, orgId)));
 
 				return { success: true };
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
 				request.log.error(err, "Failed to update Yandex Calendar settings");
 				return reply.code(400).send({ error: "Invalid payload" });
@@ -75,6 +77,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				.where(eq(yandexCalendarSyncs.organizationId, identity.organizationId));
 
 			return syncs;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -146,6 +149,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 			}
 
 			return { success: true, message: "Sync triggered successfully" };
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({

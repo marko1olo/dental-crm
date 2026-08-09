@@ -67,8 +67,11 @@ const initialUiPreferences = loadUiPreferences();
 const initialPostVisitCarePreset =
 	postVisitCarePresets[initialUiPreferences.postVisitCareTopic];
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 function createSetter(set: any, key: string) {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	return (val: any) =>
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		set((state: any) => ({
 			[key]: typeof val === "function" ? val(state[key]) : val,
 		}));
@@ -114,10 +117,13 @@ export interface DocumentState {
 	paymentFeedback: string;
 	documentIssueConfirmationId: string | null;
 	documentIssueSignatureMode: DocumentIssueSignatureMode;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	documentIssueSignedAt: any;
 	documentIssueRecipientFullName: string;
 	documentIssueRecipientRole: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	documentIssueStaffFullName: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	documentIssueStaffRole: any;
 	documentIssueNote: string;
 	documentIssueIdentityChecked: boolean;
@@ -127,7 +133,9 @@ export interface DocumentState {
 	documentVoidConfirmationId: string | null;
 	documentVoidReasonCode: DocumentVoidReasonCode;
 	documentVoidReasonText: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	documentVoidStaffFullName: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	documentVoidStaffRole: any;
 	documentVoidCorrectionDocumentId: string;
 	documentVoidReplacementRequired: boolean;
@@ -197,6 +205,7 @@ export interface DocumentState {
 			| DocumentIssueSignatureMode
 			| ((prev: DocumentIssueSignatureMode) => DocumentIssueSignatureMode),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setDocumentIssueSignedAt: (val: any | ((prev: any) => any)) => void;
 	setDocumentIssueRecipientFullName: (
 		val: string | ((prev: string) => string),
@@ -204,7 +213,9 @@ export interface DocumentState {
 	setDocumentIssueRecipientRole: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setDocumentIssueStaffFullName: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setDocumentIssueStaffRole: (val: any | ((prev: any) => any)) => void;
 	setDocumentIssueNote: (val: string | ((prev: string) => string)) => void;
 	setDocumentIssueIdentityChecked: (
@@ -228,7 +239,9 @@ export interface DocumentState {
 			| ((prev: DocumentVoidReasonCode) => DocumentVoidReasonCode),
 	) => void;
 	setDocumentVoidReasonText: (val: string | ((prev: string) => string)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setDocumentVoidStaffFullName: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setDocumentVoidStaffRole: (val: any | ((prev: any) => any)) => void;
 	setDocumentVoidCorrectionDocumentId: (
 		val: string | ((prev: string) => string),
@@ -317,6 +330,7 @@ export interface DocumentState {
 	setOutpatient025uThirdPartyDataChecked: (
 		val: boolean | ((prev: boolean) => boolean),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setCopyRequestDocumentTypes: (val: any | ((prev: any) => any)) => void;
 	setCopyRequestPeriodStart: (val: string | ((prev: string) => string)) => void;
 	setCopyRequestPeriodEnd: (val: string | ((prev: string) => string)) => void;
@@ -333,10 +347,12 @@ export interface DocumentState {
 	setCopyRequestRecipientIdentityDocument: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setCopyRequestRecipientAuthority: (val: any | ((prev: any) => any)) => void;
 	setCopyRequestRepresentativeAuthorityDocument: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setCopyRequestRequestedAt: (val: any | ((prev: any) => any)) => void;
 	setCopyRequestContactForDelivery: (
 		val: string | ((prev: string) => string),
@@ -355,14 +371,17 @@ export interface DocumentState {
 	) => void;
 	setAttendanceStartedAt: (val: string | ((prev: string) => string)) => void;
 	setAttendanceEndedAt: (val: string | ((prev: string) => string)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setAttendancePurpose: (val: any | ((prev: any) => any)) => void;
 	setAttendanceRecipientOrganization: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setAttendanceIssuedAt: (val: any | ((prev: any) => any)) => void;
 	setAttendanceSignedByFullName: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setAttendanceSignedByRole: (val: any | ((prev: any) => any)) => void;
 	setAttendanceDiagnosisDisclosureExcluded: (
 		val: boolean | ((prev: boolean) => boolean),
@@ -376,6 +395,7 @@ export interface DocumentState {
 	setReleaseRecipientIdentityDocument: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setReleaseRecipientAuthority: (val: any | ((prev: any) => any)) => void;
 	setReleaseSourceRequestDocumentId: (
 		val: string | ((prev: string) => string),
@@ -387,9 +407,11 @@ export interface DocumentState {
 					prev: MedicalDocumentReleaseChannel,
 			  ) => MedicalDocumentReleaseChannel),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setReleaseDocumentTypes: (val: any | ((prev: any) => any)) => void;
 	setReleasePeriodStart: (val: string | ((prev: string) => string)) => void;
 	setReleasePeriodEnd: (val: string | ((prev: string) => string)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setReleaseDeliveredAt: (val: any | ((prev: any) => any)) => void;
 	setReleaseAccessExpiresAt: (val: string | ((prev: string) => string)) => void;
 	setReleaseThirdPartyDataChecked: (
@@ -402,6 +424,7 @@ export interface DocumentState {
 					prev: PaymentRefundCorrectionAction,
 			  ) => PaymentRefundCorrectionAction),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setRefundAmountRub: (val: any | ((prev: any) => any)) => void;
 	setRefundReason: (val: string | ((prev: string) => string)) => void;
 	setRefundMethod: (
@@ -436,6 +459,7 @@ export interface DocumentState {
 	setPersonalDataAutomatedDecisionAllowed: (
 		val: boolean | ((prev: boolean) => boolean),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPersonalDataConsentGivenAt: (val: any | ((prev: any) => any)) => void;
 	setPersonalDataVoluntaryConsentConfirmed: (
 		val: boolean | ((prev: boolean) => boolean),
@@ -449,6 +473,7 @@ export interface DocumentState {
 	) => void;
 	setRefusalPatientReason: (val: string | ((prev: string) => string)) => void;
 	setRefusalDoctorFullName: (val: string | ((prev: string) => string)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setRefusalConfirmedAt: (val: any | ((prev: any) => any)) => void;
 	setRefusalConsequencesUnderstood: (
 		val: boolean | ((prev: boolean) => boolean),
@@ -472,14 +497,17 @@ export interface DocumentState {
 	outpatient025uFinalEpicrisis: string;
 	outpatient025uOfficialForm274nChecked: boolean;
 	outpatient025uThirdPartyDataChecked: boolean;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	copyRequestDocumentTypes: any;
 	copyRequestPeriodStart: string;
 	copyRequestPeriodEnd: string;
 	copyRequestFormat: MedicalDocumentReleaseChannel;
 	copyRequestRecipientFullName: string;
 	copyRequestRecipientIdentityDocument: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	copyRequestRecipientAuthority: any;
 	copyRequestRepresentativeAuthorityDocument: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	copyRequestRequestedAt: any;
 	copyRequestContactForDelivery: string;
 	copyRequestSpecialInstructions: string;
@@ -488,25 +516,32 @@ export interface DocumentState {
 	copyRequestThirdPartyDataChecked: boolean;
 	attendanceStartedAt: string;
 	attendanceEndedAt: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	attendancePurpose: any;
 	attendanceRecipientOrganization: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	attendanceIssuedAt: any;
 	attendanceSignedByFullName: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	attendanceSignedByRole: any;
 	attendanceDiagnosisDisclosureExcluded: boolean;
 	attendanceNotSickLeaveAcknowledged: boolean;
 	releaseRecipientFullName: string;
 	releaseRecipientIdentityDocument: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	releaseRecipientAuthority: any;
 	releaseSourceRequestDocumentId: string;
 	releaseChannel: MedicalDocumentReleaseChannel;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	releaseDocumentTypes: any;
 	releasePeriodStart: string;
 	releasePeriodEnd: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	releaseDeliveredAt: any;
 	releaseAccessExpiresAt: string;
 	releaseThirdPartyDataChecked: boolean;
 	refundAction: PaymentRefundCorrectionAction;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	refundAmountRub: any;
 	refundReason: string;
 	refundMethod: PaymentRefundCorrectionMethod;
@@ -519,6 +554,7 @@ export interface DocumentState {
 	refundAccountantDecision: string;
 	personalDataCrossBorderAllowed: boolean;
 	personalDataAutomatedDecisionAllowed: boolean;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	personalDataConsentGivenAt: any;
 	personalDataVoluntaryConsentConfirmed: boolean;
 	personalDataMedicalProcessingAcknowledged: boolean;
@@ -526,6 +562,7 @@ export interface DocumentState {
 	refusalClinicalIndication: string;
 	refusalPatientReason: string;
 	refusalDoctorFullName: string;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	refusalConfirmedAt: any;
 	refusalConsequencesUnderstood: boolean;
 	refusalSecondOpinionOffered: boolean;
@@ -1032,8 +1069,10 @@ export interface DocumentState {
 	setPaymentReceiptPayerRelationship: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	paymentReceiptTaxSupportRequested: any;
 	setPaymentReceiptTaxSupportRequested: (
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		val: any | ((prev: any) => any),
 	) => void;
 	paymentReceiptPurpose: string;
@@ -1220,7 +1259,9 @@ export interface DocumentState {
 	setWarrantyControlVisitsUnderstood: (
 		val: boolean | ((prev: boolean) => boolean),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	clinicalToothRowsText: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setClinicalToothRowsText: (val: any | ((prev: any) => any)) => void;
 	treatmentPlanClinicalReason: string;
 	setTreatmentPlanClinicalReason: (
@@ -1362,7 +1403,9 @@ export interface DocumentState {
 			| PostVisitCareTopic
 			| ((prev: PostVisitCareTopic) => PostVisitCareTopic),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	postVisitProcedureName: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPostVisitProcedureName: (val: any | ((prev: any) => any)) => void;
 	postVisitToothOrArea: string;
 	setPostVisitToothOrArea: (val: string | ((prev: string) => string)) => void;
@@ -1380,25 +1423,41 @@ export interface DocumentState {
 	setPostVisitPresetFeedback: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	postVisitAllowedAfter: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPostVisitAllowedAfter: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	postVisitRestrictions: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPostVisitRestrictions: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	postVisitMedicationAndRinsePlan: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPostVisitMedicationAndRinsePlan: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	postVisitHygieneInstructions: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPostVisitHygieneInstructions: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	postVisitNutritionInstructions: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPostVisitNutritionInstructions: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	postVisitUrgentWarningSigns: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPostVisitUrgentWarningSigns: (val: any | ((prev: any) => any)) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	postVisitFollowUpAt: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPostVisitFollowUpAt: (val: any | ((prev: any) => any)) => void;
 	postVisitClinicContactInstruction: string;
 	setPostVisitClinicContactInstruction: (
 		val: string | ((prev: string) => string),
 	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	postVisitTelegramSummary: any;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setPostVisitTelegramSummary: (val: any | ((prev: any) => any)) => void;
 	postVisitPrintedCopyReceived: boolean;
 	setPostVisitPrintedCopyReceived: (
@@ -1664,6 +1723,7 @@ export interface DocumentState {
 	) => void;
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 const createDocumentSlice = (set: any) => ({
 	documentCreateSavingKind: null,
 	setDocumentCreateSavingKind: createSetter(set, "documentCreateSavingKind"),
@@ -1791,6 +1851,7 @@ const createDocumentSlice = (set: any) => ({
 	setDocumentIngestion: createSetter(set, "documentIngestion"),
 });
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 const createTaxSlice = (set: any) => ({
 	taxDocumentPayerInn: "",
 	setTaxDocumentPayerInn: createSetter(set, "taxDocumentPayerInn"),
@@ -1847,6 +1908,7 @@ const createTaxSlice = (set: any) => ({
 		})),
 });
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 const createIntakeAndConsentSlice = (set: any) => ({
 	intakeChiefComplaint: "",
 	setIntakeChiefComplaint: createSetter(set, "intakeChiefComplaint"),
@@ -2231,6 +2293,7 @@ const createIntakeAndConsentSlice = (set: any) => ({
 	setRefusalUrgentWarningSigns: createSetter(set, "refusalUrgentWarningSigns"),
 });
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 const createFinancialSlice = (set: any) => ({
 	paidContractNumber: "",
 	setPaidContractNumber: createSetter(set, "paidContractNumber"),
@@ -2673,6 +2736,7 @@ const createFinancialSlice = (set: any) => ({
 	setPaymentFeedback: createSetter(set, "paymentFeedback"),
 });
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 const createClinicalSlice = (set: any) => ({
 	completedActNumber: "",
 	setCompletedActNumber: createSetter(set, "completedActNumber"),
@@ -3256,6 +3320,7 @@ const createClinicalSlice = (set: any) => ({
 	),
 });
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 const createMiscSlice = (set: any) => ({
 	minorRepresentativeFullName: "",
 	setMinorRepresentativeFullName: createSetter(

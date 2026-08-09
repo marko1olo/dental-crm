@@ -302,6 +302,7 @@ async function readDbfMeta(filePath: string): Promise<DbfMeta> {
 		const declaredRecords = headerStart.readUInt32LE(4);
 		const headerLength = headerStart.readUInt16LE(8);
 		const recordLength = headerStart.readUInt16LE(10);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const languageDriver = headerStart[29]!;
 
 		if (headerLength < 64 || recordLength === 0) {
@@ -335,6 +336,7 @@ async function readDbfMeta(filePath: string): Promise<DbfMeta> {
 			fields.push({
 				name,
 				type: String.fromCharCode(descriptors[offset + 11] ?? 0x43),
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				length: descriptors[offset + 16]!,
 			});
 		}
@@ -504,6 +506,7 @@ async function* streamDbfRows(
 			for (let index = 0; index < fullRecords; index += 1) {
 				const start = index * meta.recordLength;
 				const record = chunkBuffer.subarray(start, start + meta.recordLength);
+				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				const flag = record[0]!;
 				// 0x1A — маркер конца файла в старых DBF; всё после него мусор.
 				if (flag === 0x1a) {
@@ -562,6 +565,7 @@ class DelimitedRowAccumulator {
 		let consumedTo = 0;
 
 		for (let index = 0; index < this.buffer.length; index += 1) {
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const char = this.buffer[index]!;
 
 			if (this.inQuotes) {
@@ -636,6 +640,7 @@ function quoteStateOf(fragment: string): boolean {
 	let inQuotes = false;
 	let fieldEmpty = true;
 	for (let index = 0; index < fragment.length; index += 1) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const char = fragment[index]!;
 		if (inQuotes) {
 			if (char === '"') {

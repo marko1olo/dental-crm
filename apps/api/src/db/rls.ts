@@ -132,6 +132,7 @@ export async function withTenantCtx<T>(
 			// The transaction already carries exactly this tenant and no bypass to
 			// undo: set_config would write back the value that is already there, and
 			// the restore would write it a second time. Skip both.
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			return callback(existingTx as any);
 		}
 		if (bypassActive) {
@@ -145,6 +146,7 @@ export async function withTenantCtx<T>(
 			);
 		}
 		try {
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			return await callback(existingTx as any);
 		} finally {
 			// Each restore gets its own try/catch: on an aborted transaction every
@@ -179,6 +181,7 @@ export async function withTenantCtx<T>(
 		await tx.execute(
 			sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
 		);
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		return transactionStorage.run(tx as any, () => callback(tx as any));
 	});
 }
@@ -216,7 +219,9 @@ export async function withSuperuserBypass<T>(
 		await tx.execute(
 			sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
 		);
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		return transactionStorage.run(tx as any, () =>
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			bypassScope.run(true, () => callback(tx as any)),
 		);
 	});

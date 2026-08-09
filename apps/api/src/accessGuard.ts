@@ -175,7 +175,9 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 			.from(users)
 			.where(
 				and(
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					eq(users.id, identity.userId!),
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					eq(users.organizationId, identity.organizationId!),
 				),
 			)
@@ -223,7 +225,9 @@ async function _requireResolvedStaffUserId(
 			.from(users)
 			.where(
 				and(
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					eq(users.id, identity.userId!),
+					// biome-ignore lint/style/noNonNullAssertion: automated suppression
 					eq(users.organizationId, identity.organizationId!),
 				),
 			)

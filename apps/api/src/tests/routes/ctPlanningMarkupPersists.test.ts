@@ -271,6 +271,7 @@ describe("разметка планирования имплантации до�
 			1,
 			`строк разметки у пациента ${rows.length}, ожидалась одна`,
 		);
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const row = rows[0]!;
 		assert.equal(row.org, ORG_MINE);
 		assert.equal(row.study, STUDY_UID);

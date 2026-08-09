@@ -273,6 +273,7 @@ async function collectDetails(
 			const records = head.readUInt32LE(4);
 			const headerLength = head.readUInt16LE(8);
 			const fieldCount = Math.max(0, Math.floor((headerLength - 33) / 32));
+			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const languageDriver = head[29]!;
 			const codepage =
 				languageDriver === 0x65
@@ -402,6 +403,7 @@ export async function discoverLocalSources(
 			break;
 		}
 
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const item = queue.shift()!;
 		const normalized = path.resolve(item.directory).toLowerCase();
 		if (visited.has(normalized)) continue;

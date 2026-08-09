@@ -326,6 +326,7 @@ const clinicProfile: ClinicProfile = {
 	aiEnableTreatmentPlan: true,
 	aiEnableRecommendations: true,
 	aiEnableDocuments: true,
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 } as any;
 
 const staffMembers: StaffMember[] = [
@@ -6165,6 +6166,7 @@ function decryptTelegramChatTransportRef(
 			"aes-256-gcm",
 			key,
 			Buffer.from(ivRaw, "base64url"),
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			{ authTagLength: 16 } as any,
 		);
 		decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));

@@ -20,7 +20,9 @@ import {
 } from "../sampleData.js";
 
 describe("createClinicalRule", () => {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let originalClinicalRules: any[];
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let originalAuditEvents: any[];
 
 	beforeEach(() => {

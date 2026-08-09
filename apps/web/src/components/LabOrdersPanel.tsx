@@ -58,6 +58,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			}
 			const data = await res.json();
 			setOrders(data);
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			setError(err.message || "Error fetching lab orders");
 		} finally {
@@ -107,6 +108,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			setClinicalNotes("");
 			setPriceRub("");
 			await fetchOrders();
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			showToast(err.message || "Failed to create lab order", "error");
 		} finally {

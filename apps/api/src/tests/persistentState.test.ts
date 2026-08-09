@@ -174,6 +174,7 @@ describe("loadPersistentState", () => {
 	});
 
 	test("returns parsed state when file is valid and checksum matches", () => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const mockState = { clinicProfile: { id: "test-123" } } as any;
 
 		// Use savePersistentState to generate a valid file with correct checksum
@@ -243,6 +244,7 @@ describe("getPersistentStateMeta", () => {
 		mock.method(console, "warn", () => {});
 
 		// Save state multiple times to create backups
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		savePersistentState({} as any);
 
 		// Create a manual backup to have distinct files
@@ -253,6 +255,7 @@ describe("getPersistentStateMeta", () => {
 		);
 
 		// Save again to trigger rotation
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		savePersistentState({} as any);
 
 		const meta = getPersistentStateMeta();
@@ -418,6 +421,7 @@ describe("getPersistentStateIntegrityReport", () => {
 		fs.writeFileSync(stateFile, JSON.stringify(payload), "utf8");
 
 		mock.method(fs.promises, "readFile", () => {
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const error: any = new Error("EACCES: permission denied");
 			error.code = "EACCES";
 			return Promise.reject(error);
@@ -484,6 +488,7 @@ describe("savePersistentState", () => {
 	});
 
 	const mockState: DentalMutableState = {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		clinicProfile: { id: "clinic-1", name: "Test Clinic" } as any,
 		staffMembers: [],
 		chairs: [],
@@ -507,13 +512,16 @@ describe("savePersistentState", () => {
 		denteTelegramChatLinks: [],
 		denteTelegramWebhookEvents: [],
 		denteTelegramOutboxDeliveryReceipts: [],
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		denteTelegramBotSettings: {} as any,
 		uiPreferences: null,
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		activeVisit: {} as any,
 	};
 
 	test("does nothing if persistence is disabled", () => {
 		process.env.DENTAL_STATE_PERSISTENCE = "off";
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const stateFile = process.env.DENTAL_STATE_FILE!;
 
 		savePersistentState(mockState);
@@ -523,6 +531,7 @@ describe("savePersistentState", () => {
 
 	test("saves state to file with checksum", () => {
 		process.env.DENTAL_STATE_PERSISTENCE = "on";
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const stateFile = process.env.DENTAL_STATE_FILE!;
 
 		savePersistentState(mockState);
@@ -540,7 +549,9 @@ describe("savePersistentState", () => {
 
 	test("rotates backup if file already exists", () => {
 		process.env.DENTAL_STATE_PERSISTENCE = "on";
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const stateFile = process.env.DENTAL_STATE_FILE!;
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const backupDir = process.env.DENTAL_STATE_BACKUP_DIR!;
 
 		// First save
@@ -550,6 +561,7 @@ describe("savePersistentState", () => {
 		// Modify state slightly for second save
 		const modifiedState = {
 			...mockState,
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			clinicProfile: { id: "clinic-2", name: "Updated" } as any,
 		};
 

@@ -6,8 +6,10 @@ import { db } from "./db/client.js";
 
 describe("auditFromRequest", () => {
 	test("extracts ip and user-agent from fastify request when both headers are present", async (t) => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		let capturedValues: any;
 		t.mock.method(db, "insert", () => ({
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			values: (vals: any) => {
 				capturedValues = vals;
 				return Promise.resolve();
@@ -44,8 +46,10 @@ describe("auditFromRequest", () => {
 	});
 
 	test("uses request.ip when x-forwarded-for is missing", async (t) => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		let capturedValues: any;
 		t.mock.method(db, "insert", () => ({
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			values: (vals: any) => {
 				capturedValues = vals;
 				return Promise.resolve();
@@ -81,8 +85,10 @@ describe("auditFromRequest", () => {
 	});
 
 	test("handles missing ip and user-agent", async (t) => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		let capturedValues: any;
 		t.mock.method(db, "insert", () => ({
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			values: (vals: any) => {
 				capturedValues = vals;
 				return Promise.resolve();
@@ -115,8 +121,10 @@ describe("auditFromRequest", () => {
 	});
 
 	test("handles single ip in x-forwarded-for header without spaces", async (t) => {
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		let capturedValues: any;
 		t.mock.method(db, "insert", () => ({
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			values: (vals: any) => {
 				capturedValues = vals;
 				return Promise.resolve();

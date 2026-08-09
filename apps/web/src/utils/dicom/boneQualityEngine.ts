@@ -241,6 +241,7 @@ export function generateDrillProtocol(
 	// System-specific final notes
 	const systemNote = getSystemNote(system, mischClass, diameterMm);
 	if (systemNote) {
+		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		steps[steps.length - 1]!.note =
 			`${steps[steps.length - 1]?.note || ""} | ${systemNote}`;
 	}

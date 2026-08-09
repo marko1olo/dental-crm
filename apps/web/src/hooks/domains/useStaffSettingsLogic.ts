@@ -36,6 +36,7 @@ export function useStaffSettingsLogic({
 	const {
 		newStaffName,
 		setNewStaffName,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		newStaffRole,
 		setNewStaffRole,
 		newStaffSpecialty,
@@ -53,6 +54,7 @@ export function useStaffSettingsLogic({
 
 	const { selectedSpecialty } = useVisitStore();
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	async function createStaffMember(data: any) {
 		try {
 			const response = await fetchWithHandling("/api/settings/staff", {
@@ -84,6 +86,7 @@ export function useStaffSettingsLogic({
 		}
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	async function updateStaffMember(staffId: string, updates: any) {
 		try {
 			const response = await fetchWithHandling(

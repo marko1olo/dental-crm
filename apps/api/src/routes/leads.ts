@@ -60,6 +60,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		const [lead] = (await db
 			.insert(crmLeads)
 			.values({ ...data, organizationId })
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			.returning()) as any;
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "LEAD_CREATED",
@@ -230,6 +231,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 					phone: lead.phone,
 					status: "active",
 				})
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				.returning()) as any;
 			const patient = resultPatient[0];
 			if (!patient) throw new Error("PatientCreateFailed");

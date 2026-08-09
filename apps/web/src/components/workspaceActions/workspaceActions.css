@@ -183,6 +183,7 @@
 /* Объяснение простыми словами показывается там, где есть ширина под строку
    текста, — в панели на узком экране. В плотной строке топбара видны иконка и
    подпись: смысл кнопки уже назван словом, а не спрятан в title. */
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .dnt-actions__control-hint {
 	display: none;
 }

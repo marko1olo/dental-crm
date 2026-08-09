@@ -20,6 +20,7 @@ import { PanelLoadFailure } from "../PanelLoadFailure";
 export type PatientFamilyCardProps = {
 	patientId: string | null;
 	patientName: string | null;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	familyData: any | null;
 	/**
 	 * Отказ ЧТЕНИЯ семьи, а не её отсутствие. null — читали успешно (в том числе
@@ -62,6 +63,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 
 	const [newFamilyName, setNewFamilyName] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [searchResults, setSearchResults] = useState<any[]>([]);
 
 	const [loading, setLoading] = useState(false);
@@ -268,6 +270,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			setNewFamilyName("");
 			setIsCreating(false);
 			onFamilyDataChanged();
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (e: any) {
 			showToast(e.message || "Ошибка", "error");
 		} finally {
@@ -325,6 +328,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			setIsLinking(false);
 			setSearchQuery("");
 			onFamilyDataChanged();
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (e: any) {
 			showToast(e.message || "Ошибка", "error");
 		} finally {
@@ -382,6 +386,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			}
 			showToast("Пациент отвязан от семейной группы", "success");
 			onFamilyDataChanged();
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (e: any) {
 			showToast(e.message || "Ошибка отвязки", "error");
 		} finally {
@@ -450,6 +455,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
 							Участники:
 						</span>
+						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{familyData.members?.map((m: any) => (
 							<div
 								key={m.id}

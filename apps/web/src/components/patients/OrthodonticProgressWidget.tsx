@@ -106,6 +106,7 @@ export function OrthodonticProgressWidget({
 	const [isEditing, setIsEditing] = useState(false);
 	const [saving, setSaving] = useState(false);
 
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
 
 	// Если новое структурированное поле не заполнено, читаем старую запись,

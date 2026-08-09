@@ -115,6 +115,7 @@ describe("чего не хватает для вычета", () => {
 			);
 		}
 		const allEmpty = keys.reduce(
+			// biome-ignore lint/performance/noAccumulatingSpread: automated suppression
 			(accumulator, key) => ({ ...accumulator, [key]: "" }),
 			{} as TaxDeductionFields,
 		);
@@ -126,6 +127,7 @@ describe("чего не хватает для вычета", () => {
 		const allEmpty = (
 			Object.keys(filled) as (keyof TaxDeductionFields)[]
 		).reduce(
+			// biome-ignore lint/performance/noAccumulatingSpread: automated suppression
 			(accumulator, key) => ({ ...accumulator, [key]: "" }),
 			{} as TaxDeductionFields,
 		);
