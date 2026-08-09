@@ -2,6 +2,11 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 import {
+	bootRetryClearsErrorPattern,
+	bootRetryFailureIsOperatorReadablePattern,
+	bootServerErrorDelegationPattern,
+} from "./lib/boot-retry-patterns.mjs";
+import {
 	eachNode,
 	findLazyMountErrorBoundary,
 	jsxTagName,
@@ -21,8 +26,17 @@ const runtimeSource = `${appSource}\n${browserContinuitySource}`;
 
 const missing = [];
 
+/*
+ * ТРЕБОВАНИЕ ЗАДАЁТСЯ ЛИБО ПОДСТРОКОЙ, ЛИБО ВЫРАЖЕНИЕМ. Выражение нужно там, где
+ * форму диктует форматтер, а не автор кода: biome.json не содержит секции
+ * `formatter`, поэтому действуют умолчания Biome — indentStyle "tab" и
+ * lineWidth 80. Подстрока с пробельным отступом или собранная в одну длинную
+ * строку не может пережить `npm run lint` в этом репозитории.
+ */
 function requireIn(source, snippet, message) {
-	if (!source.includes(snippet)) missing.push(message);
+	const found =
+		snippet instanceof RegExp ? snippet.test(source) : source.includes(snippet);
+	if (!found) missing.push(message);
 }
 
 function forbidIn(source, snippet, message) {
@@ -140,7 +154,24 @@ requireIn(
 );
 requireIn(
 	appSource,
-	"<AppLoadingState\n        message={`Рабочий сервер недоступен: ${error}`}",
+	/*
+	 * ОТСТУП НЕ ЗАКРЕПЛЯЕТСЯ. Дословно требовалось `<AppLoadingState`, перенос и
+	 * `message={...}` с отступом в восемь ПРОБЕЛОВ. Замерено 2026-08-10: App.tsx
+	 * отбит табами (5315 строк с ведущим табом против 225 с пробелами), подстрока
+	 * не находилась — до правки EXIT=1. Продукт цел: App.tsx:1788 отдаёт ветку
+	 * отказа сервера в <AppLoadingState> с тем же текстом, слова «API» в нём нет.
+	 * Прямой замер: файл с требуемым пробельным отступом, положенный в
+	 * apps/web/src и прогнанный `biome format --write`, вернулся с табом и со
+	 * схлопнутым в одну строку JSX. То есть смоук требовал форму, запрещённую
+	 * форматтером этого же репозитория.
+	 * Закреплён СМЫСЛ: ветка отказа делегирована готовой границе, а её `message`
+	 * печатает человеческую причину и подставляет текст ошибки. Жаргон ловят
+	 * отдельные forbidIn ниже («API недоступен» и прочие).
+	 * Само выражение живёт в scripts/lib/boot-retry-patterns.mjs, чтобы корпус
+	 * форм в scripts/tests/boot-retry-patterns.test.mjs гонял ровно его, а не
+	 * свою копию.
+	 */
+	bootServerErrorDelegationPattern,
 	"App.tsx must delegate server error boot UI without API jargon",
 );
 requireIn(
@@ -150,12 +181,30 @@ requireIn(
 );
 requireIn(
 	appSource,
-	"setError(null);\n          void loadDashboard().catch",
+	/*
+	 * ПОРЯДОК ЗАКРЕПЛЁН, ОТСТУП — НЕТ. Дословно требовалось `setError(null);`,
+	 * перенос и `void loadDashboard().catch` с отступом в десять ПРОБЕЛОВ; в
+	 * продукте между ними табы (App.tsx:1792-1793). Смысл требования — оба
+	 * действия и именно в этом порядке: сначала снять устаревшую ошибку, иначе
+	 * повторная загрузка идёт под всё ещё показанным старым сообщением.
+	 * Окно в 200 символов не даёт `setError(null)` из чужого обработчика
+	 * дотянуться до loadDashboard в следующем.
+	 */
+	bootRetryClearsErrorPattern,
 	"App boot retry must clear stale error and retry dashboard loading",
 );
 requireIn(
 	appSource,
-	'operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError)',
+	/*
+	 * ПЕРЕНОС ВНУТРИ ВЫЗОВА НЕ ЗАКРЕПЛЯЕТСЯ. Требовался вызов одной строкой; при
+	 * семи табах отступа он занимает 93 колонки против lineWidth 80, поэтому
+	 * форматтер обязан разбить его на четыре строки — что и сделано в
+	 * App.tsx:1795-1798. Закреплён смысл: отказ ПОВТОРНОЙ загрузки проходит через
+	 * operatorWorkflowFailureMessage с человеческим заголовком, а не выводится
+	 * сырым. Пойманная ошибка обязана попасть туда же вторым аргументом — иначе
+	 * сотрудник видит заголовок без причины.
+	 */
+	bootRetryFailureIsOperatorReadablePattern,
 	"App boot retry failure must stay operator-readable",
 );
 requireIn(
