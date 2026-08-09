@@ -30,7 +30,11 @@
  * Только чтение. Ненулевой код возврата при находках, чтобы ставить в гейт.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
+import { createRequire } from "node:module";
 import { extname, join } from "node:path";
+
+const require_ = createRequire(import.meta.url);
+const ts = require_("typescript");
 import {
 	HEADER_HELPERS as ANALYSIS_HEADER_HELPERS,
 	CONDUIT_REASON,
@@ -225,24 +229,72 @@ function functionBody(text, declIndex) {
  * ЗАЧЕМ ЭТО ЕСТЬ. Первая версия проверки НЕ НАШЛА `/api/reports/summary`, хотя я
  * своими руками получил на нём 403 на живом сервере. Причина: обработчик зовёт не
  * охрану напрямую, а местную обёртку `scopeFor(request, reply, "report summary")`
- * (reports.ts:79), и уже она внутри зовёт `requireClinicalReadContext`
- * (reports.ts:84). Проверка, оправдывающая заведомо виновный вызов, хуже
- * отсутствующей — поэтому обёртки разбираются на один уровень вглубь, в границах
- * одного файла.
+ * (reports.ts:199), и уже она внутри зовёт `requireClinicalReadContext`
+ * (reports.ts:207). Проверка, оправдывающая заведомо виновный вызов, хуже
+ * отсутствующей — поэтому обёртки разбираются на один уровень вглубь.
+ *
+ * ПОЧЕМУ РАЗБОР ИДЁТ ПО ДЕРЕВУ, А НЕ СЧЁТОМ СКОБОК. Версия со счётом скобок
+ * ЛОМАЛАСЬ на этой самой обёртке, и самопроверка гейта её же и поймала — гейт
+ * отказывался работать с кодом 2. Тело функции искалось как «первая `{` после
+ * объявления», а у `scopeFor` многострочная сигнатура с фигурными скобками
+ * ВНУТРИ ТИПА ВОЗВРАТА:
+ *
+ *     async function scopeFor(
+ *         request: FastifyRequest, reply: FastifyReply, area: string,
+ *     ): Promise<{                 // <- первая «{» оказывалась ЗДЕСЬ
+ *         scope: ReportScope;
+ *     } | null> {                  // <- счётчик обнулялся ЗДЕСЬ
+ *
+ * За тело функции принималась аннотация типа. Охраны внутри неё нет, обёртка не
+ * опознавалась, и все охраняемые маршуты этого файла выпадали из проверки.
+ * Считать скобки в языке с типами нельзя: `{` в типе неотличима от `{` тела.
+ * Обход дерева TypeScript этой двусмысленности не имеет — у узла функции тело
+ * взято отдельным полем.
  */
-function localGuardWrappers(code) {
+function localGuardWrappers(code, fileName = "file.ts") {
+	const source = ts.createSourceFile(
+		fileName,
+		code,
+		ts.ScriptTarget.Latest,
+		true,
+		ts.ScriptKind.TS,
+	);
 	const names = new Set();
-	const declarations = [
-		/(?:async\s+)?function\s+(\w+)\s*\(/g,
-		/\bconst\s+(\w+)\s*=\s*(?:async\s*)?\(/g,
-	];
-	for (const pattern of declarations) {
-		for (const match of code.matchAll(pattern)) {
-			const body = functionBody(code, match.index);
-			if (GUARD_NAMES.some((guard) => body.includes(guard)))
-				names.add(match[1]);
+
+	const bodyMentionsGuard = (body) => {
+		if (!body) return false;
+		let found = false;
+		const walk = (node) => {
+			if (
+				!found &&
+				ts.isIdentifier(node) &&
+				GUARD_NAMES.includes(node.text)
+			) {
+				found = true;
+			}
+			node.forEachChild(walk);
+		};
+		walk(body);
+		return found;
+	};
+
+	const visit = (node) => {
+		if (ts.isFunctionDeclaration(node) && node.name && node.body) {
+			if (bodyMentionsGuard(node.body)) names.add(node.name.text);
+		} else if (
+			ts.isVariableDeclaration(node) &&
+			ts.isIdentifier(node.name) &&
+			node.initializer &&
+			(ts.isArrowFunction(node.initializer) ||
+				ts.isFunctionExpression(node.initializer)) &&
+			node.initializer.body
+		) {
+			if (bodyMentionsGuard(node.initializer.body))
+				names.add(node.name.text);
 		}
-	}
+		node.forEachChild(visit);
+	};
+	visit(source);
 	return [...names];
 }
 
