@@ -781,14 +781,52 @@ console.log(
  * - новый мёртвый маршрут не в списке (проверка краснеет)
  * - порог по одному числу хуже: молча разрешает обменять починенный на новый
  */
+/*
+ * СОСТАВ СВЕРЕН РУКАМИ 2026-08-09, В ОБЕ СТОРОНЫ. Храповик по составу обязан
+ * краснеть и на закрытом долге: иначе список превращается в свалку, где
+ * починенное неотличимо от сломанного, и обмен «починил одно, сломал другое»
+ * проходит молча.
+ *
+ * УДАЛЕНО (8) — вызывающий появился, долг закрыт:
+ *   GET /api/documents/:param/treatment-plan-pdf, GET /api/patients,
+ *   POST /api/communications/campaigns/:param/cancel,
+ *   POST /api/communications/outbox/:param/retry,
+ *   POST /api/documents/:param/sign, POST /api/documents/:param/void,
+ *   PUT /api/settings/chairs/:param, PUT /api/xray/scans/:param
+ *
+ * ДОБАВЛЕНО (6). Каждый проверен ЧТЕНИЕМ ВЕБА, а не доверием к гейту — гейт на
+ * этом проекте уже лгал (заголовочный давал ложную зелень из-за AwaitExpression).
+ * Пять из шести — ОДИН И ТОТ ЖЕ ПРОБЕЛ ПРОДУКТА: создать можно, изменить и
+ * удалить нельзя. Это не мёртвый сервер, это недостроенный интерфейс:
+ *   PATCH,DELETE /api/clinical/rules/:param — POST зовётся (useAppLogic.tsx:3582),
+ *     правки и удаления нет. Клиника копит правила без способа убрать.
+ *   PUT,DELETE /api/settings/catalog/:param — веб зовёт только POST
+ *     (SettingsPricesTab.tsx:251): услугу в прайс добавить можно, цену
+ *     исправить и услугу убрать — нельзя.
+ *   PUT /api/settings/message-templates/:param — панель умеет POST (строка 71)
+ *     и DELETE (строка 85), правки нет вовсе. Шаблон правится удалением и
+ *     созданием заново.
+ * Шестой тяжелее и стоит отдельно:
+ *   POST /api/documents (apps/api/src/routes/documents/create.ts:34) — во всём
+ *     вебе НИ ОДНОГО вызова. useDocumentWorkflowModule.ts работает только с уже
+ *     существующими документами (все шесть его адресов идут через
+ *     `${documentId}`: /:id/:action, /tax-xml, /audit-facts, /html, /pdf).
+ *     Документ в интерфейсе создать нельзя, а согласия, договоры и чеки — ядро
+ *     стоматологической CRM.
+ *
+ * ПОЧЕМУ ЗАПИСАНО, А НЕ ПОЧИНЕНО: починка здесь — это НАПИСАТЬ ИНТЕРФЕЙС,
+ * которого не было. Выдумывать экран за владельца нельзя, а оставить гейт
+ * красным значит выключить его целиком. Долг назван поимённо и ждёт решения.
+ */
 const KNOWN_DEAD_ROUTES = new Set([
 	"DELETE /api/audit/logs",
 	"DELETE /api/audit/logs/:param",
+	"DELETE /api/clinical/rules/:param",
 	"DELETE /api/finance/family/:param",
+	"DELETE /api/settings/catalog/:param",
 	"GET /api/attachments/:param/download",
 	"GET /api/auth/status",
 	"GET /api/crm/custom-crm-task-types",
-	"GET /api/documents/:param/treatment-plan-pdf",
 	"GET /api/finance/family/:param",
 	"GET /api/imaging/studies",
 	"GET /api/imaging/studies/:param/file",
@@ -802,7 +840,6 @@ const KNOWN_DEAD_ROUTES = new Set([
 	"GET /api/migration/runs/:param/reconciliation.csv",
 	"GET /api/migration/worker/status",
 	"GET /api/p/:param",
-	"GET /api/patients",
 	"GET /api/reports/appointments",
 	"GET /api/reports/chairs",
 	"GET /api/reports/doctors",
@@ -816,15 +853,13 @@ const KNOWN_DEAD_ROUTES = new Set([
 	"GET /api/templates/:param",
 	"GET /api/workspace/chairs",
 	"PATCH /api/audit/logs/:param",
+	"PATCH /api/clinical/rules/:param",
 	"POST /api/appointments/:param/visit",
 	"POST /api/auth/clinic/set-password",
 	"POST /api/auth/setup/init",
 	"POST /api/auth/staff/set-pin",
-	"POST /api/communications/campaigns/:param/cancel",
-	"POST /api/communications/outbox/:param/retry",
 	"POST /api/diaries/sync-progress",
-	"POST /api/documents/:param/sign",
-	"POST /api/documents/:param/void",
+	"POST /api/documents",
 	"POST /api/imports/patients/preview",
 	"POST /api/max/send",
 	"POST /api/migration/:param/stage",
@@ -837,9 +872,9 @@ const KNOWN_DEAD_ROUTES = new Set([
 	"PUT /api/audit/logs/:param",
 	"PUT /api/finance/family/:param",
 	"PUT /api/schedule/appointments/:param",
-	"PUT /api/settings/chairs/:param",
+	"PUT /api/settings/catalog/:param",
+	"PUT /api/settings/message-templates/:param",
 	"PUT /api/treatment-plans/:param/signature",
-	"PUT /api/xray/scans/:param",
 ]);
 
 const currentDeadKeys = new Set(internalWithoutCallers.map((e) => e.key));
