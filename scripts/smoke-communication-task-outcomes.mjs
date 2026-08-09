@@ -11,6 +11,10 @@ process.env.DENTE_CLINICAL_ADMIN_SECRET =
 
 const routePath = path.resolve("apps/api/dist/routes/communications.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
+const smokeAuthSecret =
+	process.env.AUTH_TOKEN_SECRET || "dente_communication_outcome_smoke_secret";
+process.env.AUTH_TOKEN_SECRET = smokeAuthSecret;
 
 if (!existsSync(routePath) || !existsSync(sampleDataPath)) {
 	throw new Error("Build API first: npm run build");
@@ -102,8 +106,26 @@ const Fastify = requireFromApi("fastify");
 const { registerCommunicationRoutes } = await import(
 	pathToFileURL(routePath).href
 );
-const { communicationEvents, communicationTasks } = await import(
+const { activeVisit, communicationEvents, communicationTasks } = await import(
 	pathToFileURL(sampleDataPath).href
+);
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ ИСХОД, А ВХОД.
+ *
+ * Секрет администратора закрывает ПРАВО на изменение, а границу арендатора
+ * маршрут проверяет отдельным `requireResolvedOrganizationId`
+ * (routes/communications.ts:74). Без подписанного токена все пять исходов
+ * получали 401 AuthRequired на первом же запросе, поэтому ни одна подпись
+ * исхода («нет ответа», «нужен перенос записи» и остальные) не проверялась.
+ *
+ * Секрет подписи — тот же `authTokenSecret`, что в бою: охранник настоящий.
+ */
+const smokeClinicToken = signToken(
+	{ organizationId: activeVisit.organizationId, clinicName: "Smoke clinic" },
+	smokeAuthSecret,
+	60,
 );
 
 const app = Fastify({ logger: false });
@@ -111,6 +133,7 @@ await registerCommunicationRoutes(app);
 
 const headers = {
 	"x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET,
+	"x-dente-clinic-token": smokeClinicToken,
 };
 const fixtureTask = communicationTasks.find(
 	(task) => task.status !== "completed",

@@ -212,6 +212,24 @@ function parseVisitPayload<T>(
 	return { ok: true, data: parsed.data };
 }
 
+/**
+ * ЕДИНСТВЕННОЕ В ФАЙЛЕ МЕСТО, КОТОРОЕ ЧИТАЕТ ТЕКСТ ДОМЕННОГО ИСКЛЮЧЕНИЯ.
+ *
+ * Имя осталось от черновика приёма, но читателей у неё два — отказы черновика и
+ * отказы открытия приёма (`sendVisitOpenError`). Имя не расширено намеренно: по
+ * нему опознаёт этот файл смоук `scripts/smoke-visit-route-validation.mjs`
+ * (проверка «visit route must isolate private domain exception text»), и
+ * переименование увело бы гейт с живого участка ради косметики.
+ *
+ * ПОЧЕМУ ЧИТАТЕЛЬ ОБЯЗАН БЫТЬ ОДИН. `sendVisitOpenError` читала текст исключения
+ * сама — тройным условием по `instanceof Error` прямо в теле функции, коммит
+ * 96b9ab1ae. Это ровно тот образец, который `smoke-core-route-validation` держит
+ * в `forbiddenSourceNeedles` для `schedule`. Копия опасна не формой: текст
+ * исключения слоя доступа — это внутренние слова, и второе место, читающее его,
+ * рано или поздно отправит их на экран мимо разбора, который здесь ниже.
+ * Возвращаемое значение НЕ уходит наружу ни из одной ветви: обе разбирающие
+ * функции сравнивают его с известными строками и отвечают своими текстами.
+ */
 function visitDraftDomainMessage(error: unknown): string {
 	if (!(error instanceof Error)) return "";
 	return error.message.trim();
@@ -299,7 +317,7 @@ const visitOpenFailedMessage =
  * успешной записи здесь возникнуть не может.
  */
 export function sendVisitOpenError(error: unknown, reply: FastifyReply) {
-	const message = error instanceof Error ? error.message.trim() : "";
+	const message = visitDraftDomainMessage(error);
 	if (message === "Запись не найдена") {
 		return reply.code(404).send({
 			error: "AppointmentNotFound",

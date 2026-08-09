@@ -221,16 +221,6 @@ import { actionFailureToast } from "./lib/panelStateText";
 import { safeLocalStorageSetItem } from "./lib/safeLocalStorage";
 import { describeMprClinicalPresetProjectionFallback } from "./mprClinicalStatus";
 import {
-	dentalMaterialKindLabels,
-	dentalRestorationTypeLabels,
-	pricelistItemMaterialText,
-	pricelistMaterialSummaryText,
-	pricelistRecognitionBrandGroups,
-	pricelistRecognitionServiceGroups,
-	pricelistSourceKindLabels,
-	pricelistWarningsText,
-} from "./pricelistUiMeta";
-import {
 	imagingConnectorCards,
 	imagingViewerCapabilities,
 	recognitionPresets,
@@ -304,6 +294,8 @@ import {
 	treatmentStatusLabels,
 	warningSeverityLabels,
 } from "./workspaceUiLabels";
+import { usePricelistLogic } from "./hooks/domains/usePricelistLogic";
+import { dentalMaterialKindLabels, dentalRestorationTypeLabels } from "./pricelistUiMeta";
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function useAppLogic(): any {
@@ -989,7 +981,7 @@ export function useAppLogic(): any {
 	const _localDicomOperationAbortRef = useRef<AbortController | null>(null);
 	const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
 	const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
-	const appointmentScheduleDraftsRef = useRef<
+    const appointmentScheduleDraftsRef = useRef<
 		Record<string, AppointmentScheduleDraft>
 	>({});
 	const _imagingViewerSaveTimerRef = useRef<number | null>(null);
@@ -1001,6 +993,15 @@ export function useAppLogic(): any {
 		loadTelegramControlPlane: (options) =>
 			telegramSettingsModule.loadTelegramControlPlane(options),
 	});
+
+	const pricelistLogic = usePricelistLogic({
+		auth,
+		setError,
+		showToast,
+		initialPricelistSourceKind: "vendor",
+		initialUsePricelistAi: false,
+	});
+
 
 	/*
 	 * Россыпь сеттеров формы оплаты сюда больше не передаётся: сброс при смене
@@ -2144,6 +2145,90 @@ export function useAppLogic(): any {
 		return false;
 	}
 
+	async function removeClinicalRule(ruleId: string) {
+		if (!dashboard) return;
+		if (isClinicalRuleSaving) return;
+		setIsClinicalRuleSaving(true);
+		try {
+			const response = await fetch(`/api/clinical/rules/${ruleId}`, {
+				method: "DELETE",
+				headers: auth.denteClinicalMutationHeaders(),
+			});
+			if (!response.ok) {
+				throw new Error(
+					await responseErrorMessage(response, "Ошибка при удалении"),
+				);
+			}
+			await loadDashboard();
+		} catch (ruleError) {
+			setError(
+				operatorWorkflowFailureMessage("Ошибка удаления правила", ruleError),
+			);
+		} finally {
+			setIsClinicalRuleSaving(false);
+		}
+	}
+
+	async function createServiceCatalogItem(data: any) {
+		try {
+			const response = await fetch("/api/settings/catalog", {
+				method: "POST",
+				headers: auth.settingsAccessHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(data),
+			});
+			if (!response.ok) {
+				setError(
+					await responseErrorMessage(response, "Ошибка создания услуги"),
+				);
+				return;
+			}
+			await loadDashboard();
+		} catch (error) {
+			setError("Сбой сети при создании услуги");
+		}
+	}
+
+	async function updateServiceCatalogItem(serviceId: string, updates: any) {
+		try {
+			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
+				method: "PUT",
+				headers: auth.settingsAccessHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(updates),
+			});
+			if (!response.ok) {
+				setError(
+					await responseErrorMessage(response, "Ошибка обновления услуги"),
+				);
+				return;
+			}
+			await loadDashboard();
+		} catch (error) {
+			setError("Сбой сети при обновлении услуги");
+		}
+	}
+
+	async function deleteServiceCatalogItem(serviceId: string) {
+		try {
+			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
+				method: "DELETE",
+				headers: auth.settingsAccessHeaders(),
+			});
+			if (!response.ok) {
+				setError(
+					await responseErrorMessage(response, "Ошибка удаления услуги"),
+				);
+				return;
+			}
+			await loadDashboard();
+		} catch (error) {
+			setError("Сбой сети при удалении услуги");
+		}
+	}
+
 	function currentUiPreferencesInput(): UiPreferencesInput {
 		return {
 			uiLanguage,
@@ -2712,8 +2797,8 @@ export function useAppLogic(): any {
 		setDocumentIssueStaffRole(preferences.documentIssueStaffRole);
 		setProcedureConsentProcedureType(preferences.procedureConsentProcedureType);
 		setPostVisitCareTopic(preferences.postVisitCareTopic);
-		setPricelistSourceKind(preferences.pricelistSourceKind);
-		setUsePricelistAi(preferences.usePricelistAi);
+		pricelistLogic.setPricelistSourceKind(preferences.pricelistSourceKind);
+		pricelistLogic.setUsePricelistAi(preferences.usePricelistAi);
 		setOdontogramUseSurfaces(preferences.odontogramUseSurfaces ?? false);
 		setRecognitionKind(preferences.recognitionKind);
 		setRecognitionTarget(preferences.recognitionTarget);
@@ -4209,35 +4294,6 @@ export function useAppLogic(): any {
 	 * попадало, и подпись «Фото прайса: 1600x1200, 1.9 Мп, JPEG 82%»
 	 * (SettingsView.tsx:2187) не появлялась никогда.
 	 */
-	const attachPricelistImage = async (file: File) => {
-		try {
-			const prepared = await preparePricelistImage(file);
-			setPricelistImageBase64(prepared.base64);
-			setPricelistImageMimeType(prepared.mimeType);
-			setPricelistImageName(file.name);
-			setPricelistImageNote(prepared.note);
-			setError(null);
-		} catch (readError) {
-			showToast(
-				actionFailureToast(
-					"Фото прайса не прочитано",
-					(readError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			setError(
-				operatorWorkflowFailureMessage("Фото прайса не прочитано", readError),
-			);
-		}
-	};
-
-	const clearPricelistImage = () => {
-		setPricelistImageBase64(null);
-		setPricelistImageMimeType("image/jpeg");
-		setPricelistImageName(null);
-		setPricelistImageNote(null);
-	};
-
 	/*
 	 * Разбор прайс-листа: POST /api/pricelist/analyze.
 	 *
@@ -4256,85 +4312,12 @@ export function useAppLogic(): any {
 	 * прогоне на этой машине: локально охрану гасят лазейки
 	 * DENTE_CLINICAL_ALLOW_UNGUARDED_READS, а в продакшене их нет.
 	 */
-	const analyzePricelist = async () => {
-		if (isPricelistAnalyzing) return;
-		const rawText = (pricelistText ?? "").trim();
-		const imageBase64 = pricelistImageBase64 || undefined;
-		/*
-		 * Сервер отвергает запрос без текста и без изображения
-		 * (dentalPricelistAnalysisRequestSchema.refine, shared/index.ts:2148).
-		 * Причину называем на месте, а не показываем отказ схемы.
-		 */
-		if (!rawText && !imageBase64) {
-			setError("Вставьте прайс текстом или приложите фото прайса.");
-			return;
-		}
-		setIsPricelistAnalyzing(true);
-		try {
-			const response = await fetch("/api/pricelist/analyze", {
-				method: "POST",
-				headers: auth.denteClinicalReadHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					sourceName: pricelistImageName || "manual-pricelist",
-					sourceKind: pricelistSourceKind,
-					rawText,
-					...(imageBase64
-						? {
-								imageBase64,
-								imageMimeType: pricelistImageMimeType || "image/jpeg",
-							}
-						: {}),
-					useServerAi: Boolean(usePricelistAi),
-				}),
-			});
-			/*
-			 * Проверка ответа ДО разбора тела. Отказы 403 и 503 приходят обычным
-			 * разрешением промиса, и без этой ветки тело `{error, message}` легло бы
-			 * в pricelistAnalysis, а разметка вкладки позвала бы .map на
-			 * несуществующем items (SettingsView.tsx:1707).
-			 */
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(response, "Прайс-лист не разобран"),
-				);
-			const analysis = (await response.json()) as DentalPricelistAnalysisResponse;
-			/*
-			 * Форма ответа проверяется явно: приведение типа — обещание, а не
-			 * проверка. Вкладка читает items, summary и warnings списками.
-			 */
-			if (
-				!analysis ||
-				!Array.isArray(analysis.items) ||
-				!Array.isArray(analysis.summary) ||
-				!Array.isArray(analysis.warnings)
-			)
-				throw new Error(
-					"Прайс-лист не разобран: сервер вернул ответ без разобранных позиций.",
-				);
-			setPricelistAnalysis(analysis);
-			setError(null);
-		} catch (analysisError) {
-			showToast(
-				actionFailureToast(
-					"Прайс-лист не разобран",
-					(analysisError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			setError(
-				operatorWorkflowFailureMessage(
-					"Прайс-лист не разобран",
-					analysisError,
-				),
-			);
-		} finally {
-			setIsPricelistAnalyzing(false);
-		}
-	};
-
 	return {
+		removeClinicalRule,
+		createServiceCatalogItem,
+		updateServiceCatalogItem,
+		deleteServiceCatalogItem,
+		...pricelistLogic,
 		...documentWorkflow,
 		...dicomWorkbenchModule,
 		...telegramSettingsModule,
@@ -4566,7 +4549,6 @@ export function useAppLogic(): any {
 		isPaymentSaving,
 		isPendingVisitSyncing,
 		isPersistenceExporting,
-		isPricelistAnalyzing,
 		isRecognitionLoading,
 		isServerVoiceRecording,
 		isSmartImportCommitting,
@@ -4741,19 +4723,6 @@ export function useAppLogic(): any {
 		postVisitCareTopicOptions,
 
 		previousOnboardingStep,
-		pricelistAnalysis,
-		pricelistImageBase64,
-		pricelistImageName,
-		pricelistImageNote,
-		pricelistItemMaterialText,
-		pricelistMaterialSummaryText,
-		pricelistParserModeLabels,
-		pricelistRecognitionBrandGroups,
-		pricelistRecognitionServiceGroups,
-		pricelistSourceKind,
-		pricelistSourceKindLabels,
-		pricelistText,
-		pricelistWarningsText,
 		primaryVisitWarning,
 		procedureSpecificConsentProcedureOptions,
 		query,
@@ -4871,9 +4840,6 @@ export function useAppLogic(): any {
 		setPaymentPayerRelationship,
 		setPaymentTaxDeductionCode,
 		setPaymentFeedback,
-		setPricelistAnalysis,
-		setPricelistSourceKind,
-		setPricelistText,
 		setQuery,
 		setRecognitionJob,
 		setRecognitionText,
@@ -4902,7 +4868,6 @@ export function useAppLogic(): any {
 		setTranscript,
 		setUiLanguage,
 		setUiPreferencesSyncError,
-		setUsePricelistAi,
 		settingsAdminSecretDraft,
 		settingsAdminSecretSession,
 		settingsTab,
@@ -5028,7 +4993,6 @@ export function useAppLogic(): any {
 		updateStaffScheduleDay,
 		updateStaffScheduleDraft,
 		updateVisitNoteField,
-		usePricelistAi,
 		viewLabels,
 		visibleRecommendedActions,
 		visibleScheduleSuggestions,
@@ -5074,14 +5038,12 @@ export function useAppLogic(): any {
 		activeTreatmentPlanItems,
 		addImagingViewerNoteAnnotation: null,
 		address: documentPatient?.administrativeProfile?.registrationAddress ?? "",
-		analyzePricelist,
 		applyCtPlanningQuickAction: null,
 		applyMprClinicalPreset: null,
 		applyNearestMprClinicalPreset: null,
 		applyProtocolTemplate: null,
 		applyProtocolTemplateDirectly: null,
 		assembleSpeechRecording: async () => {},
-		attachPricelistImage,
 		browserCanRequestPersistentStorage: null,
 		browserContinuityChecks: null,
 		browserContinuityCritical: null,
@@ -5097,7 +5059,6 @@ export function useAppLogic(): any {
 		chooseRecognitionPreset: null,
 		clearBrowserPickedImagingFolderPreview: null,
 		clearLocalImagingFolderRecovery: null,
-		clearPricelistImage,
 		clinic: dashboard?.clinicSettings?.profile ?? null,
 		clinicalMutationHeaders: auth.denteClinicalMutationHeaders,
 		clinicalReadHeaders: auth.denteClinicalReadHeaders,

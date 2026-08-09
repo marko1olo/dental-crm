@@ -6,6 +6,14 @@ import { pathToFileURL } from "node:url";
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.NODE_ENV = "production";
 process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
+/*
+ * СЕКРЕТ ПОДПИСИ ТОКЕНОВ — СИНТЕТИЧЕСКИЙ И ОБЯЗАТЕЛЕН ЗДЕСЬ. Под
+ * `NODE_ENV=production` `authTokenSecret()` справедливо отказывается подписывать
+ * без него, и сценарий падал бы на своём же правильном стороже. Строка списана с
+ * `scripts/smoke-core-route-validation.mjs`, второй способ подписи не заводится.
+ */
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-visit-draft-status-smoke";
 
 const routePath = path.resolve("apps/api/dist/routes/visits.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
@@ -17,6 +25,12 @@ if (!existsSync(routePath) || !existsSync(sampleDataPath)) {
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
 const { registerVisitRoutes } = await import(pathToFileURL(routePath).href);
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
 const { activeVisit, visitDraftAutosaves } = await import(
 	pathToFileURL(sampleDataPath).href
 );
@@ -88,8 +102,34 @@ function assertVisitMutationRejection(
 const app = Fastify({ logger: false });
 await registerVisitRoutes(app);
 
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ КОНТРАКТ ЧЕРНОВИКА, А ВХОД.
+ *
+ * БЫЛО: все проверки посылали только секрет администратора клиники и получали 401
+ * «Требуется авторизация рабочего кабинета клиники» на первом же запросе —
+ * порядок барьеров в маршруте ставит кабинет ПЕРЕД разбором тела и перед базой
+ * (`requireClinicalMutationContext`), поэтому ни один текст отказа черновика этим
+ * сценарием не проверялся.
+ *
+ * ПРАВ МАРШРУТ, УСТАРЕЛ СЦЕНАРИЙ: гейт визитов введён коммитом e951c9550
+ * (2026-07-29), а тот же дефект того же класса в
+ * `scripts/smoke-core-route-validation.mjs` починен в тот же день коммитом
+ * 1d2e7dfb7 этой же подписью токена. Способ повторён, а не заведён второй.
+ *
+ * ОРГАНИЗАЦИЯ ЗДЕСЬ НЕ СИНТЕТИЧЕСКАЯ, В ОТЛИЧИЕ ОТ СОСЕДНЕГО СЦЕНАРИЯ, И ЭТО
+ * СУЩЕСТВЕННО: тела запросов ниже ВАЛИДНЫ, они доходят до слоя доступа и
+ * сверяются с приёмом из `sampleData` (`activeVisit`). Токен с чужой организацией
+ * дал бы «приём не найден» на каждом шаге, то есть сценарий стал бы зелёным на
+ * ложном основании либо красным по неверной причине.
+ */
+const clinicToken = signToken(
+	{ organizationId: activeVisit.organizationId },
+	authTokenSecret(),
+);
+
 const clinicalHeaders = {
 	"x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET,
+	"x-dente-clinic-token": clinicToken,
 };
 const originalStatus = activeVisit.status;
 const originalComplaint = activeVisit.complaint;

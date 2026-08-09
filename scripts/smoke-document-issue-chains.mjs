@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { issueAttestation } from "./lib/documentIssueAttestation.mjs";
+import { createSmokeClinicAuth } from "./lib/smoke-clinic-auth.mjs";
 
 const tempRoot = mkdtempSync(path.join(tmpdir(), "dental-document-chains-"));
 
@@ -81,6 +82,17 @@ const sampleClinicalToothRows = [
 ];
 
 const app = Fastify({ logger: false });
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ ЦЕПОЧКА ВЫДАЧИ, А ВХОД.
+ * Маршруты документов берут организацию из подписанного токена, и этот барьер
+ * стоит до создания документа: без токена цепочка умирала на 401 AuthRequired,
+ * так что ни один assert про выдачу и отзыв не исполнялся.
+ */
+const smokeAuth = await createSmokeClinicAuth({
+	fallbackSecret: "dente_document_issue_chains_smoke_secret",
+	organizationId: activeVisit.organizationId,
+});
+smokeAuth.attachTo(app);
 
 try {
 	await registerDocumentRoutes(app);

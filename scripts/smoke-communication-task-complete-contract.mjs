@@ -6,8 +6,13 @@ import { pathToFileURL } from "node:url";
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-communication-secret";
 
+const smokeAuthSecret =
+	process.env.AUTH_TOKEN_SECRET || "dente_communication_smoke_secret";
+process.env.AUTH_TOKEN_SECRET = smokeAuthSecret;
+
 const routePath = path.resolve("apps/api/dist/routes/communications.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
 
 if (!existsSync(routePath) || !existsSync(sampleDataPath)) {
 	throw new Error("Build API first: npm run build");
@@ -18,7 +23,8 @@ const Fastify = requireFromApi("fastify");
 const { registerCommunicationRoutes } = await import(
 	pathToFileURL(routePath).href
 );
-const { communicationEvents, communicationTasks } = await import(
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+const { activeVisit, communicationEvents, communicationTasks } = await import(
 	pathToFileURL(sampleDataPath).href
 );
 
@@ -53,11 +59,31 @@ assert(
 	"communication route validation copy must mention a valid task outcome",
 );
 
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ КОНТРАКТ, А ВХОД.
+ *
+ * Секрет администратора (`x-dente-admin-secret`) закрывает только ПРАВО на
+ * изменение. Границу арендатора маршрут проверяет ОТДЕЛЬНЫМ охранником
+ * `requireResolvedOrganizationId` (routes/communications.ts:74), добавленным
+ * вместе с починкой `SELECT * FROM organizations LIMIT 1`. Порядок барьеров —
+ * право, затем разбор тела, затем арендатор, поэтому все четыре проверки ниже
+ * получали 401 AuthRequired и НИ ОДНА формулировка отказа не проверялась.
+ *
+ * Токен подписывается ТЕМ ЖЕ `authTokenSecret`, что и в бою, поэтому охранник
+ * остаётся настоящим: подделанный токен так же будет отвергнут.
+ */
+const smokeClinicToken = signToken(
+	{ organizationId: activeVisit.organizationId, clinicName: "Smoke clinic" },
+	smokeAuthSecret,
+	60,
+);
+
 const app = Fastify({ logger: false });
 await registerCommunicationRoutes(app);
 
 const headers = {
 	"x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET,
+	"x-dente-clinic-token": smokeClinicToken,
 };
 const openTask = communicationTasks.find((task) => task.status !== "completed");
 assert(openTask, "fixture open communication task missing");
