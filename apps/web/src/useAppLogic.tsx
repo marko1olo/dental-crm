@@ -296,6 +296,7 @@ import {
 } from "./workspaceUiLabels";
 import { usePricelistLogic } from "./hooks/domains/usePricelistLogic";
 import { dentalMaterialKindLabels, dentalRestorationTypeLabels } from "./pricelistUiMeta";
+import { useClinicSettingsLogic } from "./hooks/domains/useClinicSettingsLogic";
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function useAppLogic(): any {
@@ -1016,12 +1017,7 @@ export function useAppLogic(): any {
 		setDashboard,
 		setQuery,
 	});
-	const staffSettingsLogic = useStaffSettingsLogic({
-		auth,
-		setError,
-		loadDashboard,
-		saveClinicProfileIfDirty,
-	});
+
 	const patientIntakeLogic = usePatientIntakeLogic({
 		dashboard,
 		setError,
@@ -1797,49 +1793,6 @@ export function useAppLogic(): any {
 		isPaymentSaving,
 		recordPayment,
 	} = finance;
-
-	function updateClinicProfileDraft<K extends keyof ClinicProfileDraft>(
-		key: K,
-		value: ClinicProfileDraft[K],
-	) {
-		setClinicProfileDraft((current) => ({ ...current, [key]: value }));
-		setClinicProfileDirty(true);
-		setClinicProfileSaveState("idle");
-	}
-
-	function toggleClinicWorkingDay(day: number) {
-		setClinicProfileDraft((current) => {
-			const nextDays = current.workingDays.includes(day)
-				? current.workingDays.filter((item) => item !== day)
-				: [...current.workingDays, day];
-			return { ...current, workingDays: normalizeWorkingDaysDraft(nextDays) };
-		});
-		setClinicProfileDirty(true);
-		setClinicProfileSaveState("idle");
-	}
-
-	function toggleStaffWorkingDay(staffId: string, day: number) {
-		const currentDraft =
-			staffScheduleDrafts[staffId] ?? defaultStaffScheduleDraft();
-		const workingDays = currentDraft.workingDays.includes(day)
-			? currentDraft.workingDays.filter((item) => item !== day)
-			: [...currentDraft.workingDays, day];
-		updateStaffScheduleDraft(staffId, {
-			workingDays: normalizeWorkingDaysDraft(workingDays),
-		});
-	}
-
-	function toggleChairWorkingDay(chairId: string, day: number) {
-		const currentDraft =
-			chairScheduleDrafts[chairId] ?? defaultStaffScheduleDraft();
-		const workingDays = currentDraft.workingDays.includes(day)
-			? currentDraft.workingDays.filter((item) => item !== day)
-			: [...currentDraft.workingDays, day];
-		updateChairScheduleDraft(chairId, {
-			workingDays: normalizeWorkingDaysDraft(workingDays),
-		});
-	}
-
 	const reconcileDashboardScopedUiSelections = useCallback(
 		function reconcileDashboardScopedUiSelections() {
 			if (!dashboard) return;
@@ -1991,11 +1944,6 @@ export function useAppLogic(): any {
 		],
 	);
 
-	async function saveClinicProfileIfDirty(): Promise<boolean> {
-		if (!clinicProfileDirty) return true;
-		return saveClinicProfileFromDraft();
-	}
-
 	function buildOnboardingFirstAppointmentIssues(): string[] {
 		if (!clinicProfileDraft) return [];
 		const issues: string[] = [];
@@ -2145,90 +2093,6 @@ export function useAppLogic(): any {
 		return false;
 	}
 
-	async function removeClinicalRule(ruleId: string) {
-		if (!dashboard) return;
-		if (isClinicalRuleSaving) return;
-		setIsClinicalRuleSaving(true);
-		try {
-			const response = await fetch(`/api/clinical/rules/${ruleId}`, {
-				method: "DELETE",
-				headers: auth.denteClinicalMutationHeaders(),
-			});
-			if (!response.ok) {
-				throw new Error(
-					await responseErrorMessage(response, "Ошибка при удалении"),
-				);
-			}
-			await loadDashboard();
-		} catch (ruleError) {
-			setError(
-				operatorWorkflowFailureMessage("Ошибка удаления правила", ruleError),
-			);
-		} finally {
-			setIsClinicalRuleSaving(false);
-		}
-	}
-
-	async function createServiceCatalogItem(data: any) {
-		try {
-			const response = await fetch("/api/settings/catalog", {
-				method: "POST",
-				headers: auth.settingsAccessHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify(data),
-			});
-			if (!response.ok) {
-				setError(
-					await responseErrorMessage(response, "Ошибка создания услуги"),
-				);
-				return;
-			}
-			await loadDashboard();
-		} catch (error) {
-			setError("Сбой сети при создании услуги");
-		}
-	}
-
-	async function updateServiceCatalogItem(serviceId: string, updates: any) {
-		try {
-			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
-				method: "PUT",
-				headers: auth.settingsAccessHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify(updates),
-			});
-			if (!response.ok) {
-				setError(
-					await responseErrorMessage(response, "Ошибка обновления услуги"),
-				);
-				return;
-			}
-			await loadDashboard();
-		} catch (error) {
-			setError("Сбой сети при обновлении услуги");
-		}
-	}
-
-	async function deleteServiceCatalogItem(serviceId: string) {
-		try {
-			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
-				method: "DELETE",
-				headers: auth.settingsAccessHeaders(),
-			});
-			if (!response.ok) {
-				setError(
-					await responseErrorMessage(response, "Ошибка удаления услуги"),
-				);
-				return;
-			}
-			await loadDashboard();
-		} catch (error) {
-			setError("Сбой сети при удалении услуги");
-		}
-	}
-
 	function currentUiPreferencesInput(): UiPreferencesInput {
 		return {
 			uiLanguage,
@@ -2348,7 +2212,7 @@ export function useAppLogic(): any {
 
 	async function dismissOnboarding() {
 		if (!assertOnboardingReadyForFinish()) return;
-		if (!(await saveClinicProfileIfDirty())) return;
+		if (!(await clinicSettings.saveClinicProfileIfDirty())) return;
 		if (!(await saveOnboardingSchedulesIfDirty())) return;
 		if (telegramSettingsDirty && !(await saveTelegramSettings())) return;
 		const previousPreferencesInput = currentUiPreferencesInput();
@@ -2403,7 +2267,7 @@ export function useAppLogic(): any {
 	}
 
 	async function continueOnboardingInDraftMode(targetView?: AppView) {
-		if (!(await saveClinicProfileIfDirty())) return;
+		if (!(await clinicSettings.saveClinicProfileIfDirty())) return;
 		if (!(await saveOnboardingSchedulesIfDirty())) return;
 		if (
 			onboardingStep === "telegram" &&
@@ -2464,7 +2328,7 @@ export function useAppLogic(): any {
 
 	async function moveOnboardingTo(step: OnboardingStep) {
 		if (step === "done" && !assertOnboardingReadyForFinish()) return;
-		if (!(await saveClinicProfileIfDirty())) return;
+		if (!(await clinicSettings.saveClinicProfileIfDirty())) return;
 		if (!(await saveOnboardingSchedulesIfDirty())) return;
 		if (
 			onboardingStep === "telegram" &&
@@ -3912,77 +3776,6 @@ export function useAppLogic(): any {
 		}
 	}
 
-	async function createClinicalRuleFromSettings() {
-		if (isClinicalRuleSaving) {
-			setError("Дождитесь завершения текущего сохранения правила.");
-			return;
-		}
-		if (!newRuleTitle.trim()) {
-			setError("Укажите название клинического правила.");
-			return;
-		}
-		setIsClinicalRuleSaving(true);
-		try {
-			const response = await fetch("/api/clinical/rules", {
-				method: "POST",
-				headers: auth.denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					title: newRuleTitle.trim(),
-					action: newRuleAction,
-					severity: newRuleSeverity,
-					ownerRole: newRuleOwnerRole || undefined,
-					specialty: newRuleSpecialty || undefined,
-					category: newRuleCategory || undefined,
-					triggerServiceIds: newRuleTriggerServiceId
-						? [newRuleTriggerServiceId]
-						: [],
-					requiredServiceIds: newRuleRequiredServiceId
-						? [newRuleRequiredServiceId]
-						: [],
-					requiresCompletedServiceIds: newRuleCompletedServiceId
-						? [newRuleCompletedServiceId]
-						: [],
-					blockedServiceIds: newRuleBlockedServiceId
-						? [newRuleBlockedServiceId]
-						: [],
-					warningText: newRuleWarningText.trim() || undefined,
-					patientText: newRulePatientText?.trim() || "",
-				}),
-			});
-			if (!response.ok) {
-				setError(
-					await responseErrorMessage(
-						response,
-						"Не удалось создать клиническое правило",
-					),
-				);
-				return;
-			}
-			await loadDashboard();
-			setError(null);
-			setNewRuleTitle("");
-			setNewRuleWarningText("");
-		} catch (ruleError) {
-			showToast(
-				actionFailureToast(
-					"Не удалось создать клиническое правило",
-					(ruleError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			setError(
-				operatorWorkflowFailureMessage(
-					"Не удалось создать клиническое правило",
-					ruleError,
-				),
-			);
-		} finally {
-			setIsClinicalRuleSaving(false);
-		}
-	}
-
 	async function createImagingStudy(kind: ImagingStudyKind) {
 		if (imagingCreateSavingKind) {
 			setError("Дождитесь завершения текущего добавления снимка.");
@@ -4312,11 +4105,51 @@ export function useAppLogic(): any {
 	 * прогоне на этой машине: локально охрану гасят лазейки
 	 * DENTE_CLINICAL_ALLOW_UNGUARDED_READS, а в продакшене их нет.
 	 */
+
+	const clinicSettings = useClinicSettingsLogic({
+		dashboard,
+		clinicProfileDraft,
+		setClinicProfileDraft,
+		setClinicProfileDirty,
+		setClinicProfileSaveState,
+		clinicProfileDirty,
+		staffScheduleDrafts: schedule.staffScheduleDrafts,
+		chairScheduleDrafts: schedule.chairScheduleDrafts,
+		updateStaffScheduleDraft: schedule.updateStaffScheduleDraft,
+		updateChairScheduleDraft: schedule.updateChairScheduleDraft,
+		isClinicalRuleSaving,
+		setIsClinicalRuleSaving,
+		loadDashboard,
+		setError,
+		auth,
+		newRuleTitle,
+		setNewRuleTitle,
+		newRuleAction,
+		newRuleSeverity,
+		newRuleOwnerRole,
+		newRuleSpecialty,
+		newRuleCategory,
+		newRuleTriggerServiceId,
+		newRuleRequiredServiceId,
+		newRuleCompletedServiceId,
+		newRuleBlockedServiceId,
+		newRuleWarningText,
+		setNewRuleWarningText,
+		newRulePatientText: patient.newRulePatientText,
+	});
+
+	const staffSettings = useStaffSettingsLogic({
+		auth,
+		setError,
+		loadDashboard,
+		saveClinicProfileIfDirty: clinicSettings.saveClinicProfileIfDirty,
+	});
+
 	return {
-		removeClinicalRule,
-		createServiceCatalogItem,
-		updateServiceCatalogItem,
-		deleteServiceCatalogItem,
+		removeClinicalRule: clinicSettings.removeClinicalRule,
+		createServiceCatalogItem: clinicSettings.createServiceCatalogItem,
+		updateServiceCatalogItem: clinicSettings.updateServiceCatalogItem,
+		deleteServiceCatalogItem: clinicSettings.deleteServiceCatalogItem,
 		...pricelistLogic,
 		...documentWorkflow,
 		...dicomWorkbenchModule,
@@ -4402,7 +4235,7 @@ export function useAppLogic(): any {
 		completedActContractReferenceForUi,
 		continueOnboardingInDraftMode,
 		createAppointmentFromDraft,
-		createClinicalRuleFromSettings,
+		createClinicalRuleFromSettings: clinicSettings.createClinicalRuleFromSettings,
 		createImagingStudy,
 		ctPlanningActiveQuickActionId,
 		ctPlanningImplantPlan,
@@ -4743,7 +4576,7 @@ export function useAppLogic(): any {
 		roleFocusOrder,
 		saveAppointmentSchedule,
 		saveChairSchedule,
-		saveClinicProfileFromDraft,
+		saveClinicProfileFromDraft: clinicSettings.saveClinicProfileFromDraft,
 		savePatientAdministrativeProfile,
 		savePatientCore,
 		createPatient,
@@ -4971,9 +4804,9 @@ export function useAppLogic(): any {
 		telegramWebhookBaseUrlDraft,
 		telegramWelcomeImageUrlDraft,
 		toDateTimeLocalValue,
-		toggleChairWorkingDay,
-		toggleClinicWorkingDay,
-		toggleStaffWorkingDay,
+		toggleChairWorkingDay: clinicSettings.toggleChairWorkingDay,
+		toggleClinicWorkingDay: clinicSettings.toggleClinicWorkingDay,
+		toggleStaffWorkingDay: clinicSettings.toggleStaffWorkingDay,
 		toothRows,
 		toothStateByCode: visitToothStateByCode,
 		setToothState,
@@ -4986,7 +4819,7 @@ export function useAppLogic(): any {
 		updateAppointmentScheduleDraft,
 		updateChairScheduleDay,
 		updateChairScheduleDraft,
-		updateClinicProfileDraft,
+		updateClinicProfileDraft: clinicSettings.updateClinicProfileDraft,
 		updateNewAppointmentDraft,
 		updatePatientAdministrativeProfileDraft,
 		updatePatientCoreDraft,
@@ -5024,7 +4857,7 @@ export function useAppLogic(): any {
 		loadDashboard,
 		operatorWorkflowFailureMessage,
 		...clinicalVisitLogic,
-		...staffSettingsLogic,
+		...staffSettings,
 		...patientIntakeLogic,
 		...migrationQueries,
 		...imagingQueries,
