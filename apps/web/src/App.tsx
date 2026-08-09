@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { AppLoadingState, AppUnlockState } from "./AppBootState";
+import { browserContinuityRegistrationLabels } from "./browserContinuity";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { AuthHub } from "./components/auth/AuthHub";
 import { StaffPinPad } from "./components/auth/StaffPinPad";
@@ -221,7 +222,6 @@ export function App() {
 		attachPricelistImage,
 		browserCanRequestPersistentStorage,
 		browserContinuity,
-		browserContinuityChecks,
 		browserContinuityCritical,
 		browserContinuityState,
 		browserContinuityValue,
@@ -1128,6 +1128,83 @@ export function App() {
 		setSelectedPatientId,
 		setScheduleDateFilter,
 	} = appLogicValue;
+	/*
+	 * КАРТОЧКИ «СОХРАННОСТЬ ДАННЫХ» СОБИРАЮТСЯ ЗДЕСЬ, ПОТОМУ ЧТО ИЗ КОНТЕКСТА
+	 * ПРИХОДИЛ null.
+	 * useAppLogic.tsx:4364 отдаёт `browserContinuityChecks: null`, App.tsx клал это
+	 * в <SettingsView>, оттуда в SettingsAuditTab.tsx:1776, где стоит
+	 * `browserContinuityChecks as BrowserContinuityCheck[]` — приведение молчит, а
+	 * SettingsAuditTab.tsx:2750 зовёт .map() на null. Замерено: вкладка «Журнал
+	 * операций» роняла TypeError: Cannot read properties of null (reading 'map')
+	 * при открытии раздела «Сохранность данных». Typecheck этого не видел из-за
+	 * as-приведения.
+	 * Подписи переведены с языка разработчика: «PWA-оболочка» -> «Работа без сети»,
+	 * «Кэш» -> «Память для офлайна», «Квота» -> «Место». Состояние оболочки
+	 * печатается через browserContinuityRegistrationLabels — до этой правки эта
+	 * таблица не имела ни одного потребителя.
+	 */
+	const browserContinuityChecks = [
+		{
+			label: "Локальные черновики",
+			value: browserContinuity?.localStorageWritable
+				? "сохраняются"
+				: browserContinuity
+					? "не сохраняются"
+					: "проверяю",
+			detail: lastLocalSavedAt
+				? `последнее сохранение в ${formatTime(lastLocalSavedAt)}`
+				: "черновик приёма сохраняется на этом устройстве",
+		},
+		{
+			label: "Очередь аудио",
+			value: browserContinuity?.indexedDbSupported
+				? "работает"
+				: browserContinuity
+					? "не работает"
+					: "проверяю",
+			detail: pendingSpeechChunkCount
+				? `ждут отправки: ${pendingSpeechChunkCount}`
+				: "аудио сохранится для отправки позже",
+		},
+		{
+			label: "Работа без сети",
+			value: browserContinuity
+				? browserContinuityRegistrationLabels[
+						browserContinuity.serviceWorkerRegistrationState
+					]
+				: "проверяю",
+			detail: browserContinuity?.serviceWorkerControlled
+				? "эта вкладка готова к работе без сети"
+				: "без интернета эта вкладка может не открыться",
+		},
+		{
+			label: "Память для офлайна",
+			value: browserContinuity?.cacheStorageSupported
+				? "готова"
+				: browserContinuity
+					? "недоступна"
+					: "проверяю",
+			detail:
+				browserContinuity?.storagePersisted === true
+					? "браузер обещал не удалять сохранённое"
+					: "браузер может удалить сохранённое при нехватке места",
+		},
+		{
+			label: "Место",
+			value: formatMegabytes(browserContinuity?.storageUsageMb ?? null),
+			detail:
+				browserContinuity?.storageQuotaMb != null
+					? `занято из ${formatMegabytes(browserContinuity.storageQuotaMb)}`
+					: "браузер не сообщает, сколько места осталось",
+		},
+		{
+			label: "Синхронизация",
+			value: isOnline ? "есть связь" : "нет связи",
+			detail: pendingVisitSaveCount
+				? `приёмов ждёт отправки: ${pendingVisitSaveCount}`
+				: "всё отправлено на сервер клиники",
+		},
+	];
 	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 	const [resetting, setResetting] = useState(false);
 	// --- DUAL-TIER AUTH STATE ---
