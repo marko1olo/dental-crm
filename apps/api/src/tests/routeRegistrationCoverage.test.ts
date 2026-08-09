@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import * as ts from "typescript";
 
 /**
  * Страховка от повторения самой дорогой ошибки этого репозитория: модуль
@@ -79,11 +80,11 @@ test("каждый модуль маршрутов импортируется в
 });
 
 test("каждый импортированный модуль маршрутов ещё и вызывается", () => {
-	const server = readFileSync(serverFile, "utf8");
+	const serverSource = readFileSync(serverFile, "utf8");
 
 	// Имена, привязанные к импортам из ./routes/*
 	const importedNames = [
-		...server.matchAll(
+		...serverSource.matchAll(
 			/import\s+(?:(\w+)|\{([^}]+)\})\s+from\s+"\.\/routes\/[\w/]+\.js"/g,
 		),
 	].flatMap((match) => {
@@ -107,12 +108,51 @@ test("каждый импортированный модуль маршруто�
 		(name) => !name.startsWith("start") && !name.endsWith("Worker"),
 	);
 
-	const neverInvoked = registrars.filter((name) => {
-		// Либо `await registerX(app)`, либо `app.register(x, { prefix })`.
-		const called = new RegExp(`\\b${name}\\s*\\(`).test(server);
-		const mounted = new RegExp(`register\\(\\s*${name}\\b`).test(server);
-		return !called && !mounted;
-	});
+	/*
+	 * ВЫЗОВ ИЩЕТСЯ ПО ДЕРЕВУ, А НЕ ПО ТЕКСТУ.
+	 *
+	 * Замер 2026-08-09 мутацией: закомментированный настоящий вызов
+	 * `// MUTATION await registerToothHistoryRoutes(app);` оставался в файле
+	 * ТЕКСТОМ, регулярное выражение `\bregisterToothHistoryRoutes\s*\(` находило
+	 * его В КОММЕНТАРИИ, и тест объявлял маршрут подключённым. Дефект реальный —
+	 * toothHistory отвечал бы 404, охрана молчала.
+	 *
+	 * Тот же класс уже ловился в этом репозитории дважды: текстовый гейт
+	 * засчитывал `res.ok` из комментария, и засчитывал упоминание переменной из
+	 * комментария как проверку. Обход дерева TypeScript не имеет этой
+	 * двусмысленности: комментарии не являются узлами вызовов, а в узле вызова
+	 * `expression` — идентификатор без признаков текста.
+	 */
+	const calls = (() => {
+		const source = ts.createSourceFile(
+			"server.ts",
+			serverSource,
+			ts.ScriptTarget.Latest,
+			true,
+			ts.ScriptKind.TS,
+		);
+		const calledNames = new Set<string>();
+		const walk = (node: ts.Node) => {
+			if (ts.isCallExpression(node)) {
+				if (ts.isIdentifier(node.expression)) {
+					calledNames.add(node.expression.text);
+				} else if (
+					ts.isPropertyAccessExpression(node.expression) &&
+					node.expression.name.text === "register" &&
+					node.arguments.length > 0 &&
+					node.arguments[0] !== undefined &&
+					ts.isIdentifier(node.arguments[0])
+				) {
+					calledNames.add(node.arguments[0].text);
+				}
+			}
+			node.forEachChild(walk);
+		};
+		walk(source);
+		return calledNames;
+	})();
+
+	const neverInvoked = registrars.filter((name) => !calls.has(name));
 
 	assert.deepEqual(
 		neverInvoked,

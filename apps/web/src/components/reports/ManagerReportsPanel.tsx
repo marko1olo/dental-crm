@@ -627,7 +627,7 @@ export function ManagerReportsPanel({
 	const maxRevenue = useMemo(
 		() =>
 			summary?.revenue?.points?.reduce(
-				(max, point) => Math.max(max, point.amountRub),
+				(max, point) => Math.max(max, point.revenueRub),
 				0,
 			) ?? 0,
 		[summary],
