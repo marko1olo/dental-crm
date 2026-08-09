@@ -50,5 +50,15 @@ BE PROACTIVE. EXECUTE.
 4. **MANDATORY PIXEL INSPECTION**: The agent MUST open every PNG file using `view_file` and inspect the visual pixels with its own eyes BEFORE describing it in the report. The report caption MUST accurately state the exact pixel content. Describing uninspected or broken screenshots is treated as evidence fabrication.
 5. **TRUTH IN REPORTING**: 1 honest screenshot > 9 fake/cloned screenshots. If a UI feature cannot be visually captured or rendered, log it honestly as a DEBT item. Never pass off an unrendered screen as working.
 
-
-
+## 🏗️ MONOLITH DECOMPOSITION & POSTGRESQL SAFETY
+- **POSTGRESQL STARTUP**: On Windows, NEVER use `pg_ctl` to background PostgreSQL for E2E tests, it silently crashes when the parent session detaches. Kill `postmaster.pid` and run `postgres.exe` directly in the background. Verify `netstat -an | findstr 5432` before proceeding.
+- **DECOMPOSITION GATES**: When breaking apart massive files (e.g. `useAppLogic.tsx` >1000 lines), you MUST:
+  1. Compile a baseline (`tsc --noEmit`) and take Playwright screenshots BEFORE starting.
+  2. Write explicit TS interfaces for every extracted hook (banned `props: any`).
+  3. Verify all imports from origin using `findstr` (no hallucinated paths).
+  4. Write a detailed analysis of what was extracted.
+  5. RE-RUN `tsc --noEmit` AND Playwright E2E screenshots after EACH domain extraction. NEVER proceed to the next domain until visual layout is proven intact.
+- **PARANOIA GATES (STRICT PARITY)**: You MUST prove no logic was lost:
+  1. **Key Parity**: Compare the number of keys returned by `useAppLogic()` before and after extraction. They must match exactly.
+  2. **Diff Balance**: Verify that every line deleted from the monolith exists in the new file (no silent deletions of effects or statements).
+  3. **Anti-Optimization**: Strictly copy-paste. Never refactor or clean up code during the AST extraction phase.
