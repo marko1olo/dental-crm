@@ -27,17 +27,33 @@ const patientsSource = [
 ].join("\n");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 
+/*
+ * Требование принимает и подстроку, и выражение: приём взят из
+ * scripts/smoke-web-render-gating-source.mjs:208-216 (sourceHas), новой техники
+ * не изобретается. Выражение нужно там, где написание вокруг закрепляемой связи
+ * расставляет форматтер.
+ */
 function requireIn(source, needle, message) {
-	if (!source.includes(needle)) throw new Error(message);
+	const found =
+		needle instanceof RegExp ? needle.test(source) : source.includes(needle);
+	if (!found) throw new Error(message);
 }
 
 function forbidIn(source, needle, message) {
 	if (source.includes(needle)) throw new Error(message);
 }
 
+/*
+ * Дословно требовалось `lazy(() => import("./PatientsView")` одной строкой.
+ * Замерено 2026-08-09: коммит ad8f12499 форматтером разбил вызов надвое —
+ * App.tsx:98 держит `lazy(() =>`, перенос, `import("./PatientsView")`. Раздел
+ * грузится лениво как задумано, до правки EXIT=1. `\s*` засчитывает обе формы,
+ * прежнюю однострочную и текущую; `./PatientsViewLegacy` и статический импорт
+ * краснеют — проверено корпусом форм.
+ */
 requireIn(
 	appSource,
-	'lazy(() => import("./PatientsView")',
+	/lazy\(\(\)\s*=>\s*import\("\.\/PatientsView"\)/,
 	"App.tsx must lazy-load PatientsView.",
 );
 requireIn(
@@ -135,9 +151,17 @@ requireIn(
 	"aria-pressed={patientIsSelected}",
 	"Patient row open button must expose selected state.",
 );
+/*
+ * Тот же форматтерный перенос, что и у lazy выше. Замерено 2026-08-09:
+ * PatientAdministrativeForm.tsx:293-296 развернул вызов на четыре строки —
+ * `const weekdaySelected =` / `…preferredAppointmentWeekdays.includes(` /
+ * `day.value,` / `);`. Признак считается по-прежнему один раз и питает
+ * `aria-pressed` (:299) и класс (:300), до правки EXIT=1. Источник признака
+ * закреплён точно: другая коллекция или другое поле краснеют.
+ */
 requireIn(
 	patientsSource,
-	"const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(day.value);",
+	/const weekdaySelected =\s*patientAdministrativeProfileDraft\.preferredAppointmentWeekdays\.includes\(\s*day\.value,?\s*\)/,
 	"Patient weekday toggles must compute one selected state.",
 );
 requireIn(
@@ -155,9 +179,15 @@ requireIn(
 	"disabled={!patientCreateReady}",
 	"Patient creation button must not submit an empty name.",
 );
+/*
+ * Тот же форматтерный перенос. Замерено 2026-08-09: PatientsView.tsx:527-529
+ * развернул атрибут на три строки. Подсказка на месте — абзац с
+ * `id="patient-create-guidance"` стоит там же, строка 541, — то есть ссылка
+ * доступности никуда не ведёт вхолостую. До правки EXIT=1.
+ */
 requireIn(
 	patientsSource,
-	'aria-describedby={patientCreateGuidance ? "patient-create-guidance" : undefined}',
+	/aria-describedby=\{\s*patientCreateGuidance \? "patient-create-guidance" : undefined\s*\}/,
 	"Patient creation button must point to rendered create guidance.",
 );
 requireIn(
@@ -280,19 +310,34 @@ requireIn(
 	'aria-busy={patientCoreSaveState === "saving" || undefined}',
 	"Patient core save button must expose busy state.",
 );
+/*
+ * Тот же форматтерный перенос. Замерено 2026-08-10: PatientsView.tsx:1138-1141
+ * развернул атрибут на четыре строки — `aria-busy={` / операнд / `undefined` /
+ * `}`. Занятость кнопки «Сохранить реквизиты» на месте и дублируется
+ * отключением (`disabled={!patientAdministrativeProfileReadyToSave}`, :1147),
+ * до правки EXIT=1. Признак закреплён точно: другое поле состояния или другой
+ * литерал вместо "saving" краснеют.
+ */
 requireIn(
 	patientsSource,
-	'aria-busy={patientAdministrativeProfileSaveState === "saving" || undefined}',
+	/aria-busy=\{\s*patientAdministrativeProfileSaveState === "saving" \|\|\s*undefined\s*\}/,
 	"Patient administrative save button must expose busy state.",
 );
+/*
+ * Оба `aria-describedby` развёрнуты форматтером: PatientsView.tsx:965-967 и
+ * :1142-1146. Смысл проверки не изменился — ссылка на подсказку выдаётся ТОЛЬКО
+ * когда подсказка отрисована, иначе экранный диктор уводит на несуществующий
+ * идентификатор. Тернарник закреплён целиком, поэтому безусловная ссылка
+ * (`aria-describedby={patientCoreSaveGuidanceId}`) продолжает краснеть.
+ */
 requireIn(
 	patientsSource,
-	"aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}",
+	/aria-describedby=\{\s*patientCoreSaveGuidance \? patientCoreSaveGuidanceId : undefined\s*\}/,
 	"Patient core save button must only point to rendered guidance.",
 );
 requireIn(
 	patientsSource,
-	"aria-describedby={patientAdministrativeSaveGuidance ? patientAdministrativeSaveGuidanceId : undefined}",
+	/aria-describedby=\{\s*patientAdministrativeSaveGuidance\s*\?\s*patientAdministrativeSaveGuidanceId\s*:\s*undefined\s*\}/,
 	"Patient administrative save button must only point to rendered guidance.",
 );
 requireIn(
