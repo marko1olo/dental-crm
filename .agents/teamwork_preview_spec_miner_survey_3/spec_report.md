@@ -78,7 +78,7 @@ All work is governed by **Zero AI Optimism** (T.A.R.S. Mode) and strict physical
 | 7 | Architecture | AppHelpers Dismantling: Clinic Profile Utils | Extracting clinic profile update validators, working hours formatters, specialty & feature flags into `utils/clinicProfileUtils.ts` | Clinic profile input objects | Formatted profile attributes & feature availability | Throws validation error if required fields missing | `apps/web/src/AppHelpers.tsx` & `ORIGINAL_REQUEST.md` R3 |
 | 8 | Build Quality | Circular Dependency Guard | Static analysis using `madge` to detect circular import paths originating from `apps/web/src/main.tsx` | Entry file `apps/web/src/main.tsx` | Graph of module dependencies, circular list | Non-zero exit code if circular dependencies exist | `package.json` & `ORIGINAL_REQUEST.md` R4 |
 | 9 | Type Safety | TypeScript Workspace Typecheck | Monorepo incremental type checking with `tsc -b --noEmit` across web app | Web workspace source files (`apps/web/src/**/*.ts*`) | Typecheck status, error log | Non-zero exit code on TS errors (TS2339, TS2307, etc.) | `apps/web/package.json` & `ORIGINAL_REQUEST.md` R4 |
-| 10 | Encoding | Cyrillic UTF-8 Encoding Guard | Script checking repository files for double-encoded or corrupted Cyrillic strings (mojibake) | Source files (`.ts`, `.tsx`, `.json`, `.md`) | List of clean / broken files | Fails check if char patterns like `РљР°СЂРёРµСЃ` are found | `package.json` (`check:encoding`) & `AGENTS.md` |
+| 10 | Encoding | Cyrillic UTF-8 Encoding Guard | Script checking repository files for double-encoded or corrupted Cyrillic strings (mojibake) | Source files (`.ts`, `.tsx`, `.json`, `.md`) | List of clean / broken files | Fails check if char patterns like `Кариес` are found | `package.json` (`check:encoding`) & `AGENTS.md` |
 
 ---
 
@@ -93,7 +93,7 @@ All work is governed by **Zero AI Optimism** (T.A.R.S. Mode) and strict physical
 | 4 | Playwright Auth Injection | Missing `dente_clinic_token` or `dente_staff_token` in `localStorage` | App triggers auth gate and redirects to Login Screen. E2E tests for authenticated panels must pre-inject valid tokens via `page.addInitScript()`. |
 | 5 | Mobile Theme Verification | 390px viewport width (Mobile view) in Dark Mode | UI layouts must scale cleanly using relative units (rem, em, %) without horizontal scrolling, overlapping buttons, or unreadable low-contrast text. |
 | 6 | Financial Integer Calculations | Currency amounts passed as floating point numbers (e.g. `1500.50`) | Integer kopeck arithmetic mandate (1 RUB = 100 kopecks) requires explicit conversion (`Math.round(rub * 100)`) to prevent float precision drift in PostgreSQL. |
-| 7 | Cyrillic Input & Encoding | Russian text edited via PowerShell or non-UTF8 tools | String corruption (mojibake like `РљР°СЂРёРµСЃ`). Files MUST be created/modified using explicit UTF-8 writers (`write_to_file`) and verified via `npm run check:encoding`. |
+| 7 | Cyrillic Input & Encoding | Russian text edited via PowerShell or non-UTF8 tools | String corruption (mojibake like `Кариес`). Files MUST be created/modified using explicit UTF-8 writers (`write_to_file`) and verified via `npm run check:encoding`. |
 | 8 | Async Action Button Double-Click | User rapidly clicks submit button while promise resolves | Loading guard (`isSubmitting` / `disabled={isSubmitting}`) must lock UI synchronously before async yield to prevent duplicate backend mutations. |
 
 ---

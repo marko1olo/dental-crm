@@ -36,7 +36,13 @@
  * Код возврата 1, если что-то найдено, — можно ставить в pre-commit и в CI.
  */
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import {
+	existsSync,
+	readdirSync,
+	readFileSync,
+	statSync,
+} from "node:fs";
+import { spawnSync } from "node:child_process";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -297,6 +303,34 @@ function decodeStrictUtf8(buffer) {
 	}
 }
 
+/*
+ * ОБХОД ИДЁТ ПО ПРАВИЛАМ GIT, А НЕ ПО СВОЕМУ СПИСКУ КАТАЛОГОВ.
+ *
+ * SKIP_DIRS выше — вторая копия правил игнора, и она разошлась с `.gitignore`,
+ * как расходится любая вторая копия. Замер 2026-08-09: в списке есть
+ * `test-results`, но нет `playwright-report`, поэтому гейт читал
+ * `apps/web/playwright-report/index.html` — сгенерированный Playwright отчёт,
+ * НЕ отслеживаемый и уже покрытый `.gitignore:43` — и выдавал на нём мохибаку
+ * как находку. Гейт был красным из-за файла, которого в репозитории нет.
+ *
+ * `git ls-files --cached --others --exclude-standard` даёт ровно нужный состав:
+ * отслеживаемые плюс новые, но БЕЗ игнорируемых. Это то, что git считает
+ * проектом, — а гейт защищает именно проект, а не рабочий каталог. Список
+ * пополнять больше не нужно: добавили путь в `.gitignore` — гейт узнал сам.
+ *
+ * SKIP_DIRS оставлен: `scratch` и `.data` отслеживаются частично, и по ним
+ * ходить всё равно незачем. Список стал сужением, а не источником правды.
+ */
+function gitProjectFiles() {
+	const out = spawnSync(
+		"git",
+		["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+		{ cwd: repoRoot, encoding: "buffer", maxBuffer: 64 * 1024 * 1024 },
+	);
+	if (out.status !== 0) return null;
+	return out.stdout.toString("utf8").split("\0").filter(Boolean);
+}
+
 function* walk(directory) {
 	for (const entry of readdirSync(directory, { withFileTypes: true })) {
 		if (entry.isDirectory()) {
@@ -311,10 +345,36 @@ function* walk(directory) {
 	}
 }
 
+/**
+ * Состав к проверке. Если git недоступен (сборка из архива без `.git`),
+ * падать нельзя — возвращаемся к обходу каталогов и говорим об этом вслух,
+ * чтобы «проверено 5680 файлов» не читалось как проверка того же состава.
+ */
+function* filesToCheck() {
+	const tracked = gitProjectFiles();
+	if (!tracked) {
+		process.stdout.write(
+			"git недоступен — обход по каталогам, игнорируемое может попасть в находки.\n",
+		);
+		yield* walk(repoRoot);
+		return;
+	}
+	for (const relative of tracked) {
+		const parts = relative.split("/");
+		if (parts.some((part) => SKIP_DIRS.has(part))) continue;
+		if (!CHECKED_EXTENSIONS.some((extension) => relative.endsWith(extension)))
+			continue;
+		const full = join(repoRoot, relative);
+		// Файл может быть в индексе и удалён в рабочем каталоге.
+		if (!existsSync(full)) continue;
+		yield full;
+	}
+}
+
 const problems = [];
 let checked = 0;
 
-for (const filePath of walk(repoRoot)) {
+for (const filePath of filesToCheck()) {
 	// Файлы больше 8 МБ — это не исходники, а выгрузки и логи.
 	if (statSync(filePath).size > 8 * 1024 * 1024) continue;
 	checked += 1;
