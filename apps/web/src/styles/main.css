@@ -268,24 +268,37 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
+	/* `!important` здесь не перестраховка, а единственный способ, которым сброс
+     вообще срабатывает, и снимать его нельзя. Селектор `*` имеет специфичность
+     (0,0,0), поэтому ЛЮБОЕ правило по классу — (0,1,0) и выше — перебивает его
+     независимо от порядка строк. Замерено 2026-08-10 на этом файле: таких
+     правил с transition/animation ровно 28, среди них `.workspace > *`,
+     `.panel`, `.shift-hero > *` — то есть ровно те входные анимации, ради
+     которых блок и писался. Без `!important` врач, выключивший анимацию в
+     системе, продолжал получать все 0,22 с движения: блок выглядел
+     работающим и не работал.
+     Исключение — `html`: там специфичность равна конкурирующему правилу
+     `scroll-behavior: smooth` (строка 194), и вопрос решает порядок, но
+     `!important` оставлен и здесь, чтобы правило не зависело от того, куда
+     кто-то вставит следующий блок. */
 	html {
-		scroll-behavior: auto;
+		scroll-behavior: auto !important;
 	}
 
 	*,
 	*::before,
 	*::after {
-		animation-duration: 0.01ms;
+		animation-duration: 0.01ms !important;
 		/* Обнулённой длительности НЕ ДОСТАТОЧНО. Задержка здесь не гасилась, а при
        `animation-fill-mode: backwards`/`both` элемент всё время задержки держит
        кадр `from` — у входных анимаций это `opacity: 0`. Врач, выключивший
        анимацию в системе, всё равно получал раздел, невидимый до 0,22 с.
        Отрицательная задержка сдвигает анимацию за её собственный конец, поэтому
        элемент сразу показывается в конечном кадре. */
-		animation-delay: -0.01ms;
-		animation-iteration-count: 1;
-		scroll-behavior: auto;
-		transition-duration: 0.01ms;
+		animation-delay: -0.01ms !important;
+		animation-iteration-count: 1 !important;
+		scroll-behavior: auto !important;
+		transition-duration: 0.01ms !important;
 	}
 }
 

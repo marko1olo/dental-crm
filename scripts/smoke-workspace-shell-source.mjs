@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 /*
  * ПЕРЕВОДЫ СТРОК НОРМАЛИЗУЮТСЯ ПРИ ЧТЕНИИ, И БЕЗ ЭТОГО СТРАЖ — МОНЕТКА.
@@ -584,11 +584,6 @@ requireIn(
 	"Programmatic scroll helper must expose one safe route",
 );
 requireIn(
-	appSource,
-	'from "./motionPreference"',
-	"App.tsx must use the reduced-motion aware scroll helper",
-);
-requireIn(
 	financeViewSource,
 	'from "./motionPreference"',
 	"FinanceView must use the reduced-motion aware scroll helper",
@@ -598,31 +593,56 @@ requireIn(
 	'from "./motionPreference"',
 	"ScheduleView must use the reduced-motion aware scroll helper",
 );
-requireIn(
-	settingsViewSource,
-	'from "./motionPreference"',
-	"SettingsView must use the reduced-motion aware scroll helper",
-);
-forbidIn(
-	appSource,
-	'scrollIntoView({ behavior: "smooth"',
-	"App.tsx must not force smooth programmatic scrolling",
-);
-forbidIn(
-	financeViewSource,
-	'scrollIntoView({ behavior: "smooth"',
-	"FinanceView must not force smooth programmatic scrolling",
-);
-forbidIn(
-	scheduleViewSource,
-	'scrollIntoView({ behavior: "smooth"',
-	"ScheduleView must not force smooth programmatic scrolling",
-);
-forbidIn(
-	settingsViewSource,
-	'scrollIntoView({ behavior: "smooth"',
-	"SettingsView must not force smooth programmatic scrolling",
-);
+/*
+ * ПРИНУДИТЕЛЬНЫЙ smooth ИЩЕТСЯ ПО ВСЕМУ ДЕРЕВУ, А НЕ В ЧЕТЫРЁХ ФАЙЛАХ.
+ *
+ * Здесь стояло четыре проверки по именам: App, FinanceView, ScheduleView,
+ * SettingsView. Все четыре были зелёными, а нарушение жило в пятом файле —
+ * `components/settings/AiRecognitionJobsPanel.tsx:248` форсировал
+ * `behavior: "smooth"` в обход motionPreference. Замерено 2026-08-10: это
+ * было единственное такое место в apps/web, и гейт его не видел два месяца,
+ * потому что перечисление файлов побеждается добавлением файла.
+ *
+ * Требования «App.tsx и SettingsView обязаны импортировать помощник» сняты
+ * как ложные: ни один из этих файлов ничего не прокручивает. App.tsx получает
+ * `scrollToVisitArea` из хука (App.tsx:801) — сама прокрутка живёт в
+ * `hooks/domains/useVisitLogic.ts:1189` и помощник там используется;
+ * SettingsView не содержит ни одного вызова прокрутки. Обязательный, но
+ * никем не используемый импорт — мёртвый код, а не доступность.
+ *
+ * `behavior: "auto"` НЕ нарушение: он не анимирует никогда, поэтому
+ * вестибулярного вреда не наносит (так сделан useAppLogic.tsx:2901).
+ * Запрещён именно `smooth`, навязанный поверх системного предпочтения.
+ */
+const SMOOTH_SCROLL_PATTERN =
+	/\.(?:scrollIntoView|scrollTo|scrollBy)\(\s*\{[^}]*behavior\s*:\s*["']smooth["']/;
+const MOTION_HELPER_FILE = "apps/web/src/motionPreference.ts";
+
+function collectWebSources(dir, out) {
+	for (const entry of readdirSync(dir, { withFileTypes: true })) {
+		if (entry.name === "node_modules" || entry.name === "dist") continue;
+		const full = `${dir}/${entry.name}`;
+		if (entry.isDirectory()) collectWebSources(full, out);
+		else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name))
+			out.push(full);
+	}
+	return out;
+}
+
+const webSources = collectWebSources("apps/web/src", []);
+if (webSources.length < 50) {
+	console.error(
+		`Workspace shell source smoke aborted: обход apps/web/src дал ${webSources.length} файлов — обход сломан, а не дерево пусто.`,
+	);
+	process.exit(2);
+}
+for (const file of webSources) {
+	if (file === MOTION_HELPER_FILE) continue;
+	if (SMOOTH_SCROLL_PATTERN.test(readSource(file)))
+		missing.push(
+			`${file} must not force smooth scrolling — используй motionSafeScrollIntoView из motionPreference.ts`,
+		);
+}
 
 if (missing.length > 0) {
 	console.error("Workspace shell source smoke failed:");
