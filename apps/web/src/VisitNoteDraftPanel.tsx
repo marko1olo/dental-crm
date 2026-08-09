@@ -338,17 +338,17 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 						</div>
 					))}
 					{draft.quality?.detectedToothCodes &&
-						draft.quality.detectedToothCodes.length > 0 && (
+						(draft.quality.detectedToothCodes ?? []).length > 0 && (
 							<p className="text-xs text-zinc-400">
 								Зубы:{" "}
 								<span className="font-mono text-violet-200">
-									{draft.quality.detectedToothCodes.join(", ")}
+									{(draft.quality.detectedToothCodes ?? []).join(", ")}
 								</span>
 							</p>
 						)}
-					{draft.warnings && draft.warnings.length > 0 && (
+					{draft.warnings && (draft.warnings ?? []).length > 0 && (
 						<ul className="text-xs text-amber-200/90 list-disc pl-4 space-y-0.5">
-							{draft.warnings.map((w) => (
+							{(draft.warnings ?? []).map((w) => (
 								<li key={w}>{w}</li>
 							))}
 						</ul>

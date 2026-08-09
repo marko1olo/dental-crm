@@ -3,43 +3,47 @@ const project = new Project();
 
 // Add files
 project.addSourceFilesAtPaths([
-    "apps/web/src/views/**/*.tsx",
-    "apps/web/src/components/**/*.tsx"
+	"apps/web/src/views/**/*.tsx",
+	"apps/web/src/components/**/*.tsx",
 ]);
 
 let count = 0;
 
 for (const sourceFile of project.getSourceFiles()) {
-    let fileChanged = false;
-    const propAccesses = sourceFile.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression);
-    
-    // We want to process them in reverse order to avoid breaking offsets
-    const toProcess = propAccesses.filter(p => {
-        if (p.getName() !== "map") return false;
-        if (p.hasQuestionDotToken()) return false;
-        
-        // Ensure it's part of a CallExpression
-        const parent = p.getParent();
-        if (parent && parent.getKind() === SyntaxKind.CallExpression) {
-            return true;
-        }
-        return false;
-    }).reverse();
+	let fileChanged = false;
+	const propAccesses = sourceFile.getDescendantsOfKind(
+		SyntaxKind.PropertyAccessExpression,
+	);
 
-    for (const p of toProcess) {
-        if (count >= 20) break;
-        const expr = p.getExpression().getText();
-        p.replaceWithText(`${expr}?.map`);
-        fileChanged = true;
-        count++;
-    }
+	// We want to process them in reverse order to avoid breaking offsets
+	const toProcess = propAccesses
+		.filter((p) => {
+			if (p.getName() !== "map") return false;
+			if (p.hasQuestionDotToken()) return false;
 
-    if (fileChanged) {
-        sourceFile.saveSync();
-        console.log(`Patched unprotected .map in: ${sourceFile.getFilePath()}`);
-    }
-    
-    if (count >= 20) break;
+			// Ensure it's part of a CallExpression
+			const parent = p.getParent();
+			if (parent && parent.getKind() === SyntaxKind.CallExpression) {
+				return true;
+			}
+			return false;
+		})
+		.reverse();
+
+	for (const p of toProcess) {
+		if (count >= 20) break;
+		const expr = p.getExpression().getText();
+		p.replaceWithText(`${expr}?.map`);
+		fileChanged = true;
+		count++;
+	}
+
+	if (fileChanged) {
+		sourceFile.saveSync();
+		console.log(`Patched unprotected .map in: ${sourceFile.getFilePath()}`);
+	}
+
+	if (count >= 20) break;
 }
 
 console.log(`Patched ${count} instances.`);

@@ -1,0 +1,174 @@
+a/apps/web/src/ctPlanningExportPanel.tsx b/apps/web/src/ctPlanningExportPanel.tsx
+index e31858f98..fe1b3772f 100644
+--- a/apps/web/src/ctPlanningExportPanel.tsx
++++ b/apps/web/src/ctPlanningExportPanel.tsx
+@@ -37,14 +37,16 @@ const ownerLabels: Record<
+ function buildReleaseGate(
+ 	packet: CtPlanningExportPacket,
+ ): CtPlanningReleaseGate {
+-	const blockedFact = packet.clinicalFacts.find(
+-		(fact) => fact.tone === "blocked",
++	const clinicalFacts = packet?.clinicalFacts ?? [];
++	const missingArtifacts = packet?.missingArtifacts ?? [];
++	const blockedFact = clinicalFacts.find(
++		(fact) => fact?.tone === "blocked",
+ 	);
+-	const warningFact = packet.clinicalFacts.find(
+-		(fact) => fact.tone === "warning",
++	const warningFact = clinicalFacts.find(
++		(fact) => fact?.tone === "warning",
+ 	);
+-	const missingArtifact = packet.missingArtifacts[0];
+-	const scenario = packet.activeScenarioSummary;
++	const missingArtifact = missingArtifacts[0];
++	const scenario = packet?.activeScenarioSummary;
+ 	if (scenario?.status === "blocked") {
+ 		return {
+ 			tone: "blocked",
+@@ -53,7 +55,7 @@ function buildReleaseGate(
+ 			action: scenario.nextAction,
+ 		};
+ 	}
+-	if (scenario?.status === "warning" && packet.status !== "blocked") {
++	if (scenario?.status === "warning" && packet?.status !== "blocked") {
+ 		return {
+ 			tone: "warning",
+ 			title: "Сначала закрыть сценарий",
+@@ -61,7 +63,7 @@ function buildReleaseGate(
+ 			action: scenario.nextAction,
+ 		};
+ 	}
+-	if (packet.status === "ready") {
++	if (packet?.status === "ready") {
+ 		return {
+ 			tone: "ready",
+ 			title: "Можно фиксировать",
+@@ -69,7 +71,7 @@ function buildReleaseGate(
+ 			action: "Сохранить пакет плана и передать по маршруту.",
+ 		};
+ 	}
+-	if (packet.status === "warning") {
++	if (packet?.status === "warning") {
+ 		return {
+ 			tone: "warning",
+ 			title: "Только черновик",
+@@ -86,29 +88,30 @@ function buildReleaseGate(
+ 			? `${blockedFact.title}: ${blockedFact.value}`
+ 			: (missingArtifact ??
+ 				"Нет переносимого состояния или есть клинический блокер."),
+-		action: packet.nextAction,
++		action: packet?.nextAction ?? "",
+ 	};
+ }
+ 
+ function buildImplantFitHandoff(
+ 	plan: CtPlanningImplantFitPlan,
+ ): CtPlanningImplantFitHandoff {
++	const candidates = plan?.candidates ?? [];
+ 	const candidate =
+-		plan.candidates.find((item) => item.id === plan.selectedCandidateId) ??
+-		plan.candidates[0] ??
++		candidates.find((item) => item?.id === plan?.selectedCandidateId) ??
++		candidates[0] ??
+ 		null;
+ 	if (!candidate) {
+ 		return {
+ 			tone:
+-				plan.status === "ready"
++				plan?.status === "ready"
+ 					? "ready"
+-					: plan.status === "blocked"
++					: plan?.status === "blocked"
+ 						? "blocked"
+ 						: "warning",
+ 			title: "Типоразмер не выбран",
+-			value: `${plan.score}%`,
++			value: `${plan?.score ?? 0}%`,
+ 			detail:
+-				plan.warnings[0] ?? "Нужно сверить библиотеку имплантов с линейками.",
++				(plan?.warnings ?? [])[0] ?? "Нужно сверить библиотеку имплантов с линейками.",
+ 			action: "Выбрать типоразмер после ширины, высоты и канала.",
+ 		};
+ 	}
+@@ -121,7 +124,7 @@ function buildImplantFitHandoff(
+ 					: "warning",
+ 		title: candidate.selected ? "Выбранный типоразмер" : "Кандидат для сверки",
+ 		value: `${candidate.sizeLabel} · ${candidate.score}%`,
+-		detail: candidate.decisionReasons.join(" · "),
++		detail: (candidate.decisionReasons ?? []).join(" · "),
+ 		action: candidate.nextAction,
+ 	};
+ }
+@@ -197,13 +200,13 @@ export function CtPlanningExportPanel({
+ 			data-testid="ct-planning-export-board"
+ 			aria-label="Пакет передачи КТ-плана"
+ 		>
+-			<article className={`ct-planning-export-summary ${packet.status}`}>
++			<article className={`ct-planning-export-summary ${packet?.status ?? ""}`}>
+ 				<span>Пакет КТ-плана</span>
+ 				<strong>
+-					{packet.score}% · {packet.title}
++					{packet?.score ?? 0}% · {packet?.title}
+ 				</strong>
+-				<p>{packet.handoffSummary}</p>
+-				<small>{packet.nextAction}</small>
++				<p>{packet?.handoffSummary}</p>
++				<small>{packet?.nextAction}</small>
+ 				<div
+ 					role="toolbar"
+ 					className="ct-planning-export-actions"
+@@ -277,38 +280,38 @@ export function CtPlanningExportPanel({
+ 				className="ct-planning-export-facts"
+ 				aria-label="Ключевые факты КТ-плана"
+ 			>
+-				{packet.clinicalFacts.map((fact) => (
++				{(packet?.clinicalFacts ?? []).map((fact) => (
+ 					<article
+-						className={`ct-planning-export-fact ${fact.tone}`}
+-						key={fact.id}
++						className={`ct-planning-export-fact ${fact?.tone ?? ""}`}
++						key={fact?.id}
+ 					>
+-						<span>{fact.title}</span>
+-						<strong>{fact.value}</strong>
+-						<p>{fact.detail}</p>
++						<span>{fact?.title}</span>
++						<strong>{fact?.value}</strong>
++						<p>{fact?.detail}</p>
+ 					</article>
+ 				))}
+ 			</section>
+ 			<div className="ct-planning-export-lanes">
+-				{packet.lanes.map((lane) => (
++				{(packet?.lanes ?? []).map((lane) => (
+ 					<article
+-						className={`ct-planning-export-card ${lane.status}`}
+-						key={lane.id}
++						className={`ct-planning-export-card ${lane?.status ?? ""}`}
++						key={lane?.id}
+ 					>
+-						<span>{ownerLabels[lane.owner]}</span>
+-						<strong>{lane.title}</strong>
+-						<b>{lane.value}</b>
+-						<p>{lane.detail}</p>
+-						<small>{lane.nextAction}</small>
++						<span>{lane?.owner ? (ownerLabels[lane.owner] ?? lane.owner) : ""}</span>
++						<strong>{lane?.title}</strong>
++						<b>{lane?.value}</b>
++						<p>{lane?.detail}</p>
++						<small>{lane?.nextAction}</small>
+ 					</article>
+ 				))}
+ 			</div>
+-			{packet.missingArtifacts.length > 0 ? (
++			{(packet?.missingArtifacts ?? []).length > 0 ? (
+ 				<section
+ 					className="ct-planning-export-missing"
+ 					aria-label="Чего не хватает для передачи КТ-плана"
+ 				>
+ 					<span>Не хватает</span>
+-					<p>{packet.missingArtifacts.join(" · ")}</p>
++					<p>{(packet?.missingArtifacts ?? []).join(" · ")}</p>
+ 				</section>
+ 			) : null}
+ 		</section>

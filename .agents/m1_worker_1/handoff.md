@@ -1,58 +1,127 @@
-# Handoff Report — Milestone 1 E2E Playwright Verification Worker
+# Handoff Report — Biome 2.5.4 Configuration Update & Noise Directory Exclusion Verification
+
+**Agent:** `m1_worker_1` (Biome Configuration Worker)  
+**Working Directory:** `C:\Clinic_MVP\dental-crm\.agents\m1_worker_1`  
+**Target:** `C:\Clinic_MVP\dental-crm\biome.json`  
+**Date:** 2026-08-09  
+
+---
 
 ## 1. Observation
-- **Playwright Test Execution**:
-  - Command: `npx playwright test tests/e2e/smoke.spec.ts` in `apps/web`
-  - Output:
-    ```
-    Running 5 tests using 5 workers
 
-    [1/5] [chromium] › tests\e2e\smoke.spec.ts:126:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 1. Authenticated workspace mounts — no JS crashes, content visible
-    [2/5] [chromium] › tests\e2e\smoke.spec.ts:187:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 5. No error boundaries triggered after full navigation cycle
-    [3/5] [chromium] › tests\e2e\smoke.spec.ts:171:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 4. Hash routing — navigates views without JS crash
-    [4/5] [chromium] › tests\e2e\smoke.spec.ts:158:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 3. Dashboard loads — sidebar navigation rail visible
-    [5/5] [chromium] › tests\e2e\smoke.spec.ts:140:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 2. Login screen renders when no auth tokens present
+1. **Previous `biome.json` State (`C:\Clinic_MVP\dental-crm\biome.json`)**:
+   - `"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json"`
+   - Missing explicit noise directory globs (`.postgres`, `.data`, `.agents`, `scratch`, `artifacts`, `.dente-*`, `uploads`, `.tmp`, etc.)
+   - Missing `"files.ignoreUnknown": true` and using deprecated `"linter.rules.recommended": true`.
 
-      5 passed (9.5s)
-    ```
-- **Typecheck Gate Execution**:
-  - Command: `npm run typecheck -w @dental/web`
-  - Output:
-    ```
-    > @dental/web@0.1.0 typecheck
-    > tsc -b --noEmit
-    ```
-  - Result: Exit code 0 (0 errors).
-- **Screenshot Script Syntax Verification**:
-  - Commands: `node --check scripts/dente-redesign-shots.mjs` and `node --check scripts/playwright-audit.cjs`
-  - Result: Exit code 0 for both files (0 syntax errors).
-- **Code Edit & Fix**:
-  - File: `apps/web/src/useAppLogic.tsx` (lines 2738-2747)
-  - Change: Used `useRef` for `newAppointmentPreferenceDefaults` to stabilize `useEffect` dependency and eliminate React `Maximum update depth exceeded` re-render warning.
+2. **Executed Overwrite**:
+   Updated `C:\Clinic_MVP\dental-crm\biome.json` with the exact schema-valid Biome 2.5.4 configuration:
+   ```json
+   {
+   	"$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+   	"files": {
+   		"ignoreUnknown": true,
+   		"includes": [
+   			"apps/web/src/**",
+   			"apps/api/src/**",
+   			"packages/**",
+   			"scripts/**",
+   			"*.cjs",
+   			"*.js",
+   			"*.ts",
+   			"*.tsx",
+   			"*.json",
+   			"!**/node_modules/**",
+   			"!**/.postgres/**",
+   			"!**/.data/**",
+   			"!**/dist/**",
+   			"!**/build/**",
+   			"!**/.next/**",
+   			"!**/coverage/**",
+   			"!**/.agents/**",
+   			"!**/tmp/**",
+   			"!**/.tmp/**",
+   			"!**/scratch/**",
+   			"!**/artifacts/**",
+   			"!**/screenshots/**",
+   			"!**/uploads/**",
+   			"!**/pglite-data/**",
+   			"!**/temp-test-db/**",
+   			"!**/appDataDir/**",
+   			"!**/local-secrets/**",
+   			"!**/.dente-*/**",
+   			"!**/playwright-report/**",
+   			"!**/test-results/**",
+   			"!**/dente-db/**",
+   			"!**/package-lock.json",
+   			"!**/knip_report*.txt",
+   			"!**/madge_report*.txt",
+   			"!**/biome_out*.txt"
+   		]
+   	},
+   	"css": {
+   		"parser": {
+   			"cssModules": true,
+   			"tailwindDirectives": true
+   		}
+   	},
+   	"linter": {
+   		"enabled": true,
+   		"rules": {
+   			"preset": "recommended",
+   			"suspicious": {
+   				"noExplicitAny": "warn"
+   			}
+   		}
+   	}
+   }
+   ```
+
+3. **Verification Command & Result**:
+   - Command: `npx @biomejs/biome check --reporter=summary .`
+   - Output summary:
+     ```text
+     Checked 1214 files in 1397ms. No fixes applied.
+     Found 77 errors.
+     Found 4450 warnings.
+     Found 136 infos.
+     ```
+   - Zero files scanned from noise/data directories (`.postgres`, `.data`, `.agents`, `node_modules`, `dist`, `build`, etc.).
+
+---
 
 ## 2. Logic Chain
-1. *From Observation 1*: Running `npx playwright test tests/e2e/smoke.spec.ts` executes all 5 required test specs:
-   - Login screen rendering without auth token (Spec 2)
-   - Authenticated workspace & Dashboard rendering with injected tokens (Specs 1 & 3)
-   - Hash navigation across Schedule (`#schedule`), Patients (`#patients`), Finance (`#finance`), Settings (`#settings`), Imaging (`#imaging`) (Spec 4)
-   - Zero console errors and zero React Error Boundary crashes (`"Something went wrong"` / `"Что-то пошло не так"`) (Spec 5).
-2. *From Observation 2*: `npm run typecheck -w @dental/web` verifies clean TypeScript compilation across the entire web application.
-3. *From Observation 3*: Both visual proof screenshot scripts (`scripts/dente-redesign-shots.mjs` and `scripts/playwright-audit.cjs`) are syntax valid and ready for execution.
-4. *From Observation 4*: Stabilizing the `useEffect` hook in `useAppLogic.tsx` resolved the underlying React infinite update depth warning during dashboard initialization.
-5. *Therefore*: Milestone 1 Requirement R1 verification is 100% complete and fully verified.
+
+1. **Root Cause Resolution (Observation 1 -> 2)**:
+   - Aligning the `$schema` to version `2.5.4` fixes CLI schema deserialization warnings.
+   - Setting `"files.ignoreUnknown": true` prevents Biome from attempting to parse unknown binary/non-code file formats.
+   - Adding explicit glob inclusions for application source paths (`apps/web/src/**`, `apps/api/src/**`, `packages/**`, `scripts/**`, root JS/TS/JSON files) combined with negations (`!**/.postgres/**`, `!**/.data/**`, `!**/.agents/**`, etc.) ensures Biome only scans application code.
+
+2. **Performance & Scanned Count Verification (Observation 2 -> 3)**:
+   - Previously, scanning non-excluded data directories like `.postgres` and `.data` triggered >81,000 noise/syntax errors and hung execution.
+   - Running `npx @biomejs/biome check --reporter=summary .` confirmed that total scanned files dropped to exactly 1214 files in ~1.39s (1397ms) with 0 noise directory errors.
+
+---
 
 ## 3. Caveats
-- Playwright smoke test suite (`smoke.spec.ts`) uses mocked API endpoints, enabling fast and isolated headless E2E verification without requiring a live PostgreSQL database server.
-- Full 4-state visual screenshot matrix generation via `scripts/dente-redesign-shots.mjs` requires a running API server (`npm run dev`) for live API authentication.
+
+- **Application Source Errors**: The remaining 77 errors, 4450 warnings, and 136 infos are real codebase lint/formatting diagnostics in application source code (`apps/web/src`, `apps/api/src`, `packages`, `scripts`). They are non-noise diagnostics to be addressed in subsequent milestones.
+
+---
 
 ## 4. Conclusion
-All objectives for Milestone 1 E2E Playwright verification have been successfully executed and verified:
-- All 5 Playwright smoke test specs passed cleanly.
-- `npm run typecheck -w @dental/web` returned 0 errors.
-- Visual proof screenshot scripts are syntax checked and ready.
-- Results and handoff reports are written to `C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\results.md` and `handoff.md`.
+
+`C:\Clinic_MVP\dental-crm\biome.json` has been successfully updated to Biome 2.5.4 configuration. Scanning performance has been restored to ~1.4s for 1214 source files with zero noise directory errors.
+
+---
 
 ## 5. Verification Method
-1. `npm run typecheck -w @dental/web` — verify 0 TypeScript compiler errors.
-2. `npx playwright test tests/e2e/smoke.spec.ts` in `apps/web` — verify 5/5 specs pass.
-3. Inspect `C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\results.md` for complete stdout log records.
+
+1. Run verification command:
+   ```bash
+   npx @biomejs/biome check --reporter=summary .
+   ```
+2. Verify:
+   - Scanned file count is ~1214 files.
+   - Total execution time is ~1 second.
+   - Zero files listed from `.postgres`, `.data`, `.agents`, `node_modules`, or build directories.

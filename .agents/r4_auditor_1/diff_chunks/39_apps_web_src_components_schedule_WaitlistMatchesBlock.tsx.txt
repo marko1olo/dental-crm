@@ -1,0 +1,63 @@
+a/apps/web/src/components/schedule/WaitlistMatchesBlock.tsx b/apps/web/src/components/schedule/WaitlistMatchesBlock.tsx
+index b9fc29dd9..da184d374 100644
+--- a/apps/web/src/components/schedule/WaitlistMatchesBlock.tsx
++++ b/apps/web/src/components/schedule/WaitlistMatchesBlock.tsx
+@@ -200,9 +200,9 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
+ 					</h3>
+ 					{report ? (
+ 						<span
+-							className={`status-pill ${report.matches.length > 0 ? "status-arrived" : "status-planned"}`}
++							className={`status-pill ${(report?.matches ?? []).length > 0 ? "status-arrived" : "status-planned"}`}
+ 						>
+-							{report.matches.length}
++							{(report?.matches ?? []).length}
+ 						</span>
+ 					) : null}
+ 				</div>
+@@ -267,21 +267,21 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
+ 				</p>
+ 			) : null}
+ 
+-			{report && report.matches.length === 0 && !error ? (
++			{report && (report?.matches ?? []).length === 0 && !error ? (
+ 				<p
+ 					className="ops-note"
+ 					data-testid="waitlist-matches-empty"
+ 					style={{ margin: "6px 0" }}
+ 				>
+ 					В листе ожидания подходящих нет
+-					{report.examinedEntries > 0
++					{(report?.examinedEntries ?? 0) > 0
+ 						? ` (смотрели ${report.examinedEntries} в очереди)`
+ 						: ", очередь пуста"}
+ 					. Окно можно отдать под запись с улицы.
+ 				</p>
+ 			) : null}
+ 
+-			{report && report.matches.length > 0 ? (
++			{report && (report?.matches ?? []).length > 0 ? (
+ 				<ul
+ 					data-testid="waitlist-matches-list"
+ 					style={{
+@@ -299,10 +299,10 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
+ 							{report.slot.doctorName ? ` · ${report.slot.doctorName}` : ""}
+ 						</li>
+ 					) : null}
+-					{report.matches.map((match, index) => {
++					{(report?.matches ?? []).map((match, index) => {
+ 						const isCalled = called.has(match.patientId);
+ 						const priorityLabel =
+-							PRIORITY_LABELS[match.priorityLevel] ?? match.priorityLevel;
++							PRIORITY_LABELS[match?.priorityLevel ?? ""] ?? match?.priorityLevel ?? "";
+ 						return (
+ 							<li
+ 								key={match.entryId}
+@@ -359,7 +359,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
+ 									{match.phone ? (
+ 										<a
+ 											className="secondary-button"
+-											href={`tel:${match.phone.replace(/[^\d+]/g, "")}`}
++											href={`tel:${String(match?.phone ?? "").replace(/[^\d+]/g, "")}`}
+ 											style={{
+ 												padding: "4px 10px",
+ 												fontSize: 12,

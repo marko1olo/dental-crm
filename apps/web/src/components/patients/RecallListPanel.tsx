@@ -83,7 +83,9 @@ function invitationText(
 	candidate: RecallCandidate,
 	clinicName: string,
 ): string {
-	const name = candidate.fullName.split(" ")[1] ?? candidate.fullName;
+	const rawName =
+		typeof candidate?.fullName === "string" ? candidate.fullName.trim() : "";
+	const name = rawName.split(" ")[1] || rawName || "Пациент";
 	return `${name}, здравствуйте! ${clinicName}: прошло больше полугода с последнего осмотра — самое время проверить зубы. Записаться можно по телефону клиники.`;
 }
 

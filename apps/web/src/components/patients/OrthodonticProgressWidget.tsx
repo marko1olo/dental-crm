@@ -106,8 +106,9 @@ export function OrthodonticProgressWidget({
 	const [isEditing, setIsEditing] = useState(false);
 	const [saving, setSaving] = useState(false);
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
+	const patient = (dashboard?.patients ?? []).find(
+		(p: { id?: string }) => p?.id === patientId,
+	);
 
 	// Если новое структурированное поле не заполнено, читаем старую запись,
 	// которую раньше складывали в конец заметок.
@@ -333,11 +334,12 @@ export function OrthodonticProgressWidget({
 
 	const formatDate = (dateStr: string) => {
 		try {
-			const [y, m, d] = dateStr.split("-");
+			if (typeof dateStr !== "string" || !dateStr) return dateStr || "";
+			const [y, m, d] = (dateStr ?? "").split("-");
 			if (!y || !m || !d) return dateStr;
 			return `${d}.${m}.${y}`;
 		} catch {
-			return dateStr;
+			return dateStr || "";
 		}
 	};
 

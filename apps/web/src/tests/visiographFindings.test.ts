@@ -173,8 +173,8 @@ test("панель пишет находки на живой адрес форм
 			"смонтированный файл: запись уходит в никуда и исчезает при перезагрузке страницы.",
 	);
 	assert.ok(
-		analyzer.includes(
-			"denteClinicalMutationHeaders({ 'Content-Type': 'application/json' })",
+		/denteClinicalMutationHeaders\(\s*\{\s*["']Content-Type["']:\s*["']application\/json["']\s*,?\s*\}\s*\)/.test(
+			analyzer,
 		),
 		"запись формулы ушла без заголовков авторизации. Маршрут требует И токен кабинета, И токен " +
 			"сотрудника: голый fetch получит 401, и врач увидит пустоту вместо отказа.",

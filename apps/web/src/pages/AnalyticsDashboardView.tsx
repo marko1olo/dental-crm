@@ -312,25 +312,29 @@ export function AnalyticsDashboardView() {
 								<KpiCard
 									icon={<Users size={18} />}
 									label="Пациентов"
-									value={data.kpis.totalPatients.toLocaleString("ru-RU")}
+									value={(data?.kpis?.totalPatients ?? 0).toLocaleString(
+										"ru-RU",
+									)}
 									color="#3b82f6"
 								/>
 								<KpiCard
 									icon={<DollarSign size={18} />}
 									label="Выручка"
-									value={formatRub(data.kpis.totalRevenue)}
+									value={formatRub(data?.kpis?.totalRevenue ?? 0)}
 									color="#10b981"
 								/>
 								<KpiCard
 									icon={<Activity size={18} />}
 									label="Приёмов"
-									value={data.kpis.totalAppointments.toLocaleString("ru-RU")}
+									value={(data?.kpis?.totalAppointments ?? 0).toLocaleString(
+										"ru-RU",
+									)}
 									color="#8b5cf6"
 								/>
 								<KpiCard
 									icon={<TrendingUp size={18} />}
 									label="Выручка на пациента"
-									value={formatRub(data.kpis.avgRevenuePerPatient)}
+									value={formatRub(data?.kpis?.avgRevenuePerPatient ?? 0)}
 									color="#f59e0b"
 								/>
 							</div>
@@ -351,11 +355,11 @@ export function AnalyticsDashboardView() {
 										<TrendingUp className="w-5 h-5 text-dente-teal" /> Сколько
 										приносит пациент со временем
 									</h3>
-									<div className="widget-chart-container">
-										{data.cohortLtvJson && data.cohortLtvJson.length > 0 ? (
+									<div className="analytics-chart-container">
+										{(data?.cohortLtvJson ?? []).length > 0 ? (
 											<ResponsiveContainer width="100%" height="100%">
 												<AreaChart
-													data={data.cohortLtvJson as CohortChartRow[]}
+													data={data?.cohortLtvJson as CohortChartRow[]}
 													margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
 												>
 													<defs>
@@ -469,13 +473,14 @@ export function AnalyticsDashboardView() {
 										<BarChart3 className="w-5 h-5 text-sky-500" /> Воронка
 										планов лечения
 									</h3>
-									<div className="widget-chart-container">
+									<div className="analytics-chart-container">
 										{Array.isArray(data?.planFunnelJson) &&
-										data.planFunnelJson.filter((x) => x.value > 0).length >
-											0 ? (
+										(data?.planFunnelJson ?? []).filter(
+											(x) => (x?.value ?? 0) > 0,
+										).length > 0 ? (
 											<ResponsiveContainer width="100%" height="100%">
 												<ComposedChart
-													data={data.planFunnelJson as NamedValueChartRow[]}
+													data={data?.planFunnelJson as NamedValueChartRow[]}
 													layout="vertical"
 													margin={{ top: 10, right: 30, left: 20, bottom: 5 }}
 												>
@@ -545,8 +550,9 @@ export function AnalyticsDashboardView() {
 									</h3>
 									<div className="widget-chart-container">
 										{Array.isArray(data?.chairUtilizationJson) &&
-										data.chairUtilizationJson.filter((x) => x.value > 0)
-											.length > 0 ? (
+										(data?.chairUtilizationJson ?? []).filter(
+											(x) => (x?.value ?? 0) > 0,
+										).length > 0 ? (
 											<ResponsiveContainer width="100%" height="100%">
 												<RadialBarChart
 													cx="50%"
@@ -555,7 +561,7 @@ export function AnalyticsDashboardView() {
 													outerRadius="100%"
 													barSize={16}
 													data={
-														data.chairUtilizationJson as NamedValueChartRow[]
+														data?.chairUtilizationJson as NamedValueChartRow[]
 													}
 												>
 													<RadialBar
@@ -607,10 +613,12 @@ export function AnalyticsDashboardView() {
 										className="widget-chart-container"
 										style={{ overflowY: "auto" }}
 									>
-										{data.doctorProfitabilityJson.filter((x) => x.revenue > 0)
-											.length > 0 ? (
+										{Array.isArray(data?.doctorProfitabilityJson) &&
+										(data?.doctorProfitabilityJson ?? []).filter(
+											(x) => (x?.revenue ?? 0) > 0,
+										).length > 0 ? (
 											<DoctorProfitabilityTable
-												rows={data.doctorProfitabilityJson}
+												rows={data?.doctorProfitabilityJson ?? []}
 											/>
 										) : (
 											<EmptyState
@@ -733,8 +741,8 @@ function DoctorProfitabilityTable({
 		completionRate: number | null;
 	}[];
 }) {
-	const hasUnknownMetric = rows.some(
-		(row) => row.margin === null || row.completionRate === null,
+	const hasUnknownMetric = (rows ?? []).some(
+		(row) => row?.margin === null || row?.completionRate === null,
 	);
 
 	return (
@@ -749,14 +757,14 @@ function DoctorProfitabilityTable({
 					</tr>
 				</thead>
 				<tbody>
-					{rows.map((doc) => {
-						const margin = formatMarginCell(doc.margin);
-						const completion = formatCompletionRate(doc.completionRate);
+					{(rows ?? []).map((doc) => {
+						const margin = formatMarginCell(doc?.margin);
+						const completion = formatCompletionRate(doc?.completionRate);
 						return (
-							<tr key={doc.name}>
-								<td>{doc.name}</td>
+							<tr key={doc?.name ?? "unknown"}>
+								<td>{doc?.name ?? "—"}</td>
 								{/* Таблица — точная сумма с копейками, а не короткий вид плитки. */}
-								<td>{money(doc.revenue)}</td>
+								<td>{money(doc?.revenue ?? 0)}</td>
 								<td
 									className={`font-semibold ${metricToneClass(margin.tone)}`}
 									title={margin.title}

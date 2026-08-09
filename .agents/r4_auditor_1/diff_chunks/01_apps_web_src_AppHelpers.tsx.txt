@@ -1,0 +1,17 @@
+a/apps/web/src/AppHelpers.tsx b/apps/web/src/AppHelpers.tsx
+index be254a5c1..0b2cc4e0b 100644
+--- a/apps/web/src/AppHelpers.tsx
++++ b/apps/web/src/AppHelpers.tsx
+@@ -2419,9 +2419,9 @@ export function appendSpeechTextWithoutDuplicateTail(
+ 	)
+ 		return current;
+ 
+-	const currentWords = normalizedCurrent.split(" ").filter(Boolean);
+-	const nextWords = normalizedNext.split(" ").filter(Boolean);
+-	const originalNextWords = cleanNext.split(/\s+/).filter(Boolean);
++	const currentWords = (normalizedCurrent ?? "").split(" ").filter(Boolean);
++	const nextWords = (normalizedNext ?? "").split(" ").filter(Boolean);
++	const originalNextWords = (cleanNext ?? "").split(/\s+/).filter(Boolean);
+ 	const maxOverlap = Math.min(
+ 		14,
+ 		currentWords.length,

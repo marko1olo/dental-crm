@@ -1,0 +1,58 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+	"files": {
+		"ignoreUnknown": true,
+		"includes": [
+			"apps/web/src/**",
+			"apps/api/src/**",
+			"packages/**",
+			"scripts/**",
+			"*.cjs",
+			"*.js",
+			"*.ts",
+			"*.tsx",
+			"*.json",
+			"!**/node_modules",
+			"!**/.postgres",
+			"!**/.data",
+			"!**/dist",
+			"!**/build",
+			"!**/.next",
+			"!**/coverage",
+			"!**/.agents",
+			"!**/tmp",
+			"!**/.tmp",
+			"!**/scratch",
+			"!**/artifacts",
+			"!**/screenshots",
+			"!**/uploads",
+			"!**/pglite-data",
+			"!**/temp-test-db",
+			"!**/appDataDir",
+			"!**/local-secrets",
+			"!**/.dente-*",
+			"!**/playwright-report",
+			"!**/test-results",
+			"!**/dente-db",
+			"!**/package-lock.json",
+			"!**/knip_report*.txt",
+			"!**/madge_report*.txt",
+			"!**/biome_out*.txt"
+		]
+	},
+	"css": {
+		"parser": {
+			"cssModules": true,
+			"tailwindDirectives": true
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noExplicitAny": "warn"
+			}
+		}
+	}
+}

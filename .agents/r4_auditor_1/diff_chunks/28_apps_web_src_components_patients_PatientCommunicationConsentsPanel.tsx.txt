@@ -1,0 +1,14 @@
+a/apps/web/src/components/patients/PatientCommunicationConsentsPanel.tsx b/apps/web/src/components/patients/PatientCommunicationConsentsPanel.tsx
+index d539278d4..7cba8159a 100644
+--- a/apps/web/src/components/patients/PatientCommunicationConsentsPanel.tsx
++++ b/apps/web/src/components/patients/PatientCommunicationConsentsPanel.tsx
+@@ -59,7 +59,8 @@ function cellKey(channel: string, scope: string): string {
+ }
+ 
+ function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
+-	const t = raw.trim();
++	if (typeof raw !== "string") return null;
++	const t = (raw ?? "").trim();
+ 	if (!t) return null;
+ 	try {
+ 		const p: unknown = JSON.parse(t);

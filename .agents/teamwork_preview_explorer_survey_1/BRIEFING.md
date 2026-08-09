@@ -1,36 +1,45 @@
-# BRIEFING — 2026-08-08T20:54:35Z
+# BRIEFING — 2026-08-09T12:01:00Z
 
 ## Mission
-Explore `AppHelpers.tsx` and codebase architecture, map all exported symbols, group by domain, perform usage census across `apps/web/src`, check monorepo package structure and typecheck status, write `analysis.md` and `handoff.md`.
+Survey and audit the Playwright E2E infrastructure, test scripts (`e2e_4state_audit.cjs`, `scripts/dente-redesign-shots.mjs`, `apps/web/tests/e2e/smoke.spec.ts`), web/api server setup, auth token injection (`dente_clinic_token`, `dente_staff_token`), and 4-state screenshot storage strategy for DENTE CRM.
 
 ## 🔒 My Identity
 - Archetype: explorer
-- Roles: Codebase Architecture & AppHelpers.tsx Explorer
+- Roles: Playwright E2E & 4-State Visual Infrastructure Explorer
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_1
-- Original parent: e922dda7-e65d-472b-b0e5-727b9201e7c4
-- Milestone: AppHelpers.tsx & Architecture Survey
+- Original parent: 67e66496-7d3f-4df1-8f98-31bd016dcb96
+- Milestone: E2E Playwright Infrastructure Survey
 
 ## 🔒 Key Constraints
 - Read-only investigation — do NOT implement code changes in app source
-- Follow DENTE constitution C:\Clinic_MVP\dental-crm\.agents\AGENTS.md
-- Produce structured analysis.md and handoff.md in working directory
+- Follow DENTE constitution C:\Clinic_MVP\dental-crm\AGENTS.md
+- Produce structured handoff.md in working directory
 - Send message to parent upon completion
 
 ## Current Parent
-- Conversation ID: e922dda7-e65d-472b-b0e5-727b9201e7c4
-- Updated: 2026-08-08T20:54:35Z
+- Conversation ID: 67e66496-7d3f-4df1-8f98-31bd016dcb96
+- Updated: 2026-08-09T12:01:00Z
 
 ## Investigation State
-- **Explored paths**: `apps/web/src/AppHelpers.tsx`, `apps/web/src/utils/`, `apps/web/src/`, monorepo packages (`apps/web`, `apps/api`, `packages/shared`)
-- **Key findings**: `AppHelpers.tsx` contains 8,078 lines, 517 exports across 17 logical domains. 7 God-symbols account for 56.2% of 3,892 usages. 161 symbols are unused externally. `@dental/web` typechecks with 0 errors.
+- **Explored paths**:
+  - `apps/web/playwright.config.ts`
+  - `e2e_4state_audit.cjs`
+  - `scripts/dente-redesign-shots.mjs` & `scripts/lib/shot-audit.mjs`
+  - `apps/web/tests/e2e/smoke.spec.ts` & `documents-lifecycle.spec.ts`
+  - `apps/web/src/lib/safeLocalStorage.ts` & `store/themeStore.ts`
+  - `apps/web/vite.config.ts` & `apps/api/src/server.ts`
+- **Key findings**:
+  - Auth token injection: `dente_clinic_token` & `dente_staff_token` injected via `addInitScript` into `localStorage` along with onboarding dismissal keys (`dental-crm:web-ui-preferences:v1`, `dente_ui_preferences_v1`).
+  - Web server runs on `http://127.0.0.1:5173`, API server runs on `http://127.0.0.1:4100`, Vite proxies `/api` with WebSocket support (`ws: true`).
+  - 4-state screenshots (Mobile Light, Mobile Dark, PC Light, PC Dark) enforced with anti-fabrication guards (theme state token fingerprinting, MD5 uniqueness, size floor $\ge$ 20KB, container `busySelector` ready checks).
 - **Unexplored areas**: None for this survey scope.
 
 ## Key Decisions Made
-- Cataloged all 517 exports into 17 domains.
-- Conducted full codebase census across 476 web files.
-- Formulated 9-module refactoring blueprint.
-- Completed analysis.md and handoff.md.
+- Fully documented the E2E infrastructure and token injection protocol.
+- Formulated a 2-tier execution strategy (Tier 1: Mocked Playwright Smoke Test; Tier 2: Real-Backend 4-State Visual Audit Matrix).
+- Written 5-component `handoff.md`.
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_1\analysis.md — Detailed analysis report
-- C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_1\handoff.md — 5-component handoff report
+- `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_1\handoff.md` — 5-component Handoff Report
+- `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_1\BRIEFING.md` — Agent Briefing State
+- `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_1\progress.md` — Progress & Liveness Heartbeat

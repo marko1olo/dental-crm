@@ -1,0 +1,128 @@
+a/apps/web/src/components/settings/SettingsClinicTab.tsx b/apps/web/src/components/settings/SettingsClinicTab.tsx
+index 8821aeaaf..83b26a66e 100644
+--- a/apps/web/src/components/settings/SettingsClinicTab.tsx
++++ b/apps/web/src/components/settings/SettingsClinicTab.tsx
+@@ -578,8 +578,8 @@ export function SettingsClinicTab({
+ 					<div className="legal-readiness-badge">
+ 						<strong>{legalReadinessPercent}%</strong>
+ 						<span>
+-							{(legalMissingFields ?? []).length
+-								? `Не заполнено: ${legalMissingFields.join(", ")}`
++							{(legalMissingFields || []).length
++								? `Не заполнено: ${(legalMissingFields || []).join(", ")}`
+ 								: "Минимум заполнен"}
+ 						</span>
+ 					</div>
+@@ -695,13 +695,13 @@ export function SettingsClinicTab({
+ 						{typedWeekdayOptions.map((day: any) => (
+ 							<button
+ 								className={
+-									clinicProfileDraft.workingDays.includes(day.value)
++									(clinicProfileDraft?.workingDays ?? []).includes(day.value)
+ 										? "active"
+ 										: ""
+ 								}
+ 								key={day.value}
+ 								type="button"
+-								aria-pressed={clinicProfileDraft.workingDays.includes(
++								aria-pressed={(clinicProfileDraft?.workingDays ?? []).includes(
+ 									day.value,
+ 								)}
+ 								onClick={() => toggleClinicWorkingDay(day.value)}
+@@ -980,19 +980,19 @@ export function SettingsClinicTab({
+ 							<strong>
+ 								Публичный поиск:{" "}
+ 								{clinicPublicLookupProviderStatusLabels[
+-									clinicPublicLookup.providerStatus
++									clinicPublicLookup?.providerStatus ?? ""
+ 								] ??
+-									humanizeMigrationText(clinicPublicLookup.providerStatus)}{" "}
+-								· запрос {clinicPublicLookup.safeQuery || "не сформирован"}
++									humanizeMigrationText(clinicPublicLookup?.providerStatus ?? "")}{" "}
++								· запрос {clinicPublicLookup?.safeQuery || "не сформирован"}
+ 							</strong>
+ 							<span>
+-								{humanizeMigrationText(clinicPublicLookup.nextAction)}
++								{humanizeMigrationText(clinicPublicLookup?.nextAction ?? "")}
+ 							</span>
+ 						</div>
+ 						<small className="clinic-public-boundary">
+ 							{clinicPublicLookupBoundaryText}
+ 						</small>
+-						{clinicPublicLookup.suggestions.length ? (
++						{(typedClinicPublicLookupSuggestions ?? []).length ? (
+ 							<div className="clinic-public-suggestions">
+ 								{typedClinicPublicLookupSuggestions
+ 									.slice(0, 4)
+@@ -1016,7 +1016,7 @@ export function SettingsClinicTab({
+ 													)
+ 													.join(" · ")}
+ 											</p>
+-											{suggestion.warnings
++											{(suggestion.warnings || [])
+ 												.slice(0, 2)
+ 												.map((warning: string) => (
+ 													<small key={warning}>
+@@ -1043,7 +1043,7 @@ export function SettingsClinicTab({
+ 									))}
+ 							</div>
+ 						) : null}
+-						{clinicPublicLookup.publicLookupTargets.length ? (
++						{(typedClinicPublicLookupTargets ?? []).length ? (
+ 							<div className="clinic-public-targets">
+ 								{typedClinicPublicLookupTargets.map((target) => (
+ 									<a
+@@ -1060,7 +1060,7 @@ export function SettingsClinicTab({
+ 								))}
+ 							</div>
+ 						) : null}
+-						{clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (
++						{(clinicPublicLookup.warnings || []).slice(0, 4).map((warning: string) => (
+ 							<small key={warning}>
+ 								{clinicPublicLookupWarningText(warning)}
+ 							</small>
+@@ -1074,7 +1074,7 @@ export function SettingsClinicTab({
+ 					<div className="panel-heading">
+ 						<h3>Команда и права</h3>
+ 						<span className="status-pill status-arrived">
+-							{dashboard.clinicSettings.staff.length}
++							{typedStaffMembers.length}
+ 						</span>
+ 					</div>
+ 					<div className="quick-create">
+@@ -1169,7 +1169,7 @@ export function SettingsClinicTab({
+ 										<strong>{member.fullName}</strong>
+ 										<p>
+ 											{staffRoleLabels[member.role]} ·{" "}
+-											{member.specialties
++											{(member.specialties || [])
+ 												.map((item) => specialtyLabels[item])
+ 												.join(", ")}
+ 										</p>
+@@ -1253,7 +1253,7 @@ export function SettingsClinicTab({
+ 													)
+ 													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+ 													.map((day: any) => {
+-														const dayHours = scheduleDraft.perDay[day.value];
++														const dayHours = scheduleDraft?.perDay?.[day.value];
+ 														return (
+ 															<div key={`hours-${member.id}-${day.value}`}>
+ 																<span>{day.label}</span>
+@@ -1317,7 +1317,7 @@ export function SettingsClinicTab({
+ 					<div className="panel-heading">
+ 						<h3>Кресла и кабинеты</h3>
+ 						<span className="status-pill status-confirmed">
+-							{dashboard.clinicSettings.chairs.length}
++							{typedChairs.length}
+ 						</span>
+ 					</div>
+ 					<div className="quick-create">
+@@ -1491,7 +1491,7 @@ export function SettingsClinicTab({
+ 													)
+ 													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+ 													.map((day: any) => {
+-														const dayHours = scheduleDraft.perDay[day.value];
++														const dayHours = scheduleDraft?.perDay?.[day.value];
+ 														return (
+ 															<div key={`chair-hours-${chair.id}-${day.value}`}>
+ 																<span>{day.label}</span>

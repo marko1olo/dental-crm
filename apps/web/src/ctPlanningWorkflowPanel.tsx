@@ -16,7 +16,7 @@ export function CtPlanningWorkflowPanel({
 }: {
 	plan: CtPlanningWorkflowPlan;
 }) {
-	const focusedPhaseId = plan.selectedPhaseId ?? plan.activePhaseId;
+	const focusedPhaseId = plan?.selectedPhaseId ?? plan?.activePhaseId;
 
 	return (
 		<section
@@ -24,13 +24,13 @@ export function CtPlanningWorkflowPanel({
 			data-testid="ct-planning-workflow-board"
 			aria-label="Динамический маршрут КТ-планирования"
 		>
-			<article className={`ct-planning-workflow-summary ${plan.status}`}>
+			<article className={`ct-planning-workflow-summary ${plan?.status ?? ""}`}>
 				<span>Маршрут</span>
-				<strong>{plan.score}%</strong>
-				<p>{plan.summaryLabel}</p>
-				<small>{plan.nextAction}</small>
+				<strong>{plan?.score ?? 0}%</strong>
+				<p>{plan?.summaryLabel}</p>
+				<small>{plan?.nextAction}</small>
 			</article>
-			{plan.selectedScenario ? (
+			{plan?.selectedScenario ? (
 				<article
 					className={`ct-planning-workflow-focus ${plan.selectedScenario.status}`}
 					data-testid="ct-planning-workflow-focus"
@@ -46,12 +46,12 @@ export function CtPlanningWorkflowPanel({
 					</small>
 					<small>{plan.selectedScenario.viewerLabel}</small>
 					<small>{plan.selectedScenario.viewerBridgeLabel}</small>
-					{plan.selectedScenario.issueTitles.length > 0 ? (
+					{(plan.selectedScenario.issueTitles ?? []).length > 0 ? (
 						<div
 							className="ct-planning-workflow-issues"
 							data-testid="ct-planning-workflow-issues"
 						>
-							{plan.selectedScenario.issueTitles.map((title) => (
+							{(plan.selectedScenario.issueTitles ?? []).map((title) => (
 								<em key={title}>{title}</em>
 							))}
 						</div>
@@ -62,25 +62,27 @@ export function CtPlanningWorkflowPanel({
 				</article>
 			) : null}
 			<div className="ct-planning-workflow-grid">
-				{plan.phases.map((phase) => (
+				{(plan?.phases ?? []).map((phase, idx) => (
 					<article
-						className={`ct-planning-workflow-step ${phase.status} ${phase.id === focusedPhaseId ? "active" : ""}`}
-						aria-current={phase.id === focusedPhaseId ? "step" : undefined}
-						key={phase.id}
+						className={`ct-planning-workflow-step ${phase?.status ?? ""} ${phase?.id === focusedPhaseId ? "active" : ""}`}
+						aria-current={phase?.id === focusedPhaseId ? "step" : undefined}
+						key={phase?.id ?? `phase-${idx}`}
 					>
-						<span>{ownerLabels[phase.owner]}</span>
-						<strong>{phase.title}</strong>
-						<p>{phase.detail}</p>
+						<span>
+							{phase?.owner ? (ownerLabels[phase.owner] ?? phase.owner) : ""}
+						</span>
+						<strong>{phase?.title}</strong>
+						<p>{phase?.detail}</p>
 						<small>
-							{phase.value} · {phase.nextAction}
+							{phase?.value} · {phase?.nextAction}
 						</small>
 					</article>
 				))}
 			</div>
-			{plan.warnings.length > 0 ? (
+			{(plan?.warnings ?? []).length > 0 ? (
 				<article className="ct-planning-workflow-warnings">
 					<span>Блокеры</span>
-					{plan.warnings.slice(0, 3).map((warning) => (
+					{(plan?.warnings ?? []).slice(0, 3).map((warning) => (
 						<p key={warning}>{warning}</p>
 					))}
 				</article>

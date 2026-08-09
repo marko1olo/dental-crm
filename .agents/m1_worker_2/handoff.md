@@ -1,86 +1,97 @@
-# Handoff Report — Milestone 1 Remediation Worker (m1_worker_2)
+# Handoff Report: TypeScript Typecheck Remediation
+
+**Agent**: `m1_worker_2` (TypeScript Typecheck Remediation Worker)  
+**Working Directory**: `C:\Clinic_MVP\dental-crm\.agents\m1_worker_2`  
+**Target Monorepo**: `C:\Clinic_MVP\dental-crm`  
+**Date**: 2026-08-09  
+
+---
 
 ## 1. Observation
 
-- **Modified File**: `C:\Clinic_MVP\dental-crm\apps\web\tests\e2e\smoke.spec.ts`
-  - **Spec 2 Change**:
-    ```ts
-    // Login form should have an email input — wait for React lazy component hydration
-    const emailInput = page.locator("input[type=email], input[placeholder*='mail'], input[placeholder*='email']");
-    await expect(emailInput.first()).toBeVisible({ timeout: 10000 });
+### Initial Baseline
+Before remediation, running `npm run typecheck` failed at step 5 (`@dental/api@0.1.0 typecheck:tests`) with Exit Code `2` and 10 TypeScript compiler errors in test files:
+- `apps/api/src/migration/tests/mapping.test.ts` (5 errors on `profiles[i]?.parseRates`)
+- `apps/api/src/migration/tests/parsers.test.ts` (3 errors on `rows` possibly undefined)
+- `apps/api/src/services/clinical/ClinicalRouter.test.ts` (1 error on `fixture?.organizationId`)
+- `apps/api/src/tests/routes/telegramChatLinkPersists.test.ts` (1 error on `linkId` possibly undefined)
 
-    await screenshot(page, "02_login_screen");
+### Applied Fixes & File Modifications
 
-    const bodyHtml = await page.innerHTML("body");
-    expect(bodyHtml.length, "Login screen rendered empty body").toBeGreaterThan(200);
-    ```
-  - **Spec 5 Change**:
-    ```ts
-    const bodyText = await page.locator("body").innerText();
-    expect(bodyText).not.toContain("Something went wrong");
-    expect(bodyText).not.toContain("Что-то пошло не так");
-    expect(bodyText).not.toContain("не открылось");
-    expect(bodyText).not.toContain("Раздел временно не открылся");
-    expect(bodyText).not.toContain("Не удалось открыть");
-    expect(bodyText).not.toContain("Ошибка рендеринга");
-    ```
+1. **`apps/api/src/migration/tests/mapping.test.ts`**:
+   - Replaced `profiles[i]?.parseRates.<field>` with `profiles[i]?.parseRates?.<field>!` on lines 68, 72, 75, 76, 78.
+   - Result: `parseRates` is safely optional-chained and field accesses are non-null asserted to `number`.
 
-- **Typecheck Log**:
-  - Command: `npm run typecheck -w @dental/web` (Cwd: `C:\Clinic_MVP\dental-crm`)
-  - Output:
-    ```
-    > @dental/web@0.1.0 typecheck
-    > tsc -b --noEmit
-    ```
-  - Exit code: `0`
+2. **`apps/api/src/migration/tests/parsers.test.ts`**:
+   - Added `assert.ok(rows, "rows must be defined");` prior to line 377 (after `parseXlsx(file).sheets[0]?.rows`) and prior to line 398.
+   - Result: `rows` is explicitly narrowed to non-undefined before indexing or invoking `.length` / `.map()`.
 
-- **Playwright Test Log**:
-  - Command: `npx playwright test tests/e2e/smoke.spec.ts` (Cwd: `C:\Clinic_MVP\dental-crm\apps\web`)
-  - Output:
-    ```
-    Running 5 tests using 5 workers
+3. **`apps/api/src/services/clinical/ClinicalRouter.test.ts`**:
+   - Extracted `const orgId = fixture.organizationId;` and `const foreignPatientId = fixture.foreignPatientId;` outside the closure callback before `assert.rejects(...)`.
+   - Result: TypeScript closure narrowing reset on mutable `let fixture` is avoided, guaranteeing `orgId: string` and `foreignPatientId: string` inside the `handlePhaseCompletion` call.
 
-    [1/5] [chromium] › tests\e2e\smoke.spec.ts:140:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 2. Login screen renders when no auth tokens present
-    [2/5] [chromium] › tests\e2e\smoke.spec.ts:126:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 1. Authenticated workspace mounts — no JS crashes, content visible
-    [3/5] [chromium] › tests\e2e\smoke.spec.ts:188:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 5. No error boundaries triggered after full navigation cycle
-    [4/5] [chromium] › tests\e2e\smoke.spec.ts:172:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 4. Hash routing — navigates views without JS crash
-    [5/5] [chromium] › tests\e2e\smoke.spec.ts:159:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 3. Dashboard loads — sidebar navigation rail visible
-      5 passed (9.1s)
-    ```
-  - Exit code: `0`
+4. **`apps/api/src/tests/routes/telegramChatLinkPersists.test.ts`**:
+   - Added `assert.ok(linkId, "linkId must be defined");` immediately following `const linkId = rows[0]?.id;`.
+   - Result: `linkId` is narrowed from `string | undefined` to `string` prior to line 539.
 
 ---
 
 ## 2. Logic Chain
 
-1. *From Spec 2 timing issue*: Evaluating `expect(bodyHtml.length).toBeGreaterThan(200)` synchronously before element visibility wait allowed Playwright to fail on line 152 when `React.lazy()` bundle hydration was still showing the 184-byte fallback shell. Moving `emailInput` locator declaration and `await expect(emailInput.first()).toBeVisible({ timeout: 10000 });` before reading `page.innerHTML("body")` forces Playwright's auto-retry web-first assertion to wait up to 10 seconds for hydration, guaranteeing that subsequent HTML length inspection runs against the rendered AuthHub DOM (> 1000 bytes).
-2. *From Spec 5 boundary assertion coverage*: DENTE CRM React error boundary components (`workspaceRouteErrorBoundary.tsx`, `bootErrorBoundary.tsx`) render localized Cyrillic messages when view chunks fail to load. Adding `"не открылось"`, `"Раздел временно не открылся"`, `"Не удалось открыть"`, and `"Ошибка рендеринга"` ensures navigation cycles are audited against actual DENTE error boundary strings.
-3. *Verification*: Typecheck confirms no syntax or type regressions. Playwright E2E smoke suite execution confirms all 5 specs pass cleanly in 9.1s.
+1. Executing `npm run typecheck` runs workspace scripts sequentially:
+   - `@dental/shared@0.1.0 build` (`tsc -p tsconfig.json`) -> PASSED
+   - `@dental/shared@0.1.0 typecheck` (`tsc -p tsconfig.json --noEmit`) -> PASSED
+   - `@dental/shared@0.1.0 typecheck:tests` (`tsc -p tsconfig.tests.json --noEmit`) -> PASSED
+   - `@dental/api@0.1.0 typecheck` (`tsc -p tsconfig.json --noEmit`) -> PASSED
+   - `@dental/api@0.1.0 typecheck:tests` (`tsc -p tsconfig.tests.json --noEmit`) -> PASSED (0 errors after fixes)
+   - `@dental/web@0.1.0 typecheck` (`tsc -b --noEmit`) -> PASSED (0 errors)
+2. All 10 blocking compiler errors were eliminated without introducing any structural or functional changes to production runtime code or test logic.
+3. The overall root `npm run typecheck` script completed with **EXIT CODE 0** and **0 ERRORS**.
 
 ---
 
 ## 3. Caveats
 
-No caveats. All instructions in strategy specs and dispatch requirements were strictly followed and verified.
+- No caveats. Production source files were already compiling cleanly; all 10 errors were strictly within test utility and route test files, which are now properly type-guarded.
 
 ---
 
 ## 4. Conclusion
 
-The code updates in `apps/web/tests/e2e/smoke.spec.ts` are complete and verified. The Playwright smoke test flakiness in Spec 2 is resolved, Spec 5 Cyrillic Error Boundary assertion coverage is expanded, and all 5 Playwright E2E smoke tests pass cleanly with Exit Code 0.
+All 10 target TypeScript compiler errors across `@dental/api` test files have been completely resolved. `npm run typecheck` passes with **EXIT CODE 0** and **0 ERRORS** across all monorepo packages (`@dental/shared`, `@dental/api`, `@dental/web`).
 
 ---
 
 ## 5. Verification Method
 
-1. **TypeScript Typecheck**:
-   ```bash
-   npm run typecheck -w @dental/web
-   ```
-   *Expected Result*: Exit Code 0.
+To independently verify that the build compiles cleanly:
 
-2. **Playwright E2E Smoke Tests**:
-   ```bash
-   cd C:\Clinic_MVP\dental-crm\apps\web && npx playwright test tests/e2e/smoke.spec.ts
-   ```
-   *Expected Result*: 5 passed, Exit Code 0.
+```powershell
+cd C:\Clinic_MVP\dental-crm
+npm run typecheck
+```
+
+**Verifiable Output Logs**:
+```text
+> dental-crm@0.1.0 typecheck
+> npm run build -w @dental/shared && npm run typecheck -w @dental/shared && npm run typecheck:tests -w @dental/shared && npm run typecheck -w @dental/api && npm run typecheck:tests -w @dental/api && npm run typecheck -w @dental/web
+
+> @dental/shared@0.1.0 build
+> tsc -p tsconfig.json
+
+> @dental/shared@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+> @dental/shared@0.1.0 typecheck:tests
+> tsc -p tsconfig.tests.json --noEmit
+
+> @dental/api@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+> @dental/api@0.1.0 typecheck:tests
+> tsc -p tsconfig.tests.json --noEmit
+
+> @dental/web@0.1.0 typecheck
+> tsc -b --noEmit
+```
+Process completed with Exit Code 0.

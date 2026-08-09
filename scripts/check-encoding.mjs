@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * check-encoding.mjs — проверка кодировки исходников.
  *
@@ -36,13 +37,8 @@
  * Код возврата 1, если что-то найдено, — можно ставить в pre-commit и в CI.
  */
 
-import {
-	existsSync,
-	readdirSync,
-	readFileSync,
-	statSync,
-} from "node:fs";
 import { spawnSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 

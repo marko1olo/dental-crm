@@ -606,7 +606,10 @@ export function MessageDeliveryConsole() {
 
 	/** Активные шаблоны выбранного канала — для разовой постановки. */
 	const enqueueTemplates = useMemo(
-		() => templates.filter((t) => t.isActive && t.channel === enqueueChannel),
+		() =>
+			(templates || []).filter(
+				(t) => t.isActive && t.channel === enqueueChannel,
+			),
 		[templates, enqueueChannel],
 	);
 
@@ -756,13 +759,13 @@ export function MessageDeliveryConsole() {
 			*/}
 			{gateways &&
 			configuredChannels.length > 0 &&
-			!gateways.automaticSending.enabled &&
-			gateways.automaticSending.waiting > 0 ? (
+			!gateways?.automaticSending?.enabled &&
+			(gateways?.automaticSending?.waiting ?? 0) > 0 ? (
 				<div className="ops-notice ops-notice--error" role="alert">
 					<strong>
 						Сообщения не отправляются: ждут в очереди{" "}
-						{gateways.automaticSending.waiting}
-						{gateways.automaticSending.oldestWaitingAt
+						{gateways?.automaticSending?.waiting ?? 0}
+						{gateways?.automaticSending?.oldestWaitingAt
 							? `, самое раннее с ${new Date(gateways.automaticSending.oldestWaitingAt).toLocaleString("ru-RU")}`
 							: ""}
 						.
@@ -771,7 +774,7 @@ export function MessageDeliveryConsole() {
 						Автоматическая отправка выключена на сервере. Разослать накопившееся
 						прямо сейчас можно кнопкой «Отправить из очереди» выше; чтобы
 						сообщения уходили сами, тот, кто устанавливал программу, включает
-						переменную {gateways.automaticSending.enableWith}.
+						переменную {gateways?.automaticSending?.enableWith ?? ""}.
 					</p>
 				</div>
 			) : null}
@@ -840,43 +843,46 @@ export function MessageDeliveryConsole() {
 					*/}
 					{configuredChannels.length > 0 ? (
 						<ul className="quick-chips-row ops-channel-list">
-							{(Object.keys(gateways.channels) as ChannelCode[]).map((code) => {
-								const channel = gateways.channels[code];
-								return (
-									<li key={code}>
-										<span
-											className={`ops-state ops-state--${channel.configured ? "ok" : "muted"}`}
-										>
-											{channelLabels[code] ?? code}:{" "}
-											{channel.configured ? "настроен" : "не настроен"}
-										</span>
-									</li>
-								);
-							})}
+							{(Object.keys(gateways?.channels ?? {}) as ChannelCode[]).map(
+								(code) => {
+									const channel = gateways?.channels?.[code];
+									return (
+										<li key={code}>
+											<span
+												className={`ops-state ops-state--${channel?.configured ? "ok" : "muted"}`}
+											>
+												{channelLabels[code] ?? code}:{" "}
+												{channel?.configured ? "настроен" : "не настроен"}
+											</span>
+										</li>
+									);
+								},
+							)}
 						</ul>
 					) : null}
-					{gateways.channels.sms.configured ? (
+					{gateways?.channels?.sms?.configured ? (
 						<p className="ops-hint">
-							SMS-шлюз: {gateways.channels.sms.provider ?? "—"}
-							{gateways.channels.sms.sender
-								? `, отправитель ${gateways.channels.sms.sender}`
+							SMS-шлюз: {gateways?.channels?.sms?.provider ?? "—"}
+							{gateways?.channels?.sms?.sender
+								? `, отправитель ${gateways?.channels?.sms?.sender}`
 								: ""}
 							.{" "}
-							{gateways.channels.sms.balance
-								? `Остаток ${gateways.channels.sms.balance.amount.toFixed(2)} ${gateways.channels.sms.balance.currency}.`
-								: gateways.channels.sms.balanceError
-									? `Остаток не получен: ${gateways.channels.sms.balanceError}`
+							{gateways?.channels?.sms?.balance
+								? `Остаток ${typeof gateways?.channels?.sms?.balance?.amount === "number" ? gateways.channels.sms.balance.amount.toFixed(2) : "0.00"} ${gateways?.channels?.sms?.balance?.currency ?? ""}.`
+								: gateways?.channels?.sms?.balanceError
+									? `Остаток не получен: ${gateways?.channels?.sms?.balanceError}`
 									: ""}
 							{uisQuota && (
 								<span
 									className={
-										uisQuota.remaining <= 0
-											? "text-[var(--bad-fg,#b42318)] font-bold ml-2"
+										(uisQuota?.remaining ?? 0) <= 0
+											? "text-[var(--bad-fg)] font-bold ml-2"
 											: "ml-2"
 									}
 								>
-									Лимит UIS SMS: {uisQuota.smsQuotaLimit - uisQuota.remaining}/
-									{uisQuota.smsQuotaLimit}
+									Лимит UIS SMS:{" "}
+									{(uisQuota?.smsQuotaLimit ?? 0) - (uisQuota?.remaining ?? 0)}/
+									{uisQuota?.smsQuotaLimit ?? 0}
 								</span>
 							)}
 						</p>
@@ -908,12 +914,12 @@ export function MessageDeliveryConsole() {
 						onClick={() => setStatusFilter(code)}
 					>
 						{label}
-						{summary[code] ? ` · ${summary[code]}` : ""}
+						{summary?.[code] ? ` · ${summary[code]}` : ""}
 					</button>
 				))}
 			</fieldset>
 
-			{outbox.length === 0 ? (
+			{(outbox ?? []).length === 0 ? (
 				<p className="ops-empty">Сообщений с такими условиями нет.</p>
 			) : (
 				<div className="ops-table-wrap">
@@ -929,7 +935,7 @@ export function MessageDeliveryConsole() {
 							</tr>
 						</thead>
 						<tbody>
-							{outbox.map((item) => (
+							{(outbox || []).map((item) => (
 								<tr key={item.id}>
 									<td className="ops-time" data-label="Создано">
 										{formatMoment(item.createdAt)}
@@ -938,10 +944,10 @@ export function MessageDeliveryConsole() {
 										{channelLabels[item.channel] ?? item.channel}
 									</td>
 									<td data-label="Получатель">{item.recipientAddress}</td>
-									<td data-label="Текст" title={item.body}>
-										{item.body.length > 80
-											? `${item.body.slice(0, 80)}…`
-											: item.body}
+									<td data-label="Текст" title={item?.body ?? ""}>
+										{(item?.body ?? "").length > 80
+											? `${(item?.body ?? "").slice(0, 80)}…`
+											: (item?.body ?? "")}
 									</td>
 									<td data-label="Состояние">
 										<span
@@ -1004,6 +1010,7 @@ export function MessageDeliveryConsole() {
 					Одно сообщение одному получателю — без рассылки. Уйдёт через
 					«Отправить из очереди» или автоматический обработчик, если он включён.
 				</p>
+
 				<div className="ops-toolbar">
 					<span className="ops-field">
 						<label htmlFor="enqueue-channel">Канал</label>
@@ -1031,7 +1038,8 @@ export function MessageDeliveryConsole() {
 							)}
 						</select>
 					</span>
-					<span className="ops-field">
+
+					<span className="ops-field ops-field--grow">
 						<label htmlFor="enqueue-intent">Назначение</label>
 						<select
 							id="enqueue-intent"
@@ -1046,6 +1054,7 @@ export function MessageDeliveryConsole() {
 							))}
 						</select>
 					</span>
+
 					<span className="ops-field">
 						<label htmlFor="enqueue-scope">Тип</label>
 						<select
@@ -1062,64 +1071,66 @@ export function MessageDeliveryConsole() {
 					</span>
 				</div>
 
-				<span className="ops-field ops-field--grow">
-					<label htmlFor="enqueue-recipient">
-						{enqueueChannel === "email"
-							? "Адрес почты"
-							: "Телефон или идентификатор"}
-					</label>
-					<input
-						id="enqueue-recipient"
-						data-testid="outbox-enqueue-recipient"
-						type={enqueueChannel === "email" ? "email" : "text"}
-						value={enqueueRecipient}
-						onChange={(event) => setEnqueueRecipient(event.target.value)}
-						placeholder={
-							enqueueChannel === "email"
-								? "patient@example.com"
-								: enqueueChannel === "telegram"
-									? "chat_id или @username"
-									: "+79001234567"
-						}
-						autoComplete="off"
-					/>
-				</span>
-
-				{enqueueChannel === "email" ? (
+				<div className="ops-toolbar">
 					<span className="ops-field ops-field--grow">
-						<label htmlFor="enqueue-subject">Тема письма</label>
+						<label htmlFor="enqueue-recipient">
+							{enqueueChannel === "email"
+								? "Адрес почты"
+								: "Телефон или идентификатор"}
+						</label>
 						<input
-							id="enqueue-subject"
-							data-testid="outbox-enqueue-subject"
-							type="text"
-							value={enqueueSubject}
-							onChange={(event) => setEnqueueSubject(event.target.value)}
-							placeholder="Сообщение из клиники"
+							id="enqueue-recipient"
+							data-testid="outbox-enqueue-recipient"
+							type={enqueueChannel === "email" ? "email" : "text"}
+							value={enqueueRecipient}
+							onChange={(event) => setEnqueueRecipient(event.target.value)}
+							placeholder={
+								enqueueChannel === "email"
+									? "patient@example.com"
+									: enqueueChannel === "telegram"
+										? "chat_id или @username"
+										: "+79001234567"
+							}
+							autoComplete="off"
 						/>
 					</span>
-				) : null}
 
-				<span className="ops-field ops-field--grow">
-					<label htmlFor="enqueue-template">Шаблон (необязательно)</label>
-					<select
-						id="enqueue-template"
-						data-testid="outbox-enqueue-template"
-						value={enqueueTemplateId}
-						onChange={(event) => {
-							const next = event.target.value;
-							setEnqueueTemplateId(next);
-							if (next) setEnqueueBody("");
-						}}
-					>
-						<option value="">Без шаблона — свой текст</option>
-						{enqueueTemplates.map((t) => (
-							<option key={t.id} value={t.id}>
-								{t.title}
-								{intentLabels[t.intent] ? ` · ${intentLabels[t.intent]}` : ""}
-							</option>
-						))}
-					</select>
-				</span>
+					{enqueueChannel === "email" ? (
+						<span className="ops-field ops-field--grow">
+							<label htmlFor="enqueue-subject">Тема письма</label>
+							<input
+								id="enqueue-subject"
+								data-testid="outbox-enqueue-subject"
+								type="text"
+								value={enqueueSubject}
+								onChange={(event) => setEnqueueSubject(event.target.value)}
+								placeholder="Сообщение из клиники"
+							/>
+						</span>
+					) : null}
+
+					<span className="ops-field ops-field--grow">
+						<label htmlFor="enqueue-template">Шаблон (необязательно)</label>
+						<select
+							id="enqueue-template"
+							data-testid="outbox-enqueue-template"
+							value={enqueueTemplateId}
+							onChange={(event) => {
+								const next = event.target.value;
+								setEnqueueTemplateId(next);
+								if (next) setEnqueueBody("");
+							}}
+						>
+							<option value="">Без шаблона — свой текст</option>
+							{(enqueueTemplates || []).map((t) => (
+								<option key={t.id} value={t.id}>
+									{t.title}
+									{intentLabels[t.intent] ? ` · ${intentLabels[t.intent]}` : ""}
+								</option>
+							))}
+						</select>
+					</span>
+				</div>
 
 				{enqueueTemplateId ? (
 					<p className="ops-hint">
@@ -1128,7 +1139,7 @@ export function MessageDeliveryConsole() {
 						готовый текст ниже.
 					</p>
 				) : (
-					<span className="ops-field">
+					<span className="ops-field" style={{ marginBottom: "12px" }}>
 						<label htmlFor="enqueue-body">Текст сообщения</label>
 						<textarea
 							id="enqueue-body"
@@ -1159,14 +1170,14 @@ export function MessageDeliveryConsole() {
 
 			{/* ── Шаблоны ───────────────────────────────────────────────────── */}
 			<h3 className="ops-section-title">Шаблоны сообщений</h3>
-			{templates.length === 0 ? (
+			{(templates ?? []).length === 0 ? (
 				<p className="ops-empty">
 					Шаблонов пока нет. Без шаблона «Подтверждение приёма» автоматические
 					напоминания не включаются.
 				</p>
 			) : (
 				<ul className="ops-template-list">
-					{templates.map((template) => (
+					{(templates || []).map((template) => (
 						<li className="ops-template" key={template.id}>
 							<span className="ops-template__head">
 								<strong>{template.title}</strong>
@@ -1313,9 +1324,9 @@ export function MessageDeliveryConsole() {
 									`свободно ${preview.sms.charactersLeftInSegment}`
 								: ""}
 						</span>
-						{preview.problems.length > 0 ? (
+						{(preview?.problems ?? []).length > 0 ? (
 							<p className="ops-notice ops-notice--error" role="alert">
-								{preview.problems.join(" ")}
+								{(preview?.problems ?? []).join(" ")}
 							</p>
 						) : null}
 					</div>
@@ -1347,11 +1358,12 @@ export function MessageDeliveryConsole() {
 			) : (
 				<div>
 					<p className="ops-hint">
-						Часовой пояс: {settings.timezone}. Тихие часы:{" "}
-						{minutesToTime(settings.quietHoursStartMinute)} —{" "}
-						{minutesToTime(settings.quietHoursEndMinute)}. Сервисные сообщения в
-						это время откладываются до утра, рекламные не отправляются. Не более{" "}
-						{settings.dailyLimitPerPatient} сообщений одному пациенту в сутки.
+						Часовой пояс: {settings?.timezone ?? ""}. Тихие часы:{" "}
+						{minutesToTime(settings?.quietHoursStartMinute ?? 0)} —{" "}
+						{minutesToTime(settings?.quietHoursEndMinute ?? 0)}. Сервисные
+						сообщения в это время откладываются до утра, рекламные не
+						отправляются. Не более {settings?.dailyLimitPerPatient ?? 0}{" "}
+						сообщений одному пациенту в сутки.
 					</p>
 
 					<div className="ops-toolbar">
@@ -1360,12 +1372,14 @@ export function MessageDeliveryConsole() {
 							<input
 								id="quiet-start"
 								type="time"
-								defaultValue={minutesToTime(settings.quietHoursStartMinute)}
+								defaultValue={minutesToTime(
+									settings?.quietHoursStartMinute ?? 0,
+								)}
 								onBlur={(event) => {
 									const minutes = timeToMinutes(event.target.value);
 									if (
 										minutes !== null &&
-										minutes !== settings.quietHoursStartMinute
+										minutes !== settings?.quietHoursStartMinute
 									) {
 										void saveSettings({ quietHoursStartMinute: minutes });
 									}
@@ -1377,12 +1391,12 @@ export function MessageDeliveryConsole() {
 							<input
 								id="quiet-end"
 								type="time"
-								defaultValue={minutesToTime(settings.quietHoursEndMinute)}
+								defaultValue={minutesToTime(settings?.quietHoursEndMinute ?? 0)}
 								onBlur={(event) => {
 									const minutes = timeToMinutes(event.target.value);
 									if (
 										minutes !== null &&
-										minutes !== settings.quietHoursEndMinute
+										minutes !== settings?.quietHoursEndMinute
 									) {
 										void saveSettings({ quietHoursEndMinute: minutes });
 									}
@@ -1395,7 +1409,7 @@ export function MessageDeliveryConsole() {
 						<input
 							id="reminders-enabled"
 							type="checkbox"
-							checked={settings.appointmentReminderEnabled}
+							checked={settings?.appointmentReminderEnabled ?? false}
 							disabled={busy}
 							onChange={(event) =>
 								void saveSettings({
@@ -1404,9 +1418,9 @@ export function MessageDeliveryConsole() {
 							}
 						/>{" "}
 						Напоминать о приёме автоматически за{" "}
-						{settings.appointmentReminderLeadHours.join(", ")} ч
+						{(settings?.appointmentReminderLeadHours ?? []).join(", ")} ч
 					</label>
-					{settings.appointmentReminderEnabled ? null : (
+					{settings?.appointmentReminderEnabled ? null : (
 						<p className="ops-hint">
 							Пока выключено. Для включения нужен активный шаблон с назначением
 							«Подтверждение приёма» — иначе автоматика не отправит ничего и

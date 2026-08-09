@@ -1,0 +1,884 @@
+a/apps/web/src/components/settings/SettingsImportsTab.tsx b/apps/web/src/components/settings/SettingsImportsTab.tsx
+index 9519a4e00..e6d02158a 100644
+--- a/apps/web/src/components/settings/SettingsImportsTab.tsx
++++ b/apps/web/src/components/settings/SettingsImportsTab.tsx
+@@ -722,10 +722,10 @@ const migrationSourceDisplayName = (
+ 	>,
+ 	ordinal?: number,
+ ) => {
+-	const cleanName = humanizeMigrationText(candidate.safeDisplayName)
++	const cleanName = humanizeMigrationText(candidate?.safeDisplayName)
+ 		.replace(/\s+#[A-F0-9]{8,12}\b/g, "")
+ 		.trim();
+-	const baseName = cleanName || migrationSourceKindLabel(candidate.sourceKind);
++	const baseName = cleanName || migrationSourceKindLabel(candidate?.sourceKind ?? "");
+ 	return typeof ordinal === "number" ? `${baseName} ${ordinal + 1}` : baseName;
+ };
+ const migrationHandoffEndpointLabels: Record<string, string> = {
+@@ -737,8 +737,8 @@ const migrationHandoffEndpointLabels: Record<string, string> = {
+ };
+ const migrationHandoffRouteLabel = (handoff: MigrationLocalSourceHandoff) => {
+ 	const actionLabel =
+-		handoff.method === "GET" ? "открыть проверку" : "передать на проверку";
+-	return `${actionLabel}: ${migrationHandoffEndpointLabels[handoff.endpoint] ?? "предпросмотр в CRM"}`;
++		handoff?.method === "GET" ? "открыть проверку" : "передать на проверку";
++	return `${actionLabel}: ${migrationHandoffEndpointLabels[handoff?.endpoint ?? ""] ?? "предпросмотр в CRM"}`;
+ };
+ const shortDicomSeriesCode = (value: string | null | undefined) => {
+ 	if (!value) return "код серии не указан";
+@@ -746,20 +746,20 @@ const shortDicomSeriesCode = (value: string | null | undefined) => {
+ 	return `код серии ${trimmed.length > 18 ? `${trimmed.slice(0, 18)}...` : trimmed}`;
+ };
+ const dicomSeriesDisplayText = (series: DicomSeriesPreviewGroup) =>
+-	series.seriesDescription ??
+-	series.studyDescription ??
+-	shortDicomSeriesCode(series.seriesInstanceUid);
++	series?.seriesDescription ??
++	series?.studyDescription ??
++	shortDicomSeriesCode(series?.seriesInstanceUid);
+ const dicomSeriesWarningText = (warnings: string[]) =>
+-	warnings.length
+-		? warnings.slice(0, 3).map(humanizeMigrationText).join(", ")
++	(warnings ?? []).length
++		? (warnings ?? []).slice(0, 3).map(humanizeMigrationText).join(", ")
+ 		: "готово к просмотру";
+ const importWarningListText = (
+ 	warnings: string[],
+ 	fallback: string,
+ 	limit = 4,
+ ) => {
+-	if (!warnings.length) return fallback;
+-	const text = warnings
++	if (!(warnings ?? []).length) return fallback;
++	const text = (warnings ?? [])
+ 		.slice(0, limit)
+ 		.map(humanizeMigrationText)
+ 		.filter(Boolean)
+@@ -2668,8 +2668,8 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									setSmartImportCommit(null);
+ 								}}
+ 							>
+-								<strong>{smartImportModeLabels[mode].title}</strong>
+-								<span>{smartImportModeLabels[mode].detail}</span>
++								<strong>{smartImportModeLabels?.[mode]?.title ?? mode}</strong>
++								<span>{smartImportModeLabels?.[mode]?.detail ?? ""}</span>
+ 							</button>
+ 						))}
+ 					</div>
+@@ -2683,7 +2683,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 							<strong>Быстрый перенос без ручного поиска</strong>
+ 							<span>
+ 								{migrationAutopilot
+-									? `План готов: источников ${migrationAutopilot.sources.length}, следующий шаг уже показан ниже.`
++									? `План готов: источников ${(migrationAutopilot?.sources ?? []).length}, следующий шаг уже показан ниже.`
+ 									: "Выберите самый простой вход: поиск на ПК, папка старой программы, вставленная выгрузка или реквизиты клиники."}
+ 							</span>
+ 						</div>
+@@ -2692,13 +2692,13 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 							data-testid="migration-progress-strip"
+ 							aria-label="Готовность переноса"
+ 						>
+-							{migrationProgressItems.map((item) => (
++							{(migrationProgressItems ?? []).map((item) => (
+ 								<article
+-									className={`migration-progress-step status-${item.status}`}
+-									key={item.id}
++									className={`migration-progress-step status-${item?.status}`}
++									key={item?.id ?? Math.random()}
+ 								>
+-									<strong>{item.title}</strong>
+-									<span>{item.detail}</span>
++									<strong>{item?.title}</strong>
++									<span>{item?.detail}</span>
+ 								</article>
+ 							))}
+ 						</section>
+@@ -2707,7 +2707,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 								<strong>Старая программа на этом ПК</strong>
+ 								<span>
+ 									{migrationSourceDiscovery
+-										? `Найдено ${migrationSourceDiscovery.candidates.length}, папок проверено ${migrationSourceDiscovery.scannedFolders}.`
++										? `Найдено ${(migrationSourceDiscovery?.candidates ?? []).length}, папок проверено ${migrationSourceDiscovery?.scannedFolders ?? 0}.`
+ 										: "CRM сам ищет старые базы, выгрузки, снимки и следы стоматологических программ."}
+ 								</span>
+ 								<button
+@@ -2731,7 +2731,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 								<strong>Папка, диск или архив</strong>
+ 								<span>
+ 									{typedBrowserMigrationDiscovery
+-										? `Выбрано ${typedBrowserMigrationDiscovery.candidates.length} источников, файлов ${typedBrowserMigrationDiscovery.candidates.reduce((sum, candidate) => sum + candidate.matchedFiles, 0)}.`
++										? `Выбрано ${(typedBrowserMigrationDiscovery?.candidates ?? []).length} источников, файлов ${(typedBrowserMigrationDiscovery?.candidates ?? []).reduce((sum, candidate) => sum + (candidate?.matchedFiles ?? 0), 0)}.`
+ 										: browserDirectoryPickerAvailable
+ 											? "Админ выбирает папку старой МИС, диск выгрузки, КТ/снимки или архив снимков."
+ 											: "Если браузер не дает выбрать папку, можно выбрать файлы старой МИС и снимков."}
+@@ -3053,17 +3053,17 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 								</span>
+ 							</div>
+ 							<div className="migration-source-artifact-list">
+-								{typedBrowserMigrationDiscovery.candidates
++								{(typedBrowserMigrationDiscovery?.candidates ?? [])
+ 									.slice(0, 6)
+ 									.map((candidate, index) => (
+-										<span key={candidate.sourceFingerprint}>
++										<span key={candidate?.sourceFingerprint ?? index}>
+ 											{migrationSourceDisplayName(candidate, index)} ·{" "}
+-											{migrationSourceKindLabel(candidate.sourceKind)} ·{" "}
+-											{Math.round(candidate.confidence * 100)}%
++											{migrationSourceKindLabel(candidate?.sourceKind ?? "")} ·{" "}
++											{Math.round((candidate?.confidence ?? 0) * 100)}%
+ 										</span>
+ 									))}
+ 							</div>
+-							{!typedBrowserMigrationDiscovery.candidates.length ? (
++							{!(typedBrowserMigrationDiscovery?.candidates ?? []).length ? (
+ 								<div
+ 									className="migration-empty-recovery"
+ 									data-testid="browser-migration-empty-recovery"
+@@ -3111,7 +3111,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									</div>
+ 								</div>
+ 							) : null}
+-							{typedBrowserMigrationDiscovery.warnings
++							{(typedBrowserMigrationDiscovery?.warnings ?? [])
+ 								.slice(0, 4)
+ 								.map((warning) => (
+ 									<small key={warning}>{humanizeMigrationText(warning)}</small>
+@@ -3266,39 +3266,39 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 												</span>
+ 											</div>
+ 											<div className="migration-triage-grid">
+-												{migrationTriageItems.map((item) => (
++												{(migrationTriageItems ?? []).map((item) => (
+ 													<div
+-														className={`migration-triage-item status-${item.status}`}
+-														key={item.id}
++														className={`migration-triage-item status-${item?.status}`}
++														key={item?.id ?? Math.random()}
+ 													>
+-														<strong>{item.title}</strong>
++														<strong>{item?.title}</strong>
+ 														<span>
+-															{migrationOwnerLabels[item.owner] ??
+-																humanizeMigrationText(item.owner)}{" "}
++															{migrationOwnerLabels[item?.owner] ??
++																humanizeMigrationText(item?.owner)}{" "}
+ 															·{" "}
+-															{migrationHandoffPhaseLabels[item.phase] ??
+-																humanizeMigrationText(item.phase)}{" "}
++															{migrationHandoffPhaseLabels[item?.phase] ??
++																humanizeMigrationText(item?.phase)}{" "}
+ 															·{" "}
+ 															{migrationOperatorPacketStatusLabels[
+-																item.status
+-															] ?? humanizeMigrationText(item.status)}{" "}
+-															· {item.blocking ? "сначала это" : "параллельно"}
++																item?.status
++															] ?? humanizeMigrationText(item?.status)}{" "}
++															· {item?.blocking ? "сначала это" : "параллельно"}
+ 														</span>
+-														<small>{humanizeMigrationText(item.detail)}</small>
++														<small>{humanizeMigrationText(item?.detail)}</small>
+ 														<small>
+ 															Что нужно:{" "}
+-															{humanizeMigrationText(item.requiredArtifact)}
++															{humanizeMigrationText(item?.requiredArtifact)}
+ 														</small>
+ 														<small>
+ 															Готово, когда:{" "}
+-															{humanizeMigrationText(item.doneWhen)}
++															{humanizeMigrationText(item?.doneWhen)}
+ 														</small>
+ 													</div>
+ 												))}
+ 											</div>
+ 										</section>
+ 									) : null}
+-									{migrationAutopilot.operatorPacket.operatorScript ? (
++									{migrationAutopilot?.operatorPacket?.operatorScript ? (
+ 										<section
+ 											className="migration-autopilot-script"
+ 											data-testid="migration-autopilot-operator-script"
+@@ -3325,29 +3325,29 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 												</span>
+ 											</div>
+ 											<div className="migration-autopilot-summary">
+-												{migrationOperatorScriptSteps
++												{(migrationOperatorScriptSteps ?? [])
+ 													.slice(0, 7)
+ 													.map((step) => {
+-														const scriptCandidate = step.sourceFingerprint
+-															? typedMigrationAutopilotSources.find(
++														const scriptCandidate = step?.sourceFingerprint
++															? (typedMigrationAutopilotSources ?? []).find(
+ 																	(source) =>
+-																		source.candidate.sourceFingerprint ===
++																		source?.candidate?.sourceFingerprint ===
+ 																		step.sourceFingerprint,
+ 																)?.candidate
+ 															: null;
+ 														return (
+-															<article key={step.id}>
+-																<strong>{step.title}</strong>
++															<article key={step?.id ?? Math.random()}>
++																<strong>{step?.title}</strong>
+ 																<span>
+-																	{migrationOwnerLabels[step.owner] ??
+-																		humanizeMigrationText(step.owner)}{" "}
+-																	· {step.estimatedMinutes} мин ·{" "}
+-																	{step.blocking
++																	{migrationOwnerLabels[step?.owner] ??
++																		humanizeMigrationText(step?.owner)}{" "}
++																	· {step?.estimatedMinutes} мин ·{" "}
++																	{step?.blocking
+ 																		? "обязательно"
+ 																		: "параллельно"}
+ 																</span>
+ 																<small>
+-																	{humanizeMigrationText(step.detail)}
++																	{humanizeMigrationText(step?.detail)}
+ 																</small>
+ 																{renderMigrationOperatorStepActions(
+ 																	step,
+@@ -3361,19 +3361,19 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 										</section>
+ 									) : null}
+ 									<div className="migration-autopilot-summary">
+-										{typedMigrationOperatorLanes.slice(0, 5).map((lane) => (
+-											<article key={lane.id}>
+-												<strong>{lane.title}</strong>
++										{(typedMigrationOperatorLanes ?? []).slice(0, 5).map((lane) => (
++											<article key={lane?.id ?? Math.random()}>
++												<strong>{lane?.title}</strong>
+ 												<span>
+-													{migrationOwnerLabels[lane.owner] ??
+-														humanizeMigrationText(lane.owner)}{" "}
++													{migrationOwnerLabels[lane?.owner] ??
++														humanizeMigrationText(lane?.owner)}{" "}
+ 													·{" "}
+-													{migrationOperatorPacketStatusLabels[lane.status] ??
+-														humanizeMigrationText(lane.status)}{" "}
+-													· {Math.round(lane.score * 100)}%
++													{migrationOperatorPacketStatusLabels[lane?.status] ??
++														humanizeMigrationText(lane?.status)}{" "}
++													· {Math.round((lane?.score ?? 0) * 100)}%
+ 												</span>
+-												<small>{humanizeMigrationText(lane.detail)}</small>
+-												<small>{humanizeMigrationText(lane.nextAction)}</small>
++												<small>{humanizeMigrationText(lane?.detail)}</small>
++												<small>{humanizeMigrationText(lane?.nextAction)}</small>
+ 											</article>
+ 										))}
+ 									</div>
+@@ -3381,7 +3381,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 										className="migration-source-artifact-list"
+ 										aria-label="Первые действия миграции"
+ 									>
+-										{migrationAutopilot.operatorPacket.firstActions
++										{(migrationAutopilot?.operatorPacket?.firstActions ?? [])
+ 											.slice(0, 6)
+ 											.map((action: string) => (
+ 												<span key={action}>
+@@ -3394,53 +3394,53 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 										data-testid="migration-autopilot-handoff-checklist"
+ 										aria-label="Чеклист передачи миграции"
+ 									>
+-										{typedMigrationHandoffChecklist.slice(0, 6).map((item) => (
+-											<article key={item.id}>
+-												<strong>{item.title}</strong>
++										{(typedMigrationHandoffChecklist ?? []).slice(0, 6).map((item) => (
++											<article key={item?.id ?? Math.random()}>
++												<strong>{item?.title}</strong>
+ 												<span>
+-													{migrationOwnerLabels[item.owner] ??
+-														humanizeMigrationText(item.owner)}{" "}
++													{migrationOwnerLabels[item?.owner] ??
++														humanizeMigrationText(item?.owner)}{" "}
+ 													·{" "}
+-													{migrationHandoffPhaseLabels[item.phase] ??
+-														humanizeMigrationText(item.phase)}{" "}
++													{migrationHandoffPhaseLabels[item?.phase] ??
++														humanizeMigrationText(item?.phase)}{" "}
+ 													·{" "}
+-													{migrationOperatorPacketStatusLabels[item.status] ??
+-														humanizeMigrationText(item.status)}
++													{migrationOperatorPacketStatusLabels[item?.status] ??
++														humanizeMigrationText(item?.status)}
+ 												</span>
+-												<small>{humanizeMigrationText(item.detail)}</small>
++												<small>{humanizeMigrationText(item?.detail)}</small>
+ 												<small>
+-													Нужно: {humanizeMigrationText(item.requiredArtifact)}
++													Нужно: {humanizeMigrationText(item?.requiredArtifact)}
+ 												</small>
+-												<small>{humanizeMigrationText(item.doneWhen)}</small>
++												<small>{humanizeMigrationText(item?.doneWhen)}</small>
+ 											</article>
+ 										))}
+ 									</section>
+ 									{renderMigrationTechnicalNotes(
+ 										"Границы онлайн-поиска",
+ 										[
+-											`Онлайн-поиск: ${humanizeMigrationColumns(migrationAutopilot.operatorPacket.onlineLookupPolicy.allowed) || "нет доступных публичных полей"}`,
+-											`Не отправлять в онлайн-поиск: ${humanizeMigrationColumns(migrationAutopilot.operatorPacket.onlineLookupPolicy.forbidden, 6)}`,
++											`Онлайн-поиск: ${humanizeMigrationColumns(migrationAutopilot?.operatorPacket?.onlineLookupPolicy?.allowed) || "нет доступных публичных полей"}`,
++											`Не отправлять в онлайн-поиск: ${humanizeMigrationColumns(migrationAutopilot?.operatorPacket?.onlineLookupPolicy?.forbidden, 6)}`,
+ 										],
+ 										"migration-autopilot-technical-boundary",
+ 									)}
+ 								</div>
+ 							) : null}
+ 							<div className="migration-autopilot-summary">
+-								{typedMigrationAutopilotSteps.slice(0, 6).map((step) => (
+-									<article key={`${step.order}:${step.title}`}>
++								{(typedMigrationAutopilotSteps ?? []).slice(0, 6).map((step) => (
++									<article key={`${step?.order}:${step?.title}`}>
+ 										<strong>
+-											{step.order}. {step.title}
++											{step?.order}. {step?.title}
+ 										</strong>
+ 										<span>
+-											{migrationOwnerLabels[step.owner] ??
+-												humanizeMigrationText(step.owner)}{" "}
+-											· {step.blocking ? "обязательно" : "можно параллельно"}
++											{migrationOwnerLabels[step?.owner] ??
++												humanizeMigrationText(step?.owner)}{" "}
++											· {step?.blocking ? "обязательно" : "можно параллельно"}
+ 										</span>
+-										<small>{humanizeMigrationText(step.detail)}</small>
++										<small>{humanizeMigrationText(step?.detail)}</small>
+ 									</article>
+ 								))}
+ 							</div>
+-							{typedMigrationAutopilotSources.length ? (
++							{(typedMigrationAutopilotSources ?? []).length ? (
+ 								<div className="dicom-discovery-grid">
+ 									{typedMigrationAutopilotSources
+ 										.slice(0, 6)
+@@ -4448,18 +4448,18 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 								<span>
+ 									{typedSmartImportPreview.clinicSuggestion
+ 										? Object.keys(
+-												typedSmartImportPreview.clinicSuggestion.fields,
++												typedSmartImportPreview.clinicSuggestion?.fields ?? {},
+ 											).length
+ 										: 0}{" "}
+ 									реквизитов
+ 								</span>
+ 								<span>
+-									{typedSmartImportPreview.legacySources.length} источников
++									{(typedSmartImportPreview?.legacySources ?? []).length} источников
+ 								</span>
+ 								<span>
+ 									{
+-										typedSmartImportPreview.lineClassifications.filter(
+-											(row) => row.kind === "ignored",
++										(typedSmartImportPreview?.lineClassifications ?? []).filter(
++											(row) => row?.kind === "ignored",
+ 										).length
+ 									}{" "}
+ 									пропущено
+@@ -4473,8 +4473,8 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									disabled={
+ 										isSmartImportCommitting ||
+ 										!smartImportInputReady ||
+-										(typedSmartImportPreview.patientPreview.readyRows === 0 &&
+-											typedSmartImportPreview.imagingPreview.readyRows === 0)
++										((typedSmartImportPreview?.patientPreview?.readyRows ?? 0) === 0 &&
++											(typedSmartImportPreview?.imagingPreview?.readyRows ?? 0) === 0)
+ 									}
+ 									aria-busy={isSmartImportCommitting || undefined}
+ 								>
+@@ -4496,53 +4496,53 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									</span>
+ 								)}
+ 							</div>
+-							{typedSmartImportPreview.migrationPlan ? (
++							{typedSmartImportPreview?.migrationPlan ? (
+ 								<div className="import-rows">
+-									{typedSmartImportPreview.migrationPlan.steps.map((step) => (
++									{(typedSmartImportPreview.migrationPlan?.steps ?? []).map((step) => (
+ 										<article
+-											className={`import-row import-${step.status === "blocked" ? "blocked" : step.status === "ready" ? "ready" : "warning"}`}
+-											key={step.id}
++											className={`import-row import-${step?.status === "blocked" ? "blocked" : step?.status === "ready" ? "ready" : "warning"}`}
++											key={step?.id ?? Math.random()}
+ 										>
+-											<strong>{step.title}</strong>
++											<strong>{step?.title}</strong>
+ 											<span>
+-												{smartImportMigrationPlanStatusLabels[step.status] ??
+-													humanizeMigrationText(step.status)}
++												{smartImportMigrationPlanStatusLabels[step?.status] ??
++													humanizeMigrationText(step?.status)}
+ 											</span>
+-											<span>{step.detail}</span>
+-											<p>{humanizeMigrationText(step.nextAction)}</p>
++											<span>{step?.detail}</span>
++											<p>{humanizeMigrationText(step?.nextAction)}</p>
+ 										</article>
+ 									))}
+ 								</div>
+ 							) : null}
+-							{typedSmartImportPreview.legacySources.length ? (
++							{(typedSmartImportPreview?.legacySources ?? []).length ? (
+ 								<div className="import-rows">
+-									{typedSmartImportPreview.legacySources.map(
++									{(typedSmartImportPreview.legacySources ?? []).map(
+ 										(source, index) => (
+ 											<article
+-												className={`import-row import-${source.automationLevel === "ready_for_preview" ? "ready" : source.automationLevel === "manual_review" ? "blocked" : "warning"}`}
+-												key={`source-${source.kind}-${source.sourceRef ?? index}`}
++												className={`import-row import-${source?.automationLevel === "ready_for_preview" ? "ready" : source?.automationLevel === "manual_review" ? "blocked" : "warning"}`}
++												key={`source-${source?.kind}-${source?.sourceRef ?? index}`}
+ 											>
+ 												<strong>
+-													{source.title} · {Math.round(source.confidence * 100)}
++													{source?.title} · {Math.round((source?.confidence ?? 0) * 100)}
+ 													%
+ 												</strong>
+ 												<span>
+-													{migrationSourceKindLabel(source.kind)} ·{" "}
++													{migrationSourceKindLabel(source?.kind ?? "")} ·{" "}
+ 													{migrationAutomationLevelLabels[
+-														source.automationLevel
+-													] ?? humanizeMigrationText(source.automationLevel)}
++														source?.automationLevel ?? ""
++													] ?? humanizeMigrationText(source?.automationLevel)}
+ 												</span>
+-												{source.safeSourceAlias ? (
++												{source?.safeSourceAlias ? (
+ 													<span>{source.safeSourceAlias}</span>
+ 												) : null}
+-												<p>{humanizeMigrationText(source.recommendedRoute)}</p>
++												<p>{humanizeMigrationText(source?.recommendedRoute)}</p>
+ 												<p>
+ 													Нужно:{" "}
+-													{humanizeMigrationList(source.requiredArtifacts)}
++													{humanizeMigrationList(source?.requiredArtifacts)}
+ 												</p>
+ 												{renderMigrationTechnicalNotes(
+ 													"Технические границы источника",
+-													[source.privacy],
++													[source?.privacy ?? ""],
+ 													"smart-import-legacy-source-privacy-notes",
+ 												)}
+ 											</article>
+@@ -4550,39 +4550,39 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									)}
+ 								</div>
+ 							) : null}
+-							{typedSmartImportPreview.clinicSuggestion ? (
++							{typedSmartImportPreview?.clinicSuggestion ? (
+ 								<div className="import-rows">
+ 									<article className="import-row import-warning">
+ 										<strong>
+ 											Профиль клиники ·{" "}
+ 											{Math.round(
+-												typedSmartImportPreview.clinicSuggestion.confidence *
++												(typedSmartImportPreview.clinicSuggestion?.confidence ?? 0) *
+ 													100,
+ 											)}
+ 											%
+ 										</strong>
+ 										<span>
+ 											Строки:{" "}
+-											{typedSmartImportPreview.clinicSuggestion.sourceLineNumbers.join(
++											{(typedSmartImportPreview.clinicSuggestion?.sourceLineNumbers ?? []).join(
+ 												", ",
+ 											)}
+ 										</span>
+ 										<p>
+ 											{clinicLookupSuggestionFieldEntries(
+-												typedSmartImportPreview.clinicSuggestion.fields,
++												typedSmartImportPreview.clinicSuggestion?.fields ?? {},
+ 											)
+ 												.map(
+ 													([key, value]) =>
+-														`${clinicPublicLookupFieldLabels[key] ?? key}: ${String(value).trim()}`,
++														`${clinicPublicLookupFieldLabels[key] ?? key}: ${String(value ?? "").trim()}`,
+ 												)
+ 												.join(" · ")}
+ 										</p>
+ 										<small className="clinic-public-apply-summary">
+ 											{clinicLookupSuggestionApplySummary(
+-												typedSmartImportPreview.clinicSuggestion.fields,
++												typedSmartImportPreview.clinicSuggestion?.fields ?? {},
+ 											)}
+ 										</small>
+-										{typedSmartImportPreview.clinicSuggestion.warnings
++										{(typedSmartImportPreview.clinicSuggestion?.warnings ?? [])
+ 											.slice(0, 2)
+ 											.map((warning: string) => (
+ 												<small key={warning}>
+@@ -4595,7 +4595,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 											data-testid="apply-smart-import-clinic-profile"
+ 											disabled={
+ 												!clinicLookupSuggestionFieldEntries(
+-													typedSmartImportPreview.clinicSuggestion.fields,
++													typedSmartImportPreview.clinicSuggestion?.fields ?? {},
+ 												).length
+ 											}
+ 											onClick={() =>
+@@ -4627,21 +4627,21 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 											</small>
+ 										</div>
+ 									</article>
+-									{typedSmartImportPreview.publicLookupTargets.map((target) => (
++									{(typedSmartImportPreview?.publicLookupTargets ?? []).map((target) => (
+ 										<article
+ 											className="import-row import-warning"
+-											key={`${target.kind}:${target.url}`}
++											key={`${target?.kind}:${target?.url}`}
+ 										>
+-											<strong>{target.title}</strong>
+-											<span>{target.privacy}</span>
+-											<p>{humanizeMigrationText(target.nextAction)}</p>
++											<strong>{target?.title}</strong>
++											<span>{target?.privacy}</span>
++											<p>{humanizeMigrationText(target?.nextAction)}</p>
+ 											<a
+ 												className="text-button"
+-												href={target.url}
++												href={target?.url}
+ 												target="_blank"
+ 												rel="noreferrer noopener"
+-												aria-label={`Открыть публичный источник в новой вкладке: ${target.title}`}
+-												title={`Открыть публичный источник в новой вкладке: ${target.title}`}
++												aria-label={`Открыть публичный источник в новой вкладке: ${target?.title}`}
++												title={`Открыть публичный источник в новой вкладке: ${target?.title}`}
+ 											>
+ 												<ExternalLink aria-hidden="true" /> Открыть
+ 											</a>
+@@ -4650,18 +4650,18 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 								</div>
+ 							) : null}
+ 							<div className="import-rows">
+-								{typedSmartImportPreview.lineClassifications.map((row) => (
++								{(typedSmartImportPreview?.lineClassifications ?? []).map((row) => (
+ 									<article
+-										className={`import-row import-${row.kind === "ignored" ? "warning" : "ready"}`}
+-										key={row.lineNumber}
++										className={`import-row import-${row?.kind === "ignored" ? "warning" : "ready"}`}
++										key={row?.lineNumber ?? Math.random()}
+ 									>
+ 										<strong>
+-											{smartImportLineKindLabels[row.kind] ?? row.kind} ·{" "}
+-											{Math.round(row.confidence * 100)}%
++											{smartImportLineKindLabels[row?.kind] ?? row?.kind} ·{" "}
++											{Math.round((row?.confidence ?? 0) * 100)}%
+ 										</strong>
+-										<span>Строка {row.lineNumber}</span>
+-										<span>{row.reason}</span>
+-										<p>{row.text}</p>
++										<span>Строка {row?.lineNumber}</span>
++										<span>{row?.reason}</span>
++										<p>{row?.text}</p>
+ 									</article>
+ 								))}
+ 							</div>
+@@ -5368,7 +5368,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 											</article>
+ 										))}
+ 								</div>
+-								{typedLocalImagingOrganizer.warnings
++								{(typedLocalImagingOrganizer?.warnings ?? [])
+ 									.slice(0, 4)
+ 									.map((warning) => (
+ 										<small key={warning}>
+@@ -5381,9 +5381,9 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 							<div className="recognition-notes">
+ 								<span>
+ 									Найдено файлов: {typedImagingFolderScan.filesFound}. В
+-									предпросмотре: {typedImagingFolderScan.preview.totalRows}.
++									предпросмотре: {typedImagingFolderScan.preview?.totalRows ?? 0}.
+ 								</span>
+-								{typedImagingFolderScan.warnings.map((warning) => (
++								{(typedImagingFolderScan.warnings ?? []).map((warning) => (
+ 									<span key={warning}>{humanizeMigrationText(warning)}</span>
+ 								))}
+ 							</div>
+@@ -5395,9 +5395,9 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									{typedDicomFolderSeriesScan.filesFound}, прочитано{" "}
+ 									{typedDicomFolderSeriesScan.filesParsed}, строк метаданных{" "}
+ 									{typedDicomFolderSeriesScan.metadataRows}, серий{" "}
+-									{typedDicomFolderSeriesScan.preview.totalSeries}.
++									{typedDicomFolderSeriesScan.preview?.totalSeries ?? 0}.
+ 								</span>
+-								{typedDicomFolderSeriesScan.warnings
++								{(typedDicomFolderSeriesScan.warnings ?? [])
+ 									.slice(0, 5)
+ 									.map((warning) => (
+ 										<span key={warning}>{humanizeMigrationText(warning)}</span>
+@@ -5412,7 +5412,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 								<div className="dicom-folder-workup-head">
+ 									<strong>
+ 										План: серий {typedDicomFolderWorkupPlan.selectedSeriesCount}{" "}
+-										/ файлов {typedDicomFolderWorkupPlan.folder.filesParsed}
++										/ файлов {typedDicomFolderWorkupPlan.folder?.filesParsed ?? 0}
+ 									</strong>
+ 									<span>
+ 										{humanizeMigrationText(
+@@ -5421,33 +5421,33 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									</span>
+ 								</div>
+ 								<div className="dicom-folder-workup-plans">
+-									{typedDicomFolderWorkupPlan.plans.slice(0, 4).map((plan) => (
++									{(typedDicomFolderWorkupPlan.plans ?? []).slice(0, 4).map((plan) => (
+ 										<article
+-											className={`workup-${plan.recommendedPath}`}
+-											key={plan.series.id}
++											className={`workup-${plan?.recommendedPath}`}
++											key={plan?.series?.id ?? Math.random()}
+ 										>
+ 											<strong>
+-												{dicomFolderWorkupPathLabels[plan.recommendedPath]}
++												{dicomFolderWorkupPathLabels[plan?.recommendedPath ?? ""]}
+ 											</strong>
+ 											<span>
+-												{plan.series.modality ?? "тип не указан"} / файлов{" "}
+-												{plan.series.fileCount} / готовность{" "}
+-												{plan.readiness.readinessScore}%
++												{plan?.series?.modality ?? "тип не указан"} / файлов{" "}
++												{plan?.series?.fileCount ?? 0} / готовность{" "}
++												{plan?.readiness?.readinessScore ?? 0}%
+ 											</span>
+ 											<small>
+ 												{dicomLabel(
+ 													dicomTextureStrategyLabels,
+-													plan.renderCachePlan.textureStrategy,
++													plan?.renderCachePlan?.textureStrategy,
+ 													"план загрузки",
+ 												)}{" "}
+-												/ первый показ {plan.renderCachePlan.firstPaintBudgetMs}{" "}
+-												мс / память {plan.renderCachePlan.gpuMemoryBudgetMb} МБ
++												/ первый показ {plan?.renderCachePlan?.firstPaintBudgetMs ?? 0}{" "}
++												мс / память {plan?.renderCachePlan?.gpuMemoryBudgetMb ?? 0} МБ
+ 											</small>
+-											<small>{humanizeMigrationText(plan.nextAction)}</small>
++											<small>{humanizeMigrationText(plan?.nextAction)}</small>
+ 										</article>
+ 									))}
+ 								</div>
+-								{typedDicomFolderWorkupPlan.warnings
++								{(typedDicomFolderWorkupPlan.warnings ?? [])
+ 									.slice(0, 4)
+ 									.map((warning) => (
+ 										<small key={warning}>
+@@ -5831,49 +5831,49 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 								<span>{dicomSeriesPreview.blockedSeries} нужно действие</span>
+ 							</div>
+ 							<div className="dicom-series-list">
+-								{typedDicomSeriesPreviewSeries.slice(0, 6).map((series) => (
++								{(typedDicomSeriesPreviewSeries ?? []).slice(0, 6).map((series) => (
+ 									<article
+-										className={`dicom-series-row dicom-series-${series.status}`}
+-										key={series.id}
++										className={`dicom-series-row dicom-series-${series?.status}`}
++										key={series?.id ?? Math.random()}
+ 									>
+ 										<div>
+-											<strong>{series.patientName ?? "Пациент ?"}</strong>
++											<strong>{series?.patientName ?? "Пациент ?"}</strong>
+ 											<span>
+-												{series.kind
++												{series?.kind
+ 													? imagingKindLabels[series.kind]
+ 													: "тип не указан"}{" "}
+-												· {series.modality ?? "модальность не указана"} ·{" "}
+-												{series.fileCount} файлов
++												· {series?.modality ?? "модальность не указана"} ·{" "}
++												{series?.fileCount ?? 0} файлов
+ 											</span>
+ 										</div>
+ 										<div>
+ 											<span>
+-												{importRowStatusLabels[series.status] ?? series.status}{" "}
+-												· {dicomSeriesViewerLabels[series.recommendedViewer]}
++												{importRowStatusLabels[series?.status ?? ""] ?? series?.status}{" "}
++												· {dicomSeriesViewerLabels[series?.recommendedViewer ?? ""]}
+ 											</span>
+ 											<small>
+-												{series.mprReadiness.recommendedLayout} ·{" "}
+-												{series.mprReadiness.canOpenMpr
++												{series?.mprReadiness?.recommendedLayout} ·{" "}
++												{series?.mprReadiness?.canOpenMpr
+ 													? "предпросмотр КТ-срезов готов"
+-													: series.mprReadiness.nextAction}
++													: series?.mprReadiness?.nextAction}
+ 											</small>
+ 											<small className="dicom-series-resource">
+ 												{
+ 													mprLoadStrategyLabels[
+-														series.mprReadiness.resourcePolicy.loadStrategy
++														series?.mprReadiness?.resourcePolicy?.loadStrategy ?? ""
+ 													]
+ 												}{" "}
+-												/ {series.mprReadiness.resourcePolicy.estimatedMemoryMb}{" "}
++												/ {series?.mprReadiness?.resourcePolicy?.estimatedMemoryMb ?? 0}{" "}
+ 												МБ /{" "}
+ 												{
+ 													mprResourceTierLabels[
+-														series.mprReadiness.resourcePolicy.requiredTier
++														series?.mprReadiness?.resourcePolicy?.requiredTier ?? ""
+ 													]
+ 												}
+ 											</small>
+ 											<small>{dicomSeriesDisplayText(series)}</small>
+ 										</div>
+-										<p>{dicomSeriesWarningText(series.warnings)}</p>
++										<p>{dicomSeriesWarningText(series?.warnings ?? [])}</p>
+ 									</article>
+ 								))}
+ 							</div>
+@@ -5922,25 +5922,25 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 								)}
+ 							</div>
+ 							<div className="import-rows">
+-								{typedImagingImportPreview.rows.map((row) => (
++								{(typedImagingImportPreview.rows ?? []).map((row) => (
+ 									<article
+-										className={`import-row import-${row.status}`}
+-										key={row.rowNumber}
++										className={`import-row import-${row?.status}`}
++										key={row?.rowNumber ?? Math.random()}
+ 									>
+ 										<strong>
+-											{row.patientName ?? `Строка ${row.rowNumber}`}
++											{row?.patientName ?? `Строка ${row?.rowNumber}`}
+ 										</strong>
+ 										<span>
+-											{importRowStatusLabels[row.status] ?? row.status}
++											{importRowStatusLabels[row?.status ?? ""] ?? row?.status}
+ 										</span>
+ 										<span>
+-											{row.kind ? imagingKindLabels[row.kind] : "тип не найден"}
++											{row?.kind ? imagingKindLabels[row.kind] : "тип не найден"}
+ 										</span>
+ 										<span>
+-											{row.toothCode ?? row.region ?? "область не найдена"}
++											{row?.toothCode ?? row?.region ?? "область не найдена"}
+ 										</span>
+ 										<p>
+-											{imagingImportRowWarningText(row.warnings, row.filePath)}
++											{imagingImportRowWarningText(row?.warnings ?? [], row?.filePath)}
+ 										</p>
+ 									</article>
+ 								))}
+@@ -5972,7 +5972,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 						className="import-source-grid"
+ 						aria-label="Источник импорта"
+ 					>
+-						{typedImportSourceKinds.map((kind) => (
++						{(typedImportSourceKinds ?? []).map((kind) => (
+ 							<button
+ 								className={`source-card ${importSourceKind === kind ? "active" : ""}`}
+ 								type="button"
+@@ -5984,8 +5984,8 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									setImportCommit(null);
+ 								}}
+ 							>
+-								<strong>{importSourceLabels[kind].title}</strong>
+-								<span>{importSourceLabels[kind].detail}</span>
++								<strong>{importSourceLabels[kind]?.title ?? kind}</strong>
++								<span>{importSourceLabels[kind]?.detail ?? ""}</span>
+ 							</button>
+ 						))}
+ 					</div>
+@@ -6008,7 +6008,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 							className="document-ingestion-targets"
+ 							aria-label="Куда отправить извлеченный текст"
+ 						>
+-							{typedDocumentIngestionTargets.map((target) => (
++							{(typedDocumentIngestionTargets ?? []).map((target) => (
+ 								<button
+ 									className={documentIngestionTarget === target ? "active" : ""}
+ 									key={target}
+@@ -6016,7 +6016,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									aria-pressed={documentIngestionTarget === target}
+ 									onClick={() => setDocumentIngestionTarget(target)}
+ 								>
+-									{ingestionTargetLabels[target]}
++									{ingestionTargetLabels[target] ?? target}
+ 								</button>
+ 							))}
+ 						</section>
+@@ -6078,9 +6078,9 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 										</span>
+ 									</div>
+ 									<p>{typedDocumentIngestion.quality.nextAction}</p>
+-									{typedDocumentIngestion.quality.signals.length ? (
++									{(typedDocumentIngestion.quality?.signals ?? []).length ? (
+ 										<div className="document-signal-row">
+-											{typedDocumentIngestion.quality.signals
++											{(typedDocumentIngestion.quality?.signals ?? [])
+ 												.slice(0, 10)
+ 												.map((signal) => (
+ 													<span key={signal}>
+@@ -6090,12 +6090,12 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 										</div>
+ 									) : null}
+ 								</div>
+-								{typedDocumentIngestion.extractedFiles.length ? (
++								{(typedDocumentIngestion.extractedFiles ?? []).length ? (
+ 									<section
+ 										className="document-extracted-files"
+ 										aria-label="Извлеченные файлы архива"
+ 									>
+-										{typedDocumentIngestion.extractedFiles
++										{(typedDocumentIngestion.extractedFiles ?? [])
+ 											.slice(0, 8)
+ 											.map((file) => (
+ 												<span key={`${file.fileName}-${file.detectedKind}`}>
+@@ -6109,13 +6109,13 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 									{typedDocumentIngestion.textPreview || "Текст не извлечен"}
+ 								</p>
+ 								<div className="recognition-notes">
+-									{typedDocumentIngestion.routes.slice(0, 4).map((route) => (
++									{(typedDocumentIngestion.routes ?? []).slice(0, 4).map((route) => (
+ 										<span key={route.target}>
+ 											{ingestionTargetLabels[route.target]}:{" "}
+ 											{route.enabled ? "готово" : "пропустить"} · {route.reason}
+ 										</span>
+ 									))}
+-									{typedDocumentIngestion.warnings.map((warning) => (
++									{(typedDocumentIngestion.warnings ?? []).map((warning) => (
+ 										<span key={warning}>{humanizeMigrationText(warning)}</span>
+ 									))}
+ 								</div>
+@@ -6192,7 +6192,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 
+ 					{typedImportIntake ? (
+ 						<div className="recognition-notes">
+-							{typedImportIntake.recognitionNotes.map((note) => (
++							{(typedImportIntake.recognitionNotes ?? []).map((note) => (
+ 								<span key={note}>{note}</span>
+ 							))}
+ 						</div>
+@@ -6231,19 +6231,19 @@ export function SettingsImportsTab(props: Record<string, any>) {
+ 								)}
+ 							</div>
+ 							<div className="import-rows">
+-								{typedImportPreview.rows.map((row) => (
++								{(typedImportPreview.rows ?? []).map((row) => (
+ 									<article
+-										className={`import-row import-${row.status}`}
+-										key={row.rowNumber}
++										className={`import-row import-${row?.status}`}
++										key={row?.rowNumber ?? Math.random()}
+ 									>
+-										<strong>{row.fullName ?? `Строка ${row.rowNumber}`}</strong>
++										<strong>{row?.fullName ?? `Строка ${row?.rowNumber}`}</strong>
+ 										<span>
+-											{importRowStatusLabels[row.status] ?? row.status}
++											{importRowStatusLabels[row?.status ?? ""] ?? row?.status}
+ 										</span>
+-										<span>{row.phone ?? "нет телефона"}</span>
+-										<span>{row.birthDate ?? "нет даты"}</span>
++										<span>{row?.phone ?? "нет телефона"}</span>
++										<span>{row?.birthDate ?? "нет даты"}</span>
+ 										<p>
+-											{patientImportRowWarningText(row.warnings, row.notes)}
++											{patientImportRowWarningText(row?.warnings ?? [], row?.notes)}
+ 										</p>
+ 									</article>
+ 								))}

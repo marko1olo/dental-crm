@@ -147,7 +147,34 @@ export function useImagingQueries(options?: { auth?: any }) {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const selectCtPlanningImplant = (_implant: any) => {};
 
+	async function loadImagingViewerSession(studyId: string) {
+		await fetch(`/api/imaging/studies/${studyId}/viewer-session`);
+	}
+	async function saveImagingViewerSession(
+		studyId: string,
+		payload: Record<string, unknown>,
+	) {
+		await fetch(`/api/imaging/studies/${studyId}/viewer-session`, {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(payload),
+		});
+	}
+	async function scanImagingFolderSeriesPreview(
+		folderPath: string,
+		controller: AbortController,
+	) {
+		await fetch("/api/imaging/dicom/folder-series-preview", {
+			method: "POST",
+			signal: controller.signal,
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ folderPath }),
+		});
+	}
 	return {
+		loadImagingViewerSession,
+		saveImagingViewerSession,
+		scanImagingFolderSeriesPreview,
 		getScans,
 		saveBatchToothStates,
 		analyzeVisiograph,

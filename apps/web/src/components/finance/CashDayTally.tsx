@@ -154,7 +154,7 @@ export function CashDayTally({
 							className="finance-list"
 							style={{ border: "none", padding: 0, background: "transparent" }}
 						>
-							{summary.byMethod.map((row) => {
+							{(summary?.byMethod ?? []).map((row) => {
 								const RowIcon = METHOD_ICONS[row.method] ?? Coins;
 								return (
 									<article className="finance-row" key={row.method}>

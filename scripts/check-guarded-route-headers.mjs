@@ -35,6 +35,7 @@ import { extname, join } from "node:path";
 
 const require_ = createRequire(import.meta.url);
 const ts = require_("typescript");
+
 import {
 	HEADER_HELPERS as ANALYSIS_HEADER_HELPERS,
 	CONDUIT_REASON,
@@ -265,11 +266,7 @@ function localGuardWrappers(code, fileName = "file.ts") {
 		if (!body) return false;
 		let found = false;
 		const walk = (node) => {
-			if (
-				!found &&
-				ts.isIdentifier(node) &&
-				GUARD_NAMES.includes(node.text)
-			) {
+			if (!found && ts.isIdentifier(node) && GUARD_NAMES.includes(node.text)) {
 				found = true;
 			}
 			node.forEachChild(walk);
@@ -289,8 +286,7 @@ function localGuardWrappers(code, fileName = "file.ts") {
 				ts.isFunctionExpression(node.initializer)) &&
 			node.initializer.body
 		) {
-			if (bodyMentionsGuard(node.initializer.body))
-				names.add(node.name.text);
+			if (bodyMentionsGuard(node.initializer.body)) names.add(node.name.text);
 		}
 		node.forEachChild(visit);
 	};

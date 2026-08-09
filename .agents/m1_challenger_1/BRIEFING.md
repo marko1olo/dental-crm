@@ -1,58 +1,38 @@
-# BRIEFING — 2026-08-08T17:03:45Z
+# BRIEFING — 2026-08-09T12:05:10Z
 
 ## Mission
-Adversarial empirical challenge of Milestone 1 worker deliverables: verify Playwright smoke tests, typecheck, check flakiness, edge cases, and render verdict (APPROVE or REQUEST_CHANGES).
+Empirically and adversarially verify the 121 PNG screenshot files in `C:\Users\Admin\.gemini\antigravity\brain\67e66496-7d3f-4df1-8f98-31bd016dcb96\`. Check MD5 hashes, sizes (>= 20 KB), and 4-state matrix coverage. Produce handoff report with verdict (APPROVE or REQUEST_CHANGES).
 
 ## 🔒 My Identity
-- Archetype: Empirical Challenger
+- Archetype: empirical challenger
 - Roles: critic, specialist
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\m1_challenger_1
-- Original parent: e922dda7-e65d-472b-b0e5-727b9201e7c4
-- Milestone: Milestone 1
+- Original parent: 67e66496-7d3f-4df1-8f98-31bd016dcb96
+- Milestone: M1 Screenshot Audit & Verification
 - Instance: 1 of 1
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Rely on empirical evidence, not worker claims
-- UTF-8 encoding compliance
+- Run all verification code ourselves. Do NOT trust unverified claims.
+- Check exact size (>= 20 KB), duplicate MD5 hashes, and 4-state matrix coverage.
 
 ## Current Parent
-- Conversation ID: e922dda7-e65d-472b-b0e5-727b9201e7c4
-- Updated: 2026-08-08T17:03:45Z
+- Conversation ID: 67e66496-7d3f-4df1-8f98-31bd016dcb96
+- Updated: 2026-08-09T12:05:10Z
 
 ## Review Scope
-- **Files to review**:
-  - `C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md`
-  - `C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\handoff.md`
-  - `apps/web/tests/e2e/smoke.spec.ts`
-  - `@dental/web` codebase
-- **Interface contracts**: `C:\Clinic_MVP\dental-crm\AGENTS.md`
-- **Review criteria**: correctness, empirical verification, type checking, test stress resilience, flakiness, warning/error analysis.
+- **Target folder**: `C:\Users\Admin\.gemini\antigravity\brain\67e66496-7d3f-4df1-8f98-31bd016dcb96\`
+- **Original request**: `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`
+- **Dispatch instruction**: `C:\Clinic_MVP\dental-crm\.agents\m1_challenger_1\DISPATCH.md`
 
 ## Key Decisions Made
-- Executed `npm run typecheck -w @dental/web` (Passed 0 errors).
-- Executed `npx playwright test tests/e2e/smoke.spec.ts` (Default single run passed 5/5).
-- Executed `npx madge --circular apps/web/src/main.tsx` (0 circular dependencies).
-- Executed Playwright stress testing (`--repeat-each=3` with parallel workers): **REPRODUCED FLAKINESS DEFECT** in Spec #2 (`Error: Login screen rendered empty body` - Expected >200, Received 184).
-- Identified root cause: `smoke.spec.ts` uses `waitForTimeout(2000)` before `React.lazy` chunk loading finishes, causing brittle race condition under high CPU load.
-- Rendered Verdict: **REQUEST_CHANGES** (to harden `smoke.spec.ts` against race conditions).
-
-## Attack Surface
-- **Hypotheses tested**:
-  - H1: Does `npm run typecheck -w @dental/web` pass? -> Confirmed YES.
-  - H2: Does single-run `npx playwright test tests/e2e/smoke.spec.ts` pass? -> Confirmed YES.
-  - H3: Is Playwright smoke spec runner resilient under high concurrency / CPU stress? -> Confirmed NO (reproduced race condition failure in Spec 2).
-  - H4: Are there circular dependencies in `@dental/web`? -> Confirmed NO (madge reported 0).
-- **Vulnerabilities found**:
-  - Flaky test spec in `apps/web/tests/e2e/smoke.spec.ts`: line 148 hardcoded `waitForTimeout(2000)` leads to 184-character Suspense fallback assertion failure under parallel worker load.
-- **Untested angles**:
-  - None within Milestone 1 scope.
-
-## Loaded Skills
-- None loaded explicitly.
+- Executed empirical verification script `verify_screenshots.cjs`.
+- Found file size check passes (all 121 PNGs >= 20 KB).
+- Found MD5 duplicate check CRITICAL FAIL (7 duplicate clusters across 107 files; only 21 unique PNG contents out of 121 files).
+- Found 4-state matrix coverage CRITICAL FAIL (16 views missing PC_Dark state).
+- Formulated verdict: `REQUEST_CHANGES`.
 
 ## Artifact Index
-- `C:\Clinic_MVP\dental-crm\.agents\m1_challenger_1\DISPATCH.md` — incoming dispatch log
-- `C:\Clinic_MVP\dental-crm\.agents\m1_challenger_1\BRIEFING.md` — working briefing index
-- `C:\Clinic_MVP\dental-crm\.agents\m1_challenger_1\progress.md` — progress heartbeat log
-- `C:\Clinic_MVP\dental-crm\.agents\m1_challenger_1\handoff.md` — final 5-component handoff report
+- `BRIEFING.md` — Agent working memory
+- `progress.md` — Liveness heartbeat
+- `handoff.md` — Final verification report and verdict (REQUEST_CHANGES)

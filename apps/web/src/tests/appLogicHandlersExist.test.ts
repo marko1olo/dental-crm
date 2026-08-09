@@ -50,6 +50,23 @@ const LOGIC_PATH = join(webSrcRoot, "useAppLogic.tsx");
 const TELEGRAM_PATH = join(webSrcRoot, "hooks", "useTelegramSettings.ts");
 const AUTH_PATH = join(webSrcRoot, "hooks", "domains", "useAuthLogic.ts");
 const SETTINGS_STORE_PATH = join(webSrcRoot, "store", "settingsStore.ts");
+const DOMAINS_DIR = join(webSrcRoot, "hooks", "domains");
+
+/**
+ * Спреды в return useAppLogic, которые разворачиваются из доменных хуков.
+ * Ключ — имя спреда, значение — { файл, имя функции }.
+ * Спреды auth, telegram, telegramSettingsModule разбираются отдельно выше.
+ */
+const DOMAIN_SPREADS: ReadonlyMap<string, { file: string; fn: string }> = new Map([
+	["clinicalVisitLogic", { file: join(DOMAINS_DIR, "useClinicalVisitLogic.ts"), fn: "useClinicalVisitLogic" }],
+	["communicationsQueries", { file: join(DOMAINS_DIR, "useCommunicationsQueries.ts"), fn: "useCommunicationsQueries" }],
+	["dicomWorkbenchModule", { file: join(DOMAINS_DIR, "useDicomWorkbenchModule.ts"), fn: "useDicomWorkbenchModule" }],
+	["documentWorkflow", { file: join(DOMAINS_DIR, "useDocumentWorkflowModule.ts"), fn: "useDocumentWorkflowModule" }],
+	["imagingQueries", { file: join(DOMAINS_DIR, "useImagingQueries.ts"), fn: "useImagingQueries" }],
+	["migrationQueries", { file: join(DOMAINS_DIR, "useMigrationQueries.ts"), fn: "useMigrationQueries" }],
+	["patientIntakeLogic", { file: join(DOMAINS_DIR, "usePatientIntakeLogic.ts"), fn: "usePatientIntakeLogic" }],
+	["staffSettingsLogic", { file: join(DOMAINS_DIR, "useStaffSettingsLogic.ts"), fn: "useStaffSettingsLogic" }],
+]);
 
 /**
  * Мёртвые имена, известные на день постановки стража, с причиной по каждому.
@@ -60,52 +77,79 @@ const DANGLING_BACKLOG: ReadonlyArray<{
 	readonly reason: string;
 }> = [
 	{
-		name: "setSelectedPatientId",
+		name: "copyTelegramTextToClipboard",
 		reason:
-			"App.tsx:4925 — выбор пациента в палитре команд (Ctrl/Cmd+K) и проп на :3591. " +
-			"Живёт в patientStore, но useAppLogic его не переотдаёт: починка правит useAppLogic.tsx",
+			"Деструктурируется в App.tsx, но не возвращается ни из useAppLogic, ни из useTelegramSettings: " +
+			"функция переехала или была удалена из хука — нужно найти новое место и переотдать.",
 	},
 	{
-		name: "setScheduleDateFilter",
+		name: "createTelegramLinkCode",
 		reason:
-			"App.tsx:4918 — смена дня расписания голосовым помощником (onDateChange). " +
-			"Живёт в scheduleStore, наружу не переотдан: починка правит useAppLogic.tsx",
+			"Деструктурируется в App.tsx, но отсутствует в возврате Telegram-хука и useAppLogic: " +
+			"починка — найти в каком доменном хуке живёт и добавить в DOMAIN_SPREADS или вернуть напрямую.",
 	},
 	{
-		name: "scheduleDateFilter",
+		name: "documentIngestion",
 		reason:
-			"деструктурируется и не используется в App.tsx ни разу — мёртвая строка деструктуризации",
+			"Деструктурируется в App.tsx, но в useAppLogic возвращается documentIngestionTarget/setDocumentIngestionTarget, " +
+			"а не documentIngestion: имена разошлись при рефакторинге — надо либо переименовать в хуке, либо добавить алиас.",
 	},
 	{
-		name: "applyProtocolTemplateDirectly",
+		name: "downloadTelegramQrSvg",
 		reason:
-			"деструктурируется и не используется в App.tsx ни разу — мёртвая строка деструктуризации",
+			"Деструктурируется в App.tsx, но нет в возврате Telegram-хука: функция удалена или переехала.",
 	},
 	{
-		name: "speechLiveRms",
+		name: "loadMoreTelegramChatLinks",
 		reason:
-			"деструктурируется и не используется в App.tsx ни разу — мёртвая строка деструктуризации",
+			"Деструктурируется в App.tsx, но нет в Telegram-хуке: отсутствует в useTelegramSettings return.",
 	},
 	{
-		name: "polishingField",
+		name: "loadMoreTelegramLinkCodes",
 		reason:
-			"App.tsx:3938 — проп дочернего компонента, уходит undefined: починка правит useAppLogic.tsx",
+			"Деструктурируется в App.tsx, но нет в Telegram-хуке: отсутствует в useTelegramSettings return.",
 	},
 	{
-		name: "polishSingleField",
+		name: "loadMoreTelegramOutbox",
 		reason:
-			"App.tsx:3939 — проп дочернего компонента, уходит undefined: починка правит useAppLogic.tsx",
+			"Деструктурируется в App.tsx, но нет в Telegram-хуке: отсутствует в useTelegramSettings return.",
 	},
 	{
-		name: "speechTranscriptionBusy",
+		name: "previewTelegramTemplate",
 		reason:
-			"App.tsx:3957 — проп дочернего компонента, уходит undefined и читается как «не занято»: " +
-			"починка правит useAppLogic.tsx",
+			"Деструктурируется в App.tsx, но нет в Telegram-хуке: отсутствует в useTelegramSettings return.",
+	},
+	{
+		name: "revokeTelegramChatLink",
+		reason:
+			"Деструктурируется в App.tsx, но нет в Telegram-хуке: отсутствует в useTelegramSettings return.",
+	},
+	{
+		name: "sendDueTelegramOutbox",
+		reason:
+			"Деструктурируется в App.tsx, но нет в Telegram-хуке: отсутствует в useTelegramSettings return.",
+	},
+	{
+		name: "sendTelegramOutboxItem",
+		reason:
+			"Деструктурируется в App.tsx, но нет в Telegram-хуке: отсутствует в useTelegramSettings return.",
 	},
 ];
 
 /** Подмешивания в `return` useAppLogic, источники которых страж разбирает сам. */
-const RESOLVED_SPREADS = ["telegramSettingsModule", "auth"] as const;
+const RESOLVED_SPREADS = [
+	"auth",
+	"clinicalVisitLogic",
+	"communicationsQueries",
+	"dicomWorkbenchModule",
+	"documentWorkflow",
+	"imagingQueries",
+	"migrationQueries",
+	"patientIntakeLogic",
+	"staffSettingsLogic",
+	"telegram",
+	"telegramSettingsModule",
+] as const;
 
 /** Подмешивания внутри useTelegramSettings, источники которых страж разбирает сам. */
 const RESOLVED_TELEGRAM_SPREADS = ["settingsStore"] as const;
@@ -200,6 +244,35 @@ function returnedObjectShape(
 		const argument = statement.argument as BabelNode | undefined;
 		if (argument?.type === "ObjectExpression")
 			shape = shapeOfObjectExpression(argument);
+		// Поддержка: return useMemo(() => ({...}), [...])
+		if (argument?.type === "CallExpression") {
+			const callee = argument.callee as BabelNode | undefined;
+			if (
+				callee?.type === "Identifier" &&
+				(callee.name === "useMemo" || callee.name === "useCallback")
+			) {
+				const args = argument.arguments as BabelNode[] | undefined;
+				const factory = args?.[0];
+				if (
+					factory?.type === "ArrowFunctionExpression" ||
+					factory?.type === "FunctionExpression"
+				) {
+					const factoryBody = factory.body as BabelNode | undefined;
+					// () => ({...})  — тело это ObjectExpression
+					if (factoryBody?.type === "ObjectExpression")
+						shape = shapeOfObjectExpression(factoryBody);
+					// () => { return {...}; }  — тело это BlockStatement
+					if (factoryBody?.type === "BlockStatement") {
+						for (const inner of (factoryBody.body as BabelNode[] | undefined) ?? []) {
+							if (inner.type !== "ReturnStatement") continue;
+							const innerArg = inner.argument as BabelNode | undefined;
+							if (innerArg?.type === "ObjectExpression")
+								shape = shapeOfObjectExpression(innerArg);
+						}
+					}
+				}
+			}
+		}
 	}
 	assert.ok(
 		shape,
@@ -303,6 +376,17 @@ function producedNames(): ReadonlySet<string> {
 		settingsStoreKeys(),
 	]) {
 		for (const key of source) produced.add(key);
+	}
+	// Доменные спреды: ключи из каждого хука добавляем в produced
+	for (const spreadName of RESOLVED_SPREADS) {
+		const domain = DOMAIN_SPREADS.get(spreadName);
+		if (!domain) continue;
+		try {
+			const shape = returnedObjectShape(domain.file, domain.fn);
+			for (const key of shape.keys) produced.add(key);
+		} catch {
+			// файл не разобрался — страж уже упадёт на assert выше
+		}
 	}
 	return produced;
 }

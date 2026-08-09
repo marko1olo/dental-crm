@@ -1,44 +1,40 @@
-# BRIEFING — 2026-08-08T20:57:45Z
+# BRIEFING — 2026-08-09T08:08:47Z
 
 ## Mission
-Investigate Playwright E2E test setup (`smoke.spec.ts`, `playwright-audit.cjs`, `dente-redesign-shots.mjs`) and formulate the exact E2E execution plan for Worker 1.
+Investigate Biome configuration (`biome.json`), analyze cause of >81k false errors from `.postgres` and build/data directories, and formulate schema-valid `biome.json` updates to scan only source code files.
 
 ## 🔒 My Identity
-- Archetype: Explorer / Read-only Investigator
-- Roles: Milestone 1 E2E Verification Strategy Explorer
+- Archetype: explorer
+- Roles: Biome Configuration Explorer (m1_explorer_1)
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1
-- Original parent: e922dda7-e65d-472b-b0e5-727b9201e7c4
-- Milestone: Milestone 1
+- Original parent: 6013ed07-6028-427c-adba-7d91793dc30b
+- Milestone: M1 (Biome Noise Exclusion & Baseline)
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement or alter project source code
-- Operate within C:\Clinic_MVP\dental-crm
-- Follow Clinic MVP / Dente CRM rules (dental-crm/AGENTS.md)
-- Write analysis.md and handoff.md in working directory
+- Read-only investigation — do NOT implement changes to root `biome.json` (produce exact schema-valid changes in handoff)
+- Path-specific scope: `C:\Clinic_MVP\dental-crm`
+- Follow Clinic_MVP & Gemini rules
 
 ## Current Parent
-- Conversation ID: e922dda7-e65d-472b-b0e5-727b9201e7c4
-- Updated: 2026-08-08T20:57:45Z
+- Conversation ID: 6013ed07-6028-427c-adba-7d91793dc30b
+- Updated: 2026-08-09T08:09:55Z
 
 ## Investigation State
-- **Explored paths**:
-  - `apps/web/tests/e2e/smoke.spec.ts`
-  - `scripts/playwright-audit.cjs`
-  - `scripts/dente-redesign-shots.mjs`
-  - `ORIGINAL_REQUEST.md`, `PROJECT.md`, `TEST_INFRA.md`, `AGENTS.md`
+- **Explored paths**: `C:\Clinic_MVP\dental-crm\biome.json`, `C:\Clinic_MVP\dental-crm\AGENTS.md`, `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`, `C:\Clinic_MVP\dental-crm\.agents\orchestrator_r3\plan.md`, `scratch/test_biome_v2.json`
 - **Key findings**:
-  - `smoke.spec.ts` uses Playwright `@playwright/test` with mocked APIs, `page.addInitScript` token injection (`dente_clinic_token`, `dente_staff_token`), hash navigation (`#schedule`, `#patients`, `#finance`), console error interception, and React Error Boundary exception checks (`"Something went wrong"`).
-  - `playwright-audit.cjs` provides static mock Chromium testing with panel navigation and overlay handling.
-  - `dente-redesign-shots.mjs` uses CDP over live server (`http://127.0.0.1:5173`) to generate the full 4-state visual proof matrix (Desktop Light/Dark, Mobile Light/Dark across 11 views) with theme validation and byte size enforcement (`>= 20 KB`).
-- **Unexplored areas**: None for Milestone 1 E2E exploration.
+  1. CLI version is Biome 2.5.4; `$schema` in root `biome.json` was pointing to 1.9.4.
+  2. Root cause of >81k false errors: schema property mismatch (`include` vs `includes` in 2.5.4), unignored noise directories (`.postgres`, `.data`, `.agents`, `node_modules`, `scratch`, `artifacts`), and disabled `ignoreUnknown`.
+  3. Formulated and verified exact Biome 2.5.4 schema-valid `biome.json` configuration in `scratch/test_biome_v2.json`. Scanned files reduced from >81,000 down to exactly 1214 source files, finishing in 1.1s.
+- **Unexplored areas**: None (Milestone M1 explorer scope fully investigated and verified).
 
 ## Key Decisions Made
-- Formulated 5-phase execution plan for Worker 1.
-- Documented findings in `analysis.md` and complete 5-component handoff report in `handoff.md`.
+- Initialized dispatch log and working memory briefing.
+- Formulated exact schema-valid `biome.json` replacement matching Biome 2.5.4.
+- Verified test configuration via `scratch/test_biome_v2.json` with `npx @biomejs/biome check`.
+- Written complete 5-component handoff report to `handoff.md`.
 
 ## Artifact Index
 - `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1\DISPATCH.md` — Dispatch log
-- `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1\BRIEFING.md` — Working briefing index
-- `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1\progress.md` — Heartbeat & task progress log
-- `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1\analysis.md` — In-depth E2E verification strategy analysis
-- `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1\handoff.md` — 5-component handoff report
+- `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1\BRIEFING.md` — Working memory briefing
+- `C:\Clinic_MVP\dental-crm\scratch\test_biome_v2.json` — Verified test configuration
+- `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1\handoff.md` — Complete handoff report

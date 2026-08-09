@@ -1,0 +1,54 @@
+a/apps/web/src/components/crm/PatientDuplicateMergeQueuesWidget.tsx b/apps/web/src/components/crm/PatientDuplicateMergeQueuesWidget.tsx
+index 8078ef6f1..1b2d208b2 100644
+--- a/apps/web/src/components/crm/PatientDuplicateMergeQueuesWidget.tsx
++++ b/apps/web/src/components/crm/PatientDuplicateMergeQueuesWidget.tsx
+@@ -186,7 +186,7 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
+ 			) : null}
+ 
+ 			{report ? (
+-				report.candidates.length === 0 ? (
++				(report?.candidates ?? []).length === 0 ? (
+ 					<p className="ops-empty ops-empty--good">
+ 						Похожих карточек не найдено: просмотрено {report.examinedPatients}.
+ 						Картотека чистая.
+@@ -207,7 +207,7 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
+ 									</tr>
+ 								</thead>
+ 								<tbody>
+-									{report.candidates.map((candidate) => {
++									{(report?.candidates ?? []).map((candidate) => {
+ 										const key = duplicatePairKey(candidate);
+ 										const doubtful = candidate.confidence < DOUBTFUL_BELOW;
+ 										const isBusy = busyPair === key;
+@@ -226,12 +226,12 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
+ 												<td className="ops-strong" data-label="Первая карточка">
+ 													{candidate.leftName}
+ 													<span className="ops-note">
+-														{formatBirthDate(candidate.left.birthDate)}
++														{formatBirthDate(candidate.left?.birthDate)}
+ 													</span>
+ 													<span className="ops-note">
+-														{candidate.left.phone ?? "телефон не указан"}
++														{candidate.left?.phone ?? "телефон не указан"}
+ 													</span>
+-													{candidate.left.email ? (
++													{candidate.left?.email ? (
+ 														<span className="ops-note">
+ 															{candidate.left.email}
+ 														</span>
+@@ -240,12 +240,12 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
+ 												<td className="ops-strong" data-label="Вторая карточка">
+ 													{candidate.rightName}
+ 													<span className="ops-note">
+-														{formatBirthDate(candidate.right.birthDate)}
++														{formatBirthDate(candidate.right?.birthDate)}
+ 													</span>
+ 													<span className="ops-note">
+-														{candidate.right.phone ?? "телефон не указан"}
++														{candidate.right?.phone ?? "телефон не указан"}
+ 													</span>
+-													{candidate.right.email ? (
++													{candidate.right?.email ? (
+ 														<span className="ops-note">
+ 															{candidate.right.email}
+ 														</span>

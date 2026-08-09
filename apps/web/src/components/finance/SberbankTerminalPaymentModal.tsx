@@ -40,7 +40,12 @@ export function SberbankTerminalPaymentModal({
 	const inFlight = useRef(false);
 
 	const initiatePayment = useCallback(async () => {
-		if (!patientId || !amountInRubles) return;
+		if (
+			!patientId ||
+			typeof amountInRubles !== "number" ||
+			Number.isNaN(amountInRubles)
+		)
+			return;
 		if (inFlight.current) return;
 		inFlight.current = true;
 		setStatus("initiating");
@@ -68,7 +73,11 @@ export function SberbankTerminalPaymentModal({
 						: {}),
 				},
 				body: JSON.stringify({
-					amount: Math.round(amountInRubles * 100),
+					amount: Math.round(
+						(typeof amountInRubles === "number" && !Number.isNaN(amountInRubles)
+							? amountInRubles
+							: 0) * 100,
+					),
 					patientId,
 					description: `Оплата по пациенту ${patientId}`,
 				}),

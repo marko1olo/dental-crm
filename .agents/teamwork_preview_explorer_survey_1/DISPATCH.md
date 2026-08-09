@@ -1,12 +1,13 @@
-## 2026-08-08T16:53:27Z
-<USER_REQUEST>
-Your working directory: C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_1
-Your role: Codebase Architecture & AppHelpers.tsx Explorer
-Must read original request: C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md
+# DISPATCH — Survey Explorer 1 (E2E & Playwright Infra)
 
-Task Objectives:
-1. Examine `apps/web/src/AppHelpers.tsx` (and any related helper files). Map out line count, exported functions, variables, types, and group them by logical domain (e.g. Finance, Telegram, Date/Time, Clinic Profile, Formatting, Validation, etc.).
-2. Conduct a codebase census using ripgrep/ast-grep to map where `AppHelpers.tsx` exported symbols are imported across `apps/web/src`.
-3. Check monorepo package structure (`apps/web`, `apps/api`, `packages/shared`) and how `@dental/web` typechecks (`npm run typecheck -w @dental/web`).
-4. Write your findings to `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_1\analysis.md` and complete a handoff report at `handoff.md` in your directory.
-</USER_REQUEST>
+## 2026-08-09T11:58:00Z
+
+## Mission
+Perform codebase survey of Playwright E2E infrastructure and 4-state screenshot audit capabilities for DENTE CRM.
+
+## Scope & Instructions
+1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`.
+2. Locate and analyze all existing E2E scripts: `e2e_4state_audit.cjs`, `scripts/dente-redesign-shots.mjs`, `apps/web/tests/e2e/smoke.spec.ts`, etc.
+3. Investigate the live dev server status (`http://localhost:5173` or similar), API server (`http://localhost:3000`), database status, auth token seeding (`dente_clinic_token`, `dente_staff_token`), and view routes (`#schedule`, `#patients`, `#finance`, etc.).
+4. Determine how 4-state rendering (Mobile Light, Mobile Dark, PC Light, PC Dark) can be reliably executed to capture screenshots of all screens and dialogs.
+5. Save your investigation report and findings to `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_1\handoff.md`.

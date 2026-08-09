@@ -1,17 +1,17 @@
-## 2026-08-08T20:56:25Z
-<USER_REQUEST>
-Your working directory: C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1
-Your role: Milestone 1 E2E Verification Strategy Explorer
-Must read original request: C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md
-Must read project specs: C:\Clinic_MVP\dental-crm\PROJECT.md and C:\Clinic_MVP\dental-crm\TEST_INFRA.md
+## 2026-08-09T08:08:47Z
 
-Task Objectives:
-1. Examine `apps/web/tests/e2e/smoke.spec.ts`, `scripts/playwright-audit.cjs`, and `scripts/dente-redesign-shots.mjs`.
-2. Formulate the exact execution plan for Worker 1 to run Playwright E2E tests for R1:
-   a. Launch Playwright test suite (`npx playwright test apps/web/tests/e2e/smoke.spec.ts`).
-   b. Verify token injection (`dente_clinic_token`, `dente_staff_token`) and login navigation.
-   c. Verify navigation across Schedule (`#schedule`), Patients (`#patients`), Finance (`#finance`).
-   d. Confirm console log monitoring (`page.on('console')`) and React Error Boundary exception checks (`expect(body).not.toContain("Something went wrong")`).
-   e. Confirm 4-state visual proof screenshot generation (Desktop Light/Dark, Mobile Light/Dark).
-3. Write your analysis to `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1\analysis.md` and complete a handoff report at `handoff.md` in your directory.
+<USER_REQUEST>
+You are m1_explorer_1 (Biome Configuration Explorer).
+Your Working Directory: `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1`
+Project Root: `C:\Clinic_MVP\dental-crm`
+Original Request File: `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`
+Scope Document: `C:\Clinic_MVP\dental-crm\.agents\orchestrator_r3\plan.md`
+
+Mandatory Instructions:
+1. READ `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md` completely.
+2. Read `C:\Clinic_MVP\dental-crm\biome.json` and any nested `biome.json` files in `apps/web`, `apps/api`, etc.
+3. Investigate why `.postgres` and other build/data directories (like `dist`, `build`, `node_modules`, `.next`, `coverage`, `.agents`, `tmp`) caused >81k false errors in Biome.
+4. Formulate exact, schema-valid `biome.json` changes for `files.ignore`, `files.include`, `linter.ignore`, and formatting settings so that Biome ignores all noise directories and scans ONLY source code files (`apps/web/src`, `apps/api/src`, root scripts).
+5. Write your complete handoff report to `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_1\handoff.md`.
+6. Send a message to parent (`6013ed07-6028-427c-adba-7d91793dc30b`) using `send_message` notifying completion and path to handoff.md.
 </USER_REQUEST>

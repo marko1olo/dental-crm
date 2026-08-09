@@ -2419,9 +2419,9 @@ export function appendSpeechTextWithoutDuplicateTail(
 	)
 		return current;
 
-	const currentWords = normalizedCurrent.split(" ").filter(Boolean);
-	const nextWords = normalizedNext.split(" ").filter(Boolean);
-	const originalNextWords = cleanNext.split(/\s+/).filter(Boolean);
+	const currentWords = (normalizedCurrent ?? "").split(" ").filter(Boolean);
+	const nextWords = (normalizedNext ?? "").split(" ").filter(Boolean);
+	const originalNextWords = (cleanNext ?? "").split(/\s+/).filter(Boolean);
 	const maxOverlap = Math.min(
 		14,
 		currentWords.length,

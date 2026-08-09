@@ -1,0 +1,3176 @@
+{
+  "totalDiagnostics": 498,
+  "rules": {
+    "lint/style/useNodejsImportProtocol": 65,
+    "lint/style/useTemplate": 17,
+    "lint/complexity/noUselessEscapeInRegex": 11,
+    "lint/complexity/noUselessStringRaw": 56,
+    "lint/correctness/noUnusedImports": 22,
+    "lint/suspicious/noExplicitAny": 9,
+    "lint/suspicious/useBiomeIgnoreFolder": 22,
+    "lint/correctness/noUnusedVariables": 40,
+    "lint/correctness/noUnusedFunctionParameters": 5,
+    "lint/complexity/useOptionalChain": 9,
+    "lint/style/useConst": 2,
+    "lint/complexity/useArrowFunction": 1,
+    "lint/suspicious/noTemplateCurlyInString": 123,
+    "format": 73,
+    "lint/suspicious/noDuplicateProperties": 1,
+    "lint/correctness/noInnerDeclarations": 1,
+    "lint/suspicious/useIterableCallbackReturn": 26,
+    "lint/suspicious/noControlCharactersInRegex": 6,
+    "lint/suspicious/noAssignInExpressions": 9
+  },
+  "files": {
+    "e2e-page-audit.cjs": 4,
+    "e2e-test.cjs": 6,
+    "e2e.cjs": 3,
+    "e2e_4state_audit.cjs": 6,
+    "e2e_run.cjs": 7,
+    "find_orphans.cjs": 5,
+    "find_stubs.cjs": 3,
+    "find_unused_routes.cjs": 6,
+    "fix-suppressions-2.cjs": 8,
+    "fix-suppressions-3.cjs": 6,
+    "fix-suppressions.cjs": 10,
+    "fix_hooks.cjs": 3,
+    "packages\\shared\\src\\index.ts": 58,
+    "patch-error.cjs": 4,
+    "scripts\\auto-audit-html.cjs": 1,
+    "scripts\\capture-honest-screenshot.cjs": 3,
+    "scripts\\check-encoding.mjs": 8,
+    "scripts\\check-env-contract.mjs": 3,
+    "scripts\\check-logs.cjs": 2,
+    "scripts\\comprehensive-visual-audit.mjs": 4,
+    "scripts\\detect-overflows.mjs": 2,
+    "scripts\\fast-audit.mjs": 4,
+    "scripts\\fix-spec-paths.cjs": 2,
+    "scripts\\form043-viewport-shots.mjs": 3,
+    "scripts\\generate-wave15-individual-proofs.cjs": 3,
+    "scripts\\generate_audit_tokens.ts": 2,
+    "scripts\\ops-panels-shots.mjs": 6,
+    "scripts\\perf-migration-autopilot.mjs": 5,
+    "scripts\\playwright-audit.cjs": 6,
+    "scripts\\pr_merger.ts": 9,
+    "scripts\\screenshot_access.cjs": 2,
+    "scripts\\screenshot_all_tabs_puppeteer.cjs": 2,
+    "scripts\\screenshot_prices.cjs": 2,
+    "scripts\\screenshot_rules.cjs": 2,
+    "scripts\\screenshot_settings.cjs": 3,
+    "scripts\\screenshot_settings_puppeteer.cjs": 2,
+    "scripts\\smoke-visit-screenshots.mjs": 3,
+    "scripts\\test-settings-profile.mjs": 4,
+    "scripts\\visual_audit.cjs": 2,
+    "apps\\web\\src\\ScheduleView.tsx": 2,
+    "apps\\web\\src\\components\\settings\\MessageTemplatesPanel.tsx": 1,
+    "apps\\web\\src\\components\\settings\\SettingsTelegramTab.tsx": 1,
+    "biome.json": 22,
+    "check-dashboard.cjs": 2,
+    "check-orgs.cjs": 2,
+    "debug_pw.cjs": 3,
+    "packages\\shared\\src\\tests\\index.test.ts": 7,
+    "scripts\\check-applogic-stub-overrides.mjs": 2,
+    "scripts\\check-guarded-route-headers.mjs": 2,
+    "scripts\\check-route-callers.mjs": 7,
+    "scripts\\contract-breach-analysis.mjs": 2,
+    "scripts\\count-orphan-table-rows.mjs": 2,
+    "scripts\\lib\\route-topology.mjs": 8,
+    "scripts\\screenshot-all-views.mjs": 1,
+    "scripts\\screenshot-wizard.mjs": 1,
+    "scripts\\smoke-app-boot-state-source.mjs": 1,
+    "scripts\\smoke-communications-view-source.mjs": 3,
+    "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs": 5,
+    "scripts\\smoke-dental-persistence-routes-source.mjs": 4,
+    "scripts\\smoke-document-html-preview-source.mjs": 2,
+    "scripts\\smoke-document-payload-ui-source.mjs": 4,
+    "scripts\\smoke-documents-view-source.mjs": 13,
+    "scripts\\smoke-finance-ledger-source.mjs": 1,
+    "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs": 3,
+    "scripts\\smoke-imaging-viewer-usability-source.mjs": 15,
+    "scripts\\smoke-import-contracts.mjs": 11,
+    "scripts\\smoke-onboarding-configuration-source.mjs": 1,
+    "scripts\\smoke-patients-usability-source.mjs": 2,
+    "scripts\\smoke-persistent-state-save.mjs": 1,
+    "scripts\\smoke-schedule-configuration.mjs": 1,
+    "scripts\\smoke-schedule-view-source.mjs": 4,
+    "scripts\\smoke-settings-view-source.mjs": 18,
+    "scripts\\smoke-shift-visit-usability-source.mjs": 2,
+    "scripts\\smoke-speech-final-ready-status-source.mjs": 1,
+    "scripts\\smoke-speech-local-bridge-readiness.mjs": 2,
+    "scripts\\smoke-speech-provider-errors.mjs": 4,
+    "scripts\\smoke-speech-queue-source.mjs": 2,
+    "scripts\\smoke-tax-knd-xml.mjs": 1,
+    "scripts\\smoke-tax-payment-explicit-payer.mjs": 1,
+    "scripts\\smoke-telegram-control-ui-source.mjs": 9,
+    "scripts\\smoke-telegram-handoff-source.mjs": 1,
+    "scripts\\smoke-telegram-outbox-persistence.mjs": 2,
+    "scripts\\smoke-ui-preferences.mjs": 1,
+    "scripts\\smoke-workspace-live-core-actions.mjs": 2,
+    "scripts\\smoke-workspace-live-settings-actions.mjs": 1,
+    "scripts\\smoke-workspace-shell-source.mjs": 5,
+    "scripts\\test-edge-cases-wave10.mjs": 1,
+    "scripts\\test-edge-cases-wave11.mjs": 1,
+    "scripts\\test-edge-cases-wave12.mjs": 1,
+    "scripts\\test-edge-cases-wave13.mjs": 1,
+    "scripts\\test-edge-cases-wave14.mjs": 1,
+    "scripts\\test-edge-cases-wave15.mjs": 1,
+    "scripts\\test-edge-cases-wave6.mjs": 1,
+    "scripts\\test-edge-cases-wave7.mjs": 1,
+    "scripts\\test-edge-cases-wave9.mjs": 1,
+    "scripts\\tests\\theme-contrast-guard.test.mjs": 1,
+    "test.ts": 2,
+    "apps\\web\\src\\ClinicalAiPersonalizePanel.tsx": 1,
+    "apps\\web\\src\\ClinicalRulePanel.tsx": 1,
+    "apps\\web\\src\\DocumentsView.tsx": 1,
+    "apps\\web\\src\\ImagingView.tsx": 1,
+    "apps\\web\\src\\PatientsView.tsx": 1,
+    "apps\\web\\src\\SettingsView.tsx": 1,
+    "apps\\web\\src\\components\\CommandPalette.tsx": 1,
+    "apps\\web\\src\\components\\PatientJourneyTimeline.tsx": 1,
+    "apps\\web\\src\\components\\PatientPortal.tsx": 1,
+    "apps\\web\\src\\components\\VisitDiaryEditor.tsx": 1,
+    "apps\\web\\src\\components\\analytics\\LostPatientsPanel.tsx": 1,
+    "apps\\web\\src\\components\\auth\\StaffPinPad.tsx": 1,
+    "apps\\web\\src\\components\\communications\\CampaignPanel.tsx": 1,
+    "apps\\web\\src\\components\\finance\\SberbankTerminalPaymentModal.tsx": 1,
+    "apps\\web\\src\\components\\finance\\cashDaySummary.ts": 1,
+    "apps\\web\\src\\components\\imaging\\ShadowAnalystReport.tsx": 1,
+    "apps\\web\\src\\components\\patients\\OrthodonticProgressWidget.tsx": 1,
+    "apps\\web\\src\\components\\patients\\PatientFamilyCard.tsx": 1,
+    "apps\\web\\src\\components\\patients\\RecallListPanel.tsx": 1,
+    "apps\\web\\src\\components\\reports\\ManagerReportsPanel.tsx": 1,
+    "apps\\web\\src\\components\\schedule\\AppointmentCard.tsx": 1,
+    "apps\\web\\src\\components\\schedule\\DayConfirmationsPanel.tsx": 1,
+    "apps\\web\\src\\components\\schedule\\FreedSlotsPanel.tsx": 1,
+    "apps\\web\\src\\components\\schedule\\ScheduleFilterStrip.test.tsx": 1,
+    "apps\\web\\src\\components\\schedule\\ScheduleSubNavTabs.test.tsx": 1,
+    "apps\\web\\src\\components\\schedule\\WaitlistMatchesBlock.tsx": 1,
+    "apps\\web\\src\\components\\settings\\MigrationWizard.tsx": 1,
+    "apps\\web\\src\\components\\settings\\SettingsClinicTab.tsx": 1,
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx": 1,
+    "apps\\web\\src\\components\\settings\\SettingsProtocolsTab.tsx": 1,
+    "apps\\web\\src\\components\\settings\\SettingsRulesTab.tsx": 1,
+    "apps\\web\\src\\components\\shift\\ShiftCallout.tsx": 1,
+    "apps\\web\\src\\components\\visit\\SpeechChunksInspector.tsx": 1,
+    "apps\\web\\src\\components\\visit\\VisitMainTabs.test.tsx": 1,
+    "apps\\web\\src\\components\\visit\\VisitMainTabs.tsx": 1,
+    "apps\\web\\src\\ctPlanningExportPanel.tsx": 1,
+    "apps\\web\\src\\ctPlanningImplantFitPanel.tsx": 1,
+    "apps\\web\\src\\ctPlanningImplantModelPanel.tsx": 1,
+    "apps\\web\\src\\ctPlanningTaskBoardPanel.tsx": 1,
+    "apps\\web\\src\\ctPlanningWorkflowPanel.tsx": 1,
+    "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx": 1,
+    "apps\\web\\src\\styles\\dente-redesign.css": 1,
+    "apps\\web\\src\\useSettingsDerivations.tsx": 1,
+    "apps\\web\\src\\utils\\routeUtils.ts": 1,
+    "check-rules.cjs": 1,
+    "check-users.cjs": 1,
+    "fix-db.cjs": 1,
+    "patch-map-views.cjs": 1,
+    "patch-map.cjs": 1,
+    "scripts\\check-fetch-response-guard.mjs": 1,
+    "scripts\\check-schema-type-drift.mjs": 1,
+    "scripts\\generate-schema-alignment-migration.mjs": 3,
+    "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs": 7,
+    "scripts\\smoke-api-text-encoding.mjs": 2,
+    "scripts\\smoke-app-update-recovery-source.mjs": 2,
+    "scripts\\smoke-browser-boot.mjs": 1,
+    "scripts\\smoke-browser-imaging-scan-progress-source.mjs": 5,
+    "scripts\\smoke-browser-migration-scan-progress-source.mjs": 3,
+    "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs": 3,
+    "scripts\\smoke-interactive-buttons-source.mjs": 2,
+    "scripts\\smoke-schema-column-parity.mjs": 3,
+    "scripts\\smoke-web-service-worker-cache-source.mjs": 2
+  },
+  "ignoreFolderDiagnosticsCount": 22,
+  "diagnostics": [
+    {
+      "loc": "e2e-page-audit.cjs:2:20",
+      "file": "e2e-page-audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e-page-audit.cjs:2:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e-page-audit.cjs:3:22",
+      "file": "e2e-page-audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e-page-audit.cjs:3:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e-test.cjs:2:22",
+      "file": "e2e-test.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e-test.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e-test.cjs:3:20",
+      "file": "e2e-test.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e-test.cjs:3:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e.cjs:3:22",
+      "file": "e2e.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e.cjs:3:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e.cjs:2:20",
+      "file": "e2e.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e.cjs:2:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_4state_audit.cjs:9:20",
+      "file": "e2e_4state_audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e_4state_audit.cjs:9:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_4state_audit.cjs:10:22",
+      "file": "e2e_4state_audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e_4state_audit.cjs:10:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_4state_audit.cjs:11:24",
+      "file": "e2e_4state_audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e_4state_audit.cjs:11:24 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_run.cjs:3:22",
+      "file": "e2e_run.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e_run.cjs:3:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_run.cjs:4:20",
+      "file": "e2e_run.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "e2e_run.cjs:4:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_run.cjs:10:37",
+      "file": "e2e_run.cjs",
+      "rule": "lint/style/useTemplate",
+      "header": "e2e_run.cjs:10:37 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_orphans.cjs:1:20",
+      "file": "find_orphans.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "find_orphans.cjs:1:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_orphans.cjs:6:27",
+      "file": "find_orphans.cjs",
+      "rule": "lint/style/useTemplate",
+      "header": "find_orphans.cjs:6:27 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_orphans.cjs:6:73",
+      "file": "find_orphans.cjs",
+      "rule": "lint/style/useTemplate",
+      "header": "find_orphans.cjs:6:73 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_orphans.cjs:6:118",
+      "file": "find_orphans.cjs",
+      "rule": "lint/style/useTemplate",
+      "header": "find_orphans.cjs:6:118 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_stubs.cjs:2:22",
+      "file": "find_stubs.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "find_stubs.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_unused_routes.cjs:1:20",
+      "file": "find_unused_routes.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "find_unused_routes.cjs:1:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_unused_routes.cjs:2:22",
+      "file": "find_unused_routes.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "find_unused_routes.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_unused_routes.cjs:3:30",
+      "file": "find_unused_routes.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "find_unused_routes.cjs:3:30 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-2.cjs:24:82",
+      "file": "fix-suppressions-2.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions-2.cjs:24:82 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-2.cjs:3:30",
+      "file": "fix-suppressions-2.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "fix-suppressions-2.cjs:3:30 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-2.cjs:1:20",
+      "file": "fix-suppressions-2.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "fix-suppressions-2.cjs:1:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-2.cjs:25:82",
+      "file": "fix-suppressions-2.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions-2.cjs:25:82 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-2.cjs:26:62",
+      "file": "fix-suppressions-2.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions-2.cjs:26:62 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-3.cjs:1:20",
+      "file": "fix-suppressions-3.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "fix-suppressions-3.cjs:1:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-3.cjs:3:30",
+      "file": "fix-suppressions-3.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "fix-suppressions-3.cjs:3:30 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-3.cjs:45:82",
+      "file": "fix-suppressions-3.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions-3.cjs:45:82 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-3.cjs:46:82",
+      "file": "fix-suppressions-3.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions-3.cjs:46:82 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-3.cjs:47:62",
+      "file": "fix-suppressions-3.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions-3.cjs:47:62 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs:1:20",
+      "file": "fix-suppressions.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "fix-suppressions.cjs:1:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs:2:22",
+      "file": "fix-suppressions.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "fix-suppressions.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs:27:61",
+      "file": "fix-suppressions.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions.cjs:27:61 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs:30:61",
+      "file": "fix-suppressions.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions.cjs:30:61 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs:33:61",
+      "file": "fix-suppressions.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions.cjs:33:61 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs:36:61",
+      "file": "fix-suppressions.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix-suppressions.cjs:36:61 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix_hooks.cjs:1:20",
+      "file": "fix_hooks.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "fix_hooks.cjs:1:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix_hooks.cjs:10:47",
+      "file": "fix_hooks.cjs",
+      "rule": "lint/complexity/noUselessEscapeInRegex",
+      "header": "fix_hooks.cjs:10:47 lint/complexity/noUselessEscapeInRegex  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9023:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9023:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9053:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9053:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8603:16",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8603:16 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8604:16",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8604:16 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8608:16",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8608:16 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8609:16",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8609:16 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8613:16",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8613:16 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8614:16",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8614:16 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8618:16",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8618:16 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8619:16",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8619:16 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8625:8",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8625:8 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8628:3",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8628:3 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8632:3",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8632:3 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8636:3",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8636:3 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8640:3",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8640:3 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8642:8",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8642:8 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8643:8",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8643:8 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8644:8",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8644:8 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8687:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8687:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8696:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8696:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8698:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8698:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8734:4",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8734:4 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8745:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8745:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8760:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8760:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8765:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8765:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8782:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8782:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8786:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8786:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8788:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8788:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8793:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8793:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8798:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8798:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8802:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8802:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8803:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8803:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8804:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8804:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8813:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8813:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8841:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8841:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8847:4",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8847:4 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8917:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8917:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8922:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8922:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8962:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8962:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8979:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8979:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8985:4",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8985:4 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8991:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8991:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9009:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9009:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9012:4",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9012:4 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9018:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9018:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9054:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9054:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9029:4",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9029:4 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9035:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9035:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9040:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9040:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9047:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9047:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9048:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9048:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9049:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9049:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9050:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9050:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9051:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9051:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:9052:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:9052:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:8755:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/noUselessStringRaw",
+      "header": "packages\\shared\\src\\index.ts:8755:21 lint/complexity/noUselessStringRaw ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "patch-error.cjs:1:20",
+      "file": "patch-error.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "patch-error.cjs:1:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\auto-audit-html.cjs:177:10",
+      "file": "scripts\\auto-audit-html.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\auto-audit-html.cjs:177:10 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\capture-honest-screenshot.cjs:4:24",
+      "file": "scripts\\capture-honest-screenshot.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\capture-honest-screenshot.cjs:4:24 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\capture-honest-screenshot.cjs:3:20",
+      "file": "scripts\\capture-honest-screenshot.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\capture-honest-screenshot.cjs:3:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\capture-honest-screenshot.cjs:2:22",
+      "file": "scripts\\capture-honest-screenshot.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\capture-honest-screenshot.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-encoding.mjs:236:2",
+      "file": "scripts\\check-encoding.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\check-encoding.mjs:236:2 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-env-contract.mjs:154:23",
+      "file": "scripts\\check-env-contract.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\check-env-contract.mjs:154:23 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-env-contract.mjs:173:48",
+      "file": "scripts\\check-env-contract.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\check-env-contract.mjs:173:48 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-env-contract.mjs:63:29",
+      "file": "scripts\\check-env-contract.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\check-env-contract.mjs:63:29 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-logs.cjs:2:20",
+      "file": "scripts\\check-logs.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\check-logs.cjs:2:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\comprehensive-visual-audit.mjs:1:16",
+      "file": "scripts\\comprehensive-visual-audit.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\comprehensive-visual-audit.mjs:1:16 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\comprehensive-visual-audit.mjs:2:24",
+      "file": "scripts\\comprehensive-visual-audit.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\comprehensive-visual-audit.mjs:2:24 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\comprehensive-visual-audit.mjs:3:18",
+      "file": "scripts\\comprehensive-visual-audit.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\comprehensive-visual-audit.mjs:3:18 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\comprehensive-visual-audit.mjs:5:31",
+      "file": "scripts\\comprehensive-visual-audit.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\comprehensive-visual-audit.mjs:5:31 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\detect-overflows.mjs:58:51",
+      "file": "scripts\\detect-overflows.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\detect-overflows.mjs:58:51 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\fast-audit.mjs:1:16",
+      "file": "scripts\\fast-audit.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\fast-audit.mjs:1:16 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\fast-audit.mjs:2:24",
+      "file": "scripts\\fast-audit.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\fast-audit.mjs:2:24 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\fast-audit.mjs:3:18",
+      "file": "scripts\\fast-audit.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\fast-audit.mjs:3:18 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\fast-audit.mjs:5:31",
+      "file": "scripts\\fast-audit.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\fast-audit.mjs:5:31 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\fix-spec-paths.cjs:2:22",
+      "file": "scripts\\fix-spec-paths.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\fix-spec-paths.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\fix-spec-paths.cjs:1:20",
+      "file": "scripts\\fix-spec-paths.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\fix-spec-paths.cjs:1:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\form043-viewport-shots.mjs:6:16",
+      "file": "scripts\\form043-viewport-shots.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\form043-viewport-shots.mjs:6:16 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\form043-viewport-shots.mjs:7:18",
+      "file": "scripts\\form043-viewport-shots.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\form043-viewport-shots.mjs:7:18 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\form043-viewport-shots.mjs:9:31",
+      "file": "scripts\\form043-viewport-shots.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\form043-viewport-shots.mjs:9:31 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\generate-wave15-individual-proofs.cjs:2:22",
+      "file": "scripts\\generate-wave15-individual-proofs.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\generate-wave15-individual-proofs.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\generate-wave15-individual-proofs.cjs:3:20",
+      "file": "scripts\\generate-wave15-individual-proofs.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\generate-wave15-individual-proofs.cjs:3:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\generate_audit_tokens.ts:26:13",
+      "file": "scripts\\generate_audit_tokens.ts",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\generate_audit_tokens.ts:26:13 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\generate_audit_tokens.ts:25:13",
+      "file": "scripts\\generate_audit_tokens.ts",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\generate_audit_tokens.ts:25:13 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\ops-panels-shots.mjs:319:36",
+      "file": "scripts\\ops-panels-shots.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\ops-panels-shots.mjs:319:36 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\ops-panels-shots.mjs:670:37",
+      "file": "scripts\\ops-panels-shots.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\ops-panels-shots.mjs:670:37 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\ops-panels-shots.mjs:673:37",
+      "file": "scripts\\ops-panels-shots.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\ops-panels-shots.mjs:673:37 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\ops-panels-shots.mjs:942:18",
+      "file": "scripts\\ops-panels-shots.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\ops-panels-shots.mjs:942:18 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\ops-panels-shots.mjs:964:6",
+      "file": "scripts\\ops-panels-shots.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\ops-panels-shots.mjs:964:6 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\ops-panels-shots.mjs:1340:127",
+      "file": "scripts\\ops-panels-shots.mjs",
+      "rule": "lint/style/useTemplate",
+      "header": "scripts\\ops-panels-shots.mjs:1340:127 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\perf-migration-autopilot.mjs:1:30",
+      "file": "scripts\\perf-migration-autopilot.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\perf-migration-autopilot.mjs:1:30 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\perf-migration-autopilot.mjs:2:29",
+      "file": "scripts\\perf-migration-autopilot.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\perf-migration-autopilot.mjs:2:29 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\playwright-audit.cjs:2:22",
+      "file": "scripts\\playwright-audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\playwright-audit.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\playwright-audit.cjs:3:20",
+      "file": "scripts\\playwright-audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\playwright-audit.cjs:3:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\playwright-audit.cjs:316:10",
+      "file": "scripts\\playwright-audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\playwright-audit.cjs:316:10 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\pr_merger.ts:1:40",
+      "file": "scripts\\pr_merger.ts",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\pr_merger.ts:1:40 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\pr_merger.ts:2:30",
+      "file": "scripts\\pr_merger.ts",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\pr_merger.ts:2:30 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_access.cjs:2:22",
+      "file": "scripts\\screenshot_access.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\screenshot_access.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_all_tabs_puppeteer.cjs:2:22",
+      "file": "scripts\\screenshot_all_tabs_puppeteer.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\screenshot_all_tabs_puppeteer.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_prices.cjs:2:22",
+      "file": "scripts\\screenshot_prices.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\screenshot_prices.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_rules.cjs:2:22",
+      "file": "scripts\\screenshot_rules.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\screenshot_rules.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_settings.cjs:3:20",
+      "file": "scripts\\screenshot_settings.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\screenshot_settings.cjs:3:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_settings.cjs:2:22",
+      "file": "scripts\\screenshot_settings.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\screenshot_settings.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_settings_puppeteer.cjs:2:22",
+      "file": "scripts\\screenshot_settings_puppeteer.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\screenshot_settings_puppeteer.cjs:2:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-visit-screenshots.mjs:1:16",
+      "file": "scripts\\smoke-visit-screenshots.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\smoke-visit-screenshots.mjs:1:16 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-visit-screenshots.mjs:2:18",
+      "file": "scripts\\smoke-visit-screenshots.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\smoke-visit-screenshots.mjs:2:18 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-settings-profile.mjs:1:31",
+      "file": "scripts\\test-settings-profile.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\test-settings-profile.mjs:1:31 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-settings-profile.mjs:2:18",
+      "file": "scripts\\test-settings-profile.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\test-settings-profile.mjs:2:18 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-settings-profile.mjs:3:31",
+      "file": "scripts\\test-settings-profile.mjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\test-settings-profile.mjs:3:31 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\visual_audit.cjs:2:20",
+      "file": "scripts\\visual_audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\visual_audit.cjs:2:20 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\visual_audit.cjs:3:22",
+      "file": "scripts\\visual_audit.cjs",
+      "rule": "lint/style/useNodejsImportProtocol",
+      "header": "scripts\\visual_audit.cjs:3:22 lint/style/useNodejsImportProtocol  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ScheduleView.tsx:11:2",
+      "file": "apps\\web\\src\\ScheduleView.tsx",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "apps\\web\\src\\ScheduleView.tsx:11:2 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\settings\\MessageTemplatesPanel.tsx:1:8",
+      "file": "apps\\web\\src\\components\\settings\\MessageTemplatesPanel.tsx",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "apps\\web\\src\\components\\settings\\MessageTemplatesPanel.tsx:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\settings\\SettingsTelegramTab.tsx:1543:23",
+      "file": "apps\\web\\src\\components\\settings\\SettingsTelegramTab.tsx",
+      "rule": "lint/suspicious/noExplicitAny",
+      "header": "apps\\web\\src\\components\\settings\\SettingsTelegramTab.tsx:1543:23 lint/suspicious/noExplicitAny ━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:28:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:28:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:35:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:35:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:36:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:36:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:31:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:31:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:27:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:27:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:15:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:15:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:29:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:29:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:30:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:30:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:32:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:32:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:33:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:33:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:16:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:16:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:17:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:17:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:18:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:18:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:19:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:19:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:20:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:20:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:21:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:21:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:22:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:22:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:23:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:23:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:24:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:24:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:25:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:25:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:26:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:26:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "biome.json:34:4",
+      "file": "biome.json",
+      "rule": "lint/suspicious/useBiomeIgnoreFolder",
+      "header": "biome.json:34:4 lint/suspicious/useBiomeIgnoreFolder  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "check-dashboard.cjs:6:11",
+      "file": "check-dashboard.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "check-dashboard.cjs:6:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "check-orgs.cjs:3:9",
+      "file": "check-orgs.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "check-orgs.cjs:3:9 lint/correctness/noUnusedVariables ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "debug_pw.cjs:15:11",
+      "file": "debug_pw.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "debug_pw.cjs:15:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "debug_pw.cjs:29:11",
+      "file": "debug_pw.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "debug_pw.cjs:29:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e-page-audit.cjs:64:14",
+      "file": "e2e-page-audit.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "e2e-page-audit.cjs:64:14 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e-test.cjs:3:7",
+      "file": "e2e-test.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "e2e-test.cjs:3:7 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e-test.cjs:51:13",
+      "file": "e2e-test.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "e2e-test.cjs:51:13 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_4state_audit.cjs:694:34",
+      "file": "e2e_4state_audit.cjs",
+      "rule": "lint/correctness/noUnusedFunctionParameters",
+      "header": "e2e_4state_audit.cjs:694:34 lint/correctness/noUnusedFunctionParameters ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_4state_audit.cjs:694:41",
+      "file": "e2e_4state_audit.cjs",
+      "rule": "lint/correctness/noUnusedFunctionParameters",
+      "header": "e2e_4state_audit.cjs:694:41 lint/correctness/noUnusedFunctionParameters ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_run.cjs:9:16",
+      "file": "e2e_run.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "e2e_run.cjs:9:16 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_run.cjs:4:7",
+      "file": "e2e_run.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "e2e_run.cjs:4:7 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_stubs.cjs:2:7",
+      "file": "find_stubs.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "find_stubs.cjs:2:7 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_unused_routes.cjs:44:14",
+      "file": "find_unused_routes.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "find_unused_routes.cjs:44:14 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_unused_routes.cjs:14:11",
+      "file": "find_unused_routes.cjs",
+      "rule": "lint/complexity/useOptionalChain",
+      "header": "find_unused_routes.cjs:14:11 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-2.cjs:30:5",
+      "file": "fix-suppressions-2.cjs",
+      "rule": "lint/style/useConst",
+      "header": "fix-suppressions-2.cjs:30:5 lint/style/useConst  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-2.cjs:30:9",
+      "file": "fix-suppressions-2.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "fix-suppressions-2.cjs:30:9 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs:10:13",
+      "file": "fix-suppressions.cjs",
+      "rule": "lint/complexity/useOptionalChain",
+      "header": "fix-suppressions.cjs:10:13 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs:23:3",
+      "file": "fix-suppressions.cjs",
+      "rule": "lint/style/useConst",
+      "header": "fix-suppressions.cjs:23:3 lint/style/useConst  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs:7:18",
+      "file": "fix-suppressions.cjs",
+      "rule": "lint/complexity/useArrowFunction",
+      "header": "fix-suppressions.cjs:7:18 lint/complexity/useArrowFunction  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts:10770:21",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "lint/complexity/useOptionalChain",
+      "header": "packages\\shared\\src\\index.ts:10770:21 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\tests\\index.test.ts:99:55",
+      "file": "packages\\shared\\src\\tests\\index.test.ts",
+      "rule": "lint/suspicious/noExplicitAny",
+      "header": "packages\\shared\\src\\tests\\index.test.ts:99:55 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\tests\\index.test.ts:101:49",
+      "file": "packages\\shared\\src\\tests\\index.test.ts",
+      "rule": "lint/suspicious/noExplicitAny",
+      "header": "packages\\shared\\src\\tests\\index.test.ts:101:49 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\tests\\index.test.ts:104:62",
+      "file": "packages\\shared\\src\\tests\\index.test.ts",
+      "rule": "lint/suspicious/noExplicitAny",
+      "header": "packages\\shared\\src\\tests\\index.test.ts:104:62 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\tests\\index.test.ts:105:57",
+      "file": "packages\\shared\\src\\tests\\index.test.ts",
+      "rule": "lint/suspicious/noExplicitAny",
+      "header": "packages\\shared\\src\\tests\\index.test.ts:105:57 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\tests\\index.test.ts:225:16",
+      "file": "packages\\shared\\src\\tests\\index.test.ts",
+      "rule": "lint/suspicious/noExplicitAny",
+      "header": "packages\\shared\\src\\tests\\index.test.ts:225:16 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\tests\\index.test.ts:247:16",
+      "file": "packages\\shared\\src\\tests\\index.test.ts",
+      "rule": "lint/suspicious/noExplicitAny",
+      "header": "packages\\shared\\src\\tests\\index.test.ts:247:16 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\tests\\index.test.ts:265:16",
+      "file": "packages\\shared\\src\\tests\\index.test.ts",
+      "rule": "lint/suspicious/noExplicitAny",
+      "header": "packages\\shared\\src\\tests\\index.test.ts:265:16 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "patch-error.cjs:7:4",
+      "file": "patch-error.cjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "patch-error.cjs:7:4 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "patch-error.cjs:6:4",
+      "file": "patch-error.cjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "patch-error.cjs:6:4 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-applogic-stub-overrides.mjs:45:10",
+      "file": "scripts\\check-applogic-stub-overrides.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\check-applogic-stub-overrides.mjs:45:10 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-guarded-route-headers.mjs:212:10",
+      "file": "scripts\\check-guarded-route-headers.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\check-guarded-route-headers.mjs:212:10 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-logs.cjs:2:7",
+      "file": "scripts\\check-logs.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\check-logs.cjs:2:7 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-route-callers.mjs:295:6",
+      "file": "scripts\\check-route-callers.mjs",
+      "rule": "lint/complexity/useOptionalChain",
+      "header": "scripts\\check-route-callers.mjs:295:6 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-route-callers.mjs:140:50",
+      "file": "scripts\\check-route-callers.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\check-route-callers.mjs:140:50 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-route-callers.mjs:338:69",
+      "file": "scripts\\check-route-callers.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\check-route-callers.mjs:338:69 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-route-callers.mjs:364:19",
+      "file": "scripts\\check-route-callers.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\check-route-callers.mjs:364:19 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-route-callers.mjs:366:19",
+      "file": "scripts\\check-route-callers.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\check-route-callers.mjs:366:19 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-route-callers.mjs:280:6",
+      "file": "scripts\\check-route-callers.mjs",
+      "rule": "lint/complexity/useOptionalChain",
+      "header": "scripts\\check-route-callers.mjs:280:6 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-route-callers.mjs:290:6",
+      "file": "scripts\\check-route-callers.mjs",
+      "rule": "lint/complexity/useOptionalChain",
+      "header": "scripts\\check-route-callers.mjs:290:6 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\contract-breach-analysis.mjs:16:2",
+      "file": "scripts\\contract-breach-analysis.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\contract-breach-analysis.mjs:16:2 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\contract-breach-analysis.mjs:64:20",
+      "file": "scripts\\contract-breach-analysis.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\contract-breach-analysis.mjs:64:20 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\count-orphan-table-rows.mjs:825:64",
+      "file": "scripts\\count-orphan-table-rows.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\count-orphan-table-rows.mjs:825:64 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\count-orphan-table-rows.mjs:829:36",
+      "file": "scripts\\count-orphan-table-rows.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\count-orphan-table-rows.mjs:829:36 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\generate-wave15-individual-proofs.cjs:52:11",
+      "file": "scripts\\generate-wave15-individual-proofs.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\generate-wave15-individual-proofs.cjs:52:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\lib\\route-topology.mjs:154:31",
+      "file": "scripts\\lib\\route-topology.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\lib\\route-topology.mjs:154:31 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\lib\\route-topology.mjs:166:22",
+      "file": "scripts\\lib\\route-topology.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\lib\\route-topology.mjs:166:22 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\lib\\route-topology.mjs:166:39",
+      "file": "scripts\\lib\\route-topology.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\lib\\route-topology.mjs:166:39 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\lib\\route-topology.mjs:717:40",
+      "file": "scripts\\lib\\route-topology.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\lib\\route-topology.mjs:717:40 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\lib\\route-topology.mjs:45:49",
+      "file": "scripts\\lib\\route-topology.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\lib\\route-topology.mjs:45:49 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\lib\\route-topology.mjs:390:9",
+      "file": "scripts\\lib\\route-topology.mjs",
+      "rule": "lint/complexity/useOptionalChain",
+      "header": "scripts\\lib\\route-topology.mjs:390:9 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\lib\\route-topology.mjs:627:9",
+      "file": "scripts\\lib\\route-topology.mjs",
+      "rule": "lint/complexity/useOptionalChain",
+      "header": "scripts\\lib\\route-topology.mjs:627:9 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\lib\\route-topology.mjs:693:9",
+      "file": "scripts\\lib\\route-topology.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\lib\\route-topology.mjs:693:9 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\perf-migration-autopilot.mjs:1:8",
+      "file": "scripts\\perf-migration-autopilot.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\perf-migration-autopilot.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\perf-migration-autopilot.mjs:13:51",
+      "file": "scripts\\perf-migration-autopilot.mjs",
+      "rule": "lint/correctness/noUnusedFunctionParameters",
+      "header": "scripts\\perf-migration-autopilot.mjs:13:51 lint/correctness/noUnusedFunctionParameters  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\perf-migration-autopilot.mjs:72:8",
+      "file": "scripts\\perf-migration-autopilot.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\perf-migration-autopilot.mjs:72:8 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\playwright-audit.cjs:283:11",
+      "file": "scripts\\playwright-audit.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\playwright-audit.cjs:283:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\playwright-audit.cjs:296:11",
+      "file": "scripts\\playwright-audit.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\playwright-audit.cjs:296:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\playwright-audit.cjs:311:11",
+      "file": "scripts\\playwright-audit.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\playwright-audit.cjs:311:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\pr_merger.ts:110:13",
+      "file": "scripts\\pr_merger.ts",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\pr_merger.ts:110:13 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\pr_merger.ts:91:12",
+      "file": "scripts\\pr_merger.ts",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\pr_merger.ts:91:12 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\pr_merger.ts:97:13",
+      "file": "scripts\\pr_merger.ts",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\pr_merger.ts:97:13 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\pr_merger.ts:112:12",
+      "file": "scripts\\pr_merger.ts",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\pr_merger.ts:112:12 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\pr_merger.ts:11:14",
+      "file": "scripts\\pr_merger.ts",
+      "rule": "lint/suspicious/noExplicitAny",
+      "header": "scripts\\pr_merger.ts:11:14 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\pr_merger.ts:57:12",
+      "file": "scripts\\pr_merger.ts",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\pr_merger.ts:57:12 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\pr_merger.ts:75:12",
+      "file": "scripts\\pr_merger.ts",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\pr_merger.ts:75:12 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot-all-views.mjs:122:16",
+      "file": "scripts\\screenshot-all-views.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\screenshot-all-views.mjs:122:16 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot-wizard.mjs:176:8",
+      "file": "scripts\\screenshot-wizard.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\screenshot-wizard.mjs:176:8 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_access.cjs:44:11",
+      "file": "scripts\\screenshot_access.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\screenshot_access.cjs:44:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_all_tabs_puppeteer.cjs:44:11",
+      "file": "scripts\\screenshot_all_tabs_puppeteer.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\screenshot_all_tabs_puppeteer.cjs:44:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_prices.cjs:44:11",
+      "file": "scripts\\screenshot_prices.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\screenshot_prices.cjs:44:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_rules.cjs:44:11",
+      "file": "scripts\\screenshot_rules.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\screenshot_rules.cjs:44:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_settings.cjs:3:7",
+      "file": "scripts\\screenshot_settings.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\screenshot_settings.cjs:3:7 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\screenshot_settings_puppeteer.cjs:44:11",
+      "file": "scripts\\screenshot_settings_puppeteer.cjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\screenshot_settings_puppeteer.cjs:44:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-app-boot-state-source.mjs:143:66",
+      "file": "scripts\\smoke-app-boot-state-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-app-boot-state-source.mjs:143:66 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-communications-view-source.mjs:364:37",
+      "file": "scripts\\smoke-communications-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-communications-view-source.mjs:364:37 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-communications-view-source.mjs:309:16",
+      "file": "scripts\\smoke-communications-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-communications-view-source.mjs:309:16 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-communications-view-source.mjs:354:38",
+      "file": "scripts\\smoke-communications-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-communications-view-source.mjs:354:38 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:485:16",
+      "file": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:485:16 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:137:11",
+      "file": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:137:11 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:147:16",
+      "file": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:147:16 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:152:11",
+      "file": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:152:11 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:505:37",
+      "file": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs:505:37 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-dental-persistence-routes-source.mjs:259:24",
+      "file": "scripts\\smoke-dental-persistence-routes-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-dental-persistence-routes-source.mjs:259:24 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-dental-persistence-routes-source.mjs:269:24",
+      "file": "scripts\\smoke-dental-persistence-routes-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-dental-persistence-routes-source.mjs:269:24 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-dental-persistence-routes-source.mjs:281:38",
+      "file": "scripts\\smoke-dental-persistence-routes-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-dental-persistence-routes-source.mjs:281:38 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-dental-persistence-routes-source.mjs:109:10",
+      "file": "scripts\\smoke-dental-persistence-routes-source.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\smoke-dental-persistence-routes-source.mjs:109:10 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-document-html-preview-source.mjs:105:26",
+      "file": "scripts\\smoke-document-html-preview-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-document-html-preview-source.mjs:105:26 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-document-html-preview-source.mjs:110:11",
+      "file": "scripts\\smoke-document-html-preview-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-document-html-preview-source.mjs:110:11 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-document-payload-ui-source.mjs:192:18",
+      "file": "scripts\\smoke-document-payload-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-document-payload-ui-source.mjs:192:18 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-document-payload-ui-source.mjs:194:18",
+      "file": "scripts\\smoke-document-payload-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-document-payload-ui-source.mjs:194:18 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-document-payload-ui-source.mjs:716:24",
+      "file": "scripts\\smoke-document-payload-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-document-payload-ui-source.mjs:716:24 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-document-payload-ui-source.mjs:717:28",
+      "file": "scripts\\smoke-document-payload-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-document-payload-ui-source.mjs:717:28 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:158:3",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:158:3 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:163:4",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:163:4 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:319:34",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:319:34 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:339:68",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:339:68 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:384:39",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:384:39 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:389:40",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:389:40 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:394:35",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:394:35 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:399:40",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:399:40 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:409:40",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:409:40 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:414:39",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:414:39 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:419:43",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:419:43 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:424:45",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:424:45 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-documents-view-source.mjs:429:39",
+      "file": "scripts\\smoke-documents-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-documents-view-source.mjs:429:39 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-finance-ledger-source.mjs:108:31",
+      "file": "scripts\\smoke-finance-ledger-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-finance-ledger-source.mjs:108:31 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs:101:37",
+      "file": "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs:101:37 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs:105:36",
+      "file": "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs:105:36 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs:1:8",
+      "file": "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:573:39",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:573:39 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:558:32",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:558:32 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:563:44",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:563:44 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:568:27",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:568:27 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:5739:11",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:5739:11 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:1468:16",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:1468:16 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:1473:17",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:1473:17 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:3058:15",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:3058:15 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:3063:11",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:3063:11 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:3068:9",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:3068:9 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:3153:20",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:3153:20 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:3158:17",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:3158:17 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:3208:14",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:3208:14 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:4724:71",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:4724:71 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-imaging-viewer-usability-source.mjs:4729:71",
+      "file": "scripts\\smoke-imaging-viewer-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-imaging-viewer-usability-source.mjs:4729:71 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:200:27",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:200:27 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:880:52",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:880:52 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:176:29",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:176:29 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:178:51",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:178:51 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:179:34",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:179:34 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:180:34",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:180:34 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:185:18",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:185:18 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:199:32",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:199:32 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:431:34",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:431:34 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:437:21",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:437:21 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-import-contracts.mjs:876:56",
+      "file": "scripts\\smoke-import-contracts.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-import-contracts.mjs:876:56 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-onboarding-configuration-source.mjs:681:43",
+      "file": "scripts\\smoke-onboarding-configuration-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-onboarding-configuration-source.mjs:681:43 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-patients-usability-source.mjs:125:43",
+      "file": "scripts\\smoke-patients-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-patients-usability-source.mjs:125:43 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-patients-usability-source.mjs:130:38",
+      "file": "scripts\\smoke-patients-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-patients-usability-source.mjs:130:38 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-persistent-state-save.mjs:101:12",
+      "file": "scripts\\smoke-persistent-state-save.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\smoke-persistent-state-save.mjs:101:12 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-schedule-configuration.mjs:972:7",
+      "file": "scripts\\smoke-schedule-configuration.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\smoke-schedule-configuration.mjs:972:7 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-schedule-view-source.mjs:330:51",
+      "file": "scripts\\smoke-schedule-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-schedule-view-source.mjs:330:51 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-schedule-view-source.mjs:437:34",
+      "file": "scripts\\smoke-schedule-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-schedule-view-source.mjs:437:34 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-schedule-view-source.mjs:442:29",
+      "file": "scripts\\smoke-schedule-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-schedule-view-source.mjs:442:29 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-schedule-view-source.mjs:452:39",
+      "file": "scripts\\smoke-schedule-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-schedule-view-source.mjs:452:39 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:2595:71",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:2595:71 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:4845:4",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:4845:4 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:3275:39",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:3275:39 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:3280:36",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:3280:36 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:3285:45",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:3285:45 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:3290:40",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:3290:40 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:3305:45",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:3305:45 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:3310:40",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:3310:40 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:4309:14",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:4309:14 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:5890:13",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:5890:13 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:4985:4",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:4985:4 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:5410:23",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:5410:23 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:5280:37",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:5280:37 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:5705:9",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:5705:9 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:2034:23",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:2034:23 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:3295:39",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:3295:39 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs:3300:36",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-settings-view-source.mjs:3300:36 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-shift-visit-usability-source.mjs:565:26",
+      "file": "scripts\\smoke-shift-visit-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-shift-visit-usability-source.mjs:565:26 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-shift-visit-usability-source.mjs:191:27",
+      "file": "scripts\\smoke-shift-visit-usability-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-shift-visit-usability-source.mjs:191:27 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-speech-final-ready-status-source.mjs:170:27",
+      "file": "scripts\\smoke-speech-final-ready-status-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-speech-final-ready-status-source.mjs:170:27 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-speech-local-bridge-readiness.mjs:70:4",
+      "file": "scripts\\smoke-speech-local-bridge-readiness.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-speech-local-bridge-readiness.mjs:70:4 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-speech-local-bridge-readiness.mjs:48:19",
+      "file": "scripts\\smoke-speech-local-bridge-readiness.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-speech-local-bridge-readiness.mjs:48:19 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-speech-provider-errors.mjs:80:23",
+      "file": "scripts\\smoke-speech-provider-errors.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-speech-provider-errors.mjs:80:23 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-speech-provider-errors.mjs:75:9",
+      "file": "scripts\\smoke-speech-provider-errors.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-speech-provider-errors.mjs:75:9 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-speech-provider-errors.mjs:85:16",
+      "file": "scripts\\smoke-speech-provider-errors.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-speech-provider-errors.mjs:85:16 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-speech-provider-errors.mjs:70:15",
+      "file": "scripts\\smoke-speech-provider-errors.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-speech-provider-errors.mjs:70:15 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-speech-queue-source.mjs:324:110",
+      "file": "scripts\\smoke-speech-queue-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-speech-queue-source.mjs:324:110 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-speech-queue-source.mjs:69:10",
+      "file": "scripts\\smoke-speech-queue-source.mjs",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "scripts\\smoke-speech-queue-source.mjs:69:10 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-tax-knd-xml.mjs:95:37",
+      "file": "scripts\\smoke-tax-knd-xml.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-tax-knd-xml.mjs:95:37 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-tax-payment-explicit-payer.mjs:192:32",
+      "file": "scripts\\smoke-tax-payment-explicit-payer.mjs",
+      "rule": "lint/correctness/noUnusedFunctionParameters",
+      "header": "scripts\\smoke-tax-payment-explicit-payer.mjs:192:32 lint/correctness/noUnusedFunctionParameters  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-control-ui-source.mjs:443:21",
+      "file": "scripts\\smoke-telegram-control-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-control-ui-source.mjs:443:21 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-control-ui-source.mjs:538:26",
+      "file": "scripts\\smoke-telegram-control-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-control-ui-source.mjs:538:26 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-control-ui-source.mjs:270:24",
+      "file": "scripts\\smoke-telegram-control-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-control-ui-source.mjs:270:24 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-control-ui-source.mjs:281:31",
+      "file": "scripts\\smoke-telegram-control-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-control-ui-source.mjs:281:31 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-control-ui-source.mjs:282:39",
+      "file": "scripts\\smoke-telegram-control-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-control-ui-source.mjs:282:39 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-control-ui-source.mjs:283:31",
+      "file": "scripts\\smoke-telegram-control-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-control-ui-source.mjs:283:31 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-control-ui-source.mjs:287:35",
+      "file": "scripts\\smoke-telegram-control-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-control-ui-source.mjs:287:35 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-control-ui-source.mjs:307:35",
+      "file": "scripts\\smoke-telegram-control-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-control-ui-source.mjs:307:35 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-control-ui-source.mjs:462:40",
+      "file": "scripts\\smoke-telegram-control-ui-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-control-ui-source.mjs:462:40 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-handoff-source.mjs:29:16",
+      "file": "scripts\\smoke-telegram-handoff-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-telegram-handoff-source.mjs:29:16 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-outbox-persistence.mjs:1:8",
+      "file": "scripts\\smoke-telegram-outbox-persistence.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\smoke-telegram-outbox-persistence.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-telegram-outbox-persistence.mjs:2:35",
+      "file": "scripts\\smoke-telegram-outbox-persistence.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\smoke-telegram-outbox-persistence.mjs:2:35 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-ui-preferences.mjs:646:4",
+      "file": "scripts\\smoke-ui-preferences.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-ui-preferences.mjs:646:4 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-visit-screenshots.mjs:1:8",
+      "file": "scripts\\smoke-visit-screenshots.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\smoke-visit-screenshots.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-workspace-live-core-actions.mjs:1:8",
+      "file": "scripts\\smoke-workspace-live-core-actions.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\smoke-workspace-live-core-actions.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-workspace-live-core-actions.mjs:6:8",
+      "file": "scripts\\smoke-workspace-live-core-actions.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\smoke-workspace-live-core-actions.mjs:6:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-workspace-live-settings-actions.mjs:1:8",
+      "file": "scripts\\smoke-workspace-live-settings-actions.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\smoke-workspace-live-settings-actions.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-workspace-shell-source.mjs:451:16",
+      "file": "scripts\\smoke-workspace-shell-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-workspace-shell-source.mjs:451:16 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-workspace-shell-source.mjs:218:42",
+      "file": "scripts\\smoke-workspace-shell-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-workspace-shell-source.mjs:218:42 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-workspace-shell-source.mjs:349:11",
+      "file": "scripts\\smoke-workspace-shell-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-workspace-shell-source.mjs:349:11 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-workspace-shell-source.mjs:389:16",
+      "file": "scripts\\smoke-workspace-shell-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-workspace-shell-source.mjs:389:16 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-workspace-shell-source.mjs:394:11",
+      "file": "scripts\\smoke-workspace-shell-source.mjs",
+      "rule": "lint/suspicious/noTemplateCurlyInString",
+      "header": "scripts\\smoke-workspace-shell-source.mjs:394:11 lint/suspicious/noTemplateCurlyInString ━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-edge-cases-wave10.mjs:1:8",
+      "file": "scripts\\test-edge-cases-wave10.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\test-edge-cases-wave10.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-edge-cases-wave11.mjs:1:8",
+      "file": "scripts\\test-edge-cases-wave11.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\test-edge-cases-wave11.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-edge-cases-wave12.mjs:1:8",
+      "file": "scripts\\test-edge-cases-wave12.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\test-edge-cases-wave12.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-edge-cases-wave13.mjs:1:8",
+      "file": "scripts\\test-edge-cases-wave13.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\test-edge-cases-wave13.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-edge-cases-wave14.mjs:1:8",
+      "file": "scripts\\test-edge-cases-wave14.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\test-edge-cases-wave14.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-edge-cases-wave15.mjs:1:8",
+      "file": "scripts\\test-edge-cases-wave15.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\test-edge-cases-wave15.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-edge-cases-wave6.mjs:1:8",
+      "file": "scripts\\test-edge-cases-wave6.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\test-edge-cases-wave6.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-edge-cases-wave7.mjs:1:8",
+      "file": "scripts\\test-edge-cases-wave7.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\test-edge-cases-wave7.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-edge-cases-wave9.mjs:1:8",
+      "file": "scripts\\test-edge-cases-wave9.mjs",
+      "rule": "lint/correctness/noUnusedImports",
+      "header": "scripts\\test-edge-cases-wave9.mjs:1:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\test-settings-profile.mjs:21:30",
+      "file": "scripts\\test-settings-profile.mjs",
+      "rule": "lint/correctness/noUnusedFunctionParameters",
+      "header": "scripts\\test-settings-profile.mjs:21:30 lint/correctness/noUnusedFunctionParameters  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\tests\\theme-contrast-guard.test.mjs:435:8",
+      "file": "scripts\\tests\\theme-contrast-guard.test.mjs",
+      "rule": "lint/complexity/useOptionalChain",
+      "header": "scripts\\tests\\theme-contrast-guard.test.mjs:435:8 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━"
+    },
+    {
+      "loc": "test.ts:1:39",
+      "file": "test.ts",
+      "rule": "lint/correctness/noUnusedVariables",
+      "header": "test.ts:1:39 lint/correctness/noUnusedVariables ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ClinicalAiPersonalizePanel.tsx",
+      "file": "apps\\web\\src\\ClinicalAiPersonalizePanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\ClinicalAiPersonalizePanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ClinicalRulePanel.tsx",
+      "file": "apps\\web\\src\\ClinicalRulePanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\ClinicalRulePanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\DocumentsView.tsx",
+      "file": "apps\\web\\src\\DocumentsView.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\DocumentsView.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ImagingView.tsx",
+      "file": "apps\\web\\src\\ImagingView.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\ImagingView.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\PatientsView.tsx",
+      "file": "apps\\web\\src\\PatientsView.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\PatientsView.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ScheduleView.tsx",
+      "file": "apps\\web\\src\\ScheduleView.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\ScheduleView.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\SettingsView.tsx",
+      "file": "apps\\web\\src\\SettingsView.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\SettingsView.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\CommandPalette.tsx",
+      "file": "apps\\web\\src\\components\\CommandPalette.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\CommandPalette.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\PatientJourneyTimeline.tsx",
+      "file": "apps\\web\\src\\components\\PatientJourneyTimeline.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\PatientJourneyTimeline.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\PatientPortal.tsx",
+      "file": "apps\\web\\src\\components\\PatientPortal.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\PatientPortal.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\VisitDiaryEditor.tsx",
+      "file": "apps\\web\\src\\components\\VisitDiaryEditor.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\VisitDiaryEditor.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\analytics\\LostPatientsPanel.tsx",
+      "file": "apps\\web\\src\\components\\analytics\\LostPatientsPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\analytics\\LostPatientsPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\auth\\StaffPinPad.tsx",
+      "file": "apps\\web\\src\\components\\auth\\StaffPinPad.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\auth\\StaffPinPad.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\communications\\CampaignPanel.tsx",
+      "file": "apps\\web\\src\\components\\communications\\CampaignPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\communications\\CampaignPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\finance\\SberbankTerminalPaymentModal.tsx",
+      "file": "apps\\web\\src\\components\\finance\\SberbankTerminalPaymentModal.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\finance\\SberbankTerminalPaymentModal.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\finance\\cashDaySummary.ts",
+      "file": "apps\\web\\src\\components\\finance\\cashDaySummary.ts",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\finance\\cashDaySummary.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\imaging\\ShadowAnalystReport.tsx",
+      "file": "apps\\web\\src\\components\\imaging\\ShadowAnalystReport.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\imaging\\ShadowAnalystReport.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\patients\\OrthodonticProgressWidget.tsx",
+      "file": "apps\\web\\src\\components\\patients\\OrthodonticProgressWidget.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\patients\\OrthodonticProgressWidget.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\patients\\PatientFamilyCard.tsx",
+      "file": "apps\\web\\src\\components\\patients\\PatientFamilyCard.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\patients\\PatientFamilyCard.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\patients\\RecallListPanel.tsx",
+      "file": "apps\\web\\src\\components\\patients\\RecallListPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\patients\\RecallListPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\reports\\ManagerReportsPanel.tsx",
+      "file": "apps\\web\\src\\components\\reports\\ManagerReportsPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\reports\\ManagerReportsPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\schedule\\AppointmentCard.tsx",
+      "file": "apps\\web\\src\\components\\schedule\\AppointmentCard.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\schedule\\AppointmentCard.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\schedule\\DayConfirmationsPanel.tsx",
+      "file": "apps\\web\\src\\components\\schedule\\DayConfirmationsPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\schedule\\DayConfirmationsPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\schedule\\FreedSlotsPanel.tsx",
+      "file": "apps\\web\\src\\components\\schedule\\FreedSlotsPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\schedule\\FreedSlotsPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\schedule\\ScheduleFilterStrip.test.tsx",
+      "file": "apps\\web\\src\\components\\schedule\\ScheduleFilterStrip.test.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\schedule\\ScheduleFilterStrip.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\schedule\\ScheduleSubNavTabs.test.tsx",
+      "file": "apps\\web\\src\\components\\schedule\\ScheduleSubNavTabs.test.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\schedule\\ScheduleSubNavTabs.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\schedule\\WaitlistMatchesBlock.tsx",
+      "file": "apps\\web\\src\\components\\schedule\\WaitlistMatchesBlock.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\schedule\\WaitlistMatchesBlock.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\settings\\MigrationWizard.tsx",
+      "file": "apps\\web\\src\\components\\settings\\MigrationWizard.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\settings\\MigrationWizard.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\settings\\SettingsClinicTab.tsx",
+      "file": "apps\\web\\src\\components\\settings\\SettingsClinicTab.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\settings\\SettingsClinicTab.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+      "file": "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\settings\\SettingsProtocolsTab.tsx",
+      "file": "apps\\web\\src\\components\\settings\\SettingsProtocolsTab.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\settings\\SettingsProtocolsTab.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\settings\\SettingsRulesTab.tsx",
+      "file": "apps\\web\\src\\components\\settings\\SettingsRulesTab.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\settings\\SettingsRulesTab.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\shift\\ShiftCallout.tsx",
+      "file": "apps\\web\\src\\components\\shift\\ShiftCallout.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\shift\\ShiftCallout.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\visit\\SpeechChunksInspector.tsx",
+      "file": "apps\\web\\src\\components\\visit\\SpeechChunksInspector.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\visit\\SpeechChunksInspector.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\visit\\VisitMainTabs.test.tsx",
+      "file": "apps\\web\\src\\components\\visit\\VisitMainTabs.test.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\visit\\VisitMainTabs.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\components\\visit\\VisitMainTabs.tsx",
+      "file": "apps\\web\\src\\components\\visit\\VisitMainTabs.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\components\\visit\\VisitMainTabs.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ctPlanningExportPanel.tsx",
+      "file": "apps\\web\\src\\ctPlanningExportPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\ctPlanningExportPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ctPlanningImplantFitPanel.tsx",
+      "file": "apps\\web\\src\\ctPlanningImplantFitPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\ctPlanningImplantFitPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ctPlanningImplantModelPanel.tsx",
+      "file": "apps\\web\\src\\ctPlanningImplantModelPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\ctPlanningImplantModelPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ctPlanningTaskBoardPanel.tsx",
+      "file": "apps\\web\\src\\ctPlanningTaskBoardPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\ctPlanningTaskBoardPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\ctPlanningWorkflowPanel.tsx",
+      "file": "apps\\web\\src\\ctPlanningWorkflowPanel.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\ctPlanningWorkflowPanel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx",
+      "file": "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\styles\\dente-redesign.css:1460:2",
+      "file": "apps\\web\\src\\styles\\dente-redesign.css",
+      "rule": "lint/suspicious/noDuplicateProperties",
+      "header": "apps\\web\\src\\styles\\dente-redesign.css:1460:2 lint/suspicious/noDuplicateProperties ━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\useSettingsDerivations.tsx",
+      "file": "apps\\web\\src\\useSettingsDerivations.tsx",
+      "rule": "format",
+      "header": "apps\\web\\src\\useSettingsDerivations.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "apps\\web\\src\\utils\\routeUtils.ts",
+      "file": "apps\\web\\src\\utils\\routeUtils.ts",
+      "rule": "format",
+      "header": "apps\\web\\src\\utils\\routeUtils.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "check-dashboard.cjs",
+      "file": "check-dashboard.cjs",
+      "rule": "format",
+      "header": "check-dashboard.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "check-orgs.cjs",
+      "file": "check-orgs.cjs",
+      "rule": "format",
+      "header": "check-orgs.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "check-rules.cjs",
+      "file": "check-rules.cjs",
+      "rule": "format",
+      "header": "check-rules.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "check-users.cjs",
+      "file": "check-users.cjs",
+      "rule": "format",
+      "header": "check-users.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "debug_pw.cjs",
+      "file": "debug_pw.cjs",
+      "rule": "format",
+      "header": "debug_pw.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e-page-audit.cjs",
+      "file": "e2e-page-audit.cjs",
+      "rule": "format",
+      "header": "e2e-page-audit.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e-test.cjs:55:5",
+      "file": "e2e-test.cjs",
+      "rule": "lint/correctness/noInnerDeclarations",
+      "header": "e2e-test.cjs:55:5 lint/correctness/noInnerDeclarations ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e-test.cjs",
+      "file": "e2e-test.cjs",
+      "rule": "format",
+      "header": "e2e-test.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e.cjs",
+      "file": "e2e.cjs",
+      "rule": "format",
+      "header": "e2e.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_4state_audit.cjs",
+      "file": "e2e_4state_audit.cjs",
+      "rule": "format",
+      "header": "e2e_4state_audit.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_run.cjs:81:12",
+      "file": "e2e_run.cjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "e2e_run.cjs:81:12 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "e2e_run.cjs",
+      "file": "e2e_run.cjs",
+      "rule": "format",
+      "header": "e2e_run.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_orphans.cjs",
+      "file": "find_orphans.cjs",
+      "rule": "format",
+      "header": "find_orphans.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_stubs.cjs",
+      "file": "find_stubs.cjs",
+      "rule": "format",
+      "header": "find_stubs.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "find_unused_routes.cjs",
+      "file": "find_unused_routes.cjs",
+      "rule": "format",
+      "header": "find_unused_routes.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-db.cjs",
+      "file": "fix-db.cjs",
+      "rule": "format",
+      "header": "fix-db.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-2.cjs",
+      "file": "fix-suppressions-2.cjs",
+      "rule": "format",
+      "header": "fix-suppressions-2.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions-3.cjs",
+      "file": "fix-suppressions-3.cjs",
+      "rule": "format",
+      "header": "fix-suppressions-3.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix-suppressions.cjs",
+      "file": "fix-suppressions.cjs",
+      "rule": "format",
+      "header": "fix-suppressions.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "fix_hooks.cjs",
+      "file": "fix_hooks.cjs",
+      "rule": "format",
+      "header": "fix_hooks.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "packages\\shared\\src\\index.ts",
+      "file": "packages\\shared\\src\\index.ts",
+      "rule": "format",
+      "header": "packages\\shared\\src\\index.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "patch-error.cjs",
+      "file": "patch-error.cjs",
+      "rule": "format",
+      "header": "patch-error.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "patch-map-views.cjs",
+      "file": "patch-map-views.cjs",
+      "rule": "format",
+      "header": "patch-map-views.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "patch-map.cjs",
+      "file": "patch-map.cjs",
+      "rule": "format",
+      "header": "patch-map.cjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-applogic-stub-overrides.mjs",
+      "file": "scripts\\check-applogic-stub-overrides.mjs",
+      "rule": "format",
+      "header": "scripts\\check-applogic-stub-overrides.mjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-encoding.mjs:242:36",
+      "file": "scripts\\check-encoding.mjs",
+      "rule": "lint/suspicious/noControlCharactersInRegex",
+      "header": "scripts\\check-encoding.mjs:242:36 lint/suspicious/noControlCharactersInRegex ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-encoding.mjs",
+      "file": "scripts\\check-encoding.mjs",
+      "rule": "format",
+      "header": "scripts\\check-encoding.mjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-encoding.mjs:242:23",
+      "file": "scripts\\check-encoding.mjs",
+      "rule": "lint/suspicious/noControlCharactersInRegex",
+      "header": "scripts\\check-encoding.mjs:242:23 lint/suspicious/noControlCharactersInRegex ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-encoding.mjs:242:29",
+      "file": "scripts\\check-encoding.mjs",
+      "rule": "lint/suspicious/noControlCharactersInRegex",
+      "header": "scripts\\check-encoding.mjs:242:29 lint/suspicious/noControlCharactersInRegex ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-encoding.mjs:242:4",
+      "file": "scripts\\check-encoding.mjs",
+      "rule": "lint/suspicious/noControlCharactersInRegex",
+      "header": "scripts\\check-encoding.mjs:242:4 lint/suspicious/noControlCharactersInRegex ━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-encoding.mjs:242:17",
+      "file": "scripts\\check-encoding.mjs",
+      "rule": "lint/suspicious/noControlCharactersInRegex",
+      "header": "scripts\\check-encoding.mjs:242:17 lint/suspicious/noControlCharactersInRegex ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-encoding.mjs:242:11",
+      "file": "scripts\\check-encoding.mjs",
+      "rule": "lint/suspicious/noControlCharactersInRegex",
+      "header": "scripts\\check-encoding.mjs:242:11 lint/suspicious/noControlCharactersInRegex ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-fetch-response-guard.mjs",
+      "file": "scripts\\check-fetch-response-guard.mjs",
+      "rule": "format",
+      "header": "scripts\\check-fetch-response-guard.mjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-guarded-route-headers.mjs",
+      "file": "scripts\\check-guarded-route-headers.mjs",
+      "rule": "format",
+      "header": "scripts\\check-guarded-route-headers.mjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\check-schema-type-drift.mjs:99:10",
+      "file": "scripts\\check-schema-type-drift.mjs",
+      "rule": "lint/suspicious/noAssignInExpressions",
+      "header": "scripts\\check-schema-type-drift.mjs:99:10 lint/suspicious/noAssignInExpressions ━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\detect-overflows.mjs:58:24",
+      "file": "scripts\\detect-overflows.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\detect-overflows.mjs:58:24 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\generate-schema-alignment-migration.mjs:147:11",
+      "file": "scripts\\generate-schema-alignment-migration.mjs",
+      "rule": "lint/suspicious/noAssignInExpressions",
+      "header": "scripts\\generate-schema-alignment-migration.mjs:147:11 lint/suspicious/noAssignInExpressions ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\generate-schema-alignment-migration.mjs:104:10",
+      "file": "scripts\\generate-schema-alignment-migration.mjs",
+      "rule": "lint/suspicious/noAssignInExpressions",
+      "header": "scripts\\generate-schema-alignment-migration.mjs:104:10 lint/suspicious/noAssignInExpressions ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\generate-schema-alignment-migration.mjs:199:11",
+      "file": "scripts\\generate-schema-alignment-migration.mjs",
+      "rule": "lint/suspicious/noAssignInExpressions",
+      "header": "scripts\\generate-schema-alignment-migration.mjs:199:11 lint/suspicious/noAssignInExpressions ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:229:3",
+      "file": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:229:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:46:3",
+      "file": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:46:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:77:3",
+      "file": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:77:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:109:3",
+      "file": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:109:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:144:3",
+      "file": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:144:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:195:3",
+      "file": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:195:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:214:3",
+      "file": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-api-dicom-scan-abort-yield-source.mjs:214:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-api-text-encoding.mjs:34:24",
+      "file": "scripts\\smoke-api-text-encoding.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-api-text-encoding.mjs:34:24 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-api-text-encoding.mjs:30:9",
+      "file": "scripts\\smoke-api-text-encoding.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-api-text-encoding.mjs:30:9 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-app-update-recovery-source.mjs:207:3",
+      "file": "scripts\\smoke-app-update-recovery-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-app-update-recovery-source.mjs:207:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-app-update-recovery-source.mjs:226:3",
+      "file": "scripts\\smoke-app-update-recovery-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-app-update-recovery-source.mjs:226:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-browser-boot.mjs",
+      "file": "scripts\\smoke-browser-boot.mjs",
+      "rule": "format",
+      "header": "scripts\\smoke-browser-boot.mjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:116:3",
+      "file": "scripts\\smoke-browser-imaging-scan-progress-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:116:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:120:63",
+      "file": "scripts\\smoke-browser-imaging-scan-progress-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:120:63 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:129:3",
+      "file": "scripts\\smoke-browser-imaging-scan-progress-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:129:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:137:73",
+      "file": "scripts\\smoke-browser-imaging-scan-progress-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:137:73 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:89:3",
+      "file": "scripts\\smoke-browser-imaging-scan-progress-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-browser-imaging-scan-progress-source.mjs:89:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-browser-migration-scan-progress-source.mjs:172:3",
+      "file": "scripts\\smoke-browser-migration-scan-progress-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-browser-migration-scan-progress-source.mjs:172:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-browser-migration-scan-progress-source.mjs:98:3",
+      "file": "scripts\\smoke-browser-migration-scan-progress-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-browser-migration-scan-progress-source.mjs:98:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-browser-migration-scan-progress-source.mjs:162:3",
+      "file": "scripts\\smoke-browser-migration-scan-progress-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-browser-migration-scan-progress-source.mjs:162:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs:99:3",
+      "file": "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs:99:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs:110:3",
+      "file": "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs:110:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs:119:3",
+      "file": "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-dicom-workbench-ui-cancel-source.mjs:119:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-interactive-buttons-source.mjs:16:10",
+      "file": "scripts\\smoke-interactive-buttons-source.mjs",
+      "rule": "lint/suspicious/noAssignInExpressions",
+      "header": "scripts\\smoke-interactive-buttons-source.mjs:16:10 lint/suspicious/noAssignInExpressions ━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-interactive-buttons-source.mjs:31:10",
+      "file": "scripts\\smoke-interactive-buttons-source.mjs",
+      "rule": "lint/suspicious/noAssignInExpressions",
+      "header": "scripts\\smoke-interactive-buttons-source.mjs:31:10 lint/suspicious/noAssignInExpressions ━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-schema-column-parity.mjs:100:10",
+      "file": "scripts\\smoke-schema-column-parity.mjs",
+      "rule": "lint/suspicious/noAssignInExpressions",
+      "header": "scripts\\smoke-schema-column-parity.mjs:100:10 lint/suspicious/noAssignInExpressions ━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-schema-column-parity.mjs:119:10",
+      "file": "scripts\\smoke-schema-column-parity.mjs",
+      "rule": "lint/suspicious/noAssignInExpressions",
+      "header": "scripts\\smoke-schema-column-parity.mjs:119:10 lint/suspicious/noAssignInExpressions ━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-schema-column-parity.mjs:41:10",
+      "file": "scripts\\smoke-schema-column-parity.mjs",
+      "rule": "lint/suspicious/noAssignInExpressions",
+      "header": "scripts\\smoke-schema-column-parity.mjs:41:10 lint/suspicious/noAssignInExpressions ━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-settings-view-source.mjs",
+      "file": "scripts\\smoke-settings-view-source.mjs",
+      "rule": "format",
+      "header": "scripts\\smoke-settings-view-source.mjs format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-web-service-worker-cache-source.mjs:40:3",
+      "file": "scripts\\smoke-web-service-worker-cache-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-web-service-worker-cache-source.mjs:40:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "scripts\\smoke-web-service-worker-cache-source.mjs:51:3",
+      "file": "scripts\\smoke-web-service-worker-cache-source.mjs",
+      "rule": "lint/suspicious/useIterableCallbackReturn",
+      "header": "scripts\\smoke-web-service-worker-cache-source.mjs:51:3 lint/suspicious/useIterableCallbackReturn ━━━━━━━━━━"
+    },
+    {
+      "loc": "test.ts",
+      "file": "test.ts",
+      "rule": "format",
+      "header": "test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    }
+  ]
+}

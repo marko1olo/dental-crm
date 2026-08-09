@@ -38,7 +38,8 @@ export function localDayKey(value: Date | string): string | null {
 	if (value instanceof Date) {
 		return Number.isNaN(value.getTime()) ? null : dayKeyFromDate(value);
 	}
-	const trimmed = value.trim();
+	if (typeof value !== "string") return null;
+	const trimmed = (value ?? "").trim();
 	if (!trimmed) return null;
 	// Дата без времени берётся как есть. `new Date("2026-07-28")` по стандарту —
 	// полночь по Гринвичу, и при отрицательном смещении это предыдущие сутки.
@@ -104,6 +105,12 @@ export interface CashDaySummary {
  */
 function paymentKopecks(payment: Payment): number {
 	try {
+		if (
+			!payment ||
+			payment.amountRub === undefined ||
+			payment.amountRub === null
+		)
+			return 0;
 		return parseKopecks(payment.amountRub);
 	} catch {
 		return 0;
@@ -150,6 +157,7 @@ export function summarizeCashDay(
 	let refundedCount = 0;
 
 	for (const payment of payments ?? []) {
+		if (!payment) continue;
 		if (localDayKey(payment.paidAt ?? payment.createdAt ?? "") !== dayKey)
 			continue;
 		const kopecks = paymentKopecks(payment);

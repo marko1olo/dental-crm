@@ -1,0 +1,13 @@
+a/apps/web/src/components/patients/PatientAttachmentsPanel.tsx b/apps/web/src/components/patients/PatientAttachmentsPanel.tsx
+index 6ac626322..04107ff86 100644
+--- a/apps/web/src/components/patients/PatientAttachmentsPanel.tsx
++++ b/apps/web/src/components/patients/PatientAttachmentsPanel.tsx
+@@ -327,7 +327,7 @@ export const PatientAttachmentsPanel: React.FC<
+ 					className="flex flex-col gap-2"
+ 					data-testid="patient-attachments-list"
+ 				>
+-					{files.map((att) => (
++					{(files ?? []).map((att) => (
+ 						<li
+ 							key={att.id}
+ 							className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-2"

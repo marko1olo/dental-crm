@@ -140,7 +140,8 @@ export type SettingsTab = (typeof settingsTabs)[number]["id"];
 export function viewFromHash(): AppView {
 	if (typeof window === "undefined") return "shift";
 	const hash = window.location.hash.replace("#", "");
-	const view = hash.split("/")[0] ?? "";
+	const parts = hash.split("/").filter(Boolean);
+	const view = parts[0] ?? "";
 	return (appViews as readonly string[]).includes(view)
 		? (view as AppView)
 		: "shift";
@@ -148,7 +149,10 @@ export function viewFromHash(): AppView {
 
 export function settingsTabFromHash(): SettingsTab {
 	if (typeof window === "undefined") return "clinic";
-	const hashParts = window.location.hash.replace("#", "").split("/");
+	const hashParts = window.location.hash
+		.replace("#", "")
+		.split("/")
+		.filter(Boolean);
 	const tab = hashParts[1];
 	if (!tab) return "clinic";
 	const candidate = tab;

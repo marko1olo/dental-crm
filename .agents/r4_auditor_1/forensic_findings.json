@@ -1,0 +1,359 @@
+{
+  "findings": [],
+  "defensiveGuardsSummary": [
+    {
+      "file": "apps/web/src/AppHelpers.tsx",
+      "defensiveCount": 3,
+      "addedCount": 3,
+      "removedCount": 3
+    },
+    {
+      "file": "apps/web/src/ClinicalAiPersonalizePanel.tsx",
+      "defensiveCount": 18,
+      "addedCount": 18,
+      "removedCount": 18
+    },
+    {
+      "file": "apps/web/src/ClinicalRulePanel.tsx",
+      "defensiveCount": 40,
+      "addedCount": 41,
+      "removedCount": 40
+    },
+    {
+      "file": "apps/web/src/DocumentsView.tsx",
+      "defensiveCount": 20,
+      "addedCount": 22,
+      "removedCount": 21
+    },
+    {
+      "file": "apps/web/src/ImagingView.tsx",
+      "defensiveCount": 10,
+      "addedCount": 10,
+      "removedCount": 10
+    },
+    {
+      "file": "apps/web/src/PatientsView.tsx",
+      "defensiveCount": 13,
+      "addedCount": 15,
+      "removedCount": 15
+    },
+    {
+      "file": "apps/web/src/ScheduleView.tsx",
+      "defensiveCount": 27,
+      "addedCount": 29,
+      "removedCount": 27
+    },
+    {
+      "file": "apps/web/src/SettingsView.tsx",
+      "defensiveCount": 18,
+      "addedCount": 18,
+      "removedCount": 18
+    },
+    {
+      "file": "apps/web/src/VisitNoteDraftPanel.tsx",
+      "defensiveCount": 4,
+      "addedCount": 4,
+      "removedCount": 4
+    },
+    {
+      "file": "apps/web/src/components/CommandPalette.tsx",
+      "defensiveCount": 11,
+      "addedCount": 14,
+      "removedCount": 13
+    },
+    {
+      "file": "apps/web/src/components/Omnibar.tsx",
+      "defensiveCount": 8,
+      "addedCount": 8,
+      "removedCount": 8
+    },
+    {
+      "file": "apps/web/src/components/PatientAvatar.tsx",
+      "defensiveCount": 12,
+      "addedCount": 14,
+      "removedCount": 14
+    },
+    {
+      "file": "apps/web/src/components/PatientJourneyTimeline.tsx",
+      "defensiveCount": 8,
+      "addedCount": 22,
+      "removedCount": 17
+    },
+    {
+      "file": "apps/web/src/components/PatientPortal.tsx",
+      "defensiveCount": 6,
+      "addedCount": 7,
+      "removedCount": 6
+    },
+    {
+      "file": "apps/web/src/components/VisitDiaryEditor.tsx",
+      "defensiveCount": 16,
+      "addedCount": 16,
+      "removedCount": 15
+    },
+    {
+      "file": "apps/web/src/components/analytics/LostPatientsPanel.tsx",
+      "defensiveCount": 8,
+      "addedCount": 47,
+      "removedCount": 44
+    },
+    {
+      "file": "apps/web/src/components/auth/StaffPinPad.tsx",
+      "defensiveCount": 8,
+      "addedCount": 8,
+      "removedCount": 8
+    },
+    {
+      "file": "apps/web/src/components/communications/CampaignPanel.tsx",
+      "defensiveCount": 11,
+      "addedCount": 14,
+      "removedCount": 14
+    },
+    {
+      "file": "apps/web/src/components/communications/MessageDeliveryConsole.tsx",
+      "defensiveCount": 30,
+      "addedCount": 38,
+      "removedCount": 38
+    },
+    {
+      "file": "apps/web/src/components/crm/PatientDuplicateMergeQueuesWidget.tsx",
+      "defensiveCount": 8,
+      "addedCount": 8,
+      "removedCount": 8
+    },
+    {
+      "file": "apps/web/src/components/finance/CashDayTally.tsx",
+      "defensiveCount": 1,
+      "addedCount": 1,
+      "removedCount": 1
+    },
+    {
+      "file": "apps/web/src/components/finance/SberbankTerminalPaymentModal.tsx",
+      "defensiveCount": 0,
+      "addedCount": 2,
+      "removedCount": 2
+    },
+    {
+      "file": "apps/web/src/components/finance/cashDaySummary.ts",
+      "defensiveCount": 1,
+      "addedCount": 4,
+      "removedCount": 1
+    },
+    {
+      "file": "apps/web/src/components/imaging/ShadowAnalystReport.tsx",
+      "defensiveCount": 14,
+      "addedCount": 17,
+      "removedCount": 16
+    },
+    {
+      "file": "apps/web/src/components/imaging/VisiographAnalyzer.tsx",
+      "defensiveCount": 4,
+      "addedCount": 4,
+      "removedCount": 4
+    },
+    {
+      "file": "apps/web/src/components/patients/OrthodonticProgressWidget.tsx",
+      "defensiveCount": 2,
+      "addedCount": 4,
+      "removedCount": 3
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientAttachmentsPanel.tsx",
+      "defensiveCount": 1,
+      "addedCount": 1,
+      "removedCount": 1
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientCommunicationConsentsPanel.tsx",
+      "defensiveCount": 1,
+      "addedCount": 2,
+      "removedCount": 1
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientDuplicateAlert.tsx",
+      "defensiveCount": 0,
+      "addedCount": 4,
+      "removedCount": 4
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientFamilyCard.tsx",
+      "defensiveCount": 3,
+      "addedCount": 5,
+      "removedCount": 4
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientNoShowRisk.tsx",
+      "defensiveCount": 7,
+      "addedCount": 7,
+      "removedCount": 7
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientWhatsappSendPanel.tsx",
+      "defensiveCount": 1,
+      "addedCount": 2,
+      "removedCount": 1
+    },
+    {
+      "file": "apps/web/src/components/patients/RecallListPanel.tsx",
+      "defensiveCount": 1,
+      "addedCount": 2,
+      "removedCount": 1
+    },
+    {
+      "file": "apps/web/src/components/payments/fiscalReceiptRequirements.ts",
+      "defensiveCount": 6,
+      "addedCount": 14,
+      "removedCount": 6
+    },
+    {
+      "file": "apps/web/src/components/reports/ManagerReportsPanel.tsx",
+      "defensiveCount": 26,
+      "addedCount": 26,
+      "removedCount": 26
+    },
+    {
+      "file": "apps/web/src/components/schedule/AppointmentCard.tsx",
+      "defensiveCount": 38,
+      "addedCount": 44,
+      "removedCount": 40
+    },
+    {
+      "file": "apps/web/src/components/schedule/DayConfirmationsPanel.tsx",
+      "defensiveCount": 15,
+      "addedCount": 18,
+      "removedCount": 15
+    },
+    {
+      "file": "apps/web/src/components/schedule/FreedSlotsPanel.tsx",
+      "defensiveCount": 12,
+      "addedCount": 12,
+      "removedCount": 12
+    },
+    {
+      "file": "apps/web/src/components/schedule/WaitlistMatchesBlock.tsx",
+      "defensiveCount": 8,
+      "addedCount": 8,
+      "removedCount": 8
+    },
+    {
+      "file": "apps/web/src/components/settings/MigrationWizard.tsx",
+      "defensiveCount": 22,
+      "addedCount": 25,
+      "removedCount": 25
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsClinicTab.tsx",
+      "defensiveCount": 10,
+      "addedCount": 17,
+      "removedCount": 17
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsImportsTab.tsx",
+      "defensiveCount": 198,
+      "addedCount": 199,
+      "removedCount": 199
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsPricesTab.tsx",
+      "defensiveCount": 14,
+      "addedCount": 14,
+      "removedCount": 14
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsProtocolsTab.tsx",
+      "defensiveCount": 7,
+      "addedCount": 7,
+      "removedCount": 7
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsRulesTab.tsx",
+      "defensiveCount": 7,
+      "addedCount": 7,
+      "removedCount": 7
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsStaffTab.tsx",
+      "defensiveCount": 0,
+      "addedCount": 5,
+      "removedCount": 5
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsTelegramTab.tsx",
+      "defensiveCount": 2,
+      "addedCount": 3,
+      "removedCount": 3
+    },
+    {
+      "file": "apps/web/src/components/visit/CompletedServicesChecklist.tsx",
+      "defensiveCount": 11,
+      "addedCount": 11,
+      "removedCount": 11
+    },
+    {
+      "file": "apps/web/src/components/visit/SpeechChunksInspector.tsx",
+      "defensiveCount": 14,
+      "addedCount": 14,
+      "removedCount": 14
+    },
+    {
+      "file": "apps/web/src/ctPlanningExportPanel.tsx",
+      "defensiveCount": 36,
+      "addedCount": 40,
+      "removedCount": 37
+    },
+    {
+      "file": "apps/web/src/ctPlanningImplantFitPanel.tsx",
+      "defensiveCount": 20,
+      "addedCount": 20,
+      "removedCount": 20
+    },
+    {
+      "file": "apps/web/src/ctPlanningImplantModelPanel.tsx",
+      "defensiveCount": 36,
+      "addedCount": 38,
+      "removedCount": 37
+    },
+    {
+      "file": "apps/web/src/ctPlanningTaskBoardPanel.tsx",
+      "defensiveCount": 19,
+      "addedCount": 19,
+      "removedCount": 19
+    },
+    {
+      "file": "apps/web/src/ctPlanningWorkflowPanel.tsx",
+      "defensiveCount": 18,
+      "addedCount": 18,
+      "removedCount": 18
+    },
+    {
+      "file": "apps/web/src/pages/AnalyticsDashboardView.tsx",
+      "defensiveCount": 21,
+      "addedCount": 23,
+      "removedCount": 22
+    },
+    {
+      "file": "apps/web/src/pages/DoctorPayoutDashboard.tsx",
+      "defensiveCount": 5,
+      "addedCount": 5,
+      "removedCount": 5
+    },
+    {
+      "file": "apps/web/src/styles/dente-redesign.css",
+      "defensiveCount": 0,
+      "addedCount": 2,
+      "removedCount": 1
+    },
+    {
+      "file": "apps/web/src/useSettingsDerivations.tsx",
+      "defensiveCount": 14,
+      "addedCount": 14,
+      "removedCount": 14
+    },
+    {
+      "file": "apps/web/src/utils/routeUtils.ts",
+      "defensiveCount": 1,
+      "addedCount": 3,
+      "removedCount": 2
+    }
+  ]
+}

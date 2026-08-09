@@ -1,0 +1,40 @@
+a/apps/web/src/components/imaging/VisiographAnalyzer.tsx b/apps/web/src/components/imaging/VisiographAnalyzer.tsx
+index 4cca29808..b4ced1314 100644
+--- a/apps/web/src/components/imaging/VisiographAnalyzer.tsx
++++ b/apps/web/src/components/imaging/VisiographAnalyzer.tsx
+@@ -1648,7 +1648,7 @@ export function VisiographAnalyzer() {
+ 									<div
+ 										style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}
+ 									>
+-										{toothStatesArray.map(({ code, state }) => {
++										{(toothStatesArray ?? []).map(({ code, state }) => {
+ 											const isCritical =
+ 												state === "treatment" || state === "watch";
+ 											const isDone = state === "done" || state === "missing";
+@@ -1727,7 +1727,7 @@ export function VisiographAnalyzer() {
+ 											)}
+ 										</span>
+ 									</div>
+-									{reportSections.map((section, sIndex) => (
++									{(reportSections ?? []).map((section, sIndex) => (
+ 										<div
+ 											key={
+ 												section.title ||
+@@ -1991,7 +1991,7 @@ export function VisiographAnalyzer() {
+ 											<span>{deleteFailure}</span>
+ 										</div>
+ 									)}
+-									{scanHistory.map((scan) => (
++									{(scanHistory ?? []).map((scan) => (
+ 										<div
+ 											key={scan.id}
+ 											data-testid={`xray-scan-history-row-${scan.id}`}
+@@ -2059,7 +2059,7 @@ export function VisiographAnalyzer() {
+ 															"ru-RU",
+ 														)}{" "}
+ 														·{" "}
+-														{scan.aiToothStates
++														{scan?.aiToothStates
+ 															? Object.keys(scan.aiToothStates).length
+ 															: 0}{" "}
+ 														зубов

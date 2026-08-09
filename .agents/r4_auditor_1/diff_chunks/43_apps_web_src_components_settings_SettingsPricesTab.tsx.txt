@@ -1,0 +1,73 @@
+a/apps/web/src/components/settings/SettingsPricesTab.tsx b/apps/web/src/components/settings/SettingsPricesTab.tsx
+index d5fe2f7a8..f72770c3c 100644
+--- a/apps/web/src/components/settings/SettingsPricesTab.tsx
++++ b/apps/web/src/components/settings/SettingsPricesTab.tsx
+@@ -185,18 +185,18 @@ export function SettingsPricesTab() {
+ 			const q = searchQuery.toLowerCase();
+ 			items = items.filter(
+ 				(s) =>
+-					s.title.toLowerCase().includes(q) ||
+-					s.code?.toLowerCase().includes(q),
++					(s?.title ?? "").toLowerCase().includes(q) ||
++					(s?.code ?? "").toLowerCase().includes(q),
+ 			);
+ 		}
+-		return items.sort((a, b) => a.title.localeCompare(b.title));
++		return items.sort((a, b) => (a?.title ?? "").localeCompare(b?.title ?? ""));
+ 	}, [typedServiceCatalog, searchQuery]);
+ 
+ 	const groupedCatalog = useMemo(() => {
+ 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+ 		const groups: Record<string, any[]> = {};
+ 		filteredCatalog.forEach((item) => {
+-			const cat = item.category || "other";
++			const cat = item?.category || "other";
+ 			if (!groups[cat]) groups[cat] = [];
+ 			groups[cat].push(item);
+ 		});
+@@ -208,9 +208,9 @@ export function SettingsPricesTab() {
+ 		setIsImporting(true);
+ 		setImportResult(null);
+ 
+-		const validItems = typedPricelistAnalysis.items.filter(
++		const validItems = (typedPricelistAnalysis.items ?? []).filter(
+ 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+-			(item: any) => item.priceRub !== null,
++			(item: any) => item?.priceRub !== null,
+ 		);
+ 		if (validItems.length === 0) {
+ 			setImportResult({ error: "Нет позиций с ценой для импорта" });
+@@ -730,12 +730,12 @@ export function SettingsPricesTab() {
+ 										<FileJson size={16} /> Виды лечения
+ 									</h5>
+ 									<div className="pricelist-taxonomy-items">
+-										{typedPricelistRecognitionServiceGroups.map((group) => (
+-											<div className="pricelist-taxonomy-row" key={group.title}>
++										{(typedPricelistRecognitionServiceGroups ?? []).map((group) => (
++											<div className="pricelist-taxonomy-row" key={group?.title}>
+ 												<div className="pricelist-taxonomy-row-title">
+-													{group.title}
++													{group?.title}
+ 												</div>
+-												{group.items.map((item) => (
++												{(group?.items ?? []).map((item) => (
+ 													<span className="pricelist-taxonomy-chip" key={item}>
+ 														{item}
+ 													</span>
+@@ -749,12 +749,12 @@ export function SettingsPricesTab() {
+ 										<Database size={16} /> Материалы и реставрации
+ 									</h5>
+ 									<div className="pricelist-taxonomy-items">
+-										{typedPricelistRecognitionBrandGroups.map((group) => (
+-											<div className="pricelist-taxonomy-row" key={group.title}>
++										{(typedPricelistRecognitionBrandGroups ?? []).map((group) => (
++											<div className="pricelist-taxonomy-row" key={group?.title}>
+ 												<div className="pricelist-taxonomy-row-title">
+-													{group.title}
++													{group?.title}
+ 												</div>
+-												{group.items.map((item) => (
++												{(group?.items ?? []).map((item) => (
+ 													<span className="pricelist-taxonomy-chip" key={item}>
+ 														{item}
+ 													</span>

@@ -600,7 +600,18 @@ export function SettingsPricesTab() {
 								)}
 							</div>
 
-							{pricelistSourceKind === "scan_photo" && (
+							{/*
+							   БЫЛО: pricelistSourceKind === "scan_photo". Такого значения нет
+							   ни в перечислении pricelistSourceKindSchema (shared:2013), ни
+							   где-либо ещё в репозитории — поиск давал ровно одно вхождение,
+							   эту самую строку. Переключатели выше рисуются из
+							   pricelistSourceKindLabels, то есть из перечисления, поэтому
+							   условие не выполнялось НИКОГДА: администратор выбирал «Фото» и
+							   получал пустое место без поля загрузки, а кнопка «Разобрать
+							   прайс» оставалась заблокированной, ведь pricelistImageBase64
+							   было некому заполнить.
+							*/}
+							{pricelistSourceKind === "photo_ocr" && (
 								<div className="pricelist-image-uploader">
 									<label className="pricelist-file-dropzone">
 										<input

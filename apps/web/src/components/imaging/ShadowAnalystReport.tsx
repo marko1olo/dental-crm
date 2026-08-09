@@ -60,11 +60,11 @@ export function ShadowAnalystReport({
 			return;
 		}
 
-		let fullText = summary;
+		let fullText = summary ?? "";
 		if (toothUpdates && toothUpdates.length > 0) {
 			fullText += ". Детализация по зубам: ";
 			toothUpdates.forEach((t) => {
-				fullText += `Зуб ${t.code}: ${t.diagnosisOrFinding}. `;
+				fullText += `Зуб ${t?.code ?? ""}: ${t?.diagnosisOrFinding ?? ""}. `;
 			});
 		}
 
@@ -81,9 +81,11 @@ export function ShadowAnalystReport({
 		const voices = synth.getVoices();
 		const ruVoice =
 			voices.find(
-				(v) => v.lang === "ru-RU" && !v.name.toLowerCase().includes("google"),
+				(v) =>
+					v.lang === "ru-RU" &&
+					!(v.name ?? "").toLowerCase().includes("google"),
 			) ||
-			voices.find((v) => v.lang.startsWith("ru")) ||
+			voices.find((v) => (v.lang ?? "").startsWith("ru")) ||
 			null;
 		if (ruVoice) utterance.voice = ruVoice;
 
@@ -99,9 +101,9 @@ export function ShadowAnalystReport({
 
 	const criticalCount = (toothUpdates ?? []).filter(
 		(u) =>
-			u.state.toLowerCase().includes("caries") ||
-			u.state.toLowerCase().includes("pulpitis") ||
-			u.state.toLowerCase().includes("periodont"),
+			(u?.state ?? "").toLowerCase().includes("caries") ||
+			(u?.state ?? "").toLowerCase().includes("pulpitis") ||
+			(u?.state ?? "").toLowerCase().includes("periodont"),
 	).length;
 
 	return (
@@ -155,22 +157,23 @@ export function ShadowAnalystReport({
 				</div>
 
 				{/* Tooth table */}
-				{toothUpdates && toothUpdates.length > 0 && (
+				{(toothUpdates ?? []).length > 0 && (
 					<div className="sa-section">
 						<div className="sa-section-label">
 							<AlertTriangle size={12} />
-							Детализация по зубам · {toothUpdates.length} поз.
+							Детализация по зубам · {(toothUpdates ?? []).length} поз.
 						</div>
 						<div className="sa-tooth-grid">
-							{toothUpdates.map((update) => {
+							{(toothUpdates ?? []).map((update) => {
+								const updateState = (update?.state ?? "").toLowerCase();
 								const isCritical =
-									update.state.toLowerCase().includes("caries") ||
-									update.state.toLowerCase().includes("pulpitis") ||
-									update.state.toLowerCase().includes("periodont");
+									updateState.includes("caries") ||
+									updateState.includes("pulpitis") ||
+									updateState.includes("periodont");
 								const isDone =
-									update.state === "done" ||
-									update.state === "implant" ||
-									update.state === "prosthetic";
+									update?.state === "done" ||
+									update?.state === "implant" ||
+									update?.state === "prosthetic";
 								return (
 									<div
 										key={`tooth-${update.code}-${update.diagnosisOrFinding}`}

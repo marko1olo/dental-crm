@@ -47,12 +47,11 @@
  */
 
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { createRequire } from "node:module";
+import { join } from "node:path";
 
 const require_ = createRequire(import.meta.url);
 const ts = require_("typescript");
-
 
 const ROOTS = ["apps/web/src", "apps/api/src"];
 

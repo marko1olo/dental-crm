@@ -87,5 +87,7 @@ if (otherFailures.length) {
  * узел в корне, и по счётчику узлов мёртвое приложение неотличимо от живого.
  */
 const ok = rootChildren > 0 && bootError === 0 && pageErrors.length === 0;
-console.log(`\nВЕРДИКТ: ${ok ? "рабочее место загружается" : "НЕ ЗАГРУЖАЕТСЯ"}`);
+console.log(
+	`\nВЕРДИКТ: ${ok ? "рабочее место загружается" : "НЕ ЗАГРУЖАЕТСЯ"}`,
+);
 process.exit(ok ? 0 : 1);

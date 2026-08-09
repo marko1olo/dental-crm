@@ -1,10 +1,13 @@
-## 2026-08-08T20:53:27Z
-Your working directory: C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_spec_miner_survey_3
-Your role: Requirements & Acceptance Criteria Spec Miner
-Must read original request: C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md
+# DISPATCH — Spec Miner 3 (Biome Linter & TypeScript Code Health)
 
-Task Objectives:
-1. Probe `C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md` (specifically entry 2026-08-08T20:51:53Z) and project authority `C:\Clinic_MVP\dental-crm\AGENTS.md`.
-2. Extract all precise requirements (R1 Browser UI & E2E Verification, R2 Paranoid Global Search, R3 God-Object Dismantling of AppHelpers.tsx, R4 Zero AI Optimism & Circular Dependency Audit).
-3. Document all explicit verification gates (`npm run typecheck -w @dental/web`, `npx madge --circular apps/web/src/main.tsx`, Playwright test execution, console log checks, 4-state screenshot criteria).
-4. Write your findings to `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_spec_miner_survey_3\spec_report.md` and complete a handoff report at `handoff.md` in your directory.
+## 2026-08-09T11:58:00Z
+
+## Mission
+Survey Biome configuration, TypeScript typecheck status, and dead code / legacy duplicate patterns across the codebase.
+
+## Scope & Instructions
+1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`.
+2. Inspect `biome.json` at root and in subfolders. Identify why `.postgres` and other build/data directories were scanned and caused false linter errors.
+3. Check current TypeScript compilation state (`npm run typecheck -w @dental/web` or root typecheck) and Biome check state (`npx @biomejs/biome check`).
+4. Perform AST and static code searches (`ast-grep`, `ripgrep`) to identify dead code, unused exports, legacy duplicate modules, and circular dependencies.
+5. Save your specification mining report to `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_spec_miner_survey_3\handoff.md`.

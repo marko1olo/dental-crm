@@ -1,16 +1,19 @@
-## 2026-08-08T17:05:52Z
-Your working directory: C:\Clinic_MVP\dental-crm\.agents\m1_worker_2
-Your role: Milestone 1 Remediation Worker
-Must read original request: C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md
-Must read strategy specs: C:\Clinic_MVP\dental-crm\.agents\m1_explorer_2\analysis.md and C:\Clinic_MVP\dental-crm\.agents\m1_explorer_2\handoff.md
+## 2026-08-09T12:11:19Z
 
-Task Objectives (Milestone 1 - Iteration 2):
-1. Update `apps/web/tests/e2e/smoke.spec.ts`:
-   a. In Spec 2 ("2. Login screen renders when no auth tokens present"): Declare `const emailInput = page.locator(...)` and execute `await expect(emailInput.first()).toBeVisible({ timeout: 10000 });` BEFORE reading `page.innerHTML("body")` length, guaranteeing DOM hydration after `React.lazy()` chunk loading.
-   b. In Spec 5 ("5. No error boundaries triggered after full navigation cycle"): Add negative checks for DENTE CRM Cyrillic Error Boundary strings (`"не открылось"`, `"Раздел временно не открылся"`, `"Не удалось открыть"`, `"Ошибка рендеринга"`).
-2. Run `npm run typecheck -w @dental/web` and verify clean exit code 0.
-3. Run `npx playwright test tests/e2e/smoke.spec.ts` in `apps/web` and verify all 5 specs pass cleanly.
-4. Record verbatim execution logs in `C:\Clinic_MVP\dental-crm\.agents\m1_worker_2\results.md` and complete a handoff report at `handoff.md` in your directory.
+You are m1_worker_2 (TypeScript Typecheck Remediation Worker).
+Your Working Directory: `C:\Clinic_MVP\dental-crm\.agents\m1_worker_2`
+Project Root: `C:\Clinic_MVP\dental-crm`
+Original Request File: `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`
+Scope Document: `C:\Clinic_MVP\dental-crm\.agents\orchestrator_r3\plan.md`
 
-MANDATORY INTEGRITY WARNING:
-DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or report inaccurate test counts. A teamwork_preview_auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
+Mandatory Instructions:
+1. READ `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md` completely.
+2. Read `C:\Clinic_MVP\dental-crm\.agents\m1_explorer_2\handoff.md`.
+3. Apply the precise fixes to the 10 TypeScript compiler errors in `@dental/api` test files:
+   - `apps/api/src/migration/tests/mapping.test.ts`: Fix optional chaining / non-null assertions on `parseRates` (lines 68, 72, 75, 76, 78) so `profiles[i]?.parseRates` is safely typed.
+   - `apps/api/src/migration/tests/parsers.test.ts`: Add `assert.ok(rows, "rows must be defined");` or safe non-null check before lines 377, 398, 400.
+   - `apps/api/src/services/clinical/ClinicalRouter.test.ts`: Fix line 234 parameter type mismatch by passing non-null `fixture.organizationId` (guaranteed by test setup).
+   - `apps/api/src/tests/routes/telegramChatLinkPersists.test.ts`: Add `assert.ok(linkId, "linkId must be defined");` prior to line 539.
+4. Run `npm run typecheck` from `C:\Clinic_MVP\dental-crm` to verify that all packages (`@dental/shared`, `@dental/api`, `@dental/web`) compile cleanly with EXIT CODE 0 and 0 ERRORS.
+5. Record command outputs, exit code 0 confirmation, and modified files in `C:\Clinic_MVP\dental-crm\.agents\m1_worker_2\handoff.md`.
+6. Send a message to parent (`6013ed07-6028-427c-adba-7d91793dc30b`) using `send_message` notifying completion.

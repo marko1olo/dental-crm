@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-08-08T16:48:36.119Z",
+  "savedAt": "2026-08-09T09:42:19.164Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
@@ -19,10 +19,10 @@
       "lastError": "fetch failed"
     },
     "google_speech:401c79dc50d5": {
-      "cooldownUntil": 1786128212241,
-      "failures": 80,
+      "cooldownUntil": 1786268569164,
+      "failures": 81,
       "successes": 0,
-      "lastUsedAt": 1786128182241,
+      "lastUsedAt": 1786268539164,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },
@@ -43,12 +43,12 @@
       "lastError": "401 Unauthorized"
     },
     "google_speech:c5b553420348": {
-      "cooldownUntil": 1785499534346,
-      "failures": 97,
+      "cooldownUntil": 1786268569151,
+      "failures": 98,
       "successes": 2,
-      "lastUsedAt": 1785498934346,
-      "lastStatusCode": 401,
-      "lastError": "401 Unauthorized"
+      "lastUsedAt": 1786268539151,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
     },
     "google_speech:c637bdf62cb7": {
       "cooldownUntil": 1785952564390,
@@ -59,10 +59,10 @@
       "lastError": "fetch failed"
     },
     "google_speech:c78fec9a5b53": {
-      "cooldownUntil": 1785952564389,
-      "failures": 132,
+      "cooldownUntil": 1786268569162,
+      "failures": 133,
       "successes": 0,
-      "lastUsedAt": 1785952534389,
+      "lastUsedAt": 1786268539162,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },

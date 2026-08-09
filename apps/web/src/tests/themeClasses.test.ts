@@ -68,10 +68,9 @@ describe("вариант Tailwind dark:", () => {
 			path.join(webSrc, "styles/tailwind.css"),
 			"utf8",
 		);
-		const variant = source
-			.split("\n")
-			.find((line) => line.startsWith("@custom-variant dark"));
-		assert.ok(variant, "объявление варианта dark: не найдено");
+		const variantMatch = source.match(/@custom-variant dark[\s\S]*?\);/);
+		assert.ok(variantMatch, "объявление варианта dark: не найдено");
+		const variant = variantMatch[0];
 		// Ночная тема обязана попадать в вариант: она тёмная.
 		assert.ok(
 			variant.includes('[data-theme="night"]'),

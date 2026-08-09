@@ -157,7 +157,15 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 			headers: (authObj || auth)?.denteClinicalMutationHeaders(),
 		});
 
+	async function fetchRecordingDetails(recordingId: string) {
+		await fetch(`/api/communications/recordings/${recordingId}`);
+	}
+	async function fetchRecordingStream(recordingId: string) {
+		await fetch(`/api/communications/recordings/${recordingId}/stream`);
+	}
 	return {
+		fetchRecordingDetails,
+		fetchRecordingStream,
 		getGatewayStatus,
 		getTemplates,
 		getOutbox,

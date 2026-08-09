@@ -1,0 +1,71 @@
+a/apps/web/src/useSettingsDerivations.tsx b/apps/web/src/useSettingsDerivations.tsx
+index 86d3698df..e59124587 100644
+--- a/apps/web/src/useSettingsDerivations.tsx
++++ b/apps/web/src/useSettingsDerivations.tsx
+@@ -2247,20 +2247,20 @@ export function useSettingsDerivations() {
+ 			? "Предпросмотр построит черновой разбор найденного источника."
+ 			: "Сначала откройте план или проверку источника: у этой подсказки пока нет файлов для предпросмотра.";
+ 	const migrationPreviewableSourceCount =
+-		typedMigrationAutopilotSources.filter((source) =>
+-			migrationCandidatePreviewReady(source.candidate),
++		(typedMigrationAutopilotSources ?? []).filter((source) =>
++			migrationCandidatePreviewReady(source?.candidate),
+ 		).length +
+-		typedMigrationDiscoveryCandidates.filter(migrationCandidatePreviewReady)
++		(typedMigrationDiscoveryCandidates ?? []).filter(migrationCandidatePreviewReady)
+ 			.length +
+-		(typedBrowserMigrationDiscovery?.candidates.filter(
++		(typedBrowserMigrationDiscovery?.candidates?.filter(
+ 			migrationCandidatePreviewReady,
+ 		).length ?? 0);
+ 	const migrationPreAutopilotSourceCount =
+-		typedMigrationDiscoveryCandidates.length +
+-		(typedBrowserMigrationDiscovery?.candidates.length ?? 0) +
+-		(typedSmartImportPreview?.legacySources.length ?? 0);
++		(typedMigrationDiscoveryCandidates ?? []).length +
++		(typedBrowserMigrationDiscovery?.candidates?.length ?? 0) +
++		(typedSmartImportPreview?.legacySources?.length ?? 0);
+ 	const migrationKnownSourceCount =
+-		typedMigrationAutopilotSources.length || migrationPreAutopilotSourceCount;
++		(typedMigrationAutopilotSources ?? []).length || migrationPreAutopilotSourceCount;
+ 	const migrationHandoffReportReady = Boolean(
+ 		typedMigrationAutopilot ||
+ 			typedMigrationSourceDiscovery ||
+@@ -2268,15 +2268,15 @@ export function useSettingsDerivations() {
+ 			smartImportInputReady,
+ 	);
+ 	const migrationPreviewReadyRows = typedSmartImportPreview
+-		? typedSmartImportPreview.patientPreview.readyRows +
+-			typedSmartImportPreview.imagingPreview.readyRows
++		? (typedSmartImportPreview?.patientPreview?.readyRows ?? 0) +
++			(typedSmartImportPreview?.imagingPreview?.readyRows ?? 0)
+ 		: 0;
+ 	const migrationClinicLookupFieldCount =
+-		typedClinicPublicLookupSuggestions.reduce(
++		(typedClinicPublicLookupSuggestions ?? []).reduce(
+ 			(bestCount, suggestion) =>
+ 				Math.max(
+ 					bestCount,
+-					clinicLookupSuggestionFieldEntries(suggestion.fields).length,
++					clinicLookupSuggestionFieldEntries(suggestion?.fields).length,
+ 				),
+ 			0,
+ 		);
+@@ -2534,7 +2534,7 @@ export function useSettingsDerivations() {
+ 		items: string[],
+ 		testId?: string,
+ 	) => {
+-		const visibleItems = items.filter(Boolean).slice(0, 8);
++		const visibleItems = (items ?? []).filter(Boolean).slice(0, 8);
+ 		if (!visibleItems.length) return null;
+ 
+ 		return (
+@@ -2551,7 +2551,7 @@ export function useSettingsDerivations() {
+ 	const typedClinicalRuleActionLabels = (clinicalRuleActionLabels ||
+ 		{}) as Record<ClinicalRuleAction, string>;
+ 	const typedClinicalRuleActions = Object.keys(
+-		typedClinicalRuleActionLabels,
++		typedClinicalRuleActionLabels ?? {},
+ 	) as ClinicalRuleAction[];
+ 	const typedClinicalRuleSeverityLabels = (clinicalRuleSeverityLabels ||
+ 		{}) as Record<ClinicalRuleSeverity, string>;

@@ -1,0 +1,207 @@
+a/apps/web/src/components/schedule/AppointmentCard.tsx b/apps/web/src/components/schedule/AppointmentCard.tsx
+index 87260f547..a62f497b3 100644
+--- a/apps/web/src/components/schedule/AppointmentCard.tsx
++++ b/apps/web/src/components/schedule/AppointmentCard.tsx
+@@ -93,28 +93,31 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 		activeVisitLockedAppointmentStatuses,
+ 	} = props;
+ 
+-	const appointmentSuggestions = visibleScheduleSuggestions.filter(
+-		(s) => s.appointmentId === appointment.id,
++	const appointmentSuggestions = (visibleScheduleSuggestions ?? []).filter(
++		(s) => s?.appointmentId === appointment?.id,
+ 	);
+-	const readiness = appointmentReadinessById.get(appointment.id);
+-	const appointmentDoctor = (dashboard.clinicSettings?.staff ?? []).find(
+-		(member) => member.id === appointment.doctorUserId,
++	const readiness =
++		(appointmentReadinessById instanceof Map
++			? appointmentReadinessById.get(appointment?.id ?? "")
++			: undefined) ?? null;
++	const appointmentDoctor = (dashboard?.clinicSettings?.staff ?? []).find(
++		(member) => member?.id === appointment?.doctorUserId,
+ 	);
+-	const appointmentAssistant = appointment.assistantUserId
+-		? (dashboard.clinicSettings?.staff ?? []).find(
+-				(member) => member.id === appointment.assistantUserId,
++	const appointmentAssistant = appointment?.assistantUserId
++		? (dashboard?.clinicSettings?.staff ?? []).find(
++				(member) => member?.id === appointment.assistantUserId,
+ 			)
+ 		: null;
+-	const appointmentChair = (dashboard.clinicSettings?.chairs ?? []).find(
+-		(chair) => chair.id === appointment.chairId,
+-	);
+-	const appointmentSaveMissingId = `appointment-save-missing-${appointment.id}`;
+-	const appointmentEditorId = `appointment-editor-${appointment.id}`;
+-	const appointmentHandoffNoteId = `appointment-handoff-note-${appointment.id}`;
+-	const appointmentPatientName = patientName(
+-		dashboard.patients,
+-		appointment.patientId,
++	const appointmentChair = (dashboard?.clinicSettings?.chairs ?? []).find(
++		(chair) => chair?.id === appointment?.chairId,
+ 	);
++	const appointmentSaveMissingId = `appointment-save-missing-${appointment?.id ?? ""}`;
++	const appointmentEditorId = `appointment-editor-${appointment?.id ?? ""}`;
++	const appointmentHandoffNoteId = `appointment-handoff-note-${appointment?.id ?? ""}`;
++	const appointmentPatientName =
++		typeof patientName === "function"
++			? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null)
++			: "";
+ 
+ 	return (
+ 		<div className="timeline-node" key={appointment.id}>
+@@ -138,15 +141,15 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 				>
+ 					<div className="appointment-card-header border-b border-slate-200 dark:border-slate-800 pb-2 mb-1 flex justify-between items-center">
+ 						<div className="appointment-card-time font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+-							{formatTime(appointment.startsAt)}
++							{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}
+ 							<span className="font-normal text-slate-500 dark:text-slate-400">
+-								{formatTime(appointment.endsAt)}
++								{appointment?.endsAt ? formatTime(appointment.endsAt) : ""}
+ 							</span>
+ 						</div>
+ 						<span
+-							className={`appointment-card-status status-pill status-${appointment.status}`}
++							className={`appointment-card-status status-pill status-${appointment?.status ?? ""}`}
+ 						>
+-							{appointmentLabels[appointment.status]}
++							{appointmentLabels?.[appointment?.status] ?? String(appointment?.status ?? "")}
+ 						</span>
+ 						{appointmentHasOpenVisit ? (
+ 							<span className="handoff-lock">
+@@ -194,14 +197,14 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 								</button>
+ 							))}
+ 							<span className="chip chip-reason">
+-								{appointment.reason || "Причина не указана"}
++								{appointment?.reason || "Причина не указана"}
+ 							</span>
+ 							<span className="chip chip-doctor">
+-								{appointmentDoctor?.fullName.split(" ")[0] ??
++								{(appointmentDoctor?.fullName || "").split(" ")[0] ||
+ 									"Врач не назначен"}
+ 							</span>
+ 							<span className="chip chip-assistant">
+-								{appointmentAssistant?.fullName.split(" ")[0] ??
++								{(appointmentAssistant?.fullName || "").split(" ")[0] ||
+ 									"ассистент не назначен"}
+ 							</span>
+ 							{appointmentChair && (
+@@ -238,8 +241,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
+         дня, администратор видит полный список «кому звонить» с причиной.
+         Только future cancelled/no_show: API сам отвергает занятое и прошлое.
+       */}
+-					{(appointment.status === "cancelled" ||
+-						appointment.status === "no_show") &&
++					{(appointment?.status === "cancelled" ||
++						appointment?.status === "no_show") &&
++					appointment?.startsAt &&
+ 					new Date(appointment.startsAt).getTime() > Date.now() ? (
+ 						<div
+ 							style={{
+@@ -315,8 +319,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 								<input
+ 									type="datetime-local"
+ 									value={toDateTimeLocalValue(
+-										appointmentDraft.startsAt as string,
+-										dashboard.clinicSettings.profile.timezone,
++										appointmentDraft?.startsAt as string,
++										dashboard?.clinicSettings?.profile?.timezone,
+ 									)}
+ 									onChange={(event: TextFieldChangeEvent) =>
+ 										updateAppointmentScheduleDraft(
+@@ -324,7 +328,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 											"startsAt",
+ 											fromDateTimeLocalValue(
+ 												event.target.value,
+-												dashboard.clinicSettings.profile.timezone,
++												dashboard?.clinicSettings?.profile?.timezone,
+ 											),
+ 										)
+ 									}
+@@ -335,8 +339,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 								<input
+ 									type="datetime-local"
+ 									value={toDateTimeLocalValue(
+-										appointmentDraft.endsAt as string,
+-										dashboard.clinicSettings.profile.timezone,
++										appointmentDraft?.endsAt as string,
++										dashboard?.clinicSettings?.profile?.timezone,
+ 									)}
+ 									onChange={(event: TextFieldChangeEvent) =>
+ 										updateAppointmentScheduleDraft(
+@@ -344,7 +348,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 											"endsAt",
+ 											fromDateTimeLocalValue(
+ 												event.target.value,
+-												dashboard.clinicSettings.profile.timezone,
++												dashboard?.clinicSettings?.profile?.timezone,
+ 											),
+ 										)
+ 									}
+@@ -482,7 +486,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 									)}
+ 								</div>
+ 
+-								{dashboard.clinicSettings.profile.mode !== "solo_doctor" && (
++								{dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" && (
+ 									<div>
+ 										<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+ 											Ассистент
+@@ -547,12 +551,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 									</span>
+ 									<div className="flex flex-wrap gap-1.5">
+ 										{(
+-											Object.keys(appointmentLabels) as Appointment["status"][]
++											Object.keys(appointmentLabels ?? {}) as Appointment["status"][]
+ 										).map((status) => (
+ 											<button
+ 												key={status}
+ 												type="button"
+-												className={`quick-chip ${appointmentDraft.status === status ? "active" : ""}`}
++												className={`quick-chip ${appointmentDraft?.status === status ? "active" : ""}`}
+ 												onClick={() =>
+ 													updateAppointmentScheduleDraft(
+ 														appointment.id,
+@@ -562,10 +566,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 												}
+ 												disabled={
+ 													appointmentHasOpenVisit &&
+-													activeVisitLockedAppointmentStatuses.has(status)
++													Boolean(activeVisitLockedAppointmentStatuses?.has?.(status))
+ 												}
+ 											>
+-												{appointmentLabels[status]}
++												{appointmentLabels?.[status] ?? status}
+ 											</button>
+ 										))}
+ 									</div>
+@@ -682,7 +686,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 									{appointmentSaveError ? (
+ 										<span className="save-error">{appointmentSaveError}</span>
+ 									) : null}
+-									{appointmentMissingSteps.length ? (
++									{(appointmentMissingSteps ?? []).length ? (
+ 										<div
+ 											className="schedule-create-missing schedule-save-missing"
+ 											id={appointmentSaveMissingId}
+@@ -691,7 +695,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 										>
+ 											<strong>Чтобы сохранить запись, исправьте:</strong>
+ 											<ul>
+-												{appointmentMissingSteps.map((step) => (
++												{(appointmentMissingSteps ?? []).map((step) => (
+ 													<li key={step}>{step}</li>
+ 												))}
+ 											</ul>
+@@ -759,7 +763,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
+ 									}
+ 									aria-busy={appointmentSaveState === "saving" || undefined}
+ 									aria-describedby={
+-										!appointmentReadyToSave && appointmentMissingSteps.length
++										!appointmentReadyToSave && (appointmentMissingSteps ?? []).length
+ 											? appointmentSaveMissingId
+ 											: undefined
+ 									}

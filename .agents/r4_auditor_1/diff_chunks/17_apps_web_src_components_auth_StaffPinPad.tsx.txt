@@ -1,0 +1,50 @@
+a/apps/web/src/components/auth/StaffPinPad.tsx b/apps/web/src/components/auth/StaffPinPad.tsx
+index 3bad6efe8..6613fa330 100644
+--- a/apps/web/src/components/auth/StaffPinPad.tsx
++++ b/apps/web/src/components/auth/StaffPinPad.tsx
+@@ -314,21 +314,21 @@ export function StaffPinPad({
+ 								}
+ 							</div>
+ 						) : (
+-							activeStaff.map((staff) => {
+-								const isSelected = selectedUser?.id === staff.id;
++							(activeStaff ?? []).map((staff) => {
++								const isSelected = selectedUser?.id === staff?.id;
+ 								const fullName =
+-									typeof staff.fullName === "string" ? staff.fullName : "";
++									typeof staff?.fullName === "string" ? staff.fullName : "";
+ 								const initials = fullName
+-									? fullName
++									? (fullName ?? "")
+ 											.split(" ")
+ 											.filter(Boolean)
+-											.map((part) => part[0])
++											.map((part) => part?.[0] ?? "")
+ 											.join("")
+ 											.slice(0, 2)
+ 									: "??";
+ 								return (
+ 									<button
+-										key={staff.id}
++										key={staff?.id}
+ 										type="button"
+ 										className={`auth-staff-card ${isSelected ? "active" : ""}`}
+ 										onClick={() => {
+@@ -352,7 +352,7 @@ export function StaffPinPad({
+ 												{fullName || "Без имени"}
+ 											</div>
+ 											<div className="auth-staff-role">
+-												{typeof staff.role === "string" ? staff.role : ""}
++												{typeof staff?.role === "string" ? staff.role : ""}
+ 											</div>
+ 										</div>
+ 									</button>
+@@ -378,7 +378,7 @@ export function StaffPinPad({
+ 						<div className="auth-pin-icon">
+ 							{selectedUser ? <UserCheck size={24} /> : <Lock size={24} />}
+ 						</div>
+-						<h4>{selectedUser ? selectedUser.fullName : "Выберите профиль"}</h4>
++						<h4>{selectedUser ? (selectedUser?.fullName ?? "") : "Выберите профиль"}</h4>
+ 						<div className="auth-pin-target" aria-live="polite">
+ 							{/* Проверка PIN идёт на сервере и занимает время (там намеренная
+                   задержка на неверный PIN). Без этой строки экран замирал молча. */}

@@ -1,0 +1,119 @@
+a/apps/web/src/components/analytics/LostPatientsPanel.tsx b/apps/web/src/components/analytics/LostPatientsPanel.tsx
+index 75070d2d1..30e9770ab 100644
+--- a/apps/web/src/components/analytics/LostPatientsPanel.tsx
++++ b/apps/web/src/components/analytics/LostPatientsPanel.tsx
+@@ -73,7 +73,7 @@ export const LostPatientsPanel: React.FC = () => {
+ 					</div>
+ 					<div>
+ 						<h3 className="font-bold text-base leading-tight">
+-							Потерянные пациенты ({patients.length})
++							Потерянные пациенты ({(patients ?? []).length})
+ 						</h3>
+ 						<p className="text-xs text-slate-500 dark:text-slate-400">
+ 							Пациенты без будущих визитов — требуют обзвона и приглашения на
+@@ -107,7 +107,7 @@ export const LostPatientsPanel: React.FC = () => {
+ 					<AlertTriangle className="w-4 h-4 flex-shrink-0" />
+ 					<span>{error}</span>
+ 				</div>
+-			) : patients.length === 0 ? (
++			) : (patients ?? []).length === 0 ? (
+ 				/*
+ 				 * БЫЛО: «Все пациенты клиники имеют назначенные приёмы или активные задачи!»
+ 				 * API GET /api/analytics/lost-patients-filters выбирает только пациентов
+@@ -124,51 +124,54 @@ export const LostPatientsPanel: React.FC = () => {
+ 				</div>
+ 			) : (
+ 				<div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+-					{patients.map((patient) => (
+-						<div
+-							key={patient.id}
+-							className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between gap-3 text-xs"
+-						>
+-							<div className="min-w-0 flex-1">
+-								<div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+-									{patient.patientName}
++					{(patients ?? []).map((patient) => {
++						const days = typeof patient?.daysSinceLastVisit === "number" && !Number.isNaN(patient.daysSinceLastVisit) ? patient.daysSinceLastVisit : 0;
++						return (
++							<div
++								key={patient?.id}
++								className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between gap-3 text-xs"
++							>
++								<div className="min-w-0 flex-1">
++									<div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
++										{patient?.patientName}
++									</div>
++									<div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
++										<span className="flex items-center gap-1">
++											<Phone className="w-3 h-3" />
++											{formatPhoneNumber(patient?.phone)}
++											{/* daysSinceLastVisit теперь с сервера: max прошлых starts_at, не константа 90. */}
++										</span>
++										<span>·</span>
++										<span>
++											{days <= 0
++												? "Ещё не был на приёме или визит сегодня"
++												: `Без визита ${days} ${
++														days % 10 === 1 &&
++														days % 100 !== 11
++															? "день"
++															: days % 10 >= 2 &&
++																	days % 10 <= 4 &&
++																	(days % 100 < 10 ||
++																		days % 100 >= 20)
++																? "дня"
++																: "дней"
++													}`}
++										</span>
++									</div>
+ 								</div>
+-								<div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+-									<span className="flex items-center gap-1">
+-										<Phone className="w-3 h-3" />
+-										{formatPhoneNumber(patient.phone)}
+-										{/* daysSinceLastVisit теперь с сервера: max прошлых starts_at, не константа 90. */}
+-									</span>
+-									<span>·</span>
+-									<span>
+-										{patient.daysSinceLastVisit <= 0
+-											? "Ещё не был на приёме или визит сегодня"
+-											: `Без визита ${patient.daysSinceLastVisit} ${
+-													patient.daysSinceLastVisit % 10 === 1 &&
+-													patient.daysSinceLastVisit % 100 !== 11
+-														? "день"
+-														: patient.daysSinceLastVisit % 10 >= 2 &&
+-																patient.daysSinceLastVisit % 10 <= 4 &&
+-																(patient.daysSinceLastVisit % 100 < 10 ||
+-																	patient.daysSinceLastVisit % 100 >= 20)
+-															? "дня"
+-															: "дней"
+-												}`}
+-									</span>
+-								</div>
+-							</div>
+ 
+-							<div className="flex items-center gap-2 flex-shrink-0">
+-								<button
+-									type="button"
+-									onClick={() => handleOpenPatientCard(patient.id)}
+-									className="px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-600 text-white font-medium text-[11px] transition-colors"
+-								>
+-									Открыть карту
+-								</button>
++								<div className="flex items-center gap-2 flex-shrink-0">
++									<button
++										type="button"
++										onClick={() => handleOpenPatientCard(patient?.id)}
++										className="px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-600 text-white font-medium text-[11px] transition-colors"
++									>
++										Открыть карту
++									</button>
++								</div>
+ 							</div>
+-						</div>
+-					))}
++						);
++					})}
+ 				</div>
+ 			)}
+ 		</div>

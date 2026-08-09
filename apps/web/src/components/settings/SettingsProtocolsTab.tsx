@@ -245,13 +245,13 @@ export function SettingsProtocolsTab() {
 								}))
 							}
 						>
-							{Object.entries(specialtyLabels as Record<string, string>).map(
-								([key, label]) => (
-									<option key={key} value={key}>
-										{label}
-									</option>
-								),
-							)}
+							{Object.entries(
+								(specialtyLabels ?? {}) as Record<string, string>,
+							).map(([key, label]) => (
+								<option key={key} value={key}>
+									{label}
+								</option>
+							))}
 						</select>
 					</label>
 					<label className="dente-label">
@@ -422,7 +422,9 @@ export function SettingsProtocolsTab() {
 					{typedProtocolTemplates.map((template) => (
 						<article className="protocol-settings-card" key={template.id}>
 							<div className="protocol-settings-head">
-								<span>{specialtyLabels[template.specialty]}</span>
+								<span>
+									{specialtyLabels?.[template.specialty] ?? template.specialty}
+								</span>
 								<strong>{template.title}</strong>
 								<p>
 									{template.visitReason} · {template.defaultDurationMinutes} мин
@@ -432,20 +434,20 @@ export function SettingsProtocolsTab() {
 								className="protocol-token-row"
 								aria-label="Документы протокола"
 							>
-								{template.requiredDocuments.map((kind) => (
-									<span key={kind}>{documentLabels[kind]}</span>
+								{(template.requiredDocuments ?? []).map((kind) => (
+									<span key={kind}>{documentLabels?.[kind] ?? kind}</span>
 								))}
 							</section>
 							<section
 								className="protocol-token-row protocol-token-row-soft"
 								aria-label="Снимки протокола"
 							>
-								{template.suggestedImaging.map((kind) => (
-									<span key={kind}>{imagingKindLabels[kind]}</span>
+								{(template.suggestedImaging ?? []).map((kind) => (
+									<span key={kind}>{imagingKindLabels?.[kind] ?? kind}</span>
 								))}
 							</section>
 							<ul>
-								{template.safetyWarnings.slice(0, 2).map((warning) => (
+								{(template.safetyWarnings ?? []).slice(0, 2).map((warning) => (
 									<li key={warning}>{warning}</li>
 								))}
 							</ul>

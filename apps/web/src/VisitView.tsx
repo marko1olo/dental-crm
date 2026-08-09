@@ -9,6 +9,7 @@ import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { SpeechChunksInspector } from "./components/visit/SpeechChunksInspector";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
+import { VisitMainTabs } from "./components/visit/VisitMainTabs";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import { VisitTimer } from "./components/visit/VisitTimer";
@@ -749,61 +750,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 				</section>
 
-				<div
-					className="visit-sub-nav-tabs"
-					role="tablist"
-					aria-label="Разделы визита"
-					style={{ display: "flex", gap: "8px", margin: "16px 0" }}
-				>
-					<button
-						type="button"
-						role="tab"
-						aria-selected={visitSubViewTab === "emk"}
-						className={`secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${visitSubViewTab === "emk" ? "active" : ""}`}
-						style={{
-							background:
-								visitSubViewTab === "emk" ? "var(--teal-dark)" : undefined,
-							color: visitSubViewTab === "emk" ? "var(--on-teal)" : undefined,
-						}}
-						onClick={() => setVisitSubViewTab("emk")}
-					>
-						📝 ЭМК и Диктовка
-					</button>
-					<button
-						type="button"
-						role="tab"
-						aria-selected={visitSubViewTab === "odontogram"}
-						className={`secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${visitSubViewTab === "odontogram" ? "active" : ""}`}
-						style={{
-							background:
-								visitSubViewTab === "odontogram"
-									? "var(--teal-dark)"
-									: undefined,
-							color:
-								visitSubViewTab === "odontogram" ? "var(--on-teal)" : undefined,
-						}}
-						onClick={() => setVisitSubViewTab("odontogram")}
-					>
-						🦷 Зубная формула и Дневник
-					</button>
-					<button
-						type="button"
-						className={`secondary-button ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
-						style={{
-							background:
-								visitSubViewTab === "diagnostics"
-									? "var(--teal-dark)"
-									: undefined,
-							color:
-								visitSubViewTab === "diagnostics"
-									? "var(--on-teal)"
-									: undefined,
-						}}
-						onClick={() => setVisitSubViewTab("diagnostics")}
-					>
-						🖼️ Рентгены и Диагностика
-					</button>
-				</div>
+				<VisitMainTabs
+					visitSubViewTab={visitSubViewTab}
+					setVisitSubViewTab={setVisitSubViewTab}
+				/>
 
 				{visitSubViewTab === "emk" && (
 					<div

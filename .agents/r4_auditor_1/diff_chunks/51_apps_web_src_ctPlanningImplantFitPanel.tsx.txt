@@ -1,0 +1,77 @@
+a/apps/web/src/ctPlanningImplantFitPanel.tsx b/apps/web/src/ctPlanningImplantFitPanel.tsx
+index 3289602a1..5225efa54 100644
+--- a/apps/web/src/ctPlanningImplantFitPanel.tsx
++++ b/apps/web/src/ctPlanningImplantFitPanel.tsx
+@@ -29,52 +29,52 @@ export function CtPlanningImplantFitPanel({
+ 			data-testid="ct-planning-implant-fit-board"
+ 			aria-label="Скрининг типоразмера импланта по КТ-измерениям"
+ 		>
+-			<article className={`ct-planning-implant-fit-summary ${plan.status}`}>
++			<article className={`ct-planning-implant-fit-summary ${plan?.status ?? ""}`}>
+ 				<span>Скрининг библиотеки</span>
+-				<strong>{plan.score}%</strong>
+-				<p>{plan.summaryLabel}</p>
++				<strong>{plan?.score ?? 0}%</strong>
++				<p>{plan?.summaryLabel}</p>
+ 				<small>
+-					ширина {marginLabel(plan.ridgeWidthMm)} (
+-					{sourceLabel(plan.widthSource)}) · высота{" "}
+-					{marginLabel(plan.boneHeightMm)} ({sourceLabel(plan.heightSource)}) ·
+-					роли {plan.measurementRoleCount}/{plan.measurementSourceCount}
++					ширина {marginLabel(plan?.ridgeWidthMm ?? null)} (
++					{sourceLabel(plan?.widthSource)}) · высота{" "}
++					{marginLabel(plan?.boneHeightMm ?? null)} ({sourceLabel(plan?.heightSource)}) ·
++					роли {plan?.measurementRoleCount ?? 0}/{plan?.measurementSourceCount ?? 0}
+ 				</small>
+ 			</article>
+ 			<div className="ct-planning-implant-fit-grid">
+-				{plan.candidates.map((candidate) => (
++				{(plan?.candidates ?? []).map((candidate, idx) => (
+ 					<article
+-						className={`ct-planning-implant-fit-card ${candidate.status} ${candidate.selected ? "selected" : ""}`}
+-						key={candidate.id}
++						className={`ct-planning-implant-fit-card ${candidate?.status ?? ""} ${candidate?.selected ? "selected" : ""}`}
++						key={candidate?.id ?? `candidate-${idx}`}
+ 					>
+ 						<span>
+-							{candidate.selected ? "выбран" : fitStatusLabel(candidate.status)}
++							{candidate?.selected ? "выбран" : fitStatusLabel(candidate?.status)}
+ 						</span>
+-						<strong>{candidate.sizeLabel}</strong>
+-						<p>{candidate.title}</p>
++						<strong>{candidate?.sizeLabel}</strong>
++						<p>{candidate?.title}</p>
+ 						<small>
+-							диам. {marginLabel(candidate.diameterMarginMm)} · длина{" "}
+-							{marginLabel(candidate.lengthMarginMm)} · канал{" "}
+-							{marginLabel(candidate.canalMarginMm)}
++							диам. {marginLabel(candidate?.diameterMarginMm ?? null)} · длина{" "}
++							{marginLabel(candidate?.lengthMarginMm ?? null)} · канал{" "}
++							{marginLabel(candidate?.canalMarginMm ?? null)}
+ 						</small>
+ 						<section
+ 							className="ct-planning-implant-fit-reasons"
+ 							aria-label="Причины решения по типоразмеру"
+ 						>
+-							{candidate.decisionReasons.map((reason) => (
++							{(candidate?.decisionReasons ?? []).map((reason) => (
+ 								<em key={reason}>{reason}</em>
+ 							))}
+ 						</section>
+-						<p>{candidate.nextAction}</p>
++						<p>{candidate?.nextAction}</p>
+ 					</article>
+ 				))}
+ 			</div>
+-			{plan.warnings.length > 0 ? (
++			{(plan?.warnings ?? []).length > 0 ? (
+ 				<section
+ 					className="ct-planning-implant-fit-warnings"
+ 					aria-label="Ограничения скрининга типоразмера импланта"
+ 				>
+ 					<span>Ограничения</span>
+-					<p>{plan.warnings.join(" · ")}</p>
++					<p>{(plan?.warnings ?? []).join(" · ")}</p>
+ 				</section>
+ 			) : null}
+ 		</section>

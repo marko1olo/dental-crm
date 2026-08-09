@@ -1,10 +1,14 @@
-## 2026-08-08T17:01:28Z
-Your working directory: C:\Clinic_MVP\dental-crm\.agents\m1_auditor_1
-Your role: Milestone 1 Forensic Integrity Auditor
-Must read original request: C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md
-Must read worker handoff: C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\handoff.md and results: C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\results.md
+# DISPATCH — M1 Auditor 1 (Forensic Integrity Verification)
 
-Task Objectives:
-1. Perform forensic integrity verification on Worker 1's deliverables and code edits (`apps/web/src/useAppLogic.tsx`).
-2. Verify that test results are genuine (not hardcoded, dummy, or mocked to deceive), that `npm run typecheck -w @dental/web` passes genuinely, and that no integrity violations occurred.
-3. Render an explicit verdict (CLEAN or INTEGRITY VIOLATION) in your handoff report `C:\Clinic_MVP\dental-crm\.agents\m1_auditor_1\handoff.md`.
+## 2026-08-09T12:04:35Z
+
+## Mission
+Perform forensic integrity verification on Milestone 1 work products (Playwright test suite, screenshot generation, code changes).
+
+## Instructions
+1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`.
+2. Perform forensic audit against project integrity standards:
+   - Check if any test results, screenshot buffers, or verification strings were hardcoded or fake.
+   - Check if dummy/facade implementations were introduced.
+   - Verify live execution logs and output files in `C:\Users\Admin\.gemini\antigravity\brain\67e66496-7d3f-4df1-8f98-31bd016dcb96\`.
+3. Write your forensic audit report to `C:\Clinic_MVP\dental-crm\.agents\m1_auditor_1\handoff.md`. Specify your explicit verdict: CLEAN or INTEGRITY VIOLATION.

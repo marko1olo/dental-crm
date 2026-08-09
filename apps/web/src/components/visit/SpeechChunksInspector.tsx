@@ -373,18 +373,19 @@ export const SpeechChunksInspector: React.FC = () => {
 		return null;
 	}
 
-	const issueCount = recordings.filter(
-		(r) => r.recoveryState && r.recoveryState !== "complete",
+	const issueCount = (recordings ?? []).filter(
+		(r) => r?.recoveryState && r.recoveryState !== "complete",
 	).length;
 	const selected =
-		recordings.find((r) => r.recordingId === selectedRecordingId) ?? null;
+		(recordings ?? []).find((r) => r?.recordingId === selectedRecordingId) ??
+		null;
 	const summaryLabel = !speechRecordingRecovery
 		? "список ещё не загружен"
-		: recordings.length === 0
+		: (recordings ?? []).length === 0
 			? "записей диктовки нет"
 			: issueCount
-				? `${issueCount} запис. требуют внимания · ${recordings.length} всего`
-				: `${recordings.length} запис. · потерь не видно`;
+				? `${issueCount} запис. требуют внимания · ${(recordings ?? []).length} всего`
+				: `${(recordings ?? []).length} запис. · потерь не видно`;
 
 	return (
 		<section
@@ -531,7 +532,7 @@ export const SpeechChunksInspector: React.FC = () => {
 									gap: "6px",
 								}}
 							>
-								{recordings.map((rec) => {
+								{(recordings ?? []).map((rec) => {
 									const active = rec.recordingId === selectedRecordingId;
 									const stateLabel =
 										speechRecoveryStateLabels[rec.recoveryState] ??
@@ -574,8 +575,8 @@ export const SpeechChunksInspector: React.FC = () => {
 													}}
 												>
 													{stateLabel} · {rec.chunkCount} фрагм.
-													{rec.missingChunkIndexes?.length
-														? ` · пропуски: ${rec.missingChunkIndexes.join(", ")}`
+													{(rec.missingChunkIndexes ?? []).length
+														? ` · пропуски: ${(rec.missingChunkIndexes ?? []).join(", ")}`
 														: ""}
 												</span>
 												{rec.transcriptPreview ? (
@@ -620,8 +621,8 @@ export const SpeechChunksInspector: React.FC = () => {
 									{selected.lastChunkAt
 										? ` · последний фрагмент ${formatWhen(selected.lastChunkAt)}`
 										: ""}
-									{selected.providerLabels?.length
-										? ` · ${selected.providerLabels.join(", ")}`
+									{(selected.providerLabels ?? []).length
+										? ` · ${(selected.providerLabels ?? []).join(", ")}`
 										: ""}
 								</div>
 							) : null}
@@ -727,7 +728,7 @@ export const SpeechChunksInspector: React.FC = () => {
 											</tr>
 										</thead>
 										<tbody>
-											{chunks.map((chunk) => {
+											{(chunks ?? []).map((chunk) => {
 												const qLevel = chunk.quality?.level ?? "";
 												const bad =
 													chunk.status === "failed" ||
@@ -799,7 +800,7 @@ export const SpeechChunksInspector: React.FC = () => {
 															}}
 														>
 															{previewText(chunk.transcript, 200)}
-															{chunk.warnings?.length ? (
+															{(chunk.warnings ?? []).length ? (
 																<div
 																	style={{
 																		marginTop: "4px",
@@ -807,7 +808,7 @@ export const SpeechChunksInspector: React.FC = () => {
 																		color: "var(--rust, #a14a2a)",
 																	}}
 																>
-																	{chunk.warnings.join(" · ")}
+																	{(chunk.warnings ?? []).join(" · ")}
 																</div>
 															) : null}
 														</td>

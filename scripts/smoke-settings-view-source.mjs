@@ -864,11 +864,7 @@ requirePattern(
 	/<img\s+src=\{dicomFirstFramePreview\.imageDataUrl\}\s+alt="[^"]+"\s+decoding="async"\s+style=\{dicomFirstFrameImageStyle\}\s+\/>/,
 	"Settings first-frame DICOM preview must decode asynchronously without lazy-loading the active clinical preview.",
 );
-requireIn(
-	appSource,
-	'id="settings"',
-	"SettingsView must own settings shell.",
-);
+requireIn(appSource, 'id="settings"', "SettingsView must own settings shell.");
 requireIn(
 	settingsSource,
 	'className="settings-tabs"',

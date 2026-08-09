@@ -1,0 +1,56 @@
+a/apps/web/src/components/Omnibar.tsx b/apps/web/src/components/Omnibar.tsx
+index 0e09c1369..92a51aab4 100644
+--- a/apps/web/src/components/Omnibar.tsx
++++ b/apps/web/src/components/Omnibar.tsx
+@@ -118,10 +118,10 @@ export function Omnibar() {
+ 		},
+ 	];
+ 
+-	const filteredCommands = commands.filter(
++	const filteredCommands = (commands ?? []).filter(
+ 		(cmd) =>
+-			cmd.title.toLowerCase().includes(query.toLowerCase()) ||
+-			cmd.category.toLowerCase().includes(query.toLowerCase()),
++			(cmd?.title ?? "").toLowerCase().includes((query ?? "").toLowerCase()) ||
++			(cmd?.category ?? "").toLowerCase().includes((query ?? "").toLowerCase()),
+ 	);
+ 
+ 	useEffect(() => {
+@@ -138,14 +138,14 @@ export function Omnibar() {
+ 			} else if (e.key === "ArrowDown") {
+ 				e.preventDefault();
+ 				setSelectedIndex((prev) =>
+-					prev < filteredCommands.length - 1 ? prev + 1 : prev,
++					prev < (filteredCommands ?? []).length - 1 ? prev + 1 : prev,
+ 				);
+ 			} else if (e.key === "ArrowUp") {
+ 				e.preventDefault();
+ 				setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+ 			} else if (e.key === "Enter") {
+ 				e.preventDefault();
+-				if (filteredCommands[selectedIndex]) {
++				if (filteredCommands?.[selectedIndex]) {
+ 					filteredCommands[selectedIndex].action();
+ 					setOmnibarOpen(false);
+ 				}
+@@ -276,17 +276,17 @@ export function Omnibar() {
+ 									className="overflow-y-auto p-2"
+ 									style={{ maxHeight: "calc(60vh - 56px)" }}
+ 								>
+-									{filteredCommands.length === 0 ? (
++									{(filteredCommands ?? []).length === 0 ? (
+ 										<div className="p-8 text-center text-neutral-500 dark:text-slate-400">
+ 											Ничего не найдено
+ 										</div>
+ 									) : (
+ 										<div className="flex flex-col gap-1">
+-											{filteredCommands?.map((cmd, idx) => {
++											{(filteredCommands ?? []).map((cmd, idx) => {
+ 												// Quick check if category changed to add a header
+ 												const showCategory =
+ 													idx === 0 ||
+-													filteredCommands[idx - 1]?.category !== cmd.category;
++													filteredCommands[idx - 1]?.category !== cmd?.category;
+ 												return (
+ 													<React.Fragment key={cmd.id}>
+ 														{showCategory && (

@@ -1,0 +1,87 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+	"files": {
+		"ignoreUnknown": true,
+		"includes": [
+			"apps/web/src/**",
+			"apps/api/src/**",
+			"packages/**",
+			"scripts/**",
+			"*.cjs",
+			"*.js",
+			"*.ts",
+			"*.tsx",
+			"*.json",
+			"!**/node_modules",
+			"!**/.postgres",
+			"!**/.data",
+			"!**/dist",
+			"!**/build",
+			"!**/.next",
+			"!**/coverage",
+			"!**/.agents",
+			"!**/tmp",
+			"!**/.tmp",
+			"!**/scratch",
+			"!**/artifacts",
+			"!**/screenshots",
+			"!**/uploads",
+			"!**/pglite-data",
+			"!**/temp-test-db",
+			"!**/appDataDir",
+			"!**/local-secrets",
+			"!**/.dente-*",
+			"!**/playwright-report",
+			"!**/test-results",
+			"!**/dente-db",
+			"!**/package-lock.json",
+			"!**/knip_report*.txt",
+			"!**/madge_report*.txt",
+			"!**/biome_out*.txt"
+		]
+	},
+	"css": {
+		"parser": {
+			"cssModules": true,
+			"tailwindDirectives": true
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noExplicitAny": "warn"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["scripts/**", "*.cjs", "*.mjs", "test.ts", "fix-*.cjs", "find_*.cjs", "patch-*.cjs", "debug_*.cjs"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noTemplateCurlyInString": "off",
+						"useIterableCallbackReturn": "off",
+						"noAssignInExpressions": "off",
+						"noControlCharactersInRegex": "off",
+						"noExplicitAny": "off"
+					},
+					"style": {
+						"useNodejsImportProtocol": "off",
+						"useTemplate": "off"
+					},
+					"complexity": {
+						"noUselessEscapeInRegex": "off",
+						"useOptionalChain": "off"
+					},
+					"correctness": {
+						"noUnusedVariables": "off",
+						"noUnusedImports": "off",
+						"noUnusedFunctionParameters": "off"
+					}
+				}
+			}
+		}
+	]
+}

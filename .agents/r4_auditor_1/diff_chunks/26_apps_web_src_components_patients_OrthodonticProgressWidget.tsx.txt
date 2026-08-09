@@ -1,0 +1,28 @@
+a/apps/web/src/components/patients/OrthodonticProgressWidget.tsx b/apps/web/src/components/patients/OrthodonticProgressWidget.tsx
+index 0fb9c502a..3d99bb48c 100644
+--- a/apps/web/src/components/patients/OrthodonticProgressWidget.tsx
++++ b/apps/web/src/components/patients/OrthodonticProgressWidget.tsx
+@@ -107,7 +107,7 @@ export function OrthodonticProgressWidget({
+ 	const [saving, setSaving] = useState(false);
+ 
+ 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+-	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
++	const patient = (dashboard?.patients ?? []).find((p: any) => p?.id === patientId);
+ 
+ 	// Если новое структурированное поле не заполнено, читаем старую запись,
+ 	// которую раньше складывали в конец заметок.
+@@ -333,11 +333,12 @@ export function OrthodonticProgressWidget({
+ 
+ 	const formatDate = (dateStr: string) => {
+ 		try {
+-			const [y, m, d] = dateStr.split("-");
++			if (typeof dateStr !== "string" || !dateStr) return dateStr || "";
++			const [y, m, d] = (dateStr ?? "").split("-");
+ 			if (!y || !m || !d) return dateStr;
+ 			return `${d}.${m}.${y}`;
+ 		} catch {
+-			return dateStr;
++			return dateStr || "";
+ 		}
+ 	};
+ 

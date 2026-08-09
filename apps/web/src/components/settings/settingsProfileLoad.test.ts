@@ -75,6 +75,8 @@ describe("чтение своего профиля", () => {
 			role: "doctor",
 			email: "m@clinic.ru",
 			organizationId: "o1",
+			yandexCalendarId: null,
+			yandexCalendarToken: null,
 		});
 	});
 });

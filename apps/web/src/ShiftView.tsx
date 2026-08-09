@@ -20,6 +20,7 @@ import { patientInsightRiskLabels } from "./AppConstants";
 import { formatShortDate, minutesLabel, money } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { PatientAvatar } from "./components/PatientAvatar";
+import { ShiftCallout } from "./components/shift/ShiftCallout";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
 import { countLabel } from "./lib/russianPlural";
 
@@ -305,15 +306,14 @@ export function ShiftView({
 							</div>
 
 							{!visitPatientHasCallablePhone ? (
-								<p
-									className="hero-call-guidance"
+								<ShiftCallout
 									id="shift-call-guidance"
 									role="status"
 									aria-live="polite"
 								>
 									В карточке пациента нет телефона. Откройте «Пациенты» и
 									добавьте номер, чтобы кнопка звонка стала активной.
-								</p>
+								</ShiftCallout>
 							) : null}
 						</>
 					) : nextAppointment ? (
@@ -358,10 +358,10 @@ export function ShiftView({
 									<Calendar aria-hidden="true" /> Все записи дня
 								</button>
 							</div>
-							<p className="hero-call-guidance" role="status">
+							<ShiftCallout role="status">
 								Приём ещё не открыт. Нажмите «Начать прием», когда пациент сядет
 								в кресло.
-							</p>
+							</ShiftCallout>
 						</>
 					) : (
 						<EmptyState

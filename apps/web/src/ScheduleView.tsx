@@ -6,13 +6,7 @@ import type {
 	ScheduleSuggestion,
 	StaffRole,
 } from "@dental/shared";
-import {
-	Calendar,
-	ChevronLeft,
-	ChevronRight,
-	Plus,
-	ShieldCheck,
-} from "lucide-react";
+import { Calendar, Plus, ShieldCheck } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import {
 	Fragment,
@@ -49,6 +43,8 @@ import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPan
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
+import { ScheduleFilterStrip } from "./components/schedule/ScheduleFilterStrip";
+import { ScheduleSubNavTabs } from "./components/schedule/ScheduleSubNavTabs";
 import {
 	type DayGroupingAppointment,
 	formatDayTitle,
@@ -162,7 +158,7 @@ import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
 
 export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const logicContext = useAppLogicContext();
-	const props = { ...logicContext, ...rawProps } as ReturnType<
+	const props = { ...(logicContext ?? {}), ...(rawProps ?? {}) } as ReturnType<
 		typeof useAppLogicContext
 	> &
 		Partial<ScheduleViewProps>;
@@ -358,7 +354,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		void (async () => {
 			try {
 				const response = await fetch("/api/waitlist", {
-					headers: auth.denteClinicalReadHeaders(),
+					headers: auth?.denteClinicalReadHeaders
+						? auth.denteClinicalReadHeaders()
+						: {},
 				});
 				if (!response.ok) return;
 				const rows = await response.json();
@@ -783,11 +781,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	 * человек не может даже догадаться, что список урезан.
 	 */
 	const staffFullNameById = (staffId: string | null) =>
-		(dashboard.clinicSettings?.staff ?? []).find(
-			(member: { id: string }) => member.id === staffId,
+		(dashboard?.clinicSettings?.staff ?? []).find(
+			(member: { id: string }) => member?.id === staffId,
 		)?.fullName ?? "неизвестный сотрудник";
 	const activeScheduleFilterLabels = [
-		scheduleDateFilter.trim()
+		scheduleDateFilter?.trim()
 			? `день: ${formatDayTitle(scheduleDateFilter.trim())}`
 			: null,
 		scheduleDoctorFilterId
@@ -797,10 +795,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			? `ассистент: ${staffFullNameById(scheduleAssistantFilterId)}`
 			: null,
 		scheduleChairFilterId
-			? `кресло: ${(dashboard.clinicSettings?.chairs ?? []).find((chair: { id: string }) => chair.id === scheduleChairFilterId)?.name ?? "неизвестное"}`
+			? `кресло: ${(dashboard?.clinicSettings?.chairs ?? []).find((chair: { id: string }) => chair?.id === scheduleChairFilterId)?.name ?? "неизвестное"}`
 			: null,
 		scheduleStatusFilter !== "all"
-			? `только «${appointmentLabels[scheduleStatusFilter as Appointment["status"]] ?? scheduleStatusFilter}»`
+			? `только «${appointmentLabels?.[scheduleStatusFilter as Appointment["status"]] ?? scheduleStatusFilter}»`
 			: null,
 	].filter((value): value is string => Boolean(value));
 	const scheduleLoadSummaryCards = [
@@ -827,7 +825,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		{
 			id: "visible",
 			title: "На экране",
-			value: `${sortedAppointments?.length}`,
+			value: `${sortedAppointments?.length ?? 0}`,
 			detail: activeScheduleFilterCount
 				? `активных фильтров: ${activeScheduleFilterCount}`
 				: "показана вся очередь",
@@ -848,84 +846,20 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		>
 			<div className="panel-heading">
 				<h2>Расписание приемов</h2>
-				<div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-					<button
-						className="secondary-button"
-						type="button"
-						onClick={() => setShowShiftAnalytics(!showShiftAnalytics)}
-						style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
-					>
-						{showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
-					</button>
-					<button
-						className="text-button"
-						type="button"
-						/* Было «День»: читается как режим показа (день/неделя),
-                     а кнопка ставит фильтр на сегодняшнюю дату. */
-						onClick={() => setScheduleDateFilter(todayScheduleDate())}
-					>
-						Сегодня
-					</button>
-					{/*
-                  Лист ожидания. Экран управления очередью (WaitlistDrawer) был
-                  написан и работает с настоящими маршрутами /api/waitlist, но
-                  НИГДЕ не был смонтирован: попасть в него из интерфейса было
-                  нельзя. Поэтому очередь всегда оставалась пустой, а подбор
-                  кандидатов на освободившееся окно — бесполезным: предлагать
-                  было некого.
-                  Кнопка стоит в шапке раздела, а не в пустом состоянии
-                  расписания: сначала она стояла именно там, и снимок показал,
-                  что увидеть её можно только в день без единой записи — то
-                  есть ровно тогда, когда очередь не нужна.
-                  Число рядом — не украшение. Про очередь вспоминают, только
-                  если видно, что в ней кто-то стоит; кнопка без числа
-                  осталась бы такой же ненайденной, как ненайденный экран.
-                */}
-					<button
-						className="text-button"
-						type="button"
-						onClick={() => setWaitlistOpen(true)}
-						title="Пациенты, которые ждут свободного окна"
-					>
-						Лист ожидания{waitlistCount > 0 ? ` · ${waitlistCount}` : ""}
-					</button>
-					<button
-						className={`text-button ${showConfirmationsPanel ? "active" : ""}`}
-						type="button"
-						onClick={() => {
-							setShowConfirmationsPanel((prev) => !prev);
-							setShowFreedSlotsPanel(false);
-							setShowClipboardPanel(false);
-						}}
-						title="Панель утреннего обзвона и подтверждений"
-					>
-						Утренний обзвон
-					</button>
-					<button
-						className={`text-button ${showFreedSlotsPanel ? "active" : ""}`}
-						type="button"
-						onClick={() => {
-							setShowFreedSlotsPanel((prev) => !prev);
-							setShowConfirmationsPanel(false);
-							setShowClipboardPanel(false);
-						}}
-						title="Освободившиеся окна и подбор из листа ожидания"
-					>
-						Освободившиеся окна
-					</button>
-					<button
-						className={`text-button ${showClipboardPanel ? "active" : ""}`}
-						type="button"
-						onClick={() => {
-							setShowClipboardPanel((prev) => !prev);
-							setShowFreedSlotsPanel(false);
-							setShowConfirmationsPanel(false);
-						}}
-						title="Буфер расписания: скопированные приёмы для вставки на другое время"
-					>
-						Буфер
-					</button>
-				</div>
+				<ScheduleSubNavTabs
+					showShiftAnalytics={showShiftAnalytics}
+					setShowShiftAnalytics={setShowShiftAnalytics}
+					setScheduleDateFilter={setScheduleDateFilter}
+					todayScheduleDate={todayScheduleDate}
+					waitlistCount={waitlistCount}
+					setWaitlistOpen={setWaitlistOpen}
+					showConfirmationsPanel={showConfirmationsPanel}
+					setShowConfirmationsPanel={setShowConfirmationsPanel}
+					showFreedSlotsPanel={showFreedSlotsPanel}
+					setShowFreedSlotsPanel={setShowFreedSlotsPanel}
+					showClipboardPanel={showClipboardPanel}
+					setShowClipboardPanel={setShowClipboardPanel}
+				/>
 			</div>
 			{showConfirmationsPanel && (
 				<div className="my-4 p-4 bg-slate-900/90 text-white rounded-xl border border-slate-700 shadow-xl">
@@ -955,13 +889,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					<article>
 						<span>Врачи</span>
 						<strong>
-							{dashboard.shiftIntelligence?.doctorLoads?.length ?? 0}
+							{dashboard?.shiftIntelligence?.doctorLoads?.length ?? 0}
 						</strong>
 						<p>
-							{(dashboard.shiftIntelligence?.doctorLoads ?? [])
+							{(dashboard?.shiftIntelligence?.doctorLoads ?? [])
 								.map(
 									(load: ResourceLoad) =>
-										`${load.title.split(" ")[0]} ${load.utilizationPercent}%`,
+										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
 								)
 								.join(" · ")}
 						</p>
@@ -969,13 +903,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					<article>
 						<span>Ассистенты</span>
 						<strong>
-							{dashboard.shiftIntelligence?.assistantLoads?.length ?? 0}
+							{dashboard?.shiftIntelligence?.assistantLoads?.length ?? 0}
 						</strong>
 						<p>
-							{(dashboard.shiftIntelligence?.assistantLoads ?? [])
+							{(dashboard?.shiftIntelligence?.assistantLoads ?? [])
 								.map(
 									(load: ResourceLoad) =>
-										`${load.title.split(" ")[0]} ${load.utilizationPercent}%`,
+										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
 								)
 								.join(" · ") || "не назначены"}
 						</p>
@@ -983,20 +917,20 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					<article>
 						<span>Кресла</span>
 						<strong>
-							{dashboard.shiftIntelligence?.chairLoads?.length ?? 0}
+							{dashboard?.shiftIntelligence?.chairLoads?.length ?? 0}
 						</strong>
 						<p>
-							{(dashboard.shiftIntelligence?.chairLoads ?? [])
+							{(dashboard?.shiftIntelligence?.chairLoads ?? [])
 								.map(
 									(load: ResourceLoad) =>
-										`${load.title} ${load.utilizationPercent}%`,
+										`${load?.title ?? ""} ${load?.utilizationPercent ?? 0}%`,
 								)
 								.join(" · ")}
 						</p>
 					</article>
 					<article>
 						<span>Контроль</span>
-						<strong>{shiftWarnings?.length}</strong>
+						<strong>{shiftWarnings?.length ?? 0}</strong>
 						<p>{shiftWarnings?.[0]?.title ?? "Нет предупреждений"}</p>
 					</article>
 				</div>
@@ -1102,125 +1036,22 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					</div>
 				)}
 			</section>
-			<section
-				className="schedule-filter-strip"
-				aria-label="Сохраненные фильтры расписания"
-				style={{
-					display: "flex",
-					gap: "8px",
-					flexWrap: "wrap",
-					alignItems: "center",
-					padding: "12px 16px",
-					borderBottom: "1px solid var(--paper-soft)",
-				}}
-			>
-				{/*
-                Стрелки «день назад» и «день вперёд» рядом с датой. Раньше день
-                можно было только ввести в поле: чтобы посмотреть неделю
-                заболевшего врача, администратор набирал шесть дат руками.
-                Когда дата не выбрана, шаг считается от сегодня.
-              */}
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						borderRight: "1px solid var(--line)",
-						paddingRight: "12px",
-						marginRight: "4px",
-					}}
-				>
-					<button
-						type="button"
-						className="secondary-button schedule-day-step-prev"
-						onClick={() => stepScheduleDay(-1)}
-						aria-label="Показать предыдущий день"
-						title="День назад"
-						style={{ minHeight: "30px", padding: "0 8px" }}
-					>
-						<ChevronLeft size={16} aria-hidden="true" />
-					</button>
-					<input
-						type="date"
-						aria-label="Фильтр расписания по дате"
-						value={scheduleDateFilter}
-						onChange={(event: TextFieldChangeEvent) =>
-							setScheduleDateFilter(event.target.value)
-						}
-						style={{
-							border: "1px solid var(--line)",
-							borderRadius: "8px",
-							background: "var(--paper-soft)",
-							padding: "4px 8px",
-							fontSize: "13px",
-							fontWeight: 600,
-							color: "var(--ink)",
-							outline: "none",
-							cursor: "pointer",
-						}}
-					/>
-					<button
-						type="button"
-						className="secondary-button schedule-day-step-next"
-						onClick={() => stepScheduleDay(1)}
-						aria-label="Показать следующий день"
-						title="День вперёд"
-						style={{ minHeight: "30px", padding: "0 8px" }}
-					>
-						<ChevronRight size={16} aria-hidden="true" />
-					</button>
-				</div>
-
-				<button
-					type="button"
-					/* «Все записи» подсвечивается только когда НИ ОДИН фильтр не активен:
-                   раньше чип оставался активным при фильтре по ассистенту, статусу
-                   или дате, маскируя то, что список сокращён. */
-					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""}`}
-					onClick={resetScheduleFilters}
-				>
-					Все записи
-				</button>
-
-				{dashboard.clinicSettings.profile.mode !== "solo_doctor" &&
-					dashboard.clinicSettings.staff
-						.filter(
-							(member) =>
-								member.active &&
-								(member.role === "doctor" || member.role === "owner"),
-						)
-						.map((member) => (
-							<button
-								key={member.id}
-								type="button"
-								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""}`}
-								onClick={() =>
-									setScheduleDoctorFilterId(
-										scheduleDoctorFilterId === member.id ? null : member.id,
-									)
-								}
-							>
-								{member.fullName.split(" ")[0]}
-							</button>
-						))}
-
-				{dashboard.clinicSettings.chairs
-					.filter((chair) => chair.active)
-					.map((chair) => (
-						<button
-							key={chair.id}
-							type="button"
-							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""}`}
-							onClick={() =>
-								setScheduleChairFilterId(
-									scheduleChairFilterId === chair.id ? null : chair.id,
-								)
-							}
-						>
-							{chair.name}
-						</button>
-					))}
-			</section>
+			<ScheduleFilterStrip
+				scheduleDateFilter={scheduleDateFilter}
+				setScheduleDateFilter={setScheduleDateFilter}
+				stepScheduleDay={stepScheduleDay}
+				activeScheduleFilterCount={activeScheduleFilterCount}
+				resetScheduleFilters={resetScheduleFilters}
+				staffMembers={dashboard?.clinicSettings?.staff ?? []}
+				chairs={dashboard?.clinicSettings?.chairs ?? []}
+				isSoloDoctor={
+					dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
+				}
+				scheduleDoctorFilterId={scheduleDoctorFilterId}
+				setScheduleDoctorFilterId={setScheduleDoctorFilterId}
+				scheduleChairFilterId={scheduleChairFilterId}
+				setScheduleChairFilterId={setScheduleChairFilterId}
+			/>
 			{scheduleAdminSecretNeeded ? (
 				<fieldset
 					className="appointment-editor schedule-admin-unlock"
@@ -1332,7 +1163,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 Между карточками показаны свободные окна и накладки — то, ради
                 чего человек и смотрит на день целиком.
               */}
-				{visibleDayGroups.map((group) => (
+				{(visibleDayGroups ?? []).map((group) => (
 					<Fragment key={group.dateKey}>
 						<div
 							className="schedule-day-heading"
@@ -1372,7 +1203,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 									: ""}
 							</span>
 						</div>
-						{group.rows.map((row) => {
+						{(group?.rows ?? []).map((row) => {
 							if (row.kind === "gap") {
 								return (
 									<p

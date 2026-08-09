@@ -1,11 +1,11 @@
 import type React from "react";
 
 export function guessGender(fullName?: string): "male" | "female" | "unknown" {
-	if (!fullName?.trim()) return "unknown";
-	const parts = fullName.trim().split(/\s+/);
+	if (typeof fullName !== "string" || !fullName.trim()) return "unknown";
+	const parts = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
 
 	if (parts.length >= 3 && parts[2]) {
-		const patronymic = parts[2].toLowerCase();
+		const patronymic = (parts[2] ?? "").toLowerCase();
 		if (patronymic.endsWith("ич") || patronymic.endsWith("оглы")) return "male";
 		if (patronymic.endsWith("на") || patronymic.endsWith("кызы"))
 			return "female";
@@ -51,19 +51,19 @@ export function guessGender(fullName?: string): "male" | "female" | "unknown" {
 		"евгений",
 	]);
 
-	for (const part of parts) {
-		const lower = part.toLowerCase();
+	for (const part of parts ?? []) {
+		const lower = (part ?? "").toLowerCase();
 		if (femaleNames.has(lower)) return "female";
 		if (maleExceptions.has(lower)) return "male";
 	}
 
 	if (parts.length >= 2 && parts[1]) {
-		const firstName = parts[1].toLowerCase();
+		const firstName = (parts[1] ?? "").toLowerCase();
 		if (femaleNames.has(firstName)) return "female";
 		if (maleExceptions.has(firstName)) return "male";
 		if (firstName.endsWith("а") || firstName.endsWith("я")) return "female";
 	} else if (parts.length === 1 && parts[0]) {
-		const singleName = parts[0].toLowerCase();
+		const singleName = (parts[0] ?? "").toLowerCase();
 		if (femaleNames.has(singleName)) return "female";
 		if (maleExceptions.has(singleName)) return "male";
 		if (singleName.endsWith("а") || singleName.endsWith("я")) return "female";
@@ -71,7 +71,7 @@ export function guessGender(fullName?: string): "male" | "female" | "unknown" {
 
 	const lastName = parts[0];
 	if (parts.length >= 2 && lastName) {
-		const lowerLast = lastName.toLowerCase();
+		const lowerLast = (lastName ?? "").toLowerCase();
 		if (
 			!maleExceptions.has(lowerLast) &&
 			(lowerLast.endsWith("а") || lowerLast.endsWith("я"))
@@ -84,15 +84,15 @@ export function guessGender(fullName?: string): "male" | "female" | "unknown" {
 }
 
 export function getInitials(fullName?: string): string {
-	if (!fullName?.trim()) return "";
-	const parts = fullName.trim().split(/\s+/).filter(Boolean);
+	if (typeof fullName !== "string" || !fullName.trim()) return "";
+	const parts = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
 	const first = parts[0];
 	if (!first) return "";
-	if (parts.length === 1) return first.substring(0, 2).toUpperCase();
+	if (parts.length === 1) return (first ?? "").substring(0, 2).toUpperCase();
 	const second = parts[1];
-	if (!second) return first.substring(0, 2).toUpperCase();
-	const char1 = first.charAt(0);
-	const char2 = second.charAt(0);
+	if (!second) return (first ?? "").substring(0, 2).toUpperCase();
+	const char1 = (first ?? "").charAt(0);
+	const char2 = (second ?? "").charAt(0);
 	return (char1 + char2).toUpperCase();
 }
 

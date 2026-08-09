@@ -52,10 +52,14 @@ function withoutComments(code: string): string {
 
 /** Разметка одной группы формы: от её подписи до подписи следующей. */
 function formGroupAfterLabel(label: string): string {
-	const start = source.indexOf(`<label>${label}</label>`);
-	assert.notEqual(start, -1, `в форме услуги нет поля «${label}»`);
-	const rest = source.slice(start + label.length);
-	const next = rest.indexOf("<label>");
+	const labelPattern = new RegExp(
+		`<label[^>]*>${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}</label>`,
+	);
+	const match = labelPattern.exec(source);
+	assert.ok(match, `в форме услуги нет поля «${label}»`);
+	const start = match.index;
+	const rest = source.slice(start + match[0].length);
+	const next = rest.search(/<label[^>]*>/);
 	return withoutComments(next === -1 ? rest : rest.slice(0, next));
 }
 

@@ -1,0 +1,87 @@
+a/apps/web/src/components/communications/CampaignPanel.tsx b/apps/web/src/components/communications/CampaignPanel.tsx
+index e9089f6e6..6445d8d6e 100644
+--- a/apps/web/src/components/communications/CampaignPanel.tsx
++++ b/apps/web/src/components/communications/CampaignPanel.tsx
+@@ -248,7 +248,7 @@ export function CampaignPanel() {
+ 			);
+ 			setCampaigns(campaignData.campaigns);
+ 			setTemplates(
+-				templateData.templates.filter((template) => template.isActive),
++				(templateData.templates || []).filter((template) => template.isActive),
+ 			);
+ 			setVariables(variablesData.variables ?? []);
+ 		} catch (error) {
+@@ -501,7 +501,7 @@ export function CampaignPanel() {
+ 				)
+ 			) : null}
+ 
+-			{campaigns.length === 0 ? (
++			{(campaigns || []).length === 0 ? (
+ 				<p className="ops-empty">Рассылок пока нет.</p>
+ 			) : (
+ 				<div className="ops-table-wrap">
+@@ -517,7 +517,7 @@ export function CampaignPanel() {
+ 							</tr>
+ 						</thead>
+ 						<tbody>
+-							{campaigns.map((campaign) => (
++							{(campaigns || []).map((campaign) => (
+ 								<tr key={campaign.id}>
+ 									<td className="ops-strong" data-label="Название">
+ 										{campaign.title}
+@@ -813,44 +813,44 @@ export function CampaignPanel() {
+ 							</ul>
+ 							{/* Отсев с причинами: «отправлено 12 из 400» иначе выглядит как ошибка. */}
+ 							<ul>
+-								{preview.audience.excluded.no_consent > 0 ? (
++								{(preview?.audience?.excluded?.no_consent ?? 0) > 0 ? (
+ 									<li>без согласия: {preview.audience.excluded.no_consent}</li>
+ 								) : null}
+-								{preview.audience.excluded.no_contact > 0 ? (
++								{(preview?.audience?.excluded?.no_contact ?? 0) > 0 ? (
+ 									<li>
+ 										без пригодного контакта:{" "}
+ 										{preview.audience.excluded.no_contact}
+ 									</li>
+ 								) : null}
+-								{preview.audience.excluded.excluded_by_criteria > 0 ? (
++								{(preview?.audience?.excluded?.excluded_by_criteria ?? 0) > 0 ? (
+ 									<li>
+ 										не подошли по условиям:{" "}
+ 										{preview.audience.excluded.excluded_by_criteria}
+ 									</li>
+ 								) : null}
+ 							</ul>
+-							<p className="ops-hint">{preview.cost.note}</p>
+-							{preview.sampleText ? (
++							<p className="ops-hint">{preview?.cost?.note}</p>
++							{preview?.sampleText ? (
+ 								<>
+ 									<span className="ops-preview__title">Как увидит пациент</span>
+ 									<p className="ops-preview__text">{preview.sampleText}</p>
+ 								</>
+ 							) : null}
+-							{preview.audience.notes.map((note) => (
++							{(preview?.audience?.notes ?? []).map((note) => (
+ 								<p className="ops-hint" key={note}>
+ 									{note}
+ 								</p>
+ 							))}
+-							{preview.problems.length > 0 ? (
++							{(preview?.problems ?? []).length > 0 ? (
+ 								<p className="ops-notice ops-notice--error" role="alert">
+-									{preview.problems.join(" ")}
++									{(preview?.problems ?? []).join(" ")}
+ 								</p>
+ 							) : null}
+-							{preview.audience.candidates.length > 0 ? (
++							{(preview?.audience?.candidates ?? []).length > 0 ? (
+ 								<p className="ops-hint">
+ 									Например:{" "}
+-									{preview.audience.candidates
+-										.map((candidate) => candidate.fullName)
++									{(preview?.audience?.candidates ?? [])
++										.map((candidate) => candidate?.fullName ?? "")
+ 										.join(", ")}
+ 								</p>
+ 							) : null}

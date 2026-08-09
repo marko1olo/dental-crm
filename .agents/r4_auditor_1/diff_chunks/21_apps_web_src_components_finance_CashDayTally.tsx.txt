@@ -1,0 +1,13 @@
+a/apps/web/src/components/finance/CashDayTally.tsx b/apps/web/src/components/finance/CashDayTally.tsx
+index 5e94caa96..fb8c699f8 100644
+--- a/apps/web/src/components/finance/CashDayTally.tsx
++++ b/apps/web/src/components/finance/CashDayTally.tsx
+@@ -154,7 +154,7 @@ export function CashDayTally({
+ 							className="finance-list"
+ 							style={{ border: "none", padding: 0, background: "transparent" }}
+ 						>
+-							{summary.byMethod.map((row) => {
++							{(summary?.byMethod ?? []).map((row) => {
+ 								const RowIcon = METHOD_ICONS[row.method] ?? Coins;
+ 								return (
+ 									<article className="finance-row" key={row.method}>

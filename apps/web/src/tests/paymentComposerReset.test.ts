@@ -362,16 +362,16 @@ describe("оба сброса перечисляют все поля формы"
 	});
 
 	it("сброс после записанного платежа гасит каждое поле формы свежим значением", () => {
-		const source = read("useAppLogic.tsx");
+		const source = read("hooks/domains/useFinanceLogic.ts");
 		const start = source.indexOf("paymentMutationIdRef.current = null;");
 		assert.ok(
 			start > 0,
-			"не найдено начало сброса после платежа в useAppLogic.tsx",
+			"не найдено начало сброса после платежа в useFinanceLogic.ts",
 		);
 		const end = source.indexOf("await loadDashboard();", start);
 		assert.ok(
 			end > start,
-			"не найден конец сброса после платежа в useAppLogic.tsx",
+			"не найден конец сброса после платежа в useFinanceLogic.ts",
 		);
 		const block = source.slice(start, end);
 		const freshFields = emptyPaymentComposerFields();

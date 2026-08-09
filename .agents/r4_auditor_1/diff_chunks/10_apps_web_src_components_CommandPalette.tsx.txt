@@ -1,0 +1,76 @@
+a/apps/web/src/components/CommandPalette.tsx b/apps/web/src/components/CommandPalette.tsx
+index 745a3b715..a6f59c5e4 100644
+--- a/apps/web/src/components/CommandPalette.tsx
++++ b/apps/web/src/components/CommandPalette.tsx
+@@ -58,10 +58,10 @@ export function CommandPalette({
+ 	}, [isOpen]);
+ 
+ 	const filteredPatients = query
+-		? patients.filter(
++		? (patients ?? []).filter(
+ 				(p) =>
+-					p.fullName.toLowerCase().includes(query.toLowerCase()) ||
+-					p.phone?.includes(query),
++					(p?.fullName ?? "").toLowerCase().includes((query ?? "").toLowerCase()) ||
++					(p?.phone ?? "").includes(query),
+ 			)
+ 		: [];
+ 
+@@ -90,7 +90,7 @@ export function CommandPalette({
+ 			label: "Настройки",
+ 			action: () => onNavigate("settings"),
+ 		},
+-	].filter((c) => c.label.toLowerCase().includes(query.toLowerCase()));
++	].filter((c) => (c?.label ?? "").toLowerCase().includes((query ?? "").toLowerCase()));
+ 
+ 	if (onLogout) {
+ 		commands.push({
+@@ -108,17 +108,17 @@ export function CommandPalette({
+ 		subLabel?: string;
+ 		action: () => void;
+ 	}> = [
+-		...filteredPatients.slice(0, 5).map((p) => ({
+-			id: `patient-${p.id}`,
++		...(filteredPatients ?? []).slice(0, 5).map((p) => ({
++			id: `patient-${p?.id}`,
+ 			icon: <User size={18} />,
+-			label: p.fullName,
+-			subLabel: p.phone,
++			label: p?.fullName ?? "",
++			subLabel: p?.phone,
+ 			action: () => {
+-				onSelectPatient(p.id);
++				if (p?.id) onSelectPatient(p.id);
+ 				setIsOpen(false);
+ 			},
+ 		})),
+-		...commands,
++		...(commands ?? []),
+ 	];
+ 
+ 	useEffect(() => {
+@@ -126,12 +126,13 @@ export function CommandPalette({
+ 	}, []);
+ 
+ 	const handleKeyDown = (e: React.KeyboardEvent) => {
++		if (items.length === 0) return;
+ 		if (e.key === "ArrowDown") {
+ 			e.preventDefault();
+-			setSelectedIndex((prev) => (prev + 1) % items.length);
++			setSelectedIndex((prev) => (items.length > 0 ? (prev + 1) % items.length : 0));
+ 		} else if (e.key === "ArrowUp") {
+ 			e.preventDefault();
+-			setSelectedIndex((prev) => (prev - 1 + items.length) % items.length);
++			setSelectedIndex((prev) => (items.length > 0 ? (prev - 1 + items.length) % items.length : 0));
+ 		} else if (e.key === "Enter" && items.length > 0) {
+ 			e.preventDefault();
+ 			items[selectedIndex]?.action?.();
+@@ -181,7 +182,7 @@ export function CommandPalette({
+ 						<div className="cmd-palette-empty">Ничего не найдено</div>
+ 					) : (
+ 						<ul className="cmd-palette-list">
+-							{items?.map((item, index) => (
++							{(items ?? []).map((item, index) => (
+ 								<li key={item.id}>
+ 									<button
+ 										type="button"

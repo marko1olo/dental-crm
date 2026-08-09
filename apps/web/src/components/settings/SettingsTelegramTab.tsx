@@ -1424,7 +1424,7 @@ export function SettingsTelegramTab({
 									))}
 								</fieldset>
 							) : null}
-							{typedTelegramPreview.warnings.map((warning) => (
+							{(typedTelegramPreview?.warnings ?? []).map((warning: string) => (
 								<small key={warning}>{telegramHumanMessage(warning)}</small>
 							))}
 						</div>
@@ -1539,8 +1539,10 @@ export function SettingsTelegramTab({
 						const itemBlockingNote = item.blockedReason
 							? telegramHumanMessage(item.blockedReason)
 							: "";
-						const itemWarningNotes = item.warnings
-							.map((warning) => telegramHumanMessage(warning))
+						const itemWarningNotes = (item?.warnings ?? [])
+							.map((warning: Record<string, unknown> | string) =>
+								telegramHumanMessage(warning as string),
+							)
 							.filter(Boolean);
 						return (
 							<article

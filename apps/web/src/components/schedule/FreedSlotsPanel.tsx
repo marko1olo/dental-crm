@@ -186,7 +186,8 @@ export const FreedSlotsPanel: React.FC = () => {
 
 	// Панель молчит, когда окон нет: пустой блок «свободных окон нет» в расписании
 	// каждый день — это шум, а не сообщение.
-	if (report !== null && report.slots.length === 0 && !error) return null;
+	if (report !== null && (report?.slots ?? []).length === 0 && !error)
+		return null;
 
 	return (
 		<section className="panel ops-panel" data-testid="freed-slots-panel">
@@ -194,9 +195,9 @@ export const FreedSlotsPanel: React.FC = () => {
 				<h2>Освободившиеся окна</h2>
 				{report ? (
 					<span
-						className={`status-pill ${report.slots.length > 0 ? "status-arrived" : "status-planned"}`}
+						className={`status-pill ${(report?.slots ?? []).length > 0 ? "status-arrived" : "status-planned"}`}
 					>
-						{report.slots.length}
+						{(report?.slots ?? []).length}
 					</span>
 				) : null}
 			</div>
@@ -244,9 +245,9 @@ export const FreedSlotsPanel: React.FC = () => {
 								</tr>
 							</thead>
 							<tbody>
-								{report.slots.map((slot) => {
+								{(report?.slots ?? []).map((slot) => {
 									const isOpen = openSlot === slot.appointmentId;
-									const best = slot.topMatches[0];
+									const best = (slot?.topMatches ?? [])[0];
 
 									return (
 										<tr key={slot.appointmentId}>
@@ -267,7 +268,7 @@ export const FreedSlotsPanel: React.FC = () => {
 												</span>
 											</td>
 											<td data-label="Кому предложить">
-												{slot.topMatches.length === 0 ? (
+												{(slot?.topMatches ?? []).length === 0 ? (
 													/*
 														Предлагать некому — и это сказано словами, а не пустой
 														ячейкой. Пустота читается как «не загрузилось».
@@ -278,12 +279,12 @@ export const FreedSlotsPanel: React.FC = () => {
 													<>
 														<span className="ops-note">
 															В листе ожидания подходящих нет
-															{slot.candidatesTotal > 0
+															{(slot?.candidatesTotal ?? 0) > 0
 																? ` (в очереди ${slot.candidatesTotal})`
 																: ", очередь пуста"}
 															. Окно можно отдать под запись с улицы.
 														</span>
-														{slot.candidatesTotal > 0 ? (
+														{(slot?.candidatesTotal ?? 0) > 0 ? (
 															<button
 																className="link-button"
 																type="button"
@@ -354,10 +355,11 @@ export const FreedSlotsPanel: React.FC = () => {
 														>
 															{isOpen
 																? "Скрыть полный подбор"
-																: slot.candidatesTotal > slot.topMatches.length
-																	? `Все из очереди (${slot.candidatesTotal})`
-																	: slot.topMatches.length > 1
-																		? `Ещё ${slot.topMatches.length - 1} и полный подбор`
+																: (slot?.candidatesTotal ?? 0) >
+																		(slot?.topMatches ?? []).length
+																	? `Все из очереди (${slot?.candidatesTotal ?? 0})`
+																	: (slot?.topMatches ?? []).length > 1
+																		? `Ещё ${(slot?.topMatches ?? []).length - 1} и полный подбор`
 																		: "Полный подбор"}
 														</button>
 														{isOpen ? (

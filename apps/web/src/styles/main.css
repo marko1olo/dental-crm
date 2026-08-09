@@ -669,15 +669,23 @@ button:disabled {
 } /* end @layer legacy */
 
 .hero-call-guidance {
-	background: #fff7e6;
-	border: 1px solid rgba(184, 120, 31, 0.45);
+	background: var(--warn-bg, #fef3c7);
+	border: 1px solid var(--warn-border, rgba(217, 119, 6, 0.3));
 	border-radius: 8px;
-	color: #7a4a00;
+	color: var(--warn-fg, #92400e);
 	font-size: 13px;
-	font-weight: 800;
+	font-weight: 600;
 	line-height: 1.35;
 	margin: -6px 0 0;
 	padding: 9px 11px;
+}
+
+[data-theme="dark"] .hero-call-guidance,
+[data-theme="night"] .hero-call-guidance,
+.dark .hero-call-guidance {
+	background: rgba(69, 26, 3, 0.4);
+	border-color: rgba(146, 64, 14, 0.5);
+	color: #fde68a;
 }
 
 .app-notice {
@@ -14993,38 +15001,7 @@ textarea:focus {
 	box-shadow: var(--shadow-premium);
 	border: 1px solid var(--glass-border);
 }
-@media (max-width: 860px) {
-	.settings-zone {
-		grid-template-columns: minmax(0, 1fr);
-		padding: 12px;
-		gap: 12px;
-		border-radius: 8px;
-	}
-	.settings-tabs {
-		position: static;
-		flex-direction: row;
-		flex-wrap: wrap;
-		gap: 4px;
-	}
-	.settings-tabs button {
-		padding: 8px 12px;
-		font-size: 13px;
-	}
-	.settings-tab-panel {
-		padding: 16px;
-		border-radius: 8px;
-	}
-	.settings-tabs-group {
-		flex-direction: row;
-		flex-wrap: wrap;
-		gap: 4px;
-		margin-bottom: 8px;
-	}
-	.settings-tabs-group-header {
-		width: 100%;
-		padding-left: 4px;
-	}
-}
+
 .settings-heading {
 	grid-column: 1 / -1;
 	margin-bottom: 8px;
@@ -15492,23 +15469,40 @@ textarea:focus {
    ================================================================ */
 @media (max-width: 860px) {
 	.settings-zone {
+		display: flex;
+		flex-direction: column;
 		grid-template-columns: minmax(0, 1fr);
 		padding: 12px;
 		gap: 16px;
 		border-radius: 8px;
+		width: 100%;
+	}
+
+	.settings-heading {
+		width: 100%;
+		margin-bottom: 12px;
+		position: relative;
+		z-index: 5;
+		flex-shrink: 0;
 	}
 
 	/* Horizontal scroll for settings tabs group */
 	.settings-tabs {
-		position: static;
+		position: relative;
+		top: auto;
 		display: flex;
 		flex-direction: row;
+		flex-wrap: nowrap;
 		overflow-x: auto;
 		gap: 12px;
-		padding: 4px 0 8px;
+		padding: 6px 0 10px;
+		margin-bottom: 12px;
 		scrollbar-width: none;
 		width: 100%;
+		max-width: 100%;
 		border-bottom: 1px solid var(--line);
+		z-index: 4;
+		-webkit-overflow-scrolling: touch;
 	}
 	.settings-tabs::-webkit-scrollbar {
 		display: none;
@@ -15525,12 +15519,17 @@ textarea:focus {
 
 	.settings-tabs-group-header {
 		font-size: 10px;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--muted);
 		margin-bottom: 0;
 		padding-left: 0;
 		width: auto;
 		white-space: nowrap;
-		opacity: 0.6;
+		opacity: 0.7;
 		margin-right: 4px;
+		flex-shrink: 0;
 	}
 
 	.settings-tabs button {
@@ -15540,7 +15539,10 @@ textarea:focus {
 		border: 1px solid var(--line);
 		border-radius: 8px;
 		background: var(--paper);
-		min-height: auto;
+		min-height: 36px;
+		flex-shrink: 0;
+		text-align: center;
+		justify-content: center;
 	}
 
 	.settings-tabs button:hover {
@@ -15548,6 +15550,7 @@ textarea:focus {
 	}
 
 	.settings-tabs button.active {
+		order: 0;
 		background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark));
 		color: white;
 		box-shadow: 0 2px 8px var(--teal-glow);
@@ -15555,9 +15558,18 @@ textarea:focus {
 	}
 
 	.settings-tab-panel {
-		padding: 16px;
+		position: relative;
+		z-index: 1;
+		padding: 16px 12px;
+		margin-top: 0;
 		border-radius: 8px;
 		width: 100%;
+		min-width: 0;
+	}
+
+	.settings-tab-pane {
+		position: relative;
+		z-index: 1;
 	}
 }
 
@@ -17818,6 +17830,60 @@ html.dark .clinic-profile-form-grid textarea,
 	align-items: center;
 	padding: 12px 16px;
 	border-bottom: 1px solid var(--line);
+}
+.schedule-filter-strip input[type="date"],
+.schedule-filter-strip input.schedule-date-input {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	line-height: 1;
+	box-sizing: border-box;
+	padding: 4px 8px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	margin: 0;
+	display: inline-flex;
+	align-items: center;
+}
+.schedule-filter-strip .quick-chip {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	line-height: 1;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 14px;
+	margin: 0;
+	align-self: center;
+}
+.schedule-date-picker-group {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	border-right: 1px solid var(--line);
+	padding-right: 12px;
+	margin-right: 4px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+}
+.schedule-date-picker-group .secondary-button {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	line-height: 1;
+	box-sizing: border-box;
+	padding: 0 8px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
 }
 .schedule-date-filter-wrap {
 	display: flex;

@@ -1,12 +1,13 @@
-## 2026-08-08T16:53:27Z
-<USER_REQUEST>
-Your working directory: C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2
-Your role: E2E Playwright Testing & Infra Explorer
-Must read original request: C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md
+# DISPATCH — Survey Explorer 2 (UI/UX Architecture & 4-State Themes)
 
-Task Objectives:
-1. Investigate existing test setups, Playwright configs, scripts (e.g. `scripts/ops-panels-shots.mjs`, `e2e/`, `playwright.config.ts`), package.json scripts.
-2. Determine how the web client and API server are launched for Playwright testing, how authentication/login works, seed credentials/tokens, and how primary panels (Schedule, Patients, Finance) are navigated.
-3. Identify how browser console logs are captured, how screenshots are taken and saved, and how Error Boundary exceptions can be monitored.
-4. Write your findings to `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2\analysis.md` and complete a handoff report at `handoff.md` in your directory.
-</USER_REQUEST>
+## 2026-08-09T11:58:00Z
+
+## Mission
+Perform codebase survey of UI/UX components, panel views, dialogs, and Light/Dark theme mechanisms across `apps/web/src`.
+
+## Scope & Instructions
+1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`.
+2. Inspect `apps/web/src/components` and main views (`#schedule`, `#patients`, `#finance`, settings, medical cards, document workflows, appointment modals, etc.).
+3. Identify all key views and modal dialog windows that must be captured in the 4-state visual audit (Mobile Light, Mobile Dark, PC Light, PC Dark).
+4. Analyze how Light and Dark modes are toggled (e.g. `dark` class on `html`/`body`, CSS variables, data attributes) and how mobile viewport breakpoints are styled in Tailwind CSS v4.
+5. Save your investigation report and findings to `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2\handoff.md`.

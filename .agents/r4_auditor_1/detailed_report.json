@@ -1,0 +1,1705 @@
+[
+  {
+    "file": "apps/web/src/AppHelpers.tsx",
+    "addedLinesCount": 3,
+    "removedLinesCount": 3,
+    "mapGuards": 0,
+    "splitGuards": 3,
+    "filterGuards": 3,
+    "optionalChaining": 0,
+    "nullishCoalescing": 3,
+    "addedSample": [
+      "\tconst currentWords = (normalizedCurrent ?? \"\").split(\" \").filter(Boolean);",
+      "\tconst nextWords = (normalizedNext ?? \"\").split(\" \").filter(Boolean);",
+      "\tconst originalNextWords = (cleanNext ?? \"\").split(/\\s+/).filter(Boolean);"
+    ],
+    "removedSample": [
+      "\tconst currentWords = normalizedCurrent.split(\" \").filter(Boolean);",
+      "\tconst nextWords = normalizedNext.split(\" \").filter(Boolean);",
+      "\tconst originalNextWords = cleanNext.split(/\\s+/).filter(Boolean);"
+    ]
+  },
+  {
+    "file": "apps/web/src/ClinicalAiPersonalizePanel.tsx",
+    "addedLinesCount": 18,
+    "removedLinesCount": 18,
+    "mapGuards": 4,
+    "splitGuards": 1,
+    "filterGuards": 5,
+    "optionalChaining": 11,
+    "nullishCoalescing": 13,
+    "addedSample": [
+      "\t\tprocedureHint ?? \"\",",
+      "\t\t...(items ?? []).map(",
+      "\t\t\t\t`${i?.snapshotServiceName ?? \"\"} ${i?.snapshotServiceCategory ?? \"\"}`,",
+      "\tconst activeItems = (input?.items ?? []).filter((i) => i?.status !== \"cancelled\");",
+      "\tconst activeScenarios = (input?.scenarios ?? []).filter((s) => s?.active !== false);",
+      "\t\t(plannedStages ?? []).reduce(",
+      "\t\t\t(sum, st) => sum + moneyLine((st?.estimatedAmountRub ?? 0) as number),",
+      "\t\tplannedStages: (plannedStages ?? []).slice(0, 24),",
+      "\t\tdoctorFullName: (input?.doctorFullName || \"\").trim().slice(0, 240) || null,",
+      "\t\t\t\t{(items ?? []).map((item) => ("
+    ],
+    "removedSample": [
+      "\t\tprocedureHint,",
+      "\t\t...items.map(",
+      "\t\t\t\t`${i.snapshotServiceName ?? \"\"} ${i.snapshotServiceCategory ?? \"\"}`,",
+      "\tconst activeItems = input.items.filter((i) => i.status !== \"cancelled\");",
+      "\tconst activeScenarios = input.scenarios.filter((s) => s.active !== false);",
+      "\t\tplannedStages.reduce(",
+      "\t\t\t(sum, st) => sum + moneyLine(st.estimatedAmountRub as number),",
+      "\t\tplannedStages: plannedStages.slice(0, 24),",
+      "\t\tdoctorFullName: (input.doctorFullName || \"\").trim().slice(0, 240) || null,",
+      "\t\t\t\t{items.map((item) => ("
+    ]
+  },
+  {
+    "file": "apps/web/src/ClinicalRulePanel.tsx",
+    "addedLinesCount": 41,
+    "removedLinesCount": 40,
+    "mapGuards": 5,
+    "splitGuards": 0,
+    "filterGuards": 4,
+    "optionalChaining": 29,
+    "nullishCoalescing": 28,
+    "addedSample": [
+      "\tconst safeEvals = evaluations ?? [];",
+      "\tconst unresolvedList = safeEvals.filter((e) => !e?.resolved);",
+      "\t\tevaluatedRules: safeEvals.length,",
+      "\t\tblockers: unresolvedList.filter((e) => e?.severity === \"blocker\").length,",
+      "\t\twarnings: unresolvedList.filter((e) => e?.severity === \"warning\").length,",
+      "\t\t\t(acc, e) => acc + (e?.missingRequiredServiceIds?.length ?? 0),",
+      "\t\tcoveredRules: safeEvals.filter((e) => e?.resolved).length,",
+      "\tconst displayEvaluations = liveEvaluations ?? evaluations ?? [];",
+      "\t\t(evaluation) => !evaluation?.resolved,",
+      "\t\tif ((evaluation?.missingCompletedServiceIds ?? []).length) {"
+    ],
+    "removedSample": [
+      "\tconst unresolvedList = evaluations.filter((e) => !e.resolved);",
+      "\t\tevaluatedRules: evaluations.length,",
+      "\t\tblockers: unresolvedList.filter((e) => e.severity === \"blocker\").length,",
+      "\t\twarnings: unresolvedList.filter((e) => e.severity === \"warning\").length,",
+      "\t\t\t(acc, e) => acc + (e.missingRequiredServiceIds?.length ?? 0),",
+      "\t\tcoveredRules: evaluations.filter((e) => e.resolved).length,",
+      "\tconst displayEvaluations = liveEvaluations ?? evaluations;",
+      "\t\t(evaluation) => !evaluation.resolved,",
+      "\t\tif (evaluation.missingCompletedServiceIds.length) {",
+      "\t\t\treturn `Сначала завершить: ${evaluation.missingCompletedServiceIds.map(serviceTitle).join(\", \")}`;"
+    ]
+  },
+  {
+    "file": "apps/web/src/DocumentsView.tsx",
+    "addedLinesCount": 22,
+    "removedLinesCount": 21,
+    "mapGuards": 7,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 16,
+    "nullishCoalescing": 15,
+    "addedSample": [
+      "\t\t\t\t\tdisabled={!activeUsableDocuments?.[0]}",
+      "\t\t\t\t\t\t!activeUsableDocuments?.[0] ? latestDocumentOpenGuidanceId : undefined",
+      "\t\t\t\t\t\t!activeUsableDocuments?.[0]",
+      "\t\t\t\t\t\tconst docId = activeUsableDocuments?.[0]?.id;",
+      "\t\t\t\t\t\tif (!docId) return;",
+      "\t\t\t\t\t\tvoid openIssuedDocumentHtml(docId);",
+      "\t\t\t{!activeUsableDocuments?.[0] ? (",
+      "\t\t\t\t\t\t\t{(documentFactoryGroups ?? []).map((group) => (",
+      "\t\t\t\t\t\t\t\t\t{(group?.kinds ?? []).map((kind) => (",
+      "\t\t\t\t\t{(typedSelectedDocumentMetadata?.sourceUrls ?? []).length ? ("
+    ],
+    "removedSample": [
+      "\t\t\t\t\tdisabled={!activeUsableDocuments[0]}",
+      "\t\t\t\t\t\t!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined",
+      "\t\t\t\t\t\t!activeUsableDocuments[0]",
+      "\t\t\t\t\t\tif (!activeUsableDocuments[0]) return;",
+      "\t\t\t\t\t\tvoid openIssuedDocumentHtml(activeUsableDocuments[0].id);",
+      "\t\t\t{!activeUsableDocuments[0] ? (",
+      "\t\t\t\t\t\t\t{documentFactoryGroups.map((group) => (",
+      "\t\t\t\t\t\t\t\t\t{group.kinds.map((kind) => (",
+      "\t\t\t\t\t{typedSelectedDocumentMetadata.sourceUrls.length ? (",
+      "\t\t\t\t\t\t\t{typedSelectedDocumentMetadata.sourceUrls.map("
+    ]
+  },
+  {
+    "file": "apps/web/src/ImagingView.tsx",
+    "addedLinesCount": 10,
+    "removedLinesCount": 10,
+    "mapGuards": 4,
+    "splitGuards": 0,
+    "filterGuards": 2,
+    "optionalChaining": 0,
+    "nullishCoalescing": 10,
+    "addedSample": [
+      "\t\t? [header, ...(lines ?? []).filter((line) => !line.startsWith(\"Область:\"))]",
+      "\t\t: (lines ?? []);",
+      "\t\t\tif ((toothUpdates ?? []).length > 0) {",
+      "\t\t\t\tif ((detectedCodes ?? []).length > 0) {",
+      "\t\t\tconst applied = (toothUpdates ?? []).filter(",
+      "\t\t\t\t{(imagingKindOptions ?? []).map((kind: any) => (",
+      "\t\t\t\t\t\t\t{(mprClinicalChecklist ?? []).map((item: any) => (",
+      "\t\t\t\t\t\t{(mprOperatorSummaryCards ?? []).map((card: any) => (",
+      "\t\t\t\t\t\t\t\t{(cbctWorkbenchPlanes ?? []).map((plane: any) => {",
+      "\t\t\t\t\t\t\t\t\tconst planeSupported = (cbctWorkbenchProjections ?? []).includes("
+    ],
+    "removedSample": [
+      "\t\t? [header, ...lines.filter((line) => !line.startsWith(\"Область:\"))]",
+      "\t\t: lines;",
+      "\t\t\tif (toothUpdates?.length > 0) {",
+      "\t\t\t\tif (detectedCodes?.length > 0) {",
+      "\t\t\tconst applied = toothUpdates.filter(",
+      "\t\t\t\t{imagingKindOptions.map((kind: any) => (",
+      "\t\t\t\t\t\t\t{mprClinicalChecklist.map((item: any) => (",
+      "\t\t\t\t\t\t{mprOperatorSummaryCards.map((card: any) => (",
+      "\t\t\t\t\t\t\t\t{cbctWorkbenchPlanes.map((plane: any) => {",
+      "\t\t\t\t\t\t\t\t\tconst planeSupported = cbctWorkbenchProjections.includes("
+    ]
+  },
+  {
+    "file": "apps/web/src/PatientsView.tsx",
+    "addedLinesCount": 15,
+    "removedLinesCount": 15,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 4,
+    "nullishCoalescing": 12,
+    "addedSample": [
+      "\t\t\t(filteredPatients ?? []).length > 0 &&",
+      "\t\t\t(filteredPatients ?? [])[0]?.id",
+      "\t\t\tsetSelectedPatientId((filteredPatients ?? [])[0].id);",
+      "\t\t\t\tinsights: Array.from((patientInsightById || new Map()).values()),",
+      "\t\t\t\triskLabels: patientInsightRiskLabels || {},",
+      "\t\tif (!showLostPatientsOnly || !lostPatientIds) return filteredPatients ?? [];",
+      "\t\treturn (filteredPatients ?? []).filter((p) => lostPatientIds.has(p.id));",
+      "\tconst patientNameReady = (newPatientName ?? \"\").trim().length > 0;",
+      "\t\t(newPatientPhone ?? \"\").trim().length > 0 &&",
+      "\t\t(newPatientPhone ?? \"\").replace(/\\D/g, \"\").length < 5;"
+    ],
+    "removedSample": [
+      "\t\t\tfilteredPatients.length > 0 &&",
+      "\t\t\tfilteredPatients[0]?.id",
+      "\t\t\tsetSelectedPatientId(filteredPatients[0].id);",
+      "\t\t\t\tinsights: Array.from(patientInsightById.values()),",
+      "\t\t\t\triskLabels: patientInsightRiskLabels,",
+      "\t\tif (!showLostPatientsOnly || !lostPatientIds) return filteredPatients;",
+      "\t\treturn filteredPatients.filter((p) => lostPatientIds.has(p.id));",
+      "\tconst patientNameReady = newPatientName.trim().length > 0;",
+      "\t\tnewPatientPhone.trim().length > 0 &&",
+      "\t\tnewPatientPhone.replace(/\\D/g, \"\").length < 5;"
+    ]
+  },
+  {
+    "file": "apps/web/src/ScheduleView.tsx",
+    "addedLinesCount": 29,
+    "removedLinesCount": 27,
+    "mapGuards": 2,
+    "splitGuards": 3,
+    "filterGuards": 1,
+    "optionalChaining": 25,
+    "nullishCoalescing": 20,
+    "addedSample": [
+      "\tconst props = { ...(logicContext ?? {}), ...(rawProps ?? {}) } as ReturnType<",
+      "\t\t\t\t\theaders: auth?.denteClinicalReadHeaders",
+      "\t\t\t\t\t\t? auth.denteClinicalReadHeaders()",
+      "\t\t\t\t\t\t: {},",
+      "\t\t(dashboard?.clinicSettings?.staff ?? []).find(",
+      "\t\t\t(member: { id: string }) => member?.id === staffId,",
+      "\t\tscheduleDateFilter?.trim()",
+      "\t\t\t? `кресло: ${(dashboard?.clinicSettings?.chairs ?? []).find((chair: { id: string }) => chair?.id === scheduleChairFilterId)?.name ?? \"неизвестное\"}`",
+      "\t\t\t? `только «${appointmentLabels?.[scheduleStatusFilter as Appointment[\"status\"]] ?? scheduleStatusFilter}»`",
+      "\t\t\tvalue: `${sortedAppointments?.length ?? 0}`,"
+    ],
+    "removedSample": [
+      "\tconst props = { ...logicContext, ...rawProps } as ReturnType<",
+      "\t\t\t\t\theaders: auth.denteClinicalReadHeaders(),",
+      "\t\t(dashboard.clinicSettings?.staff ?? []).find(",
+      "\t\t\t(member: { id: string }) => member.id === staffId,",
+      "\t\tscheduleDateFilter.trim()",
+      "\t\t\t? `кресло: ${(dashboard.clinicSettings?.chairs ?? []).find((chair: { id: string }) => chair.id === scheduleChairFilterId)?.name ?? \"неизвестное\"}`",
+      "\t\t\t? `только «${appointmentLabels[scheduleStatusFilter as Appointment[\"status\"]] ?? scheduleStatusFilter}»`",
+      "\t\t\tvalue: `${sortedAppointments?.length}`,",
+      "\t\t\t\t\t\t\t{dashboard.shiftIntelligence?.doctorLoads?.length ?? 0}",
+      "\t\t\t\t\t\t\t{(dashboard.shiftIntelligence?.doctorLoads ?? [])"
+    ]
+  },
+  {
+    "file": "apps/web/src/SettingsView.tsx",
+    "addedLinesCount": 18,
+    "removedLinesCount": 18,
+    "mapGuards": 4,
+    "splitGuards": 0,
+    "filterGuards": 8,
+    "optionalChaining": 8,
+    "nullishCoalescing": 11,
+    "addedSample": [
+      "\tlet typedSettingsTabs = (settingsTabs ?? []) as SettingsTab[];",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== \"marketing\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== \"reporting\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== \"bpmn\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== \"rules\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== \"insurance\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== \"telegram\");",
+      "\tconst pricelistWarningRows = (typedPricelistItems ?? []).filter(",
+      "\t\t(item) => (item?.warnings ?? []).length > 0,",
+      "\t\t\t\t{(settingsTabGroups ?? []).map((group) => {"
+    ],
+    "removedSample": [
+      "\tlet typedSettingsTabs = settingsTabs as SettingsTab[];",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== \"marketing\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== \"reporting\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== \"bpmn\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== \"rules\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== \"insurance\");",
+      "\t\ttypedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== \"telegram\");",
+      "\tconst pricelistWarningRows = typedPricelistItems.filter(",
+      "\t\t(item) => item.warnings.length > 0,",
+      "\t\t\t\t{settingsTabGroups.map((group) => {"
+    ]
+  },
+  {
+    "file": "apps/web/src/VisitNoteDraftPanel.tsx",
+    "addedLinesCount": 4,
+    "removedLinesCount": 4,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 0,
+    "nullishCoalescing": 4,
+    "addedSample": [
+      "\t\t\t\t\t\t(draft.quality.detectedToothCodes ?? []).length > 0 && (",
+      "\t\t\t\t\t\t\t\t\t{(draft.quality.detectedToothCodes ?? []).join(\", \")}",
+      "\t\t\t\t\t{draft.warnings && (draft.warnings ?? []).length > 0 && (",
+      "\t\t\t\t\t\t\t{(draft.warnings ?? []).map((w) => ("
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\tdraft.quality.detectedToothCodes.length > 0 && (",
+      "\t\t\t\t\t\t\t\t\t{draft.quality.detectedToothCodes.join(\", \")}",
+      "\t\t\t\t\t{draft.warnings && draft.warnings.length > 0 && (",
+      "\t\t\t\t\t\t\t{draft.warnings.map((w) => ("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/CommandPalette.tsx",
+    "addedLinesCount": 14,
+    "removedLinesCount": 13,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 2,
+    "optionalChaining": 7,
+    "nullishCoalescing": 8,
+    "addedSample": [
+      "\t\t? (patients ?? []).filter(",
+      "\t\t\t\t\t(p?.fullName ?? \"\").toLowerCase().includes((query ?? \"\").toLowerCase()) ||",
+      "\t\t\t\t\t(p?.phone ?? \"\").includes(query),",
+      "\t].filter((c) => (c?.label ?? \"\").toLowerCase().includes((query ?? \"\").toLowerCase()));",
+      "\t\t...(filteredPatients ?? []).slice(0, 5).map((p) => ({",
+      "\t\t\tid: `patient-${p?.id}`,",
+      "\t\t\tlabel: p?.fullName ?? \"\",",
+      "\t\t\tsubLabel: p?.phone,",
+      "\t\t\t\tif (p?.id) onSelectPatient(p.id);",
+      "\t\t...(commands ?? []),"
+    ],
+    "removedSample": [
+      "\t\t? patients.filter(",
+      "\t\t\t\t\tp.fullName.toLowerCase().includes(query.toLowerCase()) ||",
+      "\t\t\t\t\tp.phone?.includes(query),",
+      "\t].filter((c) => c.label.toLowerCase().includes(query.toLowerCase()));",
+      "\t\t...filteredPatients.slice(0, 5).map((p) => ({",
+      "\t\t\tid: `patient-${p.id}`,",
+      "\t\t\tlabel: p.fullName,",
+      "\t\t\tsubLabel: p.phone,",
+      "\t\t\t\tonSelectPatient(p.id);",
+      "\t\t...commands,"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/Omnibar.tsx",
+    "addedLinesCount": 8,
+    "removedLinesCount": 8,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 4,
+    "nullishCoalescing": 6,
+    "addedSample": [
+      "\tconst filteredCommands = (commands ?? []).filter(",
+      "\t\t\t(cmd?.title ?? \"\").toLowerCase().includes((query ?? \"\").toLowerCase()) ||",
+      "\t\t\t(cmd?.category ?? \"\").toLowerCase().includes((query ?? \"\").toLowerCase()),",
+      "\t\t\t\t\tprev < (filteredCommands ?? []).length - 1 ? prev + 1 : prev,",
+      "\t\t\t\tif (filteredCommands?.[selectedIndex]) {",
+      "\t\t\t\t\t\t\t\t\t{(filteredCommands ?? []).length === 0 ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t{(filteredCommands ?? []).map((cmd, idx) => {",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\tfilteredCommands[idx - 1]?.category !== cmd?.category;"
+    ],
+    "removedSample": [
+      "\tconst filteredCommands = commands.filter(",
+      "\t\t\tcmd.title.toLowerCase().includes(query.toLowerCase()) ||",
+      "\t\t\tcmd.category.toLowerCase().includes(query.toLowerCase()),",
+      "\t\t\t\t\tprev < filteredCommands.length - 1 ? prev + 1 : prev,",
+      "\t\t\t\tif (filteredCommands[selectedIndex]) {",
+      "\t\t\t\t\t\t\t\t\t{filteredCommands.length === 0 ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t{filteredCommands?.map((cmd, idx) => {",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\tfilteredCommands[idx - 1]?.category !== cmd.category;"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/PatientAvatar.tsx",
+    "addedLinesCount": 14,
+    "removedLinesCount": 14,
+    "mapGuards": 0,
+    "splitGuards": 2,
+    "filterGuards": 2,
+    "optionalChaining": 0,
+    "nullishCoalescing": 12,
+    "addedSample": [
+      "\tif (typeof fullName !== \"string\" || !fullName.trim()) return \"unknown\";",
+      "\tconst parts = (fullName ?? \"\").trim().split(/\\s+/).filter(Boolean);",
+      "\t\tconst patronymic = (parts[2] ?? \"\").toLowerCase();",
+      "\tfor (const part of parts ?? []) {",
+      "\t\tconst lower = (part ?? \"\").toLowerCase();",
+      "\t\tconst firstName = (parts[1] ?? \"\").toLowerCase();",
+      "\t\tconst singleName = (parts[0] ?? \"\").toLowerCase();",
+      "\t\tconst lowerLast = (lastName ?? \"\").toLowerCase();",
+      "\tif (typeof fullName !== \"string\" || !fullName.trim()) return \"\";",
+      "\tconst parts = (fullName ?? \"\").trim().split(/\\s+/).filter(Boolean);"
+    ],
+    "removedSample": [
+      "\tif (!fullName?.trim()) return \"unknown\";",
+      "\tconst parts = fullName.trim().split(/\\s+/);",
+      "\t\tconst patronymic = parts[2].toLowerCase();",
+      "\tfor (const part of parts) {",
+      "\t\tconst lower = part.toLowerCase();",
+      "\t\tconst firstName = parts[1].toLowerCase();",
+      "\t\tconst singleName = parts[0].toLowerCase();",
+      "\t\tconst lowerLast = lastName.toLowerCase();",
+      "\tif (!fullName?.trim()) return \"\";",
+      "\tconst parts = fullName.trim().split(/\\s+/).filter(Boolean);"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/PatientJourneyTimeline.tsx",
+    "addedLinesCount": 22,
+    "removedLinesCount": 17,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 3,
+    "optionalChaining": 3,
+    "nullishCoalescing": 8,
+    "addedSample": [
+      "\t\t(dashboard?.treatmentPlanItems ?? []).filter((i) => i?.patientId === patientId);",
+      "\tconst activeItems = (planItems ?? []).filter((i) => i?.status !== \"cancelled\");",
+      "\tconst completedItems = (activeItems ?? []).filter((i) => i?.status === \"completed\");",
+      "\t\t\t\t<span className=\"patient-id-badge\">ID: {typeof patientId === \"string\" ? patientId.slice(0, 8) : \"\"}</span>",
+      "\t\t\t{(events ?? []).length === 0 ? (",
+      "\t\t\t\t{(events ?? []).map((evt, index) => {",
+      "\t\t\t\t\tconst isLast = index === (events ?? []).length - 1;",
+      "\t\t\t\t\t\t\t\t{index !== (events ?? []).length - 1 && <div className=\"marker-line\" />}",
+      "\t\t\t\t\t\t\t\t\t\t{(() => {",
+      "\t\t\t\t\t\t\t\t\t\t\tif (!evt.timestamp) return \"\";"
+    ],
+    "removedSample": [
+      "\t\tdashboard?.treatmentPlanItems?.filter((i) => i.patientId === patientId) ||",
+      "\t\t[];",
+      "\tconst activeItems = planItems.filter((i) => i.status !== \"cancelled\");",
+      "\tconst completedItems = activeItems.filter((i) => i.status === \"completed\");",
+      "\t\t\t\t<span className=\"patient-id-badge\">ID: {patientId.slice(0, 8)}</span>",
+      "\t\t\t{events.length === 0 ? (",
+      "\t\t\t\t{events?.map((evt, index) => {",
+      "\t\t\t\t\tconst isLast = index === events.length - 1;",
+      "\t\t\t\t\t\t\t\t{index !== events.length - 1 && <div className=\"marker-line\" />}",
+      "\t\t\t\t\t\t\t\t\t\t{new Date(evt.timestamp).toLocaleString(\"ru-RU\", {"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/PatientPortal.tsx",
+    "addedLinesCount": 7,
+    "removedLinesCount": 6,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 0,
+    "nullishCoalescing": 5,
+    "addedSample": [
+      "\tconst safePlans = Array.isArray(plans) ? plans : [];",
+      "\tconst planTotals = safePlans.map((plan) => planTotalRub(plan));",
+      "\tconst pricedPlanTotals = (planTotals ?? []).filter(",
+      "\tconst plansWithoutPrice = (planTotals ?? []).length - (pricedPlanTotals ?? []).length;",
+      "\tconst totalCost = (pricedPlanTotals ?? []).reduce((sum, value) => sum + value, 0);",
+      "\tconst paid = (invoices ?? [])",
+      "\t\t\t\t\t\t{(plans ?? []).map((stage: any, index: number) => {"
+    ],
+    "removedSample": [
+      "\tconst planTotals = plans?.map((plan) => planTotalRub(plan));",
+      "\tconst pricedPlanTotals = planTotals.filter(",
+      "\tconst plansWithoutPrice = planTotals.length - pricedPlanTotals.length;",
+      "\tconst totalCost = pricedPlanTotals.reduce((sum, value) => sum + value, 0);",
+      "\tconst paid = invoices",
+      "\t\t\t\t\t\t{plans?.map((stage: any, index: number) => {"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/VisitDiaryEditor.tsx",
+    "addedLinesCount": 16,
+    "removedLinesCount": 15,
+    "mapGuards": 4,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 7,
+    "nullishCoalescing": 14,
+    "addedSample": [
+      "\t\tconst typed = (icdSearch ?? \"\").trim();",
+      "\t\tconst exact = (ICD10_DICTIONARY ?? []).find(",
+      "\t\t\t(item) => (item?.code ?? \"\").toUpperCase() === normalized,",
+      "\t\tconst candidate = exact ?? filteredIcd?.[0];",
+      "\t\tif (candidate?.code) handleIcdSelect(candidate.code);",
+      "\tconst searchLower = (icdSearch ?? \"\").toLowerCase();",
+      "\tconst filteredIcd = (ICD10_DICTIONARY ?? []).filter(",
+      "\t\t\t(i?.code ?? \"\").toLowerCase().includes(searchLower) ||",
+      "\t\t\t(i?.label ?? \"\").toLowerCase().includes(searchLower) ||",
+      "\t\t\t(i?.group ?? \"\").toLowerCase().includes(searchLower),"
+    ],
+    "removedSample": [
+      "\t\tconst typed = icdSearch.trim();",
+      "\t\tconst exact = ICD10_DICTIONARY.find(",
+      "\t\t\t(item) => item.code.toUpperCase() === normalized,",
+      "\t\tconst candidate = exact ?? filteredIcd[0];",
+      "\t\tif (candidate) handleIcdSelect(candidate.code);",
+      "\tconst filteredIcd = ICD10_DICTIONARY.filter(",
+      "\t\t\ti.code.toLowerCase().includes(icdSearch.toLowerCase()) ||",
+      "\t\t\ti.label.toLowerCase().includes(icdSearch.toLowerCase()) ||",
+      "\t\t\ti.group.toLowerCase().includes(icdSearch.toLowerCase()),",
+      "\tconst icdEntry = ICD10_DICTIONARY.find("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/analytics/LostPatientsPanel.tsx",
+    "addedLinesCount": 47,
+    "removedLinesCount": 44,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 5,
+    "nullishCoalescing": 3,
+    "addedSample": [
+      "\t\t\t\t\t\t\tПотерянные пациенты ({(patients ?? []).length})",
+      "\t\t\t) : (patients ?? []).length === 0 ? (",
+      "\t\t\t\t\t{(patients ?? []).map((patient) => {",
+      "\t\t\t\t\t\tconst days = typeof patient?.daysSinceLastVisit === \"number\" && !Number.isNaN(patient.daysSinceLastVisit) ? patient.daysSinceLastVisit : 0;",
+      "\t\t\t\t\t\treturn (",
+      "\t\t\t\t\t\t\t<div",
+      "\t\t\t\t\t\t\t\tkey={patient?.id}",
+      "\t\t\t\t\t\t\t\tclassName=\"p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between gap-3 text-xs\"",
+      "\t\t\t\t\t\t\t>",
+      "\t\t\t\t\t\t\t\t<div className=\"min-w-0 flex-1\">"
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\tПотерянные пациенты ({patients.length})",
+      "\t\t\t) : patients.length === 0 ? (",
+      "\t\t\t\t\t{patients.map((patient) => (",
+      "\t\t\t\t\t\t<div",
+      "\t\t\t\t\t\t\tkey={patient.id}",
+      "\t\t\t\t\t\t\tclassName=\"p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between gap-3 text-xs\"",
+      "\t\t\t\t\t\t>",
+      "\t\t\t\t\t\t\t<div className=\"min-w-0 flex-1\">",
+      "\t\t\t\t\t\t\t\t<div className=\"font-semibold text-slate-900 dark:text-slate-100 truncate\">",
+      "\t\t\t\t\t\t\t\t\t{patient.patientName}"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/auth/StaffPinPad.tsx",
+    "addedLinesCount": 8,
+    "removedLinesCount": 8,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 6,
+    "nullishCoalescing": 4,
+    "addedSample": [
+      "\t\t\t\t\t\t\t(activeStaff ?? []).map((staff) => {",
+      "\t\t\t\t\t\t\t\tconst isSelected = selectedUser?.id === staff?.id;",
+      "\t\t\t\t\t\t\t\t\ttypeof staff?.fullName === \"string\" ? staff.fullName : \"\";",
+      "\t\t\t\t\t\t\t\t\t? (fullName ?? \"\")",
+      "\t\t\t\t\t\t\t\t\t\t\t.map((part) => part?.[0] ?? \"\")",
+      "\t\t\t\t\t\t\t\t\t\tkey={staff?.id}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t{typeof staff?.role === \"string\" ? staff.role : \"\"}",
+      "\t\t\t\t\t\t<h4>{selectedUser ? (selectedUser?.fullName ?? \"\") : \"Выберите профиль\"}</h4>"
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\tactiveStaff.map((staff) => {",
+      "\t\t\t\t\t\t\t\tconst isSelected = selectedUser?.id === staff.id;",
+      "\t\t\t\t\t\t\t\t\ttypeof staff.fullName === \"string\" ? staff.fullName : \"\";",
+      "\t\t\t\t\t\t\t\t\t? fullName",
+      "\t\t\t\t\t\t\t\t\t\t\t.map((part) => part[0])",
+      "\t\t\t\t\t\t\t\t\t\tkey={staff.id}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t{typeof staff.role === \"string\" ? staff.role : \"\"}",
+      "\t\t\t\t\t\t<h4>{selectedUser ? selectedUser.fullName : \"Выберите профиль\"}</h4>"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/communications/CampaignPanel.tsx",
+    "addedLinesCount": 14,
+    "removedLinesCount": 14,
+    "mapGuards": 3,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 11,
+    "nullishCoalescing": 9,
+    "addedSample": [
+      "\t\t\t\t(templateData.templates || []).filter((template) => template.isActive),",
+      "\t\t\t{(campaigns || []).length === 0 ? (",
+      "\t\t\t\t\t\t\t{(campaigns || []).map((campaign) => (",
+      "\t\t\t\t\t\t\t\t{(preview?.audience?.excluded?.no_consent ?? 0) > 0 ? (",
+      "\t\t\t\t\t\t\t\t{(preview?.audience?.excluded?.no_contact ?? 0) > 0 ? (",
+      "\t\t\t\t\t\t\t\t{(preview?.audience?.excluded?.excluded_by_criteria ?? 0) > 0 ? (",
+      "\t\t\t\t\t\t\t<p className=\"ops-hint\">{preview?.cost?.note}</p>",
+      "\t\t\t\t\t\t\t{preview?.sampleText ? (",
+      "\t\t\t\t\t\t\t{(preview?.audience?.notes ?? []).map((note) => (",
+      "\t\t\t\t\t\t\t{(preview?.problems ?? []).length > 0 ? ("
+    ],
+    "removedSample": [
+      "\t\t\t\ttemplateData.templates.filter((template) => template.isActive),",
+      "\t\t\t{campaigns.length === 0 ? (",
+      "\t\t\t\t\t\t\t{campaigns.map((campaign) => (",
+      "\t\t\t\t\t\t\t\t{preview.audience.excluded.no_consent > 0 ? (",
+      "\t\t\t\t\t\t\t\t{preview.audience.excluded.no_contact > 0 ? (",
+      "\t\t\t\t\t\t\t\t{preview.audience.excluded.excluded_by_criteria > 0 ? (",
+      "\t\t\t\t\t\t\t<p className=\"ops-hint\">{preview.cost.note}</p>",
+      "\t\t\t\t\t\t\t{preview.sampleText ? (",
+      "\t\t\t\t\t\t\t{preview.audience.notes.map((note) => (",
+      "\t\t\t\t\t\t\t{preview.problems.length > 0 ? ("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/communications/MessageDeliveryConsole.tsx",
+    "addedLinesCount": 38,
+    "removedLinesCount": 38,
+    "mapGuards": 4,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 30,
+    "nullishCoalescing": 16,
+    "addedSample": [
+      "\t\t() => (templates || []).filter((t) => t.isActive && t.channel === enqueueChannel),",
+      "\t\t\t!gateways?.automaticSending?.enabled &&",
+      "\t\t\t(gateways?.automaticSending?.waiting ?? 0) > 0 ? (",
+      "\t\t\t\t\t\t{gateways?.automaticSending?.waiting}",
+      "\t\t\t\t\t\t{gateways?.automaticSending?.oldestWaitingAt",
+      "\t\t\t\t\t\tпеременную {gateways?.automaticSending?.enableWith ?? \"\"}.",
+      "\t\t\t\t\t\t\t{(Object.keys(gateways?.channels || {}) as ChannelCode[]).map((code) => {",
+      "\t\t\t\t\t\t\t\tconst channel = gateways?.channels?.[code];",
+      "\t\t\t\t\t\t\t\t\t\t\tclassName={`ops-state ops-state--${channel?.configured ? \"ok\" : \"muted\"}`}",
+      "\t\t\t\t\t\t\t\t\t\t\t{channel?.configured ? \"настроен\" : \"не настроен\"}"
+    ],
+    "removedSample": [
+      "\t\t() => templates.filter((t) => t.isActive && t.channel === enqueueChannel),",
+      "\t\t\t!gateways.automaticSending.enabled &&",
+      "\t\t\tgateways.automaticSending.waiting > 0 ? (",
+      "\t\t\t\t\t\t{gateways.automaticSending.waiting}",
+      "\t\t\t\t\t\t{gateways.automaticSending.oldestWaitingAt",
+      "\t\t\t\t\t\tпеременную {gateways.automaticSending.enableWith}.",
+      "\t\t\t\t\t\t\t{(Object.keys(gateways.channels) as ChannelCode[]).map((code) => {",
+      "\t\t\t\t\t\t\t\tconst channel = gateways.channels[code];",
+      "\t\t\t\t\t\t\t\t\t\t\tclassName={`ops-state ops-state--${channel.configured ? \"ok\" : \"muted\"}`}",
+      "\t\t\t\t\t\t\t\t\t\t\t{channel.configured ? \"настроен\" : \"не настроен\"}"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/crm/PatientDuplicateMergeQueuesWidget.tsx",
+    "addedLinesCount": 8,
+    "removedLinesCount": 8,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 8,
+    "nullishCoalescing": 4,
+    "addedSample": [
+      "\t\t\t\t(report?.candidates ?? []).length === 0 ? (",
+      "\t\t\t\t\t\t\t\t\t{(report?.candidates ?? []).map((candidate) => {",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{formatBirthDate(candidate.left?.birthDate)}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{candidate.left?.phone ?? \"телефон не указан\"}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{candidate.left?.email ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{formatBirthDate(candidate.right?.birthDate)}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{candidate.right?.phone ?? \"телефон не указан\"}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{candidate.right?.email ? ("
+    ],
+    "removedSample": [
+      "\t\t\t\treport.candidates.length === 0 ? (",
+      "\t\t\t\t\t\t\t\t\t{report.candidates.map((candidate) => {",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{formatBirthDate(candidate.left.birthDate)}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{candidate.left.phone ?? \"телефон не указан\"}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{candidate.left.email ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{formatBirthDate(candidate.right.birthDate)}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{candidate.right.phone ?? \"телефон не указан\"}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{candidate.right.email ? ("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/finance/CashDayTally.tsx",
+    "addedLinesCount": 1,
+    "removedLinesCount": 1,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 1,
+    "nullishCoalescing": 1,
+    "addedSample": [
+      "\t\t\t\t\t\t\t{(summary?.byMethod ?? []).map((row) => {"
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\t{summary.byMethod.map((row) => {"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/finance/SberbankTerminalPaymentModal.tsx",
+    "addedLinesCount": 2,
+    "removedLinesCount": 2,
+    "mapGuards": 0,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 0,
+    "nullishCoalescing": 0,
+    "addedSample": [
+      "\t\tif (!patientId || typeof amountInRubles !== \"number\" || Number.isNaN(amountInRubles)) return;",
+      "\t\t\t\t\tamount: Math.round((typeof amountInRubles === \"number\" && !Number.isNaN(amountInRubles) ? amountInRubles : 0) * 100),"
+    ],
+    "removedSample": [
+      "\t\tif (!patientId || !amountInRubles) return;",
+      "\t\t\t\t\tamount: Math.round(amountInRubles * 100),"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/finance/cashDaySummary.ts",
+    "addedLinesCount": 4,
+    "removedLinesCount": 1,
+    "mapGuards": 0,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 0,
+    "nullishCoalescing": 1,
+    "addedSample": [
+      "\tif (typeof value !== \"string\") return null;",
+      "\tconst trimmed = (value ?? \"\").trim();",
+      "\t\tif (!payment || payment.amountRub === undefined || payment.amountRub === null) return 0;",
+      "\t\tif (!payment) continue;"
+    ],
+    "removedSample": [
+      "\tconst trimmed = value.trim();"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/imaging/ShadowAnalystReport.tsx",
+    "addedLinesCount": 17,
+    "removedLinesCount": 16,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 8,
+    "nullishCoalescing": 11,
+    "addedSample": [
+      "\t\tlet fullText = summary ?? \"\";",
+      "\t\t\t\tfullText += `Зуб ${t?.code ?? \"\"}: ${t?.diagnosisOrFinding ?? \"\"}. `;",
+      "\t\t\t\t(v) => v.lang === \"ru-RU\" && !(v.name ?? \"\").toLowerCase().includes(\"google\"),",
+      "\t\t\tvoices.find((v) => (v.lang ?? \"\").startsWith(\"ru\")) ||",
+      "\t\t\t(u?.state ?? \"\").toLowerCase().includes(\"caries\") ||",
+      "\t\t\t(u?.state ?? \"\").toLowerCase().includes(\"pulpitis\") ||",
+      "\t\t\t(u?.state ?? \"\").toLowerCase().includes(\"periodont\"),",
+      "\t\t\t\t{(toothUpdates ?? []).length > 0 && (",
+      "\t\t\t\t\t\t\tДетализация по зубам · {(toothUpdates ?? []).length} поз.",
+      "\t\t\t\t\t\t\t{(toothUpdates ?? []).map((update) => {"
+    ],
+    "removedSample": [
+      "\t\tlet fullText = summary;",
+      "\t\t\t\tfullText += `Зуб ${t.code}: ${t.diagnosisOrFinding}. `;",
+      "\t\t\t\t(v) => v.lang === \"ru-RU\" && !v.name.toLowerCase().includes(\"google\"),",
+      "\t\t\tvoices.find((v) => v.lang.startsWith(\"ru\")) ||",
+      "\t\t\tu.state.toLowerCase().includes(\"caries\") ||",
+      "\t\t\tu.state.toLowerCase().includes(\"pulpitis\") ||",
+      "\t\t\tu.state.toLowerCase().includes(\"periodont\"),",
+      "\t\t\t\t{toothUpdates && toothUpdates.length > 0 && (",
+      "\t\t\t\t\t\t\tДетализация по зубам · {toothUpdates.length} поз.",
+      "\t\t\t\t\t\t\t{toothUpdates.map((update) => {"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/imaging/VisiographAnalyzer.tsx",
+    "addedLinesCount": 4,
+    "removedLinesCount": 4,
+    "mapGuards": 3,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 1,
+    "nullishCoalescing": 3,
+    "addedSample": [
+      "\t\t\t\t\t\t\t\t\t\t{(toothStatesArray ?? []).map(({ code, state }) => {",
+      "\t\t\t\t\t\t\t\t\t{(reportSections ?? []).map((section, sIndex) => (",
+      "\t\t\t\t\t\t\t\t\t{(scanHistory ?? []).map((scan) => (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{scan?.aiToothStates"
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\t\t\t\t{toothStatesArray.map(({ code, state }) => {",
+      "\t\t\t\t\t\t\t\t\t{reportSections.map((section, sIndex) => (",
+      "\t\t\t\t\t\t\t\t\t{scanHistory.map((scan) => (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{scan.aiToothStates"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/patients/OrthodonticProgressWidget.tsx",
+    "addedLinesCount": 4,
+    "removedLinesCount": 3,
+    "mapGuards": 0,
+    "splitGuards": 1,
+    "filterGuards": 0,
+    "optionalChaining": 1,
+    "nullishCoalescing": 2,
+    "addedSample": [
+      "\tconst patient = (dashboard?.patients ?? []).find((p: any) => p?.id === patientId);",
+      "\t\t\tif (typeof dateStr !== \"string\" || !dateStr) return dateStr || \"\";",
+      "\t\t\tconst [y, m, d] = (dateStr ?? \"\").split(\"-\");",
+      "\t\t\treturn dateStr || \"\";"
+    ],
+    "removedSample": [
+      "\tconst patient = dashboard?.patients?.find((p: any) => p.id === patientId);",
+      "\t\t\tconst [y, m, d] = dateStr.split(\"-\");",
+      "\t\t\treturn dateStr;"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/patients/PatientAttachmentsPanel.tsx",
+    "addedLinesCount": 1,
+    "removedLinesCount": 1,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 0,
+    "nullishCoalescing": 1,
+    "addedSample": [
+      "\t\t\t\t\t{(files ?? []).map((att) => ("
+    ],
+    "removedSample": [
+      "\t\t\t\t\t{files.map((att) => ("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/patients/PatientCommunicationConsentsPanel.tsx",
+    "addedLinesCount": 2,
+    "removedLinesCount": 1,
+    "mapGuards": 0,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 0,
+    "nullishCoalescing": 1,
+    "addedSample": [
+      "\tif (typeof raw !== \"string\") return null;",
+      "\tconst t = (raw ?? \"\").trim();"
+    ],
+    "removedSample": [
+      "\tconst t = raw.trim();"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/patients/PatientDuplicateAlert.tsx",
+    "addedLinesCount": 4,
+    "removedLinesCount": 4,
+    "mapGuards": 0,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 0,
+    "nullishCoalescing": 0,
+    "addedSample": [
+      "\tif ((candidates || []).length === 0) {",
+      "\t\t\t\t{(candidates || []).length === 1",
+      "\t\t\t\t\t? \"Похоже, у этого пациента есть ещё одна карточка:\"",
+      "\t\t\t\t\t: `Похоже, у этого пациента есть ещё карточки: ${(candidates || []).length}.`}{\" \"}"
+    ],
+    "removedSample": [
+      "\tif (candidates.length === 0) {",
+      "\t\t\t\t{candidates.length === 1",
+      "\t\t\t\t\t? \"Похоже, у этого пациента есть вторая карточка.\"",
+      "\t\t\t\t\t: `Похоже, у этого пациента есть ещё карточки: ${candidates.length}.`}{\" \"}"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/patients/PatientFamilyCard.tsx",
+    "addedLinesCount": 5,
+    "removedLinesCount": 4,
+    "mapGuards": 2,
+    "splitGuards": 1,
+    "filterGuards": 0,
+    "optionalChaining": 1,
+    "nullishCoalescing": 3,
+    "addedSample": [
+      "\t\t\t\t\t\t{(familyData?.members ?? []).map((m: any) => (",
+      "\t\t\t\t\t\t\t\t\t(searchResults ?? []).length === 0 && (",
+      "\t\t\t\t\t\t\t\t{(searchResults ?? []).map((f) => (",
+      "\t\t\t\t\t\t\t\t\tconst namePart = typeof patientName === \"string\" ? patientName.trim().split(\" \")[0] : \"\";",
+      "\t\t\t\t\t\t\t\t\t\t`Семья ${namePart}`.trim(),"
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t{familyData.members?.map((m: any) => (",
+      "\t\t\t\t\t\t\t\t\tsearchResults.length === 0 && (",
+      "\t\t\t\t\t\t\t\t{searchResults.map((f) => (",
+      "\t\t\t\t\t\t\t\t\t\t`Семья ${patientName ? patientName.split(\" \")[0] : \"\"}`.trim(),"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/patients/PatientNoShowRisk.tsx",
+    "addedLinesCount": 7,
+    "removedLinesCount": 7,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 7,
+    "nullishCoalescing": 5,
+    "addedSample": [
+      "\t\t\t\t\t\t\t{getRiskIcon(riskData?.riskLevel ?? \"\")}",
+      "\t\t\t\t\t\t\t\tclassName={`text-sm font-semibold ${getRiskClass(riskData?.riskLevel ?? \"\")}`}",
+      "\t\t\t\t\t\t\t\t{getRiskLabel(riskData?.riskLevel ?? \"\")}",
+      "\t\t\t\t\t\t\t{Math.round((riskData?.noShowProbability || 0) * 100)}%",
+      "\t\t\t\t\t{(riskData?.factors ?? []).length > 0 && (",
+      "\t\t\t\t\t\t\t\t{(riskData?.factors ?? []).map((factor: string) => (",
+      "\t\t\t\t\t{riskData?.recommendedAction && ("
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\t{getRiskIcon(riskData.riskLevel)}",
+      "\t\t\t\t\t\t\t\tclassName={`text-sm font-semibold ${getRiskClass(riskData.riskLevel)}`}",
+      "\t\t\t\t\t\t\t\t{getRiskLabel(riskData.riskLevel)}",
+      "\t\t\t\t\t\t\t{Math.round((riskData.noShowProbability || 0) * 100)}%",
+      "\t\t\t\t\t{riskData.factors && riskData.factors.length > 0 && (",
+      "\t\t\t\t\t\t\t\t{riskData.factors.map((factor: string) => (",
+      "\t\t\t\t\t{riskData.recommendedAction && ("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/patients/PatientWhatsappSendPanel.tsx",
+    "addedLinesCount": 2,
+    "removedLinesCount": 1,
+    "mapGuards": 0,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 0,
+    "nullishCoalescing": 1,
+    "addedSample": [
+      "\tif (typeof raw !== \"string\") return null;",
+      "\tconst t = (raw ?? \"\").trim();"
+    ],
+    "removedSample": [
+      "\tconst t = raw.trim();"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/patients/RecallListPanel.tsx",
+    "addedLinesCount": 2,
+    "removedLinesCount": 1,
+    "mapGuards": 0,
+    "splitGuards": 1,
+    "filterGuards": 0,
+    "optionalChaining": 1,
+    "nullishCoalescing": 0,
+    "addedSample": [
+      "\tconst rawName = typeof candidate?.fullName === \"string\" ? candidate.fullName.trim() : \"\";",
+      "\tconst name = (rawName.split(\" \")[1] || rawName || \"Пациент\");"
+    ],
+    "removedSample": [
+      "\tconst name = candidate.fullName.split(\" \")[1] ?? candidate.fullName;"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/payments/fiscalReceiptRequirements.ts",
+    "addedLinesCount": 14,
+    "removedLinesCount": 6,
+    "mapGuards": 0,
+    "splitGuards": 0,
+    "filterGuards": 2,
+    "optionalChaining": 2,
+    "nullishCoalescing": 4,
+    "addedSample": [
+      "\tif (typeof value !== \"string\") return false;",
+      "\tconst trimmed = (value ?? \"\").trim();",
+      "\tif (typeof value !== \"string\") return false;",
+      "\tconst trimmed = (value ?? \"\").trim();",
+      "\treturn (taxDeductionRequirements ?? [])",
+      "\t\t.filter((requirement) => {",
+      "\t\t\tconst val = fields?.[requirement.key];",
+      "\t\t\treturn typeof val !== \"string\" || !val.trim();",
+      "\t\t})",
+      "\treturn (taxDeductionRequirements ?? [])"
+    ],
+    "removedSample": [
+      "\tconst trimmed = value.trim();",
+      "\tconst trimmed = value.trim();",
+      "\treturn taxDeductionRequirements",
+      "\t\t.filter((requirement) => !fields[requirement.key].trim())",
+      "\treturn taxDeductionRequirements",
+      "\t\t.filter((requirement) => !fields[requirement.key].trim())"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/reports/ManagerReportsPanel.tsx",
+    "addedLinesCount": 26,
+    "removedLinesCount": 26,
+    "mapGuards": 6,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 24,
+    "nullishCoalescing": 24,
+    "addedSample": [
+      "\t\t\tpeakWeekdayMinutes: (byWeekday ?? []).reduce(",
+      "\t\t\t\t(peak, row) => Math.max(peak, row?.minutes ?? 0),",
+      "\t\t\tpeakHourMinutes: (byHour ?? []).reduce(",
+      "\t\t\t\t(peak, row) => Math.max(peak, row?.minutes ?? 0),",
+      "\t\t\t\t\t\t\t\t\tдолг, {summary?.receivables?.debtors ?? 0} пациент(ов)",
+      "\t\t\t\t\t\t\t\t\t{summary?.patientFlow?.newTotal ?? 0} /{\" \"}",
+      "\t\t\t\t\t\t\t\t\t{summary?.patientFlow?.returningTotal ?? 0}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{(summary?.doctors?.rows ?? []).map((row) => (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr key={row?.doctorUserId ?? row?.doctorName ?? Math.random()}>",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t{row?.doctorName ?? \"—\"}"
+    ],
+    "removedSample": [
+      "\t\t\tpeakWeekdayMinutes: byWeekday.reduce(",
+      "\t\t\t\t(peak, row) => Math.max(peak, row.minutes),",
+      "\t\t\tpeakHourMinutes: byHour.reduce(",
+      "\t\t\t\t(peak, row) => Math.max(peak, row.minutes),",
+      "\t\t\t\t\t\t\t\t\tдолг, {summary.receivables.debtors} пациент(ов)",
+      "\t\t\t\t\t\t\t\t\t{summary.patientFlow.newTotal} /{\" \"}",
+      "\t\t\t\t\t\t\t\t\t{summary.patientFlow.returningTotal}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{summary.doctors.rows.map((row) => (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr key={row.doctorUserId ?? row.doctorName}>",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t{row.doctorName}"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/schedule/AppointmentCard.tsx",
+    "addedLinesCount": 44,
+    "removedLinesCount": 40,
+    "mapGuards": 1,
+    "splitGuards": 2,
+    "filterGuards": 1,
+    "optionalChaining": 33,
+    "nullishCoalescing": 17,
+    "addedSample": [
+      "\tconst appointmentSuggestions = (visibleScheduleSuggestions ?? []).filter(",
+      "\t\t(s) => s?.appointmentId === appointment?.id,",
+      "\tconst readiness =",
+      "\t\t(appointmentReadinessById instanceof Map",
+      "\t\t\t? appointmentReadinessById.get(appointment?.id ?? \"\")",
+      "\t\t\t: undefined) ?? null;",
+      "\tconst appointmentDoctor = (dashboard?.clinicSettings?.staff ?? []).find(",
+      "\t\t(member) => member?.id === appointment?.doctorUserId,",
+      "\tconst appointmentAssistant = appointment?.assistantUserId",
+      "\t\t? (dashboard?.clinicSettings?.staff ?? []).find("
+    ],
+    "removedSample": [
+      "\tconst appointmentSuggestions = visibleScheduleSuggestions.filter(",
+      "\t\t(s) => s.appointmentId === appointment.id,",
+      "\tconst readiness = appointmentReadinessById.get(appointment.id);",
+      "\tconst appointmentDoctor = (dashboard.clinicSettings?.staff ?? []).find(",
+      "\t\t(member) => member.id === appointment.doctorUserId,",
+      "\tconst appointmentAssistant = appointment.assistantUserId",
+      "\t\t? (dashboard.clinicSettings?.staff ?? []).find(",
+      "\t\t\t\t(member) => member.id === appointment.assistantUserId,",
+      "\tconst appointmentChair = (dashboard.clinicSettings?.chairs ?? []).find(",
+      "\t\t(chair) => chair.id === appointment.chairId,"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/schedule/DayConfirmationsPanel.tsx",
+    "addedLinesCount": 18,
+    "removedLinesCount": 15,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 2,
+    "optionalChaining": 12,
+    "nullishCoalescing": 14,
+    "addedSample": [
+      "\t\treturn showAll ? (data.rows ?? []) : (data.rows ?? []).filter((row) => row?.needsCall);",
+      "\t\tconst total = data.summary?.needsCall ?? 0;",
+      "\t\tconst done = (data.rows ?? []).filter(",
+      "\t\t\t(row) => row?.needsCall && handled.has(row.appointmentId),",
+      "\t\t\t\t{data && (data.summary?.needsCall ?? 0) > 0 ? (",
+      "\t\t\t\t\t\t\t\tclassName={`ops-metric ${(data.summary?.needsCall ?? 0) > 0 ? \"ops-metric--primary\" : \"\"}`}",
+      "\t\t\t\t\t\t\t\t\t{data.summary?.needsCall ?? 0}",
+      "\t\t\t\t\t\t\t\t\t{data.summary?.confirmed ?? 0}",
+      "\t\t\t\t\t\t\t\t\t{data.summary?.awaiting ?? 0}",
+      "\t\t\t\t\t\t\t\t<span className=\"ops-metric__value\">{data.summary?.total ?? 0}</span>"
+    ],
+    "removedSample": [
+      "\t\treturn showAll ? data.rows : data.rows.filter((row) => row.needsCall);",
+      "\t\tconst total = data.summary.needsCall;",
+      "\t\tconst done = data.rows.filter(",
+      "\t\t\t(row) => row.needsCall && handled.has(row.appointmentId),",
+      "\t\t\t\t{data && data.summary.needsCall > 0 ? (",
+      "\t\t\t\t\t\t\t\tclassName={`ops-metric ${data.summary.needsCall > 0 ? \"ops-metric--primary\" : \"\"}`}",
+      "\t\t\t\t\t\t\t\t\t{data.summary.needsCall}",
+      "\t\t\t\t\t\t\t\t\t{data.summary.confirmed}",
+      "\t\t\t\t\t\t\t\t\t{data.summary.awaiting}",
+      "\t\t\t\t\t\t\t\t<span className=\"ops-metric__value\">{data.summary.total}</span>"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/schedule/FreedSlotsPanel.tsx",
+    "addedLinesCount": 12,
+    "removedLinesCount": 12,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 12,
+    "nullishCoalescing": 12,
+    "addedSample": [
+      "\tif (report !== null && (report?.slots ?? []).length === 0 && !error) return null;",
+      "\t\t\t\t\t\tclassName={`status-pill ${(report?.slots ?? []).length > 0 ? \"status-arrived\" : \"status-planned\"}`}",
+      "\t\t\t\t\t\t{(report?.slots ?? []).length}",
+      "\t\t\t\t\t\t\t\t{(report?.slots ?? []).map((slot) => {",
+      "\t\t\t\t\t\t\t\t\tconst best = (slot?.topMatches ?? [])[0];",
+      "\t\t\t\t\t\t\t\t\t\t\t\t{(slot?.topMatches ?? []).length === 0 ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t{(slot?.candidatesTotal ?? 0) > 0",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{(slot?.candidatesTotal ?? 0) > 0 ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t: (slot?.candidatesTotal ?? 0) > (slot?.topMatches ?? []).length",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t? `Все из очереди (${slot?.candidatesTotal ?? 0})`"
+    ],
+    "removedSample": [
+      "\tif (report !== null && report.slots.length === 0 && !error) return null;",
+      "\t\t\t\t\t\tclassName={`status-pill ${report.slots.length > 0 ? \"status-arrived\" : \"status-planned\"}`}",
+      "\t\t\t\t\t\t{report.slots.length}",
+      "\t\t\t\t\t\t\t\t{report.slots.map((slot) => {",
+      "\t\t\t\t\t\t\t\t\tconst best = slot.topMatches[0];",
+      "\t\t\t\t\t\t\t\t\t\t\t\t{slot.topMatches.length === 0 ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t{slot.candidatesTotal > 0",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t{slot.candidatesTotal > 0 ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t: slot.candidatesTotal > slot.topMatches.length",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t? `Все из очереди (${slot.candidatesTotal})`"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/schedule/WaitlistMatchesBlock.tsx",
+    "addedLinesCount": 8,
+    "removedLinesCount": 8,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 8,
+    "nullishCoalescing": 8,
+    "addedSample": [
+      "\t\t\t\t\t\t\tclassName={`status-pill ${(report?.matches ?? []).length > 0 ? \"status-arrived\" : \"status-planned\"}`}",
+      "\t\t\t\t\t\t\t{(report?.matches ?? []).length}",
+      "\t\t\t{report && (report?.matches ?? []).length === 0 && !error ? (",
+      "\t\t\t\t\t{(report?.examinedEntries ?? 0) > 0",
+      "\t\t\t{report && (report?.matches ?? []).length > 0 ? (",
+      "\t\t\t\t\t{(report?.matches ?? []).map((match, index) => {",
+      "\t\t\t\t\t\t\tPRIORITY_LABELS[match?.priorityLevel ?? \"\"] ?? match?.priorityLevel ?? \"\";",
+      "\t\t\t\t\t\t\t\t\t\t\thref={`tel:${String(match?.phone ?? \"\").replace(/[^\\d+]/g, \"\")}`}"
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\tclassName={`status-pill ${report.matches.length > 0 ? \"status-arrived\" : \"status-planned\"}`}",
+      "\t\t\t\t\t\t\t{report.matches.length}",
+      "\t\t\t{report && report.matches.length === 0 && !error ? (",
+      "\t\t\t\t\t{report.examinedEntries > 0",
+      "\t\t\t{report && report.matches.length > 0 ? (",
+      "\t\t\t\t\t{report.matches.map((match, index) => {",
+      "\t\t\t\t\t\t\tPRIORITY_LABELS[match.priorityLevel] ?? match.priorityLevel;",
+      "\t\t\t\t\t\t\t\t\t\t\thref={`tel:${match.phone.replace(/[^\\d+]/g, \"\")}`}"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/settings/MigrationWizard.tsx",
+    "addedLinesCount": 25,
+    "removedLinesCount": 25,
+    "mapGuards": 4,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 21,
+    "nullishCoalescing": 22,
+    "addedSample": [
+      "\t\t(mapping?.qualityFindings ?? []).filter((item) => item?.severity === \"blocker\") ??",
+      "\t\t\t\t\t<span className=\"mw-source-name\">{upload?.fileName}</span>",
+      "\t\t\t\t\t\t{formatBytes(upload?.byteSize ?? 0)} · {(upload?.source?.kind ?? \"\").toUpperCase()}{\" \"}",
+      "\t\t\t\t\t\t· кодировка {upload?.source?.detectedEncoding}",
+      "\t\t\t\t\t\t{(upload?.source?.encodingConfidence ?? 0) < 0.8 && (",
+      "\t\t\t{upload?.previousRunWithSameFile != null && (",
+      "\t\t\t\t\t\t\t<span className=\"mw-proj-value\">{mapping?.projectedReady ?? 0}</span>",
+      "\t\t\t\t\t\t\t\t{mapping?.projectedQuarantine ?? 0}",
+      "\t\t\t\t\t\t\t\t{(mapping?.mapping?.columns ?? []).length}",
+      "\t\t\t\t\t\t{(mapping?.llm?.calls ?? 0) > 0 && ("
+    ],
+    "removedSample": [
+      "\t\tmapping?.qualityFindings.filter((item) => item.severity === \"blocker\") ??",
+      "\t\t\t\t\t<span className=\"mw-source-name\">{upload.fileName}</span>",
+      "\t\t\t\t\t\t{formatBytes(upload.byteSize)} · {upload.source.kind.toUpperCase()}{\" \"}",
+      "\t\t\t\t\t\t· кодировка {upload.source.detectedEncoding}",
+      "\t\t\t\t\t\t{upload.source.encodingConfidence < 0.8 && (",
+      "\t\t\t{upload.previousRunWithSameFile !== null && (",
+      "\t\t\t\t\t\t\t<span className=\"mw-proj-value\">{mapping.projectedReady}</span>",
+      "\t\t\t\t\t\t\t\t{mapping.projectedQuarantine}",
+      "\t\t\t\t\t\t\t\t{mapping.mapping.columns.length}",
+      "\t\t\t\t\t\t{mapping.llm.calls > 0 && ("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/settings/SettingsClinicTab.tsx",
+    "addedLinesCount": 17,
+    "removedLinesCount": 17,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 8,
+    "nullishCoalescing": 7,
+    "addedSample": [
+      "\t\t\t\t\t\t\t{(legalMissingFields || []).length",
+      "\t\t\t\t\t\t\t\t? `Не заполнено: ${(legalMissingFields || []).join(\", \")}`",
+      "\t\t\t\t\t\t\t\t\t(clinicProfileDraft?.workingDays ?? []).includes(day.value)",
+      "\t\t\t\t\t\t\t\taria-pressed={(clinicProfileDraft?.workingDays ?? []).includes(",
+      "\t\t\t\t\t\t\t\t\tclinicPublicLookup?.providerStatus ?? \"\"",
+      "\t\t\t\t\t\t\t\t\thumanizeMigrationText(clinicPublicLookup?.providerStatus ?? \"\")}{\" \"}",
+      "\t\t\t\t\t\t\t\t· запрос {clinicPublicLookup?.safeQuery || \"не сформирован\"}",
+      "\t\t\t\t\t\t\t\t{humanizeMigrationText(clinicPublicLookup?.nextAction ?? \"\")}",
+      "\t\t\t\t\t\t{(typedClinicPublicLookupSuggestions ?? []).length ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t{(suggestion.warnings || [])"
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\t{(legalMissingFields ?? []).length",
+      "\t\t\t\t\t\t\t\t? `Не заполнено: ${legalMissingFields.join(\", \")}`",
+      "\t\t\t\t\t\t\t\t\tclinicProfileDraft.workingDays.includes(day.value)",
+      "\t\t\t\t\t\t\t\taria-pressed={clinicProfileDraft.workingDays.includes(",
+      "\t\t\t\t\t\t\t\t\tclinicPublicLookup.providerStatus",
+      "\t\t\t\t\t\t\t\t\thumanizeMigrationText(clinicPublicLookup.providerStatus)}{\" \"}",
+      "\t\t\t\t\t\t\t\t· запрос {clinicPublicLookup.safeQuery || \"не сформирован\"}",
+      "\t\t\t\t\t\t\t\t{humanizeMigrationText(clinicPublicLookup.nextAction)}",
+      "\t\t\t\t\t\t{clinicPublicLookup.suggestions.length ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t{suggestion.warnings"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/settings/SettingsImportsTab.tsx",
+    "addedLinesCount": 199,
+    "removedLinesCount": 199,
+    "mapGuards": 20,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 170,
+    "nullishCoalescing": 123,
+    "addedSample": [
+      "\tconst cleanName = humanizeMigrationText(candidate?.safeDisplayName)",
+      "\tconst baseName = cleanName || migrationSourceKindLabel(candidate?.sourceKind ?? \"\");",
+      "\t\thandoff?.method === \"GET\" ? \"открыть проверку\" : \"передать на проверку\";",
+      "\treturn `${actionLabel}: ${migrationHandoffEndpointLabels[handoff?.endpoint ?? \"\"] ?? \"предпросмотр в CRM\"}`;",
+      "\tseries?.seriesDescription ??",
+      "\tseries?.studyDescription ??",
+      "\tshortDicomSeriesCode(series?.seriesInstanceUid);",
+      "\t(warnings ?? []).length",
+      "\t\t? (warnings ?? []).slice(0, 3).map(humanizeMigrationText).join(\", \")",
+      "\tif (!(warnings ?? []).length) return fallback;"
+    ],
+    "removedSample": [
+      "\tconst cleanName = humanizeMigrationText(candidate.safeDisplayName)",
+      "\tconst baseName = cleanName || migrationSourceKindLabel(candidate.sourceKind);",
+      "\t\thandoff.method === \"GET\" ? \"открыть проверку\" : \"передать на проверку\";",
+      "\treturn `${actionLabel}: ${migrationHandoffEndpointLabels[handoff.endpoint] ?? \"предпросмотр в CRM\"}`;",
+      "\tseries.seriesDescription ??",
+      "\tseries.studyDescription ??",
+      "\tshortDicomSeriesCode(series.seriesInstanceUid);",
+      "\twarnings.length",
+      "\t\t? warnings.slice(0, 3).map(humanizeMigrationText).join(\", \")",
+      "\tif (!warnings.length) return fallback;"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/settings/SettingsPricesTab.tsx",
+    "addedLinesCount": 14,
+    "removedLinesCount": 14,
+    "mapGuards": 4,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 11,
+    "nullishCoalescing": 8,
+    "addedSample": [
+      "\t\t\t\t\t(s?.title ?? \"\").toLowerCase().includes(q) ||",
+      "\t\t\t\t\t(s?.code ?? \"\").toLowerCase().includes(q),",
+      "\t\treturn items.sort((a, b) => (a?.title ?? \"\").localeCompare(b?.title ?? \"\"));",
+      "\t\t\tconst cat = item?.category || \"other\";",
+      "\t\tconst validItems = (typedPricelistAnalysis.items ?? []).filter(",
+      "\t\t\t(item: any) => item?.priceRub !== null,",
+      "\t\t\t\t\t\t\t\t\t\t{(typedPricelistRecognitionServiceGroups ?? []).map((group) => (",
+      "\t\t\t\t\t\t\t\t\t\t\t<div className=\"pricelist-taxonomy-row\" key={group?.title}>",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{group?.title}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t{(group?.items ?? []).map((item) => ("
+    ],
+    "removedSample": [
+      "\t\t\t\t\ts.title.toLowerCase().includes(q) ||",
+      "\t\t\t\t\ts.code?.toLowerCase().includes(q),",
+      "\t\treturn items.sort((a, b) => a.title.localeCompare(b.title));",
+      "\t\t\tconst cat = item.category || \"other\";",
+      "\t\tconst validItems = typedPricelistAnalysis.items.filter(",
+      "\t\t\t(item: any) => item.priceRub !== null,",
+      "\t\t\t\t\t\t\t\t\t\t{typedPricelistRecognitionServiceGroups.map((group) => (",
+      "\t\t\t\t\t\t\t\t\t\t\t<div className=\"pricelist-taxonomy-row\" key={group.title}>",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{group.title}",
+      "\t\t\t\t\t\t\t\t\t\t\t\t{group.items.map((item) => ("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/settings/SettingsProtocolsTab.tsx",
+    "addedLinesCount": 7,
+    "removedLinesCount": 7,
+    "mapGuards": 4,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 3,
+    "nullishCoalescing": 7,
+    "addedSample": [
+      "\t\t\t\t\t\t\t{Object.entries((specialtyLabels ?? {}) as Record<string, string>).map(",
+      "\t\t\t\t\t\t\t\t<span>{specialtyLabels?.[template.specialty] ?? template.specialty}</span>",
+      "\t\t\t\t\t\t\t\t{(template.requiredDocuments ?? []).map((kind) => (",
+      "\t\t\t\t\t\t\t\t\t<span key={kind}>{documentLabels?.[kind] ?? kind}</span>",
+      "\t\t\t\t\t\t\t\t{(template.suggestedImaging ?? []).map((kind) => (",
+      "\t\t\t\t\t\t\t\t\t<span key={kind}>{imagingKindLabels?.[kind] ?? kind}</span>",
+      "\t\t\t\t\t\t\t\t{(template.safetyWarnings ?? []).slice(0, 2).map((warning) => ("
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\t{Object.entries(specialtyLabels as Record<string, string>).map(",
+      "\t\t\t\t\t\t\t\t<span>{specialtyLabels[template.specialty]}</span>",
+      "\t\t\t\t\t\t\t\t{template.requiredDocuments.map((kind) => (",
+      "\t\t\t\t\t\t\t\t\t<span key={kind}>{documentLabels[kind]}</span>",
+      "\t\t\t\t\t\t\t\t{template.suggestedImaging.map((kind) => (",
+      "\t\t\t\t\t\t\t\t\t<span key={kind}>{imagingKindLabels[kind]}</span>",
+      "\t\t\t\t\t\t\t\t{template.safetyWarnings.slice(0, 2).map((warning) => ("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/settings/SettingsRulesTab.tsx",
+    "addedLinesCount": 7,
+    "removedLinesCount": 7,
+    "mapGuards": 5,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 2,
+    "nullishCoalescing": 7,
+    "addedSample": [
+      "\t\t\t\t\t{(typedClinicalRules ?? []).map((rule) => (",
+      "\t\t\t\t\t\t\t\t\t\t\t{typedClinicalRuleSeverityLabels?.[rule?.severity] ?? rule?.severity}",
+      "\t\t\t\t\t\t\t\t\t\t\t{typedClinicalRuleActionLabels?.[rule?.action] ?? rule?.action}",
+      "\t\t\t\t\t\t\t\t\t{(rule.triggerServiceIds ?? []).map((serviceId) => (",
+      "\t\t\t\t\t\t\t\t\t{(rule.requiredServiceIds ?? []).map((serviceId) => (",
+      "\t\t\t\t\t\t\t\t\t{(rule.requiresCompletedServiceIds ?? []).map((serviceId) => (",
+      "\t\t\t\t\t\t\t\t\t{(rule.blockedServiceIds ?? []).map((serviceId) => ("
+    ],
+    "removedSample": [
+      "\t\t\t\t\t{typedClinicalRules.map((rule) => (",
+      "\t\t\t\t\t\t\t\t\t\t\t{typedClinicalRuleSeverityLabels[rule.severity]}",
+      "\t\t\t\t\t\t\t\t\t\t\t{typedClinicalRuleActionLabels[rule.action]}",
+      "\t\t\t\t\t\t\t\t\t{rule.triggerServiceIds.map((serviceId) => (",
+      "\t\t\t\t\t\t\t\t\t{rule.requiredServiceIds.map((serviceId) => (",
+      "\t\t\t\t\t\t\t\t\t{rule.requiresCompletedServiceIds.map((serviceId) => (",
+      "\t\t\t\t\t\t\t\t\t{rule.blockedServiceIds.map((serviceId) => ("
+    ]
+  },
+  {
+    "file": "apps/web/src/components/settings/SettingsStaffTab.tsx",
+    "addedLinesCount": 5,
+    "removedLinesCount": 5,
+    "mapGuards": 0,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 0,
+    "nullishCoalescing": 0,
+    "addedSample": [
+      "\t\t\tclassName=\"staff-management-studio animate-fade-in w-full min-w-0\"",
+      "\t\t\t<div className=\"settings-cards-grid w-full min-w-0 grid gap-4\">",
+      "\t\t\t\t\t<div className=\"grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] w-full min-w-0\">",
+      "\t\t\t\t\t\t\t\t\t<div className=\"min-w-0 flex-1\">",
+      "\t\t\t\t\t\t\t\t\t\t<h5 className=\"m-0 text-sm font-semibold text-slate-900 dark:text-white truncate\">"
+    ],
+    "removedSample": [
+      "\t\t\tclassName=\"staff-management-studio animate-fade-in\"",
+      "\t\t\t<div className=\"settings-cards-grid\">",
+      "\t\t\t\t\t<div className=\"grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))]\">",
+      "\t\t\t\t\t\t\t\t\t<div>",
+      "\t\t\t\t\t\t\t\t\t\t<h5 className=\"m-0 text-sm font-semibold text-slate-900 dark:text-white\">"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/settings/SettingsTelegramTab.tsx",
+    "addedLinesCount": 3,
+    "removedLinesCount": 3,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 2,
+    "nullishCoalescing": 2,
+    "addedSample": [
+      "\t\t\t\t\t\t\t{(typedTelegramPreview?.warnings ?? []).map((warning: string) => (",
+      "\t\t\t\t\t\tconst itemWarningNotes = (item?.warnings ?? [])",
+      "\t\t\t\t\t\t\t.map((warning: any) => telegramHumanMessage(warning))"
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\t{typedTelegramPreview.warnings.map((warning) => (",
+      "\t\t\t\t\t\tconst itemWarningNotes = item.warnings",
+      "\t\t\t\t\t\t\t.map((warning) => telegramHumanMessage(warning))"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/visit/CompletedServicesChecklist.tsx",
+    "addedLinesCount": 11,
+    "removedLinesCount": 11,
+    "mapGuards": 2,
+    "splitGuards": 1,
+    "filterGuards": 3,
+    "optionalChaining": 0,
+    "nullishCoalescing": 11,
+    "addedSample": [
+      "\t\t() => (planText ?? \"\").split(\"\\n\").map((line) => (line ?? \"\").trim()),",
+      "\tconst markedItems = (planItems ?? []).filter((item: any) => isMarked(item));",
+      "\tconst markedWithoutPrice = (markedItems ?? []).filter(",
+      "\t\t(markedItems ?? []).reduce(",
+      "\t\t\tconst kept = (planText ?? \"\")",
+      "\t\t\t\t.filter((existing) => (existing ?? \"\").trim() !== line);",
+      "\t\tconst base = (planText ?? \"\").replace(/\\s+$/, \"\");",
+      "\tif ((planItems ?? []).length === 0) {",
+      "\t\t\t\t{(planItems ?? []).map((item: any, index: number) => {",
+      "\t\t\t\t{(markedItems ?? []).length === 0"
+    ],
+    "removedSample": [
+      "\t\t() => planText.split(\"\\n\").map((line) => line.trim()),",
+      "\tconst markedItems = planItems.filter((item: any) => isMarked(item));",
+      "\tconst markedWithoutPrice = markedItems.filter(",
+      "\t\tmarkedItems.reduce(",
+      "\t\t\tconst kept = planText",
+      "\t\t\t\t.filter((existing) => existing.trim() !== line);",
+      "\t\tconst base = planText.replace(/\\s+$/, \"\");",
+      "\tif (planItems.length === 0) {",
+      "\t\t\t\t{planItems.map((item: any, index: number) => {",
+      "\t\t\t\t{markedItems.length === 0"
+    ]
+  },
+  {
+    "file": "apps/web/src/components/visit/SpeechChunksInspector.tsx",
+    "addedLinesCount": 14,
+    "removedLinesCount": 14,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 1,
+    "optionalChaining": 2,
+    "nullishCoalescing": 13,
+    "addedSample": [
+      "\tconst issueCount = (recordings ?? []).filter(",
+      "\t\t(r) => r?.recoveryState && r.recoveryState !== \"complete\",",
+      "\t\t(recordings ?? []).find((r) => r?.recordingId === selectedRecordingId) ?? null;",
+      "\t\t: (recordings ?? []).length === 0",
+      "\t\t\t\t? `${issueCount} запис. требуют внимания · ${(recordings ?? []).length} всего`",
+      "\t\t\t\t: `${(recordings ?? []).length} запис. · потерь не видно`;",
+      "\t\t\t\t\t\t\t\t{(recordings ?? []).map((rec) => {",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{(rec.missingChunkIndexes ?? []).length",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t? ` · пропуски: ${(rec.missingChunkIndexes ?? []).join(\", \")}`",
+      "\t\t\t\t\t\t\t\t\t{(selected.providerLabels ?? []).length"
+    ],
+    "removedSample": [
+      "\tconst issueCount = recordings.filter(",
+      "\t\t(r) => r.recoveryState && r.recoveryState !== \"complete\",",
+      "\t\trecordings.find((r) => r.recordingId === selectedRecordingId) ?? null;",
+      "\t\t: recordings.length === 0",
+      "\t\t\t\t? `${issueCount} запис. требуют внимания · ${recordings.length} всего`",
+      "\t\t\t\t: `${recordings.length} запис. · потерь не видно`;",
+      "\t\t\t\t\t\t\t\t{recordings.map((rec) => {",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t{rec.missingChunkIndexes?.length",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t? ` · пропуски: ${rec.missingChunkIndexes.join(\", \")}`",
+      "\t\t\t\t\t\t\t\t\t{selected.providerLabels?.length"
+    ]
+  },
+  {
+    "file": "apps/web/src/ctPlanningExportPanel.tsx",
+    "addedLinesCount": 40,
+    "removedLinesCount": 37,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 35,
+    "nullishCoalescing": 18,
+    "addedSample": [
+      "\tconst clinicalFacts = packet?.clinicalFacts ?? [];",
+      "\tconst missingArtifacts = packet?.missingArtifacts ?? [];",
+      "\tconst blockedFact = clinicalFacts.find(",
+      "\t\t(fact) => fact?.tone === \"blocked\",",
+      "\tconst warningFact = clinicalFacts.find(",
+      "\t\t(fact) => fact?.tone === \"warning\",",
+      "\tconst missingArtifact = missingArtifacts[0];",
+      "\tconst scenario = packet?.activeScenarioSummary;",
+      "\tif (scenario?.status === \"warning\" && packet?.status !== \"blocked\") {",
+      "\tif (packet?.status === \"ready\") {"
+    ],
+    "removedSample": [
+      "\tconst blockedFact = packet.clinicalFacts.find(",
+      "\t\t(fact) => fact.tone === \"blocked\",",
+      "\tconst warningFact = packet.clinicalFacts.find(",
+      "\t\t(fact) => fact.tone === \"warning\",",
+      "\tconst missingArtifact = packet.missingArtifacts[0];",
+      "\tconst scenario = packet.activeScenarioSummary;",
+      "\tif (scenario?.status === \"warning\" && packet.status !== \"blocked\") {",
+      "\tif (packet.status === \"ready\") {",
+      "\tif (packet.status === \"warning\") {",
+      "\t\taction: packet.nextAction,"
+    ]
+  },
+  {
+    "file": "apps/web/src/ctPlanningImplantFitPanel.tsx",
+    "addedLinesCount": 20,
+    "removedLinesCount": 20,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 20,
+    "nullishCoalescing": 14,
+    "addedSample": [
+      "\t\t\t<article className={`ct-planning-implant-fit-summary ${plan?.status ?? \"\"}`}>",
+      "\t\t\t\t<strong>{plan?.score ?? 0}%</strong>",
+      "\t\t\t\t<p>{plan?.summaryLabel}</p>",
+      "\t\t\t\t\tширина {marginLabel(plan?.ridgeWidthMm ?? null)} (",
+      "\t\t\t\t\t{sourceLabel(plan?.widthSource)}) · высота{\" \"}",
+      "\t\t\t\t\t{marginLabel(plan?.boneHeightMm ?? null)} ({sourceLabel(plan?.heightSource)}) ·",
+      "\t\t\t\t\tроли {plan?.measurementRoleCount ?? 0}/{plan?.measurementSourceCount ?? 0}",
+      "\t\t\t\t{(plan?.candidates ?? []).map((candidate, idx) => (",
+      "\t\t\t\t\t\tclassName={`ct-planning-implant-fit-card ${candidate?.status ?? \"\"} ${candidate?.selected ? \"selected\" : \"\"}`}",
+      "\t\t\t\t\t\tkey={candidate?.id ?? `candidate-${idx}`}"
+    ],
+    "removedSample": [
+      "\t\t\t<article className={`ct-planning-implant-fit-summary ${plan.status}`}>",
+      "\t\t\t\t<strong>{plan.score}%</strong>",
+      "\t\t\t\t<p>{plan.summaryLabel}</p>",
+      "\t\t\t\t\tширина {marginLabel(plan.ridgeWidthMm)} (",
+      "\t\t\t\t\t{sourceLabel(plan.widthSource)}) · высота{\" \"}",
+      "\t\t\t\t\t{marginLabel(plan.boneHeightMm)} ({sourceLabel(plan.heightSource)}) ·",
+      "\t\t\t\t\tроли {plan.measurementRoleCount}/{plan.measurementSourceCount}",
+      "\t\t\t\t{plan.candidates.map((candidate) => (",
+      "\t\t\t\t\t\tclassName={`ct-planning-implant-fit-card ${candidate.status} ${candidate.selected ? \"selected\" : \"\"}`}",
+      "\t\t\t\t\t\tkey={candidate.id}"
+    ]
+  },
+  {
+    "file": "apps/web/src/ctPlanningImplantModelPanel.tsx",
+    "addedLinesCount": 38,
+    "removedLinesCount": 37,
+    "mapGuards": 4,
+    "splitGuards": 0,
+    "filterGuards": 6,
+    "optionalChaining": 36,
+    "nullishCoalescing": 12,
+    "addedSample": [
+      "\tconst cards = plan?.cards ?? [];",
+      "\tconst readyCount = cards.filter(",
+      "\t\t(card) => card?.status === \"ready\",",
+      "\tconst draftCards = cards.filter((card) => card?.status === \"draft\");",
+      "\tconst blockedCards = cards.filter((card) => card?.status === \"blocked\");",
+      "\tconst bridgeCards = cards.filter((card) => card?.requiresLocalBridge);",
+      "\tconst blockedTitles = (blockedCards ?? []).map((card) => card?.title ?? \"\").filter(Boolean).join(\", \");",
+      "\tconst bridgeTitles = (bridgeCards ?? []).map((card) => card?.title ?? \"\").filter(Boolean).join(\", \");",
+      "\tconst totalCount = cards.length;",
+      "\t\t\t<article className={`ct-planning-implant-summary ${plan?.status ?? \"\"}`}>"
+    ],
+    "removedSample": [
+      "\tconst readyCount = plan.cards.filter(",
+      "\t\t(card) => card.status === \"ready\",",
+      "\tconst draftCards = plan.cards.filter((card) => card.status === \"draft\");",
+      "\tconst blockedCards = plan.cards.filter((card) => card.status === \"blocked\");",
+      "\tconst bridgeCards = plan.cards.filter((card) => card.requiresLocalBridge);",
+      "\tconst blockedTitles = blockedCards.map((card) => card.title).join(\", \");",
+      "\tconst bridgeTitles = bridgeCards.map((card) => card.title).join(\", \");",
+      "\tconst totalCount = plan.cards.length;",
+      "\t\t\t<article className={`ct-planning-implant-summary ${plan.status}`}>",
+      "\t\t\t\t\t{plan.implantDiameterMm !== null && plan.implantLengthMm !== null"
+    ]
+  },
+  {
+    "file": "apps/web/src/ctPlanningTaskBoardPanel.tsx",
+    "addedLinesCount": 19,
+    "removedLinesCount": 19,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 19,
+    "nullishCoalescing": 9,
+    "addedSample": [
+      "\t\t\t\t\t<strong>{planningSnapshot?.readinessScore ?? 0}%</strong>",
+      "\t\t\t\t\t<p>{planningSnapshot?.taskSummaryLabel}</p>",
+      "\t\t\t\t\t<small>{planningSnapshot?.implantSummaryLabel}</small>",
+      "\t\t\t\t{(planningSnapshot?.routeCards ?? []).map((route, idx) => (",
+      "\t\t\t\t\t<article className={route?.state ?? \"\"} key={route?.id ?? `route-${idx}`}>",
+      "\t\t\t\t\t\t<span>{route?.label}</span>",
+      "\t\t\t\t\t\t<strong>{route?.title}</strong>",
+      "\t\t\t\t\t\t<p>{route?.detail}</p>",
+      "\t\t\t{(planningSnapshot?.cards ?? []).length > 0 ? (",
+      "\t\t\t\t\t{(planningSnapshot?.cards ?? []).map((task, idx) => ("
+    ],
+    "removedSample": [
+      "\t\t\t\t\t<strong>{planningSnapshot.readinessScore}%</strong>",
+      "\t\t\t\t\t<p>{planningSnapshot.taskSummaryLabel}</p>",
+      "\t\t\t\t\t<small>{planningSnapshot.implantSummaryLabel}</small>",
+      "\t\t\t\t{planningSnapshot.routeCards.map((route) => (",
+      "\t\t\t\t\t<article className={route.state} key={route.id}>",
+      "\t\t\t\t\t\t<span>{route.label}</span>",
+      "\t\t\t\t\t\t<strong>{route.title}</strong>",
+      "\t\t\t\t\t\t<p>{route.detail}</p>",
+      "\t\t\t{planningSnapshot.cards.length > 0 ? (",
+      "\t\t\t\t\t{planningSnapshot.cards.map((task) => ("
+    ]
+  },
+  {
+    "file": "apps/web/src/ctPlanningWorkflowPanel.tsx",
+    "addedLinesCount": 18,
+    "removedLinesCount": 18,
+    "mapGuards": 3,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 16,
+    "nullishCoalescing": 11,
+    "addedSample": [
+      "\tconst focusedPhaseId = plan?.selectedPhaseId ?? plan?.activePhaseId;",
+      "\t\t\t<article className={`ct-planning-workflow-summary ${plan?.status ?? \"\"}`}>",
+      "\t\t\t\t<strong>{plan?.score ?? 0}%</strong>",
+      "\t\t\t\t<p>{plan?.summaryLabel}</p>",
+      "\t\t\t\t<small>{plan?.nextAction}</small>",
+      "\t\t\t{plan?.selectedScenario ? (",
+      "\t\t\t\t\t{(plan.selectedScenario.issueTitles ?? []).length > 0 ? (",
+      "\t\t\t\t\t\t\t{(plan.selectedScenario.issueTitles ?? []).map((title) => (",
+      "\t\t\t\t{(plan?.phases ?? []).map((phase, idx) => (",
+      "\t\t\t\t\t\tclassName={`ct-planning-workflow-step ${phase?.status ?? \"\"} ${phase?.id === focusedPhaseId ? \"active\" : \"\"}`}"
+    ],
+    "removedSample": [
+      "\tconst focusedPhaseId = plan.selectedPhaseId ?? plan.activePhaseId;",
+      "\t\t\t<article className={`ct-planning-workflow-summary ${plan.status}`}>",
+      "\t\t\t\t<strong>{plan.score}%</strong>",
+      "\t\t\t\t<p>{plan.summaryLabel}</p>",
+      "\t\t\t\t<small>{plan.nextAction}</small>",
+      "\t\t\t{plan.selectedScenario ? (",
+      "\t\t\t\t\t{plan.selectedScenario.issueTitles.length > 0 ? (",
+      "\t\t\t\t\t\t\t{plan.selectedScenario.issueTitles.map((title) => (",
+      "\t\t\t\t{plan.phases.map((phase) => (",
+      "\t\t\t\t\t\tclassName={`ct-planning-workflow-step ${phase.status} ${phase.id === focusedPhaseId ? \"active\" : \"\"}`}"
+    ]
+  },
+  {
+    "file": "apps/web/src/pages/AnalyticsDashboardView.tsx",
+    "addedLinesCount": 23,
+    "removedLinesCount": 22,
+    "mapGuards": 1,
+    "splitGuards": 0,
+    "filterGuards": 3,
+    "optionalChaining": 19,
+    "nullishCoalescing": 14,
+    "addedSample": [
+      "\t\t\t\t\t\t\t\t\tvalue={(data?.kpis?.totalPatients ?? 0).toLocaleString(\"ru-RU\")}",
+      "\t\t\t\t\t\t\t\t\tvalue={formatRub(data?.kpis?.totalRevenue ?? 0)}",
+      "\t\t\t\t\t\t\t\t\tvalue={(data?.kpis?.totalAppointments ?? 0).toLocaleString(\"ru-RU\")}",
+      "\t\t\t\t\t\t\t\t\tvalue={formatRub(data?.kpis?.avgRevenuePerPatient ?? 0)}",
+      "\t\t\t\t\t\t\t\t\t<div className=\"analytics-chart-container\">",
+      "\t\t\t\t\t\t\t\t\t\t{(data?.cohortLtvJson ?? []).length > 0 ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\tdata={data?.cohortLtvJson as CohortChartRow[]}",
+      "\t\t\t\t\t\t\t\t\t<div className=\"analytics-chart-container\">",
+      "\t\t\t\t\t\t\t\t\t\t(data?.planFunnelJson ?? []).filter((x) => (x?.value ?? 0) > 0).length >",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\tdata={data?.planFunnelJson as NamedValueChartRow[]}"
+    ],
+    "removedSample": [
+      "\t\t\t\t\t\t\t\t\tvalue={data.kpis.totalPatients.toLocaleString(\"ru-RU\")}",
+      "\t\t\t\t\t\t\t\t\tvalue={formatRub(data.kpis.totalRevenue)}",
+      "\t\t\t\t\t\t\t\t\tvalue={data.kpis.totalAppointments.toLocaleString(\"ru-RU\")}",
+      "\t\t\t\t\t\t\t\t\tvalue={formatRub(data.kpis.avgRevenuePerPatient)}",
+      "\t\t\t\t\t\t\t\t\t<div className=\"widget-chart-container\">",
+      "\t\t\t\t\t\t\t\t\t\t{data.cohortLtvJson && data.cohortLtvJson.length > 0 ? (",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\tdata={data.cohortLtvJson as CohortChartRow[]}",
+      "\t\t\t\t\t\t\t\t\t<div className=\"widget-chart-container\">",
+      "\t\t\t\t\t\t\t\t\t\tdata.planFunnelJson.filter((x) => x.value > 0).length >",
+      "\t\t\t\t\t\t\t\t\t\t\t\t\tdata={data.planFunnelJson as NamedValueChartRow[]}"
+    ]
+  },
+  {
+    "file": "apps/web/src/pages/DoctorPayoutDashboard.tsx",
+    "addedLinesCount": 5,
+    "removedLinesCount": 5,
+    "mapGuards": 2,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 5,
+    "nullishCoalescing": 5,
+    "addedSample": [
+      "\t\treturn (report?.rows ?? []).reduce(",
+      "\t\t\t\treport.isEmpty || (report?.rows ?? []).length === 0 ? (",
+      "\t\t\t\t\t\t\t\t\t{(report?.rows ?? []).map((row) => (",
+      "\t\t\t\t\t\t{(report?.limitations ?? []).length > 0 ? (",
+      "\t\t\t\t\t\t\t\t{(report?.limitations ?? []).map((limitation) => ("
+    ],
+    "removedSample": [
+      "\t\treturn report.rows.reduce(",
+      "\t\t\t\treport.isEmpty || report.rows.length === 0 ? (",
+      "\t\t\t\t\t\t\t\t\t{report.rows.map((row) => (",
+      "\t\t\t\t\t\t{report.limitations.length > 0 ? (",
+      "\t\t\t\t\t\t\t\t{report.limitations.map((limitation) => ("
+    ]
+  },
+  {
+    "file": "apps/web/src/styles/dente-redesign.css",
+    "addedLinesCount": 2,
+    "removedLinesCount": 1,
+    "mapGuards": 0,
+    "splitGuards": 0,
+    "filterGuards": 0,
+    "optionalChaining": 0,
+    "nullishCoalescing": 0,
+    "addedSample": [
+      "\theight: 100vh;",
+      "\theight: 100dvh;"
+    ],
+    "removedSample": [
+      "\tmin-height: 100vh;"
+    ]
+  },
+  {
+    "file": "apps/web/src/useSettingsDerivations.tsx",
+    "addedLinesCount": 14,
+    "removedLinesCount": 14,
+    "mapGuards": 0,
+    "splitGuards": 0,
+    "filterGuards": 4,
+    "optionalChaining": 7,
+    "nullishCoalescing": 11,
+    "addedSample": [
+      "\t\t(typedMigrationAutopilotSources ?? []).filter((source) =>",
+      "\t\t\tmigrationCandidatePreviewReady(source?.candidate),",
+      "\t\t(typedMigrationDiscoveryCandidates ?? []).filter(migrationCandidatePreviewReady)",
+      "\t\t(typedBrowserMigrationDiscovery?.candidates?.filter(",
+      "\t\t(typedMigrationDiscoveryCandidates ?? []).length +",
+      "\t\t(typedBrowserMigrationDiscovery?.candidates?.length ?? 0) +",
+      "\t\t(typedSmartImportPreview?.legacySources?.length ?? 0);",
+      "\t\t(typedMigrationAutopilotSources ?? []).length || migrationPreAutopilotSourceCount;",
+      "\t\t? (typedSmartImportPreview?.patientPreview?.readyRows ?? 0) +",
+      "\t\t\t(typedSmartImportPreview?.imagingPreview?.readyRows ?? 0)"
+    ],
+    "removedSample": [
+      "\t\ttypedMigrationAutopilotSources.filter((source) =>",
+      "\t\t\tmigrationCandidatePreviewReady(source.candidate),",
+      "\t\ttypedMigrationDiscoveryCandidates.filter(migrationCandidatePreviewReady)",
+      "\t\t(typedBrowserMigrationDiscovery?.candidates.filter(",
+      "\t\ttypedMigrationDiscoveryCandidates.length +",
+      "\t\t(typedBrowserMigrationDiscovery?.candidates.length ?? 0) +",
+      "\t\t(typedSmartImportPreview?.legacySources.length ?? 0);",
+      "\t\ttypedMigrationAutopilotSources.length || migrationPreAutopilotSourceCount;",
+      "\t\t? typedSmartImportPreview.patientPreview.readyRows +",
+      "\t\t\ttypedSmartImportPreview.imagingPreview.readyRows"
+    ]
+  },
+  {
+    "file": "apps/web/src/utils/routeUtils.ts",
+    "addedLinesCount": 3,
+    "removedLinesCount": 2,
+    "mapGuards": 0,
+    "splitGuards": 2,
+    "filterGuards": 2,
+    "optionalChaining": 0,
+    "nullishCoalescing": 1,
+    "addedSample": [
+      "\tconst parts = hash.split(\"/\").filter(Boolean);",
+      "\tconst view = parts[0] ?? \"\";",
+      "\tconst hashParts = window.location.hash.replace(\"#\", \"\").split(\"/\").filter(Boolean);"
+    ],
+    "removedSample": [
+      "\tconst view = hash.split(\"/\")[0] ?? \"\";",
+      "\tconst hashParts = window.location.hash.replace(\"#\", \"\").split(\"/\");"
+    ]
+  }
+]

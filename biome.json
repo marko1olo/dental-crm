@@ -12,28 +12,28 @@
 			"*.ts",
 			"*.tsx",
 			"*.json",
-			"!**/node_modules/**",
-			"!**/.postgres/**",
-			"!**/.data/**",
-			"!**/dist/**",
-			"!**/build/**",
-			"!**/.next/**",
-			"!**/coverage/**",
-			"!**/.agents/**",
-			"!**/tmp/**",
-			"!**/.tmp/**",
-			"!**/scratch/**",
-			"!**/artifacts/**",
-			"!**/screenshots/**",
-			"!**/uploads/**",
-			"!**/pglite-data/**",
-			"!**/temp-test-db/**",
-			"!**/appDataDir/**",
-			"!**/local-secrets/**",
-			"!**/.dente-*/**",
-			"!**/playwright-report/**",
-			"!**/test-results/**",
-			"!**/dente-db/**",
+			"!**/node_modules",
+			"!**/.postgres",
+			"!**/.data",
+			"!**/dist",
+			"!**/build",
+			"!**/.next",
+			"!**/coverage",
+			"!**/.agents",
+			"!**/tmp",
+			"!**/.tmp",
+			"!**/scratch",
+			"!**/artifacts",
+			"!**/screenshots",
+			"!**/uploads",
+			"!**/pglite-data",
+			"!**/temp-test-db",
+			"!**/appDataDir",
+			"!**/local-secrets",
+			"!**/.dente-*",
+			"!**/playwright-report",
+			"!**/test-results",
+			"!**/dente-db",
 			"!**/package-lock.json",
 			"!**/knip_report*.txt",
 			"!**/madge_report*.txt",
@@ -54,5 +54,47 @@
 				"noExplicitAny": "warn"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"scripts/**",
+				"*.cjs",
+				"*.mjs",
+				"*.js",
+				"test.ts",
+				"fix-*.cjs",
+				"find_*.cjs",
+				"patch-*.cjs",
+				"debug_*.cjs",
+				"e2e*.cjs",
+				"packages/shared/src/tests/**"
+			],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noTemplateCurlyInString": "off",
+						"useIterableCallbackReturn": "off",
+						"noAssignInExpressions": "off",
+						"noControlCharactersInRegex": "off",
+						"noExplicitAny": "off"
+					},
+					"style": {
+						"useNodejsImportProtocol": "off",
+						"useTemplate": "off"
+					},
+					"complexity": {
+						"noUselessEscapeInRegex": "off",
+						"useOptionalChain": "off",
+						"noUselessStringRaw": "off"
+					},
+					"correctness": {
+						"noUnusedVariables": "off",
+						"noUnusedImports": "off",
+						"noUnusedFunctionParameters": "off"
+					}
+				}
+			}
+		}
+	]
 }

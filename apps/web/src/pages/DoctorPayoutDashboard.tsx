@@ -496,7 +496,7 @@ export function DoctorPayoutDashboard() {
 	 */
 	const ownVisible = useMemo(() => {
 		if (!report) return { revenueRub: 0, paymentCount: 0 };
-		return report.rows.reduce(
+		return (report?.rows ?? []).reduce(
 			(sum, row) => ({
 				revenueRub: sum.revenueRub + row.revenueRub,
 				paymentCount: sum.paymentCount + row.paymentCount,
@@ -564,7 +564,7 @@ export function DoctorPayoutDashboard() {
 			) : null}
 
 			{report ? (
-				report.isEmpty || report.rows.length === 0 ? (
+				report.isEmpty || (report?.rows ?? []).length === 0 ? (
 					<p className="ops-empty">
 						{isOwnScope
 							? `За ${monthLabel} по вашим приёмам расчёта нет: ни оплат, ни списаний материалов.`
@@ -590,7 +590,7 @@ export function DoctorPayoutDashboard() {
 									</tr>
 								</thead>
 								<tbody>
-									{report.rows.map((row) => (
+									{(report?.rows ?? []).map((row) => (
 										<tr key={row.doctorUserId}>
 											<td className="ops-strong" data-label="Врач">
 												{row.doctorName}
@@ -893,9 +893,9 @@ export function DoctorPayoutDashboard() {
 							{report.methodNote}
 						</p>
 
-						{report.limitations.length > 0 ? (
+						{(report?.limitations ?? []).length > 0 ? (
 							<ul className="ops-bars">
-								{report.limitations.map((limitation) => (
+								{(report?.limitations ?? []).map((limitation) => (
 									<li className="ops-hint" key={limitation}>
 										{limitation}
 									</li>

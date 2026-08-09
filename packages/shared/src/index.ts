@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export * from "./money.js";
+
 import {
 	moneyRubSchema,
 	nonNegativeMoneyRubSchema,
@@ -11308,18 +11309,27 @@ export const messageTemplateCatalogSchema = z.object({
 	isActive: z.boolean(),
 	createdAt: z.any().optional(), // Can be string or Date, handle flexibly
 });
-export type MessageTemplateCatalog = z.infer<typeof messageTemplateCatalogSchema>;
+export type MessageTemplateCatalog = z.infer<
+	typeof messageTemplateCatalogSchema
+>;
 
-export const createMessageTemplateCatalogSchema = messageTemplateCatalogSchema.pick({
-	title: true,
-	channel: true,
-	intent: true,
-	templateText: true,
-	variables: true,
-}).extend({
-	isActive: z.boolean().optional(),
-});
-export type CreateMessageTemplateCatalogInput = z.infer<typeof createMessageTemplateCatalogSchema>;
+export const createMessageTemplateCatalogSchema = messageTemplateCatalogSchema
+	.pick({
+		title: true,
+		channel: true,
+		intent: true,
+		templateText: true,
+		variables: true,
+	})
+	.extend({
+		isActive: z.boolean().optional(),
+	});
+export type CreateMessageTemplateCatalogInput = z.infer<
+	typeof createMessageTemplateCatalogSchema
+>;
 
-export const updateMessageTemplateCatalogSchema = createMessageTemplateCatalogSchema.partial();
-export type UpdateMessageTemplateCatalogInput = z.infer<typeof updateMessageTemplateCatalogSchema>;
+export const updateMessageTemplateCatalogSchema =
+	createMessageTemplateCatalogSchema.partial();
+export type UpdateMessageTemplateCatalogInput = z.infer<
+	typeof updateMessageTemplateCatalogSchema
+>;

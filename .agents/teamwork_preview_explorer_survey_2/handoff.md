@@ -1,76 +1,107 @@
-# Handoff Report — E2E Playwright Testing & Infra Survey
+# Handoff Report — UI/UX Architecture & 4-State Theme Survey
 
+**Agent**: Survey Explorer 2  
 **Working Directory**: `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2`  
-**Role**: E2E Playwright Testing & Infra Explorer  
-**Date**: 2026-08-08  
-**Analysis File**: `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2\analysis.md`  
+**Date**: 2026-08-09  
 
 ---
 
 ## 1. Observation
 
-Direct code observations from repository inspection:
-
-* **Playwright Config Path**: `C:\Clinic_MVP\dental-crm\apps\web\playwright.config.ts`
-  * Lines 5, 24, 39–44:
-    ```typescript
-    testDir: './tests/e2e',
-    baseURL: 'http://127.0.0.1:5173',
-    webServer: {
-      command: 'npm run dev',
-      url: 'http://127.0.0.1:5173',
-      reuseExistingServer: !process.env.CI,
-    }
+### 1.1 Theme Toggle & State Management Architecture
+- **State Store Location**: `apps/web/src/store/themeStore.ts`
+  - Defines `ThemeMode`: `"auto" | "light" | "dark" | "night"`.
+  - Persists selected mode to `localStorage.setItem("dente_theme_mode", mode)`.
+  - Attaches store to window object at runtime: `window.__useThemeStore = useThemeStore;` (lines 40-44).
+- **DOM Theme Application**: `apps/web/src/lib/themeClasses.ts`
+  - Function `applyThemeToRoot(root, resolved)` updates the DOM (lines 62-69):
+    ```ts
+    root.dataset.theme = resolved.theme; // 'light' | 'dark' | 'night'
+    root.classList.toggle("dark", resolved.darkClass);
+    root.classList.toggle("light", resolved.lightClass);
+    root.style.colorScheme = resolved.colorScheme;
     ```
-* **E2E Spec Files**:
-  * `apps/web/tests/e2e/smoke.spec.ts` (220 lines): Implements mocked API endpoints (`/api/auth/user/me`, `/api/dashboard`, `/api/settings/preferences`, etc.), injects auth tokens before page load, navigates hash routes (`#schedule`, `#patients`, `#settings`, `#finance`, `#imaging`), intercepts `pageerror` and `console` errors, and checks for Error Boundary fallbacks (`expect(bodyText).not.toContain("Something went wrong");`).
-  * `apps/web/tests/e2e/documents-lifecycle.spec.ts` (22 lines): Tests navigation to Patients tab, selecting patient row, and navigating to Documents tab.
-  * `apps/web/tests/smoke.spec.ts` (43 lines): Smoke test for main page load and console error tracking.
-* **Standalone CDP Audit & Screenshot Scripts**:
-  * `scripts/playwright-audit.cjs` (362 lines): CDP Chromium script with inline API mocks, localStorage token injection, boot unlock password filling (`dente123`), Staff PIN entry (`0000`), and multi-tab desktop/mobile screenshot generation.
-  * `scripts/ops-panels-shots.mjs` (1369 lines): Heavyweight operational panels screenshot engine for Light/Dark/Night themes with web server availability check at `http://127.0.0.1:5173`.
-  * `scripts/dente-redesign-shots.mjs` (752 lines): 11-view visual audit script capturing 4-state visual matrix (Desktop Light, Desktop Dark, Mobile Light, Mobile Dark).
-  * `scripts/lib/shot-audit.mjs` (376 lines): Common security & verification module enforcing dataset theme matching, SHA-256 palette fingerprinting, byte size minimum (`MIN_PLAUSIBLE_SHOT_BYTES = 20_000`), and MD5 duplicate detection.
-* **Authentication Storage Keys**:
-  * `apps/web/src/lib/safeLocalStorage.ts`: `DENTE_CLINIC_TOKEN_KEY = "dente_clinic_token"`, `DENTE_STAFF_TOKEN_KEY = "dente_staff_token"`.
-* **Database Seeding & Auth Token Generator**:
-  * `apps/api/src/scripts/seedOpsScreenshotDemo.ts`: Seeds demo org `d0000000-0000-4000-8000-00000000d001` and writes JWT tokens to `.ops-shot-tokens.json`.
+- **Theme Lifecycle Controller**: `apps/web/src/AppShell.tsx`
+  - `ThemeController` component subscribes to `useThemeStore` changes and `window.matchMedia("(prefers-color-scheme: dark)")` for auto mode, updating `document.documentElement` dynamically (lines 11-34).
+- **Tailwind CSS Integration**: `apps/web/src/styles/tailwind.css` & `apps/web/src/styles/dente-redesign.css`
+  - Tokens and color variables mapped to `:root`, `[data-theme="light"]`, `[data-theme="dark"]`, and `[data-theme="night"]` (lines 11-200 in `dente-redesign.css`).
+  - Tailwind `dark:` variant is configured to match `data-theme="dark"` and `data-theme="night"`.
+
+### 1.2 View & Navigation Registry
+- **Route Registry**: `apps/web/src/workspaceShell.tsx` (lines 90-105)
+  - Exported array `appViews`: `["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "analytics", "communications", "inventory", "scanner", "leads", "settings", "marketing"]`.
+- **View Container Selectors**:
+  - `#shift` — Shift Dashboard (`ShiftView.tsx`)
+  - `#schedule` — Appointment Schedule (`ScheduleView.tsx`)
+  - `#patients` — Patients Registry & Cockpit (`PatientsView.tsx`, `PatientCockpit`)
+  - `#imaging` — Imaging & DICOM 2D/3D (`ImagingView.tsx`)
+  - `#visit` — Active Visit Workspace (`VisitView.tsx`, `VisitNoteDraftPanel.tsx`)
+  - `#documents` — Legal & Medical Documents (`DocumentsView.tsx`)
+  - `#finance` — Billing & Financial Ledger (`FinanceView.tsx`)
+  - `#analytics` — Analytics & KPIs (`AnalyticsDashboardView.tsx`)
+  - `#communications` — Messengers & Call Console (`CommunicationsView.tsx`)
+  - `#inventory` — Materials & Sterilization Journal (`InventoryView.tsx`)
+  - `#scanner` — AI Document Ingestion (`ScannerView.tsx`)
+  - `#leads` — Patient Acquisition Kanban (`LeadsKanbanView.tsx`)
+  - `#settings` — Clinic Settings & Configuration (`SettingsView.tsx`)
+  - `#marketing` — Marketing & Promotions (`MarketingView.tsx`)
+
+### 1.3 Modal Dialogs & Overlay Windows Inventory
+- **Appointment Editor Modal**: `apps/web/src/components/schedule/NewAppointmentForm.tsx` (Triggered from `#schedule`)
+- **Sberbank Terminal Payment Modal**: `apps/web/src/components/finance/SberbankTerminalPaymentModal.tsx` (Triggered from `#finance` payment capture)
+- **NDFL Tax Deduction Modal**: `apps/web/src/components/documents/NdflCalculatorModal.tsx` (Triggered from `#documents`)
+- **Tooth Details & History Modal**: `apps/web/src/components/odontogram/ToothDetailsModal.tsx` (Triggered from `#visit` / odontogram)
+- **Waitlist Drawer / Slide-Over**: `apps/web/src/components/schedule/WaitlistDrawer.tsx` (Triggered from `#schedule` top bar)
+- **Command Palette (`Ctrl+K`)**: `apps/web/src/components/CommandPalette.tsx` (Global modal)
+- **Omnibar Search**: `apps/web/src/components/Omnibar.tsx` (Global topbar search overlay)
+- **Voice Dictation Overlay**: `apps/web/src/components/odontogram/VoiceDictationOverlay.tsx` & `VoiceAssistantUI.tsx` (Active during dictation)
+- **Staff PIN Pad Lock Screen**: `apps/web/src/components/auth/StaffPinPad.tsx` (Lock session action)
+- **Auth Hub Modal/Screen**: `apps/web/src/components/auth/AuthHub.tsx`, `ClinicLogin.tsx`
+- **UKEP Digital Signature Dialog**: `apps/web/src/components/documents/DocumentUkepSignButton.tsx`, `CryptoProSigner.tsx`
+- **Migration Wizard Dialog**: `apps/web/src/components/settings/MigrationWizard.tsx` (Settings -> Imports)
+- **Patient Duplicate Merge Dialog**: `apps/web/src/components/crm/PatientDuplicateMergeQueuesWidget.tsx` (Patients -> CRM)
+- **Lab Orders Drawer**: `apps/web/src/components/schedule/LabOrdersPanel.tsx`
+- **3D DICOM Workbench Fullscreen Viewer**: `apps/web/src/components/dicom/Cornerstone3DViewer.tsx`
 
 ---
 
 ## 2. Logic Chain
 
-1. **Test Infrastructure Dualism**: The project supports two execution modes for browser testing:
-   - *Mocked API Mode*: Used by Playwright test specs (`smoke.spec.ts`, `playwright-audit.cjs`) via `page.route("**/api/**")`. This allows instant unit/smoke testing of frontend UI components without database dependencies.
-   - *Live Integration Mode*: Used by visual proof scripts (`ops-panels-shots.mjs`, `dente-redesign-shots.mjs`). Requires live Fastify API server, PostgreSQL 18 database, and seeded demo tokens from `seedOpsScreenshotDemo.ts`.
-2. **Authentication Flow**:
-   - The web client checks `localStorage` for `dente_clinic_token` and `dente_staff_token` on startup.
-   - If missing, the app shows the login form (`/api/auth/login`) or boot unlock screen (`.boot-unlock-form input[type="password"]`).
-   - Playwright specs bypass authentication latency by invoking `page.addInitScript()` before page navigation to inject valid tokens directly into `localStorage`.
-3. **Primary Panel Navigation**:
-   - Navigation uses hash routes (`#schedule`, `#patients`, `#finance`, `#visit`, `#shift`, `#imaging`, `#documents`, `#analytics`, `#communications`, `#settings`, `#marketing`).
-   - Playwright sets `window.location.hash` or clicks navigation links (`a[href="#schedule"]`), then waits for panel-specific container selectors (`VIEW_CONTAINERS`) and checks `[aria-busy="true"]` removal.
-4. **Error & Exception Monitoring**:
-   - JS runtime crashes are caught via `page.on('pageerror')`.
-   - Browser console errors are caught via `page.on('console')`.
-   - React Error Boundary crashes are detected by checking `body` inner text for strings like `"Something went wrong"` or `"Что-то пошло не так"`.
-5. **Visual Proof Verification**:
-   - Screenshot scripts capture the 4-state visual matrix (Desktop/Mobile x Light/Dark).
-   - Strict guards prevent false positives: `assertThemeBeforeShot` validates CSS variable resolution and palette SHA-256 fingerprints, `MIN_PLAUSIBLE_SHOT_BYTES` blocks <20KB empty screens, and MD5 hashing ensures no duplicate/cloned screens.
+1. **Routing & Navigation Mechanics**:  
+   The application uses hash-based routing (`window.location.hash`). `AppHelpers.viewFromHash()` extracts the hash key (e.g. `#schedule`) and matches it against `appViews`. Changing the hash activates the target lazy-loaded React component inside `<Suspense>`.
+
+2. **Deterministic Theme Switching in Tests**:  
+   Because `themeStore` is exposed as `window.__useThemeStore`, Playwright E2E tests can programmatically trigger theme changes without relying on UI clicks:
+   ```js
+   await page.evaluate((mode) => window.__useThemeStore.getState().setThemeMode(mode), "dark");
+   await page.waitForFunction(() => document.documentElement.dataset.theme === "dark");
+   ```
+   Alternatively, UI interaction can click `[role="toolbar"].theme-switcher button` with label "День" (`light`), "Ночь" (`dark`), or "Тепло" (`night`).
+
+3. **4-State Visual Audit Requirements**:  
+   To achieve 4-state visual proof (Mobile Light, Mobile Dark, PC Light, PC Dark), every target screen and dialog must be rendered under two viewports:
+   - **PC Desktop Viewport**: `1440x900` (or `1920x1080`)
+   - **Mobile Viewport**: `390x844` (or `375x812`)  
+   Combined with two primary theme modes:
+   - **Light Mode**: `data-theme="light"`
+   - **Dark Mode**: `data-theme="dark"`
+
+4. **Breakpoint Styling Behavior**:  
+   - At `< 1140px`, `.sidebar` transforms into collapsed mode (`data-collapsed="true"`), hiding labels and showing short captions or bottom navigation bar (`WorkspaceActionsMount`).
+   - At `< 768px`, grids collapse into single-column vertical stacks, table columns hide, and drawer dialogs occupy full width (`w-full`).
 
 ---
 
 ## 3. Caveats
 
-* **Network Idle Caution**: `waitUntil: "networkidle"` should NOT be used in Playwright specs for this application because active polling background tasks keep network traffic open indefinitely. Specs must use `waitUntil: "load"` or `waitUntil: "domcontentloaded"` combined with explicit selector waits.
-* **Database State for Live Tests**: Live screenshot scripts (`ops-panels-shots.mjs`) require `.ops-shot-tokens.json` generated by `seedOpsScreenshotDemo.ts` with `DENTAL_ALLOW_DESTRUCTIVE_DB_RESET=YES`.
-* **Read-Only Scope**: This survey was conducted in read-only investigation mode without executing live server state changes or modifying application source code.
+- **Night Theme Variant**: `data-theme="night"` is available in `useThemeStore` (warm brown/amber tones). While the standard audit requests 4 states (Mobile/PC x Light/Dark), testing Night mode is recommended for complete coverage.
+- **Data Pre-seeding**: Views like `#schedule` or `#visit` render empty fallback panels if no appointments or active patients exist in the state. Playwright test runs should run against seeded API state or invoke `seedOpsScreenshotDemo.ts`.
 
 ---
 
 ## 4. Conclusion
 
-The Playwright testing and browser automation infrastructure for DENTE CRM is robust, well-structured, and fortified with defensive quality gates. Authentication, hash routing, panel container ready-states, console error interception, and 4-state screenshot proofing are fully documented and ready for E2E verification tasks.
+All 14 main panels and 15 major modal dialogs/drawers have been identified and mapped to their exact file locations, selectors, and routing targets. The theme toggling mechanism via `useThemeStore` (`window.__useThemeStore`) and `data-theme` attribute on `document.documentElement` is verified and ready for 4-state visual auditing (Mobile Light, Mobile Dark, PC Light, PC Dark).
 
 ---
 
@@ -78,16 +109,15 @@ The Playwright testing and browser automation infrastructure for DENTE CRM is ro
 
 To independently verify these findings:
 
-1. **Verify Playwright Config**:
+1. **Type Check**:
    ```powershell
-   Get-Content C:\Clinic_MVP\dental-crm\apps\web\playwright.config.ts
+   npm run typecheck -w @dental/web
    ```
-2. **Execute Playwright E2E Smoke Spec (Mocked API Mode)**:
-   ```powershell
-   cd C:\Clinic_MVP\dental-crm\apps\web
-   npx playwright test tests/e2e/smoke.spec.ts
+2. **Verify Theme Store Globals**:
+   In Chrome DevTools or Playwright context:
+   ```js
+   window.__useThemeStore.getState().setThemeMode('dark');
+   console.assert(document.documentElement.dataset.theme === 'dark');
    ```
-3. **Inspect Analysis Report**:
-   ```powershell
-   Get-Content C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2\analysis.md
-   ```
+3. **Verify Route Panel Containers**:
+   Inspect mounted DOM when navigating to `#schedule`, `#patients`, `#finance` to confirm elements matching `#schedule`, `#patients`, `#finance` exist.

@@ -55,13 +55,15 @@ export const payerInnErrorText =
 
 /** Ссылка на проверку чека: пустая допустима, непустая обязана быть адресом. */
 export function isFiscalReceiptUrlInvalid(value: string): boolean {
-	const trimmed = value.trim();
+	if (typeof value !== "string") return false;
+	const trimmed = (value ?? "").trim();
 	return Boolean(trimmed) && !/^https?:\/\/\S+$/i.test(trimmed);
 }
 
 /** ИНН: пустой допустим, непустой — строго 10 или 12 цифр. */
 export function isPayerInnInvalid(value: string): boolean {
-	const trimmed = value.trim();
+	if (typeof value !== "string") return false;
+	const trimmed = (value ?? "").trim();
 	return Boolean(trimmed) && !/^\d{10}$|^\d{12}$/.test(trimmed);
 }
 
@@ -134,8 +136,11 @@ const taxDeductionRequirements: readonly {
  * Пустой список означает, что чек полон.
  */
 export function missingTaxDeductionSteps(fields: TaxDeductionFields): string[] {
-	return taxDeductionRequirements
-		.filter((requirement) => !fields[requirement.key].trim())
+	return (taxDeductionRequirements ?? [])
+		.filter((requirement) => {
+			const val = fields?.[requirement.key];
+			return typeof val !== "string" || !val.trim();
+		})
 		.map((requirement) => `для вычета укажите ${requirement.step}`);
 }
 
@@ -149,7 +154,10 @@ export function missingTaxDeductionSteps(fields: TaxDeductionFields): string[] {
 export function missingTaxDeductionLabels(
 	fields: TaxDeductionFields,
 ): string[] {
-	return taxDeductionRequirements
-		.filter((requirement) => !fields[requirement.key].trim())
+	return (taxDeductionRequirements ?? [])
+		.filter((requirement) => {
+			const val = fields?.[requirement.key];
+			return typeof val !== "string" || !val.trim();
+		})
 		.map((requirement) => requirement.label);
 }

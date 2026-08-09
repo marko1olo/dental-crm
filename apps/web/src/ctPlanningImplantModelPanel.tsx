@@ -9,15 +9,20 @@ type CtPlanningImplantModelPanelProps = {
 };
 
 function buildLocal3DOperatorSummary(plan: CtPlanningLocal3DReadinessPlan) {
-	const readyCount = plan.cards.filter(
-		(card) => card.status === "ready",
-	).length;
-	const draftCards = plan.cards.filter((card) => card.status === "draft");
-	const blockedCards = plan.cards.filter((card) => card.status === "blocked");
-	const bridgeCards = plan.cards.filter((card) => card.requiresLocalBridge);
-	const blockedTitles = blockedCards.map((card) => card.title).join(", ");
-	const bridgeTitles = bridgeCards.map((card) => card.title).join(", ");
-	const totalCount = plan.cards.length;
+	const cards = plan?.cards ?? [];
+	const readyCount = cards.filter((card) => card?.status === "ready").length;
+	const draftCards = cards.filter((card) => card?.status === "draft");
+	const blockedCards = cards.filter((card) => card?.status === "blocked");
+	const bridgeCards = cards.filter((card) => card?.requiresLocalBridge);
+	const blockedTitles = (blockedCards ?? [])
+		.map((card) => card?.title ?? "")
+		.filter(Boolean)
+		.join(", ");
+	const bridgeTitles = (bridgeCards ?? [])
+		.map((card) => card?.title ?? "")
+		.filter(Boolean)
+		.join(", ");
+	const totalCount = cards.length;
 
 	if (blockedCards.length > 0) {
 		return {
@@ -68,40 +73,40 @@ export function CtPlanningImplantModelPanel({
 			data-testid="ct-planning-implant-board"
 			aria-label="Моделирование импланта и хирургической втулки"
 		>
-			<article className={`ct-planning-implant-summary ${plan.status}`}>
+			<article className={`ct-planning-implant-summary ${plan?.status ?? ""}`}>
 				<span>Модель импланта</span>
 				<strong>
-					{plan.implantDiameterMm !== null && plan.implantLengthMm !== null
-						? `${plan.implantDiameterMm} x ${plan.implantLengthMm} мм`
+					{plan?.implantDiameterMm !== null && plan?.implantLengthMm !== null
+						? `${plan?.implantDiameterMm} x ${plan?.implantLengthMm} мм`
 						: "нужен размер"}
 				</strong>
 				<p>
-					{plan.hasAxis
-						? `Апекс: ${plan.apexPointLabel}.`
+					{plan?.hasAxis
+						? `Апекс: ${plan?.apexPointLabel}.`
 						: "Выберите типоразмер и поставьте ось двумя точками."}
 				</p>
-				<small>{plan.modelingLabel}</small>
+				<small>{plan?.modelingLabel}</small>
 			</article>
 			<div className="ct-planning-implant-grid">
-				{plan.cards.map((card) => (
+				{(plan?.cards ?? []).map((card) => (
 					<article
-						className={`ct-planning-implant-card ${card.status}`}
-						key={card.id}
+						className={`ct-planning-implant-card ${card?.status ?? ""}`}
+						key={card?.id}
 					>
-						<span>{card.title}</span>
-						<strong>{card.value}</strong>
-						<p>{card.detail}</p>
-						<small>{card.nextAction}</small>
+						<span>{card?.title}</span>
+						<strong>{card?.value}</strong>
+						<p>{card?.detail}</p>
+						<small>{card?.nextAction}</small>
 					</article>
 				))}
 			</div>
-			{plan.warnings.length > 0 ? (
+			{(plan?.warnings ?? []).length > 0 ? (
 				<section
 					className="ct-planning-implant-warnings"
 					aria-label="Предупреждения по модели импланта"
 				>
 					<span>Контроль</span>
-					<p>{plan.warnings.join(" · ")}</p>
+					<p>{(plan?.warnings ?? []).join(" · ")}</p>
 				</section>
 			) : null}
 			{local3DReadinessPlan ? (
@@ -112,9 +117,9 @@ export function CtPlanningImplantModelPanel({
 				>
 					<article className="ct-planning-implant-summary draft">
 						<span>Локальный 3D-кейс</span>
-						<strong>{local3DReadinessPlan.recommendedTargetLabel}</strong>
-						<p>{local3DReadinessPlan.outputBoundarySummary}</p>
-						<small>{local3DReadinessPlan.bridgeStatusLabel}</small>
+						<strong>{local3DReadinessPlan?.recommendedTargetLabel}</strong>
+						<p>{local3DReadinessPlan?.outputBoundarySummary}</p>
+						<small>{local3DReadinessPlan?.bridgeStatusLabel}</small>
 					</article>
 					<div className="ct-planning-implant-grid">
 						{local3DOperatorSummary ? (
@@ -128,16 +133,16 @@ export function CtPlanningImplantModelPanel({
 								<small>{local3DOperatorSummary.nextAction}</small>
 							</article>
 						) : null}
-						{local3DReadinessPlan.cards.map((card) => (
+						{(local3DReadinessPlan?.cards ?? []).map((card) => (
 							<article
-								className={`ct-planning-implant-card ${card.status}`}
-								key={card.id}
-								data-local-3d-role={card.id}
+								className={`ct-planning-implant-card ${card?.status ?? ""}`}
+								key={card?.id}
+								data-local-3d-role={card?.id}
 							>
-								<span>{card.title}</span>
-								<strong>{card.value}</strong>
-								<p>{card.detail}</p>
-								<small>{card.nextAction}</small>
+								<span>{card?.title}</span>
+								<strong>{card?.value}</strong>
+								<p>{card?.detail}</p>
+								<small>{card?.nextAction}</small>
 							</article>
 						))}
 					</div>
@@ -147,9 +152,9 @@ export function CtPlanningImplantModelPanel({
 					>
 						<span>Метаданные</span>
 						<p>
-							{local3DReadinessPlan.warnings.length
-								? local3DReadinessPlan.warnings.join(" · ")
-								: local3DReadinessPlan.nextAction}
+							{(local3DReadinessPlan?.warnings ?? []).length
+								? (local3DReadinessPlan?.warnings ?? []).join(" · ")
+								: local3DReadinessPlan?.nextAction}
 						</p>
 					</section>
 				</section>

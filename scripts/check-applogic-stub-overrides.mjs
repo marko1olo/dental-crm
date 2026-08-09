@@ -41,9 +41,9 @@
  * защищён структурно.
  */
 
-import { readFileSync, existsSync } from "node:fs";
-import { join, dirname, resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { dirname, join, resolve } from "node:path";
 
 const require_ = createRequire(import.meta.url);
 const ts = require_("typescript");
@@ -163,7 +163,8 @@ function exportedKeysOfHookModule(file, hookName) {
 
 const entrySource = parse(ENTRY);
 const lineOf = (node) =>
-	entrySource.getLineAndCharacterOfPosition(node.getStart(entrySource)).line + 1;
+	entrySource.getLineAndCharacterOfPosition(node.getStart(entrySource)).line +
+	1;
 
 /*
  * Сопоставление «имя переменной -> файл модуля». Строится по объявлениям вида
@@ -319,7 +320,10 @@ const visitReturns = (node) => {
 			ts.isSpreadAssignment(p),
 		);
 		if (spreads.length > 0) {
-			if (!target || node.expression.properties.length > target.properties.length)
+			if (
+				!target ||
+				node.expression.properties.length > target.properties.length
+			)
 				target = node.expression;
 		}
 	}
@@ -391,7 +395,8 @@ if (unresolved.length > 0) {
 	console.error(
 		"Не удалось сопоставить раскрытие с модулем — гейт слеп на этих местах:",
 	);
-	for (const u of unresolved) console.error(`  ${ENTRY}:${u.line}  ...${u.varName}`);
+	for (const u of unresolved)
+		console.error(`  ${ENTRY}:${u.line}  ...${u.varName}`);
 	console.error(
 		"Слепое пятно гейта — это не «пройдено». Разберитесь с сопоставлением.\n",
 	);

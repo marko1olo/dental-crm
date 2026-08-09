@@ -1,0 +1,131 @@
+a/apps/web/src/components/reports/ManagerReportsPanel.tsx b/apps/web/src/components/reports/ManagerReportsPanel.tsx
+index c9abb2a92..da6844e3a 100644
+--- a/apps/web/src/components/reports/ManagerReportsPanel.tsx
++++ b/apps/web/src/components/reports/ManagerReportsPanel.tsx
+@@ -685,12 +685,12 @@ export function ManagerReportsPanel({
+ 		return {
+ 			byWeekday,
+ 			byHour,
+-			peakWeekdayMinutes: byWeekday.reduce(
+-				(peak, row) => Math.max(peak, row.minutes),
++			peakWeekdayMinutes: (byWeekday ?? []).reduce(
++				(peak, row) => Math.max(peak, row?.minutes ?? 0),
+ 				0,
+ 			),
+-			peakHourMinutes: byHour.reduce(
+-				(peak, row) => Math.max(peak, row.minutes),
++			peakHourMinutes: (byHour ?? []).reduce(
++				(peak, row) => Math.max(peak, row?.minutes ?? 0),
+ 				0,
+ 			),
+ 		};
+@@ -813,13 +813,13 @@ export function ManagerReportsPanel({
+ 									{shortRub(summary?.receivables?.totalDebtRub)}
+ 								</span>
+ 								<span className="ops-metric__label">
+-									долг, {summary.receivables.debtors} пациент(ов)
++									долг, {summary?.receivables?.debtors ?? 0} пациент(ов)
+ 								</span>
+ 							</li>
+ 							<li className="ops-metric">
+ 								<span className="ops-metric__value">
+-									{summary.patientFlow.newTotal} /{" "}
+-									{summary.patientFlow.returningTotal}
++									{summary?.patientFlow?.newTotal ?? 0} /{" "}
++									{summary?.patientFlow?.returningTotal ?? 0}
+ 								</span>
+ 								{/*
+ 									Подпись называет единицу измерения. Было просто «первичные /
+@@ -899,10 +899,10 @@ export function ManagerReportsPanel({
+ 													</tr>
+ 												</thead>
+ 												<tbody>
+-													{summary.doctors.rows.map((row) => (
+-														<tr key={row.doctorUserId ?? row.doctorName}>
++													{(summary?.doctors?.rows ?? []).map((row) => (
++														<tr key={row?.doctorUserId ?? row?.doctorName ?? Math.random()}>
+ 															<td className="ops-strong" data-label="Врач">
+-																{row.doctorName}
++																{row?.doctorName ?? "—"}
+ 															</td>
+ 															<td className="ops-num" data-label="Получено">
+ 																{money(row.revenueRub)}
+@@ -983,10 +983,10 @@ export function ManagerReportsPanel({
+ 													</tr>
+ 												</thead>
+ 												<tbody>
+-													{summary.chairs.rows.map((row) => (
+-														<tr key={row.chairId ?? row.chairName}>
++													{(summary?.chairs?.rows ?? []).map((row) => (
++														<tr key={row?.chairId ?? row?.chairName ?? Math.random()}>
+ 															<td className="ops-strong" data-label="Кресло">
+-																{row.chairName}
++																{row?.chairName ?? "—"}
+ 															</td>
+ 															<td className="ops-num" data-label="Занято">
+ 																{formatHours(row.bookedMinutes)}
+@@ -1379,10 +1379,10 @@ export function ManagerReportsPanel({
+ 										</tr>
+ 									</thead>
+ 									<tbody>
+-										{services.data.rows.map((row) => (
+-											<tr key={row.title}>
++										{(services?.data?.rows ?? []).map((row) => (
++											<tr key={row?.title ?? Math.random()}>
+ 												<td className="ops-strong" data-label="Услуга">
+-													{row.title}
++													{row?.title ?? "—"}
+ 												</td>
+ 												<td className="ops-num" data-label="Количество">
+ 													{row.quantity}
+@@ -1449,29 +1449,29 @@ export function ManagerReportsPanel({
+ 					) : (
+ 						<>
+ 							<ul className="ops-bars">
+-								{scheduleMargins.byWeekday.map((row) => (
+-									<li className="ops-bar" key={`weekday-${row.key}`}>
++								{(scheduleMargins?.byWeekday ?? []).map((row) => (
++									<li className="ops-bar" key={`weekday-${row?.key}`}>
+ 										<span className="ops-bar__label">
+-											{weekdayNames[row.key] ?? row.key}
++											{weekdayNames[row?.key] ?? row?.key}
+ 										</span>
+ 										<span className="ops-bar__track">
+ 											<span
+ 												className="ops-bar__fill"
+ 												style={{
+-													width: `${row.minutes > 0 && scheduleMargins.peakWeekdayMinutes > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakWeekdayMinutes) * 100)) : 0}%`,
++													width: `${(row?.minutes ?? 0) > 0 && (scheduleMargins?.peakWeekdayMinutes ?? 0) > 0 ? Math.max(2, Math.round(((row?.minutes ?? 0) / scheduleMargins.peakWeekdayMinutes) * 100)) : 0}%`,
+ 												}}
+ 											/>
+ 										</span>
+ 										<span className="ops-bar__value">
+-											{formatHours(row.minutes)}
++											{formatHours(row?.minutes ?? 0)}
+ 										</span>
+ 									</li>
+ 								))}
+ 							</ul>
+ 							<h3 className="ops-section-title">Часы приёма</h3>
+ 							<ul className="ops-bars">
+-								{scheduleMargins.byHour.map((row) => (
+-									<li className="ops-bar" key={`hour-${row.key}`}>
++								{(scheduleMargins?.byHour ?? []).map((row) => (
++									<li className="ops-bar" key={`hour-${row?.key}`}>
+ 										<span className="ops-bar__label">
+ 											{String(row.key).padStart(2, "0")}:00
+ 										</span>
+@@ -1547,10 +1547,10 @@ export function ManagerReportsPanel({
+ 										</tr>
+ 									</thead>
+ 									<tbody>
+-										{debtors.data.rows.map((row) => (
+-											<tr key={row.patientId}>
++										{(debtors?.data?.rows ?? []).map((row) => (
++											<tr key={row?.patientId ?? Math.random()}>
+ 												<td className="ops-strong" data-label="Пациент">
+-													{row.patientName}
++													{row?.patientName ?? "—"}
+ 												</td>
+ 												<td className="ops-num" data-label="Долг">
+ 													{money(row.debtRub)}

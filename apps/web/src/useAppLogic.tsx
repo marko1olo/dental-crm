@@ -2,6 +2,7 @@ import {
 	type CommunicationTaskOutcome,
 	type Dashboard,
 	type DenteTelegramChatLinkPublic,
+	type DentalPricelistAnalysisResponse,
 	documentFactoryGroups,
 	type ImagingStudyKind,
 	type LocalBridgeReadinessResponse,
@@ -97,6 +98,7 @@ import {
 	patientName,
 	persistUiPreferences,
 	photoVideoMaterialOptions,
+	preparePricelistImage,
 	procedureSpecificConsentProcedureOptions,
 	recommendedActionPriorityLabels,
 	responseErrorMessage,
@@ -553,17 +555,12 @@ export function useAppLogic(): any {
 		pricelistAnalysis,
 		setPricelistAnalysis,
 		pricelistImageBase64,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setPricelistImageBase64,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		pricelistImageMimeType,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setPricelistImageMimeType,
 		pricelistImageName,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setPricelistImageName,
 		pricelistImageNote,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setPricelistImageNote,
 		recognitionKind,
 		setRecognitionKind,
@@ -690,7 +687,6 @@ export function useAppLogic(): any {
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setIsRecognitionLoading,
 		isPricelistAnalyzing,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setIsPricelistAnalyzing,
 		isServerVoiceRecording,
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
@@ -4070,6 +4066,148 @@ export function useAppLogic(): any {
 		window.setTimeout(openDictation, 120);
 	};
 
+	/*
+	 * Фото прайса в состояние вкладки «Цены».
+	 *
+	 * СВОЕЙ ПОДГОТОВКИ ЗДЕСЬ НЕТ НАМЕРЕННО. Готовая `preparePricelistImage`
+	 * (AppHelpers.tsx:5869) уже сжимает снимок до 1600/1200/900/720 px и
+	 * пробует качество 82/72/62 %, пока base64 не влезет в лимит схемы
+	 * (4 000 000 символов), и возвращает ЧИСТЫЙ base64 без приставки `data:` —
+	 * именно его ждёт сервер, он сам собирает
+	 * `data:${imageMimeType};base64,${imageBase64}` (analyzer.ts:2575) и сверяет
+	 * первые байты с заявленным типом (analyzer.ts:1791). Второй разбор файла
+	 * рядом с этой функцией разошёлся бы с ней по лимиту и по типу вывода.
+	 *
+	 * До этой правки функция не вызывалась НИОТКУДА: в сборном объекте стояло
+	 * `attachPricelistImage: null`, поэтому подготовленное фото в состояние не
+	 * попадало, и подпись «Фото прайса: 1600x1200, 1.9 Мп, JPEG 82%»
+	 * (SettingsView.tsx:2187) не появлялась никогда.
+	 */
+	const attachPricelistImage = async (file: File) => {
+		try {
+			const prepared = await preparePricelistImage(file);
+			setPricelistImageBase64(prepared.base64);
+			setPricelistImageMimeType(prepared.mimeType);
+			setPricelistImageName(file.name);
+			setPricelistImageNote(prepared.note);
+			setError(null);
+		} catch (readError) {
+			showToast(
+				actionFailureToast(
+					"Фото прайса не прочитано",
+					(readError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
+			setError(
+				operatorWorkflowFailureMessage("Фото прайса не прочитано", readError),
+			);
+		}
+	};
+
+	const clearPricelistImage = () => {
+		setPricelistImageBase64(null);
+		setPricelistImageMimeType("image/jpeg");
+		setPricelistImageName(null);
+		setPricelistImageNote(null);
+	};
+
+	/*
+	 * Разбор прайс-листа: POST /api/pricelist/analyze.
+	 *
+	 * ЧТО ЗАКРЫВАЕТ. В этом сборном объекте стояло `analyzePricelist: null`, и
+	 * кнопка «Разобрать прайс» (components/settings/SettingsPricesTab.tsx:699)
+	 * получала во вкладку null. Администратор клиники вставлял прайс, нажимал
+	 * кнопку и не получал НИЧЕГО: ни разбора, ни отказа, ни признака работы.
+	 * Маршрут при этом живой (apps/api/src/routes/pricelist.ts:35). Компилятор
+	 * молчал: вкладка читает свойства через `Object.assign({}, appLogic,
+	 * derivations) as any` (SettingsPricesTab.tsx:80), и null там законен.
+	 *
+	 * ЗАГОЛОВОК ОБЯЗАТЕЛЕН. Маршрут закрыт requireClinicalReadAccess
+	 * (accessGuard.ts:76), которая читает x-dente-admin-secret. Глобальная
+	 * обёртка fetch (lib/apiAuthFetch.ts) этот заголовок НЕ подставляет, поэтому
+	 * его ставит denteClinicalReadHeaders(). Без него у заказчика 403 при зелёном
+	 * прогоне на этой машине: локально охрану гасят лазейки
+	 * DENTE_CLINICAL_ALLOW_UNGUARDED_READS, а в продакшене их нет.
+	 */
+	const analyzePricelist = async () => {
+		if (isPricelistAnalyzing) return;
+		const rawText = (pricelistText ?? "").trim();
+		const imageBase64 = pricelistImageBase64 || undefined;
+		/*
+		 * Сервер отвергает запрос без текста и без изображения
+		 * (dentalPricelistAnalysisRequestSchema.refine, shared/index.ts:2148).
+		 * Причину называем на месте, а не показываем отказ схемы.
+		 */
+		if (!rawText && !imageBase64) {
+			setError("Вставьте прайс текстом или приложите фото прайса.");
+			return;
+		}
+		setIsPricelistAnalyzing(true);
+		try {
+			const response = await fetch("/api/pricelist/analyze", {
+				method: "POST",
+				headers: auth.denteClinicalReadHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					sourceName: pricelistImageName || "manual-pricelist",
+					sourceKind: pricelistSourceKind,
+					rawText,
+					...(imageBase64
+						? {
+								imageBase64,
+								imageMimeType: pricelistImageMimeType || "image/jpeg",
+							}
+						: {}),
+					useServerAi: Boolean(usePricelistAi),
+				}),
+			});
+			/*
+			 * Проверка ответа ДО разбора тела. Отказы 403 и 503 приходят обычным
+			 * разрешением промиса, и без этой ветки тело `{error, message}` легло бы
+			 * в pricelistAnalysis, а разметка вкладки позвала бы .map на
+			 * несуществующем items (SettingsView.tsx:1707).
+			 */
+			if (!response.ok)
+				throw new Error(
+					await responseErrorMessage(response, "Прайс-лист не разобран"),
+				);
+			const analysis = (await response.json()) as DentalPricelistAnalysisResponse;
+			/*
+			 * Форма ответа проверяется явно: приведение типа — обещание, а не
+			 * проверка. Вкладка читает items, summary и warnings списками.
+			 */
+			if (
+				!analysis ||
+				!Array.isArray(analysis.items) ||
+				!Array.isArray(analysis.summary) ||
+				!Array.isArray(analysis.warnings)
+			)
+				throw new Error(
+					"Прайс-лист не разобран: сервер вернул ответ без разобранных позиций.",
+				);
+			setPricelistAnalysis(analysis);
+			setError(null);
+		} catch (analysisError) {
+			showToast(
+				actionFailureToast(
+					"Прайс-лист не разобран",
+					(analysisError as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
+			setError(
+				operatorWorkflowFailureMessage(
+					"Прайс-лист не разобран",
+					analysisError,
+				),
+			);
+		} finally {
+			setIsPricelistAnalyzing(false);
+		}
+	};
+
 	return {
 		...documentWorkflow,
 		...dicomWorkbenchModule,
@@ -4807,14 +4945,14 @@ export function useAppLogic(): any {
 		activeTreatmentPlanItems,
 		addImagingViewerNoteAnnotation: null,
 		address: documentPatient?.administrativeProfile?.registrationAddress ?? "",
-		analyzePricelist: null,
+		analyzePricelist,
 		applyCtPlanningQuickAction: null,
 		applyMprClinicalPreset: null,
 		applyNearestMprClinicalPreset: null,
 		applyProtocolTemplate: null,
 		applyProtocolTemplateDirectly: null,
 		assembleSpeechRecording: async () => {},
-		attachPricelistImage: null,
+		attachPricelistImage,
 		browserCanRequestPersistentStorage: null,
 		browserContinuityChecks: null,
 		browserContinuityCritical: null,
@@ -4830,7 +4968,7 @@ export function useAppLogic(): any {
 		chooseRecognitionPreset: null,
 		clearBrowserPickedImagingFolderPreview: null,
 		clearLocalImagingFolderRecovery: null,
-		clearPricelistImage: null,
+		clearPricelistImage,
 		clinic: dashboard?.clinicSettings?.profile ?? null,
 		clinicalMutationHeaders: auth.denteClinicalMutationHeaders,
 		clinicalReadHeaders: auth.denteClinicalReadHeaders,

@@ -1,0 +1,1 @@
+import { defineConfig } from "drizzle-kit"; import { loadAdditionalServerEnv } from "./src/env/loadServerEnv.js"; loadAdditionalServerEnv(); export default defineConfig({ out: "./drizzle-pull", dialect: "postgresql", dbCredentials: { url: process.env.DATABASE_URL } });

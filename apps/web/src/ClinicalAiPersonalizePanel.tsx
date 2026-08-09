@@ -164,10 +164,10 @@ function lineTotal(item: PlanItem): number {
  */
 function inferCareTopic(items: PlanItem[], procedureHint: string): string {
 	const blob = [
-		procedureHint,
-		...items.map(
+		procedureHint ?? "",
+		...(items ?? []).map(
 			(i) =>
-				`${i.snapshotServiceName ?? ""} ${i.snapshotServiceCategory ?? ""}`,
+				`${i?.snapshotServiceName ?? ""} ${i?.snapshotServiceCategory ?? ""}`,
 		),
 	]
 		.join(" ")
@@ -199,8 +199,12 @@ function buildTreatmentPlanPayload(input: {
 	treatmentPlanText: string | null;
 	doctorFullName: string | null;
 }): Record<string, unknown> | { error: string } {
-	const activeItems = input.items.filter((i) => i.status !== "cancelled");
-	const activeScenarios = input.scenarios.filter((s) => s.active !== false);
+	const activeItems = (input?.items ?? []).filter(
+		(i) => i?.status !== "cancelled",
+	);
+	const activeScenarios = (input?.scenarios ?? []).filter(
+		(s) => s?.active !== false,
+	);
 
 	const plannedStages: Array<Record<string, unknown>> = [];
 
@@ -364,8 +368,8 @@ function buildTreatmentPlanPayload(input: {
 				];
 
 	const estimatedTotalRub = moneyLine(
-		plannedStages.reduce(
-			(sum, st) => sum + moneyLine(st.estimatedAmountRub as number),
+		(plannedStages ?? []).reduce(
+			(sum, st) => sum + moneyLine((st?.estimatedAmountRub ?? 0) as number),
 			0,
 		),
 	);
@@ -376,13 +380,13 @@ function buildTreatmentPlanPayload(input: {
 		teethOrArea: teethOrArea.slice(0, 240),
 		clinicalToothRows,
 		treatmentGoals,
-		plannedStages: plannedStages.slice(0, 24),
+		plannedStages: (plannedStages ?? []).slice(0, 24),
 		estimatedTotalRub,
 		alternatives,
 		risksAndLimitations,
 		prognosisAndLimits: null,
 		controlPlan: null,
-		doctorFullName: (input.doctorFullName || "").trim().slice(0, 240) || null,
+		doctorFullName: (input?.doctorFullName || "").trim().slice(0, 240) || null,
 		plannedAt: todayDateLike(),
 		patientQuestionsAnswered: true,
 		planRequiresSeparateConsent: true,
@@ -402,7 +406,7 @@ function ListBlock({
 		<div className="ops-block" style={{ marginTop: "0.75rem" }}>
 			<strong>{title}</strong>
 			<ul style={{ margin: "0.35rem 0 0", paddingLeft: "1.2rem" }}>
-				{items.map((item) => (
+				{(items ?? []).map((item) => (
 					<li key={item}>{item}</li>
 				))}
 			</ul>
@@ -412,11 +416,11 @@ function ListBlock({
 
 function MarkdownishText({ text }: { text: string }) {
 	// Простой рендер: сохраняем переносы, **жирный** → <strong>
-	const parts = text.split(/(\*\*[^*]+\*\*)/g);
+	const parts = (text ?? "").split(/(\*\*[^*]+\*\*)/g);
 	return (
 		<div style={{ whiteSpace: "pre-wrap", lineHeight: 1.45 }}>
-			{parts.map((part) => {
-				if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+			{(parts ?? []).map((part) => {
+				if (part?.startsWith("**") && part?.endsWith("**") && part.length > 4) {
 					return <strong key={`bold-${part}`}>{part.slice(2, -2)}</strong>;
 				}
 				return <span key={`text-${part}`}>{part}</span>;
@@ -580,10 +584,12 @@ export const ClinicalAiPersonalizePanel: React.FC<
 			return;
 		}
 
-		const activeItems = patientItems.filter((i) => i.status !== "cancelled");
+		const activeItems = (patientItems ?? []).filter(
+			(i) => i?.status !== "cancelled",
+		);
 		const primary =
-			activeItems.find((i) => i.status === "completed") ||
-			activeItems.find((i) => i.status === "in_progress") ||
+			activeItems.find((i) => i?.status === "completed") ||
+			activeItems.find((i) => i?.status === "in_progress") ||
 			activeItems[0];
 		const procedureName =
 			(primary?.snapshotServiceName || "").trim() ||
@@ -593,7 +599,7 @@ export const ClinicalAiPersonalizePanel: React.FC<
 			(primary?.toothCode || "").trim() ||
 			Array.from(
 				new Set(
-					activeItems.map((i) => (i.toothCode || "").trim()).filter(Boolean),
+					activeItems.map((i) => (i?.toothCode || "").trim()).filter(Boolean),
 				),
 			).join(", ") ||
 			"Полость рта";
@@ -671,7 +677,9 @@ export const ClinicalAiPersonalizePanel: React.FC<
 		);
 	}
 
-	const planCount = patientItems.filter((i) => i.status !== "cancelled").length;
+	const planCount = (patientItems ?? []).filter(
+		(i) => i?.status !== "cancelled",
+	).length;
 	const contextHint =
 		context === "finance"
 			? "В кассе удобно показать пациенту объяснение сметы и выдать памятку при оплате."

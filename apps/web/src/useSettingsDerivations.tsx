@@ -2247,20 +2247,22 @@ export function useSettingsDerivations() {
 			? "Предпросмотр построит черновой разбор найденного источника."
 			: "Сначала откройте план или проверку источника: у этой подсказки пока нет файлов для предпросмотра.";
 	const migrationPreviewableSourceCount =
-		typedMigrationAutopilotSources.filter((source) =>
-			migrationCandidatePreviewReady(source.candidate),
+		(typedMigrationAutopilotSources ?? []).filter((source) =>
+			migrationCandidatePreviewReady(source?.candidate),
 		).length +
-		typedMigrationDiscoveryCandidates.filter(migrationCandidatePreviewReady)
-			.length +
-		(typedBrowserMigrationDiscovery?.candidates.filter(
+		(typedMigrationDiscoveryCandidates ?? []).filter(
+			migrationCandidatePreviewReady,
+		).length +
+		(typedBrowserMigrationDiscovery?.candidates?.filter(
 			migrationCandidatePreviewReady,
 		).length ?? 0);
 	const migrationPreAutopilotSourceCount =
-		typedMigrationDiscoveryCandidates.length +
-		(typedBrowserMigrationDiscovery?.candidates.length ?? 0) +
-		(typedSmartImportPreview?.legacySources.length ?? 0);
+		(typedMigrationDiscoveryCandidates ?? []).length +
+		(typedBrowserMigrationDiscovery?.candidates?.length ?? 0) +
+		(typedSmartImportPreview?.legacySources?.length ?? 0);
 	const migrationKnownSourceCount =
-		typedMigrationAutopilotSources.length || migrationPreAutopilotSourceCount;
+		(typedMigrationAutopilotSources ?? []).length ||
+		migrationPreAutopilotSourceCount;
 	const migrationHandoffReportReady = Boolean(
 		typedMigrationAutopilot ||
 			typedMigrationSourceDiscovery ||
@@ -2268,18 +2270,19 @@ export function useSettingsDerivations() {
 			smartImportInputReady,
 	);
 	const migrationPreviewReadyRows = typedSmartImportPreview
-		? typedSmartImportPreview.patientPreview.readyRows +
-			typedSmartImportPreview.imagingPreview.readyRows
+		? (typedSmartImportPreview?.patientPreview?.readyRows ?? 0) +
+			(typedSmartImportPreview?.imagingPreview?.readyRows ?? 0)
 		: 0;
-	const migrationClinicLookupFieldCount =
-		typedClinicPublicLookupSuggestions.reduce(
-			(bestCount, suggestion) =>
-				Math.max(
-					bestCount,
-					clinicLookupSuggestionFieldEntries(suggestion.fields).length,
-				),
-			0,
-		);
+	const migrationClinicLookupFieldCount = (
+		typedClinicPublicLookupSuggestions ?? []
+	).reduce(
+		(bestCount, suggestion) =>
+			Math.max(
+				bestCount,
+				clinicLookupSuggestionFieldEntries(suggestion?.fields).length,
+			),
+		0,
+	);
 	const migrationSmartClinicFieldCount =
 		typedSmartImportPreview?.clinicSuggestion
 			? clinicLookupSuggestionFieldEntries(
@@ -2534,7 +2537,7 @@ export function useSettingsDerivations() {
 		items: string[],
 		testId?: string,
 	) => {
-		const visibleItems = items.filter(Boolean).slice(0, 8);
+		const visibleItems = (items ?? []).filter(Boolean).slice(0, 8);
 		if (!visibleItems.length) return null;
 
 		return (
@@ -2551,7 +2554,7 @@ export function useSettingsDerivations() {
 	const typedClinicalRuleActionLabels = (clinicalRuleActionLabels ||
 		{}) as Record<ClinicalRuleAction, string>;
 	const typedClinicalRuleActions = Object.keys(
-		typedClinicalRuleActionLabels,
+		typedClinicalRuleActionLabels ?? {},
 	) as ClinicalRuleAction[];
 	const typedClinicalRuleSeverityLabels = (clinicalRuleSeverityLabels ||
 		{}) as Record<ClinicalRuleSeverity, string>;

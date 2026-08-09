@@ -1,0 +1,171 @@
+a/apps/web/src/ScheduleView.tsx b/apps/web/src/ScheduleView.tsx
+index e57415629..21348b01f 100644
+--- a/apps/web/src/ScheduleView.tsx
++++ b/apps/web/src/ScheduleView.tsx
+@@ -162,7 +162,7 @@ import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
+ 
+ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 	const logicContext = useAppLogicContext();
+-	const props = { ...logicContext, ...rawProps } as ReturnType<
++	const props = { ...(logicContext ?? {}), ...(rawProps ?? {}) } as ReturnType<
+ 		typeof useAppLogicContext
+ 	> &
+ 		Partial<ScheduleViewProps>;
+@@ -358,7 +358,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 		void (async () => {
+ 			try {
+ 				const response = await fetch("/api/waitlist", {
+-					headers: auth.denteClinicalReadHeaders(),
++					headers: auth?.denteClinicalReadHeaders
++						? auth.denteClinicalReadHeaders()
++						: {},
+ 				});
+ 				if (!response.ok) return;
+ 				const rows = await response.json();
+@@ -783,11 +785,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 	 * человек не может даже догадаться, что список урезан.
+ 	 */
+ 	const staffFullNameById = (staffId: string | null) =>
+-		(dashboard.clinicSettings?.staff ?? []).find(
+-			(member: { id: string }) => member.id === staffId,
++		(dashboard?.clinicSettings?.staff ?? []).find(
++			(member: { id: string }) => member?.id === staffId,
+ 		)?.fullName ?? "неизвестный сотрудник";
+ 	const activeScheduleFilterLabels = [
+-		scheduleDateFilter.trim()
++		scheduleDateFilter?.trim()
+ 			? `день: ${formatDayTitle(scheduleDateFilter.trim())}`
+ 			: null,
+ 		scheduleDoctorFilterId
+@@ -797,10 +799,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 			? `ассистент: ${staffFullNameById(scheduleAssistantFilterId)}`
+ 			: null,
+ 		scheduleChairFilterId
+-			? `кресло: ${(dashboard.clinicSettings?.chairs ?? []).find((chair: { id: string }) => chair.id === scheduleChairFilterId)?.name ?? "неизвестное"}`
++			? `кресло: ${(dashboard?.clinicSettings?.chairs ?? []).find((chair: { id: string }) => chair?.id === scheduleChairFilterId)?.name ?? "неизвестное"}`
+ 			: null,
+ 		scheduleStatusFilter !== "all"
+-			? `только «${appointmentLabels[scheduleStatusFilter as Appointment["status"]] ?? scheduleStatusFilter}»`
++			? `только «${appointmentLabels?.[scheduleStatusFilter as Appointment["status"]] ?? scheduleStatusFilter}»`
+ 			: null,
+ 	].filter((value): value is string => Boolean(value));
+ 	const scheduleLoadSummaryCards = [
+@@ -827,7 +829,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 		{
+ 			id: "visible",
+ 			title: "На экране",
+-			value: `${sortedAppointments?.length}`,
++			value: `${sortedAppointments?.length ?? 0}`,
+ 			detail: activeScheduleFilterCount
+ 				? `активных фильтров: ${activeScheduleFilterCount}`
+ 				: "показана вся очередь",
+@@ -955,13 +957,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 					<article>
+ 						<span>Врачи</span>
+ 						<strong>
+-							{dashboard.shiftIntelligence?.doctorLoads?.length ?? 0}
++							{dashboard?.shiftIntelligence?.doctorLoads?.length ?? 0}
+ 						</strong>
+ 						<p>
+-							{(dashboard.shiftIntelligence?.doctorLoads ?? [])
++							{(dashboard?.shiftIntelligence?.doctorLoads ?? [])
+ 								.map(
+ 									(load: ResourceLoad) =>
+-										`${load.title.split(" ")[0]} ${load.utilizationPercent}%`,
++										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
+ 								)
+ 								.join(" · ")}
+ 						</p>
+@@ -969,13 +971,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 					<article>
+ 						<span>Ассистенты</span>
+ 						<strong>
+-							{dashboard.shiftIntelligence?.assistantLoads?.length ?? 0}
++							{dashboard?.shiftIntelligence?.assistantLoads?.length ?? 0}
+ 						</strong>
+ 						<p>
+-							{(dashboard.shiftIntelligence?.assistantLoads ?? [])
++							{(dashboard?.shiftIntelligence?.assistantLoads ?? [])
+ 								.map(
+ 									(load: ResourceLoad) =>
+-										`${load.title.split(" ")[0]} ${load.utilizationPercent}%`,
++										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
+ 								)
+ 								.join(" · ") || "не назначены"}
+ 						</p>
+@@ -983,20 +985,20 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 					<article>
+ 						<span>Кресла</span>
+ 						<strong>
+-							{dashboard.shiftIntelligence?.chairLoads?.length ?? 0}
++							{dashboard?.shiftIntelligence?.chairLoads?.length ?? 0}
+ 						</strong>
+ 						<p>
+-							{(dashboard.shiftIntelligence?.chairLoads ?? [])
++							{(dashboard?.shiftIntelligence?.chairLoads ?? [])
+ 								.map(
+ 									(load: ResourceLoad) =>
+-										`${load.title} ${load.utilizationPercent}%`,
++										`${load?.title ?? ""} ${load?.utilizationPercent ?? 0}%`,
+ 								)
+ 								.join(" · ")}
+ 						</p>
+ 					</article>
+ 					<article>
+ 						<span>Контроль</span>
+-						<strong>{shiftWarnings?.length}</strong>
++						<strong>{shiftWarnings?.length ?? 0}</strong>
+ 						<p>{shiftWarnings?.[0]?.title ?? "Нет предупреждений"}</p>
+ 					</article>
+ 				</div>
+@@ -1182,12 +1184,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 					Все записи
+ 				</button>
+ 
+-				{dashboard.clinicSettings.profile.mode !== "solo_doctor" &&
+-					dashboard.clinicSettings.staff
++				{dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" &&
++					(dashboard?.clinicSettings?.staff ?? [])
+ 						.filter(
+ 							(member) =>
+-								member.active &&
+-								(member.role === "doctor" || member.role === "owner"),
++								member?.active &&
++								(member?.role === "doctor" || member?.role === "owner"),
+ 						)
+ 						.map((member) => (
+ 							<button
+@@ -1200,12 +1202,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 									)
+ 								}
+ 							>
+-								{member.fullName.split(" ")[0]}
++								{(member?.fullName ?? "").split(" ")[0]}
+ 							</button>
+ 						))}
+ 
+-				{dashboard.clinicSettings.chairs
+-					.filter((chair) => chair.active)
++				{(dashboard?.clinicSettings?.chairs ?? [])
++					.filter((chair) => chair?.active)
+ 					.map((chair) => (
+ 						<button
+ 							key={chair.id}
+@@ -1332,7 +1334,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+                 Между карточками показаны свободные окна и накладки — то, ради
+                 чего человек и смотрит на день целиком.
+               */}
+-				{visibleDayGroups.map((group) => (
++				{(visibleDayGroups ?? []).map((group) => (
+ 					<Fragment key={group.dateKey}>
+ 						<div
+ 							className="schedule-day-heading"
+@@ -1372,7 +1374,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+ 									: ""}
+ 							</span>
+ 						</div>
+-						{group.rows.map((row) => {
++						{(group?.rows ?? []).map((row) => {
+ 							if (row.kind === "gap") {
+ 								return (
+ 									<p

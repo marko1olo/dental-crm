@@ -195,12 +195,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	} = props;
 
 	useEffect(() => {
-		if (
-			!selectedPatientId &&
-			filteredPatients.length > 0 &&
-			filteredPatients[0]?.id
-		) {
-			setSelectedPatientId(filteredPatients[0].id);
+		const firstPatient = (filteredPatients ?? [])[0];
+		if (!selectedPatientId && firstPatient?.id) {
+			setSelectedPatientId(firstPatient.id);
 		}
 	}, [selectedPatientId, filteredPatients, setSelectedPatientId]);
 
@@ -215,8 +212,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const featureSalience = useMemo(
 		() =>
 			patientListFeatureSalience({
-				insights: Array.from(patientInsightById.values()),
-				riskLabels: patientInsightRiskLabels,
+				insights: Array.from((patientInsightById || new Map()).values()),
+				riskLabels: patientInsightRiskLabels || {},
 			}),
 		[patientInsightById, patientInsightRiskLabels],
 	);
@@ -257,14 +254,14 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	};
 
 	const displayPatients = useMemo(() => {
-		if (!showLostPatientsOnly || !lostPatientIds) return filteredPatients;
-		return filteredPatients.filter((p) => lostPatientIds.has(p.id));
+		if (!showLostPatientsOnly || !lostPatientIds) return filteredPatients ?? [];
+		return (filteredPatients ?? []).filter((p) => lostPatientIds.has(p.id));
 	}, [filteredPatients, showLostPatientsOnly, lostPatientIds]);
 
-	const patientNameReady = newPatientName.trim().length > 0;
+	const patientNameReady = (newPatientName ?? "").trim().length > 0;
 	const patientCreatePhoneIssue =
-		newPatientPhone.trim().length > 0 &&
-		newPatientPhone.replace(/\D/g, "").length < 5;
+		(newPatientPhone ?? "").trim().length > 0 &&
+		(newPatientPhone ?? "").replace(/\D/g, "").length < 5;
 	const patientCreateReady =
 		patientNameReady && !patientCreatePhoneIssue && !isPatientCreating;
 	const patientCreateGuidance = !patientNameReady
@@ -292,7 +289,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		void createPatient();
 	}
 
-	const patientCoreNameMissing = patientCoreDraft.fullName.trim().length === 0;
+	const patientCoreNameMissing =
+		(patientCoreDraft?.fullName ?? "").trim().length === 0;
 	const patientCoreReadyToSave =
 		Boolean(selectedPatient) &&
 		patientCoreDirty &&
@@ -554,7 +552,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
         различающие признаки — остаток по деньгам, снимок на проверку — тонут
         среди повторов. Текст называет число: «у 14 из 17», а не «у большинства».
       */}
-			{featureSalience.notices.map((notice) => (
+			{(featureSalience?.notices ?? []).map((notice) => (
 				<p
 					className="patients-clinic-wide-notice"
 					key={notice}
@@ -576,8 +574,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			>
 				{/* Left Column: Patient List */}
 				<div className="patient-list">
-					{displayPatients.map((patient) => {
-						const insight = patientInsightById.get(patient.id);
+					{(displayPatients ?? []).map((patient) => {
+						const insight = patientInsightById?.get(patient.id);
 						const patientIsSelected = selectedPatient?.id === patient.id;
 						/*
               Метка риска, цветная полоса слева и надпись о действии рисуются
@@ -712,7 +710,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							</article>
 						);
 					})}
-					{displayPatients.length === 0 ? (
+					{(displayPatients ?? []).length === 0 ? (
 						/* Класс patient-empty-state вернулся на общий компонент намеренно:
                в мобильной вёрстке (styles/dente-redesign.css) на него навешаны
                правила с !important на токенах темы, а гейт

@@ -1,0 +1,141 @@
+a/apps/web/src/DocumentsView.tsx b/apps/web/src/DocumentsView.tsx
+index 030024777..561d840ad 100644
+--- a/apps/web/src/DocumentsView.tsx
++++ b/apps/web/src/DocumentsView.tsx
+@@ -1137,24 +1137,25 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 				<button
+ 					className="text-button"
+ 					type="button"
+-					disabled={!activeUsableDocuments[0]}
++					disabled={!activeUsableDocuments?.[0]}
+ 					aria-describedby={
+-						!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined
++						!activeUsableDocuments?.[0] ? latestDocumentOpenGuidanceId : undefined
+ 					}
+ 					title={
+-						!activeUsableDocuments[0]
++						!activeUsableDocuments?.[0]
+ 							? "Сначала создайте или выдайте документ"
+ 							: undefined
+ 					}
+ 					onClick={() => {
+-						if (!activeUsableDocuments[0]) return;
+-						void openIssuedDocumentHtml(activeUsableDocuments[0].id);
++						const docId = activeUsableDocuments?.[0]?.id;
++						if (!docId) return;
++						void openIssuedDocumentHtml(docId);
+ 					}}
+ 				>
+ 					Открыть последний
+ 				</button>
+ 			</div>
+-			{!activeUsableDocuments[0] ? (
++			{!activeUsableDocuments?.[0] ? (
+ 				<p
+ 					className="document-open-guidance"
+ 					id={latestDocumentOpenGuidanceId}
+@@ -1308,9 +1309,9 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 								)
+ 							}
+ 						>
+-							{documentFactoryGroups.map((group) => (
++							{(documentFactoryGroups ?? []).map((group) => (
+ 								<optgroup key={group.title} label={group.title}>
+-									{group.kinds.map((kind) => (
++									{(group?.kinds ?? []).map((kind) => (
+ 										<option key={kind} value={kind}>
+ 											{documentLabels[kind]}
+ 										</option>
+@@ -1353,12 +1354,12 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 						источником{" "}
+ 						{isoDateLabel(typedSelectedDocumentMetadata.sourceCheckedAt)}
+ 					</small>
+-					{typedSelectedDocumentMetadata.sourceUrls.length ? (
++					{(typedSelectedDocumentMetadata?.sourceUrls ?? []).length ? (
+ 						<section
+ 							className="document-source-links"
+ 							aria-label="Официальные источники формы"
+ 						>
+-							{typedSelectedDocumentMetadata.sourceUrls.map(
++							{(typedSelectedDocumentMetadata?.sourceUrls ?? []).map(
+ 								(url: string, index: number) => (
+ 									<a
+ 										className="doc-link"
+@@ -6335,11 +6336,11 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 						<span className="settings-advanced-chevron">{"\u25BC"}</span>
+ 					</summary>
+ 					<div className="settings-advanced-form">
+-						{documentFactoryGroups?.map((group) => (
++						{(documentFactoryGroups ?? []).map((group) => (
+ 							<section className="document-factory-group" key={group.title}>
+ 								<h3>{group.title}</h3>
+ 								<div>
+-									{group.kinds?.map((kind) => {
++									{(group?.kinds ?? []).map((kind) => {
+ 										const metadata = documentKindMetadata[kind];
+ 										return (
+ 											<button
+@@ -6757,7 +6758,7 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 								}
+ 							>
+ 								<option value="">Не выбран</option>
+-								{(activeUsableDocuments as GeneratedDocument[])
++								{((activeUsableDocuments as GeneratedDocument[]) ?? [])
+ 									.filter(
+ 										(document) => document.id !== documentVoidConfirmation.id,
+ 									)
+@@ -6945,12 +6946,12 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 								{documentAuditFacts.sourceReference} · форма сверена с
+ 								источником {isoDateLabel(documentAuditFacts.sourceCheckedAt)}
+ 							</small>
+-							{documentAuditFacts.sourceUrls.length ? (
++							{(documentAuditFacts?.sourceUrls ?? []).length ? (
+ 								<section
+ 									className="document-source-links"
+ 									aria-label="Официальные источники паспорта документа"
+ 								>
+-									{documentAuditFacts.sourceUrls?.map(
++									{(documentAuditFacts?.sourceUrls ?? []).map(
+ 										(url: string, index: number) => (
+ 											<a
+ 												className="doc-link"
+@@ -7099,7 +7100,7 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 							<div>
+ 								<span>Журнал выдачи</span>
+ 								<strong>
+-									{documentAuditFacts.releaseJournalEntry.documentTypes.join(
++									{(documentAuditFacts?.releaseJournalEntry?.documentTypes ?? []).join(
+ 										", ",
+ 									) || "медицинская документация"}
+ 								</strong>
+@@ -7123,8 +7124,8 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 							</div>
+ 						) : null}
+ 					</div>
+-					{documentAuditFacts.blockers.length ||
+-					documentAuditFacts.warnings.length ? (
++					{(documentAuditFacts?.blockers ?? []).length ||
++					(documentAuditFacts?.warnings ?? []).length ? (
+ 						<div
+ 							className="document-audit-facts-notes"
+ 							style={{
+@@ -7135,8 +7136,8 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 							}}
+ 						>
+ 							{[
+-								...documentAuditFacts.blockers,
+-								...documentAuditFacts.warnings,
++								...(documentAuditFacts?.blockers ?? []),
++								...(documentAuditFacts?.warnings ?? []),
+ 							]?.map((note) => (
+ 								<div
+ 									key={note}
+@@ -7211,7 +7212,7 @@ export function DocumentsView(props: DocumentsViewProps) {
+ 				</section>
+ 			) : null}
+ 			<div className="document-list">
+-				{typedActiveDocuments?.map((document) => {
++				{(typedActiveDocuments ?? []).map((document) => {
+ 					const documentActionLabel = documentActionLabels[document.kind];
+ 					const documentKindLabel = documentLabels[document.kind];
+ 					const documentTaxYearContext = document.taxYear

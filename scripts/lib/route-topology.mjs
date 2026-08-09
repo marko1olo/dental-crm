@@ -786,14 +786,38 @@ export function buildTopology({ routes, calls, references }) {
 	}
 	const entries = [...byKey.values()];
 
-	const bestFor = (candidates, callPath) =>
-		candidates
-			.slice()
-			.sort(
-				(left, right) =>
-					matchPrecision(right.path, callPath) -
-					matchPrecision(left.path, callPath),
-			)[0] ?? null;
+	/*
+	 * НИЧЬЯ ПРИПИСЫВАЕТСЯ ВСЕМ, А НЕ ОДНОМУ. Прежний `bestFor` брал ЕДИНСТВЕННОГО
+	 * победителя, и это давало ЛОЖНЫЕ находки «маршрут есть, звать некому».
+	 *
+	 * Замер 2026-08-09. Фронт зовёт адрес шаблоном с двумя подстановками:
+	 *     fetch(`/api/documents/${documentId}/${action}`, { method: "POST" })
+	 * где `action: "issue" | "void"` (useDocumentWorkflowModule.ts:3091,3103).
+	 * Вызов нормализуется в `/api/documents/:param/:param`, и `pathsMatch`
+	 * засчитывает его КАЖДОМУ из маршрутов-братьев: POST .../issue, POST
+	 * .../void, POST .../sign. Счёт сведения у всех троих одинаков — различие
+	 * спрятано в подстановке и из адреса не видно. Победитель забирал вызов
+	 * себе, остальные попадали в «звать некому», хотя `void` заведомо живой и
+	 * вызывается именно этой строкой.
+	 *
+	 * Поэтому при РАВНОМ счёте вызов приписывается всем кандидатам сразу. Это
+	 * отказ в безопасную сторону с названной ценой: настоящий мёртвый маршрут,
+	 * у которого есть живой брат с тем же числом сегментов, спрячется за ним.
+	 * Обратный выбор дороже — он объявляет мёртвым работающий код, а список,
+	 * оправдывающий виновных вперемешку с невиновными, перестают читать вовсе.
+	 *
+	 * Ровно этот приём уже узаконен ниже для упоминаний без метода, с тем же
+	 * обоснованием. Здесь он приведён к тому же виду.
+	 */
+	const allBestFor = (candidates, callPath) => {
+		if (candidates.length === 0) return [];
+		const best = Math.max(
+			...candidates.map((entry) => matchPrecision(entry.path, callPath)),
+		);
+		return candidates.filter(
+			(entry) => matchPrecision(entry.path, callPath) === best,
+		);
+	};
 
 	for (const call of calls) {
 		if (call.fromTest) continue;
@@ -801,16 +825,16 @@ export function buildTopology({ routes, calls, references }) {
 			const candidates = entries.filter((entry) =>
 				pathsMatch(entry.path, call.path),
 			);
-			const target = bestFor(candidates, call.path);
-			if (target) target.methodUnknownCallers.push(call);
+			for (const target of allBestFor(candidates, call.path))
+				target.methodUnknownCallers.push(call);
 			continue;
 		}
 		const candidates = entries.filter(
 			(entry) =>
 				entry.method === call.method && pathsMatch(entry.path, call.path),
 		);
-		const target = bestFor(candidates, call.path);
-		if (target) target.callers.push(call);
+		for (const target of allBestFor(candidates, call.path))
+			target.callers.push(call);
 	}
 
 	/*

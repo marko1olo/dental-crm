@@ -257,4 +257,74 @@ For every piece of code suspected of being dead, physically trace its execution 
 
 USER OVERRIDE: The user specifically demands that the audit team aggressively use Git history (`git log -p`, `git diff`, etc.) to trace and investigate any lost or broken logic from recent refactorings. Ensure your orchestrator and subagents incorporate Git history analysis immediately into their workflow to find anything that might have been accidentally deleted or broken recently.
 
+## 2026-08-08T20:25:04Z
+
+# Teamwork Project Prompt — Draft
+
+> Status: Launched
+> Goal: Craft prompt → get user approval → delegate to teamwork_preview
+
+Ruthless E2E Visual Audit & Code Health Orchestration. The swarm will analyze the codebase, setup Playwright for 4-state visual testing (Mobile Light, Mobile Dark, PC Light, PC PC Dark), detect UI bugs, fix layout and contrast issues, and relentlessly refactor according to clean architecture standards without any AI-optimism.
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: benchmark
+
+## Requirements
+
+### R1. Ruthless Visual Scrutiny (4-State Proof)
+Implement Playwright or equivalent to capture screenshots of every screen, dialog, and state in Mobile Light, Mobile Dark, PC Light, PC Dark. Agents must critically evaluate these screenshots for layout breaks, padding/margin errors, unreadable contrast, missing hover states, and z-index issues. "Looks good to me" is banned.
+
+### R2. Global System Census & Code Health
+Perform exhaustive `ast-grep` and `rg` searches before writing code. Identify legacy systems, duplicate logic, and competing architectures. Run all linters and parsers to ensure clean architecture (SOLID, FSD). Fix every single warning and error.
+
+### R3. Execution Chain Verification
+Never assume code works because a file exists. Verify the entire call stack to ensure the logic is actually instantiated and called. Cross-reference with project documents and logs.
+
+### R4. Grounding & Zero Optimism
+Every technical decision must be backed by Google Search (e.g., React 19, Tailwind, Playwright docs). Agents must report facts and failures honestly. No sugarcoating, no "now it should work".
+
+## Acceptance Criteria
+
+### Visual Polish
+- [ ] Playwright tests are configured and successfully capture 4 states for all main views.
+- [ ] Screenshots are saved to the artifact directory and manually audited by an agent.
+- [ ] Zero overlapping text, broken margins, or contrast issues in the final visual report.
+
+### Codebase Health
+- [ ] No warnings or errors reported by the project's primary linters (e.g., Biome, ESLint, TypeScript).
+- [ ] Structural searches (`ast-grep`, `madge`) return zero circular dependencies or unresolved legacy duplicates for the modified scopes.
+
+### Architectural Integrity
+- [ ] Every modified or added feature includes execution chain proof (logs showing it's called in runtime).
+- [ ] No subjective "LGTM" verifications; all fixes are accompanied by before/after objective data.
+
+## 2026-08-09T09:03:30Z
+
+# Teamwork Project Prompt
+
+Устранение 48 падений React Error Boundary ("Раздел временно не открылся") в интерфейсе DENTE CRM. Внедрение Defensive Programming во все компоненты, падающие на `.map()`, `.split()` и `undefined` данных.
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Defensive Programming в React-компонентах
+Найти и исправить уязвимые места в компонентах, которые ожидают идеальные данные. Цели первой очереди:
+- `apps/web/src/components/schedule/AppointmentCard.tsx` (краш на `split`)
+- `apps/web/src/components/settings/SettingsClinicTab.tsx` (краш на `map`)
+- `apps/web/src/components/communications/MessageDeliveryConsole.tsx` (краш на `map`)
+- Все остальные компоненты в разделах `patients`, `analytics`, `communications`.
+
+### R2. Восстановление 4-State рендера
+После внедрения защит (optional chaining, fallbacks), компоненты должны рендериться даже с пустыми моками (без белых экранов смерти).
+
+## Acceptance Criteria
+
+### Verification & Quality Bar
+- [ ] Запуск `node e2e_4state_audit.cjs` генерирует 68 скриншотов без единого сообщения "Раздел временно не открылся".
+- [ ] Линтер TypeScript (`npm run typecheck`) проходит без новых ошибок.
+- [ ] Ошибки вида `Cannot read properties of undefined` полностью устранены из консоли браузера.
+
+
 

@@ -1,0 +1,83 @@
+a/apps/web/src/components/VisitDiaryEditor.tsx b/apps/web/src/components/VisitDiaryEditor.tsx
+index 9a5a5e42b..b5e59429b 100644
+--- a/apps/web/src/components/VisitDiaryEditor.tsx
++++ b/apps/web/src/components/VisitDiaryEditor.tsx
+@@ -257,21 +257,22 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
+ 	 * без кода диагноза.
+ 	 */
+ 	const commitIcdInput = () => {
+-		const typed = icdSearch.trim();
++		const typed = (icdSearch ?? "").trim();
+ 		if (!typed) return;
+ 		const normalized = typed.toUpperCase();
+-		const exact = ICD10_DICTIONARY.find(
+-			(item) => item.code.toUpperCase() === normalized,
++		const exact = (ICD10_DICTIONARY ?? []).find(
++			(item) => (item?.code ?? "").toUpperCase() === normalized,
+ 		);
+-		const candidate = exact ?? filteredIcd[0];
+-		if (candidate) handleIcdSelect(candidate.code);
++		const candidate = exact ?? filteredIcd?.[0];
++		if (candidate?.code) handleIcdSelect(candidate.code);
+ 	};
+ 
+-	const filteredIcd = ICD10_DICTIONARY.filter(
++	const searchLower = (icdSearch ?? "").toLowerCase();
++	const filteredIcd = (ICD10_DICTIONARY ?? []).filter(
+ 		(i) =>
+-			i.code.toLowerCase().includes(icdSearch.toLowerCase()) ||
+-			i.label.toLowerCase().includes(icdSearch.toLowerCase()) ||
+-			i.group.toLowerCase().includes(icdSearch.toLowerCase()),
++			(i?.code ?? "").toLowerCase().includes(searchLower) ||
++			(i?.label ?? "").toLowerCase().includes(searchLower) ||
++			(i?.group ?? "").toLowerCase().includes(searchLower),
+ 	).slice(0, 12);
+ 
+ 	const handleAutoResize = (
+@@ -283,8 +284,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
+ 		e.target.style.height = `${e.target.scrollHeight}px`;
+ 	};
+ 
+-	const icdEntry = ICD10_DICTIONARY.find(
+-		(i) => i.code === diary.diagnosisIcd10,
++	const icdEntry = (ICD10_DICTIONARY ?? []).find(
++		(i) => i?.code === diary?.diagnosisIcd10,
+ 	);
+ 
+ 	const PrintPreviewContent = (
+@@ -510,7 +511,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
+ 								>
+ 									<h4>Вложения (фотографии лечения)</h4>
+ 									<div className="vde-043-print-photos__grid">
+-										{printPhotos.map((ph) => (
++										{(printPhotos ?? []).map((ph) => (
+ 											<figure
+ 												key={ph.id}
+ 												className="vde-043-print-photos__item"
+@@ -858,7 +859,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
+ 									/>
+ 									{showIcdDropdown && filteredIcd.length > 0 && (
+ 										<div className="vde-043__icd-drop">
+-											{filteredIcd.map((icd) => (
++											{(filteredIcd ?? []).map((icd) => (
+ 												<div
+ 													key={icd.code}
+ 													className="vde-043__icd-opt"
+@@ -1221,7 +1222,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
+ 						История правок ({diaryRevisions.length})
+ 					</summary>
+ 					<ol className="vde-043__revisions-list">
+-						{diaryRevisions.map((rev, idx) => {
++						{(diaryRevisions ?? []).map((rev, idx) => {
+ 							const when = rev.revisedAt
+ 								? new Date(rev.revisedAt).toLocaleString("ru-RU")
+ 								: "дата не указана";
+@@ -1273,7 +1274,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
+ 									</div>
+ 									{prevBits.length > 0 ? (
+ 										<ul className="vde-043__revision-prev">
+-											{prevBits.map((b) => (
++											{(prevBits ?? []).map((b) => (
+ 												<li key={b.label}>
+ 													<strong>{b.label}:</strong>{" "}
+ 													<span className="vde-043__revision-prev-text">

@@ -1,0 +1,116 @@
+a/apps/web/src/SettingsView.tsx b/apps/web/src/SettingsView.tsx
+index b10024949..bd8e2c5fd 100644
+--- a/apps/web/src/SettingsView.tsx
++++ b/apps/web/src/SettingsView.tsx
+@@ -1659,18 +1659,18 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+ 	};
+ 
+ 	const flags = useWorkspaceProfile();
+-	let typedSettingsTabs = settingsTabs as SettingsTab[];
++	let typedSettingsTabs = (settingsTabs ?? []) as SettingsTab[];
+ 	if (!flags.hasMarketingModule)
+-		typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "marketing");
++		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "marketing");
+ 	if (!flags.hasAnalyticsModule)
+-		typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "reporting");
++		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "reporting");
+ 	/* Признак склада остался при самом разделе: вкладки настроек у него больше нет. */
+ 	if (!flags.hasBpmWorkflows)
+-		typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "bpmn");
++		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "bpmn");
+ 	if (!flags.hasClinicalRules)
+-		typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "rules");
++		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "rules");
+ 	if (!flags.hasInsuranceCoPay)
+-		typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "insurance");
++		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "insurance");
+ 	/*
+ 	 * Настройки мессенджеров врачу не показываем: бот клиники, номер WhatsApp и
+ 	 * рассылки — дело администратора. Это условие стояло в прежней раскладке
+@@ -1679,7 +1679,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+ 	 * месте, что и признаки модулей, — чтобы кнопка и панель не разошлись.
+ 	 */
+ 	if (activeStaffUser?.role === "doctor")
+-		typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "telegram");
++		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "telegram");
+ 	/*
+ 	 * Строки прайса, которые разбор просит проверить руками.
+ 	 *
+@@ -1706,8 +1706,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+ 	 */
+ 	const typedPricelistItems = (pricelistAnalysis?.items ??
+ 		[]) as DentalPricelistAnalysisResponse["items"];
+-	const pricelistWarningRows = typedPricelistItems.filter(
+-		(item) => item.warnings.length > 0,
++	const pricelistWarningRows = (typedPricelistItems ?? []).filter(
++		(item) => (item?.warnings ?? []).length > 0,
+ 	);
+ 	/*
+ 	 * ПРЕДУПРЕЖДЕНИЯ ОТВЕТА — ВТОРОЙ УРОВЕНЬ, И ЕГО НЕ ЧИТАЛ НИКТО.
+@@ -1933,9 +1933,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+           Пустая группа не рисуется — иначе у маленькой клиники висели бы
+           заголовки без единой строчки под ними.
+         */}
+-				{settingsTabGroups.map((group) => {
+-					const tabsInGroup = typedSettingsTabs.filter(
+-						(t) => t.group === group.id,
++				{(settingsTabGroups ?? []).map((group) => {
++					const tabsInGroup = (typedSettingsTabs ?? []).filter(
++						(t) => t?.group === group?.id,
+ 					);
+ 					if (tabsInGroup.length === 0) return null;
+ 					return (
+@@ -2138,7 +2138,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+ 										fontSize: "13px",
+ 									}}
+ 								>
+-									{typedPricelistResponseWarnings.map((warning) => (
++									{(typedPricelistResponseWarnings ?? []).map((warning) => (
+ 										<li
+ 											key={warning}
+ 											style={{
+@@ -2187,7 +2187,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+ 								Фото прайса: {pricelistImageNote}
+ 							</p>
+ 						) : null}
+-						{typedPricelistSummary.length > 0 ? (
++						{(typedPricelistSummary ?? []).length > 0 ? (
+ 							<section
+ 								aria-label="Материалы и бренды, распознанные в прайсе"
+ 								style={{
+@@ -2220,7 +2220,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+ 										fontSize: "13px",
+ 									}}
+ 								>
+-									{typedPricelistSummary.map((summary) => (
++									{(typedPricelistSummary ?? []).map((summary) => (
+ 										<li
+ 											key={`${summary.category}-${summary.specialty}`}
+ 											style={{ marginBottom: "6px" }}
+@@ -2246,7 +2246,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+ 								</ul>
+ 							</section>
+ 						) : null}
+-						{pricelistWarningRows.length > 0 ? (
++						{(pricelistWarningRows ?? []).length > 0 ? (
+ 							<section
+ 								aria-label="Строки прайса, требующие ручной проверки"
+ 								style={{
+@@ -2259,7 +2259,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+ 							>
+ 								<strong style={{ color: "var(--warning-color)" }}>
+ 									Проверьте руками: строк с предупреждениями —{" "}
+-									{pricelistWarningRows.length} из {typedPricelistItems.length}
++									{(pricelistWarningRows ?? []).length} из {(typedPricelistItems ?? []).length}
+ 								</strong>
+ 								<p
+ 									style={{
+@@ -2283,7 +2283,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+ 										fontSize: "13px",
+ 									}}
+ 								>
+-									{pricelistWarningRows.map((item) => (
++									{(pricelistWarningRows ?? []).map((item) => (
+ 										<li key={item.id} style={{ marginBottom: "6px" }}>
+ 											Строка {item.sourceLine} — {item.title}:{" "}
+ 											<span style={{ color: "var(--warning-color)" }}>

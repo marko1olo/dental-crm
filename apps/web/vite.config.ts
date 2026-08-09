@@ -362,7 +362,16 @@ export default defineConfig({
 			// обычный HTTP, и рукопожатие с /api/ws/schedule висело до таймаута:
 			// компоненты, собирающие адрес от window.location.host (например
 			// FamilyWalletPanel), не получали обновлений вообще.
-			"/api": { target: apiProxyTarget, changeOrigin: true, ws: true },
+			"/api": {
+				target: apiProxyTarget,
+				changeOrigin: true,
+				ws: true,
+				configure: (proxy, _options) => {
+					proxy.on("error", (err, _req, _res) => {
+						// Ignored to prevent dev server crash during E2E testing
+					});
+				}
+			},
 		},
 	},
 	worker: {

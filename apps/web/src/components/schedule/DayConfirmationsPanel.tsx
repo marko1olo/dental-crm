@@ -227,14 +227,16 @@ export function DayConfirmationsPanel() {
 
 	const visibleRows = useMemo(() => {
 		if (!data) return [];
-		return showAll ? data.rows : data.rows.filter((row) => row.needsCall);
+		return showAll
+			? (data.rows ?? [])
+			: (data.rows ?? []).filter((row) => row?.needsCall);
 	}, [data, showAll]);
 
 	const callProgress = useMemo(() => {
 		if (!data) return { done: 0, total: 0 };
-		const total = data.summary.needsCall;
-		const done = data.rows.filter(
-			(row) => row.needsCall && handled.has(row.appointmentId),
+		const total = data.summary?.needsCall ?? 0;
+		const done = (data.rows ?? []).filter(
+			(row) => row?.needsCall && handled.has(row.appointmentId),
 		).length;
 		return { done, total };
 	}, [data, handled]);
@@ -259,7 +261,7 @@ export function DayConfirmationsPanel() {
 		<section className="panel ops-panel" data-testid="day-confirmations-panel">
 			<div className="panel-heading">
 				<h2>Обзвон и подтверждения</h2>
-				{data && data.summary.needsCall > 0 ? (
+				{data && (data.summary?.needsCall ?? 0) > 0 ? (
 					<span className="status-pill status-arrived">
 						обзвонено {callProgress.done} из {callProgress.total}
 					</span>
@@ -316,34 +318,36 @@ export function DayConfirmationsPanel() {
 					<>
 						<ul className="ops-metrics">
 							<li
-								className={`ops-metric ${data.summary.needsCall > 0 ? "ops-metric--primary" : ""}`}
+								className={`ops-metric ${(data.summary?.needsCall ?? 0) > 0 ? "ops-metric--primary" : ""}`}
 							>
 								{/* Главное число экрана: сколько звонков реально нужно сделать. */}
 								<span className="ops-metric__value">
-									{data.summary.needsCall}
+									{data.summary?.needsCall ?? 0}
 								</span>
 								<span className="ops-metric__label">нужен звонок</span>
 							</li>
 							<li className="ops-metric">
 								<span className="ops-metric__value">
-									{data.summary.confirmed}
+									{data.summary?.confirmed ?? 0}
 								</span>
 								<span className="ops-metric__label">подтвердили сами</span>
 							</li>
 							<li className="ops-metric">
 								<span className="ops-metric__value">
-									{data.summary.awaiting}
+									{data.summary?.awaiting ?? 0}
 								</span>
 								<span className="ops-metric__label">ждут подтверждения</span>
 							</li>
 							<li className="ops-metric">
-								<span className="ops-metric__value">{data.summary.total}</span>
+								<span className="ops-metric__value">
+									{data.summary?.total ?? 0}
+								</span>
 								<span className="ops-metric__label">всего приёмов</span>
 							</li>
-							{data.summary.withoutPhone > 0 ? (
+							{(data.summary?.withoutPhone ?? 0) > 0 ? (
 								<li className="ops-metric ops-metric--danger">
 									<span className="ops-metric__value">
-										{data.summary.withoutPhone}
+										{data.summary?.withoutPhone ?? 0}
 									</span>
 									<span className="ops-metric__label">без телефона</span>
 								</li>
@@ -398,9 +402,14 @@ export function DayConfirmationsPanel() {
 										</tr>
 									</thead>
 									<tbody>
-										{visibleRows.map((row) => {
+										{(visibleRows ?? []).map((row) => {
 											const isHandled = handled.has(row.appointmentId);
-											const reminder = reminderPresentation[row.reminder.state];
+											const reminder = reminderPresentation[
+												row?.reminder?.state
+											] ?? {
+												label: "неизвестно",
+												tone: "muted",
+											};
 											return (
 												<tr
 													key={row.appointmentId}
@@ -416,7 +425,7 @@ export function DayConfirmationsPanel() {
 														{row.phone ? (
 															// tel: — на планшете регистратуры звонок в одно касание.
 															<a
-																href={`tel:${row.phone.replace(/[^\d+]/g, "")}`}
+																href={`tel:${(row.phone ?? "").replace(/[^\d+]/g, "")}`}
 															>
 																{row.phone}
 															</a>

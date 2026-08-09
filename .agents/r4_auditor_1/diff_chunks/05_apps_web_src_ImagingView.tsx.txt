@@ -1,0 +1,80 @@
+a/apps/web/src/ImagingView.tsx b/apps/web/src/ImagingView.tsx
+index 42cc5ad67..0185aa7c4 100644
+--- a/apps/web/src/ImagingView.tsx
++++ b/apps/web/src/ImagingView.tsx
+@@ -104,8 +104,8 @@ function imagingDescriptionTemplate(
+ 			? `Область: ${region}`
+ 			: null;
+ 	const body = header
+-		? [header, ...lines.filter((line) => !line.startsWith("Область:"))]
+-		: lines;
++		? [header, ...(lines ?? []).filter((line) => !line.startsWith("Область:"))]
++		: (lines ?? []);
+ 	return body.join("\n");
+ }
+ 
+@@ -439,7 +439,7 @@ export function ImagingView(props: ImagingViewProps) {
+ 				[studyId]: { summary, toothUpdates },
+ 			}));
+ 
+-			if (toothUpdates?.length > 0) {
++			if ((toothUpdates ?? []).length > 0) {
+ 				const detectedCodes: string[] = [];
+ 				const detectedToothStates: Record<string, ToothState> = {};
+ 				const aiDiagnoses: Record<string, string> = {};
+@@ -456,7 +456,7 @@ export function ImagingView(props: ImagingViewProps) {
+ 							: "находка без описания";
+ 					detectedToothStates[code] = toothStateFromAi(update.state);
+ 				}
+-				if (detectedCodes?.length > 0) {
++				if ((detectedCodes ?? []).length > 0) {
+ 					useVisitStore
+ 						.getState()
+ 						.applyAiToothCodes(
+@@ -474,7 +474,7 @@ export function ImagingView(props: ImagingViewProps) {
+ 			 * прислал сервер. Раньше печаталось присланное, и находка без номера зуба
+ 			 * считалась добавленной, хотя в формуле её не было.
+ 			 */
+-			const applied = toothUpdates.filter(
++			const applied = (toothUpdates ?? []).filter(
+ 				(raw) =>
+ 					typeof (raw as Record<string, unknown>)?.code === "string" &&
+ 					(raw as Record<string, unknown>).code,
+@@ -790,7 +790,7 @@ export function ImagingView(props: ImagingViewProps) {
+ 				</button>
+ 				biome-ignore lint/suspicious/noExplicitAny: automated suppression
+ 				{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
+-				{imagingKindOptions.map((kind: any) => (
++				{(imagingKindOptions ?? []).map((kind: any) => (
+ 					<button
+ 						className={`focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${imagingKindFilter === kind ? "active" : ""}`}
+ 						key={kind}
+@@ -1596,7 +1596,7 @@ export function ImagingView(props: ImagingViewProps) {
+ 						</div>
+ 						<div className="mpr-clinical-roadmap-steps">
+ 							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
+-							{mprClinicalChecklist.map((item: any) => (
++							{(mprClinicalChecklist ?? []).map((item: any) => (
+ 								<article
+ 									className={`mpr-clinical-step status-${item.status}`}
+ 									key={item.id}
+@@ -1613,7 +1613,7 @@ export function ImagingView(props: ImagingViewProps) {
+ 						aria-label="Быстрая сводка настройки КТ-срезов"
+ 					>
+ 						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
+-						{mprOperatorSummaryCards.map((card: any) => (
++						{(mprOperatorSummaryCards ?? []).map((card: any) => (
+ 							<article className={`tone-${card.tone}`} key={card.id}>
+ 								<span>{card.title}</span>
+ 								<strong>{card.value}</strong>
+@@ -1648,8 +1648,8 @@ export function ImagingView(props: ImagingViewProps) {
+ 						<div className="clinical-mpr-grid">
+ 							<div className="mpr-plane-grid">
+ 								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
+-								{cbctWorkbenchPlanes.map((plane: any) => {
+-									const planeSupported = cbctWorkbenchProjections.includes(
++								{(cbctWorkbenchPlanes ?? []).map((plane: any) => {
++									const planeSupported = (cbctWorkbenchProjections ?? []).includes(
+ 										plane.key,
+ 									);
+ 									const planeAvailable = mprControlsReady && planeSupported;

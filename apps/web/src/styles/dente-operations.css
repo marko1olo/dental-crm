@@ -92,6 +92,11 @@
 	flex-direction: column;
 	gap: 4px;
 	min-width: 0;
+	margin-bottom: 10px;
+}
+
+.ops-toolbar .ops-field {
+	margin-bottom: 0;
 }
 
 .ops-field > label {
@@ -111,6 +116,8 @@
 	color: var(--ink);
 	font: inherit;
 	font-size: 13.5px;
+	box-sizing: border-box;
+	min-height: 38px;
 	transition:
 		border-color var(--transition-fast),
 		box-shadow var(--transition-fast);

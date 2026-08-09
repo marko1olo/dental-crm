@@ -1,0 +1,160 @@
+a/apps/web/src/components/settings/MigrationWizard.tsx b/apps/web/src/components/settings/MigrationWizard.tsx
+index 77277c85b..a9b4648d3 100644
+--- a/apps/web/src/components/settings/MigrationWizard.tsx
++++ b/apps/web/src/components/settings/MigrationWizard.tsx
+@@ -789,18 +789,18 @@ function MappingPanel(props: {
+ }) {
+ 	const { upload, mapping } = props;
+ 	const blockers =
+-		mapping?.qualityFindings.filter((item) => item.severity === "blocker") ??
++		(mapping?.qualityFindings ?? []).filter((item) => item?.severity === "blocker") ??
+ 		[];
+ 
+ 	return (
+ 		<div className="mw-panel">
+ 			<div className="mw-source-card">
+ 				<div className="mw-source-main">
+-					<span className="mw-source-name">{upload.fileName}</span>
++					<span className="mw-source-name">{upload?.fileName}</span>
+ 					<span className="mw-source-meta">
+-						{formatBytes(upload.byteSize)} · {upload.source.kind.toUpperCase()}{" "}
+-						· кодировка {upload.source.detectedEncoding}
+-						{upload.source.encodingConfidence < 0.8 && (
++						{formatBytes(upload?.byteSize ?? 0)} · {(upload?.source?.kind ?? "").toUpperCase()}{" "}
++						· кодировка {upload?.source?.detectedEncoding}
++						{(upload?.source?.encodingConfidence ?? 0) < 0.8 && (
+ 							<em className="mw-uncertain">
+ 								{" "}
+ 								(определена неуверенно — проверьте ФИО ниже)
+@@ -817,7 +817,7 @@ function MappingPanel(props: {
+ 				</button>
+ 			</div>
+ 
+-			{upload.previousRunWithSameFile !== null && (
++			{upload?.previousRunWithSameFile != null && (
+ 				<div className="mw-alert mw-alert-info">
+ 					Этот файл уже загружался{" "}
+ 					{new Date(upload.previousRunWithSameFile.uploadedAt).toLocaleString(
+@@ -836,25 +836,25 @@ function MappingPanel(props: {
+ 				<>
+ 					<div className="mw-projection">
+ 						<div className="mw-proj-item mw-proj-ok">
+-							<span className="mw-proj-value">{mapping.projectedReady}</span>
++							<span className="mw-proj-value">{mapping?.projectedReady ?? 0}</span>
+ 							<span className="mw-proj-label">перенесётся</span>
+ 						</div>
+ 						<div className="mw-proj-item mw-proj-warn">
+ 							<span className="mw-proj-value">
+-								{mapping.projectedQuarantine}
++								{mapping?.projectedQuarantine ?? 0}
+ 							</span>
+ 							<span className="mw-proj-label">в карантин</span>
+ 						</div>
+ 						<div className="mw-proj-item">
+ 							<span className="mw-proj-value">
+-								{mapping.mapping.columns.length}
++								{(mapping?.mapping?.columns ?? []).length}
+ 							</span>
+ 							<span className="mw-proj-label">колонок сопоставлено</span>
+ 						</div>
+-						{mapping.llm.calls > 0 && (
++						{(mapping?.llm?.calls ?? 0) > 0 && (
+ 							<div className="mw-proj-item">
+ 								<span className="mw-proj-value">
+-									{mapping.llm.rejectedSuggestions}
++									{mapping?.llm?.rejectedSuggestions ?? 0}
+ 								</span>
+ 								<span className="mw-proj-label">ответов модели отклонено</span>
+ 							</div>
+@@ -871,7 +871,7 @@ function MappingPanel(props: {
+ 							</tr>
+ 						</thead>
+ 						<tbody>
+-							{mapping.mapping.columns.map((column) => (
++							{(mapping?.mapping?.columns ?? []).map((column) => (
+ 								<tr className="mw-mapping-row" key={column.sourceColumn}>
+ 									<td className="mw-col-source">{column.sourceColumn}</td>
+ 									<td className="mw-col-target">{column.targetField}</td>
+@@ -880,33 +880,33 @@ function MappingPanel(props: {
+ 											className={`mw-badge mw-badge-${column.decidedBy}`}
+ 											title={column.rationale}
+ 										>
+-											{DECISION_TITLES[column.decidedBy]}
++											{DECISION_TITLES[column.decidedBy] ?? column.decidedBy}
+ 										</span>
+ 										<span className="mw-confidence">
+-											{Math.round(column.confidence * 100)}%
++											{Math.round((column.confidence ?? 0) * 100)}%
+ 										</span>
+ 									</td>
+ 									{/* Маски, а не значения: настоящие ФИО и телефоны на экран не выводятся. */}
+ 									<td className="mw-col-shapes">
+-										{column.sampleValues.join("  ")}
++										{(column.sampleValues ?? []).join("  ")}
+ 									</td>
+ 								</tr>
+ 							))}
+ 						</tbody>
+ 					</table>
+ 
+-					{mapping.mapping.unmappedColumns.length > 0 && (
++					{(mapping?.mapping?.unmappedColumns ?? []).length > 0 && (
+ 						<div className="mw-alert mw-alert-warn">
+-							Не сопоставлены: {mapping.mapping.unmappedColumns.join(", ")}. Их
++							Не сопоставлены: {(mapping?.mapping?.unmappedColumns ?? []).join(", ")}. Их
+ 							содержимое сохранится в исходном виде, но в поля карточки не
+ 							запишется.
+ 						</div>
+ 					)}
+ 
+-					{mapping.qualityFindings.length > 0 && (
++					{(mapping?.qualityFindings ?? []).length > 0 && (
+ 						<details className="mw-findings" open={blockers.length > 0}>
+ 							<summary>
+-								Замечания к источнику: {mapping.qualityFindings.length}
++								Замечания к источнику: {(mapping?.qualityFindings ?? []).length}
+ 								{blockers.length > 0 && (
+ 									<span className="mw-findings-bad">
+ 										{" "}
+@@ -915,13 +915,13 @@ function MappingPanel(props: {
+ 								)}
+ 							</summary>
+ 							<ul>
+-								{mapping.qualityFindings.slice(0, 20).map((finding) => (
++								{(mapping?.qualityFindings ?? []).slice(0, 20).map((finding) => (
+ 									<li
+ 										key={`finding-${finding.severity}-${finding.message}`}
+ 										className={`mw-finding mw-finding-${finding.severity}`}
+ 									>
+ 										{finding.message}
+-										{finding.affectedRows > 0 && (
++										{(finding.affectedRows ?? 0) > 0 && (
+ 											<span className="mw-finding-rows">
+ 												{" "}
+ 												— строк: {finding.affectedRows}
+@@ -1084,7 +1084,7 @@ function ReportPanel(props: {
+ 			</div>
+ 
+ 			<div className="mw-checks">
+-				{report.checks.map((check) => (
++				{(report?.checks ?? []).map((check) => (
+ 					<div
+ 						className={`mw-check ${check.passed ? "is-ok" : "is-bad"}`}
+ 						key={check.code}
+@@ -1103,13 +1103,13 @@ function ReportPanel(props: {
+ 				))}
+ 			</div>
+ 
+-			{report.quarantinePreview.length > 0 && (
++			{(report?.quarantinePreview ?? []).length > 0 && (
+ 				<details className="mw-quarantine" open>
+ 					<summary>
+-						Карантин: {report.quarantinePreview.length} записей на разбор
++						Карантин: {(report?.quarantinePreview ?? []).length} записей на разбор
+ 					</summary>
+ 					<ul>
+-						{report.quarantinePreview.slice(0, 25).map((item) => (
++						{(report?.quarantinePreview ?? []).slice(0, 25).map((item) => (
+ 							<li key={item.id} className={item.blocking ? "is-blocking" : ""}>
+ 								<span className="mw-q-reason">
+ 									{REASON_TITLES[item.reason] ?? item.reason}

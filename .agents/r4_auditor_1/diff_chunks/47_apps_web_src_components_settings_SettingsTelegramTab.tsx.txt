@@ -1,0 +1,24 @@
+a/apps/web/src/components/settings/SettingsTelegramTab.tsx b/apps/web/src/components/settings/SettingsTelegramTab.tsx
+index dbd2c6761..7460870bb 100644
+--- a/apps/web/src/components/settings/SettingsTelegramTab.tsx
++++ b/apps/web/src/components/settings/SettingsTelegramTab.tsx
+@@ -1424,7 +1424,7 @@ export function SettingsTelegramTab({
+ 									))}
+ 								</fieldset>
+ 							) : null}
+-							{typedTelegramPreview.warnings.map((warning) => (
++							{(typedTelegramPreview?.warnings ?? []).map((warning: string) => (
+ 								<small key={warning}>{telegramHumanMessage(warning)}</small>
+ 							))}
+ 						</div>
+@@ -1539,8 +1539,8 @@ export function SettingsTelegramTab({
+ 						const itemBlockingNote = item.blockedReason
+ 							? telegramHumanMessage(item.blockedReason)
+ 							: "";
+-						const itemWarningNotes = item.warnings
+-							.map((warning) => telegramHumanMessage(warning))
++						const itemWarningNotes = (item?.warnings ?? [])
++							.map((warning: any) => telegramHumanMessage(warning))
+ 							.filter(Boolean);
+ 						return (
+ 							<article

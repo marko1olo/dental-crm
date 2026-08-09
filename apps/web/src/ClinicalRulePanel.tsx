@@ -52,18 +52,19 @@ function summarizeEvaluations(
 	evaluations: ClinicalRuleEvaluation[],
 	activeRulesFallback: number,
 ): ClinicalRuleSummary {
-	const unresolvedList = evaluations.filter((e) => !e.resolved);
+	const safeEvals = evaluations ?? [];
+	const unresolvedList = safeEvals.filter((e) => !e?.resolved);
 	return {
 		activeRules: activeRulesFallback,
-		evaluatedRules: evaluations.length,
+		evaluatedRules: safeEvals.length,
 		unresolved: unresolvedList.length,
-		blockers: unresolvedList.filter((e) => e.severity === "blocker").length,
-		warnings: unresolvedList.filter((e) => e.severity === "warning").length,
+		blockers: unresolvedList.filter((e) => e?.severity === "blocker").length,
+		warnings: unresolvedList.filter((e) => e?.severity === "warning").length,
 		requiredServices: unresolvedList.reduce(
-			(acc, e) => acc + (e.missingRequiredServiceIds?.length ?? 0),
+			(acc, e) => acc + (e?.missingRequiredServiceIds?.length ?? 0),
 			0,
 		),
-		coveredRules: evaluations.filter((e) => e.resolved).length,
+		coveredRules: safeEvals.filter((e) => e?.resolved).length,
 	};
 }
 
@@ -131,11 +132,11 @@ export function ClinicalRulePanel({
 		setEvaluateNotice(null);
 	}, []);
 
-	const displayEvaluations = liveEvaluations ?? evaluations;
+	const displayEvaluations = liveEvaluations ?? evaluations ?? [];
 	const displaySummary = liveSummary ?? summary ?? EMPTY_SUMMARY;
 
 	const unresolved = displayEvaluations.filter(
-		(evaluation) => !evaluation.resolved,
+		(evaluation) => !evaluation?.resolved,
 	);
 	const sourceEvaluations = unresolved.length ? unresolved : displayEvaluations;
 	const visibleEvaluations = sourceEvaluations.slice(
@@ -153,16 +154,16 @@ export function ClinicalRulePanel({
 	}, [dashboard, patientId]);
 
 	const primaryRuleAction = (evaluation: ClinicalRuleEvaluation) => {
-		if (evaluation.missingCompletedServiceIds.length) {
-			return `Сначала завершить: ${evaluation.missingCompletedServiceIds.map(serviceTitle).join(", ")}`;
+		if ((evaluation?.missingCompletedServiceIds ?? []).length) {
+			return `Сначала завершить: ${(evaluation.missingCompletedServiceIds ?? []).map(serviceTitle).join(", ")}`;
 		}
-		if (evaluation.missingRequiredServiceIds.length) {
-			return `Добавить: ${evaluation.missingRequiredServiceIds.map(serviceTitle).join(", ")}`;
+		if ((evaluation?.missingRequiredServiceIds ?? []).length) {
+			return `Добавить: ${(evaluation.missingRequiredServiceIds ?? []).map(serviceTitle).join(", ")}`;
 		}
-		if (evaluation.blockedServiceIds.length) {
-			return `Проверьте перед планированием: ${evaluation.blockedServiceIds.map(serviceTitle).join(", ")}`;
+		if ((evaluation?.blockedServiceIds ?? []).length) {
+			return `Проверьте перед планированием: ${(evaluation.blockedServiceIds ?? []).map(serviceTitle).join(", ")}`;
 		}
-		return evaluation.message;
+		return evaluation?.message ?? "";
 	};
 
 	const failureText = useCallback(
@@ -382,38 +383,42 @@ export function ClinicalRulePanel({
 						<AlertTriangle aria-hidden="true" />
 						<div>
 							<span>
-								{severityLabels[evaluation.severity]} ·{" "}
-								{staffRoleLabels[evaluation.ownerRole]}
+								{severityLabels?.[evaluation?.severity] ?? evaluation?.severity}{" "}
+								·{" "}
+								{staffRoleLabels?.[evaluation?.ownerRole] ??
+									evaluation?.ownerRole}
 							</span>
-							<h3>{evaluation.title}</h3>
+							<h3>{evaluation?.title}</h3>
 							<p>{primaryRuleAction(evaluation)}</p>
 						</div>
 					</summary>
 					<div className="clinical-rule-detail">
-						<p>{evaluation.message}</p>
-						{evaluation.missingRequiredServiceIds.length ? (
+						<p>{evaluation?.message}</p>
+						{(evaluation?.missingRequiredServiceIds ?? []).length ? (
 							<small>
 								Добавить:{" "}
-								{evaluation.missingRequiredServiceIds
+								{(evaluation.missingRequiredServiceIds ?? [])
 									.map(serviceTitle)
 									.join(", ")}
 							</small>
 						) : null}
-						{evaluation.missingCompletedServiceIds.length ? (
+						{(evaluation?.missingCompletedServiceIds ?? []).length ? (
 							<small>
 								Сначала завершить:{" "}
-								{evaluation.missingCompletedServiceIds
+								{(evaluation.missingCompletedServiceIds ?? [])
 									.map(serviceTitle)
 									.join(", ")}
 							</small>
 						) : null}
-						{evaluation.blockedServiceIds.length ? (
+						{(evaluation?.blockedServiceIds ?? []).length ? (
 							<small>
 								Проверьте перед планированием:{" "}
-								{evaluation.blockedServiceIds.map(serviceTitle).join(", ")}
+								{(evaluation.blockedServiceIds ?? [])
+									.map(serviceTitle)
+									.join(", ")}
 							</small>
 						) : null}
-						<em>{evaluation.patientMessage}</em>
+						<em>{evaluation?.patientMessage}</em>
 					</div>
 				</details>
 			))}
@@ -426,41 +431,44 @@ export function ClinicalRulePanel({
 		<div className="clinical-rule-grid">
 			{visibleEvaluations.map((evaluation) => (
 				<article
-					className={`clinical-rule-card severity-${evaluation.severity} ${evaluation.resolved ? "resolved" : ""}`}
-					key={evaluation.id}
+					className={`clinical-rule-card severity-${evaluation?.severity} ${evaluation?.resolved ? "resolved" : ""}`}
+					key={evaluation?.id ?? Math.random()}
 				>
 					<AlertTriangle aria-hidden="true" />
 					<div>
 						<span>
-							{severityLabels[evaluation.severity]} ·{" "}
-							{actionLabels[evaluation.action]} ·{" "}
-							{staffRoleLabels[evaluation.ownerRole]}
+							{severityLabels?.[evaluation?.severity] ?? evaluation?.severity} ·{" "}
+							{actionLabels?.[evaluation?.action] ?? evaluation?.action} ·{" "}
+							{staffRoleLabels?.[evaluation?.ownerRole] ??
+								evaluation?.ownerRole}
 						</span>
-						<h3>{evaluation.title}</h3>
-						<p>{evaluation.message}</p>
-						{evaluation.missingRequiredServiceIds.length ? (
+						<h3>{evaluation?.title}</h3>
+						<p>{evaluation?.message}</p>
+						{(evaluation?.missingRequiredServiceIds ?? []).length ? (
 							<small>
 								Добавить:{" "}
-								{evaluation.missingRequiredServiceIds
+								{(evaluation.missingRequiredServiceIds ?? [])
 									.map(serviceTitle)
 									.join(", ")}
 							</small>
 						) : null}
-						{evaluation.missingCompletedServiceIds.length ? (
+						{(evaluation?.missingCompletedServiceIds ?? []).length ? (
 							<small>
 								Сначала завершить:{" "}
-								{evaluation.missingCompletedServiceIds
+								{(evaluation.missingCompletedServiceIds ?? [])
 									.map(serviceTitle)
 									.join(", ")}
 							</small>
 						) : null}
-						{evaluation.blockedServiceIds.length ? (
+						{(evaluation?.blockedServiceIds ?? []).length ? (
 							<small>
 								Проверьте перед планированием:{" "}
-								{evaluation.blockedServiceIds.map(serviceTitle).join(", ")}
+								{(evaluation.blockedServiceIds ?? [])
+									.map(serviceTitle)
+									.join(", ")}
 							</small>
 						) : null}
-						<em>{evaluation.patientMessage}</em>
+						<em>{evaluation?.patientMessage}</em>
 					</div>
 				</article>
 			))}

@@ -9121,13 +9121,15 @@ export const messageTemplateCatalogSchema = z.object({
     isActive: z.boolean(),
     createdAt: z.any().optional(), // Can be string or Date, handle flexibly
 });
-export const createMessageTemplateCatalogSchema = messageTemplateCatalogSchema.pick({
+export const createMessageTemplateCatalogSchema = messageTemplateCatalogSchema
+    .pick({
     title: true,
     channel: true,
     intent: true,
     templateText: true,
     variables: true,
-}).extend({
+})
+    .extend({
     isActive: z.boolean().optional(),
 });
 export const updateMessageTemplateCatalogSchema = createMessageTemplateCatalogSchema.partial();

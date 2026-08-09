@@ -685,12 +685,12 @@ export function ManagerReportsPanel({
 		return {
 			byWeekday,
 			byHour,
-			peakWeekdayMinutes: byWeekday.reduce(
-				(peak, row) => Math.max(peak, row.minutes),
+			peakWeekdayMinutes: (byWeekday ?? []).reduce(
+				(peak, row) => Math.max(peak, row?.minutes ?? 0),
 				0,
 			),
-			peakHourMinutes: byHour.reduce(
-				(peak, row) => Math.max(peak, row.minutes),
+			peakHourMinutes: (byHour ?? []).reduce(
+				(peak, row) => Math.max(peak, row?.minutes ?? 0),
 				0,
 			),
 		};
@@ -761,7 +761,7 @@ export function ManagerReportsPanel({
 			) : null}
 
 			{summary ? (
-				summary.isEmpty ? (
+				summary?.isEmpty ? (
 					<p className="ops-empty">
 						За выбранный период данных нет: ни платежей, ни приёмов. Это не
 						нулевые показатели, а отсутствие записей.
@@ -774,9 +774,9 @@ export function ManagerReportsPanel({
 							<li className="ops-metric ops-metric--primary">
 								<span
 									className="ops-metric__value"
-									title={money(summary?.revenue?.totalRub)}
+									title={money(summary?.revenue?.totalRub ?? 0)}
 								>
-									{shortRub(summary?.revenue?.totalRub)}
+									{shortRub(summary?.revenue?.totalRub ?? 0)}
 								</span>
 								<span className="ops-metric__label">получено</span>
 							</li>
@@ -808,18 +808,18 @@ export function ManagerReportsPanel({
 							>
 								<span
 									className="ops-metric__value"
-									title={money(summary?.receivables?.totalDebtRub)}
+									title={money(summary?.receivables?.totalDebtRub ?? 0)}
 								>
-									{shortRub(summary?.receivables?.totalDebtRub)}
+									{shortRub(summary?.receivables?.totalDebtRub ?? 0)}
 								</span>
 								<span className="ops-metric__label">
-									долг, {summary.receivables.debtors} пациент(ов)
+									долг, {summary?.receivables?.debtors ?? 0} пациент(ов)
 								</span>
 							</li>
 							<li className="ops-metric">
 								<span className="ops-metric__value">
-									{summary.patientFlow.newTotal} /{" "}
-									{summary.patientFlow.returningTotal}
+									{summary?.patientFlow?.newTotal ?? 0} /{" "}
+									{summary?.patientFlow?.returningTotal ?? 0}
 								</span>
 								{/*
 									Подпись называет единицу измерения. Было просто «первичные /
@@ -842,9 +842,11 @@ export function ManagerReportsPanel({
 							<p className="ops-empty">Платежей за период не было.</p>
 						) : (
 							<ul className="ops-bars">
-								{(summary.revenue.points || []).map((point) => (
-									<li className="ops-bar" key={point.bucket}>
-										<span className="ops-bar__label">{point.bucket}</span>
+								{(summary?.revenue?.points ?? []).map((point) => (
+									<li className="ops-bar" key={point?.bucket ?? Math.random()}>
+										<span className="ops-bar__label">
+											{point?.bucket ?? ""}
+										</span>
 										{/*
 											Ширина в процентах, а не в пикселях: колонка отчёта на
 											планшете и на широком мониторе разной ширины, и полоса в
@@ -852,21 +854,21 @@ export function ManagerReportsPanel({
 										*/}
 										<span
 											className="ops-bar__track"
-											title={`${point.paymentCount} платеж(ей), ${point.payingPatients} пациент(ов)`}
+											title={`${point?.paymentCount ?? 0} платеж(ей), ${point?.payingPatients ?? 0} пациент(ов)`}
 										>
 											<span
 												className="ops-bar__fill"
 												style={{
-													width: `${maxRevenue > 0 ? Math.max(2, Math.round((point.revenueRub / maxRevenue) * 100)) : 2}%`,
+													width: `${maxRevenue > 0 ? Math.max(2, Math.round(((point?.revenueRub ?? 0) / maxRevenue) * 100)) : 2}%`,
 												}}
 											/>
 										</span>
 										{/* Полоса узкая: короткий вид, точная сумма — в подсказке. */}
 										<span
 											className="ops-bar__value"
-											title={money(point.revenueRub)}
+											title={money(point?.revenueRub ?? 0)}
 										>
-											{shortRub(point.revenueRub)}
+											{shortRub(point?.revenueRub ?? 0)}
 										</span>
 									</li>
 								))}
@@ -881,7 +883,7 @@ export function ManagerReportsPanel({
 						{showDoctorBreakdown ? (
 							<>
 								<h3 className="ops-section-title">Врачи</h3>
-								{summary.doctors.isEmpty ? (
+								{summary?.doctors?.isEmpty ? (
 									<p className="ops-empty">Выработки за период нет.</p>
 								) : (
 									<>
@@ -899,27 +901,34 @@ export function ManagerReportsPanel({
 													</tr>
 												</thead>
 												<tbody>
-													{summary.doctors.rows.map((row) => (
-														<tr key={row.doctorUserId ?? row.doctorName}>
+													{(summary?.doctors?.rows ?? []).map((row) => (
+														<tr
+															key={
+																row?.doctorUserId ??
+																row?.doctorName ??
+																Math.random()
+															}
+														>
 															<td className="ops-strong" data-label="Врач">
-																{row.doctorName}
+																{row?.doctorName ?? "—"}
 															</td>
 															<td className="ops-num" data-label="Получено">
-																{money(row.revenueRub)}
+																{money(row?.revenueRub ?? 0)}
 															</td>
 															<td className="ops-num" data-label="Приёмов">
-																{row.appointmentsTotal}
+																{row?.appointmentsTotal ?? 0}
 															</td>
 															<td className="ops-num" data-label="Завершено">
-																{row.appointmentsCompleted} (
-																{formatPercent(row.completionRate)})
+																{row?.appointmentsCompleted ?? 0} (
+																{formatPercent(row?.completionRate ?? null)})
 															</td>
 															<td className="ops-num" data-label="Неявки">
-																{row.appointmentsNoShow} (
-																{formatPercent(row.noShowRate)})
+																{row?.appointmentsNoShow ?? 0} (
+																{formatPercent(row?.noShowRate ?? null)})
 															</td>
 															<td className="ops-num" data-label="Средний чек">
-																{row.averageTicketRub === null
+																{row?.averageTicketRub === null ||
+																row?.averageTicketRub === undefined
 																	? "—"
 																	: money(row.averageTicketRub)}
 															</td>
@@ -948,11 +957,11 @@ export function ManagerReportsPanel({
 												</tbody>
 											</table>
 										</div>
-										{summary.doctors.unattributedRevenueRub > 0 ? (
+										{(summary?.doctors?.unattributedRevenueRub ?? 0) > 0 ? (
 											<p className="ops-hint">
 												Не отнесено к врачу:{" "}
-												{money(summary.doctors.unattributedRevenueRub)}.{" "}
-												{summary.doctors.attributionNote}
+												{money(summary?.doctors?.unattributedRevenueRub ?? 0)}.{" "}
+												{summary?.doctors?.attributionNote}
 											</p>
 										) : null}
 									</>
@@ -968,7 +977,7 @@ export function ManagerReportsPanel({
 						{showChairUtilisation ? (
 							<>
 								<h3 className="ops-section-title">Занятость кресел</h3>
-								{summary.chairs.isEmpty ? (
+								{summary?.chairs?.isEmpty ? (
 									<p className="ops-empty">Приёмов за период не было.</p>
 								) : (
 									<>
@@ -983,19 +992,23 @@ export function ManagerReportsPanel({
 													</tr>
 												</thead>
 												<tbody>
-													{summary.chairs.rows.map((row) => (
-														<tr key={row.chairId ?? row.chairName}>
+													{(summary?.chairs?.rows ?? []).map((row) => (
+														<tr
+															key={
+																row?.chairId ?? row?.chairName ?? Math.random()
+															}
+														>
 															<td className="ops-strong" data-label="Кресло">
-																{row.chairName}
+																{row?.chairName ?? "—"}
 															</td>
 															<td className="ops-num" data-label="Занято">
-																{formatHours(row.bookedMinutes)}
+																{formatHours(row?.bookedMinutes ?? 0)}
 															</td>
 															<td className="ops-num" data-label="Приёмов">
-																{row.appointments}
+																{row?.appointments ?? 0}
 															</td>
 															<td className="ops-num" data-label="Занятость">
-																{formatPercent(row.utilization)}
+																{formatPercent(row?.utilization ?? null)}
 															</td>
 														</tr>
 													))}
@@ -1003,7 +1016,9 @@ export function ManagerReportsPanel({
 											</table>
 										</div>
 										{/* База расчёта обязана стоять рядом с процентом. */}
-										<p className="ops-hint">{summary.chairs.basis.note}</p>
+										<p className="ops-hint">
+											{summary?.chairs?.basis?.note ?? ""}
+										</p>
 									</>
 								)}
 							</>
@@ -1012,10 +1027,13 @@ export function ManagerReportsPanel({
 						{/* ── Приёмы ────────────────────────────────────────────── */}
 						<h3 className="ops-section-title">Приёмы</h3>
 						<p>
-							Дошли до кресла: {formatPercent(summary.appointments.arrivalRate)}{" "}
-							· завершено: {formatPercent(summary.appointments.completionRate)}{" "}
-							· отменено: {formatPercent(summary.appointments.cancellationRate)}{" "}
-							· неявки: {formatPercent(summary.appointments.noShowRate)}
+							Дошли до кресла:{" "}
+							{formatPercent(summary?.appointments?.arrivalRate ?? null)} ·
+							завершено:{" "}
+							{formatPercent(summary?.appointments?.completionRate ?? null)} ·
+							отменено:{" "}
+							{formatPercent(summary?.appointments?.cancellationRate ?? null)} ·
+							неявки: {formatPercent(summary?.appointments?.noShowRate ?? null)}
 						</p>
 						{/*
 							Доли считаются от ВСЕХ записей периода, включая ещё не
@@ -1024,7 +1042,7 @@ export function ManagerReportsPanel({
 							куда делись остальные — непонятно.
 						*/}
 						<p className="ops-hint">
-							Доли считаются от всех {summary.appointments.total} записей
+							Доли считаются от всех {summary?.appointments?.total ?? 0} записей
 							периода. Остаток до 100 % — приёмы, которые ещё не состоялись: они
 							назначены на будущее или ждут подтверждения.
 						</p>
@@ -1041,7 +1059,7 @@ export function ManagerReportsPanel({
 							НОВОГО ЗАПРОСА НЕТ: числа уже в сводке. Отдельный
 							/api/reports/appointments-by-status не зовём.
 						*/}
-						{Object.keys(summary.appointments.byStatus).length > 0 ? (
+						{Object.keys(summary?.appointments?.byStatus ?? {}).length > 0 ? (
 							<div
 								className="ops-table-wrap"
 								data-testid="manager-reports-appointments-by-status"
@@ -1058,13 +1076,13 @@ export function ManagerReportsPanel({
 										</tr>
 									</thead>
 									<tbody>
-										{Object.entries(summary.appointments.byStatus)
+										{Object.entries(summary?.appointments?.byStatus ?? {})
 											.filter(([, count]) => count > 0)
 											.sort((a, b) => b[1] - a[1])
 											.map(([status, count]) => {
 												const share =
-													summary.appointments.total > 0
-														? count / summary.appointments.total
+													(summary?.appointments?.total ?? 0) > 0
+														? count / (summary?.appointments?.total ?? 1)
 														: null;
 												return (
 													<tr key={status}>
@@ -1121,15 +1139,15 @@ export function ManagerReportsPanel({
 										</thead>
 										<tbody>
 											{(summary?.patientFlow?.points ?? []).map((point) => (
-												<tr key={point.bucket}>
+												<tr key={point?.bucket ?? Math.random()}>
 													<td className="ops-strong" data-label="Месяц">
-														{point.bucket}
+														{point?.bucket ?? "—"}
 													</td>
 													<td className="ops-num" data-label="Первичные">
-														{point.newPatients}
+														{point?.newPatients ?? 0}
 													</td>
 													<td className="ops-num" data-label="Повторные">
-														{point.returningPatients}
+														{point?.returningPatients ?? 0}
 													</td>
 												</tr>
 											))}
@@ -1156,7 +1174,7 @@ export function ManagerReportsPanel({
 							подаётся как результат.
 						*/}
 						<h3 className="ops-section-title">Работают ли напоминания</h3>
-						{summary.reminderEffect.isEmpty ? (
+						{summary?.reminderEffect?.isEmpty ? (
 							<p className="ops-empty">
 								Приёмов за период нет — сравнивать нечего.
 							</p>
@@ -1182,11 +1200,11 @@ export function ManagerReportsPanel({
 												[
 													[
 														"Напоминание дошло",
-														summary.reminderEffect.reminded,
+														summary?.reminderEffect?.reminded,
 													],
 													[
 														"Напоминание не дошло",
-														summary.reminderEffect.notReminded,
+														summary?.reminderEffect?.notReminded,
 													],
 												] as const
 											).map(([label, group]) => (
@@ -1195,22 +1213,22 @@ export function ManagerReportsPanel({
 														{label}
 													</td>
 													<td className="ops-num" data-label="Всего">
-														{group.appointments}
+														{group?.appointments ?? 0}
 													</td>
 													<td className="ops-num" data-label="Отмены">
-														{group.cancelled}
+														{group?.cancelled ?? 0}
 													</td>
 													<td className="ops-num" data-label="Неявки">
-														{group.noShow}
+														{group?.noShow ?? 0}
 													</td>
 													<td className="ops-num" data-label="Потеряно">
-														{group.lost}
+														{group?.lost ?? 0}
 													</td>
 													<td
 														className="ops-num ops-strong"
 														data-label="Доля потерь"
 													>
-														{formatPercent(group.lostRate)}
+														{formatPercent(group?.lostRate ?? null)}
 													</td>
 												</tr>
 											))}
@@ -1218,32 +1236,34 @@ export function ManagerReportsPanel({
 									</table>
 								</div>
 
-								{summary.reminderEffect.lostRateDifference !== null ? (
+								{summary?.reminderEffect?.lostRateDifference !== null &&
+								summary?.reminderEffect?.lostRateDifference !== undefined ? (
 									<p
 										className={
-											summary.reminderEffect.enoughData
+											summary?.reminderEffect?.enoughData
 												? "ops-hint"
 												: "ops-hint ops-hint--weak"
 										}
 									>
-										{summary.reminderEffect.enoughData ? (
+										{summary?.reminderEffect?.enoughData ? (
 											<>
 												Без напоминания теряется на{" "}
 												<strong>
 													{Math.round(
-														summary.reminderEffect.lostRateDifference * 100,
+														(summary?.reminderEffect?.lostRateDifference ?? 0) *
+															100,
 													)}{" "}
 													п. п.
 												</strong>{" "}
 												больше.{" "}
 											</>
 										) : null}
-										{summary.reminderEffect.caveat}
+										{summary?.reminderEffect?.caveat ?? ""}
 									</p>
 								) : (
 									<p className="ops-hint">
 										Одна из групп пуста — сравнивать не с чем.{" "}
-										{summary.reminderEffect.caveat}
+										{summary?.reminderEffect?.caveat ?? ""}
 									</p>
 								)}
 							</>
@@ -1251,11 +1271,11 @@ export function ManagerReportsPanel({
 
 						{/* ── Дебиторка ─────────────────────────────────────────── */}
 						<h3 className="ops-section-title">Дебиторка</h3>
-						{summary.receivables.totalDebtRub === 0 ? (
+						{(summary?.receivables?.totalDebtRub ?? 0) === 0 ? (
 							<p className="ops-empty ops-empty--good">Долгов нет.</p>
 						) : (
 							<ul className="ops-bars">
-								{Object.entries(summary.receivables.byBucket)
+								{Object.entries(summary?.receivables?.byBucket ?? {})
 									.filter(([, amount]) => amount > 0)
 									.map(([bucket, amount]) => (
 										<li className="ops-bar" key={bucket}>
@@ -1266,7 +1286,7 @@ export function ManagerReportsPanel({
 												<span
 													className="ops-bar__fill"
 													style={{
-														width: `${Math.max(2, Math.round((amount / summary.receivables.totalDebtRub) * 100))}%`,
+														width: `${Math.max(2, Math.round((amount / (summary?.receivables?.totalDebtRub || 1)) * 100))}%`,
 													}}
 												/>
 											</span>
@@ -1279,7 +1299,7 @@ export function ManagerReportsPanel({
 						)}
 
 						{/* ── Переплаты: клиника должна вернуть ────────────────────── */}
-						{(summary.receivables.totalPrepaidRub ?? 0) > 0 && (
+						{(summary?.receivables?.totalPrepaidRub ?? 0) > 0 && (
 							<>
 								<h3 className="ops-section-title">
 									Переплаты: клиника должна вернуть
@@ -1300,13 +1320,13 @@ export function ManagerReportsPanel({
 											</tr>
 										</thead>
 										<tbody>
-											{(summary.receivables.prepayments ?? []).map((row) => (
-												<tr key={row.patientId}>
+											{(summary?.receivables?.prepayments ?? []).map((row) => (
+												<tr key={row?.patientId ?? Math.random()}>
 													<td className="ops-strong" data-label="Пациент">
-														{row.patientName}
+														{row?.patientName ?? "—"}
 													</td>
 													<td className="ops-num" data-label="Переплата">
-														{money(row.prepaidRub)}
+														{money(row?.prepaidRub ?? 0)}
 													</td>
 												</tr>
 											))}
@@ -1315,24 +1335,29 @@ export function ManagerReportsPanel({
 								</div>
 								<p className="ops-hint">
 									Эти пациенты заплатили больше назначенного — всего{" "}
-									{money(summary.receivables.totalPrepaidRub ?? 0)}. На главном
-									экране сумма к оплате считается по всей клинике одним
+									{money(summary?.receivables?.totalPrepaidRub ?? 0)}. На
+									главном экране сумма к оплате считается по всей клинике одним
 									вычитанием, поэтому переплата там уже зачтена в долг других
-									пациентов: долг {money(summary.receivables.totalDebtRub)}{" "}
-									минус переплаты{" "}
-									{money(summary.receivables.totalPrepaidRub ?? 0)} и есть та
-									сумма, которую показывает главный экран. Верните деньги или
-									зачтите их в счёт следующего приёма — иначе долг клиники
-									продолжит выглядеть меньше, чем он есть.
+									пациентов: долг{" "}
+									{money(summary?.receivables?.totalDebtRub ?? 0)} минус
+									переплаты {money(summary?.receivables?.totalPrepaidRub ?? 0)}{" "}
+									и есть та сумма, которую показывает главный экран. Верните
+									деньги или зачтите их в счёт следующего приёма — иначе долг
+									клиники продолжит выглядеть меньше, чем он есть.
 								</p>
 							</>
 						)}
 
 						<p className="ops-hint">
 							Период:{" "}
-							{new Date(summary.period.from).toLocaleDateString("ru-RU")} —{" "}
-							{new Date(summary.period.to).toLocaleDateString("ru-RU")}. В
-							выручку входят только полученные платежи; назначенные и
+							{summary?.period?.from
+								? new Date(summary.period.from).toLocaleDateString("ru-RU")
+								: "—"}{" "}
+							—{" "}
+							{summary?.period?.to
+								? new Date(summary.period.to).toLocaleDateString("ru-RU")
+								: "—"}
+							. В выручку входят только полученные платежи; назначенные и
 							возвращённые не учитываются.
 						</p>
 					</>
@@ -1379,10 +1404,10 @@ export function ManagerReportsPanel({
 										</tr>
 									</thead>
 									<tbody>
-										{services.data.rows.map((row) => (
-											<tr key={row.title}>
+										{(services?.data?.rows ?? []).map((row) => (
+											<tr key={row?.title ?? Math.random()}>
 												<td className="ops-strong" data-label="Услуга">
-													{row.title}
+													{row?.title ?? "—"}
 												</td>
 												<td className="ops-num" data-label="Количество">
 													{row.quantity}
@@ -1408,9 +1433,10 @@ export function ManagerReportsPanel({
 								выглядят как ошибка расчёта.
 							*/}
 							<p className="ops-hint">
-								Назначено всего {money(services.data.plannedTotalRub)}, из них
-								отдано скидками {money(services.data.discountTotalRub)}.{" "}
-								{services.data.note}
+								Назначено всего {money(services?.data?.plannedTotalRub ?? 0)},
+								из них отдано скидками{" "}
+								{money(services?.data?.discountTotalRub ?? 0)}.{" "}
+								{services?.data?.note}
 							</p>
 						</>
 					)}
@@ -1449,29 +1475,29 @@ export function ManagerReportsPanel({
 					) : (
 						<>
 							<ul className="ops-bars">
-								{scheduleMargins.byWeekday.map((row) => (
-									<li className="ops-bar" key={`weekday-${row.key}`}>
+								{(scheduleMargins?.byWeekday ?? []).map((row) => (
+									<li className="ops-bar" key={`weekday-${row?.key}`}>
 										<span className="ops-bar__label">
-											{weekdayNames[row.key] ?? row.key}
+											{weekdayNames[row?.key] ?? row?.key}
 										</span>
 										<span className="ops-bar__track">
 											<span
 												className="ops-bar__fill"
 												style={{
-													width: `${row.minutes > 0 && scheduleMargins.peakWeekdayMinutes > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakWeekdayMinutes) * 100)) : 0}%`,
+													width: `${(row?.minutes ?? 0) > 0 && (scheduleMargins?.peakWeekdayMinutes ?? 0) > 0 ? Math.max(2, Math.round(((row?.minutes ?? 0) / scheduleMargins.peakWeekdayMinutes) * 100)) : 0}%`,
 												}}
 											/>
 										</span>
 										<span className="ops-bar__value">
-											{formatHours(row.minutes)}
+											{formatHours(row?.minutes ?? 0)}
 										</span>
 									</li>
 								))}
 							</ul>
 							<h3 className="ops-section-title">Часы приёма</h3>
 							<ul className="ops-bars">
-								{scheduleMargins.byHour.map((row) => (
-									<li className="ops-bar" key={`hour-${row.key}`}>
+								{(scheduleMargins?.byHour ?? []).map((row) => (
+									<li className="ops-bar" key={`hour-${row?.key}`}>
 										<span className="ops-bar__label">
 											{String(row.key).padStart(2, "0")}:00
 										</span>
@@ -1526,7 +1552,8 @@ export function ManagerReportsPanel({
 						<p className="ops-notice ops-notice--error" role="alert">
 							{sliceRefusalText("Список должников", debtors.error)}
 						</p>
-					) : debtors.data === null || debtors.data.rows.length === 0 ? (
+					) : debtors?.data === null ||
+						(debtors?.data?.rows ?? []).length === 0 ? (
 						<p className="ops-empty ops-empty--good">
 							Должников нет: ни у одного пациента нет неоплаченного лечения.
 						</p>
@@ -1547,10 +1574,10 @@ export function ManagerReportsPanel({
 										</tr>
 									</thead>
 									<tbody>
-										{debtors.data.rows.map((row) => (
-											<tr key={row.patientId}>
+										{(debtors?.data?.rows ?? []).map((row) => (
+											<tr key={row?.patientId ?? Math.random()}>
 												<td className="ops-strong" data-label="Пациент">
-													{row.patientName}
+													{row?.patientName ?? "—"}
 												</td>
 												<td className="ops-num" data-label="Долг">
 													{money(row.debtRub)}
@@ -1571,8 +1598,9 @@ export function ManagerReportsPanel({
 								</table>
 							</div>
 							<p className="ops-hint">
-								Итого {money(debtors.data.totalDebtRub)} у{" "}
-								{debtors.data.rows.length} пациент(ов). {debtors.data.note}
+								Итого {money(debtors?.data?.totalDebtRub ?? 0)} у{" "}
+								{(debtors?.data?.rows ?? []).length} пациент(ов).{" "}
+								{debtors?.data?.note}
 							</p>
 						</>
 					)}

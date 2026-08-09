@@ -184,7 +184,7 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({
 
 	// Нечего сказать — ничего и не занимаем. Сообщение после слияния показываем
 	// ещё один раз: администратор должен увидеть, что произошло.
-	if (candidates.length === 0) {
+	if ((candidates || []).length === 0) {
 		return notice ? (
 			<p
 				className="patient-duplicate-alert patient-duplicate-alert--done"
@@ -202,9 +202,9 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({
 			aria-label="Возможный дубль карточки"
 		>
 			<p className="patient-duplicate-alert__lead">
-				{candidates.length === 1
-					? "Похоже, у этого пациента есть вторая карточка."
-					: `Похоже, у этого пациента есть ещё карточки: ${candidates.length}.`}{" "}
+				{(candidates || []).length === 1
+					? "Похоже, у этого пациента есть ещё одна карточка:"
+					: `Похоже, у этого пациента есть ещё карточки: ${(candidates || []).length}.`}{" "}
 				Пока карточки не объединены, приёмы, оплаты и снимки разложены по разным
 				местам, и долг не виден целиком.
 			</p>

@@ -28,7 +28,8 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 
 function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
-	const t = raw.trim();
+	if (typeof raw !== "string") return null;
+	const t = (raw ?? "").trim();
 	if (!t) return null;
 	try {
 		const p: unknown = JSON.parse(t);
