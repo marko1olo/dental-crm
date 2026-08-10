@@ -534,8 +534,7 @@ const UNEVALUABLE_MESSAGES = new Set([
 	"Manual stop must be marked before stopping MediaRecorder.",
 ]);
 const untestedDebt = [...KNOWN_ABSENT_RECORDER_RESILIENCE].filter(
-	(message) =>
-		!exercised.has(message) && !UNEVALUABLE_MESSAGES.has(message),
+	(message) => !exercised.has(message) && !UNEVALUABLE_MESSAGES.has(message),
 );
 
 /*
