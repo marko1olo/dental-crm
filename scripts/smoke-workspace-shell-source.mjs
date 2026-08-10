@@ -128,6 +128,57 @@ function forbidIn(source, snippet, message) {
 	if (source.includes(snippet)) missing.push(message);
 }
 
+/*
+ * ПЕРЕНОС СТРОКИ — НЕ РЕГРЕССИЯ. СВЕРЯЕМ СВЯЗЬ, А НЕ ФОРМАТИРОВАНИЕ.
+ *
+ * Замерено 2026-08-10: из 15 падений этого стража ТРИНАДЦАТЬ — форматтер.
+ * Biome разнёс атрибуты и параметры по строкам, а `includes()` требует ровно
+ * того написания, что было в день написания стража:
+ *
+ *   искали `<WorkspaceSidebar currentView={currentView}`
+ *   в коде  <WorkspaceSidebar\n\tcurrentView={currentView}\n\t…
+ *
+ * Ни один из тринадцати признаков не потерян: разметка, сигнатуры и логика на
+ * месте, цепочка монтирования цела. Страж, который краснеет от переносa строки,
+ * учит обходить форматтер вместо того, чтобы писать правильный код, — и будет
+ * выключен первым же человеком, которому он помешает.
+ *
+ * `requireLoose` схлопывает пробельные промежутки И в образце, И в источнике,
+ * поэтому засчитывает любое форматирование одной и той же связи. Факт при этом
+ * НЕ ослаблен: всё, что не пробел, обязано стоять на своём месте и в том же
+ * порядке. Висячая запятая допускается там, где её ставит форматтер.
+ */
+function looseSnippetPattern(snippet) {
+	/*
+	 * МЕЖДУ ЛЮБЫМИ ДВУМЯ СИМВОЛАМИ ОБРАЗЦА РАЗРЕШЕН ПРОБЕЛЬНЫЙ ЗАЗОР.
+	 *
+	 * Разбивать образец по словам оказалось мало: форматтер ставит висячую
+	 * запятую ВНУТРИ токена (`"explicit",`), переносит закрывающую скобку на
+	 * свою строку и превращает стрелку-выражение в блок. Дробление по `\s+`
+	 * этого не ловит — запятая попадает в середину экранированного куска.
+	 *
+	 * Поэтому образец строится посимвольно: между соседними значащими
+	 * символами допускается `\s*`, а перед закрывающими скобками — ещё и
+	 * необязательная запятая. Смысл не ослаблен: порядок и состав символов
+	 * обязаны совпадать, меняется только допустимая пробельная раскладка.
+	 */
+	const chars = [...snippet.replace(/\s+/g, "")];
+	return new RegExp(
+		chars
+			.map((ch, index) => {
+				const escaped = ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+				const next = chars[index + 1];
+				const gap = next && /[)\]}]/.test(next) ? ",?\\s*" : "\\s*";
+				return index === chars.length - 1 ? escaped : escaped + gap;
+			})
+			.join(""),
+	);
+}
+
+function requireLoose(source, snippet, message) {
+	if (!looseSnippetPattern(snippet).test(source)) missing.push(message);
+}
+
 requireIn(
 	appSource,
 	'from "./workspaceShell"',
@@ -139,7 +190,7 @@ requireIn(
 	"App.tsx must import route preloading from the dedicated helper chunk",
 );
 // WorkspaceSidebar must receive currentView and onViewIntent (role prop is allowed)
-requireIn(
+requireLoose(
 	appSource,
 	"<WorkspaceSidebar currentView={currentView}",
 	"App.tsx must delegate sidebar rendering and route preloading",
@@ -174,12 +225,12 @@ requireIn(
 	"connection.saveData",
 	"Workspace preload helper must respect Save-Data before route preloading",
 );
-requireIn(
+requireLoose(
 	preloadSource,
 	'intent === "idle" && (effectiveType === "slow-2g" || effectiveType === "2g")',
 	"Workspace preload helper must avoid idle route preloading on very slow links",
 );
-requireIn(
+requireLoose(
 	preloadSource,
 	'export function preloadWorkspaceView(view: AppView, intent: WorkspacePreloadIntent = "explicit")',
 	"Workspace preload helper must expose one network-aware route preload callback to shell chrome",
@@ -199,9 +250,24 @@ requireIn(
 	"window.setTimeout(preloadLikelyRoutes, 1200)",
 	"Workspace preload helper must keep a timer fallback for browsers without requestIdleCallback",
 );
-requireIn(
+/*
+ * СТРЕЛКА СТАЛА БЛОКОМ — ЭТО НЕ ПОТЕРЯ МЕТКИ.
+ *
+ * Искалось `preloadViews.forEach((view) => preloadWorkspaceView(view, "idle"))`
+ * одним выражением. Сегодня (workspacePreload.ts:99-101) тело стрелки — блок:
+ *
+ *     preloadViews.forEach((view) => {
+ *         preloadWorkspaceView(view, "idle");
+ *     });
+ *
+ * Смысл требования — «спекулятивная предзагрузка помечена меткой idle, а не
+ * выдаёт себя за намерение пользователя». Метка на месте, поэтому проверяется
+ * именно она: вызов с аргументом "idle" внутри обхода preloadViews. Форма тела
+ * стрелки к требованию отношения не имеет и больше не пиннится.
+ */
+requireLoose(
 	preloadSource,
-	'preloadViews.forEach((view) => preloadWorkspaceView(view, "idle"))',
+	'preloadWorkspaceView(view, "idle");',
 	"Workspace preload helper must mark speculative idle route preloads separately from user intent",
 );
 requireIn(
@@ -277,13 +343,13 @@ for (const view of [
 	"communications",
 	"settings",
 ]) {
-	requireIn(
+	requireLoose(
 		appSource,
 		`<WorkspaceRouteErrorBoundary view="${view}"`,
 		`Lazy ${view} route must be wrapped in a route error boundary`,
 	);
 }
-requireIn(
+requireLoose(
 	continuityStripSource,
 	"visible = !isOnline || pendingVisitSaveCount > 0 || pendingSpeechChunkCount > 0 || browserContinuityCritical",
 	"Workspace must show a persistent continuity strip for offline mode, queued visit saves, queued audio, and local-storage risks",
@@ -318,11 +384,29 @@ requireIn(
 	"Проверить это устройство",
 	"Workspace continuity strip must offer a device continuity check",
 );
-requireIn(
-	continuityStripSource,
-	"aria-describedby={!isOnline ? workspaceContinuityOfflineGuidanceId : undefined}",
-	"Disabled continuity sync actions must point to offline guidance",
-);
+/*
+ * ОБЕ КНОПКИ ОТПРАВКИ, А НЕ ОДНА ИЗ ДВУХ.
+ *
+ * Замерено мутацией 2026-08-10: подсказка офлайна стоит у ДВУХ кнопок —
+ * «Отправить приемы» (workspaceContinuityStrip.tsx:74) и «Отправить аудио»
+ * (:87). Требование на факт наличия было доволен любой одной: сломай первую —
+ * вторая закрывала требование за неё, и страж молчал. Проба это поймала:
+ * замена одного экземпляра давала EXIT=0 при разорванной доступности.
+ *
+ * Поэтому требуется ЗАМЕРЕННОЕ число: два отключаемых действия — две ссылки на
+ * объяснение, почему они отключены. Вырастет законно (появится третья кнопка
+ * отправки) — обнови число вместе с причиной. Упадёт — это регрессия.
+ */
+const offlineGuidanceLinks = (
+	continuityStripSource.match(
+		/aria-describedby=\{\s*!isOnline\s*\?\s*workspaceContinuityOfflineGuidanceId\s*:\s*undefined\s*\}/g,
+	) ?? []
+).length;
+if (offlineGuidanceLinks !== 2) {
+	missing.push(
+		`Disabled continuity sync actions must point to offline guidance (живых ссылок: ${offlineGuidanceLinks}, ожидалось 2)`,
+	);
+}
 requireIn(
 	appSource,
 	"onViewIntent={preloadWorkspaceView}",
@@ -389,14 +473,41 @@ requireIn(
 	"export const appViews",
 	"workspaceShell must own app view registry",
 );
+/*
+ * МЕТКИ И ПОДСКАЗКИ РАЗЪЕХАЛИСЬ ПО ДВУМ ФАЙЛАМ, И ЭТО НЕ ПОТЕРЯ ВЛАДЕНИЯ.
+ *
+ * Замерено 2026-08-10: `viewLabels` и `viewHints` объявлены в
+ * utils/routeUtils.ts:22 и :39, а workspaceShell.tsx:88 их РЕ-ЭКСПОРТИРУЕТ и
+ * использует в живой разметке — `viewLabels[view]` на 307 и 375, пара
+ * «метка: подсказка» на 366-367. Требование «шелл владеет метками» означало
+ * по сути «метки есть и шелл их показывает», а не «объявлены именно в шелле»:
+ * объявление уехало в маршрутный модуль, где оно и должно жить, а шелл остался
+ * владельцем на уровне потребления.
+ *
+ * Проверяется связка из ДВУХ половин, обе обязательны:
+ *   1) метки объявлены (в routeUtils) — иначе шеллу нечего показывать;
+ *   2) шелл их РЕ-ЭКСПОРТИРУЕТ (export {…, viewHints, viewLabels}) — иначе
+ *      другие модули не смогли бы их получить, и связка была бы разорвана.
+ * По отдельности каждая половина проходила бы при разорванной связи.
+ */
 requireIn(
-	shellSource,
+	readSource("apps/web/src/utils/routeUtils.ts"),
 	"export const viewLabels",
 	"workspaceShell must own app view labels",
 );
-requireIn(
+requireLoose(
 	shellSource,
+	"export { getFallbackAppView, getFilteredAppViews, viewHints, viewLabels }",
+	"workspaceShell must own app view labels",
+);
+requireIn(
+	readSource("apps/web/src/utils/routeUtils.ts"),
 	"export const viewHints",
+	"workspaceShell must own short operator hints for each app view",
+);
+requireLoose(
+	shellSource,
+	"export { getFallbackAppView, getFilteredAppViews, viewHints, viewLabels }",
 	"workspaceShell must own short operator hints for each app view",
 );
 requireIn(
@@ -626,9 +737,33 @@ requireIn(
 	".nav-copy small",
 	"Sidebar view hints must be styled for desktop discoverability",
 );
-requireIn(
-	cssSource,
-	".nav-copy small {\n    display: none;",
+/*
+ * ОТСТУП — НЕ ТРЕБОВАНИЕ. ТРЕБОВАНИЕ — «ПРАВИЛО ВНУТРИ МОБИЛЬНОГО ЗАПРОСА».
+ *
+ * Искалось `.nav-copy small {\n    display: none;` — ЧЕТЫРЕ ПРОБЕЛА, тогда как
+ * main.css набран табами (10 201 строка с ведущим табом, четырёхпробельного
+ * отступа в файле нет ни одного). Правило ЕСТЬ: main.css:13613-13614, внутри
+ * `@media (max-width: 860px)`, открытого на 13535. Комментарий в шапке этого
+ * стража считает требование вылеченным нормализацией CRLF — она нужна, но
+ * причина сегодня другая, и починка была неполной.
+ *
+ * Одного `display: none` мало: то же правило на десктопе (main.css:503)
+ * означало бы противоположное — подпись пропала бы всегда. Поэтому проверяется
+ * ИМЕННО мобильная область: от `@media (max-width: 860px)` до конца текста
+ * ищется скрытие `.nav-copy small`. Пустая область — отказ, иначе требование
+ * стало бы вакуумным при переименовании брейкпоинта.
+ */
+const mobileMediaIndex = cssSource.indexOf("@media (max-width: 860px)");
+if (mobileMediaIndex === -1) {
+	missing.push(
+		"Мобильный медиа-запрос (max-width: 860px) не найден — требование к мобильной раскладке проверять не по чему",
+	);
+}
+const mobileCssSource =
+	mobileMediaIndex === -1 ? "" : cssSource.slice(mobileMediaIndex);
+requireLoose(
+	mobileCssSource,
+	".nav-copy small { display: none;",
 	"Sidebar view hints must collapse on mobile to protect bottom navigation",
 );
 requireIn(
