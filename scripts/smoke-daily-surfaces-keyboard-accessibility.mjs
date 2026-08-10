@@ -17,8 +17,7 @@ import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
  * дерево лежит смешанным, поэтому требование с литералом `\n` иначе проверяет
  * не содержимое файла, а то, как git развернул его на этой машине.
  */
-const readSource = (path) =>
-	readFileSync(path, "utf8").replace(/\r\n/g, "\n");
+const readSource = (path) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
 const sources = {
 	app: readSource("apps/web/src/App.tsx"),
