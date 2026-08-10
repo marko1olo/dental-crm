@@ -8,7 +8,23 @@ const appSource =
 	readAppLogicSourceSync() +
 	"\n" +
 	readFileSync("apps/web/src/store/documentStore.ts", "utf8");
-const documentsSource = readFileSync("apps/web/src/DocumentsView.tsx", "utf8");
+/*
+ * РАЗМЕТКА ФОРМ ДОКУМЕНТОВ ЖИВЁТ В ОТДЕЛЬНОМ ФАЙЛЕ, И ЕГО НАДО ЧИТАТЬ.
+ *
+ * `DocumentsView.tsx` больше не держит формы: 21 форма вынесена в
+ * `DocumentsInlineForms.tsx` (5 717 строк) и импортируется оттуда
+ * (DocumentsView.tsx:44). Файл смонтирован — не сирота.
+ *
+ * Пока страж читал только `DocumentsView.tsx`, семь требований краснели на
+ * ЦЕЛОМ продукте: подсказки оператору («метки подписанных визитов, по одной в
+ * строке», «Расписка будет привязана к выбранному запросу.», «номер чека или
+ * данные фискального чека» и другие) живы дословно, просто в непрочитанном
+ * файле. Замер 2026-08-10: 7 требований, 0 регрессий.
+ */
+const documentsSource =
+	readFileSync("apps/web/src/DocumentsView.tsx", "utf8") +
+	"\n" +
+	readFileSync("apps/web/src/DocumentsInlineForms.tsx", "utf8");
 const mainCssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 const renderDocumentSource = readFileSync(
 	"apps/api/src/documents/renderDocument.ts",
@@ -67,10 +83,46 @@ function forbidIn(source, needle, message) {
 	record(!source.includes(needle), message);
 }
 
-const releaseSourceSelectBlock =
-	/<select[\s\S]*?value=\{selectedReleaseSourceRequestDocumentId\}[\s\S]*?<\/select>/.exec(
-		documentsSource,
-	)?.[0] ?? "";
+/*
+ * ГРАНИЦЫ <select> — ОТ САМОГО СЕЛЕКТА, А НЕ ОТ ПЕРВОГО В ФАЙЛЕ.
+ *
+ * Здесь стояла регулярка `/<select[\s\S]*?value=\{selected…\}[\s\S]*?<\/select>/`.
+ * Ленивый квантификатор считается от ПЕРВОГО `<select>` в тексте, а не от того,
+ * который держит нужный `value=`. Замерено 2026-08-10, оба исхода дефектны:
+ *
+ *   по DocumentsView.tsx        -> совпадения НЕТ, вырезка ПУСТА
+ *   по DocumentsInlineForms.tsx -> 125 805 символов вместо 456 (275 селектов)
+ *
+ * Пустая вырезка страшнее промаха: `forbidIn("", "document.id.slice(0, 8)")`
+ * проходит ВСЕГДА. Требование «не показывай оператору сырые id документов» не
+ * охраняло ничего и не покраснело бы ни при какой регрессии — это тот же класс
+ * вакуумной проверки, что вылечен в 41b9cdfa4.
+ *
+ * Границы берём от ближайшего `<select` ПЕРЕД маркером до первого `</select>`
+ * ПОСЛЕ него: 456 символов, ровно тело нужного селекта.
+ */
+function selectBlockAround(source, marker) {
+	const at = source.indexOf(marker);
+	if (at < 0) return "";
+	const open = source.lastIndexOf("<select", at);
+	const close = source.indexOf("</select>", at);
+	if (open < 0 || close < 0) return "";
+	return source.slice(open, close + "</select>".length);
+}
+const releaseSourceSelectBlock = selectBlockAround(
+	documentsSource,
+	"value={selectedReleaseSourceRequestDocumentId}",
+);
+/*
+ * Пустая вырезка — ОТКАЗ, а не молчание: иначе следующий переезд формы снова
+ * превратит запрет ниже в декорацию, причём незаметно.
+ */
+if (!releaseSourceSelectBlock) {
+	failures.push(
+		"Выбор источника расписки не найден: проверки над ним стали бы пустыми, " +
+			"а запрет на сырые id документов — вакуумным.",
+	);
+}
 
 /*
  * Дословно требовалось `lazy(() => import("./DocumentsView")` одной строкой.
