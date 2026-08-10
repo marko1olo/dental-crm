@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
 const appSource = fs.readFileSync("apps/web/src/App.tsx", "utf8");
 const settingsSource = fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8");
@@ -23,24 +24,31 @@ const settingsSource = fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8");
  * разметка раздела — в файле, который ей теперь владеет. Обе половины остались
  * обязательными, ни одна не снята.
  */
-const settingsTabComponentSources = [
-	"SettingsProtocolsTab",
-	"SettingsRulesTab",
-	"SettingsPricesTab",
-	"SettingsAiTab",
-	"SettingsImportsTab",
-	"SettingsAuditTab",
-	"sources/SourcesConnectorGrid",
-	"sources/SourcesDicomCapability",
-	"sources/SourcesIntegrationPresets",
-]
-	.map((component) =>
-		fs.readFileSync(
-			`apps/web/src/components/settings/${component}.tsx`,
-			"utf8",
-		),
-	)
-	.join("\n");
+/*
+ * НАБОР ВКЛАДОК БЕРЁТСЯ КАТАЛОГОМ, А НЕ СПИСКОМ ИМЁН.
+ *
+ * Здесь стоял список из девяти файлов, и он снова устарел: замер 2026-08-10 —
+ * страж падал на `className="import-studio smart-import-studio"` и
+ * `className="import-studio"`. Обе строки ЖИВЫ дословно и смонтированы, просто
+ * уехали в файлы, которых в списке не было:
+ *   SettingsSmartImportTab.tsx:1971   (рендер: SettingsImportsTab.tsx:1944)
+ *   SettingsPatientImportTab.tsx:1949 (рендер: SettingsImportsTab.tsx:1950-1952)
+ * Цепочка дальше общая: SettingsView.tsx:2384 -> App.tsx:4684. Регрессий нет.
+ *
+ * Дописать два имени было бы лечением симптома: следующий вынесенный файл
+ * уронил бы стража снова, ровно как уже случилось после первого разбора
+ * монолита (см. комментарий выше про 12 требований из 15). Поэтому читается
+ * ВЕСЬ каталог вкладок — тем же модулем, что и в страже доступности.
+ *
+ * Оговорка о цене: каталогом в набор попадают и файлы, которых никто не
+ * рендерит. Для ЗАПРЕТОВ это строгость (запрет расширяется и на мёртвую копию
+ * — не беда), но требование о НАЛИЧИИ разметки такой файл может выполнить за
+ * живой. Здесь это приемлемо: запреты ниже — суть стража, а смонтированность
+ * обеих найденных вкладок подтверждена поимённо цепочкой выше.
+ */
+const settingsTabComponentSources = readWebSurfaceSourceSync([
+	"apps/web/src/components/settings",
+]);
 
 const requiredSnippets = [
 	'{currentView === "shift" ? (',
