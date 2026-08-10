@@ -51,6 +51,48 @@ function assertNotIncludes(source, marker, label) {
 	}
 }
 
+/*
+ * ИМЯ — НЕ ПОВЕДЕНИЕ. ЗДЕСЬ БЫЛА ЛОЖНАЯ ЗЕЛЕНЬ, И ОНА ХУЖЕ ЛЮБОЙ КРАСНОТЫ.
+ *
+ * Два требования проверялись подстрокой по имени: `cancelBrowserImagingFolderScan`
+ * и `browserImagingScanAbortRef`. Замерено 2026-08-11 — оба удовлетворялись
+ * НЕРАБОТАЮЩИМ кодом:
+ *
+ *   useAppLogic.tsx:2944   cancelBrowserImagingFolderScan: false,
+ *   useImagingLogic.ts:226 const _browserImagingScanAbortRef = useRef(null);
+ *
+ * Первое — не функция, а `false`. Обе кнопки «Остановить» получают
+ * `onClick={false}` (SettingsImagingImportTab.tsx:2098 и :2220): нажатие не
+ * делает НИЧЕГО. Второе — имя с подчёркиванием, то есть намеренно неиспользуемое;
+ * `.current` не присваивается нигде.
+ *
+ * То есть страж докладывал об исправной отмене сканирования, которой нет. Это
+ * тот же класс, что комментарий-обманка, только подделка сделана значением.
+ *
+ * Теперь требуется ВЫЗЫВАЕМОЕ значение: объявление функции, стрелка или
+ * присваивание из хука. Литерал `false`/`null`/`undefined` требование больше
+ * не закрывает.
+ */
+function assertCallable(source, name, label) {
+	const callable = new RegExp(
+		`(?:function\\s+${name}\\s*\\(` +
+			`|(?:const|let)\\s+${name}\\s*=\\s*(?:async\\s*)?(?:\\(|function\\b|useCallback\\b)` +
+			`|${name}\\s*:\\s*(?:async\\s*)?(?:\\(|function\\b)` +
+			`|${name}\\s*:\\s*[A-Za-z_$][\\w$]*\\s*[,}])`,
+	);
+	const deadLiteral = new RegExp(
+		`${name}\\s*:\\s*(?:false|true|null|undefined)\\s*[,}]`,
+	);
+	if (deadLiteral.test(source)) {
+		throw new Error(
+			`${label}: «${name}» задан литералом вместо функции — кнопка получает мёртвый обработчик`,
+		);
+	}
+	if (!callable.test(source)) {
+		throw new Error(`${label}: «${name}» не объявлен как вызываемое значение`);
+	}
+}
+
 [
 	"type BrowserImagingScanProgress",
 	"elapsedMs: number",
@@ -65,9 +107,7 @@ function assertNotIncludes(source, marker, label) {
 	"const browserImagingScanMagicReadLimit = 180",
 	"const browserImagingScanYieldEveryUnits = 24",
 	"const browserImagingScanProgressEveryMs = 96",
-	"browserImagingScanAbortRef",
 	"new AbortController()",
-	"cancelBrowserImagingFolderScan",
 	"signal?: AbortSignal",
 	"throwIfBrowserImagingScanAborted",
 	"browserImagingScanElapsedFromIso",
@@ -141,6 +181,21 @@ function assertNotIncludes(source, marker, label) {
 			marker,
 			"Browser imaging scan must not materialize full FileList",
 		),
+);
+
+/*
+ * Отмена сканирования обязана быть ЖИВОЙ, а не одноимённой. Проверяется
+ * вызываемость, потому что именно здесь подделка и обнаружилась.
+ */
+assertCallable(
+	appSource,
+	"cancelBrowserImagingFolderScan",
+	"Browser imaging scan cancel",
+);
+assertCallable(
+	appSource,
+	"browserImagingScanAbortRef",
+	"Browser imaging scan abort ref",
 );
 
 const smokeCommand =
