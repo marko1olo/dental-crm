@@ -2,11 +2,30 @@ import { readFileSync } from "node:fs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 import { functionBodySource } from "./lib/function-body-source.mjs";
 import { scheduleSourceExpectations } from "./lib/schedule-source-expectations.mjs";
+import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
+/*
+ * ПОМОЩНИКИ ЗАПИСИ УЕХАЛИ В utils/, И БЕЗ НИХ СТРАЖ СВЕРЯЛСЯ БЫ С ПУСТОТОЙ.
+ *
+ * Коммит ddd625d59 разобрал `AppHelpers.tsx` (5 700 строк -> 83) на каталог
+ * `apps/web/src/utils/`. Туда уехало общее правило «чего не хватает записи» —
+ * `appointmentScheduleMissingFields` теперь в utils/AppointmentHelpers.ts:410.
+ *
+ * Страж заметил это САМ и упал с внятным текстом: «Либо функция переименована,
+ * либо переехала в файл, которого нет в склейке. Проверка не может сузить
+ * область и обязана упасть, а не сверяться с пустотой». Ровно то поведение,
+ * ради которого отказ на пустую область и писался: молчаливая пустая склейка
+ * сделала бы все требования к телу функции вакуумными.
+ *
+ * Каталог читается целиком, а не поимённо: перечисление имён и есть то, что
+ * ломается при следующем разборе.
+ */
 const appSource = (
 	readFileSync("apps/web/src/App.tsx", "utf8") +
 	"\n" +
 	readAppLogicSourceSync() +
+	"\n" +
+	readWebSurfaceSourceSync(["apps/web/src/utils"]) +
 	"\n" +
 	readFileSync("apps/web/src/hooks/domains/useScheduleLogic.ts", "utf8")
 ).replace(/\r\n/g, "\n");
@@ -291,10 +310,19 @@ requireIn(
  * ScheduleView с ним — отдельным утверждением: иначе правило могло бы уцелеть в
  * AppHelpers, перестав вызываться из расписания.
  */
-const helpersSource = readFileSync(
-	"apps/web/src/AppHelpers.tsx",
-	"utf8",
-).replace(/\r\n/g, "\n");
+/*
+ * `AppHelpers.tsx` — СБОРНИК НА 83 СТРОКИ, ТЕЛО В utils/.
+ *
+ * Коммит ddd625d59 разнёс помощников по `apps/web/src/utils/` (12+ модулей).
+ * Читать один сборник значит сверяться почти с пустотой: `functionBodySource`
+ * не найдёт объявления и справедливо упадёт. Берём сборник ВМЕСТЕ с каталогом.
+ */
+const helpersSource = [
+	readFileSync("apps/web/src/AppHelpers.tsx", "utf8"),
+	readWebSurfaceSourceSync(["apps/web/src/utils"]),
+]
+	.join("\n")
+	.replace(/\r\n/g, "\n");
 
 requireIn(
 	scheduleSource,

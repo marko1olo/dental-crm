@@ -49,10 +49,20 @@ function typeScriptFilesIn(directory) {
 	return collected;
 }
 
+/*
+ * `AppHelpers.tsx` СТАЛ СБОРНИКОМ — ЧИТАЕМ ЕГО ВМЕСТЕ С utils/.
+ *
+ * Коммит ddd625d59 оставил от него 83 строки ре-экспортов, а тело разошлось по
+ * `apps/web/src/utils/`. Проверка искала `normalizeTelegramPublicHttpsUrlDraft`
+ * в сборнике и не находила: функция жива в utils/CommonHelpers.ts:1277.
+ * Каталог берётся целиком, а не поимённо, чтобы следующий разбор не уронил
+ * стража заново.
+ */
 const webSourceFiles = [
 	"apps/web/src/App.tsx",
 	...appLogicSourceFiles(),
 	"apps/web/src/AppHelpers.tsx",
+	...typeScriptFilesIn("apps/web/src/utils"),
 	...typeScriptFilesIn("apps/web/src/hooks"),
 ].filter((file, index, all) => all.indexOf(file) === index);
 
