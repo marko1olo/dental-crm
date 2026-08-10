@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 import { readRouteSourceSync } from "./lib/route-source.mjs";
+import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
 const appSource =
 	readFileSync("apps/web/src/App.tsx", "utf8") +
@@ -9,22 +10,30 @@ const appSource =
 	"\n" +
 	readFileSync("apps/web/src/store/documentStore.ts", "utf8");
 /*
- * РАЗМЕТКА ФОРМ ДОКУМЕНТОВ ЖИВЁТ В ОТДЕЛЬНОМ ФАЙЛЕ, И ЕГО НАДО ЧИТАТЬ.
+ * РАЗМЕТКА ФОРМ ДОКУМЕНТОВ РАЗЪЕХАЛАСЬ ПО КАТАЛОГУ, И ЕГО НАДО ЧИТАТЬ.
  *
- * `DocumentsView.tsx` больше не держит формы: 21 форма вынесена в
- * `DocumentsInlineForms.tsx` (5 717 строк) и импортируется оттуда
- * (DocumentsView.tsx:44). Файл смонтирован — не сирота.
+ * История в два шага, и оба — переезд, а не поломка:
+ *   1) формы уехали из `DocumentsView.tsx` в `DocumentsInlineForms.tsx`;
+ *   2) коммит f4618c75c разобрал и его: 5 717 строк разошлись по
+ *      `components/documents/forms/` (14 файлов), а `DocumentsInlineForms.tsx`
+ *      остался сборником ре-экспортов на 1 106 байт.
  *
- * Пока страж читал только `DocumentsView.tsx`, семь требований краснели на
- * ЦЕЛОМ продукте: подсказки оператору («метки подписанных визитов, по одной в
- * строке», «Расписка будет привязана к выбранному запросу.», «номер чека или
- * данные фискального чека» и другие) живы дословно, просто в непрочитанном
- * файле. Замер 2026-08-10: 7 требований, 0 регрессий.
+ * После второго шага страж снова ослеп: он читал сборник, где текста
+ * подсказок оператору больше нет. Семь требований краснели на ЦЕЛОМ продукте —
+ * ровно тот же класс, что закрывали шагом раньше.
+ *
+ * Поэтому читается КАТАЛОГ целиком, а не перечисленные файлы: перечисление
+ * имён и есть механизм, который ломается при каждом следующем разборе.
+ * `readWebSurfaceSourceSync` обходит каталог рекурсивно, сортирует (порядок
+ * устойчив между запусками), исключает тесты и ПАДАЕТ на пустоте — молчаливая
+ * пустая строка здесь опаснее отказа, потому что `forbidIn` по ней проходит
+ * всегда и охраняет ничто.
  */
-const documentsSource =
-	readFileSync("apps/web/src/DocumentsView.tsx", "utf8") +
-	"\n" +
-	readFileSync("apps/web/src/DocumentsInlineForms.tsx", "utf8");
+const documentsSource = [
+	readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
+	readFileSync("apps/web/src/DocumentsInlineForms.tsx", "utf8"),
+	readWebSurfaceSourceSync(["apps/web/src/components/documents"]),
+].join("\n");
 const mainCssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 const renderDocumentSource = readFileSync(
 	"apps/api/src/documents/renderDocument.ts",

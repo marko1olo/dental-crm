@@ -5,6 +5,7 @@ import {
 	appLogicSourceFiles,
 	readAppLogicSourceSync,
 } from "./lib/app-logic-source.mjs";
+import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
 /**
  * Формы документов больше не живут одним файлом: семь из них вынесены в
@@ -56,7 +57,23 @@ function documentComponentSources(directory) {
 const source = [
 	fs.readFileSync("apps/web/src/App.tsx", "utf8"),
 	readAppLogicSourceSync(),
+	/*
+	 * AppHelpers РАЗОБРАН, И ЕГО ТЕЛО ТЕПЕРЬ В utils/.
+	 *
+	 * Коммит ddd625d59 оставил от `AppHelpers.tsx` 83 строки ре-экспортов, а
+	 * содержимое разошлось по `apps/web/src/utils/` (DocumentHelpers.ts,
+	 * CommonHelpers.ts и ещё десяток модулей). Страж продолжал читать сборник и
+	 * ослеп сразу на два десятка игл: `recordExtractIssuedAt: localDraftString`
+	 * жив в utils/CommonHelpers.ts, `type DocumentPayload` — в
+	 * utils/DocumentHelpers.ts и AppConstants.ts.
+	 *
+	 * Читаем каталог целиком, а не перечисленные имена: перечисление и есть то,
+	 * что ломается при следующем разборе. Модуль обходит рекурсивно, сортирует и
+	 * падает на пустоте.
+	 */
 	fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8"),
+	readWebSurfaceSourceSync(["apps/web/src/utils"]),
+	fs.readFileSync("apps/web/src/AppConstants.ts", "utf8"),
 	fs.readFileSync("apps/web/src/documentLogic.ts", "utf8"),
 	fs.readFileSync("apps/web/src/documentValidators.ts", "utf8"),
 	fs.readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
@@ -123,18 +140,13 @@ const requiredSnippets = [
 	"communicationDocumentTaskActionLabels",
 	'medical_intervention_refusal: "Отказ"',
 	"documentKindsForCommunicationTask(task)",
-	"documentKinds.map",
 	"openCommunicationTaskDocumentWorkflow",
 	"setSelectedDocumentKind(kind)",
-	"setSelectedPatientId(task.patientId)",
 	'window.location.hash = "documents"',
-	"communicationDocumentTaskActionLabels[kind] ?? documentLabels[kind]",
 	"documentSourceStatusLabels",
 	"documentSourceStatusClassNames",
 	"document-source-card",
 	"document-source-links",
-	"typedSelectedDocumentMetadata.sourceUrls.map",
-	"documentAuditFacts.sourceUrls.map",
 	"Контрольная метка",
 	"Официальные источники формы",
 	"Официальные источники паспорта документа",
@@ -173,8 +185,6 @@ const requiredSnippets = [
 	"initialUiPreferences.documentIssueSignatureMode",
 	"initialUiPreferences.documentIssueStaffFullName",
 	"initialUiPreferences.documentIssueStaffRole",
-	"loadDocumentIssueSignatureDraft(organizationId",
-	"setDocumentIssueSignatureMode(normalizedDocumentIssueSignatureMode(event.target.value))",
 	"documentIssueAttestationReady",
 	"documentIssueIdentityChecked",
 	"documentIssueDocumentOpenedAndChecked",
@@ -266,7 +276,6 @@ const requiredSnippets = [
 	"outpatient025uPayloadValue",
 	"outpatient025uOfficialForm274nChecked",
 	"outpatient025uThirdPartyDataChecked",
-	"Структура сверена с приказом Минздрава России от 13.05.2025 N 274н",
 	"medicalRecordExtract",
 	"recordExtractDiagnosis",
 	"recordExtractPreparedFromSignedRecords",
@@ -300,7 +309,6 @@ const requiredSnippets = [
 	"chainSummary?.medicalRecordCopyRequest",
 	"метки подписанных визитов, по одной в строке",
 	"метки визитов или номера записей, по одной в строке",
-	"Расписка будет привязана к выбранному запросу.",
 	"setReleaseRecipientFullName(request.recipientFullName)",
 	"setReleaseRecipientIdentityDocument(request.recipientIdentityDocument)",
 	"setReleaseChannel(request.requestedFormat)",
@@ -358,13 +366,6 @@ const requiredSnippets = [
 	"recordExtractThirdPartyDataChecked: boolean;",
 	"outpatient025uOfficialForm274nChecked: boolean;",
 	"outpatient025uThirdPartyDataChecked: boolean;",
-	"recordExtractPreparedFromSignedRecords: candidate.recordExtractPreparedFromSignedRecords === true",
-	"recordExtractRecipientFullName: localDraftString(candidate.recordExtractRecipientFullName, 240)",
-	"recordExtractRecipientAuthority: localDraftString(candidate.recordExtractRecipientAuthority, 240)",
-	"recordExtractIssuedAt: localDraftString(candidate.recordExtractIssuedAt, 80)",
-	"recordExtractThirdPartyDataChecked: candidate.recordExtractThirdPartyDataChecked === true",
-	"outpatient025uOfficialForm274nChecked: candidate.outpatient025uOfficialForm274nChecked === true",
-	"outpatient025uThirdPartyDataChecked: candidate.outpatient025uThirdPartyDataChecked === true",
 	"loadOutpatient025uDocumentDraft(",
 	"saveOutpatient025uDocumentDraft(",
 	"loadMedicalRecordExtractDocumentDraft(",
@@ -378,7 +379,6 @@ const requiredSnippets = [
 	"applyMedicalRecordExtractDocumentDraftFields(",
 	"currentMedicalRecordExtractDocumentDraftFields()",
 	"setRecordExtractRecipientFullName(fields.recordExtractRecipientFullName)",
-	"setRecordExtractRecipientAuthority(fields.recordExtractRecipientAuthority)",
 	"setRecordExtractIssuedAt(fields.recordExtractIssuedAt)",
 	"taxPaymentSelectionPersistenceKey",
 	"paymentReceiptSelectionPersistenceKey",
@@ -394,7 +394,6 @@ const requiredSnippets = [
 	"installmentPaymentSchedule",
 	"installmentScheduleNumber",
 	"installmentPaymentStatusAliases",
-	"запланировано / оплачено / просрочено / перенесено / отменено",
 	"installmentScheduleWrittenChangesConfirmed",
 	"minor_legal_representative_consent",
 	"minorLegalRepresentativeConsent",
@@ -452,6 +451,111 @@ const requiredSnippets = [
  * покраснеет. Переформатируйте — нет.
  */
 const requiredPatterns = [
+	{
+		pattern: /documentKinds\??\.map\(/,
+		as: "communication task card must iterate offered document kinds",
+	},
+	{
+		/*
+		 * ТРЕБОВАНИЕ ПЕРЕВЁРНУТО НАМЕРЕННО, И ЭТО НЕ ОСЛАБЛЕНИЕ.
+		 *
+		 * Здесь стояла игла `setSelectedPatientId(task.patientId)` — «открывая
+		 * документ из заявки, молча переключи активного пациента». Замер
+		 * 2026-08-11: такого вызова в `openCommunicationTaskDocumentWorkflow`
+		 * (useDocumentWorkflowModule.ts:3649-3672) НЕТ, и `setSelectedPatientId`
+		 * не встречается в этом модуле ни разу.
+		 *
+		 * Вместо переключения продукт ПРЕДУПРЕЖДАЕТ оператора: если пациент
+		 * заявки не совпадает с пациентом активного приёма, ставится ошибка
+		 * «Открыта форма … для заявки пациента X. Перед выпуском документа
+		 * переключите активный прием на этого пациента, чтобы не создать
+		 * документ по текущему визиту.»
+		 *
+		 * Молчаливое переключение ОПАСНЕЕ: оператор видит открытую форму и не
+		 * знает, что контекст сменился под ним, — так документ выпускается не по
+		 * тому визиту. Выполнить прежнюю иглу означало бы вернуть этот риск.
+		 * Поэтому проверяется ЗАЩИТА, а не подмена: сверка пациента заявки с
+		 * пациентом активного приёма.
+		 */
+		pattern: /task\.patientId\s*!==\s*dashboard\??\.activeVisit\??\.patientId/,
+		as: "communication document workflow must warn instead of silently switching the patient",
+	},
+	{
+		pattern:
+			/communicationDocumentTaskActionLabels\[\s*kind\s*\]\s*\?\?\s*documentLabels\[\s*kind\s*\]/,
+		as: "communication task action labels must fall back to document labels",
+	},
+	{
+		pattern: /typedSelectedDocumentMetadata\??\.sourceUrls[^;]{0,24}?\.map\(/,
+		as: "document metadata sources must be listed",
+	},
+	{
+		pattern: /documentAuditFacts\??\.sourceUrls[^;]{0,24}?\.map\(/,
+		as: "document audit facts sources must be listed",
+	},
+	{
+		pattern: /loadDocumentIssueSignatureDraft\(\s*organizationId/,
+		as: "document issue signature draft must be loaded per organization",
+	},
+	{
+		pattern:
+			/setDocumentIssueSignatureMode\(\s*normalizedDocumentIssueSignatureMode\(\s*event\.target\.value\s*,?\s*\)\s*,?\s*\)/,
+		as: "document issue signature mode must be normalized before storing",
+	},
+	{
+		pattern:
+			/Официальная\s+учетная\s+форма\s+по\s+приказу\s+Минздрава\s+N\s+274н/,
+		as: "outpatient 025u form must cite the official ministry order",
+	},
+	{
+		pattern: /Расписка\s+будет\s+привязана\s+к\s+выбранному\s+запросу\./,
+		as: "medical release receipt must state the source request binding",
+	},
+	{
+		pattern:
+			/recordExtractPreparedFromSignedRecords:\s*candidate\??\.recordExtractPreparedFromSignedRecords\s*===\s*true/,
+		as: "record extract draft must keep the signed-records flag",
+	},
+	{
+		pattern:
+			/recordExtractRecipientFullName:\s*localDraftString\(\s*candidate\??\.recordExtractRecipientFullName\s*,\s*240\s*,?\s*\)/,
+		as: "record extract draft must bound the recipient name",
+	},
+	{
+		pattern:
+			/recordExtractRecipientAuthority:\s*localDraftString\(\s*candidate\??\.recordExtractRecipientAuthority\s*,\s*240\s*,?\s*\)/,
+		as: "record extract draft must bound the recipient authority",
+	},
+	{
+		pattern:
+			/recordExtractIssuedAt:\s*localDraftString\(\s*candidate\??\.recordExtractIssuedAt\s*,\s*80\s*,?\s*\)/,
+		as: "record extract draft must bound the issue date",
+	},
+	{
+		pattern:
+			/recordExtractThirdPartyDataChecked:\s*candidate\??\.recordExtractThirdPartyDataChecked\s*===\s*true/,
+		as: "record extract draft must keep the third-party data confirmation",
+	},
+	{
+		pattern:
+			/outpatient025uOfficialForm274nChecked:\s*candidate\??\.outpatient025uOfficialForm274nChecked\s*===\s*true/,
+		as: "outpatient 025u draft must keep the official-form confirmation",
+	},
+	{
+		pattern:
+			/outpatient025uThirdPartyDataChecked:\s*candidate\??\.outpatient025uThirdPartyDataChecked\s*===\s*true/,
+		as: "outpatient 025u draft must keep the third-party data confirmation",
+	},
+	{
+		pattern:
+			/setRecordExtractRecipientAuthority\(\s*fields\??\.recordExtractRecipientAuthority\s*,?\s*\)/,
+		as: "record extract form must restore the recipient authority",
+	},
+	{
+		pattern:
+			/запланировано\s*\/\s*оплачено\s*\/\s*просрочено\s*\/\s*перенесено\s*\/\s*отменено/,
+		as: "payment schedule statuses must be spelled out for the operator",
+	},
 	{
 		pattern: /validateDocumentPayloadForKind\(\s*kind\s*[,)]/,
 		as: "validateDocumentPayloadForKind must be called for the selected kind",
