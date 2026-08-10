@@ -5,8 +5,7 @@ import {
     buildClinicProfileUpdatePayload,
     clinicProfileDraftSignature,
     clinicProfileDraftFromProfile,
-    clinicProfileEndpoint,
-} from "../../AppHelpers";
+    clinicProfileEndpoint, emptyClinicProfileDraft, clinicLegalMissingFields, clinicLegalReadinessPercent } from "../../AppHelpers";
 import type { Dashboard } from "@dental/shared";
 
 import type { ClinicProfileDraft } from "../../AppHelpers";
@@ -54,8 +53,56 @@ export function useClinicSettingsLogic({
     setNewRuleWarningText,
     newRulePatientText,
     setDashboard,
-    clinicProfileDraftRef,
+    clinicProfileSaveState,
 }: any) {
+	const clinicProfileDraftHydratedRef = useRef(false);
+	const clinicProfileDraftRef = useRef<ClinicProfileDraft>(emptyClinicProfileDraft());
+
+
+    	// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
+    	useEffect(() => {
+    		if (
+    			!dashboard ||
+    			!clinicProfileDirty ||
+    			clinicProfileSaveState === "saving" ||
+    			!clinicProfileDraft.clinicName.trim()
+    		) {
+    			return undefined;
+    		}
+    		const saveTimer = window.setTimeout(() => {
+    			void saveClinicProfileFromDraft();
+    		}, 1400);
+    		return () => window.clearTimeout(saveTimer);
+    	}, [
+    		clinicProfileDraft,
+    		clinicProfileDirty,
+    		clinicProfileSaveState,
+    		dashboard,
+    	]);
+    	useEffect(() => {
+    		if (!dashboard || clinicProfileDraftHydratedRef.current) return;
+    		if (dashboard?.clinicSettings?.profile) {
+    			setClinicProfileDraft(
+    				clinicProfileDraftFromProfile(dashboard?.clinicSettings?.profile),
+    			);
+    		} else {
+    			setClinicProfileDraft(emptyClinicProfileDraft);
+    		}
+    		setClinicProfileDirty(false);
+    		clinicProfileDraftHydratedRef.current = true;
+    	}, [dashboard, setClinicProfileDirty, setClinicProfileDraft]);
+
+    	useEffect(() => {
+    		clinicProfileDraftRef.current = clinicProfileDraft;
+    	}, [clinicProfileDraft]);
+
+    	const legalMissingFields = dashboard
+    		? clinicLegalMissingFields(dashboard?.clinicSettings?.profile)
+    		: [];
+
+    	const legalReadinessPercent = dashboard
+    		? clinicLegalReadinessPercent(dashboard?.clinicSettings?.profile)
+    		: 0;
 
 
 
@@ -355,6 +402,8 @@ export function useClinicSettingsLogic({
         createServiceCatalogItem,
         updateServiceCatalogItem,
         deleteServiceCatalogItem,
-        createClinicalRuleFromSettings
+        createClinicalRuleFromSettings,
+        legalMissingFields: legalMissingFields,
+        legalReadinessPercent: legalReadinessPercent
     };
 }

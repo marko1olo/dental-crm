@@ -4,7 +4,7 @@ import type {
 	ScheduleWarning,
 	StaffWorkingHours,
 } from "@dental/shared";
-import { useRef } from "react";
+import { useRef, useState, useMemo } from "react";
 import type {
 	AppointmentScheduleDraft,
 	StaffScheduleDraft,
@@ -23,6 +23,7 @@ import {
 	staffScheduleDraftSignature,
 	staffWorkingHoursFromDraft,
 } from "../../AppHelpers";
+import { toDateTimeLocalValue } from "../../AppHelpers";
 import { showToast } from "../../components/GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -951,6 +952,104 @@ export function useScheduleLogic({
 		}
 	}
 
+
+    	const sortedAppointments = useMemo(() => {
+    		if (!dashboard) return [];
+    		return (dashboard.appointments || [])
+    			.filter((appointment) => {
+    				if (
+    					scheduleDoctorFilterId &&
+    					appointment.doctorUserId !== scheduleDoctorFilterId
+    				)
+    					return false;
+    				if (
+    					scheduleAssistantFilterId &&
+    					appointment.assistantUserId !== scheduleAssistantFilterId
+    				)
+    					return false;
+    				if (
+    					scheduleChairFilterId &&
+    					appointment.chairId !== scheduleChairFilterId
+    				)
+    					return false;
+    				if (
+    					scheduleStatusFilter !== "all" &&
+    					appointment.status !== scheduleStatusFilter
+    				)
+    					return false;
+    				if (scheduleDateFilter) {
+    					const localAppointmentDate = toDateTimeLocalValue(
+    						appointment.startsAt,
+    						dashboard?.clinicSettings?.profile?.timezone,
+    					).slice(0, 10);
+    					if (localAppointmentDate !== scheduleDateFilter) return false;
+    				}
+    				return true;
+    			})
+    			.sort((left, right) => left.startsAt.localeCompare(right.startsAt));
+    	}, [
+    		dashboard,
+    		scheduleAssistantFilterId,
+    		scheduleChairFilterId,
+    		scheduleDateFilter,
+    		scheduleDoctorFilterId,
+    		scheduleStatusFilter,
+    	]);
+
+    	const appointmentReadinessById = useMemo(() => {
+    		if (!dashboard)
+    			return new Map<string, Dashboard["appointmentReadiness"][number]>();
+    		return new Map(
+    			(dashboard?.appointmentReadiness ?? []).map((readiness) => [
+    				readiness.appointmentId,
+    				readiness,
+    			]),
+    		);
+    	}, [dashboard]);
+
+
+    	const [isQuickConsultLoading, setIsQuickConsultLoading] = useState(false);
+
+    	const handleQuickConsult = async () => {
+    		if (isQuickConsultLoading) return;
+    		setIsQuickConsultLoading(true);
+    		try {
+    			const response = await fetch("/api/visits/quick", {
+    				method: "POST",
+    				headers: auth.denteClinicalMutationHeaders({
+    					"Content-Type": "application/json",
+    				}),
+    			});
+    			if (!response.ok) {
+    				const msg = await response.text().catch((err) => {
+    					showToast(
+    						actionFailureToast(
+    							"Не удалось прочитать ошибку",
+    							(err as { status?: number })?.status ?? null,
+    						),
+    						"error",
+    					);
+    					return "Ошибка";
+    				});
+    				setError(`Быстрый приём: ${msg}`);
+    				return;
+    			}
+    			const { patientId } = (await response.json()) as {
+    				patientId: string;
+    				appointmentId: string;
+    			};
+    			// Select the patient and navigate to visit
+    			setSelectedPatientId(patientId);
+    			await loadDashboard();
+    			window.location.hash = "visit";
+    			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+    		} catch (err: any) {
+    			setError(`Быстрый приём: ${err.message ?? "Ошибка сети"}`);
+    		} finally {
+    			setIsQuickConsultLoading(false);
+    		}
+    	};
+
 	return {
 		...scheduleStore,
 		markStaffScheduleDirty,
@@ -974,5 +1073,9 @@ export function useScheduleLogic({
 		saveAppointmentSchedule,
 		newAppointmentMissingFields,
 		createAppointmentFromDraft,
-	};
+        sortedAppointments: sortedAppointments,
+        appointmentReadinessById: appointmentReadinessById,
+        handleQuickConsult: handleQuickConsult,
+        isQuickConsultLoading: isQuickConsultLoading
+    };
 }

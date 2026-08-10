@@ -534,6 +534,104 @@ export function useImagingLogic({
 		imagingPreviewObjectUrls[study.id] ?? study.previewUrl;
 	const imagingViewerHref = (study: Dashboard["imagingStudies"][number]) =>
 		imagingPreviewObjectUrls[study.id] ?? study.viewerUrl ?? study.previewUrl;
+    useEffect(() => {
+    		if (typeof window === "undefined") return undefined;
+    		if (!imagingPreviewWorkset.length) {
+    			setImagingPreviewObjectUrls((current) => {
+    				auth.revokeObjectUrlMap(current);
+    				return {};
+    			});
+    			return undefined;
+    		}
+
+    		let cancelled = false;
+    		const abortController = new AbortController();
+    		const createdUrls: string[] = [];
+    		void Promise.all(
+    			imagingPreviewWorkset.map(
+    				async (study): Promise<[string, string] | null> => {
+    					if (!study.previewUrl.startsWith("/api/"))
+    						return [study.id, study.previewUrl];
+    					const response = await fetch(study.previewUrl, {
+    						cache: "no-store",
+    						headers: auth.denteClinicalReadHeaders(),
+    						signal: abortController.signal,
+    					});
+    					if (!response.ok) return null;
+    					const blobUrl = URL.createObjectURL(await response.blob());
+    					if (cancelled) {
+    						auth.revokeObjectUrlIfNeeded(blobUrl);
+    						return null;
+    					}
+    					createdUrls.push(blobUrl);
+    					return [study.id, blobUrl];
+    				},
+    			),
+    		)
+    			.then((entries) => {
+    				if (cancelled) {
+    					createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
+    					return;
+    				}
+    				const next = Object.fromEntries(
+    					entries.filter((entry): entry is [string, string] => Boolean(entry)),
+    				);
+    				const nextUrls = new Set(Object.values(next));
+    				setImagingPreviewObjectUrls((current) => {
+    					Object.values(current).forEach((url) => {
+    						if (!nextUrls.has(url)) auth.revokeObjectUrlIfNeeded(url);
+    					});
+    					return next;
+    				});
+    			})
+    			.catch((err) => {
+    				showToast(
+    					actionFailureToast(
+    						"Ошибка при создании превью снимка",
+    						(err as { status?: number })?.status ?? null,
+    					),
+    					"error",
+    				);
+    				createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
+    				if (!cancelled) {
+    					setImagingPreviewObjectUrls((current) => {
+    						auth.revokeObjectUrlMap(current);
+    						return {};
+    					});
+    				}
+    			});
+
+    		return () => {
+    			cancelled = true;
+    			abortController.abort();
+    			createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
+    		};
+    	}, [
+    		imagingPreviewWorkset,
+    		auth.revokeObjectUrlIfNeeded,
+    		auth.denteClinicalReadHeaders,
+    		auth.revokeObjectUrlMap,
+    	]);
+    useEffect(() => {
+    		const organizationId = activeOrganizationId?.trim() ?? "";
+    		if (
+    			!organizationId ||
+    			localImagingRecoveryHydratedOrganizationIdRef.current === organizationId
+    		)
+    			return;
+    		localImagingRecoveryHydratedOrganizationIdRef.current = organizationId;
+    		const localFolderDraft = loadLocalImagingFolderDraft(organizationId);
+    		setLocalImagingFolderDraft(localFolderDraft);
+    		setImagingFolderPath(localFolderDraft?.folderPath ?? "C:\\Images");
+    		setBrowserPickedImagingFolder(
+    			loadBrowserPickedImagingFolderPreview(organizationId),
+    		);
+    	}, [
+    		activeOrganizationId,
+    		setImagingFolderPath,
+    		setLocalImagingFolderDraft,
+    		setBrowserPickedImagingFolder,
+    	]);
 
 	return {
 		imagingImportText,

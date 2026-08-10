@@ -16,7 +16,7 @@ import {
 	type VisitFlowResult,
 	type VisitNoteDraft,
 } from "@dental/shared";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
 	acceptedVisitSaveFailureIsRetryable,
 	appendSpeechTextWithoutDuplicateTail,
@@ -46,7 +46,10 @@ import {
 	visitNoteFormFromDraft,
 	visitNoteFormFromVisit,
 	WorkflowResponseError,
+	loadVisitLocalDraft,
+	saveVisitLocalDraft,
 } from "../../AppHelpers";
+import { inferDashboardVisitSpecialty } from "../../visitSpecialtyData";
 import { showToast } from "../../components/GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { motionSafeScrollIntoView } from "../../motionPreference";
@@ -102,6 +105,7 @@ export function useVisitLogic({
 	const appStore = useAppStore();
 
 	const {
+		resetVisitToothState,
 		selectedSpecialty,
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setSelectedSpecialty,
@@ -164,6 +168,11 @@ export function useVisitLogic({
 
 	const {
 		isOnline,
+		setIsOnline,
+		localAutosaveReady,
+		setLocalAutosaveReady,
+		lastLocalSavedAt,
+		setLastLocalSavedAt,
 		speechGatewayHealthReport,
 		setSpeechGatewayHealthReport,
 		speechGatewayStatus,
@@ -1999,6 +2008,210 @@ export function useVisitLogic({
 		setImportCommit,
 		setError,
 		isImportDictating,
+	]);
+
+	useEffect(() => {
+		void refreshPendingVisitSaveState();
+		void refreshPendingSpeechChunkState();
+		const markOnline = () => {
+			setIsOnline(true);
+			void flushPendingVisitSaves({ silent: true });
+			void flushPendingSpeechChunks({ silent: true });
+			if (lastLocalSavedAt)
+				void syncVisitDraftAutosave(lastLocalSavedAt, { silent: true });
+		};
+		const markOffline = () => setIsOnline(false);
+		const refreshFromStorage = () => {
+			void refreshPendingVisitSaveState();
+			void refreshPendingSpeechChunkState();
+		};
+		window.addEventListener("online", markOnline);
+		window.addEventListener("offline", markOffline);
+		window.addEventListener("storage", refreshFromStorage);
+		const syncTimer = window.setTimeout(() => {
+			void flushPendingVisitSaves({ silent: true });
+			void flushPendingSpeechChunks({ silent: true });
+		}, 700);
+		return () => {
+			window.removeEventListener("online", markOnline);
+			window.removeEventListener("offline", markOffline);
+			window.removeEventListener("storage", refreshFromStorage);
+			window.clearTimeout(syncTimer);
+		};
+	}, [
+		lastLocalSavedAt,
+		setIsOnline,
+		refreshPendingVisitSaveState,
+		syncVisitDraftAutosave,
+		flushPendingSpeechChunks,
+		refreshPendingSpeechChunkState,
+		flushPendingVisitSaves,
+	]);
+
+	useEffect(() => {
+		if (!dashboard) return;
+		void loadSpeechRecordingStrategy({ silent: true });
+	}, [dashboard?.activeVisit?.id, loadSpeechRecordingStrategy, dashboard]);
+
+	useEffect(() => {
+		if (!dashboard) return;
+		let cancelled = false;
+		visitDraftUserEditedRef.current = false;
+		setLocalAutosaveReady(false);
+		// Отметки зубов и ИИ-диагнозы относятся к КОНКРЕТНОМУ приёму. Без сброса
+		// они переносились на следующего пациента (см. resetVisitToothState).
+		resetVisitToothState();
+		/*
+		 * ЧЕРНОВИК В ПАМЯТИ БРАУЗЕРА ПРИНАДЛЕЖИТ КОНКРЕТНОМУ ПРИЁМУ, А НЕ «ЛЮБОМУ».
+		 *
+		 * Сводка теперь честно отвечает `activeVisit: null`, когда в клинике не
+		 * открыт ни один приём (`dashboardSchema.activeVisit` — `visitSchema.nullable()`).
+		 * До этого сервер подставлял заготовку с нулевым идентификатором, и черновик
+		 * врача сохранялся в памяти браузера под ключом этого несуществующего приёма,
+		 * а затем восстанавливался в СЛЕДУЮЩИЙ открытый приём: ключ у всех «приёмов,
+		 * которых нет», один и тот же. Продиктованное про одного человека всплывало в
+		 * записи другого.
+		 *
+		 * Раннего выхода здесь НЕТ намеренно: ветка `else` ниже очищает поля ЭМК от
+		 * предыдущего приёма (`visitNoteFormFromVisit` на `null` даёт пустую форму).
+		 * Выйти сразу значило бы оставить на экране текст закрытого приёма.
+		 */
+		const openVisitId = dashboard.activeVisit?.id ?? null;
+		const savedDraft = openVisitId
+			? loadVisitLocalDraft(openVisitId, activeOrganizationId)
+			: null;
+		const serverUpdatedAt = dashboard.activeVisit
+			? Date.parse(dashboard.activeVisit.updatedAt)
+			: Number.NaN;
+		const savedAt = savedDraft ? Date.parse(savedDraft.savedAt) : Number.NaN;
+
+		if (savedDraft && Number.isFinite(savedAt) && savedAt > serverUpdatedAt) {
+			setTranscript(savedDraft.transcript);
+			setSelectedSpecialty(savedDraft.selectedSpecialty);
+			setVisitNoteForm(savedDraft.visitNoteForm);
+			setLastLocalSavedAt(savedDraft.savedAt);
+			setLocalDraftWasRestored(true);
+		} else {
+			const defaultSpecialty = inferDashboardVisitSpecialty(dashboard);
+			setSelectedSpecialty((current) =>
+				current === "therapist" || current === "universal"
+					? defaultSpecialty
+					: current,
+			);
+			setVisitNoteForm(visitNoteFormFromVisit(dashboard.activeVisit));
+			setLastLocalSavedAt(null);
+			setLocalDraftWasRestored(false);
+		}
+
+		const restoreServerDraft = async () => {
+			try {
+				const result = await loadServerVisitDraft(dashboard?.activeVisit?.id);
+				if (cancelled || !result.serverDraft) return;
+				if (visitDraftUserEditedRef.current) {
+					setLastServerDraftSavedAt(result.serverDraft.serverSavedAt);
+					return;
+				}
+				const serverDraftAt = Date.parse(result.serverDraft.serverSavedAt);
+				const localDraftAt = Number.isFinite(savedAt) ? savedAt : 0;
+				const activeVisitAt = Number.isFinite(serverUpdatedAt)
+					? serverUpdatedAt
+					: 0;
+				if (
+					Number.isFinite(serverDraftAt) &&
+					serverDraftAt > Math.max(localDraftAt, activeVisitAt)
+				) {
+					setTranscript(result.serverDraft.transcript);
+					setSelectedSpecialty(result.serverDraft.selectedSpecialty);
+					setVisitNoteForm(visitNoteFormFromDraft(result.serverDraft.draft));
+					setLastServerDraftSavedAt(result.serverDraft.serverSavedAt);
+					setLocalDraftWasRestored(true);
+					lastServerDraftSignatureRef.current = visitDraftSignature(
+						result.serverDraft.transcript,
+						result.serverDraft.selectedSpecialty,
+						visitNoteFormFromDraft(result.serverDraft.draft),
+					);
+				} else {
+					setLastServerDraftSavedAt(result.serverDraft.serverSavedAt);
+				}
+			} catch {
+				if (!cancelled) setServerDraftSyncState("queued");
+			} finally {
+				if (!cancelled) setLocalAutosaveReady(true);
+			}
+		};
+
+		void restoreServerDraft();
+		return () => {
+			cancelled = true;
+		};
+	}, [
+		activeOrganizationId,
+		dashboard?.activeVisit?.id,
+		dashboard?.activeVisit?.updatedAt,
+		setTranscript,
+		setVisitNoteForm,
+		lastServerDraftSignatureRef,
+		setLastServerDraftSavedAt,
+		setSelectedSpecialty,
+		setLocalDraftWasRestored,
+		visitDraftSignature,
+		setLastLocalSavedAt, // Отметки зубов и ИИ-диагнозы относятся к КОНКРЕТНОМУ приёму. Без сброса
+		// они переносились на следующего пациента (см. resetVisitToothState).
+		resetVisitToothState,
+		loadServerVisitDraft,
+		dashboard?.activeVisit,
+		setServerDraftSyncState,
+		visitDraftUserEditedRef,
+		dashboard,
+		setLocalAutosaveReady,
+	]);
+
+	useEffect(() => {
+		// Приёма нет — сохранять черновик некуда. Раньше он уходил под ключ
+		// несуществующего приёма и всплывал у следующего пациента.
+		const openVisitId = dashboard?.activeVisit?.id;
+		if (!dashboard || !localAutosaveReady || !openVisitId) return;
+		const savedAt = new Date().toISOString();
+		const timeout = window.setTimeout(() => {
+			saveVisitLocalDraft(
+				{
+					version: 1,
+					visitId: openVisitId,
+					savedAt,
+					transcript,
+					selectedSpecialty,
+					visitNoteForm,
+				},
+				activeOrganizationId,
+			);
+			setLastLocalSavedAt(savedAt);
+			setLocalDraftWasRestored(false);
+		}, 350);
+		return () => window.clearTimeout(timeout);
+	}, [
+		activeOrganizationId,
+		dashboard?.activeVisit?.id,
+		localAutosaveReady,
+		selectedSpecialty,
+		transcript,
+		visitNoteForm,
+		setLocalDraftWasRestored,
+		setLastLocalSavedAt,
+		dashboard,
+	]);
+
+	useEffect(() => {
+		if (!dashboard || !localAutosaveReady || !lastLocalSavedAt) return;
+		const timeout = window.setTimeout(() => {
+			void syncVisitDraftAutosave(lastLocalSavedAt, { silent: true });
+		}, 1600);
+		return () => window.clearTimeout(timeout);
+	}, [
+		dashboard?.activeVisit?.id,
+		lastLocalSavedAt,
+		localAutosaveReady,
+		syncVisitDraftAutosave,
+		dashboard,
 	]);
 
 	return {

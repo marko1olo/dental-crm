@@ -30,7 +30,70 @@
  * Здесь тело функции берётся счётом фигурных скобок от её объявления, второй
  * якорь не нужен вовсе. Потерянное объявление — громкая ошибка, а не пустая
  * строка.
+ *
+ * ТРЕТИЙ МОЛЧАЛИВЫЙ ОТКАЗ, НАЙДЕН 2026-08-10 И ЗАКРЫТ ЗДЕСЬ ЖЕ. Открывающей
+ * скобкой тела считалась ПЕРВАЯ `{` после объявления. У функции, чей параметр
+ * описан встроенным объектным типом, первая `{` принадлежит СПИСКУ ПАРАМЕТРОВ:
+ *
+ *     export function appointmentScheduleMissingFields(
+ *       draft: AppointmentScheduleDraft,
+ *       clinicMode: ... ,
+ *       staff: ... ,
+ *       resources?: {            <-- сюда уходил счёт скобок
+ *         chairs?: ... ;
+ *         patients?: ... ;
+ *       },
+ *     ): string[] {              <-- настоящее тело начиналось только тут
+ *
+ * Счёт закрывался на `}` объектного типа, и «телом» возвращалась одна сигнатура:
+ * замерено на AppHelpers.tsx — 346 символов вместо всей функции. Это ХУЖЕ пустой
+ * строки, потому что выглядит правдоподобно: `requireIn` падает с обвинением не
+ * того места, а `forbidIn` по сигнатуре проходит вхолостую — ровно та беда, ради
+ * которой этот модуль и написан.
+ *
+ * Теперь список параметров сперва проходится по круглым скобкам, и телом
+ * считается первая `{` ПОСЛЕ его закрытия.
  */
+
+/**
+ * Позиция за концом сбалансированной пары скобок, начиная с `openIndex`.
+ * Строки, шаблоны и комментарии пропускаются: скобка внутри строки — не скобка
+ * кода. Возвращает −1, если пара не сошлась до конца исходника.
+ */
+function matchingPairEnd(source, openIndex, openChar, closeChar) {
+	let depth = 0;
+	for (let i = openIndex; i < source.length; i += 1) {
+		const ch = source[i];
+
+		if (ch === "/" && source[i + 1] === "/") {
+			const end = source.indexOf("\n", i);
+			i = end < 0 ? source.length : end;
+			continue;
+		}
+		if (ch === "/" && source[i + 1] === "*") {
+			const end = source.indexOf("*/", i + 2);
+			if (end < 0) return -1;
+			i = end + 1;
+			continue;
+		}
+		if (ch === '"' || ch === "'" || ch === "`") {
+			const quote = ch;
+			i += 1;
+			while (i < source.length && source[i] !== quote) {
+				if (source[i] === "\\") i += 1;
+				i += 1;
+			}
+			continue;
+		}
+
+		if (ch === openChar) depth += 1;
+		else if (ch === closeChar) {
+			depth -= 1;
+			if (depth === 0) return i;
+		}
+	}
+	return -1;
+}
 
 /**
  * Тело функции вместе с заголовком, от `declaration` до парной закрывающей
@@ -53,7 +116,25 @@ export function functionBodySource(source, declaration, label = declaration) {
 				"сверяться с пустотой.",
 		);
 
-	const open = source.indexOf("{", start);
+	/*
+	 * Список параметров пропускается целиком: его встроенные объектные типы
+	 * содержат `{`, и без этого шага телом функции становилась бы сигнатура
+	 * (разбор — в шапке модуля). Если круглых скобок до первой `{` нет вовсе,
+	 * поведение прежнее — берётся первая `{`.
+	 */
+	const paramsOpen = source.indexOf("(", start);
+	const firstBrace = source.indexOf("{", start);
+	let searchFrom = start;
+	if (paramsOpen >= 0 && (firstBrace < 0 || paramsOpen < firstBrace)) {
+		const paramsEnd = matchingPairEnd(source, paramsOpen, "(", ")");
+		if (paramsEnd < 0)
+			throw new Error(
+				`У «${declaration}» (${label}) не сошлись скобки списка параметров.`,
+			);
+		searchFrom = paramsEnd;
+	}
+
+	const open = source.indexOf("{", searchFrom);
 	if (open < 0)
 		throw new Error(
 			`У «${declaration}» (${label}) не найдена открывающая скобка тела.`,
@@ -65,40 +146,10 @@ export function functionBodySource(source, declaration, label = declaration) {
 	 * Без этого тело обрывалось бы на первом же `"}"` в сообщении оператору, а
 	 * в этом репозитории такие сообщения по-русски и длинные.
 	 */
-	let depth = 0;
-	for (let i = open; i < source.length; i += 1) {
-		const ch = source[i];
-
-		if (ch === "/" && source[i + 1] === "/") {
-			const end = source.indexOf("\n", i);
-			i = end < 0 ? source.length : end;
-			continue;
-		}
-		if (ch === "/" && source[i + 1] === "*") {
-			const end = source.indexOf("*/", i + 2);
-			if (end < 0)
-				throw new Error(`Незакрытый комментарий внутри «${declaration}».`);
-			i = end + 1;
-			continue;
-		}
-		if (ch === '"' || ch === "'" || ch === "`") {
-			const quote = ch;
-			i += 1;
-			while (i < source.length && source[i] !== quote) {
-				if (source[i] === "\\") i += 1;
-				i += 1;
-			}
-			continue;
-		}
-
-		if (ch === "{") depth += 1;
-		else if (ch === "}") {
-			depth -= 1;
-			if (depth === 0) return source.slice(start, i + 1);
-		}
-	}
-
-	throw new Error(
-		`Скобки тела «${declaration}» (${label}) не сошлись до конца файла.`,
-	);
+	const end = matchingPairEnd(source, open, "{", "}");
+	if (end < 0)
+		throw new Error(
+			`Скобки тела «${declaration}» (${label}) не сошлись до конца файла.`,
+		);
+	return source.slice(start, end + 1);
 }

@@ -42,6 +42,7 @@ import {
 	operatorWorkflowFailureMessage,
 	redactedDicomViewerToolStateBundleForDownload,
 	redactedDicomWorkbenchManifestForDownload,
+	loadLocalDicomWorkbenchDraft,
 	removeLocalDicomWorkbenchDraft,
 	removeLocalImagingFolderDraft,
 	responseErrorMessage,
@@ -1558,6 +1559,32 @@ export function useDicomWorkbenchModule({
 	}, [imagingPreviewWorkset]);
 
 	// ===== Return =====
+    useEffect(() => {
+    		let cancelled = false;
+    		const restore = async () => {
+    			const recovered =
+    				await loadLocalDicomWorkbenchDraft(activeOrganizationId);
+    			if (cancelled) return;
+    			if (recovered) {
+    				applyDicomWorkbenchManifest(recovered.manifest);
+    				setDicomWorkbenchLocalSavedAt(recovered.clientSavedAt);
+    			}
+    			void loadDicomWorkbenchBundles({
+    				silent: true,
+    				restoreLatest: !recovered,
+    			});
+    		};
+    		void restore();
+    		return () => {
+    			cancelled = true;
+    		};
+    		// eslint-disable-next-line react-hooks/exhaustive-deps
+    	}, [
+    		activeOrganizationId,
+    		setDicomWorkbenchLocalSavedAt,
+    		loadDicomWorkbenchBundles,
+    		applyDicomWorkbenchManifest,
+    	]);
 	return {
 		// State
 		imagingPreviewObjectUrls,

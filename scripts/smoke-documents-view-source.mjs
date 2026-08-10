@@ -18,8 +18,16 @@ const documentsRoutesSource = readFileSync(
 	"utf8",
 );
 
+/*
+ * Требование принимает и подстроку, и выражение: приём взят из
+ * scripts/smoke-web-render-gating-source.mjs:208-216 (sourceHas), новой техники
+ * не изобретается. Выражение нужно там, где написание вокруг закрепляемой связи
+ * расставляет форматтер.
+ */
 function requireIn(source, needle, message) {
-	if (!source.includes(needle)) throw new Error(message);
+	const found =
+		needle instanceof RegExp ? needle.test(source) : source.includes(needle);
+	if (!found) throw new Error(message);
 }
 
 function forbidIn(source, needle, message) {
@@ -31,9 +39,15 @@ const releaseSourceSelectBlock =
 		documentsSource,
 	)?.[0] ?? "";
 
+/*
+ * Дословно требовалось `lazy(() => import("./DocumentsView")` одной строкой.
+ * Замерено 2026-08-09: коммит ad8f12499 форматтером разбил вызов надвое —
+ * App.tsx:87 держит `lazy(() =>`, перенос, `import("./DocumentsView")`. Раздел
+ * грузится лениво как задумано, до правки EXIT=1. `\s*` засчитывает обе формы.
+ */
 requireIn(
 	appSource,
-	'lazy(() => import("./DocumentsView")',
+	/lazy\(\(\)\s*=>\s*import\("\.\/DocumentsView"\)/,
 	"App.tsx must lazy-load DocumentsView.",
 );
 requireIn(

@@ -4,6 +4,7 @@ import {
 	type Dashboard,
 	type DentalMedicalCard043uPayload,
 	type DocumentAuditFacts,
+	documentAmountSource,
 	documentKindMetadata,
 	type GeneratedDocument,
 	type IssueDocumentInput,
@@ -34,6 +35,7 @@ import {
 	documentPayloadDraftKey,
 	emptyMedicalRecordExtractDocumentDraftFields,
 	emptyOutpatient025uDocumentDraftFields,
+	formatDateTime,
 	loadDocumentPaymentSelection,
 	loadMedicalRecordExtractDocumentDraft,
 	loadOutpatient025uDocumentDraft,
@@ -55,10 +57,16 @@ import {
 	telegramDocumentRequestWorkflowDocumentKinds,
 } from "../../communicationTaskData";
 import { showToast } from "../../components/GlobalToast";
+import {
+	documentPayloadForKind,
+	validateDocumentPayloadForKind,
+	withDocumentCreationTimestamps,
+} from "../../documentLogic";
 import type { useAuthLogic } from "../../hooks/domains/useAuthLogic";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { postVisitCarePresets } from "../../postVisitCareData";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
+import { useAppStore } from "../../store/appStore";
 import { useDocumentStore } from "../../store/documentStore";
 import {
 	clinicalToothStatusValue,
@@ -73,10 +81,12 @@ import {
 	clinicalRuleSummaryForUi,
 	completedActContractReferenceForUi,
 	documentLabels,
+	moneyDocumentKinds,
 	paymentTaxYearForUi,
 	staffRoleLabels,
 	taxPaymentPayerKeyForUi,
 	taxPaymentSelectionDocumentKinds,
+	taxPaymentSelectionPayloadDocumentKinds,
 } from "../../workspaceUiLabels";
 
 export interface DocumentWorkflowModuleProps {
@@ -112,10 +122,15 @@ export function useDocumentWorkflowModule({
 	setCurrentView,
 }: DocumentWorkflowModuleProps) {
 	const documentState = useDocumentStore();
+	/*
+	 * Заметка о доставке расписки живёт в appStore, а не в хранилище документов,
+	 * поэтому documentState её не несёт. Сборщик содержимого читает её как
+	 * releaseProtectionNote.trim() (documentLogic.ts:1233) для расписки о выдаче
+	 * медицинских документов: без неё этот вид упал бы на «не функция».
+	 */
+	const { releaseProtectionNote } = useAppStore();
 	const {
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		documentCreateSavingKind,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setDocumentCreateSavingKind,
 		documentStatusSavingId,
 		setDocumentStatusSavingId,
@@ -3299,6 +3314,214 @@ export function useDocumentWorkflowModule({
 		);
 	}
 
+	/*
+	 * ВЫЧИСЛЯЕМЫЕ ЗНАЧЕНИЯ, БЕЗ КОТОРЫХ ДОКУМЕНТ НЕ СОБИРАЕТСЯ.
+	 *
+	 * Сборщик содержимого (documentPayloadForKind) и валидаторы
+	 * (documentValidators.ts) достают эти имена ИЗ ОБЪЕКТА СОСТОЯНИЯ и ЗОВУТ их
+	 * как функции: documentLogic.ts:508 `paidContractCareReasonValue()`,
+	 * :549 `completedActTotalRubValue()`, :908 `treatmentPlanStageRows()`.
+	 * Хранилище useDocumentStore держит только сырые поля формы
+	 * (paidContractCareReason), но не значение с подстановкой по умолчанию
+	 * (paidContractCareReasonValue). Без этих 25 объявлений создание договора,
+	 * акта, сметы, счёта, плана лечения и справки посещения падало бы на
+	 * «X is not a function» — ровно тот отказ, о котором предупреждает
+	 * documentLogic.ts:1343-1347.
+	 *
+	 * Тела восстановлены дословно из коммита 84f14ccf3
+	 * (apps/web/src/useAppLogic.tsx), а не написаны заново: подстановки по
+	 * умолчанию попадают в юридический документ, и придумывать их нельзя.
+	 * Единственное осознанное отступление отмечено ниже у денежных сумм.
+	 */
+	function attendanceStartedAtValue(): string {
+		return (
+			attendanceStartedAt.trim() ||
+			(activeAppointment?.startsAt
+				? formatDateTime(activeAppointment.startsAt)
+				: "")
+		);
+	}
+
+	function attendanceEndedAtValue(): string {
+		return (
+			attendanceEndedAt.trim() ||
+			(activeAppointment?.endsAt ? formatDateTime(activeAppointment.endsAt) : "")
+		);
+	}
+
+	function attendanceSignedByValue(): string {
+		return attendanceSignedByFullName.trim() || activeDoctor?.fullName || "";
+	}
+
+	function completedActDoctorFullNameValue(): string {
+		return completedActDoctorFullName.trim() || activeDoctor?.fullName || "";
+	}
+
+	function completedActServicesSummaryValue(): string {
+		return (
+			completedActServicesSummary.trim() ||
+			dashboard?.activeVisit?.doctorSummary?.trim() ||
+			dashboard?.activeVisit?.treatmentPlan?.trim() ||
+			""
+		);
+	}
+
+	/*
+	 * СУММА РАЗБИРАЕТСЯ manualRubAmount, А НЕ Number(текст.replace(/[^\d]/g,"")).
+	 *
+	 * Это единственное место, где я отступил от дословного тела 84f14ccf3, и
+	 * отступил осознанно. В том коммите три итоговых суммы разбирались снятием
+	 * всего, кроме цифр: «1500,50» превращалось в 150050 — акт на полторы тысячи
+	 * становился актом на сто пятьдесят тысяч. Тот дефект в этом файле уже
+	 * починен и описан над manualRubAmount, и все соседние итоги
+	 * (_paidContractTotalRubValue, completedActPaidRubValue,
+	 * installmentScheduleTotalRubValue) уже считают через него. Вернуть сюда
+	 * старый разбор значило бы дать двум суммам одной и той же формы два разных
+	 * смысла. Поведение «руками не задано → расчётная сумма» сохранено дословно.
+	 */
+	function completedActTotalRubValue(): number {
+		const manual = manualRubAmount(completedActTotalRub);
+		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
+	}
+
+	function installmentSchedulePayerFullNameValue(): string {
+		return (
+			installmentSchedulePayerFullName.trim() || documentPatient?.fullName || ""
+		);
+	}
+
+	function installmentScheduleResponsibleFullNameValue(): string {
+		return (
+			installmentScheduleResponsibleFullName.trim() ||
+			activeDoctor?.fullName ||
+			"Администратор клиники"
+		);
+	}
+
+	function minorConsentDoctorFullNameValue(): string {
+		return minorConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
+	}
+
+	function paidContractCareReasonValue(): string {
+		return (
+			paidContractCareReason.trim() ||
+			dashboard?.activeVisit?.complaint?.trim() ||
+			"плановое стоматологическое лечение по результатам осмотра"
+		);
+	}
+
+	function paidContractCustomerFullNameValue(): string {
+		return paidContractCustomerFullName.trim() || documentPatient?.fullName || "";
+	}
+
+	function paidContractDoctorFullNameValue(): string {
+		return paidContractDoctorFullName.trim() || activeDoctor?.fullName || "";
+	}
+
+	function paidContractServiceScopeValue(): string {
+		return (
+			paidContractServiceScope.trim() ||
+			dashboard?.activeVisit?.treatmentPlan?.trim() ||
+			dashboard?.activeVisit?.doctorSummary?.trim() ||
+			""
+		);
+	}
+
+	function paymentInvoiceBankDetailsValue(): string {
+		return (
+			paymentInvoiceBankDetails.trim() ||
+			dashboard?.clinicSettings?.profile?.bankDetails?.trim() ||
+			""
+		);
+	}
+
+	function paymentInvoicePayerFullNameValue(): string {
+		return paymentInvoicePayerFullName.trim() || documentPatient?.fullName || "";
+	}
+
+	function postVisitProcedureNameValue(): string {
+		return (
+			postVisitProcedureName.trim() ||
+			dashboard?.activeVisit?.treatmentPlan?.trim() ||
+			"Рекомендации после стоматологического приема"
+		);
+	}
+
+	function postVisitToothOrAreaValue(): string {
+		return (
+			postVisitToothOrArea.trim() ||
+			inferredTreatmentArea ||
+			"область лечения по записи приема"
+		);
+	}
+
+	function postVisitDoctorFullNameValue(): string {
+		return postVisitDoctorFullName.trim() || activeDoctor?.fullName || "";
+	}
+
+	/*
+	 * Разбор суммы в строках этапа оставлен дословным (снятие всего, кроме цифр).
+	 * Он совпадает с уже живущим в этом файле _installmentScheduleInstallmentRows
+	 * и потому не создаёт разнобоя внутри строковых таблиц. Копейки в строках
+	 * этапов теряются так же, как и до правки, — это унаследованный долг, а не
+	 * привнесённый мной, и он записан в отчёте.
+	 */
+	function treatmentAcceptanceStageRows() {
+		return documentTextLines(treatmentAcceptanceStages).map((line, index) => {
+			const [stageName, plannedServices, plannedTiming, amount] = line
+				.split("|")
+				.map((part) => part.trim());
+			const parsedAmount = amount
+				? Number(amount.replace(/[^\d]/g, ""))
+				: Number.NaN;
+			return {
+				stageName: stageName || `Этап ${index + 1}`,
+				plannedServices: plannedServices || "объем лечения по выбранному плану",
+				plannedTiming: plannedTiming || "по расписанию клиники",
+				estimatedAmountRub: Number.isFinite(parsedAmount) ? parsedAmount : null,
+			};
+		});
+	}
+
+	function treatmentAcceptanceTotalRubValue(): number {
+		const manual = manualRubAmount(treatmentAcceptanceEstimatedTotalRub);
+		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
+	}
+
+	function treatmentEstimateDoctorFullNameValue(): string {
+		return treatmentEstimateDoctorFullName.trim() || activeDoctor?.fullName || "";
+	}
+
+	function treatmentPlanStageRows() {
+		return documentTextLines(treatmentPlanStages).map((line, index) => {
+			const [stageName, plannedServices, plannedTiming, clinicalNotes, amount] =
+				line.split("|").map((part) => part.trim());
+			const parsedAmount = amount
+				? Number(amount.replace(/[^\d]/g, ""))
+				: Number.NaN;
+			return {
+				stageName: stageName || `Этап ${index + 1}`,
+				plannedServices: plannedServices || "объем лечения по клиническому плану",
+				plannedTiming: plannedTiming || "по расписанию клиники",
+				clinicalNotes: clinicalNotes || null,
+				estimatedAmountRub: Number.isFinite(parsedAmount) ? parsedAmount : null,
+			};
+		});
+	}
+
+	function treatmentPlanTotalRubValue(): number {
+		const manual = manualRubAmount(treatmentPlanEstimatedTotalRub);
+		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
+	}
+
+	function treatmentPlanDoctorFullNameValue(): string {
+		return treatmentPlanDoctorFullName.trim() || activeDoctor?.fullName || "";
+	}
+
+	function warrantyDoctorFullNameValue(): string {
+		return warrantyDoctorFullName.trim() || activeDoctor?.fullName || "";
+	}
+
 	function applyPostVisitCarePreset(
 		topic: PostVisitCareTopic,
 		options: { force?: boolean } = {},
@@ -4097,6 +4320,353 @@ export function useDocumentWorkflowModule({
 		}
 	}
 
+	/*
+	 * СОЗДАНИЕ ДОКУМЕНТА. ЧЕМ ЭТА ФУНКЦИЯ БЫЛА ПОДМЕНЕНА И ПОЧЕМУ КНОПКА НЕ РАБОТАЛА.
+	 *
+	 * Коммит 57d904b0a (08-07 21:26) вынес рабочий процесс документов из
+	 * useAppLogic.tsx и потерял по дороге createDocument. Коммит f81cba16f
+	 * (08-08 14:50, «stub missing derived props») закрыл дыру заглушкой: в
+	 * возвращаемом объекте появилось `createDocument: requestDocumentIssue`.
+	 *
+	 * Под именем createDocument наружу уходила ВЫДАЧА уже существующего
+	 * черновика. requestDocumentIssue принимает ОБЪЕКТ документа
+	 * (GeneratedDocument) и первым делом смотрит `document.status !== "draft"`.
+	 * А точки вызова передают ВИД документа строкой — DocumentsView.tsx:6319
+	 * `createDocument(selectedDocumentKind)` и :6359 `createDocument(kind)`.
+	 * У строки поля status нет, `undefined !== "draft"` истинно, и выполнялось
+	 * `setError("Выдать можно только черновик документа.")`. Оператор нажимал
+	 * «Создать документ», получал сообщение про выдачу черновика, и не
+	 * создавалось ничего.
+	 *
+	 * Проверка типов эту подмену не видела: пропсы DocumentsView разбираются из
+	 * слабо типизированного контекста, поэтому typecheck был зелёным всё время,
+	 * пока кнопка не работала.
+	 *
+	 * Тело восстановлено из коммита 84f14ccf3 (useAppLogic.tsx:12134). Сборка и
+	 * проверка содержимого делегированы documentLogic.ts — тем самым 1376
+	 * строкам, которые до этой правки не вызывал из продукта никто.
+	 */
+	async function createDocument(kind: GeneratedDocument["kind"]) {
+		if (documentCreateSavingKind) {
+			setError("Дождитесь завершения текущего создания документа.");
+			return;
+		}
+		if (!documentPatient || !dashboard) {
+			setError("Выберите пациента перед созданием документа.");
+			return;
+		}
+		const amountSource = documentAmountSource(kind);
+		const metadata = documentKindMetadata[kind];
+		const isTaxDocument = metadata.group === "tax";
+		/*
+		 * Отметки времени подставляются здесь, в момент создания документа.
+		 *
+		 * В хранилище они пусты. Раньше они вычислялись один раз при загрузке
+		 * страницы и несли время открытия вкладки: договор, созданный вечером,
+		 * уходил на подпись с утренним часом. Заполняем ДО проверки полей — иначе
+		 * пустая обязательная дата упёрлась бы в валидатор и потребовала вписать
+		 * руками то, что программа знает сама.
+		 *
+		 * Введённое человеком не трогается, заполняются только пустые поля.
+		 */
+		/*
+		 * Имена перечислены поштучно намеренно, а не собраны хитростью: проверка
+		 * типов ловит опечатку и переименование, а список читается как контракт
+		 * между формой документа и его сборщиком. Функции передаются ссылкой —
+		 * валидаторы зовут их как paidContractTotalRubValue() и
+		 * documentTextLines(текст).
+		 */
+		const documentDerivedValues = {
+			activeDoctor,
+			attendanceEndedAtValue,
+			attendanceSignedByValue,
+			attendanceStartedAtValue,
+			clinicProfileDraft,
+			clinicalToothRowsValue,
+			completedActDoctorFullNameValue,
+			completedActFiscalReceiptLines: _completedActFiscalReceiptLines,
+			completedActPaidRubValue,
+			completedActServicesSummaryValue,
+			completedActTotalRubValue,
+			dashboard,
+			documentPatient,
+			documentTextLines,
+			inferredTreatmentArea,
+			installmentScheduleBaseDocumentTitleValue:
+				_installmentScheduleBaseDocumentTitleValue,
+			installmentScheduleInstallmentRows: _installmentScheduleInstallmentRows,
+			installmentSchedulePayerFullNameValue,
+			installmentSchedulePrepaidRubValue,
+			installmentScheduleRemainingRubValue,
+			installmentScheduleResponsibleFullNameValue,
+			installmentScheduleTotalRubValue,
+			minorConsentDiagnosisOrIndicationValue:
+				_minorConsentDiagnosisOrIndicationValue,
+			minorConsentDoctorFullNameValue,
+			minorConsentInterventionScopeValue: _minorConsentInterventionScopeValue,
+			minorConsentPatientBirthDateValue: _minorConsentPatientBirthDateValue,
+			minorConsentPatientFullNameValue: _minorConsentPatientFullNameValue,
+			minorRepresentativeFullNameValue: _minorRepresentativeFullNameValue,
+			minorRepresentativeIdentityDocumentValue:
+				_minorRepresentativeIdentityDocumentValue,
+			minorRepresentativePhoneValue: _minorRepresentativePhoneValue,
+			minorRepresentativeRelationshipValue: _minorRepresentativeRelationshipValue,
+			outpatient025uMedicalCardNumberValue,
+			outpatient025uPayloadValue,
+			dentalMedicalCard043uPayloadValue,
+			outpatient025uSourceVisitIdsValue,
+			paidContractCareReasonValue,
+			paidContractCustomerFullNameValue,
+			paidContractDoctorFullNameValue,
+			paidContractServiceScopeValue,
+			paidContractTotalRubValue: _paidContractTotalRubValue,
+			paymentInvoiceBankDetailsValue,
+			paymentInvoicePayerFullNameValue,
+			paymentInvoiceTotalRubValue,
+			paymentReceiptFiscalReceiptLines: _paymentReceiptFiscalReceiptLines,
+			paymentReceiptIssuedByValue: _paymentReceiptIssuedByValue,
+			paymentReceiptPayerBirthDateValue: _paymentReceiptPayerBirthDateValue,
+			paymentReceiptPayerFullNameValue: _paymentReceiptPayerFullNameValue,
+			paymentReceiptPayerIdentityDocumentValue:
+				_paymentReceiptPayerIdentityDocumentValue,
+			paymentReceiptPayerInnValue: _paymentReceiptPayerInnValue,
+			paymentReceiptPayerRelationshipValue: _paymentReceiptPayerRelationshipValue,
+			plannedServiceLinesForFinancialPayload,
+			postVisitDoctorFullNameValue,
+			postVisitProcedureNameValue,
+			postVisitToothOrAreaValue,
+			recordExtractComplaintAndAnamnesisValue,
+			recordExtractDiagnosisValue,
+			recordExtractObjectiveStatusValue,
+			recordExtractTreatmentProvidedValue,
+			releaseProtectionNote,
+			selectedCompletedActContractDocumentId,
+			selectedPaymentReceiptPayments,
+			selectedPaymentReceiptTotalRub,
+			selectedReleaseSourceRequestDocumentId,
+			selectedTaxPaymentIdsForCurrentDocument,
+			treatmentAcceptanceStageRows,
+			treatmentAcceptanceTotalRubValue,
+			treatmentEstimateDoctorFullNameValue,
+			treatmentEstimatePatientOrPayerFullNameValue:
+				_treatmentEstimatePatientOrPayerFullNameValue,
+			treatmentEstimateTotalRubValue: _treatmentEstimateTotalRubValue,
+			treatmentEstimateTreatmentBasisValue: _treatmentEstimateTreatmentBasisValue,
+			treatmentPlanClinicalReasonValue,
+			treatmentPlanDiagnosisSummaryValue,
+			treatmentPlanDoctorFullNameValue,
+			treatmentPlanStageRows,
+			treatmentPlanTeethOrAreaValue,
+			treatmentPlanTotalRubValue,
+			warrantyDoctorFullNameValue,
+			warrantyLinkedActOrContractValue: _warrantyLinkedActOrContractValue,
+			warrantyServiceOrWorkNameValue: _warrantyServiceOrWorkNameValue,
+			warrantyTeethOrAreaValue: _warrantyTeethOrAreaValue,
+		};
+
+		const documentStateForCreation = withDocumentCreationTimestamps({
+			...documentState,
+			...documentDerivedValues,
+		});
+		const payloadError = validateDocumentPayloadForKind(
+			kind,
+			documentStateForCreation,
+		);
+		if (payloadError) {
+			setError(Array.isArray(payloadError) ? payloadError.join(", ") : payloadError);
+			return;
+		}
+		const documentPayload = documentPayloadForKind(
+			kind,
+			documentStateForCreation,
+		);
+		if (
+			(kind === "tax_deduction_certificate" ||
+				kind === "tax_deduction_registry") &&
+			taxDocumentYear < 2024
+		) {
+			setError(
+				"КНД 1151156 подходит только для оплат с 2024 года. Для 2021-2023 выберите старую справку.",
+			);
+			return;
+		}
+		if (
+			kind === "legacy_tax_deduction_certificate" &&
+			(taxDocumentYear < 2021 || taxDocumentYear > 2023)
+		) {
+			setError(
+				"Старая налоговая справка подходит только для оплат 2021-2023. Для 2024+ выберите КНД 1151156.",
+			);
+			return;
+		}
+		const selectedTaxPayerInn = isTaxDocument ? selectedTaxDocumentPayerInn : "";
+		if (
+			isTaxDocument &&
+			taxDocumentPayerOptions.length > 1 &&
+			!selectedTaxDocumentPayerKey
+		) {
+			setError(
+				"Выберите плательщика для КНД 1151156. Разные налогоплательщики должны идти отдельными справками.",
+			);
+			return;
+		}
+		const usesTaxPaymentSelection = taxPaymentSelectionDocumentKinds.has(kind);
+		const requiresTaxPaymentSelection =
+			taxPaymentSelectionPayloadDocumentKinds.has(kind);
+		const selectedTaxPaymentIdsForDocument = usesTaxPaymentSelection
+			? selectedTaxPaymentIdsForCurrentDocument()
+			: [];
+		const requiresPaymentReceiptSelection = kind === "payment_receipt";
+		const eligiblePaymentReceiptIdSet = new Set(
+			eligiblePaymentReceiptPayments.map((payment) => payment.id),
+		);
+		const selectedPaymentReceiptIdsForDocument = requiresPaymentReceiptSelection
+			? selectedPaymentReceiptIds.filter((paymentId) =>
+					eligiblePaymentReceiptIdSet.has(paymentId),
+				)
+			: [];
+		if (
+			requiresTaxPaymentSelection &&
+			selectedTaxPaymentIdsForDocument.length === 0
+		) {
+			setError(
+				"Выберите фискальные чеки для налогового документа. Система больше не подставляет все оплаты за год автоматически.",
+			);
+			return;
+		}
+		if (
+			requiresPaymentReceiptSelection &&
+			selectedPaymentReceiptIdsForDocument.length === 0
+		) {
+			setError(
+				"Выберите оплаченные платежи для платежной квитанции. Система не подставляет все оплаты скрыто.",
+			);
+			return;
+		}
+		const linkActiveVisit =
+			metadata.requiresVisit ||
+			metadata.group === "payment" ||
+			(metadata.group !== "tax" && metadata.amountSource !== "none");
+		if (linkActiveVisit && !documentPatientMatchesActiveVisit) {
+			setError(
+				`Документ «${metadata.label}» требует активного приема пациента ${documentPatient.fullName}. Сейчас открыт прием другого пациента, поэтому система не создаст документ с чужой привязкой к приему. Откройте нужный прием или выберите документ без привязки к визиту.`,
+			);
+			return;
+		}
+		const plannedAmount =
+			activeTreatmentPlanItems
+				.filter((item) => item.status !== "cancelled")
+				.filter(
+					(item) =>
+						!dashboard?.activeVisit?.id ||
+						item.visitId === dashboard?.activeVisit?.id,
+				)
+				.reduce(
+					(total, item) =>
+						total +
+						Math.max(0, item.unitPriceRub * item.quantity - item.discountRub),
+					0,
+				) || null;
+		const paidAmount =
+			activePayments
+				.filter((payment) => payment.status === "paid")
+				.filter((payment) => {
+					if (requiresPaymentReceiptSelection)
+						return selectedPaymentReceiptIdsForDocument.includes(payment.id);
+					if (
+						kind === "payment_refund_correction_request" &&
+						documentPayload?.paymentRefundCorrection
+					) {
+						return documentPayload.paymentRefundCorrection.selectedPaymentIds.includes(
+							payment.id,
+						);
+					}
+					if (metadata.group !== "tax")
+						return payment.visitId === dashboard?.activeVisit?.id;
+					if (requiresTaxPaymentSelection)
+						return selectedTaxPaymentIdsForDocument.includes(payment.id);
+					return (
+						paymentTaxYearForUi(payment) === taxDocumentYear &&
+						(!selectedTaxDocumentPayerKey ||
+							taxPaymentPayerKeyForUi(payment) === selectedTaxDocumentPayerKey)
+					);
+				})
+				.reduce((total, payment) => total + payment.amountRub, 0) || null;
+		if (amountSource === "paid" && !paidAmount) {
+			setError(
+				metadata.group === "tax"
+					? `Для налогового документа нужна фактическая оплата за ${taxDocumentYear} год. План лечения и оплаты других лет не подходят.`
+					: "Для этого документа нужна фактическая оплата. План лечения или примерная сумма не подходят.",
+			);
+			return;
+		}
+		if (
+			kind === "payment_refund_correction_request" &&
+			documentPayload?.paymentRefundCorrection &&
+			paidAmount &&
+			documentPayload.paymentRefundCorrection.amountRub > paidAmount
+		) {
+			setError(
+				"Сумма возврата или коррекции не может превышать фактическую оплату по выбранному визиту.",
+			);
+			return;
+		}
+		const totalAmountRub =
+			amountSource === "paid"
+				? paidAmount
+				: amountSource === "planned"
+					? plannedAmount
+					: null;
+		const payloadForDocument = taxPaymentSelectionPayloadDocumentKinds.has(kind)
+			? {
+					...(documentPayload ?? {}),
+					taxPaymentSelection: {
+						selectedPaymentIds: selectedTaxPaymentIdsForDocument,
+					},
+				}
+			: documentPayload;
+		setDocumentCreateSavingKind(kind);
+		try {
+			const response = await fetch("/api/documents", {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					patientId: documentPatient.id,
+					visitId: linkActiveVisit ? dashboard?.activeVisit?.id : null,
+					kind,
+					taxYear: isTaxDocument ? taxDocumentYear : null,
+					taxPayerInn: isTaxDocument ? selectedTaxPayerInn || null : null,
+					payload: payloadForDocument,
+					title: isTaxDocument
+						? `${metadata.title} за ${taxDocumentYear} год`
+						: undefined,
+					totalAmountRub: moneyDocumentKinds.has(kind) ? totalAmountRub : null,
+				}),
+			});
+			if (!response.ok) {
+				setError(await responseErrorMessage(response, "Документ не создан"));
+				return;
+			}
+			try {
+				await loadDashboard();
+				setError(null);
+			} catch (error) {
+				setError(
+					requestFailureMessage(
+						"Документ создан, но список документов не перезагружен",
+						error,
+					),
+				);
+			}
+		} catch (error) {
+			setError(requestFailureMessage("Документ не создан", error));
+		} finally {
+			setDocumentCreateSavingKind(null);
+		}
+	}
+
 	const _inn = clinicProfileDraft?.inn?.trim() || "";
 	const _insuranceContractId =
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -4142,7 +4712,7 @@ export function useDocumentWorkflowModule({
 		togglePhotoVideoMaterial,
 		selectAllEligibleTaxPaymentsForCurrentDocument,
 		selectRefundOriginalPayment,
-		createDocument: requestDocumentIssue,
+		createDocument,
 		activeTreatmentPlanScenarios: _activeTreatmentPlanScenarios,
 		activeVisitClinicalRuleEvaluations,
 		activeVisitClinicalRuleSummary: _activeVisitClinicalRuleSummary,
