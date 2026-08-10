@@ -76,16 +76,16 @@ export function useScheduleLogic({
 	setNewAppointmentError,
 	clinicProfileDraft,
 	setSettingsTab,
-	staffScheduleDraftsRef,
-	chairScheduleDraftsRef,
-	appointmentScheduleDraftsRef,
 	loadDashboard,
 	selectedSpecialty,
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 }: any) {
 	const appointmentMutationIdRef = useRef<string | null>(null);
 	const scheduleStore = useScheduleStore();
-	const { setScheduleAdminSecretDemand } = useSettingsStore();
+		const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
+	const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
+	const appointmentScheduleDraftsRef = useRef<Record<string, AppointmentScheduleDraft>>({});
+const { setScheduleAdminSecretDemand } = useSettingsStore();
 	const {
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleDoctorFilterId,

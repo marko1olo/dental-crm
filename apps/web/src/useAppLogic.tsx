@@ -750,15 +750,10 @@ export function useAppLogic(): any {
 	const initialUiPreferencesRef = useRef<UiPreferences | null>(null);
 	// Порядковый номер запроса данных клиники: применяем только последний ответ.
 	// Защита от двойного создания сотрудников и кресел (двойной клик по кнопке).
-	const _staffCreateInFlightRef = useRef(false);
-	const _chairCreateInFlightRef = useRef(false);
 	const [isStaffCreating, _setIsStaffCreating] = useState(false);
 	const [isChairCreating, _setIsChairCreating] = useState(false);
 	const uiPreferencesServerReadyRef = useRef(false);
-	const uiPreferencesHydratedRef = useRef(false);
 	const pendingUiPreferencesSyncRef = useRef<UiPreferences | null>(null);
-	const uiPreferencesSyncInFlightRef = useRef(false);
-	const uiPreferencesRetryTimerRef = useRef<number | null>(null);
 	const newAppointmentDraftUserEditedRef = useRef(false);
 	/*
 	 * Последняя карточка, о которой уже отправлена отметка просмотра.
@@ -772,22 +767,10 @@ export function useAppLogic(): any {
 	}
 	const initialUiPreferences =
 		initialUiPreferencesRef.current ?? defaultUiPreferences;
-	const _initialRecognitionText =
-		recognitionPresets?.find(
-			(preset) =>
-				preset.kind === initialUiPreferences.recognitionKind &&
-				preset.target === initialUiPreferences.recognitionTarget,
-		)?.text ??
-		recognitionPresets?.[0]?.text ??
-		"";
 	const activeOrganizationId =
 		dashboard?.clinicSettings?.profile?.organizationId ?? null;
-	const _isOmniRoleMode =
-		(dashboard?.clinicSettings?.profile as { isOmniRole?: boolean } | undefined)
-			?.isOmniRole ?? false;
 	const browserDirectoryInputRef = useRef<HTMLInputElement | null>(null);
 	const browserMigrationInputRef = useRef<HTMLInputElement | null>(null);
-	const _browserMigrationScanAbortRef = useRef<AbortController | null>(null);
 	const authRef = useRef<any>(null);
 	const loadPersistenceHealthRef = useRef<any>(null);
 	const refreshSpeechRuntimeRef = useRef<any>(null);
@@ -803,13 +786,6 @@ export function useAppLogic(): any {
 		refreshSpeechRuntimeRef,
 	});
 	const { loadDashboard } = dashboardLoaderLogic;
-	const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
-	const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
-	const appointmentScheduleDraftsRef = useRef<
-		Record<string, AppointmentScheduleDraft>
-	>({});
-	const _mprWorkbenchSaveTimerRef = useRef<number | null>(null);
-
 	const auth = useAuthLogic({
 		setError,
 		loadDashboard,
@@ -1200,9 +1176,6 @@ export function useAppLogic(): any {
 		setNewAppointmentError,
 		clinicProfileDraft,
 		setSettingsTab,
-		staffScheduleDraftsRef,
-		chairScheduleDraftsRef,
-		appointmentScheduleDraftsRef,
 		loadDashboard,
 		selectedSpecialty,
 	});
@@ -1717,10 +1690,6 @@ export function useAppLogic(): any {
 	}, [setBrowserContinuity]);
 	// Флаг «готово к созданию» дополнительно учитывает выполняющийся запрос,
 	// поэтому кнопки гаснут сразу после первого нажатия, а не после ответа сервера.
-	const _newStaffReadyToCreate =
-		newStaffName.trim().length > 0 && !isStaffCreating;
-	const _newChairReadyToCreate =
-		newChairName.trim().length > 0 && !isChairCreating;
 	const selectedUiLanguageOption =
 		uiLanguageOptions?.find((option) => option.value === uiLanguage) ??
 		defaultUiLanguageOption;

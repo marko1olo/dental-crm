@@ -888,6 +888,8 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 		loadLocalBridgeUsePlans,
 		requestBrowserStoragePersistence,
 		applyUiPreferences,
-		recentPatientViewsVersion
+		recentPatientViewsVersion,
+		uiPreferencesServerReadyRef,
+		pendingUiPreferencesSyncRef
 	};
 }
