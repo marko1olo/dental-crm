@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
 /*
  * СТРАЖ ДОСТУПНОСТИ СЕГМЕНТНЫХ ПЕРЕКЛЮЧАТЕЛЕЙ.
@@ -76,11 +77,20 @@ function codeOnly(source) {
 	return out;
 }
 
+/*
+ * НАБОР ЭКРАНА ПРИЛОЖЕНИЯ: МОНОЛИТ ПЛЮС ВЫНЕСЕННЫЙ ОНБОРДИНГ (класс STALE).
+ *
+ * Онбординг уехал из App.tsx в `components/onboarding/`: OnboardingGuidePanel
+ * (смонтирован App.tsx:1719) и FullscreenOnboardingWizard (App.tsx:1451). Пока
+ * страж читал только App.tsx, ОДИННАДЦАТЬ требований онбординга краснели как
+ * «регрессия доступности», хотя вся разметка жива и смонтирована.
+ */
 const appSource = [
 	readFileSync("apps/web/src/App.tsx", "utf8"),
 	readAppLogicSourceSync(),
 	readFileSync("apps/web/src/ImagingView.tsx", "utf8"),
 	readFileSync("apps/web/src/VisitView.tsx", "utf8"),
+	readWebSurfaceSourceSync(["apps/web/src/components/onboarding"]),
 ]
 	.map(codeOnly)
 	.join("\n");
@@ -91,23 +101,16 @@ const appSource = [
  * SettingsView.tsx разобран на вкладки и рендерит их по условию активной
  * вкладки: SettingsClinicTab — строка 1586, SettingsPricesTab — 1831,
  * SettingsAiTab — 1835, SettingsImportsTab — 1894. Это ЖИВЫЕ поверхности, а не
- * мёртвые копии, поэтому набор расширен, а требования не ослаблены.
+ * мёртвые копии. Вкладки импортов и источников смонтированы отдельными
+ * файлами: SettingsSmartImportTab, SettingsImagingImportTab и
+ * SettingsPatientImportTab рендерятся внутри SettingsImportsTab (строки
+ * 1944-1951), SourcesDicomCapability — внутри SettingsSourcesTab (строка 24).
+ * Поэтому набор берёт ВЕСЬ каталог, а не пять вручную перечисленных файлов:
+ * вручную перечислять — это создавать следующий OWNER_MOVED своими руками.
  */
 const settingsSource = [
 	readFileSync("apps/web/src/SettingsView.tsx", "utf8"),
-	readFileSync(
-		"apps/web/src/components/settings/SettingsClinicTab.tsx",
-		"utf8",
-	),
-	readFileSync(
-		"apps/web/src/components/settings/SettingsPricesTab.tsx",
-		"utf8",
-	),
-	readFileSync("apps/web/src/components/settings/SettingsAiTab.tsx", "utf8"),
-	readFileSync(
-		"apps/web/src/components/settings/SettingsImportsTab.tsx",
-		"utf8",
-	),
+	readWebSurfaceSourceSync(["apps/web/src/components/settings"]),
 ]
 	.map(codeOnly)
 	.join("\n");
@@ -153,6 +156,56 @@ function requireIn(source, snippet, message) {
 
 function requirePattern(source, pattern, message) {
 	requireSatisfied(pattern.test(source), message);
+}
+
+/*
+ * ТРЕБОВАНИЕ НА ВСЕ ЖИВЫЕ ЭКЗЕМПЛЯРЫ, А НЕ НА ПЕРВЫЙ НАЙДЕННЫЙ.
+ *
+ * ЗАЧЕМ. Одна и та же поверхность бывает нарисована в нескольких файлах, и
+ * `pattern.test()` доволен ЛЮБЫМ одним совпадением. Пока страж читал один
+ * файл, это совпадало с истиной. После расширения набора — перестало.
+ *
+ * ЗАМЕРЕНО МУТАЦИЕЙ 2026-08-10 (проба ломала признак и ждала падения стража):
+ * из 25 проб 5 НЕ БЫЛИ ЗАМЕЧЕНЫ, и у всех пяти одна причина — дубликат в
+ * соседнем файле продолжал выполнять требование за сломанный экземпляр:
+ *
+ *   aria-current={… onboardingStep …}     OnboardingGuidePanel:103 и
+ *                                          FullscreenOnboardingWizard:79
+ *   aria-pressed={selectedWorkspaceRole}   OnboardingGuidePanel:164,
+ *                                          FullscreenOnboardingWizard:252,
+ *                                          workspaceShell:551
+ *   scheduleDraft.workingDays              SettingsClinicTab:1231 и :1469
+ *                                          (сотрудник и кресло — РАЗНЫЕ экраны)
+ *   aria-selected={tabSelected}            SettingsView:1813 плюс пять копий
+ *                                          в components/settings/*
+ *
+ * То есть сломать доступность на экране онбординга и остаться зелёным было
+ * можно — за него отвечала разметка мастера. Это ровно тот ложный зелёный,
+ * ради которого страж и существует.
+ *
+ * ПОЧЕМУ ИМЕННО СЧЁТ. Требовать «не меньше N» недостаточно: правка, которая
+ * ломает один экземпляр и добавляет другой, прошла бы. Требуется РОВНО N, и
+ * при расхождении страж печатает, сколько нашёл и сколько ждал, — иначе
+ * следующий человек не поймёт, добавил он поверхность или сломал.
+ *
+ * ЧИСЛО N — ЗАМЕР, А НЕ ЖЕЛАНИЕ. Оно получено подсчётом живых экземпляров в
+ * коде (после вырезки комментариев). Выросло законно — обнови число вместе с
+ * причиной. Упало — это регрессия доступности.
+ */
+function requireEveryInstance(source, pattern, expectedCount, message) {
+	const found = source.match(new RegExp(pattern, "g"))?.length ?? 0;
+	requireSatisfied(
+		found === expectedCount,
+		found === expectedCount
+			? message
+			: `${message} (живых экземпляров: ${found}, ожидалось ${expectedCount})`,
+	);
+	/*
+	 * Ключ в реестре долга и в `exercised` обязан совпадать с текстом
+	 * требования дословно, иначе расхождение счёта заводит НОВОЕ имя
+	 * требования и обратный храповик перестаёт его видеть.
+	 */
+	if (found !== expectedCount) exercised.add(message);
 }
 
 function requireSatisfied(satisfied, message) {
@@ -246,9 +299,26 @@ function selectedStateBoundTo(expression) {
 	return new RegExp(`(?:${direct})|(?:${viaVariable})`);
 }
 
-requireIn(
+/*
+ * ПЕРЕНОС СТРОКИ — НЕ РЕГРЕССИЯ ДОСТУПНОСТИ.
+ *
+ * Два требования ниже краснели за форматирование. Замер 2026-08-10:
+ * OnboardingGuidePanel.tsx:103-105 и :355-357 — форматтер разнёс выражение на
+ * три строки, и односрочный `.includes()` перестал его видеть:
+ *
+ *     aria-current={
+ *         step.id === onboardingStep ? "step" : undefined
+ *     }
+ *
+ * Атрибут, переменная и смысл те же. Страж, который краснеет от переноса
+ * строки, учит обходить форматтер, а не писать доступность, поэтому здесь
+ * пробелы свободные. Сам факт при этом не ослаблен: и атрибут, и всё выражение
+ * целиком по-прежнему обязаны стоять в живом коде.
+ */
+requireEveryInstance(
 	appSource,
-	'aria-current={step.id === onboardingStep ? "step" : undefined}',
+	/aria-current=\{\s*step\.id === onboardingStep \? "step" : undefined\s*\}/,
+	2,
 	"Onboarding step buttons must expose the current step.",
 );
 requireIn(
@@ -256,9 +326,16 @@ requireIn(
 	"aria-pressed={step.id === onboardingStep}",
 	"Onboarding step buttons must expose selected state.",
 );
-requireIn(
+/*
+ * ДВА ЭКРАНА ВЫБОРА РОЛИ, И ОБА ОБЯЗАНЫ БЫТЬ ДОСТУПНЫ: панель-подсказка
+ * (OnboardingGuidePanel:164) и полноэкранный мастер (FullscreenOnboardingWizard:252).
+ * Третий экземпляр — workspaceShell:551 — это переключатель роли в шапке, он не
+ * входит в набор экрана онбординга и здесь не считается.
+ */
+requireEveryInstance(
 	appSource,
-	"aria-pressed={selectedWorkspaceRole === role}",
+	/aria-pressed=\{selectedWorkspaceRole === role\}/,
+	2,
 	"Onboarding role picker must expose selected state.",
 );
 requireIn(
@@ -276,9 +353,9 @@ requireIn(
 	"aria-pressed={newStaffSpecialty === specialty}",
 	"Onboarding team specialty picker must expose selected state.",
 );
-requireIn(
+requirePattern(
 	appSource,
-	"aria-pressed={clinicProfileDraft.workingDays.includes(day.value)}",
+	/aria-pressed=\{clinicProfileDraft\.workingDays\.includes\(\s*day\.value,?\s*\)\}/,
 	"Onboarding clinic working-day toggles must expose selected state.",
 );
 requireIn(
@@ -347,10 +424,46 @@ requireIn(
 	'role="tabpanel"',
 	"Settings active tab content must expose a tabpanel role.",
 );
-requireIn(
+requireEveryInstance(
 	settingsSource,
-	"aria-selected={tabSelected}",
+	/aria-selected=\{\s*tabSelected\s*\}/,
+	6,
 	"Settings tabs must expose selected state through aria-selected.",
+);
+/*
+ * ЧИСЛО 6 — ЗАМЕР, И ЗАМЕР С ОГОВОРКОЙ. Пять из шести экземпляров лежат в
+ * копиях функции `_renderTabButton` (по одной в SettingsAuditTab,
+ * SettingsImagingImportTab, SettingsImportsTab, SettingsPatientImportTab,
+ * SettingsSmartImportTab), которые НИКЕМ НЕ ВЫЗЫВАЮТСЯ. Страж за них не
+ * отвечает: живой экземпляр один, SettingsView.tsx:1813. Это зафиксировано
+ * здесь, чтобы мёртвый код не рядился в живую доступность.
+ */
+/*
+ * ОБРАТНЫЙ ХРАПОВИК ДЛЯ ПРАВИЛЬНОГО ПОВЕДЕНИЯ.
+ *
+ * Требование «aria-pressed у вкладок» УБРАНО, и это не ослабление.
+ *
+ * Замер 2026-08-10: кнопка вкладки (SettingsView.tsx:1811-1827) несёт цельный
+ * набор паттерна вкладок — role="tab", aria-selected, aria-controls, один
+ * tab stop через tabIndex, стрелочная навигация. `aria-pressed` из неё убран
+ * НАМЕРЕННО: по WAI-ARIA он определён для кнопок-переключателей, а не для
+ * вкладок, и на `role="tab"` состояние выбора несёт ИМЕННО aria-selected.
+ * Тот же довод страж уже принял для ImagingView (см. блок про класс BRITTLE).
+ *
+ * Прежняя формулировка требования ссылалась на «existing button styling and
+ * tests». Проверено: НИ ОДИН тест и НИ ОДНО правило CSS не опираются на
+ * aria-pressed у вкладок настроек — все пять мест с `[aria-pressed="true"]` в
+ * стилях относятся к другим элементам (.theme-switcher, .imaging-row-select,
+ * .wizard-role-chip, .dnt-actions__control). Обоснование требования исчезло
+ * вместе с атрибутом; «выполнить» его сегодня = вернуть конфликтующую пару.
+ *
+ * Поэтому здесь сторожится ОБРАТНОЕ: aria-pressed не должен вернуться к
+ * вкладкам. Если он вернётся — это регрессия доступности, и страж обязан
+ * упасть, а не промолчать.
+ */
+requireSatisfied(
+	!/aria-pressed=\{\s*tabSelected\s*\}/.test(settingsSource),
+	"Settings tabs must NOT carry aria-pressed: role=tab expresses selection through aria-selected only.",
 );
 requireIn(
 	settingsSource,
@@ -377,11 +490,6 @@ requireIn(
 	"document.getElementById(nextTabButtonId)?.focus()",
 	"Settings tab keyboard navigation must focus the exact target tab button.",
 );
-requireIn(
-	settingsSource,
-	"aria-pressed={tabSelected}",
-	"Settings tabs must preserve pressed state for existing button styling and tests.",
-);
 requirePattern(
 	settingsSource,
 	selectedStateBoundTo("dashboard.clinicSettings.profile.mode === mode"),
@@ -397,9 +505,26 @@ requireIn(
 	"aria-pressed={newStaffSpecialty === specialty}",
 	"Settings staff specialty picker must expose selected state.",
 );
-requireIn(
+/*
+ * ЗАЩИТА ОТ ПУСТОГО СПИСКА — ТОЖЕ НЕ РЕГРЕССИЯ.
+ *
+ * Продукт стал устойчивее: `scheduleDraft.workingDays` теперь читается как
+ * `(scheduleDraft.workingDays ?? []).includes(day.value)` — расписание без
+ * заполненных дней больше не роняет разметку. Замер 2026-08-10:
+ * SettingsClinicTab.tsx:1230-1232 (рабочие дни сотрудника) и :1468-1470
+ * (рабочие дни кресла), обе кнопки живые, с обработчиками
+ * toggleStaffWorkingDay и toggleChairWorkingDay.
+ *
+ * Дословный литерал прежней формы остался ТОЛЬКО в мёртвом блочном
+ * комментарии SettingsView.tsx (начинается на 2432, сразу после `return`).
+ * Именно поэтому требование обязано смотреть в код, а не в текст файла:
+ * иначе оно «выполнялось» бы инвентарём из комментария. Это ровно тот случай,
+ * ради которого выше стоит codeOnly().
+ */
+requireEveryInstance(
 	settingsSource,
-	"aria-pressed={scheduleDraft.workingDays.includes(day.value)}",
+	/aria-pressed=\{\(?\s*scheduleDraft\.workingDays(?:\s*\?\?\s*\[\])?\s*\)?\.includes\(\s*day\.value,?\s*\)\}/,
+	2,
 	"Settings schedule working-day toggles must expose selected state.",
 );
 requireIn(
@@ -447,9 +572,9 @@ requireIn(
 	"aria-pressed={imagingImportSourceKind === kind}",
 	"Settings imaging source picker must expose selected state.",
 );
-requireIn(
+requirePattern(
 	settingsSource,
-	"aria-pressed={typedDicomFirstFrameViewerState.flipHorizontal}",
+	/aria-pressed=\{\s*typedDicomFirstFrameViewerState\.flipHorizontal\s*\}/,
 	"Settings first-slice mirror toggle must expose selected state.",
 );
 requireIn(
