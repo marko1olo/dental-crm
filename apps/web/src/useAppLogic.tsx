@@ -172,6 +172,7 @@ import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule
 import { useDocumentWorkflowModule } from "./hooks/domains/useDocumentWorkflowModule";
 import { useFinanceLogic } from "./hooks/domains/useFinanceLogic";
 import { useImagingLogic } from "./hooks/domains/useImagingLogic";
+import { useCommunicationTaskLogic } from "./hooks/domains/useCommunicationTaskLogic";
 import { useUiPreferencesLogic } from "./hooks/domains/useUiPreferencesLogic";
 import { useOnboardingLogic } from "./hooks/domains/useOnboardingLogic";
 import { useTelegramLogic } from "./hooks/domains/useTelegramLogic";
@@ -2024,59 +2025,6 @@ export function useAppLogic(): any {
 		setTelegramLinkStaffId,
 	]);
 
-	async function completeCommunicationTask(
-		taskId: string,
-		outcome: CommunicationTaskOutcome,
-	) {
-		if (communicationSavingTaskId) {
-			setError("Дождитесь завершения текущего закрытия задачи связи.");
-			return;
-		}
-		if (!outcome) {
-			setError(
-				"Выберите исход задачи связи: нет ответа, перезвонить, перенос, обещал оплату или выдача документов.",
-			);
-			return;
-		}
-		setCommunicationSavingTaskId(taskId);
-		try {
-			const response = await fetch("/api/communications/tasks/complete", {
-				method: "POST",
-				headers: auth.denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					taskId,
-					outcome,
-					note: communicationNote.trim() || "Задача связи закрыта.",
-				}),
-			});
-			if (!response.ok) {
-				setError(
-					await responseErrorMessage(response, "Задача связи не закрыта"),
-				);
-				return;
-			}
-			await loadDashboard();
-			setError(null);
-		} catch (communicationError) {
-			showToast(
-				actionFailureToast(
-					"Задача связи не закрыта",
-					(communicationError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			setError(
-				operatorWorkflowFailureMessage(
-					"Задача связи не закрыта",
-					communicationError,
-				),
-			);
-		} finally {
-			setCommunicationSavingTaskId(null);
-		}
-	}
 
 	// Флаг «готово к созданию» дополнительно учитывает выполняющийся запрос,
 	// поэтому кнопки гаснут сразу после первого нажатия, а не после ответа сервера.
@@ -2180,6 +2128,17 @@ export function useAppLogic(): any {
 		saveClinicProfileIfDirty: clinicSettings.saveClinicProfileIfDirty,
 	});
 
+
+
+	const { completeCommunicationTask } = useCommunicationTaskLogic({
+		auth,
+		setError,
+		loadDashboard,
+		showToast,
+		actionFailureToast,
+		responseErrorMessage,
+		operatorWorkflowFailureMessage,
+	});
 
     const uiPreferencesLogic = useUiPreferencesLogic({
 		dashboard,
