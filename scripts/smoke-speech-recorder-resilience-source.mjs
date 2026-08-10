@@ -126,6 +126,17 @@ function requireIn(source, marker, message) {
  * `unevaluable`, а НЕ в «держит».
  */
 function forbidIn(source, marker, message, { scopeName = null } = {}) {
+	/*
+	 * ЗАПРЕТ ТОЖЕ ОБЯЗАН ОТМЕЧАТЬСЯ ВЫПОЛНЕННЫМ.
+	 *
+	 * Найдено мутацией 2026-08-10: `forbidIn` НЕ звал `exercised.add`, в отличие
+	 * от `requireIn`. Значит ни одно требование-запрет не было видно проверке
+	 * «реестр разошёлся с проверками»: запись о запрете могла лежать в реестре
+	 * вечно, не подтверждаясь ни одним утверждением, и храповик бы молчал.
+	 * Обнаружилось потому, что проба на устаревшее освобождение не сработала —
+	 * дефект был в самом страже, а не в пробе.
+	 */
+	exercised.add(message);
 	if (scopeName !== null && source === null) {
 		unevaluable.push(`${message} [область «${scopeName}» отсутствует]`);
 		return;
@@ -498,8 +509,44 @@ const heldSet = new Set(liveLocksHeld);
 const closedDebt = [...KNOWN_ABSENT_RECORDER_RESILIENCE].filter((message) =>
 	heldSet.has(message),
 );
+/*
+ * ДРЕЙФ РЕЕСТРА, О КОТОРОМ ЗАБЫЛИ. 2026-08-10 страж упал с кодом 2 на четырёх
+ * записях «РЕЕСТР РАЗОШЁЛСЯ С ПРОВЕРКАМИ»: это НЕ регрессия продукта, а
+ * учётная ошибка. Проверка `exercised` считала запись «без утверждения»,
+ * потому что настоящие утверждения четырёх требований живут ВНУТРИ блоков
+ * `startBlock`/`manualStopBlock` (строки 374-383 и 445-454) и выполняются
+ * только пока эти блоки существуют. Блоки снесены вместе со слоем серверного
+ * рекордера (2026-07-07), поэтому утверждения не выполняются ВООБЩЕ — они не
+ * «не найдены», у них нет области, чтобы быть найденными.
+ *
+ * Смысл записи в реестре при этом остаётся: поведение отсутствует и должно
+ * вернуться вместе со слоем. Здесь она помечается как принятая неоценённость,
+ * а не как потерянный долг, — и код 2 обязан уходить: реестр сошёлся.
+ *
+ * Явный список неоценимых сообщений (а не «все, кого нет в exercised»)
+ * потому, что последний вариант молча признал бы пропажу живого утверждения
+ * из-за опечатки или правки кода — и превратил бы сбой в тихую учётную запись.
+ */
+const UNEVALUABLE_MESSAGES = new Set([
+	"Initial voice recorder start path must retain the stream so failures can release the microphone.",
+	"Initial voice recorder start path must use the shared recorder configuration.",
+	"Manual stop must prevent automatic recorder restart.",
+	"Manual stop must be marked before stopping MediaRecorder.",
+]);
 const untestedDebt = [...KNOWN_ABSENT_RECORDER_RESILIENCE].filter(
-	(message) => !exercised.has(message),
+	(message) =>
+		!exercised.has(message) && !UNEVALUABLE_MESSAGES.has(message),
+);
+
+/*
+ * ХРАПОВИК НАД САМИМ ИСКЛЮЧЕНИЕМ. Если блок вернулся в продукт, утверждение
+ * снова выполняется — и тогда освобождение обязано ПЕРЕСТАТЬ действовать, иначе
+ * оно вечно прощает требование, которое уже можно проверять. Освобождённое
+ * сообщение, попавшее в `exercised`, — это сигнал убрать его из
+ * UNEVALUABLE_MESSAGES, а не молчать.
+ */
+const staleExemptions = [...UNEVALUABLE_MESSAGES].filter((message) =>
+	exercised.has(message),
 );
 
 const report = [];
@@ -525,6 +572,15 @@ if (untestedDebt.length > 0) {
 			"Уберите их из KNOWN_ABSENT_RECORDER_RESILIENCE:",
 	);
 	for (const message of untestedDebt) report.push(`  ? ${message}`);
+	report.push("");
+}
+if (staleExemptions.length > 0) {
+	report.push(
+		`ОСВОБОЖДЕНИЕ УСТАРЕЛО (${staleExemptions.length}): область проверки вернулась, ` +
+			"утверждение снова выполняется. Уберите эти записи из UNEVALUABLE_MESSAGES в " +
+			"scripts/smoke-speech-recorder-resilience-source.mjs, иначе они прощаются вечно:",
+	);
+	for (const message of staleExemptions) report.push(`  ^ ${message}`);
 	report.push("");
 }
 if (unevaluable.length > 0) {
@@ -553,7 +609,8 @@ report.push(
 const brokenLiveLock =
 	liveLockFailures.length > 0 ||
 	closedDebt.length > 0 ||
-	untestedDebt.length > 0;
+	untestedDebt.length > 0 ||
+	staleExemptions.length > 0;
 if (brokenLiveLock) {
 	console.error(report.join("\n"));
 	process.exit(2);
