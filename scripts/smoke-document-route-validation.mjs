@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { readRouteSourceSync } from "./lib/route-source.mjs";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.NODE_ENV = "production";
@@ -34,7 +35,19 @@ for (const [label, routePath] of Object.entries(routeFiles)) {
 }
 
 const sourceFiles = {
-	documents: readFileSync("apps/api/src/routes/documents.ts", "utf8"),
+	/*
+	 * Маршрут документов расщеплён на каталог: `routes/documents.ts` — сборник на
+	 * 24 строки, тело живёт в девяти модулях `routes/documents/` (2662 строки).
+	 * Читаем сборник ВМЕСТЕ с модулями, иначе страж судит о почти пустом файле.
+	 * Замерено 2026-08-10: требование «отделять устойчивый код ошибки от текста
+	 * оператору» краснело, хотя и `error = "DocumentOperationRejected"`, и
+	 * `message: repairMojibakeText(message)` живы в модулях.
+	 *
+	 * Опаснее красноты обратное: проверки вида `assert(!source.includes(...))`
+	 * по почти пустому сборнику проходили ВСЕГДА. Запрет на подстановку текста
+	 * оператора в машинное поле ошибки не охранял ничего.
+	 */
+	documents: readRouteSourceSync("apps/api/src/routes/documents.ts"),
 	ingestion: readFileSync("apps/api/src/routes/ingestion.ts", "utf8"),
 	pricelist: readFileSync("apps/api/src/routes/pricelist.ts", "utf8"),
 };

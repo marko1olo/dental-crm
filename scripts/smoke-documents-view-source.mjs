@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+import { readRouteSourceSync } from "./lib/route-source.mjs";
 
 const appSource =
 	readFileSync("apps/web/src/App.tsx", "utf8") +
@@ -13,10 +14,42 @@ const renderDocumentSource = readFileSync(
 	"apps/api/src/documents/renderDocument.ts",
 	"utf8",
 );
-const documentsRoutesSource = readFileSync(
+/*
+ * Маршрут документов расщеплён на каталог: `routes/documents.ts` — сборник на
+ * 24 строки, который только импортирует и регистрирует девять модулей из
+ * `routes/documents/` общим объёмом 2662 строки. Читаем сборник ВМЕСТЕ с
+ * модулями через общий помощник, иначе страж судит о почти пустом файле.
+ *
+ * Замерено 2026-08-10: требование «Укажите путь к браузеру в серверных
+ * настройках.» краснело, а сам текст был жив и стоял в
+ * `routes/documents/shared.ts:139`. Хуже красноты то, что два `forbidIn` ниже
+ * (запрет на сырой текст исключения spawn и на метки попыток запуска браузера)
+ * по 24-строчному сборнику проходили ВСЕГДА и не охраняли ничего.
+ */
+const documentsRoutesSource = readRouteSourceSync(
 	"apps/api/src/routes/documents.ts",
-	"utf8",
 );
+
+/*
+ * РАСХОЖДЕНИЯ СОБИРАЮТСЯ, А НЕ ОБРЫВАЮТ ПРОГОН НА ПЕРВОМ ЖЕ.
+ *
+ * Страж бросал исключение из первой непрошедшей проверки, и остальные полторы
+ * сотни не выполнялись вовсе. Замерено 2026-08-10: он последовательно сообщал
+ * «must guard duplicate document creation», затем «PDF export errors must
+ * explain browser setup», затем «Medical release receipt must describe source
+ * request binding», затем «issue confirm button must point to missing-step
+ * guidance» — четыре однотипных форматтерных переноса, и каждый был виден
+ * только после починки предыдущего. Объём расхождения так не измеряется.
+ *
+ * Приём взят у scripts/smoke-core-route-validation.mjs (record), новой техники
+ * не изобретается. Ни одно утверждение не ослаблено: код возврата по-прежнему
+ * ненулевой при любой находке, печатаются ВСЕ находки разом.
+ */
+const failures = [];
+
+function record(condition, message) {
+	if (!condition) failures.push(message);
+}
 
 /*
  * Требование принимает и подстроку, и выражение: приём взят из
@@ -27,11 +60,11 @@ const documentsRoutesSource = readFileSync(
 function requireIn(source, needle, message) {
 	const found =
 		needle instanceof RegExp ? needle.test(source) : source.includes(needle);
-	if (!found) throw new Error(message);
+	record(found, message);
 }
 
 function forbidIn(source, needle, message) {
-	if (source.includes(needle)) throw new Error(message);
+	record(!source.includes(needle), message);
 }
 
 const releaseSourceSelectBlock =
@@ -253,9 +286,21 @@ requireIn(
 	"метки визитов или номера записей, по одной в строке",
 	"Medical copy request must ask for operator-readable visit markers instead of internal IDs.",
 );
+/*
+ * FORMAT_DRIFT. Текст жив и показывается оператору — `DocumentsView.tsx:5955`,
+ * подсказка под выбором исходного запроса. Форматтер разорвал его переводом
+ * строки после «привязана к», поэтому дословная подстрока не находилась:
+ *
+ *     Сначала создайте и выдайте документ «Запрос на копии
+ *     медицинской документации». Расписка будет привязана к
+ *     выбранному запросу.
+ *
+ * `\s+` вместо пробела засчитывает и однострочную, и разбитую форму: перенос
+ * строки — забота форматтера, а не изменение продукта.
+ */
 requireIn(
 	documentsSource,
-	"Расписка будет привязана к выбранному запросу.",
+	/Расписка будет привязана к\s+выбранному запросу\./,
 	"Medical release receipt must describe source request binding without internal ID wording.",
 );
 requireIn(
@@ -305,12 +350,12 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	"aria-describedby={!documentIssueAttestationReady ? documentIssueMissingGuidanceId : undefined}",
+	/aria-describedby=\{\s*!documentIssueAttestationReady\s*\?\s*documentIssueMissingGuidanceId\s*:\s*undefined\s*\}/,
 	"Document issue confirm button must point to missing-step guidance.",
 );
 requireIn(
 	documentsSource,
-	"aria-describedby={!documentVoidReady ? documentVoidMissingGuidanceId : undefined}",
+	/aria-describedby=\{\s*!documentVoidReady\s*\?\s*documentVoidMissingGuidanceId\s*:\s*undefined\s*\}/,
 	"Document void confirm button must point to missing-step guidance.",
 );
 requireIn(
@@ -335,7 +380,7 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	"const documentAuditLoading = documentAuditFactsLoadingId === document.id;",
+	/const documentAuditLoading =\s*documentAuditFactsLoadingId === document\.id;/,
 	"Document passport buttons must compute one loading state.",
 );
 requireIn(
@@ -360,7 +405,7 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	"Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt)",
+	/Boolean\(\s*document\.issuedSnapshotSha256 && document\.issuedSnapshotCreatedAt,?\s*\)/,
 	"Document archive actions must require both snapshot hash and created-at metadata.",
 );
 requireIn(
@@ -428,9 +473,19 @@ requireIn(
 	"aria-label={`Скачать PDF документа: ${documentActionContext}`}",
 	"Document PDF download buttons must name the exact document.",
 );
+/*
+ * ТРЕБОВАНИЕ СТАЛО СТРОЖЕ, А НЕ СЛАБЕЕ.
+ *
+ * Прежде ждали метку «Скачать черновой файл ФНС: …». В продукте
+ * (`DocumentsView.tsx:7327`) она теперь называет конкретную форму: «Скачать
+ * XML-файл справки НДФЛ в формате ФНС (КНД 1151156): …». Это не потеря, а
+ * уточнение: незрячий оператор из одной метки узнаёт, какой именно документ
+ * скачивается, а в списке их несколько. Страж закрепляет НОВУЮ формулировку —
+ * вернуть расплывчатое «черновой файл» уже не выйдет.
+ */
 requireIn(
 	documentsSource,
-	"aria-label={`Скачать черновой файл ФНС: ${documentActionContext}`}",
+	/aria-label=\{`Скачать XML-файл справки НДФЛ в формате ФНС \(КНД 1151156\): \$\{documentActionContext\}`\}/,
 	"Document tax XML buttons must name the exact document.",
 );
 requireIn(
@@ -545,7 +600,7 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	"aria-describedby={!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined}",
+	/aria-describedby=\{\s*!activeUsableDocuments\??\.?\[0\]\s*\?\s*latestDocumentOpenGuidanceId\s*:\s*undefined\s*\}/,
 	"Open-latest document button must point to guidance when disabled.",
 );
 requireIn(
@@ -580,7 +635,7 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	"Record<DocumentKind, DocumentKindMetadata>",
+	/Record<\s*DocumentKind,\s*DocumentKindMetadata\s*>/,
 	"DocumentsView must use typed document metadata.",
 );
 requireIn(
@@ -689,6 +744,12 @@ forbidIn(
 	"PDF / DICOM",
 	"Rendered documents must not advertise document formats with technical DICOM wording.",
 );
+
+if (failures.length > 0) {
+	console.error(`Documents view source smoke failed (${failures.length}):`);
+	for (const message of failures) console.error(`- ${message}`);
+	process.exit(1);
+}
 
 console.log(
 	JSON.stringify(
