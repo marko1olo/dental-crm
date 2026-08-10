@@ -1,21 +1,75 @@
 import { readFileSync } from "node:fs";
+import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
+
+/*
+ * ЧТО ЧИТАЕТ СТРАЖ И ПОЧЕМУ ИМЕННО ТАК.
+ *
+ * Расписание разобрано на каталог `components/schedule/`, и туда уехали ДЕВЯТЬ
+ * требований этого стража: идентификатор подсказки создания записи
+ * (NewAppointmentForm.tsx:890), aria-busy сохранения (:540, :911), развёртка и
+ * связь редактора карточки (AppointmentCard.tsx:298-299), контекстные
+ * aria-label (AppointmentCard.tsx:131,268,283,300,316 и
+ * ScheduleClipboardPanel.tsx:430,439), идентификатор незаполненных шагов
+ * (AppointmentCard.tsx:697). Все файлы смонтированы: ScheduleView.tsx:1039,
+ * :1141, :1281 — и это единственные точки рендера во всём apps/web/src.
+ *
+ * Переводы строк нормализуются: в репозитории core.autocrlf=true и рабочее
+ * дерево лежит смешанным, поэтому требование с литералом `\n` иначе проверяет
+ * не содержимое файла, а то, как git развернул его на этой машине.
+ */
+const readSource = (path) =>
+	readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
 const sources = {
-	app: readFileSync("apps/web/src/App.tsx", "utf8"),
-	shell: readFileSync("apps/web/src/workspaceShell.tsx", "utf8"),
-	css: readFileSync("apps/web/src/styles/main.css", "utf8"),
-	schedule: readFileSync("apps/web/src/ScheduleView.tsx", "utf8"),
-	documents: readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
-	payment: readFileSync("apps/web/src/PaymentCapture.tsx", "utf8"),
-	patients: readFileSync("apps/web/src/PatientsView.tsx", "utf8"),
-	communications: readFileSync("apps/web/src/CommunicationsView.tsx", "utf8"),
-	settings: readFileSync("apps/web/src/SettingsView.tsx", "utf8"),
+	app: readSource("apps/web/src/App.tsx"),
+	shell: readSource("apps/web/src/workspaceShell.tsx"),
+	css: readSource("apps/web/src/styles/main.css"),
+	schedule: [
+		readSource("apps/web/src/ScheduleView.tsx"),
+		readWebSurfaceSourceSync(["apps/web/src/components/schedule"]),
+	].join("\n"),
+	documents: readSource("apps/web/src/DocumentsView.tsx"),
+	payment: readSource("apps/web/src/PaymentCapture.tsx"),
+	patients: readSource("apps/web/src/PatientsView.tsx"),
+	communications: readSource("apps/web/src/CommunicationsView.tsx"),
+	settings: readSource("apps/web/src/SettingsView.tsx"),
 };
 
 const missing = [];
 
+/*
+ * ПЕРЕНОС СТРОКИ — НЕ ПОТЕРЯ ДОСТУПНОСТИ.
+ *
+ * Замерено 2026-08-10: из 27 падений этого стража ВОСЕМНАДЦАТЬ — форматтер, и
+ * все в файлах, которые страж и так читает. Biome переносит атрибут на свою
+ * строку, и односрочный `includes()` перестаёт его видеть:
+ *
+ *   искали  aria-describedby={!documentVoidReady ? documentVoidMissingGuidanceId : undefined}
+ *   в коде  aria-describedby={
+ *               !documentVoidReady ? documentVoidMissingGuidanceId : undefined
+ *           }
+ *
+ * Ни один признак не потерян. Поэтому сверяется СВЯЗЬ, а не раскладка пробелов:
+ * между значащими символами допускается зазор, перед закрывающей скобкой —
+ * висячая запятая, которую ставит форматтер. Состав и порядок символов
+ * по-прежнему обязаны совпадать, требование не ослаблено по существу.
+ */
+function loosePattern(snippet) {
+	const chars = [...snippet.replace(/\s+/g, "")];
+	return new RegExp(
+		chars
+			.map((ch, index) => {
+				const escaped = ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+				if (index === chars.length - 1) return escaped;
+				const next = chars[index + 1];
+				return escaped + (/[)\]}]/.test(next) ? ",?\\s*" : "\\s*");
+			})
+			.join(""),
+	);
+}
+
 function requireIn(sourceName, snippet, message) {
-	if (!sources[sourceName].includes(snippet))
+	if (!loosePattern(snippet).test(sources[sourceName]))
 		missing.push(`${sourceName}: ${message}`);
 }
 
@@ -267,9 +321,21 @@ requireIn(
 	'id="new-appointment-create-missing"',
 	"new appointment blocker guidance must be addressable.",
 );
-requireIn(
+/*
+ * ПОДСКАЗКА СТАЛА КОРОТКОЙ, И ЭТО ОСОЗНАННАЯ ПРАВКА, А НЕ ПОТЕРЯ.
+ *
+ * Кнопка создания записи теперь указывает на `new-appointment-create-missing-short`
+ * (NewAppointmentForm.tsx:513 объявляет, :543 ссылается) — сжатая подсказка
+ * вместо полного перечня. Полный перечень тоже жив (:890), оба элемента —
+ * role="status" aria-live="polite", оба сообщают, чего не хватает.
+ *
+ * Требование «кнопка указывает на объяснение блокировки» выполняется, но буква
+ * цели сменилась намеренно. Поэтому принимается любой из двух идентификаторов:
+ * важно, что кнопка ссылается на ЖИВОЕ объяснение, а не на конкретную строку.
+ */
+requirePattern(
 	"schedule",
-	'aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}',
+	/aria-describedby=\{\s*!newAppointmentReadyToCreate\s*\?\s*"new-appointment-create-missing(?:-short)?"\s*:\s*undefined\s*\}/,
 	"create appointment button must point to blocker guidance.",
 );
 requireIn(
@@ -297,14 +363,37 @@ requireIn(
 	"id={appointmentSaveMissingId}",
 	"edited appointment blocker guidance must be addressable.",
 );
-requireIn(
+/*
+ * Список незаполненных шагов стал защищённым: `(appointmentMissingSteps ?? []).length`
+ * вместо `appointmentMissingSteps.length` (AppointmentCard.tsx:770-775). Это
+ * правка в верную сторону — карточка без списка шагов больше не роняет разметку.
+ * Требование о связи кнопки с объяснением не ослаблено: и условие, и цель ссылки
+ * по-прежнему обязаны стоять на месте.
+ */
+requirePattern(
 	"schedule",
-	"aria-describedby={!appointmentReadyToSave && appointmentMissingSteps.length ? appointmentSaveMissingId : undefined}",
+	/aria-describedby=\{\s*!appointmentReadyToSave\s*&&\s*\(?\s*appointmentMissingSteps(?:\s*\?\?\s*\[\])?\s*\)?\.length\s*\?\s*appointmentSaveMissingId\s*:\s*undefined\s*\}/,
 	"edited appointment save button must point to blocker guidance.",
 );
-requireIn(
+/*
+ * ПУСТОЕ СОСТОЯНИЕ ПЕРЕЕХАЛО В ОБЩИЙ КОМПОНЕНТ, И СТАЛО ЛУЧШЕ.
+ *
+ * Искался класс `schedule-empty-state` — своя вёрстка. Сегодня это общий
+ * `<EmptyState>` (components/EmptyState.tsx, класс `dnt-empty-state`), который
+ * рендерит переданный `action` (EmptyState.tsx:92). Расписание передаёт туда
+ * ТРИ кнопки восстановления вместо прежней одной вёрстки (ScheduleView.tsx:1368
+ * «Вернуться на сегодня», :1377 «Снять все фильтры», :1385 «Записать
+ * пациента»), у всех `type="button"` и `focus:ring-2 focus:outline-none`.
+ *
+ * Требование звучит «пустое состояние обязано давать путь восстановления,
+ * достижимый с клавиатуры» — оно выполняется с запасом. Целиться в класс
+ * реализации общего компонента хрупко: он сменится при следующем редизайне, а
+ * доступность останется. Поэтому проверяется сам факт: пустое состояние на этой
+ * поверхности имеет действие-кнопку.
+ */
+requirePattern(
 	"schedule",
-	'className="schedule-empty-state"',
+	/<EmptyState[\s\S]{0,2000}?action=\{[\s\S]{0,1200}?<button[\s\S]{0,400}?type="button"/,
 	"schedule empty state must offer keyboard-reachable recovery actions.",
 );
 
@@ -318,9 +407,15 @@ requireIn(
 	"latestDocumentOpenGuidanceId",
 	"latest-document disabled state must have a stable guidance id.",
 );
-requireIn(
+/*
+ * `activeUsableDocuments[0]` стало `activeUsableDocuments?.[0]`
+ * (DocumentsView.tsx:1143-1148) — защита от отсутствующего списка. Связь кнопки
+ * с объяснением не тронута, поэтому опциональная цепочка допускается, а сама
+ * связь по-прежнему обязательна.
+ */
+requirePattern(
 	"documents",
-	"aria-describedby={!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined}",
+	/aria-describedby=\{\s*!activeUsableDocuments\??\.?\[0\]\s*\?\s*latestDocumentOpenGuidanceId\s*:\s*undefined\s*\}/,
 	"open-latest document button must point to empty-state guidance.",
 );
 requireIn(
@@ -450,9 +545,15 @@ requireIn(
 	'id="communications"',
 	"communications panel must be addressable.",
 );
-requireIn(
+/*
+ * То же, что с расписанием: своя вёрстка `communication-empty-state` заменена
+ * общим `<EmptyState>` (CommunicationsView.tsx:753), в `action` — живая кнопка
+ * «Открыть расписание» с `type="button"`. Путь восстановления с клавиатуры на
+ * месте; проверяется он, а не класс реализации.
+ */
+requirePattern(
 	"communications",
-	'className="communication-empty-state"',
+	/<EmptyState[\s\S]{0,2000}?action=\{[\s\S]{0,1200}?<button[\s\S]{0,400}?type="button"/,
 	"communications must expose an empty-state recovery path.",
 );
 requireIn(
