@@ -438,20 +438,31 @@ requireIn(
 	'role="tabpanel"',
 	"Settings active tab content must expose a tabpanel role.",
 );
-requireEveryInstance(
-	settingsSource,
+/*
+ * СЧЁТ ПО ЖИВОЙ КНОПКЕ, А НЕ ПО МЁРТВЫМ КОПИЯМ.
+ *
+ * Здесь стояло `requireEveryInstance(..., 6, ...)`, и число 6 было ошибкой
+ * замера: ПЯТЬ из шести экземпляров лежали в копиях `_renderTabButton`
+ * (SettingsAuditTab, SettingsImagingImportTab, SettingsImportsTab,
+ * SettingsPatientImportTab, SettingsSmartImportTab), которые НИКЕМ НЕ
+ * ВЫЗЫВАЮТСЯ. Живая кнопка вкладки одна — SettingsView.tsx:1813, её рендерит
+ * `renderTabButton` из `{tabsInGroup.map(renderTabButton)}`.
+ *
+ * ЧЕМ ЭТО ОБЕРНУЛОСЬ. 2026-08-10 другой агент удалил ОДНУ мёртвую копию —
+ * законная уборка. Страж немедленно упал с кодом 2 и назвал это «регрессией
+ * доступности»: 5 вместо 6. Требование, привязанное к числу мёртвых копий,
+ * наказывает за удаление мёртвого кода и будет выключено первым же человеком,
+ * который возьмётся за уборку.
+ *
+ * Поэтому проверяется живая поверхность: `aria-selected={tabSelected}` обязан
+ * стоять в SettingsView.tsx. Мёртвые копии остальных файлов на требование не
+ * влияют ни в какую сторону — ни закрывают его, ни ломают.
+ */
+requirePattern(
+	codeOnly(readFileSync("apps/web/src/SettingsView.tsx", "utf8")),
 	/aria-selected=\{\s*tabSelected\s*\}/,
-	6,
 	"Settings tabs must expose selected state through aria-selected.",
 );
-/*
- * ЧИСЛО 6 — ЗАМЕР, И ЗАМЕР С ОГОВОРКОЙ. Пять из шести экземпляров лежат в
- * копиях функции `_renderTabButton` (по одной в SettingsAuditTab,
- * SettingsImagingImportTab, SettingsImportsTab, SettingsPatientImportTab,
- * SettingsSmartImportTab), которые НИКЕМ НЕ ВЫЗЫВАЮТСЯ. Страж за них не
- * отвечает: живой экземпляр один, SettingsView.tsx:1813. Это зафиксировано
- * здесь, чтобы мёртвый код не рядился в живую доступность.
- */
 /*
  * ОБРАТНЫЙ ХРАПОВИК ДЛЯ ПРАВИЛЬНОГО ПОВЕДЕНИЯ.
  *
