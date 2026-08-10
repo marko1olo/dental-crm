@@ -1,6 +1,3 @@
-// Static test compliance matches:
-// outcome,
-// setSelectedPatientId(patient.id)
 import type {
 	ClinicMode,
 	DentalSpecialty,
@@ -164,7 +161,6 @@ function _speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
 	);
 }
 export function App() {
-	// Topbar dictation shortcut must open the visit dictation area: goToVisitDictation, scrollToVisitArea(".dictation-box")
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(
 		() =>
 			typeof window !== "undefined" &&

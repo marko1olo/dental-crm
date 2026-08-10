@@ -22,7 +22,87 @@ function readSource(relativePath) {
 	return readFileSync(relativePath, "utf8").replace(/\r\n/g, "\n");
 }
 
-const appSource = readSource("apps/web/src/App.tsx");
+/*
+ * КОММЕНТАРИЙ НЕ ВЫПОЛНЯЕТ ТРЕБОВАНИЕ К КОДУ.
+ *
+ * ДОКАЗАНО МУТАЦИЕЙ 2026-08-10. В App.tsx:167, первой строкой тела `App()`,
+ * лежал комментарий, содержащий ДОСЛОВНЫЙ текст сообщения этого стража и оба
+ * его искомых куска:
+ *
+ *   // Topbar dictation shortcut must open the visit dictation area:
+ *   // goToVisitDictation, scrollToVisitArea(".dictation-box")
+ *
+ * Удаление ОДНОГО этого комментария при полностью целом продукте поднимало
+ * число падений с 15 до 16, и новое падение — ровно «Topbar dictation shortcut
+ * must open the visit dictation area». То есть требование охраняло комментарий,
+ * а не поведение. Сама способность жива и смонтирована, но в другом месте:
+ * useAppLogic.tsx:1862 (`scrollToVisitArea(".dictation-box")` внутри
+ * `goToVisitDictation`) и VisitView.tsx:739 (кнопка «Диктовка»).
+ *
+ * Рядом, App.tsx:1-3, лежит блок с заголовком «Static test compliance matches:»
+ * той же природы. Комментарий, написанный, чтобы кормить проверку, — это
+ * подделка зелёного цвета: продукт можно сломать, не тронув комментарий, и
+ * страж промолчит.
+ *
+ * Поэтому весь текст проходит вырезку комментариев ПЕРЕД сравнением. Строки и
+ * шаблоны сохраняются: требования вида '"documents"' и `className="…"` обязаны
+ * продолжать работать. Длина текста сохраняется тоже — иначе поехали бы
+ * смещения в требованиях, которые считают позиции.
+ */
+function codeOnly(source) {
+	let out = "";
+	let i = 0;
+	const n = source.length;
+	while (i < n) {
+		const c = source[i];
+		const next = source[i + 1];
+		if (c === "/" && next === "/") {
+			while (i < n && source[i] !== "\n") {
+				out += " ";
+				i += 1;
+			}
+			continue;
+		}
+		if (c === "/" && next === "*") {
+			while (i < n && !(source[i] === "*" && source[i + 1] === "/")) {
+				out += source[i] === "\n" ? "\n" : " ";
+				i += 1;
+			}
+			out += "  ";
+			i += 2;
+			continue;
+		}
+		if (c === '"' || c === "'" || c === "`") {
+			const quote = c;
+			out += c;
+			i += 1;
+			while (i < n) {
+				if (source[i] === "\\") {
+					out += source[i] + (source[i + 1] ?? "");
+					i += 2;
+					continue;
+				}
+				out += source[i];
+				if (source[i] === quote) {
+					i += 1;
+					break;
+				}
+				i += 1;
+			}
+			continue;
+		}
+		out += c;
+		i += 1;
+	}
+	return out;
+}
+
+/** Исходник без комментариев: требования к коду сверяются только с кодом. */
+function readCode(relativePath) {
+	return codeOnly(readSource(relativePath));
+}
+
+const appSource = readCode("apps/web/src/App.tsx");
 const financeViewSource = readSource("apps/web/src/FinanceView.tsx");
 const scheduleViewSource = readSource("apps/web/src/ScheduleView.tsx");
 const settingsViewSource = readSource("apps/web/src/SettingsView.tsx");
@@ -503,10 +583,33 @@ requireIn(
 	"goToVisitDictation",
 	"App.tsx must wire the topbar dictation shortcut",
 );
+/*
+ * ТРЕБОВАНИЕ ЦЕЛИТСЯ ТУДА, ГДЕ ПОВЕДЕНИЕ ЖИВЁТ, А НЕ В App.tsx.
+ *
+ * Искалось `scrollToVisitArea(".dictation-box")` в App.tsx — и находилось
+ * ТОЛЬКО в комментарии (см. блок про подделку зелёного в начале файла). В коде
+ * App.tsx этого вызова нет и быть не должно: шелл лишь прокидывает обработчик
+ * (App.tsx:392 берёт `goToVisitDictation` из логики, App.tsx:2002 передаёт его
+ * в топбар как `onGoToDictation`). Сам переход живёт в useAppLogic.tsx:1859-1866.
+ *
+ * Проверяются обе половины связи, и обе обязательны:
+ *   1) логика действительно ведёт к области диктовки;
+ *   2) шелл действительно подключает её к кнопке топбара.
+ * По отдельности каждая половина проходила бы при разорванной связи: живая
+ * функция без подключения — мёртвая кнопка, подключение без функции не
+ * скомпилируется. Ровно такой разрыв в этом продукте уже случался — см.
+ * __tests__/workspaceTopbarActions.test.ts:216 про «безымянный микрофон».
+ */
+const appLogicSource = readCode("apps/web/src/useAppLogic.tsx");
 requireIn(
-	appSource,
+	appLogicSource,
 	'scrollToVisitArea(".dictation-box")',
 	"Topbar dictation shortcut must open the visit dictation area",
+);
+requireIn(
+	appSource,
+	"onGoToDictation={goToVisitDictation}",
+	"Topbar dictation shortcut must be wired to the visit dictation handler",
 );
 requireIn(
 	cssSource,
