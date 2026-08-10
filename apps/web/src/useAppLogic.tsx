@@ -321,8 +321,6 @@ export function useAppLogic(): any {
 		setAccessUnlockMessage,
 		uiLanguage,
 		setUiLanguage,
-		clinicProfileDraft,
-		setClinicProfileDraft,
 		clinicProfileSaveState,
 		setClinicProfileSaveState,
 		clinicProfileDirty,
@@ -775,6 +773,7 @@ export function useAppLogic(): any {
 	const loadPersistenceHealthRef = useRef<any>(null);
 	const refreshSpeechRuntimeRef = useRef<any>(null);
 
+	const [clinicProfileDraft, setClinicProfileDraft] = useState<ClinicProfileDraft>(emptyClinicProfileDraft());
 	const dashboardLoaderLogic = useDashboardLoaderLogic({
 		authRef,
 		setDashboard,
@@ -786,12 +785,33 @@ export function useAppLogic(): any {
 		refreshSpeechRuntimeRef,
 	});
 	const { loadDashboard } = dashboardLoaderLogic;
+	/*
+	 * ССЫЛКА ЗАПОЛНЯЕТСЯ СРАЗУ ПОСЛЕ СОЗДАНИЯ `auth`, А НЕ В ЭФФЕКТЕ.
+	 *
+	 * `useDashboardLoaderLogic` объявлен ВЫШЕ, потому что `useAuthLogic` требует
+	 * готовый `loadDashboard`, — круг разорван через ссылку. Но саму ссылку никто
+	 * не заполнял: `authRef` создавался как `useRef<any>(null)` и таким оставался,
+	 * присваиваний `.current` в файле не было ни одного.
+	 *
+	 * Замерено в браузере 2026-08-10: рабочее место не открывалось ВООБЩЕ, все 14
+	 * разделов показывали одну заглушку «Не удалось открыть рабочее место
+	 * клиники», 1 уникальный снимок из 14. В консоли —
+	 *   TypeError: Cannot read properties of null
+	 *   (reading 'denteClinicalReadHeaders') at useDashboardLoaderLogic.ts:23
+	 * Граница ошибок исключение проглатывала, поэтому `pageerror` в обходе
+	 * оставался нулевым и отказ выглядел «тихим».
+	 *
+	 * Присваивание идёт при отрисовке, а не в `useEffect`: сводку запрашивает
+	 * эффект монтирования, а эффекты выполняются ПОСЛЕ отрисовки всего дерева —
+	 * к первому вызову `loadDashboard` ссылка уже заполнена.
+	 */
 	const auth = useAuthLogic({
 		setError,
 		loadDashboard,
 		loadTelegramControlPlane: (options) =>
 			telegramSettingsModule.loadTelegramControlPlane(options),
 	});
+	authRef.current = auth;
 
 	const pricelistLogic = usePricelistLogic({
 		auth,
@@ -1161,6 +1181,21 @@ export function useAppLogic(): any {
 		setImportPreview,
 		setImportCommit,
 	});
+	/*
+	 * Вторая незаполненная ссылка того же коммита декомпозиции.
+	 *
+	 * `refreshSpeechRuntime` появляется только здесь, из `useVisitLogic`, а
+	 * загрузчик сводки объявлен выше и зовёт его после успешной загрузки. Ссылка
+	 * создавалась `useRef<any>(null)` и не заполнялась ничем.
+	 *
+	 * Замерено в браузере 2026-08-10, сразу за отказом authRef:
+	 *   TypeError: refreshSpeechRuntimeRef.current is not a function
+	 *   at useDashboardLoaderLogic.ts:63
+	 * Загрузчик перехватывал это в свой catch и уходил в запасную ветку — то
+	 * есть даже при живом сервере сводка считалась незагруженной, а состояние
+	 * готовности диктовки не обновлялось никогда.
+	 */
+	refreshSpeechRuntimeRef.current = refreshSpeechRuntime;
 
 	const schedule = useScheduleLogic({
 		dashboard,
@@ -1780,6 +1815,7 @@ export function useAppLogic(): any {
         
 
 	const staffSettings = useStaffSettingsLogic({
+		clinicProfileDraft,
 		auth,
 		setError,
 		loadDashboard,
@@ -1943,6 +1979,20 @@ export function useAppLogic(): any {
         applyUiPreferences,
         recentPatientViewsVersion,
     } = uiPreferencesLogic;
+	/*
+	 * Третья незаполненная ссылка того же коммита декомпозиции.
+	 *
+	 * `loadPersistenceHealth` появляется только здесь, из `uiPreferencesLogic`, а
+	 * загрузчик сводки объявлен выше и зовёт его на строке 100 своего файла —
+	 * `void loadPersistenceHealthRef.current({...})`. Ссылка создавалась
+	 * `useRef<any>(null)` и не заполнялась ничем.
+	 *
+	 * Отдельно от двух предыдущих этот отказ в браузере не наблюдался: до него
+	 * не доходило, загрузка сводки падала раньше на `authRef`. Но он того же
+	 * рода и сработал бы сразу после починки первых двух, поэтому закрывается
+	 * здесь же, а не «когда проявится».
+	 */
+	loadPersistenceHealthRef.current = loadPersistenceHealth;
 
 	const onboardingLogic = useOnboardingLogic({
 		clinicProfileDraft,
@@ -2758,7 +2808,6 @@ export function useAppLogic(): any {
         		applyNearestMprClinicalPreset: null,
         		applyProtocolTemplate: null,
         		applyProtocolTemplateDirectly: null,
-        		assembleSpeechRecording: async () => {},
         		browserCanRequestPersistentStorage: null,
         		browserContinuityChecks: null,
         		browserContinuityCritical: null,
@@ -2788,10 +2837,7 @@ export function useAppLogic(): any {
         		imagingComparisonCandidates: [],
         		imagingKindOptions: [],
         		imagingViewerImageStyle: null,
-        		inn: documentPatient?.administrativeProfile?.inn ?? "",
         		lastName: documentPatient?.fullName?.split(" ")[0] ?? "",
-        		loadSpeechRecordingRecovery: async () => {},
-        		localBridgeStatusState: "",
         		loyaltyTier: "standard",
         		middleName: documentPatient?.fullName?.split(" ")[2] ?? "",
         		mostLoadedResource: null,
@@ -2818,7 +2864,6 @@ export function useAppLogic(): any {
         		mprSliceRangeValue: null,
         		mprWorkbenchSummaryText: null,
         		name: documentPatient?.fullName ?? "",
-        		newRulePatientText: newRulePatientText,
         		noShowRisk: "low",
         		patientId: documentPatient?.id ?? "",
         		pendingSpeechFlushActionLabel: null,
@@ -2829,14 +2874,7 @@ export function useAppLogic(): any {
         		renderClinicalToothRowsEditor,
         		resetMprControls: null,
         		retryImagingViewerSessionSave: null,
-        		scheduleDateFilter: "",
-        		selectedPaymentReceiptTotalRub: 0,
         		selectedProtocolTemplate: null,
-        		selectedTaxPaymentTotalRub: 0,
-        		setNewRulePatientText: setNewRulePatientText,
-        		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-        		setScheduleDateFilter: (_date?: any) => {},
-        		setSelectedPatientId: setSelectedPatientId,
         		shiftWarnings: null,
         		sortedCommunicationTasks: null,
         		specialtiesWithTemplates: [],
