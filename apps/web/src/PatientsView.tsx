@@ -70,32 +70,6 @@ export type WeekdayOption = {
 	value: number;
 };
 
-export type PatientsViewProps = {
-	createPatient: () => void | Promise<void>;
-	filteredPatients: Patient[];
-	money: (amountRub: number) => string;
-	normalizeOptionalWorkingDaysDraft: (days: number[]) => number[];
-	patientAdministrativeProfileValidationMessage: string | null;
-	patientInsightById: Map<string, PatientInsight>;
-	patientInsightRiskLabels: Record<PatientInsight["riskLevel"], string>;
-	query: string;
-	savePatientAdministrativeProfile: () =>
-		| undefined
-		| Promise<undefined | boolean>;
-	savePatientCore: () => undefined | Promise<undefined | boolean>;
-	selectedPatient: Patient | null | undefined;
-	setQuery: (value: string) => void;
-	updatePatientAdministrativeProfileDraft: (
-		field: keyof PatientAdministrativeProfileDraft,
-		value: string | number[],
-	) => void;
-	updatePatientCoreDraft: (
-		field: keyof PatientCoreDraft,
-		value: string,
-	) => void;
-	weekdayOptions: WeekdayOption[];
-};
-
 export type TextFieldChangeEvent = ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
 >;
@@ -134,9 +108,9 @@ const quickCreateInputStyle: CSSProperties = {
 	width: "100%",
 };
 
-export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
+export function PatientsView() {
 	const logicContext = useAppLogicContext();
-	const props = { ...logicContext, ...rawProps } as PatientsViewProps;
+	const appLogic = logicContext;
 	const {
 		selectedPatientId,
 		patientCoreDraft,
@@ -192,7 +166,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		updatePatientCoreDraft,
 		updatePatientAdministrativeProfileDraft,
 		weekdayOptions,
-	} = props;
+	} = appLogic || {};
 
 	useEffect(() => {
 		const firstPatient = (filteredPatients ?? [])[0];
@@ -212,7 +186,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const featureSalience = useMemo(
 		() =>
 			patientListFeatureSalience({
-				insights: Array.from((patientInsightById || new Map()).values()),
+				insights: Array.from((patientInsightById || new Map()).values()) as any,
 				riskLabels: patientInsightRiskLabels || {},
 			}),
 		[patientInsightById, patientInsightRiskLabels],

@@ -36,6 +36,7 @@ import {
 	appointmentScheduleMissingFields,
 	denteAdminSecretRequestHeaders,
 } from "./AppHelpers";
+import { useAppLogicContext } from './contexts/AppLogicContext';
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
@@ -153,7 +154,6 @@ type ScheduleViewProps = {
 };
 
 import { auth } from "./AppConstants";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
 
 export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
@@ -174,6 +174,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	// ничего не делала — событие до страницы доходило, сетка не обновлялась. App.tsx
 	// передаёт loadDashboard явным пропсом, и его читаем именно оттуда.
 	useScheduleRealtime(props.loadDashboard);
+	const appLogic = useAppLogicContext();
 	const {
 		scheduleDoctorFilterId,
 		scheduleAssistantFilterId,
@@ -281,7 +282,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		updateAppointmentScheduleDraft,
 		updateNewAppointmentDraft,
 		visibleScheduleSuggestions,
-	} = props;
+	} = appLogic;
 	const {
 		setScheduleAdminSecretDraft,
 		scheduleAdminSecretDraft,

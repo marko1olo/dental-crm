@@ -1,3 +1,4 @@
+import { useAppLogicContext } from './contexts/AppLogicContext';
 import type {
 	CommunicationTaskOutcome,
 	Dashboard,
@@ -51,7 +52,7 @@ type CommunicationsViewProps = {
 	) => readonly GeneratedDocument["kind"][];
 	documentLabels: Record<GeneratedDocument["kind"], string>;
 	formatDateTime: (value: string) => string;
-	onCommunicationNoteChange: (value: string) => void;
+	setCommunicationNote: (value: string) => void;
 	onGoToSchedule: () => void;
 	openCommunicationTaskDocumentWorkflow: (
 		task: CommunicationTask,
@@ -464,26 +465,10 @@ function CommunicationEventRow({
 	);
 }
 
-export function CommunicationsView({
-	communicationChannelLabels,
-	communicationDocumentTaskActionLabels,
-	communicationIntentLabels,
-	communicationNote,
-	communicationPriorityLabels,
-	communicationSavingTaskId,
-	communicationStatusLabels,
-	completeCommunicationTask,
-	dashboard,
-	documentKindsForCommunicationTask,
-	documentLabels,
-	formatDateTime,
-	onCommunicationNoteChange,
-	onGoToSchedule,
-	openCommunicationTaskDocumentWorkflow,
-	sortedCommunicationTasks,
-	staffRoleLabels,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-}: any = {}) {
+export function CommunicationsView() {
+	const logicContext = useAppLogicContext();
+	const onGoToSchedule = () => { window.location.hash = "schedule"; };
+	const { communicationChannelLabels, communicationDocumentTaskActionLabels, communicationIntentLabels, communicationNote, communicationPriorityLabels, communicationStatusLabels, completeCommunicationTask, dashboard, documentKindsForCommunicationTask, documentLabels, formatDateTime, communicationSavingTaskId, setCommunicationNote, openCommunicationTaskDocumentWorkflow, sortedCommunicationTasks, staffRoleLabels } = logicContext || {};
 	const communicationNoteInputId = "communication-closing-note";
 	const communicationNoteDescriptionId = "communication-closing-note-guidance";
 	// Режим клиники решает, какие разделы уместны. Пока профиль не загружен,
@@ -645,7 +630,7 @@ export function CommunicationsView({
 							context="general"
 							onResult={(t) => {
 								const prev = communicationNote || "";
-								onCommunicationNoteChange(prev ? `${prev}, ${t}` : t);
+								setCommunicationNote(prev ? `${prev}, ${t}` : t);
 							}}
 							className="inline-flex gap-1.5 items-center px-3 py-1.5 text-[var(--teal-dark,#0f766e)] bg-[var(--teal-soft,#ccfbf1)] border-none rounded-lg font-semibold text-xs hover:opacity-80 transition-opacity"
 						/>
@@ -653,7 +638,7 @@ export function CommunicationsView({
 					<textarea
 						id={communicationNoteInputId}
 						value={communicationNote}
-						onChange={(event) => onCommunicationNoteChange(event.target.value)}
+						onChange={(event) => setCommunicationNote(event.target.value)}
 						aria-describedby={communicationNoteDescriptionId}
 						placeholder="Нажмите для ввода или надиктуйте результат связи..."
 						rows={2}
@@ -674,7 +659,7 @@ export function CommunicationsView({
 							<button
 								type="button"
 								className="secondary-button text-xs"
-								onClick={() => onCommunicationNoteChange("")}
+								onClick={() => setCommunicationNote("")}
 							>
 								Очистить заметку
 							</button>
@@ -697,7 +682,7 @@ export function CommunicationsView({
 								className="quick-chip focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all hover:scale-[1.02]"
 								onClick={() => {
 									const prev = communicationNote || "";
-									onCommunicationNoteChange(
+									setCommunicationNote(
 										prev ? `${prev}, ${chip.toLowerCase()}` : chip,
 									);
 								}}

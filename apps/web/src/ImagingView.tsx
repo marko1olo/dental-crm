@@ -150,14 +150,12 @@ function imagingStudyHasFile(study: any): boolean {
 	);
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-type ImagingViewProps = Record<string, any>;
 
-export function ImagingView(props: ImagingViewProps) {
+
+export function ImagingView() {
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
-	const {
-		activeAppointment,
+	const {activeAppointment,
 		activeImagingStudies,
 		activePatient,
 		addImagingViewerNoteAnnotation,
@@ -285,13 +283,13 @@ export function ImagingView(props: ImagingViewProps) {
 		setMprWindowPreset,
 		setSelectedImagingStudyId,
 		visibleImagingStudies,
-	} = props;
+	} = appLogic;
 
 	const localFilesInputRef = useRef<HTMLInputElement | null>(null);
 	const browserImagingFilesInputRef =
-		props.browserImagingFilesInputRef || localFilesInputRef;
+		appLogic.browserImagingFilesInputRef || localFilesInputRef;
 	const pickBrowserImagingFiles =
-		props.pickBrowserImagingFiles ||
+		appLogic.pickBrowserImagingFiles ||
 		(() => {
 			browserImagingFilesInputRef.current?.click();
 		});

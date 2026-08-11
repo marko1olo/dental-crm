@@ -1,3 +1,4 @@
+import { useAppLogicContext } from './contexts/AppLogicContext';
 import type { Dashboard } from "@dental/shared";
 import {
 	Building2,
@@ -72,21 +73,9 @@ function formatClockTime(value: unknown): string {
 	});
 }
 
-export function ShiftView({
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
-	activePatientHasCallablePhone,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
-	activePatientCallablePhone,
-	visibleRecommendedActions,
-	recommendedActionPriorityLabels,
-	staffRoleLabels,
-	dashboard,
-	activeQueueRole,
-	setError,
-	mostLoadedResource,
-	setSelectedPatientId,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-}: any) {
+export function ShiftView() {
+	const logicContext = useAppLogicContext();
+	const { activePatientHasCallablePhone, dashboard, staffRoleLabels, setSelectedPatientId, shiftWarnings, activeStaffUser, isOnline, visitKindLabels, setSettingsTab, setShiftDateFilter, setError, visibleRecommendedActions, recommendedActionPriorityLabels, mostLoadedResource, activeQueueRole } = logicContext || {};
 	const patientsById = useMemo(() => {
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const index = new Map<string, any>();

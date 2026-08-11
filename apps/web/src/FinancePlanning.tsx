@@ -1,6 +1,6 @@
 import type { Dashboard } from "@dental/shared";
 import { ChevronDown, ChevronUp, ClipboardList } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 type TreatmentPlanScenario = Dashboard["treatmentPlanScenarios"][number];
 type ServiceCatalogItem = Dashboard["serviceCatalog"][number];

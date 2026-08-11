@@ -75,29 +75,7 @@ function patientsViewMarkup(options: {
 }): string {
 	return renderToStaticMarkup(
 		<AppLogicProvider value={emptyAppLogicValue}>
-			<PatientsView
-				createPatient={() => undefined}
-				filteredPatients={[]}
-				money={(amountRub: number) => `${amountRub} ₽`}
-				normalizeOptionalWorkingDaysDraft={(days: number[]) => days}
-				patientAdministrativeProfileValidationMessage={
-					options.patientAdministrativeProfileValidationMessage ?? null
-				}
-				patientInsightById={new Map()}
-				patientInsightRiskLabels={{
-					low: "спокойно",
-					watch: "контроль",
-					high: "риск",
-				}}
-				query=""
-				savePatientAdministrativeProfile={() => undefined}
-				savePatientCore={() => undefined}
-				selectedPatient={options.selectedPatient ?? null}
-				setQuery={() => undefined}
-				updatePatientAdministrativeProfileDraft={() => undefined}
-				updatePatientCoreDraft={() => undefined}
-				weekdayOptions={[{ label: "Пн", value: 1 }]}
-			/>
+			<PatientsView />
 		</AppLogicProvider>,
 	);
 }

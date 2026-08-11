@@ -58,27 +58,7 @@ function resetPatientStore(): void {
 const emptyProviderValue = {} as AppLogicContextType;
 
 const patientsViewElement = () => (
-	<PatientsView
-		createPatient={() => undefined}
-		filteredPatients={[]}
-		money={(amountRub: number) => `${amountRub} ₽`}
-		normalizeOptionalWorkingDaysDraft={(days: number[]) => days}
-		patientAdministrativeProfileValidationMessage={null}
-		patientInsightById={new Map()}
-		patientInsightRiskLabels={{
-			low: "спокойно",
-			watch: "контроль",
-			high: "риск",
-		}}
-		query=""
-		savePatientAdministrativeProfile={() => undefined}
-		savePatientCore={() => undefined}
-		selectedPatient={null}
-		setQuery={() => undefined}
-		updatePatientAdministrativeProfileDraft={() => undefined}
-		updatePatientCoreDraft={() => undefined}
-		weekdayOptions={[{ label: "Пн", value: 1 }]}
-	/>
+	<PatientsView />
 );
 
 describe("потребитель контекста вне провайдера", () => {
