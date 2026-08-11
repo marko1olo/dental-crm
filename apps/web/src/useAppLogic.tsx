@@ -1815,7 +1815,6 @@ export function useAppLogic(): any {
         
 
 	const staffSettings = useStaffSettingsLogic({
-		clinicProfileDraft,
 		auth,
 		setError,
 		loadDashboard,

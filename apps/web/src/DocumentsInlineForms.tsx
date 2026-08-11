@@ -1,5 +1,4 @@
-
-// DocumentsInlineForms.tsx — thin re-export barrel
+// DocumentsInlineForms.tsx - thin re-export barrel
 // All forms extracted into individual files per form in components/documents/forms/
 
 export { PaidMedicalServicesContractForm } from './components/documents/forms/PaidMedicalServicesContractForm';
@@ -27,4 +26,3 @@ export { MedicalRecordCopyRequestForm } from './components/documents/forms/Medic
 
 export { VisitAttendanceCertificateForm } from './components/documents/forms/VisitAttendanceCertificateForm';
 export { MedicalDocumentReleaseReceiptForm } from './components/documents/forms/MedicalDocumentReleaseReceiptForm';
-
