@@ -1,45 +1,60 @@
-import type {
-	AiJobKind,
-	AiRecognitionTarget,
-	Dashboard,
-	DenteTelegramVisualCardKey,
-	DenteTelegramVisualCardUrls,
-	DocumentIngestionTarget,
-	ImagingSourceKind,
-	ImagingStudyKind,
-	ImportSourceKind,
-	InstallmentPaymentStatus,
-	PaymentMethod,
-	PricelistSourceKind,
-	ProcedureSpecificConsentProcedure,
-	SmartImportMode,
-	TreatmentPlanAcceptanceVariant,
-	XrayCbctReferralPregnancyStatus,
-	XrayCbctReferralPriority,
-	XrayCbctReferralStudyType,
-} from "@dental/shared";
-import { showToast } from "../components/GlobalToast";
-import { imagingKindLabels, imagingSourceLabels } from "../imagingUiLabels";
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
-import { actionFailureToast } from "../lib/panelStateText";
-import { countLabel } from "../lib/russianPlural.js";
-import { pricelistSourceKindLabels } from "../pricelistUiMeta";
-import { telegramVisualCardFields } from "../workspaceStaticOptions";
 import {
+	type AiJobKind,
+	type AiRecognitionTarget,
+	type Appointment,
+	type Dashboard,
+	type DenteTelegramVisualCardKey,
+	type DenteTelegramVisualCardUrls,
+	type DocumentIngestionTarget,
+	type DocumentIssueSignatureMode,
+	documentKindMetadata,
+	type GeneratedDocument,
+	type ImagingSourceKind,
+	type ImagingStudyKind,
+	type ImportSourceKind,
+	type InstallmentPaymentStatus,
+	type PaymentMethod,
+	type PostVisitCareTopic,
+	type PricelistSourceKind,
+	type ProcedureSpecificConsentProcedure,
+	type SmartImportMode,
+	type TaxDeductionApplicationDeliveryChannel,
+	type TaxDeductionApplicationForm,
+	type TreatmentPlanAcceptanceVariant,
+	type XrayCbctReferralPregnancyStatus,
+	type XrayCbctReferralPriority,
+	type XrayCbctReferralStudyType,
+} from "@dental/shared";
+import { showToast } from "../../components/GlobalToast";
+import { imagingKindLabels, imagingSourceLabels } from "../../imagingUiLabels";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { countLabel } from "../../lib/russianPlural.js";
+import { pricelistSourceKindLabels } from "../../pricelistUiMeta";
+import {
+	postVisitCareTopicOptions,
+	telegramVisualCardFields,
+} from "../../workspaceStaticOptions";
+import {
+	appointmentLabels,
 	clinicalRuleActionLabels,
 	clinicalRuleSeverityLabels,
 	paymentMethodLabels,
 	recognitionTargetLabels,
 	serviceCategoryLabels,
-} from "../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "./AppointmentHelpers";
-import { normalizedLocalOrganizationId } from "./AuthOnboardingHelpers";
+} from "../../workspaceUiLabels";
+import { treatmentAcceptanceVariantOptions } from "../AppointmentHelpers";
+import {
+	normalizedLocalOrganizationId,
+	type OnboardingStep,
+	onboardingStepValues,
+} from "../AuthOnboardingHelpers";
 import {
 	collectDicomWorkstationClientFacts,
 	isBrowserImagingScanAbortError,
 	isBrowserMigrationScanAbortError,
 	localImagingFolderFingerprint,
-} from "./browserScanUtils";
+} from "../browserScanUtils";
 import {
 	buildClinicProfileUpdatePayload,
 	buildPatientAdministrativeProfilePayload,
@@ -71,7 +86,12 @@ import {
 	staffScheduleDraftSignature,
 	staffWorkingHoursFromDraft,
 	staffWorkingHoursFromSimpleDraft,
-} from "./clinicProfileUtils";
+} from "../clinicProfileUtils";
+import {
+	loadDocumentIssueSignatureDraft,
+	taxApplicationDeliveryChannelOptions,
+	taxApplicationFormOptions,
+} from "../DocumentHelpers";
 import {
 	addMinutesToClinicDateTimeLocal,
 	calendarDayInTimeZone,
@@ -94,25 +114,41 @@ import {
 	todayDateInputValue,
 	validClockTime,
 	weekdayFromDateInput,
-} from "./dateTimeUtils";
+} from "../dateTimeUtils";
 import {
 	loadImageFromDataUrl,
 	readFileAsDataUrl,
 	xrayPregnancyStatusOptions,
 	xrayPriorityOptions,
 	xrayStudyTypeOptions,
-} from "./ImagingHelpers";
+} from "../ImagingHelpers";
 import {
 	localConvenienceRetentionMs,
 	localSavedAtFresh,
 	organizationScopedLocalStorageKey,
-} from "./localStorageHelpers";
+} from "../localStorageHelpers";
+import {
+	isUiLanguage,
+	pickUiPreference,
+	type UiLanguageOption,
+	uiLanguageLabels,
+	uiPreferencesServerPath,
+} from "../PreferencesHelpers";
+import {
+	defaultUiPreferences,
+	type UiPreferences,
+	type UiPreferencesInput,
+} from "../preferencesUtils";
 import {
 	type DenteTelegramPortalSection,
 	denteTelegramHandoffTargets,
+	isTelegramLinkSubjectTypePreference,
+	isTelegramOutboxStatusFilterPreference,
+	isTelegramOutboxTemplateFilterPreference,
 	telegramPublicUrlSensitivePathSegments,
 	telegramPublicUrlSensitiveQueryKeys,
-} from "./TelegramHelpers";
+} from "../TelegramHelpers";
+import { responseErrorMessage } from "./errorHelpers";
 
 export function browserGeneratedId(prefix: string): string {
 	return `${prefix}-${crypto.randomUUID()}`;
@@ -332,6 +368,13 @@ export function localQueueOrganizationMatches(
 		normalizedLocalOrganizationId(activeOrganizationId)
 	);
 }
+
+export const defaultUiLanguageOption: UiLanguageOption = {
+	value: "ru",
+	label: uiLanguageLabels.ru,
+	detail:
+		"Русский интерфейс включен сейчас. Выбор сохраняется автоматически и остается до смены языка.",
+};
 
 export function normalizeTelegramPublicHttpsUrlDraft(
 	fieldLabel: string,
@@ -603,12 +646,87 @@ export function isImagingKindFilter(
 	return value === "all" || isRecordKey(value, imagingKindLabels);
 }
 
+export function isTaxDocumentYearPreference(value: unknown): value is number {
+	if (!Number.isInteger(value)) return false;
+	const year = value as number;
+	return year >= 2021 && year <= 2100;
+}
+
+export function isDocumentKindPreference(
+	value: unknown,
+): value is GeneratedDocument["kind"] {
+	return isRecordKey(value, documentKindMetadata);
+}
+
+export function isAppointmentStatusFilterPreference(
+	value: unknown,
+): value is Appointment["status"] | "all" {
+	return value === "all" || isRecordKey(value, appointmentLabels);
+}
+
+export function isTaxApplicationFormPreference(
+	value: unknown,
+): value is TaxDeductionApplicationForm {
+	return isOptionValue(value, taxApplicationFormOptions);
+}
+
+export function isTaxApplicationDeliveryChannelPreference(
+	value: unknown,
+): value is TaxDeductionApplicationDeliveryChannel {
+	return isOptionValue(value, taxApplicationDeliveryChannelOptions);
+}
+
+export function isProcedureSpecificConsentProcedurePreference(
+	value: unknown,
+): value is ProcedureSpecificConsentProcedure {
+	return isOptionValue(value, procedureSpecificConsentProcedureOptions);
+}
+
+export function isPostVisitCareTopicPreference(
+	value: unknown,
+): value is PostVisitCareTopic {
+	return isOptionValue(value, postVisitCareTopicOptions);
+}
+
+export function isDocumentIssueSignatureModePreference(
+	value: unknown,
+): value is DocumentIssueSignatureMode {
+	return (
+		value === "paper_signed" ||
+		value === "simple_electronic_signature" ||
+		value === "qualified_electronic_signature"
+	);
+}
+
+export function isNullablePreferenceString(
+	value: unknown,
+): value is string | null {
+	return value === null || isBoundedPreferenceString(value);
+}
+
+export function isOnboardingStepPreference(
+	value: unknown,
+): value is OnboardingStep {
+	return (
+		typeof value === "string" &&
+		onboardingStepValues.includes(value as OnboardingStep)
+	);
+}
+
 export function normalizedTreatmentPlanAcceptanceVariant(
 	value: unknown,
 ): TreatmentPlanAcceptanceVariant {
 	return isStringUnionValue(value, treatmentAcceptanceVariantOptions)
 		? value
 		: "standard";
+}
+
+export function normalizedPostVisitCareTopic(
+	value: unknown,
+): PostVisitCareTopic {
+	return isPostVisitCareTopicPreference(value)
+		? value
+		: defaultUiPreferences.postVisitCareTopic;
 }
 
 export function normalizedXrayStudyType(
@@ -665,7 +783,339 @@ export function normalizedServiceCategory(
 	return isRecordKey(value, serviceCategoryLabels) ? value : "therapy";
 }
 
+export function normalizeUiPreferencesPayload(
+	parsed: unknown,
+): UiPreferences | null {
+	if (
+		!parsed ||
+		typeof parsed !== "object" ||
+		(parsed as { version?: unknown }).version !== 1
+	) {
+		return null;
+	}
+	const source = parsed as Record<string, unknown>;
+	const legacyIssueSignatureDraft = loadDocumentIssueSignatureDraft();
+	return {
+		version: 1,
+		uiLanguage: pickUiPreference(
+			source,
+			"uiLanguage",
+			defaultUiPreferences.uiLanguage,
+			isUiLanguage,
+		),
+		selectedWorkspaceRole: pickUiPreference(
+			source,
+			"selectedWorkspaceRole",
+			defaultUiPreferences.selectedWorkspaceRole,
+			isStaffRole,
+		),
+		selectedSpecialty: pickUiPreference(
+			source,
+			"selectedSpecialty",
+			defaultUiPreferences.selectedSpecialty,
+			isDentalSpecialty,
+		),
+		selectedProtocolId: pickUiPreference(
+			source,
+			"selectedProtocolId",
+			defaultUiPreferences.selectedProtocolId,
+			isNullablePreferenceString,
+		),
+		selectedPatientId: pickUiPreference(
+			source,
+			"selectedPatientId",
+			defaultUiPreferences.selectedPatientId,
+			isNullablePreferenceString,
+		),
+		scheduleDoctorFilterId: pickUiPreference(
+			source,
+			"scheduleDoctorFilterId",
+			defaultUiPreferences.scheduleDoctorFilterId,
+			isNullablePreferenceString,
+		),
+		scheduleAssistantFilterId: pickUiPreference(
+			source,
+			"scheduleAssistantFilterId",
+			defaultUiPreferences.scheduleAssistantFilterId,
+			isNullablePreferenceString,
+		),
+		scheduleChairFilterId: pickUiPreference(
+			source,
+			"scheduleChairFilterId",
+			defaultUiPreferences.scheduleChairFilterId,
+			isNullablePreferenceString,
+		),
+		scheduleDefaultDoctorUserId: pickUiPreference(
+			source,
+			"scheduleDefaultDoctorUserId",
+			defaultUiPreferences.scheduleDefaultDoctorUserId,
+			isNullablePreferenceString,
+		),
+		scheduleDefaultAssistantUserId: pickUiPreference(
+			source,
+			"scheduleDefaultAssistantUserId",
+			defaultUiPreferences.scheduleDefaultAssistantUserId,
+			isNullablePreferenceString,
+		),
+		scheduleDefaultChairId: pickUiPreference(
+			source,
+			"scheduleDefaultChairId",
+			defaultUiPreferences.scheduleDefaultChairId,
+			isNullablePreferenceString,
+		),
+		scheduleStatusFilter: pickUiPreference(
+			source,
+			"scheduleStatusFilter",
+			defaultUiPreferences.scheduleStatusFilter,
+			isAppointmentStatusFilterPreference,
+		),
+		scheduleDateFilter: pickUiPreference(
+			source,
+			"scheduleDateFilter",
+			defaultUiPreferences.scheduleDateFilter,
+			isBoundedPreferenceString,
+		),
+		paymentMethod: pickUiPreference(
+			source,
+			"paymentMethod",
+			defaultUiPreferences.paymentMethod,
+			isPaymentMethod,
+		),
+		taxDocumentYear: pickUiPreference(
+			source,
+			"taxDocumentYear",
+			defaultUiPreferences.taxDocumentYear,
+			isTaxDocumentYearPreference,
+		),
+		selectedDocumentKind: pickUiPreference(
+			source,
+			"selectedDocumentKind",
+			defaultUiPreferences.selectedDocumentKind,
+			isDocumentKindPreference,
+		),
+		taxApplicationForm: pickUiPreference(
+			source,
+			"taxApplicationForm",
+			defaultUiPreferences.taxApplicationForm,
+			isTaxApplicationFormPreference,
+		),
+		taxApplicationDeliveryChannel: pickUiPreference(
+			source,
+			"taxApplicationDeliveryChannel",
+			defaultUiPreferences.taxApplicationDeliveryChannel,
+			isTaxApplicationDeliveryChannelPreference,
+		),
+		paymentReceiptTaxSupportRequested: pickUiPreference(
+			source,
+			"paymentReceiptTaxSupportRequested",
+			defaultUiPreferences.paymentReceiptTaxSupportRequested,
+			isBooleanPreference,
+		),
+		documentIssueSignatureMode: pickUiPreference(
+			source,
+			"documentIssueSignatureMode",
+			legacyIssueSignatureDraft.mode,
+			isDocumentIssueSignatureModePreference,
+		),
+		documentIssueStaffFullName: pickUiPreference(
+			source,
+			"documentIssueStaffFullName",
+			legacyIssueSignatureDraft.staffFullName,
+			isBoundedPreferenceString,
+		).slice(0, 160),
+		documentIssueStaffRole:
+			pickUiPreference(
+				source,
+				"documentIssueStaffRole",
+				legacyIssueSignatureDraft.staffRole,
+				isBoundedPreferenceString,
+			).slice(0, 120) || defaultUiPreferences.documentIssueStaffRole,
+		procedureConsentProcedureType: pickUiPreference(
+			source,
+			"procedureConsentProcedureType",
+			defaultUiPreferences.procedureConsentProcedureType,
+			isProcedureSpecificConsentProcedurePreference,
+		),
+		postVisitCareTopic: pickUiPreference(
+			source,
+			"postVisitCareTopic",
+			defaultUiPreferences.postVisitCareTopic,
+			isPostVisitCareTopicPreference,
+		),
+		pricelistSourceKind: pickUiPreference(
+			source,
+			"pricelistSourceKind",
+			defaultUiPreferences.pricelistSourceKind,
+			isPricelistSourceKind,
+		),
+		usePricelistAi: pickUiPreference(
+			source,
+			"usePricelistAi",
+			defaultUiPreferences.usePricelistAi,
+			isBooleanPreference,
+		),
+		odontogramUseSurfaces: pickUiPreference(
+			source,
+			"odontogramUseSurfaces",
+			defaultUiPreferences.odontogramUseSurfaces,
+			isBooleanPreference,
+		),
+		recognitionKind: pickUiPreference(
+			source,
+			"recognitionKind",
+			defaultUiPreferences.recognitionKind,
+			isAiJobKind,
+		),
+		recognitionTarget: pickUiPreference(
+			source,
+			"recognitionTarget",
+			defaultUiPreferences.recognitionTarget,
+			isAiRecognitionTarget,
+		),
+		importSourceKind: pickUiPreference(
+			source,
+			"importSourceKind",
+			defaultUiPreferences.importSourceKind,
+			isImportSourceKind,
+		),
+		documentIngestionTarget: pickUiPreference(
+			source,
+			"documentIngestionTarget",
+			defaultUiPreferences.documentIngestionTarget,
+			isDocumentIngestionTarget,
+		),
+		imagingImportSourceKind: pickUiPreference(
+			source,
+			"imagingImportSourceKind",
+			defaultUiPreferences.imagingImportSourceKind,
+			isImagingSourceKind,
+		),
+		smartImportMode: pickUiPreference(
+			source,
+			"smartImportMode",
+			defaultUiPreferences.smartImportMode,
+			isSmartImportMode,
+		),
+		imagingKindFilter: pickUiPreference(
+			source,
+			"imagingKindFilter",
+			defaultUiPreferences.imagingKindFilter,
+			isImagingKindFilter,
+		),
+		dicomWebEndpointUrl: pickUiPreference(
+			source,
+			"dicomWebEndpointUrl",
+			defaultUiPreferences.dicomWebEndpointUrl,
+			isBoundedPreferenceString,
+		),
+		ohifBaseUrl: pickUiPreference(
+			source,
+			"ohifBaseUrl",
+			defaultUiPreferences.ohifBaseUrl,
+			isBoundedPreferenceString,
+		),
+		telegramBotConfigId: pickUiPreference(
+			source,
+			"telegramBotConfigId",
+			defaultUiPreferences.telegramBotConfigId,
+			isBoundedPreferenceString,
+		)
+			.trim()
+			.slice(0, 160),
+		telegramLinkSubjectType: pickUiPreference(
+			source,
+			"telegramLinkSubjectType",
+			defaultUiPreferences.telegramLinkSubjectType,
+			isTelegramLinkSubjectTypePreference,
+		),
+		telegramLinkStaffId: pickUiPreference(
+			source,
+			"telegramLinkStaffId",
+			defaultUiPreferences.telegramLinkStaffId,
+			isNullablePreferenceString,
+		),
+		telegramOutboxStatusFilter: pickUiPreference(
+			source,
+			"telegramOutboxStatusFilter",
+			defaultUiPreferences.telegramOutboxStatusFilter,
+			isTelegramOutboxStatusFilterPreference,
+		),
+		telegramOutboxTemplateFilter: pickUiPreference(
+			source,
+			"telegramOutboxTemplateFilter",
+			defaultUiPreferences.telegramOutboxTemplateFilter,
+			isTelegramOutboxTemplateFilterPreference,
+		),
+		onboardingDismissed: pickUiPreference(
+			source,
+			"onboardingDismissed",
+			defaultUiPreferences.onboardingDismissed,
+			isBooleanPreference,
+		),
+		onboardingDismissedAt: pickUiPreference(
+			source,
+			"onboardingDismissedAt",
+			defaultUiPreferences.onboardingDismissedAt,
+			isNullablePreferenceString,
+		),
+		onboardingStep: pickUiPreference(
+			source,
+			"onboardingStep",
+			defaultUiPreferences.onboardingStep,
+			isOnboardingStepPreference,
+		),
+		onboardingDraftMode: pickUiPreference(
+			source,
+			"onboardingDraftMode",
+			defaultUiPreferences.onboardingDraftMode,
+			isBooleanPreference,
+		),
+		savedAt: typeof source.savedAt === "string" ? source.savedAt : "",
+	};
+}
+
+export function withSavedUiPreferenceTimestamp(
+	preferences: UiPreferencesInput,
+): UiPreferences {
+	return {
+		version: 1,
+		...preferences,
+		savedAt: new Date().toISOString(),
+	};
+}
+
 export { denteAdminSecretRequestHeaders };
+
+export async function loadServerUiPreferences(
+	adminSecret?: string,
+): Promise<UiPreferences | null> {
+	const response = await fetch(uiPreferencesServerPath, {
+		headers: denteAdminSecretRequestHeaders({}, adminSecret),
+	});
+	if (!response.ok) return null;
+	const payload = (await response.json()) as { preferences?: unknown };
+	return normalizeUiPreferencesPayload(payload.preferences) ?? null;
+}
+
+export async function saveServerUiPreferences(
+	preferences: UiPreferences,
+	adminSecret?: string,
+): Promise<void> {
+	const response = await fetch(uiPreferencesServerPath, {
+		method: "PUT",
+		headers: denteAdminSecretRequestHeaders(
+			{ "Content-Type": "application/json" },
+			adminSecret,
+		),
+		body: JSON.stringify(preferences),
+	});
+	if (!response.ok) {
+		throw new Error(
+			await responseErrorMessage(response, "Настройки интерфейса не сохранены"),
+		);
+	}
+}
+
 export type PricelistImageMimeType = "image/jpeg" | "image/png" | "image/webp";
 
 export const pricelistImageMimeTypes: PricelistImageMimeType[] = [
@@ -747,7 +1197,7 @@ export const recommendedActionPriorityLabels: Record<
 	urgent: "срочно",
 };
 
-export * from "./browserScanUtils";
+export * from "../browserScanUtils";
 
 export type {
 	ClinicProfileDraft,
@@ -780,12 +1230,6 @@ export type {
  * достижимости — приложение при этом не стартовало ни разу.
  */
 
-export * from "./commonHelpers/documentDraftHelpers";
-export * from "./commonHelpers/errorHelpers";
-export * from "./commonHelpers/imagingDraftHelpers";
-export * from "./commonHelpers/speechChunkHelpers";
-export * from "./commonHelpers/uiPreferencesHelpers";
-export * from "./commonHelpers/visitDraftHelpers";
 export {
 	addMinutesToClinicDateTimeLocal,
 	buildClinicProfileUpdatePayload,

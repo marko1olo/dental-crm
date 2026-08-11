@@ -13,33 +13,38 @@ import type {
 	PricelistSourceKind,
 	ProcedureSpecificConsentProcedure,
 	SmartImportMode,
+	SpeechChunkUploadInput,
 	TreatmentPlanAcceptanceVariant,
 	XrayCbctReferralPregnancyStatus,
 	XrayCbctReferralPriority,
 	XrayCbctReferralStudyType,
 } from "@dental/shared";
-import { showToast } from "../components/GlobalToast";
-import { imagingKindLabels, imagingSourceLabels } from "../imagingUiLabels";
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
-import { actionFailureToast } from "../lib/panelStateText";
-import { countLabel } from "../lib/russianPlural.js";
-import { pricelistSourceKindLabels } from "../pricelistUiMeta";
-import { telegramVisualCardFields } from "../workspaceStaticOptions";
+import { showToast } from "../../components/GlobalToast";
+import { imagingKindLabels, imagingSourceLabels } from "../../imagingUiLabels";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { countLabel } from "../../lib/russianPlural.js";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
+} from "../../lib/safeLocalStorage";
+import { pricelistSourceKindLabels } from "../../pricelistUiMeta";
+import { telegramVisualCardFields } from "../../workspaceStaticOptions";
 import {
 	clinicalRuleActionLabels,
 	clinicalRuleSeverityLabels,
 	paymentMethodLabels,
 	recognitionTargetLabels,
 	serviceCategoryLabels,
-} from "../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "./AppointmentHelpers";
-import { normalizedLocalOrganizationId } from "./AuthOnboardingHelpers";
+} from "../../workspaceUiLabels";
+import { treatmentAcceptanceVariantOptions } from "../AppointmentHelpers";
+import { normalizedLocalOrganizationId } from "../AuthOnboardingHelpers";
 import {
 	collectDicomWorkstationClientFacts,
 	isBrowserImagingScanAbortError,
 	isBrowserMigrationScanAbortError,
 	localImagingFolderFingerprint,
-} from "./browserScanUtils";
+} from "../browserScanUtils";
 import {
 	buildClinicProfileUpdatePayload,
 	buildPatientAdministrativeProfilePayload,
@@ -71,7 +76,7 @@ import {
 	staffScheduleDraftSignature,
 	staffWorkingHoursFromDraft,
 	staffWorkingHoursFromSimpleDraft,
-} from "./clinicProfileUtils";
+} from "../clinicProfileUtils";
 import {
 	addMinutesToClinicDateTimeLocal,
 	calendarDayInTimeZone,
@@ -94,25 +99,39 @@ import {
 	todayDateInputValue,
 	validClockTime,
 	weekdayFromDateInput,
-} from "./dateTimeUtils";
+} from "../dateTimeUtils";
 import {
+	dicomWorkbenchDraftStoreName,
 	loadImageFromDataUrl,
+	mprWorkbenchDraftStoreName,
 	readFileAsDataUrl,
 	xrayPregnancyStatusOptions,
 	xrayPriorityOptions,
 	xrayStudyTypeOptions,
-} from "./ImagingHelpers";
+} from "../ImagingHelpers";
 import {
 	localConvenienceRetentionMs,
 	localSavedAtFresh,
 	organizationScopedLocalStorageKey,
-} from "./localStorageHelpers";
+} from "../localStorageHelpers";
+import { logger } from "../logger";
+import {
+	openSpeechChunkDb,
+	type PendingSpeechChunk,
+	pendingSpeechChunkQueueKey,
+	pendingSpeechChunkQueueLocalKey,
+	savePendingSpeechChunksToLocalStorage,
+	speechAudioQueueRetentionMs,
+	speechChunkIndexedDbAvailable,
+	speechChunkStoreName,
+} from "../SpeechHelpers";
 import {
 	type DenteTelegramPortalSection,
 	denteTelegramHandoffTargets,
 	telegramPublicUrlSensitivePathSegments,
 	telegramPublicUrlSensitiveQueryKeys,
-} from "./TelegramHelpers";
+} from "../TelegramHelpers";
+import { pendingVisitSaveStoreName } from "./visitDraftHelpers";
 
 export function browserGeneratedId(prefix: string): string {
 	return `${prefix}-${crypto.randomUUID()}`;
@@ -322,6 +341,12 @@ export type PersistenceIntegrityReport = {
 	warnings: string[];
 	nextAction: string;
 };
+export const requiredSpeechChunkDbStoreNames = [
+	pendingVisitSaveStoreName,
+	dicomWorkbenchDraftStoreName,
+	mprWorkbenchDraftStoreName,
+	speechChunkStoreName,
+] as const;
 
 export function localQueueOrganizationMatches(
 	itemOrganizationId: string | null | undefined,
@@ -666,6 +691,343 @@ export function normalizedServiceCategory(
 }
 
 export { denteAdminSecretRequestHeaders };
+
+export function isPendingSpeechChunk(
+	value: unknown,
+): value is PendingSpeechChunk {
+	if (!value || typeof value !== "object") return false;
+	const candidate = value as Partial<PendingSpeechChunk>;
+	return (
+		candidate.version === 1 &&
+		typeof candidate.id === "string" &&
+		typeof candidate.queuedAt === "string" &&
+		typeof candidate.recordingId === "string" &&
+		typeof candidate.chunkIndex === "number" &&
+		Number.isInteger(candidate.chunkIndex) &&
+		typeof candidate.mimeType === "string" &&
+		typeof candidate.language === "string" &&
+		typeof candidate.source === "string" &&
+		(typeof candidate.audioBase64 === "string" ||
+			typeof candidate.localTranscript === "string")
+	);
+}
+
+export function normalizePendingSpeechChunk(
+	value: unknown,
+	activeOrganizationId: string | null | undefined,
+	legacyOrganizationFallback: string | null | undefined = null,
+): PendingSpeechChunk | null {
+	if (!isPendingSpeechChunk(value)) return null;
+	const organizationId =
+		normalizedLocalOrganizationId(value.organizationId) ??
+		normalizedLocalOrganizationId(legacyOrganizationFallback);
+	if (!localQueueOrganizationMatches(organizationId, activeOrganizationId))
+		return null;
+	if (!localSavedAtFresh(value.queuedAt, speechAudioQueueRetentionMs))
+		return null;
+	return { ...value, organizationId };
+}
+
+export function sortPendingSpeechChunks(
+	queue: PendingSpeechChunk[],
+): PendingSpeechChunk[] {
+	return queue
+		.slice()
+		.sort((left, right) => left.queuedAt.localeCompare(right.queuedAt));
+}
+
+export function loadPendingSpeechChunksFromLocalStorage(
+	organizationId: string | null | undefined = null,
+): PendingSpeechChunk[] {
+	if (typeof window === "undefined") return [];
+	try {
+		const normalizedOrganizationId =
+			normalizedLocalOrganizationId(organizationId);
+		const localKey = pendingSpeechChunkQueueLocalKey(normalizedOrganizationId);
+		const scopedRaw = safeLocalStorageGetItem(localKey);
+		const legacyRaw = normalizedOrganizationId
+			? safeLocalStorageGetItem(pendingSpeechChunkQueueKey)
+			: null;
+		const byId = new Map<string, PendingSpeechChunk>();
+		for (const raw of [scopedRaw, legacyRaw]) {
+			if (!raw) continue;
+			const parsed = JSON.parse(raw);
+			if (!Array.isArray(parsed)) continue;
+			for (const item of parsed) {
+				const normalized = normalizePendingSpeechChunk(
+					item,
+					normalizedOrganizationId,
+					raw === legacyRaw ? normalizedOrganizationId : null,
+				);
+				if (normalized) byId.set(normalized.id, normalized);
+			}
+		}
+		const queue = sortPendingSpeechChunks(Array.from(byId.values()));
+		if (normalizedOrganizationId && legacyRaw) {
+			savePendingSpeechChunksToLocalStorage(queue, normalizedOrganizationId);
+			safeLocalStorageRemoveItem(pendingSpeechChunkQueueKey);
+		}
+		return queue;
+	} catch {
+		return [];
+	}
+}
+
+export function assertSpeechChunkDbStores(db: IDBDatabase): void {
+	const missingStores = requiredSpeechChunkDbStoreNames.filter(
+		(storeName) => !db.objectStoreNames.contains(storeName),
+	);
+	if (missingStores.length) {
+		throw new Error(
+			`Offline IndexedDB schema is missing stores: ${missingStores.join(", ")}`,
+		);
+	}
+}
+
+export async function readPendingSpeechChunksFromIndexedDb(
+	organizationId: string | null | undefined = null,
+): Promise<PendingSpeechChunk[]> {
+	const db = await openSpeechChunkDb();
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const values = await new Promise<unknown[]>((resolve, reject) => {
+		const transaction = db.transaction(speechChunkStoreName, "readonly");
+		const request = transaction.objectStore(speechChunkStoreName).getAll();
+		request.onsuccess = () => {
+			resolve(Array.isArray(request.result) ? request.result : []);
+		};
+		request.onerror = () =>
+			reject(request.error ?? new Error("Хранилище аудио не прочитано"));
+		transaction.onerror = () =>
+			reject(
+				transaction.error ??
+					new Error("Операция с хранилищем аудио не выполнена"),
+			);
+	});
+	const queue: PendingSpeechChunk[] = [];
+	const staleIds: string[] = [];
+	for (const value of values) {
+		const id =
+			value &&
+			typeof value === "object" &&
+			typeof (value as Partial<PendingSpeechChunk>).id === "string"
+				? (value as Partial<PendingSpeechChunk>).id
+				: null;
+		const normalized = normalizePendingSpeechChunk(
+			value,
+			normalizedOrganizationId,
+			normalizedOrganizationId,
+		);
+		if (normalized) {
+			queue.push(normalized);
+		} else if (
+			id &&
+			(!isPendingSpeechChunk(value) ||
+				!localSavedAtFresh(value.queuedAt, speechAudioQueueRetentionMs))
+		) {
+			staleIds.push(id);
+		}
+	}
+	if (staleIds.length) {
+		await Promise.allSettled(
+			staleIds.map((id) => deletePendingSpeechChunkFromIndexedDb(id)),
+		);
+	}
+	return sortPendingSpeechChunks(queue);
+}
+
+export async function savePendingSpeechChunksToIndexedDb(
+	queue: PendingSpeechChunk[],
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	const db = await openSpeechChunkDb();
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const scopedQueue = sortPendingSpeechChunks(
+		queue
+			.map((item) => ({
+				...item,
+				organizationId:
+					normalizedLocalOrganizationId(item.organizationId) ??
+					normalizedOrganizationId,
+			}))
+			.filter(
+				(item) =>
+					localQueueOrganizationMatches(
+						item.organizationId,
+						normalizedOrganizationId,
+					) && localSavedAtFresh(item.queuedAt, speechAudioQueueRetentionMs),
+			),
+	);
+	await new Promise<void>((resolve, reject) => {
+		const transaction = db.transaction(speechChunkStoreName, "readwrite");
+		const store = transaction.objectStore(speechChunkStoreName);
+		for (const chunk of scopedQueue) {
+			store.put(chunk);
+		}
+		transaction.oncomplete = () => resolve();
+		transaction.onerror = () =>
+			reject(
+				transaction.error ??
+					new Error("Аудио не сохранено в локальное хранилище"),
+			);
+		transaction.onabort = () =>
+			reject(
+				transaction.error ?? new Error("Сохранение аудио отменено браузером"),
+			);
+	});
+}
+
+export async function putPendingSpeechChunkToIndexedDb(
+	chunk: PendingSpeechChunk,
+): Promise<void> {
+	const db = await openSpeechChunkDb();
+	await new Promise<void>((resolve, reject) => {
+		const transaction = db.transaction(speechChunkStoreName, "readwrite");
+		transaction.objectStore(speechChunkStoreName).put(chunk);
+		transaction.oncomplete = () => resolve();
+		transaction.onerror = () =>
+			reject(transaction.error ?? new Error("Очередь аудио не обновлена"));
+		transaction.onabort = () =>
+			reject(
+				transaction.error ??
+					new Error("Обновление очереди аудио отменено браузером"),
+			);
+	});
+}
+
+export async function deletePendingSpeechChunkFromIndexedDb(
+	id: string,
+): Promise<void> {
+	const db = await openSpeechChunkDb();
+	await new Promise<void>((resolve, reject) => {
+		const transaction = db.transaction(speechChunkStoreName, "readwrite");
+		transaction.objectStore(speechChunkStoreName).delete(id);
+		transaction.oncomplete = () => resolve();
+		transaction.onerror = () =>
+			reject(
+				transaction.error ?? new Error("Аудио не удалено из локальной очереди"),
+			);
+		transaction.onabort = () =>
+			reject(
+				transaction.error ??
+					new Error("Удаление аудио из очереди отменено браузером"),
+			);
+	});
+}
+
+export async function migrateSpeechChunksFromLocalStorage(
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const legacyQueue = loadPendingSpeechChunksFromLocalStorage(
+		normalizedOrganizationId,
+	);
+	if (!legacyQueue.length || !speechChunkIndexedDbAvailable()) return;
+	const existing = await readPendingSpeechChunksFromIndexedDb(
+		normalizedOrganizationId,
+	).catch((err) => {
+		logger.error("[Dente] read speech chunks error:", err);
+		showToast(
+			actionFailureToast(
+				"Ошибка чтения очереди аудиофрагментов",
+				(err as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
+		return [];
+	});
+	const byId = new Map<string, PendingSpeechChunk>();
+	for (const chunk of [...existing, ...legacyQueue]) {
+		byId.set(chunk.id, chunk);
+	}
+	await savePendingSpeechChunksToIndexedDb(
+		sortPendingSpeechChunks(Array.from(byId.values())),
+		normalizedOrganizationId,
+	);
+	safeLocalStorageRemoveItem(
+		pendingSpeechChunkQueueLocalKey(normalizedOrganizationId),
+	);
+	if (normalizedOrganizationId)
+		safeLocalStorageRemoveItem(pendingSpeechChunkQueueKey);
+}
+
+export async function loadPendingSpeechChunks(
+	organizationId: string | null | undefined = null,
+): Promise<PendingSpeechChunk[]> {
+	if (!speechChunkIndexedDbAvailable())
+		return loadPendingSpeechChunksFromLocalStorage(organizationId);
+	try {
+		await migrateSpeechChunksFromLocalStorage(organizationId);
+		return await readPendingSpeechChunksFromIndexedDb(organizationId);
+	} catch {
+		return loadPendingSpeechChunksFromLocalStorage(organizationId);
+	}
+}
+
+export async function queuePendingSpeechChunk(
+	chunk: SpeechChunkUploadInput,
+	organizationId: string | null | undefined = null,
+): Promise<PendingSpeechChunk | null> {
+	if (typeof window === "undefined") return null;
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const queued: PendingSpeechChunk = {
+		...chunk,
+		version: 1,
+		id: createLocalQueueId(),
+		organizationId: normalizedOrganizationId,
+		queuedAt: new Date().toISOString(),
+	};
+	if (speechChunkIndexedDbAvailable()) {
+		try {
+			await migrateSpeechChunksFromLocalStorage(normalizedOrganizationId);
+			await putPendingSpeechChunkToIndexedDb(queued);
+			safeLocalStorageRemoveItem(
+				pendingSpeechChunkQueueLocalKey(normalizedOrganizationId),
+			);
+			if (normalizedOrganizationId)
+				safeLocalStorageRemoveItem(pendingSpeechChunkQueueKey);
+			return queued;
+		} catch {
+			// Fall through to the small legacy fallback. It may reject instead of silently dropping audio.
+		}
+	}
+	try {
+		await savePendingSpeechChunksToLocalStorage(
+			[
+				...loadPendingSpeechChunksFromLocalStorage(normalizedOrganizationId),
+				queued,
+			],
+			normalizedOrganizationId,
+		);
+		return queued;
+	} catch {
+		return null;
+	}
+}
+
+export async function removePendingSpeechChunkById(
+	id: string,
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	if (speechChunkIndexedDbAvailable()) {
+		try {
+			await deletePendingSpeechChunkFromIndexedDb(id);
+			return;
+		} catch {
+			// Legacy fallback below keeps retry cleanup working when browser audio storage is unavailable mid-session.
+		}
+	}
+	savePendingSpeechChunksToLocalStorage(
+		loadPendingSpeechChunksFromLocalStorage(organizationId).filter(
+			(chunk) => chunk.id !== id,
+		),
+		organizationId,
+	);
+}
+
 export type PricelistImageMimeType = "image/jpeg" | "image/png" | "image/webp";
 
 export const pricelistImageMimeTypes: PricelistImageMimeType[] = [
@@ -747,7 +1109,7 @@ export const recommendedActionPriorityLabels: Record<
 	urgent: "срочно",
 };
 
-export * from "./browserScanUtils";
+export * from "../browserScanUtils";
 
 export type {
 	ClinicProfileDraft,
@@ -780,12 +1142,6 @@ export type {
  * достижимости — приложение при этом не стартовало ни разу.
  */
 
-export * from "./commonHelpers/documentDraftHelpers";
-export * from "./commonHelpers/errorHelpers";
-export * from "./commonHelpers/imagingDraftHelpers";
-export * from "./commonHelpers/speechChunkHelpers";
-export * from "./commonHelpers/uiPreferencesHelpers";
-export * from "./commonHelpers/visitDraftHelpers";
 export {
 	addMinutesToClinicDateTimeLocal,
 	buildClinicProfileUpdatePayload,

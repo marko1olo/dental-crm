@@ -18,28 +18,28 @@ import type {
 	XrayCbctReferralPriority,
 	XrayCbctReferralStudyType,
 } from "@dental/shared";
-import { showToast } from "../components/GlobalToast";
-import { imagingKindLabels, imagingSourceLabels } from "../imagingUiLabels";
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
-import { actionFailureToast } from "../lib/panelStateText";
-import { countLabel } from "../lib/russianPlural.js";
-import { pricelistSourceKindLabels } from "../pricelistUiMeta";
-import { telegramVisualCardFields } from "../workspaceStaticOptions";
+import { showToast } from "../../components/GlobalToast";
+import { imagingKindLabels, imagingSourceLabels } from "../../imagingUiLabels";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { countLabel } from "../../lib/russianPlural.js";
+import { pricelistSourceKindLabels } from "../../pricelistUiMeta";
+import { telegramVisualCardFields } from "../../workspaceStaticOptions";
 import {
 	clinicalRuleActionLabels,
 	clinicalRuleSeverityLabels,
 	paymentMethodLabels,
 	recognitionTargetLabels,
 	serviceCategoryLabels,
-} from "../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "./AppointmentHelpers";
-import { normalizedLocalOrganizationId } from "./AuthOnboardingHelpers";
+} from "../../workspaceUiLabels";
+import { treatmentAcceptanceVariantOptions } from "../AppointmentHelpers";
+import { normalizedLocalOrganizationId } from "../AuthOnboardingHelpers";
 import {
 	collectDicomWorkstationClientFacts,
 	isBrowserImagingScanAbortError,
 	isBrowserMigrationScanAbortError,
 	localImagingFolderFingerprint,
-} from "./browserScanUtils";
+} from "../browserScanUtils";
 import {
 	buildClinicProfileUpdatePayload,
 	buildPatientAdministrativeProfilePayload,
@@ -71,7 +71,7 @@ import {
 	staffScheduleDraftSignature,
 	staffWorkingHoursFromDraft,
 	staffWorkingHoursFromSimpleDraft,
-} from "./clinicProfileUtils";
+} from "../clinicProfileUtils";
 import {
 	addMinutesToClinicDateTimeLocal,
 	calendarDayInTimeZone,
@@ -94,25 +94,25 @@ import {
 	todayDateInputValue,
 	validClockTime,
 	weekdayFromDateInput,
-} from "./dateTimeUtils";
+} from "../dateTimeUtils";
 import {
 	loadImageFromDataUrl,
 	readFileAsDataUrl,
 	xrayPregnancyStatusOptions,
 	xrayPriorityOptions,
 	xrayStudyTypeOptions,
-} from "./ImagingHelpers";
+} from "../ImagingHelpers";
 import {
 	localConvenienceRetentionMs,
 	localSavedAtFresh,
 	organizationScopedLocalStorageKey,
-} from "./localStorageHelpers";
+} from "../localStorageHelpers";
 import {
 	type DenteTelegramPortalSection,
 	denteTelegramHandoffTargets,
 	telegramPublicUrlSensitivePathSegments,
 	telegramPublicUrlSensitiveQueryKeys,
-} from "./TelegramHelpers";
+} from "../TelegramHelpers";
 
 export function browserGeneratedId(prefix: string): string {
 	return `${prefix}-${crypto.randomUUID()}`;
@@ -151,6 +151,74 @@ export function isBooleanPreference(value: unknown): value is boolean {
 
 export function isBoundedPreferenceString(value: unknown): value is string {
 	return typeof value === "string" && value.length <= 500;
+}
+
+export class WorkflowResponseError extends Error {
+	readonly status: number;
+
+	constructor(message: string, status: number) {
+		super(message);
+		this.name = "WorkflowResponseError";
+		this.status = status;
+	}
+}
+
+export function acceptedVisitSaveFailureIsRetryable(error: unknown): boolean {
+	if (!(error instanceof WorkflowResponseError)) return true;
+	return (
+		error.status === 0 ||
+		error.status === 408 ||
+		error.status === 429 ||
+		error.status >= 500
+	);
+}
+
+export function requestFailureMessage(
+	fallback: string,
+	_error: unknown,
+): string {
+	return `${fallback}: сеть или локальный сервер недоступны. Повторите действие или проверьте подключение к серверу клиники.`;
+}
+
+export function operatorReadableErrorDetail(
+	detail: string | null,
+): string | null {
+	const message = detail?.trim() ?? "";
+	if (!message) return null;
+	if (!/[А-Яа-яЁё]/.test(message)) return null;
+	if (technicalWorkflowFailurePattern.test(message)) return null;
+	return message;
+}
+
+export function operatorReadableErrorDetailFromUnknown(
+	error: unknown,
+): string | null {
+	return operatorReadableErrorDetail(
+		error instanceof Error ? error.message : null,
+	);
+}
+
+export function operatorWorkflowFailureMessage(
+	fallback: string,
+	error: unknown,
+): string {
+	const message = operatorReadableErrorDetailFromUnknown(error);
+	if (message) return message;
+	return requestFailureMessage(fallback, error);
+}
+
+export function browserLocalSourceErrorMessage(
+	fallback: string,
+	_error: unknown,
+): string {
+	return `${fallback}. Проверьте, что браузеру разрешено читать выбранный источник, или выберите файлы вручную.`;
+}
+
+export function browserCapabilityFailureMessage(
+	fallback: string,
+	_error: unknown,
+): string {
+	return `${fallback}. Проверьте разрешения браузера и повторите действие; если устройство занято другой программой, закройте ее.`;
 }
 
 export function isNullableString(value: unknown): value is string | null {
@@ -666,6 +734,47 @@ export function normalizedServiceCategory(
 }
 
 export { denteAdminSecretRequestHeaders };
+
+export function responseStatusFailureLabel(response: Response): string {
+	if (response.status === 0) return "нет ответа сервера";
+	if (response.status === 400) return "сервер не принял данные";
+	if (response.status === 401 || response.status === 403)
+		return "нет доступа к действию";
+	if (response.status === 404) return "нужный маршрут не найден";
+	if (response.status === 409) return "данные уже изменились, обновите экран";
+	if (response.status === 413) return "файл или запрос слишком большой";
+	if (response.status === 422) return "данные не прошли проверку";
+	if (response.status === 429) return "слишком много запросов, повторите позже";
+	if (response.status >= 500) return "сервер не смог выполнить действие";
+	return `сервер вернул код ${response.status}`;
+}
+
+export async function responseErrorMessage(
+	response: Response,
+	fallback: string,
+): Promise<string> {
+	try {
+		const payload = (await response.clone().json()) as {
+			error?: unknown;
+			message?: unknown;
+		};
+		const detail =
+			typeof payload.message === "string"
+				? payload.message
+				: typeof payload.error === "string"
+					? payload.error
+					: null;
+		const operatorDetail = operatorReadableErrorDetail(detail);
+		return operatorDetail
+			? `${fallback}: ${operatorDetail}`
+			: `${fallback}: ${responseStatusFailureLabel(response)}`;
+	} catch {
+		return `${fallback}: ${responseStatusFailureLabel(response)}`;
+	}
+}
+
+export const technicalWorkflowFailurePattern =
+	/\b(TypeError|DOMException|SyntaxError|ReferenceError|Failed to fetch|NetworkError|Load failed|fetch|JSON|ENOENT|EACCES|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EPIPE|stack|undefined|null|NaN|[A-Z][A-Z0-9_]{5,})\b|\/api\/|https?:\/\/|[A-Za-z]:\\|\\\\[^\\]+\\|\/(Users|home|var|tmp)\//i;
 export type PricelistImageMimeType = "image/jpeg" | "image/png" | "image/webp";
 
 export const pricelistImageMimeTypes: PricelistImageMimeType[] = [
@@ -747,7 +856,7 @@ export const recommendedActionPriorityLabels: Record<
 	urgent: "срочно",
 };
 
-export * from "./browserScanUtils";
+export * from "../browserScanUtils";
 
 export type {
 	ClinicProfileDraft,
@@ -780,12 +889,6 @@ export type {
  * достижимости — приложение при этом не стартовало ни разу.
  */
 
-export * from "./commonHelpers/documentDraftHelpers";
-export * from "./commonHelpers/errorHelpers";
-export * from "./commonHelpers/imagingDraftHelpers";
-export * from "./commonHelpers/speechChunkHelpers";
-export * from "./commonHelpers/uiPreferencesHelpers";
-export * from "./commonHelpers/visitDraftHelpers";
 export {
 	addMinutesToClinicDateTimeLocal,
 	buildClinicProfileUpdatePayload,

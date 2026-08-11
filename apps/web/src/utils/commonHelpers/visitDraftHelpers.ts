@@ -1,7 +1,9 @@
 import type {
+	AcceptVisitDraftResponse,
 	AiJobKind,
 	AiRecognitionTarget,
 	Dashboard,
+	DentalSpecialty,
 	DenteTelegramVisualCardKey,
 	DenteTelegramVisualCardUrls,
 	DocumentIngestionTarget,
@@ -14,32 +16,39 @@ import type {
 	ProcedureSpecificConsentProcedure,
 	SmartImportMode,
 	TreatmentPlanAcceptanceVariant,
+	UpdatePatientInput,
+	VisitNoteDraft,
 	XrayCbctReferralPregnancyStatus,
 	XrayCbctReferralPriority,
 	XrayCbctReferralStudyType,
 } from "@dental/shared";
-import { showToast } from "../components/GlobalToast";
-import { imagingKindLabels, imagingSourceLabels } from "../imagingUiLabels";
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
-import { actionFailureToast } from "../lib/panelStateText";
-import { countLabel } from "../lib/russianPlural.js";
-import { pricelistSourceKindLabels } from "../pricelistUiMeta";
-import { telegramVisualCardFields } from "../workspaceStaticOptions";
+import { showToast } from "../../components/GlobalToast";
+import { imagingKindLabels, imagingSourceLabels } from "../../imagingUiLabels";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { countLabel } from "../../lib/russianPlural.js";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
+import { pricelistSourceKindLabels } from "../../pricelistUiMeta";
+import { telegramVisualCardFields } from "../../workspaceStaticOptions";
 import {
 	clinicalRuleActionLabels,
 	clinicalRuleSeverityLabels,
 	paymentMethodLabels,
 	recognitionTargetLabels,
 	serviceCategoryLabels,
-} from "../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "./AppointmentHelpers";
-import { normalizedLocalOrganizationId } from "./AuthOnboardingHelpers";
+} from "../../workspaceUiLabels";
+import { treatmentAcceptanceVariantOptions } from "../AppointmentHelpers";
+import { normalizedLocalOrganizationId } from "../AuthOnboardingHelpers";
 import {
 	collectDicomWorkstationClientFacts,
 	isBrowserImagingScanAbortError,
 	isBrowserMigrationScanAbortError,
 	localImagingFolderFingerprint,
-} from "./browserScanUtils";
+} from "../browserScanUtils";
 import {
 	buildClinicProfileUpdatePayload,
 	buildPatientAdministrativeProfilePayload,
@@ -71,7 +80,7 @@ import {
 	staffScheduleDraftSignature,
 	staffWorkingHoursFromDraft,
 	staffWorkingHoursFromSimpleDraft,
-} from "./clinicProfileUtils";
+} from "../clinicProfileUtils";
 import {
 	addMinutesToClinicDateTimeLocal,
 	calendarDayInTimeZone,
@@ -94,25 +103,36 @@ import {
 	todayDateInputValue,
 	validClockTime,
 	weekdayFromDateInput,
-} from "./dateTimeUtils";
+} from "../dateTimeUtils";
 import {
 	loadImageFromDataUrl,
 	readFileAsDataUrl,
 	xrayPregnancyStatusOptions,
 	xrayPriorityOptions,
 	xrayStudyTypeOptions,
-} from "./ImagingHelpers";
+} from "../ImagingHelpers";
 import {
 	localConvenienceRetentionMs,
 	localSavedAtFresh,
 	organizationScopedLocalStorageKey,
-} from "./localStorageHelpers";
+} from "../localStorageHelpers";
+import { logger } from "../logger";
+import type { PatientCoreDraft } from "../PatientHelpers";
+import {
+	openSpeechChunkDb,
+	savePendingVisitSavesToLocalStorage,
+	speechChunkIndexedDbAvailable,
+	type VisitNoteField,
+	type VisitNoteForm,
+	visitNoteFieldDefinitions,
+} from "../SpeechHelpers";
 import {
 	type DenteTelegramPortalSection,
 	denteTelegramHandoffTargets,
 	telegramPublicUrlSensitivePathSegments,
 	telegramPublicUrlSensitiveQueryKeys,
-} from "./TelegramHelpers";
+} from "../TelegramHelpers";
+import { sensitiveLocalDraftRetentionMs } from "./documentDraftHelpers";
 
 export function browserGeneratedId(prefix: string): string {
 	return `${prefix}-${crypto.randomUUID()}`;
@@ -288,6 +308,30 @@ export const ingestionTargetLabels: Record<DocumentIngestionTarget, string> = {
 };
 
 export { countLabel };
+
+export type VisitLocalDraft = {
+	version: 1;
+	visitId: string;
+	savedAt: string;
+	transcript: string;
+	selectedSpecialty: DentalSpecialty;
+	visitNoteForm: VisitNoteForm;
+};
+
+export type PendingVisitSave = {
+	version: 1;
+	id: string;
+	organizationId: string | null;
+	visitId: string;
+	clientMutationId: string;
+	baseRevision: number | null;
+	queuedAt: string;
+	draft: VisitNoteDraft;
+	doctorSummary: string | null;
+	transcript: string;
+	selectedSpecialty: DentalSpecialty;
+};
+
 export type PersistenceHealth = {
 	enabled: boolean;
 	filePath: string;
@@ -322,6 +366,29 @@ export type PersistenceIntegrityReport = {
 	warnings: string[];
 	nextAction: string;
 };
+
+export function visitLocalDraftKey(
+	visitId: string,
+	organizationId: string | null | undefined = null,
+) {
+	return organizationScopedLocalStorageKey(
+		`dental-crm:visit-draft:${visitId}`,
+		organizationId,
+	);
+}
+
+export const pendingVisitSaveQueueKey = "dental-crm:pending-visit-saves";
+
+export const pendingVisitSaveStoreName = "pendingVisitSaves";
+
+export function pendingVisitSaveQueueLocalKey(
+	organizationId: string | null | undefined = null,
+): string {
+	return organizationScopedLocalStorageKey(
+		pendingVisitSaveQueueKey,
+		organizationId,
+	);
+}
 
 export function localQueueOrganizationMatches(
 	itemOrganizationId: string | null | undefined,
@@ -666,6 +733,428 @@ export function normalizedServiceCategory(
 }
 
 export { denteAdminSecretRequestHeaders };
+
+export function nullableAppointmentDraftValue(value: string): string | null {
+	const trimmed = value.trim();
+	return trimmed ? trimmed : null;
+}
+
+export function buildPatientCorePayload(
+	draft: PatientCoreDraft,
+): UpdatePatientInput {
+	return {
+		fullName: draft.fullName.trim(),
+		birthDate: nullablePatientDraftValue(draft.birthDate),
+		phone: nullablePatientDraftValue(draft.phone),
+		email: nullablePatientDraftValue(draft.email),
+		notes: nullablePatientDraftValue(draft.notes),
+	};
+}
+
+export function isVisitNoteForm(value: unknown): value is VisitNoteForm {
+	if (!value || typeof value !== "object") return false;
+	const candidate = value as Partial<Record<VisitNoteField, unknown>>;
+	return visitNoteFieldDefinitions.every(
+		({ key }) => typeof candidate[key] === "string",
+	);
+}
+
+export function loadVisitLocalDraft(
+	visitId: string,
+	organizationId: string | null | undefined = null,
+): VisitLocalDraft | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const raw =
+			safeLocalStorageGetItem(visitLocalDraftKey(visitId, organizationId)) ??
+			(organizationId
+				? safeLocalStorageGetItem(visitLocalDraftKey(visitId))
+				: null);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as Partial<VisitLocalDraft>;
+		if (
+			parsed.version !== 1 ||
+			parsed.visitId !== visitId ||
+			typeof parsed.savedAt !== "string" ||
+			typeof parsed.transcript !== "string" ||
+			!isDentalSpecialty(parsed.selectedSpecialty) ||
+			!isVisitNoteForm(parsed.visitNoteForm)
+		) {
+			return null;
+		}
+		if (!localSavedAtFresh(parsed.savedAt, sensitiveLocalDraftRetentionMs)) {
+			safeLocalStorageRemoveItem(visitLocalDraftKey(visitId, organizationId));
+			if (organizationId)
+				safeLocalStorageRemoveItem(visitLocalDraftKey(visitId));
+			return null;
+		}
+		return parsed as VisitLocalDraft;
+	} catch {
+		return null;
+	}
+}
+
+export function saveVisitLocalDraft(
+	draft: VisitLocalDraft,
+	organizationId: string | null | undefined = null,
+): void {
+	if (typeof window === "undefined") return;
+	safeLocalStorageSetItem(
+		visitLocalDraftKey(draft.visitId, organizationId),
+		JSON.stringify(draft),
+	);
+}
+
+export function isVisitNoteDraft(value: unknown): value is VisitNoteDraft {
+	if (!value || typeof value !== "object") return false;
+	const candidate = value as Partial<VisitNoteDraft>;
+	return (
+		isNullableString(candidate.complaint) &&
+		isNullableString(candidate.anamnesis) &&
+		isNullableString(candidate.objectiveStatus) &&
+		isNullableString(candidate.diagnosis) &&
+		isNullableString(candidate.treatmentPlan) &&
+		Array.isArray(candidate.warnings) &&
+		candidate.warnings.every((warning) => typeof warning === "string")
+	);
+}
+
+export function parsePendingVisitSaveQueue(
+	raw: string | null,
+	activeOrganizationId: string | null | undefined,
+	legacyOrganizationFallback: string | null | undefined = null,
+): PendingVisitSave[] {
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.flatMap((item): PendingVisitSave[] => {
+			const normalized = normalizePendingVisitSave(
+				item,
+				activeOrganizationId,
+				legacyOrganizationFallback,
+			);
+			return normalized ? [normalized] : [];
+		});
+	} catch {
+		return [];
+	}
+}
+
+export function normalizePendingVisitSave(
+	value: unknown,
+	activeOrganizationId: string | null | undefined,
+	legacyOrganizationFallback: string | null | undefined = null,
+): PendingVisitSave | null {
+	if (!value || typeof value !== "object") return null;
+	const candidate = value as Partial<PendingVisitSave>;
+	const {
+		id,
+		visitId,
+		queuedAt,
+		draft,
+		doctorSummary,
+		transcript,
+		selectedSpecialty,
+	} = candidate;
+	const organizationId =
+		normalizedLocalOrganizationId(candidate.organizationId) ??
+		normalizedLocalOrganizationId(legacyOrganizationFallback);
+	if (
+		candidate.version !== 1 ||
+		typeof id !== "string" ||
+		!localQueueOrganizationMatches(organizationId, activeOrganizationId) ||
+		typeof visitId !== "string" ||
+		typeof queuedAt !== "string" ||
+		!localSavedAtFresh(queuedAt, sensitiveLocalDraftRetentionMs) ||
+		!isVisitNoteDraft(draft) ||
+		!isNullableString(doctorSummary) ||
+		typeof transcript !== "string" ||
+		!isDentalSpecialty(selectedSpecialty)
+	) {
+		return null;
+	}
+	const normalizedBaseRevision =
+		typeof candidate.baseRevision === "number" &&
+		Number.isInteger(candidate.baseRevision)
+			? candidate.baseRevision
+			: null;
+	return {
+		version: 1,
+		id,
+		organizationId,
+		visitId,
+		clientMutationId:
+			typeof candidate.clientMutationId === "string"
+				? candidate.clientMutationId
+				: id,
+		baseRevision: normalizedBaseRevision,
+		queuedAt,
+		draft,
+		doctorSummary,
+		transcript,
+		selectedSpecialty,
+	};
+}
+
+export function sortPendingVisitSaves(
+	queue: PendingVisitSave[],
+): PendingVisitSave[] {
+	return queue
+		.slice()
+		.sort((left, right) => left.queuedAt.localeCompare(right.queuedAt));
+}
+
+export function loadPendingVisitSavesFromLocalStorage(
+	organizationId: string | null | undefined = null,
+): PendingVisitSave[] {
+	if (typeof window === "undefined") return [];
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const localKey = pendingVisitSaveQueueLocalKey(normalizedOrganizationId);
+	const scopedRaw = safeLocalStorageGetItem(localKey);
+	const legacyRaw = normalizedOrganizationId
+		? safeLocalStorageGetItem(pendingVisitSaveQueueKey)
+		: null;
+	const byId = new Map<string, PendingVisitSave>();
+	for (const item of parsePendingVisitSaveQueue(
+		scopedRaw,
+		normalizedOrganizationId,
+	)) {
+		byId.set(item.id, item);
+	}
+	for (const item of parsePendingVisitSaveQueue(
+		legacyRaw,
+		normalizedOrganizationId,
+		normalizedOrganizationId,
+	)) {
+		byId.set(item.id, item);
+	}
+	const queue = sortPendingVisitSaves(Array.from(byId.values()));
+	if (normalizedOrganizationId && legacyRaw) {
+		savePendingVisitSavesToLocalStorage(queue, normalizedOrganizationId);
+		safeLocalStorageRemoveItem(pendingVisitSaveQueueKey);
+	}
+	return queue;
+}
+
+export function pendingVisitSaveIndexedDbAvailable(): boolean {
+	return speechChunkIndexedDbAvailable();
+}
+
+export async function readPendingVisitSavesFromIndexedDb(
+	organizationId: string | null | undefined = null,
+): Promise<PendingVisitSave[]> {
+	const db = await openSpeechChunkDb();
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const values = await new Promise<unknown[]>((resolve, reject) => {
+		const transaction = db.transaction(pendingVisitSaveStoreName, "readonly");
+		const request = transaction.objectStore(pendingVisitSaveStoreName).getAll();
+		request.onsuccess = () =>
+			resolve(Array.isArray(request.result) ? request.result : []);
+		request.onerror = () =>
+			reject(request.error ?? new Error("Local visit queue read failed"));
+		transaction.onerror = () =>
+			reject(
+				transaction.error ?? new Error("Local visit queue transaction failed"),
+			);
+	});
+	const queue: PendingVisitSave[] = [];
+	const staleIds: string[] = [];
+	for (const value of values) {
+		const candidate =
+			value && typeof value === "object"
+				? (value as Partial<PendingVisitSave>)
+				: {};
+		const normalized = normalizePendingVisitSave(
+			value,
+			normalizedOrganizationId,
+			normalizedOrganizationId,
+		);
+		if (normalized) {
+			queue.push(normalized);
+		} else if (typeof candidate.id === "string") {
+			const itemOrganizationId =
+				normalizedLocalOrganizationId(candidate.organizationId) ??
+				normalizedOrganizationId;
+			const stale =
+				typeof candidate.queuedAt === "string" &&
+				!localSavedAtFresh(candidate.queuedAt, sensitiveLocalDraftRetentionMs);
+			const malformedActiveRecord = localQueueOrganizationMatches(
+				itemOrganizationId,
+				normalizedOrganizationId,
+			);
+			if (stale || malformedActiveRecord) {
+				staleIds.push(candidate.id);
+			}
+		}
+	}
+	if (staleIds.length) {
+		await Promise.allSettled(
+			staleIds.map((id) => deletePendingVisitSaveFromIndexedDb(id)),
+		);
+	}
+	return sortPendingVisitSaves(queue);
+}
+
+export async function savePendingVisitSavesToIndexedDb(
+	queue: PendingVisitSave[],
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	const db = await openSpeechChunkDb();
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const scopedQueue = sortPendingVisitSaves(
+		queue
+			.map((item) => ({
+				...item,
+				organizationId:
+					normalizedLocalOrganizationId(item.organizationId) ??
+					normalizedOrganizationId,
+			}))
+			.filter(
+				(item) =>
+					localQueueOrganizationMatches(
+						item.organizationId,
+						normalizedOrganizationId,
+					) && localSavedAtFresh(item.queuedAt, sensitiveLocalDraftRetentionMs),
+			),
+	);
+	await new Promise<void>((resolve, reject) => {
+		const transaction = db.transaction(pendingVisitSaveStoreName, "readwrite");
+		const store = transaction.objectStore(pendingVisitSaveStoreName);
+		const request = store.getAll();
+		request.onsuccess = () => {
+			const existing = Array.isArray(request.result) ? request.result : [];
+			for (const value of existing) {
+				const candidate =
+					value && typeof value === "object"
+						? (value as Partial<PendingVisitSave>)
+						: {};
+				const itemOrganizationId =
+					normalizedLocalOrganizationId(candidate.organizationId) ??
+					normalizedOrganizationId;
+				const stale =
+					typeof candidate.queuedAt === "string" &&
+					!localSavedAtFresh(
+						candidate.queuedAt,
+						sensitiveLocalDraftRetentionMs,
+					);
+				if (
+					typeof candidate.id === "string" &&
+					(localQueueOrganizationMatches(
+						itemOrganizationId,
+						normalizedOrganizationId,
+					) ||
+						stale)
+				) {
+					store.delete(candidate.id);
+				}
+			}
+			for (const item of scopedQueue) {
+				store.put(item);
+			}
+		};
+		request.onerror = () =>
+			reject(request.error ?? new Error("Local visit queue read failed"));
+		transaction.oncomplete = () => resolve();
+		transaction.onerror = () =>
+			reject(transaction.error ?? new Error("Local visit queue save failed"));
+		transaction.onabort = () =>
+			reject(transaction.error ?? new Error("Local visit queue save aborted"));
+	});
+}
+
+export async function deletePendingVisitSaveFromIndexedDb(
+	id: string,
+): Promise<void> {
+	const db = await openSpeechChunkDb();
+	await new Promise<void>((resolve, reject) => {
+		const transaction = db.transaction(pendingVisitSaveStoreName, "readwrite");
+		transaction.objectStore(pendingVisitSaveStoreName).delete(id);
+		transaction.oncomplete = () => resolve();
+		transaction.onerror = () =>
+			reject(transaction.error ?? new Error("Local visit queue delete failed"));
+		transaction.onabort = () =>
+			reject(
+				transaction.error ?? new Error("Local visit queue delete aborted"),
+			);
+	});
+}
+
+export async function migratePendingVisitSavesFromLocalStorage(
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const legacyQueue = loadPendingVisitSavesFromLocalStorage(
+		normalizedOrganizationId,
+	);
+	if (!legacyQueue.length || !pendingVisitSaveIndexedDbAvailable()) return;
+	const existing = await readPendingVisitSavesFromIndexedDb(
+		normalizedOrganizationId,
+	).catch((err) => {
+		logger.error("[Dente] read visit saves error:", err);
+		showToast(
+			actionFailureToast(
+				"Ошибка чтения очереди приёмов",
+				(err as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
+		return [];
+	});
+	const byId = new Map<string, PendingVisitSave>();
+	for (const item of [...existing, ...legacyQueue]) {
+		byId.set(item.id, item);
+	}
+	await savePendingVisitSavesToIndexedDb(
+		sortPendingVisitSaves(Array.from(byId.values())),
+		normalizedOrganizationId,
+	);
+	safeLocalStorageRemoveItem(
+		pendingVisitSaveQueueLocalKey(normalizedOrganizationId),
+	);
+	if (normalizedOrganizationId)
+		safeLocalStorageRemoveItem(pendingVisitSaveQueueKey);
+}
+
+export async function loadPendingVisitSaves(
+	organizationId: string | null | undefined = null,
+): Promise<PendingVisitSave[]> {
+	if (!pendingVisitSaveIndexedDbAvailable())
+		return loadPendingVisitSavesFromLocalStorage(organizationId);
+	try {
+		await migratePendingVisitSavesFromLocalStorage(organizationId);
+		return await readPendingVisitSavesFromIndexedDb(organizationId);
+	} catch {
+		return loadPendingVisitSavesFromLocalStorage(organizationId);
+	}
+}
+
+export async function savePendingVisitSaves(
+	queue: PendingVisitSave[],
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	if (pendingVisitSaveIndexedDbAvailable()) {
+		try {
+			await savePendingVisitSavesToIndexedDb(queue, normalizedOrganizationId);
+			safeLocalStorageRemoveItem(
+				pendingVisitSaveQueueLocalKey(normalizedOrganizationId),
+			);
+			if (normalizedOrganizationId)
+				safeLocalStorageRemoveItem(pendingVisitSaveQueueKey);
+			return;
+		} catch {
+			// Keep accepted visits retryable on restricted browsers.
+		}
+	}
+	savePendingVisitSavesToLocalStorage(queue, normalizedOrganizationId);
+}
+
 export type PricelistImageMimeType = "image/jpeg" | "image/png" | "image/webp";
 
 export const pricelistImageMimeTypes: PricelistImageMimeType[] = [
@@ -722,6 +1211,52 @@ export async function preparePricelistImage(file: File): Promise<{
 	);
 }
 
+export async function queuePendingVisitSave(
+	save: Omit<
+		PendingVisitSave,
+		"version" | "id" | "queuedAt" | "organizationId"
+	>,
+	organizationId: string | null | undefined = null,
+): Promise<PendingVisitSave> {
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const queued: PendingVisitSave = {
+		...save,
+		version: 1,
+		id: createLocalQueueId(),
+		organizationId: normalizedOrganizationId,
+		queuedAt: new Date().toISOString(),
+	};
+	const existing = await loadPendingVisitSaves(normalizedOrganizationId);
+	const withoutSameVisit = existing.filter(
+		(item) => item.visitId !== queued.visitId,
+	);
+	await savePendingVisitSaves(
+		[...withoutSameVisit, queued],
+		normalizedOrganizationId,
+	);
+	return queued;
+}
+
+export function latestPendingVisitSaveAt(
+	queue: PendingVisitSave[],
+): string | null {
+	const latest = queue[queue.length - 1];
+	return latest?.queuedAt ?? null;
+}
+
+export function visitSaveReceiptText(
+	receipt: AcceptVisitDraftResponse["saveReceipt"],
+): string {
+	if (receipt.status === "duplicate") {
+		return `Повторная отправка распознана: дубль не создан, серверная версия ${receipt.serverRevision}.`;
+	}
+	if (receipt.warning) {
+		return `${receipt.warning} Серверная версия ${receipt.serverRevision}.`;
+	}
+	return `Сервер подтвердил сохранение ${formatTime(receipt.savedAt)}, версия карты ${receipt.serverRevision}.`;
+}
+
 export function isDenteTelegramPortalSection(
 	value: string | null,
 ): value is DenteTelegramPortalSection {
@@ -747,7 +1282,7 @@ export const recommendedActionPriorityLabels: Record<
 	urgent: "срочно",
 };
 
-export * from "./browserScanUtils";
+export * from "../browserScanUtils";
 
 export type {
 	ClinicProfileDraft,
@@ -780,12 +1315,6 @@ export type {
  * достижимости — приложение при этом не стартовало ни разу.
  */
 
-export * from "./commonHelpers/documentDraftHelpers";
-export * from "./commonHelpers/errorHelpers";
-export * from "./commonHelpers/imagingDraftHelpers";
-export * from "./commonHelpers/speechChunkHelpers";
-export * from "./commonHelpers/uiPreferencesHelpers";
-export * from "./commonHelpers/visitDraftHelpers";
 export {
 	addMinutesToClinicDateTimeLocal,
 	buildClinicProfileUpdatePayload,
