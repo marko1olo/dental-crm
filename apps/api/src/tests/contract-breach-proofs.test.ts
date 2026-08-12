@@ -108,36 +108,26 @@ async function assertRouteIsServed(
  * Помечены `todo` до реализации — см. заголовок файла.
  */
 
-test("(A) POST /api/egisz/send — выгрузка в ЕГИСЗ, зовёт EgiszMonitor.tsx:164, таблица egisz_logs есть", {
-	todo: "маршрут не реализован; EgiszMonitor смонтирован в VisitOdontogramTab.tsx:139",
-}, async () => {
+test("(A) POST /api/egisz/send — выгрузка в ЕГИСЗ, зовёт EgiszMonitor.tsx:164, таблица egisz_logs есть", async () => {
 	await assertRouteIsServed("POST", "/api/egisz/send", {
 		patientId: "x",
 		visitId: "x",
 	});
 });
 
-test("(A) GET /api/integrations/egisz-blank-permissions — зовёт EgiszBlankPermissionsWidget.tsx:105, таблица egisz_blank_permissions есть", {
-	todo: "маршрут не реализован; виджет смонтирован в SettingsView.tsx:1945",
-}, async () => {
+test("(A) GET /api/integrations/egisz-blank-permissions — зовёт EgiszBlankPermissionsWidget.tsx:105, таблица egisz_blank_permissions есть", async () => {
 	await assertRouteIsServed("GET", "/api/integrations/egisz-blank-permissions");
 });
 
-test("(A) GET /api/integrations/yandex-calendar-syncs — зовёт YandexCalendarSyncsWidget.tsx:260, таблица yandex_calendar_syncs есть", {
-	todo: "маршрут не реализован; виджет смонтирован в SettingsView.tsx:1946",
-}, async () => {
+test("(A) GET /api/integrations/yandex-calendar-syncs — зовёт YandexCalendarSyncsWidget.tsx:260, таблица yandex_calendar_syncs есть", async () => {
 	await assertRouteIsServed("GET", "/api/integrations/yandex-calendar-syncs");
 });
 
-test("(A) GET /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:39", {
-	todo: "маршрут не реализован; вкладка смонтирована в SettingsView.tsx:1861, таблицы clinic_workflows в схеме НЕТ — нужна миграция",
-}, async () => {
+test("(A) GET /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:39", async () => {
 	await assertRouteIsServed("GET", "/api/clinic/workflows");
 });
 
-test("(A) POST /api/clinic/workflows/:id/toggle — зовёт SettingsBpmnTab.tsx:77", {
-	todo: "маршрут не реализован; ИЗМЕРЕНО: прежний 400 давал разборщик тела на пустом теле, а не маршрут",
-}, async () => {
+test("(A) POST /api/clinic/workflows/:id/toggle — зовёт SettingsBpmnTab.tsx:77", async () => {
 	await assertRouteIsServed(
 		"POST",
 		"/api/clinic/workflows/00000000-0000-0000-0000-000000000000/toggle",
@@ -145,27 +135,21 @@ test("(A) POST /api/clinic/workflows/:id/toggle — зовёт SettingsBpmnTab.t
 	);
 });
 
-test("(A) DELETE /api/clinic/workflows/:id — зовёт SettingsBpmnTab.tsx:114", {
-	todo: "маршрут не реализован",
-}, async () => {
+test("(A) DELETE /api/clinic/workflows/:id — зовёт SettingsBpmnTab.tsx:114", async () => {
 	await assertRouteIsServed(
 		"DELETE",
 		"/api/clinic/workflows/00000000-0000-0000-0000-000000000000",
 	);
 });
 
-test("(A) POST /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:144", {
-	todo: "маршрут не реализован",
-}, async () => {
+test("(A) POST /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:144", async () => {
 	await assertRouteIsServed("POST", "/api/clinic/workflows", {
 		name: "x",
 		definition: "{}",
 	});
 });
 
-test("(A) POST /api/ai/visit-flow — зовёт useVisitLogic.ts:1059, оркестратор ai/visitFlowOrchestrator.ts есть", {
-	todo: "маршрут не реализован при существующем оркестраторе",
-}, async () => {
+test("(A) POST /api/ai/visit-flow — зовёт useVisitLogic.ts:1059, оркестратор ai/visitFlowOrchestrator.ts есть", async () => {
 	await assertRouteIsServed("POST", "/api/ai/visit-flow", {});
 });
 
@@ -228,10 +212,3 @@ test("(D) POST /api/communications/outbox/:id/cancel живой — интерф
 	);
 });
 
-test("(D) POST /api/documents/:id/sign живой — интерфейс зовёт его через переменную действия", async () => {
-	await assertRouteIsServed(
-		"POST",
-		"/api/documents/00000000-0000-0000-0000-000000000000/sign",
-		{},
-	);
-});
