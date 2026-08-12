@@ -238,6 +238,7 @@ import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 import { DoctorDesktopHeader } from "./components/visit/DoctorDesktopHeader";
+import { useSoundNotifications } from "./hooks/useSoundNotifications";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const logicContext = useAppLogicContext();
@@ -412,6 +413,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
+
+	/*
+	 * Feature #49: Звуковое уведомление врачу за 5 минут до конца слота.
+	 * Хук использует активный приём врача, и если окно времени подходит,
+	 * запускает синтезированный сигнал. Без передачи doctorUserId и slots
+	 * таймер просто спит (сценарий расписания администратора).
+	 */
+	useSoundNotifications({
+		currentDoctorUserId: activeAppointment?.doctorUserId,
+		doctorTodaySlots: activeAppointment ? [activeAppointment] : [],
+	});
+
 
 	const _visitAiDiagnosesByCode = useVisitStore(
 		(state) => state.visitAiDiagnosesByCode,

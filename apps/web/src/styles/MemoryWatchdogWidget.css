@@ -1,0 +1,100 @@
+.memory-watchdog-widget {
+	position: fixed;
+	bottom: 24px;
+	left: 24px;
+	z-index: 99999;
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 16px;
+	border-radius: 12px;
+	box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+	background: var(--surface-floating, #ffffff);
+	border-left: 4px solid transparent;
+	max-width: 400px;
+	font-family: var(--font-primary, system-ui, sans-serif);
+	animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.memory-watchdog-widget.warning {
+	border-left-color: #f59e0b; /* amber-500 */
+	background-color: #fffbeb; /* amber-50 */
+}
+
+.memory-watchdog-widget.critical {
+	border-left-color: #ef4444; /* red-500 */
+	background-color: #fef2f2; /* red-50 */
+}
+
+.memory-watchdog-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+}
+
+.memory-watchdog-widget.warning .memory-watchdog-icon {
+	color: #d97706; /* amber-600 */
+}
+
+.memory-watchdog-widget.critical .memory-watchdog-icon {
+	color: #dc2626; /* red-600 */
+}
+
+.memory-watchdog-content {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.memory-watchdog-title {
+	font-weight: 600;
+	font-size: 14px;
+	color: #111827; /* gray-900 */
+}
+
+.memory-watchdog-details {
+	font-size: 13px;
+	color: #4b5563; /* gray-600 */
+	line-height: 1.4;
+}
+
+.memory-watchdog-action {
+	padding: 6px 12px;
+	font-size: 13px;
+	font-weight: 500;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s;
+	background: transparent;
+	align-self: flex-start;
+}
+
+.memory-watchdog-widget.warning .memory-watchdog-action {
+	color: #b45309; /* amber-700 */
+	background: #fef3c7; /* amber-100 */
+}
+.memory-watchdog-widget.warning .memory-watchdog-action:hover {
+	background: #fde68a; /* amber-200 */
+}
+
+.memory-watchdog-widget.critical .memory-watchdog-action {
+	color: #b91c1c; /* red-700 */
+	background: #fee2e2; /* red-100 */
+}
+.memory-watchdog-widget.critical .memory-watchdog-action:hover {
+	background: #fecaca; /* red-200 */
+}
+
+@keyframes slideInUp {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}

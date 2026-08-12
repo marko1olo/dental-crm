@@ -155,6 +155,8 @@ type ScheduleViewProps = {
 
 import { auth } from "./AppConstants";
 import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
+import { useSoundNotifications } from "./hooks/useSoundNotifications";
+
 
 export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const logicContext = useAppLogicContext();
@@ -174,7 +176,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	// ничего не делала — событие до страницы доходило, сетка не обновлялась. App.tsx
 	// передаёт loadDashboard явным пропсом, и его читаем именно оттуда.
 	useScheduleRealtime(props.loadDashboard);
+	/*
+	 * Feature #49: звуковые уведомления для администратора.
+	 * Слушает ONLINE_APPOINTMENT_CREATED через тот же WS-урл, что и useScheduleRealtime.
+	 * Звук играется автоматически при получении события; никакой настройки не требует.
+	 * AudioContext создаётся лениво — только при первом звуке (политика браузера autoplay).
+	 */
+	useSoundNotifications({});
 	const appLogic = useAppLogicContext();
+
 	const {
 		scheduleDoctorFilterId,
 		scheduleAssistantFilterId,
