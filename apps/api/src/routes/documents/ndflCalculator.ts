@@ -151,7 +151,23 @@ export async function register(app: FastifyInstance) {
 		const firstName = parts[1] || "";
 		const middleName = parts.slice(2).join(" ");
 
-		const xmlStr = `<?xml version="1.0" encoding="windows-1251"?>
+		/*
+		 * КОДИРОВКА: заголовок объявлял windows-1251, но Node.js отправлял
+		 * UTF-8 строку — ФНС-валидатор отклонял файл как невалидный XML.
+		 * Переключились на UTF-8 (ФНС принимает с версии 5.01).
+		 *
+		 * СУММЫ: rublesFromKopecks возвращает number (например 1500.5).
+		 * ФНС требует строку с ровно 2 знаками ("1500.50"). Добавлен toFixed(2).
+		 *
+		 * НУЛЕВЫЕ СТРОКИ: если платежей по одному коду нет — тег опускается.
+		 * Пустой <СумОплУслуг СуммОпл="0.00"> противоречит XSD ФНС.
+		 */
+		const sum1Str =
+			code1Kopecks > 0 ? rublesFromKopecks(code1Kopecks).toFixed(2) : null;
+		const sum2Str =
+			code2Kopecks > 0 ? rublesFromKopecks(code2Kopecks).toFixed(2) : null;
+
+		const xmlStr = `<?xml version="1.0" encoding="UTF-8"?>
 <Файл ИдФайл="UT_SVOPLMEDUSL_${patientInn}_${orgInn}_${dateString}_${crypto.randomUUID()}" ВерсФорм="5.01" ВерсПрог="Dente">
 	<Документ КНД="1151156" ДатаДок="${new Date().toISOString().substring(0, 10)}" ОтчетГод="${year}">
 		<СвМедОрг НаимМедОрг="${(org?.name || "").replace(/"/g, '&quot;')}" ИННМедОрг="${orgInn}" КПП="${orgKpp}"/>
@@ -159,12 +175,12 @@ export async function register(app: FastifyInstance) {
 			<ФИО Фамилия="${lastName.replace(/"/g, '&quot;')}" Имя="${firstName.replace(/"/g, '&quot;')}" ${middleName ? `Отчество="${middleName.replace(/"/g, '&quot;')}"` : ""}/>
 			${patientInn !== "000000000000" ? `<ИННФЛ>${patientInn}</ИННФЛ>` : ""}
 		</СвНалПлат>
-		<СумОплУслуг СуммОпл="${rublesFromKopecks(code1Kopecks)}" КодВидУслуг="1"/>
-		<СумОплУслуг СуммОпл="${rublesFromKopecks(code2Kopecks)}" КодВидУслуг="2"/>
+		${sum1Str !== null ? `<СумОплУслуг СуммОпл="${sum1Str}" КодВидУслуг="1"/>` : ""}
+		${sum2Str !== null ? `<СумОплУслуг СуммОпл="${sum2Str}" КодВидУслуг="2"/>` : ""}
 	</Документ>
 </Файл>`;
 
-		reply.header("Content-Type", "application/xml; charset=windows-1251");
+		reply.header("Content-Type", "application/xml; charset=UTF-8");
 		reply.header("Content-Disposition", `attachment; filename="ndfl_${query.patientId}_${year}.xml"`);
 		return reply.send(xmlStr);
 	});
