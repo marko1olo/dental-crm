@@ -542,6 +542,72 @@ export function AnalyticsDashboardView() {
 									</div>
 								</article>
 
+								{/* Виджет - Конверсия первичных пациентов */}
+								<article className="glass-widget">
+									<h3 title="Сквозная воронка пациентов, впервые зарегистрированных в выбранный период. Показывает сколько из них записались, дошли до клиники, прошли ИИ-осмотр и получили план лечения.">
+										<BarChart3 className="w-5 h-5 text-indigo-500" /> Конверсия
+										первичных пациентов
+									</h3>
+									<div className="analytics-chart-container">
+										{Array.isArray(data?.primaryFunnelJson) &&
+										(data?.primaryFunnelJson ?? []).filter(
+											(x) => (x?.value ?? 0) > 0,
+										).length > 0 ? (
+											<ResponsiveContainer width="100%" height="100%">
+												<ComposedChart
+													data={data?.primaryFunnelJson as NamedValueChartRow[]}
+													layout="vertical"
+													margin={{ top: 10, right: 30, left: 20, bottom: 5 }}
+												>
+													<CartesianGrid
+														strokeDasharray="3 3"
+														stroke="#27272a"
+														horizontal={false}
+													/>
+													<XAxis
+														type="number"
+														stroke="#a1a1aa"
+														fontSize={12}
+														tickLine={false}
+														axisLine={false}
+													/>
+													<YAxis
+														dataKey="name"
+														type="category"
+														stroke="#a1a1aa"
+														fontSize={12}
+														tickLine={false}
+														axisLine={false}
+														width={90}
+													/>
+													<RechartsTooltip
+														contentStyle={{
+															backgroundColor: "var(--paper)",
+															borderColor: "var(--line)",
+															borderRadius: "8px",
+															color: "var(--ink)",
+														}}
+														itemStyle={{ color: "var(--ink)" }}
+													/>
+													<Bar
+														dataKey="value"
+														name="Количество"
+														barSize={32}
+														radius={[0, 4, 4, 0]}
+													/>
+												</ComposedChart>
+											</ResponsiveContainer>
+										) : (
+											<EmptyState
+												glass={false}
+												title="Первичных пациентов нет"
+												description="За выбранный период не было создано ни одной карточки пациента. Зарегистрируйте нового пациента, чтобы увидеть воронку его конверсии."
+												style={{ height: "100%", padding: "20px" }}
+											/>
+										)}
+									</div>
+								</article>
+
 								{/* Виджет 3 — загруженность кресел по фактическим приёмам. */}
 								<article className="glass-widget">
 									<h3>
