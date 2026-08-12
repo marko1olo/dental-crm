@@ -168,22 +168,25 @@ import { useAuthLogic } from "./hooks/domains/useAuthLogic";
 import { useClinicalVisitLogic } from "./hooks/domains/useClinicalVisitLogic";
 import { useClinicSettingsLogic } from "./hooks/domains/useClinicSettingsLogic";
 import { useCommunicationsQueries } from "./hooks/domains/useCommunicationsQueries";
+import { useCommunicationTaskLogic } from "./hooks/domains/useCommunicationTaskLogic";
+import { useDashboardLoaderLogic } from "./hooks/domains/useDashboardLoaderLogic";
+import { useDashboardReconciler } from "./hooks/domains/useDashboardReconciler";
 import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule";
 import { useDocumentWorkflowModule } from "./hooks/domains/useDocumentWorkflowModule";
 import { useFinanceLogic } from "./hooks/domains/useFinanceLogic";
 import { useImagingLogic } from "./hooks/domains/useImagingLogic";
-import { useCommunicationTaskLogic } from "./hooks/domains/useCommunicationTaskLogic";
-import { useUiPreferencesLogic } from "./hooks/domains/useUiPreferencesLogic";
-import { useOnboardingLogic } from "./hooks/domains/useOnboardingLogic";
-import { useTelegramLogic } from "./hooks/domains/useTelegramLogic";
 import { useImagingQueries } from "./hooks/domains/useImagingQueries";
 import { useMigrationQueries } from "./hooks/domains/useMigrationQueries";
+import { useOnboardingLogic } from "./hooks/domains/useOnboardingLogic";
 import { usePatientIntakeLogic } from "./hooks/domains/usePatientIntakeLogic";
 import { usePatientLogic } from "./hooks/domains/usePatientLogic";
 import { usePricelistLogic } from "./hooks/domains/usePricelistLogic";
+import { useRoleAccessLogic } from "./hooks/domains/useRoleAccessLogic";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useStaffSettingsLogic } from "./hooks/domains/useStaffSettingsLogic";
+import { useTelegramLogic } from "./hooks/domains/useTelegramLogic";
 import { useTelegramModule } from "./hooks/domains/useTelegramModule";
+import { useUiPreferencesLogic } from "./hooks/domains/useUiPreferencesLogic";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import { loadWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import {
@@ -304,9 +307,6 @@ import {
 	treatmentStatusLabels,
 	warningSeverityLabels,
 } from "./workspaceUiLabels";
-import { useDashboardReconciler } from "./hooks/domains/useDashboardReconciler";
-import { useRoleAccessLogic } from "./hooks/domains/useRoleAccessLogic";
-import { useDashboardLoaderLogic } from "./hooks/domains/useDashboardLoaderLogic";
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function useAppLogic(): any {
@@ -1182,6 +1182,25 @@ export function useAppLogic(): any {
 		setImportPreview,
 		setImportCommit,
 	});
+
+	/*
+	 * ГОТОВНОСТЬ РАСПОЗНАВАНИЯ РЕЧИ — ВОССТАНОВЛЕНО ИЗ 57d904b0a~1.
+	 *
+	 * В возвращаемом объекте стояли `speechRecognitionReady: null` и
+	 * `speechGatewayActiveProviderIsLocal: null`, то есть интерфейс диктовки
+	 * никогда не узнавал, что распознавание доступно. Оба вычисления были
+	 * простыми и опирались на то, что живо и сегодня: хелпер
+	 * `speechGatewayCanUpload` (utils/SpeechHelpers.ts:175) и статус шлюза из
+	 * `useVisitLogic`.
+	 *
+	 * Перенесено дословно, включая проверку двух локальных провайдеров: имена
+	 * `local_whisper` и `vosk_local` — это контракт со сервером, а не догадка.
+	 */
+	const speechUploadReady = speechGatewayCanUpload(speechGatewayStatus);
+	const speechRecognitionReady = speechUploadReady && isOnline;
+	const speechGatewayActiveProviderIsLocal =
+		speechGatewayStatus?.providerId === "local_whisper" ||
+		speechGatewayStatus?.providerId === "vosk_local";
 	/*
 	 * Вторая незаполненная ссылка того же коммита декомпозиции.
 	 *
@@ -2901,9 +2920,9 @@ export function useAppLogic(): any {
 		sortedCommunicationTasks: null,
 		specialtiesWithTemplates: [],
 		specialtyProtocolTemplates: [],
-		speechGatewayActiveProviderIsLocal: null,
+		speechGatewayActiveProviderIsLocal,
 		speechLiveRms: 0,
-		speechRecognitionReady: null,
+		speechRecognitionReady,
 		speechTranscriptionBusy: false,
 		startServerVoiceRecording: null,
 		stopServerVoiceRecording: null,
