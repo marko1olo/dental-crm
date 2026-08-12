@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" ADD COLUMN "patient_creation_rules" jsonb;

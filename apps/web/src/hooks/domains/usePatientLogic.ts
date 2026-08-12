@@ -92,6 +92,7 @@ export function usePatientLogic({
 		newPatientName,
 		newPatientPhone,
 		newPatientBirthDate,
+		newPatientMarketingSource,
 		isPatientCreating,
 		newRulePatientText,
 		setSelectedPatientId,
@@ -104,6 +105,7 @@ export function usePatientLogic({
 		setNewPatientName,
 		setNewPatientPhone,
 		setNewPatientBirthDate,
+		setNewPatientMarketingSource,
 		setIsPatientCreating,
 		setNewRulePatientText,
 	} = usePatientStore();
@@ -620,10 +622,32 @@ export function usePatientLogic({
 			setError("Укажите ФИО пациента перед созданием карточки.");
 			return;
 		}
+
+		const requirePhone =
+			dashboard?.clinicSettings.profile.patientCreationRules?.requirePhone;
+		const requireSource =
+			dashboard?.clinicSettings.profile.patientCreationRules?.requireSource;
+
+		if (requirePhone && !nullablePatientDraftValue(newPatientPhone)) {
+			setError("В настройках клиники включено обязательное указание телефона пациента.");
+			return;
+		}
+
+		if (requireSource && !nullablePatientDraftValue(newPatientMarketingSource)) {
+			setError("В настройках клиники включено обязательное указание источника рекламы пациента.");
+			return;
+		}
+
+		const administrativeProfile = {
+			...emptyPatientAdministrativeProfileDraft(),
+			marketingSource: nullablePatientDraftValue(newPatientMarketingSource) ?? "",
+		};
+
 		const payload = {
 			fullName,
 			phone: nullablePatientDraftValue(newPatientPhone),
 			birthDate: nullablePatientDraftValue(newPatientBirthDate),
+			administrativeProfile: buildPatientAdministrativeProfilePayload(administrativeProfile),
 		};
 		setIsPatientCreating(true);
 		try {
@@ -642,6 +666,7 @@ export function usePatientLogic({
 			setNewPatientName("");
 			setNewPatientPhone("");
 			setNewPatientBirthDate("");
+			setNewPatientMarketingSource("");
 			setSelectedPatientId(patient.id);
 			setQuery(patient.fullName);
 			setDashboard((current) =>
@@ -685,6 +710,7 @@ export function usePatientLogic({
 		newPatientName,
 		newPatientPhone,
 		newPatientBirthDate,
+		newPatientMarketingSource,
 		isPatientCreating,
 		newRulePatientText,
 		setSelectedPatientId,
@@ -697,6 +723,7 @@ export function usePatientLogic({
 		setNewPatientName,
 		setNewPatientPhone,
 		setNewPatientBirthDate,
+		setNewPatientMarketingSource,
 		setIsPatientCreating,
 		setNewRulePatientText,
 		activePatient,

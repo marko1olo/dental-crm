@@ -10880,6 +10880,7 @@ function normalizePatientAdministrativeProfile(
 		dataProcessingBasisNote: nullableTrimmed(input?.dataProcessingBasisNote),
 		orthodonticProgress: nullableTrimmed(input?.orthodonticProgress),
 		loyaltyTier,
+		marketingSource: nullableTrimmed(input?.marketingSource),
 	};
 
 	const hasValue = Object.values(profile).some((value) =>

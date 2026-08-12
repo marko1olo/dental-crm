@@ -35,6 +35,7 @@ import {
 	updatePatientAdministrativeProfileSchema,
 	updatePatientSchema,
 } from "@dental/shared";
+import { getClinicSettingsFromDb } from "../db/settingsQuery.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 
@@ -488,6 +489,9 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
+		const settings = await getClinicSettingsFromDb(orgId);
+		const rules = settings.profile.patientCreationRules;
+
 		const input = parsePatientPayload(createPatientSchema, request.body);
 		if (!input) {
 			return reply.code(400).send({
@@ -495,6 +499,21 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				message: patientCreateValidationMessage,
 			});
 		}
+
+		if (rules?.requirePhone && !(input.phone ?? "").trim()) {
+			return reply.code(400).send({
+				error: "PatientValidationError",
+				message: "В настройках клиники включено обязательное указание телефона пациента.",
+			});
+		}
+
+		if (rules?.requireSource && !(input.administrativeProfile?.marketingSource ?? "").trim()) {
+			return reply.code(400).send({
+				error: "PatientValidationError",
+				message: "В настройках клиники включено обязательное указание источника рекламы пациента.",
+			});
+		}
+
 		try {
 			const safeResult = await createPatientSafeInDb(
 				orgId,

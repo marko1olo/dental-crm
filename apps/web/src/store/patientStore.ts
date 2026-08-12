@@ -88,6 +88,9 @@ export interface PatientStore {
 	newPatientBirthDate: string;
 	setNewPatientBirthDate: (val: string | ((prev: string) => string)) => void;
 
+	newPatientMarketingSource: string;
+	setNewPatientMarketingSource: (val: string | ((prev: string) => string)) => void;
+
 	isPatientCreating: boolean;
 	setIsPatientCreating: (val: boolean | ((prev: boolean) => boolean)) => void;
 
@@ -184,6 +187,13 @@ export const usePatientStore = create<PatientStore>((set) => ({
 		set((state) => ({
 			newPatientBirthDate:
 				typeof val === "function" ? val(state.newPatientBirthDate) : val,
+		})),
+
+	newPatientMarketingSource: "",
+	setNewPatientMarketingSource: (val) =>
+		set((state) => ({
+			newPatientMarketingSource:
+				typeof val === "function" ? val(state.newPatientMarketingSource) : val,
 		})),
 
 	isPatientCreating: false,

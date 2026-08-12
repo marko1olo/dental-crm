@@ -334,6 +334,7 @@ export async function getClinicSettingsFromDb(
 		timezone: clinic?.timezone || "Europe/Samara",
 		defaultVisitMinutes: 60,
 		scheduleDefaults: narrowScheduleDefaults(org.clinicSchedule),
+		patientCreationRules: org.patientCreationRules as { requirePhone: boolean; requireSource: boolean } | undefined,
 		networkEnabled: false,
 		egiszEnabled: false,
 		updatedAt: org.updatedAt.toISOString(),
@@ -437,6 +438,8 @@ export async function updateClinicProfileInDb(
 		updateData.signatoryTitle = input.signatoryTitle;
 	if (input.scheduleDefaults !== undefined)
 		updateData.clinicSchedule = input.scheduleDefaults;
+	if (input.patientCreationRules !== undefined)
+		updateData.patientCreationRules = input.patientCreationRules;
 
 	await db
 		.update(schema.organizations)

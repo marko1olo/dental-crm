@@ -64,6 +64,7 @@ const draft = {
 	dataProcessingBasisNote: "метка-основание-пдн",
 	orthodonticProgress: "",
 	loyaltyTier: "standard",
+	marketingSource: "",
 	preferredAppointmentWeekdays: [1, 3],
 };
 

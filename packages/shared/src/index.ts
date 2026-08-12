@@ -1788,6 +1788,10 @@ export const clinicProfileSchema = z.object({
 	timezone: timeZoneSchema,
 	defaultVisitMinutes: z.number().int().positive(),
 	scheduleDefaults: clinicScheduleDefaultsSchema,
+	patientCreationRules: z.object({
+		requirePhone: z.boolean(),
+		requireSource: z.boolean(),
+	}).optional(),
 	networkEnabled: z.boolean(),
 	egiszEnabled: z.boolean(),
 	specializations: z.array(z.string()).optional(),
@@ -3134,6 +3138,12 @@ const patientAdministrativeProfileBaseSchema = z.object({
 		.enum(["standard", "silver", "gold", "platinum"])
 		.nullable()
 		.optional()
+		.default(null),
+	marketingSource: z
+		.string()
+		.trim()
+		.max(120)
+		.nullable()
 		.default(null),
 });
 
@@ -5658,6 +5668,10 @@ export const updateClinicProfileSchema = z.object({
 	timezone: timeZoneSchema.optional(),
 	defaultVisitMinutes: z.number().int().positive().max(480).optional(),
 	scheduleDefaults: clinicScheduleDefaultsSchema.optional(),
+	patientCreationRules: z.object({
+		requirePhone: z.boolean(),
+		requireSource: z.boolean(),
+	}).optional(),
 	egiszEnabled: z.boolean().optional(),
 });
 export type UpdateClinicProfileInput = z.infer<

@@ -400,6 +400,7 @@ export const organizations = pgTable("organizations", {
 	 */
 	clinicMode: text("clinic_mode").notNull().default(DEFAULT_CLINIC_MODE),
 	clinicSchedule: jsonb("clinic_schedule"),
+	patientCreationRules: jsonb("patient_creation_rules"),
 	/*
 	 * Какие модули включены у этой клиники.
 	 *

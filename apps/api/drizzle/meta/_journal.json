@@ -295,6 +295,13 @@
       "when": 1786517075012,
       "tag": "0041_giant_captain_midlands",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1786519509432,
+      "tag": "0042_odd_purple_man",
+      "breakpoints": true
     }
   ]
 }

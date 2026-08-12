@@ -158,6 +158,8 @@ export function emptyClinicProfileDraft(): ClinicProfileDraft {
 		workingDays: defaultWorkingDays,
 		appointmentBufferMinutes: "10",
 		egiszEnabled: false,
+		requirePhone: false,
+		requireSource: false,
 	};
 }
 
@@ -193,6 +195,8 @@ export function clinicProfileDraftFromProfile(
 		workingDays: normalizeWorkingDaysDraft(schedule.workingDays),
 		appointmentBufferMinutes: String(schedule.appointmentBufferMinutes ?? 10),
 		egiszEnabled: profile.egiszEnabled ?? false,
+		requirePhone: profile.patientCreationRules?.requirePhone ?? false,
+		requireSource: profile.patientCreationRules?.requireSource ?? false,
 	};
 }
 
@@ -234,6 +238,7 @@ export function patientAdministrativeProfileDraftFromPatient(
 			profile?.loyaltyTier === "standard"
 				? profile.loyaltyTier
 				: "standard",
+		marketingSource: profile?.marketingSource ?? "",
 	};
 }
 
@@ -279,15 +284,14 @@ export function buildPatientAdministrativeProfilePayload(
 		),
 		orthodonticProgress: nullablePatientDraftValue(draft.orthodonticProgress),
 		loyaltyTier:
-			draft.loyaltyTier === "silver" ||
-			draft.loyaltyTier === "gold" ||
-			draft.loyaltyTier === "platinum" ||
-			draft.loyaltyTier === "standard"
-				? draft.loyaltyTier
-				: "standard",
+			(draft.loyaltyTier === "standard" ? null : draft.loyaltyTier || null) as
+				| "silver"
+				| "gold"
+				| "platinum"
+				| null,
+		marketingSource: nullablePatientDraftValue(draft.marketingSource),
 	};
 }
-
 export function patientAdministrativeProfileDraftSignature(
 	draft: PatientAdministrativeProfileDraft,
 ): string {
@@ -452,6 +456,8 @@ export type ClinicProfileDraft = {
 	workingDays: number[];
 	appointmentBufferMinutes: string;
 	egiszEnabled: boolean;
+	requirePhone: boolean;
+	requireSource: boolean;
 };
 
 export function normalizeOptionalWorkingDaysDraft(

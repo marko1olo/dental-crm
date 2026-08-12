@@ -31,7 +31,7 @@
  */
 
 import { sumKopecks } from "@dental/shared";
-import { and, eq, gte, isNotNull, lte, ne, sql } from "drizzle-orm";
+import { and, eq, gte, isNotNull, lte, ne, sql, inArray } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -41,6 +41,7 @@ import {
 	patients,
 	payments,
 	treatmentItems,
+	treatmentPlans,
 	users,
 	visits,
 } from "../../db/schema.js";
