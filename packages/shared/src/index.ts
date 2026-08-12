@@ -974,6 +974,7 @@ export const staffRoleSchema = z.enum([
 	"administrator",
 	"assistant",
 	"manager",
+	"curator",
 ]);
 export type StaffRole = z.infer<typeof staffRoleSchema>;
 
@@ -3188,6 +3189,7 @@ export const patientSchema = z.object({
 	 * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
 	 */
 	familyGroupId: z.string().uuid().nullable().optional(),
+	curatorId: z.string().uuid().nullable().optional(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });
@@ -5559,6 +5561,7 @@ export const createPatientSchema = z.object({
 	administrativeProfile: patientAdministrativeProfileSchema
 		.nullable()
 		.optional(),
+	curatorId: z.string().uuid().nullable().optional(),
 });
 export type CreatePatientInput = z.infer<typeof createPatientSchema>;
 
@@ -5578,6 +5581,7 @@ export const updatePatientSchema = z.object({
 	 * счёта за «привязанного» шла в никуда.
 	 */
 	familyGroupId: z.string().uuid().nullable().optional(),
+	curatorId: z.string().uuid().nullable().optional(),
 });
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
 

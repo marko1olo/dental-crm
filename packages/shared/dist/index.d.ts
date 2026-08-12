@@ -344,7 +344,7 @@ export declare const egiszStatusSchema: z.ZodEnum<["Pending", "Sent", "Error", "
 export type EgiszStatus = z.infer<typeof egiszStatusSchema>;
 export declare const clinicModeSchema: z.ZodEnum<["solo_doctor", "one_chair", "small_clinic", "network_clinic"]>;
 export type ClinicMode = z.infer<typeof clinicModeSchema>;
-export declare const staffRoleSchema: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+export declare const staffRoleSchema: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
 export type StaffRole = z.infer<typeof staffRoleSchema>;
 export declare const dentalSpecialtySchema: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
 export type DentalSpecialty = z.infer<typeof dentalSpecialtySchema>;
@@ -2699,7 +2699,7 @@ export declare const staffMemberSchema: z.ZodObject<{
     id: z.ZodString;
     organizationId: z.ZodString;
     fullName: z.ZodString;
-    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     specialties: z.ZodArray<z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>, "many">;
     phone: z.ZodNullable<z.ZodString>;
     email: z.ZodNullable<z.ZodString>;
@@ -2745,7 +2745,7 @@ export declare const staffMemberSchema: z.ZodObject<{
     createdAt: string;
     updatedAt: string;
     fullName: string;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
     canSignMedicalRecords: boolean;
     canManageMoney: boolean;
@@ -2766,7 +2766,7 @@ export declare const staffMemberSchema: z.ZodObject<{
     createdAt: string;
     updatedAt: string;
     fullName: string;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
     canSignMedicalRecords: boolean;
     canManageMoney: boolean;
@@ -2863,7 +2863,7 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
     title: z.ZodString;
     description: z.ZodString;
     scope: z.ZodEnum<["personal", "clinic", "branch", "network"]>;
-    primaryRoles: z.ZodArray<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>, "many">;
+    primaryRoles: z.ZodArray<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>, "many">;
     defaultSection: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
     visibleSections: z.ZodArray<z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>, "many">;
     compactNavigation: z.ZodBoolean;
@@ -2876,7 +2876,7 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
     description: string;
     scope: "personal" | "clinic" | "branch" | "network";
-    primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+    primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
     defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
     compactNavigation: boolean;
@@ -2889,7 +2889,7 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
     description: string;
     scope: "personal" | "clinic" | "branch" | "network";
-    primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+    primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
     defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
     compactNavigation: boolean;
@@ -2899,7 +2899,7 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
 }>;
 export type ClinicWorkspaceProfile = z.infer<typeof clinicWorkspaceProfileSchema>;
 export declare const roleAccessPolicySchema: z.ZodObject<{
-    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     title: z.ZodString;
     scope: z.ZodEnum<["personal", "clinic", "branch", "network"]>;
     defaultSection: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
@@ -2910,7 +2910,7 @@ export declare const roleAccessPolicySchema: z.ZodObject<{
     auditEvents: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
     title: string;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     scope: "personal" | "clinic" | "branch" | "network";
     defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -2920,7 +2920,7 @@ export declare const roleAccessPolicySchema: z.ZodObject<{
     auditEvents: string[];
 }, {
     title: string;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     scope: "personal" | "clinic" | "branch" | "network";
     defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -3076,7 +3076,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         id: z.ZodString;
         organizationId: z.ZodString;
         fullName: z.ZodString;
-        role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         specialties: z.ZodArray<z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>, "many">;
         phone: z.ZodNullable<z.ZodString>;
         email: z.ZodNullable<z.ZodString>;
@@ -3122,7 +3122,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         fullName: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
         canSignMedicalRecords: boolean;
         canManageMoney: boolean;
@@ -3143,7 +3143,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         fullName: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
         canSignMedicalRecords: boolean;
         canManageMoney: boolean;
@@ -3265,7 +3265,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         title: z.ZodString;
         description: z.ZodString;
         scope: z.ZodEnum<["personal", "clinic", "branch", "network"]>;
-        primaryRoles: z.ZodArray<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>, "many">;
+        primaryRoles: z.ZodArray<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>, "many">;
         defaultSection: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
         visibleSections: z.ZodArray<z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>, "many">;
         compactNavigation: z.ZodBoolean;
@@ -3278,7 +3278,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
         description: string;
         scope: "personal" | "clinic" | "branch" | "network";
-        primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+        primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
         defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
         compactNavigation: boolean;
@@ -3291,7 +3291,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
         description: string;
         scope: "personal" | "clinic" | "branch" | "network";
-        primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+        primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
         defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
         compactNavigation: boolean;
@@ -3300,7 +3300,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         safeguards: string[];
     }>, "many">;
     roleAccessPolicies: z.ZodArray<z.ZodObject<{
-        role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         title: z.ZodString;
         scope: z.ZodEnum<["personal", "clinic", "branch", "network"]>;
         defaultSection: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
@@ -3311,7 +3311,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         auditEvents: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
         title: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         scope: "personal" | "clinic" | "branch" | "network";
         defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -3321,7 +3321,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         auditEvents: string[];
     }, {
         title: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         scope: "personal" | "clinic" | "branch" | "network";
         defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -3383,7 +3383,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         fullName: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
         canSignMedicalRecords: boolean;
         canManageMoney: boolean;
@@ -3431,7 +3431,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
         description: string;
         scope: "personal" | "clinic" | "branch" | "network";
-        primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+        primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
         defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
         compactNavigation: boolean;
@@ -3441,7 +3441,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     }[];
     roleAccessPolicies: {
         title: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         scope: "personal" | "clinic" | "branch" | "network";
         defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -3503,7 +3503,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         fullName: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
         canSignMedicalRecords: boolean;
         canManageMoney: boolean;
@@ -3551,7 +3551,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
         description: string;
         scope: "personal" | "clinic" | "branch" | "network";
-        primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+        primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
         defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
         compactNavigation: boolean;
@@ -3561,7 +3561,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     }[];
     roleAccessPolicies: {
         title: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         scope: "personal" | "clinic" | "branch" | "network";
         defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -3614,7 +3614,7 @@ export declare const resourceLoadSchema: z.ZodObject<{
 }>;
 export type ResourceLoad = z.infer<typeof resourceLoadSchema>;
 export declare const roleQueueSchema: z.ZodObject<{
-    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     title: z.ZodString;
     ownerLabel: z.ZodString;
     openItems: z.ZodNumber;
@@ -3624,7 +3624,7 @@ export declare const roleQueueSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     title: string;
     nextAction: string;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     ownerLabel: string;
     openItems: number;
     automationHint: string;
@@ -3632,7 +3632,7 @@ export declare const roleQueueSchema: z.ZodObject<{
 }, {
     title: string;
     nextAction: string;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     ownerLabel: string;
     openItems: number;
     automationHint: string;
@@ -3644,7 +3644,7 @@ export declare const scheduleWarningSchema: z.ZodObject<{
     severity: z.ZodEnum<["info", "warning", "critical"]>;
     title: z.ZodString;
     detail: z.ZodString;
-    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     relatedAppointmentId: z.ZodNullable<z.ZodString>;
     actionLabel: z.ZodString;
 }, "strip", z.ZodTypeAny, {
@@ -3652,7 +3652,7 @@ export declare const scheduleWarningSchema: z.ZodObject<{
     detail: string;
     severity: "info" | "warning" | "critical";
     id: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     relatedAppointmentId: string | null;
     actionLabel: string;
 }, {
@@ -3660,7 +3660,7 @@ export declare const scheduleWarningSchema: z.ZodObject<{
     detail: string;
     severity: "info" | "warning" | "critical";
     id: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     relatedAppointmentId: string | null;
     actionLabel: string;
 }>;
@@ -3814,7 +3814,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         flags: string[];
     }>, "many">;
     roleQueues: z.ZodArray<z.ZodObject<{
-        role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         title: z.ZodString;
         ownerLabel: z.ZodString;
         openItems: z.ZodNumber;
@@ -3824,7 +3824,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         title: string;
         nextAction: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         ownerLabel: string;
         openItems: number;
         automationHint: string;
@@ -3832,7 +3832,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     }, {
         title: string;
         nextAction: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         ownerLabel: string;
         openItems: number;
         automationHint: string;
@@ -3843,7 +3843,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         severity: z.ZodEnum<["info", "warning", "critical"]>;
         title: z.ZodString;
         detail: z.ZodString;
-        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         relatedAppointmentId: z.ZodNullable<z.ZodString>;
         actionLabel: z.ZodString;
     }, "strip", z.ZodTypeAny, {
@@ -3851,7 +3851,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         detail: string;
         severity: "info" | "warning" | "critical";
         id: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         relatedAppointmentId: string | null;
         actionLabel: string;
     }, {
@@ -3859,7 +3859,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         detail: string;
         severity: "info" | "warning" | "critical";
         id: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         relatedAppointmentId: string | null;
         actionLabel: string;
     }>, "many">;
@@ -3911,7 +3911,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     roleQueues: {
         title: string;
         nextAction: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         ownerLabel: string;
         openItems: number;
         automationHint: string;
@@ -3922,7 +3922,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         detail: string;
         severity: "info" | "warning" | "critical";
         id: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         relatedAppointmentId: string | null;
         actionLabel: string;
     }[];
@@ -3974,7 +3974,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     roleQueues: {
         title: string;
         nextAction: string;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         ownerLabel: string;
         openItems: number;
         automationHint: string;
@@ -3985,7 +3985,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         detail: string;
         severity: "info" | "warning" | "critical";
         id: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         relatedAppointmentId: string | null;
         actionLabel: string;
     }[];
@@ -4601,7 +4601,7 @@ export declare const clinicalRuleSchema: z.ZodObject<{
     specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
     action: z.ZodEnum<["add_required_service", "block_service", "show_warning", "schedule_followup"]>;
     severity: z.ZodEnum<["info", "warning", "blocker"]>;
-    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     triggerServiceIds: z.ZodArray<z.ZodString, "many">;
     requiredServiceIds: z.ZodArray<z.ZodString, "many">;
     requiresCompletedServiceIds: z.ZodArray<z.ZodString, "many">;
@@ -4618,7 +4618,7 @@ export declare const clinicalRuleSchema: z.ZodObject<{
     category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
     specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
     organizationId: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
     requiredServiceIds: string[];
@@ -4635,7 +4635,7 @@ export declare const clinicalRuleSchema: z.ZodObject<{
     category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
     specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
     organizationId: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
     requiredServiceIds: string[];
@@ -4655,7 +4655,7 @@ export declare const clinicalRuleEvaluationSchema: z.ZodObject<{
     title: z.ZodString;
     action: z.ZodEnum<["add_required_service", "block_service", "show_warning", "schedule_followup"]>;
     severity: z.ZodEnum<["info", "warning", "blocker"]>;
-    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     triggeredByServiceIds: z.ZodArray<z.ZodString, "many">;
     missingRequiredServiceIds: z.ZodArray<z.ZodString, "many">;
     missingCompletedServiceIds: z.ZodArray<z.ZodString, "many">;
@@ -4670,7 +4670,7 @@ export declare const clinicalRuleEvaluationSchema: z.ZodObject<{
     id: string;
     patientId: string;
     organizationId: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     blockedServiceIds: string[];
     ruleId: string;
@@ -4687,7 +4687,7 @@ export declare const clinicalRuleEvaluationSchema: z.ZodObject<{
     id: string;
     patientId: string;
     organizationId: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     blockedServiceIds: string[];
     ruleId: string;
@@ -4755,7 +4755,7 @@ export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
         title: z.ZodString;
         action: z.ZodEnum<["add_required_service", "block_service", "show_warning", "schedule_followup"]>;
         severity: z.ZodEnum<["info", "warning", "blocker"]>;
-        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         triggeredByServiceIds: z.ZodArray<z.ZodString, "many">;
         missingRequiredServiceIds: z.ZodArray<z.ZodString, "many">;
         missingCompletedServiceIds: z.ZodArray<z.ZodString, "many">;
@@ -4770,7 +4770,7 @@ export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
         id: string;
         patientId: string;
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         blockedServiceIds: string[];
         ruleId: string;
@@ -4787,7 +4787,7 @@ export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
         id: string;
         patientId: string;
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         blockedServiceIds: string[];
         ruleId: string;
@@ -4840,7 +4840,7 @@ export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
         id: string;
         patientId: string;
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         blockedServiceIds: string[];
         ruleId: string;
@@ -4868,7 +4868,7 @@ export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
         id: string;
         patientId: string;
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         blockedServiceIds: string[];
         ruleId: string;
@@ -4887,7 +4887,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
     action: z.ZodEnum<["add_required_service", "block_service", "show_warning", "schedule_followup"]>;
     severity: z.ZodEnum<["info", "warning", "blocker"]>;
-    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     triggerServiceIds: z.ZodArray<z.ZodString, "many">;
     requiredServiceIds: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     requiresCompletedServiceIds: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
@@ -4902,7 +4902,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     active: boolean;
     category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
     specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
     requiredServiceIds: string[];
@@ -4916,7 +4916,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     severity: "info" | "warning" | "blocker";
     category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
     specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
     warningText: string;
@@ -4932,7 +4932,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     active: boolean;
     category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
     specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
     requiredServiceIds: string[];
@@ -4946,7 +4946,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     severity: "info" | "warning" | "blocker";
     category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
     specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
     warningText: string;
@@ -4964,7 +4964,7 @@ export declare const updateClinicalRuleSchema: z.ZodObject<{
     specialty: z.ZodOptional<z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>>;
     action: z.ZodOptional<z.ZodEnum<["add_required_service", "block_service", "show_warning", "schedule_followup"]>>;
     severity: z.ZodOptional<z.ZodEnum<["info", "warning", "blocker"]>>;
-    ownerRole: z.ZodOptional<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>>;
+    ownerRole: z.ZodOptional<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>>;
     triggerServiceIds: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     requiredServiceIds: z.ZodOptional<z.ZodDefault<z.ZodArray<z.ZodString, "many">>>;
     requiresCompletedServiceIds: z.ZodOptional<z.ZodDefault<z.ZodArray<z.ZodString, "many">>>;
@@ -4982,7 +4982,7 @@ export declare const updateClinicalRuleSchema: z.ZodObject<{
     active?: boolean | undefined;
     category?: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents" | undefined;
     specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
-    ownerRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | undefined;
+    ownerRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator" | undefined;
     action?: "add_required_service" | "block_service" | "show_warning" | "schedule_followup" | undefined;
     triggerServiceIds?: string[] | undefined;
     requiredServiceIds?: string[] | undefined;
@@ -4998,7 +4998,7 @@ export declare const updateClinicalRuleSchema: z.ZodObject<{
     active?: boolean | undefined;
     category?: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents" | undefined;
     specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
-    ownerRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | undefined;
+    ownerRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator" | undefined;
     action?: "add_required_service" | "block_service" | "show_warning" | "schedule_followup" | undefined;
     triggerServiceIds?: string[] | undefined;
     requiredServiceIds?: string[] | undefined;
@@ -5176,7 +5176,7 @@ export declare const communicationTemplateSchema: z.ZodObject<{
     title: z.ZodString;
     channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
     intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "lead_capture", "callback_requested", "transactional_reply"]>;
-    audienceRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    audienceRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     body: z.ZodString;
     variables: z.ZodArray<z.ZodString, "many">;
     active: z.ZodBoolean;
@@ -5187,7 +5187,7 @@ export declare const communicationTemplateSchema: z.ZodObject<{
     organizationId: string;
     channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
     intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
-    audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     body: string;
     variables: string[];
 }, {
@@ -5197,7 +5197,7 @@ export declare const communicationTemplateSchema: z.ZodObject<{
     organizationId: string;
     channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
     intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
-    audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     body: string;
     variables: string[];
 }>;
@@ -5209,7 +5209,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     appointmentId: z.ZodNullable<z.ZodString>;
     visitId: z.ZodNullable<z.ZodString>;
     documentId: z.ZodNullable<z.ZodString>;
-    assignedRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    assignedRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
     intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "lead_capture", "callback_requested", "transactional_reply"]>;
     status: z.ZodEnum<["queued", "scheduled", "needs_call", "sent", "delivered", "completed", "failed", "skipped"]>;
@@ -5235,7 +5235,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
     body: string;
     appointmentId: string | null;
-    assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     dueAt: string;
     lastEventAt: string | null;
     workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -5254,7 +5254,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
     body: string;
     appointmentId: string | null;
-    assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     dueAt: string;
     lastEventAt: string | null;
     workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -7658,6 +7658,7 @@ export declare const patientSchema: z.ZodObject<{
     }>>>;
     balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
     familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    curatorId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     createdAt: z.ZodString;
     updatedAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
@@ -7693,6 +7694,7 @@ export declare const patientSchema: z.ZodObject<{
     } | null;
     balanceRub: number;
     familyGroupId?: string | null | undefined;
+    curatorId?: string | null | undefined;
 }, {
     status: "active" | "archived";
     email: string | null;
@@ -7726,6 +7728,7 @@ export declare const patientSchema: z.ZodObject<{
     } | null | undefined;
     balanceRub?: number | undefined;
     familyGroupId?: string | null | undefined;
+    curatorId?: string | null | undefined;
 }>;
 export type Patient = z.infer<typeof patientSchema>;
 export declare const patientInsightRiskSchema: z.ZodEnum<["low", "watch", "high"]>;
@@ -7772,7 +7775,7 @@ export declare const recommendedActionPrioritySchema: z.ZodEnum<["routine", "imp
 export type RecommendedActionPriority = z.infer<typeof recommendedActionPrioritySchema>;
 export declare const recommendedActionSchema: z.ZodObject<{
     id: z.ZodString;
-    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     priority: z.ZodEnum<["routine", "important", "urgent"]>;
     section: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
     patientId: z.ZodNullable<z.ZodString>;
@@ -7787,7 +7790,7 @@ export declare const recommendedActionSchema: z.ZodObject<{
     id: string;
     source: string;
     patientId: string | null;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     actionLabel: string;
     priority: "urgent" | "routine" | "important";
     section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
@@ -7798,7 +7801,7 @@ export declare const recommendedActionSchema: z.ZodObject<{
     id: string;
     source: string;
     patientId: string | null;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     actionLabel: string;
     priority: "urgent" | "routine" | "important";
     section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
@@ -7971,7 +7974,7 @@ export declare const appointmentReadinessSchema: z.ZodObject<{
     patientId: z.ZodNullable<z.ZodString>;
     state: z.ZodEnum<["ready", "needs_attention", "blocked"]>;
     score: z.ZodNumber;
-    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     nextAction: z.ZodString;
     blockers: z.ZodArray<z.ZodString, "many">;
     warnings: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
@@ -8002,7 +8005,7 @@ export declare const appointmentReadinessSchema: z.ZodObject<{
     patientId: string | null;
     nextAction: string;
     state: "ready" | "blocked" | "needs_attention";
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     blockers: string[];
     appointmentId: string;
     score: number;
@@ -8016,7 +8019,7 @@ export declare const appointmentReadinessSchema: z.ZodObject<{
     patientId: string | null;
     nextAction: string;
     state: "ready" | "blocked" | "needs_attention";
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     blockers: string[];
     appointmentId: string;
     score: number;
@@ -8026,7 +8029,7 @@ export type AppointmentReadiness = z.infer<typeof appointmentReadinessSchema>;
 export declare const scheduleSuggestionSchema: z.ZodObject<{
     id: z.ZodString;
     priority: z.ZodEnum<["routine", "important", "urgent"]>;
-    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     appointmentId: z.ZodNullable<z.ZodString>;
     section: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
     title: z.ZodString;
@@ -8038,7 +8041,7 @@ export declare const scheduleSuggestionSchema: z.ZodObject<{
     detail: string;
     id: string;
     reason: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     actionLabel: string;
     priority: "urgent" | "routine" | "important";
     appointmentId: string | null;
@@ -8048,7 +8051,7 @@ export declare const scheduleSuggestionSchema: z.ZodObject<{
     detail: string;
     id: string;
     reason: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     actionLabel: string;
     priority: "urgent" | "routine" | "important";
     appointmentId: string | null;
@@ -8062,7 +8065,7 @@ export declare const visitCloseChecklistItemSchema: z.ZodObject<{
     detail: z.ZodString;
     ready: z.ZodBoolean;
     blocking: z.ZodBoolean;
-    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     section: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
     actionLabel: z.ZodString;
 }, "strip", z.ZodTypeAny, {
@@ -8072,7 +8075,7 @@ export declare const visitCloseChecklistItemSchema: z.ZodObject<{
     id: string;
     blocking: boolean;
     visitId: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     actionLabel: string;
     section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
 }, {
@@ -8082,7 +8085,7 @@ export declare const visitCloseChecklistItemSchema: z.ZodObject<{
     id: string;
     blocking: boolean;
     visitId: string;
-    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     actionLabel: string;
     section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
 }>;
@@ -8100,7 +8103,7 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         detail: z.ZodString;
         ready: z.ZodBoolean;
         blocking: z.ZodBoolean;
-        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         section: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
         actionLabel: z.ZodString;
     }, "strip", z.ZodTypeAny, {
@@ -8110,7 +8113,7 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         id: string;
         blocking: boolean;
         visitId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     }, {
@@ -8120,7 +8123,7 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         id: string;
         blocking: boolean;
         visitId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     }>, "many">;
@@ -8134,7 +8137,7 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         id: string;
         blocking: boolean;
         visitId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     }[];
@@ -8151,7 +8154,7 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         id: string;
         blocking: boolean;
         visitId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     }[];
@@ -17388,6 +17391,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         }>>>;
         balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
         familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        curatorId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         createdAt: z.ZodString;
         updatedAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
@@ -17423,6 +17427,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         } | null;
         balanceRub: number;
         familyGroupId?: string | null | undefined;
+        curatorId?: string | null | undefined;
     }, {
         status: "active" | "archived";
         email: string | null;
@@ -17456,6 +17461,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         } | null | undefined;
         balanceRub?: number | undefined;
         familyGroupId?: string | null | undefined;
+        curatorId?: string | null | undefined;
     }>;
     clinicProfile: z.ZodObject<{
         organizationId: z.ZodString;
@@ -17737,6 +17743,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         } | null;
         balanceRub: number;
         familyGroupId?: string | null | undefined;
+        curatorId?: string | null | undefined;
     };
     payments: {
         status: "planned" | "voided" | "paid" | "refunded";
@@ -17845,6 +17852,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         } | null | undefined;
         balanceRub?: number | undefined;
         familyGroupId?: string | null | undefined;
+        curatorId?: string | null | undefined;
     };
     payments: {
         status: "planned" | "voided" | "paid" | "refunded";
@@ -23223,6 +23231,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }>>>;
             balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
             familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            curatorId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             createdAt: z.ZodString;
             updatedAt: z.ZodString;
         }, "strip", z.ZodTypeAny, {
@@ -23258,6 +23267,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         }, {
             status: "active" | "archived";
             email: string | null;
@@ -23291,6 +23301,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         }>;
         clinicProfile: z.ZodObject<{
             organizationId: z.ZodString;
@@ -23572,6 +23583,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -23680,6 +23692,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -24738,6 +24751,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -25781,6 +25795,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -31221,6 +31236,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }>>>;
             balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
             familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            curatorId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             createdAt: z.ZodString;
             updatedAt: z.ZodString;
         }, "strip", z.ZodTypeAny, {
@@ -31256,6 +31272,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         }, {
             status: "active" | "archived";
             email: string | null;
@@ -31289,6 +31306,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         }>;
         clinicProfile: z.ZodObject<{
             organizationId: z.ZodString;
@@ -31570,6 +31588,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -31678,6 +31697,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
+            curatorId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -32619,7 +32639,7 @@ export declare const dashboardSchema: z.ZodObject<{
             id: z.ZodString;
             organizationId: z.ZodString;
             fullName: z.ZodString;
-            role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+            role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
             specialties: z.ZodArray<z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>, "many">;
             phone: z.ZodNullable<z.ZodString>;
             email: z.ZodNullable<z.ZodString>;
@@ -32665,7 +32685,7 @@ export declare const dashboardSchema: z.ZodObject<{
             createdAt: string;
             updatedAt: string;
             fullName: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
@@ -32686,7 +32706,7 @@ export declare const dashboardSchema: z.ZodObject<{
             createdAt: string;
             updatedAt: string;
             fullName: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
@@ -32808,7 +32828,7 @@ export declare const dashboardSchema: z.ZodObject<{
             title: z.ZodString;
             description: z.ZodString;
             scope: z.ZodEnum<["personal", "clinic", "branch", "network"]>;
-            primaryRoles: z.ZodArray<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>, "many">;
+            primaryRoles: z.ZodArray<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>, "many">;
             defaultSection: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
             visibleSections: z.ZodArray<z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>, "many">;
             compactNavigation: z.ZodBoolean;
@@ -32821,7 +32841,7 @@ export declare const dashboardSchema: z.ZodObject<{
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             description: string;
             scope: "personal" | "clinic" | "branch" | "network";
-            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
             compactNavigation: boolean;
@@ -32834,7 +32854,7 @@ export declare const dashboardSchema: z.ZodObject<{
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             description: string;
             scope: "personal" | "clinic" | "branch" | "network";
-            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
             compactNavigation: boolean;
@@ -32843,7 +32863,7 @@ export declare const dashboardSchema: z.ZodObject<{
             safeguards: string[];
         }>, "many">;
         roleAccessPolicies: z.ZodArray<z.ZodObject<{
-            role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+            role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
             title: z.ZodString;
             scope: z.ZodEnum<["personal", "clinic", "branch", "network"]>;
             defaultSection: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
@@ -32854,7 +32874,7 @@ export declare const dashboardSchema: z.ZodObject<{
             auditEvents: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
             title: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             scope: "personal" | "clinic" | "branch" | "network";
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -32864,7 +32884,7 @@ export declare const dashboardSchema: z.ZodObject<{
             auditEvents: string[];
         }, {
             title: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             scope: "personal" | "clinic" | "branch" | "network";
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -32926,7 +32946,7 @@ export declare const dashboardSchema: z.ZodObject<{
             createdAt: string;
             updatedAt: string;
             fullName: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
@@ -32974,7 +32994,7 @@ export declare const dashboardSchema: z.ZodObject<{
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             description: string;
             scope: "personal" | "clinic" | "branch" | "network";
-            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
             compactNavigation: boolean;
@@ -32984,7 +33004,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }[];
         roleAccessPolicies: {
             title: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             scope: "personal" | "clinic" | "branch" | "network";
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -33046,7 +33066,7 @@ export declare const dashboardSchema: z.ZodObject<{
             createdAt: string;
             updatedAt: string;
             fullName: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
@@ -33094,7 +33114,7 @@ export declare const dashboardSchema: z.ZodObject<{
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             description: string;
             scope: "personal" | "clinic" | "branch" | "network";
-            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
             compactNavigation: boolean;
@@ -33104,7 +33124,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }[];
         roleAccessPolicies: {
             title: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             scope: "personal" | "clinic" | "branch" | "network";
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -33242,7 +33262,7 @@ export declare const dashboardSchema: z.ZodObject<{
             flags: string[];
         }>, "many">;
         roleQueues: z.ZodArray<z.ZodObject<{
-            role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+            role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
             title: z.ZodString;
             ownerLabel: z.ZodString;
             openItems: z.ZodNumber;
@@ -33252,7 +33272,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             title: string;
             nextAction: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             ownerLabel: string;
             openItems: number;
             automationHint: string;
@@ -33260,7 +33280,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }, {
             title: string;
             nextAction: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             ownerLabel: string;
             openItems: number;
             automationHint: string;
@@ -33271,7 +33291,7 @@ export declare const dashboardSchema: z.ZodObject<{
             severity: z.ZodEnum<["info", "warning", "critical"]>;
             title: z.ZodString;
             detail: z.ZodString;
-            ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+            ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
             relatedAppointmentId: z.ZodNullable<z.ZodString>;
             actionLabel: z.ZodString;
         }, "strip", z.ZodTypeAny, {
@@ -33279,7 +33299,7 @@ export declare const dashboardSchema: z.ZodObject<{
             detail: string;
             severity: "info" | "warning" | "critical";
             id: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             relatedAppointmentId: string | null;
             actionLabel: string;
         }, {
@@ -33287,7 +33307,7 @@ export declare const dashboardSchema: z.ZodObject<{
             detail: string;
             severity: "info" | "warning" | "critical";
             id: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             relatedAppointmentId: string | null;
             actionLabel: string;
         }>, "many">;
@@ -33339,7 +33359,7 @@ export declare const dashboardSchema: z.ZodObject<{
         roleQueues: {
             title: string;
             nextAction: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             ownerLabel: string;
             openItems: number;
             automationHint: string;
@@ -33350,7 +33370,7 @@ export declare const dashboardSchema: z.ZodObject<{
             detail: string;
             severity: "info" | "warning" | "critical";
             id: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             relatedAppointmentId: string | null;
             actionLabel: string;
         }[];
@@ -33402,7 +33422,7 @@ export declare const dashboardSchema: z.ZodObject<{
         roleQueues: {
             title: string;
             nextAction: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             ownerLabel: string;
             openItems: number;
             automationHint: string;
@@ -33413,7 +33433,7 @@ export declare const dashboardSchema: z.ZodObject<{
             detail: string;
             severity: "info" | "warning" | "critical";
             id: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             relatedAppointmentId: string | null;
             actionLabel: string;
         }[];
@@ -33525,6 +33545,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }>>>;
         balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
         familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        curatorId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         createdAt: z.ZodString;
         updatedAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
@@ -33560,6 +33581,7 @@ export declare const dashboardSchema: z.ZodObject<{
         } | null;
         balanceRub: number;
         familyGroupId?: string | null | undefined;
+        curatorId?: string | null | undefined;
     }, {
         status: "active" | "archived";
         email: string | null;
@@ -33593,6 +33615,7 @@ export declare const dashboardSchema: z.ZodObject<{
         } | null | undefined;
         balanceRub?: number | undefined;
         familyGroupId?: string | null | undefined;
+        curatorId?: string | null | undefined;
     }>, "many">;
     patientInsights: z.ZodArray<z.ZodObject<{
         patientId: z.ZodString;
@@ -33633,7 +33656,7 @@ export declare const dashboardSchema: z.ZodObject<{
     }>, "many">;
     recommendedActions: z.ZodArray<z.ZodObject<{
         id: z.ZodString;
-        role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         priority: z.ZodEnum<["routine", "important", "urgent"]>;
         section: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
         patientId: z.ZodNullable<z.ZodString>;
@@ -33648,7 +33671,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         source: string;
         patientId: string | null;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         priority: "urgent" | "routine" | "important";
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
@@ -33659,7 +33682,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         source: string;
         patientId: string | null;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         priority: "urgent" | "routine" | "important";
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
@@ -33707,7 +33730,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: z.ZodNullable<z.ZodString>;
         state: z.ZodEnum<["ready", "needs_attention", "blocked"]>;
         score: z.ZodNumber;
-        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         nextAction: z.ZodString;
         blockers: z.ZodArray<z.ZodString, "many">;
         warnings: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
@@ -33738,7 +33761,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string | null;
         nextAction: string;
         state: "ready" | "blocked" | "needs_attention";
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         blockers: string[];
         appointmentId: string;
         score: number;
@@ -33752,7 +33775,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string | null;
         nextAction: string;
         state: "ready" | "blocked" | "needs_attention";
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         blockers: string[];
         appointmentId: string;
         score: number;
@@ -33761,7 +33784,7 @@ export declare const dashboardSchema: z.ZodObject<{
     scheduleSuggestions: z.ZodArray<z.ZodObject<{
         id: z.ZodString;
         priority: z.ZodEnum<["routine", "important", "urgent"]>;
-        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         appointmentId: z.ZodNullable<z.ZodString>;
         section: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
         title: z.ZodString;
@@ -33773,7 +33796,7 @@ export declare const dashboardSchema: z.ZodObject<{
         detail: string;
         id: string;
         reason: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         priority: "urgent" | "routine" | "important";
         appointmentId: string | null;
@@ -33783,7 +33806,7 @@ export declare const dashboardSchema: z.ZodObject<{
         detail: string;
         id: string;
         reason: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         priority: "urgent" | "routine" | "important";
         appointmentId: string | null;
@@ -33848,7 +33871,7 @@ export declare const dashboardSchema: z.ZodObject<{
             detail: z.ZodString;
             ready: z.ZodBoolean;
             blocking: z.ZodBoolean;
-            ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+            ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
             section: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
             actionLabel: z.ZodString;
         }, "strip", z.ZodTypeAny, {
@@ -33858,7 +33881,7 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }, {
@@ -33868,7 +33891,7 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }>, "many">;
@@ -33882,7 +33905,7 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
@@ -33899,7 +33922,7 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
@@ -39186,6 +39209,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 }>>>;
                 balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
                 familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+                curatorId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 createdAt: z.ZodString;
                 updatedAt: z.ZodString;
             }, "strip", z.ZodTypeAny, {
@@ -39221,6 +39245,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 } | null;
                 balanceRub: number;
                 familyGroupId?: string | null | undefined;
+                curatorId?: string | null | undefined;
             }, {
                 status: "active" | "archived";
                 email: string | null;
@@ -39254,6 +39279,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 } | null | undefined;
                 balanceRub?: number | undefined;
                 familyGroupId?: string | null | undefined;
+                curatorId?: string | null | undefined;
             }>;
             clinicProfile: z.ZodObject<{
                 organizationId: z.ZodString;
@@ -39535,6 +39561,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 } | null;
                 balanceRub: number;
                 familyGroupId?: string | null | undefined;
+                curatorId?: string | null | undefined;
             };
             payments: {
                 status: "planned" | "voided" | "paid" | "refunded";
@@ -39643,6 +39670,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 } | null | undefined;
                 balanceRub?: number | undefined;
                 familyGroupId?: string | null | undefined;
+                curatorId?: string | null | undefined;
             };
             payments: {
                 status: "planned" | "voided" | "paid" | "refunded";
@@ -40247,7 +40275,7 @@ export declare const dashboardSchema: z.ZodObject<{
         specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
         action: z.ZodEnum<["add_required_service", "block_service", "show_warning", "schedule_followup"]>;
         severity: z.ZodEnum<["info", "warning", "blocker"]>;
-        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         triggerServiceIds: z.ZodArray<z.ZodString, "many">;
         requiredServiceIds: z.ZodArray<z.ZodString, "many">;
         requiresCompletedServiceIds: z.ZodArray<z.ZodString, "many">;
@@ -40264,7 +40292,7 @@ export declare const dashboardSchema: z.ZodObject<{
         category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
         specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         triggerServiceIds: string[];
         requiredServiceIds: string[];
@@ -40281,7 +40309,7 @@ export declare const dashboardSchema: z.ZodObject<{
         category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
         specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         triggerServiceIds: string[];
         requiredServiceIds: string[];
@@ -40300,7 +40328,7 @@ export declare const dashboardSchema: z.ZodObject<{
         title: z.ZodString;
         action: z.ZodEnum<["add_required_service", "block_service", "show_warning", "schedule_followup"]>;
         severity: z.ZodEnum<["info", "warning", "blocker"]>;
-        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         triggeredByServiceIds: z.ZodArray<z.ZodString, "many">;
         missingRequiredServiceIds: z.ZodArray<z.ZodString, "many">;
         missingCompletedServiceIds: z.ZodArray<z.ZodString, "many">;
@@ -40315,7 +40343,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         patientId: string;
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         blockedServiceIds: string[];
         ruleId: string;
@@ -40332,7 +40360,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         patientId: string;
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         blockedServiceIds: string[];
         ruleId: string;
@@ -40510,7 +40538,7 @@ export declare const dashboardSchema: z.ZodObject<{
         title: z.ZodString;
         channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
         intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "lead_capture", "callback_requested", "transactional_reply"]>;
-        audienceRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        audienceRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         body: z.ZodString;
         variables: z.ZodArray<z.ZodString, "many">;
         active: z.ZodBoolean;
@@ -40521,7 +40549,7 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
-        audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         body: string;
         variables: string[];
     }, {
@@ -40531,7 +40559,7 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
-        audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         body: string;
         variables: string[];
     }>, "many">;
@@ -40542,7 +40570,7 @@ export declare const dashboardSchema: z.ZodObject<{
         appointmentId: z.ZodNullable<z.ZodString>;
         visitId: z.ZodNullable<z.ZodString>;
         documentId: z.ZodNullable<z.ZodString>;
-        assignedRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+        assignedRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
         channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
         intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general", "lead_capture", "callback_requested", "transactional_reply"]>;
         status: z.ZodEnum<["queued", "scheduled", "needs_call", "sent", "delivered", "completed", "failed", "skipped"]>;
@@ -40568,7 +40596,7 @@ export declare const dashboardSchema: z.ZodObject<{
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         body: string;
         appointmentId: string | null;
-        assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -40587,7 +40615,7 @@ export declare const dashboardSchema: z.ZodObject<{
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         body: string;
         appointmentId: string | null;
-        assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -40868,6 +40896,7 @@ export declare const dashboardSchema: z.ZodObject<{
         } | null;
         balanceRub: number;
         familyGroupId?: string | null | undefined;
+        curatorId?: string | null | undefined;
     }[];
     appointments: {
         status: "completed" | "planned" | "confirmed" | "arrived" | "in_treatment" | "cancelled" | "no_show";
@@ -40976,7 +41005,7 @@ export declare const dashboardSchema: z.ZodObject<{
             createdAt: string;
             updatedAt: string;
             fullName: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
@@ -41024,7 +41053,7 @@ export declare const dashboardSchema: z.ZodObject<{
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             description: string;
             scope: "personal" | "clinic" | "branch" | "network";
-            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
             compactNavigation: boolean;
@@ -41034,7 +41063,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }[];
         roleAccessPolicies: {
             title: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             scope: "personal" | "clinic" | "branch" | "network";
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -41094,7 +41123,7 @@ export declare const dashboardSchema: z.ZodObject<{
         roleQueues: {
             title: string;
             nextAction: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             ownerLabel: string;
             openItems: number;
             automationHint: string;
@@ -41105,7 +41134,7 @@ export declare const dashboardSchema: z.ZodObject<{
             detail: string;
             severity: "info" | "warning" | "critical";
             id: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             relatedAppointmentId: string | null;
             actionLabel: string;
         }[];
@@ -41129,7 +41158,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         source: string;
         patientId: string | null;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         priority: "urgent" | "routine" | "important";
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
@@ -41146,7 +41175,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string | null;
         nextAction: string;
         state: "ready" | "blocked" | "needs_attention";
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         blockers: string[];
         appointmentId: string;
         score: number;
@@ -41156,7 +41185,7 @@ export declare const dashboardSchema: z.ZodObject<{
         detail: string;
         id: string;
         reason: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         priority: "urgent" | "routine" | "important";
         appointmentId: string | null;
@@ -41188,7 +41217,7 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
@@ -41291,7 +41320,7 @@ export declare const dashboardSchema: z.ZodObject<{
         category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
         specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         triggerServiceIds: string[];
         requiredServiceIds: string[];
@@ -41308,7 +41337,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         patientId: string;
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         blockedServiceIds: string[];
         ruleId: string;
@@ -41346,7 +41375,7 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
-        audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         body: string;
         variables: string[];
     }[];
@@ -41364,7 +41393,7 @@ export declare const dashboardSchema: z.ZodObject<{
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         body: string;
         appointmentId: string | null;
-        assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -41533,6 +41562,7 @@ export declare const dashboardSchema: z.ZodObject<{
         } | null | undefined;
         balanceRub?: number | undefined;
         familyGroupId?: string | null | undefined;
+        curatorId?: string | null | undefined;
     }[];
     appointments: {
         status: "completed" | "planned" | "confirmed" | "arrived" | "in_treatment" | "cancelled" | "no_show";
@@ -41641,7 +41671,7 @@ export declare const dashboardSchema: z.ZodObject<{
             createdAt: string;
             updatedAt: string;
             fullName: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
@@ -41689,7 +41719,7 @@ export declare const dashboardSchema: z.ZodObject<{
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             description: string;
             scope: "personal" | "clinic" | "branch" | "network";
-            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager")[];
+            primaryRoles: ("doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator")[];
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             visibleSections: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
             compactNavigation: boolean;
@@ -41699,7 +41729,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }[];
         roleAccessPolicies: {
             title: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             scope: "personal" | "clinic" | "branch" | "network";
             defaultSection: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
             canRead: ("shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings")[];
@@ -41759,7 +41789,7 @@ export declare const dashboardSchema: z.ZodObject<{
         roleQueues: {
             title: string;
             nextAction: string;
-            role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             ownerLabel: string;
             openItems: number;
             automationHint: string;
@@ -41770,7 +41800,7 @@ export declare const dashboardSchema: z.ZodObject<{
             detail: string;
             severity: "info" | "warning" | "critical";
             id: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             relatedAppointmentId: string | null;
             actionLabel: string;
         }[];
@@ -41794,7 +41824,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         source: string;
         patientId: string | null;
-        role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         priority: "urgent" | "routine" | "important";
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
@@ -41810,7 +41840,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string | null;
         nextAction: string;
         state: "ready" | "blocked" | "needs_attention";
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         blockers: string[];
         appointmentId: string;
         score: number;
@@ -41821,7 +41851,7 @@ export declare const dashboardSchema: z.ZodObject<{
         detail: string;
         id: string;
         reason: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         actionLabel: string;
         priority: "urgent" | "routine" | "important";
         appointmentId: string | null;
@@ -41853,7 +41883,7 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
@@ -41956,7 +41986,7 @@ export declare const dashboardSchema: z.ZodObject<{
         category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
         specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         triggerServiceIds: string[];
         requiredServiceIds: string[];
@@ -41973,7 +42003,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         patientId: string;
         organizationId: string;
-        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         blockedServiceIds: string[];
         ruleId: string;
@@ -42011,7 +42041,7 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         channel: "email" | "max" | "phone" | "sms" | "whatsapp" | "telegram" | "in_person" | "vk";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
-        audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        audienceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         body: string;
         variables: string[];
     }[];
@@ -42029,7 +42059,7 @@ export declare const dashboardSchema: z.ZodObject<{
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general" | "lead_capture" | "callback_requested" | "transactional_reply";
         body: string;
         appointmentId: string | null;
-        assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+        assignedRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -42187,6 +42217,7 @@ export declare const createPatientSchema: z.ZodObject<{
         orthodonticProgress?: string | null | undefined;
         loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
     }>>>;
+    curatorId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     fullName: string;
     email?: string | null | undefined;
@@ -42213,6 +42244,7 @@ export declare const createPatientSchema: z.ZodObject<{
         orthodonticProgress: string | null;
         loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
     } | null | undefined;
+    curatorId?: string | null | undefined;
 }, {
     fullName: string;
     email?: string | null | undefined;
@@ -42239,6 +42271,7 @@ export declare const createPatientSchema: z.ZodObject<{
         orthodonticProgress?: string | null | undefined;
         loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
     } | null | undefined;
+    curatorId?: string | null | undefined;
 }>;
 export type CreatePatientInput = z.infer<typeof createPatientSchema>;
 export declare const updatePatientSchema: z.ZodObject<{
@@ -42248,6 +42281,7 @@ export declare const updatePatientSchema: z.ZodObject<{
     email: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    curatorId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     email?: string | null | undefined;
     phone?: string | null | undefined;
@@ -42255,6 +42289,7 @@ export declare const updatePatientSchema: z.ZodObject<{
     notes?: string | null | undefined;
     birthDate?: string | null | undefined;
     familyGroupId?: string | null | undefined;
+    curatorId?: string | null | undefined;
 }, {
     email?: string | null | undefined;
     phone?: string | null | undefined;
@@ -42262,6 +42297,7 @@ export declare const updatePatientSchema: z.ZodObject<{
     notes?: string | null | undefined;
     birthDate?: string | null | undefined;
     familyGroupId?: string | null | undefined;
+    curatorId?: string | null | undefined;
 }>;
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
 export declare const updatePatientAdministrativeProfileSchema: z.ZodEffects<z.ZodObject<{
@@ -42468,7 +42504,7 @@ export declare const updateClinicProfileSchema: z.ZodObject<{
 export type UpdateClinicProfileInput = z.infer<typeof updateClinicProfileSchema>;
 export declare const createStaffMemberSchema: z.ZodObject<{
     fullName: z.ZodString;
-    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+    role: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
     specialties: z.ZodDefault<z.ZodArray<z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>, "many">>;
     phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     email: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -42500,7 +42536,7 @@ export declare const createStaffMemberSchema: z.ZodObject<{
     }>, "many">>>;
 }, "strip", z.ZodTypeAny, {
     fullName: string;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
     email?: string | null | undefined;
     phone?: string | null | undefined;
@@ -42512,7 +42548,7 @@ export declare const createStaffMemberSchema: z.ZodObject<{
     }[] | null | undefined;
 }, {
     fullName: string;
-    role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    role: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     email?: string | null | undefined;
     phone?: string | null | undefined;
     workingHours?: {
@@ -85570,7 +85606,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             detail: z.ZodString;
             ready: z.ZodBoolean;
             blocking: z.ZodBoolean;
-            ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
+            ownerRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>;
             section: z.ZodEnum<["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"]>;
             actionLabel: z.ZodString;
         }, "strip", z.ZodTypeAny, {
@@ -85580,7 +85616,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }, {
@@ -85590,7 +85626,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }>, "many">;
@@ -85604,7 +85640,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
@@ -85621,7 +85657,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
@@ -85678,7 +85714,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
@@ -85721,7 +85757,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             id: string;
             blocking: boolean;
             visitId: string;
-            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+            ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
@@ -86502,7 +86538,7 @@ export type OnboardingStep = z.infer<typeof onboardingStepSchema>;
 export declare const uiPreferencesSchema: z.ZodObject<{
     version: z.ZodDefault<z.ZodLiteral<1>>;
     uiLanguage: z.ZodDefault<z.ZodEnum<["ru"]>>;
-    selectedWorkspaceRole: z.ZodDefault<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>>;
+    selectedWorkspaceRole: z.ZodDefault<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>>;
     selectedSpecialty: z.ZodDefault<z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>>;
     selectedProtocolId: z.ZodDefault<z.ZodNullable<z.ZodString>>;
     selectedPatientId: z.ZodDefault<z.ZodNullable<z.ZodString>>;
@@ -86553,7 +86589,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
     savedAt: string;
     uiLanguage: "ru";
-    selectedWorkspaceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    selectedWorkspaceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     selectedProtocolId: string | null;
     selectedPatientId: string | null;
     scheduleDoctorFilterId: string | null;
@@ -86601,7 +86637,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     selectedSpecialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
     savedAt?: string | undefined;
     uiLanguage?: "ru" | undefined;
-    selectedWorkspaceRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | undefined;
+    selectedWorkspaceRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator" | undefined;
     selectedProtocolId?: string | null | undefined;
     selectedPatientId?: string | null | undefined;
     scheduleDoctorFilterId?: string | null | undefined;
@@ -86648,7 +86684,7 @@ export type UiPreferences = z.infer<typeof uiPreferencesSchema>;
 export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     version: z.ZodDefault<z.ZodLiteral<1>>;
     uiLanguage: z.ZodDefault<z.ZodEnum<["ru"]>>;
-    selectedWorkspaceRole: z.ZodDefault<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>>;
+    selectedWorkspaceRole: z.ZodDefault<z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager", "curator"]>>;
     selectedSpecialty: z.ZodDefault<z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>>;
     selectedProtocolId: z.ZodDefault<z.ZodNullable<z.ZodString>>;
     selectedPatientId: z.ZodDefault<z.ZodNullable<z.ZodString>>;
@@ -86700,7 +86736,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     ohifBaseUrl: string;
     selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
     uiLanguage: "ru";
-    selectedWorkspaceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
+    selectedWorkspaceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator";
     selectedProtocolId: string | null;
     selectedPatientId: string | null;
     scheduleDoctorFilterId: string | null;
@@ -86750,7 +86786,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     selectedSpecialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
     savedAt?: string | undefined;
     uiLanguage?: "ru" | undefined;
-    selectedWorkspaceRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | undefined;
+    selectedWorkspaceRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | "curator" | undefined;
     selectedProtocolId?: string | null | undefined;
     selectedPatientId?: string | null | undefined;
     scheduleDoctorFilterId?: string | null | undefined;

@@ -40,7 +40,7 @@ export function useRoleAccessLogic({
         .map((member) => member.role as string),
     );
     return (
-      ["doctor", "administrator", "assistant", "manager"] as const
+      ["doctor", "administrator", "assistant", "manager", "curator"] as const
     ).filter((role) => !covered.has(role)) as string[];
   }, [dashboard?.clinicSettings?.staff]);
 

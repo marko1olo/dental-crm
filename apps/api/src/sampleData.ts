@@ -6807,6 +6807,7 @@ function staffRoleLabelForTelegramDigest(role: StaffRole): string {
 		administrator: "администратор",
 		assistant: "ассистент",
 		manager: "управляющий",
+		curator: "куратор",
 	};
 	return labels[role];
 }

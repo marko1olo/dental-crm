@@ -582,6 +582,7 @@ export const patients = pgTable(
 		 * должен увидеть, куда она объединена, а не пустоту.
 		 */
 		mergedIntoPatientId: uuid("merged_into_patient_id"),
+		curatorId: uuid("curator_id").references(() => users.id),
 		isSynced: boolean("is_synced").notNull().default(false),
 		version: integer("version").notNull().default(1),
 		createdAt: timestamp("created_at", { withTimezone: true })

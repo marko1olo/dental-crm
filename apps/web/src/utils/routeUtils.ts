@@ -104,6 +104,16 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"settings",
 		];
 	}
+	if (role === "curator") {
+		return [
+			"schedule",
+			"patients",
+			"finance",
+			"analytics",
+			"communications",
+			"leads",
+		];
+	}
 	if (role === "owner") {
 		return Array.from(appViews);
 	}

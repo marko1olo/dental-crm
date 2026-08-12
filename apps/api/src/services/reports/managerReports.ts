@@ -1699,3 +1699,111 @@ export async function scheduleLoad(
 		isEmpty: cells.length === 0,
 	};
 }
+
+export type CuratorPerformanceRow = {
+	readonly curatorId: string;
+	readonly curatorName: string;
+	readonly totalPatients: number;
+	readonly totalPlans: number;
+	readonly acceptedPlans: number;
+	readonly conversionRate: number | null;
+	readonly totalRevenueRub: number;
+};
+
+export type CuratorPerformanceReport = {
+	readonly rows: CuratorPerformanceRow[];
+	readonly isEmpty: boolean;
+};
+
+export async function curatorPerformance(
+	scope: ReportScope,
+): Promise<CuratorPerformanceReport> {
+	const patientsWithCurators = await db
+		.select({
+			patientId: patients.id,
+			curatorId: patients.curatorId,
+		})
+		.from(patients)
+		.where(
+			and(
+				eq(patients.organizationId, scope.organizationId),
+				isNotNull(patients.curatorId)
+			)
+		);
+
+	const curatorPatientIds = patientsWithCurators.map((p) => p.patientId);
+	if (curatorPatientIds.length === 0) {
+		return { rows: [], isEmpty: true };
+	}
+
+	const plans = await db
+		.select({
+			curatorId: patients.curatorId,
+			status: treatmentPlans.status,
+			totalPriceRub: treatmentPlans.totalPriceRub,
+		})
+		.from(treatmentPlans)
+		.innerJoin(patients, eq(treatmentPlans.patientId, patients.id))
+		.where(
+			and(
+				eq(treatmentPlans.organizationId, scope.organizationId),
+				inArray(treatmentPlans.patientId, curatorPatientIds)
+			)
+		);
+
+	const staff = await db
+		.select({ id: users.id, fullName: users.fullName })
+		.from(users)
+		.where(eq(users.organizationId, scope.organizationId));
+	const staffNames = new Map(staff.map((row) => [row.id, row.fullName]));
+
+	type Accumulator = {
+		totalPatients: number;
+		totalPlans: number;
+		acceptedPlans: number;
+		totalRevenueRub: number;
+	};
+	const byCurator = new Map<string, Accumulator>();
+
+	for (const p of patientsWithCurators) {
+		if (!p.curatorId) continue;
+		if (!byCurator.has(p.curatorId)) {
+			byCurator.set(p.curatorId, { totalPatients: 0, totalPlans: 0, acceptedPlans: 0, totalRevenueRub: 0 });
+		}
+		const acc = byCurator.get(p.curatorId)!;
+		acc.totalPatients++;
+	}
+
+	for (const plan of plans) {
+		if (!plan.curatorId) continue;
+		const acc = byCurator.get(plan.curatorId);
+		if (!acc) continue;
+
+		acc.totalPlans++;
+		const isAccepted = plan.status === "Active" || plan.status === "Completed" || plan.status === "Approved";
+		if (isAccepted) {
+			acc.acceptedPlans++;
+			acc.totalRevenueRub += Number(plan.totalPriceRub || 0);
+		}
+	}
+
+	const rows: CuratorPerformanceRow[] = [];
+	for (const [curatorId, acc] of byCurator.entries()) {
+		rows.push({
+			curatorId,
+			curatorName: staffNames.get(curatorId) ?? "Удалённый сотрудник",
+			totalPatients: acc.totalPatients,
+			totalPlans: acc.totalPlans,
+			acceptedPlans: acc.acceptedPlans,
+			conversionRate: acc.totalPlans > 0 ? (acc.acceptedPlans / acc.totalPlans) * 100 : null,
+			totalRevenueRub: acc.totalRevenueRub,
+		});
+	}
+
+	rows.sort((a, b) => b.totalRevenueRub - a.totalRevenueRub);
+
+	return {
+		rows,
+		isEmpty: rows.length === 0,
+	};
+}

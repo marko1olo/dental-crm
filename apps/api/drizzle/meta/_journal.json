@@ -288,6 +288,13 @@
       "when": 1786263440539,
       "tag": "0040_exotic_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1786517075012,
+      "tag": "0041_giant_captain_midlands",
+      "breakpoints": true
     }
   ]
 }

@@ -842,6 +842,7 @@ export const staffRoleSchema = z.enum([
     "administrator",
     "assistant",
     "manager",
+    "curator",
 ]);
 export const dentalSpecialtySchema = z.enum([
     "therapist",
@@ -2584,6 +2585,7 @@ export const patientSchema = z.object({
      * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
      */
     familyGroupId: z.string().uuid().nullable().optional(),
+    curatorId: z.string().uuid().nullable().optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
@@ -4524,6 +4526,7 @@ export const createPatientSchema = z.object({
     administrativeProfile: patientAdministrativeProfileSchema
         .nullable()
         .optional(),
+    curatorId: z.string().uuid().nullable().optional(),
 });
 export const updatePatientSchema = z.object({
     fullName: z.string().trim().min(1).max(240).optional(),
@@ -4541,6 +4544,7 @@ export const updatePatientSchema = z.object({
      * счёта за «привязанного» шла в никуда.
      */
     familyGroupId: z.string().uuid().nullable().optional(),
+    curatorId: z.string().uuid().nullable().optional(),
 });
 export const updatePatientAdministrativeProfileSchema = patientAdministrativeProfileBaseSchema
     .partial()

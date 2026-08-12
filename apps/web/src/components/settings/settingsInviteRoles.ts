@@ -61,6 +61,7 @@ import { staffRoleLabels } from "../../workspaceUiLabels";
 export const INVITABLE_STAFF_ROLES: readonly StaffRole[] = [
 	"doctor",
 	"administrator",
+	"curator",
 	"assistant",
 	"manager",
 	"owner",
