@@ -186,7 +186,44 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 					</div>
 				)}
 
-				<div style={{ marginTop: "24px", textAlign: "right" }}>
+				<div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+					{result && !result.isBlocked && (
+						<button 
+							type="button" 
+							onClick={async () => {
+								if (!patientId) return;
+								try {
+									const url = `/api/documents/ndfl-xml?patientId=${encodeURIComponent(patientId)}&startDate=${encodeURIComponent(`${startDate}T00:00:00.000Z`)}&endDate=${encodeURIComponent(`${endDate}T23:59:59.999Z`)}`;
+									const res = await fetch(url, {
+										headers: auth && typeof auth.denteClinicalMutationHeaders === "function" ? auth.denteClinicalMutationHeaders() : {},
+									});
+									if (!res.ok) {
+										const text = await res.text();
+										throw new Error(text || `HTTP ${res.status}`);
+									}
+									const blob = await res.blob();
+									const downloadUrl = window.URL.createObjectURL(blob);
+									const a = document.createElement("a");
+									a.href = downloadUrl;
+									a.download = `ndfl_${patientId}_${startDate}_${endDate}.xml`;
+									document.body.appendChild(a);
+									a.click();
+									document.body.removeChild(a);
+									window.URL.revokeObjectURL(downloadUrl);
+									showToast("XML для ФНС успешно скачан", "success");
+								} catch (error) {
+									showToast(
+										actionFailureToast("Ошибка скачивания XML", null),
+										"error",
+									);
+									logger.error(error);
+								}
+							}}
+							className="primary-button"
+						>
+							Скачать XML для ЭДО
+						</button>
+					)}
 					<button type="button" onClick={onClose} className="secondary-button">
 						Закрыть
 					</button>
