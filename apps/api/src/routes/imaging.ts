@@ -2285,3 +2285,6 @@ export {
 	scoreDentalModelFile,
 	shouldSkipDicomDiscoveryDirectory,
 } from "../modules/imaging/filesystemScanner.js";
+
+export { parseDicomSeriesManifest } from "../modules/imaging/dicomDecoder.js";
+
