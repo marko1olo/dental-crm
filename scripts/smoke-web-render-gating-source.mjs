@@ -1,7 +1,8 @@
 import fs from "node:fs";
+import { readAppShellSourceSync } from "./lib/app-shell-source.mjs";
 import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
-const appSource = fs.readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = readAppShellSourceSync();
 const settingsSource = fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 
 /*

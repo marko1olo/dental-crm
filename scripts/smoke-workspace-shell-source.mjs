@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
+import { readAppShellSourceSync } from "./lib/app-shell-source.mjs";
 
 /*
  * ПЕРЕВОДЫ СТРОК НОРМАЛИЗУЮТСЯ ПРИ ЧТЕНИИ, И БЕЗ ЭТОГО СТРАЖ — МОНЕТКА.
@@ -102,7 +103,16 @@ function readCode(relativePath) {
 	return codeOnly(readSource(relativePath));
 }
 
-const appSource = readCode("apps/web/src/App.tsx");
+/*
+ * ОБОЛОЧКА — ТРИ ФАЙЛА, А НЕ ОДИН App.tsx.
+ *
+ * Разметка уехала снова: `<WorkspaceSidebar>` и 31 граница маршрута теперь в
+ * `AppRouter.tsx` (импорт App.tsx:71), мастер онбординга — в
+ * `FullscreenOnboardingWizard.tsx` (App.tsx:70). Набор описан в
+ * `lib/app-shell-source.mjs`, чтобы следующий перенос закрывался в одном месте,
+ * а не в шести стражах по отдельности. Комментарии вырезаются, как и раньше.
+ */
+const appSource = codeOnly(readAppShellSourceSync());
 const financeViewSource = readSource("apps/web/src/FinanceView.tsx");
 const scheduleViewSource = readSource("apps/web/src/ScheduleView.tsx");
 const settingsViewSource = readSource("apps/web/src/SettingsView.tsx");
@@ -177,6 +187,11 @@ function looseSnippetPattern(snippet) {
 
 function requireLoose(source, snippet, message) {
 	if (!looseSnippetPattern(snippet).test(source)) missing.push(message);
+}
+
+/** Требование, заданное выражением: для многострочных форм вроде ре-экспорта. */
+function requirePattern(source, pattern, message) {
+	if (!pattern.test(source)) missing.push(message);
 }
 
 requireIn(
@@ -468,9 +483,26 @@ forbidIn(
 	"App.tsx must not inline idle preload scheduling in the workspace chunk",
 );
 
+/*
+ * РЕЕСТР ВИДОВ: ОБЪЯВЛЕНИЕ В routeUtils, ВЛАДЕНИЕ — У ШЕЛЛА.
+ *
+ * `export const appViews` уехал в `utils/routeUtils.ts`, а шелл его импортирует
+ * (workspaceShell.tsx:42), ре-экспортирует (:70) и рисует по нему навигацию
+ * (:346). Требование «шелл владеет реестром» означает «реестр есть и шелл им
+ * распоряжается», а не «объявлен именно здесь» — объявление в маршрутном модуле
+ * и есть предотвращение монолита.
+ *
+ * Проверяются обе половины связки: объявление в routeUtils И ре-экспорт из
+ * шелла. По отдельности каждая прошла бы при разорванной связи.
+ */
 requireIn(
-	shellSource,
+	readSource("apps/web/src/utils/routeUtils.ts"),
 	"export const appViews",
+	"workspaceShell must own app view registry",
+);
+requirePattern(
+	shellSource,
+	/export \{[^}]*appViews[^}]*\}/,
 	"workspaceShell must own app view registry",
 );
 /*
@@ -495,9 +527,9 @@ requireIn(
 	"export const viewLabels",
 	"workspaceShell must own app view labels",
 );
-requireLoose(
+requirePattern(
 	shellSource,
-	"export { getFallbackAppView, getFilteredAppViews, viewHints, viewLabels }",
+	/export \{[^}]*viewLabels[^}]*\}/,
 	"workspaceShell must own app view labels",
 );
 requireIn(
@@ -505,9 +537,9 @@ requireIn(
 	"export const viewHints",
 	"workspaceShell must own short operator hints for each app view",
 );
-requireLoose(
+requirePattern(
 	shellSource,
-	"export { getFallbackAppView, getFilteredAppViews, viewHints, viewLabels }",
+	/export \{[^}]*viewLabels[^}]*\}/,
 	"workspaceShell must own short operator hints for each app view",
 );
 requireIn(

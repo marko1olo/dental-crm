@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+import { readAppShellSourceSync } from "./lib/app-shell-source.mjs";
 import { functionBodySource } from "./lib/function-body-source.mjs";
 import { scheduleSourceExpectations } from "./lib/schedule-source-expectations.mjs";
 import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
@@ -21,7 +22,7 @@ import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
  * ломается при следующем разборе.
  */
 const appSource = (
-	readFileSync("apps/web/src/App.tsx", "utf8") +
+	readAppShellSourceSync() +
 	"\n" +
 	readAppLogicSourceSync() +
 	"\n" +

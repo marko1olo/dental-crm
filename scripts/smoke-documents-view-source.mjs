@@ -1,14 +1,25 @@
 import { readFileSync } from "node:fs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+import { readAppShellSourceSync } from "./lib/app-shell-source.mjs";
 import { readRouteSourceSync } from "./lib/route-source.mjs";
 import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
 const appSource =
-	readFileSync("apps/web/src/App.tsx", "utf8") +
+	readAppShellSourceSync() +
 	"\n" +
 	readAppLogicSourceSync() +
 	"\n" +
-	readFileSync("apps/web/src/store/documentStore.ts", "utf8");
+	readFileSync("apps/web/src/store/documentStore.ts", "utf8") +
+	"\n" +
+	/*
+	 * СТОР ТОЖЕ РАЗОБРАН НА СЛАЙСЫ.
+	 *
+	 * Требование `setPostVisitPresetFeedback: createSetter(set, …)` живо ДОСЛОВНО,
+	 * но переехало в `store/slices/clinicalSlice.ts:386`, а страж читал только
+	 * `documentStore.ts`. Каталог слайсов берётся целиком: перечислять имена — это
+	 * готовить следующее падение при следующем разборе.
+	 */
+	readWebSurfaceSourceSync(["apps/web/src/store/slices"]);
 /*
  * РАЗМЕТКА ФОРМ ДОКУМЕНТОВ РАЗЪЕХАЛАСЬ ПО КАТАЛОГУ, И ЕГО НАДО ЧИТАТЬ.
  *

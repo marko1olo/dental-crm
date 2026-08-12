@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { readAppShellSourceSync } from "./lib/app-shell-source.mjs";
 import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
 /*
@@ -20,8 +21,17 @@ import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 const readSource = (path) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
 const sources = {
-	app: readSource("apps/web/src/App.tsx"),
-	shell: readSource("apps/web/src/workspaceShell.tsx"),
+	app: readAppShellSourceSync(),
+	/*
+	 * Реестр видов уехал из шелла в `utils/routeUtils.ts` (`export const appViews`),
+	 * а `workspaceShell.tsx` его ре-экспортирует и использует в разметке. Требование
+	 * «шелл владеет реестром» выполняется связкой из двух файлов, поэтому читаются
+	 * оба: по одному шеллу оно краснеет на целом продукте.
+	 */
+	shell: [
+		readSource("apps/web/src/workspaceShell.tsx"),
+		readSource("apps/web/src/utils/routeUtils.ts"),
+	].join("\n"),
 	css: readSource("apps/web/src/styles/main.css"),
 	schedule: [
 		readSource("apps/web/src/ScheduleView.tsx"),

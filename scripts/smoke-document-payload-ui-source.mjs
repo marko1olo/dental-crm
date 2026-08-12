@@ -5,6 +5,7 @@ import {
 	appLogicSourceFiles,
 	readAppLogicSourceSync,
 } from "./lib/app-logic-source.mjs";
+import { readAppShellSourceSync } from "./lib/app-shell-source.mjs";
 import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
 /**
@@ -55,7 +56,7 @@ function documentComponentSources(directory) {
  * в её красноте не видно настоящей регрессии.
  */
 const source = [
-	fs.readFileSync("apps/web/src/App.tsx", "utf8"),
+	readAppShellSourceSync(),
 	readAppLogicSourceSync(),
 	/*
 	 * AppHelpers РАЗОБРАН, И ЕГО ТЕЛО ТЕПЕРЬ В utils/.
