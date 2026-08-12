@@ -108,7 +108,10 @@ export async function getVisitDraftAutosaveFromDb(
 	if (visit.draftAutosave) {
 		return {
 			outcome: "draft",
-			serverDraft: visit.draftAutosave as VisitDraftAutosave,
+			serverDraft: {
+				...(visit.draftAutosave as VisitDraftAutosave),
+				qualityControlStatus: visit.qualityControlStatus,
+			},
 		};
 	}
 
@@ -134,6 +137,7 @@ export async function getVisitDraftAutosaveFromDb(
 			clientSavedAt: null,
 			serverSavedAt: visit.updatedAt.toISOString(),
 			transcriptHash: "",
+			qualityControlStatus: visit.qualityControlStatus,
 		},
 	};
 }
@@ -310,6 +314,7 @@ export async function acceptVisitDraftInDb(
 		.update(schema.visits)
 		.set({
 			status: "signed",
+			qualityControlStatus: "pending",
 			revision: newRevision,
 			complaint: input.draft.complaint,
 			anamnesis: input.draft.anamnesis,
@@ -781,7 +786,11 @@ export async function updateVisitQualityControlStatusInDb(
 ) {
 	const [updated] = await db
 		.update(schema.visits)
-		.set({ qualityControlStatus })
+		.set(
+			qualityControlStatus === "rejected"
+				? { qualityControlStatus, status: "draft" }
+				: { qualityControlStatus }
+		)
 		.where(
 			and(
 				eq(schema.visits.organizationId, organizationId),

@@ -3469,6 +3469,7 @@ export const visitSchema = z.object({
 	patientId: z.string().uuid(),
 	appointmentId: z.string().uuid().nullable(),
 	status: visitStatusSchema,
+	qualityControlStatus: z.string().nullable().optional(),
 	revision: z.number().int().nonnegative().default(1),
 	complaint: z.string().nullable(),
 	anamnesis: z.string().nullable(),
@@ -7866,6 +7867,7 @@ export const visitDraftAutosaveSchema = z.object({
 	clientSavedAt: z.string().nullable(),
 	serverSavedAt: z.string(),
 	transcriptHash: z.string(),
+	qualityControlStatus: z.string().nullable().optional(),
 });
 export type VisitDraftAutosave = z.infer<typeof visitDraftAutosaveSchema>;
 

@@ -681,6 +681,20 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					<span className="status-pill status-in_treatment">Черновик</span>
 				</div>
 
+				{draft?.qualityControlStatus === "rejected" ? (
+					<div
+						className="system-alert alert-error"
+						role="alert"
+						style={{ margin: "0 0 24px 0" }}
+					>
+						<strong>Этот приём возвращён на доработку главврачом.</strong>
+						<p style={{ margin: "4px 0 0", fontSize: "14px" }}>
+							Пожалуйста, внесите исправления в ЭМК и заново подпишите карту приёма. 
+							После подписания она снова отправится на проверку.
+						</p>
+					</div>
+				) : null}
+
 				<DoctorDesktopHeader
 					dashboard={dashboard}
 					activeAppointment={activeAppointment}
