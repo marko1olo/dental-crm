@@ -1,0 +1,420 @@
+﻿apps/api/src/audit.test.ts:11: * ╨С╨╡╨╖ ╨╜╨╡╨│╨╛ mock.fn(async () => {}) ╨╛╨▒╤К╤П╨▓╨╗╤П╨╗ ╨┐╨╛╨┤╨╝╨╡╨╜╤С╨╜╨╜╤Г╤О ╤Д╤Г╨╜╨║╤Ж╨╕╤О ╨▓╨╛╨╛╨▒╤Й╨╡ ╨▒╨╡╨╖
+apps/api/src/audit.test.ts:20:		// node:test mock reset isn't strictly necessary per-test if we use t.mock
+apps/api/src/audit.test.ts:24:		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
+apps/api/src/audit.test.ts:25:		t.mock.method(db, "insert", () => ({
+apps/api/src/audit.test.ts:29:		// Also mock select just in case, though it shouldn't be called
+apps/api/src/audit.test.ts:30:		const selectMock = t.mock.method(db, "select", () => ({}));
+apps/api/src/audit.test.ts:40:		assert.strictEqual(selectMock.mock.calls.length, 0);
+apps/api/src/audit.test.ts:41:		assert.strictEqual(valuesMock.mock.calls.length, 1);
+apps/api/src/audit.test.ts:42:		const insertCall = valuesMock.mock.calls[0];
+apps/api/src/audit.test.ts:55:		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
+apps/api/src/audit.test.ts:56:		t.mock.method(db, "insert", () => ({
+apps/api/src/audit.test.ts:59:		t.mock.method(db, "select", () => ({}));
+apps/api/src/audit.test.ts:70:		const insertCall = valuesMock.mock.calls[0];
+apps/api/src/audit.test.ts:76:		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
+apps/api/src/audit.test.ts:77:		t.mock.method(db, "insert", () => ({
+apps/api/src/audit.test.ts:81:		const limitMock = t.mock.fn(async () => [{ id: "org-fallback" }]);
+apps/api/src/audit.test.ts:82:		t.mock.method(db, "select", () => ({
+apps/api/src/audit.test.ts:94:		assert.strictEqual(limitMock.mock.calls.length, 1);
+apps/api/src/audit.test.ts:95:		assert.strictEqual(valuesMock.mock.calls.length, 1);
+apps/api/src/audit.test.ts:96:		const insertCall = valuesMock.mock.calls[0];
+apps/api/src/audit.test.ts:121:		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
+apps/api/src/audit.test.ts:122:		t.mock.method(db, "insert", () => ({
+apps/api/src/audit.test.ts:126:		const limitMock = t.mock.fn(async () => []); // Returns empty array
+apps/api/src/audit.test.ts:127:		t.mock.method(db, "select", () => ({
+apps/api/src/audit.test.ts:143:		assert.strictEqual(limitMock.mock.calls.length, 1);
+apps/api/src/audit.test.ts:144:		assert.strictEqual(valuesMock.mock.calls.length, 0);
+apps/api/src/audit.test.ts:149:		t.mock.method(db, "insert", () => ({
+apps/api/src/audit.test.ts:154:		t.mock.method(db, "select", () => ({}));
+apps/api/src/clinicalAuditService.test.ts:11:		t.mock.method(db, "insert", () => ({
+apps/api/src/clinicalAuditService.test.ts:51:		t.mock.method(db, "insert", () => ({
+apps/api/src/clinicalAuditService.test.ts:90:		t.mock.method(db, "insert", () => ({
+apps/api/src/clinicalAuditService.test.ts:126:		t.mock.method(db, "insert", () => ({
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:47:		const fetchMock = t.mock.method(global, "fetch", async () => {
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:68:		assert.strictEqual(fetchMock.mock.callCount(), 1);
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:69:		const firstCall = fetchMock.mock.calls[0];
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:86:		t.mock.method(global, "fetch", async () => {
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:119:			// Mock console.warn to keep output clean
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:120:			t.mock.method(console, "warn", () => {});
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:123:			const fetchMock = t.mock.method(global, "fetch", async () => {
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:154:			assert.ok(fetchMock.mock.callCount() >= 2);
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:155:			const firstCall = fetchMock.mock.calls[0];
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:157:			const secondCall = fetchMock.mock.calls[1];
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:183:			// Mock console.warn and console.error
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:184:			t.mock.method(console, "warn", () => {});
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:185:			t.mock.method(console, "error", () => {});
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:187:			const fetchMock = t.mock.method(global, "fetch", async () => {
+apps/api/src/ai\treatmentPlanPersonalize.test.ts:199:			assert.ok(fetchMock.mock.callCount() >= 1);
+apps/api/src/db\clinicalQuery.test.ts:22:		t.mock.method(db, "select", () => ({
+apps/api/src/db\clinicalQuery.test.ts:33:		t.mock.method(db, "select", () => ({
+apps/api/src/db\billingQuery.test.ts:8:		t.mock.method(db, "select", () => ({
+apps/api/src/db\billingQuery.test.ts:24:		t.mock.method(db, "select", () => ({
+apps/api/src/db\auditQuery.test.ts:2:import { afterEach, describe, mock, test } from "node:test";
+apps/api/src/db\auditQuery.test.ts:8:		mock.restoreAll();
+apps/api/src/db\auditQuery.test.ts:13:		mock.method(db, "insert", () => ({
+apps/api/src/db\auditQuery.test.ts:50:		mock.method(db, "insert", () => ({
+apps/api/src/db\auditQuery.test.ts:84:		mock.method(db, "insert", () => ({
+apps/api/src/db\documentQuery.ts:228: * routes/documents/issue.ts:57-59 ╨┤╨╗╤П ╨┐╤А╨╡╨╢╨╜╨╡╨╣ ╨┐╨╛╨┤╤Б╤В╨░╨╜╨╛╨▓╨║╨╕ ┬лmock-org┬╗.
+apps/web/src/ShiftView.tsx:494:				<section className="shift-todo" aria-label="╨з╤В╨╛ ╤Б╨┤╨╡╨╗╨░╤В╤М ╤Б╨╡╨╣╤З╨░╤Б">
+apps/web/src/ShiftView.tsx:495:					<div className="shift-todo-head">
+apps/web/src/ShiftView.tsx:497:						<span className="shift-todo-count">
+apps/web/src/ShiftView.tsx:509:						<ul className="shift-todo-list">
+apps/web/src/ShiftView.tsx:518:										className={`shift-todo-item priority-${action.priority}`}
+apps/web/src/ShiftView.tsx:521:											className={`shift-todo-priority priority-${action.priority}`}
+apps/web/src/ShiftView.tsx:526:										<div className="shift-todo-text">
+apps/web/src/ShiftView.tsx:530:												<span className="shift-todo-patient">
+apps/web/src/ShiftView.tsx:536:											className="secondary-button shift-todo-go"
+apps/api/src/db\settingsQuery.ts:469:		// InMemory is mock logic; we can just throw or return mock
+apps/api/src/tests\documents\guards.test.ts:22:	} as unknown as Payment; // Cast as Payment for partial mock
+apps/api/src/tests\documents\guards.test.ts:165:				} as any, // Cast as any because we might not be providing all the required fields for the application payload mock
+apps/api/src/db\tests\clinicalQuery.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/db\tests\clinicalQuery.test.ts:8:		mock.restoreAll();
+apps/api/src/db\tests\clinicalQuery.test.ts:11:		mock.restoreAll();
+apps/api/src/db\tests\clinicalQuery.test.ts:16:		mock.method(db, "select", () => {
+apps/api/src/tests\visitFlow.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\visitFlow.test.ts:8: * ╨а╨░╨╜╤М╤И╨╡ ╤Д╨░╨╣╨╗ ╨┐╨╛╨┤╨╝╨╡╨╜╤П╨╗ ╤Н╨║╤Б╨┐╨╛╤А╤В ╤З╨╡╤А╨╡╨╖ mock.method(visitDraft, ...) ╨┐╨╛╨▓╨╡╤А╤Е
+apps/api/src/tests\visitFlow.test.ts:31:		mock.method(
+apps/api/src/tests\visitFlow.test.ts:57:		mock.restoreAll();
+apps/api/src/db\tests\billingQuery.test.ts:2:import { afterEach, describe, mock, test } from "node:test";
+apps/api/src/db\tests\billingQuery.test.ts:72:	mock.method(db, "transaction", async (callback: (tx: unknown) => unknown) =>
+apps/api/src/db\tests\billingQuery.test.ts:80:		mock.restoreAll();
+apps/api/src/tests\db\patientsQuery.test.ts:40:		test.mock.restoreAll();
+apps/api/src/tests\db\patientsQuery.test.ts:44:		test.mock.restoreAll();
+apps/api/src/tests\db\patientsQuery.test.ts:51:		t.mock.method(db, "select", () => ({
+apps/api/src/tests\db\patientsQuery.test.ts:66:		t.mock.method(db, "insert", () => ({
+apps/api/src/tests\db\patientsQuery.test.ts:81:		t.mock.method(db, "update", () => ({
+apps/api/src/tests\db\patientsQuery.test.ts:101:		t.mock.method(db, "update", () => ({
+apps/api/src/tests\db\patientsQuery.test.ts:121:		t.mock.method(db, "select", () => ({
+apps/api/src/tests\db\patientsQuery.test.ts:148:		t.mock.method(db, "update", () => ({
+apps/api/src/tests\db\patientsQuery.test.ts:179:		t.mock.method(db, "update", () => ({
+apps/api/src/tests\db\clinicalQuery.test.ts:8:		test.mock.restoreAll();
+apps/api/src/tests\db\clinicalQuery.test.ts:12:		t.mock.method(db, "select", () => ({
+apps/api/src/tests\db\clinicalQuery.test.ts:23:		t.mock.method(db, "select", () => ({
+apps/api/src/tests\contract-breach-proofs.test.ts:17: * ╨Я╨Ю╨з╨Х╨Ь╨г ╨Ш╨Ч╨Т╨Х╨б╨в╨Э╨Ю-╨Ю╨в╨б╨г╨в╨б╨в╨Т╨г╨о╨й╨Ш╨Х ╨Я╨Ю╨Ь╨Х╨з╨Х╨Э╨л `todo`. ╨Т╨╛╤Б╨╡╨╝╤М ╨╝╨░╤А╤И╤А╤Г╤В╨╛╨▓ ╨╜╨╡ ╤Б╤Г╤Й╨╡╤Б╤В╨▓╤Г╤О╤В,
+apps/api/src/tests\contract-breach-proofs.test.ts:19: * ╨┐╨╛╤З╨╕╨╜╨╕╤В╤М ╤Б╨╡╨│╨╛╨┤╨╜╤П, ╨┐╤А╨╕╤Г╤З╨░╨╡╤В ╨╕╨│╨╜╨╛╤А╨╕╤А╨╛╨▓╨░╤В╤М ╨▓╤Л╨▓╨╛╨┤ тАФ ╨┐╨╛╤Н╤В╨╛╨╝╤Г ╨╛╨╜╨╕ ╨┐╨╛╨╝╨╡╤З╨╡╨╜╤Л `todo`:
+apps/api/src/tests\contract-breach-proofs.test.ts:21: * ╨┐╨╡╤З╨░╤В╨░╨╡╤В ╨╛╤В╨┤╨╡╨╗╤М╨╜╤Г╤О ╤Б╤В╤А╨╛╨║╤Г ╨╛ ╨┐╤А╨╛╤И╨╡╨┤╤И╨╡╨╝ `todo`-╤В╨╡╤Б╤В╨╡. ╨н╤В╨╛ ╤А╨╛╨▓╨╜╨╛ ╤В╨╛╤В ╤Б╨╕╨│╨╜╨░╨╗,
+apps/api/src/tests\contract-breach-proofs.test.ts:108: * ╨Я╨╛╨╝╨╡╤З╨╡╨╜╤Л `todo` ╨┤╨╛ ╤А╨╡╨░╨╗╨╕╨╖╨░╤Ж╨╕╨╕ тАФ ╤Б╨╝. ╨╖╨░╨│╨╛╨╗╨╛╨▓╨╛╨║ ╤Д╨░╨╣╨╗╨░.
+apps/api/src/tests\contract-breach-proofs.test.ts:112:	todo: "╨╝╨░╤А╤И╤А╤Г╤В ╨╜╨╡ ╤А╨╡╨░╨╗╨╕╨╖╨╛╨▓╨░╨╜; EgiszMonitor ╤Б╨╝╨╛╨╜╤В╨╕╤А╨╛╨▓╨░╨╜ ╨▓ VisitOdontogramTab.tsx:139",
+apps/api/src/tests\contract-breach-proofs.test.ts:121:	todo: "╨╝╨░╤А╤И╤А╤Г╤В ╨╜╨╡ ╤А╨╡╨░╨╗╨╕╨╖╨╛╨▓╨░╨╜; ╨▓╨╕╨┤╨╢╨╡╤В ╤Б╨╝╨╛╨╜╤В╨╕╤А╨╛╨▓╨░╨╜ ╨▓ SettingsView.tsx:1945",
+apps/api/src/tests\contract-breach-proofs.test.ts:127:	todo: "╨╝╨░╤А╤И╤А╤Г╤В ╨╜╨╡ ╤А╨╡╨░╨╗╨╕╨╖╨╛╨▓╨░╨╜; ╨▓╨╕╨┤╨╢╨╡╤В ╤Б╨╝╨╛╨╜╤В╨╕╤А╨╛╨▓╨░╨╜ ╨▓ SettingsView.tsx:1946",
+apps/api/src/tests\contract-breach-proofs.test.ts:133:	todo: "╨╝╨░╤А╤И╤А╤Г╤В ╨╜╨╡ ╤А╨╡╨░╨╗╨╕╨╖╨╛╨▓╨░╨╜; ╨▓╨║╨╗╨░╨┤╨║╨░ ╤Б╨╝╨╛╨╜╤В╨╕╤А╨╛╨▓╨░╨╜╨░ ╨▓ SettingsView.tsx:1861, ╤В╨░╨▒╨╗╨╕╤Ж╤Л clinic_workflows ╨▓ ╤Б╤Е╨╡╨╝╨╡ ╨Э╨Х╨в тАФ ╨╜╤Г╨╢╨╜╨░ ╨╝╨╕╨│╤А╨░╤Ж╨╕╤П",
+apps/api/src/tests\contract-breach-proofs.test.ts:139:	todo: "╨╝╨░╤А╤И╤А╤Г╤В ╨╜╨╡ ╤А╨╡╨░╨╗╨╕╨╖╨╛╨▓╨░╨╜; ╨Ш╨Ч╨Ь╨Х╨а╨Х╨Э╨Ю: ╨┐╤А╨╡╨╢╨╜╨╕╨╣ 400 ╨┤╨░╨▓╨░╨╗ ╤А╨░╨╖╨▒╨╛╤А╤Й╨╕╨║ ╤В╨╡╨╗╨░ ╨╜╨░ ╨┐╤Г╤Б╤В╨╛╨╝ ╤В╨╡╨╗╨╡, ╨░ ╨╜╨╡ ╨╝╨░╤А╤И╤А╤Г╤В",
+apps/api/src/tests\contract-breach-proofs.test.ts:149:	todo: "╨╝╨░╤А╤И╤А╤Г╤В ╨╜╨╡ ╤А╨╡╨░╨╗╨╕╨╖╨╛╨▓╨░╨╜",
+apps/api/src/tests\contract-breach-proofs.test.ts:158:	todo: "╨╝╨░╤А╤И╤А╤Г╤В ╨╜╨╡ ╤А╨╡╨░╨╗╨╕╨╖╨╛╨▓╨░╨╜",
+apps/api/src/tests\contract-breach-proofs.test.ts:167:	todo: "╨╝╨░╤А╤И╤А╤Г╤В ╨╜╨╡ ╤А╨╡╨░╨╗╨╕╨╖╨╛╨▓╨░╨╜ ╨┐╤А╨╕ ╤Б╤Г╤Й╨╡╤Б╤В╨▓╤Г╤О╤Й╨╡╨╝ ╨╛╤А╨║╨╡╤Б╤В╤А╨░╤В╨╛╤А╨╡",
+apps/api/src/tests\telegramTransport.test.ts:2:import { afterEach, describe, mock, test } from "node:test";
+apps/api/src/tests\telegramTransport.test.ts:10:		mock.restoreAll();
+apps/api/src/tests\telegramTransport.test.ts:20:		globalThis.fetch = mock.fn(async () => {
+apps/api/src/tests\telegramTransport.test.ts:40:		globalThis.fetch = mock.fn(async () => {
+apps/api/src/tests\telegramTransport.test.ts:60:		globalThis.fetch = mock.fn(async () => {
+apps/api/src/tests\telegramTransport.test.ts:80:		globalThis.fetch = mock.fn(async () => {
+apps/api/src/tests\telegramTransport.test.ts:98:		globalThis.fetch = mock.fn(async () => {
+apps/web/src/styles\main.css:1713:.shift-todo {
+apps/web/src/styles\main.css:1721:.shift-todo-head {
+apps/web/src/styles\main.css:1729:.shift-todo-head h2 {
+apps/web/src/styles\main.css:1735:.shift-todo-count {
+apps/web/src/styles\main.css:1741:.shift-todo-list {
+apps/web/src/styles\main.css:1749:.shift-todo-item {
+apps/web/src/styles\main.css:1761:.shift-todo-item.priority-urgent {
+apps/web/src/styles\main.css:1765:.shift-todo-item.priority-important {
+apps/web/src/styles\main.css:1771:.shift-todo-priority {
+apps/web/src/styles\main.css:1785:.shift-todo-priority.priority-urgent {
+apps/web/src/styles\main.css:1790:.shift-todo-priority.priority-important {
+apps/web/src/styles\main.css:1795:.shift-todo-priority.priority-routine {
+apps/web/src/styles\main.css:1800:.shift-todo-text strong {
+apps/web/src/styles\main.css:1806:.shift-todo-text p {
+apps/web/src/styles\main.css:1812:.shift-todo-patient {
+apps/web/src/styles\main.css:1820:.shift-todo-go {
+apps/web/src/styles\main.css:1825:	.shift-todo-item {
+apps/web/src/styles\main.css:1829:	.shift-todo-go {
+apps/api/src/speech\tests\tunnel.test.ts:5:import { afterEach, beforeEach, describe, it, mock, test } from "node:test";
+apps/api/src/speech\tests\tunnel.test.ts:16:		mock.method(global, "setTimeout", (cb: Function) => cb()); // mock delay
+apps/api/src/speech\tests\tunnel.test.ts:21:		mock.restoreAll();
+apps/api/src/speech\tests\tunnel.test.ts:50:			once: mock.fn((event: string, cb: Function) => {
+apps/api/src/speech\tests\tunnel.test.ts:54:			listen: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:55:			close: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:57:		mock.method(net, "createServer", () => serverMock);
+apps/api/src/speech\tests\tunnel.test.ts:69:			once: mock.fn((event: string, cb: Function) => {
+apps/api/src/speech\tests\tunnel.test.ts:73:			listen: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:74:			close: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:76:		mock.method(net, "createServer", () => serverMock);
+apps/api/src/speech\tests\tunnel.test.ts:78:		mock.method(fs, "existsSync", () => false);
+apps/api/src/speech\tests\tunnel.test.ts:91:			once: mock.fn((event: string, cb: Function) => {
+apps/api/src/speech\tests\tunnel.test.ts:101:			listen: mock.fn(() => {
+apps/api/src/speech\tests\tunnel.test.ts:104:			close: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:106:		mock.method(net, "createServer", () => serverMock);
+apps/api/src/speech\tests\tunnel.test.ts:108:		mock.method(fs, "existsSync", () => true);
+apps/api/src/speech\tests\tunnel.test.ts:111:			unref: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:112:			kill: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:114:		mock.method(cp, "spawn", () => spawnMock);
+apps/api/src/speech\tests\tunnel.test.ts:120:		assert.strictEqual(spawnMock.kill.mock.calls.length, 1);
+apps/api/src/speech\tests\tunnel.test.ts:129:			once: mock.fn((event: string, cb: Function) => {
+apps/api/src/speech\tests\tunnel.test.ts:134:			listen: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:135:			close: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:137:		mock.method(net, "createServer", () => serverMock);
+apps/api/src/speech\tests\tunnel.test.ts:139:		mock.method(fs, "existsSync", () => true);
+apps/api/src/speech\tests\tunnel.test.ts:142:			unref: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:143:			kill: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:145:		mock.method(cp, "spawn", () => spawnMock);
+apps/api/src/speech\tests\tunnel.test.ts:157:			once: mock.fn((event: string, cb: Function) => {
+apps/api/src/speech\tests\tunnel.test.ts:161:			listen: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:162:			close: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:164:		mock.method(net, "createServer", () => serverMock);
+apps/api/src/speech\tests\tunnel.test.ts:166:		mock.method(fs, "existsSync", () => true);
+apps/api/src/speech\tests\tunnel.test.ts:168:		mock.method(cp, "spawn", () => {
+apps/api/src/speech\tests\tunnel.test.ts:183:			once: mock.fn((event: string, cb: Function) => {
+apps/api/src/speech\tests\tunnel.test.ts:191:			listen: mock.fn(() => callCount++),
+apps/api/src/speech\tests\tunnel.test.ts:192:			close: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:194:		mock.method(net, "createServer", () => serverMock);
+apps/api/src/speech\tests\tunnel.test.ts:196:		mock.method(fs, "existsSync", () => true);
+apps/api/src/speech\tests\tunnel.test.ts:199:			unref: mock.fn(),
+apps/api/src/speech\tests\tunnel.test.ts:200:			kill: mock.fn(() => {
+apps/api/src/speech\tests\tunnel.test.ts:204:		mock.method(cp, "spawn", () => spawnMock);
+apps/api/src/speech\tests\tunnel.test.ts:211:		assert.strictEqual(spawnMock.kill.mock.calls.length, 1);
+apps/api/src/speech\tests\tunnel.test.ts:222:		mock.restoreAll();
+apps/api/src/speech\tests\tunnel.test.ts:239:		mock.method(cp, "spawn", () => {
+apps/api/src/speech\tests\tunnel.test.ts:243:		mock.method(fs, "existsSync", () => true);
+apps/api/src/speech\tests\tunnel.test.ts:245:		mock.method(net, "createServer", () => ({
+apps/api/src/speech\tests\tunnel.test.ts:254:		const consoleErrorMock = mock.method(console, "error", () => {});
+apps/api/src/speech\tests\tunnel.test.ts:264:		assert.strictEqual(consoleErrorMock.mock.calls.length, 1);
+apps/api/src/speech\tests\tunnel.test.ts:266:			consoleErrorMock.mock.calls[0]?.arguments[0],
+apps/api/src/speech\tests\tunnel.test.ts:270:			consoleErrorMock.mock.calls[0]?.arguments[1].message,
+apps/api/src/tests\persistentStateExport.test.ts:6:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\persistentStateExport.test.ts:24:		mock.restoreAll();
+apps/api/src/tests\persistentStateExport.test.ts:95:		mock.method(console, "warn", () => {}); // Suppress expected warning from readPersistedState called via meta
+apps/web/src/tests\dateInputValueLocalDay.test.ts:25: * ╨з╨░╤Б╤Л ╨╖╨┤╨╡╤Б╤М ╨Я╨а╨Ш╨С╨Ш╨в╨л (`t.mock.timers`), ╨┐╨╛╤В╨╛╨╝╤Г ╤З╤В╨╛ ╨╕╨╜╨░╤З╨╡ ╨┐╤А╨╛╨▓╨╡╤А╨║╨░ ╨┐╤А╨╛╤Е╨╛╨┤╨╕╨╗╨░ ╨▒╤Л
+apps/web/src/tests\dateInputValueLocalDay.test.ts:40:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/web/src/tests\dateInputValueLocalDay.test.ts:50:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/web/src/tests\dateInputValueLocalDay.test.ts:55:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/web/src/tests\dateInputValueLocalDay.test.ts:60:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/web/src/tests\dateInputValueLocalDay.test.ts:66:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/web/src/tests\dateInputValueLocalDay.test.ts:71:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/web/src/tests\dateInputValueLocalDay.test.ts:81:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/api/src/tests\persistentState.test.ts:6:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\persistentState.test.ts:33:		mock.restoreAll();
+apps/api/src/tests\persistentState.test.ts:73:		mock.method(fs, "existsSync", () => false);
+apps/api/src/tests\persistentState.test.ts:80:		mock.method(fs, "existsSync", () => true);
+apps/api/src/tests\persistentState.test.ts:81:		mock.method(fs, "readFileSync", () => "{ invalid json");
+apps/api/src/tests\persistentState.test.ts:82:		mock.method(console, "warn", () => {});
+apps/api/src/tests\persistentState.test.ts:90:		mock.method(fs, "existsSync", () => true);
+apps/api/src/tests\persistentState.test.ts:91:		mock.method(fs, "readFileSync", () =>
+apps/api/src/tests\persistentState.test.ts:94:		mock.method(console, "warn", () => {});
+apps/api/src/tests\persistentState.test.ts:102:		mock.method(fs, "existsSync", () => true);
+apps/api/src/tests\persistentState.test.ts:103:		mock.method(fs, "readFileSync", () =>
+apps/api/src/tests\persistentState.test.ts:106:		mock.method(console, "warn", () => {});
+apps/api/src/tests\persistentState.test.ts:114:		mock.method(fs, "existsSync", () => true);
+apps/api/src/tests\persistentState.test.ts:115:		mock.method(fs, "readFileSync", () => {
+apps/api/src/tests\persistentState.test.ts:118:		mock.method(console, "warn", () => {}); // Suppress expected warning
+apps/api/src/tests\persistentState.test.ts:127:		mock.method(console, "warn", () => {}); // Suppress expected warning
+apps/api/src/tests\persistentState.test.ts:164:		mock.method(console, "warn", (message: string) => {
+apps/api/src/tests\persistentState.test.ts:199:		mock.restoreAll();
+apps/api/src/tests\persistentState.test.ts:244:		mock.method(console, "warn", () => {});
+apps/api/src/tests\persistentState.test.ts:298:		mock.restoreAll();
+apps/api/src/tests\persistentState.test.ts:423:		mock.method(fs.promises, "readFile", () => {
+apps/api/src/tests\persistentState.test.ts:477:		mock.restoreAll();
+apps/api/src/tests\persistentState.test.ts:598:		mock.method(console, "warn", (message: string) => {
+apps/api/src/tests\ai\visitFlow.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\ai\visitFlow.test.ts:40:		mock.restoreAll();
+apps/api/src/tests\ai\visitFlow.test.ts:55:		mock.method(globalThis, "fetch", async (_url: any, init: any) => {
+apps/web/src/tests\ctPlanningMeasurementPlan.test.ts:20:		label: "mock",
+apps/api/src/tests\keyPool.test.ts:2:import { afterEach, describe, mock, test } from "node:test";
+apps/api/src/tests\keyPool.test.ts:14:		mock.restoreAll();
+apps/api/src/tests\keyPool.test.ts:18:		globalThis.fetch = mock.fn(async () => {
+apps/api/src/tests\keyPool.test.ts:31:		globalThis.fetch = mock.fn(async () => {
+apps/api/src/tests\keyPool.test.ts:55:		globalThis.fetch = mock.fn(async () => {
+apps/api/src/tests\ai\visitDraft.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\ai\visitDraft.test.ts:14:		mock.restoreAll();
+apps/api/src/tests\ai\visitDraft.test.ts:24:		mock.method(globalThis, "fetch", async () => {
+apps/api/src/tests\ai\visitDraft.test.ts:56:		mock.method(globalThis, "fetch", async () => {
+apps/api/src/tests\ai\visitDraft.test.ts:88:		mock.method(globalThis, "fetch", async () => {
+apps/api/src/tests\ai\visitDraft.test.ts:114:		mock.method(globalThis, "fetch", async () => {
+apps/api/src/tests\ai\visitDraft.test.ts:154:		mock.method(globalThis, "fetch", async () => {
+apps/api/src/tests\mutableStateFlushCoalescing.test.ts:5:import { after, before, describe, mock, test } from "node:test";
+apps/api/src/tests\mutableStateFlushCoalescing.test.ts:58:	mock.method(fs, "writeFileSync", ((
+apps/api/src/tests\mutableStateFlushCoalescing.test.ts:113:		mock.restoreAll();
+apps/api/src/tests\ai\dictationPromptClinicDay.test.ts:26: * ╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡╨╝ ╨┐╨╛ ╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В╤Б╤П `t.mock.timers`. ╨Ш╨╜╨░╤З╨╡ ╨┐╤А╨╛╨▓╨╡╤А╨║╨░ ╨┐╤А╨╛╤Е╨╛╨┤╨╕╨╗╨░
+apps/api/src/tests\ai\dictationPromptClinicDay.test.ts:78:		t.mock.timers.enable({ apis: ["Date"], now: PINNED_MS });
+apps/api/src/tests\ai\dictationPromptClinicDay.test.ts:87:		t.mock.timers.enable({ apis: ["Date"], now: PINNED_MS });
+apps/api/src/tests\routes\clinical.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\routes\clinical.test.ts:41:		mock.restoreAll();
+apps/api/src/tests\routes\clinical.test.ts:96:		mock.method(db, "select", () => ({
+apps/api/src/tests\routes\clinical.test.ts:156:		mock.method(db, "insert", () => ({
+apps/api/src/tests\routes\clinical.test.ts:231:		mock.method(db, "select", () => ({
+apps/api/src/tests\routes\clinical.test.ts:258:		mock.method(db, "update", () => ({
+apps/web/src/tests\leadsKanbanDefaultDay.test.ts:39:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/web/src/tests\leadsKanbanDefaultDay.test.ts:49:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/web/src/tests\leadsKanbanDefaultDay.test.ts:65:		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+apps/api/src/services\tests\postOpCareTrigger.test.ts:2:import { after, afterEach, describe, mock, test } from "node:test";
+apps/api/src/services\tests\postOpCareTrigger.test.ts:11: * ╨С╨╡╨╖ ╨╜╨╡╨│╨╛ mock.fn(async () => {}) ╨╛╨▒╤К╤П╨▓╨╗╤П╨╗ ╨┐╨╛╨┤╨╝╨╡╨╜╤С╨╜╨╜╤Г╤О ╤Д╤Г╨╜╨║╤Ж╨╕╤О ╨▓╨╛╨╛╨▒╤Й╨╡ ╨▒╨╡╨╖
+apps/api/src/services\tests\postOpCareTrigger.test.ts:26:		mock.restoreAll();
+apps/api/src/services\tests\postOpCareTrigger.test.ts:30:		const valuesMock = mock.fn(
+apps/api/src/services\tests\postOpCareTrigger.test.ts:33:		mock.method(db, "insert", (schema) => {
+apps/api/src/services\tests\postOpCareTrigger.test.ts:40:		assert.strictEqual(valuesMock.mock.calls.length, 1);
+apps/api/src/services\tests\postOpCareTrigger.test.ts:41:		const insertCall = valuesMock.mock.calls[0];
+apps/api/src/tests\env\loadServerEnv.test.ts:5:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\env\loadServerEnv.test.ts:17:		mock.restoreAll();
+apps/api/src/tests\env\loadServerEnv.test.ts:37:		mock.restoreAll();
+apps/api/src/tests\env\loadServerEnv.test.ts:90:				"The environment variable from the mock file should be loaded",
+apps/api/src/tests\env\loadServerEnv.test.ts:104:			const warnMock = mock.method(console, "warn", () => {});
+apps/api/src/tests\env\loadServerEnv.test.ts:120:				warnMock.mock.calls.length > 0,
+apps/api/src/tests\env\loadServerEnv.test.ts:123:			const firstWarn = warnMock.mock.calls[0];
+apps/api/src/tests\routes\visits.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\routes\visits.test.ts:47:		mock.restoreAll();
+apps/web/src/tests\panelsAreMounted.test.ts:684:	 * ╤Н╨║╤А╨░╨╜ ╤Б╨╝╨╡╨╜╤Л. ╨Э╨░ ╨╡╤С ╨╝╨╡╤Б╤В╨╡ ╨╢╨╕╨▓╤С╤В ╤Б╨╡╨║╤Ж╨╕╤П shift-todo ┬л╨з╤В╨╛ ╤Б╨┤╨╡╨╗╨░╤В╤М ╤Б╨╡╨╣╤З╨░╤Б┬╗
+apps/api/src/tests\routes\clinicalRuleDelete.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\routes\clinicalRuleDelete.test.ts:138:		mock.method(db, "delete", () => ({
+apps/api/src/tests\routes\clinicalRuleDelete.test.ts:150:		mock.method(db, "select", () => ({
+apps/api/src/tests\routes\clinicalRuleDelete.test.ts:164:		mock.restoreAll();
+apps/web/src/components\dicom\Cornerstone3DViewer.tsx:769:		// 1. We mock the physical placing in 3D world space (DICOM coords)
+apps/web/src/components\dicom\Cornerstone3DViewer.tsx:773:		// 2. We mock nerve spline
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:8:		t.mock.timers.enable({ apis: ["Date"] });
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:11:		t.mock.timers.setTime(fixedDate.getTime());
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:68:		t.mock.timers.enable({ apis: ["Date"] });
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:70:		t.mock.timers.setTime(fixedDate.getTime());
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:96:		t.mock.timers.enable({ apis: ["Date"] });
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:98:		t.mock.timers.setTime(fixedDate.getTime());
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:130:		t.mock.timers.enable({ apis: ["Date"] });
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:133:		t.mock.timers.setTime(generationNow.getTime());
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:2758:		t.mock.timers.enable({ apis: ["Date"] });
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:2759:		t.mock.timers.setTime(new Date("2024-05-15T12:00:00.000Z").getTime());
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:2848:		t.mock.timers.enable({ apis: ["Date"] });
+apps/api/src/services\tests\egiszCdaGenerator.test.ts:2849:		t.mock.timers.setTime(new Date("2024-05-15T12:00:00.000Z").getTime());
+apps/api/src/tests\accessGuard.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/tests\accessGuard.test.ts:16:		process.env.TEST_ADMIN_SECRET || `mock-admin-secret-${Date.now()}`;
+apps/api/src/tests\accessGuard.test.ts:22:	let sendMock: ReturnType<typeof mock.fn>;
+apps/api/src/tests\accessGuard.test.ts:23:	let codeMock: ReturnType<typeof mock.fn>;
+apps/api/src/tests\accessGuard.test.ts:28:		sendMock = mock.fn();
+apps/api/src/tests\accessGuard.test.ts:29:		codeMock = mock.fn((_code: number) => ({ send: sendMock }));
+apps/api/src/tests\accessGuard.test.ts:42:		mock.restoreAll();
+apps/api/src/tests\accessGuard.test.ts:90:			assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 503);
+apps/api/src/tests\accessGuard.test.ts:91:			assert.deepStrictEqual(sendMock.mock.calls[0]?.arguments[0], {
+apps/api/src/tests\accessGuard.test.ts:109:			assert.strictEqual(codeMock.mock.calls.length, 0);
+apps/api/src/tests\accessGuard.test.ts:122:			assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 503);
+apps/api/src/tests\accessGuard.test.ts:132:			assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
+apps/api/src/tests\accessGuard.test.ts:133:			assert.deepStrictEqual(sendMock.mock.calls[0]?.arguments[0], {
+apps/api/src/tests\accessGuard.test.ts:149:			assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
+apps/api/src/tests\accessGuard.test.ts:161:			assert.strictEqual(codeMock.mock.calls.length, 0);
+apps/api/src/tests\accessGuard.test.ts:200:			assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 503);
+apps/api/src/tests\accessGuard.test.ts:201:			assert.deepStrictEqual(sendMock.mock.calls[0]?.arguments[0], {
+apps/api/src/tests\accessGuard.test.ts:219:			assert.strictEqual(codeMock.mock.calls.length, 0);
+apps/api/src/tests\accessGuard.test.ts:232:			assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 503);
+apps/api/src/tests\accessGuard.test.ts:243:			assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
+apps/api/src/tests\accessGuard.test.ts:244:			assert.deepStrictEqual(sendMock.mock.calls[0]?.arguments[0], {
+apps/api/src/tests\accessGuard.test.ts:260:			assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
+apps/api/src/tests\accessGuard.test.ts:272:			assert.strictEqual(codeMock.mock.calls.length, 0);
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:100:	t.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:101:	const setTimeoutMock = t.mock.method(global, "setTimeout");
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:102:	const setIntervalMock = t.mock.method(global, "setInterval");
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:105:	t.mock.method(db, "select", () => {
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:114:	assert.strictEqual(setTimeoutMock.mock.calls.length, 1);
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:115:	assert.strictEqual(setTimeoutMock.mock.calls[0]?.arguments[1], 5000);
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:117:	assert.strictEqual(setIntervalMock.mock.calls.length, 1);
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:119:		setIntervalMock.mock.calls[0]?.arguments[1],
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:129:	t.mock.timers.tick(5000);
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:138:	t.mock.timers.tick(1000 * 60 * 60);
+apps/api/src/services\tests\biAnalyticsWorker.test.ts:147:	t.mock.timers.reset();
+apps/api/src/services\notificationWorker.test.ts:10:		const setIntervalMock = t.mock.method(
+apps/api/src/services\notificationWorker.test.ts:20:		const dbSelectMock = t.mock.method(db, "select", () => {
+apps/api/src/services\notificationWorker.test.ts:32:		assert.strictEqual(setIntervalMock.mock.callCount(), 1);
+apps/api/src/services\notificationWorker.test.ts:33:		const intervalCall = setIntervalMock.mock.calls[0];
+apps/api/src/services\notificationWorker.test.ts:42:		assert.strictEqual(dbSelectMock.mock.callCount(), 1);
+apps/api/src/services\backupWorker.test.ts:57:		test.mock.method(process, "cwd", () => path.join(tempDir, "a", "b"));
+apps/api/src/services\backupWorker.test.ts:65:		test.mock.restoreAll();
+apps/api/src/services\backupWorker.test.ts:75:		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
+apps/api/src/services\backupWorker.test.ts:77:		const logMock = t.mock.method(console, "log", () => {});
+apps/api/src/services\backupWorker.test.ts:81:		assert.strictEqual(logMock.mock.callCount(), 1, "Should log start message");
+apps/api/src/services\backupWorker.test.ts:82:		const startLog = logMock.mock.calls[0];
+apps/api/src/services\backupWorker.test.ts:89:		const logs = logMock.mock.calls.map((c: any) => c.arguments[0]).join(" ");
+apps/api/src/services\backupWorker.test.ts:93:		const callsAfterStop = logMock.mock.callCount();
+apps/api/src/services\backupWorker.test.ts:94:		t.mock.timers.tick(24 * 60 * 60 * 1000);
+apps/api/src/services\backupWorker.test.ts:96:			logMock.mock.callCount(),
+apps/api/src/services\backupWorker.test.ts:103:		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
+apps/api/src/services\backupWorker.test.ts:104:		const logMock = t.mock.method(console, "log", () => {});
+apps/api/src/services\backupWorker.test.ts:111:		assert.strictEqual(logMock.mock.callCount(), 1);
+apps/api/src/services\backupWorker.test.ts:115:		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
+apps/api/src/services\backupWorker.test.ts:118:		const logMock = t.mock.method(console, "log", () => {});
+apps/api/src/services\backupWorker.test.ts:119:		const errorMock = t.mock.method(console, "error", () => {});
+apps/api/src/services\backupWorker.test.ts:124:		assert.strictEqual(logMock.mock.callCount(), 0);
+apps/api/src/services\backupWorker.test.ts:125:		assert.strictEqual(errorMock.mock.callCount(), 1);
+apps/api/src/services\backupWorker.test.ts:126:		const disabledError = errorMock.mock.calls[0];
+apps/api/src/services\backupWorker.test.ts:132:		assert.strictEqual(logMock.mock.callCount(), 0);
+apps/api/src/services\backupWorker.test.ts:136:		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
+apps/api/src/services\backupWorker.test.ts:139:		const logMock = t.mock.method(console, "log", () => {});
+apps/api/src/services\backupWorker.test.ts:140:		const errorMock = t.mock.method(console, "error", () => {});
+apps/api/src/services\backupWorker.test.ts:144:		assert.strictEqual(logMock.mock.callCount(), 0);
+apps/api/src/services\backupWorker.test.ts:145:		assert.strictEqual(errorMock.mock.callCount(), 1);
+apps/api/src/services\backupWorker.test.ts:146:		const shortKeyError = errorMock.mock.calls[0];
+apps/api/src/routes\auth.test.ts:3:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/routes\auth.test.ts:21:		mock.restoreAll();
+apps/api/src/routes\auth.test.ts:35:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:54:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:71:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:85:			mock.method(db, "insert", () => ({
+apps/api/src/routes\auth.test.ts:86:				values: async () => {}, // mock audit event insertion
+apps/api/src/routes\auth.test.ts:120:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:134:			mock.restoreAll();
+apps/api/src/routes\auth.test.ts:135:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:165:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:180:			mock.method(db, "insert", () => ({
+apps/api/src/routes\auth.test.ts:212:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:230:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:280:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:299:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:386:			mock.method(db, "select", reject("select"));
+apps/api/src/routes\auth.test.ts:387:			mock.method(db, "update", reject("update"));
+apps/api/src/routes\auth.test.ts:388:			mock.method(db, "insert", reject("insert"));
+apps/api/src/routes\auth.test.ts:394:			mock.method(db, "select", () => ({
+apps/api/src/routes\auth.test.ts:401:			mock.method(db, "update", () => ({
+apps/api/src/routes\auth.test.ts:406:			mock.method(db, "insert", () => ({
+apps/api/src/routes\auth.test.ts:693:			mock.restoreAll();
+apps/api/src/routes\chat.ts:64:			// Wait, "No mock interfaces. Every line of React/Fastify/TS/JS produced by ANY agent MUST be production-ready."
+apps/api/src/routes\dicomweb.test.ts:18: * ╤З╨╡╤А╨╡╨╖ t.mock.method, ╨║╨░╨║ ╨▓ db/billingQuery.test.ts.
+apps/api/src/routes\dicomweb.test.ts:134:	t.mock.method(db, "select", select);
+apps/api/src/routes\dicomweb.test.ts:150:	t.mock.method(
+apps/api/src/routes\documents.test.ts:12:		// Mock mkdtemp and writeFile to succeed so we enter the try block smoothly and avoid real I/O
+apps/api/src/routes\documents.test.ts:13:		t.mock.method(fsPromises, "mkdtemp", async () => "/mock/tmp/dir");
+apps/api/src/routes\documents.test.ts:14:		t.mock.method(fsPromises, "writeFile", async () => {});
+apps/api/src/routes\documents.test.ts:16:		// Mock rm to ensure the finally block does not perform real I/O operations
+apps/api/src/routes\documents.test.ts:17:		t.mock.method(fsPromises, "rm", async () => {});
+apps/api/src/routes\documents.test.ts:20:		t.mock.method(global, "setTimeout", () => {
+apps/api/src/routes\documents\html.ts:30:			// ╨С╨л╨Ы╨Ю: ╨┐╤А╨╕ ╨╛╤В╤Б╤Г╤В╤Б╤В╨▓╨╕╨╕/╨╜╨╡╨▓╨░╨╗╨╕╨┤╨╜╨╛╤Б╤В╨╕ ╤В╨╛╨║╨╡╨╜╨░ ╨┐╨╛╨┤╤Б╤В╨░╨▓╨╗╤П╨╗╨░╤Б╤М ╤Б╤В╤А╨╛╨║╨░ "mock-org".
+apps/api/src/routes\documents\html.ts:32:			// ╨░ ╨▓ uuid-╨║╨╛╨╗╨╛╨╜╨║╤Г ╤Г╤Е╨╛╨┤╨╕╨╗╨╛ "mock-org" тЖТ 500 ╨╜╨░ ╨║╨░╨╢╨┤╨╛╨╝ ╨╝╨░╤А╤И╤А╤Г╤В╨╡ ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨▓.
+apps/api/src/routes\documents\auditFacts.ts:15:		// ╨С╨л╨Ы╨Ю: ╨┐╤А╨╕ ╨╛╤В╤Б╤Г╤В╤Б╤В╨▓╨╕╨╕/╨╜╨╡╨▓╨░╨╗╨╕╨┤╨╜╨╛╤Б╤В╨╕ ╤В╨╛╨║╨╡╨╜╨░ ╨┐╨╛╨┤╤Б╤В╨░╨▓╨╗╤П╨╗╨░╤Б╤М ╤Б╤В╤А╨╛╨║╨░ "mock-org".
+apps/api/src/routes\documents\auditFacts.ts:17:		// ╨░ ╨▓ uuid-╨║╨╛╨╗╨╛╨╜╨║╤Г ╤Г╤Е╨╛╨┤╨╕╨╗╨╛ "mock-org" тЖТ 500 ╨╜╨░ ╨║╨░╨╢╨┤╨╛╨╝ ╨╝╨░╤А╤И╤А╤Г╤В╨╡ ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨▓.
+apps/api/src/routes\imaging.test.ts:2:import { afterEach, describe, mock, test } from "node:test";
+apps/api/src/routes\imaging.test.ts:8:		mock.restoreAll();
+apps/api/src/routes\imaging.test.ts:18:		const result = await parseDicomSeriesManifest("mock-org", input);
+apps/api/src/routes\imports.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/routes\imports.test.ts:25:		mock.method(db, "select", () => ({
+apps/api/src/routes\imports.test.ts:31:		mock.restoreAll();
+apps/api/src/routes\documents\create.ts:49:		// ╨С╨л╨Ы╨Ю: ╨┐╤А╨╕ ╨╛╤В╤Б╤Г╤В╤Б╤В╨▓╨╕╨╕/╨╜╨╡╨▓╨░╨╗╨╕╨┤╨╜╨╛╤Б╤В╨╕ ╤В╨╛╨║╨╡╨╜╨░ ╨┐╨╛╨┤╤Б╤В╨░╨▓╨╗╤П╨╗╨░╤Б╤М ╤Б╤В╤А╨╛╨║╨░ "mock-org".
+apps/api/src/routes\documents\create.ts:51:		// ╨░ ╨▓ uuid-╨║╨╛╨╗╨╛╨╜╨║╤Г ╤Г╤Е╨╛╨┤╨╕╨╗╨╛ "mock-org" тЖТ 500 ╨╜╨░ ╨║╨░╨╢╨┤╨╛╨╝ ╨╝╨░╤А╤И╤А╤Г╤В╨╡ ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨▓.
+apps/api/src/routes\documents\void.ts:26:		// ╨С╨л╨Ы╨Ю: ╨┐╤А╨╕ ╨╛╤В╤Б╤Г╤В╤Б╤В╨▓╨╕╨╕/╨╜╨╡╨▓╨░╨╗╨╕╨┤╨╜╨╛╤Б╤В╨╕ ╤В╨╛╨║╨╡╨╜╨░ ╨┐╨╛╨┤╤Б╤В╨░╨▓╨╗╤П╨╗╨░╤Б╤М ╤Б╤В╤А╨╛╨║╨░ "mock-org".
+apps/api/src/routes\documents\void.ts:28:		// ╨░ ╨▓ uuid-╨║╨╛╨╗╨╛╨╜╨║╤Г ╤Г╤Е╨╛╨┤╨╕╨╗╨╛ "mock-org" тЖТ 500 ╨╜╨░ ╨║╨░╨╢╨┤╨╛╨╝ ╨╝╨░╤А╤И╤А╤Г╤В╨╡ ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨▓.
+apps/api/src/routes\documents\taxXml.ts:39:	// ╨С╨л╨Ы╨Ю: ╨┐╤А╨╕ ╨╛╤В╤Б╤Г╤В╤Б╤В╨▓╨╕╨╕/╨╜╨╡╨▓╨░╨╗╨╕╨┤╨╜╨╛╤Б╤В╨╕ ╤В╨╛╨║╨╡╨╜╨░ ╨┐╨╛╨┤╤Б╤В╨░╨▓╨╗╤П╨╗╨░╤Б╤М ╤Б╤В╤А╨╛╨║╨░ "mock-org".
+apps/api/src/routes\documents\taxXml.ts:41:	// ╨░ ╨▓ uuid-╨║╨╛╨╗╨╛╨╜╨║╤Г ╤Г╤Е╨╛╨┤╨╕╨╗╨╛ "mock-org" тЖТ 500 ╨╜╨░ ╨║╨░╨╢╨┤╨╛╨╝ ╨╝╨░╤А╤И╤А╤Г╤В╨╡ ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨▓.
+apps/api/src/routes\documents\issue.ts:47:		// ╨С╨л╨Ы╨Ю: ╨┐╤А╨╕ ╨╛╤В╤Б╤Г╤В╤Б╤В╨▓╨╕╨╕/╨╜╨╡╨▓╨░╨╗╨╕╨┤╨╜╨╛╤Б╤В╨╕ ╤В╨╛╨║╨╡╨╜╨░ ╨┐╨╛╨┤╤Б╤В╨░╨▓╨╗╤П╨╗╨░╤Б╤М ╤Б╤В╤А╨╛╨║╨░ "mock-org".
+apps/api/src/routes\documents\issue.ts:49:		// ╨░ ╨▓ uuid-╨║╨╛╨╗╨╛╨╜╨║╤Г ╤Г╤Е╨╛╨┤╨╕╨╗╨╛ "mock-org" тЖТ 500 ╨╜╨░ ╨║╨░╨╢╨┤╨╛╨╝ ╨╝╨░╤А╤И╤А╤Г╤В╨╡ ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨▓.
+apps/api/src/routes\documents\pdf.ts:43:			// ╨С╨л╨Ы╨Ю: ╨┐╤А╨╕ ╨╛╤В╤Б╤Г╤В╤Б╤В╨▓╨╕╨╕/╨╜╨╡╨▓╨░╨╗╨╕╨┤╨╜╨╛╤Б╤В╨╕ ╤В╨╛╨║╨╡╨╜╨░ ╨┐╨╛╨┤╤Б╤В╨░╨▓╨╗╤П╨╗╨░╤Б╤М ╤Б╤В╤А╨╛╨║╨░ "mock-org".
+apps/api/src/routes\documents\pdf.ts:45:			// ╨░ ╨▓ uuid-╨║╨╛╨╗╨╛╨╜╨║╤Г ╤Г╤Е╨╛╨┤╨╕╨╗╨╛ "mock-org" тЖТ 500 ╨╜╨░ ╨║╨░╨╢╨┤╨╛╨╝ ╨╝╨░╤А╤И╤А╤Г╤В╨╡ ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨▓.
+apps/api/src/routes\documents\pdf.ts:123:			// ╨С╨л╨Ы╨Ю: ╨┐╤А╨╕ ╨╛╤В╤Б╤Г╤В╤Б╤В╨▓╨╕╨╕/╨╜╨╡╨▓╨░╨╗╨╕╨┤╨╜╨╛╤Б╤В╨╕ ╤В╨╛╨║╨╡╨╜╨░ ╨┐╨╛╨┤╤Б╤В╨░╨▓╨╗╤П╨╗╨░╤Б╤М ╤Б╤В╤А╨╛╨║╨░ "mock-org".
+apps/api/src/routes\documents\pdf.ts:125:			// ╨░ ╨▓ uuid-╨║╨╛╨╗╨╛╨╜╨║╤Г ╤Г╤Е╨╛╨┤╨╕╨╗╨╛ "mock-org" тЖТ 500 ╨╜╨░ ╨║╨░╨╢╨┤╨╛╨╝ ╨╝╨░╤А╤И╤А╤Г╤В╨╡ ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨▓.
+apps/api/src/routes\visits.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/routes\visits.test.ts:32:		mock.restoreAll();
+apps/api/src/routes\visits.test.ts:146:		mock.restoreAll();
+apps/api/src/routes\settings.test.ts:2:import { afterEach, beforeEach, describe, mock, test } from "node:test";
+apps/api/src/routes\settings.test.ts:28:	let codeMock: ReturnType<typeof mock.fn>;
+apps/api/src/routes\settings.test.ts:31:		codeMock = mock.fn((_code: number) => mockReply as FastifyReply);
+apps/api/src/routes\settings.test.ts:39:		mock.restoreAll();
+apps/api/src/routes\settings.test.ts:49:		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
+apps/api/src/routes\settings.test.ts:65:		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
+apps/api/src/routes\settings.test.ts:81:		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
+apps/api/src/routes\settings.test.ts:97:		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
+apps/api/src/routes\settings.test.ts:113:		assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 409);
+apps/api/src/routes\tests\imaging.test.ts:2:import { after, afterEach, before, describe, it, mock } from "node:test";
+apps/api/src/routes\tests\imaging.test.ts:13: * orgId "mock-org". ╨Ь╨░╤Б╤Б╨╕╨▓ ╨╜╨╡ ╨┐╨╛╨┐╨╛╨╗╨╜╤П╨╗╤Б╤П ╨╜╨╕╨║╨╛╨│╨┤╨░, ╨░ ╨╖╨░╨┐╤А╨╛╤Б ╤Г╤Е╨╛╨┤╨╕╨╗ ╨▓ ╨╢╨╕╨▓╤Г╤О ╨▒╨░╨╖╤Г
+apps/api/src/routes\tests\imaging.test.ts:14: * ╨╕ ╨┐╨░╨┤╨░╨╗ ╨╜╨░ ┬лinvalid input syntax for type uuid: "mock-org"┬╗. ╨в╨╛ ╨╡╤Б╤В╤М
+apps/api/src/routes\tests\imaging.test.ts:79:		mock.restoreAll();
+apps/api/src/routes\tests\imaging.test.ts:88:		mock.method(db, "select", () => ({
+apps/api/src/routes\tests\imaging.test.ts:93:		mock.method(db, "insert", () => ({
+apps/api/src/routes\tests\imaging.test.ts:160:		mock.method(db, "insert", () => {

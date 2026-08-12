@@ -8225,6 +8225,7 @@ export declare const visitSchema: z.ZodObject<{
     patientId: z.ZodString;
     appointmentId: z.ZodNullable<z.ZodString>;
     status: z.ZodEnum<["draft", "signed", "voided"]>;
+    qualityControlStatus: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     revision: z.ZodDefault<z.ZodNumber>;
     complaint: z.ZodNullable<z.ZodString>;
     anamnesis: z.ZodNullable<z.ZodString>;
@@ -8249,6 +8250,7 @@ export declare const visitSchema: z.ZodObject<{
     diagnosis: string | null;
     treatmentPlan: string | null;
     doctorSummary: string | null;
+    qualityControlStatus?: string | null | undefined;
 }, {
     status: "draft" | "signed" | "voided";
     id: string;
@@ -8263,6 +8265,7 @@ export declare const visitSchema: z.ZodObject<{
     diagnosis: string | null;
     treatmentPlan: string | null;
     doctorSummary: string | null;
+    qualityControlStatus?: string | null | undefined;
     revision?: number | undefined;
 }>;
 export type Visit = z.infer<typeof visitSchema>;
@@ -34022,6 +34025,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: z.ZodString;
         appointmentId: z.ZodNullable<z.ZodString>;
         status: z.ZodEnum<["draft", "signed", "voided"]>;
+        qualityControlStatus: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         revision: z.ZodDefault<z.ZodNumber>;
         complaint: z.ZodNullable<z.ZodString>;
         anamnesis: z.ZodNullable<z.ZodString>;
@@ -34046,6 +34050,7 @@ export declare const dashboardSchema: z.ZodObject<{
         diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
+        qualityControlStatus?: string | null | undefined;
     }, {
         status: "draft" | "signed" | "voided";
         id: string;
@@ -34060,6 +34065,7 @@ export declare const dashboardSchema: z.ZodObject<{
         diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
+        qualityControlStatus?: string | null | undefined;
         revision?: number | undefined;
     }>>;
     visitCloseChecklist: z.ZodObject<{
@@ -41450,6 +41456,7 @@ export declare const dashboardSchema: z.ZodObject<{
         diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
+        qualityControlStatus?: string | null | undefined;
     } | null;
     visitCloseChecklist: {
         visitId: string;
@@ -42120,6 +42127,7 @@ export declare const dashboardSchema: z.ZodObject<{
         diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
+        qualityControlStatus?: string | null | undefined;
         revision?: number | undefined;
     } | null;
     visitCloseChecklist: {
@@ -84710,6 +84718,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
     clientSavedAt: z.ZodNullable<z.ZodString>;
     serverSavedAt: z.ZodString;
     transcriptHash: z.ZodString;
+    qualityControlStatus: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     draft: {
         warnings: string[];
@@ -84749,6 +84758,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
     baseRevision: number | null;
     clientDraftId: string | null;
     transcriptHash: string;
+    qualityControlStatus?: string | null | undefined;
 }, {
     draft: {
         warnings: string[];
@@ -84788,6 +84798,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
     baseRevision: number | null;
     clientDraftId: string | null;
     transcriptHash: string;
+    qualityControlStatus?: string | null | undefined;
 }>;
 export type VisitDraftAutosave = z.infer<typeof visitDraftAutosaveSchema>;
 export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
@@ -85205,6 +85216,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
         clientSavedAt: z.ZodNullable<z.ZodString>;
         serverSavedAt: z.ZodString;
         transcriptHash: z.ZodString;
+        qualityControlStatus: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         draft: {
             warnings: string[];
@@ -85244,6 +85256,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
         baseRevision: number | null;
         clientDraftId: string | null;
         transcriptHash: string;
+        qualityControlStatus?: string | null | undefined;
     }, {
         draft: {
             warnings: string[];
@@ -85283,6 +85296,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
         baseRevision: number | null;
         clientDraftId: string | null;
         transcriptHash: string;
+        qualityControlStatus?: string | null | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
     serverDraft: {
@@ -85324,6 +85338,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
         baseRevision: number | null;
         clientDraftId: string | null;
         transcriptHash: string;
+        qualityControlStatus?: string | null | undefined;
     } | null;
 }, {
     serverDraft: {
@@ -85365,6 +85380,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
         baseRevision: number | null;
         clientDraftId: string | null;
         transcriptHash: string;
+        qualityControlStatus?: string | null | undefined;
     } | null;
 }>;
 export type VisitDraftAutosaveResponse = z.infer<typeof visitDraftAutosaveResponseSchema>;
@@ -85832,6 +85848,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
         patientId: z.ZodString;
         appointmentId: z.ZodNullable<z.ZodString>;
         status: z.ZodEnum<["draft", "signed", "voided"]>;
+        qualityControlStatus: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         revision: z.ZodDefault<z.ZodNumber>;
         complaint: z.ZodNullable<z.ZodString>;
         anamnesis: z.ZodNullable<z.ZodString>;
@@ -85856,6 +85873,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
         diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
+        qualityControlStatus?: string | null | undefined;
     }, {
         status: "draft" | "signed" | "voided";
         id: string;
@@ -85870,6 +85888,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
         diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
+        qualityControlStatus?: string | null | undefined;
         revision?: number | undefined;
     }>;
     visitCloseChecklist: z.ZodObject<{
@@ -85982,6 +86001,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
         diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
+        qualityControlStatus?: string | null | undefined;
     };
     visitCloseChecklist: {
         visitId: string;
@@ -86024,6 +86044,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
         diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
+        qualityControlStatus?: string | null | undefined;
         revision?: number | undefined;
     };
     visitCloseChecklist: {
