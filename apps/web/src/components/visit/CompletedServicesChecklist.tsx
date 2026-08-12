@@ -273,13 +273,14 @@ export const CompletedServicesChecklist: React.FC = () => {
 			<div className="flex flex-col gap-1.5">
 				{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 				{(planItems ?? []).map((item: any, index: number) => {
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					const catalogItem = (dashboard?.serviceCatalog ?? []).find(
 						(c: any) => c.id === item.serviceId,
 					);
 					const isArchived = catalogItem && catalogItem.active === false;
 					const priceChanged =
 						catalogItem && catalogItem.basePriceRub !== item.unitPriceRub;
+					const isApproved = item.status === "approved";
+					const isUnfixedPriceChanged = priceChanged && !isApproved;
 
 					const marked = isMarked(item);
 					const totalRub = planLineTotalRub(item);
@@ -295,9 +296,9 @@ export const CompletedServicesChecklist: React.FC = () => {
 							<input
 								type="checkbox"
 								checked={marked}
-								disabled={isArchived && !marked}
+								disabled={(isArchived || isUnfixedPriceChanged) && !marked}
 								onChange={() => {
-									if (!isArchived || marked) toggle(item);
+									if ((!isArchived && !isUnfixedPriceChanged) || marked) toggle(item);
 								}}
 								className="rounded border-slate-300 dark:border-slate-700"
 							/>
@@ -312,9 +313,14 @@ export const CompletedServicesChecklist: React.FC = () => {
 										[Услуга в архиве]
 									</span>
 								)}
-								{!isArchived && priceChanged && (
+								{!isArchived && isUnfixedPriceChanged && (
+									<span className="text-[10px] leading-tight font-semibold text-red-600 dark:text-red-400 mt-0.5">
+										[Цена не закреплена и изменилась в прайсе: {money(catalogItem.basePriceRub)}]
+									</span>
+								)}
+								{!isArchived && priceChanged && isApproved && (
 									<span className="text-[10px] leading-tight font-semibold text-amber-600 dark:text-amber-500 mt-0.5">
-										[Цена прайса изменилась: {money(catalogItem.basePriceRub)}]
+										[Цена зафиксирована планом, в прайсе сейчас: {money(catalogItem.basePriceRub)}]
 									</span>
 								)}
 							</span>
