@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import QRCode from "react-qr-code";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
@@ -23,6 +24,7 @@ export function SberbankTerminalPaymentModal({
 		"idle" | "initiating" | "polling" | "success" | "error"
 	>("idle");
 	const [orderId, setOrderId] = useState<string | null>(null);
+	const [formUrl, setFormUrl] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState("");
 	const { auth } = useAppLogicContext();
 
@@ -90,6 +92,9 @@ export function SberbankTerminalPaymentModal({
 			}
 
 			setOrderId(data.orderId);
+			if (data.formUrl) {
+				setFormUrl(data.formUrl);
+			}
 			setStatus("polling");
 		} catch (err) {
 			setStatus("error");
@@ -112,6 +117,7 @@ export function SberbankTerminalPaymentModal({
 		if (!isOpen) {
 			setStatus("idle");
 			setOrderId(null);
+			setFormUrl(null);
 			setErrorMsg("");
 		}
 	}, [isOpen]);
@@ -208,19 +214,38 @@ export function SberbankTerminalPaymentModal({
 				)}
 
 				{status === "polling" && (
-					<div style={{ marginBottom: "16px" }}>
-						<div style={{ color: "var(--brand-600)", fontWeight: "bold" }}>
-							Ожидание оплаты клиентом на терминале...
+					<div style={{ marginBottom: "16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+						<div style={{ color: "var(--brand-600)", fontWeight: "bold", marginBottom: "16px" }}>
+							Ожидание оплаты клиентом...
 						</div>
+						
+						{formUrl ? (
+							<div style={{ marginBottom: "16px", padding: "16px", background: "white", borderRadius: "8px" }}>
+								<QRCode value={formUrl} size={200} />
+								<div style={{ marginTop: "12px", textAlign: "center", fontSize: "14px", color: "var(--slate-600)" }}>
+									Отсканируйте QR-код для оплаты (SberPay / Карта)
+								</div>
+								<div style={{ marginTop: "8px", textAlign: "center" }}>
+									<a href={formUrl} target="_blank" rel="noreferrer" style={{ fontSize: "14px", color: "var(--brand-600)", textDecoration: "underline" }}>
+										Или отправить ссылку (открыть в новой вкладке)
+									</a>
+								</div>
+							</div>
+						) : (
+							<div style={{ color: "var(--slate-500)", marginBottom: "16px", textAlign: "center" }}>
+								Прямое подключение к аппаратному терминалу...
+							</div>
+						)}
+
 						<div
 							style={{
 								color: "var(--rust, #c53030)",
 								fontSize: "13px",
 								marginTop: "6px",
+								textAlign: "center"
 							}}
 						>
-							Внимание: при закрытии окна во время оплаты транзакция на
-							терминале не отменяется.
+							Внимание: при закрытии окна во время оплаты транзакция на шлюзе не отменяется.
 						</div>
 					</div>
 				)}

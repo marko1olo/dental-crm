@@ -30,6 +30,7 @@
 		"playwright": "^1.61.1",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",
+		"react-qr-code": "^2.2.0",
 		"react-rnd": "^10.5.3",
 		"vite": "^6.3.5",
 		"zod": "^3.24.4",
