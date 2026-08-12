@@ -237,6 +237,7 @@ import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
+import { DoctorDesktopHeader } from "./components/visit/DoctorDesktopHeader";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const logicContext = useAppLogicContext();
@@ -680,75 +681,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					<span className="status-pill status-in_treatment">Черновик</span>
 				</div>
 
-				<section className="visit-focus-bar" aria-label="Быстрый фокус приема">
-					<div className="visit-focus-patient">
-						<PatientAvatar fullName={activePatient.fullName} size={44} />
-						<div>
-							<p className="eyebrow">Пациент сейчас</p>
-							<h3>{activePatient.fullName}</h3>
-							<div
-								style={{ display: "flex", alignItems: "center", gap: "8px" }}
-							>
-								<p style={{ margin: 0 }}>
-									{activeAppointment?.reason ?? "прием"} ·{" "}
-									{activePatient.phone ?? "телефон не указан"}
-								</p>
-								<VisitTimer createdAt={dashboard?.activeVisit?.createdAt} />
-							</div>
-						</div>
-					</div>
-					<div className="visit-focus-status">
-						{/* Было «4 предупр.» — сокращение ради экономии трёх букв. */}
-						<span className={safeVisitWarnings.length ? "" : "ready"}>
-							{safeVisitWarnings.length
-								? countLabel(
-										safeVisitWarnings.length,
-										"предупреждение",
-										"предупреждения",
-										"предупреждений",
-									)
-								: "спокойно"}
-						</span>
-						<strong>{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
-						{/* Было «1 снимка · 0 документа»: счёт без склонения читается
-                    как ошибка программы. */}
-						<p>
-							{visitCloseChecklist
-								? `${visitCloseChecklist.score}% готовности`
-								: "статус закрытия не рассчитан"}{" "}
-							· предупреждения не останавливают прием ·{" "}
-							{countLabel(
-								safeImagingStudies.length,
-								"снимок",
-								"снимка",
-								"снимков",
-							)}{" "}
-							·{" "}
-							{countLabel(
-								safeUsableDocuments.length,
-								"документ",
-								"документа",
-								"документов",
-							)}
-						</p>
-					</div>
-					<div className="visit-focus-actions">
-						<button
-							className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
-							type="button"
-							onClick={() => scrollToVisitArea(".dictation-box")}
-						>
-							<Mic aria-hidden="true" /> Диктовка
-						</button>
-						<button
-							className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
-							type="button"
-							onClick={openVisitWarningAction}
-						>
-							<AlertTriangle aria-hidden="true" /> Риски
-						</button>
-					</div>
-				</section>
+				<DoctorDesktopHeader
+					dashboard={dashboard}
+					activeAppointment={activeAppointment}
+					activePatientName={activePatient.fullName}
+					activePatientPhone={activePatient.phone}
+					onOpenOdontogram={() => setVisitSubViewTab("odontogram")}
+					onOpenInvoice={() => {
+						// Logic to open invoice or switch tab
+						window.location.hash = "finance";
+					}}
+					onOpenImaging={() => setVisitSubViewTab("diagnostics")}
+				/>
 
 				<VisitMainTabs
 					visitSubViewTab={visitSubViewTab}
