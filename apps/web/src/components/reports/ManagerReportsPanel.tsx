@@ -45,6 +45,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { type ClinicMode, hasCapability } from "../../lib/clinicCapabilities";
 import { formatRub as shortRub } from "../../pages/analyticsDoctorMetrics.js";
 import { DoctorPayoutDashboard } from "../../pages/DoctorPayoutDashboard.js";
+import { QualityControlPanel } from "../qualityControl/QualityControlPanel.js";
 import { logger } from "../../utils/logger";
 
 type RevenuePoint = {
@@ -1642,6 +1643,8 @@ export function ManagerReportsPanel({
 				ответил 403, и матрицу прав на клиенте не повторяет.
 			*/}
 			{showDoctorBreakdown ? <DoctorPayoutDashboard /> : null}
+
+			<QualityControlPanel />
 		</section>
 	);
 }
