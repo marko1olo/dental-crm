@@ -273,6 +273,14 @@ export const CompletedServicesChecklist: React.FC = () => {
 			<div className="flex flex-col gap-1.5">
 				{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 				{(planItems ?? []).map((item: any, index: number) => {
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+					const catalogItem = (dashboard?.serviceCatalog ?? []).find(
+						(c: any) => c.id === item.serviceId,
+					);
+					const isArchived = catalogItem && catalogItem.active === false;
+					const priceChanged =
+						catalogItem && catalogItem.basePriceRub !== item.unitPriceRub;
+
 					const marked = isMarked(item);
 					const totalRub = planLineTotalRub(item);
 					const quantity = planLineQuantity(item);
@@ -282,18 +290,33 @@ export const CompletedServicesChecklist: React.FC = () => {
 								item?.id ??
 								`${item?.serviceId ?? "услуга"}-${item?.toothCode ?? "без-зуба"}-${index}`
 							}
-							className="flex items-center gap-2 cursor-pointer text-xs text-slate-800 dark:text-slate-200"
+							className={`flex items-center gap-2 cursor-pointer text-xs ${isArchived ? "opacity-50" : "text-slate-800 dark:text-slate-200"}`}
 						>
 							<input
 								type="checkbox"
 								checked={marked}
-								onChange={() => toggle(item)}
+								disabled={isArchived && !marked}
+								onChange={() => {
+									if (!isArchived || marked) toggle(item);
+								}}
 								className="rounded border-slate-300 dark:border-slate-700"
 							/>
-							<span className="flex-1">
-								{serviceTitleOf(item)}
-								{toothSuffixOf(item)}
-								{quantity !== null && quantity > 1 ? `, ${quantity} шт.` : ""}
+							<span className="flex-1 flex flex-col">
+								<span>
+									{serviceTitleOf(item)}
+									{toothSuffixOf(item)}
+									{quantity !== null && quantity > 1 ? `, ${quantity} шт.` : ""}
+								</span>
+								{isArchived && (
+									<span className="text-[10px] leading-tight font-semibold text-red-600 dark:text-red-400 mt-0.5">
+										[Услуга в архиве]
+									</span>
+								)}
+								{!isArchived && priceChanged && (
+									<span className="text-[10px] leading-tight font-semibold text-amber-600 dark:text-amber-500 mt-0.5">
+										[Цена прайса изменилась: {money(catalogItem.basePriceRub)}]
+									</span>
+								)}
 							</span>
 							{/* Сумма — общими money(): «1 500,50 ₽», а не своё форматирование.
 							    Непрочитанная цена называется словами, а не нулём. */}
