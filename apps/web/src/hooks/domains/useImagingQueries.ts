@@ -131,8 +131,6 @@ export function useImagingQueries(options?: { auth?: any }) {
 			}),
 		});
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const handleBrowserDirectoryInputChange = async (_files: any) => {};
 	const organizeLocalImagingSources = async () => {
 		return fetchWithHandling("/api/imaging/local-organizer/scan-preview", {
 			method: "POST",
@@ -252,7 +250,6 @@ export function useImagingQueries(options?: { auth?: any }) {
 		dicomFirstFrameImageStyle,
 		dicomWorkbenchSourceIsRedacted,
 		discoverDicomFolders,
-		handleBrowserDirectoryInputChange,
 		organizeLocalImagingSources,
 		localBridgeStatusState,
 		localBridgeStatusValue,

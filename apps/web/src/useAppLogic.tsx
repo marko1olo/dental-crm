@@ -1449,7 +1449,17 @@ export function useAppLogic(): any {
 		setImagingPreviewObjectUrls,
 		_dicomFirstFramePreviewRequest,
 		_setDicomFirstFramePreviewRequest,
-		_browserImagingScanAbortRef,
+		browserImagingScanAbortRef,
+		/*
+		 * Восстановленный обход папки со снимками. Раньше здесь не забиралось
+		 * ничего, а в возвращаемом объекте стояло
+		 * `cancelBrowserImagingFolderScan: false` — обе кнопки «Остановить»
+		 * получали onClick={false}. Сам обход был вырезан коммитом 57d904b0a.
+		 */
+		runBrowserImagingFolderScan,
+		cancelBrowserImagingFolderScan,
+		handleBrowserDirectoryInputChange,
+		pickBrowserImagingDirectory,
 		_localDicomOperationAbortRef,
 		_imagingViewerSaveTimerRef,
 		imagingQueries,
@@ -2814,7 +2824,7 @@ export function useAppLogic(): any {
         		browserContinuityValue: null,
         		browserImagingFileInputAccept: ".dcm,.dicom,.zip,.png,.jpg,.jpeg,.stl,.obj",
         		browserImagingFilesInputRef: { current: null },
-        		cancelBrowserImagingFolderScan: false,
+        		cancelBrowserImagingFolderScan,
         		cancelBrowserMigrationScan: false,
         		cbctWorkbenchPlanes: null,
         		cbctWorkbenchProjections: null,
@@ -2831,6 +2841,15 @@ export function useAppLogic(): any {
         		dictationQuickPhrases: null,
         		emptyDictationVoiceActionLabel: null,
         		firstName: documentPatient?.fullName?.split(" ")[1] ?? "",
+        		/*
+        		 * Обработчик выбора папки был пустой заглушкой в useImagingQueries
+        		 * (`async (_files: any) => {}`) — кнопка «Выбрать папку» на экране
+        		 * импорта снимков не делала ничего. Теперь отдаётся живой из
+        		 * useImagingLogic вместе с восстановленным обходом.
+        		 */
+        		handleBrowserDirectoryInputChange,
+        		pickBrowserImagingDirectory,
+        		runBrowserImagingFolderScan,
         		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
         		handleMprKeyboardNavigation: async (..._args: any[]) => {},
         		imagingComparisonCandidates: [],

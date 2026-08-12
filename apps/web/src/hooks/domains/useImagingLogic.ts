@@ -1,6 +1,12 @@
 import type { Dashboard, ImagingStudyKind } from "@dental/shared";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type {
+	BrowserFileSystemDirectoryHandle,
+	BrowserImagingScanOptions,
+	BrowserPickedImagingFolderPreview,
+} from "../../AppConstants";
 import {
+	browserLocalSourceErrorMessage,
 	formatTime,
 	type ImagingViewerSaveState,
 	loadBrowserPickedImagingFolderPreview,
@@ -8,12 +14,26 @@ import {
 	loadLocalImagingFolderDraft,
 	operatorWorkflowFailureMessage,
 	responseErrorMessage,
+	saveBrowserPickedImagingFolderPreview,
 } from "../../AppHelpers";
 import {
 	imagingCaptureDistanceMs,
 	imagingComparisonScore,
 } from "../../imagingComparison";
 import { useImagingStore } from "../../store/imagingStore";
+/*
+ * Восстановленный обход папки: чистые функции лежат отдельным модулем, чтобы
+ * связка с состоянием (ниже, в хуке) не смешивалась с самим обходом.
+ */
+import {
+	scanBrowserDirectoryHandle,
+	scanBrowserFileList,
+} from "../../utils/browserImagingFolderScan";
+import {
+	browserImagingScanProgressFromStats,
+	createBrowserImagingScanRuntime,
+	isBrowserImagingScanAbortError,
+} from "../../utils/browserScanUtils";
 import {
 	type DicomFirstFramePreviewRequestContext,
 	useDicomWorkbenchModule,
@@ -59,7 +79,6 @@ export function useImagingLogic({
 		browserPickedImagingFolder,
 		setBrowserPickedImagingFolder,
 		browserImagingScanProgress,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setBrowserImagingScanProgress,
 		browserDirectoryPickerAvailable,
 		setBrowserDirectoryPickerAvailable,
@@ -223,7 +242,7 @@ export function useImagingLogic({
 	>({});
 	const [_dicomFirstFramePreviewRequest, _setDicomFirstFramePreviewRequest] =
 		useState<DicomFirstFramePreviewRequestContext | null>(null);
-	const _browserImagingScanAbortRef = useRef<AbortController | null>(null);
+	const browserImagingScanAbortRef = useRef<AbortController | null>(null);
 	const _localDicomOperationAbortRef = useRef<AbortController | null>(null);
 	const _imagingViewerSaveTimerRef = useRef<number | null>(null);
 	const imagingQueries = useImagingQueries({ auth });
@@ -409,6 +428,129 @@ export function useImagingLogic({
 		setLocalImagingFolderDraft,
 		setBrowserPickedImagingFolder,
 	]);
+
+	/*
+	 * ЗАПУСК ОБХОДА ПАПКИ — ВОССТАНОВЛЕНО. Обход был вырезан в 57d904b0a вместе с
+	 * этой связкой; каркас (browserScanUtils) и сеттеры стора при этом остались.
+	 *
+	 * Чистый обход живёт в utils/browserImagingFolderScan.ts, здесь — только то,
+	 * что требует состояния: отмена через AbortController, публикация прогресса,
+	 * сохранение предпросмотра и снятие флага занятости.
+	 *
+	 * Прежняя правка (57d904b0a) оставила вместо этого пустую заглушку и `false`
+	 * в поле отмены, из-за чего кнопка «Остановить» получала onClick={false}.
+	 * Поэтому отмена здесь — настоящая функция, а не значение.
+	 */
+	const runBrowserImagingFolderScan = useCallback(
+		async (input: {
+			rootName: string;
+			sourceKind: BrowserPickedImagingFolderPreview["sourceKind"];
+			currentItem: string;
+			errorMessage: string;
+			scan: (
+				options: BrowserImagingScanOptions,
+			) => Promise<BrowserPickedImagingFolderPreview>;
+		}) => {
+			browserImagingScanAbortRef.current?.abort();
+			const controller = new AbortController();
+			browserImagingScanAbortRef.current = controller;
+			const startedAt = new Date().toISOString();
+			const runtime = createBrowserImagingScanRuntime(startedAt);
+			setIsBrowserImagingFolderPicking(true);
+			setBrowserImagingScanProgress(
+				browserImagingScanProgressFromStats(
+					{
+						rootName: input.rootName,
+						sourceKind: input.sourceKind,
+						scannedFiles: 0,
+						scannedFolders: 0,
+						dicomLikeFiles: 0,
+						archiveFiles: 0,
+						modelFiles: 0,
+						imageFiles: 0,
+						totalBytes: 0,
+						warnings: [],
+					},
+					runtime,
+					"scanning",
+					input.currentItem,
+				),
+			);
+			try {
+				const preview = await input.scan({
+					signal: controller.signal,
+					startedAt,
+					onProgress: setBrowserImagingScanProgress,
+				});
+				if (controller.signal.aborted) return;
+				setBrowserPickedImagingFolder(preview);
+				/*
+				 * Порядок аргументов — (preview, organizationId): в сегодняшнем
+				 * каркасе он обратный к прежнему коду, и это проверено по подписи
+				 * browserScanUtils.ts:792, а не по памяти о том, как было.
+				 */
+				if (activeOrganizationId)
+					saveBrowserPickedImagingFolderPreview(preview, activeOrganizationId);
+			} catch (scanError) {
+				/*
+				 * Отмена — не ошибка: врач нажал «Остановить». Показывать ему текст
+				 * сбоя в этом случае значит врать о том, что произошло.
+				 */
+				if (!isBrowserImagingScanAbortError(scanError))
+					setError(
+						browserLocalSourceErrorMessage(input.errorMessage, scanError),
+					);
+			} finally {
+				if (browserImagingScanAbortRef.current === controller)
+					browserImagingScanAbortRef.current = null;
+				setIsBrowserImagingFolderPicking(false);
+			}
+		},
+		[
+			activeOrganizationId,
+			setError,
+			setBrowserImagingScanProgress,
+			setBrowserPickedImagingFolder,
+			setIsBrowserImagingFolderPicking,
+		],
+	);
+
+	/** Отмена обхода: живая функция, а не литерал. */
+	const cancelBrowserImagingFolderScan = useCallback(() => {
+		browserImagingScanAbortRef.current?.abort();
+		browserImagingScanAbortRef.current = null;
+		setIsBrowserImagingFolderPicking(false);
+	}, [setIsBrowserImagingFolderPicking]);
+
+	/** Выбор файлов через input[type=file][webkitdirectory]. */
+	const handleBrowserDirectoryInputChange = useCallback(
+		async (fileList: FileList | null) => {
+			if (!fileList || fileList.length === 0) return;
+			await runBrowserImagingFolderScan({
+				rootName: "Выбранные файлы браузера",
+				sourceKind: "browser_file_input",
+				currentItem: "проверка выбранных файлов",
+				errorMessage: "Браузер не открыл выбор файлов снимков",
+				scan: (options) => scanBrowserFileList(fileList, options),
+			});
+		},
+		[runBrowserImagingFolderScan],
+	);
+
+	/** Выбор папки через File System Access API. */
+	const pickBrowserImagingDirectory = useCallback(
+		async (directoryHandle: BrowserFileSystemDirectoryHandle) => {
+			await runBrowserImagingFolderScan({
+				rootName: "Выбранная папка браузера",
+				sourceKind: "browser_directory_picker",
+				currentItem: "чтение папки",
+				errorMessage: "Браузер не открыл выбор папки снимков",
+				scan: (options) => scanBrowserDirectoryHandle(directoryHandle, options),
+			});
+		},
+		[runBrowserImagingFolderScan],
+	);
+
 	async function createImagingStudy(kind: ImagingStudyKind) {
 		if (imagingCreateSavingKind) {
 			setError("Дождитесь завершения текущего добавления снимка.");
@@ -775,7 +917,15 @@ export function useImagingLogic({
 		setImagingPreviewObjectUrls,
 		_dicomFirstFramePreviewRequest,
 		_setDicomFirstFramePreviewRequest,
-		_browserImagingScanAbortRef,
+		browserImagingScanAbortRef,
+		/*
+		 * Восстановленный обход папки. Отмена — функция: раньше в этом месте
+		 * стоял литерал `false`, и обе кнопки «Остановить» получали onClick={false}.
+		 */
+		runBrowserImagingFolderScan,
+		cancelBrowserImagingFolderScan,
+		handleBrowserDirectoryInputChange,
+		pickBrowserImagingDirectory,
 		_localDicomOperationAbortRef,
 		_imagingViewerSaveTimerRef,
 		imagingQueries,
