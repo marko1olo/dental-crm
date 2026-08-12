@@ -730,10 +730,18 @@ export async function getVisitsForQualityControlInDb(organizationId: string) {
 		.leftJoin(schema.appointments, eq(schema.appointments.id, schema.visits.appointmentId))
 		.leftJoin(schema.users, eq(schema.users.id, schema.appointments.doctorUserId))
 		.where(
-			eq(schema.visits.organizationId, organizationId)
+			and(
+				eq(schema.visits.organizationId, organizationId),
+				/*
+				 * БЫЛО: возвращались ВСЕ 300 визитов организации.
+				 * Главврач видел одобренные и отклонённые вместе с ожидающими.
+				 * СТАЛО: только те, что действительно ждут решения.
+				 */
+				inArray(schema.visits.qualityControlStatus, ["pending", "needs_correction"]),
+			)
 		)
 		.orderBy(desc(schema.visits.createdAt))
-		.limit(300)
+		.limit(100)
 	]);
 
 	// Use any[] or a specific interface to bypass never[] TS error
@@ -757,6 +765,14 @@ export async function getVisitsForQualityControlInDb(organizationId: string) {
 			if (v.qualityControlStatus === "pending") type = "under_review";
 			else if (v.qualityControlStatus === "approved") type = "approved";
 			else if (v.qualityControlStatus === "rejected") type = "rejected";
+			/*
+			 * needs_correction: врач вернул приём на доработку. Статус самого
+			 * визита при этом сбрасывается в draft (см. updateVisitQualityControlStatusInDb).
+			 * Из under_review → needs_correction, чтобы UI различал «впервые
+			 * не проверен» от «уже вернули на исправление».
+			 */
+		} else if (v.qualityControlStatus === "needs_correction") {
+			type = "needs_correction";
 		}
 		
 		result.push({
@@ -787,9 +803,15 @@ export async function updateVisitQualityControlStatusInDb(
 	const [updated] = await db
 		.update(schema.visits)
 		.set(
-			qualityControlStatus === "rejected"
-				? { qualityControlStatus, status: "draft" }
-				: { qualityControlStatus }
+			/*
+		 * rejected и needs_correction оба возвращают визит в draft:
+		 * врач должен доработать ЭМК и подписать заново.
+		 * БЫЛО: needs_correction сохранялся без смены status="draft",
+		 * визит оставался signed — врач не видел, что его вернули.
+		 */
+		qualityControlStatus === "rejected" || qualityControlStatus === "needs_correction"
+			? { qualityControlStatus, status: "draft" }
+			: { qualityControlStatus }
 		)
 		.where(
 			and(
