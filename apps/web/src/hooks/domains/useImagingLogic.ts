@@ -430,6 +430,48 @@ export function useImagingLogic({
 	]);
 
 	/*
+	 * ЛЕНТА СНИМКОВ АКТИВНОГО ПАЦИЕНТА — ВОССТАНОВЛЕНО ИЗ 57d904b0a~1.
+	 *
+	 * В useAppLogic на этом месте стоял `activeImagingStudies: null`, из-за чего
+	 * ImagingView показывал «В ленте 0» (ImagingView.tsx:694) и «Снимков по
+	 * пациенту нет» при любых данных.
+	 *
+	 * Комментарий прежнего автора сохранён дословно: он фиксирует замеренный
+	 * дефект, который иначе будет внесён заново.
+	 */
+	const activeImagingStudies = useMemo(() => {
+		if (!dashboard) return [];
+		/* БЫЛО: сравнение строго с dashboard.activeVisit.patientId. Когда приём
+		   не открыт, сервер отдаёт синтетический activeVisit с нулевым
+		   идентификатором 00000000-0000-0000-0000-000000000000 — проверено
+		   запросом к /api/dashboard, scratch/probe-active-visit.mjs. Ни один
+		   снимок с таким пациентом не совпадает, поэтому лента была пуста
+		   ВСЕГДА, пока не начат приём.
+
+		   При этом шапка того же экрана показывает пациента через
+		   activePatient, у которого есть запасные варианты (активный приём ->
+		   первый активный пациент -> первый пациент). Получалось «Пациент:
+		   Ковальчук Дмитрий Игоревич · В ленте 0», хотя у Ковальчука снимок
+		   есть — сверено с /api/imaging/studies. Врач, открывший «Снимки» без
+		   начатого приёма, видел «Снимков по пациенту нет» и не мог посмотреть
+		   ни прошлогоднюю ОПТГ, ни только что загруженный снимок.
+
+		   Лента обязана показывать того же пациента, что назван в шапке. */
+		const feedPatientId =
+			activePatient?.id ?? dashboard?.activeVisit?.patientId ?? null;
+		if (!feedPatientId) return [];
+		/*
+		 * Тип берётся из Dashboard, а не `any`: снимок здесь сравнивается по
+		 * patientId и сортируется по capturedAt, и оба поля должны проверяться
+		 * компилятором — иначе переименование поля на сервере пройдёт молча.
+		 */
+		const studies: Dashboard["imagingStudies"] = dashboard.imagingStudies ?? [];
+		return studies
+			.filter((study) => study.patientId === feedPatientId)
+			.sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
+	}, [activePatient, dashboard]);
+
+	/*
 	 * ЗАПУСК ОБХОДА ПАПКИ — ВОССТАНОВЛЕНО. Обход был вырезан в 57d904b0a вместе с
 	 * этой связкой; каркас (browserScanUtils) и сеттеры стора при этом остались.
 	 *
@@ -676,104 +718,104 @@ export function useImagingLogic({
 		imagingPreviewObjectUrls[study.id] ?? study.previewUrl;
 	const imagingViewerHref = (study: Dashboard["imagingStudies"][number]) =>
 		imagingPreviewObjectUrls[study.id] ?? study.viewerUrl ?? study.previewUrl;
-    useEffect(() => {
-    		if (typeof window === "undefined") return undefined;
-    		if (!imagingPreviewWorkset.length) {
-    			setImagingPreviewObjectUrls((current) => {
-    				auth.revokeObjectUrlMap(current);
-    				return {};
-    			});
-    			return undefined;
-    		}
+	useEffect(() => {
+		if (typeof window === "undefined") return undefined;
+		if (!imagingPreviewWorkset.length) {
+			setImagingPreviewObjectUrls((current) => {
+				auth.revokeObjectUrlMap(current);
+				return {};
+			});
+			return undefined;
+		}
 
-    		let cancelled = false;
-    		const abortController = new AbortController();
-    		const createdUrls: string[] = [];
-    		void Promise.all(
-    			imagingPreviewWorkset.map(
-    				async (study): Promise<[string, string] | null> => {
-    					if (!study.previewUrl.startsWith("/api/"))
-    						return [study.id, study.previewUrl];
-    					const response = await fetch(study.previewUrl, {
-    						cache: "no-store",
-    						headers: auth.denteClinicalReadHeaders(),
-    						signal: abortController.signal,
-    					});
-    					if (!response.ok) return null;
-    					const blobUrl = URL.createObjectURL(await response.blob());
-    					if (cancelled) {
-    						auth.revokeObjectUrlIfNeeded(blobUrl);
-    						return null;
-    					}
-    					createdUrls.push(blobUrl);
-    					return [study.id, blobUrl];
-    				},
-    			),
-    		)
-    			.then((entries) => {
-    				if (cancelled) {
-    					createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
-    					return;
-    				}
-    				const next = Object.fromEntries(
-    					entries.filter((entry): entry is [string, string] => Boolean(entry)),
-    				);
-    				const nextUrls = new Set(Object.values(next));
-    				setImagingPreviewObjectUrls((current) => {
-    					Object.values(current).forEach((url) => {
-    						if (!nextUrls.has(url)) auth.revokeObjectUrlIfNeeded(url);
-    					});
-    					return next;
-    				});
-    			})
-    			.catch((err) => {
-    				showToast(
-    					actionFailureToast(
-    						"Ошибка при создании превью снимка",
-    						(err as { status?: number })?.status ?? null,
-    					),
-    					"error",
-    				);
-    				createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
-    				if (!cancelled) {
-    					setImagingPreviewObjectUrls((current) => {
-    						auth.revokeObjectUrlMap(current);
-    						return {};
-    					});
-    				}
-    			});
+		let cancelled = false;
+		const abortController = new AbortController();
+		const createdUrls: string[] = [];
+		void Promise.all(
+			imagingPreviewWorkset.map(
+				async (study): Promise<[string, string] | null> => {
+					if (!study.previewUrl.startsWith("/api/"))
+						return [study.id, study.previewUrl];
+					const response = await fetch(study.previewUrl, {
+						cache: "no-store",
+						headers: auth.denteClinicalReadHeaders(),
+						signal: abortController.signal,
+					});
+					if (!response.ok) return null;
+					const blobUrl = URL.createObjectURL(await response.blob());
+					if (cancelled) {
+						auth.revokeObjectUrlIfNeeded(blobUrl);
+						return null;
+					}
+					createdUrls.push(blobUrl);
+					return [study.id, blobUrl];
+				},
+			),
+		)
+			.then((entries) => {
+				if (cancelled) {
+					createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
+					return;
+				}
+				const next = Object.fromEntries(
+					entries.filter((entry): entry is [string, string] => Boolean(entry)),
+				);
+				const nextUrls = new Set(Object.values(next));
+				setImagingPreviewObjectUrls((current) => {
+					Object.values(current).forEach((url) => {
+						if (!nextUrls.has(url)) auth.revokeObjectUrlIfNeeded(url);
+					});
+					return next;
+				});
+			})
+			.catch((err) => {
+				showToast(
+					actionFailureToast(
+						"Ошибка при создании превью снимка",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
+				if (!cancelled) {
+					setImagingPreviewObjectUrls((current) => {
+						auth.revokeObjectUrlMap(current);
+						return {};
+					});
+				}
+			});
 
-    		return () => {
-    			cancelled = true;
-    			abortController.abort();
-    			createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
-    		};
-    	}, [
-    		imagingPreviewWorkset,
-    		auth.revokeObjectUrlIfNeeded,
-    		auth.denteClinicalReadHeaders,
-    		auth.revokeObjectUrlMap,
-    	]);
-    useEffect(() => {
-    		const organizationId = activeOrganizationId?.trim() ?? "";
-    		if (
-    			!organizationId ||
-    			localImagingRecoveryHydratedOrganizationIdRef.current === organizationId
-    		)
-    			return;
-    		localImagingRecoveryHydratedOrganizationIdRef.current = organizationId;
-    		const localFolderDraft = loadLocalImagingFolderDraft(organizationId);
-    		setLocalImagingFolderDraft(localFolderDraft);
-    		setImagingFolderPath(localFolderDraft?.folderPath ?? "C:\\Images");
-    		setBrowserPickedImagingFolder(
-    			loadBrowserPickedImagingFolderPreview(organizationId),
-    		);
-    	}, [
-    		activeOrganizationId,
-    		setImagingFolderPath,
-    		setLocalImagingFolderDraft,
-    		setBrowserPickedImagingFolder,
-    	]);
+		return () => {
+			cancelled = true;
+			abortController.abort();
+			createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
+		};
+	}, [
+		imagingPreviewWorkset,
+		auth.revokeObjectUrlIfNeeded,
+		auth.denteClinicalReadHeaders,
+		auth.revokeObjectUrlMap,
+	]);
+	useEffect(() => {
+		const organizationId = activeOrganizationId?.trim() ?? "";
+		if (
+			!organizationId ||
+			localImagingRecoveryHydratedOrganizationIdRef.current === organizationId
+		)
+			return;
+		localImagingRecoveryHydratedOrganizationIdRef.current = organizationId;
+		const localFolderDraft = loadLocalImagingFolderDraft(organizationId);
+		setLocalImagingFolderDraft(localFolderDraft);
+		setImagingFolderPath(localFolderDraft?.folderPath ?? "C:\\Images");
+		setBrowserPickedImagingFolder(
+			loadBrowserPickedImagingFolderPreview(organizationId),
+		);
+	}, [
+		activeOrganizationId,
+		setImagingFolderPath,
+		setLocalImagingFolderDraft,
+		setBrowserPickedImagingFolder,
+	]);
 
 	return {
 		imagingImportText,
@@ -922,6 +964,7 @@ export function useImagingLogic({
 		 * Восстановленный обход папки. Отмена — функция: раньше в этом месте
 		 * стоял литерал `false`, и обе кнопки «Остановить» получали onClick={false}.
 		 */
+		activeImagingStudies,
 		runBrowserImagingFolderScan,
 		cancelBrowserImagingFolderScan,
 		handleBrowserDirectoryInputChange,
