@@ -103,6 +103,24 @@ export type ReportsSummary = {
 	};
 	appointments: {
 		byStatus: Record<string, number>;
+		bySource?: {
+			admin: {
+				total: number;
+				arrivalRate: number | null;
+				completionRate: number | null;
+				cancellationRate: number | null;
+				noShowRate: number | null;
+				lostAppointments: number;
+			};
+			online: {
+				total: number;
+				arrivalRate: number | null;
+				completionRate: number | null;
+				cancellationRate: number | null;
+				noShowRate: number | null;
+				lostAppointments: number;
+			};
+		};
 		total: number;
 		arrivalRate: number | null;
 		completionRate: number | null;
@@ -1028,7 +1046,7 @@ export function ManagerReportsPanel({
 						{/* ── Приёмы ────────────────────────────────────────────── */}
 						<h3 className="ops-section-title">Приёмы</h3>
 						<p>
-							Дошли до кресла:{" "}
+							<strong>Все записи:</strong> Дошли до кресла:{" "}
 							{formatPercent(summary?.appointments?.arrivalRate ?? null)} ·
 							завершено:{" "}
 							{formatPercent(summary?.appointments?.completionRate ?? null)} ·
@@ -1036,6 +1054,26 @@ export function ManagerReportsPanel({
 							{formatPercent(summary?.appointments?.cancellationRate ?? null)} ·
 							неявки: {formatPercent(summary?.appointments?.noShowRate ?? null)}
 						</p>
+						<p>
+							<strong>Записаны администраторами ({summary?.appointments?.bySource?.admin?.total ?? 0}):</strong> Дошли до кресла:{" "}
+							{formatPercent(summary?.appointments?.bySource?.admin?.arrivalRate ?? null)} ·
+							завершено:{" "}
+							{formatPercent(summary?.appointments?.bySource?.admin?.completionRate ?? null)} ·
+							отменено:{" "}
+							{formatPercent(summary?.appointments?.bySource?.admin?.cancellationRate ?? null)} ·
+							неявки: {formatPercent(summary?.appointments?.bySource?.admin?.noShowRate ?? null)}
+						</p>
+						{(summary?.appointments?.bySource?.online?.total ?? 0) > 0 && (
+							<p>
+								<strong>Онлайн-записи ({summary?.appointments?.bySource?.online?.total ?? 0}):</strong> Дошли до кресла:{" "}
+								{formatPercent(summary?.appointments?.bySource?.online?.arrivalRate ?? null)} ·
+								завершено:{" "}
+								{formatPercent(summary?.appointments?.bySource?.online?.completionRate ?? null)} ·
+								отменено:{" "}
+								{formatPercent(summary?.appointments?.bySource?.online?.cancellationRate ?? null)} ·
+								неявки: {formatPercent(summary?.appointments?.bySource?.online?.noShowRate ?? null)}
+							</p>
+						)}
 						{/*
 							Доли считаются от ВСЕХ записей периода, включая ещё не
 							состоявшиеся, поэтому в сумме они меньше ста процентов. Без этой

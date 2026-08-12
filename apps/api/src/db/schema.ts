@@ -627,6 +627,8 @@ export const patientConsents = pgTable(
 	}),
 );
 
+export const appointmentSource = pgEnum("appointment_source", ["admin", "online"]);
+
 export const appointments = pgTable(
 	"appointments",
 	{
@@ -639,6 +641,7 @@ export const appointments = pgTable(
 		assistantUserId: uuid("assistant_user_id").references(() => users.id),
 		chairId: uuid("chair_id").references(() => chairs.id),
 		status: appointmentStatus("status").notNull().default("planned"),
+		source: appointmentSource("source").notNull().default("admin"),
 		startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
 		endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
 		reason: text("reason"),

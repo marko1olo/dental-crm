@@ -786,6 +786,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							patientId,
 							doctorUserId: doctorId,
 							status: "planned",
+							source: "online",
 							startsAt: startDate,
 							endsAt: endDate,
 							comment: comment || "Запись через виджет на сайте",

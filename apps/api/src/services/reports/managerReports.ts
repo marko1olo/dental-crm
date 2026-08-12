@@ -677,44 +677,28 @@ export async function chairLoad(
 	};
 }
 
-export type AppointmentFunnelReport = {
-	readonly byStatus: Readonly<Record<string, number>>;
+export type AppointmentFunnelMetrics = {
 	readonly total: number;
-	/** Доля дошедших до кресла (arrived, in_treatment, completed). */
 	readonly arrivalRate: number | null;
 	readonly completionRate: number | null;
 	readonly cancellationRate: number | null;
 	readonly noShowRate: number | null;
-	/**
-	 * Потерянные приёмы: отмены плюс неявки. Именно этот показатель клиника
-	 * может уменьшить напоминаниями, и именно его нужно смотреть до и после.
-	 */
 	readonly lostAppointments: number;
+};
+
+export type AppointmentFunnelReport = AppointmentFunnelMetrics & {
+	readonly byStatus: Readonly<Record<string, number>>;
+	readonly bySource: {
+		readonly admin: AppointmentFunnelMetrics;
+		readonly online: AppointmentFunnelMetrics;
+	};
 	readonly isEmpty: boolean;
 };
 
-export async function appointmentFunnel(
-	scope: ReportScope,
-): Promise<AppointmentFunnelReport> {
-	const rows = await db
-		.select({ status: appointments.status, total: sql<number>`count(*)::int` })
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, scope.organizationId),
-				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to),
-			),
-		)
-		.groupBy(appointments.status);
-
-	const byStatus: Record<string, number> = {};
-	let total = 0;
-	for (const row of rows) {
-		byStatus[row.status] = Number(row.total);
-		total += Number(row.total);
-	}
-
+function calculateFunnelMetrics(
+	byStatus: Record<string, number>,
+	total: number,
+): AppointmentFunnelMetrics {
 	const share = (value: number) => (total > 0 ? value / total : null);
 	const arrived =
 		(byStatus.arrived ?? 0) +
@@ -724,13 +708,64 @@ export async function appointmentFunnel(
 	const noShow = byStatus.no_show ?? 0;
 
 	return {
-		byStatus,
 		total,
 		arrivalRate: share(arrived),
 		completionRate: share(byStatus.completed ?? 0),
 		cancellationRate: share(cancelled),
 		noShowRate: share(noShow),
 		lostAppointments: cancelled + noShow,
+	};
+}
+
+export async function appointmentFunnel(
+	scope: ReportScope,
+): Promise<AppointmentFunnelReport> {
+	const rows = await db
+		.select({
+			status: appointments.status,
+			source: appointments.source,
+			total: sql<number>`count(*)::int`,
+		})
+		.from(appointments)
+		.where(
+			and(
+				eq(appointments.organizationId, scope.organizationId),
+				gte(appointments.startsAt, scope.from),
+				lte(appointments.startsAt, scope.to),
+			),
+		)
+		.groupBy(appointments.status, appointments.source);
+
+	const byStatus: Record<string, number> = {};
+	const adminByStatus: Record<string, number> = {};
+	const onlineByStatus: Record<string, number> = {};
+	let total = 0;
+	let adminTotal = 0;
+	let onlineTotal = 0;
+
+	for (const row of rows) {
+		const val = Number(row.total);
+		byStatus[row.status] = (byStatus[row.status] ?? 0) + val;
+		total += val;
+
+		if (row.source === "admin") {
+			adminByStatus[row.status] = (adminByStatus[row.status] ?? 0) + val;
+			adminTotal += val;
+		} else if (row.source === "online") {
+			onlineByStatus[row.status] = (onlineByStatus[row.status] ?? 0) + val;
+			onlineTotal += val;
+		}
+	}
+
+	const overallMetrics = calculateFunnelMetrics(byStatus, total);
+
+	return {
+		...overallMetrics,
+		byStatus,
+		bySource: {
+			admin: calculateFunnelMetrics(adminByStatus, adminTotal),
+			online: calculateFunnelMetrics(onlineByStatus, onlineTotal),
+		},
 		isEmpty: total === 0,
 	};
 }
