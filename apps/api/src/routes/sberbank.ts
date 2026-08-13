@@ -1,11 +1,69 @@
 import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { requireResolvedOrganizationId as requireOrganizationContext } from "../accessGuard.js";
+import {
+	namedDevelopmentModeActive,
+	requireResolvedOrganizationId as requireOrganizationContext,
+} from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import { payments, sberbankTransactions } from "../db/schema.js";
 import { requirePermission } from "../security/permissions.js";
 import { SberbankClient } from "../services/sberbankClient.js";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+
+export function verifySberbankChecksum(
+	payload: Record<string, unknown>,
+	secret: string,
+	incomingChecksum: string,
+): boolean {
+	if (timingSafeSecretEqual(incomingChecksum, secret)) {
+		return true;
+	}
+
+	const cleanPayload: Record<string, string> = {};
+	for (const [key, value] of Object.entries(payload)) {
+		if (
+			key === "checksum" ||
+			key === "sign" ||
+			key === "signature" ||
+			value === undefined ||
+			value === null
+		) {
+			continue;
+		}
+		cleanPayload[key] = String(value);
+	}
+
+	const sortedKeys = Object.keys(cleanPayload).sort();
+	if (sortedKeys.length === 0) return false;
+
+	const str1 = sortedKeys.map((k) => `${k}=${cleanPayload[k]}`).join(";");
+	const hmac1 = crypto.createHmac("sha256", secret).update(str1).digest("hex");
+	if (
+		timingSafeSecretEqual(hmac1.toLowerCase(), incomingChecksum.toLowerCase())
+	) {
+		return true;
+	}
+
+	const str2 = sortedKeys.map((k) => `${k}=${cleanPayload[k]}`).join("&");
+	const hmac2 = crypto.createHmac("sha256", secret).update(str2).digest("hex");
+	if (
+		timingSafeSecretEqual(hmac2.toLowerCase(), incomingChecksum.toLowerCase())
+	) {
+		return true;
+	}
+
+	const str3 = `${sortedKeys.map((k) => `${k};${cleanPayload[k]}`).join(";")};`;
+	const hmac3 = crypto.createHmac("sha256", secret).update(str3).digest("hex");
+	if (
+		timingSafeSecretEqual(hmac3.toLowerCase(), incomingChecksum.toLowerCase())
+	) {
+		return true;
+	}
+
+	return false;
+}
 
 export async function registerSberbankRoutes(app: FastifyInstance) {
 	app.post(
@@ -174,4 +232,167 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 			}
 		},
 	);
+
+	app.post("/api/sberbank/webhook", async (request, reply) => {
+		const secret =
+			process.env.SBERBANK_WEBHOOK_SECRET ||
+			process.env.DENTE_WEBHOOK_SECRET ||
+			process.env.SBERBANK_SECRET_KEY;
+
+		if (!secret) {
+			if (!namedDevelopmentModeActive()) {
+				return reply.status(503).send({
+					error: "WebhookSecretNotConfigured",
+					message:
+						"Секрет вебхука Sberbank не настроен: задайте SBERBANK_WEBHOOK_SECRET в окружении сервера.",
+				});
+			}
+		}
+
+		const body = (request.body as Record<string, unknown>) || {};
+		const query = (request.query as Record<string, unknown>) || {};
+		const payload = { ...query, ...body };
+
+		const incomingChecksum =
+			(payload.checksum as string) ||
+			(payload.sign as string) ||
+			(payload.signature as string) ||
+			(request.headers["x-dente-webhook-secret"] as string) ||
+			(request.headers["x-sberbank-signature"] as string);
+
+		if (!incomingChecksum) {
+			return reply.status(400).send({
+				error: "MissingChecksum",
+				message: "Параметр подписи/контрольной суммы (checksum) отсутствует.",
+			});
+		}
+
+		const effectiveSecret = secret || "dev-sberbank-secret";
+		const isValidSignature = verifySberbankChecksum(
+			payload,
+			effectiveSecret,
+			incomingChecksum,
+		);
+
+		if (!isValidSignature) {
+			return reply.status(401).send({
+				error: "InvalidChecksum",
+				message: "Неверная подпись/контрольная сумма вебхука.",
+			});
+		}
+
+		// Signature guard passed with ZERO DB calls so far.
+
+		const orderId =
+			(payload.orderId as string) ||
+			(payload.mdOrder as string) ||
+			(payload.orderNumber as string);
+
+		if (!orderId) {
+			return reply.status(400).send({
+				error: "MissingOrderId",
+				message: "Параметр orderId отсутствует в запросе.",
+			});
+		}
+
+		const targetTx = await withSuperuserBypass(async (tx) => {
+			const [found] = await tx
+				.select()
+				.from(sberbankTransactions)
+				.where(eq(sberbankTransactions.orderId, String(orderId)))
+				.limit(1);
+			return found;
+		});
+
+		if (!targetTx) {
+			return reply.status(404).send({
+				error: "TransactionNotFound",
+				message: `Транзакция с orderId '${orderId}' не найдена.`,
+			});
+		}
+
+		return await withTenantCtx(targetTx.organizationId, async (tx) => {
+			const [lockedTx] = await tx
+				.select()
+				.from(sberbankTransactions)
+				.where(
+					and(
+						eq(sberbankTransactions.orderId, String(orderId)),
+						eq(sberbankTransactions.organizationId, targetTx.organizationId),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!lockedTx) {
+				return reply.status(404).send({
+					error: "TransactionNotFound",
+					message: "Транзакция не найдена в контексте организации.",
+				});
+			}
+
+			if (lockedTx.status === "success") {
+				return reply.status(200).send({
+					success: true,
+					processed: false,
+					reason: "already_processed",
+					status: "success",
+				});
+			}
+
+			const rawStatus = String(
+				payload.status ?? payload.operation ?? payload.actionCode ?? "success",
+			).toLowerCase();
+
+			const isSuccess =
+				rawStatus === "success" ||
+				rawStatus === "approved" ||
+				rawStatus === "deposited" ||
+				rawStatus === "0" ||
+				rawStatus === "1" ||
+				rawStatus === "2";
+
+			if (isSuccess) {
+				if (lockedTx.status === "pending") {
+					await tx
+						.update(sberbankTransactions)
+						.set({
+							status: "success",
+							updatedAt: new Date(),
+						})
+						.where(eq(sberbankTransactions.id, lockedTx.id));
+
+					await tx.insert(payments).values({
+						organizationId: lockedTx.organizationId,
+						patientId: lockedTx.patientId,
+						method: "card",
+						status: "paid",
+						amountRub: lockedTx.amount / 100,
+					});
+				}
+
+				return reply.status(200).send({
+					success: true,
+					processed: true,
+					status: "success",
+					amount: lockedTx.amount,
+				});
+			}
+
+			await tx
+				.update(sberbankTransactions)
+				.set({
+					status: "failed",
+					updatedAt: new Date(),
+				})
+				.where(eq(sberbankTransactions.id, lockedTx.id));
+
+			return reply.status(200).send({
+				success: true,
+				processed: true,
+				status: "failed",
+			});
+		});
+	});
 }
+
