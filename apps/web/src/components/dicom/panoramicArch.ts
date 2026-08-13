@@ -511,7 +511,7 @@ export function buildPanoramicArch(
 			annotation.data?.contour?.closed === true ||
 			polylineReturnsToStart(polyline);
 		const usePolyline =
-			!contourIsClosed && polyline.length > controlPoints.length;
+			!contourIsClosed && polyline.length > 0;
 		const sampled = usePolyline
 			? resamplePolylineByArcLength(polyline, stepMm)
 			: sampleArchCurve(controlPoints, stepMm);

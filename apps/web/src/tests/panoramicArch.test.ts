@@ -639,8 +639,9 @@ describe("a closed contour does not grow a tail on the panorama", () => {
 	test("an open polyline is still used verbatim", () => {
 		// The fix must not throw away the curve the dentist actually saw whenever a
 		// trace really is open: its endpoints are the polyline's, not the handles'.
+		const shorterHandles = handles.slice(1, -1);
 		const result = buildPanoramicArch([
-			archAnnotation(handles, { polyline: openArch, closed: false }),
+			archAnnotation(shorterHandles, { polyline: openArch, closed: false }),
 		]);
 		assert.strictEqual(result.status, "ready");
 		if (result.status !== "ready") return;
