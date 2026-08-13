@@ -38,7 +38,7 @@
  *    сообщений. Возврат значения отложил бы подтверждение до конца разбора.
  */
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -580,17 +580,6 @@ export async function registerWhatsappRoutes(
 						? (value.messages as unknown[])
 						: [];
 
-					const toInsert: {
-						organizationId: string;
-						channel: "whatsapp";
-						externalId: string | null;
-						externalChatId: string;
-						messageText: string | null;
-						eventKind: "message";
-						rawPayload: Record<string, unknown>;
-					}[] = [];
-					const msgIds: string[] = [];
-
 					for (const msg of messages) {
 						if (!msg || typeof msg !== "object" || Array.isArray(msg)) {
 							continue;
@@ -628,57 +617,43 @@ export async function registerWhatsappRoutes(
 								? m.id.trim()
 								: null;
 
-						if (msgId) msgIds.push(msgId);
-
-						toInsert.push({
-							organizationId: inboundOrganizationId,
-							channel: "whatsapp",
-							externalId: msgId,
-							externalChatId: fromId,
-							messageText: textBody,
-							eventKind: "message",
-							rawPayload: m as Record<string, unknown>,
-						});
-					}
-
-					if (toInsert.length > 0) {
 						// Клиника уже известна из настроек бота, найденных выше, —
 						// вставка идёт под её контекстом. Без него `INSERT` не
 						// «возвращал ноль строк», а падал с 42501: в WITH CHECK
 						// политики messenger_inbound_events обхода нет.
 						await withTenantCtx(inboundOrganizationId, async (tx) => {
-							let finalInsert = toInsert;
-
-							if (msgIds.length > 0) {
+							if (msgId) {
 								const existing = await tx
-									.select({ id: messengerInboundEvents.id, externalId: messengerInboundEvents.externalId })
+									.select({ id: messengerInboundEvents.id })
 									.from(messengerInboundEvents)
 									.where(
 										and(
-											eq(messengerInboundEvents.organizationId, inboundOrganizationId),
-											inArray(messengerInboundEvents.externalId, msgIds)
-										)
+											eq(
+												messengerInboundEvents.organizationId,
+												inboundOrganizationId,
+											),
+											eq(messengerInboundEvents.externalId, msgId),
+										),
+									)
+									.limit(1);
+								if (existing.length > 0) {
+									request.log.info(
+										{ msgId, inboundOrganizationId },
+										"WhatsApp message already ingested (replay skipped)",
 									);
-
-								const existingIds = new Set(existing.map((e) => e.externalId).filter(Boolean));
-
-								if (existingIds.size > 0) {
-									for (const e of existing) {
-										request.log.info(
-											{ msgId: e.externalId, inboundOrganizationId },
-											"WhatsApp message already ingested (replay skipped)"
-										);
-									}
+									return;
 								}
-
-								finalInsert = finalInsert.filter((item) =>
-									!item.externalId || !existingIds.has(item.externalId)
-								);
 							}
 
-							if (finalInsert.length > 0) {
-								await tx.insert(messengerInboundEvents).values(finalInsert);
-							}
+							await tx.insert(messengerInboundEvents).values({
+								organizationId: inboundOrganizationId,
+								channel: "whatsapp",
+								externalId: msgId,
+								externalChatId: fromId,
+								messageText: textBody,
+								eventKind: "message",
+								rawPayload: m as Record<string, unknown>,
+							});
 						});
 					}
 				}
