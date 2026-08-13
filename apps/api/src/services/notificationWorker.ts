@@ -1,156 +1,141 @@
 import { and, eq, inArray, lte } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
-	denteTelegramBotConfigs,
-	denteTelegramChatLinks,
-	outgoingNotifications,
+  denteTelegramBotConfigs,
+  denteTelegramChatLinks,
+  outgoingNotifications,
 } from "../db/schema.js";
 import { sendTelegramTextMessage } from "../telegramTransport.js";
 
 async function attemptTelegramDelivery(
-	chatLink: typeof denteTelegramChatLinks.$inferSelect | undefined,
-	botConfig: typeof denteTelegramBotConfigs.$inferSelect | undefined,
-	messageText: string,
+  chatLink: typeof denteTelegramChatLinks.$inferSelect | undefined,
+  botConfig: typeof denteTelegramBotConfigs.$inferSelect | undefined,
+  messageText: string,
 ): Promise<{ deliveryStatus: string; failureReason: string }> {
-	if (!chatLink || !chatLink.chatTransportRef) {
-		return {
-			deliveryStatus: "failed",
-			failureReason:
-				"skipped: no telegram bot token configured or patient not linked",
-		};
-	}
+  if (!chatLink || !chatLink.chatTransportRef) {
+    return {
+      deliveryStatus: "failed",
+      failureReason:
+        "skipped: no telegram bot token configured or patient not linked",
+    };
+  }
 
-	// tokenSecretRef stores the key reference; in production this would be resolved
-	// from a secrets manager. Here we fall back to env var directly.
-	const token: string | undefined =
-		process.env.DENTE_TELEGRAM_BOT_TOKEN ||
-		botConfig?.tokenSecretRef ||
-		undefined;
+  // tokenSecretRef stores the key reference; in production this would be resolved
+  // from a secrets manager. Here we fall back to env var directly.
+  const token: string | undefined =
+    process.env.DENTE_TELEGRAM_BOT_TOKEN ||
+    botConfig?.tokenSecretRef ||
+    undefined;
 
-	if (!token) {
-		return {
-			deliveryStatus: "failed",
-			failureReason:
-				"skipped: no telegram bot token configured or patient not linked",
-		};
-	}
+  if (!token) {
+    return {
+      deliveryStatus: "failed",
+      failureReason:
+        "skipped: no telegram bot token configured or patient not linked",
+    };
+  }
 
-	const res = await sendTelegramTextMessage({
-		botToken: token,
-		chatId: chatLink.chatTransportRef as string,
-		text: messageText,
-	});
+  const res = await sendTelegramTextMessage({
+    botToken: token,
+    chatId: chatLink.chatTransportRef as string,
+    text: messageText,
+  });
 
-	if (res.ok) {
-		return { deliveryStatus: "sent", failureReason: "" };
-	} else {
-		return {
-			deliveryStatus: "failed",
-			failureReason: `telegram_error: ${res.errorClass}`,
-		};
-	}
+  if (res.ok) {
+    return { deliveryStatus: "sent", failureReason: "" };
+  } else {
+    return {
+      deliveryStatus: "failed",
+      failureReason: `telegram_error: ${res.errorClass}`,
+    };
+  }
 }
 
 export async function scheduleNotification(input: {
-	organizationId: string;
-	patientId: string;
-	type: string;
-	payload: any;
-	scheduledAt?: Date;
+  organizationId: string;
+  patientId: string;
+  type: string;
+  payload: any;
+  scheduledAt?: Date;
 }) {
-	await db.insert(outgoingNotifications).values({
-		organizationId: input.organizationId,
-		patientId: input.patientId,
-		type: input.type,
-		payload: input.payload,
-		scheduledAt: input.scheduledAt ?? new Date(),
-		status: "pending",
-	});
+  await db.insert(outgoingNotifications).values({
+    organizationId: input.organizationId,
+    patientId: input.patientId,
+    type: input.type,
+    payload: input.payload,
+    scheduledAt: input.scheduledAt ?? new Date(),
+    status: "pending",
+  });
 }
 
 export async function processNotificationQueue() {
-	try {
-		const pending = await db
-			.select()
-			.from(outgoingNotifications)
-			.where(
-				and(
-					eq(outgoingNotifications.status, "pending"),
-					lte(outgoingNotifications.scheduledAt, new Date()),
-				),
-			)
-			.limit(10);
+  try {
+    const pending = await db
+      .select()
+      .from(outgoingNotifications)
+      .where(
+        and(
+          eq(outgoingNotifications.status, "pending"),
+          lte(outgoingNotifications.scheduledAt, new Date()),
+        ),
+      )
+      .limit(10);
 
-		if (pending.length === 0) {
-			return;
-		}
+    if (pending.length === 0) {
+      return;
+    }
 
-		const uniqueOrganizationIds = Array.from(
-			new Set(pending.map((n) => n.organizationId)),
-		);
-		const uniquePatientIds = Array.from(
-			new Set(pending.map((n) => n.patientId)),
-		);
+    const uniqueOrganizationIds = Array.from(
+      new Set(pending.map((n) => n.organizationId)),
+    );
+    const uniquePatientIds = Array.from(
+      new Set(pending.map((n) => n.patientId)),
+    );
 
-		// Pre-fetch configs and chat links for pending notifications
-		const botConfigs = await db.query.denteTelegramBotConfigs.findMany({
-			where: inArray(
-				denteTelegramBotConfigs.organizationId,
-				uniqueOrganizationIds,
-			),
-		});
-		const chatLinks = await db.query.denteTelegramChatLinks.findMany({
-			where: and(
-				inArray(denteTelegramChatLinks.subjectId, uniquePatientIds),
-				eq(denteTelegramChatLinks.status, "active"),
-			),
-		});
+    // Pre-fetch configs and chat links for pending notifications
+    const botConfigs = await db.query.denteTelegramBotConfigs.findMany({
+      where: inArray(
+        denteTelegramBotConfigs.organizationId,
+        uniqueOrganizationIds,
+      ),
+    });
+    const chatLinks = await db.query.denteTelegramChatLinks.findMany({
+      where: and(
+        inArray(denteTelegramChatLinks.subjectId, uniquePatientIds),
+        eq(denteTelegramChatLinks.status, "active"),
+      ),
+    });
 
-		const botConfigsMap = new Map(botConfigs.map((c) => [c.organizationId, c]));
-		const chatLinksMap = new Map(chatLinks.map((l) => [l.subjectId, l]));
+    const botConfigsMap = new Map(botConfigs.map((c) => [c.organizationId, c]));
+    const chatLinksMap = new Map(chatLinks.map((l) => [l.subjectId, l]));
 
-		for (const notif of pending) {
-			const messageText: string = String(
-				(notif.payload as Record<string, unknown>)?.text ??
-					JSON.stringify(notif.payload),
-			);
+    for (const notif of pending) {
+      const messageText: string = String(
+        (notif.payload as Record<string, unknown>)?.text ??
+          JSON.stringify(notif.payload),
+      );
 
-			// Try to find telegram link
-			const chatLink = chatLinksMap.get(notif.patientId);
-			const botConfig = botConfigsMap.get(notif.organizationId);
+      // Try to find telegram link
+      const chatLink = chatLinksMap.get(notif.patientId);
+      const botConfig = botConfigsMap.get(notif.organizationId);
 
-			const { deliveryStatus, failureReason } = await attemptTelegramDelivery(
-				chatLink,
-				botConfig,
-				messageText,
-			);
+      const { deliveryStatus, failureReason } = await attemptTelegramDelivery(
+        chatLink,
+        botConfig,
+        messageText,
+      );
 
-			console.log(
-				`\n${colors.gray}--- [OUTGOING MESSAGE GATEWAY] ---${colors.reset}`,
-			);
-			console.log(
-				`${colors.neonBlue}TO PATIENT:${colors.reset} ${notif.patientId}`,
-			);
-			console.log(`${colors.neonGreen}TYPE:${colors.reset} ${notif.type}`);
-			console.log(`${colors.neonGreen}MESSAGE:${colors.reset} ${messageText}`);
-			console.log(
-				`${colors.neonGreen}STATUS:${colors.reset} ${deliveryStatus} ${failureReason ? `(${failureReason})` : ""}`,
-			);
-			console.log(
-				`${colors.gray}----------------------------------${colors.reset}\n`,
-			);
-
-			await db
-				.update(outgoingNotifications)
-				.set({
-					status: deliveryStatus as any,
-					sentAt: deliveryStatus === "sent" ? new Date() : null,
-				})
-				.where(eq(outgoingNotifications.id, notif.id));
-		}
-	} catch (e) {
-		console.error("Failed to process notification queue:", e);
-	}
+      await db
+        .update(outgoingNotifications)
+        .set({
+          status: deliveryStatus as any,
+          sentAt: deliveryStatus === "sent" ? new Date() : null,
+        })
+        .where(eq(outgoingNotifications.id, notif.id));
+    }
+  } catch (e) {
+    console.error("Failed to process notification queue:", e);
+  }
 }
 
 let notificationInterval: NodeJS.Timeout | null = null;
@@ -171,20 +156,20 @@ let notificationInterval: NodeJS.Timeout | null = null;
  * НЕЛЬЗЯ, иначе очередь получит второго разборщика на те же строки.
  */
 export function startNotificationWorker() {
-	if (notificationInterval) return;
+  if (notificationInterval) return;
 
-	notificationInterval = setInterval(() => {
-		processNotificationQueue().catch(console.error);
-	}, 10000); // 10s for fast demo feedback
+  notificationInterval = setInterval(() => {
+    processNotificationQueue().catch(console.error);
+  }, 10000); // 10s for fast demo feedback
 
-	// unref, чтобы таймер не удерживал процесс: без него выход только по форс-киллу.
-	// Через optional call, потому что тесты подменяют setInterval и возвращают число.
-	(notificationInterval as unknown as { unref?: () => void }).unref?.();
+  // unref, чтобы таймер не удерживал процесс: без него выход только по форс-киллу.
+  // Через optional call, потому что тесты подменяют setInterval и возвращают число.
+  (notificationInterval as unknown as { unref?: () => void }).unref?.();
 }
 
 export function stopNotificationWorker(): void {
-	if (notificationInterval) {
-		clearInterval(notificationInterval);
-		notificationInterval = null;
-	}
+  if (notificationInterval) {
+    clearInterval(notificationInterval);
+    notificationInterval = null;
+  }
 }

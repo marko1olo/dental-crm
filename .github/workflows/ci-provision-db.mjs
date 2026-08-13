@@ -45,15 +45,15 @@ const roleName = process.env.CI_DB_ROLE;
 const rolePassword = process.env.CI_DB_PASSWORD;
 
 for (const [name, value] of Object.entries({
-	ADMIN_DATABASE_URL: adminUrl,
-	CI_DB_NAME: dbName,
-	CI_DB_ROLE: roleName,
-	CI_DB_PASSWORD: rolePassword,
+  ADMIN_DATABASE_URL: adminUrl,
+  CI_DB_NAME: dbName,
+  CI_DB_ROLE: roleName,
+  CI_DB_PASSWORD: rolePassword,
 })) {
-	if (!value) {
-		console.error(`[provision] ${name} не задан.`);
-		process.exit(1);
-	}
+  if (!value) {
+    console.error(`[provision] ${name} не задан.`);
+    process.exit(1);
+  }
 }
 
 // Идентификаторы приходят из ci.yml, но подставлять их в SQL склейкой всё равно
@@ -62,66 +62,65 @@ for (const [name, value] of Object.entries({
 // DDL, — поэтому они проверяются по белому списку символов и цитируются.
 const SAFE_IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
 for (const [name, value] of Object.entries({
-	CI_DB_NAME: dbName,
-	CI_DB_ROLE: roleName,
+  CI_DB_NAME: dbName,
+  CI_DB_ROLE: roleName,
 })) {
-	if (!SAFE_IDENTIFIER.test(value)) {
-		console.error(
-			`[provision] ${name}="${value}" не является безопасным идентификатором.`,
-		);
-		process.exit(1);
-	}
+  if (!SAFE_IDENTIFIER.test(value)) {
+    console.error(
+      `[provision] ${name}="${value}" не является безопасным идентификатором.`,
+    );
+    process.exit(1);
+  }
 }
 
 const client = new pg.Client({ connectionString: adminUrl });
 await client.connect();
 
 try {
-	const existingRole = await client.query(
-		"SELECT 1 FROM pg_roles WHERE rolname = $1",
-		[roleName],
-	);
-	if (existingRole.rowCount === 0) {
-		// NOSUPERUSER и NOBYPASSRLS — не косметика, см. причину 2 в шапке файла.
-		await client.query(
-			`CREATE ROLE "${roleName}" LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD $1`,
-			[rolePassword],
-		);
-		console.log(
-			`[provision] создана роль ${roleName} (NOSUPERUSER, NOBYPASSRLS)`,
-		);
-	} else {
-		console.log(`[provision] роль ${roleName} уже существует`);
-	}
+  const existingRole = await client.query(
+    "SELECT 1 FROM pg_roles WHERE rolname = $1",
+    [roleName],
+  );
+  if (existingRole.rowCount === 0) {
+    // NOSUPERUSER и NOBYPASSRLS — не косметика, см. причину 2 в шапке файла.
+    await client.query(
+      `CREATE ROLE "${roleName}" LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD '${rolePassword.replace(/'/g, "''")}'`,
+    );
+    console.log(
+      `[provision] создана роль ${roleName} (NOSUPERUSER, NOBYPASSRLS)`,
+    );
+  } else {
+    console.log(`[provision] роль ${roleName} уже существует`);
+  }
 
-	const existingDb = await client.query(
-		"SELECT 1 FROM pg_database WHERE datname = $1",
-		[dbName],
-	);
-	if (existingDb.rowCount === 0) {
-		await client.query(`CREATE DATABASE "${dbName}" OWNER "${roleName}"`);
-		console.log(`[provision] создана база ${dbName}, владелец ${roleName}`);
-	} else {
-		console.log(`[provision] база ${dbName} уже существует`);
-	}
+  const existingDb = await client.query(
+    "SELECT 1 FROM pg_database WHERE datname = $1",
+    [dbName],
+  );
+  if (existingDb.rowCount === 0) {
+    await client.query(`CREATE DATABASE "${dbName}" OWNER "${roleName}"`);
+    console.log(`[provision] создана база ${dbName}, владелец ${roleName}`);
+  } else {
+    console.log(`[provision] база ${dbName} уже существует`);
+  }
 
-	// Контроль: если роль оказалась суперпользователем, RLS в этом прогоне не
-	// работает, и любой зелёный тест изоляции — ложь. Падаем громко.
-	const check = await client.query(
-		"SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = $1",
-		[roleName],
-	);
-	const { rolsuper, rolbypassrls } = check.rows[0];
-	if (rolsuper || rolbypassrls) {
-		console.error(
-			`[provision] ОТКАЗ: роль ${roleName} имеет rolsuper=${rolsuper}, rolbypassrls=${rolbypassrls}. ` +
-				"При таких правах RLS не применяется и тесты арендной изоляции зеленеют впустую.",
-		);
-		process.exit(1);
-	}
-	console.log(
-		`[provision] проверено: ${roleName} rolsuper=false, rolbypassrls=false — RLS будет применяться`,
-	);
+  // Контроль: если роль оказалась суперпользователем, RLS в этом прогоне не
+  // работает, и любой зелёный тест изоляции — ложь. Падаем громко.
+  const check = await client.query(
+    "SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = $1",
+    [roleName],
+  );
+  const { rolsuper, rolbypassrls } = check.rows[0];
+  if (rolsuper || rolbypassrls) {
+    console.error(
+      `[provision] ОТКАЗ: роль ${roleName} имеет rolsuper=${rolsuper}, rolbypassrls=${rolbypassrls}. ` +
+        "При таких правах RLS не применяется и тесты арендной изоляции зеленеют впустую.",
+    );
+    process.exit(1);
+  }
+  console.log(
+    `[provision] проверено: ${roleName} rolsuper=false, rolbypassrls=false — RLS будет применяться`,
+  );
 } finally {
-	await client.end();
+  await client.end();
 }
