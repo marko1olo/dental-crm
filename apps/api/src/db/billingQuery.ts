@@ -7,6 +7,7 @@ import {
 } from "../money/patientDebt.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
+import { payments as inMemoryPayments } from "../sampleData.js";
 
 // The DB stores tax_deduction_code as free `text`, but the Payment DTO narrows it
 // to the fiscal codes "1" | "2" | null. Validate at the read boundary instead of
@@ -477,6 +478,13 @@ export async function getPaymentsByPatientIdInDb(
 	organizationId: string,
 	patientId: string,
 ): Promise<Payment[]> {
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+	        return inMemoryPayments.filter(
+	                (payment) =>
+	                        payment.organizationId === organizationId &&
+	                        payment.patientId === patientId,
+	        );
+	}
 	const res = await db
 		.select()
 		.from(schema.payments)

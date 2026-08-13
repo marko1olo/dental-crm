@@ -11,6 +11,7 @@
 import {
 	collectRouteTable,
 	createRealApiApp,
+        materializeRouteUrl,
 } from "./lib/api-route-census.mjs";
 import {
 	buildTopology,
@@ -36,7 +37,7 @@ const { app } = await createRealApiApp();
 const liveRoutes = collectRouteTable(app).filter((e) =>
 	e.routePath.startsWith("/api/"),
 );
-await app.close();
+
 
 console.log(`Живих маршрутів: ${liveRoutes.length}`);
 
@@ -47,6 +48,20 @@ for (const route of liveRoutes) {
 	const key = routeKey(route.method, normalized);
 	if (!liveMap.has(key)) liveMap.set(key, []);
 	liveMap.get(key).push(route.routePath);
+}
+
+const runtimeRouteProbeOptions = {
+        paramValue: "00000000-0000-0000-0000-000000000000",
+        wildcardValue: "route-census-probe",
+};
+
+async function isRouteServedAtRuntime(call) {
+        const response = await app.inject({
+                method: call.method,
+                url: materializeRouteUrl(call.path, runtimeRouteProbeOptions),
+                headers: { authorization: "Bearer route-census-probe" },
+        });
+        return response.statusCode !== 404 && response.statusCode !== 405;
 }
 
 // Знайти всі фронтові виклики, що не мають відповідного маршрута
@@ -74,7 +89,7 @@ for (const call of clientUsage.calls) {
 				actualMethods: allMethodsForPath,
 			});
 		} else {
-			missingRoutes.push(call);
+			if (!(await isRouteServedAtRuntime(call))) missingRoutes.push(call);
 		}
 	}
 }
@@ -101,3 +116,5 @@ for (const unresolved of clientUsage.unresolved.slice(0, 15)) {
 	console.log(`  ${unresolved.file}:${unresolved.line}`);
 	console.log(`    ${unresolved.raw}`);
 }
+
+await app.close();

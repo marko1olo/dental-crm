@@ -2629,12 +2629,24 @@ export const labOrders = pgTable(
 		toothFdi: text("tooth_fdi"),
 		material: text("material"),
 		colorVita: text("color_vita"),
+		/**
+		 * Статус заказа ЗТЛ. Значения ограничены миграцией 0042
+		 * CHECK-ограничением; произвольные строки не пройдут.
+		 *
+		 * Переходы: draft → sent → in_progress → shipped → received →
+		 *           refitting → completed. Из любого состояния → cancelled.
+		 * Закрытые состояния (completed, cancelled) не могут быть открыты назад.
+		 */
 		status: text("status").notNull().default("draft"),
 		dueDate: timestamp("due_date", { withTimezone: true }),
 		clinicalNotes: text("clinical_notes"),
 		labComments: text("lab_comments"),
 		attachedImageUrl: text("attached_image_url"),
 		priceRub: numeric("price_rub", { precision: 12, scale: 2, mode: "number" }),
+		/** Временны́е метки жизненного цикла заказа для аудита. */
+		sentAt: timestamp("sent_at", { withTimezone: true }),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -3491,6 +3503,28 @@ export const sterilizationLogs = pgTable(
 		status: text("status").notNull().default("passed"),
 		passedIndicator: boolean("passed_indicator").notNull().default(true),
 		timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow(),
+		/**
+		 * СанПиН 3.3686-21 — тип упаковки и срок годности стерильности.
+		 * Бумажные крафт-пакеты (ТУ, термосварка: 50 суток; самоклей: 20–30 суток),
+		 * ламинированные пакеты (термосварка: 180–360 суток),
+		 * металлические кассеты/контейнеры с фильтром (21–30 суток).
+		 * NULL допустим для записей, созданных до этой миграции.
+		 */
+		packagingType: text("packaging_type"),
+		expiresAt: timestamp("expires_at", { withTimezone: true }),
+		/** Класс химического индикатора (4/5/6) или биологический контроль. */
+		indicatorType: text("indicator_type"),
+		/**
+		 * Режим цикла автоклава: B, S, N (ИСО 13060), или dry_heat_180/160,
+		 * plasma_vh2o2, ethylene_oxide для холодной/плазменной стерилизации.
+		 */
+		cycleMode: text("cycle_mode"),
+		/** Заданная (номинальная) температура цикла °C. */
+		temperatureSet: numeric("temperature_set", { precision: 5, scale: 1 }),
+		/** Заданное давление цикла бар. */
+		pressureSet: numeric("pressure_set", { precision: 4, scale: 2 }),
+		/** Продолжительность цикла в минутах. */
+		durationMin: integer("duration_min"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

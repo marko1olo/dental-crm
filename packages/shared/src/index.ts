@@ -4250,6 +4250,201 @@ export const labWorkOrderPayloadSchema = z.object({
 });
 export type LabWorkOrderPayload = z.infer<typeof labWorkOrderPayloadSchema>;
 
+/**
+ * Международные стандарты расцветок зубов VITA (VITA Zahnfabrik).
+ * Включает:
+ * 1. VITA Classical A1–D4 (16 оттенков по шкалам красно-коричневый, красно-желтый, серый, красно-серый)
+ * 2. VITA Bleached Shades (0M1, 0M2, 0M3, BL1, BL2, BL3, BL4, OM1, OM2, OM3)
+ * 3. VITA System 3D-Master (26 оттенков по трем параметрам: светлота, насыщенность, цветовой тон)
+ */
+export const VITA_CLASSICAL_SHADES = [
+	"A1",
+	"A2",
+	"A3",
+	"A3.5",
+	"A4",
+	"B1",
+	"B2",
+	"B3",
+	"B4",
+	"C1",
+	"C2",
+	"C3",
+	"C4",
+	"D2",
+	"D3",
+	"D4",
+] as const;
+
+export const VITA_BLEACH_SHADES = [
+	"0M1",
+	"0M2",
+	"0M3",
+	"BL1",
+	"BL2",
+	"BL3",
+	"BL4",
+	"OM1",
+	"OM2",
+	"OM3",
+] as const;
+
+export const VITA_3D_MASTER_SHADES = [
+	"1M1",
+	"1M2",
+	"2L1.5",
+	"2L2.5",
+	"2M1",
+	"2M2",
+	"2M3",
+	"2R1.5",
+	"2R2.5",
+	"3L1.5",
+	"3L2.5",
+	"3M1",
+	"3M2",
+	"3M3",
+	"3R1.5",
+	"3R2.5",
+	"4L1.5",
+	"4L2.5",
+	"4M1",
+	"4M2",
+	"4M3",
+	"4R1.5",
+	"4R2.5",
+	"5M1",
+	"5M2",
+	"5M3",
+] as const;
+
+export const ALL_VALID_VITA_SHADES: ReadonlySet<string> = new Set<string>([
+	...VITA_CLASSICAL_SHADES,
+	...VITA_BLEACH_SHADES,
+	...VITA_3D_MASTER_SHADES,
+]);
+
+export function isValidVitaShade(shade: string): boolean {
+	return ALL_VALID_VITA_SHADES.has(shade.trim().toUpperCase());
+}
+
+export const VITA_SHADE_VALIDATION_MESSAGE =
+	"Недопустимый оттенок зуба. Используйте стандарт VITA Classical (A1–D4), VITA 3D-Master (1M1–5M3) или Bleach (0M1–0M3, BL1–BL4).";
+
+export const vitaShadeSchema = z
+	.string()
+	.trim()
+	.refine(
+		(val) => isValidVitaShade(val),
+		{ message: VITA_SHADE_VALIDATION_MESSAGE },
+	);
+
+/** Таксономия стоматологических материалов для зуботехнической лаборатории */
+export const LAB_ORDER_MATERIALS = {
+	zirconia_multilayer: "Диоксид циркония многослойный (Multi-layer)",
+	zirconia_ht: "Диоксид циркония высокопрозрачный (HT/ST)",
+	emax_cad: "Литий-дисиликатная керамика (IPS e.max CAD)",
+	emax_press: "Пресс-керамика (IPS e.max Press)",
+	pfm: "Металлокерамика (PFM / CoCr/NiCr)",
+	pmma_temp: "Временная пластмасса PMMA (CAD/CAM)",
+	composite: "Композит лабораторный (Nano-hybrid)",
+	titanium_abutment: "Индивидуальный титановый абатмент",
+	cocr_framework: "Литой/фрезерованный бюгельный каркас (CoCr)",
+	peek: "Биополимер PEEK / BioHPP",
+} as const;
+
+export type LabOrderMaterialKey = keyof typeof LAB_ORDER_MATERIALS;
+
+export const LAB_ORDER_STATUS_LABELS = {
+	draft: "Черновик",
+	sent: "Отправлен в лабораторию",
+	in_progress: "В работе у техника",
+	shipped: "Отправлен в клинику",
+	received: "Получен клиникой",
+	refitting: "На примерке / доработке",
+	completed: "Установлен / завершен",
+	cancelled: "Отменен",
+} as const;
+
+export type LabOrderStatusKey = keyof typeof LAB_ORDER_STATUS_LABELS;
+
+export const labOrderStatusSchema = z.enum([
+	"draft",
+	"sent",
+	"in_progress",
+	"shipped",
+	"received",
+	"refitting",
+	"completed",
+	"cancelled",
+]);
+
+/**
+ * Стерилизация и инфекционный контроль (СанПиН 3.3686-21, форма № 257/у).
+ */
+export const STERILIZATION_PACKAGING_TYPES = {
+	kraft_heat_sealed: {
+		label: "Крафт-пакет (термосварка)",
+		shelfLifeDays: 50,
+	},
+	kraft_self_adhesive: {
+		label: "Крафт-пакет (самоклеящийся)",
+		shelfLifeDays: 30,
+	},
+	laminated_heat_sealed: {
+		label: "Ламинированный пакет комбинированный (термосварка)",
+		shelfLifeDays: 180,
+	},
+	metal_cassette: {
+		label: "Металлическая кассета / контейнер с фильтром",
+		shelfLifeDays: 30,
+	},
+	other: {
+		label: "Иной вид упаковки",
+		shelfLifeDays: 3,
+	},
+} as const;
+
+export type SterilizationPackagingType = keyof typeof STERILIZATION_PACKAGING_TYPES;
+
+export const STERILIZATION_INDICATOR_TYPES = {
+	class4_multivariable: "Класс 4 — многопараметрический химический индикатор",
+	class5_integrating: "Класс 5 — интегрирующий химический индикатор",
+	class6_emulating: "Класс 6 — имитирующий индикатор (эмулятор)",
+	biological: "Биологический индикатор (споровый тест Geobacillus stearothermophilus)",
+	bowie_dick: "Тест Бови-Дика (Bowie-Dick / вакуум-тест)",
+} as const;
+
+export type SterilizationIndicatorType = keyof typeof STERILIZATION_INDICATOR_TYPES;
+
+export const STERILIZATION_CYCLE_MODES = {
+	B: "Автоклав класс B (фракционированный вакуум: 134°C / 2.1 бар или 121°C / 1.1 бар)",
+	S: "Автоклав класс S (однократный вакуум)",
+	N: "Автоклав класс N (неупакованные сплошные изделия)",
+	dry_heat_180: "Сухожаровой шкаф 180°C 60 мин",
+	dry_heat_160: "Сухожаровой шкаф 160°C 150 мин",
+	plasma_vh2o2: "Низкотемпературная плазма (пары пероксида водорода)",
+	ethylene_oxide: "Этиленоксидная газовая стерилизация",
+} as const;
+
+export type SterilizationCycleMode = keyof typeof STERILIZATION_CYCLE_MODES;
+
+export function computePackagingExpirationDate(
+	packagingType: SterilizationPackagingType | string | null | undefined,
+	sterilizationDate: Date = new Date(),
+): Date {
+	const validKey = (
+		packagingType && packagingType in STERILIZATION_PACKAGING_TYPES
+			? packagingType
+			: "other"
+	) as SterilizationPackagingType;
+	const days = STERILIZATION_PACKAGING_TYPES[validKey].shelfLifeDays;
+	const expires = new Date(sterilizationDate.getTime());
+	expires.setUTCDate(expires.getUTCDate() + days);
+	return expires;
+}
+
+
 export const photoVideoConsentMaterialSchema = z.enum([
 	"intraoral_photo",
 	"face_photo",

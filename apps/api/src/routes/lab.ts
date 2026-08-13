@@ -1,4 +1,13 @@
-import { nonNegativeMoneyRubSchema } from "@dental/shared";
+import {
+	LAB_ORDER_MATERIALS,
+	type LabOrderMaterialKey,
+	type LabOrderStatusKey,
+	labOrderStatusSchema,
+	nonNegativeMoneyRubSchema,
+	VALID_FDI_TOOTH_NUMBERS,
+	isValidVitaShade,
+	VITA_SHADE_VALIDATION_MESSAGE,
+} from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -7,38 +16,80 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { getLabOrderByToken, updateLabOrderStatus } from "../db/labQuery.js";
+import {
+	getLabOrderByToken,
+	LAB_ORDER_CLINIC_TRANSITIONS,
+	LAB_ORDER_TECHNICIAN_TRANSITIONS,
+	type LabOrderStatus,
+	updateLabOrderStatusByClinic,
+	updateLabOrderStatusByToken,
+} from "../db/labQuery.js";
 import { labOrders, patients, users } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 /*
  * Цена заказа лаборатории — деньги клиники. Колонка `numeric(12,2)`:
- * `z.number()` пропускал 1500.505, и третья цифра после запятой либо
- * молча обрезалась драйвером, либо уезжала в базу как «почти копейка».
- * Единый контракт `nonNegativeMoneyRubSchema` — как прайс и смета.
+ * Контракт `nonNegativeMoneyRubSchema` исключает копеечный дрейф и дробные части.
  */
 const labOrderPriceRubSchema = nonNegativeMoneyRubSchema
 	.refine((value) => value <= 100_000_000, {
-		message: "цена заказа лаборатории не помещается в допустимый диапазон",
+		message: "Цена заказа лаборатории не помещается в допустимый диапазон (до 100 000 000 руб.).",
 	})
+	.optional()
+	.nullable();
+
+/**
+ * Валидатор номера зуба или группы зубов по формуле FDI (ISO 3950).
+ * Принимает как одиночный номер (напр. "16"), так и список через запятую ("16, 17", "11-21").
+ */
+function validateFdiToothNotation(value: string | null | undefined): boolean {
+	if (!value) return true;
+	const parts = value.split(/[\s,;-]+/).filter(Boolean);
+	if (parts.length === 0) return true;
+	for (const part of parts) {
+		const num = Number.parseInt(part, 10);
+		if (Number.isNaN(num) || !VALID_FDI_TOOTH_NUMBERS.has(num)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+const toothFdiSchema = z
+	.string()
+	.trim()
+	.refine(validateFdiToothNotation, {
+		message:
+			"Недопустимый номер зуба в заказе ЗТЛ. Используйте номера FDI (11–48, 51–85, 91–98).",
+	})
+	.optional()
+	.nullable();
+
+const colorVitaSchema = z
+	.string()
+	.trim()
+	.refine(
+		(val) => !val || isValidVitaShade(val),
+		{ message: VITA_SHADE_VALIDATION_MESSAGE },
+	)
 	.optional()
 	.nullable();
 
 const createLabOrderSchema = z.object({
 	patientId: z.string().uuid(),
-	doctorId: z.string().uuid().optional(),
-	toothFdi: z.string().optional().nullable(),
-	material: z.string().optional().nullable(),
-	colorVita: z.string().optional().nullable(),
+	doctorId: z.string().uuid().optional().nullable(),
+	toothFdi: toothFdiSchema,
+	material: z.string().trim().optional().nullable(),
+	colorVita: colorVitaSchema,
 	dueDate: z.string().optional().nullable(),
-	clinicalNotes: z.string().optional().nullable(),
+	clinicalNotes: z.string().trim().optional().nullable(),
 	priceRub: labOrderPriceRubSchema,
 });
 
 export async function registerLabRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/clinical/lab-orders
-	 * Retrieve all lab orders for the organization. Can filter by patientId.
+	 * Получение всех заказов лаборатории клиники с возможностью фильтрации по пациенту.
 	 */
 	app.get("/api/clinical/lab-orders", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(
@@ -50,7 +101,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const { patientId } = request.query as { patientId?: string };
 
-		const query = db
+		const orders = await db
 			.select({
 				id: labOrders.id,
 				patientId: labOrders.patientId,
@@ -67,6 +118,9 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				labComments: labOrders.labComments,
 				attachedImageUrl: labOrders.attachedImageUrl,
 				priceRub: labOrders.priceRub,
+				sentAt: labOrders.sentAt,
+				completedAt: labOrders.completedAt,
+				cancelledAt: labOrders.cancelledAt,
 				createdAt: labOrders.createdAt,
 				updatedAt: labOrders.updatedAt,
 			})
@@ -81,13 +135,12 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			)
 			.orderBy(desc(labOrders.createdAt));
 
-		const orders = await query;
 		return orders;
 	});
 
 	/**
 	 * POST /api/clinical/lab-orders
-	 * Create a new lab order.
+	 * Создание нового наряд-заказа в зуботехническую лабораторию.
 	 */
 	app.post("/api/clinical/lab-orders", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -99,17 +152,16 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const parsed = createLabOrderSchema.safeParse(request.body);
 		if (!parsed.success) {
+			const firstError = parsed.error.issues[0]?.message ?? "Проверьте корректность заполнения полей заказа ЗТЛ.";
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Проверьте корректность заполнения полей заказа ЗТЛ.",
+				message: firstError,
 			});
 		}
 
 		const data = parsed.data;
 
-		// Verify the patient exists AND belongs to this org — without the scope,
-		// org A could create a lab order against org B's patient (and leak that
-		// patient's name back via the GET join).
+		// Проверяем принадлежность пациента к организации
 		const [patient] = await db
 			.select({ id: patients.id })
 			.from(patients)
@@ -124,14 +176,15 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		if (!patient) {
 			return reply.code(404).send({
 				error: "PatientNotFound",
-				message: "Пациент не найден.",
+				message: "Пациент не найден в вашей клинике.",
 			});
 		}
 
-		// If a doctor is named, it must be a member of this org.
+		// Если указан врач — проверяем принадлежность к персоналу клиники
+		let doctorName: string | null = null;
 		if (data.doctorId) {
 			const [doctor] = await db
-				.select({ id: users.id })
+				.select({ id: users.id, fullName: users.fullName })
 				.from(users)
 				.where(
 					and(eq(users.id, data.doctorId), eq(users.organizationId, orgId)),
@@ -143,6 +196,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 					message: "Врач не найден в вашей клинике.",
 				});
 			}
+			doctorName = doctor.fullName;
 		}
 
 		const secureToken = crypto.randomUUID();
@@ -153,10 +207,11 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				organizationId: orgId,
 				patientId: data.patientId,
 				doctorId: data.doctorId || null,
+				doctorName,
 				secureToken,
 				toothFdi: data.toothFdi || null,
 				material: data.material || null,
-				colorVita: data.colorVita || null,
+				colorVita: data.colorVita ? data.colorVita.toUpperCase() : null,
 				dueDate: data.dueDate ? new Date(data.dueDate) : null,
 				clinicalNotes: data.clinicalNotes || null,
 				priceRub: data.priceRub || null,
@@ -168,11 +223,11 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			return reply.code(500).send({
 				error: "LabOrderNotSaved",
 				message:
-					"Заказ в лабораторию не создан: сервер не сохранил запись. Проверьте данные и повторите; если снова не выйдет — сообщите администратору клиники.",
+					"Заказ в лабораторию не создан: сервер не сохранил запись. Проверьте данные и повторите попытку.",
 			});
 		}
 
-		// Notify clinic clients via WS
+		// Уведомление через веб-сокет
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "LAB_ORDER_UPDATED",
 			payload: {
@@ -182,12 +237,12 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			},
 		});
 
-		return newOrder;
+		return reply.code(201).send(newOrder);
 	});
 
 	/**
 	 * PUT /api/clinical/lab-orders/:id
-	 * Update a lab order (clinic-side).
+	 * Обновление заказа ЗТЛ клиникой с проверкой допустимости переходов состояний.
 	 */
 	app.put("/api/clinical/lab-orders/:id", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -201,43 +256,79 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const updateSchema = z.object({
 			doctorId: z.string().uuid().optional().nullable(),
-			toothFdi: z.string().optional().nullable(),
-			material: z.string().optional().nullable(),
-			colorVita: z.string().optional().nullable(),
+			toothFdi: toothFdiSchema,
+			material: z.string().trim().optional().nullable(),
+			colorVita: colorVitaSchema,
 			dueDate: z.string().optional().nullable(),
-			clinicalNotes: z.string().optional().nullable(),
+			clinicalNotes: z.string().trim().optional().nullable(),
 			priceRub: labOrderPriceRubSchema,
-			status: z
-				.enum([
-					"draft",
-					"sent",
-					"in_progress",
-					"shipped",
-					"received",
-					"refitting",
-					"completed",
-				])
-				.optional(),
-			labComments: z.string().optional().nullable(),
-			attachedImageUrl: z.string().optional().nullable(),
+			status: labOrderStatusSchema.optional(),
+			labComments: z.string().trim().optional().nullable(),
+			attachedImageUrl: z.string().trim().optional().nullable(),
 		});
 
 		const parsed = updateSchema.safeParse(request.body);
 		if (!parsed.success) {
+			const firstError = parsed.error.issues[0]?.message ?? "Некорректные параметры обновления заказа ЗТЛ.";
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Некорректные параметры обновления заказа ЗТЛ.",
+				message: firstError,
 			});
 		}
 
 		const updateData = parsed.data;
 
+		// Загружаем текущий заказ с проверкой принадлежности к клинике
+		const [currentOrder] = await db
+			.select()
+			.from(labOrders)
+			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+			.limit(1);
+
+		if (!currentOrder) {
+			return reply.code(404).send({
+				error: "LabOrderNotFound",
+				message: "Заказ ЗТЛ не найден.",
+			});
+		}
+
+		// Проверка автомата состояний при смене статуса
+		if (updateData.status && updateData.status !== currentOrder.status) {
+			const currentStatus = currentOrder.status as LabOrderStatus;
+			const targetStatus = updateData.status as LabOrderStatus;
+			const allowed = LAB_ORDER_CLINIC_TRANSITIONS[currentStatus];
+
+			if (!allowed || !allowed.includes(targetStatus)) {
+				return reply.code(409).send({
+					error: "InvalidStateTransition",
+					message: `Недопустимый переход статуса заказа ЗТЛ из «${currentStatus}» в «${targetStatus}».`,
+				});
+			}
+		}
+
+		const now = new Date();
+		const auditFields: Partial<{
+			sentAt: Date;
+			completedAt: Date;
+			cancelledAt: Date;
+		}> = {};
+
+		if (updateData.status === "sent" && !currentOrder.sentAt) {
+			auditFields.sentAt = now;
+		} else if (updateData.status === "completed" && !currentOrder.completedAt) {
+			auditFields.completedAt = now;
+		} else if (updateData.status === "cancelled" && !currentOrder.cancelledAt) {
+			auditFields.cancelledAt = now;
+		}
+
 		const [updated] = await db
 			.update(labOrders)
 			.set({
 				...updateData,
-				dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
-				updatedAt: new Date(),
+				colorVita: updateData.colorVita ? updateData.colorVita.toUpperCase() : updateData.colorVita,
+				dueDate: updateData.dueDate ? new Date(updateData.dueDate) : updateData.dueDate === null ? null : undefined,
+				...auditFields,
+				updatedAt: now,
 			})
 			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
 			.returning();
@@ -249,7 +340,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			});
 		}
 
-		// Notify clinic clients via WS
+		// Уведомление через веб-сокет
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "LAB_ORDER_UPDATED",
 			payload: {
@@ -264,7 +355,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 	/**
 	 * DELETE /api/clinical/lab-orders/:id
-	 * Delete a lab order.
+	 * Удаление заказа ЗТЛ (только черновики или отмененные).
 	 */
 	app.delete("/api/clinical/lab-orders/:id", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -275,6 +366,26 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { id } = request.params as { id: string };
+
+		const [existing] = await db
+			.select()
+			.from(labOrders)
+			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+			.limit(1);
+
+		if (!existing) {
+			return reply.code(404).send({
+				error: "LabOrderNotFound",
+				message: "Заказ ЗТЛ не найден.",
+			});
+		}
+
+		if (existing.status !== "draft" && existing.status !== "cancelled") {
+			return reply.code(409).send({
+				error: "CannotDeleteActiveOrder",
+				message: `Нельзя удалить заказ со статусом «${existing.status}». Сначала отмените заказ.`,
+			});
+		}
 
 		const [deleted] = await db
 			.delete(labOrders)
@@ -288,17 +399,33 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			});
 		}
 
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "LAB_ORDER_DELETED",
+			payload: {
+				orderId: deleted.id,
+				patientId: deleted.patientId,
+			},
+		});
+
 		return { success: true };
 	});
 
-	// Public technician portal routes (by secure_token)
+	/**
+	 * GET /api/portal/lab-order/:token
+	 * Публичный защищенный портал зубного техника (доступ по криптографическому токену наряда).
+	 */
 	app.get("/api/portal/lab-order/:token", async (request, reply) => {
 		const { token } = request.params as { token: string };
-		if (!token) return reply.code(400).send({ error: "TokenRequired" });
+		if (!token) return reply.code(400).send({ error: "TokenRequired", message: "Токен наряда обязателен." });
 
 		try {
 			const order = await getLabOrderByToken(token);
-			if (!order) return reply.code(404).send({ error: "OrderNotFound" });
+			if (!order) {
+				return reply.code(404).send({
+					error: "OrderNotFound",
+					message: "Наряд-заказ не найден или срок действия ссылки истек.",
+				});
+			}
 
 			return {
 				id: order.id,
@@ -309,60 +436,88 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				status: order.status,
 				clinicalNotes: order.clinicalNotes,
 				attachedImageUrl: order.attachedImageUrl,
+				dueDate: order.dueDate,
 				createdAt: order.createdAt,
 			};
 		} catch (e) {
-			console.error("[LabPortal] GET error:", e);
+			request.log.error({ err: e }, "[LabPortal] GET error");
 			return reply.code(500).send({
 				error: "LabPortalError",
 				message:
-					"Портал лаборатории временно недоступен. Повторите попытку; если снова не выйдет — сообщите администратору клиники.",
+					"Портал лаборатории временно недоступен. Повторите попытку позже.",
 			});
 		}
 	});
 
+	/**
+	 * POST /api/portal/lab-order/:token/status
+	 * Обновление статуса заказа зубным техником по токену наряда с валидацией автомата переходов.
+	 */
 	app.post("/api/portal/lab-order/:token/status", async (request, reply) => {
 		const { token } = request.params as { token: string };
 
-		// This endpoint is public (token-only, no auth), so the status must be
-		// validated against the set a technician is allowed to set. The clinic-only
-		// states (draft/sent) are intentionally excluded, and arbitrary strings are
-		// rejected — previously any string was written straight to the column.
+		const technicianAllowedStatuses = z.enum([
+			"in_progress",
+			"shipped",
+			"received",
+			"refitting",
+			"completed",
+		]);
+
 		const parsedBody = z
 			.object({
-				status: z.enum([
-					"in_progress",
-					"shipped",
-					"received",
-					"refitting",
-					"completed",
-				]),
+				status: technicianAllowedStatuses,
+				labComments: z.string().trim().max(1000).optional().nullable(),
 			})
 			.safeParse(request.body);
-		if (!token || !parsedBody.success)
-			return reply.code(400).send({ error: "InvalidRequest" });
-		const { status } = parsedBody.data;
+
+		if (!token || !parsedBody.success) {
+			return reply.code(400).send({
+				error: "InvalidRequest",
+				message: "Недопустимый статус работы лаборатории.",
+			});
+		}
+
+		const { status: targetStatus, labComments } = parsedBody.data;
 
 		try {
 			const order = await getLabOrderByToken(token);
-			if (!order) return reply.code(404).send({ error: "OrderNotFound" });
+			if (!order) {
+				return reply.code(404).send({
+					error: "OrderNotFound",
+					message: "Наряд-заказ не найден или ссылка устарела.",
+				});
+			}
 
-			/*
-			 * БЫЛО: updateLabOrderStatus мог вернуть null (гонка: заказ сняли,
-			 * токен сменили), а маршрут всё равно отвечал { success: true,
-			 * status: undefined }. Техник видел «сохранено», клиника по WS
-			 * ничего не получала, статус в базе не менялся — повторные клики
-			 * и расхождение портала с расписанием ЗТЛ.
-			 * СТАЛО: пустой RETURNING → честный 409; success только с реальным
-			 * статусом из строки; WS только после успешной записи.
-			 */
-			const updated = await updateLabOrderStatus(token, status);
+			const currentStatus = order.status as LabOrderStatus;
+			const allowed = LAB_ORDER_TECHNICIAN_TRANSITIONS[currentStatus];
+
+			if (!allowed || !allowed.includes(targetStatus as LabOrderStatus)) {
+				return reply.code(409).send({
+					error: "InvalidTechnicianStateTransition",
+					message: `Техник не может перевести заказ из статуса «${currentStatus}» в «${targetStatus}».`,
+				});
+			}
+
+			const updated = await updateLabOrderStatusByToken(
+				token,
+				order.organizationId,
+				targetStatus as LabOrderStatus,
+			);
+
 			if (!updated) {
 				return reply.code(409).send({
 					error: "LabOrderStatusNotSaved",
 					message:
-						"Статус заказа не обновлён: запись уже изменена или недоступна. Обновите страницу портала и повторите.",
+						"Статус заказа не обновлен: запись уже изменена или недоступна.",
 				});
+			}
+
+			if (labComments !== undefined) {
+				await db
+					.update(labOrders)
+					.set({ labComments, updatedAt: new Date() })
+					.where(eq(labOrders.id, updated.id));
 			}
 
 			wsBroker.broadcastToOrganization(updated.organizationId, {
@@ -376,11 +531,11 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 			return { success: true, status: updated.status };
 		} catch (e) {
-			console.error("[LabPortal] POST error:", e);
+			request.log.error({ err: e }, "[LabPortal] POST status error");
 			return reply.code(500).send({
 				error: "LabPortalError",
 				message:
-					"Портал лаборатории временно недоступен. Повторите попытку; если снова не выйдет — сообщите администратору клиники.",
+					"Портал лаборатории временно недоступен. Повторите попытку позже.",
 			});
 		}
 	});

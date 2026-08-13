@@ -499,7 +499,7 @@ export const appointments: Appointment[] = [
 	},
 ];
 
-const activeVisit: Visit = {
+export const activeVisit: Visit = {
 	id: activeVisitId,
 	organizationId,
 	patientId: marinaPatientId,

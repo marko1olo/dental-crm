@@ -1,4 +1,13 @@
 import crypto from "node:crypto";
+import {
+	computePackagingExpirationDate,
+	STERILIZATION_CYCLE_MODES,
+	STERILIZATION_INDICATOR_TYPES,
+	STERILIZATION_PACKAGING_TYPES,
+	type SterilizationCycleMode,
+	type SterilizationIndicatorType,
+	type SterilizationPackagingType,
+} from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -10,17 +19,61 @@ import { db } from "../db/client.js";
 import { sterilizationLogs, users, visitDiaries } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
+const packagingTypeSchema = z
+	.enum([
+		"kraft_heat_sealed",
+		"kraft_self_adhesive",
+		"laminated_heat_sealed",
+		"metal_cassette",
+		"other",
+	])
+	.optional()
+	.nullable();
+
+const indicatorTypeSchema = z
+	.enum([
+		"class4_multivariable",
+		"class5_integrating",
+		"class6_emulating",
+		"biological",
+		"bowie_dick",
+	])
+	.optional()
+	.nullable();
+
+const cycleModeSchema = z
+	.enum([
+		"B",
+		"S",
+		"N",
+		"dry_heat_180",
+		"dry_heat_160",
+		"plasma_vh2o2",
+		"ethylene_oxide",
+	])
+	.optional()
+	.nullable();
+
 const scanSchema = z.object({
-	barcode: z.string().min(1),
-	autoclaveId: z.string().min(1),
-	operatorId: z.string().uuid().optional(),
-	status: z.enum(["passed", "failed"]),
+	barcode: z.string().trim().min(1, "Штрихкод упаковки обязателен."),
+	autoclaveId: z.string().trim().min(1, "Идентификатор стерилизатора/автоклава обязателен."),
+	operatorId: z.string().uuid("Некорректный ID оператора стерилизации.").optional().nullable(),
+	status: z.enum(["passed", "failed", "quarantined"]),
+	deviceName: z.string().trim().max(120).optional().nullable(),
+	cycleNumber: z.number().int().min(1).optional().nullable(),
+	temperatureCelsius: z.number().min(50).max(300).optional().nullable(),
+	pressureBar: z.number().min(0).max(10).optional().nullable(),
+	itemsDescription: z.string().trim().max(500).optional().nullable(),
+	packagingType: packagingTypeSchema,
+	indicatorType: indicatorTypeSchema,
+	cycleMode: cycleModeSchema,
+	durationMin: z.number().int().min(1).max(300).optional().nullable(),
 });
 
 /**
- * Тот же 8-сегментный SHA-256, что computeDiaryHash в routes/diary.ts.
- * Лоток входит в отпечаток 043/у: смена barcode без пересчёта оставляет
- * diary_hash от старой упаковки, а ЭЦП/печать заверяют уже другую.
+ * 8-сегментный криптографический отпечаток SHA-256 для формы 043/у.
+ * Лоток входит в неизменяемый отпечаток дневника: смена штрихкода лотка
+ * пересчитывает diary_hash синхронно с подписью.
  */
 function computeDiaryHashForTrayLink(row: {
 	visitId: string;
@@ -50,6 +103,10 @@ function computeDiaryHashForTrayLink(row: {
 }
 
 export async function registerSterilizationRoutes(app: FastifyInstance) {
+	/**
+	 * GET /api/sterilization/logs
+	 * Журнал контроля работы стерилизаторов (форма № 257/у по СанПиН 3.3686-21).
+	 */
 	app.get("/api/sterilization/logs", async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 			req,
@@ -59,13 +116,42 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 
 		const logs = await db
-			.select()
+			.select({
+				id: sterilizationLogs.id,
+				organizationId: sterilizationLogs.organizationId,
+				deviceName: sterilizationLogs.deviceName,
+				autoclaveId: sterilizationLogs.autoclaveId,
+				cycleNumber: sterilizationLogs.cycleNumber,
+				temperatureCelsius: sterilizationLogs.temperatureCelsius,
+				pressureBar: sterilizationLogs.pressureBar,
+				itemsDescription: sterilizationLogs.itemsDescription,
+				operatorId: sterilizationLogs.operatorId,
+				operatorName: users.fullName,
+				barcode: sterilizationLogs.barcode,
+				status: sterilizationLogs.status,
+				passedIndicator: sterilizationLogs.passedIndicator,
+				packagingType: sterilizationLogs.packagingType,
+				expiresAt: sterilizationLogs.expiresAt,
+				indicatorType: sterilizationLogs.indicatorType,
+				cycleMode: sterilizationLogs.cycleMode,
+				temperatureSet: sterilizationLogs.temperatureSet,
+				pressureSet: sterilizationLogs.pressureSet,
+				durationMin: sterilizationLogs.durationMin,
+				timestamp: sterilizationLogs.timestamp,
+				createdAt: sterilizationLogs.createdAt,
+			})
 			.from(sterilizationLogs)
+			.leftJoin(users, eq(users.id, sterilizationLogs.operatorId))
 			.where(eq(sterilizationLogs.organizationId, organizationId))
 			.orderBy(desc(sterilizationLogs.timestamp));
+
 		return logs;
 	});
 
+	/**
+	 * POST /api/sterilization/scan
+	 * Регистрация цикла стерилизации и упаковки инструментов с расчетом срока годности.
+	 */
 	app.post("/api/sterilization/scan", async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 			req,
@@ -73,12 +159,13 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			"sterilization scan",
 		);
 		if (!organizationId) return;
+
 		const scanParsed = scanSchema.safeParse(req.body);
 		if (!scanParsed.success) {
+			const firstError = scanParsed.error.issues[0]?.message ?? "Проверьте данные стерилизации.";
 			return reply.code(400).send({
 				error: "ValidationError",
-				message:
-					"Проверьте данные стерилизации: barcode, autoclaveId и status.",
+				message: firstError,
 			});
 		}
 		const data = scanParsed.data;
@@ -103,14 +190,34 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			}
 		}
 
+		// Расчет срока годности стерильности по типу упаковки (СанПиН 3.3686-21)
+		const now = new Date();
+		const expiresAt = data.status === "passed"
+			? computePackagingExpirationDate(data.packagingType as SterilizationPackagingType, now)
+			: null;
+
+		const passedIndicator = data.status === "passed";
+
 		const [log] = await db
 			.insert(sterilizationLogs)
 			.values({
 				organizationId,
 				barcode: data.barcode,
 				autoclaveId: data.autoclaveId,
-				operatorId: data.operatorId,
+				deviceName: data.deviceName || "Автоклав 1",
+				cycleNumber: data.cycleNumber || 1,
+				temperatureCelsius: data.temperatureCelsius ? String(data.temperatureCelsius) : null,
+				pressureBar: data.pressureBar ? String(data.pressureBar) : null,
+				itemsDescription: data.itemsDescription || null,
+				operatorId: data.operatorId || null,
 				status: data.status,
+				passedIndicator,
+				packagingType: data.packagingType || null,
+				expiresAt,
+				indicatorType: data.indicatorType || null,
+				cycleMode: data.cycleMode || null,
+				durationMin: data.durationMin || null,
+				timestamp: now,
 			})
 			.returning();
 
@@ -118,18 +225,16 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			type: "STERILIZATION_LOG_ADDED",
 			payload: log,
 		});
-		return log;
+
+		return reply.code(201).send(log);
 	});
 
+	/**
+	 * POST /api/sterilization/link
+	 * Привязка стерильного лотка к дневному приему 043/у с пересчетом SHA-256 хэша
+	 * и защитой от TOCTOU / нестерильных или просроченных упаковок.
+	 */
 	app.post("/api/sterilization/link", async (req, reply) => {
-		/*
-		 * Clinical mutation context (not staff-only org).
-		 * BYLO: requireResolvedStaffOrAdminOrganizationId — tolko JWT staff/org,
-		 * bez requireClinicalMutationAccess. Client link bez mutation headers
-		 * prohodil v dev (unguarded) i pisal visit_diaries.barcode + diary_hash.
-		 * STALO: tot zhe gate, chto POST /api/diaries draft/lock — secret kliniki
-		 * + verified organizationId. scan/logs ostayutsya staff-org (zhurnal SanPiN).
-		 */
 		const clinical = await requireClinicalMutationContext(
 			req,
 			reply,
@@ -137,18 +242,23 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 		);
 		if (!clinical) return;
 		const organizationId = clinical.organizationId;
+
 		const linkParsed = z
-			.object({ visitId: z.string().uuid(), barcode: z.string() })
+			.object({
+				visitId: z.string().uuid("Некорректный ID визита."),
+				barcode: z.string().trim().min(1, "Штрихкод обязателен."),
+			})
 			.safeParse(req.body);
+
 		if (!linkParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Проверьте привязку стерилизации: visitId и barcode.",
+				message: "Проверьте привязку стерилизации: visitId и barcode обязательны.",
 			});
 		}
 		const { visitId, barcode } = linkParsed.data;
 
-		// Verify that the barcode passed sterilization within the same tenant.
+		// Проверяем статус последнего цикла стерилизации для данного штрихкода в организации
 		const [log] = await db
 			.select()
 			.from(sterilizationLogs)
@@ -160,40 +270,32 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			)
 			.orderBy(desc(sterilizationLogs.timestamp))
 			.limit(1);
-		if (log?.status !== "passed") {
-			/*
-			 * БЫЛО: только error латиницей без message. Клиент doLock читает
-			 * payload.message; без него строил общий fallback. 404 ниже тоже
-			 * был голым VisitDiaryNotFound — requestFailureCause(404) слал
-			 * врача «программа обновлена не полностью» вместо «сохраните
-			 * черновик дневника».
-			 */
+
+		if (!log) {
 			return reply.code(400).send({
-				error: "Invalid or failed sterilization barcode",
+				error: "InvalidSterilizationBarcode",
 				message:
-					"Лоток не подтверждён журналом стерилизации: такого штрихкода нет в этой клинике или последний цикл не пройден. Проверьте штрихкод на упаковке или отсканируйте другой лоток.",
+					"Штрихкод инструментального лотка не найден в журнале стерилизации клиники. Отсканируйте зарегистрированный лоток.",
 			});
 		}
 
-		/*
-		 * БЫЛО: UPDATE instrument_tray_barcode по visitId+org без чтения is_locked
-		 * и без пересчёта diary_hash. Подписанный 043/у можно было «переклеить»
-		 * на другой лоток — PKCS#7 и печать оставались от старого содержимого.
-		 * Черновик после link тоже нёс hash без нового barcode до следующего
-		 * save/lock — CryptoPro подписывал устаревший отпечаток.
-		 *
-		 * СТАЛО: SELECT → отказ если locked → UPDATE barcode + diary_hash
-		 * той же 8-сегментной формулой, что routes/diary.ts.
-		 */
-		/*
-		 * DEFECT #82: tray-link TOCTOU — same class as draft save (#73).
-		 * БЫЛО: SELECT without FOR UPDATE, then UPDATE WHERE is_locked=false.
-		 * Concurrent POST /lock could commit between read and write; the
-		 * is_locked=false WHERE still races under READ COMMITTED if lock
-		 * and tray-link interleave without row lock (hash recompute used
-		 * a stale unlocked snapshot). СТАЛО: single transaction with
-		 * FOR UPDATE, re-check isLocked, UPDATE is_locked=false.
-		 */
+		if (log.status !== "passed" || !log.passedIndicator) {
+			return reply.code(400).send({
+				error: "FailedSterilizationBarcode",
+				message:
+					"Лоток не прошел контроль стерилизации (статус «failed» или карантин). Использование непростерилизованных инструментов категорически запрещено СанПиН 3.3686-21.",
+			});
+		}
+
+		// Проверка срока годности стерильности
+		if (log.expiresAt && new Date(log.expiresAt).getTime() < Date.now()) {
+			return reply.code(400).send({
+				error: "ExpiredSterilizationBarcode",
+				message: `Срок годности стерильной упаковки лотка истек (${new Date(log.expiresAt).toLocaleDateString("ru-RU")}). Требуется повторная предстерилизационная очистка и автоклавирование.`,
+			});
+		}
+
+		// Атомарная транзакция с пессимистичной блокировкой FOR UPDATE
 		const diary = await db.transaction(async (tx) => {
 			const [existingDiary] = await tx
 				.select()
@@ -206,6 +308,7 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 				)
 				.limit(1)
 				.for("update");
+
 			if (!existingDiary) {
 				return { kind: "not_found" as const };
 			}
@@ -237,11 +340,11 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 					and(
 						eq(visitDiaries.id, existingDiary.id),
 						eq(visitDiaries.organizationId, organizationId),
-						// Повторная защита от TOCTOU: между SELECT и UPDATE кто-то /lock.
 						eq(visitDiaries.isLocked, false),
 					),
 				)
 				.returning();
+
 			if (!updated) {
 				return { kind: "locked" as const };
 			}
@@ -252,14 +355,14 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			return reply.code(404).send({
 				error: "VisitDiaryNotFound",
 				message:
-					"Дневник этого приёма ещё не сохранён, привязать лоток не к чему. Нажмите «Сохранить черновик», дождитесь отметки времени и повторите подписание.",
+					"Дневник этого приема еще не сохранен, привязать лоток не к чему. Сохраните черновик дневника и повторите привязку.",
 			});
 		}
 		if (diary.kind === "locked") {
 			return reply.code(409).send({
 				error: "DiaryLocked",
 				message:
-					"Дневник приёма уже подписан — сменить инструментальный лоток в 043/у нельзя. Если упаковка указана неверно, правку вносит администратор через ревизию дневника.",
+					"Дневник приема уже подписан — изменить инструментальный лоток в 043/у нельзя. Если упаковка указана неверно, правку вносит администратор через ревизию дневника.",
 			});
 		}
 
@@ -267,6 +370,7 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			type: "VISIT_DIARY_UPDATED",
 			payload: diary.diary,
 		});
+
 		return diary.diary;
 	});
 }
