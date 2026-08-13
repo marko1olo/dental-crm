@@ -63,7 +63,7 @@ describe("commitImagingImport", () => {
 			return tx
 				.select()
 				.from(schema.imagingStudies)
-				.where(eq(schema.imagingStudies.id, result.createdStudyIds[0]));
+				.where(eq(schema.imagingStudies.id, result.createdStudyIds[0] ?? ""));
 		});
 
 		assert.ok(stored);

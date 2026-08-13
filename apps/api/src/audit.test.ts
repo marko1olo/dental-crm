@@ -24,7 +24,7 @@ describe("recordAuditEvent", () => {
 			await db
 				.insert(organizations)
 				.values([
-					{ id: orgId, name: "Audit Test Org", schemaVersion: 1 },
+					{ id: orgId, name: "Audit Test Org" },
 				])
 				.onConflictDoNothing();
 		});
@@ -51,6 +51,7 @@ describe("recordAuditEvent", () => {
 				.orderBy(desc(auditEvents.createdAt));
 
 			assert.strictEqual(events.length, 1);
+			assert.ok(events[0]);
 			assert.strictEqual(events[0].entityType, "User");
 			assert.strictEqual(events[0].entityId, "user-456");
 			assert.strictEqual(events[0].action, "LOGIN");
@@ -65,9 +66,9 @@ describe("recordAuditEvent", () => {
 			await withSuperuserBypass(async () => {
 				await db.insert(users).values({
 					id: userId,
-					fullName: "Test User",
+					fullName: "Тестовый Пользователь",
 					phone: "+79991234567",
-					role: "admin",
+					role: "doctor",
 					organizationId: orgId,
 				});
 			});
@@ -75,10 +76,9 @@ describe("recordAuditEvent", () => {
 			await recordAuditEvent({
 				organizationId: orgId,
 				actorUserId: userId,
-				entityType: "document",
-				entityId: "doc-1",
-				action: "document_voided",
-				reason: null,
+				entityType: "User",
+				entityId: "user-456",
+				action: "LOGIN",
 			});
 
 			const events = await db
@@ -88,6 +88,7 @@ describe("recordAuditEvent", () => {
 				.orderBy(desc(auditEvents.createdAt));
 
 			assert.strictEqual(events.length, 1);
+			assert.ok(events[0]);
 			assert.strictEqual(events[0].actorUserId, userId);
 		});
 	});
@@ -109,6 +110,7 @@ describe("recordAuditEvent", () => {
 				.orderBy(desc(auditEvents.createdAt));
 
 			assert.strictEqual(events.length >= 1, true);
+			assert.ok(events[0]);
 			assert.strictEqual(events[0].organizationId, firstOrg.id);
 			assert.strictEqual(events[0].entityType, "Post");
 			assert.strictEqual(events[0].action, "CREATE");

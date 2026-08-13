@@ -1049,8 +1049,13 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 	app.patch(
 		"/api/schedule/urgent-schedule-requests/:id/resolve",
 		async (request, reply) => {
-			const orgId = await requireOrganizationContext(request, reply);
-			if (!orgId) return reply;
+			const context = await requireScheduleMutationContext(
+				request,
+				reply,
+				"resolve-urgent-request",
+			);
+			if (!context) return reply;
+			const orgId = context.organizationId;
 
 			const params = request.params as { id: string };
 

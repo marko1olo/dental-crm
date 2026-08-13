@@ -109,6 +109,7 @@ describe("doctorProfitabilityRow", () => {
 });
 
 test("startBiAnalyticsWorker scheduling and execution with PostgreSQL fixtures", async (t) => {
+	const realSetTimeout = setTimeout;
 	t.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
 
 	const orgId = fixtureUuid("m4.biAnalyticsWorker", 0);
@@ -150,7 +151,7 @@ test("startBiAnalyticsWorker scheduling and execution with PostgreSQL fixtures",
 					.where(eq(biAnalyticsSnapshots.organizationId, orgId));
 			});
 			if (snapshots.length >= 1) break;
-			await new Promise((r) => setTimeout(r, 50));
+			await new Promise((r) => realSetTimeout(r, 50));
 		}
 
 		assert.ok(snapshots.length >= 1, "Snapshot should be inserted into DB");
@@ -167,7 +168,7 @@ test("startBiAnalyticsWorker scheduling and execution with PostgreSQL fixtures",
 					.where(eq(biAnalyticsSnapshots.organizationId, orgId));
 			});
 			if (snapshotsAfterHour.length >= 2) break;
-			await new Promise((r) => setTimeout(r, 50));
+			await new Promise((r) => realSetTimeout(r, 50));
 		}
 
 		assert.ok(

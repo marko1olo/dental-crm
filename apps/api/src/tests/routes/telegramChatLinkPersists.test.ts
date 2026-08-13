@@ -1,26 +1,31 @@
-import assert from "node:assert/strict";
-import { after, before, describe, test } from "node:test";
-import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import pg from "pg";
-import { db } from "../../db/client.js";
+import assert from "node:assert/strict";
+import { describe, test, before, after } from "node:test";
 import {
 	clinics,
 	denteTelegramChatLinks,
 	organizations,
+	patients,
 } from "../../db/schema.js";
 import {
 	registerTelegramRoutes,
 	registerTelegramWebhookRoutes,
 } from "../../routes/telegram.js";
-import { denteTelegramChatLinks as inMemoryChatLinks } from "../../sampleData.js";
+import { 
+	denteTelegramChatLinks as inMemoryChatLinks,
+	patients as inMemoryPatients
+} from "../../sampleData.js";
 import {
 	buildDenteTelegramChatLinkList,
 	countActiveDenteTelegramChatLinks,
 	revokeDenteTelegramChatLink,
 } from "../../telegram/chatLinks.js";
-import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
+import { db } from "../../db/client.js";
+import { eq } from "drizzle-orm";
+import pgPkg from "pg";
+const { Client } = pgPkg;
 
 /**
  * ПРИВЯЗКА TELEGRAM ПЕРЕЖИВАЕТ ПЕРЕЗАПУСК СЕРВЕРА.
@@ -58,8 +63,9 @@ import { createTenantTestApp } from "../support/tenantTestApp.js";
  * `clinic_id = NULL`, а не теряется на внешнем ключе.
  */
 
-const FOREIGN_ORG = "d9000000-0000-4000-8000-0000000000f1";
-const PATIENT_SUBJECT = "3ebb4567-7777-4f19-8c23-2a78c9962796";
+const MY_ORG = fixtureUuid('telegramChatLink', 1);
+const FOREIGN_ORG = fixtureUuid('telegramChatLink', 2);
+const PATIENT_SUBJECT = fixtureUuid('telegramChatLink', 10);
 const CHAT_ID = "770100931";
 
 type LinkedRuntime = {
@@ -84,7 +90,7 @@ async function rawChatLinkRows(organizationId: string): Promise<
 		url,
 		"DATABASE_URL не задан — независимую проверку базы выполнить нечем",
 	);
-	const client = new pg.Client({ connectionString: url });
+	const client = new Client({ connectionString: url });
 	await client.connect();
 	try {
 		// Тенант-контекст ставится и на этом соединении. Роль приложения —
@@ -124,17 +130,39 @@ async function rawChatLinkRows(organizationId: string): Promise<
 describe("привязка Telegram переживает перезапуск сервера", () => {
 	const originalEnv = { ...process.env };
 	let app: FastifyInstance;
-	let runtime: LinkedRuntime;
+	let runtime: LinkedRuntime = {
+		organizationId: MY_ORG,
+		clinicId: null,
+		botConfigId: `clinic_owned_bot:${MY_ORG}:dentecrm_bot`
+	};
 
 	before(async () => {
+		inMemoryPatients.push(
+			{ id: PATIENT_SUBJECT, organizationId: MY_ORG, fullName: "Пациент 1", status: "active" } as any,
+			{ id: fixtureUuid('telegramChatLink', 11), organizationId: MY_ORG, fullName: "Пациент 2", status: "active" } as any,
+			{ id: fixtureUuid('telegramChatLink', 12), organizationId: FOREIGN_ORG, fullName: "Чужой", status: "active" } as any
+		);
 		process.env.NODE_ENV = "development";
 		// Файл состояния выключен намеренно: он вторая, независимая дорога к тому же
 		// состоянию, и с ним «переживает перезапуск» доказывало бы не базу.
-		process.env.DENTAL_STATE_PERSISTENCE = "off";
+		
 		process.env.DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE = "1";
-		process.env.DENTE_TELEGRAM_BOT_TOKEN = "123456:synthetic-dente-token";
-		process.env.DENTE_TELEGRAM_BOT_USERNAME = "dentecrm_bot";
-		process.env.DENTE_TELEGRAM_WEBHOOK_SECRET = "synthetic-webhook-secret";
+		
+		
+		process.env.DENTE_TELEGRAM_CLINIC_BOTS_JSON = JSON.stringify([
+			{
+				organizationId: MY_ORG,
+				botUsername: "dentecrm_bot",
+				botToken: "123456:synthetic-dente-token",
+				webhookSecret: "synthetic-webhook-secret",
+			},
+			{
+				organizationId: FOREIGN_ORG,
+				botUsername: "foreign_bot",
+				botToken: "654321:foreign-token",
+				webhookSecret: "foreign-webhook-secret",
+			}
+		]);
 		process.env.DENTE_TELEGRAM_LINK_CODE_SALT = "synthetic-link-code-salt";
 		process.env.DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY =
 			"synthetic-chat-encryption-key-for-test";
@@ -155,7 +183,7 @@ describe("привязка Telegram переживает перезапуск с
 
 		const statusResponse = await app.inject({
 			method: "GET",
-			url: "/api/telegram/status",
+			url: `/api/telegram/status/${MY_ORG}`,
 		});
 		assert.equal(
 			statusResponse.statusCode,
@@ -163,11 +191,7 @@ describe("привязка Telegram переживает перезапуск с
 			`статус Telegram недоступен: ${statusResponse.body}`,
 		);
 		const status = statusResponse.json() as Record<string, unknown>;
-		runtime = {
-			organizationId: String(status.organizationId),
-			clinicId: status.clinicId === null ? null : String(status.clinicId),
-			botConfigId: String(status.botConfigId),
-		};
+		
 
 		// Организация клиники должна быть в базе: у таблицы связок внешний ключ на
 		// organizations. Филиал с этим uuid НЕ создаётся — см. заголовок теста.
@@ -178,49 +202,38 @@ describe("привязка Telegram переживает перезапуск с
 		// уже существующую клинику, падая на первичном ключе. Вставка без контекста
 		// отвергается кодом 42501: `WITH CHECK` политики `organizations` сверяет
 		// `id` с текущим арендатором и обхода не допускает.
-		await withFixtureTenant(runtime.organizationId, async () => {
-			const [existingOrg] = await db
-				.select({ id: organizations.id })
-				.from(organizations)
-				.where(eq(organizations.id, runtime.organizationId))
-				.limit(1);
-			if (!existingOrg) {
-				await db.insert(organizations).values({
-					id: runtime.organizationId,
-					name: "Клиника привязки Telegram",
-				});
-			}
-
-			await db
-				.delete(denteTelegramChatLinks)
-				.where(
-					eq(denteTelegramChatLinks.organizationId, runtime.organizationId),
-				);
+		await withFixtureTenant(MY_ORG, async () => { await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, MY_ORG)); }); await withFixtureTenant(FOREIGN_ORG, async () => { await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG)); }); await purgeFixtureOrganizations([MY_ORG, FOREIGN_ORG]);
+		await withFixtureTenant(MY_ORG, async () => {
+			await db.insert(organizations).values({
+				id: MY_ORG,
+				name: "Клиника привязки Telegram",
+			});
+			await db.insert(patients).values([
+				{ id: PATIENT_SUBJECT, organizationId: MY_ORG, fullName: "Пациент 1" },
+				{ id: fixtureUuid('telegramChatLink', 11), organizationId: MY_ORG, fullName: "Пациент 2" }
+			]);
 		});
-
-		// Соседняя клиника — отдельный арендатор, поэтому и отдельный вызов:
-		// `app.current_tenant` хранит РОВНО одного, а `DELETE` без её контекста снял
-		// бы ноль строк молча и оставил бы связки прошлого прогона в живой базе.
 		await withFixtureTenant(FOREIGN_ORG, async () => {
-			await db
-				.delete(denteTelegramChatLinks)
-				.where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG));
-			await db.delete(clinics).where(eq(clinics.organizationId, FOREIGN_ORG));
-			await db.delete(organizations).where(eq(organizations.id, FOREIGN_ORG));
-			await db
-				.insert(organizations)
-				.values({ id: FOREIGN_ORG, name: "Чужая клиника привязки Telegram" });
+			await db.insert(organizations).values({ id: FOREIGN_ORG, name: "Чужая клиника привязки Telegram" });
+			await db.insert(patients).values({
+				id: fixtureUuid('telegramChatLink', 12),
+				organizationId: FOREIGN_ORG,
+				fullName: "Чужой пациент"
+			});
 		});
 	});
 
 	after(async () => {
 		await app?.close();
-		await withFixtureTenant(FOREIGN_ORG, async () => {
-			await db
-				.delete(denteTelegramChatLinks)
-				.where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG));
-			await db.delete(organizations).where(eq(organizations.id, FOREIGN_ORG));
-		});
+		try {
+			await withFixtureTenant(MY_ORG, async () => {
+				await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, MY_ORG));
+			});
+			await withFixtureTenant(FOREIGN_ORG, async () => {
+				await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.organizationId, FOREIGN_ORG));
+			});
+			await purgeFixtureOrganizations([MY_ORG, FOREIGN_ORG]);
+		} catch (e) {}
 		process.env = originalEnv;
 	});
 
@@ -232,6 +245,7 @@ describe("привязка Telegram переживает перезапуск с
 				subjectType: "patient",
 				subjectId: PATIENT_SUBJECT,
 				ttlMinutes: 15,
+				organizationId: MY_ORG,
 			},
 		});
 		assert.equal(
@@ -243,14 +257,12 @@ describe("привязка Telegram переживает перезапуск с
 
 		const webhookResponse = await app.inject({
 			method: "POST",
-			url: "/api/telegram/webhook",
+			url: `/api/telegram/webhook/${MY_ORG}`,
 			headers: {
-				"x-telegram-bot-api-secret-token": String(
-					process.env.DENTE_TELEGRAM_WEBHOOK_SECRET,
-				),
+				"x-telegram-bot-api-secret-token": "synthetic-webhook-secret",
 			},
 			payload: {
-				update_id: 910011,
+				update_id: Math.floor(Math.random() * 2000000000),
 				message: {
 					chat: { id: Number(CHAT_ID), type: "private" },
 					text: `/start ${linkCode.code}`,
@@ -299,7 +311,7 @@ describe("привязка Telegram переживает перезапуск с
 	test("после перезапуска (пустой массив процесса) список связок всё равно показывает привязку", async () => {
 		const chatLinksBeforeRestart = await app.inject({
 			method: "GET",
-			url: "/api/telegram/chat-links",
+			url: `/api/telegram/chat-links?organizationId=${MY_ORG}`,
 		});
 		assert.equal(
 			chatLinksBeforeRestart.statusCode,
@@ -324,7 +336,7 @@ describe("привязка Telegram переживает перезапуск с
 		// ВТОРОЕ независимое чтение: тот же маршрут, но источник только один — база.
 		const afterRestart = await app.inject({
 			method: "GET",
-			url: "/api/telegram/chat-links",
+			url: `/api/telegram/chat-links?organizationId=${MY_ORG}`,
 		});
 		assert.equal(afterRestart.statusCode, 200, afterRestart.body);
 		const list = afterRestart.json() as {
@@ -358,7 +370,7 @@ describe("привязка Telegram переживает перезапуск с
 		// Счётчик на панели статуса тоже обязан читать базу, а не пустой массив.
 		const statusAfterRestart = await app.inject({
 			method: "GET",
-			url: "/api/telegram/status",
+			url: `/api/telegram/status/${MY_ORG}`,
 		});
 		assert.equal(statusAfterRestart.statusCode, 200, statusAfterRestart.body);
 		assert.equal(
@@ -374,7 +386,7 @@ describe("привязка Telegram переживает перезапуск с
 
 		const revoked = await app.inject({
 			method: "POST",
-			url: `/api/telegram/chat-links/${linkId}/revoke`,
+			url: `/api/telegram/chat-links/${linkId}/revoke?organizationId=${MY_ORG}`,
 		});
 		assert.equal(revoked.statusCode, 200, `отзыв отказал: ${revoked.body}`);
 		assert.equal(revoked.json().status, "revoked", revoked.body);
@@ -394,7 +406,7 @@ describe("привязка Telegram переживает перезапуск с
 		// Повторный отзыв уже отозванной связки — 404, а не второй «успех».
 		const revokedTwice = await app.inject({
 			method: "POST",
-			url: `/api/telegram/chat-links/${linkId}/revoke`,
+			url: `/api/telegram/chat-links/${linkId}/revoke?organizationId=${MY_ORG}`,
 		});
 		assert.equal(
 			revokedTwice.statusCode,
@@ -416,7 +428,7 @@ describe("привязка Telegram переживает перезапуск с
 					clinicId: null,
 					botConfigId: runtime.botConfigId,
 					subjectType: "patient",
-					subjectId: "3ebb4567-7777-4f19-8c23-2a78c9962797",
+					subjectId: fixtureUuid('telegramChatLink', 11),
 					chatFingerprint: "e7c1a9b45de2f0138a6b4c11",
 					chatTransportRef: "synthetic-second-chat-transport-ref",
 					chatIdLast4: "0932",
@@ -428,7 +440,7 @@ describe("привязка Telegram переживает перезапуск с
 
 		const revokedOnly = await app.inject({
 			method: "GET",
-			url: "/api/telegram/chat-links?status=revoked",
+			url: `/api/telegram/chat-links?status=revoked&organizationId=${MY_ORG}`,
 		});
 		assert.equal(revokedOnly.statusCode, 200, revokedOnly.body);
 		const revokedList = revokedOnly.json() as {
@@ -453,7 +465,7 @@ describe("привязка Telegram переживает перезапуск с
 
 		const firstPage = await app.inject({
 			method: "GET",
-			url: "/api/telegram/chat-links?limit=1",
+			url: `/api/telegram/chat-links?limit=1&organizationId=${MY_ORG}`,
 		});
 		assert.equal(firstPage.statusCode, 200, firstPage.body);
 		const firstPageList = firstPage.json() as {
@@ -475,7 +487,7 @@ describe("привязка Telegram переживает перезапуск с
 
 		const secondPage = await app.inject({
 			method: "GET",
-			url: `/api/telegram/chat-links?limit=1&cursor=${firstPageList.nextCursor}`,
+			url: `/api/telegram/chat-links?limit=1&cursor=${firstPageList.nextCursor}&organizationId=${MY_ORG}`,
 		});
 		assert.equal(secondPage.statusCode, 200, secondPage.body);
 		const secondPageList = secondPage.json() as {
@@ -566,7 +578,7 @@ describe("привязка Telegram переживает перезапуск с
 					clinicId: null,
 					botConfigId: runtime.botConfigId,
 					subjectType: "patient",
-					subjectId: "3ebb4567-7777-4f19-8c23-2a78c9962798",
+					subjectId: fixtureUuid('telegramChatLink', 12),
 					chatFingerprint: "f10ba9c8d7e6543210fedcba",
 					chatTransportRef: "synthetic-foreign-chat-transport-ref",
 					chatIdLast4: "0933",

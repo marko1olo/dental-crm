@@ -22,8 +22,10 @@ import type { FastifyInstance } from "fastify";
 import Fastify from "fastify";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import { fixtureUuid, withFixtureTenant } from "../support/fixtureOrganizations.js";
 
-const STAFF_ID = "00000000-0000-4000-8000-000000000099";
+const STAFF_ID = fixtureUuid("staff-credentials", 99);
+const ORG_ID = fixtureUuid("staff-credentials-org", 1);
 const SETTINGS_ADMIN_SECRET = "staff-credentials-body-proof-secret";
 const CREDENTIALS_URL = `/api/settings/staff/${STAFF_ID}/credentials`;
 
@@ -39,6 +41,7 @@ describe("Staff credentials — body guard (null/typed → 400, не 500)", () =
 			"DENTE_SETTINGS_ADMIN_SECRET",
 			"DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS",
 			"DENTAL_STATE_PERSISTENCE",
+			"DENTE_DEV_ALLOW_HEADER_ORG",
 		]) {
 			savedEnv[key] = process.env[key];
 		}
@@ -46,8 +49,7 @@ describe("Staff credentials — body guard (null/typed → 400, не 500)", () =
 		process.env.NODE_ENV = "test";
 		process.env.DENTE_SETTINGS_ADMIN_SECRET = SETTINGS_ADMIN_SECRET;
 		delete process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS;
-		// Org без PostgreSQL: requireSettingsAccess после секрета берёт dev-org.
-		process.env.DENTAL_STATE_PERSISTENCE = "off";
+		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 
 		app = Fastify({ logger: false });
 		app.addHook("onRequest", async (request) => {
@@ -74,6 +76,7 @@ describe("Staff credentials — body guard (null/typed → 400, не 500)", () =
 	) {
 		const headers: Record<string, string> = {
 			"content-type": "application/json",
+			"x-organization-id": ORG_ID,
 		};
 		if (opts.withAdminSecret !== false) {
 			headers["x-dente-admin-secret"] = SETTINGS_ADMIN_SECRET;
@@ -94,14 +97,16 @@ describe("Staff credentials — body guard (null/typed → 400, не 500)", () =
 		} else if (opts.body !== undefined) {
 			injectOpts.payload = opts.body;
 		}
-		const response = await app.inject(injectOpts);
-		let json: Record<string, unknown> = {};
-		try {
-			json = JSON.parse(response.body) as Record<string, unknown>;
-		} catch {
-			json = {};
-		}
-		return { statusCode: response.statusCode, json, body: response.body };
+		return withFixtureTenant(ORG_ID, async () => {
+			const response = await app.inject(injectOpts);
+			let json: Record<string, unknown> = {};
+			try {
+				json = JSON.parse(response.body) as Record<string, unknown>;
+			} catch {
+				json = {};
+			}
+			return { statusCode: response.statusCode, json, body: response.body };
+		});
 	}
 
 	test("без admin secret → 403 SettingsAdminSecretRequired (auth-first)", async () => {

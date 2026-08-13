@@ -18,14 +18,13 @@ describe("getPaymentsByPatientIdInDb", () => {
 		await purgeFixtureOrganizations([orgId]);
 		await withSuperuserBypass(async () => {
 			await db.insert(organizations).values([
-				{ id: orgId, name: "Billing Query Test Org", schemaVersion: 1 },
+				{ id: orgId, name: "Billing Query Test Org" },
 			]);
 			await db.insert(patients).values([
 				{
 					id: patientId,
 					organizationId: orgId,
-					firstName: "Test",
-					lastName: "Patient",
+					fullName: "Test Patient",
 					phone: "+79998887766",
 				}
 			]);
@@ -68,7 +67,7 @@ describe("getPaymentsByPatientIdInDb", () => {
 						organizationId: orgId,
 						patientId: patientId,
 						amountRub: 500,
-						status: "pending",
+						status: "planned",
 						createdAt: createdAt2,
 						paidAt: paidAt2,
 					}

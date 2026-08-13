@@ -25,7 +25,7 @@ describe("auditFromRequest", () => {
 			await db
 				.insert(organizations)
 				.values([
-					{ id: orgId, name: "Clinical Audit Test Org", schemaVersion: 1 },
+					{ id: orgId, name: "Clinical Audit Test Org" },
 				])
 				.onConflictDoNothing();
 		});
@@ -61,6 +61,7 @@ describe("auditFromRequest", () => {
 				.orderBy(desc(clinicalAuditLogs.createdAt));
 
 			assert.strictEqual(events.length, 1);
+			assert.ok(events[0]);
 			assert.strictEqual(events[0].organizationId, orgId);
 			assert.strictEqual(events[0].action, "VIEW_PATIENT");
 			assert.strictEqual(events[0].entityType, "patient");
@@ -95,6 +96,7 @@ describe("auditFromRequest", () => {
 				.orderBy(desc(clinicalAuditLogs.createdAt));
 
 			assert.strictEqual(events.length, 1);
+			assert.ok(events[0]);
 			assert.strictEqual(events[0].ipAddress, "10.0.0.5");
 			assert.strictEqual(events[0].userAgent, "CustomApp/1.0");
 		});
@@ -122,6 +124,7 @@ describe("auditFromRequest", () => {
 				.orderBy(desc(clinicalAuditLogs.createdAt));
 
 			assert.strictEqual(events.length, 1);
+			assert.ok(events[0]);
 			assert.strictEqual(events[0].ipAddress, null);
 			assert.strictEqual(events[0].userAgent, null);
 		});
@@ -151,6 +154,7 @@ describe("auditFromRequest", () => {
 				.orderBy(desc(clinicalAuditLogs.createdAt));
 
 			assert.strictEqual(events.length, 1);
+			assert.ok(events[0]);
 			assert.strictEqual(events[0].ipAddress, "192.168.1.100");
 		});
 	});

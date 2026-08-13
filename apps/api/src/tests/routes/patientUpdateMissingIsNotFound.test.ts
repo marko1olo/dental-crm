@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 
 /**
  * ПРАВКА ОТСУТСТВУЮЩЕЙ КАРТЫ — ЭТО 404, А НЕ 500 «ДАННЫЕ МОГЛИ БЫТЬ ЗАПИСАНЫ».
@@ -23,60 +29,82 @@ import { after, before, describe, test } from "node:test";
  * — тем же флагом, которым пользуются сценарии прогона.
  */
 
+const NAMESPACE = "patientUpdateMissingIsNotFound";
+const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
 const MISSING_PATIENT = "00000000-0000-4000-8000-0000000000ff";
 
 describe("правка отсутствующей карты пациента", () => {
-	const saved = {
-		persistence: process.env.DENTAL_STATE_PERSISTENCE,
-	};
+	let databaseReady = true;
 
-	before(() => {
-		process.env.DENTAL_STATE_PERSISTENCE = "off";
+	before(async () => {
+		try {
+			await purgeFixtureOrganizations([ORGANIZATION_ID]);
+		} catch (error) {
+			if (!isDatabaseUnavailable(error)) throw error;
+			databaseReady = false;
+            return;
+		}
+
+        await withFixtureTenant(ORGANIZATION_ID, async () => {
+            const { organizations } = await import("../../db/schema.js");
+            const { db } = await import("../../db/client.js");
+            await db.insert(organizations).values({
+                id: ORGANIZATION_ID,
+                name: "Test Org for missing patient update",
+            });
+        });
 	});
 
-	after(() => {
-		if (saved.persistence === undefined)
-			delete process.env.DENTAL_STATE_PERSISTENCE;
-		else process.env.DENTAL_STATE_PERSISTENCE = saved.persistence;
+	after(async () => {
+		if (!databaseReady) return;
+		await purgeFixtureOrganizations([ORGANIZATION_ID]);
 	});
 
 	test("слой доступа отдаёт null, а не бросает исключение", async () => {
+		if (!databaseReady) return;
 		const { updatePatientInDb } = await import("../../db/patientsQuery.js");
-		const result = await updatePatientInDb(
-			"d0000000-0000-4000-8000-00000000d001",
-			MISSING_PATIENT,
-			{
-				fullName: "Никого Такого Нет",
-			},
-		);
-		assert.equal(
-			result,
-			null,
-			"слой доступа бросил исключение вместо null: маршрут не сможет ответить 404, " +
-				"и оператор получит 500 «данные могли быть записаны» на карту, которой нет",
-		);
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			const result = await updatePatientInDb(
+				ORGANIZATION_ID,
+				MISSING_PATIENT,
+				{
+					fullName: "Никого Такого Нет",
+				},
+			);
+			assert.equal(
+				result,
+				null,
+				"слой доступа бросил исключение вместо null: маршрут не сможет ответить 404, " +
+					"и оператор получит 500 «данные могли быть записаны» на карту, которой нет",
+			);
+		});
 	});
 
 	test("проверка не выродилась: существующая карта правится и возвращается", async () => {
-		const { updatePatientInDb } = await import("../../db/patientsQuery.js");
-		const { patients: inMemoryPatients } = await import("../../sampleData.js");
-		const existing = inMemoryPatients[0];
-		assert.ok(
-			existing,
-			"в памяти нет ни одного пациента — сравнивать не с чем, проверка бессодержательна",
-		);
+		if (!databaseReady) return;
+		const { updatePatientInDb, createPatientSafeInDb } = await import("../../db/patientsQuery.js");
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			const creation = await createPatientSafeInDb(ORGANIZATION_ID, {
+				fullName: "Тестовый Пациент",
+				phone: "+79001234567",
+			}, () => false);
+			
+			assert.equal(creation.type, "success");
+			if (creation.type !== "success") return;
+			const existing = creation.patient;
 
-		const updated = await updatePatientInDb(
-			existing.organizationId,
-			existing.id,
-			{
-				notes: "Замок правки существующей карты",
-			},
-		);
-		assert.ok(
-			updated,
-			"существующая карта вернулась как null: правка сломала рабочий случай, а не только отсутствующий",
-		);
-		assert.equal(updated.id, existing.id);
+			const updated = await updatePatientInDb(
+				ORGANIZATION_ID,
+				existing.id,
+				{
+					notes: "Замок правки существующей карты",
+				},
+			);
+			assert.ok(
+				updated,
+				"существующая карта вернулась как null: правка сломала рабочий случай, а не только отсутствующий",
+			);
+			assert.equal(updated.id, existing.id);
+		});
 	});
 });

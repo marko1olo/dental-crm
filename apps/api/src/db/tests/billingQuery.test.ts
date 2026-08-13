@@ -184,6 +184,7 @@ describe("billingQuery integration tests (Real PostgreSQL 18)", () => {
 				return getPaymentsByPatientIdInDb(ORG_ID, PATIENT_1_ID);
 			});
 			assert.ok(patientPayments.length >= 1);
+			assert.ok(patientPayments[0]);
 			assert.strictEqual(patientPayments[0].patientId, PATIENT_1_ID);
 		});
 	});
@@ -214,6 +215,7 @@ describe("billingQuery integration tests (Real PostgreSQL 18)", () => {
 				const [p] = await getPaymentsByPatientIdInDb(ORG_ID, PATIENT_2_ID);
 				return p;
 			});
+			assert.ok(refundedPayment);
 			assert.strictEqual(refundedPayment.status, "refunded");
 
 			// 3. Restore payment settlement (fullyRefunded: false)
@@ -230,6 +232,7 @@ describe("billingQuery integration tests (Real PostgreSQL 18)", () => {
 				const [p] = await getPaymentsByPatientIdInDb(ORG_ID, PATIENT_2_ID);
 				return p;
 			});
+			assert.ok(restoredPayment);
 			assert.strictEqual(restoredPayment.status, "paid");
 		});
 	});

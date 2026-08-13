@@ -7,6 +7,12 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 
 /**
  * РАСПИСАНИЕ КЛИНИКИ МЕНЯЛОСЬ БЕЗ СЕКРЕТА АДМИНИСТРАТОРА, ХОТЯ ОХРАНА БЫЛА
@@ -63,7 +69,8 @@ const SCHEDULE_ROUTE_FILE = path.resolve(
 const SECRET_HEADER = "x-dente-admin-secret";
 const UNGUARDED_FLAG = "DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS";
 const SECRET_VARIABLE = "DENTE_SCHEDULE_ADMIN_SECRET";
-const ORGANIZATION = "d0000000-0000-4000-8000-00000000d001";
+const NAMESPACE = "scheduleMutationGuard";
+const ORGANIZATION = fixtureUuid(NAMESPACE, 1);
 /** Подставляется вместо `:appointmentId`: до данных запрос всё равно не доходит. */
 const ANY_APPOINTMENT = "8356141b-7cfa-4221-95f7-70f47e7344b1";
 
@@ -163,6 +170,7 @@ const MUTATING_ROUTES = discoverMutatingRoutes(scheduleSource);
 describe("периметр расписания закрыт секретом администратора на КАЖДОМ изменяющем маршруте", () => {
 	let app: FastifyInstance;
 	let clinicToken: string;
+	let databaseReady = true;
 	const adminSecret = randomBytes(24).toString("base64url");
 	const savedEnvironment = {
 		secret: process.env[SECRET_VARIABLE],
@@ -171,6 +179,23 @@ describe("периметр расписания закрыт секретом а
 	};
 
 	before(async () => {
+		try {
+			await purgeFixtureOrganizations([ORGANIZATION]);
+		} catch (error) {
+			if (!isDatabaseUnavailable(error)) throw error;
+			databaseReady = false;
+			return;
+		}
+
+		await withFixtureTenant(ORGANIZATION, async () => {
+			const { organizations } = await import("../../db/schema.js");
+			const { db } = await import("../../db/client.js");
+			await db.insert(organizations).values({
+				id: ORGANIZATION,
+				name: "Schedule Guard Test Org",
+			});
+		});
+
 		app = Fastify({ logger: false });
 		await registerScheduleRoutes(app);
 		await app.ready();
@@ -183,6 +208,9 @@ describe("периметр расписания закрыт секретом а
 	after(async () => {
 		await app?.close();
 		restoreEnvironment();
+		if (databaseReady) {
+			await purgeFixtureOrganizations([ORGANIZATION]);
+		}
 	});
 
 	function setEnvironment(value: string | undefined, variable: string): void {

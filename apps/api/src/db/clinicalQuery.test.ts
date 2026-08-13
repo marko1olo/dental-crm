@@ -18,14 +18,13 @@ describe("clinicalQuery - getTreatmentPlanItemsForPatient", () => {
 		await purgeFixtureOrganizations([orgId]);
 		await withSuperuserBypass(async () => {
 			await db.insert(organizations).values([
-				{ id: orgId, name: "Clinical Query Test Org", schemaVersion: 1 },
+				{ id: orgId, name: "Clinical Query Test Org" },
 			]);
 			await db.insert(patients).values([
 				{
 					id: patientId,
 					organizationId: orgId,
-					firstName: "Test",
-					lastName: "Patient",
+					fullName: "Test Patient",
 					phone: "+79998887766",
 				}
 			]);
@@ -46,15 +45,16 @@ describe("clinicalQuery - getTreatmentPlanItemsForPatient", () => {
 					patientId: patientId,
 					title: "Test Item",
 					quantity: "1",
-					priceKopecks: 100000,
-					unitPriceKopecks: 100000,
-					discountKopecks: 0,
+					priceRub: 1000,
+					unitPriceRub: 1000,
+					discountRub: 0,
 					status: "proposed",
 				});
 			});
 
 			const result = await getTreatmentPlanItemsForPatient(orgId, patientId);
 			assert.strictEqual(result.length, 1);
+			assert.ok(result[0]);
 			assert.strictEqual(result[0].id, itemId);
 			assert.strictEqual(result[0].title, "Test Item");
 		});

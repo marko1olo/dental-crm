@@ -71,7 +71,9 @@ function loadClientFailurePattern(): RegExp {
 		"..",
 		"web",
 		"src",
-		"AppHelpers.tsx",
+		"utils",
+		"commonHelpers",
+		"errorHelpers.ts",
 	);
 	const source = readFileSync(file, "utf8");
 	const declaration =

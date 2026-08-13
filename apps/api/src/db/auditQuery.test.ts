@@ -24,7 +24,7 @@ describe("recordAuditEventInDb", () => {
 			await db
 				.insert(organizations)
 				.values([
-					{ id: orgId, name: "Audit Query Test Org", schemaVersion: 1 },
+					{ id: orgId, name: "Audit Query Test Org" },
 				])
 				.onConflictDoNothing();
 		});
@@ -71,6 +71,7 @@ describe("recordAuditEventInDb", () => {
 				.where(eq(auditEvents.id, result.id));
 			
 			assert.strictEqual(events.length, 1);
+			assert.ok(events[0]);
 			assert.strictEqual(events[0].entityType, "patient");
 		});
 	});
@@ -99,6 +100,7 @@ describe("recordAuditEventInDb", () => {
 				.where(eq(auditEvents.id, result.id));
 			
 			assert.strictEqual(events.length, 1);
+			assert.ok(events[0]);
 			assert.strictEqual(events[0].entityType, "document");
 		});
 	});
