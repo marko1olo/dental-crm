@@ -44,6 +44,13 @@ import {
 	requireClinicalReadContext,
 } from "../accessGuard.js";
 
+import { db as database } from "../db/client.js";
+import { chairs } from "../db/schema.js";
+import { eq } from "drizzle-orm";
+import { createPatientInDb } from "../db/patientsQuery.js";
+import { createAppointmentInDb } from "../db/appointmentsQuery.js";
+import type { RequestIdentity } from "../security/identity.js";
+
 type VisitPayloadSchema<T> = {
 	safeParse: (
 		value: unknown,
@@ -329,6 +336,54 @@ export function sendVisitOpenError(error: unknown, reply: FastifyReply) {
 }
 
 export async function registerVisitRoutes(app: FastifyInstance) {
+	app.post("/api/visits/quick", async (request, reply) => {
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"visit quick",
+		);
+		if (!context) return;
+		const orgId = context.organizationId;
+		
+		const identity = (request as unknown as { __denteIdentity?: RequestIdentity }).__denteIdentity;
+		const doctorUserId = identity?.userId;
+		
+		if (!doctorUserId) {
+			reply.code(400);
+			return { error: "QuickVisitValidationError", message: "Не удалось определить врача" };
+		}
+
+		const chair = await database.select().from(chairs).where(eq(chairs.organizationId, orgId)).limit(1).then(r => r[0]);
+		if (!chair) {
+			reply.code(400);
+			return { error: "QuickVisitValidationError", message: "В клинике не настроены кресла" };
+		}
+
+		const patient = await createPatientInDb(orgId, {
+			fullName: "Быстрый прием",
+			phone: null,
+			birthDate: null,
+		});
+
+		const startsAt = new Date().toISOString();
+		const endsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+		const appointment = await createAppointmentInDb(orgId, {
+			patientId: patient.id,
+			doctorUserId,
+			chairId: chair.id,
+			status: "planned",
+			startsAt,
+			endsAt,
+			reason: "Быстрый прием",
+			comment: null,
+			assistantUserId: null,
+		});
+
+		await openVisitForAppointmentInDb(orgId, appointment.id);
+
+		reply.code(201);
+		return { patientId: patient.id, appointmentId: appointment.id };
+	});
 	/**
 	 * Открыть приём по записи расписания — недостающее звено цепочки.
 	 *
