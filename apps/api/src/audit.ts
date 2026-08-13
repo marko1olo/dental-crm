@@ -1,5 +1,6 @@
 import { db } from "./db/client.js";
 import { auditEvents, organizations } from "./db/schema.js";
+import { sql } from "drizzle-orm";
 
 /**
  * Писатель журнала аудита для пути документов (`db/documentQuery.ts`).
@@ -64,8 +65,10 @@ export async function recordAuditEvent(input: {
 }) {
 	let orgId = input.organizationId?.trim();
 	if (!orgId) {
-		const [org] = await db.select().from(organizations).limit(1);
-		orgId = org?.id;
+		const res = await db.execute<{ id: string }>(
+			sql`SELECT NULLIF(current_setting('app.current_tenant', true), '') AS id`
+		);
+		orgId = res.rows[0]?.id;
 	}
 
 	if (!orgId) {
@@ -78,6 +81,11 @@ export async function recordAuditEvent(input: {
 	}
 
 	try {
+		const debugCtx = await db.execute<{ ctx: string, bypass: string }>(sql`SELECT current_setting('app.current_tenant', true) AS ctx, current_setting('app.superuser_bypass', true) AS bypass`);
+		console.log("DEBUG: current_tenant before insert:", debugCtx.rows[0]?.ctx);
+		console.log("DEBUG: bypass before insert:", debugCtx.rows[0]?.bypass);
+		console.log("DEBUG: inserting with orgId:", orgId);
+		
 		await db.insert(auditEvents).values({
 			organizationId: orgId,
 			actorUserId: input.actorUserId ?? null,
@@ -86,6 +94,7 @@ export async function recordAuditEvent(input: {
 			action: input.action,
 			reason: input.reason,
 		});
+		console.log("DEBUG: insert SUCCEEDED!");
 	} catch (error) {
 		// Аварийный канал: событие целиком уходит в лог одной строкой, чтобы его
 		// можно было восстановить, даже если база отвергла запись. Проброс

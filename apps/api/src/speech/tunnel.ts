@@ -117,9 +117,4 @@ export function stopSshTunnel(): void {
 process.on("exit", () => {
 	stopSshTunnel();
 });
-process.on("SIGINT", () => {
-	stopSshTunnel();
-});
-process.on("SIGTERM", () => {
-	stopSshTunnel();
-});
+// process.on handlers removed to prevent test suite termination

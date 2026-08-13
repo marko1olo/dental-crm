@@ -712,6 +712,7 @@ export function startBackupDaemon(): void {
 		void createEncryptedBackup();
 	}, backupIntervalMs());
 	(backupInterval as any).unref?.();
+	(backupInterval as any).unref?.();
 }
 
 export function stopBackupDaemon(): void {

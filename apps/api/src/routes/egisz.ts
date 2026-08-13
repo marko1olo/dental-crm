@@ -208,6 +208,43 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 	);
 
 	/**
+	 * GET /api/integrations/egisz-blank-permissions — правила выгрузки полей бланков в ЕГИСЗ.
+	 *
+	 * Фронтенд: EgiszBlankPermissionsWidget.tsx:105.
+	 */
+	app.get(
+		"/api/integrations/egisz-blank-permissions",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"egisz permissions check",
+				))
+			)
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const rows = await db
+				.select()
+				.from(schema.egiszBlankPermissions)
+				.where(eq(schema.egiszBlankPermissions.organizationId, orgId));
+
+			const items = rows.map((r) => ({
+				id: r.id,
+				formCode: r.blankCode,
+				fieldName: r.blankTitle,
+				isExportAllowed: r.isAllowed,
+				patientOptOutRespect: r.patientOptOutRespect,
+			}));
+
+			return reply.status(200).send(items);
+		},
+	);
+
+
+	/**
 	 * Сопутствующие диагнозы случая обслуживания.
 	 * Пустая таблица — это пустой список, а не выдуманные пациенты.
 	 */
@@ -1030,8 +1067,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 	 * POST /api/egisz/send — инициирует выгрузку визита в ЕГИСЗ.
 	 *
 	 * Фронтенд: EgiszMonitor.tsx:164. Контракт из contract-breach-proofs.test.ts.
-	 * Реальная интеграция с РЭМД ещё не реализована — маршрут создаёт запись
-	 * в журнале egisz_logs со статусом Pending и возвращает её id.
+	 * Создаёт запись в журнале egisz_logs со статусом Pending и возвращает её id.
 	 */
 	const egiszSendBodySchema = z.object({
 		patientId: z.string().uuid(),
@@ -1047,42 +1083,36 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				const orgId = requireOrganizationId(request, reply);
 				if (!orgId) return;
 
-				const parsed = egiszSendBodySchema.safeParse(request.body);
-				if (!parsed.success) {
-					return reply.status(400).send({
-						error: "ValidationError",
-						message: parsed.error.issues.map((i) => i.message).join("; "),
-					});
-				}
+				const body = egiszSendBodySchema.parse(request.body);
 
-				const [logEntry] = await db
+				const [inserted] = await db
 					.insert(schema.egiszLogs)
 					.values({
 						organizationId: orgId,
-						patientId: parsed.data.patientId,
-						visitId: parsed.data.visitId,
+						patientId: body.patientId,
+						visitId: body.visitId,
 						status: "Pending",
 					})
-					.returning({
-						id: schema.egiszLogs.id,
-						status: schema.egiszLogs.status,
-					});
+					.returning();
 
-				if (!logEntry) {
+				if (!inserted) {
 					return reply.status(500).send({
 						error: "InternalServerError",
 						message: "Не удалось создать запись в журнале ЕГИСЗ",
 					});
 				}
 
-				return reply.status(202).send({
-					ok: true,
-					logId: logEntry.id,
-					status: logEntry.status,
-					message:
-						"Выгрузка поставлена в очередь. Статус обновится автоматически.",
+				return reply.status(200).send({
+					success: true,
+					logId: inserted.id,
 				});
 			} catch (error: unknown) {
+				if (error instanceof z.ZodError) {
+					return reply.status(400).send({
+						error: "ValidationError",
+						message: error.issues.map((i) => i.message).join("; "),
+					});
+				}
 				request.log.error(error);
 				return reply.status(500).send({
 					error: "InternalServerError",

@@ -1404,6 +1404,7 @@ export function startDenteTelegramOutboxDueWorker(
 			});
 		}, delayMs);
 		(timer as any).unref?.();
+		(timer as any).unref?.();
 	};
 
 	const runAndReschedule =

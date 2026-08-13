@@ -1,45 +1,51 @@
-# BRIEFING — 2026-08-12T23:41:00Z
+# BRIEFING — 2026-08-13T20:22:19Z
 
 ## Mission
-Perform a rigorous forensic integrity audit on `apps/api/src/routes/auth.test.ts` and `apps/api/src/routes/imports.test.ts`, verifying zero DB mocks, genuine database interactions against native PostgreSQL 18, zero hardcoded/facade test cheating, clean compilation, and test execution. Emit explicit verdict in handoff report.
+Perform a forensic integrity audit on all changes made for the Clinic Workflows API task:
+- `apps/api/src/db/schema.ts`
+- `apps/api/src/routes/clinicWorkflows.ts`
+- `apps/api/src/server.ts`
+- `apps/api/drizzle/` (generated migration files)
+- `apps/api/src/tests/contract-breach-proofs.test.ts`
 
 ## 🔒 My Identity
 - Archetype: forensic_auditor
 - Roles: critic, specialist, auditor
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\auditor_m1_1
-- Original parent: 07ec1df8-6892-4283-abff-71de296cd712
-- Target: apps/api/src/routes/auth.test.ts & apps/api/src/routes/imports.test.ts
+- Original parent: dd88ac1d-1ae8-41d7-815d-6f585512f0a3
+- Target: Clinic Workflows API task
 
 ## 🔒 Key Constraints
-- Audit-only — do NOT modify implementation or test code unless performing verification scratch operations
+- Audit-only — do NOT modify implementation code
 - Trust NOTHING — verify everything empirically
-- Ground-truth integrity mode: development (from ORIGINAL_REQUEST.md line 204)
-- Must verify test execution against real PostgreSQL 18 database on 127.0.0.1:5432
-- Must write handoff report to C:\Clinic_MVP\dental-crm\.agents\auditor_m1_1\handoff.md with explicit verdict (CLEAN or INTEGRITY VIOLATION)
+- Ground-truth integrity mode: development (from ORIGINAL_REQUEST.md line 237)
+- Must write handoff report to C:\Clinic_MVP\dental-crm\.agents\auditor_m1_1\handoff.md with explicit verdict (CLEAN or INTEGRITY_VIOLATION)
 
 ## Current Parent
-- Conversation ID: 07ec1df8-6892-4283-abff-71de296cd712
-- Updated: 2026-08-12T23:41:00Z
+- Conversation ID: dd88ac1d-1ae8-41d7-815d-6f585512f0a3
+- Updated: 2026-08-13T20:22:19Z
 
 ## Audit Scope
-- **Work product**: apps/api/src/routes/auth.test.ts, apps/api/src/routes/imports.test.ts
+- **Work product**: Clinic Workflows API implementation and migration
 - **Profile loaded**: General Project / Clinic MVP
-- **Audit type**: Forensic integrity audit
+- **Audit type**: Forensic integrity check
 
 ## Audit Progress
 - **Phase**: Investigating
-- **Checks completed**: Initial context load
+- **Checks completed**: Initial context load, BRIEFING & DISPATCH setup
 - **Checks remaining**:
-  1. Static census of DB mocks and forbidden patterns (`mock.method(db`, hardcoding, facade)
-  2. Inspection of `auth.test.ts` source code
-  3. Inspection of `imports.test.ts` source code
-  4. Typecheck execution (`npm run typecheck -w @dental/api`)
-  5. Test execution against real PG 18 (`node --import tsx ... --test ...`)
-  6. Database state and RLS / transaction context verification
+  1. Inspect modified files (`schema.ts`, `clinicWorkflows.ts`, `server.ts`, `contract-breach-proofs.test.ts`, drizzle migration files)
+  2. Check for hardcoded test responses, dummy/facade implementations, or bypassed checks
+  3. Verify encoding with `node scripts/check-encoding.mjs`
+  4. Verify zero stub overrides (`npm run check:stub-overrides`)
+  5. Multi-tenancy sanity: verify `organizationId` filtering on DB queries
+  6. Migration sanity: verify Drizzle migration reflects `definition` jsonb column on `clinic_workflows`
+  7. Run typecheck (`npm run typecheck -w @dental/api`)
+  8. Run contract breach proof tests (`node --import tsx --test apps/api/src/tests/contract-breach-proofs.test.ts`)
 - **Findings so far**: Under evaluation
 
 ## Key Decisions Made
-- Loaded ORIGINAL_REQUEST.md, AGENTS.md, DISPATCH.md, worker_m1_1 handoff.
+- Updated DISPATCH.md and BRIEFING.md with Clinic Workflows API task scope.
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\auditor_m1_1\handoff.md — Final audit report with verdict
+- C:\Clinic_MVP\dental-crm\.agents\auditor_m1_1\handoff.md — Final forensic audit report

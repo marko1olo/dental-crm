@@ -98078,6 +98078,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
     visitId: z.ZodOptional<z.ZodString>;
     transcript: z.ZodString;
     specialty: z.ZodOptional<z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>>;
+    source: z.ZodOptional<z.ZodString>;
     doctorFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     completedServices: z.ZodOptional<z.ZodArray<z.ZodObject<{
         serviceId: z.ZodString;
@@ -98111,7 +98112,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         enableRecommendations?: boolean | undefined;
         enableDocuments?: boolean | undefined;
     }>>;
-    planPayload: z.ZodOptional<z.ZodObject<{
+    planPayload: z.ZodOptional<z.ZodNullable<z.ZodObject<{
         clinicalReason: z.ZodString;
         diagnosisSummary: z.ZodString;
         teethOrArea: z.ZodString;
@@ -98256,8 +98257,8 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         patientFriendlyExplanation?: string | null | undefined;
         patientHygieneAdvice?: string | null | undefined;
         customHygieneTextOverride?: string | null | undefined;
-    }>>;
-    recommendationsPayload: z.ZodOptional<z.ZodObject<{
+    }>>>;
+    recommendationsPayload: z.ZodOptional<z.ZodNullable<z.ZodObject<{
         careTopic: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
         procedureName: z.ZodString;
         toothOrArea: z.ZodString;
@@ -98311,9 +98312,10 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         patientUnderstandsUrgentSigns: true;
         safeForTelegramSending: true;
         plannedFollowUpAt?: string | null | undefined;
-    }>>;
+    }>>>;
 }, "strip", z.ZodTypeAny, {
     transcript: string;
+    source?: string | undefined;
     patientId?: string | undefined;
     visitId?: string | undefined;
     specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
@@ -98367,7 +98369,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         patientFriendlyExplanation?: string | null | undefined;
         patientHygieneAdvice?: string | null | undefined;
         customHygieneTextOverride?: string | null | undefined;
-    } | undefined;
+    } | null | undefined;
     recommendationsPayload?: {
         doctorFullName: string;
         toothOrArea: string;
@@ -98386,9 +98388,10 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         patientUnderstandsUrgentSigns: true;
         safeForTelegramSending: true;
         plannedFollowUpAt?: string | null | undefined;
-    } | undefined;
+    } | null | undefined;
 }, {
     transcript: string;
+    source?: string | undefined;
     patientId?: string | undefined;
     visitId?: string | undefined;
     specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
@@ -98442,7 +98445,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         patientFriendlyExplanation?: string | null | undefined;
         patientHygieneAdvice?: string | null | undefined;
         customHygieneTextOverride?: string | null | undefined;
-    } | undefined;
+    } | null | undefined;
     recommendationsPayload?: {
         doctorFullName: string;
         toothOrArea: string;
@@ -98461,7 +98464,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         patientUnderstandsUrgentSigns: true;
         safeForTelegramSending: true;
         plannedFollowUpAt?: string | null | undefined;
-    } | undefined;
+    } | null | undefined;
 }>;
 export type VisitFlowRequest = z.infer<typeof visitFlowRequestSchema>;
 export declare const visitFlowResultSchema: z.ZodObject<{

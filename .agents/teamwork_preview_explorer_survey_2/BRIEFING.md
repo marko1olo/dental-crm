@@ -1,49 +1,33 @@
-# BRIEFING — 2026-08-09T11:58:00Z
+# BRIEFING — 2026-08-13T20:34:20Z
 
 ## Mission
-Survey UI/UX architecture, view components in `apps/web/src/components`, main panels (`#schedule`, `#patients`, `#finance`, etc.), modal dialogs, and Light/Dark theme toggle mechanisms across DENTE CRM frontend.
+Investigate DB schema definitions for `schema.egiszBlankPermissions` and `schema.egiszLogs` in the codebase, document exact column names, types, default values, organizationId, status, id generation, and exports, and deliver handoff report.
 
 ## 🔒 My Identity
-- Archetype: UI/UX Architecture & 4-State Themes Survey Explorer
-- Roles: Read-only investigator, analyzer, report author
-- Working directory: C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2
-- Original parent: 67e66496-7d3f-4df1-8f98-31bd016dcb96
-- Milestone: Preview & E2E Survey 2
+- Archetype: Teamwork explorer
+- Roles: Read-only investigation, schema survey
+- Working directory: C:/Clinic_MVP/dental-crm/.agents/teamwork_preview_explorer_survey_2
+- Original parent: 5cea3e66-72a6-4582-9166-148a87fc0b77
+- Milestone: DB Schema Audit (EGISZ tables)
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement or modify source code files
-- Write findings to handoff.md in working directory
-- UTF-8 encoding for any files written
+- Read-only investigation — do NOT implement
+- Deliver findings in handoff.md and send message to parent
 
 ## Current Parent
-- Conversation ID: 67e66496-7d3f-4df1-8f98-31bd016dcb96
-- Updated: 2026-08-09T11:58:00Z
+- Conversation ID: 5cea3e66-72a6-4582-9166-148a87fc0b77
+- Updated: 2026-08-13T20:34:20Z
 
 ## Investigation State
-- **Explored paths**:
-  - `apps/web/src/App.tsx`
-  - `apps/web/src/AppShell.tsx`
-  - `apps/web/src/workspaceShell.tsx`
-  - `apps/web/src/store/themeStore.ts`
-  - `apps/web/src/lib/themeClasses.ts`
-  - `apps/web/src/styles/dente-redesign.css`
-  - `apps/web/src/styles/main.css`
-  - `apps/web/src/styles/tailwind.css`
-  - `apps/web/src/components/*`
-  - `scripts/dente-redesign-shots.mjs`
-  - `scripts/ops-panels-shots.mjs`
-- **Key findings**:
-  - Main App Navigation relies on hash routes (#shift, #schedule, #patients, #imaging, #visit, #documents, #finance, #analytics, #communications, #inventory, #scanner, #leads, #settings, #marketing) mapped in `workspaceShell.tsx` and dynamically rendered in `App.tsx`.
-  - Theme state management is driven by Zustand store `useThemeStore` in `themeStore.ts`, with modes `light`, `dark`, `night`, `auto`, persisting to `localStorage.setItem('dente_theme_mode', mode)` and exposed globally via `window.__useThemeStore`.
-  - Theme application applies `root.dataset.theme = resolved.theme` (`<html data-theme="...">`), `root.classList.toggle("dark", ...)` and `root.style.colorScheme = ...`.
-  - Tailwind CSS configured to read `data-theme` attribute for `dark:` variant matching light, dark, and night modes.
-  - Comprehensive inventory of 14 main screens/panels and 15 key modal dialogs / slide-overs identified for 4-state visual auditing (Mobile Light, Mobile Dark, PC Light, PC Dark).
-- **Unexplored areas**: None, all survey targets investigated.
+- **Explored paths**: `apps/api/src/db/schema.ts`, `apps/api/src/routes/egisz.ts`, `apps/api/src/routes/integrations.ts`, `apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx`, `apps/api/src/tests/contract-breach-proofs.test.ts`
+- **Key findings**: Complete definition details of `schema.egiszBlankPermissions`, `schema.egiszStatus` (pgEnum), and `schema.egiszLogs` located in `apps/api/src/db/schema.ts` lines 3828-3924.
+- **Unexplored areas**: None. Scope fully surveyed.
 
 ## Key Decisions Made
-- Documented complete catalog of screens, panels, modals, and theme mechanisms in `handoff.md`.
+- Confirmed exact column names, types, constraints, default values, id generation (`uuidv7()`), organizationId foreign keys, enum values for status, and exports in `apps/api/src/db/schema.ts`.
 
 ## Artifact Index
-- `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2\DISPATCH.md`
-- `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2\BRIEFING.md`
-- `C:\Clinic_MVP\dental-crm\.agents\teamwork_preview_explorer_survey_2\handoff.md`
+- C:/Clinic_MVP/dental-crm/.agents/teamwork_preview_explorer_survey_2/DISPATCH.md — Task dispatch log
+- C:/Clinic_MVP/dental-crm/.agents/teamwork_preview_explorer_survey_2/BRIEFING.md — Working briefing index
+- C:/Clinic_MVP/dental-crm/.agents/teamwork_preview_explorer_survey_2/progress.md — Liveness heartbeat
+- C:/Clinic_MVP/dental-crm/.agents/teamwork_preview_explorer_survey_2/handoff.md — Final handoff report

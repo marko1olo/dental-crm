@@ -326,5 +326,104 @@ Integrity mode: development
 - [ ] Линтер TypeScript (`npm run typecheck`) проходит без новых ошибок.
 - [ ] Ошибки вида `Cannot read properties of undefined` полностью устранены из консоли браузера.
 
+## 2026-08-13T20:12:02Z
+
+# Teamwork Project Prompt — Draft
+
+> Status: Launched
+> Goal: Eradicate race conditions in payment capturing by implementing a secure async webhook receiver for Sberbank Acquiring.
+
+Implement `POST /api/sberbank/webhook` to handle asynchronous payment confirmations from Sberbank, ensuring the Dente CRM ledger is updated even if the client closes their browser.
+
+Working directory: C:/Clinic_MVP/dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Webhook Endpoint
+Implement a Fastify route in `apps/api/src/routes/sberbank.ts` at `POST /api/sberbank/webhook` to receive Sberbank callbacks.
+
+### R2. Cryptographic Verification Guard
+The webhook must not accept unverified payloads. Implement a verification mechanism (e.g. signature validation) as expected by Sberbank Acquiring standards. The route must drop unauthorized calls immediately without touching the database.
+
+### R3. Ledger State Machine
+If the webhook signals successful payment, look up the `sberbankTransactions` row. If the transaction transitions from `pending` to `success`, strictly insert a new row into the `payments` table (schema: id, organizationId, patientId, method: "card", status: "paid", amountRub: transaction.amount / 100).
+
+### R4. ZERO MOCKS
+Write pure, mathematically sound logic. No `// TODO` stubs.
+
+## Acceptance Criteria
+
+### Automated Tests
+- [ ] A new integration test in `apps/api/src/tests/routes/sberbankWebhook.test.ts` exists.
+- [ ] The test proves that an invalid checksum is rejected with 400 or 401 without updating the DB.
+- [ ] The test proves that a valid payload updates `sberbankTransactions` and inserts a ledger record into `payments`.
+- [ ] The `check:stub-overrides` and `tsc --noEmit` checks must pass completely.
+
+## 2026-08-13T20:33:06Z
+
+# Teamwork Project Prompt — Draft
+
+> Status: Launched
+> Goal: Implement `POST /api/ai/visit-flow` route calling `ai/visitFlowOrchestrator.ts`.
+
+Working directory: C:/Clinic_MVP/dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Create AI route module
+- Check if `apps/api/src/routes/ai.ts` exists. If not, create it.
+- Implement `POST /api/ai/visit-flow`.
+- Use `requireClinicalMutationAccess(request, reply, "ai visit flow")` and `requireOrganizationId(request, reply)`.
+
+### R2. Integrate Orchestrator
+- Import and call the appropriate function from `apps/api/src/ai/visitFlowOrchestrator.ts` to process the request. (e.g. `startVisitFlowOrchestrator(payload)`).
+- Ensure the route reads the required payload from `request.body`. Use `rg "/api/ai/visit-flow" apps/web/src` to see what the frontend sends.
+
+### R3. Register the route
+- Add `import { registerAiRoutes } from "./routes/ai.js"` and `await registerAiRoutes(app)` to `apps/api/src/server.ts`.
+
+### R4. Remove `todo` marker
+In `apps/api/src/tests/contract-breach-proofs.test.ts`, remove the `todo` marker from `(A) POST /api/ai/visit-flow`.
+
+Ensure `tsc --noEmit` passes. NO MOCKS.
+
+
+## 2026-08-13T20:33:06Z
+
+# Teamwork Project Prompt — Draft
+
+> Status: Launched
+> Goal: Implement missing EGISZ routes for `GET /api/integrations/egisz-blank-permissions` and `POST /api/egisz/send`.
+
+Working directory: C:/Clinic_MVP/dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. `GET /api/integrations/egisz-blank-permissions`
+Implement this route in `apps/api/src/routes/egisz.ts`.
+- Use `requireClinicalReadAccess(request, reply, "egisz permissions check")`.
+- Extract `orgId` via `requireOrganizationId(request, reply)`.
+- Query `db.select().from(schema.egiszBlankPermissions).where(eq(schema.egiszBlankPermissions.organizationId, orgId))` and return the rows in a way the frontend expects. Check the frontend code (`apps/web/src`) to see if it expects an array or `{ permissions }`.
+
+### R2. `POST /api/egisz/send`
+Implement this route in `apps/api/src/routes/egisz.ts`.
+- Use `requireClinicalMutationAccess(request, reply, "egisz send")`.
+- Parse body with Zod `{ patientId: z.string().uuid(), visitId: z.string().uuid() }`.
+- Insert into `schema.egiszLogs` with `status: "Pending"`.
+- Return `{ success: true, logId: inserted.id }`.
+
+### R3. Remove `todo` markers
+In `apps/api/src/tests/contract-breach-proofs.test.ts`, remove `todo` markers from:
+- `(A) POST /api/egisz/send`
+- `(A) GET /api/integrations/egisz-blank-permissions`
+Do not touch other `todo` tests.
+
+Ensure `tsc --noEmit` passes. NO MOCKS.
+
+
+
 
 

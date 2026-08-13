@@ -70,6 +70,10 @@ export const pool = new pg.Pool({
 	allowExitOnIdle: isAutomatedRun(),
 });
 
+pool.on("error", (err) => {
+	console.error("[pg.Pool] Unexpected error on idle PostgreSQL client:", err);
+});
+
 /**
  * Закрытие пула, безопасное при повторном вызове.
  *

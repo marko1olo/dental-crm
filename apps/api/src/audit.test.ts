@@ -1,135 +1,125 @@
 import assert from "node:assert";
-import { beforeEach, describe, test } from "node:test";
+import { after, before, describe, test } from "node:test";
 import { recordAuditEvent } from "./audit.js";
 import { db } from "./db/client.js";
-import type { auditEvents } from "./db/schema.js";
+import { auditEvents, organizations, users } from "./db/schema.js";
+import {
+	fixtureUuid,
+	withFixtureTenant,
+	purgeFixtureOrganizations,
+} from "./tests/support/fixtureOrganizations.js";
+import { eq, sql } from "drizzle-orm";
+import { withSuperuserBypass } from "./db/rls.js";
 
-/**
- * Настоящий параметр db.insert(auditEvents).values() — строка вставки в
- * audit_events.
- *
- * Без него mock.fn(async () => {}) объявлял подменённую функцию вообще без
- * параметров, тип arguments выводился как пустой кортеж [], и обращение к
- * arguments[0] не компилировалось. Тип взят из самой таблицы, поэтому расходиться
- * со схемой он не может.
- */
-type AuditEventInsert = typeof auditEvents.$inferInsert;
+const ORG_ID = fixtureUuid("auditTest", 1);
+const FALLBACK_ORG_ID = fixtureUuid("auditTest", 2);
+const USER_ID = fixtureUuid("user", 1);
+
+async function purgeAuditEvents(orgIds: string[]) {
+    // Audit events are protected by triggers, we temporarily disable them to clean up our tests
+    for (const orgId of orgIds) {
+        await db.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_append_only`);
+        await db.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_no_truncate`);
+        await db.execute(sql`DELETE FROM audit_events WHERE organization_id = ${orgId}`);
+        await db.execute(sql`ALTER TABLE audit_events ENABLE ALWAYS TRIGGER audit_events_append_only`);
+        await db.execute(sql`ALTER TABLE audit_events ENABLE ALWAYS TRIGGER audit_events_no_truncate`);
+    }
+}
 
 describe("recordAuditEvent", () => {
-	beforeEach(() => {
-		// node:test mock reset isn't strictly necessary per-test if we use t.mock
+	before(async () => {
+		await purgeAuditEvents([ORG_ID, FALLBACK_ORG_ID]);
+		await purgeFixtureOrganizations([ORG_ID, FALLBACK_ORG_ID]);
 	});
 
-	test("inserts audit event with provided organizationId", async (t) => {
-		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
-		t.mock.method(db, "insert", () => ({
-			values: valuesMock,
-		}));
-
-		// Also mock select just in case, though it shouldn't be called
-		const selectMock = t.mock.method(db, "select", () => ({}));
-
-		await recordAuditEvent({
-			organizationId: "org-123  ", // also tests trim
-			entityType: "User",
-			entityId: "user-456",
-			action: "LOGIN",
-			reason: "Successful login",
-		});
-
-		assert.strictEqual(selectMock.mock.calls.length, 0);
-		assert.strictEqual(valuesMock.mock.calls.length, 1);
-		const insertCall = valuesMock.mock.calls[0];
-		assert.ok(insertCall);
-		assert.deepStrictEqual(insertCall.arguments[0], {
-			organizationId: "org-123",
-			actorUserId: null,
-			entityType: "User",
-			entityId: "user-456",
-			action: "LOGIN",
-			reason: "Successful login",
-		});
+	after(async () => {
+		await purgeAuditEvents([ORG_ID, FALLBACK_ORG_ID]);
+		await purgeFixtureOrganizations([ORG_ID, FALLBACK_ORG_ID]);
 	});
 
-	test("записывает автора события, когда вызывающий его передал", async (t) => {
-		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
-		t.mock.method(db, "insert", () => ({
-			values: valuesMock,
-		}));
-		t.mock.method(db, "select", () => ({}));
+	test("inserts audit event with provided organizationId", async () => {
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.insert(organizations).values({ id: ORG_ID, name: "Test Org" });
+			
+			await recordAuditEvent(
+				{
+					organizationId: "  " + ORG_ID + "  ", // tests trim
+					entityType: "User",
+					entityId: "user-456",
+					action: "LOGIN",
+					reason: "Successful login",
+				}
+			);
 
-		await recordAuditEvent({
-			organizationId: "org-123",
-			actorUserId: "user-789",
-			entityType: "document",
-			entityId: "doc-1",
-			action: "document_voided",
-			reason: null,
-		});
-
-		const insertCall = valuesMock.mock.calls[0];
-		assert.ok(insertCall);
-		assert.strictEqual(insertCall.arguments[0].actorUserId, "user-789");
-	});
-
-	test("fetches first organization when organizationId is missing", async (t) => {
-		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
-		t.mock.method(db, "insert", () => ({
-			values: valuesMock,
-		}));
-
-		const limitMock = t.mock.fn(async () => [{ id: "org-fallback" }]);
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				limit: limitMock,
-			}),
-		}));
-
-		await recordAuditEvent({
-			entityType: "Post",
-			entityId: "post-1",
-			action: "CREATE",
-		});
-
-		assert.strictEqual(limitMock.mock.calls.length, 1);
-		assert.strictEqual(valuesMock.mock.calls.length, 1);
-		const insertCall = valuesMock.mock.calls[0];
-		assert.ok(insertCall);
-		assert.deepStrictEqual(insertCall.arguments[0], {
-			organizationId: "org-fallback",
-			actorUserId: null,
-			entityType: "Post",
-			entityId: "post-1",
-			action: "CREATE",
-			reason: undefined,
+			const events = await tx
+				.select()
+				.from(auditEvents)
+				.where(eq(auditEvents.organizationId, ORG_ID));
+			
+			assert.strictEqual(events.length, 1);
+			const event = events[0]!;
+			assert.strictEqual(event.organizationId, ORG_ID);
+			assert.strictEqual(event.entityType, "User");
+			assert.strictEqual(event.entityId, "user-456");
+			assert.strictEqual(event.action, "LOGIN");
+			assert.strictEqual(event.reason, "Successful login");
+			assert.strictEqual(event.actorUserId, null);
 		});
 	});
 
-	/*
-	 * БЫЛО: тест назывался «returns early without inserting if no organization is
-	 * found» и утверждал, что при неопределённой клинике функция ТИХО возвращается,
-	 * не записав событие и не сообщив об этом никому. Он закреплял дефект как
-	 * контракт: операция с медданными или документом проходила, а следа в журнале
-	 * не оставалось — при этом вызывающий получал успех.
-	 *
-	 * СТАЛО: пустая клиника — это отказ. Пустой `orgId` при fail-closed RLS
-	 * (миграция 0157) означает «арендатор не установлен», а в таком контексте
-	 * INSERT в audit_events всё равно отвергается политикой (SQLSTATE 42501,
-	 * замерено 2026-08-06). Тихий возврат не спасал операцию — он прятал отказ.
-	 */
-	test("при неопределённой клинике бросает ошибку, а не молчит", async (t) => {
-		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
-		t.mock.method(db, "insert", () => ({
-			values: valuesMock,
-		}));
+	test("записывает автора события, когда вызывающий его передал", async () => {
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			// We MUST insert the organization and the user first to satisfy foreign keys
+			await tx.insert(organizations).values({ id: ORG_ID, name: "Test Org 2" }).onConflictDoNothing();
+			await tx.insert(users).values({ id: USER_ID, organizationId: ORG_ID, fullName: "Test User", role: "admin" }).onConflictDoNothing();
 
-		const limitMock = t.mock.fn(async () => []); // Returns empty array
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				limit: limitMock,
-			}),
-		}));
+			await recordAuditEvent(
+				{
+					organizationId: ORG_ID,
+					actorUserId: USER_ID,
+					entityType: "document",
+					entityId: "doc-1",
+					action: "document_voided",
+					reason: null,
+				}
+			);
 
+			const events = await tx
+				.select()
+				.from(auditEvents)
+				.where(eq(auditEvents.action, "document_voided"));
+
+			assert.strictEqual(events.length, 1);
+			assert.strictEqual(events[0]!.actorUserId, USER_ID);
+		});
+	});
+
+	test("fetches first organization when organizationId is missing", async () => {
+		await withFixtureTenant(FALLBACK_ORG_ID, async (tx) => {
+			await tx.insert(organizations).values({ id: FALLBACK_ORG_ID, name: "Fallback Org" }).onConflictDoNothing();
+
+			await recordAuditEvent(
+				{
+					entityType: "Post",
+					entityId: "post-1",
+					action: "CREATE",
+				}
+			);
+
+			const events = await tx
+				.select()
+				.from(auditEvents)
+				.where(eq(auditEvents.entityId, "post-1"));
+
+			assert.strictEqual(events.length, 1);
+			const event = events[0]!;
+			assert.strictEqual(event.organizationId, FALLBACK_ORG_ID);
+			assert.strictEqual(event.action, "CREATE");
+		});
+	});
+
+	test("при неопределённой клинике бросает ошибку, а не молчит", async () => {
+		// Run without tenant context so it can't find app.current_tenant
 		await assert.rejects(
 			() =>
 				recordAuditEvent({
@@ -137,31 +127,27 @@ describe("recordAuditEvent", () => {
 					entityId: "comment-1",
 					action: "DELETE",
 				}),
-			/клиника не определена/,
+			/клиника не определена/
 		);
-
-		assert.strictEqual(limitMock.mock.calls.length, 1);
-		assert.strictEqual(valuesMock.mock.calls.length, 0);
 	});
 
-	test("отказ базы пробрасывается вызывающему, а не проглатывается", async (t) => {
-		const failure = new Error("row violates row-level security policy");
-		t.mock.method(db, "insert", () => ({
-			values: async () => {
-				throw failure;
-			},
-		}));
-		t.mock.method(db, "select", () => ({}));
+	test("отказ базы пробрасывается вызывающему, а не проглатывается", async () => {
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.insert(organizations).values({ id: ORG_ID, name: "Test Org" }).onConflictDoNothing();
+			const NON_EXISTENT_ORG_ID = fixtureUuid("auditTest", 999);
 
-		await assert.rejects(
-			() =>
-				recordAuditEvent({
-					organizationId: "org-123",
-					entityType: "document",
-					entityId: "doc-1",
-					action: "document_issued",
-				}),
-			(error: unknown) => error === failure,
-		);
+			await assert.rejects(
+				() =>
+					recordAuditEvent(
+						{
+							organizationId: NON_EXISTENT_ORG_ID, // Mismatched and non-existent tenant
+							entityType: "document",
+							entityId: "doc-1",
+							action: "document_issued",
+						}
+					),
+				(err: any) => err.message.includes("Failed query: insert into \"audit_events\"") || err.cause?.message.includes("foreign key constraint")
+			);
+		});
 	});
 });

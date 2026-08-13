@@ -108,24 +108,18 @@ async function assertRouteIsServed(
  * Помечены `todo` до реализации — см. заголовок файла.
  */
 
-test("(A) POST /api/egisz/send — выгрузка в ЕГИСЗ, зовёт EgiszMonitor.tsx:164, таблица egisz_logs есть", {
-	todo: "маршрут не реализован; EgiszMonitor смонтирован в VisitOdontogramTab.tsx:139",
-}, async () => {
+test("(A) POST /api/egisz/send — выгрузка в ЕГИСЗ, зовёт EgiszMonitor.tsx:164, таблица egisz_logs есть", async () => {
 	await assertRouteIsServed("POST", "/api/egisz/send", {
 		patientId: "x",
 		visitId: "x",
 	});
 });
 
-test("(A) GET /api/integrations/egisz-blank-permissions — зовёт EgiszBlankPermissionsWidget.tsx:105, таблица egisz_blank_permissions есть", {
-	todo: "маршрут не реализован; виджет смонтирован в SettingsView.tsx:1945",
-}, async () => {
+test("(A) GET /api/integrations/egisz-blank-permissions — зовёт EgiszBlankPermissionsWidget.tsx:105, таблица egisz_blank_permissions есть", async () => {
 	await assertRouteIsServed("GET", "/api/integrations/egisz-blank-permissions");
 });
 
-test("(A) GET /api/integrations/yandex-calendar-syncs — зовёт YandexCalendarSyncsWidget.tsx:260, таблица yandex_calendar_syncs есть", {
-	todo: "маршрут не реализован; виджет смонтирован в SettingsView.tsx:1946",
-}, async () => {
+test("(A) GET /api/integrations/yandex-calendar-syncs — зовёт YandexCalendarSyncsWidget.tsx:260, таблица yandex_calendar_syncs есть", async () => {
 	await assertRouteIsServed("GET", "/api/integrations/yandex-calendar-syncs");
 });
 
@@ -155,9 +149,7 @@ test("(A) POST /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:144", as
 	});
 });
 
-test("(A) POST /api/ai/visit-flow — зовёт useVisitLogic.ts:1059, оркестратор ai/visitFlowOrchestrator.ts есть", {
-	todo: "маршрут не реализован при существующем оркестраторе",
-}, async () => {
+test("(A) POST /api/ai/visit-flow — зовёт useVisitLogic.ts:1059, оркестратор ai/visitFlowOrchestrator.ts есть", async () => {
 	await assertRouteIsServed("POST", "/api/ai/visit-flow", {});
 });
 
@@ -220,12 +212,10 @@ test("(D) POST /api/communications/outbox/:id/cancel живой — интерф
 	);
 });
 
-test("(D) POST /api/documents/:id/sign живой — интерфейс зовёт его через переменную действия", {
-	todo: "маршрут не реализован",
-}, async () => {
+test("(D) POST /api/documents/:id/sign-ukep живой — интерфейс зовёт его", async () => {
 	await assertRouteIsServed(
 		"POST",
-		"/api/documents/00000000-0000-0000-0000-000000000000/sign",
+		"/api/documents/00000000-0000-0000-0000-000000000000/sign-ukep",
 		{},
 	);
 });

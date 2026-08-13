@@ -1,27 +1,24 @@
-# DISPATCH — Explorer Milestone M1 (Auth & Tenant Routes)
+## 2026-08-13T20:19:52Z
 
-## Role
-teamwork_preview_explorer
+<USER_REQUEST>
+You are teamwork_preview_explorer (Exploration Agent).
+Working Directory: C:/Clinic_MVP/dental-crm/.agents/explorer_m1_1
+Target Workspace: C:/Clinic_MVP/dental-crm
 
-## Working Directory
-C:\Clinic_MVP\dental-crm\.agents\explorer_m1_1
+## Objective
+Investigate the codebase for Clinic Workflows API implementation and Contract Breach resolution:
+1. Examine `apps/api/src/db/schema.ts` to locate the `clinic_workflows` table definition and see how `jsonb` or other columns are defined.
+2. Locate existing Drizzle migrations directory (e.g., `apps/api/drizzle` or `apps/api/src/db/migrations` or package.json scripts) to check migration numbering and journal structure.
+3. Examine existing routes in `apps/api/src/routes/` (e.g. settings or clinic routes) to determine standard Fastify route structure, permission checks (`requirePermission`), tenant isolation helpers (`requireResolvedOrganizationId`), and error handling conventions.
+4. Examine `apps/api/src/server.ts` (or relevant route registration file) to see how routes are registered under `/api/clinic/workflows`.
+5. Examine `apps/api/src/tests/contract-breach-proofs.test.ts` to inspect the 4 skipped/todo tests for `/api/clinic/workflows`. Note their exact requirements, HTTP methods, URLs, headers, payloads, permission checks, and expected responses.
+6. Check `ORIGINAL_REQUEST.md` at path `C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md` under `## 2026-08-13T20:19:13Z` and project rules in `C:/Clinic_MVP/dental-crm/.agents/AGENTS.md`.
 
-## Task
-Investigate `apps/api/src/routes/auth.test.ts` and `apps/api/src/routes/imports.test.ts` to produce a step-by-step refactoring strategy to eradicate all database mocks (`mock.method(db, ...)`, `t.mock.method(db, ...)`) and replace them with real PostgreSQL 18 fixture data (`withFixtureTenant`, `withSuperuserBypass`, `fixtureUuid`).
+## Scope Boundaries
+- READ-ONLY exploration. Do NOT edit any source code or test files.
+- Report all findings and recommended concrete implementation steps in `C:/Clinic_MVP/dental-crm/.agents/explorer_m1_1/handoff.md`.
 
-## Instructions
-1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`, `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`, and `C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md`.
-2. Inspect `apps/api/src/routes/auth.test.ts`:
-   - Identify every mocked DB call (`db.select`, `db.insert`, `db.update`).
-   - Detail how to replace each mock with real DB fixture seeding using `withSuperuserBypass` and `withFixtureTenant`.
-   - Ensure unique organization UUID generation per test case (`fixtureUuid("auth-test", index++)`) because auth flows write append-only records to `audit_events`.
-   - Ensure JWT authentication headers use real seeded tenant/user identities.
-3. Inspect `apps/api/src/routes/imports.test.ts`:
-   - Identify every mocked DB call (`db.select`).
-   - Detail how to replace each mock with real DB fixture seeding.
-4. Produce a clear, concrete refactoring plan for the Worker agent.
-5. Write your findings and recommended strategy to `C:\Clinic_MVP\dental-crm\.agents\explorer_m1_1\handoff.md`.
+## Output Requirements
+Write your handoff report to `C:/Clinic_MVP/dental-crm/.agents/explorer_m1_1/handoff.md` and send a summary message back to parent. Include exact line numbers, code snippets, migration steps, route structure, and test details.
 
-## 2026-08-12T23:34:51Z
-You are an Explorer agent. Your working directory is C:\Clinic_MVP\dental-crm\.agents\explorer_m1_1. Read C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md, C:\Clinic_MVP\dental-crm\.agents\AGENTS.md, C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md, and C:\Clinic_MVP\dental-crm\.agents\explorer_m1_1\DISPATCH.md. Perform your investigation of apps/api/src/routes/auth.test.ts and apps/api/src/routes/imports.test.ts, and write a detailed refactoring strategy to C:\Clinic_MVP\dental-crm\.agents\explorer_m1_1\handoff.md. Report back when done.
-
+</USER_REQUEST>

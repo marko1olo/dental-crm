@@ -1,131 +1,138 @@
-# HANDOFF — Milestone M1: Auth & Tenant Routes Test Refactoring Strategy
+# HANDOFF REPORT — Clinic Workflows API & Contract Breach Resolution Analysis
 
 ## 1. Observation
 
-Exhaustive code analysis of `apps/api/src/routes/auth.test.ts` (960 lines) and `apps/api/src/routes/imports.test.ts` (106 lines) reveals widespread reliance on `mock.method(db, ...)` stubs for database interactions.
+Direct observations from the codebase investigation:
 
-### Direct Observations & Verbatim Snippets
+1. **Schema Definition (`apps/api/src/db/schema.ts:5231-5250`)**:
+   - The `clinicWorkflows` Drizzle table definition on lines 5231-5250 ALREADY contains the `definition` column:
+     ```typescript
+     export const clinicWorkflows = pgTable(
+         "clinic_workflows",
+         {
+             id: uuid("id").primaryKey().default(sql`uuidv7()`),
+             organizationId: uuid("organization_id")
+                 .notNull()
+                 .references(() => organizations.id, { onDelete: "cascade" }),
+             name: varchar("name", { length: 255 }).notNull(),
+             trigger: varchar("trigger", { length: 255 }).notNull(),
+             definition: jsonb("definition").notNull(),
+             active: boolean("active").notNull().default(false),
+             createdAt: timestamp("created_at", { withTimezone: true })
+                 .notNull()
+                 .defaultNow(),
+             updatedAt: timestamp("updated_at", { withTimezone: true })
+                 .notNull()
+                 .defaultNow(),
+         },
+         (table) => [index("clinic_workflows_org_idx").on(table.organizationId)],
+     );
+     ```
+   - `jsonb` is imported on line 29 of `apps/api/src/db/schema.ts` from `"drizzle-orm/pg-core"`.
 
-1. **`apps/api/src/routes/imports.test.ts`**:
-   - **Line 20**: Hardcoded static UUID string:
-     ```ts
-     const ORG_ID = "123e4567-e89b-12d3-a456-4266141740ff";
-     ```
-   - **Lines 25–27**: Global `beforeEach` stub mocking `db.select` to bypass database queries:
-     ```ts
-     mock.method(db, "select", () => ({
-         from: () => ({ where: async () => [] }),
-     }));
-     ```
+2. **Drizzle Migrations Structure (`apps/api/drizzle/`)**:
+   - Migration directory: `apps/api/drizzle/`.
+   - Migration configuration: `apps/api/drizzle.config.ts` outputs to `./drizzle` and uses `process.env.DATABASE_URL` against native PostgreSQL 18.
+   - Script in `package.json`: `"db:generate": "npm run db:generate -w @dental/api"`.
+   - Existing migration history: Most recent migration files are `0165_add_clinic_workflows.sql`, `0166_declared_but_never_created.sql`, and `0167_add_users_current_session_id.sql`.
+   - `0165_add_clinic_workflows.sql` created only the btree index `clinic_workflows_org_idx` on `organization_id` (since `clinic_workflows` table base schema was generated earlier in `0008_add_settings.sql`). Next migration sequence number is **0168** (`0168_clinic_workflows_definition.sql`).
 
-2. **`apps/api/src/routes/auth.test.ts`**:
-   - **Lines 35–43**: DB failure injection test:
-     ```ts
-     mock.method(db, "select", () => ({
-         from: () => ({
-             where: () => ({
-                 limit: async () => { throw new Error("DB Error"); }
-             })
-         })
-     }));
-     ```
-   - **Lines 54–60**: Clinic login non-existent org stub:
-     ```ts
-     mock.method(db, "select", () => ({
-         from: () => ({ where: () => ({ limit: async () => [] }) })
-     }));
-     ```
-   - **Lines 71–87**: Clinic login success stubbing both `db.select` and `db.insert` (audit event):
-     ```ts
-     mock.method(db, "select", () => ({ ... passwordHash: await hashCredential("password123") }));
-     mock.method(db, "insert", () => ({ values: async () => {} }));
-     ```
-   - **Lines 120–148**: Staff unlock stubbing user queries for non-existent user and wrong PIN.
-   - **Lines 165–182**: Staff unlock success stubbing `db.select` and `db.insert`.
-   - **Lines 212–218**: Direct login invalid credentials stubbing `db.select`.
-   - **Lines 229–251**: Direct login success stubbing `db.select`.
-   - **Lines 280–286**: User profile `/api/auth/user/me` 404 test stubbing `db.select`.
-   - **Lines 299–307**: User profile `/api/auth/user/me` 200 test stubbing `db.select`.
-   - **Lines 380–409**: Permission precedence helper functions `forbidDatabaseAccess()` and `allowDatabaseWrites()` stubbing `db.select`, `db.update`, and `db.insert`.
+3. **Fastify Route Implementations (`apps/api/src/routes/clinicWorkflows.ts` vs `workflows.ts`)**:
+   - Two route files exist:
+     - `apps/api/src/routes/clinicWorkflows.ts`: Fully implements `registerClinicWorkflowsRoutes` supporting `definition` (`z.union([z.string(), z.record(z.unknown()), z.array(z.unknown())])`), default `trigger` ("manual"), `requirePermission(request, reply, "settings.read")` and `"settings.write"`, and `requireResolvedOrganizationId(request, reply)`.
+     - `apps/api/src/routes/workflows.ts`: Legacy route file exporting `registerWorkflowRoutes` which lacks `definition` handling and causes `tsc` compilation error TS2769 because `definition` is required by `schema.ts`.
+   
+4. **Server Route Registration (`apps/api/src/server.ts:31, 650`)**:
+   - Line 31: `import { registerClinicWorkflowsRoutes } from "./routes/clinicWorkflows.js";`
+   - Line 650: `await registerWorkflowRoutes(app);`
+   - **Root Cause of Build Failure**: `server.ts` imports `registerClinicWorkflowsRoutes` on line 31 but attempts to invoke `registerWorkflowRoutes(app)` on line 650! This causes TypeScript compiler error `TS2552: Cannot find name 'registerWorkflowRoutes'`.
 
-3. **Support Infrastructure (`apps/api/src/tests/support/`)**:
-   - `fixtureOrganizations.ts`: Provides `fixtureUuid(namespace, index)` for deterministic UUID generation (`dce70000-` prefix), `withFixtureTenant` (executes within RLS tenant context `app.current_tenant`), `withSuperuserBypass` (bypasses RLS for root org/user inserts), and `purgeFixtureOrganizations` (safely purges tenant data).
-   - `tenantTestApp.ts`: Provides `createTenantTestApp()`, a Fastify instance configured with tenant isolation hooks (`onRequest` and `onRoute`), so JWT tokens automatically attach `request.tenantId` and wrap route handlers in `withTenantCtx(tenantId, ...)`.
+5. **Contract Breach Proofs Test (`apps/api/src/tests/contract-breach-proofs.test.ts:132-164`)**:
+   - 4 tests targeting `/api/clinic/workflows` exist:
+     - Line 132: `test("(A) GET /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:39", { todo: "..." }, async () => { await assertRouteIsServed("GET", "/api/clinic/workflows"); });`
+     - Line 138: `test("(A) POST /api/clinic/workflows/:id/toggle — зовёт SettingsBpmnTab.tsx:77", { todo: "..." }, async () => { await assertRouteIsServed("POST", "/api/clinic/workflows/00000000-0000-0000-0000-000000000000/toggle", {}); });`
+     - Line 148: `test("(A) DELETE /api/clinic/workflows/:id — зовёт SettingsBpmnTab.tsx:114", { todo: "..." }, async () => { await assertRouteIsServed("DELETE", "/api/clinic/workflows/00000000-0000-0000-0000-000000000000"); });`
+     - Line 157: `test("(A) POST /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:144", { todo: "..." }, async () => { await assertRouteIsServed("POST", "/api/clinic/workflows", { name: "x", definition: "{}" }); });`
+   - Observed gap: All 4 tests are currently suppressed with `{ todo: "..." }`.
+
+6. **Frontend Expectations (`apps/web/src/components/settings/SettingsBpmnTab.tsx`)**:
+   - `GET /api/clinic/workflows` expects `{ workflows: Array<{ id: string, name: string, trigger: string, active: boolean }> }`.
+   - `POST /api/clinic/workflows` sends `{ name: string, trigger: string, active: boolean }` (or `definition`) and expects `{ workflow: ClinicWorkflow }`.
+   - `POST /api/clinic/workflows/:id/toggle` sends `{ active: boolean }` and expects `{ workflow: ClinicWorkflow }`.
+   - `DELETE /api/clinic/workflows/:id` expects HTTP 200 `{ deleted: true }`.
 
 ---
 
 ## 2. Logic Chain
 
-1. **Why database mocks must be eradicated**:
-   - Database stubs (`mock.method(db, ...)`) mask schema mismatches, RLS policy failures, missing foreign keys, and broken transaction logic.
-   - Routes in `auth.ts` (such as clinic login, staff unlock, direct user login) write append-only records to `audit_events`. Under PostgreSQL 18 FORCE RLS and append-only trigger rules, real database queries must execute against real PostgreSQL tables.
+1. **Schema & Types Alignment**:
+   - `schema.ts:5240` already has `definition: jsonb("definition").notNull()`.
+   - Legacy file `apps/api/src/routes/workflows.ts` attempts `db.insert(clinicWorkflows).values({...})` without providing `definition`, triggering `TS2769`.
+   - `apps/api/src/routes/clinicWorkflows.ts` has the full implementation that includes `definition` parsing, `trigger` defaulting to `"manual"`, `requirePermission`, and `requireResolvedOrganizationId`.
 
-2. **Handling Append-Only Audit Tables & Organization Collisions**:
-   - Auth routes write audit logs to `audit_events` on successful logins and unlocks.
-   - `audit_events` cannot be cleared with `DELETE` by the application role `dental` (migration `0161_audit_append_only.sql`).
-   - Therefore, tests writing to audit tables MUST use deterministic, per-test-case unique organization UUIDs generated via `fixtureUuid("auth.test.ts", index++)`. This guarantees each test case operates on a distinct fixture organization without primary key or foreign key conflicts upon re-runs.
+2. **Server Registration Mismatch**:
+   - Line 31 of `server.ts` imports `registerClinicWorkflowsRoutes` from `./routes/clinicWorkflows.js`.
+   - Line 650 of `server.ts` calls `registerWorkflowRoutes(app)`.
+   - Updating line 650 of `server.ts` to `await registerClinicWorkflowsRoutes(app);` binds the working implementation and eliminates `TS2552`.
 
-3. **Replacing Mocks in `apps/api/src/routes/imports.test.ts`**:
-   - Define `ORG_ID = fixtureUuid("imports.test.ts", 1)`.
-   - In `beforeEach`, call `purgeFixtureOrganizations([ORG_ID])` and seed a fixture organization in PostgreSQL via `withSuperuserBypass`.
-   - In `afterEach`, call `purgeFixtureOrganizations([ORG_ID])`.
-   - Remove the `mock.method(db, "select", ...)` stub.
-   - `buildPatientImportIntake(ORG_ID, input)` will execute real `db.select().from(patients)...` against PostgreSQL, finding 0 existing patients for `ORG_ID`, and returning the normalized intake response.
+3. **Database Migration Step**:
+   - The production PostgreSQL database table `clinic_workflows` needs the `definition` column added via SQL migration `0168_clinic_workflows_definition.sql` containing `ALTER TABLE "clinic_workflows" ADD COLUMN IF NOT EXISTS "definition" jsonb NOT NULL DEFAULT '{}'::jsonb;` to prevent runtime query failures when accessing `definition`.
 
-4. **Replacing Mocks in `apps/api/src/routes/auth.test.ts`**:
-   - **`clinic login`**:
-     - Remove `db.select` and `db.insert` stubs.
-     - Seed a real organization with hashed password (`await hashCredential("password123")`) using `withSuperuserBypass`.
-     - Test 401 with missing org email (queries real DB, returns 0 rows).
-     - Test 200 with correct credentials (queries real DB, validates password hash, inserts real `audit_events` row).
-   - **`staff unlock`**:
-     - Seed real org `ORG_ID` and user `USER_ID` with `pinCodeHash: await hashCredential("1234")`.
-     - Test non-existent `userId` vs wrong `pinCode`: real DB queries return 0 rows or fail hash check, producing identical 401 responses.
-     - Test 200 unlock: real DB checks PIN, writes audit log, returns valid `staffToken`.
-   - **`direct user login`**:
-     - Seed real org and user with `email` and `passwordHash`.
-     - Test 401 for invalid credentials vs 200 for valid credentials against real PostgreSQL.
-   - **`user profile (/api/auth/user/me)`**:
-     - Test 404 with non-existent `userId` in `staffToken` against real DB.
-     - Test 200 with seeded user profile in real DB.
-   - **`права проверяются раньше тела запроса`**:
-     - For unauthenticated forbidden tests, auth guards reject requests before DB is touched.
-     - For authenticated write tests (`set-password`, `set-pin`), replace `allowDatabaseWrites()` with real DB fixture seeding using `withSuperuserBypass` and execute real DB updates on `organizations` and `users` tables.
-   - **`SaaS body Zod validation`**:
-     - Pure validation tests (lines 714–958) hit Fastify validation guards before DB and require no changes.
+4. **Contract Breach Proof Activation**:
+   - Removing the `{ todo: "..." }` options block from lines 132, 138, 148, and 157 in `apps/api/src/tests/contract-breach-proofs.test.ts` activates the 4 contract breach tests, proving the routes are served.
 
 ---
 
 ## 3. Caveats
 
-- **Fault-Injection Test**: `test("returns 500 when database throws an error")` in `auth.test.ts:34` explicitly tests Fastify's 500 error boundary when `db.select` throws an unexpected error. This is a fault-injection check; if strictly eliminating all `mock.method(db, ...)`, it can either retain a targeted fault injection mock with explicit comments or be adapted accordingly.
-- **Environment Prerequisites**: Tests running against real database fixtures require PostgreSQL 18 running on `127.0.0.1:5432` with `DATABASE_URL` set.
+- **Legacy File Cleanup**: `apps/api/src/routes/workflows.ts` should be deleted or updated to delegate to `clinicWorkflows.ts` so `tsc` does not compile legacy broken insert statements.
+- **Migration Journal**: Ensure `apps/api/drizzle/meta/_journal.json` includes the entry for `0168_clinic_workflows_definition.sql` when generated or manually created.
 
 ---
 
-## 4. Conclusion
+## 4. Conclusion & Concrete Implementation Steps
 
-All database stubs (`mock.method(db, ...)`) in `apps/api/src/routes/auth.test.ts` and `apps/api/src/routes/imports.test.ts` can be completely eradicated and replaced with real PostgreSQL 18 fixture data using `withFixtureTenant`, `withSuperuserBypass`, `fixtureUuid`, and `purgeFixtureOrganizations`.
+The plan for the implementation agent:
 
-Refactoring strategy is fully defined and ready for execution by the Worker agent.
+### Step 1: Fix Server Route Registration (`apps/api/src/server.ts`)
+Update line 650 in `apps/api/src/server.ts` from `await registerWorkflowRoutes(app);` to:
+```typescript
+await registerClinicWorkflowsRoutes(app);
+```
+
+### Step 2: Remove / Replace Legacy `apps/api/src/routes/workflows.ts`
+Delete or update `apps/api/src/routes/workflows.ts` so it no longer causes `TS2769` type errors (since `apps/api/src/routes/clinicWorkflows.ts` is the active route module).
+
+### Step 3: Add Drizzle Migration
+Create `apps/api/drizzle/0168_clinic_workflows_definition.sql`:
+```sql
+ALTER TABLE "clinic_workflows" ADD COLUMN IF NOT EXISTS "definition" jsonb NOT NULL DEFAULT '{}'::jsonb;
+```
+Update `apps/api/drizzle/meta/_journal.json` to register index entry 42 for `0168_clinic_workflows_definition`.
+
+### Step 4: Activate Contract Breach Tests (`apps/api/src/tests/contract-breach-proofs.test.ts`)
+Remove the `{ todo: "..." }` options block from the 4 test cases for `/api/clinic/workflows` (lines 132-164).
 
 ---
 
 ## 5. Verification Method
 
-To independently verify the refactoring once implemented by the Worker:
+To verify the implementation independently:
 
-1. **Run single test file for `auth.test.ts`**:
+1. **Typecheck Verification**:
    ```bash
-   node --import tsx --import ./src/tests/support/poolTeardown.ts --test apps/api/src/routes/auth.test.ts
+   npm run typecheck -w @dental/api
    ```
-2. **Run single test file for `imports.test.ts`**:
+   *Expected result*: 0 TypeScript errors.
+
+2. **Contract Breach Test Suite Execution**:
    ```bash
-   node --import tsx --import ./src/tests/support/poolTeardown.ts --test apps/api/src/routes/imports.test.ts
+   node --import tsx --test apps/api/src/tests/contract-breach-proofs.test.ts
    ```
-3. **Static DB mock census check**:
-   Verify zero DB mocks remain in both target test files:
+   *Expected result*: All 4 `/api/clinic/workflows` contract tests pass active execution.
+
+3. **Check Code Integrity**:
    ```bash
-   rg "mock\.method\(db" apps/api/src/routes/auth.test.ts apps/api/src/routes/imports.test.ts
+   npm run check:stub-overrides
    ```
-   Expectation: 0 matches (or only fault-injection if explicitly preserved).
+   *Expected result*: Pass without stub override violations.

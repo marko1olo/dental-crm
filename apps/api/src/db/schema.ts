@@ -5237,6 +5237,7 @@ export const clinicWorkflows = pgTable(
 			.references(() => organizations.id, { onDelete: "cascade" }),
 		name: varchar("name", { length: 255 }).notNull(),
 		trigger: varchar("trigger", { length: 255 }).notNull(),
+		definition: jsonb("definition").notNull(),
 		active: boolean("active").notNull().default(false),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

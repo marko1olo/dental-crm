@@ -11240,6 +11240,7 @@ export const visitFlowRequestSchema = z.object({
 	visitId: z.string().uuid().optional(),
 	transcript: z.string(),
 	specialty: dentalSpecialtySchema.optional(),
+	source: z.string().optional(),
 	doctorFullName: z.string().nullable().optional(),
 	completedServices: z
 		.array(
@@ -11266,8 +11267,8 @@ export const visitFlowRequestSchema = z.object({
 			enableDocuments: z.boolean().optional(),
 		})
 		.optional(),
-	planPayload: treatmentPlanPayloadSchema.optional(),
-	recommendationsPayload: postVisitRecommendationsPayloadSchema.optional(),
+	planPayload: treatmentPlanPayloadSchema.nullable().optional(),
+	recommendationsPayload: postVisitRecommendationsPayloadSchema.nullable().optional(),
 });
 export type VisitFlowRequest = z.infer<typeof visitFlowRequestSchema>;
 
