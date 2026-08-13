@@ -111,7 +111,18 @@ describe("rublesToKopecks / kopecksToWholeRubles", () => {
 	});
 
 	test("сумма с копейками не выдаёт себя за целые рубли", () => {
-		assert.throws(() => kopecksToWholeRubles(15050));
+		assert.throws(
+			() => kopecksToWholeRubles(15050),
+			(err) =>
+				err instanceof Error &&
+				err.message ===
+					"Сумма 150.50 руб. содержит копейки и не может быть выражена целыми рублями",
+		);
+	});
+
+	test("ноль и отрицательные значения обрабатываются корректно", () => {
+		assert.strictEqual(kopecksToWholeRubles(0), 0);
+		assert.strictEqual(kopecksToWholeRubles(-150000), -1500);
 	});
 });
 
