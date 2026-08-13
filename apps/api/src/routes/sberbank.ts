@@ -1,9 +1,11 @@
+import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { sberbankTransactions } from "../db/schema.js";
+import { payments, sberbankTransactions } from "../db/schema.js";
 import { requirePermission } from "../security/permissions.js";
+import { SberbankClient } from "../services/sberbankClient.js";
 
 export async function registerSberbankRoutes(app: FastifyInstance) {
 	app.post(
@@ -32,37 +34,48 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				amount: number;
 			};
 
-			/*
-			 * ИНТЕГРАЦИИ СО СБЕРБАНКОМ В ПРОЕКТЕ НЕТ. Проверено 2026-08-07 по трём
-			 * направлениям: обращений к `payment/rest/*` или к любому хосту банка нет
-			 * ни одного (единственные совпадения — комментарии этого же файла);
-			 * переменных окружения Сбербанка нет в контракте `env/requiredEnv.ts`;
-			 * тестов на маршрут нет ни одного.
-			 *
-			 * ПОЧЕМУ ОТКАЗ, А НЕ ЗАПИСЬ «pending». Прежний код писал строку и отвечал
-			 * `{ success: true, orderId }`, ничего никуда не отправив, а обработчик
-			 * состояния затем БЕЗУСЛОВНО переводил `pending` → `success`. То есть
-			 * система докладывала о поступлении денег, которых не было, и счёт
-			 * помечался оплаченным. Для клиники это расхождение кассы с фактом.
-			 *
-			 * Такой же приём — зашитый `{ success: true }` без сетевого вызова — уже
-			 * изымали из этого репозитория осознанно вместе с `syncDaemon`
-			 * (пакет P3-syncdaemon, коммит 8c87dcd93). Здесь остаётся тот же класс.
-			 *
-			 * 501 выбран вместо удаления маршрута намеренно: клиент получает честный
-			 * отказ вместо ложного успеха, а точка расширения сохраняется. Когда
-			 * появятся учётные данные банка, сюда встаёт настоящий вызов, а ниже —
-			 * запись строки по его фактическому ответу.
-			 */
-			void patientId;
-			void amount;
-			void db;
-			void sberbankTransactions;
-			return reply.status(501).send({
-				error: "PaymentGatewayNotConfigured",
-				message:
-					"Платёжный шлюз Сбербанка не подключён: интеграция отсутствует в сборке.",
-			});
+			let client: SberbankClient;
+			try {
+				client = new SberbankClient();
+			} catch (error) {
+				return reply.status(501).send({
+					error: "PaymentGatewayNotConfigured",
+					message:
+						"Платёжный шлюз Сбербанка не подключён: интеграция отсутствует в сборке.",
+				});
+			}
+
+			const orderNumber = crypto.randomUUID();
+			const origin = request.headers.origin;
+			const returnUrl = origin
+				? `${origin}/cabinet`
+				: "http://localhost:3000/cabinet";
+
+			try {
+				const res = await client.registerOrder(orderNumber, amount, returnUrl);
+
+				if (!res.orderId || !res.formUrl) {
+					return reply.status(500).send({
+						error: "SberbankError",
+						message: res.errorMessage || "Ошибка регистрации заказа в Сбербанке",
+					});
+				}
+
+				await db.insert(sberbankTransactions).values({
+					organizationId,
+					patientId,
+					orderId: res.orderId,
+					amount,
+					status: "pending",
+				});
+
+				return { success: true, orderId: res.orderId, formUrl: res.formUrl };
+			} catch (error) {
+				return reply.status(500).send({
+					error: "SberbankError",
+					message: error instanceof Error ? error.message : "Неизвестная ошибка",
+				});
+			}
 		},
 	);
 
@@ -101,23 +114,64 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				return reply.status(404).send({ error: "Transaction not found" });
 			}
 
-			/*
-			 * СОСТОЯНИЕ ОТДАЁТСЯ КАК ХРАНИТСЯ. Прежде здесь стоял безусловный перевод
-			 * `pending` → `success` с комментарием «Simulate external Sberbank API»:
-			 * любой запрос состояния объявлял платёж успешным, не спросив банк. Тот
-			 * же `UPDATE` фильтровался ТОЛЬКО по `orderId`, без `organizationId`, —
-			 * а `orderId` собирался из `Date.now()` и `Math.random()*1000`, где
-			 * столкновение правдоподобно, значит запись могла уйти чужой клинике.
-			 *
-			 * Подтверждение состояния обязано приходить от банка: обращением к
-			 * `getOrderStatusExtended` либо его уведомлением (callback). Пока
-			 * интеграции нет, выдумывать успех нельзя — см. обработчик оплаты выше.
-			 */
-			return {
-				success: true,
-				status: transaction.status,
-				amount: transaction.amount,
-			};
+			let client: SberbankClient;
+			try {
+				client = new SberbankClient();
+			} catch (error) {
+				return reply.status(501).send({
+					error: "PaymentGatewayNotConfigured",
+					message:
+						"Платёжный шлюз Сбербанка не подключён: интеграция отсутствует в сборке.",
+				});
+			}
+
+			try {
+				const sberStatus = await client.getOrderStatusExtended(orderId);
+				const code = sberStatus.orderStatus;
+
+				let mappedStatus = "pending";
+				if (code === 2) {
+					mappedStatus = "success";
+				} else if (code === 3 || code === 6) {
+					mappedStatus = "failed";
+				}
+
+				if (mappedStatus !== transaction.status) {
+					await db
+						.update(sberbankTransactions)
+						.set({ status: mappedStatus, updatedAt: new Date() })
+						.where(
+							and(
+								eq(sberbankTransactions.orderId, orderId),
+								eq(sberbankTransactions.organizationId, orgId),
+							),
+						);
+
+					if (
+						transaction.status === "pending" &&
+						mappedStatus === "success"
+					) {
+						await db.insert(payments).values({
+							organizationId: orgId,
+							patientId: transaction.patientId,
+							method: "card",
+							status: "paid",
+							amountRub: transaction.amount / 100,
+						});
+					}
+				}
+
+				return {
+					success: true,
+					status: mappedStatus,
+					amount: transaction.amount,
+				};
+			} catch (error) {
+				return reply.status(500).send({
+					error: "SberbankError",
+					message: error instanceof Error ? error.message : "Неизвестная ошибка",
+				});
+			}
 		},
 	);
 }
