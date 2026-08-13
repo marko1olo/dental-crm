@@ -587,7 +587,6 @@ async function runDiarySigningCeremony(
 					),
 				);
 			completedTreatmentItems = visitTreatmentItems.length;
-			const transactionsToInsert: (typeof inventoryTransactions.$inferInsert)[] = [];
 
 			for (const item of visitTreatmentItems) {
 				if (!item.serviceId) continue;
@@ -702,7 +701,7 @@ async function runDiarySigningCeremony(
 							),
 						);
 
-					transactionsToInsert.push({
+					await tx.insert(inventoryTransactions).values({
 						organizationId,
 						visitId: diary.visitId,
 						inventoryItemId: inv.id,
@@ -718,9 +717,6 @@ async function runDiarySigningCeremony(
 						quantityChanged,
 					});
 				}
-			}
-			if (transactionsToInsert.length > 0) {
-				await tx.insert(inventoryTransactions).values(transactionsToInsert);
 			}
 		}
 	}
