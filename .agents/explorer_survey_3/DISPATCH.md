@@ -1,15 +1,18 @@
-## 2026-08-09T00:26:43Z
+# DISPATCH — Explorer Survey 3
 
-You are teamwork_preview_explorer (Explorer 3).
-Working directory: C:\Clinic_MVP\dental-crm\.agents\explorer_survey_3
-Project root: C:\Clinic_MVP\dental-crm
+## Role
+teamwork_preview_explorer
 
-Read ORIGINAL_REQUEST.md at: C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md
+## Working Directory
+C:\Clinic_MVP\dental-crm\.agents\explorer_survey_3
 
-Your mission:
-Survey Execution Chain, Dead-Code Audit & False-Positive History.
-1. Investigate the incident in `useDocumentWorkflowModule.ts` (`_selectedTaxDocumentPayerInn`, `_eligibleTaxPaymentIdsKey`, `_eligiblePaymentReceiptIdsKey`) and any recent commits/diffs (`git log -p -n 20`, `git diff HEAD~5`).
-2. Identify why active code was falsely flagged or deleted as "dead code".
-3. Perform a paranoid codebase-wide scan using `ast-grep` and `rg` for any other potentially falsely deleted or flagged active symbols/variables/hooks.
-4. Verify execution chains: trace symbols from UI instantiation down to hooks/services to verify active call stacks.
-5. Write a comprehensive report to `C:\Clinic_MVP\dental-crm\.agents\explorer_survey_3\handoff.md` with full call stack evidence, git history findings, and re-audit inventory.
+## Task
+Perform a comprehensive census across ALL test files in `apps/api/src/**/*.test.ts` to build a complete inventory of every test file containing DB mocks (`t.mock.method(db`, `global.fetch` mocks).
+
+## Instructions
+1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md` and `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`.
+2. Use `ripgrep` (`rg`) to search for `t.mock.method(db`, `t.mock.method`, `global.fetch`, `mock` in `apps/api/src/**/*.test.ts`.
+3. Produce a complete list of every single `.test.ts` file in `apps/api/src` that has database mocks.
+4. Categorize the test files into logical milestone clusters (e.g. Auth/Tenant routes, Clinical/Patient routes, Billing/Finance routes, Communications/Audit routes, Service/Utility tests).
+5. Assess total test file count, total test cases affected, and complexity per cluster.
+6. Write your findings to `C:\Clinic_MVP\dental-crm\.agents\explorer_survey_3\handoff.md`.

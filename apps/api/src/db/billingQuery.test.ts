@@ -1,65 +1,98 @@
 import assert from "node:assert";
-import { describe, test } from "node:test";
+import { describe, test, beforeEach, afterEach } from "node:test";
 import { getPaymentsByPatientIdInDb } from "./billingQuery.js";
 import { db } from "./client.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../tests/support/fixtureOrganizations.js";
+import { withSuperuserBypass } from "./rls.js";
+import { organizations, patients, payments } from "./schema.js";
+
+const orgId = fixtureUuid("billing-query", 1);
+const patientId = fixtureUuid("billing-query-pat", 1);
 
 describe("getPaymentsByPatientIdInDb", () => {
-	test("returns empty array when no payments are found", async (t) => {
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				where: async () => [],
-			}),
-		}));
-
-		const result = await getPaymentsByPatientIdInDb("org-1", "patient-1");
-		assert.deepStrictEqual(result, []);
+	beforeEach(async () => {
+		await purgeFixtureOrganizations([orgId]);
+		await withSuperuserBypass(async () => {
+			await db.insert(organizations).values([
+				{ id: orgId, name: "Billing Query Test Org", schemaVersion: 1 },
+			]);
+			await db.insert(patients).values([
+				{
+					id: patientId,
+					organizationId: orgId,
+					firstName: "Test",
+					lastName: "Patient",
+					phone: "+79998887766",
+				}
+			]);
+		});
 	});
 
-	// Маппер отдаёт createdAt и paidAt; поля updatedAt в контракте Payment нет.
-	// Фикстура задавала updatedAt, поэтому p.paidAt оказывался undefined и
-	// маппер падал на .toISOString(). В базе paid_at объявлен NOT NULL (как и в
-	// schema.ts), так что для рабочего кода обращение без проверки безопасно —
-	// ошибочной была именно фикстура.
+	afterEach(async () => {
+		await purgeFixtureOrganizations([orgId]);
+	});
+
+	test("returns empty array when no payments are found", async (t) => {
+		await withFixtureTenant(orgId, async () => {
+			const result = await getPaymentsByPatientIdInDb(orgId, patientId);
+			assert.deepStrictEqual(result, []);
+		});
+	});
+
 	test("maps createdAt and paidAt dates to ISO strings correctly", async (t) => {
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				where: async () => [
+		await withFixtureTenant(orgId, async () => {
+			const paymentId1 = fixtureUuid("billing-query-pay", 1);
+			const paymentId2 = fixtureUuid("billing-query-pay", 2);
+			const createdAt1 = new Date("2023-10-01T12:00:00Z");
+			const paidAt1 = new Date("2023-10-02T12:00:00Z");
+			const createdAt2 = new Date("2023-10-03T12:00:00Z");
+			const paidAt2 = new Date("2023-10-04T12:00:00Z");
+
+			await withSuperuserBypass(async () => {
+				await db.insert(payments).values([
 					{
-						id: "1",
-						organizationId: "org-1",
-						patientId: "patient-1",
+						id: paymentId1,
+						organizationId: orgId,
+						patientId: patientId,
 						amountRub: 1000,
 						status: "paid",
-						createdAt: new Date("2023-10-01T12:00:00Z"),
-						paidAt: new Date("2023-10-02T12:00:00Z"),
+						createdAt: createdAt1,
+						paidAt: paidAt1,
 					},
 					{
-						id: "2",
-						organizationId: "org-1",
-						patientId: "patient-1",
+						id: paymentId2,
+						organizationId: orgId,
+						patientId: patientId,
 						amountRub: 500,
 						status: "pending",
-						createdAt: new Date("2023-10-03T12:00:00Z"),
-						paidAt: new Date("2023-10-04T12:00:00Z"),
-					},
-				],
-			}),
-		}));
+						createdAt: createdAt2,
+						paidAt: paidAt2,
+					}
+				]);
+			});
 
-		const result = await getPaymentsByPatientIdInDb("org-1", "patient-1");
+			const result = await getPaymentsByPatientIdInDb(orgId, patientId);
 
-		assert.strictEqual(result.length, 2);
-		// Локальные переменные под noUncheckedIndexedAccess: assert.ok — настоящая
-		// проверка, тест падает внятно, а не TypeError-ом на обращении к полю.
-		const firstPayment = result[0];
-		const secondPayment = result[1];
-		assert.ok(firstPayment);
-		assert.ok(secondPayment);
-		assert.strictEqual(firstPayment.id, "1");
-		assert.strictEqual(firstPayment.createdAt, "2023-10-01T12:00:00.000Z");
-		assert.strictEqual(firstPayment.paidAt, "2023-10-02T12:00:00.000Z");
-		assert.strictEqual(secondPayment.id, "2");
-		assert.strictEqual(secondPayment.createdAt, "2023-10-03T12:00:00.000Z");
-		assert.strictEqual(secondPayment.paidAt, "2023-10-04T12:00:00.000Z");
+			assert.strictEqual(result.length, 2);
+			
+			// We order by createdAt to ensure consistent results, or sort them manually
+			result.sort((a, b) => a.id.localeCompare(b.id));
+
+			const firstPayment = result.find(p => p.id === paymentId1);
+			const secondPayment = result.find(p => p.id === paymentId2);
+
+			assert.ok(firstPayment);
+			assert.ok(secondPayment);
+			assert.strictEqual(firstPayment.id, paymentId1);
+			assert.strictEqual(firstPayment.createdAt, "2023-10-01T12:00:00.000Z");
+			assert.strictEqual(firstPayment.paidAt, "2023-10-02T12:00:00.000Z");
+			assert.strictEqual(secondPayment.id, paymentId2);
+			assert.strictEqual(secondPayment.createdAt, "2023-10-03T12:00:00.000Z");
+			assert.strictEqual(secondPayment.paidAt, "2023-10-04T12:00:00.000Z");
+		});
 	});
 });

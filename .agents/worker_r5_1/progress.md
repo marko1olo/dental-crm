@@ -1,19 +1,16 @@
-# Progress Log - Worker R5 1
+# Progress Log — Worker R5-1
 
-Last visited: 2026-08-09T13:54:15Z
+Last visited: 2026-08-12T20:05:43Z
 
-- [x] Initialized DISPATCH.md and BRIEFING.md
-- [x] Read ORIGINAL_REQUEST.md and Explorer handoffs (1, 2, 3)
-- [x] Apply Defect 1 fix: SettingsView Mobile Dark Tab Overlap
-  - Modified: `apps/web/src/styles/main.css`
-  - Modified: `apps/web/src/components/settings/SettingsProfileTab.tsx`
-- [x] Apply Defect 2 fix: MessageDeliveryConsole PC Light Form Squashing
-  - Modified: `apps/web/src/components/communications/MessageDeliveryConsole.tsx`
-  - Modified: `apps/web/src/styles/dente-operations.css`
-- [x] Apply Defect 3 fix: ScheduleView PC Dark Button Alignment
-  - Modified: `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
-  - Modified: `apps/web/src/styles/main.css`
-- [x] Fixed pre-existing typecheck duplicate identifier bug in `apps/web/src/hooks/domains/useImagingQueries.ts`
-- [x] Run `npm run typecheck -w @dental/web`: PASSED (0 errors, Exit Code 0)
-- [x] Write `C:\Clinic_MVP\dental-crm\.agents\worker_r5_1\handoff.md` and update `progress.md`
-- [x] Send message to parent orchestrator
+- [x] Initialized DISPATCH.md, BRIEFING.md, and progress.md
+- [ ] Read ORIGINAL_REQUEST.md, GATE_STATUS.md, and challenger_m5_2/handoff.md
+- [ ] Inspect test files (`audit.test.ts`, `auditQuery.test.ts`, `clinicalAuditService.test.ts`, etc.)
+- [ ] Apply fixes for the 3 reported issues:
+  - [ ] Add `.onConflictDoNothing()` or run-unique UUID generation for `organizations` insert
+  - [ ] Fix broken import in `clinicalAuditService.test.ts`
+  - [ ] Fix NOT NULL constraint (`fullName` vs `name`) in `audit.test.ts`
+- [ ] Run `npm run typecheck -w @dental/api` and verify 0 errors
+- [ ] Run integration tests twice consecutively and verify 0 failures & key collisions
+- [ ] Verify zero DB query mocks remain (`rg "mock\.method\(db"`)
+- [ ] Write handoff report `C:/Clinic_MVP/dental-crm/.agents/worker_r5_1/handoff.md`
+- [ ] Send report message to parent

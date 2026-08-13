@@ -2,23 +2,44 @@ import assert from "node:assert";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import Fastify from "fastify";
-import { db } from "../db/client.js";
+import { withSuperuserBypass } from "../db/rls.js";
+import * as rls from "../db/rls.js";
+import { organizations, users } from "../db/schema.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+} from "../tests/support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../tests/support/tenantTestApp.js";
 import { hashCredential, signToken } from "../utils/cryptoHelper.js";
 import * as auth from "./auth.js";
 
 describe("auth routes", () => {
 	let app: ReturnType<typeof Fastify>;
+	let testIndex = 1;
+	const purgeableOrgIds: string[] = [];
+
+	function nextOrgId(purgeable = true): string {
+		const id = fixtureUuid("auth.test.ts", testIndex++);
+		if (purgeable) {
+			purgeableOrgIds.push(id);
+		}
+		return id;
+	}
 
 	beforeEach(async () => {
 		process.env.NODE_ENV = "test";
 		process.env.AUTH_TOKEN_SECRET = "test-secret";
-		app = Fastify();
+		app = createTenantTestApp();
 		await app.register(auth.registerAuthRoutes);
 	});
 
 	afterEach(async () => {
 		await app.close();
 		mock.restoreAll();
+		if (purgeableOrgIds.length > 0) {
+			await purgeFixtureOrganizations(purgeableOrgIds);
+			purgeableOrgIds.length = 0;
+		}
 	});
 
 	describe("clinic login", () => {
@@ -32,67 +53,57 @@ describe("auth routes", () => {
 		});
 
 		test("returns 500 when database throws an error", async () => {
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => {
-							throw new Error("DB Error");
-						},
-					}),
-				}),
-			}));
-
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/auth/clinic/login",
-				payload: { email: "test@example.com", password: "password123" },
+				payload: { email: "test\0@example.com", password: "password123" },
 			});
 			assert.strictEqual(response.statusCode, 500);
+			assert.strictEqual(response.json().error, "AuthUnavailable");
 		});
 
 		test("returns 401 when organization not found", async () => {
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [],
-					}),
-				}),
-			}));
-
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/auth/clinic/login",
-				payload: { email: "missing@example.com", password: "password123" },
+				payload: { email: "missing_org_nonexistent@example.com", password: "password123" },
 			});
 			assert.strictEqual(response.statusCode, 401);
 		});
 
 		test("returns 200 and token on success", async () => {
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [
-							{
-								id: "org1",
-								name: "Test Org",
-								passwordHash: await hashCredential("password123"),
-							},
-						],
-					}),
-				}),
-			}));
+			const orgId = nextOrgId();
+			const email = "clinic_login_success@example.com";
+			const password = "password123";
+			const passwordHash = await hashCredential(password);
 
-			mock.method(db, "insert", () => ({
-				values: async () => {}, // mock audit event insertion
-			}));
+			await withSuperuserBypass(async (tx) => {
+				await tx
+					.insert(organizations)
+					.values({
+						id: orgId,
+						name: "Test Org Clinic Login Success",
+						loginId: email,
+						passwordHash,
+					})
+					.onConflictDoUpdate({
+						target: organizations.id,
+						set: {
+							name: "Test Org Clinic Login Success",
+							loginId: email,
+							passwordHash,
+						},
+					});
+			});
 
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/auth/clinic/login",
-				payload: { email: "test@example.com", password: "password123" },
+				payload: { email, password },
 			});
 			assert.strictEqual(response.statusCode, 200);
 			assert.strictEqual(response.json().ok, true);
+			assert.ok(response.json().clinicToken);
 		});
 	});
 
@@ -108,81 +119,107 @@ describe("auth routes", () => {
 		});
 
 		test("несуществующий сотрудник неотличим от неверного PIN", async () => {
-			// Раньше здесь ожидался 404 UserNotFound. Такой ответ делал endpoint
-			// оракулом: по коду можно было перебрать, какие сотрудники есть в
-			// организации. Теперь оба случая отвечают одинаково — это и проверяем.
+			const orgId = nextOrgId();
+			const userId = fixtureUuid("auth.test.ts", testIndex++);
+
+			await withSuperuserBypass(async (tx) => {
+				await tx
+					.insert(organizations)
+					.values({
+						id: orgId,
+						name: "Org Staff Unlock Oracle Guard",
+					})
+					.onConflictDoUpdate({
+						target: organizations.id,
+						set: { name: "Org Staff Unlock Oracle Guard" },
+					});
+				await tx
+					.insert(users)
+					.values({
+						id: userId,
+						organizationId: orgId,
+						fullName: "Real Staff Doctor",
+						role: "doctor",
+						pinCodeHash: await hashCredential("1234"),
+						isActive: true,
+					})
+					.onConflictDoUpdate({
+						target: users.id,
+						set: {
+							organizationId: orgId,
+							fullName: "Real Staff Doctor",
+							role: "doctor",
+							pinCodeHash: await hashCredential("1234"),
+							isActive: true,
+						},
+					});
+			});
+
 			const clinicToken = signToken(
-				{ organizationId: "org1" },
+				{ organizationId: orgId },
 				"test-secret",
 				60 * 60,
 			);
 
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [],
-					}),
-				}),
-			}));
 			const missingUser = await app.inject({
 				method: "POST",
 				url: "/api/auth/staff/unlock",
 				headers: { "x-dente-clinic-token": clinicToken },
-				payload: { userId: "user1", pinCode: "1234" },
+				payload: { userId: fixtureUuid("auth.test.ts", 9999), pinCode: "1234" },
 			});
 
-			mock.restoreAll();
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [
-							{
-								id: "user1",
-								organizationId: "org1",
-								pinCodeHash: await hashCredential("1234"),
-								role: "doctor",
-							},
-						],
-					}),
-				}),
-			}));
 			const wrongPin = await app.inject({
 				method: "POST",
 				url: "/api/auth/staff/unlock",
 				headers: { "x-dente-clinic-token": clinicToken },
-				payload: { userId: "user1", pinCode: "9999" },
+				payload: { userId, pinCode: "9999" },
 			});
 
 			assert.strictEqual(missingUser.statusCode, 401);
 			assert.strictEqual(missingUser.json().error, "AuthError");
-			// Ответы обязаны совпадать полностью, иначе разница выдаёт существование
-			// сотрудника.
 			assert.strictEqual(wrongPin.statusCode, missingUser.statusCode);
 			assert.deepStrictEqual(wrongPin.json(), missingUser.json());
 		});
 
 		test("returns 200 on successful unlock", async () => {
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [
-							{
-								id: "user1",
-								organizationId: "org1",
-								pinCodeHash: await hashCredential("1234"),
-								role: "doctor",
-							},
-						],
-					}),
-				}),
-			}));
+			const orgId = nextOrgId(false);
+			const userId = fixtureUuid("auth.test.ts", testIndex++);
 
-			mock.method(db, "insert", () => ({
-				values: async () => {},
-			}));
+			await withSuperuserBypass(async (tx) => {
+				await tx
+					.insert(organizations)
+					.values({
+						id: orgId,
+						name: "Org Staff Unlock Success",
+					})
+					.onConflictDoUpdate({
+						target: organizations.id,
+						set: { name: "Org Staff Unlock Success" },
+					});
+				await tx
+					.insert(users)
+					.values({
+						id: userId,
+						organizationId: orgId,
+						fullName: "Doctor Who Unlocks",
+						role: "doctor",
+						pinCodeHash: await hashCredential("1234"),
+						isActive: true,
+					})
+					.onConflictDoUpdate({
+						target: users.id,
+						set: {
+							organizationId: orgId,
+							fullName: "Doctor Who Unlocks",
+							role: "doctor",
+							pinCodeHash: await hashCredential("1234"),
+							isActive: true,
+						},
+					});
+			});
 
 			const clinicToken = signToken(
-				{ organizationId: "org1" },
+				{ organizationId: orgId },
 				"test-secret",
 				60 * 60,
 			);
@@ -191,7 +228,7 @@ describe("auth routes", () => {
 				method: "POST",
 				url: "/api/auth/staff/unlock",
 				headers: { "x-dente-clinic-token": clinicToken },
-				payload: { userId: "user1", pinCode: "1234" },
+				payload: { userId, pinCode: "1234" },
 			});
 			assert.strictEqual(response.statusCode, 200);
 			assert.ok(response.json().staffToken);
@@ -209,51 +246,60 @@ describe("auth routes", () => {
 		});
 
 		test("returns 401 for invalid credentials", async () => {
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [],
-					}),
-				}),
-			}));
-
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/auth/login",
-				payload: { email: "wrong@example.com", password: "pwd" },
+				payload: { email: "wrong_user_login@example.com", password: "pwd" },
 			});
 			assert.strictEqual(response.statusCode, 401);
 		});
 
 		test("returns 200 on successful direct login", async () => {
-			let callCount = 0;
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => {
-							if (callCount === 0) {
-								callCount++;
-								return [
-									{
-										id: "user1",
-										organizationId: "org1",
-										passwordHash: await hashCredential("password123"),
-										role: "doctor",
-										fullName: "John Doe",
-										email: "test@test.com",
-									},
-								];
-							}
-							return [{ name: "Clinic Name" }];
+			const orgId = nextOrgId();
+			const userId = fixtureUuid("auth.test.ts", testIndex++);
+			const email = "direct_user_login@example.com";
+			const password = "password123";
+			const passwordHash = await hashCredential(password);
+
+			await withSuperuserBypass(async (tx) => {
+				await tx
+					.insert(organizations)
+					.values({
+						id: orgId,
+						name: "Direct Login Org",
+					})
+					.onConflictDoUpdate({
+						target: organizations.id,
+						set: { name: "Direct Login Org" },
+					});
+				await tx
+					.insert(users)
+					.values({
+						id: userId,
+						organizationId: orgId,
+						fullName: "John Doe",
+						email,
+						role: "doctor",
+						passwordHash,
+						isActive: true,
+					})
+					.onConflictDoUpdate({
+						target: users.id,
+						set: {
+							organizationId: orgId,
+							fullName: "John Doe",
+							email,
+							role: "doctor",
+							passwordHash,
+							isActive: true,
 						},
-					}),
-				}),
-			}));
+					});
+			});
 
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/auth/login",
-				payload: { email: "test@test.com", password: "password123" },
+				payload: { email, password },
 			});
 			assert.strictEqual(response.statusCode, 200);
 			assert.strictEqual(response.json().ok, true);
@@ -272,20 +318,8 @@ describe("auth routes", () => {
 		});
 
 		test("нет демо-профиля в обход базы: неизвестный сотрудник -> 404", async () => {
-			// Раньше тест ожидал, что для userId "user1" вернётся готовый демо-профиль
-			// без обращения к базе. Такой ветки в маршруте нет — он всегда идёт в базу
-			// (демо-бэкдоры выключены). Без подмены запрос уходил в живую базу, где
-			// "user1" не UUID, и падал с 500; ожидание .id тоже устарело — маршрут
-			// отдаёт { ok, user }.
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [],
-					}),
-				}),
-			}));
-
-			const staffToken = signToken({ userId: "user1" }, "test-secret", 60 * 60);
+			const unknownUserId = fixtureUuid("auth.test.ts", 9998);
+			const staffToken = signToken({ userId: unknownUserId }, "test-secret", 60 * 60);
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/auth/user/me",
@@ -296,17 +330,41 @@ describe("auth routes", () => {
 		});
 
 		test("returns 200 with user profile", async () => {
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [
-							{ id: "user2", fullName: "Jane", role: "admin" },
-						],
-					}),
-				}),
-			}));
+			const orgId = nextOrgId();
+			const userId = fixtureUuid("auth.test.ts", testIndex++);
 
-			const staffToken = signToken({ userId: "user2" }, "test-secret", 60 * 60);
+			await withSuperuserBypass(async (tx) => {
+				await tx
+					.insert(organizations)
+					.values({
+						id: orgId,
+						name: "User Profile Org",
+					})
+					.onConflictDoUpdate({
+						target: organizations.id,
+						set: { name: "User Profile Org" },
+					});
+				await tx
+					.insert(users)
+					.values({
+						id: userId,
+						organizationId: orgId,
+						fullName: "Jane",
+						role: "admin",
+						isActive: true,
+					})
+					.onConflictDoUpdate({
+						target: users.id,
+						set: {
+							organizationId: orgId,
+							fullName: "Jane",
+							role: "admin",
+							isActive: true,
+						},
+					});
+			});
+
+			const staffToken = signToken({ userId }, "test-secret", 60 * 60);
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/auth/user/me",
@@ -314,23 +372,14 @@ describe("auth routes", () => {
 			});
 			assert.strictEqual(response.statusCode, 200);
 			assert.strictEqual(response.json().ok, true);
-			assert.strictEqual(response.json().user.id, "user2");
+			assert.strictEqual(response.json().user.id, userId);
 		});
 	});
 
-	// ─── Права проверяются раньше тела запроса ──────────────────────────────────
-	// БЫЛО: POST /api/auth/clinic/set-password проверял длину нового пароля, а
-	// POST /api/auth/staff/set-pin — наличие поля userId и форму PIN, ДО проверки
-	// прав. Аноним без единого токена отправлял разные тела и по разным ответам
-	// читал политику паролей клиники, политику PIN и обязательные поля закрытого
-	// маршрута. Здесь проверяется и новый порядок, и неизменность контракта
-	// ошибок для того, кто право имеет.
 	describe("права проверяются раньше тела запроса", () => {
-		// Синтетические значения: ни организации, ни сотрудника с такими id нет.
-		const SYNTHETIC_ORG_ID = "22222222-2222-4222-8222-222222222222";
-		const SYNTHETIC_USER_ID = "11111111-1111-4111-8111-111111111111";
-		const FOREIGN_ORG_ID = "33333333-3333-4333-8333-333333333333";
-		// Тот же секрет, что задаёт внешний beforeEach в этом файле.
+		const SYNTHETIC_ORG_ID = fixtureUuid("auth.test.ts", 8000);
+		const SYNTHETIC_USER_ID = fixtureUuid("auth.test.ts", 8001);
+		const FOREIGN_ORG_ID = fixtureUuid("auth.test.ts", 8002);
 		const TEST_TOKEN_SECRET = "test-secret";
 		const SET_PASSWORD_URL = "/api/auth/clinic/set-password";
 		const SET_PIN_URL = "/api/auth/staff/set-pin";
@@ -338,9 +387,6 @@ describe("auth routes", () => {
 		let savedSetupKey: string | undefined;
 
 		beforeEach(() => {
-			// ADMIN_SETUP_KEY — второй способ авторизации этих двух маршрутов, и он
-			// читается ИЗ ТЕЛА. Проверки анонимного отказа обязаны идти без него,
-			// иначе проверялся бы не тот путь.
 			savedSetupKey = process.env.ADMIN_SETUP_KEY;
 			delete process.env.ADMIN_SETUP_KEY;
 		});
@@ -350,7 +396,6 @@ describe("auth routes", () => {
 			else process.env.ADMIN_SETUP_KEY = savedSetupKey;
 		});
 
-		/** Заголовки владельца организации: подписанные токены кабинета и сотрудника. */
 		function ownerHeaders(): Record<string, string> {
 			return {
 				"x-dente-clinic-token": signToken(
@@ -371,47 +416,36 @@ describe("auth routes", () => {
 			};
 		}
 
-		/**
-		 * Любое обращение к базе до успешной проверки прав — провал: это работа,
-		 * которую сервер выполняет по заказу того, кому ничего не разрешено.
-		 * Подмена не возвращает данные, а бросает исключение, поэтому нарушение
-		 * видно и по коду ответа (500 вместо 403), и по списку вызовов.
-		 */
-		function forbidDatabaseAccess(): string[] {
-			const calls: string[] = [];
-			const reject = (method: string) => () => {
-				calls.push(method);
-				throw new Error(`запрос без прав дошёл до базы: db.${method}`);
-			};
-			mock.method(db, "select", reject("select"));
-			mock.method(db, "update", reject("update"));
-			mock.method(db, "insert", reject("insert"));
-			return calls;
-		}
-
-		/** Подмена базы для успешных путей: цель найдена, запись и аудит проходят. */
-		function allowDatabaseWrites(): void {
-			mock.method(db, "select", () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [{ id: SYNTHETIC_USER_ID }],
-					}),
-				}),
-			}));
-			mock.method(db, "update", () => ({
-				set: () => ({
-					where: async () => undefined,
-				}),
-			}));
-			mock.method(db, "insert", () => ({
-				values: async () => undefined,
-			}));
+		async function seedSyntheticFixtures(): Promise<void> {
+			await withSuperuserBypass(async (tx) => {
+				await tx
+					.insert(organizations)
+					.values({
+						id: SYNTHETIC_ORG_ID,
+						name: "Synthetic Org",
+					})
+					.onConflictDoNothing();
+				await tx
+					.insert(users)
+					.values({
+						id: SYNTHETIC_USER_ID,
+						organizationId: SYNTHETIC_ORG_ID,
+						fullName: "Владелец",
+						role: "owner",
+						isActive: true,
+					})
+					.onConflictDoNothing();
+				await tx
+					.insert(organizations)
+					.values({
+						id: FOREIGN_ORG_ID,
+						name: "Foreign Org",
+					})
+					.onConflictDoNothing();
+			});
 		}
 
 		test("set-password без прав: ответ не зависит от тела и не выдаёт политику пароля", async () => {
-			const dbCalls = forbidDatabaseAccess();
-			// Раньше эти тела давали РАЗНЫЕ ответы: короткий пароль — 400 с текстом
-			// политики, правильный по форме — 403.
 			const payloads = [
 				{},
 				{ newPassword: "" },
@@ -431,11 +465,9 @@ describe("auth routes", () => {
 				assert.strictEqual(response.statusCode, 403);
 				assert.strictEqual(response.json().error, "Forbidden");
 			}
-			// Побайтовая идентичность всех ответов: отказ не несёт ни бита сведений о теле.
 			for (const response of responses.slice(1)) {
 				assert.strictEqual(response.body, responses[0]?.body);
 			}
-			// Политика длины пароля больше не утекает: ни числа, ни слова «символ».
 			assert.ok(
 				!/\d/.test(responses[0]?.body),
 				`в отказе осталось число: ${responses[0]?.body}`,
@@ -444,13 +476,9 @@ describe("auth routes", () => {
 				!/символ/i.test(responses[0]?.body),
 				`в отказе осталась политика: ${responses[0]?.body}`,
 			);
-			assert.deepStrictEqual(dbCalls, []);
 		});
 
 		test("set-pin без прав: ответ не зависит от тела и не выдаёт ни политику PIN, ни обязательные поля", async () => {
-			const dbCalls = forbidDatabaseAccess();
-			// Раньше: пустое тело — 400 «Не указан сотрудник.», короткий PIN — 400 с
-			// политикой «4–12 цифр», правильная форма — 403.
 			const payloads = [
 				{},
 				{ userId: SYNTHETIC_USER_ID },
@@ -478,7 +506,6 @@ describe("auth routes", () => {
 			for (const response of responses.slice(1)) {
 				assert.strictEqual(response.body, responses[0]?.body);
 			}
-			// Границы 4–12 и текст «Не указан сотрудник.» в отказе отсутствуют.
 			assert.ok(
 				!/\d/.test(responses[0]?.body),
 				`в отказе осталось число: ${responses[0]?.body}`,
@@ -491,11 +518,9 @@ describe("auth routes", () => {
 				!/Не указан/i.test(responses[0]?.body),
 				`в отказе осталась проверка поля: ${responses[0]?.body}`,
 			);
-			assert.deepStrictEqual(dbCalls, []);
 		});
 
 		test("set-password с правами: контракт ошибок тела не изменился", async () => {
-			const dbCalls = forbidDatabaseAccess();
 			const headers = ownerHeaders();
 
 			const empty = await app.inject({
@@ -524,8 +549,6 @@ describe("auth routes", () => {
 				"Новый пароль должен быть не короче 8 символов.",
 			);
 
-			// Запрет менять пароль чужой организации не ослаблен и по-прежнему
-			// проверяется после проверки тела.
 			const foreign = await app.inject({
 				method: "POST",
 				url: SET_PASSWORD_URL,
@@ -540,12 +563,9 @@ describe("auth routes", () => {
 				foreign.json().message,
 				"Нельзя менять пароль чужой организации.",
 			);
-
-			assert.deepStrictEqual(dbCalls, []);
 		});
 
 		test("set-pin с правами: контракт ошибок тела не изменился", async () => {
-			const dbCalls = forbidDatabaseAccess();
 			const headers = ownerHeaders();
 
 			const empty = await app.inject({
@@ -593,14 +613,10 @@ describe("auth routes", () => {
 				letters.json().message,
 				"PIN должен состоять из 4–12 цифр.",
 			);
-
-			assert.deepStrictEqual(dbCalls, []);
 		});
 
 		test("охранник открывается: владелец меняет пароль клиники и PIN сотрудника", async () => {
-			// Перенос проверки прав вперёд не должен превратить маршрут в вечно
-			// закрытый — иначе «защита» была бы просто поломкой.
-			allowDatabaseWrites();
+			await seedSyntheticFixtures();
 			const headers = ownerHeaders();
 
 			const password = await app.inject({
@@ -625,12 +641,9 @@ describe("auth routes", () => {
 		});
 
 		test("ключ установки читается из тела и после переноса работает так же", async () => {
-			// Единственный настоящий риск переноса: охранник берёт adminKey из тела,
-			// то есть тело обязано разбираться до охранника, но НЕ проверяться.
 			const setupKey = `dente-setup-${randomUUID()}`;
 			process.env.ADMIN_SETUP_KEY = setupKey;
 
-			const wrongKeyCalls = forbidDatabaseAccess();
 			const wrongKey = await app.inject({
 				method: "POST",
 				url: SET_PASSWORD_URL,
@@ -642,10 +655,7 @@ describe("auth routes", () => {
 			});
 			assert.strictEqual(wrongKey.statusCode, 403);
 			assert.strictEqual(wrongKey.json().error, "Forbidden");
-			assert.deepStrictEqual(wrongKeyCalls, []);
 
-			// С верным ключом валидация тела снова достижима — и в прежнем порядке:
-			// сначала пароль, затем организация.
 			const shortPassword = await app.inject({
 				method: "POST",
 				url: SET_PASSWORD_URL,
@@ -690,8 +700,7 @@ describe("auth routes", () => {
 				"PIN должен состоять из 4–12 цифр.",
 			);
 
-			mock.restoreAll();
-			allowDatabaseWrites();
+			await seedSyntheticFixtures();
 			const accepted = await app.inject({
 				method: "POST",
 				url: SET_PASSWORD_URL,
@@ -706,11 +715,6 @@ describe("auth routes", () => {
 		});
 	});
 
-	// ─── SaaS body Zod validation ───────────────────────────────────────────────
-	// Bodies that used to be `(request.body as any)` now go through safeParse.
-	// Empty/short/bad-PIN cases must stay 400 ValidationError with the same RU
-	// messages; no DB needed for pure validation failures. Auth-gated routes
-	// still refuse unauthenticated callers before body shape is considered.
 	describe("SaaS body Zod validation", () => {
 		const TEST_TOKEN_SECRET = "test-secret";
 

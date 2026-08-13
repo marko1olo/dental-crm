@@ -1,6 +1,18 @@
 import assert from "node:assert";
 import test, { describe } from "node:test";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
+import {
+	biAnalyticsSnapshots,
+	patients,
+	payments,
+} from "../../db/schema.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../../tests/support/fixtureOrganizations.js";
 import {
 	doctorProfitabilityRow,
 	startBiAnalyticsWorker,
@@ -96,53 +108,74 @@ describe("doctorProfitabilityRow", () => {
 	});
 });
 
-test("startBiAnalyticsWorker scheduling and execution", async (t) => {
+test("startBiAnalyticsWorker scheduling and execution with PostgreSQL fixtures", async (t) => {
 	t.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
-	const setTimeoutMock = t.mock.method(global, "setTimeout");
-	const setIntervalMock = t.mock.method(global, "setInterval");
 
-	let dbSelectCalled = 0;
-	t.mock.method(db, "select", () => {
-		dbSelectCalled++;
-		return {
-			from: () => Promise.resolve([]),
-		};
+	const orgId = fixtureUuid("m4.biAnalyticsWorker", 0);
+	const patientId = fixtureUuid("m4.biAnalyticsWorker", 1);
+	const paymentId = fixtureUuid("m4.biAnalyticsWorker", 2);
+
+	await purgeFixtureOrganizations([orgId]);
+	await withSuperuserBypass(async (tx) => {
+		await tx.execute(
+			sql`INSERT INTO organizations (id, name) VALUES (${orgId}::uuid, 'M4 BI Org') ON CONFLICT DO NOTHING`,
+		);
+	});
+	await withFixtureTenant(orgId, async (tx) => {
+		await tx.insert(patients).values({
+			id: patientId,
+			organizationId: orgId,
+			fullName: "BI Patient",
+		});
+		await tx.insert(payments).values({
+			id: paymentId,
+			organizationId: orgId,
+			patientId: patientId,
+			amountRub: 5000,
+			status: "paid",
+		});
 	});
 
-	startBiAnalyticsWorker();
+	try {
+		startBiAnalyticsWorker();
 
-	assert.strictEqual(setTimeoutMock.mock.calls.length, 1);
-	assert.strictEqual(setTimeoutMock.mock.calls[0]?.arguments[1], 5000);
+		t.mock.timers.tick(5000);
 
-	assert.strictEqual(setIntervalMock.mock.calls.length, 1);
-	assert.strictEqual(
-		setIntervalMock.mock.calls[0]?.arguments[1],
-		1000 * 60 * 60,
-	);
+		let snapshots: Array<typeof biAnalyticsSnapshots.$inferSelect> = [];
+		for (let i = 0; i < 20; i++) {
+			snapshots = await withFixtureTenant(orgId, async (tx) => {
+				return tx
+					.select()
+					.from(biAnalyticsSnapshots)
+					.where(eq(biAnalyticsSnapshots.organizationId, orgId));
+			});
+			if (snapshots.length >= 1) break;
+			await new Promise((r) => setTimeout(r, 50));
+		}
 
-	assert.strictEqual(
-		dbSelectCalled,
-		0,
-		"Не должно быть вызовов до срабатывания таймера",
-	);
+		assert.ok(snapshots.length >= 1, "Snapshot should be inserted into DB");
+		assert.strictEqual(snapshots[0]?.organizationId, orgId);
 
-	t.mock.timers.tick(5000);
-	await Promise.resolve(); // даём микротаскам (async функциям) выполниться
+		t.mock.timers.tick(1000 * 60 * 60);
 
-	assert.strictEqual(
-		dbSelectCalled,
-		1,
-		"Должен произойти один вызов через 5 секунд (setTimeout)",
-	);
+		let snapshotsAfterHour: Array<typeof biAnalyticsSnapshots.$inferSelect> = [];
+		for (let i = 0; i < 20; i++) {
+			snapshotsAfterHour = await withFixtureTenant(orgId, async (tx) => {
+				return tx
+					.select()
+					.from(biAnalyticsSnapshots)
+					.where(eq(biAnalyticsSnapshots.organizationId, orgId));
+			});
+			if (snapshotsAfterHour.length >= 2) break;
+			await new Promise((r) => setTimeout(r, 50));
+		}
 
-	t.mock.timers.tick(1000 * 60 * 60);
-	await Promise.resolve();
-
-	assert.strictEqual(
-		dbSelectCalled,
-		2,
-		"Должен произойти второй вызов через час (setInterval)",
-	);
-
-	t.mock.timers.reset();
+		assert.ok(
+			snapshotsAfterHour.length >= 2,
+			"Second snapshot inserted after 1 hour",
+		);
+	} finally {
+		t.mock.timers.reset();
+		await purgeFixtureOrganizations([orgId]);
+	}
 });

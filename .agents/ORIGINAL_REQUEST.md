@@ -190,3 +190,36 @@ Deploy CSS/React fixes for these immediately and verify.
 ## Follow-up — 2026-08-09T09:50:07Z
 
 [CRITICAL] Server restarted. Resume CSS fixes immediately for SettingsView, CommunicationsTab, and ScheduleView. Ensure all 3 visual defects are fixed and verified.
+
+## 2026-08-12T19:32:18Z
+
+# Teamwork Project Prompt — Draft
+
+> Status: Ready for launch — awaiting user approval
+> Goal: Craft prompt → get user approval → delegate to teamwork_preview
+
+Автоматический аудит и рефакторинг интеграционных тестов Dente для полного искоренения заглушек (mocks) и обеспечения взаимодействия с реальной БД PostgreSQL. Команда должна найти все моки БД, переписать тесты с использованием фикстур и запустить тесты для проверки.
+
+Working directory: C:/Clinic_MVP/dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Искоренение моков базы данных
+Команда должна проанализировать все файлы тестов в `apps/api/src/**/*.test.ts` на предмет использования `t.mock.method(db, ...)` или `global.fetch` (если это не инъекция сбоев сети). Все моки БД должны быть заменены на реальные вставки данных через `withFixtureTenant` и `withSuperuserBypass`.
+
+### R2. Строгое управление уникальными идентификаторами
+Ввиду наличия триггеров append-only на таблицах аудита (`audit_events`, `clinical_audit_logs`), очистка тестовых организаций с данными аудита невозможна. Тесты, пишущие в аудит, должны генерировать уникальный идентификатор организации для каждого тест-кейса (например, `fixtureUuid("audit", testIndex++)`), чтобы избежать падения из-за конфликта первичного ключа (`organizations_pkey`).
+
+### R3. Автоматизированное исправление
+Команда должна самостоятельно изменять файлы с тестами, удаляя моки и прописывая реальное создание зависимых сущностей (пациенты, платежи, визиты), если этого требует тестируемая функция. 
+
+## Acceptance Criteria
+
+### Проверка работоспособности тестов
+- [ ] Все переписанные тестовые файлы должны успешно проходить при запуске `node --import tsx --import ./src/tests/support/poolTeardown.ts --test <путь_к_файлу>`.
+- [ ] При запуске всего набора тестов командой `npm run test` не должно возникать ошибок уникальности ключа или таймаутов, связанных с фикстурами.
+
+### Статический контроль отсутствия моков
+- [ ] Поиск по кодовой базе (например, `rg "t.mock.method\(db"`) не должен находить ни одного использования заглушек для базы данных.
+

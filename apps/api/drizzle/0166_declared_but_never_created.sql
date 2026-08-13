@@ -46,7 +46,7 @@ ALTER TABLE "yandex_calendar_syncs" ADD COLUMN IF NOT EXISTS "current_session_id
 
 -- ─── diagnocat_reports ───────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS "diagnocat_reports" (
-	"id" uuid PRIMARY KEY DEFAULT uuidv7(),
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"organization_id" uuid NOT NULL REFERENCES "organizations"("id"),
 	"patient_id" uuid NOT NULL,
 	"report_url" text NOT NULL,
@@ -63,7 +63,7 @@ CREATE INDEX IF NOT EXISTS "diagnocat_reports_organization_id_idx"
 -- обязательны, иначе PostgreSQL приведёт его к нижнему регистру и сверка имён
 -- разойдётся.
 CREATE TABLE IF NOT EXISTS "sberbank_transactions" (
-	"id" uuid PRIMARY KEY DEFAULT uuidv7(),
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"organization_id" uuid NOT NULL REFERENCES "organizations"("id"),
 	"order_id" text NOT NULL,
 	"amount" integer NOT NULL,

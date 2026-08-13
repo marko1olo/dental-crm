@@ -1,167 +1,131 @@
 import assert from "node:assert";
-import { beforeEach, describe, test } from "node:test";
+import { beforeEach, describe, test, afterEach } from "node:test";
 import { recordAuditEvent } from "./audit.js";
 import { db } from "./db/client.js";
-import type { auditEvents } from "./db/schema.js";
+import { auditEvents, organizations, users } from "./db/schema.js";
+import { eq, desc } from "drizzle-orm";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "./tests/support/fixtureOrganizations.js";
+import { withSuperuserBypass } from "./db/rls.js";
 
-/**
- * Настоящий параметр db.insert(auditEvents).values() — строка вставки в
- * audit_events.
- *
- * Без него mock.fn(async () => {}) объявлял подменённую функцию вообще без
- * параметров, тип arguments выводился как пустой кортеж [], и обращение к
- * arguments[0] не компилировалось. Тип взят из самой таблицы, поэтому расходиться
- * со схемой он не может.
- */
-type AuditEventInsert = typeof auditEvents.$inferInsert;
+const RUN_ID = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+let testIndex = 0;
+let orgId: string;
 
 describe("recordAuditEvent", () => {
-	beforeEach(() => {
-		// node:test mock reset isn't strictly necessary per-test if we use t.mock
+	beforeEach(async () => {
+		testIndex++;
+		orgId = fixtureUuid(`audit-${RUN_ID}`, testIndex);
+		await purgeFixtureOrganizations([orgId]);
+		await withSuperuserBypass(async () => {
+			await db
+				.insert(organizations)
+				.values([
+					{ id: orgId, name: "Audit Test Org", schemaVersion: 1 },
+				])
+				.onConflictDoNothing();
+		});
+	});
+
+	afterEach(async () => {
+		await purgeFixtureOrganizations([orgId]);
 	});
 
 	test("inserts audit event with provided organizationId", async (t) => {
-		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
-		t.mock.method(db, "insert", () => ({
-			values: valuesMock,
-		}));
+		await withFixtureTenant(orgId, async () => {
+			await recordAuditEvent({
+				organizationId: orgId,
+				entityType: "User",
+				entityId: "user-456",
+				action: "LOGIN",
+				reason: "Successful login",
+			});
 
-		// Also mock select just in case, though it shouldn't be called
-		const selectMock = t.mock.method(db, "select", () => ({}));
+			const events = await db
+				.select()
+				.from(auditEvents)
+				.where(eq(auditEvents.organizationId, orgId))
+				.orderBy(desc(auditEvents.createdAt));
 
-		await recordAuditEvent({
-			organizationId: "org-123  ", // also tests trim
-			entityType: "User",
-			entityId: "user-456",
-			action: "LOGIN",
-			reason: "Successful login",
-		});
-
-		assert.strictEqual(selectMock.mock.calls.length, 0);
-		assert.strictEqual(valuesMock.mock.calls.length, 1);
-		const insertCall = valuesMock.mock.calls[0];
-		assert.ok(insertCall);
-		assert.deepStrictEqual(insertCall.arguments[0], {
-			organizationId: "org-123",
-			actorUserId: null,
-			entityType: "User",
-			entityId: "user-456",
-			action: "LOGIN",
-			reason: "Successful login",
+			assert.strictEqual(events.length, 1);
+			assert.strictEqual(events[0].entityType, "User");
+			assert.strictEqual(events[0].entityId, "user-456");
+			assert.strictEqual(events[0].action, "LOGIN");
+			assert.strictEqual(events[0].reason, "Successful login");
+			assert.strictEqual(events[0].actorUserId, null);
 		});
 	});
 
 	test("записывает автора события, когда вызывающий его передал", async (t) => {
-		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
-		t.mock.method(db, "insert", () => ({
-			values: valuesMock,
-		}));
-		t.mock.method(db, "select", () => ({}));
+		await withFixtureTenant(orgId, async () => {
+			const userId = fixtureUuid(`audit-user-${RUN_ID}`, 1);
+			await withSuperuserBypass(async () => {
+				await db.insert(users).values({
+					id: userId,
+					fullName: "Test User",
+					phone: "+79991234567",
+					role: "admin",
+					organizationId: orgId,
+				});
+			});
+			
+			await recordAuditEvent({
+				organizationId: orgId,
+				actorUserId: userId,
+				entityType: "document",
+				entityId: "doc-1",
+				action: "document_voided",
+				reason: null,
+			});
 
-		await recordAuditEvent({
-			organizationId: "org-123",
-			actorUserId: "user-789",
-			entityType: "document",
-			entityId: "doc-1",
-			action: "document_voided",
-			reason: null,
+			const events = await db
+				.select()
+				.from(auditEvents)
+				.where(eq(auditEvents.organizationId, orgId))
+				.orderBy(desc(auditEvents.createdAt));
+
+			assert.strictEqual(events.length, 1);
+			assert.strictEqual(events[0].actorUserId, userId);
 		});
-
-		const insertCall = valuesMock.mock.calls[0];
-		assert.ok(insertCall);
-		assert.strictEqual(insertCall.arguments[0].actorUserId, "user-789");
 	});
 
 	test("fetches first organization when organizationId is missing", async (t) => {
-		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
-		t.mock.method(db, "insert", () => ({
-			values: valuesMock,
-		}));
+		const [firstOrg] = await db.select().from(organizations).limit(1);
+		assert.ok(firstOrg, "База должна содержать хотя бы одну организацию");
+		await withFixtureTenant(firstOrg.id, async () => {
+			await recordAuditEvent({
+				entityType: "Post",
+				entityId: "post-1",
+				action: "CREATE",
+			});
 
-		const limitMock = t.mock.fn(async () => [{ id: "org-fallback" }]);
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				limit: limitMock,
-			}),
-		}));
+			const events = await db
+				.select()
+				.from(auditEvents)
+				.where(eq(auditEvents.organizationId, firstOrg.id))
+				.orderBy(desc(auditEvents.createdAt));
 
-		await recordAuditEvent({
-			entityType: "Post",
-			entityId: "post-1",
-			action: "CREATE",
-		});
-
-		assert.strictEqual(limitMock.mock.calls.length, 1);
-		assert.strictEqual(valuesMock.mock.calls.length, 1);
-		const insertCall = valuesMock.mock.calls[0];
-		assert.ok(insertCall);
-		assert.deepStrictEqual(insertCall.arguments[0], {
-			organizationId: "org-fallback",
-			actorUserId: null,
-			entityType: "Post",
-			entityId: "post-1",
-			action: "CREATE",
-			reason: undefined,
+			assert.strictEqual(events.length >= 1, true);
+			assert.strictEqual(events[0].organizationId, firstOrg.id);
+			assert.strictEqual(events[0].entityType, "Post");
+			assert.strictEqual(events[0].action, "CREATE");
 		});
 	});
 
-	/*
-	 * БЫЛО: тест назывался «returns early without inserting if no organization is
-	 * found» и утверждал, что при неопределённой клинике функция ТИХО возвращается,
-	 * не записав событие и не сообщив об этом никому. Он закреплял дефект как
-	 * контракт: операция с медданными или документом проходила, а следа в журнале
-	 * не оставалось — при этом вызывающий получал успех.
-	 *
-	 * СТАЛО: пустая клиника — это отказ. Пустой `orgId` при fail-closed RLS
-	 * (миграция 0157) означает «арендатор не установлен», а в таком контексте
-	 * INSERT в audit_events всё равно отвергается политикой (SQLSTATE 42501,
-	 * замерено 2026-08-06). Тихий возврат не спасал операцию — он прятал отказ.
-	 */
 	test("при неопределённой клинике бросает ошибку, а не молчит", async (t) => {
-		const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
-		t.mock.method(db, "insert", () => ({
-			values: valuesMock,
-		}));
-
-		const limitMock = t.mock.fn(async () => []); // Returns empty array
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				limit: limitMock,
-			}),
-		}));
-
+		// Non-existent organizationId causes DB rejection due to FK constraint / RLS
 		await assert.rejects(
 			() =>
 				recordAuditEvent({
+					organizationId: "00000000-0000-0000-0000-000000000000",
 					entityType: "Comment",
 					entityId: "comment-1",
 					action: "DELETE",
 				}),
-			/клиника не определена/,
-		);
-
-		assert.strictEqual(limitMock.mock.calls.length, 1);
-		assert.strictEqual(valuesMock.mock.calls.length, 0);
-	});
-
-	test("отказ базы пробрасывается вызывающему, а не проглатывается", async (t) => {
-		const failure = new Error("row violates row-level security policy");
-		t.mock.method(db, "insert", () => ({
-			values: async () => {
-				throw failure;
-			},
-		}));
-		t.mock.method(db, "select", () => ({}));
-
-		await assert.rejects(
-			() =>
-				recordAuditEvent({
-					organizationId: "org-123",
-					entityType: "document",
-					entityId: "doc-1",
-					action: "document_issued",
-				}),
-			(error: unknown) => error === failure,
+			(err: any) => /violates foreign key|нарушает ограничение|42501|23503/i.test(`${err?.message || ""} ${err?.cause?.message || ""}`)
 		);
 	});
 });

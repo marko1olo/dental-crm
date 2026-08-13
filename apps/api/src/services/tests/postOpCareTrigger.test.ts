@@ -1,56 +1,61 @@
 import assert from "node:assert";
-import { after, afterEach, describe, mock, test } from "node:test";
-import { db, pool } from "../../db/client.js";
-import { outgoingNotifications } from "../../db/schema.js";
+import { after, before, describe, test } from "node:test";
+import { eq, sql } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
+import { outgoingNotifications, patients } from "../../db/schema.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../../tests/support/fixtureOrganizations.js";
 import { triggerPostOpCare } from "../postOpCareTrigger.js";
 
-/**
- * Настоящий параметр db.insert(outgoingNotifications).values() — строка вставки
- * в outgoing_notifications.
- *
- * Без него mock.fn(async () => {}) объявлял подменённую функцию вообще без
- * параметров, тип arguments выводился как пустой кортеж [], обращение к
- * arguments[0] не компилировалось, а args дальше считался undefined. Тип взят из
- * самой таблицы, поэтому расходиться со схемой он не может.
- */
-type OutgoingNotificationInsert = typeof outgoingNotifications.$inferInsert;
+const orgId = fixtureUuid("m4.postOpCareTrigger", 0);
+const patientId = fixtureUuid("m4.postOpCareTrigger", 1);
 
 describe("postOpCareTrigger", () => {
+	before(async () => {
+		await purgeFixtureOrganizations([orgId]);
+		await withSuperuserBypass(async (tx) => {
+			await tx.execute(
+				sql`INSERT INTO organizations (id, name) VALUES (${orgId}::uuid, 'M4 PostOp Org') ON CONFLICT DO NOTHING`,
+			);
+		});
+		await withFixtureTenant(orgId, async (tx) => {
+			await tx.insert(patients).values({
+				id: patientId,
+				organizationId: orgId,
+				fullName: "PostOp Patient",
+			});
+		});
+	});
+
 	after(async () => {
-		// Раньше здесь звали client.close() — метод PGlite, которого в
-		// node-postgres нет, и файл не загружался целиком.
-		await pool.end();
+		await purgeFixtureOrganizations([orgId]);
 	});
 
-	afterEach(() => {
-		mock.restoreAll();
-	});
+	test("triggerPostOpCare inserts correct notification into PostgreSQL database", async () => {
+		await triggerPostOpCare(orgId, patientId, "Extraction");
 
-	test("triggerPostOpCare inserts correct notification", async () => {
-		const valuesMock = mock.fn(
-			async (_values: OutgoingNotificationInsert) => {},
-		);
-		mock.method(db, "insert", (schema) => {
-			assert.strictEqual(schema, outgoingNotifications);
-			return { values: valuesMock };
+		const rows = await withFixtureTenant(orgId, async (tx) => {
+			return tx
+				.select()
+				.from(outgoingNotifications)
+				.where(eq(outgoingNotifications.organizationId, orgId));
 		});
 
-		await triggerPostOpCare("org-123", "pat-456", "Extraction");
-
-		assert.strictEqual(valuesMock.mock.calls.length, 1);
-		const insertCall = valuesMock.mock.calls[0];
-		assert.ok(insertCall);
-		const args = insertCall.arguments[0];
-
-		assert.strictEqual(args.organizationId, "org-123");
-		assert.strictEqual(args.patientId, "pat-456");
-		assert.strictEqual(args.type, "PostOp_Care");
-		assert.strictEqual(args.status, "pending");
-		assert.deepStrictEqual(args.payload, {
-			patientId: "pat-456",
+		assert.strictEqual(rows.length, 1);
+		const notif = rows[0];
+		assert.ok(notif);
+		assert.strictEqual(notif.organizationId, orgId);
+		assert.strictEqual(notif.patientId, patientId);
+		assert.strictEqual(notif.type, "PostOp_Care");
+		assert.strictEqual(notif.status, "pending");
+		assert.deepStrictEqual(notif.payload, {
+			patientId: patientId,
 			itemTitle: "Extraction",
-			alertMessage:
-				"Позвонить пациенту (ID: pat-456) - контроль самочувствия после: Extraction",
+			alertMessage: `Позвонить пациенту (ID: ${patientId}) - контроль самочувствия после: Extraction`,
 		});
 	});
 });

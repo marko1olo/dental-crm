@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "savedAt": "2026-08-12T18:12:34.107Z",
+  "savedAt": "2026-08-13T09:22:41.786Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
-      "successes": 347,
-      "lastUsedAt": 1786558354106,
+      "successes": 381,
+      "lastUsedAt": 1786612961786,
       "lastStatusCode": null,
       "lastError": null
     },

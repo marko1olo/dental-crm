@@ -67,7 +67,7 @@ const CLINIC_SCHEDULE_SITES: readonly AllowedSite[] = [
 	},
 	{
 		file: "db/settingsQuery.ts",
-		code: "if (input.scheduleDefaults !== undefined) updateData.clinicSchedule = input.scheduleDefaults;",
+		code: "updateData.clinicSchedule = input.scheduleDefaults;",
 		role: "писатель",
 		why: "ЕДИНСТВЕННЫЙ писатель: Настройки → «Клиника», формат clinicScheduleDefaultsSchema",
 	},
@@ -101,7 +101,7 @@ const CLINIC_MODE_SITES: readonly AllowedSite[] = [
 	},
 	{
 		file: "db/settingsQuery.ts",
-		code: "await db.update(schema.organizations).set({ clinicMode: mode }).where(eq(schema.organizations.id, organizationId));",
+		code: ".set({ clinicMode: mode })",
 		role: "писатель",
 		why: "ЕДИНСТВЕННЫЙ писатель: updateClinicModeInDb, принимает ClinicMode, то есть значение из словаря",
 	},

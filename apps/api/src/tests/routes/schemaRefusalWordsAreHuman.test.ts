@@ -34,7 +34,7 @@ import {
  * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ, И ХУЖЕ, ЧЕМ ВЫГЛЯДИТ. Кассир не читал смесь двух
  * языков — он не читал НИЧЕГО. Экраны сотрудников гасят фразу отказа ЦЕЛИКОМ,
  * если в ней есть латинское слово из шести и более знаков
- * (`apps/web/src/AppHelpers.tsx`), а `Required`, `Expected`, `received`,
+ * (`apps/web/src/utils/commonHelpers/errorHelpers.ts`), а `Required`, `Expected`, `received`,
  * `string`, `number`, `Invalid` попадают под это правило все. На месте
  * объяснения оставалась общая подпись по коду ответа, и человек у стойки с
  * пациентом в очереди не знал, что нажать. В виджете записи с сайта клиники
@@ -66,15 +66,15 @@ import {
 
 const appHelpersPath = path.resolve(
 	import.meta.dirname,
-	"../../../../web/src/AppHelpers.tsx",
+	"../../../../web/src/utils/commonHelpers/errorHelpers.ts",
 );
 
 /**
  * Достаёт правило фильтра из ЖИВОГО исходника интерфейса.
  *
  * Читается файл, а не копия: если в интерфейсе правило изменят, здесь изменится
- * и проверка. Импортировать сам `AppHelpers.tsx` нельзя — это шесть тысяч строк
- * React, тянущих за собой браузерное окружение; а разбирать его исходник
+ * и проверка. Импортировать сам `errorHelpers.ts` нельзя — он тянет за
+ * собой браузерное окружение; а разбирать его исходник
  * достаточно, потому что волатильная часть фильтра ровно одна — это правило.
  */
 function liveOperatorTextRule(): { source: string; flags: string } {
@@ -96,7 +96,7 @@ const liveOperatorTextPattern = new RegExp(liveRule.source, liveRule.flags);
 /**
  * Решение ЖИВОГО интерфейса «показать текст или погасить его целиком».
  *
- * Повторяет `operatorReadableErrorDetail` из `AppHelpers.tsx`: пусто — нет,
+ * Повторяет `operatorReadableErrorDetail` из `errorHelpers.ts`: пусто — нет,
  * нет кириллицы — нет, сработало правило — нет.
  */
 function liveScreenShowsText(text: string): boolean {

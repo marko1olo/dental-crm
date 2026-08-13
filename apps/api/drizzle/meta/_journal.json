@@ -283,13 +283,6 @@
       "breakpoints": true
     },
     {
-      "idx": 40,
-      "version": "7",
-      "when": 1786263440539,
-      "tag": "0040_exotic_monster_badoon",
-      "breakpoints": true
-    },
-    {
       "idx": 41,
       "version": "7",
       "when": 1786517075012,
