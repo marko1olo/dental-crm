@@ -154,3 +154,38 @@ html.dark .analytics-header h2 {
 		grid-template-columns: 1fr;
 	}
 }
+
+@media (max-width: 640px) {
+	.analytics-dashboard {
+		gap: 1rem;
+		padding: 1rem;
+	}
+
+	.analytics-header {
+		align-items: flex-start;
+		gap: 0.75rem;
+	}
+
+	.glass-widget {
+		border-radius: 1rem;
+		padding: 1rem;
+	}
+
+	.glass-widget h3 {
+		font-size: 1rem;
+		line-height: 1.35;
+		margin-bottom: 0.75rem;
+	}
+
+	.widget-chart-container {
+		height: 17.5rem;
+	}
+
+	.analytics-chart-empty {
+		min-height: 17.5rem;
+	}
+
+	.analytics-chart-empty .dnt-empty-state-icon {
+		margin-bottom: 0.75rem;
+	}
+}
