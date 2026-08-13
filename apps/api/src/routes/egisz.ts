@@ -33,6 +33,10 @@ const visitCdaParamsSchema = z.object({
 	visitId: z.string().uuid(),
 });
 
+const egiszLogsParamsSchema = z.object({
+	patientId: z.string().uuid(),
+});
+
 /**
  * Модуль ЕГИСЗ (ФРМО / ФРМР / РЭМД).
  *
@@ -971,6 +975,54 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				)
 				.status(200)
 				.send(xml);
+		},
+	);
+
+	/**
+	 * GET /api/egisz/logs/:patientId — история передачи документов в ЕГИСЗ для пациента.
+	 */
+	app.get(
+		"/api/egisz/logs/:patientId",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			try {
+				if (!(await requireClinicalReadAccess(request, reply, "egisz logs read")))
+					return;
+				const orgId = requireOrganizationId(request, reply);
+				if (!orgId) return;
+
+				const parsed = egiszLogsParamsSchema.safeParse(request.params);
+				if (!parsed.success) {
+					return reply.status(400).send({
+						error: "ValidationError",
+						message: "Идентификатор пациента в адресе должен быть UUID.",
+					});
+				}
+				const { patientId } = parsed.data;
+
+				const logs = await db
+					.select({
+						id: schema.egiszLogs.id,
+						visitId: schema.egiszLogs.visitId,
+						status: schema.egiszLogs.status,
+						errorDetails: schema.egiszLogs.errorDetails,
+						createdAt: schema.egiszLogs.createdAt,
+					})
+					.from(schema.egiszLogs)
+					.where(
+						and(
+							eq(schema.egiszLogs.patientId, patientId),
+							eq(schema.egiszLogs.organizationId, orgId),
+						),
+					);
+
+				return reply.status(200).send({ logs });
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при чтении журнала ЕГИСЗ",
+				});
+			}
 		},
 	);
 
