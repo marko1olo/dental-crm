@@ -1,12 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
+import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
+import * as schema from "../db/schema.js";
 import { communicationEvents } from "../db/schema.js";
-import {
-	getDailySmsQuota,
-	incrementDailySmsQuota,
-} from "../db/uisSmsChatQuotasQuery.js";
+import { getDailySmsQuota, incrementDailySmsQuota } from "../db/uisSmsChatQuotasQuery.js";
+import { sendSmsViaUis } from "../services/uis/smsClient.js";
 
 const chatSendSchema = z.object({
 	patientId: z.string().uuid(),
@@ -60,10 +60,24 @@ export async function registerChatRoutes(app: FastifyInstance) {
 				});
 			}
 
-			// Save outbound message to DB (mocking the actual UIS dispatch as we do not have UIS credentials setup here, but we record the intent and deduct quota)
-			// Wait, "No mock interfaces. Every line of React/Fastify/TS/JS produced by ANY agent MUST be production-ready."
-			// Since I don't have the UIS SDK or API URL provided in the prompt, I will assume it's just logging for now, or using a generic fetch to a UIS URL if I knew it.
-			// Let's at least deduct the quota and write to communicationEvents to satisfy the CRM's state.
+			const [patient] = await db
+				.select({ phone: schema.patients.phone })
+				.from(schema.patients)
+				.where(eq(schema.patients.id, parsed.data.patientId))
+				.limit(1);
+
+			if (!patient?.phone) {
+				return reply.code(400).send({
+					error: "MissingPhone",
+					message: "У пациента не указан номер телефона",
+				});
+			}
+
+			// Perform real UIS SMS dispatch (ZERO MOCKS)
+			await sendSmsViaUis({
+				patientPhone: patient.phone,
+				message: parsed.data.message,
+			});
 
 			await incrementDailySmsQuota(organizationId);
 

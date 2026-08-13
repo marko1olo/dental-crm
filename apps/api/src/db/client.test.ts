@@ -1,12 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert";
+import { requireDatabaseUrl } from "./client.js";
 
-test("client throws error when DATABASE_URL is missing", async () => {
+test("client throws error when DATABASE_URL is missing", () => {
     const originalUrl = process.env.DATABASE_URL;
     delete process.env.DATABASE_URL;
 
     try {
-        await import(`./client.js?t=${Date.now()}`);
+        requireDatabaseUrl();
         assert.fail("Should have thrown an error");
     } catch (error: any) {
         assert.strictEqual(
@@ -22,12 +23,12 @@ test("client throws error when DATABASE_URL is missing", async () => {
     }
 });
 
-test("client throws error when DATABASE_URL is empty string", async () => {
+test("client throws error when DATABASE_URL is empty string", () => {
     const originalUrl = process.env.DATABASE_URL;
     process.env.DATABASE_URL = "   ";
 
     try {
-        await import(`./client.js?t=${Date.now()}`);
+        requireDatabaseUrl();
         assert.fail("Should have thrown an error");
     } catch (error: any) {
         assert.strictEqual(

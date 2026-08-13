@@ -1,0 +1,635 @@
+C:\Clinic_MVP\dental-crm\apps\api\src\db\clinicalTasksQuery.ts:12: * «Mocking db imports» и возвращало задачу вызывающему. Передача пациента
+C:\Clinic_MVP\dental-crm\apps\api\src\db\documentQuery.ts:228: * routes/documents/issue.ts:57-59 для прежней подстановки «mock-org».
+C:\Clinic_MVP\dental-crm\apps\api\src\db\schema.ts:2421: export const treatmentPlanPrintOdontograms = pgTable(
+C:\Clinic_MVP\dental-crm\apps\api\src\db\settingsQuery.ts:466: // InMemory is mock logic; we can just throw or return mock
+C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.ts:95: * строка входит в unresolvedPlaceholderPatterns, то есть документ с такой суммой
+C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.ts:131: const unresolvedPlaceholderPatterns = [
+C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.ts:140: export function documentHasUnresolvedPlaceholders(html: string): boolean {
+C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.ts:147: return unresolvedPlaceholderPatterns.some((pattern) =>
+C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.ts:918: * а `rub(null)` печатает «не указана» — строку из `unresolvedPlaceholderPatterns`,
+C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.ts:987: * эта строка входит в `unresolvedPlaceholderPatterns`, то есть документ не
+C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.ts:4122: <p class="placeholder-warning">Документ ожидает структурированные данные запроса: состав, период, формат, получателя, полномочия, контакт выдачи и проверку лишних данных третьих лиц.</p>`;
+C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.ts:5051: if (documentHasUnresolvedPlaceholders(html)) {
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\chat.ts:63: // Save outbound message to DB (mocking the actual UIS dispatch as we do not have UIS credentials setup here, but we record the intent and deduct quota)
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\chat.ts:64: // Wait, "No mock interfaces. Every line of React/Fastify/TS/JS produced by ANY agent MUST be production-ready."
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\auditFacts.ts:15: // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\auditFacts.ts:17: // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\create.ts:49: // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\create.ts:51: // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\html.ts:30: // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\html.ts:32: // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\issue.ts:47: // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\issue.ts:49: // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\pdf.ts:43: // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\pdf.ts:45: // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\pdf.ts:123: // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\pdf.ts:125: // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\taxXml.ts:39: // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\taxXml.ts:41: // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\void.ts:26: // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\documents\void.ts:28: // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\visits.ts:225: * DENTAL_MOCK_*_ERROR, которых в коде не существует, — ошибка не подставлялась
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\workspaceProfile.ts:91: * (components/visit/VisitOdontogramTab.tsx:97-104).
+C:\Clinic_MVP\dental-crm\apps\api\src\security\rateLimit.ts:73: // To skip rate limiting, we can return a dummy key and set max extremely high,
+C:\Clinic_MVP\dental-crm\apps\api\src\services\backupWorker.ts:58: const PUBLIC_SAMPLE_KEY = "DUMMY_SAMPLE_KEY_NOT_A_REAL_SECRET";
+C:\Clinic_MVP\dental-crm\apps\api\src\services\biAnalyticsWorker.ts:51: * числа, запрещённые правилом «Zero Mocks» из `.agents/AGENTS.md`. Цена именно у
+C:\Clinic_MVP\dental-crm\apps\api\src\services\clinical\ClinicalRouter.ts:10: * БЫЛО: файл открывался комментарием «Mocking db imports to keep it simple and
+C:\Clinic_MVP\dental-crm\apps\api\src\services\communications\templateRenderer.ts:145: const PLACEHOLDER_PATTERN = /\{\{|\}\}|\{([A-Za-z][A-Za-z0-9_]*)\}/g;
+C:\Clinic_MVP\dental-crm\apps\api\src\services\communications\templateRenderer.ts:151: for (const match of body.matchAll(PLACEHOLDER_PATTERN)) {
+C:\Clinic_MVP\dental-crm\apps\api\src\services\communications\templateRenderer.ts:281: const rendered = body.replace(PLACEHOLDER_PATTERN, (match, key?: string) => {
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:1560: placeholder="Стоматология..."
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:1576: placeholder="89..."
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:1630: placeholder="Иванов Иван Иванович"
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:1645: placeholder="Кабинет терапевта"
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3128: placeholder="http://127.0.0.1:8042/dicom-web"
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3140: placeholder="http://127.0.0.1:3000"
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3227: placeholder="dentecrm_bot"
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3239: placeholder="https://portal.example"
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3254: placeholder="https://.../welcome.jpg"
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3267: placeholder="https://..."
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3280: placeholder="https://..."
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3306: placeholder="24, 2"
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3381: placeholder="если защищенные настройки включены на сервере клиники"
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:3439: placeholder={field.placeholder}
+C:\Clinic_MVP\dental-crm\apps\web\src\App.tsx:4648: onGoToDocuments={() => {
+C:\Clinic_MVP\dental-crm\apps\web\src\AppBootState.tsx:71: placeholder="введите секрет администратора"
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2532: placeholder="http://127.0.0.1:8042/dicom-web"
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2544: placeholder="http://127.0.0.1:3000"
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2631: placeholder="dentecrm_bot"
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2643: placeholder="https://portal.example"
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2658: placeholder="https://.../welcome.jpg"
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2671: placeholder="https://..."
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2684: placeholder="https://..."
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2710: placeholder="24, 2"
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2781: placeholder="если защищенные настройки включены на сервере клиники"
+C:\Clinic_MVP\dental-crm\apps\web\src\AppRouter.tsx:2837: placeholder={field.placeholder}
+C:\Clinic_MVP\dental-crm\apps\web\src\AuditLogsPanel.tsx:194: placeholder="например visit"
+C:\Clinic_MVP\dental-crm\apps\web\src\AuditLogsPanel.tsx:207: placeholder="uuid"
+C:\Clinic_MVP\dental-crm\apps\web\src\ClinicalTasksPanel.tsx:390: placeholder="Например: зубы 16 и 17 готовы к препарированию под коронки"
+C:\Clinic_MVP\dental-crm\apps\web\src\CommunicationsView.tsx:658: placeholder="Нажмите для ввода или надиктуйте результат связи..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\AcceptInvite.tsx:96: placeholder="Иванов И.И."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\AcceptInvite.tsx:111: placeholder="••••••••"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\AcceptInvite.tsx:127: placeholder="1234"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\ClinicLogin.tsx:85: placeholder="clinic@example.com"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\ClinicLogin.tsx:102: placeholder="••••••••"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\Register.tsx:134: placeholder="Dental Clinic"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\Register.tsx:150: placeholder="Иванов Иван Иванович"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\Register.tsx:166: placeholder="admin@clinic.com"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\Register.tsx:183: placeholder="Не менее 8 символов"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\Register.tsx:223: placeholder="Повторите пароль"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\UserLogin.tsx:86: placeholder="doctor@clinic.com"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\auth\UserLogin.tsx:102: placeholder="••••••••"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\CommandPalette.tsx:175: placeholder="Найти пациента или команду (Ctrl+K)..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\communications\CampaignPanel.tsx:886: placeholder="Приглашение на осмотр"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\communications\MessageDeliveryConsole.tsx:1087: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\communications\MessageDeliveryConsole.tsx:1107: placeholder="Сообщение из клиники"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\communications\MessageDeliveryConsole.tsx:1149: placeholder="Текст сообщения..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\communications\MessageDeliveryConsole.tsx:1222: placeholder="Напоминание о приёме"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\communications\MessageDeliveryConsole.tsx:1266: placeholder="{patient}, напоминаем: приём {date} в {time}."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\dicom\Cornerstone3DViewer.tsx:769: // 1. We mock the physical placing in 3D world space (DICOM coords)
+C:\Clinic_MVP\dental-crm\apps\web\src\components\dicom\Cornerstone3DViewer.tsx:773: // 2. We mock nerve spline
+C:\Clinic_MVP\dental-crm\apps\web\src\components\dicom\Cornerstone3DViewer.tsx:782: // 4. Bone Density Math (Mocking scalarData since we'd normally get it from volume)
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\AnamnesisField.tsx:24: placeholder: string;
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\AnamnesisField.tsx:36: placeholder,
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\AnamnesisField.tsx:48: placeholder={placeholder}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\AnesthesiaConsentLogForm.tsx:133: placeholder="например: инфильтрационная"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\AnesthesiaConsentLogForm.tsx:141: placeholder="например: артикаин 4%"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\AnesthesiaConsentLogForm.tsx:149: placeholder="например: 1:100000 или «без вазоконстриктора»"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\AnesthesiaConsentLogForm.tsx:157: placeholder="например: 46 или нижняя челюсть справа"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\AnesthesiaConsentLogForm.tsx:173: placeholder="была ли реакция на анестетики и какая"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\AnesthesiaConsentLogForm.tsx:182: placeholder="время введения, часы:минуты"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\AnesthesiaConsentLogForm.tsx:190: placeholder="например: 1,7"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\AnesthesiaConsentLogForm.tsx:199: placeholder="заполняется после введения"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\AnesthesiaConsentLogForm.tsx:210: placeholder="например: без вазоконстриктора / контроль АД"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\CompletedWorksActForm.tsx:117: placeholder="например: АВР-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\CompletedWorksActForm.tsx:137: placeholder="номер и дата договора"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\CompletedWorksActForm.tsx:198: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\CompletedWorksActForm.tsx:208: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\CompletedWorksActForm.tsx:225: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\CompletedWorksActForm.tsx:240: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\CompletedWorksActForm.tsx:255: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\CompletedWorksActForm.tsx:269: placeholder="оставьте пустым, если замечаний нет"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InformedConsentForm.tsx:112: placeholder="что именно делаем: например, лечение кариеса зуба 36 с постановкой пломбы"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InformedConsentForm.tsx:124: placeholder={inferredTreatmentArea || "FDI / зона лечения"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InformedConsentForm.tsx:134: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InformedConsentForm.tsx:147: placeholder={activeVisitComplaint ?? "показание к вмешательству"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InformedConsentForm.tsx:198: placeholder="кому пациент разрешил сообщать сведения, или «никому»"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InstallmentPaymentScheduleForm.tsx:106: placeholder="например: ГР-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InstallmentPaymentScheduleForm.tsx:128: placeholder={installmentScheduleBaseDocumentTitleValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InstallmentPaymentScheduleForm.tsx:141: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InstallmentPaymentScheduleForm.tsx:155: placeholder={activeDoctor?.fullName ?? "администратор"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InstallmentPaymentScheduleForm.tsx:168: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\InstallmentPaymentScheduleForm.tsx:183: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\LabWorkOrderForm.tsx:82: placeholder="коронка / вкладка / каппа"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\LabWorkOrderForm.tsx:92: placeholder={inferredTreatmentArea || "FDI / сегмент"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\LabWorkOrderForm.tsx:114: placeholder="скан / слепок / фото"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalDocumentReleaseReceiptForm.tsx:128: placeholder={documentPatient?.fullName ?? "ФИО пациента"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalDocumentReleaseReceiptForm.tsx:138: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalInterventionRefusalForm.tsx:92: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalInterventionRefusalForm.tsx:106: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalInterventionRefusalForm.tsx:242: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordCopyRequestForm.tsx:157: placeholder={documentPatient?.fullName ?? "ФИО пациента"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordCopyRequestForm.tsx:169: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordCopyRequestForm.tsx:193: placeholder="доверенность, свидетельство, законный представитель"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordCopyRequestForm.tsx:213: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordCopyRequestForm.tsx:228: placeholder="например: выдать исходные файлы снимков, подготовить архив, передать только лично"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordExtractForm.tsx:126: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordExtractForm.tsx:142: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordExtractForm.tsx:158: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordExtractForm.tsx:172: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordExtractForm.tsx:206: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordExtractForm.tsx:222: placeholder="назначения, режим, контрольный прием, признаки для срочного обращения"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordExtractForm.tsx:234: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MedicalRecordExtractForm.tsx:244: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:116: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:129: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:145: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:160: placeholder="свидетельство о рождении, акт опеки, доверенность"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:171: placeholder={minorConsentPatientFullNameValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:181: placeholder={minorConsentPatientBirthDateValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:192: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:205: placeholder={minorConsentInterventionScopeValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:216: placeholder={minorConsentDiagnosisOrIndicationValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\MinorLegalRepresentativeConsentForm.tsx:248: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:148: placeholder={outpatient025uMedicalCardNumberValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:191: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:223: placeholder="например: Российская Федерация"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:236: placeholder="из карточки пациента"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:266: placeholder="из карточки пациента"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:296: placeholder="из карточки пациента"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:327: placeholder="из карточки пациента"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:350: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:366: placeholder="код или текст"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:459: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:475: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:489: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:504: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:520: placeholder="назначения, режим, контроль, срочные признаки"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\OutpatientMedicalCard025uForm.tsx:532: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaidMedicalServicesContractForm.tsx:136: placeholder="например: ДПМУ-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaidMedicalServicesContractForm.tsx:157: placeholder="дата и время первого этапа"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaidMedicalServicesContractForm.tsx:178: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaidMedicalServicesContractForm.tsx:193: placeholder="если действует представитель"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaidMedicalServicesContractForm.tsx:204: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaidMedicalServicesContractForm.tsx:244: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaidMedicalServicesContractForm.tsx:261: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaidMedicalServicesContractForm.tsx:275: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PatientIntakeQuestionnaireForm.tsx:97: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PatientIntakeQuestionnaireForm.tsx:107: placeholder="на что бывала реакция: препараты, латекс, металлы, анестетики"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PatientIntakeQuestionnaireForm.tsx:114: placeholder="что пациент принимает постоянно и в какой дозе"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PatientIntakeQuestionnaireForm.tsx:122: placeholder="диабет, гипертония, гепатит, эпилепсия и другое"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PatientIntakeQuestionnaireForm.tsx:155: placeholder="ФИО и телефон, если пациент сообщил"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PatientIntakeQuestionnaireForm.tsx:163: placeholder="варфарин, ксарелто, аспирин; были ли долгие кровотечения"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PatientIntakeQuestionnaireForm.tsx:171: placeholder="гепатит, ВИЧ, туберкулёз и другое, о чём сообщил пациент"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentInvoiceForm.tsx:106: placeholder="например: СЧ-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentInvoiceForm.tsx:127: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentInvoiceForm.tsx:139: placeholder="например: до 25.05.2026"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentInvoiceForm.tsx:151: placeholder={documentPatient?.phone ?? "необязательно"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentInvoiceForm.tsx:161: placeholder={documentPatient?.email ?? "необязательно"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentInvoiceForm.tsx:192: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentInvoiceForm.tsx:206: placeholder="необязательно: данные СБП или платежная ссылка"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentReceiptForm.tsx:122: placeholder="например: КВ-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentReceiptForm.tsx:238: placeholder={paymentReceiptPayerFullNameValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentReceiptForm.tsx:267: placeholder={paymentReceiptPayerBirthDateValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentReceiptForm.tsx:277: placeholder={paymentReceiptPayerInnValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentReceiptForm.tsx:291: placeholder={paymentReceiptPayerRelationshipValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentReceiptForm.tsx:303: placeholder={paymentReceiptPayerIdentityDocumentValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentReceiptForm.tsx:332: placeholder={paymentReceiptIssuedByValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentRefundCorrectionRequestForm.tsx:196: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentRefundCorrectionRequestForm.tsx:210: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PaymentRefundCorrectionRequestForm.tsx:235: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PersonalDataProcessingConsentForm.tsx:112: placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PersonalDataProcessingConsentForm.tsx:120: placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PersonalDataProcessingConsentForm.tsx:129: placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PostVisitRecommendationsForm.tsx:136: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PostVisitRecommendationsForm.tsx:176: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PostVisitRecommendationsForm.tsx:192: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PostVisitRecommendationsForm.tsx:283: placeholder="дата или условие контроля"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\PrescriptionMedicationOrderForm.tsx:81: placeholder="например: ибупрофен"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\ProcedureSpecificConsentForm.tsx:97: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\ProcedureSpecificConsentForm.tsx:110: placeholder="название процедуры: например, удаление зуба 48"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\ProcedureSpecificConsentForm.tsx:122: placeholder={inferredTreatmentArea || "FDI / зона лечения"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\ProcedureSpecificConsentForm.tsx:142: placeholder={activeVisitComplaint ?? "показание к процедуре"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\ProcedureSpecificConsentForm.tsx:171: placeholder="что именно у этого пациента: аллергия, антикоагулянты, диабет, беременность"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TaxDeductionApplicationForm.tsx:126: placeholder="ФИО того, кто получит вычет"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TaxDeductionApplicationForm.tsx:140: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TaxDeductionApplicationForm.tsx:165: placeholder="паспорт, серия, номер, кем и когда выдан"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TaxDeductionApplicationForm.tsx:239: placeholder="телефон или другой способ связи"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TaxDeductionApplicationForm.tsx:255: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentCostEstimateForm.tsx:113: placeholder="например: СМ-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentCostEstimateForm.tsx:136: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentCostEstimateForm.tsx:149: placeholder="дата или условие действия сметы"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentCostEstimateForm.tsx:160: placeholder={treatmentEstimateTreatmentBasisValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentCostEstimateForm.tsx:201: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentCostEstimateForm.tsx:215: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentCostEstimateForm.tsx:315: placeholder="если отличается от врача"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentPlanAcceptanceForm.tsx:146: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentPlanAcceptanceForm.tsx:161: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentPlanAcceptanceForm.tsx:192: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentPlanAcceptanceForm.tsx:263: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentPlanForm.tsx:107: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentPlanForm.tsx:121: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentPlanForm.tsx:137: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentPlanForm.tsx:151: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\TreatmentPlanForm.tsx:232: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\VisitAttendanceCertificateForm.tsx:91: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\VisitAttendanceCertificateForm.tsx:105: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\VisitAttendanceCertificateForm.tsx:129: placeholder="работа, учеба, страховая или по месту требования"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\VisitAttendanceCertificateForm.tsx:140: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\WarrantyServiceMemoForm.tsx:104: placeholder={warrantyServiceOrWorkNameValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\WarrantyServiceMemoForm.tsx:116: placeholder="дата финального этапа"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\WarrantyServiceMemoForm.tsx:126: placeholder={warrantyTeethOrAreaValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\WarrantyServiceMemoForm.tsx:137: placeholder="материал реставрации, конструкция, имплант-система"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\WarrantyServiceMemoForm.tsx:198: placeholder={warrantyLinkedActOrContractValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\WarrantyServiceMemoForm.tsx:209: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\XrayCbctReferralForm.tsx:120: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\XrayCbctReferralForm.tsx:132: placeholder="что нужно подтвердить или исключить"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\XrayCbctReferralForm.tsx:143: placeholder="эндодонтия / имплантация / хирургия / ортодонтия / контроль"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\XrayCbctReferralForm.tsx:219: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\XrayCbctReferralForm.tsx:230: placeholder="свой кабинет / партнерский центр"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\documents\forms\XrayCbctReferralForm.tsx:238: placeholder="например: до имплантации"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\finance\CashDayTally.tsx:217: полей ввода. Пустой placeholder обязателен — на нём держится
+C:\Clinic_MVP\dental-crm\apps\web\src\components\finance\CashDayTally.tsx:218: подъём подписи (:not(:placeholder-shown)), а сам текст подсказки
+C:\Clinic_MVP\dental-crm\apps\web\src\components\finance\CashDayTally.tsx:227: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\components\finance\FamilyWalletPanel.tsx:751: placeholder="0"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\finance\FamilyWalletPanel.tsx:815: placeholder="0"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\InventoryView.tsx:798: placeholder="Поиск материала..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\InventoryView.tsx:1432: placeholder="Перчатки нитриловые, Альгинат..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\InventoryView.tsx:1463: placeholder="например: 5"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\InventoryView.tsx:1511: placeholder="цена за единицу, например 12,50"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\InventoryView.tsx:1542: placeholder="номер с упаковки, если есть"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\InventoryView.tsx:1576: placeholder="код поставщика"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\InventoryView.tsx:1587: placeholder="или отсканируйте сканером"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\LabOrdersPanel.tsx:176: placeholder="ID Пациента"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\LabOrdersPanel.tsx:191: placeholder="Зубы (FDI), напр. 11, 21"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\LabOrdersPanel.tsx:204: placeholder="Материал (Диоксид циркония, E.max...)"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\LabOrdersPanel.tsx:217: placeholder="Цвет (Vita)"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\LabOrdersPanel.tsx:230: placeholder="Срок сдачи"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\LabOrdersPanel.tsx:242: placeholder="Клинические заметки"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\LabOrdersPanel.tsx:257: placeholder="Стоимость лаборатории (Руб)"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\leads\LeadsKanbanView.tsx:526: placeholder="Поиск по имени или телефону..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\leads\LeadsKanbanView.tsx:1168: placeholder="Иван Иванов"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\leads\LeadsKanbanView.tsx:1194: placeholder="+7 (999) 123-45-67"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\leads\LeadsKanbanView.tsx:1219: placeholder="Instagram, Сайт, Рекомендация..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\leads\LeadsKanbanView.tsx:1247: placeholder="15000"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\Omnibar.tsx:257: className="flex-1 h-14 bg-transparent border-none outline-none text-lg text-neutral-800 dark:text-slate-100 placeholder-neutral-400 dark:placeholder-slate-500"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\Omnibar.tsx:258: placeholder="Поиск по разделам или действиям..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\OmnichannelInboxView.tsx:203: placeholder="Найти пациента по имени или телефону..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\OmnichannelInboxView.tsx:775: placeholder="Поиск диалогов..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\OmnichannelInboxView.tsx:1297: placeholder="Введите сообщение (Enter для отправки)..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\FullscreenOnboardingWizard.tsx:207: placeholder="Стоматология..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\FullscreenOnboardingWizard.tsx:223: placeholder="89..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\FullscreenOnboardingWizard.tsx:277: placeholder="Иванов Иван Иванович"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\FullscreenOnboardingWizard.tsx:292: placeholder="Кабинет терапевта"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1118: placeholder="http://127.0.0.1:8042/dicom-web"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1130: placeholder="http://127.0.0.1:3000"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1217: placeholder="dentecrm_bot"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1229: placeholder="https://portal.example"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1244: placeholder="https://.../welcome.jpg"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1257: placeholder="https://..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1270: placeholder="https://..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1296: placeholder="24, 2"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1371: placeholder="если защищенные настройки включены на сервере клиники"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\onboarding\OnboardingGuidePanel.tsx:1429: placeholder={field.placeholder}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:107: placeholder="Паспорт РФ 0000 000000"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:123: placeholder="10 или 12 цифр"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:137: placeholder="Индекс, город, улица, дом"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:151: placeholder="Если отличается"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:165: placeholder="Номер полиса"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:178: placeholder="000-000-000 00"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:192: placeholder="ФИО представителя"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:208: placeholder="Родитель, опекун"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:227: placeholder="Паспорт / доверенность"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:246: placeholder="+7..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:260: placeholder="Пациенту лично / представителю / доверенному лицу"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:279: placeholder="Согласие пациента, согласие представителя, договор"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patient\PatientAdministrativeForm.tsx:367: placeholder="Например: только утро, не звонить после 19:00, нужен сопровождающий"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\PatientPortal.tsx:447: placeholder="+7 (999) 000-00-00"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientArchiveAndBlacklistWidget.tsx:324: placeholder="Например: Переезд, дубль..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientArchiveAndBlacklistWidget.tsx:351: placeholder="Например: Агрессивное поведение, долг..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientFamilyCard.tsx:519: placeholder="Название семьи (напр. Семья Ивановых)"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientFamilyCard.tsx:552: placeholder="Поиск семьи по названию..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientReclamationsWidget.tsx:475: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientReclamationsWidget.tsx:492: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientTaskTicketsWidget.tsx:312: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientTaskTicketsWidget.tsx:355: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientWhatsappSendPanel.tsx:179: placeholder="Текст сообщения…"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\patients\PatientWhatsappSendPanel.tsx:180: className="w-full min-h-[96px] px-3 py-2 text-sm rounded-xl border border-zinc-700 bg-zinc-900/80 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 disabled:opacity-50"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\schedule\LabOrdersPanel.tsx:415: placeholder="Напр. 16, 24"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\schedule\LabOrdersPanel.tsx:495: placeholder="например 12500"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\schedule\LabOrdersPanel.tsx:553: placeholder="Опишите особенности прикуса, уступы..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\schedule\NewAppointmentForm.tsx:257: placeholder="Например: Петров на чистку завтра в 12:30 (Нажмите Enter)"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\DoctorSnilsValidationWidget.tsx:114: placeholder="000-000-000 00"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\InsuranceContractsPanel.tsx:541: placeholder="СОГАЗ, Ингосстрах, АльфаСтрахование..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\InsuranceContractsPanel.tsx:575: placeholder="ХХХХ-ХХХХ-ХХХХ"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\InsuranceContractsPanel.tsx:681: placeholder="120000"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\MaxSettingsPanel.tsx:180: placeholder="ID вашего бота из business.max.ru"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\MaxSettingsPanel.tsx:197: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\MessageTemplatesPanel.tsx:114: placeholder="Название шаблона"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\MessageTemplatesPanel.tsx:143: placeholder="Текст сообщения..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\migrationHelpers.ts:158: placeholder: string;
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsAccessTab.tsx:188: placeholder="email@example.com"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsAiTab.tsx:363: placeholder="Вставьте сырой текст диктовки для проверки ИИ-ассистента..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsAuditTab.tsx:150: placeholder: string;
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsBpmnTab.tsx:321: placeholder="Напр.: NPS после приёма"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsClinicTab.tsx:320: placeholder="email@example.com"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsClinicTab.tsx:331: placeholder="Оставьте пустым, чтобы не менять"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsClinicTab.tsx:342: placeholder="0000"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsClinicTab.tsx:1087: placeholder="ФИО сотрудника"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsClinicTab.tsx:1330: placeholder="Кресло / кабинет"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsImagingImportTab.tsx:2032: placeholder="C:\Images или D:\OPG"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsImportsTab.tsx:159: placeholder: string;
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsImportsTab.tsx:2829: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsImportsTab.tsx:4768: placeholder="C:\Images или D:\OPG"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsImportsTab.tsx:6184: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsPatientImportTab.tsx:2116: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsPricesTab.tsx:412: placeholder="Поиск по названию или коду..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsPricesTab.tsx:659: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsPricesTab.tsx:944: placeholder="Например: Первичная консультация врача-терапевта"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsPricesTab.tsx:961: placeholder="A01.07.001"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsPricesTab.tsx:1005: placeholder="например 1500 или 1500,50"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsProfileTab.tsx:481: placeholder="••••••••"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsProfileTab.tsx:501: placeholder="Мин. 8 символов"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsProfileTab.tsx:550: placeholder="Повторите новый пароль"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsProfileTab.tsx:604: placeholder="Yandex Calendar ID"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsProfileTab.tsx:615: placeholder='{"access_token": "...", ...}'
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsProfileTab.tsx:663: placeholder="••••"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsProfileTab.tsx:677: placeholder="••••"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsRulesTab.tsx:279: placeholder="Например: Обязательный снимок КТ перед имплантацией"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsRulesTab.tsx:340: placeholder="При планировании этой услуги..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsRulesTab.tsx:360: placeholder="Автоматически добавим..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsRulesTab.tsx:380: placeholder="Без этой услуги не дадим продолжить"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsRulesTab.tsx:400: placeholder="Запретить эту услугу"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsRulesTab.tsx:433: placeholder="Что увидит врач при срабатывании правила?"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsRulesTab.tsx:462: placeholder="Как аргументировать это пациенту?"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsSmartImportTab.tsx:79: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsStaffTab.tsx:403: placeholder="+7..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsStaffTab.tsx:434: placeholder="PIN"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsStaffTab.tsx:463: placeholder="Пароль"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsStaffTab.tsx:550: placeholder="Иванов Иван Иванович"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsStaffTab.tsx:585: placeholder="+7..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsStaffTab.tsx:595: placeholder="doctor@clinic.com"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:351: placeholder="введите секрет администратора"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:770: placeholder="dentecrm_bot"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:783: placeholder="clinic_bot"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:796: placeholder="clinic-main"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:813: placeholder="https://crm.clinic.ru"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:833: placeholder="https://portal.example"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:879: placeholder="https://.../welcome.jpg"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:907: placeholder="24, 2"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:972: placeholder="@clinic_admins"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:1129: placeholder={field.placeholder}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:1152: placeholder="https://..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\SettingsTelegramTab.tsx:1166: placeholder="https://..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\StaffCommissionsPanel.tsx:439: placeholder="0–100"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\WhatsappSettingsPanel.tsx:194: placeholder="Из Meta Business Console → WhatsApp → API Setup"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\WhatsappSettingsPanel.tsx:211: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\components\settings\WhatsappSettingsPanel.tsx:227: placeholder="Любая строка — вставьте то же значение в Meta Console"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\visit\CryptoProSigner.tsx:415: placeholder="••••"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\visit\CryptoProSigner.tsx:515: placeholder="ПИН носителя"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\visit\VisitEmkTab.tsx:769: placeholder="Отсканируйте или введите штрихкод лотка (напр. TRAY-2026-001)"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\visit\VisitOdontogramTab.tsx:8: export function VisitOdontogramTab(props?: {
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:142: // Always under AppLogicProvider when mounted from VisitOdontogramTab — call unconditionally (Rules of Hooks).
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:749: placeholder="Со слов пациента: жалобы на боли, чувствительность..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:788: placeholder="Внешний осмотр, перкуссия, пальпация, ЭОД, рентген..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:860: placeholder="K02.1 Кариес... или введите название"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:915: placeholder="16, 36..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:957: placeholder="Анестезия, проведённые манипуляции, рекомендации..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:982: placeholder="Осложнения лечения..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:994: placeholder="Сопутствующие заболевания (если есть)..."
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:1096: placeholder="Штрихкод лотка или пусто, чтобы снять"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:1119: placeholder="Например: исправление опечатки в диагнозе МКБ-10"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryEditor.tsx:1328: placeholder="000000000000"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryTemplateSelector.tsx:441: placeholder="Например: Кариес · композит"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryTemplateSelector.tsx:453: placeholder="Общие"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VisitDiaryTemplateSelector.tsx:500: placeholder="K02.1"
+C:\Clinic_MVP\dental-crm\apps\web\src\components\VoiceAssistantUI.tsx:228: workspaceActionsLabels.voice.listeningPlaceholder}
+C:\Clinic_MVP\dental-crm\apps\web\src\components\workspaceActions\workspaceActionsLabels.ts:52: listeningPlaceholder: "Говорите…",
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1446: placeholder="например: ДПМУ-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1467: placeholder="дата и время первого этапа"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1488: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1503: placeholder="если действует представитель"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1514: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1554: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1571: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1585: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1753: placeholder="например: АВР-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1773: placeholder="номер и дата договора"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1834: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1844: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1861: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1876: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1891: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:1905: placeholder="оставьте пустым, если замечаний нет"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2021: placeholder="например: СМ-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2044: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2057: placeholder="дата или условие действия сметы"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2068: placeholder={treatmentEstimateTreatmentBasisValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2109: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2123: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2223: placeholder="если отличается от врача"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2340: placeholder="например: СЧ-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2361: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2373: placeholder="например: до 25.05.2026"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2385: placeholder={documentPatient?.phone ?? "необязательно"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2395: placeholder={documentPatient?.email ?? "необязательно"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2426: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2440: placeholder="необязательно: данные СБП или платежная ссылка"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2556: placeholder="например: КВ-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2672: placeholder={paymentReceiptPayerFullNameValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2701: placeholder={paymentReceiptPayerBirthDateValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2711: placeholder={paymentReceiptPayerInnValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2725: placeholder={paymentReceiptPayerRelationshipValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2737: placeholder={paymentReceiptPayerIdentityDocumentValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2766: placeholder={paymentReceiptIssuedByValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2859: placeholder="например: ГР-2026-001"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2881: placeholder={installmentScheduleBaseDocumentTitleValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2894: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2908: placeholder={activeDoctor?.fullName ?? "администратор"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2921: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:2936: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3069: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3082: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3098: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3113: placeholder="свидетельство о рождении, акт опеки, доверенность"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3124: placeholder={minorConsentPatientFullNameValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3134: placeholder={minorConsentPatientBirthDateValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3145: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3158: placeholder={minorConsentInterventionScopeValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3169: placeholder={minorConsentDiagnosisOrIndicationValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3201: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3314: placeholder={warrantyServiceOrWorkNameValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3326: placeholder="дата финального этапа"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3336: placeholder={warrantyTeethOrAreaValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3347: placeholder="материал реставрации, конструкция, имплант-система"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3408: placeholder={warrantyLinkedActOrContractValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3419: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3512: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3522: placeholder="на что бывала реакция: препараты, латекс, металлы, анестетики"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3529: placeholder="что пациент принимает постоянно и в какой дозе"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3537: placeholder="диабет, гипертония, гепатит, эпилепсия и другое"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3570: placeholder="ФИО и телефон, если пациент сообщил"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3578: placeholder="варфарин, ксарелто, аспирин; были ли долгие кровотечения"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3586: placeholder="гепатит, ВИЧ, туберкулёз и другое, о чём сообщил пациент"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3700: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3714: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3730: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3744: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3825: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3955: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:3970: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4001: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4072: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4203: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4243: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4259: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4350: placeholder="дата или условие контроля"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4461: placeholder="например: ибупрофен"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4558: placeholder="коронка / вкладка / каппа"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4568: placeholder={inferredTreatmentArea || "FDI / сегмент"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4590: placeholder="скан / слепок / фото"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4683: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4695: placeholder="что нужно подтвердить или исключить"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4706: placeholder="эндодонтия / имплантация / хирургия / ортодонтия / контроль"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4782: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4793: placeholder="свой кабинет / партнерский центр"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4801: placeholder="например: до имплантации"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4860: placeholder={outpatient025uMedicalCardNumberValue()}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4903: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4935: placeholder="например: Российская Федерация"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4948: placeholder="из карточки пациента"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:4978: placeholder="из карточки пациента"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5008: placeholder="из карточки пациента"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5039: placeholder="из карточки пациента"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5062: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5078: placeholder="код или текст"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5171: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5187: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5201: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5216: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5232: placeholder="назначения, режим, контроль, срочные признаки"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5244: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5364: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5380: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5396: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5410: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5444: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5460: placeholder="назначения, режим, контрольный прием, признаки для срочного обращения"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5472: placeholder={activeDoctor?.fullName ?? "лечащий врач"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5482: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5635: placeholder={documentPatient?.fullName ?? "ФИО пациента"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5647: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5671: placeholder="доверенность, свидетельство, законный представитель"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5691: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5706: placeholder="например: выдать исходные файлы снимков, подготовить архив, передать только лично"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5795: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5809: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5833: placeholder="работа, учеба, страховая или по месту требования"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5844: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5967: placeholder={documentPatient?.fullName ?? "ФИО пациента"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:5977: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6237: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6251: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6276: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6493: placeholder="ФИО пациента или представителя"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6503: placeholder="пациент, законный представитель"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6513: placeholder={activeDoctor?.fullName ?? "ФИО сотрудника"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6523: placeholder="врач, администратор"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6531: placeholder="например: представитель показал паспорт и доверенность"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6741: placeholder={activeDoctor?.fullName ?? "ФИО сотрудника"}
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6751: placeholder="врач, администратор"
+C:\Clinic_MVP\dental-crm\apps\web\src\DocumentsView.tsx:6782: placeholder="Например: в справке указан неверный плательщик, нужна новая годовая справка после проверки чеков."
+C:\Clinic_MVP\dental-crm\apps\web\src\FinanceView.tsx:51: onGoToDocuments: () => void;
+C:\Clinic_MVP\dental-crm\apps\web\src\FinanceView.tsx:187: onGoToDocuments = () => {},
+C:\Clinic_MVP\dental-crm\apps\web\src\FinanceView.tsx:306: onClick={onGoToDocuments}
+C:\Clinic_MVP\dental-crm\apps\web\src\FullscreenOnboardingWizard.tsx:1344: placeholder="Стоматология..."
+C:\Clinic_MVP\dental-crm\apps\web\src\FullscreenOnboardingWizard.tsx:1360: placeholder="89..."
+C:\Clinic_MVP\dental-crm\apps\web\src\FullscreenOnboardingWizard.tsx:1414: placeholder="Иванов Иван Иванович"
+C:\Clinic_MVP\dental-crm\apps\web\src\FullscreenOnboardingWizard.tsx:1429: placeholder="Кабинет терапевта"
+C:\Clinic_MVP\dental-crm\apps\web\src\hooks\domains\useClinicalVisitLogic.ts:8: const { odontogramUseSurfaces, setOdontogramUseSurfaces } = useAppStore();
+C:\Clinic_MVP\dental-crm\apps\web\src\hooks\domains\useClinicalVisitLogic.ts:194: setOdontogramUseSurfaces,
+C:\Clinic_MVP\dental-crm\apps\web\src\hooks\domains\useUiPreferencesLogic.ts:98: setOdontogramUseSurfaces: any;
+C:\Clinic_MVP\dental-crm\apps\web\src\hooks\domains\useUiPreferencesLogic.ts:230: setOdontogramUseSurfaces,
+C:\Clinic_MVP\dental-crm\apps\web\src\hooks\domains\useUiPreferencesLogic.ts:709: setOdontogramUseSurfaces(preferences.odontogramUseSurfaces ?? false);
+C:\Clinic_MVP\dental-crm\apps\web\src\ImagingView.tsx:1218: placeholder="Опишите снимок: что видно, где, какое заключение"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:120: показывает placeholder ниже.
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:324: placeholder="Оценка"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:333: placeholder="Отзывов"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:352: placeholder="Оценка"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:359: placeholder="Отзывов"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:378: placeholder="Оценка"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:387: placeholder="Отзывов"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:405: placeholder="Запрос, например: стоматология Химки"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:415: placeholder="Место"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:477: placeholder="+7 (000) 000-00-00"
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:525: placeholder="Вставьте текст отзыва сюда..."
+C:\Clinic_MVP\dental-crm\apps\web\src\MarketingView.tsx:681: placeholder="Новый SEO-ключ (напр. 'детский ортодонт')"
+C:\Clinic_MVP\dental-crm\apps\web\src\pages\analyticsDoctorMetrics.ts:270: function toDoctorRows(value: unknown): DoctorProfitabilityRow[] {
+C:\Clinic_MVP\dental-crm\apps\web\src\pages\analyticsDoctorMetrics.ts:366: const doctorProfitabilityJson = toDoctorRows(body.doctorProfitabilityJson);
+C:\Clinic_MVP\dental-crm\apps\web\src\pages\PublicBookingWidget.tsx:442: placeholder="Иванов Иван Иванович"
+C:\Clinic_MVP\dental-crm\apps\web\src\pages\PublicBookingWidget.tsx:460: placeholder="+7 (999) 000-00-00"
+C:\Clinic_MVP\dental-crm\apps\web\src\pages\PublicBookingWidget.tsx:476: placeholder="Что вас беспокоит?"
+C:\Clinic_MVP\dental-crm\apps\web\src\PatientsView.tsx:338: placeholder="Поиск пациента: ФИО или телефон"
+C:\Clinic_MVP\dental-crm\apps\web\src\PatientsView.tsx:379: Подписи видимые, а не placeholder: placeholder исчезает с первым
+C:\Clinic_MVP\dental-crm\apps\web\src\PatientsView.tsx:412: placeholder="Фамилия Имя Отчество"
+C:\Clinic_MVP\dental-crm\apps\web\src\PatientsView.tsx:466: placeholder="+7..."
+C:\Clinic_MVP\dental-crm\apps\web\src\PatientsView.tsx:812: placeholder="Фамилия Имя Отчество"
+C:\Clinic_MVP\dental-crm\apps\web\src\PatientsView.tsx:841: placeholder="+7..."
+C:\Clinic_MVP\dental-crm\apps\web\src\PatientsView.tsx:853: placeholder="patient@example.ru"
+C:\Clinic_MVP\dental-crm\apps\web\src\PatientsView.tsx:889: placeholder="Особые пожелания, аллергии, примечания"
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:161: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:184: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:196: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:208: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:223: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:237: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:312: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:326: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:339: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:353: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:367: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:906: placeholder="Пример: Оплата 5000 картой, нужен налоговый вычет..."
+C:\Clinic_MVP\dental-crm\apps\web\src\PaymentCapture.tsx:997: placeholder=" "
+C:\Clinic_MVP\dental-crm\apps\web\src\PriceDictationBar.tsx:61: className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-slate-900 dark:text-slate-100 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+C:\Clinic_MVP\dental-crm\apps\web\src\PriceDictationBar.tsx:62: placeholder="Опишите услугу или надиктуйте (напр. 'Добавь удаление зуба за 5000 руб')"
+C:\Clinic_MVP\dental-crm\apps\web\src\ScannerView.tsx:311: placeholder="Название аппарата, например MELAtronic 23"
+C:\Clinic_MVP\dental-crm\apps\web\src\ScannerView.tsx:347: placeholder="Штрих-код лотка, например TRAY-1049"
+C:\Clinic_MVP\dental-crm\apps\web\src\ScheduleView.tsx:1096: placeholder="введите секрет администратора"
+C:\Clinic_MVP\dental-crm\apps\web\src\SettingsView.tsx:137: placeholder: string;
+C:\Clinic_MVP\dental-crm\apps\web\src\SettingsView.tsx:1995: placeholder="введите секрет администратора"
+C:\Clinic_MVP\dental-crm\apps\web\src\ShiftView.tsx:505: <section className="shift-todo" aria-label="Что сделать сейчас">
+C:\Clinic_MVP\dental-crm\apps\web\src\ShiftView.tsx:506: <div className="shift-todo-head">
+C:\Clinic_MVP\dental-crm\apps\web\src\ShiftView.tsx:508: <span className="shift-todo-count">
+C:\Clinic_MVP\dental-crm\apps\web\src\ShiftView.tsx:520: <ul className="shift-todo-list">
+C:\Clinic_MVP\dental-crm\apps\web\src\ShiftView.tsx:529: className={`shift-todo-item priority-${action.priority}`}
+C:\Clinic_MVP\dental-crm\apps\web\src\ShiftView.tsx:532: className={`shift-todo-priority priority-${action.priority}`}
+C:\Clinic_MVP\dental-crm\apps\web\src\ShiftView.tsx:537: <div className="shift-todo-text">
+C:\Clinic_MVP\dental-crm\apps\web\src\ShiftView.tsx:541: <span className="shift-todo-patient">
+C:\Clinic_MVP\dental-crm\apps\web\src\ShiftView.tsx:547: className="secondary-button shift-todo-go"
+C:\Clinic_MVP\dental-crm\apps\web\src\store\appStore.ts:279: setOdontogramUseSurfaces: (val: any) => void;
+C:\Clinic_MVP\dental-crm\apps\web\src\store\appStore.ts:452: setOdontogramUseSurfaces: (val) => set({ odontogramUseSurfaces: val }),
+C:\Clinic_MVP\dental-crm\apps\web\src\store\documentStore.ts:2897: * (documentHasUnresolvedPlaceholders ищет среди прочего «не указана»), а
+C:\Clinic_MVP\dental-crm\apps\web\src\store\slices\clinicalSlice.ts:210: * (documentHasUnresolvedPlaceholders ищет среди прочего «не указана»), а
+C:\Clinic_MVP\dental-crm\apps\web\src\useAppLogic.tsx:732: const { odontogramUseSurfaces, setOdontogramUseSurfaces } =
+C:\Clinic_MVP\dental-crm\apps\web\src\useAppLogic.tsx:2591: setOdontogramUseSurfaces(preferences.odontogramUseSurfaces ?? false);
+C:\Clinic_MVP\dental-crm\apps\web\src\useSettingsDerivations.tsx:496: // Compliance: placeholder="введите секрет администратора"
+C:\Clinic_MVP\dental-crm\apps\web\src\useSettingsDerivations.tsx:684: placeholder: string;
+C:\Clinic_MVP\dental-crm\apps\web\src\utils\dicom\clinicalImplants.ts:10: toothFdi?: number; // FDI tooth number for crown mockup (e.g. 46)
+C:\Clinic_MVP\dental-crm\apps\web\src\utils\math\toothGeometry.ts:798: * Draw a schematic tooth crown mockup on canvas context.
+C:\Clinic_MVP\dental-crm\apps\web\src\utils\math\toothGeometry.ts:807: export function drawCrownMockup(
+C:\Clinic_MVP\dental-crm\apps\web\src\VisitNoteDraftPanel.tsx:278: placeholder="Со слов: боль на холод в 16, глубокий кариес, анестезия, пломба…"
+C:\Clinic_MVP\dental-crm\apps\web\src\VisitView.tsx:13: import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
+C:\Clinic_MVP\dental-crm\apps\web\src\VisitView.tsx:592: const [odontogramTabWasOpened, setOdontogramTabWasOpened] = useState(false);
+C:\Clinic_MVP\dental-crm\apps\web\src\VisitView.tsx:594: if (visitSubViewTab === "odontogram") setOdontogramTabWasOpened(true);
+C:\Clinic_MVP\dental-crm\apps\web\src\VisitView.tsx:802: размонтировал VisitOdontogramTab вместе с дневником приёма
+C:\Clinic_MVP\dental-crm\apps\web\src\VisitView.tsx:827: <VisitOdontogramTab
+C:\Clinic_MVP\dental-crm\apps\web\src\VisitView.tsx:1101: placeholder={
+C:\Clinic_MVP\dental-crm\apps\web\src\workspaceStaticOptions.ts:65: placeholder: string;
+C:\Clinic_MVP\dental-crm\apps\web\src\workspaceStaticOptions.ts:71: placeholder: "https://.../menu.jpg",
+C:\Clinic_MVP\dental-crm\apps\web\src\workspaceStaticOptions.ts:77: placeholder: "https://.../appointment.jpg",
+C:\Clinic_MVP\dental-crm\apps\web\src\workspaceStaticOptions.ts:83: placeholder: "https://.../documents.jpg",
+C:\Clinic_MVP\dental-crm\apps\web\src\workspaceStaticOptions.ts:89: placeholder: "https://.../tax.jpg",
+C:\Clinic_MVP\dental-crm\apps\web\src\workspaceStaticOptions.ts:95: placeholder: "https://.../payment.jpg",
+C:\Clinic_MVP\dental-crm\apps\web\src\workspaceStaticOptions.ts:101: placeholder: "https://.../care.jpg",
+C:\Clinic_MVP\dental-crm\apps\web\src\workspaceStaticOptions.ts:107: placeholder: "https://.../review.jpg",
+C:\Clinic_MVP\dental-crm\apps\web\src\workspaceStaticOptions.ts:113: placeholder: "https://.../staff.jpg",

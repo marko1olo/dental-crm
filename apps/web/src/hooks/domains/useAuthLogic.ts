@@ -7,6 +7,8 @@ import {
 import { showToast } from "../../components/GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppStore } from "../../store/appStore";
+import { useSettingsStore } from "../../store/settingsStore";
+
 export function determineAdminSecretUnlockDomain(
 	accessUnlockRequired: boolean,
 	hasDashboard: boolean,
