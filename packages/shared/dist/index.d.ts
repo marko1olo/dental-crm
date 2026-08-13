@@ -9087,7 +9087,7 @@ export declare const clinicalToothRowsSchema: z.ZodArray<z.ZodObject<{
  */
 export declare const VALID_FDI_TOOTH_NUMBERS: ReadonlySet<number>;
 /** Текст отказа — один и тот же на сервере и на клиенте, чтобы врач не читал две разные формулировки. */
-export declare const FDI_TOOTH_NUMBER_MESSAGE = "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B\u0439 \u043D\u043E\u043C\u0435\u0440 \u0437\u0443\u0431\u0430. \u0421\u0438\u0441\u0442\u0435\u043C\u0430 FDI: 11\u201318, 21\u201328, 31\u201338, 41\u201348 (\u043F\u043E\u0441\u0442\u043E\u044F\u043D\u043D\u044B\u0435), 51\u201355, 61\u201365, 71\u201375, 81\u201385 (\u043C\u043E\u043B\u043E\u0447\u043D\u044B\u0435).";
+export declare const FDI_TOOTH_NUMBER_MESSAGE = "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B\u0439 \u043D\u043E\u043C\u0435\u0440 \u0437\u0443\u0431\u0430. \u0421\u0438\u0441\u0442\u0435\u043C\u0430 FDI: 11\u201318, 21\u201328, 31\u201338, 41\u201348 (\u043F\u043E\u0441\u0442\u043E\u044F\u043D\u043D\u044B\u0435), 51\u201355, 61\u201365, 71\u201375, 81\u201385 (\u043C\u043E\u043B\u043E\u0447\u043D\u044B\u0435), 91\u201398 (\u0441\u0432\u0435\u0440\u0445\u043A\u043E\u043C\u043F\u043B\u0435\u043A\u0442\u043D\u044B\u0435).";
 /** Проверка без zod — для фильтров на клиенте, где схема не нужна. */
 export declare function isValidFdiToothNumber(value: unknown): value is number;
 export declare const fdiToothNumberSchema: z.ZodEffects<z.ZodNumber, number, number>;

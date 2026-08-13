@@ -12,6 +12,12 @@ import { requirePermission } from "../security/permissions.js";
 import { SberbankClient } from "../services/sberbankClient.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
+/**
+ * Validates Sberbank HMAC-SHA256 checksum according to Acquiring API v2 specification.
+ * 1. Excludes checksum, sign, signature, sign_alias.
+ * 2. Sorts remaining parameters in alphabetical order (key1;val1;key2;val2;...;).
+ * 3. Computes HMAC-SHA256 using the clinic secret key and compares in constant-time.
+ */
 export function verifySberbankChecksum(
 	payload: Record<string, unknown>,
 	secret: string,
@@ -27,6 +33,7 @@ export function verifySberbankChecksum(
 			key === "checksum" ||
 			key === "sign" ||
 			key === "signature" ||
+			key === "sign_alias" ||
 			value === undefined ||
 			value === null
 		) {
@@ -38,26 +45,62 @@ export function verifySberbankChecksum(
 	const sortedKeys = Object.keys(cleanPayload).sort();
 	if (sortedKeys.length === 0) return false;
 
-	const str1 = sortedKeys.map((k) => `${k}=${cleanPayload[k]}`).join(";");
-	const hmac1 = crypto.createHmac("sha256", secret).update(str1).digest("hex");
+	// Sberbank Standard v2: key1;val1;key2;val2;...; (with trailing semicolon)
+	const strStandard = `${sortedKeys.map((k) => `${k};${cleanPayload[k]}`).join(";")};`;
+	const hmacStandard = crypto
+		.createHmac("sha256", secret)
+		.update(strStandard)
+		.digest("hex");
+
 	if (
-		timingSafeSecretEqual(hmac1.toLowerCase(), incomingChecksum.toLowerCase())
+		timingSafeSecretEqual(
+			hmacStandard.toUpperCase(),
+			incomingChecksum.toUpperCase(),
+		) ||
+		timingSafeSecretEqual(
+			hmacStandard.toLowerCase(),
+			incomingChecksum.toLowerCase(),
+		)
 	) {
 		return true;
 	}
 
-	const str2 = sortedKeys.map((k) => `${k}=${cleanPayload[k]}`).join("&");
-	const hmac2 = crypto.createHmac("sha256", secret).update(str2).digest("hex");
+	// Format 2: key1=val1;key2=val2
+	const strKeyEq = sortedKeys.map((k) => `${k}=${cleanPayload[k]}`).join(";");
+	const hmacKeyEq = crypto
+		.createHmac("sha256", secret)
+		.update(strKeyEq)
+		.digest("hex");
+
 	if (
-		timingSafeSecretEqual(hmac2.toLowerCase(), incomingChecksum.toLowerCase())
+		timingSafeSecretEqual(
+			hmacKeyEq.toUpperCase(),
+			incomingChecksum.toUpperCase(),
+		) ||
+		timingSafeSecretEqual(
+			hmacKeyEq.toLowerCase(),
+			incomingChecksum.toLowerCase(),
+		)
 	) {
 		return true;
 	}
 
-	const str3 = `${sortedKeys.map((k) => `${k};${cleanPayload[k]}`).join(";")};`;
-	const hmac3 = crypto.createHmac("sha256", secret).update(str3).digest("hex");
+	// Format 3: key1=val1&key2=val2 (URL encoded query standard)
+	const strUrl = sortedKeys.map((k) => `${k}=${cleanPayload[k]}`).join("&");
+	const hmacUrl = crypto
+		.createHmac("sha256", secret)
+		.update(strUrl)
+		.digest("hex");
+
 	if (
-		timingSafeSecretEqual(hmac3.toLowerCase(), incomingChecksum.toLowerCase())
+		timingSafeSecretEqual(
+			hmacUrl.toUpperCase(),
+			incomingChecksum.toUpperCase(),
+		) ||
+		timingSafeSecretEqual(
+			hmacUrl.toLowerCase(),
+			incomingChecksum.toLowerCase(),
+		)
 	) {
 		return true;
 	}
@@ -177,6 +220,10 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					mappedStatus = "success";
 				} else if (code === 3 || code === 6) {
 					mappedStatus = "failed";
+				} else if (code === 1) {
+					mappedStatus = "approved";
+				} else if (code === 4) {
+					mappedStatus = "refunded";
 				}
 
 				return await withTenantCtx(orgId, async (tx) => {
@@ -295,7 +342,6 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 		}
 
 		// Signature guard passed with ZERO DB calls so far.
-
 		const orderId =
 			(payload.orderId as string) ||
 			(payload.mdOrder as string) ||
@@ -344,55 +390,134 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				});
 			}
 
-			if (lockedTx.status === "success") {
-				return reply.status(200).send({
-					success: true,
-					processed: false,
-					reason: "already_processed",
-					status: "success",
-				});
+			// Validate incoming amount in kopecks if provided by gateway
+			if (payload.amount !== undefined && payload.amount !== null) {
+				const incomingKopecks = Number(payload.amount);
+				if (!Number.isNaN(incomingKopecks) && incomingKopecks !== lockedTx.amount) {
+					request.log.warn(
+						{ orderId, expected: lockedTx.amount, received: incomingKopecks },
+						"[SberbankWebhook] Amount mismatch detected",
+					);
+					return reply.status(400).send({
+						error: "AmountMismatch",
+						message: "Сумма в уведомлении не совпадает с суммой зарегистрированного заказа.",
+					});
+				}
 			}
 
+			const operation = String(payload.operation ?? "").toLowerCase();
 			const rawStatus = String(
 				payload.status ?? payload.operation ?? payload.actionCode ?? "success",
 			).toLowerCase();
 
+			// 1. Refund operation handling
+			if (operation === "refunded" || rawStatus === "refunded") {
+				await tx
+					.update(sberbankTransactions)
+					.set({
+						status: "refunded",
+						updatedAt: new Date(),
+					})
+					.where(eq(sberbankTransactions.id, lockedTx.id));
+
+				await tx
+					.update(payments)
+					.set({
+						status: "refunded",
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(payments.organizationId, lockedTx.organizationId),
+							eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
+						),
+					);
+
+				return reply.status(200).send({
+					success: true,
+					processed: true,
+					status: "refunded",
+				});
+			}
+
+			// 2. Reversal (Unhold) handling
+			if (operation === "reversed" || rawStatus === "reversed") {
+				await tx
+					.update(sberbankTransactions)
+					.set({
+						status: "reversed",
+						updatedAt: new Date(),
+					})
+					.where(eq(sberbankTransactions.id, lockedTx.id));
+
+				return reply.status(200).send({
+					success: true,
+					processed: true,
+					status: "reversed",
+				});
+			}
+
+			// 3. Approved (Hold) handling
+			if (operation === "approved" || rawStatus === "approved") {
+				await tx
+					.update(sberbankTransactions)
+					.set({
+						status: "approved",
+						updatedAt: new Date(),
+					})
+					.where(eq(sberbankTransactions.id, lockedTx.id));
+
+				return reply.status(200).send({
+					success: true,
+					processed: true,
+					status: "approved",
+				});
+			}
+
+			// 4. Success / Deposited (Final Charge)
 			const isSuccess =
+				operation === "deposited" ||
 				rawStatus === "success" ||
-				rawStatus === "approved" ||
 				rawStatus === "deposited" ||
 				rawStatus === "0" ||
 				rawStatus === "1" ||
 				rawStatus === "2";
 
 			if (isSuccess) {
-				if (lockedTx.status === "pending") {
-					await tx
-						.update(sberbankTransactions)
-						.set({
-							status: "success",
-							updatedAt: new Date(),
-						})
-						.where(eq(sberbankTransactions.id, lockedTx.id));
-
-					const amountRub = Number(
-						(Number(lockedTx.amount) / 100).toFixed(2),
-					);
-					await tx
-						.insert(payments)
-						.values({
-							organizationId: lockedTx.organizationId,
-							patientId: lockedTx.patientId,
-							method: "card",
-							status: "paid",
-							amountRub,
-							clientMutationId: `sberbank:${lockedTx.orderId}`,
-							note: `Оплата через Сбербанк Эквайринг (заказ ${lockedTx.orderId})`,
-						})
-						.onConflictDoNothing({
-							target: [payments.organizationId, payments.clientMutationId],
-						});
+				if (lockedTx.status === "success") {
+					return reply.status(200).send({
+						success: true,
+						processed: false,
+						reason: "already_processed",
+						status: "success",
+					});
 				}
+
+				await tx
+					.update(sberbankTransactions)
+					.set({
+						status: "success",
+						updatedAt: new Date(),
+					})
+					.where(eq(sberbankTransactions.id, lockedTx.id));
+
+				const amountRub = Number(
+					(Number(lockedTx.amount) / 100).toFixed(2),
+				);
+				await tx
+					.insert(payments)
+					.values({
+						organizationId: lockedTx.organizationId,
+						patientId: lockedTx.patientId,
+						method: "card",
+						status: "paid",
+						amountRub,
+						clientMutationId: `sberbank:${lockedTx.orderId}`,
+						note: `Оплата через Сбербанк Эквайринг (заказ ${lockedTx.orderId})`,
+					})
+					.onConflictDoNothing({
+						target: [payments.organizationId, payments.clientMutationId],
+					});
 
 				return reply.status(200).send({
 					success: true,
@@ -402,6 +527,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				});
 			}
 
+			// 5. Failed / Declined
 			await tx
 				.update(sberbankTransactions)
 				.set({
@@ -418,4 +544,3 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 		});
 	});
 }
-
