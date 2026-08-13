@@ -1,44 +1,74 @@
-import assert from "node:assert";
-import { describe, test } from "node:test";
-import { db } from "../db/client.js";
-import * as workerModule from "./notificationWorker.js";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+	describeAutomaticSending,
+	startCommunicationDispatchWorker,
+	startDispatchWorker,
+} from "./communications/dispatchWorker.js";
+import {
+	startNotificationWorker,
+	stopNotificationWorker,
+} from "./notificationWorker.js";
 
-describe("startNotificationWorker", () => {
-	test("calls setInterval with correct timing and handles queue processing", async (t) => {
-		// biome-ignore lint/complexity/noBannedTypes: automated suppression
-		let capturedCallback: Function | undefined;
-		const setIntervalMock = t.mock.method(
-			global,
-			"setInterval",
-			// biome-ignore lint/complexity/noBannedTypes: automated suppression
-			(cb: Function) => {
-				capturedCallback = cb;
-				return 123;
-			},
-		);
+describe("notificationWorker & dispatchWorker delegation", () => {
+	it("returns disabled handle when DENTE_COMMUNICATION_WORKER_ENABLED is disabled or unset", async () => {
+		stopNotificationWorker();
 
-		const dbSelectMock = t.mock.method(db, "select", () => {
-			return {
-				from: () => ({
-					where: () => ({
-						limit: () => Promise.resolve([]),
-					}),
-				}),
-			};
+		const handle = startNotificationWorker({
+			env: { DENTE_COMMUNICATION_WORKER_ENABLED: "0" },
 		});
 
-		workerModule.startNotificationWorker();
+		assert.strictEqual(handle.enabled, false);
+		assert.strictEqual(typeof handle.stop, "function");
 
-		assert.strictEqual(setIntervalMock.mock.callCount(), 1);
-		const intervalCall = setIntervalMock.mock.calls[0];
-		assert.ok(intervalCall);
-		const args = intervalCall.arguments;
-		assert.strictEqual(args[1], 10000);
-		assert.strictEqual(typeof args[0], "function");
+		// No-op invocation verification
+		handle.stop();
+		const runResult = await handle.runOnce();
+		assert.strictEqual(runResult, null);
 
-		assert.ok(capturedCallback);
-		await capturedCallback();
+		const reminderResult = await handle.scheduleRemindersOnce();
+		assert.strictEqual(reminderResult, null);
+	});
 
-		assert.strictEqual(dbSelectMock.mock.callCount(), 1);
+	it("returns enabled handle and can be stopped cleanly when worker is enabled via env", () => {
+		stopNotificationWorker();
+
+		const handle = startNotificationWorker({
+			env: {
+				DENTE_COMMUNICATION_WORKER_ENABLED: "true",
+				DENTE_COMMUNICATION_WORKER_INTERVAL_MS: "60000",
+			},
+		});
+
+		assert.strictEqual(handle.enabled, true);
+		assert.strictEqual(typeof handle.stop, "function");
+		assert.strictEqual(typeof handle.runOnce, "function");
+		assert.strictEqual(typeof handle.scheduleRemindersOnce, "function");
+
+		// Verify clean lifecycle teardown
+		handle.stop();
+		stopNotificationWorker();
+	});
+
+	it("startDispatchWorker and startCommunicationDispatchWorker refer to the same function", () => {
+		assert.strictEqual(startDispatchWorker, startCommunicationDispatchWorker);
+	});
+
+	it("describeAutomaticSending correctly reflects environment configuration", () => {
+		const disabledState = describeAutomaticSending({
+			DENTE_COMMUNICATION_WORKER_ENABLED: "false",
+		});
+		assert.strictEqual(disabledState.enabled, false);
+		assert.strictEqual(disabledState.intervalSeconds, null);
+		assert.strictEqual(disabledState.batchSize, null);
+
+		const enabledState = describeAutomaticSending({
+			DENTE_COMMUNICATION_WORKER_ENABLED: "1",
+			DENTE_COMMUNICATION_WORKER_INTERVAL_MS: "15000",
+			DENTE_COMMUNICATION_WORKER_BATCH_SIZE: "50",
+		});
+		assert.strictEqual(enabledState.enabled, true);
+		assert.strictEqual(enabledState.intervalSeconds, 15);
+		assert.strictEqual(enabledState.batchSize, 50);
 	});
 });

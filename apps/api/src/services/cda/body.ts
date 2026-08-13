@@ -4,7 +4,7 @@
  */
 
 import type { CdaContext } from "./util.js";
-import { escapeXml } from "./util.js";
+import { EGISZ_OIDS, escapeXml } from "./util.js";
 
 function section(opts: {
 	loinc: string;
@@ -16,7 +16,7 @@ function section(opts: {
 	return `
 			<component>
 				<section>
-					<code code="${loinc}" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="${displayName}"/>
+					<code code="${loinc}" codeSystem="${EGISZ_OIDS.LOINC}" codeSystemName="LOINC" displayName="${displayName}"/>
 					<title>${title}</title>
 					<text>
 						<paragraph>${escapeXml(paragraph)}</paragraph>
@@ -60,7 +60,7 @@ export function generateCdaBody(ctx: CdaContext): string {
 			<!-- Диагноз -->
 			<component>
 				<section>
-					<code code="29548-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагнозы"/>
+					<code code="29548-5" codeSystem="${EGISZ_OIDS.LOINC}" codeSystemName="LOINC" displayName="Диагнозы"/>
 					<title>Диагноз</title>
 					<text>
 						<paragraph>${escapeXml(diagnosisText)}${diagnosisIcd10Suffix}${diagnosisTooth ? ` · зуб ${escapeXml(diagnosisTooth)}` : ""}</paragraph>
@@ -69,9 +69,10 @@ export function generateCdaBody(ctx: CdaContext): string {
 							? `
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
-							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="Диагноз"/>
-							<value xsi:type="CD"${diagnosisIcd10Attr} codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(diagnosisText)}"/>
-							${diagnosisTooth ? `<targetSiteCode code="${escapeXml(diagnosisTooth)}" codeSystem="1.2.643.5.1.13.13.11.1466" displayName="Зуб ${escapeXml(diagnosisTooth)}"/>` : ""}
+							<code code="29308-4" codeSystem="${EGISZ_OIDS.LOINC}" displayName="Диагноз"/>
+							<statusCode code="completed"/>
+							<value xsi:type="CD"${diagnosisIcd10Attr} codeSystem="${EGISZ_OIDS.ICD10}" codeSystemName="МКБ-10" displayName="${escapeXml(diagnosisText)}"/>
+							${diagnosisTooth ? `<targetSiteCode code="${escapeXml(diagnosisTooth)}" codeSystem="${EGISZ_OIDS.DENTAL_TOOTH}" displayName="Зуб ${escapeXml(diagnosisTooth)}"/>` : ""}
 						</observation>
 					</entry>`
 							: ""

@@ -1,6 +1,7 @@
 /**
  * Shared CDA XML helpers (escape, dates, resolved clock fields).
- * Keep org shells flat — never nest asOrganizationPartOf / wholeOrganization.
+ * Strict compliance with HL7 CDA R2 (POCD_MT000040.xsd) and EGISZ REMD.
+ * Organization sequence: <id>* -> <name>* -> <telecom>* -> <addr>*
  */
 
 import type { EgiszCdaParams } from "./schema.js";
@@ -15,20 +16,50 @@ export function escapeXml(value: string): string {
 		.replace(/'/g, "&\u0061pos;");
 }
 
-function formatDate(d: Date, format: "yyyyMMdd" | "yyyyMMddHHmmss"): string {
+/**
+ * Format Date to HL7 CDA R2 TS format:
+ * - Date only (birthTime): YYYYMMDD
+ * - Date with Time & Timezone offset (effectiveTime): YYYYMMDDHHMMSS+ZZZZ
+ */
+export function formatHl7DateTime(d: Date, includeTime = true): string {
 	const pad = (n: number) => n.toString().padStart(2, "0");
 	const yyyy = d.getFullYear().toString();
 	const MM = pad(d.getMonth() + 1);
 	const dd = pad(d.getDate());
-	if (format === "yyyyMMdd") return `${yyyy}${MM}${dd}`;
+	if (!includeTime) return `${yyyy}${MM}${dd}`;
+
 	const HH = pad(d.getHours());
 	const mm = pad(d.getMinutes());
 	const ss = pad(d.getSeconds());
-	return `${yyyy}${MM}${dd}${HH}${mm}${ss}`;
+
+	const offsetMinutes = -d.getTimezoneOffset();
+	const sign = offsetMinutes >= 0 ? "+" : "-";
+	const absOffset = Math.abs(offsetMinutes);
+	const offsetHours = pad(Math.floor(absOffset / 60));
+	const offsetMins = pad(absOffset % 60);
+	const tzStr = `${sign}${offsetHours}${offsetMins}`;
+
+	return `${yyyy}${MM}${dd}${HH}${mm}${ss}${tzStr}`;
 }
 
 /** Default MO registry root when clinicOid is absent. */
 export const DEFAULT_MO_ROOT = "1.2.643.5.1.13.13.12.2";
+
+export const EGISZ_OIDS = {
+	FRMO_MO_ROOT: "1.2.643.5.1.13.13.12.2",
+	SNILS: "1.2.643.100.3",
+	OGRN_LEGAL: "1.2.643.100.1",
+	OGRN_IP: "1.2.643.100.5",
+	INN: "1.2.643.100.4",
+	SEMD_TEMPLATE_CONSULTATION: "1.2.643.5.1.13.13.11.1527",
+	GENDER: "1.2.643.5.1.13.13.11.1040",
+	MEDICAL_CARE_TYPE: "1.2.643.5.1.13.13.11.1461",
+	MEDICAL_POSITIONS: "1.2.643.5.1.13.13.11.1002",
+	ICD10: "1.2.643.5.1.13.13.11.1005",
+	DENTAL_TOOTH: "1.2.643.5.1.13.13.11.1466",
+	CONFIDENTIALITY: "2.16.840.1.113883.5.25",
+	LOINC: "2.16.840.1.113883.6.1",
+} as const;
 
 /** Resolved clocks and identity keys used by every CDA fragment. */
 export interface CdaContext {
@@ -52,8 +83,8 @@ export function buildCdaContext(params: EgiszCdaParams): CdaContext {
 		!Number.isNaN(params.documentTime.getTime())
 			? params.documentTime
 			: now;
-	const effectiveTime = formatDate(documentClock, "yyyyMMddHHmmss");
-	const visitTime = formatDate(params.visitDate, "yyyyMMddHHmmss");
+	const effectiveTime = formatHl7DateTime(documentClock, true);
+	const visitTime = formatHl7DateTime(params.visitDate, true);
 
 	const birthDateRaw =
 		params.patientBirthDate && String(params.patientBirthDate).trim()
@@ -61,7 +92,7 @@ export function buildCdaContext(params: EgiszCdaParams): CdaContext {
 			: null;
 	const birthTimeValue =
 		birthDateRaw && !Number.isNaN(birthDateRaw.getTime())
-			? formatDate(birthDateRaw, "yyyyMMdd")
+			? formatHl7DateTime(birthDateRaw, false)
 			: null;
 
 	const genderCode: "1" | "2" | null =
@@ -176,31 +207,51 @@ export function clinicTelecomXml(ctx: CdaContext): string {
 	return telecomXml(ctx.params.clinicPhone, ctx.params.clinicEmail);
 }
 
-/** Flat MO organization id: real OID extension or nullFlavor NI. */
+/** Flat MO organization ids: real OID extension, OGRN, INN or nullFlavor NI. */
 export function orgIdXml(ctx: CdaContext): string {
-	return ctx.clinicOidEscaped
-		? `<id root="${DEFAULT_MO_ROOT}" extension="${ctx.clinicOidEscaped}"/>`
-		: `<id nullFlavor="NI"/>`;
+	const ids: string[] = [];
+	if (ctx.clinicOidEscaped) {
+		ids.push(`<id root="${DEFAULT_MO_ROOT}" extension="${ctx.clinicOidEscaped}"/>`);
+	} else {
+		ids.push(`<id nullFlavor="NI"/>`);
+	}
+
+	const ogrn = ctx.params.clinicOgrn ? String(ctx.params.clinicOgrn).trim() : "";
+	if (ogrn) {
+		const root = ogrn.length === 15 ? EGISZ_OIDS.OGRN_IP : EGISZ_OIDS.OGRN_LEGAL;
+		ids.push(`<id root="${root}" extension="${escapeXml(ogrn)}"/>`);
+	}
+
+	const inn = ctx.params.clinicInn ? String(ctx.params.clinicInn).trim() : "";
+	if (inn) {
+		ids.push(`<id root="${EGISZ_OIDS.INN}" extension="${escapeXml(inn)}"/>`);
+	}
+
+	return ids.join("\n\t\t\t\t");
 }
 
-/** Flat representedOrganization shell (real clinic addr/telecom + name). No recursion. */
+/**
+ * Flat representedOrganization shell conforming to POCD_MT000040.Organization
+ * Strict sequence: id* -> name -> telecom* -> addr*
+ */
 export function flatRepresentedOrganization(ctx: CdaContext): string {
 	const name = escapeXml(ctx.params.clinicName);
 	return `<representedOrganization>
-				${clinicAddrXml(ctx)}
-				${clinicTelecomXml(ctx)}
+				${orgIdXml(ctx)}
 				<name>${name}</name>
+				${clinicTelecomXml(ctx)}
+				${clinicAddrXml(ctx)}
 			</representedOrganization>`;
 }
 
-/** Flat scopingOrganization shell (same fields, different tag). */
+/** Flat scopingOrganization shell (same fields, strict sequence). */
 export function flatScopingOrganization(ctx: CdaContext): string {
 	const name = escapeXml(ctx.params.clinicName);
 	return `<scopingOrganization>
 				${orgIdXml(ctx)}
-				${clinicAddrXml(ctx)}
-				${clinicTelecomXml(ctx)}
 				<name>${name}</name>
+				${clinicTelecomXml(ctx)}
+				${clinicAddrXml(ctx)}
 			</scopingOrganization>`;
 }
 
@@ -210,13 +261,17 @@ export function doctorIdXml(ctx: CdaContext): string {
 		? String(ctx.params.doctorSnils).trim()
 		: "";
 	return snils
-		? `<id root="1.2.643.100.3" extension="${escapeXml(snils)}"/>`
+		? `<id root="${EGISZ_OIDS.SNILS}" extension="${escapeXml(snils)}"/>`
 		: `<id nullFlavor="NI"/>`;
 }
 
-/** Specialty code: NI + displayName when position known, else bare NI. */
+/** Specialty code: NSI 1.2.643.5.1.13.13.11.1002 or NI + displayName. */
 export function doctorCodeXml(ctx: CdaContext): string {
-	const pos = ctx.params.doctorPosition ? ctx.params.doctorPosition.trim() : "";
+	const code = ctx.params.doctorPositionCode ? String(ctx.params.doctorPositionCode).trim() : "";
+	const pos = ctx.params.doctorPosition ? String(ctx.params.doctorPosition).trim() : "Врач-стоматолог";
+	if (code) {
+		return `<code code="${escapeXml(code)}" codeSystem="${EGISZ_OIDS.MEDICAL_POSITIONS}" codeSystemName="Должности медицинских и фармацевтических работников" displayName="${escapeXml(pos)}"/>`;
+	}
 	return pos
 		? `<code nullFlavor="NI" displayName="${escapeXml(pos)}"/>`
 		: `<code nullFlavor="NI"/>`;
@@ -235,9 +290,8 @@ export function doctorNameXml(ctx: CdaContext): string {
 }
 
 /**
- * Assigned entity block reused by author-side roles (flat org only).
- * The physician's own contact is telecom (phone/email); the org carries
- * the clinic addr/telecom.
+ * Assigned entity block reused by author-side roles (POCD_MT000040.AssignedEntity).
+ * Strict sequence: id* -> code? -> addr* -> telecom* -> assignedPerson? -> representedOrganization?
  */
 export function flatAssignedEntity(ctx: CdaContext): string {
 	return `${doctorIdXml(ctx)}

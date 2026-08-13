@@ -11,6 +11,14 @@ import { type EgiszCdaParams, egiszCdaParamsSchema } from "./schema.js";
 import { buildCdaContext } from "./util.js";
 
 export type { EgiszCdaParams };
+export { egiszCdaParamsSchema } from "./schema.js";
+export {
+	detachedSignatureSchema,
+	egiszRemdPackageSchema,
+	canonicalizeCdaXml,
+	type DetachedSignature,
+	type EgiszRemdPackage,
+} from "./signature.js";
 
 export type CdaResult =
 	| { success: true; xml: string }

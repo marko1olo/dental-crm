@@ -5,6 +5,7 @@
 import type { CdaContext } from "./util.js";
 import {
 	DEFAULT_MO_ROOT,
+	EGISZ_OIDS,
 	escapeXml,
 	patientAddrXml,
 	patientTelecomXml,
@@ -22,7 +23,7 @@ export function generateCdaPatient(ctx: CdaContext): string {
 		? String(params.patientSnils).trim()
 		: "";
 	const snilsId = snilsRaw
-		? `<id root="1.2.643.100.3" extension="${escapeXml(snilsRaw)}"/>`
+		? `<id root="${EGISZ_OIDS.SNILS}" extension="${escapeXml(snilsRaw)}"/>`
 		: "";
 	const idsXml = mrnRaw
 		? snilsId
@@ -35,7 +36,7 @@ export function generateCdaPatient(ctx: CdaContext): string {
 		: "";
 
 	const genderXml = genderCode
-		? `<administrativeGenderCode code="${genderCode}" codeSystem="1.2.643.5.1.13.13.11.1040"/>`
+		? `<administrativeGenderCode code="${genderCode}" codeSystem="${EGISZ_OIDS.GENDER}" codeSystemName="Пол пациента" displayName="${genderCode === "1" ? "Мужской" : "Женский"}"/>`
 		: `<administrativeGenderCode nullFlavor="UNK"/>`;
 
 	const birthXml = birthTimeValue
@@ -44,7 +45,6 @@ export function generateCdaPatient(ctx: CdaContext): string {
 
 	return `
 	<recordTarget>
-
 		<patientRole>
 			${idsXml}
 			<!--
@@ -57,33 +57,21 @@ export function generateCdaPatient(ctx: CdaContext): string {
 			${patientAddrXml(ctx)}
 			${patientTelecomXml(ctx)}
 			<patient>
-
-
-
 				<name>
 					<family>${escapeXml(params.patientName.last)}</family>
 					<given>${escapeXml(params.patientName.first)}</given>${middle}
 				</name>
 				${genderXml}
-
 				${birthXml}
 				<!--
 					DEFECT #97: patient/languageCommunication (preferred language).
-					\u0411\u042b\u041b\u041e: patient had name + gender + birthTime only. HL7 CDA R2
-					and EGISZ SEMD expect languageCommunication so the record
-					declares the language of care/communication (ru-RU for RF
-					ambulatory dentistry). Without it validators flag incomplete
-					patient demographics and REMD cannot route interpreter needs.
-					\u0421\u0422\u0410\u041b\u041e: languageCode ru-RU + preferenceInd true (primary).
+					languageCode ru-RU + preferenceInd true (primary).
 				-->
 				<languageCommunication>
 					<languageCode code="ru-RU"/>
 					<preferenceInd value="true"/>
 				</languageCommunication>
-
 			</patient>
-
-
 		</patientRole>
 	</recordTarget>`;
 }

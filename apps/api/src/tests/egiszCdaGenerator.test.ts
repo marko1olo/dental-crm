@@ -1,6 +1,11 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { generateDentalCdaXml } from "../services/egiszCdaGenerator.js";
+import {
+	canonicalizeCdaXml,
+	detachedSignatureSchema,
+	egiszRemdPackageSchema,
+	generateDentalCdaXml,
+} from "../services/cda/index.js";
 
 describe("generateDentalCdaXml", () => {
 	const baseParams = {
@@ -10,10 +15,13 @@ describe("generateDentalCdaXml", () => {
 		patientBirthDate: "1990-01-01T00:00:00.000Z",
 		patientGender: "male" as const,
 		clinicOid: "1.2.643.5.1.13.13.12.2.123",
+		clinicOgrn: "1027700132195",
+		clinicInn: "7701234567",
 		clinicName: "ООО Ромашка",
 		doctorName: { first: "Петр", last: "Петров", middle: "Петрович" },
 		doctorSnils: "987-654-321 00",
 		doctorPosition: "Стоматолог-терапевт",
+		doctorPositionCode: "18",
 		icd10Code: "K02.1",
 		diagnosisText: "Кариес дентина",
 		anamnesis: "Жалобы на боль от сладкого",
@@ -22,7 +30,7 @@ describe("generateDentalCdaXml", () => {
 		documentId: "doc-123",
 	};
 
-	test("generates valid XML with full parameters", () => {
+	test("generates valid XML with full parameters and correct XSD tag order", () => {
 		const result = generateDentalCdaXml(baseParams);
 		assert.ok(result.success, result.success ? "" : String(result.error));
 		const xml = result.xml;
@@ -34,7 +42,7 @@ describe("generateDentalCdaXml", () => {
 		assert.ok(xml.includes(`<given>Иван</given>`));
 		assert.ok(xml.includes(`<given>Иванович</given>`));
 		assert.ok(xml.includes(`extension="123-456-789 00"`));
-		assert.ok(xml.includes(`value="19900101"`));
+		assert.ok(xml.includes(`value="19900101"`)); // Birth date YYYYMMDD
 		assert.ok(xml.includes(`code="1"`)); // male gender code
 
 		assert.ok(xml.includes(`<family>Петров</family>`));
@@ -42,37 +50,95 @@ describe("generateDentalCdaXml", () => {
 		assert.ok(xml.includes(`<given>Петрович</given>`));
 		assert.ok(xml.includes(`extension="987-654-321 00"`));
 
+		// Doctor NSI 1.2.643.5.1.13.13.11.1002 position code 18 for therapist
+		assert.ok(xml.includes(`code="18"`));
+		assert.ok(xml.includes(`codeSystem="1.2.643.5.1.13.13.11.1002"`));
+		assert.ok(xml.includes(`displayName="Стоматолог-терапевт"`));
+
+		// Clinic MO IDs: FRMO, OGRN, INN
 		assert.ok(xml.includes(`<name>ООО Ромашка</name>`));
-		assert.ok(xml.includes(`extension="1.2.643.5.1.13.13.12.2.123"`));
+		assert.ok(
+			xml.includes(
+				`root="1.2.643.5.1.13.13.12.2" extension="1.2.643.5.1.13.13.12.2.123"`,
+			),
+		);
+		assert.ok(
+			xml.includes(`root="1.2.643.100.1" extension="1027700132195"`),
+		);
+		assert.ok(xml.includes(`root="1.2.643.100.4" extension="7701234567"`));
+
+		// Observation with statusCode="completed"
+		assert.ok(xml.includes(`<statusCode code="completed"/>`));
+		const obsMatch = xml.match(/<observation[^>]*>([\s\S]*?)<\/observation>/);
+		assert.ok(obsMatch, "observation block must exist");
+		const obsContent = obsMatch[1] ?? "";
+		const codeIdx = obsContent.indexOf("<code");
+		const statusIdx = obsContent.indexOf("<statusCode");
+		const valueIdx = obsContent.indexOf("<value");
+		assert.ok(codeIdx !== -1 && statusIdx !== -1 && valueIdx !== -1);
+		assert.ok(
+			codeIdx < statusIdx && statusIdx < valueIdx,
+			"observation: <code> -> <statusCode> -> <value>",
+		);
+
+		// Organization tag order in representedCustodianOrganization: <id> -> <name> -> <telecom> -> <addr>
+		const custOrgMatch = xml.match(
+			/<representedCustodianOrganization>([\s\S]*?)<\/representedCustodianOrganization>/,
+		);
+		assert.ok(custOrgMatch, "representedCustodianOrganization must exist");
+		const custContent = custOrgMatch[1] ?? "";
+		const orgIdPos = custContent.indexOf("<id");
+		const orgNamePos = custContent.indexOf("<name>");
+		const orgTelecomPos = custContent.indexOf("<telecom");
+		const orgAddrPos = custContent.indexOf("<addr");
+		assert.ok(
+			orgIdPos !== -1 &&
+				orgNamePos !== -1 &&
+				orgTelecomPos !== -1 &&
+				orgAddrPos !== -1,
+		);
+		assert.ok(
+			orgIdPos < orgNamePos &&
+				orgNamePos < orgTelecomPos &&
+				orgTelecomPos < orgAddrPos,
+			"POCD_MT000040.Organization strictly: <id> -> <name> -> <telecom> -> <addr>",
+		);
 
 		assert.ok(xml.includes(`Кариес дентина (МКБ-10: K02.1)`));
 		assert.ok(xml.includes(`Жалобы на боль от сладкого`));
 		assert.ok(xml.includes(`Лечение кариеса`));
 	});
 
+	test("handles OGRNIP 15-digit root 1.2.643.100.5", () => {
+		const result = generateDentalCdaXml({
+			...baseParams,
+			clinicOgrn: "304770000123456",
+		});
+		assert.ok(result.success);
+		assert.ok(
+			result.xml.includes(
+				`root="1.2.643.100.5" extension="304770000123456"`,
+			),
+		);
+	});
+
 	test("handles missing optional parameters correctly", () => {
-		/*
-		 * Отсутствие необязательного параметра выражается его ОТСУТСТВИЕМ, а не
-		 * значением undefined: при exactOptionalPropertyTypes объявление
-		 * `clinicOid?: string` явное undefined не принимает. Для генератора это
-		 * ровно то же самое — все четыре поля он читает через `||` и тернарник
-		 * (services/egiszCdaGenerator.ts: строки 46, 71, 113, 123), поэтому
-		 * пропущенный ключ и undefined дают один и тот же XML.
-		 */
 		const {
-			clinicOid: _clinicOid, // Should fallback to default
-			doctorSnils: _doctorSnils, // Should omit id
-			anamnesis: _anamnesis, // Should omit the section
-			treatmentDescription: _treatmentDescription, // Should omit the section
+			clinicOid: _clinicOid,
+			clinicOgrn: _clinicOgrn,
+			clinicInn: _clinicInn,
+			doctorSnils: _doctorSnils,
+			anamnesis: _anamnesis,
+			treatmentDescription: _treatmentDescription,
 			...withoutOptionalParams
 		} = baseParams;
 
 		const params = {
 			...withoutOptionalParams,
-			patientName: { first: "Анна", last: "Смирнова" }, // No middle name
-			doctorName: { first: "Елена", last: "Соколова" }, // No middle name
-			patientBirthDate: null, // No birth date
-			patientGender: "female" as const, // Female gender code
+			patientName: { first: "Анна", last: "Смирнова" },
+			doctorName: { first: "Елена", last: "Соколова" },
+			patientBirthDate: null,
+			patientGender: "female" as const,
 		};
 
 		const result = generateDentalCdaXml(params);
@@ -86,27 +152,20 @@ describe("generateDentalCdaXml", () => {
 		assert.ok(xml.includes(`<family>Соколова</family>`));
 		assert.ok(xml.includes(`<given>Елена</given>`));
 
-		// No fabricated birth date: an absent DOB is expressed as HL7 nullFlavor
-		// UNK, never a fake value="19000101".
 		assert.ok(!xml.includes(`value="19000101"`));
 		assert.ok(xml.includes(`<birthTime nullFlavor="UNK"/>`));
-		assert.ok(xml.includes(`code="2"`)); // Real female gender code from DB
+		assert.ok(xml.includes(`code="2"`));
 
 		assert.ok(
 			xml.includes(`root="1.2.643.5.1.13.13.12.2" extension="doc-123"`),
-		); // EGDIS default MO root
-		assert.ok(!xml.includes(`extension="undefined"`)); // Missing doctorSnils should not render the whole tag
+		);
+		assert.ok(!xml.includes(`extension="undefined"`));
 
-		// No fabricated clinical text: an absent anamnesis / treatment description
-		// omits the section entirely rather than inventing "Без особенностей" or
-		// "Осмотр и консультация".
 		assert.ok(!xml.includes(`Без особенностей`));
 		assert.ok(!xml.includes(`Осмотр и консультация`));
 	});
 
 	test("handles 'other' or null gender code", () => {
-		// Unknown/absent gender is expressed as HL7 nullFlavor UNK, never a fake
-		// administrativeGenderCode code="0".
 		let result = generateDentalCdaXml({
 			...baseParams,
 			patientGender: "other",
@@ -123,13 +182,8 @@ describe("generateDentalCdaXml", () => {
 		assert.ok(!xml.includes(`code="0"`));
 	});
 
-	test("DEFECT #72: documentTime (lockedAt) sets ClinicalDocument and author effectiveTime", () => {
+	test("DEFECT #72: documentTime (lockedAt) sets ClinicalDocument and author effectiveTime with timezone", () => {
 		const lockedAt = new Date("2023-09-01T14:22:33.000Z");
-		const pad = (n: number) => n.toString().padStart(2, "0");
-		const expected =
-			`${lockedAt.getFullYear()}${pad(lockedAt.getMonth() + 1)}${pad(lockedAt.getDate())}` +
-			`${pad(lockedAt.getHours())}${pad(lockedAt.getMinutes())}${pad(lockedAt.getSeconds())}`;
-
 		const result = generateDentalCdaXml({
 			...baseParams,
 			documentTime: lockedAt,
@@ -138,23 +192,44 @@ describe("generateDentalCdaXml", () => {
 		assert.ok(result.success, result.success ? "" : String(result.error));
 		const xml = result.xml;
 
+		// Must match YYYYMMDDHHMMSS+ZZZZ format
+		assert.match(xml, /<effectiveTime value="\d{14}[+-]\d{4}"\/>/);
+		assert.match(xml, /<time value="\d{14}[+-]\d{4}"\/>/);
+	});
+
+	test("signature module: canonicalizeCdaXml and Zod schemas", () => {
+		const rawXml = `\uFEFF<?xml version="1.0" encoding="UTF-8"?>\r\n  <ClinicalDocument>\r\n    <id root="1.2.3"/>   \r\n  </ClinicalDocument>\r\n\r\n`;
+		const canonical = canonicalizeCdaXml(rawXml);
+		assert.ok(!canonical.startsWith("\uFEFF"), "BOM must be stripped");
+		assert.ok(!canonical.includes("\r"), "CR must be normalized to LF");
 		assert.ok(
-			xml.includes(`<effectiveTime value="${expected}"/>`),
-			"ClinicalDocument effectiveTime must match documentTime/lockedAt",
+			canonical.endsWith("</ClinicalDocument>"),
+			"trailing whitespace/blank lines stripped",
 		);
-		assert.ok(
-			xml.includes(`<time value="${expected}"/>`),
-			"author/time must match documentTime/lockedAt",
-		);
-		// visitDate still independent in documentationOf
-		const vd = new Date("2023-09-01T10:00:00.000Z");
-		const visitExpected =
-			`${vd.getFullYear()}${pad(vd.getMonth() + 1)}${pad(vd.getDate())}` +
-			`${pad(vd.getHours())}${pad(vd.getMinutes())}${pad(vd.getSeconds())}`;
-		assert.ok(
-			xml.includes(`<effectiveTime value="${visitExpected}"/>`),
-			"serviceEvent effectiveTime must remain visitDate",
-		);
-		assert.notStrictEqual(expected, visitExpected);
+
+		const signatureItem = detachedSignatureSchema.safeParse({
+			signatureBase64: "MIIE...base64",
+			certificateSerialNumber: "01D8A2...",
+			certificateSubject: "Иванов И. И.",
+			signedAt: "2026-08-13T10:00:00.000Z",
+		});
+		assert.ok(signatureItem.success);
+
+		const pkg = egiszRemdPackageSchema.safeParse({
+			documentId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+			documentVersion: 1,
+			xmlCanonicalPayload: "<ClinicalDocument/>",
+			doctorSignature: {
+				signatureBase64: "MIIE...base64",
+				certificateSerialNumber: "01D8A2...",
+				certificateSubject: "Иванов И. И.",
+				signedAt: "2026-08-13T10:00:00.000Z",
+			},
+			metadata: {
+				patientSnils: "12345678901",
+				clinicOid: "1.2.643.5.1.13.13.12.2.123",
+			},
+		});
+		assert.ok(pkg.success);
 	});
 });

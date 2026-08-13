@@ -426,6 +426,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			};
 			/* DEFECT #58: specialty for CDA assignedAuthor — was never loaded */
 			let doctorPosition: string | undefined;
+			let doctorPositionCode: string | undefined;
 			/* Real physician contact (users.phone/email) resolved alongside the
 			 * signer user row; generator emits nullFlavor only when absent. */
 			let doctorContact:
@@ -482,6 +483,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 						doctorName = splitFullName(doctor.fullName);
 						const pos = formatDoctorSpecialtyLabelForCda(doctor.specialties);
 						if (pos) doctorPosition = pos;
+						const posCode = formatDoctorSpecialtyNsiCodeForCda(doctor.specialties);
+						if (posCode) doctorPositionCode = posCode;
 						doctorContact = { phone: doctor.phone, email: doctor.email };
 					}
 				}
@@ -655,6 +658,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 							doctorName = splitFullName(u.fullName);
 							const pos = formatDoctorSpecialtyLabelForCda(u.specialties);
 							if (pos) doctorPosition = pos;
+							const posCode = formatDoctorSpecialtyNsiCodeForCda(u.specialties);
+							if (posCode) doctorPositionCode = posCode;
 							doctorContact = { phone: u.phone, email: u.email };
 							break;
 						}
@@ -855,6 +860,12 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				...(patientEmail ? { patientEmail } : {}),
 				...(patientAddress ? { patientAddress } : {}),
 				clinicName,
+				...(typeof row.organization.ogrn === "string" && row.organization.ogrn.trim()
+					? { clinicOgrn: row.organization.ogrn.trim() }
+					: {}),
+				...(typeof row.organization.inn === "string" && row.organization.inn.trim()
+					? { clinicInn: row.organization.inn.trim() }
+					: {}),
 				/*
 				 * Real MO contact (clinics.address/phone + organizations.email).
 				 * Generator emits nullFlavor only when the DB has none.
@@ -871,6 +882,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				...(doctorPhone ? { doctorPhone } : {}),
 				...(doctorEmail ? { doctorEmail } : {}),
 				...(doctorPosition ? { doctorPosition } : {}),
+				...(doctorPositionCode ? { doctorPositionCode } : {}),
 				icd10Code: resolvedIcd10,
 				diagnosisText: effectiveDiagnosis,
 				visitDate: encounterDate,
@@ -1131,13 +1143,26 @@ const EGISZ_DENTAL_SPECIALTY_LABELS: Record<string, string> = {
 	therapist: "врач-стоматолог-терапевт",
 	orthopedist: "врач-стоматолог-ортопед",
 	surgeon: "врач-стоматолог-хирург",
-	orthodontist: "врач-стоматолог-ортодонт",
+	orthodontist: "врач-ортодонт",
 	periodontist: "врач-стоматолог-пародонтолог",
 	hygienist: "гигиенист стоматологический",
-	pediatric: "детский стоматолог",
+	pediatric: "врач-стоматолог детский",
 	implantologist: "врач-стоматолог-хирург (имплантология)",
 	radiologist: "врач-рентгенолог",
 	universal: "врач-стоматолог",
+};
+
+const EGISZ_DENTAL_SPECIALTY_NSI_CODES: Record<string, string> = {
+	therapist: "18",
+	orthopedist: "17",
+	surgeon: "19",
+	orthodontist: "93",
+	periodontist: "18",
+	hygienist: "281",
+	pediatric: "16",
+	implantologist: "19",
+	radiologist: "118",
+	universal: "15",
 };
 
 function formatDoctorSpecialtyLabelForCda(raw: unknown): string | null {
@@ -1152,6 +1177,18 @@ function formatDoctorSpecialtyLabelForCda(raw: unknown): string | null {
 	const labels = list.map((c) => EGISZ_DENTAL_SPECIALTY_LABELS[c] ?? c);
 	const joined = labels.join(", ").trim();
 	return joined.length > 0 ? joined : null;
+}
+
+function formatDoctorSpecialtyNsiCodeForCda(raw: unknown): string | null {
+	const codes: string[] = Array.isArray(raw)
+		? raw.map((x) => (typeof x === "string" ? x.trim() : "")).filter(Boolean)
+		: typeof raw === "string" && raw.trim()
+			? [raw.trim()]
+			: [];
+	if (codes.length === 0) return null;
+	const meaningful = codes.filter((c) => c !== "universal");
+	const primary = meaningful[0] ?? codes[0];
+	return primary ? (EGISZ_DENTAL_SPECIALTY_NSI_CODES[primary] ?? null) : null;
 }
 
 /** «Иванов Иван Иванович» → { last, first, middle }. */

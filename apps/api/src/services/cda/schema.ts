@@ -27,6 +27,8 @@ export const egiszCdaParamsSchema = z.object({
 	patientEmail: z.string().nullable().optional(),
 	clinicOid: z.string().optional(),
 	clinicName: z.string().min(1),
+	clinicOgrn: z.string().nullable().optional(),
+	clinicInn: z.string().nullable().optional(),
 	/*
 	 * Real clinic (MO) contact model (organizations.legalAddress/email +
 	 * clinics.address/phone). Fall back to nullFlavor only when absent.
@@ -38,6 +40,7 @@ export const egiszCdaParamsSchema = z.object({
 	doctorName: personNameSchema,
 	doctorSnils: z.string().optional(),
 	doctorPosition: z.string().optional(),
+	doctorPositionCode: z.string().optional(), // NSI 1.2.643.5.1.13.13.11.1002
 	/*
 	 * Real doctor contact model (users.phone/email). Doctor has no address
 	 * column, so only telecom is wired.

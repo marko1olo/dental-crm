@@ -11,7 +11,7 @@ import { db, dbRaw } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
-import { registerDicomwebRoutes } from "./dicomweb.js";
+import { parseHttpRange, registerDicomwebRoutes } from "./dicomweb.js";
 
 /**
  * Тесты ничего не пишут на диск и не ходят в PostgreSQL: db.select подменяется
@@ -114,14 +114,7 @@ function mockDb(t: TestContext, fixture: DbFixture): { calls: number } {
 		counter.calls += 1;
 		if (fixture.failure) throw fixture.failure;
 		let table: unknown = null;
-		const node: Record<string, unknown> = {};
-		node.from = (source: unknown) => {
-			table = source;
-			return node;
-		};
-		node.innerJoin = () => node;
-		node.where = () => node;
-		node.limit = async () => {
+		const resolveRows = () => {
 			if (table === schema.organizations) return fixture.organizations ?? [];
 			if (table === schema.imagingInstances) return fixture.instances ?? [];
 			if (table === schema.imagingStudies) return fixture.studies ?? [];
@@ -129,6 +122,20 @@ function mockDb(t: TestContext, fixture: DbFixture): { calls: number } {
 				"Маршрут dicomweb запросил таблицу, которой нет в фикстуре теста",
 			);
 		};
+		const node: Record<string, unknown> = {};
+		node.from = (source: unknown) => {
+			table = source;
+			return node;
+		};
+		node.innerJoin = () => node;
+		node.where = () => node;
+		node.orderBy = () => node;
+		node.offset = () => node;
+		node.limit = () => node;
+		node.then = (
+			onfulfilled?: ((value: unknown) => unknown) | null,
+			onrejected?: ((reason: unknown) => unknown) | null,
+		) => Promise.resolve(resolveRows()).then(onfulfilled, onrejected);
 		return node;
 	};
 	t.mock.method(db, "select", select);
@@ -553,3 +560,139 @@ test("DICOM route does not return wildcard CORS", async (t) => {
 
 	await app.close();
 });
+
+test("parseHttpRange handles full and partial ranges accurately", () => {
+	assert.deepStrictEqual(parseHttpRange(undefined, 1000), {
+		start: 0,
+		end: 999,
+		chunkSize: 1000,
+		totalSize: 1000,
+		isPartial: false,
+	});
+	assert.deepStrictEqual(parseHttpRange("bytes=0-499", 1000), {
+		start: 0,
+		end: 499,
+		chunkSize: 500,
+		totalSize: 1000,
+		isPartial: true,
+	});
+	assert.deepStrictEqual(parseHttpRange("bytes=500-", 1000), {
+		start: 500,
+		end: 999,
+		chunkSize: 500,
+		totalSize: 1000,
+		isPartial: true,
+	});
+	assert.deepStrictEqual(parseHttpRange("bytes=-200", 1000), {
+		start: 800,
+		end: 999,
+		chunkSize: 200,
+		totalSize: 1000,
+		isPartial: true,
+	});
+	assert.deepStrictEqual(parseHttpRange("bytes=1500-2000", 1000), {
+		invalid: true,
+	});
+});
+
+test("WADO-RS streaming returns 206 Partial Content for valid Range header", async (t) => {
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
+
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: {
+			...clinicHeaders(),
+			range: "bytes=0-127",
+		},
+	});
+
+	assert.strictEqual(response.statusCode, 206);
+	assert.strictEqual(
+		response.headers["content-range"],
+		`bytes 0-127/${SAMPLE_BYTES}`,
+	);
+	assert.strictEqual(response.headers["content-length"], "128");
+	assert.strictEqual(response.headers["accept-ranges"], "bytes");
+	assert.strictEqual(response.rawPayload.length, 128);
+
+	await app.close();
+});
+
+test("WADO-RS streaming returns 416 for out-of-bounds Range", async (t) => {
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
+
+	const response = await app.inject({
+		method: "GET",
+		url: instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID),
+		headers: {
+			...clinicHeaders(),
+			range: `bytes=${SAMPLE_BYTES + 100}-${SAMPLE_BYTES + 200}`,
+		},
+	});
+
+	assert.strictEqual(response.statusCode, 416);
+	assert.strictEqual(
+		response.headers["content-range"],
+		`bytes */${SAMPLE_BYTES}`,
+	);
+
+	await app.close();
+});
+
+test("WADO-RS frame retrieval returns frame 1 successfully", async (t) => {
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
+
+	const response = await app.inject({
+		method: "GET",
+		url: `${instanceUrl(SAMPLE_STUDY_UID, SAMPLE_SERIES_UID, SAMPLE_SOP_UID)}/frames/1`,
+		headers: clinicHeaders(),
+	});
+
+	assert.strictEqual(response.statusCode, 200);
+	assert.strictEqual(
+		response.headers["content-type"],
+		"application/octet-stream",
+	);
+	assert.strictEqual(response.rawPayload.length, SAMPLE_BYTES);
+
+	await app.close();
+});
+
+test("QIDO-RS search returns DICOM JSON list for clinic", async (t) => {
+	mockDb(t, {
+		organizations: existingOrganization(),
+		studies: [
+			{
+				id: "6f6e86ef-d754-46c5-a6e5-4d27572798e6",
+				dicomStudyUid: SAMPLE_STUDY_UID,
+				patientId: "2b9da7eb-1234-4567-89ab-cdef01234567",
+				capturedAt: new Date("2026-08-01T10:00:00Z"),
+				title: "КТ челюсти",
+				kind: "cbct",
+			},
+		],
+	});
+	const app = await buildApp();
+
+	const response = await app.inject({
+		method: "GET",
+		url: "/api/dicomweb/studies",
+		headers: clinicHeaders(),
+	});
+
+	assert.strictEqual(response.statusCode, 200);
+	assert.ok(
+		response.headers["content-type"]?.startsWith("application/dicom+json"),
+	);
+	const json = response.json();
+	assert.ok(Array.isArray(json));
+	assert.strictEqual(json.length, 1);
+	assert.strictEqual(json[0]["0020000D"].Value[0], SAMPLE_STUDY_UID);
+
+	await app.close();
+});
+

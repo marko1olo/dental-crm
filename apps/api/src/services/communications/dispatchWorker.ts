@@ -312,3 +312,9 @@ export function startCommunicationDispatchWorker(
 		scheduleRemindersOnce,
 	};
 }
+
+/**
+ * Канонический алиас для обратной совместимости и единообразия наименования.
+ */
+export const startDispatchWorker = startCommunicationDispatchWorker;
+
