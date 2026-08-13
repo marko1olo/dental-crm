@@ -1,4 +1,4 @@
-import { and, eq, gte, lt, notInArray } from "drizzle-orm";
+import { and, eq, gte, ilike, lt, notInArray, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";
@@ -753,19 +753,47 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					if (hasConflict) return { conflict: true as const };
 
 					const phoneDigits = normalizePhoneDigits(patientPhone);
-					const candidates = await tx
-						.select({ id: patients.id, phone: patients.phone })
+					const [existingByPhone] = await tx
+						.select({ id: patients.id })
 						.from(patients)
-						.where(eq(patients.organizationId, organizationId));
-					const existingPatient = candidates.find(
-						(candidate) =>
-							normalizePhoneDigits(candidate.phone ?? "") === phoneDigits,
-					);
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								or(
+									eq(patients.phone, patientPhone),
+									eq(patients.phone, phoneDigits),
+								),
+							),
+						)
+						.limit(1);
 
-					let patientId: string;
-					if (existingPatient) {
-						patientId = existingPatient.id;
-					} else {
+					let patientId = existingByPhone?.id;
+
+					if (!patientId) {
+						const last10 = phoneDigits.slice(-10);
+						if (last10.length === 10) {
+							const candidates = await tx
+								.select({ id: patients.id, phone: patients.phone })
+								.from(patients)
+								.where(
+									and(
+										eq(patients.organizationId, organizationId),
+										ilike(patients.phone, `%${last10}%`),
+									),
+								)
+								.limit(10);
+
+							const matched = candidates.find(
+								(candidate) =>
+									normalizePhoneDigits(candidate.phone ?? "") === phoneDigits,
+							);
+							if (matched) {
+								patientId = matched.id;
+							}
+						}
+					}
+
+					if (!patientId) {
 						const [createdPatient] = await tx
 							.insert(patients)
 							.values({

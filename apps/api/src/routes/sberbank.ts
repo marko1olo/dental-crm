@@ -157,21 +157,6 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 			const orgId = await requireOrganizationContext(request, reply);
 			if (!orgId) return;
 
-			const [transaction] = await db
-				.select()
-				.from(sberbankTransactions)
-				.where(
-					and(
-						eq(sberbankTransactions.orderId, orderId),
-						eq(sberbankTransactions.organizationId, orgId),
-					),
-				)
-				.limit(1);
-
-			if (!transaction) {
-				return reply.status(404).send({ error: "Transaction not found" });
-			}
-
 			let client: SberbankClient;
 			try {
 				client = new SberbankClient();
@@ -194,36 +179,64 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					mappedStatus = "failed";
 				}
 
-				if (mappedStatus !== transaction.status) {
-					await db
-						.update(sberbankTransactions)
-						.set({ status: mappedStatus, updatedAt: new Date() })
+				return await withTenantCtx(orgId, async (tx) => {
+					const [lockedTx] = await tx
+						.select()
+						.from(sberbankTransactions)
 						.where(
 							and(
 								eq(sberbankTransactions.orderId, orderId),
 								eq(sberbankTransactions.organizationId, orgId),
 							),
-						);
+						)
+						.for("update")
+						.limit(1);
 
-					if (
-						transaction.status === "pending" &&
-						mappedStatus === "success"
-					) {
-						await db.insert(payments).values({
-							organizationId: orgId,
-							patientId: transaction.patientId,
-							method: "card",
-							status: "paid",
-							amountRub: transaction.amount / 100,
-						});
+					if (!lockedTx) {
+						return reply.status(404).send({ error: "Transaction not found" });
 					}
-				}
 
-				return {
-					success: true,
-					status: mappedStatus,
-					amount: transaction.amount,
-				};
+					if (mappedStatus !== lockedTx.status) {
+						await tx
+							.update(sberbankTransactions)
+							.set({ status: mappedStatus, updatedAt: new Date() })
+							.where(
+								and(
+									eq(sberbankTransactions.id, lockedTx.id),
+									eq(sberbankTransactions.organizationId, orgId),
+								),
+							);
+
+						if (
+							lockedTx.status === "pending" &&
+							mappedStatus === "success"
+						) {
+							const amountRub = Number(
+								(Number(lockedTx.amount) / 100).toFixed(2),
+							);
+							await tx
+								.insert(payments)
+								.values({
+									organizationId: orgId,
+									patientId: lockedTx.patientId,
+									method: "card",
+									status: "paid",
+									amountRub,
+									clientMutationId: `sberbank:${orderId}`,
+									note: `Оплата через Сбербанк Эквайринг (заказ ${orderId})`,
+								})
+								.onConflictDoNothing({
+									target: [payments.organizationId, payments.clientMutationId],
+								});
+						}
+					}
+
+					return {
+						success: true,
+						status: mappedStatus,
+						amount: lockedTx.amount,
+					};
+				});
 			} catch (error) {
 				return reply.status(500).send({
 					error: "SberbankError",
@@ -362,13 +375,23 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						})
 						.where(eq(sberbankTransactions.id, lockedTx.id));
 
-					await tx.insert(payments).values({
-						organizationId: lockedTx.organizationId,
-						patientId: lockedTx.patientId,
-						method: "card",
-						status: "paid",
-						amountRub: lockedTx.amount / 100,
-					});
+					const amountRub = Number(
+						(Number(lockedTx.amount) / 100).toFixed(2),
+					);
+					await tx
+						.insert(payments)
+						.values({
+							organizationId: lockedTx.organizationId,
+							patientId: lockedTx.patientId,
+							method: "card",
+							status: "paid",
+							amountRub,
+							clientMutationId: `sberbank:${lockedTx.orderId}`,
+							note: `Оплата через Сбербанк Эквайринг (заказ ${lockedTx.orderId})`,
+						})
+						.onConflictDoNothing({
+							target: [payments.organizationId, payments.clientMutationId],
+						});
 				}
 
 				return reply.status(200).send({

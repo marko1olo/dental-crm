@@ -8,7 +8,7 @@ import {
 	withFixtureTenant,
 	purgeFixtureOrganizations,
 } from "./tests/support/fixtureOrganizations.js";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { withSuperuserBypass } from "./db/rls.js";
 
 const ORG_ID = fixtureUuid("auditTest", 1);
@@ -16,16 +16,24 @@ const FALLBACK_ORG_ID = fixtureUuid("auditTest", 2);
 const USER_ID = fixtureUuid("user", 1);
 
 async function purgeAuditEvents(orgIds: string[]) {
-    // Audit events are protected by triggers, we temporarily disable them to clean up our tests
-    for (const orgId of orgIds) {
-        await db.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_append_only`);
-        await db.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_no_truncate`);
-        await db.execute(sql`DELETE FROM audit_events WHERE organization_id = ${orgId}`);
-        await db.execute(sql`ALTER TABLE audit_events ENABLE ALWAYS TRIGGER audit_events_append_only`);
-        await db.execute(sql`ALTER TABLE audit_events ENABLE ALWAYS TRIGGER audit_events_no_truncate`);
-    }
+    await withSuperuserBypass(async (tx) => {
+        let appendOnlyTriggerDisabled = false;
+        try {
+            try {
+                await tx.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_append_only`);
+                appendOnlyTriggerDisabled = true;
+            } catch (error) {
+                const code = (error as { cause?: { code?: string } }).cause?.code;
+                if (code !== "42704") throw error;
+            }
+            await tx.delete(auditEvents).where(inArray(auditEvents.organizationId, orgIds));
+        } finally {
+            if (appendOnlyTriggerDisabled) {
+                await tx.execute(sql`ALTER TABLE audit_events ENABLE ALWAYS TRIGGER audit_events_append_only`);
+            }
+        }
+    });
 }
-
 describe("recordAuditEvent", () => {
 	before(async () => {
 		await purgeAuditEvents([ORG_ID, FALLBACK_ORG_ID]);
