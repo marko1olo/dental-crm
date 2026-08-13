@@ -109,7 +109,7 @@ const REASON_META: Readonly<
 };
 
 /** «+7 (916) 123-45-67» и «89161234567» — один номер. Сравниваем последние 10 цифр. */
-function phoneKey(raw: string | null): string | null {
+export function phoneKey(raw: string | null): string | null {
 	const digits = (raw ?? "").replace(/\D/g, "");
 	return digits.length >= 10 ? digits.slice(-10) : null;
 }
@@ -124,7 +124,7 @@ export function nameKey(raw: string): string {
 		.trim();
 }
 
-function surnameOf(fullName: string): string {
+export function surnameOf(fullName: string): string {
 	return nameKey(fullName).split(" ")[0] ?? "";
 }
 
@@ -137,7 +137,7 @@ type PatientRow = {
 };
 
 /** Пара идентификаторов в устойчивом порядке — чтобы не считать дважды. */
-function pairKey(left: string, right: string): string {
+export function pairKey(left: string, right: string): string {
 	return left < right ? `${left}|${right}` : `${right}|${left}`;
 }
 
