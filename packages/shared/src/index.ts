@@ -5747,6 +5747,192 @@ export const dashboardSchema = z.object({
 });
 export type Dashboard = z.infer<typeof dashboardSchema>;
 
+/**
+ * Договор ДМС (Добровольное медицинское страхование).
+ */
+export const insuranceContractSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	companyName: z.string().trim().min(1),
+	policyNumberMask: z.string().trim().nullable().optional(),
+	coverageTherapyPct: z.number().min(0).max(100),
+	coverageSurgeryPct: z.number().min(0).max(100),
+	coverageOrthoPct: z.number().min(0).max(100),
+	coverageHygienePct: z.number().min(0).max(100),
+	annualLimitRub: z.number().min(0).nullable().optional(),
+	isActive: z.boolean().default(true),
+	createdAt: z.string().or(z.date()).optional(),
+});
+export type InsuranceContract = z.infer<typeof insuranceContractSchema>;
+
+export const insuranceCalculationItemSchema = z.object({
+	serviceId: z.string().uuid().or(z.string().min(1)),
+	serviceName: z.string().trim().optional(),
+	category: z.enum([
+		"consultation",
+		"therapy",
+		"surgery",
+		"prosthetics",
+		"orthodontics",
+		"periodontology",
+		"hygiene",
+		"imaging",
+		"documents",
+		"other",
+	]),
+	priceRub: nonNegativeMoneyRubSchema,
+	quantity: z.number().int().min(1).default(1),
+});
+export type InsuranceCalculationItem = z.infer<typeof insuranceCalculationItemSchema>;
+
+export const insuranceCoverageCalculationInputSchema = z.object({
+	contractId: z.string().uuid(),
+	usedAnnualAmountRub: nonNegativeMoneyRubSchema.default(0),
+	items: z.array(insuranceCalculationItemSchema).min(1),
+});
+export type InsuranceCoverageCalculationInput = z.infer<
+	typeof insuranceCoverageCalculationInputSchema
+>;
+
+export const insuranceItemBreakdownSchema = z.object({
+	serviceId: z.string(),
+	serviceName: z.string().optional(),
+	category: z.string(),
+	quantity: z.number(),
+	unitPriceRub: z.number(),
+	totalPriceRub: z.number(),
+	coveragePct: z.number(),
+	coveredAmountRub: z.number(),
+	patientCoPayRub: z.number(),
+});
+export type InsuranceItemBreakdown = z.infer<typeof insuranceItemBreakdownSchema>;
+
+export const insuranceCoverageCalculationResultSchema = z.object({
+	contractId: z.string().uuid(),
+	companyName: z.string(),
+	totalPriceRub: z.number(),
+	totalCoveredRub: z.number(),
+	totalPatientCoPayRub: z.number(),
+	annualLimitRub: z.number().nullable(),
+	usedAnnualAmountRub: z.number(),
+	remainingAnnualLimitRub: z.number().nullable(),
+	itemBreakdown: z.array(insuranceItemBreakdownSchema),
+});
+export type InsuranceCoverageCalculationResult = z.infer<
+	typeof insuranceCoverageCalculationResultSchema
+>;
+
+/**
+ * Точный расчет покрытия ДМС и доплаты пациента (копеечная точность без двоичного дрейфа).
+ */
+export function calculateDmsCoverage(
+	contract: Pick<
+		InsuranceContract,
+		| "id"
+		| "companyName"
+		| "coverageTherapyPct"
+		| "coverageSurgeryPct"
+		| "coverageOrthoPct"
+		| "coverageHygienePct"
+		| "annualLimitRub"
+	>,
+	items: readonly InsuranceCalculationItem[],
+	usedAnnualAmountRub: number = 0,
+): InsuranceCoverageCalculationResult {
+	const annualLimitKopecks =
+		contract.annualLimitRub != null && Number.isFinite(contract.annualLimitRub)
+			? Math.round(contract.annualLimitRub * 100)
+			: null;
+	const usedKopecks = Math.max(0, Math.round(usedAnnualAmountRub * 100));
+
+	let availableLimitKopecks =
+		annualLimitKopecks != null
+			? Math.max(0, annualLimitKopecks - usedKopecks)
+			: null;
+
+	let totalBillKopecks = 0;
+	let totalCoveredKopecks = 0;
+	let totalCoPayKopecks = 0;
+
+	const breakdown: InsuranceItemBreakdown[] = [];
+
+	for (const item of items) {
+		const unitPriceKopecks = Math.round(item.priceRub * 100);
+		const lineTotalKopecks = unitPriceKopecks * item.quantity;
+		totalBillKopecks += lineTotalKopecks;
+
+		let pct = 0;
+		switch (item.category) {
+			case "therapy":
+				pct = Number(contract.coverageTherapyPct) || 0;
+				break;
+			case "surgery":
+				pct = Number(contract.coverageSurgeryPct) || 0;
+				break;
+			case "orthodontics":
+			case "prosthetics":
+				pct = Number(contract.coverageOrthoPct) || 0;
+				break;
+			case "hygiene":
+			case "periodontology":
+				pct = Number(contract.coverageHygienePct) || 0;
+				break;
+			case "consultation":
+			case "imaging":
+				pct = 100;
+				break;
+			case "documents":
+			case "other":
+			default:
+				pct = 0;
+				break;
+		}
+		pct = Math.min(100, Math.max(0, pct));
+
+		let candidateCoveredKopecks = Math.round(lineTotalKopecks * (pct / 100));
+
+		if (availableLimitKopecks != null) {
+			const allowedByCap = Math.min(
+				candidateCoveredKopecks,
+				availableLimitKopecks,
+			);
+			candidateCoveredKopecks = allowedByCap;
+			availableLimitKopecks -= allowedByCap;
+		}
+
+		const itemCoPayKopecks = lineTotalKopecks - candidateCoveredKopecks;
+
+		totalCoveredKopecks += candidateCoveredKopecks;
+		totalCoPayKopecks += itemCoPayKopecks;
+
+		breakdown.push({
+			serviceId: item.serviceId,
+			serviceName: item.serviceName,
+			category: item.category,
+			quantity: item.quantity,
+			unitPriceRub: unitPriceKopecks / 100,
+			totalPriceRub: lineTotalKopecks / 100,
+			coveragePct: pct,
+			coveredAmountRub: candidateCoveredKopecks / 100,
+			patientCoPayRub: itemCoPayKopecks / 100,
+		});
+	}
+
+	return {
+		contractId: contract.id,
+		companyName: contract.companyName,
+		totalPriceRub: totalBillKopecks / 100,
+		totalCoveredRub: totalCoveredKopecks / 100,
+		totalPatientCoPayRub: totalCoPayKopecks / 100,
+		annualLimitRub: contract.annualLimitRub ?? null,
+		usedAnnualAmountRub: usedKopecks / 100,
+		remainingAnnualLimitRub:
+			availableLimitKopecks != null ? availableLimitKopecks / 100 : null,
+		itemBreakdown: breakdown,
+	};
+}
+
+
 export const createPatientSchema = z.object({
 	fullName: z.string().trim().min(1).max(240),
 	birthDate: birthDateInputSchema,

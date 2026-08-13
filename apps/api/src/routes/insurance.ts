@@ -3,6 +3,11 @@
  * Manages DMS (voluntary medical insurance) contracts at the organization level.
  * Patients are associated via the policyNumber on the patient administrative profile.
  */
+import {
+	calculateDmsCoverage,
+	insuranceCalculationItemSchema,
+	nonNegativeMoneyRubSchema,
+} from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -12,6 +17,11 @@ import {
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { insuranceContracts } from "../db/schema.js";
+
+const calculateCoverageBodySchema = z.object({
+	usedAnnualAmountRub: nonNegativeMoneyRubSchema.default(0),
+	items: z.array(insuranceCalculationItemSchema).min(1, "Передайте как минимум одну услугу для расчёта покрытия ДМС."),
+});
 
 /**
  * Тела договоров ДМС раньше читались через bare destructure `const { … } = request.body`.
@@ -374,4 +384,83 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			return { success: true };
 		},
 	);
+
+	// POST calculate coverage and co-payment for an invoice or treatment plan
+	app.post<{
+		Params: { contractId: string };
+		Body: {
+			usedAnnualAmountRub?: number;
+			items: Array<{
+				serviceId: string;
+				serviceName?: string;
+				category:
+					| "consultation"
+					| "therapy"
+					| "surgery"
+					| "prosthetics"
+					| "orthodontics"
+					| "periodontology"
+					| "hygiene"
+					| "imaging"
+					| "documents"
+					| "other";
+				priceRub: number;
+				quantity?: number;
+			}>;
+		};
+	}>("/api/insurance/contracts/:contractId/calculate-coverage", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"insurance calculate coverage",
+		);
+		if (!orgId) return;
+
+		const { contractId } = request.params;
+		const [contract] = await db
+			.select()
+			.from(insuranceContracts)
+			.where(
+				and(
+					eq(insuranceContracts.id, contractId),
+					eq(insuranceContracts.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!contract || !contract.isActive) {
+			return reply.code(404).send({
+				error: "ContractNotFound",
+				message: INSURANCE_CONTRACT_NOT_FOUND,
+			});
+		}
+
+		const parsed = calculateCoverageBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			const msg = parsed.error.issues[0]?.message ?? "Проверьте список услуг для расчёта покрытия ДМС.";
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: msg,
+			});
+		}
+
+		const { items, usedAnnualAmountRub } = parsed.data;
+
+		const result = calculateDmsCoverage(
+			{
+				id: contract.id,
+				companyName: contract.companyName,
+				coverageTherapyPct: Number(contract.coverageTherapyPct),
+				coverageSurgeryPct: Number(contract.coverageSurgeryPct),
+				coverageOrthoPct: Number(contract.coverageOrthoPct),
+				coverageHygienePct: Number(contract.coverageHygienePct),
+				annualLimitRub: contract.annualLimitRub != null ? Number(contract.annualLimitRub) : null,
+			},
+			items,
+			usedAnnualAmountRub,
+		);
+
+		return reply.code(200).send(result);
+	});
 }
+
