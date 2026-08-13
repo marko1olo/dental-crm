@@ -448,9 +448,10 @@ export function AnalyticsDashboardView() {
 										   всё плохо, но не говорит ни почему, ни что делать. */
 											<EmptyState
 												glass={false}
+												icon={<TrendingUp size={24} aria-hidden="true" />}
 												title="Пока нечего показать"
 												description="График появится, когда в клинике будут оплаты хотя бы за два месяца: он сравнивает, сколько принесли пациенты, пришедшие в разные месяцы."
-												style={{ height: "100%", padding: "20px" }}
+												className="analytics-chart-empty"
 											/>
 										)}
 									</div>
@@ -527,16 +528,17 @@ export function AnalyticsDashboardView() {
 										) : (
 											<EmptyState
 												glass={false}
+												icon={<BarChart3 size={24} aria-hidden="true" />}
 												title="Планов лечения ещё нет"
 												/*
-												«сколько оплачено» здесь обещало ветвь, которой у плана
-												лечения нет: оплата — это платежи, отдельная сущность и
-												отдельный виджет. Названы настоящие состояния плана,
-												включая отказ пациента от сметы — ровно то, по чему
-												видно, что смета не продаётся.
-											*/
+														«сколько оплачено» здесь обещало ветвь, которой у плана
+														оплата — это платежи, отдельная сущность и
+														отдельный виджет. Названы настоящие состояния плана,
+														включая отказ пациента от сметы — ровно то, по чему
+														видно, что смета не продаётся.
+													*/
 												description="Составьте план в карточке пациента — здесь будет видно, сколько смет в черновиках, сколько согласовано, сколько доведено до конца и от скольких пациент отказался."
-												style={{ height: "100%", padding: "20px" }}
+												className="analytics-chart-empty"
 											/>
 										)}
 									</div>
@@ -595,9 +597,10 @@ export function AnalyticsDashboardView() {
 										) : (
 											<EmptyState
 												glass={false}
+												icon={<Calendar size={24} aria-hidden="true" />}
 												title="Приёмов за этот период нет"
 												description="Смените период вверху страницы или запишите пациента в разделе «Записи» — загруженность считается по фактическим приёмам в креслах."
-												style={{ height: "100%", padding: "20px" }}
+												className="analytics-chart-empty"
 											/>
 										)}
 									</div>
@@ -623,9 +626,10 @@ export function AnalyticsDashboardView() {
 										) : (
 											<EmptyState
 												glass={false}
+												icon={<Users size={24} aria-hidden="true" />}
 												title="Закрытых приёмов пока нет"
 												description="Эффективность считается по завершённым визитам. Закройте приём в разделе «Приём» — врач появится в этом списке."
-												style={{ height: "100%", padding: "20px" }}
+												className="analytics-chart-empty"
 											/>
 										)}
 									</div>

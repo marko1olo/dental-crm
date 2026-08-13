@@ -107,6 +107,48 @@ html.dark .analytics-header h2 {
 	font-style: italic;
 }
 
+/* The dashboard can be empty during a valid early clinic lifecycle. These panels
+   must therefore read as a guided next step rather than an inactive chart frame. */
+.analytics-chart-empty {
+	gap: 0;
+	min-height: 100%;
+	overflow: hidden;
+	position: relative;
+}
+
+.analytics-chart-empty::before {
+	background: radial-gradient(
+		circle at 50% 0%,
+		var(--teal-surface),
+		transparent 62%
+	);
+	content: "";
+	inset: 0;
+	pointer-events: none;
+	position: absolute;
+}
+
+.analytics-chart-empty > * {
+	position: relative;
+	z-index: 1;
+}
+
+.analytics-chart-empty .dnt-empty-state-icon {
+	border: 1px solid var(--line-strong);
+	box-shadow: var(--shadow-1);
+	flex: 0 0 auto;
+}
+
+.analytics-chart-empty .dnt-empty-state-title {
+	line-height: 1.35;
+	max-width: 30rem;
+}
+
+.analytics-chart-empty .dnt-empty-state-desc {
+	line-height: 1.6;
+	max-width: 30rem;
+}
+
 @media (max-width: 1024px) {
 	.analytics-grid {
 		grid-template-columns: 1fr;
