@@ -9,6 +9,7 @@ import type {
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { visitCloseChecklistFactsFor } from "../sampleData.js";
+import { deductMaterialsForVisit } from "../services/inventory/materialDeduction.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
 import { db } from "./client.js";
@@ -282,138 +283,109 @@ export async function acceptVisitDraftInDb(
 	organizationId: string,
 	input: AcceptVisitDraftInput,
 ): Promise<AcceptVisitDraftResponse> {
-	const [visit] = await db
-		.select()
-		.from(schema.visits)
-		.where(
-			and(
-				eq(schema.visits.id, input.visitId),
-				eq(schema.visits.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	if (!visit) throw new Error("Визит не найден");
-	if (visit.status !== "draft")
-		throw new Error("Прием уже закрыт или аннулирован");
+	return await db.transaction(async (tx) => {
+		const [visit] = await tx
+			.select()
+			.from(schema.visits)
+			.where(
+				and(
+					eq(schema.visits.id, input.visitId),
+					eq(schema.visits.organizationId, organizationId),
+				),
+			)
+			.for("update")
+			.limit(1);
+		if (!visit) throw new Error("Визит не найден");
+		if (visit.status !== "draft")
+			throw new Error("Прием уже закрыт или аннулирован");
 
-	const previousRevision = visit.revision;
-	const newRevision = previousRevision + 1;
-	const savedAt = new Date();
+		const previousRevision = visit.revision;
+		const newRevision = previousRevision + 1;
+		const savedAt = new Date();
 
-	/*
-	 * БЫЛО: UPDATE только по visitId. SELECT уже с org, но запись подписи —
-	 * юридически значимое действие: условие области обязано быть на самом UPDATE
-	 * (тот же класс, что patientsQuery updatePatientInDb после live cross-tenant PUT).
-	 * СТАЛО: organizationId + id в WHERE.
-	 */
-	const [signedRow] = await db
-		.update(schema.visits)
-		.set({
-			status: "signed",
-			revision: newRevision,
-			complaint: input.draft.complaint,
-			anamnesis: input.draft.anamnesis,
-			objectiveStatus: input.draft.objectiveStatus,
-			diagnosis: input.draft.diagnosis,
-			treatmentPlan: input.draft.treatmentPlan,
-			doctorSummary: input.doctorSummary,
-			signedAt: savedAt,
-			updatedAt: savedAt,
-		})
-		.where(
-			and(
-				eq(schema.visits.organizationId, organizationId),
-				eq(schema.visits.id, input.visitId),
-			),
-		)
-		.returning();
-	// До этой строки приём ещё черновик: пустой RETURNING значит, что подписания не
-	// случилось, и обычный доменный отказ здесь правдив.
-	if (!signedRow) throw new Error("Прием не подписан");
-
-	const signedVisit = projectVisitRow(signedRow);
-	const saveReceipt = buildVisitSaveReceipt(
-		input,
-		signedVisit,
-		previousRevision,
-	);
-
-	/*
-	 * Журнал пишется ДО сборки ответа. Карточка закрытия ниже может не собраться
-	 * (VisitSignedResponseIncompleteError, HTTP 500 на уже подписанный приём) — но
-	 * приём при этом ПОДПИСАН, и именно в таком прогоне след в журнале нужен
-	 * больше всего: врач не увидел подтверждения и будет разбираться, что
-	 * произошло.
-	 */
-	await recordVisitDraftAcceptedAuditEvent(
-		organizationId,
-		signedVisit,
-		input,
-		previousRevision,
-		saveReceipt.warning,
-	);
-
-	try {
 		/*
-		 * Строки денег читаются ИЗ БАЗЫ, а не из inMemoryDomainState.
-		 *
-		 * БЫЛО, замерено 2026-07-29: visitCloseChecklistFactsFor(signedVisit) БЕЗ второго
-		 * аргумента → функция брала дефолт `state = inMemoryDomainState` → расчёт billing
-		 * читал коллекции treatmentPlanItems и payments из демо-данных в памяти. Тест сеял
-		 * реальные позиции и оплаты в PostgreSQL, но они не попадали в расчёт — карточка
-		 * закрытия показывала остаток по клинике из демо-состояния вместо остатка по
-		 * ЭТОМУ приёму из базы. Замер: 10 приёмов клиники, все получали одну строку
-		 * «Остаток по плану 51 400 ₽», включая приём, оплаченный полностью.
-		 *
-		 * СТАЛО: срез клиники берётся у `hydrateDomainStateFromDb` — того же модуля, что
-		 * питает сводку. Расчёту billing нужны только `treatmentPlanItems` и `payments`,
-		 * и соблазн прочитать эти две таблицы здесь напрямую велик. Так и было сделано
-		 * сначала, и это оказалось неверно: сырая строка базы НЕ РАВНА доменной записи.
-		 * Замерено компилятором 2026-08-06 — четыре расхождения на двух таблицах:
-		 *   `quantity`   в базе `numeric` → драйвер отдаёт СТРОКУ, домен ждёт число;
-		 *   `createdAt`  в базе `Date`    → домен ждёт ISO-строку;
-		 *   `serviceId`  в базе nullable  → домен требует строку;
-		 *   `snapshotServiceName` в строке отсутствует вовсе (в базе это `title`).
-		 * Первая версия правки скрывала всё это `as unknown as TreatmentChargeRow[]`, то
-		 * есть отдавала расчёту денег строку там, где он ждёт число. Копировать проекцию
-		 * сюда тоже нельзя: две копии преобразования `numeric`→число разойдутся, и
-		 * разойдутся молча, в расчёте ДЕНЕГ. Поэтому здесь один вызов гидратации, у
-		 * которой проекция уже есть и проверяется схемой (`collect(...)`).
-		 *
-		 * ЦЕНА НАЗВАНА ЧЕСТНО: гидратация читает ~15 таблиц вместо двух нужных. Если
-		 * подписание приёма станет узким местом, правильное лечение — `hydrateBillingSlice()`
-		 * в самом модуле гидратации, рядом с существующей проекцией. НЕ копия здесь.
-		 *
-		 * ПОЧЕМУ СРЕЗ ПО КЛИНИКЕ, А НЕ ПО ПРИЁМУ. buildVisitLedger принимает
-		 * ОТФИЛЬТРОВАННЫЕ коллекции: он сам ищет строки с visit_id = signedVisit.id. Если
-		 * сузить до одного приёма, расчёт не увидит позиции БЕЗ приёма
-		 * (treatment_items.visit_id = null), которые входят в сальдо пациента, но не в
-		 * сальдо приёма. Эта разница важна для переплаты: если пациент переплатил по
-		 * приёму, а по клинике у него долг из-за позиций без приёма, карточка обязана
-		 * показать переплату ПО ПРИЁМУ, а не молчать из-за другой позиции.
-		 *
-		 * Транзакция здесь та же, что записала приём: `db` — Proxy над
-		 * `transactionStorage`, поэтому гидратация видит только что вставленные строки.
+		 * БЫЛО: UPDATE только по visitId. SELECT уже с org, но запись подписи —
+		 * юридически значимое действие: условие области обязано быть на самом UPDATE
+		 * (тот же класс, что patientsQuery updatePatientInDb после live cross-tenant PUT).
+		 * СТАЛО: organizationId + id в WHERE.
 		 */
-		const { state: clinicState } =
-			await hydrateDomainStateFromDb(organizationId);
+		const [signedRow] = await tx
+			.update(schema.visits)
+			.set({
+				status: "signed",
+				revision: newRevision,
+				complaint: input.draft.complaint,
+				anamnesis: input.draft.anamnesis,
+				objectiveStatus: input.draft.objectiveStatus,
+				diagnosis: input.draft.diagnosis,
+				treatmentPlan: input.draft.treatmentPlan,
+				doctorSummary: input.doctorSummary,
+				signedAt: savedAt,
+				updatedAt: savedAt,
+			})
+			.where(
+				and(
+					eq(schema.visits.organizationId, organizationId),
+					eq(schema.visits.id, input.visitId),
+					eq(schema.visits.status, "draft"),
+				),
+			)
+			.returning();
+		// До этой строки приём ещё черновик: пустой RETURNING значит, что подписания не
+		// случилось, и обычный доменный отказ здесь правдив.
+		if (!signedRow) throw new Error("Прием не подписан");
 
-		const visitCloseChecklist = buildVisitCloseChecklist(
-			visitCloseChecklistFactsFor(signedVisit, clinicState),
+		// Execute atomic material deduction
+		await deductMaterialsForVisit(tx, {
+			organizationId,
+			visitId: input.visitId,
+			userId: null,
+			transactionType: "auto_deduct",
+		});
+
+		const signedVisit = projectVisitRow(signedRow);
+		const saveReceipt = buildVisitSaveReceipt(
+			input,
+			signedVisit,
+			previousRevision,
 		);
 
-		return {
-			visit: signedVisit,
-			visitCloseChecklist,
-			saveReceipt,
-		};
-	} catch (error) {
-		throw new VisitSignedResponseIncompleteError(
-			signedVisit.id,
-			signedVisit.revision,
-			error,
+		/*
+		 * Журнал пишется ДО сборки ответа. Карточка закрытия ниже может не собраться
+		 * (VisitSignedResponseIncompleteError, HTTP 500 на уже подписанный приём) — но
+		 * приём при этом ПОДПИСАН, и именно в таком прогоне след в журнале нужен
+		 * больше всего: врач не увидел подтверждения и будет разбираться, что
+		 * произошло.
+		 */
+		await recordVisitDraftAcceptedAuditEvent(
+			organizationId,
+			signedVisit,
+			input,
+			previousRevision,
+			saveReceipt.warning,
 		);
-	}
+
+		try {
+			const { state: clinicState } =
+				await hydrateDomainStateFromDb(organizationId);
+
+			const visitCloseChecklist = buildVisitCloseChecklist(
+				visitCloseChecklistFactsFor(signedVisit, clinicState),
+			);
+
+			return {
+				visit: signedVisit,
+				visitCloseChecklist,
+				saveReceipt,
+			};
+		} catch (error) {
+			throw new VisitSignedResponseIncompleteError(
+				signedVisit.id,
+				signedVisit.revision,
+				error,
+			);
+		}
+	});
 }
 
 /**

@@ -13,6 +13,7 @@ import {
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
 import {
+	BillingOverpaymentError,
 	createPaymentInDb,
 	findPaymentByClientMutationIdInDb,
 	getDocumentForBilling,
@@ -696,6 +697,14 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			const payment = await createPaymentInDb(orgId, paymentInput);
 			return reply.code(201).send(paymentSchema.parse(payment));
 		} catch (error) {
+			if (error instanceof BillingOverpaymentError) {
+				return reply.code(400).send({
+					error: "BillingOverpaymentError",
+					message: error.message,
+					targetKind: error.targetKind,
+					targetId: error.targetId,
+				});
+			}
 			/* Проверка «нет ли уже такой оплаты» выше и вставка здесь — два
          отдельных запроса вне транзакции. При двойном нажатии на «Принять
          оплату» оба запроса видят, что платежа нет, и оба вставляют.

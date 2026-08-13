@@ -1,5 +1,10 @@
 import type { CreatePaymentInput, Payment } from "@dental/shared";
-import { and, eq, inArray } from "drizzle-orm";
+import { formatKopecksRu, sumKopecks, type Kopecks } from "@dental/shared";
+import { and, eq, inArray, ne } from "drizzle-orm";
+import {
+	chargeLineKopecks,
+	toKopecks,
+} from "../money/patientDebt.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
@@ -9,6 +14,51 @@ import * as schema from "./schema.js";
 // silently violating the contract.
 function narrowTaxDeductionCode(value: string | null): "1" | "2" | null {
 	return value === "1" || value === "2" ? value : null;
+}
+
+export class BillingOverpaymentError extends Error {
+	readonly statusCode = 400;
+	readonly error = "BillingOverpaymentError";
+	readonly targetKind: "visit" | "document";
+	readonly targetId: string;
+	readonly incomingKopecks: Kopecks;
+	readonly remainingKopecks: Kopecks;
+	readonly totalKopecks: Kopecks;
+	readonly paidKopecks: Kopecks;
+
+	constructor(params: {
+		targetKind: "visit" | "document";
+		targetId: string;
+		targetLabel: string;
+		incomingKopecks: Kopecks;
+		remainingKopecks: Kopecks;
+		totalKopecks: Kopecks;
+		paidKopecks: Kopecks;
+	}) {
+		const {
+			targetKind,
+			targetId,
+			targetLabel,
+			incomingKopecks,
+			remainingKopecks,
+			totalKopecks,
+			paidKopecks,
+		} = params;
+
+		const message =
+			remainingKopecks <= 0
+				? `По ${targetLabel} уже внесена вся необходимая сумма (${formatKopecksRu(totalKopecks)}). Дополнительная оплата не требуется.`
+				: `Сумма оплаты (${formatKopecksRu(incomingKopecks)}) превышает остаток по ${targetLabel} (${formatKopecksRu(remainingKopecks)}). Всего по ${targetLabel}: ${formatKopecksRu(totalKopecks)}, ранее оплачено: ${formatKopecksRu(paidKopecks)}. Укажите сумму не более ${formatKopecksRu(remainingKopecks)}.`;
+
+		super(message);
+		this.name = "BillingOverpaymentError";
+		this.targetKind = targetKind;
+		this.targetId = targetId;
+		this.incomingKopecks = incomingKopecks;
+		this.remainingKopecks = remainingKopecks;
+		this.totalKopecks = totalKopecks;
+		this.paidKopecks = paidKopecks;
+	}
 }
 
 export async function getDefaultOrganizationId(): Promise<string | null> {
@@ -113,6 +163,11 @@ export async function createPaymentInDb(
 	organizationId: string,
 	input: CreatePaymentInput,
 ): Promise<Payment> {
+	const incomingPaymentKopecks = toKopecks(input.amountRub, "сумма оплаты");
+	if (incomingPaymentKopecks <= 0) {
+		throw new Error("Сумма оплаты должна быть строго больше нуля.");
+	}
+
 	return await db.transaction(async (tx) => {
 		// Pessimistic lock on the target patient to prevent concurrent balance race conditions
 		const [lockedPatient] = await tx
@@ -133,6 +188,176 @@ export async function createPaymentInDb(
 			);
 		}
 
+		// 2. Validate and check remaining balance for visitId
+		if (input.visitId) {
+			const [lockedVisit] = await tx
+				.select({
+					id: schema.visits.id,
+					patientId: schema.visits.patientId,
+					status: schema.visits.status,
+				})
+				.from(schema.visits)
+				.where(
+					and(
+						eq(schema.visits.organizationId, organizationId),
+						eq(schema.visits.id, input.visitId),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!lockedVisit) {
+				throw new Error(`Прием ${input.visitId} не найден.`);
+			}
+
+			if (lockedVisit.patientId !== input.patientId) {
+				throw new Error("Прием оплаты относится к другому пациенту.");
+			}
+
+			// Calculate charged amount from non-cancelled treatment items
+			const activeTreatmentItems = await tx
+				.select({
+					unitPriceRub: schema.treatmentItems.unitPriceRub,
+					quantity: schema.treatmentItems.quantity,
+					discountRub: schema.treatmentItems.discountRub,
+					status: schema.treatmentItems.status,
+				})
+				.from(schema.treatmentItems)
+				.where(
+					and(
+						eq(schema.treatmentItems.organizationId, organizationId),
+						eq(schema.treatmentItems.visitId, input.visitId),
+						ne(schema.treatmentItems.status, "cancelled"),
+					),
+				);
+
+			if (activeTreatmentItems.length > 0) {
+				const chargedVisitKopecks: Kopecks = sumKopecks(
+					activeTreatmentItems.map((item) =>
+						chargeLineKopecks({
+							unitPriceRub: item.unitPriceRub,
+							quantity: item.quantity,
+							discountRub: item.discountRub,
+						}),
+					),
+				);
+
+				// Calculate existing paid payments for this visit
+				const existingVisitPayments = await tx
+					.select({
+						amountRub: schema.payments.amountRub,
+					})
+					.from(schema.payments)
+					.where(
+						and(
+							eq(schema.payments.organizationId, organizationId),
+							eq(schema.payments.visitId, input.visitId),
+							eq(schema.payments.status, "paid"),
+						),
+					);
+
+				const paidVisitKopecks: Kopecks = sumKopecks(
+					existingVisitPayments.map((p) =>
+						toKopecks(p.amountRub, "сумма платежа визита"),
+					),
+				);
+
+				const remainingVisitKopecks = Math.max(
+					0,
+					chargedVisitKopecks - paidVisitKopecks,
+				);
+
+				if (incomingPaymentKopecks > remainingVisitKopecks) {
+					throw new BillingOverpaymentError({
+						targetKind: "visit",
+						targetId: input.visitId,
+						targetLabel: "приему",
+						incomingKopecks: incomingPaymentKopecks,
+						remainingKopecks: remainingVisitKopecks,
+						totalKopecks: chargedVisitKopecks,
+						paidKopecks: paidVisitKopecks,
+					});
+				}
+			}
+		}
+
+		// 3. Validate and check remaining balance for documentId
+		if (input.documentId) {
+			const [lockedDoc] = await tx
+				.select({
+					id: schema.generatedDocuments.id,
+					patientId: schema.generatedDocuments.patientId,
+					visitId: schema.generatedDocuments.visitId,
+					kind: schema.generatedDocuments.kind,
+					status: schema.generatedDocuments.status,
+					totalAmountRub: schema.generatedDocuments.totalAmountRub,
+				})
+				.from(schema.generatedDocuments)
+				.where(
+					and(
+						eq(schema.generatedDocuments.organizationId, organizationId),
+						eq(schema.generatedDocuments.id, input.documentId),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!lockedDoc) {
+				throw new Error(`Документ ${input.documentId} не найден.`);
+			}
+
+			if (lockedDoc.patientId !== input.patientId) {
+				throw new Error("Документ оплаты относится к другому пациенту.");
+			}
+
+			if (lockedDoc.status === "voided") {
+				throw new Error("К аннулированному документу нельзя привязать оплату.");
+			}
+
+			if (lockedDoc.totalAmountRub !== null && lockedDoc.totalAmountRub !== undefined) {
+				const documentTotalKopecks = toKopecks(
+					lockedDoc.totalAmountRub,
+					"общая сумма документа",
+				);
+
+				const existingDocPayments = await tx
+					.select({
+						amountRub: schema.payments.amountRub,
+					})
+					.from(schema.payments)
+					.where(
+						and(
+							eq(schema.payments.organizationId, organizationId),
+							eq(schema.payments.documentId, input.documentId),
+							eq(schema.payments.status, "paid"),
+						),
+					);
+
+				const paidDocKopecks: Kopecks = sumKopecks(
+					existingDocPayments.map((p) =>
+						toKopecks(p.amountRub, "сумма платежа документа"),
+					),
+				);
+
+				const remainingDocKopecks = Math.max(
+					0,
+					documentTotalKopecks - paidDocKopecks,
+				);
+
+				if (incomingPaymentKopecks > remainingDocKopecks) {
+					throw new BillingOverpaymentError({
+						targetKind: "document",
+						targetId: input.documentId,
+						targetLabel: "документу",
+						incomingKopecks: incomingPaymentKopecks,
+						remainingKopecks: remainingDocKopecks,
+						totalKopecks: documentTotalKopecks,
+						paidKopecks: paidDocKopecks,
+					});
+				}
+			}
+		}
+
 		const [newPayment] = await tx
 			.insert(schema.payments)
 			.values({
@@ -141,27 +366,6 @@ export async function createPaymentInDb(
 				visitId: input.visitId || null,
 				documentId: input.documentId || null,
 				amountRub: input.amountRub,
-				/*
-				 * `paid_at` ЗДЕСЬ НЕ ПИШЕТСЯ, И ЭТО ИЗВЕСТНЫЙ ДЕФЕКТ, А НЕ РЕШЕНИЕ.
-				 *
-				 * Колонка объявлена `timestamp ... notNull().defaultNow()` (db/schema.ts),
-				 * поэтому в неё попадает момент НАЖАТИЯ КНОПКИ, а не момент расчёта с
-				 * пациентом. Поля `paidAt` нет и во входном контракте
-				 * (`packages/shared/src/index.ts`, `createPaymentSchema`), так что назвать
-				 * настоящую дату оплаты кассиру нечем даже при желании.
-				 *
-				 * Цена для клиники измерима, а не теоретична: по `payments.paid_at`
-				 * отбирается зарплатный период врача (`services/finance/doctorPayouts.ts`)
-				 * и налоговый год справки о вычете (`documents/guards.ts`,
-				 * `paymentPaidInTaxYear`). Вчерашняя смена, забитая утром, уезжает в чужой
-				 * расчёт зарплаты, а забитая 1 января — в чужой налоговый год.
-				 *
-				 * Не чинится здесь намеренно: принять `paidAt` от клиента значит разрешить
-				 * назначать дату выручки задним числом, то есть переносить деньги между
-				 * налоговыми периодами. Это вопрос полномочий и проверок, а не записи в
-				 * таблицу; развилка вынесена ведущему (см. комментарий у
-				 * `paymentFieldLabels` в `routes/billing.ts`).
-				 */
 				method: input.method,
 				fiscalReceiptNumber: input.fiscalReceiptNumber || null,
 				fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,

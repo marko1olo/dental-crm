@@ -29,6 +29,10 @@ import {
 	visitDiaryRevisions,
 	visits,
 } from "../db/schema.js";
+import {
+	deductMaterialsForVisit,
+	InsufficientStockError,
+} from "../services/inventory/materialDeduction.js";
 import { clinicNotIdentifiedMessage } from "../utils/clinicSessionRefusal.js";
 import { verifyCredential } from "../utils/cryptoHelper.js";
 
@@ -558,174 +562,24 @@ async function runDiarySigningCeremony(
 		);
 	}
 
-	// 2. Закрыть услуги визита и списать расходники.
-	// Все чтения ограничены организацией дневника. БЫЛО: правила материалов
-	// выбирались по одному serviceId, а позиция склада — по одному id, без
-	// организации. Правило чужой клиники, ссылающееся на её же позицию склада,
-	// списывало остаток ЧУЖОЙ клиники, а строка inventory_transactions при этом
-	// записывалась на нашу — то есть запись о расходе и сам расход оказывались в
-	// разных клиниках.
-	const deductions: DiaryStockDeduction[] = [];
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const transactionsToInsert: any[] = [];
+	// 2. Закрыть услуги визита и списать расходники через единый сервис списания.
 	let completedTreatmentItems = 0;
+	const deductions: DiaryStockDeduction[] = [];
 	if (diary.visitId) {
-		const visitTreatmentItems = await tx
-			.select()
-			.from(treatmentItems)
-			.where(
-				and(
-					eq(treatmentItems.visitId, diary.visitId),
-					eq(treatmentItems.organizationId, organizationId),
-				),
-			);
-		if (visitTreatmentItems.length > 0) {
-			await tx
-				.update(treatmentItems)
-				.set({ status: "completed" })
-				.where(
-					and(
-						eq(treatmentItems.visitId, diary.visitId),
-						eq(treatmentItems.organizationId, organizationId),
-					),
-				);
-			completedTreatmentItems = visitTreatmentItems.length;
-
-			for (const item of visitTreatmentItems) {
-				if (!item.serviceId) continue;
-				// Правило материалов может быть НИЧЬИМ, и это норма для этого
-				// продукта: единственный маршрут, который их создаёт
-				// (routes/inventory.ts:410-417), не заполняет organization_id, а
-				// колонка nullable — проверено в information_schema живой базы.
-				// Требование точного совпадения организации выбрасывало такие
-				// правила из выборки, и подписание приёма НЕ СПИСЫВАЛО материал
-				// вовсе: измерено на живой базе — остаток 10 -> 10, ноль строк
-				// inventory_transactions, при ответе 200 и подписанном дневнике.
-				// До 87e367c40 то же правило списывало (10 -> 6): ограничение по
-				// организации, закрывшее межклиничную утечку, заодно молча
-				// отключило склад для правил, которые продукт создаёт сам. Тихое
-				// несписание на подписанном приёме хуже расхождения остатка —
-				// инвентаризация не сойдётся, а следа в журнале не останется.
-				// Правило ЧУЖОЙ клиники (organization_id заполнен и не наш)
-				// по-прежнему не подходит, а позиция склада ниже читается только
-				// внутри нашей организации — списать чужой остаток нечем.
-				const rules = await tx
-					.select()
-					.from(procedureMaterialRules)
-					.where(
-						and(
-							eq(procedureMaterialRules.serviceId, item.serviceId),
-							or(
-								eq(procedureMaterialRules.organizationId, organizationId),
-								isNull(procedureMaterialRules.organizationId),
-							),
-						),
-					);
-				for (const rule of rules) {
-					if (!rule.inventoryItemId) continue;
-					const [inv] = await tx
-						.select()
-						.from(inventoryItems)
-						.where(
-							and(
-								eq(inventoryItems.id, rule.inventoryItemId),
-								eq(inventoryItems.organizationId, organizationId),
-							),
-						)
-						.for("update");
-					if (!inv) continue;
-
-					// ЧТО ЗДЕСЬ БЫЛО СЛОМАНО НА САМОМ ДЕЛЕ (измерено, а не выведено).
-					// Предыдущий комментарий на этом месте — и заголовок коммита
-					// 1f65d674b — утверждали, что подписание с ПУСТОЙ полки
-					// (stock_quantity = 0) увеличивало остаток, потому что `||`
-					// принимал ноль за отсутствующее значение. Это НЕВЕРНО и не
-					// воспроизводится: на 1f65d674b^ пустая полка отвечала
-					// 400 TransactionFailed при остатке 0. Причина в том, что
-					// schema.ts объявляет все три колонки numeric, а drizzle для
-					// numeric вызывает String(value) (PgNumeric.mapFromDriverValue),
-					// поэтому в маршрут приходит строка "0" — истинная. `||` не имел
-					// шанса провалиться, и замена его на `??` была защитной
-					// гигиеной, а не исправлением склада.
-					//
-					// Настоящие два дефекта, оба воспроизведены на 1f65d674b^:
-					//  1. ОТРИЦАТЕЛЬНОЕ quantity_to_deduct (-3 при количестве услуги
-					//     2) поднимало остаток 10 -> 16 и писало ПОЛОЖИТЕЛЬНУЮ строку
-					//     расхода "+6" с типом auto_deduct. Подписание приёма
-					//     создавало материал из ничего.
-					//  2. Правило со списанием 0 писало мусорную строку движения на 0.
-					//     Оно списывало именно 0, а не 1, как утверждал тот коммит.
-					const ruleQuantity = Number(rule.quantityToDeduct);
-					const serviceQuantity = Number(item.quantity);
-					if (
-						!isDeductibleQuantity(ruleQuantity) ||
-						!isDeductibleQuantity(serviceQuantity)
-					) {
-						continue;
-					}
-					const qtyToDeduct = ruleQuantity * serviceQuantity;
-					// Остаток читается ровно так же, как его читает единственный
-					// другой читатель этой колонки — routes/inventory.ts:143. Раньше
-					// здесь стоял фолбэк `?? inv.currentQty`: для строки с
-					// stock_quantity NULL церемония списывала из устаревшей
-					// current_qty и записывала результат в stock_quantity, то есть
-					// позиция, которую склад показывает как 0, ПОЛУЧАЛА остаток.
-					// В живой базе stock_quantity объявлен NOT NULL (проверено в
-					// information_schema), поэтому ветка была недостижима, а
-					// current_qty в продукте не пишет никто — брать остаток оттуда
-					// значит подставлять выдуманное значение вместо неизвестного.
-					// Неизвестный остаток должен приводить к отказу, а не к расходу.
-					const currentStock = Number(inv.stockQuantity ?? 0);
-					if (!Number.isFinite(currentStock) || currentStock < qtyToDeduct) {
-						throw new DiarySigningError(
-							"InsufficientStock",
-							`Недостаточно материалов: ${inv.name}`,
-						);
-					}
-					// ДОЛГ, РЕШЕНИЕ ЗА ВЕДУЩИМ: в живой базе stock_quantity,
-					// quantity_changed и quantity_to_deduct имеют тип integer, хотя
-					// schema.ts объявляет их numeric, а treatment_items.quantity —
-					// настоящий numeric(10,2). Поэтому услуга с количеством 1.5 при
-					// правиле 1 требует записать "8.5" в integer-колонку: PostgreSQL
-					// отвергает запрос, ошибка драйвера не является DiarySigningError
-					// и уходит в обработчик server.ts как 500. Измерено: подписание
-					// падает, транзакция откатывается целиком (остаток 10, ноль строк
-					// расхода, дневник не подписан). Округлять здесь нельзя — это
-					// выдуманная политика на материалах. Нужна миграция колонок в
-					// numeric, вне рамок этого пакета.
-					const quantityChanged = String(-qtyToDeduct);
-					await tx
-						.update(inventoryItems)
-						.set({ stockQuantity: String(currentStock - qtyToDeduct) })
-						.where(
-							and(
-								eq(inventoryItems.id, inv.id),
-								eq(inventoryItems.organizationId, organizationId),
-							),
-						);
-
-					transactionsToInsert.push({
-						organizationId,
-						visitId: diary.visitId,
-						inventoryItemId: inv.id,
-						quantityChanged,
-						unitCostRub:
-							inv.unitCostRub != null ? String(inv.unitCostRub) : null,
-						transactionType: "auto_deduct" as const,
-						userId,
-					});
-
-					deductions.push({
-						inventoryItemId: inv.id,
-						inventoryItemName: inv.name,
-						quantityChanged,
-					});
-				}
+		try {
+			const deductionResult = await deductMaterialsForVisit(tx, {
+				organizationId,
+				visitId: diary.visitId,
+				userId,
+				transactionType: "auto_deduct",
+			});
+			completedTreatmentItems = deductionResult.completedTreatmentItems;
+			deductions.push(...deductionResult.deductions);
+		} catch (err) {
+			if (err instanceof InsufficientStockError) {
+				throw new DiarySigningError("InsufficientStock", err.message);
 			}
-
-			if (transactionsToInsert.length > 0) {
-				await tx.insert(inventoryTransactions).values(transactionsToInsert);
-			}
+			throw err;
 		}
 	}
 
