@@ -286,7 +286,13 @@ function createApiDicomScanYieldState(): ApiDicomScanYieldState {
 function createImagingRequestAbortSignal(request: FastifyRequest): AbortSignal {
 	const controller = new AbortController();
 	request.raw.once("close", () => {
-		if (request.raw.aborted) controller.abort();
+		if (
+			request.raw.destroyed ||
+			request.raw.errored ||
+			!request.raw.readableEnded
+		) {
+			controller.abort();
+		}
 	});
 	return controller.signal;
 }
@@ -9499,6 +9505,32 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			}
 
 			const resolved = path.resolve(storagePath);
+			// Безопасность: проверяем, что разрешённый путь не содержит null-байтов и не выходит за пределы диска/корня
+			if (resolved.includes("\0")) {
+				return reply.code(400).send({
+					error: "InvalidPath",
+					message: "Недопустимый путь к файлу снимка.",
+				});
+			}
+
+			const allowedRoot = process.env.DENTE_IMAGING_STORAGE_ROOT
+				? path.resolve(process.env.DENTE_IMAGING_STORAGE_ROOT)
+				: null;
+			if (
+				allowedRoot &&
+				!resolved.startsWith(allowedRoot + path.sep) &&
+				resolved !== allowedRoot
+			) {
+				request.log.warn(
+					{ resolved, allowedRoot },
+					"Attempted imaging file access outside configured DENTE_IMAGING_STORAGE_ROOT",
+				);
+				return reply.code(403).send({
+					error: "ImagingStorageAccessDenied",
+					message: "Файл снимка находится за пределами разрешенного хранилища клиники.",
+				});
+			}
+
 			try {
 				await access(resolved);
 			} catch (err) {
