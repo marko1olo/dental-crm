@@ -8,7 +8,7 @@ import type {
 	VisitSaveReceipt,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { visitCloseChecklistFactsFor } from "../sampleData.js";
+import { activeVisit as inMemoryActiveVisit, visitCloseChecklistFactsFor } from "../sampleData.js";
 import { deductMaterialsForVisit } from "../services/inventory/materialDeduction.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
@@ -510,6 +510,15 @@ function buildVisitSaveReceipt(
 }
 
 export async function getVisitByIdInDb(organizationId: string, id: string) {
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+		return (
+			inMemoryActiveVisit.organizationId === organizationId &&
+			inMemoryActiveVisit.id === id
+				? inMemoryActiveVisit
+				: null
+		);
+	}
+
 	const [res] = await db
 		.select()
 		.from(schema.visits)

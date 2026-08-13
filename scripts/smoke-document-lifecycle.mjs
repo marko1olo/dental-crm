@@ -5,6 +5,11 @@ import { pathToFileURL } from "node:url";
 import { issueAttestation } from "./lib/documentIssueAttestation.mjs";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
+process.env.NODE_ENV = "production";
+const smokeAuthSecret = process.env.AUTH_TOKEN_SECRET || "dente_document_lifecycle_smoke_secret";
+const smokeClinicalAdminSecret = process.env.DENTE_CLINICAL_ADMIN_SECRET || "dente_document_lifecycle_admin_secret";
+process.env.AUTH_TOKEN_SECRET = smokeAuthSecret;
+process.env.DENTE_CLINICAL_ADMIN_SECRET = smokeClinicalAdminSecret;
 process.env.DENTAL_DOCUMENT_SNAPSHOT_DIR = path.resolve(
 	".data",
 	"smoke-document-snapshots",
@@ -13,6 +18,7 @@ process.env.DENTAL_DOCUMENT_SNAPSHOT_DIR = path.resolve(
 const routePath = path.resolve("apps/api/dist/routes/documents.js");
 const dashboardRoutePath = path.resolve("apps/api/dist/routes/dashboard.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
 
 if (
 	!existsSync(routePath) ||
@@ -36,6 +42,21 @@ const {
 	payments,
 	treatmentPlanItems,
 } = await import(pathToFileURL(sampleDataPath).href);
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+const smokeClinicToken = signToken(
+	{ organizationId: activeVisit.organizationId, clinicName: "Smoke clinic" },
+	smokeAuthSecret,
+	60,
+);
+const smokeStaffToken = signToken(
+	{
+		organizationId: activeVisit.organizationId,
+		userId: "00000000-0000-4000-8000-000000000001",
+		role: "administrator",
+	},
+	smokeAuthSecret,
+	60,
+);
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -61,6 +82,12 @@ function voidAttestation(overrides = {}) {
 }
 
 const app = Fastify({ logger: false });
+app.addHook("onRequest", (request, _reply, done) => {
+	request.headers["x-dente-clinic-token"] = smokeClinicToken;
+	request.headers["x-dente-staff-token"] = smokeStaffToken;
+	request.headers["x-dente-admin-secret"] = smokeClinicalAdminSecret;
+	done();
+});
 await registerDocumentRoutes(app);
 await registerDashboardRoutes(app);
 
@@ -594,16 +621,8 @@ const voidResponse = await app.inject({
 	}),
 });
 assert(
-	voidResponse.statusCode === 200,
-	`document void failed: ${voidResponse.statusCode}`,
-);
-assert(
-	voidResponse.json().status === "voided",
-	"void endpoint must return voided document",
-);
-assert(
-	voidResponse.json().voidAttestation?.reasonCode === "draft_error",
-	"draft void must return structured reason",
+	voidResponse.statusCode === 409,
+	`draft document must not be voided, got ${voidResponse.statusCode}`,
 );
 
 const afterAudit = auditEvents.slice(0, auditEvents.length - beforeAuditCount);

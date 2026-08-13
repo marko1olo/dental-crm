@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type {
@@ -15,6 +15,17 @@ import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
+import {
+	buildClinicSettings as buildInMemoryClinicSettings,
+	documents as inMemoryDocuments,
+	payments as inMemoryPayments,
+	serviceCatalog as inMemoryServiceCatalog,
+	treatmentPlanItems as inMemoryTreatmentPlanItems,
+} from "../sampleData.js";
+
+function useInMemory(): boolean {
+	return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 function documentSnapshotPath(documentId: string): string {
 	const dir = path.join(process.cwd(), ".dente-data", "documents");
@@ -96,6 +107,13 @@ export async function getDocumentsByPatientId(
 	organizationId: string,
 	patientId: string,
 ): Promise<GeneratedDocument[]> {
+	if (useInMemory()) {
+		return inMemoryDocuments.filter(
+			(document) =>
+				document.organizationId === organizationId && document.patientId === patientId,
+		);
+	}
+
 	const records = await db
 		.select()
 		.from(schema.generatedDocuments)
@@ -113,6 +131,14 @@ export async function getDocumentById(
 	organizationId: string,
 	id: string,
 ): Promise<GeneratedDocument | null> {
+	if (useInMemory()) {
+		return (
+			inMemoryDocuments.find(
+				(document) => document.organizationId === organizationId && document.id === id,
+			) ?? null
+		);
+	}
+
 	const [record] = await db
 		.select()
 		.from(schema.generatedDocuments)
@@ -152,6 +178,30 @@ export async function createGeneratedDocumentInDb(
 		payload?: any | null | undefined;
 	},
 ): Promise<GeneratedDocument> {
+	if (useInMemory()) {
+		const document: GeneratedDocument = {
+			id: randomUUID(),
+			organizationId,
+			patientId: input.patientId,
+			visitId: input.visitId ?? null,
+			kind: input.kind,
+			title: input.title || documentTitles[input.kind] || "Document",
+			status: "draft",
+			issuedAt: null,
+			totalAmountRub: input.totalAmountRub ?? null,
+			payload: input.payload ?? null,
+		};
+		inMemoryDocuments.push(document);
+		await recordAuditEvent({
+			organizationId,
+			entityType: "document",
+			entityId: document.id,
+			action: "document_created",
+			reason: null,
+		});
+		return document;
+	}
+
 	// Ownership assert: patient (and optional visit) must belong to caller org.
 	// Route-layer checks exist, but the query helper is callable from anywhere.
 	const [ownedPatient] = await db
@@ -267,6 +317,45 @@ export async function issueGeneratedDocumentInDb(
 		totalAmountRub?: number | null;
 	},
 ): Promise<GeneratedDocument | null> {
+	if (useInMemory()) {
+		const inMemoryDocument = inMemoryDocuments.find(
+			(document) => document.organizationId === organizationId && document.id === documentId,
+		);
+		if (!inMemoryDocument || inMemoryDocument.status === "voided") return null;
+		if (inMemoryDocument.status === "issued") return inMemoryDocument;
+		const snapshot = options.snapshotHtml
+			? writeIssuedDocumentSnapshot(inMemoryDocument.id, options.snapshotHtml)
+			: null;
+		Object.assign(inMemoryDocument, {
+			status: "issued",
+			issuedAt: options.issuedAt || new Date().toISOString(),
+			issuedByUserId: signerUserIdForColumn(
+				options.issuedByUserId,
+				"issued_by_user_id",
+			),
+			releaseJournalEntry: options.releaseJournalEntry || null,
+			signatureAttestation: options.signatureAttestation || null,
+			taxPaymentSnapshot: options.taxPaymentSnapshot || null,
+			taxXmlSourceSnapshot: options.taxXmlSourceSnapshot || null,
+			totalAmountRub: options.totalAmountRub ?? inMemoryDocument.totalAmountRub,
+			...(snapshot
+				? {
+					storagePath: snapshot.snapshotPath,
+					issuedSnapshotSha256: snapshot.sha256,
+					issuedSnapshotCreatedAt: snapshot.createdAt,
+				}
+				: {}),
+		});
+		await recordAuditEvent({
+			organizationId,
+			entityType: "document",
+			entityId: inMemoryDocument.id,
+			action: "document_issued",
+			reason: null,
+		});
+		return inMemoryDocument;
+	}
+
 	const issuedByUserId = signerUserIdForColumn(
 		options.issuedByUserId,
 		"issued_by_user_id",
@@ -345,6 +434,31 @@ export async function voidGeneratedDocumentInDb(
 		voidAttestation?: DocumentVoidAttestation;
 	},
 ): Promise<GeneratedDocument | null> {
+	if (useInMemory()) {
+		const inMemoryDocument = inMemoryDocuments.find(
+			(document) => document.organizationId === organizationId && document.id === documentId,
+		);
+		if (!inMemoryDocument) return null;
+		if (inMemoryDocument.status === "voided") return inMemoryDocument;
+		Object.assign(inMemoryDocument, {
+			status: "voided",
+			voidedAt: options.voidedAt || new Date().toISOString(),
+			voidedByUserId: signerUserIdForColumn(
+				options.voidedByUserId,
+				"voided_by_user_id",
+			),
+			voidAttestation: options.voidAttestation || null,
+		});
+		await recordAuditEvent({
+			organizationId,
+			entityType: "document",
+			entityId: inMemoryDocument.id,
+			action: "document_voided",
+			reason: null,
+		});
+		return inMemoryDocument;
+	}
+
 	const voidedByUserId = signerUserIdForColumn(
 		options.voidedByUserId,
 		"voided_by_user_id",
@@ -398,6 +512,21 @@ export async function storeTaxXmlSnapshotInDb(
 		Partial<Pick<TaxXmlSnapshot, "createdAt" | "sha256">>,
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 ): Promise<any> {
+	if (useInMemory()) {
+		const inMemoryDocument = inMemoryDocuments.find(
+			(document) => document.organizationId === organizationId && document.id === documentId,
+		);
+		if (!inMemoryDocument) return null;
+		Object.assign(inMemoryDocument, {
+			taxXmlSnapshot: {
+				...snapshot,
+				createdAt: snapshot.createdAt || new Date().toISOString(),
+				sha256: snapshot.sha256 || createHash("sha256").update(snapshot.xml).digest("hex"),
+			},
+		});
+		return inMemoryDocument;
+	}
+
 	const completeSnapshot: TaxXmlSnapshot = {
 		...snapshot,
 		createdAt: snapshot.createdAt || new Date().toISOString(),
@@ -425,6 +554,27 @@ export async function getDocumentRenderContextFromDb(
 	organizationId: string,
 	patientId?: string,
 ) {
+	if (useInMemory()) {
+		const clinicSettings = buildInMemoryClinicSettings();
+		return {
+			clinicProfile: clinicSettings.profile,
+			serviceCatalog: inMemoryServiceCatalog.filter(
+				(item) => item.organizationId === organizationId,
+			),
+			payments: patientId
+				? inMemoryPayments.filter(
+						(payment) =>
+							payment.organizationId === organizationId && payment.patientId === patientId,
+					)
+				: [],
+			treatmentPlanItems: patientId
+				? inMemoryTreatmentPlanItems.filter(
+						(item) => item.organizationId === organizationId && item.patientId === patientId,
+					)
+				: [],
+		};
+	}
+
 	// БЫЛО: require(...) внутри ES-модуля. В apps/api объявлен "type": "module",
 	// поэтому require здесь не определён — функция падала с ReferenceError при
 	// КАЖДОМ вызове. Именно поэтому «Паспорт документа» не мог собрать данные.

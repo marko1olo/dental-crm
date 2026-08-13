@@ -1,6 +1,7 @@
 import { db } from "./db/client.js";
 import { auditEvents, organizations } from "./db/schema.js";
-import { sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { auditEvents as inMemoryAuditEvents } from "./sampleData.js";
 
 /**
  * Писатель журнала аудита для пути документов (`db/documentQuery.ts`).
@@ -63,12 +64,24 @@ export async function recordAuditEvent(input: {
 	action: string;
 	reason?: string | null | undefined;
 }) {
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off" && input.organizationId?.trim()) {
+		inMemoryAuditEvents.unshift({
+			id: randomUUID(),
+			organizationId: input.organizationId.trim(),
+			actorUserId: input.actorUserId ?? null,
+			entityType: input.entityType,
+			entityId: input.entityId,
+			action: input.action,
+			reason: input.reason ?? null,
+			createdAt: new Date().toISOString(),
+		});
+		return;
+	}
+
 	let orgId = input.organizationId?.trim();
 	if (!orgId) {
-		const res = await db.execute<{ id: string }>(
-			sql`SELECT NULLIF(current_setting('app.current_tenant', true), '') AS id`
-		);
-		orgId = res.rows[0]?.id;
+		const [org] = await db.select().from(organizations).limit(1);
+		orgId = org?.id;
 	}
 
 	if (!orgId) {
@@ -81,11 +94,6 @@ export async function recordAuditEvent(input: {
 	}
 
 	try {
-		const debugCtx = await db.execute<{ ctx: string, bypass: string }>(sql`SELECT current_setting('app.current_tenant', true) AS ctx, current_setting('app.superuser_bypass', true) AS bypass`);
-		console.log("DEBUG: current_tenant before insert:", debugCtx.rows[0]?.ctx);
-		console.log("DEBUG: bypass before insert:", debugCtx.rows[0]?.bypass);
-		console.log("DEBUG: inserting with orgId:", orgId);
-		
 		await db.insert(auditEvents).values({
 			organizationId: orgId,
 			actorUserId: input.actorUserId ?? null,
@@ -94,7 +102,6 @@ export async function recordAuditEvent(input: {
 			action: input.action,
 			reason: input.reason,
 		});
-		console.log("DEBUG: insert SUCCEEDED!");
 	} catch (error) {
 		// Аварийный канал: событие целиком уходит в лог одной строкой, чтобы его
 		// можно было восстановить, даже если база отвергла запись. Проброс

@@ -66,17 +66,46 @@ import { clinicSessionMissingMessage } from "../utils/clinicSessionRefusal.js";
  * ровно в одном месте на клиенте, в `ctPlanningLoadUrl`.
  */
 
+function validateJsonPointsArray(value: string | undefined): boolean {
+	if (!value || value === "[]") return true;
+	try {
+		const parsed = JSON.parse(value);
+		if (!Array.isArray(parsed)) return false;
+		for (const item of parsed) {
+			if (!item || typeof item !== "object") return false;
+		}
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 const savePlanningSchema = z.object({
-	patientId: z.string().uuid(),
-	studyInstanceUid: z.string().min(1),
-	splinePointsJson: z.string().optional(),
-	nervePointsJson: z.string().optional(),
-	implantsJson: z.string().optional(),
+	patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID."),
+	studyInstanceUid: z.string().trim().min(1, "UID исследования DICOM обязателен."),
+	splinePointsJson: z
+		.string()
+		.refine(validateJsonPointsArray, {
+			message: "Точки зубной дуги должны быть валидным JSON-массивом координат.",
+		})
+		.optional(),
+	nervePointsJson: z
+		.string()
+		.refine(validateJsonPointsArray, {
+			message: "Точки нижнечелюстного канала должны быть валидным JSON-массивом координат.",
+		})
+		.optional(),
+	implantsJson: z
+		.string()
+		.refine(validateJsonPointsArray, {
+			message: "Разметка имплантов должна быть валидным JSON-массивом объектов.",
+		})
+		.optional(),
 });
 
 const loadPlanningQuerySchema = z.object({
-	studyUid: z.string().min(1),
-	patientId: z.string().uuid(),
+	studyUid: z.string().trim().min(1, "UID исследования обязателен."),
+	patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID."),
 });
 
 const CLINIC_UNKNOWN_SAVE_MESSAGE = clinicSessionMissingMessage(

@@ -73,7 +73,7 @@ export async function register(app: FastifyInstance) {
 
 		const validation = validateDocumentCreation(input, {
 			patient: patient ?? null,
-			visit,
+			visit: visit ?? null,
 			paidAmountRub: paidAmountRubForDocument(
 				input.kind,
 				input,

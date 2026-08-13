@@ -130,6 +130,81 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		},
 	);
 
+	// GET /:organizationId/alerts — сводка по дефициту и срокам годности материалов
+	server.get<{ Params: { organizationId: string } }>(
+		"/:organizationId/alerts",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"inventory alerts read",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			const items = await db
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.organizationId, organizationId))
+				.orderBy(inventoryItems.name);
+
+			const now = new Date();
+			const todayStr = now.toISOString().slice(0, 10);
+			const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+			const in30DaysStr = in30Days.toISOString().slice(0, 10);
+
+			const lowStockItems: typeof items = [];
+			const outOfStockItems: typeof items = [];
+			const expiredItems: typeof items = [];
+			const expiringSoonItems: typeof items = [];
+
+			let totalValuationRub = 0;
+
+			for (const item of items) {
+				const stock = Number(item.stockQuantity ?? 0);
+				const threshold = Number(item.criticalThreshold ?? 0);
+				const cost = Number(item.unitCostRub ?? 0);
+
+				if (Number.isFinite(stock) && Number.isFinite(cost)) {
+					totalValuationRub += Math.max(0, stock) * Math.max(0, cost);
+				}
+
+				if (stock <= 0) {
+					outOfStockItems.push(item);
+				} else if (threshold > 0 && stock <= threshold) {
+					lowStockItems.push(item);
+				}
+
+				if (item.expirationDate) {
+					if (item.expirationDate < todayStr) {
+						expiredItems.push(item);
+					} else if (item.expirationDate <= in30DaysStr) {
+						expiringSoonItems.push(item);
+					}
+				}
+			}
+
+			return {
+				summary: {
+					totalItems: items.length,
+					totalValuationRub: Number(totalValuationRub.toFixed(2)),
+					lowStockCount: lowStockItems.length,
+					outOfStockCount: outOfStockItems.length,
+					expiredCount: expiredItems.length,
+					expiringSoonCount: expiringSoonItems.length,
+				},
+				lowStockItems,
+				outOfStockItems,
+				expiredItems,
+				expiringSoonItems,
+			};
+		},
+	);
+
 	// POST new inventory item (staff/admin only)
 	server.post<{
 		Params: { organizationId: string };

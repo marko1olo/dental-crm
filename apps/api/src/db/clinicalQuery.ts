@@ -10,6 +10,7 @@ import { and, eq } from "drizzle-orm";
 import {
 	createClinicalRule as createClinicalRuleInMemory,
 	clinicalRules as inMemoryClinicalRules,
+	treatmentPlanItems as inMemoryTreatmentPlanItems,
 	updateClinicalRule as updateClinicalRuleInMemory,
 } from "../sampleData.js";
 import { db } from "./client.js";
@@ -327,6 +328,12 @@ export async function getTreatmentPlanItemsForPatient(
 	organizationId: string,
 	patientId: string,
 ) {
+	if (useInMemory()) {
+		return inMemoryTreatmentPlanItems.filter(
+			(item) => item.organizationId === organizationId && item.patientId === patientId,
+		);
+	}
+
 	return await db
 		.select()
 		.from(schema.treatmentItems)

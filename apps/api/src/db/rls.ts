@@ -105,6 +105,10 @@ export async function withTenantCtx<T>(
 	organizationId: string,
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
+
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+		return callback(undefined as unknown as TenantDb);
+	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
 		// Re-assert the tenant on the existing transaction rather than opening a

@@ -63,6 +63,13 @@ export async function register(app: FastifyInstance) {
 		if (existing.status === "issued") {
 			return reply.code(409).send(apiError("Документ уже выдан."));
 		}
+		const earlyParsedIssueInput = issueDocumentSchema.safeParse(request.body);
+		if (!earlyParsedIssueInput.success) {
+			return reply.code(400).send({
+				error: "DocumentIssueValidationFailed",
+				message: repairMojibakeText(documentIssueValidationMessage),
+			});
+		}
 		const patient = await getPatientByIdFromDb(orgId, existing.patientId);
 		if (!patient) {
 			return reply.code(404).send(apiError("Пациент не найден"));
