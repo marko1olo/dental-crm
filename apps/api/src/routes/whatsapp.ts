@@ -580,7 +580,12 @@ export async function registerWhatsappRoutes(
             ? (value.messages as unknown[])
             : [];
 
-          const parsedMessages: { msgId: string | null; fromId: string; textBody: string | null; m: Record<string, unknown> }[] = [];
+          const parsedMessages: {
+            msgId: string | null;
+            fromId: string;
+            textBody: string | null;
+            m: Record<string, unknown>;
+          }[] = [];
           for (const msg of messagesRaw) {
             if (!msg || typeof msg !== "object" || Array.isArray(msg)) {
               continue;
@@ -657,7 +662,8 @@ export async function registerWhatsappRoutes(
                 );
               }
 
-              const valuesToInsert: (typeof messengerInboundEvents.$inferInsert)[] = [];
+              const valuesToInsert: (typeof messengerInboundEvents.$inferInsert)[] =
+                [];
               for (const p of parsedMessages) {
                 if (p.msgId && existingIds.has(p.msgId)) {
                   request.log.info(
