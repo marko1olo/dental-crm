@@ -28,7 +28,7 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerBillingRoutes } from "./routes/billing.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerClinicalRoutes } from "./routes/clinical.js";
-import { registerClinicWorkflowRoutes } from "./routes/clinicWorkflows.js";
+import { registerWorkflowRoutes } from "./routes/workflows.js";
 import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
 import { registerCommunicationRoutes } from "./routes/communications.js";
 import { registerCommunicationOutboxRoutes } from "./routes/communicationsOutbox.js";
@@ -647,7 +647,7 @@ export async function createDenteApiApp(
 	await registerSpeechRoutes(app);
 	void registerSmartImportRoutes(app);
 	void registerYandexCalendarRoutes(app);
-	await registerClinicWorkflowRoutes(app);
+	await registerWorkflowRoutes(app);
 	void registerSystemRoutes(app);
 	// Живые обновления. Раньше плагин не регистрировался вовсе, поэтому
 	// /api/ws/schedule отвечал 404, а все wsBroker.broadcast* были пустышками.
