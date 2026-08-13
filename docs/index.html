@@ -26,6 +26,15 @@
         .card:hover::before { opacity: 0.1; }
         .card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.8); border-color: var(--accent); }
         footer { text-align: center; padding: 2rem; background: var(--primary); margin-top: 4rem; border-top: 2px solid var(--accent); }
+        .product-chip { align-items: center; border: 1px solid rgba(100,255,218,0.38); border-radius: 999px; color: var(--accent); display: inline-flex; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; padding: 0.45rem 0.7rem; text-transform: uppercase; }
+        .hero-eyebrow { color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.16em; margin-bottom: 1rem; text-transform: uppercase; }
+        .hero-copy { color: rgba(204,214,246,0.9); font-size: 1.2rem; line-height: 1.6; max-width: 42rem; }
+        .feature-kicker { color: var(--accent); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; margin: 0 0 0.65rem; text-transform: uppercase; }
+        .card p { color: rgba(204,214,246,0.86); line-height: 1.6; margin-bottom: 0; }
+        details[open] { border-color: rgba(100,255,218,0.42) !important; }
+        summary:focus-visible, nav a:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+        @media (max-width: 760px) { header { align-items: flex-start; flex-direction: column; gap: 0.8rem; padding: 1rem; } nav { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; } nav a { margin-left: 0; } .hero { min-height: 72vh; padding: 5rem 1.25rem 2rem; } .hero h1 { font-size: clamp(2.6rem, 13vw, 4rem); } .grid { gap: 1rem; padding: 2rem 1rem; } .card { padding: 1.35rem; } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; } }
         
         @keyframes slideDown { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
@@ -641,76 +650,67 @@
             <div style="width:20px; height:20px; background:var(--accent); animation: pulse 2s infinite;"></div>
             Dente Enterprise CRM
         </div>
-        <nav>
-            <a href="#features">Features</a>
-            <a href="#tech">Tech Stack</a>
-        
-<div id="lang-switcher" style="display: inline-flex; gap: 6px; background: rgba(255,255,255,0.08); padding: 4px 8px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); font-size: 0.8rem; margin-left: 1rem; align-items: center;">
-    <span style="color: #aaa; font-weight: bold; margin-right: 2px;">🌐</span>
-    <button onclick="setLang('en')" style="background: transparent; border: none; color: #00ffcc; font-weight: bold; cursor: pointer; padding: 2px 4px;">EN</button> |
-    <button onclick="setLang('ru')" style="background: transparent; border: none; color: #fff; cursor: pointer; padding: 2px 4px;">RU</button> |
-    <button onclick="setLang('zh')" style="background: transparent; border: none; color: #fff; cursor: pointer; padding: 2px 4px;">ZH</button> |
-    <button onclick="setLang('de')" style="background: transparent; border: none; color: #fff; cursor: pointer; padding: 2px 4px;">DE</button>
-</div>
-<script>
-function setLang(lang) {
-    const notice = document.getElementById('i18n-notice');
-    if (notice) {
-        const msgs = {
-            en: '🌐 Switched language to English',
-            ru: '🌐 Язык переключён на Русский',
-            zh: '🌐 语言已切换为中文',
-            de: '🌐 Sprache auf Deutsch umgestellt'
-        };
-        notice.innerText = msgs[lang] || msgs.en;
-        notice.style.display = 'block';
-        setTimeout(() => notice.style.display = 'none', 3000);
-    }
-}
-</script>
-</nav>
+        <nav aria-label="Primary navigation">
+            <a href="#features">Capabilities</a>
+            <a href="#tech">Architecture</a>
+            <a href="#faq">Scope</a>
+        </nav>
+        <div class="product-chip">Prototype workspace</div>
     </header>
     <main>
         <section class="hero">
+            <p class="hero-eyebrow">Dental CRM / MIS platform</p>
             <h1>Dente Enterprise CRM</h1>
-            <p style="font-size: 1.2rem; max-width: 600px; line-height: 1.6;">DENTE ENTERPRISE DENTAL CRM. PostgreSQL 18, voice dictation.</p>
-            <div class="hero-graphic" style="margin-top: 3rem; width: 150px; height: 150px; background: rgba(255,255,255,0.05); border: 2px solid var(--accent); border-radius: 30%; animation: rotate3d 12s infinite linear, glow 3s infinite ease-in-out;"></div>
+            <p class="hero-copy">An evolving multi-tenant workspace for schedules, clinical records, imaging, documents, payments, and team communication in dental practice.</p>
+            <div class="hero-graphic" aria-hidden="true" style="margin-top: 3rem; width: 150px; height: 150px; background: rgba(255,255,255,0.05); border: 2px solid var(--accent); border-radius: 30%; animation: rotate3d 12s infinite linear, glow 3s infinite ease-in-out;"></div>
         </section>
         
-        <section id="features" class="grid">
-            <div class="card">
-                <h3 style="color: var(--accent); margin-top: 0;">PostgreSQL 18 DB</h3>
-                <p>Enterprise-grade feature crafted with precision and performance in mind.</p>
-            </div><div class="card">
-                <h3 style="color: var(--accent); margin-top: 0;">Voice Dictation</h3>
-                <p>Enterprise-grade feature crafted with precision and performance in mind.</p>
-            </div><div class="card">
-                <h3 style="color: var(--accent); margin-top: 0;">Patient Flow Chart</h3>
-                <p>Enterprise-grade feature crafted with precision and performance in mind.</p>
-            </div><div class="card">
-                <h3 style="color: var(--accent); margin-top: 0;">3D DICOM Viewer</h3>
-                <p>Enterprise-grade feature crafted with precision and performance in mind.</p>
-            </div><div class="card">
-                <h3 style="color: var(--accent); margin-top: 0;">Enterprise Security</h3>
-                <p>Enterprise-grade feature crafted with precision and performance in mind.</p>
-            </div><div class="card">
-                <h3 style="color: var(--accent); margin-top: 0;">Multi-clinic Support</h3>
-                <p>Enterprise-grade feature crafted with precision and performance in mind.</p>
-            </div>
+        <section id="features" class="grid" aria-label="Core product capabilities">
+            <article class="card">
+                <p class="feature-kicker">Data foundation</p>
+                <h3 style="color: var(--accent); margin-top: 0;">Tenant-aware clinic workspaces</h3>
+                <p>Organization-scoped workflows and role-aware access keep day-to-day operations structured as a practice grows.</p>
+            </article><article class="card">
+                <p class="feature-kicker">Clinical workflow</p>
+                <h3 style="color: var(--accent); margin-top: 0;">Scheduling, EMR, and visit focus</h3>
+                <p>A linked workflow for appointments, patient context, treatment plans, visit closure, and actionable staff queues.</p>
+            </article><article class="card">
+                <p class="feature-kicker">Imaging boundary</p>
+                <h3 style="color: var(--accent); margin-top: 0;">DICOM and CBCT workbench</h3>
+                <p>Study organization, 2D controls, MPR readiness, and safe handoff paths for dedicated imaging workstations.</p>
+            </article><article class="card">
+                <p class="feature-kicker">Dictation resilience</p>
+                <h3 style="color: var(--accent); margin-top: 0;">Recoverable voice-to-note flow</h3>
+                <p>Speech capture is designed with local recovery, provider fallbacks, and review-oriented transcription quality states.</p>
+            </article><article class="card">
+                <p class="feature-kicker">Documents and billing</p>
+                <h3 style="color: var(--accent); margin-top: 0;">Attested operational workflows</h3>
+                <p>Structured document review, payments, balances, and clinic configuration remain connected to the patient journey.</p>
+            </article><article class="card">
+                <p class="feature-kicker">Team communication</p>
+                <h3 style="color: var(--accent); margin-top: 0;">Scoped, privacy-aware handoffs</h3>
+                <p>Communications and Telegram workflows are built around explicit scope, safe templates, and task-based follow-up.</p>
+            </article>
         </section>
         
         <section id="tech" class="glass" style="margin: 4rem 5%; text-align: center;">
-            <h2 style="color: var(--accent);">Technology Stack</h2>
-            <p style="font-size: 1.2rem; letter-spacing: 2px;">HTML5 • CSS3 • CANVAS API • JAVASCRIPT • GITHUB ACTIONS</p>
+            <p class="feature-kicker">System architecture</p>
+            <h2 style="color: var(--accent);">Built for a real clinical application stack</h2>
+            <p style="font-size: 1.2rem; letter-spacing: 2px;">REACT 19 • FASTIFY / NESTJS • DRIZZLE ORM • POSTGRESQL 18 • TYPESCRIPT</p>
         </section>
     </main>
     
 <section id="faq" style="padding: 3rem 1.5rem; max-width: 1000px; margin: 0 auto;">
-  <h2 style="font-size: 2rem; margin-bottom: 1.5rem; text-align: center; color: var(--accent, #00ffcc);">❓ Frequently Asked Questions (FAQ)</h2>
+  <p class="feature-kicker" style="text-align: center;">Product scope</p>
+  <h2 style="font-size: 2rem; margin-bottom: 1.5rem; text-align: center; color: var(--accent, #00ffcc);">What the workspace is designed to support</h2>
   <div style="display: flex; flex-direction: column; gap: 1rem;">
     <details style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 1rem; cursor: pointer; transition: all 0.3s;">
-      <summary style="font-weight: bold; font-size: 1.1rem; color: #fff;">How does DENTE DICOM Viewer work?</summary>
-      <p style="margin-top: 0.75rem; color: rgba(255,255,255,0.8); line-height: 1.6;">DENTE renders 3D CT/DICOM scans directly in the browser using WebGL without requiring heavy native client installations.</p>
+      <summary style="font-weight: bold; font-size: 1.1rem; color: #fff;">How does DENTE approach DICOM and CBCT work?</summary>
+      <p style="margin-top: 0.75rem; color: rgba(255,255,255,0.8); line-height: 1.6;">DENTE keeps imaging study organization, basic 2D controls, MPR readiness, and workstation guidance inside the clinic workflow. Advanced image review remains connected to the appropriate imaging viewer and qualified clinical judgement.</p>
+    </details>
+    <details style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 1rem; cursor: pointer; transition: all 0.3s;">
+      <summary style="font-weight: bold; font-size: 1.1rem; color: #fff;">Is DENTE a finished hosted service?</summary>
+      <p style="margin-top: 0.75rem; color: rgba(255,255,255,0.8); line-height: 1.6;">No. This repository presents an actively evolving prototype surface and architecture. Its purpose is to make the clinical, administrative, imaging, and communication workflows inspectable as they mature.</p>
     </details>
   </div>
 </section>
