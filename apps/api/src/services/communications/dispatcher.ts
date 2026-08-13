@@ -755,43 +755,6 @@ type RowOutcome =
 	| "not_configured"
 	| "deferred";
 
-function recordOutcome(
-	report: {
-		sent: number;
-		retried: number;
-		failed: number;
-		suppressed: number;
-		notConfigured: number;
-		deferred: number;
-	},
-	outcome: RowOutcome
-): void {
-	switch (outcome) {
-		case "sent":
-			report.sent += 1;
-			break;
-		case "retried":
-			report.retried += 1;
-			break;
-		case "failed":
-			report.failed += 1;
-			break;
-		case "suppressed":
-			report.suppressed += 1;
-			break;
-		case "not_configured":
-			report.notConfigured += 1;
-			break;
-		case "deferred":
-			report.deferred += 1;
-			break;
-		default: {
-			const unhandled: never = outcome;
-			throw new Error(`Неизвестный итог отправки: ${String(unhandled)}`);
-		}
-	}
-}
-
 /**
  * Одна строка очереди: проверки, отправка, запись итога. Возвращает, что
  * именно произошло, — отчёт собирается вызывающим.
@@ -1177,7 +1140,30 @@ async function dispatchForOrganization(input: {
 				 * новый — и он тихо посчитался бы отложенным. Здесь недостающая ветка
 				 * не компилируется.
 				 */
-				recordOutcome(report, outcome);
+				switch (outcome) {
+					case "sent":
+						report.sent += 1;
+						break;
+					case "retried":
+						report.retried += 1;
+						break;
+					case "failed":
+						report.failed += 1;
+						break;
+					case "suppressed":
+						report.suppressed += 1;
+						break;
+					case "not_configured":
+						report.notConfigured += 1;
+						break;
+					case "deferred":
+						report.deferred += 1;
+						break;
+					default: {
+						const unhandled: never = outcome;
+						throw new Error(`Неизвестный итог отправки: ${String(unhandled)}`);
+					}
+				}
 			} catch (error) {
 				// Непредвиденный сбой не должен оставить строку захваченной
 				// навсегда: возвращаем её в очередь с записанной причиной.

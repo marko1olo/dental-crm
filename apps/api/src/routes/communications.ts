@@ -2,14 +2,14 @@ import {
 	communicationTaskSchema,
 	completeCommunicationTaskSchema,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike, asc, desc, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
-	requireClinicalMutationAccess,
+	requireClinicalMutationAccess, requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { communicationEvents, communicationTasks } from "../db/schema.js";
+import { communicationEvents, communicationTasks, patients } from "../db/schema.js";
 
 const communicationTaskValidationMessage =
 	"Задача связи не закрыта: выберите задачу, сотрудника и корректный исход действия.";
@@ -318,4 +318,125 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 			return reply.redirect(event.recordingUrl);
 		},
 	);
+
+
+	// --- Omnichannel Inbox endpoints ---
+
+	app.get("/api/communications/patients/search", async (request, reply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "communications patients search"))) return;
+		const { q } = request.query as { q?: string };
+		if (!q || q.length < 2) return reply.send([]);
+
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+		const result = await db.select({
+			id: patients.id,
+			fullName: patients.fullName,
+			phone: patients.phone
+		})
+		.from(patients)
+		.where(
+			and(
+				eq(patients.organizationId, orgId),
+				ilike(patients.fullName, `%${q}%`)
+			)
+		)
+		.limit(20);
+
+		return reply.send(result);
+	});
+
+	app.get("/api/communications/inbox", async (request, reply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "communications inbox"))) return;
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const latestEvents = await db.execute(sql`
+			SELECT DISTINCT ON (e.patient_id)
+				e.id,
+				e.patient_id AS "patientId",
+				e.message,
+				e.channel,
+				e.direction,
+				e.created_at AS "createdAt",
+				p.full_name AS "patientName",
+				p.phone AS "patientPhone"
+			FROM communication_events e
+			JOIN patients p ON e.patient_id = p.id
+			WHERE p.organization_id = ${orgId}
+			ORDER BY e.patient_id, e.created_at DESC
+		`);
+
+		const summaries = latestEvents.rows.map((row: any) => ({
+			id: row.id,
+			patientId: row.patientId,
+			message: row.message,
+			channel: row.channel,
+			direction: row.direction,
+			createdAt: row.createdAt,
+			readAt: row.createdAt,
+			patientName: row.patientName,
+			patientPhone: row.patientPhone,
+			unreadCount: 0
+		}));
+		summaries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+		return reply.send(summaries);
+	});
+
+	app.get("/api/communications/inbox/:patientId", async (request, reply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "communications inbox thread"))) return;
+		const { patientId } = request.params as { patientId: string };
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const events = await db.select({
+			id: communicationEvents.id,
+			patientId: communicationEvents.patientId,
+			message: communicationEvents.message,
+			channel: communicationEvents.channel,
+			direction: communicationEvents.direction,
+			createdAt: communicationEvents.createdAt,
+			patientName: patients.fullName
+		})
+		.from(communicationEvents)
+		.leftJoin(patients, eq(patients.id, communicationEvents.patientId))
+		.where(
+			and(
+				eq(patients.organizationId, orgId),
+				eq(communicationEvents.patientId, patientId)
+			)
+		)
+		.orderBy(asc(communicationEvents.createdAt));
+
+		return reply.send(events.map(e => ({
+			id: e.id,
+			patientId: e.patientId,
+			message: e.message,
+			channel: e.channel,
+			direction: e.direction,
+			createdAt: e.createdAt,
+			patientName: e.patientName,
+			readAt: e.createdAt
+		})));
+	});
+
+	app.post("/api/communications/inbox/:patientId/send", async (request, reply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "communications send message"))) return;
+		const { patientId } = request.params as { patientId: string };
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+		const { message, channel } = request.body as { message: string, channel: string };
+
+		const inserted = await db.insert(communicationEvents).values({
+			organizationId: orgId,
+			patientId: patientId,
+			channel: channel as any,
+			direction: "outbound",
+			status: "sent",
+			message: message,
+		}).returning();
+
+		return reply.send({ success: true, event: inserted[0] });
+	});
 }

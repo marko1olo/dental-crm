@@ -1,1 +1,1 @@
-ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "current_session_id" text;
+ALTER TABLE "users" ADD COLUMN "current_session_id" text;

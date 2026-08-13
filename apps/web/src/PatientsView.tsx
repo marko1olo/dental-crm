@@ -70,6 +70,32 @@ export type WeekdayOption = {
 	value: number;
 };
 
+export type PatientsViewProps = {
+	createPatient: () => void | Promise<void>;
+	filteredPatients: Patient[];
+	money: (amountRub: number) => string;
+	normalizeOptionalWorkingDaysDraft: (days: number[]) => number[];
+	patientAdministrativeProfileValidationMessage: string | null;
+	patientInsightById: Map<string, PatientInsight>;
+	patientInsightRiskLabels: Record<PatientInsight["riskLevel"], string>;
+	query: string;
+	savePatientAdministrativeProfile: () =>
+		| undefined
+		| Promise<undefined | boolean>;
+	savePatientCore: () => undefined | Promise<undefined | boolean>;
+	selectedPatient: Patient | null | undefined;
+	setQuery: (value: string) => void;
+	updatePatientAdministrativeProfileDraft: (
+		field: keyof PatientAdministrativeProfileDraft,
+		value: string | number[],
+	) => void;
+	updatePatientCoreDraft: (
+		field: keyof PatientCoreDraft,
+		value: string,
+	) => void;
+	weekdayOptions: WeekdayOption[];
+};
+
 export type TextFieldChangeEvent = ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
 >;
@@ -108,9 +134,9 @@ const quickCreateInputStyle: CSSProperties = {
 	width: "100%",
 };
 
-export function PatientsView() {
+export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const logicContext = useAppLogicContext();
-	const appLogic = logicContext;
+	const props = { ...logicContext, ...rawProps } as PatientsViewProps;
 	const {
 		selectedPatientId,
 		patientCoreDraft,
@@ -122,13 +148,11 @@ export function PatientsView() {
 		newPatientName,
 		newPatientPhone,
 		newPatientBirthDate,
-		newPatientMarketingSource,
 		isPatientCreating,
 		setSelectedPatientId,
 		setNewPatientName,
 		setNewPatientPhone,
 		setNewPatientBirthDate,
-		setNewPatientMarketingSource,
 	} = usePatientStore();
 
 	/*
@@ -168,7 +192,7 @@ export function PatientsView() {
 		updatePatientCoreDraft,
 		updatePatientAdministrativeProfileDraft,
 		weekdayOptions,
-	} = appLogic || {};
+	} = props;
 
 	useEffect(() => {
 		const firstPatient = (filteredPatients ?? [])[0];
@@ -188,7 +212,7 @@ export function PatientsView() {
 	const featureSalience = useMemo(
 		() =>
 			patientListFeatureSalience({
-				insights: Array.from((patientInsightById || new Map()).values()) as any,
+				insights: Array.from((patientInsightById || new Map()).values()),
 				riskLabels: patientInsightRiskLabels || {},
 			}),
 		[patientInsightById, patientInsightRiskLabels],
@@ -238,31 +262,13 @@ export function PatientsView() {
 	const patientCreatePhoneIssue =
 		(newPatientPhone ?? "").trim().length > 0 &&
 		(newPatientPhone ?? "").replace(/\D/g, "").length < 5;
-
-	const requirePhone =
-		appLogic.dashboard?.clinicSettings.profile.patientCreationRules?.requirePhone;
-	const requireSource =
-		appLogic.dashboard?.clinicSettings.profile.patientCreationRules?.requireSource;
-
-	const patientPhoneMissing = requirePhone && !(newPatientPhone ?? "").trim();
-	const patientSourceMissing = requireSource && !(newPatientMarketingSource ?? "").trim();
-
 	const patientCreateReady =
-		patientNameReady &&
-		!patientCreatePhoneIssue &&
-		!patientPhoneMissing &&
-		!patientSourceMissing &&
-		!isPatientCreating;
-
+		patientNameReady && !patientCreatePhoneIssue && !isPatientCreating;
 	const patientCreateGuidance = !patientNameReady
 		? "Укажите ФИО пациента. Телефон и дату рождения можно добавить позже."
 		: patientCreatePhoneIssue
 			? "Телефон пациента слишком короткий. Исправьте номер или очистите поле."
-			: patientPhoneMissing
-				? "В настройках клиники включено обязательное указание телефона. Пожалуйста, введите телефон."
-				: patientSourceMissing
-					? "В настройках клиники включено обязательное указание источника рекламы. Пожалуйста, укажите источник."
-					: null;
+			: null;
 	/*
 	 * ENTER ТЕПЕРЬ ДЕЛАЕТ ТО, ЧТО ОБЕЩАЕТ.
 	 *
@@ -484,26 +490,6 @@ export function PatientsView() {
 								style={quickCreateInputStyle}
 							/>
 						</div>
-						{(requireSource || newPatientMarketingSource) && (
-							<div style={{ ...quickCreateFieldStyle, flex: "1 1 9rem" }}>
-								<label htmlFor="patient-create-marketing-source">
-									Источник рекламы {requireSource && "*"}
-								</label>
-								<input
-									id="patient-create-marketing-source"
-									type="text"
-									title="Откуда пациент узнал о клинике"
-									placeholder="2ГИС, Яндекс, Знакомые..."
-									value={newPatientMarketingSource}
-									onChange={(event: TextFieldChangeEvent) =>
-										setNewPatientMarketingSource(event.target.value)
-									}
-									onKeyDown={handleQuickCreateKeyDown}
-									style={quickCreateInputStyle}
-									required={requireSource}
-								/>
-							</div>
-						)}
 					</div>
 					{/*
             РАЗБОР НАБРАННОЙ СТРОКИ СТАЛ ВИДИМЫМ ДЕЙСТВИЕМ.

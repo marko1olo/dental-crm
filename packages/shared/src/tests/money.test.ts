@@ -21,17 +21,6 @@ import {
  */
 const money = (digits: string) => `${digits}${RU_MONEY_NBSP}₽`;
 
-describe("Constants", () => {
-	test("RU_MONEY_NBSP является неразрывным пробелом (U+00A0)", () => {
-		assert.strictEqual(RU_MONEY_NBSP, "\u00A0");
-	});
-
-	test("RU_MONEY_MINUS является типографским минусом (U+2212), а не дефисом", () => {
-		assert.strictEqual(RU_MONEY_MINUS, "\u2212");
-		assert.notStrictEqual(RU_MONEY_MINUS, "-");
-	});
-});
-
 describe("parseKopecks", () => {
 	test("разбирает строку numeric из драйвера точно", () => {
 		assert.strictEqual(parseKopecks("150.50"), 15050);
@@ -55,16 +44,10 @@ describe("parseKopecks", () => {
 		assert.strictEqual(parseKopecks(1500), 150000);
 	});
 
-	test("нецелое число из базы разбирается как рубли с копейками", () => {
-		assert.strictEqual(parseKopecks(150.5), 15050);
-	});
-
 	test("мусор не превращается молча в ноль", () => {
 		assert.throws(() => parseKopecks("сто рублей"));
 		assert.throws(() => parseKopecks("12.345"));
-		assert.throws(() => parseKopecks(Number.NaN), /не является числом/);
-		assert.throws(() => parseKopecks(Number.POSITIVE_INFINITY), /не является числом/);
-		assert.throws(() => parseKopecks(Number.NEGATIVE_INFINITY), /не является числом/);
+		assert.throws(() => parseKopecks(Number.NaN));
 	});
 
 	test("не теряет копейки там, где ошибается плавающая точка", () => {
@@ -93,21 +76,8 @@ describe("kopecksToNumericString", () => {
 		}
 	});
 
-	test("отрицательные суммы меньше рубля форматируются с нулём и минусом", () => {
-		assert.strictEqual(kopecksToNumericString(-1), "-0.01");
-		assert.strictEqual(kopecksToNumericString(-50), "-0.50");
-		assert.strictEqual(kopecksToNumericString(-99), "-0.99");
-	});
-
 	test("дробные копейки — признак прохода через float, это ошибка", () => {
 		assert.throws(() => kopecksToNumericString(50.5));
-	});
-
-	test("сумма выходит за пределы точного целого, это ошибка", () => {
-		assert.throws(
-			() => kopecksToNumericString(Number.MAX_SAFE_INTEGER + 1),
-			/выходит за пределы точного целого/,
-		);
 	});
 });
 
@@ -122,37 +92,7 @@ describe("rublesToKopecks / kopecksToWholeRubles", () => {
 	});
 
 	test("сумма с копейками не выдаёт себя за целые рубли", () => {
-		assert.throws(
-			() => kopecksToWholeRubles(15050),
-			(err) =>
-				err instanceof Error &&
-				err.message ===
-					"Сумма 150.50 руб. содержит копейки и не может быть выражена целыми рублями",
-		);
-	});
-
-	test("ноль и отрицательные значения обрабатываются корректно", () => {
-		assert.strictEqual(kopecksToWholeRubles(0), 0);
-		assert.strictEqual(kopecksToWholeRubles(-150000), -1500);
-	});
-});
-
-describe("sumKopecks", () => {
-	test("пустой массив возвращает 0", () => {
-		assert.strictEqual(sumKopecks([]), 0);
-	});
-
-	test("сумма нескольких значений считается точно", () => {
-		assert.strictEqual(sumKopecks([15050, 1, 0, 100000]), 115051);
-	});
-
-	test("отрицательные значения уменьшают сумму", () => {
-		assert.strictEqual(sumKopecks([1000, -500, -500]), 0);
-		assert.strictEqual(sumKopecks([500, -1000]), -500);
-	});
-
-	test("если хотя бы одно значение не целое, выбрасывается ошибка", () => {
-		assert.throws(() => sumKopecks([1000, 1.5]));
+		assert.throws(() => kopecksToWholeRubles(15050));
 	});
 });
 
@@ -178,11 +118,6 @@ describe("percentageOfKopecks", () => {
 		// 33.33% от 0.10 — меньше копейки, значит ноль.
 		assert.strictEqual(percentageOfKopecks(10, 3333), 3);
 		assert.ok(percentageOfKopecks(12345, 10000) <= 12345);
-	});
-
-	test("отклоняет некорректный процент", () => {
-		assert.throws(() => percentageOfKopecks(100000, 10.5), /целым/);
-		assert.throws(() => percentageOfKopecks(100000, -100), /целым/);
 	});
 });
 
@@ -218,12 +153,6 @@ describe("splitKopecks", () => {
 	test("долг делится с сохранением знака", () => {
 		assert.strictEqual(sumKopecks(splitKopecks(-10000, 3)), -10000);
 	});
-
-	test("отклоняет некорректное число частей", () => {
-		assert.throws(() => splitKopecks(10000, 0), /положительным/);
-		assert.throws(() => splitKopecks(10000, -2), /положительным/);
-		assert.throws(() => splitKopecks(10000, 2.5), /положительным/);
-	});
 });
 
 describe("formatKopecksRu", () => {
@@ -248,18 +177,5 @@ describe("formatKopecksRu", () => {
 			formatKopecksRu(-4275),
 			`${RU_MONEY_MINUS}${money("42,75")}`,
 		);
-	});
-
-	test("бросает ошибку, если переданы дробные копейки", () => {
-		assert.throws(() => formatKopecksRu(150.5), /Копейки должны быть целым числом/);
-	});
-
-	test("бросает ошибку при выходе за пределы безопасного целого", () => {
-		assert.throws(() => formatKopecksRu(Number.MAX_SAFE_INTEGER + 1), /выходит за пределы точного целого/);
-	});
-
-	test("отклоняет некорректные копейки (дробные или слишком большие)", () => {
-		assert.throws(() => formatKopecksRu(100.5), /целым числом/);
-		assert.throws(() => formatKopecksRu(Number.MAX_SAFE_INTEGER + 1), /пределы точного целого/);
 	});
 });

@@ -38,7 +38,9 @@ import { staffAuthorityFlags } from "../security/permissions.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
-
+function useInMemory() {
+	return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 // The DB columns are looser than the DTO: clinic_mode is free `text` (legacy rows
 // hold "demo"/"single"/"network"), and clinic_schedule / working_hours are untyped
@@ -219,7 +221,7 @@ async function uiPreferencesRow(
 export async function getUiPreferencesFromDb(
 	organizationId: string,
 ): Promise<UiPreferences | null> {
-	
+	if (useInMemory()) return memoryUiPreferences.get(organizationId) ?? null;
 	const row = await uiPreferencesRow(organizationId);
 	if (!row?.uiPreferences) return null;
 	return row.uiPreferences as UiPreferences;
@@ -229,7 +231,17 @@ export async function saveUiPreferencesInDb(
 	organizationId: string,
 	prefs: UiPreferences,
 ): Promise<UiPreferencesSaveOutcome> {
-	
+	if (useInMemory()) {
+		const stored = memoryUiPreferences.get(organizationId) ?? null;
+		if (
+			stored &&
+			uiPreferencesSaveIsSuperseded(stored.savedAt, prefs.savedAt)
+		) {
+			return { applied: false, stored };
+		}
+		memoryUiPreferences.set(organizationId, prefs);
+		return { applied: true, stored: prefs };
+	}
 
 	for (let attempt = 1; attempt <= UI_PREFERENCES_SAVE_ATTEMPTS; attempt += 1) {
 		const row = await uiPreferencesRow(organizationId);
@@ -276,7 +288,9 @@ export async function saveUiPreferencesInDb(
 export async function getClinicSettingsFromDb(
 	organizationId: string,
 ): Promise<ClinicSettings> {
-	
+	if (useInMemory()) {
+		return getClinicSettingsInMemory();
+	}
 	const [org] = await db
 		.select()
 		.from(schema.organizations)
@@ -320,7 +334,6 @@ export async function getClinicSettingsFromDb(
 		timezone: clinic?.timezone || "Europe/Samara",
 		defaultVisitMinutes: 60,
 		scheduleDefaults: narrowScheduleDefaults(org.clinicSchedule),
-		patientCreationRules: org.patientCreationRules as { requirePhone: boolean; requireSource: boolean } | undefined,
 		networkEnabled: false,
 		egiszEnabled: false,
 		updatedAt: org.updatedAt.toISOString(),
@@ -389,7 +402,7 @@ export async function updateClinicModeInDb(
 	organizationId: string,
 	mode: ClinicMode,
 ) {
-	
+	if (useInMemory()) return updateClinicModeInMemory(mode);
 	await db
 		.update(schema.organizations)
 		.set({ clinicMode: mode })
@@ -400,7 +413,7 @@ export async function updateClinicProfileInDb(
 	organizationId: string,
 	input: UpdateClinicProfileInput,
 ) {
-	
+	if (useInMemory()) return updateClinicProfileInMemory(input);
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const updateData: any = { updatedAt: new Date() };
 	if (input.legalName !== undefined) updateData.name = input.legalName;
@@ -424,8 +437,6 @@ export async function updateClinicProfileInDb(
 		updateData.signatoryTitle = input.signatoryTitle;
 	if (input.scheduleDefaults !== undefined)
 		updateData.clinicSchedule = input.scheduleDefaults;
-	if (input.patientCreationRules !== undefined)
-		updateData.patientCreationRules = input.patientCreationRules;
 
 	await db
 		.update(schema.organizations)
@@ -450,7 +461,11 @@ export async function createStaffMemberInDb(
 	organizationId: string,
 	input: CreateStaffMemberInput,
 ): Promise<StaffMember> {
-	
+	if (useInMemory()) {
+		createStaffMemberInMemory(input);
+		// InMemory is mock logic; we can just throw or return mock
+		throw new Error("InMemory backend cannot return created staff");
+	}
 	const [inserted] = await db
 		.insert(schema.users)
 		.values({
@@ -493,7 +508,8 @@ export async function updateStaffWorkingHoursInDb(
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	workingHours: any,
 ) {
-	
+	if (useInMemory())
+		return updateStaffWorkingHoursInMemory(staffId, workingHours);
 	await db
 		.update(schema.users)
 		.set({ workingHours })
@@ -517,7 +533,10 @@ export async function updateStaffMemberProfileInDb(
 	staffId: string,
 	input: UpdateStaffMemberProfileInput,
 ) {
-	
+	if (useInMemory()) {
+		updateStaffMemberProfileInMemory(staffId, input);
+		return;
+	}
 	const updateData: {
 		fullName?: string;
 		role?: string;
@@ -552,7 +571,10 @@ export async function deactivateStaffMemberInDb(
 	organizationId: string,
 	staffId: string,
 ) {
-	
+	if (useInMemory()) {
+		deactivateStaffMemberInMemory(staffId);
+		return;
+	}
 	await db
 		.update(schema.users)
 		.set({ isActive: false })
@@ -569,7 +591,7 @@ export async function updateStaffCredentialsInDb(
 	staffId: string,
 	updates: { email?: string; passwordHash?: string; pinCodeHash?: string },
 ) {
-	
+	if (useInMemory()) return;
 	await db
 		.update(schema.users)
 		.set(updates)
@@ -618,7 +640,7 @@ const COMMISSION_STORAGE_UNAVAILABLE =
 export async function listDoctorCommissionRatesInDb(
 	organizationId: string,
 ): Promise<DoctorCommissionRate[]> {
-	
+	if (useInMemory()) return [];
 	const rows = await db
 		.select({
 			userId: schema.doctorCommissions.userId,
@@ -683,7 +705,7 @@ export async function setDoctorCommissionRateInDb(
 	staffId: string,
 	commissionPct: number,
 ): Promise<DoctorCommissionRate> {
-	
+	if (useInMemory()) throw new Error(COMMISSION_STORAGE_UNAVAILABLE);
 
 	const [staffMember] = await db
 		.select({ id: schema.users.id })
@@ -788,7 +810,7 @@ export async function createChairInDb(
 	organizationId: string,
 	input: CreateChairInput,
 ) {
-	
+	if (useInMemory()) return createChairInMemory(input);
 	const [clinic] = await db
 		.select()
 		.from(schema.clinics)
@@ -811,7 +833,8 @@ export async function updateChairWorkingHoursInDb(
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	workingHours: any,
 ) {
-	
+	if (useInMemory())
+		return updateChairWorkingHoursInMemory(chairId, workingHours);
 	await db
 		.update(schema.chairs)
 		.set({ workingHours })
@@ -833,7 +856,10 @@ export async function updateChairProfileInDb(
 	chairId: string,
 	input: UpdateChairProfileInput,
 ) {
-	
+	if (useInMemory()) {
+		updateChairProfileInMemory(chairId, input);
+		return;
+	}
 	const updateData: { name?: string; isActive?: boolean } = {};
 	if (input.name !== undefined) updateData.name = input.name;
 	if (input.active !== undefined) updateData.isActive = input.active;
@@ -858,7 +884,10 @@ export async function deactivateChairInDb(
 	organizationId: string,
 	chairId: string,
 ) {
-	
+	if (useInMemory()) {
+		deactivateChairInMemory(chairId);
+		return;
+	}
 	await db
 		.update(schema.chairs)
 		.set({ isActive: false })

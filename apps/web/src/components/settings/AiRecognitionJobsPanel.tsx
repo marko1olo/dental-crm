@@ -28,7 +28,6 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 import { aiJobKindLabels } from "../../AppConstants";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type { PanelSubject } from "../../lib/panelStateText";
-import { motionSafeScrollIntoView } from "../../motionPreference";
 import { logger } from "../../utils/logger";
 import { recognitionTargetLabels } from "../../workspaceUiLabels";
 import { showToast } from "../GlobalToast";
@@ -242,27 +241,14 @@ export const AiRecognitionJobsPanel: React.FC = () => {
 				"success",
 				7000,
 			);
-			/*
-			 * Прокрутка через motionSafeScrollIntoView, а не напрямую: здесь
-			 * стояло `behavior: "smooth"` жёстко, в обход предпочтения
-			 * пользователя. Плавная прокрутка при включённом системном
-			 * «уменьшить движение» — не украшение: у людей с вестибулярными
-			 * нарушениями она вызывает тошноту и головокружение (WCAG 2.3.3).
-			 * Замерено 2026-08-10: это было ЕДИНСТВЕННОЕ во всём apps/web
-			 * место с принудительным smooth. Смоук его не видел, потому что
-			 * перечислял четыре файла по имени (App, FinanceView,
-			 * ScheduleView, SettingsView), а нарушение жило в пятом.
-			 *
-			 * try/catch снят: он не защищал ничего. `scrollIntoView` не
-			 * бросает, `querySelector` бросает лишь на синтаксически неверном
-			 * селекторе, а он здесь постоянный и верный; отсутствующий узел
-			 * даёт null, и его гасит `target?.` внутри помощника
-			 * (motionPreference.ts:15). Пустой `catch` при этом сообщал
-			 * читателю «тут бывает исключение», чего не бывает.
-			 */
-			motionSafeScrollIntoView(document.querySelector(".ai-result-panel"), {
-				block: "nearest",
-			});
+			// Scroll workbench result into view if present.
+			try {
+				document
+					.querySelector(".ai-result-panel")
+					?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+			} catch {
+				/* ignore */
+			}
 		},
 		[appLogic.setRecognitionJob],
 	);

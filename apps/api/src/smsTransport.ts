@@ -80,7 +80,7 @@ const DEFAULT_SMS_BASE_URL: Readonly<Record<SmsProviderId, string>> = {
 
 export type SendSmsInput = {
 	readonly credentials: SmsCredentials;
-	/** Номер получателя, только цифры, в формате 7XXXXXXXXXX. */
+	/** Номер получателя, только цифры, в международном формате (от 11 до 15 цифр). */
 	readonly toMsisdn: string;
 	readonly text: string;
 	readonly timeoutMs?: number;
@@ -485,7 +485,7 @@ export async function sendSms(
 			errorMessage: "Пустой текст сообщения.",
 		};
 	}
-	if (!/^\d{10,15}$/.test(input.toMsisdn)) {
+	if (!/^\d{11,15}$/.test(input.toMsisdn)) {
 		return {
 			ok: false,
 			providerMessageId: null,

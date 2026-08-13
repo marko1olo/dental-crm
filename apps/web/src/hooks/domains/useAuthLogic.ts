@@ -7,31 +7,14 @@ import {
 import { showToast } from "../../components/GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppStore } from "../../store/appStore";
-import { useSettingsStore } from "../../store/settingsStore";
-
-/**
- * Какой секрет спрашивать у сотрудника: решение вынесено из замыкания хука.
- *
- * Правило прежде жило внутри `useCallback` и читало пять значений из области
- * видимости хука. Проверить его отдельно было нельзя: чтобы получить ответ,
- * требовалось поднять React, оба хранилища и хук целиком. Тест
- * `tests/useAuthLogic.test.ts` закрепляет именно эти семь переходов, поэтому
- * правило обязано быть чистой функцией, а замыкание — её звать. Двух копий
- * правила быть не должно: разъехавшаяся копия спросит не тот секрет и даст 403
- * на экране, где секрет уже введён.
- *
- * `dashboard` объявлен `unknown` намеренно: используется только истинность.
- * В хуке это объект или null, в тесте — булево; сузить тип значило бы
- * потребовать от теста поднимать настоящую сводку ради одной проверки `!`.
- */
 export function determineAdminSecretUnlockDomain(
 	accessUnlockRequired: boolean,
-	dashboard: unknown,
+	hasDashboard: boolean,
 	currentView: string,
 	settingsTab: string,
 	onboardingStep: string | null,
 ): AdminSecretUnlockDomain {
-	if (accessUnlockRequired || !dashboard) return "all";
+	if (accessUnlockRequired || !hasDashboard) return "all";
 	if (currentView === "schedule") return "schedule";
 	if (currentView === "settings")
 		return settingsTab === "telegram" ? "telegram" : "settings";
@@ -129,7 +112,7 @@ export function useAuthLogic({
 		function currentAdminSecretUnlockDomain(): AdminSecretUnlockDomain {
 			return determineAdminSecretUnlockDomain(
 				accessUnlockRequired,
-				dashboard,
+				!!dashboard,
 				currentView,
 				settingsTab,
 				onboardingStep,

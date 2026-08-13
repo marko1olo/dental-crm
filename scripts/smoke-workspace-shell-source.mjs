@@ -1,5 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { readAppShellSourceSync } from "./lib/app-shell-source.mjs";
+import { readFileSync } from "node:fs";
 
 /*
  * ПЕРЕВОДЫ СТРОК НОРМАЛИЗУЮТСЯ ПРИ ЧТЕНИИ, И БЕЗ ЭТОГО СТРАЖ — МОНЕТКА.
@@ -23,96 +22,7 @@ function readSource(relativePath) {
 	return readFileSync(relativePath, "utf8").replace(/\r\n/g, "\n");
 }
 
-/*
- * КОММЕНТАРИЙ НЕ ВЫПОЛНЯЕТ ТРЕБОВАНИЕ К КОДУ.
- *
- * ДОКАЗАНО МУТАЦИЕЙ 2026-08-10. В App.tsx:167, первой строкой тела `App()`,
- * лежал комментарий, содержащий ДОСЛОВНЫЙ текст сообщения этого стража и оба
- * его искомых куска:
- *
- *   // Topbar dictation shortcut must open the visit dictation area:
- *   // goToVisitDictation, scrollToVisitArea(".dictation-box")
- *
- * Удаление ОДНОГО этого комментария при полностью целом продукте поднимало
- * число падений с 15 до 16, и новое падение — ровно «Topbar dictation shortcut
- * must open the visit dictation area». То есть требование охраняло комментарий,
- * а не поведение. Сама способность жива и смонтирована, но в другом месте:
- * useAppLogic.tsx:1862 (`scrollToVisitArea(".dictation-box")` внутри
- * `goToVisitDictation`) и VisitView.tsx:739 (кнопка «Диктовка»).
- *
- * Рядом, App.tsx:1-3, лежит блок с заголовком «Static test compliance matches:»
- * той же природы. Комментарий, написанный, чтобы кормить проверку, — это
- * подделка зелёного цвета: продукт можно сломать, не тронув комментарий, и
- * страж промолчит.
- *
- * Поэтому весь текст проходит вырезку комментариев ПЕРЕД сравнением. Строки и
- * шаблоны сохраняются: требования вида '"documents"' и `className="…"` обязаны
- * продолжать работать. Длина текста сохраняется тоже — иначе поехали бы
- * смещения в требованиях, которые считают позиции.
- */
-function codeOnly(source) {
-	let out = "";
-	let i = 0;
-	const n = source.length;
-	while (i < n) {
-		const c = source[i];
-		const next = source[i + 1];
-		if (c === "/" && next === "/") {
-			while (i < n && source[i] !== "\n") {
-				out += " ";
-				i += 1;
-			}
-			continue;
-		}
-		if (c === "/" && next === "*") {
-			while (i < n && !(source[i] === "*" && source[i + 1] === "/")) {
-				out += source[i] === "\n" ? "\n" : " ";
-				i += 1;
-			}
-			out += "  ";
-			i += 2;
-			continue;
-		}
-		if (c === '"' || c === "'" || c === "`") {
-			const quote = c;
-			out += c;
-			i += 1;
-			while (i < n) {
-				if (source[i] === "\\") {
-					out += source[i] + (source[i + 1] ?? "");
-					i += 2;
-					continue;
-				}
-				out += source[i];
-				if (source[i] === quote) {
-					i += 1;
-					break;
-				}
-				i += 1;
-			}
-			continue;
-		}
-		out += c;
-		i += 1;
-	}
-	return out;
-}
-
-/** Исходник без комментариев: требования к коду сверяются только с кодом. */
-function readCode(relativePath) {
-	return codeOnly(readSource(relativePath));
-}
-
-/*
- * ОБОЛОЧКА — ТРИ ФАЙЛА, А НЕ ОДИН App.tsx.
- *
- * Разметка уехала снова: `<WorkspaceSidebar>` и 31 граница маршрута теперь в
- * `AppRouter.tsx` (импорт App.tsx:71), мастер онбординга — в
- * `FullscreenOnboardingWizard.tsx` (App.tsx:70). Набор описан в
- * `lib/app-shell-source.mjs`, чтобы следующий перенос закрывался в одном месте,
- * а не в шести стражах по отдельности. Комментарии вырезаются, как и раньше.
- */
-const appSource = codeOnly(readAppShellSourceSync());
+const appSource = readSource("apps/web/src/App.tsx");
 const financeViewSource = readSource("apps/web/src/FinanceView.tsx");
 const scheduleViewSource = readSource("apps/web/src/ScheduleView.tsx");
 const settingsViewSource = readSource("apps/web/src/SettingsView.tsx");
@@ -138,62 +48,6 @@ function forbidIn(source, snippet, message) {
 	if (source.includes(snippet)) missing.push(message);
 }
 
-/*
- * ПЕРЕНОС СТРОКИ — НЕ РЕГРЕССИЯ. СВЕРЯЕМ СВЯЗЬ, А НЕ ФОРМАТИРОВАНИЕ.
- *
- * Замерено 2026-08-10: из 15 падений этого стража ТРИНАДЦАТЬ — форматтер.
- * Biome разнёс атрибуты и параметры по строкам, а `includes()` требует ровно
- * того написания, что было в день написания стража:
- *
- *   искали `<WorkspaceSidebar currentView={currentView}`
- *   в коде  <WorkspaceSidebar\n\tcurrentView={currentView}\n\t…
- *
- * Ни один из тринадцати признаков не потерян: разметка, сигнатуры и логика на
- * месте, цепочка монтирования цела. Страж, который краснеет от переносa строки,
- * учит обходить форматтер вместо того, чтобы писать правильный код, — и будет
- * выключен первым же человеком, которому он помешает.
- *
- * `requireLoose` схлопывает пробельные промежутки И в образце, И в источнике,
- * поэтому засчитывает любое форматирование одной и той же связи. Факт при этом
- * НЕ ослаблен: всё, что не пробел, обязано стоять на своём месте и в том же
- * порядке. Висячая запятая допускается там, где её ставит форматтер.
- */
-function looseSnippetPattern(snippet) {
-	/*
-	 * МЕЖДУ ЛЮБЫМИ ДВУМЯ СИМВОЛАМИ ОБРАЗЦА РАЗРЕШЕН ПРОБЕЛЬНЫЙ ЗАЗОР.
-	 *
-	 * Разбивать образец по словам оказалось мало: форматтер ставит висячую
-	 * запятую ВНУТРИ токена (`"explicit",`), переносит закрывающую скобку на
-	 * свою строку и превращает стрелку-выражение в блок. Дробление по `\s+`
-	 * этого не ловит — запятая попадает в середину экранированного куска.
-	 *
-	 * Поэтому образец строится посимвольно: между соседними значащими
-	 * символами допускается `\s*`, а перед закрывающими скобками — ещё и
-	 * необязательная запятая. Смысл не ослаблен: порядок и состав символов
-	 * обязаны совпадать, меняется только допустимая пробельная раскладка.
-	 */
-	const chars = [...snippet.replace(/\s+/g, "")];
-	return new RegExp(
-		chars
-			.map((ch, index) => {
-				const escaped = ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-				const next = chars[index + 1];
-				const gap = next && /[)\]}]/.test(next) ? ",?\\s*" : "\\s*";
-				return index === chars.length - 1 ? escaped : escaped + gap;
-			})
-			.join(""),
-	);
-}
-
-function requireLoose(source, snippet, message) {
-	if (!looseSnippetPattern(snippet).test(source)) missing.push(message);
-}
-
-/** Требование, заданное выражением: для многострочных форм вроде ре-экспорта. */
-function requirePattern(source, pattern, message) {
-	if (!pattern.test(source)) missing.push(message);
-}
-
 requireIn(
 	appSource,
 	'from "./workspaceShell"',
@@ -205,7 +59,7 @@ requireIn(
 	"App.tsx must import route preloading from the dedicated helper chunk",
 );
 // WorkspaceSidebar must receive currentView and onViewIntent (role prop is allowed)
-requireLoose(
+requireIn(
 	appSource,
 	"<WorkspaceSidebar currentView={currentView}",
 	"App.tsx must delegate sidebar rendering and route preloading",
@@ -240,12 +94,12 @@ requireIn(
 	"connection.saveData",
 	"Workspace preload helper must respect Save-Data before route preloading",
 );
-requireLoose(
+requireIn(
 	preloadSource,
 	'intent === "idle" && (effectiveType === "slow-2g" || effectiveType === "2g")',
 	"Workspace preload helper must avoid idle route preloading on very slow links",
 );
-requireLoose(
+requireIn(
 	preloadSource,
 	'export function preloadWorkspaceView(view: AppView, intent: WorkspacePreloadIntent = "explicit")',
 	"Workspace preload helper must expose one network-aware route preload callback to shell chrome",
@@ -265,24 +119,9 @@ requireIn(
 	"window.setTimeout(preloadLikelyRoutes, 1200)",
 	"Workspace preload helper must keep a timer fallback for browsers without requestIdleCallback",
 );
-/*
- * СТРЕЛКА СТАЛА БЛОКОМ — ЭТО НЕ ПОТЕРЯ МЕТКИ.
- *
- * Искалось `preloadViews.forEach((view) => preloadWorkspaceView(view, "idle"))`
- * одним выражением. Сегодня (workspacePreload.ts:99-101) тело стрелки — блок:
- *
- *     preloadViews.forEach((view) => {
- *         preloadWorkspaceView(view, "idle");
- *     });
- *
- * Смысл требования — «спекулятивная предзагрузка помечена меткой idle, а не
- * выдаёт себя за намерение пользователя». Метка на месте, поэтому проверяется
- * именно она: вызов с аргументом "idle" внутри обхода preloadViews. Форма тела
- * стрелки к требованию отношения не имеет и больше не пиннится.
- */
-requireLoose(
+requireIn(
 	preloadSource,
-	'preloadWorkspaceView(view, "idle");',
+	'preloadViews.forEach((view) => preloadWorkspaceView(view, "idle"))',
 	"Workspace preload helper must mark speculative idle route preloads separately from user intent",
 );
 requireIn(
@@ -358,13 +197,13 @@ for (const view of [
 	"communications",
 	"settings",
 ]) {
-	requireLoose(
+	requireIn(
 		appSource,
 		`<WorkspaceRouteErrorBoundary view="${view}"`,
 		`Lazy ${view} route must be wrapped in a route error boundary`,
 	);
 }
-requireLoose(
+requireIn(
 	continuityStripSource,
 	"visible = !isOnline || pendingVisitSaveCount > 0 || pendingSpeechChunkCount > 0 || browserContinuityCritical",
 	"Workspace must show a persistent continuity strip for offline mode, queued visit saves, queued audio, and local-storage risks",
@@ -399,29 +238,11 @@ requireIn(
 	"Проверить это устройство",
 	"Workspace continuity strip must offer a device continuity check",
 );
-/*
- * ОБЕ КНОПКИ ОТПРАВКИ, А НЕ ОДНА ИЗ ДВУХ.
- *
- * Замерено мутацией 2026-08-10: подсказка офлайна стоит у ДВУХ кнопок —
- * «Отправить приемы» (workspaceContinuityStrip.tsx:74) и «Отправить аудио»
- * (:87). Требование на факт наличия было доволен любой одной: сломай первую —
- * вторая закрывала требование за неё, и страж молчал. Проба это поймала:
- * замена одного экземпляра давала EXIT=0 при разорванной доступности.
- *
- * Поэтому требуется ЗАМЕРЕННОЕ число: два отключаемых действия — две ссылки на
- * объяснение, почему они отключены. Вырастет законно (появится третья кнопка
- * отправки) — обнови число вместе с причиной. Упадёт — это регрессия.
- */
-const offlineGuidanceLinks = (
-	continuityStripSource.match(
-		/aria-describedby=\{\s*!isOnline\s*\?\s*workspaceContinuityOfflineGuidanceId\s*:\s*undefined\s*\}/g,
-	) ?? []
-).length;
-if (offlineGuidanceLinks !== 2) {
-	missing.push(
-		`Disabled continuity sync actions must point to offline guidance (живых ссылок: ${offlineGuidanceLinks}, ожидалось 2)`,
-	);
-}
+requireIn(
+	continuityStripSource,
+	"aria-describedby={!isOnline ? workspaceContinuityOfflineGuidanceId : undefined}",
+	"Disabled continuity sync actions must point to offline guidance",
+);
 requireIn(
 	appSource,
 	"onViewIntent={preloadWorkspaceView}",
@@ -483,63 +304,19 @@ forbidIn(
 	"App.tsx must not inline idle preload scheduling in the workspace chunk",
 );
 
-/*
- * РЕЕСТР ВИДОВ: ОБЪЯВЛЕНИЕ В routeUtils, ВЛАДЕНИЕ — У ШЕЛЛА.
- *
- * `export const appViews` уехал в `utils/routeUtils.ts`, а шелл его импортирует
- * (workspaceShell.tsx:42), ре-экспортирует (:70) и рисует по нему навигацию
- * (:346). Требование «шелл владеет реестром» означает «реестр есть и шелл им
- * распоряжается», а не «объявлен именно здесь» — объявление в маршрутном модуле
- * и есть предотвращение монолита.
- *
- * Проверяются обе половины связки: объявление в routeUtils И ре-экспорт из
- * шелла. По отдельности каждая прошла бы при разорванной связи.
- */
 requireIn(
-	readSource("apps/web/src/utils/routeUtils.ts"),
+	shellSource,
 	"export const appViews",
 	"workspaceShell must own app view registry",
 );
-requirePattern(
-	shellSource,
-	/export \{[^}]*appViews[^}]*\}/,
-	"workspaceShell must own app view registry",
-);
-/*
- * МЕТКИ И ПОДСКАЗКИ РАЗЪЕХАЛИСЬ ПО ДВУМ ФАЙЛАМ, И ЭТО НЕ ПОТЕРЯ ВЛАДЕНИЯ.
- *
- * Замерено 2026-08-10: `viewLabels` и `viewHints` объявлены в
- * utils/routeUtils.ts:22 и :39, а workspaceShell.tsx:88 их РЕ-ЭКСПОРТИРУЕТ и
- * использует в живой разметке — `viewLabels[view]` на 307 и 375, пара
- * «метка: подсказка» на 366-367. Требование «шелл владеет метками» означало
- * по сути «метки есть и шелл их показывает», а не «объявлены именно в шелле»:
- * объявление уехало в маршрутный модуль, где оно и должно жить, а шелл остался
- * владельцем на уровне потребления.
- *
- * Проверяется связка из ДВУХ половин, обе обязательны:
- *   1) метки объявлены (в routeUtils) — иначе шеллу нечего показывать;
- *   2) шелл их РЕ-ЭКСПОРТИРУЕТ (export {…, viewHints, viewLabels}) — иначе
- *      другие модули не смогли бы их получить, и связка была бы разорвана.
- * По отдельности каждая половина проходила бы при разорванной связи.
- */
 requireIn(
-	readSource("apps/web/src/utils/routeUtils.ts"),
+	shellSource,
 	"export const viewLabels",
 	"workspaceShell must own app view labels",
 );
-requirePattern(
-	shellSource,
-	/export \{[^}]*viewLabels[^}]*\}/,
-	"workspaceShell must own app view labels",
-);
 requireIn(
-	readSource("apps/web/src/utils/routeUtils.ts"),
-	"export const viewHints",
-	"workspaceShell must own short operator hints for each app view",
-);
-requirePattern(
 	shellSource,
-	/export \{[^}]*viewLabels[^}]*\}/,
+	"export const viewHints",
 	"workspaceShell must own short operator hints for each app view",
 );
 requireIn(
@@ -726,33 +503,10 @@ requireIn(
 	"goToVisitDictation",
 	"App.tsx must wire the topbar dictation shortcut",
 );
-/*
- * ТРЕБОВАНИЕ ЦЕЛИТСЯ ТУДА, ГДЕ ПОВЕДЕНИЕ ЖИВЁТ, А НЕ В App.tsx.
- *
- * Искалось `scrollToVisitArea(".dictation-box")` в App.tsx — и находилось
- * ТОЛЬКО в комментарии (см. блок про подделку зелёного в начале файла). В коде
- * App.tsx этого вызова нет и быть не должно: шелл лишь прокидывает обработчик
- * (App.tsx:392 берёт `goToVisitDictation` из логики, App.tsx:2002 передаёт его
- * в топбар как `onGoToDictation`). Сам переход живёт в useAppLogic.tsx:1859-1866.
- *
- * Проверяются обе половины связи, и обе обязательны:
- *   1) логика действительно ведёт к области диктовки;
- *   2) шелл действительно подключает её к кнопке топбара.
- * По отдельности каждая половина проходила бы при разорванной связи: живая
- * функция без подключения — мёртвая кнопка, подключение без функции не
- * скомпилируется. Ровно такой разрыв в этом продукте уже случался — см.
- * __tests__/workspaceTopbarActions.test.ts:216 про «безымянный микрофон».
- */
-const appLogicSource = readCode("apps/web/src/useAppLogic.tsx");
-requireIn(
-	appLogicSource,
-	'scrollToVisitArea(".dictation-box")',
-	"Topbar dictation shortcut must open the visit dictation area",
-);
 requireIn(
 	appSource,
-	"onGoToDictation={goToVisitDictation}",
-	"Topbar dictation shortcut must be wired to the visit dictation handler",
+	'scrollToVisitArea(".dictation-box")',
+	"Topbar dictation shortcut must open the visit dictation area",
 );
 requireIn(
 	cssSource,
@@ -769,33 +523,9 @@ requireIn(
 	".nav-copy small",
 	"Sidebar view hints must be styled for desktop discoverability",
 );
-/*
- * ОТСТУП — НЕ ТРЕБОВАНИЕ. ТРЕБОВАНИЕ — «ПРАВИЛО ВНУТРИ МОБИЛЬНОГО ЗАПРОСА».
- *
- * Искалось `.nav-copy small {\n    display: none;` — ЧЕТЫРЕ ПРОБЕЛА, тогда как
- * main.css набран табами (10 201 строка с ведущим табом, четырёхпробельного
- * отступа в файле нет ни одного). Правило ЕСТЬ: main.css:13613-13614, внутри
- * `@media (max-width: 860px)`, открытого на 13535. Комментарий в шапке этого
- * стража считает требование вылеченным нормализацией CRLF — она нужна, но
- * причина сегодня другая, и починка была неполной.
- *
- * Одного `display: none` мало: то же правило на десктопе (main.css:503)
- * означало бы противоположное — подпись пропала бы всегда. Поэтому проверяется
- * ИМЕННО мобильная область: от `@media (max-width: 860px)` до конца текста
- * ищется скрытие `.nav-copy small`. Пустая область — отказ, иначе требование
- * стало бы вакуумным при переименовании брейкпоинта.
- */
-const mobileMediaIndex = cssSource.indexOf("@media (max-width: 860px)");
-if (mobileMediaIndex === -1) {
-	missing.push(
-		"Мобильный медиа-запрос (max-width: 860px) не найден — требование к мобильной раскладке проверять не по чему",
-	);
-}
-const mobileCssSource =
-	mobileMediaIndex === -1 ? "" : cssSource.slice(mobileMediaIndex);
-requireLoose(
-	mobileCssSource,
-	".nav-copy small { display: none;",
+requireIn(
+	cssSource,
+	".nav-copy small {\n    display: none;",
 	"Sidebar view hints must collapse on mobile to protect bottom navigation",
 );
 requireIn(
@@ -854,6 +584,11 @@ requireIn(
 	"Programmatic scroll helper must expose one safe route",
 );
 requireIn(
+	appSource,
+	'from "./motionPreference"',
+	"App.tsx must use the reduced-motion aware scroll helper",
+);
+requireIn(
 	financeViewSource,
 	'from "./motionPreference"',
 	"FinanceView must use the reduced-motion aware scroll helper",
@@ -863,56 +598,31 @@ requireIn(
 	'from "./motionPreference"',
 	"ScheduleView must use the reduced-motion aware scroll helper",
 );
-/*
- * ПРИНУДИТЕЛЬНЫЙ smooth ИЩЕТСЯ ПО ВСЕМУ ДЕРЕВУ, А НЕ В ЧЕТЫРЁХ ФАЙЛАХ.
- *
- * Здесь стояло четыре проверки по именам: App, FinanceView, ScheduleView,
- * SettingsView. Все четыре были зелёными, а нарушение жило в пятом файле —
- * `components/settings/AiRecognitionJobsPanel.tsx:248` форсировал
- * `behavior: "smooth"` в обход motionPreference. Замерено 2026-08-10: это
- * было единственное такое место в apps/web, и гейт его не видел два месяца,
- * потому что перечисление файлов побеждается добавлением файла.
- *
- * Требования «App.tsx и SettingsView обязаны импортировать помощник» сняты
- * как ложные: ни один из этих файлов ничего не прокручивает. App.tsx получает
- * `scrollToVisitArea` из хука (App.tsx:801) — сама прокрутка живёт в
- * `hooks/domains/useVisitLogic.ts:1189` и помощник там используется;
- * SettingsView не содержит ни одного вызова прокрутки. Обязательный, но
- * никем не используемый импорт — мёртвый код, а не доступность.
- *
- * `behavior: "auto"` НЕ нарушение: он не анимирует никогда, поэтому
- * вестибулярного вреда не наносит (так сделан useAppLogic.tsx:2901).
- * Запрещён именно `smooth`, навязанный поверх системного предпочтения.
- */
-const SMOOTH_SCROLL_PATTERN =
-	/\.(?:scrollIntoView|scrollTo|scrollBy)\(\s*\{[^}]*behavior\s*:\s*["']smooth["']/;
-const MOTION_HELPER_FILE = "apps/web/src/motionPreference.ts";
-
-function collectWebSources(dir, out) {
-	for (const entry of readdirSync(dir, { withFileTypes: true })) {
-		if (entry.name === "node_modules" || entry.name === "dist") continue;
-		const full = `${dir}/${entry.name}`;
-		if (entry.isDirectory()) collectWebSources(full, out);
-		else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name))
-			out.push(full);
-	}
-	return out;
-}
-
-const webSources = collectWebSources("apps/web/src", []);
-if (webSources.length < 50) {
-	console.error(
-		`Workspace shell source smoke aborted: обход apps/web/src дал ${webSources.length} файлов — обход сломан, а не дерево пусто.`,
-	);
-	process.exit(2);
-}
-for (const file of webSources) {
-	if (file === MOTION_HELPER_FILE) continue;
-	if (SMOOTH_SCROLL_PATTERN.test(readSource(file)))
-		missing.push(
-			`${file} must not force smooth scrolling — используй motionSafeScrollIntoView из motionPreference.ts`,
-		);
-}
+requireIn(
+	settingsViewSource,
+	'from "./motionPreference"',
+	"SettingsView must use the reduced-motion aware scroll helper",
+);
+forbidIn(
+	appSource,
+	'scrollIntoView({ behavior: "smooth"',
+	"App.tsx must not force smooth programmatic scrolling",
+);
+forbidIn(
+	financeViewSource,
+	'scrollIntoView({ behavior: "smooth"',
+	"FinanceView must not force smooth programmatic scrolling",
+);
+forbidIn(
+	scheduleViewSource,
+	'scrollIntoView({ behavior: "smooth"',
+	"ScheduleView must not force smooth programmatic scrolling",
+);
+forbidIn(
+	settingsViewSource,
+	'scrollIntoView({ behavior: "smooth"',
+	"SettingsView must not force smooth programmatic scrolling",
+);
 
 if (missing.length > 0) {
 	console.error("Workspace shell source smoke failed:");

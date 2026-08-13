@@ -1,23 +1,15 @@
-# DISPATCH — Explorer Survey 1
+## 2026-08-09T00:26:43Z
+You are teamwork_preview_explorer (Explorer 1).
+Working directory: C:\Clinic_MVP\dental-crm\.agents\explorer_survey_1
+Project root: C:\Clinic_MVP\dental-crm
 
-## 2026-08-12T19:33:25Z
+Read ORIGINAL_REQUEST.md at: C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md
 
-## Role
-teamwork_preview_explorer
-
-## Working Directory
-C:\Clinic_MVP\dental-crm\.agents\explorer_survey_1
-
-## Task
-Conduct thorough exploration of API route test files in `apps/api/src/routes/**/*.test.ts` (and subdirectories).
-Identify all database mocks (e.g., `t.mock.method(db, ...)` or `global.fetch` mocks for database operations).
-
-## Instructions
-1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md` and `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`.
-2. Find all test files under `apps/api/src/routes/**/*.test.ts` that use database mocks.
-3. For each file found, document:
-   - File path
-   - Specific mocked DB methods (e.g., `db.select`, `db.insert`, `db.update`, `db.delete`, `db.execute`, `db.query`)
-   - Dependent entities required for real database test replacement (e.g. patients, appointments, payments, staff)
-   - Whether the test triggers audit events (`audit_events`, `clinical_audit_logs`) needing unique organization IDs (`fixtureUuid("audit", ...)`).
-4. Write your findings to `C:\Clinic_MVP\dental-crm\.agents\explorer_survey_1\handoff.md`.
+Your mission:
+Survey the E2E & Visual Testing infrastructure for DENTE CRM.
+1. Inspect Playwright setup, `playwright.config.ts`, existing test scripts in `apps/web` or root.
+2. Determine how dev server is started (`npm run dev` or build + preview), port, login credentials / auth bypass / mock state for test runner.
+3. Enumerate all major views, panels, dialogs (Schedule, Patients, Finance, Settings, Patient Card, Treatment Plan, Tax Docs, etc.).
+4. Formulate the strategy for capturing 4-state screenshots (Mobile Light, Mobile Dark, PC Light, PC Dark) for every view/panel/dialog.
+5. Identify any current broken Playwright tests or missing dependencies.
+6. Write a comprehensive report to `C:\Clinic_MVP\dental-crm\.agents\explorer_survey_1\handoff.md` detailing all findings, file paths, test commands, and exact steps required to execute 4-state visual proof testing.

@@ -7,7 +7,7 @@ import type {
 	VisitDraftAutosaveRequest,
 	VisitSaveReceipt,
 } from "@dental/shared";
-import { and, eq, inArray, isNull, desc } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { visitCloseChecklistFactsFor } from "../sampleData.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
@@ -108,10 +108,7 @@ export async function getVisitDraftAutosaveFromDb(
 	if (visit.draftAutosave) {
 		return {
 			outcome: "draft",
-			serverDraft: {
-				...(visit.draftAutosave as VisitDraftAutosave),
-				qualityControlStatus: visit.qualityControlStatus,
-			},
+			serverDraft: visit.draftAutosave as VisitDraftAutosave,
 		};
 	}
 
@@ -137,7 +134,6 @@ export async function getVisitDraftAutosaveFromDb(
 			clientSavedAt: null,
 			serverSavedAt: visit.updatedAt.toISOString(),
 			transcriptHash: "",
-			qualityControlStatus: visit.qualityControlStatus,
 		},
 	};
 }
@@ -314,7 +310,6 @@ export async function acceptVisitDraftInDb(
 		.update(schema.visits)
 		.set({
 			status: "signed",
-			qualityControlStatus: "pending",
 			revision: newRevision,
 			complaint: input.draft.complaint,
 			anamnesis: input.draft.anamnesis,
@@ -687,112 +682,17 @@ export async function openVisitForAppointmentInDb(
 }
 
 export async function getVisitsForQualityControlInDb(organizationId: string) {
-	const [appointmentsRes, visitsRes] = await Promise.all([
-		db.select({
-			appointmentId: schema.appointments.id,
-			patientId: schema.appointments.patientId,
-			patientName: schema.patients.fullName,
-			doctorId: schema.appointments.doctorUserId,
-			doctorName: schema.users.fullName,
-			date: schema.appointments.startsAt,
-		})
-		.from(schema.appointments)
-		.leftJoin(schema.patients, eq(schema.patients.id, schema.appointments.patientId))
-		.leftJoin(schema.visits, eq(schema.visits.appointmentId, schema.appointments.id))
-		.leftJoin(schema.users, eq(schema.users.id, schema.appointments.doctorUserId))
-		.where(
-			and(
-				eq(schema.appointments.organizationId, organizationId),
-				inArray(schema.appointments.status, ["completed", "arrived"]),
-				isNull(schema.visits.id)
-			)
-		)
-		.limit(100),
-
-		db.select({
-			visitId: schema.visits.id,
-			patientId: schema.visits.patientId,
-			patientName: schema.patients.fullName,
-			appointmentId: schema.visits.appointmentId,
-			doctorId: schema.appointments.doctorUserId,
-			doctorName: schema.users.fullName,
-			status: schema.visits.status,
-			qualityControlStatus: schema.visits.qualityControlStatus,
-			createdAt: schema.visits.createdAt,
-			complaint: schema.visits.complaint,
-			anamnesis: schema.visits.anamnesis,
-			objectiveStatus: schema.visits.objectiveStatus,
-			diagnosis: schema.visits.diagnosis,
-			treatmentPlan: schema.visits.treatmentPlan,
-		})
+	const res = await db
+		.select()
 		.from(schema.visits)
-		.leftJoin(schema.patients, eq(schema.patients.id, schema.visits.patientId))
-		.leftJoin(schema.appointments, eq(schema.appointments.id, schema.visits.appointmentId))
-		.leftJoin(schema.users, eq(schema.users.id, schema.appointments.doctorUserId))
 		.where(
 			and(
 				eq(schema.visits.organizationId, organizationId),
-				/*
-				 * БЫЛО: возвращались ВСЕ 300 визитов организации.
-				 * Главврач видел одобренные и отклонённые вместе с ожидающими.
-				 * СТАЛО: только те, что действительно ждут решения.
-				 */
-				inArray(schema.visits.qualityControlStatus, ["pending", "needs_correction"]),
-			)
-		)
-		.orderBy(desc(schema.visits.createdAt))
-		.limit(100)
-	]);
-
-	// Use any[] or a specific interface to bypass never[] TS error
-	const result: any[] = [];
-
-	for (const a of appointmentsRes) {
-		result.push({
-			id: `app-${a.appointmentId}`,
-			type: "not_filled",
-			patientId: a.patientId,
-			patientName: a.patientName,
-			doctorId: a.doctorId,
-			doctorName: a.doctorName,
-			createdAt: a.date,
-		});
-	}
-
-	for (const v of visitsRes) {
-		let type = "draft";
-		if (v.status === "signed") {
-			if (v.qualityControlStatus === "pending") type = "under_review";
-			else if (v.qualityControlStatus === "approved") type = "approved";
-			else if (v.qualityControlStatus === "rejected") type = "rejected";
-			/*
-			 * needs_correction: врач вернул приём на доработку. Статус самого
-			 * визита при этом сбрасывается в draft (см. updateVisitQualityControlStatusInDb).
-			 * Из under_review → needs_correction, чтобы UI различал «впервые
-			 * не проверен» от «уже вернули на исправление».
-			 */
-		} else if (v.qualityControlStatus === "needs_correction") {
-			type = "needs_correction";
-		}
-		
-		result.push({
-			id: v.visitId,
-			visitId: v.visitId,
-			type,
-			patientId: v.patientId,
-			patientName: v.patientName,
-			doctorId: v.doctorId,
-			doctorName: v.doctorName,
-			createdAt: v.createdAt,
-			complaint: v.complaint,
-			anamnesis: v.anamnesis,
-			objectiveStatus: v.objectiveStatus,
-			diagnosis: v.diagnosis,
-			treatmentPlan: v.treatmentPlan,
-		});
-	}
-
-	return result;
+				eq(schema.visits.status, "signed"),
+				eq(schema.visits.qualityControlStatus, "pending"),
+			),
+		);
+	return res.map(projectVisitRow);
 }
 
 export async function updateVisitQualityControlStatusInDb(
@@ -802,17 +702,7 @@ export async function updateVisitQualityControlStatusInDb(
 ) {
 	const [updated] = await db
 		.update(schema.visits)
-		.set(
-			/*
-		 * rejected и needs_correction оба возвращают визит в draft:
-		 * врач должен доработать ЭМК и подписать заново.
-		 * БЫЛО: needs_correction сохранялся без смены status="draft",
-		 * визит оставался signed — врач не видел, что его вернули.
-		 */
-		qualityControlStatus === "rejected" || qualityControlStatus === "needs_correction"
-			? { qualityControlStatus, status: "draft" }
-			: { qualityControlStatus }
-		)
+		.set({ qualityControlStatus })
 		.where(
 			and(
 				eq(schema.visits.organizationId, organizationId),

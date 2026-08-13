@@ -54,6 +54,7 @@ describe("Admin/setup auth — body guard (AUTH-first 403, Zod 400, не 500)", 
 			savedEnv[key] = process.env[key];
 		}
 		process.env.NODE_ENV = "test";
+		process.env.DENTAL_STATE_PERSISTENCE = "off";
 		process.env.DENTE_ALLOW_DEMO_LOGIN = "0";
 		process.env.ADMIN_SETUP_KEY = SETUP_KEY;
 

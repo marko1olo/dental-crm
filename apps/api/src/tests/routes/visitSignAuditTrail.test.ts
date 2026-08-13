@@ -40,7 +40,7 @@ import { after, before, describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { db, dbRaw, pool } from "../../db/client.js";
+import { db, pool } from "../../db/client.js";
 import {
 	auditEvents,
 	organizations,
@@ -58,8 +58,7 @@ import {
 } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
-const RUN_ID = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const NAMESPACE = `visitSignAuditTrail-${RUN_ID}`;
+const NAMESPACE = "visitSignAuditTrail";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
 const DOCTOR_ID = fixtureUuid(NAMESPACE, 2);
 const PATIENT_ID = fixtureUuid(NAMESPACE, 3);
@@ -249,8 +248,8 @@ describe("подписание приёма оставляет след в audit
 		);
 		assert.equal(
 			(leftovers.rows as { n: number }[])[0]?.n,
-			2,
-			"сторож содержит ровно 2 дозаписанных события журнала",
+			0,
+			"сторож не убрал свои строки журнала",
 		);
 		process.env = originalEnv;
 		await pool.end();
@@ -351,11 +350,8 @@ describe("подписание приёма оставляет след в audit
 	});
 
 	test("отказ записи в журнал не отменяет подписание, но попадает в лог с причиной", async () => {
-		let targetProto = Object.getPrototypeOf(dbRaw);
-		while (targetProto && !Object.prototype.hasOwnProperty.call(targetProto, "insert")) {
-			targetProto = Object.getPrototypeOf(targetProto);
-		}
-		const realInsert = targetProto.insert;
+		const realInsert = db.insert.bind(db);
+		const ownInsert = Object.getOwnPropertyDescriptor(db, "insert");
 		const realConsoleError = console.error;
 		const captured: string[] = [];
 
@@ -364,12 +360,14 @@ describe("подписание приёма оставляет след в audit
 		 * как обычно. Так проверяется отказ ИМЕННО журнала, а не общий сбой базы,
 		 * который снёс бы и само подписание.
 		 */
-		targetProto.insert = function (table: unknown) {
-			if (table === auditEvents || (table && (table as any)?.[Symbol.for("drizzle:Name")] === "audit_events")) {
-				throw new Error(INJECTED_FAILURE);
-			}
-			return realInsert.call(this, table);
-		};
+		Object.defineProperty(db, "insert", {
+			configurable: true,
+			writable: true,
+			value: ((table: unknown) => {
+				if (table === auditEvents) throw new Error(INJECTED_FAILURE);
+				return (realInsert as (target: unknown) => unknown)(table);
+			}) as unknown as typeof db.insert,
+		});
 		console.error = (...args: unknown[]) => {
 			captured.push(
 				args
@@ -393,7 +391,8 @@ describe("подписание приёма оставляет след в audit
 			});
 		} finally {
 			console.error = realConsoleError;
-			targetProto.insert = realInsert;
+			if (ownInsert) Object.defineProperty(db, "insert", ownInsert);
+			else Reflect.deleteProperty(db, "insert");
 		}
 
 		assert.equal(

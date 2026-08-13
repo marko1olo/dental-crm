@@ -1,30 +1,34 @@
 import assert from "node:assert";
-import { afterEach, beforeEach, describe, test } from "node:test";
+import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import type { ImportPreviewRequest } from "@dental/shared";
-import { withSuperuserBypass } from "../db/rls.js";
-import { organizations } from "../db/schema.js";
-import {
-	fixtureUuid,
-	purgeFixtureOrganizations,
-} from "../tests/support/fixtureOrganizations.js";
+import { db } from "../db/client.js";
 import { buildPatientImportIntake } from "./imports.js";
 
-const ORG_ID = fixtureUuid("imports.test.ts", 1);
+/**
+ * buildPatientImportIntake стала асинхронной и принимает организацию первым
+ * аргументом: preview ищет дубли среди уже заведённых пациентов клиники.
+ *
+ * Тесты звали её по старой сигнатуре — одним аргументом и без await, — поэтому
+ * input попадал на место orgId, сам input оказывался undefined, а в result
+ * лежал Promise. Отсюда `undefined !== 'test-source'` и падения на чтении
+ * свойств у undefined.
+ *
+ * db.select подменяется, чтобы проверка дублей не требовала живой базы:
+ * db — обычный объект, его свойство подменяется штатно (в отличие от
+ * пространства имён ES-модуля).
+ */
+const ORG_ID = "123e4567-e89b-12d3-a456-4266141740ff";
 
 describe("buildPatientImportIntake", () => {
-	beforeEach(async () => {
-		await purgeFixtureOrganizations([ORG_ID]);
-		await withSuperuserBypass(async (tx) => {
-			await tx.insert(organizations).values({
-				id: ORG_ID,
-				name: "Imports Test Org",
-				loginId: "imports_test_org",
-			});
-		});
+	beforeEach(() => {
+		// Ни одного заведённого пациента: дублей нет, поведение детерминировано.
+		mock.method(db, "select", () => ({
+			from: () => ({ where: async () => [] }),
+		}));
 	});
 
-	afterEach(async () => {
-		await purgeFixtureOrganizations([ORG_ID]);
+	afterEach(() => {
+		mock.restoreAll();
 	});
 
 	test("processes unstructured text and normalizes it", async () => {
@@ -99,4 +103,3 @@ describe("buildPatientImportIntake", () => {
 		assert.strictEqual(result.preview.totalRows, 0);
 	});
 });
-

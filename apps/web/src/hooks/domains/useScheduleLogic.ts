@@ -4,7 +4,7 @@ import type {
 	ScheduleWarning,
 	StaffWorkingHours,
 } from "@dental/shared";
-import { useRef, useState, useMemo, useEffect } from "react";
+import { useRef } from "react";
 import type {
 	AppointmentScheduleDraft,
 	StaffScheduleDraft,
@@ -23,7 +23,6 @@ import {
 	staffScheduleDraftSignature,
 	staffWorkingHoursFromDraft,
 } from "../../AppHelpers";
-import { toDateTimeLocalValue } from "../../AppHelpers";
 import { showToast } from "../../components/GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -76,16 +75,16 @@ export function useScheduleLogic({
 	setNewAppointmentError,
 	clinicProfileDraft,
 	setSettingsTab,
+	staffScheduleDraftsRef,
+	chairScheduleDraftsRef,
+	appointmentScheduleDraftsRef,
 	loadDashboard,
 	selectedSpecialty,
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 }: any) {
 	const appointmentMutationIdRef = useRef<string | null>(null);
 	const scheduleStore = useScheduleStore();
-		const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
-	const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
-	const appointmentScheduleDraftsRef = useRef<Record<string, AppointmentScheduleDraft>>({});
-const { setScheduleAdminSecretDemand } = useSettingsStore();
+	const { setScheduleAdminSecretDemand } = useSettingsStore();
 	const {
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		scheduleDoctorFilterId,
@@ -952,261 +951,6 @@ const { setScheduleAdminSecretDemand } = useSettingsStore();
 		}
 	}
 
-
-    	const sortedAppointments = useMemo(() => {
-    		if (!dashboard) return [];
-    		return (dashboard.appointments || [])
-    			.filter((appointment) => {
-    				if (
-    					scheduleDoctorFilterId &&
-    					appointment.doctorUserId !== scheduleDoctorFilterId
-    				)
-    					return false;
-    				if (
-    					scheduleAssistantFilterId &&
-    					appointment.assistantUserId !== scheduleAssistantFilterId
-    				)
-    					return false;
-    				if (
-    					scheduleChairFilterId &&
-    					appointment.chairId !== scheduleChairFilterId
-    				)
-    					return false;
-    				if (
-    					scheduleStatusFilter !== "all" &&
-    					appointment.status !== scheduleStatusFilter
-    				)
-    					return false;
-    				if (scheduleDateFilter) {
-    					const localAppointmentDate = toDateTimeLocalValue(
-    						appointment.startsAt,
-    						dashboard?.clinicSettings?.profile?.timezone,
-    					).slice(0, 10);
-    					if (localAppointmentDate !== scheduleDateFilter) return false;
-    				}
-    				return true;
-    			})
-    			.sort((left, right) => left.startsAt.localeCompare(right.startsAt));
-    	}, [
-    		dashboard,
-    		scheduleAssistantFilterId,
-    		scheduleChairFilterId,
-    		scheduleDateFilter,
-    		scheduleDoctorFilterId,
-    		scheduleStatusFilter,
-    	]);
-
-    	const appointmentReadinessById = useMemo(() => {
-    		if (!dashboard)
-    			return new Map<string, Dashboard["appointmentReadiness"][number]>();
-    		return new Map(
-    			(dashboard?.appointmentReadiness ?? []).map((readiness) => [
-    				readiness.appointmentId,
-    				readiness,
-    			]),
-    		);
-    	}, [dashboard]);
-
-
-    	const [isQuickConsultLoading, setIsQuickConsultLoading] = useState(false);
-
-    	const handleQuickConsult = async () => {
-    		if (isQuickConsultLoading) return;
-    		setIsQuickConsultLoading(true);
-    		try {
-    			const response = await fetch("/api/visits/quick", {
-    				method: "POST",
-    				headers: auth.denteClinicalMutationHeaders({
-    					"Content-Type": "application/json",
-    				}),
-    			});
-    			if (!response.ok) {
-    				const msg = await response.text().catch((err) => {
-    					showToast(
-    						actionFailureToast(
-    							"Не удалось прочитать ошибку",
-    							(err as { status?: number })?.status ?? null,
-    						),
-    						"error",
-    					);
-    					return "Ошибка";
-    				});
-    				setError(`Быстрый приём: ${msg}`);
-    				return;
-    			}
-    			const { patientId } = (await response.json()) as {
-    				patientId: string;
-    				appointmentId: string;
-    			};
-    			// Select the patient and navigate to visit
-    			setSelectedPatientId(patientId);
-    			await loadDashboard();
-    			window.location.hash = "visit";
-    			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-    		} catch (err: any) {
-    			setError(`Быстрый приём: ${err.message ?? "Ошибка сети"}`);
-    		} finally {
-    			setIsQuickConsultLoading(false);
-    		}
-    	};
-
-		useEffect(() => {
-		if (!dashboard) return;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		setAppointmentScheduleDrafts((current: any) => {
-			return (dashboard?.appointments ?? []).reduce(
-				(next: Record<string, AppointmentScheduleDraft>, appointment) => {
-					next[appointment.id] =
-						current[appointment.id] ??
-						appointmentScheduleDraftFromAppointment(appointment);
-					return next;
-				},
-				{},
-			);
-		});
-	}, [dashboard, setAppointmentScheduleDrafts]);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: global action without stale state
-	const newAppointmentPreferenceDefaultsRef = useRef(
-		newAppointmentPreferenceDefaults,
-	);
-	newAppointmentPreferenceDefaultsRef.current =
-		newAppointmentPreferenceDefaults;
-
-	useEffect(() => {
-		if (!dashboard) return;
-		if (newAppointmentDraftUserEditedRef.current) return;
-		setNewAppointmentDraft(
-			newAppointmentDraftFromDashboard(
-				dashboard,
-				newAppointmentPreferenceDefaultsRef.current(),
-			),
-		);
-	}, [dashboard, setNewAppointmentDraft]);
-
-	useEffect(() => {
-		staffScheduleDraftsRef.current = staffScheduleDrafts;
-	}, [staffScheduleDrafts]);
-
-	useEffect(() => {
-		chairScheduleDraftsRef.current = chairScheduleDrafts;
-	}, [chairScheduleDrafts]);
-
-	useEffect(() => {
-		appointmentScheduleDraftsRef.current = appointmentScheduleDrafts;
-	}, [appointmentScheduleDrafts]);
-
-	useEffect(() => {
-		if (!dashboard || staffScheduleDirtyIds.size === 0) return undefined;
-		const dirtyStaffIds = Array.from(staffScheduleDirtyIds).filter(
-			(staffId) => staffScheduleSaveStates[staffId] !== "saving",
-		);
-		if (!dirtyStaffIds.length) return undefined;
-		const staffRetryingErrors = dirtyStaffIds.some(
-			(staffId) => staffScheduleSaveStates[staffId] === "error",
-		);
-		const saveTimer = window.setTimeout(
-			() => {
-				dirtyStaffIds.forEach((staffId) => void saveStaffSchedule(staffId));
-			},
-			staffRetryingErrors ? 5000 : 1200,
-		);
-		return () => window.clearTimeout(saveTimer);
-	}, [
-		dashboard,
-		staffScheduleDirtyIds,
-		staffScheduleSaveStates,
-		saveStaffSchedule,
-	]);
-
-	useEffect(() => {
-		if (!dashboard || chairScheduleDirtyIds.size === 0) return undefined;
-		const dirtyChairIds = Array.from(chairScheduleDirtyIds).filter(
-			(chairId) => chairScheduleSaveStates[chairId] !== "saving",
-		);
-		if (!dirtyChairIds.length) return undefined;
-		const chairRetryingErrors = dirtyChairIds.some(
-			(chairId) => chairScheduleSaveStates[chairId] === "error",
-		);
-		const saveTimer = window.setTimeout(
-			() => {
-				dirtyChairIds.forEach((chairId) => void saveChairSchedule(chairId));
-			},
-			chairRetryingErrors ? 5000 : 1200,
-		);
-		return () => window.clearTimeout(saveTimer);
-	}, [
-		dashboard,
-		chairScheduleDirtyIds,
-		chairScheduleSaveStates,
-		saveChairSchedule,
-	]);
-
-	useEffect(() => {
-		if (!dashboard || appointmentScheduleDirtyIds.size === 0) return undefined;
-		const dirtyAppointmentIds = Array.from(appointmentScheduleDirtyIds).filter(
-			(appointmentId) =>
-				appointmentScheduleSaveStates[appointmentId] !== "saving",
-		);
-		if (!dirtyAppointmentIds.length) return undefined;
-		const appointmentRetryingErrors = dirtyAppointmentIds.some(
-			(appointmentId) =>
-				appointmentScheduleSaveStates[appointmentId] === "error",
-		);
-		const saveTimer = window.setTimeout(
-			() => {
-				dirtyAppointmentIds.forEach((appointmentId) => {
-					void saveAppointmentSchedule(appointmentId, {
-						closeEditorOnSave: false,
-					});
-				});
-			},
-			appointmentRetryingErrors ? 5000 : 1200,
-		);
-		return () => window.clearTimeout(saveTimer);
-	}, [
-		dashboard,
-		appointmentScheduleDirtyIds,
-		appointmentScheduleSaveStates,
-		saveAppointmentSchedule,
-	]);
-
-	useEffect(() => {
-		if (!dashboard || typeof window === "undefined") return undefined;
-		const retryScheduleAutosaves = () => {
-			Array.from(staffScheduleDirtyIds).forEach((staffId) => {
-				if (staffScheduleSaveStates[staffId] !== "saving") {
-					void saveStaffSchedule(staffId);
-				}
-			});
-			Array.from(chairScheduleDirtyIds).forEach((chairId) => {
-				if (chairScheduleSaveStates[chairId] !== "saving") {
-					void saveChairSchedule(chairId);
-				}
-			});
-			Array.from(appointmentScheduleDirtyIds).forEach((appointmentId) => {
-				if (appointmentScheduleSaveStates[appointmentId] !== "saving") {
-					void saveAppointmentSchedule(appointmentId, {
-						closeEditorOnSave: false,
-					});
-				}
-			});
-		};
-		window.addEventListener("online", retryScheduleAutosaves);
-		return () => window.removeEventListener("online", retryScheduleAutosaves);
-	}, [
-		dashboard,
-		staffScheduleDirtyIds,
-		staffScheduleSaveStates,
-		chairScheduleDirtyIds,
-		chairScheduleSaveStates,
-		appointmentScheduleDirtyIds,
-		appointmentScheduleSaveStates,
-		saveChairSchedule,
-		saveAppointmentSchedule,
-		saveStaffSchedule,
-	]);
-
 	return {
 		...scheduleStore,
 		markStaffScheduleDirty,
@@ -1230,9 +974,5 @@ const { setScheduleAdminSecretDemand } = useSettingsStore();
 		saveAppointmentSchedule,
 		newAppointmentMissingFields,
 		createAppointmentFromDraft,
-        sortedAppointments: sortedAppointments,
-        appointmentReadinessById: appointmentReadinessById,
-        handleQuickConsult: handleQuickConsult,
-        isQuickConsultLoading: isQuickConsultLoading
-    };
+	};
 }

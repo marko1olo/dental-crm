@@ -1,6 +1,6 @@
 {
-  "id": "909ac2d9-52a5-4fa0-b7e4-03f3c23cc38d",
-  "prevId": "48c75cec-427f-4e62-92ce-cbe6e7af1dbc",
+  "id": "f546186d-4897-4e5e-8a40-dcf4366ef4e1",
+  "prevId": "a99e420e-f220-4f0f-ac8f-ea24c38b577a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2218,6 +2218,186 @@
           "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.clinical_tasks": {
+      "name": "clinical_tasks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_id": {
+          "name": "patient_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "treatment_plan_id": {
+          "name": "treatment_plan_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assigned_doctor_id": {
+          "name": "assigned_doctor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "task_type": {
+          "name": "task_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "clinical_task_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "due_at": {
+          "name": "due_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "clinical_tasks_organizationId_idx": {
+          "name": "clinical_tasks_organizationId_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "clinical_tasks_patientId_idx": {
+          "name": "clinical_tasks_patientId_idx",
+          "columns": [
+            {
+              "expression": "patient_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "clinical_tasks_organization_id_organizations_id_fk": {
+          "name": "clinical_tasks_organization_id_organizations_id_fk",
+          "tableFrom": "clinical_tasks",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "clinical_tasks_patient_id_patients_id_fk": {
+          "name": "clinical_tasks_patient_id_patients_id_fk",
+          "tableFrom": "clinical_tasks",
+          "tableTo": "patients",
+          "columnsFrom": [
+            "patient_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "clinical_tasks_treatment_plan_id_treatment_plans_id_fk": {
+          "name": "clinical_tasks_treatment_plan_id_treatment_plans_id_fk",
+          "tableFrom": "clinical_tasks",
+          "tableTo": "treatment_plans",
+          "columnsFrom": [
+            "treatment_plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "clinical_tasks_assigned_doctor_id_users_id_fk": {
+          "name": "clinical_tasks_assigned_doctor_id_users_id_fk",
+          "tableFrom": "clinical_tasks",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_doctor_id"
           ],
           "columnsTo": [
             "id"
@@ -12057,12 +12237,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "curator_id": {
-          "name": "curator_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "is_synced": {
           "name": "is_synced",
           "type": "boolean",
@@ -12122,19 +12296,6 @@
           "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "patients_curator_id_users_id_fk": {
-          "name": "patients_curator_id_users_id_fk",
-          "tableFrom": "patients",
-          "tableTo": "users",
-          "columnsFrom": [
-            "curator_id"
           ],
           "columnsTo": [
             "id"
@@ -17577,6 +17738,16 @@
         "info",
         "warning",
         "blocker"
+      ]
+    },
+    "public.clinical_task_status": {
+      "name": "clinical_task_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "in_progress",
+        "completed",
+        "cancelled"
       ]
     },
     "public.communication_channel": {

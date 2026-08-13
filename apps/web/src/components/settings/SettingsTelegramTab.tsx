@@ -1013,43 +1013,37 @@ export function SettingsTelegramTab({
 											telegramPrivacyModeLabels.consented_phi_templates +
 											" (после аудита)",
 									},
-								].map((option) => (
-									<button
-										key={option.value}
-										type="button"
-										className={`quick-chip ${telegramPrivacyModeDraft === option.value ? "active" : ""}`}
-										onClick={() => {
-											if (option.value === "consented_phi_templates") return;
-											setTelegramPrivacyModeDraft(
-												normalizedTelegramPrivacyMode(option.value),
-											);
-											markTelegramSettingsDirty();
-										}}
-										disabled={option.value === "consented_phi_templates"}
-										style={{
-											background:
-												telegramPrivacyModeDraft === option.value
-													? "var(--brand-500)"
-													: "var(--slate-100)",
-											color:
-												telegramPrivacyModeDraft === option.value
-													? "#fff"
-													: "var(--slate-700)",
-											padding: "6px 12px",
-											borderRadius: "16px",
-											border: "none",
-											cursor:
-												option.value === "consented_phi_templates"
-													? "not-allowed"
-													: "pointer",
-											fontSize: "14px",
-											opacity:
-												option.value === "consented_phi_templates" ? 0.5 : 1,
-										}}
-									>
-										{option.label}
-									</button>
-								))}
+									].map((option) => {
+										const isActive = telegramPrivacyModeDraft === option.value;
+										const isConsented = option.value === "consented_phi_templates";
+										return (
+											<button
+												key={option.value}
+												type="button"
+												className={`quick-chip ${isActive ? "active" : ""}`}
+												onClick={() => {
+													if (isConsented) return;
+													setTelegramPrivacyModeDraft(
+														normalizedTelegramPrivacyMode(option.value),
+													);
+													markTelegramSettingsDirty();
+												}}
+												disabled={isConsented}
+												style={{
+													background: isActive ? "var(--brand-500)" : "var(--slate-100)",
+													color: isActive ? "#fff" : "var(--slate-700)",
+													padding: "6px 12px",
+													borderRadius: "16px",
+													border: "none",
+													cursor: isConsented ? "not-allowed" : "pointer",
+													fontSize: "14px",
+													opacity: isConsented ? 0.5 : 1,
+												}}
+											>
+												{option.label}
+											</button>
+										);
+									})}
 							</div>
 							<small className="field-note">
 								{telegramPrivacyModeHints[telegramPrivacyModeDraft]}

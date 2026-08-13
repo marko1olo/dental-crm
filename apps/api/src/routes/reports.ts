@@ -32,7 +32,6 @@ import {
 	revenueTimeline,
 	scheduleLoad,
 	serviceSales,
-	curatorPerformance,
 } from "../services/reports/managerReports.js";
 
 /** Календарная дата: ровно то, что показывает и отдаёт `<input type="date">`. */
@@ -441,16 +440,6 @@ export async function registerReportRoutes(app: FastifyInstance) {
 				chairs.isEmpty &&
 				funnel.isEmpty &&
 				flow.isEmpty,
-		};
-	});
-
-	app.get("/api/reports/curators", async (request, reply) => {
-		const resolved = await scopeFor(request, reply, "report curator performance");
-		if (!resolved) return;
-		const report = await curatorPerformance(resolved.scope);
-		return {
-			period: { from: resolved.scope.from, to: resolved.scope.to },
-			...report,
 		};
 	});
 }

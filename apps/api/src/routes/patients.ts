@@ -35,7 +35,6 @@ import {
 	updatePatientAdministrativeProfileSchema,
 	updatePatientSchema,
 } from "@dental/shared";
-import { getClinicSettingsFromDb } from "../db/settingsQuery.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 
@@ -455,25 +454,7 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 			const dbPatients = await getPatientsFromDb(orgId);
 			return dbPatients.map((patient) => patientSchema.parse(patient));
 		} catch (e) {
-			/*
-			 * В лог уходит СТРОКА, а не объект исключения. `console.error(prefix, err)`
-			 * форматирует аргумент через `util.inspect`, а тот на ZodError сам бросает
-			 * `TypeError: Cannot read properties of undefined (reading 'value')` —
-			 * замерено на zod 3.25.76 + node 24.13.0 внутри apps/api.
-			 *
-			 * Здесь в try стоит `patientSchema.parse(patient)`, то есть ZodError —
-			 * штатный исход, а не экзотика: он прилетает, как только в базе окажется
-			 * строка, не подходящая под схему. Прежний сырой лог бросал ПЕРЕД
-			 * подготовленным `return reply.code(500)`, и ответ уходил из общего
-			 * обработчика Fastify. Код совпадал случайно, а вот текст ниже —
-			 * «не считайте, что картотека пуста» — до клиники не доходил никогда,
-			 * хотя ровно ради него блок и написан.
-			 */
-			console.error(
-				`[Patients] Error fetching from DB: ${
-					e instanceof Error ? e.message : String(e)
-				}`,
-			);
+			console.error("[Patients] Error fetching from DB:", e);
 			// Пустой список вместо отказа читается как «пациентов нет», а картотека —
 			// это первый экран смены: администратор решит, что база пуста, и начнёт
 			// заводить карты заново.
@@ -489,9 +470,6 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
-		const settings = await getClinicSettingsFromDb(orgId);
-		const rules = settings.profile.patientCreationRules;
-
 		const input = parsePatientPayload(createPatientSchema, request.body);
 		if (!input) {
 			return reply.code(400).send({
@@ -499,21 +477,6 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				message: patientCreateValidationMessage,
 			});
 		}
-
-		if (rules?.requirePhone && !(input.phone ?? "").trim()) {
-			return reply.code(400).send({
-				error: "PatientValidationError",
-				message: "В настройках клиники включено обязательное указание телефона пациента.",
-			});
-		}
-
-		if (rules?.requireSource && !(input.administrativeProfile?.marketingSource ?? "").trim()) {
-			return reply.code(400).send({
-				error: "PatientValidationError",
-				message: "В настройках клиники включено обязательное указание источника рекламы пациента.",
-			});
-		}
-
 		try {
 			const safeResult = await createPatientSafeInDb(
 				orgId,
@@ -537,21 +500,7 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 
 			return reply.code(201).send(patientSchema.parse(safeResult.patient));
 		} catch (e) {
-			/*
-			 * Строкой, а не объектом: `util.inspect` на ZodError бросает сам
-			 * (zod 3.25.76 + node 24.13.0), а в try выше стоит `patientSchema.parse`.
-			 * Здесь это опаснее, чем на чтении списка: разбор идёт ПОСЛЕ успешной
-			 * вставки, поэтому сырой лог ронял обработчик ровно в том случае, когда
-			 * карта уже создана. Ответ уходил из общего обработчика Fastify — без
-			 * текста ниже. А текст ниже написан именно для того, чтобы администратор
-			 * не завёл вторую карту того же человека; тот же промах на соседнем PUT
-			 * уже приводил к дублям.
-			 */
-			console.error(
-				`[Patients] Create error: ${
-					e instanceof Error ? e.message : String(e)
-				}`,
-			);
+			console.error("[Patients] Create error:", e);
 			/*
 			 * «Мог не сохраниться», а не «не сохранён», и это точность, а не
 			 * осторожность: в try стоят и вставка в базу, и разбор ответа

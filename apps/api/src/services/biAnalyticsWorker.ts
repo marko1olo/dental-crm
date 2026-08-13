@@ -617,12 +617,12 @@ function runScheduledSnapshots(): void {
 
 export function startBiAnalyticsWorker() {
 	// Run async without blocking startup
-	setTimeout(() => runScheduledSnapshots(), 5000);
+	setTimeout(() => runScheduledSnapshots(), 5000).unref();
 
 	return setInterval(
 		() => {
 			runScheduledSnapshots();
 		},
 		1000 * 60 * 60,
-	);
+	).unref();
 }

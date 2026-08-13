@@ -150,12 +150,14 @@ function imagingStudyHasFile(study: any): boolean {
 	);
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+type ImagingViewProps = Record<string, any>;
 
-
-export function ImagingView() {
+export function ImagingView(props: ImagingViewProps) {
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
-	const {activeAppointment,
+	const {
+		activeAppointment,
 		activeImagingStudies,
 		activePatient,
 		addImagingViewerNoteAnnotation,
@@ -283,13 +285,13 @@ export function ImagingView() {
 		setMprWindowPreset,
 		setSelectedImagingStudyId,
 		visibleImagingStudies,
-	} = appLogic;
+	} = props;
 
 	const localFilesInputRef = useRef<HTMLInputElement | null>(null);
 	const browserImagingFilesInputRef =
-		appLogic.browserImagingFilesInputRef || localFilesInputRef;
+		props.browserImagingFilesInputRef || localFilesInputRef;
 	const pickBrowserImagingFiles =
-		appLogic.pickBrowserImagingFiles ||
+		props.pickBrowserImagingFiles ||
 		(() => {
 			browserImagingFilesInputRef.current?.click();
 		});
@@ -359,6 +361,16 @@ export function ImagingView() {
 	 * врачу до нажатия кнопки, а не показывать отказ сервера постфактум.
 	 */
 	const selectedStudyHasFile = imagingStudyHasFile(selectedImagingStudy);
+
+	const handleCompareCandidateClick = (study: any) => {
+		if (
+			imagingKindFilter !== "all" &&
+			imagingKindFilter !== study.kind
+		) {
+			setImagingKindFilter("all");
+		}
+		setSelectedImagingStudyId(study.id);
+	};
 
 	const handleAnalyzeAI = async () => {
 		if (!selectedImagingStudy) return;
@@ -975,14 +987,7 @@ export function ImagingView() {
 												<button
 													key={study.id}
 													type="button"
-													onClick={() => {
-														if (
-															imagingKindFilter !== "all" &&
-															imagingKindFilter !== study.kind
-														)
-															setImagingKindFilter("all");
-														setSelectedImagingStudyId(study.id);
-													}}
+													onClick={() => handleCompareCandidateClick(study)}
 												>
 													<img
 														src={imagingPreviewSource(study)}
@@ -1696,16 +1701,16 @@ export function ImagingView() {
 								</span>
 								<div className="mpr-axis-board" aria-hidden="true">
 									<span className="mpr-axis-label mpr-axis-label-top">
-										{mprProjectionCompass?.top}
+										{mprProjectionCompass.top}
 									</span>
 									<span className="mpr-axis-label mpr-axis-label-right">
-										{mprProjectionCompass?.right}
+										{mprProjectionCompass.right}
 									</span>
 									<span className="mpr-axis-label mpr-axis-label-bottom">
-										{mprProjectionCompass?.bottom}
+										{mprProjectionCompass.bottom}
 									</span>
 									<span className="mpr-axis-label mpr-axis-label-left">
-										{mprProjectionCompass?.left}
+										{mprProjectionCompass.left}
 									</span>
 									<span className="mpr-axis-slab" />
 									<span className="mpr-axis-slice-marker" />
@@ -1723,7 +1728,7 @@ export function ImagingView() {
 								<div className="mpr-axis-facts">
 									<strong>{mprActiveProjectionLabel}</strong>
 									<span>{mprActiveProjectionOrientation}</span>
-									<span>{mprProjectionCompass?.summary}</span>
+									<span>{mprProjectionCompass.summary}</span>
 									<span>{mprAxisDirectionLabel}</span>
 									<span>слой {mprSlabMm} мм</span>
 									<span>{mprSliceLabel}</span>
@@ -1731,9 +1736,9 @@ export function ImagingView() {
 										className="mpr-axis-guidance"
 										data-testid="ct-mpr-axis-guidance"
 									>
-										<span>{mprAxisGuidance?.tiltLabel}</span>
-										<span>{mprAxisGuidance?.slabLabel}</span>
-										<span>{mprAxisGuidance?.sliceLabel}</span>
+										<span>{mprAxisGuidance.tiltLabel}</span>
+										<span>{mprAxisGuidance.slabLabel}</span>
+										<span>{mprAxisGuidance.sliceLabel}</span>
 									</div>
 									<small
 										className="mpr-workbench-summary"
@@ -1748,20 +1753,20 @@ export function ImagingView() {
 											: "сначала откройте готовую КЛКТ/КТ-серию"}
 									</small>
 									<div
-										className={`mpr-preset-fit ${mprNearestClinicalPreset?.exact ? "exact" : ""}`}
+										className={`mpr-preset-fit ${mprNearestClinicalPreset.exact ? "exact" : ""}`}
 										data-testid="ct-mpr-preset-fit"
 									>
-										<span>{mprNearestClinicalPreset?.label}</span>
+										<span>{mprNearestClinicalPreset.label}</span>
 										<button
 											type="button"
 											onClick={applyNearestMprClinicalPreset}
 											disabled={
 												!mprControlsReady ||
-												!mprNearestClinicalPreset?.deltas?.length ||
-												!mprNearestClinicalPreset?.title
+												!mprNearestClinicalPreset.deltas?.length ||
+												!mprNearestClinicalPreset.title
 											}
-											aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset?.label}`}
-											title={`Подогнать под протокол: ${mprNearestClinicalPreset?.label}`}
+											aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}
+											title={`Подогнать под протокол: ${mprNearestClinicalPreset.label}`}
 										>
 											Подогнать
 										</button>
@@ -1771,7 +1776,7 @@ export function ImagingView() {
 							<div className="mpr-control-panel">
 								<div className="mpr-toggle-row">
 									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(cbctWorkbenchProjections ?? []).map((projection: any) => (
+									{cbctWorkbenchProjections.map((projection: any) => (
 										<button
 											className={mprProjection === projection ? "active" : ""}
 											key={projection}
@@ -2084,8 +2089,8 @@ export function ImagingView() {
 												type="button"
 												onClick={() => applyMprClinicalPreset(preset)}
 												aria-current={
-													mprNearestClinicalPreset?.exact &&
-													mprNearestClinicalPreset?.title === preset.title
+													mprNearestClinicalPreset.exact &&
+													mprNearestClinicalPreset.title === preset.title
 														? "true"
 														: undefined
 												}

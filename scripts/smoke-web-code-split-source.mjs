@@ -4,8 +4,6 @@ import {
 	callsLocationReload,
 	eachNode,
 	findLazyMountErrorBoundary,
-	parseTypeScriptFile,
-	resolveRelativeModule,
 } from "./lib/source-tree.mjs";
 
 /*
@@ -83,153 +81,10 @@ function announcesBlockingFailure(sourceFile) {
 	return announces;
 }
 
-/*
- * РАЗДЕЛЕНИЕ ВЛАДЕНИЯ: ПОЧЕМУ ЗДЕСЬ РАЗБОР, А НЕ `appSource.includes('from "./X"')`.
- *
- * Восемь проверок ниже требовали дословный `from "./МОДУЛЬ"` в App.tsx и
- * SettingsView.tsx. Замерено 2026-08-10: EXIT=1 на всех восьми, и ни одна не была
- * переносом строки — импортов в App.tsx нет вовсе. Декомпозиция ушла на шаг
- * дальше, чем видел сторож: таблицы уехали в свои модули, а ПОТРЕБИТЕЛЯМИ стали
- * соседние файлы — AppHelpers.tsx, useAppLogic.tsx (App.tsx:60 берёт её целиком) и
- * components/settings/sources/SourcesDicomCapability.tsx для вкладки источников.
- * Ровно та же ловушка, что разобрана в шапке файла про BootErrorBoundary: сторожили
- * НАПИСАНИЕ в том файле, где сущность больше не объявлена.
- *
- * Дописать `\s*` было бы бесполезно — строка отсутствует, а не переформатирована.
- * Поменять имя файла в проверке значило бы оставить ту же ловушку следующему
- * переезду. Поэтому проверяется свойство из двух половин, и обе обязательны:
- *
- *   1. ДОСТИЖИМОСТЬ: модуль лежит в транзитивном замыкании рантайм-импортов от
- *      файла входа. Ловит отсоединённый модуль — тот случай, когда файл в
- *      репозитории есть, компилируется, а в рабочее место не входит ничем;
- *   2. НЕВЛАДЕНИЕ: файл входа сам не объявляет ни одного экспортируемого имени
- *      этого модуля. Ловит возврат таблицы обратно в App.tsx — без этой половины
- *      сторож зеленел бы на дубликате, пока модуль остаётся достижим.
- *
- * Имена берутся ИЗ МОДУЛЯ, а не выписаны здесь: переименование таблицы сторожа не
- * задевает. `import type` в расчёт не идёт — компилятор его стирает, в рантайме
- * такого ребра нет. Сломает проверку только настоящая пропажа: модуль выпал из
- * графа рабочего места либо его таблицы вернулись в файл входа.
- */
-
-/** Спецификаторы, живущие в рантайме: import, `export ... from` и import(). */
-function runtimeSpecifiers(sourceFile) {
-	const specifiers = [];
-	for (const statement of sourceFile.statements) {
-		if (ts.isImportDeclaration(statement)) {
-			if (statement.importClause?.isTypeOnly) continue;
-			if (ts.isStringLiteral(statement.moduleSpecifier)) {
-				specifiers.push(statement.moduleSpecifier.text);
-			}
-		}
-		if (ts.isExportDeclaration(statement) && !statement.isTypeOnly) {
-			if (
-				statement.moduleSpecifier &&
-				ts.isStringLiteral(statement.moduleSpecifier)
-			) {
-				specifiers.push(statement.moduleSpecifier.text);
-			}
-		}
-	}
-	eachNode(sourceFile, (node) => {
-		if (
-			ts.isCallExpression(node) &&
-			node.expression.kind === ts.SyntaxKind.ImportKeyword &&
-			node.arguments.length > 0 &&
-			ts.isStringLiteral(node.arguments[0])
-		) {
-			specifiers.push(node.arguments[0].text);
-		}
-	});
-	return specifiers;
-}
-
-const moduleGraphCache = new Map();
-
-/** Транзитивное замыкание рантайм-импортов от файла входа (только наши пути). */
-function runtimeModuleGraph(entryFile) {
-	const cached = moduleGraphCache.get(entryFile);
-	if (cached) return cached;
-	const reached = new Set([entryFile]);
-	const queue = [entryFile];
-	while (queue.length > 0) {
-		const file = queue.shift();
-		for (const specifier of runtimeSpecifiers(parseTypeScriptFile(file))) {
-			const target = resolveRelativeModule(file, specifier);
-			if (!target || reached.has(target)) continue;
-			reached.add(target);
-			queue.push(target);
-		}
-	}
-	moduleGraphCache.set(entryFile, reached);
-	return reached;
-}
-
-/** Имена, объявленные на верхнем уровне файла (разбор `const {a} = ...` — не объявление). */
-function topLevelDeclaredNames(sourceFile) {
-	const names = new Set();
-	for (const statement of sourceFile.statements) {
-		if (ts.isVariableStatement(statement)) {
-			for (const declaration of statement.declarationList.declarations) {
-				if (ts.isIdentifier(declaration.name)) names.add(declaration.name.text);
-			}
-		}
-		if (
-			(ts.isFunctionDeclaration(statement) ||
-				ts.isClassDeclaration(statement)) &&
-			statement.name
-		) {
-			names.add(statement.name.text);
-		}
-	}
-	return names;
-}
-
-/** Экспортируемые ЗНАЧЕНИЯ модуля: типы стираются и владением не считаются. */
-function exportedValueNames(sourceFile) {
-	const names = new Set();
-	for (const statement of sourceFile.statements) {
-		const modifiers = ts.canHaveModifiers(statement)
-			? (ts.getModifiers(statement) ?? [])
-			: [];
-		if (!modifiers.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
-		if (ts.isVariableStatement(statement)) {
-			for (const declaration of statement.declarationList.declarations) {
-				if (ts.isIdentifier(declaration.name)) names.add(declaration.name.text);
-			}
-		}
-		if (
-			(ts.isFunctionDeclaration(statement) ||
-				ts.isClassDeclaration(statement)) &&
-			statement.name
-		) {
-			names.add(statement.name.text);
-		}
-	}
-	return names;
-}
-
-/**
- * Причина отказа или null. Обе половины свойства: модуль достижим из файла входа
- * И файл входа не объявляет его экспорты сам.
- */
-function splitOwnershipFailure(entryFile, moduleFile) {
-	if (!runtimeModuleGraph(entryFile).has(moduleFile)) {
-		return `${moduleFile} не достижим рантайм-импортами из ${entryFile}`;
-	}
-	const declared = topLevelDeclaredNames(parseTypeScriptFile(entryFile));
-	const reowned = [
-		...exportedValueNames(parseTypeScriptFile(moduleFile)),
-	].filter((name) => declared.has(name));
-	if (reowned.length > 0) {
-		return `${entryFile} снова объявляет у себя ${reowned.join(", ")} из ${moduleFile}`;
-	}
-	return null;
-}
-
 const mainSource = readFileSync("apps/web/src/main.tsx", "utf8");
 const shellSource = readFileSync(shellFile, "utf8");
 const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 const viteSource = readFileSync("apps/web/vite.config.ts", "utf8");
 const webBundleBudgetSource = readFileSync(
 	"scripts/smoke-web-bundle-budget.mjs",
@@ -343,17 +198,7 @@ if (mainSource.includes('from "./App";')) {
 	missing.push("main.tsx must not synchronously import the heavy workspace");
 }
 
-/*
- * Дословно требовалось `lazy(() => import("./App")` одной строкой. Замерено
- * 2026-08-09: коммит ad8f12499 форматтером разбил вызов надвое —
- * AppShell.tsx:7-9 держит `lazy(() =>`, перенос, `import("./App")`. Тяжёлая
- * рабочая область по-прежнему отделена от входного чанка, до правки EXIT=1.
- *
- * Закрывающая кавычка в выражении обязательна: без неё `import("./AppShell")`
- * и `import("./AppBootState")` засчитывались бы за границу самого App.
- * Проверено корпусом форм.
- */
-if (!/lazy\(\(\)\s*=>\s*import\("\.\/App"\)/.test(shellSource)) {
+if (!shellSource.includes('lazy(() => import("./App")')) {
 	missing.push("AppShell must lazy-load App.tsx");
 }
 
@@ -811,69 +656,33 @@ if (!viteSource.includes('return "workspace-ui-labels"')) {
 	);
 }
 
-/*
- * Восемь утверждений о разделении владения. Формулировки сообщений сохранены
- * дословно: словарь гейта не меняется, меняется способ доказательства (см. разбор
- * над splitOwnershipFailure). Причина отказа дописывается в скобках, чтобы в логе
- * было видно, какая из двух половин не выполнена.
- */
-for (const { entry, module: moduleFile, message } of [
-	{
-		entry: "apps/web/src/App.tsx",
-		module: "apps/web/src/workspaceStaticOptions.ts",
-		message:
-			"App.tsx must import shared workspace static options instead of owning bulky option tables",
-	},
-	{
-		entry: "apps/web/src/App.tsx",
-		module: "apps/web/src/workspaceUiLabels.ts",
-		message:
-			"App.tsx must import shared workspace UI labels instead of owning bulky label tables",
-	},
-	{
-		entry: "apps/web/src/App.tsx",
-		module: "apps/web/src/imagingUiLabels.ts",
-		message:
-			"App.tsx must import shared imaging UI labels instead of owning bulky CT/DICOM tables",
-	},
-	{
-		entry: "apps/web/src/SettingsView.tsx",
-		module: "apps/web/src/ctPlanningTools.tsx",
-		message:
-			"SettingsView.tsx must reuse the shared CT planning tools panel instead of duplicating implant-planning tables",
-	},
-	{
-		entry: "apps/web/src/App.tsx",
-		module: "apps/web/src/imagingComparison.ts",
-		message:
-			"App.tsx must import imaging comparison helpers instead of owning extra workspace code",
-	},
-	{
-		entry: "apps/web/src/App.tsx",
-		module: "apps/web/src/mprControlMath.ts",
-		message:
-			"App.tsx must import MPR control math instead of owning extra workspace code",
-	},
-	{
-		entry: "apps/web/src/App.tsx",
-		module: "apps/web/src/mprClinicalStatus.ts",
-		message:
-			"App.tsx must import MPR clinical status helpers instead of owning extra workspace code",
-	},
-	{
-		entry: "apps/web/src/App.tsx",
-		module: "apps/web/src/pricelistUiMeta.ts",
-		message:
-			"App.tsx must import pricelist UI metadata instead of owning extra workspace code",
-	},
-]) {
-	const failure = splitOwnershipFailure(entry, moduleFile);
-	if (failure) missing.push(`${message} (${failure})`);
+if (!appSource.includes('from "./workspaceStaticOptions"')) {
+	missing.push(
+		"App.tsx must import shared workspace static options instead of owning bulky option tables",
+	);
+}
+
+if (!appSource.includes('from "./workspaceUiLabels"')) {
+	missing.push(
+		"App.tsx must import shared workspace UI labels instead of owning bulky label tables",
+	);
+}
+
+if (!appSource.includes('from "./imagingUiLabels"')) {
+	missing.push(
+		"App.tsx must import shared imaging UI labels instead of owning bulky CT/DICOM tables",
+	);
 }
 
 if (!appSource.includes('from "./ctPlanningTools"')) {
 	missing.push(
 		"App.tsx must import the shared CT planning tools panel instead of owning implant-planning tables inline",
+	);
+}
+
+if (!settingsSource.includes('from "./ctPlanningTools"')) {
+	missing.push(
+		"SettingsView.tsx must reuse the shared CT planning tools panel instead of duplicating implant-planning tables",
 	);
 }
 
@@ -1110,6 +919,30 @@ if (
 ) {
 	missing.push(
 		"imagingUiLabels.ts must own imaging/MPR labels and current DICOM render-plan labels",
+	);
+}
+
+if (!appSource.includes('from "./imagingComparison"')) {
+	missing.push(
+		"App.tsx must import imaging comparison helpers instead of owning extra workspace code",
+	);
+}
+
+if (!appSource.includes('from "./mprControlMath"')) {
+	missing.push(
+		"App.tsx must import MPR control math instead of owning extra workspace code",
+	);
+}
+
+if (!appSource.includes('from "./mprClinicalStatus"')) {
+	missing.push(
+		"App.tsx must import MPR clinical status helpers instead of owning extra workspace code",
+	);
+}
+
+if (!appSource.includes('from "./pricelistUiMeta"')) {
+	missing.push(
+		"App.tsx must import pricelist UI metadata instead of owning extra workspace code",
 	);
 }
 

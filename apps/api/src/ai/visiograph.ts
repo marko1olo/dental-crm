@@ -1,4 +1,3 @@
-import { randomInt } from "node:crypto";
 import {
 	fetchWithProviderTimeout,
 	getProviderKeyCandidates,
@@ -34,12 +33,7 @@ export async function analyzeVisiographImage(
 		if (!candidates.length) continue;
 
 		// Shuffle candidates for load balancing
-		for (let i = candidates.length - 1; i > 0; i--) {
-			const j = randomInt(i + 1);
-			const temp = candidates[i];
-			candidates[i] = candidates[j] as NonNullable<typeof candidates[number]>;
-			candidates[j] = temp as NonNullable<typeof candidates[number]>;
-		}
+		candidates.sort(() => Math.random() - 0.5);
 
 		for (const candidate of candidates) {
 			try {

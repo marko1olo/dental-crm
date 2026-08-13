@@ -53,27 +53,6 @@ function assert(condition, message) {
 	if (!condition) throw new Error(message);
 }
 
-/*
- * КЛЮЧ ОПЕРАЦИИ ОБЯЗАТЕЛЕН КАЖДОЙ ОПЛАТЕ, И У КАЖДОЙ — СВОЙ.
- *
- * Маршрут требует `clientMutationId` с коммита db4de12d1 («enforce idempotency»):
- * без него POST /api/billing/payments отвечает 400 «Ключ операции
- * (clientMutationId) обязателен для предотвращения двойных списаний». Веб его
- * посылает (`browserGeneratedId("payment")`, сохранён в ref, чтобы повтор не
- * создал второе списание) — прав маршрут, а этот сценарий требование
- * предшествовал и потому падал на первой же оплате.
- *
- * ПОЧЕМУ КЛЮЧ РАЗНЫЙ У КАЖДОГО ЗАПРОСА. Отказ по отсутствию ключа выдаётся
- * РАНЬШЕ проверки области видимости. С одним общим ключом восемь проверок
- * областей (чужой пациент, неизвестный визит, нефинансовый документ) получали бы
- * отказ идемпотентности вместо проверяемого отказа области — и «зелёный» сценарий
- * не проверял бы ничего. Ключ выводится из ярлыка проверки, а не из случайного
- * значения: прогон остаётся воспроизводимым.
- */
-function mutationKey(label) {
-	return `smoke-billing-document-link:${label}`;
-}
-
 assert(
 	billingRouteSource.includes("BillingPaymentScopeError"),
 	"billing route must keep a stable payment scope error code",
@@ -175,7 +154,6 @@ const validResponse = await app.inject({
 		amountRub: 1000,
 		method: "card",
 		note: "smoke valid document link",
-		clientMutationId: mutationKey("valid-document-link"),
 	},
 });
 assert(
@@ -204,7 +182,6 @@ const inheritedVisitResponse = await app.inject({
 		amountRub: 1000,
 		method: "card",
 		note: "smoke inherited document visit link",
-		clientMutationId: mutationKey("inherited-visit"),
 	},
 });
 assert(
@@ -224,7 +201,6 @@ const unknownPatientResponse = await app.inject({
 		amountRub: 1000,
 		method: "card",
 		note: "smoke unknown patient payment",
-		clientMutationId: mutationKey("unknown-patient"),
 	},
 });
 assertBillingScopeError(
@@ -243,7 +219,6 @@ const unknownVisitResponse = await app.inject({
 		amountRub: 1000,
 		method: "card",
 		note: "smoke unknown visit payment",
-		clientMutationId: mutationKey("unknown-visit"),
 	},
 });
 assertBillingScopeError(
@@ -263,7 +238,6 @@ const unknownDocumentResponse = await app.inject({
 		amountRub: 1000,
 		method: "card",
 		note: "smoke unknown document payment",
-		clientMutationId: mutationKey("unknown-document"),
 	},
 });
 assertBillingScopeError(
@@ -283,7 +257,6 @@ const wrongPatientResponse = await app.inject({
 		amountRub: 1000,
 		method: "card",
 		note: "smoke invalid document link",
-		clientMutationId: mutationKey("invalid-document-link"),
 	},
 });
 assertBillingScopeError(
@@ -303,7 +276,6 @@ const nonFinancialDocumentResponse = await app.inject({
 		amountRub: 1000,
 		method: "card",
 		note: "smoke invalid non-financial document link",
-		clientMutationId: mutationKey("non-financial-document"),
 	},
 });
 assertBillingScopeError(
@@ -323,7 +295,6 @@ const refundCorrectionDocumentResponse = await app.inject({
 		amountRub: 1000,
 		method: "card",
 		note: "smoke refund correction cannot receive new incoming payment",
-		clientMutationId: mutationKey("refund-correction"),
 	},
 });
 assertBillingScopeError(

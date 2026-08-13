@@ -10,8 +10,6 @@ import {
 	patients,
 	users,
 } from "../db/schema.js";
-import { wsBroker } from "../services/websocketBroker.js";
-
 /*
  * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
  * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts). Этот
@@ -788,7 +786,6 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							patientId,
 							doctorUserId: doctorId,
 							status: "planned",
-							source: "online",
 							startsAt: startDate,
 							endsAt: endDate,
 							comment: comment || "Запись через виджет на сайте",
@@ -803,28 +800,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 						error: "Выбранное время уже занято. Обновите список слотов.",
 					});
 				}
-				/*
-				 * WS-УВЕДОМЛЕНИЕ АДМИНИСТРАТОРУ — Feature #49.
-				 *
-				 * До этой правки publicBooking не рассылал НИЧЕГО через WebSocket: запись
-				 * с виджета появлялась в расписании только при ручном обновлении страницы.
-				 * Администратор не получал сигнала «пришла онлайн-заявка» ни визуально,
-				 * ни звуком. Теперь событие ONLINE_APPOINTMENT_CREATED идёт в рамках той
-				 * же WS-инфраструктуры, что и APPOINTMENT_CREATED из schedule.ts.
-				 *
-				 * source: "online" — явная метка, чтобы клиент мог отличить онлайн-запись
-				 * от записи администратора и воспроизвести другой звуковой сигнал.
-				 */
-				wsBroker.broadcastToOrganization(organizationId, {
-					type: "ONLINE_APPOINTMENT_CREATED",
-					payload: {
-						appointmentId: result.appointment.id,
-						startsAt: result.appointment.startsAt,
-						source: "online" as const,
-					},
-				});
 				return { success: true, appointment: result.appointment };
-
 			} catch (error) {
 				request.log.error(
 					{ err: error },

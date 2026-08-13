@@ -283,24 +283,17 @@
       "breakpoints": true
     },
     {
+      "idx": 40,
+      "version": "7",
+      "when": 1786263440539,
+      "tag": "0040_exotic_monster_badoon",
+      "breakpoints": true
+    },
+    {
       "idx": 41,
       "version": "7",
-      "when": 1786517075012,
-      "tag": "0041_giant_captain_midlands",
-      "breakpoints": true
-    },
-    {
-      "idx": 42,
-      "version": "7",
-      "when": 1786519509432,
-      "tag": "0042_odd_purple_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 43,
-      "version": "7",
-      "when": 1786525743703,
-      "tag": "0043_boring_unus",
+      "when": 1786617096863,
+      "tag": "0041_tidy_cerebro",
       "breakpoints": true
     }
   ]

@@ -222,34 +222,20 @@ export async function mergePatients(
 					if (count > 0) droppedConflicts[table] = count;
 				}
 
-				if (columns.length > 0) {
-					const parts = columns.map(
-						(col, idx) => sql`upd_${sql.raw(String(idx))} AS (
-							update ${sql.identifier(col.tableName)}
-							set ${sql.identifier(col.columnName)} = ${input.primaryPatientId}
-							where ${sql.identifier(col.columnName)} = ${input.duplicatePatientId}
-							returning 1
-						)`,
-					);
-					const selects = columns.map(
-						(_, idx) =>
-							sql`(select count(*) from upd_${sql.raw(String(idx))}) as cnt_${sql.raw(String(idx))}`,
-					);
-					const query = sql`WITH ${sql.join(parts, sql`, `)} SELECT ${sql.join(selects, sql`, `)}`;
+				const updatePromises = columns.map(async (column) => {
+					const updated = await inner.execute(sql`
+					update ${sql.identifier(column.tableName)}
+					set ${sql.identifier(column.columnName)} = ${input.primaryPatientId}
+					where ${sql.identifier(column.columnName)} = ${input.duplicatePatientId}
+					returning 1
+				`);
+					const count = rowCount(updated);
+					return { key: `${column.tableName}.${column.columnName}`, count };
+				});
 
-					const batchResult = await inner.execute(query);
-					const row = (batchResult as any).rows?.[0] || (batchResult as any)[0] || {};
-
-					for (let i = 0; i < columns.length; i++) {
-						const count = Number(row[`cnt_${i}`] || 0);
-						if (count > 0) {
-							const tableName = columns[i]?.tableName;
-							const columnName = columns[i]?.columnName;
-							if (tableName && columnName) {
-								movedRows[`${tableName}.${columnName}`] = count;
-							}
-						}
-					}
+				const updateResults = await Promise.all(updatePromises);
+				for (const { key, count } of updateResults) {
+					if (count > 0) movedRows[key] = count;
 				}
 
 				// Переносим только то, чего в основной карточке нет.

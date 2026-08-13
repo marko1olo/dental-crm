@@ -35,23 +35,7 @@ function forbidIn(source, snippet, message) {
 
 requireIn(
 	appSource,
-	/*
-	 * ПЕРЕНОС СТРОКИ ВНУТРИ ВЫЗОВА НЕ ЗАКРЕПЛЯЕТСЯ.
-	 *
-	 * Дословно требовалось `lazy(() => import("./FinanceView")` одной строкой.
-	 * Замерено 2026-08-09: в `ad8f12499^` все пятнадцать вызовов lazy в App.tsx
-	 * лежали одной строкой, форматтер тем же коммитом разбил их надвое, и
-	 * подстрока перестала находиться — до правки EXIT=1. Продукт цел: App.tsx:79
-	 * держит `lazy(() =>`, перенос, `import("./FinanceView")`, раздел грузится
-	 * лениво ровно как задумано, отдельный чанк никуда не делся.
-	 *
-	 * Закреплён СМЫСЛ: FinanceView входит в сборку через lazy + динамический
-	 * import именно этого модуля. `\s*` засчитывает и пробел, и перенос с табами,
-	 * то есть обе формы — прежнюю однострочную и текущую. Подмена модуля
-	 * (`./FinanceViewLegacy`, `./LegacyFinanceView`) и статический импорт
-	 * по-прежнему краснеют: проверено корпусом форм.
-	 */
-	/lazy\(\(\)\s*=>\s*import\("\.\/FinanceView"\)/,
+	'lazy(() => import("./FinanceView")',
 	"App.tsx must lazy-load FinanceView",
 );
 requireIn(
@@ -94,15 +78,8 @@ requireIn(
 	 * Закреплена СВЯЗЬ: сводка по пациенту выводится через useMemo и типизирована
 	 * формой Dashboard["billingSummary"]. Нулевой признак (` | null`) допускается,
 	 * подмена типа на чужой — нет.
-	 *
-	 * ДОБАВЛЕНО 2026-08-09: `\s*` в трёх местах внутри параметра типа. Признак
-	 * ` | null` автор уже предусмотрел, и ломала проверку ровно расстановка
-	 * переносов: коммит ad8f12499 (тот же форматтерный проход, что разбил вызовы
-	 * lazy в App.tsx) развернул параметр типа на три строки —
-	 * useDocumentWorkflowModule.ts:1872-1874 `useMemo<` / `Dashboard[...] | null`
-	 * / `>(() => {`. До правки EXIT=1. Тип по-прежнему закреплён точно.
 	 */
-	/const patientBillingSummary = useMemo<\s*Dashboard\["billingSummary"\](?:\s*\|\s*null)?\s*>/,
+	/const patientBillingSummary = useMemo<Dashboard\["billingSummary"\](?:\s*\|\s*null)?>/,
 	"App.tsx must derive a patient-scoped finance summary",
 );
 requireIn(
@@ -115,33 +92,10 @@ requireIn(
 	"const patientClinicalRuleEvaluations = useMemo",
 	"App.tsx must derive patient-scoped clinical rule evaluations for finance",
 );
-/*
- * Сводка клинических правил уехала из App.tsx в
- * hooks/domains/useDocumentWorkflowModule.ts:1839 и получила там подчёркивание
- * в имени (`_patientClinicalRuleSummary`) — так помечают значение, которое
- * наружу отдаётся под чистым именем. Дословный литерал `const
- * patientClinicalRuleSummary = useMemo` перестал совпадать, хотя сводка
- * считается и доходит до экрана.
- *
- * Цепочка прослежена целиком 2026-08-10:
- *   useDocumentWorkflowModule.ts:1839  вычисление через clinicalRuleSummaryForUi
- *   useDocumentWorkflowModule.ts:4174  отдаётся как patientClinicalRuleSummary
- *   App.tsx:676                        разбирается из модуля
- *   App.tsx:4719                       уходит пропсом clinicalRuleSummary
- *
- * Закрепляются ОБА конца: само вычисление и вывод под чистым именем. Одного
- * первого мало — вычисленная и никому не отданная сводка на экран не попадёт,
- * а страж этого не заметил бы.
- */
 requireIn(
 	appSource,
-	/const _?patientClinicalRuleSummary = useMemo/,
+	"const patientClinicalRuleSummary = useMemo",
 	"App.tsx must derive patient-scoped clinical rule summary for finance",
-);
-requireIn(
-	appSource,
-	/(?<![A-Za-z0-9_$])patientClinicalRuleSummary(?::\s*_?patientClinicalRuleSummary)?,/,
-	"Patient-scoped clinical rule summary must be exposed to its consumer",
 );
 requireIn(
 	appSource,
@@ -272,17 +226,9 @@ requireIn(
 	'document.getElementById("payment-capture")',
 	"FinanceView must support a direct jump back to payment capture",
 );
-/*
- * Форматтер перенёс присваивание на вторую строку (vite.config.ts:9-10):
- * `const apiProxyTarget =` / перенос / `process.env.DENTAL_API_PROXY_TARGET ??
- * "http://127.0.0.1:4100";`. Требование прежнее и не косметическое: адрес API
- * обязан читаться из переменной окружения, иначе параллельные смоуки на разных
- * портах бьются об один захардкоженный 4100. Значение по умолчанию закрепляется
- * тоже — без него можно было бы читать переменную и подставлять что угодно.
- */
 requireIn(
 	viteSource,
-	/const apiProxyTarget =\s*process\.env\.DENTAL_API_PROXY_TARGET \?\? "http:\/\/127\.0\.0\.1:4100"/,
+	'const apiProxyTarget = process.env.DENTAL_API_PROXY_TARGET ?? "http://127.0.0.1:4100"',
 	"Vite dev proxy must be configurable for parallel smoke ports",
 );
 requireIn(

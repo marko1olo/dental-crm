@@ -842,7 +842,6 @@ export const staffRoleSchema = z.enum([
     "administrator",
     "assistant",
     "manager",
-    "curator",
 ]);
 export const dentalSpecialtySchema = z.enum([
     "therapist",
@@ -1476,10 +1475,6 @@ export const clinicProfileSchema = z.object({
     timezone: timeZoneSchema,
     defaultVisitMinutes: z.number().int().positive(),
     scheduleDefaults: clinicScheduleDefaultsSchema,
-    patientCreationRules: z.object({
-        requirePhone: z.boolean(),
-        requireSource: z.boolean(),
-    }).optional(),
     networkEnabled: z.boolean(),
     egiszEnabled: z.boolean(),
     specializations: z.array(z.string()).optional(),
@@ -2543,12 +2538,6 @@ const patientAdministrativeProfileBaseSchema = z.object({
         .nullable()
         .optional()
         .default(null),
-    marketingSource: z
-        .string()
-        .trim()
-        .max(120)
-        .nullable()
-        .default(null),
 });
 export const patientAdministrativeProfileSchema = patientAdministrativeProfileBaseSchema.superRefine((value, context) => {
     if (value.preferredAppointmentStart &&
@@ -2595,7 +2584,6 @@ export const patientSchema = z.object({
      * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
      */
     familyGroupId: z.string().uuid().nullable().optional(),
-    curatorId: z.string().uuid().nullable().optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
@@ -2806,7 +2794,6 @@ export const visitSchema = z.object({
     patientId: z.string().uuid(),
     appointmentId: z.string().uuid().nullable(),
     status: visitStatusSchema,
-    qualityControlStatus: z.string().nullable().optional(),
     revision: z.number().int().nonnegative().default(1),
     complaint: z.string().nullable(),
     anamnesis: z.string().nullable(),
@@ -4537,7 +4524,6 @@ export const createPatientSchema = z.object({
     administrativeProfile: patientAdministrativeProfileSchema
         .nullable()
         .optional(),
-    curatorId: z.string().uuid().nullable().optional(),
 });
 export const updatePatientSchema = z.object({
     fullName: z.string().trim().min(1).max(240).optional(),
@@ -4555,7 +4541,6 @@ export const updatePatientSchema = z.object({
      * счёта за «привязанного» шла в никуда.
      */
     familyGroupId: z.string().uuid().nullable().optional(),
-    curatorId: z.string().uuid().nullable().optional(),
 });
 export const updatePatientAdministrativeProfileSchema = patientAdministrativeProfileBaseSchema
     .partial()
@@ -4618,10 +4603,6 @@ export const updateClinicProfileSchema = z.object({
     timezone: timeZoneSchema.optional(),
     defaultVisitMinutes: z.number().int().positive().max(480).optional(),
     scheduleDefaults: clinicScheduleDefaultsSchema.optional(),
-    patientCreationRules: z.object({
-        requirePhone: z.boolean(),
-        requireSource: z.boolean(),
-    }).optional(),
     egiszEnabled: z.boolean().optional(),
 });
 export const createStaffMemberSchema = z.object({
@@ -6328,7 +6309,6 @@ export const visitDraftAutosaveSchema = z.object({
     clientSavedAt: z.string().nullable(),
     serverSavedAt: z.string(),
     transcriptHash: z.string(),
-    qualityControlStatus: z.string().nullable().optional(),
 });
 export const visitDraftAutosaveRequestSchema = z
     .object({

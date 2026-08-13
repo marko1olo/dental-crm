@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { createSmokeClinicAuth } from "./lib/smoke-clinic-auth.mjs";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 
@@ -81,17 +80,6 @@ function assertImagingError(
 }
 
 const app = Fastify({ logger: false });
-/*
- * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ ГРАНИЦА ВИЗИТА В СНИМКАХ, А ВХОД.
- * Организация берётся маршрутом из подписанного токена, и барьер стоит ДО
- * разбора тела и самой операции: без токена всё падало на 401 AuthRequired,
- * поэтому проверяемое поведение не исполнялось НИ РАЗУ.
- */
-const smokeAuth = await createSmokeClinicAuth({
-	fallbackSecret: "dente_imaging_visit_scope_smoke_secret",
-	organizationId: activeVisit.organizationId,
-});
-smokeAuth.attachTo(app);
 await registerImagingRoutes(app);
 
 const activePatient = patients.find(

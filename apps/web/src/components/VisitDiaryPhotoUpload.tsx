@@ -9,8 +9,6 @@ import { actionFailureToast, requestFailureCause } from "../lib/panelStateText";
 import { readDenteClinicToken } from "../lib/safeLocalStorage";
 import { logger } from "../utils/logger";
 import { showToast } from "./GlobalToast";
-import heic2any from "heic2any";
-
 
 interface Attachment {
 	id: string;
@@ -286,31 +284,8 @@ export function VisitDiaryPhotoUpload({
 		setIsUploading(true);
 		let localObjectUrl: string | null = null;
 		try {
-			let processFile: Blob | File = file;
-			const fileName = file.name || "";
-
-			/*
-			 * Feature #7: Конвертация HEIC/HEIF в JPEG на клиенте перед ресайзом.
-			 * Прямая загрузка фотографий полости рта с iPhone даёт .heic, который
-			 * не понимает canvas браузера. Конвертируем через WebAssembly heic2any.
-			 */
-			if (
-				processFile.type === "image/heic" ||
-				processFile.type === "image/heif" ||
-				fileName.toLowerCase().endsWith(".heic") ||
-				fileName.toLowerCase().endsWith(".heif")
-			) {
-				const converted = await heic2any({
-					blob: processFile,
-					toType: "image/jpeg",
-					quality: 0.8,
-				});
-				processFile = (Array.isArray(converted) ? converted[0] : converted) as Blob;
-			}
-
 			const img = new Image();
-			localObjectUrl = URL.createObjectURL(processFile);
-
+			localObjectUrl = URL.createObjectURL(file);
 
 			try {
 				await new Promise<void>((resolve, reject) => {

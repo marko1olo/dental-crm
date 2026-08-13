@@ -13,7 +13,9 @@ import { db } from "./client.js";
 import { isPatientBookingBlocked } from "./patientArchiveReasonsAndBlacklistsQuery.js";
 import * as schema from "./schema.js";
 
-
+function useInMemory() {
+	return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 /**
  * Пессимистично блокирует строки ресурсов приёма до проверки занятости.
@@ -238,7 +240,9 @@ export async function createAppointmentInDb(
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	tx?: any,
 ): Promise<Appointment> {
-	
+	if (useInMemory()) {
+		return createAppointmentInMemory(input);
+	}
 	if (
 		input.patientId &&
 		(await isPatientBookingBlocked(organizationId, input.patientId))
@@ -328,7 +332,9 @@ export async function updateAppointmentInDb(
 	appointmentId: string,
 	input: UpdateAppointmentInput,
 ): Promise<Appointment> {
-	
+	if (useInMemory()) {
+		return updateAppointmentInMemory(appointmentId, input);
+	}
 	// Перенос приёма — та же гонка, что и создание: между проверкой занятости
 	// и записью другой администратор успевает занять слот. Всё внутри одной
 	// транзакции с блокировкой строк ресурсов.
@@ -444,7 +450,9 @@ export async function getAppointmentByIdInDb(
 	organizationId: string,
 	id: string,
 ) {
-	
+	if (useInMemory()) {
+		return inMemoryAppointments.find((a) => a.id === id) ?? null;
+	}
 	const [res] = await db
 		.select()
 		.from(schema.appointments)

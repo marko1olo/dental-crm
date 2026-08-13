@@ -42,16 +42,9 @@ function forbidIn(source, snippet, message) {
 	if (source.includes(snippet)) missing.push(message);
 }
 
-/*
- * Перенос строки внутри вызова НЕ закрепляется. Замерено 2026-08-09: biome
- * разбил однострочный вызов на две строки, дословная подстрока перестала
- * находиться, до правки EXIT=1. В продукте App.tsx:79 стоит `lazy(() =>`,
- * перенос, `import("./FinanceView")` — раздел грузится лениво как задумано.
- * `\s*` засчитывает обе формы, прежнюю однострочную и текущую.
- */
 requireIn(
 	appSource,
-	/lazy\(\(\)\s*=>\s*import\("\.\/FinanceView"\)/,
+	'lazy(() => import("./FinanceView")',
 	"App.tsx must lazy-load the finance view boundary",
 );
 forbidIn(
@@ -95,17 +88,9 @@ requireIn(
 	"onFocusPaymentCapture={focusPaymentCapture}",
 	"FinanceView must let empty payment history jump back to capture",
 );
-/*
- * Тот же перенос от форматтера, что и у lazy выше, и тот же коммит ad8f12499:
- * в `ad8f12499^` строка была одной (`getElementById("payment-amount-input") as
- * HTMLInputElement | null`), сейчас аргумент вынесен на отдельную строку —
- * FinanceView.tsx:283-285. Продукт цел: фокус ставится там же, строкой 290
- * (`amountInput?.focus({ preventScroll: true })`), и это требование ниже
- * проходит дословно. Закреплён поиск нужного поля по идентификатору.
- */
 requireIn(
 	financeViewSource,
-	/document\.getElementById\(\s*"payment-amount-input"/,
+	'document.getElementById("payment-amount-input")',
 	"FinanceView payment empty-state action must focus the amount input",
 );
 requireIn(

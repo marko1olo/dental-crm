@@ -149,6 +149,12 @@ export const clinicalRuleAction = pgEnum("clinical_rule_action", [
 	"show_warning",
 	"schedule_followup",
 ]);
+export const clinicalTaskStatus = pgEnum("clinical_task_status", [
+	"pending",
+	"in_progress",
+	"completed",
+	"cancelled",
+]);
 export const paymentMethod = pgEnum("payment_method", [
 	"cash",
 	"card",
@@ -400,7 +406,6 @@ export const organizations = pgTable("organizations", {
 	 */
 	clinicMode: text("clinic_mode").notNull().default(DEFAULT_CLINIC_MODE),
 	clinicSchedule: jsonb("clinic_schedule"),
-	patientCreationRules: jsonb("patient_creation_rules"),
 	/*
 	 * Какие модули включены у этой клиники.
 	 *
@@ -583,7 +588,6 @@ export const patients = pgTable(
 		 * должен увидеть, куда она объединена, а не пустоту.
 		 */
 		mergedIntoPatientId: uuid("merged_into_patient_id"),
-		curatorId: uuid("curator_id").references(() => users.id),
 		isSynced: boolean("is_synced").notNull().default(false),
 		version: integer("version").notNull().default(1),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -627,8 +631,6 @@ export const patientConsents = pgTable(
 	}),
 );
 
-export const appointmentSource = pgEnum("appointment_source", ["admin", "online"]);
-
 export const appointments = pgTable(
 	"appointments",
 	{
@@ -641,7 +643,6 @@ export const appointments = pgTable(
 		assistantUserId: uuid("assistant_user_id").references(() => users.id),
 		chairId: uuid("chair_id").references(() => chairs.id),
 		status: appointmentStatus("status").notNull().default("planned"),
-		source: appointmentSource("source").notNull().default("admin"),
 		startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
 		endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
 		reason: text("reason"),
@@ -887,6 +888,41 @@ export const treatmentScenarios = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("treatment_scenarios_patient_id_idx").on(t.patientId),
+	}),
+);
+
+export const clinicalTasks = pgTable(
+	"clinical_tasks",
+	{
+		id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		treatmentPlanId: uuid("treatment_plan_id").references(
+			() => treatmentPlans.id,
+		),
+		assignedDoctorId: uuid("assigned_doctor_id").references(() => users.id),
+		taskType: text("task_type").notNull(),
+		status: clinicalTaskStatus("status").notNull().default("pending"),
+		title: text("title").notNull(),
+		description: text("description"),
+		dueAt: timestamp("due_at", { withTimezone: true }),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("clinical_tasks_organizationId_idx").on(
+			t.organizationId,
+		),
+		patientIdIdx: index("clinical_tasks_patientId_idx").on(t.patientId),
 	}),
 );
 

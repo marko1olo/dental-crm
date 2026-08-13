@@ -58,16 +58,8 @@ const patientsSource = readFileSync(
 	path.resolve("apps/web/src/PatientsView.tsx"),
 	"utf8",
 );
-/*
- * Дословно требовалось `lazy(() => import("./PatientsView")` одной строкой.
- * Замерено 2026-08-09: коммит ad8f12499 форматтером разбил вызов надвое —
- * App.tsx:98 держит `lazy(() =>`, перенос, `import("./PatientsView")`. Граница
- * маршрута на месте, до правки EXIT=1. `\s*` покрывает пробел и перенос с
- * табами, то есть обе формы; `./PatientsViewLegacy` и статический импорт
- * краснеют — проверено корпусом форм.
- */
 assert(
-	/lazy\(\(\)\s*=>\s*import\("\.\/PatientsView"\)/.test(appSource),
+	appSource.includes('lazy(() => import("./PatientsView")'),
 	"patients screen must stay behind the lazy route boundary",
 );
 assert(

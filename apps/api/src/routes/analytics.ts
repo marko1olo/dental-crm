@@ -8,7 +8,6 @@ import { db } from "../db/client.js";
 import {
 	appointments,
 	chairs,
-	diagnocatAiFindings,
 	patients,
 	payments,
 	treatmentPlans,
@@ -366,28 +365,6 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					};
 				});
 
-			const [primaryFunnelRes] = await db
-				.select({
-					leads: sql<number>`count(distinct ${patients.id})::int`,
-					scheduled: sql<number>`count(distinct ${appointments.patientId})::int`,
-					arrived: sql<number>`count(distinct case when ${appointments.status} in ('arrived', 'in_treatment', 'completed') then ${appointments.patientId} end)::int`,
-					aiInspection: sql<number>`count(distinct ${diagnocatAiFindings.patientId})::int`,
-					treatmentPlan: sql<number>`count(distinct ${treatmentPlans.patientId})::int`,
-				})
-				.from(patients)
-				.leftJoin(appointments, eq(patients.id, appointments.patientId))
-				.leftJoin(diagnocatAiFindings, eq(patients.id, diagnocatAiFindings.patientId))
-				.leftJoin(treatmentPlans, eq(patients.id, treatmentPlans.patientId))
-				.where(withDate(patients.organizationId, patients.createdAt));
-
-			const primaryFunnelJson = [
-				{ name: "Обращения", value: primaryFunnelRes?.leads ?? 0, fill: "#3b82f6" },
-				{ name: "Записаны", value: primaryFunnelRes?.scheduled ?? 0, fill: "#8b5cf6" },
-				{ name: "Дошли", value: primaryFunnelRes?.arrived ?? 0, fill: "#ec4899" },
-				{ name: "ИИ-осмотр", value: primaryFunnelRes?.aiInspection ?? 0, fill: "#f59e0b" },
-				{ name: "План лечения", value: primaryFunnelRes?.treatmentPlan ?? 0, fill: "#10b981" },
-			].filter((x) => x.value > 0);
-
 			const [patientCountRow] = await db
 				.select({ count: sql<number>`count(*)` })
 				.from(patients)
@@ -441,7 +418,6 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				// Пустой массив честнее: интерфейс покажет "нет данных за период".
 				cohortLtvJson,
 				planFunnelJson,
-				primaryFunnelJson,
 				chairUtilizationJson,
 				doctorProfitabilityJson,
 				// Явный признак пустого периода, чтобы интерфейс отличал "нет данных"
@@ -449,7 +425,6 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				isEmpty:
 					!cohortLtvJson.length &&
 					!planFunnelJson.length &&
-					!primaryFunnelJson.length &&
 					!chairUtilizationJson.length &&
 					!doctorProfitabilityJson.length,
 			};

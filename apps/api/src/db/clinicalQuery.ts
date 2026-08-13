@@ -15,7 +15,9 @@ import {
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
-
+function useInMemory() {
+	return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 function parseJsonArray(jsonString: string | null | undefined): string[] {
 	if (!jsonString) return [];
@@ -55,7 +57,9 @@ function mapClinicalRule(
 export async function getClinicalRules(
 	organizationId: string,
 ): Promise<ClinicalRule[]> {
-	
+	if (useInMemory()) {
+		return inMemoryClinicalRules;
+	}
 	const records = await db
 		.select()
 		.from(schema.clinicalRules)
@@ -67,7 +71,9 @@ async function getClinicalRuleById(
 	organizationId: string,
 	ruleId: string,
 ): Promise<ClinicalRule | null> {
-	
+	if (useInMemory()) {
+		return inMemoryClinicalRules.find((r) => r.id === ruleId) ?? null;
+	}
 	const [record] = await db
 		.select()
 		.from(schema.clinicalRules)
@@ -182,7 +188,9 @@ export async function createClinicalRuleInDb(
 	organizationId: string,
 	input: CreateClinicalRuleInput,
 ): Promise<ClinicalRule> {
-	
+	if (useInMemory()) {
+		return createClinicalRuleInMemory(input);
+	}
 	const [record] = await db
 		.insert(schema.clinicalRules)
 		.values({
@@ -217,7 +225,9 @@ export async function updateClinicalRuleInDb(
 	organizationId: string,
 	input: UpdateClinicalRuleInput,
 ): Promise<ClinicalRule> {
-	
+	if (useInMemory()) {
+		return updateClinicalRuleInMemory(input);
+	}
 	const existing = await getClinicalRuleById(organizationId, input.id);
 	if (!existing) {
 		throw new Error("Правило не найдено");
@@ -291,7 +301,14 @@ export async function deleteClinicalRuleInDb(
 	organizationId: string,
 	ruleId: string,
 ): Promise<boolean> {
-	
+	if (useInMemory()) {
+		const index = inMemoryClinicalRules.findIndex(
+			(rule) => rule.id === ruleId && rule.organizationId === organizationId,
+		);
+		if (index < 0) return false;
+		inMemoryClinicalRules.splice(index, 1);
+		return true;
+	}
 
 	const deleted = await db
 		.delete(schema.clinicalRules)

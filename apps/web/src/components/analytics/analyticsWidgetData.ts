@@ -174,7 +174,6 @@ const ROLE_KEY_ALIASES: Record<string, keyof typeof staffRoleLabels> = {
 	assistant: "assistant",
 	owner: "owner",
 	manager: "manager",
-	curator: "curator",
 };
 
 export function roleLabel(

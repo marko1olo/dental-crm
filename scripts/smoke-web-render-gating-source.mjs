@@ -1,8 +1,6 @@
 import fs from "node:fs";
-import { readAppShellSourceSync } from "./lib/app-shell-source.mjs";
-import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
-const appSource = readAppShellSourceSync();
+const appSource = fs.readFileSync("apps/web/src/App.tsx", "utf8");
 const settingsSource = fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 
 /*
@@ -25,31 +23,24 @@ const settingsSource = fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8");
  * разметка раздела — в файле, который ей теперь владеет. Обе половины остались
  * обязательными, ни одна не снята.
  */
-/*
- * НАБОР ВКЛАДОК БЕРЁТСЯ КАТАЛОГОМ, А НЕ СПИСКОМ ИМЁН.
- *
- * Здесь стоял список из девяти файлов, и он снова устарел: замер 2026-08-10 —
- * страж падал на `className="import-studio smart-import-studio"` и
- * `className="import-studio"`. Обе строки ЖИВЫ дословно и смонтированы, просто
- * уехали в файлы, которых в списке не было:
- *   SettingsSmartImportTab.tsx:1971   (рендер: SettingsImportsTab.tsx:1944)
- *   SettingsPatientImportTab.tsx:1949 (рендер: SettingsImportsTab.tsx:1950-1952)
- * Цепочка дальше общая: SettingsView.tsx:2384 -> App.tsx:4684. Регрессий нет.
- *
- * Дописать два имени было бы лечением симптома: следующий вынесенный файл
- * уронил бы стража снова, ровно как уже случилось после первого разбора
- * монолита (см. комментарий выше про 12 требований из 15). Поэтому читается
- * ВЕСЬ каталог вкладок — тем же модулем, что и в страже доступности.
- *
- * Оговорка о цене: каталогом в набор попадают и файлы, которых никто не
- * рендерит. Для ЗАПРЕТОВ это строгость (запрет расширяется и на мёртвую копию
- * — не беда), но требование о НАЛИЧИИ разметки такой файл может выполнить за
- * живой. Здесь это приемлемо: запреты ниже — суть стража, а смонтированность
- * обеих найденных вкладок подтверждена поимённо цепочкой выше.
- */
-const settingsTabComponentSources = readWebSurfaceSourceSync([
-	"apps/web/src/components/settings",
-]);
+const settingsTabComponentSources = [
+	"SettingsProtocolsTab",
+	"SettingsRulesTab",
+	"SettingsPricesTab",
+	"SettingsAiTab",
+	"SettingsImportsTab",
+	"SettingsAuditTab",
+	"sources/SourcesConnectorGrid",
+	"sources/SourcesDicomCapability",
+	"sources/SourcesIntegrationPresets",
+]
+	.map((component) =>
+		fs.readFileSync(
+			`apps/web/src/components/settings/${component}.tsx`,
+			"utf8",
+		),
+	)
+	.join("\n");
 
 const requiredSnippets = [
 	'{currentView === "shift" ? (',
@@ -103,39 +94,18 @@ const requiredSnippets = [
  * строится по условию. Три вкладки (clinic, access, telegram) по-прежнему лежат
  * разметкой в самом SettingsView, остальные смонтированы компонентами: и то и
  * другое — законный способ, лишь бы ветка была условной.
- *
- * ПОЧЕМУ ПЯТЬ ЗАПИСЕЙ СТАЛИ ВЫРАЖЕНИЯМИ, А НЕ СТРОКАМИ. Заявленный выше договор
- * («содержимое ветки НЕ закрепляется») расходился с реализацией: пять записей
- * закрепляли ветку целиком, вплоть до `<SettingsRulesTab /> : null}`. Замерено
- * 2026-08-09 — на этом и сломалось. Продукт обернул вкладку правил в
- * ErrorBoundary с русским именем модуля, а вкладку журнала — во фрагмент рядом
- * с AuditLogsPanel:
- *   {settingsTab === "rules" ? (
- *     <ErrorBoundary moduleName="Правила и регламенты">
- *       <SettingsRulesTab />
- *     </ErrorBoundary>
- *   ) : null}
- * Обе правки делают продукт ЛУЧШЕ, а смоук от них краснел и требовал снять
- * границу ошибок — то есть требовал ухудшить продукт. Это ровно та ловушка, о
- * которой предупреждает комментарий к forbiddenSnippets выше: следующий агент
- * «чинит» стража, откатывая улучшение.
- *
- * Выражение закрепляет СМЫСЛ, а не набор символов: ветка условна по нужной
- * вкладке И внутри неё смонтирован нужный компонент. Обёртки разрешены, порядок
- * атрибутов и переносы строк безразличны. Окно в 400 символов не даёт условию
- * одной вкладки дотянуться до компонента следующей.
  */
 const requiredSettingsTabGates = [
 	'{settingsTab === "clinic" ? (',
 	'{settingsTab === "access" ? (',
 	'{settingsTab === "telegram" ? (',
-	/\{settingsTab === "protocols" \?[\s\S]{0,400}?<SettingsProtocolsTab\b/,
-	/\{settingsTab === "rules" \?[\s\S]{0,400}?<SettingsRulesTab\b/,
+	'{settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}',
+	'{settingsTab === "rules" ? <SettingsRulesTab /> : null}',
 	'{settingsTab === "prices" ? (',
-	/\{settingsTab === "sources" \?[\s\S]{0,400}?<SettingsSourcesTab\b/,
-	/\{settingsTab === "ai" \?[\s\S]{0,400}?<SettingsAiTab\b/,
+	'{settingsTab === "sources" ? <SettingsSourcesTab /> : null}',
+	'{settingsTab === "ai" ? <SettingsAiTab /> : null}',
 	'{settingsTab === "imports" ? (',
-	/\{settingsTab === "audit" \?[\s\S]{0,400}?<SettingsAuditTab\b/,
+	'{settingsTab === "audit" ? <SettingsAuditTab',
 ];
 
 /*

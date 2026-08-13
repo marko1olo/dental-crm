@@ -31,7 +31,7 @@
  */
 
 import { sumKopecks } from "@dental/shared";
-import { and, eq, gte, isNotNull, lte, ne, sql, inArray } from "drizzle-orm";
+import { and, eq, gte, isNotNull, lte, ne, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -41,7 +41,6 @@ import {
 	patients,
 	payments,
 	treatmentItems,
-	treatmentPlans,
 	users,
 	visits,
 } from "../../db/schema.js";
@@ -677,28 +676,44 @@ export async function chairLoad(
 	};
 }
 
-export type AppointmentFunnelMetrics = {
+export type AppointmentFunnelReport = {
+	readonly byStatus: Readonly<Record<string, number>>;
 	readonly total: number;
+	/** Доля дошедших до кресла (arrived, in_treatment, completed). */
 	readonly arrivalRate: number | null;
 	readonly completionRate: number | null;
 	readonly cancellationRate: number | null;
 	readonly noShowRate: number | null;
+	/**
+	 * Потерянные приёмы: отмены плюс неявки. Именно этот показатель клиника
+	 * может уменьшить напоминаниями, и именно его нужно смотреть до и после.
+	 */
 	readonly lostAppointments: number;
-};
-
-export type AppointmentFunnelReport = AppointmentFunnelMetrics & {
-	readonly byStatus: Readonly<Record<string, number>>;
-	readonly bySource: {
-		readonly admin: AppointmentFunnelMetrics;
-		readonly online: AppointmentFunnelMetrics;
-	};
 	readonly isEmpty: boolean;
 };
 
-function calculateFunnelMetrics(
-	byStatus: Record<string, number>,
-	total: number,
-): AppointmentFunnelMetrics {
+export async function appointmentFunnel(
+	scope: ReportScope,
+): Promise<AppointmentFunnelReport> {
+	const rows = await db
+		.select({ status: appointments.status, total: sql<number>`count(*)::int` })
+		.from(appointments)
+		.where(
+			and(
+				eq(appointments.organizationId, scope.organizationId),
+				gte(appointments.startsAt, scope.from),
+				lte(appointments.startsAt, scope.to),
+			),
+		)
+		.groupBy(appointments.status);
+
+	const byStatus: Record<string, number> = {};
+	let total = 0;
+	for (const row of rows) {
+		byStatus[row.status] = Number(row.total);
+		total += Number(row.total);
+	}
+
 	const share = (value: number) => (total > 0 ? value / total : null);
 	const arrived =
 		(byStatus.arrived ?? 0) +
@@ -708,64 +723,13 @@ function calculateFunnelMetrics(
 	const noShow = byStatus.no_show ?? 0;
 
 	return {
+		byStatus,
 		total,
 		arrivalRate: share(arrived),
 		completionRate: share(byStatus.completed ?? 0),
 		cancellationRate: share(cancelled),
 		noShowRate: share(noShow),
 		lostAppointments: cancelled + noShow,
-	};
-}
-
-export async function appointmentFunnel(
-	scope: ReportScope,
-): Promise<AppointmentFunnelReport> {
-	const rows = await db
-		.select({
-			status: appointments.status,
-			source: appointments.source,
-			total: sql<number>`count(*)::int`,
-		})
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, scope.organizationId),
-				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to),
-			),
-		)
-		.groupBy(appointments.status, appointments.source);
-
-	const byStatus: Record<string, number> = {};
-	const adminByStatus: Record<string, number> = {};
-	const onlineByStatus: Record<string, number> = {};
-	let total = 0;
-	let adminTotal = 0;
-	let onlineTotal = 0;
-
-	for (const row of rows) {
-		const val = Number(row.total);
-		byStatus[row.status] = (byStatus[row.status] ?? 0) + val;
-		total += val;
-
-		if (row.source === "admin") {
-			adminByStatus[row.status] = (adminByStatus[row.status] ?? 0) + val;
-			adminTotal += val;
-		} else if (row.source === "online") {
-			onlineByStatus[row.status] = (onlineByStatus[row.status] ?? 0) + val;
-			onlineTotal += val;
-		}
-	}
-
-	const overallMetrics = calculateFunnelMetrics(byStatus, total);
-
-	return {
-		...overallMetrics,
-		byStatus,
-		bySource: {
-			admin: calculateFunnelMetrics(adminByStatus, adminTotal),
-			online: calculateFunnelMetrics(onlineByStatus, onlineTotal),
-		},
 		isEmpty: total === 0,
 	};
 }
@@ -1733,113 +1697,5 @@ export async function scheduleLoad(
 		busiestWeekday: peak(byWeekday),
 		busiestHour: peak(byHour),
 		isEmpty: cells.length === 0,
-	};
-}
-
-export type CuratorPerformanceRow = {
-	readonly curatorId: string;
-	readonly curatorName: string;
-	readonly totalPatients: number;
-	readonly totalPlans: number;
-	readonly acceptedPlans: number;
-	readonly conversionRate: number | null;
-	readonly totalRevenueRub: number;
-};
-
-export type CuratorPerformanceReport = {
-	readonly rows: CuratorPerformanceRow[];
-	readonly isEmpty: boolean;
-};
-
-export async function curatorPerformance(
-	scope: ReportScope,
-): Promise<CuratorPerformanceReport> {
-	const patientsWithCurators = await db
-		.select({
-			patientId: patients.id,
-			curatorId: patients.curatorId,
-		})
-		.from(patients)
-		.where(
-			and(
-				eq(patients.organizationId, scope.organizationId),
-				isNotNull(patients.curatorId)
-			)
-		);
-
-	const curatorPatientIds = patientsWithCurators.map((p) => p.patientId);
-	if (curatorPatientIds.length === 0) {
-		return { rows: [], isEmpty: true };
-	}
-
-	const plans = await db
-		.select({
-			curatorId: patients.curatorId,
-			status: treatmentPlans.status,
-			totalPriceRub: treatmentPlans.totalPriceRub,
-		})
-		.from(treatmentPlans)
-		.innerJoin(patients, eq(treatmentPlans.patientId, patients.id))
-		.where(
-			and(
-				eq(treatmentPlans.organizationId, scope.organizationId),
-				inArray(treatmentPlans.patientId, curatorPatientIds)
-			)
-		);
-
-	const staff = await db
-		.select({ id: users.id, fullName: users.fullName })
-		.from(users)
-		.where(eq(users.organizationId, scope.organizationId));
-	const staffNames = new Map(staff.map((row) => [row.id, row.fullName]));
-
-	type Accumulator = {
-		totalPatients: number;
-		totalPlans: number;
-		acceptedPlans: number;
-		totalRevenueRub: number;
-	};
-	const byCurator = new Map<string, Accumulator>();
-
-	for (const p of patientsWithCurators) {
-		if (!p.curatorId) continue;
-		if (!byCurator.has(p.curatorId)) {
-			byCurator.set(p.curatorId, { totalPatients: 0, totalPlans: 0, acceptedPlans: 0, totalRevenueRub: 0 });
-		}
-		const acc = byCurator.get(p.curatorId)!;
-		acc.totalPatients++;
-	}
-
-	for (const plan of plans) {
-		if (!plan.curatorId) continue;
-		const acc = byCurator.get(plan.curatorId);
-		if (!acc) continue;
-
-		acc.totalPlans++;
-		const isAccepted = plan.status === "Active" || plan.status === "Completed" || plan.status === "Approved";
-		if (isAccepted) {
-			acc.acceptedPlans++;
-			acc.totalRevenueRub += Number(plan.totalPriceRub || 0);
-		}
-	}
-
-	const rows: CuratorPerformanceRow[] = [];
-	for (const [curatorId, acc] of byCurator.entries()) {
-		rows.push({
-			curatorId,
-			curatorName: staffNames.get(curatorId) ?? "Удалённый сотрудник",
-			totalPatients: acc.totalPatients,
-			totalPlans: acc.totalPlans,
-			acceptedPlans: acc.acceptedPlans,
-			conversionRate: acc.totalPlans > 0 ? (acc.acceptedPlans / acc.totalPlans) * 100 : null,
-			totalRevenueRub: acc.totalRevenueRub,
-		});
-	}
-
-	rows.sort((a, b) => b.totalRevenueRub - a.totalRevenueRub);
-
-	return {
-		rows,
-		isEmpty: rows.length === 0,
 	};
 }

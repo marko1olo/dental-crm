@@ -2608,10 +2608,9 @@ async function readWindowsMigrationWorkstationSignalValues(
 	if (!/^[a-zA-Z0-9_| -]+$/.test(rxPattern)) {
 		throw new Error("Invalid characters in migration rxPattern");
 	}
-	const rxPatternBase64 = Buffer.from(rxPattern, "utf8").toString("base64");
 	const script = [
 		"$ErrorActionPreference='SilentlyContinue'",
-		`$rx = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${rxPatternBase64}'))`,
+		"$rx = $env:MIGRATION_RX",
 		"$rows = @()",
 		"$processes = Get-Process | Select-Object -First 500 -Property ProcessName,Path | ForEach-Object { ([string]$_.ProcessName + ' || ' + [string]$_.Path) } | Where-Object { $_ -match $rx }",
 		"$services = Get-CimInstance Win32_Service | Select-Object -First 1000 -Property Name,DisplayName,PathName | ForEach-Object { ([string]$_.Name + ' || ' + [string]$_.DisplayName + ' || ' + [string]$_.PathName) } | Where-Object { $_ -match $rx }",
@@ -2651,6 +2650,7 @@ async function readWindowsMigrationWorkstationSignalValues(
 				timeout: 2500,
 				maxBuffer: 160 * 1024,
 				windowsHide: true,
+				env: { ...process.env, MIGRATION_RX: rxPattern },
 			},
 		);
 		if (!stdout.trim()) return [];

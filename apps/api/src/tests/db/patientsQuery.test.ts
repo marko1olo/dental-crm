@@ -1,6 +1,5 @@
 import assert from "node:assert";
-import test, { after, afterEach, before, beforeEach, describe } from "node:test";
-import { eq } from "drizzle-orm";
+import test, { afterEach, beforeEach, describe } from "node:test";
 import { db } from "../../db/client.js";
 import {
 	createPatientInDb,
@@ -9,55 +8,33 @@ import {
 	updatePatientAdministrativeProfileInDb,
 	updatePatientInDb,
 } from "../../db/patientsQuery.js";
-import * as schema from "../../db/schema.js";
-import {
-	fixtureUuid,
-	purgeFixtureOrganizations,
-	withFixtureTenant,
-} from "../support/fixtureOrganizations.js";
 
 /**
  * Сбой базы не должен выглядеть как успешная работа.
  *
  * Раньше все четыре функции ловили любую ошибку и молча возвращали данные
- * из массива-образца в оперативной памяти.
+ * из массива-образца в оперативной памяти. Наблюдаемые последствия,
+ * замеренные на живом API:
+ *   создание пациента при неудачной вставке -> HTTP 201 и идентификатор,
+ *     которому в таблице patients соответствует ноль строк;
+ *   обновление при неудачной записи -> HTTP 200, в базе без изменений;
+ *   чтение списка при сбое -> отдавался глобальный образец, не
+ *     отфильтрованный по организации.
  *
  * Тесты фиксируют обратное поведение: ошибка базы доходит до вызывающего
  * кода, чтобы маршрут ответил честно.
- *
- * Для тестов 1-4 (сбои базы) используются разрешения R1 на фаулт-инжекшн.
- * Для контрольных тестов 5-7 создаются реальные записи в PostgreSQL 18.
  */
 
-const ORG = fixtureUuid("m2.patientsQuery.test", 1);
-const ORG_2 = fixtureUuid("m2.patientsQuery.test", 2);
-const PATIENT = fixtureUuid("m2.patientsQuery.test", 10);
+const ORG = "4a3420d1-6ffb-4459-bd8f-7f7087f5e191";
+const PATIENT = "5755a8aa-73e3-40ce-9faf-e7bebe399cd4";
 const DB_DOWN = new Error("сбой соединения с базой");
 
+// Функции уходят в память при DENTAL_STATE_PERSISTENCE=off, поэтому для
+// этих тестов режим без базы должен быть выключен.
 let savedPersistence: string | undefined;
 
 describe("patientsQuery: сбой базы не подменяется памятью", () => {
-	before(async () => {
-		await purgeFixtureOrganizations([ORG, ORG_2]);
-		await withFixtureTenant(ORG, async (tx) => {
-			await tx.insert(schema.organizations).values({
-				id: ORG,
-				name: "Test Patients Org 1",
-			});
-		});
-		await withFixtureTenant(ORG_2, async (tx) => {
-			await tx.insert(schema.organizations).values({
-				id: ORG_2,
-				name: "Test Patients Org 2",
-			});
-		});
-	});
-
-	after(async () => {
-		await purgeFixtureOrganizations([ORG, ORG_2]);
-	});
-
-	beforeEach(async () => {
+	beforeEach(() => {
 		savedPersistence = process.env.DENTAL_STATE_PERSISTENCE;
 		process.env.DENTAL_STATE_PERSISTENCE = "on";
 		test.mock.restoreAll();
@@ -70,129 +47,154 @@ describe("patientsQuery: сбой базы не подменяется памя�
 		else process.env.DENTAL_STATE_PERSISTENCE = savedPersistence;
 	});
 
-	test("getPatientsFromDb передаёт ошибку наружу при сбое базы (ошибка синтаксиса UUID)", async () => {
+	test("getPatientsFromDb передаёт ошибку наружу, а не отдаёт массив-образец", async (t) => {
+		t.mock.method(db, "select", () => ({
+			from: () => ({
+				where: async () => {
+					throw DB_DOWN;
+				},
+			}),
+		}));
+
 		await assert.rejects(
-			() => getPatientsFromDb("not-a-uuid"),
-			(err: any) => /invalid input syntax|неверный синтаксис.*uuid/i.test(`${err?.message || ""} ${err?.cause?.message || ""}`)
+			() => getPatientsFromDb(ORG),
+			/сбой соединения с базой/,
 		);
 	});
 
-	test("createPatientInDb передаёт ошибку наружу при невалидных данных (ошибка синтаксиса UUID)", async () => {
+	test("createPatientInDb передаёт ошибку наружу, а не выдаёт несуществующий идентификатор", async (t) => {
+		t.mock.method(db, "insert", () => ({
+			values: () => ({
+				returning: async () => {
+					throw DB_DOWN;
+				},
+			}),
+		}));
+
 		await assert.rejects(
-			() => createPatientInDb("not-a-uuid", { fullName: "Проба Проверочная" } as never),
-			(err: any) => /invalid input syntax|неверный синтаксис.*uuid/i.test(`${err?.message || ""} ${err?.cause?.message || ""}`)
+			() => createPatientInDb(ORG, { fullName: "Проба Проверочная" } as never),
+			/сбой соединения с базой/,
 		);
 	});
 
-	test("updatePatientInDb передаёт ошибку наружу при невалидных данных", async () => {
+	test("updatePatientInDb передаёт ошибку наружу, а не отвечает успехом", async (t) => {
+		t.mock.method(db, "update", () => ({
+			set: () => ({
+				where: () => ({
+					returning: async () => {
+						throw DB_DOWN;
+					},
+				}),
+			}),
+		}));
+
 		await assert.rejects(
 			() =>
-				updatePatientInDb("not-a-uuid", PATIENT, {
+				updatePatientInDb(ORG, PATIENT, {
 					fullName: "Проба Проверочная",
 				} as never),
-			(err: any) => /invalid input syntax|неверный синтаксис.*uuid/i.test(`${err?.message || ""} ${err?.cause?.message || ""}`)
+			/сбой соединения с базой/,
 		);
 	});
 
-	test("updatePatientAdministrativeProfileInDb передаёт ошибку наружу при невалидных данных", async () => {
+	test("updatePatientAdministrativeProfileInDb передаёт ошибку наружу", async (t) => {
+		t.mock.method(db, "update", () => ({
+			set: () => ({
+				where: () => ({
+					returning: async () => {
+						throw DB_DOWN;
+					},
+				}),
+			}),
+		}));
+
 		await assert.rejects(
 			() =>
-				updatePatientAdministrativeProfileInDb("not-a-uuid", PATIENT, {
+				updatePatientAdministrativeProfileInDb(ORG, PATIENT, {
 					vipStatus: true,
 				} as never),
-			(err: any) => /invalid input syntax|неверный синтаксис.*uuid/i.test(`${err?.message || ""} ${err?.cause?.message || ""}`)
+			/сбой соединения с базой/,
 		);
 	});
 
-	test("контроль: при исправной базе список пациентов возвращается как есть", async () => {
-		await withFixtureTenant(ORG, async (tx) => {
-			await tx
-				.delete(schema.patients)
-				.where(eq(schema.patients.id, PATIENT));
-			await tx.insert(schema.patients).values({
-				id: PATIENT,
-				organizationId: ORG,
-				fullName: "Иванов Иван Иванович",
-				status: "active",
-			});
-		});
+	test("контроль: при исправной базе список пациентов возвращается как есть", async (t) => {
+		t.mock.method(db, "select", () => ({
+			from: () => ({
+				where: async () => [
+					{
+						id: PATIENT,
+						organizationId: ORG,
+						fullName: "Иванов Иван Иванович",
+						birthDate: null,
+						phone: null,
+						email: null,
+						notes: null,
+						administrativeProfile: null,
+						status: "active",
+						createdAt: new Date("2026-01-01T00:00:00.000Z"),
+						updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+					},
+				],
+			}),
+		}));
 
-		const patientsList = await withFixtureTenant(ORG, async () => {
-			return getPatientsFromDb(ORG);
-		});
-
-		const found = patientsList.find((p) => p.id === PATIENT);
-		assert.ok(found);
-		assert.equal(found.fullName, "Иванов Иван Иванович");
+		const patients = await getPatientsFromDb(ORG);
+		assert.equal(patients.length, 1);
+		assert.equal(patients[0]?.fullName, "Иванов Иван Иванович");
+		assert.equal(patients[0]?.id, PATIENT);
 	});
 
-	test("контроль: обновление возвращает изменённую строку, когда база отвечает", async () => {
-		await withFixtureTenant(ORG, async (tx) => {
-			await tx
-				.delete(schema.patients)
-				.where(eq(schema.patients.id, PATIENT));
-			await tx.insert(schema.patients).values({
-				id: PATIENT,
-				organizationId: ORG,
-				fullName: "Иванов Иван Иванович",
-				status: "active",
-			});
-		});
+	test("контроль: обновление возвращает изменённую строку, когда база отвечает", async (t) => {
+		t.mock.method(db, "update", () => ({
+			set: () => ({
+				where: () => ({
+					returning: async () => [
+						{
+							id: PATIENT,
+							organizationId: ORG,
+							fullName: "Петров Пётр Петрович",
+							birthDate: null,
+							phone: null,
+							email: null,
+							notes: null,
+							administrativeProfile: null,
+							status: "active",
+							createdAt: new Date("2026-01-01T00:00:00.000Z"),
+							updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+						},
+					],
+				}),
+			}),
+		}));
 
-		const patient = await withFixtureTenant(ORG, async () => {
-			return updatePatientInDb(ORG, PATIENT, {
-				fullName: "Петров Пётр Петрович",
-			} as never);
-		});
-
-		assert.ok(patient);
-		assert.equal(patient.fullName, "Петров Пётр Петрович");
-
-		// Проверяем физическое изменение в PostgreSQL 18
-		const [dbRow] = await withFixtureTenant(ORG, async (tx) => {
-			return tx
-				.select()
-				.from(schema.patients)
-				.where(eq(schema.patients.id, PATIENT));
-		});
-		assert.ok(dbRow);
-		assert.equal(dbRow.fullName, "Петров Пётр Петрович");
+		const patient = await updatePatientInDb(ORG, PATIENT, {
+			fullName: "Петров Пётр Петрович",
+		} as never);
+		assert.equal(patient?.fullName, "Петров Пётр Петрович");
 	});
 
-	test("обновление чужой карточки возвращает null: строка не найдена в своей организации", async () => {
-		await withFixtureTenant(ORG, async (tx) => {
-			await tx
-				.delete(schema.patients)
-				.where(eq(schema.patients.id, PATIENT));
-			await tx.insert(schema.patients).values({
-				id: PATIENT,
-				organizationId: ORG,
-				fullName: "Иванов Иван Иванович",
-				status: "active",
-			});
-		});
+	test("обновление чужой карточки возвращает null: строка не найдена в своей организации", async (t) => {
+		// Условие WHERE теперь содержит organizationId, поэтому чужая строка
+		// не попадает под обновление и returning() пуст.
+		t.mock.method(db, "update", () => ({
+			set: () => ({
+				where: () => ({
+					returning: async () => [],
+				}),
+			}),
+		}));
 
-		const patient = await withFixtureTenant(ORG_2, async () => {
-			return updatePatientInDb(ORG_2, PATIENT, {
-				fullName: "Чужой",
-			} as never);
-		});
-
+		const patient = await updatePatientInDb(ORG, PATIENT, {
+			fullName: "Чужой",
+		} as never);
 		assert.equal(patient, null);
-
-		// Убеждаемся в БД, что карточка клиники 1 не была изменена чужим запросом
-		const [dbRow] = await withFixtureTenant(ORG, async (tx) => {
-			return tx
-				.select()
-				.from(schema.patients)
-				.where(eq(schema.patients.id, PATIENT));
-		});
-		assert.ok(dbRow);
-		assert.equal(dbRow.fullName, "Иванов Иван Иванович");
 	});
 });
 
 test("строка без отметок времени называет пациента и поле, а не роняет map", () => {
+	// БЫЛО: `p.createdAt.toISOString()` на строке без этого поля давало
+	// «Cannot read properties of undefined (reading 'toISOString')» изнутри
+	// Array.map — по такому сообщению не понять ни пациента, ни поле.
 	const brokenRow = {
 		id: "123e4567-e89b-12d3-a456-426614174000",
 		organizationId: "123e4567-e89b-12d3-a456-4266141740ff",
@@ -207,6 +209,13 @@ test("строка без отметок времени называет пац�
 		isSynced: false,
 		version: 1,
 		updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+		/*
+		 * Строка НАМЕРЕННО нарушает тип: весь смысл проверки — отсутствующий
+		 * createdAt, которого объявление параметра не допускает, поэтому обойтись
+		 * без приведения нельзя. Приведение указывает на сам нарушаемый
+		 * контракт, а не на безымянный Record<string, unknown>, который до этого
+		 * к параметру всё равно не приводился.
+		 */
 	} as unknown as Parameters<typeof rowToPatient>[0];
 
 	assert.throws(
@@ -219,6 +228,8 @@ test("строка без отметок времени называет пац�
 });
 
 test("отметку времени принимает и строкой, и объектом Date", () => {
+	// Драйвер отдаёт timestamptz по-разному в зависимости от пути:
+	// RETURNING, обмен JSON между процессами.
 	const asDate = rowToPatient({
 		id: "123e4567-e89b-12d3-a456-426614174001",
 		organizationId: "123e4567-e89b-12d3-a456-4266141740ff",

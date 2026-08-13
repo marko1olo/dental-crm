@@ -275,7 +275,7 @@ function syncDenteTelegramOutboxDeliveryReceiptsMap(): void {
 const denteTelegramLinkCodes: DenteTelegramLinkCode[] = [];
 export const denteTelegramChatLinks: DenteTelegramChatLink[] = [];
 
-export const clinicProfile: ClinicProfile = {
+const clinicProfile: ClinicProfile = {
 	organizationId,
 	clinicName: "Стоматология, 1 кабинет",
 	legalName: "ИП Иванова М.С.",
@@ -329,7 +329,7 @@ export const clinicProfile: ClinicProfile = {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 } as any;
 
-export const staffMembers: StaffMember[] = [
+const staffMembers: StaffMember[] = [
 	{
 		id: "e44d32ca-7777-4c00-a001-c88f01b92e21",
 		organizationId,
@@ -396,7 +396,7 @@ export const staffMembers: StaffMember[] = [
 	},
 ];
 
-export const chairs: Chair[] = [
+const chairs: Chair[] = [
 	{
 		id: chairId,
 		organizationId,
@@ -499,24 +499,7 @@ export const appointments: Appointment[] = [
 	},
 ];
 
-/*
- * ЭКСПОРТ ВОССТАНОВЛЕН 2026-08-09. Слово `export` сняли коммитом 5da9b3a27
- * («chore(sync): sweep outstanding agent and user changes», 2026-08-08 23:51),
- * и это молча сломало девять смоук-скриптов: они разбирают `activeVisit` из
- * этого модуля, получали `undefined` и падали с TypeError вида «Cannot read
- * properties of undefined (reading 'patientId')» — smoke-payment-idempotency,
- * smoke-document-lifecycle, smoke-visit-workflow-forms-lifecycle,
- * smoke-schedule-active-visit-status-contract, smoke-telegram-outbox-lookup,
- * smoke-clinical-rule-panel-source, smoke-onboarding-configuration-source,
- * screenshot-docs и другие.
- *
- * Удаление не было решением: будь оно намеренным, эти девять потребителей
- * обновили бы вместе с ним. Это третий случай за один сеанс, когда уборочный
- * коммит снимает `export` с несущего символа и убивает проверки, — так же
- * пропали REQUIRED_ENV (убило check:env-contract) и ре-экспорт
- * documentIssueBlockReason.
- */
-export const activeVisit: Visit = {
+const activeVisit: Visit = {
 	id: activeVisitId,
 	organizationId,
 	patientId: marinaPatientId,
@@ -1099,10 +1082,7 @@ const communicationTemplates: CommunicationTemplate[] = [
 	},
 ];
 
-/* ЭКСПОРТ ВОССТАНОВЛЕН 2026-08-09, тот же коммит 5da9b3a27 и та же причина, что
- * у `activeVisit` выше: smoke-communication-task-outcomes разбирает этот список
- * из модуля и падал на `communicationTasks.find` по `undefined`. */
-export const communicationTasks: CommunicationTask[] = [
+const communicationTasks: CommunicationTask[] = [
 	{
 		id: "7195a20f-0aa8-4f0a-8d33-8db69fbb3d91",
 		organizationId,
@@ -1195,7 +1175,7 @@ export const communicationTasks: CommunicationTask[] = [
 	},
 ];
 
-export const communicationEvents: CommunicationEvent[] = [
+const communicationEvents: CommunicationEvent[] = [
 	{
 		id: "88ff10d9-e50a-4a67-8500-f1dfeff6b92c",
 		organizationId,
@@ -1210,7 +1190,7 @@ export const communicationEvents: CommunicationEvent[] = [
 	},
 ];
 
-export const imagingStudies: ImagingStudy[] = [
+const imagingStudies: ImagingStudy[] = [
 	{
 		id: "fbe3704c-9b37-4149-ae4b-e99e46d7599f",
 		organizationId,
@@ -1298,7 +1278,7 @@ const importBatches: ImportBatch[] = [];
 const aiRecognitionJobs: AiRecognitionJob[] = [];
 const imagingViewerSessions: ImagingViewerSession[] = [];
 const dicomWorkbenchBundles: DicomWorkbenchBundle[] = [];
-export const speechTranscriptionChunks: SpeechTranscriptionChunk[] = [];
+const speechTranscriptionChunks: SpeechTranscriptionChunk[] = [];
 
 class SpeechChunkIdentityConflictError extends Error {
 	statusCode = 409;
@@ -1311,7 +1291,7 @@ class SpeechChunkIdentityConflictError extends Error {
 	}
 }
 const visitSaveReceipts: VisitSaveReceipt[] = [];
-export const visitDraftAutosaves: VisitDraftAutosave[] = [];
+const visitDraftAutosaves: VisitDraftAutosave[] = [];
 
 function findVisitById(visitId: string): Visit | null {
 	return activeVisit.id === visitId ? activeVisit : null;
@@ -6807,7 +6787,6 @@ function staffRoleLabelForTelegramDigest(role: StaffRole): string {
 		administrator: "администратор",
 		assistant: "ассистент",
 		manager: "управляющий",
-		curator: "куратор",
 	};
 	return labels[role];
 }
@@ -10880,7 +10859,6 @@ function normalizePatientAdministrativeProfile(
 		dataProcessingBasisNote: nullableTrimmed(input?.dataProcessingBasisNote),
 		orthodonticProgress: nullableTrimmed(input?.orthodonticProgress),
 		loyaltyTier,
-		marketingSource: nullableTrimmed(input?.marketingSource),
 	};
 
 	const hasValue = Object.values(profile).some((value) =>
@@ -12634,7 +12612,7 @@ function _storeIssuedDocumentSnapshot(
 	return document;
 }
 
-export function createGeneratedDocument(input: {
+function _createGeneratedDocument(input: {
 	patientId: string;
 	visitId?: string | null | undefined;
 	kind: DocumentKind;
@@ -12848,7 +12826,7 @@ function _findPaymentByClientMutationId(
 	);
 }
 
-export function createPayment(input: CreatePaymentInput): Payment {
+function _createPayment(input: CreatePaymentInput): Payment {
 	const createdAt = new Date().toISOString();
 	assertPaidPaymentFiscalReceiptOperation(input);
 	const fiscalReceipt = normalizeFiscalReceiptDetails(input.fiscalReceipt);

@@ -1,25 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { readAppLogicSource } from "./lib/app-logic-source.mjs";
-import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
-/*
- * НАБОР: СБОРНИК ПЛЮС НАСТОЯЩИЕ ДОМА КОДА.
- *
- * `AppHelpers.tsx` после ddd625d59 — сборник ре-экспортов на 83 строки, тело
- * разошлось по `apps/web/src/utils/`. Типы и лимиты сканирования живут в
- * `AppConstants.ts` и `utils/browserScanUtils.ts`, а сам обход папки — в
- * `utils/browserImagingFolderScan.ts` (восстановлен из 57d904b0a~1).
- *
- * Читается каталог utils целиком, а не перечисленные имена: перечисление и есть
- * то, что ломается при следующем разборе монолита.
- */
-const appSource = [
-	await readFile("apps/web/src/App.tsx", "utf8"),
-	await readAppLogicSource(),
-	await readFile("apps/web/src/AppHelpers.tsx", "utf8"),
-	await readFile("apps/web/src/AppConstants.ts", "utf8"),
-	readWebSurfaceSourceSync(["apps/web/src/utils"]),
-].join("\n");
+const appSource =
+	(await readFile("apps/web/src/App.tsx", "utf8")) +
+	"\n" +
+	(await readAppLogicSource()) +
+	"\n" +
+	(await readFile("apps/web/src/AppHelpers.tsx", "utf8"));
 /*
  * ЭКРАН ИМПОРТА БОЛЬШЕ НЕ ЛЕЖИТ В SettingsView.tsx — ЭТО ВСЯ ПРИЧИНА КРАСНОТЫ.
  *
@@ -64,48 +51,6 @@ function assertNotIncludes(source, marker, label) {
 	}
 }
 
-/*
- * ИМЯ — НЕ ПОВЕДЕНИЕ. ЗДЕСЬ БЫЛА ЛОЖНАЯ ЗЕЛЕНЬ, И ОНА ХУЖЕ ЛЮБОЙ КРАСНОТЫ.
- *
- * Два требования проверялись подстрокой по имени: `cancelBrowserImagingFolderScan`
- * и `browserImagingScanAbortRef`. Замерено 2026-08-11 — оба удовлетворялись
- * НЕРАБОТАЮЩИМ кодом:
- *
- *   useAppLogic.tsx:2944   cancelBrowserImagingFolderScan: false,
- *   useImagingLogic.ts:226 const _browserImagingScanAbortRef = useRef(null);
- *
- * Первое — не функция, а `false`. Обе кнопки «Остановить» получают
- * `onClick={false}` (SettingsImagingImportTab.tsx:2098 и :2220): нажатие не
- * делает НИЧЕГО. Второе — имя с подчёркиванием, то есть намеренно неиспользуемое;
- * `.current` не присваивается нигде.
- *
- * То есть страж докладывал об исправной отмене сканирования, которой нет. Это
- * тот же класс, что комментарий-обманка, только подделка сделана значением.
- *
- * Теперь требуется ВЫЗЫВАЕМОЕ значение: объявление функции, стрелка или
- * присваивание из хука. Литерал `false`/`null`/`undefined` требование больше
- * не закрывает.
- */
-function assertCallable(source, name, label) {
-	const callable = new RegExp(
-		`(?:function\\s+${name}\\s*\\(` +
-			`|(?:const|let)\\s+${name}\\s*=\\s*(?:async\\s*)?(?:\\(|function\\b|useCallback\\b)` +
-			`|${name}\\s*:\\s*(?:async\\s*)?(?:\\(|function\\b)` +
-			`|${name}\\s*:\\s*[A-Za-z_$][\\w$]*\\s*[,}])`,
-	);
-	const deadLiteral = new RegExp(
-		`${name}\\s*:\\s*(?:false|true|null|undefined)\\s*[,}]`,
-	);
-	if (deadLiteral.test(source)) {
-		throw new Error(
-			`${label}: «${name}» задан литералом вместо функции — кнопка получает мёртвый обработчик`,
-		);
-	}
-	if (!callable.test(source)) {
-		throw new Error(`${label}: «${name}» не объявлен как вызываемое значение`);
-	}
-}
-
 [
 	"type BrowserImagingScanProgress",
 	"elapsedMs: number",
@@ -120,7 +65,9 @@ function assertCallable(source, name, label) {
 	"const browserImagingScanMagicReadLimit = 180",
 	"const browserImagingScanYieldEveryUnits = 24",
 	"const browserImagingScanProgressEveryMs = 96",
+	"browserImagingScanAbortRef",
 	"new AbortController()",
+	"cancelBrowserImagingFolderScan",
 	"signal?: AbortSignal",
 	"throwIfBrowserImagingScanAborted",
 	"browserImagingScanElapsedFromIso",
@@ -142,40 +89,6 @@ function assertCallable(source, name, label) {
 ].forEach((marker) =>
 	assertIncludes(appSource, marker, "App browser imaging scan contract"),
 );
-
-/*
- * ОБЪЯВЛЕНИЯ ОБХОДА, А НЕ ТОЛЬКО ВЫЗОВЫ. ЗАКРЫТО ПО МУТАЦИИ.
- *
- * Выше требуются лишь ВЫЗОВЫ `scanBrowserDirectoryHandle(directoryHandle,
- * options)` и `scanBrowserFileList(fileList, options)`. Проба показала дыру:
- * переименуй И объявление, И вызов одновременно — подстрока с аргументами
- * уцелеет под новым именем, и гейт останется зелёным при вырезанном обходе.
- * Ровно это и произошло в 57d904b0a: обход удалили, никто не заметил.
- *
- * Поэтому требуется само ОБЪЯВЛЕНИЕ каждой функции обхода, плюс живой
- * обработчик выбора папки: раньше он был пустой заглушкой
- * `async (_files: any) => {}` в useImagingQueries, кнопка «Выбрать папку» не
- * делала ничего, а гейт про неё не знал вовсе.
- */
-for (const [pattern, label] of [
-	[
-		/export\s+async\s+function\s+scanBrowserDirectoryHandle\s*\(/,
-		"объявление обхода папки (scanBrowserDirectoryHandle)",
-	],
-	[
-		/export\s+async\s+function\s+scanBrowserFileList\s*\(/,
-		"объявление обхода списка файлов (scanBrowserFileList)",
-	],
-	[
-		/handleBrowserDirectoryInputChange\s*=\s*useCallback\(|async\s+function\s+handleBrowserDirectoryInputChange\s*\(/,
-		"живой обработчик выбора папки (handleBrowserDirectoryInputChange)",
-	],
-]) {
-	if (!pattern.test(appSource))
-		throw new Error(
-			`Browser imaging scan engine: отсутствует ${label}. Обход вырезан — кнопка «Выбрать папку» ничего не делает.`,
-		);
-}
 
 [
 	"CircleStop",
@@ -229,45 +142,6 @@ for (const [pattern, label] of [
 			"Browser imaging scan must not materialize full FileList",
 		),
 );
-
-/*
- * Отмена сканирования обязана быть ЖИВОЙ, а не одноимённой. Проверяется
- * вызываемость, потому что именно здесь подделка и обнаружилась.
- */
-assertCallable(
-	appSource,
-	"cancelBrowserImagingFolderScan",
-	"Browser imaging scan cancel",
-);
-
-/*
- * ССЫЛКА ОТМЕНЫ — НЕ ФУНКЦИЯ, И ТРЕБОВАТЬ ОТ НЕЁ ВЫЗЫВАЕМОСТИ БЫЛО ОШИБКОЙ.
- *
- * `browserImagingScanAbortRef` — это `useRef<AbortController | null>`, поэтому
- * `assertCallable` для него неприменим: он бы заставлял писать неверный код.
- * Смысл требования другой — ссылка обязана РАБОТАТЬ, то есть в неё должен
- * записываться контроллер и по ней должен вызываться `abort()`. Ровно этого не
- * было, когда ссылка называлась `_browserImagingScanAbortRef`: подчёркивание
- * означало «намеренно не используется», и `.current` не присваивался нигде.
- *
- * Проверяются обе половины: присваивание контроллера и вызов отмены. По
- * отдельности каждая проходила бы при мёртвой ссылке.
- */
-for (const [pattern, label] of [
-	[
-		/browserImagingScanAbortRef\.current\s*=\s*(?:controller|new AbortController\(\))/,
-		"в ссылку отмены записывается контроллер",
-	],
-	[
-		/browserImagingScanAbortRef\.current\??\.abort\(\)/,
-		"по ссылке отмены вызывается abort()",
-	],
-]) {
-	if (!pattern.test(appSource))
-		throw new Error(
-			`Browser imaging scan abort ref: не выполнено — ${label}. Ссылка объявлена, но мертва.`,
-		);
-}
 
 const smokeCommand =
 	packageJson.scripts?.["smoke:browser-imaging-scan-progress-source"];

@@ -23,20 +23,6 @@ interface SettingsStaffTabProps {
 	props: Record<string, any>;
 }
 
-function getPasswordStrength(password: string): { label: string; color: string; score: number } {
-	if (!password) return { label: "", color: "transparent", score: 0 };
-	let score = 0;
-	if (password.length > 5) score += 1;
-	if (password.length > 8) score += 1;
-	if (/[A-Z]/.test(password)) score += 1;
-	if (/[0-9]/.test(password)) score += 1;
-	if (/[^A-Za-z0-9]/.test(password)) score += 1;
-
-	if (score <= 2) return { label: "Слабый", color: "#ef4444", score: 33 };
-	if (score <= 3) return { label: "Средний", color: "#eab308", score: 66 };
-	return { label: "Надёжный", color: "#22c55e", score: 100 };
-}
-
 export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 	// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 	const { dashboard, staffRoleLabels, loadDashboard, auth } = props;
@@ -353,17 +339,16 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 								: "Данные клиники ещё не прочитаны, поэтому список персонала показать нельзя. Обновите страницу; если список не появится, сообщите администратору."}
 						</p>
 					)}
-					<div className="grid gap-3 grid-cols-1 w-full min-w-0">
+					<div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] w-full min-w-0">
 						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{staff.map((member: any) => (
 							<div
 								key={member.id}
-								className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4 min-h-[140px] grid grid-cols-1 md:grid-cols-3 gap-4 shadow-sm"
+								className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4 min-h-[140px] flex flex-col justify-between shadow-sm"
 							>
-								{/* Колонка 1: Информация о сотруднике */}
-								<div className="flex items-start gap-3">
+								<div className="flex items-center gap-3 mb-3">
 									<div
-										className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white shrink-0 mt-1"
+										className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white"
 										style={{ backgroundColor: member.color || "#3b82f6" }}
 									>
 										{member.fullName ? member.fullName.charAt(0) : "S"}
@@ -372,9 +357,23 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 										<h5 className="m-0 text-sm font-semibold text-slate-900 dark:text-white truncate">
 											{member.fullName}
 										</h5>
-										<span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
+										{/*
+                      БЫЛО: `staffRoleLabels ? staffRoleLabels[member.role] : member.role`.
+                      Роль вне схемы (такие в базе есть — их создала форма
+                      приглашения, пока отправляла «admin») давала undefined, и на
+                      месте должности не было НИЧЕГО: администратор не мог понять,
+                      чего у человека не хватает. А без справочника подписей на
+                      экран попадало имя роли латиницей.
+                    */}
+										<span className="text-xs text-slate-500 dark:text-slate-400">
 											{staffRoleTitle(String(member.role ?? ""))}
 										</span>
+										{/*
+                      Номер показан, а его отсутствие названо словами. Пустое
+                      место на карточке нельзя отличить от «поля не существует» —
+                      именно так телефон и потерялся: колонка есть на всём пути от
+                      формы до базы, а на экране про неё нет ни буквы.
+                    */}
 										{member.phone ? (
 											<a
 												className="block text-xs text-slate-600 dark:text-slate-300 no-underline hover:underline"
@@ -390,29 +389,11 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 									</div>
 								</div>
 
-								{/* Колонка 2: Права доступа */}
-								<div className="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-300 justify-center border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-3 md:pt-0 md:pl-4">
-									<div className="font-medium mb-1 text-slate-800 dark:text-slate-200">Права доступа:</div>
-									<div className="flex items-center gap-1.5">
-										<div className={`w-2 h-2 rounded-full ${member.canSignMedicalRecords ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-										<span className={!member.canSignMedicalRecords ? 'opacity-50' : ''}>Подпись ЭМК</span>
-									</div>
-									<div className="flex items-center gap-1.5">
-										<div className={`w-2 h-2 rounded-full ${member.canManageMoney ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-										<span className={!member.canManageMoney ? 'opacity-50' : ''}>Касса и финансы</span>
-									</div>
-									<div className="flex items-center gap-1.5">
-										<div className={`w-2 h-2 rounded-full ${member.canManageImports ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-										<span className={!member.canManageImports ? 'opacity-50' : ''}>Настройки системы</span>
-									</div>
-								</div>
-
-								{/* Колонка 3: Действия и авторизация */}
-								<div className="flex flex-col gap-2 justify-center border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-3 md:pt-0 md:pl-4">
+								<div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col gap-2">
 									{editingPhoneForId === member.id ? (
 										<form
 											onSubmit={(e) => handleUpdatePhone(e, member.id)}
-											className="flex flex-wrap gap-2 w-full"
+											className="flex flex-wrap gap-2"
 										>
 											<input
 												type="tel"
@@ -445,7 +426,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 											onSubmit={(e) =>
 												handleUpdateCredential(e, member.id, "pin")
 											}
-											className="flex gap-2 w-full"
+											className="flex gap-2"
 										>
 											<input
 												type="password"
@@ -475,51 +456,37 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 											onSubmit={(e) =>
 												handleUpdateCredential(e, member.id, "password")
 											}
-											className="flex flex-col gap-2 w-full"
+											className="flex gap-2"
 										>
-											<div className="flex gap-2">
-												<input
-													type="password"
-													placeholder="Пароль"
-													value={newPassword}
-													onChange={(e) => setNewPassword(e.target.value)}
-													className="w-full px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-												/>
-												<button
-													type="submit"
-													className="primary-button px-3 py-1 text-xs"
-													disabled={loading}
-												>
-													ОК
-												</button>
-												<button
-													type="button"
-													className="secondary-button px-3 py-1 text-xs"
-													onClick={() => setEditingPasswordForId(null)}
-												>
-													Отмена
-												</button>
-											</div>
-											{newPassword.length > 0 && (() => {
-												const strength = getPasswordStrength(newPassword);
-												return (
-													<div className="w-full flex items-center gap-2">
-														<div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded overflow-hidden">
-															<div 
-																className="h-full transition-all duration-300"
-																style={{ width: `${strength.score}%`, backgroundColor: strength.color }}
-															/>
-														</div>
-														<span className="text-[10px]" style={{ color: strength.color }}>{strength.label}</span>
-													</div>
-												);
-											})()}
+											<input
+												type="password"
+												placeholder="Пароль"
+												value={newPassword}
+												onChange={(e) => setNewPassword(e.target.value)}
+												className="w-full px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+											/>
+											<button
+												type="submit"
+												className="primary-button px-3 py-1 text-xs"
+												disabled={loading}
+											>
+												ОК
+											</button>
+											<button
+												type="button"
+												className="secondary-button px-3 py-1 text-xs"
+												onClick={() => setEditingPasswordForId(null)}
+											>
+												Отмена
+											</button>
 										</form>
 									) : (
+										/* flex-wrap: три кнопки в колонке от 280 px не встают в один
+                       ряд на телефоне и обрезались бы справа. */
 										<div className="flex flex-wrap gap-2">
 											<button
 												type="button"
-												className="secondary-button flex-1 justify-center py-1.5 text-xs flex items-center gap-1 cursor-pointer"
+												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
 												onClick={() => {
 													setEditingPinForId(member.id);
 													setEditingPasswordForId(null);
@@ -532,7 +499,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 											</button>
 											<button
 												type="button"
-												className="secondary-button flex-1 justify-center py-1.5 text-xs flex items-center gap-1 cursor-pointer"
+												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
 												onClick={() => {
 													setEditingPasswordForId(member.id);
 													setEditingPinForId(null);
@@ -545,7 +512,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 											</button>
 											<button
 												type="button"
-												className="secondary-button flex-1 justify-center py-1.5 text-xs flex items-center gap-1 cursor-pointer"
+												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
 												onClick={() => {
 													setEditingPhoneForId(member.id);
 													setEditingPinForId(null);

@@ -744,19 +744,12 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 									.filter((priceId) => UUID_SHAPE.test(priceId)),
 							),
 						];
-						const knownServiceIds = new Map<
-							string,
-							{ isActive: boolean; priceRub: number }
-						>(
+						const knownServiceIds = new Set<string>(
 							priceIdCandidates.length === 0
 								? []
 								: (
 										await tx
-											.select({
-												id: serviceCatalogItems.id,
-												isActive: serviceCatalogItems.isActive,
-												basePriceRub: serviceCatalogItems.basePriceRub,
-											})
+											.select({ id: serviceCatalogItems.id })
 											.from(serviceCatalogItems)
 											.where(
 												and(
@@ -767,35 +760,8 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 													inArray(serviceCatalogItems.id, priceIdCandidates),
 												),
 											)
-									).map((row) => [
-										row.id,
-										{
-											isActive: row.isActive,
-											priceRub: Number(row.basePriceRub),
-										},
-									]),
+									).map((row) => row.id),
 						);
-
-						for (const item of input.items) {
-							const catalogItem = knownServiceIds.get(item.priceId);
-							if (!catalogItem) continue;
-							if (!catalogItem.isActive) {
-								const err = new Error(
-									`Услуга «${item.name?.trim() || item.priceId}» больше не действует в прайс-листе. Сохранение отменено.`,
-								);
-								// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-								(err as any).statusCode = 400;
-								throw err;
-							}
-							if (item.price !== catalogItem.priceRub) {
-								const err = new Error(
-									`Цена на услугу «${item.name?.trim() || item.priceId}» изменилась (актуальная: ${catalogItem.priceRub} ₽). Сохранение отменено.`,
-								);
-								// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-								(err as any).statusCode = 400;
-								throw err;
-							}
-						}
 
 						/*
 						 * ПРОВЕРКА КЛИНИЧЕСКИХ ПРАВИЛ ДО ЗАПИСИ (Race Condition Fix)
@@ -820,7 +786,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						// removed to eliminate cold-module-load latency and double pool connection on hot path.
 						const evaluation = await evaluateClinicalRulesInDb(organizationId, {
 							patientId,
-							serviceIds: Array.from(knownServiceIds.keys()),
+							serviceIds: Array.from(knownServiceIds),
 							completedServiceIds: completedItems
 								.map((r) => r.serviceId)
 								.filter(Boolean) as string[],

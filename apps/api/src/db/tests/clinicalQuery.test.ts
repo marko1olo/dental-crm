@@ -1,117 +1,97 @@
 import assert from "node:assert";
-import { after, before, beforeEach, describe, test } from "node:test";
-import { eq } from "drizzle-orm";
-import {
-	fixtureUuid,
-	purgeFixtureOrganizations,
-	withFixtureTenant,
-} from "../../tests/support/fixtureOrganizations.js";
+import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import { db } from "../client.js";
 import { evaluateClinicalRulesInDb } from "../clinicalQuery.js";
-import * as schema from "../schema.js";
-
-const ORG_ID = fixtureUuid("m2.db.clinicalQuery.test", 1);
-const PATIENT_ID = fixtureUuid("m2.db.clinicalQuery.test", 100);
 
 describe("evaluateClinicalRulesInDb", () => {
-	before(async () => {
-		process.env.DENTAL_STATE_PERSISTENCE = "on";
-		await purgeFixtureOrganizations([ORG_ID]);
-		await withFixtureTenant(ORG_ID, async (tx) => {
-			await tx.insert(schema.organizations).values({
-				id: ORG_ID,
-				name: "Test DB Clinical Query Org",
-			});
-		});
+	beforeEach(() => {
+		mock.restoreAll();
+	});
+	afterEach(() => {
+		mock.restoreAll();
 	});
 
-	after(async () => {
-		await purgeFixtureOrganizations([ORG_ID]);
-	});
-
-	beforeEach(async () => {
-		await withFixtureTenant(ORG_ID, async (tx) => {
-			await tx
-				.delete(schema.clinicalRules)
-				.where(eq(schema.clinicalRules.organizationId, ORG_ID));
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	function mockDbResponse(records: any[]) {
+		mock.method(db, "select", () => {
+			return {
+				from: () => {
+					return {
+						where: async () => {
+							return records;
+						},
+					};
+				},
+			};
 		});
-	});
-
-	async function seedRule(
-		slot: number,
-		overrides: Partial<typeof schema.clinicalRules.$inferInsert> = {},
-	) {
-		const ruleId = fixtureUuid("m2.db.clinicalQuery.test", slot);
-		await withFixtureTenant(ORG_ID, async (tx) => {
-			await tx.insert(schema.clinicalRules).values({
-				id: ruleId,
-				organizationId: ORG_ID,
-				title: "Test Rule",
-				category: "therapy",
-				specialty: "therapist",
-				action: "add_required_service",
-				severity: "warning",
-				ownerRole: "doctor",
-				triggerServiceIdsJson: "[]",
-				requiredServiceIdsJson: "[]",
-				requiresCompletedServiceIdsJson: "[]",
-				blockedServiceIdsJson: "[]",
-				condition: null,
-				warningText: "Warning text",
-				patientText: "Patient text",
-				isActive: true,
-				...overrides,
-			});
-		});
-		return ruleId;
 	}
 
+	const baseRecord = {
+		id: "rule-1",
+		organizationId: "org-1",
+		title: "Test Rule",
+		category: "therapy",
+		specialty: "therapist",
+		action: "add_service",
+		severity: "warning",
+		ownerRole: "doctor",
+		triggerServiceIdsJson: "[]",
+		requiredServiceIdsJson: "[]",
+		requiresCompletedServiceIdsJson: "[]",
+		blockedServiceIdsJson: "[]",
+		condition: null,
+		warningText: "Warning text",
+		patientText: "Patient text",
+		isActive: true,
+	};
+
 	test("returns empty evaluations when no rules match", async () => {
-		const result = await withFixtureTenant(ORG_ID, async () => {
-			return evaluateClinicalRulesInDb(ORG_ID, {
-				patientId: PATIENT_ID,
-				serviceIds: ["service-1"],
-				completedServiceIds: [],
-			});
+		mockDbResponse([]);
+		const result = await evaluateClinicalRulesInDb("org-1", {
+			patientId: "patient-1",
+			serviceIds: ["service-1"],
+			completedServiceIds: [],
 		});
 
 		assert.deepStrictEqual(result.evaluations, []);
-		assert.strictEqual(result.summary.evaluatedRules, 0);
+		assert.deepStrictEqual(result.summary.evaluatedRules, 0);
 	});
 
 	test("ignores inactive rules", async () => {
-		await seedRule(10, {
-			triggerServiceIdsJson: '["service-1"]',
-			isActive: false,
+		mockDbResponse([
+			{
+				...baseRecord,
+				triggerServiceIdsJson: '["service-1"]',
+				isActive: false,
+			},
+		]);
+		const result = await evaluateClinicalRulesInDb("org-1", {
+			patientId: "patient-1",
+			serviceIds: ["service-1"],
+			completedServiceIds: [],
 		});
-
-		const result = await withFixtureTenant(ORG_ID, async () => {
-			return evaluateClinicalRulesInDb(ORG_ID, {
-				patientId: PATIENT_ID,
-				serviceIds: ["service-1"],
-				completedServiceIds: [],
-			});
-		});
-
 		assert.deepStrictEqual(result.evaluations, []);
 	});
 
 	test("resolves successfully when all required and completed services are present", async () => {
-		await seedRule(10, {
-			triggerServiceIdsJson: '["service-1"]',
-			requiredServiceIdsJson: '["service-req-1"]',
-			requiresCompletedServiceIdsJson: '["service-comp-1"]',
-		});
+		mockDbResponse([
+			{
+				...baseRecord,
+				triggerServiceIdsJson: '["service-1"]',
+				requiredServiceIdsJson: '["service-req-1"]',
+				requiresCompletedServiceIdsJson: '["service-comp-1"]',
+			},
+		]);
 
-		const result = await withFixtureTenant(ORG_ID, async () => {
-			return evaluateClinicalRulesInDb(ORG_ID, {
-				patientId: PATIENT_ID,
-				serviceIds: ["service-1", "service-req-1"],
-				completedServiceIds: ["service-comp-1"],
-			});
+		const result = await evaluateClinicalRulesInDb("org-1", {
+			patientId: "patient-1",
+			serviceIds: ["service-1", "service-req-1"],
+			completedServiceIds: ["service-comp-1"],
 		});
 
 		assert.strictEqual(result.evaluations.length, 1);
+		// Локальная переменная под noUncheckedIndexedAccess: assert.ok — настоящая
+		// проверка, тест падает внятно, а не TypeError-ом на обращении к полю.
 		const evaluation = result.evaluations[0];
 		assert.ok(evaluation);
 		assert.strictEqual(evaluation.resolved, true);
@@ -120,17 +100,18 @@ describe("evaluateClinicalRulesInDb", () => {
 	});
 
 	test("does not resolve when missing required services", async () => {
-		await seedRule(10, {
-			triggerServiceIdsJson: '["service-1"]',
-			requiredServiceIdsJson: '["service-req-1", "service-req-2"]',
-		});
+		mockDbResponse([
+			{
+				...baseRecord,
+				triggerServiceIdsJson: '["service-1"]',
+				requiredServiceIdsJson: '["service-req-1", "service-req-2"]',
+			},
+		]);
 
-		const result = await withFixtureTenant(ORG_ID, async () => {
-			return evaluateClinicalRulesInDb(ORG_ID, {
-				patientId: PATIENT_ID,
-				serviceIds: ["service-1", "service-req-1"],
-				completedServiceIds: [],
-			});
+		const result = await evaluateClinicalRulesInDb("org-1", {
+			patientId: "patient-1",
+			serviceIds: ["service-1", "service-req-1"],
+			completedServiceIds: [],
 		});
 
 		assert.strictEqual(result.evaluations.length, 1);
@@ -145,17 +126,18 @@ describe("evaluateClinicalRulesInDb", () => {
 	});
 
 	test("does not resolve when missing completed services", async () => {
-		await seedRule(10, {
-			triggerServiceIdsJson: '["service-1"]',
-			requiresCompletedServiceIdsJson: '["service-comp-1"]',
-		});
+		mockDbResponse([
+			{
+				...baseRecord,
+				triggerServiceIdsJson: '["service-1"]',
+				requiresCompletedServiceIdsJson: '["service-comp-1"]',
+			},
+		]);
 
-		const result = await withFixtureTenant(ORG_ID, async () => {
-			return evaluateClinicalRulesInDb(ORG_ID, {
-				patientId: PATIENT_ID,
-				serviceIds: ["service-1"],
-				completedServiceIds: [],
-			});
+		const result = await evaluateClinicalRulesInDb("org-1", {
+			patientId: "patient-1",
+			serviceIds: ["service-1"],
+			completedServiceIds: [],
 		});
 
 		assert.strictEqual(result.evaluations.length, 1);
@@ -168,18 +150,19 @@ describe("evaluateClinicalRulesInDb", () => {
 	});
 
 	test("handles block_service logic correctly with blocked services", async () => {
-		await seedRule(10, {
-			action: "block_service",
-			triggerServiceIdsJson: '["service-1"]',
-			blockedServiceIdsJson: '["service-1"]',
-		});
+		mockDbResponse([
+			{
+				...baseRecord,
+				action: "block_service",
+				triggerServiceIdsJson: '["service-1"]',
+				blockedServiceIdsJson: '["service-1"]',
+			},
+		]);
 
-		const result = await withFixtureTenant(ORG_ID, async () => {
-			return evaluateClinicalRulesInDb(ORG_ID, {
-				patientId: PATIENT_ID,
-				serviceIds: ["service-1"],
-				completedServiceIds: [],
-			});
+		const result = await evaluateClinicalRulesInDb("org-1", {
+			patientId: "patient-1",
+			serviceIds: ["service-1"],
+			completedServiceIds: [],
 		});
 
 		assert.strictEqual(result.evaluations.length, 1);
@@ -190,23 +173,27 @@ describe("evaluateClinicalRulesInDb", () => {
 	});
 
 	test("show_warning and schedule_followup always remain unresolved", async () => {
-		await seedRule(10, {
-			action: "show_warning",
-			triggerServiceIdsJson: '["service-1"]',
-			requiredServiceIdsJson: "[]",
-		});
-		await seedRule(11, {
-			action: "schedule_followup",
-			triggerServiceIdsJson: '["service-1"]',
-			requiredServiceIdsJson: "[]",
-		});
+		mockDbResponse([
+			{
+				...baseRecord,
+				id: "rule-warning",
+				action: "show_warning",
+				triggerServiceIdsJson: '["service-1"]',
+				requiredServiceIdsJson: "[]", // no missing services
+			},
+			{
+				...baseRecord,
+				id: "rule-followup",
+				action: "schedule_followup",
+				triggerServiceIdsJson: '["service-1"]',
+				requiredServiceIdsJson: "[]", // no missing services
+			},
+		]);
 
-		const result = await withFixtureTenant(ORG_ID, async () => {
-			return evaluateClinicalRulesInDb(ORG_ID, {
-				patientId: PATIENT_ID,
-				serviceIds: ["service-1"],
-				completedServiceIds: [],
-			});
+		const result = await evaluateClinicalRulesInDb("org-1", {
+			patientId: "patient-1",
+			serviceIds: ["service-1"],
+			completedServiceIds: [],
 		});
 
 		assert.strictEqual(result.evaluations.length, 2);

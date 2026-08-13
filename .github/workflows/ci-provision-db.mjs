@@ -84,7 +84,8 @@ try {
 	if (existingRole.rowCount === 0) {
 		// NOSUPERUSER и NOBYPASSRLS — не косметика, см. причину 2 в шапке файла.
 		await client.query(
-			`CREATE ROLE "${roleName}" LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD '${rolePassword.replace(/'/g, "''")}'`
+			`CREATE ROLE "${roleName}" LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD $1`,
+			[rolePassword],
 		);
 		console.log(
 			`[provision] создана роль ${roleName} (NOSUPERUSER, NOBYPASSRLS)`,

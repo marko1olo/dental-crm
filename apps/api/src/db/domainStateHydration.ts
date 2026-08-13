@@ -64,7 +64,6 @@ import {
 	type Appointment,
 	appointmentSchema,
 	type Chair,
-	type ClinicProfile,
 	type ClinicalRule,
 	type CommunicationEvent,
 	type CommunicationTask,
@@ -95,18 +94,10 @@ import {
 import { and, desc, eq } from "drizzle-orm";
 import {
 	type DomainState,
+	inMemoryDomainState,
+	validScheduleTimeZone,
 } from "../sampleData.js";
 import { staffAuthorityFlags } from "../security/permissions.js";
-
-export function validScheduleTimeZone(value: string | null | undefined): string {
-	const timeZone = value?.trim() || "Europe/Moscow";
-	try {
-		Intl.DateTimeFormat(undefined, { timeZone });
-		return timeZone;
-	} catch {
-		return "Europe/Moscow";
-	}
-}
 import { db } from "./client.js";
 import {
 	projectServiceCatalogRows,
@@ -186,6 +177,10 @@ const NO_VISIT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
  */
 const UNREADABLE_TIME_MARKER = "1970-01-01T00:00:00.000Z";
 
+/** В режиме "off" источник истины — сами доменные массивы, синхронизировать нечего. */
+function inMemoryMode(): boolean {
+	return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 function iso(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
@@ -482,13 +477,16 @@ export async function hydrateDomainStateFromDb(
 ): Promise<HydratedDomainState> {
 	const report: DomainStateHydrationReport = {
 		organizationId,
-		mode: "database",
+		mode: inMemoryMode() ? "in_memory" : "database",
 		organizationFound: true,
 		counts: {},
 		skipped: {},
 		warnings: [],
 		unavailable: [],
 	};
+	if (report.mode === "in_memory") {
+		return { state: inMemoryDomainState, report };
+	}
 	return hydrateFromDatabase(organizationId, report);
 }
 
@@ -659,33 +657,7 @@ async function hydrateFromDatabase(
 	// в нём оставалась смесь двух клиник. Здесь объект строится целиком и живёт
 	// только внутри этого среза.
 	const clinicProfile: DomainState["clinicProfile"] = {
-		organizationId: organization.id,
-		clinicName: organization.name,
-		legalName: organization.name,
-		inn: organization.inn ?? null,
-		kpp: organization.kpp ?? null,
-		ogrn: organization.ogrn ?? null,
-		address: clinic?.address ?? organization.legalAddress ?? null,
-		phone: clinic?.phone ?? null,
-		email: organization.email ?? null,
-		website: organization.website ?? null,
-		medicalLicenseNumber: organization.medicalLicenseNumber ?? null,
-		medicalLicenseIssuedAt: organization.medicalLicenseIssuedAt ?? null,
-		medicalLicenseIssuer: organization.medicalLicenseIssuer ?? null,
-		bankDetails: organization.bankDetails ?? null,
-		signatoryName: organization.signatoryName ?? null,
-		signatoryTitle: organization.signatoryTitle ?? null,
-		mode: clinicModeSchema.catch("one_chair").parse(organization.clinicMode),
-		timezone: validScheduleTimeZone(clinic?.timezone),
-		updatedAt: UNREADABLE_TIME_MARKER,
-		defaultVisitMinutes: 30,
-		scheduleDefaults: { workdayStart: "08:00", workdayEnd: "20:00", workingDays: [1,2,3,4,5], appointmentBufferMinutes: 15 },
-		patientCreationRules: parseJsonObject(
-			organization.patientCreationRules,
-			{ requirePhone: false, requireSource: false }
-		) as ClinicProfile["patientCreationRules"],
-		networkEnabled: false,
-		egiszEnabled: false,
+		...inMemoryDomainState.clinicProfile,
 	};
 	{
 		clinicProfile.organizationId = organization.id;
@@ -1307,32 +1279,7 @@ async function hydrateFromDatabase(
 
 function emptyDomainState(organizationId: string): DomainState {
 	return {
-		clinicProfile: {
-			organizationId,
-			clinicName: "",
-			legalName: null,
-			inn: null,
-			kpp: null,
-			ogrn: null,
-			address: null,
-			phone: null,
-			email: null,
-			website: null,
-			medicalLicenseNumber: null,
-			medicalLicenseIssuedAt: null,
-			medicalLicenseIssuer: null,
-			bankDetails: null,
-			signatoryName: null,
-			signatoryTitle: null,
-			mode: "one_chair",
-			timezone: "Europe/Moscow",
-			updatedAt: UNREADABLE_TIME_MARKER,
-			defaultVisitMinutes: 30,
-			scheduleDefaults: { workdayStart: "08:00", workdayEnd: "20:00", workingDays: [1,2,3,4,5], appointmentBufferMinutes: 15 },
-			patientCreationRules: { requirePhone: false, requireSource: false },
-			networkEnabled: false,
-			egiszEnabled: false,
-		},
+		clinicProfile: { ...inMemoryDomainState.clinicProfile, organizationId },
 		staffMembers: [],
 		chairs: [],
 		patients: [],
@@ -1441,6 +1388,7 @@ async function _findLatestVisitIdForPatient(
 	organizationId: string,
 	patientId: string,
 ): Promise<string | null> {
+	if (inMemoryMode()) return null;
 	try {
 		const rows = await db
 			.select({ id: schema.visits.id })

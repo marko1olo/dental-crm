@@ -87,39 +87,15 @@ assertNoMojibake(
 	routeSource.match(/DENTE: .{0,80}/)?.[0] ?? "",
 	"callback fallback source",
 );
-/*
- * ОБА ОБРАЗЦА ИЩУТСЯ БЕЗ ПРИВЯЗКИ К РАССТАНОВКЕ ПЕРЕНОСОВ, И ЭТО ИСПРАВЛЕНИЕ
- * ЛОЖНОГО ОТКАЗА, А НЕ ПОСЛАБЛЕНИЕ.
- *
- * БЫЛО: оба образца были однострочными подстроками `includes`. Маршрут звал общий
- * разборщик ровно так, как здесь требуется, но коммит 083559a17
- * («chore(architect): global biome formatting», 2026-07-15) разложил вызов на
- * четыре строки:
- *
- *     const parsedInput = parseTelegramRouteBody(
- *         updateDenteTelegramBotSettingsSchema,
- *         request.body,
- *     );
- *
- * Подстрока перестала совпадать, и сценарий с этого дня отказывал словами
- * «Telegram settings route must use the shared route-body parser» — про маршрут,
- * который разборщик использует. Прав был МАРШРУТ, устарел СЦЕНАРИЙ.
- *
- * Гейт при этом не ослаблен: проверяется та же пара «схема + тело запроса» у того
- * же разборщика, и запрет на прямой `.parse(request.body)` тоже стал переносо-
- * стойким, то есть теперь ловит и разложенную форму запрета, которую прежняя
- * подстрока пропускала. `\.parse\(` не совпадает с `.safeParse(` — точка перед
- * `parse` обязательна.
- */
 assert(
-	!/updateDenteTelegramBotSettingsSchema\s*\.parse\(\s*request\.body\s*,?\s*\)/.test(
-		routeSource,
+	!routeSource.includes(
+		"updateDenteTelegramBotSettingsSchema.parse(request.body)",
 	),
 	"Telegram settings route must not parse request.body directly",
 );
 assert(
-	/parseTelegramRouteBody\(\s*updateDenteTelegramBotSettingsSchema\s*,\s*request\.body\s*,?\s*\)/.test(
-		routeSource,
+	routeSource.includes(
+		"parseTelegramRouteBody(updateDenteTelegramBotSettingsSchema, request.body)",
 	),
 	"Telegram settings route must use the shared route-body parser",
 );

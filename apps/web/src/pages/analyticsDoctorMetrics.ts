@@ -206,7 +206,6 @@ export interface AnalyticsDashboardData {
 	readonly kpis: AnalyticsKpis;
 	readonly cohortLtvJson: readonly CohortLtvPoint[];
 	readonly planFunnelJson: readonly NamedValuePoint[];
-	readonly primaryFunnelJson: readonly NamedValuePoint[];
 	readonly chairUtilizationJson: readonly NamedValuePoint[];
 	readonly doctorProfitabilityJson: readonly DoctorProfitabilityRow[];
 	/**
@@ -363,7 +362,6 @@ export function parseDashboardPayload(
 	const kpisRow = asRecord(body.kpis);
 	const cohortLtvJson = toCohortPoints(body.cohortLtvJson);
 	const planFunnelJson = toNamedValuePoints(body.planFunnelJson);
-	const primaryFunnelJson = toNamedValuePoints(body.primaryFunnelJson);
 	const chairUtilizationJson = toNamedValuePoints(body.chairUtilizationJson);
 	const doctorProfitabilityJson = toDoctorRows(body.doctorProfitabilityJson);
 
@@ -378,7 +376,6 @@ export function parseDashboardPayload(
 			},
 			cohortLtvJson,
 			planFunnelJson,
-			primaryFunnelJson,
 			chairUtilizationJson,
 			doctorProfitabilityJson,
 			// Сервер присылает isEmpty; если поле отсутствует — считаем по факту,
@@ -388,7 +385,6 @@ export function parseDashboardPayload(
 					? body.isEmpty
 					: cohortLtvJson.length === 0 &&
 						planFunnelJson.length === 0 &&
-						primaryFunnelJson.length === 0 &&
 						chairUtilizationJson.length === 0 &&
 						doctorProfitabilityJson.length === 0,
 		},

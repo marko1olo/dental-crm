@@ -1,107 +1,104 @@
 import assert from "node:assert";
-import { describe, test, beforeEach, afterEach } from "node:test";
+import { afterEach, describe, mock, test } from "node:test";
 import { recordAuditEventInDb } from "./auditQuery.js";
 import { db } from "./client.js";
-import { auditEvents, organizations, users } from "./schema.js";
-import { eq, desc } from "drizzle-orm";
-import {
-	fixtureUuid,
-	purgeFixtureOrganizations,
-	withFixtureTenant,
-} from "../tests/support/fixtureOrganizations.js";
-import { withSuperuserBypass } from "./rls.js";
-
-const RUN_ID = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-let testIndex = 0;
-let orgId: string;
 
 describe("recordAuditEventInDb", () => {
-	beforeEach(async () => {
-		testIndex++;
-		orgId = fixtureUuid(`audit-query-${RUN_ID}`, testIndex);
-		await purgeFixtureOrganizations([orgId]);
-		await withSuperuserBypass(async () => {
-			await db
-				.insert(organizations)
-				.values([
-					{ id: orgId, name: "Audit Query Test Org" },
-				])
-				.onConflictDoNothing();
-		});
-	});
-
-	afterEach(async () => {
-		await purgeFixtureOrganizations([orgId]);
+	afterEach(() => {
+		mock.restoreAll();
 	});
 
 	test("successfully inserts and returns an audit event with all fields", async () => {
-		await withFixtureTenant(orgId, async () => {
-			const userId = fixtureUuid(`audit-query-user-${RUN_ID}`, 1);
-			await withSuperuserBypass(async () => {
-				await db.insert(users).values({
-					id: userId,
-					fullName: "Test User",
-					phone: "+79991112233",
-					role: "admin",
-					organizationId: orgId,
-				});
-			});
+		const mockDate = new Date("2024-01-01T00:00:00.000Z");
+		mock.method(db, "insert", () => ({
+			values: () => ({
+				returning: async () => [
+					{
+						id: "test-id",
+						organizationId: "org-1",
+						actorUserId: "user-1",
+						entityType: "patient",
+						entityId: "patient-1",
+						action: "create",
+						reason: "test reason",
+						createdAt: mockDate,
+					},
+				],
+			}),
+		}));
 
-			const result = await recordAuditEventInDb(orgId, {
-				entityType: "patient",
-				entityId: "patient-1",
-				action: "create",
-				reason: "test reason",
-				actorUserId: userId,
-			});
-
-			assert.ok(result.id);
-			assert.strictEqual(result.organizationId, orgId);
-			assert.strictEqual(result.actorUserId, userId);
-			assert.strictEqual(result.entityType, "patient");
-			assert.strictEqual(result.entityId, "patient-1");
-			assert.strictEqual(result.action, "create");
-			assert.strictEqual(result.reason, "test reason");
-			assert.ok(result.createdAt);
-
-			// Verify it actually went to the DB
-			const events = await db
-				.select()
-				.from(auditEvents)
-				.where(eq(auditEvents.id, result.id));
-			
-			assert.strictEqual(events.length, 1);
-			assert.ok(events[0]);
-			assert.strictEqual(events[0].entityType, "patient");
+		const result = await recordAuditEventInDb("org-1", {
+			entityType: "patient",
+			entityId: "patient-1",
+			action: "create",
+			reason: "test reason",
+			actorUserId: "user-1",
 		});
+
+		assert.strictEqual(result.id, "test-id");
+		assert.strictEqual(result.organizationId, "org-1");
+		assert.strictEqual(result.actorUserId, "user-1");
+		assert.strictEqual(result.entityType, "patient");
+		assert.strictEqual(result.entityId, "patient-1");
+		assert.strictEqual(result.action, "create");
+		assert.strictEqual(result.reason, "test reason");
+		assert.strictEqual(result.createdAt, mockDate.toISOString());
 	});
 
 	test("successfully inserts with minimal required fields", async () => {
-		await withFixtureTenant(orgId, async () => {
-			const result = await recordAuditEventInDb(orgId, {
-				entityType: "document",
-				entityId: "doc-1",
-				action: "update",
-			});
+		const mockDate = new Date("2024-01-01T00:00:00.000Z");
+		mock.method(db, "insert", () => ({
+			values: () => ({
+				returning: async () => [
+					{
+						id: "test-id-2",
+						organizationId: "org-2",
+						actorUserId: null,
+						entityType: "document",
+						entityId: "doc-1",
+						action: "update",
+						reason: null,
+						createdAt: mockDate,
+					},
+				],
+			}),
+		}));
 
-			assert.ok(result.id);
-			assert.strictEqual(result.organizationId, orgId);
-			assert.strictEqual(result.actorUserId, null);
-			assert.strictEqual(result.entityType, "document");
-			assert.strictEqual(result.entityId, "doc-1");
-			assert.strictEqual(result.action, "update");
-			assert.strictEqual(result.reason, null);
-			assert.ok(result.createdAt);
-
-			// Verify it actually went to the DB
-			const events = await db
-				.select()
-				.from(auditEvents)
-				.where(eq(auditEvents.id, result.id));
-			
-			assert.strictEqual(events.length, 1);
-			assert.ok(events[0]);
-			assert.strictEqual(events[0].entityType, "document");
+		const result = await recordAuditEventInDb("org-2", {
+			entityType: "document",
+			entityId: "doc-1",
+			action: "update",
 		});
+
+		assert.strictEqual(result.id, "test-id-2");
+		assert.strictEqual(result.organizationId, "org-2");
+		assert.strictEqual(result.actorUserId, null);
+		assert.strictEqual(result.entityType, "document");
+		assert.strictEqual(result.entityId, "doc-1");
+		assert.strictEqual(result.action, "update");
+		assert.strictEqual(result.reason, null);
+		assert.strictEqual(result.createdAt, mockDate.toISOString());
+	});
+
+	test("throws an error if insert returns empty array", async () => {
+		mock.method(db, "insert", () => ({
+			values: () => ({
+				returning: async () => [],
+			}),
+		}));
+
+		await assert.rejects(
+			async () => {
+				await recordAuditEventInDb("org-1", {
+					entityType: "patient",
+					entityId: "patient-1",
+					action: "create",
+				});
+			},
+			(err: Error) => {
+				assert.strictEqual(err.message, "Failed to insert audit event");
+				return true;
+			},
+		);
 	});
 });

@@ -1,5 +1,5 @@
 import type { ImagingStudy, ImagingViewerSessionState } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
@@ -7,9 +7,7 @@ import * as schema from "./schema.js";
 /**
  * Canonical default state for a freshly-created imaging viewer session.
  * Typed as ImagingViewerSessionState so the compiler enforces that every
- * required field is present and correctly typed (previously this was an
- * `as any`-masked `{ version, layout, currentTool }` literal that did not
- * match the schema at all — a persisted-state corruption bug).
+ * required field is present and correctly typed.
  */
 function createDefaultViewerSessionState(): ImagingViewerSessionState {
 	return {
@@ -119,6 +117,71 @@ export async function getImagingStudyById(
 		)
 		.limit(1);
 	return record ? mapImagingStudy(record) : null;
+}
+
+export async function createImagingStudiesInDb(
+	organizationId: string,
+	inputs: Array<{
+		patientId: string;
+		visitId?: string | null | undefined;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+		kind: any;
+		title: string;
+		toothCode?: string | null | undefined;
+		region?: string | null | undefined;
+		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+		sourceKind: any;
+		sourceName: string;
+		storagePath?: string | null | undefined;
+		dicomStudyUid?: string | null | undefined;
+		capturedAt?: string | null | undefined;
+		aiSummary?: string | null | undefined;
+	}>,
+): Promise<ImagingStudy[]> {
+	if (inputs.length === 0) return [];
+
+	const patientIds = Array.from(new Set(inputs.map((i) => i.patientId)));
+
+	const ownedPatients = await db
+		.select({ id: schema.patients.id })
+		.from(schema.patients)
+		.where(
+			and(
+				eq(schema.patients.organizationId, organizationId),
+				inArray(schema.patients.id, patientIds),
+			),
+		);
+
+	if (ownedPatients.length !== patientIds.length) {
+		throw new Error("imaging create: some patients do not belong to organization");
+	}
+
+	const records = await db
+		.insert(schema.imagingStudies)
+		.values(
+			inputs.map((input) => ({
+				organizationId,
+				patientId: input.patientId,
+				visitId: input.visitId || null,
+				kind: input.kind,
+				title: input.title.length > 180 ? input.title.slice(0, 180) : input.title,
+				toothCode: input.toothCode || null,
+				region: input.region || null,
+				capturedAt: input.capturedAt ? new Date(input.capturedAt) : new Date(),
+				sourceKind: input.sourceKind,
+				sourceName:
+					input.sourceName.length > 160
+						? input.sourceName.slice(0, 160)
+						: input.sourceName,
+				storagePath: input.storagePath || null,
+				dicomStudyUid: input.dicomStudyUid || null,
+				status: "needs_review" as const,
+				aiSummary: input.aiSummary || null,
+			})),
+		)
+		.returning();
+
+	return records.map(mapImagingStudy);
 }
 
 export async function createImagingStudyInDb(

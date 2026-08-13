@@ -53,7 +53,6 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		dataProcessingBasisNote: "",
 		orthodonticProgress: "",
 		loyaltyTier: "standard",
-		marketingSource: "",
 	};
 }
 

@@ -45,6 +45,7 @@ describe("Clinic/staff auth — body guard (null/typed → 400, не 500)", () =
 			savedEnv[key] = process.env[key];
 		}
 		process.env.NODE_ENV = "test";
+		process.env.DENTAL_STATE_PERSISTENCE = "off";
 		// Демо-вход не нужен: 400-ветки до credentials.
 		process.env.DENTE_ALLOW_DEMO_LOGIN = "0";
 

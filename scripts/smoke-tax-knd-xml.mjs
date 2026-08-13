@@ -10,28 +10,14 @@ import { issueAttestation } from "./lib/documentIssueAttestation.mjs";
 const tempRoot = mkdtempSync(path.join(tmpdir(), "dental-tax-knd-xml-"));
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
-/*
- * СЕКРЕТ ПОДПИСИ ТОКЕНА КАБИНЕТА. Способ списан с
- * `scripts/smoke-patient-forms-lifecycle.mjs` и
- * `scripts/smoke-document-html-issue-guards.mjs`: тот же маршрут документов и тот
- * же барьер, второй способ подписи не заводится.
- */
-const smokeAuthSecret =
-	process.env.AUTH_TOKEN_SECRET || "dente_tax_knd_xml_smoke_secret";
-process.env.AUTH_TOKEN_SECRET = smokeAuthSecret;
 process.env.DENTAL_DOCUMENT_SNAPSHOT_DIR = path.join(tempRoot, "snapshots");
 delete process.env.DENTE_FNS_TAX_OFFICE_CODE;
 delete process.env.FNS_TAX_OFFICE_CODE;
 
 const routePath = path.resolve("apps/api/dist/routes/documents.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
-const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
 
-if (
-	!existsSync(routePath) ||
-	!existsSync(sampleDataPath) ||
-	!existsSync(cryptoHelperPath)
-) {
+if (!existsSync(routePath) || !existsSync(sampleDataPath)) {
 	throw new Error("Build API first: npm run build");
 }
 
@@ -40,22 +26,6 @@ const Fastify = requireFromApi("fastify");
 const { registerDocumentRoutes } = await import(pathToFileURL(routePath).href);
 const { activeVisit, clinicProfile, documents, patients, payments } =
 	await import(pathToFileURL(sampleDataPath).href);
-const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
-
-/*
- * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ ВЫГРУЗКА ФНС, А ВХОД.
- *
- * БЫЛО: каждый запрос к маршруту документов получал 401 «Требуется авторизация
- * рабочего кабинета клиники» — граница арендатора (`requireOrganizationId`,
- * routes/documents/create.ts:53) стоит до разбора содержимого. Барьер поставлен
- * коммитом 4ad7b10ec (2026-07-26), убравшим подпорку `|| "mock-org"`; смоуки тот
- * коммит не тронул.
- */
-const smokeClinicToken = signToken(
-	{ organizationId: activeVisit.organizationId, clinicName: "Smoke clinic" },
-	smokeAuthSecret,
-	60,
-);
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -75,37 +45,10 @@ const appSource = [
 	readAppLogicSourceSync(),
 	readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
 ].join("\n");
-/*
- * ЧИТАЕТСЯ ВЕСЬ УЧАСТОК МАРШРУТОВ ДОКУМЕНТОВ, А НЕ ОДИН ФАЙЛ-ПЕРЕХОДНИК.
- *
- * БЫЛО: `apps/api/src/routes/documents.ts`. Коммит 12cfd18f6 («Extract document
- * route handlers», 2026-06-22) разнёс обработчики по `routes/documents/*.ts`, и
- * от прежнего файла осталась переходная скорлупа в 24 строки. Проверки
- * заморозки фактов справки искали `taxXmlSourceSnapshotForIssue` и
- * `frozenTaxXmlPatient` в этой скорлупе и не находили — притом что сами
- * механизмы целы и лежат в `routes/documents/issue.ts`, `shared.ts` и
- * `taxXml.ts`. Отказ звучал как «факты справки не заморожены при выдаче», то
- * есть обвинял живой механизм в отсутствии.
- *
- * ПРАВ МАРШРУТ, УСТАРЕЛ СЦЕНАРИЙ. Файлы перечислены поимённо, а не собраны
- * обходом каталога: новый модуль в этой папке должен попадать в проверку
- * осознанно, а не молча.
- */
-const documentRoutesSource = [
+const documentRoutesSource = readFileSync(
 	"apps/api/src/routes/documents.ts",
-	"apps/api/src/routes/documents/auditFacts.ts",
-	"apps/api/src/routes/documents/create.ts",
-	"apps/api/src/routes/documents/html.ts",
-	"apps/api/src/routes/documents/issue.ts",
-	"apps/api/src/routes/documents/ndflCalculator.ts",
-	"apps/api/src/routes/documents/pdf.ts",
-	"apps/api/src/routes/documents/shared.ts",
-	"apps/api/src/routes/documents/signUkep.ts",
-	"apps/api/src/routes/documents/taxXml.ts",
-	"apps/api/src/routes/documents/void.ts",
-]
-	.map((file) => readFileSync(file, "utf8"))
-	.join("\n");
+	"utf8",
+);
 const sampleDataSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
 const taxXmlSource = readFileSync("apps/api/src/documents/taxXml.ts", "utf8");
 assert(
@@ -126,25 +69,9 @@ assert(
 	!appSource.includes('"XML КНД доступен после выдачи"'),
 	"document passport UI must not call KND XML ready without the draft boundary",
 );
-/*
- * ОБРАЗЕЦ ИЩЕТСЯ БЕЗ ПРИВЯЗКИ К ПЕРЕНОСАМ — ЭТО ИСПРАВЛЕНИЕ ЛОЖНОГО ОТКАЗА.
- *
- * БЫЛО: однострочная подстрока
- * `humanizeDocumentAuditText(documentAuditFacts.taxXmlOfficialValidationNote)`.
- * Экран вызывает её ровно так же и сегодня, но коммит 083559a17
- * («chore(architect): global biome formatting», 2026-07-15) разложил вызов на
- * четыре строки — сверено обеими сторонами коммита: до него строка была одна
- * (DocumentsView.tsx:4815), после — перенос аргумента (DocumentsView.tsx:8436).
- * Подстрока перестала совпадать, и сценарий с того дня отказывал словами про
- * «humanized copy» — про экран, который её применяет.
- *
- * ПРАВ ЭКРАН, УСТАРЕЛ СЦЕНАРИЙ. Возвращать в `DocumentsView.tsx` одну строку
- * нельзя: биом разложит её обратно на первом же прогоне. Проверяется та же пара
- * «переводчик текста + именно этот факт», только сквозь перенос.
- */
 assert(
-	/humanizeDocumentAuditText\(\s*documentAuditFacts\.taxXmlOfficialValidationNote\s*,?\s*\)/.test(
-		appSource,
+	appSource.includes(
+		"humanizeDocumentAuditText(documentAuditFacts.taxXmlOfficialValidationNote)",
 	),
 	"document passport UI must render official tax XML validation boundary note through humanized copy",
 );
@@ -168,44 +95,17 @@ assert(
 	appSource.includes("/api/documents/${documentId}/tax-xml"),
 	"Documents UI must call the guarded FNS XML export endpoint",
 );
-/*
- * НАДПИСЬ НА КНОПКЕ НАЗЫВАЕТ ДОКУМЕНТ, А ГРАНИЦА «ЭТО ЧЕРНОВИК» СТОИТ РЯДОМ В
- * ПАСПОРТЕ — ЭТО РЕШЕНИЕ ЧЕЛОВЕКА, А НЕ ПОТЕРЯ.
- *
- * БЫЛО: здесь требовалась подпись кнопки «Черновой файл ФНС». Коммит beeb9abed
- * («feat(web): add explicit NDFL Tax XML export action button», 2026-07-31)
- * заменил её на «Справка НДФЛ в XML (ФНС)» с прямо названной причиной в теле
- * коммита: «Upgrade document action button from vague draft label». Заодно
- * появились подпись для чтения с экрана и всплывающая подсказка, обе называют
- * форму ФНС по номеру (КНД 1151156).
- *
- * ПРАВ ЭКРАН, УСТАРЕЛ СЦЕНАРИЙ. Требование границы черновика при этом НЕ снято:
- * её несёт паспорт документа, и проверка выше в этом же файле («черновой файл
- * для ФНС доступен после выдачи», DocumentsView.tsx:6987) остаётся и проходит.
- * Администратор видит обе части: чем является файл и что он ещё не прошёл
- * официальную проверку и подпись.
- */
 assert(
-	appSource.includes("Справка НДФЛ в XML (ФНС)"),
-	"Documents UI must name the KND export in Russian on the action button",
-);
-assert(
-	appSource.includes("КНД 1151156"),
-	"Documents UI must name the official FNS form number for the export action",
+	appSource.includes("Черновой файл ФНС"),
+	"Documents UI must label KND export in Russian as a draft that still needs validation/signing",
 );
 assert(
 	!appSource.includes("XML draft КНД"),
 	"Documents UI must not expose English fallback in the KND XML button",
 );
-/*
- * Тот же перенос от биома, что и у вызова `humanizeDocumentAuditText` выше:
- * условие показа кнопки цело и стоит на DocumentsView.tsx:7320-7321, но
- * разложено на две строки, поэтому однострочная подстрока не совпадала.
- * Проверяется связка «только справка НДФЛ» и «только выданная» — сквозь перенос.
- */
 assert(
-	/document\.kind === "tax_deduction_certificate" &&\s*document\.status === "issued"/.test(
-		appSource,
+	appSource.includes(
+		'document.kind === "tax_deduction_certificate" && document.status === "issued"',
 	),
 	"Documents UI must expose FNS XML only for issued KND 1151156 certificates",
 );
@@ -303,10 +203,6 @@ assert(
 );
 
 const app = Fastify({ logger: false });
-app.addHook("onRequest", (request, _reply, done) => {
-	request.headers["x-dente-clinic-token"] = smokeClinicToken;
-	done();
-});
 
 try {
 	await registerDocumentRoutes(app);

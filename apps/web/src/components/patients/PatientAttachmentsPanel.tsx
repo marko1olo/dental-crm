@@ -29,8 +29,6 @@ import {
 } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
-import heic2any from "heic2any";
-
 
 type AttachmentFile = {
 	id: string;
@@ -148,10 +146,9 @@ export const PatientAttachmentsPanel: React.FC<
 
 	const onUpload = useCallback(
 		async (e: React.ChangeEvent<HTMLInputElement>) => {
-			let file: Blob | File | undefined = e.target.files?.[0];
-			let fileName = e.target.files?.[0]?.name;
+			const file = e.target.files?.[0];
 			const id = (patientId ?? "").trim();
-			if (!file || !fileName || !id || uploading) {
+			if (!file || !id || uploading) {
 				e.target.value = "";
 				return;
 			}
@@ -159,30 +156,8 @@ export const PatientAttachmentsPanel: React.FC<
 			setUploading(true);
 			setError(null);
 			try {
-				/*
-				 * Feature #7: Конвертация HEIC/HEIF в JPEG на клиенте перед отправкой.
-				 * Прямая загрузка фотографий с iPhone даёт .heic, который не рендерится
-				 * в браузере. Мы используем heic2any (через WebAssembly) для прозрачной
-				 * конвертации файла.
-				 */
-				if (
-					file.type === "image/heic" ||
-					file.type === "image/heif" ||
-					fileName.toLowerCase().endsWith(".heic") ||
-					fileName.toLowerCase().endsWith(".heif")
-				) {
-					const converted = await heic2any({
-						blob: file,
-						toType: "image/jpeg",
-						quality: 0.8, // Баланс качества и размера для медицинских снимков
-					});
-					// heic2any может вернуть массив блобов при конвертации анимации.
-					file = Array.isArray(converted) ? converted[0] : converted;
-					fileName = fileName.replace(/\.heic|\.heif/i, ".jpg");
-				}
-
 				const formData = new FormData();
-				formData.append("file", file as Blob, fileName);
+				formData.append("file", file, file.name);
 
 				const res = await fetch(
 					`/api/patients/${encodeURIComponent(id)}/attachments`,
@@ -224,11 +199,11 @@ export const PatientAttachmentsPanel: React.FC<
 					const newId = typeof f.id === "string" ? f.id.trim() : "";
 					const newUrl = typeof f.url === "string" ? f.url.trim() : "";
 					const newName =
-						typeof f.name === "string" ? f.name.trim() : fileName;
+						typeof f.name === "string" ? f.name.trim() : file.name;
 					const newType =
 						typeof f.type === "string"
 							? f.type.trim()
-							: (file as Blob)?.type || "application/octet-stream";
+							: file.type || "application/octet-stream";
 					if (newId && newUrl) {
 						setFiles((prev) => {
 							if (prev.some((x) => x.id === newId)) return prev;
@@ -248,7 +223,7 @@ export const PatientAttachmentsPanel: React.FC<
 				} else {
 					await load();
 				}
-				showToast(`Файл «${fileName}» загружен в карточку.`, "success", 8000);
+				showToast(`Файл «${file.name}» загружен в карточку.`, "success", 8000);
 			} catch (err) {
 				logger.error("[patient-attachments] upload failed", err);
 				const msg = `Файл не загружен: ${requestFailureCause(null)}.`;

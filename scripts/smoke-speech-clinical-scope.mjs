@@ -5,18 +5,10 @@ import { pathToFileURL } from "node:url";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-speech-scope-secret";
-/*
- * СЕКРЕТ ПОДПИСИ ТОКЕНА КАБИНЕТА. Способ списан с
- * `scripts/smoke-core-route-validation.mjs`, второй способ подписи не заводится.
- */
-const smokeAuthSecret =
-	process.env.AUTH_TOKEN_SECRET || "dente_speech_clinical_scope_smoke_secret";
-process.env.AUTH_TOKEN_SECRET = smokeAuthSecret;
 
 const routePath = path.resolve("apps/api/dist/routes/speech.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
 const sharedPath = path.resolve("packages/shared/dist/index.js");
-const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
 const dentalPromptSource = readFileSync(
 	"apps/api/src/speech/dentalPrompt.ts",
 	"utf8",
@@ -25,8 +17,7 @@ const dentalPromptSource = readFileSync(
 if (
 	!existsSync(routePath) ||
 	!existsSync(sampleDataPath) ||
-	!existsSync(sharedPath) ||
-	!existsSync(cryptoHelperPath)
+	!existsSync(sharedPath)
 ) {
 	throw new Error("Build API first: npm run build");
 }
@@ -42,7 +33,6 @@ const {
 	speechTranscriptPolishRequestSchema,
 	visitNoteDraftRequestSchema,
 } = await import(pathToFileURL(sharedPath).href);
-const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -154,23 +144,7 @@ assert(
 		dentalPromptSource.includes(
 			"Стоматологический словарь распознавания выключен.",
 		) &&
-		/*
-		 * ПОДПИСЬ СПИСКА ТЕРМИНОВ — «Доп. термины:», И ЭТО НЕ ПОТЕРЯ.
-		 *
-		 * БЫЛО: здесь требовалась подстрока `Термины: ${terms.join`. Коммит
-		 * f4ab1401e («Add dual-tier auth (clinic + staff PIN) and voice
-		 * enhancements», 2026-07-04) переименовал подпись в «Доп. термины:» —
-		 * сверено обеими сторонами коммита: до него dentalPrompt.ts:334 держал
-		 * `Термины: ${terms.join(", ")}.`, после — `Доп. термины: ${terms.join(",
-		 * ")}.` (сегодня dentalPrompt.ts:367).
-		 *
-		 * ПРАВ МАРШРУТ, УСТАРЕЛ СЦЕНАРИЙ. Требование этой проверки — русский
-		 * человеческий текст без имён переменных окружения — соблюдено новой
-		 * подписью полностью: «Доп.» это «дополнительные», латиницы нет.
-		 * Запрет английского `Terms: ${terms.join` ниже (строка 155) оставлен как
-		 * есть, поэтому подмена русской подписи английской по-прежнему ловится.
-		 */
-		dentalPromptSource.includes("Доп. термины: ${terms.join"),
+		dentalPromptSource.includes("Термины: ${terms.join"),
 	"speech prompt warnings must be readable for clinic staff",
 );
 assert(
@@ -204,22 +178,8 @@ assert(
 const app = Fastify({ logger: false });
 await registerSpeechRoutes(app);
 
-/*
- * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ ГРАНИЦА ДИКТОВКИ, А ВХОД.
- *
- * БЫЛО: посылался только секрет администратора клиники, и каждый запрос получал
- * 401 — граница арендатора стоит до разбора содержимого. Ни одна проверка
- * области диктовки этим сценарием не выполнялась.
- */
-const smokeClinicToken = signToken(
-	{ organizationId: activeVisit.organizationId, clinicName: "Smoke clinic" },
-	smokeAuthSecret,
-	60,
-);
-
 const headers = {
 	"x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET,
-	"x-dente-clinic-token": smokeClinicToken,
 };
 const activePatient = patients.find(
 	(patient) => patient.id === activeVisit.patientId,

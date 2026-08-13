@@ -39,37 +39,14 @@ for (const marker of [
 		fail(`Speech gateway does not recognize expected env marker: ${marker}`);
 }
 
-/*
- * ДВА ТРЕБОВАНИЯ ВЫНЕСЕНЫ ИЗ ДОСЛОВНОГО СПИСКА: ФОРМАТТЕР РАЗНЁС ИХ ПО СТРОКАМ.
- *
- * Замер 2026-08-11: подпись и вызов `healthUrl` ЖИВЫ и не менялись по сути —
- * routes/system.ts:196-200 и :260-264, просто параметры теперь на отдельных
- * строках с висячей запятой. Односрочный `includes()` этого не видит.
- *
- * Логика вывода health-пути на месте целиком (system.ts:205-216), поэтому
- * сверяется СВЯЗЬ, а не раскладка пробелов: имена параметров, их порядок и
- * значение по умолчанию по-прежнему обязательны.
- */
-for (const [pattern, label] of [
-	[
-		/function\s+healthUrl\(\s*rawUrl:\s*string,\s*defaultHealthPath:\s*string,\s*deriveHealthFromConfiguredPath\s*=\s*false,?\s*\):\s*URL/,
-		"function healthUrl(rawUrl, defaultHealthPath, deriveHealthFromConfiguredPath = false): URL",
-	],
-	[
-		/healthUrl\(\s*configuredUrl,\s*definition\.defaultHealthPath,\s*definition\.deriveHealthFromConfiguredPath,?\s*\)/,
-		"healthUrl(configuredUrl, definition.defaultHealthPath, definition.deriveHealthFromConfiguredPath)",
-	],
-]) {
-	if (!pattern.test(systemSource))
-		fail(`Local bridge readiness health derivation missing marker: ${label}`);
-}
-
 for (const marker of [
 	"deriveHealthFromConfiguredPath?: boolean",
 	"deriveHealthFromConfiguredPath: true",
+	"function healthUrl(rawUrl: string, defaultHealthPath: string, deriveHealthFromConfiguredPath = false): URL",
 	"/\\/(?:health|healthz|status)$/i.test(cleanPath)",
 	"/\\/v1\\/audio\\/transcriptions$/i.test(cleanPath)",
 	"url.pathname = `${cleanPath}${defaultHealthPath}`",
+	"healthUrl(configuredUrl, definition.defaultHealthPath, definition.deriveHealthFromConfiguredPath)",
 ]) {
 	if (!systemSource.includes(marker))
 		fail(`Local bridge readiness health derivation missing marker: ${marker}`);

@@ -3,7 +3,6 @@ import {
 	aiRecognitionJobSchema,
 	createAiRecognitionJobSchema,
 	treatmentPlanPayloadSchema,
-	visitFlowRequestSchema,
 	visitNoteDraftRequestSchema,
 	visitNoteDraftSchema,
 } from "@dental/shared";
@@ -21,7 +20,6 @@ import { parseDictationLocally } from "../ai/localDictationParser.js";
 import { personalizePostVisitRecommendations } from "../ai/postVisitPersonalize.js";
 import { personalizeTreatmentPlan } from "../ai/treatmentPlanPersonalize.js";
 import { buildVisitDraftFromTranscript } from "../ai/visitDraft.js";
-import { runVisitFlow } from "../ai/visitFlowOrchestrator.js";
 import {
 	createAiRecognitionJobInDb,
 	listAiRecognitionJobsFromDb,
@@ -515,42 +513,6 @@ export async function registerAiRoutes(app: FastifyInstance) {
 				error: "NoShowRiskFailed",
 				message:
 					"Не удалось посчитать риск неявки. Не считайте пациента ни надёжным, ни рискованным: подтвердите запись обычным порядком.",
-			});
-		}
-	});
-
-	app.post("/api/ai/visit-flow", async (request, reply) => {
-		try {
-			if (
-				!(await requireClinicalReadAccess(
-					request,
-					reply,
-					"ai visit flow orchestrator",
-				))
-			)
-				return;
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"ai visit flow orchestrator",
-			);
-			if (!orgId) return;
-
-			const parsedInput = visitFlowRequestSchema.safeParse(request.body);
-			if (!parsedInput.success) {
-				return reply.code(400).send({
-					error: "VisitFlowValidationError",
-					message: "Некорректный запрос к AI-оркестратору визита.",
-				});
-			}
-
-			const result = await runVisitFlow(parsedInput.data);
-			return reply.send(result);
-		} catch (error: any) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Internal server error",
 			});
 		}
 	});

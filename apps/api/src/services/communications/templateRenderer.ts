@@ -133,7 +133,7 @@ const variableByKey = new Map(
 	communicationTemplateVariables.map((variable) => [variable.key, variable]),
 );
 
-function _findTemplateVariable(key: string): TemplateVariableDefinition | null {
+export function findTemplateVariable(key: string): TemplateVariableDefinition | null {
 	return variableByKey.get(key) ?? null;
 }
 

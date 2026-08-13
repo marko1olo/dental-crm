@@ -90,40 +90,17 @@ const { activeVisit, documents, patients, payments } = await import(
 const { documentKindMetadata } = await import(pathToFileURL(sharedPath).href);
 const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
 
-/*
- * ОРГАНИЗАЦИЮ РАЗРЕШАЕТ ТОКЕН КАБИНЕТА, А НЕ ТОКЕН СОТРУДНИКА БЕЗ userId.
- *
- * ЗДЕСЬ СТОЯЛ КОММЕНТАРИЙ, УТВЕРЖДАВШИЙ ОБРАТНОЕ: «Sign a short-lived staff
- * token with no userId so verifyRequestToken resolves the org without a DB user
- * lookup». Код так не работает и не работал: security/identity.ts:224 закрывает
- * ВЕСЬ разбор токена сотрудника условием `typeof staffPayload.userId ===
- * "string"`. Токен сотрудника без userId не даёт НИЧЕГО — ни организации, ни
- * роли, — поэтому requireResolvedOrganizationId (routes/billing.ts:559)
- * отвечал 401 AuthRequired, и НИ ОДНА проверка идемпотентности не исполнялась.
- *
- * Организацию ставит токен кабинета (identity.ts:219). Токен сотрудника
- * оставлен и дополнен userId: маршрут проверяет право finance.write, а врач и
- * ассистент к кассе не допущены — без userId эта проверка молчит («мягкий
- * режим», billing.ts:547), то есть роль тоже не проверялась бы.
- */
-const smokeClinicToken = signToken(
-	{ organizationId: activeVisit.organizationId, clinicName: "Smoke clinic" },
-	smokeAuthSecret,
-	60,
-);
+// Billing mutations require a staff session. Sign a short-lived staff token with
+// no userId so verifyRequestToken resolves the org without a DB user lookup
+// (this smoke runs against in-memory sample state, not the PGlite database).
 const smokeStaffToken = signToken(
-	{
-		organizationId: activeVisit.organizationId,
-		userId: "smoke-user",
-		role: "administrator",
-	},
+	{ organizationId: activeVisit.organizationId, role: "administrator" },
 	smokeAuthSecret,
 	60,
 );
 
 const app = Fastify({ logger: false });
 app.addHook("onRequest", (request, _reply, done) => {
-	request.headers["x-dente-clinic-token"] = smokeClinicToken;
 	request.headers["x-dente-staff-token"] = smokeStaffToken;
 	done();
 });

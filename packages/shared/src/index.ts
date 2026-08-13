@@ -974,7 +974,6 @@ export const staffRoleSchema = z.enum([
 	"administrator",
 	"assistant",
 	"manager",
-	"curator",
 ]);
 export type StaffRole = z.infer<typeof staffRoleSchema>;
 
@@ -1788,10 +1787,6 @@ export const clinicProfileSchema = z.object({
 	timezone: timeZoneSchema,
 	defaultVisitMinutes: z.number().int().positive(),
 	scheduleDefaults: clinicScheduleDefaultsSchema,
-	patientCreationRules: z.object({
-		requirePhone: z.boolean(),
-		requireSource: z.boolean(),
-	}).optional(),
 	networkEnabled: z.boolean(),
 	egiszEnabled: z.boolean(),
 	specializations: z.array(z.string()).optional(),
@@ -3139,12 +3134,6 @@ const patientAdministrativeProfileBaseSchema = z.object({
 		.nullable()
 		.optional()
 		.default(null),
-	marketingSource: z
-		.string()
-		.trim()
-		.max(120)
-		.nullable()
-		.default(null),
 });
 
 export const patientAdministrativeProfileSchema =
@@ -3199,7 +3188,6 @@ export const patientSchema = z.object({
 	 * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
 	 */
 	familyGroupId: z.string().uuid().nullable().optional(),
-	curatorId: z.string().uuid().nullable().optional(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });
@@ -3469,7 +3457,6 @@ export const visitSchema = z.object({
 	patientId: z.string().uuid(),
 	appointmentId: z.string().uuid().nullable(),
 	status: visitStatusSchema,
-	qualityControlStatus: z.string().nullable().optional(),
 	revision: z.number().int().nonnegative().default(1),
 	complaint: z.string().nullable(),
 	anamnesis: z.string().nullable(),
@@ -5572,7 +5559,6 @@ export const createPatientSchema = z.object({
 	administrativeProfile: patientAdministrativeProfileSchema
 		.nullable()
 		.optional(),
-	curatorId: z.string().uuid().nullable().optional(),
 });
 export type CreatePatientInput = z.infer<typeof createPatientSchema>;
 
@@ -5592,7 +5578,6 @@ export const updatePatientSchema = z.object({
 	 * счёта за «привязанного» шла в никуда.
 	 */
 	familyGroupId: z.string().uuid().nullable().optional(),
-	curatorId: z.string().uuid().nullable().optional(),
 });
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
 
@@ -5669,10 +5654,6 @@ export const updateClinicProfileSchema = z.object({
 	timezone: timeZoneSchema.optional(),
 	defaultVisitMinutes: z.number().int().positive().max(480).optional(),
 	scheduleDefaults: clinicScheduleDefaultsSchema.optional(),
-	patientCreationRules: z.object({
-		requirePhone: z.boolean(),
-		requireSource: z.boolean(),
-	}).optional(),
 	egiszEnabled: z.boolean().optional(),
 });
 export type UpdateClinicProfileInput = z.infer<
@@ -7867,7 +7848,6 @@ export const visitDraftAutosaveSchema = z.object({
 	clientSavedAt: z.string().nullable(),
 	serverSavedAt: z.string(),
 	transcriptHash: z.string(),
-	qualityControlStatus: z.string().nullable().optional(),
 });
 export type VisitDraftAutosave = z.infer<typeof visitDraftAutosaveSchema>;
 

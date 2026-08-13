@@ -1,74 +1,51 @@
 import assert from "node:assert";
-import test, { after, before, beforeEach, describe } from "node:test";
-import { eq } from "drizzle-orm";
+import test, { beforeEach, describe } from "node:test";
+import { db } from "../../db/client.js";
 import { getClinicalRules } from "../../db/clinicalQuery.js";
-import * as schema from "../../db/schema.js";
-import {
-	fixtureUuid,
-	purgeFixtureOrganizations,
-	withFixtureTenant,
-} from "../support/fixtureOrganizations.js";
-
-const ORG_ID = fixtureUuid("m2.tests.db.clinicalQuery.test", 1);
 
 describe("getClinicalRules", () => {
-	before(async () => {
-		process.env.DENTAL_STATE_PERSISTENCE = "on";
-		await purgeFixtureOrganizations([ORG_ID]);
-		await withFixtureTenant(ORG_ID, async (tx) => {
-			await tx.insert(schema.organizations).values({
-				id: ORG_ID,
-				name: "Test Clinical Query Org",
-			});
-		});
+	beforeEach(() => {
+		test.mock.restoreAll();
 	});
 
-	after(async () => {
-		await purgeFixtureOrganizations([ORG_ID]);
-	});
+	test("should return an empty array if no rules exist", async (t) => {
+		t.mock.method(db, "select", () => ({
+			from: () => ({
+				where: async () => [],
+			}),
+		}));
 
-	beforeEach(async () => {
-		await withFixtureTenant(ORG_ID, async (tx) => {
-			await tx
-				.delete(schema.clinicalRules)
-				.where(eq(schema.clinicalRules.organizationId, ORG_ID));
-		});
-	});
-
-	test("should return an empty array if no rules exist", async () => {
-		const rules = await withFixtureTenant(ORG_ID, async () =>
-			getClinicalRules(ORG_ID),
-		);
+		const rules = await getClinicalRules("org1");
 		assert.deepEqual(rules, []);
 	});
 
-	test("should parse arrays correctly from json strings", async () => {
-		const ruleId = fixtureUuid("m2.tests.db.clinicalQuery.test", 10);
+	test("should parse arrays correctly from json strings", async (t) => {
+		t.mock.method(db, "select", () => ({
+			from: () => ({
+				where: async () => [
+					{
+						id: "1",
+						organizationId: "org1",
+						title: "Rule 1",
+						category: "general",
+						specialty: "therapist",
+						action: "show_warning",
+						severity: "warning",
+						ownerRole: "doctor",
+						triggerServiceIdsJson: '["1", "2"]',
+						requiredServiceIdsJson: "[]",
+						requiresCompletedServiceIdsJson: null,
+						blockedServiceIdsJson: "invalid-json",
+						condition: "none",
+						warningText: "warning",
+						patientText: "patient",
+						isActive: true,
+					},
+				],
+			}),
+		}));
 
-		await withFixtureTenant(ORG_ID, async (tx) => {
-			await tx.insert(schema.clinicalRules).values({
-				id: ruleId,
-				organizationId: ORG_ID,
-				title: "Rule 1",
-				category: "consultation",
-				specialty: "therapist",
-				action: "show_warning",
-				severity: "warning",
-				ownerRole: "doctor",
-				triggerServiceIdsJson: '["1", "2"]',
-				requiredServiceIdsJson: "[]",
-				requiresCompletedServiceIdsJson: "null",
-				blockedServiceIdsJson: "invalid-json",
-				condition: "none",
-				warningText: "warning",
-				patientText: "patient",
-				isActive: true,
-			});
-		});
-
-		const rules = await withFixtureTenant(ORG_ID, async () =>
-			getClinicalRules(ORG_ID),
-		);
+		const rules = await getClinicalRules("org1");
 		assert.equal(rules.length, 1);
 		const rule = rules[0];
 		assert.ok(rule);

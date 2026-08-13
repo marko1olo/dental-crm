@@ -136,7 +136,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			return clinicalRuleEvaluationResponseSchema.parse(evaluation);
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -172,7 +172,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			);
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -211,7 +211,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			);
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -268,7 +268,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			return reply.code(200).send({ id: ruleId, deleted: true });
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -382,7 +382,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 				.send(await new ClinicalRouter().listTasks(orgId, patientId));
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -515,7 +515,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 				.send(await getSingleSessionEnforcementsFromDb(orgId));
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -539,7 +539,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 				.send(await getDadataGeocodedAddressesFromDb(orgId));
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -586,7 +586,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			);
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -644,7 +644,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			return reply.status(200).send({ recorded: true });
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -666,7 +666,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -713,7 +713,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 					.send(await getLandingFieldMappingsFromDb(orgId));
 				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (error: any) {
-				request.log.error(error); console.error("TEST ERROR LOG", error);
+				request.log.error(error);
 				return reply.status(500).send({
 					error: "InternalServerError",
 					message: "Internal server error",
@@ -736,7 +736,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",
@@ -762,7 +762,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 					.send(await getDadataGeocodedAddressesFromDb(orgId));
 				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (error: any) {
-				request.log.error(error); console.error("TEST ERROR LOG", error);
+				request.log.error(error);
 				return reply.status(500).send({
 					error: "InternalServerError",
 					message: "Internal server error",
@@ -793,7 +793,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			return reply.status(200).send(await getLostPatientsFiltersFromDb(orgId));
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
-			request.log.error(error); console.error("TEST ERROR LOG", error);
+			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Internal server error",

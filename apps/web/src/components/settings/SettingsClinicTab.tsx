@@ -937,34 +937,6 @@ export function SettingsClinicTab({
 								Нужен только при подключении к федеральной системе ЕГИСЗ
 							</small>
 						</label>
-						<label className="checkbox-line form-span-2">
-							<input
-								checked={clinicProfileDraft.requirePhone}
-								type="checkbox"
-								className="toggle-switch"
-								onChange={(event: InputChangeEvent) =>
-									updateClinicProfileDraft("requirePhone", event.target.checked)
-								}
-							/>
-							Обязательный телефон
-							<small className="field-note">
-								Запрещает создавать карточку пациента без указания телефона
-							</small>
-						</label>
-						<label className="checkbox-line form-span-2">
-							<input
-								checked={clinicProfileDraft.requireSource}
-								type="checkbox"
-								className="toggle-switch"
-								onChange={(event: InputChangeEvent) =>
-									updateClinicProfileDraft("requireSource", event.target.checked)
-								}
-							/>
-							Обязательный источник
-							<small className="field-note">
-								Запрещает создавать карточку пациента без указания источника рекламы
-							</small>
-						</label>
 					</div>
 				</details>
 

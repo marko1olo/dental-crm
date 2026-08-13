@@ -371,7 +371,6 @@ export const staffRoleLabels: Record<StaffRole, string> = {
 	administrator: "Администратор",
 	assistant: "Ассистент",
 	manager: "Управляющий",
-	curator: "Куратор",
 };
 
 /**

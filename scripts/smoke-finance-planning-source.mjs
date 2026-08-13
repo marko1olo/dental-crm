@@ -70,18 +70,9 @@ function propFromSource(prop, sourceExpression) {
 	);
 }
 
-/*
- * Перенос строки внутри вызова не закрепляется. Замерено 2026-08-09: коммит
- * ad8f12499 форматтером разбил все вызовы lazy в App.tsx надвое, дословная
- * подстрока перестала находиться — до правки EXIT=1. Продукт цел: App.tsx:79
- * держит `lazy(() =>`, перенос, `import("./FinanceView")`.
- *
- * Проверка идёт через requirePattern, который в этом файле уже есть (строка
- * 54): одиннадцатая копия того же приёма не заводится.
- */
-requirePattern(
+requireIn(
 	appSource,
-	/lazy\(\(\)\s*=>\s*import\("\.\/FinanceView"\)/,
+	'lazy(() => import("./FinanceView")',
 	"App.tsx must lazy-load the finance view boundary",
 );
 forbidIn(

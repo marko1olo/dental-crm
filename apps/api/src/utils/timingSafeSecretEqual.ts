@@ -4,12 +4,13 @@ export function timingSafeSecretEqual(
 	providedSecret: string | null,
 	expectedSecret: string | null | undefined,
 ): boolean {
-	if (!providedSecret || !expectedSecret) return false;
+	if (typeof providedSecret !== "string" || typeof expectedSecret !== "string")
+		return false;
 	const providedHash = createHash("sha256")
-		.update(String(providedSecret))
+		.update(providedSecret)
 		.digest();
 	const expectedHash = createHash("sha256")
-		.update(String(expectedSecret))
+		.update(expectedSecret)
 		.digest();
 	return timingSafeEqual(providedHash, expectedHash);
 }

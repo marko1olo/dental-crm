@@ -1,31 +1,29 @@
-# Dente Integration Test DB Mock Eradication & Refactoring Plan
+# DENTE CRM Dead Code Reassessment Plan
 
 ## Overview
-Perform an automated audit and refactoring of Dente API integration tests in `apps/api/src/**/*.test.ts` to completely eradicate database mocks (`t.mock.method(db, ...)` or `global.fetch` DB mocks) and replace them with real PostgreSQL 18 database fixtures (`withFixtureTenant`, `withSuperuserBypass`). Ensure strict organization ID isolation (`fixtureUuid("audit", testIndex++)`) for audit logging tests to avoid `organizations_pkey` primary key collisions.
+Perform a paranoid, objective reassessment of all "dead code" removals and flagged variables in `apps/web/src`. Identify false positives, restore valid code, verify zero typecheck errors (`npm run typecheck -w @dental/web`), and generate a comprehensive incident report.
 
 ## Stages & Milestones
 
-### Stage 1: Codebase Survey & Mock Census (M0)
-- **Goal**: Identify all test files in `apps/api/src/**/*.test.ts` containing database query mocks or network mocks.
-- **Completed**: Identified 13 test files grouped into 4 milestone clusters (M1-M4).
+### Stage 1: Survey & Root Cause Analysis
+- **Goal**: Investigate `useDocumentWorkflowModule.ts` and recent git commits / AST scans across `apps/web/src`.
+- **Subagents**: 3 Parallel Explorers (`teamwork_preview_explorer`).
+  - Explorer 1 (`survey_explorer_1`): Deep dive into `useDocumentWorkflowModule.ts`. Analyze why `_selectedTaxDocumentPayerInn`, `_eligibleTaxPaymentIdsKey`, and `_eligiblePaymentReceiptIdsKey` were falsely flagged as dead code. Trace their exact usages (state keys, react query keys, callbacks, returns, or effects). Document the exact logical fallacy or tool failure.
+  - Explorer 2 (`survey_explorer_2`): Audit recent git history (`git diff`, `git log`, recent commits) across `apps/web/src` for any deleted or flagged "dead" code. Identify all functions/variables removed or marked as unused in recent sessions.
+  - Explorer 3 (`survey_explorer_3`): Conduct a codebase-wide AST / reference audit across `apps/web/src` using `ast-grep`, `ripgrep`, or `tsc` to find any other false positive dead code flags or broken reference chains.
+- **Output**: Detailed analysis reports in `.agents/explorer_1/analysis.md`, `.agents/explorer_2/analysis.md`, `.agents/explorer_3/analysis.md`.
 
-### Stage 2: Implementation & Refactoring (M1-M4)
-- **M1 (Auth & Tenant Routes)**: `routes/auth.test.ts`, `routes/imports.test.ts` — DONE (38/38 tests pass).
-- **M2 (Clinical, Imaging & Patient Suites)**: `dicomweb.test.ts`, `imaging.test.ts`, `clinical.test.ts`, `clinicalRuleDelete.test.ts`, `clinicalQuery.test.ts` (x2), `patientsQuery.test.ts` — DONE (56/56 tests pass).
-- **M3 (Billing & Finance Queries)**: `billingQuery.test.ts` — DONE (8/8 tests pass).
-- **M4 (Background Workers & Triggers)**: `notificationWorker.test.ts`, `biAnalyticsWorker.test.ts`, `postOpCareTrigger.test.ts` — DONE (10/10 tests pass).
+### Stage 2: Restoration & Fix
+- **Goal**: Restore falsely identified/deleted code and fix any broken call stacks.
+- **Subagent**: Worker (`teamwork_preview_worker`).
+  - Task: Implement restorations in `useDocumentWorkflowModule.ts` and any other affected files based on Explorer findings. Ensure mathematical proof (AST references > 0). Run `npm run typecheck -w @dental/web` to verify 0 errors.
 
-### Stage 3: Milestone M5 Final Gate Verification
-- **Goal**: Multi-agent verification gate to independently verify:
-  1. Full API test suite execution: `npm run test -w @dental/api` (or running all 13 test files with poolTeardown).
-  2. Static DB mock census check: `rg "mock\.method\(db"` returns 0 database query mock occurrences across `apps/api/src`.
-  3. TypeScript compilation: `npm run typecheck -w @dental/api` returns 0 errors.
-  4. Forensic audit (`teamwork_preview_auditor`): verify 100% genuine PostgreSQL database interactions, zero facade/hardcode cheating, and proper unique UUID fixture isolation under FORCE RLS.
-- **Subagents to Dispatch**:
-  - 2 Reviewers (`teamwork_preview_reviewer`): `reviewer_m5_1`, `reviewer_m5_2`
-  - 2 Challengers (`teamwork_preview_challenger`): `challenger_m5_1`, `challenger_m5_2`
-  - 1 Forensic Auditor (`teamwork_preview_auditor`): `auditor_m5_1`
+### Stage 3: Verification & Gate Audit
+- **Goal**: Multi-agent review and forensic audit.
+- **Subagents**: 2 Reviewers (`teamwork_preview_reviewer`), 2 Challengers (`teamwork_preview_challenger`), 1 Forensic Auditor (`teamwork_preview_auditor`).
+  - Reviewers: Verify code correctness, AST reference validity, type safety.
+  - Challengers: Execute typecheck and verify runtime reference chains / dynamic key generation.
+  - Forensic Auditor: Perform integrity check (verify genuine fix, no facade/hardcode/cheating).
 
-### Stage 4: Synthesis & Final Reporting
-- **Goal**: Collect verdicts, verify all Reviewers APPROVE, all Challengers APPROVE, Auditor CLEAN. Compile final project report and notify parent/Sentinel via `send_message`.
-
+### Stage 4: Incident Report & Handoff
+- **Goal**: Generate detailed incident report, update progress.md, and send final completion report to Sentinel / Parent.

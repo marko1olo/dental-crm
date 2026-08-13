@@ -24,7 +24,9 @@ import {
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
-
+function useInMemory(): boolean {
+	return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 /**
  * САЛЬДО КАРТОЧКИ ПАЦИЕНТА — ИЗ ЕДИНОГО ДОМА ФОРМУЛЫ ДОЛГА.
@@ -256,7 +258,11 @@ export async function getPatientByIdFromDb(
 	organizationId: string,
 	id: string,
 ): Promise<Patient | null> {
-	
+	if (useInMemory()) {
+		return (
+			(inMemoryPatients.find((p) => p.id === id) as unknown as Patient) ?? null
+		);
+	}
 	try {
 		const [p] = await db
 			.select()
@@ -292,7 +298,9 @@ export async function getPatientByIdFromDb(
 export async function getPatientsFromDb(
 	organizationId: string,
 ): Promise<Patient[]> {
-	
+	if (useInMemory()) {
+		return inMemoryPatients as unknown as Patient[];
+	}
 	try {
 		const pts = await db
 			.select()
@@ -324,7 +332,9 @@ export async function createPatientInDb(
 	organizationId: string,
 	input: CreatePatientInput,
 ): Promise<Patient> {
-	
+	if (useInMemory()) {
+		return createPatientInMemory(input);
+	}
 	try {
 		const [created] = await db
 			.insert(schema.patients)
@@ -367,7 +377,37 @@ export async function updatePatientInDb(
 	patientId: string,
 	input: UpdatePatientInput,
 ): Promise<Patient | null> {
-	
+	if (useInMemory()) {
+		/*
+		 * ОТСУТСТВИЕ КАРТЫ — ЭТО `null`, А НЕ ИСКЛЮЧЕНИЕ.
+		 *
+		 * Подпись объявляет `Promise<Patient | null>`, и ветка базы ниже её
+		 * соблюдает: `if (!updated) return null`. А память нет —
+		 * `sampleData.updatePatient` БРОСАЕТ `Error("Пациент не найден")`.
+		 *
+		 * Цена этого расхождения измерена на маршруте: `routes/patients.ts:436`
+		 * держит ветку `if (!patient) return sendPatientNotFound(reply)`, и она
+		 * НЕДОСТИЖИМА — бросок улетает в `catch` строкой ниже, и оператор получает
+		 * 500 с текстом «данные могли быть записаны». Дальше он делает то, что
+		 * прямо описано в комментарии того же `catch`: считает, что не
+		 * сохранилось, и заводит карточку заново. Появляется дубль уже
+		 * существующего пациента — ровно тот дефект, против которого тот
+		 * комментарий и написан.
+		 *
+		 * Проверка существования, а не перехват броска: перехват по тексту
+		 * сообщения ломается от правки формулировки, а новый `try/catch` в `db/**`
+		 * покраснел бы у стража переписи проглатывающих `catch`
+		 * (`tests/noFabricatedDataFallback.test.ts` сверяет её РОВНЫМ равенством
+		 * со списком долга).
+		 *
+		 * Отбор по клинике здесь не нужен и его тут нет: путь без базы держит одну
+		 * организацию в памяти процесса. Межарендную проверку делает ветка базы —
+		 * `organizationId` в её `where`, и причина этого названа ниже.
+		 */
+		if (!inMemoryPatients.some((candidate) => candidate.id === patientId))
+			return null;
+		return updatePatientInMemory(patientId, input);
+	}
 	try {
 		/*
 		 * БЫЛО: .set() принимал только fullName/birthDate/phone/email/notes.
@@ -494,7 +534,9 @@ export async function updatePatientAdministrativeProfileInDb(
 	patientId: string,
 	input: UpdatePatientAdministrativeProfileInput,
 ): Promise<Patient | null> {
-	
+	if (useInMemory()) {
+		return updatePatientAdministrativeProfileInMemory(patientId, input);
+	}
 	try {
 		/*
 		 * БЫЛО: .set({ administrativeProfile: input }) — целиком перезаписывал
@@ -579,7 +621,15 @@ export async function createPatientSafeInDb(
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	{ type: "duplicate"; duplicate: any } | { type: "success"; patient: Patient }
 > {
-	
+	if (useInMemory()) {
+		const dbPatients = await getPatientsFromDb(organizationId);
+		const duplicate = duplicateCheckFn(dbPatients, input);
+		if (duplicate) return { type: "duplicate", duplicate };
+		return {
+			type: "success",
+			patient: await createPatientInDb(organizationId, input),
+		};
+	}
 
 	return await db.transaction(async (tx) => {
 		const rawPatients = await tx

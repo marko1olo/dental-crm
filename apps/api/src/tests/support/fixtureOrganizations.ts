@@ -296,13 +296,10 @@ async function organizationScopedTables(): Promise<OrganizationScopedTable[]> {
 		deletable: boolean;
 	}>(sql`
 		SELECT c.table_name,
-		       (
-		         has_table_privilege(
-		           current_user,
-		           format('%I.%I', c.table_schema, c.table_name),
-		           'DELETE'
-		         )
-		         AND c.table_name NOT IN ('audit_events', 'clinical_audit_logs')
+		       has_table_privilege(
+		         current_user,
+		         format('%I.%I', c.table_schema, c.table_name),
+		         'DELETE'
 		       ) AS deletable
 		FROM information_schema.columns AS c
 		JOIN information_schema.tables AS t
@@ -457,6 +454,28 @@ async function purgeOneFixtureOrganization(
 			remaining = blocked;
 		}
 
+		if (remaining.length > 0) {
+			const reason =
+				lastFailure instanceof Error
+					? lastFailure.message
+					: String(lastFailure);
+			throw new Error(
+				`purgeFixtureOrganizations: не удалось очистить таблицы ${remaining.join(", ")} для ${organizationId}. ` +
+					`Последняя ошибка базы: ${reason}`,
+			);
+		}
+
+		/*
+		 * Журнал аудита неудаляем по построению (миграция 0161_audit_append_only.sql).
+		 * Организацию, которая дописала хоть одну строку в audit_events или
+		 * audit_actions, удалить нельзя из-за внешнего ключа без ON DELETE. Уборка
+		 * ПРОПУСКАЕТ такую организацию, а не бросает исключение: тесты, пишущие в
+		 * журнал, используют `fixtureUuid` с детерминированными идентификаторами,
+		 * поэтому строка остаётся в базе до следующего прогона того же теста и не
+		 * мешает соседям. Единственное требование — каждый тест, пишущий журнал,
+		 * обязан получить СОБСТВЕННОЕ пространство имён `fixtureUuid`, чтобы его
+		 * организация не совпала с чужой.
+		 */
 		const hasAuditRows = await hasAppendOnlyRows(
 			tx,
 			appendOnly,
@@ -470,17 +489,6 @@ async function purgeOneFixtureOrganization(
 				rowsRemoved,
 				tablesTouched,
 			};
-		}
-
-		if (remaining.length > 0) {
-			const reason =
-				lastFailure instanceof Error
-					? lastFailure.message
-					: String(lastFailure);
-			throw new Error(
-				`purgeFixtureOrganizations: не удалось очистить таблицы ${remaining.join(", ")} для ${organizationId}. ` +
-					`Последняя ошибка базы: ${reason}`,
-			);
 		}
 
 		const removedOrganization = await tx.execute(

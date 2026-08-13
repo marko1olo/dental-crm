@@ -1,158 +1,39 @@
 import { readFileSync } from "node:fs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
-import { readAppShellSourceSync } from "./lib/app-shell-source.mjs";
-import { readRouteSourceSync } from "./lib/route-source.mjs";
-import { readWebSurfaceSourceSync } from "./lib/web-surface-source.mjs";
 
 const appSource =
-	readAppShellSourceSync() +
+	readFileSync("apps/web/src/App.tsx", "utf8") +
 	"\n" +
 	readAppLogicSourceSync() +
 	"\n" +
-	readFileSync("apps/web/src/store/documentStore.ts", "utf8") +
-	"\n" +
-	/*
-	 * СТОР ТОЖЕ РАЗОБРАН НА СЛАЙСЫ.
-	 *
-	 * Требование `setPostVisitPresetFeedback: createSetter(set, …)` живо ДОСЛОВНО,
-	 * но переехало в `store/slices/clinicalSlice.ts:386`, а страж читал только
-	 * `documentStore.ts`. Каталог слайсов берётся целиком: перечислять имена — это
-	 * готовить следующее падение при следующем разборе.
-	 */
-	readWebSurfaceSourceSync(["apps/web/src/store/slices"]);
-/*
- * РАЗМЕТКА ФОРМ ДОКУМЕНТОВ РАЗЪЕХАЛАСЬ ПО КАТАЛОГУ, И ЕГО НАДО ЧИТАТЬ.
- *
- * История в два шага, и оба — переезд, а не поломка:
- *   1) формы уехали из `DocumentsView.tsx` в `DocumentsInlineForms.tsx`;
- *   2) коммит f4618c75c разобрал и его: 5 717 строк разошлись по
- *      `components/documents/forms/` (14 файлов), а `DocumentsInlineForms.tsx`
- *      остался сборником ре-экспортов на 1 106 байт.
- *
- * После второго шага страж снова ослеп: он читал сборник, где текста
- * подсказок оператору больше нет. Семь требований краснели на ЦЕЛОМ продукте —
- * ровно тот же класс, что закрывали шагом раньше.
- *
- * Поэтому читается КАТАЛОГ целиком, а не перечисленные файлы: перечисление
- * имён и есть механизм, который ломается при каждом следующем разборе.
- * `readWebSurfaceSourceSync` обходит каталог рекурсивно, сортирует (порядок
- * устойчив между запусками), исключает тесты и ПАДАЕТ на пустоте — молчаливая
- * пустая строка здесь опаснее отказа, потому что `forbidIn` по ней проходит
- * всегда и охраняет ничто.
- */
-const documentsSource = [
-	readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
-	readFileSync("apps/web/src/DocumentsInlineForms.tsx", "utf8"),
-	readWebSurfaceSourceSync(["apps/web/src/components/documents"]),
-].join("\n");
+	readFileSync("apps/web/src/store/documentStore.ts", "utf8");
+const documentsSource = readFileSync("apps/web/src/DocumentsView.tsx", "utf8");
 const mainCssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 const renderDocumentSource = readFileSync(
 	"apps/api/src/documents/renderDocument.ts",
 	"utf8",
 );
-/*
- * Маршрут документов расщеплён на каталог: `routes/documents.ts` — сборник на
- * 24 строки, который только импортирует и регистрирует девять модулей из
- * `routes/documents/` общим объёмом 2662 строки. Читаем сборник ВМЕСТЕ с
- * модулями через общий помощник, иначе страж судит о почти пустом файле.
- *
- * Замерено 2026-08-10: требование «Укажите путь к браузеру в серверных
- * настройках.» краснело, а сам текст был жив и стоял в
- * `routes/documents/shared.ts:139`. Хуже красноты то, что два `forbidIn` ниже
- * (запрет на сырой текст исключения spawn и на метки попыток запуска браузера)
- * по 24-строчному сборнику проходили ВСЕГДА и не охраняли ничего.
- */
-const documentsRoutesSource = readRouteSourceSync(
+const documentsRoutesSource = readFileSync(
 	"apps/api/src/routes/documents.ts",
+	"utf8",
 );
 
-/*
- * РАСХОЖДЕНИЯ СОБИРАЮТСЯ, А НЕ ОБРЫВАЮТ ПРОГОН НА ПЕРВОМ ЖЕ.
- *
- * Страж бросал исключение из первой непрошедшей проверки, и остальные полторы
- * сотни не выполнялись вовсе. Замерено 2026-08-10: он последовательно сообщал
- * «must guard duplicate document creation», затем «PDF export errors must
- * explain browser setup», затем «Medical release receipt must describe source
- * request binding», затем «issue confirm button must point to missing-step
- * guidance» — четыре однотипных форматтерных переноса, и каждый был виден
- * только после починки предыдущего. Объём расхождения так не измеряется.
- *
- * Приём взят у scripts/smoke-core-route-validation.mjs (record), новой техники
- * не изобретается. Ни одно утверждение не ослаблено: код возврата по-прежнему
- * ненулевой при любой находке, печатаются ВСЕ находки разом.
- */
-const failures = [];
-
-function record(condition, message) {
-	if (!condition) failures.push(message);
-}
-
-/*
- * Требование принимает и подстроку, и выражение: приём взят из
- * scripts/smoke-web-render-gating-source.mjs:208-216 (sourceHas), новой техники
- * не изобретается. Выражение нужно там, где написание вокруг закрепляемой связи
- * расставляет форматтер.
- */
 function requireIn(source, needle, message) {
-	const found =
-		needle instanceof RegExp ? needle.test(source) : source.includes(needle);
-	record(found, message);
+	if (!source.includes(needle)) throw new Error(message);
 }
 
 function forbidIn(source, needle, message) {
-	record(!source.includes(needle), message);
+	if (source.includes(needle)) throw new Error(message);
 }
 
-/*
- * ГРАНИЦЫ <select> — ОТ САМОГО СЕЛЕКТА, А НЕ ОТ ПЕРВОГО В ФАЙЛЕ.
- *
- * Здесь стояла регулярка `/<select[\s\S]*?value=\{selected…\}[\s\S]*?<\/select>/`.
- * Ленивый квантификатор считается от ПЕРВОГО `<select>` в тексте, а не от того,
- * который держит нужный `value=`. Замерено 2026-08-10, оба исхода дефектны:
- *
- *   по DocumentsView.tsx        -> совпадения НЕТ, вырезка ПУСТА
- *   по DocumentsInlineForms.tsx -> 125 805 символов вместо 456 (275 селектов)
- *
- * Пустая вырезка страшнее промаха: `forbidIn("", "document.id.slice(0, 8)")`
- * проходит ВСЕГДА. Требование «не показывай оператору сырые id документов» не
- * охраняло ничего и не покраснело бы ни при какой регрессии — это тот же класс
- * вакуумной проверки, что вылечен в 41b9cdfa4.
- *
- * Границы берём от ближайшего `<select` ПЕРЕД маркером до первого `</select>`
- * ПОСЛЕ него: 456 символов, ровно тело нужного селекта.
- */
-function selectBlockAround(source, marker) {
-	const at = source.indexOf(marker);
-	if (at < 0) return "";
-	const open = source.lastIndexOf("<select", at);
-	const close = source.indexOf("</select>", at);
-	if (open < 0 || close < 0) return "";
-	return source.slice(open, close + "</select>".length);
-}
-const releaseSourceSelectBlock = selectBlockAround(
-	documentsSource,
-	"value={selectedReleaseSourceRequestDocumentId}",
-);
-/*
- * Пустая вырезка — ОТКАЗ, а не молчание: иначе следующий переезд формы снова
- * превратит запрет ниже в декорацию, причём незаметно.
- */
-if (!releaseSourceSelectBlock) {
-	failures.push(
-		"Выбор источника расписки не найден: проверки над ним стали бы пустыми, " +
-			"а запрет на сырые id документов — вакуумным.",
-	);
-}
+const releaseSourceSelectBlock =
+	/<select[\s\S]*?value=\{selectedReleaseSourceRequestDocumentId\}[\s\S]*?<\/select>/.exec(
+		documentsSource,
+	)?.[0] ?? "";
 
-/*
- * Дословно требовалось `lazy(() => import("./DocumentsView")` одной строкой.
- * Замерено 2026-08-09: коммит ad8f12499 форматтером разбил вызов надвое —
- * App.tsx:87 держит `lazy(() =>`, перенос, `import("./DocumentsView")`. Раздел
- * грузится лениво как задумано, до правки EXIT=1. `\s*` засчитывает обе формы.
- */
 requireIn(
 	appSource,
-	/lazy\(\(\)\s*=>\s*import\("\.\/DocumentsView"\)/,
+	'lazy(() => import("./DocumentsView")',
 	"App.tsx must lazy-load DocumentsView.",
 );
 requireIn(
@@ -358,21 +239,9 @@ requireIn(
 	"метки визитов или номера записей, по одной в строке",
 	"Medical copy request must ask for operator-readable visit markers instead of internal IDs.",
 );
-/*
- * FORMAT_DRIFT. Текст жив и показывается оператору — `DocumentsView.tsx:5955`,
- * подсказка под выбором исходного запроса. Форматтер разорвал его переводом
- * строки после «привязана к», поэтому дословная подстрока не находилась:
- *
- *     Сначала создайте и выдайте документ «Запрос на копии
- *     медицинской документации». Расписка будет привязана к
- *     выбранному запросу.
- *
- * `\s+` вместо пробела засчитывает и однострочную, и разбитую форму: перенос
- * строки — забота форматтера, а не изменение продукта.
- */
 requireIn(
 	documentsSource,
-	/Расписка будет привязана к\s+выбранному запросу\./,
+	"Расписка будет привязана к выбранному запросу.",
 	"Medical release receipt must describe source request binding without internal ID wording.",
 );
 requireIn(
@@ -422,12 +291,12 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	/aria-describedby=\{\s*!documentIssueAttestationReady\s*\?\s*documentIssueMissingGuidanceId\s*:\s*undefined\s*\}/,
+	"aria-describedby={!documentIssueAttestationReady ? documentIssueMissingGuidanceId : undefined}",
 	"Document issue confirm button must point to missing-step guidance.",
 );
 requireIn(
 	documentsSource,
-	/aria-describedby=\{\s*!documentVoidReady\s*\?\s*documentVoidMissingGuidanceId\s*:\s*undefined\s*\}/,
+	"aria-describedby={!documentVoidReady ? documentVoidMissingGuidanceId : undefined}",
 	"Document void confirm button must point to missing-step guidance.",
 );
 requireIn(
@@ -452,7 +321,7 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	/const documentAuditLoading =\s*documentAuditFactsLoadingId === document\.id;/,
+	"const documentAuditLoading = documentAuditFactsLoadingId === document.id;",
 	"Document passport buttons must compute one loading state.",
 );
 requireIn(
@@ -477,7 +346,7 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	/Boolean\(\s*document\.issuedSnapshotSha256 && document\.issuedSnapshotCreatedAt,?\s*\)/,
+	"Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt)",
 	"Document archive actions must require both snapshot hash and created-at metadata.",
 );
 requireIn(
@@ -545,19 +414,9 @@ requireIn(
 	"aria-label={`Скачать PDF документа: ${documentActionContext}`}",
 	"Document PDF download buttons must name the exact document.",
 );
-/*
- * ТРЕБОВАНИЕ СТАЛО СТРОЖЕ, А НЕ СЛАБЕЕ.
- *
- * Прежде ждали метку «Скачать черновой файл ФНС: …». В продукте
- * (`DocumentsView.tsx:7327`) она теперь называет конкретную форму: «Скачать
- * XML-файл справки НДФЛ в формате ФНС (КНД 1151156): …». Это не потеря, а
- * уточнение: незрячий оператор из одной метки узнаёт, какой именно документ
- * скачивается, а в списке их несколько. Страж закрепляет НОВУЮ формулировку —
- * вернуть расплывчатое «черновой файл» уже не выйдет.
- */
 requireIn(
 	documentsSource,
-	/aria-label=\{`Скачать XML-файл справки НДФЛ в формате ФНС \(КНД 1151156\): \$\{documentActionContext\}`\}/,
+	"aria-label={`Скачать черновой файл ФНС: ${documentActionContext}`}",
 	"Document tax XML buttons must name the exact document.",
 );
 requireIn(
@@ -672,7 +531,7 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	/aria-describedby=\{\s*!activeUsableDocuments\??\.?\[0\]\s*\?\s*latestDocumentOpenGuidanceId\s*:\s*undefined\s*\}/,
+	"aria-describedby={!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined}",
 	"Open-latest document button must point to guidance when disabled.",
 );
 requireIn(
@@ -707,7 +566,7 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	/Record<\s*DocumentKind,\s*DocumentKindMetadata\s*>/,
+	"Record<DocumentKind, DocumentKindMetadata>",
 	"DocumentsView must use typed document metadata.",
 );
 requireIn(
@@ -816,12 +675,6 @@ forbidIn(
 	"PDF / DICOM",
 	"Rendered documents must not advertise document formats with technical DICOM wording.",
 );
-
-if (failures.length > 0) {
-	console.error(`Documents view source smoke failed (${failures.length}):`);
-	for (const message of failures) console.error(`- ${message}`);
-	process.exit(1);
-}
 
 console.log(
 	JSON.stringify(

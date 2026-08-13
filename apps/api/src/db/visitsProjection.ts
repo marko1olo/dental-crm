@@ -44,7 +44,6 @@ export function projectVisitRow(row: VisitRow): Visit {
 		patientId: row.patientId,
 		appointmentId: row.appointmentId ?? null,
 		status: row.status,
-		qualityControlStatus: row.qualityControlStatus ?? null,
 		revision: row.revision,
 		complaint: row.complaint ?? null,
 		anamnesis: row.anamnesis ?? null,

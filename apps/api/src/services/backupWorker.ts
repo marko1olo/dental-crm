@@ -668,7 +668,6 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 }
 
 let backupInterval: NodeJS.Timeout | null = null;
-let firstRunTimeout: NodeJS.Timeout | null = null;
 
 function backupIntervalMs(): number {
 	const configured = Number(process.env.DENTE_BACKUP_INTERVAL_HOURS ?? 24);
@@ -700,33 +699,25 @@ export function startBackupDaemon(): void {
 	const firstRunDelayMs = Number(
 		process.env.DENTE_BACKUP_FIRST_RUN_DELAY_MS ?? 120_000,
 	);
-	firstRunTimeout = setTimeout(
+	const firstRun: ReturnType<typeof setTimeout> = setTimeout(
 		() => {
 			void createEncryptedBackup();
 		},
 		Math.max(0, firstRunDelayMs),
 	);
 	// unref, чтобы отложенный первый прогон не удерживал процесс при остановке.
-	(firstRunTimeout as unknown as { unref?: () => void }).unref?.();
+	(firstRun as unknown as { unref?: () => void }).unref?.();
 
 	backupInterval = setInterval(() => {
 		void createEncryptedBackup();
 	}, backupIntervalMs());
+	(backupInterval as any).unref?.();
 }
 
 export function stopBackupDaemon(): void {
-	let stopped = false;
-	if (firstRunTimeout) {
-		clearTimeout(firstRunTimeout);
-		firstRunTimeout = null;
-		stopped = true;
-	}
 	if (backupInterval) {
 		clearInterval(backupInterval);
 		backupInterval = null;
-		stopped = true;
-	}
-	if (stopped) {
 		console.log("[BackupWorker] Резервное копирование остановлено.");
 	}
 }

@@ -489,10 +489,12 @@ before(async () => {
 	for (const name of [
 		"DENTE_SETTINGS_ADMIN_SECRET",
 		"DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS",
+		"DENTAL_STATE_PERSISTENCE",
 	]) {
 		savedEnv[name] = process.env[name];
 	}
 	delete process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS;
+	delete process.env.DENTAL_STATE_PERSISTENCE;
 	process.env.DENTE_SETTINGS_ADMIN_SECRET = settingsAdminSecret;
 
 	app = createTenantTestApp();
@@ -507,23 +509,17 @@ before(async () => {
 
 after(async () => {
 	await app.close();
-	let purged = { organizationsRemoved: 0 };
-	try {
-		purged = await removeProofOrganizations();
-	} catch (e) {
-		// Ignore pool already closed
-	}
+	const purged = await removeProofOrganizations();
 	for (const [name, value] of Object.entries(savedEnv)) {
 		if (value === undefined) delete process.env[name];
 		else process.env[name] = value;
 	}
-	if (purged.organizationsRemoved > 0) {
-		assert.equal(
-			purged.organizationsRemoved,
-			PROOF_ORGANIZATION_IDS.length,
-			"организации прогона остались в базе",
-		);
-	}
+	assert.equal(
+		purged.organizationsRemoved,
+		PROOF_ORGANIZATION_IDS.length,
+		"организации прогона остались в базе",
+	);
+	await pool.end();
 });
 
 describe("настройки рабочего места: устаревшее сохранение не затирает свежее", () => {
@@ -683,4 +679,30 @@ describe("настройки рабочего места: устаревшее �
 		);
 	});
 
+	test("путь без базы ведёт себя РОВНО так же, как путь с базой", async () => {
+		assert.equal(
+			databaseRecords.length,
+			SCENARIOS.length,
+			"путь с базой прошёл не все сценарии — сверять пути нечем",
+		);
+
+		process.env.DENTAL_STATE_PERSISTENCE = "off";
+		const memoryRecords: ScenarioRecord[] = [];
+		try {
+			for (const scenario of SCENARIOS) {
+				const record = normalizeRecord(await runScenario(scenario), scenario);
+				assertRecordMatchesScenario(record, scenario, "путь без базы");
+				memoryRecords.push(record);
+			}
+		} finally {
+			delete process.env.DENTAL_STATE_PERSISTENCE;
+		}
+
+		assert.deepEqual(
+			memoryRecords,
+			databaseRecords,
+			"путь без базы и путь с базой разошлись — это отдельный класс дефекта, " +
+				"его в этом дереве ловили дважды: правило обязано быть ОДНО, а не два похожих",
+		);
+	});
 });

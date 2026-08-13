@@ -51,24 +51,9 @@ function forbidIn(source, snippet, message) {
 	if (source.includes(snippet)) missing.push(message);
 }
 
-/*
- * ЭТО ТРЕБОВАНИЕ НЕ ПАДАЛО — И ИМЕННО ПОЭТОМУ ПЕРЕПИСАНО.
- *
- * Замерено 2026-08-09: у девяти братских стражей тот же литерал покраснел после
- * форматтерного прохода ad8f12499 (вызовы lazy в App.tsx разбиты надвое), здесь
- * же требование прошло — его вытянул flexiblePattern выше. Он терпим не только к
- * переносу: `\.` он превращает в `\s*\??\s*\.`, то есть засчитал бы и
- * `import("?./CommunicationsView")`. Проверка держалась на неявном запасе, а не
- * на записанном условии.
- *
- * Закреплён СМЫСЛ явным выражением: lazy + динамический import ровно этого
- * модуля. Это СТРОЖЕ прежнего пути через flexiblePattern. Обе формы, старая
- * однострочная и текущая двухстрочная (App.tsx:82), проходят; подмена модуля и
- * статический импорт краснеют — проверено корпусом форм.
- */
 requireIn(
 	appSource,
-	/lazy\(\(\)\s*=>\s*import\("\.\/CommunicationsView"\)/,
+	'lazy(() => import("./CommunicationsView")',
 	"App.tsx must lazy-load CommunicationsView",
 );
 requireIn(
@@ -299,16 +284,9 @@ requireIn(
 	'className="communication-outcome-select"',
 	"Communication task cards must render a row-level outcome selector",
 );
-/*
- * Тот же форматтерный перенос, что и у lazy выше. Замерено 2026-08-09:
- * CommunicationsView.tsx:126-128 держит параметр типа на трёх строках —
- * `useState<` / `CommunicationTaskOutcome | ""` / `>("")`. Состояние на месте и
- * по-прежнему своё у каждой карточки, до правки EXIT=1. Тип закреплён точно:
- * подмена на чужой союз краснеет.
- */
 requireIn(
 	communicationsSource,
-	/const \[selectedOutcome, setSelectedOutcome\] = useState<\s*CommunicationTaskOutcome \| ""\s*>\(""\)/,
+	'const [selectedOutcome, setSelectedOutcome] = useState<CommunicationTaskOutcome | "">("")',
 	"Each communication task card must keep its own selected outcome",
 );
 requireIn(

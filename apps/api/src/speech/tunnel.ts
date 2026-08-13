@@ -119,9 +119,7 @@ process.on("exit", () => {
 });
 process.on("SIGINT", () => {
 	stopSshTunnel();
-	process.exit();
 });
 process.on("SIGTERM", () => {
 	stopSshTunnel();
-	process.exit();
 });

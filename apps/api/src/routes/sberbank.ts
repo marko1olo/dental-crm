@@ -1,88 +1,9 @@
-import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { payments, sberbankTransactions } from "../db/schema.js";
+import { sberbankTransactions } from "../db/schema.js";
 import { requirePermission } from "../security/permissions.js";
-import { SberbankClient } from "../services/sberbankClient.js";
-
-async function processSberbankTransaction(orgId: string, transactionId: string) {
-	let client: SberbankClient;
-	try {
-		client = new SberbankClient();
-	} catch (e) {
-		throw new Error("PaymentGatewayNotConfigured");
-	}
-
-	return await db.transaction(async (tx) => {
-		// Блокируем строку транзакции от параллельных гонок (Race Conditions).
-		// Двойной GET /status или GET + Callback не создадут два платежа.
-		const [transaction] = await tx
-			.select()
-			.from(sberbankTransactions)
-			.where(
-				and(
-					eq(sberbankTransactions.id, transactionId),
-					eq(sberbankTransactions.organizationId, orgId)
-				)
-			)
-			.limit(1)
-			.for("update");
-
-		if (!transaction) {
-			throw new Error("Transaction not found");
-		}
-
-		// Читаем единственный источник правды напрямую из шлюза банка
-		const statusData = await client.getOrderStatusExtended(transaction.orderId);
-		const sberStatus = statusData.orderStatus?.toString() || "UNKNOWN";
-		const oldStatus = transaction.status;
-
-		// Обновляем статус транзакции
-		await tx
-			.update(sberbankTransactions)
-			.set({ status: sberStatus, updatedAt: new Date() })
-			.where(eq(sberbankTransactions.id, transaction.id));
-
-		// Логика переходов финансового состояния
-		// 1. Успешная оплата (status 2 = полная авторизация суммы)
-		if (sberStatus === "2" && oldStatus !== "2") {
-			await tx.insert(payments).values({
-				organizationId: orgId,
-				patientId: transaction.patientId,
-				amountRub: transaction.amount / 100, // Конвертация копеек в рубли
-				method: "card",
-				status: "paid",
-				note: `Оплата картой через терминал Сбербанка, заказ #${transaction.orderId}`,
-				clientMutationId: `sberbank_order_id:${transaction.orderId}`, // ЖЕСТКАЯ СВЯЗЬ
-			});
-		}
-
-		// 2. Возврат (Refund = 4) или Отмена (Reversed = 3)
-		// Если платеж уже был "paid", а банк прислал возврат, клиника не должна 
-		// сохранять виртуальную выручку.
-		if ((sberStatus === "4" || sberStatus === "3") && oldStatus === "2") {
-			await tx
-				.update(payments)
-				.set({ status: "refunded" })
-				.where(
-					and(
-						eq(payments.organizationId, orgId),
-						eq(payments.clientMutationId, `sberbank_order_id:${transaction.orderId}`)
-					)
-				);
-		}
-
-		return {
-			success: true,
-			status: sberStatus,
-			amount: transaction.amount,
-			bankData: statusData,
-			transaction,
-		};
-	});
-}
 
 export async function registerSberbankRoutes(app: FastifyInstance) {
 	app.post(
@@ -111,68 +32,37 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				amount: number;
 			};
 
-			let client: SberbankClient;
-			try {
-				client = new SberbankClient();
-			} catch (e) {
-				return reply.status(501).send({
-					error: "PaymentGatewayNotConfigured",
-					message:
-						"Платёжный шлюз Сбербанка не подключён: отсутствуют учётные данные в окружении.",
-				});
-			}
-
-			// Конвертируем рубли в копейки
-			const amountKopecks = Math.round(amount * 100);
-			const internalOrderNumber = randomUUID();
-
-			// Формируем обратный URL, куда вернётся пользователь.
-			const origin = request.headers.origin ?? "https://dente.clinic";
-			const returnUrl = `${origin}/payment/success`;
-
-			try {
-				const sberbankResponse = await client.registerOrder(
-					internalOrderNumber,
-					amountKopecks,
-					returnUrl,
-				);
-
-				if (sberbankResponse.errorCode) {
-					return reply.status(400).send({
-						error: "SberbankRegistrationFailed",
-						message:
-							sberbankResponse.errorMessage || "Ошибка регистрации заказа в банке",
-					});
-				}
-
-				if (!sberbankResponse.orderId) {
-					return reply.status(500).send({
-						error: "SberbankInvalidResponse",
-						message: "Банк не вернул orderId",
-					});
-				}
-
-				await db.insert(sberbankTransactions).values({
-					id: internalOrderNumber,
-					organizationId,
-					orderId: sberbankResponse.orderId,
-					amount: amountKopecks,
-					status: "CREATED",
-					patientId,
-				});
-
-				return {
-					success: true,
-					orderId: sberbankResponse.orderId,
-					formUrl: sberbankResponse.formUrl,
-				};
-			} catch (err) {
-				request.log.error(err, "Sberbank API Error");
-				return reply.status(502).send({
-					error: "PaymentGatewayError",
-					message: "Ошибка связи с платёжным шлюзом",
-				});
-			}
+			/*
+			 * ИНТЕГРАЦИИ СО СБЕРБАНКОМ В ПРОЕКТЕ НЕТ. Проверено 2026-08-07 по трём
+			 * направлениям: обращений к `payment/rest/*` или к любому хосту банка нет
+			 * ни одного (единственные совпадения — комментарии этого же файла);
+			 * переменных окружения Сбербанка нет в контракте `env/requiredEnv.ts`;
+			 * тестов на маршрут нет ни одного.
+			 *
+			 * ПОЧЕМУ ОТКАЗ, А НЕ ЗАПИСЬ «pending». Прежний код писал строку и отвечал
+			 * `{ success: true, orderId }`, ничего никуда не отправив, а обработчик
+			 * состояния затем БЕЗУСЛОВНО переводил `pending` → `success`. То есть
+			 * система докладывала о поступлении денег, которых не было, и счёт
+			 * помечался оплаченным. Для клиники это расхождение кассы с фактом.
+			 *
+			 * Такой же приём — зашитый `{ success: true }` без сетевого вызова — уже
+			 * изымали из этого репозитория осознанно вместе с `syncDaemon`
+			 * (пакет P3-syncdaemon, коммит 8c87dcd93). Здесь остаётся тот же класс.
+			 *
+			 * 501 выбран вместо удаления маршрута намеренно: клиент получает честный
+			 * отказ вместо ложного успеха, а точка расширения сохраняется. Когда
+			 * появятся учётные данные банка, сюда встаёт настоящий вызов, а ниже —
+			 * запись строки по его фактическому ответу.
+			 */
+			void patientId;
+			void amount;
+			void db;
+			void sberbankTransactions;
+			return reply.status(501).send({
+				error: "PaymentGatewayNotConfigured",
+				message:
+					"Платёжный шлюз Сбербанка не подключён: интеграция отсутствует в сборке.",
+			});
 		},
 	);
 
@@ -211,98 +101,23 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				return reply.status(404).send({ error: "Transaction not found" });
 			}
 
-			try {
-				const result = await processSberbankTransaction(orgId, transaction.id);
-				return {
-					success: true,
-					status: result.status,
-					amount: result.amount,
-					bankData: result.bankData,
-				};
-			} catch (err: any) {
-				if (err.message === "PaymentGatewayNotConfigured") {
-					return reply.status(501).send({
-						error: "PaymentGatewayNotConfigured",
-						message: "Платёжный шлюз не сконфигурирован",
-					});
-				}
-				request.log.error(err, "Sberbank API Error checking status");
-				return reply.status(502).send({
-					error: "PaymentGatewayError",
-					message: "Не удалось получить статус от шлюза",
-				});
-			}
+			/*
+			 * СОСТОЯНИЕ ОТДАЁТСЯ КАК ХРАНИТСЯ. Прежде здесь стоял безусловный перевод
+			 * `pending` → `success` с комментарием «Simulate external Sberbank API»:
+			 * любой запрос состояния объявлял платёж успешным, не спросив банк. Тот
+			 * же `UPDATE` фильтровался ТОЛЬКО по `orderId`, без `organizationId`, —
+			 * а `orderId` собирался из `Date.now()` и `Math.random()*1000`, где
+			 * столкновение правдоподобно, значит запись могла уйти чужой клинике.
+			 *
+			 * Подтверждение состояния обязано приходить от банка: обращением к
+			 * `getOrderStatusExtended` либо его уведомлением (callback). Пока
+			 * интеграции нет, выдумывать успех нельзя — см. обработчик оплаты выше.
+			 */
+			return {
+				success: true,
+				status: transaction.status,
+				amount: transaction.amount,
+			};
 		},
 	);
-
-	// Webhook Callback. Вызывается Сбербанком (без токена Bearer).
-	// Мы игнорируем любые параметры статуса из хука, используя его лишь как
-	// триггер для самостоятельного запроса getOrderStatusExtended.
-	app.get("/api/sberbank/callback", async (request, reply) => {
-		const query = request.query as { mdOrder?: string; orderNumber?: string };
-		const mdOrder = query.mdOrder;
-		const orderNumber = query.orderNumber;
-
-		if (!mdOrder && !orderNumber) {
-			return reply.status(400).send({ error: "Missing order parameters" });
-		}
-
-		try {
-			const [transaction] = await db
-				.select()
-				.from(sberbankTransactions)
-				.where(
-					mdOrder
-						? eq(sberbankTransactions.orderId, mdOrder)
-						: eq(sberbankTransactions.id, orderNumber!)
-				)
-				.limit(1);
-
-			if (!transaction) {
-				return reply.status(404).send({ error: "Transaction not found" });
-			}
-
-			await processSberbankTransaction(transaction.organizationId, transaction.id);
-			return reply.send({ success: true });
-		} catch (err) {
-			request.log.error(err, "Sberbank Callback Error");
-			return reply.status(500).send({ error: "Internal Callback Processing Error" });
-		}
-	});
-
-	// Support Sberbank POST webhooks as well
-	app.post("/api/sberbank/callback", async (request, reply) => {
-		// Some Acquiring gateways send parameters as url-encoded body, some as JSON
-		const body = request.body as Record<string, string> | undefined;
-		const query = request.query as Record<string, string> | undefined;
-
-		const mdOrder = body?.mdOrder || query?.mdOrder;
-		const orderNumber = body?.orderNumber || query?.orderNumber;
-
-		if (!mdOrder && !orderNumber) {
-			return reply.status(400).send({ error: "Missing order parameters" });
-		}
-
-		try {
-			const [transaction] = await db
-				.select()
-				.from(sberbankTransactions)
-				.where(
-					mdOrder
-						? eq(sberbankTransactions.orderId, mdOrder)
-						: eq(sberbankTransactions.id, orderNumber!)
-				)
-				.limit(1);
-
-			if (!transaction) {
-				return reply.status(404).send({ error: "Transaction not found" });
-			}
-
-			await processSberbankTransaction(transaction.organizationId, transaction.id);
-			return reply.send({ success: true });
-		} catch (err) {
-			request.log.error(err, "Sberbank Callback Error");
-			return reply.status(500).send({ error: "Internal Callback Processing Error" });
-		}
-	});
 }
