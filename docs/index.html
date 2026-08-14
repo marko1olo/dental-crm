@@ -667,6 +667,102 @@
       </div>
     </section>
 
+    <!-- Interactive FDI Odontogram Showcase -->
+    <section id="odontogram-demo" class="section" aria-labelledby="odontogram-heading">
+      <div class="section-intro">
+        <div>
+          <p class="eyebrow">Interactive Clinical Chart</p>
+          <h2 id="odontogram-heading">FDI Dental Formula &amp; Restorative Chart Sandbox</h2>
+        </div>
+        <p>Click any tooth to inspect clinical diagnosis, historical treatments, periodontal pocket depth, and linked 3D DICOM slices.</p>
+      </div>
+
+      <div class="flow-card" style="padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <span class="prototype-pill">Patient: #D-8491 (A. Petushkov)</span>
+            <span style="color: var(--muted); font-size: 0.85rem; margin-left: 0.75rem;">Adult Dentition (FDI Standard)</span>
+          </div>
+          <div id="tooth-status-badge" style="background: rgba(141, 238, 219, 0.15); border: 1px solid var(--mint); color: var(--mint); padding: 0.35rem 0.85rem; border-radius: 999px; font-weight: 700; font-size: 0.82rem;">
+            Selected: Tooth 16 (Maxillary Right First Molar)
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(16, 1fr); gap: 6px; max-width: 100%; overflow-x: auto; padding: 1rem 0; text-align: center;">
+          <!-- Upper Jaw: 18 to 28 -->
+          <button type="button" class="tooth-btn" onclick="selectTooth(18, 'Здоровый / Интактный', 'K00.0', 'Норма')">18</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(17, 'Пломба композит (МОД)', 'K02.1', 'Реставрация 2024')">17</button>
+          <button type="button" class="tooth-btn tooth-active" onclick="selectTooth(16, 'Глубокий кариес (Окклюзионный)', 'K02.2', 'План: Эндодонтическое лечение')">16</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(15, 'Здоровый / Интактный', 'K00.0', 'Норма')">15</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(14, 'Коронка металлокерамика', 'Z96.5', 'Установлена 2022')">14</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(13, 'Здоровый / Интактный', 'K00.0', 'Норма')">13</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(12, 'Керамический винир E.max', 'K03.8', 'Эстетическая реставрация')">12</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(11, 'Керамический винир E.max', 'K03.8', 'Эстетическая реставрация')">11</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(21, 'Керамический винир E.max', 'K03.8', 'Эстетическая реставрация')">21</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(22, 'Керамический винир E.max', 'K03.8', 'Эстетическая реставрация')">22</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(23, 'Здоровый / Интактный', 'K00.0', 'Норма')">23</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(24, 'Пломба световая (V класс)', 'K02.0', 'Контроль краевого прилегания')">24</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(25, 'Здоровый / Интактный', 'K00.0', 'Норма')">25</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(26, 'Имплантат Nobel Biocare 4.3x10', 'Z96.5', 'Остеоинтеграция 100%')">26</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(27, 'Здоровый / Интактный', 'K00.0', 'Норма')">27</button>
+          <button type="button" class="tooth-btn" onclick="selectTooth(28, 'Дистопия / Ретенция', 'K01.1', 'План: Атравматичное удаление')">28</button>
+        </div>
+
+        <div id="tooth-details-card" style="background: rgba(7, 17, 22, 0.85); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;">Диагноз по МКБ-10</div>
+            <div id="tooth-diagnosis" style="font-size: 1.15rem; font-weight: 700; color: var(--ink); margin-top: 0.25rem;">K02.2 — Глубокий кариес (Окклюзионный)</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;">Клинический статус</div>
+            <div id="tooth-action" style="font-size: 0.95rem; font-weight: 600; color: var(--coral); margin-top: 0.25rem;">План: Эндодонтическое лечение</div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <span class="prototype-pill" style="border-color: var(--aqua); color: var(--aqua);">3D DICOM Связан</span>
+            <span class="prototype-pill">Audio Note Прикреплена</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <style>
+      .tooth-btn {
+        background: rgba(16, 38, 46, 0.85);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        border-radius: 6px;
+        padding: 0.75rem 0.25rem;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .tooth-btn:hover {
+        background: rgba(44, 202, 181, 0.2);
+        border-color: var(--mint);
+        color: var(--mint);
+        transform: translateY(-2px);
+      }
+      .tooth-btn.tooth-active {
+        background: var(--mint);
+        border-color: var(--mint);
+        color: #071116;
+        box-shadow: 0 0 12px rgba(141, 238, 219, 0.5);
+      }
+    </style>
+
+    <script>
+      function selectTooth(num, status, icd, plan) {
+        document.querySelectorAll('.tooth-btn').forEach(b => {
+          if (b.innerText === String(num)) b.classList.add('tooth-active');
+          else b.classList.remove('tooth-active');
+        });
+        document.getElementById('tooth-status-badge').innerText = `Selected: Tooth ${num} (FDI Standard)`;
+        document.getElementById('tooth-diagnosis').innerText = `${icd} — ${status}`;
+        document.getElementById('tooth-action').innerText = plan;
+      }
+    </script>
+
     <section id="workflow" class="section" aria-labelledby="workflow-heading">
       <div class="explorer">
         <div class="explorer-top">
