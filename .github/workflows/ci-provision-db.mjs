@@ -82,11 +82,17 @@ try {
 		[roleName],
 	);
 	if (existingRole.rowCount === 0) {
-		// NOSUPERUSER и NOBYPASSRLS — не косметика, см. причину 2 в шапке файла.
-		await client.query(
-			`CREATE ROLE "${roleName}" LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD $1`,
-			[rolePassword],
+		// PostgreSQL не принимает $1 внутри DDL. Генерируем выражение на стороне
+		// сервера через format: %I цитирует идентификатор, а %L — пароль как SQL-литерал.
+		const createRoleStatement = await client.query(
+			"SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD %L', $1, $2) AS statement",
+			[roleName, rolePassword],
 		);
+		const statement = createRoleStatement.rows[0]?.statement;
+		if (typeof statement !== "string") {
+			throw new Error("[provision] PostgreSQL не вернул DDL для создания роли.");
+		}
+		await client.query(statement);
 		console.log(
 			`[provision] создана роль ${roleName} (NOSUPERUSER, NOBYPASSRLS)`,
 		);
