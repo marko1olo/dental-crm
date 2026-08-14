@@ -1,6 +1,9 @@
 import crypto from "node:crypto";
 import {
+	SanPiNSterilizationEngine,
 	computePackagingExpirationDate,
+	createAutoclaveDailyTestSchema,
+	createPsoCleaningLogSchema,
 	STERILIZATION_CYCLE_MODES,
 	STERILIZATION_INDICATOR_TYPES,
 	STERILIZATION_PACKAGING_TYPES,
@@ -16,7 +19,13 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { sterilizationLogs, users, visitDiaries } from "../db/schema.js";
+import {
+	autoclaveDailyTests,
+	preSterilizationCleaningLogs,
+	sterilizationLogs,
+	users,
+	visitDiaries,
+} from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 const packagingTypeSchema = z
@@ -372,5 +381,241 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 		});
 
 		return diary.diary;
+	});
+
+	/**
+	 * POST /api/sterilization/pso-tests
+	 * Регистрация контроля качества предстерилизационной очистки (Азопирам / Фенолфталеин)
+	 * с проверкой нормы выборки по СанПиН 3.3686-21 (>= 1% партии, min 3-5 шт).
+	 */
+	app.post("/api/sterilization/pso-tests", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sterilization pso test",
+		);
+		if (!organizationId) return;
+
+		const parsed = createPsoCleaningLogSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры контроля ПСО.",
+				details: parsed.error.format(),
+			});
+		}
+		const data = parsed.data;
+
+		const evaluation = SanPiNSterilizationEngine.evaluatePsoCleaningBatch(
+			data.batchItemCount,
+			data.testedSampleCount,
+			data.isAzopyramNegative,
+			data.isPhenolphthaleinNegative,
+		);
+
+		const [log] = await db
+			.insert(preSterilizationCleaningLogs)
+			.values({
+				organizationId,
+				testType: data.testType,
+				batchItemCount: data.batchItemCount,
+				testedSampleCount: data.testedSampleCount,
+				isAzopyramNegative: data.isAzopyramNegative,
+				isPhenolphthaleinNegative: data.isPhenolphthaleinNegative,
+				isBatchApproved: evaluation.isBatchApproved,
+				detergentBrand: data.detergentBrand ?? null,
+				rejectionReason: evaluation.rejectionReason,
+				operatorId: data.operatorId ?? null,
+				notes: data.notes ?? null,
+				timestamp: new Date(),
+			})
+			.returning();
+
+		return reply.code(201).send({
+			success: true,
+			log,
+			evaluation,
+		});
+	});
+
+	/**
+	 * GET /api/sterilization/pso-tests
+	 * Журнал учета предстерилизационной очистки (ПСО).
+	 */
+	app.get("/api/sterilization/pso-tests", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"read pso tests",
+		);
+		if (!organizationId) return;
+
+		const logs = await db
+			.select({
+				id: preSterilizationCleaningLogs.id,
+				organizationId: preSterilizationCleaningLogs.organizationId,
+				testType: preSterilizationCleaningLogs.testType,
+				batchItemCount: preSterilizationCleaningLogs.batchItemCount,
+				testedSampleCount: preSterilizationCleaningLogs.testedSampleCount,
+				isAzopyramNegative:
+					preSterilizationCleaningLogs.isAzopyramNegative,
+				isPhenolphthaleinNegative:
+					preSterilizationCleaningLogs.isPhenolphthaleinNegative,
+				isBatchApproved: preSterilizationCleaningLogs.isBatchApproved,
+				detergentBrand: preSterilizationCleaningLogs.detergentBrand,
+				rejectionReason: preSterilizationCleaningLogs.rejectionReason,
+				operatorId: preSterilizationCleaningLogs.operatorId,
+				operatorName: users.fullName,
+				notes: preSterilizationCleaningLogs.notes,
+				timestamp: preSterilizationCleaningLogs.timestamp,
+				createdAt: preSterilizationCleaningLogs.createdAt,
+			})
+			.from(preSterilizationCleaningLogs)
+			.leftJoin(users, eq(users.id, preSterilizationCleaningLogs.operatorId))
+			.where(
+				eq(preSterilizationCleaningLogs.organizationId, organizationId),
+			)
+			.orderBy(desc(preSterilizationCleaningLogs.timestamp));
+
+		return logs;
+	});
+
+	/**
+	 * POST /api/sterilization/daily-tests
+	 * Фиксация ежедневных тестов автоклава (Bowie-Dick, Helix PCD, Вакуум-тест).
+	 */
+	app.post("/api/sterilization/daily-tests", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sterilization daily test",
+		);
+		if (!organizationId) return;
+
+		const parsed = createAutoclaveDailyTestSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры ежедневного теста автоклава.",
+				details: parsed.error.format(),
+			});
+		}
+		const data = parsed.data;
+
+		const testResult = data.colorChangeVerified ? "passed" : "failed";
+
+		const [log] = await db
+			.insert(autoclaveDailyTests)
+			.values({
+				organizationId,
+				autoclaveId: data.autoclaveId,
+				testType: data.testType,
+				cycleTemperatureCelsius: String(data.cycleTemperatureCelsius),
+				cyclePressureBar: String(data.cyclePressureBar),
+				vacuumLeakRateMbarPerMin: data.vacuumLeakRateMbarPerMin
+					? String(data.vacuumLeakRateMbarPerMin)
+					: null,
+				colorChangeVerified: data.colorChangeVerified,
+				testResult,
+				operatorId: data.operatorId ?? null,
+				notes: data.notes ?? null,
+				timestamp: new Date(),
+			})
+			.returning();
+
+		return reply.code(201).send({
+			success: true,
+			test: log,
+		});
+	});
+
+	/**
+	 * GET /api/sterilization/daily-tests
+	 * Журнал ежедневного контроля готовности автоклавов.
+	 */
+	app.get("/api/sterilization/daily-tests", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"read daily tests",
+		);
+		if (!organizationId) return;
+
+		const tests = await db
+			.select({
+				id: autoclaveDailyTests.id,
+				organizationId: autoclaveDailyTests.organizationId,
+				autoclaveId: autoclaveDailyTests.autoclaveId,
+				testType: autoclaveDailyTests.testType,
+				cycleTemperatureCelsius:
+					autoclaveDailyTests.cycleTemperatureCelsius,
+				cyclePressureBar: autoclaveDailyTests.cyclePressureBar,
+				vacuumLeakRateMbarPerMin:
+					autoclaveDailyTests.vacuumLeakRateMbarPerMin,
+				colorChangeVerified: autoclaveDailyTests.colorChangeVerified,
+				testResult: autoclaveDailyTests.testResult,
+				operatorId: autoclaveDailyTests.operatorId,
+				operatorName: users.fullName,
+				notes: autoclaveDailyTests.notes,
+				timestamp: autoclaveDailyTests.timestamp,
+				createdAt: autoclaveDailyTests.createdAt,
+			})
+			.from(autoclaveDailyTests)
+			.leftJoin(users, eq(users.id, autoclaveDailyTests.operatorId))
+			.where(eq(autoclaveDailyTests.organizationId, organizationId))
+			.orderBy(desc(autoclaveDailyTests.timestamp));
+
+		return tests;
+	});
+
+	/**
+	 * POST /api/sterilization/generate-barcode
+	 * Генерация маркировочного штрихкода трассируемости и расчет срока сохранения стерильности.
+	 */
+	app.post("/api/sterilization/generate-barcode", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"generate barcode",
+		);
+		if (!organizationId) return;
+
+		const bodySchema = z.object({
+			cycleId: z.union([z.string(), z.number()]),
+			trayCode: z.string().trim().min(1).max(50),
+			packagingType: packagingTypeSchema.default("kraft_heat_sealed"),
+		});
+
+		const parsed = bodySchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры для генерации штрихкода.",
+				details: parsed.error.format(),
+			});
+		}
+		const data = parsed.data;
+
+		const now = new Date();
+		const expiryDate =
+			computePackagingExpirationDate(
+				(data.packagingType as SterilizationPackagingType) ||
+					"kraft_heat_sealed",
+				now,
+			) || new Date(now.getTime() + 50 * 86400000);
+
+		const barcode = SanPiNSterilizationEngine.generateSterilizationBarcode({
+			cycleId: data.cycleId,
+			trayCode: data.trayCode,
+			expiryDate,
+		});
+
+		return reply.send({
+			success: true,
+			barcode,
+			packagingType: data.packagingType,
+			createdAt: now.toISOString(),
+			expiresAt: expiryDate.toISOString(),
+		});
 	});
 }

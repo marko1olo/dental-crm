@@ -6071,6 +6071,92 @@ export const multiImplantAllOnXCases = pgTable(
 	}),
 );
 
+// ─── SanPiN 3.3686-21 Central Sterilization (ЦСО) & Quality Logs ───────────
+
+export const preSterilizationCleaningLogs = pgTable(
+	"pre_sterilization_cleaning_logs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		testType: text("test_type").notNull().default("both"), // azopyram | phenolphthalein | both
+		batchItemCount: integer("batch_item_count").notNull(),
+		testedSampleCount: integer("tested_sample_count").notNull(),
+		isAzopyramNegative: boolean("is_azopyram_negative").notNull().default(true),
+		isPhenolphthaleinNegative: boolean("is_phenolphthalein_negative")
+			.notNull()
+			.default(true),
+		isBatchApproved: boolean("is_batch_approved").notNull().default(true),
+		detergentBrand: text("detergent_brand"),
+		rejectionReason: text("rejection_reason"),
+		operatorId: uuid("operator_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
+		notes: text("notes"),
+		timestamp: timestamp("timestamp", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgIdx: index("pre_sterilization_cleaning_logs_org_idx").on(
+			t.organizationId,
+		),
+		timestampIdx: index("pre_sterilization_cleaning_logs_timestamp_idx").on(
+			t.timestamp,
+		),
+	}),
+);
+
+export const autoclaveDailyTests = pgTable(
+	"autoclave_daily_tests",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		autoclaveId: text("autoclave_id").notNull(),
+		testType: text("test_type").notNull().default("bowie_dick"), // bowie_dick | helix_pcd | vacuum_leak
+		cycleTemperatureCelsius: numeric("cycle_temperature_celsius", {
+			precision: 5,
+			scale: 2,
+		}).notNull(),
+		cyclePressureBar: numeric("cycle_pressure_bar", {
+			precision: 4,
+			scale: 2,
+		}).notNull(),
+		vacuumLeakRateMbarPerMin: numeric("vacuum_leak_rate_mbar_per_min", {
+			precision: 5,
+			scale: 2,
+		}),
+		colorChangeVerified: boolean("color_change_verified")
+			.notNull()
+			.default(true),
+		testResult: text("test_result").notNull().default("passed"), // passed | failed
+		operatorId: uuid("operator_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
+		notes: text("notes"),
+		timestamp: timestamp("timestamp", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgIdx: index("autoclave_daily_tests_org_idx").on(t.organizationId),
+		autoclaveIdx: index("autoclave_daily_tests_autoclave_idx").on(
+			t.organizationId,
+			t.autoclaveId,
+		),
+	}),
+);
+
+
 
 
 

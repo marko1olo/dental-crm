@@ -13043,6 +13043,212 @@ export class ImplantStabilityCalculator {
 	}
 }
 
+// ─── SanPiN 3.3686-21 Sterilization, Autoclave Cycles & Traceability ────────
+
+export const psoTestTypeSchema = z.enum([
+	"azopyram",
+	"phenolphthalein",
+	"both",
+]);
+export type PsoTestType = z.infer<typeof psoTestTypeSchema>;
+
+export const autoclaveDailyTestTypeSchema = z.enum([
+	"bowie_dick",
+	"helix_pcd",
+	"vacuum_leak",
+]);
+export type AutoclaveDailyTestType = z.infer<
+	typeof autoclaveDailyTestTypeSchema
+>;
+
+export const createPsoCleaningLogSchema = z.object({
+	testType: psoTestTypeSchema.default("both"),
+	batchItemCount: z.number().int().min(1).max(5000),
+	testedSampleCount: z.number().int().min(1).max(1000),
+	isAzopyramNegative: z.boolean().default(true),
+	isPhenolphthaleinNegative: z.boolean().default(true),
+	detergentBrand: z.string().trim().max(120).optional().nullable(),
+	operatorId: z.string().uuid().optional().nullable(),
+	notes: z.string().trim().max(500).optional().nullable(),
+});
+export type CreatePsoCleaningLogInput = z.infer<
+	typeof createPsoCleaningLogSchema
+>;
+
+export const createAutoclaveDailyTestSchema = z.object({
+	autoclaveId: z.string().trim().min(1).max(80),
+	testType: autoclaveDailyTestTypeSchema,
+	cycleTemperatureCelsius: z.number().min(100).max(140),
+	cyclePressureBar: z.number().min(0.5).max(3.5),
+	vacuumLeakRateMbarPerMin: z.number().min(0).max(10).optional().nullable(),
+	colorChangeVerified: z.boolean().default(true),
+	operatorId: z.string().uuid().optional().nullable(),
+	notes: z.string().trim().max(500).optional().nullable(),
+});
+export type CreateAutoclaveDailyTestInput = z.infer<
+	typeof createAutoclaveDailyTestSchema
+>;
+
+export class SanPiNSterilizationEngine {
+	/**
+	 * Минимальный объем выборки для контроля ПСО по СанПиН 3.3686-21:
+	 * 1% от обработанной партии, но не менее 3-5 изделий каждого наименования
+	 */
+	static computeMinimumPsoSampleSize(batchItemCount: number): number {
+		const onePercent = Math.ceil(batchItemCount * 0.01);
+		return Math.max(3, onePercent);
+	}
+
+	static evaluatePsoCleaningBatch(
+		batchItemCount: number,
+		testedSampleCount: number,
+		isAzopyramNegative: boolean,
+		isPhenolphthaleinNegative: boolean,
+	): {
+		isBatchApproved: boolean;
+		minSampleRequired: number;
+		rejectionReason: string | null;
+	} {
+		const minSampleRequired = this.computeMinimumPsoSampleSize(batchItemCount);
+		if (testedSampleCount < minSampleRequired) {
+			return {
+				isBatchApproved: false,
+				minSampleRequired,
+				rejectionReason: `Недостаточный объем выборки ПСО: проверено ${testedSampleCount} из минимум ${minSampleRequired} изделий (1% партии).`,
+			};
+		}
+		if (!isAzopyramNegative) {
+			return {
+				isBatchApproved: false,
+				minSampleRequired,
+				rejectionReason:
+					"Положительная азопирамовая проба (следы крови/гемоглобина). Вся партия подлежит повторной дезинфекции и ПСО.",
+			};
+		}
+		if (!isPhenolphthaleinNegative) {
+			return {
+				isBatchApproved: false,
+				minSampleRequired,
+				rejectionReason:
+					"Положительная фенолфталеиновая проба (остатки щелочных моющих средств). Вся партия подлежит повторному обессоливанию и промывке.",
+			};
+		}
+		return {
+			isBatchApproved: true,
+			minSampleRequired,
+			rejectionReason: null,
+		};
+	}
+
+	static validateAutoclaveCycle(params: {
+		cycleMode: string;
+		temperatureCelsius: number;
+		pressureBar?: number | null;
+		durationMin: number;
+		passedIndicator: boolean;
+	}): {
+		isValid: boolean;
+		status: "passed" | "failed" | "quarantined";
+		reasons: string[];
+	} {
+		const reasons: string[] = [];
+		const {
+			cycleMode,
+			temperatureCelsius,
+			pressureBar,
+			durationMin,
+			passedIndicator,
+		} = params;
+
+		if (!passedIndicator) {
+			reasons.push("Химический индикатор не изменил цвет на эталонный.");
+		}
+
+		if (cycleMode === "B" || cycleMode === "S" || cycleMode === "N") {
+			if (temperatureCelsius >= 132 && temperatureCelsius <= 138) {
+				if (
+					pressureBar !== undefined &&
+					pressureBar !== null &&
+					pressureBar < 2.0
+				) {
+					reasons.push(
+						`Недостаточное давление пара: ${pressureBar} бар (требуется >= 2.0 бар для 134°C).`,
+					);
+				}
+				if (durationMin < 5) {
+					reasons.push(
+						`Недостаточная стерилизационная выдержка: ${durationMin} мин (требуется >= 5 мин для 134°C).`,
+					);
+				}
+			} else if (temperatureCelsius >= 120 && temperatureCelsius <= 126) {
+				if (
+					pressureBar !== undefined &&
+					pressureBar !== null &&
+					pressureBar < 1.1
+				) {
+					reasons.push(
+						`Недостаточное давление пара: ${pressureBar} бар (требуется >= 1.1 бар для 121°C).`,
+					);
+				}
+				if (durationMin < 20) {
+					reasons.push(
+						`Недостаточная стерилизационная выдержка: ${durationMin} мин (требуется >= 20 мин для 121°C).`,
+					);
+				}
+			} else {
+				reasons.push(
+					`Недопустимая температура для парового автоклава: ${temperatureCelsius}°C.`,
+				);
+			}
+		} else if (cycleMode === "dry_heat_180") {
+			if (temperatureCelsius < 178 || temperatureCelsius > 185) {
+				reasons.push(
+					`Температура сухожара ${temperatureCelsius}°C вне диапазона 180°C ± 3°C.`,
+				);
+			}
+			if (durationMin < 60) {
+				reasons.push(
+					`Выдержка в сухожаре ${durationMin} мин недостаточна (требуется >= 60 мин при 180°C).`,
+				);
+			}
+		} else if (cycleMode === "dry_heat_160") {
+			if (temperatureCelsius < 158 || temperatureCelsius > 165) {
+				reasons.push(
+					`Температура сухожара ${temperatureCelsius}°C вне диапазона 160°C ± 3°C.`,
+				);
+			}
+			if (durationMin < 150) {
+				reasons.push(
+					`Выдержка в сухожаре ${durationMin} мин недостаточна (требуется >= 150 мин при 160°C).`,
+				);
+			}
+		}
+
+		const isValid = reasons.length === 0;
+		return {
+			isValid,
+			status: isValid ? "passed" : "failed",
+			reasons,
+		};
+	}
+
+	static generateSterilizationBarcode(params: {
+		cycleId: string | number;
+		trayCode: string;
+		expiryDate: Date;
+	}): string {
+		const yyyy = params.expiryDate.getFullYear();
+		const mm = String(params.expiryDate.getMonth() + 1).padStart(2, "0");
+		const dd = String(params.expiryDate.getDate()).padStart(2, "0");
+		const cleanTray = params.trayCode
+			.toUpperCase()
+			.replace(/[^A-Z0-9_-]/g, "");
+		const cleanCycle = String(params.cycleId).replace(/[^A-Za-z0-9_-]/g, "");
+		return `DNT-STER-${cleanCycle}-${cleanTray}-${yyyy}${mm}${dd}`;
+	}
+}
+
+
 
 
 
