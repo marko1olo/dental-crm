@@ -5149,6 +5149,7 @@ export const createPaymentSchema = z
 });
 export const completeCommunicationTaskSchema = z.object({
     taskId: z.string().uuid(),
+    actorUserId: z.string().uuid().optional().nullable(),
     outcome: communicationTaskOutcomeSchema.optional(),
     note: z.string().trim().min(1).max(1000).optional(),
 });
@@ -10300,37 +10301,6 @@ export const recordIsqMeasurementSchema = z.object({
     smartpegCode: z.string().trim().max(40).optional().nullable(),
     notes: z.string().trim().max(1000).optional().nullable(),
 });
-export const evaluateAllOnXCaseSchema = z.object({
-    patientId: z.string().uuid(),
-    caseTitle: z.string().trim().min(1).max(200),
-    jawArch: z.enum(["maxilla", "mandible"]),
-    implants: z
-        .array(z.object({
-        toothNumberFdi: z.number().int().min(11).max(48),
-        positionWorldMm: z.object({
-            x: z.number(),
-            y: z.number(),
-            z: z.number(),
-        }),
-        axisVector: z.object({
-            x: z.number(),
-            y: z.number(),
-            z: z.number(),
-        }),
-        insertionTorqueNcm: z.number().min(0).max(100),
-        baselineIsq: z.number().int().min(1).max(100),
-    }))
-        .min(4)
-        .max(8),
-    plannedCantileverLengthMm: z.number().min(0).max(30),
-    prostheticMaterial: z
-        .enum([
-        "titanium_pmma",
-        "zirconia_multilayer_ti_bar",
-        "cobalt_chrome_composite",
-    ])
-        .default("titanium_pmma"),
-});
 export class ImplantStabilityCalculator {
     static calculateMeanIsq(md, bl, dp) {
         const values = [md, bl];
@@ -10408,72 +10378,573 @@ export class ImplantStabilityCalculator {
             isBiologicalDip: false,
         };
     }
-    static calculateStabilityCurve(baselineIsq, currentDays) {
-        const curve = [];
-        const lambdaResorption = 0.38 / 7; // per day
-        const sMax = 80;
-        const kOsteo = 0.75 / 7; // per day
-        const tMid = 24.5; // days (~3.5 weeks)
-        for (let d = 0; d <= Math.max(90, currentDays); d += 3) {
-            const primary = baselineIsq * Math.exp(-lambdaResorption * d);
-            const secondary = sMax * (1 / (1 + Math.exp(-kOsteo * (d - tMid))));
-            const total = Number((primary + secondary).toFixed(1));
-            curve.push({
-                day: d,
-                primaryStability: Number(primary.toFixed(1)),
-                secondaryStability: Number(secondary.toFixed(1)),
-                totalStability: Math.min(100, total),
-            });
-        }
-        return curve;
+}
+// ─── SanPiN 3.3686-21 Sterilization, Autoclave Cycles & Traceability ────────
+export const psoTestTypeSchema = z.enum([
+    "azopyram",
+    "phenolphthalein",
+    "both",
+]);
+export const autoclaveDailyTestTypeSchema = z.enum([
+    "bowie_dick",
+    "helix_pcd",
+    "vacuum_leak",
+]);
+export const createPsoCleaningLogSchema = z.object({
+    testType: psoTestTypeSchema.default("both"),
+    batchItemCount: z.number().int().min(1).max(5000),
+    testedSampleCount: z.number().int().min(1).max(1000),
+    isAzopyramNegative: z.boolean().default(true),
+    isPhenolphthaleinNegative: z.boolean().default(true),
+    detergentBrand: z.string().trim().max(120).optional().nullable(),
+    operatorId: z.string().uuid().optional().nullable(),
+    notes: z.string().trim().max(500).optional().nullable(),
+});
+export const createAutoclaveDailyTestSchema = z.object({
+    autoclaveId: z.string().trim().min(1).max(80),
+    testType: autoclaveDailyTestTypeSchema,
+    cycleTemperatureCelsius: z.number().min(100).max(140),
+    cyclePressureBar: z.number().min(0.5).max(3.5),
+    vacuumLeakRateMbarPerMin: z.number().min(0).max(10).optional().nullable(),
+    colorChangeVerified: z.boolean().default(true),
+    operatorId: z.string().uuid().optional().nullable(),
+    notes: z.string().trim().max(500).optional().nullable(),
+});
+export class SanPiNSterilizationEngine {
+    /**
+     * Минимальный объем выборки для контроля ПСО по СанПиН 3.3686-21:
+     * 1% от обработанной партии, но не менее 3-5 изделий каждого наименования
+     */
+    static computeMinimumPsoSampleSize(batchItemCount) {
+        const onePercent = Math.ceil(batchItemCount * 0.01);
+        return Math.max(3, onePercent);
     }
-    static evaluateAllOnXGeometry(jawArch, implants, plannedCantileverMm) {
-        const yCoords = implants.map((i) => i.positionWorldMm.y);
-        const yMax = Math.max(...yCoords);
-        const yMin = Math.min(...yCoords);
-        const apSpreadMm = Number((yMax - yMin).toFixed(2));
-        const maxCantileverMultiplier = jawArch === "mandible" ? 1.5 : 1.0;
-        const maxCap = jawArch === "mandible" ? 18.0 : 12.0;
-        const calculatedCantileverLimit = Number(Math.min(maxCap, apSpreadMm * maxCantileverMultiplier).toFixed(2));
-        const isCantileverSafe = plannedCantileverMm <= calculatedCantileverLimit;
-        const standardAngles = [0, 17, 30, 45];
-        const abutmentPlan = implants.map((imp) => {
-            const mag = Math.sqrt(imp.axisVector.x ** 2 +
-                imp.axisVector.y ** 2 +
-                imp.axisVector.z ** 2);
-            const uz = mag > 0 ? Math.abs(imp.axisVector.z) / mag : 1;
-            const divergenceRad = Math.acos(Math.min(1, Math.max(0, uz)));
-            const divergenceDeg = Number(((divergenceRad * 180) / Math.PI).toFixed(1));
-            let bestAngle = 0;
-            let minDiff = 999;
-            for (const angle of standardAngles) {
-                const diff = Math.abs(divergenceDeg - angle);
-                if (diff < minDiff) {
-                    minDiff = diff;
-                    bestAngle = angle;
+    static evaluatePsoCleaningBatch(batchItemCount, testedSampleCount, isAzopyramNegative, isPhenolphthaleinNegative) {
+        const minSampleRequired = this.computeMinimumPsoSampleSize(batchItemCount);
+        if (testedSampleCount < minSampleRequired) {
+            return {
+                isBatchApproved: false,
+                minSampleRequired,
+                rejectionReason: `Недостаточный объем выборки ПСО: проверено ${testedSampleCount} из минимум ${minSampleRequired} изделий (1% партии).`,
+            };
+        }
+        if (!isAzopyramNegative) {
+            return {
+                isBatchApproved: false,
+                minSampleRequired,
+                rejectionReason: "Положительная азопирамовая проба (следы крови/гемоглобина). Вся партия подлежит повторной дезинфекции и ПСО.",
+            };
+        }
+        if (!isPhenolphthaleinNegative) {
+            return {
+                isBatchApproved: false,
+                minSampleRequired,
+                rejectionReason: "Положительная фенолфталеиновая проба (остатки щелочных моющих средств). Вся партия подлежит повторному обессоливанию и промывке.",
+            };
+        }
+        return {
+            isBatchApproved: true,
+            minSampleRequired,
+            rejectionReason: null,
+        };
+    }
+    static validateAutoclaveCycle(params) {
+        const reasons = [];
+        const { cycleMode, temperatureCelsius, pressureBar, durationMin, passedIndicator, } = params;
+        if (!passedIndicator) {
+            reasons.push("Химический индикатор не изменил цвет на эталонный.");
+        }
+        if (cycleMode === "B" || cycleMode === "S" || cycleMode === "N") {
+            if (temperatureCelsius >= 132 && temperatureCelsius <= 138) {
+                if (pressureBar !== undefined &&
+                    pressureBar !== null &&
+                    pressureBar < 2.0) {
+                    reasons.push(`Недостаточное давление пара: ${pressureBar} бар (требуется >= 2.0 бар для 134°C).`);
+                }
+                if (durationMin < 5) {
+                    reasons.push(`Недостаточная стерилизационная выдержка: ${durationMin} мин (требуется >= 5 мин для 134°C).`);
                 }
             }
-            return {
-                toothNumberFdi: imp.toothNumberFdi,
-                implantVector: imp.axisVector,
-                measuredDivergenceDeg: divergenceDeg,
-                recommendedAbutmentAngle: String(bestAngle),
-                residualAngulationErrorDeg: Number(minDiff.toFixed(1)),
-                gingivalCollarHeightMm: divergenceDeg > 20 ? 3.5 : 2.0,
-                isWithinProstheticTolerances: minDiff <= 5.0,
-            };
-        });
-        const avgIsq = implants.reduce((acc, i) => acc + i.baselineIsq, 0) / implants.length;
-        const minTorque = Math.min(...implants.map((i) => i.insertionTorqueNcm));
-        const immediateLoadingPass = avgIsq >= 70 && minTorque >= 35 && isCantileverSafe;
-        const crossArchRigidityIndex = Number((avgIsq * (implants.length / 4) * (apSpreadMm / 10)).toFixed(2));
+            else if (temperatureCelsius >= 120 && temperatureCelsius <= 126) {
+                if (pressureBar !== undefined &&
+                    pressureBar !== null &&
+                    pressureBar < 1.1) {
+                    reasons.push(`Недостаточное давление пара: ${pressureBar} бар (требуется >= 1.1 бар для 121°C).`);
+                }
+                if (durationMin < 20) {
+                    reasons.push(`Недостаточная стерилизационная выдержка: ${durationMin} мин (требуется >= 20 мин для 121°C).`);
+                }
+            }
+            else {
+                reasons.push(`Недопустимая температура для парового автоклава: ${temperatureCelsius}°C.`);
+            }
+        }
+        else if (cycleMode === "dry_heat_180") {
+            if (temperatureCelsius < 178 || temperatureCelsius > 185) {
+                reasons.push(`Температура сухожара ${temperatureCelsius}°C вне диапазона 180°C ± 3°C.`);
+            }
+            if (durationMin < 60) {
+                reasons.push(`Выдержка в сухожаре ${durationMin} мин недостаточна (требуется >= 60 мин при 180°C).`);
+            }
+        }
+        else if (cycleMode === "dry_heat_160") {
+            if (temperatureCelsius < 158 || temperatureCelsius > 165) {
+                reasons.push(`Температура сухожара ${temperatureCelsius}°C вне диапазона 160°C ± 3°C.`);
+            }
+            if (durationMin < 150) {
+                reasons.push(`Выдержка в сухожаре ${durationMin} мин недостаточна (требуется >= 150 мин при 160°C).`);
+            }
+        }
+        const isValid = reasons.length === 0;
         return {
-            apSpreadMm,
-            maxSafeCantileverMm: calculatedCantileverLimit,
-            isCantileverSafe,
-            abutmentPlan,
-            immediateLoadingPass,
-            crossArchRigidityIndex,
+            isValid,
+            status: isValid ? "passed" : "failed",
+            reasons,
+        };
+    }
+    static generateSterilizationBarcode(params) {
+        const yyyy = params.expiryDate.getFullYear();
+        const mm = String(params.expiryDate.getMonth() + 1).padStart(2, "0");
+        const dd = String(params.expiryDate.getDate()).padStart(2, "0");
+        const cleanTray = params.trayCode
+            .toUpperCase()
+            .replace(/[^A-Z0-9_-]/g, "");
+        const cleanCycle = String(params.cycleId).replace(/[^A-Za-z0-9_-]/g, "");
+        return `DNT-STER-${cleanCycle}-${cleanTray}-${yyyy}${mm}${dd}`;
+    }
+}
+// ─── Russian Fintech, Fast Payment System (СБП B2C QR) & 54-FZ Fiscal Cloud ───
+export const sbpQrTypeSchema = z.enum(["01", "02"]); // 01 = Static, 02 = Dynamic
+export const generateSbpDynamicQrSchema = z.object({
+    operationId: z.string().trim().min(1).max(64),
+    bankMemberId: z
+        .string()
+        .trim()
+        .min(1)
+        .max(32)
+        .default("100000000111"), // Sberbank NSPK ID
+    amountKopecks: z
+        .number()
+        .int()
+        .positive("Сумма должна быть положительной в копейках"),
+    currency: z.literal("RUB").default("RUB"),
+    description: z.string().trim().max(140).optional().nullable(),
+    ttlSeconds: z.number().int().min(60).max(86400).default(1800), // 30 min default
+});
+export const ffd12OperationTypeSchema = z.enum([
+    "income", // 1 (Приход)
+    "income_return", // 2 (Возврат прихода)
+    "expense", // 3 (Расход)
+    "expense_return", // 4 (Возврат расхода)
+]);
+export const ffd12PaymentSubjectSchema = z.enum([
+    "commodity", // 1 (Товар, напр. паста/щетка)
+    "service", // 4 (Медицинская услуга)
+    "job", // 3 (Работа)
+    "payment", // 10 (Платеж)
+]);
+export const ffd12PaymentMethodSchema = z.enum([
+    "full_prepayment", // 1 (Предоплата 100%)
+    "prepayment", // 2 (Частичная предоплата)
+    "advance", // 3 (Аванс)
+    "full_payment", // 4 (Полный расчет)
+    "partial_payment_and_credit", // 5 (Частичный расчет и кредит)
+    "credit_handover", // 6 (Передача в кредит)
+    "credit_payment", // 7 (Оплата кредита)
+]);
+export const ffd12VatRateSchema = z.enum([
+    "vat_20", // 1
+    "vat_10", // 2
+    "vat_20_120", // 3
+    "vat_10_110", // 4
+    "vat_0", // 5
+    "vat_none", // 6 (Без НДС - ст. 149 п. 2 пп. 2 НК РФ для мед. услуг)
+]);
+export const taxDeductionCategorySchema = z.enum([
+    "code_1_standard", // Код 1: обычное лечение (терапия, гигиена, брекеты)
+    "code_2_expensive_treatment", // Код 2: дорогостоящее лечение (хирургическая имплантация, костная пластика)
+]);
+export const fiscalReceiptItemSchema = z.object({
+    name: z.string().trim().min(1).max(128),
+    priceKopecks: z.number().int().positive(),
+    quantity: z.number().positive().default(1),
+    amountKopecks: z.number().int().positive(),
+    subject: ffd12PaymentSubjectSchema.default("service"),
+    method: ffd12PaymentMethodSchema.default("full_payment"),
+    vatRate: ffd12VatRateSchema.default("vat_none"),
+    taxDeductionCode: taxDeductionCategorySchema.default("code_1_standard"),
+    medicalServiceCodeMzk: z.string().trim().max(32).optional().nullable(),
+});
+export const createFiscalReceiptPayloadSchema = z.object({
+    invoiceId: z.string().uuid().optional().nullable(),
+    patientId: z.string().uuid(),
+    operationType: ffd12OperationTypeSchema.default("income"),
+    customerContact: z.string().trim().min(5).max(100),
+    items: z.array(fiscalReceiptItemSchema).min(1),
+    cashKopecks: z.number().int().min(0).default(0),
+    electronicCardKopecks: z.number().int().min(0).default(0),
+    sbpKopecks: z.number().int().min(0).default(0),
+    prepaidKopecks: z.number().int().min(0).default(0),
+    totalKopecks: z.number().int().positive(),
+    cashierFullName: z
+        .string()
+        .trim()
+        .min(1)
+        .max(120)
+        .default("Кассир-администратор"),
+    cashierInn: z.string().trim().max(12).optional().nullable(),
+    taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
+});
+export class SbpQrEngine {
+    /**
+     * Вычисляет контрольную сумму CRC16-CCITT (ГОСТ Р 56042-2014, полином 0x1021, init 0xFFFF)
+     */
+    static computeCrc16Ccitt(str) {
+        let crc = 0xffff;
+        for (let i = 0; i < str.length; i++) {
+            crc ^= (str.charCodeAt(i) << 8) & 0xffff;
+            for (let j = 0; j < 8; j++) {
+                if ((crc & 0x8000) !== 0) {
+                    crc = ((crc << 1) ^ 0x1021) & 0xffff;
+                }
+                else {
+                    crc = (crc << 1) & 0xffff;
+                }
+            }
+        }
+        return crc.toString(16).toUpperCase().padStart(4, "0");
+    }
+    /**
+     * Формирует стандартную платежную ссылку НСПК СБП (B2C Dynamic QR)
+     * Пример: https://qr.nspk.ru/AD100004ABC12345?type=02&bank=100000000111&sum=150000&cur=RUB&crc=A4F2
+     */
+    static buildNspkDynamicPayload(params) {
+        const cleanOperationId = params.operationId
+            .replace(/[^A-Za-z0-9]/g, "")
+            .toUpperCase();
+        const cur = params.currency || "RUB";
+        const baseQuery = `https://qr.nspk.ru/${cleanOperationId}?type=02&bank=${params.bankMemberId}&sum=${params.amountKopecks}&cur=${cur}`;
+        const crc16 = this.computeCrc16Ccitt(baseQuery);
+        const payloadUrl = `${baseQuery}&crc=${crc16}`;
+        return { payloadUrl, cleanOperationId, crc16 };
+    }
+    /**
+     * Проверяет подлинность и контрольную сумму URL СБП
+     */
+    static verifyNspkPayload(payloadUrl) {
+        try {
+            const url = new URL(payloadUrl);
+            if (!url.hostname.includes("nspk.ru")) {
+                return {
+                    isValid: false,
+                    operationId: null,
+                    amountKopecks: null,
+                    bankMemberId: null,
+                };
+            }
+            const pathParts = url.pathname.split("/").filter(Boolean);
+            const operationId = pathParts[0] || null;
+            const bank = url.searchParams.get("bank");
+            const sumStr = url.searchParams.get("sum");
+            const crc = url.searchParams.get("crc");
+            if (!operationId || !bank || !sumStr || !crc) {
+                return {
+                    isValid: false,
+                    operationId,
+                    amountKopecks: null,
+                    bankMemberId: bank,
+                };
+            }
+            const sum = parseInt(sumStr, 10);
+            const cur = url.searchParams.get("cur") || "RUB";
+            const baseQuery = `https://qr.nspk.ru/${operationId}?type=02&bank=${bank}&sum=${sum}&cur=${cur}`;
+            const expectedCrc = this.computeCrc16Ccitt(baseQuery);
+            const isValid = expectedCrc.toUpperCase() === crc.toUpperCase();
+            return {
+                isValid,
+                operationId,
+                amountKopecks: sum,
+                bankMemberId: bank,
+            };
+        }
+        catch {
+            return {
+                isValid: false,
+                operationId: null,
+                amountKopecks: null,
+                bankMemberId: null,
+            };
+        }
+    }
+}
+// ─────────────────────────────────────────────────────────────
+// PHASE 26: DENTAL PHARMACOLOGY, ELECTRONIC PRESCRIPTIONS 1094н & INTERACTIONS
+// ─────────────────────────────────────────────────────────────
+export const prescriptionFormTypeSchema = z.enum([
+    "form_107_1_u",
+    "form_148_1_u_88",
+    "form_148_1_u_04_l",
+    "consultation_order",
+]);
+export const prescriptionValidityPeriodSchema = z.enum([
+    "days_15",
+    "days_30",
+    "days_60",
+    "year_1",
+]);
+export const prescriptionStatusSchema = z.enum([
+    "draft",
+    "issued",
+    "dispensed",
+    "cancelled",
+    "expired",
+]);
+export const prescriptionItemInputSchema = z.object({
+    catalogDrugId: z.string().uuid().optional().nullable(),
+    innLatin: z.string().trim().min(2).max(200),
+    dosageFormLatin: z.string().trim().min(2).max(100),
+    dosageDoseConcentration: z.string().trim().min(1).max(100),
+    dispenseInstructionLatin: z.string().trim().min(2).max(150),
+    signatureDirectionRussian: z.string().trim().min(5).max(500),
+    quantityPackages: z.number().int().min(1).max(50).default(1),
+    durationDays: z.number().int().min(1).max(365).default(5),
+    frequencyTimesPerDay: z.number().int().min(1).max(12).default(2),
+    mealRelation: z
+        .enum(["before_meal", "with_meal", "after_meal", "independent"])
+        .default("after_meal"),
+});
+export const checkInteractionsRequestSchema = z.object({
+    patientId: z.string().uuid(),
+    prescribedInnList: z.array(z.string().trim().min(2)).min(1),
+    currentMedications: z.array(z.string().trim()).default([]),
+    chronicDiseases: z.array(z.string().trim()).default([]),
+    localAnestheticPlanned: z.string().optional().nullable(),
+    vasoconstrictorPlanned: z
+        .enum(["none", "1:100000", "1:200000", "1:50000"])
+        .default("1:200000"),
+    patientAgeYears: z.number().int().min(0).max(130).default(35),
+    isPregnant: z.boolean().default(false),
+    isLactating: z.boolean().default(false),
+});
+export const interactionConflictItemSchema = z.object({
+    id: z.string(),
+    severity: z.enum(["info", "warning", "blocker"]),
+    agentA: z.string(),
+    agentB: z.string(),
+    conflictCategory: z.enum([
+        "drug_drug",
+        "drug_allergy_cross",
+        "drug_disease",
+        "anesthetic_vasoconstrictor",
+        "pregnancy_lactation",
+        "age_contraindication",
+    ]),
+    title: z.string(),
+    clinicalRisk: z.string(),
+    mechanism: z.string(),
+    actionRequired: z.string(),
+});
+export const checkInteractionsResponseSchema = z.object({
+    patientId: z.string().uuid(),
+    isPrescriptionSafe: z.boolean(),
+    blockersCount: z.number().int().nonnegative(),
+    warningsCount: z.number().int().nonnegative(),
+    conflicts: z.array(interactionConflictItemSchema),
+    suggestedModifications: z.array(z.string()),
+    evaluatedAt: z.string(),
+});
+export const createPrescription107RequestSchema = z.object({
+    patientId: z.string().uuid(),
+    visitId: z.string().uuid().optional().nullable(),
+    prescribingDoctorId: z.string().uuid(),
+    validityPeriod: z
+        .enum(["days_15", "days_30", "days_60", "year_1"])
+        .default("days_60"),
+    isSpecialChronicIndication: z.boolean().default(false),
+    chronicDispenseFrequencyNotes: z
+        .string()
+        .trim()
+        .max(300)
+        .optional()
+        .nullable(),
+    clinicalDiagnosisMkb10: z.string().trim().max(16).optional().nullable(),
+    clinicalDiagnosisDescription: z
+        .string()
+        .trim()
+        .max(500)
+        .optional()
+        .nullable(),
+    items: z.array(prescriptionItemInputSchema).min(1).max(3),
+    currentMedications: z.array(z.string()).default([]),
+});
+export class DentalInteractionMatrixEngine {
+    static evaluatePrescriptionSafety(req, patientAllergies) {
+        const conflicts = [];
+        const normalizedPrescribed = req.prescribedInnList.map((d) => d.toLowerCase().trim());
+        const normalizedBaseline = req.currentMedications.map((d) => d.toLowerCase().trim());
+        // 1. Metronidazole + Ethanol
+        const hasMetronidazole = normalizedPrescribed.some((d) => d.includes("metronidazol") ||
+            d.includes("метронидазол") ||
+            d.includes("трихопол") ||
+            d.includes("метрогил"));
+        if (hasMetronidazole) {
+            conflicts.push({
+                id: "INT-METRO-ALC",
+                severity: "blocker",
+                agentA: "Метронидазол (Metronidazolum)",
+                agentB: "Этанол / Спиртосодержащие растворы",
+                conflictCategory: "drug_drug",
+                title: "Дисульфирамоподобная реакция (Ингибирование ALDH)",
+                clinicalRisk: "Накопление токсического ацетальдегида: гипотония, тахикардия, неукротимая рвота, коллапс.",
+                mechanism: "Блокада печеночной альдегиддегидрогеназы. Запрещен алкоголь во время курса + 48ч.",
+                actionRequired: "Предупредить пациента; исключить спиртовые ополаскиватели.",
+            });
+        }
+        // 2. NSAIDs + Anticoagulants
+        const hasNsaid = normalizedPrescribed.some((d) => d.includes("ketorolac") ||
+            d.includes("кеторолак") ||
+            d.includes("кеторол") ||
+            d.includes("ibuprofen") ||
+            d.includes("ибупрофен") ||
+            d.includes("nimesulid") ||
+            d.includes("нимесулид") ||
+            d.includes("ketoprofen") ||
+            d.includes("кетопрофен"));
+        const hasAnticoagulant = normalizedBaseline.some((d) => d.includes("warfarin") ||
+            d.includes("варфарин") ||
+            d.includes("rivaroxaban") ||
+            d.includes("ривароксабан") ||
+            d.includes("ксарелто") ||
+            d.includes("apixaban") ||
+            d.includes("апиксабан") ||
+            d.includes("эликвис") ||
+            d.includes("dabigatran") ||
+            d.includes("дабигатран") ||
+            d.includes("прадакса") ||
+            d.includes("clopidogrel") ||
+            d.includes("клопидогрел") ||
+            d.includes("аспирин"));
+        if (hasNsaid && hasAnticoagulant) {
+            conflicts.push({
+                id: "INT-NSAID-ANTICOAG",
+                severity: "blocker",
+                agentA: "НПВП (Кеторолак / Ибупрофен / Нимесулид)",
+                agentB: "Антикоагулянты / Антиагреганты",
+                conflictCategory: "drug_drug",
+                title: "Высокий риск массивного луночкового кровотечения и язв ЖКТ",
+                clinicalRisk: "Синергическое угнетение тромбоцитарного гемостаза (ингибирование ЦОГ-1) и свертывания крови.",
+                mechanism: "Подавление TxA2 на фоне системной антикоагуляции.",
+                actionRequired: "Заменить НПВП на Парацетамол 500-1000 мг (до 2 г/сут). Провести ревизию лунки и ушивание.",
+            });
+        }
+        // 3. NSAIDs + ACEi / ARBs
+        const hasAceiArb = normalizedBaseline.some((d) => d.includes("enalapril") ||
+            d.includes("эналаприл") ||
+            d.includes("lisinopril") ||
+            d.includes("лизиноприл") ||
+            d.includes("losartan") ||
+            d.includes("лозартан") ||
+            d.includes("valsartan") ||
+            d.includes("валсартан"));
+        if (hasNsaid && hasAceiArb) {
+            conflicts.push({
+                id: "INT-NSAID-ACEI",
+                severity: "warning",
+                agentA: "НПВП (Кеторолак / Нимесулид / Ибупрофен)",
+                agentB: "Ингибиторы АПФ / БРА",
+                conflictCategory: "drug_drug",
+                title: "Риск острого почечного повреждения и снижение гипотензивного эффекта",
+                clinicalRisk: "Спазм приносящей артериолы (дефицит PGE2) + дилатация выносящей артериолы -> падение СКФ.",
+                mechanism: "Блокада простагландинового ауторегуляторного почечного кровотока.",
+                actionRequired: "Ограничить курс НПВП до 48 часов.",
+            });
+        }
+        // 4. Aminopenicillins + Methotrexate
+        const hasPenicillin = normalizedPrescribed.some((d) => d.includes("amoxicillin") ||
+            d.includes("амоксициллин") ||
+            d.includes("augmentin") ||
+            d.includes("аугментин") ||
+            d.includes("ampicillin"));
+        const hasMethotrexate = normalizedBaseline.some((d) => d.includes("methotrexate") || d.includes("метотрексат"));
+        if (hasPenicillin && hasMethotrexate) {
+            conflicts.push({
+                id: "INT-PEN-MTX",
+                severity: "blocker",
+                agentA: "Аминопенициллины (Амоксициллин / Аугментин)",
+                agentB: "Метотрексат (Methotrexatum)",
+                conflictCategory: "drug_drug",
+                title: "Блокада канальцевой секреции метотрексата: тяжелая миелосупрессия",
+                clinicalRisk: "Угнетение кроветворения, панцитопения, токсический некролиз.",
+                mechanism: "Конкуренция за транспортеры OAT1/OAT3 в почечных канальцах.",
+                actionRequired: "Исключить пенициллины! Заменить на Кларитромицин или Клиндамицин.",
+            });
+        }
+        // 5. Vasoconstrictor Epinephrine + Non-selective Beta-blockers
+        const hasBetaBlocker = normalizedBaseline.some((d) => d.includes("propranolol") ||
+            d.includes("пропранолол") ||
+            d.includes("анаприлин") ||
+            d.includes("sotalol") ||
+            d.includes("соталол"));
+        if (hasBetaBlocker && req.vasoconstrictorPlanned !== "none") {
+            conflicts.push({
+                id: "INT-EPI-BB",
+                severity: "blocker",
+                agentA: "Эпинефрин (Адреналин в анестетике)",
+                agentB: "Неселективные бета-блокаторы (Анаприлин)",
+                conflictCategory: "anesthetic_vasoconstrictor",
+                title: "Некомпенсированная альфа-1 вазоконстрикция: Острый гипертонический криз",
+                clinicalRisk: "Критический скачок АД > 200 мм рт. ст., рефлекторная брадикардия, геморрагический инсульт.",
+                mechanism: "Блокада сосудистых бета-2 рецепторов оставляет чистую альфа-1 вазоконстрикцию.",
+                actionRequired: "Применять Мепивакаин 3% БЕЗ вазоконстриктора (Plain)!",
+            });
+        }
+        // 6. Penicillin Allergy Direct & Cross to Cephalosporins
+        const hasPenicillinAllergy = patientAllergies.some((a) => a.allergenGroup.toLowerCase().includes("penicillin") ||
+            a.allergenGroup.toLowerCase().includes("пенициллин"));
+        if (hasPenicillinAllergy && hasPenicillin) {
+            conflicts.push({
+                id: "ALLERGY-PEN-DIRECT",
+                severity: "blocker",
+                agentA: "Амоксициллин / Пенициллины",
+                agentB: "Сенсибилизация к пенициллинам в анамнезе",
+                conflictCategory: "drug_allergy_cross",
+                title: "Прямая аллергическая реакция: Риск анафилактического шока",
+                clinicalRisk: "Отек Квинке, ларингоспазм, анафилаксия.",
+                mechanism: "IgE-опосредованная дегрануляция тучных клеток на бета-лактамы.",
+                actionRequired: "Заменить на Азитромицин 500 мг или Клиндамицин 300 мг.",
+            });
+        }
+        // 7. Aspirin Asthma / Samter Triad
+        const hasSamter = patientAllergies.some((a) => a.hasSamterTriad ||
+            a.allergenGroup.toLowerCase().includes("aspirin") ||
+            a.allergenGroup.toLowerCase().includes("аспирин"));
+        if (hasSamter && hasNsaid) {
+            conflicts.push({
+                id: "ALLERGY-SAMTER-TRIAD",
+                severity: "blocker",
+                agentA: "НПВП (Кеторолак / Нимесулид / Ибупрофен)",
+                agentB: "Аспириновая астма / Триада Видаля",
+                conflictCategory: "drug_disease",
+                title: "Аспириновая триада: Астматический статус и анафилактоидный шок",
+                clinicalRisk: "Тотальный бронхоспазм, отек дыхательных путей, асфиксия.",
+                mechanism: "Шунтирование каскада арахидоновой кислоты на 5-LOX путь лейкотриенов.",
+                actionRequired: "Категорически запрещены любые неселективные НПВП! Использовать Парацетамол до 500 мг.",
+            });
+        }
+        const blockers = conflicts.filter((c) => c.severity === "blocker");
+        const warnings = conflicts.filter((c) => c.severity === "warning");
+        return {
+            patientId: req.patientId,
+            isPrescriptionSafe: blockers.length === 0,
+            blockersCount: blockers.length,
+            warningsCount: warnings.length,
+            conflicts,
+            suggestedModifications: blockers.length > 0
+                ? [
+                    "Рецепт заблокирован движком безопасности DENTE. Исправьте назначения согласно рекомендациям.",
+                ]
+                : [],
+            evaluatedAt: new Date().toISOString(),
         };
     }
 }

@@ -51434,15 +51434,18 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export declare const completeCommunicationTaskSchema: z.ZodObject<{
     taskId: z.ZodString;
+    actorUserId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     outcome: z.ZodOptional<z.ZodEnum<["no_answer", "callback_requested", "reschedule_requested", "promised_payment", "document_pickup"]>>;
     note: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     taskId: string;
     note?: string | undefined;
+    actorUserId?: string | null | undefined;
     outcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | undefined;
 }, {
     taskId: string;
     note?: string | undefined;
+    actorUserId?: string | null | undefined;
     outcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | undefined;
 }>;
 export type CompleteCommunicationTaskInput = z.infer<typeof completeCommunicationTaskSchema>;
@@ -101449,115 +101452,6 @@ export declare const recordIsqMeasurementSchema: z.ZodObject<{
     smartpegCode?: string | null | undefined;
 }>;
 export type RecordIsqMeasurementInput = z.infer<typeof recordIsqMeasurementSchema>;
-export declare const evaluateAllOnXCaseSchema: z.ZodObject<{
-    patientId: z.ZodString;
-    caseTitle: z.ZodString;
-    jawArch: z.ZodEnum<["maxilla", "mandible"]>;
-    implants: z.ZodArray<z.ZodObject<{
-        toothNumberFdi: z.ZodNumber;
-        positionWorldMm: z.ZodObject<{
-            x: z.ZodNumber;
-            y: z.ZodNumber;
-            z: z.ZodNumber;
-        }, "strip", z.ZodTypeAny, {
-            x: number;
-            y: number;
-            z: number;
-        }, {
-            x: number;
-            y: number;
-            z: number;
-        }>;
-        axisVector: z.ZodObject<{
-            x: z.ZodNumber;
-            y: z.ZodNumber;
-            z: z.ZodNumber;
-        }, "strip", z.ZodTypeAny, {
-            x: number;
-            y: number;
-            z: number;
-        }, {
-            x: number;
-            y: number;
-            z: number;
-        }>;
-        insertionTorqueNcm: z.ZodNumber;
-        baselineIsq: z.ZodNumber;
-    }, "strip", z.ZodTypeAny, {
-        toothNumberFdi: number;
-        positionWorldMm: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        axisVector: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        insertionTorqueNcm: number;
-        baselineIsq: number;
-    }, {
-        toothNumberFdi: number;
-        positionWorldMm: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        axisVector: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        insertionTorqueNcm: number;
-        baselineIsq: number;
-    }>, "many">;
-    plannedCantileverLengthMm: z.ZodNumber;
-    prostheticMaterial: z.ZodDefault<z.ZodEnum<["titanium_pmma", "zirconia_multilayer_ti_bar", "cobalt_chrome_composite"]>>;
-}, "strip", z.ZodTypeAny, {
-    patientId: string;
-    caseTitle: string;
-    jawArch: "maxilla" | "mandible";
-    implants: {
-        toothNumberFdi: number;
-        positionWorldMm: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        axisVector: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        insertionTorqueNcm: number;
-        baselineIsq: number;
-    }[];
-    plannedCantileverLengthMm: number;
-    prostheticMaterial: "titanium_pmma" | "zirconia_multilayer_ti_bar" | "cobalt_chrome_composite";
-}, {
-    patientId: string;
-    caseTitle: string;
-    jawArch: "maxilla" | "mandible";
-    implants: {
-        toothNumberFdi: number;
-        positionWorldMm: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        axisVector: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        insertionTorqueNcm: number;
-        baselineIsq: number;
-    }[];
-    plannedCantileverLengthMm: number;
-    prostheticMaterial?: "titanium_pmma" | "zirconia_multilayer_ti_bar" | "cobalt_chrome_composite" | undefined;
-}>;
-export type EvaluateAllOnXCaseInput = z.infer<typeof evaluateAllOnXCaseSchema>;
 export declare class ImplantStabilityCalculator {
     static calculateMeanIsq(md: number, bl: number, dp?: number | null): {
         isqMean: number;
@@ -101569,44 +101463,562 @@ export declare class ImplantStabilityCalculator {
         decisionRationale: string;
         isBiologicalDip: boolean;
     };
-    static calculateStabilityCurve(baselineIsq: number, currentDays: number): {
-        day: number;
-        primaryStability: number;
-        secondaryStability: number;
-        totalStability: number;
-    }[];
-    static evaluateAllOnXGeometry(jawArch: "maxilla" | "mandible", implants: {
-        toothNumberFdi: number;
-        positionWorldMm: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        axisVector: {
-            x: number;
-            y: number;
-            z: number;
-        };
-        insertionTorqueNcm: number;
-        baselineIsq: number;
-    }[], plannedCantileverMm: number): {
-        apSpreadMm: number;
-        maxSafeCantileverMm: number;
-        isCantileverSafe: boolean;
-        abutmentPlan: {
-            toothNumberFdi: number;
-            implantVector: {
-                x: number;
-                y: number;
-                z: number;
-            };
-            measuredDivergenceDeg: number;
-            recommendedAbutmentAngle: "0" | "17" | "30" | "45";
-            residualAngulationErrorDeg: number;
-            gingivalCollarHeightMm: number;
-            isWithinProstheticTolerances: boolean;
-        }[];
-        immediateLoadingPass: boolean;
-        crossArchRigidityIndex: number;
+}
+export declare const psoTestTypeSchema: z.ZodEnum<["azopyram", "phenolphthalein", "both"]>;
+export type PsoTestType = z.infer<typeof psoTestTypeSchema>;
+export declare const autoclaveDailyTestTypeSchema: z.ZodEnum<["bowie_dick", "helix_pcd", "vacuum_leak"]>;
+export type AutoclaveDailyTestType = z.infer<typeof autoclaveDailyTestTypeSchema>;
+export declare const createPsoCleaningLogSchema: z.ZodObject<{
+    testType: z.ZodDefault<z.ZodEnum<["azopyram", "phenolphthalein", "both"]>>;
+    batchItemCount: z.ZodNumber;
+    testedSampleCount: z.ZodNumber;
+    isAzopyramNegative: z.ZodDefault<z.ZodBoolean>;
+    isPhenolphthaleinNegative: z.ZodDefault<z.ZodBoolean>;
+    detergentBrand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    operatorId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    notes: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    testType: "azopyram" | "phenolphthalein" | "both";
+    batchItemCount: number;
+    testedSampleCount: number;
+    isAzopyramNegative: boolean;
+    isPhenolphthaleinNegative: boolean;
+    notes?: string | null | undefined;
+    detergentBrand?: string | null | undefined;
+    operatorId?: string | null | undefined;
+}, {
+    batchItemCount: number;
+    testedSampleCount: number;
+    notes?: string | null | undefined;
+    testType?: "azopyram" | "phenolphthalein" | "both" | undefined;
+    isAzopyramNegative?: boolean | undefined;
+    isPhenolphthaleinNegative?: boolean | undefined;
+    detergentBrand?: string | null | undefined;
+    operatorId?: string | null | undefined;
+}>;
+export type CreatePsoCleaningLogInput = z.infer<typeof createPsoCleaningLogSchema>;
+export declare const createAutoclaveDailyTestSchema: z.ZodObject<{
+    autoclaveId: z.ZodString;
+    testType: z.ZodEnum<["bowie_dick", "helix_pcd", "vacuum_leak"]>;
+    cycleTemperatureCelsius: z.ZodNumber;
+    cyclePressureBar: z.ZodNumber;
+    vacuumLeakRateMbarPerMin: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+    colorChangeVerified: z.ZodDefault<z.ZodBoolean>;
+    operatorId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    notes: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    testType: "bowie_dick" | "helix_pcd" | "vacuum_leak";
+    autoclaveId: string;
+    cycleTemperatureCelsius: number;
+    cyclePressureBar: number;
+    colorChangeVerified: boolean;
+    notes?: string | null | undefined;
+    operatorId?: string | null | undefined;
+    vacuumLeakRateMbarPerMin?: number | null | undefined;
+}, {
+    testType: "bowie_dick" | "helix_pcd" | "vacuum_leak";
+    autoclaveId: string;
+    cycleTemperatureCelsius: number;
+    cyclePressureBar: number;
+    notes?: string | null | undefined;
+    operatorId?: string | null | undefined;
+    vacuumLeakRateMbarPerMin?: number | null | undefined;
+    colorChangeVerified?: boolean | undefined;
+}>;
+export type CreateAutoclaveDailyTestInput = z.infer<typeof createAutoclaveDailyTestSchema>;
+export declare class SanPiNSterilizationEngine {
+    /**
+     * Минимальный объем выборки для контроля ПСО по СанПиН 3.3686-21:
+     * 1% от обработанной партии, но не менее 3-5 изделий каждого наименования
+     */
+    static computeMinimumPsoSampleSize(batchItemCount: number): number;
+    static evaluatePsoCleaningBatch(batchItemCount: number, testedSampleCount: number, isAzopyramNegative: boolean, isPhenolphthaleinNegative: boolean): {
+        isBatchApproved: boolean;
+        minSampleRequired: number;
+        rejectionReason: string | null;
     };
+    static validateAutoclaveCycle(params: {
+        cycleMode: string;
+        temperatureCelsius: number;
+        pressureBar?: number | null;
+        durationMin: number;
+        passedIndicator: boolean;
+    }): {
+        isValid: boolean;
+        status: "passed" | "failed" | "quarantined";
+        reasons: string[];
+    };
+    static generateSterilizationBarcode(params: {
+        cycleId: string | number;
+        trayCode: string;
+        expiryDate: Date;
+    }): string;
+}
+export declare const sbpQrTypeSchema: z.ZodEnum<["01", "02"]>;
+export type SbpQrType = z.infer<typeof sbpQrTypeSchema>;
+export declare const generateSbpDynamicQrSchema: z.ZodObject<{
+    operationId: z.ZodString;
+    bankMemberId: z.ZodDefault<z.ZodString>;
+    amountKopecks: z.ZodNumber;
+    currency: z.ZodDefault<z.ZodLiteral<"RUB">>;
+    description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    ttlSeconds: z.ZodDefault<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    currency: "RUB";
+    operationId: string;
+    bankMemberId: string;
+    amountKopecks: number;
+    ttlSeconds: number;
+    description?: string | null | undefined;
+}, {
+    operationId: string;
+    amountKopecks: number;
+    currency?: "RUB" | undefined;
+    description?: string | null | undefined;
+    bankMemberId?: string | undefined;
+    ttlSeconds?: number | undefined;
+}>;
+export type GenerateSbpDynamicQrInput = z.infer<typeof generateSbpDynamicQrSchema>;
+export declare const ffd12OperationTypeSchema: z.ZodEnum<["income", "income_return", "expense", "expense_return"]>;
+export type Ffd12OperationType = z.infer<typeof ffd12OperationTypeSchema>;
+export declare const ffd12PaymentSubjectSchema: z.ZodEnum<["commodity", "service", "job", "payment"]>;
+export type Ffd12PaymentSubject = z.infer<typeof ffd12PaymentSubjectSchema>;
+export declare const ffd12PaymentMethodSchema: z.ZodEnum<["full_prepayment", "prepayment", "advance", "full_payment", "partial_payment_and_credit", "credit_handover", "credit_payment"]>;
+export type Ffd12PaymentMethod = z.infer<typeof ffd12PaymentMethodSchema>;
+export declare const ffd12VatRateSchema: z.ZodEnum<["vat_20", "vat_10", "vat_20_120", "vat_10_110", "vat_0", "vat_none"]>;
+export type Ffd12VatRate = z.infer<typeof ffd12VatRateSchema>;
+export declare const taxDeductionCategorySchema: z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>;
+export type TaxDeductionCategory = z.infer<typeof taxDeductionCategorySchema>;
+export declare const fiscalReceiptItemSchema: z.ZodObject<{
+    name: z.ZodString;
+    priceKopecks: z.ZodNumber;
+    quantity: z.ZodDefault<z.ZodNumber>;
+    amountKopecks: z.ZodNumber;
+    subject: z.ZodDefault<z.ZodEnum<["commodity", "service", "job", "payment"]>>;
+    method: z.ZodDefault<z.ZodEnum<["full_prepayment", "prepayment", "advance", "full_payment", "partial_payment_and_credit", "credit_handover", "credit_payment"]>>;
+    vatRate: z.ZodDefault<z.ZodEnum<["vat_20", "vat_10", "vat_20_120", "vat_10_110", "vat_0", "vat_none"]>>;
+    taxDeductionCode: z.ZodDefault<z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>>;
+    medicalServiceCodeMzk: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    name: string;
+    quantity: number;
+    method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+    taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
+    amountKopecks: number;
+    priceKopecks: number;
+    subject: "service" | "payment" | "job" | "commodity";
+    vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+    medicalServiceCodeMzk?: string | null | undefined;
+}, {
+    name: string;
+    amountKopecks: number;
+    priceKopecks: number;
+    quantity?: number | undefined;
+    method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+    taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
+    subject?: "service" | "payment" | "job" | "commodity" | undefined;
+    vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+    medicalServiceCodeMzk?: string | null | undefined;
+}>;
+export type FiscalReceiptItem = z.infer<typeof fiscalReceiptItemSchema>;
+export declare const createFiscalReceiptPayloadSchema: z.ZodObject<{
+    invoiceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    patientId: z.ZodString;
+    operationType: z.ZodDefault<z.ZodEnum<["income", "income_return", "expense", "expense_return"]>>;
+    customerContact: z.ZodString;
+    items: z.ZodArray<z.ZodObject<{
+        name: z.ZodString;
+        priceKopecks: z.ZodNumber;
+        quantity: z.ZodDefault<z.ZodNumber>;
+        amountKopecks: z.ZodNumber;
+        subject: z.ZodDefault<z.ZodEnum<["commodity", "service", "job", "payment"]>>;
+        method: z.ZodDefault<z.ZodEnum<["full_prepayment", "prepayment", "advance", "full_payment", "partial_payment_and_credit", "credit_handover", "credit_payment"]>>;
+        vatRate: z.ZodDefault<z.ZodEnum<["vat_20", "vat_10", "vat_20_120", "vat_10_110", "vat_0", "vat_none"]>>;
+        taxDeductionCode: z.ZodDefault<z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>>;
+        medicalServiceCodeMzk: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    }, "strip", z.ZodTypeAny, {
+        name: string;
+        quantity: number;
+        method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+        taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
+        amountKopecks: number;
+        priceKopecks: number;
+        subject: "service" | "payment" | "job" | "commodity";
+        vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+        medicalServiceCodeMzk?: string | null | undefined;
+    }, {
+        name: string;
+        amountKopecks: number;
+        priceKopecks: number;
+        quantity?: number | undefined;
+        method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+        taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
+        subject?: "service" | "payment" | "job" | "commodity" | undefined;
+        vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+        medicalServiceCodeMzk?: string | null | undefined;
+    }>, "many">;
+    cashKopecks: z.ZodDefault<z.ZodNumber>;
+    electronicCardKopecks: z.ZodDefault<z.ZodNumber>;
+    sbpKopecks: z.ZodDefault<z.ZodNumber>;
+    prepaidKopecks: z.ZodDefault<z.ZodNumber>;
+    totalKopecks: z.ZodNumber;
+    cashierFullName: z.ZodDefault<z.ZodString>;
+    cashierInn: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    taxDeductionSummaryCode: z.ZodDefault<z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>>;
+}, "strip", z.ZodTypeAny, {
+    patientId: string;
+    items: {
+        name: string;
+        quantity: number;
+        method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+        taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
+        amountKopecks: number;
+        priceKopecks: number;
+        subject: "service" | "payment" | "job" | "commodity";
+        vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+        medicalServiceCodeMzk?: string | null | undefined;
+    }[];
+    operationType: "income" | "income_return" | "expense" | "expense_return";
+    customerContact: string;
+    cashKopecks: number;
+    electronicCardKopecks: number;
+    sbpKopecks: number;
+    prepaidKopecks: number;
+    totalKopecks: number;
+    cashierFullName: string;
+    taxDeductionSummaryCode: "code_1_standard" | "code_2_expensive_treatment";
+    invoiceId?: string | null | undefined;
+    cashierInn?: string | null | undefined;
+}, {
+    patientId: string;
+    items: {
+        name: string;
+        amountKopecks: number;
+        priceKopecks: number;
+        quantity?: number | undefined;
+        method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+        taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
+        subject?: "service" | "payment" | "job" | "commodity" | undefined;
+        vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+        medicalServiceCodeMzk?: string | null | undefined;
+    }[];
+    customerContact: string;
+    totalKopecks: number;
+    operationType?: "income" | "income_return" | "expense" | "expense_return" | undefined;
+    invoiceId?: string | null | undefined;
+    cashKopecks?: number | undefined;
+    electronicCardKopecks?: number | undefined;
+    sbpKopecks?: number | undefined;
+    prepaidKopecks?: number | undefined;
+    cashierFullName?: string | undefined;
+    cashierInn?: string | null | undefined;
+    taxDeductionSummaryCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
+}>;
+export type CreateFiscalReceiptPayloadInput = z.infer<typeof createFiscalReceiptPayloadSchema>;
+export declare class SbpQrEngine {
+    /**
+     * Вычисляет контрольную сумму CRC16-CCITT (ГОСТ Р 56042-2014, полином 0x1021, init 0xFFFF)
+     */
+    static computeCrc16Ccitt(str: string): string;
+    /**
+     * Формирует стандартную платежную ссылку НСПК СБП (B2C Dynamic QR)
+     * Пример: https://qr.nspk.ru/AD100004ABC12345?type=02&bank=100000000111&sum=150000&cur=RUB&crc=A4F2
+     */
+    static buildNspkDynamicPayload(params: {
+        operationId: string;
+        bankMemberId: string;
+        amountKopecks: number;
+        currency?: string;
+    }): {
+        payloadUrl: string;
+        cleanOperationId: string;
+        crc16: string;
+    };
+    /**
+     * Проверяет подлинность и контрольную сумму URL СБП
+     */
+    static verifyNspkPayload(payloadUrl: string): {
+        isValid: boolean;
+        operationId: string | null;
+        amountKopecks: number | null;
+        bankMemberId: string | null;
+    };
+}
+export declare const prescriptionFormTypeSchema: z.ZodEnum<["form_107_1_u", "form_148_1_u_88", "form_148_1_u_04_l", "consultation_order"]>;
+export type PrescriptionFormType = z.infer<typeof prescriptionFormTypeSchema>;
+export declare const prescriptionValidityPeriodSchema: z.ZodEnum<["days_15", "days_30", "days_60", "year_1"]>;
+export type PrescriptionValidityPeriod = z.infer<typeof prescriptionValidityPeriodSchema>;
+export declare const prescriptionStatusSchema: z.ZodEnum<["draft", "issued", "dispensed", "cancelled", "expired"]>;
+export type PrescriptionStatus = z.infer<typeof prescriptionStatusSchema>;
+export declare const prescriptionItemInputSchema: z.ZodObject<{
+    catalogDrugId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    innLatin: z.ZodString;
+    dosageFormLatin: z.ZodString;
+    dosageDoseConcentration: z.ZodString;
+    dispenseInstructionLatin: z.ZodString;
+    signatureDirectionRussian: z.ZodString;
+    quantityPackages: z.ZodDefault<z.ZodNumber>;
+    durationDays: z.ZodDefault<z.ZodNumber>;
+    frequencyTimesPerDay: z.ZodDefault<z.ZodNumber>;
+    mealRelation: z.ZodDefault<z.ZodEnum<["before_meal", "with_meal", "after_meal", "independent"]>>;
+}, "strip", z.ZodTypeAny, {
+    innLatin: string;
+    dosageFormLatin: string;
+    dosageDoseConcentration: string;
+    dispenseInstructionLatin: string;
+    signatureDirectionRussian: string;
+    quantityPackages: number;
+    durationDays: number;
+    frequencyTimesPerDay: number;
+    mealRelation: "before_meal" | "with_meal" | "after_meal" | "independent";
+    catalogDrugId?: string | null | undefined;
+}, {
+    innLatin: string;
+    dosageFormLatin: string;
+    dosageDoseConcentration: string;
+    dispenseInstructionLatin: string;
+    signatureDirectionRussian: string;
+    catalogDrugId?: string | null | undefined;
+    quantityPackages?: number | undefined;
+    durationDays?: number | undefined;
+    frequencyTimesPerDay?: number | undefined;
+    mealRelation?: "before_meal" | "with_meal" | "after_meal" | "independent" | undefined;
+}>;
+export type PrescriptionItemInput = z.infer<typeof prescriptionItemInputSchema>;
+export declare const checkInteractionsRequestSchema: z.ZodObject<{
+    patientId: z.ZodString;
+    prescribedInnList: z.ZodArray<z.ZodString, "many">;
+    currentMedications: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    chronicDiseases: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    localAnestheticPlanned: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    vasoconstrictorPlanned: z.ZodDefault<z.ZodEnum<["none", "1:100000", "1:200000", "1:50000"]>>;
+    patientAgeYears: z.ZodDefault<z.ZodNumber>;
+    isPregnant: z.ZodDefault<z.ZodBoolean>;
+    isLactating: z.ZodDefault<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    patientId: string;
+    currentMedications: string[];
+    chronicDiseases: string[];
+    patientAgeYears: number;
+    prescribedInnList: string[];
+    vasoconstrictorPlanned: "none" | "1:100000" | "1:200000" | "1:50000";
+    isPregnant: boolean;
+    isLactating: boolean;
+    localAnestheticPlanned?: string | null | undefined;
+}, {
+    patientId: string;
+    prescribedInnList: string[];
+    currentMedications?: string[] | undefined;
+    chronicDiseases?: string[] | undefined;
+    patientAgeYears?: number | undefined;
+    localAnestheticPlanned?: string | null | undefined;
+    vasoconstrictorPlanned?: "none" | "1:100000" | "1:200000" | "1:50000" | undefined;
+    isPregnant?: boolean | undefined;
+    isLactating?: boolean | undefined;
+}>;
+export type CheckInteractionsRequest = z.infer<typeof checkInteractionsRequestSchema>;
+export declare const interactionConflictItemSchema: z.ZodObject<{
+    id: z.ZodString;
+    severity: z.ZodEnum<["info", "warning", "blocker"]>;
+    agentA: z.ZodString;
+    agentB: z.ZodString;
+    conflictCategory: z.ZodEnum<["drug_drug", "drug_allergy_cross", "drug_disease", "anesthetic_vasoconstrictor", "pregnancy_lactation", "age_contraindication"]>;
+    title: z.ZodString;
+    clinicalRisk: z.ZodString;
+    mechanism: z.ZodString;
+    actionRequired: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    title: string;
+    severity: "info" | "warning" | "blocker";
+    id: string;
+    agentA: string;
+    agentB: string;
+    conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
+    clinicalRisk: string;
+    mechanism: string;
+    actionRequired: string;
+}, {
+    title: string;
+    severity: "info" | "warning" | "blocker";
+    id: string;
+    agentA: string;
+    agentB: string;
+    conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
+    clinicalRisk: string;
+    mechanism: string;
+    actionRequired: string;
+}>;
+export type InteractionConflictItem = z.infer<typeof interactionConflictItemSchema>;
+export declare const checkInteractionsResponseSchema: z.ZodObject<{
+    patientId: z.ZodString;
+    isPrescriptionSafe: z.ZodBoolean;
+    blockersCount: z.ZodNumber;
+    warningsCount: z.ZodNumber;
+    conflicts: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        severity: z.ZodEnum<["info", "warning", "blocker"]>;
+        agentA: z.ZodString;
+        agentB: z.ZodString;
+        conflictCategory: z.ZodEnum<["drug_drug", "drug_allergy_cross", "drug_disease", "anesthetic_vasoconstrictor", "pregnancy_lactation", "age_contraindication"]>;
+        title: z.ZodString;
+        clinicalRisk: z.ZodString;
+        mechanism: z.ZodString;
+        actionRequired: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        title: string;
+        severity: "info" | "warning" | "blocker";
+        id: string;
+        agentA: string;
+        agentB: string;
+        conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
+        clinicalRisk: string;
+        mechanism: string;
+        actionRequired: string;
+    }, {
+        title: string;
+        severity: "info" | "warning" | "blocker";
+        id: string;
+        agentA: string;
+        agentB: string;
+        conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
+        clinicalRisk: string;
+        mechanism: string;
+        actionRequired: string;
+    }>, "many">;
+    suggestedModifications: z.ZodArray<z.ZodString, "many">;
+    evaluatedAt: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    patientId: string;
+    isPrescriptionSafe: boolean;
+    blockersCount: number;
+    warningsCount: number;
+    conflicts: {
+        title: string;
+        severity: "info" | "warning" | "blocker";
+        id: string;
+        agentA: string;
+        agentB: string;
+        conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
+        clinicalRisk: string;
+        mechanism: string;
+        actionRequired: string;
+    }[];
+    suggestedModifications: string[];
+    evaluatedAt: string;
+}, {
+    patientId: string;
+    isPrescriptionSafe: boolean;
+    blockersCount: number;
+    warningsCount: number;
+    conflicts: {
+        title: string;
+        severity: "info" | "warning" | "blocker";
+        id: string;
+        agentA: string;
+        agentB: string;
+        conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
+        clinicalRisk: string;
+        mechanism: string;
+        actionRequired: string;
+    }[];
+    suggestedModifications: string[];
+    evaluatedAt: string;
+}>;
+export type CheckInteractionsResponse = z.infer<typeof checkInteractionsResponseSchema>;
+export declare const createPrescription107RequestSchema: z.ZodObject<{
+    patientId: z.ZodString;
+    visitId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    prescribingDoctorId: z.ZodString;
+    validityPeriod: z.ZodDefault<z.ZodEnum<["days_15", "days_30", "days_60", "year_1"]>>;
+    isSpecialChronicIndication: z.ZodDefault<z.ZodBoolean>;
+    chronicDispenseFrequencyNotes: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    clinicalDiagnosisMkb10: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    clinicalDiagnosisDescription: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    items: z.ZodArray<z.ZodObject<{
+        catalogDrugId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+        innLatin: z.ZodString;
+        dosageFormLatin: z.ZodString;
+        dosageDoseConcentration: z.ZodString;
+        dispenseInstructionLatin: z.ZodString;
+        signatureDirectionRussian: z.ZodString;
+        quantityPackages: z.ZodDefault<z.ZodNumber>;
+        durationDays: z.ZodDefault<z.ZodNumber>;
+        frequencyTimesPerDay: z.ZodDefault<z.ZodNumber>;
+        mealRelation: z.ZodDefault<z.ZodEnum<["before_meal", "with_meal", "after_meal", "independent"]>>;
+    }, "strip", z.ZodTypeAny, {
+        innLatin: string;
+        dosageFormLatin: string;
+        dosageDoseConcentration: string;
+        dispenseInstructionLatin: string;
+        signatureDirectionRussian: string;
+        quantityPackages: number;
+        durationDays: number;
+        frequencyTimesPerDay: number;
+        mealRelation: "before_meal" | "with_meal" | "after_meal" | "independent";
+        catalogDrugId?: string | null | undefined;
+    }, {
+        innLatin: string;
+        dosageFormLatin: string;
+        dosageDoseConcentration: string;
+        dispenseInstructionLatin: string;
+        signatureDirectionRussian: string;
+        catalogDrugId?: string | null | undefined;
+        quantityPackages?: number | undefined;
+        durationDays?: number | undefined;
+        frequencyTimesPerDay?: number | undefined;
+        mealRelation?: "before_meal" | "with_meal" | "after_meal" | "independent" | undefined;
+    }>, "many">;
+    currentMedications: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+}, "strip", z.ZodTypeAny, {
+    patientId: string;
+    items: {
+        innLatin: string;
+        dosageFormLatin: string;
+        dosageDoseConcentration: string;
+        dispenseInstructionLatin: string;
+        signatureDirectionRussian: string;
+        quantityPackages: number;
+        durationDays: number;
+        frequencyTimesPerDay: number;
+        mealRelation: "before_meal" | "with_meal" | "after_meal" | "independent";
+        catalogDrugId?: string | null | undefined;
+    }[];
+    currentMedications: string[];
+    prescribingDoctorId: string;
+    validityPeriod: "days_15" | "days_30" | "days_60" | "year_1";
+    isSpecialChronicIndication: boolean;
+    visitId?: string | null | undefined;
+    chronicDispenseFrequencyNotes?: string | null | undefined;
+    clinicalDiagnosisMkb10?: string | null | undefined;
+    clinicalDiagnosisDescription?: string | null | undefined;
+}, {
+    patientId: string;
+    items: {
+        innLatin: string;
+        dosageFormLatin: string;
+        dosageDoseConcentration: string;
+        dispenseInstructionLatin: string;
+        signatureDirectionRussian: string;
+        catalogDrugId?: string | null | undefined;
+        quantityPackages?: number | undefined;
+        durationDays?: number | undefined;
+        frequencyTimesPerDay?: number | undefined;
+        mealRelation?: "before_meal" | "with_meal" | "after_meal" | "independent" | undefined;
+    }[];
+    prescribingDoctorId: string;
+    visitId?: string | null | undefined;
+    currentMedications?: string[] | undefined;
+    validityPeriod?: "days_15" | "days_30" | "days_60" | "year_1" | undefined;
+    isSpecialChronicIndication?: boolean | undefined;
+    chronicDispenseFrequencyNotes?: string | null | undefined;
+    clinicalDiagnosisMkb10?: string | null | undefined;
+    clinicalDiagnosisDescription?: string | null | undefined;
+}>;
+export type CreatePrescription107Request = z.infer<typeof createPrescription107RequestSchema>;
+export declare class DentalInteractionMatrixEngine {
+    static evaluatePrescriptionSafety(req: CheckInteractionsRequest, patientAllergies: Array<{
+        allergenGroup: string;
+        reactionSeverity: string;
+        hasSamterTriad: boolean;
+    }>): CheckInteractionsResponse;
 }

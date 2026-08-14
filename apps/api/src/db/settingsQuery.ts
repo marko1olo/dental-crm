@@ -59,6 +59,10 @@ function narrowStaffRole(value: unknown): StaffMember["role"] {
 	return parsed.success ? parsed.data : "assistant";
 }
 
+function useInMemory() {
+	return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
+
 const memoryUiPreferences = new Map<string, UiPreferences>();
 
 /**
@@ -206,7 +210,7 @@ async function uiPreferencesRow(
 export async function getUiPreferencesFromDb(
 	organizationId: string,
 ): Promise<UiPreferences | null> {
-	
+	if (useInMemory()) return memoryUiPreferences.get(organizationId) ?? null;
 	const row = await uiPreferencesRow(organizationId);
 	if (!row?.uiPreferences) return null;
 	return row.uiPreferences as UiPreferences;
@@ -216,7 +220,18 @@ export async function saveUiPreferencesInDb(
 	organizationId: string,
 	prefs: UiPreferences,
 ): Promise<UiPreferencesSaveOutcome> {
-	// Memory fallback removed as part of Zero Mocks
+	if (useInMemory()) {
+		const stored = memoryUiPreferences.get(organizationId) ?? null;
+		if (
+			stored &&
+			uiPreferencesSaveIsSuperseded(stored.savedAt, prefs.savedAt)
+		) {
+			return { applied: false, stored };
+		}
+		memoryUiPreferences.set(organizationId, prefs);
+		return { applied: true, stored: prefs };
+	}
+
 	for (let attempt = 1; attempt <= UI_PREFERENCES_SAVE_ATTEMPTS; attempt += 1) {
 		const row = await uiPreferencesRow(organizationId);
 		if (!row) throw new Error("No users found to save preferences to.");

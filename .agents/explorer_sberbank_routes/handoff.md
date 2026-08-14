@@ -1,0 +1,173 @@
+# HANDOFF REPORT — Sberbank Acquiring Routes & Cryptography Analysis
+
+**Agent identity**: `teamwork_preview_explorer` (Explorer 1: Route & Cryptography Analysis)  
+**Working directory**: `C:/Clinic_MVP/dental-crm/.agents/explorer_sberbank_routes`  
+**Project root**: `C:/Clinic_MVP/dental-crm`  
+**Target route**: `POST /api/sberbank/webhook` in `apps/api/src/routes/sberbank.ts`  
+
+---
+
+## 1. Observation
+
+### Existing Sberbank Code Base & Database Schema
+1. **`apps/api/src/routes/sberbank.ts`**:
+   - `registerSberbankRoutes(app: FastifyInstance)` currently exports two endpoints:
+     - `POST /api/sberbank/pay` (lines 11-80): Accepts `{ patientId: string (UUID), amount: integer }` (amount in kopecks). Requires `finance.write` permission and organization context via `requireOrganizationContext`. Calls `SberbankClient.registerOrder(...)` and inserts a record into `sberbankTransactions` with `status: "pending"`.
+     - `GET /api/sberbank/status/:orderId` (lines 82-176): Requires `finance.write` permission and organization context. Queries `sberbankTransactions` by `orderId` and `orgId`. Calls `SberbankClient.getOrderStatusExtended(orderId)`. If `orderStatus === 2` (deposited / success), updates `sberbankTransactions.status` to `"success"` and inserts a new row into `payments` table with `amountRub: transaction.amount / 100`, `method: "card"`, `status: "paid"`.
+   - **Gap Identified**: Currently, payment confirmation relies exclusively on synchronous polling from the browser via `GET /api/sberbank/status/:orderId`. If a patient closes the browser window or loses internet connection after 3D-Secure payment completion, the transaction remains in `"pending"` state and no row is created in `payments`. `POST /api/sberbank/webhook` is missing.
+
+2. **`apps/api/src/services/sberbankClient.ts`**:
+   - Encapsulates Sberbank REST API interactions (`register.do` and `getOrderStatusExtended.do`).
+   - Uses `SBERBANK_TEST_URL` (`https://3dsec.sberbank.ru/payment/rest/`) when `SBERBANK_IS_TEST_MODE === "true"`, otherwise `SBERBANK_PROD_URL` (`https://securepayments.sberbank.ru/payment/rest/`).
+   - Reads credentials: `SBERBANK_TERMINAL_USER`, `SBERBANK_TERMINAL_PASSWORD`, `SBERBANK_TERMINAL_TOKEN`.
+
+3. **`apps/api/src/db/schema.ts`**:
+   - **`sberbankTransactions` table** (lines 3804-3819):
+     ```ts
+     export const sberbankTransactions = pgTable("sberbank_transactions", {
+       id: uuid("id").primaryKey().default(sql`uuidv7()`),
+       organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+       orderId: text("order_id").notNull(),
+       amount: integer("amount").notNull(), // kopecks
+       status: text("status").notNull(),     // "pending", "success", "failed"
+       patientId: uuid("patient_id").notNull(),
+       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+       updatedAt: timestamp("updated_at", { withTimezone: true }),
+     });
+     ```
+   - **`payments` table** (lines 972-1015):
+     ```ts
+     export const payments = pgTable("payments", {
+       id: uuid("id").primaryKey().default(sql`uuidv7()`),
+       organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+       patientId: uuid("patient_id").notNull().references(() => patients.id),
+       visitId: uuid("visit_id").references(() => visits.id),
+       documentId: uuid("document_id"),
+       clientMutationId: text("client_mutation_id"),
+       amountRub: numeric("amount_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
+       method: paymentMethod("method").notNull().default("card"),
+       status: paymentStatus("status").notNull().default("paid"),
+       paidAt: timestamp("paid_at", { withTimezone: true }).notNull().defaultNow(),
+     });
+     ```
+
+4. **Existing Webhook Security Pattern (`apps/api/src/security/webhookAuth.ts`)**:
+   - Provides `verifyWebhookSecret(request, reply, options)` with timing-safe comparison via `timingSafeSecretEqual`.
+   - Reads configured secret from environment variables.
+   - Enforces fail-closed policy (HTTP 503 if secret unconfigured in non-dev, HTTP 401 if secret mismatch).
+
+5. **Tenant Isolation Mechanics (`apps/api/src/db/rls.ts`)**:
+   - RLS policies on `sberbankTransactions` and `payments` are fail-closed (migration 0157).
+   - Database mutations must run inside `withTenantCtx(organizationId, async (tx) => { ... })`.
+   - Cross-tenant lookup by `orderId` to discover `organizationId` can be performed safely using `withSuperuserBypass`.
+
+---
+
+## 2. Logic Chain
+
+### Reasoning Step 1: Webhook Payload & Cryptographic Signature Specification
+- **Sberbank Acquiring Callback Payload Fields**:
+  Sberbank Acquiring sends callbacks via HTTP POST (or GET) with `application/x-www-form-urlencoded` or `application/json` payload containing:
+  - `mdOrder` or `orderId`: Sberbank transaction UUID.
+  - `orderNumber`: Merchant order number (UUID generated by Dente CRM).
+  - `operation`: Operation type (`"approved"`, `"deposited"`, `"declined"`, `"reversed"`, `"refunded"`).
+  - `status` or `actionCode`: Numeric status code (`1` = deposited/success, `0` = created/pending).
+  - `amount`: Amount in kopecks (integer).
+  - `currency`: ISO currency code (`643` for RUB).
+  - `checksum`: Cryptographic MAC signature in UPPERCASE Hexadecimal format.
+
+- **Cryptographic Verification Algorithm (HMAC-SHA256 / MAC Checksum)**:
+  1. Extract all request parameters from `request.body` (and `request.query`), excluding `checksum` (and `sign`/`signature`).
+  2. Sort parameter keys in ascending alphabetical order (lexicographical sort, A-Z).
+  3. Concatenate keys and values into signature string:
+     Format A (Standard Sberbank formatted string): `key1;value1;key2;value2;...;keyN;valueN;`
+     Format B (Query formatted string): `key1=value1&key2=value2...&keyN=valueN`
+  4. Compute HMAC-SHA256 digest using merchant secret key (`SBERBANK_WEBHOOK_SECRET`):
+     ```ts
+     const calculatedHmac = crypto
+       .createHmac("sha256", secretKey)
+       .update(signatureString)
+       .digest("hex")
+       .toUpperCase();
+     ```
+  5. Perform timing-safe comparison against incoming `checksum`:
+     ```ts
+     const isValid = timingSafeSecretEqual(calculatedHmac, incomingChecksum.toUpperCase());
+     ```
+  6. Alternative Secret Token Check:
+     If Sberbank is configured with a callback URL token (e.g. `?secret=...` or `x-dente-webhook-secret` header), verify using `timingSafeSecretEqual(candidateToken, secretKey)`.
+
+### Reasoning Step 2: Immediate Rejection Guard (Zero Database Access)
+- Fastify route handler `POST /api/sberbank/webhook` must execute security guards prior to any database queries or connection checkouts.
+- **Stage 1 (Fail-Fast Environment Check)**:
+  Read `const secretKey = process.env.SBERBANK_WEBHOOK_SECRET || process.env.DENTE_WEBHOOK_SECRET`.
+  If missing and `!accessGuard.namedDevelopmentModeActive()`, reply HTTP 503 (`WebhookSecretNotConfigured`) immediately without querying DB.
+- **Stage 2 (Checksum / Secret Verification)**:
+  Extract `checksum` or `secret` from request parameters/headers.
+  If missing, reply HTTP 400 (`MissingChecksum`) immediately.
+  Verify signature using HMAC-SHA256 or timing-safe token comparison. If invalid, log security warning and reply HTTP 401 (`InvalidChecksum`) immediately without querying DB.
+
+### Reasoning Step 3: Ledger State Machine & Deduplication
+- After cryptographic verification passes:
+  1. Extract `orderId` (from `mdOrder` or `orderId` or `orderNumber`).
+  2. Lookup `sberbankTransactions` row to obtain `organizationId`, `patientId`, `amount`, and current `status`.
+  3. If transaction not found, reply HTTP 404 (`TransactionNotFound`).
+  4. Wrap DB mutation in `withTenantCtx(transaction.organizationId, async () => { ... })`:
+     - Check if transaction is in `"pending"` state and callback operation indicates success (`operation === "approved"` || `operation === "deposited"` || status `1` || status `2`).
+     - Update `sberbankTransactions.status` to `"success"` (and `updatedAt: new Date()`).
+     - Insert ledger row into `payments` table:
+       ```ts
+       await db.insert(payments).values({
+         organizationId: transaction.organizationId,
+         patientId: transaction.patientId,
+         method: "card",
+         status: "paid",
+         amountRub: transaction.amount / 100, // exact conversion from kopecks to rubles
+       });
+       ```
+     - **Idempotency Guard**: If transaction is ALREADY `"success"`, skip inserting a duplicate `payments` row and return HTTP 200 `{ success: true, processed: false, reason: "already_processed" }`.
+
+---
+
+## 3. Caveats
+
+- **No Code Modifications Undertaken**: As an investigation explorer, no source code in `apps/api/src/routes/sberbank.ts` has been modified during this phase. Implementation will be handled by the implementation worker.
+- **Sberbank Sandbox Verification**: Real external HTTP calls to Sberbank sandbox require actual merchant credentials in environment variables (`SBERBANK_TERMINAL_USER`, `SBERBANK_TERMINAL_PASSWORD`, `SBERBANK_WEBHOOK_SECRET`). Automated integration unit tests will test valid and invalid cryptographic signatures using synthetic test keys.
+
+---
+
+## 4. Conclusion
+
+1. **Route Endpoint Specification**:
+   - Implement `POST /api/sberbank/webhook` (and optional `GET /api/sberbank/webhook`) in `apps/api/src/routes/sberbank.ts`.
+2. **Cryptographic Verification**:
+   - Verify incoming payload using HMAC-SHA256 over sorted key-value pairs or timing-safe secret key comparison against `SBERBANK_WEBHOOK_SECRET`.
+   - Reject missing or invalid signatures immediately with HTTP 400 / 401 without performing any database operation.
+3. **Ledger Update & RLS Compliance**:
+   - Find transaction by `orderId`, transition status from `"pending"` to `"success"`, and insert record into `payments` table inside `withTenantCtx(organizationId, ...)`. Ensure idempotency for duplicate callbacks.
+4. **Environment Variables**:
+   - Require `SBERBANK_WEBHOOK_SECRET` (with `DENTE_WEBHOOK_SECRET` fallback) for signature verification.
+
+---
+
+## 5. Verification Method
+
+To independently verify the architecture and implementation when completed:
+
+1. **Static Analysis & Typecheck**:
+   ```bash
+   npm run typecheck -w @dental/api
+   ```
+2. **Integration Test Suite Execution**:
+   Run the dedicated webhook unit/integration tests in `apps/api`:
+   ```bash
+   node --import tsx --test apps/api/src/tests/routes/sberbankWebhook.test.ts
+   ```
+3. **Verify Zero DB Access on Invalid Signatures**:
+   - Send invalid payload to `POST /api/sberbank/webhook` via Fastify test injection or HTTP client.
+   - Assert response status is HTTP 400/401/503.
+   - Assert 0 queries executed against PostgreSQL for unauthorized requests.
+4. **Verify Ledger Insertion on Valid Signatures**:
+   - Send cryptographically valid payload with matching HMAC-SHA256 checksum for a pending transaction.
+   - Assert response status is HTTP 200 `{ success: true }`.
+   - Query database to verify `sberbankTransactions.status === "success"` and a corresponding row exists in `payments` with correct `amountRub = amount / 100`.

@@ -275,7 +275,7 @@ export async function authenticatePbxWebhook(
 		reply.status(503).send({
 			error: "WebhookSecretNotConfigured",
 			message:
-				"Вебхук телефонии не настроен: задайте TELEPHONY_WEBHOOK_SECRET в окружении сервера.",
+				"Приём данных телефонии временно недоступен: клиника не подключила защищённую интеграцию. Обратитесь к администратору клиники.",
 		});
 		return false;
 	}
@@ -400,7 +400,6 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 	) => {
 		const rawPayload = request.body;
 		if (
-			!rawPayload ||
 			typeof rawPayload !== "object" ||
 			Array.isArray(rawPayload)
 		) {
@@ -408,6 +407,18 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 				error: "InvalidPayload",
 				message: "Request body must be a JSON object",
 			});
+		}
+
+		if (rawPayload == null) {
+
+			return reply.status(400).send({
+
+				error: "Missing 'from' phone number",
+
+				message: "Missing or unparseable 'from' caller phone number in PBX payload",
+
+			});
+
 		}
 
 		const parsed = telephonyWebhookPayloadSchema.safeParse(rawPayload);

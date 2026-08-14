@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://marko1olo.github.io/dental-crm/sitemap.xml

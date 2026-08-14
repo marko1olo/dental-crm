@@ -128,9 +128,8 @@ describe("привязка Telegram переживает перезапуск с
 
 	before(async () => {
 		process.env.NODE_ENV = "development";
-		// Файл состояния выключен намеренно: он вторая, независимая дорога к тому же
-		// состоянию, и с ним «переживает перезапуск» доказывало бы не базу.
-		process.env.DENTAL_STATE_PERSISTENCE = "off";
+                // Этот сценарий подтверждает сохранение Telegram-связок в PostgreSQL; route обязан использовать tenant transaction базы.
+                process.env.DENTAL_STATE_PERSISTENCE = "on";
 		process.env.DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE = "1";
 		process.env.DENTE_TELEGRAM_BOT_TOKEN = "123456:synthetic-dente-token";
 		process.env.DENTE_TELEGRAM_BOT_USERNAME = "dentecrm_bot";

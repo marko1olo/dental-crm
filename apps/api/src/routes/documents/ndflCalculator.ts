@@ -41,7 +41,10 @@ export async function register(app: FastifyInstance) {
 		const patient = await getPatientByIdFromDb(organizationId, query.patientId);
 
 		if (!patient) {
-			return reply.status(404).send({ error: "Patient not found" });
+			return reply.status(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в базе данных клиники.",
+			});
 		}
 
 		// balanceRub is negative if there is a debt.

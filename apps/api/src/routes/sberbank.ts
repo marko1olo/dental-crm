@@ -304,7 +304,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				return reply.status(503).send({
 					error: "WebhookSecretNotConfigured",
 					message:
-						"Секрет вебхука Sberbank не настроен: задайте SBERBANK_WEBHOOK_SECRET в окружении сервера.",
+						"Приём уведомлений от банка временно недоступен: клиника не подключила защищённую интеграцию. Обратитесь к администратору клиники.",
 				});
 			}
 		}

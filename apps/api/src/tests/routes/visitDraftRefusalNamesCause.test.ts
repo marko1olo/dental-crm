@@ -88,6 +88,7 @@ type Refusal = {
 };
 
 let app: FastifyInstance;
+const originalEnv = process.env;
 
 function headersFor(organizationId: string): Record<string, string> {
 	const secret = clinicalAdminSecret();
@@ -140,6 +141,7 @@ function namesNextStep(message: string): boolean {
 }
 
 before(async () => {
+        process.env = { ...originalEnv, NODE_ENV: "test", DENTE_CLINICAL_ALLOW_UNGUARDED_READS: "1" };
 	// Уборка НА ВХОДЕ: прогон, убитый снаружи, до `after` не доходит и оставляет
 	// свои строки в живой базе. Следующий прогон обязан начинать с чистого места.
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
@@ -202,6 +204,7 @@ before(async () => {
 
 after(async () => {
 	await app?.close();
+        process.env = originalEnv;
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
 	// Счёт идёт по каждой клинике под ЕЁ контекстом и складывается: одним запросом
 	// с `in (своя, чужая)` под контекстом одной из них строки второй не видны, и

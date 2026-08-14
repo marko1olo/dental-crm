@@ -36,6 +36,7 @@ import {
 	unguardedBypassAllowed,
 } from "../accessGuard.js";
 import { withTenantCtx } from "../db/rls.js";
+import { communicationTasks, denteTelegramBotConfigs } from "../db/schema.js";
 import type {
 	BuildDenteTelegramChatLinkListOptions,
 	BuildDenteTelegramLinkCodeListOptions,

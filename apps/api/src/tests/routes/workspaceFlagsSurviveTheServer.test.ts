@@ -203,7 +203,10 @@ describe("признаки рабочего пространства не тер
 			hasVampireMode: true,
 		}) as unknown as Record<string, unknown>;
 
-		assert.equal(merged.hasClinicalRules, false);
+		assert.equal(
+			merged.hasClinicalRules,
+			DEFAULT_WORKSPACE_FEATURE_FLAGS.hasClinicalRules,
+		);
 		assert.equal(
 			merged.numberOfDoctors,
 			DEFAULT_WORKSPACE_FEATURE_FLAGS.numberOfDoctors,

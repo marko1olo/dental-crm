@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-08-13T17:40:35.746Z",
+  "savedAt": "2026-08-14T05:52:07.164Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -36,7 +36,7 @@
       },
       "networkEnabled": false,
       "egiszEnabled": false,
-      "updatedAt": "2026-08-13T17:40:28.219Z",
+      "updatedAt": "2026-08-14T04:31:17.429Z",
       "currency": "₽",
       "themeColor": "teal",
       "logoUrl": null,
@@ -79,8 +79,8 @@
         "canManageMoney": true,
         "canManageImports": true,
         "color": "#1e293b",
-        "createdAt": "2026-08-13T17:40:28.219Z",
-        "updatedAt": "2026-08-13T17:40:28.219Z",
+        "createdAt": "2026-08-14T04:31:17.429Z",
+        "updatedAt": "2026-08-14T04:31:17.429Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -142,8 +142,8 @@
         "canManageMoney": false,
         "canManageImports": false,
         "color": "#0f766e",
-        "createdAt": "2026-08-13T17:40:28.219Z",
-        "updatedAt": "2026-08-13T17:40:28.219Z",
+        "createdAt": "2026-08-14T04:31:17.429Z",
+        "updatedAt": "2026-08-14T04:31:17.429Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -204,8 +204,8 @@
         "canManageMoney": true,
         "canManageImports": true,
         "color": "#b8781f",
-        "createdAt": "2026-08-13T17:40:28.219Z",
-        "updatedAt": "2026-08-13T17:40:28.219Z",
+        "createdAt": "2026-08-14T04:31:17.429Z",
+        "updatedAt": "2026-08-14T04:31:17.429Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -267,8 +267,8 @@
         "canManageMoney": false,
         "canManageImports": false,
         "color": "#a34f32",
-        "createdAt": "2026-08-13T17:40:28.219Z",
-        "updatedAt": "2026-08-13T17:40:28.219Z",
+        "createdAt": "2026-08-14T04:31:17.429Z",
+        "updatedAt": "2026-08-14T04:31:17.429Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -426,8 +426,8 @@
         "notes": "Замок правки существующей карты",
         "administrativeProfile": null,
         "balanceRub": 0,
-        "createdAt": "2026-08-13T17:40:28.219Z",
-        "updatedAt": "2026-08-13T17:40:28.228Z"
+        "createdAt": "2026-08-14T04:31:17.429Z",
+        "updatedAt": "2026-08-14T04:31:17.436Z"
       },
       {
         "id": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
@@ -440,8 +440,8 @@
         "notes": "Нужны документы для налогового вычета.",
         "administrativeProfile": null,
         "balanceRub": 0,
-        "createdAt": "2026-08-13T17:40:28.219Z",
-        "updatedAt": "2026-08-13T17:40:28.219Z"
+        "createdAt": "2026-08-14T04:31:17.429Z",
+        "updatedAt": "2026-08-14T04:31:17.429Z"
       },
       {
         "id": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
@@ -454,8 +454,8 @@
         "notes": null,
         "administrativeProfile": null,
         "balanceRub": 0,
-        "createdAt": "2026-08-13T17:40:28.219Z",
-        "updatedAt": "2026-08-13T17:40:28.219Z"
+        "createdAt": "2026-08-14T04:31:17.429Z",
+        "updatedAt": "2026-08-14T04:31:17.429Z"
       }
     ],
     "documents": [
@@ -595,7 +595,7 @@
         "method": "card",
         "status": "paid",
         "paidAt": "2026-05-12T10:05:00+04:00",
-        "createdAt": "2026-08-13T17:40:28.219Z",
+        "createdAt": "2026-08-14T04:31:17.429Z",
         "fiscalReceiptNumber": "FN-2026-000001",
         "fiscalReceiptIssuedAt": "2026-05-12T10:05:00+04:00",
         "fiscalReceiptUrl": "https://example.com/fiscal/FN-2026-000001",
@@ -633,7 +633,7 @@
         "title": "Отправить ссылку на памятку после приема",
         "body": "Памятка после приема готова в защищенном портале клиники. Не включать диагноз, номера зубов, снимки и детали лечения в Telegram.",
         "lastEventAt": null,
-        "createdAt": "2026-08-13T17:40:28.219Z"
+        "createdAt": "2026-08-14T04:31:17.429Z"
       },
       {
         "id": "31ba633f-64e3-4a50-8a10-dc3d44f81a5a",
@@ -651,7 +651,7 @@
         "title": "Закрыть остаток оплаты и документы",
         "body": "Связать оплату с договором/актом, затем подготовить пакет документов.",
         "lastEventAt": null,
-        "createdAt": "2026-08-13T17:40:28.219Z"
+        "createdAt": "2026-08-14T04:31:17.429Z"
       },
       {
         "id": "16f19699-5b11-45fa-a329-5c53567b7f28",
@@ -669,7 +669,7 @@
         "title": "Предупредить о справке для вычета",
         "body": "После оплаты выдать справку КНД 1151156 и проверить ФИО/ИНН.",
         "lastEventAt": null,
-        "createdAt": "2026-08-13T17:40:28.219Z"
+        "createdAt": "2026-08-14T04:31:17.429Z"
       },
       {
         "id": "b896a902-665d-4b33-9851-53822a04c12a",
@@ -687,7 +687,7 @@
         "title": "Подтвердить первичную консультацию",
         "body": "Уточнить жалобу, предупредить взять паспорт и старые снимки.",
         "lastEventAt": null,
-        "createdAt": "2026-08-13T17:40:28.219Z"
+        "createdAt": "2026-08-14T04:31:17.429Z"
       },
       {
         "id": "d144ac6c-c570-4d0c-b6a6-dc0154130cd6",
@@ -705,7 +705,7 @@
         "title": "Обсудить ОПТГ контроль",
         "body": "Пояснить пациенту, что AI-описание не является диагнозом, врач проверяет снимок.",
         "lastEventAt": null,
-        "createdAt": "2026-08-13T17:40:28.219Z"
+        "createdAt": "2026-08-14T04:31:17.429Z"
       }
     ],
     "communicationEvents": [
@@ -797,14 +797,14 @@
     "importBatches": [],
     "auditEvents": [
       {
-        "id": "e3d543cb-778a-4be5-ab7b-491cbf29905d",
+        "id": "48234c0d-1a2c-49a5-b362-85dfade1df6b",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
         "entityType": "patient",
         "entityId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
         "action": "patient_core_updated",
         "reason": "Core patient identity and contact facts updated for scheduling, documents, tax, and communication.",
-        "createdAt": "2026-08-13T17:40:28.228Z"
+        "createdAt": "2026-08-14T04:31:17.437Z"
       },
       {
         "id": "cdac781e-6a56-4bbb-a4bd-1e2da6efc047",
@@ -814,7 +814,7 @@
         "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
         "action": "visit_opened",
         "reason": "Смена открыта, карта пациента доступна врачу.",
-        "createdAt": "2026-08-13T17:40:28.219Z"
+        "createdAt": "2026-08-14T04:31:17.429Z"
       },
       {
         "id": "5caa31eb-f50e-4d85-aa5e-c328d8d08229",
@@ -824,7 +824,7 @@
         "entityId": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
         "action": "document_prepared",
         "reason": "Договор создан как черновик перед приемом.",
-        "createdAt": "2026-08-13T17:40:28.219Z"
+        "createdAt": "2026-08-14T04:31:17.429Z"
       }
     ],
     "aiRecognitionJobs": [],
@@ -885,11 +885,41 @@
       "allowVoiceIntake": false,
       "staffEscalationChannel": null,
       "privacyMode": "no_phi_by_default",
-      "updatedAt": "2026-08-13T17:40:28.219Z"
+      "updatedAt": "2026-08-14T04:31:17.429Z"
     },
-    "denteTelegramLinkCodes": [],
+    "denteTelegramLinkCodes": [
+      {
+        "id": "7789b0db-9a1e-49b2-8970-137d9f388cfa",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "clinicId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "botConfigId": "shared_dente_bot:4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "subjectType": "patient",
+        "subjectId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "codeFingerprint": "850b3a804592e65edf8a852a5971edb536bf8f96534bfcc2503ca57b5c9b7d61",
+        "codeLast4": "652C",
+        "status": "used",
+        "expiresAt": "2026-08-14T06:07:06.914Z",
+        "usedAt": "2026-08-14T05:52:06.919Z",
+        "createdAt": "2026-08-14T05:52:06.914Z",
+        "createdByUserId": null
+      }
+    ],
     "denteTelegramChatLinks": [],
-    "denteTelegramWebhookEvents": [],
+    "denteTelegramWebhookEvents": [
+      {
+        "updateId": 910011,
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "botConfigId": "shared_dente_bot:4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "chatFingerprint": "63a7546ba4d42173512f6f77",
+        "updateKind": "command",
+        "command": "/start",
+        "status": "processed",
+        "action": "linked_patient_telegram_chat",
+        "warnings": [],
+        "id": "81ab2ebe-5d70-429b-858d-b7cf05b78a21",
+        "createdAt": "2026-08-14T05:52:06.919Z"
+      }
+    ],
     "denteTelegramOutboxDeliveryReceipts": [],
     "uiPreferences": null,
     "activeVisit": {
@@ -905,9 +935,9 @@
       "diagnosis": "K02.1 кариес дентина, предварительно.",
       "treatmentPlan": "Анестезия, изоляция, препарирование, восстановление композитом.",
       "doctorSummary": "AI-диктовка должна попадать сюда как черновик, не как подписанный диагноз.",
-      "createdAt": "2026-08-13T17:40:28.219Z",
-      "updatedAt": "2026-08-13T17:40:28.219Z"
+      "createdAt": "2026-08-14T04:31:17.429Z",
+      "updatedAt": "2026-08-14T04:31:17.429Z"
     }
   },
-  "checksum": "0b783f12311bf180bf962e5bd49b18c2b51b887bb6e3c1f1debf849a757a00cb"
+  "checksum": "584d84e652fbc1c049043febef9b2de08ce1258985c463586acfc475333060c1"
 }

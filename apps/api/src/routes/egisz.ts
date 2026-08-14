@@ -507,7 +507,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				return reply.status(422).send({
 					error: "ClinicOidRequired",
 					message:
-						"Для выгрузки в ЕГИСЗ задайте OID медицинской организации (переменная EGISZ_CLINIC_OID).",
+						"Для выгрузки в ЕГИСЗ укажите идентификатор организации в настройках интеграции.",
 				});
 			}
 			/*
