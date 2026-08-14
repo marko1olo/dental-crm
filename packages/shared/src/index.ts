@@ -6317,6 +6317,7 @@ export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 
 export const completeCommunicationTaskSchema = z.object({
 	taskId: z.string().uuid(),
+	actorUserId: z.string().uuid().optional().nullable(),
 	outcome: communicationTaskOutcomeSchema.optional(),
 	note: z.string().trim().min(1).max(1000).optional(),
 });

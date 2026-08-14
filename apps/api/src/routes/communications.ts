@@ -103,11 +103,16 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 				 * СТАЛО: organizationId в WHERE; пустой RETURNING → не пишем
 				 * событие и не отдаём успех.
 				 */
+				const outcome = parsedInput.data.outcome ?? "completed";
+				const taskStatus: "completed" | "needs_call" =
+					outcome === "no_answer" || outcome === "callback_requested"
+						? "needs_call"
+						: "completed";
+
 				const [updatedTask] = await tx
 					.update(communicationTasks)
 					.set({
-						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-						status: parsedInput.data.outcome as any,
+						status: taskStatus,
 						lastEventAt: new Date(),
 					})
 					.where(
@@ -127,15 +132,13 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 					clinicId: task.clinicId,
 					taskId: task.id,
 					patientId: task.patientId,
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					actorUserId: (parsedInput.data as any).actorUserId ?? null,
+					actorUserId: parsedInput.data.actorUserId ?? null,
 					channel: task.channel,
 					direction: "outbound",
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					status: parsedInput.data.outcome as any,
+					status: taskStatus,
 					message:
 						parsedInput.data.note ??
-						`Задача переведена в статус ${parsedInput.data.outcome}`,
+						`Задача переведена в статус ${outcome}`,
 				});
 
 				return updatedTask;
