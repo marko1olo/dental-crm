@@ -139,7 +139,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при расчете клинических правил.",
 			});
 		}
 	});
@@ -175,7 +175,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при создании клинического правила.",
 			});
 		}
 	});
@@ -214,7 +214,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при обновлении клинического правила.",
 			});
 		}
 	});
@@ -271,7 +271,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при удалении клинического правила.",
 			});
 		}
 	});
@@ -385,7 +385,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при получении клинических задач.",
 			});
 		}
 	});
@@ -518,7 +518,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при проверке односессионного режима.",
 			});
 		}
 	});
@@ -542,7 +542,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при геокодировании адресов через DaData.",
 			});
 		}
 	});
@@ -589,7 +589,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при получении недавних пациентов.",
 			});
 		}
 	});
@@ -647,7 +647,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при записи открытия карточки пациента.",
 			});
 		}
 	});
@@ -669,7 +669,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при получении типов CRM-задач.",
 			});
 		}
 	});
@@ -716,7 +716,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 				request.log.error(error);
 				return reply.status(500).send({
 					error: "InternalServerError",
-					message: "Internal server error",
+					message: "Внутренняя ошибка сервера при получении маппинга полей лендингов.",
 				});
 			}
 		},
@@ -739,7 +739,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при получении пользовательских типов CRM-задач.",
 			});
 		}
 	});
@@ -765,7 +765,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 				request.log.error(error);
 				return reply.status(500).send({
 					error: "InternalServerError",
-					message: "Internal server error",
+					message: "Внутренняя ошибка сервера при геокодировании адресов пациентов.",
 				});
 			}
 		},
@@ -796,7 +796,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Внутренняя ошибка сервера при фильтрации потерянных пациентов.",
 			});
 		}
 	});
