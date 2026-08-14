@@ -4,8 +4,7 @@ import type { FastifyInstance } from "fastify";
 
 declare module "fastify" {
 	interface FastifyRequest {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		user?: { id: string; [key: string]: any };
+		user?: { id: string; role?: string; organizationId?: string; [key: string]: unknown };
 	}
 }
 
@@ -566,8 +565,8 @@ async function runDiarySigningCeremony(
 	// записывалась на нашу — то есть запись о расходе и сам расход оказывались в
 	// разных клиниках.
 	const deductions: DiaryStockDeduction[] = [];
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const transactionsToInsert: any[] = [];
+	const transactionsToInsert: (typeof inventoryTransactions.$inferInsert)[] =
+		[];
 	let completedTreatmentItems = 0;
 	if (diary.visitId) {
 		const visitTreatmentItems = await tx
@@ -749,6 +748,7 @@ async function runDiarySigningCeremony(
 				specialty: "universal",
 				serviceCategory: "therapy",
 				commissionPct: "30.00",
+				commissionPercent: "30.00",
 				materialCostDeductionPct: "100.00",
 				isActive: true,
 			});

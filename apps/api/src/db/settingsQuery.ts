@@ -811,8 +811,7 @@ export async function createChairInDb(
 export async function updateChairWorkingHoursInDb(
 	organizationId: string,
 	chairId: string,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	workingHours: any,
+	workingHours: unknown,
 ) {
 	
 	await db

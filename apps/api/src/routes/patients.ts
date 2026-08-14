@@ -209,9 +209,16 @@ type PatientDuplicateOptions = {
 	requireDistinguishingData?: boolean;
 };
 
+export type PatientDuplicateCandidate = {
+	readonly id: string;
+	readonly status?: string | null;
+	readonly fullName: string;
+	readonly birthDate?: string | null;
+	readonly phone?: string | null;
+};
+
 function findPatientDuplicate(
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	patientsList: any[],
+	patientsList: readonly PatientDuplicateCandidate[],
 	input: PatientDuplicateInput,
 	ignoredPatientId?: string,
 	options: PatientDuplicateOptions = {},
@@ -496,8 +503,7 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				orgId,
 				input,
 				(patients, inp) => {
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					return findPatientDuplicate(patients, inp as any, undefined, {
+					return findPatientDuplicate(patients, inp, undefined, {
 						requireDistinguishingData: true,
 					});
 				},

@@ -337,7 +337,15 @@ export async function computePlanFunnelAll(
 	return map;
 }
 
-async function computeChairUtilizationAll() {
+export interface ChairUtilizationPoint {
+	readonly name: string;
+	readonly value: number;
+	readonly fill: string;
+}
+
+async function computeChairUtilizationAll(): Promise<
+	Map<string, ChairUtilizationPoint[]>
+> {
 	// Aggregate appointments by chair and organization
 	const stats = await db
 		.select({
@@ -349,8 +357,7 @@ async function computeChairUtilizationAll() {
 		.where(eq(appointments.status, "completed"))
 		.groupBy(appointments.organizationId, appointments.chairId);
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const orgChairs = new Map<string, any[]>();
+	const orgChairs = new Map<string, ChairUtilizationPoint[]>();
 
 	for (const s of stats) {
 		if (!s.organizationId) continue;
@@ -358,13 +365,13 @@ async function computeChairUtilizationAll() {
 			orgChairs.set(s.organizationId, []);
 		}
 
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const arr = orgChairs.get(s.organizationId)!;
+		const arr = orgChairs.get(s.organizationId);
+		if (!arr) continue;
 		const i = arr.length;
 		arr.push({
-			name: s.chairId ? `Chair ${s.chairId.substring(0, 4)}` : "Unknown",
+			name: s.chairId ? `Кресло ${s.chairId.substring(0, 4)}` : "Без кресла",
 			value: Number(s.count),
-			fill: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][i % 4],
+			fill: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][i % 4] ?? "#3b82f6",
 		});
 	}
 
