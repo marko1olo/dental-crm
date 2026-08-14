@@ -499,12 +499,18 @@ export function WorkspaceTopbar({
 	todayIso,
 	onLockSession,
 }: WorkspaceTopbarProps) {
+	const validDate = (() => {
+		if (todayIso && !Number.isNaN(Date.parse(`${todayIso}T12:00:00`))) {
+			return new Date(`${todayIso}T12:00:00`);
+		}
+		return new Date();
+	})();
 	const formattedDate = new Intl.DateTimeFormat("ru-RU", {
 		day: "numeric",
 		month: "long",
 		year: "numeric",
 		weekday: "long",
-	}).format(new Date(`${todayIso}T12:00:00`));
+	}).format(validDate);
 
 	/*
 	 * Порядок ролей приходит из AppHelpers (roleFocusOrder) и содержит все пять.

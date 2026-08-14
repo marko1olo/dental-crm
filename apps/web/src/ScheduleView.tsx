@@ -427,7 +427,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			Number.isFinite(endsAtMs) &&
 			endsAtMs > startsAtMs
 				? endsAtMs - startsAtMs
-				: (dashboard.clinicSettings.profile.defaultVisitMinutes ?? 30) * 60_000;
+				: (dashboard.clinicSettings?.profile?.defaultVisitMinutes ?? 30) *
+					60_000;
 		const weekMs = 7 * 24 * 60 * 60_000;
 		const nextSameWeekdayMs = () => {
 			if (!Number.isFinite(startsAtMs)) return Date.now() + weekMs;
@@ -453,7 +454,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		);
 		const repeatAssistantId =
 			appointment.assistantUserId ??
-			(dashboard.clinicSettings.profile.mode === "solo_doctor"
+			(dashboard.clinicSettings?.profile?.mode === "solo_doctor"
 				? null
 				: (fallbackAssistant?.id ?? null));
 
@@ -570,14 +571,17 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const appointmentDraftMissingSteps = (draft: AppointmentScheduleDraft) =>
 		appointmentScheduleMissingFields(
 			draft,
-			dashboard.clinicSettings.profile.mode,
-			dashboard.clinicSettings.staff,
-			{ chairs: dashboard.clinicSettings.chairs, patients: dashboard.patients },
+			dashboard.clinicSettings?.profile?.mode ?? "clinic",
+			dashboard.clinicSettings?.staff ?? [],
+			{
+				chairs: dashboard.clinicSettings?.chairs ?? [],
+				patients: dashboard.patients ?? [],
+			},
 		);
 	const todayScheduleDate = () =>
 		toDateTimeLocalValue(
 			new Date().toISOString(),
-			dashboard.clinicSettings.profile.timezone,
+			dashboard.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
 		).slice(0, 10);
 	/**
 	 * Разбор показанных приёмов по дням клиники: заголовок дня, свободные окна
@@ -602,14 +606,14 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					toClinicLocal: (iso: string) =>
 						toDateTimeLocalValue(
 							iso,
-							dashboard.clinicSettings.profile.timezone,
+							dashboard.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
 						),
 					todayKey: clinicToday,
 				},
 			),
 		[
 			sortedAppointments,
-			dashboard.clinicSettings.profile.timezone,
+			dashboard.clinicSettings?.profile?.timezone,
 			clinicToday,
 			toDateTimeLocalValue,
 		],
