@@ -1,20 +1,37 @@
-# DENTE Dental CRM — Architecture Specification
+# 🦷 DENTE Dental CRM — Architecture Specification
 
-## 1. Clinical Data Model & FDI Odontogram State Machine
-Each tooth entity (FDI 11–48) maintains an immutable history of clinical observations, procedures, and conditions.
+> **Enterprise Multi-Tenant Clinical Practice Management Architecture**  
+> Developed by **Жирняк** & **Адольф Петушков**
+
+---
+
+## 🏛️ 1. Domain Model & Invariants
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Healthy
-    Healthy --> Caries: Acid Demineralization
-    Caries --> Pulpitis: Deep Bacterial Infiltration
-    Pulpitis --> Periodontitis: Periapical Spread
-    Periodontitis --> Extracted: Non-Restorable
-    Extracted --> Implanted: Titanium Fixture
-    Implanted --> Crowned: Prosthetic Loading
+erDiagram
+    ORGANIZATION ||--o{ PATIENT : owns
+    ORGANIZATION ||--o{ DOCTOR : employs
+    ORGANIZATION ||--o{ APPOINTMENT : schedules
+    PATIENT ||--o{ TOOTH_RECORD : has
+    PATIENT ||--o{ INVOICE : billed
+    INVOICE ||--o{ INVOICE_ITEM : contains
+    INVOICE ||--o{ PAYMENT : settles
+    APPOINTMENT }|--|| DOCTOR : assigned_to
+    APPOINTMENT }|--|| PATIENT : for_patient
 ```
 
-## 2. Financial Ledger & SBP QR Invariants
-- All monetary amounts stored as exact integers (kopecks) in PostgreSQL `BIGINT` columns.
-- Doctor commissions calculated deterministically using tiered percentage matrix after material cost deduction.
-- SBP QR payloads generated dynamically with SHA-256 HMAC signature verification.
+### 1.1 Invariants
+1. **Tenant Isolation:** Every SQL query and ORM operation must enforce `organization_id = :current_tenant`. Zero cross-tenant data leakage.
+2. **Kopeck-Exact Arithmetic:** All financial sums stored as `BIGINT` representing integer kopecks/cents.
+3. **Optimistic Locking:** Appointments and clinical charts employ version increment checks to prevent race conditions during simultaneous doctor edits.
+
+---
+
+## 🔬 2. DICOM / MPR Multi-Planar Reconstruction
+* **Volume Pipeline:** 3D voxel volume reconstruction from contiguous 16-bit CT/CBCT slices.
+* **Axial / Coronal / Sagittal Projections:** Trilinear interpolation with dynamic Hounsfield Unit (HU) windowing (Soft Tissue, Bone, Enamel).
+
+---
+
+### 👥 Engineering Syndicate
+Developed and maintained by **Жирняк** & **Адольф Петушков**.
