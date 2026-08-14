@@ -29,41 +29,7 @@ import {
 import { getRequestIdentity } from "../security/identity.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
-/**
- * Создаёт таблицу истории переходов состояний зубов, если миграция ещё не применена.
- */
-let toothStateHistoryTableReady = false;
-async function ensureToothStateHistoryTable(): Promise<void> {
-	if (toothStateHistoryTableReady) return;
-	try {
-		await db.execute(sql`
-			CREATE TABLE IF NOT EXISTS "tooth_state_history" (
-				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-				"organization_id" uuid NOT NULL,
-				"patient_id" uuid NOT NULL,
-				"tooth_number" integer NOT NULL,
-				"previous_state" text,
-				"new_state" text NOT NULL,
-				"previous_surfaces" jsonb,
-				"new_surfaces" jsonb,
-				"changed_by_user_id" uuid,
-				"visit_id" uuid,
-				"reason" text,
-				"changed_at" timestamp with time zone DEFAULT now() NOT NULL
-			);
-		`);
-		await db.execute(sql`
-			CREATE INDEX IF NOT EXISTS "idx_tooth_state_history_patient_tooth"
-				ON "tooth_state_history" ("patient_id", "tooth_number", "changed_at");
-		`);
-		toothStateHistoryTableReady = true;
-	} catch (error) {
-		console.warn(
-			"[toothStateHistory] Не удалось подготовить таблицу истории:",
-			error,
-		);
-	}
-}
+
 
 export const CLINICAL_TOOTH_STATE_VALUES = [
 	"Healthy",
@@ -303,7 +269,6 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			if (toothNumbers.length === 0)
 				return reply.send({ success: true, states: [] });
 
-			await ensureToothStateHistoryTable();
 			const actorUserId = getRequestIdentity(request).userId;
 			const now = new Date();
 
