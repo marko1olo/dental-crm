@@ -1,58 +1,60 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { SanPiNSterilizationEngine } from "@dental/shared";
 
 describe("SanPiN 3.3686-21 Central Sterilization & PSO Quality Engine", () => {
 	it("computes minimum sample size for PSO cleaning per SanPiN norms (>= 1% and min 3)", () => {
-		expect(SanPiNSterilizationEngine.computeMinimumPsoSampleSize(50)).toBe(3);
-		expect(SanPiNSterilizationEngine.computeMinimumPsoSampleSize(200)).toBe(3);
-		expect(SanPiNSterilizationEngine.computeMinimumPsoSampleSize(450)).toBe(5);
-		expect(SanPiNSterilizationEngine.computeMinimumPsoSampleSize(1000)).toBe(10);
+		assert.equal(SanPiNSterilizationEngine.computeMinimumPsoSampleSize(50), 3);
+		assert.equal(SanPiNSterilizationEngine.computeMinimumPsoSampleSize(200), 3);
+		assert.equal(SanPiNSterilizationEngine.computeMinimumPsoSampleSize(450), 5);
+		assert.equal(
+			SanPiNSterilizationEngine.computeMinimumPsoSampleSize(1000),
+			10,
+		);
 	});
 
 	it("rejects PSO batches with insufficient sample size or positive chemical reactions", () => {
-		// Insufficient sample size
 		const evalSample = SanPiNSterilizationEngine.evaluatePsoCleaningBatch(
 			200,
-			2, // minimum required is 3
+			2,
 			true,
 			true,
 		);
-		expect(evalSample.isBatchApproved).toBe(false);
-		expect(evalSample.rejectionReason).toContain("Недостаточный объем выборки");
+		assert.equal(evalSample.isBatchApproved, false);
+		assert.match(
+			evalSample.rejectionReason ?? "",
+			/Недостаточный объем выборки/,
+		);
 
-		// Positive Azopyram (blood traces detected)
 		const evalAzopyram = SanPiNSterilizationEngine.evaluatePsoCleaningBatch(
 			200,
 			5,
-			false, // positive test (blood present)
+			false,
 			true,
 		);
-		expect(evalAzopyram.isBatchApproved).toBe(false);
-		expect(evalAzopyram.rejectionReason).toContain("азопирамовая проба");
+		assert.equal(evalAzopyram.isBatchApproved, false);
+		assert.match(evalAzopyram.rejectionReason ?? "", /азопирамовая проба/);
 
-		// Positive Phenolphthalein (alkaline detergent residues detected)
 		const evalPhenol = SanPiNSterilizationEngine.evaluatePsoCleaningBatch(
 			200,
 			5,
 			true,
-			false, // positive test (detergent present)
+			false,
 		);
-		expect(evalPhenol.isBatchApproved).toBe(false);
-		expect(evalPhenol.rejectionReason).toContain("фенолфталеиновая проба");
+		assert.equal(evalPhenol.isBatchApproved, false);
+		assert.match(evalPhenol.rejectionReason ?? "", /фенолфталеиновая проба/);
 
-		// 100% negative with adequate sample
 		const evalValid = SanPiNSterilizationEngine.evaluatePsoCleaningBatch(
 			200,
 			5,
 			true,
 			true,
 		);
-		expect(evalValid.isBatchApproved).toBe(true);
-		expect(evalValid.rejectionReason).toBeNull();
+		assert.equal(evalValid.isBatchApproved, true);
+		assert.equal(evalValid.rejectionReason, null);
 	});
 
 	it("validates steam and dry heat autoclave cycles against physical critical parameters", () => {
-		// Valid Steam 134°C B-cycle
 		const steam134 = SanPiNSterilizationEngine.validateAutoclaveCycle({
 			cycleMode: "B",
 			temperatureCelsius: 134.5,
@@ -60,29 +62,30 @@ describe("SanPiN 3.3686-21 Central Sterilization & PSO Quality Engine", () => {
 			durationMin: 5,
 			passedIndicator: true,
 		});
-		expect(steam134.isValid).toBe(true);
-		expect(steam134.status).toBe("passed");
+		assert.equal(steam134.isValid, true);
+		assert.equal(steam134.status, "passed");
 
-		// Invalid Steam 134°C (low pressure)
 		const steamLowPressure = SanPiNSterilizationEngine.validateAutoclaveCycle({
 			cycleMode: "B",
-			temperatureCelsius: 134.0,
-			pressureBar: 1.6, // required >= 2.0 bar
+			temperatureCelsius: 134,
+			pressureBar: 1.6,
 			durationMin: 5,
 			passedIndicator: true,
 		});
-		expect(steamLowPressure.isValid).toBe(false);
-		expect(steamLowPressure.reasons[0]).toContain("Недостаточное давление пара");
+		assert.equal(steamLowPressure.isValid, false);
+		assert.match(
+			steamLowPressure.reasons[0] ?? "",
+			/Недостаточное давление пара/,
+		);
 
-		// Valid Dry Heat 180°C (60 min)
 		const dryHeat180 = SanPiNSterilizationEngine.validateAutoclaveCycle({
 			cycleMode: "dry_heat_180",
-			temperatureCelsius: 180.0,
+			temperatureCelsius: 180,
 			durationMin: 60,
 			passedIndicator: true,
 		});
-		expect(dryHeat180.isValid).toBe(true);
-		expect(dryHeat180.status).toBe("passed");
+		assert.equal(dryHeat180.isValid, true);
+		assert.equal(dryHeat180.status, "passed");
 	});
 
 	it("generates deterministic traceability barcodes with sanitized tray code and ISO expiration date", () => {
@@ -91,6 +94,6 @@ describe("SanPiN 3.3686-21 Central Sterilization & PSO Quality Engine", () => {
 			trayCode: "TRAY/SURGERY 01",
 			expiryDate: new Date("2026-11-15T12:00:00Z"),
 		});
-		expect(barcode).toBe("DNT-STER-CYC-204-TRAYSURGERY01-20261115");
+		assert.equal(barcode, "DNT-STER-CYC-204-TRAYSURGERY01-20261115");
 	});
 });

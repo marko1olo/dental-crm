@@ -1,15 +1,16 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { ImplantStabilityCalculator } from "@dental/shared";
 
 describe("Dental Implantology & RFA ISQ Biomechanical Engine", () => {
 	it("calculates multi-vector ISQ mean and anisotropy delta", () => {
 		const result2D = ImplantStabilityCalculator.calculateMeanIsq(74, 78);
-		expect(result2D.isqMean).toBe(76.0);
-		expect(result2D.isqAnisotropyDelta).toBe(4);
+		assert.equal(result2D.isqMean, 76);
+		assert.equal(result2D.isqAnisotropyDelta, 4);
 
 		const result3D = ImplantStabilityCalculator.calculateMeanIsq(70, 68, 72);
-		expect(result3D.isqMean).toBe(70.0);
-		expect(result3D.isqAnisotropyDelta).toBe(4);
+		assert.equal(result3D.isqMean, 70);
+		assert.equal(result3D.isqAnisotropyDelta, 4);
 	});
 
 	it("evaluates immediate loading protocol on day 0 when ISQ >= 70 and Torque >= 35 N·cm", () => {
@@ -18,48 +19,51 @@ describe("Dental Implantology & RFA ISQ Biomechanical Engine", () => {
 			40,
 			0,
 		);
-		expect(evalHigh.protocol).toBe("immediate_functional_loading");
-		expect(evalHigh.status).toBe("primary_mechanical_high");
-		expect(evalHigh.isBiologicalDip).toBe(false);
+		assert.equal(evalHigh.protocol, "immediate_functional_loading");
+		assert.equal(evalHigh.status, "primary_mechanical_high");
+		assert.equal(evalHigh.isBiologicalDip, false);
 
 		const evalLow = ImplantStabilityCalculator.evaluateLoadingProtocol(
 			55,
 			20,
 			0,
 		);
-		expect(evalLow.protocol).toBe("submerged_two_stage");
+		assert.equal(evalLow.protocol, "submerged_two_stage");
 	});
 
 	it("detects biological stability dip during weeks 2-4 (days 14-30)", () => {
 		const evalDip = ImplantStabilityCalculator.evaluateLoadingProtocol(
 			63,
 			45,
-			21, // 3 weeks post-op
+			21,
 		);
-		expect(evalDip.status).toBe("biological_dip_phase");
-		expect(evalDip.isBiologicalDip).toBe(true);
+		assert.equal(evalDip.status, "biological_dip_phase");
+		assert.equal(evalDip.isBiologicalDip, true);
 	});
 
 	it("evaluates secondary osseointegration maturation after week 6", () => {
 		const evalIntegrated = ImplantStabilityCalculator.evaluateLoadingProtocol(
 			78,
 			35,
-			56, // 8 weeks post-op
+			56,
 		);
-		expect(evalIntegrated.protocol).toBe("immediate_functional_loading");
-		expect(evalIntegrated.status).toBe("secondary_osseointegrated");
+		assert.equal(evalIntegrated.protocol, "immediate_functional_loading");
+		assert.equal(evalIntegrated.status, "secondary_osseointegrated");
 	});
 
 	it("generates mathematical stability trajectory combining primary decay and secondary sigmoidal osseogenesis", () => {
 		const curve = ImplantStabilityCalculator.calculateStabilityCurve(75, 90);
-		expect(curve.length).toBeGreaterThan(15);
-		expect(curve[0].day).toBe(0);
-		expect(curve[0].primaryStability).toBe(75);
-		// As days increase, primary decay drops while secondary increases
-		const day30 = curve.find((c) => c.day === 30);
-		expect(day30).toBeDefined();
-		expect(day30!.primaryStability).toBeLessThan(20);
-		expect(day30!.secondaryStability).toBeGreaterThan(45);
+		assert.ok(curve.length > 15);
+
+		const [initial] = curve;
+		assert.ok(initial);
+		assert.equal(initial.day, 0);
+		assert.equal(initial.primaryStability, 75);
+
+		const day30 = curve.find((point) => point.day === 30);
+		assert.ok(day30);
+		assert.ok(day30.primaryStability < 20);
+		assert.ok(day30.secondaryStability > 45);
 	});
 
 	it("evaluates All-on-X AP-Spread, cantilever safety limit, and Multi-Unit Abutment angles", () => {
@@ -67,28 +71,28 @@ describe("Dental Implantology & RFA ISQ Biomechanical Engine", () => {
 			{
 				toothNumberFdi: 36,
 				positionWorldMm: { x: -18, y: -10, z: 0 },
-				axisVector: { x: -0.5, y: 0, z: 0.866 }, // ~30 deg tilt
+				axisVector: { x: -0.5, y: 0, z: 0.866 },
 				insertionTorqueNcm: 45,
 				baselineIsq: 75,
 			},
 			{
 				toothNumberFdi: 32,
 				positionWorldMm: { x: -6, y: 5, z: 0 },
-				axisVector: { x: 0, y: 0, z: 1.0 }, // 0 deg
+				axisVector: { x: 0, y: 0, z: 1 },
 				insertionTorqueNcm: 40,
 				baselineIsq: 72,
 			},
 			{
 				toothNumberFdi: 42,
 				positionWorldMm: { x: 6, y: 5, z: 0 },
-				axisVector: { x: 0, y: 0, z: 1.0 }, // 0 deg
+				axisVector: { x: 0, y: 0, z: 1 },
 				insertionTorqueNcm: 40,
 				baselineIsq: 74,
 			},
 			{
 				toothNumberFdi: 46,
 				positionWorldMm: { x: 18, y: -10, z: 0 },
-				axisVector: { x: 0.5, y: 0, z: 0.866 }, // ~30 deg tilt
+				axisVector: { x: 0.5, y: 0, z: 0.866 },
 				insertionTorqueNcm: 45,
 				baselineIsq: 76,
 			},
@@ -97,15 +101,19 @@ describe("Dental Implantology & RFA ISQ Biomechanical Engine", () => {
 		const evalMandible = ImplantStabilityCalculator.evaluateAllOnXGeometry(
 			"mandible",
 			implants,
-			14.0, // 14mm planned cantilever
+			14,
 		);
 
-		expect(evalMandible.apSpreadMm).toBe(15.0); // 5 - (-10) = 15.0
-		expect(evalMandible.maxSafeCantileverMm).toBe(18.0); // capped at 18.0 mm
-		expect(evalMandible.isCantileverSafe).toBe(true);
-		expect(evalMandible.immediateLoadingPass).toBe(true);
-		expect(evalMandible.abutmentPlan.length).toBe(4);
-		expect(evalMandible.abutmentPlan[0].recommendedAbutmentAngle).toBe("30");
-		expect(evalMandible.abutmentPlan[1].recommendedAbutmentAngle).toBe("0");
+		assert.equal(evalMandible.apSpreadMm, 15);
+		assert.equal(evalMandible.maxSafeCantileverMm, 18);
+		assert.equal(evalMandible.isCantileverSafe, true);
+		assert.equal(evalMandible.immediateLoadingPass, true);
+		assert.equal(evalMandible.abutmentPlan.length, 4);
+
+		const [firstAbutment, secondAbutment] = evalMandible.abutmentPlan;
+		assert.ok(firstAbutment);
+		assert.ok(secondAbutment);
+		assert.equal(firstAbutment.recommendedAbutmentAngle, "30");
+		assert.equal(secondAbutment.recommendedAbutmentAngle, "0");
 	});
 });
