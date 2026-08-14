@@ -6017,59 +6017,7 @@ export const implantIsqMeasurements = pgTable(
 	}),
 );
 
-export const multiImplantAllOnXCases = pgTable(
-	"multi_implant_all_on_x_cases",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientId: uuid("patient_id")
-			.notNull()
-			.references(() => patients.id, { onDelete: "cascade" }),
-		caseTitle: text("case_title").notNull(),
-		jawArch: text("jaw_arch").notNull().default("mandible"),
-		implantCount: integer("implant_count").notNull().default(4),
-		installationIds: jsonb("installation_ids").notNull().default(sql`'[]'::jsonb`),
-		anteroPosteriorSpreadMm: numeric("antero_posterior_spread_mm", {
-			precision: 5,
-			scale: 2,
-		}).notNull(),
-		maxSafeCantileverMm: numeric("max_safe_cantilever_mm", {
-			precision: 5,
-			scale: 2,
-		}).notNull(),
-		plannedCantileverLengthMm: numeric("planned_cantilever_length_mm", {
-			precision: 5,
-			scale: 2,
-		}).notNull(),
-		isCantileverSafe: boolean("is_cantilever_safe").notNull().default(true),
-		crossArchRigidityIndex: numeric("cross_arch_rigidity_index", {
-			precision: 6,
-			scale: 2,
-		}).notNull(),
-		abutmentPlanJson: text("abutment_plan_json").notNull().default("[]"),
-		immediateLoadingPass: boolean("immediate_loading_pass")
-			.notNull()
-			.default(false),
-		prostheticMaterial: text("prosthetic_material")
-			.notNull()
-			.default("titanium_pmma"),
-		notes: text("notes"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		orgPatientIdx: index("multi_implant_all_on_x_cases_org_pat_idx").on(
-			t.organizationId,
-			t.patientId,
-		),
-	}),
-);
+
 
 // ─── SanPiN 3.3686-21 Central Sterilization (ЦСО) & Quality Logs ───────────
 

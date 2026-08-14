@@ -1,7 +1,6 @@
 import {
 	ImplantStabilityCalculator,
 	createImplantInstallationSchema,
-	evaluateAllOnXCaseSchema,
 	recordIsqMeasurementSchema,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -13,7 +12,6 @@ import {
 import { db } from "../db/client.js";
 import {
 	implantIsqMeasurements,
-	multiImplantAllOnXCases,
 	patientImplantInstallations,
 	patients,
 	toothStateHistory,
@@ -275,134 +273,33 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 	);
 
 	/**
-	 * 3. GET /api/clinical/implants/:installationId/osseointegration-curve
-	 * Полный временной ряд и математическая модель интеграции (Primary, Secondary, Total)
+	 * 3. GET /api/clinical/implants/patient/:patientId
+	 * Получение списка установленных имплантатов пациента (Имплантологический паспорт)
 	 */
 	app.get(
-		"/api/clinical/implants/:installationId/osseointegration-curve",
+		"/api/clinical/implants/patient/:patientId",
 		async (request, reply) => {
 			const orgId = await requireResolvedOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const { installationId } = request.params as {
-				installationId: string;
-			};
-			const [installation] = await db
+			const { patientId } = request.params as { patientId: string };
+
+			const installations = await db
 				.select()
 				.from(patientImplantInstallations)
 				.where(
 					and(
-						eq(patientImplantInstallations.id, installationId),
+						eq(patientImplantInstallations.patientId, patientId),
 						eq(patientImplantInstallations.organizationId, orgId),
 					),
 				)
-				.limit(1);
-
-			if (!installation) {
-				return reply.code(404).send({
-					error: "ImplantInstallationNotFound",
-					message: "Запись имплантата не найдена.",
-				});
-			}
-
-			const measurements = await db
-				.select()
-				.from(implantIsqMeasurements)
-				.where(
-					and(
-						eq(implantIsqMeasurements.installationId, installationId),
-						eq(implantIsqMeasurements.organizationId, orgId),
-					),
-				)
-				.orderBy(implantIsqMeasurements.daysPostOp);
-
-			const latestDays =
-				measurements.length > 0
-					? (measurements[measurements.length - 1]?.daysPostOp ?? 0)
-					: 0;
-
-			const calculatedCurve =
-				ImplantStabilityCalculator.calculateStabilityCurve(
-					installation.baselineIsq,
-					latestDays,
-				);
+				.orderBy(desc(patientImplantInstallations.installedAt));
 
 			return reply.send({
 				success: true,
-				installation: {
-					id: installation.id,
-					toothNumberFdi: installation.toothNumberFdi,
-					brand: installation.implantBrand,
-					diameter: Number(installation.implantDiameterMm),
-					length: Number(installation.implantLengthMm),
-					insertionTorque: Number(installation.finalInsertionTorqueNcm),
-					baselineIsq: installation.baselineIsq,
-					installedAt: installation.installedAt,
-				},
-				measurements,
-				modelTrajectory: calculatedCurve,
-			});
-		},
-	);
-
-	/**
-	 * 4. POST /api/clinical/implants/all-on-x/evaluate
-	 * Расчет геометрии All-on-4 / All-on-6, AP-Spread, кантилеверов и углов Multi-Unit абатментов
-	 */
-	app.post(
-		"/api/clinical/implants/all-on-x/evaluate",
-		async (request, reply) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-			);
-			if (!orgId) return;
-
-			const parsed = evaluateAllOnXCaseSchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "AllOnXEvaluationValidationError",
-					message: "Некорректные параметры расчета All-on-X.",
-					details: parsed.error.format(),
-				});
-			}
-			const input = parsed.data;
-
-			const evaluation = ImplantStabilityCalculator.evaluateAllOnXGeometry(
-				input.jawArch,
-				input.implants,
-				input.plannedCantileverLengthMm,
-			);
-
-			const [savedCase] = await db
-				.insert(multiImplantAllOnXCases)
-				.values({
-					organizationId: orgId,
-					patientId: input.patientId,
-					caseTitle: input.caseTitle,
-					jawArch: input.jawArch,
-					implantCount: input.implants.length,
-					installationIds: [],
-					anteroPosteriorSpreadMm: String(evaluation.apSpreadMm),
-					maxSafeCantileverMm: String(evaluation.maxSafeCantileverMm),
-					plannedCantileverLengthMm: String(
-						input.plannedCantileverLengthMm,
-					),
-					isCantileverSafe: evaluation.isCantileverSafe,
-					crossArchRigidityIndex: String(
-						evaluation.crossArchRigidityIndex,
-					),
-					abutmentPlanJson: JSON.stringify(evaluation.abutmentPlan),
-					immediateLoadingPass: evaluation.immediateLoadingPass,
-					prostheticMaterial: input.prostheticMaterial,
-				})
-				.returning();
-
-			return reply.code(201).send({
-				success: true,
-				case: savedCase ?? null,
-				evaluation,
+				installations,
 			});
 		},
 	);
 }
+
