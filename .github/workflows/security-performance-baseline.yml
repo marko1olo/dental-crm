@@ -38,5 +38,5 @@ jobs:
             git ls-files -z | xargs -0 -r du -ch --apparent-size -- | tail -n 1
             echo
             echo "## 20 largest tracked paths"
-            git ls-files -z | xargs -0 -r du -ah --apparent-size -- | sort -hr | head -n 20
+            git ls-files -z | xargs -0 -r du -ah --apparent-size -- | sort -hr | sed -n '1,20p'
           } | tee repository-footprint.txt
