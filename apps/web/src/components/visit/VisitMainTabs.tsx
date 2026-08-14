@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-export type VisitSubViewTab = "emk" | "odontogram" | "diagnostics";
+export type VisitSubViewTab = "emk" | "odontogram" | "perio" | "diagnostics";
 
 export interface VisitMainTabsProps {
 	visitSubViewTab: VisitSubViewTab;
@@ -51,6 +51,21 @@ export function VisitMainTabs({
 				onClick={() => setVisitSubViewTab("odontogram")}
 			>
 				🦷 Зубная формула и Дневник
+			</button>
+			<button
+				type="button"
+				role="tab"
+				aria-selected={visitSubViewTab === "perio"}
+				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-2.5 sm:px-4 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${visitSubViewTab === "perio" ? "active" : ""}`}
+				style={{
+					background:
+						visitSubViewTab === "perio" ? "var(--teal-dark)" : undefined,
+					color:
+						visitSubViewTab === "perio" ? "var(--on-teal)" : undefined,
+				}}
+				onClick={() => setVisitSubViewTab("perio")}
+			>
+				📊 Пародонтология и Зондирование
 			</button>
 			<button
 				type="button"

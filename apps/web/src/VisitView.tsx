@@ -9,8 +9,9 @@ import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { SpeechChunksInspector } from "./components/visit/SpeechChunksInspector";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
-import { VisitMainTabs } from "./components/visit/VisitMainTabs";
+import { VisitMainTabs, type VisitSubViewTab } from "./components/visit/VisitMainTabs";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
+import { PeriodontalChartModule } from "./components/odontogram/PeriodontalChartModule";
 import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import { VisitTimer } from "./components/visit/VisitTimer";
 import { DictationHints } from "./DictationHints";
@@ -404,9 +405,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		universal: "Универсальный прием",
 	};
 
-	const [visitSubViewTab, setVisitSubViewTab] = useState<
-		"emk" | "odontogram" | "diagnostics"
-	>("emk");
+	const [visitSubViewTab, setVisitSubViewTab] = useState<VisitSubViewTab>("emk");
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -828,6 +827,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							activePatient={activePatient}
 							activeAppointment={activeAppointment}
 							dashboard={dashboard}
+						/>
+					</div>
+				)}
+
+				{visitSubViewTab === "perio" && activePatient?.id && (
+					<div style={{ margin: "16px 0" }}>
+						<PeriodontalChartModule
+							patientId={activePatient.id}
+							visitId={activeAppointment?.id}
+							doctorId={activeAppointment?.doctorUserId}
 						/>
 					</div>
 				)}
