@@ -126,9 +126,62 @@ function normalizedAppointmentException(error: unknown): string {
 	return repairMojibakeText(error.message).trim();
 }
 
+function extractExclusionConstraintMessage(error: unknown): string | null {
+	if (!error || typeof error !== "object") return null;
+	const err = error as { code?: string; constraint?: string; message?: string };
+	const code = err.code ?? "";
+	const constraint = err.constraint ?? "";
+	const message = typeof err.message === "string" ? err.message : "";
+
+	const isExclusion =
+		code === "23P01" ||
+		message.includes("23P01") ||
+		message.includes("exclusion constraint") ||
+		constraint.includes("overlap_excl") ||
+		message.includes("overlap_excl");
+
+	if (
+		constraint === "appointments_doctor_overlap_excl" ||
+		message.includes("appointments_doctor_overlap_excl")
+	) {
+		return "У врача уже есть запись в это время";
+	}
+	if (
+		constraint === "appointments_chair_overlap_excl" ||
+		message.includes("appointments_chair_overlap_excl")
+	) {
+		return "Кресло уже занято другой записью в это время";
+	}
+	if (
+		constraint === "appointments_assistant_overlap_excl" ||
+		message.includes("appointments_assistant_overlap_excl")
+	) {
+		return "У ассистента уже есть запись в это время";
+	}
+	if (
+		constraint === "appointments_patient_overlap_excl" ||
+		message.includes("appointments_patient_overlap_excl")
+	) {
+		return "У пациента уже есть запись в это время";
+	}
+
+	if (isExclusion) {
+		return appointmentResourceOverlapCreateMessage;
+	}
+
+	return null;
+}
+
 function classifyAppointmentRejection(
 	error: unknown,
 ): AppointmentRejectionReason {
+	if (extractExclusionConstraintMessage(error) !== null) {
+		return "resource_overlap";
+	}
+	const err = error as { code?: string };
+	if (err && typeof err === "object" && err.code === "23P01") {
+		return "resource_overlap";
+	}
 	const message = normalizedAppointmentException(error);
 	if (
 		message.includes("черный список") ||
@@ -154,7 +207,12 @@ function classifyAppointmentRejection(
 		message.includes("нужен активный пациент")
 	)
 		return "resource_missing";
-	if (message.includes("уже есть запись") || message.includes("уже занято"))
+	if (
+		message.includes("уже есть запись") ||
+		message.includes("уже занято") ||
+		message.includes("23P01") ||
+		message.includes("exclusion constraint")
+	)
 		return "resource_overlap";
 	if (
 		message.includes("Запись вне расписания") ||
@@ -215,13 +273,20 @@ function appointmentRejectionResponse(
 			message: appointmentNotFoundMessage,
 		};
 	}
-	const specificMessage =
-		reason === "resource_overlap" &&
-		error instanceof Error &&
-		(error.message.includes("уже есть запись") ||
-			error.message.includes("уже занято"))
-			? error.message
-			: appointmentRejectionMessage(reason, operation);
+	const exclusionMessage = extractExclusionConstraintMessage(error);
+	let specificMessage = exclusionMessage;
+	if (!specificMessage) {
+		if (
+			reason === "resource_overlap" &&
+			error instanceof Error &&
+			(error.message.includes("уже есть запись") ||
+				error.message.includes("уже занято"))
+		) {
+			specificMessage = error.message;
+		} else {
+			specificMessage = appointmentRejectionMessage(reason, operation);
+		}
+	}
 
 	return {
 		statusCode: 409,

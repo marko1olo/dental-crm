@@ -801,17 +801,11 @@ export function useScheduleLogic({
 			setError(null);
 			return true;
 		} catch (saveError) {
-			showToast(
-				actionFailureToast(
-					"Запись не сохранена",
-					(saveError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
 			const message = operatorWorkflowFailureMessage(
 				"Запись не сохранена",
 				saveError,
 			);
+			showToast(message, "error");
 			setAppointmentScheduleErrors((current) => ({
 				...current,
 				[appointmentId]: message,
@@ -940,17 +934,11 @@ export function useScheduleLogic({
 			setError(null);
 			return true;
 		} catch (createError) {
-			showToast(
-				actionFailureToast(
-					"Запись не создана",
-					(createError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
 			const message = operatorWorkflowFailureMessage(
 				"Запись не создана",
 				createError,
 			);
+			showToast(message, "error");
 			setNewAppointmentError(message);
 			setNewAppointmentSaveState("error");
 			setError(message);

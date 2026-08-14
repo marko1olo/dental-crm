@@ -1,15 +1,17 @@
-import { and, eq, gte, ilike, inArray, lt, notInArray, or } from "drizzle-orm";
+import { and, eq, gt, gte, ilike, inArray, lt, notInArray, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
 	appointments,
+	chairs,
 	clinics,
 	organizations,
 	patients,
 	users,
 } from "../db/schema.js";
+import { wsBroker } from "../services/websocketBroker.js";
 import {
 	schemaIssuePhrase,
 	schemaRefusalMessage,
@@ -793,6 +795,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			// ── Atomic Collision Check & Appointment Creation ──
 			try {
 				const result = await tenantTx.transaction(async (tx) => {
+					// 1. Pessimistic lock for doctor
 					await tx
 						.select({ id: users.id })
 						.from(users)
@@ -800,37 +803,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 						.limit(1)
 						.for("update");
 
-					const sameDayApps = await tx
-						.select({
-							startsAt: appointments.startsAt,
-							endsAt: appointments.endsAt,
-						})
-						.from(appointments)
-						.where(
-							and(
-								eq(appointments.organizationId, organizationId),
-								eq(appointments.doctorUserId, doctorId),
-								gte(
-									appointments.startsAt,
-									new Date(startDate.getTime() - 24 * 60 * 60_000),
-								),
-								lt(
-									appointments.startsAt,
-									new Date(startDate.getTime() + 24 * 60 * 60_000),
-								),
-								notInArray(appointments.status, [
-									...FREED_APPOINTMENT_STATUSES,
-								]),
-							),
-						);
-
-					const hasConflict = sameDayApps.some((app) => {
-						const appStart = new Date(app.startsAt).getTime();
-						const appEnd = new Date(app.endsAt).getTime();
-						return startDate.getTime() < appEnd && endDate.getTime() > appStart;
-					});
-					if (hasConflict) return { conflict: true as const };
-
+					// 2. Identify and lock/create patient
 					const phoneDigits = normalizePhoneDigits(patientPhone);
 					const [existingByPhone] = await tx
 						.select({ id: patients.id })
@@ -884,6 +857,92 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							.returning({ id: patients.id });
 						if (!createdPatient) throw new Error("patient_insert_failed");
 						patientId = createdPatient.id;
+					} else {
+						await tx
+							.select({ id: patients.id })
+							.from(patients)
+							.where(eq(patients.id, patientId))
+							.limit(1)
+							.for("update");
+					}
+
+					// 3. Find and lock available chair (if clinic has chairs)
+					const activeChairs = await tx
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(
+							and(
+								eq(chairs.organizationId, organizationId),
+								eq(chairs.isActive, true),
+							),
+						);
+
+					let selectedChairId: string | null = null;
+					if (activeChairs.length > 0) {
+						const activeChairIds = activeChairs.map((c) => c.id);
+						const occupiedChairApps = await tx
+							.select({ chairId: appointments.chairId })
+							.from(appointments)
+							.where(
+								and(
+									eq(appointments.organizationId, organizationId),
+									inArray(appointments.chairId, activeChairIds),
+									lt(appointments.startsAt, endDate),
+									gt(appointments.endsAt, startDate),
+									notInArray(appointments.status, [
+										...FREED_APPOINTMENT_STATUSES,
+									]),
+								),
+							);
+						const occupiedChairIds = new Set(
+							occupiedChairApps.map((a) => a.chairId),
+						);
+						const availableChair = activeChairs.find(
+							(c) => !occupiedChairIds.has(c.id),
+						);
+						if (!availableChair) {
+							return { conflict: true as const };
+						}
+						selectedChairId = availableChair.id;
+						await tx
+							.select({ id: chairs.id })
+							.from(chairs)
+							.where(eq(chairs.id, selectedChairId))
+							.limit(1)
+							.for("update");
+					}
+
+					// 4. Overlap checks across Doctor, Patient, and Chair
+					const resourceMatchConditions = [
+						eq(appointments.doctorUserId, doctorId),
+					];
+					if (patientId) {
+						resourceMatchConditions.push(eq(appointments.patientId, patientId));
+					}
+					if (selectedChairId) {
+						resourceMatchConditions.push(
+							eq(appointments.chairId, selectedChairId),
+						);
+					}
+
+					const overlapping = await tx
+						.select({ id: appointments.id })
+						.from(appointments)
+						.where(
+							and(
+								eq(appointments.organizationId, organizationId),
+								or(...resourceMatchConditions),
+								lt(appointments.startsAt, endDate),
+								gt(appointments.endsAt, startDate),
+								notInArray(appointments.status, [
+									...FREED_APPOINTMENT_STATUSES,
+								]),
+							),
+						)
+						.limit(1);
+
+					if (overlapping.length > 0) {
+						return { conflict: true as const };
 					}
 
 					const [created] = await tx
@@ -892,6 +951,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							organizationId,
 							patientId,
 							doctorUserId: doctorId,
+							chairId: selectedChairId ?? null,
 							status: "planned",
 							startsAt: startDate,
 							endsAt: endDate,
@@ -907,8 +967,28 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 						error: "Выбранное время уже занято. Обновите список слотов.",
 					});
 				}
+
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "APPOINTMENT_CREATED",
+					payload: {
+						appointmentId: result.appointment.id,
+						startsAt: result.appointment.startsAt,
+					},
+				});
+
 				return { success: true, appointment: result.appointment };
 			} catch (error) {
+				const err = error as { code?: string; message?: string };
+				if (
+					err?.code === "23P01" ||
+					err?.message?.includes("23P01") ||
+					err?.message?.includes("exclusion constraint") ||
+					err?.message?.includes("overlap_excl")
+				) {
+					return reply.status(409).send({
+						error: "Выбранное время уже занято. Обновите список слотов.",
+					});
+				}
 				request.log.error(
 					{ err: error },
 					"[publicBooking] Не удалось создать запись",

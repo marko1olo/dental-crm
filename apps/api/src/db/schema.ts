@@ -667,6 +667,11 @@ export const appointments = pgTable(
 				"appointments_time_order_check",
 				sql`${table.startsAt} < ${table.endsAt}`,
 			),
+			// Note: 4D PostgreSQL GIST exclusion constraints managed in migrations (0154, 0170):
+			// - appointments_doctor_overlap_excl (doctor_user_id)
+			// - appointments_chair_overlap_excl (chair_id)
+			// - appointments_assistant_overlap_excl (assistant_user_id)
+			// - appointments_patient_overlap_excl (patient_id)
 		};
 	},
 );
