@@ -168,16 +168,14 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [showPinDialog, lockInProgress, closeDialog]);
 
-	// Ожидание подтверждения подписи: истекло, а признак isLocked не пришёл —
-	// значит, подписание отказало без исключения (см. пояснение выше).
 	useEffect(() => {
 		if (!awaitingLockConfirmation) return;
 		const timer = setTimeout(() => {
 			setAwaitingLockConfirmation(false);
 			setFailureText(
-				"Запись НЕ подписана: сервер не подтвердил подпись. Набранный текст на месте, ничего не потеряно. Причину показало сообщение в углу экрана — чаще всего дневник не сохранён на сервере или не подтверждён штрихкод лотка. Нажмите «Сохранить черновик», затем повторите подписание.",
+				"Запись НЕ подписана: сервер не подтвердил подпись вовремя. Набранный текст на месте, ничего не потеряно. Причину показало сообщение в углу экрана — чаще всего дневник не сохранён на сервере или не подтверждён штрихкод лотка. Нажмите «Сохранить черновик», затем повторите подписание.",
 			);
-		}, 1500);
+		}, 6000);
 		return () => clearTimeout(timer);
 	}, [awaitingLockConfirmation]);
 
@@ -448,7 +446,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									</label>
 									<select
 										id="cryptopro-cert-select"
-										className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:ring-2 focus:ring-rose-500 focus:outline-none"
+										className="w-full bg-[var(--paper-soft)] border border-[var(--line-strong)] rounded-xl px-4 py-3 text-sm text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-h-[44px]"
 										value={selectedCert}
 										onChange={(e) => {
 											setSelectedCert(e.target.value);

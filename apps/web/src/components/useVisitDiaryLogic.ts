@@ -827,6 +827,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		],
 	);
 
+	const doSaveRef = useRef(doSave);
+	doSaveRef.current = doSave;
+
 	// ── Autosave
 	useEffect(() => {
 		if (autosaveRef.current) clearInterval(autosaveRef.current);
@@ -834,12 +837,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		// для подписанного дневника не подходит — только POST …/revise.
 		if (isLocked || isRevising) return;
 		autosaveRef.current = setInterval(() => {
-			void doSave(true);
+			void doSaveRef.current(true);
 		}, 30000);
 		return () => {
 			if (autosaveRef.current) clearInterval(autosaveRef.current);
 		};
-	}, [doSave, isLocked, isRevising]);
+	}, [isLocked, isRevising]);
 
 	/**
 	 * Правка уже подписанного дневника (admin-only на API).

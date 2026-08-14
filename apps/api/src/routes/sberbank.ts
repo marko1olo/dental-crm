@@ -32,7 +32,8 @@ export function verifySberbankChecksum(
 			key === "signature" ||
 			key === "sign_alias" ||
 			value === undefined ||
-			value === null
+			value === null ||
+			typeof value === "object"
 		) {
 			continue;
 		}

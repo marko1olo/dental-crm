@@ -119,7 +119,7 @@
 	align-items: center;
 	justify-content: center;
 	gap: 0.4rem;
-	min-height: 40px;
+	min-height: 44px;
 	padding: 0.45rem 0.9rem;
 	border-radius: 0.75rem;
 	border: 1px solid var(--line);
@@ -140,7 +140,7 @@
 }
 
 .vde-043__btn:disabled {
-	opacity: 0.5;
+	opacity: 0.55;
 	cursor: not-allowed;
 }
 
@@ -150,31 +150,45 @@
 }
 
 .vde-043__btn--primary {
-	background: var(--teal);
-	border-color: var(--teal-dark, var(--teal));
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
 	color: #fff;
 	font-weight: 600;
 }
 
 .vde-043__btn--primary:hover:not(:disabled) {
-	background: var(--teal-dark, var(--teal));
+	background: var(--teal-dark, #0f766e);
+	border-color: var(--teal-dark, #0f766e);
 	color: #fff;
 }
 
 .vde-043__btn--ghost {
 	background: transparent;
+	border-color: transparent;
 	color: var(--muted);
 }
 
 .vde-043__btn--ghost:hover:not(:disabled) {
-	color: var(--ink);
 	background: var(--paper-soft);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+.vde-043__btn--danger {
+	color: var(--bad-fg, #b91c1c);
+	border-color: var(--bad-bg, rgba(185, 28, 28, 0.25));
+	background: transparent;
+}
+
+.vde-043__btn--danger:hover:not(:disabled) {
+	background: var(--bad-bg, rgba(185, 28, 28, 0.1));
+	color: var(--bad-fg, #b91c1c);
 }
 
 .vde-043__btn--amber {
-	background: var(--amber-soft, rgba(217, 119, 6, 0.12));
-	border-color: color-mix(in srgb, var(--amber, #d97706) 40%, transparent);
-	color: var(--amber, #d97706);
+	color: var(--amber, #b45309);
+	border-color: var(--amber-soft, rgba(217, 119, 6, 0.35));
+	background: transparent;
 }
 
 .vde-043__btn--amber:hover:not(:disabled) {
@@ -187,12 +201,12 @@
 	color: var(--ink);
 }
 
-/* Icon-only controls (ICD clear, etc.) — keep ≥40×40 touch target */
+/* Icon-only controls (ICD clear, etc.) — keep ≥44×44 touch target */
 .vde-043__btn--icon {
-	min-width: 40px;
-	min-height: 40px;
-	width: 40px;
-	height: 40px;
+	min-width: 44px;
+	min-height: 44px;
+	width: 44px;
+	height: 44px;
 	padding: 0;
 	flex-shrink: 0;
 }
@@ -202,14 +216,14 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 40px;
-	min-height: 40px;
+	min-width: 44px;
+	min-height: 44px;
 }
 
 .vde-043__label-mic button,
 .vde-043__label-mic [role="button"] {
-	min-width: 40px;
-	min-height: 40px;
+	min-width: 44px;
+	min-height: 44px;
 }
 
 .vde-043__badge {
@@ -938,16 +952,19 @@ html.dark .vde-043__letter--p {
 .vde-043__revisions {
 	margin: 0.75rem 1rem 1rem;
 	padding: 0.5rem 0.75rem;
-	border: 1px solid var(--border, #e2e8f0);
+	border: 1px solid var(--line);
 	border-radius: 8px;
-	background: var(--surface-2, #f8fafc);
+	background: var(--paper-soft);
 	font-size: 0.8125rem;
 }
 .vde-043__revisions-summary {
 	cursor: pointer;
 	font-weight: 600;
-	color: var(--amber-800, #92400e);
+	color: var(--amber, #d97706);
 	list-style: none;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
 }
 .vde-043__revisions-summary::-webkit-details-marker {
 	display: none;
@@ -969,20 +986,20 @@ html.dark .vde-043__letter--p {
 	margin-bottom: 0.35rem;
 }
 .vde-043__revision-when {
-	color: var(--muted, #64748b);
+	color: var(--muted);
 	font-size: 0.75rem;
 }
 .vde-043__revision-reason {
-	color: var(--text, #0f172a);
+	color: var(--ink);
 }
 .vde-043__revision-reason--missing {
-	color: var(--muted, #94a3b8);
+	color: var(--muted);
 	font-style: italic;
 }
 .vde-043__revision-prev {
 	margin: 0;
 	padding: 0.35rem 0 0 1rem;
-	color: var(--text-2, #334155);
+	color: var(--muted);
 	line-height: 1.35;
 }
 .vde-043__revision-prev-text {

@@ -490,7 +490,8 @@ function InstallmentCalculator({
 				className="smart-details-content"
 				style={{
 					padding: "16px",
-					background: "var(--brand-50)",
+					background: "var(--paper-soft)",
+					border: "1px solid var(--line)",
 					borderRadius: "8px",
 					marginTop: "8px",
 				}}
@@ -509,7 +510,7 @@ function InstallmentCalculator({
 							style={{
 								fontSize: "13px",
 								fontWeight: 600,
-								color: "var(--slate-700)",
+								color: "var(--ink)",
 								display: "block",
 								marginBottom: "8px",
 							}}
@@ -552,7 +553,7 @@ function InstallmentCalculator({
 							style={{
 								fontSize: "13px",
 								fontWeight: 600,
-								color: "var(--slate-700)",
+								color: "var(--ink)",
 								display: "block",
 								marginBottom: "8px",
 							}}
