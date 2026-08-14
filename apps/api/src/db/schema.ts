@@ -5765,4 +5765,89 @@ export const anesthesiaLogs = pgTable(
 	}),
 );
 
+// ─── CAD/CAM Restorations & Dental Laboratory Events ─────────────────────────
+
+export const labItems = pgTable(
+	"lab_items",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		labOrderId: uuid("lab_order_id")
+			.notNull()
+			.references(() => labOrders.id, { onDelete: "cascade" }),
+		toothFdi: integer("tooth_fdi").notNull(),
+		restorationType: text("restoration_type").notNull().default("crown_monolithic"),
+		material: text("material").notNull().default("zirconia_multilayer_gradient"),
+		shadeSystem: text("shade_system").notNull().default("VITA_CLASSICAL"),
+		shadeFinal: text("shade_final").notNull().default("A2"),
+		shadeStump: text("shade_stump"), // ND1..ND9
+		shadeGingiva: text("shade_gingiva"),
+		translucencyLevel: text("translucency_level").default("HT"),
+		cementGapMicrons: integer("cement_gap_microns").default(30),
+		extraMarginGapMicrons: integer("extra_margin_gap_microns").default(10),
+		minimalThicknessMm: numeric("minimal_thickness_mm", {
+			precision: 4,
+			scale: 2,
+		}).default("0.60"),
+		implantSystem: text("implant_system"),
+		implantPlatformDiameterMm: numeric("implant_platform_diameter_mm", {
+			precision: 4,
+			scale: 2,
+		}),
+		tiBaseHeightMm: numeric("ti_base_height_mm", { precision: 4, scale: 2 }),
+		meshTriangleCount: integer("mesh_triangle_count"),
+		meshSurfaceAreaMm2: numeric("mesh_surface_area_mm2", {
+			precision: 10,
+			scale: 2,
+		}),
+		meshVolumeMm3: numeric("mesh_volume_mm3", { precision: 10, scale: 2 }),
+		meshBboxMm: jsonb("mesh_bbox_mm"),
+		isManifold: boolean("is_manifold").default(true),
+		priceRub: numeric("price_rub", { precision: 12, scale: 2 }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgIdx: index("lab_items_org_idx").on(t.organizationId),
+		orderIdx: index("lab_items_order_idx").on(t.labOrderId),
+		toothIdx: index("lab_items_tooth_idx").on(t.toothFdi),
+	}),
+);
+
+export const labOrderEvents = pgTable(
+	"lab_order_events",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		labOrderId: uuid("lab_order_id")
+			.notNull()
+			.references(() => labOrders.id, { onDelete: "cascade" }),
+		milestone: text("milestone").notNull(),
+		actorType: text("actor_type").notNull().default("clinic_doctor"),
+		actorId: uuid("actor_id"),
+		actorName: text("actor_name").notNull(),
+		notes: text("notes"),
+		barcodeScanned: text("barcode_scanned"),
+		photoUrls: jsonb("photo_urls").notNull().default(sql`'[]'::jsonb`),
+		cadPreviewGlbUrl: text("cad_preview_glb_url"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgIdx: index("lab_order_events_org_idx").on(t.organizationId),
+		orderIdx: index("lab_order_events_order_idx").on(t.labOrderId),
+		createdAtIdx: index("lab_order_events_created_at_idx").on(t.createdAt),
+	}),
+);
+
+
 

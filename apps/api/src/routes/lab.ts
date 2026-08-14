@@ -7,6 +7,12 @@ import {
 	VALID_FDI_TOOTH_NUMBERS,
 	isValidVitaShade,
 	VITA_SHADE_VALIDATION_MESSAGE,
+	calculateMeshGeometryMetrics,
+	restorationTypeSchema,
+	restorationMaterialSchema,
+	stumpPreparationShadeSchema,
+	labOrderMilestoneSchema,
+	type Triangle3D,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -24,7 +30,7 @@ import {
 	updateLabOrderStatusByClinic,
 	updateLabOrderStatusByToken,
 } from "../db/labQuery.js";
-import { labOrders, patients, users } from "../db/schema.js";
+import { labItems, labOrderEvents, labOrders, patients, users } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 /*
@@ -539,4 +545,129 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			});
 		}
 	});
+
+	// ─── CAD/CAM 3D Mesh Geometry Analysis ───────────────────────────────────
+
+	app.post("/api/clinical/cadcam/analyze-mesh", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const body = request.body as { triangles: Triangle3D[] };
+		if (!Array.isArray(body?.triangles)) {
+			return reply.status(400).send({
+				error: "InvalidMeshPayload",
+				message: "Ожидается массив полигонов triangles: Array<{ v1, v2, v3 }>",
+			});
+		}
+
+		const metrics = calculateMeshGeometryMetrics(body.triangles);
+		return reply.send({
+			success: true,
+			metrics,
+		});
+	});
+
+	// ─── Multi-Unit Restoration Items CRUD ───────────────────────────────────
+
+	app.get("/api/clinical/lab-orders/:id/items", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { id: labOrderId } = request.params as { id: string };
+
+		const items = await db
+			.select()
+			.from(labItems)
+			.where(and(eq(labItems.organizationId, orgId), eq(labItems.labOrderId, labOrderId)))
+			.orderBy(labItems.toothFdi);
+
+		return reply.send({ items });
+	});
+
+	app.post("/api/clinical/lab-orders/:id/items", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { id: labOrderId } = request.params as { id: string };
+		const body = request.body as any;
+
+		const [createdItem] = await db
+			.insert(labItems)
+			.values({
+				organizationId: orgId,
+				labOrderId,
+				toothFdi: Number(body.toothFdi),
+				restorationType: body.restorationType || "crown_monolithic",
+				material: body.material || "zirconia_multilayer_gradient",
+				shadeSystem: body.shadeSystem || "VITA_CLASSICAL",
+				shadeFinal: body.shadeFinal || "A2",
+				shadeStump: body.shadeStump || null,
+				shadeGingiva: body.shadeGingiva || null,
+				translucencyLevel: body.translucencyLevel || "HT",
+				cementGapMicrons: body.cementGapMicrons != null ? Number(body.cementGapMicrons) : 30,
+				extraMarginGapMicrons: body.extraMarginGapMicrons != null ? Number(body.extraMarginGapMicrons) : 10,
+				minimalThicknessMm: body.minimalThicknessMm ? String(body.minimalThicknessMm) : "0.60",
+				implantSystem: body.implantSystem || null,
+				implantPlatformDiameterMm: body.implantPlatformDiameterMm ? String(body.implantPlatformDiameterMm) : null,
+				tiBaseHeightMm: body.tiBaseHeightMm ? String(body.tiBaseHeightMm) : null,
+				meshTriangleCount: body.meshTriangleCount != null ? Number(body.meshTriangleCount) : null,
+				meshSurfaceAreaMm2: body.meshSurfaceAreaMm2 ? String(body.meshSurfaceAreaMm2) : null,
+				meshVolumeMm3: body.meshVolumeMm3 ? String(body.meshVolumeMm3) : null,
+				meshBboxMm: body.meshBboxMm || null,
+				isManifold: body.isManifold ?? true,
+				priceRub: body.priceRub != null ? String(body.priceRub) : null,
+			})
+			.returning();
+
+		return reply.status(201).send({ success: true, item: createdItem });
+	});
+
+	// ─── Lab Order Milestone & Event Audit Logging ───────────────────────────
+
+	app.get("/api/clinical/lab-orders/:id/events", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { id: labOrderId } = request.params as { id: string };
+
+		const events = await db
+			.select()
+			.from(labOrderEvents)
+			.where(
+				and(
+					eq(labOrderEvents.organizationId, orgId),
+					eq(labOrderEvents.labOrderId, labOrderId),
+				),
+			)
+			.orderBy(desc(labOrderEvents.createdAt));
+
+		return reply.send({ events });
+	});
+
+	app.post("/api/clinical/lab-orders/:id/events", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const { id: labOrderId } = request.params as { id: string };
+		const body = request.body as any;
+
+		const [createdEvent] = await db
+			.insert(labOrderEvents)
+			.values({
+				organizationId: orgId,
+				labOrderId,
+				milestone: body.milestone || "in_progress",
+				actorType: body.actorType || "clinic_doctor",
+				actorId: body.actorId || null,
+				actorName: body.actorName || "Сотрудник клиники",
+				notes: body.notes || null,
+				barcodeScanned: body.barcodeScanned || null,
+				photoUrls: Array.isArray(body.photoUrls) ? body.photoUrls : [],
+				cadPreviewGlbUrl: body.cadPreviewGlbUrl || null,
+			})
+			.returning();
+
+		return reply.status(201).send({ success: true, event: createdEvent });
+	});
 }
+

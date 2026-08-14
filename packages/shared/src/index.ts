@@ -12438,4 +12438,281 @@ export function calculateAnestheticSafety(params: {
 	};
 }
 
+// ─── CAD/CAM Restorations, Digital Lab (ZTL) & 3D Mesh Geometry Engine ───────
+
+export const restorationTypeSchema = z.enum([
+	"crown_monolithic",
+	"crown_layered_cutback",
+	"inlay",
+	"onlay",
+	"overlay",
+	"veneer_laminate",
+	"endocrown",
+	"bridge_retainer",
+	"bridge_pontic",
+	"custom_abutment_tibase",
+	"screw_retained_crown",
+	"surgical_guide",
+	"occlusal_splint_nightguard",
+	"clear_aligner_stage",
+	"digital_waxup_mockup",
+]);
+export type RestorationType = z.infer<typeof restorationTypeSchema>;
+
+export const restorationMaterialSchema = z.enum([
+	"zirconia_3y_high_strength",
+	"zirconia_4y_high_translucent",
+	"zirconia_5y_ultra_translucent",
+	"zirconia_multilayer_gradient",
+	"emax_lithium_disilicate_cad",
+	"emax_lithium_disilicate_press",
+	"pmma_cad_provisional",
+	"composite_lab_nanohybrid",
+	"titanium_grade_5",
+	"cocr_milled_cast",
+	"peek_biohpp",
+	"resin_3d_surgical_guide",
+	"resin_3d_splint_biocompatible",
+]);
+export type RestorationMaterial = z.infer<typeof restorationMaterialSchema>;
+
+export const stumpPreparationShadeSchema = z.enum([
+	"ND1",
+	"ND2",
+	"ND3",
+	"ND4",
+	"ND5",
+	"ND6",
+	"ND7",
+	"ND8",
+	"ND9",
+]);
+export type StumpPreparationShade = z.infer<typeof stumpPreparationShadeSchema>;
+
+export const zonalShadeSpecificationSchema = z.object({
+	cervical: z.string().trim().default("A3.5"),
+	body: z.string().trim().default("A3"),
+	incisal: z.string().trim().default("A2"),
+	stumpPreparation: stumpPreparationShadeSchema.optional().nullable(),
+	translucency: z.enum(["UTML", "STML", "HT", "MT", "LT", "MO", "HO"]).default("HT"),
+	mamelons: z.boolean().default(false),
+	calcifications: z.boolean().default(false),
+});
+export type ZonalShadeSpecification = z.infer<typeof zonalShadeSpecificationSchema>;
+
+export const labOrderMilestoneSchema = z.enum([
+	"draft",
+	"submitted",
+	"cad_intake_verified",
+	"digital_design_cad",
+	"doctor_preview_pending",
+	"design_revision",
+	"cam_production",
+	"sintering_crystallization",
+	"ceramic_glaze_finish",
+	"quality_control_passed",
+	"shipped_courier",
+	"clinic_received",
+	"clinical_try_in",
+	"refitting_remake",
+	"final_cementation",
+	"closed_warranty",
+	"cancelled",
+]);
+export type LabOrderMilestone = z.infer<typeof labOrderMilestoneSchema>;
+
+export interface Vector3D {
+	x: number;
+	y: number;
+	z: number;
+}
+
+export interface Triangle3D {
+	v1: Vector3D;
+	v2: Vector3D;
+	v3: Vector3D;
+}
+
+export interface MeshGeometryMetrics {
+	triangleCount: number;
+	surfaceAreaMm2: number;
+	volumeMm3: number;
+	volumeCm3: number;
+	boundingBoxMm: {
+		min: Vector3D;
+		max: Vector3D;
+		dimensions: Vector3D;
+	};
+	materialMassGrams: {
+		zirconia: number;
+		emax: number;
+		pmma: number;
+		titanium: number;
+	};
+	isManifold: boolean;
+	boundaryEdgeCount: number;
+	nonManifoldEdgeCount: number;
+}
+
+/**
+ * Расчёт геометрических метрик 3D STL полигональной сетки коронки / моста:
+ * AABB Bounding Box, площадь поверхности, объём по формуле Гаусса и масса материала.
+ */
+export function calculateMeshGeometryMetrics(
+	triangles: Triangle3D[],
+): MeshGeometryMetrics {
+	if (triangles.length === 0) {
+		return {
+			triangleCount: 0,
+			surfaceAreaMm2: 0,
+			volumeMm3: 0,
+			volumeCm3: 0,
+			boundingBoxMm: {
+				min: { x: 0, y: 0, z: 0 },
+				max: { x: 0, y: 0, z: 0 },
+				dimensions: { x: 0, y: 0, z: 0 },
+			},
+			materialMassGrams: { zirconia: 0, emax: 0, pmma: 0, titanium: 0 },
+			isManifold: true,
+			boundaryEdgeCount: 0,
+			nonManifoldEdgeCount: 0,
+		};
+	}
+
+	let minX = Number.POSITIVE_INFINITY;
+	let minY = Number.POSITIVE_INFINITY;
+	let minZ = Number.POSITIVE_INFINITY;
+	let maxX = Number.NEGATIVE_INFINITY;
+	let maxY = Number.NEGATIVE_INFINITY;
+	let maxZ = Number.NEGATIVE_INFINITY;
+
+	let totalSurfaceArea = 0;
+	let signedVolumeSum = 0;
+
+	// Edge occurrence map for 2-manifold check
+	const edgeMap = new Map<string, number>();
+
+	const quantize = (v: Vector3D): string =>
+		`${Math.round(v.x * 1000)},${Math.round(v.y * 1000)},${Math.round(v.z * 1000)}`;
+
+	const addEdge = (p1: string, p2: string) => {
+		const edgeKey = p1 < p2 ? `${p1}|${p2}` : `${p2}|${p1}`;
+		edgeMap.set(edgeKey, (edgeMap.get(edgeKey) || 0) + 1);
+	};
+
+	for (const tri of triangles) {
+		const { v1, v2, v3 } = tri;
+
+		// 1. AABB Bounding Box
+		if (v1.x < minX) minX = v1.x;
+		if (v1.y < minY) minY = v1.y;
+		if (v1.z < minZ) minZ = v1.z;
+		if (v1.x > maxX) maxX = v1.x;
+		if (v1.y > maxY) maxY = v1.y;
+		if (v1.z > maxZ) maxZ = v1.z;
+
+		if (v2.x < minX) minX = v2.x;
+		if (v2.y < minY) minY = v2.y;
+		if (v2.z < minZ) minZ = v2.z;
+		if (v2.x > maxX) maxX = v2.x;
+		if (v2.y > maxY) maxY = v2.y;
+		if (v2.z > maxZ) maxZ = v2.z;
+
+		if (v3.x < minX) minX = v3.x;
+		if (v3.y < minY) minY = v3.y;
+		if (v3.z < minZ) minZ = v3.z;
+		if (v3.x > maxX) maxX = v3.x;
+		if (v3.y > maxY) maxY = v3.y;
+		if (v3.z > maxZ) maxZ = v3.z;
+
+		// 2. Triangle Surface Area (Cross product norm / 2)
+		const ax = v2.x - v1.x;
+		const ay = v2.y - v1.y;
+		const az = v2.z - v1.z;
+
+		const bx = v3.x - v1.x;
+		const by = v3.y - v1.y;
+		const bz = v3.z - v1.z;
+
+		const cx = ay * bz - az * by;
+		const cy = az * bx - ax * bz;
+		const cz = ax * by - ay * bx;
+
+		const area = 0.5 * Math.sqrt(cx * cx + cy * cy + cz * cz);
+		totalSurfaceArea += area;
+
+		// 3. Signed Tetrahedron Volume (Divergence theorem: v1 . (v2 x v3) / 6)
+		const det =
+			v1.x * (v2.y * v3.z - v2.z * v3.y) -
+			v1.y * (v2.x * v3.z - v2.z * v3.x) +
+			v1.z * (v2.x * v3.y - v2.y * v3.x);
+
+		signedVolumeSum += det / 6.0;
+
+		// 4. Edges for manifold validation
+		const q1 = quantize(v1);
+		const q2 = quantize(v2);
+		const q3 = quantize(v3);
+		addEdge(q1, q2);
+		addEdge(q2, q3);
+		addEdge(q3, q1);
+	}
+
+	const volumeMm3 = Number(Math.abs(signedVolumeSum).toFixed(3));
+	const volumeCm3 = Number((volumeMm3 * 0.001).toFixed(4));
+	const surfaceAreaMm2 = Number(totalSurfaceArea.toFixed(2));
+
+	// Densities in g/cm3
+	const DENSITY_ZIRCONIA = 6.05;
+	const DENSITY_EMAX = 2.50;
+	const DENSITY_PMMA = 1.18;
+	const DENSITY_TITANIUM = 4.43;
+
+	const materialMassGrams = {
+		zirconia: Number((volumeCm3 * DENSITY_ZIRCONIA).toFixed(3)),
+		emax: Number((volumeCm3 * DENSITY_EMAX).toFixed(3)),
+		pmma: Number((volumeCm3 * DENSITY_PMMA).toFixed(3)),
+		titanium: Number((volumeCm3 * DENSITY_TITANIUM).toFixed(3)),
+	};
+
+	let boundaryEdges = 0;
+	let nonManifoldEdges = 0;
+
+	for (const count of edgeMap.values()) {
+		if (count === 1) boundaryEdges++;
+		else if (count > 2) nonManifoldEdges++;
+	}
+
+	const isManifold = boundaryEdges === 0 && nonManifoldEdges === 0;
+
+	return {
+		triangleCount: triangles.length,
+		surfaceAreaMm2,
+		volumeMm3,
+		volumeCm3,
+		boundingBoxMm: {
+			min: {
+				x: Number(minX.toFixed(2)),
+				y: Number(minY.toFixed(2)),
+				z: Number(minZ.toFixed(2)),
+			},
+			max: {
+				x: Number(maxX.toFixed(2)),
+				y: Number(maxY.toFixed(2)),
+				z: Number(maxZ.toFixed(2)),
+			},
+			dimensions: {
+				x: Number((maxX - minX).toFixed(2)),
+				y: Number((maxY - minY).toFixed(2)),
+				z: Number((maxZ - minZ).toFixed(2)),
+			},
+		},
+		materialMassGrams,
+		isManifold,
+		boundaryEdgeCount: boundaryEdges,
+		nonManifoldEdgeCount: nonManifoldEdges,
+	};
+}
+
+
 

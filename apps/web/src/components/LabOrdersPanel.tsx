@@ -24,9 +24,54 @@ export interface LabOrder {
 	updatedAt: string;
 }
 
+export interface LabItem {
+	id: string;
+	toothFdi: number;
+	restorationType: string;
+	material: string;
+	shadeSystem: string;
+	shadeFinal: string;
+	shadeStump: string | null;
+	cementGapMicrons: number;
+	priceRub: number | null;
+}
+
 interface LabOrdersPanelProps {
 	patientId?: string;
 }
+
+const VITA_CLASSICAL_SHADES = [
+	"A1", "A2", "A3", "A3.5", "A4",
+	"B1", "B2", "B3", "B4",
+	"C1", "C2", "C3", "C4",
+	"D2", "D3", "D4",
+];
+
+const STUMP_SHADES = [
+	"ND1", "ND2", "ND3", "ND4", "ND5", "ND6", "ND7", "ND8", "ND9",
+];
+
+const RESTORATION_TYPES = [
+	{ value: "crown_monolithic", label: "Коронка монолитная (Full Zirconia)" },
+	{ value: "crown_layered_cutback", label: "Коронка с редукцией (Cut-back)" },
+	{ value: "emax_press_cad", label: "Коронка / Вкладка E.max CAD" },
+	{ value: "veneer_laminate", label: "Винир керамический" },
+	{ value: "inlay_onlay", label: "Вкладка Inlay / Onlay / Overlay" },
+	{ value: "custom_abutment_tibase", label: "Индивидуальный абатмент Ti-Base" },
+	{ value: "surgical_guide", label: "Хирургический навигационный шаблон" },
+	{ value: "pmma_provisional", label: "Временная коронка PMMA" },
+	{ value: "occlusal_splint", label: "Окклюзионная сплинт-шина / каппа" },
+];
+
+const MATERIALS = [
+	{ value: "zirconia_multilayer_gradient", label: "Диоксид циркония Multi-Layer 3D Pro" },
+	{ value: "zirconia_high_translucent", label: "Диоксид циркония HT / ST (Высокая прочность)" },
+	{ value: "emax_lithium_disilicate", label: "Дисиликат лития IPS e.max CAD" },
+	{ value: "pmma_milled", label: "CAD/CAM PMMA медицинский полимер" },
+	{ value: "titanium_grade_5", label: "Титан Grade 5 (Ti-6Al-4V ELI)" },
+	{ value: "cocr_milled", label: "Кобальт-хром фрезерованный (CoCr)" },
+	{ value: "resin_3d_print", label: "Биосовместимый 3D фотополимер" },
+];
 
 export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	const [orders, setOrders] = useState<LabOrder[]>([]);
@@ -35,9 +80,12 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 	const [showForm, setShowForm] = useState(false);
 	const [formPatientId, setFormPatientId] = useState(patientId || "");
-	const [toothFdi, setToothFdi] = useState("");
-	const [material, setMaterial] = useState("");
-	const [colorVita, setColorVita] = useState("");
+	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
+	const [restorationType, setRestorationType] = useState("crown_monolithic");
+	const [material, setMaterial] = useState("zirconia_multilayer_gradient");
+	const [colorVita, setColorVita] = useState("A2");
+	const [stumpShade, setStumpShade] = useState<string>("");
+	const [cementGap, setCementGap] = useState(30);
 	const [dueDate, setDueDate] = useState("");
 	const [clinicalNotes, setClinicalNotes] = useState("");
 	const [priceRub, setPriceRub] = useState("");
@@ -58,7 +106,6 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			}
 			const data = await res.json();
 			setOrders(data);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			setError(err.message || "Error fetching lab orders");
 		} finally {
@@ -70,15 +117,30 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 		fetchOrders();
 	}, [fetchOrders]);
 
+	const toggleTooth = (tooth: number) => {
+		setSelectedTeeth((prev) =>
+			prev.includes(tooth) ? prev.filter((t) => t !== tooth) : [...prev, tooth].sort((a, b) => a - b),
+		);
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!formPatientId) {
-			showToast("Patient ID is required", "error");
+			showToast("ID пациента обязателен", "error");
 			return;
 		}
 
 		setSubmitting(true);
 		try {
+			const toothFdiStr = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : null;
+			const fullNotes = [
+				clinicalNotes,
+				stumpShade ? `Культя: ${stumpShade}` : null,
+				`Зазор под цемент: ${cementGap} мкм`,
+			]
+				.filter(Boolean)
+				.join(" | ");
+
 			const res = await fetch("/api/clinical/lab-orders", {
 				method: "POST",
 				headers: {
@@ -87,30 +149,53 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				},
 				body: JSON.stringify({
 					patientId: formPatientId,
-					toothFdi: toothFdi || null,
-					material: material || null,
-					colorVita: colorVita || null,
+					toothFdi: toothFdiStr,
+					material,
+					colorVita,
 					dueDate: dueDate || null,
-					clinicalNotes: clinicalNotes || null,
+					clinicalNotes: fullNotes || null,
 					priceRub: priceRub ? parseFloat(priceRub) : null,
 				}),
 			});
+
 			if (!res.ok) {
 				const errorData = await res.json().catch(() => ({}));
-				throw new Error(errorData.message || "Failed to create lab order");
+				throw new Error(errorData.message || "Не удалось создать наряд в ЗТЛ");
 			}
+
+			const createdOrder = await res.json();
+
+			// If items were selected, add itemized records
+			if (selectedTeeth.length > 0 && createdOrder?.id) {
+				for (const tooth of selectedTeeth) {
+					await fetch(`/api/clinical/lab-orders/${createdOrder.id}/items`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...denteAdminSecretRequestHeaders(),
+						},
+						body: JSON.stringify({
+							toothFdi: tooth,
+							restorationType,
+							material,
+							shadeFinal: colorVita,
+							shadeStump: stumpShade || null,
+							cementGapMicrons: cementGap,
+						}),
+					}).catch(() => {});
+				}
+			}
+
+			showToast("Наряд в лабораторию успешно оформлен", "success");
 			setShowForm(false);
 			setFormPatientId(patientId || "");
-			setToothFdi("");
-			setMaterial("");
-			setColorVita("");
+			setSelectedTeeth([]);
 			setDueDate("");
 			setClinicalNotes("");
 			setPriceRub("");
 			await fetchOrders();
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
-			showToast(err.message || "Failed to create lab order", "error");
+			showToast(err.message || "Ошибка создания наряда в ЗТЛ", "error");
 		} finally {
 			setSubmitting(false);
 		}
@@ -119,13 +204,14 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	const getStatusLabel = (status: string) => {
 		const mapping: Record<string, string> = {
 			draft: "Черновик",
-			sent: "Отправлен (Sent)",
-			in_progress: "В работе (In Design)",
-			shipped: "Отправлен в клинику",
-			received: "Получен (Received)",
-			fitting: "Примерка (Fitting)",
-			refitting: "Переделка (Quality Check)",
-			completed: "Сдан (Delivered)",
+			sent: "Отправлен в ЗТЛ",
+			in_progress: "В моделировании CAD/CAM",
+			shipped: "Передан курьеру",
+			received: "Поступил в клинику",
+			fitting: "Клиническая примерка",
+			refitting: "Переделка / коррекция",
+			completed: "Сдан / Зафиксирован",
+			cancelled: "Аннулирован",
 		};
 		return mapping[status] || status;
 	};
@@ -138,22 +224,31 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "center",
+					marginBottom: "16px",
 				}}
 			>
-				<h3>Заказы в лабораторию (ЗТЛ)</h3>
+				<div>
+					<h3 style={{ margin: 0, color: "#f4f4f5", fontSize: "1.1rem" }}>
+						🦷 Зуботехническая лаборатория (CAD/CAM ЗТЛ)
+					</h3>
+					<small style={{ color: "#71717a" }}>
+						Оформление нарядов, выбор реставраций, шкалы VITA, культей ND1-ND9 и трекинг статусов
+					</small>
+				</div>
 				<button
 					type="button"
 					onClick={() => setShowForm(!showForm)}
 					style={{
-						padding: "6px 12px",
-						background: "rgba(59, 130, 246, 0.2)",
-						color: "#93c5fd",
-						border: "1px solid rgba(59, 130, 246, 0.3)",
+						padding: "8px 16px",
+						background: showForm ? "rgba(239, 68, 68, 0.15)" : "rgba(59, 130, 246, 0.2)",
+						color: showForm ? "#fca5a5" : "#93c5fd",
+						border: `1px solid ${showForm ? "rgba(239, 68, 68, 0.3)" : "rgba(59, 130, 246, 0.3)"}`,
 						borderRadius: "6px",
 						cursor: "pointer",
+						fontWeight: 500,
 					}}
 				>
-					{showForm ? "Отмена" : "+ Новый заказ"}
+					{showForm ? "✕ Отмена" : "+ Новый наряд в ЗТЛ"}
 				</button>
 			</div>
 
@@ -164,122 +259,286 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					style={{
 						display: "flex",
 						flexDirection: "column",
-						gap: "10px",
-						background: "rgba(255,255,255,0.05)",
-						padding: "16px",
+						gap: "12px",
+						background: "rgba(24, 24, 27, 0.8)",
+						padding: "18px",
 						borderRadius: "8px",
+						border: "1px solid rgba(63, 63, 70, 0.5)",
+						marginBottom: "20px",
 					}}
 				>
+					<h4 style={{ margin: 0, color: "#e4e4e7" }}>Параметры ортопедической работы</h4>
+
 					{!patientId && (
-						<input
-							type="text"
-							placeholder="ID Пациента"
-							value={formPatientId}
-							onChange={(e) => setFormPatientId(e.target.value)}
-							required
+						<div>
+							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+								ID Пациента
+							</label>
+							<input
+								type="text"
+								placeholder="UUID Пациента"
+								value={formPatientId}
+								onChange={(e) => setFormPatientId(e.target.value)}
+								required
+								style={{
+									width: "100%",
+									padding: "8px",
+									borderRadius: "4px",
+									border: "1px solid #52525b",
+									background: "#27272a",
+									color: "#fff",
+								}}
+							/>
+						</div>
+					)}
+
+					{/* Зубная формула быстрый выбор */}
+					<div>
+						<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							Зубы по FDI (выбрано: {selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "не выбрано"})
+						</label>
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", background: "#18181b", padding: "8px", borderRadius: "6px" }}>
+							{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => toggleTooth(t)}
+									style={{
+										padding: "4px 8px",
+										fontSize: "12px",
+										borderRadius: "4px",
+										background: selectedTeeth.includes(t) ? "#3b82f6" : "#27272a",
+										color: selectedTeeth.includes(t) ? "#fff" : "#a1a1aa",
+										border: "1px solid #3f3f46",
+										cursor: "pointer",
+									}}
+								>
+									{t}
+								</button>
+							))}
+						</div>
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", background: "#18181b", padding: "8px", borderRadius: "6px", marginTop: "4px" }}>
+							{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => toggleTooth(t)}
+									style={{
+										padding: "4px 8px",
+										fontSize: "12px",
+										borderRadius: "4px",
+										background: selectedTeeth.includes(t) ? "#3b82f6" : "#27272a",
+										color: selectedTeeth.includes(t) ? "#fff" : "#a1a1aa",
+										border: "1px solid #3f3f46",
+										cursor: "pointer",
+									}}
+								>
+									{t}
+								</button>
+							))}
+						</div>
+					</div>
+
+					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+						<div>
+							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+								Тип конструкции
+							</label>
+							<select
+								value={restorationType}
+								onChange={(e) => setRestorationType(e.target.value)}
+								style={{
+									width: "100%",
+									padding: "8px",
+									borderRadius: "4px",
+									border: "1px solid #52525b",
+									background: "#27272a",
+									color: "#fff",
+								}}
+							>
+								{RESTORATION_TYPES.map((rt) => (
+									<option key={rt.value} value={rt.value}>
+										{rt.label}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<div>
+							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+								Материал
+							</label>
+							<select
+								value={material}
+								onChange={(e) => setMaterial(e.target.value)}
+								style={{
+									width: "100%",
+									padding: "8px",
+									borderRadius: "4px",
+									border: "1px solid #52525b",
+									background: "#27272a",
+									color: "#fff",
+								}}
+							>
+								{MATERIALS.map((m) => (
+									<option key={m.value} value={m.value}>
+										{m.label}
+									</option>
+								))}
+							</select>
+						</div>
+					</div>
+
+					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+						<div>
+							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+								Цвет реставрации (VITA)
+							</label>
+							<select
+								value={colorVita}
+								onChange={(e) => setColorVita(e.target.value)}
+								style={{
+									width: "100%",
+									padding: "8px",
+									borderRadius: "4px",
+									border: "1px solid #52525b",
+									background: "#27272a",
+									color: "#fff",
+								}}
+							>
+								{VITA_CLASSICAL_SHADES.map((s) => (
+									<option key={s} value={s}>
+										VITA {s}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<div>
+							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+								Цвет культи (IPS Natural Die)
+							</label>
+							<select
+								value={stumpShade}
+								onChange={(e) => setStumpShade(e.target.value)}
+								style={{
+									width: "100%",
+									padding: "8px",
+									borderRadius: "4px",
+									border: "1px solid #52525b",
+									background: "#27272a",
+									color: "#fff",
+								}}
+							>
+								<option value="">Не указан (обычная)</option>
+								{STUMP_SHADES.map((nd) => (
+									<option key={nd} value={nd}>
+										{nd} {nd === "ND1" ? "(Bleach)" : nd === "ND9" ? "(Металл/Литой)" : ""}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<div>
+							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+								Цементный зазор (мкм)
+							</label>
+							<input
+								type="number"
+								min="10"
+								max="100"
+								value={cementGap}
+								onChange={(e) => setCementGap(Number(e.target.value))}
+								style={{
+									width: "100%",
+									padding: "8px",
+									borderRadius: "4px",
+									border: "1px solid #52525b",
+									background: "#27272a",
+									color: "#fff",
+								}}
+							/>
+						</div>
+					</div>
+
+					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+						<div>
+							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+								Срок сдачи работы
+							</label>
+							<input
+								type="date"
+								value={dueDate}
+								onChange={(e) => setDueDate(e.target.value)}
+								style={{
+									width: "100%",
+									padding: "8px",
+									borderRadius: "4px",
+									border: "1px solid #52525b",
+									background: "#27272a",
+									color: "#fff",
+								}}
+							/>
+						</div>
+
+						<div>
+							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+								Стоимость ЗТЛ (₽)
+							</label>
+							<input
+								type="number"
+								step="0.01"
+								placeholder="0.00"
+								value={priceRub}
+								onChange={(e) => setPriceRub(e.target.value)}
+								style={{
+									width: "100%",
+									padding: "8px",
+									borderRadius: "4px",
+									border: "1px solid #52525b",
+									background: "#27272a",
+									color: "#fff",
+								}}
+							/>
+						</div>
+					</div>
+
+					<div>
+						<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							Клинические заметки технику
+						</label>
+						<textarea
+							placeholder="Анатомические ориентиры, контакты, мамелоны, прозрачность режущего края..."
+							value={clinicalNotes}
+							onChange={(e) => setClinicalNotes(e.target.value)}
 							style={{
+								width: "100%",
 								padding: "8px",
 								borderRadius: "4px",
 								border: "1px solid #52525b",
 								background: "#27272a",
 								color: "#fff",
+								minHeight: "60px",
 							}}
 						/>
-					)}
-					<input
-						type="text"
-						placeholder="Зубы (FDI), напр. 11, 21"
-						value={toothFdi}
-						onChange={(e) => setToothFdi(e.target.value)}
-						style={{
-							padding: "8px",
-							borderRadius: "4px",
-							border: "1px solid #52525b",
-							background: "#27272a",
-							color: "#fff",
-						}}
-					/>
-					<input
-						type="text"
-						placeholder="Материал (Диоксид циркония, E.max...)"
-						value={material}
-						onChange={(e) => setMaterial(e.target.value)}
-						style={{
-							padding: "8px",
-							borderRadius: "4px",
-							border: "1px solid #52525b",
-							background: "#27272a",
-							color: "#fff",
-						}}
-					/>
-					<input
-						type="text"
-						placeholder="Цвет (Vita)"
-						value={colorVita}
-						onChange={(e) => setColorVita(e.target.value)}
-						style={{
-							padding: "8px",
-							borderRadius: "4px",
-							border: "1px solid #52525b",
-							background: "#27272a",
-							color: "#fff",
-						}}
-					/>
-					<input
-						type="date"
-						placeholder="Срок сдачи"
-						value={dueDate}
-						onChange={(e) => setDueDate(e.target.value)}
-						style={{
-							padding: "8px",
-							borderRadius: "4px",
-							border: "1px solid #52525b",
-							background: "#27272a",
-							color: "#fff",
-						}}
-					/>
-					<textarea
-						placeholder="Клинические заметки"
-						value={clinicalNotes}
-						onChange={(e) => setClinicalNotes(e.target.value)}
-						style={{
-							padding: "8px",
-							borderRadius: "4px",
-							border: "1px solid #52525b",
-							background: "#27272a",
-							color: "#fff",
-							minHeight: "60px",
-						}}
-					/>
-					<input
-						type="number"
-						step="0.01"
-						placeholder="Стоимость лаборатории (Руб)"
-						value={priceRub}
-						onChange={(e) => setPriceRub(e.target.value)}
-						style={{
-							padding: "8px",
-							borderRadius: "4px",
-							border: "1px solid #52525b",
-							background: "#27272a",
-							color: "#fff",
-						}}
-					/>
+					</div>
+
 					<button
 						type="submit"
 						disabled={submitting}
 						style={{
 							padding: "10px",
 							borderRadius: "4px",
-							background: "#3b82f6",
+							background: "#2563eb",
 							color: "#fff",
 							border: "none",
 							cursor: "pointer",
 							fontWeight: "bold",
 							opacity: submitting ? 0.7 : 1,
+							marginTop: "8px",
 						}}
 					>
-						{submitting ? "Создание..." : "Создать заказ"}
+						{submitting ? "Оформление наряда..." : "🚀 Отправить заказ в лабораторию"}
 					</button>
 				</form>
 			)}
@@ -288,35 +547,75 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 			{loading ? (
 				<div style={{ color: "#a1a1aa", textAlign: "center", padding: "20px" }}>
-					Загрузка...
+					Загрузка заказов...
 				</div>
 			) : orders.length === 0 ? (
-				<div className="lab-orders-empty">Нет заказов</div>
+				<div className="lab-orders-empty" style={{ textAlign: "center", padding: "30px", color: "#71717a" }}>
+					Нет оформленных нарядов в зуботехническую лабораторию
+				</div>
 			) : (
-				<div className="lab-orders-list">
-					{orders?.map((order) => (
-						<div key={order.id} className="lab-order-card">
-							<div className="lab-order-main">
+				<div className="lab-orders-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+					{orders.map((order) => (
+						<div
+							key={order.id}
+							className="lab-order-card"
+							style={{
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+								padding: "14px 18px",
+								background: "rgba(24, 24, 27, 0.6)",
+								border: "1px solid rgba(63, 63, 70, 0.4)",
+								borderRadius: "8px",
+							}}
+						>
+							<div className="lab-order-main" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
 								{order.toothFdi && (
-									<div className="fdi-badge">{order.toothFdi}</div>
+									<div
+										className="fdi-badge"
+										style={{
+											background: "rgba(59, 130, 246, 0.2)",
+											color: "#93c5fd",
+											padding: "4px 8px",
+											borderRadius: "4px",
+											fontWeight: "bold",
+											fontSize: "13px",
+										}}
+									>
+										Зуб {order.toothFdi}
+									</div>
 								)}
 								<div className="order-details">
-									<strong>{order.patientName}</strong>
-									{order.material && <small>Материал: {order.material}</small>}
-									{order.colorVita && <small>Цвет: {order.colorVita}</small>}
+									<strong style={{ color: "#f4f4f5", display: "block" }}>{order.patientName}</strong>
+									<div style={{ display: "flex", gap: "12px", color: "#a1a1aa", fontSize: "12px", marginTop: "2px" }}>
+										{order.material && <span>{order.material}</span>}
+										{order.colorVita && <span>Цвет: VITA {order.colorVita}</span>}
+									</div>
 								</div>
 							</div>
-							<div className="lab-order-meta">
-								<span className={`status-badge ${order.status}`}>
+							<div className="lab-order-meta" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+								<span
+									className={`status-badge ${order.status}`}
+									style={{
+										padding: "4px 10px",
+										borderRadius: "12px",
+										fontSize: "12px",
+										background: "rgba(16, 185, 129, 0.15)",
+										color: "#6ee7b7",
+										border: "1px solid rgba(16, 185, 129, 0.3)",
+									}}
+								>
 									{getStatusLabel(order.status)}
 								</span>
 								{order.dueDate && (
-									<span className="delivery-date">
-										К: {new Date(order.dueDate).toLocaleDateString()}
+									<span className="delivery-date" style={{ color: "#a1a1aa", fontSize: "12px" }}>
+										Срок: {new Date(order.dueDate).toLocaleDateString()}
 									</span>
 								)}
 								{order.priceRub != null && (
-									<span className="cost">{order.priceRub} ₽</span>
+									<span className="cost" style={{ color: "#f4f4f5", fontWeight: "bold", fontSize: "14px" }}>
+										{order.priceRub.toLocaleString("ru-RU")} ₽
+									</span>
 								)}
 							</div>
 						</div>
