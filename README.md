@@ -23,6 +23,7 @@
 | If you need to… | Start here | What it gives you |
 | --- | --- | --- |
 | **See the product direction** | [Public project surface](https://marko1olo.github.io/dental-crm/) | A concise visual walkthrough and an interactive workflow explorer with explicit scope boundaries. |
+| **Read the product story** | [DENTE promotional landing](https://marko1olo.github.io/dental-crm/dente/) | A focused, interactive orientation to the connected workflow and its explicit prototype boundaries. |
 | **Trace web, API, and data responsibilities** | [Architecture](#architecture) | The monorepo map and the declared React, Fastify, PostgreSQL, shared-contract, and imaging-adjacent layers. |
 | **Evaluate engineering evidence** | [Verification](#verification) | The repository’s focused commands and the distinction between source checks and deployment proof. |
 | **Contribute without widening risk** | [Contributing](CONTRIBUTING.md) and [Security](SECURITY.md) | Expectations for bounded changes, sensitive domains, and responsible reporting. |

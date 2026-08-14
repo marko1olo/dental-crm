@@ -1,0 +1,42 @@
+name: Security and Performance Baseline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    name: Secret scan and repository footprint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Scan tracked history for leaked credentials
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+
+      - name: Report tracked repository footprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "# Repository footprint"
+            echo "Measured at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            echo "Scope: tracked files only. This is a storage and review signal, not a runtime performance benchmark."
+            echo
+            echo "## Total apparent size"
+            git ls-files -z | xargs -0 -r du -ch --apparent-size -- | tail -n 1
+            echo
+            echo "## 20 largest tracked paths"
+            git ls-files -z | xargs -0 -r du -ah --apparent-size -- | sort -hr | head -n 20
+          } | tee repository-footprint.txt

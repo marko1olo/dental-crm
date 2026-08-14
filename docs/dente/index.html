@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="DENTE is an inspectable clinic-workspace prototype that connects operations, patient context, clinical workflow, imaging, documents, finance, and follow-up." />
+  <meta name="theme-color" content="#07191d" />
+  <title>DENTE — Connected Clinic Operations</title>
+  <style>
+    :root {
+      --ink: #e8fffb;
+      --muted: #94b8b6;
+      --line: rgba(133, 213, 200, 0.22);
+      --panel: rgba(11, 37, 42, 0.78);
+      --panel-strong: #102d33;
+      --mint: #67ead1;
+      --aqua: #5cc9e8;
+      --violet: #a994ff;
+      --night: #07191d;
+      --night-deep: #030c10;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--night-deep);
+      font-family: var(--font);
+      line-height: 1.5;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(42, 196, 177, 0.18), transparent 26rem),
+        radial-gradient(circle at 84% 6%, rgba(110, 125, 255, 0.15), transparent 30rem),
+        linear-gradient(145deg, #061116 0%, #071a1f 50%, #07121d 100%);
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.16;
+      background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: linear-gradient(to bottom, black, transparent 78%);
+    }
+    a { color: inherit; }
+    .wrap { width: min(1180px, calc(100% - 2.5rem)); margin: 0 auto; }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 82px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: inline-flex; gap: 0.8rem; align-items: center; text-decoration: none; font-weight: 800; letter-spacing: 0.12em; }
+    .brand-mark {
+      width: 32px; height: 32px; border-radius: 10px;
+      display: grid; place-items: center;
+      color: #062026; background: var(--mint);
+      box-shadow: 0 0 26px rgba(103, 234, 209, 0.42);
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    .nav-links { display: flex; align-items: center; gap: 1.2rem; color: var(--muted); font-size: 0.9rem; }
+    .nav-links a { text-decoration: none; }
+    .nav-links a:hover { color: var(--mint); }
+
+    .hero { padding: clamp(4.5rem, 10vw, 8.5rem) 0 4.5rem; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; align-items: center; gap: clamp(2.5rem, 7vw, 6rem); }
+    .eyebrow { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--mint); font-family: var(--mono); font-size: 0.77rem; font-weight: 700; letter-spacing: 0.14em; }
+    .eyebrow::before { content: ""; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--mint); box-shadow: 0 0 16px var(--mint); }
+    h1 { max-width: 12ch; margin: 1.2rem 0 1.4rem; font-size: clamp(3.2rem, 6.7vw, 6.1rem); letter-spacing: -0.065em; line-height: 0.94; }
+    .hero-copy { max-width: 58ch; margin: 0; font-size: clamp(1.02rem, 1.6vw, 1.18rem); color: #c0d9d7; }
+    .hero-copy strong { color: var(--mint); }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 2.1rem; }
+    .button {
+      display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: 0.7rem 1rem;
+      border: 1px solid var(--line); border-radius: 12px; color: var(--ink); text-decoration: none; font-size: 0.9rem; font-weight: 700;
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+    .button:hover { transform: translateY(-2px); border-color: var(--mint); }
+    .button.primary { color: #062026; border-color: var(--mint); background: var(--mint); }
+    .button.primary:hover { background: #9affea; }
+
+    .orbital {
+      min-height: 480px; position: relative; isolation: isolate;
+      display: grid; place-items: center;
+    }
+    .orbital::before, .orbital::after { content: ""; position: absolute; border: 1px solid rgba(103, 234, 209, 0.24); border-radius: 50%; }
+    .orbital::before { width: 95%; aspect-ratio: 1; transform: rotate(20deg); }
+    .orbital::after { width: 67%; aspect-ratio: 1; border-color: rgba(169, 148, 255, 0.3); transform: rotate(-25deg); }
+    .core {
+      width: min(290px, 66vw); aspect-ratio: 1; border: 1px solid rgba(103, 234, 209, 0.5); border-radius: 42px;
+      background: linear-gradient(145deg, rgba(31, 105, 101, 0.92), rgba(11, 27, 48, 0.9)); box-shadow: 0 0 90px rgba(48, 214, 191, 0.2);
+      display: grid; place-items: center; text-align: center; transform: rotate(8deg); z-index: 1;
+    }
+    .core-inner { transform: rotate(-8deg); }
+    .core-kicker { color: var(--mint); font: 700 0.73rem var(--mono); letter-spacing: 0.16em; }
+    .core-title { margin: 0.8rem 0 0.45rem; font-size: 2.3rem; letter-spacing: -0.06em; }
+    .core-copy { max-width: 18ch; margin: 0; color: #bad6d3; font-size: 0.85rem; }
+    .orbit-label {
+      position: absolute; display: flex; align-items: center; gap: 0.45rem; padding: 0.46rem 0.62rem;
+      border: 1px solid rgba(125, 217, 205, 0.24); border-radius: 999px; background: rgba(5, 22, 26, 0.88);
+      color: #c3dedb; font: 700 0.7rem var(--mono); letter-spacing: 0.07em;
+    }
+    .orbit-label::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--mint); }
+    .orbit-label.one { top: 7%; right: 7%; }.orbit-label.two { left: -1%; bottom: 24%; }.orbit-label.three { right: 1%; bottom: 9%; }
+
+    .rule { height: 1px; background: linear-gradient(90deg, transparent, var(--line), transparent); }
+    .section { padding: clamp(4.5rem, 9vw, 7rem) 0; }
+    .section-head { display: grid; grid-template-columns: 0.75fr 1.25fr; gap: 2rem; align-items: start; margin-bottom: 2rem; }
+    h2 { margin: 0; font-size: clamp(2rem, 4vw, 3.7rem); letter-spacing: -0.055em; line-height: 1; }
+    .section-head p { max-width: 57ch; margin: 0; color: var(--muted); }
+
+    .navigator { display: grid; grid-template-columns: 0.8fr 1.2fr; border: 1px solid var(--line); border-radius: 22px; overflow: hidden; background: rgba(7, 24, 29, 0.76); }
+    .mode-list { padding: 0.8rem; border-right: 1px solid var(--line); display: grid; align-content: center; gap: 0.4rem; }
+    .mode-button { width: 100%; border: 0; border-radius: 13px; background: transparent; padding: 1rem; color: var(--muted); font: 700 0.92rem var(--font); text-align: left; cursor: pointer; transition: background 160ms ease, color 160ms ease; }
+    .mode-button:hover, .mode-button[aria-selected="true"] { background: rgba(103, 234, 209, 0.12); color: var(--mint); }
+    .mode-button span { display: block; margin-top: 0.25rem; color: #769c9b; font: 0.75rem var(--mono); }
+    .mode-panel { min-height: 330px; padding: clamp(1.8rem, 5vw, 3.5rem); display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, rgba(15, 51, 55, 0.9), rgba(15, 29, 53, 0.9)); }
+    .mode-number { color: var(--mint); font: 700 0.78rem var(--mono); letter-spacing: 0.18em; }
+    .mode-panel h3 { margin: 0.75rem 0; font-size: clamp(2rem, 4.5vw, 3.4rem); letter-spacing: -0.06em; }
+    .mode-panel p { max-width: 42ch; margin: 0; color: #bdd7d4; font-size: 1.02rem; }
+    .mode-signal { display: flex; gap: 0.55rem; flex-wrap: wrap; margin-top: 1.65rem; }
+    .mode-signal span { padding: 0.38rem 0.54rem; border: 1px solid rgba(103, 234, 209, 0.26); border-radius: 8px; color: var(--mint); font: 0.7rem var(--mono); }
+
+    .surface-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .surface { min-height: 200px; padding: 1.4rem; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, rgba(10, 32, 37, 0.9), rgba(9, 20, 37, 0.8)); transition: transform 180ms ease, border-color 180ms ease; }
+    .surface:hover { transform: translateY(-4px); border-color: rgba(103, 234, 209, 0.72); }
+    .surface-index { color: var(--aqua); font: 700 0.72rem var(--mono); letter-spacing: 0.15em; }
+    .surface h3 { margin: 1.2rem 0 0.55rem; font-size: 1.3rem; }
+    .surface p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+    .boundary { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .boundary-card { padding: clamp(1.5rem, 4vw, 2.3rem); border-radius: 20px; }
+    .boundary-card.good { background: linear-gradient(135deg, rgba(42, 161, 142, 0.2), rgba(8, 50, 53, 0.64)); border: 1px solid rgba(103, 234, 209, 0.4); }
+    .boundary-card.care { background: linear-gradient(135deg, rgba(69, 75, 141, 0.25), rgba(20, 24, 54, 0.64)); border: 1px solid rgba(169, 148, 255, 0.38); }
+    .boundary-card h3 { margin: 0 0 0.6rem; font-size: 1.3rem; }.boundary-card p { margin: 0; color: #bdd7d4; }
+
+    .cta { padding: 2.6rem; border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(100deg, rgba(25, 95, 88, 0.7), rgba(21, 29, 65, 0.72)); text-align: center; }
+    .cta h2 { max-width: 17ch; margin: auto; }.cta p { max-width: 54ch; margin: 1rem auto 1.6rem; color: #c2dddd; }
+    footer { padding: 2rem 0 3rem; color: #719393; font: 0.76rem var(--mono); text-align: center; }
+
+    @media (max-width: 820px) {
+      .nav-links { display: none; }.hero-grid, .section-head, .navigator, .boundary { grid-template-columns: 1fr; }.orbital { min-height: 370px; order: -1; }.mode-list { border-right: 0; border-bottom: 1px solid var(--line); }.surface-grid { grid-template-columns: 1fr; }.orbit-label.two { left: 0; }.orbit-label.three { right: 0; }
+    }
+    @media (max-width: 520px) { .wrap { width: min(100% - 1.5rem, 1180px); }.hero { padding-top: 3rem; }.nav { min-height: 66px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav" aria-label="DENTE landing navigation">
+      <a class="brand" href="../"><span class="brand-mark">D</span><span>DENTE</span></a>
+      <div class="nav-links"><a href="#workflow">Workflow</a><a href="#boundaries">Boundaries</a><a href="https://github.com/marko1olo/dental-crm">Repository ↗</a></div>
+    </nav>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-grid">
+          <div>
+            <div class="eyebrow">CONNECTED CLINIC OPERATIONS</div>
+            <h1 id="hero-title">Every clinic day is one connected system.</h1>
+            <p class="hero-copy">DENTE is an <strong>inspectable clinic-workspace prototype</strong> that maps the thread from scheduling and patient context to visits, imaging, documents, finance, and follow-up — without presenting these surfaces as disconnected screens.</p>
+            <div class="actions">
+              <a class="button primary" href="https://github.com/marko1olo/dental-crm">Explore repository ↗</a>
+              <a class="button" href="../">Open interactive product surface</a>
+            </div>
+          </div>
+          <div class="orbital" aria-label="DENTE system concept">
+            <div class="orbit-label one">RECORDS</div><div class="orbit-label two">OPERATIONS</div><div class="orbit-label three">CONTINUITY</div>
+            <div class="core"><div class="core-inner"><div class="core-kicker">DENTE / 01</div><div class="core-title">One thread.</div><p class="core-copy">A product story for an inspectable workspace prototype.</p></div></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="rule"></div>
+      <section class="section" id="workflow" aria-labelledby="workflow-title">
+        <div class="section-head"><h2 id="workflow-title">Follow the signal, not the screens.</h2><p>Use the navigator to see the five product surfaces as parts of one operational path. The copy reflects the repository direction and deliberately avoids a claim of clinical certification or production readiness.</p></div>
+        <div class="navigator">
+          <div class="mode-list" role="tablist" aria-label="DENTE operational path">
+            <button class="mode-button" role="tab" aria-selected="true" aria-controls="mode-panel" data-mode="schedule">Schedule<span>readiness and chair context</span></button>
+            <button class="mode-button" role="tab" aria-selected="false" aria-controls="mode-panel" data-mode="context">Patient context<span>structured preparation</span></button>
+            <button class="mode-button" role="tab" aria-selected="false" aria-controls="mode-panel" data-mode="visit">Clinical workflow<span>records and controls</span></button>
+            <button class="mode-button" role="tab" aria-selected="false" aria-controls="mode-panel" data-mode="artifacts">Imaging &amp; documents<span>browser tools and lifecycle routes</span></button>
+            <button class="mode-button" role="tab" aria-selected="false" aria-controls="mode-panel" data-mode="continuity">Finance &amp; follow-up<span>accountable handoff</span></button>
+          </div>
+          <article class="mode-panel" id="mode-panel" role="tabpanel" tabindex="0"></article>
+        </div>
+      </section>
+
+      <div class="rule"></div>
+      <section class="section" aria-labelledby="surfaces-title">
+        <div class="section-head"><h2 id="surfaces-title">Designed for inspection.</h2><p>The repository is organized around clearly named web, API, shared-contract, database, and presentation layers. Its public surface makes that direction easier to evaluate without exposing operational data.</p></div>
+        <div class="surface-grid">
+          <article class="surface"><div class="surface-index">WEB / REACT 19</div><h3>Workspace flow</h3><p>A Vite-powered React client is the interface layer for operational and clinical-adjacent routes.</p></article>
+          <article class="surface"><div class="surface-index">API / FASTIFY 5</div><h3>Explicit boundaries</h3><p>Fastify routes, service modules, and PostgreSQL access establish the server-side responsibility line.</p></article>
+          <article class="surface"><div class="surface-index">CONTRACTS / TS</div><h3>Shared vocabulary</h3><p>A shared package carries common types, schemas, and helpers between frontend and backend workspaces.</p></article>
+        </div>
+      </section>
+
+      <div class="rule"></div>
+      <section class="section" id="boundaries" aria-labelledby="boundaries-title">
+        <div class="section-head"><h2 id="boundaries-title">Clear scope is part of the design.</h2><p>A credible clinical-adjacent product surface must distinguish an engineering prototype from real clinical, legal, security, imaging, or regulatory proof.</p></div>
+        <div class="boundary">
+          <article class="boundary-card good"><h3>What this page is</h3><p>A static product story and a source-backed orientation layer for DENTE’s public repository, architecture, and interactive exploration surface.</p></article>
+          <article class="boundary-card care"><h3>What this page is not</h3><p>It does not certify production deployment, clinical correctness, patient safety, imaging validity, privacy compliance, financial compliance, or regulatory approval.</p></article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="cta"><h2>Inspect the product direction in your own order.</h2><p>Move from this narrative to the source repository, the main interactive surface, architecture routes, and verification material. No patient data or live clinic system is presented here.</p><div class="actions" style="justify-content:center"><a class="button primary" href="https://github.com/marko1olo/dental-crm">Repository ↗</a><a class="button" href="../">Interactive product surface</a></div></div>
+      </section>
+    </main>
+    <footer>DENTE promotional microsite · static source-backed navigation · no patient data · 2026</footer>
+  </div>
+  <script>
+    const modes = {
+      schedule: { number: "01 / OPERATIONS", title: "Schedule", text: "Begin with clinic readiness and chair context. The product direction treats an appointment as the first part of a connected visit thread, rather than a detached calendar object.", signals: ["readiness", "chair context", "appointment thread"] },
+      context: { number: "02 / CONTEXT", title: "Patient context", text: "Bring structured preparation into view before a visit. The point is not a promise of clinical completeness; it is an inspectable workspace direction for relevant profile and visit context.", signals: ["structured preparation", "profile", "visit context"] },
+      visit: { number: "03 / VISIT", title: "Clinical workflow", text: "The central workspace direction includes records and rule-aware controls. It is presented as repository scope, with real-world validation held outside this static narrative.", signals: ["records", "controls", "accountability"] },
+      artifacts: { number: "04 / ARTIFACTS", title: "Imaging & documents", text: "Imaging-adjacent browser tools and document lifecycle routes belong to the same operational story. Their presence here is a source-backed map, not a claim of validated imaging or legal output.", signals: ["browser tools", "documents", "lifecycle routes"] },
+      continuity: { number: "05 / CONTINUITY", title: "Finance & follow-up", text: "Finish the thread with payments, tasks, and accountable handoff. The intended value is continuity across the day, not a generic promise of automation or compliance.", signals: ["payments", "tasks", "handoff"] }
+    };
+    const panel = document.querySelector(".mode-panel");
+    const buttons = [...document.querySelectorAll(".mode-button")];
+    function showMode(key) {
+      const mode = modes[key];
+      panel.innerHTML = `<div class="mode-number">${mode.number}</div><h3>${mode.title}</h3><p>${mode.text}</p><div class="mode-signal">${mode.signals.map((signal) => `<span>${signal}</span>`).join("")}</div>`;
+      buttons.forEach((button) => button.setAttribute("aria-selected", String(button.dataset.mode === key)));
+    }
+    buttons.forEach((button) => button.addEventListener("click", () => showMode(button.dataset.mode)));
+    showMode("schedule");
+  </script>
+</body>
+</html>
