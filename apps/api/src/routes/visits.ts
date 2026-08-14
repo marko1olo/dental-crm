@@ -46,7 +46,7 @@ import {
 
 import { db as database } from "../db/client.js";
 import { chairs } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createPatientInDb } from "../db/patientsQuery.js";
 import { createAppointmentInDb } from "../db/appointmentsQuery.js";
 import type { RequestIdentity } from "../security/identity.js";
@@ -353,10 +353,19 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 			return { error: "QuickVisitValidationError", message: "Не удалось определить врача" };
 		}
 
-		const chair = await database.select().from(chairs).where(eq(chairs.organizationId, orgId)).limit(1).then(r => r[0]);
+		const activeChairs = await database
+			.select()
+			.from(chairs)
+			.where(and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)))
+			.orderBy(chairs.id);
+
+		const chair = activeChairs[0];
 		if (!chair) {
 			reply.code(400);
-			return { error: "QuickVisitValidationError", message: "В клинике не настроены кресла" };
+			return {
+				error: "QuickVisitValidationError",
+				message: "В клинике не настроены активные кресла",
+			};
 		}
 
 		const patient = await createPatientInDb(orgId, {

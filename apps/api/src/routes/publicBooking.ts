@@ -809,37 +809,42 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 					let selectedChairId: string | null = null;
 					if (activeChairs.length > 0) {
-						const activeChairIds = activeChairs.map((c) => c.id);
-						const occupiedChairApps = await tx
-							.select({ chairId: appointments.chairId })
-							.from(appointments)
-							.where(
-								and(
-									eq(appointments.organizationId, organizationId),
-									inArray(appointments.chairId, activeChairIds),
-									lt(appointments.startsAt, endDate),
-									gt(appointments.endsAt, startDate),
-									notInArray(appointments.status, [
-										...FREED_APPOINTMENT_STATUSES,
-									]),
-								),
-							);
-						const occupiedChairIds = new Set(
-							occupiedChairApps.map((a) => a.chairId),
+						const sortedChairs = [...activeChairs].sort((a, b) =>
+							a.id.localeCompare(b.id),
 						);
-						const availableChair = activeChairs.find(
-							(c) => !occupiedChairIds.has(c.id),
-						);
-						if (!availableChair) {
+						for (const chair of sortedChairs) {
+							await tx
+								.select({ id: chairs.id })
+								.from(chairs)
+								.where(eq(chairs.id, chair.id))
+								.limit(1)
+								.for("update");
+
+							const [occupied] = await tx
+								.select({ id: appointments.id })
+								.from(appointments)
+								.where(
+									and(
+										eq(appointments.organizationId, organizationId),
+										eq(appointments.chairId, chair.id),
+										lt(appointments.startsAt, endDate),
+										gt(appointments.endsAt, startDate),
+										notInArray(appointments.status, [
+											...FREED_APPOINTMENT_STATUSES,
+										]),
+									),
+								)
+								.limit(1);
+
+							if (!occupied) {
+								selectedChairId = chair.id;
+								break;
+							}
+						}
+
+						if (!selectedChairId) {
 							return { conflict: true as const };
 						}
-						selectedChairId = availableChair.id;
-						await tx
-							.select({ id: chairs.id })
-							.from(chairs)
-							.where(eq(chairs.id, selectedChairId))
-							.limit(1)
-							.for("update");
 					}
 
 					// 2. Pessimistic lock for doctor

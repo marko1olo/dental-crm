@@ -55,32 +55,31 @@ async function lockAppointmentResources(
 			.for("update")
 			.limit(1);
 	}
-	if (resources.doctorUserId) {
+
+	// Детерминированный порядок сортировки UUID исключает взаимную блокировку (40P01 deadlock),
+	// если врач и ассистент меняются ролями в параллельных транзакциях.
+	const userIdsToLock = Array.from(
+		new Set(
+			[resources.doctorUserId, resources.assistantUserId].filter(
+				(id): id is string => typeof id === "string" && id.trim().length > 0,
+			),
+		),
+	).sort();
+
+	for (const userId of userIdsToLock) {
 		await executor
 			.select({ id: schema.users.id })
 			.from(schema.users)
 			.where(
 				and(
 					eq(schema.users.organizationId, organizationId),
-					eq(schema.users.id, resources.doctorUserId),
+					eq(schema.users.id, userId),
 				),
 			)
 			.for("update")
 			.limit(1);
 	}
-	if (resources.assistantUserId) {
-		await executor
-			.select({ id: schema.users.id })
-			.from(schema.users)
-			.where(
-				and(
-					eq(schema.users.organizationId, organizationId),
-					eq(schema.users.id, resources.assistantUserId),
-				),
-			)
-			.for("update")
-			.limit(1);
-	}
+
 	if (resources.patientId) {
 		await executor
 			.select({ id: schema.patients.id })
@@ -204,6 +203,7 @@ async function assertAppointmentResourcesBelongToOrganization(
 	input: {
 		patientId?: string | null | undefined;
 		doctorUserId?: string | null | undefined;
+		assistantUserId?: string | null | undefined;
 		chairId?: string | null | undefined;
 	},
 ): Promise<void> {
@@ -222,6 +222,13 @@ async function assertAppointmentResourcesBelongToOrganization(
 			table: schema.users,
 			what: "Врач",
 			action: "Обновите список сотрудников и выберите врача своей клиники.",
+		});
+	if (input.assistantUserId)
+		checks.push({
+			id: input.assistantUserId,
+			table: schema.users,
+			what: "Ассистент",
+			action: "Обновите список сотрудников и выберите ассистента своей клиники.",
 		});
 	if (input.chairId)
 		checks.push({
