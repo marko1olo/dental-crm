@@ -130,7 +130,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при получении списка задач распознавания ИИ.",
 			});
 		}
 	});
@@ -205,7 +205,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при создании задачи распознавания снимка.",
 			});
 		}
 	});
@@ -253,7 +253,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при генерации черновика дневника приёма.",
 			});
 		}
 	});
@@ -289,7 +289,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при выполнении клинического AI-сценария.",
 			});
 		}
 	});
@@ -308,7 +308,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			if (!parsedInput.success) {
 				return reply.code(400).send({
 					error: "TreatmentPlanValidationError",
-					message: "Оекорректный план лечения для ИИ-персонализации.",
+					message: "Некорректный план лечения для ИИ-персонализации.",
 				});
 			}
 			const result = await personalizeTreatmentPlan(parsedInput.data);
@@ -318,7 +318,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при персонализации плана лечения.",
 			});
 		}
 	});
@@ -343,7 +343,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			if (!parsedInput.success) {
 				return reply.code(400).send({
 					error: "PostVisitPersonalizeValidationError",
-					message: "Оекорректные параметры для ИИ-рекомендаций после приема.",
+					message: "Некорректные параметры для ИИ-рекомендаций после приема.",
 				});
 			}
 			const result = await personalizePostVisitRecommendations(
@@ -355,7 +355,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при персонализации рекомендаций после приёма.",
 			});
 		}
 	});

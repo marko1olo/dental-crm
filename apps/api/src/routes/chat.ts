@@ -30,7 +30,7 @@ export async function registerChatRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при получении квоты SMS.",
 			});
 		}
 	});
@@ -99,7 +99,7 @@ export async function registerChatRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при отправке SMS пациенту.",
 			});
 		}
 	});

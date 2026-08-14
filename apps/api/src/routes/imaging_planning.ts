@@ -212,7 +212,7 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 
 			if (!patient) {
 				return reply.status(404).send({
-					error: "Patient not found",
+					error: "PatientNotFound",
 					message: PATIENT_NOT_FOUND_SAVE_MESSAGE,
 				});
 			}
@@ -252,7 +252,7 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 					.returning({ id: patientCtPlannings.id });
 				if (!updated) {
 					return reply.status(500).send({
-						error: "Internal server error",
+						error: "InternalServerError",
 						message: SAVE_FAILED_MESSAGE,
 					});
 				}
@@ -270,7 +270,7 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 					.returning({ id: patientCtPlannings.id });
 				if (!inserted) {
 					return reply.status(500).send({
-						error: "Internal server error",
+						error: "InternalServerError",
 						message: SAVE_FAILED_MESSAGE,
 					});
 				}
@@ -281,7 +281,7 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 			request.log.error(err);
 			return reply
 				.status(500)
-				.send({ error: "Internal server error", message: SAVE_FAILED_MESSAGE });
+				.send({ error: "InternalServerError", message: SAVE_FAILED_MESSAGE });
 		}
 	});
 
@@ -321,7 +321,7 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 
 			if (!patient) {
 				return reply.status(404).send({
-					error: "Patient not found",
+					error: "PatientNotFound",
 					message: PATIENT_NOT_FOUND_LOAD_MESSAGE,
 				});
 			}
@@ -346,7 +346,7 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 			request.log.error(err);
 			return reply
 				.status(500)
-				.send({ error: "Internal server error", message: LOAD_FAILED_MESSAGE });
+				.send({ error: "InternalServerError", message: LOAD_FAILED_MESSAGE });
 		}
 	});
 }

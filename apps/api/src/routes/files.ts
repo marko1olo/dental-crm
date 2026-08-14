@@ -75,7 +75,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при получении списка вложений пациента.",
 			});
 		}
 	});
@@ -170,7 +170,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при сохранении вложения карточки пациента.",
 			});
 		}
 	});
@@ -281,7 +281,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при чтении снимков и вложений приёма.",
 			});
 		}
 	});
@@ -400,7 +400,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при прикреплении снимка к приёму.",
 			});
 		}
 	});

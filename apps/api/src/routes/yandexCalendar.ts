@@ -26,7 +26,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при получении параметров авторизации Яндекс.Календаря.",
 			});
 		}
 	});
@@ -53,7 +53,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
 				request.log.error(err, "Failed to update Yandex Calendar settings");
-				return reply.code(400).send({ error: "Invalid payload" });
+				return reply.code(400).send({ error: "InvalidPayload", message: "Некорректные параметры настроек Яндекс.Календаря." });
 			}
 		},
 	);
@@ -82,7 +82,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при получении статусов синхронизации Яндекс.Календаря.",
 			});
 		}
 	});
@@ -104,7 +104,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				.then((r) => r[0]);
 
 			if (!staffInfo?.yandexCalendarId || !staffInfo?.yandexCalendarToken) {
-				return reply.code(400).send({ error: "Yandex Calendar not connected" });
+				return reply.code(400).send({ error: "YandexCalendarNotConnected", message: "Яндекс.Календарь не подключен для данного сотрудника." });
 			}
 
 			request.log.info(
@@ -148,13 +148,13 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				});
 			}
 
-			return { success: true, message: "Sync triggered successfully" };
+			return { success: true, message: "Синхронизация с Яндекс.Календарем успешно запущена." };
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при синхронизации с Яндекс.Календарем.",
 			});
 		}
 	});

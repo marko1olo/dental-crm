@@ -69,7 +69,7 @@ export async function registerWaitlistRoutes(
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при получении записей листа ожидания.",
 			});
 		}
 	});
@@ -176,7 +176,7 @@ export async function registerWaitlistRoutes(
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при добавлении пациента в лист ожидания.",
 			});
 		}
 	});
@@ -253,7 +253,7 @@ export async function registerWaitlistRoutes(
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при обновлении записи листа ожидания.",
 			});
 		}
 	});
@@ -302,7 +302,7 @@ export async function registerWaitlistRoutes(
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при удалении записи листа ожидания.",
 			});
 		}
 	});

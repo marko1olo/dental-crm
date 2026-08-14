@@ -134,7 +134,7 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: "Internal server error",
+				message: "Ошибка при получении списка освободившихся окон расписания.",
 			});
 		}
 	});
@@ -223,7 +223,7 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 				request.log.error(error);
 				return reply.status(500).send({
 					error: "InternalServerError",
-					message: "Internal server error",
+					message: "Ошибка при подборе кандидатов из листа ожидания.",
 				});
 			}
 		},
