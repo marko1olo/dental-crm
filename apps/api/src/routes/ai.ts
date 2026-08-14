@@ -387,7 +387,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 		if (!parsedInput.success) {
 			return reply.code(400).send({
 				error: "ParseDictationValidationError",
-				message: "Оеверный формат для AI-разбора.",
+				message: "Неверный формат для AI-разбора.",
 			});
 		}
 
@@ -395,59 +395,49 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			const { text, type, volumeContext } = parsedInput.data;
 
 			// 1. Try Local Algorithmic NLP first (to save LLM keys)
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			let result = parseDictationLocally(text, type as any);
+			let result = parseDictationLocally(text, type);
 
 			// 2. Fallback to LLM if local NLP couldn't handle complex natural language
 			if (!result) {
-				// Пояс клиники нужен, чтобы «сегодня» в подсказке модели было днём
-				// клиники, а не днём по UTC: иначе ночью диктовка «запиши на завтра»
-				// возвращает сегодняшнюю дату (см. dictationTodayDate).
-				//
-				// Организация берётся без отправки ошибки: гейт этого маршрута —
-				// requireClinicalReadAccess (админский секрет), токен кабинета в запросе
-				// может отсутствовать. Разбор диктовки из-за неизвестного пояса ронять
-				// нельзя — в этом случае берётся день сервера.
 				result = await parseDictationWithLLM(
 					text,
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					type as any,
+					type,
 					await resolveClinicTimeZone(request),
 				);
 			}
 
 			// 3. Database Linkage (If 3D viewer context is provided and teeth were found)
+			const candidateResult = result as {
+				toothUpdates?: Array<{ code: string; state: string }>;
+				emkUpdates?: { complaint?: string };
+			} | null;
+
 			if (
 				volumeContext &&
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				(result as any)?.toothUpdates &&
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				(result as any).toothUpdates.length > 0
+				candidateResult?.toothUpdates &&
+				candidateResult.toothUpdates.length > 0
 			) {
-				// We link coordinates to the first mentioned tooth, or multiple if needed
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				const valuesToInsert = (result as any).toothUpdates.map(
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					(update: any) => ({
+				const valuesToInsert = candidateResult.toothUpdates.map(
+					(update) => ({
 						organizationId: volumeContext.organizationId,
 						patientId: volumeContext.patientId,
 						studyId: volumeContext.studyId,
 						annotationType: "tooth" as const,
 						toothCode: update.code,
 						coordinates: volumeContext.coordinates || null,
-						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-						notes: (result as any).emkUpdates?.complaint || update.state,
+						notes: candidateResult.emkUpdates?.complaint || update.state,
 					}),
 				);
 				await db.insert(imagingAnnotations).values(valuesToInsert);
 			}
 
 			return reply.send(result);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (err: any) {
+		} catch (err) {
+			const errMessage =
+				err instanceof Error ? err.message : "Неизвестная ошибка";
 			return reply.code(500).send({
 				error: "ParseDictationError",
-				message: err.message || "Ншибка парсинга диктовки",
+				message: errMessage || "Ошибка разбора диктовки",
 			});
 		}
 	});
