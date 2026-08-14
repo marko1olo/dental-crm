@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 430" role="img" aria-labelledby="title description">
+  <title id="title">DENTE connected clinic workflow</title>
+  <desc id="description">A visual map from schedule through patient context and visit workflow to imaging, documents, payments, and follow-up. It describes repository direction and does not claim production or clinical certification.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#061318"/>
+      <stop offset="55%" stop-color="#08272d"/>
+      <stop offset="100%" stop-color="#11253b"/>
+    </linearGradient>
+    <linearGradient id="flow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2ccab5"/>
+      <stop offset="100%" stop-color="#78a6ff"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1600" height="430" rx="28" fill="url(#background)"/>
+  <rect x="1" y="1" width="1598" height="428" rx="27" fill="none" stroke="#23636a" stroke-opacity="0.9"/>
+  <path d="M0 354 C220 281 310 404 505 334 S815 261 1008 332 S1340 396 1600 280" fill="none" stroke="#2ccab5" stroke-opacity="0.11" stroke-width="2"/>
+  <path d="M0 374 C220 301 310 424 505 354 S815 281 1008 352 S1340 416 1600 300" fill="none" stroke="#78a6ff" stroke-opacity="0.08" stroke-width="2"/>
+  <g font-family="DejaVu Sans, sans-serif">
+    <text x="74" y="72" fill="#8ff3e3" font-size="17" font-weight="700" letter-spacing="3.2">DENTE / CONNECTED CLINIC PATH</text>
+    <text x="74" y="111" fill="#f2fffd" font-size="31" font-weight="700">One operational thread, not disconnected screens</text>
+    <text x="74" y="143" fill="#a8c9ca" font-size="16">Repository direction: an inspectable workspace prototype. Clinical, legal, and deployment validation remain separate responsibilities.</text>
+
+    <line x1="202" y1="258" x2="1386" y2="258" stroke="url(#flow)" stroke-opacity="0.54" stroke-width="3"/>
+    <g fill="#2ccab5" filter="url(#glow)">
+      <circle cx="202" cy="258" r="7"/><circle cx="498" cy="258" r="7"/><circle cx="794" cy="258" r="7"/><circle cx="1090" cy="258" r="7"/><circle cx="1386" cy="258" r="7"/>
+    </g>
+
+    <g transform="translate(72 184)">
+      <rect width="260" height="148" rx="18" fill="#0b2a2f" stroke="#28777b"/>
+      <text x="28" y="44" fill="#8ff3e3" font-size="14" font-weight="700" letter-spacing="2">01 / OPERATIONS</text>
+      <text x="28" y="81" fill="#f2fffd" font-size="23" font-weight="700">Schedule</text>
+      <text x="28" y="112" fill="#aac8c8" font-size="15">Clinic readiness and chair context</text>
+    </g>
+    <g transform="translate(368 184)">
+      <rect width="260" height="148" rx="18" fill="#0b2a2f" stroke="#28777b"/>
+      <text x="28" y="44" fill="#8ff3e3" font-size="14" font-weight="700" letter-spacing="2">02 / CONTEXT</text>
+      <text x="28" y="81" fill="#f2fffd" font-size="23" font-weight="700">Patient context</text>
+      <text x="28" y="112" fill="#aac8c8" font-size="15">Profile and structured visit preparation</text>
+    </g>
+    <g transform="translate(664 184)">
+      <rect width="260" height="148" rx="18" fill="#0b2a2f" stroke="#28777b"/>
+      <text x="28" y="44" fill="#8ff3e3" font-size="14" font-weight="700" letter-spacing="2">03 / VISIT</text>
+      <text x="28" y="81" fill="#f2fffd" font-size="23" font-weight="700">Clinical workflow</text>
+      <text x="28" y="112" fill="#aac8c8" font-size="15">Records and rule-aware controls</text>
+    </g>
+    <g transform="translate(960 184)">
+      <rect width="260" height="148" rx="18" fill="#102941" stroke="#3c6f96"/>
+      <text x="28" y="44" fill="#a8caff" font-size="14" font-weight="700" letter-spacing="2">04 / ARTIFACTS</text>
+      <text x="28" y="81" fill="#f2fffd" font-size="23" font-weight="700">Imaging &amp; documents</text>
+      <text x="28" y="112" fill="#b6cce2" font-size="15">Browser tools and lifecycle routes</text>
+    </g>
+    <g transform="translate(1256 184)">
+      <rect width="260" height="148" rx="18" fill="#102941" stroke="#3c6f96"/>
+      <text x="28" y="44" fill="#a8caff" font-size="14" font-weight="700" letter-spacing="2">05 / CONTINUITY</text>
+      <text x="28" y="81" fill="#f2fffd" font-size="23" font-weight="700">Finance &amp; follow-up</text>
+      <text x="28" y="112" fill="#b6cce2" font-size="15">Payments, tasks, accountable handoff</text>
+    </g>
+
+    <text x="74" y="386" fill="#8ff3e3" font-size="14" font-weight="700">WEB</text>
+    <text x="132" y="386" fill="#a8c9ca" font-size="14">React 19 + Vite</text>
+    <circle cx="304" cy="381" r="3" fill="#2ccab5"/>
+    <text x="322" y="386" fill="#8ff3e3" font-size="14" font-weight="700">API</text>
+    <text x="369" y="386" fill="#a8c9ca" font-size="14">Fastify 5 + Drizzle</text>
+    <circle cx="542" cy="381" r="3" fill="#2ccab5"/>
+    <text x="560" y="386" fill="#8ff3e3" font-size="14" font-weight="700">CONTRACTS</text>
+    <text x="658" y="386" fill="#a8c9ca" font-size="14">shared TypeScript package</text>
+  </g>
+</svg>
