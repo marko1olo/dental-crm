@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { DentalInteractionMatrixEngine } from "@dental/shared";
 
 describe("Dental Pharmacology & Drug Interaction Matrix (Order 1094n)", () => {
@@ -17,11 +18,13 @@ describe("Dental Pharmacology & Drug Interaction Matrix (Order 1094n)", () => {
 			[],
 		);
 
-		expect(result.isPrescriptionSafe).toBe(false);
-		expect(result.blockersCount).toBeGreaterThanOrEqual(1);
-		const blocker = result.conflicts.find((c) => c.id === "INT-METRO-ALC");
-		expect(blocker).toBeDefined();
-		expect(blocker?.severity).toBe("blocker");
+		assert.equal(result.isPrescriptionSafe, false);
+		assert.ok(result.blockersCount >= 1);
+		const blocker = result.conflicts.find(
+			(conflict) => conflict.id === "INT-METRO-ALC",
+		);
+		assert.ok(blocker);
+		assert.equal(blocker.severity, "blocker");
 	});
 
 	it("blocks NSAIDs when patient is taking Anticoagulants (severe hemorrhage risk)", () => {
@@ -39,12 +42,12 @@ describe("Dental Pharmacology & Drug Interaction Matrix (Order 1094n)", () => {
 			[],
 		);
 
-		expect(result.isPrescriptionSafe).toBe(false);
+		assert.equal(result.isPrescriptionSafe, false);
 		const blocker = result.conflicts.find(
-			(c) => c.id === "INT-NSAID-ANTICOAG",
+			(conflict) => conflict.id === "INT-NSAID-ANTICOAG",
 		);
-		expect(blocker).toBeDefined();
-		expect(blocker?.severity).toBe("blocker");
+		assert.ok(blocker);
+		assert.equal(blocker.severity, "blocker");
 	});
 
 	it("blocks Penicillins and warns on Cephalosporins for Penicillin-allergic patients", () => {
@@ -68,11 +71,11 @@ describe("Dental Pharmacology & Drug Interaction Matrix (Order 1094n)", () => {
 			],
 		);
 
-		expect(result.isPrescriptionSafe).toBe(false);
+		assert.equal(result.isPrescriptionSafe, false);
 		const blocker = result.conflicts.find(
-			(c) => c.id === "ALLERGY-PEN-DIRECT",
+			(conflict) => conflict.id === "ALLERGY-PEN-DIRECT",
 		);
-		expect(blocker).toBeDefined();
+		assert.ok(blocker);
 	});
 
 	it("blocks Epinephrine for patients on Non-selective Beta-blockers (Propranolol)", () => {
@@ -90,9 +93,11 @@ describe("Dental Pharmacology & Drug Interaction Matrix (Order 1094n)", () => {
 			[],
 		);
 
-		expect(result.isPrescriptionSafe).toBe(false);
-		const blocker = result.conflicts.find((c) => c.id === "INT-EPI-BB");
-		expect(blocker).toBeDefined();
+		assert.equal(result.isPrescriptionSafe, false);
+		const blocker = result.conflicts.find(
+			(conflict) => conflict.id === "INT-EPI-BB",
+		);
+		assert.ok(blocker);
 	});
 
 	it("blocks NSAIDs in Samter Triad (Aspirin-induced asthma) patients", () => {
@@ -116,10 +121,10 @@ describe("Dental Pharmacology & Drug Interaction Matrix (Order 1094n)", () => {
 			],
 		);
 
-		expect(result.isPrescriptionSafe).toBe(false);
+		assert.equal(result.isPrescriptionSafe, false);
 		const blocker = result.conflicts.find(
-			(c) => c.id === "ALLERGY-SAMTER-TRIAD",
+			(conflict) => conflict.id === "ALLERGY-SAMTER-TRIAD",
 		);
-		expect(blocker).toBeDefined();
+		assert.ok(blocker);
 	});
 });

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
 	NiTiFileFatigueEngine,
 	SchneiderCurvatureCalculator,
@@ -12,9 +13,9 @@ describe("Endodontics, Schneider Curvature & NiTi Fatigue Lifespan Engine", () =
 			apicalPoint: { x: 5, y: 18 },
 		});
 
-		expect(result.schneiderAngleDeg).toBeGreaterThan(0);
-		expect(result.curvatureRadiusMm).toBeGreaterThan(0);
-		expect(result.riskCategory).toBeDefined();
+		assert.ok(result.schneiderAngleDeg > 0);
+		assert.ok(result.curvatureRadiusMm > 0);
+		assert.ok(result.riskCategory);
 	});
 
 	it("computes incremental fatigue accumulation (Delta Phi) with kinematic factors", () => {
@@ -40,31 +41,29 @@ describe("Endodontics, Schneider Curvature & NiTi Fatigue Lifespan Engine", () =
 			taper: 0.06,
 		});
 
-		expect(rotary.deltaPhi).toBeGreaterThan(0);
-		expect(recip.deltaPhi).toBeLessThan(rotary.deltaPhi);
-		expect(recip.deltaPhi).toBeCloseTo(rotary.deltaPhi * 0.4, 2);
+		assert.ok(rotary.deltaPhi > 0);
+		assert.ok(recip.deltaPhi < rotary.deltaPhi);
+		assert.ok(Math.abs(recip.deltaPhi - rotary.deltaPhi * 0.4) < 0.005);
 	});
 
 	it("enforces hard digital lockout when cumulative fatigue Phi >= 1.00", () => {
-		const activeEval = NiTiFileFatigueEngine.evaluateFileLifeStatus(
-			0.35,
-			0.15,
-		);
-		expect(activeEval.newPhi).toBe(0.5);
-		expect(activeEval.newStatus).toBe("active");
-		expect(activeEval.isLockoutRequired).toBe(false);
+		const activeEval = NiTiFileFatigueEngine.evaluateFileLifeStatus(0.35, 0.15);
+		assert.equal(activeEval.newPhi, 0.5);
+		assert.equal(activeEval.newStatus, "active");
+		assert.equal(activeEval.isLockoutRequired, false);
 
 		const warningEval = NiTiFileFatigueEngine.evaluateFileLifeStatus(
 			0.75,
 			0.12,
 		);
-		expect(warningEval.newPhi).toBe(0.87);
-		expect(warningEval.newStatus).toBe("warning_near_fatigue");
+		assert.equal(warningEval.newPhi, 0.87);
+		assert.equal(warningEval.newStatus, "warning_near_fatigue");
 
 		const lockedEval = NiTiFileFatigueEngine.evaluateFileLifeStatus(0.9, 0.15);
-		expect(lockedEval.newPhi).toBe(1.05);
-		expect(lockedEval.newStatus).toBe("locked_disposed");
-		expect(lockedEval.isLockoutRequired).toBe(true);
-		expect(lockedEval.lockoutReason).toContain("Исчерпан ресурс");
+		assert.equal(lockedEval.newPhi, 1.05);
+		assert.equal(lockedEval.newStatus, "locked_disposed");
+		assert.equal(lockedEval.isLockoutRequired, true);
+		assert.ok(lockedEval.lockoutReason);
+		assert.ok(lockedEval.lockoutReason.includes("Исчерпан ресурс"));
 	});
 });

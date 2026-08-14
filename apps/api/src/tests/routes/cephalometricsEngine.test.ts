@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
 	CephalometricEngine,
 	type CephalometricLandmarksInput,
@@ -38,16 +39,16 @@ describe("Orthodontic Cephalometric Tracing & Craniofacial Analysis Engine", () 
 			0.2,
 		);
 
-		expect(result.steiner.snaDeg).toBeGreaterThan(70);
-		expect(result.steiner.snaDeg).toBeLessThan(100);
-		expect(result.steiner.snbDeg).toBeGreaterThan(65);
-		expect(result.steiner.snbDeg).toBeLessThan(95);
+		assert.ok(result.steiner.snaDeg > 70);
+		assert.ok(result.steiner.snaDeg < 100);
+		assert.ok(result.steiner.snbDeg > 65);
+		assert.ok(result.steiner.snbDeg < 95);
 
 		// ANB = SNA - SNB
 		const calculatedAnb = Number(
 			(result.steiner.snaDeg - result.steiner.snbDeg).toFixed(2),
 		);
-		expect(result.steiner.anbDeg).toBe(calculatedAnb);
+		assert.equal(result.steiner.anbDeg, calculatedAnb);
 	});
 
 	it("strictly satisfies the Tweed Diagnostic Triangle Invariant (FMA + IMPA + FMIA = 180.0°)", () => {
@@ -56,10 +57,10 @@ describe("Orthodontic Cephalometric Tracing & Craniofacial Analysis Engine", () 
 			0.2,
 		);
 
-		expect(result.tweed.triangleSumDeg).toBe(180.0);
-		expect(result.tweed.fmaDeg).toBeGreaterThan(0);
-		expect(result.tweed.impaDeg).toBeGreaterThan(0);
-		expect(result.tweed.fmiaDeg).toBeGreaterThan(0);
+		assert.equal(result.tweed.triangleSumDeg, 180.0);
+		assert.ok(result.tweed.fmaDeg > 0);
+		assert.ok(result.tweed.impaDeg > 0);
+		assert.ok(result.tweed.fmiaDeg > 0);
 	});
 
 	it("computes Jacobson Wits linear appraisal projection on functional occlusal plane", () => {
@@ -68,9 +69,9 @@ describe("Orthodontic Cephalometric Tracing & Craniofacial Analysis Engine", () 
 			0.2,
 		);
 
-		expect(typeof result.wits.witsAoBoMm).toBe("number");
-		expect(result.classifications.skeletalClass).toBeDefined();
-		expect(result.classifications.facialBiotype).toBeDefined();
-		expect(result.clinicalInterpretation.length).toBeGreaterThan(50);
+		assert.equal(typeof result.wits.witsAoBoMm, "number");
+		assert.ok(result.classifications.skeletalClass);
+		assert.ok(result.classifications.facialBiotype);
+		assert.ok(result.clinicalInterpretation.length > 50);
 	});
 });
