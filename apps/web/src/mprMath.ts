@@ -421,12 +421,16 @@ export function distancePointToSpline(p: vec3, spline: vec3[]): number {
 }
 
 /**
- * Classifies Bone Density (HU) into D1-D4 scale (Misch bone density classification).
+ * Classifies Bone Density (HU) into D1-D4 scale (Misch bone density classification standard).
+ * D1: > 1250 HU (Dense cortical bone)
+ * D2: 850 - 1250 HU (Porous cortical & coarse trabecular bone)
+ * D3: 350 - 850 HU (Porous cortical & fine trabecular bone)
+ * D4: < 350 HU (Fine trabecular bone)
  */
 export function classifyBoneDensity(hu: number): "D1" | "D2" | "D3" | "D4" {
-	if (hu >= 850) return "D1";
-	if (hu >= 500) return "D2";
-	if (hu >= 225) return "D3";
+	if (hu > 1250) return "D1";
+	if (hu >= 850) return "D2";
+	if (hu >= 350) return "D3";
 	return "D4";
 }
 

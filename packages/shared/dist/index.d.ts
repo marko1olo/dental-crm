@@ -101619,6 +101619,12 @@ export declare const ffd12VatRateSchema: z.ZodEnum<["vat_20", "vat_10", "vat_20_
 export type Ffd12VatRate = z.infer<typeof ffd12VatRateSchema>;
 export declare const taxDeductionCategorySchema: z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>;
 export type TaxDeductionCategory = z.infer<typeof taxDeductionCategorySchema>;
+/** Тег 2108: Мера количества предмета расчета (ФФД 1.2) */
+export declare const ffd12QuantityMeasureSchema: z.ZodEnum<["piece", "gram", "kilogram", "other"]>;
+export type Ffd12QuantityMeasure = z.infer<typeof ffd12QuantityMeasureSchema>;
+/** Тег 1055: Применяемая система налогообложения (СНО) */
+export declare const ffd12TaxationSystemSchema: z.ZodEnum<["osn", "usn_income", "usn_income_expense", "esxn", "psn"]>;
+export type Ffd12TaxationSystem = z.infer<typeof ffd12TaxationSystemSchema>;
 export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
     name: z.ZodString;
     priceKopecks: z.ZodNumber;
@@ -101627,6 +101633,7 @@ export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
     subject: z.ZodDefault<z.ZodEnum<["commodity", "service", "job", "payment"]>>;
     method: z.ZodDefault<z.ZodEnum<["full_prepayment", "prepayment", "advance", "full_payment", "partial_payment_and_credit", "credit_handover", "credit_payment"]>>;
     vatRate: z.ZodDefault<z.ZodEnum<["vat_20", "vat_10", "vat_20_120", "vat_10_110", "vat_0", "vat_none"]>>;
+    measure: z.ZodDefault<z.ZodEnum<["piece", "gram", "kilogram", "other"]>>;
     taxDeductionCode: z.ZodDefault<z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>>;
     medicalServiceCodeMzk: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
@@ -101638,6 +101645,7 @@ export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
     priceKopecks: number;
     subject: "service" | "payment" | "job" | "commodity";
     vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+    measure: "other" | "piece" | "gram" | "kilogram";
     medicalServiceCodeMzk?: string | null | undefined;
 }, {
     name: string;
@@ -101648,6 +101656,7 @@ export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
     taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
     subject?: "service" | "payment" | "job" | "commodity" | undefined;
     vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+    measure?: "other" | "piece" | "gram" | "kilogram" | undefined;
     medicalServiceCodeMzk?: string | null | undefined;
 }>, {
     name: string;
@@ -101658,6 +101667,7 @@ export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
     priceKopecks: number;
     subject: "service" | "payment" | "job" | "commodity";
     vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+    measure: "other" | "piece" | "gram" | "kilogram";
     medicalServiceCodeMzk?: string | null | undefined;
 }, {
     name: string;
@@ -101668,6 +101678,7 @@ export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
     taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
     subject?: "service" | "payment" | "job" | "commodity" | undefined;
     vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+    measure?: "other" | "piece" | "gram" | "kilogram" | undefined;
     medicalServiceCodeMzk?: string | null | undefined;
 }>;
 export type FiscalReceiptItem = z.infer<typeof fiscalReceiptItemSchema>;
@@ -101676,6 +101687,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     invoiceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     patientId: z.ZodString;
     operationType: z.ZodDefault<z.ZodEnum<["income", "income_return", "expense", "expense_return"]>>;
+    taxationSystem: z.ZodDefault<z.ZodEnum<["osn", "usn_income", "usn_income_expense", "esxn", "psn"]>>;
     customerContact: z.ZodString;
     items: z.ZodArray<z.ZodEffects<z.ZodObject<{
         name: z.ZodString;
@@ -101685,6 +101697,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         subject: z.ZodDefault<z.ZodEnum<["commodity", "service", "job", "payment"]>>;
         method: z.ZodDefault<z.ZodEnum<["full_prepayment", "prepayment", "advance", "full_payment", "partial_payment_and_credit", "credit_handover", "credit_payment"]>>;
         vatRate: z.ZodDefault<z.ZodEnum<["vat_20", "vat_10", "vat_20_120", "vat_10_110", "vat_0", "vat_none"]>>;
+        measure: z.ZodDefault<z.ZodEnum<["piece", "gram", "kilogram", "other"]>>;
         taxDeductionCode: z.ZodDefault<z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>>;
         medicalServiceCodeMzk: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
@@ -101696,6 +101709,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         priceKopecks: number;
         subject: "service" | "payment" | "job" | "commodity";
         vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+        measure: "other" | "piece" | "gram" | "kilogram";
         medicalServiceCodeMzk?: string | null | undefined;
     }, {
         name: string;
@@ -101706,6 +101720,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
         subject?: "service" | "payment" | "job" | "commodity" | undefined;
         vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+        measure?: "other" | "piece" | "gram" | "kilogram" | undefined;
         medicalServiceCodeMzk?: string | null | undefined;
     }>, {
         name: string;
@@ -101716,6 +101731,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         priceKopecks: number;
         subject: "service" | "payment" | "job" | "commodity";
         vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+        measure: "other" | "piece" | "gram" | "kilogram";
         medicalServiceCodeMzk?: string | null | undefined;
     }, {
         name: string;
@@ -101726,6 +101742,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
         subject?: "service" | "payment" | "job" | "commodity" | undefined;
         vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+        measure?: "other" | "piece" | "gram" | "kilogram" | undefined;
         medicalServiceCodeMzk?: string | null | undefined;
     }>, "many">;
     cashKopecks: z.ZodDefault<z.ZodNumber>;
@@ -101747,9 +101764,11 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         priceKopecks: number;
         subject: "service" | "payment" | "job" | "commodity";
         vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+        measure: "other" | "piece" | "gram" | "kilogram";
         medicalServiceCodeMzk?: string | null | undefined;
     }[];
     operationType: "income" | "income_return" | "expense" | "expense_return";
+    taxationSystem: "osn" | "usn_income" | "usn_income_expense" | "esxn" | "psn";
     customerContact: string;
     cashKopecks: number;
     electronicCardKopecks: number;
@@ -101772,6 +101791,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
         subject?: "service" | "payment" | "job" | "commodity" | undefined;
         vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+        measure?: "other" | "piece" | "gram" | "kilogram" | undefined;
         medicalServiceCodeMzk?: string | null | undefined;
     }[];
     customerContact: string;
@@ -101779,6 +101799,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     operationType?: "income" | "income_return" | "expense" | "expense_return" | undefined;
     clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
+    taxationSystem?: "osn" | "usn_income" | "usn_income_expense" | "esxn" | "psn" | undefined;
     cashKopecks?: number | undefined;
     electronicCardKopecks?: number | undefined;
     sbpKopecks?: number | undefined;
@@ -101797,9 +101818,11 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         priceKopecks: number;
         subject: "service" | "payment" | "job" | "commodity";
         vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+        measure: "other" | "piece" | "gram" | "kilogram";
         medicalServiceCodeMzk?: string | null | undefined;
     }[];
     operationType: "income" | "income_return" | "expense" | "expense_return";
+    taxationSystem: "osn" | "usn_income" | "usn_income_expense" | "esxn" | "psn";
     customerContact: string;
     cashKopecks: number;
     electronicCardKopecks: number;
@@ -101822,6 +101845,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
         subject?: "service" | "payment" | "job" | "commodity" | undefined;
         vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+        measure?: "other" | "piece" | "gram" | "kilogram" | undefined;
         medicalServiceCodeMzk?: string | null | undefined;
     }[];
     customerContact: string;
@@ -101829,6 +101853,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     operationType?: "income" | "income_return" | "expense" | "expense_return" | undefined;
     clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
+    taxationSystem?: "osn" | "usn_income" | "usn_income_expense" | "esxn" | "psn" | undefined;
     cashKopecks?: number | undefined;
     electronicCardKopecks?: number | undefined;
     sbpKopecks?: number | undefined;

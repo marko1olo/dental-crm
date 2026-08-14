@@ -10565,6 +10565,21 @@ export const taxDeductionCategorySchema = z.enum([
     "code_1_standard", // Код 1: обычное лечение (терапия, гигиена, брекеты)
     "code_2_expensive_treatment", // Код 2: дорогостоящее лечение (хирургическая имплантация, костная пластика)
 ]);
+/** Тег 2108: Мера количества предмета расчета (ФФД 1.2) */
+export const ffd12QuantityMeasureSchema = z.enum([
+    "piece", // 0 (штуки / единицы)
+    "gram", // 10 (граммы)
+    "kilogram", // 11 (килограммы)
+    "other", // 255 (иное)
+]);
+/** Тег 1055: Применяемая система налогообложения (СНО) */
+export const ffd12TaxationSystemSchema = z.enum([
+    "osn", // 1 (Общая / ОСН)
+    "usn_income", // 2 (УСН Доходы)
+    "usn_income_expense", // 4 (УСН Доходы минус расходы)
+    "esxn", // 8 (ЕСХН)
+    "psn", // 16 (Патент / ПСН)
+]);
 export const fiscalReceiptItemSchema = z
     .object({
     name: z.string().trim().min(1).max(128),
@@ -10574,6 +10589,7 @@ export const fiscalReceiptItemSchema = z
     subject: ffd12PaymentSubjectSchema.default("service"),
     method: ffd12PaymentMethodSchema.default("full_payment"),
     vatRate: ffd12VatRateSchema.default("vat_none"),
+    measure: ffd12QuantityMeasureSchema.default("piece"),
     taxDeductionCode: taxDeductionCategorySchema.default("code_1_standard"),
     medicalServiceCodeMzk: z.string().trim().max(32).optional().nullable(),
 })
@@ -10593,6 +10609,7 @@ export const createFiscalReceiptPayloadSchema = z
     invoiceId: z.string().uuid().optional().nullable(),
     patientId: z.string().uuid(),
     operationType: ffd12OperationTypeSchema.default("income"),
+    taxationSystem: ffd12TaxationSystemSchema.default("usn_income"),
     customerContact: z.string().trim().min(5).max(100),
     items: z.array(fiscalReceiptItemSchema).min(1),
     cashKopecks: z.number().int().min(0).default(0),

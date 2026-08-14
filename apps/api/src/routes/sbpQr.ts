@@ -90,6 +90,40 @@ function resolveTag1199(vatRate: string): number {
 	}
 }
 
+/** Helper to map FFD 1.2 Tag 2108 Measure of quantity */
+function resolveTag2108(measure: string): number {
+	switch (measure) {
+		case "piece":
+			return 0; // 0 = шт / ед
+		case "gram":
+			return 10; // 10 = г
+		case "kilogram":
+			return 11; // 11 = кг
+		case "other":
+			return 255; // 255 = иное
+		default:
+			return 0;
+	}
+}
+
+/** Helper to map FFD 1.2 Tag 1055 Taxation system (СНО) */
+function resolveTag1055(taxation: string): number {
+	switch (taxation) {
+		case "osn":
+			return 1; // 1 = ОСН
+		case "usn_income":
+			return 2; // 2 = УСН Доходы
+		case "usn_income_expense":
+			return 4; // 4 = УСН Доходы минус расходы
+		case "esxn":
+			return 8; // 8 = ЕСХН
+		case "psn":
+			return 16; // 16 = Патент (ПСН)
+		default:
+			return 2;
+	}
+}
+
 export async function registerSbpQrRoutes(app: FastifyInstance) {
 	/**
 	 * 1. POST /api/billing/sbp/generate-qr
@@ -274,6 +308,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			tag1212_paymentSubject: resolveTag1212(item.subject),
 			tag1214_paymentMethod: resolveTag1214(item.method),
 			tag1199_vatRate: resolveTag1199(item.vatRate),
+			tag2108_quantityMeasure: resolveTag2108(item.measure),
 			medicalServiceCodeMzk: item.medicalServiceCodeMzk || null,
 		}));
 
@@ -389,6 +424,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			fiscalReceiptNumber,
 			ffd12Tags: {
 				tag1054_operationType: resolveTag1054(input.operationType),
+				tag1055_taxationSystem: resolveTag1055(input.taxationSystem),
 				tag1008_customerContact: input.customerContact,
 				tag1021_cashier: input.cashierFullName,
 				tag1031_cashSumKopecks: input.cashKopecks,
