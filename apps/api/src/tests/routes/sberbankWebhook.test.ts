@@ -74,13 +74,14 @@ describe("POST /api/sberbank/webhook — Cryptographic Helper Unit Tests", () =>
 		assert.equal(resultTampered, false);
 	});
 
-	test("verifySberbankChecksum approves matching secret token", () => {
+	test("verifySberbankChecksum rejects raw secret token when HMAC is required", () => {
 		const result = verifySberbankChecksum(
 			{ orderId: "sber-101" },
 			SECRET_KEY,
 			SECRET_KEY,
 		);
-		assert.equal(result, true);
+		// Сырой токен секрета больше не обходит расчет HMAC-подписи
+		assert.equal(result, false);
 	});
 });
 
