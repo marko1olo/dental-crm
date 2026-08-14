@@ -123,6 +123,12 @@ function implantProtocolLog(implant: ImplantData): string {
 	return `В область зуба ${implant.fdiCode} запланирована установка имплантата ${implant.diameter.toFixed(1)}x${implant.length.toFixed(1)} мм. Плотность кости по HU соответствует типу ${implant.boneDensity.classification} (${implant.boneDensity.averageHU} HU). Дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм.`;
 }
 
+const VIEWPORT_IDS = {
+	axial: "AXIAL",
+	sagittal: "SAGITTAL",
+	coronal: "CORONAL",
+} as const;
+
 export function Cornerstone3DViewer({
 	imageIds,
 	patientId = null,
@@ -759,13 +765,39 @@ export function Cornerstone3DViewer({
 			cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
 		if (!toolGroup) return;
 
-		// Disable previous
-		toolGroup.setToolDisabled(activeTool);
-		// Enable new
+		// Set previous tool to passive (for crosshairs to keep reference lines) or disabled
+		if (activeTool === cornerstoneTools.CrosshairsTool.toolName) {
+			toolGroup.setToolPassive(activeTool);
+		} else {
+			toolGroup.setToolDisabled(activeTool);
+		}
+
+		// Enable new active tool
 		toolGroup.setToolActive(toolName, {
 			bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Primary }],
 		});
 		setActiveTool(toolName);
+	};
+
+	const applyVoiPreset = (windowWidth: number, windowCenter: number) => {
+		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+		if (!renderingEngine) return;
+		const viewportIdsList = [
+			VIEWPORT_IDS.axial,
+			VIEWPORT_IDS.sagittal,
+			VIEWPORT_IDS.coronal,
+		];
+		const lower = windowCenter - windowWidth / 2;
+		const upper = windowCenter + windowWidth / 2;
+		for (const vId of viewportIdsList) {
+			const vp = renderingEngine.getViewport(vId);
+			if (vp && "setProperties" in vp) {
+				(vp as cornerstone.Types.IVolumeViewport).setProperties({
+					voiRange: { lower, upper },
+				});
+				vp.render();
+			}
+		}
 	};
 
 	const simulateImplantPlacement = () => {
@@ -949,6 +981,29 @@ export function Cornerstone3DViewer({
 							border: "none",
 							transition: "all 0.2s",
 							backgroundColor:
+								activeTool === cornerstoneTools.LengthTool.toolName
+									? "#2563eb"
+									: "transparent",
+							color:
+								activeTool === cornerstoneTools.LengthTool.toolName
+									? "#fff"
+									: "#d4d4d8",
+						}}
+						onClick={() => setTool(cornerstoneTools.LengthTool.toolName)}
+					>
+						Линейка (мм)
+					</button>
+					<button
+						type="button"
+						style={{
+							padding: "8px 16px",
+							borderRadius: "8px",
+							fontSize: "14px",
+							fontWeight: 500,
+							cursor: "pointer",
+							border: "none",
+							transition: "all 0.2s",
+							backgroundColor:
 								activeTool === cornerstoneTools.ProbeTool.toolName
 									? "#2563eb"
 									: "transparent",
@@ -989,6 +1044,72 @@ export function Cornerstone3DViewer({
 						margin: "0 4px",
 					}}
 				></div>
+
+				{/* DENTAL VOI PRESETS */}
+				<div
+					style={{
+						display: "flex",
+						backgroundColor: "rgba(0,0,0,0.4)",
+						borderRadius: "12px",
+						padding: "4px",
+						gap: "4px",
+					}}
+				>
+					<button
+						type="button"
+						style={{
+							padding: "6px 10px",
+							borderRadius: "8px",
+							fontSize: "12px",
+							fontWeight: 500,
+							cursor: "pointer",
+							border: "none",
+							backgroundColor: "rgba(255,255,255,0.1)",
+							color: "#d4d4d8",
+							transition: "all 0.2s",
+						}}
+						onClick={() => applyVoiPreset(3000, 700)}
+						title="Режим кости: WW 3000, WL 700"
+					>
+						🦴 Кость
+					</button>
+					<button
+						type="button"
+						style={{
+							padding: "6px 10px",
+							borderRadius: "8px",
+							fontSize: "12px",
+							fontWeight: 500,
+							cursor: "pointer",
+							border: "none",
+							backgroundColor: "rgba(255,255,255,0.1)",
+							color: "#d4d4d8",
+							transition: "all 0.2s",
+						}}
+						onClick={() => applyVoiPreset(400, 40)}
+						title="Мягкие ткани: WW 400, WL 40"
+					>
+						🧠 Ткани
+					</button>
+					<button
+						type="button"
+						style={{
+							padding: "6px 10px",
+							borderRadius: "8px",
+							fontSize: "12px",
+							fontWeight: 500,
+							cursor: "pointer",
+							border: "none",
+							backgroundColor: "rgba(255,255,255,0.1)",
+							color: "#d4d4d8",
+							transition: "all 0.2s",
+						}}
+						onClick={() => applyVoiPreset(4000, 1000)}
+						title="Эмаль / Зубы: WW 4000, WL 1000"
+					>
+						🦷 Зубы
+					</button>
+				</div>
 
 				<div
 					style={{

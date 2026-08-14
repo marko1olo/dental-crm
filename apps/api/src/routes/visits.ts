@@ -629,7 +629,10 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 		const body = request.body as { status: string };
 		if (!body?.status) {
 			reply.code(400);
-			return { error: "ValidationError", message: "Missing status" };
+			return {
+				error: "ValidationError",
+				message: "Не указан статус контроля качества приёма.",
+			};
 		}
 
 		try {
@@ -641,7 +644,10 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 			return { visit: updated };
 		} catch (_error) {
 			reply.code(404);
-			return { error: "NotFound", message: "Visit not found" };
+			return {
+				error: "NotFound",
+				message: "Приём не найден или недоступен для контроля качества.",
+			};
 		}
 	});
 }

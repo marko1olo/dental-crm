@@ -108,7 +108,7 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 				.returning();
 
 			if (!installation) {
-				throw new Error("Failed to insert implant installation");
+				throw new Error("Не удалось сохранить протокол установки имплантата в базе данных.");
 			}
 
 			// Record baseline ISQ measurement entry

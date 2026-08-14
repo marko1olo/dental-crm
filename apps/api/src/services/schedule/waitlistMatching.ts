@@ -55,6 +55,7 @@ export type FreedSlot = {
 	readonly endsAt: Date;
 	readonly doctorUserId: string | null;
 	readonly doctorName: string | null;
+	readonly timezone?: string;
 };
 
 export type WaitlistMatchReport = {
@@ -209,9 +210,12 @@ export function parsePreferredRanges(
 				}
 			}
 
+			const startRaw = record.from ?? record.start;
+			const endRaw = record.to ?? record.end;
 			const start =
-				typeof record.from === "string" ? toMinutes(record.from) : null;
-			const end = typeof record.to === "string" ? toMinutes(record.to) : null;
+				typeof startRaw === "string" ? toMinutes(startRaw) : null;
+			const end =
+				typeof endRaw === "string" ? toMinutes(endRaw) : null;
 			if (start !== null && end !== null && end > start)
 				collected.push({ fromMinute: start, toMinute: end });
 		}
@@ -284,7 +288,8 @@ export async function findWaitlistMatches(
 	);
 
 	const now = new Date();
-	const localSlot = utcToLocalWallTime(slot.startsAt, "Europe/Samara");
+	const effectiveTimeZone = slot.timezone || "Europe/Samara";
+	const localSlot = utcToLocalWallTime(slot.startsAt, effectiveTimeZone);
 	const slotStartMinute = localSlot.hours * 60 + localSlot.minutes;
 
 	/** День недели окна. 0 — воскресенье, как в Date.getDay(). */
@@ -298,12 +303,9 @@ export async function findWaitlistMatches(
 		/*
 		 * ДЕНЬ НЕДЕЛИ УЧИТЫВАЕТСЯ, а не игнорируется. В первой редакции подбор
 		 * смотрел только на время суток, потому что я не сверился с фактическим
-		 * контрактом поля: в zod-схеме POST /api/waitlist это массив {day, slot},
-		 * то есть день там есть. Без его учёта человек, просивший вторник, попадал
-		 * в подбор на пятничное окно — и звонок был бы потрачен впустую.
-		 *
-		 * Если день не разобрался ни у одной записи — ограничения нет, подходит
-		 * любой: выдуманное ограничение хуже отсутствующего.
+		 * наполнением колонки: форма WaitlistDrawer кладёт в JSON день недели
+		 * («пн», «вт»… или английские имена), и пациент, просивший только субботу,
+		 * получал окна во вторник. День недели считается по часовому поясу клиники.
 		 */
 		const rangesArray = Array.isArray(row.preferredTimeRanges)
 			? row.preferredTimeRanges
@@ -388,13 +390,17 @@ export async function findWaitlistMatches(
 		return right.waitingDays - left.waitingDays;
 	});
 
-	const asTime = (date: Date) =>
-		`${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+	const formatWallTime = (date: Date) => {
+		const local = utcToLocalWallTime(date, effectiveTimeZone);
+		const hh = String(local.hours).padStart(2, "0");
+		const mm = String(local.minutes).padStart(2, "0");
+		return `${hh}:${mm}`;
+	};
 
 	return {
 		slot: {
-			from: asTime(slot.startsAt),
-			to: asTime(slot.endsAt),
+			from: formatWallTime(slot.startsAt),
+			to: formatWallTime(slot.endsAt),
 			doctorName: slot.doctorName,
 		},
 		matches: matches.slice(0, limit),

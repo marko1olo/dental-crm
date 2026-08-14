@@ -36,9 +36,10 @@ async function lockAppointmentResources(
 	executor: any,
 	organizationId: string,
 	resources: {
-		chairId?: string | null;
-		doctorUserId?: string | null;
-		patientId?: string | null;
+		chairId?: string | null | undefined;
+		doctorUserId?: string | null | undefined;
+		assistantUserId?: string | null | undefined;
+		patientId?: string | null | undefined;
 	},
 ) {
 	if (resources.chairId) {
@@ -67,6 +68,19 @@ async function lockAppointmentResources(
 			.for("update")
 			.limit(1);
 	}
+	if (resources.assistantUserId) {
+		await executor
+			.select({ id: schema.users.id })
+			.from(schema.users)
+			.where(
+				and(
+					eq(schema.users.organizationId, organizationId),
+					eq(schema.users.id, resources.assistantUserId),
+				),
+			)
+			.for("update")
+			.limit(1);
+	}
 	if (resources.patientId) {
 		await executor
 			.select({ id: schema.patients.id })
@@ -84,14 +98,8 @@ async function lockAppointmentResources(
 
 /**
  * Ищет приём, который пересекается по времени с кандидатом по любому из
- * трёх ресурсов, и бросает ошибку с указанием конкретного виновника.
- *
- * Пациент проверяется наравне с креслом и врачом: физически он не может
- * сидеть в двух креслах одновременно, путь в памяти (sampleData) это
- * запрещает, а сообщение маршрута прямо обещает «время уже занято
- * пациентом, сотрудником или креслом». В пути через базу проверки пациента
- * не было — замерено на живом API: один и тот же пациент записывался в два
- * кресла на одно время, оба ответа 201.
+ * ресурсов (кресло, врач, ассистент, пациент), и бросает ошибку с указанием
+ * конкретного виновника.
  */
 async function assertNoResourceOverlap(
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -100,10 +108,11 @@ async function assertNoResourceOverlap(
 	candidate: {
 		startsAt: Date;
 		endsAt: Date;
-		chairId?: string | null;
-		doctorUserId?: string | null;
-		patientId?: string | null;
-		excludeAppointmentId?: string;
+		chairId?: string | null | undefined;
+		doctorUserId?: string | null | undefined;
+		assistantUserId?: string | null | undefined;
+		patientId?: string | null | undefined;
+		excludeAppointmentId?: string | undefined;
 	},
 ) {
 	const conditions: SQL[] = [
@@ -124,6 +133,10 @@ async function assertNoResourceOverlap(
 		matchConditions.push(
 			eq(schema.appointments.doctorUserId, candidate.doctorUserId),
 		);
+	if (candidate.assistantUserId)
+		matchConditions.push(
+			eq(schema.appointments.assistantUserId, candidate.assistantUserId),
+		);
 	if (candidate.patientId)
 		matchConditions.push(
 			eq(schema.appointments.patientId, candidate.patientId),
@@ -140,12 +153,15 @@ async function assertNoResourceOverlap(
 	if (!ov) return;
 
 	// Порядок сообщений — от самого понятного администратору: пациент важнее
-	// врача, врач важнее кресла.
+	// врача, врач важнее ассистента, ассистент важнее кресла.
 	if (candidate.patientId && ov.patientId === candidate.patientId) {
 		throw new Error("У пациента уже есть запись в это время");
 	}
 	if (candidate.doctorUserId && ov.doctorUserId === candidate.doctorUserId) {
 		throw new Error("У врача уже есть запись в это время");
+	}
+	if (candidate.assistantUserId && ov.assistantUserId === candidate.assistantUserId) {
+		throw new Error("У ассистента уже есть запись в это время");
 	}
 	throw new Error("Кресло уже занято другой записью в это время");
 }
@@ -276,6 +292,7 @@ export async function createAppointmentInDb(
 			await lockAppointmentResources(executor, organizationId, {
 				chairId: input.chairId,
 				doctorUserId: input.doctorUserId,
+				assistantUserId: input.assistantUserId,
 				patientId: input.patientId,
 			});
 			await assertNoResourceOverlap(executor, organizationId, {
@@ -283,6 +300,7 @@ export async function createAppointmentInDb(
 				endsAt: candidateEnds,
 				chairId: input.chairId,
 				doctorUserId: input.doctorUserId,
+				assistantUserId: input.assistantUserId,
 				patientId: input.patientId,
 			});
 		}
@@ -378,12 +396,17 @@ export async function updateAppointmentInDb(
 		const newStatus = input.status ?? existing.status;
 		const newChairId = input.chairId ?? existing.chairId;
 		const newDoctorUserId = input.doctorUserId ?? existing.doctorUserId;
+		const newAssistantUserId =
+			input.assistantUserId !== undefined
+				? input.assistantUserId
+				: existing.assistantUserId;
 		const newPatientId = input.patientId ?? existing.patientId;
 
 		if (newStatus !== "cancelled" && newStatus !== "no_show") {
 			await lockAppointmentResources(tx, organizationId, {
 				chairId: newChairId,
 				doctorUserId: newDoctorUserId,
+				assistantUserId: newAssistantUserId,
 				patientId: newPatientId,
 			});
 			await assertNoResourceOverlap(tx, organizationId, {
@@ -391,6 +414,7 @@ export async function updateAppointmentInDb(
 				endsAt: candidateEnds,
 				chairId: newChairId,
 				doctorUserId: newDoctorUserId,
+				assistantUserId: newAssistantUserId,
 				patientId: newPatientId,
 				excludeAppointmentId: appointmentId,
 			});

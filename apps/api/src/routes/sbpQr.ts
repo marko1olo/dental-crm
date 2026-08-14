@@ -139,14 +139,54 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 
 		const fiscalReceiptNumber = `FD-${Date.now().toString().slice(-6)}`;
 		const now = new Date();
+		const effectiveMutationId =
+			input.clientMutationId || `fiscal:${fiscalReceiptNumber}`;
 
 		const result = await db.transaction(async (tx) => {
+			// 1. Идемпотентность фискализации (защита от повторного списания/чека)
+			if (input.clientMutationId) {
+				const [existingPayment] = await tx
+					.select()
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.clientMutationId, input.clientMutationId),
+						),
+					)
+					.limit(1);
+
+				if (existingPayment) {
+					return existingPayment;
+				}
+			}
+
+			// 2. Блокировка и валидация счёта (если указан)
+			if (input.invoiceId) {
+				const [lockedInvoice] = await tx
+					.select()
+					.from(patientInvoices)
+					.where(
+						and(
+							eq(patientInvoices.id, input.invoiceId),
+							eq(patientInvoices.organizationId, orgId),
+						),
+					)
+					.for("update")
+					.limit(1);
+
+				if (!lockedInvoice) {
+					throw new Error("Счёт на оплату не найден в этой клинике.");
+				}
+			}
+
 			const [payment] = await tx
 				.insert(payments)
 				.values({
 					organizationId: orgId,
 					patientId: input.patientId,
-					amountRub: input.totalKopecks / 100,
+					clientMutationId: effectiveMutationId,
+					amountRub: Number((input.totalKopecks / 100).toFixed(2)),
 					method:
 						input.sbpKopecks > 0
 							? "online"
@@ -177,7 +217,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				.returning();
 
 			if (!payment) {
-				throw new Error("Failed to insert fiscal payment");
+				throw new Error("Не удалось зарегистрировать фискальный платёж в базе данных.");
 			}
 
 			// Record cash ledger entry
@@ -190,7 +230,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 							: input.electronicCardKopecks > 0
 								? "card"
 								: "cash",
-					amountRub: String(input.totalKopecks / 100),
+					amountRub: (input.totalKopecks / 100).toFixed(2),
 					timestamp: now,
 				});
 
@@ -217,12 +257,48 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				dispatchChannel: isEmail ? "email" : "sms",
 				targetDestination: input.customerContact,
 				fiscalReceiptNumber,
-				receiptAmountRub: String(input.totalKopecks / 100),
+				receiptAmountRub: (input.totalKopecks / 100).toFixed(2),
 				paperPrintSkipped: true,
 			});
 
 			return payment;
 		});
+
+		// Dynamic FFD 1.2 Tag Mapping (Приказ ФНС РФ № ЕД-7-20/662@)
+		const firstItem = input.items[0];
+		const subject = firstItem?.subject ?? "service";
+		const tag1212 =
+			subject === "commodity" ? 1 : subject === "job" ? 3 : subject === "payment" ? 10 : 4;
+
+		const method = firstItem?.method ?? "full_payment";
+		const tag1214 =
+			method === "full_prepayment"
+				? 1
+				: method === "prepayment"
+					? 2
+					: method === "advance"
+						? 3
+						: method === "partial_payment_and_credit"
+							? 5
+							: method === "credit_handover"
+								? 6
+								: method === "credit_payment"
+									? 7
+									: 4;
+
+		const vat = firstItem?.vatRate ?? "vat_none";
+		const tag1199 =
+			vat === "vat_20"
+				? 1
+				: vat === "vat_10"
+					? 2
+					: vat === "vat_20_120"
+						? 3
+						: vat === "vat_10_110"
+							? 4
+							: vat === "vat_0"
+								? 5
+								: 6;
 
 		return reply.code(201).send({
 			success: true,
@@ -230,9 +306,9 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			fiscalReceiptNumber,
 			ffd12Tags: {
 				tag1054_operationType: input.operationType === "income" ? 1 : 2,
-				tag1212_paymentSubject: 4, // Услуга
-				tag1214_paymentMethod: 4, // Полный расчет
-				tag1199_vatRate: 6, // Без НДС (ст. 149 НК РФ)
+				tag1212_paymentSubject: tag1212,
+				tag1214_paymentMethod: tag1214,
+				tag1199_vatRate: tag1199,
 				tag1008_customerContact: input.customerContact,
 				tag1021_cashier: input.cashierFullName,
 			},

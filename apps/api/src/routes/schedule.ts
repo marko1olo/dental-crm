@@ -140,7 +140,8 @@ function classifyAppointmentRejection(
 	if (message.includes("не найден") || message.includes("не активен"))
 		return "reference_missing";
 	if (
-		message.includes("Время окончания записи должно быть позже времени начала")
+		message.includes("Время окончания записи должно быть позже времени начала") ||
+		message.includes("Время окончания должно быть позже времени начала")
 	)
 		return "time_invalid";
 	if (

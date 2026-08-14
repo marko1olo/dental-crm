@@ -52,23 +52,18 @@ function paintPanorama(
 	canvas.width = width;
 	canvas.height = height;
 
-	// Derive a simple min/max window from the data (single pass, no allocation
-	// inside the loop). A real viewer would take WW/WL from the toolbar.
-	let min = Infinity;
-	let max = -Infinity;
-	for (let i = 0; i < pixels.length; i++) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const v = pixels[i]!;
-		if (v < min) min = v;
-		if (v > max) max = v;
-	}
-	const range = max - min || 1;
+	// Standard dental bone window (WW: 3000, WL: 700, range: [-800, 2200]) to avoid washed out contrast
+	const lower = -800;
+	const upper = 2200;
+	const range = upper - lower;
 
 	const img = ctx.createImageData(width, height);
 	const rgba = img.data;
 	for (let i = 0; i < pixels.length; i++) {
 		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const g = Math.round(((pixels[i]! - min) / range) * 255);
+		const v = pixels[i]!;
+		const clamped = Math.max(lower, Math.min(upper, v));
+		const g = Math.round(((clamped - lower) / range) * 255);
 		const o = i * 4;
 		rgba[o] = g;
 		rgba[o + 1] = g;

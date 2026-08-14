@@ -140,14 +140,17 @@ export function checkImplantCollision(
 		z: tip.z + implant.direction.z * implant.length,
 	};
 
-	const collisionDistSquared = (thresholdDistance + implant.diameter / 2) ** 2;
+	const implantRadius = implant.diameter / 2;
 
 	for (const nerve of ClinicalStore.nerves) {
 		const nerveRadius = nerve.diameter / 2;
-		// Simple check: iterate over nerve points and check distance to the implant axis
+		const totalSafeDist = thresholdDistance + implantRadius + nerveRadius;
+		const totalSafeDistSq = totalSafeDist * totalSafeDist;
+
+		// Iterate over nerve points and check distance to the implant axis
 		for (const pt of nerve.points) {
 			const distSq = distToSegmentSquared(pt, tip, neck);
-			if (distSq < collisionDistSquared + nerveRadius ** 2) {
+			if (distSq < totalSafeDistSq) {
 				return true;
 			}
 		}

@@ -267,14 +267,25 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		if (candidate?.code) handleIcdSelect(candidate.code);
 	};
 
-	const searchLower = (icdSearch ?? "").toLowerCase();
+	const normalizeRu = (str: string) =>
+		(str ?? "").toLowerCase().replace(/ё/g, "е").trim();
+	const searchNormalized = normalizeRu(icdSearch ?? "");
+	const searchTokens = searchNormalized.split(/\s+/).filter(Boolean);
+
 	const filteredIcd = (ICD10_DICTIONARY ?? [])
-		.filter(
-			(i) =>
-				(i?.code ?? "").toLowerCase().includes(searchLower) ||
-				(i?.label ?? "").toLowerCase().includes(searchLower) ||
-				(i?.group ?? "").toLowerCase().includes(searchLower),
-		)
+		.filter((i) => {
+			if (!i) return false;
+			if (searchTokens.length === 0) return true;
+			const codeNorm = normalizeRu(i.code);
+			const labelNorm = normalizeRu(i.label);
+			const groupNorm = normalizeRu(i.group);
+			return searchTokens.every(
+				(token) =>
+					codeNorm.includes(token) ||
+					labelNorm.includes(token) ||
+					groupNorm.includes(token),
+			);
+		})
 		.slice(0, 12);
 
 	const handleAutoResize = (

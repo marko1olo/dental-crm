@@ -10564,7 +10564,8 @@ export const taxDeductionCategorySchema = z.enum([
     "code_1_standard", // Код 1: обычное лечение (терапия, гигиена, брекеты)
     "code_2_expensive_treatment", // Код 2: дорогостоящее лечение (хирургическая имплантация, костная пластика)
 ]);
-export const fiscalReceiptItemSchema = z.object({
+export const fiscalReceiptItemSchema = z
+    .object({
     name: z.string().trim().min(1).max(128),
     priceKopecks: z.number().int().positive(),
     quantity: z.number().positive().default(1),
@@ -10574,9 +10575,20 @@ export const fiscalReceiptItemSchema = z.object({
     vatRate: ffd12VatRateSchema.default("vat_none"),
     taxDeductionCode: taxDeductionCategorySchema.default("code_1_standard"),
     medicalServiceCodeMzk: z.string().trim().max(32).optional().nullable(),
+})
+    .superRefine((item, ctx) => {
+    const expectedAmount = Math.round(item.priceKopecks * item.quantity);
+    if (Math.abs(expectedAmount - item.amountKopecks) > 1) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Сумма позиции «${item.name}» (${item.amountKopecks} коп.) не соответствует расчёту цена × количество (${expectedAmount} коп.).`,
+            path: ["amountKopecks"],
+        });
+    }
 });
 export const createFiscalReceiptPayloadSchema = z
     .object({
+    clientMutationId: z.string().trim().min(1).max(128).optional().nullable(),
     invoiceId: z.string().uuid().optional().nullable(),
     patientId: z.string().uuid(),
     operationType: ffd12OperationTypeSchema.default("income"),

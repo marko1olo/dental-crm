@@ -101589,7 +101589,7 @@ export declare const ffd12VatRateSchema: z.ZodEnum<["vat_20", "vat_10", "vat_20_
 export type Ffd12VatRate = z.infer<typeof ffd12VatRateSchema>;
 export declare const taxDeductionCategorySchema: z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>;
 export type TaxDeductionCategory = z.infer<typeof taxDeductionCategorySchema>;
-export declare const fiscalReceiptItemSchema: z.ZodObject<{
+export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
     name: z.ZodString;
     priceKopecks: z.ZodNumber;
     quantity: z.ZodDefault<z.ZodNumber>;
@@ -101619,14 +101619,35 @@ export declare const fiscalReceiptItemSchema: z.ZodObject<{
     subject?: "service" | "payment" | "job" | "commodity" | undefined;
     vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
     medicalServiceCodeMzk?: string | null | undefined;
+}>, {
+    name: string;
+    quantity: number;
+    method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+    taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
+    amountKopecks: number;
+    priceKopecks: number;
+    subject: "service" | "payment" | "job" | "commodity";
+    vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+    medicalServiceCodeMzk?: string | null | undefined;
+}, {
+    name: string;
+    amountKopecks: number;
+    priceKopecks: number;
+    quantity?: number | undefined;
+    method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+    taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
+    subject?: "service" | "payment" | "job" | "commodity" | undefined;
+    vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+    medicalServiceCodeMzk?: string | null | undefined;
 }>;
 export type FiscalReceiptItem = z.infer<typeof fiscalReceiptItemSchema>;
 export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<{
+    clientMutationId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     invoiceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     patientId: z.ZodString;
     operationType: z.ZodDefault<z.ZodEnum<["income", "income_return", "expense", "expense_return"]>>;
     customerContact: z.ZodString;
-    items: z.ZodArray<z.ZodObject<{
+    items: z.ZodArray<z.ZodEffects<z.ZodObject<{
         name: z.ZodString;
         priceKopecks: z.ZodNumber;
         quantity: z.ZodDefault<z.ZodNumber>;
@@ -101637,6 +101658,26 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         taxDeductionCode: z.ZodDefault<z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>>;
         medicalServiceCodeMzk: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
+        name: string;
+        quantity: number;
+        method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+        taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
+        amountKopecks: number;
+        priceKopecks: number;
+        subject: "service" | "payment" | "job" | "commodity";
+        vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+        medicalServiceCodeMzk?: string | null | undefined;
+    }, {
+        name: string;
+        amountKopecks: number;
+        priceKopecks: number;
+        quantity?: number | undefined;
+        method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+        taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
+        subject?: "service" | "payment" | "job" | "commodity" | undefined;
+        vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+        medicalServiceCodeMzk?: string | null | undefined;
+    }>, {
         name: string;
         quantity: number;
         method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
@@ -101687,6 +101728,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     totalKopecks: number;
     cashierFullName: string;
     taxDeductionSummaryCode: "code_1_standard" | "code_2_expensive_treatment";
+    clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
     cashierInn?: string | null | undefined;
 }, {
@@ -101705,6 +101747,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     customerContact: string;
     totalKopecks: number;
     operationType?: "income" | "income_return" | "expense" | "expense_return" | undefined;
+    clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
     cashKopecks?: number | undefined;
     electronicCardKopecks?: number | undefined;
@@ -101735,6 +101778,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     totalKopecks: number;
     cashierFullName: string;
     taxDeductionSummaryCode: "code_1_standard" | "code_2_expensive_treatment";
+    clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
     cashierInn?: string | null | undefined;
 }, {
@@ -101753,6 +101797,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     customerContact: string;
     totalKopecks: number;
     operationType?: "income" | "income_return" | "expense" | "expense_return" | undefined;
+    clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
     cashKopecks?: number | undefined;
     electronicCardKopecks?: number | undefined;

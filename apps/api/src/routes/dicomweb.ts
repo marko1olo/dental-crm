@@ -681,12 +681,19 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 				);
 			}
 
-			return streamDicomFileResponse(
-				request,
-				reply,
-				filePath,
-				"application/octet-stream",
-			);
+			if (frameNumber === 1) {
+				return streamDicomFileResponse(
+					request,
+					reply,
+					filePath,
+					"application/octet-stream",
+				);
+			}
+
+			return reply.code(422).send({
+				error: "FramePixelDataUnavailable",
+				message: "Не удалось определить смещение пиксельных данных для запрошенного кадра КТ.",
+			});
 		},
 	);
 }

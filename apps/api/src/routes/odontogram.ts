@@ -61,6 +61,7 @@ const batchToothStateSchema = z.object({
 	toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64),
 	state: z.enum(CLINICAL_TOOTH_STATE_VALUES),
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
+	visitId: z.string().uuid().optional().nullable(),
 });
 
 const treatmentPlanMoneyRubSchema = nonNegativeMoneyRubSchema.refine(
@@ -320,6 +321,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						changedTeeth.map((toothNumber) => ({
 							organizationId,
 							patientId,
+							visitId: parsed.data.visitId ?? null,
 							toothNumber,
 							previousState: previousByTooth.get(toothNumber)?.state ?? null,
 							newState: parsed.data.state,

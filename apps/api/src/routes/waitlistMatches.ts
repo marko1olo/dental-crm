@@ -14,7 +14,7 @@ import { and, eq, gt, inArray, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { requireClinicalReadContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { appointments, users } from "../db/schema.js";
+import { appointments, clinics, users } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import {
 	findWaitlistMatches,
@@ -58,6 +58,13 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 			const horizon = new Date(
 				now.getTime() + horizonDays * 24 * 60 * 60 * 1000,
 			);
+
+			const [clinic] = await db
+				.select({ timezone: clinics.timezone })
+				.from(clinics)
+				.where(eq(clinics.organizationId, context.organizationId))
+				.limit(1);
+			const timeZone = clinic?.timezone ?? "Europe/Samara";
 
 			const rows = await db
 				.select({
@@ -105,6 +112,7 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 						endsAt: row.endsAt,
 						doctorUserId: row.doctorUserId,
 						doctorName: row.doctorName ?? null,
+						timezone: timeZone,
 					},
 					3,
 				);
@@ -209,12 +217,20 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 					);
 				}
 
+				const [clinic] = await db
+					.select({ timezone: clinics.timezone })
+					.from(clinics)
+					.where(eq(clinics.organizationId, context.organizationId))
+					.limit(1);
+				const timeZone = clinic?.timezone ?? "Europe/Samara";
+
 				const report = await findWaitlistMatches({
 					organizationId: context.organizationId,
 					startsAt: appointment.startsAt,
 					endsAt: appointment.endsAt,
 					doctorUserId: appointment.doctorUserId,
 					doctorName: appointment.doctorName ?? null,
+					timezone: timeZone,
 				});
 
 				return { appointmentId: appointment.id, ...report };

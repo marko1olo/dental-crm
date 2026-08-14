@@ -185,7 +185,7 @@ export async function createPaymentInDb(
 
 		if (!lockedPatient) {
 			throw new Error(
-				`Patient ${input.patientId} not found or locked by another transaction.`,
+				`Пациент с идентификатором ${input.patientId} не найден или заблокирован другой операцией.`,
 			);
 		}
 
@@ -385,7 +385,7 @@ export async function createPaymentInDb(
 			.returning();
 
 		if (!newPayment) {
-			throw new Error("Failed to create payment");
+			throw new Error("Не удалось создать запись платежа в базе данных.");
 		}
 
 		return {

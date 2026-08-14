@@ -52,9 +52,9 @@ function icd10CodeFromDiagnosisText(diagnosis: string): string {
 	return embeddedCode ? embeddedCode.toUpperCase() : "";
 }
 
-/** Зуб по FDI (постоянные 11–48) из текста диагноза ЭМК, если указан. */
+/** Зуб по FDI (постоянные 11–48, молочные 51–85) из текста диагноза ЭМК, если указан. */
 function fdiToothFromText(text: string): string {
-	const m = text.trim().match(/\b([1-4][1-8])\b/);
+	const m = text.trim().match(/\b([1-4][1-8]|[5-8][1-5])\b/);
 	const tooth = m?.[1];
 	return tooth ?? "";
 }
