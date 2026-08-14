@@ -11,6 +11,7 @@ import {
 	type Point2D,
 	toTransferableScalarData,
 } from "../../mprMath";
+import { mapCtCoordinatesToFdiNumber } from "../../utils/dicom/fdiMapper";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import {
@@ -839,7 +840,15 @@ export function Cornerstone3DViewer({
 
 		// 3. Вычисление реальной плотности кости по вокселям активного тома
 		let boneDensity = { averageHU: 650, classification: "D2" };
-		const volume = cornerstone.cache.getVolume("my-volume");
+		const activeVolumeId = volumeId ?? "my-volume";
+		let volume = cornerstone.cache.getVolume(activeVolumeId);
+		if (!volume) {
+			const allVolumes = cornerstone.cache.getVolumes();
+			if (allVolumes && allVolumes.length > 0) {
+				volume = allVolumes[0];
+			}
+		}
+
 		if (volume) {
 			const voxels = readVolumeScalarData(
 				{
@@ -867,9 +876,21 @@ export function Cornerstone3DViewer({
 			}
 		}
 
+		let fdiCode = "36";
+		const jawSpline = restoredMarkupRef.current?.splinePoints;
+		if (jawSpline && jawSpline.length >= 2) {
+			const computedFdi = mapCtCoordinatesToFdiNumber(
+				{ x: startX, y: startY, z: startZ },
+				jawSpline,
+			);
+			if (computedFdi) {
+				fdiCode = String(computedFdi);
+			}
+		}
+
 		const newImplant: ImplantData = {
 			id: Math.random().toString(36).substring(7),
-			fdiCode: "36",
+			fdiCode,
 			diameter: 4.0,
 			length: 10.0,
 			startWorld: implantStart,

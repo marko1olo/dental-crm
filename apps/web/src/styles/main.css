@@ -2430,7 +2430,7 @@ section.imaging-panel {
 }
 
 .imaging-patient-strip article {
-	background: #f7fcfa;
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	display: grid;
@@ -2461,7 +2461,7 @@ section.imaging-panel {
 }
 
 .imaging-kind-filter button {
-	background: #f7fcfa;
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 999px;
 	color: var(--ink);

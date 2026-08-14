@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -23,6 +24,7 @@ export function SberbankTerminalPaymentModal({
 		"idle" | "initiating" | "polling" | "success" | "error"
 	>("idle");
 	const [orderId, setOrderId] = useState<string | null>(null);
+	const [formUrl, setFormUrl] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState("");
 	const { auth } = useAppLogicContext();
 
@@ -90,6 +92,9 @@ export function SberbankTerminalPaymentModal({
 			}
 
 			setOrderId(data.orderId);
+			if (data.formUrl) {
+				setFormUrl(data.formUrl);
+			}
 			setStatus("polling");
 		} catch (err) {
 			setStatus("error");
@@ -112,6 +117,7 @@ export function SberbankTerminalPaymentModal({
 		if (!isOpen) {
 			setStatus("idle");
 			setOrderId(null);
+			setFormUrl(null);
 			setErrorMsg("");
 		}
 	}, [isOpen]);
@@ -140,43 +146,47 @@ export function SberbankTerminalPaymentModal({
 							? auth.denteClinicalReadHeaders()
 							: {},
 				});
-				if (!res.ok) throw new Error(`HTTP ${res.status}`);
-				const data = await res.json();
-				if (data.status === "success") {
+				if (!res.ok) {
+					// 404 / 500 во время опроса — не повод ронять модалку сразу:
+					// временная сетевая ошибка не значит, что платёж отклонён.
+					return;
+				}
+				const data = await res.json().catch(() => ({}));
+				if (data.status === "PAID" || data.status === "CONFIRMED") {
 					setStatus("success");
 					clearInterval(interval);
-					showToast("Оплата успешно завершена на терминале", "success");
+					showToast("Оплата через терминал успешно принята", "success");
 					setTimeout(() => {
 						onSuccess();
 						onClose();
 					}, 1500);
-				} else if (data.status === "failed") {
+				} else if (
+					data.status === "FAILED" ||
+					data.status === "DECLINED" ||
+					data.status === "EXPIRED"
+				) {
 					setStatus("error");
-					setErrorMsg("Оплата отклонена терминалом");
+					setErrorMsg(
+						data.errorDescription ||
+							data.message ||
+							"Оплата отклонена банком или истекло время ожидания.",
+					);
 					clearInterval(interval);
 				}
 			} catch (err) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				logger.error("Polling error", err);
-				setStatus("error");
-				setErrorMsg("Ошибка связи с терминалом");
-				clearInterval(interval);
+				logger.error("Sberbank status poll error", err);
 			}
 		}, 3000);
 
 		return () => clearInterval(interval);
-	}, [status, orderId, onSuccess, onClose, auth]);
+	}, [status, orderId, auth, onSuccess, onClose]);
 
 	const handleClose = () => {
 		if (
 			status === "polling" &&
-			!window.confirm("Оплата в процессе. Вы уверены, что хотите закрыть?")
+			!window.confirm(
+				"Оплата еще не подтверждена. Вы уверены, что хотите закрыть окно?",
+			)
 		) {
 			return;
 		}
@@ -212,6 +222,25 @@ export function SberbankTerminalPaymentModal({
 						<div style={{ color: "var(--brand-600)", fontWeight: "bold" }}>
 							Ожидание оплаты клиентом на терминале...
 						</div>
+						{formUrl && (
+							<div style={{ marginTop: "12px", marginBottom: "12px" }}>
+								<a
+									href={formUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="primary-button"
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "8px",
+										textDecoration: "none",
+									}}
+								>
+									<ExternalLink size={16} />
+									Открыть страницу оплаты / QR Сбербанк
+								</a>
+							</div>
+						)}
 						<div
 							style={{
 								color: "var(--rust, #c53030)",

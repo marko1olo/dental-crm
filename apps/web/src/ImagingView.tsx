@@ -798,7 +798,6 @@ export function ImagingView(props: ImagingViewProps) {
 				>
 					Все
 				</button>
-				biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 				{(imagingKindOptions ?? []).map((kind: any) => (
 					<button
