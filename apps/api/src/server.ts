@@ -53,6 +53,7 @@ import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerInsuranceRoutes } from "./routes/insurance.js";
 import { registerDiagnocatRoutes } from "./routes/integrations/diagnocat.js";
 import { registerFlexbeRoutes } from "./routes/integrations/flexbe.js";
+import registerIntegrationsRoutes from "./routes/integrations.js";
 import { inventoryRoutes } from "./routes/inventory.js";
 import { registerLabRoutes } from "./routes/lab.js";
 import { registerLeadsRoutes } from "./routes/leads.js";
@@ -72,12 +73,12 @@ import { registerPublicBookingRoutes } from "./routes/publicBooking.js";
 import { registerReferralRoutes } from "./routes/referrals.js";
 import { registerReportRoutes } from "./routes/reports.js";
 import { registerSberbankRoutes } from "./routes/sberbank.js";
+import { registerSbpQrRoutes } from "./routes/sbpQr.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
 import { registerSterilizationRoutes } from "./routes/sterilization.js";
-import { registerSbpQrRoutes } from "./routes/sbpQr.js";
 import { registerSystemRoutes } from "./routes/system.js";
 import {
 	registerTelegramRoutes,
@@ -629,6 +630,7 @@ export async function createDenteApiApp(
 	await registerFamilyFinanceRoutes(app);
 	await registerImagingPlanningRoutes(app);
 	await registerInsuranceRoutes(app);
+	await registerIntegrationsRoutes(app);
 	await registerLabRoutes(app);
 	await registerLeadsRoutes(app);
 	/* registerMaxRoutes и registerWhatsappRoutes навешивают внутри себя
