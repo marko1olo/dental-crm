@@ -932,7 +932,7 @@ async function processRow(
 				);
 				if (nextAddr.address) {
 					const fit = checkChannelFit(nextChannel, row.body);
-					if (fit.fits) {
+					if (fit.ok) {
 						await db
 							.update(communicationOutbox)
 							.set({

@@ -5849,5 +5849,228 @@ export const labOrderEvents = pgTable(
 	}),
 );
 
+// ─── Dental Implantology, Osseointegration & RFA (ISQ) Biomechanics ─────────
+
+export const implantCatalogItems = pgTable(
+	"implant_catalog_items",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		brand: text("brand").notNull().default("osstem"),
+		lineName: text("line_name").notNull(), // e.g. "TS III SA", "BLX", "Active"
+		platformDiameterMm: numeric("platform_diameter_mm", {
+			precision: 4,
+			scale: 2,
+		}).notNull(),
+		bodyDiameterMm: numeric("body_diameter_mm", {
+			precision: 4,
+			scale: 2,
+		}).notNull(),
+		lengthMm: numeric("length_mm", { precision: 4, scale: 2 }).notNull(),
+		connectionType: text("connection_type")
+			.notNull()
+			.default("conical_morse_taper"),
+		recommendedMaxTorqueNcm: integer("recommended_max_torque_ncm")
+			.notNull()
+			.default(45),
+		smartpegType: text("smartpeg_type").notNull().default("Type 04"),
+		isActive: boolean("is_active").notNull().default(true),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgBrandIdx: index("implant_catalog_items_org_brand_idx").on(
+			t.organizationId,
+			t.brand,
+		),
+	}),
+);
+
+export const patientImplantInstallations = pgTable(
+	"patient_implant_installations",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		surgeonDoctorId: uuid("surgeon_doctor_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
+		visitId: uuid("visit_id").references(() => visits.id, {
+			onDelete: "set null",
+		}),
+		catalogItemId: uuid("catalog_item_id").references(
+			() => implantCatalogItems.id,
+			{ onDelete: "set null" },
+		),
+		toothNumberFdi: integer("tooth_number_fdi").notNull(),
+		installedAt: timestamp("installed_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		implantBrand: text("implant_brand").notNull().default("osstem"),
+		implantDiameterMm: numeric("implant_diameter_mm", {
+			precision: 4,
+			scale: 2,
+		}).notNull(),
+		implantLengthMm: numeric("implant_length_mm", {
+			precision: 4,
+			scale: 2,
+		}).notNull(),
+		lotNumber: text("lot_number"),
+		serialNumber: text("serial_number"),
+		boneDensityClass: text("bone_density_class").notNull().default("D2"),
+		averageHounsfieldUnits: numeric("average_hounsfield_units", {
+			precision: 6,
+			scale: 1,
+		}),
+		finalInsertionTorqueNcm: numeric("final_insertion_torque_ncm", {
+			precision: 5,
+			scale: 2,
+		}).notNull(),
+		baselineIsq: integer("baseline_isq").notNull().default(70),
+		initialProtocol: text("initial_protocol")
+			.notNull()
+			.default("delayed_loading"),
+		corticalTapUsed: boolean("cortical_tap_used").notNull().default(false),
+		underdrillingUsed: boolean("underdrilling_used").notNull().default(false),
+		boneGraftMaterial: text("bone_graft_material"),
+		membraneUsed: text("membrane_used"),
+		torqueCurveSamplesJson: text("torque_curve_samples_json")
+			.notNull()
+			.default("[]"),
+		notes: text("notes"),
+		isArchived: boolean("is_archived").notNull().default(false),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgPatientIdx: index("patient_implant_installations_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+		patientToothIdx: index(
+			"patient_implant_installations_patient_tooth_idx",
+		).on(t.patientId, t.toothNumberFdi),
+	}),
+);
+
+export const implantIsqMeasurements = pgTable(
+	"implant_isq_measurements",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		installationId: uuid("installation_id")
+			.notNull()
+			.references(() => patientImplantInstallations.id, {
+				onDelete: "cascade",
+			}),
+		measuredByDoctorId: uuid("measured_by_doctor_id").references(
+			() => users.id,
+			{ onDelete: "set null" },
+		),
+		visitId: uuid("visit_id").references(() => visits.id, {
+			onDelete: "set null",
+		}),
+		measuredAt: timestamp("measured_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		daysPostOp: integer("days_post_op").notNull().default(0),
+		isqMesiodistal: integer("isq_mesiodistal").notNull(),
+		isqBuccolingual: integer("isq_buccolingual").notNull(),
+		isqDistopalatal: integer("isq_distopalatal"),
+		isqMean: numeric("isq_mean", { precision: 5, scale: 2 }).notNull(),
+		isqAnisotropyDelta: integer("isq_anisotropy_delta").notNull().default(0),
+		stabilityStatus: text("stability_status")
+			.notNull()
+			.default("primary_mechanical_adequate"),
+		recommendedLoadingDecision: text("recommended_loading_decision").notNull(),
+		isBiologicalDipDetected: boolean("is_biological_dip_detected")
+			.notNull()
+			.default(false),
+		smartpegCode: text("smartpeg_code"),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgInstallationIdx: index("implant_isq_measurements_org_install_idx").on(
+			t.organizationId,
+			t.installationId,
+		),
+		measuredAtIdx: index("implant_isq_measurements_measured_at_idx").on(
+			t.installationId,
+			t.measuredAt,
+		),
+	}),
+);
+
+export const multiImplantAllOnXCases = pgTable(
+	"multi_implant_all_on_x_cases",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		caseTitle: text("case_title").notNull(),
+		jawArch: text("jaw_arch").notNull().default("mandible"),
+		implantCount: integer("implant_count").notNull().default(4),
+		installationIds: jsonb("installation_ids").notNull().default(sql`'[]'::jsonb`),
+		anteroPosteriorSpreadMm: numeric("antero_posterior_spread_mm", {
+			precision: 5,
+			scale: 2,
+		}).notNull(),
+		maxSafeCantileverMm: numeric("max_safe_cantilever_mm", {
+			precision: 5,
+			scale: 2,
+		}).notNull(),
+		plannedCantileverLengthMm: numeric("planned_cantilever_length_mm", {
+			precision: 5,
+			scale: 2,
+		}).notNull(),
+		isCantileverSafe: boolean("is_cantilever_safe").notNull().default(true),
+		crossArchRigidityIndex: numeric("cross_arch_rigidity_index", {
+			precision: 6,
+			scale: 2,
+		}).notNull(),
+		abutmentPlanJson: text("abutment_plan_json").notNull().default("[]"),
+		immediateLoadingPass: boolean("immediate_loading_pass")
+			.notNull()
+			.default(false),
+		prostheticMaterial: text("prosthetic_material")
+			.notNull()
+			.default("titanium_pmma"),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgPatientIdx: index("multi_implant_all_on_x_cases_org_pat_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+	}),
+);
+
+
 
 

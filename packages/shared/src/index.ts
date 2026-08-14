@@ -12714,5 +12714,335 @@ export function calculateMeshGeometryMetrics(
 	};
 }
 
+// ─── Dental Implantology, Osseointegration & RFA (ISQ) Biomechanics ─────────
+
+export const implantSystemBrandSchema = z.enum([
+	"osstem",
+	"straumann",
+	"nobel_biocare",
+	"bredent",
+	"astra_tech",
+	"dentium",
+	"ankylos",
+	"mis",
+	"megagen",
+	"neodent",
+	"other",
+]);
+export type ImplantSystemBrand = z.infer<typeof implantSystemBrandSchema>;
+
+export const boneDensityClassSchema = z.enum(["D1", "D2", "D3", "D4"]);
+export type BoneDensityClass = z.infer<typeof boneDensityClassSchema>;
+
+export const surgicalImplantProtocolSchema = z.enum([
+	"submerged_two_stage",
+	"transgingival_one_stage",
+	"immediate_provisionalization",
+	"immediate_functional_loading",
+	"delayed_loading",
+]);
+export type SurgicalImplantProtocol = z.infer<typeof surgicalImplantProtocolSchema>;
+
+export const stabilityEvaluationStatusSchema = z.enum([
+	"primary_mechanical_high",
+	"primary_mechanical_adequate",
+	"biological_dip_phase",
+	"secondary_osseointegrated",
+	"fibrous_encapsulation_failing",
+	"integrated_stable",
+]);
+export type StabilityEvaluationStatus = z.infer<typeof stabilityEvaluationStatusSchema>;
+
+export const torqueCurveSampleSchema = z.object({
+	depthMm: z.number().min(0).max(25),
+	torqueNcm: z.number().min(0).max(120),
+});
+export type TorqueCurveSample = z.infer<typeof torqueCurveSampleSchema>;
+
+export const createImplantInstallationSchema = z.object({
+	patientId: z.string().uuid(),
+	toothNumberFdi: z.number().int().min(11).max(85),
+	catalogItemId: z.string().uuid().optional().nullable(),
+	visitId: z.string().uuid().optional().nullable(),
+	implantBrand: implantSystemBrandSchema.default("osstem"),
+	implantDiameterMm: z.number().min(2.0).max(7.0),
+	implantLengthMm: z.number().min(4.0).max(20.0),
+	lotNumber: z.string().trim().max(80).optional().nullable(),
+	serialNumber: z.string().trim().max(80).optional().nullable(),
+	boneDensityClass: boneDensityClassSchema.default("D2"),
+	averageHounsfieldUnits: z.number().min(-1000).max(3000).optional().nullable(),
+	finalInsertionTorqueNcm: z.number().min(5).max(100),
+	baselineIsqMesiodistal: z.number().int().min(1).max(100),
+	baselineIsqBuccolingual: z.number().int().min(1).max(100),
+	baselineIsqDistopalatal: z.number().int().min(1).max(100).optional().nullable(),
+	corticalTapUsed: z.boolean().default(false),
+	underdrillingUsed: z.boolean().default(false),
+	boneGraftMaterial: z.string().trim().max(200).optional().nullable(),
+	membraneUsed: z.string().trim().max(200).optional().nullable(),
+	torqueCurveSamples: z.array(torqueCurveSampleSchema).default([]),
+	notes: z.string().trim().max(1000).optional().nullable(),
+});
+export type CreateImplantInstallationInput = z.infer<
+	typeof createImplantInstallationSchema
+>;
+
+export const recordIsqMeasurementSchema = z.object({
+	installationId: z.string().uuid(),
+	visitId: z.string().uuid().optional().nullable(),
+	daysPostOp: z.number().int().min(0).max(1825),
+	isqMesiodistal: z.number().int().min(1).max(100),
+	isqBuccolingual: z.number().int().min(1).max(100),
+	isqDistopalatal: z.number().int().min(1).max(100).optional().nullable(),
+	smartpegCode: z.string().trim().max(40).optional().nullable(),
+	notes: z.string().trim().max(1000).optional().nullable(),
+});
+export type RecordIsqMeasurementInput = z.infer<
+	typeof recordIsqMeasurementSchema
+>;
+
+export const evaluateAllOnXCaseSchema = z.object({
+	patientId: z.string().uuid(),
+	caseTitle: z.string().trim().min(1).max(200),
+	jawArch: z.enum(["maxilla", "mandible"]),
+	implants: z
+		.array(
+			z.object({
+				toothNumberFdi: z.number().int().min(11).max(48),
+				positionWorldMm: z.object({
+					x: z.number(),
+					y: z.number(),
+					z: z.number(),
+				}),
+				axisVector: z.object({
+					x: z.number(),
+					y: z.number(),
+					z: z.number(),
+				}),
+				insertionTorqueNcm: z.number().min(0).max(100),
+				baselineIsq: z.number().int().min(1).max(100),
+			}),
+		)
+		.min(4)
+		.max(8),
+	plannedCantileverLengthMm: z.number().min(0).max(30),
+	prostheticMaterial: z
+		.enum([
+			"titanium_pmma",
+			"zirconia_multilayer_ti_bar",
+			"cobalt_chrome_composite",
+		])
+		.default("titanium_pmma"),
+});
+export type EvaluateAllOnXCaseInput = z.infer<typeof evaluateAllOnXCaseSchema>;
+
+export class ImplantStabilityCalculator {
+	static calculateMeanIsq(
+		md: number,
+		bl: number,
+		dp?: number | null,
+	): { isqMean: number; isqAnisotropyDelta: number } {
+		const values = [md, bl];
+		if (dp !== undefined && dp !== null) values.push(dp);
+		const sum = values.reduce((acc, v) => acc + v, 0);
+		const isqMean = Number((sum / values.length).toFixed(2));
+		const isqAnisotropyDelta = Math.max(...values) - Math.min(...values);
+		return { isqMean, isqAnisotropyDelta };
+	}
+
+	static evaluateLoadingProtocol(
+		isqMean: number,
+		insertionTorqueNcm: number,
+		daysPostOp: number,
+	): {
+		protocol: SurgicalImplantProtocol;
+		status: StabilityEvaluationStatus;
+		decisionRationale: string;
+		isBiologicalDip: boolean;
+	} {
+		const isBiologicalDip =
+			daysPostOp >= 14 && daysPostOp <= 30 && isqMean < 68;
+
+		if (daysPostOp === 0) {
+			if (
+				isqMean >= 70 &&
+				insertionTorqueNcm >= 35 &&
+				insertionTorqueNcm <= 55
+			) {
+				return {
+					protocol: "immediate_functional_loading",
+					status: "primary_mechanical_high",
+					decisionRationale: `Высокая первичная стабильность (ISQ=${isqMean}, Torque=${insertionTorqueNcm} Н·см). Разрешена немедленная нагрузка (Immediate Provisionalization) при отсутствии парафункций.`,
+					isBiologicalDip: false,
+				};
+			}
+			if (isqMean >= 65 && insertionTorqueNcm >= 30) {
+				return {
+					protocol: "transgingival_one_stage",
+					status: "primary_mechanical_adequate",
+					decisionRationale: `Умеренная первичная стабильность (ISQ=${isqMean}, Torque=${insertionTorqueNcm} Н·см). Одноэтапный протокол с формирователем десны. Ранняя нагрузка через 6-8 недель.`,
+					isBiologicalDip: false,
+				};
+			}
+			if (isqMean >= 60) {
+				return {
+					protocol: "delayed_loading",
+					status: "primary_mechanical_adequate",
+					decisionRationale: `Стандартная первичная стабильность (ISQ=${isqMean}). Стандартный протокол нагрузки через 8-12 недель.`,
+					isBiologicalDip: false,
+				};
+			}
+			return {
+				protocol: "submerged_two_stage",
+				status: "primary_mechanical_adequate",
+				decisionRationale: `Низкая первичная стабильность (ISQ=${isqMean} < 60 или Torque < 25 Н·см). Двухэтапный протокол с глухим ушиванием на 3-6 месяцев.`,
+				isBiologicalDip: false,
+			};
+		}
+
+		if (isBiologicalDip) {
+			return {
+				protocol: "delayed_loading",
+				status: "biological_dip_phase",
+				decisionRationale: `Период биологического проседания стабильности (2-4 недели, остеокластическая резорбция). Не допускать окклюзионных перегрузок и микроподвижности >100мкм.`,
+				isBiologicalDip: true,
+			};
+		}
+
+		if (isqMean >= 70 && daysPostOp >= 42) {
+			return {
+				protocol: "immediate_functional_loading",
+				status: "secondary_osseointegrated",
+				decisionRationale: `Вторичная биологическая остеоинтеграция сформирована (ISQ=${isqMean} >= 70). Имплантат готов к постоянному протезированию.`,
+				isBiologicalDip: false,
+			};
+		}
+
+		if (isqMean < 55 && daysPostOp >= 60) {
+			return {
+				protocol: "submerged_two_stage",
+				status: "fibrous_encapsulation_failing",
+				decisionRationale: `Критическое снижение стабильности (ISQ=${isqMean} < 55 на ${daysPostOp} день). Риск фиброзной инкапсуляции и дезинтеграции. Требуется рентген-контроль КЛКТ.`,
+				isBiologicalDip: false,
+			};
+		}
+
+		return {
+			protocol: "delayed_loading",
+			status: "integrated_stable",
+			decisionRationale: `Текущая стабильность ISQ=${isqMean}. Рекомендован контрольный замер через 4 недели перед постоянным протезированием.`,
+			isBiologicalDip: false,
+		};
+	}
+
+	static calculateStabilityCurve(
+		baselineIsq: number,
+		currentDays: number,
+	): {
+		day: number;
+		primaryStability: number;
+		secondaryStability: number;
+		totalStability: number;
+	}[] {
+		const curve = [];
+		const lambdaResorption = 0.38 / 7; // per day
+		const sMax = 80;
+		const kOsteo = 0.75 / 7; // per day
+		const tMid = 24.5; // days (~3.5 weeks)
+
+		for (let d = 0; d <= Math.max(90, currentDays); d += 3) {
+			const primary = baselineIsq * Math.exp(-lambdaResorption * d);
+			const secondary = sMax * (1 / (1 + Math.exp(-kOsteo * (d - tMid))));
+			const total = Number((primary + secondary).toFixed(1));
+			curve.push({
+				day: d,
+				primaryStability: Number(primary.toFixed(1)),
+				secondaryStability: Number(secondary.toFixed(1)),
+				totalStability: Math.min(100, total),
+			});
+		}
+		return curve;
+	}
+
+	static evaluateAllOnXGeometry(
+		jawArch: "maxilla" | "mandible",
+		implants: {
+			toothNumberFdi: number;
+			positionWorldMm: { x: number; y: number; z: number };
+			axisVector: { x: number; y: number; z: number };
+			insertionTorqueNcm: number;
+			baselineIsq: number;
+		}[],
+		plannedCantileverMm: number,
+	) {
+		const yCoords = implants.map((i) => i.positionWorldMm.y);
+		const yMax = Math.max(...yCoords);
+		const yMin = Math.min(...yCoords);
+		const apSpreadMm = Number((yMax - yMin).toFixed(2));
+
+		const maxCantileverMultiplier = jawArch === "mandible" ? 1.5 : 1.0;
+		const maxCap = jawArch === "mandible" ? 18.0 : 12.0;
+		const calculatedCantileverLimit = Number(
+			Math.min(maxCap, apSpreadMm * maxCantileverMultiplier).toFixed(2),
+		);
+		const isCantileverSafe = plannedCantileverMm <= calculatedCantileverLimit;
+
+		const standardAngles = [0, 17, 30, 45] as const;
+		const abutmentPlan = implants.map((imp) => {
+			const mag = Math.sqrt(
+				imp.axisVector.x ** 2 +
+					imp.axisVector.y ** 2 +
+					imp.axisVector.z ** 2,
+			);
+			const uz = mag > 0 ? Math.abs(imp.axisVector.z) / mag : 1;
+			const divergenceRad = Math.acos(Math.min(1, Math.max(0, uz)));
+			const divergenceDeg = Number(((divergenceRad * 180) / Math.PI).toFixed(1));
+
+			let bestAngle = 0;
+			let minDiff = 999;
+			for (const angle of standardAngles) {
+				const diff = Math.abs(divergenceDeg - angle);
+				if (diff < minDiff) {
+					minDiff = diff;
+					bestAngle = angle;
+				}
+			}
+
+			return {
+				toothNumberFdi: imp.toothNumberFdi,
+				implantVector: imp.axisVector,
+				measuredDivergenceDeg: divergenceDeg,
+				recommendedAbutmentAngle: String(bestAngle) as
+					| "0"
+					| "17"
+					| "30"
+					| "45",
+				residualAngulationErrorDeg: Number(minDiff.toFixed(1)),
+				gingivalCollarHeightMm: divergenceDeg > 20 ? 3.5 : 2.0,
+				isWithinProstheticTolerances: minDiff <= 5.0,
+			};
+		});
+
+		const avgIsq =
+			implants.reduce((acc, i) => acc + i.baselineIsq, 0) / implants.length;
+		const minTorque = Math.min(...implants.map((i) => i.insertionTorqueNcm));
+		const immediateLoadingPass =
+			avgIsq >= 70 && minTorque >= 35 && isCantileverSafe;
+
+		const crossArchRigidityIndex = Number(
+			(avgIsq * (implants.length / 4) * (apSpreadMm / 10)).toFixed(2),
+		);
+
+		return {
+			apSpreadMm,
+			maxSafeCantileverMm: calculatedCantileverLimit,
+			isCantileverSafe,
+			abutmentPlan,
+			immediateLoadingPass,
+			crossArchRigidityIndex,
+		};
+	}
+}
+
+
 
 

@@ -9289,6 +9289,91 @@ export declare const labWorkOrderPayloadSchema: z.ZodObject<{
     technicianNotes?: string | null | undefined;
 }>;
 export type LabWorkOrderPayload = z.infer<typeof labWorkOrderPayloadSchema>;
+/**
+ * Международные стандарты расцветок зубов VITA (VITA Zahnfabrik).
+ * Включает:
+ * 1. VITA Classical A1–D4 (16 оттенков по шкалам красно-коричневый, красно-желтый, серый, красно-серый)
+ * 2. VITA Bleached Shades (0M1, 0M2, 0M3, BL1, BL2, BL3, BL4, OM1, OM2, OM3)
+ * 3. VITA System 3D-Master (26 оттенков по трем параметрам: светлота, насыщенность, цветовой тон)
+ */
+export declare const VITA_CLASSICAL_SHADES: readonly ["A1", "A2", "A3", "A3.5", "A4", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D2", "D3", "D4"];
+export declare const VITA_BLEACH_SHADES: readonly ["0M1", "0M2", "0M3", "BL1", "BL2", "BL3", "BL4", "OM1", "OM2", "OM3"];
+export declare const VITA_3D_MASTER_SHADES: readonly ["1M1", "1M2", "2L1.5", "2L2.5", "2M1", "2M2", "2M3", "2R1.5", "2R2.5", "3L1.5", "3L2.5", "3M1", "3M2", "3M3", "3R1.5", "3R2.5", "4L1.5", "4L2.5", "4M1", "4M2", "4M3", "4R1.5", "4R2.5", "5M1", "5M2", "5M3"];
+export declare const ALL_VALID_VITA_SHADES: ReadonlySet<string>;
+export declare function isValidVitaShade(shade: string): boolean;
+export declare const VITA_SHADE_VALIDATION_MESSAGE = "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B\u0439 \u043E\u0442\u0442\u0435\u043D\u043E\u043A \u0437\u0443\u0431\u0430. \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442 VITA Classical (A1\u2013D4), VITA 3D-Master (1M1\u20135M3) \u0438\u043B\u0438 Bleach (0M1\u20130M3, BL1\u2013BL4).";
+export declare const vitaShadeSchema: z.ZodEffects<z.ZodString, string, string>;
+/** Таксономия стоматологических материалов для зуботехнической лаборатории */
+export declare const LAB_ORDER_MATERIALS: {
+    readonly zirconia_multilayer: "Диоксид циркония многослойный (Multi-layer)";
+    readonly zirconia_ht: "Диоксид циркония высокопрозрачный (HT/ST)";
+    readonly emax_cad: "Литий-дисиликатная керамика (IPS e.max CAD)";
+    readonly emax_press: "Пресс-керамика (IPS e.max Press)";
+    readonly pfm: "Металлокерамика (PFM / CoCr/NiCr)";
+    readonly pmma_temp: "Временная пластмасса PMMA (CAD/CAM)";
+    readonly composite: "Композит лабораторный (Nano-hybrid)";
+    readonly titanium_abutment: "Индивидуальный титановый абатмент";
+    readonly cocr_framework: "Литой/фрезерованный бюгельный каркас (CoCr)";
+    readonly peek: "Биополимер PEEK / BioHPP";
+};
+export type LabOrderMaterialKey = keyof typeof LAB_ORDER_MATERIALS;
+export declare const LAB_ORDER_STATUS_LABELS: {
+    readonly draft: "Черновик";
+    readonly sent: "Отправлен в лабораторию";
+    readonly in_progress: "В работе у техника";
+    readonly shipped: "Отправлен в клинику";
+    readonly received: "Получен клиникой";
+    readonly refitting: "На примерке / доработке";
+    readonly completed: "Установлен / завершен";
+    readonly cancelled: "Отменен";
+};
+export type LabOrderStatusKey = keyof typeof LAB_ORDER_STATUS_LABELS;
+export declare const labOrderStatusSchema: z.ZodEnum<["draft", "sent", "in_progress", "shipped", "received", "refitting", "completed", "cancelled"]>;
+/**
+ * Стерилизация и инфекционный контроль (СанПиН 3.3686-21, форма № 257/у).
+ */
+export declare const STERILIZATION_PACKAGING_TYPES: {
+    readonly kraft_heat_sealed: {
+        readonly label: "Крафт-пакет (термосварка)";
+        readonly shelfLifeDays: 50;
+    };
+    readonly kraft_self_adhesive: {
+        readonly label: "Крафт-пакет (самоклеящийся)";
+        readonly shelfLifeDays: 30;
+    };
+    readonly laminated_heat_sealed: {
+        readonly label: "Ламинированный пакет комбинированный (термосварка)";
+        readonly shelfLifeDays: 180;
+    };
+    readonly metal_cassette: {
+        readonly label: "Металлическая кассета / контейнер с фильтром";
+        readonly shelfLifeDays: 30;
+    };
+    readonly other: {
+        readonly label: "Иной вид упаковки";
+        readonly shelfLifeDays: 3;
+    };
+};
+export type SterilizationPackagingType = keyof typeof STERILIZATION_PACKAGING_TYPES;
+export declare const STERILIZATION_INDICATOR_TYPES: {
+    readonly class4_multivariable: "Класс 4 — многопараметрический химический индикатор";
+    readonly class5_integrating: "Класс 5 — интегрирующий химический индикатор";
+    readonly class6_emulating: "Класс 6 — имитирующий индикатор (эмулятор)";
+    readonly biological: "Биологический индикатор (споровый тест Geobacillus stearothermophilus)";
+    readonly bowie_dick: "Тест Бови-Дика (Bowie-Dick / вакуум-тест)";
+};
+export type SterilizationIndicatorType = keyof typeof STERILIZATION_INDICATOR_TYPES;
+export declare const STERILIZATION_CYCLE_MODES: {
+    readonly B: "Автоклав класс B (фракционированный вакуум: 134°C / 2.1 бар или 121°C / 1.1 бар)";
+    readonly S: "Автоклав класс S (однократный вакуум)";
+    readonly N: "Автоклав класс N (неупакованные сплошные изделия)";
+    readonly dry_heat_180: "Сухожаровой шкаф 180°C 60 мин";
+    readonly dry_heat_160: "Сухожаровой шкаф 160°C 150 мин";
+    readonly plasma_vh2o2: "Низкотемпературная плазма (пары пероксида водорода)";
+    readonly ethylene_oxide: "Этиленоксидная газовая стерилизация";
+};
+export type SterilizationCycleMode = keyof typeof STERILIZATION_CYCLE_MODES;
+export declare function computePackagingExpirationDate(packagingType: SterilizationPackagingType | string | null | undefined, sterilizationDate?: Date): Date;
 export declare const photoVideoConsentMaterialSchema: z.ZodEnum<["intraoral_photo", "face_photo", "video", "xray", "cbct", "scan", "other"]>;
 export type PhotoVideoConsentMaterial = z.infer<typeof photoVideoConsentMaterialSchema>;
 export declare const photoVideoConsentPayloadSchema: z.ZodObject<{
@@ -42085,6 +42170,229 @@ export declare const dashboardSchema: z.ZodObject<{
     insuranceContracts?: any[] | undefined;
 }>;
 export type Dashboard = z.infer<typeof dashboardSchema>;
+/**
+ * Договор ДМС (Добровольное медицинское страхование).
+ */
+export declare const insuranceContractSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    companyName: z.ZodString;
+    policyNumberMask: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    coverageTherapyPct: z.ZodNumber;
+    coverageSurgeryPct: z.ZodNumber;
+    coverageOrthoPct: z.ZodNumber;
+    coverageHygienePct: z.ZodNumber;
+    annualLimitRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    isActive: z.ZodDefault<z.ZodBoolean>;
+    createdAt: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodDate]>>;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    organizationId: string;
+    companyName: string;
+    coverageTherapyPct: number;
+    coverageSurgeryPct: number;
+    coverageOrthoPct: number;
+    coverageHygienePct: number;
+    isActive: boolean;
+    createdAt?: string | Date | undefined;
+    policyNumberMask?: string | null | undefined;
+    annualLimitRub?: number | null | undefined;
+}, {
+    id: string;
+    organizationId: string;
+    companyName: string;
+    coverageTherapyPct: number;
+    coverageSurgeryPct: number;
+    coverageOrthoPct: number;
+    coverageHygienePct: number;
+    createdAt?: string | Date | undefined;
+    policyNumberMask?: string | null | undefined;
+    annualLimitRub?: number | null | undefined;
+    isActive?: boolean | undefined;
+}>;
+export type InsuranceContract = z.infer<typeof insuranceContractSchema>;
+export declare const insuranceCalculationItemSchema: z.ZodObject<{
+    serviceId: z.ZodUnion<[z.ZodString, z.ZodString]>;
+    serviceName: z.ZodOptional<z.ZodString>;
+    category: z.ZodEnum<["consultation", "therapy", "surgery", "prosthetics", "orthodontics", "periodontology", "hygiene", "imaging", "documents", "other"]>;
+    priceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    quantity: z.ZodDefault<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
+    priceRub: number;
+    serviceId: string;
+    quantity: number;
+    serviceName?: string | undefined;
+}, {
+    category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
+    priceRub: number;
+    serviceId: string;
+    quantity?: number | undefined;
+    serviceName?: string | undefined;
+}>;
+export type InsuranceCalculationItem = z.infer<typeof insuranceCalculationItemSchema>;
+export declare const insuranceCoverageCalculationInputSchema: z.ZodObject<{
+    contractId: z.ZodString;
+    usedAnnualAmountRub: z.ZodDefault<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
+    items: z.ZodArray<z.ZodObject<{
+        serviceId: z.ZodUnion<[z.ZodString, z.ZodString]>;
+        serviceName: z.ZodOptional<z.ZodString>;
+        category: z.ZodEnum<["consultation", "therapy", "surgery", "prosthetics", "orthodontics", "periodontology", "hygiene", "imaging", "documents", "other"]>;
+        priceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        quantity: z.ZodDefault<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
+        priceRub: number;
+        serviceId: string;
+        quantity: number;
+        serviceName?: string | undefined;
+    }, {
+        category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
+        priceRub: number;
+        serviceId: string;
+        quantity?: number | undefined;
+        serviceName?: string | undefined;
+    }>, "many">;
+}, "strip", z.ZodTypeAny, {
+    items: {
+        category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
+        priceRub: number;
+        serviceId: string;
+        quantity: number;
+        serviceName?: string | undefined;
+    }[];
+    contractId: string;
+    usedAnnualAmountRub: number;
+}, {
+    items: {
+        category: "other" | "consultation" | "therapy" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "imaging" | "documents";
+        priceRub: number;
+        serviceId: string;
+        quantity?: number | undefined;
+        serviceName?: string | undefined;
+    }[];
+    contractId: string;
+    usedAnnualAmountRub?: number | undefined;
+}>;
+export type InsuranceCoverageCalculationInput = z.infer<typeof insuranceCoverageCalculationInputSchema>;
+export declare const insuranceItemBreakdownSchema: z.ZodObject<{
+    serviceId: z.ZodString;
+    serviceName: z.ZodOptional<z.ZodString>;
+    category: z.ZodString;
+    quantity: z.ZodNumber;
+    unitPriceRub: z.ZodNumber;
+    totalPriceRub: z.ZodNumber;
+    coveragePct: z.ZodNumber;
+    coveredAmountRub: z.ZodNumber;
+    patientCoPayRub: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+    category: string;
+    serviceId: string;
+    quantity: number;
+    unitPriceRub: number;
+    totalPriceRub: number;
+    coveragePct: number;
+    coveredAmountRub: number;
+    patientCoPayRub: number;
+    serviceName?: string | undefined;
+}, {
+    category: string;
+    serviceId: string;
+    quantity: number;
+    unitPriceRub: number;
+    totalPriceRub: number;
+    coveragePct: number;
+    coveredAmountRub: number;
+    patientCoPayRub: number;
+    serviceName?: string | undefined;
+}>;
+export type InsuranceItemBreakdown = z.infer<typeof insuranceItemBreakdownSchema>;
+export declare const insuranceCoverageCalculationResultSchema: z.ZodObject<{
+    contractId: z.ZodString;
+    companyName: z.ZodString;
+    totalPriceRub: z.ZodNumber;
+    totalCoveredRub: z.ZodNumber;
+    totalPatientCoPayRub: z.ZodNumber;
+    annualLimitRub: z.ZodNullable<z.ZodNumber>;
+    usedAnnualAmountRub: z.ZodNumber;
+    remainingAnnualLimitRub: z.ZodNullable<z.ZodNumber>;
+    itemBreakdown: z.ZodArray<z.ZodObject<{
+        serviceId: z.ZodString;
+        serviceName: z.ZodOptional<z.ZodString>;
+        category: z.ZodString;
+        quantity: z.ZodNumber;
+        unitPriceRub: z.ZodNumber;
+        totalPriceRub: z.ZodNumber;
+        coveragePct: z.ZodNumber;
+        coveredAmountRub: z.ZodNumber;
+        patientCoPayRub: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        category: string;
+        serviceId: string;
+        quantity: number;
+        unitPriceRub: number;
+        totalPriceRub: number;
+        coveragePct: number;
+        coveredAmountRub: number;
+        patientCoPayRub: number;
+        serviceName?: string | undefined;
+    }, {
+        category: string;
+        serviceId: string;
+        quantity: number;
+        unitPriceRub: number;
+        totalPriceRub: number;
+        coveragePct: number;
+        coveredAmountRub: number;
+        patientCoPayRub: number;
+        serviceName?: string | undefined;
+    }>, "many">;
+}, "strip", z.ZodTypeAny, {
+    companyName: string;
+    annualLimitRub: number | null;
+    contractId: string;
+    usedAnnualAmountRub: number;
+    totalPriceRub: number;
+    totalCoveredRub: number;
+    totalPatientCoPayRub: number;
+    remainingAnnualLimitRub: number | null;
+    itemBreakdown: {
+        category: string;
+        serviceId: string;
+        quantity: number;
+        unitPriceRub: number;
+        totalPriceRub: number;
+        coveragePct: number;
+        coveredAmountRub: number;
+        patientCoPayRub: number;
+        serviceName?: string | undefined;
+    }[];
+}, {
+    companyName: string;
+    annualLimitRub: number | null;
+    contractId: string;
+    usedAnnualAmountRub: number;
+    totalPriceRub: number;
+    totalCoveredRub: number;
+    totalPatientCoPayRub: number;
+    remainingAnnualLimitRub: number | null;
+    itemBreakdown: {
+        category: string;
+        serviceId: string;
+        quantity: number;
+        unitPriceRub: number;
+        totalPriceRub: number;
+        coveragePct: number;
+        coveredAmountRub: number;
+        patientCoPayRub: number;
+        serviceName?: string | undefined;
+    }[];
+}>;
+export type InsuranceCoverageCalculationResult = z.infer<typeof insuranceCoverageCalculationResultSchema>;
+/**
+ * Точный расчет покрытия ДМС и доплаты пациента (копеечная точность без двоичного дрейфа).
+ */
+export declare function calculateDmsCoverage(contract: Pick<InsuranceContract, "id" | "companyName" | "coverageTherapyPct" | "coverageSurgeryPct" | "coverageOrthoPct" | "coverageHygienePct" | "annualLimitRub">, items: readonly InsuranceCalculationItem[], usedAnnualAmountRub?: number): InsuranceCoverageCalculationResult;
 export declare const createPatientSchema: z.ZodObject<{
     fullName: z.ZodString;
     birthDate: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>>>;
@@ -99306,8 +99614,8 @@ export declare const messageTemplateCatalogSchema: z.ZodObject<{
     organizationId: string;
     channel: string;
     intent: string;
-    templateText: string;
     isActive: boolean;
+    templateText: string;
     createdAt?: any;
     variables?: any;
 }, {
@@ -99316,8 +99624,8 @@ export declare const messageTemplateCatalogSchema: z.ZodObject<{
     organizationId: string;
     channel: string;
     intent: string;
-    templateText: string;
     isActive: boolean;
+    templateText: string;
     createdAt?: any;
     variables?: any;
 }>;
@@ -99362,14 +99670,1943 @@ export declare const updateMessageTemplateCatalogSchema: z.ZodObject<{
     channel?: string | undefined;
     intent?: string | undefined;
     variables?: any;
-    templateText?: string | undefined;
     isActive?: boolean | undefined;
+    templateText?: string | undefined;
 }, {
     title?: string | undefined;
     channel?: string | undefined;
     intent?: string | undefined;
     variables?: any;
-    templateText?: string | undefined;
     isActive?: boolean | undefined;
+    templateText?: string | undefined;
 }>;
 export type UpdateMessageTemplateCatalogInput = z.infer<typeof updateMessageTemplateCatalogSchema>;
+/**
+ * ============================================================================
+ * ПАРОДОНТОЛОГИЧЕСКАЯ КАРТА (PERIODONTAL PROBING & RISK ASSESSMENT ENGINE)
+ * ============================================================================
+ * Клинический стандарт ВОЗ, AAP и EFP:
+ * 1. 6 точек зондирования на каждый зуб (дистально-вестибулярная, медиально-вестибулярная, центрально-вестибулярная и 3 оральных/язычных).
+ * 2. Глубина кармана (Probing Depth, PD mm).
+ * 3. Рецессия / уровень десневого края (Gingival Margin, GM mm).
+ * 4. Клинический уровень прикрепления (CAL = PD + GM mm).
+ * 5. Кровоточивость при зондировании (Bleeding on Probing, BOP).
+ * 6. Наличие поддесневого зубного камня и налёта (Plaque & Calculus).
+ * 7. Нагноение (Suppuration).
+ * 8. Подвижность по Миллеру (Mobility 0..3) и фуркация (Furcation 0..4).
+ * 9. Индексы FMBS (Full Mouth Bleeding Score), FMPS (Full Mouth Plaque Score) и оценка риска пародонтита (PRA).
+ * 10. PSR / CPITN скрининг по 6 секстантам.
+ */
+export declare const perioSiteMeasurementSchema: z.ZodObject<{
+    /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+    probingDepthMm: z.ZodDefault<z.ZodNumber>;
+    /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+    gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+    /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+    bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+    /** Нагноение (Suppuration — гнойный экссудат) */
+    suppuration: z.ZodDefault<z.ZodBoolean>;
+    /** Зубной налёт на придесневой поверхности */
+    plaque: z.ZodDefault<z.ZodBoolean>;
+    /** Поддесневой зубной камень */
+    calculus: z.ZodDefault<z.ZodBoolean>;
+    /** Вычисленный клинический уровень прикрепления (CAL mm) */
+    calMm: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    probingDepthMm: number;
+    gingivalMarginMm: number;
+    bleedingOnProbing: boolean;
+    suppuration: boolean;
+    plaque: boolean;
+    calculus: boolean;
+    calMm?: number | undefined;
+}, {
+    probingDepthMm?: number | undefined;
+    gingivalMarginMm?: number | undefined;
+    bleedingOnProbing?: boolean | undefined;
+    suppuration?: boolean | undefined;
+    plaque?: boolean | undefined;
+    calculus?: boolean | undefined;
+    calMm?: number | undefined;
+}>;
+export type PerioSiteMeasurement = z.infer<typeof perioSiteMeasurementSchema>;
+export declare const perioToothRecordSchema: z.ZodObject<{
+    /** Номер зуба по FDI (11..48) */
+    toothNumber: z.ZodEffects<z.ZodNumber, number, number>;
+    /** Зуб отсутствует (адентия, удалён) */
+    isMissing: z.ZodDefault<z.ZodBoolean>;
+    /** Имплантат (периимплантатное зондирование) */
+    isImplant: z.ZodDefault<z.ZodBoolean>;
+    /** Подвижность по Миллеру (0 = физиологическая, 1 = I ст., 2 = II ст., 3 = III ст.) */
+    mobility: z.ZodDefault<z.ZodUnion<[z.ZodLiteral<0>, z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+    /** Вовлечение бифуркации/трифуркации (0..4) */
+    furcation: z.ZodDefault<z.ZodUnion<[z.ZodLiteral<0>, z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>>;
+    /** 6 анатомических точек зондирования */
+    distoBuccal: z.ZodDefault<z.ZodObject<{
+        /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+        probingDepthMm: z.ZodDefault<z.ZodNumber>;
+        /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+        gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+        /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+        bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+        /** Нагноение (Suppuration — гнойный экссудат) */
+        suppuration: z.ZodDefault<z.ZodBoolean>;
+        /** Зубной налёт на придесневой поверхности */
+        plaque: z.ZodDefault<z.ZodBoolean>;
+        /** Поддесневой зубной камень */
+        calculus: z.ZodDefault<z.ZodBoolean>;
+        /** Вычисленный клинический уровень прикрепления (CAL mm) */
+        calMm: z.ZodOptional<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    }, {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    }>>;
+    midBuccal: z.ZodDefault<z.ZodObject<{
+        /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+        probingDepthMm: z.ZodDefault<z.ZodNumber>;
+        /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+        gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+        /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+        bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+        /** Нагноение (Suppuration — гнойный экссудат) */
+        suppuration: z.ZodDefault<z.ZodBoolean>;
+        /** Зубной налёт на придесневой поверхности */
+        plaque: z.ZodDefault<z.ZodBoolean>;
+        /** Поддесневой зубной камень */
+        calculus: z.ZodDefault<z.ZodBoolean>;
+        /** Вычисленный клинический уровень прикрепления (CAL mm) */
+        calMm: z.ZodOptional<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    }, {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    }>>;
+    mesioBuccal: z.ZodDefault<z.ZodObject<{
+        /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+        probingDepthMm: z.ZodDefault<z.ZodNumber>;
+        /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+        gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+        /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+        bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+        /** Нагноение (Suppuration — гнойный экссудат) */
+        suppuration: z.ZodDefault<z.ZodBoolean>;
+        /** Зубной налёт на придесневой поверхности */
+        plaque: z.ZodDefault<z.ZodBoolean>;
+        /** Поддесневой зубной камень */
+        calculus: z.ZodDefault<z.ZodBoolean>;
+        /** Вычисленный клинический уровень прикрепления (CAL mm) */
+        calMm: z.ZodOptional<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    }, {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    }>>;
+    distoLingual: z.ZodDefault<z.ZodObject<{
+        /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+        probingDepthMm: z.ZodDefault<z.ZodNumber>;
+        /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+        gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+        /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+        bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+        /** Нагноение (Suppuration — гнойный экссудат) */
+        suppuration: z.ZodDefault<z.ZodBoolean>;
+        /** Зубной налёт на придесневой поверхности */
+        plaque: z.ZodDefault<z.ZodBoolean>;
+        /** Поддесневой зубной камень */
+        calculus: z.ZodDefault<z.ZodBoolean>;
+        /** Вычисленный клинический уровень прикрепления (CAL mm) */
+        calMm: z.ZodOptional<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    }, {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    }>>;
+    midLingual: z.ZodDefault<z.ZodObject<{
+        /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+        probingDepthMm: z.ZodDefault<z.ZodNumber>;
+        /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+        gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+        /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+        bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+        /** Нагноение (Suppuration — гнойный экссудат) */
+        suppuration: z.ZodDefault<z.ZodBoolean>;
+        /** Зубной налёт на придесневой поверхности */
+        plaque: z.ZodDefault<z.ZodBoolean>;
+        /** Поддесневой зубной камень */
+        calculus: z.ZodDefault<z.ZodBoolean>;
+        /** Вычисленный клинический уровень прикрепления (CAL mm) */
+        calMm: z.ZodOptional<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    }, {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    }>>;
+    mesioLingual: z.ZodDefault<z.ZodObject<{
+        /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+        probingDepthMm: z.ZodDefault<z.ZodNumber>;
+        /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+        gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+        /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+        bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+        /** Нагноение (Suppuration — гнойный экссудат) */
+        suppuration: z.ZodDefault<z.ZodBoolean>;
+        /** Зубной налёт на придесневой поверхности */
+        plaque: z.ZodDefault<z.ZodBoolean>;
+        /** Поддесневой зубной камень */
+        calculus: z.ZodDefault<z.ZodBoolean>;
+        /** Вычисленный клинический уровень прикрепления (CAL mm) */
+        calMm: z.ZodOptional<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    }, {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    toothNumber: number;
+    isMissing: boolean;
+    isImplant: boolean;
+    mobility: 0 | 1 | 2 | 3;
+    furcation: 0 | 1 | 2 | 4 | 3;
+    distoBuccal: {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    };
+    midBuccal: {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    };
+    mesioBuccal: {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    };
+    distoLingual: {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    };
+    midLingual: {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    };
+    mesioLingual: {
+        probingDepthMm: number;
+        gingivalMarginMm: number;
+        bleedingOnProbing: boolean;
+        suppuration: boolean;
+        plaque: boolean;
+        calculus: boolean;
+        calMm?: number | undefined;
+    };
+}, {
+    toothNumber: number;
+    isMissing?: boolean | undefined;
+    isImplant?: boolean | undefined;
+    mobility?: 0 | 1 | 2 | 3 | undefined;
+    furcation?: 0 | 1 | 2 | 4 | 3 | undefined;
+    distoBuccal?: {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    } | undefined;
+    midBuccal?: {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    } | undefined;
+    mesioBuccal?: {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    } | undefined;
+    distoLingual?: {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    } | undefined;
+    midLingual?: {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    } | undefined;
+    mesioLingual?: {
+        probingDepthMm?: number | undefined;
+        gingivalMarginMm?: number | undefined;
+        bleedingOnProbing?: boolean | undefined;
+        suppuration?: boolean | undefined;
+        plaque?: boolean | undefined;
+        calculus?: boolean | undefined;
+        calMm?: number | undefined;
+    } | undefined;
+}>;
+export type PerioToothRecord = z.infer<typeof perioToothRecordSchema>;
+export declare const perioChartSummarySchema: z.ZodObject<{
+    totalTeethExamined: z.ZodNumber;
+    totalSitesProbed: z.ZodNumber;
+    /** Full Mouth Bleeding Score (FMBS) в процентах (0..100%) */
+    fmbsPercent: z.ZodNumber;
+    /** Full Mouth Plaque Score (FMPS) в процентах (0..100%) */
+    fmpsPercent: z.ZodNumber;
+    /** Число глубоких карманов (PD >= 5 мм) */
+    deepPocketsCount: z.ZodNumber;
+    /** Число умеренных карманов (PD == 4 мм) */
+    moderatePocketsCount: z.ZodNumber;
+    /** Число участков с нагноением */
+    sitesWithSuppurationCount: z.ZodNumber;
+    /** Число участков с зубным камнем */
+    sitesWithCalculusCount: z.ZodNumber;
+    /** Число подвижных зубов (подвижность >= 1) */
+    teethWithMobilityCount: z.ZodNumber;
+    /** Число зубов с поражением фуркации (фуркация >= 1) */
+    teethWithFurcationCount: z.ZodNumber;
+    /** Максимальная глубина кармана (мм) */
+    maxPocketDepthMm: z.ZodNumber;
+    /** Средняя глубина кармана (мм) */
+    meanPocketDepthMm: z.ZodNumber;
+    /** Максимальная потеря прикрепления (CAL мм) */
+    maxCalMm: z.ZodNumber;
+    /** Средняя потеря прикрепления (CAL мм) */
+    meanCalMm: z.ZodNumber;
+    /** Категория пародонтального риска (PRA: low, moderate, high) */
+    riskCategory: z.ZodEnum<["low", "moderate", "high"]>;
+}, "strip", z.ZodTypeAny, {
+    totalTeethExamined: number;
+    totalSitesProbed: number;
+    fmbsPercent: number;
+    fmpsPercent: number;
+    deepPocketsCount: number;
+    moderatePocketsCount: number;
+    sitesWithSuppurationCount: number;
+    sitesWithCalculusCount: number;
+    teethWithMobilityCount: number;
+    teethWithFurcationCount: number;
+    maxPocketDepthMm: number;
+    meanPocketDepthMm: number;
+    maxCalMm: number;
+    meanCalMm: number;
+    riskCategory: "low" | "high" | "moderate";
+}, {
+    totalTeethExamined: number;
+    totalSitesProbed: number;
+    fmbsPercent: number;
+    fmpsPercent: number;
+    deepPocketsCount: number;
+    moderatePocketsCount: number;
+    sitesWithSuppurationCount: number;
+    sitesWithCalculusCount: number;
+    teethWithMobilityCount: number;
+    teethWithFurcationCount: number;
+    maxPocketDepthMm: number;
+    meanPocketDepthMm: number;
+    maxCalMm: number;
+    meanCalMm: number;
+    riskCategory: "low" | "high" | "moderate";
+}>;
+export type PerioChartSummary = z.infer<typeof perioChartSummarySchema>;
+export declare const perioChartDataSchema: z.ZodObject<{
+    id: z.ZodOptional<z.ZodString>;
+    organizationId: z.ZodString;
+    patientId: z.ZodString;
+    visitId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    doctorId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    chartDate: z.ZodString;
+    teeth: z.ZodArray<z.ZodObject<{
+        /** Номер зуба по FDI (11..48) */
+        toothNumber: z.ZodEffects<z.ZodNumber, number, number>;
+        /** Зуб отсутствует (адентия, удалён) */
+        isMissing: z.ZodDefault<z.ZodBoolean>;
+        /** Имплантат (периимплантатное зондирование) */
+        isImplant: z.ZodDefault<z.ZodBoolean>;
+        /** Подвижность по Миллеру (0 = физиологическая, 1 = I ст., 2 = II ст., 3 = III ст.) */
+        mobility: z.ZodDefault<z.ZodUnion<[z.ZodLiteral<0>, z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>>;
+        /** Вовлечение бифуркации/трифуркации (0..4) */
+        furcation: z.ZodDefault<z.ZodUnion<[z.ZodLiteral<0>, z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>, z.ZodLiteral<4>]>>;
+        /** 6 анатомических точек зондирования */
+        distoBuccal: z.ZodDefault<z.ZodObject<{
+            /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+            probingDepthMm: z.ZodDefault<z.ZodNumber>;
+            /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+            gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+            /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+            bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+            /** Нагноение (Suppuration — гнойный экссудат) */
+            suppuration: z.ZodDefault<z.ZodBoolean>;
+            /** Зубной налёт на придесневой поверхности */
+            plaque: z.ZodDefault<z.ZodBoolean>;
+            /** Поддесневой зубной камень */
+            calculus: z.ZodDefault<z.ZodBoolean>;
+            /** Вычисленный клинический уровень прикрепления (CAL mm) */
+            calMm: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        }, {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        }>>;
+        midBuccal: z.ZodDefault<z.ZodObject<{
+            /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+            probingDepthMm: z.ZodDefault<z.ZodNumber>;
+            /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+            gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+            /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+            bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+            /** Нагноение (Suppuration — гнойный экссудат) */
+            suppuration: z.ZodDefault<z.ZodBoolean>;
+            /** Зубной налёт на придесневой поверхности */
+            plaque: z.ZodDefault<z.ZodBoolean>;
+            /** Поддесневой зубной камень */
+            calculus: z.ZodDefault<z.ZodBoolean>;
+            /** Вычисленный клинический уровень прикрепления (CAL mm) */
+            calMm: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        }, {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        }>>;
+        mesioBuccal: z.ZodDefault<z.ZodObject<{
+            /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+            probingDepthMm: z.ZodDefault<z.ZodNumber>;
+            /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+            gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+            /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+            bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+            /** Нагноение (Suppuration — гнойный экссудат) */
+            suppuration: z.ZodDefault<z.ZodBoolean>;
+            /** Зубной налёт на придесневой поверхности */
+            plaque: z.ZodDefault<z.ZodBoolean>;
+            /** Поддесневой зубной камень */
+            calculus: z.ZodDefault<z.ZodBoolean>;
+            /** Вычисленный клинический уровень прикрепления (CAL mm) */
+            calMm: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        }, {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        }>>;
+        distoLingual: z.ZodDefault<z.ZodObject<{
+            /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+            probingDepthMm: z.ZodDefault<z.ZodNumber>;
+            /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+            gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+            /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+            bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+            /** Нагноение (Suppuration — гнойный экссудат) */
+            suppuration: z.ZodDefault<z.ZodBoolean>;
+            /** Зубной налёт на придесневой поверхности */
+            plaque: z.ZodDefault<z.ZodBoolean>;
+            /** Поддесневой зубной камень */
+            calculus: z.ZodDefault<z.ZodBoolean>;
+            /** Вычисленный клинический уровень прикрепления (CAL mm) */
+            calMm: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        }, {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        }>>;
+        midLingual: z.ZodDefault<z.ZodObject<{
+            /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+            probingDepthMm: z.ZodDefault<z.ZodNumber>;
+            /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+            gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+            /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+            bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+            /** Нагноение (Suppuration — гнойный экссудат) */
+            suppuration: z.ZodDefault<z.ZodBoolean>;
+            /** Зубной налёт на придесневой поверхности */
+            plaque: z.ZodDefault<z.ZodBoolean>;
+            /** Поддесневой зубной камень */
+            calculus: z.ZodDefault<z.ZodBoolean>;
+            /** Вычисленный клинический уровень прикрепления (CAL mm) */
+            calMm: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        }, {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        }>>;
+        mesioLingual: z.ZodDefault<z.ZodObject<{
+            /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+            probingDepthMm: z.ZodDefault<z.ZodNumber>;
+            /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+            gingivalMarginMm: z.ZodDefault<z.ZodNumber>;
+            /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+            bleedingOnProbing: z.ZodDefault<z.ZodBoolean>;
+            /** Нагноение (Suppuration — гнойный экссудат) */
+            suppuration: z.ZodDefault<z.ZodBoolean>;
+            /** Зубной налёт на придесневой поверхности */
+            plaque: z.ZodDefault<z.ZodBoolean>;
+            /** Поддесневой зубной камень */
+            calculus: z.ZodDefault<z.ZodBoolean>;
+            /** Вычисленный клинический уровень прикрепления (CAL mm) */
+            calMm: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        }, {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        }>>;
+    }, "strip", z.ZodTypeAny, {
+        toothNumber: number;
+        isMissing: boolean;
+        isImplant: boolean;
+        mobility: 0 | 1 | 2 | 3;
+        furcation: 0 | 1 | 2 | 4 | 3;
+        distoBuccal: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        midBuccal: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        mesioBuccal: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        distoLingual: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        midLingual: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        mesioLingual: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+    }, {
+        toothNumber: number;
+        isMissing?: boolean | undefined;
+        isImplant?: boolean | undefined;
+        mobility?: 0 | 1 | 2 | 3 | undefined;
+        furcation?: 0 | 1 | 2 | 4 | 3 | undefined;
+        distoBuccal?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        midBuccal?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        mesioBuccal?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        distoLingual?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        midLingual?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        mesioLingual?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+    }>, "many">;
+    summary: z.ZodOptional<z.ZodObject<{
+        totalTeethExamined: z.ZodNumber;
+        totalSitesProbed: z.ZodNumber;
+        /** Full Mouth Bleeding Score (FMBS) в процентах (0..100%) */
+        fmbsPercent: z.ZodNumber;
+        /** Full Mouth Plaque Score (FMPS) в процентах (0..100%) */
+        fmpsPercent: z.ZodNumber;
+        /** Число глубоких карманов (PD >= 5 мм) */
+        deepPocketsCount: z.ZodNumber;
+        /** Число умеренных карманов (PD == 4 мм) */
+        moderatePocketsCount: z.ZodNumber;
+        /** Число участков с нагноением */
+        sitesWithSuppurationCount: z.ZodNumber;
+        /** Число участков с зубным камнем */
+        sitesWithCalculusCount: z.ZodNumber;
+        /** Число подвижных зубов (подвижность >= 1) */
+        teethWithMobilityCount: z.ZodNumber;
+        /** Число зубов с поражением фуркации (фуркация >= 1) */
+        teethWithFurcationCount: z.ZodNumber;
+        /** Максимальная глубина кармана (мм) */
+        maxPocketDepthMm: z.ZodNumber;
+        /** Средняя глубина кармана (мм) */
+        meanPocketDepthMm: z.ZodNumber;
+        /** Максимальная потеря прикрепления (CAL мм) */
+        maxCalMm: z.ZodNumber;
+        /** Средняя потеря прикрепления (CAL мм) */
+        meanCalMm: z.ZodNumber;
+        /** Категория пародонтального риска (PRA: low, moderate, high) */
+        riskCategory: z.ZodEnum<["low", "moderate", "high"]>;
+    }, "strip", z.ZodTypeAny, {
+        totalTeethExamined: number;
+        totalSitesProbed: number;
+        fmbsPercent: number;
+        fmpsPercent: number;
+        deepPocketsCount: number;
+        moderatePocketsCount: number;
+        sitesWithSuppurationCount: number;
+        sitesWithCalculusCount: number;
+        teethWithMobilityCount: number;
+        teethWithFurcationCount: number;
+        maxPocketDepthMm: number;
+        meanPocketDepthMm: number;
+        maxCalMm: number;
+        meanCalMm: number;
+        riskCategory: "low" | "high" | "moderate";
+    }, {
+        totalTeethExamined: number;
+        totalSitesProbed: number;
+        fmbsPercent: number;
+        fmpsPercent: number;
+        deepPocketsCount: number;
+        moderatePocketsCount: number;
+        sitesWithSuppurationCount: number;
+        sitesWithCalculusCount: number;
+        teethWithMobilityCount: number;
+        teethWithFurcationCount: number;
+        maxPocketDepthMm: number;
+        meanPocketDepthMm: number;
+        maxCalMm: number;
+        meanCalMm: number;
+        riskCategory: "low" | "high" | "moderate";
+    }>>;
+    notes: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    patientId: string;
+    organizationId: string;
+    teeth: {
+        toothNumber: number;
+        isMissing: boolean;
+        isImplant: boolean;
+        mobility: 0 | 1 | 2 | 3;
+        furcation: 0 | 1 | 2 | 4 | 3;
+        distoBuccal: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        midBuccal: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        mesioBuccal: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        distoLingual: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        midLingual: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+        mesioLingual: {
+            probingDepthMm: number;
+            gingivalMarginMm: number;
+            bleedingOnProbing: boolean;
+            suppuration: boolean;
+            plaque: boolean;
+            calculus: boolean;
+            calMm?: number | undefined;
+        };
+    }[];
+    chartDate: string;
+    id?: string | undefined;
+    visitId?: string | null | undefined;
+    notes?: string | null | undefined;
+    summary?: {
+        totalTeethExamined: number;
+        totalSitesProbed: number;
+        fmbsPercent: number;
+        fmpsPercent: number;
+        deepPocketsCount: number;
+        moderatePocketsCount: number;
+        sitesWithSuppurationCount: number;
+        sitesWithCalculusCount: number;
+        teethWithMobilityCount: number;
+        teethWithFurcationCount: number;
+        maxPocketDepthMm: number;
+        meanPocketDepthMm: number;
+        maxCalMm: number;
+        meanCalMm: number;
+        riskCategory: "low" | "high" | "moderate";
+    } | undefined;
+    doctorId?: string | null | undefined;
+}, {
+    patientId: string;
+    organizationId: string;
+    teeth: {
+        toothNumber: number;
+        isMissing?: boolean | undefined;
+        isImplant?: boolean | undefined;
+        mobility?: 0 | 1 | 2 | 3 | undefined;
+        furcation?: 0 | 1 | 2 | 4 | 3 | undefined;
+        distoBuccal?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        midBuccal?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        mesioBuccal?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        distoLingual?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        midLingual?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+        mesioLingual?: {
+            probingDepthMm?: number | undefined;
+            gingivalMarginMm?: number | undefined;
+            bleedingOnProbing?: boolean | undefined;
+            suppuration?: boolean | undefined;
+            plaque?: boolean | undefined;
+            calculus?: boolean | undefined;
+            calMm?: number | undefined;
+        } | undefined;
+    }[];
+    chartDate: string;
+    id?: string | undefined;
+    visitId?: string | null | undefined;
+    notes?: string | null | undefined;
+    summary?: {
+        totalTeethExamined: number;
+        totalSitesProbed: number;
+        fmbsPercent: number;
+        fmpsPercent: number;
+        deepPocketsCount: number;
+        moderatePocketsCount: number;
+        sitesWithSuppurationCount: number;
+        sitesWithCalculusCount: number;
+        teethWithMobilityCount: number;
+        teethWithFurcationCount: number;
+        maxPocketDepthMm: number;
+        meanPocketDepthMm: number;
+        maxCalMm: number;
+        meanCalMm: number;
+        riskCategory: "low" | "high" | "moderate";
+    } | undefined;
+    doctorId?: string | null | undefined;
+}>;
+export type PerioChartData = z.infer<typeof perioChartDataSchema>;
+/**
+ * Вычисляет клинический уровень прикрепления (Clinical Attachment Level):
+ * CAL = Probing Depth (PD) + Gingival Margin (GM).
+ */
+export declare function calculateClinicalAttachmentLevel(probingDepthMm: number, gingivalMarginMm: number): number;
+/**
+ * Чистая математическая функция расчёта пародонтальных индексов (FMBS, FMPS, CAL, PRA).
+ */
+export declare function calculatePerioIndices(teeth: PerioToothRecord[]): PerioChartSummary;
+/**
+ * Расчёт кодов PSR / CPITN по 6 секстантам:
+ * S1: 17..14, S2: 13..23, S3: 24..27, S4: 37..34, S5: 33..43, S6: 44..47.
+ */
+export declare const PSR_SEXTANTS: readonly [{
+    readonly name: "S1";
+    readonly label: "Верхний правый дистальный (17-14)";
+    readonly teeth: readonly [17, 16, 15, 14];
+}, {
+    readonly name: "S2";
+    readonly label: "Верхний фронтальный (13-23)";
+    readonly teeth: readonly [13, 12, 11, 21, 22, 23];
+}, {
+    readonly name: "S3";
+    readonly label: "Верхний левый дистальный (24-27)";
+    readonly teeth: readonly [24, 25, 26, 27];
+}, {
+    readonly name: "S4";
+    readonly label: "Нижний левый дистальный (37-34)";
+    readonly teeth: readonly [37, 36, 35, 34];
+}, {
+    readonly name: "S5";
+    readonly label: "Нижний фронтальный (33-43)";
+    readonly teeth: readonly [33, 32, 31, 41, 42, 43];
+}, {
+    readonly name: "S6";
+    readonly label: "Нижний правый дистальный (44-47)";
+    readonly teeth: readonly [44, 45, 46, 47];
+}];
+export type PsrSextantResult = {
+    code: 0 | 1 | 2 | 3 | 4;
+    asterisk: boolean;
+    highestPocketDepthMm: number;
+    teethCount: number;
+};
+export declare function calculatePsrSextants(teeth: PerioToothRecord[]): Record<string, PsrSextantResult>;
+export declare const loyaltyProgramTierSchema: z.ZodEnum<["bronze", "silver", "gold", "platinum", "vip"]>;
+export type LoyaltyProgramTier = z.infer<typeof loyaltyProgramTierSchema>;
+export declare const loyaltyProgramSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    name: z.ZodString;
+    tier: z.ZodDefault<z.ZodEnum<["bronze", "silver", "gold", "platinum", "vip"]>>;
+    minSpendThresholdRub: z.ZodDefault<z.ZodNumber>;
+    cashbackPercent: z.ZodDefault<z.ZodNumber>;
+    maxInvoiceCoveragePercent: z.ZodDefault<z.ZodNumber>;
+    pointsTtlDays: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodNumber>>>;
+    pointRateRub: z.ZodDefault<z.ZodNumber>;
+    isActive: z.ZodDefault<z.ZodBoolean>;
+    createdAt: z.ZodOptional<z.ZodString>;
+    updatedAt: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    organizationId: string;
+    name: string;
+    isActive: boolean;
+    tier: "silver" | "gold" | "platinum" | "bronze" | "vip";
+    minSpendThresholdRub: number;
+    cashbackPercent: number;
+    maxInvoiceCoveragePercent: number;
+    pointsTtlDays: number | null;
+    pointRateRub: number;
+    createdAt?: string | undefined;
+    updatedAt?: string | undefined;
+}, {
+    id: string;
+    organizationId: string;
+    name: string;
+    createdAt?: string | undefined;
+    updatedAt?: string | undefined;
+    isActive?: boolean | undefined;
+    tier?: "silver" | "gold" | "platinum" | "bronze" | "vip" | undefined;
+    minSpendThresholdRub?: number | undefined;
+    cashbackPercent?: number | undefined;
+    maxInvoiceCoveragePercent?: number | undefined;
+    pointsTtlDays?: number | null | undefined;
+    pointRateRub?: number | undefined;
+}>;
+export type LoyaltyProgram = z.infer<typeof loyaltyProgramSchema>;
+export declare const patientBonusBalanceSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    patientId: z.ZodString;
+    activePoints: z.ZodDefault<z.ZodNumber>;
+    pendingPoints: z.ZodDefault<z.ZodNumber>;
+    lifetimeEarnedPoints: z.ZodDefault<z.ZodNumber>;
+    lifetimeSpentPoints: z.ZodDefault<z.ZodNumber>;
+    lifetimeExpiredPoints: z.ZodDefault<z.ZodNumber>;
+    currentLoyaltyProgramId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    tier: z.ZodDefault<z.ZodEnum<["bronze", "silver", "gold", "platinum", "vip"]>>;
+    cashbackPercent: z.ZodDefault<z.ZodNumber>;
+    maxInvoiceCoveragePercent: z.ZodDefault<z.ZodNumber>;
+    updatedAt: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    patientId: string;
+    organizationId: string;
+    tier: "silver" | "gold" | "platinum" | "bronze" | "vip";
+    cashbackPercent: number;
+    maxInvoiceCoveragePercent: number;
+    activePoints: number;
+    pendingPoints: number;
+    lifetimeEarnedPoints: number;
+    lifetimeSpentPoints: number;
+    lifetimeExpiredPoints: number;
+    updatedAt?: string | undefined;
+    currentLoyaltyProgramId?: string | null | undefined;
+}, {
+    id: string;
+    patientId: string;
+    organizationId: string;
+    updatedAt?: string | undefined;
+    tier?: "silver" | "gold" | "platinum" | "bronze" | "vip" | undefined;
+    cashbackPercent?: number | undefined;
+    maxInvoiceCoveragePercent?: number | undefined;
+    activePoints?: number | undefined;
+    pendingPoints?: number | undefined;
+    lifetimeEarnedPoints?: number | undefined;
+    lifetimeSpentPoints?: number | undefined;
+    lifetimeExpiredPoints?: number | undefined;
+    currentLoyaltyProgramId?: string | null | undefined;
+}>;
+export type PatientBonusBalance = z.infer<typeof patientBonusBalanceSchema>;
+export declare const bonusTransactionTypeSchema: z.ZodEnum<["accrual_payment", "accrual_referral_l1", "accrual_referral_l2", "accrual_welcome", "accrual_birthday", "accrual_manual_admin", "redemption_payment", "expiration", "reversal_refund"]>;
+export type BonusTransactionType = z.infer<typeof bonusTransactionTypeSchema>;
+export declare const bonusTransactionSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    patientId: z.ZodString;
+    amountPoints: z.ZodNumber;
+    balanceAfterPoints: z.ZodNumber;
+    type: z.ZodEnum<["accrual_payment", "accrual_referral_l1", "accrual_referral_l2", "accrual_welcome", "accrual_birthday", "accrual_manual_admin", "redemption_payment", "expiration", "reversal_refund"]>;
+    relatedPaymentId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    relatedInvoiceId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    relatedReferralId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    expiresAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    unspentPoints: z.ZodDefault<z.ZodNumber>;
+    clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    description: z.ZodString;
+    createdById: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    createdAt: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    type: "accrual_payment" | "accrual_referral_l1" | "accrual_referral_l2" | "accrual_welcome" | "accrual_birthday" | "accrual_manual_admin" | "redemption_payment" | "expiration" | "reversal_refund";
+    id: string;
+    patientId: string;
+    organizationId: string;
+    createdAt: string;
+    description: string;
+    amountPoints: number;
+    balanceAfterPoints: number;
+    unspentPoints: number;
+    clientMutationId?: string | null | undefined;
+    expiresAt?: string | null | undefined;
+    relatedPaymentId?: string | null | undefined;
+    relatedInvoiceId?: string | null | undefined;
+    relatedReferralId?: string | null | undefined;
+    createdById?: string | null | undefined;
+}, {
+    type: "accrual_payment" | "accrual_referral_l1" | "accrual_referral_l2" | "accrual_welcome" | "accrual_birthday" | "accrual_manual_admin" | "redemption_payment" | "expiration" | "reversal_refund";
+    id: string;
+    patientId: string;
+    organizationId: string;
+    createdAt: string;
+    description: string;
+    amountPoints: number;
+    balanceAfterPoints: number;
+    clientMutationId?: string | null | undefined;
+    expiresAt?: string | null | undefined;
+    relatedPaymentId?: string | null | undefined;
+    relatedInvoiceId?: string | null | undefined;
+    relatedReferralId?: string | null | undefined;
+    unspentPoints?: number | undefined;
+    createdById?: string | null | undefined;
+}>;
+export type BonusTransaction = z.infer<typeof bonusTransactionSchema>;
+export declare const referralCampaignSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    name: z.ZodString;
+    isActive: z.ZodDefault<z.ZodBoolean>;
+    refereeWelcomePoints: z.ZodDefault<z.ZodNumber>;
+    referrerTier1Points: z.ZodDefault<z.ZodNumber>;
+    referrerTier2Points: z.ZodDefault<z.ZodNumber>;
+    minFirstSpendThresholdRub: z.ZodDefault<z.ZodNumber>;
+    shareMessageTemplate: z.ZodDefault<z.ZodString>;
+    createdAt: z.ZodOptional<z.ZodString>;
+    updatedAt: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    organizationId: string;
+    name: string;
+    isActive: boolean;
+    refereeWelcomePoints: number;
+    referrerTier1Points: number;
+    referrerTier2Points: number;
+    minFirstSpendThresholdRub: number;
+    shareMessageTemplate: string;
+    createdAt?: string | undefined;
+    updatedAt?: string | undefined;
+}, {
+    id: string;
+    organizationId: string;
+    name: string;
+    createdAt?: string | undefined;
+    updatedAt?: string | undefined;
+    isActive?: boolean | undefined;
+    refereeWelcomePoints?: number | undefined;
+    referrerTier1Points?: number | undefined;
+    referrerTier2Points?: number | undefined;
+    minFirstSpendThresholdRub?: number | undefined;
+    shareMessageTemplate?: string | undefined;
+}>;
+export type ReferralCampaign = z.infer<typeof referralCampaignSchema>;
+export declare const patientReferralCodeSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    patientId: z.ZodString;
+    referralCode: z.ZodString;
+    referralToken: z.ZodString;
+    inviteUrl: z.ZodOptional<z.ZodString>;
+    clickCount: z.ZodDefault<z.ZodNumber>;
+    signupCount: z.ZodDefault<z.ZodNumber>;
+    convertedCount: z.ZodDefault<z.ZodNumber>;
+    createdAt: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    patientId: string;
+    organizationId: string;
+    referralCode: string;
+    referralToken: string;
+    clickCount: number;
+    signupCount: number;
+    convertedCount: number;
+    createdAt?: string | undefined;
+    inviteUrl?: string | undefined;
+}, {
+    id: string;
+    patientId: string;
+    organizationId: string;
+    referralCode: string;
+    referralToken: string;
+    createdAt?: string | undefined;
+    inviteUrl?: string | undefined;
+    clickCount?: number | undefined;
+    signupCount?: number | undefined;
+    convertedCount?: number | undefined;
+}>;
+export type PatientReferralCode = z.infer<typeof patientReferralCodeSchema>;
+export declare const referralStatusSchema: z.ZodEnum<["registered", "appointment_booked", "first_visit_paid", "rewarded", "expired", "rejected_fraud"]>;
+export type ReferralStatus = z.infer<typeof referralStatusSchema>;
+export declare const patientReferralSchema: z.ZodObject<{
+    id: z.ZodString;
+    organizationId: z.ZodString;
+    campaignId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    referrerPatientId: z.ZodString;
+    parentReferrerPatientId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    refereePatientId: z.ZodString;
+    status: z.ZodDefault<z.ZodEnum<["registered", "appointment_booked", "first_visit_paid", "rewarded", "expired", "rejected_fraud"]>>;
+    qualifyingPaymentId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    qualifyingAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    rewardedAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    createdAt: z.ZodOptional<z.ZodString>;
+    updatedAt: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    status: "expired" | "registered" | "appointment_booked" | "first_visit_paid" | "rewarded" | "rejected_fraud";
+    id: string;
+    organizationId: string;
+    referrerPatientId: string;
+    refereePatientId: string;
+    createdAt?: string | undefined;
+    updatedAt?: string | undefined;
+    campaignId?: string | null | undefined;
+    parentReferrerPatientId?: string | null | undefined;
+    qualifyingPaymentId?: string | null | undefined;
+    qualifyingAmountRub?: number | null | undefined;
+    rewardedAt?: string | null | undefined;
+}, {
+    id: string;
+    organizationId: string;
+    referrerPatientId: string;
+    refereePatientId: string;
+    status?: "expired" | "registered" | "appointment_booked" | "first_visit_paid" | "rewarded" | "rejected_fraud" | undefined;
+    createdAt?: string | undefined;
+    updatedAt?: string | undefined;
+    campaignId?: string | null | undefined;
+    parentReferrerPatientId?: string | null | undefined;
+    qualifyingPaymentId?: string | null | undefined;
+    qualifyingAmountRub?: number | null | undefined;
+    rewardedAt?: string | null | undefined;
+}>;
+export type PatientReferral = z.infer<typeof patientReferralSchema>;
+/**
+ * Расчёт максимальной суммы баллов, допустимой к списанию в счёт чека.
+ */
+export declare function calculateMaxRedeemablePoints(invoiceAmountRub: number, activePoints: number, maxCoveragePercent?: number, pointRateRub?: number): {
+    maxAllowedPoints: number;
+    maxDiscountRub: number;
+    remainingPaymentRub: number;
+};
+/**
+ * Расчёт кешбэка баллами от суммы оплаченного лечения.
+ */
+export declare function calculateCashbackPoints(paidAmountRub: number, cashbackPercent: number, pointRateRub?: number): number;
+export declare const anestheticDrugSchema: z.ZodEnum<["articaine", "mepivacaine", "lidocaine", "bupivacaine"]>;
+export type AnestheticDrug = z.infer<typeof anestheticDrugSchema>;
+export declare const vasoconstrictorRatioSchema: z.ZodEnum<["none", "1:100000", "1:200000", "1:50000"]>;
+export type VasoconstrictorRatio = z.infer<typeof vasoconstrictorRatioSchema>;
+export declare const anesthesiaTechniqueSchema: z.ZodEnum<["infiltration", "mandibular_block", "tuberal_block", "infraorbital_block", "incisive_block", "palatine_block", "mental_block", "intraligamentary", "intraseptal", "intraosseous", "sedation_nitrous", "sedation_iv"]>;
+export type AnesthesiaTechnique = z.infer<typeof anesthesiaTechniqueSchema>;
+export declare const asaClassificationSchema: z.ZodEnum<["ASA_I", "ASA_II", "ASA_III", "ASA_IV"]>;
+export type AsaClassification = z.infer<typeof asaClassificationSchema>;
+export declare const vitalSignsMeasurementSchema: z.ZodObject<{
+    systolicBp: z.ZodNumber;
+    diastolicBp: z.ZodNumber;
+    heartRateBpm: z.ZodNumber;
+    spO2Pct: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+    respiratoryRate: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+    measuredAt: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    systolicBp: number;
+    diastolicBp: number;
+    heartRateBpm: number;
+    measuredAt: string;
+    spO2Pct?: number | null | undefined;
+    respiratoryRate?: number | null | undefined;
+}, {
+    systolicBp: number;
+    diastolicBp: number;
+    heartRateBpm: number;
+    measuredAt: string;
+    spO2Pct?: number | null | undefined;
+    respiratoryRate?: number | null | undefined;
+}>;
+export type VitalSignsMeasurement = z.infer<typeof vitalSignsMeasurementSchema>;
+export declare const anesthesiaLogRecordSchema: z.ZodObject<{
+    id: z.ZodOptional<z.ZodString>;
+    organizationId: z.ZodString;
+    visitId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    patientId: z.ZodString;
+    doctorId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    technique: z.ZodEnum<["infiltration", "mandibular_block", "tuberal_block", "infraorbital_block", "incisive_block", "palatine_block", "mental_block", "intraligamentary", "intraseptal", "intraosseous", "sedation_nitrous", "sedation_iv"]>;
+    drug: z.ZodEnum<["articaine", "mepivacaine", "lidocaine", "bupivacaine"]>;
+    drugBrandName: z.ZodDefault<z.ZodString>;
+    concentrationPct: z.ZodDefault<z.ZodNumber>;
+    vasoconstrictor: z.ZodDefault<z.ZodEnum<["none", "1:100000", "1:200000", "1:50000"]>>;
+    carpuleVolumeMl: z.ZodDefault<z.ZodNumber>;
+    carpulesAdministered: z.ZodDefault<z.ZodNumber>;
+    totalDoseMg: z.ZodNumber;
+    maxAllowedDoseMg: z.ZodNumber;
+    epinephrineMg: z.ZodDefault<z.ZodNumber>;
+    maxEpinephrineMg: z.ZodDefault<z.ZodNumber>;
+    aspirationTestPositive: z.ZodDefault<z.ZodBoolean>;
+    toothNumbers: z.ZodDefault<z.ZodArray<z.ZodNumber, "many">>;
+    injectionSite: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    lotNumber: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    expirationDate: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    vitalsPre: z.ZodNullable<z.ZodOptional<z.ZodObject<{
+        systolicBp: z.ZodNumber;
+        diastolicBp: z.ZodNumber;
+        heartRateBpm: z.ZodNumber;
+        spO2Pct: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+        respiratoryRate: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+        measuredAt: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    }, {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    }>>>;
+    vitalsIntra: z.ZodNullable<z.ZodOptional<z.ZodObject<{
+        systolicBp: z.ZodNumber;
+        diastolicBp: z.ZodNumber;
+        heartRateBpm: z.ZodNumber;
+        spO2Pct: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+        respiratoryRate: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+        measuredAt: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    }, {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    }>>>;
+    vitalsPost: z.ZodNullable<z.ZodOptional<z.ZodObject<{
+        systolicBp: z.ZodNumber;
+        diastolicBp: z.ZodNumber;
+        heartRateBpm: z.ZodNumber;
+        spO2Pct: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+        respiratoryRate: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+        measuredAt: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    }, {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    }>>>;
+    notes: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    complications: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    createdAt: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    patientId: string;
+    organizationId: string;
+    vasoconstrictor: "none" | "1:100000" | "1:200000" | "1:50000";
+    technique: "infiltration" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraligamentary" | "intraseptal" | "intraosseous" | "sedation_nitrous" | "sedation_iv";
+    drug: "articaine" | "mepivacaine" | "lidocaine" | "bupivacaine";
+    drugBrandName: string;
+    concentrationPct: number;
+    carpuleVolumeMl: number;
+    carpulesAdministered: number;
+    totalDoseMg: number;
+    maxAllowedDoseMg: number;
+    epinephrineMg: number;
+    maxEpinephrineMg: number;
+    aspirationTestPositive: boolean;
+    toothNumbers: number[];
+    id?: string | undefined;
+    visitId?: string | null | undefined;
+    createdAt?: string | undefined;
+    notes?: string | null | undefined;
+    complications?: string | null | undefined;
+    doctorId?: string | null | undefined;
+    injectionSite?: string | null | undefined;
+    lotNumber?: string | null | undefined;
+    expirationDate?: string | null | undefined;
+    vitalsPre?: {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    } | null | undefined;
+    vitalsIntra?: {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    } | null | undefined;
+    vitalsPost?: {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    } | null | undefined;
+}, {
+    patientId: string;
+    organizationId: string;
+    technique: "infiltration" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraligamentary" | "intraseptal" | "intraosseous" | "sedation_nitrous" | "sedation_iv";
+    drug: "articaine" | "mepivacaine" | "lidocaine" | "bupivacaine";
+    totalDoseMg: number;
+    maxAllowedDoseMg: number;
+    id?: string | undefined;
+    visitId?: string | null | undefined;
+    createdAt?: string | undefined;
+    notes?: string | null | undefined;
+    vasoconstrictor?: "none" | "1:100000" | "1:200000" | "1:50000" | undefined;
+    complications?: string | null | undefined;
+    doctorId?: string | null | undefined;
+    drugBrandName?: string | undefined;
+    concentrationPct?: number | undefined;
+    carpuleVolumeMl?: number | undefined;
+    carpulesAdministered?: number | undefined;
+    epinephrineMg?: number | undefined;
+    maxEpinephrineMg?: number | undefined;
+    aspirationTestPositive?: boolean | undefined;
+    toothNumbers?: number[] | undefined;
+    injectionSite?: string | null | undefined;
+    lotNumber?: string | null | undefined;
+    expirationDate?: string | null | undefined;
+    vitalsPre?: {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    } | null | undefined;
+    vitalsIntra?: {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    } | null | undefined;
+    vitalsPost?: {
+        systolicBp: number;
+        diastolicBp: number;
+        heartRateBpm: number;
+        measuredAt: string;
+        spO2Pct?: number | null | undefined;
+        respiratoryRate?: number | null | undefined;
+    } | null | undefined;
+}>;
+export type AnesthesiaLogRecord = z.infer<typeof anesthesiaLogRecordSchema>;
+export interface AnestheticSafetyCalculation {
+    totalAnestheticMg: number;
+    maxRecommendedAnestheticMg: number;
+    anestheticUtilizationPct: number;
+    totalEpinephrineMg: number;
+    maxRecommendedEpinephrineMg: number;
+    epinephrineUtilizationPct: number;
+    isAnestheticOverdose: boolean;
+    isEpinephrineOverdose: boolean;
+    maxSafeCarpules: number;
+    remainingSafeCarpules: number;
+    clinicalWarnings: string[];
+}
+/**
+ * Расчёт предельно допустимой дозы (MRD) и карпул анестетика с проверкой токсичности.
+ */
+export declare function calculateAnestheticSafety(params: {
+    drug: AnestheticDrug;
+    concentrationPct: number;
+    vasoconstrictor: VasoconstrictorRatio;
+    carpuleVolumeMl: number;
+    carpulesAdministered: number;
+    patientWeightKg: number;
+    patientAgeYears?: number;
+    asaClass?: AsaClassification;
+    hasCardiovascularDisease?: boolean;
+}): AnestheticSafetyCalculation;
+export declare const restorationTypeSchema: z.ZodEnum<["crown_monolithic", "crown_layered_cutback", "inlay", "onlay", "overlay", "veneer_laminate", "endocrown", "bridge_retainer", "bridge_pontic", "custom_abutment_tibase", "screw_retained_crown", "surgical_guide", "occlusal_splint_nightguard", "clear_aligner_stage", "digital_waxup_mockup"]>;
+export type RestorationType = z.infer<typeof restorationTypeSchema>;
+export declare const restorationMaterialSchema: z.ZodEnum<["zirconia_3y_high_strength", "zirconia_4y_high_translucent", "zirconia_5y_ultra_translucent", "zirconia_multilayer_gradient", "emax_lithium_disilicate_cad", "emax_lithium_disilicate_press", "pmma_cad_provisional", "composite_lab_nanohybrid", "titanium_grade_5", "cocr_milled_cast", "peek_biohpp", "resin_3d_surgical_guide", "resin_3d_splint_biocompatible"]>;
+export type RestorationMaterial = z.infer<typeof restorationMaterialSchema>;
+export declare const stumpPreparationShadeSchema: z.ZodEnum<["ND1", "ND2", "ND3", "ND4", "ND5", "ND6", "ND7", "ND8", "ND9"]>;
+export type StumpPreparationShade = z.infer<typeof stumpPreparationShadeSchema>;
+export declare const zonalShadeSpecificationSchema: z.ZodObject<{
+    cervical: z.ZodDefault<z.ZodString>;
+    body: z.ZodDefault<z.ZodString>;
+    incisal: z.ZodDefault<z.ZodString>;
+    stumpPreparation: z.ZodNullable<z.ZodOptional<z.ZodEnum<["ND1", "ND2", "ND3", "ND4", "ND5", "ND6", "ND7", "ND8", "ND9"]>>>;
+    translucency: z.ZodDefault<z.ZodEnum<["UTML", "STML", "HT", "MT", "LT", "MO", "HO"]>>;
+    mamelons: z.ZodDefault<z.ZodBoolean>;
+    calcifications: z.ZodDefault<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    body: string;
+    incisal: string;
+    cervical: string;
+    translucency: "UTML" | "STML" | "HT" | "MT" | "LT" | "MO" | "HO";
+    mamelons: boolean;
+    calcifications: boolean;
+    stumpPreparation?: "ND1" | "ND2" | "ND3" | "ND4" | "ND5" | "ND6" | "ND7" | "ND8" | "ND9" | null | undefined;
+}, {
+    body?: string | undefined;
+    incisal?: string | undefined;
+    cervical?: string | undefined;
+    stumpPreparation?: "ND1" | "ND2" | "ND3" | "ND4" | "ND5" | "ND6" | "ND7" | "ND8" | "ND9" | null | undefined;
+    translucency?: "UTML" | "STML" | "HT" | "MT" | "LT" | "MO" | "HO" | undefined;
+    mamelons?: boolean | undefined;
+    calcifications?: boolean | undefined;
+}>;
+export type ZonalShadeSpecification = z.infer<typeof zonalShadeSpecificationSchema>;
+export declare const labOrderMilestoneSchema: z.ZodEnum<["draft", "submitted", "cad_intake_verified", "digital_design_cad", "doctor_preview_pending", "design_revision", "cam_production", "sintering_crystallization", "ceramic_glaze_finish", "quality_control_passed", "shipped_courier", "clinic_received", "clinical_try_in", "refitting_remake", "final_cementation", "closed_warranty", "cancelled"]>;
+export type LabOrderMilestone = z.infer<typeof labOrderMilestoneSchema>;
+export interface Vector3D {
+    x: number;
+    y: number;
+    z: number;
+}
+export interface Triangle3D {
+    v1: Vector3D;
+    v2: Vector3D;
+    v3: Vector3D;
+}
+export interface MeshGeometryMetrics {
+    triangleCount: number;
+    surfaceAreaMm2: number;
+    volumeMm3: number;
+    volumeCm3: number;
+    boundingBoxMm: {
+        min: Vector3D;
+        max: Vector3D;
+        dimensions: Vector3D;
+    };
+    materialMassGrams: {
+        zirconia: number;
+        emax: number;
+        pmma: number;
+        titanium: number;
+    };
+    isManifold: boolean;
+    boundaryEdgeCount: number;
+    nonManifoldEdgeCount: number;
+}
+/**
+ * Расчёт геометрических метрик 3D STL полигональной сетки коронки / моста:
+ * AABB Bounding Box, площадь поверхности, объём по формуле Гаусса и масса материала.
+ */
+export declare function calculateMeshGeometryMetrics(triangles: Triangle3D[]): MeshGeometryMetrics;
+export declare const implantSystemBrandSchema: z.ZodEnum<["osstem", "straumann", "nobel_biocare", "bredent", "astra_tech", "dentium", "ankylos", "mis", "megagen", "neodent", "other"]>;
+export type ImplantSystemBrand = z.infer<typeof implantSystemBrandSchema>;
+export declare const boneDensityClassSchema: z.ZodEnum<["D1", "D2", "D3", "D4"]>;
+export type BoneDensityClass = z.infer<typeof boneDensityClassSchema>;
+export declare const surgicalImplantProtocolSchema: z.ZodEnum<["submerged_two_stage", "transgingival_one_stage", "immediate_provisionalization", "immediate_functional_loading", "delayed_loading"]>;
+export type SurgicalImplantProtocol = z.infer<typeof surgicalImplantProtocolSchema>;
+export declare const stabilityEvaluationStatusSchema: z.ZodEnum<["primary_mechanical_high", "primary_mechanical_adequate", "biological_dip_phase", "secondary_osseointegrated", "fibrous_encapsulation_failing", "integrated_stable"]>;
+export type StabilityEvaluationStatus = z.infer<typeof stabilityEvaluationStatusSchema>;
+export declare const torqueCurveSampleSchema: z.ZodObject<{
+    depthMm: z.ZodNumber;
+    torqueNcm: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+    depthMm: number;
+    torqueNcm: number;
+}, {
+    depthMm: number;
+    torqueNcm: number;
+}>;
+export type TorqueCurveSample = z.infer<typeof torqueCurveSampleSchema>;
+export declare const createImplantInstallationSchema: z.ZodObject<{
+    patientId: z.ZodString;
+    toothNumberFdi: z.ZodNumber;
+    catalogItemId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    visitId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    implantBrand: z.ZodDefault<z.ZodEnum<["osstem", "straumann", "nobel_biocare", "bredent", "astra_tech", "dentium", "ankylos", "mis", "megagen", "neodent", "other"]>>;
+    implantDiameterMm: z.ZodNumber;
+    implantLengthMm: z.ZodNumber;
+    lotNumber: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    serialNumber: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    boneDensityClass: z.ZodDefault<z.ZodEnum<["D1", "D2", "D3", "D4"]>>;
+    averageHounsfieldUnits: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+    finalInsertionTorqueNcm: z.ZodNumber;
+    baselineIsqMesiodistal: z.ZodNumber;
+    baselineIsqBuccolingual: z.ZodNumber;
+    baselineIsqDistopalatal: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+    corticalTapUsed: z.ZodDefault<z.ZodBoolean>;
+    underdrillingUsed: z.ZodDefault<z.ZodBoolean>;
+    boneGraftMaterial: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    membraneUsed: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    torqueCurveSamples: z.ZodDefault<z.ZodArray<z.ZodObject<{
+        depthMm: z.ZodNumber;
+        torqueNcm: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        depthMm: number;
+        torqueNcm: number;
+    }, {
+        depthMm: number;
+        torqueNcm: number;
+    }>, "many">>;
+    notes: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    patientId: string;
+    toothNumberFdi: number;
+    implantBrand: "other" | "osstem" | "straumann" | "nobel_biocare" | "bredent" | "astra_tech" | "dentium" | "ankylos" | "mis" | "megagen" | "neodent";
+    implantDiameterMm: number;
+    implantLengthMm: number;
+    boneDensityClass: "D2" | "D3" | "D4" | "D1";
+    finalInsertionTorqueNcm: number;
+    baselineIsqMesiodistal: number;
+    baselineIsqBuccolingual: number;
+    corticalTapUsed: boolean;
+    underdrillingUsed: boolean;
+    torqueCurveSamples: {
+        depthMm: number;
+        torqueNcm: number;
+    }[];
+    visitId?: string | null | undefined;
+    notes?: string | null | undefined;
+    lotNumber?: string | null | undefined;
+    catalogItemId?: string | null | undefined;
+    serialNumber?: string | null | undefined;
+    averageHounsfieldUnits?: number | null | undefined;
+    baselineIsqDistopalatal?: number | null | undefined;
+    boneGraftMaterial?: string | null | undefined;
+    membraneUsed?: string | null | undefined;
+}, {
+    patientId: string;
+    toothNumberFdi: number;
+    implantDiameterMm: number;
+    implantLengthMm: number;
+    finalInsertionTorqueNcm: number;
+    baselineIsqMesiodistal: number;
+    baselineIsqBuccolingual: number;
+    visitId?: string | null | undefined;
+    notes?: string | null | undefined;
+    lotNumber?: string | null | undefined;
+    catalogItemId?: string | null | undefined;
+    implantBrand?: "other" | "osstem" | "straumann" | "nobel_biocare" | "bredent" | "astra_tech" | "dentium" | "ankylos" | "mis" | "megagen" | "neodent" | undefined;
+    serialNumber?: string | null | undefined;
+    boneDensityClass?: "D2" | "D3" | "D4" | "D1" | undefined;
+    averageHounsfieldUnits?: number | null | undefined;
+    baselineIsqDistopalatal?: number | null | undefined;
+    corticalTapUsed?: boolean | undefined;
+    underdrillingUsed?: boolean | undefined;
+    boneGraftMaterial?: string | null | undefined;
+    membraneUsed?: string | null | undefined;
+    torqueCurveSamples?: {
+        depthMm: number;
+        torqueNcm: number;
+    }[] | undefined;
+}>;
+export type CreateImplantInstallationInput = z.infer<typeof createImplantInstallationSchema>;
+export declare const recordIsqMeasurementSchema: z.ZodObject<{
+    installationId: z.ZodString;
+    visitId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    daysPostOp: z.ZodNumber;
+    isqMesiodistal: z.ZodNumber;
+    isqBuccolingual: z.ZodNumber;
+    isqDistopalatal: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
+    smartpegCode: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    notes: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    installationId: string;
+    daysPostOp: number;
+    isqMesiodistal: number;
+    isqBuccolingual: number;
+    visitId?: string | null | undefined;
+    notes?: string | null | undefined;
+    isqDistopalatal?: number | null | undefined;
+    smartpegCode?: string | null | undefined;
+}, {
+    installationId: string;
+    daysPostOp: number;
+    isqMesiodistal: number;
+    isqBuccolingual: number;
+    visitId?: string | null | undefined;
+    notes?: string | null | undefined;
+    isqDistopalatal?: number | null | undefined;
+    smartpegCode?: string | null | undefined;
+}>;
+export type RecordIsqMeasurementInput = z.infer<typeof recordIsqMeasurementSchema>;
+export declare const evaluateAllOnXCaseSchema: z.ZodObject<{
+    patientId: z.ZodString;
+    caseTitle: z.ZodString;
+    jawArch: z.ZodEnum<["maxilla", "mandible"]>;
+    implants: z.ZodArray<z.ZodObject<{
+        toothNumberFdi: z.ZodNumber;
+        positionWorldMm: z.ZodObject<{
+            x: z.ZodNumber;
+            y: z.ZodNumber;
+            z: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            x: number;
+            y: number;
+            z: number;
+        }, {
+            x: number;
+            y: number;
+            z: number;
+        }>;
+        axisVector: z.ZodObject<{
+            x: z.ZodNumber;
+            y: z.ZodNumber;
+            z: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            x: number;
+            y: number;
+            z: number;
+        }, {
+            x: number;
+            y: number;
+            z: number;
+        }>;
+        insertionTorqueNcm: z.ZodNumber;
+        baselineIsq: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        toothNumberFdi: number;
+        positionWorldMm: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        axisVector: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        insertionTorqueNcm: number;
+        baselineIsq: number;
+    }, {
+        toothNumberFdi: number;
+        positionWorldMm: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        axisVector: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        insertionTorqueNcm: number;
+        baselineIsq: number;
+    }>, "many">;
+    plannedCantileverLengthMm: z.ZodNumber;
+    prostheticMaterial: z.ZodDefault<z.ZodEnum<["titanium_pmma", "zirconia_multilayer_ti_bar", "cobalt_chrome_composite"]>>;
+}, "strip", z.ZodTypeAny, {
+    patientId: string;
+    caseTitle: string;
+    jawArch: "maxilla" | "mandible";
+    implants: {
+        toothNumberFdi: number;
+        positionWorldMm: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        axisVector: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        insertionTorqueNcm: number;
+        baselineIsq: number;
+    }[];
+    plannedCantileverLengthMm: number;
+    prostheticMaterial: "titanium_pmma" | "zirconia_multilayer_ti_bar" | "cobalt_chrome_composite";
+}, {
+    patientId: string;
+    caseTitle: string;
+    jawArch: "maxilla" | "mandible";
+    implants: {
+        toothNumberFdi: number;
+        positionWorldMm: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        axisVector: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        insertionTorqueNcm: number;
+        baselineIsq: number;
+    }[];
+    plannedCantileverLengthMm: number;
+    prostheticMaterial?: "titanium_pmma" | "zirconia_multilayer_ti_bar" | "cobalt_chrome_composite" | undefined;
+}>;
+export type EvaluateAllOnXCaseInput = z.infer<typeof evaluateAllOnXCaseSchema>;
+export declare class ImplantStabilityCalculator {
+    static calculateMeanIsq(md: number, bl: number, dp?: number | null): {
+        isqMean: number;
+        isqAnisotropyDelta: number;
+    };
+    static evaluateLoadingProtocol(isqMean: number, insertionTorqueNcm: number, daysPostOp: number): {
+        protocol: SurgicalImplantProtocol;
+        status: StabilityEvaluationStatus;
+        decisionRationale: string;
+        isBiologicalDip: boolean;
+    };
+    static calculateStabilityCurve(baselineIsq: number, currentDays: number): {
+        day: number;
+        primaryStability: number;
+        secondaryStability: number;
+        totalStability: number;
+    }[];
+    static evaluateAllOnXGeometry(jawArch: "maxilla" | "mandible", implants: {
+        toothNumberFdi: number;
+        positionWorldMm: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        axisVector: {
+            x: number;
+            y: number;
+            z: number;
+        };
+        insertionTorqueNcm: number;
+        baselineIsq: number;
+    }[], plannedCantileverMm: number): {
+        apSpreadMm: number;
+        maxSafeCantileverMm: number;
+        isCantileverSafe: boolean;
+        abutmentPlan: {
+            toothNumberFdi: number;
+            implantVector: {
+                x: number;
+                y: number;
+                z: number;
+            };
+            measuredDivergenceDeg: number;
+            recommendedAbutmentAngle: "0" | "17" | "30" | "45";
+            residualAngulationErrorDeg: number;
+            gingivalCollarHeightMm: number;
+            isWithinProstheticTolerances: boolean;
+        }[];
+        immediateLoadingPass: boolean;
+        crossArchRigidityIndex: number;
+    };
+}

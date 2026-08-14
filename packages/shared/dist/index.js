@@ -3434,6 +3434,167 @@ export const labWorkOrderPayloadSchema = z.object({
     deadline: z.string().trim().min(1).max(120),
     technicianNotes: z.string().trim().max(800).nullable().optional(),
 });
+/**
+ * Международные стандарты расцветок зубов VITA (VITA Zahnfabrik).
+ * Включает:
+ * 1. VITA Classical A1–D4 (16 оттенков по шкалам красно-коричневый, красно-желтый, серый, красно-серый)
+ * 2. VITA Bleached Shades (0M1, 0M2, 0M3, BL1, BL2, BL3, BL4, OM1, OM2, OM3)
+ * 3. VITA System 3D-Master (26 оттенков по трем параметрам: светлота, насыщенность, цветовой тон)
+ */
+export const VITA_CLASSICAL_SHADES = [
+    "A1",
+    "A2",
+    "A3",
+    "A3.5",
+    "A4",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "D2",
+    "D3",
+    "D4",
+];
+export const VITA_BLEACH_SHADES = [
+    "0M1",
+    "0M2",
+    "0M3",
+    "BL1",
+    "BL2",
+    "BL3",
+    "BL4",
+    "OM1",
+    "OM2",
+    "OM3",
+];
+export const VITA_3D_MASTER_SHADES = [
+    "1M1",
+    "1M2",
+    "2L1.5",
+    "2L2.5",
+    "2M1",
+    "2M2",
+    "2M3",
+    "2R1.5",
+    "2R2.5",
+    "3L1.5",
+    "3L2.5",
+    "3M1",
+    "3M2",
+    "3M3",
+    "3R1.5",
+    "3R2.5",
+    "4L1.5",
+    "4L2.5",
+    "4M1",
+    "4M2",
+    "4M3",
+    "4R1.5",
+    "4R2.5",
+    "5M1",
+    "5M2",
+    "5M3",
+];
+export const ALL_VALID_VITA_SHADES = new Set([
+    ...VITA_CLASSICAL_SHADES,
+    ...VITA_BLEACH_SHADES,
+    ...VITA_3D_MASTER_SHADES,
+]);
+export function isValidVitaShade(shade) {
+    return ALL_VALID_VITA_SHADES.has(shade.trim().toUpperCase());
+}
+export const VITA_SHADE_VALIDATION_MESSAGE = "Недопустимый оттенок зуба. Используйте стандарт VITA Classical (A1–D4), VITA 3D-Master (1M1–5M3) или Bleach (0M1–0M3, BL1–BL4).";
+export const vitaShadeSchema = z
+    .string()
+    .trim()
+    .refine((val) => isValidVitaShade(val), { message: VITA_SHADE_VALIDATION_MESSAGE });
+/** Таксономия стоматологических материалов для зуботехнической лаборатории */
+export const LAB_ORDER_MATERIALS = {
+    zirconia_multilayer: "Диоксид циркония многослойный (Multi-layer)",
+    zirconia_ht: "Диоксид циркония высокопрозрачный (HT/ST)",
+    emax_cad: "Литий-дисиликатная керамика (IPS e.max CAD)",
+    emax_press: "Пресс-керамика (IPS e.max Press)",
+    pfm: "Металлокерамика (PFM / CoCr/NiCr)",
+    pmma_temp: "Временная пластмасса PMMA (CAD/CAM)",
+    composite: "Композит лабораторный (Nano-hybrid)",
+    titanium_abutment: "Индивидуальный титановый абатмент",
+    cocr_framework: "Литой/фрезерованный бюгельный каркас (CoCr)",
+    peek: "Биополимер PEEK / BioHPP",
+};
+export const LAB_ORDER_STATUS_LABELS = {
+    draft: "Черновик",
+    sent: "Отправлен в лабораторию",
+    in_progress: "В работе у техника",
+    shipped: "Отправлен в клинику",
+    received: "Получен клиникой",
+    refitting: "На примерке / доработке",
+    completed: "Установлен / завершен",
+    cancelled: "Отменен",
+};
+export const labOrderStatusSchema = z.enum([
+    "draft",
+    "sent",
+    "in_progress",
+    "shipped",
+    "received",
+    "refitting",
+    "completed",
+    "cancelled",
+]);
+/**
+ * Стерилизация и инфекционный контроль (СанПиН 3.3686-21, форма № 257/у).
+ */
+export const STERILIZATION_PACKAGING_TYPES = {
+    kraft_heat_sealed: {
+        label: "Крафт-пакет (термосварка)",
+        shelfLifeDays: 50,
+    },
+    kraft_self_adhesive: {
+        label: "Крафт-пакет (самоклеящийся)",
+        shelfLifeDays: 30,
+    },
+    laminated_heat_sealed: {
+        label: "Ламинированный пакет комбинированный (термосварка)",
+        shelfLifeDays: 180,
+    },
+    metal_cassette: {
+        label: "Металлическая кассета / контейнер с фильтром",
+        shelfLifeDays: 30,
+    },
+    other: {
+        label: "Иной вид упаковки",
+        shelfLifeDays: 3,
+    },
+};
+export const STERILIZATION_INDICATOR_TYPES = {
+    class4_multivariable: "Класс 4 — многопараметрический химический индикатор",
+    class5_integrating: "Класс 5 — интегрирующий химический индикатор",
+    class6_emulating: "Класс 6 — имитирующий индикатор (эмулятор)",
+    biological: "Биологический индикатор (споровый тест Geobacillus stearothermophilus)",
+    bowie_dick: "Тест Бови-Дика (Bowie-Dick / вакуум-тест)",
+};
+export const STERILIZATION_CYCLE_MODES = {
+    B: "Автоклав класс B (фракционированный вакуум: 134°C / 2.1 бар или 121°C / 1.1 бар)",
+    S: "Автоклав класс S (однократный вакуум)",
+    N: "Автоклав класс N (неупакованные сплошные изделия)",
+    dry_heat_180: "Сухожаровой шкаф 180°C 60 мин",
+    dry_heat_160: "Сухожаровой шкаф 160°C 150 мин",
+    plasma_vh2o2: "Низкотемпературная плазма (пары пероксида водорода)",
+    ethylene_oxide: "Этиленоксидная газовая стерилизация",
+};
+export function computePackagingExpirationDate(packagingType, sterilizationDate = new Date()) {
+    const validKey = (packagingType && packagingType in STERILIZATION_PACKAGING_TYPES
+        ? packagingType
+        : "other");
+    const days = STERILIZATION_PACKAGING_TYPES[validKey].shelfLifeDays;
+    const expires = new Date(sterilizationDate.getTime());
+    expires.setUTCDate(expires.getUTCDate() + days);
+    return expires;
+}
 export const photoVideoConsentMaterialSchema = z.enum([
     "intraoral_photo",
     "face_photo",
@@ -4517,6 +4678,146 @@ export const dashboardSchema = z.object({
     complianceWarnings: z.array(z.string()),
     insuranceContracts: z.array(z.any()).optional(),
 });
+/**
+ * Договор ДМС (Добровольное медицинское страхование).
+ */
+export const insuranceContractSchema = z.object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    companyName: z.string().trim().min(1),
+    policyNumberMask: z.string().trim().nullable().optional(),
+    coverageTherapyPct: z.number().min(0).max(100),
+    coverageSurgeryPct: z.number().min(0).max(100),
+    coverageOrthoPct: z.number().min(0).max(100),
+    coverageHygienePct: z.number().min(0).max(100),
+    annualLimitRub: z.number().min(0).nullable().optional(),
+    isActive: z.boolean().default(true),
+    createdAt: z.string().or(z.date()).optional(),
+});
+export const insuranceCalculationItemSchema = z.object({
+    serviceId: z.string().uuid().or(z.string().min(1)),
+    serviceName: z.string().trim().optional(),
+    category: z.enum([
+        "consultation",
+        "therapy",
+        "surgery",
+        "prosthetics",
+        "orthodontics",
+        "periodontology",
+        "hygiene",
+        "imaging",
+        "documents",
+        "other",
+    ]),
+    priceRub: nonNegativeMoneyRubSchema,
+    quantity: z.number().int().min(1).default(1),
+});
+export const insuranceCoverageCalculationInputSchema = z.object({
+    contractId: z.string().uuid(),
+    usedAnnualAmountRub: nonNegativeMoneyRubSchema.default(0),
+    items: z.array(insuranceCalculationItemSchema).min(1),
+});
+export const insuranceItemBreakdownSchema = z.object({
+    serviceId: z.string(),
+    serviceName: z.string().optional(),
+    category: z.string(),
+    quantity: z.number(),
+    unitPriceRub: z.number(),
+    totalPriceRub: z.number(),
+    coveragePct: z.number(),
+    coveredAmountRub: z.number(),
+    patientCoPayRub: z.number(),
+});
+export const insuranceCoverageCalculationResultSchema = z.object({
+    contractId: z.string().uuid(),
+    companyName: z.string(),
+    totalPriceRub: z.number(),
+    totalCoveredRub: z.number(),
+    totalPatientCoPayRub: z.number(),
+    annualLimitRub: z.number().nullable(),
+    usedAnnualAmountRub: z.number(),
+    remainingAnnualLimitRub: z.number().nullable(),
+    itemBreakdown: z.array(insuranceItemBreakdownSchema),
+});
+/**
+ * Точный расчет покрытия ДМС и доплаты пациента (копеечная точность без двоичного дрейфа).
+ */
+export function calculateDmsCoverage(contract, items, usedAnnualAmountRub = 0) {
+    const annualLimitKopecks = contract.annualLimitRub != null && Number.isFinite(contract.annualLimitRub)
+        ? Math.round(contract.annualLimitRub * 100)
+        : null;
+    const usedKopecks = Math.max(0, Math.round(usedAnnualAmountRub * 100));
+    let availableLimitKopecks = annualLimitKopecks != null
+        ? Math.max(0, annualLimitKopecks - usedKopecks)
+        : null;
+    let totalBillKopecks = 0;
+    let totalCoveredKopecks = 0;
+    let totalCoPayKopecks = 0;
+    const breakdown = [];
+    for (const item of items) {
+        const unitPriceKopecks = Math.round(item.priceRub * 100);
+        const lineTotalKopecks = unitPriceKopecks * item.quantity;
+        totalBillKopecks += lineTotalKopecks;
+        let pct = 0;
+        switch (item.category) {
+            case "therapy":
+                pct = Number(contract.coverageTherapyPct) || 0;
+                break;
+            case "surgery":
+                pct = Number(contract.coverageSurgeryPct) || 0;
+                break;
+            case "orthodontics":
+            case "prosthetics":
+                pct = Number(contract.coverageOrthoPct) || 0;
+                break;
+            case "hygiene":
+            case "periodontology":
+                pct = Number(contract.coverageHygienePct) || 0;
+                break;
+            case "consultation":
+            case "imaging":
+                pct = 100;
+                break;
+            case "documents":
+            case "other":
+            default:
+                pct = 0;
+                break;
+        }
+        pct = Math.min(100, Math.max(0, pct));
+        let candidateCoveredKopecks = Math.round(lineTotalKopecks * (pct / 100));
+        if (availableLimitKopecks != null) {
+            const allowedByCap = Math.min(candidateCoveredKopecks, availableLimitKopecks);
+            candidateCoveredKopecks = allowedByCap;
+            availableLimitKopecks -= allowedByCap;
+        }
+        const itemCoPayKopecks = lineTotalKopecks - candidateCoveredKopecks;
+        totalCoveredKopecks += candidateCoveredKopecks;
+        totalCoPayKopecks += itemCoPayKopecks;
+        breakdown.push({
+            serviceId: item.serviceId,
+            serviceName: item.serviceName,
+            category: item.category,
+            quantity: item.quantity,
+            unitPriceRub: unitPriceKopecks / 100,
+            totalPriceRub: lineTotalKopecks / 100,
+            coveragePct: pct,
+            coveredAmountRub: candidateCoveredKopecks / 100,
+            patientCoPayRub: itemCoPayKopecks / 100,
+        });
+    }
+    return {
+        contractId: contract.id,
+        companyName: contract.companyName,
+        totalPriceRub: totalBillKopecks / 100,
+        totalCoveredRub: totalCoveredKopecks / 100,
+        totalPatientCoPayRub: totalCoPayKopecks / 100,
+        annualLimitRub: contract.annualLimitRub ?? null,
+        usedAnnualAmountRub: usedKopecks / 100,
+        remainingAnnualLimitRub: availableLimitKopecks != null ? availableLimitKopecks / 100 : null,
+        itemBreakdown: breakdown,
+    };
+}
 export const createPatientSchema = z.object({
     fullName: z.string().trim().min(1).max(240),
     birthDate: birthDateInputSchema,
@@ -9136,3 +9437,1043 @@ export const createMessageTemplateCatalogSchema = messageTemplateCatalogSchema
     isActive: z.boolean().optional(),
 });
 export const updateMessageTemplateCatalogSchema = createMessageTemplateCatalogSchema.partial();
+/**
+ * ============================================================================
+ * ПАРОДОНТОЛОГИЧЕСКАЯ КАРТА (PERIODONTAL PROBING & RISK ASSESSMENT ENGINE)
+ * ============================================================================
+ * Клинический стандарт ВОЗ, AAP и EFP:
+ * 1. 6 точек зондирования на каждый зуб (дистально-вестибулярная, медиально-вестибулярная, центрально-вестибулярная и 3 оральных/язычных).
+ * 2. Глубина кармана (Probing Depth, PD mm).
+ * 3. Рецессия / уровень десневого края (Gingival Margin, GM mm).
+ * 4. Клинический уровень прикрепления (CAL = PD + GM mm).
+ * 5. Кровоточивость при зондировании (Bleeding on Probing, BOP).
+ * 6. Наличие поддесневого зубного камня и налёта (Plaque & Calculus).
+ * 7. Нагноение (Suppuration).
+ * 8. Подвижность по Миллеру (Mobility 0..3) и фуркация (Furcation 0..4).
+ * 9. Индексы FMBS (Full Mouth Bleeding Score), FMPS (Full Mouth Plaque Score) и оценка риска пародонтита (PRA).
+ * 10. PSR / CPITN скрининг по 6 секстантам.
+ */
+export const perioSiteMeasurementSchema = z.object({
+    /** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+    probingDepthMm: z.number().int().min(0).max(20).default(0),
+    /** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+    gingivalMarginMm: z.number().int().min(-15).max(15).default(0),
+    /** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+    bleedingOnProbing: z.boolean().default(false),
+    /** Нагноение (Suppuration — гнойный экссудат) */
+    suppuration: z.boolean().default(false),
+    /** Зубной налёт на придесневой поверхности */
+    plaque: z.boolean().default(false),
+    /** Поддесневой зубной камень */
+    calculus: z.boolean().default(false),
+    /** Вычисленный клинический уровень прикрепления (CAL mm) */
+    calMm: z.number().int().optional(),
+});
+export const perioToothRecordSchema = z.object({
+    /** Номер зуба по FDI (11..48) */
+    toothNumber: fdiToothNumberSchema,
+    /** Зуб отсутствует (адентия, удалён) */
+    isMissing: z.boolean().default(false),
+    /** Имплантат (периимплантатное зондирование) */
+    isImplant: z.boolean().default(false),
+    /** Подвижность по Миллеру (0 = физиологическая, 1 = I ст., 2 = II ст., 3 = III ст.) */
+    mobility: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]).default(0),
+    /** Вовлечение бифуркации/трифуркации (0..4) */
+    furcation: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).default(0),
+    /** 6 анатомических точек зондирования */
+    distoBuccal: perioSiteMeasurementSchema.default({}),
+    midBuccal: perioSiteMeasurementSchema.default({}),
+    mesioBuccal: perioSiteMeasurementSchema.default({}),
+    distoLingual: perioSiteMeasurementSchema.default({}),
+    midLingual: perioSiteMeasurementSchema.default({}),
+    mesioLingual: perioSiteMeasurementSchema.default({}),
+});
+export const perioChartSummarySchema = z.object({
+    totalTeethExamined: z.number().int().nonnegative(),
+    totalSitesProbed: z.number().int().nonnegative(),
+    /** Full Mouth Bleeding Score (FMBS) в процентах (0..100%) */
+    fmbsPercent: z.number().min(0).max(100),
+    /** Full Mouth Plaque Score (FMPS) в процентах (0..100%) */
+    fmpsPercent: z.number().min(0).max(100),
+    /** Число глубоких карманов (PD >= 5 мм) */
+    deepPocketsCount: z.number().int().nonnegative(),
+    /** Число умеренных карманов (PD == 4 мм) */
+    moderatePocketsCount: z.number().int().nonnegative(),
+    /** Число участков с нагноением */
+    sitesWithSuppurationCount: z.number().int().nonnegative(),
+    /** Число участков с зубным камнем */
+    sitesWithCalculusCount: z.number().int().nonnegative(),
+    /** Число подвижных зубов (подвижность >= 1) */
+    teethWithMobilityCount: z.number().int().nonnegative(),
+    /** Число зубов с поражением фуркации (фуркация >= 1) */
+    teethWithFurcationCount: z.number().int().nonnegative(),
+    /** Максимальная глубина кармана (мм) */
+    maxPocketDepthMm: z.number().int().nonnegative(),
+    /** Средняя глубина кармана (мм) */
+    meanPocketDepthMm: z.number().nonnegative(),
+    /** Максимальная потеря прикрепления (CAL мм) */
+    maxCalMm: z.number().int().nonnegative(),
+    /** Средняя потеря прикрепления (CAL мм) */
+    meanCalMm: z.number().nonnegative(),
+    /** Категория пародонтального риска (PRA: low, moderate, high) */
+    riskCategory: z.enum(["low", "moderate", "high"]),
+});
+export const perioChartDataSchema = z.object({
+    id: z.string().uuid().optional(),
+    organizationId: z.string().uuid(),
+    patientId: z.string().uuid(),
+    visitId: z.string().uuid().optional().nullable(),
+    doctorId: z.string().uuid().optional().nullable(),
+    chartDate: z.string(),
+    teeth: z.array(perioToothRecordSchema),
+    summary: perioChartSummarySchema.optional(),
+    notes: z.string().optional().nullable(),
+});
+/**
+ * Вычисляет клинический уровень прикрепления (Clinical Attachment Level):
+ * CAL = Probing Depth (PD) + Gingival Margin (GM).
+ */
+export function calculateClinicalAttachmentLevel(probingDepthMm, gingivalMarginMm) {
+    const pd = Number.isFinite(probingDepthMm) ? Math.max(0, Math.round(probingDepthMm)) : 0;
+    const gm = Number.isFinite(gingivalMarginMm) ? Math.round(gingivalMarginMm) : 0;
+    return Math.max(0, pd + gm);
+}
+const PERIO_SITE_KEYS = [
+    "distoBuccal",
+    "midBuccal",
+    "mesioBuccal",
+    "distoLingual",
+    "midLingual",
+    "mesioLingual",
+];
+/**
+ * Чистая математическая функция расчёта пародонтальных индексов (FMBS, FMPS, CAL, PRA).
+ */
+export function calculatePerioIndices(teeth) {
+    let examinedTeeth = 0;
+    let totalSites = 0;
+    let bopSites = 0;
+    let plaqueSites = 0;
+    let suppurationSites = 0;
+    let calculusSites = 0;
+    let deepPockets = 0;
+    let moderatePockets = 0;
+    let mobileTeeth = 0;
+    let furcationTeeth = 0;
+    let maxPd = 0;
+    let sumPd = 0;
+    let maxCal = 0;
+    let sumCal = 0;
+    for (const tooth of teeth) {
+        if (tooth.isMissing)
+            continue;
+        examinedTeeth++;
+        if (tooth.mobility && tooth.mobility > 0)
+            mobileTeeth++;
+        if (tooth.furcation && tooth.furcation > 0)
+            furcationTeeth++;
+        for (const siteKey of PERIO_SITE_KEYS) {
+            const site = tooth[siteKey] ?? {
+                probingDepthMm: 0,
+                gingivalMarginMm: 0,
+                bleedingOnProbing: false,
+                suppuration: false,
+                plaque: false,
+                calculus: false,
+            };
+            totalSites++;
+            const pd = site.probingDepthMm ?? 0;
+            const gm = site.gingivalMarginMm ?? 0;
+            const cal = calculateClinicalAttachmentLevel(pd, gm);
+            if (pd > maxPd)
+                maxPd = pd;
+            sumPd += pd;
+            if (cal > maxCal)
+                maxCal = cal;
+            sumCal += cal;
+            if (pd >= 5)
+                deepPockets++;
+            else if (pd >= 4)
+                moderatePockets++;
+            if (site.bleedingOnProbing)
+                bopSites++;
+            if (site.plaque)
+                plaqueSites++;
+            if (site.suppuration)
+                suppurationSites++;
+            if (site.calculus)
+                calculusSites++;
+        }
+    }
+    const fmbsPercent = totalSites > 0 ? Math.round((bopSites / totalSites) * 1000) / 10 : 0;
+    const fmpsPercent = totalSites > 0 ? Math.round((plaqueSites / totalSites) * 1000) / 10 : 0;
+    const meanPocketDepthMm = totalSites > 0 ? Math.round((sumPd / totalSites) * 10) / 10 : 0;
+    const meanCalMm = totalSites > 0 ? Math.round((sumCal / totalSites) * 10) / 10 : 0;
+    // Оценка риска по Lang & Tonetti (Periodontal Risk Assessment)
+    let riskCategory = "low";
+    if (fmbsPercent >= 30 ||
+        deepPockets >= 9 ||
+        mobileTeeth >= 3 ||
+        furcationTeeth >= 2 ||
+        suppurationSites >= 3) {
+        riskCategory = "high";
+    }
+    else if (fmbsPercent >= 15 ||
+        deepPockets >= 4 ||
+        moderatePockets >= 10 ||
+        mobileTeeth >= 1 ||
+        furcationTeeth >= 1) {
+        riskCategory = "moderate";
+    }
+    return {
+        totalTeethExamined: examinedTeeth,
+        totalSitesProbed: totalSites,
+        fmbsPercent,
+        fmpsPercent,
+        deepPocketsCount: deepPockets,
+        moderatePocketsCount: moderatePockets,
+        sitesWithSuppurationCount: suppurationSites,
+        sitesWithCalculusCount: calculusSites,
+        teethWithMobilityCount: mobileTeeth,
+        teethWithFurcationCount: furcationTeeth,
+        maxPocketDepthMm: maxPd,
+        meanPocketDepthMm,
+        maxCalMm: maxCal,
+        meanCalMm,
+        riskCategory,
+    };
+}
+/**
+ * Расчёт кодов PSR / CPITN по 6 секстантам:
+ * S1: 17..14, S2: 13..23, S3: 24..27, S4: 37..34, S5: 33..43, S6: 44..47.
+ */
+export const PSR_SEXTANTS = [
+    { name: "S1", label: "Верхний правый дистальный (17-14)", teeth: [17, 16, 15, 14] },
+    { name: "S2", label: "Верхний фронтальный (13-23)", teeth: [13, 12, 11, 21, 22, 23] },
+    { name: "S3", label: "Верхний левый дистальный (24-27)", teeth: [24, 25, 26, 27] },
+    { name: "S4", label: "Нижний левый дистальный (37-34)", teeth: [37, 36, 35, 34] },
+    { name: "S5", label: "Нижний фронтальный (33-43)", teeth: [33, 32, 31, 41, 42, 43] },
+    { name: "S6", label: "Нижний правый дистальный (44-47)", teeth: [44, 45, 46, 47] },
+];
+export function calculatePsrSextants(teeth) {
+    const results = {};
+    const toothMap = new Map();
+    for (const t of teeth) {
+        toothMap.set(t.toothNumber, t);
+    }
+    for (const sextant of PSR_SEXTANTS) {
+        let maxCode = 0;
+        let hasAsterisk = false;
+        let maxPd = 0;
+        let validTeeth = 0;
+        for (const toothNum of sextant.teeth) {
+            const t = toothMap.get(toothNum);
+            if (!t || t.isMissing)
+                continue;
+            validTeeth++;
+            if ((t.mobility && t.mobility >= 2) || (t.furcation && t.furcation >= 1)) {
+                hasAsterisk = true;
+            }
+            for (const siteKey of PERIO_SITE_KEYS) {
+                const site = t[siteKey];
+                if (!site)
+                    continue;
+                const pd = site.probingDepthMm ?? 0;
+                if (pd > maxPd)
+                    maxPd = pd;
+                if (pd >= 6) {
+                    if (maxCode < 4)
+                        maxCode = 4;
+                }
+                else if (pd >= 4) {
+                    if (maxCode < 3)
+                        maxCode = 3;
+                }
+                else if (site.calculus) {
+                    if (maxCode < 2)
+                        maxCode = 2;
+                }
+                else if (site.bleedingOnProbing) {
+                    if (maxCode < 1)
+                        maxCode = 1;
+                }
+            }
+        }
+        results[sextant.name] = {
+            code: maxCode,
+            asterisk: hasAsterisk,
+            highestPocketDepthMm: maxPd,
+            teethCount: validTeeth,
+        };
+    }
+    return results;
+}
+// ─── Loyalty Programs, Bonus Ledger & Referral Architecture ──────────────────
+export const loyaltyProgramTierSchema = z.enum([
+    "bronze",
+    "silver",
+    "gold",
+    "platinum",
+    "vip",
+]);
+export const loyaltyProgramSchema = z.object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    name: z.string().min(1).max(200),
+    tier: loyaltyProgramTierSchema.default("bronze"),
+    minSpendThresholdRub: z.number().nonnegative().default(0),
+    cashbackPercent: z.number().min(0).max(100).default(3),
+    maxInvoiceCoveragePercent: z.number().min(0).max(100).default(30),
+    pointsTtlDays: z.number().int().positive().nullable().optional().default(180),
+    pointRateRub: z.number().positive().default(1),
+    isActive: z.boolean().default(true),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+});
+export const patientBonusBalanceSchema = z.object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    patientId: z.string().uuid(),
+    activePoints: z.number().nonnegative().default(0),
+    pendingPoints: z.number().nonnegative().default(0),
+    lifetimeEarnedPoints: z.number().nonnegative().default(0),
+    lifetimeSpentPoints: z.number().nonnegative().default(0),
+    lifetimeExpiredPoints: z.number().nonnegative().default(0),
+    currentLoyaltyProgramId: z.string().uuid().nullable().optional(),
+    tier: loyaltyProgramTierSchema.default("bronze"),
+    cashbackPercent: z.number().min(0).max(100).default(3),
+    maxInvoiceCoveragePercent: z.number().min(0).max(100).default(30),
+    updatedAt: z.string().optional(),
+});
+export const bonusTransactionTypeSchema = z.enum([
+    "accrual_payment",
+    "accrual_referral_l1",
+    "accrual_referral_l2",
+    "accrual_welcome",
+    "accrual_birthday",
+    "accrual_manual_admin",
+    "redemption_payment",
+    "expiration",
+    "reversal_refund",
+]);
+export const bonusTransactionSchema = z.object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    patientId: z.string().uuid(),
+    amountPoints: z.number(),
+    balanceAfterPoints: z.number().nonnegative(),
+    type: bonusTransactionTypeSchema,
+    relatedPaymentId: z.string().uuid().nullable().optional(),
+    relatedInvoiceId: z.string().uuid().nullable().optional(),
+    relatedReferralId: z.string().uuid().nullable().optional(),
+    expiresAt: z.string().nullable().optional(),
+    unspentPoints: z.number().nonnegative().default(0),
+    clientMutationId: z.string().nullable().optional(),
+    description: z.string(),
+    createdById: z.string().uuid().nullable().optional(),
+    createdAt: z.string(),
+});
+export const referralCampaignSchema = z.object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    name: z.string().min(1).max(200),
+    isActive: z.boolean().default(true),
+    refereeWelcomePoints: z.number().nonnegative().default(500),
+    referrerTier1Points: z.number().nonnegative().default(1000),
+    referrerTier2Points: z.number().nonnegative().default(300),
+    minFirstSpendThresholdRub: z.number().nonnegative().default(1500),
+    shareMessageTemplate: z.string().default("Привет! Дарю тебе 500 ₽ на первое лечение в стоматологии {clinicName}. Запишись по ссылке: {inviteLink}"),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+});
+export const patientReferralCodeSchema = z.object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    patientId: z.string().uuid(),
+    referralCode: z.string(),
+    referralToken: z.string(),
+    inviteUrl: z.string().url().optional(),
+    clickCount: z.number().int().nonnegative().default(0),
+    signupCount: z.number().int().nonnegative().default(0),
+    convertedCount: z.number().int().nonnegative().default(0),
+    createdAt: z.string().optional(),
+});
+export const referralStatusSchema = z.enum([
+    "registered",
+    "appointment_booked",
+    "first_visit_paid",
+    "rewarded",
+    "expired",
+    "rejected_fraud",
+]);
+export const patientReferralSchema = z.object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    campaignId: z.string().uuid().nullable().optional(),
+    referrerPatientId: z.string().uuid(),
+    parentReferrerPatientId: z.string().uuid().nullable().optional(),
+    refereePatientId: z.string().uuid(),
+    status: referralStatusSchema.default("registered"),
+    qualifyingPaymentId: z.string().uuid().nullable().optional(),
+    qualifyingAmountRub: z.number().nonnegative().nullable().optional(),
+    rewardedAt: z.string().nullable().optional(),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+});
+/**
+ * Расчёт максимальной суммы баллов, допустимой к списанию в счёт чека.
+ */
+export function calculateMaxRedeemablePoints(invoiceAmountRub, activePoints, maxCoveragePercent = 30, pointRateRub = 1) {
+    if (invoiceAmountRub <= 0 || activePoints <= 0 || pointRateRub <= 0) {
+        return {
+            maxAllowedPoints: 0,
+            maxDiscountRub: 0,
+            remainingPaymentRub: Math.max(0, invoiceAmountRub),
+        };
+    }
+    const maxInvoiceCoverageRub = Number(((invoiceAmountRub * maxCoveragePercent) / 100).toFixed(2));
+    const maxPointsByCoverage = Math.floor(maxInvoiceCoverageRub / pointRateRub);
+    const maxAllowedPoints = Math.min(Math.floor(activePoints), maxPointsByCoverage);
+    const maxDiscountRub = Number((maxAllowedPoints * pointRateRub).toFixed(2));
+    const remainingPaymentRub = Number((invoiceAmountRub - maxDiscountRub).toFixed(2));
+    return {
+        maxAllowedPoints,
+        maxDiscountRub,
+        remainingPaymentRub,
+    };
+}
+/**
+ * Расчёт кешбэка баллами от суммы оплаченного лечения.
+ */
+export function calculateCashbackPoints(paidAmountRub, cashbackPercent, pointRateRub = 1) {
+    if (paidAmountRub <= 0 || cashbackPercent <= 0 || pointRateRub <= 0) {
+        return 0;
+    }
+    const cashbackRub = (paidAmountRub * cashbackPercent) / 100;
+    return Number((cashbackRub / pointRateRub).toFixed(2));
+}
+// ─── Clinical Anesthesia, Sedation & Vital Signs Safety Engine ───────────────
+export const anestheticDrugSchema = z.enum([
+    "articaine",
+    "mepivacaine",
+    "lidocaine",
+    "bupivacaine",
+]);
+export const vasoconstrictorRatioSchema = z.enum([
+    "none",
+    "1:100000",
+    "1:200000",
+    "1:50000",
+]);
+export const anesthesiaTechniqueSchema = z.enum([
+    "infiltration",
+    "mandibular_block",
+    "tuberal_block",
+    "infraorbital_block",
+    "incisive_block",
+    "palatine_block",
+    "mental_block",
+    "intraligamentary",
+    "intraseptal",
+    "intraosseous",
+    "sedation_nitrous",
+    "sedation_iv",
+]);
+export const asaClassificationSchema = z.enum([
+    "ASA_I",
+    "ASA_II",
+    "ASA_III",
+    "ASA_IV",
+]);
+export const vitalSignsMeasurementSchema = z.object({
+    systolicBp: z.number().int().min(40).max(300),
+    diastolicBp: z.number().int().min(20).max(200),
+    heartRateBpm: z.number().int().min(30).max(250),
+    spO2Pct: z.number().int().min(50).max(100).optional().nullable(),
+    respiratoryRate: z.number().int().min(5).max(60).optional().nullable(),
+    measuredAt: z.string(),
+});
+export const anesthesiaLogRecordSchema = z.object({
+    id: z.string().uuid().optional(),
+    organizationId: z.string().uuid(),
+    visitId: z.string().uuid().optional().nullable(),
+    patientId: z.string().uuid(),
+    doctorId: z.string().uuid().optional().nullable(),
+    technique: anesthesiaTechniqueSchema,
+    drug: anestheticDrugSchema,
+    drugBrandName: z.string().default("Ультракаин Д-С"),
+    concentrationPct: z.number().positive().default(4.0),
+    vasoconstrictor: vasoconstrictorRatioSchema.default("1:200000"),
+    carpuleVolumeMl: z.number().positive().default(1.7),
+    carpulesAdministered: z.number().positive().default(1.0),
+    totalDoseMg: z.number().nonnegative(),
+    maxAllowedDoseMg: z.number().nonnegative(),
+    epinephrineMg: z.number().nonnegative().default(0),
+    maxEpinephrineMg: z.number().nonnegative().default(0.2),
+    aspirationTestPositive: z.boolean().default(false),
+    toothNumbers: z.array(z.number().int()).default([]),
+    injectionSite: z.string().optional().nullable(),
+    lotNumber: z.string().optional().nullable(),
+    expirationDate: z.string().optional().nullable(),
+    vitalsPre: vitalSignsMeasurementSchema.optional().nullable(),
+    vitalsIntra: vitalSignsMeasurementSchema.optional().nullable(),
+    vitalsPost: vitalSignsMeasurementSchema.optional().nullable(),
+    notes: z.string().optional().nullable(),
+    complications: z.string().optional().nullable(),
+    createdAt: z.string().optional(),
+});
+/**
+ * Расчёт предельно допустимой дозы (MRD) и карпул анестетика с проверкой токсичности.
+ */
+export function calculateAnestheticSafety(params) {
+    const { drug, concentrationPct, vasoconstrictor, carpuleVolumeMl, carpulesAdministered, patientWeightKg, patientAgeYears = 35, asaClass = "ASA_I", hasCardiovascularDisease = false, } = params;
+    const weight = Math.max(5, Math.min(250, patientWeightKg));
+    const warnings = [];
+    // 1. Определение предельной дозы на 1 кг массы тела (MRD) и абсолютного максимума
+    let mrdPerKg = 7.0; // мг/кг
+    let absoluteMaxMg = 500; // мг
+    if (drug === "articaine") {
+        mrdPerKg = 7.0;
+        absoluteMaxMg = 500;
+        if (patientAgeYears < 4) {
+            warnings.push("Артикаин противопоказан детям в возрасте до 4 лет.");
+        }
+        else if (patientAgeYears < 12) {
+            mrdPerKg = 5.0; // консервативный педиатрический предел
+        }
+    }
+    else if (drug === "mepivacaine") {
+        mrdPerKg = 6.6;
+        absoluteMaxMg = 400;
+    }
+    else if (drug === "lidocaine") {
+        mrdPerKg = vasoconstrictor === "none" ? 4.4 : 7.0;
+        absoluteMaxMg = vasoconstrictor === "none" ? 300 : 500;
+    }
+    else if (drug === "bupivacaine") {
+        mrdPerKg = 2.0;
+        absoluteMaxMg = 90;
+    }
+    const maxRecommendedAnestheticMg = Number(Math.min(absoluteMaxMg, weight * mrdPerKg).toFixed(1));
+    // 2. Расчет содержания анестетика в 1 карпуле
+    const mgPerMl = concentrationPct * 10;
+    const mgPerCarpule = mgPerMl * carpuleVolumeMl;
+    const totalAnestheticMg = Number((carpulesAdministered * mgPerCarpule).toFixed(1));
+    // 3. Расчет вазоконстриктора (Адреналин / Эпинефрин)
+    let epiMgPerMl = 0;
+    if (vasoconstrictor === "1:100000")
+        epiMgPerMl = 0.01;
+    else if (vasoconstrictor === "1:200000")
+        epiMgPerMl = 0.005;
+    else if (vasoconstrictor === "1:50000")
+        epiMgPerMl = 0.02;
+    const totalEpinephrineMg = Number((carpulesAdministered * carpuleVolumeMl * epiMgPerMl).toFixed(4));
+    // Кардиальный предел адреналина: 0.04 мг при сердечно-сосудистой патологии (ASA III/IV), иначе 0.2 мг
+    const isCardiacRisk = hasCardiovascularDisease || asaClass === "ASA_III" || asaClass === "ASA_IV";
+    const maxRecommendedEpinephrineMg = isCardiacRisk ? 0.04 : 0.2;
+    if (isCardiacRisk && vasoconstrictor !== "none") {
+        warnings.push("Кардиальный риск (ASA III/IV): лимит адреналина снижен до 0.04 мг (макс. 2 карпулы 1:100k или 4 карпулы 1:200k).");
+    }
+    // 4. Расчет максимального безопасного количества карпул
+    const maxCarpulesByDrug = mgPerCarpule > 0 ? maxRecommendedAnestheticMg / mgPerCarpule : 0;
+    const maxCarpulesByEpi = epiMgPerMl > 0
+        ? maxRecommendedEpinephrineMg / (carpuleVolumeMl * epiMgPerMl)
+        : 999;
+    const maxSafeCarpules = Number(Math.min(maxCarpulesByDrug, maxCarpulesByEpi).toFixed(1));
+    const remainingSafeCarpules = Number(Math.max(0, maxSafeCarpules - carpulesAdministered).toFixed(1));
+    const anestheticUtilizationPct = Number(((totalAnestheticMg / (maxRecommendedAnestheticMg || 1)) * 100).toFixed(1));
+    const epinephrineUtilizationPct = maxRecommendedEpinephrineMg > 0
+        ? Number(((totalEpinephrineMg / maxRecommendedEpinephrineMg) *
+            100).toFixed(1))
+        : 0;
+    const isAnestheticOverdose = totalAnestheticMg > maxRecommendedAnestheticMg;
+    const isEpinephrineOverdose = vasoconstrictor !== "none" &&
+        totalEpinephrineMg > maxRecommendedEpinephrineMg;
+    if (isAnestheticOverdose) {
+        warnings.push(`ПРЕВЫШЕНА ТОКСИЧЕСКАЯ ДОЗА АНЕСТЕТИКА: ${totalAnestheticMg} мг при допустимом максимуме ${maxRecommendedAnestheticMg} мг!`);
+    }
+    if (isEpinephrineOverdose) {
+        warnings.push(`ПРЕВЫШЕНА ДОЗА АДРЕНАЛИНА: ${totalEpinephrineMg} мг при максимуме ${maxRecommendedEpinephrineMg} мг!`);
+    }
+    return {
+        totalAnestheticMg,
+        maxRecommendedAnestheticMg,
+        anestheticUtilizationPct,
+        totalEpinephrineMg,
+        maxRecommendedEpinephrineMg,
+        epinephrineUtilizationPct,
+        isAnestheticOverdose,
+        isEpinephrineOverdose,
+        maxSafeCarpules,
+        remainingSafeCarpules,
+        clinicalWarnings: warnings,
+    };
+}
+// ─── CAD/CAM Restorations, Digital Lab (ZTL) & 3D Mesh Geometry Engine ───────
+export const restorationTypeSchema = z.enum([
+    "crown_monolithic",
+    "crown_layered_cutback",
+    "inlay",
+    "onlay",
+    "overlay",
+    "veneer_laminate",
+    "endocrown",
+    "bridge_retainer",
+    "bridge_pontic",
+    "custom_abutment_tibase",
+    "screw_retained_crown",
+    "surgical_guide",
+    "occlusal_splint_nightguard",
+    "clear_aligner_stage",
+    "digital_waxup_mockup",
+]);
+export const restorationMaterialSchema = z.enum([
+    "zirconia_3y_high_strength",
+    "zirconia_4y_high_translucent",
+    "zirconia_5y_ultra_translucent",
+    "zirconia_multilayer_gradient",
+    "emax_lithium_disilicate_cad",
+    "emax_lithium_disilicate_press",
+    "pmma_cad_provisional",
+    "composite_lab_nanohybrid",
+    "titanium_grade_5",
+    "cocr_milled_cast",
+    "peek_biohpp",
+    "resin_3d_surgical_guide",
+    "resin_3d_splint_biocompatible",
+]);
+export const stumpPreparationShadeSchema = z.enum([
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND5",
+    "ND6",
+    "ND7",
+    "ND8",
+    "ND9",
+]);
+export const zonalShadeSpecificationSchema = z.object({
+    cervical: z.string().trim().default("A3.5"),
+    body: z.string().trim().default("A3"),
+    incisal: z.string().trim().default("A2"),
+    stumpPreparation: stumpPreparationShadeSchema.optional().nullable(),
+    translucency: z.enum(["UTML", "STML", "HT", "MT", "LT", "MO", "HO"]).default("HT"),
+    mamelons: z.boolean().default(false),
+    calcifications: z.boolean().default(false),
+});
+export const labOrderMilestoneSchema = z.enum([
+    "draft",
+    "submitted",
+    "cad_intake_verified",
+    "digital_design_cad",
+    "doctor_preview_pending",
+    "design_revision",
+    "cam_production",
+    "sintering_crystallization",
+    "ceramic_glaze_finish",
+    "quality_control_passed",
+    "shipped_courier",
+    "clinic_received",
+    "clinical_try_in",
+    "refitting_remake",
+    "final_cementation",
+    "closed_warranty",
+    "cancelled",
+]);
+/**
+ * Расчёт геометрических метрик 3D STL полигональной сетки коронки / моста:
+ * AABB Bounding Box, площадь поверхности, объём по формуле Гаусса и масса материала.
+ */
+export function calculateMeshGeometryMetrics(triangles) {
+    if (triangles.length === 0) {
+        return {
+            triangleCount: 0,
+            surfaceAreaMm2: 0,
+            volumeMm3: 0,
+            volumeCm3: 0,
+            boundingBoxMm: {
+                min: { x: 0, y: 0, z: 0 },
+                max: { x: 0, y: 0, z: 0 },
+                dimensions: { x: 0, y: 0, z: 0 },
+            },
+            materialMassGrams: { zirconia: 0, emax: 0, pmma: 0, titanium: 0 },
+            isManifold: true,
+            boundaryEdgeCount: 0,
+            nonManifoldEdgeCount: 0,
+        };
+    }
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+    let maxZ = Number.NEGATIVE_INFINITY;
+    let totalSurfaceArea = 0;
+    let signedVolumeSum = 0;
+    // Edge occurrence map for 2-manifold check
+    const edgeMap = new Map();
+    const quantize = (v) => `${Math.round(v.x * 1000)},${Math.round(v.y * 1000)},${Math.round(v.z * 1000)}`;
+    const addEdge = (p1, p2) => {
+        const edgeKey = p1 < p2 ? `${p1}|${p2}` : `${p2}|${p1}`;
+        edgeMap.set(edgeKey, (edgeMap.get(edgeKey) || 0) + 1);
+    };
+    for (const tri of triangles) {
+        const { v1, v2, v3 } = tri;
+        // 1. AABB Bounding Box
+        if (v1.x < minX)
+            minX = v1.x;
+        if (v1.y < minY)
+            minY = v1.y;
+        if (v1.z < minZ)
+            minZ = v1.z;
+        if (v1.x > maxX)
+            maxX = v1.x;
+        if (v1.y > maxY)
+            maxY = v1.y;
+        if (v1.z > maxZ)
+            maxZ = v1.z;
+        if (v2.x < minX)
+            minX = v2.x;
+        if (v2.y < minY)
+            minY = v2.y;
+        if (v2.z < minZ)
+            minZ = v2.z;
+        if (v2.x > maxX)
+            maxX = v2.x;
+        if (v2.y > maxY)
+            maxY = v2.y;
+        if (v2.z > maxZ)
+            maxZ = v2.z;
+        if (v3.x < minX)
+            minX = v3.x;
+        if (v3.y < minY)
+            minY = v3.y;
+        if (v3.z < minZ)
+            minZ = v3.z;
+        if (v3.x > maxX)
+            maxX = v3.x;
+        if (v3.y > maxY)
+            maxY = v3.y;
+        if (v3.z > maxZ)
+            maxZ = v3.z;
+        // 2. Triangle Surface Area (Cross product norm / 2)
+        const ax = v2.x - v1.x;
+        const ay = v2.y - v1.y;
+        const az = v2.z - v1.z;
+        const bx = v3.x - v1.x;
+        const by = v3.y - v1.y;
+        const bz = v3.z - v1.z;
+        const cx = ay * bz - az * by;
+        const cy = az * bx - ax * bz;
+        const cz = ax * by - ay * bx;
+        const area = 0.5 * Math.sqrt(cx * cx + cy * cy + cz * cz);
+        totalSurfaceArea += area;
+        // 3. Signed Tetrahedron Volume (Divergence theorem: v1 . (v2 x v3) / 6)
+        const det = v1.x * (v2.y * v3.z - v2.z * v3.y) -
+            v1.y * (v2.x * v3.z - v2.z * v3.x) +
+            v1.z * (v2.x * v3.y - v2.y * v3.x);
+        signedVolumeSum += det / 6.0;
+        // 4. Edges for manifold validation
+        const q1 = quantize(v1);
+        const q2 = quantize(v2);
+        const q3 = quantize(v3);
+        addEdge(q1, q2);
+        addEdge(q2, q3);
+        addEdge(q3, q1);
+    }
+    const volumeMm3 = Number(Math.abs(signedVolumeSum).toFixed(3));
+    const volumeCm3 = Number((volumeMm3 * 0.001).toFixed(4));
+    const surfaceAreaMm2 = Number(totalSurfaceArea.toFixed(2));
+    // Densities in g/cm3
+    const DENSITY_ZIRCONIA = 6.05;
+    const DENSITY_EMAX = 2.50;
+    const DENSITY_PMMA = 1.18;
+    const DENSITY_TITANIUM = 4.43;
+    const materialMassGrams = {
+        zirconia: Number((volumeCm3 * DENSITY_ZIRCONIA).toFixed(3)),
+        emax: Number((volumeCm3 * DENSITY_EMAX).toFixed(3)),
+        pmma: Number((volumeCm3 * DENSITY_PMMA).toFixed(3)),
+        titanium: Number((volumeCm3 * DENSITY_TITANIUM).toFixed(3)),
+    };
+    let boundaryEdges = 0;
+    let nonManifoldEdges = 0;
+    for (const count of edgeMap.values()) {
+        if (count === 1)
+            boundaryEdges++;
+        else if (count > 2)
+            nonManifoldEdges++;
+    }
+    const isManifold = boundaryEdges === 0 && nonManifoldEdges === 0;
+    return {
+        triangleCount: triangles.length,
+        surfaceAreaMm2,
+        volumeMm3,
+        volumeCm3,
+        boundingBoxMm: {
+            min: {
+                x: Number(minX.toFixed(2)),
+                y: Number(minY.toFixed(2)),
+                z: Number(minZ.toFixed(2)),
+            },
+            max: {
+                x: Number(maxX.toFixed(2)),
+                y: Number(maxY.toFixed(2)),
+                z: Number(maxZ.toFixed(2)),
+            },
+            dimensions: {
+                x: Number((maxX - minX).toFixed(2)),
+                y: Number((maxY - minY).toFixed(2)),
+                z: Number((maxZ - minZ).toFixed(2)),
+            },
+        },
+        materialMassGrams,
+        isManifold,
+        boundaryEdgeCount: boundaryEdges,
+        nonManifoldEdgeCount: nonManifoldEdges,
+    };
+}
+// ─── Dental Implantology, Osseointegration & RFA (ISQ) Biomechanics ─────────
+export const implantSystemBrandSchema = z.enum([
+    "osstem",
+    "straumann",
+    "nobel_biocare",
+    "bredent",
+    "astra_tech",
+    "dentium",
+    "ankylos",
+    "mis",
+    "megagen",
+    "neodent",
+    "other",
+]);
+export const boneDensityClassSchema = z.enum(["D1", "D2", "D3", "D4"]);
+export const surgicalImplantProtocolSchema = z.enum([
+    "submerged_two_stage",
+    "transgingival_one_stage",
+    "immediate_provisionalization",
+    "immediate_functional_loading",
+    "delayed_loading",
+]);
+export const stabilityEvaluationStatusSchema = z.enum([
+    "primary_mechanical_high",
+    "primary_mechanical_adequate",
+    "biological_dip_phase",
+    "secondary_osseointegrated",
+    "fibrous_encapsulation_failing",
+    "integrated_stable",
+]);
+export const torqueCurveSampleSchema = z.object({
+    depthMm: z.number().min(0).max(25),
+    torqueNcm: z.number().min(0).max(120),
+});
+export const createImplantInstallationSchema = z.object({
+    patientId: z.string().uuid(),
+    toothNumberFdi: z.number().int().min(11).max(85),
+    catalogItemId: z.string().uuid().optional().nullable(),
+    visitId: z.string().uuid().optional().nullable(),
+    implantBrand: implantSystemBrandSchema.default("osstem"),
+    implantDiameterMm: z.number().min(2.0).max(7.0),
+    implantLengthMm: z.number().min(4.0).max(20.0),
+    lotNumber: z.string().trim().max(80).optional().nullable(),
+    serialNumber: z.string().trim().max(80).optional().nullable(),
+    boneDensityClass: boneDensityClassSchema.default("D2"),
+    averageHounsfieldUnits: z.number().min(-1000).max(3000).optional().nullable(),
+    finalInsertionTorqueNcm: z.number().min(5).max(100),
+    baselineIsqMesiodistal: z.number().int().min(1).max(100),
+    baselineIsqBuccolingual: z.number().int().min(1).max(100),
+    baselineIsqDistopalatal: z.number().int().min(1).max(100).optional().nullable(),
+    corticalTapUsed: z.boolean().default(false),
+    underdrillingUsed: z.boolean().default(false),
+    boneGraftMaterial: z.string().trim().max(200).optional().nullable(),
+    membraneUsed: z.string().trim().max(200).optional().nullable(),
+    torqueCurveSamples: z.array(torqueCurveSampleSchema).default([]),
+    notes: z.string().trim().max(1000).optional().nullable(),
+});
+export const recordIsqMeasurementSchema = z.object({
+    installationId: z.string().uuid(),
+    visitId: z.string().uuid().optional().nullable(),
+    daysPostOp: z.number().int().min(0).max(1825),
+    isqMesiodistal: z.number().int().min(1).max(100),
+    isqBuccolingual: z.number().int().min(1).max(100),
+    isqDistopalatal: z.number().int().min(1).max(100).optional().nullable(),
+    smartpegCode: z.string().trim().max(40).optional().nullable(),
+    notes: z.string().trim().max(1000).optional().nullable(),
+});
+export const evaluateAllOnXCaseSchema = z.object({
+    patientId: z.string().uuid(),
+    caseTitle: z.string().trim().min(1).max(200),
+    jawArch: z.enum(["maxilla", "mandible"]),
+    implants: z
+        .array(z.object({
+        toothNumberFdi: z.number().int().min(11).max(48),
+        positionWorldMm: z.object({
+            x: z.number(),
+            y: z.number(),
+            z: z.number(),
+        }),
+        axisVector: z.object({
+            x: z.number(),
+            y: z.number(),
+            z: z.number(),
+        }),
+        insertionTorqueNcm: z.number().min(0).max(100),
+        baselineIsq: z.number().int().min(1).max(100),
+    }))
+        .min(4)
+        .max(8),
+    plannedCantileverLengthMm: z.number().min(0).max(30),
+    prostheticMaterial: z
+        .enum([
+        "titanium_pmma",
+        "zirconia_multilayer_ti_bar",
+        "cobalt_chrome_composite",
+    ])
+        .default("titanium_pmma"),
+});
+export class ImplantStabilityCalculator {
+    static calculateMeanIsq(md, bl, dp) {
+        const values = [md, bl];
+        if (dp !== undefined && dp !== null)
+            values.push(dp);
+        const sum = values.reduce((acc, v) => acc + v, 0);
+        const isqMean = Number((sum / values.length).toFixed(2));
+        const isqAnisotropyDelta = Math.max(...values) - Math.min(...values);
+        return { isqMean, isqAnisotropyDelta };
+    }
+    static evaluateLoadingProtocol(isqMean, insertionTorqueNcm, daysPostOp) {
+        const isBiologicalDip = daysPostOp >= 14 && daysPostOp <= 30 && isqMean < 68;
+        if (daysPostOp === 0) {
+            if (isqMean >= 70 &&
+                insertionTorqueNcm >= 35 &&
+                insertionTorqueNcm <= 55) {
+                return {
+                    protocol: "immediate_functional_loading",
+                    status: "primary_mechanical_high",
+                    decisionRationale: `Высокая первичная стабильность (ISQ=${isqMean}, Torque=${insertionTorqueNcm} Н·см). Разрешена немедленная нагрузка (Immediate Provisionalization) при отсутствии парафункций.`,
+                    isBiologicalDip: false,
+                };
+            }
+            if (isqMean >= 65 && insertionTorqueNcm >= 30) {
+                return {
+                    protocol: "transgingival_one_stage",
+                    status: "primary_mechanical_adequate",
+                    decisionRationale: `Умеренная первичная стабильность (ISQ=${isqMean}, Torque=${insertionTorqueNcm} Н·см). Одноэтапный протокол с формирователем десны. Ранняя нагрузка через 6-8 недель.`,
+                    isBiologicalDip: false,
+                };
+            }
+            if (isqMean >= 60) {
+                return {
+                    protocol: "delayed_loading",
+                    status: "primary_mechanical_adequate",
+                    decisionRationale: `Стандартная первичная стабильность (ISQ=${isqMean}). Стандартный протокол нагрузки через 8-12 недель.`,
+                    isBiologicalDip: false,
+                };
+            }
+            return {
+                protocol: "submerged_two_stage",
+                status: "primary_mechanical_adequate",
+                decisionRationale: `Низкая первичная стабильность (ISQ=${isqMean} < 60 или Torque < 25 Н·см). Двухэтапный протокол с глухим ушиванием на 3-6 месяцев.`,
+                isBiologicalDip: false,
+            };
+        }
+        if (isBiologicalDip) {
+            return {
+                protocol: "delayed_loading",
+                status: "biological_dip_phase",
+                decisionRationale: `Период биологического проседания стабильности (2-4 недели, остеокластическая резорбция). Не допускать окклюзионных перегрузок и микроподвижности >100мкм.`,
+                isBiologicalDip: true,
+            };
+        }
+        if (isqMean >= 70 && daysPostOp >= 42) {
+            return {
+                protocol: "immediate_functional_loading",
+                status: "secondary_osseointegrated",
+                decisionRationale: `Вторичная биологическая остеоинтеграция сформирована (ISQ=${isqMean} >= 70). Имплантат готов к постоянному протезированию.`,
+                isBiologicalDip: false,
+            };
+        }
+        if (isqMean < 55 && daysPostOp >= 60) {
+            return {
+                protocol: "submerged_two_stage",
+                status: "fibrous_encapsulation_failing",
+                decisionRationale: `Критическое снижение стабильности (ISQ=${isqMean} < 55 на ${daysPostOp} день). Риск фиброзной инкапсуляции и дезинтеграции. Требуется рентген-контроль КЛКТ.`,
+                isBiologicalDip: false,
+            };
+        }
+        return {
+            protocol: "delayed_loading",
+            status: "integrated_stable",
+            decisionRationale: `Текущая стабильность ISQ=${isqMean}. Рекомендован контрольный замер через 4 недели перед постоянным протезированием.`,
+            isBiologicalDip: false,
+        };
+    }
+    static calculateStabilityCurve(baselineIsq, currentDays) {
+        const curve = [];
+        const lambdaResorption = 0.38 / 7; // per day
+        const sMax = 80;
+        const kOsteo = 0.75 / 7; // per day
+        const tMid = 24.5; // days (~3.5 weeks)
+        for (let d = 0; d <= Math.max(90, currentDays); d += 3) {
+            const primary = baselineIsq * Math.exp(-lambdaResorption * d);
+            const secondary = sMax * (1 / (1 + Math.exp(-kOsteo * (d - tMid))));
+            const total = Number((primary + secondary).toFixed(1));
+            curve.push({
+                day: d,
+                primaryStability: Number(primary.toFixed(1)),
+                secondaryStability: Number(secondary.toFixed(1)),
+                totalStability: Math.min(100, total),
+            });
+        }
+        return curve;
+    }
+    static evaluateAllOnXGeometry(jawArch, implants, plannedCantileverMm) {
+        const yCoords = implants.map((i) => i.positionWorldMm.y);
+        const yMax = Math.max(...yCoords);
+        const yMin = Math.min(...yCoords);
+        const apSpreadMm = Number((yMax - yMin).toFixed(2));
+        const maxCantileverMultiplier = jawArch === "mandible" ? 1.5 : 1.0;
+        const maxCap = jawArch === "mandible" ? 18.0 : 12.0;
+        const calculatedCantileverLimit = Number(Math.min(maxCap, apSpreadMm * maxCantileverMultiplier).toFixed(2));
+        const isCantileverSafe = plannedCantileverMm <= calculatedCantileverLimit;
+        const standardAngles = [0, 17, 30, 45];
+        const abutmentPlan = implants.map((imp) => {
+            const mag = Math.sqrt(imp.axisVector.x ** 2 +
+                imp.axisVector.y ** 2 +
+                imp.axisVector.z ** 2);
+            const uz = mag > 0 ? Math.abs(imp.axisVector.z) / mag : 1;
+            const divergenceRad = Math.acos(Math.min(1, Math.max(0, uz)));
+            const divergenceDeg = Number(((divergenceRad * 180) / Math.PI).toFixed(1));
+            let bestAngle = 0;
+            let minDiff = 999;
+            for (const angle of standardAngles) {
+                const diff = Math.abs(divergenceDeg - angle);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestAngle = angle;
+                }
+            }
+            return {
+                toothNumberFdi: imp.toothNumberFdi,
+                implantVector: imp.axisVector,
+                measuredDivergenceDeg: divergenceDeg,
+                recommendedAbutmentAngle: String(bestAngle),
+                residualAngulationErrorDeg: Number(minDiff.toFixed(1)),
+                gingivalCollarHeightMm: divergenceDeg > 20 ? 3.5 : 2.0,
+                isWithinProstheticTolerances: minDiff <= 5.0,
+            };
+        });
+        const avgIsq = implants.reduce((acc, i) => acc + i.baselineIsq, 0) / implants.length;
+        const minTorque = Math.min(...implants.map((i) => i.insertionTorqueNcm));
+        const immediateLoadingPass = avgIsq >= 70 && minTorque >= 35 && isCantileverSafe;
+        const crossArchRigidityIndex = Number((avgIsq * (implants.length / 4) * (apSpreadMm / 10)).toFixed(2));
+        return {
+            apSpreadMm,
+            maxSafeCantileverMm: calculatedCantileverLimit,
+            isCantileverSafe,
+            abutmentPlan,
+            immediateLoadingPass,
+            crossArchRigidityIndex,
+        };
+    }
+}
