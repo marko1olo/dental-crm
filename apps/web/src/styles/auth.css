@@ -18,7 +18,7 @@
 	position: absolute;
 	width: 500px;
 	height: 500px;
-	background: rgba(79, 70, 229, 0.08); /* indigo-600 */
+	background: rgba(13, 148, 136, 0.08); /* teal-600 */
 	border-radius: 50%;
 	filter: blur(120px);
 	pointer-events: none;
@@ -128,9 +128,9 @@
 .auth-logo-box {
 	width: 64px;
 	height: 64px;
-	background: rgba(79, 70, 229, 0.1);
-	border: 1px solid rgba(79, 70, 229, 0.2);
-	color: #818cf8;
+	background: rgba(13, 148, 136, 0.1);
+	border: 1px solid rgba(13, 148, 136, 0.2);
+	color: var(--teal, #0d9488);
 	border-radius: 16px;
 	display: flex;
 	align-items: center;
@@ -197,7 +197,7 @@
 }
 
 .auth-icon-inline {
-	color: #818cf8; /* indigo-400 */
+	color: var(--teal, #0d9488); /* teal-600 */
 }
 
 /* Staff Grid */
@@ -242,9 +242,9 @@
 }
 
 .auth-staff-card.active {
-	background: rgba(79, 70, 229, 0.15);
-	border-color: #6366f1; /* indigo-500 */
-	box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+	background: rgba(13, 148, 136, 0.15);
+	border-color: #0d9488; /* teal-600 */
+	box-shadow: 0 0 15px rgba(13, 148, 136, 0.2);
 }
 
 .auth-staff-avatar {
@@ -328,7 +328,7 @@
 
 .auth-pin-target {
 	font-size: 12px;
-	color: #818cf8; /* indigo-400 */
+	color: var(--teal, #0d9488);
 	font-weight: 500;
 }
 
@@ -353,9 +353,9 @@
 }
 
 .auth-pin-dot.filled {
-	background: #6366f1; /* indigo-500 */
+	background: var(--teal, #0d9488);
 	transform: scale(1.2);
-	box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+	box-shadow: 0 0 8px rgba(13, 148, 136, 0.5);
 }
 
 /* PIN Grid */
@@ -452,8 +452,8 @@
 }
 
 .auth-input:focus {
-	border-color: #6366f1;
-	box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 1px rgba(13, 148, 136, 0.3);
 }
 
 .auth-input:disabled {
@@ -490,7 +490,7 @@
 
 .auth-submit-btn {
 	width: 100%;
-	background: #4f46e5;
+	background: var(--teal-dark, #0f766e);
 	color: #fff;
 	font-weight: 500;
 	font-size: 14px;
@@ -503,12 +503,12 @@
 	justify-content: center;
 	gap: 8px;
 	transition: all 0.2s;
-	box-shadow: 0 0 20px rgba(79, 70, 229, 0.3);
+	box-shadow: 0 0 20px rgba(13, 148, 136, 0.3);
 	margin-top: 16px;
 }
 
 .auth-submit-btn:hover:not(:disabled) {
-	background: #6366f1;
+	background: var(--teal, #0d9488);
 }
 
 .auth-submit-btn:active:not(:disabled) {
@@ -562,7 +562,7 @@
 .auth-link-btn {
 	background: none;
 	border: none;
-	color: #818cf8;
+	color: var(--teal, #0d9488);
 	font-size: inherit;
 	font-family: inherit;
 	cursor: pointer;
@@ -576,7 +576,7 @@
 }
 
 .auth-link-btn:hover {
-	color: #a5b4fc;
+	color: var(--teal-light, #14b8a6);
 	text-decoration-style: solid;
 }
 

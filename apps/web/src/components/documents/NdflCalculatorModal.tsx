@@ -82,36 +82,32 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 	};
 
 	return (
-		<div className="modal-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+		<div className="modal-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
 			<div
-				className="modal-content w-full max-w-md p-6 rounded-lg"
-				style={{
-					background: "var(--paper)",
-					color: "var(--ink)",
-				}}
+				className="modal-content w-full max-w-md p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 space-y-4"
 			>
-				<h2 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<Calculator size={20} />
+				<h2 className="text-lg font-bold flex items-center gap-2 m-0 text-slate-900 dark:text-slate-100">
+					<Calculator size={20} className="text-teal-600 dark:text-teal-400" />
 					Калькулятор НДФЛ
 				</h2>
 
-				<div style={{ display: "flex", gap: "16px", margin: "16px 0" }}>
-					<label style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
+					<label className="flex flex-col text-xs font-semibold text-slate-600 dark:text-slate-400">
 						Начало периода
 						<input
 							type="date"
 							value={startDate}
 							onChange={(e) => setStartDate(e.target.value)}
-							style={{ padding: "8px", marginTop: "4px" }}
+							className="mt-1 p-2 min-h-[44px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-teal-500"
 						/>
 					</label>
-					<label style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+					<label className="flex flex-col text-xs font-semibold text-slate-600 dark:text-slate-400">
 						Конец периода
 						<input
 							type="date"
 							value={endDate}
 							onChange={(e) => setEndDate(e.target.value)}
-							style={{ padding: "8px", marginTop: "4px" }}
+							className="mt-1 p-2 min-h-[44px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-teal-500"
 						/>
 					</label>
 				</div>
@@ -120,74 +116,45 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 					type="button"
 					onClick={handleCalculate}
 					disabled={loading}
-					className="primary-button w-full"
+					className="primary-button w-full min-h-[44px] text-sm font-semibold"
 				>
 					{loading ? "Вычисление..." : "Рассчитать"}
 				</button>
 
 				{result && (
-					<div style={{ marginTop: "24px" }}>
+					<div className="mt-4">
 						{result.isBlocked ? (
-							<div
-								style={{
-									background: "var(--red-soft)",
-									borderColor: "var(--red-light)",
-									borderWidth: "1px",
-									borderStyle: "solid",
-									padding: "16px",
-									borderRadius: "4px",
-									color: "var(--red-dark)",
-								}}
-							>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										fontWeight: "bold",
-									}}
-								>
-									<AlertTriangle size={18} />
+							<div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 text-xs space-y-1.5">
+								<div className="flex items-center gap-2 font-bold text-sm text-rose-900 dark:text-rose-200">
+									<AlertTriangle size={18} className="text-rose-600 dark:text-rose-400 shrink-0" />
 									Формирование заблокировано
 								</div>
-								<div style={{ marginTop: "8px" }}>
+								<div className="leading-relaxed">
 									У пациента есть неоплаченный долг:{" "}
-									<strong>{result.debtRub} ₽</strong>. Для получения справки
+									<strong className="font-bold">{result.debtRub} ₽</strong>. Для получения справки
 									НДФЛ необходимо полностью погасить задолженность.
 								</div>
 							</div>
 						) : (
-							<div
-								style={{
-									background: "var(--success-soft)",
-									borderColor: "var(--success-light)",
-									borderWidth: "1px",
-									borderStyle: "solid",
-									padding: "16px",
-									borderRadius: "4px",
-									color: "var(--success-dark)",
-								}}
-							>
-								<h3 style={{ margin: "0 0 12px 0" }}>Суммы для справки:</h3>
-								<div
-									style={{ display: "flex", justifyContent: "space-between" }}
-								>
-									<span>Код 1 (Обычное лечение):</span>
-									<strong>{result.code1TotalRub} ₽</strong>
+							<div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 text-xs space-y-2">
+								<h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 m-0">
+									Суммы для справки (КНД 1151156):
+								</h3>
+								<div className="flex justify-between items-center py-0.5 border-b border-emerald-200/50 dark:border-emerald-800/50">
+									<span className="text-slate-700 dark:text-slate-300">Код 1 (Обычное лечение):</span>
+									<strong className="font-bold text-sm text-emerald-700 dark:text-emerald-300">{result.code1TotalRub} ₽</strong>
 								</div>
-								<div
-									style={{ display: "flex", justifyContent: "space-between" }}
-								>
-									<span>Код 2 (Дорогостоящее):</span>
-									<strong>{result.code2TotalRub} ₽</strong>
+								<div className="flex justify-between items-center py-0.5">
+									<span className="text-slate-700 dark:text-slate-300">Код 2 (Дорогостоящее):</span>
+									<strong className="font-bold text-sm text-emerald-700 dark:text-emerald-300">{result.code2TotalRub} ₽</strong>
 								</div>
 							</div>
 						)}
 					</div>
 				)}
 
-				<div style={{ marginTop: "24px", textAlign: "right" }}>
-					<button type="button" onClick={onClose} className="secondary-button">
+				<div className="mt-4 text-right">
+					<button type="button" onClick={onClose} className="secondary-button min-h-[44px]">
 						Закрыть
 					</button>
 				</div>
