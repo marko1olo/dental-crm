@@ -1979,6 +1979,27 @@ export const fiscalReceiptDetailsSchema = z.object({
     cashierName: z.string().trim().max(160).nullable().optional(),
     receiptUrl: fiscalReceiptUrlSchema.nullable().optional(),
     operationType: z.enum(["income", "income_return"]).nullable().optional(),
+    /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+    calculationMethod: z
+        .enum([
+        "full_prepayment",
+        "partial_prepayment",
+        "advance",
+        "full_settlement",
+        "credit",
+        "credit_settlement",
+    ])
+        .nullable()
+        .optional(),
+    /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+    calculationSubject: z
+        .enum(["service", "payment", "goods"])
+        .nullable()
+        .optional(),
+    /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+    quantityMeasure: z.number().int().min(0).max(255).nullable().optional(),
+    /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+    advancePaymentRub: nonNegativeMoneyRubSchema.nullable().optional(),
 });
 export const paymentSchema = z.object({
     id: z.string().uuid(),

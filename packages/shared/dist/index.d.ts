@@ -5016,6 +5016,14 @@ export declare const fiscalReceiptDetailsSchema: z.ZodObject<{
     cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
     operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+    /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+    calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+    /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+    calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+    /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+    quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+    advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
 }, "strip", z.ZodTypeAny, {
     fn?: string | null | undefined;
     fd?: string | null | undefined;
@@ -5023,6 +5031,10 @@ export declare const fiscalReceiptDetailsSchema: z.ZodObject<{
     cashierName?: string | null | undefined;
     receiptUrl?: string | null | undefined;
     operationType?: "income" | "income_return" | null | undefined;
+    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+    quantityMeasure?: number | null | undefined;
+    advancePaymentRub?: number | null | undefined;
 }, {
     fn?: string | null | undefined;
     fd?: string | null | undefined;
@@ -5030,6 +5042,10 @@ export declare const fiscalReceiptDetailsSchema: z.ZodObject<{
     cashierName?: string | null | undefined;
     receiptUrl?: string | null | undefined;
     operationType?: "income" | "income_return" | null | undefined;
+    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+    quantityMeasure?: number | null | undefined;
+    advancePaymentRub?: number | null | undefined;
 }>;
 export type FiscalReceiptDetails = z.infer<typeof fiscalReceiptDetailsSchema>;
 export declare const paymentSchema: z.ZodObject<{
@@ -5053,6 +5069,14 @@ export declare const paymentSchema: z.ZodObject<{
         cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
         operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+        /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+        calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+        /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+        calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+        /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+        quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+        advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
     }, "strip", z.ZodTypeAny, {
         fn?: string | null | undefined;
         fd?: string | null | undefined;
@@ -5060,6 +5084,10 @@ export declare const paymentSchema: z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     }, {
         fn?: string | null | undefined;
         fd?: string | null | undefined;
@@ -5067,6 +5095,10 @@ export declare const paymentSchema: z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     }>>>;
     clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -5098,6 +5130,10 @@ export declare const paymentSchema: z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     } | null | undefined;
     clientMutationId?: string | null | undefined;
     payerFullName?: string | null | undefined;
@@ -5128,6 +5164,10 @@ export declare const paymentSchema: z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     } | null | undefined;
     clientMutationId?: string | null | undefined;
     payerFullName?: string | null | undefined;
@@ -16926,6 +16966,14 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
             operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+            /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+            calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+            /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+            calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+            /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+            quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+            advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
         }, "strip", z.ZodTypeAny, {
             fn?: string | null | undefined;
             fd?: string | null | undefined;
@@ -16933,6 +16981,10 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         }, {
             fn?: string | null | undefined;
             fd?: string | null | undefined;
@@ -16940,6 +16992,10 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         }>>>;
         clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -16971,6 +17027,10 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -17001,6 +17061,10 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -17033,6 +17097,10 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -17070,6 +17138,10 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -17710,6 +17782,14 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
             operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+            /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+            calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+            /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+            calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+            /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+            quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+            advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
         }, "strip", z.ZodTypeAny, {
             fn?: string | null | undefined;
             fd?: string | null | undefined;
@@ -17717,6 +17797,10 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         }, {
             fn?: string | null | undefined;
             fd?: string | null | undefined;
@@ -17724,6 +17808,10 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         }>>>;
         clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -17755,6 +17843,10 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -17785,6 +17877,10 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -17852,6 +17948,10 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -17961,6 +18061,10 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -18076,6 +18180,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
                 operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+                /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+                calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+                /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+                calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+                /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+                quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+                advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 fn?: string | null | undefined;
                 fd?: string | null | undefined;
@@ -18083,6 +18195,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             }, {
                 fn?: string | null | undefined;
                 fd?: string | null | undefined;
@@ -18090,6 +18206,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             }>>>;
             clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -18121,6 +18241,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -18151,6 +18275,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -18183,6 +18311,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -18220,6 +18352,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -23550,6 +23686,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
                 operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+                /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+                calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+                /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+                calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+                /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+                quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+                advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 fn?: string | null | undefined;
                 fd?: string | null | undefined;
@@ -23557,6 +23701,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             }, {
                 fn?: string | null | undefined;
                 fd?: string | null | undefined;
@@ -23564,6 +23712,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             }>>>;
             clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -23595,6 +23747,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -23625,6 +23781,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -23692,6 +23852,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -23801,6 +23965,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -23942,6 +24110,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -24860,6 +25032,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -24986,6 +25162,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -25904,6 +26084,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -26081,6 +26265,14 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
                 operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+                /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+                calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+                /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+                calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+                /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+                quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+                advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 fn?: string | null | undefined;
                 fd?: string | null | undefined;
@@ -26088,6 +26280,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             }, {
                 fn?: string | null | undefined;
                 fd?: string | null | undefined;
@@ -26095,6 +26291,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             }>>>;
             clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -26126,6 +26326,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -26156,6 +26360,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -26188,6 +26396,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -26225,6 +26437,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -31555,6 +31771,14 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
                 operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+                /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+                calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+                /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+                calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+                /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+                quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+                advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 fn?: string | null | undefined;
                 fd?: string | null | undefined;
@@ -31562,6 +31786,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             }, {
                 fn?: string | null | undefined;
                 fd?: string | null | undefined;
@@ -31569,6 +31797,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             }>>>;
             clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -31600,6 +31832,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -31630,6 +31866,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -31697,6 +31937,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -31806,6 +32050,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
                 operationType?: "income" | "income_return" | null | undefined;
+                calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                quantityMeasure?: number | null | undefined;
+                advancePaymentRub?: number | null | undefined;
             } | null | undefined;
             clientMutationId?: string | null | undefined;
             payerFullName?: string | null | undefined;
@@ -34054,6 +34302,14 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
                     operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+                    /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+                    calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+                    /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+                    calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+                    /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+                    quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                    /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+                    advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
                 }, "strip", z.ZodTypeAny, {
                     fn?: string | null | undefined;
                     fd?: string | null | undefined;
@@ -34061,6 +34317,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 }, {
                     fn?: string | null | undefined;
                     fd?: string | null | undefined;
@@ -34068,6 +34328,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 }>>>;
                 clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -34099,6 +34363,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 } | null | undefined;
                 clientMutationId?: string | null | undefined;
                 payerFullName?: string | null | undefined;
@@ -34129,6 +34397,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 } | null | undefined;
                 clientMutationId?: string | null | undefined;
                 payerFullName?: string | null | undefined;
@@ -34161,6 +34433,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 } | null | undefined;
                 clientMutationId?: string | null | undefined;
                 payerFullName?: string | null | undefined;
@@ -34198,6 +34474,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 } | null | undefined;
                 clientMutationId?: string | null | undefined;
                 payerFullName?: string | null | undefined;
@@ -39528,6 +39808,14 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
                     operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+                    /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+                    calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+                    /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+                    calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+                    /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+                    quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                    /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+                    advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
                 }, "strip", z.ZodTypeAny, {
                     fn?: string | null | undefined;
                     fd?: string | null | undefined;
@@ -39535,6 +39823,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 }, {
                     fn?: string | null | undefined;
                     fd?: string | null | undefined;
@@ -39542,6 +39834,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 }>>>;
                 clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -39573,6 +39869,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 } | null | undefined;
                 clientMutationId?: string | null | undefined;
                 payerFullName?: string | null | undefined;
@@ -39603,6 +39903,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 } | null | undefined;
                 clientMutationId?: string | null | undefined;
                 payerFullName?: string | null | undefined;
@@ -39670,6 +39974,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 } | null | undefined;
                 clientMutationId?: string | null | undefined;
                 payerFullName?: string | null | undefined;
@@ -39779,6 +40087,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
                     operationType?: "income" | "income_return" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+                    quantityMeasure?: number | null | undefined;
+                    advancePaymentRub?: number | null | undefined;
                 } | null | undefined;
                 clientMutationId?: string | null | undefined;
                 payerFullName?: string | null | undefined;
@@ -40502,6 +40814,14 @@ export declare const dashboardSchema: z.ZodObject<{
             cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
             operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+            /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+            calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+            /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+            calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+            /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+            quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+            advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
         }, "strip", z.ZodTypeAny, {
             fn?: string | null | undefined;
             fd?: string | null | undefined;
@@ -40509,6 +40829,10 @@ export declare const dashboardSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         }, {
             fn?: string | null | undefined;
             fd?: string | null | undefined;
@@ -40516,6 +40840,10 @@ export declare const dashboardSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         }>>>;
         clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -40547,6 +40875,10 @@ export declare const dashboardSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -40577,6 +40909,10 @@ export declare const dashboardSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -41018,6 +41354,10 @@ export declare const dashboardSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -41684,6 +42024,10 @@ export declare const dashboardSchema: z.ZodObject<{
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
             operationType?: "income" | "income_return" | null | undefined;
+            calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+            quantityMeasure?: number | null | undefined;
+            advancePaymentRub?: number | null | undefined;
         } | null | undefined;
         clientMutationId?: string | null | undefined;
         payerFullName?: string | null | undefined;
@@ -51337,6 +51681,14 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         cashierName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         receiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
         operationType: z.ZodOptional<z.ZodNullable<z.ZodEnum<["income", "income_return"]>>>;
+        /** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
+        calculationMethod: z.ZodOptional<z.ZodNullable<z.ZodEnum<["full_prepayment", "partial_prepayment", "advance", "full_settlement", "credit", "credit_settlement"]>>>;
+        /** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
+        calculationSubject: z.ZodOptional<z.ZodNullable<z.ZodEnum<["service", "payment", "goods"]>>>;
+        /** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
+        quantityMeasure: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        /** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
+        advancePaymentRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
     }, "strip", z.ZodTypeAny, {
         fn?: string | null | undefined;
         fd?: string | null | undefined;
@@ -51344,6 +51696,10 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     }, {
         fn?: string | null | undefined;
         fd?: string | null | undefined;
@@ -51351,6 +51707,10 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     }>>>;
     clientMutationId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     payerFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -51376,6 +51736,10 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     } | null | undefined;
     clientMutationId?: string | null | undefined;
     payerFullName?: string | null | undefined;
@@ -51401,6 +51765,10 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     } | null | undefined;
     clientMutationId?: string | null | undefined;
     payerFullName?: string | null | undefined;
@@ -51426,6 +51794,10 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     } | null | undefined;
     clientMutationId?: string | null | undefined;
     payerFullName?: string | null | undefined;
@@ -51451,6 +51823,10 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
         operationType?: "income" | "income_return" | null | undefined;
+        calculationMethod?: "full_prepayment" | "partial_prepayment" | "advance" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationSubject?: "service" | "payment" | "goods" | null | undefined;
+        quantityMeasure?: number | null | undefined;
+        advancePaymentRub?: number | null | undefined;
     } | null | undefined;
     clientMutationId?: string | null | undefined;
     payerFullName?: string | null | undefined;
@@ -101639,7 +102015,7 @@ export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     name: string;
     quantity: number;
-    method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+    method: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
     taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
     amountKopecks: number;
     priceKopecks: number;
@@ -101652,7 +102028,7 @@ export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
     amountKopecks: number;
     priceKopecks: number;
     quantity?: number | undefined;
-    method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+    method?: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
     taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
     subject?: "service" | "payment" | "job" | "commodity" | undefined;
     vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
@@ -101661,7 +102037,7 @@ export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
 }>, {
     name: string;
     quantity: number;
-    method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+    method: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
     taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
     amountKopecks: number;
     priceKopecks: number;
@@ -101674,7 +102050,7 @@ export declare const fiscalReceiptItemSchema: z.ZodEffects<z.ZodObject<{
     amountKopecks: number;
     priceKopecks: number;
     quantity?: number | undefined;
-    method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+    method?: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
     taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
     subject?: "service" | "payment" | "job" | "commodity" | undefined;
     vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
@@ -101703,7 +102079,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     }, "strip", z.ZodTypeAny, {
         name: string;
         quantity: number;
-        method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+        method: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
         taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
         amountKopecks: number;
         priceKopecks: number;
@@ -101716,7 +102092,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         amountKopecks: number;
         priceKopecks: number;
         quantity?: number | undefined;
-        method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+        method?: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
         taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
         subject?: "service" | "payment" | "job" | "commodity" | undefined;
         vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
@@ -101725,7 +102101,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     }>, {
         name: string;
         quantity: number;
-        method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+        method: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
         taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
         amountKopecks: number;
         priceKopecks: number;
@@ -101738,7 +102114,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         amountKopecks: number;
         priceKopecks: number;
         quantity?: number | undefined;
-        method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+        method?: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
         taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
         subject?: "service" | "payment" | "job" | "commodity" | undefined;
         vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
@@ -101758,7 +102134,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     items: {
         name: string;
         quantity: number;
-        method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+        method: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
         taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
         amountKopecks: number;
         priceKopecks: number;
@@ -101787,7 +102163,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         amountKopecks: number;
         priceKopecks: number;
         quantity?: number | undefined;
-        method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+        method?: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
         taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
         subject?: "service" | "payment" | "job" | "commodity" | undefined;
         vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
@@ -101812,7 +102188,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     items: {
         name: string;
         quantity: number;
-        method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+        method: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
         taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
         amountKopecks: number;
         priceKopecks: number;
@@ -101841,7 +102217,7 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
         amountKopecks: number;
         priceKopecks: number;
         quantity?: number | undefined;
-        method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+        method?: "full_prepayment" | "advance" | "prepayment" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
         taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
         subject?: "service" | "payment" | "job" | "commodity" | undefined;
         vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;

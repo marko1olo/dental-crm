@@ -300,7 +300,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</div>
 					) : null}
 
-					<div className="appointment-card-footer flex justify-end gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+					<div className="appointment-card-footer flex flex-wrap justify-end gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
 						<button
 							className="secondary-button appointment-repeat-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 							type="button"
@@ -308,9 +308,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							aria-label={`Повторить запись: ${appointmentPatientName}. Форма новой записи откроется заполненной, останется выбрать время`}
 							title={`Повторить запись: те же пациент, врач и кресло — останется выбрать время`}
 							style={{
-								padding: "4px 12px",
-								minHeight: "28px",
-								fontSize: "12px",
+								padding: "6px 14px",
+								minHeight: "36px",
+								fontSize: "13px",
 							}}
 						>
 							Повторить
@@ -323,9 +323,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								aria-label={`В буфер: ${appointmentPatientName}`}
 								title="Скопировать в буфер расписания для вставки на другое время"
 								style={{
-									padding: "4px 12px",
-									minHeight: "28px",
-									fontSize: "12px",
+									padding: "6px 14px",
+									minHeight: "36px",
+									fontSize: "13px",
 								}}
 							>
 								В буфер
@@ -340,9 +340,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							aria-label={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
 							title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
 							style={{
-								padding: "4px 12px",
-								minHeight: "28px",
-								fontSize: "12px",
+								padding: "6px 14px",
+								minHeight: "36px",
+								fontSize: "13px",
 							}}
 						>
 							Настроить

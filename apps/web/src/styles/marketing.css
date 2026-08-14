@@ -82,6 +82,7 @@
 	gap: 7px;
 	margin-bottom: -1px;
 	padding: 10px 16px;
+	min-height: 40px;
 	transition:
 		color 0.15s ease,
 		border-color 0.15s ease;
@@ -95,6 +96,11 @@
 .marketing-tab.active {
 	border-bottom-color: var(--teal);
 	color: var(--teal-dark);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .marketing-tab.active {
+	color: var(--teal-light, #2dd4bf);
+	border-bottom-color: var(--teal-light, #2dd4bf);
 }
 
 .marketing-tab:hover:not(.active) {
@@ -120,6 +126,10 @@
 	.marketing-form-grid {
 		grid-template-columns: 1fr;
 	}
+	.marketing-tab,
+	.tone-btn {
+		min-height: 44px;
+	}
 }
 
 .marketing-tone-group {
@@ -140,7 +150,8 @@
 	font-size: 13px;
 	font-weight: 700;
 	gap: 6px;
-	padding: 7px 14px;
+	padding: 8px 16px;
+	min-height: 40px;
 	transition:
 		background 0.15s ease,
 		border-color 0.15s ease,
@@ -156,6 +167,11 @@
 	background: var(--teal-soft);
 	border-color: var(--teal);
 	color: var(--teal-dark);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .tone-btn.active {
+	color: var(--teal-light, #2dd4bf);
+	border-color: var(--teal-light, #2dd4bf);
 }
 
 .tone-btn-negative.active {
