@@ -250,8 +250,7 @@ export const PatientCommunicationTimelineWidget: React.FC<{
 					role="alert"
 					className="p-3 rounded-lg border text-xs bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800"
 				>
-					Журнал не загружен: {error} Это не значит, что общения с пациентом не
-					было.
+					Журнал не загружен: {error} Это не значит, что общения с пациентом не было.
 				</div>
 			) : !log ? (
 				<div

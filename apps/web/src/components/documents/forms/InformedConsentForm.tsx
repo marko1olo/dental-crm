@@ -1,3 +1,4 @@
+import React from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import { informedConsentBlockersReview } from "../informedConsentBlockers";

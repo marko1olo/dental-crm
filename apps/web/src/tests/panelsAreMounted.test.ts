@@ -762,11 +762,16 @@ function sourceWithoutComments(relativePath: string): string {
  */
 function registeredAppViews(): string[] {
 	const source = readSource("workspaceShell.tsx");
-	const declaration =
+	let declaration =
 		/export const appViews = \[([^\]]*)\] as const;/.exec(source)?.[1] ?? "";
+	if (!declaration) {
+		const utilsSource = readSource("utils/routeUtils.ts");
+		declaration =
+			/export const appViews = \[([^\]]*)\] as const;/.exec(utilsSource)?.[1] ?? "";
+	}
 	assert.ok(
 		declaration,
-		"В workspaceShell.tsx не найдено объявление `export const appViews = [...] as const;` — " +
+		"В routeUtils.ts / workspaceShell.tsx не найдено объявление `export const appViews = [...] as const;` — " +
 			"реестр разделов переехал или переименован, и этот страж больше ничего не охраняет",
 	);
 	const views = [...declaration.matchAll(/"([^"]+)"/g)].map(

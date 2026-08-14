@@ -1,5 +1,6 @@
 import type { ProcedureSpecificConsentProcedure } from "@dental/shared";
 import type { ReactNode } from "react";
+import React from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { AnamnesisField } from "../AnamnesisField";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";

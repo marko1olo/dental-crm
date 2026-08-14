@@ -30,7 +30,7 @@ const read = (relativePath: string) =>
 /** Начальное значение поля в объекте хранилища. */
 function initialValueOf(source: string, field: string): string | null {
 	const match = new RegExp(
-		`^\\s{2}${field}\\s*:\\s*(".*?"|'.*?'|[^,\\n]+),`,
+		`^\\s+${field}\\s*:\\s*(".*?"|'.*?'|[^,\\n]+),`,
 		"m",
 	).exec(source);
 	if (!match) return null;

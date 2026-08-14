@@ -893,8 +893,7 @@ export function MessageDeliveryConsole() {
 			{/* ── Журнал ────────────────────────────────────────────────────── */}
 			<h3 className="ops-section-title">Журнал отправки</h3>
 			<fieldset
-				className="quick-chips-row"
-				style={{ border: 0, padding: 0, margin: 0 }}
+				className="quick-chips-row p-0 m-0 border-0"
 			>
 				<legend className="sr-only">Фильтр по состоянию</legend>
 				<button
@@ -1139,7 +1138,7 @@ export function MessageDeliveryConsole() {
 						готовый текст ниже.
 					</p>
 				) : (
-					<span className="ops-field" style={{ marginBottom: "12px" }}>
+					<span className="ops-field mb-3">
 						<label htmlFor="enqueue-body">Текст сообщения</label>
 						<textarea
 							id="enqueue-body"

@@ -1485,7 +1485,142 @@ if ('serviceWorker' in navigator) {
       </div>
     </section>
 
-  </main>
+  
+    <!-- PERIODONTAL & ORTHODONTIC CLINICAL DIAGNOSTIC DECK -->
+    <section class="clinic-subdeck" style="margin: 2rem 0; background: #0f172a; border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 12px; padding: 1.5rem; box-shadow: 0 8px 30px rgba(0,0,0,0.5); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+        <div>
+          <span style="background: rgba(14, 165, 233, 0.15); border: 1px solid #0ea5e9; color: #38bdf8; font-size: 0.75rem; font-weight: bold; padding: 0.2rem 0.6rem; border-radius: 999px; font-family: monospace;">CLINICAL SUITE 2.4</span>
+          <h3 style="font-size: 1.25rem; color: #fff; margin-top: 0.4rem;">Periodontal Pocket Probing & Orthodontic Cephalometry</h3>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="perio-tab-btn" class="perio-btn active" style="background: #0ea5e9; border: none; color: #fff; font-size: 0.8rem; font-weight: bold; padding: 0.45rem 0.9rem; border-radius: 6px; cursor: pointer;">PERIODONTAL CHART</button>
+          <button id="ortho-tab-btn" class="perio-btn" style="background: #1e293b; border: 1px solid #334155; color: #94a3b8; font-size: 0.8rem; font-weight: bold; padding: 0.45rem 0.9rem; border-radius: 6px; cursor: pointer;">CEPHALOMETRIC ANGLES</button>
+        </div>
+      </div>
+
+      <!-- Perio Tab Content -->
+      <div id="perio-content" style="display: block;">
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">Interactive 6-point periodontal pocket depth simulator with Bleeding on Probing (BOP) and furcation grading.</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;" id="perio-teeth-grid">
+          <!-- Dynamically generated teeth probing boxes -->
+        </div>
+        <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.25); border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-family: monospace;">
+          <span style="color: #94a3b8;">Mean Pocket Depth: <strong id="perio-mean-depth" style="color: #38bdf8;">2.4 mm</strong></span>
+          <span style="color: #94a3b8;">BOP Sites: <strong id="perio-bop-count" style="color: #f43f5e;">2 / 16 (12.5%)</strong></span>
+          <span style="color: #22c55e;">Status: Mild Gingivitis</span>
+        </div>
+      </div>
+
+      <!-- Ortho Tab Content -->
+      <div id="ortho-content" style="display: none;">
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">Lateral Cephalometric Angle Analyzer for skeletal Class I, II, and III sagittal malocclusion classification.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div>
+            <div style="margin-bottom: 0.75rem;">
+              <label style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #cbd5e1; font-family: monospace;">
+                <span>SNA Angle (Maxilla to Cranial Base):</span>
+                <strong id="val-sna" style="color: #38bdf8;">82°</strong>
+              </label>
+              <input type="range" id="slider-sna" min="72" max="92" value="82" style="width: 100%; accent-color: #0ea5e9;">
+            </div>
+            <div style="margin-bottom: 0.75rem;">
+              <label style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #cbd5e1; font-family: monospace;">
+                <span>SNB Angle (Mandible to Cranial Base):</span>
+                <strong id="val-snb" style="color: #38bdf8;">80°</strong>
+              </label>
+              <input type="range" id="slider-snb" min="70" max="90" value="80" style="width: 100%; accent-color: #0ea5e9;">
+            </div>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid #334155; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; justify-content: center; font-family: monospace; font-size: 0.85rem;">
+            <div style="margin-bottom: 0.5rem; color: #94a3b8;">ANB Difference: <strong id="val-anb" style="color: #22c55e; font-size: 1.1rem;">2.0°</strong></div>
+            <div id="ortho-diagnosis" style="padding: 0.4rem 0.8rem; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #22c55e; border-radius: 4px; font-weight: bold; text-align: center;">
+              Skeletal Class I (Normal Relationship)
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+    (function() {
+      // Perio Generator
+      const grid = document.getElementById('perio-teeth-grid');
+      if (grid) {
+        const teeth = [16, 15, 14, 13, 21, 22, 23, 24];
+        teeth.forEach(t => {
+          const card = document.createElement('div');
+          card.style.background = '#1e293b';
+          card.style.border = '1px solid #334155';
+          card.style.borderRadius = '6px';
+          card.style.padding = '8px';
+          card.style.textAlign = 'center';
+          card.innerHTML = `
+            <div style="font-size:0.75rem; font-weight:bold; color:#38bdf8; font-family:monospace; margin-bottom:4px;">#${t} FDI</div>
+            <div style="display:flex; justify-content:space-around; font-family:monospace; font-size:0.75rem; color:#f1f5f9;">
+              <span style="color:#22c55e;">2mm</span>
+              <span style="color:#f59e0b;">3mm</span>
+              <span style="color:#f43f5e; font-weight:bold;">4mm*</span>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
+
+      // Tab Toggle
+      const pTab = document.getElementById('perio-tab-btn');
+      const oTab = document.getElementById('ortho-tab-btn');
+      const pContent = document.getElementById('perio-content');
+      const oContent = document.getElementById('ortho-content');
+
+      if (pTab && oTab) {
+        pTab.addEventListener('click', () => {
+          pTab.style.background = '#0ea5e9'; pTab.style.color = '#fff';
+          oTab.style.background = '#1e293b'; oTab.style.color = '#94a3b8';
+          pContent.style.display = 'block'; oContent.style.display = 'none';
+        });
+        oTab.addEventListener('click', () => {
+          oTab.style.background = '#0ea5e9'; oTab.style.color = '#fff';
+          pTab.style.background = '#1e293b'; pTab.style.color = '#94a3b8';
+          oContent.style.display = 'block'; pContent.style.display = 'none';
+        });
+      }
+
+      // Ortho Calculation
+      const sSna = document.getElementById('slider-sna');
+      const sSnb = document.getElementById('slider-snb');
+      const vSna = document.getElementById('val-sna');
+      const vSnb = document.getElementById('val-snb');
+      const vAnb = document.getElementById('val-anb');
+      const diag = document.getElementById('ortho-diagnosis');
+
+      function updateOrtho() {
+        if (!sSna || !sSnb) return;
+        const sna = parseInt(sSna.value);
+        const snb = parseInt(sSnb.value);
+        const anb = sna - snb;
+        vSna.textContent = sna + '°';
+        vSnb.textContent = snb + '°';
+        vAnb.textContent = (anb >= 0 ? '+' : '') + anb + '.0°';
+
+        if (anb >= 1 && anb <= 4) {
+          diag.textContent = 'Skeletal Class I (Normal Relationship)';
+          diag.style.borderColor = '#22c55e'; diag.style.color = '#22c55e'; diag.style.background = 'rgba(34, 197, 94, 0.15)';
+        } else if (anb > 4) {
+          diag.textContent = 'Skeletal Class II (Maxillary Prognathism / Retrognathia)';
+          diag.style.borderColor = '#f59e0b'; diag.style.color = '#f59e0b'; diag.style.background = 'rgba(245, 158, 11, 0.15)';
+        } else {
+          diag.textContent = 'Skeletal Class III (Mandibular Prognathism / Anterior Crossbite)';
+          diag.style.borderColor = '#f43f5e'; diag.style.color = '#f43f5e'; diag.style.background = 'rgba(244, 63, 94, 0.15)';
+        }
+      }
+
+      if (sSna) sSna.addEventListener('input', updateOrtho);
+      if (sSnb) sSnb.addEventListener('input', updateOrtho);
+    })();
+    </script>
+
+</main>
 
   <!-- Site Footer -->
   

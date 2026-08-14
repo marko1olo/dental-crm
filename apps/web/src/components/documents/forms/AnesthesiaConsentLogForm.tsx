@@ -1,3 +1,4 @@
+import React from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { AnamnesisField } from "../AnamnesisField";
 import {

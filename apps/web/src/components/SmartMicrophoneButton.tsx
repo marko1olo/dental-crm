@@ -1,6 +1,5 @@
 import { Loader2, Mic } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { DictationHints } from "../DictationHints";
 import { useShortDictation } from "../hooks/useShortDictation";
 

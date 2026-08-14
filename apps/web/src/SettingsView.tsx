@@ -1660,17 +1660,12 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
 	const flags = useWorkspaceProfile();
 	let typedSettingsTabs = (settingsTabs ?? []) as SettingsTab[];
-	if (!flags.hasMarketingModule)
-		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "marketing");
-	if (!flags.hasAnalyticsModule)
-		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "reporting");
+	if (!flags.hasMarketingModule) typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "marketing");
+	if (!flags.hasAnalyticsModule) typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "reporting");
 	/* Признак склада остался при самом разделе: вкладки настроек у него больше нет. */
-	if (!flags.hasBpmWorkflows)
-		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "bpmn");
-	if (!flags.hasClinicalRules)
-		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "rules");
-	if (!flags.hasInsuranceCoPay)
-		typedSettingsTabs = typedSettingsTabs.filter((t) => t?.id !== "insurance");
+	if (!flags.hasBpmWorkflows) typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "bpmn");
+	if (!flags.hasClinicalRules) typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "rules");
+	if (!flags.hasInsuranceCoPay) typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "insurance");
 	/*
 	 * Настройки мессенджеров врачу не показываем: бот клиники, номер WhatsApp и
 	 * рассылки — дело администратора. Это условие стояло в прежней раскладке

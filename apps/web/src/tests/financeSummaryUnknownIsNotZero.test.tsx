@@ -229,11 +229,23 @@ const doorReportsUnknown = (door: string) =>
 	/if \(!dashboard \|\| !documentPatient\) return null;/.test(door) &&
 	!/totalDueRub:\s*0/.test(door);
 
+const loadLogicSource = () => {
+	const domainPath = join(
+		webSrcDir,
+		"hooks",
+		"domains",
+		"useDocumentWorkflowModule.ts",
+	);
+	try {
+		return readFileSync(domainPath, "utf8");
+	} catch {
+		return readFileSync(join(webSrcDir, "useAppLogic.tsx"), "utf8");
+	}
+};
+
 describe("источник сводки: отсутствие данных возвращается как null", () => {
-	it("useAppLogic.tsx не подставляет сводку из нулей", () => {
-		const door = unknownTotalDoor(
-			readFileSync(join(webSrcDir, "useAppLogic.tsx"), "utf8"),
-		);
+	it("useDocumentWorkflowModule.ts не подставляет сводку из нулей", () => {
+		const door = unknownTotalDoor(loadLogicSource());
 		assert.ok(
 			doorReportsUnknown(door),
 			`при отсутствии дашборда или пациента сводка снова собирается из нулей:\n${door}`,
@@ -241,10 +253,8 @@ describe("источник сводки: отсутствие данных во�
 	});
 
 	it("тип мемо допускает признак «не посчитано»", () => {
-		const door = unknownTotalDoor(
-			readFileSync(join(webSrcDir, "useAppLogic.tsx"), "utf8"),
-		);
-		assert.match(door, /useMemo<Dashboard\["billingSummary"\]\s*\|\s*null>/);
+		const door = unknownTotalDoor(loadLogicSource());
+		assert.match(door, /useMemo<[\s\n]*Dashboard\["billingSummary"\]\s*\|\s*null>/);
 	});
 
 	it("сама проверка видит дефект", () => {

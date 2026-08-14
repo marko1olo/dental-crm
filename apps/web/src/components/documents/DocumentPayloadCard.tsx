@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import React from "react";
 
 /**
  * Карточка формы документа: заголовок, пояснение и складной блок ручной правки.

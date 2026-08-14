@@ -1869,9 +1869,7 @@ export function useDocumentWorkflowModule({
 	 * один: App.tsx -> FinanceView -> FinancePlanningOverview, и он рисует блок
 	 * как неопределённый.
 	 */
-	const patientBillingSummary = useMemo<
-		Dashboard["billingSummary"] | null
-	>(() => {
+	const patientBillingSummary = useMemo<Dashboard["billingSummary"] | null>(() => {
 		if (!dashboard || !documentPatient) return null;
 		const activePlanItems = activeTreatmentPlanItems.filter(
 			(item) => item.status !== "cancelled",

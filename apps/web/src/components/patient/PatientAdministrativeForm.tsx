@@ -1,5 +1,5 @@
 import type { PatientAdministrativeProfile } from "@dental/shared";
-import type { ChangeEvent } from "react";
+import React, { type ChangeEvent } from "react";
 import { formatPhoneNumber } from "../../utils/inputSanitation";
 
 /*
@@ -238,10 +238,7 @@ export function PatientAdministrativeForm({
 					autoComplete="tel"
 					value={patientAdministrativeProfileDraft.legalRepresentativePhone}
 					onChange={(event: TextFieldChangeEvent) =>
-						updatePatientAdministrativeProfileDraft(
-							"legalRepresentativePhone",
-							formatPhoneNumber(event.target.value),
-						)
+						updatePatientAdministrativeProfileDraft("legalRepresentativePhone", formatPhoneNumber(event.target.value))
 					}
 					placeholder="+7..."
 				/>

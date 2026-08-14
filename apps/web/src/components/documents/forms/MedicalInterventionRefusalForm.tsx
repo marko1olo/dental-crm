@@ -1,3 +1,4 @@
+import React from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
 import { appendChipToText } from "../documentChipText";
@@ -129,8 +130,7 @@ export function MedicalInterventionRefusalForm({
 							rows={2}
 							className="mt-0"
 						/>
-						<QuickChipsRow
-							chips={REFUSAL_REASON_CHIPS}
+						<QuickChipsRow chips={REFUSAL_REASON_CHIPS}
 							onPick={(chip) =>
 								setRefusalPatientReason(
 									appendChipToText(refusalPatientReason, chip),
@@ -160,8 +160,7 @@ export function MedicalInterventionRefusalForm({
 							rows={3}
 							className="mt-0"
 						/>
-						<QuickChipsRow
-							chips={REFUSAL_RISK_CHIPS}
+						<QuickChipsRow chips={REFUSAL_RISK_CHIPS}
 							onPick={(chip) =>
 								setRefusalExplainedRisks(
 									appendChipToText(refusalExplainedRisks, chip),
@@ -189,8 +188,7 @@ export function MedicalInterventionRefusalForm({
 							rows={3}
 							className="mt-0"
 						/>
-						<QuickChipsRow
-							chips={REFUSAL_ALT_CHIPS}
+						<QuickChipsRow chips={REFUSAL_ALT_CHIPS}
 							onPick={(chip) =>
 								setRefusalAlternatives(
 									appendChipToText(refusalAlternatives, chip),
@@ -222,8 +220,7 @@ export function MedicalInterventionRefusalForm({
 							rows={3}
 							className="mt-0"
 						/>
-						<QuickChipsRow
-							chips={REFUSAL_WARNING_CHIPS}
+						<QuickChipsRow chips={REFUSAL_WARNING_CHIPS}
 							onPick={(chip) =>
 								setRefusalUrgentWarningSigns(
 									appendChipToText(refusalUrgentWarningSigns, chip),

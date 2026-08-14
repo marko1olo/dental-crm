@@ -186,10 +186,10 @@ describe("реквизиты пациента рисуются целиком", 
 
 	it("телефон представителя приводится к тому же виду, что и телефон пациента", () => {
 		assert.equal(formatPhoneNumber("89123456789"), "+7 (912) 345-67-89");
-		assert.ok(
-			read("components/patient/PatientAdministrativeForm.tsx").includes(
-				'updatePatientAdministrativeProfileDraft("legalRepresentativePhone", formatPhoneNumber(event.target.value))',
-			),
+		const source = read("components/patient/PatientAdministrativeForm.tsx");
+		assert.match(
+			source,
+			/updatePatientAdministrativeProfileDraft\(\s*"legalRepresentativePhone",\s*formatPhoneNumber\(event\.target\.value\)\s*\)/,
 			"телефон представителя снова пишется сырым: разнобой форматов ломает поиск по номеру и рассылку",
 		);
 	});

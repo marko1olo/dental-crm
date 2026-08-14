@@ -355,9 +355,8 @@ export function DayConfirmationsPanel() {
 						</ul>
 
 						<fieldset
-							className="quick-chips-row"
+							className="quick-chips-row p-0 m-0 border-0"
 							aria-label="Что показывать в списке"
-							style={{ border: "none", padding: 0, margin: 0 }}
 						>
 							<legend className="sr-only">Что показывать в списке</legend>
 							<button

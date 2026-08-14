@@ -1,3 +1,5 @@
+import React from "react";
+
 /**
  * Поле анамнеза: пустое по умолчанию, с быстрой вставкой отрицательного ответа.
  *
@@ -15,7 +17,7 @@
  * когда есть что записать.
  */
 
-type AnamnesisFieldProps = {
+export interface AnamnesisFieldProps {
 	/** Подпись поля, как её видит врач. */
 	label: string;
 	value: string;

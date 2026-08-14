@@ -14,7 +14,7 @@ export function showToast(
 	type: ToastType = "info",
 	duration: number = 4000,
 ) {
-	if (typeof window !== "undefined") {
+	if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
 		const event = new CustomEvent<ToastEventDetail>("dente-toast", {
 			detail: { text, type, duration },
 		});

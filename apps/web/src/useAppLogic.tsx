@@ -5,6 +5,8 @@ import {
 	type DentalPricelistAnalysisResponse,
 	documentFactoryGroups,
 	type ImagingStudyKind,
+	type ImportCommitResponse,
+	type ImportIntakeResponse,
 	type LocalBridgeReadinessResponse,
 	type LocalBridgeUsePlansResponse,
 	type StaffRole,
@@ -3248,6 +3250,90 @@ export function useAppLogic(): any {
 		return () => window.removeEventListener("hashchange", syncView);
 	}, [setSettingsTab, setCurrentView]);
 
+	const previewImport = useCallback(async () => {
+		const rawText = (importText || "").trim();
+		if (!rawText) {
+			showToast(
+				"Внимание, пустой текст для импорта: проверьте ввод, OCR и настройки формата.",
+				"error",
+			);
+			return;
+		}
+		setIsImportLoading(true);
+		try {
+			const res = await migrationQueries.previewImport({
+				sourceName: "manual_input",
+				sourceKind: importSourceKind || "csv_text",
+				rawText,
+			});
+			const intake = (await res.json()) as ImportIntakeResponse;
+			setImportIntake(intake);
+			setImportPreview(intake?.preview ?? null);
+			setImportCommit(null);
+		} catch (e) {
+			logger.error("[import preview] Ошибка при превью", e);
+			setImportIntake(null);
+			setImportPreview(null);
+			showToast(
+				actionFailureToast(
+					"Ошибка парсинга при превью",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
+		} finally {
+			setIsImportLoading(false);
+		}
+	}, [
+		importText,
+		importSourceKind,
+		migrationQueries,
+		setImportIntake,
+		setImportPreview,
+		setImportCommit,
+		setIsImportLoading,
+	]);
+
+	const commitImport = useCallback(async () => {
+		const rawText = (importText || "").trim();
+		if (!rawText || !importPreview) {
+			showToast(
+				"Импорт невозможен: сначала необходимо получить превью (preview) и убедиться, что текст не пуст.",
+				"error",
+			);
+			return;
+		}
+		setIsImportCommitting(true);
+		try {
+			const res = await migrationQueries.commitImport({
+				sourceName: "manual_input",
+				sourceKind: importSourceKind || "csv_text",
+				rawText,
+			});
+			const result = (await res.json()) as ImportCommitResponse;
+			setImportCommit(result);
+			showToast("Импорт пациентов успешно завершен", "success");
+		} catch (e) {
+			logger.error("[import commit] Ошибка при коммите импорта", e);
+			showToast(
+				actionFailureToast(
+					"Ошибка фиксации импорта пациентов",
+					(e as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
+		} finally {
+			setIsImportCommitting(false);
+		}
+	}, [
+		importText,
+		importPreview,
+		importSourceKind,
+		migrationQueries,
+		setImportCommit,
+		setIsImportCommitting,
+	]);
+
 	useEffect(() => {
 		/*
 		 * Здесь БОЛЬШЕ НЕ ОХРАННИК — решение о том, что рисовать, принято выше при
@@ -4937,6 +5023,8 @@ export function useAppLogic(): any {
 		...staffSettingsLogic,
 		...patientIntakeLogic,
 		...migrationQueries,
+		previewImport,
+		commitImport,
 		...imagingQueries,
 		...communicationsQueries,
 		activeCommunicationTasks: null,

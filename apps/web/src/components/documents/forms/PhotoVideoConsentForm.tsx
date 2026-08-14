@@ -1,4 +1,5 @@
 import type { PhotoVideoConsentMaterial } from "@dental/shared";
+import React from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import { photoVideoConsentBlockersReview } from "../photoVideoConsentBlockers";
