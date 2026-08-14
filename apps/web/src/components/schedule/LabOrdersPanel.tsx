@@ -735,7 +735,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										disabled={deletingId === order.id}
 										aria-busy={deletingId === order.id}
 										onClick={() => handleDeleteOrder(order.id)}
-										className="p-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+										className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 									>
 										<Trash2 className="w-3.5 h-3.5" />
 									</button>

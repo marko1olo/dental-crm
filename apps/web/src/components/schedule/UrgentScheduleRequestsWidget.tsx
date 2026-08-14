@@ -38,13 +38,6 @@ export function UrgentScheduleRequestsWidget() {
 			})
 			.catch((err) => {
 				logger.error("Failed to fetch urgent requests", err);
-				showToast(
-					actionFailureToast(
-						"Не удалось загрузить срочные обращения",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				setLoading(false);
 			});
 	}, []);

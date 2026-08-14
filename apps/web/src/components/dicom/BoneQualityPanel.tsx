@@ -170,7 +170,7 @@ export function BoneQualityPanel({
 							onChange={(e) =>
 								onSystemChange?.(e.target.value as ImplantSystem)
 							}
-							className="w-full text-xs p-1.5 rounded-md border"
+							className="w-full text-xs p-1.5 min-h-[44px] rounded-md border"
 							style={{
 								background: "var(--surface-50)",
 								color: "var(--ink)",

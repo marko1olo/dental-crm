@@ -89,13 +89,6 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					const data = await res.json().catch((err: any) => {
 						logger.error(err);
-						showToast(
-							actionFailureToast(
-								"Ошибка чтения ответа",
-								(err as { status?: number })?.status ?? null,
-							),
-							"error",
-						);
 						return null;
 					});
 					if (cancelled) return;
@@ -106,13 +99,6 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 					setFailure({ status: res.status });
 				}
 			} catch (e) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(e as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (cancelled || (e as Error)?.name === "AbortError") return;
 				logger.error("Failed to fetch AI no-show risk", e);
 				setFailure({ status: null });

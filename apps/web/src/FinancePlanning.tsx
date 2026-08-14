@@ -33,7 +33,7 @@ function ruCount(value: number, forms: [string, string, string]): string {
  * незачем на него завязываться. Расхождение слов не оставлено на честное слово —
  * равенство закреплено проверкой (tests/financeSummaryUnknownIsNotZero.test.tsx).
  */
-export const financeSummaryUnknownLabel = "не определено";
+export const financeSummaryUnknownLabel = "—";
 
 type FinancePlanningOverviewProps = {
 	activePaymentsCount: number;
@@ -120,7 +120,9 @@ export function FinancePlanningOverview({
 			>
 				<article>
 					<span>План лечения</span>
-					<strong>{money(billingSummary?.totalPlannedRub ?? null)}</strong>
+					<strong>
+						{billingSummary ? money(billingSummary.totalPlannedRub) : "—"}
+					</strong>
 					<p>
 						{billingSummary
 							? ruCount(billingSummary.openTreatmentItems, [
@@ -133,10 +135,13 @@ export function FinancePlanningOverview({
 				</article>
 				<article>
 					<span>Оплачено</span>
-					<strong>{money(billingSummary?.totalPaidRub ?? null)}</strong>
+					<strong>
+						{billingSummary ? money(billingSummary.totalPaidRub) : "—"}
+					</strong>
 					<p>
-						{ruCount(activePaymentsCount, ["платеж", "платежа", "платежей"])} по
-						текущему пациенту
+						{billingSummary
+							? `${ruCount(activePaymentsCount, ["платеж", "платежа", "платежей"])} по текущему пациенту`
+							: financeSummaryUnknownLabel}
 					</p>
 				</article>
 				<article
@@ -145,7 +150,9 @@ export function FinancePlanningOverview({
 					}
 				>
 					<span>Остаток</span>
-					<strong>{money(billingSummary?.totalDueRub ?? null)}</strong>
+					<strong>
+						{billingSummary ? money(billingSummary.totalDueRub) : "—"}
+					</strong>
 					<p>
 						{billingSummary
 							? `${ruCount(billingSummary.unpaidDocuments, ["документ", "документа", "документов"])} без оплаты`
@@ -155,7 +162,9 @@ export function FinancePlanningOverview({
 				<article>
 					<span>Вычет</span>
 					<strong>
-						{money(billingSummary?.taxDeductionEligibleRub ?? null)}
+						{billingSummary
+							? money(billingSummary.taxDeductionEligibleRub)
+							: "—"}
 					</strong>
 					<p>медицинские услуги, пригодные для справки</p>
 				</article>

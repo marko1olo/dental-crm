@@ -162,11 +162,23 @@ export function PanoramicRendererWindow({
 		zStepWorld,
 	]);
 
+	const isClient = typeof window !== "undefined";
+	const screenW = isClient ? window.innerWidth : 800;
+	const screenH = isClient ? window.innerHeight : 600;
+	const initialWidth = Math.min(800, Math.max(320, screenW - 32));
+	const initialHeight = Math.min(300, Math.max(200, Math.round(screenH * 0.4)));
+	const minW = Math.min(400, Math.max(280, screenW - 16));
+
 	return (
 		<Rnd
-			default={{ x: 100, y: 100, width: 800, height: 300 }}
-			minWidth={400}
-			minHeight={200}
+			default={{
+				x: Math.max(8, Math.round((screenW - initialWidth) / 2)),
+				y: Math.max(60, Math.round((screenH - initialHeight) / 2)),
+				width: initialWidth,
+				height: initialHeight,
+			}}
+			minWidth={minW}
+			minHeight={180}
 			bounds="window"
 			className="bg-neutral-900 border border-neutral-700 shadow-2xl rounded-lg overflow-hidden flex flex-col z-50"
 		>

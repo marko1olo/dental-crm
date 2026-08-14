@@ -76,11 +76,10 @@
 	}
 
 	/* --- Плотные наборы чипов ---
-     36px + промежуток 8px: по WCAG 2.5.8 допустимо, когда цели
-     разнесены, и не ломает плотную сетку быстрых сумм. */
+     44px для соблюдения минимальной зоны нажатия на сенсорных устройствах. */
 	.quick-chip,
 	.dictation-quick-row button {
-		min-height: 36px;
+		min-height: 44px;
 	}
 
 	/* !important нужен только там, где конкурирующее объявление тоже с
@@ -89,11 +88,11 @@
        main.css  .appointment-edit-button { min-height: 28px !important }
      Замерено до правки: чипы быстрых сумм оплаты 55x24, 56x24, 41x24. */
 	.quick-chip--sm {
-		min-height: 36px;
+		min-height: 44px;
 	}
 
 	.appointment-edit-button {
-		min-height: 40px;
+		min-height: 44px;
 	}
 
 	.quick-chips-row,
@@ -108,7 +107,7 @@
 	input[type="datetime-local"],
 	input[type="time"],
 	input[type="month"] {
-		min-height: 40px;
+		min-height: 44px;
 	}
 
 	/* --- Кнопки-иконки без текста --- */
@@ -117,8 +116,8 @@
 	button[aria-label]:not(.primary-button):not(.secondary-button):not(
 		.nav-item
 	) {
-		min-height: 40px;
-		min-width: 40px;
+		min-height: 44px;
+		min-width: 44px;
 	}
 
 	/* --- Раскрывающиеся блоки ---
@@ -168,7 +167,7 @@
      задаём размер обеих сторон. */
 	.smart-ai-booking .relative button,
 	.smart-field button[aria-label] {
-		min-height: 40px;
-		min-width: 40px;
+		min-height: 44px;
+		min-width: 44px;
 	}
 }

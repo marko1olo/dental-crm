@@ -132,13 +132,17 @@ describe("финансовая сводка: непосчитанное не р�
 		for (const caption of moneyCaptions) {
 			assert.equal(
 				tileValue(markup, caption),
-				moneyUnknownLabel,
-				`плитка «${caption}» при отсутствии сводки печатает не «${moneyUnknownLabel}»`,
+				"—",
+				`плитка «${caption}» при отсутствии сводки печатает не «—»`,
 			);
 		}
 		assert.ok(
 			!markup.includes("0 ₽"),
 			`при отсутствии сводки на экране появился ноль рублей: ${markup}`,
+		);
+		assert.ok(
+			!markup.includes("не определено"),
+			`при отсутствии сводки на экране появился спам «не определено»: ${markup}`,
 		);
 	});
 
@@ -197,10 +201,8 @@ describe("финансовая сводка: непосчитанное не р�
 		);
 	});
 
-	it("подпись непосчитанного счётчика дословно совпадает с подписью непосчитанной суммы", () => {
-		// В одной плитке стоят сумма и счётчик. Два разных слова про одно и то же
-		// состояние читаются как два разных состояния.
-		assert.equal(financeSummaryUnknownLabel, moneyUnknownLabel);
+	it("подпись непосчитанного счётчика нейтральна и равна «—»", () => {
+		assert.equal(financeSummaryUnknownLabel, "—");
 	});
 });
 

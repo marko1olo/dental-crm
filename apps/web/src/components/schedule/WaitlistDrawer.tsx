@@ -417,7 +417,7 @@ export function WaitlistDrawer(props: Props) {
 						<button
 							type="button"
 							onClick={() => setIsMinimized(true)}
-							className="p-1 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+							className="p-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 							title="Свернуть окно"
 						>
 							<svg
@@ -439,7 +439,7 @@ export function WaitlistDrawer(props: Props) {
 							type="button"
 							onClick={onClose}
 							aria-label="Закрыть"
-							className="p-1 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+							className="p-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 						>
 							<X className="w-5 h-5" />
 						</button>

@@ -90,13 +90,13 @@ export const CallPlayer: React.FC<{
 			<button
 				type="button"
 				onClick={togglePlayPause}
-				className="flex items-center justify-center w-7 h-7 rounded-full bg-sky-500 hover:bg-sky-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+				className="flex items-center justify-center min-h-[44px] min-w-[44px] w-11 h-11 rounded-full bg-sky-500 hover:bg-sky-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
 				aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
 			>
 				{isPlaying ? (
-					<Pause className="w-3.5 h-3.5" aria-hidden="true" />
+					<Pause className="w-4 h-4" aria-hidden="true" />
 				) : (
-					<Play className="w-3.5 h-3.5 ml-0.5" aria-hidden="true" />
+					<Play className="w-4 h-4 ml-0.5" aria-hidden="true" />
 				)}
 			</button>
 			<span className="text-xs font-mono text-slate-600 dark:text-slate-400 min-w-[2.5rem] text-right">
@@ -118,7 +118,7 @@ export const CallPlayer: React.FC<{
 			<button
 				type="button"
 				onClick={handleRateChange}
-				className="px-2 py-0.5 text-xs font-medium rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+				className="px-2.5 py-1.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-xs font-medium rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
 				title="Скорость воспроизведения"
 			>
 				{playbackRate}x

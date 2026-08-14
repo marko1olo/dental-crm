@@ -2702,9 +2702,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 									{visitWarnings && visitWarnings.length > 0 && (
 										<div className="_ccm-warn">
-											<strong>⚠️ Риски:</strong> {/*  */}
-											biome-ignore lint/suspicious/noExplicitAny: automated
-											suppression
+											<strong>⚠️ Риски:</strong>{" "}
 											{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 											{visitWarnings.map((w: any) => w.title).join(" · ")}
 										</div>
@@ -2718,9 +2716,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										data-color="green"
 										style={
 											{
-												"--ab": "#f0fdf4",
-												"--af": "#166534",
-												"--abr": "#bbf7d0",
+												"--ab": "var(--ok-bg, #f0fdf4)",
+												"--af": "var(--ok-fg, #166534)",
+												"--abr": "var(--ok-fg, #bbf7d0)",
 												// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 											} as any
 										}
@@ -2735,9 +2733,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										data-color="green"
 										style={
 											{
-												"--ab": "#f0fdf4",
-												"--af": "#166534",
-												"--abr": "#bbf7d0",
+												"--ab": "var(--ok-bg, #f0fdf4)",
+												"--af": "var(--ok-fg, #166534)",
+												"--abr": "var(--ok-fg, #bbf7d0)",
 												// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 											} as any
 										}
@@ -2775,9 +2773,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										data-color="amber"
 										style={
 											{
-												"--ab": "#fffbeb",
-												"--af": "#78350f",
-												"--abr": "#fde68a",
+												"--ab": "var(--warn-bg, #fffbeb)",
+												"--af": "var(--warn-fg, #78350f)",
+												"--abr": "var(--warn-fg, #fde68a)",
 												// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 											} as any
 										}

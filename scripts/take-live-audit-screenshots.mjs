@@ -83,21 +83,21 @@ async function seedTokensAndGo(page, clinicToken, staffToken, url) {
 
   // Step 2: navigate to target page
   try {
-    await page.goto(url, { waitUntil: "load", timeout: 20000 });
+    await page.goto(url, { waitUntil: "networkidle2", timeout: 25000 });
   } catch (e) {
     console.log(`  [WARN] Page load: ${e.message}`);
   }
 
-  // Wait until .topbar and .panel/.workspace are mounted and visible
+  // Wait until boot state disappears and main layout is rendered
   try {
-    await page.waitForSelector(".topbar", { visible: true, timeout: 30000 });
-    await page.waitForSelector(".panel, .workspace, .work-grid", { visible: true, timeout: 30000 });
+    await page.waitForFunction(() => !document.querySelector(".boot-state"), { timeout: 20000 });
+    await page.waitForSelector(".topbar", { visible: true, timeout: 20000 });
   } catch (e) {
-    console.log(`  [WARN] Wait selectors: ${e.message}`);
+    console.log(`  [WARN] Wait boot-state/topbar: ${e.message}`);
   }
 
   // Settle CSS transitions & fetch calls
-  await new Promise(r => setTimeout(r, 1500));
+  await new Promise(r => setTimeout(r, 1200));
 }
 
 async function applyTheme(page, dark) {

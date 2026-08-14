@@ -146,13 +146,6 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			})
 			.catch((err) => {
 				logger.error("[Dente]", err);
-				showToast(
-					actionFailureToast(
-						"Статус блокировки записи не прочитан",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				// Не выдаём отказ чтения за «не заблокирован» — иначе админ запишет вслепую.
 				if (!cancelled) {
 					setBlacklistStatus({
@@ -506,7 +499,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							aria-expanded={showCreateForm}
 							onClick={() => setShowCreateForm(!showCreateForm)}
 							className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
-							style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
+							style={{ minHeight: "44px", padding: "0 12px", fontSize: "12px" }}
 						>
 							{showCreateForm
 								? "Скрыть ручной ввод"

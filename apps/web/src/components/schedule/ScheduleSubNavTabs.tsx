@@ -41,7 +41,7 @@ export function ScheduleSubNavTabs({
 				className="secondary-button shrink-0 whitespace-nowrap"
 				type="button"
 				onClick={() => setShowShiftAnalytics((prev) => !prev)}
-				style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
+				style={{ minHeight: "44px", padding: "0 12px", fontSize: "12px" }}
 			>
 				{showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
 			</button>

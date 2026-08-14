@@ -36,13 +36,6 @@ export function EgiszMultipleDiagnosesWidget() {
 				setItems(Array.isArray(data) ? data : []);
 				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
-				showToast(
-					actionFailureToast(
-						"Загрузка диагнозов ЕГИСЗ",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				setError(err?.message || "Ошибка загрузки сопутствующих диагнозов");
 			} finally {
 				setLoading(false);
@@ -66,7 +59,7 @@ export function EgiszMultipleDiagnosesWidget() {
 					type="button"
 					disabled={loading}
 					onClick={fetchDiagnoses}
-					className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors"
+					className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
 					title="Обновить сопутствующие диагнозы"
 				>
 					<RefreshCw

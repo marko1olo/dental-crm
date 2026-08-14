@@ -2720,13 +2720,7 @@ export function useAppLogic(): any {
 				if (response.ok) setRecentPatientViewsVersion((version) => version + 1);
 			})
 			.catch((err) => {
-				showToast(
-					actionFailureToast(
-						"Ошибка обновления списка пациентов",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
+				logger.error("[Dente] Failed to record recent patient view", err);
 			});
 	}, [selectedPatientId, dashboard, auth.denteClinicalMutationHeaders]);
 

@@ -976,6 +976,8 @@ export function Cornerstone3DViewer({
 					display: "flex",
 					alignItems: "center",
 					gap: "12px",
+					maxWidth: "calc(100% - 32px)",
+					overflowX: "auto",
 					backgroundColor: "rgba(255,255,255,0.1)",
 					backdropFilter: "blur(12px)",
 					WebkitBackdropFilter: "blur(12px)",
@@ -988,6 +990,8 @@ export function Cornerstone3DViewer({
 				<div
 					style={{
 						display: "flex",
+						flexWrap: "wrap",
+						maxWidth: "100%",
 						backgroundColor: "rgba(0,0,0,0.4)",
 						borderRadius: "12px",
 						padding: "4px",

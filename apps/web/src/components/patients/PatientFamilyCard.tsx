@@ -100,13 +100,6 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						setSearchFailed(true);
 					}
 				} catch (e) {
-					showToast(
-						actionFailureToast(
-							"Ошибка выполнения операции",
-							(e as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
 					logger.error("Family search failed", e);
 					setSearchResults([]);
 					setSearchFailed(true);
