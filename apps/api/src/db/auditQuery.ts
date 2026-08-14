@@ -70,7 +70,7 @@ export async function recordAuditEventInDb(
 			`[auditQuery] ОТКАЗ ЗАПИСИ в audit_events: вставка не вернула строку. ` +
 				`Событие подлежит ручному внесению: ${emergencyRecord()}`,
 		);
-		throw new Error("Failed to insert audit event");
+		throw new Error("Не удалось записать событие аудита");
 	}
 
 	return {

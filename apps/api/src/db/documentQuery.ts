@@ -215,7 +215,7 @@ export async function createGeneratedDocumentInDb(
 		)
 		.limit(1);
 	if (!ownedPatient) {
-		throw new Error("document create: patient does not belong to organization");
+		throw new Error("Пациент не принадлежит организации: создание документа отклонено");
 	}
 	if (input.visitId) {
 		const [ownedVisit] = await db
@@ -231,7 +231,7 @@ export async function createGeneratedDocumentInDb(
 			.limit(1);
 		if (!ownedVisit) {
 			throw new Error(
-				"document create: visit does not belong to organization/patient",
+				"Приём не принадлежит организации или пациенту: создание документа отклонено",
 			);
 		}
 	}
@@ -252,7 +252,7 @@ export async function createGeneratedDocumentInDb(
 		})
 		.returning();
 
-	if (!record) throw new Error("Failed to create document");
+	if (!record) throw new Error("Не удалось создать документ в базе данных");
 
 	await recordAuditEvent({
 		organizationId,

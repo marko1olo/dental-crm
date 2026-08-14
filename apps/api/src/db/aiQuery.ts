@@ -118,7 +118,7 @@ export async function createAiRecognitionJobInDb(
 		})
 		.returning();
 
-	if (!job) throw new Error("Failed to create AI job in DB");
+	if (!job) throw new Error("Не удалось создать задачу ИИ в базе данных");
 
 	const aiJob = {
 		id: job.id,

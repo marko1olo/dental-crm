@@ -36,7 +36,7 @@ export async function createMessageTemplateCatalog(
 			isActive: input.isActive ?? true,
 		})
 		.returning();
-	if (!row) throw new Error("Failed to create message template catalog");
+	if (!row) throw new Error("Не удалось создать шаблон сообщения");
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	return row as any;
 }
@@ -65,7 +65,7 @@ export async function updateMessageTemplateCatalog(
 		)
 		.returning();
 	if (!row)
-		throw new Error("Message template catalog not found or update failed");
+		throw new Error("Шаблон сообщения не найден или не удалось обновить");
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	return row as any;
 }
@@ -84,5 +84,5 @@ export async function deleteMessageTemplateCatalog(
 		)
 		.returning();
 	if (!row)
-		throw new Error("Message template catalog not found or delete failed");
+		throw new Error("Шаблон сообщения не найден или не удалось удалить");
 }

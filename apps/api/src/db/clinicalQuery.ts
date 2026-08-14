@@ -216,7 +216,7 @@ export async function createClinicalRuleInDb(
 		.returning();
 
 	if (!record) {
-		throw new Error("Failed to create clinical rule");
+		throw new Error("Не удалось создать клиническое правило");
 	}
 
 	return mapClinicalRule(record);
@@ -271,7 +271,7 @@ export async function updateClinicalRuleInDb(
 		.returning();
 
 	if (!record) {
-		throw new Error("Failed to update clinical rule");
+		throw new Error("Не удалось обновить клиническое правило");
 	}
 
 	return mapClinicalRule(record);

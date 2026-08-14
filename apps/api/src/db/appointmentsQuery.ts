@@ -321,7 +321,7 @@ export async function createAppointmentInDb(
 			})
 			.returning();
 
-		if (!created) throw new Error("Failed to insert appointment");
+		if (!created) throw new Error("Не удалось создать запись на приём в базе данных");
 
 		return {
 			id: created.id,
@@ -453,7 +453,7 @@ export async function updateAppointmentInDb(
 		return row;
 	});
 
-	if (!updated) throw new Error("Failed to update appointment");
+	if (!updated) throw new Error("Не удалось обновить запись на приём");
 
 	return {
 		id: updated.id,

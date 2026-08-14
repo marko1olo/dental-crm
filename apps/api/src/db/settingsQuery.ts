@@ -234,7 +234,7 @@ export async function saveUiPreferencesInDb(
 
 	for (let attempt = 1; attempt <= UI_PREFERENCES_SAVE_ATTEMPTS; attempt += 1) {
 		const row = await uiPreferencesRow(organizationId);
-		if (!row) throw new Error("No users found to save preferences to.");
+		if (!row) throw new Error("Не найден пользователь для сохранения настроек интерфейса.");
 		const stored = (row.uiPreferences ?? null) as UiPreferences | null;
 		if (
 			stored &&
@@ -283,7 +283,7 @@ export async function getClinicSettingsFromDb(
 		.from(schema.organizations)
 		.where(eq(schema.organizations.id, organizationId))
 		.limit(1);
-	if (!org) throw new Error("Organization not found");
+	if (!org) throw new Error("Организация не найдена в базе данных");
 
 	const [clinic] = await db
 		.select()
@@ -463,7 +463,7 @@ export async function createStaffMemberInDb(
 		.returning();
 
 	if (!inserted) {
-		throw new Error("Failed to insert staff member into database.");
+		throw new Error("Не удалось добавить сотрудника в базу данных.");
 	}
 
 	return {

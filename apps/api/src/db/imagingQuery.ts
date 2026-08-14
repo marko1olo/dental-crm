@@ -153,7 +153,7 @@ export async function createImagingStudiesInDb(
 		);
 
 	if (ownedPatients.length !== patientIds.length) {
-		throw new Error("imaging create: some patients do not belong to organization");
+		throw new Error("Не все пациенты принадлежат организации: создание снимка отклонено");
 	}
 
 	const records = await db
@@ -215,7 +215,7 @@ export async function createImagingStudyInDb(
 		)
 		.limit(1);
 	if (!ownedPatient) {
-		throw new Error("imaging create: patient does not belong to organization");
+		throw new Error("Пациент не принадлежит организации: создание снимка отклонено");
 	}
 	if (input.visitId) {
 		const [ownedVisit] = await db
@@ -231,7 +231,7 @@ export async function createImagingStudyInDb(
 			.limit(1);
 		if (!ownedVisit) {
 			throw new Error(
-				"imaging create: visit does not belong to organization/patient",
+				"Приём не принадлежит организации или пациенту: создание снимка отклонено",
 			);
 		}
 	}
@@ -259,7 +259,7 @@ export async function createImagingStudyInDb(
 		.returning();
 
 	if (!record) {
-		throw new Error("Failed to create imaging study");
+		throw new Error("Не удалось создать запись исследования");
 	}
 
 	return mapImagingStudy(record);
@@ -282,7 +282,7 @@ export async function updateImagingStudyAiSummaryInDb(
 		.returning();
 
 	if (!record) {
-		throw new Error("Failed to update imaging study");
+		throw new Error("Не удалось обновить исследование");
 	}
 
 	return mapImagingStudy(record);
@@ -347,7 +347,7 @@ export async function getOrCreateImagingViewerSession(
 			warnings: [],
 		})
 		.returning();
-	if (!newSession) throw new Error("Failed to insert session");
+	if (!newSession) throw new Error("Не удалось создать сессию в базе данных");
 
 	return {
 		id: newSession.id,
@@ -412,7 +412,7 @@ export async function saveImagingViewerSession(
 				),
 			)
 			.returning();
-		if (!updated) throw new Error("Failed to update session");
+		if (!updated) throw new Error("Не удалось обновить сессию");
 
 		return {
 			id: updated.id,
@@ -445,7 +445,7 @@ export async function saveImagingViewerSession(
 			warnings: [],
 		})
 		.returning();
-	if (!newSession) throw new Error("Failed to insert session");
+	if (!newSession) throw new Error("Не удалось создать сессию в базе данных");
 
 	return {
 		id: newSession.id,
@@ -537,7 +537,7 @@ export async function saveDicomWorkbenchBundle(
 				),
 			)
 			.returning();
-		if (!updated) throw new Error("Failed to update bundle");
+		if (!updated) throw new Error("Не удалось обновить пакет исследований");
 
 		return {
 			id: updated.id,
@@ -573,7 +573,7 @@ export async function saveDicomWorkbenchBundle(
 			warnings: [],
 		})
 		.returning();
-	if (!newBundle) throw new Error("Failed to insert bundle");
+	if (!newBundle) throw new Error("Не удалось создать пакет исследований");
 
 	return {
 		id: newBundle.id,
