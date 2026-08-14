@@ -178,7 +178,24 @@ export function EmkControlBoard({ dashboard }: any) {
 	}
 
 	if (error) {
-		return <div className="p-4 text-red-600">{error}</div>;
+		return (
+			<div
+				className="p-4 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 flex items-center justify-between gap-3 text-sm my-3"
+				role="alert"
+			>
+				<div className="flex items-center gap-2">
+					<AlertTriangle size={16} className="text-rose-500 shrink-0" />
+					<span>{error}</span>
+				</div>
+				<button
+					type="button"
+					onClick={() => loadVisits()}
+					className="text-xs font-semibold underline hover:no-underline px-2 py-1 rounded bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-200"
+				>
+					Повторить
+				</button>
+			</div>
+		);
 	}
 
 	if (visits.length === 0) {

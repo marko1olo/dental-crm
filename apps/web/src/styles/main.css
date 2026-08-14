@@ -580,7 +580,7 @@ button:disabled {
 
 	.workspace-role-switcher summary {
 		align-items: center;
-		background: #fbfefd;
+		background: var(--paper-strong);
 		border: 1px solid var(--line);
 		border-radius: 999px;
 		cursor: pointer;
@@ -614,7 +614,7 @@ button:disabled {
 	}
 
 	.role-switcher-options {
-		background: #ffffff;
+		background: var(--paper);
 		border: 1px solid var(--line);
 		border-radius: 8px;
 		box-shadow:
@@ -12507,11 +12507,11 @@ html.dark .payment-capture h3,
 
 .finance-empty-state {
 	align-items: center;
-	background: #f6fbf7;
-	border: 1px solid rgba(47, 115, 64, 0.22);
-	border-left: 5px solid var(--green);
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-left: 5px solid var(--teal);
 	border-radius: 8px;
-	color: var(--green);
+	color: var(--ink);
 	display: grid;
 	gap: 10px;
 	grid-template-columns: auto minmax(0, 1fr);
@@ -12520,18 +12520,20 @@ html.dark .payment-capture h3,
 }
 
 .finance-empty-state svg {
+	color: var(--teal);
 	height: 20px;
 	width: 20px;
 }
 
 .finance-empty-state p {
-	color: var(--green);
+	color: var(--muted);
 	font-size: 13px;
-	font-weight: 850;
+	font-weight: 600;
 	margin: 0;
 }
 
 .finance-empty-state .text-button {
+	color: var(--teal);
 	grid-column: 2;
 	justify-self: start;
 }

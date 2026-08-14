@@ -1123,14 +1123,14 @@ export function useDicomWorkbenchModule({
 				restoreDicomWorkbenchServerBundle(latest);
 			}
 		} catch (bundleError) {
-			showToast(
-				actionFailureToast(
-					"Список сохраненных наборов просмотра не загружен",
-					(bundleError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
 			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Список сохраненных наборов просмотра не загружен",
+						(bundleError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setError(
 					operatorWorkflowFailureMessage(
 						"Список сохраненных наборов просмотра не загружен",

@@ -336,14 +336,14 @@ export function useVisitLogic({
 					(await response.json()) as SpeechGatewayHealthReport,
 				);
 			} catch (speechHealthError) {
-				showToast(
-					actionFailureToast(
-						"Проверка распознавания недоступна",
-						(speechHealthError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Проверка распознавания недоступна",
+							(speechHealthError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Проверка распознавания недоступна",
@@ -377,14 +377,14 @@ export function useVisitLogic({
 					(await response.json()) as SpeechProviderRuntimeStatus[],
 				);
 			} catch (speechRuntimeError) {
-				showToast(
-					actionFailureToast(
-						"Провайдер распознавания недоступен",
-						(speechRuntimeError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Провайдер распознавания недоступен",
+							(speechRuntimeError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Провайдер распознавания недоступен",
@@ -427,14 +427,14 @@ export function useVisitLogic({
 					(await response.json()) as SpeechRecordingStrategy,
 				);
 			} catch (speechStrategyError) {
-				showToast(
-					actionFailureToast(
-						"Стратегия распознавания недоступна",
-						(speechStrategyError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Стратегия распознавания недоступна",
+							(speechStrategyError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Стратегия распознавания недоступна",

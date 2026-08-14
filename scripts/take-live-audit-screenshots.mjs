@@ -88,16 +88,13 @@ async function seedTokensAndGo(page, clinicToken, staffToken, url) {
     console.log(`  [WARN] Page load: ${e.message}`);
   }
 
-  // Wait for React to render workspace content
+  // Wait until .topbar and .panel/.workspace are mounted and visible
   try {
-    await page.waitForFunction(
-      () => {
-        const root = document.getElementById("root");
-        return root && root.children.length > 0 && root.textContent.trim().length > 20;
-      },
-      { timeout: 8000 }
-    );
-  } catch {}
+    await page.waitForSelector(".topbar", { visible: true, timeout: 30000 });
+    await page.waitForSelector(".panel, .workspace, .work-grid", { visible: true, timeout: 30000 });
+  } catch (e) {
+    console.log(`  [WARN] Wait selectors: ${e.message}`);
+  }
 
   // Settle CSS transitions & fetch calls
   await new Promise(r => setTimeout(r, 1500));
@@ -163,6 +160,11 @@ async function main() {
             await seedTokensAndGo(page, auth.clinicToken, auth.staffToken, url);
             await applyTheme(page, dark);
             await screenshot(page, label);
+            
+            // Capture scrolled view
+            await page.evaluate(() => window.scrollBy(0, 700));
+            await new Promise(r => setTimeout(r, 400));
+            await screenshot(page, `${label}_scrolled`);
           } catch (err) {
             console.error(`  [ERR] ${label}: ${err.message}`);
             try { await screenshot(page, `${label}`); } catch {}
