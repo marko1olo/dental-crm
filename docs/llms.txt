@@ -1,0 +1,20 @@
+# Adolf Petushkov & Jirnyak Engineering Syndicate
+> High-performance game engine internals, clinical dental AI, deep tech physics simulations, and developer proxy tooling.
+
+## Flagship Systems & Live Demonstrations
+
+- [DENTE Dental CRM](https://marko1olo.github.io/dental-crm/): Enterprise clinical workspace prototype featuring an interactive 5-surface FDI odontogram (teeth 11-48), ICD-10 clinical diagnosis engine, periodontal depth sliders, and a 3D DICOM CBCT volumetric slice viewer with Hounsfield windowing.
+- [StomChat Dispatcher](https://marko1olo.github.io/stomchat/): Omni-channel clinical operator workplace integrating WhatsApp Business and Telegram MTProto with 60 FPS real-time SLA telemetry, triage prioritization, and direct DENTE CRM synchronization.
+- [AgentRouter Setup Guide](https://marko1olo.github.io/agentrouter-setup-guide/): Complete integration and proxy configuration guide for Claude Code CLI and VS Code Cline. Features WAF Cyrillic homoglyph byte-substitution (U+0441) and real-time TLS 1.3 latency diagnostics.
+- [Token Audit](https://marko1olo.github.io/token-audit/): Real-time LLM token cost waterfall simulator and cyberpunk CRT terminal. Exact token pricing for Claude Opus 4.8, Sonnet 3.7, GPT-5.6-sol, and DeepSeek-V3 MoE with prompt caching breakdown.
+- [Nexus Media Engine](https://marko1olo.github.io/nexus-media-engine/): High-performance Web Audio API DSP synthesizer and 60 FPS FFT frequency spectrum analyzer with custom oscillator waveforms and dynamic reactive ambilight.
+- [Avito Dental AI Bot](https://marko1olo.github.io/avito-dental-ai-bot/): Zero-hallucination lead intake assistant with a 4-stage deterministic Veto Layer enforcing medical liability rules, price floors, and doctor schedule booking.
+- [Hecton-8 Submersible](https://marko1olo.github.io/Hecton8/): NASA-punk deep sea noir submarine game engine on Unity 6000. Features Hydro-X active sonar, Mackenzie acoustic sound speed calculations, and 0B GC hot paths.
+- [Gigahrush Raycaster](https://marko1olo.github.io/gigahrush/): 2.5D DDA Samosbor raycaster with cellular gas dispersion physics, Soviet dosimeter CRT oscilloscope, and procedural texture synthesis.
+- [Starcluster](https://jirnyak.github.io/starcluster/): 10,000-star gravitational N-body orbital physics simulator utilizing symplectic Velocity-Verlet integration and Keplerian velocity dispersion.
+- [OOMMF Framework](https://jirnyak.github.io/oommf/): Landau-Lifshitz-Gilbert 3D micromagnetic vector lattice visualizer with Heun numerical solver and Skyrmion topological charge calculation.
+- [Macromac Engine](https://jirnyak.github.io/macromac/): Low-level macOS CoreGraphics HID event injection and JSON macro automation engine.
+
+## Architects & Leadership
+- **Адольф Петушков (Adolf Petushkov)** — Lead Systems Architect (Game Engine Internals, Clinical AI, Zero-GC Concurrency). GitHub: https://github.com/marko1olo
+- **Жирняк (Jirnyak)** — Deep Tech Specialist (N-Body Gravitational Physics, Quantum Dynamics, macOS HID). GitHub: https://github.com/Jirnyak
