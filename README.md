@@ -1,53 +1,72 @@
-# 🦷 DENTE — Clinical Dental Practice Management & 3D DICOM Engine
+<div align="center">
 
-[![Live Demo](https://img.shields.io/badge/Live_Showcase-GitHub_Pages-0ea5e9?style=for-the-badge&logo=github)](https://marko1olo.github.io/dental-crm/)
-[![PWA Ready](https://img.shields.io/badge/PWA-Installable-22c55e?style=for-the-badge&logo=pwa)](https://marko1olo.github.io/dental-crm/manifest.json)
-[![AI Index](https://img.shields.io/badge/LLM_Search-llms.txt-38bdf8?style=for-the-badge)](https://marko1olo.github.io/dental-crm/llms.txt)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Fastify](https://img.shields.io/badge/Fastify-5.0-000000?style=for-the-badge&logo=fastify)](https://fastify.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+# 🦷 DENTE — Clinical Dental Practice Management & Diagnostics CRM
 
-An enterprise-grade dental clinic workspace and electronic health record (EHR) platform featuring an interactive 32-teeth FDI odontogram, lateral cephalometric analysis, 3D volumetric DICOM raymarching, SBP QR dynamic billing, and deterministic multi-tenant PostgreSQL 18 isolation.
+[![Live Showcase](https://img.shields.io/badge/Live_Showcase-GitHub_Pages-38bdf8?style=for-the-badge&logo=github)](https://marko1olo.github.io/dental-crm/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE.md)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8_Strict-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18_Native-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+
+**Enterprise Multi-Tenant Dental Practice Management System with DICOM/MPR Imaging, Interactive Odontogram, Smart Scheduling & Kopeck-Exact Financial Ledger.**
+
+</div>
 
 ---
 
-## 🏛️ Architecture & Clinical Data Flow
+## 🌟 Core Features
+
+- **Interactive 32/20 Tooth Interactive Odontogram:** Vector SVG odontogram supporting FDI Two-Digit and Universal Numbering systems with surface-level pathology tracking (caries, pulpitis, crowns, implants, mobility).
+- **Real-Time DICOM / MPR Volumetric View:** Multi-Planar Reconstruction (Axial, Coronal, Sagittal) with Hounsfield Unit (HU) windowing and measurement tools.
+- **Kopeck-Exact Financial Accounting:** Zero floating-point rounding errors. Integer-cent arithmetic across invoices, payments, deposits, insurance coverage, and doctor payroll.
+- **Strict Multi-Tenant Isolation:** Guaranteed tenant separation via `organization_id` column constraints and PostgreSQL row-level indexing.
+- **Telemedicine & Appointment Engine:** Conflict-free doctor scheduling matrix with automated SMS/Telegram reminders and chair occupancy heatmaps.
+
+---
+
+## 📐 Architecture Overview
 
 ```mermaid
 graph TD
-    Client[React 19 SPA + PWA] -->|Strict Zod HTTP / WS| API[Fastify 5 REST API]
-    API -->|Tenant Isolation org_id| DB[(PostgreSQL 18 + Drizzle ORM)]
-    API -->|Volumetric Slices| DICOM[3D DICOM WebGL Engine]
-    API -->|Clinical Records| Odonto[FDI 32-Teeth Odontogram Engine]
-    API -->|Dynamic QR| SBP[SBP QR & Sberbank Acquiring]
+    A[React 19 + Vite Frontend] -->|Zod Validated JSON / REST| B[Fastify Backend Core]
+    B -->|Connection Pool| C[(PostgreSQL 18 Database)]
+    B -->|WebSocket Bus| D[Real-Time Notifications & Triage]
+    B -->|Dicom Parser Pipeline| E[MPR Imaging & Volumetric Raytracer]
+    
+    subgraph Frontend Subsystems
+        F1[Interactive Odontogram SVG]
+        F2[Multi-Chair Appointment Grid]
+        F3[DICOM Slice Viewer]
+        F4[Patient Health Record EHR]
+    end
+    
+    subgraph Backend Services
+        B1[Billing & Kopeck-Exact Ledger]
+        B2[Authentication & RBAC Security]
+        B3[Clinical Diagnostic Pipeline]
+        B4[Telegram / WhatsApp Triage Bot]
+    end
 ```
 
 ---
 
-## 🔬 Core Capabilities
-
-1. **Interactive 32-Teeth FDI Odontogram:** Full FDI numbering (18-48), per-surface clinical condition tracking (caries, restoration, crown, endo, implant, missing), and instant treatment plan cost generation.
-2. **Periodontal Pocket Depth Probing:** 6-point probing depth tracking with Bleeding on Probing (BOP) and furcation grading.
-3. **Lateral Cephalometric Angle Calculator:** Sagittal malocclusion classification (SNA, SNB, ANB Class I/II/III).
-4. **3D DICOM Volumetric Viewer:** GPU-accelerated client-side raymarching of CBCT scans with Hounsfield Unit windowing.
-5. **Deterministic Financial Ledger:** SBP QR payments, fiscal receipting, and kopeck-exact doctor commission payouts.
-
----
-
-## 🛠️ Quickstart
+## 🚀 Quick Start
 
 ```bash
-# Clone and install dependencies
+# Clone the repository
 git clone https://github.com/marko1olo/dental-crm.git
 cd dental-crm
-pnpm install
 
-# Start development stack
-pnpm dev
+# Install dependencies
+npm install
+
+# Run database migrations
+npm run db:migrate
+
+# Start development server
+npm run dev
 ```
 
 ---
 
-### 👨‍💻 Lead Architect
-**Адольф Петушков (Adolf Petushkov)** — High-Concurrency Systems & Clinical AI Architecture.  
-GitHub: [@marko1olo](https://github.com/marko1olo)
+### 👥 Engineering Syndicate
+Developed and maintained by **Жирняк** & **Адольф Петушков**.
